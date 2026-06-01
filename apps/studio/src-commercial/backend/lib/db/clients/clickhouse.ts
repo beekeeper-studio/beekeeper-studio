@@ -63,6 +63,9 @@ import { errors } from "@/lib/errors";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { ClickHouseCursor } from "./clickhouse/ClickHouseCursor";
+import { readFileSync } from 'fs';
+import { NodeClickHouseClientConfigOptions } from "@clickhouse/client/dist/config";
+import https from 'https'
 
 interface JSONResult {
   statement: IdentifyResult;
@@ -148,7 +151,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       url = urlObj.toString();
     }
 
-    this.client = createClient({
+    const config: NodeClickHouseClientConfigOptions = {
       url,
       username: this.server.config.user,
       password: this.server.config.password,
@@ -158,7 +161,34 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
         default_format: "JSONCompact",
       },
       request_timeout: 120_000, // 2 minutes
-    });
+    };
+    if (this.server.config.ssl) {
+      let hasCerts = false;
+      // ClickHouse client supports both one-way and mutual TLS authentication. If sslCertFile and sslKeyFile are provided, we will use mutual TLS, otherwise we will use one-way TLS.
+      if (this.server.config.sslCaFile) {
+        hasCerts = true;
+        if (this.server.config.sslCertFile && this.server.config.sslKeyFile) {
+          config.tls = {
+            ca_cert: readFileSync(this.server.config.sslCaFile),
+            cert: readFileSync(this.server.config.sslCertFile),
+            key: readFileSync(this.server.config.sslKeyFile),
+          };
+        } else {
+          config.tls = {
+            ca_cert: readFileSync(this.server.config.sslCaFile),
+          };
+        }
+      }
+
+      // Beekeeper's default behavior is to disable verification unless certificates are provided.
+      if (!hasCerts || !this.server.config.sslRejectUnauthorized) {
+        config.http_agent = new https.Agent({
+          rejectUnauthorized: false
+        });
+      }
+    }
+
+    this.client = createClient(config);
     const result = await this.driverExecuteSingle(
       "SELECT version() AS version"
     );
