@@ -353,7 +353,7 @@ export default {
       return !this.dialectData?.disabledFeatures?.resultEditing;
     },
     editButtonTooltip() {
-      if (this.usedConfig.readOnlyMode) {
+      if (this.usedConfig?.readOnlyMode) {
         return "Read Only Mode is enabled for this connection. Editing is disabled.";
       } else if (this.resultEditable) {
         return "Edit table data directly from query results";
