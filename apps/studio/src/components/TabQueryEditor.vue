@@ -1357,6 +1357,13 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             const payload = _.clone(this.query)
             payload.text = this.unsavedText
             payload.excerpt = payload.text.substr(0, 250)
+            if (payload.id) {
+              const latest = this.savedQueries.find(q => q.id === payload.id)
+              if (latest) {
+                payload.queryFolderId = latest.queryFolderId
+                payload.position = latest.position
+              }
+            }
             this.$modal.hide(`save-modal-${this.tab.id}`)
             const id = await this.$store.dispatch('data/queries/save', payload)
             this.tab.queryId = id
