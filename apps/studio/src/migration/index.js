@@ -91,6 +91,7 @@ import addLicenseInvalidatedAt from './20260421_add_license_invalidated_at'
 import cleanupDuplicateLicenseKeys from './20260421_cleanup_duplicate_license_keys'
 import createTabulatorPersistence from './20260424_create_tabulator_persistence'
 import createQueryAudits from './20260526_create_query_audits'
+import clearLogFiles from './20260527_clear_log_files'
 
 import ultimate from './ultimate/index'
 
@@ -143,6 +144,7 @@ const realMigrations = [
   cleanupDuplicateLicenseKeys,
   createTabulatorPersistence,
   createQueryAudits,
+  clearLogFiles,
 ]
 
 // fixtures require the models

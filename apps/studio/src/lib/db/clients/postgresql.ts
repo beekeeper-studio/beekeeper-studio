@@ -46,8 +46,6 @@ const pgErrors = {
   CANCELED: '57014',
 };
 
-const dataTypes: any = {}
-
 export interface STQOptions {
   table: string,
   orderBy?: OrderBy[],
@@ -90,7 +88,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   version: VersionInfo;
   conn: HasPool;
   _defaultSchema: string;
-  dataTypes: any;
+  dataTypes: any = {};
   transcoders = [GenericBinaryTranscoder];
   interval: NodeJS.Timeout;
 
@@ -1112,7 +1110,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       query: qs.query,
       params: qs.params,
       conn: this.conn,
-      chunkSize
+      chunkSize,
+      dataTypes: this.dataTypes
     }
 
     return {
@@ -1127,14 +1126,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       query: query,
       params: [],
       conn: this.conn,
-      chunkSize
+      chunkSize,
+      dataTypes: this.dataTypes
     }
 
-    const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
-
     return {
-      totalRows,
-      columns,
       cursor: new PsqlCursor(cursorOpts)
     }
   }
@@ -1379,7 +1375,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
 
   parseFields(fields: any[], rowResults: boolean) {
     return fields.map((field, idx) => {
-      field.dataType = dataTypes[field.dataTypeID] || 'user-defined'
+      field.dataType = this.dataTypes[field.dataTypeID] || 'user-defined'
       field.id = rowResults ? `c${idx}` : field.name
       return field
     })

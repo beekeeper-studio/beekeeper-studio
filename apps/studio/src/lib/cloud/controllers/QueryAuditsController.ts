@@ -13,21 +13,14 @@ export class QueryAuditsController {
   plural = 'audits'
   path = '/queries'
 
-  // The cloud API serialises created_at as float epoch seconds; convert to a
-  // Date so callers get the same shape as the local workspace.
-  private withDate<T extends IQueryAudit>(audit: T): T {
-    return { ...audit, createdAt: new Date((audit.createdAt as unknown as number) * 1000) }
-  }
-
   async list(queryId: number): Promise<IQueryAudit[]> {
     const response = await this.axios.get(url(this.path, queryId, this.plural))
-    const audits: IQueryAudit[] = res(response, this.plural)
-    return audits.map((audit) => this.withDate(audit))
+    return res(response, this.plural)
   }
 
   async get(queryId: number, auditId: number): Promise<IQueryAuditDetail> {
     const response = await this.axios.get(url(this.path, queryId, this.plural, auditId))
-    return this.withDate(res(response, this.name))
+    return res(response, this.name)
   }
 
   async restore(queryId: number, auditId: number): Promise<ISavedQuery> {

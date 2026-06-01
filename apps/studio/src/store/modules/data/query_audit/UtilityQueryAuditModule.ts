@@ -4,9 +4,6 @@ import { State as RootState } from "../../../index";
 import { IQueryAudit, IQueryAuditDetail } from "@/common/interfaces/IQueryAudit";
 import { TransportFavoriteQuery } from "@/common/transport";
 
-// Local counterpart to CloudQueryAuditModule. Talks to the utility process
-// appdb handlers so edit history works offline. Audits are fetched on demand
-// per query, so there is no items/load/poll behaviour.
 interface State {
   pollError: null;
 }

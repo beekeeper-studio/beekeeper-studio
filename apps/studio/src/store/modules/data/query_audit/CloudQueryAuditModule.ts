@@ -1,5 +1,5 @@
 import { Module } from "vuex";
-import { having } from "@/common/utils";
+import { havingCli } from "../StoreHelpers";
 import { State as RootState } from "../../../index";
 import { IQueryAudit, IQueryAuditDetail } from "@/common/interfaces/IQueryAudit";
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
@@ -19,30 +19,27 @@ export const CloudQueryAuditModule: Module<State, RootState> = {
     async load() {},
     async poll() {},
     async list(context, queryId: number): Promise<IQueryAudit[]> {
-      return await having(
+      return await havingCli(
         context.rootGetters.cloudClient,
         (cli) => cli.queryAudits.list(queryId),
-        "You are not logged in"
       );
     },
     async get(
       context,
       { queryId, auditId }: { queryId: number; auditId: number }
     ): Promise<IQueryAuditDetail> {
-      return await having(
+      return await havingCli(
         context.rootGetters.cloudClient,
         (cli) => cli.queryAudits.get(queryId, auditId),
-        "You are not logged in"
       );
     },
     async restore(
       context,
       { queryId, auditId }: { queryId: number; auditId: number }
     ): Promise<ISavedQuery> {
-      return await having(
+      return await havingCli(
         context.rootGetters.cloudClient,
         (cli) => cli.queryAudits.restore(queryId, auditId),
-        "You are not logged in"
       );
     },
   },

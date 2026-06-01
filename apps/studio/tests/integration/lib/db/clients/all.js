@@ -133,6 +133,14 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().tableViewTests()
     })
 
+    // Regression guard for sql-query-identifier 3.0.0: getResultEditData failed
+    // on quoted identifiers (e.g. `SELECT cl."legacyConfig", * FROM "Agenda" cl
+    // ...`) because the old library left the quotes on the parsed names.
+    test("getResultEditData handles quoted identifiers", async () => {
+      if (getUtil().data.disabledFeatures?.resultEditing) return
+      await getUtil().getResultEditDataQuotedIdentifierTest()
+    })
+
     describe("stream tests", () => {
       beforeAll(async () => {
         if (getUtil().dbType === 'cockroachdb') return
