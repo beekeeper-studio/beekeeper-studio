@@ -6,7 +6,7 @@ import { CloudConnectionFolderModule } from "./modules/data/connection_folder/Cl
 import { CloudQueryModule } from "./modules/data/query/CloudQueryModule";
 import { UtilQueryModule } from "./modules/data/query/UtilityQueryModule";
 import { CloudQueryAuditModule } from "./modules/data/query_audit/CloudQueryAuditModule";
-import { LocalQueryAuditModule } from "./modules/data/query_audit/LocalQueryAuditModule";
+import { UtilQueryAuditModule } from "./modules/data/query_audit/UtilityQueryAuditModule";
 import { CloudQueryFolderModule } from "./modules/data/query_folder/CloudQueryFolderModule";
 import { UtilUsedConnectionModule } from "./modules/data/used_connection/UtilityUsedConnectionModule";
 import { CloudUsedQueryModule } from "./modules/data/used_query/CloudUsedQueryModule";
@@ -21,7 +21,7 @@ export const DataModules = [
   },
   {
     path: 'data/queryAudits',
-    local: LocalQueryAuditModule,
+    local: UtilQueryAuditModule,
     cloud: CloudQueryAuditModule,
   },
   {

@@ -7,7 +7,7 @@ interface State {
   pollError: null;
 }
 
-export const LocalQueryAuditModule: Module<State, RootState> = {
+export const UtilQueryAuditModule: Module<State, RootState> = {
   namespaced: true,
   state: {
     pollError: null,
