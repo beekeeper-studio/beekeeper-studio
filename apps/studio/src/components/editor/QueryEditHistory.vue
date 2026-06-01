@@ -322,8 +322,7 @@ export default Vue.extend({
       }
       return target.id === this.queryAudits[0].id;
     },
-    formatTime(createdAt: Date): string {
-      const d = new Date(createdAt);
+    formatTime(d: Date): string {
       const month = d.toLocaleString("en-US", { month: "long" });
       const day = d.getDate();
       const time = d.toLocaleString("en-US", {
