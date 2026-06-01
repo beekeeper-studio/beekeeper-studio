@@ -5,6 +5,7 @@
       name="upgrade-modal"
       height="auto"
       :width="modalWidth"
+      @opened="focusDialog"
     >
       <div
         class="dialog-content upgrade-modal-content"
@@ -14,6 +15,7 @@
           class="close-btn btn btn-fab"
           @click.prevent="close"
           aria-label="Close"
+          ref="closeButton"
         >
           <i class="material-icons">clear</i>
         </button>
@@ -40,6 +42,11 @@ export default Vue.extend({
     }
   },
   methods: {
+    focusDialog() {
+      this.$nextTick(() => {
+        this.$refs.closeButton.focus()
+      })
+    },
     showModal(featureName?: string | null) {
       if (this.$store.getters.isCommunity) {
         this.featureName = featureName || null
@@ -52,6 +59,7 @@ export default Vue.extend({
   },
   mounted() {
     this.$root.$on(AppEvent.upgradeModal, this.showModal)
+
   },
   beforeDestroy() {
     this.$root.$off(AppEvent.upgradeModal, this.showModal)
