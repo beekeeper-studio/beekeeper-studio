@@ -30,7 +30,7 @@
               class="form-control"
               v-model.trim="value"
               :placeholder="`Input a ${title}`"
-            />
+            >
           </div>
         </div>
         <div class="vue-dialog-buttons">

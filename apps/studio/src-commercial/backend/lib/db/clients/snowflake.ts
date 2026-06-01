@@ -852,12 +852,12 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
   }
 
   private async getQueryResultFromId<T>(queryId: string, conn: Connection, rowResults: boolean, formatResults: (stmt: RawSnowflakeStatement, rows: any[]) => T): Promise<T> {
-    return await new Promise<T>(async (resolve, reject) => {
+    const snowflakeStmt = await conn.getResultsFromQueryId({
+      queryId,
+      rowMode: rowResults ? 'array' : 'object_with_renamed_duplicated_columns'
+    });
+    return await new Promise<T>((resolve, reject) => {
       try {
-        const snowflakeStmt = await conn.getResultsFromQueryId({
-          queryId,
-          rowMode: rowResults ? 'array' : 'object_with_renamed_duplicated_columns'
-        });
         const stream = snowflakeStmt.streamRows();
         const rows: any[] = [];
 
@@ -939,7 +939,7 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
 
     const queries: string[] = [];
 
-    for (const statement of options?.statements) {
+    for (const statement of options.statements) {
       const result = await this.runToStatement(statement.text, {
         params: options.params,
         connection: conn,
@@ -1025,13 +1025,11 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
   }
 
   private async updateValues(rawUpdates: TableUpdate[], connection: Connection): Promise<TableUpdateResult> {
-    let results: TableUpdateResult[];
-
     await this.driverExecuteMultiple(buildUpdateQueries(this.knex, rawUpdates).join(";"), { connection });
 
     const data = await this.driverExecuteMultiple(buildSelectQueriesFromUpdates(this.knex, rawUpdates).join(";"), { connection });
 
-    results = data.map((r) => r.rows[0]);
+    const results = data.map((r) => r.rows[0]);
 
     return results;
   }
