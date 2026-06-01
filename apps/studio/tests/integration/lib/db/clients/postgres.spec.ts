@@ -707,6 +707,13 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
         await util.paramTest(['$1', '$2', '$3']);
       })
     })
+
+    describe("queryStream double execution", () => {
+      it("should run the supplied query only once across the full stream lifecycle", async () => {
+        if (util.connection.readOnlyMode) return
+        await util.queryStreamDoubleExecutionTest()
+      })
+    })
   })
 }
 

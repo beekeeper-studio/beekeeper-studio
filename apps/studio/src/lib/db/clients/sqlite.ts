@@ -516,11 +516,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
-    const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
-
     return {
-      totalRows,
-      columns,
       cursor: this.createCursor(this.isTempDB ? this.acquireConnection() : this.databasePath, query, [], chunkSize)
     };
   }

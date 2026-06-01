@@ -10,7 +10,7 @@
       />
     </template>
     <template>
-      <div class="row gutter alert-row">
+      <div class="row gutter alert-row ssh-tunnel-info">
         <div class="alert alert-info">
           <i class="material-icons-outlined">info</i>
           <div>For the SSH tunnel to work, AllowTcpForwarding must be set to "yes" in your ssh server config.</div>
@@ -375,7 +375,17 @@ export default {
   vertical-align: middle;
 }
 
+.ssh-tunnel-info {
+  margin-inline: 0;
+}
+
 body.theme-dark .bastion-host {
   background-color: rgb(from var(--theme-base) r g b / 3.5%);
+}
+
+@media (prefers-color-scheme: dark) {
+  body.theme-system .bastion-host {
+    background-color: rgb(from var(--theme-base) r g b / 3.5%);
+  }
 }
 </style>

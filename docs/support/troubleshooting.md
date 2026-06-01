@@ -39,30 +39,56 @@ Are there any errors here? Take a screenshot and attach them to a new issue!
 
 ### Enable Debug Mode and Collect Logs
 
-You can find logs for Beekeeper in these directories:
+You can find logs for Beekeeper Studio in these directories:
 
-- **Linux:** `~/.config/beekeeper-studio/logs/{process type}.log`
-- **MacOS:** `~/Library/Logs/beekeeper-studio/{process type}.log`
-- **Windows:** `%USERPROFILE%\AppData\Roaming\beekeeper-studio\logs\{process type}.log`
+- Linux: `~/.config/beekeeper-studio/logs/{process}.log`
+- macOS: `~/Library/Logs/beekeeper-studio/{process}.log`
+- Windows: `%USERPROFILE%\AppData\Roaming\beekeeper-studio\logs\{process}.log`
 
-By default they will only contain uncaught errors.
+`{process}` is `main` for the Electron main process and `utility` for the
+database driver process.
 
-You can enable extended logging by starting Beekeeper Studio with the debug flag `DEBUG=*`.
+By default, packaged builds only write `warn` and `error` messages to disk.
+Sensitive fields (passwords, tokens, private keys) are redacted before they
+hit the log file.
 
-### Linux
+To collect more detail for a bug report, restart the app with one of the
+following environment variables set:
+
+| Variable                | Effect                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------- |
+| `DEBUG=1`               | Quick toggle. Drops the log level to `silly` (everything) and opens DevTools on launch. |
+| `BKS_LOG_LEVEL=<level>` | Sets the log level explicitly. Valid values: `error`, `warn`, `info`, `verbose`, `debug`, `silly`. Takes precedence over `DEBUG`. |
+| `BKS_LOG_NO_REDACT=1`   | Disables the credential redacter so passwords, tokens, and similar fields appear verbatim. Local debugging only — never set this on a machine whose logs might be shared. |
+
+`silly` is the most verbose; `error` is the quietest. Most users investigating
+a bug should start with `BKS_LOG_LEVEL=debug` or `DEBUG=1`.
+
+Example invocations:
+
 ```bash
-DEBUG=* beekeeper-studio
+# Linux / macOS
+BKS_LOG_LEVEL=debug beekeeper-studio
+
+# Just turn everything on
+DEBUG=1 beekeeper-studio
 ```
 
-### MacOS
-```bash
-DEBUG=* open -a "Beekeeper Studio"
+```cmd
+:: Windows (cmd)
+set BKS_LOG_LEVEL=debug
+"Beekeeper Studio.exe"
 ```
 
-### Windows
 ```powershell
-$env:DEBUG="*"; & "$env:LOCALAPPDATA\Programs\beekeeper-studio\Beekeeper Studio.exe"
+# Windows (PowerShell)
+$env:BKS_LOG_LEVEL = "debug"
+& "Beekeeper Studio.exe"
 ```
+
+Reproduce the issue, then attach the contents of `main.log` and `utility.log`
+to your bug report.
+
 
 ## MySQL
 

@@ -235,7 +235,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   override async setElementName(elementName: string, newElementName: string, typeOfElement:DatabaseElement): Promise<void> {
     const db = this.conn.db(this.db);
 
-    if (typeOfElement == DatabaseElement.TABLE) {
+    if (typeOfElement === DatabaseElement.TABLE) {
       try {
         // Check if target name already exists
         const targetCollections = await db.listCollections({ name: newElementName }).toArray();
@@ -900,7 +900,6 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     };
 
     return {
-      totalRows: 0,// need to figure this out
       columns,
       cursor: new MongoDBCursor(cursorOpts)
     };
@@ -913,15 +912,9 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       chunkSize
     };
 
-    const { columns, totalRows } = await this.getColumnsAndTotalRows(query);
-
     return {
-      totalRows,
-      columns,
       cursor: new MongoDBCursor(cursorOpts)
     }
-    log.error('MongoDB does not support querying');
-    return null;
   }
 
   wrapIdentifier(_value: string): string {
