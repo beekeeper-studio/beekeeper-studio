@@ -9,7 +9,7 @@ export interface IQueryAudit {
   id: number
   revision: number
   action: 'create' | 'update' | 'destroy'
-  createdAt: Date
+  createdAt: Date | number
   user: IQueryAuditUser
 }
 

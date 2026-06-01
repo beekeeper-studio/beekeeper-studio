@@ -216,12 +216,14 @@ export default Vue.extend({
       return mode === "text/x-redis" ? "redis" : mode;
     },
     audits(): Audit[] {
-      // The top entry of the saved list is the "current version" only when
-      // the editor isn't dirty — when dirty, the synthetic unsaved row above
-      // the list takes that role.
       return this.queryAudits.map((queryAudit: IQueryAudit, i: number) => ({
         queryAudit,
-        time: this.formatTime(queryAudit.createdAt),
+        // createdAt is float seconds since epoch (from cloud API).
+        time: this.formatTime(
+          typeof queryAudit.createdAt === 'number'
+            ? new Date(queryAudit.createdAt * 1000)
+            : queryAudit.createdAt
+        ),
         user: this.userLabel(queryAudit),
         isCurrentVersion: !this.dirty && i === 0,
       }));
@@ -232,8 +234,11 @@ export default Vue.extend({
       // `audits` is sorted newest-first by the API, so single-pass grouping
       // also yields chronological group order (newest → oldest).
       for (const audit of this.audits) {
+        // createdAt is float seconds since epoch (cloud API convention).
         const heading = this.$bks.timeAgo(
-          new Date(audit.queryAudit.createdAt)
+          typeof audit.queryAudit.createdAt === 'number'
+            ? new Date(audit.queryAudit.createdAt * 1000)
+            : audit.queryAudit.createdAt
         );
         if (!current || current.heading !== heading) {
           current = { heading, items: [] };
