@@ -28,6 +28,21 @@
   --md-primary-fg-color--dark: black;
 }
 
+/* Theme toggle: show the active mode's name (Auto/Light/Dark) next to the icon.
+   Selector matches Material's reveal rule + our class to win specificity. */
+.md-option:checked + label.md-palette__label:not([hidden]) {
+  display: flex;
+  align-items: center;
+  width: auto;
+  gap: 0.25rem;
+  padding: 0.2rem 0.5rem;
+}
+.md-palette__name {
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
 article {
   a:hover {
     text-decoration: underline;
