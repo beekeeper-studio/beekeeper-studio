@@ -52,6 +52,27 @@ export type TransportOpenTabInit<Context = {}> = Omit<
 export type TransportPluginShellTab = TransportOpenTab<PluginTabContext>;
 export type TransportPluginTab = TransportOpenTab<PluginTabContext>;
 
+/** How the multiple result sets of a query are rendered. */
+export type QueryResultsViewMode = 'tabbed' | 'split';
+/** Orientation of the gutter when `QueryResultsViewMode === 'split'`.
+ * `horizontal` = split BY a horizontal line = panels stacked top-to-bottom.
+ * `vertical` = split BY a vertical line = panels side-by-side. */
+export type QueryResultsSplitOrientation = 'horizontal' | 'vertical';
+
+/** Persisted layout state for a query tab. Stored in `context`. */
+export type QueryTabContext = {
+  /** How the multiple result sets of a query are rendered. */
+  resultsViewMode?: QueryResultsViewMode;
+  /** When `resultsViewMode === 'split'`, the split.js direction.
+   * `horizontal` = split BY a horizontal line = panels stacked top-to-bottom.
+   * `vertical` = split BY a vertical line = panels side-by-side. */
+  resultsSplitOrientation?: QueryResultsSplitOrientation;
+  /** When non-null, only this result index is rendered (others hidden). */
+  resultsMaximizedIndex?: number | null;
+};
+
+export type TransportQueryTab = TransportOpenTab<QueryTabContext>;
+
 export type PluginTabContext = {
   pluginId: string;
   pluginTabTypeId: string;

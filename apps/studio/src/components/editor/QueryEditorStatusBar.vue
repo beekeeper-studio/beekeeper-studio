@@ -11,7 +11,7 @@
         v-hotkey="keymap"
       >
         <span
-          v-show="results?.length > 1"
+          v-show="results?.length > 1 && viewMode !== 'split'"
           class="statusbar-item result-selector"
           :title="'Results'"
         >
@@ -39,6 +39,43 @@
               </option>
             </select>
           </div>
+        </span>
+        <span
+          v-show="results?.length > 1 && !!viewMode"
+          class="statusbar-item results-view-toggle"
+          role="group"
+          aria-label="Results layout"
+        >
+          <button
+            type="button"
+            class="btn btn-flat btn-icon"
+            :class="{ active: viewMode === 'tabbed' }"
+            v-tooltip="'Tabbed view — one result at a time'"
+            aria-label="Tabbed view"
+            @click="setLayout('tabbed', splitOrientation)"
+          >
+            <i class="material-icons">tab</i>
+          </button>
+          <button
+            type="button"
+            class="btn btn-flat btn-icon"
+            :class="{ active: viewMode === 'split' && splitOrientation === 'horizontal' }"
+            v-tooltip="'Split — stacked (top to bottom)'"
+            aria-label="Split stacked"
+            @click="setLayout('split', 'horizontal')"
+          >
+            <i class="material-icons">horizontal_split</i>
+          </button>
+          <button
+            type="button"
+            class="btn btn-flat btn-icon"
+            :class="{ active: viewMode === 'split' && splitOrientation === 'vertical' }"
+            v-tooltip="'Split — side by side'"
+            aria-label="Split side by side"
+            @click="setLayout('split', 'vertical')"
+          >
+            <i class="material-icons">vertical_split</i>
+          </button>
         </span>
         <div
           class="statusbar-item row-counts"
@@ -251,7 +288,21 @@ const shortEnglishHumanizer = humanizeDuration.humanizer({
 });
 
 export default {
-  props: ['results', 'running', 'value', 'executeTime', 'wrapText', 'active', 'elapsedTime', 'editing', 'changesCount', 'changesString', 'resultEditable'],
+  props: [
+    'results',
+    'running',
+    'value',
+    'executeTime',
+    'wrapText',
+    'active',
+    'elapsedTime',
+    'editing',
+    'changesCount',
+    'changesString',
+    'resultEditable',
+    'viewMode',
+    'splitOrientation',
+  ],
   components: { Statusbar },
   data() {
     return {
@@ -415,6 +466,9 @@ export default {
     },
     submitCurrentQueryToFile() {
       this.$emit('submitCurrentQueryToFile')
+    },
+    setLayout(mode, orientation) {
+      this.$emit('layout-change', { mode, orientation })
     },
   }
 }
