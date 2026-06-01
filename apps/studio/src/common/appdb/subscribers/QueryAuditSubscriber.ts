@@ -9,9 +9,7 @@ import { FavoriteQuery } from "../models/favorite_query";
 import { QueryAudit } from "../models/QueryAudit";
 
 // Records query edit-history audits as a side effect of FavoriteQuery saves.
-// Implemented as an EntitySubscriber (rather than model lifecycle hooks) to
-// keep the entity free of audit logic and to use the event's transactional
-// manager. Deletes cascade via the FK, so afterRemove isn't needed.
+// Deletes cascade via the FK, so afterRemove isn't needed.
 @EventSubscriber()
 export class QueryAuditSubscriber
   implements EntitySubscriberInterface<FavoriteQuery>
@@ -34,7 +32,7 @@ export class QueryAuditSubscriber
   // position-only saves (reorder) add no noise. The action and revision are
   // derived from whether any history exists yet.
   private async record(
-    manager: EntityManager,
+    transaction: EntityManager,
     query: FavoriteQuery
   ): Promise<void> {
     if (query.id == null) {
@@ -42,14 +40,14 @@ export class QueryAuditSubscriber
     }
     const title = query.title ?? "";
     const text = query.text ?? "";
-    const latest = await manager.findOne(QueryAudit, {
+    const latest = await transaction.findOne(QueryAudit, {
       where: { favoriteQueryId: query.id },
       order: { revision: "DESC" },
     });
     if (latest && latest.title === title && latest.text === text) {
       return;
     }
-    await manager.insert(QueryAudit, {
+    await transaction.insert(QueryAudit, {
       favoriteQueryId: query.id,
       revision: latest ? latest.revision + 1 : 1,
       action: latest ? "update" : "create",

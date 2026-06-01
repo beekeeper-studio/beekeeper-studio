@@ -1,16 +1,17 @@
-export interface IQueryAuditUser {
-  id?: number
-  name?: string
-  email?: string
-  username?: string
-}
-
 export interface IQueryAudit {
   id: number
   revision: number
   action: 'create' | 'update' | 'destroy'
   createdAt: Date | number
-  user: IQueryAuditUser
+  user:
+    | {
+        source: "cloud"
+        id: number
+        name: string
+        email: string
+        username: string
+      }
+    | { source: "util" }
 }
 
 export interface IQueryAuditValues {
@@ -18,14 +19,7 @@ export interface IQueryAuditValues {
   text: string
 }
 
-export interface IQueryAuditChangeSize {
-  added: number
-  removed: number
-}
-
 export interface IQueryAuditDetail extends IQueryAudit {
   previousAuditId: number | null
   values: IQueryAuditValues
-  changedFields: string[]
-  changes: Record<string, IQueryAuditChangeSize>
 }

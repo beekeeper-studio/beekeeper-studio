@@ -72,7 +72,7 @@ describe('Query audit handlers', () => {
     expect(detail.values.text).toBe('edited')
   })
 
-  it('returns snapshot values, previousAuditId and changes from get', async () => {
+  it('returns snapshot values and previousAuditId from get', async () => {
     const saved = await saveQuery(newQuery({ text: 'select 1' }))
     await saveQuery({ ...saved, text: 'select 12' })
 
@@ -84,8 +84,6 @@ describe('Query audit handlers', () => {
 
     expect(latest.values.text).toBe('select 12')
     expect(latest.previousAuditId).toBe(audits[1].id)
-    expect(latest.changedFields).toContain('text')
-    expect(latest.changes.text).toEqual({ added: 1, removed: 0 })
   })
 
   it('restores a prior revision and records a new audit', async () => {

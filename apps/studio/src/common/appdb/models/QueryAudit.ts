@@ -29,4 +29,16 @@ export class QueryAudit extends ApplicationEntity {
 
   @Column({ type: "text", nullable: false })
   text: string;
+
+  static async getPreviousId(queryId: number, revision: number): Promise<number | null> {
+    const audit = await QueryAudit.getRepository()
+      .createQueryBuilder("a")
+      .where(
+        "a.favoriteQueryId = :id AND a.revision < :v",
+        { id: queryId, v: revision }
+      )
+      .orderBy("a.revision", "DESC")
+      .getOne()
+    return audit?.id ?? null;
+  }
 }

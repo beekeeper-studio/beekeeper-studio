@@ -169,8 +169,7 @@ export const AppDbHandlers = {
   ...handlersFor<TransportPinnedConn>('pinconn', PinnedConnection),
   ...handlersFor<TransportPinnedEntity>('pins', PinnedEntity),
   ...handlersFor<TransportFavoriteQuery>('query', FavoriteQuery),
-  ...handlersFor<IQueryAudit>('queryAudit', QueryAudit, transformAudit),
-  ...QueryAuditHandlers,
+  ...handlersFor<IQueryAudit>('queryAudit', QueryAudit),
   ...handlersFor<TransportUsedQuery>('usedQuery', UsedQuery),
   ...handlersFor<TransportOpenTab>('tabs', OpenTab),
   ...handlersFor<TransportHiddenEntity>('hiddenEntity', HiddenEntity),
@@ -182,6 +181,7 @@ export const AppDbHandlers = {
   ...handlersFor<IQueryFolder>('queryFolder', QueryFolder),
   ...handlersFor<IConnectionFolder>('connectionFolder', ConnectionFolder),
   ...handlersFor<TransportTabulatorPersistence>('tabulatorPersistence', TabulatorPersistence),
+  ...QueryAuditHandlers,
   'appdb/saved/parseUrl': async function({ url }: { url: string }) {
     const conn = new SavedConnection();
     if (!conn.parse(url)) {
