@@ -18,7 +18,6 @@ import knexlib from 'knex';
 import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SnowflakeChangeBuilder } from "@/shared/lib/sql/change_builder/SnowflakeChangeBuilder";
 import { SnowflakeCursor } from "./snowflake/SnowflakeCursor";
-import { ModifyAquaConfiguration$ } from "@aws-sdk/client-redshift";
 
 const log = rawLog.scope('snowflake')
 
@@ -70,7 +69,7 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
     })
   }
 
-  // Snowflake supports basically an infinite number of collations so idk how we want ot handle this
+  // Snowflake supports basically an infinite number of collations so idk how we want to handle this
   async listCharsets(): Promise<string[]> {
     return [];
   }
@@ -104,7 +103,10 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
     await this.pool.clear();
   }
 
-  // TODO (@day): need to be async? prob not
+  async defaultSchema(): Promise<string | null> {
+    return this._defaultSchema;
+  }
+
   private async configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase): Promise<ConnectionOptions> {
 
     if (!database.database) {
@@ -200,7 +202,7 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
   }
 
   async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'TABLE_SCHEMA');
+    const schemaFilter = buildSchemaFilter(filter, 'TABLE_SCHEMA', this.wrapIdentifier);
 
     const sql = `
       SELECT
@@ -221,8 +223,7 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
   }
 
   async listViews(filter?: FilterOptions): Promise<TableOrView[]> {
-    // TODO (@day): do we need a custom wrapIdent
-    const schemaFilter = buildSchemaFilter(filter, 'TABLE_SCHEMA');
+    const schemaFilter = buildSchemaFilter(filter, 'TABLE_SCHEMA', this.wrapIdentifier);
 
     const sql = `
       SELECT

@@ -17,14 +17,22 @@ export class SnowflakeCursor extends BeeCursor {
   private conn: Connection;
 
   constructor(options: CursorOptions) {
-    // TODO (@day): chunksize :)
     super(options.chunkSize);
     this.options = options;
+  }
+
+  get columns(): TableColumn[] | null {
+    if (!this.stmt) return null
+    return this.stmt.getColumns()?.map((v) => ({
+      columnName: v.getName(),
+      dataType: v.getType()
+    }));
   }
 
   async start() {
     this.conn = await this.options.pool.acquire();
     return await new Promise<void>((resolve, reject) => {
+      // idk if we really need to set this here, but I don't think it hurts anything?
       this.stmt = this.conn.execute({
         sqlText: this.options.query,
         binds: this.options.params,
