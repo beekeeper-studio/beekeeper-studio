@@ -13,6 +13,7 @@ import { SqlAnywhereConn, SqlAnywherePool } from './anywhere/SqlAnywherePool';
 import _ from 'lodash';
 import { joinFilters } from '@/common/utils';
 import { SqlAnywhereChangeBuilder } from '@/shared/lib/sql/change_builder/SqlAnywhereChangeBuilder';
+import { SqlAnywhereCursor } from './anywhere/SqlAnywhereCursor';
 
 const D = SqlAnywhereData;
 const log = rawLog.scope('sql-anywhere');
@@ -1170,8 +1171,6 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
 
     const conn = await this.pool.connect();
 
-    // Import SqlAnywhereCursor
-    const { SqlAnywhereCursor } = await import('./anywhere/SqlAnywhereCursor');
 
     return {
       totalRows: Number(rowCount),
@@ -1186,7 +1185,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     };
   }
 
-  queryStream(query: string, chunkSize: number): Promise<StreamResults> {
+  queryStream(_query: string, _chunkSize: number): Promise<StreamResults> {
     throw new Error('Method not implemented.');
   }
 
