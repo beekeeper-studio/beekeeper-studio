@@ -12,7 +12,7 @@
       </template>
 
       <template #default>
-        <div class="row gutter">
+        <div class="row">
           <div class="alert alert-info">
             <i class="material-icons-outlined">info</i>
             <div>

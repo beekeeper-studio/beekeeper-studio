@@ -4,7 +4,7 @@
       <span class="expand">IAM Authentication</span>
     </h4>
     <div class="advanced-body">
-      <div class="row gutter">
+      <div class="row">
         <div class="alert alert-info">
           <i class="material-icons-outlined">info</i>
           <div>
