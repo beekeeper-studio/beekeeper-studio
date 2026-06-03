@@ -243,7 +243,7 @@
                 <hr>
                 <x-menuitem
                   @click.prevent="queryFunctions.primaryWrite"
-                  :disabled="disableRunToFile"
+                  :disabled="disableRunToFile || (primaryIsCurrent && runCurrentDisabled)"
                 >
                   <x-label>{{ runPrimaryText(true) }}</x-label>
                   <x-shortcut :value="displayShortcut('queryEditor.primaryQueryToFileAction')" />
@@ -256,7 +256,7 @@
                 </x-menuitem>
                 <x-menuitem
                   @click.prevent="queryFunctions.secondaryWrite"
-                  :disabled="disableRunToFile"
+                  :disabled="disableRunToFile || (primaryIsTab && runCurrentDisabled)"
                 >
                   <x-label>{{ runSecondaryText(true) }}</x-label>
                   <x-shortcut :value="displayShortcut('queryEditor.secondaryQueryToFileAction')" />
