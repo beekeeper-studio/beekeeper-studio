@@ -180,7 +180,8 @@ export type DatabaseType =
   | "libsql"
   | "redis"
   | "surrealdb"
-  | "trino";
+  | "trino"
+  | "snowflake";
 
 export type ConnectionInfo = {
   /** @alias databaseType */
