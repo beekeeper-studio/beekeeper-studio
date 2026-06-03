@@ -50,7 +50,7 @@ import FilePicker from '@/components/common/form/FilePicker.vue'
 // forms. Mirrors the backup-tool "binary location" pattern from
 // BaseCommandClient.ts: a file picker that returns symlinks unresolved on
 // macOS, plus a "Find" action that runs `which`/`where` (extended with the
-// Homebrew bin dirs on macOS) via the existing `backup/whichDumpTool` handler.
+// Homebrew bin dirs on macOS) via the shared `cli/which` handler.
 export default {
   components: { FilePicker },
   props: {
@@ -93,7 +93,7 @@ export default {
     async findCli(force = false) {
       if (!force && this.value) return;
       try {
-        const result = await this.$util.send('backup/whichDumpTool', { toolName: this.toolName });
+        const result = await this.$util.send('cli/which', { toolName: this.toolName });
         if (result) {
           this.cliError = false;
           this.$emit('input', result);

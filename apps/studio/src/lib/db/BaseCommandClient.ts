@@ -463,7 +463,7 @@ export abstract class BaseCommandClient {
       return null;
     }
 
-    return await Vue.prototype.$util.send('backup/whichDumpTool', { toolName: this.toolName });
+    return await Vue.prototype.$util.send('cli/which', { toolName: this.toolName });
   }
 
   private async _runCommand(command: Command): Promise<void> {

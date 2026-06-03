@@ -16,9 +16,10 @@
  *   A. The executable picker passes `noResolveAliases` so macOS returns the
  *      symlink, not the Cellar target (verified manually on macOS — the native
  *      dialog can't run under jest).
- *   B. whichDumpTool prepends the Homebrew bin dirs to the lookup PATH on macOS
- *      (extraToolSearchDirs), so brew tools are discovered via their stable
- *      symlink. Covered here against the REAL filesystem, with NO mocks.
+ *   B. The shared `cli/which` handler prepends the Homebrew bin dirs to the
+ *      lookup PATH on macOS (extraToolSearchDirs), so brew tools are discovered
+ *      via their stable symlink. Covered here against the REAL filesystem, with
+ *      NO mocks.
  */
 import fs from "fs";
 import os from "os";
@@ -83,8 +84,8 @@ describeOrSkip("Tool path symlink resolution (issue #4355)", () => {
     symlinkPath = path.join(binDir, toolName);
     pointSymlinkAt("1.0");
 
-    // Stand in for /opt/homebrew/bin being on PATH. whichDumpTool now forwards
-    // the environment to the `which` child explicitly, so this is honoured.
+    // Stand in for /opt/homebrew/bin being on PATH. The cli/which handler
+    // forwards the environment to the `which` child explicitly, so this is honoured.
     originalPath = process.env.PATH;
     process.env.PATH = `${binDir}${path.delimiter}${originalPath ?? ""}`;
   });
@@ -99,8 +100,8 @@ describeOrSkip("Tool path symlink resolution (issue #4355)", () => {
     fs.rmSync(prefix, { recursive: true, force: true });
   });
 
-  it("auto-discovery (whichDumpTool) returns the stable symlink, not the version-pinned target", async () => {
-    const discovered: string = await Vue.prototype.$util.send("backup/whichDumpTool", {
+  it("auto-discovery (cli/which) returns the stable symlink, not the version-pinned target", async () => {
+    const discovered: string = await Vue.prototype.$util.send("cli/which", {
       toolName,
     });
 
