@@ -108,7 +108,8 @@ export function removeQueryQuotes(possibleQuery: string, dialect: any): string {
   const unquotedQuery = possibleQuery.slice(1, possibleQuery.length - 1);
 
   // if the query is quoted and we can identify at least one valid sql statement, we'll unquote it.
-  if (isQuoted && identify(unquotedQuery, { strict: false, dialect })?.some((res) => res.type != 'UNKNOWN')) {
+  const { queries } = safelyIdentify(unquotedQuery, { dialect });
+  if (isQuoted && queries?.some((res) => res.type != 'UNKNOWN')) {
     return unquotedQuery;
   }
 
