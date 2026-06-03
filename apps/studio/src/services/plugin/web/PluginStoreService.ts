@@ -15,20 +15,28 @@ import { SidebarTab } from "@/store/modules/SidebarModule";
 import {
   Manifest,
   PluginMenuItem,
+  PluginSnapshot,
   PluginView,
   TabType,
   CreatePluginTabOptions,
-  PluginSnapshot,
 } from "../types";
-import { ExternalMenuItem, JsonValue } from "@/types";
+import { ExternalMenuItem } from "@/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
 import { cssVars } from "./cssVars";
 import type { DialectData } from "@/shared/lib/dialects/models";
+import IPluginData from "@/common/interfaces/IPluginData";
+import { IWorkspace } from "@/common/interfaces/IWorkspace";
 
 type Table = {
   name: string;
   schema?: string;
+};
+
+type PluginDataMeta = {
+  pluginId: string;
+  connectionId: number;
+  key: string;
 };
 
 /** An interface that bridges plugin system with Vuex and AppEvents. */
@@ -243,6 +251,9 @@ export default class PluginStoreService {
   }
 
   getConnectionInfo() {
+    if (!this.store.state.connected) {
+      throw new Error("Not connected");
+    }
     return {
       id: this.store.state.usedConfig.id,
       workspaceId: this.store.state.workspaceId,
@@ -252,6 +263,16 @@ export default class PluginStoreService {
       databaseName: this.store.state.database,
       defaultSchema: this.store.state.defaultSchema,
       readOnlyMode: this.store.state.usedConfig.readOnlyMode,
+    };
+  }
+
+  getWorkspaceInfo() {
+    const workspace: IWorkspace = this.store.getters.workspace;
+    return {
+      id: workspace.id,
+      name: workspace.name,
+      type: workspace.type,
+      isOwner: workspace.isOwner ?? false,
     };
   }
 
@@ -369,6 +390,33 @@ export default class PluginStoreService {
     return this.store.getters["plugins/snapshots/snapshotsById"][id];
   }
 
+  async getCloudPluginData(metadata: PluginDataMeta): Promise<unknown> {
+    const item = this.findCloudPluginDatum(metadata);
+    if (!item) return null;
+    try {
+      return JSON.parse(item.value);
+    } catch {
+      return null;
+    }
+  }
+
+  async setWorkspaceData(
+    metadata: PluginDataMeta,
+    value: unknown
+  ): Promise<void> {
+    const existing = this.findCloudPluginDatum(metadata);
+
+    const item = {
+      id: existing?.id ?? null,
+      plugin_id: metadata.pluginId,
+      connection_id: metadata.connectionId,
+      key: metadata.key,
+      value: JSON.stringify(value),
+    };
+
+    await this.store.dispatch("data/pluginData/save", item);
+  }
+
   buildPluginTabInit(
     options: CreatePluginTabOptions
   ): TransportOpenTabInit<PluginTabContext> {
@@ -400,6 +448,17 @@ export default class PluginStoreService {
         command: options.command,
       },
     };
+  }
+
+  private findCloudPluginDatum(options: PluginDataMeta) {
+    const items = this.store.state["data/pluginData"]
+      .items as IPluginData[];
+    return items.find(
+      (item: IPluginData) =>
+        item.pluginId === options.pluginId &&
+        item.connectionId === options.connectionId &&
+        item.key === options.key
+    );
   }
 
   private getAppEl() {
