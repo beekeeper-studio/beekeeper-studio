@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import { identify, Options } from 'sql-query-identifier'
+import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 import { EntityFilter } from '@/store/models'
 import { RoutineTypeNames } from "./models"
 import { format } from 'sql-formatter'
@@ -12,6 +13,29 @@ export function splitQueries(queryText: string, dialect) {
   }
   const result = identify(queryText, { strict: false, dialect })
   return result
+}
+
+// Wraps identify so a parser failure is returned instead of thrown,
+// falling back to treating the whole text as a single query.
+export function safelyIdentify(
+  queryText: string,
+  options: Options
+): { queries: IdentifyResult[]; error: Error | null } {
+  try {
+    return { queries: identify(queryText, options), error: null }
+  } catch (error) {
+    const fallback: IdentifyResult = {
+      start: 0,
+      end: queryText.length - 1,
+      text: queryText,
+      type: "UNKNOWN",
+      executionType: "UNKNOWN",
+      parameters: [],
+      tables: [],
+      columns: [],
+    }
+    return { queries: [fallback], error: error as Error }
+  }
 }
 
 // can only have positional params OR non-positional
