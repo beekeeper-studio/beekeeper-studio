@@ -1,0 +1,24 @@
+#!/usr/bin/make -f
+# debian/rules — recipe lines are TAB-indented, not spaces.
+# -*- makefile -*-
+
+export DESTROOT=$(CURDIR)/debian/{{ package_name }}
+# export DH_VERBOSE=1
+
+%:
+	dh $@ --parallel
+
+# install.sh is shared with the rpm spec; the second arg is the package name so
+# /opt/<pkg>/ and the launcher symlink line up.
+override_dh_auto_install:
+	$(CURDIR)/.omnipackage/install.sh $(DESTROOT) {{ package_name }}
+
+# Beekeeper Studio bundles its own dependencies under /opt/<pkg>/. Skip the
+# default strip pass: it mangles electron's native helpers (libffmpeg,
+# libvk_swiftshader) and the app segfaults on launch.
+override_dh_strip:
+
+# Don't touch the bundled .so/.node files — electron-builder ships them as-is and
+# shlibdeps aborts on the private libraries. Runtime libs are declared explicitly
+# in config.yml (runtime_dependencies).
+override_dh_shlibdeps:

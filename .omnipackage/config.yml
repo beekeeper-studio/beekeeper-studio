@@ -1,0 +1,155 @@
+version_extractors:
+  - name: package_json
+    provider: "file"
+    file:
+      file: "apps/studio/package.json"
+      # First "version" key in the file is the top-level app version (e.g. 5.8.1).
+      regex: '"version": "(.+)"'
+
+common: &common
+  package_name: "beekeeper-studio"
+  maintainer: "Beekeeper Studio Team <matthew@rathbonelabs.com>"
+  homepage: "https://www.beekeeperstudio.io"
+  description: "Modern and easy to use SQL client for MySQL, Postgres, SQLite, SQL Server and more"
+
+repositories:
+  - name: Local test
+    <<: *common
+    gpg_private_key_base64: "${GPG_PRIVATE_KEY_BASE64}"
+    provider: localfs
+    localfs:
+      path: /run/media/oleg/c3996ce0-a379-4403-9d64-7d4c0536463f/dev/omnipackage-repos/beekeeper-studio
+
+  - name: R2 test repo
+    provider: s3
+    gpg_private_key_base64: "${GPG_PRIVATE_KEY_BASE64}"
+    <<: *common
+    s3:
+      bucket: repositories-test
+      path_in_bucket: "beekeeper-studio"
+      bucket_public_url: "https://repositories-test.omnipackage.org"
+      endpoint: "${CLOUDFLARE_R2_ENDPOINT}"
+      access_key_id: "${CLOUDFLARE_R2_ACCESS_KEY_ID}"
+      secret_access_key: "${CLOUDFLARE_R2_SECRET_ACCESS_KEY}"
+      region: auto
+      force_path_style: true
+      cloudflare_zone_id: "${CLOUDFLARE_ZONE_ID}"
+      cloudflare_api_token: "${CLOUDFLARE_API_TOKEN}"
+
+
+rpm: &rpm
+  <<: *common
+  before_build_script: ".omnipackage/prepare.sh"
+  rpm:
+    spec_template: ".omnipackage/specfile.spec.liquid"
+
+deb: &deb
+  <<: *common
+  before_build_script: ".omnipackage/prepare.sh"
+  deb:
+    debian_templates: ".omnipackage/deb"
+
+# build_dependencies = toolchain only. better-sqlite3 and oracledb bundle their
+# own C/C++ sources, so node-gyp needs a compiler + make + a modern python3, but
+# no system -dev headers. (cpu-features is stubbed via the root resolutions field,
+# so ssh2 needs nothing extra.)
+#
+# runtime_dependencies = the libs Electron dlopen's (libsecret/libnotify keyring +
+# notifications) and tools (xdg-utils) that ELF dependency scanning can't infer.
+# Everything else (gtk3, nss, ...) is auto-detected from the binary by rpmbuild.
+opensuse: &opensuse
+  # No curl/wget here on purpose: listing them makes zypper upgrade Tumbleweed's
+  # working libcurl-mini4 to the full libcurl4-8.20.0, which is built against a
+  # newer ngtcp2 than the repo ships and crashes every libcurl-linked tool
+  # (curl/wget/zypper) with an undefined ngtcp2_crypto_* symbol. The base image's
+  # curl is fine and is what nvm uses.
+  build_dependencies:
+    [gcc, gcc-c++, make, python313-distutils-extra, git, pkg-config]
+  runtime_dependencies:
+    [xdg-utils, libsecret-1-0, libnotify4]
+  <<: *rpm
+
+# Fedora package-name quirks vs openSUSE: pkgconf-pkg-config provides pkg-config,
+# and setuptools ships the vendored distutils shim node-gyp needs on python 3.12+.
+fedora: &fedora
+  build_dependencies:
+    [gcc, gcc-c++, make, python3, python3-setuptools, wget, curl, git, pkgconf-pkg-config]
+  runtime_dependencies:
+    [xdg-utils, libsecret, libnotify]
+  <<: *rpm
+
+# RHEL clones (AlmaLinux/Rocky). Same toolchain as Fedora; EL9 python3 is 3.9
+# (fine for node-gyp), EL10 is 3.12 (the setuptools dep supplies distutils).
+redhat: &redhat
+  build_dependencies:
+    [gcc, gcc-c++, make, python3, python3-setuptools, wget, curl, git, pkgconf-pkg-config]
+  runtime_dependencies:
+    [xdg-utils, libsecret, libnotify]
+  <<: *rpm
+
+# Mageia uses bare `pkgconf` rather than pkgconf-pkg-config.
+mageia: &mageia
+  build_dependencies:
+    [gcc, gcc-c++, make, python3, python3-setuptools, wget, curl, git, pkgconf]
+  runtime_dependencies:
+    [xdg-utils, libsecret, libnotify]
+  <<: *rpm
+
+# Debian + Ubuntu. dh_shlibdeps is skipped (debian/rules) because it aborts on
+# Electron's bundled private .so files, so runtime libs are declared explicitly.
+# The t64 alternations cover the libgtk/libatspi ABI rename on Ubuntu 24.04+ and
+# Debian 13 while still resolving on older releases.
+debian: &debian
+  build_dependencies:
+    [build-essential, git, wget, curl, ca-certificates, pkg-config, python3, python3-setuptools]
+  runtime_dependencies:
+    - "libgtk-3-0t64 | libgtk-3-0"
+    - "libnotify4"
+    - "libnss3"
+    - "libxss1"
+    - "libxtst6"
+    - "xdg-utils"
+    - "libatspi2.0-0t64 | libatspi2.0-0"
+    - "libuuid1"
+    - "libsecret-1-0"
+  <<: *deb
+
+builds:
+  - { distro: "opensuse_tumbleweed", <<: *opensuse }
+  - { distro: "opensuse_16.0", <<: *opensuse }
+
+  # Leap 15.6's default python3 is 3.6 (too old for node-gyp); install python311
+  # explicitly. stdlib distutils is still present in 3.11, so no setuptools shim.
+  - distro: "opensuse_15.6"
+    # Leap 15.6's default gcc is 7 (too old for the C++20 native modules, e.g.
+    # os-dns-native); pull gcc 13. prepare.sh exposes it as the default compiler.
+    <<: *opensuse
+    build_dependencies:
+      [gcc13, gcc13-c++, make, python311, git, pkg-config]
+
+  - { distro: "fedora_42", <<: *fedora }
+  - { distro: "fedora_43", <<: *fedora }
+  - { distro: "fedora_44", <<: *fedora }
+  - { distro: "fedora_rawhide", <<: *fedora }
+
+  - { distro: "debian_12", <<: *debian }
+  - { distro: "debian_13", <<: *debian }
+  - { distro: "ubuntu_22.04", <<: *debian }
+  - { distro: "ubuntu_24.04", <<: *debian }
+  - { distro: "ubuntu_26.04", <<: *debian }
+
+  - { distro: "almalinux_9", <<: *redhat }
+  - { distro: "almalinux_10", <<: *redhat }
+  - { distro: "rockylinux_9", <<: *redhat }
+  - { distro: "rockylinux_10", <<: *redhat }
+
+  - { distro: "mageia_9", <<: *mageia }
+
+ignore_source_files:
+  - .git
+  - .env
+  - "*.log"
+  - node_modules
+  - /apps/studio/dist
+  - /apps/studio/dist_electron
+  - /apps/ui-kit/dist

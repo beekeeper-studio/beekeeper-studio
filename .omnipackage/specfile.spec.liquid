@@ -1,0 +1,65 @@
+Name:       {{ package_name }}
+Version:    {{ version }}
+Release:    1%{?dist}
+Summary:    {{ description }}
+License:    GPL-3.0-or-later
+URL:        {{ homepage }}
+Source0:    {{ source_folder_name }}.tar.gz
+
+BuildRequires: {{ build_dependencies | join: ' ' }}
+{% if runtime_dependencies.size > 0 %}
+Requires: {{ runtime_dependencies | join: ', ' }}
+{% endif %}
+
+# Bundled node_modules carry versionless `python`/`node` shebangs that Fedora's
+# shebang mangler rejects.
+%undefine __brp_mangle_shebangs
+# Electron apps don't ship a useful debug package; disabling it also avoids the
+# build-id link conflicts other electron apps hit on Fedora (mirrors the existing
+# electron-builder _build_id_links workaround).
+%define debug_package %{nil}
+%define _build_id_links none
+# Ship electron's bundled binaries and prebuilt .node files untouched. oracledb
+# bundles linux-arm64/darwin/win binaries alongside linux-x64, and rpm's strip pass
+# aborts on the foreign-arch ELF it can't parse. Disabling post-install processing
+# skips stripping (auto Requires/Provides still work); mirrors the deb dh_strip skip.
+%define __os_install_post %{nil}
+# Electron's bundled private libs (libffmpeg.so, libduckdb.so, libnss3.so, …) are
+# referenced by UNVERSIONED sonames via $ORIGIN rpath and ship no matching Provides,
+# so their auto-generated Requires are unsatisfiable (e.g. "nothing provides
+# libffmpeg.so()(64bit)"). Drop every unversioned-soname Require; the real system
+# libs (libc.so.6, libgtk-3.so.0, …) are versioned and stay auto-detected.
+# NOTE: the parens MUST be double-escaped — rpm's spec parser eats one backslash,
+# so a single \( degrades the regex to ".so()" (matches every soname) and wrongly
+# strips the versioned system deps too. Verified against rpm 4.20.
+%global __requires_exclude ^.+\\.so\\(\\)\\(64bit\\)$
+
+%description
+{{ description }}
+
+%prep
+%setup -q
+
+%build
+
+%install
+.omnipackage/install.sh %{buildroot} %{name}
+
+%files
+/opt/%{name}/
+/usr/bin/%{name}
+/usr/share/applications/%{name}.desktop
+/usr/share/icons/hicolor/16x16/apps/%{name}.png
+/usr/share/icons/hicolor/24x24/apps/%{name}.png
+/usr/share/icons/hicolor/32x32/apps/%{name}.png
+/usr/share/icons/hicolor/48x48/apps/%{name}.png
+/usr/share/icons/hicolor/64x64/apps/%{name}.png
+/usr/share/icons/hicolor/96x96/apps/%{name}.png
+/usr/share/icons/hicolor/128x128/apps/%{name}.png
+/usr/share/icons/hicolor/256x256/apps/%{name}.png
+/usr/share/icons/hicolor/512x512/apps/%{name}.png
+/usr/share/icons/hicolor/1024x1024/apps/%{name}.png
+
+%changelog
+* Mon Jun 01 2026 Beekeeper Studio Team <matthew@rathbonelabs.com>
+- omnipackage build
