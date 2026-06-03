@@ -170,7 +170,7 @@ export default {
       }
 
       try {
-        const result = await this.$util.send('aws/getProfiles', { toolName: cliPath });
+        const result = await this.$util.send('aws/getProfiles', { cliPath });
 
         // aws/getProfiles spawns a subprocess; if cliPath changed during the
         // await, this result corresponds to a path we no longer care about —

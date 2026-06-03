@@ -4,19 +4,19 @@ import rawLog from '@bksLogger'
 import { extraToolSearchDirs } from "./cliHandlers";
 
 export interface IAwsHandlers {
-  "aws/getProfiles": (args: { toolName?: string }) => Promise<string[]>;
+  "aws/getProfiles": (args: { cliPath?: string }) => Promise<string[]>;
 }
 
 export const AwsHandlers: IAwsHandlers = {
-  "aws/getProfiles": async function ({ toolName }: { toolName?: string } = {}) {
+  "aws/getProfiles": async function ({ cliPath }: { cliPath?: string } = {}) {
     // Use the binary the user selected/discovered (an absolute path), not
     // whatever bare `aws` happens to be first on PATH — that could be a
     // different, older CLI. shell:false to match the rest of the spawn
-    // surface (see cliAuth.exploit.spec.ts). In practice toolName is always
+    // surface (see cliAuth.exploit.spec.ts). In practice cliPath is always
     // an absolute path (CommonIam's watcher returns early when cliPath is
     // empty), but extend PATH defensively so the bare-`aws` fallback works
     // the same way `cli/which` does on GUI-launched macOS/Linux.
-    const awsBin = toolName || "aws";
+    const awsBin = cliPath || "aws";
     const env = { ...process.env };
     env.PATH = [...extraToolSearchDirs, env.PATH].filter(Boolean).join(path.delimiter);
     return new Promise((resolve, reject) => {
