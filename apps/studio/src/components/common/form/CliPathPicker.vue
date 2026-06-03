@@ -89,12 +89,14 @@ export default {
     },
     // Run `which`/`where`. When `force` is false (mount-time auto-discovery),
     // skip if a value is already set so a manually-chosen path is preserved
-    // across re-mounts of the form.
+    // across re-mounts of the form. Toast feedback is only shown when the user
+    // explicitly clicked Find (force=true) — auto-discovery is silent.
     //
     // `cli/which` spawns a subprocess that can take 100+ms; during the await
     // the user may pick a file or trigger another discovery. Snapshot the
     // value first and bail before emitting if it changed externally — last
-    // action wins.
+    // action wins. The toast is suppressed in that case too, since a
+    // superseded result reporting "could not find" would be confusing.
     async findCli(force = false) {
       if (!force && this.value) return;
       const initial = this.value;
@@ -105,16 +107,19 @@ export default {
           this.cliError = false;
           this.$emit('input', result);
           this.$emit('found', result);
+          if (force) this.$noty.success(`Found ${this.toolName} at ${result}`);
         } else {
           this.cliError = true;
           this.$emit('input', null);
           this.$emit('found', null);
+          if (force) this.$noty.error(`Unable to find "${this.toolName}", please select it manually`);
         }
       } catch (_e) {
         if (this.value !== initial) return;
         this.cliError = true;
         this.$emit('input', null);
         this.$emit('found', null);
+        if (force) this.$noty.error(`Unable to find "${this.toolName}", please select it manually`);
       }
     },
   },
