@@ -85,6 +85,12 @@ If you're part of a large enterprise, they likely have documentation on how to d
     - Ensure that the group has a matching **AADUSER** on the database server
 - If you created your **AADUSER** with an alias, ie `CREATE AADUSER '<reallylongupn>' as 'shortername'`, you may still need to use the `<reallylongupn>` as the username from within Beekeeper
 
+### CLI path discovery
+
+The path to the `az` binary is auto-detected on first use. If it isn't found, click **Find** to retry, or pick the binary manually with the file picker. On macOS the common Homebrew prefixes (`/opt/homebrew/bin`, `/usr/local/bin`) and standard system bins (`/usr/bin`, `/bin`) are searched in addition to the inherited `PATH` — GUI-launched apps don't get the same `PATH` your terminal session has, so these are added explicitly.
+
+The stored path is the stable symlink (e.g. `/opt/homebrew/bin/az`), not the version-pinned Cellar target, so a `brew upgrade` won't break the saved connection.
+
 ## Service Principal Authentication
 
 !!! info "MS SQL Server Supported"

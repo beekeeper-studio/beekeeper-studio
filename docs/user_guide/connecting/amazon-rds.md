@@ -59,6 +59,15 @@ Uses your local AWS CLI session to retrieve an access token.
 
 [Install AWS CLI From Amazon](https://aws.amazon.com/cli/)
 
+!!! tip "AWS CLI v2 recommended"
+    Profile auto-discovery uses `aws configure list-profiles`, which requires AWS CLI v2 (or v1 ≥ 1.16.146). Older v1 builds — common on Debian/Ubuntu's distribution package (`apt install awscli`) — don't support `list-profiles`, so the profile dropdown stays empty and an "Unable to list AWS profiles" warning appears. You can still type a profile name manually. [Install AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
+
+#### CLI path discovery
+
+The path to the `aws` binary is auto-detected on first use. If it isn't found, click **Find** to retry, or pick the binary manually with the file picker. On macOS the common Homebrew prefixes (`/opt/homebrew/bin`, `/usr/local/bin`) and standard system bins (`/usr/bin`, `/bin`) are searched in addition to the inherited `PATH` — GUI-launched apps don't get the same `PATH` your terminal session has, so these are added explicitly.
+
+The stored path is the stable symlink (e.g. `/opt/homebrew/bin/aws`), not the version-pinned Cellar target, so a `brew upgrade` won't break the saved connection.
+
 **Steps:**
 1. Make sure AWS Credentials are set
 2. In the application, select **AWS CLI Authentication**.
