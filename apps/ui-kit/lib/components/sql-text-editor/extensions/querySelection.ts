@@ -3,6 +3,7 @@ import { Extension, StateField, StateEffect } from "@codemirror/state";
 import { EditorView, Decoration, DecorationSet } from "@codemirror/view";
 import { identify, Options } from "sql-query-identifier";
 import { IdentifyResult, ParamTypes } from "sql-query-identifier/lib/defines";
+import { safelyIdentify } from "@/utils";
 // Utility function from entity-list/sql_tools
 function isTextSelected(
   textStart: number,
@@ -120,25 +121,8 @@ function splitQueries(
   if (_.isEmpty(queryText.trim())) {
     return { queries: [], error: null };
   }
-  try {
-    return {
-      queries: identify(queryText, { strict: false, dialect, paramTypes }),
-      error: null,
-    };
-  } catch (e) {
-    // identify can throw on unparseable input; treat the whole doc as one query
-    const fallback: IdentifyResult = {
-      start: 0,
-      end: queryText.length - 1,
-      text: queryText,
-      type: "UNKNOWN",
-      executionType: "UNKNOWN",
-      parameters: [],
-      tables: [],
-      columns: [],
-    };
-    return { queries: [fallback], error: e as Error };
-  }
+
+  return safelyIdentify(queryText, { dialect, paramTypes });
 }
 
 // State field that manages query selection

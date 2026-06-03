@@ -106,6 +106,7 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(null, dynamoContext, server, database);
     this.readOnlyMode = server?.config?.readOnlyMode;
+    this.dialect = 'dynamodb';
   }
 
   async applyChangesSql(_changes: TableChanges): Promise<string> {
@@ -631,7 +632,7 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
 
   async executeQuery(queryText: string, _options?: any): Promise<NgQueryResult[]> {
     // Use sql-query-identifier with native DynamoDB/PartiQL dialect support (v2.11.0+)
-    const identified = identify(queryText, { strict: false, dialect: 'dynamodb' });
+    const identified = this.identifyCommands(queryText);
     const results: NgQueryResult[] = [];
 
     for (const stmt of identified) {
