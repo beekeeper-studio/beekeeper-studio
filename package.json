@@ -1,6 +1,6 @@
 {
   "name": "@beekeeperstudio/plugin",
-  "version": "1.7.1-beta.2",
+  "version": "1.7.1",
   "description": "A simple TypeScript wrapper to send messages from your Beekeeper Studio plugin to the main app.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
