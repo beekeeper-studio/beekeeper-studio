@@ -17,32 +17,16 @@
         </div>
       </div>
 
-      <div class="form-group col" v-show="showCli">
-        <div class="form-group">
-          <label for="cliPath">AWS CLI Path
-            <i
-              class="material-icons"
-              style="padding-left: 0.25rem"
-              v-tooltip="{
-                content:
-                  'You are signing in using the <code>AWS CLI</code>. Beekeeper Studio will attempt to use the AWS CLI tool at the specified path.',
-                html: true,
-              }"
-            >help_outlined</i>
-          </label>
-
-          <div class="alert alert-danger" v-show="!cliFound">
-            <i class="material-icons-outlined">warning</i>
-            <div>
-              NO CLI FOUND, Please refer to our
-              <a href="https://docs.beekeeperstudio.io/user_guide/connecting/amazon-rds">Beekeeper Docs</a>
-              for more information
-            </div>
-          </div>
-
-          <file-picker v-model="cliPath" />
-        </div>
-      </div>
+      <cli-path-picker
+        v-show="showCli"
+        tool-name="aws"
+        label="AWS CLI Path"
+        docs-href="https://docs.beekeeperstudio.io/user_guide/connecting/amazon-rds"
+        help-tooltip="You are signing in using the <code>AWS CLI</code>. Beekeeper Studio will attempt to use the AWS CLI tool at the specified path."
+        :value="cliPath"
+        @input="val => cliPath = val"
+        @found="tryFindAWSProfiles"
+      />
 
       <div v-show="isRedshift" class="flex flex-middle mb-3">
         <h4
@@ -121,19 +105,18 @@
 
 <script>
 import MaskedInput from '@/components/MaskedInput.vue'
-import FilePicker from '@/components/common/form/FilePicker.vue'
+import CliPathPicker from '@/components/common/form/CliPathPicker.vue'
 
 export default {
   props: ['config', 'authType'],
   components: {
     MaskedInput,
-    FilePicker
+    CliPathPicker
   },
   data() {
     return {
       iamAuthenticationEnabled: this.config.iamAuthOptions?.iamAuthenticationEnabled,
       isServerless: this.config.redshiftOptions?.isServerless,
-      cliError: false,
       profilesError: false,
     };
   },
@@ -149,9 +132,6 @@ export default {
     },
     isProfileAuth() {
       return ['iam_cli', 'iam_file'].includes(this.authType);
-    },
-    cliFound() {
-      return !!this.config.iamAuthOptions?.cliPath && !this.cliError;
     },
     hasProfiles() {
       const p = this.config.iamAuthOptions?.profiles;
@@ -173,25 +153,6 @@ export default {
     },
     toggleServerless() {
       this.$set(this.config.redshiftOptions, 'isServerless', !this.config.redshiftOptions.isServerless);
-    },
-
-    async tryFindAWSCli() {
-      try {
-        const result = await this.$util.send('backup/whichDumpTool', { toolName: 'aws' });
-        if (result) {
-          this.$set(this.config.iamAuthOptions, 'cliPath', result);
-          this.cliError = false;
-          return result;
-        } else {
-          this.$set(this.config.iamAuthOptions, 'cliPath', null);
-          this.cliError = true;
-          return null;
-        }
-      } catch (e) {
-        this.$set(this.config.iamAuthOptions, 'cliPath', null);
-        this.cliError = true;
-        return null;
-      }
     },
 
     async tryFindAWSProfiles(cliPath) {
@@ -223,8 +184,13 @@ export default {
     },
   },
   async mounted() {
-    const cliPath = await this.tryFindAWSCli();
-    await this.tryFindAWSProfiles(cliPath);
+    // CliPathPicker auto-discovers on mount and emits `found` with the
+    // discovered path; AWS-specific profile fetching is wired to that event.
+    // Still run a profile fetch here for the case where cliPath was already
+    // persisted from a prior session (no discovery needed, no `found` fires).
+    if (this.config.iamAuthOptions?.cliPath) {
+      await this.tryFindAWSProfiles(this.config.iamAuthOptions.cliPath);
+    }
   },
 };
 </script>
