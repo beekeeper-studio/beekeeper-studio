@@ -34,10 +34,10 @@
     <!-- Empty state: picker + Find button + warning when discovery failed. -->
     <template v-else>
       <div
-        class="alert alert-danger"
+        class="alert alert-danger alert-centered"
         v-show="cliError"
       >
-        <i class="material-icons-outlined">warning</i>
+        <i class="material-icons">error_outline</i>
         <div>
           NO CLI FOUND, Please refer to our
           <a :href="docsHref">Beekeeper Docs</a>

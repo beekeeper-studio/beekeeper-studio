@@ -44,8 +44,8 @@
       <div v-show="isProfileAuth" class="form-group">
         <label>AWS Profile</label>
 
-        <div class="alert alert-warning" v-show="profilesError">
-          <i class="material-icons-outlined">warning</i>
+        <div class="alert alert-warning alert-centered" v-show="profilesError">
+          <i class="material-icons">error_outline</i>
           <div>
             Unable to list AWS profiles from the selected CLI. Check it's installed
             and up to date, or enter a profile name manually.
