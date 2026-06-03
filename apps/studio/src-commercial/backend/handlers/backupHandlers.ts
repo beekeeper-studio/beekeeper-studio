@@ -14,9 +14,9 @@ export const errorMessages = {
 // az, ...) are discovered. Apple Silicon installs to /opt/homebrew/bin, Intel
 // to /usr/local/bin. `which` returns the stable symlink there, which keeps
 // pointing at the current version after a `brew upgrade`.
-export function extraToolSearchDirs(): string[] {
-  return platformInfo.isMac ? ['/opt/homebrew/bin', '/usr/local/bin'] : [];
-}
+export const extraToolSearchDirs: string[] = platformInfo.isMac
+  ? ['/opt/homebrew/bin', '/usr/local/bin']
+  : [];
 
 export interface IBackupHandlers {
   'backup/runCommand': ({ command, sId }: { command: Command, sId: string }) => Promise<void>,
@@ -114,9 +114,8 @@ export const BackupHandlers: IBackupHandlers = {
     // Pass the environment explicitly so we can prepend the Homebrew bin dirs
     // that a macOS GUI app would otherwise be missing from its PATH.
     const env = { ...process.env };
-    const extraDirs = extraToolSearchDirs();
-    if (extraDirs.length > 0) {
-      env.PATH = [...extraDirs, env.PATH].filter(Boolean).join(path.delimiter);
+    if (extraToolSearchDirs.length > 0) {
+      env.PATH = [...extraToolSearchDirs, env.PATH].filter(Boolean).join(path.delimiter);
     }
 
     return new Promise((resolve, reject) => {

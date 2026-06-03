@@ -191,7 +191,8 @@ export abstract class BaseCommandClient {
             // macOS's native picker resolves a chosen symlink (e.g.
             // /opt/homebrew/bin/az) to its version-pinned Homebrew target, which
             // breaks after `brew upgrade`. noResolveAliases keeps the stable
-            // symlink path. macOS only; ignored on other platforms.
+            // symlink path. Electron applies it on macOS and silently ignores it
+            // on Windows/Linux, so passing it unconditionally is safe.
             properties: ['openFile', 'noResolveAliases'],
           },
           placeholder: 'Choose',

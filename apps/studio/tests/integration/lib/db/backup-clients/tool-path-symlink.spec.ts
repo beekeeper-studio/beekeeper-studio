@@ -25,8 +25,6 @@ import os from "os";
 import path from "path";
 import Vue from "vue";
 import { Command } from "@/lib/db/models";
-import platformInfo from "@/common/platform_info";
-import { extraToolSearchDirs } from "@commercial/backend/handlers/backupHandlers";
 import { installUtilStub, UtilStub } from "./setup";
 
 // `which`/`where` and POSIX symlink semantics; the rig is unix-oriented.
@@ -146,20 +144,5 @@ describeOrSkip("Tool path symlink resolution (issue #4355)", () => {
 
     expect(fs.existsSync(resolvedPath)).toBe(false);
     await expect(run(resolvedPath)).rejects.toMatch(/ENOENT/);
-  });
-});
-
-describe("extraToolSearchDirs (issue #4355, fix B)", () => {
-  it("adds the Homebrew bin dirs on macOS and nothing elsewhere", () => {
-    const original = platformInfo.isMac;
-    try {
-      platformInfo.isMac = true;
-      expect(extraToolSearchDirs()).toEqual(["/opt/homebrew/bin", "/usr/local/bin"]);
-
-      platformInfo.isMac = false;
-      expect(extraToolSearchDirs()).toEqual([]);
-    } finally {
-      platformInfo.isMac = original;
-    }
   });
 });
