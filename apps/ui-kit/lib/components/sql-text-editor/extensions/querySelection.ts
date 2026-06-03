@@ -4,6 +4,7 @@ import { EditorView, Decoration, DecorationSet } from "@codemirror/view";
 import { Options } from "sql-query-identifier";
 import { IdentifyResult, ParamTypes } from "sql-query-identifier/lib/defines";
 import { safelyIdentify } from "@/utils";
+
 // Utility function from entity-list/sql_tools
 function isTextSelected(
   textStart: number,
