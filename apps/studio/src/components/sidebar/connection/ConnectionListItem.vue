@@ -313,9 +313,17 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-.list-item .list-item-btn .connection-title .title {
-  position: relative;
-  width: 100%;
-  overflow: visible;
+.list-item .list-item-btn .connection-title {
+  min-width: 0;
+
+  .title {
+    position: relative;
+    width: 100%;
+    overflow: visible;
+  }
+
+  .editable-text {
+    width: 100%;
+  }
 }
 </style>
