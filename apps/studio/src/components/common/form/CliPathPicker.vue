@@ -39,9 +39,7 @@
       >
         <i class="material-icons">error_outline</i>
         <div>
-          NO CLI FOUND, Please refer to our
-          <a :href="docsHref">Beekeeper Docs</a>
-          for more information
+          No CLI found. See the Beekeeper Studio docs for setup help. <a :href="docsHref">Read more</a>.
         </div>
       </div>
       <file-picker
@@ -210,7 +208,9 @@ export default {
 
   &:hover {
     opacity: 1;
-    background: rgba(255, 255, 255, 0.08);
+    // currentColor inherits from the text colour, which inverts per theme,
+    // so this hover overlay works on both dark and light backgrounds.
+    background: color-mix(in srgb, currentColor 10%, transparent);
   }
 
   .material-icons {
