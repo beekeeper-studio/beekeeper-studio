@@ -1,5 +1,5 @@
 <template>
-  <div class="form-group">
+  <div class="form-group cli-path-picker">
     <label :for="inputId">
       {{ label }}
       <i
@@ -9,37 +9,61 @@
         v-tooltip="{ content: helpTooltip, html: true }"
       >help_outlined</i>
     </label>
+
+    <!-- Filled state: show a compact card with the resolved path. -->
     <div
-      class="alert alert-danger"
-      v-show="!cliFound"
+      v-if="value"
+      class="cli-path-filled-card"
     >
-      <i class="material-icons-outlined">warning</i>
-      <div>
-        NO CLI FOUND, Please refer to our
-        <a :href="docsHref">Beekeeper Docs</a>
-        for more information
-      </div>
+      <i class="material-icons cli-path-filled-icon">check_circle</i>
+      <span
+        class="cli-path-filled-path"
+        :title="value"
+      >{{ value }}</span>
+      <button
+        class="cli-path-clear-btn"
+        type="button"
+        title="Clear"
+        @click.prevent="clearValue"
+      >
+        <i class="material-icons">close</i>
+      </button>
     </div>
-    <file-picker
-      :value="value"
-      @input="onPick"
-      :input-id="inputId"
-      :options="filePickerOptions"
-    >
-      <template #actions>
-        <div class="input-group-append">
-          <a
-            type="button"
-            class="btn btn-flat btn-icon"
-            v-tooltip="`Automatically find ${toolName}`"
-            @click.prevent="findCli(true)"
-          >
-            <i class="material-icons">search</i>
-            <span>Find</span>
-          </a>
+
+    <!-- Empty state: picker + Find button + warning when discovery failed. -->
+    <template v-else>
+      <div
+        class="alert alert-danger"
+        v-show="cliError"
+      >
+        <i class="material-icons-outlined">warning</i>
+        <div>
+          NO CLI FOUND, Please refer to our
+          <a :href="docsHref">Beekeeper Docs</a>
+          for more information
         </div>
-      </template>
-    </file-picker>
+      </div>
+      <file-picker
+        :value="value"
+        @input="onPick"
+        :input-id="inputId"
+        :options="filePickerOptions"
+      >
+        <template #actions>
+          <div class="input-group-append">
+            <a
+              type="button"
+              class="btn btn-flat btn-icon"
+              v-tooltip="`Automatically find ${toolName}`"
+              @click.prevent="findCli(true)"
+            >
+              <i class="material-icons">search</i>
+              <span>Find</span>
+            </a>
+          </div>
+        </template>
+      </file-picker>
+    </template>
   </div>
 </template>
 
@@ -51,6 +75,10 @@ import FilePicker from '@/components/common/form/FilePicker.vue'
 // BaseCommandClient.ts: a file picker that returns symlinks unresolved on
 // macOS, plus a "Find" action that runs `which`/`where` (extended with the
 // Homebrew bin dirs on macOS) via the shared `cli/which` handler.
+//
+// UI states mirror SettingsInput.vue: when a path is set, render a compact
+// card with a clear button. When empty, render the picker + Find button, with
+// the "NO CLI FOUND" alert shown only after a discovery attempt has failed.
 export default {
   components: { FilePicker },
   props: {
@@ -71,9 +99,6 @@ export default {
     inputId() {
       return `cli-path-${this.toolName}`;
     },
-    cliFound() {
-      return !!this.value && !this.cliError;
-    },
     filePickerOptions() {
       // macOS's native open panel resolves a chosen symlink (e.g.
       // /opt/homebrew/bin/az) to its version-pinned Homebrew target, which
@@ -86,6 +111,10 @@ export default {
     onPick(value) {
       if (value) this.cliError = false;
       this.$emit('input', value);
+    },
+    clearValue() {
+      this.cliError = false;
+      this.$emit('input', null);
     },
     // Run `which`/`where`. When `force` is false (mount-time auto-discovery),
     // skip if a value is already set so a manually-chosen path is preserved
@@ -106,19 +135,14 @@ export default {
         if (result) {
           this.cliError = false;
           this.$emit('input', result);
-          this.$emit('found', result);
           if (force) this.$noty.success(`Found ${this.toolName} at ${result}`);
         } else {
           this.cliError = true;
-          this.$emit('input', null);
-          this.$emit('found', null);
           if (force) this.$noty.error(`Unable to find "${this.toolName}", please select it manually`);
         }
       } catch (_e) {
         if (this.value !== initial) return;
         this.cliError = true;
-        this.$emit('input', null);
-        this.$emit('found', null);
         if (force) this.$noty.error(`Unable to find "${this.toolName}", please select it manually`);
       }
     },
@@ -128,3 +152,58 @@ export default {
   },
 };
 </script>
+
+<style lang="scss" scoped>
+.cli-path-filled-card {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--bks-border-color, rgba(255, 255, 255, 0.1));
+  border-radius: 4px;
+  background: var(--bks-query-editor-bg, rgba(0, 0, 0, 0.1));
+}
+
+.cli-path-filled-icon {
+  font-size: 18px;
+  color: var(--bks-brand-success, #4caf50);
+  flex-shrink: 0;
+}
+
+.cli-path-filled-path {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.cli-path-clear-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  margin: 0;
+  min-width: 0;
+  width: 22px;
+  height: 22px;
+  background: none;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  opacity: 0.4;
+  color: inherit;
+
+  &:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .material-icons {
+    font-size: 16px;
+  }
+}
+</style>

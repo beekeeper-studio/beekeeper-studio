@@ -3,14 +3,17 @@ import path from "path";
 import platformInfo from "@/common/platform_info";
 
 // Directories to search for CLI tools in addition to the inherited PATH.
-// macOS GUI apps don't inherit the shell's PATH, so Homebrew's bin dirs are
-// missing — add them explicitly so brew-installed tools (pg_dump, mysqldump,
-// az, aws, ...) are discovered. Apple Silicon installs to /opt/homebrew/bin,
-// Intel to /usr/local/bin. `which` returns the stable symlink there, which
-// keeps pointing at the current version after a `brew upgrade`.
-export const extraToolSearchDirs: string[] = platformInfo.isMac
-  ? ['/opt/homebrew/bin', '/usr/local/bin']
-  : [];
+// GUI apps frequently don't inherit a normal shell PATH — on macOS launchd
+// gives a minimal one, and on Linux some packagings (AppImage, Snap) strip it
+// further. Explicitly prepend the common executable directories so brew /
+// system-installed tools (az, aws, pg_dump, mysqldump, ...) are found, and so
+// `which` returns the stable symlink (not the version-pinned Cellar target).
+// Duplicates with whatever is already in process.env.PATH are harmless.
+export const extraToolSearchDirs: string[] = (() => {
+  if (platformInfo.isWindows) return [];
+  const system = ['/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin'];
+  return platformInfo.isMac ? ['/opt/homebrew/bin', ...system] : system;
+})();
 
 export interface ICliHandlers {
   'cli/which': ({ toolName }: { toolName: string }) => Promise<string>,

@@ -24,7 +24,7 @@
         docs-href="https://docs.beekeeperstudio.io/user_guide/connecting/amazon-rds"
         help-tooltip="You are signing in using the <code>AWS CLI</code>. Beekeeper Studio will attempt to use the AWS CLI tool at the specified path."
         :value="cliPath"
-        @input="val => cliPath = val"
+        @input="val => $set(config.iamAuthOptions, 'cliPath', val)"
       />
 
       <div v-show="isRedshift" class="flex flex-middle mb-3">
@@ -136,13 +136,11 @@ export default {
       const p = this.config.iamAuthOptions?.profiles;
       return Array.isArray(p) && p.length > 0 && !this.profilesError;
     },
-    cliPath: {
-      get() {
-        return this.config.iamAuthOptions?.cliPath;
-      },
-      set(value) {
-        this.config.iamAuthOptions.cliPath = value;
-      },
+    // Read-only getter; writes go through $set in the template to keep Vue 2
+    // reactivity working when cliPath is being added to iamAuthOptions for
+    // the first time (defaults to `{}`).
+    cliPath() {
+      return this.config.iamAuthOptions?.cliPath;
     },
   },
   methods: {
