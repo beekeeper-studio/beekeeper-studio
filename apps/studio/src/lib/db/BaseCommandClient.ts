@@ -188,6 +188,11 @@ export abstract class BaseCommandClient {
           required: true,
           controlOptions: {
             buttonLabel: `Choose ${this.toolName} binary`,
+            // macOS's native picker resolves a chosen symlink (e.g.
+            // /opt/homebrew/bin/az) to its version-pinned Homebrew target, which
+            // breaks after `brew upgrade`. noResolveAliases keeps the stable
+            // symlink path. macOS only; ignored on other platforms.
+            properties: ['openFile', 'noResolveAliases'],
           },
           placeholder: 'Choose',
           valid: (config: BackupConfig): boolean => {

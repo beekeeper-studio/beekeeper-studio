@@ -5,34 +5,28 @@
  *
  * Homebrew exposes a stable symlink (e.g. /opt/homebrew/bin/az) that always
  * points at the currently-installed version under the Cellar
- * (e.g. /opt/homebrew/Cellar/azure-cli/2.85.0/bin/az). The report is that
- * Beekeeper persists the *resolved, version-pinned* target rather than the
- * stable symlink, so after `brew upgrade` the stored path no longer exists and
- * the tool integration silently breaks.
+ * (e.g. /opt/homebrew/Cellar/azure-cli/2.85.0/bin/az). Two things were wrong:
  *
- * These tests exercise — against the REAL filesystem, with NO mocks — every
- * place the app touches an executable, to confirm or disprove the bug at each:
+ *   - Auto-discovery never found Homebrew tools, because a macOS GUI app's PATH
+ *     doesn't include /opt/homebrew/bin or /usr/local/bin.
+ *   - The native file picker resolved a chosen symlink to its version-pinned
+ *     Cellar target, so after `brew upgrade` the stored path vanished.
  *
- *   1. backup/whichDumpTool  (auto-discovery via `which`/`where`)
- *        -> DISPROVES: `which` returns the symlink, not the Cellar target.
- *   2. backup/runCommand     (spawn of the configured dumpToolPath)
- *        -> DISPROVES: spawning the symlink follows it at runtime, so it keeps
- *           working across a `brew upgrade`.
- *   3. The file-picker save path (what Electron's showOpenDialogSync returns on
- *      macOS: the resolved target — see the screenshot in the issue).
- *        -> CONFIRMS: persisting the resolved target breaks after `brew upgrade`.
- *           This is the failing reproduction. The assertion encodes the desired
- *           post-fix behaviour (the configured tool must still run).
- *
- * The Electron dialog itself can't run under jest, so case 3 reproduces exactly
- * what it persists by resolving the symlink with fs.realpathSync — the same real
- * filesystem operation, no stubbing.
+ * The fix:
+ *   A. The executable picker passes `noResolveAliases` so macOS returns the
+ *      symlink, not the Cellar target (verified manually on macOS — the native
+ *      dialog can't run under jest).
+ *   B. whichDumpTool prepends the Homebrew bin dirs to the lookup PATH on macOS
+ *      (extraToolSearchDirs), so brew tools are discovered via their stable
+ *      symlink. Covered here against the REAL filesystem, with NO mocks.
  */
 import fs from "fs";
 import os from "os";
 import path from "path";
 import Vue from "vue";
 import { Command } from "@/lib/db/models";
+import platformInfo from "@/common/platform_info";
+import { extraToolSearchDirs } from "@commercial/backend/handlers/backupHandlers";
 import { installUtilStub, UtilStub } from "./setup";
 
 // `which`/`where` and POSIX symlink semantics; the rig is unix-oriented.
@@ -41,10 +35,10 @@ const describeOrSkip = process.platform === "win32" ? describe.skip : describe;
 describeOrSkip("Tool path symlink resolution (issue #4355)", () => {
   let stub: UtilStub;
   let prefix: string; // fake Homebrew prefix
-  let binDir: string; // <prefix>/bin   (stable, on PATH)
+  let binDir: string; // <prefix>/bin   (stable, prepended to PATH)
   let cellarDir: string; // <prefix>/Cellar (versioned)
   let symlinkPath: string; // <prefix>/bin/<tool>  -> Cellar/<tool>-<ver>/bin/<tool>
-  let plantedOnPath: string | null = null; // symlink planted on the real PATH for `which`
+  let originalPath: string | undefined;
 
   // A tool name unlikely to collide with anything actually on PATH, so that
   // `which` only finds the one we plant under our fake Homebrew prefix.
@@ -77,33 +71,6 @@ describeOrSkip("Tool path symlink resolution (issue #4355)", () => {
     });
   }
 
-  // Plant a symlink named <toolName> in a directory that is already on the
-  // child process's PATH, pointing at the given Cellar target. Returns the
-  // symlink path, or null when no writable PATH directory is available.
-  //
-  // jest's `node` test environment hands spawned children a PATH snapshot that
-  // ignores writes to the in-sandbox `process.env`, so the symlink must live on
-  // a directory the real child PATH already contains for `which` to find it.
-  function plantOnRealPath(target: string): string | null {
-    const { spawnSync } = require("child_process");
-    const childPath: string = spawnSync("sh", ["-c", "printf %s \"$PATH\""]).stdout.toString();
-    const writableDir = childPath
-      .split(path.delimiter)
-      .filter(Boolean)
-      .find((dir) => {
-        try {
-          return fs.statSync(dir).isDirectory() && (fs.accessSync(dir, fs.constants.W_OK), true);
-        } catch {
-          return false;
-        }
-      });
-    if (!writableDir) return null;
-    const planted = path.join(writableDir, toolName);
-    fs.rmSync(planted, { force: true });
-    fs.symlinkSync(target, planted);
-    return planted;
-  }
-
   beforeAll(() => {
     stub = installUtilStub();
 
@@ -117,35 +84,31 @@ describeOrSkip("Tool path symlink resolution (issue #4355)", () => {
     installVersion("1.0");
     symlinkPath = path.join(binDir, toolName);
     pointSymlinkAt("1.0");
+
+    // Stand in for /opt/homebrew/bin being on PATH. whichDumpTool now forwards
+    // the environment to the `which` child explicitly, so this is honoured.
+    originalPath = process.env.PATH;
+    process.env.PATH = `${binDir}${path.delimiter}${originalPath ?? ""}`;
   });
 
   afterAll(async () => {
     // A failed spawn (ENOENT) emits 'error' and then 'close'; let the trailing
     // 'close' drain before disposing the handler state it reads from.
     await new Promise((resolve) => setTimeout(resolve, 100));
-    if (plantedOnPath) fs.rmSync(plantedOnPath, { force: true });
+    if (originalPath === undefined) delete process.env.PATH;
+    else process.env.PATH = originalPath;
     await stub?.dispose();
     fs.rmSync(prefix, { recursive: true, force: true });
   });
 
   it("auto-discovery (whichDumpTool) returns the stable symlink, not the version-pinned target", async () => {
-    // Expose the tool through a symlink on the real PATH, like /opt/homebrew/bin/<tool>.
-    plantedOnPath = plantOnRealPath(fs.realpathSync(symlinkPath));
-    if (!plantedOnPath) {
-      // eslint-disable-next-line no-console
-      console.warn("No writable directory on PATH; skipping whichDumpTool discovery assertion.");
-      return;
-    }
-
     const discovered: string = await Vue.prototype.$util.send("backup/whichDumpTool", {
       toolName,
     });
-    const resolved = fs.realpathSync(plantedOnPath);
 
     // `which` reports the path as it sits on PATH (the symlink), not the Cellar
-    // target — so the auto-discovery site does not introduce the bug.
-    expect(discovered).toBe(plantedOnPath);
-    expect(discovered).not.toBe(resolved);
+    // target — so what we persist keeps working after `brew upgrade`.
+    expect(discovered).toBe(symlinkPath);
     expect(discovered).not.toContain("Cellar");
   });
 
@@ -162,30 +125,41 @@ describeOrSkip("Tool path symlink resolution (issue #4355)", () => {
     await expect(run(symlinkPath)).resolves.toBeUndefined();
   });
 
-  it("running via the resolved Cellar path (as the file picker persists it) breaks after a brew upgrade", async () => {
+  it("a version-pinned Cellar path (the pre-fix picker behaviour) is what breaks after a brew upgrade", async () => {
     // Reset to a clean v1.0 install for an isolated reproduction.
     fs.rmSync(cellarDir, { recursive: true, force: true });
     fs.mkdirSync(cellarDir, { recursive: true });
     installVersion("1.0");
     pointSymlinkAt("1.0");
 
-    // What Electron's showOpenDialogSync hands back on macOS when the user picks
-    // /opt/homebrew/bin/<tool>: the resolved, version-pinned Cellar target. This
-    // is the string the app persists in BackupConfig.dumpToolPath today.
-    const persistedPath = fs.realpathSync(symlinkPath);
-    expect(persistedPath).toContain("Cellar");
+    // The resolved, version-pinned Cellar target — what macOS used to hand back
+    // before fix A added noResolveAliases. It runs fine immediately after configuring.
+    const resolvedPath = fs.realpathSync(symlinkPath);
+    expect(resolvedPath).toContain("Cellar");
+    await expect(run(resolvedPath)).resolves.toBeUndefined();
 
-    // It runs fine immediately after configuring.
-    await expect(run(persistedPath)).resolves.toBeUndefined();
-
-    // `brew upgrade`: 1.0 -> 2.0. The persisted version-pinned path is now gone.
+    // `brew upgrade`: 1.0 -> 2.0. The version-pinned path is now gone, demonstrating
+    // why the picker must keep the symlink (fix A) and discovery must find it (fix B).
     installVersion("2.0");
     pointSymlinkAt("2.0");
     fs.rmSync(path.join(cellarDir, `${toolName}-1.0`), { recursive: true, force: true });
 
-    // Desired behaviour: the configured tool must still run after an upgrade.
-    // Currently FAILS because the stored resolved path no longer exists — this
-    // is the bug reported in #4355.
-    await expect(run(persistedPath)).resolves.toBeUndefined();
+    expect(fs.existsSync(resolvedPath)).toBe(false);
+    await expect(run(resolvedPath)).rejects.toMatch(/ENOENT/);
+  });
+});
+
+describe("extraToolSearchDirs (issue #4355, fix B)", () => {
+  it("adds the Homebrew bin dirs on macOS and nothing elsewhere", () => {
+    const original = platformInfo.isMac;
+    try {
+      platformInfo.isMac = true;
+      expect(extraToolSearchDirs()).toEqual(["/opt/homebrew/bin", "/usr/local/bin"]);
+
+      platformInfo.isMac = false;
+      expect(extraToolSearchDirs()).toEqual([]);
+    } finally {
+      platformInfo.isMac = original;
+    }
   });
 });

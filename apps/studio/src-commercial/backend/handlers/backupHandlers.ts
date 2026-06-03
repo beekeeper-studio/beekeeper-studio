@@ -1,10 +1,21 @@
 import { Command } from "@/lib/db/models";
 import { spawn } from "child_process";
+import path from "path";
 import { state } from "@/handlers/handlerState";
 import platformInfo from "@/common/platform_info";
 
 export const errorMessages = {
   nonZero: 'Command returned non-zero exit code'
+}
+
+// Directories to search for backup tools in addition to the inherited PATH.
+// macOS GUI apps don't inherit the shell's PATH, so Homebrew's bin dirs are
+// missing — add them explicitly so brew-installed tools (pg_dump, mysqldump,
+// az, ...) are discovered. Apple Silicon installs to /opt/homebrew/bin, Intel
+// to /usr/local/bin. `which` returns the stable symlink there, which keeps
+// pointing at the current version after a `brew upgrade`.
+export function extraToolSearchDirs(): string[] {
+  return platformInfo.isMac ? ['/opt/homebrew/bin', '/usr/local/bin'] : [];
 }
 
 export interface IBackupHandlers {
@@ -100,8 +111,16 @@ export const BackupHandlers: IBackupHandlers = {
   'backup/whichDumpTool': async function({ toolName }: { toolName: string }) {
     const command = platformInfo.isWindows ? 'where' : 'which';
 
+    // Pass the environment explicitly so we can prepend the Homebrew bin dirs
+    // that a macOS GUI app would otherwise be missing from its PATH.
+    const env = { ...process.env };
+    const extraDirs = extraToolSearchDirs();
+    if (extraDirs.length > 0) {
+      env.PATH = [...extraDirs, env.PATH].filter(Boolean).join(path.delimiter);
+    }
+
     return new Promise((resolve, reject) => {
-      const proc = spawn(command, [toolName], { shell: false });
+      const proc = spawn(command, [toolName], { shell: false, env });
 
       let stdout = '';
       let stderr = '';
