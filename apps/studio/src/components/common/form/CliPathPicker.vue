@@ -30,11 +30,11 @@
         <div class="input-group-append">
           <a
             type="button"
-            class="btn btn-flat"
+            class="btn btn-flat btn-icon"
             v-tooltip="`Automatically find ${toolName}`"
             @click.prevent="findCli(true)"
           >
-            <i class="material-icons btn-icon">search</i>
+            <i class="material-icons">search</i>
             <span>Find</span>
           </a>
         </div>
@@ -90,10 +90,17 @@ export default {
     // Run `which`/`where`. When `force` is false (mount-time auto-discovery),
     // skip if a value is already set so a manually-chosen path is preserved
     // across re-mounts of the form.
+    //
+    // `cli/which` spawns a subprocess that can take 100+ms; during the await
+    // the user may pick a file or trigger another discovery. Snapshot the
+    // value first and bail before emitting if it changed externally — last
+    // action wins.
     async findCli(force = false) {
       if (!force && this.value) return;
+      const initial = this.value;
       try {
         const result = await this.$util.send('cli/which', { toolName: this.toolName });
+        if (this.value !== initial) return;
         if (result) {
           this.cliError = false;
           this.$emit('input', result);
@@ -104,6 +111,7 @@ export default {
           this.$emit('found', null);
         }
       } catch (_e) {
+        if (this.value !== initial) return;
         this.cliError = true;
         this.$emit('input', null);
         this.$emit('found', null);
