@@ -44,6 +44,15 @@
       <div v-show="isProfileAuth" class="form-group">
         <label>AWS Profile</label>
 
+        <div class="alert alert-warning" v-show="profilesError">
+          <i class="material-icons-outlined">warning</i>
+          <div>
+            Unable to list AWS profiles from the selected CLI. Check it's installed
+            and up to date, or enter a profile name manually.
+          </div>
+        </div>
+
+
         <!-- Use SELECT only if we have a non-empty string[] of profiles -->
         <select
           v-if="hasProfiles"
@@ -134,7 +143,7 @@ export default {
     },
     hasProfiles() {
       const p = this.config.iamAuthOptions?.profiles;
-      return Array.isArray(p) && p.length > 0 && !this.profilesError;
+      return Array.isArray(p) && p.length > 0;
     },
     // Read-only getter; writes go through $set in the template to keep Vue 2
     // reactivity working when cliPath is being added to iamAuthOptions for
@@ -153,13 +162,14 @@ export default {
     },
 
     async tryFindAWSProfiles(cliPath) {
-      try {
-        if (!cliPath) {
-          this.$set(this.config.iamAuthOptions, 'profiles', null);
-          this.profilesError = true;
-          return;
-        }
+      // No CLI selected yet — nothing to discover, and not an error.
+      if (!cliPath) {
+        this.$set(this.config.iamAuthOptions, 'profiles', null);
+        this.profilesError = false;
+        return;
+      }
 
+      try {
         const result = await this.$util.send('aws/getProfiles', { toolName: cliPath });
 
         // aws/getProfiles spawns a subprocess; if cliPath changed during the
@@ -167,20 +177,26 @@ export default {
         // drop it so it can't overwrite a fresher fetch.
         if (this.cliPath !== cliPath) return;
 
-        if (Array.isArray(result) && result.length > 0) {
-          const unique = Array.from(new Set(result.map(String)));
-          this.$set(this.config.iamAuthOptions, 'profiles', unique);
-          this.profilesError = false;
+        const profiles = Array.isArray(result)
+          ? Array.from(new Set(result.map(String).map((s) => s.trim()).filter(Boolean)))
+          : [];
 
+        // The CLI ran successfully; clear any prior failure flag.
+        this.profilesError = false;
+
+        if (profiles.length > 0) {
+          this.$set(this.config.iamAuthOptions, 'profiles', profiles);
           if (!this.config.iamAuthOptions.awsProfile) {
-            this.$set(this.config.iamAuthOptions, 'awsProfile', unique[0]);
+            this.$set(this.config.iamAuthOptions, 'awsProfile', profiles[0]);
           }
         } else {
+          // CLI ran but reported no profiles — fall back to manual entry, no warning.
           this.$set(this.config.iamAuthOptions, 'profiles', null);
-          this.profilesError = true;
         }
       } catch (e) {
         if (this.cliPath !== cliPath) return;
+        // The CLI invocation failed (missing / too old / broken). Surface it —
+        // the form still falls back to the manual profile input.
         this.$set(this.config.iamAuthOptions, 'profiles', null);
         this.profilesError = true;
       }
