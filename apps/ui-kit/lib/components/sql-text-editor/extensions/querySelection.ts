@@ -27,6 +27,7 @@ function isTextSelected(
 export interface QuerySelectionChangeParams {
   queries: IdentifyResult[];
   selectedQuery: IdentifyResult;
+  error: Error | null;
 }
 
 interface QuerySelectionState {
@@ -34,6 +35,7 @@ interface QuerySelectionState {
   selectedQueryIndex: number;
   selectedQueryPosition: { from: number; to: number } | null;
   decorations: DecorationSet;
+  error: Error | null;
 }
 
 // Effects for updating the state
@@ -107,12 +109,36 @@ function getSelectedQueryIndex(
   return -1;
 }
 
-function splitQueries(queryText: string, dialect: Options["dialect"], paramTypes: ParamTypes) {
+function splitQueries(
+  queryText: string,
+  dialect: Options["dialect"],
+  paramTypes: ParamTypes
+): {
+  queries: IdentifyResult[];
+  error: Error | null;
+} {
   if (_.isEmpty(queryText.trim())) {
-    return [];
+    return { queries: [], error: null };
   }
-  const result = identify(queryText, { strict: false, dialect, paramTypes });
-  return result;
+  try {
+    return {
+      queries: identify(queryText, { strict: false, dialect, paramTypes }),
+      error: null,
+    };
+  } catch (e) {
+    // identify can throw on unparseable input; treat the whole doc as one query
+    const fallback: IdentifyResult = {
+      start: 0,
+      end: queryText.length - 1,
+      text: queryText,
+      type: "UNKNOWN",
+      executionType: "UNKNOWN",
+      parameters: [],
+      tables: [],
+      columns: [],
+    };
+    return { queries: [fallback], error: e as Error };
+  }
 }
 
 // State field that manages query selection
@@ -122,6 +148,7 @@ const querySelectionState = StateField.define<QuerySelectionState>({
     selectedQueryIndex: -1,
     selectedQueryPosition: null,
     decorations: Decoration.none,
+    error: null,
   }),
 
   update: (state, tr) => {
@@ -134,7 +161,7 @@ const querySelectionState = StateField.define<QuerySelectionState>({
     const cursorIndexAnchor = cursor.anchor;
 
     // Split queries
-    const queries = splitQueries(tr.state.doc.toString(), dialect, paramTypes);
+    const { queries, error } = splitQueries(tr.state.doc.toString(), dialect, paramTypes);
     const selectedQueryIndex = getSelectedQueryIndex(
       queries,
       cursorIndex,
@@ -170,6 +197,7 @@ const querySelectionState = StateField.define<QuerySelectionState>({
       selectedQueryIndex,
       selectedQueryPosition,
       decorations,
+      error,
     };
   },
 
@@ -199,6 +227,7 @@ export function querySelection(
           onQuerySelectionChange({
             queries: currentState.queries,
             selectedQuery: currentState.queries[currentState.selectedQueryIndex],
+            error: currentState.error,
           });
         }
 
