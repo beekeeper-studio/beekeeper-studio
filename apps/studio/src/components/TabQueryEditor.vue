@@ -1494,7 +1494,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
       },
       async submitCurrentQuery() {
-        if(this.runButtonDisabled) return;
+        if (this.runButtonDisabled) return;
         if (this.runCurrentDisabled) return;
         this.runningType = 'current'
 
@@ -1507,7 +1507,16 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           return await this.submitQuery(this.currentlySelectedQuery.text)
         }
 
-        const queries = identify(this.unsavedText, { strict: false, dialect: this.identifierDialect, paramTypes: this.paramTypes })
+        const { queries, error } = safelyIdentify(this.unsavedText, { dialect: this.identifierDialect, paramTypes: this.paramTypes })
+
+        // this should not theoretically be possible as there probably would have been a queryselection error,
+        // but if we somehow manage to get here, we need to panic
+        if (error) {
+          log.error(error);
+          this.querySelectionError = error;
+          return;
+        }
+
         if (queries.length > 0) {
           this.individualQueries = queries
           this.currentlySelectedQuery = queries[0]
@@ -1568,11 +1577,10 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         this.selectedResult = 0
         let identification = []
         try {
-          const { queries, error } = safelyIdentify(rawQuery, { strict: false, dialect: this.identifyDialect, identifyTables: true, identifyColumns: true })
+          const { queries: identification, error } = safelyIdentify(rawQuery, { dialect: this.identifyDialect, identifyTables: true, identifyColumns: true })
           if (error) {
-            log.error("Unable to identify query. Disabling run current.", error)
+            log.error("Unable to identify query.", error)
           }
-          identification = queries
 
           if (this.canManageTransactions && identification.some((value: IdentifyResult) => value.executionType === "TRANSACTION")) {
             const startTransaction = identification.filter((value: IdentifyResult) => value.type === "BEGIN_TRANSACTION").length
@@ -1693,7 +1701,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         }
         const originalText = this.query?.text || this.tab.unsavedQueryText
         if (originalText) {
-          const queries = identify(originalText, { strict: false, dialect: this.identifierDialect, paramTypes: this.paramTypes })
+          // The run methods should catch any errors, so we don't need to do that here
+          const { queries } = safelyIdentify(originalText, { dialect: this.identifierDialect, paramTypes: this.paramTypes })
           if (queries.length > 0) {
             this.individualQueries = queries
             this.currentlySelectedQuery = queries[0]

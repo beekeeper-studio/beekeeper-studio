@@ -682,7 +682,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     q: string,
     options: any
   ): Promise<DuckDBResult | DuckDBResult[]> {
-    const queries = identify(q, { strict: false });
+    const queries = this.identifyCommands(q);
     const params = options.params;
     const results: DuckDBResult[] = [];
     const conn: Connection = options.connection || this.connectionInstance;

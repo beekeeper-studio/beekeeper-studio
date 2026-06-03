@@ -3,15 +3,15 @@ import { identify, Options } from 'sql-query-identifier'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 import { EntityFilter } from '@/store/models'
 import { RoutineTypeNames } from "./models"
-import { format } from 'sql-formatter'
+import { format, ParamItems } from 'sql-formatter'
 import { Dialect, FormatterDialect } from '@/shared/lib/dialects/models'
-import { ParamItems } from 'sql-formatter/lib/src/formatter/Params'
 
 export function splitQueries(queryText: string, dialect) {
   if(_.isEmpty(queryText.trim())) {
     return []
   }
-  const result = identify(queryText, { strict: false, dialect })
+  safelyIdentify(queryText, { dialect });
+  const result = identify(queryText, { dialect })
   return result
 }
 
@@ -22,7 +22,8 @@ export function safelyIdentify(
   options: Options
 ): { queries: IdentifyResult[]; error: Error | null } {
   try {
-    return { queries: identify(queryText, options), error: null }
+    // We should really not be using strict mode anywhere, but I guess we can allow an override here just in case
+    return { queries: identify(queryText, { strict: false, ...options }), error: null }
   } catch (error) {
     const fallback: IdentifyResult = {
       start: 0,

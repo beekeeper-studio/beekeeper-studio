@@ -1254,14 +1254,6 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     }
   }
 
-  private identifyCommands(queryText: string) {
-    try {
-      return identify(queryText, { strict: false, dialect: 'mssql' });
-    } catch (err) {
-      return [];
-    }
-  }
-
   protected parseTableColumn(column: any): BksField {
     return {
       name: column.column_name,

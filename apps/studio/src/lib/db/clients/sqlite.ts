@@ -735,14 +735,6 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     })
   }
 
-  private identifyCommands(queryText: string) {
-    try {
-      return identify(queryText, { strict: false, dialect: 'sqlite' });
-    } catch (err) {
-      return [];
-    }
-  }
-
   private async insertRows(cli: any, inserts: TableInsert[]) {
     for (const command of buildInsertQueries(knex, inserts)) {
       await this.driverExecuteSingle(command, cli);
