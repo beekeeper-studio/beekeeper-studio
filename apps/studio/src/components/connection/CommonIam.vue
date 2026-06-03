@@ -25,7 +25,6 @@
         help-tooltip="You are signing in using the <code>AWS CLI</code>. Beekeeper Studio will attempt to use the AWS CLI tool at the specified path."
         :value="cliPath"
         @input="val => cliPath = val"
-        @found="tryFindAWSProfiles"
       />
 
       <div v-show="isRedshift" class="flex flex-middle mb-3">
@@ -165,6 +164,11 @@ export default {
 
         const result = await this.$util.send('aws/getProfiles', { toolName: cliPath });
 
+        // aws/getProfiles spawns a subprocess; if cliPath changed during the
+        // await, this result corresponds to a path we no longer care about —
+        // drop it so it can't overwrite a fresher fetch.
+        if (this.cliPath !== cliPath) return;
+
         if (Array.isArray(result) && result.length > 0) {
           const unique = Array.from(new Set(result.map(String)));
           this.$set(this.config.iamAuthOptions, 'profiles', unique);
@@ -178,19 +182,23 @@ export default {
           this.profilesError = true;
         }
       } catch (e) {
+        if (this.cliPath !== cliPath) return;
         this.$set(this.config.iamAuthOptions, 'profiles', null);
         this.profilesError = true;
       }
     },
   },
-  async mounted() {
-    // CliPathPicker auto-discovers on mount and emits `found` with the
-    // discovered path; AWS-specific profile fetching is wired to that event.
-    // Still run a profile fetch here for the case where cliPath was already
-    // persisted from a prior session (no discovery needed, no `found` fires).
-    if (this.config.iamAuthOptions?.cliPath) {
-      await this.tryFindAWSProfiles(this.config.iamAuthOptions.cliPath);
-    }
+  watch: {
+    // Refetch AWS profiles whenever cliPath changes, regardless of source
+    // (CliPathPicker auto-discovery, the Find action, a manual file pick, or
+    // late hydration). immediate: true covers the saved-from-prior-session
+    // case that the old mounted() hook handled.
+    cliPath: {
+      immediate: true,
+      handler(newPath) {
+        this.tryFindAWSProfiles(newPath);
+      },
+    },
   },
 };
 </script>
