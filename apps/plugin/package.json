@@ -1,0 +1,64 @@
+{
+  "name": "@beekeeperstudio/plugin",
+  "version": "1.7.1",
+  "description": "A simple TypeScript wrapper to send messages from your Beekeeper Studio plugin to the main app.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./dist/internal": {
+      "types": "./dist/internal.d.ts",
+      "import": "./dist/internal.js"
+    },
+    "./dist/eventForwarder": {
+      "types": "./dist/eventForwarder.d.ts",
+      "import": "./dist/eventForwarder.js"
+    }
+  },
+  "files": [
+    "dist/*.js",
+    "dist/*.d.ts",
+    "dist/*.js.map",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "docs": "typedoc",
+    "prepublishOnly": "yarn run build",
+    "clean": "rm -rf dist"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/beekeeper-studio/plugin.git"
+  },
+  "keywords": [
+    "beekeeper-studio",
+    "plugin",
+    "typescript",
+    "database"
+  ],
+  "license": "MIT",
+  "private": false,
+  "author": {
+    "name": "Beekeeper Studio Team",
+    "email": "support@beekeeperstudio.io",
+    "url": "https://beekeeperstudio.io"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.3",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-typescript": "^12.1.2",
+    "rollup": "^4.41.1",
+    "rollup-plugin-dts": "^6.2.1",
+    "tslib": "^2.8.1",
+    "typedoc": "^0.28.19",
+    "typescript": "^5.8.3"
+  }
+}
