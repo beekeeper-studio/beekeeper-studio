@@ -2,6 +2,7 @@
   <div class="form-group cli-path-picker">
     <label :for="inputId">
       {{ label }}
+      <code class="cli-binary-hint">{{ toolName }}</code>
       <i
         v-if="helpTooltip"
         class="material-icons"
@@ -154,6 +155,16 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.cli-binary-hint {
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.3rem;
+  border-radius: 3px;
+  font-size: 0.8em;
+  font-family: var(--bks-text-editor-font-family, monospace);
+  background: var(--bks-query-editor-bg, rgba(0, 0, 0, 0.12));
+  opacity: 0.85;
+}
+
 .cli-path-filled-card {
   display: flex;
   align-items: center;

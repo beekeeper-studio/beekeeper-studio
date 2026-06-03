@@ -20,7 +20,7 @@
       <cli-path-picker
         v-show="showCli"
         tool-name="az"
-        label="Azure CLI Path (az)"
+        label="Azure CLI Path"
         docs-href="https://docs.beekeeperstudio.io/user_guide/connecting/azure-entraid"
         :value="config.azureAuthOptions.cliPath"
         @input="val => $set(config.azureAuthOptions, 'cliPath', val)"
