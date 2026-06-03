@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { Extension, StateField, StateEffect } from "@codemirror/state";
 import { EditorView, Decoration, DecorationSet } from "@codemirror/view";
-import { identify, Options } from "sql-query-identifier";
+import { Options } from "sql-query-identifier";
 import { IdentifyResult, ParamTypes } from "sql-query-identifier/lib/defines";
 import { safelyIdentify } from "@/utils";
 // Utility function from entity-list/sql_tools
