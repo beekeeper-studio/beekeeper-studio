@@ -13527,10 +13527,10 @@ sql-query-identifier@^2.10.0:
   resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-2.10.0.tgz#ee46e7ffb941a5f03a4f1b297d47d438dc6c14e1"
   integrity sha512-SBYnk1PPIDJ4M1+O3YXKfc4L++RyntcJAGhEWqBv0xrOzzp2k7lTeM7Ow//IfmDsfyh7dVas03UJWoL2P+nPEQ==
 
-sql-query-identifier@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-3.0.0.tgz#33ff0974ece4138a810995709d1ef640fbc94031"
-  integrity sha512-XtAqC3MvrYz6ZCiTmSo6sBGaQRiQFLzraC824vApetKsoA+bDjSwNTBD/CAY1aOjEZY9uHc7XmJqrNrFW+pxaw==
+sql-query-identifier@^3.0.1:
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-3.0.1.tgz#d8568a8950ec5fe556b461b09168711ac801e2ad"
+  integrity sha512-qyEB/pXpI0rib0sAfbK4mN0lTlE0RasJL4Cb2FQcl6PLOF2OScab0RGQJbzpu0ELsS1efsVj/75TzCKo9lZqxg==
 
 sqlanywhere@beekeeper-studio/node-sqlanywhere#54d1ef2052ccdfe963f0956a3e4d024ee6f1fd8d:
   version "2.0.4"

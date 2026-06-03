@@ -1,18 +1,17 @@
 import _ from 'lodash'
-import { identify, Options } from 'sql-query-identifier'
+import { identify, Options, Dialect as IdentifierDialect } from 'sql-query-identifier'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 import { EntityFilter } from '@/store/models'
 import { RoutineTypeNames } from "./models"
 import { format, ParamItems } from 'sql-formatter'
 import { Dialect, FormatterDialect } from '@/shared/lib/dialects/models'
 
-export function splitQueries(queryText: string, dialect) {
+export function splitQueries(queryText: string, dialect: IdentifierDialect): IdentifyResult[] {
   if(_.isEmpty(queryText.trim())) {
     return []
   }
-  safelyIdentify(queryText, { dialect });
-  const result = identify(queryText, { dialect })
-  return result
+  const { queries: result } = safelyIdentify(queryText, { dialect });
+  return result;
 }
 
 // Wraps identify so a parser failure is returned instead of thrown,
