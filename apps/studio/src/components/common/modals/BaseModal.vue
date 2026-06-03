@@ -1,6 +1,12 @@
 <template>
   <portal to="modals">
-    <modal :name="name" class="base-modal-root">
+    <modal
+      :name="name"
+      @before-open="$emit('before-open', $event)"
+      @opened="$emit('opened')"
+      @closed="$emit('closed')"
+      class="base-modal-root beekeeper-modal"
+    >
       <div v-kbd-trap="true" class="base-modal">
         <div class="base-modal-header">
           <div class="base-modal-title">

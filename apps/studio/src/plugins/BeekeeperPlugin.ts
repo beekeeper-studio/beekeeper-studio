@@ -164,7 +164,7 @@ export const BeekeeperPlugin = {
   },
   async promptSnowflakeMFAPasscode(): Promise<{ passcode?: string, cancelled: boolean }> {
     return new Promise((resolve) => {
-      const description = "Input the MFA passcode from your Authenticator App (this is not saved)";
+      const description = "Input the MFA passcode from your Authenticator App";
       const title = "MFA Passcode";
 
       Vue.prototype.$modal.show('input-ephemeral-modal', {

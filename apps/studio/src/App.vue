@@ -41,7 +41,7 @@
     <keyboard-shortcuts-modal />
     <confirmation-modal-manager />
     <lock-manager />
-    <input-ephemeral-modal />
+    <input-ephemeral-modal name="input-ephemeral-modal" />
     <util-died-modal />
     <template v-if="licensesInitialized">
       <trial-expired-modal />
