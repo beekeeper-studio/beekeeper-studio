@@ -40,9 +40,11 @@ export const SnowflakeData: DialectData = {
   disabledFeatures: {
     shell: true,
     alter: {
-      indexes: true,
       reorderColumn: true,
       alterDefault: true
+    },
+    index: {
+      desc: true
     },
     triggers: true,
     backup: true,
