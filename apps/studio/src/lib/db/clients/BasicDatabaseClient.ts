@@ -11,7 +11,7 @@ import connectTunnel from '../tunnel';
 import { IDbConnectionServer } from '../backendTypes';
 import platformInfo from '@/common/platform_info';
 import { LicenseKey } from '@/common/appdb/models/LicenseKey';
-import { IdentifyResult } from 'sql-query-identifier/lib/defines';
+import { IdentifyResult, Dialect as IdentifierDialect } from 'sql-query-identifier/lib/defines';
 import { Transcoder } from '../serialization/transcoders';
 import { ColumnReference, TableReference } from 'sql-query-identifier/lib/defines';
 
@@ -71,7 +71,7 @@ export interface BaseQueryResult {
 export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult, Conn = null> implements IBasicDatabaseClient {
   knex: Knex | null;
   contextProvider: AppContextProvider;
-  dialect: "mssql" | "sqlite" | "mysql" | "oracle" | "psql" | "bigquery" | "generic";
+  dialect: IdentifierDialect;
   // TODO (@day): this can be cleaned up when we fix configuration
   readOnlyMode = false;
   server: IDbConnectionServer;

@@ -58,7 +58,7 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(null, snowflakeContext, server, database);
-    this.dialect = "generic";
+    this.dialect = "snowflake";
     this.readOnlyMode = server?.config?.readOnlyMode || false;
 
     this.knex = knexlib({
