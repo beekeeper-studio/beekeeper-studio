@@ -39,7 +39,6 @@ export const SnowflakeData: DialectData = {
   textEditorMode: "text/x-sql",
   disabledFeatures: {
     shell: true,
-    indexes: true, // for now, only available on hybrid tables which are paywalled
     alter: {
       indexes: true,
       reorderColumn: true,

@@ -18,6 +18,7 @@ import knexlib from 'knex';
 import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SnowflakeChangeBuilder } from "@/shared/lib/sql/change_builder/SnowflakeChangeBuilder";
 import { SnowflakeCursor } from "./snowflake/SnowflakeCursor";
+import { IndexColumn } from "@beekeeperstudio/plugin";
 
 const log = rawLog.scope('snowflake')
 
@@ -96,6 +97,7 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
 
     this.version = await this.getVersion();
     this._defaultSchema = await this.getSchema();
+    log.info("DEFAULT SCHEMA: ", this._defaultSchema);
   }
 
   async disconnect(): Promise<void> {
@@ -316,8 +318,36 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
   }
 
   // Only available on hybrid tables, which I can't create on a trial account :(
-  async listTableIndexes(_table: string, _schema?: string): Promise<TableIndex[]> {
-    return [];
+  async listTableIndexes(table: string, schema?: string): Promise<TableIndex[]> {
+    const ident = this.wrapTable(table, schema);
+    const sql = `
+      SHOW INDEXES IN TABLE ${ident}
+    `;
+
+    const data = await this.driverExecuteSingle(sql);
+
+    const result = data.rows.map((r) => {
+      const columns: IndexColumn[] = r.columns.slice(1, -1).split(',').map((c) => {
+        return {
+          name: c.trim(),
+          order: 'ASC' // apparently all indexes in snowflake are ascending
+        }
+      });
+
+      const item: TableIndex = {
+        id: r.name,
+        name: r.name,
+        columns,
+        table: r.table,
+        schema: r.schema_name,
+        unique: r.is_unique === 'Y',
+        primary: false
+      }
+
+      return item;
+    })
+
+    return result;
   }
 
   async listSchemas(filter?: SchemaFilterOptions): Promise<string[]> {
@@ -691,12 +721,20 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
       return []
     })
 
+    const indexesPromise = this.listTableIndexes(table, schema).catch(err => {
+      log.warn('Unable to fetch table indexes (likely due to insufficient permissions):', err.message)
+      permissionWarnings.push('Unable to retrieve table indexes due to insufficient permissions')
+      return []
+    });
+
     const [
       details,
-      relations
+      relations,
+      indexes
     ] = await Promise.all([
       detailsPromise,
-      relationsPromise
+      relationsPromise,
+      indexesPromise
     ]);
 
     const props = details.rows.length > 0 ? details.rows[0] : {};
@@ -704,7 +742,7 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
       description: props.comment,
       indexSize: Number(props.search_optimization_bytes || 0), // this conceptually matches but idk if its the same thing
       size: Number(props.bytes || 0),
-      indexes: [],
+      indexes,
       relations,
       triggers: [],
       partitions: [],
@@ -1044,15 +1082,27 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
     return []
   }
 
-  protected wrapTable(table: string, schema: string = this._defaultSchema) {
+  protected wrapTable(table: string, schema?: string) {
     if (!schema) return this.wrapIdentifier(table);
     return `${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)}`;
   }
 
   private async getSchema() {
-    const sql = 'SELECT CURRENT_SCHEMA() AS schema';
+    const sql = `
+      SELECT COALESCE(
+        CURRENT_SCHEMA(),
+        (
+          SELECT SCHEMA_NAME
+          FROM INFORMATION_SCHEMA.SCHEMATA
+          WHERE SCHEMA_NAME <> 'INFORMATION_SCHEMA'
+            AND CATALOG_NAME = CURRENT_DATABASE()
+          ORDER BY SCHEMA_NAME
+          LIMIT 1
+        )
+      ) AS schema;
+    `;
 
     const data = await this.driverExecuteSingle(sql);
-    return data.rows[0].schema;
+    return data.rows[0].SCHEMA;
   }
 }
