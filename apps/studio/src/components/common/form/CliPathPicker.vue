@@ -11,24 +11,44 @@
       >help_outlined</i>
     </label>
 
-    <!-- Filled state: show a compact card with the resolved path. -->
+    <!-- Filled state: a system-result card with a tinted check tile,
+         two-line body, and edit/clear actions. -->
     <div
       v-if="value"
-      class="cli-path-filled-card"
+      class="cli-path-found-card"
     >
-      <i class="material-icons cli-path-filled-icon">check_circle</i>
-      <span
-        class="cli-path-filled-path"
-        :title="value"
-      >{{ value }}</span>
-      <button
-        class="cli-path-clear-btn"
-        type="button"
-        title="Clear"
-        @click.prevent="clearValue"
-      >
-        <i class="material-icons">close</i>
-      </button>
+      <div class="cli-path-found-tile">
+        <i class="material-icons">check</i>
+      </div>
+      <div class="cli-path-found-body">
+        <div class="cli-path-found-title">
+          {{ foundTitle }}
+        </div>
+        <div
+          class="cli-path-found-pathline"
+          :title="value"
+        >
+          {{ value }}
+        </div>
+      </div>
+      <div class="cli-path-found-actions">
+        <button
+          class="cli-path-found-ibtn"
+          type="button"
+          v-tooltip="'Change path'"
+          @click.prevent="openPicker"
+        >
+          <i class="material-icons">edit</i>
+        </button>
+        <button
+          class="cli-path-found-ibtn"
+          type="button"
+          v-tooltip="'Clear'"
+          @click.prevent="clearValue"
+        >
+          <i class="material-icons">close</i>
+        </button>
+      </div>
     </div>
 
     <!-- Empty state: picker + Find button + warning when discovery failed. -->
@@ -98,6 +118,11 @@ export default {
     inputId() {
       return `cli-path-${this.toolName}`;
     },
+    // Derive the found-state title from the field label by dropping a trailing
+    // "Path" — so "Azure CLI Path" → "Azure CLI found".
+    foundTitle() {
+      return `${this.label.replace(/\s*Path\s*$/i, '')} found`;
+    },
     filePickerOptions() {
       // macOS's native open panel resolves a chosen symlink (e.g.
       // /opt/homebrew/bin/az) to its version-pinned Homebrew target, which
@@ -114,6 +139,15 @@ export default {
     clearValue() {
       this.cliError = false;
       this.$emit('input', null);
+    },
+    // Edit action — open the file dialog directly (no need to roundtrip
+    // through the empty-state FilePicker UI).
+    openPicker() {
+      const files = this.$native.dialog.showOpenDialogSync({
+        ...this.filePickerOptions,
+        defaultPath: this.value || '',
+      });
+      if (files && files[0]) this.onPick(files[0]);
     },
     // Run `which`/`where`. When `force` is false (mount-time auto-discovery),
     // skip if a value is already set so a manually-chosen path is preserved
@@ -163,54 +197,85 @@ export default {
   opacity: 0.85;
 }
 
-.cli-path-filled-card {
+// Variant D — system-result card. A raised surface with a tinted check
+// tile, two-line body (title + path), and edit/clear actions.
+.cli-path-found-card {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.35rem 0.5rem;
-  border: 1px solid var(--bks-border-color, rgba(255, 255, 255, 0.1));
-  border-radius: 4px;
+  gap: 12px;
+  padding: 11px 12px;
+  border-radius: 8px;
   background: var(--bks-query-editor-bg, rgba(0, 0, 0, 0.1));
+  box-shadow: inset 0 0 0 1px var(--bks-border-color, rgba(255, 255, 255, 0.1));
 }
 
-.cli-path-filled-icon {
-  font-size: 18px;
-  color: var(--bks-brand-success, #4caf50);
+.cli-path-found-tile {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--bks-brand-success, #15db95) 13%, transparent);
+  color: var(--bks-brand-success, #15db95);
+
+  .material-icons {
+    font-size: 18px;
+  }
 }
 
-.cli-path-filled-path {
+.cli-path-found-body {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cli-path-found-title {
+  font-size: 13px;
+  color: var(--bks-text-dark);
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.cli-path-found-pathline {
+  font-family: var(--bks-text-editor-font-family, monospace);
+  font-size: 12px;
+  color: var(--bks-text-light);
+  font-weight: 400;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.85rem;
-  opacity: 0.85;
 }
 
-.cli-path-clear-btn {
+.cli-path-found-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
   flex-shrink: 0;
+}
+
+.cli-path-found-ibtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 2px;
-  margin: 0;
-  min-width: 0;
-  width: 22px;
-  height: 22px;
-  background: none;
-  border: none;
-  border-radius: 3px;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--bks-text-lighter);
   cursor: pointer;
-  opacity: 0.4;
-  color: inherit;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.15s ease-in-out, color 0.15s ease-in-out;
 
   &:hover {
-    opacity: 1;
-    // currentColor inherits from the text colour, which inverts per theme,
-    // so this hover overlay works on both dark and light backgrounds.
+    // currentColor inherits the text colour so the overlay inverts per theme.
     background: color-mix(in srgb, currentColor 10%, transparent);
+    color: var(--bks-text-dark);
   }
 
   .material-icons {
