@@ -224,24 +224,19 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
     } as TableOrView));
   }
 
-  async listViews(filter?: FilterOptions): Promise<TableOrView[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'TABLE_SCHEMA', this.wrapIdentifier);
-
+  async listViews(_filter?: FilterOptions): Promise<TableOrView[]> {
     const sql = `
-      SELECT
-        TABLE_SCHEMA as schema,
-        TABLE_NAME as name,
-      FROM INFORMATION_SCHEMA.VIEWS
-      ${schemaFilter ? `AND ${schemaFilter}` : ''}
-      ORDER BY TABLE_SCHEMA, TABLE_NAME
+      SHOW VIEWS IN DATABASE
     `;
 
     const data = await this.driverExecuteSingle(sql);
 
-    return data.rows.map((row) => ({
-      name: row.NAME,
-      schema: row.SCHEMA
-    } as TableOrView));
+    return data.rows
+      .filter((row) => row.is_materialized === 'false')
+      .map((row) => ({
+        name: row.name,
+        schema: row.schema_name
+      } as TableOrView));
   }
 
   // TODO (@day): this may be annoying lmao
@@ -249,65 +244,50 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
     return [];
   }
 
-  // TODO (@day): this requires enterprise edition
   async listMaterializedViews(_filter?: FilterOptions): Promise<TableOrView[]> {
-    return [];
-  }
-
-  // TODO (@day): this requires enterprise edition
-  async listMaterializedViewColumns(_table: string, _schema?: string): Promise<TableColumn[]> {
-    return [];
-  }
-
-  async listTableColumns(table?: string, schema: string = 'PUBLIC'): Promise<ExtendedTableColumn[]> {
-    const clause = table ? "WHERE TABLE_SCHEMA = :1 AND TABLE_NAME = :2" : "";
-    const params = table ? [schema, table] : [];
-    if (table && !schema) {
-      throw new Error(`Table '${table}' provided for listTableColumns, but no schema name`);
-    }
-
     const sql = `
-      SELECT
-        TABLE_SCHEMA,
-        TABLE_NAME,
-        COLUMN_NAME,
-        IS_NULLABLE,
-        CASE
-          WHEN DATA_TYPE_ALIAS IS NOT NULL
-            THEN DATA_TYPE_ALIAS
-          WHEN CHARACTER_MAXIMUM_LENGTH IS NOT NULL
-            THEN DATA_TYPE || '(' || CHARACTER_MAXIMUM_LENGTH::varchar(255) || ')'
-          WHEN NUMERIC_PRECISION IS NOT NULL AND NUMERIC_SCALE IS NOT NULL
-            THEN DATA_TYPE || '(' || NUMERIC_PRECISION::varchar(255) || ',' || NUMERIC_SCALE::varchar(255) || ')'
-          WHEN NUMERIC_PRECISION IS NOT NULL AND NUMERIC_SCALE IS NULL
-            THEN DATA_TYPE || '(' || NUMERIC_PRECISION::varchar(255) || ')'
-          ELSE DATA_TYPE
-        END as DATA_TYPE,
-        CASE
-          WHEN DATA_TYPE = 'ARRAY' THEN 'YES'
-          ELSE 'NO'
-        END AS IS_ARRAY,
-        COMMENT,
-        ORDINAL_POSITION,
-        COLUMN_DEFAULT
-      FROM INFORMATION_SCHEMA.COLUMNS
-      ${clause}
-      ORDER BY TABLE_SCHEMA, TABLE_NAME, ORDINAL_POSITION
+      SHOW MATERIALIZED VIEWS IN DATABASE
     `;
 
-    const data = await this.driverExecuteSingle(sql, { params });
+    try {
+      const data = await this.driverExecuteSingle(sql);
 
-    return data.rows.map((row: any) => ({
-      schemaName: row.TABLE_SCHEMA,
-      tableName: row.TABLE_NAME,
-      columnName: row.COLUMN_NAME,
-      dataType: row.DATA_TYPE,
-      nullable: row.IS_NULLABLE === 'YES',
-      defaultValue: row.COLUMN_DEFAULT,
-      ordinalPosition: Number(row.ORDINAL_POSITION),
-      hasDefault: !_.isNil(row.COLUMN_DEFAULT),
-      array: row.is_array === "YES",
-      comment: row.COMMENT || null,
+      return data.rows
+        .map((row) => ({
+          name: row.name,
+          schema: row.schema_name
+        } as TableOrView));
+    } catch {
+      // I believe this might throw if you don't have enterprise edition
+      return [];
+    }
+  }
+
+  async listMaterializedViewColumns(table: string, schema?: string): Promise<TableColumn[]> {
+    return await this.listTableColumns(table, schema);
+  }
+
+  async listTableColumns(table: string, schema: string = this._defaultSchema): Promise<ExtendedTableColumn[]> {
+    const ident = this.wrapTable(table, schema);
+    const sql = `
+      DESCRIBE TABLE ${ident}
+    `;
+
+    const data = await this.driverExecuteSingle(sql);
+
+    return data.rows.map((row: any, ind) => ({
+      schemaName: schema,
+      tableName: table,
+      columnName: row.name,
+      dataType: row.type,
+      nullable: row['null?'] === 'Y', // wtf snowflake
+      defaultValue: row.default,
+      ordinalPosition: ind,
+      hasDefault: !_.isNil(row.default),
+      array: row.type === 'ARRAY',
+      comment: row.comment,
+      generated: row.kind === 'VIRTUAL',
+      generationExpression: row.expression,
       bksField: this.parseTableColumn(row)
     }))
   }
@@ -317,7 +297,6 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
     return [];
   }
 
-  // Only available on hybrid tables, which I can't create on a trial account :(
   async listTableIndexes(table: string, schema?: string): Promise<TableIndex[]> {
     const ident = this.wrapTable(table, schema);
     const sql = `
@@ -325,6 +304,7 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
     `;
 
     const data = await this.driverExecuteSingle(sql);
+    const reg = /^SYS_INDEX_.*_PRIMARY$/;
 
     const result = data.rows.map((r) => {
       const columns: IndexColumn[] = r.columns.slice(1, -1).split(',').map((c) => {
@@ -341,7 +321,7 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
         table: r.table,
         schema: r.schema_name,
         unique: r.is_unique === 'Y',
-        primary: false
+        primary: reg.test(r.name)
       }
 
       return item;
@@ -1054,7 +1034,7 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
 
   protected parseTableColumn(column: any): BksField {
     return {
-      name: column.COLUMN_NAME,
+      name: column.name,
       bksType: "UNKNOWN"
     }
   }
