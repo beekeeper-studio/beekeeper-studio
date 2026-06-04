@@ -132,18 +132,14 @@ builds:
   - { distro: "fedora_44", <<: *fedora }
   - { distro: "fedora_rawhide", <<: *fedora }
 
-  - { distro: "debian_11", <<: *debian }
+  # Toolchain floor is gcc 11: a native dep (sqlanywhere) includes the C++20
+  # <source_location> header, which libstdc++ only ships from gcc 11. That rules
+  # out debian_11 (gcc 10) and ubuntu_20.04 (gcc 9/10, no gcc 11 without a PPA).
   - { distro: "debian_12", <<: *debian }
   - { distro: "debian_13", <<: *debian }
   - { distro: "debian_testing", <<: *debian }
   - { distro: "debian_unstable", <<: *debian }
 
-  # 20.04's default gcc is 9 (no -std=gnu++20 for os-dns-native); pull gcc 10.
-  # prepare.sh exposes it as the default compiler (same pattern as Leap 15.6).
-  - distro: "ubuntu_20.04"
-    <<: *debian
-    build_dependencies:
-      [build-essential, g++-10, gcc-10, git, wget, curl, ca-certificates, pkg-config, python3, python3-setuptools]
   - { distro: "ubuntu_22.04", <<: *debian }
   - { distro: "ubuntu_24.04", <<: *debian }
   - { distro: "ubuntu_25.10", <<: *debian }
@@ -155,7 +151,6 @@ builds:
   - { distro: "rockylinux_10", <<: *redhat }
 
   - { distro: "mageia_9", <<: *mageia }
-  - { distro: "mageia_cauldron", <<: *mageia }
 
 ignore_source_files:
   - .git
