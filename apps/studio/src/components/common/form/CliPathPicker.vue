@@ -193,7 +193,10 @@ export default {
   border-radius: 3px;
   font-size: 0.8em;
   font-family: var(--bks-text-editor-font-family, monospace);
-  background: var(--bks-query-editor-bg, rgba(0, 0, 0, 0.12));
+  // Slight raised tint over the form bg — text-dark inverts per theme, so on
+  // a dark form the badge lightens, and on a light form it darkens. Either
+  // way it reads as a distinct chip instead of a sunken hole.
+  background: color-mix(in srgb, var(--bks-theme-bg, #1e1e1e), var(--bks-text-dark) 7%);
   opacity: 0.85;
 }
 
@@ -205,7 +208,9 @@ export default {
   gap: 12px;
   padding: 11px 12px;
   border-radius: 8px;
-  background: var(--bks-query-editor-bg, rgba(0, 0, 0, 0.1));
+  // Same approach as the badge: tint over the form bg so the card reads as
+  // raised, not sunken. ~4% to match the design's #242424 over #1e1e1e.
+  background: color-mix(in srgb, var(--bks-theme-bg, #1e1e1e), var(--bks-text-dark) 4%);
   box-shadow: inset 0 0 0 1px var(--bks-border-color, rgba(255, 255, 255, 0.1));
 }
 
