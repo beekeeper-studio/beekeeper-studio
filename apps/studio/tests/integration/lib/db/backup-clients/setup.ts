@@ -2,12 +2,14 @@ import { EventEmitter } from "events";
 import Vue from "vue";
 import { newState, removeState, state } from "@/handlers/handlerState";
 import { BackupHandlers } from "@commercial/backend/handlers/backupHandlers";
+import { CliHandlers } from "@commercial/backend/handlers/cliHandlers";
 import { TempHandlers } from "@/handlers/tempHandlers";
 import { uuidv4 } from "@/lib/uuid";
 import os from "os";
 
 const handlers: Record<string, (args: any) => Promise<any>> = {
   ...BackupHandlers,
+  ...CliHandlers,
   ...TempHandlers,
 };
 

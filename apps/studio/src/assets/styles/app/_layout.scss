@@ -797,6 +797,12 @@ input[type=file] {
     height: 26px; // button height
   }
 }
+.alert.alert-centered {
+  // Short, single-/two-line alerts look misaligned with the default
+  // align-items: flex-start; opt-in modifier that vertically centers the
+  // icon against the text.
+  align-items: center;
+}
 .alert-danger {
   color: color.adjust($brand-danger, $lightness: 5%);
 }
