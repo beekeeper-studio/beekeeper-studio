@@ -2552,10 +2552,10 @@
   resolved "https://registry.yarnpkg.com/@beekeeperstudio/bks-ai-shell/-/bks-ai-shell-3.1.0.tgz#492ac7dda65cd22ba93b7143dfd05ea1acede777"
   integrity sha512-6dWgXdr5PDerNs1UthaZG6UQLN2Dztst8SzWNqjRm9XRgph/5cqfg8Z2vk8SngdycUePBEuuBBhTVksGzBfUzg==
 
-"@beekeeperstudio/bks-er-diagram@^1.0.9":
-  version "1.0.9"
-  resolved "https://registry.yarnpkg.com/@beekeeperstudio/bks-er-diagram/-/bks-er-diagram-1.0.9.tgz#78730e8d841ddeab04193e22eff90f5804607703"
-  integrity sha512-cnSL+9gnmmUptD26gJ1IPHBEUWdXFGRnlSnuMtOfRPhtR83v2pXGPVv3CCNpg3QaGT/cDLl7EKqfjieyzyXL+w==
+"@beekeeperstudio/bks-er-diagram@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@beekeeperstudio/bks-er-diagram/-/bks-er-diagram-1.1.0.tgz#23b7cb4c1fd8b7a2c8bd95e2b9f67520c8c526c0"
+  integrity sha512-0dWHjlDTOozch9QkKn/PCw+FJ85y7Yrao+J5HOgfeTemLYZ6+0TrYnCFhyhSzcfQXL2vnmZPcArAY1xrqTDoLg==
 
 "@beekeeperstudio/knex-snowflake-dialect@^0.4.4":
   version "0.4.4"
