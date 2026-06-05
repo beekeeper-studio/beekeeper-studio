@@ -146,6 +146,7 @@
             <x-button
               class="btn btn-primary btn-badge btn-icon"
               @click.prevent="saveChanges"
+              :disabled="running"
               :title="saveButtonText"
               :class="{'error': !!saveError}"
             >
@@ -166,7 +167,7 @@
             >
               <i class="material-icons">arrow_drop_down</i>
               <x-menu>
-                <x-menuitem @click.prevent="saveChanges">
+                <x-menuitem :disabled="running" @click.prevent="saveChanges">
                   <x-label>Apply</x-label>
                   <x-shortcut value="Control+S" />
                 </x-menuitem>
@@ -407,6 +408,7 @@ export default Vue.extend({
       // App.db row holding tabulator's column persistence.
       // Loaded by loadPersistence() and read synchronously by persistenceReader.
       persistenceRow: null as { id?: number; data: string } | null,
+      running: false
     };
   },
   computed: {
@@ -756,6 +758,9 @@ export default Vue.extend({
     this.registerHandlers(this.rootBindings)
   },
   methods: {
+    updateTab() {
+      this.$emit('update-tab', this.tab)
+    },
     async loadPersistence() {
       if (!this.tableId) {
         return;
@@ -1693,9 +1698,12 @@ export default Vue.extend({
         this.saveError = null
 
         // guard to make sure we don't do anything in readonly mode
-        if (!this.editable) return;
+        if (!this.editable && !this.running) return;
 
         let replaceData = false
+        this.running = true;
+        this.tab.isRunning = true;
+        this.updateTab();
 
         try {
           const payload = {
@@ -1753,6 +1761,9 @@ export default Vue.extend({
           return
         } finally {
           this.updateJsonViewerSidebar()
+          this.running = false;
+          this.tab.isRunning = false;
+          this.updateTab();
           if (!this.active) {
             this.forceRedraw = true
           }
