@@ -36,6 +36,7 @@ import { AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from '../serialization/transcoders';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
+import { safelyIdentify } from '../sql_tools';
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData
@@ -1233,14 +1234,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       rowCount: data.length,
       affectedRows: rowsAffected,
       text: command?.text
-    }
-  }
-
-  private identifyCommands(queryText: string) {
-    try {
-      return identify(queryText);
-    } catch (err) {
-      return [];
     }
   }
 
