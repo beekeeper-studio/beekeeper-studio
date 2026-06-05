@@ -220,14 +220,6 @@ async function configDatabase(
   return config;
 }
 
-function identifyCommands(queryText: string) {
-  try {
-    return identify(queryText);
-  } catch (err) {
-    return [];
-  }
-}
-
 function isMultipleQuery(fields: any[]) {
   if (!fields) {
     return false;
@@ -1182,7 +1174,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       return [];
     }
 
-    const commands = identifyCommands(queryText);
+    const commands = this.identifyCommands(queryText);
 
     if (!isMultipleQuery(fields)) {
       return [

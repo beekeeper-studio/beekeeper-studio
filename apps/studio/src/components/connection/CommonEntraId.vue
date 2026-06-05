@@ -17,22 +17,14 @@
       </div>
     </div>
     <div class="form-group col">
-      <div v-show="showCli" class="form-group">
-        <label for="cliPath">
-          Azure CLI Path (az)
-        </label>
-        <file-picker v-model="config.azureAuthOptions.cliPath" />
-        <div class="alert alert-danger" v-show="!cliFound">
-          <i class="material-icons-outlined">warning</i>
-          <div>
-            NO CLI FOUND, Please refer to our
-            <a
-              href="https://docs.beekeeperstudio.io/user_guide/connecting/azure-entraid"
-            >Beekeeper Docs</a>
-            for more information
-          </div>
-        </div>
-      </div>
+      <cli-path-picker
+        v-show="showCli"
+        tool-name="az"
+        label="Azure CLI Path"
+        docs-href="https://docs.beekeeperstudio.io/user_guide/connecting/azure-entraid"
+        :value="config.azureAuthOptions.cliPath"
+        @input="val => $set(config.azureAuthOptions, 'cliPath', val)"
+      />
       <div class="form-group">
         <label for="server">
           Server
@@ -123,7 +115,7 @@ import MaskedInput from '@/components/MaskedInput.vue'
 import PasswordInput from '@/components/common/form/PasswordInput.vue'
 import CommonSsl from './CommonSsl.vue'
 import { mapState, mapGetters } from 'vuex'
-import FilePicker from '@/components/common/form/FilePicker.vue'
+import CliPathPicker from '@/components/common/form/CliPathPicker.vue'
 
 export default {
   props: {
@@ -139,7 +131,7 @@ export default {
     MaskedInput,
     PasswordInput,
     CommonSsl,
-    FilePicker
+    CliPathPicker
   },
   data() {
     return {
@@ -147,7 +139,6 @@ export default {
       accountName: null,
       signingOut: false,
       errorSigningOut: null,
-      cliError: false
     };
   },
   computed: {
@@ -168,9 +159,6 @@ export default {
     hasAccessTokenCache() {
       return Boolean(this.accountName);
     },
-    cliFound() {
-      return !!this.config?.azureAuthOptions?.cliPath && !this.cliError;
-    }
   },
   watch: {
     async authType() {
@@ -203,26 +191,6 @@ export default {
         this.signingOut = false;
       }
     },
-    async tryFindAzCli() {
-      if (!this.config.azureAuthOptions.cliPath) {
-        try {
-          const result = await this.$util.send('backup/whichDumpTool', {toolName: "az"});
-          if (result) {
-            this.$set(this.config.azureAuthOptions, 'cliPath', result);
-            this.cliError = false;
-          } else {
-            this.$set(this.config.azureAuthOptions, 'cliPath', null);
-            this.cliError = true;
-          }
-        } catch (e) {
-          this.$set(this.config.azureAuthOptions, 'cliPath', null);
-          this.cliError = true;
-        }
-      }
-    },
-  },
-  mounted() {
-    this.tryFindAzCli();
   },
 };
 </script>
