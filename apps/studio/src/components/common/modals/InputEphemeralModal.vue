@@ -7,32 +7,26 @@
       @closed="closed"
     >
       <template #title>
-        <div class="dialog-c-title has-icon">
-          <i class="material-icons">vpn_key</i>
-          Input {{ title }}
-        </div>
+        <i class="material-icons">vpn_key</i>
+        Input {{ title }}
       </template>
-      <form v-kbd-trap="true" @submit.prevent="submit">
-        <div class="dialog-content">
-          <div class="description">
-            <p>{{ description }}</p>
+      <form @submit.prevent="submit">
+        <p>{{ description }}</p>
+
+        <error-alert v-if="errorMessage" :error="errorMessage" />
+
+        <slot name="input" :description="description" :title="title">
+          <div class="form-group">
+            <label for="input-ephemeral">{{ title }}</label>
+            <input
+              id="input-ephemeral"
+              ref="valueInput"
+              class="form-control"
+              v-model.trim="value"
+              :placeholder="`Input a ${title}`"
+            >
           </div>
-
-          <error-alert v-if="errorMessage" :error="errorMessage" />
-
-          <slot name="input" :description="description" :title="title">
-            <div class="form-group">
-              <label for="input-ephemeral">{{ title }}</label>
-              <input
-                id="input-ephemeral"
-                ref="valueInput"
-                class="form-control"
-                v-model.trim="value"
-                :placeholder="`Input a ${title}`"
-              >
-            </div>
-          </slot>
-        </div>
+        </slot>
       </form>
       <template #footer>
         <button
@@ -115,3 +109,10 @@ export default Vue.extend({
   },
 });
 </script>
+
+<style scoped>
+p {
+  margin-top: 0;
+  margin-bottom: 0.25rem;
+}
+</style>
