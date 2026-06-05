@@ -1,0 +1,61 @@
+name: Publish to NPM
+
+on:
+  push:
+    tags:
+      - 'v*' # Run on any tag that starts with v (e.g., v1.0.0)
+
+
+permissions:
+  id-token: write  # Required for OIDC
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      # Ensure npm 11.5.1 or later is installed
+      - name: Update npm
+        run: npm install -g npm@latest
+
+      - name: Get tag version
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Update package version
+        run: |
+          yarn version --new-version $VERSION --no-git-tag-version
+
+      - name: Build package
+        run: yarn build
+
+      - name: Check if beta version
+        id: check_beta
+        run: |
+          if [[ "$VERSION" == *"beta"* ]]; then
+            echo "IS_BETA=true" >> $GITHUB_ENV
+            echo "Publishing as beta version"
+          else
+            echo "IS_BETA=false" >> $GITHUB_ENV
+            echo "Publishing as stable version"
+          fi
+
+      - name: Publish package (beta)
+        if: env.IS_BETA == 'true'
+        run: npm publish --access public --tag beta
+
+      - name: Publish package (stable)
+        if: env.IS_BETA == 'false'
+        run: npm publish --access public
