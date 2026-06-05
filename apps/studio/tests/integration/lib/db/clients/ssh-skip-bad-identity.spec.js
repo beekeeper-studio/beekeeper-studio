@@ -28,6 +28,21 @@ import { DockerComposeEnvironment, Wait } from 'testcontainers'
 import { dbtimeout } from '../../../../lib/db'
 import { TestOrmConnection } from '@tests/lib/TestOrmConnection'
 
+// connection-provider resolves ~/.ssh/config via os.homedir(). In this electron
+// test runtime os.homedir() ignores a runtime $HOME override, so point it at a
+// throwaway fake home instead of touching the real ~/.ssh/config.
+// var (not let): testcontainers calls os.homedir() at import time, before this
+// initializes — var is hoisted as undefined so the mock falls back to the real
+// homedir until the test assigns the fake one.
+var mockHomedir
+jest.mock('os', () => {
+  const actual = jest.requireActual('os')
+  return {
+    ...actual,
+    homedir: () => mockHomedir || actual.homedir(),
+  }
+})
+
 let mockSshAuthSock
 jest.mock('@/common/platform_info', () => {
   const actual = jest.requireActual('@/common/platform_info')
@@ -53,7 +68,6 @@ describe('SSH Tunnel Tests (skip bad ssh-config IdentityFile, #4366)', () => {
   let connection
   let workDir
   let agentPid
-  let originalHome
 
   beforeAll(async () => {
     await TestOrmConnection.connect()
@@ -78,10 +92,10 @@ describe('SSH Tunnel Tests (skip bad ssh-config IdentityFile, #4366)', () => {
       stdio: 'pipe',
     })
 
-    // Build a fake HOME whose ~/.ssh/config lists a BAD IdentityFile first
-    // (a path that does not exist) followed by the GOOD key. IdentitiesOnly yes
-    // mirrors the strict OpenSSH case where only the listed identities are
-    // offered. OpenSSH skips the missing first entry and uses the second.
+    // Fake home whose ~/.ssh/config lists a BAD IdentityFile first (a path that
+    // does not exist) followed by the GOOD key. IdentitiesOnly yes mirrors the
+    // strict OpenSSH case where only the listed identities are offered. OpenSSH
+    // skips the missing first entry and authenticates with the second.
     const badKeyPath = path.join(workDir, 'does-not-exist')
     const fakeHome = path.join(workDir, 'home')
     fs.mkdirSync(path.join(fakeHome, '.ssh'), { recursive: true })
@@ -95,8 +109,7 @@ describe('SSH Tunnel Tests (skip bad ssh-config IdentityFile, #4366)', () => {
         '',
       ].join('\n'),
     )
-    originalHome = process.env.HOME
-    process.env.HOME = fakeHome
+    mockHomedir = fakeHome
 
     environment = await new DockerComposeEnvironment('tests/docker', 'ssh.yml')
       .withWaitStrategy('test_ssh_postgres', Wait.forLogMessage('database system is ready to accept connections', 2))
@@ -137,22 +150,19 @@ describe('SSH Tunnel Tests (skip bad ssh-config IdentityFile, #4366)', () => {
   })
 
   afterAll(async () => {
+    // Guard each step: when the connection fails (the bug under test)
+    // disconnect() throws, and the agent/containers still need tearing down.
     if (database) {
-      await database.disconnect()
+      try { await database.disconnect() } catch (_e) { /* ignore */ }
     }
     if (environment) {
-      await environment.stop()
-    }
-    if (originalHome === undefined) {
-      delete process.env.HOME
-    } else {
-      process.env.HOME = originalHome
+      try { await environment.stop() } catch (_e) { /* ignore */ }
     }
     if (agentPid) {
       try { process.kill(agentPid) } catch (_e) { /* ignore */ }
     }
     if (workDir && fs.existsSync(workDir)) {
-      fs.rmSync(workDir, { recursive: true, force: true })
+      try { fs.rmSync(workDir, { recursive: true, force: true }) } catch (_e) { /* ignore */ }
     }
     await TestOrmConnection.disconnect()
   })
