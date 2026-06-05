@@ -2,12 +2,13 @@ import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FieldDescr
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import type { SshMode } from '@/common/interfaces/IConnection';
 
-export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'scylladb', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'greengage', 'mongodb', 'sqlanywhere', 'surrealdb', 'redis', 'trino', 'bedrock', 'dynamodb'] as const
+export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'scylladb', 'oracle', 'bigquery', 'firebird', 'tidb', 'starrocks', 'libsql', 'clickhouse', 'duckdb', 'greengage', 'mongodb', 'sqlanywhere', 'surrealdb', 'redis', 'trino', 'bedrock', 'dynamodb'] as const
 export type ConnectionType = typeof DatabaseTypes[number]
 
 export const ConnectionTypes = [
   { name: 'MySQL', value: 'mysql' },
   { name: 'TiDB', value: 'tidb' },
+  { name: 'StarRocks', value: 'starrocks' },
   { name: 'MariaDB', value: 'mariadb' },
   { name: 'Postgres', value: 'postgresql' },
   { name: 'SQLite', value: 'sqlite' },

@@ -80,6 +80,7 @@ const KnexTypes: any = {
   'mysql': 'mysql2',
   "mariadb": "mysql2",
   "tidb": "mysql2",
+  "starrocks": "mysql2",
   "sqlite": "sqlite3",
   "sqlserver": "mssql",
   "cockroachdb": "pg",

@@ -32,6 +32,7 @@ export function dialectFor(s: string): Dialect | null {
       return 'greengage'
     case 'mariadb':
     case 'tidb':
+    case 'starrocks':
       return 'mysql'
     case 'libsql':
       return 'sqlite'
