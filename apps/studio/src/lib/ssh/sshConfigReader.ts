@@ -16,7 +16,11 @@ export interface SshConfigResult {
   user?: string;
 }
 
-export function readSshConfig(host: string, configPath?: string): SshConfigResult {
+export function readSshConfig(
+  host: string,
+  configPath?: string,
+  user?: string
+): SshConfigResult {
   const endResult: SshConfigResult = { host };
   configPath = configPath ?? path.join(os.homedir(), ".ssh", "config");
   if (!fs.existsSync(configPath)) {
@@ -26,7 +30,13 @@ export function readSshConfig(host: string, configPath?: string): SshConfigResul
   try {
     const raw = fs.readFileSync(configPath, "utf-8");
     const config = SSHConfig.parse(raw);
-    const result = config.compute(host, { ignoreCase: true });
+    // Pass the connection username so `Match user`/`Match localuser` rules are
+    // evaluated against it. Without it, compute() falls back to the OS user and
+    // those Match blocks never fire.
+    const result = config.compute(
+      user ? { Host: host, User: user } : host,
+      { ignoreCase: true }
+    );
 
     if (result.hostname) {
       endResult.host = result.hostname as string;

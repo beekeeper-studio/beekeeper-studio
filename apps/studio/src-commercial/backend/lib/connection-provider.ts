@@ -31,7 +31,11 @@ export default {
     // The chosen authentication mode is never overridden — only Automatic
     // mode pulls credentials from ~/.ssh/config (IdentityFile / IdentitiesOnly).
     if (ssh && config.sshHost) {
-      const fileConfig = readSshConfig(config.sshHost.trim())
+      const fileConfig = readSshConfig(
+        config.sshHost.trim(),
+        undefined,
+        config.sshUsername ? config.sshUsername.trim() : undefined
+      )
       if (fileConfig.host) {
         ssh.host = fileConfig.host
       }
@@ -51,7 +55,11 @@ export default {
     }
 
     if (ssh && config.sshBastionHost) {
-      const fileConfig = readSshConfig(config.sshBastionHost.trim())
+      const fileConfig = readSshConfig(
+        config.sshBastionHost.trim(),
+        undefined,
+        config.sshBastionUsername ? config.sshBastionUsername.trim() : undefined
+      )
       if (fileConfig.host) {
         ssh.bastionHost = fileConfig.host
       }
