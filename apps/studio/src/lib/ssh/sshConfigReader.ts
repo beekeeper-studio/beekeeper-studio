@@ -16,6 +16,32 @@ export interface SshConfigResult {
   user?: string;
 }
 
+// Mirror OpenSSH: only honour a config that is owned by the current user (or
+// root) and not writable by group or others. `Match exec` runs arbitrary
+// commands via compute(), so an untrusted config must be ignored entirely.
+// POSIX-only — NTFS ACLs don't map to uid/mode bits, so on Windows (no
+// process.getuid) the file is trusted, matching ssh's own platform behaviour.
+function isConfigTrusted(configPath: string): boolean {
+  const getuid = typeof process.getuid === "function" ? process.getuid : null;
+  if (!getuid) return true;
+  let stats: fs.Stats;
+  try {
+    stats = fs.statSync(configPath);
+  } catch (err) {
+    log.warn(`Cannot stat ${configPath}, ignoring it: ${err.message}`);
+    return false;
+  }
+  if (stats.uid !== 0 && stats.uid !== getuid()) {
+    log.warn(`Ignoring ${configPath}: not owned by the current user`);
+    return false;
+  }
+  if (stats.mode & 0o022) {
+    log.warn(`Ignoring ${configPath}: group/world-writable permissions`);
+    return false;
+  }
+  return true;
+}
+
 export function readSshConfig(
   host: string,
   configPath?: string,
@@ -24,6 +50,9 @@ export function readSshConfig(
   const endResult: SshConfigResult = { host };
   configPath = configPath ?? path.join(os.homedir(), ".ssh", "config");
   if (!fs.existsSync(configPath)) {
+    return endResult;
+  }
+  if (!isConfigTrusted(configPath)) {
     return endResult;
   }
 

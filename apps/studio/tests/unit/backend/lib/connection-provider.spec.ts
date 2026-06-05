@@ -56,7 +56,10 @@ describe("connection-provider SSH config merging", () => {
   });
 
   function writeSshConfig(content: string) {
-    fs.writeFileSync(path.join(tmpHome.name, ".ssh", "config"), content, "utf-8");
+    const configPath = path.join(tmpHome.name, ".ssh", "config");
+    fs.writeFileSync(configPath, content, "utf-8");
+    // Owner-only so the ownership guard trusts it regardless of the runner umask.
+    fs.chmodSync(configPath, 0o600);
   }
 
   it("resolves alias hostname/port/user for keyfile mode", () => {
