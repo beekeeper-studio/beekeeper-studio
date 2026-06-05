@@ -10,7 +10,6 @@ import { buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQ
 import _ from "lodash";
 import { TableKey } from "@/shared/lib/dialects/models";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
-import { identify } from "sql-query-identifier";
 import { createCancelablePromise } from "@/common/utils";
 import { errors } from "@/lib/errors";
 import { SnowflakeDialect } from "@beekeeperstudio/knex-snowflake-dialect"
@@ -257,8 +256,9 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
           name: row.name,
           schema: row.schema_name
         } as TableOrView));
-    } catch {
+    } catch (e) {
       // I believe this might throw if you don't have enterprise edition
+      log.warn('Could not list mat views: ', e);
       return [];
     }
   }
@@ -452,9 +452,8 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
 
     return {
       execute: async(): Promise<NgQueryResult[]> => {
-        // TODO (@day): use the snowflake dialect
         log.info('RUNNING: ', queryText);
-        const commands = identify(queryText, { strict: false, dialect: undefined });
+        const commands = this.identifyCommands(queryText);
         if (await this.checkAllowReadOnly() && this.violatesReadOnly(commands)) {
           throw new Error(errorMessages.readOnly);
         }
@@ -523,7 +522,7 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
   async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
     const data = await this.driverExecuteMultiple(queryText, options);
 
-    const commands = identify(queryText, { strict: false });
+    const commands = this.identifyCommands(queryText);
 
     return data.map((r, idx) => {
       const command = commands[idx];
