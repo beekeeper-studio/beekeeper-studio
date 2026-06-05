@@ -1789,14 +1789,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     return data.rows[0].schema;
   }
 
-  private identifyCommands(queryText: string) {
-    try {
-      return identify(queryText);
-    } catch (err) {
-      return [];
-    }
-  }
-
   parseQueryResultColumns(qr: QueryResult): BksField[] {
     return qr.columns.map((column) => {
       let bksType: BksFieldType = 'UNKNOWN';

@@ -11,6 +11,7 @@ import { ClickhouseKnexClient } from "@shared/lib/knex-clickhouse";
 import Client_Firebird from '@shared/lib/knex-firebird'
 import Client_Oracledb from '@shared/lib/knex-oracledb'
 import { SnowflakeDialect } from '@beekeeperstudio/knex-snowflake-dialect'
+import { safelyIdentify } from '@/lib/db/sql_tools'
 
 interface GeneratorConnection {
   dbConfig: any
@@ -84,7 +85,7 @@ export class SqlGenerator {
     // HACK: firebird knex includes the database path in the query which breaks
     // the sql syntax
     if (this.dialect === 'firebird') {
-      const queries = identify(sql, { strict: false, dialect: "generic" })
+      const { queries } = safelyIdentify(sql, { dialect: "generic" })
       sql = queries.reduce((prev, curr) => prev + curr.text.replace(`${this.connection.dbName}.`, ''), '')
     }
 

@@ -126,15 +126,6 @@ const FIELD_TYPE_QUERY = (
   END
 `;
 
-function identifyCommands(queryText: string) {
-  try {
-    return identify(queryText, { strict: false, dialect: "generic" });
-  } catch (err) {
-    log.error(err);
-    return [];
-  }
-}
-
 function buildFilterString(filters: TableFilter[], columns = []) {
   let filterString = "";
   let filterParams = [];
@@ -1181,7 +1172,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
       tabId?: number;
     } = {}
   ): Promise<FirebirdResult | FirebirdResult[]> {
-    const queries = identifyCommands(queryText);
+    const queries = this.identifyCommands(queryText);
     const params = options.params ?? [];
 
     const results: FirebirdResult[] = [];

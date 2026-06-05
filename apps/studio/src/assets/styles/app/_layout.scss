@@ -815,6 +815,18 @@ input[type=file] {
 .alert-success {
   color: color.adjust($brand-success, $lightness: 5%);
 }
+.alert-small {
+  align-items: center;
+  padding: 0.4rem 0.6rem;
+  margin: 0.25rem 0;
+  line-height: 1.1rem;
+  > i {
+    margin-right: 0.5rem;
+  }
+  .alert-body {
+    align-items: center;
+  }
+}
 
 // Dropdown
 // --------------------------
