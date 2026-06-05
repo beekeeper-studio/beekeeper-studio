@@ -5,9 +5,15 @@ import tmp from "tmp";
 import { readSshConfig } from "@/lib/ssh/sshConfigReader";
 
 describe("readSshConfig", () => {
+  // ssh-config ownership/permission checks are POSIX-specific (uid + mode bits).
+  const itPosix = typeof process.getuid === "function" ? it : it.skip;
+
   function writeConfig(content: string): string {
     const tmpFile = tmp.fileSync();
     fs.writeFileSync(tmpFile.name, content, "utf-8");
+    // Keep the fixture trusted (owner-only) so the ownership guard doesn't
+    // reject it regardless of the test runner's umask.
+    fs.chmodSync(tmpFile.name, 0o600);
     return tmpFile.name;
   }
 
@@ -141,5 +147,29 @@ Match host myserver
 
     const result = readSshConfig("myserver", configPath);
     expect(result.identityFile).toBe("/keys/match_host_key");
+  });
+
+  // `Match exec` runs an arbitrary command via ssh-config's compute(). Mirror
+  // OpenSSH: only honour the config if it's owned by the user and not group/
+  // world-writable, so an untrusted config can't trigger command execution
+  // (or inject any other directive).
+  itPosix("ignores the config when it is group/world-writable", () => {
+    const configPath = writeConfig(`
+Host myserver
+  IdentityFile /keys/should_be_ignored`);
+    fs.chmodSync(configPath, 0o666);
+
+    const result = readSshConfig("myserver", configPath);
+    expect(result).toEqual({ host: "myserver" });
+  });
+
+  itPosix("reads the config when owner-only and not group/world-writable", () => {
+    const configPath = writeConfig(`
+Host myserver
+  IdentityFile /keys/ok`);
+    fs.chmodSync(configPath, 0o600);
+
+    const result = readSshConfig("myserver", configPath);
+    expect(result.identityFile).toBe("/keys/ok");
   });
 });
