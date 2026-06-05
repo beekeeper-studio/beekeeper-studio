@@ -228,6 +228,27 @@ Host alias
     expect(result.ssh.identityFiles).toEqual(["/keys/strict"]);
   });
 
+  it("agent (Automatic) mode applies Match user IdentityFile using the connection username", () => {
+    writeSshConfig(`
+Host alias
+  HostName real.example.com
+Match user deploybot123
+  IdentityFile /keys/match_user_key
+`);
+    const result = connectionProvider.convertConfig(
+      makeConfig({
+        sshHost: "alias",
+        sshMode: "agent",
+        sshUsername: "deploybot123",
+      }),
+      "osuser",
+      {} as any
+    );
+    expect(result.ssh.host).toBe("real.example.com");
+    expect(result.ssh.identityFiles).toEqual(["/keys/match_user_key"]);
+    expect(result.ssh.privateKey).toBe("/keys/match_user_key");
+  });
+
   it("agent (Automatic) mode without IdentityFile leaves identitiesOnly false and privateKey null", () => {
     writeSshConfig(`
 Host alias

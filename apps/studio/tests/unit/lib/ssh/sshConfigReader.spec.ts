@@ -106,4 +106,40 @@ Host myserver
     const result = readSshConfig("myserver", configPath);
     expect(result.identitiesOnly).toBeUndefined();
   });
+
+  // Match rules are evaluated by ssh-config's compute(), but `Match user` /
+  // `Match localuser` compare against the user in the compute context. When no
+  // username is supplied that defaults to the OS user, so user-based Match
+  // blocks never fire. The connection username must be passed through.
+  it("applies Match user rules using the supplied ssh username", () => {
+    const configPath = writeConfig(`
+Host myserver
+  HostName real.example.com
+Match user deploybot123
+  IdentityFile /keys/match_user_key`);
+
+    const result = readSshConfig("myserver", configPath, "deploybot123");
+    expect(result.identityFile).toBe("/keys/match_user_key");
+    expect(result.identityFiles).toEqual(["/keys/match_user_key"]);
+  });
+
+  it("does not apply Match user rules for a different username", () => {
+    const configPath = writeConfig(`
+Host myserver
+  HostName real.example.com
+Match user deploybot123
+  IdentityFile /keys/match_user_key`);
+
+    const result = readSshConfig("myserver", configPath, "someone-else");
+    expect(result.identityFile).toBeUndefined();
+  });
+
+  it("still applies Match host rules without a username", () => {
+    const configPath = writeConfig(`
+Match host myserver
+  IdentityFile /keys/match_host_key`);
+
+    const result = readSshConfig("myserver", configPath);
+    expect(result.identityFile).toBe("/keys/match_host_key");
+  });
 });
