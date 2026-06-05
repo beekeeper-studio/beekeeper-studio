@@ -200,7 +200,7 @@
     "cross-env": "^7.0.3",
     "dts-gen": "0.7.4",
     "electron": "39.8.5",
-    "electron-builder": "26.7.0",
+    "electron-builder": "26.11.1",
     "esbuild": "^0.25.12",
     "esbuild-node-externals": "^1.13.1",
     "eslint": "^8.57.1",

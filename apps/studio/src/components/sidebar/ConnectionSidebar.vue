@@ -168,12 +168,16 @@
               <sidebar-folder
                 v-for="{ folder, connections, subfolders } in foldersWithConnections"
                 :key="`${folder.id}-${connections.length}`"
-                :title="`${folder.name} (${connections.length})`"
+                :name="folder.name"
+                :children-count="connections.length"
+                :rename="renamingFolderId === folder.id"
                 placeholder="No Items"
                 :expanded-initially="getFolderExpanded(folder.id)"
                 @toggle="onFolderToggle(folder.id, $event)"
-                @contextmenu.native.stop.prevent="showFolderContextMenu($event, folder)"
+                @contextmenu.native.prevent="showFolderContextMenu($event, folder)"
                 @header-drop="onConnectionFolderHeaderDrop(folder)"
+                @rename-submit="submitFolderRename(folder, $event)"
+                @rename-cancel="renamingFolderId = null"
               >
                 <Draggable
                   :list="connections"
@@ -201,12 +205,16 @@
                 <sidebar-folder
                   v-for="{ folder: subfolder, connections: subConnections } in subfolders"
                   :key="`${subfolder.id}-${subConnections.length}`"
-                  :title="`${subfolder.name} (${subConnections.length})`"
+                  :name="folder.name"
+                  :children-count="connections.length"
+                  :rename="renamingFolderId === subfolder.id"
                   placeholder="No Items"
                   :expanded-initially="getFolderExpanded(subfolder.id)"
                   @toggle="onFolderToggle(subfolder.id, $event)"
-                  @contextmenu.native.stop.prevent="showFolderContextMenu($event, subfolder)"
+                  @contextmenu.native.prevent="showFolderContextMenu($event, subfolder)"
                   @header-drop="onConnectionFolderHeaderDrop(subfolder)"
+                  @rename-submit="submitFolderRename(subfolder, $event)"
+                  @rename-cancel="renamingFolderId = null"
                 >
                   <Draggable
                     :list="subConnections"
@@ -389,7 +397,8 @@ export default {
     folderModalError: null,
     folderModalSubmitting: false,
     folderExpandedState: {},
-    draggingConnection: null
+    draggingConnection: null,
+    renamingFolderId: null,
   }),
   watch: {
     async sort(newSort) {
@@ -562,6 +571,11 @@ export default {
       this.$modal.show('connection-folder-modal')
     },
     showFolderContextMenu(event, folder) {
+      if (event.target.tagName === 'INPUT') {
+        return;
+      }
+      event.stopPropagation();
+
       const options = []
       if (this.isCloud && !folder.parentId) {
         options.push({ name: 'New Subfolder', handler: ({ item }) => this.createSubfolder(item) })
@@ -597,10 +611,20 @@ export default {
       })
     },
     renameFolder(folder) {
-      this.folderModalName = folder.name
-      this.folderModalItem = folder
-      this.folderModalError = null
-      this.$modal.show('connection-folder-modal')
+      this.renamingFolderId = folder.id
+    },
+    async submitFolderRename(folder, name) {
+      if (!name || name === folder.name) {
+        this.renamingFolderId = null
+        return
+      }
+      try {
+        await this.$store.dispatch('data/connectionFolders/save', { ...folder, name })
+      } catch (ex) {
+        this.$noty.error(`Rename error: ${ex.userMessage ?? ex.message}`)
+      } finally {
+        this.renamingFolderId = null
+      }
     },
     async moveFolderToParent(folder, newParent) {
       await this.$store.dispatch('data/connectionFolders/save', { ...folder, parentId: newParent.id })
