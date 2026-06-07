@@ -11,7 +11,6 @@
     <div
       v-else
       class="interface-wrap row"
-      ref="splitContainer"
     >
       <global-sidebar
         v-if="!minimalMode"
@@ -20,24 +19,26 @@
         ref="globalSidebar"
       />
 
-      <sidebar
-        ref="sidebar"
-        class="primary-sidebar"
-      >
-        <core-sidebar
-          @databaseSelected="databaseSelected"
-        />
-      </sidebar>
+      <div class="split-container" ref="splitContainer">
+        <sidebar
+          ref="primarySidebar"
+          class="primary-sidebar"
+        >
+          <core-sidebar
+            @databaseSelected="databaseSelected"
+          />
+        </sidebar>
 
-      <div
-        ref="content"
-        class="page-content flex-col main-content"
-        id="page-content"
-      >
-        <core-tabs />
+        <div
+          ref="content"
+          class="page-content flex-col main-content"
+          id="page-content"
+        >
+          <core-tabs />
+        </div>
+
+        <secondary-sidebar ref="secondarySidebar" @close="handleToggleOpenSecondarySidebar(false)" />
       </div>
-
-      <secondary-sidebar ref="secondarySidebar" @close="handleToggleOpenSecondarySidebar(false)" />
     </div>
     <global-status-bar
       :connection-button-width="globalPrimarySidebarWidth"
@@ -122,7 +123,7 @@
       },
       splitElements() {
         return [
-          this.$refs.sidebar.$el,
+          this.$refs.primarySidebar.$el,
           this.$refs.content,
           this.$refs.secondarySidebar.$el
         ]
@@ -365,3 +366,10 @@
   })
 
 </script>
+
+<style scoped>
+.split-container {
+  display: flex;
+  width: 100%;
+}
+</style>
