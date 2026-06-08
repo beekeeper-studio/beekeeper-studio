@@ -34,7 +34,7 @@ function findDefaultIdentityFile(): string | undefined {
 }
 
 function buildAuthHandler(opts: { useAgent: boolean; hasPrivateKey: boolean; hasPassword: boolean }): AuthenticationType[] {
-  const methods: AuthenticationType[] = [];
+  const methods: AuthenticationType[] = ['none'];// always add none as a fallback for things like tailscale, #4358
   if (opts.useAgent) methods.push('agent');
   if (opts.hasPrivateKey) methods.push('publickey');
   if (opts.hasPassword) methods.push('password');
