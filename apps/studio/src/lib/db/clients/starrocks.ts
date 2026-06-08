@@ -1,19 +1,24 @@
 import mysql from "mysql2";
 import { MysqlClient } from "./mysql";
-import { FilterOptions, PrimaryKeyColumn, Routine, TableChanges } from "../models";
+import { FilterOptions, PrimaryKeyColumn, Routine } from "../models";
 
-// StarRocks speaks the MySQL protocol and reports VERSION() as 8.0.33, so it
-// reuses MysqlClient. Only the spots where StarRocks' information_schema
-// diverges from MySQL are overridden here.
 export class StarRocksClient extends MysqlClient {
-  constructor(server, database) {
-    super(server, database);
-    this.dialect = 'mysql';
+  // StarRocks forbids reading a table that was modified earlier in the same
+  // explicit transaction, so read updated rows in a separate statement.
+  protected readUpdatedRowsBeforeCommit = false;
+
+  // StarRocks' transaction support is limited: it rejects modifying a table and
+  // then reading or further modifying it within the same explicit transaction
+  // (and several DML patterns fail inside START TRANSACTION outright). Run
+  // "transactional" work in autocommit, where each statement commits on its own.
+  async runWithTransaction<T>(
+    func: (c: mysql.PoolConnection) => Promise<T>
+  ): Promise<T> {
+    return this.runWithConnection(func);
   }
 
   // StarRocks (PRIMARY KEY model) does not expose primary keys via SHOW KEYS /
-  // SHOW INDEX the way MySQL does — both return nothing. The primary-key columns
-  // are reported through information_schema.columns.column_key = 'PRI' instead.
+  // SHOW INDEX the way MySQL does — both return nothing.
   async getPrimaryKeys(
     table: string,
     schema?: string
@@ -33,30 +38,6 @@ export class StarRocksClient extends MysqlClient {
       columnName: r.column_name,
       position: r.ordinal_position,
     }));
-  }
-
-  // StarRocks forbids reading a table that was modified earlier in the same
-  // explicit transaction ("SELECT cannot read table ... modified earlier in the
-  // same transaction"). updateValues() reads rows back after updating them, so
-  // apply changes with autocommit instead of inside a single transaction.
-  async executeApplyChanges(changes: TableChanges, tabId?: number): Promise<any[]> {
-    let results = [];
-
-    const run = async (connection: mysql.PoolConnection) => {
-      if (changes.inserts) {
-        await this.insertRows(changes.inserts, connection);
-      }
-      if (changes.updates) {
-        results = await this.updateValues(changes.updates, connection);
-      }
-      if (changes.deletes) {
-        await this.deleteRows(changes.deletes, connection);
-      }
-    };
-
-    await this.runWithConnection(run, tabId);
-
-    return results;
   }
 
   // StarRocks' information_schema.routines lacks data_type/character_maximum_length

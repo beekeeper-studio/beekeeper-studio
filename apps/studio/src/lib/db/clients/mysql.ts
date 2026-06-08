@@ -312,6 +312,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
 
   clientId: string
 
+  /** If this is false, `executeApplyChanges` will run SELECT queries after commiting / outside of the transaction. */
+  protected readUpdatedRowsBeforeCommit = true;
+
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, context, server, database);
     this.clientId = uuidv4();
@@ -928,7 +931,11 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       }
 
       if (changes.updates) {
-        results = await this.updateValues(changes.updates, connection);
+        await this.updateValues(changes.updates, connection);
+
+        if (this.readUpdatedRowsBeforeCommit) {
+          results = await this.readUpdatedRows(changes.updates, connection);
+        }
       }
 
       if (changes.deletes) {
@@ -987,7 +994,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       };
     });
 
-    const results = [];
     // TODO: this should probably return the updated values
     for (let index = 0; index < commands.length; index++) {
       const blob = commands[index];
@@ -996,6 +1002,20 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
         connection,
       });
     }
+  }
+
+  async deleteRows(deletes: TableDelete[], connection: mysql.PoolConnection) {
+    for (const command of buildDeleteQueries(this.knex, deletes)) {
+      await this.driverExecuteSingle(command, { connection });
+    }
+    return true;
+  }
+
+  private async readUpdatedRows(
+    updates: TableUpdate[],
+    connection: mysql.PoolConnection
+  ): Promise<unknown[]> {
+    const results = [];
 
     const returnQueries = updates.map((update) => {
       const params = [];
@@ -1025,13 +1045,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     }
 
     return results;
-  }
-
-  async deleteRows(deletes: TableDelete[], connection: mysql.PoolConnection) {
-    for (const command of buildDeleteQueries(this.knex, deletes)) {
-      await this.driverExecuteSingle(command, { connection });
-    }
-    return true;
   }
 
   async truncateElementSql(elementName: string, typeOfElement: DatabaseElement) {
@@ -1638,3 +1651,4 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
 export const testOnly = {
   parseFields,
 };
+
