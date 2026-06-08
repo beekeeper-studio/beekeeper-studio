@@ -1,20 +1,18 @@
-import mysql from "mysql2";
-import { MysqlClient } from "./mysql";
-import { FilterOptions, PrimaryKeyColumn, Routine } from "../models";
+import { ExecuteApplyChangesOptions, MysqlClient } from "./mysql";
+import { FilterOptions, PrimaryKeyColumn, Routine, TableChanges } from "../models";
 
 export class StarRocksClient extends MysqlClient {
-  // StarRocks forbids reading a table that was modified earlier in the same
-  // explicit transaction, so read updated rows in a separate statement.
-  protected readUpdatedRowsBeforeCommit = false;
-
-  // StarRocks' transaction support is limited: it rejects modifying a table and
-  // then reading or further modifying it within the same explicit transaction
-  // (and several DML patterns fail inside START TRANSACTION outright). Run
-  // "transactional" work in autocommit, where each statement commits on its own.
-  async runWithTransaction<T>(
-    func: (c: mysql.PoolConnection) => Promise<T>
-  ): Promise<T> {
-    return this.runWithConnection(func);
+  // StarRocks' SQL transactions are too limited to wrap applyChanges in one transaction
+  // Ref: https://docs.starrocks.io/docs/loading/SQL_transaction/#usage-notes
+  async executeApplyChanges(
+    changes: TableChanges,
+    tabId?: number,
+    options?: ExecuteApplyChangesOptions
+  ): Promise<any[]> {
+    return super.executeApplyChanges(changes, tabId, {
+      ...options,
+      autocommit: true,
+    });
   }
 
   // StarRocks (PRIMARY KEY model) does not expose primary keys via SHOW KEYS /

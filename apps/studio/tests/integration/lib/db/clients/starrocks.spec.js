@@ -106,4 +106,93 @@ describe("StarRocks Tests", () => {
       await util.paramTest(['?']);
     })
   })
+
+  // StarRocks' SQL transactions are too limited to wrap applyChanges in one transaction
+  // Ref: https://docs.starrocks.io/docs/loading/SQL_transaction/#usage-notes
+  describe("executeApplyChanges", () => {
+    const schema = 'test'
+
+    beforeEach(async () => {
+      await util.knex.raw('drop table if exists sr_apply')
+      await util.knex.raw(
+        'create table sr_apply (id int not null, name varchar(50)) primary key(id)'
+      )
+    })
+
+    afterAll(async () => {
+      await util.knex.raw('drop table if exists sr_apply')
+    })
+
+    it("inserts multiple rows into the same table", async () => {
+      await util.connection.applyChanges({
+        inserts: [
+          { table: 'sr_apply', schema, data: [{ id: 1, name: 'a' }] },
+          { table: 'sr_apply', schema, data: [{ id: 2, name: 'b' }] },
+        ],
+      })
+
+      const rows = await util.knex('sr_apply').select().orderBy('id')
+      expect(rows).toEqual([
+        { id: 1, name: 'a' },
+        { id: 2, name: 'b' },
+      ])
+    })
+
+    it("applies inserts, updates and deletes together", async () => {
+      await util.connection.applyChanges({
+        inserts: [
+          { table: 'sr_apply', schema, data: [{ id: 1, name: 'a' }] },
+          { table: 'sr_apply', schema, data: [{ id: 2, name: 'b' }] },
+        ],
+      });
+      await util.connection.applyChanges({
+        inserts: [{ table: 'sr_apply', schema, data: [{ id: 3, name: 'c' }] }],
+        updates: [{
+          table: 'sr_apply',
+          schema,
+          primaryKeys: [{ column: 'id', value: 1 }],
+          column: 'name',
+          value: 'updated',
+        }],
+        deletes: [{
+          table: 'sr_apply',
+          schema,
+          primaryKeys: [{ column: 'id', value: 2 }],
+        }],
+      })
+
+      const rows = await util.knex('sr_apply').select().orderBy('id')
+      expect(rows).toEqual([
+        { id: 1, name: 'updated' },
+        { id: 3, name: 'c' },
+      ])
+    })
+
+    it("returns the updated rows", async () => {
+      await util.connection.applyChanges({
+        inserts: [
+          { table: 'sr_apply', schema, data: [{ id: 1, name: 'a' }] },
+        ],
+      });
+      const results = await util.connection.applyChanges({
+        updates: [{
+          table: 'sr_apply',
+          schema,
+          primaryKeys: [{ column: 'id', value: 1 }],
+          column: 'name',
+          value: 'updated',
+        }],
+      })
+
+      expect(results).toEqual([{ id: 1, name: 'updated' }])
+    })
+
+    it("returns an empty result when there are no updates", async () => {
+      const results = await util.connection.applyChanges({
+        inserts: [{ table: 'sr_apply', schema, data: [{ id: 1, name: 'a' }] }],
+      })
+
+      expect(results).toEqual([])
+    })
+  })
 })
