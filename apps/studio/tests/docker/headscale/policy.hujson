@@ -1,0 +1,29 @@
+{
+  // ACL policy for the tailscale SSH integration test.
+  //
+  // The "ssh" block is what makes the Tailscale SSH server on ts-node offer the
+  // passwordless "none" auth method to peers in group:ci. This mirrors a real
+  // Tailscale SSH setup, where the tailnet identity (not a key/password) is the
+  // credential. ts-node is tagged tag:node via its pre-auth key; ts-client is a
+  // plain member of the tailnet (user "test", hence group:ci).
+  //
+  // headscale's policy v2 does not support "*" in ssh rules or autogroup:self,
+  // so the rule is expressed with an explicit group/tag pair.
+  "groups": {
+    "group:ci": ["test@"]
+  },
+  "tagOwners": {
+    "tag:node": ["group:ci"]
+  },
+  "acls": [
+    { "action": "accept", "src": ["*"], "dst": ["*:*"] }
+  ],
+  "ssh": [
+    {
+      "action": "accept",
+      "src": ["group:ci"],
+      "dst": ["tag:node"],
+      "users": ["autogroup:nonroot", "root"]
+    }
+  ]
+}
