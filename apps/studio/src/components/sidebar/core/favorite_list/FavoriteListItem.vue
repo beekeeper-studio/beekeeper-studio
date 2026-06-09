@@ -5,7 +5,10 @@
   >
     <a
       class="list-item-btn"
-      :title="truncatedText"
+      v-tooltip.bottom.delay="{
+        content: truncatedText,
+        delay: { show: 500 },
+      }"
       @click.prevent="$emit('select', item)"
       @dblclick.prevent="$emit('open', item)"
       :class="{active, selected}"
@@ -44,7 +47,8 @@ export default Vue.extend({
     ...mapGetters(['isCloud']),
     ...mapState('data/queryFolders', {'folders': 'items'}),
     truncatedText() {
-      return _.truncate(this.item.excerpt, { length: 100});
+      const excerpt: string = this.item.excerpt ?? ''
+      return _.truncate(excerpt.trim().replaceAll('\n', ''), { length: 60 })
     },
     moveToOptions() {
       const rootById: Record<number, string> = {}
