@@ -186,6 +186,10 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
     const app = new Vue({
       render: h => h(App),
       store,
+      mounted() {
+        VTooltip.options.defaultBoundariesElement =
+          document.querySelector(".beekeeper-studio-wrapper") as HTMLElement;
+      },
     })
 
     Vue.prototype.$util = utility;
