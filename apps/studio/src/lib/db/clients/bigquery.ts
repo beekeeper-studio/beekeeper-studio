@@ -636,8 +636,13 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
       const parsedRow = {}
       Object.keys(row).forEach((key) => {
         let strValue = row[key]
-        if (strValue != null && (Object.prototype.hasOwnProperty.call(strValue, 'value'))) {
-          strValue = row[key].value
+        if (strValue !== null && typeof strValue === 'object') {
+          if ('value' in strValue) {
+            strValue = row[key].value
+            // This is for numerics which are returned as a 'BIG'
+          } else if ('toFixed' in strValue) {
+            strValue = row[key].toFixed()
+          }
         }
         parsedRow[key] = strValue
       })
