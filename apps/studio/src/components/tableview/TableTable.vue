@@ -1206,7 +1206,7 @@ export default Vue.extend({
           disabled: !this.editable,
         },
         {
-          label: createMenuItem(`Delete ${rowRangeLabel} selected rows`, "Delete"),
+          label: createMenuItem(`Delete ${rowRangeLabel}`, "Delete"),
           action: () => {
             this.tabulator.rowManager.element.focus()
             this.deleteTableSelection(undefined)
