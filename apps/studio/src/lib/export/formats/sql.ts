@@ -21,7 +21,7 @@ export class SqlExporter extends Export {
     "tidb": "mysql2",
     "mysql": "mysql2",
     "postgresql": "pg",
-    "sqlite": "sqlite3",
+    "sqlite": "better-sqlite3",
     "sqlserver": "mssql"
   }
   private outputOptions: OutputOptionsSql
