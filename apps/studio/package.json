@@ -198,7 +198,7 @@
     "babel-jest": "^29.7.0",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
-    "dts-gen": "0.7.4",
+    "dts-gen": "^0.10.9",
     "electron": "39.8.5",
     "electron-builder": "26.11.1",
     "esbuild": "^0.25.12",
