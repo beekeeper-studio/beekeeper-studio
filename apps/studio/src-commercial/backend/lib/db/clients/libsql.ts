@@ -1,7 +1,7 @@
 import _ from "lodash";
 import rawLog from "@bksLogger";
 import { SqliteClient, SqliteResult } from "@/lib/db/clients/sqlite";
-import Client_Libsql from "@libsql/knex-libsql";
+import Client_Libsql from "@shared/lib/knex-libsql";
 import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient";
 import Database from "libsql";
 import { LibSQLCursor, LibSQLCursorOptions } from "./libsql/LibSQLCursor";
