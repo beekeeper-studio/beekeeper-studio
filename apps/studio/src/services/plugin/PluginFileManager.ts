@@ -19,6 +19,27 @@ const log = rawLog.scope("PluginFileManager");
 
 const PLUGIN_MANIFEST_FILENAME = "manifest.json";
 
+/**
+ * A plugin id is used verbatim as a single directory-name segment under the
+ * plugins directory (see `getDirectoryOf`) and as an identity key. It is read
+ * from attacker-controlled `manifest.json`, so it must be constrained to a
+ * single safe path component: alphanumeric first character, then alphanumerics
+ * plus `.` `_` `-`. This forbids path separators and `.`/`..`, which are the
+ * only traversal-capable strings once separators are excluded.
+ */
+const PLUGIN_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/;
+
+/** Max length mirrors the npm package-name limit; ample for any real plugin. */
+const PLUGIN_ID_MAX_LENGTH = 214;
+
+export function isValidPluginId(id: unknown): id is string {
+  return (
+    typeof id === "string" &&
+    id.length <= PLUGIN_ID_MAX_LENGTH &&
+    PLUGIN_ID_PATTERN.test(id)
+  );
+}
+
 class PluginDownloadError extends Error {
   status: "UNKNOWN" | "NOT_FOUND" | "ABORTED" = "UNKNOWN";
 
@@ -257,7 +278,25 @@ export default class PluginFileManager {
       });
 
       try {
-        manifests.push(JSON.parse(manifestContent));
+        const manifest = JSON.parse(manifestContent);
+        // The id is later used as a path segment (uninstall/update) and as an
+        // identity key. Trust the directory name we found it in, not the
+        // self-declared id: reject malformed ids and any manifest whose id does
+        // not match its own directory, so a plugin cannot redirect filesystem
+        // operations at another location.
+        if (!isValidPluginId(manifest.id)) {
+          log.warn(
+            `Plugin in "${dir}" has a missing or invalid id. Skipping.`
+          );
+          continue;
+        }
+        if (manifest.id !== dir) {
+          log.warn(
+            `Plugin in "${dir}" declares mismatched id "${manifest.id}". Skipping.`
+          );
+          continue;
+        }
+        manifests.push(manifest);
       } catch (e) {
         log.error(`Failed to parse manifest for plugin "${dir}":`, e);
       }
@@ -272,11 +311,32 @@ export default class PluginFileManager {
       path.join(directory, PLUGIN_MANIFEST_FILENAME),
       { encoding: "utf-8" }
     );
-    return JSON.parse(manifestContent);
+    const manifest = JSON.parse(manifestContent);
+    // The id read from the manifest must be well-formed and match the directory
+    // it was installed into, so it can be safely reused as a path segment.
+    if (!isValidPluginId(manifest.id)) {
+      throw new Error(`Plugin "${id}" has a missing or invalid manifest id.`);
+    }
+    if (manifest.id !== id) {
+      throw new Error(
+        `Plugin manifest id "${manifest.id}" does not match expected id "${id}".`
+      );
+    }
+    return manifest;
   }
 
   getDirectoryOf(id: string) {
-    return path.join(this.options.pluginsDirectory, id);
+    const pluginsRoot = path.resolve(this.options.pluginsDirectory);
+    const resolved = path.resolve(pluginsRoot, id);
+    // Must be strictly *inside* the plugins directory. This rejects traversal
+    // (`../`), absolute ids, and the empty/`.` id (which would resolve to the
+    // plugins root itself and let `remove()` delete every installed plugin).
+    if (!resolved.startsWith(pluginsRoot + path.sep)) {
+      throw new Error(
+        `Refusing to access path outside plugins directory: ${id}`
+      );
+    }
+    return resolved;
   }
 
   private getPath(manifest: Manifest, filename: string): string {
