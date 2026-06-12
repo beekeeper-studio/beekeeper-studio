@@ -244,9 +244,15 @@ export default {
       const extension = this.selectedExportFormat.key
       let fileName;
       if (this.table) {
-        const schema = this.table.schema ? `${this.table.schema}_` : ''
+        // Table and schema names come from the database server and may contain
+        // path separators — a table can be named literally "../../foo".
+        // Replace filename-unsafe characters with underscores so the name
+        // can't make path.join() walk out of the chosen export directory.
+        // Mirrors the sanitization in CoreTabs.handlePromptQueryExport.
+        const safe = (value) => `${value}`.replace(/[/\\?%*:|"<>]/g, '_')
+        const schema = this.table.schema ? `${safe(this.table.schema)}_` : ''
         const extension = this.selectedExportFormat.key
-        fileName = `${schema}${this.table.name}_export_${formatted}.${extension}`
+        fileName = `${schema}${safe(this.table.name)}_export_${formatted}.${extension}`
       } else {
         // sanitize query name for use as filename
         let queryFileName = this.queryName.replace(/[^a-z0-9]/gi, '_').toLowerCase()

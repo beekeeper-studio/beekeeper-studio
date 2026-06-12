@@ -127,26 +127,24 @@ function makeCursor(rows: any[][]) {
 
 const skipOnWindows = process.platform === 'win32' ? it.skip : it
 
-// A connected database server fully controls table/schema metadata. ExportModal
-// builds the export filename straight from that metadata with no sanitization:
+// A connected database server fully controls table/schema metadata, and
+// ExportModal builds the export filename from that metadata:
 //
-//   const schema = this.table.schema ? `${this.table.schema}_` : ''
-//   fileName = `${schema}${this.table.name}_export_${formatted}.${extension}`
+//   fileName = `${schema}${safe(this.table.name)}_export_${formatted}.${ext}`
 //   return window.main.join(this.fileDirectory, this.fileName)  // path.join
 //
-// (The query-export branch right beside it DOES sanitize its name via
-// .replace(/[^a-z0-9]/gi, '_'); the table branch — the remote-controlled
-// input — does not.) A server-supplied name like `../outside/pwned` makes
+// Without sanitization, a server-supplied name like `../outside/pwned` makes
 // path.join walk out of the directory the user chose in the export dialog, so
-// export.ts's fs.promises.open(filePath, 'w+') writes the file — with
-// attacker-controlled row content — OUTSIDE the approved directory. No access
-// to the victim's machine is needed: they only have to export a table from a
-// hostile server.
+// export.ts's fs.promises.open(filePath, 'w+') would write the file — with
+// attacker-controlled row content — OUTSIDE the approved directory, needing no
+// access to the victim's machine (they only export a table from a hostile
+// server). ExportModal.defaultFileName now runs table/schema names through a
+// filename-safe replacement (path separators -> '_'), so the name can no
+// longer carry a separator out of the chosen directory.
 //
-// This test drives the real ExportModal (the unsanitized path construction)
-// and the real CsvExporter writer end to end, asserting the secure invariant
-// that the export stays inside the chosen directory. It fails today (the file
-// escapes) and will pass once the table name is sanitized.
+// This test drives the real ExportModal (the path construction) and the real
+// CsvExporter writer end to end, asserting that the export stays inside the
+// chosen directory. It is the regression guard for that fix.
 describe('Export path traversal via server-controlled table name', () => {
   beforeAll(() => {
     // window.main.join is literally path.join(...paths) (preload.ts) — no
@@ -219,11 +217,18 @@ describe('Export path traversal via server-controlled table name', () => {
       // writing, outsideDir would also be empty. Require a completed export.
       expect(exporter.status).toBe(ExportStatus.Completed)
 
-      // Secure invariant: the export must stay inside the chosen directory.
-      // Today this FAILS — the server-controlled table name walked path.join()
-      // into `outside/`, where the exporter wrote `pwned_export_*.csv`
-      // containing the attacker's row.
+      // Secure invariant: the server-controlled table name must not let the
+      // export escape the directory chosen in the dialog. Nothing lands
+      // outside it...
       expect(fs.readdirSync(outsideDir)).toEqual([])
+
+      // ...and the export is written inside the chosen directory under a
+      // sanitized name, with the path separators replaced by underscores
+      // (ExportModal.defaultFileName). Before the fix the table name
+      // `../outside/pwned` walked path.join() into `outside/`.
+      const written = fs.readdirSync(chosenDir)
+      expect(written).toHaveLength(1)
+      expect(written[0]).not.toMatch(/[\\/]/)
     } finally {
       fs.rmSync(root, { recursive: true, force: true })
     }
