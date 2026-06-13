@@ -52,6 +52,7 @@ module.exports = {
   },
   files: [
     'dist/**/*',
+    '!dist/.esbuild-meta.json',
     'package.json',
     'public/icons/**/*',
     '!**/node_gyp_bins/*',

@@ -85,6 +85,10 @@ const commonArgs = {
   outdir: 'dist',
   bundle: true,
   external: [...externals, '*.woff', '*.woff2', '*.ttf', '*.svg', '*.png'],
+  // metafile records which imports esbuild left external (i.e. resolved from
+  // node_modules at runtime). build/check-bundled-requires.cjs reads it to
+  // confirm every such import actually ships in the packaged app.
+  metafile: true,
   // Sourcemaps ship with the app: source-map-support rewrites stack traces
   // at runtime. It only needs the mappings, so production maps omit
   // sourcesContent (the embedded copy of every input file), which is the
@@ -128,9 +132,12 @@ if(isWatching) {
   const utility = await esbuild.context(utilityArgs)
   await Promise.all([main.watch(), utility.watch()])
 } else {
-  await Promise.all([
+  const [main, utility] = await Promise.all([
     esbuild.build(mainArgs),
     esbuild.build(utilityArgs),
   ])
+  // Consumed by build/check-bundled-requires.cjs. Lives under dist/ (gitignored,
+  // cleaned with the build) and is excluded from the packaged app.
+  fs.writeFileSync('dist/.esbuild-meta.json', JSON.stringify({ main: main.metafile, utility: utility.metafile }))
 }
 // launch electron
