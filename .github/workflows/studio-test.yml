@@ -108,6 +108,9 @@ jobs:
       - name: Check for missing lodash imports
         run: bin/check-lodash.sh
 
+      - name: Check for unbundled runtime requires
+        run: yarn workspace beekeeper-studio run check:bundled-requires
+
       - name: Build UI Kit
         run: yarn lib:build
 

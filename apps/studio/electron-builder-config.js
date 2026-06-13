@@ -1,70 +1,16 @@
 const path = require('path')
-const fs = require('fs')
-
-// Packages that must ship as raw node_modules: esbuild externals (native
-// modules and packages that can't be bundled) plus packages whose platform
-// binaries are resolved at runtime. Everything else in `dependencies` is
-// already bundled into dist/ by esbuild/vite, so shipping it again is pure
-// bloat. The bundled plugins ship via extraResources (bundled_plugins)
-// instead and are loaded from there, never from node_modules.
-const { externals, runtimeResolved } = require('./externals.cjs')
-// electron itself is provided by the runtime, never from packed node_modules;
-// walking its (dev-only) dependency tree would needlessly keep packages that
-// happen to share names with bundled production deps.
-const keepModules = [...externals.filter((name) => name !== 'electron'), ...runtimeResolved]
-
-// Node-style resolution: look for name in fromDir/node_modules, then walk up.
-// Nested copies matter — a package may depend on an older major of a hoisted
-// name (e.g. socksv5 -> ip-address@9, which needs sprintf-js while the
-// hoisted ip-address@10 doesn't), and electron-builder's own hoister can
-// promote that nested copy to the top level of the packed app.
-function resolvePackageDir(fromDir, name) {
-  let dir = fromDir
-  for (;;) {
-    const candidate = path.join(dir, 'node_modules', name)
-    if (fs.existsSync(path.join(candidate, 'package.json'))) {
-      return candidate
-    }
-    const parent = path.dirname(dir)
-    if (parent === dir) return null
-    dir = parent
-  }
-}
-
-// Transitive closure (by package name) of the given modules' runtime deps,
-// walking every reachable installed copy so version-specific deps are kept.
-function dependencyClosure(moduleNames) {
-  const names = new Set()
-  const seenDirs = new Set()
-  const queue = moduleNames
-    .map((name) => ({ name, dir: resolvePackageDir(__dirname, name) }))
-    .filter((entry) => entry.dir != null)
-  while (queue.length > 0) {
-    const { name, dir } = queue.pop()
-    const realDir = fs.realpathSync(dir)
-    names.add(name)
-    if (seenDirs.has(realDir)) continue
-    seenDirs.add(realDir)
-    const pkg = JSON.parse(fs.readFileSync(path.join(realDir, 'package.json'), 'utf8'))
-    const deps = [...Object.keys(pkg.dependencies || {}), ...Object.keys(pkg.optionalDependencies || {})]
-    for (const dep of deps) {
-      const depDir = resolvePackageDir(realDir, dep)
-      if (depDir != null) {
-        queue.push({ name: dep, dir: depDir })
-      }
-    }
-  }
-  return names
-}
+const { dependencyClosure, packagedModuleNames } = require('./build/packaged-modules.cjs')
 
 // electron-builder always collects the full production dependency tree;
 // its node_modules copier only honors *negative* `files` patterns
 // (see app-builder-lib getNodeModuleFileMatcher). So the explicit
-// keep-list is expressed as generated exclusions for everything outside
-// the keep closure.
+// keep-list (build/packaged-modules.cjs, derived from externals.cjs) is
+// expressed as generated exclusions for every production dependency outside
+// the keep closure — everything else is already bundled into dist/ by
+// esbuild/vite, and the bundled plugins ship via extraResources instead.
 function excludedNodeModulePatterns() {
   const appDependencies = Object.keys(require('./package.json').dependencies)
-  const keep = dependencyClosure(keepModules)
+  const keep = packagedModuleNames()
   const all = dependencyClosure(appDependencies)
   return [...all]
     .filter((name) => !keep.has(name))

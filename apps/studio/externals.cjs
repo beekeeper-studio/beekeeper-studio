@@ -43,4 +43,12 @@ const runtimeResolved = [
   'libsql',
 ];
 
-module.exports = { externals, bundledPlugins, runtimeResolved };
+// Escape hatch for build/check-bundled-requires.cjs: package names that the
+// check would otherwise flag (installed, left as a literal runtime require,
+// but not in the packaged keep-set) yet are safe because the require sits on
+// a dead/optional code path the packaged app never reaches. Keep this list
+// short and justify each entry — the default should be to add a genuinely
+// needed package to `externals` instead.
+const ignoredRuntimeRequires = [];
+
+module.exports = { externals, bundledPlugins, runtimeResolved, ignoredRuntimeRequires };
