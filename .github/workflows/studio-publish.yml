@@ -214,7 +214,10 @@ jobs:
             exit 1
           fi
 
-      - name: Install Node.js, NPM and Yarn
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Node.js
         uses: actions/setup-node@v3
         with:
           node-version-file: '.nvmrc'
@@ -227,28 +230,23 @@ jobs:
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
-            apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v3
         if: matrix.os.type == 'linux'
 
-      - name: Clean cache
-        if: steps.cache-nm.outputs.cache-hit != 'true'
-        run: yarn cache clean --all
-
       # FIXME (matthew) Windows needs retries. It sometimes fails to build
       # the native oracledb package.
       # But only sometimes. I cannot figure out why.
       # Someone should at some point.
-      - name: yarn install (with retry)
+      - name: pnpm install (with retry)
         if: steps.cache-nm.outputs.cache-hit != 'true'
         uses: nick-fields/retry@v2
         with:
           timeout_minutes: 20
           max_attempts: 3
-          command: "yarn install --frozen-lockfile --network-timeout 100000"
+          command: "pnpm install --frozen-lockfile"
         env:
           npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
 
@@ -288,7 +286,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
           USE_SYSTEM_FPM: true
           SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
-        run: yarn run electron:build --publish always
+        run: pnpm run electron:build --publish always
 
       - name: Build & Publish (*NIX)
         if: matrix.os.type != 'windows'
@@ -304,7 +302,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
           USE_SYSTEM_FPM: true
           SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
-        run: yarn run electron:build --publish always
+        run: pnpm run electron:build --publish always
 
       - name: Delete latest-mac.yml
         if: matrix.os.type == 'macos'

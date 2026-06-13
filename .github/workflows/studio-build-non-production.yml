@@ -83,7 +83,10 @@ jobs:
             exit 1
           fi
 
-      - name: Install Node.js, NPM and Yarn
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Node.js
         uses: actions/setup-node@v3
         with:
           node-version-file: '.nvmrc'
@@ -96,20 +99,15 @@ jobs:
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
-            apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
-
-      - name: Clean cache
-        if: steps.cache-nm.outputs.cache-hit != 'true'
-        run: yarn cache clean
+          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Check dependencies
         if: steps.cache-nm.outputs.cache-hit != 'true'
-        run: "yarn install --frozen-lockfile --network-timeout 100000"
+        run: "pnpm install --frozen-lockfile"
         env:
           npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
       - name: Build Electron app
-        run: "yarn run electron:build --publish never"
+        run: "pnpm run electron:build --publish never"
         if: startsWith(matrix.os, 'ubuntu') == false
         env:
           PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHON_PATH' }}"
@@ -119,7 +117,7 @@ jobs:
 
         # Build deb for hardlinks testing
       - name: Build Electron app
-        run: yarn run electron:build --publish never --linux deb
+        run: pnpm run electron:build --publish never --linux deb
         if: startsWith(matrix.os, 'ubuntu')
         env:
           PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHON_PATH' }}"

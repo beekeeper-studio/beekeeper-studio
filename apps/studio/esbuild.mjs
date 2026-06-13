@@ -4,6 +4,9 @@ import { spawn, exec, fork } from 'child_process'
 import path from 'path';
 import _ from 'lodash'
 import fs from 'fs'
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 // NOTE: keep in sync with src/common/globals.ts -> plugins.ensureInstalled
 const ensureInstalled = [
@@ -14,10 +17,9 @@ const ensureInstalled = [
 const isWatching = process.argv[2] === 'watch';
 
 function getElectronBinary() {
-  const winLinux = path.join('../../node_modules/electron/dist/electron')
-  const mac = path.join('../../node_modules/electron/dist/Electron.app/Contents/MacOS/Electron')
-  const result = process.platform === 'darwin' ? mac : winLinux
-  return path.resolve(result)
+  // electron's main export is the absolute path to the binary when
+  // required outside an electron process
+  return require('electron')
 }
 
 let electronBin

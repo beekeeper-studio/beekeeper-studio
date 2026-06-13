@@ -39,7 +39,10 @@ jobs:
         name: Set Chunks
         run: echo "test-chunks=$(./bin/get-db-files-as-json.sh)" >> $GITHUB_OUTPUT
 
-      - name: Install Node.js, NPM and Yarn
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Node.js
         uses: actions/setup-node@v3
         with:
           node-version-file: '.nvmrc'
@@ -52,8 +55,7 @@ jobs:
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
-            apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies
         if: steps.cache-nm.outputs.cache-hit != 'true'
@@ -61,7 +63,7 @@ jobs:
         with:
           timeout_minutes: 20
           max_attempts: 3
-          command: yarn install --frozen-lockfile --network-timeout 100000
+          command: pnpm install --frozen-lockfile
         env:
           HUSKY: "0"
           npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
@@ -74,7 +76,10 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v4
 
-      - name: Install Node.js, NPM and Yarn
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Node.js
         uses: actions/setup-node@v3
         with:
           node-version-file: '.nvmrc'
@@ -86,12 +91,11 @@ jobs:
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
-            apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('pnpm-lock.yaml') }}
           fail-on-cache-miss: true
 
       - name: Lint
-        run: yarn workspace beekeeper-studio run lint
+        run: pnpm --filter beekeeper-studio run lint
 
       - name: Check for bad files
         run: bin/check-for-only-tests.sh
@@ -109,16 +113,16 @@ jobs:
         run: bin/check-lodash.sh
 
       - name: Build UI Kit
-        run: yarn lib:build
+        run: pnpm run lib:build
 
       - name: Unit Tests
-        run: yarn workspace beekeeper-studio run test:unit --ci --silent
+        run: pnpm --filter beekeeper-studio run test:unit --ci --silent
 
       - name: Non-DB Integration Tests
-        run: yarn workspace beekeeper-studio run test:ci --ci --silent
+        run: pnpm --filter beekeeper-studio run test:ci --ci --silent
 
       - name: Unit Tests (UI Kit)
-        run: yarn workspace @beekeeperstudio/ui-kit run test --silent
+        run: pnpm --filter @beekeeperstudio/ui-kit run test --silent
 
 
   integration:
@@ -134,7 +138,10 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v4
 
-      - name: Install Node.js, NPM and Yarn
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Node.js
         uses: actions/setup-node@v3
         with:
           node-version-file: '.nvmrc'
@@ -146,8 +153,7 @@ jobs:
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
-            apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('pnpm-lock.yaml') }}
           fail-on-cache-miss: true
 
       - name: Install libaio (for oracle)
@@ -168,7 +174,7 @@ jobs:
           timeout_minutes: 20
           max_attempts: 2
           on_retry_command: "docker ps -aq | xargs docker stop | xargs docker rm"
-          command: yarn workspace beekeeper-studio run test:integration --runInBand --ci ${{ matrix.chunk[1] }}
+          command: pnpm --filter beekeeper-studio run test:integration --runInBand --ci ${{ matrix.chunk[1] }}
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
 
@@ -179,14 +185,13 @@ jobs:
   #   - name: Check out Git repository
   #     uses: actions/checkout@v2
 
-  #   - name: Install Node.js, NPM and Yarn
+  #   - name: Install Node.js
   #     uses: actions/setup-node@v3
   #     with:
   #       node-version-file: '.nvmrc'
-  #       cache: yarn
 
   #   - name: Install dependencies
-  #     run: yarn install --frozen-lockfile
+  #     run: pnpm install --frozen-lockfile
   #     env:
   #       npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
   #   - name: Test
@@ -195,4 +200,4 @@ jobs:
   #       timeout_minutes: 20
   #       max_attempts: 2
   #       on_retry_command: "docker ps -aq | xargs docker stop | xargs docker rm"
-  #       command: yarn workspace beekeeper-studio run test:codemirror --runInBand --ci
+  #       command: pnpm --filter beekeeper-studio run test:codemirror --runInBand --ci

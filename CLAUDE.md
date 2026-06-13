@@ -33,52 +33,52 @@ All entrypoints are listed under src-commercial/entrypoints
 
 ## Development Commands
 
-**Package Manager**: This project uses Yarn (not npm).
+**Package Manager**: This project uses pnpm (not npm or yarn).
 
 ### Root-level Commands (from project root)
 ```bash
 # Development
-yarn bks:dev              # Start development server (builds lib + starts electron)
-yarn electron:serve       # Alias for bks:dev
+pnpm bks:dev              # Start development server (builds lib + starts electron)
+pnpm electron:serve       # Alias for bks:dev
 
 # Building
-yarn bks:build            # Build complete app (lib + electron)
-yarn electron:build       # Alias for bks:build
-yarn lib:build            # Build UI kit library only
-yarn lib:dev              # Start UI kit in development/watch mode
+pnpm bks:build            # Build complete app (lib + electron)
+pnpm electron:build       # Alias for bks:build
+pnpm lib:build            # Build UI kit library only
+pnpm lib:dev              # Start UI kit in development/watch mode
 
 # Testing
-yarn test:unit            # Unit tests with Jest
-yarn test:integration     # Integration tests
-yarn test:e2e             # End-to-end tests with Playwright
-yarn test:ci              # CI-specific test configuration
-yarn test:codemirror      # CodeMirror-specific tests
+pnpm test:unit            # Unit tests with Jest
+pnpm test:integration     # Integration tests
+pnpm test:e2e             # End-to-end tests with Playwright
+pnpm test:ci              # CI-specific test configuration
+pnpm test:codemirror      # CodeMirror-specific tests
 
 # Linting
-yarn all:lint             # Lint all workspaces
+pnpm all:lint             # Lint all workspaces
 ```
 
 ### Studio App Commands (from apps/studio/)
 ```bash
 # Development
-yarn electron:serve       # Start development with hot reload
-yarn dev:esbuild          # Watch main process (ESBuild)
-yarn dev:vite             # Watch renderer process (Vite)
+pnpm electron:serve       # Start development with hot reload
+pnpm dev:esbuild          # Watch main process (ESBuild)
+pnpm dev:vite             # Watch renderer process (Vite)
 
 # Building
-yarn build                # Build both main and renderer processes
-yarn build:esbuild        # Build main process only
-yarn build:vite           # Build renderer process only
-yarn electron:build       # Full production build with electron-builder
+pnpm build                # Build both main and renderer processes
+pnpm build:esbuild        # Build main process only
+pnpm build:vite           # Build renderer process only
+pnpm electron:build       # Full production build with electron-builder
 
 # Test Build (Agents - use this to test the build, also good for CI)
-yarn run electron:build --linux AppImage  # Create Linux AppImage for testing
+pnpm run electron:build --linux AppImage  # Create Linux AppImage for testing
 
 # Testing
-yarn test:unit            # Unit tests
-yarn test:integration     # Integration tests
-yarn test:e2e             # E2E tests
-yarn lint                 # ESLint
+pnpm test:unit            # Unit tests
+pnpm test:integration     # Integration tests
+pnpm test:e2e             # E2E tests
+pnpm lint                 # ESLint
 ```
 
 ## Code Architecture
@@ -134,8 +134,8 @@ assets/            # Styles, fonts, images
 ## Running Tests
 
 Always run tests from the appropriate directory:
-- From root: `yarn test:unit`, `yarn test:integration`, `yarn test:e2e`
-- From apps/studio: `yarn test:unit`, `yarn test:integration`, `yarn test:e2e`
+- From root: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
+- From apps/studio: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
 
 Test files are organized in `apps/studio/tests/`:
 - `unit/` - Unit tests
@@ -144,10 +144,10 @@ Test files are organized in `apps/studio/tests/`:
 
 ## Development Workflow
 
-1. **Setup**: `yarn install` from root
-2. **Start development**: `yarn bks:dev` (from root) or `yarn electron:serve` (from apps/studio)
-3. **Run tests**: `yarn test:unit` before committing
-4. **Build**: `yarn bks:build` for production build
+1. **Setup**: `pnpm install` from root
+2. **Start development**: `pnpm bks:dev` (from root) or `pnpm electron:serve` (from apps/studio)
+3. **Run tests**: `pnpm test:unit` before committing
+4. **Build**: `pnpm bks:build` for production build
 
 ## UI Copy Style
 

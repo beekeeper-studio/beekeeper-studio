@@ -15,23 +15,28 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v1
 
-      - name: Install Node.js, NPM and Yarn
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Node.js
         uses: actions/setup-node@v3
         with:
           node-version-file: '.nvmrc'
-          cache: yarn
+          cache: pnpm
           registry-url: 'https://registry.npmjs.org'
 
-      - name: yarn install
-        run: yarn install --frozen-lockfile --network-timeout 100000
+      - name: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Run tests
-        run: yarn workspace @beekeeperstudio/ui-kit run test
+        run: pnpm --filter @beekeeperstudio/ui-kit run test
 
       - name: Build
-        run: yarn workspace @beekeeperstudio/ui-kit run build
+        run: pnpm --filter @beekeeperstudio/ui-kit run build
 
       - name: Publish to npm
-        run: yarn workspace @beekeeperstudio/ui-kit npm publish --access public
+        # --no-git-checks: CI checks out a tag (detached HEAD), which pnpm's
+        # git branch/clean checks would otherwise reject
+        run: pnpm --filter @beekeeperstudio/ui-kit publish --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

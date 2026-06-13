@@ -11,21 +11,21 @@
   "scripts": {
     "build:esbuild": "node ./esbuild.mjs",
     "build:vite": "vite build",
-    "build": "concurrently -n esbuild,vite \"yarn build:esbuild\" \"yarn build:vite\"",
-    "test:codemirror": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.codemirror.config.js",
-    "test:ci": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.ci.config.js",
-    "test:unit": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.config.js",
-    "test:e2e": "cross-env TEST_MODE=1 yarn playwright test --config=playwright.config.ts",
-    "test:e2e:ci": "cross-env TEST_MODE=1 yarn playwright test --config=playwright.ci.config.ts",
-    "test:e2e:smoke": "cross-env TEST_MODE=1 yarn playwright test --config=playwright.smoke.config.ts",
+    "build": "concurrently -n esbuild,vite \"pnpm run build:esbuild\" \"pnpm run build:vite\"",
+    "test:codemirror": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 electron ../../node_modules/jest/bin/jest.js --config ./jest.codemirror.config.js",
+    "test:ci": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 electron ../../node_modules/jest/bin/jest.js --config ./jest.ci.config.js",
+    "test:unit": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 electron ../../node_modules/jest/bin/jest.js --config ./jest.config.js",
+    "test:e2e": "cross-env TEST_MODE=1 playwright test --config=playwright.config.ts",
+    "test:e2e:ci": "cross-env TEST_MODE=1 playwright test --config=playwright.ci.config.ts",
+    "test:e2e:smoke": "cross-env TEST_MODE=1 playwright test --config=playwright.smoke.config.ts",
     "lint": "eslint src src-commercial tests --ext .ts,.tsx,.vue,.js",
-    "electron:build": "yarn build && yarn electron-builder --config ./electron-builder-config.js",
-    "electron:serve": "concurrently --kill-others-on-fail -c blue,green -n esbuild,vite \"yarn dev:esbuild\" \"yarn dev:vite\"",
+    "electron:build": "pnpm run build && electron-builder --config ./electron-builder-config.js",
+    "electron:serve": "concurrently --kill-others-on-fail -c blue,green -n esbuild,vite \"pnpm run dev:esbuild\" \"pnpm run dev:vite\"",
     "config:build": "CLI_MODE=1 tsx ./src/config/typesGenerator.ts",
     "postinstall": "electron-builder install-app-deps",
-    "internal:integration": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.config.js",
+    "internal:integration": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.config.js",
     "test:integration": "../../bin/integration-tests.sh",
-    "test:integration:macos": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 yarn electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.macos.config.js",
+    "test:integration:macos": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 electron ../../node_modules/jest/bin/jest.js --config ./jest.integration.macos.config.js",
     "dev:esbuild": "node ./esbuild.mjs watch",
     "dev:vite": "vite dev"
   },
@@ -157,12 +157,13 @@
     "vuedraggable": "^2.24.2",
     "vuex": "^3.1.1",
     "ws": "^8.20.1",
-    "xel": "beekeeper-studio/xel",
+    "xel": "file:../../vendor/xel-0.0.220-137f7903.tgz",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "yargs-parser": "^21.0.0"
   },
   "devDependencies": {
     "@aws-sdk/types": "^3.127.0",
+    "@beekeeperstudio/ui-kit": "workspace:*",
     "@babel/core": "^7.29.0",
     "@babel/plugin-proposal-private-methods": "^7.18.6",
     "@babel/plugin-transform-private-methods": "^7.24.7",
@@ -213,6 +214,7 @@
     "jose": "^5.9.0",
     "jszip": "^3.10.1",
     "node-abi": "^3.65.0",
+    "node-fetch": "^2.6.9",
     "sass": "~1.77.1",
     "sass-embedded": "^1.77.1",
     "testcontainers": "~11.14.0",
@@ -236,8 +238,5 @@
     "> 1%",
     "last 2 versions"
   ],
-  "repository": "git@github.com:beekeeper-studio/beekeeper-studio.git",
-  "resolutions": {
-    "cpu-features": "file:./.yarn/packages/empty-package"
-  }
+  "repository": "git@github.com:beekeeper-studio/beekeeper-studio.git"
 }

@@ -38,11 +38,13 @@ jobs:
           brew install python@3.11
           echo "/opt/homebrew/opt/python@3.11/libexec/bin" >> $GITHUB_PATH
 
-      - name: Install Node.js, NPM and Yarn
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Node.js
         uses: actions/setup-node@v3
         with:
           node-version-file: '.nvmrc'
-          cache: yarn
 
       - name: Cache node_modules
         id: cache-nm
@@ -52,8 +54,7 @@ jobs:
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
-            apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies
         if: steps.cache-nm.outputs.cache-hit != 'true'
@@ -61,7 +62,7 @@ jobs:
         with:
           timeout_minutes: 20
           max_attempts: 3
-          command: yarn install --frozen-lockfile --network-timeout 100000
+          command: pnpm install --frozen-lockfile
         env:
           HUSKY: "0"
           npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
@@ -77,28 +78,28 @@ jobs:
             ~/.cache/ms-playwright
             ~/Library/Caches/ms-playwright
             ~/AppData/Local/ms-playwright
-          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('yarn.lock') }}
+          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install Playwright browsers
         if: steps.cache-playwright.outputs.cache-hit != 'true'
-        run: yarn playwright install chromium
+        run: pnpm exec playwright install chromium
 
       - name: Install Playwright system dependencies (Linux)
         if: runner.os == 'Linux'
-        run: yarn playwright install-deps chromium
+        run: pnpm exec playwright install-deps chromium
 
       - name: Build UI Kit
-        run: yarn lib:build
+        run: pnpm run lib:build
 
       - name: Build App
-        run: yarn workspace beekeeper-studio build
+        run: pnpm --filter beekeeper-studio run build
 
       - name: Run Tests (Linux/macOS)
         if: runner.os != 'Windows'
         shell: bash
         run: |
           xvfb-maybe -a -s "-screen 0 1024x768x24" -- bash -c '
-            yarn workspace beekeeper-studio test:e2e:smoke
+            pnpm --filter beekeeper-studio run test:e2e:smoke
           '
         env:
           ELECTRON_ENABLE_LOGGING: 1
@@ -109,7 +110,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          yarn workspace beekeeper-studio test:e2e:smoke
+          pnpm --filter beekeeper-studio run test:e2e:smoke
         env:
           ELECTRON_ENABLE_LOGGING: 1
 

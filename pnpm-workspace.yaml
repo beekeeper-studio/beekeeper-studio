@@ -1,0 +1,34 @@
+packages:
+  - "apps/*"
+
+# Flat node_modules (pnpm's recommendation for Electron apps): electron-builder
+# packing, electron-builder install-app-deps, and the few hardcoded
+# ../../node_modules paths all behave as they did under yarn.
+nodeLinker: hoisted
+
+overrides:
+  # Stub out cpu-features (optional native dep of ssh2); it breaks
+  # cross-platform electron builds and ssh2 works fine without it.
+  cpu-features: "file:./vendor/empty-package"
+  axios: "^1.15.0"
+
+# pnpm blocks dependency build scripts unless allowlisted here.
+# electron must stay in this list or its binary download is skipped.
+# The git-hosted forks (@vue/web-component-wrapper) need their prepare
+# scripts to build from source at fetch time.
+onlyBuiltDependencies:
+  - electron
+  - esbuild
+  - better-sqlite3
+  - oracledb
+  - libsql
+  - ssh2
+  - kerberos
+  - mongodb-client-encryption
+  - os-dns-native
+  # vue-demi's postinstall switches its entrypoint to the Vue 2 build
+  - vue-demi
+  # Git-hosted deps need the full name@spec form to allow their
+  # install/prepare scripts; update the URL if the pinned commit changes.
+  - "@vue/web-component-wrapper@https://codeload.github.com/beekeeper-studio/vue-web-component-wrapper/tar.gz/635e4b427b90e199c273b194cf9db6b744d63e95"
+  - "sqlanywhere@https://codeload.github.com/beekeeper-studio/node-sqlanywhere/tar.gz/54d1ef2052ccdfe963f0956a3e4d024ee6f1fd8d"

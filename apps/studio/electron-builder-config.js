@@ -16,6 +16,8 @@ const rpmFpmOptions = [
 const certSubject = 'SERIALNUMBER=803010247, C=US, ST=Texas, L=Dallas, O="Rathbone Labs, LLC", CN="Rathbone Labs, LLC"'
 const bksAiShellPath = path.dirname(require.resolve('@beekeeperstudio/bks-ai-shell/package.json'));
 const bksErDiagramPath = path.dirname(require.resolve('@beekeeperstudio/bks-er-diagram/package.json'));
+// ws's main module sits at the package root, so this resolves to its directory
+const wsPath = path.dirname(require.resolve('ws'));
 
 
 
@@ -77,7 +79,7 @@ module.exports = {
       filter: ["user.config.ini", "system.config.ini", "default.config.ini", "deprecated.config.ini"],
     },
     {
-      from: "node_modules/ws",
+      from: wsPath,
       to: "node_modules/ws"
     }
   ],

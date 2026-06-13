@@ -15,7 +15,7 @@ test.db
 dist_electron/
 docs/.vuepress/dist/
 .DS_Store
-yarn-error.log
+.pnpm-debug.log
 .history
 .package-lock.json
 .secrets

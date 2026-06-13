@@ -13,4 +13,4 @@ export LD_LIBRARY_PATH="$ORACLE_CLI_PATH"
 export ELECTRON_RUN_AS_NODE=1
 export TEST_MODE=1
 
-yarn workspace beekeeper-studio internal:integration "$@"
+pnpm --filter beekeeper-studio run internal:integration "$@"

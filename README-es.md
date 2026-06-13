@@ -142,18 +142,18 @@ Te tenemos cubierto, lee nuestra [guía para contribuir en 10 minutos sin progra
 ¿Quieres escribir algo de código y mejorar Beekeeper Studio? Configurar es fácil en Mac, Linux o Windows.
 
 ```bash
-# Primero: Instala NodeJS 20, NPM y Yarn
+# Primero: Instala NodeJS 22 y pnpm (p. ej. con `corepack enable`)
 # ...
 
 # 1. Haz un fork del repositorio de Beekeeper Studio (haz clic en el botón fork en la parte superior derecha de esta pantalla)
 # 2. Clona tu fork:
 git clone git@github.com:<tu-usuario>/beekeeper-studio.git beekeeper-studio
 cd beekeeper-studio/
-yarn install # instala las dependencias
+pnpm install # instala las dependencias
 
 
 # Ahora puedes iniciar la aplicación:
-yarn run electron:serve ## la aplicación se iniciará
+pnpm run electron:serve ## la aplicación se iniciará
 ```
 
 **Si obtienes `error:03000086:digital envelope routines::initialization error`, necesitarás actualizar openssl.**

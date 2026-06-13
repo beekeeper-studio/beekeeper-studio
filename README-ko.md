@@ -142,18 +142,18 @@ Beekeeper Studio 앱만 사용하고 있고 Beekeeper Studio 코드를 포크하
 코드를 작성하고 Beekeeper Studio를 개선하고 싶으신가요? Mac, Linux, Windows에서 설정이 쉽습니다.
 
 ```bash
-# 먼저: NodeJS 20, NPM, Yarn 설치
+# 먼저: NodeJS 22, pnpm 설치 (예: `corepack enable`)
 # ...
 
 # 1. Beekeeper Studio 저장소 포크하기 (이 화면 오른쪽 상단의 fork 버튼 클릭)
 # 2. 포크 체크아웃:
 git clone git@github.com:<your-username>/beekeeper-studio.git beekeeper-studio
 cd beekeeper-studio/
-yarn install # 의존성 설치
+pnpm install # 의존성 설치
 
 
 # 이제 앱을 시작할 수 있습니다:
-yarn run electron:serve ## 앱이 시작됩니다
+pnpm run electron:serve ## 앱이 시작됩니다
 ```
 
 **`error:03000086:digital envelope routines::initialization error`가 발생하면 openssl을 업데이트해야 합니다.**

@@ -22,7 +22,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Node.js, NPM and Yarn
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Node.js
         uses: actions/setup-node@v3
         with:
           node-version-file: '.nvmrc'
@@ -35,8 +38,7 @@ jobs:
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
-            apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies
         if: steps.cache-nm.outputs.cache-hit != 'true'
@@ -44,7 +46,7 @@ jobs:
         with:
           timeout_minutes: 20
           max_attempts: 3
-          command: yarn install --frozen-lockfile --network-timeout 100000
+          command: pnpm install --frozen-lockfile
         env:
           HUSKY: "0"
           npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
@@ -54,11 +56,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('yarn.lock') }}
+          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install Playwright browsers
         if: steps.cache-playwright.outputs.cache-hit != 'true'
-        run: yarn playwright install chromium
+        run: pnpm exec playwright install chromium
 
   e2e-tests:
     name: E2E Tests
@@ -74,7 +76,10 @@ jobs:
         with:
           python-version: 3.11
 
-      - name: Install Node.js, NPM and Yarn
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Node.js
         uses: actions/setup-node@v3
         with:
           node-version-file: '.nvmrc'
@@ -86,25 +91,24 @@ jobs:
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
-            apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('pnpm-lock.yaml') }}
           fail-on-cache-miss: true
 
       - name: Restore Playwright browsers cache
         uses: actions/cache/restore@v4
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('yarn.lock') }}
+          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
           fail-on-cache-miss: true
 
       - name: Install Playwright system dependencies
-        run: yarn playwright install-deps chromium
+        run: pnpm exec playwright install-deps chromium
 
       - name: Build UI Kit
-        run: yarn lib:build
+        run: pnpm run lib:build
 
       - name: Build App
-        run: yarn workspace beekeeper-studio build
+        run: pnpm --filter beekeeper-studio run build
 
       - name: Start postgres container
         run: docker compose up psql15 -d --wait
@@ -113,7 +117,7 @@ jobs:
         shell: bash
         run: |
           xvfb-run --auto-servernum --server-args "-screen 0 1600x1000x24" bash -c '
-            yarn workspace beekeeper-studio test:e2e:ci
+            pnpm --filter beekeeper-studio run test:e2e:ci
           '
         env:
           ELECTRON_ENABLE_LOGGING: 1

@@ -5,28 +5,21 @@
   "author": "Matthew Rathbone <matthew.rathbone@gmail.com>",
   "license": "MIT",
   "private": true,
-  "workspaces": [
-    "apps/*"
-  ],
   "scripts": {
-    "bks:build": "yarn lib:build && yarn workspace beekeeper-studio electron:build",
-    "bks:dev": "yarn lib:build && yarn workspace beekeeper-studio electron:serve",
-    "bks:config:build": "yarn workspace beekeeper-studio config:build",
-    "lib:dev": "yarn workspace @beekeeperstudio/ui-kit lib:dev",
-    "lib:build": "yarn workspace @beekeeperstudio/ui-kit build",
-    "sqltools:build": "yarn workspace sqltools build",
-    "sqltools:dev": "yarn workspace sqltools serve",
-    "electron:build": "yarn bks:build",
-    "electron:serve": "yarn bks:dev",
-    "docs:serve": "yarn workspace beekeeper-studio docs:serve",
-    "web:serve": "yarn sqltools:dev",
-    "test:e2e": "yarn workspace beekeeper-studio test:e2e",
-    "test:e2e:ci": "yarn workspace beekeeper-studio test:e2e:ci",
-    "test:integration": "yarn workspace beekeeper-studio test:integration",
-    "test:unit": "yarn workspace beekeeper-studio test:unit && yarn workspace @beekeeperstudio/ui-kit test:unit",
-    "test:ci": "yarn workspace beekeeper-studio test:ci",
-    "test:codemirror": "yarn workspace beekeeper-studio test:codemirror",
-    "all:lint": "yarn workspace beekeeper-studio lint",
+    "bks:build": "pnpm run lib:build && pnpm --filter beekeeper-studio run electron:build",
+    "bks:dev": "pnpm run lib:build && pnpm --filter beekeeper-studio run electron:serve",
+    "bks:config:build": "pnpm --filter beekeeper-studio run config:build",
+    "lib:dev": "pnpm --filter @beekeeperstudio/ui-kit run lib:dev",
+    "lib:build": "pnpm --filter @beekeeperstudio/ui-kit run build",
+    "electron:build": "pnpm run bks:build",
+    "electron:serve": "pnpm run bks:dev",
+    "test:e2e": "pnpm --filter beekeeper-studio run test:e2e",
+    "test:e2e:ci": "pnpm --filter beekeeper-studio run test:e2e:ci",
+    "test:integration": "pnpm --filter beekeeper-studio run test:integration",
+    "test:unit": "pnpm --filter beekeeper-studio run test:unit && pnpm --filter @beekeeperstudio/ui-kit run test",
+    "test:ci": "pnpm --filter beekeeper-studio run test:ci",
+    "test:codemirror": "pnpm --filter beekeeper-studio run test:codemirror",
+    "all:lint": "pnpm --filter beekeeper-studio run lint",
     "postinstall": "husky install",
     "prepack": "pinst --disable",
     "postpack": "pinst --enable"
@@ -35,9 +28,5 @@
     "husky": "8.0.3",
     "pinst": "^3.0.0"
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
-  "resolutions": {
-    "cpu-features": "file:./.yarn/packages/empty-package",
-    "**/axios": "^1.15.0"
-  }
+  "packageManager": "pnpm@10.34.3+sha512.f2c531b08829d7be7f03c90addc266615f9c5477463e4bf1d275cb263ce9ea57cf0d5599110d94649a9bb3fed9f0b5efcea74a7016b61532a24cb9ad87860c1d"
 }
