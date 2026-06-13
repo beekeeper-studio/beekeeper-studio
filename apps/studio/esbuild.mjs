@@ -4,12 +4,9 @@ import { spawn, exec, fork } from 'child_process'
 import path from 'path';
 import _ from 'lodash'
 import fs from 'fs'
+import externalsDef from './externals.cjs'
 
-// NOTE: keep in sync with src/common/globals.ts -> plugins.ensureInstalled
-const ensureInstalled = [
-  "@beekeeperstudio/bks-ai-shell",
-  "@beekeeperstudio/bks-er-diagram",
-];
+const ensureInstalled = externalsDef.bundledPlugins;
 
 const isWatching = process.argv[2] === 'watch';
 
@@ -29,15 +26,7 @@ try {
   throw new Error(err)
 }
 
-const externals = ['better-sqlite3', 'sqlite3',
-        'sequelize', 'reflect-metadata',
-        'cassandra-driver', 'mysql2', 'ssh2', 'mysql',
-        'oracledb', '@electron/remote', "@google-cloud/bigquery",
-        'pg-query-stream', 'electron', '@duckdb/node-api',
-        '@mongosh/browser-runtime-electron', '@mongosh/service-provider-node-driver',
-        'mongodb-client-encryption', 'sqlanywhere', 'ws', 'kerberos',
-        ...ensureInstalled,
-      ]
+const externals = [...externalsDef.externals, ...ensureInstalled]
 
 let electron = null
 /** @type {fs.FSWatcher[]} */
