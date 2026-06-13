@@ -1,5 +1,14 @@
+# NOTE: pnpm is pinned to 10.29.2 (packageManager field in package.json).
+# pnpm >= 10.29.3 emits deduplicated `pnpm list` output that electron-builder's
+# dependency collector mishandles, silently dropping packages (e.g. mongodb,
+# ssh2) from the packaged app. See:
+#   https://github.com/pnpm/pnpm/issues/10601
+# Before bumping pnpm past 10.29.2, build an AppImage and verify the asar
+# still contains node_modules/mongodb (at the right version) and
+# node_modules/ssh2.
+
 packages:
-  - "apps/*"
+  - apps/*
 
 # Flat node_modules (pnpm's recommendation for Electron apps): electron-builder
 # packing, electron-builder install-app-deps, and the few hardcoded
@@ -9,13 +18,11 @@ nodeLinker: hoisted
 overrides:
   # Stub out cpu-features (optional native dep of ssh2); it breaks
   # cross-platform electron builds and ssh2 works fine without it.
-  cpu-features: "file:./vendor/empty-package"
-  axios: "^1.15.0"
+  cpu-features: file:./vendor/empty-package
+  axios: ^1.15.0
 
 # pnpm blocks dependency build scripts unless allowlisted here.
 # electron must stay in this list or its binary download is skipped.
-# The git-hosted forks (@vue/web-component-wrapper) need their prepare
-# scripts to build from source at fetch time.
 onlyBuiltDependencies:
   - electron
   - esbuild
@@ -28,7 +35,14 @@ onlyBuiltDependencies:
   - os-dns-native
   # vue-demi's postinstall switches its entrypoint to the Vue 2 build
   - vue-demi
-  # Git-hosted deps need the full name@spec form to allow their
-  # install/prepare scripts; update the URL if the pinned commit changes.
-  - "@vue/web-component-wrapper@https://codeload.github.com/beekeeper-studio/vue-web-component-wrapper/tar.gz/635e4b427b90e199c273b194cf9db6b744d63e95"
-  - "sqlanywhere@https://codeload.github.com/beekeeper-studio/node-sqlanywhere/tar.gz/54d1ef2052ccdfe963f0956a3e4d024ee6f1fd8d"
+  # Git-hosted deps that build at fetch time (prepare/install scripts)
+  - '@vue/web-component-wrapper'
+  - sqlanywhere
+
+# Fixes electron-builder's pnpm dependency collector under nodeLinker=hoisted:
+# `pnpm list --json` reports virtual-store (.pnpm) paths that don't exist on
+# disk, which made the collector resolve duplicated packages to the wrong
+# version (the app's mongodb@6 was packaged as mongodb@7). The patch ignores
+# nonexistent parent paths so lookups fall back to real on-disk resolution.
+patchedDependencies:
+  app-builder-lib: patches/app-builder-lib.patch

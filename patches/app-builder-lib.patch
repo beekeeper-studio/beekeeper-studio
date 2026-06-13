@@ -1,0 +1,20 @@
+diff --git a/out/node-module-collector/pnpmNodeModulesCollector.js b/out/node-module-collector/pnpmNodeModulesCollector.js
+index 8853912e013d3769f3e763d06720a94091a7ffaa..c84646f881fc11891e59325e284cdda976a6dfd7 100644
+--- a/out/node-module-collector/pnpmNodeModulesCollector.js
++++ b/out/node-module-collector/pnpmNodeModulesCollector.js
+@@ -76,7 +76,14 @@ class PnpmNodeModulesCollector extends nodeModulesCollector_1.NodeModulesCollect
+         // land at `<root>/node_modules/A/node_modules/B` — downward BFS is needed to find them.
+         const skipDownwardSearch = !(await this.isHoisted.value);
+         const promise = (async () => {
+-            const fromDep = parentPath ? await this.cache.locatePackageVersion({ pkgName, parentDir: parentPath, requiredRange, skipDownwardSearch }) : null;
++            // With nodeLinker=hoisted, `pnpm list --json` reports virtual-store
++            // paths under node_modules/.pnpm that do not exist on disk. Searching
++            // from such a path walks up into the workspace root node_modules and
++            // the out-of-range tolerance pass can accept the wrong version of a
++            // duplicated package (e.g. resolving the app's mongodb@6 to the
++            // hoisted mongodb@7). Only trust parentPath if it actually exists.
++            const parentPathValid = parentPath ? require("fs").existsSync(parentPath) : false;
++            const fromDep = parentPathValid ? await this.cache.locatePackageVersion({ pkgName, parentDir: parentPath, requiredRange, skipDownwardSearch }) : null;
+             if (fromDep) {
+                 return fromDep;
+             }

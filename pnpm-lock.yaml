@@ -8,6 +8,11 @@ overrides:
   cpu-features: file:./vendor/empty-package
   axios: ^1.15.0
 
+patchedDependencies:
+  app-builder-lib:
+    hash: 413380a63e31bf1dc00c8d2b9319583f5919ca94dec68e82cef71a8e2b0a1a01
+    path: patches/app-builder-lib.patch
+
 importers:
 
   .:
@@ -3804,7 +3809,7 @@ packages:
         optional: true
 
   '@vue/web-component-wrapper@https://codeload.github.com/beekeeper-studio/vue-web-component-wrapper/tar.gz/635e4b427b90e199c273b194cf9db6b744d63e95':
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/beekeeper-studio/vue-web-component-wrapper/tar.gz/635e4b427b90e199c273b194cf9db6b744d63e95}
+    resolution: {tarball: https://codeload.github.com/beekeeper-studio/vue-web-component-wrapper/tar.gz/635e4b427b90e199c273b194cf9db6b744d63e95}
     version: 1.3.0-bks.7
 
   '@xmldom/xmldom@0.8.13':
@@ -4317,7 +4322,7 @@ packages:
     engines: {node: '>=18'}
 
   cassandra-knex@https://codeload.github.com/beekeeper-studio/cassandra-knex/tar.gz/1bac17636e3451f0f7aaa62fb92c8a9539f5ee4a:
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/beekeeper-studio/cassandra-knex/tar.gz/1bac17636e3451f0f7aaa62fb92c8a9539f5ee4a}
+    resolution: {tarball: https://codeload.github.com/beekeeper-studio/cassandra-knex/tar.gz/1bac17636e3451f0f7aaa62fb92c8a9539f5ee4a}
     version: 0.1.0
     peerDependencies:
       knex: ^2.4.2
@@ -7090,7 +7095,7 @@ packages:
     engines: {node: '>=10'}
 
   noty@https://codeload.github.com/beekeeper-studio/noty/tar.gz/dc27550d340dd53480cf861d5ad4e7e292107ad6:
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/beekeeper-studio/noty/tar.gz/dc27550d340dd53480cf861d5ad4e7e292107ad6}
+    resolution: {tarball: https://codeload.github.com/beekeeper-studio/noty/tar.gz/dc27550d340dd53480cf861d5ad4e7e292107ad6}
     version: 3.2.0-beta
 
   npm-run-path@2.0.2:
@@ -8164,7 +8169,7 @@ packages:
     engines: {node: '>= 10.13'}
 
   sqlanywhere@https://codeload.github.com/beekeeper-studio/node-sqlanywhere/tar.gz/54d1ef2052ccdfe963f0956a3e4d024ee6f1fd8d:
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/beekeeper-studio/node-sqlanywhere/tar.gz/54d1ef2052ccdfe963f0956a3e4d024ee6f1fd8d}
+    resolution: {tarball: https://codeload.github.com/beekeeper-studio/node-sqlanywhere/tar.gz/54d1ef2052ccdfe963f0956a3e4d024ee6f1fd8d}
     version: 2.0.4
     engines: {node: '>=14.0.0'}
 
@@ -8349,7 +8354,7 @@ packages:
     resolution: {integrity: sha512-QlQvvCHxjUuhW8mAbOsDh6GTWvdJPFKpu4xTLsAYDDCjwZXCGiOC0zhhzS9QXBJOpO1CcKOU/CuVCDlJA+pIIQ==}
 
   tabulator-tables@https://codeload.github.com/beekeeper-studio/tabulator/tar.gz/f9d3c0cdf0933a9a1bc5056b773c02a68a309fa1:
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/beekeeper-studio/tabulator/tar.gz/f9d3c0cdf0933a9a1bc5056b773c02a68a309fa1}
+    resolution: {tarball: https://codeload.github.com/beekeeper-studio/tabulator/tar.gz/f9d3c0cdf0933a9a1bc5056b773c02a68a309fa1}
     version: 6.3.1-bks.1
 
   tar-fs@2.1.4:
@@ -13490,7 +13495,7 @@ snapshots:
       normalize-path: 3.0.0
       picomatch: 2.3.2
 
-  app-builder-lib@26.15.3(dmg-builder@26.15.3)(electron-builder-squirrel-windows@26.15.3):
+  app-builder-lib@26.15.3(patch_hash=413380a63e31bf1dc00c8d2b9319583f5919ca94dec68e82cef71a8e2b0a1a01)(dmg-builder@26.15.3)(electron-builder-squirrel-windows@26.15.3):
     dependencies:
       '@electron/asar': 3.4.1
       '@electron/fuses': 1.8.0
@@ -14423,7 +14428,7 @@ snapshots:
 
   dmg-builder@26.15.3(electron-builder-squirrel-windows@26.15.3):
     dependencies:
-      app-builder-lib: 26.15.3(dmg-builder@26.15.3)(electron-builder-squirrel-windows@26.15.3)
+      app-builder-lib: 26.15.3(patch_hash=413380a63e31bf1dc00c8d2b9319583f5919ca94dec68e82cef71a8e2b0a1a01)(dmg-builder@26.15.3)(electron-builder-squirrel-windows@26.15.3)
       builder-util: 26.15.3
       fs-extra: 10.1.0
       js-yaml: 4.1.1
@@ -14525,7 +14530,7 @@ snapshots:
 
   electron-builder-squirrel-windows@26.15.3(dmg-builder@26.15.3):
     dependencies:
-      app-builder-lib: 26.15.3(dmg-builder@26.15.3)(electron-builder-squirrel-windows@26.15.3)
+      app-builder-lib: 26.15.3(patch_hash=413380a63e31bf1dc00c8d2b9319583f5919ca94dec68e82cef71a8e2b0a1a01)(dmg-builder@26.15.3)(electron-builder-squirrel-windows@26.15.3)
       builder-util: 26.15.3
       electron-winstaller: 5.4.0
     transitivePeerDependencies:
@@ -14534,7 +14539,7 @@ snapshots:
 
   electron-builder@26.15.3(electron-builder-squirrel-windows@26.15.3):
     dependencies:
-      app-builder-lib: 26.15.3(dmg-builder@26.15.3)(electron-builder-squirrel-windows@26.15.3)
+      app-builder-lib: 26.15.3(patch_hash=413380a63e31bf1dc00c8d2b9319583f5919ca94dec68e82cef71a8e2b0a1a01)(dmg-builder@26.15.3)(electron-builder-squirrel-windows@26.15.3)
       builder-util: 26.15.3
       builder-util-runtime: 9.7.0
       chalk: 4.1.2
