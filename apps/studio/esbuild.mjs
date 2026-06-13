@@ -85,8 +85,16 @@ const commonArgs = {
   outdir: 'dist',
   bundle: true,
   external: [...externals, '*.woff', '*.woff2', '*.ttf', '*.svg', '*.png'],
+  // Sourcemaps ship with the app: source-map-support rewrites stack traces
+  // at runtime. It only needs the mappings, so production maps omit
+  // sourcesContent (the embedded copy of every input file), which is the
+  // bulk of their size.
   sourcemap: true,
-  minify: false,
+  sourcesContent: isWatching,
+  // keepNames so minification doesn't break code relying on
+  // constructor/function names (e.g. typeorm entity resolution).
+  minify: !isWatching,
+  keepNames: true,
   define: {
     'process.env.NODE_ENV': env
   }
