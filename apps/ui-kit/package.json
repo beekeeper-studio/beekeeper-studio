@@ -123,7 +123,7 @@
     "tinyduration": "^3.2.4",
     "typescript": "~5.8.3",
     "vite": "^8.0.8",
-    "vite-ng-plugin-vue2": "github:beekeeper-studio/vite-plugin-vue2#claude/beekeeper-vite-8-upgrade-thnhtf",
+    "vite-ng-plugin-vue2": "^1.0.0",
     "vitest": "~4.1.0",
     "vue": "^2.7.16",
     "vue-js-modal": "^2.0.1",
