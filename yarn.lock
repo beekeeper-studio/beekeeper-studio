@@ -13566,10 +13566,6 @@ vite-ng-plugin-vue2@^1.0.0:
   resolved "https://registry.yarnpkg.com/vite-ng-plugin-vue2/-/vite-ng-plugin-vue2-1.0.0.tgz#4626c82536ca81bc13c15895d26ba225be8bd557"
   integrity sha512-uBOUmqqzp8nSB0AuFSqOJ/bRpEKV3oM5Gyeit5XRLfBnwPva6lEl9/a0YbgAQQVU+FA2CyljFM+dCA9eaApk+A==
 
-"vite-ng-plugin-vue2@github:beekeeper-studio/vite-plugin-vue2#claude/beekeeper-vite-8-upgrade-thnhtf":
-  version "3.0.0"
-  resolved "https://codeload.github.com/beekeeper-studio/vite-plugin-vue2/tar.gz/9314f72cfd079cadc27dcba5e85126aca14e6bfb"
-
 vite-plugin-commonjs@^0.10.1:
   version "0.10.4"
   resolved "https://registry.yarnpkg.com/vite-plugin-commonjs/-/vite-plugin-commonjs-0.10.4.tgz#5bcf316a323e3b88e392ec2de8754ca5f249b74f"
