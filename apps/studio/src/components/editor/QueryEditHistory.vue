@@ -96,6 +96,7 @@
             Close
           </button>
           <button
+            v-if="isCloud && !query.canWrite"
             class="btn btn-primary"
             type="button"
             @click="confirmRestore"
@@ -190,8 +191,14 @@ export default Vue.extend({
     },
   },
   computed: {
-    ...mapState(["connectionType", "tables"]),
+    ...mapState(["connectionType", "tables", "isCloud"]),
     ...mapGetters(["dialectData"]),
+    ...mapGetters("data/queries", {
+      queries: "items",
+    }),
+    query(): ISavedQuery {
+      return this.queries.find((q) => q.id === this.queryId);
+    },
     dirty(): boolean {
       return this.unsavedText !== null;
     },
