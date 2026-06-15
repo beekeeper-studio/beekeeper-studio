@@ -16,4 +16,7 @@ export default interface ISavedQuery {
     name: string
   }
 
+  /** These are returned by the cloud API */
+  canWrite?: boolean;
+  canRead?: boolean;
 }
