@@ -399,19 +399,22 @@ export default {
       event.stopPropagation();
 
       const options = []
+      const canWrite = folder.canWrite ?? true;
       if (this.isCloud && !folder.parentId) {
         options.push({ name: 'New Subfolder', handler: ({ item }) => this.createSubfolder(item) })
       }
-      if (folder.parentId) {
+      if (folder.parentId && canWrite) {
         const otherRoots = this.rootFolders.filter(f => f.id !== folder.parentId)
         otherRoots.forEach(root => {
           options.push({ name: `Move to ${root.name}`, handler: ({ item }) => this.moveFolderToParent(item, root) })
         })
       }
-      options.push(
-        { name: 'Rename', handler: ({ item }) => this.renameQueryFolder(item) },
-        { name: 'Delete', handler: ({ item }) => this.deleteFolder(item) }
-      )
+      if (canWrite) {
+        options.push(
+          { name: 'Rename', handler: ({ item }) => this.renameQueryFolder(item) },
+          { name: 'Delete', handler: ({ item }) => this.deleteFolder(item) }
+        )
+      }
       this.$bks.openMenu({ event, item: folder, options })
     },
     createSubfolder(parentFolder) {

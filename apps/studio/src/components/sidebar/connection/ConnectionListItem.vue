@@ -187,9 +187,10 @@ export default {
 
       event.stopPropagation();
 
-      const ultimateCheck = this.$store.getters.isUltimate
+      const canConnect = this.$store.getters.isUltimate
         ? true
         : !isUltimateType(this.displayConfig.connectionType)
+      const canWrite = this.config.canWrite ?? true;
 
       const options = [
         {
@@ -197,18 +198,21 @@ export default {
           slug: 'view',
           handler: (blob) => this.click(blob.item)
         },
-        ultimateCheck && {
+        {
           name: 'Connect',
           slug: 'connect',
+          hideIf: !canConnect,
           handler: (blob) => this.doubleClick(blob.item)
         },
-        !this.isRecentList && {
+        {
           name: this.pinned ? 'Unpin' : 'Pin',
+          hideIf: this.isRecentList,
           handler: () => this.pinned ? this.unpin() : this.pin()
         },
-        !this.isRecentList && {
+        {
           name: "Rename",
           slug: 'rename',
+          hideIf: this.isRecentList || !canWrite,
           handler: () => {
             this.rename = true;
           },
@@ -224,11 +228,15 @@ export default {
         },
         {
           name: "Remove",
+          hideIf: !canWrite,
           handler: this.remove
         },
-      ].filter(v => v)
+      ].filter(v => !v.hideIf)
 
-      if (this.isCloud || this.folders.length > 0) {
+      // ========= "Move to ..." Options ======
+      if (!canWrite) {
+        // do nothing
+      } else if (this.isCloud || this.folders.length > 0) {
         options.push({ type: 'divider' })
         if (!this.isCloud && this.config.connectionFolderId) {
           options.push({ name: 'Move to top level', handler: () => this.moveToRoot() })

@@ -114,6 +114,8 @@ export default Vue.extend({
 
       event.stopPropagation();
 
+      const canWrite = this.item.canWrite ?? true;
+
       const options = [
         {
           name: "Open",
@@ -121,6 +123,7 @@ export default Vue.extend({
         },
         {
           name: "Rename",
+          hideIf: !canWrite,
           handler: () => {
             this.rename = true;
           },
@@ -131,6 +134,7 @@ export default Vue.extend({
         },
         {
           name: "Delete",
+          hideIf: !canWrite,
           handler: ({ item }) => this.$emit('remove', item)
         },
         {
@@ -144,8 +148,11 @@ export default Vue.extend({
           name: "Export",
           handler: ({ item }) => this.$emit('export', item)
         },
-      ]
-      if (this.folders.length > 0) {
+      ].filter((item) => item.hideIf)
+      // ======== "Move to ..." options ========
+      if (!canWrite) {
+        // skip adding "Move to ..." options" if user can not write
+      } else if (this.folders.length > 0) {
         options.push({ type: 'divider' })
         if (!this.isCloud && this.item.queryFolderId) {
           options.push({ name: 'Move to top level', handler: ({ item }) => this.moveToRoot(item) })
