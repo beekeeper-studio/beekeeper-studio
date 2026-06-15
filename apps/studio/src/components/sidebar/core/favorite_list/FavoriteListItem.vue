@@ -148,7 +148,7 @@ export default Vue.extend({
           name: "Export",
           handler: ({ item }) => this.$emit('export', item)
         },
-      ].filter((item) => item.hideIf)
+      ].filter((item) => !item.hideIf)
       // ======== "Move to ..." options ========
       if (!canWrite) {
         // skip adding "Move to ..." options" if user can not write
