@@ -220,7 +220,7 @@
     "tsx": "^4.20.3",
     "typescript": "~5.8.3",
     "vite": "^8.0.8",
-    "vite-ng-plugin-vue2": "github:beekeeper-studio/vite-plugin-vue2#claude/beekeeper-vite-8-upgrade-thnhtf",
+    "vite-ng-plugin-vue2": "^1.0.0",
     "vite-plugin-commonjs": "^0.10.1",
     "vue-template-compiler": "^2.7.16",
     "xvfb-maybe": "^0.2.1"
