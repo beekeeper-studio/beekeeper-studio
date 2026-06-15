@@ -25,6 +25,7 @@
         help-tooltip="You are signing in using the <code>AWS CLI</code>. Beekeeper Studio will attempt to use the AWS CLI tool at the specified path."
         :value="cliPath"
         @input="val => $set(config.iamAuthOptions, 'cliPath', val)"
+        :disabled="disabled"
       />
 
       <div v-show="isRedshift" class="flex flex-middle mb-3">
@@ -36,6 +37,7 @@
           <x-switch
             @click.prevent="toggleServerless"
             :toggled="config.redshiftOptions.isServerless"
+            :disabled="disabled"
           />
         </h4>
       </div>
@@ -58,6 +60,7 @@
           v-if="hasProfiles"
           class="form-control"
           v-model="config.iamAuthOptions.awsProfile"
+          :disabled="disabled"
         >
           <option
             v-for="option in config.iamAuthOptions.profiles"
@@ -74,37 +77,38 @@
           class="form-control"
           placeholder="Enter AWS profile name (e.g., default, dev, prod)"
           v-model="config.iamAuthOptions.awsProfile"
+          :disabled="disabled"
         >
       </div>
 
       <div v-show="isKeyAuth">
         <div class="form-group">
           <label for="Access Key ID">Access Key ID</label>
-          <masked-input :value="config.iamAuthOptions.accessKeyId" @input="val => config.iamAuthOptions.accessKeyId = val" :type="'password'" />
+          <masked-input :value="config.iamAuthOptions.accessKeyId" @input="val => config.iamAuthOptions.accessKeyId = val" :type="'password'" :disabled="disabled" />
         </div>
         <div class="form-group">
           <label for="Secret Access Key">Secret Access Key</label>
-          <masked-input :value="config.iamAuthOptions.secretAccessKey" @input="val => config.iamAuthOptions.secretAccessKey = val" :type="'password'" />
+          <masked-input :value="config.iamAuthOptions.secretAccessKey" @input="val => config.iamAuthOptions.secretAccessKey = val" :type="'password'" :disabled="disabled" />
         </div>
       </div>
 
       <div class="form-group">
         <label for="AWS Region">AWS Region</label>
-        <masked-input :value="config.iamAuthOptions.awsRegion" @input="val => config.iamAuthOptions.awsRegion = val" />
+        <masked-input :value="config.iamAuthOptions.awsRegion" @input="val => config.iamAuthOptions.awsRegion = val" :disabled="disabled" />
       </div>
 
       <div v-show="isRedshift">
         <div class="form-group">
           <label for="Cluster Identifier">Cluster Identifier or Workgroup Name</label>
-          <masked-input :value="config.redshiftOptions.clusterIdentifier" @input="val => config.redshiftOptions.clusterIdentifier = val" :type="'password'" />
+          <masked-input :value="config.redshiftOptions.clusterIdentifier" @input="val => config.redshiftOptions.clusterIdentifier = val" :type="'password'" :disabled="disabled" />
         </div>
         <div class="form-group">
           <label for="Database Group">Database Group <span class="hint">(optional)</span></label>
-          <input type="text" class="form-control" v-model="config.redshiftOptions.databaseGroup">
+          <input type="text" class="form-control" v-model="config.redshiftOptions.databaseGroup" :disabled="disabled">
         </div>
         <div class="form-group">
           <label for="Token Duration">Token Duration <span class="hint">(optional, in seconds)</span></label>
-          <input type="text" class="form-control" v-model="config.redshiftOptions.tokenDurationSeconds">
+          <input type="text" class="form-control" v-model="config.redshiftOptions.tokenDurationSeconds" :disabled="disabled">
         </div>
       </div>
     </div>
@@ -116,7 +120,14 @@ import MaskedInput from '@/components/MaskedInput.vue'
 import CliPathPicker from '@/components/common/form/CliPathPicker.vue'
 
 export default {
-  props: ['config', 'authType'],
+  props: {
+    config: Object,
+    authType: [String, Number],
+    disabled: {
+      type: Boolean,
+      default: false
+    }
+  },
   components: {
     MaskedInput,
     CliPathPicker

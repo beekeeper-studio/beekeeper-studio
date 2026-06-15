@@ -3,7 +3,7 @@
     <div class="form-group col">
       <label for="authenticationType">Authentication Method</label>
       <!-- need to take the value -->
-      <select name="" v-model="authType" id="">
+      <select name="" v-model="authType" id="" :disabled="disabled">
         <option value="default">
           Username / Password
         </option>
@@ -12,7 +12,7 @@
         </option>
       </select>
     </div>
-    <common-server-inputs v-show="!azureAuthEnabled" :config="config">
+    <common-server-inputs v-show="!azureAuthEnabled" :config="config" :disabled="disabled">
       <div class="advanced-connection-settings">
         <h4 class="advanced-heading">
           SQL Server Options
@@ -30,6 +30,7 @@
               type="text"
               v-model="config.domain"
               class="form-control"
+              :disabled="disabled"
             >
           </div>
           <div class="form-group">
@@ -42,6 +43,7 @@
                 name="trustServerCertificate"
                 v-model="config.trustServerCertificate"
                 id="trustServerCertificate"
+                :disabled="disabled"
               >
               Trust Server Certificate?
               <i
@@ -53,8 +55,8 @@
         </div>
       </div>
     </common-server-inputs>
-    <common-entra-id v-show="azureAuthEnabled" :auth-type="authType" :config="config" />
-    <common-advanced v-show="!azureAuthEnabled" :config="config" />
+    <common-entra-id v-show="azureAuthEnabled" :auth-type="authType" :config="config" :disabled="disabled" />
+    <common-advanced v-show="!azureAuthEnabled" :config="config" :disabled="disabled" />
   </div>
 </template>
 
@@ -69,7 +71,13 @@
 
   export default {
     components: {CommonEntraId, CommonServerInputs, CommonAdvanced },
-    props: ['config'],
+    props: {
+      config: Object,
+      disabled: {
+        type: Boolean,
+        default: false
+      }
+    },
     mounted() {
       this.authType = this.config?.azureAuthOptions?.azureAuthType || 'default'
       this.azureAuthEnabled = this.config?.azureAuthOptions?.azureAuthEnabled || false

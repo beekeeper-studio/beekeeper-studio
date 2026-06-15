@@ -12,6 +12,7 @@
             input-id="Database"
             editable
             show-create-button
+            :disabled="disabled"
           />
 
           <toggle-form-area
@@ -55,7 +56,8 @@
                     </span>
                     <a
                       class="a-icon"
-                      @click.prevent="unloadExtension(extension)"
+                      :class="{ disabled }"
+                      @click.prevent="!disabled && unloadExtension(extension)"
                     ><i class="material-icons">delete</i></a>
                   </span>
                 </div>
@@ -70,7 +72,7 @@
               <div class="row flex-middle">
                 <span class="expand" />
                 <div class="btn-group">
-                  <button class="btn" @click.prevent.stop="loadExtension">
+                  <button class="btn" @click.prevent.stop="loadExtension" :disabled="disabled">
                     <i class="material-icons">add</i> Add Extension
                   </button>
                 </div>
@@ -92,7 +94,13 @@ import ToggleFormArea from '../common/ToggleFormArea.vue'
 import FilePicker from '../common/form/FilePicker.vue'
 import PlatformWarning from './PlatformWarning.vue'
 export default Vue.extend({
-  props: ['config'],
+  props: {
+    config: Object,
+    disabled: {
+      type: Boolean,
+      default: false
+    }
+  },
   components: {
     SettingsInput,
     ToggleFormArea,

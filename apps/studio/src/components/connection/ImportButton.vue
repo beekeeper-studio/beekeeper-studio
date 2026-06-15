@@ -2,7 +2,8 @@
   <div class="import-button">
     <a
       class="btn btn-link btn-small"
-      @click.prevent="$modal.show('import-modal')"
+      :class="{ disabled }"
+      @click.prevent="!disabled && $modal.show('import-modal')"
       href="#"
     ><slot /></a>
     <portal to="modals">
@@ -60,7 +61,13 @@
 </template>
 <script>
 export default {
-    props: ['config'],
+    props: {
+      config: Object,
+      disabled: {
+        type: Boolean,
+        default: false
+      }
+    },
     data() {
       return {
         importError: null,

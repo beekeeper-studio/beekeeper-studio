@@ -4,12 +4,14 @@
       :config="config"
       :testing="testing"
       :saving="saving"
+      :disabled="disabled"
     />
 
     <CommonAdvanced
       :config="config"
       :testing="testing"
       :saving="saving"
+      :disabled="disabled"
     />
   </div>
 </template>
@@ -33,6 +35,10 @@ export default {
       default: false
     },
     saving: {
+      type: Boolean,
+      default: false
+    },
+    disabled: {
       type: Boolean,
       default: false
     }
