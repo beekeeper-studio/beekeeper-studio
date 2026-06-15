@@ -90,12 +90,12 @@
       >
         <div class="actions" v-if="canManageTransactions">
           <transition name="fade-swap">
-            <x-buttons
+            <bk-buttons
               id="commit-mode"
               class="selectbutton"
               v-if="!hasActiveTransaction"
             >
-              <x-button
+              <bk-button
                 :toggled="!isManualCommit"
                 @click.prevent="toggleCommitMode('auto')"
                 v-tooltip="getCommitModeVTooltip({
@@ -106,8 +106,8 @@
                 <span class="togglebutton-content">
                   {{ !isManualCommit ? 'Auto Commit' : 'Auto' }}
                 </span>
-              </x-button>
-              <x-button
+              </bk-button>
+              <bk-button
                 :toggled="isManualCommit"
                 @click.prevent="toggleCommitMode('manual')"
                 v-tooltip="getCommitModeVTooltip({
@@ -119,8 +119,8 @@
                 <span class="togglebutton-content">
                   {{ isManualCommit ? 'Manual Commit' : 'Manual' }}
                 </span>
-              </x-button>
-            </x-buttons>
+              </bk-button>
+            </bk-buttons>
           </transition>
           <transition name="fade-swap">
             <div
@@ -146,53 +146,53 @@
         </div>
 
         <div v-if="canManageTransactions && isManualCommit" class="actions btn-group">
-          <x-buttons v-show="!hasActiveTransaction">
-            <x-button
+          <bk-buttons v-show="!hasActiveTransaction">
+            <bk-button
               @click.prevent="manualBegin"
               class="btn btn-flat btn-small"
             >
               Begin
-            </x-button>
-          </x-buttons>
+            </bk-button>
+          </bk-buttons>
 
-          <x-buttons v-show="showKeepAlive">
-            <x-button
+          <bk-buttons v-show="showKeepAlive">
+            <bk-button
               @click.prevent="keepAliveTransaction"
               class="btn btn-flat btn-small"
             >
-              <x-label>Keep Alive</x-label>
-            </x-button>
-          </x-buttons>
-          <x-buttons>
-            <x-button
+              <bk-label>Keep Alive</bk-label>
+            </bk-button>
+          </bk-buttons>
+          <bk-buttons>
+            <bk-button
               @click.prevent="manualCommit"
               class="btn btn-flat btn-small"
               :disabled="!hasActiveTransaction"
             >
-              <x-label>Commit</x-label>
-            </x-button>
-          </x-buttons>
-          <x-buttons>
-            <x-button
+              <bk-label>Commit</bk-label>
+            </bk-button>
+          </bk-buttons>
+          <bk-buttons>
+            <bk-button
               @click.prevent="manualRollback"
               class="btn btn-flat btn-small"
               :disabled="!hasActiveTransaction"
             >
-              <x-label>Rollback</x-label>
-            </x-button>
-          </x-buttons>
+              <bk-label>Rollback</bk-label>
+            </bk-button>
+          </bk-buttons>
         </div>
 
         <div class="editor-help expand" />
         <div class="expand" />
         <div class="actions btn-group">
-          <x-button
+          <bk-button
             v-if="showDryRun"
             class="btn btn-flat btn-small dry-run-btn"
             :disabled="isCommunity"
             @click="dryRun = !dryRun"
           >
-            <x-label>Dry Run</x-label>
+            <bk-label>Dry Run</bk-label>
             <i
               v-if="isCommunity"
               class="material-icons menu-icon"
@@ -202,74 +202,74 @@
               type="checkbox"
               v-model="dryRun"
             >
-          </x-button>
-          <x-button
+          </bk-button>
+          <bk-button
             @click.prevent="triggerSave"
             class="btn btn-flat btn-small"
           >
             Save
-          </x-button>
+          </bk-button>
 
-          <x-buttons class="" v-tooltip="runButtonTooltip">
-            <x-button
+          <bk-buttons class="" v-tooltip="runButtonTooltip">
+            <bk-button
               class="btn btn-primary btn-small"
               :v-tooltip="displayShortcut('queryEditor.primaryQueryAction')"
               @click.prevent="queryFunctions.primaryRead"
               :disabled="runButtonDisabled || (primaryIsCurrent && runCurrentDisabled)"
             >
-              <x-label>{{ runPrimaryText() }}</x-label>
-            </x-button>
-            <x-button
+              <bk-label>{{ runPrimaryText() }}</bk-label>
+            </bk-button>
+            <bk-button
               class="btn btn-primary btn-small"
               :disabled="runButtonDisabled"
               menu
             >
               <i class="material-icons">arrow_drop_down</i>
-              <x-menu>
-                <x-menuitem
+              <bk-menu>
+                <bk-menuitem
                   @click.prevent="queryFunctions.primaryRead"
                   :disabled="primaryIsCurrent && runCurrentDisabled"
                 >
-                  <x-label>{{ runPrimaryText() }}</x-label>
-                  <x-shortcut :value="displayShortcut('queryEditor.primaryQueryAction')" />
-                </x-menuitem>
-                <x-menuitem
+                  <bk-label>{{ runPrimaryText() }}</bk-label>
+                  <bk-shortcut :value="displayShortcut('queryEditor.primaryQueryAction')" />
+                </bk-menuitem>
+                <bk-menuitem
                   @click.prevent="queryFunctions.secondaryRead"
                   :disabled="primaryIsTab && runCurrentDisabled"
                 >
-                  <x-label>{{ runSecondaryText() }}</x-label>
-                  <x-shortcut :value="displayShortcut('queryEditor.secondaryQueryAction')" />
-                </x-menuitem>
+                  <bk-label>{{ runSecondaryText() }}</bk-label>
+                  <bk-shortcut :value="displayShortcut('queryEditor.secondaryQueryAction')" />
+                </bk-menuitem>
                 <hr>
-                <x-menuitem
+                <bk-menuitem
                   @click.prevent="queryFunctions.primaryWrite"
                   :disabled="disableRunToFile || (primaryIsCurrent && runCurrentDisabled)"
                 >
-                  <x-label>{{ runPrimaryText(true) }}</x-label>
-                  <x-shortcut :value="displayShortcut('queryEditor.primaryQueryToFileAction')" />
+                  <bk-label>{{ runPrimaryText(true) }}</bk-label>
+                  <bk-shortcut :value="displayShortcut('queryEditor.primaryQueryToFileAction')" />
                   <i
                     v-if="isCommunity"
                     class="material-icons menu-icon "
                   >
                     stars
                   </i>
-                </x-menuitem>
-                <x-menuitem
+                </bk-menuitem>
+                <bk-menuitem
                   @click.prevent="queryFunctions.secondaryWrite"
                   :disabled="disableRunToFile || (primaryIsTab && runCurrentDisabled)"
                 >
-                  <x-label>{{ runSecondaryText(true) }}</x-label>
-                  <x-shortcut :value="displayShortcut('queryEditor.secondaryQueryToFileAction')" />
+                  <bk-label>{{ runSecondaryText(true) }}</bk-label>
+                  <bk-shortcut :value="displayShortcut('queryEditor.secondaryQueryToFileAction')" />
                   <i
                     v-if="isCommunity"
                     class="material-icons menu-icon"
                   >
                     stars
                   </i>
-                </x-menuitem>
-              </x-menu>
-            </x-button>
-          </x-buttons>
+                </bk-menuitem>
+              </bk-menu>
+            </bk-button>
+          </bk-buttons>
         </div>
       </div>
     </div>

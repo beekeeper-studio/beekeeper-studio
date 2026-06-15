@@ -62,8 +62,8 @@ select {
   background: rgba($brand-info, 0.25);
 }
 
-x-buttons {
-  > x-button {
+.bk-buttons {
+  > .bk-button {
     &.btn-primary {
       &[menu] {
         border-left: 1px solid $query-editor-bg;
@@ -156,7 +156,7 @@ x-buttons {
   position: relative;
   .filter {
     .filter-actions {
-      x-button {
+      .bk-button {
         &.btn-fab {
         margin-right: 2px;
         line-height: 22px;
@@ -498,7 +498,7 @@ x-buttons {
 }
 
 // Switch
-x-switch {
+.bk-switch {
   color: $theme-primary;
 }
 

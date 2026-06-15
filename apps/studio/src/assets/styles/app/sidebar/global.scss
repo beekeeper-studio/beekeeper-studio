@@ -31,7 +31,7 @@
       }
       .add-workspace-button {
         &.disabled {
-          x-button {
+          .bk-button {
             cursor: not-allowed;
           }
         }

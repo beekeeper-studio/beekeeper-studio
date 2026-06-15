@@ -97,7 +97,7 @@ hr {
 .btn {
   @include btn;
 }
-x-buttons > x-button[menu].btn {
+.bk-buttons > .bk-button[menu].btn {
   border-left: 1px solid rgba(black, 0.35);
 }
 .btn-primary {
@@ -163,14 +163,14 @@ x-buttons > x-button[menu].btn {
 .btn-small {
   @include btn-small;
 }
-x-buttons {
+.bk-buttons {
   border-radius: 6px;
   overflow: hidden;
-  > x-button.btn-small {
+  > .bk-button.btn-small {
     border-radius: 0;
   }
 }
-x-buttons > x-button.btn-rounded {
+.bk-buttons > .bk-button.btn-rounded {
   border-radius: 6px !important;
 }
 .btn-block {
@@ -217,7 +217,7 @@ x-buttons > x-button.btn-rounded {
 .btn-group {
   margin-left: -0.25rem;
   margin-right: -0.25rem;
-  >.btn, > x-buttons, > x-button {
+  >.btn, > .bk-buttons, > .bk-button {
     margin-left: 0.25rem;
     margin-right: 0.25rem;
   }

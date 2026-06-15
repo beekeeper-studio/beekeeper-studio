@@ -1,6 +1,6 @@
 <template>
   <div class="core-account-button">
-    <x-button
+    <bk-button
       class="nav-item account"
       menu
     >
@@ -14,29 +14,29 @@
           :display="true"
         />
       </span>
-      <x-menu>
-        <x-menuitem disabled>
-          <x-label>{{ title }}</x-label>
-        </x-menuitem>
-        <x-menuitem @click.prevent="manage">
-          <x-label>Manage Workspace</x-label>
-        </x-menuitem>
-        <x-menuitem
+      <bk-menu>
+        <bk-menuitem disabled>
+          <bk-label>{{ title }}</bk-label>
+        </bk-menuitem>
+        <bk-menuitem @click.prevent="manage">
+          <bk-label>Manage Workspace</bk-label>
+        </bk-menuitem>
+        <bk-menuitem
           v-if="workspace.level === 'team' && workspace.isOwner"
           @click.prevent="invite"
         >
-          <x-label>Add Users</x-label>
-        </x-menuitem>
-        <x-menuitem
+          <bk-label>Add Users</bk-label>
+        </bk-menuitem>
+        <bk-menuitem
           v-if="pollError"
           @click.prevent="reAuthenticate"
         >
-          <x-label>
+          <bk-label>
             Log In Again
-          </x-label>
-        </x-menuitem>
-      </x-menu>
-    </x-button>
+          </bk-label>
+        </bk-menuitem>
+      </bk-menu>
+    </bk-button>
   </div>
 </template>
 <script lang="ts">

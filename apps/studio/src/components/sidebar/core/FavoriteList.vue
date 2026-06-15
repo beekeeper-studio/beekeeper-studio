@@ -14,26 +14,26 @@
               >
                 <i class="material-icons-outlined">create_new_folder</i>
               </a>
-              <x-button
+              <bk-button
                 title="Import queries"
               >
                 <i class="material-icons">save_alt</i>
-                <x-menu style="--align: end;">
-                  <x-menuitem @click.prevent="importFromComputer">
-                    <x-label>Import .sql files into Saved Queries</x-label>
-                  </x-menuitem>
-                  <x-menuitem
+                <bk-menu style="--align: end;">
+                  <bk-menuitem @click.prevent="importFromComputer">
+                    <bk-label>Import .sql files into Saved Queries</bk-label>
+                  </bk-menuitem>
+                  <bk-menuitem
                     v-if="isCloud"
                     @click.prevent="importFromLocal"
                   >
-                    <x-label>Import from local workspace</x-label>
+                    <bk-label>Import from local workspace</bk-label>
                     <i
                       v-if="$store.getters.isCommunity"
                       class="material-icons menu-icon"
                     >stars</i>
-                  </x-menuitem>
-                </x-menu>
-              </x-button>
+                  </bk-menuitem>
+                </bk-menu>
+              </bk-button>
               <a
                 class=""
                 @click.prevent="refresh"
@@ -56,14 +56,14 @@
                 placeholder="Filter"
                 v-model="filterQuery"
               >
-              <x-buttons class="filter-actions">
-                <x-button
+              <bk-buttons class="filter-actions">
+                <bk-button
                   @click="clearFilter"
                   v-if="filterQuery"
                 >
                   <i class="clear material-icons">cancel</i>
-                </x-button>
-              </x-buttons>
+                </bk-button>
+              </bk-buttons>
             </div>
           </div>
         </div>

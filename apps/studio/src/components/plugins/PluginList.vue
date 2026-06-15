@@ -35,44 +35,44 @@
         </div>
       </div>
       <div class="actions">
-        <x-button
+        <bk-button
           v-if="plugin.installed && plugin.updateAvailable"
           class="btn btn-flat"
           :disabled="plugin.installing"
           @click.prevent.stop="$emit('update', plugin)"
         >
-          <x-label>
+          <bk-label>
             {{ plugin.installing ? "Updating..." : "Update" }}
-          </x-label>
-        </x-button>
-        <x-button
+          </bk-label>
+        </bk-button>
+        <bk-button
           v-if="!plugin.installed"
           class="btn btn-flat"
           :disabled="plugin.installing"
           @click.prevent.stop="$emit('install', plugin)"
         >
-          <x-label>
+          <bk-label>
             {{ plugin.installing ? "Installing..." : "Install" }}
-          </x-label>
-        </x-button>
-        <x-button
+          </bk-label>
+        </bk-button>
+        <bk-button
           @click.stop
           class="menu-btn btn btn-fab"
           v-if="plugin.installed"
         >
           <i class="material-icons">more_vert</i>
-          <x-menu>
-            <x-menuitem @click.prevent="handleItemClick($event, plugin)">
-              <x-label>View</x-label>
-            </x-menuitem>
-            <x-menuitem v-if="!$bksConfig.pluginSystem.disabled" @click.prevent="$emit('checkForUpdates', plugin)" :disabled="plugin.checkingForUpdates">
-              <x-label>Check for updates</x-label>
-            </x-menuitem>
-            <x-menuitem v-if="!$bksConfig.pluginSystem.disabled" @click.prevent="$emit('uninstall', plugin)">
-              <x-label> Uninstall </x-label>
-            </x-menuitem>
-          </x-menu>
-        </x-button>
+          <bk-menu>
+            <bk-menuitem @click.prevent="handleItemClick($event, plugin)">
+              <bk-label>View</bk-label>
+            </bk-menuitem>
+            <bk-menuitem v-if="!$bksConfig.pluginSystem.disabled" @click.prevent="$emit('checkForUpdates', plugin)" :disabled="plugin.checkingForUpdates">
+              <bk-label>Check for updates</bk-label>
+            </bk-menuitem>
+            <bk-menuitem v-if="!$bksConfig.pluginSystem.disabled" @click.prevent="$emit('uninstall', plugin)">
+              <bk-label> Uninstall </bk-label>
+            </bk-menuitem>
+          </bk-menu>
+        </bk-button>
       </div>
     </li>
   </ul>

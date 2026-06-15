@@ -3,11 +3,11 @@
   flex-direction: column;
   z-index: 0;
 
-  .sidebar-heading x-tabs {
+  .sidebar-heading .bk-tabs {
     padding: 0;
     gap: 0.8rem;
 
-    x-tab {
+    .bk-tab {
       padding: 0;
       min-height: 0px;
       color: $text;
@@ -15,7 +15,7 @@
       --selection-indicator-height: 0;
       --ripple-background: none;
 
-      x-label {
+      .bk-label {
         font-size: 0.85rem;
         // NOTE: This was probably ok when we still use Roboto as a font.
         // Now we use system font. So at least in mac, this isn't good.

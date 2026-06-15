@@ -81,15 +81,15 @@
       </span>
     </template>
     <span class="expand" />
-    <x-button
+    <bk-button
       v-if="canEdit && editing && changesCount > 0"
       class="btn btn-flat"
       @click.prevent="discardChanges"
     >
       Reset
-    </x-button>
-    <x-buttons v-if="canEdit && editing && changesCount > 0" class="pending-changes">
-      <x-button
+    </bk-button>
+    <bk-buttons v-if="canEdit && editing && changesCount > 0" class="pending-changes">
+      <bk-button
         class="btn btn-primary btn-badge btn-icon"
         @click.prevent="saveChanges"
         v-tooltip="`Apply ${changesString}`"
@@ -100,27 +100,27 @@
           <small>{{ changesCount }}</small>
         </span>
         <span>Apply</span>
-      </x-button>
-      <x-button
+      </bk-button>
+      <bk-button
         class="btn btn-primary"
         menu
       >
         <i class="material-icons">arrow_drop_down</i>
-        <x-menu>
-          <x-menuitem @click.prevent="saveChanges">
-            <x-label>Apply</x-label>
+        <bk-menu>
+          <bk-menuitem @click.prevent="saveChanges">
+            <bk-label>Apply</bk-label>
             <!-- TODO (@day): Keyboard shortcut?? -->
-          </x-menuitem>
-          <x-menuitem @click.prevent="copyToSql">
-            <x-label>Copy to SQL</x-label>
-          </x-menuitem>
-        </x-menu>
-      </x-button>
-    </x-buttons>
+          </bk-menuitem>
+          <bk-menuitem @click.prevent="copyToSql">
+            <bk-label>Copy to SQL</bk-label>
+          </bk-menuitem>
+        </bk-menu>
+      </bk-button>
+    </bk-buttons>
     <span
       v-tooltip="editButtonTooltip"
     >
-      <x-button
+      <bk-button
         v-if="canEdit && !editing"
         :disabled="results?.length === 0 || !resultEditable || usedConfig.readOnlyMode"
         class="btn btn-flat btn-icon"
@@ -129,102 +129,102 @@
       >
         <i class="material-icons">edit</i>
         Edit Data
-      </x-button>
+      </bk-button>
     </span>
-    <x-button
+    <bk-button
       v-if="canEdit && editing && changesCount <= 0"
       class="btn btn-flat"
       @click.prevent="stopEditing"
     >
       Stop Editing
-    </x-button>
-    <x-button
+    </bk-button>
+    <bk-button
       class="btn btn-flat btn-icon end"
       :disabled="results?.length === 0"
       menu
     >
       Download <i class="material-icons">arrow_drop_down</i>
-      <x-menu>
-        <x-menuitem @click.prevent="download('csv')">
-          <x-label>Download as CSV</x-label>
-        </x-menuitem>
-        <x-menuitem @click.prevent="download('xlsx')">
-          <x-label>Download as Excel</x-label>
-        </x-menuitem>
-        <x-menuitem @click.prevent="download('json')">
-          <x-label>Download as JSON</x-label>
-        </x-menuitem>
-        <x-menuitem @click.prevent="download('md')">
-          <x-label>Download as Markdown</x-label>
-        </x-menuitem>
+      <bk-menu>
+        <bk-menuitem @click.prevent="download('csv')">
+          <bk-label>Download as CSV</bk-label>
+        </bk-menuitem>
+        <bk-menuitem @click.prevent="download('xlsx')">
+          <bk-label>Download as Excel</bk-label>
+        </bk-menuitem>
+        <bk-menuitem @click.prevent="download('json')">
+          <bk-label>Download as JSON</bk-label>
+        </bk-menuitem>
+        <bk-menuitem @click.prevent="download('md')">
+          <bk-label>Download as Markdown</bk-label>
+        </bk-menuitem>
         <span
           v-if="dialect !== 'mongodb'"
           v-tooltip="{
             content: downloadFullTooltip
           }"
         >
-          <x-menuitem
+          <bk-menuitem
             @click.prevent="$event => submitCurrentQueryToFile()"
             :disabled="!(result && result.truncated)"
           >
-            <x-label>Download Full Resultset</x-label>
+            <bk-label>Download Full Resultset</bk-label>
             <i
               v-if="$store.getters.isCommunity"
               class="material-icons menu-icon"
             >stars</i>
-          </x-menuitem>
+          </bk-menuitem>
         </span>
         <hr>
-        <x-menuitem
+        <bk-menuitem
           title="Probably don't do this with large results (500+)"
           @click.prevent="copyToClipboard"
         >
-          <x-label>Copy to Clipboard (TSV / Excel)</x-label>
-        </x-menuitem>
-        <x-menuitem
+          <bk-label>Copy to Clipboard (TSV / Excel)</bk-label>
+        </bk-menuitem>
+        <bk-menuitem
           title="Probably don't do this with large results (500+)"
           @click.prevent="copyToClipboardJson"
         >
-          <x-label>Copy to Clipboard (JSON)</x-label>
-        </x-menuitem>
-        <x-menuitem
+          <bk-label>Copy to Clipboard (JSON)</bk-label>
+        </bk-menuitem>
+        <bk-menuitem
           title="Probably don't do this with large results (500+)"
           @click.prevent="copyToClipboardMarkdown"
         >
-          <x-label>Copy to Clipboard (Markdown)</x-label>
-        </x-menuitem>
-      </x-menu>
-    </x-button>
-    <x-button
+          <bk-label>Copy to Clipboard (Markdown)</bk-label>
+        </bk-menuitem>
+      </bk-menu>
+    </bk-button>
+    <bk-button
       class="actions-btn btn btn-flat settings-btn"
       menu
     >
       <i class="material-icons">settings</i>
       <i class="material-icons">arrow_drop_down</i>
-      <x-menu>
-        <x-menuitem disabled togglable>
-          <x-label>Editor keymap</x-label>
-        </x-menuitem>
-        <x-menuitem
+      <bk-menu>
+        <bk-menuitem disabled togglable>
+          <bk-label>Editor keymap</bk-label>
+        </bk-menuitem>
+        <bk-menuitem
           :key="t.value"
           v-for="t in keymapTypes"
           togglable
           :toggled="t.value === userKeymap"
           @click.prevent="userKeymap = t.value"
         >
-          <x-label>{{ t.name }}</x-label>
-        </x-menuitem>
-        <x-menuitem
+          <bk-label>{{ t.name }}</bk-label>
+        </bk-menuitem>
+        <bk-menuitem
           togglable
           :toggled="wrapText"
           @click.prevent="$emit('wrap-text')"
         >
-          <x-label class="flex-between">
+          <bk-label class="flex-between">
             Wrap Text
-          </x-label>
-        </x-menuitem>
-      </x-menu>
-    </x-button>
+          </bk-label>
+        </bk-menuitem>
+      </bk-menu>
+    </bk-button>
   </statusbar>
 </template>
 <script>

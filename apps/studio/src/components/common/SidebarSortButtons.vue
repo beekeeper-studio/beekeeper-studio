@@ -1,6 +1,6 @@
 <template>
   <div class="sort-buttons">
-    <x-button
+    <bk-button
       v-if="noOrder !== sortBy"
       class="actions-btn btn btn-link btn-sm"
       v-tooltip="sortOrderTooltip"
@@ -14,22 +14,22 @@
         v-else
         class="material-icons"
       >expand_less</i>
-    </x-button>
-    <x-button
+    </bk-button>
+    <bk-button
       class="actions-btn btn btn-link btn-sm"
       v-tooltip="'Reorder items'"
     >
       <i class="material-icons-outlined">sort</i>
-      <x-menu style="--target-align:right;">
-        <x-menuitem
+      <bk-menu style="--target-align:right;">
+        <bk-menuitem
           v-for="key in Object.keys(sortOptions)"
           :key="key"
           @click.prevent="sortBy = key"
         >
-          <x-label>{{ sortOptions[key] }}</x-label>
-        </x-menuitem>
-      </x-menu>
-    </x-button>
+          <bk-label>{{ sortOptions[key] }}</bk-label>
+        </bk-menuitem>
+      </bk-menu>
+    </bk-button>
   </div>
 </template>
 

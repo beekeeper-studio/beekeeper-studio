@@ -11,7 +11,7 @@
         <a class="close-btn btn btn-fab" href="#" @click.prevent="close">
           <i class="material-icons">clear</i>
         </a>
-        <x-progressbar v-if="loadingPlugins" style="margin-top: -5px" />
+        <bk-progressbar v-if="loadingPlugins" style="margin-top: -5px" />
         <div class="plugin-manager-content">
           <div class="plugin-list-container">
             <div class="description">

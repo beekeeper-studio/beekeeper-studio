@@ -29,28 +29,28 @@
       </div>
       <div class="actions" v-if="!$bksConfig.pluginSystem.disabled">
         <template v-if="plugin.installed">
-          <x-button
+          <bk-button
             v-if="plugin.updateAvailable"
             @click.prevent="$emit('update')"
             class="btn btn-primary"
           >
-            <x-label>
+            <bk-label>
               {{
                 plugin.installing ? "Updating..." : "Update"
               }}
-            </x-label>
-          </x-button>
-          <x-button
+            </bk-label>
+          </bk-button>
+          <bk-button
             v-else
             @click.prevent="$emit('checkForUpdates')"
             class="btn btn-flat"
             :disabled="plugin.checkingForUpdates"
           >
-            <x-label>Check for Updates</x-label>
-          </x-button>
-          <x-button @click.prevent="$emit('uninstall')" class="btn btn-flat">
-            <x-label>Uninstall</x-label>
-          </x-button>
+            <bk-label>Check for Updates</bk-label>
+          </bk-button>
+          <bk-button @click.prevent="$emit('uninstall')" class="btn btn-flat">
+            <bk-label>Uninstall</bk-label>
+          </bk-button>
           <label class="checkbox-group">
             <input
               type="checkbox"
@@ -60,18 +60,18 @@
             <span>Auto-update</span>
           </label>
         </template>
-        <x-button
+        <bk-button
           v-else
           @click.prevent="$emit('install')"
           class="btn btn-primary"
           :disabled="plugin.installing"
         >
-          <x-label>
+          <bk-label>
             {{
               plugin.installing ? "Installing..." : "Install"
             }}
-          </x-label>
-        </x-button>
+          </bk-label>
+        </bk-button>
       </div>
       <div
         v-if="

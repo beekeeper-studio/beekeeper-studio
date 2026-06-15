@@ -45,35 +45,35 @@
                 </div>
 
                 <div>
-                  <x-button
+                  <bk-button
                     class="actions-btn btn btn-link btn-fab"
                     title="actions"
                   >
                     <!-- <span>Actions</span> -->
                     <i class="material-icons">more_horiz</i>
-                    <x-menu style="--target-align: right;">
-                      <x-menuitem>
-                        <x-label>
+                    <bk-menu style="--target-align: right;">
+                      <bk-menuitem>
+                        <bk-label>
                           <a href="https://app.beekeeperstudio.io">Account Dashboard</a>
-                        </x-label>
-                      </x-menuitem>
-                      <x-menuitem @click.prevent="refresh">
-                        <x-label>Refresh</x-label>
-                      </x-menuitem>
-                      <x-menuitem
+                        </bk-label>
+                      </bk-menuitem>
+                      <bk-menuitem @click.prevent="refresh">
+                        <bk-label>Refresh</bk-label>
+                      </bk-menuitem>
+                      <bk-menuitem
                         @click.prevent="reauth(blob)"
                         title="Sign in again with the same email and a new password"
                       >
-                        <x-label>Re-authenticate</x-label>
-                      </x-menuitem>
-                      <x-menuitem
+                        <bk-label>Re-authenticate</bk-label>
+                      </bk-menuitem>
+                      <bk-menuitem
                         @click.prevent="logout(blob)"
                         title="Sign out of this account"
                       >
-                        <x-label>Log out</x-label>
-                      </x-menuitem>
-                    </x-menu>
-                  </x-button>
+                        <bk-label>Log out</bk-label>
+                      </bk-menuitem>
+                    </bk-menu>
+                  </bk-button>
                 </div>
               </a>
             </div>

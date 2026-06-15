@@ -24,14 +24,14 @@
               placeholder="Filter"
               v-model="connFilter"
             >
-            <x-buttons class="filter-actions">
-              <x-button
+            <bk-buttons class="filter-actions">
+              <bk-button
                 @click="clearFilter"
                 v-if="connFilter"
               >
                 <i class="clear material-icons">cancel</i>
-              </x-button>
-            </x-buttons>
+              </bk-button>
+            </bk-buttons>
           </div>
         </div>
       </div>
@@ -119,20 +119,20 @@
                     :sort-options="sortables"
                   />
                 </div>
-                <!-- <x-button class="actions-btn btn btn-link btn-small" v-tooltip="`Sorted by ${sortables[sortOrder]}`">
+                <!-- <bk-button class="actions-btn btn btn-link btn-small" v-tooltip="`Sorted by ${sortables[sortOrder]}`">
                   <i class="material-icons-outlined">sort</i>
-                  <x-menu style="--target-align: right;">
-                    <x-menuitem
+                  <bk-menu style="--target-align: right;">
+                    <bk-menuitem
                       v-for="i in Object.keys(sortables)"
                       :key="i"
                       :toggled="i === sortOrder"
                       togglable
                       @click="sortConnections(i)"
                     >
-                      <x-label>{{ sortables[i] }}</x-label>
-                    </x-menuitem>
-                  </x-menu>
-                </x-button> -->
+                      <bk-label>{{ sortables[i] }}</bk-label>
+                    </bk-menuitem>
+                  </bk-menu>
+                </bk-button> -->
               </div>
             </div>
             <error-alert

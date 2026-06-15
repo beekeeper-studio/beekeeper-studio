@@ -95,7 +95,7 @@
           >
             Cancel
           </button>
-          <x-button
+          <bk-button
             class="btn btn-primary btn-icon"
             @click.prevent="onSubmit"
             v-tooltip="hasPendingChanges && anyChanges ? 'Heads up: This will discard pending data changes' : null"
@@ -106,7 +106,7 @@
               class="material-icons"
             >error_outline</i>
             <span> Apply</span>
-          </x-button>
+          </bk-button>
         </div>
       </form>
     </modal>

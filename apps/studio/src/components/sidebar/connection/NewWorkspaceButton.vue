@@ -4,17 +4,17 @@
     :class="{disabled: !credentials.length}"
     v-tooltip="title"
   >
-    <x-button class="nav-item" @click="onClick">
+    <bk-button class="nav-item" @click="onClick">
       <span class="avatar-btn-link"><i class="material-icons">add</i></span>
-      <x-menu v-if="credentials.length && $store.getters.isUltimate">
-        <x-menuitem @click.prevent="createWorkspace">
-          <x-label>Create a new workspace</x-label>
-        </x-menuitem>
-        <x-menuitem @click.prevent="addWorkspace">
-          <x-label>{{ credentials.length ? 'Sign in to another workspace account' : 'Sign in' }}</x-label>
-        </x-menuitem>
-      </x-menu>
-    </x-button>
+      <bk-menu v-if="credentials.length && $store.getters.isUltimate">
+        <bk-menuitem @click.prevent="createWorkspace">
+          <bk-label>Create a new workspace</bk-label>
+        </bk-menuitem>
+        <bk-menuitem @click.prevent="addWorkspace">
+          <bk-label>{{ credentials.length ? 'Sign in to another workspace account' : 'Sign in' }}</bk-label>
+        </bk-menuitem>
+      </bk-menu>
+    </bk-button>
   </div>
 </template>
 

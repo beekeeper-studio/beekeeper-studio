@@ -23,7 +23,7 @@
           <div class="alert alert-info">
             Applying changes...
           </div>
-          <x-progressbar />
+          <bk-progressbar />
         </div>
         <div class="content-wrap">
           <div class="table-subheader">
@@ -58,18 +58,18 @@
     <status-bar class="tabulator-footer" :active="active">
       <div class="flex flex-middle flex-right statusbar-actions">
         <slot name="footer" />
-        <x-button
+        <bk-button
           v-if="hasEdits && !loading"
           class="btn btn-flat reset"
           @click.prevent="submitUndo"
         >
           Reset
-        </x-button>
-        <x-buttons
+        </bk-button>
+        <bk-buttons
           v-if="hasEdits && !loading"
           class="pending-changes"
         >
-          <x-button
+          <bk-button
             class="btn btn-primary"
             @click.prevent="submitApply"
           >
@@ -82,25 +82,25 @@
               v-if="!error"
             ><small>{{ editCount }}</small></span>
             <span>Apply</span>
-          </x-button>
-          <x-button
+          </bk-button>
+          <bk-button
             class="btn btn-primary"
             menu
             v-if="hasSql"
           >
             <i class="material-icons">arrow_drop_down</i>
-            <x-menu>
-              <x-menuitem @click.prevent="submitApply">
-                <x-label>Apply</x-label>
-                <x-shortcut value="Control+S" />
-              </x-menuitem>
-              <x-menuitem @click.prevent="submitSql">
-                <x-label>Copy to SQL</x-label>
-                <x-shortcut value="Control+Shift+S" />
-              </x-menuitem>
-            </x-menu>
-          </x-button>
-        </x-buttons>
+            <bk-menu>
+              <bk-menuitem @click.prevent="submitApply">
+                <bk-label>Apply</bk-label>
+                <bk-shortcut value="Control+S" />
+              </bk-menuitem>
+              <bk-menuitem @click.prevent="submitSql">
+                <bk-label>Copy to SQL</bk-label>
+                <bk-shortcut value="Control+Shift+S" />
+              </bk-menuitem>
+            </bk-menu>
+          </bk-button>
+        </bk-buttons>
 
         <slot name="actions" />
       </div>

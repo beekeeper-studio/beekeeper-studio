@@ -22,7 +22,7 @@
       // border-top: 1px solid darken($theme-bg, 6%);
       border-top: 1px solid $border-color;
     }
-    x-menu {
+    .bk-menu {
       hr {
         margin: ($gutter-h * 0.75) 0;
       }
@@ -159,7 +159,7 @@
     .filter-actions {
       display: inline-flex;
       padding: 0 0 0 ($gutter-h * 0.5);
-      x-button {
+      .bk-button {
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -195,7 +195,7 @@
 
         }
       }
-      x-menu {
+      .bk-menu {
         padding: $gutter-h 0;
         label {
           display: flex;
@@ -205,7 +205,7 @@
           min-height: $input-height;
           cursor: pointer;
         }
-        x-menuitem {
+        .bk-menuitem {
           display: none;
         }
       }
@@ -281,7 +281,7 @@
       display: flex;
       cursor: pointer;
     }
-    x-button {
+    .bk-button {
       height: auto;
     }
     & > * {
@@ -298,7 +298,7 @@
       }
     }
   }
-  x-menuitem .menu-icon {
+  .bk-menuitem .menu-icon {
     padding-left: 0.4rem;
   }
 }

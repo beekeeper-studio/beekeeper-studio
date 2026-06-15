@@ -65,13 +65,13 @@
       @clipboardMarkdown="clipboardMarkdown"
     >
       <template #left-actions>
-        <x-button
+        <bk-button
           class="btn btn-flat btn-icon"
           @click="toggleTablePanel"
         >
           <i class="material-icons">{{ isTablePanelVisible ? 'remove' : 'table_view' }}</i>
           {{ isTablePanelVisible ? 'Hide result' : 'Show result' }}
-        </x-button>
+        </bk-button>
       </template>
     </query-editor-status-bar>
   </div>

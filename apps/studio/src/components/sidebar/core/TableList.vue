@@ -13,14 +13,14 @@
             placeholder="Filter"
             v-model="filterQuery"
           >
-          <x-buttons class="filter-actions">
-            <x-button
+          <bk-buttons class="filter-actions">
+            <bk-button
               @click="clearFilter"
               v-if="filterQuery"
             >
               <i class="clear material-icons">cancel</i>
-            </x-button>
-            <x-button
+            </bk-button>
+            <bk-button
               v-if="this.dialect != 'mongodb'"
               :title="entitiesHidden ? 'Filter active' : 'No filters'"
               class="btn btn-fab btn-link action-item"
@@ -28,7 +28,7 @@
               menu
             >
               <i class="material-icons-outlined">filter_alt</i>
-              <x-menu style="--target-align: right;">
+              <bk-menu style="--target-align: right;">
                 <label>
                   <input
                     type="checkbox"
@@ -50,15 +50,15 @@
                   >
                   <span>Routines</span>
                 </label>
-                <x-menuitem />
-              </x-menu>
-            </x-button>
-          </x-buttons>
+                <bk-menuitem />
+              </bk-menu>
+            </bk-button>
+          </bk-buttons>
         </div>
       </div>
     </div>
 
-    <x-progressbar
+    <bk-progressbar
       v-show="tablesLoading"
       style="margin-top: -5px;"
     />
@@ -124,38 +124,38 @@
             <i class="material-icons">refresh</i>
           </button>
 
-          <x-button
+          <bk-button
             v-if="!usedConfig?.readOnlyMode"
             class="settings-btn"
             menu
           >
             <i class="material-icons">add</i>
             <i class="material-icons">arrow_drop_down</i>
-            <x-menu>
-              <x-menuitem
+            <bk-menu>
+              <bk-menuitem
                 :disabled="tablesLoading || createDisabled"
                 @click.prevent="newTable"
                 :title="createDisabled ? `Creating tables is not supported for ${dialect}` : ''"
               >
-                <x-label>
+                <bk-label>
                   {{ newTableOrCollection }}
-                </x-label>
-              </x-menuitem>
-              <x-menuitem
+                </bk-label>
+              </bk-menuitem>
+              <bk-menuitem
                 :disabled="tablesLoading || createDisabled"
                 @click.prevent="newTableFromFile"
                 :title="createDisabled ? `Creating tables is not supported for ${dialect}` : ''"
               >
-                <x-label>
+                <bk-label>
                   {{ newTableOrCollection }} from File
                   <i
                     v-if="$store.getters.isCommunity"
                     class="material-icons menu-icon"
                   >stars</i>
-                </x-label>
-              </x-menuitem>
-            </x-menu>
-          </x-button>
+                </bk-label>
+              </bk-menuitem>
+            </bk-menu>
+          </bk-button>
         </div>
       </div>
 

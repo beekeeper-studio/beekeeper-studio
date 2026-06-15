@@ -33,7 +33,7 @@
           :class="{enabled: config.redshiftOptions.isServerless}"
         >
           <span class="expand">Is Serverless Instance</span>
-          <x-switch
+          <bk-switch
             @click.prevent="toggleServerless"
             :toggled="config.redshiftOptions.isServerless"
           />

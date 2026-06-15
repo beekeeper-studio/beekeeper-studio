@@ -1,7 +1,7 @@
 <template>
   <div class="with-table-wrapper">
     <div v-if="!tablesInitialLoaded">
-      <x-progressbar />
+      <bk-progressbar />
     </div>
     <div
       class="no-content flex"

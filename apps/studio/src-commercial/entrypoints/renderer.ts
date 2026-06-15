@@ -8,10 +8,10 @@ import Vue from 'vue'
 import VueHotkey from 'v-hotkey'
 import VModal from 'vue-js-modal'
 import VTooltip from 'v-tooltip'
-import 'xel/xel'
 import { TabulatorFull as Tabulator } from 'tabulator-tables'
 import '@/filters/pretty-bytes-filter'
 import PortalVue from 'portal-vue'
+import BkComponents from '@/components/common/bk'
 import 'typeface-roboto'
 import 'typeface-source-code-pro'
 import '@/assets/styles/app.scss'
@@ -173,6 +173,7 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
     Vue.use(SettingsPlugin)
     Vue.use(VueElectronPlugin)
     Vue.use(PortalVue)
+    Vue.use(BkComponents)
     Vue.use(NotyPlugin, {
       timeout: 2300,
       progressBar: true,

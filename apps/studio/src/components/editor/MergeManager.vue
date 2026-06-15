@@ -33,31 +33,31 @@
       </div>
       <span class="alert-footer btn-group">
         <span class="expand" />
-        <x-button
+        <bk-button
           @click.prevent="viewDiff"
           class="btn btn-link"
-        >Preview Merge</x-button>
-        <x-buttons>
-          <x-button
+        >Preview Merge</bk-button>
+        <bk-buttons>
+          <bk-button
             title="Merge local and remote changes together"
             class="btn btn-primary btn-small"
             @click.prevent="merge"
-          >Merge</x-button>
-          <x-button
+          >Merge</bk-button>
+          <bk-button
             class="btn btn-primary btn-small"
             menu
           >
             <i class="material-icons">arrow_drop_down</i>
-            <x-menu>
-              <x-menuitem
+            <bk-menu>
+              <bk-menuitem
                 title="Discard local changes and reload with only the remote changes"
                 @click.prevent="discardLocal"
               >
-                <x-label>Discard Local Changes</x-label>
-              </x-menuitem>
-            </x-menu>
-          </x-button>
-        </x-buttons>
+                <bk-label>Discard Local Changes</bk-label>
+              </bk-menuitem>
+            </bk-menu>
+          </bk-button>
+        </bk-buttons>
       </span>
     </div>
 

@@ -8,7 +8,7 @@
         <label for="createTableSwitch">
           Create Table from Import File
         </label>
-        <x-switch
+        <bk-switch
           id="createTableSwitch"
           @click.prevent="updateTableSwitch"
           :toggled="createTableFromFile"
@@ -34,14 +34,14 @@
               placeholder="Filter"
               v-model="filterQuery"
             >
-            <x-buttons class="filter-actions">
-              <x-button
+            <bk-buttons class="filter-actions">
+              <bk-button
                 @click="clearFilter"
                 v-if="filterQuery"
               >
                 <i class="clear material-icons">cancel</i>
-              </x-button>
-            </x-buttons>
+              </bk-button>
+            </bk-buttons>
           </div>
         </div>
       </div>

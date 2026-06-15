@@ -8,7 +8,7 @@
       :error="error"
     />
     <div v-show="running">
-      <x-progressbar />
+      <bk-progressbar />
     </div>
     <div class="table-builder-wrap">
       <div class="center-wrap">
@@ -47,8 +47,8 @@
     <status-bar class="tabulator-footer" :active="active">
       <span class="expand" />
       <div class="col flex-right statusbar-actions">
-        <x-buttons class="pending-changes">
-          <x-button
+        <bk-buttons class="pending-changes">
+          <bk-button
             class="btn btn-primary"
             @click.prevent="create"
           >
@@ -57,33 +57,33 @@
               class="material-icons"
             >error</i>
             <span>Create Table</span>
-          </x-button>
-          <x-button
+          </bk-button>
+          <bk-button
             class="btn btn-primary"
             menu
           >
             <i class="material-icons">arrow_drop_down</i>
-            <x-menu>
-              <x-menuitem @click.prevent="create">
-                <x-label>Create Table</x-label>
-                <x-shortcut value="Control+S" />
-              </x-menuitem>
-              <x-menuitem @click.prevent="sql">
-                <x-label>Copy to SQL</x-label>
-                <x-shortcut value="Control+Shift+S" />
-              </x-menuitem>
-              <!-- <x-menuitem @click.prevent="createAndImport"> -->
-              <!--   <x-label> -->
+            <bk-menu>
+              <bk-menuitem @click.prevent="create">
+                <bk-label>Create Table</bk-label>
+                <bk-shortcut value="Control+S" />
+              </bk-menuitem>
+              <bk-menuitem @click.prevent="sql">
+                <bk-label>Copy to SQL</bk-label>
+                <bk-shortcut value="Control+Shift+S" />
+              </bk-menuitem>
+              <!-- <bk-menuitem @click.prevent="createAndImport"> -->
+              <!--   <bk-label> -->
               <!--     Create Table and Import Data from File -->
               <!--     <i -->
               <!--       v-if="$store.getters.isCommunity" -->
               <!--       class="material-icons menu-icon" -->
               <!--     >stars</i> -->
-              <!--   </x-label> -->
-              <!-- </x-menuitem> -->
-            </x-menu>
-          </x-button>
-        </x-buttons>
+              <!--   </bk-label> -->
+              <!-- </bk-menuitem> -->
+            </bk-menu>
+          </bk-button>
+        </bk-buttons>
       </div>
     </status-bar>
   </div>

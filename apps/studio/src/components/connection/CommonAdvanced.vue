@@ -4,7 +4,7 @@
     :expanded="config.sshEnabled"
   >
     <template #header>
-      <x-switch
+      <bk-switch
         @click.prevent="config.sshEnabled = !config.sshEnabled"
         :toggled="config.sshEnabled"
       />

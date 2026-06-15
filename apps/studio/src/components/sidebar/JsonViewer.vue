@@ -26,23 +26,23 @@
             <i class="material-icons">cancel</i>
           </button>
         </div>
-        <x-button
+        <bk-button
           class="menu-btn btn btn-fab"
           tabindex="0"
         >
           <i class="material-icons">more_vert</i>
-          <x-menu style="--target-align:right;">
-            <x-menuitem
+          <bk-menu style="--target-align:right;">
+            <bk-menuitem
               v-for="option in menuOptions"
               :key="option.name"
               :toggled="option.checked"
               :togglable="typeof option.checked !== 'undefined'"
               @click.prevent="option.handler"
             >
-              <x-label>{{ option.name }}</x-label>
-            </x-menuitem>
-          </x-menu>
-        </x-button>
+              <bk-label>{{ option.name }}</bk-label>
+            </bk-menuitem>
+          </bk-menu>
+        </bk-button>
       </div>
     </div>
     <div class="text-editor-wrapper">

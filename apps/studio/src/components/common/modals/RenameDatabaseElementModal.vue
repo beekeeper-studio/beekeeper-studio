@@ -33,28 +33,28 @@
           >
             Cancel
           </button>
-          <x-buttons :disabled="loading">
-            <x-button
+          <bk-buttons :disabled="loading">
+            <bk-button
               class="btn btn-primary"
               @click.prevent="rename"
             >
               Apply
-            </x-button>
-            <x-button
+            </bk-button>
+            <bk-button
               class="btn btn-primary"
               menu
             >
               <i class="material-icons">arrow_drop_down</i>
-              <x-menu style="--align: end;">
-                <x-menuitem @click.prevent="rename">
-                  <x-label>Apply</x-label>
-                </x-menuitem>
-                <x-menuitem @click.prevent="renameSql">
-                  <x-label>Copy to SQL</x-label>
-                </x-menuitem>
-              </x-menu>
-            </x-button>
-          </x-buttons>
+              <bk-menu style="--align: end;">
+                <bk-menuitem @click.prevent="rename">
+                  <bk-label>Apply</bk-label>
+                </bk-menuitem>
+                <bk-menuitem @click.prevent="renameSql">
+                  <bk-label>Copy to SQL</bk-label>
+                </bk-menuitem>
+              </bk-menu>
+            </bk-button>
+          </bk-buttons>
         </div>
       </div>
     </modal>

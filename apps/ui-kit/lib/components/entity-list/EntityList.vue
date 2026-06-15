@@ -35,7 +35,7 @@
       </div>
     </div>
 
-    <x-progressbar
+    <bk-progressbar
       v-show="tablesLoading"
       style="margin-top: -5px;"
     />

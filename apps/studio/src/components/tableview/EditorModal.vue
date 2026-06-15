@@ -41,34 +41,34 @@
               </option>
             </select>
 
-            <x-button
+            <bk-button
               class="btn btn-flat"
               title="Actions"
             >
               <i class="material-icons">settings</i>
               <i class="material-icons">arrow_drop_down</i>
-              <x-menu style="--align: end">
-                <x-menuitem
+              <bk-menu style="--align: end">
+                <bk-menuitem
                   togglable
                   @click.prevent="format"
                   v-show="!language.noBeautify"
                 >
-                  <x-label>Format {{ language.label }}</x-label>
-                </x-menuitem>
-                <x-menuitem @click.prevent="minify" togglable>
-                  <x-label>Minify text</x-label>
-                </x-menuitem>
-                <x-menuitem
+                  <bk-label>Format {{ language.label }}</bk-label>
+                </bk-menuitem>
+                <bk-menuitem @click.prevent="minify" togglable>
+                  <bk-label>Minify text</bk-label>
+                </bk-menuitem>
+                <bk-menuitem
                   togglable
                   :toggled="wrapText"
                   @click.prevent="toggleWrapText"
                 >
-                  <x-label class="flex-between">
+                  <bk-label class="flex-between">
                     Wrap Text
-                  </x-label>
-                </x-menuitem>
-              </x-menu>
-            </x-button>
+                  </bk-label>
+                </bk-menuitem>
+              </bk-menu>
+            </bk-button>
           </div>
 
           <!-- Prevent tabbing into the next element, caused by v-kbd-trap -->
@@ -110,35 +110,35 @@
             >
               Copy
             </button>
-            <x-button
+            <bk-button
               v-if="language.noMinify"
               class="btn btn-primary btn-sm"
               @click.prevent="save"
               :disabled="isReadOnly"
             >
-              <x-label>Apply</x-label>
-            </x-button>
-            <x-buttons v-else>
-              <x-button
+              <bk-label>Apply</bk-label>
+            </bk-button>
+            <bk-buttons v-else>
+              <bk-button
                 class="btn btn-primary btn-small"
                 :disabled="isReadOnly"
                 @click.prevent="saveAndMinify"
               >
-                <x-label>Minify & Apply</x-label>
-              </x-button>
-              <x-button
+                <bk-label>Minify & Apply</bk-label>
+              </bk-button>
+              <bk-button
                 :disabled="isReadOnly"
                 class="btn btn-primary btn-small"
                 menu
               >
                 <i class="material-icons">arrow_drop_down</i>
-                <x-menu style="--align: end">
-                  <x-menuitem @click.prevent="save">
-                    <x-label>Apply (no minify)</x-label>
-                  </x-menuitem>
-                </x-menu>
-              </x-button>
-            </x-buttons>
+                <bk-menu style="--align: end">
+                  <bk-menuitem @click.prevent="save">
+                    <bk-label>Apply (no minify)</bk-label>
+                  </bk-menuitem>
+                </bk-menu>
+              </bk-button>
+            </bk-buttons>
           </div>
         </div>
       </div>
@@ -301,8 +301,8 @@ div.vue-dialog div.dialog-content {
   }
 }
 
-.vue-dialog .vue-dialog-buttons x-buttons {
-  x-button.btn {
+.vue-dialog .vue-dialog-buttons .bk-buttons {
+  .bk-button.btn {
     margin: 0;
   }
 }

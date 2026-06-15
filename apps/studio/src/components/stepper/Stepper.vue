@@ -86,13 +86,13 @@
       :to="buttonPortalTarget"
     >
       <div class="portal">
-        <x-button
+        <bk-button
           v-if="currentStepIndex > 0"
           class="btn btn-flat btn-flex"
           @click="prevStep"
         >
           <i class="material-icons">keyboard_arrow_left</i>
-        </x-button>
+        </bk-button>
         <div v-else>
           &nbsp;
         </div>
@@ -100,7 +100,7 @@
           &nbsp;
         </slot>
         <span v-tooltip="tooltip">
-          <x-button
+          <bk-button
             :disabled="continueButtonDisabled"
             :class="currentStepNextButtonClass"
             @click="nextStep"
@@ -117,7 +117,7 @@
               class="next-button-icon material-icons"
             >{{ currentStep.nextButtonIcon
             }}</i>
-          </x-button>
+          </bk-button>
 
         </span>
       </div>

@@ -34,27 +34,27 @@
           @click.prevent="createQuery(null)"
           class="btn-fab add-query"
         ><i class=" material-icons">add</i></a>
-        <x-button
+        <bk-button
           class="btn-fab add-tab-dropdown"
           menu
           v-if="newTabDropdownItems.length > 1"
         >
           <i class="material-icons">arrow_drop_down</i>
-          <x-menu>
+          <bk-menu>
             <template v-for="(menuItem, index) in newTabDropdownItems">
-              <x-menuitem
+              <bk-menuitem
                 :key="index"
                 @click.prevent="createTab(menuItem.config)"
               >
-                <x-label>
+                <bk-label>
                   <i class="material-icons">{{ menuItem.config.icon }}</i>
                   {{ menuItem.label }}
-                </x-label>
-                <x-shortcut v-if="menuItem.shortcut" :value="menuItem.shortcut" />
-              </x-menuitem>
+                </bk-label>
+                <bk-shortcut v-if="menuItem.shortcut" :value="menuItem.shortcut" />
+              </bk-menuitem>
             </template>
-          </x-menu>
-        </x-button>
+          </bk-menu>
+        </bk-button>
       </span>
       <a
         @click.prevent="showUpgradeModal"
@@ -65,7 +65,7 @@
         <i class="material-icons">stars</i> Upgrade
       </a>
     </div>
-    <x-progressbar v-if="activeTab?.isLoading" />
+    <bk-progressbar v-if="activeTab?.isLoading" />
     <div class="tab-content">
       <div class="empty-editor-group empty flex-col  expand">
         <div class="expand layout-center">

@@ -7,7 +7,7 @@
       $bks.buildConnectionString(config)"
     :class="classes"
   >
-    <x-button
+    <bk-button
       class="btn btn-link btn-icon"
       menu
     >
@@ -19,32 +19,32 @@
         class="connection-type badge truncate"
         v-tooltip="databaseVersion"
       >{{ connectionType }}</span>
-      <x-menu @close="isQuickSwitcherVisible = false">
-        <x-menuitem
+      <bk-menu @close="isQuickSwitcherVisible = false">
+        <bk-menuitem
           @click.prevent="disconnect(false)"
           class="red"
         >
-          <x-label><i class="material-icons">power_settings_new</i>Disconnect</x-label>
-        </x-menuitem>
-        <x-menuitem @click.prevent="$modal.show('config-save-modal')">
-          <x-label v-if="config.id">
+          <bk-label><i class="material-icons">power_settings_new</i>Disconnect</bk-label>
+        </bk-menuitem>
+        <bk-menuitem @click.prevent="$modal.show('config-save-modal')">
+          <bk-label v-if="config.id">
             <i class="material-icons">edit</i>Edit Connection
-          </x-label>
-          <x-label v-else>
+          </bk-label>
+          <bk-label v-else>
             <i class="material-icons">save</i>Save Connection
-          </x-label>
-        </x-menuitem>
+          </bk-label>
+        </bk-menuitem>
         <!-- FIXME: Let's not use connection.connectionType -->
-        <x-menuitem
+        <bk-menuitem
           v-if="connection.connectionType === 'libsql' && connection.server.config.libsqlOptions.syncUrl"
           @click.prevent="syncDatabase"
         >
-          <x-label>
+          <bk-label>
             <i class="material-icons">sync</i>Sync Database
-          </x-label>
-        </x-menuitem>
-        <x-menuitem @click.stop.prevent="showQuickSwitcher">
-          <x-label class="flex items-center justify-between">
+          </bk-label>
+        </bk-menuitem>
+        <bk-menuitem @click.stop.prevent="showQuickSwitcher">
+          <bk-label class="flex items-center justify-between">
             <span class="flex items-center">
               <i class="material-icons">swap_horiz</i>
               Switch Connection
@@ -52,10 +52,10 @@
             <span style="font-size: 22px;">
               {{ isQuickSwitcherVisible ? '‹' : '›' }}
             </span>
-          </x-label>
-        </x-menuitem>
-      </x-menu>
-    </x-button>
+          </bk-label>
+        </bk-menuitem>
+      </bk-menu>
+    </bk-button>
     <portal to="modals">
       <modal
         class="vue-dialog beekeeper-modal save-connection-modal"

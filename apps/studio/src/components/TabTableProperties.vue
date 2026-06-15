@@ -30,7 +30,7 @@
         v-if="loading"
         class="table-properties-loading"
       >
-        <x-progressbar />
+        <bk-progressbar />
       </div>
       <div
         class="table-properties-wrap"
@@ -52,13 +52,13 @@
         >
           <template #footer>
             <div class="statusbar-info col flex expand">
-              <x-button
+              <bk-button
                 @click.prevent="openData"
                 class="btn btn-flat btn-icon end"
                 title="View Data"
               >
                 Data <i class="material-icons">north_east</i>
-              </x-button>
+              </bk-button>
               <template v-if="properties">
                 <table-length
                   :table="table"
@@ -99,44 +99,44 @@
           </template>
 
           <template #actions>
-            <x-button
+            <bk-button
               class="actions-btn btn btn-flat"
               title="Actions"
             >
               <i class="material-icons">settings</i>
               <i class="material-icons">arrow_drop_down</i>
-              <x-menu>
-                <x-menuitem @click.prevent="refresh">
-                  <x-label>Refresh</x-label>
-                </x-menuitem>
-                <x-menuitem @click.prevent="openTable">
-                  <x-label>View Data</x-label>
-                </x-menuitem>
+              <bk-menu>
+                <bk-menuitem @click.prevent="refresh">
+                  <bk-label>Refresh</bk-label>
+                </bk-menuitem>
+                <bk-menuitem @click.prevent="openTable">
+                  <bk-label>View Data</bk-label>
+                </bk-menuitem>
                 <template v-for="item in extraPopupMenu">
                   <hr v-if="item.type === 'divider'" :key="item.slug">
-                  <x-menuitem
+                  <bk-menuitem
                     v-else
                     :key="item.slug"
                     @click.prevent="handleExtraStatusbarMenuClick($event, item)"
                   >
-                    <x-label>{{ item.name }}</x-label>
-                  </x-menuitem>
+                    <bk-label>{{ item.name }}</bk-label>
+                  </bk-menuitem>
                 </template>
                 <hr v-if="dev">
-                <x-menuitem
+                <bk-menuitem
                   v-if="dev"
                   @click.prevent="triggerError"
                 >
-                  <x-label>[DEV] Toggle Error</x-label>
-                </x-menuitem>
-                <x-menuitem
+                  <bk-label>[DEV] Toggle Error</bk-label>
+                </bk-menuitem>
+                <bk-menuitem
                   v-if="dev"
                   @click.prevent="loading = !loading"
                 >
-                  <x-label>[DEV] Toggle Loading</x-label>
-                </x-menuitem>
-              </x-menu>
-            </x-button>
+                  <bk-label>[DEV] Toggle Loading</bk-label>
+                </bk-menuitem>
+              </bk-menu>
+            </bk-button>
           </template>
         </component>
       </div>

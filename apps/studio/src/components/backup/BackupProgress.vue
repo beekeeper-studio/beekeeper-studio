@@ -40,14 +40,14 @@
       <div class="system-logs">
         <h3 class="flex">
           <span class="expand">Logs (last 100 lines)</span>
-          <x-buttons>
-            <x-button
+          <bk-buttons>
+            <bk-button
               @click.prevent="$emit('showLog')"
               class="btn btn-flat btn-small"
             >
-              <x-label>Show Log File</x-label>
-            </x-button>
-          </x-buttons>
+              <bk-label>Show Log File</bk-label>
+            </bk-button>
+          </bk-buttons>
         </h3>
         <div
           v-if="!expanded"

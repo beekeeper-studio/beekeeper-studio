@@ -81,18 +81,18 @@
     <status-bar class="tabulator-footer" :active="active">
       <div class="flex flex-middle statusbar-actions">
         <slot name="footer" />
-        <x-button
+        <bk-button
           v-if="isDirty"
           class="btn btn-flat reset"
           @click.prevent="resetForm"
         >
           Reset
-        </x-button>
-        <x-buttons
+        </bk-button>
+        <bk-buttons
           v-if="isDirty"
           class="pending-changes"
         >
-          <x-button
+          <bk-button
             class="btn btn-primary"
             @click.prevent="submitApply"
           >
@@ -101,8 +101,8 @@
               class="material-icons"
             >error</i>
             <span>Apply</span>
-          </x-button>
-        </x-buttons>
+          </bk-button>
+        </bk-buttons>
         <slot name="actions" />
       </div>
     </status-bar>

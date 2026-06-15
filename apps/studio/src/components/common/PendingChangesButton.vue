@@ -1,38 +1,38 @@
 <template>
-  <x-buttons
+  <bk-buttons
     class="pending-changes-button"
     v-hotkey="hotkeys"
   >
-    <x-button
+    <bk-button
       class="btn btn-primary"
       @click.prevent="submitApply"
       style="margin:0"
     >
       <span>{{ labelApply || 'Apply' }}</span>
-    </x-button>
-    <x-button
+    </bk-button>
+    <bk-button
       v-if="dialect !== 'mongodb'"
       class="btn btn-primary"
       menu
       style="margin:0"
     >
       <i class="material-icons">arrow_drop_down</i>
-      <x-menu>
-        <x-menuitem @click.prevent="submitApply">
-          <x-label>
+      <bk-menu>
+        <bk-menuitem @click.prevent="submitApply">
+          <bk-label>
             {{ labelApply || 'Apply' }}
-          </x-label>
-          <x-shortcut value="Control+S" />
-        </x-menuitem>
-        <x-menuitem @click.prevent="submitSql">
-          <x-label>
+          </bk-label>
+          <bk-shortcut value="Control+S" />
+        </bk-menuitem>
+        <bk-menuitem @click.prevent="submitSql">
+          <bk-label>
             {{ labelSql || 'Copy to SQL' }}
-          </x-label>
-          <x-shortcut value="Control+Shift+S" />
-        </x-menuitem>
-      </x-menu>
-    </x-button>
-  </x-buttons>
+          </bk-label>
+          <bk-shortcut value="Control+Shift+S" />
+        </bk-menuitem>
+      </bk-menu>
+    </bk-button>
+  </bk-buttons>
 </template>
 
 <script lang="ts">

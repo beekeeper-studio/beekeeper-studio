@@ -51,13 +51,13 @@
 
     <statusbar :mode="statusbarMode" :active="active">
       <div class="truncate statusbar-info">
-        <x-button
+        <bk-button
           @click.prevent="openProperties"
           class="btn btn-flat btn-icon end"
           title="View Structure"
         >
           Structure <i class="material-icons">north_east</i>
-        </x-button>
+        </bk-button>
         <!-- Info -->
         <table-length
           v-if="!minimalMode"
@@ -136,14 +136,14 @@
         </div> -->
 
         <template v-if="pendingChangesCount > 0">
-          <x-button
+          <bk-button
             class="btn btn-flat"
             @click.prevent="discardChanges"
           >
             Reset
-          </x-button>
-          <x-buttons class="pending-changes">
-            <x-button
+          </bk-button>
+          <bk-buttons class="pending-changes">
+            <bk-button
               class="btn btn-primary btn-badge btn-icon"
               @click.prevent="saveChanges"
               :disabled="running"
@@ -159,25 +159,25 @@
                 v-if="!error"
               ><small>{{ pendingChangesCount }}</small></span>
               <span>Apply</span>
-            </x-button>
-            <x-button
+            </bk-button>
+            <bk-button
               v-if="dialect !== 'mongodb'"
               class="btn btn-primary"
               menu
             >
               <i class="material-icons">arrow_drop_down</i>
-              <x-menu>
-                <x-menuitem :disabled="running" @click.prevent="saveChanges">
-                  <x-label>Apply</x-label>
-                  <x-shortcut value="Control+S" />
-                </x-menuitem>
-                <x-menuitem @click.prevent="copyToSql">
-                  <x-label>Copy to SQL</x-label>
-                  <x-shortcut value="Control+Shift+S" />
-                </x-menuitem>
-              </x-menu>
-            </x-button>
-          </x-buttons>
+              <bk-menu>
+                <bk-menuitem :disabled="running" @click.prevent="saveChanges">
+                  <bk-label>Apply</bk-label>
+                  <bk-shortcut value="Control+S" />
+                </bk-menuitem>
+                <bk-menuitem @click.prevent="copyToSql">
+                  <bk-label>Copy to SQL</bk-label>
+                  <bk-shortcut value="Control+Shift+S" />
+                </bk-menuitem>
+              </bk-menu>
+            </bk-button>
+          </bk-buttons>
         </template>
         <span
           v-else
@@ -206,60 +206,60 @@
         </template>
 
         <!-- Actions -->
-        <x-button
+        <bk-button
           v-tooltip="`Refresh Table (${$bksConfig.keybindings.general.refresh})`"
           class="btn btn-flat"
           @click="refreshTable"
         >
           <i class="material-icons">refresh</i>
-        </x-button>
-        <x-button
+        </bk-button>
+        <bk-button
           class="btn btn-flat"
           v-tooltip="addRowTooltip"
           :disabled="usedConfig.readOnlyMode"
           @click.prevent="cellAddRow"
         >
           <i class="material-icons">add</i>
-        </x-button>
-        <x-button
+        </bk-button>
+        <bk-button
           class="actions-btn btn btn-flat"
         >
           <i class="material-icons">settings</i>
           <i class="material-icons">arrow_drop_down</i>
-          <x-menu>
-            <x-menuitem
+          <bk-menu>
+            <bk-menuitem
               v-if="isCassandra"
               @click="cassandraAllowFilter = !this.isCassandra"
             >
-              <x-label>
+              <bk-label>
                 <i class="material-icons">{{ this.isCassandra ? 'check' : 'horizontal_rule' }}</i>
                 Allow Filtering
-              </x-label>
-            </x-menuitem>
-            <x-menuitem @click="exportTable" :disabled="dialectData?.disabledFeatures?.exportTable">
-              <x-label>Export whole table</x-label>
-            </x-menuitem>
+              </bk-label>
+            </bk-menuitem>
+            <bk-menuitem @click="exportTable" :disabled="dialectData?.disabledFeatures?.exportTable">
+              <bk-label>Export whole table</bk-label>
+            </bk-menuitem>
 
-            <x-menuitem @click="exportFiltered" :disabled="dialectData?.disabledFeatures?.exportTable">
-              <x-label>Export filtered view</x-label>
-            </x-menuitem>
-            <x-menuitem @click="showColumnFilterModal">
-              <x-label>Hide columns ({{ hiddenColumnCount }})</x-label>
-            </x-menuitem>
-            <x-menuitem @click="importTab" :disabled="dialectData?.disabledFeatures?.importFromFile || usedConfig.readOnlyMode">
-              <x-label>
+            <bk-menuitem @click="exportFiltered" :disabled="dialectData?.disabledFeatures?.exportTable">
+              <bk-label>Export filtered view</bk-label>
+            </bk-menuitem>
+            <bk-menuitem @click="showColumnFilterModal">
+              <bk-label>Hide columns ({{ hiddenColumnCount }})</bk-label>
+            </bk-menuitem>
+            <bk-menuitem @click="importTab" :disabled="dialectData?.disabledFeatures?.importFromFile || usedConfig.readOnlyMode">
+              <bk-label>
                 Import from file
                 <i
                   v-if="$store.getters.isCommunity"
                   class="material-icons menu-icon"
                 >stars</i>
-              </x-label>
-            </x-menuitem>
-            <x-menuitem @click="openQueryTab">
-              <x-label>Copy view to SQL</x-label>
-            </x-menuitem>
-          </x-menu>
-        </x-button>
+              </bk-label>
+            </bk-menuitem>
+            <bk-menuitem @click="openQueryTab">
+              <bk-label>Copy view to SQL</bk-label>
+            </bk-menuitem>
+          </bk-menu>
+        </bk-button>
       </div>
     </statusbar>
 

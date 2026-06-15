@@ -1,7 +1,7 @@
 <template>
   <div v-if="open" class="query-edit-history">
     <section class="preview" ref="preview">
-      <x-progressbar v-show="loadingPreview" />
+      <bk-progressbar v-show="loadingPreview" />
       <div
         v-if="selectedAuditId == null && !loadingList && !loadingPreview"
         class="empty-state"
@@ -32,7 +32,7 @@
         </button>
       </header>
       <div class="audit-groups">
-        <x-progressbar v-show="loadingList" />
+        <bk-progressbar v-show="loadingList" />
         <section v-if="dirty" class="audit-group">
           <ul>
             <li class="item-wrapper">
@@ -473,7 +473,7 @@ export default Vue.extend({
   min-width: 0;
   position: relative;
 
-  > x-progressbar {
+  > .bk-progressbar {
     position: absolute;
     top: 0;
     right: 0;
@@ -514,7 +514,7 @@ export default Vue.extend({
   min-width: 0;
   position: relative;
 
-  > x-progressbar {
+  > .bk-progressbar {
     position: absolute;
     top: 0;
     right: 0;

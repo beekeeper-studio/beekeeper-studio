@@ -31,7 +31,7 @@
       :hide-toggle="true"
     >
       <template #header>
-        <x-switch
+        <bk-switch
           @click.prevent="devMode = !devMode"
           :toggled="devMode"
         />

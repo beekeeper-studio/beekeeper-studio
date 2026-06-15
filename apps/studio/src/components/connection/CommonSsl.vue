@@ -5,7 +5,7 @@
       v-if="supportComplexSSL && supportsSsl"
     >
       <template #header>
-        <x-switch
+        <bk-switch
           @click.prevent="toggleSsl"
           :toggled="config.ssl"
         />
@@ -87,7 +87,7 @@
           :class="{enabled: config.ssl}"
         >
           <span class="expand">Enable SSL</span>
-          <x-switch
+          <bk-switch
             @click.prevent="toggleSsl"
             :toggled="config.ssl"
           />

@@ -1,17 +1,17 @@
 <template>
   <div class="sidebar secondary-sidebar">
     <div class="sidebar-heading">
-      <x-tabs>
-        <x-tab
+      <bk-tabs>
+        <bk-tab
           v-for="tab in tabs"
           :key="tab.id"
           :selected="secondaryActiveTabId === tab.id"
           @click="handleTabClick($event, tab)"
           @click.right="handleTabRightClick($event, tab)"
         >
-          <x-label>{{ tab.label }}</x-label>
-        </x-tab>
-      </x-tabs>
+          <bk-label>{{ tab.label }}</bk-label>
+        </bk-tab>
+      </bk-tabs>
       <div class="actions">
         <button class="close-btn btn btn-flat btn-fab" @click="$emit('close')">
           <i class="material-icons">close</i>

@@ -29,7 +29,7 @@
           :expanded="!isAutodetect"
         >
           <template #header>
-            <x-switch
+            <bk-switch
               @click.prevent="isAutodetect = !isAutodetect"
               :toggled="isAutodetect"
             />
