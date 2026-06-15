@@ -4711,10 +4711,10 @@
   resolved "https://registry.yarnpkg.com/@types/strip-json-comments/-/strip-json-comments-0.0.30.tgz#9aa30c04db212a9a0649d6ae6fd50accc40748a1"
   integrity sha512-7NQmHra/JILCd1QqpSzl8+mJRc8ZHz3uDm8YV1Ks9IhK0epEiTw8aIErbvH9PI+6XbqhyIQy3462nEsn7UVzjQ==
 
-"@types/tabulator-tables@^6.2.0":
-  version "6.3.1"
-  resolved "https://registry.yarnpkg.com/@types/tabulator-tables/-/tabulator-tables-6.3.1.tgz#49b3c9e780b2b1c978b63017ade4bb60716332e4"
-  integrity sha512-qL05wGXVy0yfWcF8LCE9+9uSeUIpeKdgpm8YmOAPTjLd3FaoZziPOhVxIiLzEhLTFfOvbuwnaWDm4v4i87diRQ==
+"@types/tabulator-tables@^6.3.4":
+  version "6.3.4"
+  resolved "https://registry.yarnpkg.com/@types/tabulator-tables/-/tabulator-tables-6.3.4.tgz#e9d91e1ccc7b8945517ad4b8783ba3952989984e"
+  integrity sha512-5b7lP+ztHb4djsH6Nw9sL2i/helpREljgs75Xm9wQWiubslSXYeCjiSdfZMgwQt/iDXVODIlVg3o7+L5Fk3SJQ==
 
 "@types/tern@*":
   version "0.23.9"
@@ -12868,9 +12868,10 @@ system-ca@^3.0.0:
     macos-export-certificate-and-key "^2.0.1"
     win-export-certificate-and-key "^3.0.2"
 
-tabulator-tables@beekeeper-studio/tabulator#f9d3c0cdf0933a9a1bc5056b773c02a68a309fa1:
-  version "6.3.1-bks.1"
-  resolved "https://codeload.github.com/beekeeper-studio/tabulator/tar.gz/f9d3c0cdf0933a9a1bc5056b773c02a68a309fa1"
+tabulator-tables@^6.5.0:
+  version "6.5.0"
+  resolved "https://registry.yarnpkg.com/tabulator-tables/-/tabulator-tables-6.5.0.tgz#df11ef5d31529b0fc87320185243f57973876864"
+  integrity sha512-n0S4rvb2tGJnVBXoiB8ns1liGfSz+sgniG5a92vEY+Wqj3R4L2LB+bF29OeWmEJwo4KAsdhfeknW2S92s/mvMw==
 
 tar-fs@^2.0.0, tar-fs@^2.1.4:
   version "2.1.4"
