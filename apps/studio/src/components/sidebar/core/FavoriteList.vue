@@ -74,15 +74,15 @@
         />
         <sidebar-loading v-if="loading" />
         <nav
-          v-else-if="filteredQueries.length > 0"
+          v-else-if="!empty"
           class="list-body"
           ref="wrapper"
         >
           <sidebar-folder
-            v-for="({ folder, queries, subfolders }) in foldersWithQueries"
-            :key="`${folder.id}-${queries.length}`"
+            v-for="({ folder, items, subfolders }) in foldersWithQueries"
+            :key="`${folder.id}-${items.length}`"
             :name="folder.name"
-            :children-count="queries.length"
+            :children-count="items.length"
             :rename="renamingFolderId === folder.id"
             :expanded-initially="getFolderExpanded(folder.id)"
             @toggle="onFolderToggle(folder.id, $event)"
@@ -92,15 +92,15 @@
             @rename-cancel="renamingFolderId = null"
           >
             <Draggable
-              :list="queries"
+              :list="items"
               group="queries"
               ghost-class="drag-ghost"
-              @start="onQueryDragStart($event, queries)"
+              @start="onQueryDragStart($event, items)"
               @end="draggingQuery = null"
-              @change="onQueryDrop($event, folder, queries)"
+              @change="onQueryDrop($event, folder, items)"
             >
               <favorite-list-item
-                v-for="item in queries"
+                v-for="item in items"
                 :key="item.id"
                 :item="item"
                 :active="isActive(item)"
@@ -115,7 +115,7 @@
               />
             </Draggable>
             <sidebar-folder
-              v-for="({ folder: subfolder, queries: subQueries }) in subfolders"
+              v-for="({ folder: subfolder, items: subQueries }) in subfolders"
               :key="`${subfolder.id}-${subQueries.length}`"
               :name="subfolder.name"
               :children-count="subQueries.length"
@@ -253,6 +253,7 @@ import SidebarLoading from '../../common/SidebarLoading.vue'
 import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
 import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
+import { getLonelyItems, isFolderListEmpty } from '@/common/utils/folderTree'
 import Draggable from 'vuedraggable'
 
 export default {
@@ -305,10 +306,10 @@ export default {
       return this.$store.getters['data/queryFolders/foldersWithQueries'](this.filteredQueries)
     },
     lonelyQueries() {
-      const folderIds = this.folders.map((f) => f.id)
-      return [...this.filteredQueries]
-        .filter((query) => !query.queryFolderId || !folderIds.includes(query.queryFolderId))
-        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+      return getLonelyItems(this.folders, this.filteredQueries, 'queryFolderId')
+    },
+    empty() {
+      return isFolderListEmpty(this.filteredQueries, this.folders)
     },
     removeTitle() {
       return `Remove ${this.checkedFavorites.length} saved queries`;
