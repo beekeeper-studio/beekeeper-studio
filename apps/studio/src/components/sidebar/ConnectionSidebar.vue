@@ -205,8 +205,8 @@
                 <sidebar-folder
                   v-for="{ folder: subfolder, items: subConnections } in subfolders"
                   :key="`${subfolder.id}-${subConnections.length}`"
-                  :name="folder.name"
-                  :children-count="items.length"
+                  :name="subfolder.name"
+                  :children-count="subConnections.length"
                   :rename="renamingFolderId === subfolder.id"
                   placeholder="No Items"
                   :expanded-initially="getFolderExpanded(subfolder.id)"
