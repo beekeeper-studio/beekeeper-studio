@@ -36,19 +36,13 @@
       </a>
       <slot name="folder-drop-zone" />
       <div v-if="expanded">
-        <template v-if="hasSlot">
-          <slot />
-        </template>
-        <template v-else>
-          <template v-if="$slots.placeholder">
-            <slot name="placeholder" />
-          </template>
-          <div
-            v-else
-            class="list-item empty"
-          >
-            {{ placeholder || "No items" }}
-          </div>
+        <slot />
+        <template v-if="showPlaceholder">
+          <slot name="placeholder">
+            <div class="list-item empty">
+              {{ placeholder || "No items" }}
+            </div>
+          </slot>
         </template>
       </div>
     </div>
@@ -62,7 +56,7 @@
 import EditableText from '@/components/common/EditableText.vue'
 
   export default {
-    props: ["name", "childrenCount", "rename", "forceExpand", "forceCollapse", "expandedInitially", "skipDisplay", "placeholder", "connections"],
+    props: ["name", "childrenCount", "rename", "forceExpand", "forceCollapse", "expandedInitially", "skipDisplay", "placeholder", "connections", "empty"],
     components: { EditableText },
     data() {
       return {
@@ -80,6 +74,15 @@ import EditableText from '@/components/common/EditableText.vue'
       },
       hasSlot() {
         return !!this.$slots.default
+      },
+      showPlaceholder() {
+        // When the parent declares emptiness explicitly, honor it. The default
+        // slot still renders so the drag-and-drop drop zone stays mounted.
+        if (this.empty != null) {
+          return this.empty
+        }
+        // Legacy: treat "no slot content at all" as empty.
+        return !this.hasSlot
       },
       expanded() {
         return this.manuallyExpanded
