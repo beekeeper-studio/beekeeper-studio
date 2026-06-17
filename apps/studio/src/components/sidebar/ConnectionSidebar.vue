@@ -166,12 +166,12 @@
               class="list-body"
             >
               <sidebar-folder
-                v-for="{ folder, connections, subfolders } in foldersWithConnections"
-                :key="`${folder.id}-${connections.length}`"
+                v-for="{ folder, items, subfolders } in foldersWithConnections"
+                :key="`${folder.id}-${items.length}`"
                 :name="folder.name"
-                :children-count="connections.length"
+                :children-count="items.length"
                 :rename="renamingFolderId === folder.id"
-                placeholder="No Items"
+                :empty="items.length === 0 && subfolders.length === 0"
                 :expanded-initially="getFolderExpanded(folder.id)"
                 @toggle="onFolderToggle(folder.id, $event)"
                 @contextmenu.native.prevent="showFolderContextMenu($event, folder)"
@@ -180,15 +180,15 @@
                 @rename-cancel="renamingFolderId = null"
               >
                 <Draggable
-                  :list="connections"
+                  :list="items"
                   group="connections"
                   ghost-class="drag-ghost"
-                  @start="onConnectionDragStart($event, connections)"
+                  @start="onConnectionDragStart($event, items)"
                   @end="draggingConnection = null"
-                  @change="onConnectionDrop($event, folder, connections)"
+                  @change="onConnectionDrop($event, folder, items)"
                 >
                   <connection-list-item
-                    v-for="c in connections"
+                    v-for="c in items"
                     :key="c.id"
                     :config="c"
                     :selected-config="selectedConfig"
@@ -203,12 +203,12 @@
                   />
                 </Draggable>
                 <sidebar-folder
-                  v-for="{ folder: subfolder, connections: subConnections } in subfolders"
+                  v-for="{ folder: subfolder, items: subConnections } in subfolders"
                   :key="`${subfolder.id}-${subConnections.length}`"
                   :name="subfolder.name"
-                  :children-count="connections.length"
+                  :children-count="subConnections.length"
                   :rename="renamingFolderId === subfolder.id"
-                  placeholder="No Items"
+                  :empty="subConnections.length === 0"
                   :expanded-initially="getFolderExpanded(subfolder.id)"
                   @toggle="onFolderToggle(subfolder.id, $event)"
                   @contextmenu.native.prevent="showFolderContextMenu($event, subfolder)"
@@ -362,6 +362,7 @@ import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import Split from 'split.js'
 import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
+import { getLonelyItems, isFolderListEmpty } from '@/common/utils/folderTree'
 import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
 import Draggable from 'vuedraggable'
@@ -439,7 +440,7 @@ export default {
       }
     },
     empty() {
-      return !this.filteredConnections?.length && !this.folders?.length
+      return isFolderListEmpty(this.filteredConnections, this.folders)
     },
     noPins() {
       return !this.pinnedConnections?.length;
@@ -448,10 +449,7 @@ export default {
       return this.folders.filter((f) => !f.parentId).sort((a, b) => a.name.localeCompare(b.name))
     },
     lonelyConnections() {
-      const folderIds = this.folders.map((c) => c.id)
-      return [...this.filteredConnections]
-        .filter((config) => !config.connectionFolderId || !folderIds.includes(config.connectionFolderId))
-        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+      return getLonelyItems(this.folders, this.filteredConnections, 'connectionFolderId')
     },
     foldersWithConnections() {
       if (this.loading) return []
