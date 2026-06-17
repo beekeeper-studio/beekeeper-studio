@@ -110,7 +110,8 @@ export default Vue.extend({
       const candidates = this.queries.filter((q) => q.checked)
       try {
         await Promise.all(candidates.map((q) => {
-          const payload = {...q, id: null}
+          // Clear id and queryFolderId so the query goes to the personal folder
+          const payload = {...q, id: null, queryFolderId: null}
           return this.$store.dispatch('data/queries/save', payload)
         }))
         this.$modal.hide('import-queries')
