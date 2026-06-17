@@ -1,7 +1,8 @@
-import { BeeCursor, TableColumn } from "@/lib/db/models";
+import { TableColumn } from "@/lib/db/models";
 import { CursorResult, QueryLeaf } from "@queryleaf/lib";
 import { AggregationCursor } from "mongodb";
 import _ from "lodash";
+import { BeeCursor } from "@/lib/db/clients/models";
 
 interface CursorOptions {
   query?: string,

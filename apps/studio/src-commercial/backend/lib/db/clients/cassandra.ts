@@ -1,6 +1,6 @@
 import { TableKey } from "@shared/lib/dialects/models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, BksField } from "@/lib/db/models";
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, BksField } from "@/lib/db/models";
 import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
 import knexlib from 'knex';
@@ -11,13 +11,13 @@ import { readFileSync } from "fs";
 import { CassandraChangeBuilder } from "@shared/lib/sql/change_builder/CassandraChangeBuilder";
 import rawLog from "@bksLogger";
 import { createCancelablePromise } from "@/common/utils";
-import { identify } from "sql-query-identifier";
 import { errors } from "@/lib/errors";
 import { dataTypesToMatchTypeCode, CassandraData as D } from "@shared/lib/dialects/cassandra";
 import { CassandraCursor } from "./cassandra/CassandraCursor";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import _ from "lodash";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
+import { StreamResults } from "@/lib/db/clients/models";
 
 const log = rawLog.scope("cassandra");
 const logger = () => log;

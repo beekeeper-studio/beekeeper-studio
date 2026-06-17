@@ -1,12 +1,11 @@
 import { IDbConnectionServer } from '@/lib/db/backendTypes';
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from '@/lib/db/clients/BasicDatabaseClient';
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, BksField, TableInsert, TableUpdate, TableDelete } from '@/lib/db/models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, TableChanges, OrderBy, TableFilter, TableResult, BksField, TableInsert, TableUpdate, TableDelete } from '@/lib/db/models';
 import { DatabaseElement, IDbConnectionDatabase } from '@/lib/db/types';
 import { TableKey } from '@/shared/lib/dialects/models';
 import { ChangeBuilderBase } from '@/shared/lib/sql/change_builder/ChangeBuilderBase';
 import rawLog from '@bksLogger';
 import knexlib from 'knex';
-import { identify } from 'sql-query-identifier';
 import { buildDeleteQueries, buildInsertQuery, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from '@/lib/db/clients/utils';
 import { SqlAnywhereData } from '@/shared/lib/dialects/anywhere';
 import { SqlAnywhereConn, SqlAnywherePool } from './anywhere/SqlAnywherePool';
@@ -14,6 +13,7 @@ import _ from 'lodash';
 import { joinFilters } from '@/common/utils';
 import { SqlAnywhereChangeBuilder } from '@/shared/lib/sql/change_builder/SqlAnywhereChangeBuilder';
 import { SqlAnywhereCursor } from './anywhere/SqlAnywhereCursor';
+import { StreamResults } from '@/lib/db/clients/models';
 
 const D = SqlAnywhereData;
 const log = rawLog.scope('sql-anywhere');
@@ -423,7 +423,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     });
   }
 
-  async listSchemas(filter?: SchemaFilterOptions): Promise<string[]> {
+  async listSchemas(_filter?: SchemaFilterOptions): Promise<string[]> {
     const sql = `
       SELECT
         user_name AS schema_name

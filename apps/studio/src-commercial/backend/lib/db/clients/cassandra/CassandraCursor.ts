@@ -1,6 +1,7 @@
-import { BeeCursor, TableColumn } from "@/lib/db/models";
-import rawLog from '@bksLogger'
+import { TableColumn } from "@/lib/db/models";
 import { waitFor } from "@/lib/db/clients/base/wait"
+import { BeeCursor } from "@/lib/db/clients/models";
+import rawLog from '@bksLogger'
 
 const log = rawLog.scope('cassandra:cursor');
 

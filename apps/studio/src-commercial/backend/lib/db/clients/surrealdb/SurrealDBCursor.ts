@@ -1,7 +1,8 @@
-import { BeeCursor, TableColumn } from "@/lib/db/models";
+import { TableColumn } from "@/lib/db/models";
 import rawLog from '@bksLogger';
 import { Frame } from "surrealdb";
 import { SurrealConn, SurrealPool } from "./SurrealDBPool";
+import { BeeCursor } from "@/lib/db/clients/models";
 
 const log = rawLog.scope('surrealdb/cursor');
 

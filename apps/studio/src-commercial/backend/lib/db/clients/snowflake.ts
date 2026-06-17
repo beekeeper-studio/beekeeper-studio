@@ -5,7 +5,7 @@ import * as snowflake from "snowflake-sdk";
 import { Connection, ConnectionOptions, Pool, PoolOptions } from "snowflake-sdk"
 import BksConfig from "@/common/bksConfig";
 import rawLog from '@bksLogger'
-import { BksField, CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FieldDescriptor, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableDelete, TableFilter, TableIndex, TableInsert, TableOrView, TableProperties, TableResult, TableTrigger, TableUpdate, TableUpdateResult } from "@/lib/db/models";
+import { BksField, CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FieldDescriptor, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, SupportedFeatures, TableChanges, TableColumn, TableDelete, TableFilter, TableIndex, TableInsert, TableOrView, TableProperties, TableResult, TableTrigger, TableUpdate, TableUpdateResult } from "@/lib/db/models";
 import { buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildSelectTopQuery, buildUpdateQueries, errorMessages, escapeString } from "@/lib/db/clients/utils";
 import _ from "lodash";
 import { TableKey } from "@/shared/lib/dialects/models";
@@ -18,6 +18,7 @@ import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilder
 import { SnowflakeChangeBuilder } from "@/shared/lib/sql/change_builder/SnowflakeChangeBuilder";
 import { SnowflakeCursor } from "./snowflake/SnowflakeCursor";
 import { IndexColumn } from "@beekeeperstudio/plugin";
+import { StreamResults } from "@/lib/db/clients/models";
 
 const log = rawLog.scope('snowflake')
 

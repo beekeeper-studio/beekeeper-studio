@@ -1,7 +1,8 @@
-import { BeeCursor, OrderBy, TableColumn, TableFilter } from "@/lib/db/models";
+import { OrderBy, TableColumn, TableFilter } from "@/lib/db/models";
 import { SqlAnywhereConn } from "./SqlAnywherePool";
 import rawLog from '@bksLogger';
 import { SQLAnywhereClient } from "../anywhere";
+import { BeeCursor } from "@/lib/db/clients/models";
 
 const log = rawLog.scope('SqlAnywhereCursor');
 

@@ -1,8 +1,9 @@
-import { BeeCursor, TableColumn } from "@/lib/db/models";
-import rawlog from "@bksLogger";
+import { TableColumn } from "@/lib/db/models";
 import type { ClickHouseClient, Row, StreamReadable } from "@clickhouse/client";
 import { uuidv4 } from "@/lib/uuid";
 import { waitFor } from "@/lib/db/clients/base/wait";
+import rawlog from "@bksLogger";
+import { BeeCursor } from "@/lib/db/clients/models";
 
 interface CursorOptions {
   query: string;

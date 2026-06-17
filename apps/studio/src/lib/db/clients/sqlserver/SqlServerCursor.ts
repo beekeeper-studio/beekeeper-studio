@@ -1,6 +1,7 @@
-import { BeeCursor, TableColumn } from "../../models";
+import { TableColumn } from "../../models";
 import { ConnectionPool, Request } from 'mssql';
 import { waitFor } from "../base/wait";
+import { BeeCursor } from "../models";
 
 export class SqlServerCursor extends BeeCursor {
   private connection: ConnectionPool | undefined

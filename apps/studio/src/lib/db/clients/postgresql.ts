@@ -3,13 +3,12 @@
 import { readFileSync } from 'fs';
 
 import pg, { QueryResult as PgQueryResult, QueryArrayResult as PgQueryArrayResult, FieldDef, PoolConfig, PoolClient } from 'pg';
-import { identify } from 'sql-query-identifier';
 import _ from 'lodash'
 import knexlib from 'knex'
 import logRaw from '@bksLogger'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
 import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries, errorMessages } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
@@ -28,6 +27,7 @@ import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import {AzureAuthService} from "@/lib/db/authentication/azure";
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
+import { CursorOptions, StreamResults } from './models';
 
 const PD = PostgresData
 
@@ -62,7 +62,7 @@ export interface STQOptions {
 interface STQResults {
   query: string,
   countQuery: string,
-  params: (string | string[])[],
+  params: string[],
 
 }
 
@@ -800,9 +800,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
         try {
           const data = await Promise.race([
             cancelable.wait(),
-            this.executeQuery(queryText, { arrayMode: true, tabId }),
+            this.executeQueryStream(queryText, { arrayMode: true, tabId }),
           ]);
-          console.info("QUERYDATA: ", data)
 
           pid = null;
 
@@ -845,6 +844,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
         }
       },
     };
+  }
+
+  getCursor(options: CursorOptions, conn: PoolClient): PsqlCursor {
+    return new PsqlCursor(options, conn, this.dataTypes);
   }
 
   async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
@@ -1158,11 +1161,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     const rowWithTotal = countResults.rows.find((row: any) => { return row.total })
     const totalRecords = rowWithTotal ? Number(rowWithTotal.total) : 0
     const columns = await this.listTableColumns(table, schema)
+    const conn = await this.conn.pool.connect()
 
     const cursorOpts = {
       query: qs.query,
       params: qs.params,
-      conn: this.conn,
       chunkSize,
       dataTypes: this.dataTypes
     }
@@ -1170,21 +1173,21 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     return {
       totalRows: totalRecords,
       columns,
-      cursor: new PsqlCursor(cursorOpts)
+      cursor: new PsqlCursor(cursorOpts, conn)
     }
   }
 
   async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
+    const conn = await this.conn.pool.connect()
     const cursorOpts = {
       query: query,
       params: [],
-      conn: this.conn,
       chunkSize,
       dataTypes: this.dataTypes
     }
 
     return {
-      cursor: new PsqlCursor(cursorOpts)
+      cursor: new PsqlCursor(cursorOpts, conn)
     }
   }
 
@@ -1342,6 +1345,16 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     return await this.rawExecuteQuery('ROLLBACK;', importOptions.executeOptions)
   }
 
+  async acquireRawConnection(): Promise<PoolClient> {
+    return await this.conn.pool.connect();
+  }
+
+  async releaseRawConnection(conn: pg.PoolClient): Promise<void> {
+    if (conn) {
+      conn.release();
+    }
+  }
+
   // Manual transaction management
   async reserveConnection(tabId: number) {
     this.throwIfHasConnection(tabId);
@@ -1455,7 +1468,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     const selects = options.selects ?? ['*']
     let orderByString = ""
     let filterString = ""
-    let params: (string | string[])[] = []
+    let params: string[] = []
 
     if (orderBy && orderBy.length > 0) {
       orderByString = "ORDER BY " + (orderBy.map((item) => {

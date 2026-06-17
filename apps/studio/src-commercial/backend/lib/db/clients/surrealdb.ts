@@ -1,5 +1,5 @@
 import { ProvidedAuth, RecordId } from "surrealdb";
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, BksField, CancelableQuery, BksFieldType, TableChanges, TableUpdateResult, TableInsert, TableUpdate, TableDelete } from "@/lib/db/models";
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, BksField, CancelableQuery, BksFieldType, TableChanges, TableUpdateResult, TableInsert, TableUpdate, TableDelete } from "@/lib/db/models";
 import { TableKey } from "@/shared/lib/dialects/models";
 import { _baseTest } from "@playwright/test";
 import { DatabaseElement, IDbConnectionDatabase, SurrealAuthType } from "@/lib/db/types";
@@ -14,6 +14,7 @@ import { SurrealConn, SurrealPool } from "./surrealdb/SurrealDBPool";
 import _ from "lodash";
 import { surrealEscapeValue } from "@/shared/lib/dialects/surrealdb";
 import { uuidv4 } from "@/lib/uuid";
+import { StreamResults } from "@/lib/db/clients/models";
 
 const log = rawLog.scope('SurrealDB');
 

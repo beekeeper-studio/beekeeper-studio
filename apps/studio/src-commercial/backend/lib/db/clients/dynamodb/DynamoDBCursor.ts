@@ -1,7 +1,7 @@
-import { BeeCursor } from "@/lib/db/models";
 import { DynamoDBDocumentClient, ScanCommand, ExecuteStatementCommand } from "@aws-sdk/lib-dynamodb";
 import rawLog from '@bksLogger';
 import BksConfig from '@/common/bksConfig';
+import { BeeCursor } from "@/lib/db/clients/models";
 
 const log = rawLog.scope('dynamodb-cursor');
 
