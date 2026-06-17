@@ -1,6 +1,6 @@
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField, FieldDescriptor, FieldReadOnlyReason, ServerStatistics, FieldEditData } from '../models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField, FieldDescriptor, FieldReadOnlyReason, ServerStatistics, FieldEditData } from '../models';
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
-import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries, applyChangesSql } from './utils';
+import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries, applyChangesSql, streamToPromise } from './utils';
 import { Knex } from 'knex';
 import _ from 'lodash'
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
@@ -14,6 +14,8 @@ import { Dialect as IdentifierDialect, IdentifyResult } from 'sql-query-identifi
 import { Transcoder } from '../serialization/transcoders';
 import { ColumnReference, TableReference } from 'sql-query-identifier/lib/defines';
 import { safelyIdentify } from '../sql_tools';
+import BksConfig from '@/common/bksConfig';
+import { BeeCursor, CursorOptions, StreamResults } from './models';
 
 const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
@@ -298,6 +300,75 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
 
       return editData;
     })
+  }
+
+  async cursorToStreamCapped(cursor: BeeCursor, command: IdentifyResult): Promise<NgQueryResult> {
+    await cursor.start();
+    const stream = cursor.stream();
+    // this part is probably temporary, we either want to stream to the frontend or to a file
+    const result: any[][] = await streamToPromise(stream, BksConfig.ui.queryEditor.maxResults);
+
+    const fields: FieldDescriptor[] = cursor.columns?.map((col, idx) => ({
+      name: col.columnName,
+      dataType: col.dataType,
+      id: `c${idx}`
+    })) ?? [];
+
+    const fieldIds = fields.map((f) => f.id);
+
+    const res: NgQueryResult = {
+      command: command.type,
+      text: command.text,
+      rows: result.map((r) => _.zipObject(fieldIds, r)),
+      fields,
+      rowCount: result.length
+    }
+
+    return res;
+  }
+
+  abstract acquireRawConnection(): Promise<Conn>;
+  abstract releaseRawConnection(conn: Conn): Promise<void>;
+  abstract getCursor(options: CursorOptions, conn: Conn): BeeCursor;
+
+  async executeQueryStream(queryText: string, options?: any): Promise<NgQueryResult[]> {
+    const commands = this.identifyCommands(queryText);
+    const hasReserved = this.reservedConnections.has(options?.tabId);
+    let conn: Conn = null;
+    if (options?.tabId && hasReserved) {
+      conn = this.peekConnection(options?.tabId);
+    } else {
+      conn = await this.acquireRawConnection();
+    }
+
+    const cursorOpts: CursorOptions = {
+      query: null,
+      params: [],
+      chunkSize: 200,
+      manageConnection: false,
+      isStreaming: true
+    };
+
+    const results: NgQueryResult[] = [];
+
+    for (const command of commands) {
+      if (command.type !== 'SELECT') {
+        const result = await this.executeQuery(command.text, { arrayMode: true, tabId: options.tabId });
+        results.push(...result);
+      } else {
+        cursorOpts.query = command.text;
+        const cursor = this.getCursor(cursorOpts, conn);
+        const res = await this.cursorToStreamCapped(cursor, command);
+
+        results.push(res);
+      }
+    }
+
+    if (!hasReserved) {
+      this.releaseRawConnection(conn);
+    }
+
+    return results;
   }
 
   abstract query(queryText: string, tabId: number, options?: any): Promise<CancelableQuery>;

@@ -4,11 +4,12 @@ import crypto from 'crypto'
 import { promises } from 'fs'
 import { dialectFor } from '@shared/lib/dialects/models'
 import rawlog from '@bksLogger'
-import { BeeCursor, TableColumn, TableFilter, TableOrView } from '../db/models'
+import { TableColumn, TableFilter, TableOrView } from '../db/models'
 import { ExportOptions, ExportStatus, ProgressCallback, ExportProgress } from './models'
 import _ from 'lodash'
 import { Mutators } from '../data/tools'
 import { BasicDatabaseClient } from '../db/clients/BasicDatabaseClient'
+import { BeeCursor } from '../db/clients/models'
 
 const log = rawlog.scope('export/export')
 

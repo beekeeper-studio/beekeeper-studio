@@ -1,5 +1,6 @@
-import { BeeCursor, TableColumn } from "../../models";
+import { TableColumn } from "../../models";
 import Sqlite, { Database, Statement } from 'better-sqlite3'
+import { BeeCursor } from "../models";
 
 export class SqliteCursor extends BeeCursor {
 

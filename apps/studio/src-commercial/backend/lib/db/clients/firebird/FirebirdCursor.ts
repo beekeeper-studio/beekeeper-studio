@@ -1,8 +1,9 @@
-import { BeeCursor, OrderBy, TableColumn, TableFilter } from "@/lib/db/models";
+import { OrderBy, TableColumn, TableFilter } from "@/lib/db/models";
 import rawLog from "@bksLogger";
 import { Connection } from "./NodeFirebirdWrapper";
 import Firebird from "node-firebird";
 import { FirebirdClient } from "../firebird";
+import { BeeCursor } from "@/lib/db/clients/models";
 
 const log = rawLog.scope("firebirdcursor");
 

@@ -3,13 +3,13 @@ import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db
 import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
 import { AggregationCursor, Collection, Db, Document, MongoClient, ObjectId } from 'mongodb';
 import rawLog from '@bksLogger';
-import { BksField, BksFieldType, CancelableQuery, ExtendedTableColumn, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableDelete, TableFilter, TableIndex, TableInsert, TableOrView, TableProperties, TableResult, TableTrigger, TableUpdate, TableUpdateResult } from "@/lib/db/models";
+import { BksField, BksFieldType, CancelableQuery, ExtendedTableColumn, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, SupportedFeatures, TableChanges, TableColumn, TableDelete, TableFilter, TableIndex, TableInsert, TableOrView, TableProperties, TableResult, TableTrigger, TableUpdate, TableUpdateResult } from "@/lib/db/models";
 import { CreateTableSpec, IndexAlterations, TableKey } from "@/shared/lib/dialects/models";
 import _ from 'lodash';
 import { MongoDBObjectIdTranscoder } from "@/lib/db/serialization/transcoders";
 import { ElectronRuntime as MongoRuntime } from '@mongosh/browser-runtime-electron';
 import { NodeDriverServiceProvider } from '@mongosh/service-provider-node-driver';
-import { createCancelablePromise } from "@/common/utils";
+import { createCancelablePromise, joinFilters } from "@/common/utils";
 import { errors } from "@/lib/errors";
 import EventEmitter from "events";
 import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilderBase";
@@ -17,6 +17,7 @@ import { QueryLeaf } from '@queryleaf/lib'
 import { MongoDBCursor } from './mongodb/MongoDBCursor';
 import { wrapIdentifier } from "@/lib/db/clients/postgresql";
 import knexlib from 'knex'
+import { StreamResults } from "@/lib/db/clients/models";
 
 const knex = knexlib({ client: 'pg' })
 
@@ -254,7 +255,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     }
   }
 
-  async selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[] = ['*']): Promise<string> {
+  async selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects: string[] = ['*']): Promise<string> {
     let orderByString = ""
     let filterString = ""
     let params: (string | string[])[] = []
@@ -275,7 +276,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       let paramIdx = 1
       const allFilters = filters.map((item) => {
         if (item.type === 'in' && _.isArray(item.value)) {
-          const values = item.value.map((v, idx) => {
+          const values = item.value.map((v, _idx) => {
             return knex.raw('?', [v]).toQuery();
           })
           paramIdx += values.length

@@ -15,6 +15,7 @@ import { spawn } from "child_process";
 import { loadSharedConfigFiles } from "@smithy/shared-ini-file-loader";
 import { AwsCredentialIdentity, RuntimeConfigAwsCredentialIdentityProvider } from '@aws-sdk/types'
 import platformInfo from '@/common/platform_info'
+import { Readable } from 'stream'
 
 const log = logRaw.scope('db/util')
 
@@ -380,6 +381,26 @@ export function isAllowedReadOnlyQuery (identifiedQueries: IdentifyResult[], rea
 export const errorMessages = {
   readOnly: 'Write action(s) not allowed in Read-Only Mode.',
   maxReservedConnections: 'You have reserved the max connections available for manual transactions. Stop one of your active transactions to start a new one.'
+}
+
+export async function streamToPromise(stream: Readable, maxRecords?: number): Promise<any[]> {
+  return await new Promise((resolve, reject) => {
+    let processedRecords = 0
+    const data: any[] = [];
+
+    stream.on('data', (chunk) => {
+      data.push(chunk);
+      if (maxRecords && ++processedRecords >= maxRecords) {
+        stream.destroy();
+      }
+    });
+
+    stream.on('error', reject);
+
+    stream.on('close', () => {
+      resolve(data);
+    })
+  })
 }
 
 export async function resolveAWSCredentials(iamOptions: IamAuthOptions): Promise<AWSCredentials> {

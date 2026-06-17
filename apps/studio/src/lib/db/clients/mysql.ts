@@ -27,7 +27,6 @@ import {
 import { MysqlCursor } from "./mysql/MySqlCursor";
 import {createCancelablePromise} from "@/common/utils";
 import { errors } from "@/lib/errors";
-import { identify } from "sql-query-identifier";
 import { MySqlChangeBuilder } from "@shared/lib/sql/change_builder/MysqlChangeBuilder";
 import { AlterTableSpec, IndexColumn, TableKey } from "@shared/lib/dialects/models";
 import { MysqlData } from "@shared/lib/dialects/mysql";
@@ -44,7 +43,6 @@ import {
   Routine,
   SchemaFilterOptions,
   ServerStatistics,
-  StreamResults,
   SupportedFeatures,
   TableChanges,
   TableColumn,
@@ -69,6 +67,7 @@ import { Version, isVersionLessThanOrEqual, parseVersion } from "@/common/versio
 import globals from '../../../common/globals';
 import {AzureAuthService} from "@/lib/db/authentication/azure";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
+import { CursorOptions, BeeCursor, StreamResults } from "./models";
 
 type ResultType = {
   tableName?: string
@@ -678,10 +677,17 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     const columns = await this.listTableColumns(table);
     const rowCount = await this.driverExecuteSingle(countQuery, { params });
 
+    const cursorOptions: CursorOptions = {
+      query,
+      chunkSize,
+      params
+    };
+    const conn = await this.acquireRawConnection();
+
     return {
       totalRows: Number(rowCount.rows[0].total),
       columns,
-      cursor: new MysqlCursor(this.conn, query, params, chunkSize),
+      cursor: new MysqlCursor(cursorOptions, conn),
     };
   }
 
@@ -1160,6 +1166,10 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     };
   }
 
+  getCursor(options: CursorOptions, conn: mysql.PoolConnection): BeeCursor {
+    return new MysqlCursor(options, conn);
+  }
+
   async executeQuery(
     queryText: string,
     options: { rowsAsArray?: boolean; connection?: mysql.PoolConnection } = {}
@@ -1185,7 +1195,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     return rows.map((_, idx) =>
       parseRowQueryResult(
         rows[idx],
-        fields[idx],
+        fields[idx] as unknown as mysql.FieldPacket[],
         commands[idx],
         options.rowsAsArray
       )
@@ -1428,7 +1438,13 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     query: string,
     chunkSize: number
   ): Promise<StreamResults> {
-    const theCursor = new MysqlCursor(this.conn, query, [], chunkSize);
+    const cursorOptions: CursorOptions = {
+      query,
+      chunkSize,
+      params: []
+    };
+    const conn = await this.acquireRawConnection();
+    const theCursor = new MysqlCursor(cursorOptions, conn);
 
     return {
       cursor: theCursor,
@@ -1516,19 +1532,12 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     return this.rawExecuteQuery('ROLLBACK;', executeOptions)
   }
 
-  async reserveConnection(tabId: number): Promise<void> {
-    this.throwIfHasConnection(tabId);
-
-    if (this.reservedConnections.size >= BksConfig.db[this.connectionType].maxReservedConnections) {
-      throw new Error(errorMessages.maxReservedConnections)
-    }
-
-    return new Promise((resolve, reject) => {
+  async acquireRawConnection(): Promise<mysql.PoolConnection> {
+    return new Promise<mysql.PoolConnection>((resolve, reject) => {
       this.conn.pool.getConnection((err, conn) => {
         if (!err) {
           try {
-            this.pushConnection(tabId, conn);
-            resolve();
+            resolve(conn);
           } catch (e) {
             reject(e);
           }
@@ -1536,6 +1545,23 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
         reject(err);
       })
     })
+  }
+
+  async releaseRawConnection(conn: mysql.PoolConnection): Promise<void> {
+    if (conn) {
+      conn.release();
+    }
+  }
+
+  async reserveConnection(tabId: number): Promise<void> {
+    this.throwIfHasConnection(tabId);
+
+    if (this.reservedConnections.size >= BksConfig.db[this.connectionType].maxReservedConnections) {
+      throw new Error(errorMessages.maxReservedConnections)
+    }
+
+    const conn = await this.acquireRawConnection();
+    this.pushConnection(tabId, conn);
   }
 
   async releaseConnection(tabId: number): Promise<void> {

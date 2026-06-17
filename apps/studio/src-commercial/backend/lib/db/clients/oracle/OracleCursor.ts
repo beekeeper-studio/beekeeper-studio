@@ -1,7 +1,8 @@
-import { BeeCursor, TableColumn } from "@/lib/db/models";
+import { TableColumn } from "@/lib/db/models";
 import oracle, { Metadata } from 'oracledb'
 import rawLog from '@bksLogger'
 import { waitFor } from "@/lib/db/clients/base/wait";
+import { BeeCursor } from "@/lib/db/clients/models";
 
 const log = rawLog.scope("oracle:cursor")
 

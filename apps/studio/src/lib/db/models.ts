@@ -1,38 +1,6 @@
 import { IndexColumn, SchemaItem, TableKey } from "@shared/lib/dialects/models";
 import { BackupConfig } from "./models/BackupConfig";
 
-export abstract class BeeCursor {
-  constructor(public chunkSize: number) {
-
-  }
-  abstract get columns(): TableColumn[] | null
-  abstract start(): Promise<void>
-  abstract read(): Promise<any[][]>
-  abstract cancel(): Promise<void>
-  async close() {
-    await this.cancel()
-  }
-}
-
-export class NoOpCursor extends BeeCursor {
-  async start(): Promise<void> {
-    // yes
-  }
-  async read(): Promise<any[][]> {
-    return []
-  }
-  async cancel(): Promise<void> {
-    // yes
-  }
-
-}
-
-export interface StreamResults {
-  columns?: TableColumn[],
-  totalRows?: number,
-  cursor: BeeCursor
-}
-
 export interface DatabaseEntity {
   schema?: string;
   name: string;
