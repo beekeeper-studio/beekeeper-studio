@@ -37,13 +37,12 @@
       <slot name="folder-drop-zone" />
       <div v-if="expanded">
         <slot />
-        <template v-if="showPlaceholder">
-          <slot name="placeholder">
-            <div class="list-item empty">
-              {{ placeholder || "No items" }}
-            </div>
-          </slot>
-        </template>
+        <div
+          v-if="showPlaceholder"
+          class="list-item empty"
+        >
+          No items
+        </div>
       </div>
     </div>
     <div v-else>
@@ -56,7 +55,7 @@
 import EditableText from '@/components/common/EditableText.vue'
 
   export default {
-    props: ["name", "childrenCount", "rename", "forceExpand", "forceCollapse", "expandedInitially", "skipDisplay", "placeholder", "connections", "empty"],
+    props: ["name", "childrenCount", "rename", "forceExpand", "forceCollapse", "expandedInitially", "skipDisplay", "connections", "empty"],
     components: { EditableText },
     data() {
       return {
