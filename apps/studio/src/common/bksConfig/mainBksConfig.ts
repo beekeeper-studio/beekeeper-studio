@@ -2,7 +2,7 @@ import rawLog from "@bksLogger";
 import platformInfo from "@/common/platform_info";
 import * as path from "path";
 import _ from "lodash";
-import { existsSync, readFileSync, copyFileSync, accessSync, constants } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { parseIni, processRawConfig } from "@/config/helpers";
 import {
   BksConfigProvider,
@@ -143,22 +143,6 @@ export function checkDeprecations(
 
 const bundledConfigPath = path.join(process.resourcesPath);
 
-function copyBundledConfig(file: ConfigFileName, dest: string) {
-  log.info(`Copying bundled config ${file} to ${dest}.`);
-  const src = path.join(bundledConfigPath, file);
-  if (!existsSync(src)) {
-    throw new Error(
-      `Bundled config file not found: ${src}. This should not happen. Please report an issue.`
-    );
-  }
-  try {
-    accessSync(dest, constants.W_OK);
-    copyFileSync(src, dest);
-  } catch (err) {
-    log.warn(`Skipping copy of ${file}. Permission denied or dest not writable:`, err.message);
-  }
-}
-
 function readConfig(filePath: string) {
   try {
     const config = parseIni(readFileSync(filePath, "utf-8"));
@@ -207,9 +191,9 @@ export function loadConfig(file: ConfigFileName): IBksConfig | Partial<IBksConfi
 
   if (!isDev && file === "default.config.ini") {
     // We always read the bundled version of default.config.ini and
-    // system.config.ini so it's not possible for users to modify it. However,
-    // we want to make sure they can read them for reference.
-    copyBundledConfig(file, filePath);
+    // system.config.ini so it's not possible for users to modify it. A
+    // read-only reference copy is seeded into the user directory on first run
+    // by the 20260618_seed_config_files migration.
     return readConfig(path.join(bundledConfigPath, file));
   }
 
@@ -221,7 +205,10 @@ export function loadConfig(file: ConfigFileName): IBksConfig | Partial<IBksConfi
     if (isDev) {
       throw new Error(`Failed loading config. File not found: ${filePath}`);
     }
-    copyBundledConfig(file, filePath);
+    // In production the file is seeded on first run by the
+    // 20260618_seed_config_files migration. Until then, treat it as empty
+    // rather than touching the filesystem during config load.
+    return {};
   }
 
   return readConfig(filePath);
