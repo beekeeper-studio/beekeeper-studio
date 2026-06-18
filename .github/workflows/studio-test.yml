@@ -80,7 +80,7 @@ jobs:
           node-version-file: '.nvmrc'
 
       - name: Restore node_modules cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: |
             node_modules
@@ -140,7 +140,7 @@ jobs:
           node-version-file: '.nvmrc'
 
       - name: Restore node_modules cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: |
             node_modules
