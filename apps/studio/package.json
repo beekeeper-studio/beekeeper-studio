@@ -215,7 +215,7 @@
     "sass": "~1.77.1",
     "sass-embedded": "^1.77.1",
     "testcontainers": "~11.14.0",
-    "tmp": "^0.2.6",
+    "tmp": "^0.2.7",
     "ts-jest": "^29.1.5",
     "tsx": "^4.20.3",
     "typescript": "~5.8.3",
