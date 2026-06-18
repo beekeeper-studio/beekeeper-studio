@@ -44,6 +44,9 @@ const mmsqlErrors = {
   CANCELED: 'ECANCEL',
 };
 
+// Setup guide for SQL Server integrated / Kerberos authentication prerequisites.
+const WIN_AUTH_DOCS_URL = 'https://docs.beekeeperstudio.io/user_guide/connecting/sql-server/'
+
 // Wrap a promise with a JS-level deadline. msnodesqlv8/ODBC's native conn_timeout
 // does NOT reliably cancel a stalled SQLDriverConnect -- it only covers the TCP
 // connect, not the post-connect TDS prelogin / SSPI handshake -- so a stalled
@@ -1268,9 +1271,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       sqlWindows = require('mssql/msnodesqlv8')
     } catch {
       throw new Error(
-        process.platform === 'win32'
+        (process.platform === 'win32'
           ? 'Integrated authentication is unavailable: the msnodesqlv8 native module could not be loaded. Try reinstalling Beekeeper Studio.'
-          : 'Integrated authentication is unavailable: the msnodesqlv8 native module could not be loaded. Install unixODBC and the Microsoft ODBC Driver 18 for SQL Server, then reinstall Beekeeper Studio.'
+          : 'Integrated authentication is unavailable: the msnodesqlv8 native module could not be loaded. Install unixODBC and the Microsoft ODBC Driver 18 for SQL Server, then reinstall Beekeeper Studio.') +
+        ` See ${WIN_AUTH_DOCS_URL} for setup.`
       )
     }
 
@@ -1375,9 +1379,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     }
 
     throw new Error(
-      process.platform === 'win32'
+      (process.platform === 'win32'
         ? 'Integrated authentication requires an ODBC Driver for SQL Server. Install "ODBC Driver 18 for SQL Server" (or 17) from Microsoft.'
-        : 'Integrated authentication requires unixODBC and the Microsoft "ODBC Driver 18 for SQL Server" installed on this machine.'
+        : 'Integrated authentication requires unixODBC and the Microsoft "ODBC Driver 18 for SQL Server" installed on this machine.') +
+      ` See ${WIN_AUTH_DOCS_URL} for setup.`
     )
   }
 
