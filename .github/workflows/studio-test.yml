@@ -111,6 +111,12 @@ jobs:
       - name: Build UI Kit
         run: yarn lib:build
 
+      - name: Build backend bundle (esbuild)
+        run: yarn workspace beekeeper-studio run build:esbuild
+
+      - name: Verify externalized requires ship in the package
+        run: yarn workspace beekeeper-studio run check:bundled-requires
+
       - name: Unit Tests
         run: yarn workspace beekeeper-studio run test:unit --ci --silent
 
