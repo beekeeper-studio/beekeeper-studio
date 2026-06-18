@@ -10455,6 +10455,15 @@ ms@^2.1.1, ms@^2.1.3:
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.3.tgz#574c8138ce1d2b5861f0b44579dbadd60c6615b2"
   integrity sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==
 
+msnodesqlv8@^5.1.5:
+  version "5.2.0"
+  resolved "https://registry.yarnpkg.com/msnodesqlv8/-/msnodesqlv8-5.2.0.tgz#aabfe9ae8fc05f47cdbb3c3f43da37e1d08b4d9d"
+  integrity sha512-kSZnvGNo21EGon3HIZ9xkWTh9ndzkdKmfSLj4kKiam2ZqSN7c+ifcTRUpTq5hX8SZiVOlOzWWZFc6aYrxFEHUQ==
+  dependencies:
+    node-abi "^4.28.0"
+    node-addon-api "^8.7.0"
+    prebuild-install "^7.1.3"
+
 mssql@^12.2.1:
   version "12.2.1"
   resolved "https://registry.yarnpkg.com/mssql/-/mssql-12.2.1.tgz#5c36af0b83ea34c35cee0424a88e6cdb7153ec79"
@@ -10567,6 +10576,13 @@ node-abi@^4.2.0:
   dependencies:
     semver "^7.6.3"
 
+node-abi@^4.28.0:
+  version "4.31.0"
+  resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-4.31.0.tgz#ac1e244d05d1b8c9e82d6fdcaa37b6407a47bf66"
+  integrity sha512-Erq5w/t3syw3s4sDsUaX4QttIdBPsGKTT1DTRsCkTonGggczhlDKm/wDX3o+HPJpQ41EjXCbcmXf0tgr5YZJXw==
+  dependencies:
+    semver "^7.6.3"
+
 node-addon-api@^7.0.0:
   version "7.1.1"
   resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-7.1.1.tgz#1aba6693b0f255258a049d621329329322aad558"
@@ -10576,6 +10592,11 @@ node-addon-api@^8.5.0:
   version "8.5.0"
   resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-8.5.0.tgz#c91b2d7682fa457d2e1c388150f0dff9aafb8f3f"
   integrity sha512-/bRZty2mXUIFY/xU5HLvveNHlswNJej+RnxBjOMkidWfwZzgTbPG1E3K5TOxRLOR+5hX7bSofy8yf1hZevMS8A==
+
+node-addon-api@^8.7.0:
+  version "8.8.0"
+  resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-8.8.0.tgz#b742be05007b37ebc1741bbaf370d22bf25d208a"
+  integrity sha512-c5Ko1fZJIJmzhFIkhRN76WTq+fC6tWnGy9CXA0fA+XygsWZmEwG8vmbkNqxMyoaa0Tin4djul49NzdVcJJcjeA==
 
 node-api-version@^0.2.1:
   version "0.2.1"
