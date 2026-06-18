@@ -151,6 +151,7 @@ Want to write some code and improve Beekeeper Studio? Getting set-up is easy on 
 git clone git@github.com:<your-username>/beekeeper-studio.git beekeeper-studio
 cd beekeeper-studio/
 yarn set version classic
+nvm use 22
 yarn install # installs dependencies
 
 
