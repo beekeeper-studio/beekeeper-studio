@@ -629,20 +629,51 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   }
 
   private parseRowData(data) {
-    // BigQuery can return nested objects with custom types in the results
-    // look for the value string property.
-    // https://github.com/googleapis/nodejs-bigquery/blob/71dbed2140893677f7af254f5a7713a7f50bae92/src/bigquery.ts#L2191
     return data.map((row) => {
       const parsedRow = {}
       Object.keys(row).forEach((key) => {
-        let strValue = row[key]
-        if (strValue != null && (Object.prototype.hasOwnProperty.call(strValue, 'value'))) {
-          strValue = row[key].value
-        }
-        parsedRow[key] = strValue
+        parsedRow[key] = this.parseCellValue(row[key])
       })
       return parsedRow
     })
+  }
+
+  // BigQuery can return values wrapped in custom classes (BigQueryDate,
+  // BigQueryTimestamp, NUMERIC/BIGNUMERIC as big.js `Big`, etc). These
+  // instances are not structured-cloneable, so sending them over the utility
+  // process IPC boundary fails. Coerce them to plain serializable values.
+  // See https://github.com/beekeeper-studio/beekeeper-studio/issues/4388
+  private parseCellValue(value) {
+    if (value == null || typeof value !== 'object') {
+      return value
+    }
+    // Most BigQuery type wrappers (DATE, TIME, DATETIME, TIMESTAMP, GEOGRAPHY,
+    // wrapped integers) expose the underlying value via a `value` property.
+    // https://github.com/googleapis/nodejs-bigquery/blob/71dbed2140893677f7af254f5a7713a7f50bae92/src/bigquery.ts#L2191
+    if (Object.prototype.hasOwnProperty.call(value, 'value')) {
+      return value.value
+    }
+    // NUMERIC/BIGNUMERIC columns are returned as big.js `Big` instances, which
+    // have no `value` property. Coerce them to their string representation.
+    if (value.constructor?.name === 'Big') {
+      return value.toString()
+    }
+    // ARRAY columns come back as arrays, RECORD/STRUCT columns as plain
+    // objects. Recurse so any nested wrapped values are handled too. Other
+    // built-ins that are already cloneable (e.g. Buffer for BYTES) are left
+    // untouched.
+    if (Array.isArray(value)) {
+      return value.map((v) => this.parseCellValue(v))
+    }
+    const proto = Object.getPrototypeOf(value)
+    if (proto === Object.prototype || proto === null) {
+      const parsed = {}
+      Object.keys(value).forEach((key) => {
+        parsed[key] = this.parseCellValue(value[key])
+      })
+      return parsed
+    }
+    return value
   }
 
   private async insertRows(inserts: TableInsert[]) {
