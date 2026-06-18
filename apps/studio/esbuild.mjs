@@ -96,8 +96,11 @@ const commonArgs = {
   outdir: 'dist',
   bundle: true,
   external: [...externals, '*.woff', '*.woff2', '*.ttf', '*.svg', '*.png'],
-  sourcemap: true,
-  minify: false,
+  // In production, minify and emit external sourcemaps so the main/preload/utility
+  // bundles are smaller and faster for V8 to parse/compile at startup. Keep the
+  // dev (watch) build readable with inline maps and no minification.
+  sourcemap: isWatching ? true : 'external',
+  minify: !isWatching,
   define: {
     'process.env.NODE_ENV': env
   }

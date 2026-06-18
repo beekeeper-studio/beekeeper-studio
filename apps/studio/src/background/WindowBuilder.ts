@@ -1,12 +1,13 @@
 import _ from 'lodash'
 import path from 'path'
-import { BrowserWindow, globalShortcut, Rectangle } from "electron"
+import { BrowserWindow, globalShortcut } from "electron"
 import electron from 'electron'
 import platformInfo from '../common/platform_info'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import rawLog from '@bksLogger'
 import querystring from 'query-string'
 import { safeOpenExternal } from './lib/electron/safeOpenExternal'
+import { readWindowState, saveWindowState, windowStateExisted, WindowState } from './windowState'
 
 
 // eslint-disable-next-line
@@ -24,15 +25,24 @@ function getIcon() {
   return path.resolve(path.join(__dirname, '..', `public/icons/png/512x512.png`))
 }
 
-class BeekeeperWindow {
+export class BeekeeperWindow {
   private win: BrowserWindow | null
   private reloaded = false
   private appUrl: string
   public sId: string;
+  private settings: IGroupedUserSettings | null
+  private maximizeOnShow = false
+  private hadCachedState = false
 
-  constructor(protected settings: IGroupedUserSettings, openOptions: OpenOptions) {
-    const theme = settings.theme
-    const dark = electron.nativeTheme.shouldUseDarkColors || theme.value.toString().includes('dark')
+  // settings is optional: the first window at startup is constructed from the
+  // fast window-state cache BEFORE the settings DB is ready, then reconciled via
+  // attachSettings() once the real settings load.
+  constructor(openOptions: OpenOptions, settings?: IGroupedUserSettings) {
+    this.settings = settings ?? null
+    const state = readWindowState()
+    this.hadCachedState = windowStateExisted()
+    const dark = electron.nativeTheme.shouldUseDarkColors || state.dark
+    this.maximizeOnShow = state.maximized
     let titleBarStyle: 'default' | 'hidden' = platformInfo.isWindows ? 'default' : 'hidden'
 
     if (platformInfo.isWayland) {
@@ -43,7 +53,7 @@ class BeekeeperWindow {
     const preloadPath = path.join(__dirname, 'preload.js')
     console.log("PRELOAD PATH:", preloadPath)
     this.win = new BrowserWindow({
-      ...this.getWindowPosition(settings),
+      ...this.getWindowPosition(state),
       minWidth: 800,
       minHeight: 600,
       backgroundColor: dark ? "#252525" : '#ffffff',
@@ -73,7 +83,7 @@ class BeekeeperWindow {
 
     this.appUrl = query ? `${appUrl}?${query}` : `${appUrl}/`
     remoteMain.enable(this.win.webContents)
-    this.win.webContents.zoomLevel = Number(settings.zoomLevel?.value) || 0
+    this.win.webContents.zoomLevel = state.zoomLevel
 
     this.initializeCallbacks()
     this.win.webContents.on('will-navigate', (e, url) => {
@@ -110,14 +120,14 @@ class BeekeeperWindow {
 
     this.win.on('maximize', () => {
       this.win.webContents.send(`maximize-${this.sId}`)
-      this.settings.windowMaximized.value = true
-      this.settings.windowMaximized.save().then(_.noop).catch(log.error)
+      saveWindowState({ maximized: true })
+      this.persistSetting('windowMaximized', true)
     })
 
     this.win.on('unmaximize', () => {
       this.win.webContents.send(`unmaximize-${this.sId}`)
-      this.settings.windowMaximized.value = false
-      this.settings.windowMaximized.save().then(_.noop).catch(log.error)
+      saveWindowState({ maximized: false })
+      this.persistSetting('windowMaximized', false)
     })
 
     this.win.on('enter-full-screen', () => {
@@ -146,13 +156,15 @@ class BeekeeperWindow {
     //   log.error('devtools failed to install:', e.toString())
     // }
 
-    if (this.settings.windowMaximized.value) {
+    if (this.maximizeOnShow) {
       this.win.maximize()
     }
 
     this.win.show()
+    log.info(`window visible ${Math.round(process.uptime() * 1000)}ms after process start`)
 
     await this.win.loadURL(this.appUrl)
+    log.info(`renderer loaded ${Math.round(process.uptime() * 1000)}ms after process start`)
     if ((platformInfo.env.development && !platformInfo.env.test) || platformInfo.debugEnabled) {
       globalShortcut.register('F12', this.win.webContents.toggleDevTools.bind(this.win.webContents))
       globalShortcut.register('CommandOrControl+Shift+I', this.win.webContents.toggleDevTools.bind(this.win.webContents))
@@ -161,35 +173,55 @@ class BeekeeperWindow {
     }
   }
 
-  private getWindowPosition(settings: IGroupedUserSettings) {
+  private getWindowPosition(state: WindowState) {
     const options: Electron.BrowserWindowConstructorOptions = {
-      width: 1200,
-      height: 800,
+      width: state.width || 1200,
+      height: state.height || 800,
     }
 
-    const isRectangle = (obj: any): obj is Rectangle => typeof obj === "object" &&
-      typeof obj.x === "number" &&
-      typeof obj.y === "number" &&
-      typeof obj.width === "number" &&
-      typeof obj.height === "number"
-
-    const winPosition = settings.windowPosition.value as Record<string, any>
-    if (isRectangle(winPosition)) {
-      const area = electron.screen.getDisplayMatching(winPosition).workArea
-      if (winPosition.x >= area.x &&
-        winPosition.y >= area.y &&
-        winPosition.x + winPosition.width <= area.x + area.width &&
-        winPosition.y + winPosition.height <= area.y + area.height) {
-        options.x = winPosition.x
-        options.y = winPosition.y
-      }
-      if (winPosition.width <= area.width ||
-        winPosition.height <= area.height) {
-        options.width = winPosition.width
-        options.height = winPosition.height
+    if (typeof state.x === "number" && typeof state.y === "number") {
+      const rect = { x: state.x, y: state.y, width: options.width, height: options.height }
+      const area = electron.screen.getDisplayMatching(rect).workArea
+      if (rect.x >= area.x &&
+        rect.y >= area.y &&
+        rect.x + rect.width <= area.x + area.width &&
+        rect.y + rect.height <= area.y + area.height) {
+        options.x = state.x
+        options.y = state.y
       }
     }
     return options
+  }
+
+  // Reconciles the window with the authoritative settings once the DB has loaded,
+  // and refreshes the fast window-state cache so the next launch starts correct.
+  attachSettings(settings: IGroupedUserSettings) {
+    this.settings = settings
+    if (!this.win) return
+
+    const dark = electron.nativeTheme.shouldUseDarkColors || settings.theme.value.toString().includes('dark')
+    const zoomLevel = Number(settings.zoomLevel?.value) || 0
+    const maximized = !!settings.windowMaximized.value
+    const pos = settings.windowPosition.value as Record<string, any>
+    const bounds = (pos && typeof pos.x === "number" && typeof pos.y === "number")
+      ? { x: pos.x, y: pos.y, width: pos.width, height: pos.height }
+      : {}
+
+    saveWindowState({ dark, zoomLevel, maximized, ...bounds })
+
+    // If there was no cache yet (first launch after upgrade) the window was built
+    // from defaults — reconcile it to the user's saved values now.
+    if (!this.hadCachedState) {
+      this.win.webContents.zoomLevel = zoomLevel
+      if (typeof bounds.x === "number") this.win.setBounds(bounds as Electron.Rectangle)
+      if (maximized && !this.win.isMaximized()) this.win.maximize()
+    }
+  }
+
+  private persistSetting(key: 'windowMaximized' | 'windowPosition', value: any) {
+    if (!this.settings) return
+    this.settings[key].value = value
+    this.settings[key].save().then(_.noop).catch(log.error)
   }
 
   get webContents() {
@@ -220,8 +252,8 @@ class BeekeeperWindow {
 
   windowMoveResizeListener(){
     const bounds = this.win.getNormalBounds()
-    this.settings.windowPosition.value = bounds
-    this.settings.windowPosition.save().then(_.noop).catch(log.error)
+    saveWindowState({ x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height })
+    this.persistSetting('windowPosition', bounds)
   }
 
   finishLoadListener() {
@@ -276,8 +308,18 @@ export function getActiveWindows(): BeekeeperWindow[] {
   return _.filter(windows, 'active')
 }
 
-export function buildWindow(settings: IGroupedUserSettings, options?: OpenOptions): void {
-  windows.push(new BeekeeperWindow(settings, options || {}))
+export function buildWindow(settings: IGroupedUserSettings, options?: OpenOptions): BeekeeperWindow {
+  const win = new BeekeeperWindow(options || {}, settings)
+  windows.push(win)
+  return win
+}
+
+// Build and show a window from the fast window-state cache, before the settings
+// DB is ready. Call attachSettings() on the returned window once settings load.
+export function buildBootstrapWindow(options?: OpenOptions): BeekeeperWindow {
+  const win = new BeekeeperWindow(options || {})
+  windows.push(win)
+  return win
 }
 
 export function getCurrentWindow(): BeekeeperWindow {

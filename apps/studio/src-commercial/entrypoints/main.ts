@@ -15,7 +15,7 @@ import MenuHandler from '@/background/NativeMenuBuilder'
 import { IGroupedUserSettings, UserSetting } from '@/common/appdb/models/user_setting'
 import Connection from '@/common/appdb/Connection'
 import Migration from '@/migration/index'
-import { buildWindow, getActiveWindows, getCurrentWindow } from '@/background/WindowBuilder'
+import { buildWindow, buildBootstrapWindow, getActiveWindows, getCurrentWindow, BeekeeperWindow } from '@/background/WindowBuilder'
 import platformInfo from '@/common/platform_info'
 import bksConfig from '@/common/bksConfig'
 
@@ -122,11 +122,20 @@ protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true
 protocol.registerSchemesAsPrivileged([{scheme: 'plugin', privileges: { secure: true, standard: true } }])
 let initialized = false
 
-async function initBasics() {
+let protocolsRegistered = false
+// Register the app:// and plugin:// protocols exactly once. Must run after the
+// app is ready and before any window calls loadURL('app://...').
+function ensureProtocols() {
+  if (protocolsRegistered) return
+  protocolsRegistered = true
   // this creates the app:// protocol we use for loading assets
   ProtocolBuilder.createAppProtocol()
   // this creates the plugin:// protocol we use for loading plugins
   ProtocolBuilder.createPluginProtocol()
+}
+
+async function initBasics() {
+  ensureProtocols()
   if (initialized) return settings
   initialized = true
   await ormConnection.connect()
@@ -204,6 +213,7 @@ app.on('browser-window-created', (_event: electron.Event, window: electron.Brows
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
+  log.info(`app ready ${Math.round(process.uptime() * 1000)}ms after process start`)
   if (isDevelopment && !process.env.IS_TEST) {
 
     // Per: www.npmjs.com/package/electron-devtools-installer?activeTab=readme#what-extensions-can-i-use
@@ -220,24 +230,36 @@ app.on('ready', async () => {
 
   }
 
+  // Register protocols up front so the window can load app://./index.html (and
+  // its inline loading preloader) before any DB/migration work happens.
+  ensureProtocols()
+
   // this gets positional arguments
   const options = platformInfo.parsedArgs._.map((url: string) => ({ url }))
-  const settings = await initBasics()
 
+  // Show the window with its preloader as fast as possible, BEFORE we connect to
+  // the DB, run migrations, load settings, or fork the utility process. The window
+  // is built from a small cached window-state file; the real settings are
+  // reconciled via attachSettings() once initBasics() resolves below.
+  let bootstrapWindows: BeekeeperWindow[] = []
   if (options.length > 0) {
-
-    await Promise.all(options.map((option) => buildWindow(settings, option)))
-  } else {
-    if (getActiveWindows().length === 0) {
-      const settings = await initBasics()
-      initializeSecurity(app);
-      initializeFileHelpers();
-      await createUtilityProcess()
-
-      await buildWindow(settings)
-    }
+    bootstrapWindows = options.map((option) => buildBootstrapWindow(option))
+  } else if (getActiveWindows().length === 0) {
+    bootstrapWindows = [buildBootstrapWindow()]
   }
+  log.info(`window(s) created ${Math.round(process.uptime() * 1000)}ms after process start`)
 
+  // Now do the heavy lifting. Fork the utility process in parallel with the DB
+  // work rather than blocking the window on it; the renderer requests ports lazily.
+  initializeSecurity(app);
+  initializeFileHelpers();
+  const utilityReady = createUtilityProcess()
+
+  const settings = await initBasics()
+  log.info(`settings ready ${Math.round(process.uptime() * 1000)}ms after process start`)
+  bootstrapWindows.forEach((w) => w.attachSettings(settings))
+
+  await utilityReady
 })
 
 function createAndSendPorts(filter: boolean, utilDied = false) {
