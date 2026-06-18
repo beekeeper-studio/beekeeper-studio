@@ -3,56 +3,80 @@
  * Guardrail for the deps/devDependencies externals convention.
  *
  * esbuild bundles the backend into dist/ and leaves a handful of packages as
- * runtime require()s (the `dependencies` block, plus a few optional/transitive
- * drivers). electron-builder ships `dependencies` (and their closure) and
- * prunes `devDependencies`. So every package esbuild leaves external MUST be
- * resolvable at runtime in the packaged app; if one points at a package that
- * now lives in devDependencies it would only blow up as MODULE_NOT_FOUND after
- * packaging.
+ * runtime require()s. electron-builder ships the production `dependencies`
+ * closure and prunes `devDependencies`. So every package esbuild leaves
+ * external MUST be reachable in that closure at runtime; if one points at a
+ * package that now lives only in devDependencies it would blow up as
+ * MODULE_NOT_FOUND, but only after packaging.
  *
- * This reads the esbuild metafiles (written by esbuild.mjs) and asserts that
- * every externalized import is one of:
- *   - a Node builtin (or electron, provided by the runtime),
- *   - a `dependencies` entry (shipped raw + its closure),
- *   - a known optional/transitive driver that ships inside a dependency's
- *     subtree or is gracefully absent,
- *   - a bundled plugin delivered via electron-builder extraResources.
+ * Rather than mirror esbuild's external list (which would have to be kept in
+ * sync by hand), this derives "what will ship" from the same single source of
+ * truth esbuild uses: the package.json `dependencies` block and its installed
+ * dependency closure — exactly what electron-builder packs. It reads the
+ * esbuild metafiles and flags any externalized import whose package is NOT in
+ * that closure (nor a Node builtin / electron / the app itself) yet exists on
+ * disk — i.e. a real package that has been pushed into devDependencies and will
+ * be pruned.
  *
- * Anything else is a require() that would be missing at runtime.
+ * Optional drivers a bundled library require()s inside a try/catch but that are
+ * not installed (typeorm's sql.js, mongodb's snappy, ...) are ignored: they
+ * were never shipped or bundled, so they can't regress.
  */
 const fs = require('fs')
 const path = require('path')
 const { builtinModules } = require('module')
 
 const studioDir = path.resolve(__dirname, '..')
+const repoRoot = path.resolve(studioDir, '../..')
 const pkg = require(path.join(studioDir, 'package.json'))
 
-// Optional/transitive drivers a bundled package may require() at runtime. They
-// either ship inside a kept dependency's subtree or are optional and absent by
-// design. Keep in sync with `forceExternal` in esbuild.mjs.
-const OPTIONAL_EXTERNALS = new Set([
-  'sqlite3',
-  'sequelize',
-  'mysql',
-  'pg-query-stream',
-  'mongodb-client-encryption',
-  'kerberos',
-])
+// node_modules roots to probe. Yarn hoists most packages to the repo root.
+const nodeModulesRoots = [studioDir, repoRoot]
 
-// Bundled plugins ship via electron-builder `extraResources`, not node_modules.
-const BUNDLED_PLUGINS = new Set([
-  '@beekeeperstudio/bks-ai-shell',
-  '@beekeeperstudio/bks-er-diagram',
-])
+/** Locate a package's package.json, preferring a parent's nested node_modules. */
+function findPackageJson(name, fromDir) {
+  const candidates = []
+  if (fromDir) candidates.push(path.join(fromDir, 'node_modules', name, 'package.json'))
+  for (const root of nodeModulesRoots) {
+    candidates.push(path.join(root, 'node_modules', name, 'package.json'))
+  }
+  return candidates.find((p) => fs.existsSync(p)) || null
+}
+
+/**
+ * Walk the installed production dependency closure of `dependencies`, following
+ * each package's own dependencies + optionalDependencies. This mirrors what
+ * electron-builder ships (devDependencies, and uninstalled optional deps, are
+ * excluded by construction since we only follow packages found on disk).
+ */
+function productionClosure() {
+  const shipped = new Set()
+  const stack = Object.keys(pkg.dependencies || {}).map((name) => ({ name, fromDir: studioDir }))
+  while (stack.length) {
+    const { name, fromDir } = stack.pop()
+    if (shipped.has(name)) continue
+    const pkgJson = findPackageJson(name, fromDir)
+    if (!pkgJson) continue // optional dep that isn't installed -> not shipped
+    shipped.add(name)
+    const data = JSON.parse(fs.readFileSync(pkgJson, 'utf8'))
+    const dir = path.dirname(pkgJson)
+    const children = [
+      ...Object.keys(data.dependencies || {}),
+      ...Object.keys(data.optionalDependencies || {}),
+    ]
+    for (const child of children) {
+      if (!shipped.has(child)) stack.push({ name: child, fromDir: dir })
+    }
+  }
+  return shipped
+}
 
 const allowed = new Set([
   ...builtinModules,
   ...builtinModules.map((m) => `node:${m}`),
-  'electron',
+  'electron', // provided by the runtime, kept in devDependencies
   'beekeeper-studio', // self-reference; ships its own package.json
-  ...Object.keys(pkg.dependencies || {}),
-  ...OPTIONAL_EXTERNALS,
-  ...BUNDLED_PLUGINS,
+  ...productionClosure(),
 ])
 
 /** Reduce an import path to its npm package name. */
@@ -63,28 +87,9 @@ function packageName(importPath) {
   return importPath.split('/')[0]
 }
 
-// node_modules roots to probe for "is this package actually installed?".
-const resolvePaths = [studioDir, path.resolve(studioDir, '../..')]
-
-/**
- * Optional drivers that a bundled library require()s inside a try/catch (e.g.
- * typeorm's sql.js / @sap/hana-client, mongodb's snappy) are left external by
- * esbuild but were never installed. They can never be MODULE_NOT_FOUND
- * regressions because they were never shipped or bundled — only flag packages
- * that genuinely exist on disk.
- */
+/** Is the package present on disk at all (vs. an uninstalled optional require)? */
 function isInstalled(name) {
-  try {
-    require.resolve(`${name}/package.json`, { paths: resolvePaths })
-    return true
-  } catch {
-    try {
-      require.resolve(name, { paths: resolvePaths })
-      return true
-    } catch {
-      return false
-    }
-  }
+  return Boolean(findPackageJson(name))
 }
 
 const metafiles = ['dist/metafile-main.json', 'dist/metafile-utility.json']
@@ -108,9 +113,9 @@ const violations = []
 for (const imp of externalImports) {
   const name = packageName(imp)
   if (allowed.has(name) || allowed.has(imp)) continue
-  // Not in the shipped set. Only a problem if it actually exists on disk — an
-  // installed package that is externalized but lives in devDependencies would
-  // be pruned by electron-builder and throw MODULE_NOT_FOUND when required.
+  // Not in the shipped closure. Only a problem if it actually exists on disk —
+  // an installed package that is externalized but lives in devDependencies gets
+  // pruned by electron-builder and throws MODULE_NOT_FOUND when required.
   if (isInstalled(name)) {
     violations.push(`${imp}  (package: ${name})`)
   }
