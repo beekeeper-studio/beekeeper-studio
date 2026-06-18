@@ -15,11 +15,35 @@ function disabledTitle(dialectName: string, feature: string, isDisabled: boolean
 }
 
 export default {
-  data() {
-    // HACK (@day): this stuff will be removed once we get write mode working for BQ
-    const isBQClass = this.$store.getters.dialect === 'bigquery' ? 'disabled' : '';
-    return {
-      routineMenuOptions: [
+  computed: {
+    routineMenuOptions() {
+      const dialect: DialectData = this.$store.getters.dialectData;
+      const dialectName: string = this.$store.getters.dialect;
+      const usedConfig: IConnection = this.$store.state.usedConfig;
+      // HACK (@day): this stuff will be removed once we get write mode working for BQ
+      const isBQClass = dialectName === 'bigquery' ? 'disabled' : '';
+      const canEdit = !!dialect.editableRoutineDefinition;
+      const canExecute = !!dialect.routineExecuteStatement;
+      return [
+        {
+          name: "Edit Routine",
+          slug: 'edit-routine',
+          class: disabled(!canEdit, usedConfig.readOnlyMode),
+          title: usedConfig.readOnlyMode
+            ? 'Read-only mode is enabled'
+            : disabledTitle(dialectName, 'Editing routines', !canEdit, false),
+          handler: this.routineMenuClick
+        },
+        {
+          name: "Execute",
+          slug: 'execute',
+          class: disabled(!canExecute),
+          title: disabledTitle(dialectName, 'Executing routines', !canExecute, false),
+          handler: this.routineMenuClick
+        },
+        {
+          type: 'divider',
+        },
         {
           name: "Copy Name",
           slug: 'copy-name',
@@ -41,11 +65,8 @@ export default {
           class: isBQClass,
           handler: this.routineMenuClick
         },
-      ] as ContextOption[],
-
-    }
-  },
-  computed: {
+      ] as ContextOption[]
+    },
     tableMenuOptions() {
       const dialect: DialectData = this.$store.getters.dialectData;
       const dialectName: string = this.$store.getters.dialect;
@@ -219,6 +240,10 @@ export default {
           return this.$copyText(item.name)
         case 'sql-create':
           return this.$root.$emit('loadRoutineCreate', item)
+        case 'edit-routine':
+          return this.$root.$emit('openRoutineEditor', item)
+        case 'execute':
+          return this.$root.$emit('loadRoutineExecute', item)
         default:
           break;
       }

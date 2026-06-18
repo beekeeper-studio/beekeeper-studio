@@ -1,6 +1,7 @@
 import _ from "lodash";
 import {
   ColumnType,
+  createOrAlterRoutineDefinition,
   defaultConstraintActions,
   defaultEscapeString,
   defaultWrapLiteral,
@@ -27,6 +28,21 @@ export interface DefaultConstraint {
 }
 
 const UNWRAPPER = /^"(.*)"$/
+
+function sqlServerQualifiedName(routine: { name: string; schema?: string }): string {
+  const wrap = (s: string) => `[${s.replace(/\]/g, ']]')}]`
+  return routine.schema ? `${wrap(routine.schema)}.${wrap(routine.name)}` : wrap(routine.name)
+}
+
+function sqlServerRoutineExecute(routine: { name: string; schema?: string; type?: string; routineParams?: { name: string; type: string }[] }): string {
+  const args = (routine.routineParams || [])
+    .map((p) => {
+      const paramName = p.name?.startsWith('@') ? p.name : `@${p.name}`
+      return `${paramName} = /* ${p.type} */ NULL`
+    })
+    .join(', ')
+  return `EXEC ${sqlServerQualifiedName(routine)}${args ? ' ' + args : ''};`
+}
 
 export const SqlServerData: DialectData = {
   sqlLabel: "SQL",
@@ -70,6 +86,10 @@ export const SqlServerData: DialectData = {
     informationSchema: {
       extra: true
     }
-  }
+  },
+  // sys.sql_modules returns a plain CREATE PROCEDURE/FUNCTION; rewrite it to
+  // CREATE OR ALTER so saved edits update the routine in place.
+  editableRoutineDefinition: createOrAlterRoutineDefinition,
+  routineExecuteStatement: sqlServerRoutineExecute,
 
 }

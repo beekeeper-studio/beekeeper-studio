@@ -29,6 +29,19 @@ const charsets = [
 
 const UNWRAPPER = /^"(.*)"$/
 
+function pgQualifiedName(routine: { name: string; schema?: string }): string {
+  const wrap = (s: string) => `"${s.replaceAll(/"/g, '""')}"`
+  return routine.schema ? `${wrap(routine.schema)}.${wrap(routine.name)}` : wrap(routine.name)
+}
+
+function pgRoutineExecute(routine: { name: string; schema?: string; type?: string; routineParams?: { name: string; type: string }[] }): string {
+  const args = (routine.routineParams || [])
+    .map((p) => `/* ${p.name}: ${p.type} */ NULL`)
+    .join(', ')
+  const call = routine.type === 'procedure' ? 'CALL' : 'SELECT'
+  return `${call} ${pgQualifiedName(routine)}(${args});`
+}
+
 export const PostgresData: DialectData = {
   sqlLabel: "SQL",
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
@@ -64,6 +77,10 @@ export const PostgresData: DialectData = {
       reorderColumn: true
     }
   },
+  // pg_get_functiondef already returns a re-runnable CREATE OR REPLACE
+  // statement, so the definition is editable as-is.
+  editableRoutineDefinition: (definition) => definition,
+  routineExecuteStatement: pgRoutineExecute,
   charsets
 }
 

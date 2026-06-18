@@ -33,6 +33,10 @@ export const TabModule: Module<State, RootState> = {
         name: "Shell",
         menuItem: { label: 'Add Shell' },
       },
+      {
+        type: 'routine',
+        name: "Routine",
+      },
     ],
   }),
   getters: {

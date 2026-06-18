@@ -47,6 +47,10 @@
     class="material-icons item-icon query"
   >terminal</i>
   <i
+    v-else-if="tab.tabType === 'routine'"
+    class="material-icons item-icon routine-icon"
+  >functions</i>
+  <i
     v-else
     class="material-icons item-icon"
   >{{ tabTypeConfig?.icon || 'new_releases' }}</i>

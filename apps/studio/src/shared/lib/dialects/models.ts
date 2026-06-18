@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import CodeMirror from 'codemirror'
 import { Version } from '@/common/version'
-import { ExtendedTableColumn } from '@/lib/db/models'
+import { ExtendedTableColumn, Routine } from '@/lib/db/models'
 
 const communityDialects = ['postgresql', 'greengage', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery', 'bedrock', 'redis'] as const
 const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'sqlanywhere', 'surrealdb', 'trino', 'dynamodb', 'snowflake'] as const
@@ -244,6 +244,19 @@ export interface DialectData {
     true: any
     false: any
   }
+  /**
+   * Transform the result of `getRoutineCreateScript` into a definition that can
+   * be re-executed to update the routine in place (e.g. `CREATE OR REPLACE` /
+   * `CREATE OR ALTER`). Only defined for dialects that support editing
+   * routines; its presence is used to gate the "Edit Routine" UI.
+   */
+  editableRoutineDefinition?: (definition: string, routine: Routine) => string
+  /**
+   * Build a CALL/EXEC statement template for running a routine. Parameters are
+   * rendered as placeholders for the user to fill in. Only defined for dialects
+   * that support executing routines.
+   */
+  routineExecuteStatement?: (routine: Routine) => string
 }
 
 export const defaultConstraintActions = [
@@ -266,6 +279,20 @@ export function defaultWrapLiteral(str: string): string {
 
 export function defaultWrapIdentifier(value: string): string {
   return value ? `"${value.replaceAll(/"/g, '""')}"` : ''
+}
+
+/**
+ * Rewrite a leading `CREATE <kind>` into `CREATE OR ALTER <kind>` (T-SQL
+ * style, SQL Server 2016+). Leaves the rest of the definition untouched. Used
+ * to make the `CREATE PROCEDURE/FUNCTION` text returned by SQL Server
+ * re-executable so edits can be saved.
+ */
+export function createOrAlterRoutineDefinition(definition: string): string {
+  if (!definition) return definition
+  return definition.replace(
+    /^(\s*)CREATE(\s+)(PROC(?:EDURE)?|FUNCTION|TRIGGER|VIEW)\b/i,
+    (_m, lead, gap, kind) => `${lead}CREATE OR ALTER${gap}${kind}`
+  )
 }
 
 const maybeWrapIdentifierRegex = /(?:[^a-z0-9_]|^\d)/;

@@ -170,6 +170,11 @@ export class OpenTab extends ApplicationEntity {
         return this.tableName === other.tableName &&
           (this.schemaName || null) === (other.schemaName || null) &&
           (this.entityType || null) === (other.entityType || null)
+      case 'routine':
+        return other.tabType === 'routine' &&
+          this.tableName === other.tableName &&
+          (this.schemaName || null) === (other.schemaName || null) &&
+          (this.entityType || null) === (other.entityType || null)
       case 'import-export-database':
         // we store export state in the store, so don't want multiple open
         // at a time.

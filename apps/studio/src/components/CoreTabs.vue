@@ -139,6 +139,13 @@
           :tab="tab"
           :tab-id="tab.id"
         />
+        <RoutineEditor
+          v-if="tab.tabType === 'routine'"
+          :active="activeTab?.id === tab.id"
+          :tab="tab"
+          :tab-id="tab.id"
+          @update-tab="updateTab"
+        />
         <ImportExportDatabase
           v-if="tab.tabType === 'import-export-database'"
           :schema="tab.schemaName"
@@ -303,6 +310,7 @@ import CoreTabHeader from './CoreTabHeader.vue'
 import TableTable from './tableview/TableTable.vue'
 import TableProperties from './TabTableProperties.vue'
 import TableBuilder from './TabTableBuilder.vue'
+import RoutineEditor from './TabRoutineEditor.vue'
 import ImportExportDatabase from './importexportdatabase/ImportExportDatabase.vue'
 import ImportTable from './TabImportTable.vue'
 import DatabaseBackup from './TabDatabaseBackup.vue'
@@ -339,6 +347,7 @@ export default Vue.extend({
     CoreTabHeader,
     TableTable,
     TableProperties,
+    RoutineEditor,
     ImportExportDatabase,
     ImportTable,
     Draggable,
@@ -440,6 +449,8 @@ export default Vue.extend({
         { event: 'loadSettings', handler: this.openSettings },
         { event: 'loadTableCreate', handler: this.loadTableCreate },
         { event: 'loadRoutineCreate', handler: this.loadRoutineCreate },
+        { event: 'openRoutineEditor', handler: this.openRoutineEditor },
+        { event: 'loadRoutineExecute', handler: this.executeRoutine },
         { event: 'favoriteClick', handler: this.favoriteClick },
         { event: 'exportTable', handler: this.openExportModal },
         { event: AppEvent.toggleHideEntity, handler: this.toggleHideEntity },
@@ -991,6 +1002,28 @@ export default Vue.extend({
       const result = await this.connection.getRoutineCreateScript(routine.name, routine.type, routine.schema);
       const stringResult = safeFormat(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
       this.createQuery(stringResult);
+    },
+    openRoutineEditor(routine) {
+      const t = {} as TransportOpenTab;
+      t.tabType = 'routine';
+      t.title = routine.name;
+      // Routine identity is carried on the generic table columns so it persists
+      // without a new migration (name -> tableName, schema -> schemaName,
+      // type -> entityType).
+      t.tableName = routine.name;
+      t.schemaName = routine.schema;
+      t.entityType = routine.type;
+      const existing = this.tabItems.find((tab) => matches(tab, t));
+      if (existing) return this.$store.dispatch('tabs/setActive', existing);
+      this.addTab(t);
+    },
+    executeRoutine(routine) {
+      const stub = this.dialectData.routineExecuteStatement?.(routine);
+      if (!stub) {
+        this.$noty.error(`Executing routines is not supported for ${this.dialectTitle}`);
+        return;
+      }
+      this.createQuery(stub);
     },
     switchUserKeymap(value) {
       this.$store.dispatch('settings/save', { key: 'keymap', value: value });
