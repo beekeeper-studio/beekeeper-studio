@@ -215,7 +215,7 @@ jobs:
           fi
 
       - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
 
@@ -367,7 +367,7 @@ jobs:
     needs: [release, create_draft_release, identify_channel]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v6
       - run: npm install js-yaml
       - name: Merge yml files
         uses: actions/github-script@v7
