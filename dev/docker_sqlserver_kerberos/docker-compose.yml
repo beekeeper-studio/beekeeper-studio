@@ -1,0 +1,76 @@
+# Stands up a real Kerberos environment for the SQL Server integrated-auth test:
+#   samba  -- Active Directory DC (KDC + LDAP), realm BKS.TEST
+#   mssql  -- SQL Server 2022 on Linux, joined to the realm via a keytab
+#
+# The Jest client runs on the host (CI runner) and connects to mssql.bks.test,1433 with
+# a Kerberos ticket obtained via kinit. See sqlserver-kerberos-tests.yaml for the host
+# wiring (krb5.conf, /etc/hosts, kinit) and
+# apps/studio/tests/integration/lib/db/clients/sqlserver-kerberos.spec.ts for the test.
+name: bks-sqlserver-kerberos
+
+networks:
+  bksnet:
+    driver: bridge
+
+volumes:
+  # Shared channel for the Samba-exported keytab + a readiness marker.
+  secrets:
+
+services:
+  samba:
+    build:
+      context: .
+      dockerfile: samba/Dockerfile
+    hostname: dc.bks.test
+    domainname: bks.test
+    # Samba AD DC provisioning needs broad privileges; this is a throwaway test container.
+    privileged: true
+    networks:
+      bksnet:
+        aliases:
+          - dc.bks.test
+    volumes:
+      - secrets:/shared
+    ports:
+      # Exposed so the host runner can reach the KDC for kinit.
+      - "88:88"
+      - "88:88/udp"
+      - "389:389"
+      - "389:389/udp"
+      - "464:464"
+      - "464:464/udp"
+      - "636:636"
+    healthcheck:
+      # Healthy once the keytab has been exported for the SQL Server container.
+      test: ["CMD-SHELL", "test -f /shared/keytab.ready"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+
+  mssql:
+    build:
+      context: .
+      dockerfile: mssql/Dockerfile
+    hostname: mssql.bks.test
+    domainname: bks.test
+    depends_on:
+      samba:
+        condition: service_healthy
+    networks:
+      bksnet:
+        aliases:
+          - mssql.bks.test
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Example*1"
+      MSSQL_PID: "Developer"
+    volumes:
+      - secrets:/shared
+    ports:
+      - "1433:1433"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 30s
