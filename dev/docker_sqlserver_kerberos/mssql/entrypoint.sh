@@ -1,13 +1,18 @@
 #!/bin/bash
-# Waits for the Samba-exported keytab, configures SQL Server for AD/Kerberos auth via
-# mssql-conf, starts the engine, and creates the Kerberos-mapped login. Runs as the
-# mssql user (the image's default), which owns /var/opt/mssql and can edit mssql.conf.
-set -euo pipefail
+# Joins the host to the Samba AD domain (SSSD) so SQL Server trusts the realm and can map
+# the Kerberos principal to a login, installs the MSSQLSvc keytab + AD config, then starts
+# the engine (as the mssql user) and creates the Kerberos-mapped login. Runs as root.
+# Not `set -e`: we want to push through and surface diagnostics rather than abort silently.
+set -uxo pipefail
 
+REALM="BKS.TEST"
+DOMAIN_DNS="bks.test"
+ADMIN_USER="Administrator"
+ADMIN_PASS="Beekeeper*1Admin"
+SVC_USER="sqlsvc"
 KEYTAB_SRC="/shared/mssql.keytab"
 KEYTAB_DST="/var/opt/mssql/secrets/mssql.keytab"
 READY="/shared/keytab.ready"
-SVC_USER="sqlsvc"
 SQLCMD="/opt/mssql-tools18/bin/sqlcmd"
 
 echo "Waiting for the Samba keytab on the shared volume ..."
@@ -15,40 +20,49 @@ for _ in $(seq 1 120); do
   if [ -f "${READY}" ] && [ -f "${KEYTAB_SRC}" ]; then break; fi
   sleep 2
 done
-if [ ! -f "${KEYTAB_SRC}" ]; then
-  echo "ERROR: keytab never appeared at ${KEYTAB_SRC}" >&2
-  exit 1
-fi
+[ -f "${KEYTAB_SRC}" ] || { echo "ERROR: keytab never appeared at ${KEYTAB_SRC}" >&2; exit 1; }
 
+echo "::group::Join AD domain ${DOMAIN_DNS} (adcli + SSSD)"
+# Creates the machine account + /etc/krb5.keytab SSSD authenticates with.
+echo "${ADMIN_PASS}" | adcli join "${DOMAIN_DNS}" --login-user "${ADMIN_USER}" --stdin-password -v \
+  || echo "WARNING: adcli join reported a problem"
+
+# Route passwd/group through SSSD so SQL Server can resolve AD principals.
+grep -q 'sss' /etc/nsswitch.conf || sed -i -E 's/^(passwd:.*)$/\1 sss/; s/^(group:.*)$/\1 sss/' /etc/nsswitch.conf
+mkdir -p /var/lib/sss/db /var/lib/sss/mc /var/lib/sss/pipes
+sssd -i -d 2 &
+SSSD_PID=$!
+sleep 5
+echo "AD principal resolution check:"
+id "testuser@${DOMAIN_DNS}" || getent passwd "testuser@${DOMAIN_DNS}" || echo "testuser not yet resolvable via SSSD"
+echo "::endgroup::"
+
+echo "::group::Configure SQL Server AD/Kerberos"
 mkdir -p /var/opt/mssql/secrets
 cp "${KEYTAB_SRC}" "${KEYTAB_DST}"
-# SQL Server refuses a keytab that is readable by anyone but its own account.
+chown mssql:mssql "${KEYTAB_DST}"
 chmod 400 "${KEYTAB_DST}"
-
-# Delegate authentication to the OS Kerberos/keytab stack. These write to
-# /var/opt/mssql/mssql.conf (owned by mssql).
 /opt/mssql/bin/mssql-conf set network.privilegedadaccount "${SVC_USER}"
 /opt/mssql/bin/mssql-conf set network.kerberoskeytabfile "${KEYTAB_DST}"
+echo "::endgroup::"
 
-# Start the engine in the background so we can run setup.sql once it accepts connections.
-/opt/mssql/bin/sqlservr &
+# sqlservr refuses to run as root, so start it as the mssql user. su (without -l) preserves
+# the MSSQL_* environment on Debian; HOME is set explicitly for the engine.
+echo "Starting SQL Server ..."
+su mssql -s /bin/bash -c 'HOME=/var/opt/mssql exec /opt/mssql/bin/sqlservr' &
 SQLPID=$!
 
 echo "Waiting for SQL Server to accept connections ..."
 for _ in $(seq 1 60); do
-  if "${SQLCMD}" -S localhost -U sa -P "${MSSQL_SA_PASSWORD}" -C -Q "SELECT 1" >/dev/null 2>&1; then
-    break
-  fi
+  if "${SQLCMD}" -S localhost -U sa -P "${MSSQL_SA_PASSWORD}" -C -Q "SELECT 1" >/dev/null 2>&1; then break; fi
   sleep 2
 done
 
 echo "Creating the Kerberos-mapped login ..."
-if ! "${SQLCMD}" -S localhost -U sa -P "${MSSQL_SA_PASSWORD}" -C -b -i /usr/local/bin/setup.sql; then
-  echo "WARNING: setup.sql failed -- the [BKS\\testuser] login may be missing." >&2
-fi
+"${SQLCMD}" -S localhost -U sa -P "${MSSQL_SA_PASSWORD}" -C -b -i /usr/local/bin/setup.sql \
+  || echo "WARNING: setup.sql failed -- the [BKS\\testuser] login may be missing."
 
-# Signal readiness (engine up + login created) for the compose healthcheck / test runner.
-touch /shared/mssql.ready
+# Readiness marker (engine up + login created) for the compose healthcheck.
+touch /var/opt/mssql/mssql.ready
 
-# Hand the foreground back to the engine so the container's lifecycle tracks it.
 wait "${SQLPID}"
