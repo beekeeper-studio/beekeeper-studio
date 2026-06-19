@@ -69,7 +69,8 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
       }
       &.tabulator-moving {
         position: absolute;
-      } 
+        background: $row-add !important;
+      }
     }
     &.deleted,
     &.deleted:hover {
