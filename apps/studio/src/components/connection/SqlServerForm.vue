@@ -21,7 +21,7 @@
           SQL Server Options
         </h4>
         <div class="advanced-body">
-          <div class="form-group">
+          <div class="form-group" v-show="!windowsAuthEnabled">
             <label for="domain">
               Domain
               <i
