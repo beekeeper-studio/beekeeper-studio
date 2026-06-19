@@ -10,7 +10,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN echo "krb5-config krb5-config/default_realm string BKS.TEST" | debconf-set-selections \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
-        samba smbclient ldb-tools krb5-user winbind \
+        samba samba-ad-provision samba-dsdb-modules smbclient krb5-user winbind \
         ca-certificates procps iproute2 dnsutils \
     && rm -rf /var/lib/apt/lists/*
 
