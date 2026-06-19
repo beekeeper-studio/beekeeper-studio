@@ -67,6 +67,9 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
       .tabulator-editing {
         box-shadow: inset 0 -1px $theme-base!important;
       }
+      &.tabulator-moving {
+        position: absolute;
+      } 
     }
     &.deleted,
     &.deleted:hover {
