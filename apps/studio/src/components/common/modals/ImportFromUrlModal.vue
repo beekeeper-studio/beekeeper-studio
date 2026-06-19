@@ -1,6 +1,5 @@
 <template>
   <base-modal
-    class="vue-dialog beekeeper-modal import-modal"
     :name="name"
     form-based
     @opened="handleOpened"

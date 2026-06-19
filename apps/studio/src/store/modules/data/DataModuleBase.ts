@@ -207,10 +207,10 @@ export function utilActionsFor<T extends Transport>(type: string, other: any = {
 
 export function actionsFor<T extends HasId>(scope: string, obj: any) {
   return {
-    async load(context) {
+    async load(context, options?: { initialLoad?: boolean; extraParams?: Record<string, unknown> }) {
       context.commit("error", null)
       await safelyDo(context, async (cli) => {
-        const items: any[] = await cli[scope].list()
+        const items: any[] = await cli[scope].list(undefined, options)
         // this is to account for when the store module changes
         const rightItems = items.filter((i) => i.workspaceId === context.rootState.workspaceId)
         if (rightItems.length === items.length) {

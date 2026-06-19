@@ -1,5 +1,6 @@
 import { AzureAuthOptions, BigQueryOptions, CassandraOptions, DynamoDBOptions, LibSQLOptions, RedshiftOptions, ConnectionType, SQLAnywhereOptions, IamAuthOptions, SurrealDBOptions, SnowflakeOptions } from "@/lib/db/types"
 import { Transport } from "../transport"
+import { IShareable } from "./IShareable"
 
 export type SshMode = null | 'agent' | 'userpass' | 'keyfile'
 
@@ -81,7 +82,7 @@ export interface IConnection extends ISimpleConnection {
   sshBastionKeyfilePassword: Nullable<string>
 }
 
-export interface ICloudSavedConnection extends IConnection {
+export interface ICloudSavedConnection extends IConnection, IShareable {
   userSpecificCredentials: boolean
   userSpecificPaths: boolean
 }

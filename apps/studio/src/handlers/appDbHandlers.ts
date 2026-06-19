@@ -55,7 +55,7 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
       return await transform(new cls().withProps(init), cls);
     },
     [`appdb/${name}/save`]: async function({ obj, options }: { obj: T | T[], options: SaveOptions }) {
-      // Use query builder to select all columns (including those marked select: false by default) 
+      // Use query builder to select all columns (including those marked select: false by default)
       // since all columns are required for validation checks.
       const repo = cls.getRepository();
       const alias = "e";
@@ -156,7 +156,10 @@ async function transformConn(obj: SavedConnection, cls: any): Promise<IConnectio
     obj.readOnlyMode = false;
   }
 
-  const newObj = {} as unknown as SavedConnection;
+  const newObj = {
+    canRead: true,
+    canWrite: true,
+  } as unknown as SavedConnection;
   return cls.merge(newObj, obj);
 }
 

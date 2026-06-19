@@ -226,8 +226,8 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     })
   }
 
-  switchLicenseState = async (state: Electron.MenuItem | DevLicenseState, win: ElectronWindow) => {
-    if (win) win.webContents.send(AppEvent.switchLicenseState, state)
+  switchLicenseState = async (state: Electron.MenuItem | DevLicenseState, win: ElectronWindow, a) => {
+    if (win) win.webContents.send(AppEvent.switchLicenseState, a)
   }
 
   simulatePlatform = async (platform: Electron.MenuItem | string, win: ElectronWindow) => {

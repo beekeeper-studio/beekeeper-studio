@@ -11,6 +11,13 @@ export interface IWorkspace {
   active: boolean
   isOwner?: boolean
   level: string
+  currentMembership: {
+    id: number;
+    userId: number;
+    admin: boolean;
+    owner: boolean;
+    canManageWorkspace: boolean;
+  }
 }
 
 export const LocalWorkspace: IWorkspace = {

@@ -136,7 +136,7 @@ x-buttons > x-button[menu].btn {
     margin-left: 0;
   }
 
-  .material-icons:last-child {
+  .material-icons:last-child:not(:first-child) {
     margin-left: $gutter-h * 0.65;
   }
 }
@@ -361,8 +361,14 @@ input, select, textarea, .bk-form-input {
 select {
   -webkit-appearance: none;
   appearance: none;
-  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(255,255,255, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(255,255,255, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 65% transparent !important;
   padding: 0 0.75rem;
+  &.width-auto {
+    // It should adjust when using `width: auto`, depending on the padding
+    background-position-x: calc(100% - 0.75rem) !important;
+    width: auto;
+    padding-right: 1.75rem;
+  }
   option {
     background: color.adjust($theme-bg, $lightness: 3%);
     color: $text;

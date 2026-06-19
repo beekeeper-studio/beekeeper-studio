@@ -20,11 +20,14 @@ export abstract class GenericController<T extends HasId> {
   name: string
   plural: string
 
-  async list(updatedSince?: number): Promise<T[]> {
+  async list(updatedSince?: number, options?: { extraParams?: Record<string, unknown> }): Promise<T[]> {
     const params = updatedSince ? {
       updated_since: updatedSince,
       slim: true
     } : { slim: true }
+    if (options?.extraParams) {
+      Object.assign(params, options.extraParams);
+    }
     const response = await this.axios.get(url(this.path), { params })
     return res(response, this.plural)
   }

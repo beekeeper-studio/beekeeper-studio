@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import path from 'path'
-import { BrowserWindow, globalShortcut, Rectangle } from "electron"
+import { BrowserWindow, globalShortcut, Menu, Rectangle } from "electron"
 import electron from 'electron'
 import platformInfo from '../common/platform_info'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
@@ -99,6 +99,21 @@ class BeekeeperWindow {
       } else {
         return { action: 'deny' }
       }
+    })
+
+    this.win.webContents.on('context-menu', (_e, params) => {
+      const menu = Menu.buildFromTemplate([
+        {
+          label: 'Inspect Element',
+          click: () => {
+            this.win?.webContents.inspectElement(params.x, params.y)
+            if (this.win?.webContents.isDevToolsOpened()) {
+              this.win.webContents.devToolsWebContents?.focus()
+            }
+          }
+        }
+      ])
+      menu.popup({ window: this.win })
     })
 
     this.win.webContents.on('ipc-message', (e, channel, ...args) => {
