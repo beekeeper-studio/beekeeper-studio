@@ -260,6 +260,10 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: 'boolean', nullable: false })
   trustServerCertificate = false
 
+  // SQL Server only. Integrated authentication (SSPI/Kerberos/NTLM) via msnodesqlv8.
+  @Column({ type: 'boolean', nullable: false })
+  windowsAuthEnabled = false
+
   // oracle only.
   @Column({type: 'varchar', nullable: true})
   serviceName: Nullable<string> = null
