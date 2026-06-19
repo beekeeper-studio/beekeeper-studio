@@ -15,6 +15,15 @@
         </option>
       </select>
     </div>
+    <div v-show="windowsAuthEnabled" class="alert alert-info">
+      <i class="material-icons-outlined">info</i>
+      <div>
+        Integrated authentication uses the current OS login &mdash; no username or
+        password. On Linux and macOS it also requires unixODBC, the Microsoft ODBC
+        Driver 18 for SQL Server, and a valid Kerberos ticket (kinit).
+        <a href="https://docs.beekeeperstudio.io/user_guide/connecting/sql-server/">Setup guide</a>
+      </div>
+    </div>
     <common-server-inputs v-show="!azureAuthEnabled" :config="config" :hide-credentials="windowsAuthEnabled">
       <div class="advanced-connection-settings">
         <h4 class="advanced-heading">
