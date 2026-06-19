@@ -1,7 +1,7 @@
 <template>
   <modal
     name="import-connections"
-    class="vue-dialog beekeeper-modal"
+    class="vue-dialog beekeeper-modal import-connections-modal"
   >
     <div class="dialog-content">
       <div class="dialog-c-title">
@@ -97,7 +97,8 @@ export default Vue.extend({
       const candidates = this.connections.filter((c) => c.checked)
       try {
         await Promise.all(candidates.map((c) => {
-          const payload = {...c, id: null}
+          // Clear id and connectionFolderId so the connection goes to the personal folder
+          const payload = {...c, id: null, connectionFolderId: null}
           return this.$store.dispatch('data/connections/save', payload)
         }))
         this.$modal.hide('import-connections')
@@ -110,3 +111,19 @@ export default Vue.extend({
   }
 })
 </script>
+<style lang="scss">
+.import-connections-modal {
+  .v--modal {
+    display: flex;
+    flex-direction: column;
+  }
+  .dialog-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .vue-dialog-buttons {
+    flex-shrink: 0;
+  }
+}
+</style>

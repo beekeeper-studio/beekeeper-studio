@@ -194,6 +194,7 @@ import BuilderFilter from "./filter/BuilderFilter.vue";
 
 const BUILDER = "builder";
 const RAW = "raw";
+const isEmpty = (s) => _.isEmpty(_.trim(s))
 
 export default Vue.extend({
   components: { BuilderFilter },
@@ -265,7 +266,7 @@ export default Vue.extend({
     addFilter() {
       if (this.isCommunity) {
         if (this.filters.length >= 2) {
-          this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use more than 2 filters")
+          this.$root.$emit(AppEvent.upgradeModal, "Advanced Filters")
           return;
         }
       }
@@ -287,7 +288,7 @@ export default Vue.extend({
     submit() {
       let filters: TableFilter[] | string | null
       if (this.filterMode === RAW) {
-        filters = this.filterRaw || null
+        filters = isEmpty(this.filterRaw) ? [] : this.filterRaw;
       } else {
         filters = normalizeFilters(this.filters)
         this.submittedWithEmptyValue = checkEmptyFilters(filters)

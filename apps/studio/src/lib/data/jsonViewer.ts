@@ -28,7 +28,7 @@ export interface ExpandablePath {
  * We expect the string to be a result of `JSON.stringify(obj, null, 2)`
  **/
 export function findKeyPosition(jsonStr: string, path: (string | number)[]) {
-  let lines = jsonStr.split("\n");
+  const lines = jsonStr.split("\n");
   let lineSearchOffset = 0;
 
   for (let pathIdx = 0; pathIdx < path.length; pathIdx++) {
@@ -109,7 +109,7 @@ export function deepFilterObjectProps(
 
   if (!paths) paths = getPaths(obj);
   const filteredPaths = paths.filter((path) =>
-    regex ? regex.test(path) : path.toLowerCase().includes(filter)
+    regex ? regex.test(path) : path.toLowerCase().includes(filter.toLowerCase())
   );
   return _.pick(obj, filteredPaths);
 }

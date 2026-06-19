@@ -11,7 +11,6 @@ import log from '@bksLogger'
 require('@electron/remote/main').initialize()
 log.info("initializing background")
 
-
 import MenuHandler from '@/background/NativeMenuBuilder'
 import { IGroupedUserSettings, UserSetting } from '@/common/appdb/models/user_setting'
 import Connection from '@/common/appdb/Connection'
@@ -29,10 +28,14 @@ import { manageUpdates } from '@/background/update_manager'
 import * as sms from 'source-map-support'
 import { initializeSecurity } from '@/backend/lib/security'
 import { initializeFileHelpers } from '@/backend/lib/FileHelpers'
+import { safeOpenExternal } from '@/background/lib/electron/safeOpenExternal'
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
 }
+
+log.transports.console.level = platformInfo.logLevel;
+log.transports.file.level = platformInfo.logLevel;
 
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
@@ -77,7 +80,7 @@ async function createUtilityProcess() {
 
   utilityProcess.on("message", (msg: UtilProcMessage) => {
     if (msg.type === 'openExternal') {
-      electron.shell.openExternal(msg.url)
+      safeOpenExternal(msg.url)
     }
   })
 
@@ -155,9 +158,7 @@ async function initBasics() {
   log.debug("managing updates")
   manageUpdates(settings.useBeta.valueAsBool)
   ipcMain.on(AppEvent.openExternally, (_e: electron.IpcMainEvent, args: any[]) => {
-    const url = args[0]
-    if (!url) return
-    electron.shell.openExternal(url)
+    safeOpenExternal(args?.[0])
   })
   return settings
 }
@@ -205,9 +206,11 @@ app.on('browser-window-created', (_event: electron.Event, window: electron.Brows
 app.on('ready', async () => {
   if (isDevelopment && !process.env.IS_TEST) {
 
-      installExtension('iaajmlceplecbljialhhkmedjlpdblhp')
-        .then((name) => console.log(`Added Extension:  ${name}`))
-        .catch((err) => console.log('An error occurred: ', err));
+    // Per: www.npmjs.com/package/electron-devtools-installer?activeTab=readme#what-extensions-can-i-use
+    // https://chromewebstore.google.com/detail/vuejs-devtools/iaajmlceplecbljialhhkmedjlpdblhp
+    installExtension('iaajmlceplecbljialhhkmedjlpdblhp')
+      .then((name) => console.log(`Added Extension:  ${name}`))
+      .catch((err) => console.log('An error occurred: ', err));
     // Need to explicitly disable CORS when running in dev mode because
     // we can't connect to bigquery-emulator on localhost.
     // See: https://github.com/electron/electron/issues/23664

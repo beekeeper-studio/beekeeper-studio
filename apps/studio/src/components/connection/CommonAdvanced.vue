@@ -1,63 +1,195 @@
 <template>
   <toggle-form-area
     title="SSH Tunnel"
-    hide-toggle="true"
     :expanded="config.sshEnabled"
   >
-    <template v-slot:header>
+    <template #header>
       <x-switch
         @click.prevent="config.sshEnabled = !config.sshEnabled"
         :toggled="config.sshEnabled"
       />
     </template>
     <template>
-      <div class="row gutter">
+      <div class="row alert-row">
         <div class="alert alert-info">
           <i class="material-icons-outlined">info</i>
           <div>For the SSH tunnel to work, AllowTcpForwarding must be set to "yes" in your ssh server config.</div>
         </div>
       </div>
+
+      <!-- Bastion -->
+
+      <toggle-form-area
+        title="Bastion Host (optional)"
+        class="bastion-host"
+      >
+        <div class="row gutter">
+          <div class="col s9 form-group">
+            <label for="bastionHost">
+              Bastion Host (Jump Host)
+              <i
+                class="material-icons help-icon"
+                v-tooltip="{ content: hostTooltip, html: true }"
+              >help_outlined</i>
+            </label>
+            <masked-input
+              :value="config.sshBastionHost"
+              @input="val => config.sshBastionHost = val"
+            />
+          </div>
+          <div class="col s3 form-group">
+            <label for="sshBastionHostPort">Port <span class="hint">(Optional)</span></label>
+            <masked-input
+              :value="config.sshBastionHostPort"
+              @input="val => config.sshBastionHostPort = val"
+              placeholder="22"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Bastion Host Authentication</label>
+          <select
+            class="form-control"
+            v-model="config.sshBastionMode"
+          >
+            <option
+              v-for="option in sshModeOptions"
+              :key="option.mode"
+              :value="option.mode"
+            >
+              {{ option.label }}
+            </option>
+          </select>
+          <div class="hint">
+            <auto-mode-status
+              v-if="config.sshBastionMode === 'agent'"
+              :ssh-auth-sock="$config.sshAuthSock"
+              :is-windows="$config.isWindows"
+              :ssh-config-exists="$config.sshConfigExists"
+              :ssh-config-path="sshConfigPath"
+              :default-ssh-identity-file="$config.defaultSshIdentityFile"
+              :home-directory="homeDirectory"
+            />
+          </div>
+        </div>
+
+        <div
+          v-if="config.sshBastionMode === 'agent'"
+          class="agent flex-col"
+        >
+          <div class="form-group">
+            <label>
+              Bastion Username <span class="hint">(Optional)</span>
+              <i
+                class="material-icons help-icon"
+                v-tooltip="{ content: usernameTooltip, html: true }"
+              >help_outlined</i>
+            </label>
+            <masked-input
+              :value="config.sshBastionUsername"
+              @input="val => config.sshBastionUsername = val"
+            />
+          </div>
+          <platform-warning location="ssh-agent" />
+        </div>
+
+        <div
+          v-if="config.sshBastionMode === 'keyfile'"
+          class="private-key gutter"
+        >
+          <div class="row">
+            <div class="col">
+              <div class="form-group">
+                <label>
+                  Bastion Username <span class="hint">(Optional)</span>
+                  <i
+                    class="material-icons help-icon"
+                    v-tooltip="{ content: usernameTooltip, html: true }"
+                  >help_outlined</i>
+                </label>
+                <masked-input
+                  :value="config.sshBastionUsername"
+                  @input="val => config.sshBastionUsername = val"
+                />
+              </div>
+            </div>
+          </div>
+          <div class="row gutter">
+            <div class="col s6 form-group">
+              <label>Private Key File</label>
+              <file-picker
+                v-model="config.sshBastionKeyfile"
+                :show-hidden-files="true"
+                :default-path="filePickerDefaultPath"
+              />
+            </div>
+            <div class="col s6 form-group">
+              <label>Key File PassPhrase <span class="hint">(Optional)</span></label>
+              <input
+                type="password"
+                class="form-control"
+                v-model="config.sshBastionKeyfilePassword"
+              >
+            </div>
+          </div>
+        </div>
+
+        <div
+          v-if="config.sshBastionMode === 'userpass'"
+          class="row gutter"
+        >
+          <div class="col s6">
+            <div class="form-group">
+              <label>
+                Bastion Username <span class="hint">(Optional)</span>
+                <i
+                  class="material-icons help-icon"
+                  v-tooltip="{ content: usernameTooltip, html: true }"
+                >help_outlined</i>
+              </label>
+              <masked-input
+                :value="config.sshBastionUsername"
+                @input="val => config.sshBastionUsername = val"
+              />
+            </div>
+          </div>
+          <div class="col s6">
+            <div class="form-group">
+              <label>Bastion Password</label>
+              <input
+                class="form-control"
+                type="password"
+                v-model="config.sshBastionPassword"
+              >
+            </div>
+          </div>
+        </div>
+      </toggle-form-area>
+
+      <!-- Target Host -->
+
       <div class="row gutter">
         <div class="col s9 form-group">
-          <label for="sshHost">SSH Hostname</label>
+          <label for="sshHost">
+            SSH Hostname
+            <i
+              class="material-icons help-icon"
+              v-tooltip="{ content: hostTooltip, html: true }"
+            >help_outlined</i>
+          </label>
           <masked-input
             :value="config.sshHost"
-            :privacyMode="privacyMode"
             @input="val => config.sshHost = val"
           />
         </div>
         <div class="col s3 form-group">
-          <label for="sshPort">Port</label>
+          <label for="sshPort">Port <span class="hint">(Optional)</span></label>
           <masked-input
             :value="config.sshPort"
-            :privacyMode="privacyMode"
             @input="val => config.sshPort = val"
+            placeholder="22"
           />
-        </div>
-      </div>
-      <div class="row gutter">
-        <div class="col s8 form-group">
-          <label for="bastionHost">Bastion Host (Jump Host)</label>
-          <masked-input
-            :value="config.sshBastionHost"
-            :privacyMode="privacyMode"
-            @input="val => config.sshBastionHost = val"
-          />
-        </div>
-        <div class="col s4 form-group">
-          <label for="sshKeepaliveInterval">
-            Keepalive Interval <i
-              class="material-icons"
-              style="padding-left: 0.25rem"
-              v-tooltip="{ content: 'Ping the server after this many seconds when idle <br /> to prevent getting disconnected due to inactiviy <br/> (like<code> ServerAliveInterval 60 </code>in ssh/config)', html: true}"
-            >help_outlined</i>
-          </label>
-          <input
-            type="number"
-            v-model.number="config.sshKeepaliveInterval"
-            name="sshKeepaliveInterval"
-            placeholder="(in seconds)"
-          >
         </div>
       </div>
       <div class="form-group">
@@ -74,6 +206,16 @@
             {{ option.label }}
           </option>
         </select>
+        <div class="hint" v-if="config.sshMode === 'agent'">
+          <auto-mode-status
+            :ssh-auth-sock="$config.sshAuthSock"
+            :is-windows="$config.isWindows"
+            :ssh-config-exists="$config.sshConfigExists"
+            :ssh-config-path="sshConfigPath"
+            :default-ssh-identity-file="$config.defaultSshIdentityFile"
+            :home-directory="homeDirectory"
+          />
+        </div>
       </div>
 
       <div
@@ -81,46 +223,19 @@
         class="agent flex-col"
       >
         <div class="form-group">
-          <label for="sshUsername">SSH Username</label>
+          <label for="sshUsername">
+            SSH Username <span class="hint">(Optional)</span>
+            <i
+              class="material-icons help-icon"
+              v-tooltip="{ content: usernameTooltip, html: true }"
+            >help_outlined</i>
+          </label>
           <masked-input
             :value="config.sshUsername"
-            :privacyMode="privacyMode"
             @input="val => config.sshUsername = val"
           />
         </div>
-        <div
-          class="alert alert-warning"
-          v-if="$config.isSnap"
-        >
-          <i class="material-icons">error_outline</i>
-          <div>
-            SSH Agent Forwarding is not possible with the Snap version of Beekeeper Studio due to the security model of Snap apps.
-            <external-link :href="enableSshLink">
-              Read more
-            </external-link>
-          </div>
-        </div>
-        <div
-          v-else-if="$config.sshAuthSock"
-          class="alert alert-success"
-        >
-          <i class="material-icons">check</i>
-          <div>We found your SSH Agent. You're good to go!</div>
-        </div>
-        <div
-          v-else-if="$config.isWindows"
-          class="alert alert-info"
-        >
-          <i class="material-icons-outlined">info</i>
-          <div>We didn't find a *nix ssh-agent running, so we'll attempt to use the PuTTY agent, pageant.</div>
-        </div>
-        <div
-          v-else
-          class="alert alert-warning"
-        >
-          <i class="material-icons">error_outline</i>
-          <div>You don't seem to have an SSH agent running.</div>
-        </div>
+        <platform-warning location="ssh-agent" />
       </div>
 
       <div
@@ -130,28 +245,21 @@
         <div class="row">
           <div class="col">
             <div class="form-group">
-              <label for="sshUsername">SSH Username</label>
+              <label for="sshUsername">
+                SSH Username <span class="hint">(Optional)</span>
+                <i
+                  class="material-icons help-icon"
+                  v-tooltip="{ content: usernameTooltip, html: true }"
+                >help_outlined</i>
+              </label>
               <masked-input
                 :value="config.sshUsername"
-                :privacyMode="privacyMode"
                 @input="val => config.sshUsername = val"
               />
             </div>
           </div>
         </div>
-        <div
-          v-if="$config.isSnap && !$config.snapSshPlug"
-          class="row"
-        >
-          <div class="alert alert-warning">
-            <i class="material-icons">error_outline</i>
-            <div>
-              Hey snap user! You need to <external-link :href="enableSshLink">
-                enable SSH access
-              </external-link>, then restart Beekeeper to provide access to your .ssh directory.
-            </div>
-          </div>
-        </div>
+        <platform-warning location="ssh-keyfile" />
         <div class="row gutter">
           <div class="col s6 form-group">
             <label for="sshKeyfile">Private Key File</label>
@@ -177,10 +285,15 @@
       >
         <div class="col s6">
           <div class="form-group">
-            <label for="sshUsername">SSH Username</label>
+            <label for="sshUsername">
+              SSH Username <span class="hint">(Optional)</span>
+              <i
+                class="material-icons help-icon"
+                v-tooltip="{ content: usernameTooltip, html: true }"
+              >help_outlined</i>
+            </label>
             <masked-input
               :value="config.sshUsername"
-              :privacyMode="privacyMode"
               @input="val => config.sshUsername = val"
             />
           </div>
@@ -196,6 +309,24 @@
           </div>
         </div>
       </div>
+
+      <div class="row gutter">
+        <div class="col form-group">
+          <label for="sshKeepaliveInterval">
+            Keepalive Interval <i
+              class="material-icons"
+              style="padding-left: 0.25rem"
+              v-tooltip="{ content: 'Ping the server after this many seconds when idle <br /> to prevent getting disconnected due to inactiviy <br/> (like<code> ServerAliveInterval 60 </code>in ssh/config)', html: true}"
+            >help_outlined</i>
+          </label>
+          <input
+            type="number"
+            v-model.number="config.sshKeepaliveInterval"
+            name="sshKeepaliveInterval"
+            placeholder="(in seconds)"
+          >
+        </div>
+      </div>
     </template>
   </toggle-form-area>
 </template>
@@ -204,26 +335,28 @@ import FilePicker from '@/components/common/form/FilePicker.vue'
 import ExternalLink from '@/components/common/ExternalLink.vue'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
 import MaskedInput from '@/components/MaskedInput.vue'
-import { mapState } from 'vuex'
+import PlatformWarning from './PlatformWarning.vue'
+import AutoModeStatus from './AutoModeStatus.vue'
 
 export default {
   props: ['config'],
   components: {
     FilePicker, ExternalLink,
-    ToggleFormArea, MaskedInput
-  },
-  computed: {
-    ...mapState('settings', ['privacyMode']),
+    ToggleFormArea, MaskedInput,
+    PlatformWarning, AutoModeStatus
   },
   data() {
     return {
-      enableSshLink: "https://docs.beekeeperstudio.io/installation/linux/#ssh-key-access-for-the-snap",
       sshModeOptions: [
+        { label: "Automatic", mode: "agent" },
         { label: "Key File", mode: 'keyfile' },
         { label: "Username & Password", mode: "userpass" },
-        { label: "SSH Agent", mode: "agent" }
       ],
-      filePickerDefaultPath: window.main.join(platformInfo.homeDirectory, '.ssh')
+      filePickerDefaultPath: window.main.join(platformInfo.homeDirectory, '.ssh'),
+      sshConfigPath: window.main.join(platformInfo.homeDirectory, '.ssh', 'config'),
+      homeDirectory: platformInfo.homeDirectory,
+      hostTooltip: "Hostname or IP. A <code>Host</code> alias from <code>~/.ssh/config</code> resolves to <code>HostName</code>, <code>Port</code>, and <code>User</code> from the matching entry.",
+      usernameTooltip: "If blank, falls back to <code>User</code> from <code>~/.ssh/config</code>, then your OS username.",
     }
   },
   methods: {
@@ -233,3 +366,22 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.help-icon {
+  font-size: 14px;
+  padding-left: 0.25rem;
+  opacity: 0.6;
+  vertical-align: middle;
+}
+
+body.theme-dark .bastion-host {
+  background-color: rgb(from var(--theme-base) r g b / 3.5%);
+}
+
+@media (prefers-color-scheme: dark) {
+  body.theme-system .bastion-host {
+    background-color: rgb(from var(--theme-base) r g b / 3.5%);
+  }
+}
+</style>

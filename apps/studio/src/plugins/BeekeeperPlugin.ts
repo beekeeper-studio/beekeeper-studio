@@ -11,9 +11,10 @@ export interface ContextOption {
   slug: string
   type?: 'divider'
   handler: (...any) => void
-  class?: string
+  class?: string | ((...args: any[]) => string)
   shortcut?: string
   ultimate?: boolean
+  title?: string | ((...args: any[]) => string)
 }
 
 interface MenuProps {
@@ -62,6 +63,11 @@ export const BeekeeperPlugin = {
   buildConnectionName(config: IConnection) {
     return config.name || this.simpleConnectionString(config)
   },
+  dynamoConnectionLabel(config: IConnection): string {
+    const endpoint = config.dynamoDbOptions?.endpoint
+    if (endpoint) return endpoint.replace(/^https?:\/\//, '')
+    return config.iamAuthOptions?.awsRegion || 'us-east-1'
+  },
   buildConnectionString(config: IConnection): string {
     if (config.socketPathEnabled) return config.socketPath;
 
@@ -69,8 +75,12 @@ export const BeekeeperPlugin = {
       return config.defaultDatabase || "./unknown.db"
     } else if (config.connectionType === 'mongodb') {
       return config.url
+    } else if (config.connectionType === 'dynamodb') {
+      return this.dynamoConnectionLabel(config)
     } else if (config.connectionType === 'sqlanywhere' && config.sqlAnywhereOptions.mode === 'file') {
       return config.sqlAnywhereOptions.databaseFile || "./unknown.db"
+    } else if (config.connectionType === 'snowflake') {
+      return `${config.username || 'user'}@${config.snowflakeOptions?.accountId}/${config.defaultDatabase}`
     } else {
       let result = `${config.username || 'user'}@${config.host}:${config.port}`
 
@@ -97,8 +107,12 @@ export const BeekeeperPlugin = {
       connectionString = `${config.bigQueryOptions.projectId}${config.defaultDatabase ? '.' + config.defaultDatabase : ''}`
     } else if (config.connectionType === 'mongodb') {
       return config.url;
+    } else if (config.connectionType === 'dynamodb') {
+      return this.dynamoConnectionLabel(config)
     } else if (config.connectionType === 'sqlanywhere' && config.sqlAnywhereOptions.mode === 'file') {
       return window.main.basename(config.sqlAnywhereOptions.databaseFile || "./unknown.db")
+    } else if (config.connectionType === 'snowflake') {
+      connectionString = `${config.snowflakeOptions?.accountId}/${config.defaultDatabase}`;
     } else {
       if (config.defaultDatabase) {
         connectionString += `/${config.defaultDatabase}`
@@ -133,6 +147,34 @@ export const BeekeeperPlugin = {
     }
     return { cancelled: false }
   },
+  async promptJwtToken(connectionName?: string): Promise<{ token?: string; cancelled: boolean }> {
+    return new Promise((resolve) => {
+      const description = connectionName
+        ? `Paste a fresh CockroachDB JWT to connect to ${connectionName}. Beekeeper will send it as the password for this connection.`
+        : 'Paste a fresh CockroachDB JWT. Beekeeper will send it as the password for this connection.';
+      const title = "CockroachDB JWT";
+
+      Vue.prototype.$modal.show('input-ephemeral-modal', {
+        description,
+        title,
+        onSubmit: (token: string) => resolve({ token, cancelled: false }),
+        onCancel: () => resolve({ cancelled: true }),
+      })
+    })
+  },
+  async promptSnowflakeMFAPasscode(): Promise<{ passcode?: string, cancelled: boolean }> {
+    return new Promise((resolve) => {
+      const description = "Input the MFA passcode from your Authenticator App";
+      const title = "MFA Passcode";
+
+      Vue.prototype.$modal.show('input-ephemeral-modal', {
+        description,
+        title,
+        onSubmit: (passcode: string) => resolve({ passcode, cancelled: false }),
+        onCancel: () => resolve({ cancelled: true }),
+      });
+    })
+  }
 }
 
 export type BeekeeperPlugin = typeof BeekeeperPlugin

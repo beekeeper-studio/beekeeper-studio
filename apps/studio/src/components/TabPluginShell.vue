@@ -1,39 +1,14 @@
 <template>
   <div
     v-if="isCommunity && tab.context.pluginId.startsWith('bks-')"
-    class="tab-upsell-wrapper"
+    :class="isAiShellPlugin ? 'tab-upsell-wrapper tab-upsell-wrapper--ai-shell' : 'upgrade-panel-tab-wrapper'"
   >
-    <upsell-content />
+    <ai-shell-upsell v-if="isAiShellPlugin" />
+    <upgrade-panel v-else :feature-name="tab.title || 'Plugins'" standalone />
   </div>
   <div v-else class="plugin-shell" ref="container" v-hotkey="keymap">
     <div class="top-panel" ref="topPanel">
-      <div
-        v-if="pluginManagerStatus !== 'ready'"
-        class="plugin-status"
-        :class="pluginManagerStatus"
-      >
-        <template v-if="pluginManagerStatus === 'initializing'">
-          Initializing plugins ...
-        </template>
-        <template v-else-if="pluginManagerStatus === 'failed-to-initialize'">
-          Failed to initialize plugin manager.
-        </template>
-      </div>
-      <div v-else-if="plugin && !plugin.loadable" class="plugin-status">
-        <p>
-          Plugin "{{ plugin.manifest.name }}" isn’t compatible with this version of Beekeeper Studio.
-          It requires version {{ plugin.manifest.minAppVersion }} or newer.
-        </p>
-
-        <p>To fix this:</p>
-
-        <ol>
-          <li>Upgrade your Beekeeper Studio.</li>
-          <li>Or install an older plugin version manually (see <a href="https://docs.beekeeperstudio.io/user_guide/plugins/#installing-a-specific-plugin-version">instructions</a>).</li>
-        </ol>
-      </div>
       <isolated-plugin-view
-        v-else
         :visible="active"
         :plugin-id="tab.context.pluginId"
         :view-id="tab.context.pluginTabTypeId"
@@ -52,7 +27,7 @@
         :result="result"
         :query="query"
         :tab="tab"
-        :binaryEncoding="$bksConfig.ui.general.binaryEncoding"
+        :binary-encoding="$bksConfig.ui.general.binaryEncoding"
       />
       <div class="message" v-else-if="result">
         <div class="alert alert-info">
@@ -113,9 +88,10 @@ import { PropType } from "vue";
 import { TransportPluginTab } from "@/common/transport/TransportOpenTab";
 import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 import Vue from "vue";
-import { mapState, mapGetters } from "vuex";
-import UpsellContent from "@/components/upsell/UpsellContent.vue";
-import type { OnViewRequestListenerParams, PluginContext } from "@/services/plugin/types";
+import { mapGetters } from "vuex";
+import UpgradePanel from "@/components/upsell/UpgradePanel.vue";
+import AiShellUpsell from "@/components/upsell/AiShellUpsell.vue";
+import type { OnViewRequestListenerParams } from "@/services/plugin/types";
 import { RunQueryResponse } from "@beekeeperstudio/plugin"
 import rawLog from '@bksLogger'
 
@@ -129,7 +105,8 @@ export default Vue.extend({
     QueryEditorStatusBar,
     ErrorAlert,
     IsolatedPluginView,
-    UpsellContent,
+    UpgradePanel,
+    AiShellUpsell,
   },
   props: {
     tab: {
@@ -158,18 +135,12 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapState(["pluginManagerStatus"]),
     ...mapGetters(["isCommunity"]),
-    plugin(): PluginContext {
-      try {
-        return this.$plugin.pluginOf(this.tab.context.pluginId);
-      } catch (e) {
-        log.error(e);
-        return null;
-      }
-    },
     shouldInitialize() {
       return !this.isCommunity && this.active && !this.initialized;
+    },
+    isAiShellPlugin() {
+      return this.tab.context.pluginId === "bks-ai-shell";
     },
     errors() {
       return this.error ? [this.error] : null;

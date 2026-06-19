@@ -60,7 +60,7 @@
           v-model="config.defaultDatabase"
           input-id="default-database"
         />
-        <snap-external-warning />
+        <platform-warning location="database-file" />
       </div>
     </template>
     <toggle-form-area title="Embedded Replica">
@@ -105,10 +105,10 @@
 <script lang="ts">
 import Vue from "vue";
 import FilePicker from "@/components/common/form/FilePicker.vue";
-import SnapExternalWarning from "@/components/connection/SnapExternalWarning.vue";
+import PlatformWarning from "@/components/connection/PlatformWarning.vue";
 import ToggleFormArea from "../common/ToggleFormArea.vue";
 export default Vue.extend({
   props: ["config"],
-  components: { FilePicker, SnapExternalWarning, ToggleFormArea },
+  components: { FilePicker, PlatformWarning, ToggleFormArea },
 });
 </script>

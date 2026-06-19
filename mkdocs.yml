@@ -19,6 +19,8 @@ theme:
   logo: assets/bks.svg
   favicon: assets/favicon-96x96.png
   name: material
+  # Nav `icon:` resolves via theme templates as `.icons/<name>.svg` (see Material partials).
+  custom_dir: docs/assets/custom
   icon:
     repo: fontawesome/brands/github
   font:
@@ -111,8 +113,6 @@ markdown_extensions:
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.highlight:
-      anchor_linenums: true
-      line_spans: __span
       pygments_lang_class: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
@@ -124,6 +124,9 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      options:
+        custom_icons:
+          - docs/assets/custom/.icons
 
 nav:
   - Introduction:
@@ -139,20 +142,26 @@ nav:
     - Connection Options: user_guide/connecting/connecting.md
     - user_guide/connecting/amazon-rds.md
     - ClickHouse: user_guide/connecting/clickhouse.md
+    - user_guide/connecting/cockroachdb.md
     - user_guide/connecting/duckdb.md
+    - DynamoDB: user_guide/connecting/dynamodb.md
     - user_guide/connecting/firebird.md
     - user_guide/connecting/google-bigquery.md
+    - GreengageDB: user_guide/connecting/greengage.md
     - user_guide/connecting/mongodb.md
     - user_guide/connecting/oracle-database.md
+    - user_guide/connecting/redis.md
     - SQLite: user_guide/connecting/sqlite.md
     - Trino: user_guide/connecting/trino.md
     - user_guide/connecting/surrealdb.md
     - user_guide/connecting/azure-entraid.md
+    - user_guide/connecting/snowflake.md
 
   - Features:
     - user_guide/sql_editor/editor.md
     - user_guide/sql-query-formatter.md
     - user_guide/sql_editor/manual-transaction-management.md
+    - user_guide/sql_editor/editing-data.md
     - user_guide/sql-ai-shell.md
     - user_guide/editing-data.md
     - user_guide/modify-tables.md
@@ -183,3 +192,4 @@ nav:
     - support/open-source.md
     - support/troubleshooting.md
     - support/data-location.md
+    - support/deprecated-configs.md

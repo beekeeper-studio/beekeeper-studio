@@ -17,6 +17,10 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       this.sshHost = other.sshHost
       this.sshPort = other.sshPort
       this.sshBastionHost = other.sshBastionHost
+      this.sshBastionHostPort = other.sshBastionHostPort
+      this.sshBastionMode = other.sshBastionMode
+      this.sshBastionUsername = other.sshBastionUsername
+      this.sshBastionKeyfile = other.sshBastionKeyfile
       this.sshKeepaliveInterval = other.sshKeepaliveInterval
       this.ssl = other.ssl
       this.sslCaFile = other.sslCaFile
@@ -41,6 +45,7 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       this.libsqlOptions = other.libsqlOptions
       this.sqlAnywhereOptions = other.sqlAnywhereOptions
       this.surrealDbOptions = other.surrealDbOptions
+      this.dynamoDbOptions = other.dynamoDbOptions
 
     }
 

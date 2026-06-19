@@ -30,7 +30,9 @@ i {
   font-weight: bold;
   text-transform: uppercase;
   font-size: 80%;
-  letter-spacing: 0.05rem;
+  // NOTE: This was probably ok when we still use Roboto as a font.
+  // Now we use system font. So at least in mac, this isn't good.
+  // letter-spacing: 0.05rem;
 }
 .noselect {
   @include noselect;
@@ -752,16 +754,24 @@ input[type=file] {
 
 .alert {
   display: flex;
+  align-items: flex-start;
   border-radius: 6px;
   padding: 0.75rem 1rem;
   background: rgba($theme-base, 0.035);
   margin: 0.5rem 0;
   font-size: 0.85rem;
-  line-height: 24px;
+  line-height: 1.2rem;
   > i {
     font-size: 18px;
-    line-height: 24px;
+    line-height: 1;
     margin-right: 1rem;
+  }
+  code {
+    background: rgba($theme-base, 0.08);
+    margin: 0 0.25rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.8rem;
   }
   ul {
     margin: 0.35rem 0;
@@ -779,13 +789,19 @@ input[type=file] {
     align-items: flex-start;
     justify-content: flex-start;
     flex-grow: 1;
-    line-height: 24px;
+    line-height: 1.2rem;
   }
   .alert-footer {
     display: flex;
-    line-height: 24px;
+    line-height: 1.2rem;
     height: 26px; // button height
   }
+}
+.alert.alert-centered {
+  // Short, single-/two-line alerts look misaligned with the default
+  // align-items: flex-start; opt-in modifier that vertically centers the
+  // icon against the text.
+  align-items: center;
 }
 .alert-danger {
   color: color.adjust($brand-danger, $lightness: 5%);
@@ -798,6 +814,18 @@ input[type=file] {
 }
 .alert-success {
   color: color.adjust($brand-success, $lightness: 5%);
+}
+.alert-small {
+  align-items: center;
+  padding: 0.4rem 0.6rem;
+  margin: 0.25rem 0;
+  line-height: 1.1rem;
+  > i {
+    margin-right: 0.5rem;
+  }
+  .alert-body {
+    align-items: center;
+  }
 }
 
 // Dropdown

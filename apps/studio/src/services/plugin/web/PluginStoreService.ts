@@ -18,6 +18,7 @@ import {
   PluginView,
   TabType,
   CreatePluginTabOptions,
+  PluginSnapshot,
 } from "../types";
 import { ExternalMenuItem, JsonValue } from "@/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
@@ -49,6 +50,10 @@ export default class PluginStoreService {
     })
   }
 
+  async initialize() {
+    await this.store.dispatch('plugins/initialize');
+  }
+
   on(name: 'tablesChanged', listener: () => void) {
     this.tablesChangedListeners.add(listener);
     return () => this.tablesChangedListeners.delete(listener);
@@ -59,7 +64,7 @@ export default class PluginStoreService {
   }
 
   getTheme()  {
-    const styles = getComputedStyle(document.body);
+    const styles = getComputedStyle(this.getAppEl());
     /** Key = css property, value = css value */
     const palette: Record<string, string> = {};
 
@@ -352,6 +357,18 @@ export default class PluginStoreService {
     this.store.commit("menuBar/remove", id);
   }
 
+  async loadSnapshots() {
+    return await this.store.dispatch("plugins/snapshots/load");
+  }
+
+  getSnapshots(): PluginSnapshot[] {
+    return this.store.state.plugins!.snapshots.all;
+  }
+
+  getSnapshot(id: string): PluginSnapshot | undefined {
+    return this.store.getters["plugins/snapshots/snapshotsById"][id];
+  }
+
   buildPluginTabInit(
     options: CreatePluginTabOptions
   ): TransportOpenTabInit<PluginTabContext> {
@@ -383,5 +400,9 @@ export default class PluginStoreService {
         command: options.command,
       },
     };
+  }
+
+  private getAppEl() {
+    return document.body.querySelector('.beekeeper-studio-wrapper');
   }
 }

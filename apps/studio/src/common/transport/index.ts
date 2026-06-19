@@ -28,6 +28,7 @@ export interface TransportLicenseKey extends Transport {
   licenseType: 'TrialLicense' | 'PersonalLicense' | 'BusinessLicense',
   active: boolean
   maxAllowedAppRelease: { tagName: string } | null
+  invalidatedAt: Date | null
 }
 
 export interface TransportPinnedConn extends Transport {
@@ -43,6 +44,8 @@ export interface TransportFavoriteQuery extends Transport {
   excerpt: string;
   database: string | null;
   connectionHash: string;
+  queryFolderId?: number | null;
+  position?: number;
 }
 
 export function blankFavoriteQuery(): TransportFavoriteQuery {
@@ -65,7 +68,7 @@ export interface TransportUsedQuery extends Transport {
   database: string;
   connectionHash: string;
   status: string;
-  numberOfRecords?: BigInt;
+  numberOfRecords?: bigint;
   workspaceId: number;
 }
 

@@ -33,13 +33,15 @@
     <workspace-sign-in-modal />
     <workspace-create-modal />
     <workspace-rename-modal />
+    <workspace-delete-modal />
     <import-queries-modal />
     <import-connections-modal />
-    <plugin-controller />
+    <plugin-controller :editor-font-size="editorFontSize" />
     <plugin-manager-modal />
     <keyboard-shortcuts-modal />
     <confirmation-modal-manager />
     <lock-manager />
+    <input-ephemeral-modal name="input-ephemeral-modal" />
     <util-died-modal />
     <template v-if="licensesInitialized">
       <trial-expired-modal />
@@ -62,6 +64,7 @@ import ConfigurationWarningModal from '@/components/ConfigurationWarningModal.vu
 
 import WorkspaceCreateModal from '@/components/data/WorkspaceCreateModal.vue'
 import WorkspaceRenameModal from '@/components/data/WorkspaceRenameModal.vue'
+import WorkspaceDeleteModal from '@/components/data/WorkspaceDeleteModal.vue'
 import UpgradeRequiredModal from './components/upsell/UpgradeRequiredModal.vue'
 import WorkspaceSignInModal from '@/components/data/WorkspaceSignInModal.vue'
 import ImportQueriesModal from '@/components/data/ImportQueriesModal.vue'
@@ -84,6 +87,7 @@ import PluginManagerModal from '@/components/plugins/PluginManagerModal.vue'
 import KeyboardShortcutsModal from '@/components/common/modals/KeyboardShortcutsModal.vue'
 import PluginController from '@/components/plugins/PluginController.vue'
 import LockManager from "@/components/managers/LockManager.vue";
+import InputEphemeralModal from "@/components/common/modals/InputEphemeralModal.vue";
 
 import rawLog from '@bksLogger'
 import { assignContextMenuToAllInputs } from './mixins/assignContextMenuToAllInputs'
@@ -98,8 +102,9 @@ export default Vue.extend({
     DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
-    LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal,
+    LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
     PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
+    InputEphemeralModal,
   },
   data() {
     return {
@@ -156,7 +161,10 @@ export default Vue.extend({
     this.interval = setInterval(this.notifyFreeTrial, globals.trialNotificationInterval)
     this.$store.dispatch('licenses/updateAll');
     this.licenseInterval = setInterval(
-      () => this.$store.dispatch('licenses/updateAll'),
+      () => {
+        log.debug('license check - interval')
+        this.$store.dispatch('licenses/updateAll')
+      },
       globals.licenseCheckInterval
     )
     const query = querystring.parse(window.location.search, { parseBooleans: true })

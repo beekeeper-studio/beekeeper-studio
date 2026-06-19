@@ -4,3 +4,8 @@ declare module '*.vue' {
   export default Vue
 }
 
+declare module '*.svg' {
+  const src: string
+  export default src
+}
+

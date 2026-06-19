@@ -1,6 +1,11 @@
 version: '3'
 volumes:
   psql:
+networks:
+  testrunner_ssh:
+  testrunner_bastion:
+  bastion_ssh:
+  ssh_postgres:
 services:
   postgres:
     image: postgres:13
@@ -9,8 +14,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
       POSTGRES_DB: integration_test
-    ports:
-      - 5432
+    networks:
+      - ssh_postgres
   ssh:
     build:
       context: ./
@@ -26,3 +31,25 @@ services:
       - SUDO_ACCESS=true
     ports:
       - 2222
+    networks:
+      - testrunner_ssh
+      - bastion_ssh
+      - ssh_postgres
+  bastion:
+    build:
+      context: ./
+      dockerfile: ./SSHDockerFile
+    container_name: test_ssh_bastion
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+      - PASSWORD_ACCESS=true
+      - USER_PASSWORD=password
+      - USER_NAME=beekeeper
+      - SUDO_ACCESS=true
+    ports:
+      - 2222
+    networks:
+      - testrunner_bastion
+      - bastion_ssh

@@ -7,7 +7,7 @@
             for="Database"
             required
           >Database File</label>
-          <file-picker 
+          <file-picker
             v-model="config.defaultDatabase"
             input-id="Database"
             editable
@@ -25,8 +25,22 @@
                 <span class="flex">
                   <span class="expand">
                     This is a global setting that affects all SQLite connections.
+                    <a href="https://docs.beekeeperstudio.io/docs/sqlite#runtime-extensions">Learn more</a>
                   </span>
-                  <a href="https://docs.beekeeperstudio.io/docs/sqlite#runtime-extensions">Learn more</a>
+                </span>
+              </div>
+
+              <div
+                v-if="!runtimeExtensionsEnabled"
+                class="alert alert-warning"
+              >
+                <i class="material-icons">error_outline</i>
+                <span class="flex">
+                  <span class="expand">
+                    Runtime extensions are disabled. Configured extensions will be ignored until you set
+                    <code>allowRuntimeExtensions = true</code> under <code>[security]</code> in your user config file.
+                    <a href="https://docs.beekeeperstudio.io/docs/sqlite#runtime-extensions">Learn more</a>
+                  </span>
                 </span>
               </div>
 
@@ -54,7 +68,7 @@
                 </span>
               </div>
               <div class="row flex-middle">
-                <span class="expand"/>
+                <span class="expand" />
                 <div class="btn-group">
                   <button class="btn" @click.prevent.stop="loadExtension">
                     <i class="material-icons">add</i> Add Extension
@@ -63,18 +77,7 @@
               </div>
             </template>
           </toggle-form-area>
-          <div
-            class="alert alert-warning"
-            v-if="$config.isSnap"
-          >
-            <i class="material-icons">error_outline</i>
-            <div>
-              Hey snap user! If you want to use a sqlite database on an external drive you'll need to give Beekeeper some extra permissions
-              <external-link :href="snap">
-                Read more
-              </external-link>
-            </div>
-          </div>
+          <platform-warning location="database-file" />
         </div>
       </div>
     </div>
@@ -87,16 +90,17 @@ import SettingsInput from '../common/SettingsInput.vue'
 import { mapGetters, mapState } from 'vuex'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
 import FilePicker from '../common/form/FilePicker.vue'
+import PlatformWarning from './PlatformWarning.vue'
 export default Vue.extend({
   props: ['config'],
   components: {
     SettingsInput,
     ToggleFormArea,
-    FilePicker
+    FilePicker,
+    PlatformWarning
   },
   data() {
     return {
-      snap: "https://docs.beekeeperstudio.io/support/troubleshooting/#i-get-permission-denied-when-trying-to-access-a-database-on-an-external-drive",
       loadExtensionFileType: this.$config.isMac ? "dylib" : this.$config.isWindows ? "dll" : "so"
     }
   },
@@ -108,6 +112,9 @@ export default Vue.extend({
     },
     extensions() {
       return this.sqliteRuntimeExtensions?.value
+    },
+    runtimeExtensionsEnabled() {
+      return this.$bksConfig.security.allowRuntimeExtensions
     }
   },
   methods: {

@@ -11,10 +11,13 @@ export interface IPlatformInfo {
   sessionType: string,
   isWayland: boolean,
   isSnap: string,
+  isFlatpak: boolean,
   isPortable: string,
   isDevelopment: boolean,
   isAppImage: boolean,
   sshAuthSock: string,
+  sshConfigExists: boolean,
+  defaultSshIdentityFile: string,
   environment: string,
   resourcesPath: string,
   env: {
@@ -30,6 +33,7 @@ export interface IPlatformInfo {
   downloadsDirectory: string,
   homeDirectory: string,
   pluginsDirectory: string,
+  driverDepsDirectory: string,
   testMode: boolean,
   appDbPath: string,
   updatesDisabled: boolean,
@@ -37,4 +41,9 @@ export interface IPlatformInfo {
   parsedAppVersion: BksVersion,
   cloudUrl: string,
   locale: string,
+  // Resolved log level pushed from main when the renderer requests
+  // platformInfo. Renderer applies this to its console + ipc transports
+  // so BKS_LOG_LEVEL / DEBUG affect what the renderer actually emits.
+  // Mirrors the LogLevel union from the shared logger library.
+  logLevel?: 'error' | 'warn' | 'info' | 'verbose' | 'debug' | 'silly',
 }

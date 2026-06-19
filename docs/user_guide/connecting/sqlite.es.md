@@ -10,6 +10,12 @@ icon: simple/sqlite
 
 Conectarse a una base de datos SQLite desde la aplicacion es bastante facil, simplemente selecciona `SQLite` del menu desplegable, elige tu archivo SQLite, luego haz clic en `conectar`.
 
+## Crear una nueva base de datos SQLite
+
+Puedes crear una nueva base de datos SQLite directamente desde Beekeeper Studio. Selecciona `SQLite` como tipo de conexion, luego haz clic en el boton `Create` junto al selector de archivos. Se te pedira que elijas una ubicacion y un nombre de archivo para tu nueva base de datos.
+
+![Crear una nueva base de datos SQLite](../../assets/images/create-sqlite.png)
+
 ## Conectarse a SQLite haciendo doble clic
 
 Cuando instalas Beekeeper Studio, se creara una asociacion para archivos con las siguientes extensiones: `.db`, `.sqlite3` y `.sqlite`.

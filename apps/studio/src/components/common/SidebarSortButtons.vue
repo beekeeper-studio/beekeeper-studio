@@ -17,15 +17,13 @@
     </x-button>
     <x-button
       class="actions-btn btn btn-link btn-sm"
-      v-tooltip="`Sorted by ${sortOptions[sortBy]} (${sortOrderTooltip})`"
+      v-tooltip="'Reorder items'"
     >
       <i class="material-icons-outlined">sort</i>
       <x-menu style="--target-align:right;">
         <x-menuitem
           v-for="key in Object.keys(sortOptions)"
           :key="key"
-          :toggled="key === sortBy"
-          togglable
           @click.prevent="sortBy = key"
         >
           <x-label>{{ sortOptions[key] }}</x-label>

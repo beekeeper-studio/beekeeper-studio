@@ -2,18 +2,19 @@ import _ from "lodash";
 import PluginRegistry from "./PluginRegistry";
 import PluginFileManager from "./PluginFileManager";
 import {
-  Manifest,
-  PluginContext,
-  PluginRegistryEntry,
+  Manifest as AnyVersionManifest,
+  ManifestV1 as Manifest,
+  PluginOrigin,
   PluginRepository,
   PluginSettings,
+  PluginSnapshot,
 } from "./types";
 import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import semver from "semver";
 import { NotFoundPluginError, NotFoundPluginViewError, NotSupportedPluginError } from "./errors";
-import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "./utils";
+import { convertToManifestV1, isManifestV0, mapViewsAndMenuFromV0ToV1 } from "./utils";
 import { Hookable } from "./Hookable";
 
 const log = rawLog.scope("PluginManager");
@@ -27,8 +28,8 @@ export type PluginManagerOptions = {
 export default class PluginManager extends Hookable {
   private initialized = false;
   public readonly registry: PluginRegistry;
-  private fileManager: PluginFileManager;
-  private plugins: PluginContext[] = [];
+  public readonly fileManager: PluginFileManager;
+  private manifests: Manifest[] = [];
   pluginSettings: PluginSettings = {};
   private pluginLocks: string[] = [];
 
@@ -54,14 +55,10 @@ export default class PluginManager extends Hookable {
 
     await this.callHook("before-initialize");
 
-    const installedPlugins = this.fileManager.scanPlugins();
+    const installedPlugins = this.fileManager.scanPlugins().map(convertToManifestV1);
+    this.manifests = installedPlugins;
 
     log.debug("Installed plugins:", installedPlugins);
-
-    this.plugins = installedPlugins.map((manifest) => ({
-      manifest,
-      loadable: this.isPluginLoadable(manifest),
-    }));
 
     this.initialized = true;
 
@@ -80,6 +77,11 @@ export default class PluginManager extends Hookable {
     }
   }
 
+  async getEntries() {
+    this.initializeGuard();
+    return await this.registry.getEntries();
+  }
+
   /**
    * Check if the view's entrypoint exists. The plugin must be installed,
    * and the view must be defined in the plugin's manifest.
@@ -87,7 +89,7 @@ export default class PluginManager extends Hookable {
    * @throws if `pluginId` or `viewId` is not found
    **/
   viewEntrypointExists(pluginId: string, viewId: string): boolean {
-    const manifest = this.plugins.find((p) => p.manifest.id === pluginId)?.manifest;
+    const manifest = this.manifests.find((manifest) => manifest.id === pluginId);
     if (!manifest) {
       throw new NotFoundPluginError(`Plugin "${pluginId}" not found.`);
     }
@@ -108,14 +110,44 @@ export default class PluginManager extends Hookable {
     return await this.registry.getRepository(pluginId);
   }
 
-  getPlugins(): PluginContext[] {
+ /** Returns snapshots of installed plugins, derived from manifests and runtime state */
+  async getPlugins(): Promise<PluginSnapshot[]> {
     this.initializeGuard();
-    return this.plugins;
+
+    const snapshots: PluginSnapshot[] = [];
+
+    for (const manifest of this.manifests) {
+      const loadable = this.isPluginLoadable(manifest);
+
+      let origin: PluginOrigin = "unlisted";
+
+      try {
+        const found = await this.registry.findEntry(manifest.id);
+        origin = found.origin;
+      } catch (e) {
+        if (e instanceof NotFoundPluginError) {
+          // There's nothing wrong if the plugin is not found in the registry.
+          // It may be a local plugin.
+        } else {
+          // Else, it might be a real error
+          log.error(e);
+        }
+      }
+
+      snapshots.push({
+        manifest,
+        loadable,
+        disableState: { disabled: false },
+        origin,
+      });
+    }
+
+    return await this.applyHook("plugin-snapshots", snapshots);
   }
 
   /** Plugin is not loadable if the **current app version** is lower than the
    * **minimum app version** required by the plugin. */
-  isPluginLoadable(manifest: Manifest): boolean {
+  isPluginLoadable(manifest: AnyVersionManifest): boolean {
     if (!manifest.minAppVersion) {
       return true;
     }
@@ -126,10 +158,12 @@ export default class PluginManager extends Hookable {
   async installPlugin(id: string): Promise<Manifest> {
     this.initializeGuard();
 
+    await this.callHook("before-install-plugin", id);
+
     let update = false;
 
     // If plugin is already installed, perform update
-    if (this.plugins.find(({ manifest }) => manifest.id === id)) {
+    if (this.manifests.find((manifest) => manifest.id === id)) {
       update = true;
     }
 
@@ -154,17 +188,13 @@ export default class PluginManager extends Hookable {
       }
 
       const manifest = this.fileManager.getManifest(id);
-      const installedPluginIdx = this.plugins.findIndex(
-        ({ manifest }) => manifest.id === id
+      const installedPluginIdx = this.manifests.findIndex(
+        (manifest) => manifest.id === id
       );
-      const plugin: PluginContext = {
-        manifest,
-        loadable: this.isPluginLoadable(manifest),
-      };
       if (installedPluginIdx === -1) {
-        this.plugins.push(plugin);
+        this.manifests.push(manifest);
       } else {
-        this.plugins[installedPluginIdx] = plugin;
+        this.manifests[installedPluginIdx] = manifest;
       }
 
       if (!this.pluginSettings[id]) {
@@ -192,8 +222,8 @@ export default class PluginManager extends Hookable {
       log.debug(`Uninstalling plugin "${id}"...`);
 
       this.fileManager.remove(id);
-      this.plugins = this.plugins.filter(
-        ({ manifest }) => manifest.id !== id
+      this.manifests = this.manifests.filter(
+        (manifest) => manifest.id !== id
       );
 
       log.debug(`Plugin "${id}" uninstalled!`);
@@ -203,8 +233,8 @@ export default class PluginManager extends Hookable {
   /** if returns true, update is available */
   async checkForUpdates(id: string): Promise<boolean> {
     this.initializeGuard();
-    const { manifest } = this.plugins.find(
-      ({ manifest }) => manifest.id === id
+    const manifest = this.manifests.find(
+      (manifest) => manifest.id === id
     );
     if (!manifest) {
       throw new Error(`Plugin "${id}" is not installed.`);

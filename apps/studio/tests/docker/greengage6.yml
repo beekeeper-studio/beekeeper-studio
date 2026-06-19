@@ -1,0 +1,13 @@
+version: '3'
+services:
+  greengage6:
+    image: greengagedb/ggdb6_ubuntu:6.29.2
+    platform: linux/amd64
+    sysctls:
+      kernel.sem: "500 1024000 200 4096"
+    ports:
+      - 6000
+    volumes:
+      - ../../../../dev/docker_greengage/init-and-run.sh:/init-and-run.sh:ro
+    command: ["bash", "/init-and-run.sh"]
+    container_name: test_greengage6

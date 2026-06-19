@@ -11,7 +11,7 @@
         name="import-modal"
         height="auto"
         :scrollable="true"
-        @opened="$refs.importInput.select()"
+        @opened="$nextTick(() => $refs.importInput && $refs.importInput.select())"
       >
         <form
           v-kbd-trap="true"

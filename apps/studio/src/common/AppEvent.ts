@@ -27,6 +27,7 @@ export enum AppEvent {
   promptLogin = 'cloud_signin',
   promptCreateWorkspace = 'cloud_create_workspace',
   promptRenameWorkspace = 'cloud_rename_workspace',
+  promptDeleteWorkspace = 'cloud_delete_workspace',
   promptQueryImport = 'cloud_q_import',
   promptQueryExport = 'q_export',
   promptConnectionImport = 'cloud_c_import',
@@ -72,11 +73,17 @@ export enum AppEvent {
   switchedTab = 'switchedTab',
   /** A tab is about to be closed. First argument is the tab. */
   closingTab = 'closingTab',
+  simulatePlatform = 'simulatePlatform',
   updatePin = 'updatePin',
   /** The theme has been changed. */
   changedTheme = 'changedTheme',
   /** A plugin menu item was clicked in the native/client menu under the tools. */
   pluginMenuClicked = 'pluginMenuClicked',
+  /** Open query edit history on a new / existing query tab.
+   * @example
+   * this.trigger(AppEvent.openQueryEditHistory, savedQueryId);
+   **/
+  openQueryEditHistory = 'openQueryEditHistory',
 }
 
 export interface RootBinding {

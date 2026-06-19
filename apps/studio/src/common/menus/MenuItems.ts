@@ -23,42 +23,47 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       id: 'undo',
       label: "Undo",
       accelerator: "CommandOrControl+Z",
-      click: actionHandler.undo
+      click: actionHandler.undo,
+      role: 'undo',
     },
     redo: {
       id: "redo",
       label: "Redo",
       accelerator: platformInfo.isWindows ? 'Ctrl+Y' : 'Shift+CommandOrControl+Z',
-      click: actionHandler.redo
+      click: actionHandler.redo,
+      role: 'redo',
     },
     cut: {
       id: 'cut',
       label: 'Cut',
       accelerator: 'CommandOrControl+X',
       click: actionHandler.cut,
-      registerAccelerator: false
-
+      registerAccelerator: false,
+      role: 'cut',
     },
     copy: {
       id: 'copy',
       label: 'Copy',
       accelerator: 'CommandOrControl+C',
       click: actionHandler.copy,
-      registerAccelerator: false
+      registerAccelerator: false,
+      role: 'copy',
     },
     paste: {
       id: 'paste',
       label: 'Paste',
       accelerator: 'CommandOrControl+V',
       click: actionHandler.paste,
-      registerAccelerator: false
+      registerAccelerator: false,
+      role: 'paste',
     },
 
     selectAll: {
       id: 'select-all',
       label: 'Select All',
       accelerator: 'CommandOrControl+A',
-      click: actionHandler.selectAll
+      click: actionHandler.selectAll,
+      role: 'selectAll',
     },
     // view
     zoomreset: {
@@ -120,7 +125,8 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     about: {
       id: 'about',
       label: 'About Beekeeper Studio',
-      click: actionHandler.about
+      click: actionHandler.about,
+      role: 'about',
     },
     devtools: {
       id: 'dev-tools',
@@ -147,6 +153,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       id: 'contactSupport',
       label: 'Contact Support',
       click: actionHandler.contactSupport
+    },
+    gettingStartedGuide: {
+      id: 'gettingStartedGuide',
+      label: 'Getting Started Guide',
+      click: actionHandler.openGettingStarted
     },
     reload: {
       id: 'reload-window',
@@ -217,6 +228,12 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       click: actionHandler.toggleSecondarySidebar,
       enabled: false,
     },
+    privacyModeToggle: {
+      id: 'privacy-mode-toggle',
+      label: 'Toggle Privacy Mode',
+      click: actionHandler.togglePrivacyMode,
+      checked: settings?.privacyMode?.value
+    },
     themeToggle: {
       id: "theme-toggle-menu",
       label: "Theme",
@@ -286,6 +303,28 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       id: "minimal-mode-toggle",
       label: "Toggle Minimal Mode",
       click: actionHandler.toggleMinimalMode,
+    },
+    simulatePlatform: {
+      id: "simulate-platform",
+      label: "DEV Simulate Platform",
+      submenu: [
+        {
+          type: 'radio',
+          label: "None (use real platform)",
+          checked: true,
+          click: (item, win) => actionHandler.simulatePlatform(item, win, 'none'),
+        },
+        {
+          type: 'radio',
+          label: "Snap",
+          click: (item, win) => actionHandler.simulatePlatform(item, win, 'snap'),
+        },
+        {
+          type: 'radio',
+          label: "Flatpak",
+          click: (item, win) => actionHandler.simulatePlatform(item, win, 'flatpak'),
+        },
+      ],
     },
     licenseState: {
       id: "license-state",

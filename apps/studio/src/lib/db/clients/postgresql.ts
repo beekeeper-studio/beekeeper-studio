@@ -27,6 +27,7 @@ import BksConfig from '@/common/bksConfig';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import {AzureAuthService} from "@/lib/db/authentication/azure";
+import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 
 const PD = PostgresData
 
@@ -44,8 +45,6 @@ knex.client._escapeBinding = function(value: any, context: any) {
 const pgErrors = {
   CANCELED: '57014',
 };
-
-const dataTypes: any = {}
 
 export interface STQOptions {
   table: string,
@@ -89,7 +88,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   version: VersionInfo;
   conn: HasPool;
   _defaultSchema: string;
-  dataTypes: any;
+  dataTypes: any = {};
   transcoders = [GenericBinaryTranscoder];
   interval: NodeJS.Timeout;
 
@@ -203,7 +202,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   }
 
   async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'table_schema');
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema', wrapIdentifier);
 
     let sql = `
       SELECT
@@ -264,7 +263,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   }
 
   async listViews(filter: FilterOptions = { schema: 'public' }): Promise<TableOrView[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'table_schema');
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema', wrapIdentifier);
     const sql = `
       SELECT
         table_schema as schema,
@@ -280,7 +279,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   }
 
   async listRoutines(filter?: FilterOptions): Promise<Routine[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'r.routine_schema');
+    const schemaFilter = buildSchemaFilter(filter, 'r.routine_schema', wrapIdentifier);
     const sql = `
       SELECT
         r.specific_name as id,
@@ -343,7 +342,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   async listMaterializedViewColumns(table: string, schema: string = this._defaultSchema): Promise<TableColumn[]> {
     const clause = table ? `AND s.nspname = $1 AND t.relname = $2` : '';
     if (table && !schema) {
-      throw new Error("Cannot get columns for '${table}, no schema provided'")
+      throw new Error(`Cannot get columns for '${table}', no schema provided`)
     }
     const sql = `
       SELECT s.nspname, t.relname, a.attname,
@@ -518,7 +517,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   }
 
   async listSchemas(filter?: SchemaFilterOptions): Promise<string[]> {
-    const schemaFilter = buildSchemaFilter(filter);
+    const schemaFilter = buildSchemaFilter(filter, 'schema_name', wrapIdentifier);
     const sql = `
       SELECT schema_name
       FROM information_schema.schemata
@@ -750,6 +749,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
             cancelable.wait(),
             this.executeQuery(queryText, { arrayMode: true, tabId }),
           ]);
+          console.info("QUERYDATA: ", data)
 
           pid = null;
 
@@ -798,13 +798,14 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     const arrayMode: boolean = options?.arrayMode;
     const data = await this.driverExecuteMultiple(queryText, { arrayMode, tabId: options?.tabId });
 
-    const commands = this.identifyCommands(queryText).map((item) => item.type);
+    const commands = this.identifyCommands(queryText);
+    log.info("COMMANDS: ", commands)
 
     return data.map((result, idx) => this.parseRowQueryResult(result, commands[idx], arrayMode));
   }
 
   async listDatabases(filter?: DatabaseFilterOptions): Promise<string[]> {
-    const databaseFilter = buildDatabaseFilter(filter, 'datname');
+    const databaseFilter = buildDatabaseFilter(filter, 'datname', wrapIdentifier);
     const sql = `
       SELECT datname
       FROM pg_database
@@ -820,10 +821,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     return data.rows.map((row) => row.datname);
   }
 
-  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
+  async executeApplyChanges(changes: TableChanges, tabId?: number): Promise<any[]> {
     let results: TableUpdateResult[] = []
 
-    await this.runWithTransaction(async (connection) => {
+    const run = async (connection: PoolClient) => {
       log.debug("Applying changes", changes)
       if (changes.inserts) {
         await this.insertRows(changes.inserts, connection);
@@ -836,7 +837,15 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       if (changes.deletes) {
         await this.deleteRows(changes.deletes, connection)
       }
-    })
+    }
+
+    if (tabId) {
+      const conn = this.peekConnection(tabId);
+      await run(conn);
+    } else {
+      await this.runWithTransaction(run)
+    }
+
     return results
   }
 
@@ -1015,7 +1024,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       return []
     }
 
-    const schemaFilter = buildSchemaFilter(filter, 'schemaname')
+    const schemaFilter = buildSchemaFilter(filter, 'schemaname', wrapIdentifier)
     const sql = `
       SELECT
         schemaname as schema,
@@ -1101,7 +1110,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       query: qs.query,
       params: qs.params,
       conn: this.conn,
-      chunkSize
+      chunkSize,
+      dataTypes: this.dataTypes
     }
 
     return {
@@ -1116,14 +1126,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       query: query,
       params: [],
       conn: this.conn,
-      chunkSize
+      chunkSize,
+      dataTypes: this.dataTypes
     }
 
-    const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
-
     return {
-      totalRows,
-      columns,
       cursor: new PsqlCursor(cursorOpts)
     }
   }
@@ -1317,8 +1324,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     await this.runQuery(conn, 'ROLLBACK', {});
   }
 
-  protected async rawExecuteQuery(q: string, options: { connection?: PoolClient, isManualCommit?: boolean, tabId?: number }): Promise<QueryResult | QueryResult[]> {
-    log.debug('rawExecuteQuery isManualCommit', options.isManualCommit)
+  protected async rawExecuteQuery(q: string, options: { connection?: PoolClient, tabId?: number }): Promise<QueryResult | QueryResult[]> {
     const hasReserved = this.reservedConnections.has(options?.tabId)
     if (options?.tabId && hasReserved) {
       const conn = this.peekConnection(options?.tabId);
@@ -1369,19 +1375,20 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
 
   parseFields(fields: any[], rowResults: boolean) {
     return fields.map((field, idx) => {
-      field.dataType = dataTypes[field.dataTypeID] || 'user-defined'
+      field.dataType = this.dataTypes[field.dataTypeID] || 'user-defined'
       field.id = rowResults ? `c${idx}` : field.name
       return field
     })
   }
 
-  parseRowQueryResult(data: QueryResult, command: string, rowResults: boolean): NgQueryResult {
+  parseRowQueryResult(data: QueryResult, command: IdentifyResult, rowResults: boolean): NgQueryResult {
     const fields = this.parseFields(data.columns, rowResults)
     const fieldIds = fields.map(f => f.id)
     const isSelect = data.command === 'SELECT';
     const rowCount = data.rowCount || data.rows?.length || 0
     return {
-      command: command || data.command,
+      command: command?.type || data.command,
+      text: command?.text,
       rows: rowResults ? data.rows.map(r => _.zipObject(fieldIds, r)) : data.rows,
       fields: fields,
       rowCount: rowCount,
@@ -1780,14 +1787,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
 
     const data = await this.driverExecuteSingle(sql);
     return data.rows[0].schema;
-  }
-
-  private identifyCommands(queryText: string) {
-    try {
-      return identify(queryText);
-    } catch (err) {
-      return [];
-    }
   }
 
   parseQueryResultColumns(qr: QueryResult): BksField[] {

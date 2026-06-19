@@ -4,12 +4,18 @@
       <div class="title">
         {{ plugin.name }} <span class="version">{{ plugin.version }}</span>
       </div>
-      <div>
+      <div class="author">
         By
         <template v-if="plugin.author.name && plugin.author.url">
           <a :href="plugin.author.url">{{ plugin.author.name }}</a>
         </template>
-        <template v-else>{{ plugin.author }}</template>
+        <template v-else>
+          {{ plugin.author }}
+        </template>
+        <i
+          class="material-icons verified-icon"
+          v-if="plugin.origin === 'official'"
+        >verified</i>
       </div>
       <a v-if="plugin.repo" :href="`https://github.com/${plugin.repo}`">
         <span class="flex">
@@ -21,16 +27,18 @@
       <div class="description">
         {{ plugin.description }}
       </div>
-      <div class="actions">
+      <div class="actions" v-if="!$bksConfig.pluginSystem.disabled">
         <template v-if="plugin.installed">
           <x-button
             v-if="plugin.updateAvailable"
             @click.prevent="$emit('update')"
             class="btn btn-primary"
           >
-            <x-label>{{
-              plugin.installing ? "Updating..." : "Update"
-            }}</x-label>
+            <x-label>
+              {{
+                plugin.installing ? "Updating..." : "Update"
+              }}
+            </x-label>
           </x-button>
           <x-button
             v-else
@@ -48,7 +56,7 @@
               type="checkbox"
               :checked="autoUpdateEnabled"
               @change="toggleAutoUpdate"
-            />
+            >
             <span>Auto-update</span>
           </label>
         </template>
@@ -58,9 +66,11 @@
           class="btn btn-primary"
           :disabled="plugin.installing"
         >
-          <x-label>{{
-            plugin.installing ? "Installing..." : "Install"
-          }}</x-label>
+          <x-label>
+            {{
+              plugin.installing ? "Installing..." : "Install"
+            }}
+          </x-label>
         </x-button>
       </div>
       <div
@@ -71,10 +81,7 @@
       >
         {{ plugin.updateAvailable ? "Update Available!" : "Up to date!" }}
       </div>
-      <div class="alert" v-if="$bksConfig.plugins?.[plugin.id]?.disabled">
-        <i class="material-icons">info_outline</i>
-        <div>This plugin has been disabled via configuration</div>
-      </div>
+      <DisableStateAlert :plugin-id="plugin.id" />
       <div class="alert alert-danger" v-if="!plugin.loadable && plugin.installed">
         <i class="material-icons">error_outline</i>
         <div class="alert-body expand">
@@ -94,7 +101,9 @@
     </div>
     <div class="divider" v-if="rawHtmlContent" />
     <div class="markdown-content">
-      <div v-if="loadingMarkdown" class="loading">Loading plugin readme</div>
+      <div v-if="loadingMarkdown" class="loading">
+        Loading plugin readme
+      </div>
       <div v-html="rawHtmlContent" />
     </div>
   </div>
@@ -104,9 +113,13 @@
 import Vue from "vue";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
+import DisableStateAlert from "./DisableStateAlert.vue";
 
 export default Vue.extend({
   name: "PluginPage",
+  components: {
+    DisableStateAlert,
+  },
   props: {
     plugin: {
       type: Object, // FIXME (azmi): forgot what type this is!!!
@@ -154,6 +167,17 @@ export default Vue.extend({
 </script>
 
 <style scoped>
+.author {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.material-icons.verified-icon {
+  font-size: 1em;
+  color: var(--theme-secondary);
+}
+
 .loading {
   margin-top: 0.5rem;
   color: var(--text);

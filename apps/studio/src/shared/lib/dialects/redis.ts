@@ -9,6 +9,7 @@ export const RedisData: DialectData = {
   rawFilterPlaceholder: 'Search',
   disabledFeatures: {
     manualCommit: true,
+    resultEditing: true,
     readOnlyPrimaryKeys: true,
     builderFilters: true,
     shell: true,
@@ -61,6 +62,7 @@ export const RedisData: DialectData = {
     duplicateTable: true,
     export: {
       sql: true,
+      stream: true
     },
     schema: true,
     // multipleDatabases: true, // 16 databases by default if not redis cluster

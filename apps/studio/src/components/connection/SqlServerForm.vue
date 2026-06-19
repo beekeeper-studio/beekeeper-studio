@@ -4,8 +4,11 @@
       <label for="authenticationType">Authentication Method</label>
       <!-- need to take the value -->
       <select name="" v-model="authType" id="">
-        <option value="default">Username / Password</option>
-        <option :key="`${t.value}-${t.name}`" v-for="t in authTypes" :value="t.value">{{t.name}}
+        <option value="default">
+          Username / Password
+        </option>
+        <option :key="`${t.value}-${t.name}`" v-for="t in authTypes" :value="t.value">
+          {{ t.name }}
         </option>
       </select>
     </div>
@@ -50,8 +53,8 @@
         </div>
       </div>
     </common-server-inputs>
-    <common-advanced v-show="!azureAuthEnabled" :config="config" />
     <common-entra-id v-show="azureAuthEnabled" :auth-type="authType" :config="config" />
+    <common-advanced v-show="!azureAuthEnabled" :config="config" />
   </div>
 </template>
 
@@ -76,7 +79,6 @@
         azureAuthEnabled: false,
         authType: 'default',
         authTypes: AzureAuthTypes,
-        accountName: null
       }
     },
     watch: {
@@ -86,7 +88,7 @@
           this.config.azureAuthOptions.azureAuthType = undefined
         } else {
           if (this.$store.getters.isCommunity) {
-            this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use this authentication type");
+            this.$root.$emit(AppEvent.upgradeModal, "Enterprise Authentication");
             this.authType = 'default'
           } else {
             this.azureAuthEnabled = true

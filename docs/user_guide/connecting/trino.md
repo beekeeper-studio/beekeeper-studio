@@ -21,10 +21,21 @@ Connecting to a Trino database from Beekeeper Studio is straightforward. SElect 
 To connect to a Trino database, you'll need the following information:
 
 - **Host**: The IP address or hostname of your Trino server.
-- **Port**: The default port is 8080, but this can be customized if your server uses a different port.
+- **Port**: The default port is 8080 for HTTP, or 8443 for HTTPS. This can be customized if your server uses a different port.
 - **Username**: Your Trino username, with default being the typical default.
 - **Password**: Your Trino password, if applicable.
 - **Default Catalog (optional)**: The catalog you want initially connected to at startup
+
+### SSL / HTTPS Connections
+
+If your Trino coordinator is configured with TLS/HTTPS, enable **SSL** in the connection form. Beekeeper Studio supports three SSL modes:
+
+1. **Trust the server certificate** — Enable SSL without providing any certificate files. Beekeeper Studio will connect over HTTPS but will not verify the server's certificate. This is the simplest option and works with self-signed certificates.
+2. **Provide a CA certificate** — If your Trino server uses a certificate signed by a private CA, provide the CA certificate file. Leave "Reject Unauthorized" unchecked to allow the connection.
+3. **Full certificate verification** — Provide the CA certificate and optionally a client certificate and key file, then check "Reject Unauthorized" to enforce full TLS verification.
+
+!!! tip
+    If you import a connection URL that starts with `https://`, SSL will be enabled automatically.
 
 ### Testing Your Trino Connection
 
@@ -40,6 +51,7 @@ Once your connection details have been verified, you can choose to save them by 
 
 ## Supported Features
 
+- SSL / HTTPS connections (with optional CA, client cert, and key files)
 - Table data view
 - Table data sorting, filtering
 - Table structure view

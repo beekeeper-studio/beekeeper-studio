@@ -1,6 +1,6 @@
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import rawLog from "@bksLogger";
-import { Manifest, OnViewRequestListener, PluginContext } from "../types";
+import { Manifest, OnViewRequestListener, PluginSnapshot } from "../types";
 import PluginStoreService from "./PluginStoreService";
 import WebPluginLoader from "./WebPluginLoader";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
@@ -47,10 +47,10 @@ export type WebPluginManagerParams = {
  * and `onViewRequest`. (Don't forget to register the iframe first! Use
  * `registerIframe` and `unregisterIframe`)
  *
- * For more info about a plugin, use `pluginOf`.
+ * For more info about a plugin, try using the vuex store for plugins like
+ * PluginSnapshotsModule or PluginEntriesModule.
  */
 export default class WebPluginManager {
-  plugins: PluginContext[] = [];
   /** A map of plugin id -> loader */
   loaders: Map<string, WebPluginLoader> = new Map();
 
@@ -78,12 +78,10 @@ export default class WebPluginManager {
     }
 
     await this.utilityConnection.send("plugin/waitForInit");
+    await this.pluginStore.initialize();
 
-    this.plugins = await this.utilityConnection.send(
-      "plugin/plugins"
-    );
-
-    for (const { loadable, manifest } of this.plugins) {
+    for (const snapshot of this.pluginStore.getSnapshots()) {
+      const { loadable, manifest } = snapshot;
       if (!loadable) {
         log.warn(`Plugin "${manifest.id}" is not loadable. Skipping...`);
         continue;
@@ -93,7 +91,7 @@ export default class WebPluginManager {
         continue;
       }
       try {
-        await this.loadPlugin(manifest);
+        await this.loadPlugin(snapshot);
       } catch (e) {
         log.error(`Failed to load plugin: ${manifest.id}`, e);
       }
@@ -102,44 +100,38 @@ export default class WebPluginManager {
     this.initialized = true;
   }
 
-  // TODO implement enable/disable plugins
-  async getEnabledPlugins(): Promise<Manifest[]> {
-    return [...this.loaders.values()].map((loader) => loader.manifest);
-  }
-
   /** Install a plugin by its id */
   async install(id: string) {
-    const manifest = await this.utilityConnection.send("plugin/install", {
-      id,
-    });
-    await this.loadPlugin(manifest);
-    this.plugins.push({ manifest, loadable: true });
-    return manifest;
+    await this.utilityConnection.send("plugin/install", { id });
+    await this.pluginStore.loadSnapshots();
+    const snapshot = this.pluginStore.getSnapshot(id)!;
+    await this.loadPlugin(snapshot);
+    return snapshot.manifest;
   }
 
   /** Update a plugin by its id */
   async update(id: string) {
-    const manifest = await this.utilityConnection.send("plugin/update", {
-      id,
-    });
-    await this.reloadPlugin(id);
-    return manifest;
+    await this.utilityConnection.send("plugin/update", { id });
+    await this.pluginStore.loadSnapshots();
+    const snapshot = this.pluginStore.getSnapshot(id)!;
+    await this.reloadPlugin(snapshot);
+    return snapshot.manifest;
   }
 
   /** Uninstall a plugin by its id */
   async uninstall(id: string) {
     await this.utilityConnection.send("plugin/uninstall", { id });
     await this.unloadPlugin(id);
-    this.plugins = this.plugins.filter((p) => p.manifest.id !== id);
+    await this.pluginStore.loadSnapshots();
   }
 
-  private async reloadPlugin(id: string, manifest?: Manifest) {
-    const loader = this.loaders.get(id);
+  private async reloadPlugin(snapshot: PluginSnapshot) {
+    const loader = this.loaders.get(snapshot.manifest.id);
     if (!loader) {
-      throw new Error("Plugin not found: " + id);
+      throw new Error("Plugin not found: " + snapshot.manifest.id);
     }
     await loader.unload();
-    await loader.load(manifest);
+    await loader.load(snapshot);
   }
 
   /** For plugins that use iframes, they need to be registered for communication.
@@ -178,22 +170,12 @@ export default class WebPluginManager {
     })
   }
 
-  /** Get more info about a specific plugin */
-  pluginOf(pluginId: string) {
-    const plugin = this.plugins.find((p) => p.manifest.id === pluginId);
-    if (!plugin) {
-      throw new Error("Plugin not found: " + pluginId);
-    }
-    return plugin;
-  }
-
   buildUrlFor(pluginId: string, viewId: string) {
     const loader = this.loaders.get(pluginId);
     if (!loader) {
       throw new Error("Plugin not found: " + pluginId);
     }
-    // TODO (azmi): later, we don't need to convert the manifest when plugin snapshot is added
-    const view = convertToManifestV1(loader.manifest).capabilities.views.find(
+    const view = loader.context.manifest.capabilities.views.find(
       (v) => v.id === viewId
     );
     if (!view) {
@@ -283,24 +265,24 @@ export default class WebPluginManager {
   }
 
 
-  private async loadPlugin(manifest: Manifest) {
-    if (this.loaders.has(manifest.id)) {
-      log.warn(`Plugin "${manifest.id}" already loaded. Skipping...`);
-      return this.loaders.get(manifest.id);
+  private async loadPlugin(snapshot: PluginSnapshot) {
+    if (this.loaders.has(snapshot.manifest.id)) {
+      log.warn(`Plugin "${snapshot.manifest.id}" already loaded. Skipping...`);
+      return this.loaders.get(snapshot.manifest.id);
     }
 
     const loader = new WebPluginLoader({
-      manifest,
+      manifest: snapshot.manifest,
       store: this.pluginStore,
       utility: this.utilityConnection,
-      log: rawLog.scope(`Plugin:${manifest.id}`),
+      log: rawLog.scope(`Plugin:${snapshot.manifest.id}`),
       appVersion: this.appVersion,
       fileHelpers: this.fileHelpers,
       noty: this.noty,
       confirm: this.confirm,
     });
-    await loader.load();
-    this.loaders.set(manifest.id, loader);
+    await loader.load(snapshot);
+    this.loaders.set(snapshot.manifest.id, loader);
     return loader;
   }
 

@@ -9,9 +9,13 @@
     >
       <a
         class="folder-btn"
-        :class="{'open': expanded}"
+        :class="{'open': expanded, 'drag-target': isDragTarget}"
         role="button"
-        @click.prevent="manuallyExpanded = !manuallyExpanded"
+        @click.prevent="toggleExpanded"
+        @dragenter.prevent="isDragTarget = true"
+        @dragover.prevent="handleDragOver"
+        @dragleave="handleDragLeave"
+        @drop.prevent="handleDrop"
       >
         <span class="btn-fab open-close">
           <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
@@ -20,26 +24,25 @@
           title="Schema"
           class="schema-icon item-icon material-icons"
         >folder</i>
-        <span
-          class="table-name truncate expand"
-          :title="title"
-        >{{ title }}</span>
+        <editable-text
+          class="folder-name"
+          :initial-value="name"
+          :rename="rename"
+          @submit="$emit('rename-submit', $event)"
+          @cancel="$emit('rename-cancel')"
+        >
+          <template #text>{{ title }}</template>
+        </editable-text>
       </a>
+      <slot name="folder-drop-zone" />
       <div v-if="expanded">
-        <template v-if="hasSlot">
-          <slot />
-        </template>
-        <template v-else>
-          <template v-if="$slots.placeholder">
-            <slot name="placeholder" />
-          </template>
-          <div
-            v-else
-            class="list-item empty"
-          >
-            {{ placeholder || "No items" }}
-          </div>
-        </template>
+        <slot />
+        <div
+          v-if="showPlaceholder"
+          class="list-item empty"
+        >
+          No items
+        </div>
       </div>
     </div>
     <div v-else>
@@ -49,23 +52,65 @@
 </template>
 
 <script type="text/javascript">
-	export default {
-    props: ["title", "forceExpand", "forceCollapse", "expandedInitially", "skipDisplay", "placeholder", "connections"],
+import EditableText from '@/components/common/EditableText.vue'
+
+  export default {
+    props: ["name", "childrenCount", "rename", "forceExpand", "forceCollapse", "expandedInitially", "skipDisplay", "connections", "empty"],
+    components: { EditableText },
     data() {
       return {
         manuallyExpanded: false,
+        dragExpandTimer: null,
+        isDragTarget: false,
       }
     },
     mounted() {
       this.manuallyExpanded = this.expandedInitially
     },
     computed: {
+      title() {
+        return `${this.name} (${this.childrenCount})`
+      },
       hasSlot() {
         return !!this.$slots.default
+      },
+      showPlaceholder() {
+        // When the parent declares emptiness explicitly, honor it. The default
+        // slot still renders so the drag-and-drop drop zone stays mounted.
+        if (this.empty != null) {
+          return this.empty
+        }
+        // Legacy: treat "no slot content at all" as empty.
+        return !this.hasSlot
       },
       expanded() {
         return this.manuallyExpanded
       }
+    },
+    methods: {
+      toggleExpanded() {
+        this.manuallyExpanded = !this.manuallyExpanded
+        this.$emit('toggle', this.manuallyExpanded)
+      },
+      handleDragOver() {
+        this.isDragTarget = true
+        if (this.expanded || this.dragExpandTimer) return
+        this.dragExpandTimer = setTimeout(() => {
+          this.manuallyExpanded = true
+          this.dragExpandTimer = null
+        }, 600)
+      },
+      handleDragLeave() {
+        this.isDragTarget = false
+        if (this.dragExpandTimer) {
+          clearTimeout(this.dragExpandTimer)
+          this.dragExpandTimer = null
+        }
+      },
+      handleDrop() {
+        this.isDragTarget = false
+        this.$emit('header-drop')
+      },
     },
     watch: {
       forceExpand() {
@@ -85,5 +130,15 @@
 
   .schema > .sub-items {
     padding-left: 18px!important;
+  }
+
+  .folder-btn.drag-target {
+    background-color: rgba(128, 128, 128, 0.2);
+    outline: 1px solid rgba(128, 128, 128, 0.4);
+    outline-offset: -1px;
+  }
+
+  .folder-name {
+    width: 100%;
   }
 </style>

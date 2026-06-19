@@ -31,15 +31,14 @@ import { UserEnumsModule } from './modules/UserEnumsModule'
 import MultiTableExportStoreModule from './modules/exports/MultiTableExportModule'
 import ImportStoreModule from './modules/imports/ImportStoreModule'
 import { BackupModule } from './modules/backup/BackupModule'
-import globals from '@/common/globals'
 import { CloudClient } from '@/lib/cloud/CloudClient'
-import { ConnectionTypes, SurrealAuthType } from '@/lib/db/types'
+import { ConnectionTypes, SnowflakeAuthType, SurrealAuthType } from '@/lib/db/types'
 import { SidebarModule } from './modules/SidebarModule'
 import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
 import { PopupMenuModule } from './modules/PopupMenuModule'
 import { WebPluginManagerStatus } from '@/services/plugin'
 import { MenuBarModule } from './modules/MenuBarModule'
-import { PluginsModule } from './modules/plugins'
+import { PluginsModule, PluginsState } from './modules/plugins'
 
 
 const log = RawLog.scope('store/index')
@@ -50,6 +49,42 @@ const tablesMatch = (t: TableOrView, t2: TableOrView) => {
     t2.entityType === t.entityType
 }
 
+function shouldPromptCockroachJwt(config: Nullable<IConnection>) {
+  return config?.connectionType === 'cockroachdb' &&
+    !!config?.options?.jwtAuthEnabled &&
+    !config?.password;
+}
+
+function shouldPromptSnowflakeMFA(config: Nullable<IConnection>) {
+  return config?.connectionType === 'snowflake' &&
+    config?.snowflakeOptions.authType === SnowflakeAuthType.MFACode;
+}
+
+async function resolveEphemeralValues(config: IConnection): Promise<IConnection | null> {
+  if (shouldPromptCockroachJwt(config)) {
+    const { token, cancelled } = await BeekeeperPlugin.promptJwtToken(
+      BeekeeperPlugin.buildConnectionName(config)
+    );
+
+    if (cancelled) return null;
+
+    const resolvedConfig = _.cloneDeep(config);
+
+    resolvedConfig.password = token;
+    return resolvedConfig;
+  } else if (shouldPromptSnowflakeMFA(config)) {
+    const { passcode, cancelled } = await BeekeeperPlugin.promptSnowflakeMFAPasscode();
+
+    if (cancelled) return null;
+
+    const resolvedConfig = _.cloneDeep(config);
+
+    resolvedConfig.snowflakeOptions.passcode = passcode;
+    return resolvedConfig;
+  }
+
+  return config;
+}
 
 export interface State {
   connection: ElectronUtilityConnectionClient,
@@ -83,6 +118,9 @@ export interface State {
   namespaceList: string[],
 
   pluginManagerStatus: WebPluginManagerStatus,
+
+  /** Set by VueX module */
+  plugins?: PluginsState,
 }
 
 Vue.use(Vuex)
@@ -263,6 +301,9 @@ const store = new Vuex.Store<State>({
     expandFKDetailsByDefault(state) {
       return state.expandFKDetailsByDefault
     },
+    onboardingNotyShown(_state, getters) {
+      return !_.isEmpty(getters["settings/settings"]["onboardingNotyShown"]?.value);
+    },
     aiShellHintShown(_state, getters) {
       return !_.isEmpty(getters["settings/settings"]["tabDropdownAIShellHintShown"]?.value);
     },
@@ -419,7 +460,11 @@ const store = new Vuex.Store<State>({
   },
   actions: {
     async test(context, config: IConnection) {
-      await Vue.prototype.$util.send('conn/test', { config, osUser: context.state.username });
+      const resolvedConfig = await resolveEphemeralValues(config);
+      if (!resolvedConfig) return false;
+
+      await Vue.prototype.$util.send('conn/test', { config: resolvedConfig, osUser: context.state.username });
+      return true;
     },
 
     async fetchUsername(context) {
@@ -455,15 +500,18 @@ const store = new Vuex.Store<State>({
     },
 
     async connect(context, { config, auth }: { config: IConnection, auth?: { input: string; mode: 'pin'; }}) {
+      const resolvedConfig = await resolveEphemeralValues(config);
+      if (!resolvedConfig) return false;
+
       if (context.state.username) {
-        await Vue.prototype.$util.send('conn/create', { config, auth, osUser: context.state.username })
+        await Vue.prototype.$util.send('conn/create', { config: resolvedConfig, auth, osUser: context.state.username })
         const defaultSchema = await context.state.connection.defaultSchema();
         const supportedFeatures = await context.state.connection.supportedFeatures();
         const versionString = await context.state.connection.versionString();
 
         if (supportedFeatures.backups) {
           const serverConfig = await Vue.prototype.$util.send('conn/getServerConfig');
-          context.dispatch('backups/setConnectionConfigs', { config, supportedFeatures, serverConfig });
+          context.dispatch('backups/setConnectionConfigs', { config: resolvedConfig, supportedFeatures, serverConfig });
         }
 
         window.main.enableConnectionMenuItems();
@@ -473,7 +521,7 @@ const store = new Vuex.Store<State>({
         context.commit('connected', true);
         context.commit('supportedFeatures', supportedFeatures);
         context.commit('versionString', versionString);
-        config = await context.dispatch('data/usedconnections/recordUsed', config)
+        config = await context.dispatch('data/usedconnections/recordUsed', resolvedConfig)
         context.commit('newConnection', config)
 
         if (context.state.usedConfig.connectionType === 'surrealdb' &&
@@ -488,6 +536,7 @@ const store = new Vuex.Store<State>({
         await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id })
 
         await context.dispatch('checkVersion');
+        return true;
       } else {
         throw "No username provided"
       }
@@ -507,8 +556,14 @@ const store = new Vuex.Store<State>({
     },
     async reconnect(context) {
       if (context.state.connection) {
+        if (shouldPromptForCockroachJwt(context.state.usedConfig)) {
+          return await context.dispatch('connect', { config: context.state.usedConfig });
+        }
+
         await context.state.connection.connect();
+        return true;
       }
+      return false;
     },
     async disconnect(context) {
       if (context.state.connection) {
@@ -664,11 +719,6 @@ const store = new Vuex.Store<State>({
       await context.dispatch('licenses/init')
       await context.dispatch('userEnums/init')
       await context.dispatch('updateWindowTitle')
-      setInterval(
-        () => context.dispatch('licenses/sync'),
-        globals.licenseCheckInterval
-      )
-      await context.dispatch('plugins/initialize')
     },
     licenseEntered(context) {
       context.dispatch('updateWindowTitle')
@@ -683,6 +733,12 @@ const store = new Vuex.Store<State>({
     },
     toggleExpandFKDetailsByDefault(context, value?: boolean) {
       context.dispatch('toggleFlag', { flag: 'expandFKDetailsByDefault', value })
+    },
+    setOnboardingNotyShown(context) {
+      context.dispatch('settings/save', {
+        key: 'onboardingNotyShown',
+        value: new Date(),
+      });
     },
     setAiShellHintShown(context) {
       context.dispatch("settings/save", {

@@ -30,9 +30,15 @@
             <div class="form-group col-md-6">
               <label for="validation-level">Validation Level</label>
               <select v-model="validationLevel" id="validation-level" class="form-control">
-                <option value="off">Off (No validation)</option>
-                <option value="moderate">Moderate (Apply to inserts and updates)</option>
-                <option value="strict">Strict (Apply to all operations)</option>
+                <option value="off">
+                  Off (No validation)
+                </option>
+                <option value="moderate">
+                  Moderate (Apply to inserts and updates)
+                </option>
+                <option value="strict">
+                  Strict (Apply to all operations)
+                </option>
               </select>
               <small class="form-text text-muted">
                 Controls how strictly MongoDB applies validation rules to existing documents during updates
@@ -42,8 +48,12 @@
             <div class="form-group col-md-6">
               <label for="validation-action">Validation Action</label>
               <select v-model="validationAction" id="validation-action" class="form-control">
-                <option value="error">Error (Reject invalid documents)</option>
-                <option value="warn">Warn (Allow invalid documents, but log warnings)</option>
+                <option value="error">
+                  Error (Reject invalid documents)
+                </option>
+                <option value="warn">
+                  Warn (Allow invalid documents, but log warnings)
+                </option>
               </select>
               <small class="form-text text-muted">
                 Controls whether MongoDB rejects invalid documents or just logs warnings

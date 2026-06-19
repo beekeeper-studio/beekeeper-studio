@@ -1,5 +1,6 @@
 import yargs from 'yargs-parser'
 import _ from 'lodash'
+import { existsSync } from 'fs'
 import { resolve, join } from 'path'
 import { IPlatformInfo } from '../IPlatformInfo'
 import { BksVersion } from '@/lib/license'
@@ -26,6 +27,15 @@ export function resolveAppVersion(appVersion): BksVersion {
     channelRelease: Number(channelVersion || 0)
   }
 
+}
+
+const VALID = ['error', 'warn', 'info', 'verbose', 'debug', 'silly'];
+
+export function resolveLevel(env: any, isDev = false) {
+  const override = env.BKS_LOG_LEVEL?.toLowerCase() || undefined;
+  if (override && (VALID as string[]).includes(override)) return override;
+  if (env.NODE_ENV === 'development' || env.DEBUG || isDev) return 'silly';
+  return 'warn';
 }
 
 
@@ -60,6 +70,7 @@ export function mainPlatformInfo(): IPlatformInfo {
     userDirectory = join(p.env.PORTABLE_EXECUTABLE_DIR, 'beekeeper_studio_data')
   }
   const pluginsDirectory = join(userDirectory, 'plugins')
+  const driverDepsDirectory = join(userDirectory, 'driver-deps')
 
   const sessionType = p.env.XDG_SESSION_TYPE
 
@@ -79,10 +90,15 @@ export function mainPlatformInfo(): IPlatformInfo {
     sessionType,
     isWayland: isWaylandMode(),
     isSnap: p.env.ELECTRON_SNAP,
+    isFlatpak: !!p.env.FLATPAK_ID || existsSync('/.flatpak-info'),
     isPortable: isWindows && p.env.PORTABLE_EXECUTABLE_DIR,
     isDevelopment: isDevEnv,
     isAppImage: p.env.DESKTOPINTEGRATION === 'AppImageLauncher',
     sshAuthSock: p.env.SSH_AUTH_SOCK,
+    sshConfigExists: existsSync(join(homeDirectory, '.ssh', 'config')),
+    defaultSshIdentityFile: ['id_ed25519', 'id_ecdsa', 'id_rsa', 'id_dsa']
+      .map((name) => join(homeDirectory, '.ssh', name))
+      .find((path) => existsSync(path)) || '',
     environment: p.env.NODE_ENV,
     resourcesPath,
     env: {
@@ -98,6 +114,7 @@ export function mainPlatformInfo(): IPlatformInfo {
     downloadsDirectory,
     homeDirectory,
     pluginsDirectory,
+    driverDepsDirectory,
     testMode,
     appDbPath: join(userDirectory, isDevEnv ? 'app-dev.db' : 'app.db'),
     updatesDisabled,
@@ -106,6 +123,10 @@ export function mainPlatformInfo(): IPlatformInfo {
     // cloudUrl: isDevEnv ? 'https://staging.beekeeperstudio.io' : 'https://app.beekeeperstudio.io',
     // cloudUrl: 'https://app.beekeeperstudio.io',
     locale,
+    // Resolved here once so main, utility, and renderer all read the same
+    // value: main consumes platformInfo directly, utility receives it as a
+    // JSON env var when forked, renderer fetches it over IPC.
+    logLevel: resolveLevel(p.env, isDevEnv),
 
     cloudUrl: isDevEnv ? 'http://localhost:3000' : 'https://app.beekeeperstudio.io'
   }

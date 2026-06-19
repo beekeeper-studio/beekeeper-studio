@@ -44,15 +44,15 @@
           </x-label>
         </x-menuitem>
         <x-menuitem @click.stop.prevent="showQuickSwitcher">
-            <x-label class="flex items-center justify-between">
-              <span class="flex items-center">
-                <i class="material-icons">swap_horiz</i>
-                Switch Connection
-              </span>
-              <span style="font-size: 22px;">
-                {{ isQuickSwitcherVisible ? '‹' : '›' }}
-              </span>
-            </x-label>
+          <x-label class="flex items-center justify-between">
+            <span class="flex items-center">
+              <i class="material-icons">swap_horiz</i>
+              Switch Connection
+            </span>
+            <span style="font-size: 22px;">
+              {{ isQuickSwitcherVisible ? '‹' : '›' }}
+            </span>
+          </x-label>
         </x-menuitem>
       </x-menu>
     </x-button>
@@ -193,14 +193,14 @@ export default {
       connection: state => state.connection,
       versionString: state => state.versionString
     }),
-    ...mapState('settings', ['privacyMode']),
     ...mapState('data/connections', {'connectionConfigs': 'items'}),
     ...mapGetters({
       hasRunningExports: 'exports/hasRunningExports',
       workspace: 'workspace',
       connectionColor: 'connectionColor',
       savedConnections: 'data/connections/filteredConnections',
-      isUltimate: 'isUltimate'
+      isUltimate: 'isUltimate',
+      privacyMode: 'settings/privacyMode'
     }),
     connectionName() {
       return this.config ? this.$bks.buildConnectionName(this.config) : 'Connection'

@@ -5,6 +5,7 @@ import { Dialect, DialectData } from "./models";
 import { MysqlData } from "./mysql";
 import { OracleData } from "./oracle";
 import { PostgresData } from "./postgresql";
+import { GreengageData } from "./greengage";
 import { SqliteData } from "./sqlite";
 import { SqlServerData } from "./sqlserver";
 import { CassandraData } from './cassandra'
@@ -15,11 +16,15 @@ import { SqlAnywhereData } from "./anywhere";
 import { TrinoData } from "./trino";
 import { SurrealDBData } from "./surrealdb";
 import { RedisData } from "@shared/lib/dialects/redis";
+import { DynamoDBData } from "./dynamodb";
+import { SnowflakeData } from "./snowflake";
 
 export function getDialectData(dialect: Dialect): DialectData  {
   switch (dialect) {
     case "postgresql":
       return PostgresData
+    case "greengage":
+      return GreengageData
     case "mysql":
       return MysqlData
     case "sqlserver":
@@ -50,6 +55,10 @@ export function getDialectData(dialect: Dialect): DialectData  {
       return SurrealDBData
     case 'redis':
       return RedisData
+    case 'dynamodb':
+      return DynamoDBData
+    case 'snowflake':
+      return SnowflakeData
     default:
       return SqliteData
   }

@@ -4,13 +4,13 @@
     class="interface"
     v-hotkey="keymap"
   >
+    <privacy-banner class="privacyBanner" :privacy-mode="privacyMode" />
     <div v-if="initializing">
       <progress-bar />
     </div>
     <div
       v-else
       class="interface-wrap row"
-      ref="splitContainer"
     >
       <global-sidebar
         v-if="!minimalMode"
@@ -19,24 +19,26 @@
         ref="globalSidebar"
       />
 
-      <sidebar
-        ref="sidebar"
-        class="primary-sidebar"
-      >
-        <core-sidebar
-          @databaseSelected="databaseSelected"
-        />
-      </sidebar>
+      <div class="split-container" ref="splitContainer">
+        <sidebar
+          ref="primarySidebar"
+          class="primary-sidebar"
+        >
+          <core-sidebar
+            @databaseSelected="databaseSelected"
+          />
+        </sidebar>
 
-      <div
-        ref="content"
-        class="page-content flex-col main-content"
-        id="page-content"
-      >
-        <core-tabs />
+        <div
+          ref="content"
+          class="page-content flex-col main-content"
+          id="page-content"
+        >
+          <core-tabs />
+        </div>
+
+        <secondary-sidebar ref="secondarySidebar" @close="handleToggleOpenSecondarySidebar(false)" />
       </div>
-
-      <secondary-sidebar ref="secondarySidebar" @close="handleToggleOpenSecondarySidebar(false)" />
     </div>
     <global-status-bar
       :connection-button-width="globalPrimarySidebarWidth"
@@ -67,11 +69,25 @@
   import GlobalStatusBar from './GlobalStatusBar.vue'
   import Vue from 'vue'
   import RenameDatabaseElementModal from './common/modals/RenameDatabaseElementModal.vue'
+  import PrivacyBanner from '@/components/PrivacyBanner.vue'
   import { mapGetters, mapActions, mapState } from 'vuex'
   import _ from "lodash"
 
   export default Vue.extend({
-    components: { CoreSidebar, CoreTabs, Sidebar, ExportManager, QuickSearch, ProgressBar, LostConnectionModal, RenameDatabaseElementModal, SecondarySidebar, GlobalStatusBar, GlobalSidebar },
+    components: {
+      CoreSidebar,
+      CoreTabs,
+      Sidebar,
+      ExportManager,
+      QuickSearch,
+      ProgressBar,
+      LostConnectionModal,
+      RenameDatabaseElementModal,
+      SecondarySidebar,
+      GlobalStatusBar,
+      GlobalSidebar,
+      PrivacyBanner
+    },
     data() {
       /* eslint-disable */
       return {
@@ -95,15 +111,19 @@
         "secondarySidebarWidth",
         "globalSidebarActiveItem",
       ]),
+      ...mapGetters({
+        privacyMode: 'settings/privacyMode'
+      }),
       keymap() {
         const result = this.$vHotkeyKeymap({
-          'general.openQuickSearch': this.showQuickSearch
+          'general.openQuickSearch': this.showQuickSearch,
+          'general.jsonViewerSidebar': this.toggleOpenJsonViewer,
         });
         return result;
       },
       splitElements() {
         return [
-          this.$refs.sidebar.$el,
+          this.$refs.primarySidebar.$el,
           this.$refs.content,
           this.$refs.secondarySidebar.$el
         ]
@@ -326,6 +346,10 @@
 
         this.setSecondarySidebarOpen(open)
       },
+      toggleOpenJsonViewer() {
+        this.handleToggleOpenSecondarySidebar()
+        this.trigger(AppEvent.selectSecondarySidebarTab, 'json-viewer')
+      },
       handleSelectGlobalSidebarItem(item) {
         if (this.globalSidebarActiveItem === item) {
           this.toggleOpenPrimarySidebar()
@@ -342,3 +366,10 @@
   })
 
 </script>
+
+<style scoped>
+.split-container {
+  display: flex;
+  width: 100%;
+}
+</style>

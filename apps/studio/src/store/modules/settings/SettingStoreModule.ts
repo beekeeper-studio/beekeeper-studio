@@ -8,8 +8,7 @@ import config from "@/config";
 
 interface State {
   settings: IGroupedUserSettings,
-  initialized: boolean,
-  privacyMode: boolean
+  initialized: boolean
 }
 
 const M = {
@@ -21,8 +20,7 @@ const SettingStoreModule: Module<State, any> = {
   namespaced: true,
   state: () => ({
     settings: {},
-    initialized: false,
-    privacyMode: false
+    initialized: false
   }),
   mutations: {
     replaceSettings(state, newSettings: TransportUserSetting) {
@@ -34,20 +32,12 @@ const SettingStoreModule: Module<State, any> = {
     },
     setInitialized(state) {
       state.initialized = true;
-    },
-    SET_PRIVACY_MODE(state, value: boolean) {
-      state.privacyMode = value;
     }
   },
   actions: {
     async initializeSettings(context) {
       const settings = await Vue.prototype.$util.send('appdb/setting/find');
       context.commit(M.REPLACEALL, settings);
-
-      const privacyModeSetting = settings.find(s => s.key === 'privacyMode');
-      if (privacyModeSetting) {
-        context.commit('SET_PRIVACY_MODE', privacyModeSetting.value);
-      }
 
       context.commit('setInitialized');
     },
@@ -66,10 +56,13 @@ const SettingStoreModule: Module<State, any> = {
       _.merge(setting, newSetting);
       context.commit(M.ADD, newSetting);
     },
-    async togglePrivacyMode({ commit, state, dispatch }) {
-      const newPrivacyMode = !state.privacyMode;
-      commit('SET_PRIVACY_MODE', newPrivacyMode);
-      await dispatch('save', { key: 'privacyMode', value: newPrivacyMode });
+    async setEditResultsHintShown(context) {
+      const options = { key: "editResultsHintShown", value: new Date() };
+      await context.dispatch("save", options);
+    },
+    async setStartedEditingResult(context) {
+      const options = { key: "startedEditingResult", value: new Date() };
+      await context.dispatch("save", options);
     },
   },
   getters: {
@@ -111,8 +104,16 @@ const SettingStoreModule: Module<State, any> = {
     sqliteRuntimeExtensions(state) {
       if (!state.settings.sqliteExtensionFile) return null
       return state.settings.sqliteExtensionFile
-    }
-  }
+    },
+    privacyMode(state) {
+      if (!state.settings.privacyMode) return false;
+      return state.settings.privacyMode.value;
+    },
+    editResultsHintShown: (state) =>
+      !_.isEmpty(state.settings["editResultsHintShown"]?.value),
+    startedEditingResult: (state) =>
+      !_.isEmpty(state.settings["startedEditingResult"]?.value),
+  },
 }
 
 

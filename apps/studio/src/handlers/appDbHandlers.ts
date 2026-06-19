@@ -11,10 +11,15 @@ import { PinnedEntity } from "@/common/appdb/models/PinnedEntity";
 import { OpenTab } from "@/common/appdb/models/OpenTab";
 import { HiddenEntity } from "@/common/appdb/models/HiddenEntity";
 import { FormatterPreset } from "@/common/appdb/models/FormatterPreset";
+import { QueryFolder } from "@/common/appdb/models/QueryFolder";
+import { ConnectionFolder } from "@/common/appdb/models/ConnectionFolder";
+import { IQueryFolder, IConnectionFolder } from "@/common/interfaces/IQueryFolder";
 import { HiddenSchema } from "@/common/appdb/models/HiddenSchema";
 import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
 import { TransportHiddenEntity, TransportHiddenSchema } from "@/common/transport/TransportHidden";
 import { TransportPinnedEntity } from "@/common/transport/TransportPinnedEntity";
+import { TransportTabulatorPersistence } from "@/common/transport/TransportTabulatorPersistence";
+import { TabulatorPersistence } from "@/common/appdb/models/TabulatorPersistence";
 import { TransportUserSetting } from "@/common/transport/TransportUserSetting";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import { TokenCache } from "@/common/appdb/models/token_cache";
@@ -169,6 +174,9 @@ export const AppDbHandlers = {
   ...handlersFor<TransportUserSetting>('setting', UserSetting, transformSetting),
   ...handlersFor<TransportCloudCredential>('credential', CloudCredential),
   ...handlersFor<TransportLicenseKey>('license', LicenseKey, transformLicense),
+  ...handlersFor<IQueryFolder>('queryFolder', QueryFolder),
+  ...handlersFor<IConnectionFolder>('connectionFolder', ConnectionFolder),
+  ...handlersFor<TransportTabulatorPersistence>('tabulatorPersistence', TabulatorPersistence),
   'appdb/saved/parseUrl': async function({ url }: { url: string }) {
     const conn = new SavedConnection();
     if (!conn.parse(url)) {

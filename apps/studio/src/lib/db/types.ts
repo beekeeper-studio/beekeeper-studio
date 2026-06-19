@@ -1,7 +1,35 @@
-import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, ServerStatistics, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
+import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FieldDescriptor, FieldEditData, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, ServerStatistics, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
+import type { SshMode } from '@/common/interfaces/IConnection';
 
-export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'mongodb', 'sqlanywhere', 'surrealdb', 'redis', 'trino'] as const
+export const DatabaseTypes = [
+  'sqlite',
+  'sqlserver',
+  'redshift',
+  'cockroachdb',
+  'mysql',
+  'postgresql',
+  'mariadb',
+  'cassandra',
+  'scylladb',
+  'oracle',
+  'bigquery',
+  'firebird',
+  'tidb',
+  'libsql',
+  'clickhouse',
+  'duckdb',
+  'greengage',
+  'mongodb',
+  'sqlanywhere',
+  'surrealdb',
+  'redis',
+  'trino',
+  'bedrock',
+  'dynamodb',
+  'snowflake'
+] as const
+
 export type ConnectionType = typeof DatabaseTypes[number]
 
 export const ConnectionTypes = [
@@ -14,8 +42,10 @@ export const ConnectionTypes = [
   { name: 'SQL Server', value: 'sqlserver' },
   { name: 'Amazon Redshift', value: 'redshift' },
   { name: 'CockroachDB', value: 'cockroachdb' },
+  { name: 'GreengageDB', value: 'greengage' },
   { name: 'Oracle', value: 'oracle' },
   { name: 'Cassandra', value: 'cassandra' },
+  { name: 'ScyllaDB', value: 'scylladb' },
   { name: 'BigQuery', value: 'bigquery' },
   { name: 'Firebird', value: 'firebird'},
   { name: 'DuckDB', value: 'duckdb' },
@@ -24,7 +54,10 @@ export const ConnectionTypes = [
   { name: 'SqlAnywhere', value: 'sqlanywhere' },
   { name: 'Trino', value: 'trino' },
   { name: 'SurrealDB', value: 'surrealdb' },
-  { name: 'Redis', value: 'redis' }
+  { name: 'Redis', value: 'redis' },
+  { name: 'Bedrock', value: 'bedrock' },
+  { name: 'DynamoDB', value: 'dynamodb' },
+  { name: 'Snowflake', value: 'snowflake' }
 ]
 
 /** `value` should be recognized by codemirror */
@@ -82,6 +115,20 @@ export const AzureAuthTypes = [
   { name: 'Azure CLI Authentication', value: AzureAuthType.CLI }
 ];
 
+export enum SnowflakeAuthType {
+  Default,
+  MFACode,
+  MFANotif,
+  Browser
+}
+
+export const SnowflakeAuthTypes = [
+  { name: 'Username / Password', value: SnowflakeAuthType.Default },
+  { name: 'SSO with Browser', value: SnowflakeAuthType.Browser },
+  { name: 'Multi-Factor Authentication with Code', value: SnowflakeAuthType.MFACode },
+  { name: 'Multi-Factor Authentication with Duo', value: SnowflakeAuthType.MFANotif }
+]
+
 export interface RedshiftOptions {
   clusterIdentifier?: string;
   databaseGroup?: string;
@@ -89,8 +136,14 @@ export interface RedshiftOptions {
   isServerless?: boolean;
 }
 
+export interface DynamoDBOptions {
+  /** Custom endpoint, e.g. `http://localhost:8000` for DynamoDB Local. */
+  endpoint?: string;
+}
+
 export interface IamAuthOptions {
   awsProfile?: string
+  profiles?: string[];
   iamAuthenticationEnabled?: boolean
   accessKeyId?: string;
   secretAccessKey?: string;
@@ -137,6 +190,13 @@ export interface SurrealDBOptions {
   token?: string;
 }
 
+export interface SnowflakeOptions {
+  authType?: SnowflakeAuthType;
+  accountId?: string;
+  defaultWarehouse?: string;
+  passcode?: string;
+}
+
 export enum SurrealAuthType {
   Root,
   Namespace,
@@ -181,7 +241,17 @@ export interface IDbConnectionServerSSHConfig {
   password: Nullable<string>
   privateKey: Nullable<string>
   passphrase: Nullable<string>
+  identityFiles?: string[]
+  identitiesOnly?: boolean
   bastionHost: Nullable<string>
+  bastionPort: Nullable<number>
+  bastionUser: Nullable<string>
+  bastionPassword: Nullable<string>
+  bastionPrivateKey: Nullable<string>
+  bastionPassphrase: Nullable<string>
+  bastionIdentityFiles?: string[]
+  bastionIdentitiesOnly?: boolean
+  bastionMode: Nullable<SshMode>
   keepaliveInterval: number
   useAgent: boolean
 }
@@ -220,6 +290,8 @@ export interface IDbConnectionServerConfig {
   libsqlOptions?: LibSQLOptions
   sqlAnywhereOptions?: SQLAnywhereOptions
   surrealDbOptions?: SurrealDBOptions
+  dynamoDbOptions?: DynamoDBOptions
+  snowflakeOptions?: SnowflakeOptions
   runtimeExtensions?: string[]
 }
 
@@ -249,6 +321,7 @@ export interface IBasicDatabaseClient {
   listTablePartitions(table: string, schema?: string): Promise<TablePartition[]>,
   executeCommand(commandText: string): Promise<NgQueryResult[]>,
   query(queryText: string, tabId: number, options?: any): Promise<CancelableQuery>,
+  getResultEditData(queryText: string, fields: FieldDescriptor[]): Promise<FieldEditData[]>
   executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>,
   listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>,
   getTableProperties(table: string, schema?: string): Promise<TableProperties | null>,
@@ -277,7 +350,7 @@ export interface IBasicDatabaseClient {
   alterPartition(changes: AlterPartitionsSpec): Promise<void>,
 
   applyChangesSql(changes: TableChanges): Promise<string>,
-  applyChanges(changes: TableChanges): Promise<TableUpdateResult[]>,
+  applyChanges(changes: TableChanges, tabId?: number): Promise<TableUpdateResult[]>,
   setTableDescription(table: string, description: string, schema?: string): Promise<string>
   setElementName(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>,
   dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void>,

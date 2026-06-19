@@ -60,6 +60,26 @@ describe("Detail View", () => {
     })
   })
 
+  it("should filter case-insensitively", () => {
+    const obj = {
+      MyKey: "value1",
+      anotherKey: "value2",
+      UPPER_CASE: "value3",
+    };
+
+    // Searching lowercase should find uppercase keys
+    const filtered1 = deepFilterObjectProps(obj, "mykey");
+    expect(filtered1).toStrictEqual({ MyKey: "value1" });
+
+    // Searching uppercase should find lowercase keys
+    const filtered2 = deepFilterObjectProps(obj, "ANOTHERKEY");
+    expect(filtered2).toStrictEqual({ anotherKey: "value2" });
+
+    // Mixed case search
+    const filtered3 = deepFilterObjectProps(obj, "upper_case");
+    expect(filtered3).toStrictEqual({ UPPER_CASE: "value3" });
+  })
+
   it("should recursively iterate through a JSON object", () => {
     const obj = {
       a: 0,

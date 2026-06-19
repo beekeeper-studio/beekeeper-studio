@@ -85,6 +85,10 @@ export default class NativeMenuBuilder {
 
   listenForPluginMenuChanges(): void {
     ipcMain.on("add-native-menu-item", (_event, item: NativePluginMenuItem) => {
+      if (this.pluginMenuItems.some((existing) => existing.id === item.id)) {
+        log.debug(`Menu item with id ${item.id} already exists.`);
+        return;
+      }
       this.pluginMenuItems.push({
         ...item,
         click: (_menuItem, win) => {

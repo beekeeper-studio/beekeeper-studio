@@ -10,6 +10,12 @@ icon: simple/sqlite
 
 Connecting to a SQLite database from the app is pretty easy, simply select `SQLite` from the dropdown, choose your SQLite file, then click `connect`.
 
+## Creating a new SQLite database
+
+You can create a new SQLite database directly from Beekeeper Studio. Select `SQLite` as the connection type, then click the `Create` button next to the file picker. You'll be prompted to choose a location and filename for your new database.
+
+![Creating a new SQLite database](../../assets/images/create-sqlite.png)
+
 ## Connect to SQLite by double clicking
 
 When you install Beekeeper Studio it will create an association for files with the following extensions: `.db`, `.sqlite3`, and `.sqlite`.
@@ -25,7 +31,20 @@ You can also use your terminal to open a database in Beekeeper Studio so long as
 
 ## Enabling SQLite Runtime Extensions
 
-SQLite supports [runtime extensions](https://www.sqlite.org/loadext.html). This provides extended capabilities for interacting with SQLite.
+SQLite Runtime extensions are disabled by default for security reasons (you're basically just running arbitrary code). You can enable them by editing your [configuration file](../configuration.md).
+
+You need to add the following to the `[security]` section of your configuration file:
+
+```ini
+[security]
+
+; Loading SQLite runtime extensions executes arbitrary native code from the
+; extension path. Off by default - users must explicitly opt in via their
+; user.config.ini before any sqliteExtensionFile setting will be honoured.
+allowRuntimeExtensions = false
+
+```
+
 
 There are many such extensions, a lot of them are open source. For example [sqlean](https://github.com/nalgeon/sqlean) is an extension that provides a range of new functions and features from crypto functions, to array handling.
 

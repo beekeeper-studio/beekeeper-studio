@@ -126,15 +126,6 @@ const FIELD_TYPE_QUERY = (
   END
 `;
 
-function identifyCommands(queryText: string) {
-  try {
-    return identify(queryText, { strict: false, dialect: "generic" });
-  } catch (err) {
-    log.error(err);
-    return [];
-  }
-}
-
 function buildFilterString(filters: TableFilter[], columns = []) {
   let filterString = "";
   let filterParams = [];
@@ -863,35 +854,46 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
     return databaseName;
   }
 
-  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
+  async executeApplyChanges(changes: TableChanges, tabId?: number): Promise<any[]> {
     let results = [];
-    const connection = await this.pool.getConnection();
-    const transaction = await connection.transaction();
-    try {
+
+    const run = async (connection: Connection | Transaction) => {
       if (changes.inserts) {
         for (const command of buildInsertQueries(this.knex, changes.inserts)) {
-          await transaction.query(command);
+          await connection.query(command);
         }
       }
 
       if (changes.updates) {
-        results = await this.updateValues(transaction, changes.updates);
+        results = await this.updateValues(connection, changes.updates);
       }
 
       if (changes.deletes) {
         for (const command of buildDeleteQueries(this.knex, changes.deletes)) {
-          await transaction.query(command);
+          await connection.query(command);
         }
       }
-      await transaction.commit();
-      return results;
-    } catch (ex) {
-      log.error("query exception: ", ex);
-      await transaction.rollback();
-      throw ex;
-    } finally {
-      await connection.release()
     }
+
+    if (tabId) {
+      const conn = this.peekConnection(tabId).transaction;
+      await run(conn);
+    } else {
+      const connection = await this.pool.getConnection();
+      const transaction = await connection.transaction();
+
+      try {
+        await run(transaction);
+        await transaction.commit();
+      } catch (ex) {
+        log.error("query exception: ", ex);
+        await transaction.rollback();
+        throw ex;
+      } finally {
+        await connection.release()
+      }
+    }
+    return results;
   }
 
   async updateValues(
@@ -1132,6 +1134,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
         rows,
         affectedRows: undefined, // TODO implement affectedRows
         command: statement.type,
+        text: statement.text,
         rowCount: rows.length,
       };
     });
@@ -1169,7 +1172,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
       tabId?: number;
     } = {}
   ): Promise<FirebirdResult | FirebirdResult[]> {
-    const queries = identifyCommands(queryText);
+    const queries = this.identifyCommands(queryText);
     const params = options.params ?? [];
 
     const results: FirebirdResult[] = [];

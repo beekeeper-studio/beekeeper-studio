@@ -183,6 +183,7 @@ export default Vue.extend({
     ...mapGetters(['dialect', 'dialectData']),
     ...mapState(['database', 'connection', 'usedConfig']),
     hotkeys() {
+      if (!this.active) return {}
       return this.$vHotkeyKeymap({
         'general.refresh': this.refreshColumns,
         'general.addRow': this.addRow,
@@ -268,7 +269,7 @@ export default Vue.extend({
           headerTooltip: "Be sure to 'quote' string values.",
           cellEdited: this.cellEdited,
           formatter: this.cellFormatter,
-          editable: this.isCellEditable.bind(this, 'alterColumn'),
+          editable: this.isCellEditable.bind(this, ['alterColumn', 'alterDefault']),
           cssClass: this.customColumnCssClass('alterColumn'),
           minWidth: 90,
         },
@@ -334,22 +335,23 @@ export default Vue.extend({
     isEditable(feature: string): boolean {
       return this.editable && !this.disabledFeatures?.alter?.[feature]
     },
-    isCellEditable(feature: string, cell: CellComponent): boolean {
+    isCellEditable(feature: string | string[], cell: CellComponent): boolean {
       // views and materialized views are not editable
 
+      const features = _.isArray(feature) ? feature : [feature];
       if (!this.editable) return false
       if (this.removedRows.includes(cell.getRow())) return false
       const row = cell.getRow()
       const columnName = row.getData()['columnName']
       const column: ExtendedTableColumn | undefined = this.table.columns.find((c) => c.columnName === columnName)
 
-      if (feature === 'alterColumn' && column?.generated)  {
+      if (features.includes('alterColumn') && column?.generated)  {
         return false
       }
 
       const isNewRow = this.newRows.includes(cell.getRow())
 
-      return isNewRow || this.isEditable(feature)
+      return isNewRow || features.every((f) => this.isEditable(f))
     },
     async refreshColumns() {
       if(this.hasEdits) {
@@ -450,6 +452,7 @@ export default Vue.extend({
       if (this.usedConfig.readOnlyMode) return;
       if (this.disabledFeatures?.alter?.addColumn) {
         this.$noty.info(`Adding columns is not supported by ${this.dialect}`)
+        return;
       }
       const data = this.tabulator.getData()
       const name = `column_${data.length + 1}`

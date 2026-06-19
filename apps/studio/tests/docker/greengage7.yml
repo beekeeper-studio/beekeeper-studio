@@ -1,0 +1,13 @@
+version: '3'
+services:
+  greengage7:
+    image: greengagedb/ggdb7_ubuntu:7.4.1
+    platform: linux/amd64
+    sysctls:
+      kernel.sem: "500 1024000 200 4096"
+    ports:
+      - 7000
+    volumes:
+      - ../../../../dev/docker_greengage/init-and-run.sh:/init-and-run.sh:ro
+    command: ["bash", "/init-and-run.sh"]
+    container_name: test_greengage7

@@ -87,6 +87,13 @@ Flatpak (.flatpak) files are provided separately for both x86_64 and ARM64 syste
 
 Flathub integration coming soon.
 
+!!! note "SQLite file access"
+    Flatpak sandboxes file access by default. If you need to open SQLite databases outside the sandbox, grant filesystem access with:
+    ```bash
+    sudo flatpak override io.beekeeperstudio.Studio --filesystem=host
+    ```
+    See [Troubleshooting](../support/troubleshooting.md#i-get-permission-denied-or-unable-to-open-database-file-when-trying-to-access-a-sqlite-database) for more details.
+
 ## Snap
 
 You can also install Beekeeper Studio through Snapcraft (also part of the Ubuntu Store). Use either the Snap Store link below, or install through the terminal.

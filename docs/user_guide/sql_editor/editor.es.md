@@ -91,6 +91,22 @@ Si ejecutas una consulta que genera un conjunto de resultados de mas de 50,000 r
 
 En la edicion comercial de Beekeeper Studio, tambien puedes seleccionar `Ejecutar a archivo`, esto ejecutara tu consulta SQL y enviara los resultados completos directamente a un archivo CSV.
 
+## Atajos de teclado
+
+Beekeeper Studio tiene una referencia de atajos de teclado integrada. Abrela desde el menu `Help` para ver todos los atajos disponibles organizados por categoria.
+
+![Modal de atajos de teclado](../../assets/images/keyboard-shortcuts-modal.png)
+
+## Tamano de fuente del editor
+
+Puedes ajustar el tamano de fuente del editor SQL desde el menu `View`:
+
+- **Aumentar tamano de fuente del editor** - `Ctrl+Shift+.`
+- **Disminuir tamano de fuente del editor** - `Ctrl+Shift+,`
+- **Restablecer tamano de fuente del editor** - restaura el tamano predeterminado
+
+![Ajustar tamano de fuente del editor](../../assets/images/adjust-editor-font-size.png)
+
 ## Modo Vim
 Junto con el editor de consultas predeterminado, Beekeeper soporta el modo Vim, que te permite escribir consultas en un editor de texto tipo Vim.
 

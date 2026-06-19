@@ -18,6 +18,7 @@ import { IDbConnectionServer } from "../backendTypes";
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 
 import rawLog from '@bksLogger'
+import bksConfig from '@/common/bksConfig';
 const log = rawLog.scope('sqlite');
 
 const knex = createSQLiteKnex();
@@ -320,9 +321,11 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   async executeQuery(queryText: string, options: any = {}): Promise<NgQueryResult[]> {
     const arrayMode: boolean = options.arrayMode;
     const result = await this.driverExecuteMultiple(queryText, options);
+    const commands = this.identifyCommands(queryText)
 
-    return (result || []).map(({ rows: data, columns, statement, changes }) => {
+    return (result || []).map(({ rows: data, columns, statement, changes }, i) => {
       // Fallback in case the identifier could not reconize the command
+      const text = commands[i]?.text;
       const isSelect = Array.isArray(data);
       let rows: any[];
       let fields: any[];
@@ -349,6 +352,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         fields,
         rowCount: data && data.length,
         affectedRows: changes || 0,
+        text
       };
     });
   }
@@ -512,11 +516,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
-    const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
-
     return {
-      totalRows,
-      columns,
       cursor: this.createCursor(this.isTempDB ? this.acquireConnection() : this.databasePath, query, [], chunkSize)
     };
   }
@@ -623,14 +623,25 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     // (Part 2 of 2 is in apps/studio/src/common/initializers/big_int_initializer.ts)
     connection.defaultSafeIntegers(true);
 
-    console.log("Extensions: ", this.server.config.runtimeExtensions)
+    log.info("Extensions: ", this.server.config.runtimeExtensions)
     if (this.server.config.runtimeExtensions && this.server.config.runtimeExtensions.length > 0) {
-      for (const extension of this.server.config.runtimeExtensions) {
-        try {
-          connection.loadExtension(extension)
-        } catch (err) {
-          log.error(`Unable to load extension file ${extension}`)
-          throw err
+      // Loading SQLite runtime extensions executes arbitrary native code from
+      // the extension path via dlopen()/LoadLibrary. Require the user to
+      // explicitly opt in through bksConfig.security.allowRuntimeExtensions
+      // before honouring any extension paths from the connection config.
+      if (!bksConfig.security.allowRuntimeExtensions) {
+        log.warn(
+          "Refusing to load SQLite runtime extensions: " +
+            "set [security] allowRuntimeExtensions = true in user.config.ini to opt in."
+        );
+      } else {
+        for (const extension of this.server.config.runtimeExtensions) {
+          try {
+            connection.loadExtension(extension)
+          } catch (err) {
+            log.error(`Unable to load extension file ${extension}`)
+            throw err
+          }
         }
       }
     }
@@ -722,14 +733,6 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         bksField: this.parseTableColumn(row),
       }
     })
-  }
-
-  private identifyCommands(queryText: string) {
-    try {
-      return identify(queryText, { strict: false, dialect: 'sqlite' });
-    } catch (err) {
-      return [];
-    }
   }
 
   private async insertRows(cli: any, inserts: TableInsert[]) {
