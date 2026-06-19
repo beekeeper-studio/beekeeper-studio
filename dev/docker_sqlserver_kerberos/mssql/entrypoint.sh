@@ -47,5 +47,8 @@ if ! "${SQLCMD}" -S localhost -U sa -P "${MSSQL_SA_PASSWORD}" -C -b -i /usr/loca
   echo "WARNING: setup.sql failed -- the [BKS\\testuser] login may be missing." >&2
 fi
 
+# Signal readiness (engine up + login created) for the compose healthcheck / test runner.
+touch /shared/mssql.ready
+
 # Hand the foreground back to the engine so the container's lifecycle tracks it.
 wait "${SQLPID}"

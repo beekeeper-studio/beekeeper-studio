@@ -3,9 +3,13 @@ name: SQL Server Kerberos integration test
 permissions:
   contents: read
 
-# Heavy multi-container job (Samba AD DC + SQL Server on Linux), so it runs only when the
-# integrated-auth code or this suite changes, plus on demand. The companion spec
-# self-skips in the normal integration matrix unless SQLSERVER_KERBEROS_TEST=1.
+# Heavy multi-container job (Samba AD DC + SQL Server on Linux + a dockerized Jest client),
+# so it runs only when the integrated-auth code or this suite changes, plus on demand. The
+# companion spec self-skips in the normal integration matrix unless SQLSERVER_KERBEROS_TEST=1.
+#
+# The entire environment lives in Docker (see dev/docker_sqlserver_kerberos/run.sh), so this
+# job needs nothing on the runner except Docker -- it runs the exact same command a developer
+# runs locally.
 on:
   pull_request:
     paths:
@@ -20,101 +24,10 @@ jobs:
   sqlserver-kerberos:
     runs-on: ubuntu-24.04
     # Tight enough that a stalled Kerberos handshake surfaces in minutes, not an hour.
-    timeout-minutes: 35
-    env:
-      KRB_REALM: BKS.TEST
-      KRB_TEST_USER: testuser
-      KRB_TEST_PASS: Beekeeper*1User
-      MSSQL_FQDN: mssql.bks.test
-      COMPOSE_DIR: dev/docker_sqlserver_kerberos
+    timeout-minutes: 40
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
 
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: '.nvmrc'
-
-      - name: Install workspace dependencies
-        uses: nick-fields/retry@v2
-        with:
-          timeout_minutes: 20
-          max_attempts: 3
-          command: yarn install --frozen-lockfile --network-timeout 100000
-        env:
-          HUSKY: "0"
-
-      - name: Install ODBC driver and Kerberos client
-        run: |
-          set -euxo pipefail
-          # Microsoft ODBC Driver 18 + tools (provides the GSSAPI/Kerberos client path
-          # msnodesqlv8 uses) and the MIT Kerberos client for kinit.
-          curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc > /dev/null
-          curl -fsSL https://packages.microsoft.com/config/ubuntu/24.04/prod.list | sudo tee /etc/apt/sources.list.d/mssql-release.list > /dev/null
-          echo "krb5-config krb5-config/default_realm string ${KRB_REALM}" | sudo debconf-set-selections
-          sudo apt-get update
-          sudo ACCEPT_EULA=Y DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            msodbcsql18 mssql-tools18 unixodbc-dev krb5-user
-          echo "/opt/mssql-tools18/bin" >> "$GITHUB_PATH"
-
-      - name: Wire up host Kerberos (krb5.conf, hosts, ticket)
-        run: |
-          set -euxo pipefail
-          # Point the realm at the dockerized KDC, exposed on localhost.
-          sudo cp "${COMPOSE_DIR}/krb5.conf" /etc/krb5.conf
-          # The KDC alias and the SQL Server FQDN both resolve to the published ports.
-          echo "127.0.0.1 dc.bks.test mssql.bks.test" | sudo tee -a /etc/hosts
-
-      - name: Start Samba AD DC and SQL Server
-        run: |
-          set -euxo pipefail
-          docker compose -f "${COMPOSE_DIR}/docker-compose.yml" up -d --build --wait --wait-timeout 600
-
-      - name: Obtain a Kerberos ticket for the test user
-        run: |
-          set -euxo pipefail
-          echo "${KRB_TEST_PASS}" | kinit "${KRB_TEST_USER}@${KRB_REALM}"
-          klist
-
-      - name: Pre-flight integrated auth and confirm KERBEROS
-        run: |
-          set -euxo pipefail
-          # Fail early with a clean diagnostic if the integrated login or the Kerberos
-          # negotiation is broken before spending time booting Jest/Electron.
-          sqlcmd -S "${MSSQL_FQDN},1433" -E -C -Q "SELECT SUSER_SNAME() AS loginName;"
-          scheme=$(sqlcmd -S "${MSSQL_FQDN},1433" -E -C -h -1 -W -Q \
-            "SET NOCOUNT ON; SELECT auth_scheme FROM sys.dm_exec_connections WHERE session_id = @@SPID;")
-          echo "Negotiated auth_scheme: ${scheme}"
-          if [ "${scheme}" != "KERBEROS" ]; then
-            echo "Expected KERBEROS, got '${scheme}'." >&2
-            exit 1
-          fi
-
-      - name: Run SQL Server Kerberos Jest spec
-        working-directory: apps/studio
-        env:
-          SQLSERVER_KERBEROS_TEST: '1'
-          SQLSERVER_KERBEROS_HOST: mssql.bks.test
-          SQLSERVER_KERBEROS_PORT: '1433'
-        # --forceExit: msnodesqlv8 pool teardown can leave a native ODBC handle that keeps
-        # Node from exiting cleanly even after tests pass. --testTimeout caps any hang at 90s.
-        run: yarn internal:integration --testPathPattern sqlserver-kerberos --runInBand --ci --forceExit --testTimeout=90000
-
-      - name: Collect diagnostics on failure
-        if: failure()
-        run: |
-          echo "===== klist ====="; klist || true
-          echo "===== docker compose ps ====="
-          docker compose -f "${COMPOSE_DIR}/docker-compose.yml" ps || true
-          echo "===== samba logs ====="
-          docker compose -f "${COMPOSE_DIR}/docker-compose.yml" logs samba --tail 200 || true
-          echo "===== mssql logs ====="
-          docker compose -f "${COMPOSE_DIR}/docker-compose.yml" logs mssql --tail 200 || true
-          echo "===== SQL Server ERRORLOG ====="
-          docker compose -f "${COMPOSE_DIR}/docker-compose.yml" exec -T mssql \
-            bash -lc 'tail -n 200 /var/opt/mssql/log/errorlog' || true
-
-      - name: Tear down containers
-        if: always()
-        run: docker compose -f "${COMPOSE_DIR}/docker-compose.yml" down -v || true
+      - name: Run the dockerized Kerberos integration test
+        run: bash dev/docker_sqlserver_kerberos/run.sh
