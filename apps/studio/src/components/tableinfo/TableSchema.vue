@@ -215,12 +215,15 @@ export default Vue.extend({
     hasEdits() {
       return this.editCount > 0
     },
-    // Editing the next AUTO_INCREMENT value inline is currently a MySQL/MariaDB feature.
-    // The mysql dialect covers mysql, mariadb and tidb. A dialect can opt out via
+    // Editing the next AUTO_INCREMENT value inline is a MySQL/MariaDB feature. The mysql
+    // dialect also covers TiDB, but TiDB allocates IDs in cached per-node ranges with
+    // different AUTO_INCREMENT semantics (so the clamp/next-value model here doesn't apply);
+    // it's excluded by connectionType. A dialect can also opt out via
     // disabledFeatures.alter.editAutoIncrement.
     canEditAutoIncrement() {
       return this.editable &&
         this.dialect === 'mysql' &&
+        this.usedConfig?.connectionType !== 'tidb' &&
         !this.disabledFeatures?.alter?.editAutoIncrement
     },
     tableColumns() {
