@@ -477,22 +477,44 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       connection,
     });
 
-    return rows.map((row) => ({
-      tableName: row.table_name,
-      columnName: row.column_name,
-      dataType: row.column_type,
-      ordinalPosition: Number(row.ordinal_position),
-      nullable: row.is_nullable === "YES",
-      defaultValue: this.resolveDefault(row.column_default),
-      extra: _.isEmpty(row.extra) ? null : row.extra,
-      hasDefault: this.hasDefaultValue(this.resolveDefault(row.column_default), _.isEmpty(row.extra) ? null : row.extra),
-      comment: _.isEmpty(row.column_comment) ? null : row.column_comment,
-      generated: /^(STORED|VIRTUAL) GENERATED$/.test(row.extra || ""),
-      generationExpression: row.generation_expression,
-      characterSet: row.character_set,
-      collation: row.collation,
-      bksField: this.parseTableColumn(row),
-    }));
+    // The next AUTO_INCREMENT value is a table-level property, so it isn't returned by the
+    // per-column query above. Read it once (only when a specific table was requested) and
+    // attach it to that table's auto-increment column below.
+    let autoIncrementValue: number | null = null;
+    if (table) {
+      const aiSql = `
+        SELECT auto_increment as 'auto_increment'
+        FROM information_schema.tables
+        WHERE table_schema = database()
+        AND table_name = ?
+        LIMIT 1
+      `;
+      const aiResult = await this.driverExecuteSingle(aiSql, { params: [table], connection });
+      const aiRow = aiResult.rows?.[0];
+      autoIncrementValue = aiRow != null && aiRow.auto_increment != null ? Number(aiRow.auto_increment) : null;
+    }
+
+    return rows.map((row) => {
+      const extra = _.isEmpty(row.extra) ? null : row.extra;
+      const isAutoIncrement = !!extra && /auto_increment/i.test(extra);
+      return {
+        tableName: row.table_name,
+        columnName: row.column_name,
+        dataType: row.column_type,
+        ordinalPosition: Number(row.ordinal_position),
+        nullable: row.is_nullable === "YES",
+        defaultValue: this.resolveDefault(row.column_default),
+        extra,
+        hasDefault: this.hasDefaultValue(this.resolveDefault(row.column_default), extra),
+        comment: _.isEmpty(row.column_comment) ? null : row.column_comment,
+        generated: /^(STORED|VIRTUAL) GENERATED$/.test(row.extra || ""),
+        generationExpression: row.generation_expression,
+        characterSet: row.character_set,
+        collation: row.collation,
+        autoIncrement: isAutoIncrement ? autoIncrementValue : null,
+        bksField: this.parseTableColumn(row),
+      };
+    });
   }
 
   async listTableTriggers(
@@ -1287,6 +1309,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
   async alterTable(change: AlterTableSpec): Promise<void> {
     await this.runWithTransaction(async (connection) => {
       const sql = await this.alterTableSql(change);
+      // No SQL is produced when a change collects to nothing (e.g. an edit that was
+      // reverted to its original value). Skip execution rather than run an empty query.
+      if (!sql) return;
       return await this.driverExecuteSingle(sql, { connection });
     });
   }

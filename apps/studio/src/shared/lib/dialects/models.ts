@@ -314,6 +314,9 @@ export interface AlterTableSpec {
   adds?: SchemaItem[]
   drops?: string[]
   reorder? : { newOrder: ExtendedTableColumn[], oldOrder: ExtendedTableColumn[] } | null
+  // Table-level next AUTO_INCREMENT value (MySQL/MariaDB). When set, emits
+  // `ALTER TABLE <t> AUTO_INCREMENT = <n>`. Ignored by dialects that don't support it.
+  autoIncrement?: number
 }
 
 export interface PartitionExpressionChange {

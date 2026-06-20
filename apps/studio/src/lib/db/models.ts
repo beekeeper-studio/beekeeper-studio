@@ -105,6 +105,10 @@ export interface ExtendedTableColumn extends SchemaItem {
   characterSet?: string
   collation?: string
   array?: boolean
+  // For auto-increment columns (currently MySQL/MariaDB only): the table's current
+  // AUTO_INCREMENT value, i.e. the value the next inserted row will receive. Null/undefined
+  // for non auto-increment columns and engines that don't expose it.
+  autoIncrement?: number | null
   bksField: BksField
 }
 
