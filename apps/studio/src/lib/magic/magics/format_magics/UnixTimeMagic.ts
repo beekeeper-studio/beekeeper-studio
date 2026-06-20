@@ -74,7 +74,7 @@ function formatDate(value: number, useUtc: boolean, useIso: boolean): string {
       const locale = window.platformInfo?.locale || 'en-US';
       const formatterOptions: Intl.DateTimeFormatOptions = {
         dateStyle: 'short',
-        timeStyle: 'short'
+        timeStyle: 'medium'
       };
 
       if (useUtc) {
