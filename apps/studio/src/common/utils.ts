@@ -377,3 +377,9 @@ export function isNumericDataType (dataType) {
 
   return numericStarts.some(t => base.startsWith(t))
 }
+
+/** Escape a string value for use in SQL by doubling single quotes */
+export function escapeSqlString(value: any): string | null {
+  if (_.isNil(value)) return null
+  return value.toString().replaceAll("'", "''")
+}

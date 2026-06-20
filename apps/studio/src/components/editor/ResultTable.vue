@@ -404,7 +404,7 @@ import { stringToTypedArray } from '@/common/utils'
 
           return [
             this.openEditorMenu(cell),
-            this.setAsNullMenuItem(range),
+            this.setAsNullMenuItem(ranges),
             { separator: true },
             ...copyActionsMenu({
               ranges: cell.getTable().getRanges(),

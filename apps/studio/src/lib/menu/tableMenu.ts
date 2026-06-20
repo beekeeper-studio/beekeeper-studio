@@ -8,7 +8,7 @@ import {
 import { markdownTable } from "markdown-table";
 import { ElectronPlugin } from "@/lib/NativeWrapper";
 import Papa from "papaparse";
-import { stringifyRangeData, rowHeaderField, isNumericDataType } from "@/common/utils";
+import { stringifyRangeData, rowHeaderField, isNumericDataType, escapeSqlString } from "@/common/utils";
 import { escapeHtml } from "@shared/lib/tabulator";
 import _ from "lodash";
 // ?? not sure about this but :shrug:
@@ -173,10 +173,10 @@ export async function copyRanges(options: {
         schema: options.schema
       });
       const dataType = columns.find(c => c.columnName === colDataType)?.dataType
-      const isNumericType = isNumericDataType(dataType)
+      const isNumericType = dataType ? isNumericDataType(dataType) : false
       const textArr = rangeData.map(rd => {
         const [data] = Object.values(rd)
-        return isNumericType ? data : `'${data}'`
+        return isNumericType ? data : `'${escapeSqlString(data)}'`
       })
       text = `(\n${textArr.join(',\n')}\n)`
       break
