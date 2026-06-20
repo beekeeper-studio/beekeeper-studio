@@ -496,7 +496,9 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
 
     return rows.map((row) => {
       const extra = _.isEmpty(row.extra) ? null : row.extra;
-      const isAutoIncrement = !!extra && /auto_increment/i.test(extra);
+      // `auto_increment` is the entire EXTRA value when present (it never co-occurs with
+      // other flags like ON UPDATE / GENERATED), so match it exactly.
+      const isAutoIncrement = !!extra && /^auto_increment$/i.test(String(extra).trim());
       return {
         tableName: row.table_name,
         columnName: row.column_name,

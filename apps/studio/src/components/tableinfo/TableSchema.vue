@@ -295,8 +295,9 @@ export default Vue.extend({
           editable: this.isAutoIncrementCellEditable.bind(this),
           cellEdited: this.cellEdited,
           cssClass: this.customColumnCssClass('alterColumn'),
-          formatter: this.cellFormatter,
-          minWidth: 90,
+          formatter: this.extraCellFormatter,
+          // A touch wider so the "auto_increment" label + value fit without truncation.
+          minWidth: 150,
         }),
         (this.disabledFeatures?.comments ? null : {
           title: 'Comment',
@@ -336,7 +337,13 @@ export default Vue.extend({
       const keys = _.keyBy(this.primaryKeys, 'columnName')
       return this.table.columns.map((c) => {
         const key = keys[c.columnName]
-        const isAutoIncrement = this.canEditAutoIncrement && !!c.extra && /auto_increment/i.test(c.extra)
+        // Treat as the editable auto-increment cell only when (a) the dialect supports it,
+        // (b) the current value is actually readable, and (c) EXTRA is exactly
+        // `auto_increment` (anchored — it never co-occurs with other EXTRA flags).
+        const isAutoIncrement = this.canEditAutoIncrement
+          && c.autoIncrement != null
+          && !!c.extra
+          && /^auto_increment$/i.test(String(c.extra).trim())
         const row = {
           primary: !!key || null,
           ...c
@@ -344,10 +351,11 @@ export default Vue.extend({
         if (isAutoIncrement) {
           // Surface the table's next AUTO_INCREMENT value in the Extra cell so it can be
           // viewed and edited inline. Keep the original "auto_increment" keyword in
-          // `extraKeyword` so the column-reorder DDL still emits AUTO_INCREMENT correctly.
+          // `extraKeyword` so the formatter can label it and the column-reorder DDL still
+          // emits AUTO_INCREMENT correctly.
           row.autoIncrementColumn = true
           row.extraKeyword = c.extra
-          row.extra = c.autoIncrement != null ? String(c.autoIncrement) : c.extra
+          row.extra = String(c.autoIncrement)
         }
         return row
       })
@@ -601,8 +609,19 @@ export default Vue.extend({
     },
     // Read the current next AUTO_INCREMENT value from the freshly loaded columns.
     readCurrentAutoIncrement(): number | null {
-      const col = (this.table.columns || []).find((c) => !!c.extra && /auto_increment/i.test(c.extra))
+      const col = (this.table.columns || []).find((c) => !!c.extra && /^auto_increment$/i.test(String(c.extra).trim()))
       return col && col.autoIncrement != null ? Number(col.autoIncrement) : null
+    },
+    // Keeps the "auto_increment" keyword visible to the left of the value in the display
+    // state, so the cell reads e.g. "auto_increment 1042" without needing a hover. The edit
+    // field still opens with just the raw number. Other Extra cells use the normal formatter.
+    extraCellFormatter(cell: CellComponent, formatterParams: any, onRendered: any): string {
+      if (this.isAutoIncrementRow(cell.getRow())) {
+        const label = escapeHtml(`${cell.getRow().getData().extraKeyword ?? 'auto_increment'}`)
+        const value = escapeHtml(`${cell.getValue() ?? ''}`)
+        return `<span class="auto-increment-label" style="opacity:0.55;margin-right:6px;">${label}</span>${value}`
+      }
+      return this.cellFormatter(cell, formatterParams, onRendered)
     },
     extraCellTooltip(_e: any, cell: CellComponent, _onRendered: any): string {
       if (this.isAutoIncrementRow(cell.getRow())) {
