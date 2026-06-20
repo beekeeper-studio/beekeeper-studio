@@ -17,8 +17,12 @@
     <div class="form-group" v-if="folders && folders.length > 0">
       <label>Folder <i v-if="!isUltimate && !isCloud" class="material-icons menu-icon">stars</i></label>
       <select v-model="config.connectionFolderId" :disabled="!isUltimate && !isCloud">
-        <option :value="null">No folder</option>
-        <option v-for="f in folders" :key="f.id" :value="f.id">{{ f.name }}</option>
+        <option :value="null">
+          No folder
+        </option>
+        <option v-for="f in folders" :key="f.id" :value="f.id">
+          {{ f.name }}
+        </option>
       </select>
     </div>
 

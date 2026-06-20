@@ -1,7 +1,7 @@
 ---
 title: Amazon RDS
 summary: How to connect to Amazon's 'special' RDS databases using native authentication types
-icon: material/cloud
+icon: amazonrds
 ---
 
 Connecting to Amazon RDS requires you to set up an IAM user and ensure your security group allows traffic from your IP address.
@@ -58,6 +58,11 @@ Uses your local AWS CLI session to retrieve an access token.
 ![AWS IAM CLI](../../assets/images/aws-iam-cli.png)
 
 [Install AWS CLI From Amazon](https://aws.amazon.com/cli/)
+
+!!! tip "AWS CLI v2 recommended"
+    Profile auto-discovery uses `aws configure list-profiles`, which requires AWS CLI v2 (or v1 ≥ 1.16.146). Older v1 builds — common on Debian/Ubuntu's distribution package (`apt install awscli`) — don't support `list-profiles`, so the profile dropdown stays empty and an "Unable to list AWS profiles" warning appears. You can still type a profile name manually. [Install AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
+
+The path to the `aws` binary is detected automatically — common install locations are checked, including Homebrew. If it isn't found, click **Find** to retry or pick the binary manually with the file picker.
 
 **Steps:**
 1. Make sure AWS Credentials are set

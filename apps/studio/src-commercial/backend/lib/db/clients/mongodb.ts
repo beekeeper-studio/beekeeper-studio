@@ -2,7 +2,6 @@ import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
 import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
 import { AggregationCursor, Collection, Db, Document, MongoClient, ObjectId } from 'mongodb';
-import { identify } from 'sql-query-identifier';
 import rawLog from '@bksLogger';
 import { BksField, BksFieldType, CancelableQuery, ExtendedTableColumn, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableDelete, TableFilter, TableIndex, TableInsert, TableOrView, TableProperties, TableResult, TableTrigger, TableUpdate, TableUpdateResult } from "@/lib/db/models";
 import { CreateTableSpec, IndexAlterations, TableKey } from "@/shared/lib/dialects/models";
@@ -46,6 +45,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, mongoContext, server, database);
+    this.dialect = 'psql';
   }
 
   async connect(): Promise<void> {
@@ -235,7 +235,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   override async setElementName(elementName: string, newElementName: string, typeOfElement:DatabaseElement): Promise<void> {
     const db = this.conn.db(this.db);
 
-    if (typeOfElement == DatabaseElement.TABLE) {
+    if (typeOfElement === DatabaseElement.TABLE) {
       try {
         // Check if target name already exists
         const targetCollections = await db.listCollections({ name: newElementName }).toArray();
@@ -461,7 +461,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async updateValues(updates: TableUpdate[], connection: Db) {
-    let results = [];
+    const results = [];
     const errors = [];
 
     for (const update of updates) {
@@ -488,7 +488,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         const filter = { _id: idValue };
 
         // Handle value conversion for special types if needed
-        let fieldValue = update.value;
+        const fieldValue = update.value;
 
         // Create the update document
         const updateDoc = {
@@ -591,7 +591,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       const collection = db.collection(changes.table);
 
       // Process index additions
-      for (let addition of changes.additions) {
+      for (const addition of changes.additions) {
         try {
           // Convert column order specifications to MongoDB format
           const indexSpec = addition.columns.reduce((obj, col) => ({
@@ -622,7 +622,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       }
 
       // Process index drops
-      for (let drop of changes.drops) {
+      for (const drop of changes.drops) {
         try {
           log.debug(`Dropping index ${drop.name} from ${changes.table}`);
           await collection.dropIndex(drop.name);
@@ -700,7 +700,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
 
   async executeQuery(queryText: string, _options?: any): Promise<NgQueryResult[]> {
     const queries = this.identifyCommands(queryText);
-    let results = [];
+    const results = [];
 
     for (let i = 0; i < queries.length; i++) {
       const query = queries[i];
@@ -743,20 +743,12 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     return results;
   }
 
-  private identifyCommands(queryText: string) {
-    try {
-      return identify(queryText, { strict: false, dialect: 'psql' });
-    } catch (err) {
-      return [];
-    }
-  }
-
   async executeCommand(commandText: string, _options?: any): Promise<NgQueryResult[]> {
-    let results: NgQueryResult[] = [];
+    const results: NgQueryResult[] = [];
 
     const listener = {
       onPrint: (value): void => {
-        value.map((v) => {
+        value.forEach((v) => {
           results.push({
             output: v.printable
           })
@@ -900,7 +892,6 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     };
 
     return {
-      totalRows: 0,// need to figure this out
       columns,
       cursor: new MongoDBCursor(cursorOpts)
     };
@@ -913,15 +904,9 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       chunkSize
     };
 
-    const { columns, totalRows } = await this.getColumnsAndTotalRows(query);
-
     return {
-      totalRows,
-      columns,
       cursor: new MongoDBCursor(cursorOpts)
     }
-    log.error('MongoDB does not support querying');
-    return null;
   }
 
   wrapIdentifier(_value: string): string {

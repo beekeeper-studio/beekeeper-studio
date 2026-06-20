@@ -1,19 +1,29 @@
 <template>
   <div
     class="list-item"
-    @contextmenu.prevent.stop="openContextMenu($event, item)"
+    @contextmenu.prevent="openContextMenu($event, item)"
   >
     <a
       class="list-item-btn"
-      :title="truncatedText"
+      v-tooltip.bottom.delay="{
+        content: truncatedText,
+        delay: { show: 500 },
+      }"
       @click.prevent="$emit('select', item)"
       @dblclick.prevent="$emit('open', item)"
       :class="{active, selected}"
     >
       <i class="item-icon query material-icons">code</i>
-      <div class="list-title flex-col">
-        <span class="item-text title truncate expand">{{ item.title }}</span>
-        <span class="database subtitle"><span>{{ subtitle }}</span></span>
+      <div class="list-text">
+        <div class="list-title flex-col">
+          <editable-text
+            :initial-value="item.title"
+            :rename="rename"
+            @submit="submitRename"
+            @cancel="rename = false"
+          />
+        </div>
+        <div class="database subtitle"><span>{{ subtitle }}</span></div>
       </div>
     </a>
   </div>
@@ -24,17 +34,21 @@ import { IQueryFolder } from '@/common/interfaces/IQueryFolder'
 import Vue from 'vue'
 import { mapState, mapGetters } from 'vuex'
 import TimeAgo from 'javascript-time-ago'
+import EditableText from '@/components/common/EditableText.vue'
 
 export default Vue.extend({
+  components: { EditableText },
   props: ['item', 'selected', 'active'],
   data: () => ({
-    timeAgo: new TimeAgo('en-US')
+    timeAgo: new TimeAgo('en-US'),
+    rename: false,
   }),
   computed: {
     ...mapGetters(['isCloud']),
     ...mapState('data/queryFolders', {'folders': 'items'}),
     truncatedText() {
-      return _.truncate(this.item.excerpt, { length: 100});
+      const excerpt: string = this.item.excerpt ?? ''
+      return _.truncate(excerpt.trim().replaceAll('\n', ''), { length: 60 })
     },
     moveToOptions() {
       const rootById: Record<number, string> = {}
@@ -70,6 +84,7 @@ export default Vue.extend({
     async moveToRoot(item) {
       try {
         const updated = _.clone(item)
+
         updated.queryFolderId = null
         await this.$store.dispatch('data/queries/save', updated)
       } catch (ex) {
@@ -92,6 +107,13 @@ export default Vue.extend({
       }
     },
     openContextMenu(event, item) {
+      // Stop here and propagate the event if right clicking an input element
+      if (event.target.tagName === 'INPUT') {
+        return;
+      }
+
+      event.stopPropagation();
+
       const options = [
         {
           name: "Open",
@@ -99,7 +121,9 @@ export default Vue.extend({
         },
         {
           name: "Rename",
-          handler: ({ item }) => this.$emit('rename', item)
+          handler: () => {
+            this.rename = true;
+          },
         },
         {
           name: "Duplicate",
@@ -108,6 +132,10 @@ export default Vue.extend({
         {
           name: "Delete",
           handler: ({ item }) => this.$emit('remove', item)
+        },
+        {
+          name: "View Edit History",
+          handler: ({ item }) => this.$emit('open-history', item)
         },
         {
           type: 'divider'
@@ -129,7 +157,37 @@ export default Vue.extend({
         options
       })
     },
+    async submitRename(title) {
+      if (!title || title === this.item.title) {
+        this.rename = false;
+        return;
+      }
+
+      try {
+        await this.$store.dispatch('data/queries/save', {
+          id: this.item.id,
+          title,
+        });
+      } catch (ex) {
+        this.$noty.error(`Rename error: ${ex.userMessage ?? ex.message}`)
+      } finally {
+        this.rename = false;
+      }
+    },
   }
-  
+
 })
 </script>
+<style lang="scss" scoped>
+.list-text {
+  flex-grow: 1;
+  font-size: 1rem;
+
+}
+
+.list-item-btn .list-text .list-title {
+  position: relative;
+  width: 100%;
+  overflow: visible;
+}
+</style>

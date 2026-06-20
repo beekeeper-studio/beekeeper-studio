@@ -26,7 +26,14 @@ export function keysToStatus(licenses: LicenseKey[]): LicenseStatus {
     const currentLicense = _.orderBy(licenses, ["validUntil"], ["desc"])[0];
     status.license = currentLicense;
 
-    if (currentDate > currentLicense.supportUntil) {
+    // "Expired support date" indicates a paid lifetime license whose
+    // support window has ended but is still valid for the version it was
+    // sold against. Trial licenses are time-limited previews, not lifetime
+    // licenses, so this condition does not apply to them.
+    if (
+      currentLicense.licenseType !== "TrialLicense" &&
+      currentDate > currentLicense.supportUntil
+    ) {
       status.condition.push("Expired support date");
     }
 

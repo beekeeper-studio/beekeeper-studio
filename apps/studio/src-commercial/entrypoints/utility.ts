@@ -16,6 +16,7 @@ import { QueryHandlers } from '@/handlers/queryHandlers';
 import { TabHistoryHandlers } from '@/handlers/tabHistoryHandlers'
 import { ExportHandlers } from '@commercial/backend/handlers/exportHandlers';
 import { BackupHandlers } from '@commercial/backend/handlers/backupHandlers';
+import { CliHandlers } from '@commercial/backend/handlers/cliHandlers';
 import { AwsHandlers } from '@commercial/backend/handlers/awsHandlers';
 import { ImportHandlers } from '@commercial/backend/handlers/importHandlers';
 import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
@@ -80,6 +81,7 @@ export const handlers: Handlers = {
   ...ImportHandlers,
   ...AppDbHandlers,
   ...BackupHandlers,
+  ...CliHandlers,
   ...AwsHandlers,
   ...FileHandlers,
   ...EnumHandlers,
@@ -130,7 +132,7 @@ process.parentPort.on('message', async ({ data, ports }) => {
     case 'close':
       log.info('REMOVING STATE FOR: ', sId);
       state(sId).port.close();
-      removeState(sId);
+      await removeState(sId);
       break;
     default:
       log.error('UNRECOGNIZED MESSAGE TYPE RECEIVED FROM MAIN PROCESS');

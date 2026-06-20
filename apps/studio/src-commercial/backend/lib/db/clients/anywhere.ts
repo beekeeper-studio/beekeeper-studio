@@ -13,6 +13,7 @@ import { SqlAnywhereConn, SqlAnywherePool } from './anywhere/SqlAnywherePool';
 import _ from 'lodash';
 import { joinFilters } from '@/common/utils';
 import { SqlAnywhereChangeBuilder } from '@/shared/lib/sql/change_builder/SqlAnywhereChangeBuilder';
+import { SqlAnywhereCursor } from './anywhere/SqlAnywhereCursor';
 
 const D = SqlAnywhereData;
 const log = rawLog.scope('sql-anywhere');
@@ -911,7 +912,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
 
     // Add column definitions
     const columnDefs = columns.map(c => {
-      let dataType = c.domain_name.toLowerCase();
+      const dataType = c.domain_name.toLowerCase();
 
       // Start with column name
       let def = `  ${c.column_name} `;
@@ -1170,8 +1171,6 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
 
     const conn = await this.pool.connect();
 
-    // Import SqlAnywhereCursor
-    const { SqlAnywhereCursor } = await import('./anywhere/SqlAnywhereCursor');
 
     return {
       totalRows: Number(rowCount),
@@ -1186,7 +1185,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     };
   }
 
-  queryStream(query: string, chunkSize: number): Promise<StreamResults> {
+  queryStream(_query: string, _chunkSize: number): Promise<StreamResults> {
     throw new Error('Method not implemented.');
   }
 
@@ -1219,7 +1218,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     const runQuery = async (connection: SqlAnywhereConn) => {
       const queries = this.identifyCommands(q);
       const results: SQLAnywhereResult[] = [];
-      for (let query of queries) {
+      for (const query of queries) {
         log.info('EXECUTING QUERY: ', query.text);
         const result = await connection.query(query.text, autoCommit);
         log.info('RECEIVED RESULT: ', result);
@@ -1252,14 +1251,6 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
       return await child(connection)
     } finally {
       await connection.release();
-    }
-  }
-
-  private identifyCommands(queryText: string) {
-    try {
-      return identify(queryText, { strict: false, dialect: 'mssql' });
-    } catch (err) {
-      return [];
     }
   }
 

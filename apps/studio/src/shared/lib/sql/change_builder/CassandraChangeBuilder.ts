@@ -115,8 +115,8 @@ export class CassandraChangeBuilder extends ChangeBuilderBase {
     */
     const renameColumnAlterations = spec.alterations?.filter(v => v.changeType === 'columnName') ?? []
     const alterations = [
-      ...spec.adds?.map(v => this.addColumn(v)),
-      ...spec.drops?.map(v => this.dropColumn(v))
+      ...(spec.adds?.map(v => this.addColumn(v)) ?? []),
+      ...(spec.drops?.map(v => this.dropColumn(v)) ?? [])
     ].filter((i) => !_.isEmpty(i))
 
     const fullRenames = renameColumnAlterations

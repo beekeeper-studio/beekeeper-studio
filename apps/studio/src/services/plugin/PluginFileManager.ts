@@ -280,11 +280,20 @@ export default class PluginFileManager {
   }
 
   private getPath(manifest: Manifest, filename: string): string {
-    return path.join(
+    const pluginRoot = path.resolve(
       this.options.pluginsDirectory,
-      manifest.id,
-      path.normalize(filename)
+      manifest.id
     );
+    const resolved = path.resolve(pluginRoot, filename);
+    if (
+      resolved !== pluginRoot &&
+      !resolved.startsWith(pluginRoot + path.sep)
+    ) {
+      throw new Error(
+        `Refusing to access path outside plugin directory: ${filename}`
+      );
+    }
+    return resolved;
   }
 
   readAsset(manifest: Manifest, filename: string): string {

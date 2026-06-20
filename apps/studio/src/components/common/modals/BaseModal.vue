@@ -1,9 +1,17 @@
 <template>
   <portal to="modals">
-    <modal :name="name" class="base-modal-root">
+    <modal
+      :name="name"
+      @before-open="$emit('before-open', $event)"
+      @opened="$emit('opened')"
+      @closed="$emit('closed')"
+      class="base-modal-root"
+    >
       <div v-kbd-trap="true" class="base-modal">
         <div class="base-modal-header">
-          <div class="base-modal-title"><slot name="title" :close="close" /></div>
+          <div class="base-modal-title">
+            <slot name="title" :close="close" />
+          </div>
           <a
             href="#"
             class="base-modal-close"
@@ -65,26 +73,27 @@ export default Vue.extend({
   line-height: 1;
   font-weight: 500;
   margin: 0;
-}
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 
-.base-modal-title i.material-icons {
-  vertical-align: middle;
-  font-size: 1.1rem;
+  ::v-deep i.material-icons {
+    font-size: 1.1rem;
+  }
 }
 
 .base-modal-close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.625rem;
-  min-width: 1.625rem;
-  height: 1.625rem;
-  line-height: 1.625rem;
-  border-radius: 1.625rem;
+  width: 1.8rem;
+  min-width: 1.8rem;
+  height: 1.8rem;
+  line-height: 1.8rem;
+  border-radius: 1.8rem;
   padding: 0;
   margin: 0;
-  margin-right: -0.35em;
-  text-align: center;
+  margin-right: -0.15em;
   box-shadow: none;
   user-select: none;
   transition: background 0.15s ease-in-out;

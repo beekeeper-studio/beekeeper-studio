@@ -41,4 +41,9 @@ export interface IPlatformInfo {
   parsedAppVersion: BksVersion,
   cloudUrl: string,
   locale: string,
+  // Resolved log level pushed from main when the renderer requests
+  // platformInfo. Renderer applies this to its console + ipc transports
+  // so BKS_LOG_LEVEL / DEBUG affect what the renderer actually emits.
+  // Mirrors the LogLevel union from the shared logger library.
+  logLevel?: 'error' | 'warn' | 'info' | 'verbose' | 'debug' | 'silly',
 }
