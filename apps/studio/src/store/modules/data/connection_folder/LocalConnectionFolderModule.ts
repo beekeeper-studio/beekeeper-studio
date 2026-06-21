@@ -36,6 +36,9 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     }
   },
   actions: {
+    async initialize(context) {
+      await context.dispatch('load');
+    },
     async load(context) {
       context.commit('error', null)
       await safely(context, async () => {

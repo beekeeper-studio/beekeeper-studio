@@ -18,14 +18,20 @@
             <content-placeholder-heading />
           </div>
           <div class="card-flat padding" :class="determineLabelColor" v-else>
-            <div class="flex flex-between">
-              <h3 class="card-title" v-if="!pageTitle">
-                New Connection
-              </h3>
-              <h3 class="card-title" v-if="pageTitle">
+            <div class="connection-heading">
+              <h3 class="card-title">
                 {{ pageTitle }}
               </h3>
-              <button class="btn btn-fab" @click="openMenu">
+              <button
+                v-if="isCloud && !isNewConnection"
+                type="button"
+                class="btn btn-link btn-icon btn-small share-btn"
+                @click="share"
+              >
+                <i class="material-icons">share</i>
+                Share
+              </button>
+              <button class="btn btn-fab more-btn" @click="openMenu">
                 <i class="material-icons">more_vert</i>
               </button>
             </div>
@@ -376,8 +382,11 @@ export default Vue.extend({
       if (this.isUltimate) return false
       return isUltimateType(this.config.connectionType)
     },
+    isNewConnection() {
+      return _.isNil(this.config) || _.isNil(this.config.id);
+    },
     pageTitle() {
-      if (_.isNull(this.config) || _.isUndefined(this.config.id)) {
+      if (this.isNewConnection) {
         return "New Connection"
       } else {
         return this.config.name
@@ -656,7 +665,13 @@ export default Vue.extend({
           },
         ],
       });
-    }
+    },
+    share() {
+      this.trigger(AppEvent.openShareModal, {
+        subjectId: this.config.id,
+        subjectType: "Connection",
+      });
+    },
   },
 })
 </script>
@@ -672,6 +687,10 @@ export default Vue.extend({
   .share-btn,
   &::v-deep .import-button {
     flex-shrink: 0;
+  }
+
+  .more-btn:not(:hover) {
+    background-color: transparent;
   }
 }
 </style>

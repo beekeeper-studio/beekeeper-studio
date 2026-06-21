@@ -156,7 +156,10 @@ async function transformConn(obj: SavedConnection, cls: any): Promise<IConnectio
     obj.readOnlyMode = false;
   }
 
-  const newObj = {} as unknown as SavedConnection;
+  const newObj = {
+    canRead: true,
+    canWrite: true,
+  } as unknown as SavedConnection;
   return cls.merge(newObj, obj);
 }
 

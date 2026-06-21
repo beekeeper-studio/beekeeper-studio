@@ -1,6 +1,6 @@
+import { IShareable } from "./IShareable"
 
-
-export default interface ISavedQuery {
+export default interface ISavedQuery extends IShareable {
   id: number | null
   title: string
   // same as title, damn you title
@@ -11,13 +11,4 @@ export default interface ISavedQuery {
   position?: number
   createdAt: Date | number | null
   updatedAt: Date | null
-  user?: {
-    id: number
-    name: string
-  }
-
-  /** These are returned by the cloud API. It's always defined unless this
-  * interface was obtained from utility. */
-  canWrite?: boolean;
-  canRead?: boolean;
 }

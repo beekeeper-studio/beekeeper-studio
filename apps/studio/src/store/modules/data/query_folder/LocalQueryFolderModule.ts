@@ -36,6 +36,9 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
     }
   },
   actions: {
+    async initialize(context) {
+      context.dispatch('load');
+    },
     async load(context) {
       context.commit('error', null)
       await safely(context, async () => {

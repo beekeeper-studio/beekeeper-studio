@@ -20,11 +20,14 @@ export abstract class GenericController<T extends HasId> {
   name: string
   plural: string
 
-  async list(updatedSince?: number): Promise<T[]> {
+  async list(updatedSince?: number, options?: { extraParams?: Record<string, unknown> }): Promise<T[]> {
     const params = updatedSince ? {
       updated_since: updatedSince,
       slim: true
     } : { slim: true }
+    if (options?.extraParams) {
+      Object.assign(params, options.extraParams);
+    }
     const response = await this.axios.get(url(this.path), { params })
     return res(response, this.plural)
   }
@@ -45,6 +48,13 @@ export abstract class GenericController<T extends HasId> {
 
     const response = await this.axios.post(url(this.path), q)
     return res(response, this.name)
+  }
+
+  async createBulk(qs: Omit<T, 'id'>[]): Promise<T[]> {
+    if (qs.some((q) => q.id)) throw new CloudError(400, `Cannot create ${this.name} - it already has an ID`)
+
+    const response = await this.axios.post(url(this.path, 'bulk'), { [this.plural]: qs })
+    return res(response, this.plural)
   }
 
   async update(q: T): Promise<T> {

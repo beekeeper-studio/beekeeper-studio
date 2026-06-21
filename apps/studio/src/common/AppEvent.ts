@@ -84,13 +84,23 @@ export enum AppEvent {
    * this.trigger(AppEvent.openQueryEditHistory, savedQueryId);
    **/
   openQueryEditHistory = 'openQueryEditHistory',
+  /** Open a share modal by passing the subject as the first parameter (See {@link OpenShareModalOptions}).
+   * The subject should be available in the cloud.
+   * @example
+   * this.trigger(AppEvent.openShareModal, { subject: { type: "query", id: 1 } });
+   */
+  openShareModal = 'openShareModal',
+}
+
+export type OpenShareModalOptions =  {
+  subjectId: number;
+  subjectType: "Query" | "Connection" | "QueryFolder" | "ConnectionFolder";
 }
 
 export interface RootBinding {
   event: string
   handler(arg: any): void
 }
-
 
 export const AppEventMixin = Vue.extend({
   methods:  {

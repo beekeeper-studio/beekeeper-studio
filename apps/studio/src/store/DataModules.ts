@@ -11,6 +11,10 @@ import { CloudQueryFolderModule } from "./modules/data/query_folder/CloudQueryFo
 import { UtilUsedConnectionModule } from "./modules/data/used_connection/UtilityUsedConnectionModule";
 import { CloudUsedQueryModule } from "./modules/data/used_query/CloudUsedQueryModule";
 import { UtilUsedQueryModule } from "./modules/data/used_query/UtilityUsedQueryModule";
+import { CloudAccessGrantModule } from "./modules/data/access_grant/CloudAccessGrantModule";
+import { UtilAccessGrantModule } from "./modules/data/access_grant/UtilAccessGrantModule";
+import { CloudMembershipModule } from "./modules/data/membership/CloudMembershipModule";
+import { UtilMembershipModule } from "./modules/data/membership/UtilMembershipModule";
 
 
 export const DataModules = [
@@ -48,6 +52,15 @@ export const DataModules = [
     path: 'data/usedconnections',
     cloud: UtilUsedConnectionModule,
     local: UtilUsedConnectionModule
-  }
-
+  },
+  {
+    path: 'data/accessGrants',
+    cloud: CloudAccessGrantModule,
+    local: UtilAccessGrantModule,
+  },
+  {
+    path: 'data/memberships',
+    cloud: CloudMembershipModule,
+    local: UtilMembershipModule,
+  },
 ]

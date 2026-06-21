@@ -43,6 +43,7 @@
     <lock-manager />
     <input-ephemeral-modal name="input-ephemeral-modal" />
     <util-died-modal />
+    <share-modal />
     <template v-if="licensesInitialized">
       <trial-expired-modal />
       <license-expired-modal />
@@ -88,6 +89,7 @@ import KeyboardShortcutsModal from '@/components/common/modals/KeyboardShortcuts
 import PluginController from '@/components/plugins/PluginController.vue'
 import LockManager from "@/components/managers/LockManager.vue";
 import InputEphemeralModal from "@/components/common/modals/InputEphemeralModal.vue";
+import ShareModal from "@/components/common/modals/ShareModal.vue";
 
 import rawLog from '@bksLogger'
 import { assignContextMenuToAllInputs } from './mixins/assignContextMenuToAllInputs'
@@ -104,7 +106,7 @@ export default Vue.extend({
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
     LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
     PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
-    InputEphemeralModal,
+    InputEphemeralModal, ShareModal,
   },
   data() {
     return {

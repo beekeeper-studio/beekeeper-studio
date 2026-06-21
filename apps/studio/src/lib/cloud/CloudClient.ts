@@ -12,6 +12,8 @@ import { WorkspacesController } from './controllers/WorkspacesController';
 import { ConnectionFoldersController } from '@/lib/cloud/controllers/ConnectionFoldersController';
 import { QueryFoldersController } from '@/lib/cloud/controllers/QueryFoldersController';
 import { UsedQueriesController } from '@/lib/cloud/controllers/UsedQueriesController';
+import { AccessGrantsController } from '@/lib/cloud/controllers/AccessGrantsController';
+import { MembershipsController } from '@/lib/cloud/controllers/MembershipsController';
 import { LicenseKeyController } from './controllers/LicenseKeyController';
 import { camelCaseObjectKeys, snakeCaseObjectKeys } from '@/common/utils';
 
@@ -77,6 +79,8 @@ export class CloudClient {
   public connectionFolders: ConnectionFoldersController
   public queryFolders: QueryFoldersController
   public usedQueries: UsedQueriesController
+  public accessGrants: AccessGrantsController
+  public memberships: MembershipsController
   public workspaces: WorkspacesController
   public workspaceId: number
   constructor(public options: CloudClientOptions) {
@@ -103,6 +107,8 @@ export class CloudClient {
     this.queryFolders = new QueryFoldersController(this.axios)
     this.workspaces = new WorkspacesController(this.axios)
     this.usedQueries = new UsedQueriesController(this.axios)
+    this.accessGrants = new AccessGrantsController(this.axios)
+    this.memberships = new MembershipsController(this.axios)
 
     this.axios.interceptors.request.use(request => {
       log.debug('REQ', request)
