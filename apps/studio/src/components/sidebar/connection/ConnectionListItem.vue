@@ -78,6 +78,7 @@
 import TimeAgo from 'javascript-time-ago'
 import { mapGetters, mapState } from 'vuex'
 import { isUltimateType } from '@/common/interfaces/IConnection'
+import { AppEvent } from '@/common/AppEvent'
 import EditableText from '@/components/common/EditableText.vue'
 
 export default {
@@ -223,6 +224,12 @@ export default {
           handler: this.duplicate
         },
         {
+          name: "Share",
+          slug: 'share',
+          hideIf: !this.isCloud || !this.savedConnection || !this.savedConnection.id,
+          handler: () => this.share()
+        },
+        {
           name: `Copy ${this.connectionType}`,
           handler: this.copyUrl
         },
@@ -287,6 +294,12 @@ export default {
     },
     duplicate() {
       this.$emit('duplicate', this.config)
+    },
+    share() {
+      this.trigger(AppEvent.openShareModal, {
+        subjectId: this.savedConnection.id,
+        subjectType: "Connection",
+      });
     },
     async copyUrl() {
       try {
