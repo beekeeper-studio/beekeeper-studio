@@ -415,7 +415,17 @@ export default {
           { name: 'Delete', handler: ({ item }) => this.deleteFolder(item) }
         )
       }
+      // Root folders (Personal/Team) are not shareable
+      if (this.isCloud && folder.id && folder.parentId) {
+        options.push({ name: 'Share', slug: 'share', handler: ({ item }) => this.share(item) })
+      }
       this.$bks.openMenu({ event, item: folder, options })
+    },
+    share(folder) {
+      this.trigger(AppEvent.openShareModal, {
+        subjectId: folder.id,
+        subjectType: "QueryFolder",
+      });
     },
     createSubfolder(parentFolder) {
       if (!this.isUltimate && !this.isCloud) {

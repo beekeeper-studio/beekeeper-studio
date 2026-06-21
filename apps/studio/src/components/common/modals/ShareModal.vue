@@ -135,6 +135,7 @@ import _ from "lodash";
 import LoadingSpinner from "@/components/common/loading/LoadingSpinner.vue";
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { ICloudSavedConnection } from "@/common/interfaces/IConnection";
+import { IQueryFolder, IConnectionFolder } from "@/common/interfaces/IQueryFolder";
 
 type Permission = "view" | "edit" | "hidden";
 type AccessGrantLike = Pick<IAccessGrant, "canRead" | "canWrite">;
@@ -214,8 +215,27 @@ export default Vue.extend({
       }
       return [];
     },
-    subject(): ISavedQuery | ICloudSavedConnection | undefined {
+    subject():
+      | ISavedQuery
+      | ICloudSavedConnection
+      | IQueryFolder
+      | IConnectionFolder
+      | undefined {
       return this.items.find((i) => i.id === this.subjectId);
+    },
+    subjectModulePath(): string {
+      switch (this.subjectType) {
+        case "Connection":
+          return "data/connections";
+        case "Query":
+          return "data/queries";
+        case "ConnectionFolder":
+          return "data/connectionFolders";
+        case "QueryFolder":
+          return "data/queryFolders";
+        default:
+          throw new Error(`Invalid subject type. Got "${this.subjectType}"`);
+      }
     },
     teamPermission(): Permission {
       if (this.subject?.teamWrite) {
@@ -241,9 +261,6 @@ export default Vue.extend({
     }),
     ...mapActions("data/memberships", {
       loadMemberships: "load",
-    }),
-    ...mapActions("data/connections", {
-      saveConnection: "save",
     }),
     resetState() {
       this.subjectId = null;
@@ -323,7 +340,7 @@ export default Vue.extend({
       try {
         this.teamPermissionError = null;
         const { canRead, canWrite } = this.permissionToGrant(permission);
-        await this.saveConnection({
+        await this.$store.dispatch(`${this.subjectModulePath}/save`, {
           id: this.subject.id,
           teamRead: canRead,
           teamWrite: canWrite,

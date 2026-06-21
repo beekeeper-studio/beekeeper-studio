@@ -1,6 +1,6 @@
+import { IShareable } from "./IShareable"
 
-
-export interface IFolder {
+export interface IFolder extends IShareable {
   id: number | null
   name: string
   expanded?: boolean

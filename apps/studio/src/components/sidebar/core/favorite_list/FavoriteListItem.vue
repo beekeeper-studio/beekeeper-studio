@@ -31,6 +31,7 @@
 <script lang="ts">
 import _ from 'lodash'
 import { IQueryFolder } from '@/common/interfaces/IQueryFolder'
+import { AppEvent } from '@/common/AppEvent'
 import Vue from 'vue'
 import { mapState, mapGetters } from 'vuex'
 import TimeAgo from 'javascript-time-ago'
@@ -133,6 +134,12 @@ export default Vue.extend({
           handler: ({ item }) => this.$emit('duplicate', item)
         },
         {
+          name: "Share",
+          slug: 'share',
+          hideIf: !this.isCloud || !this.item.id,
+          handler: () => this.share()
+        },
+        {
           name: "Delete",
           hideIf: !canWrite,
           handler: ({ item }) => this.$emit('remove', item)
@@ -163,6 +170,12 @@ export default Vue.extend({
         item, event,
         options
       })
+    },
+    share() {
+      this.trigger(AppEvent.openShareModal, {
+        subjectId: this.item.id,
+        subjectType: "Query",
+      });
     },
     async submitRename(title) {
       if (!title || title === this.item.title) {
