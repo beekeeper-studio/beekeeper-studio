@@ -28,7 +28,7 @@
         <div class="base-modal-body">
           <slot :close="close" />
         </div>
-        <div class="base-modal-footer">
+        <div class="base-modal-footer" v-if="$slots.footer">
           <slot name="footer" :close="close" />
         </div>
       </component>
@@ -59,6 +59,7 @@ export default Vue.extend({
 <style scoped>
 .base-modal-root ::v-deep .v--modal {
   min-height: 6rem;
+  max-width: 550px;
 }
 
 .base-modal {

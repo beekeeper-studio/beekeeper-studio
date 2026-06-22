@@ -36,7 +36,7 @@ export const CloudAccessGrantModule: DataStore<IAccessGrant, State> = {
     },
     async saveMany(context, options: SaveManyOptions) {
       await safelyDo(context, async (cli) => {
-        const items: any[] = await cli.accessGrants.createBulk(
+        const items: IAccessGrant[] = await cli.accessGrants.createBulk(
           options.memberships.map((member) => ({
             membership_id: member.id,
             subject_id: options.subjectId,
@@ -45,13 +45,7 @@ export const CloudAccessGrantModule: DataStore<IAccessGrant, State> = {
             can_write: options.canWrite,
           }))
         );
-        // this is to account for when the store module changes
-        const rightItems = items.filter(
-          (i) => i.workspaceId === context.rootState.workspaceId
-        );
-        if (rightItems.length === items.length) {
-          context.commit("replace", rightItems);
-        }
+        context.commit("upsert", items);
       });
     },
   }),

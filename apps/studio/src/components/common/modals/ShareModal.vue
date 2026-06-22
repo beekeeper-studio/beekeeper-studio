@@ -1,10 +1,11 @@
 <template>
   <base-modal name="share-modal" @opened="handleOpened">
-    <template #title>{{ subject?.name || "Share" }}</template>
+    <template #title>{{ subject?.name || subject?.title || "Share" }}</template>
     <template v-if="subject">
       <div class="search-members">
         <div class="input-wrapper">
           <multi-select
+            ref="search"
             placeholder="Search a member"
             v-model="search"
             option-label="searchable"
@@ -13,6 +14,8 @@
             @item-add="handleMemberAdd"
             @item-remove="handleMemberRemove"
             @open="loadMembershipsOnce"
+            @keyup.esc.stop
+            @keydown.esc.stop
           >
             <template #empty-state v-if="loadingMemberships">
               Loading ...
@@ -36,7 +39,7 @@
         <button
           class="btn btn-primary btn-icon add-btn"
           type="button"
-          :disabled="selectedMembers.length === 0"
+          :disabled="selectedMembers.length === 0 || savingGrants"
           @click="addSelectedMembers"
         >
           <i class="material-icons">add</i>
@@ -45,13 +48,18 @@
       </div>
 
       <div class="member-access">
-        Who has access
+        <h3>Who has access</h3>
         <ul>
           <li class="access-grant">
             <div class="icon">
               <i class="material-icons-outlined">people_alt</i>
             </div>
-            <div class="label">Your team</div>
+            <div class="label">
+              <span>Your team</span>
+              <div class="hint" v-if="teamPermission === 'restricted'">
+                Access is restricted to members listed below.
+              </div>
+            </div>
             <div class="access">
               <loading-spinner v-if="loadingTeamPermission" />
               <select
@@ -63,13 +71,14 @@
               >
                 <option value="view">can view</option>
                 <option value="edit">can edit</option>
-                <option value="hidden">hidden</option>
+                <option value="restricted">restricted</option>
               </select>
               <template v-else>
                 <template v-if="teamPermission === 'view'">can view</template>
                 <template v-else-if="teamPermission === 'edit'">
                   can edit
                 </template>
+                <template v-else>restricted</template>
               </template>
             </div>
           </li>
@@ -77,11 +86,34 @@
             <div class="icon">{{ subject.membership.name[0] }}</div>
             <div class="label">
               <span>{{ subject.membership.name }}</span>
-              <span v-if="isItYou(subject.membership)"> (You)</span>
+              <span v-if="isItYou(subject.membership.userId)"> (You)</span>
             </div>
             <div class="access">Owner</div>
           </li>
-          <li class="access-grant" v-for="grant of accessGrants">
+          <!-- We don't want to show admin if it's the same user as the owner -->
+          <li
+            class="access-grant"
+            v-if="subject.membership.userId !== workspace.owner.id"
+          >
+            <div class="icon">{{ workspace.owner.name[0] }}</div>
+            <div class="label">
+              <span>{{ workspace.owner.name }}</span>
+              <span v-if="isItYou(workspace.owner.id)"> (You)</span>
+            </div>
+            <div class="access">Admin</div>
+          </li>
+          <li v-if="initiallyLoadingGrants" class="access-grant skeleton">
+            <div class="icon" />
+            <div class="label" />
+            <div class="access" />
+          </li>
+          <li
+            class="access-grant"
+            v-for="grant of accessGrants"
+            :class="{
+              highlight: highlightedMembers.includes(grant.membershipId),
+            }"
+          >
             <div class="icon">{{ grant.membership.name[0] }}</div>
             <div class="label">
               {{ grant.membership.name }}
@@ -126,7 +158,6 @@ import Vue from "vue";
 import BaseModal from "@/components/common/modals/BaseModal.vue";
 import { AppEvent, OpenShareModalOptions } from "@/common/AppEvent";
 import { mapActions, mapGetters, mapState } from "vuex";
-import { IShareable } from "@/common/interfaces/IShareable";
 import { DataState } from "@/store/modules/data/DataModuleBase";
 import { IAccessGrant } from "@/common/interfaces/IAccessGrant";
 import { IMembership } from "@/common/interfaces/IMembership";
@@ -135,10 +166,18 @@ import _ from "lodash";
 import LoadingSpinner from "@/components/common/loading/LoadingSpinner.vue";
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { ICloudSavedConnection } from "@/common/interfaces/IConnection";
-import { IQueryFolder, IConnectionFolder } from "@/common/interfaces/IQueryFolder";
+import {
+  IQueryFolder,
+  IConnectionFolder,
+} from "@/common/interfaces/IQueryFolder";
 
-type Permission = "view" | "edit" | "hidden";
+type Permission = "view" | "edit" | "restricted";
 type AccessGrantLike = Pick<IAccessGrant, "canRead" | "canWrite">;
+type Subject =
+  | ISavedQuery
+  | ICloudSavedConnection
+  | IQueryFolder
+  | IConnectionFolder;
 
 export default Vue.extend({
   components: { BaseModal, MultiSelect, LoadingSpinner },
@@ -150,8 +189,11 @@ export default Vue.extend({
       search: "",
       permission: "view" as "none" | "view" | "edit",
       selectedMembers: [] as IMembership[],
+      highlightedMembers: [] as number[], // the membership ids
+      initiallyLoadingGrants: false,
       loadingGrants: [] as number[], // the access grant ids
       loadingTeamPermission: false,
+      savingGrants: false,
       teamPermissionError: null as Error | null,
     };
   },
@@ -178,12 +220,13 @@ export default Vue.extend({
         return state.items
           .filter((member) => {
             const accessGrants: IAccessGrant[] = this.accessGrants;
-            const subject: IShareable = this.subject;
+            const subject: Subject = this.subject;
             const isOwner = member.id === subject.membership.id;
             const isGranted = accessGrants.some(
-              (grant) => grant.membership.id === member.id
+              (grant) => grant.membershipId === member.id
             );
-            return !isOwner && !isGranted;
+            const isAdmin = member.userId === this.workspace.owner.id;
+            return !isOwner && !isGranted && !isAdmin;
           })
           .map((member) => ({
             ...member,
@@ -215,12 +258,7 @@ export default Vue.extend({
       }
       return [];
     },
-    subject():
-      | ISavedQuery
-      | ICloudSavedConnection
-      | IQueryFolder
-      | IConnectionFolder
-      | undefined {
+    subject(): Subject | undefined {
       return this.items.find((i) => i.id === this.subjectId);
     },
     subjectModulePath(): string {
@@ -244,7 +282,7 @@ export default Vue.extend({
       if (this.subject?.teamRead) {
         return "view";
       }
-      return "hidden";
+      return "restricted";
     },
   },
   watch: {
@@ -269,8 +307,11 @@ export default Vue.extend({
       this.search = "";
       this.permission = "view";
       this.selectedMembers = [];
+      this.highlightedMembers = [];
+      this.initiallyLoadingGrants = false;
       this.loadingGrants = [];
       this.loadingTeamPermission = false;
+      this.savingGrants = false;
       this.teamPermissionError = null;
     },
     async open(options: OpenShareModalOptions) {
@@ -283,14 +324,22 @@ export default Vue.extend({
       this.$modal.show("share-modal");
     },
     async handleOpened() {
-      await this.loadAccessGrants({
-        extraParams: {
-          access_grant: {
-            subject_type: this.subjectType,
-            subject_id: this.subjectId,
+      this.$refs.search.$el.querySelector("input").focus();
+
+      this.initiallyLoadingGrants = true;
+      await this.$nextTick();
+      try {
+        await this.loadAccessGrants({
+          extraParams: {
+            access_grant: {
+              subject_type: this.subjectType,
+              subject_id: this.subjectId,
+            },
           },
-        },
-      });
+        });
+      } finally {
+        this.initiallyLoadingGrants = false;
+      }
     },
     async loadMembershipsOnce() {
       if (!this.membershipsLoaded) {
@@ -374,15 +423,20 @@ export default Vue.extend({
         throw new Error(`Invalid permission. Got "${this.permission}"`);
       }
 
-      await this.saveAccessGrants({
-        subjectId: this.subjectId,
-        subjectType: this.subjectType,
-        canRead,
-        canWrite,
-        memberships: selectedMembers,
-      });
-
-      this.selectedMembers = [];
+      try {
+        this.savingGrants = true;
+        await this.saveAccessGrants({
+          subjectId: this.subjectId,
+          subjectType: this.subjectType,
+          canRead,
+          canWrite,
+          memberships: selectedMembers,
+        });
+        this.highlightedMembers = selectedMembers.map((m) => m.id);
+        this.selectedMembers = [];
+      } finally {
+        this.savingGrants = false;
+      }
     },
     permissionToGrant(permission: Permission): AccessGrantLike {
       if (permission === "edit") {
@@ -400,10 +454,10 @@ export default Vue.extend({
       if (grant.canRead) {
         return "view";
       }
-      return "hidden";
+      return "restricted";
     },
-    isItYou(membership: IMembership) {
-      return membership.id === this.workspace.currentMembership.id;
+    isItYou(userId: number) {
+      return userId === this.workspace.currentMembership.userId;
     },
   },
   mounted() {
@@ -450,16 +504,21 @@ export default Vue.extend({
   }
 }
 
+h3 {
+  font-size: 1rem;
+  margin: 0;
+}
+
 .member-access {
   margin-top: 1rem;
 
   ul {
     list-style: none;
     margin: 0;
+    margin-top: 0.25rem;
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
   }
 }
 
@@ -471,6 +530,27 @@ export default Vue.extend({
 .access-grant {
   display: flex;
   align-items: center;
+  padding-block: 0.5rem;
+
+  &.highlight {
+    animation: highlightFadeOut 2s ease-out forwards;
+  }
+
+  &.skeleton {
+    .label {
+      background-color: rgb(from var(--theme-base) r g b / 10%);
+      width: 20ch;
+      height: 1rem;
+      border-radius: 4px;
+    }
+
+    .access {
+      background-color: rgb(from var(--theme-base) r g b / 10%);
+      width: 5ch;
+      height: 1rem;
+      border-radius: 4px;
+    }
+  }
 
   .icon {
     width: 2rem;
@@ -481,11 +561,20 @@ export default Vue.extend({
     justify-content: center;
     border-radius: 9999px;
     text-transform: uppercase;
+
+    .material-icons-outlined {
+      font-size: 1rem;
+    }
   }
 
   .label {
     flex-shrink: 0;
     margin-inline: 1rem;
+  }
+
+  .hint {
+    margin-top: 0.1rem;
+    color: var(--text-light);
   }
 
   select {
@@ -497,6 +586,26 @@ export default Vue.extend({
     display: flex;
     align-items: center;
     margin-left: auto;
+    font-size: 0.875rem;
+
+    /** Visually align the select and the plain text. */
+    &:not(:has(select)) {
+      margin-right: 0.1rem;
+    }
+  }
+}
+
+@keyframes highlightFadeOut {
+  0% {
+    background-color: rgb(from var(--theme-primary) r g b / 10%);
+  }
+  /* Holds the solid 10% highlight for the first 30% of the animation time */
+  30% {
+    background-color: rgb(from var(--theme-primary) r g b / 10%);
+  }
+  /* Smoothly fades out to 0% (transparent) over the remaining 70% of the time */
+  100% {
+    background-color: rgb(from var(--theme-primary) r g b / 0%);
   }
 }
 </style>

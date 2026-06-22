@@ -3,7 +3,6 @@ import { IMembership } from "./IMembership";
 
 export interface IShareable {
   id: number | null;
-  name: string;
   /** Can my team read this? */
   teamRead: boolean;
   /** Can my team write this? */
