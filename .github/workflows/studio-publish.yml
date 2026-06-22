@@ -100,20 +100,9 @@ jobs:
         if: matrix.os.setup_flatpak
         run: bash ./.github/scripts/install-build-deps.sh
 
-      - name: Authenticate to Google Cloud
-        if: matrix.os.type == 'windows'
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ secrets.gcp_workload_identity_provider }}
-          service_account: ${{ secrets.gcp_service_account }}
-
-      - name: Set up gcloud
-        if: matrix.os.type == 'windows'
-        uses: google-github-actions/setup-gcloud@v2
-
       - name: Set up Java (for jsign)
         if: matrix.os.type == 'windows'
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
@@ -295,6 +284,18 @@ jobs:
         run: |
           echo "$DATA" | base64 --decode > ~/mac-certificate.p12
 
+      # Authenticate just before signing so the access token (1h lifetime) is
+      # fresh. token_format: access_token outputs the token jsign uses as its
+      # KMS store password, so no gcloud token minting is needed in sign.js.
+      - name: Authenticate to Google Cloud
+        id: auth
+        if: matrix.os.type == 'windows'
+        uses: google-github-actions/auth@v3
+        with:
+          token_format: access_token
+          workload_identity_provider: ${{ secrets.gcp_workload_identity_provider }}
+          service_account: ${{ secrets.gcp_service_account }}
+
         # Oh hello future Matthew, why do we split out windows build?
         # well CSC_LINK gets picked up EVEN THOUGH YOU HAVE
         # A CUSTOM sign.js. Obviously a bug, but this is a workaround
@@ -304,6 +305,7 @@ jobs:
         env:
           GCP_KMS_KEYRING: "${{ secrets.gcp_kms_keyring }}"
           GCP_KMS_KEY: "${{ secrets.gcp_kms_key }}"
+          GCP_ACCESS_TOKEN: "${{ steps.auth.outputs.access_token }}"
           # WIN_CERT_FILE and JSIGN_JAR are exported to $GITHUB_ENV by earlier steps
           PYTHON_PATH: "${{'$PYTHON_PATH' }}"
           PYTHONPATH: "${{ '$PYTHONPATH' }}"

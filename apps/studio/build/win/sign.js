@@ -25,11 +25,9 @@ exports.default = async function (configuration) {
   // Sectigo's RFC3161 timestamp server with SHA-256, per their code signing docs.
   const timeserver = "http://timestamp.sectigo.com"
 
-  // Mint a fresh GCP OAuth access token at sign time so it can't expire
-  // mid-build. gcloud is provisioned by the setup-gcloud step in CI.
-  const token = cp.execSync('gcloud auth print-access-token', {
-    encoding: 'utf8'
-  }).trim();
+  // GCP OAuth access token produced by the google-github-actions/auth step
+  // (token_format: access_token). Valid for an hour, well within build time.
+  const token = process.env.GCP_ACCESS_TOKEN;
 
   // jsign signs via Google Cloud KMS (GOOGLECLOUD storetype). The private key
   // never leaves KMS; only the public certificate chain is read from --certfile.
