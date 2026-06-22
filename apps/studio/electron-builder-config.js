@@ -226,21 +226,19 @@ module.exports = {
       environment: {
         "ELECTRON_SNAP": "true"
       },
-      // core24 drops browser-support from its default plug set and only
-      // auto-injects it when no custom plugs are given. Declare it explicitly
-      // (with allow-sandbox so Chromium's sandbox + /dev/shm work under strict
-      // confinement) alongside the interfaces the app needs.
+      // core24 drops browser-support from its default plug set. It must be
+      // declared so Chromium can use /dev/shm under strict confinement.
+      // Use the plain interface (not allow-sandbox: true) — the privileged
+      // form is denied auto-connection by snapd, so it would stay disconnected
+      // on both sideloaded and store installs. electron-builder appends
+      // --no-sandbox automatically when allow-sandbox isn't set, matching the
+      // previous core22 behaviour.
       plugs: [
         "default",
         "ssh-keys",
         "removable-media",
         "mount-observe",
-        {
-          "browser-support": {
-            interface: "browser-support",
-            "allow-sandbox": true
-          }
-        }
+        "browser-support"
       ],
       // Bundle fonts so non-Latin text and emoji render correctly. "default"
       // keeps electron-builder's standard stage packages.
