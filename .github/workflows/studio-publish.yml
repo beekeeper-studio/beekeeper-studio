@@ -89,9 +89,11 @@ jobs:
             type: macos
     steps:
 
+      # core24 snaps always run a full `snapcraft pack --use-lxd` build, so every
+      # Linux runner needs an initialised LXD (previously only arm64 required it).
       - name: setup LXD
         uses: canonical/setup-lxd@main
-        if: matrix.os.type == 'linux' && matrix.os.arch == 'arm64'
+        if: matrix.os.type == 'linux'
 
       - name: Check out Git repository
         uses: actions/checkout@v1

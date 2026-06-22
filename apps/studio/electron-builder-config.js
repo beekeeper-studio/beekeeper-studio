@@ -213,16 +213,43 @@ module.exports = {
     publish: [ 'github' ],
     fpm: rpmFpmOptions,
   },
-  snap: {
-    base: 'core22',
-    publish: [
-      'github',
-      'snapStore'
-    ],
-    environment: {
-      "ELECTRON_SNAP": "true"
-    },
-    plugs: ["default", "ssh-keys", "removable-media", "mount-observe"]
+  snapcraft: {
+    base: 'core24',
+    core24: {
+      // Build the core24 snap in an isolated LXD container. CI provisions LXD
+      // via canonical/setup-lxd on every Linux runner.
+      useLXD: true,
+      publish: [
+        'github',
+        'snapStore'
+      ],
+      environment: {
+        "ELECTRON_SNAP": "true"
+      },
+      // core24 drops browser-support from its default plug set. It must be
+      // declared so Chromium can use /dev/shm under strict confinement.
+      // Use the plain interface (not allow-sandbox: true) — the privileged
+      // form is denied auto-connection by snapd, so it would stay disconnected
+      // on both sideloaded and store installs. electron-builder appends
+      // --no-sandbox automatically when allow-sandbox isn't set, matching the
+      // previous core22 behaviour.
+      plugs: [
+        "default",
+        "ssh-keys",
+        "removable-media",
+        "mount-observe",
+        "browser-support"
+      ],
+      // Bundle fonts so non-Latin text and emoji render correctly. "default"
+      // keeps electron-builder's standard stage packages.
+      stagePackages: [
+        "default",
+        "fonts-noto",
+        "fonts-noto-cjk",
+        "fonts-noto-color-emoji",
+        "fonts-liberation"
+      ]
+    }
   },
   win: {
     icon: './public/icons/png/512x512.png',
