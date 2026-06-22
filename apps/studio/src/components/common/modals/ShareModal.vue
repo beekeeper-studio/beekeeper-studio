@@ -109,6 +109,7 @@
           <li
             class="access-grant"
             v-for="grant of accessGrants"
+            :key="grant.id"
             :class="{
               highlight: highlightedMembers.includes(grant.membershipId),
             }"
