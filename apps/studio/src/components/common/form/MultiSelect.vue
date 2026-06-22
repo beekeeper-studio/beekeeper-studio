@@ -1,5 +1,10 @@
 <template>
-  <div class="multi-select" :class="{ open: isOpen }">
+  <div
+    class="multi-select"
+    :class="{ open: isOpen }"
+    v-bind="$attrs"
+    v-on="filteredListeners"
+  >
     <input
       ref="input"
       type="text"
@@ -17,42 +22,45 @@
       @click="open"
       @input="onInput"
       @blur="close"
-      @keydown.down.prevent="moveDown"
-      @keydown.up.prevent="moveUp"
-      @keydown.enter.prevent="addOption(activeOption)"
+      @keydown.down.prevent="isOpen ? move(1) : open()"
+      @keydown.up.prevent="isOpen ? move(-1) : open()"
+      @keydown.enter.prevent="isOpen && activeOption && addOption(activeOption)"
       @keydown.esc.prevent="close"
       @keydown.tab="close"
     />
 
-    <ul
-      v-show="isOpen"
-      :id="listboxId"
-      ref="listbox"
-      class="panel"
-      role="listbox"
-    >
-      <li
-        v-for="(option, index) in filteredSuggestions"
-        :id="optionId(index)"
-        :key="index"
-        class="option"
-        :class="{ active: index === activeIndex }"
-        role="option"
-        :aria-selected="index === activeIndex ? 'true' : 'false'"
-        @mousedown.prevent="addOption(option)"
+    <portal to="menus">
+      <ul
+        v-show="isOpen"
+        :id="listboxId"
+        ref="listbox"
+        class="panel"
+        role="listbox"
+        :style="panelStyle"
       >
-        <slot name="option" :option="option" :index="index">
-          {{ optionText(option) }}
-        </slot>
-      </li>
-      <li
-        v-if="filteredSuggestions.length === 0"
-        class="empty"
-        role="presentation"
-      >
-        <slot name="empty-state">No results</slot>
-      </li>
-    </ul>
+        <li
+          v-for="(option, index) in filteredSuggestions"
+          :id="optionId(index)"
+          :key="index"
+          class="option"
+          :class="{ active: index === activeIndex }"
+          role="option"
+          :aria-selected="index === activeIndex ? 'true' : 'false'"
+          @mousedown.prevent="addOption(option)"
+        >
+          <slot name="option" :option="option" :index="index">
+            {{ optionText(option) }}
+          </slot>
+        </li>
+        <li
+          v-if="filteredSuggestions.length === 0"
+          class="empty"
+          role="presentation"
+        >
+          <slot name="empty-state">No results</slot>
+        </li>
+      </ul>
+    </portal>
     <div v-if="selectedOptions.length" class="selected-options">
       <span
         v-for="(option, index) in selectedOptions"
@@ -72,17 +80,18 @@
         </button>
       </span>
     </div>
-
   </div>
 </template>
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
+import { Portal } from "portal-vue";
 
 type Option = unknown;
 
 export default Vue.extend({
   name: "MultiSelect",
+  components: { Portal },
   props: {
     value: {
       type: String,
@@ -111,9 +120,14 @@ export default Vue.extend({
     return {
       isOpen: false,
       activeIndex: -1,
+      panelPosition: { top: 0, left: 0, width: 0 },
     };
   },
   computed: {
+    filteredListeners() {
+      const { input, ...rest } = this.$listeners;
+      return rest;
+    },
     listboxId() {
       return `multi-select-${this._uid}-listbox`;
     },
@@ -132,13 +146,26 @@ export default Vue.extend({
         this.optionText(option).toLowerCase().includes(query)
       );
     },
+    panelStyle() {
+      return {
+        position: "fixed",
+        top: `${this.panelPosition.top}px`,
+        left: `${this.panelPosition.left}px`,
+        width: `${this.panelPosition.width}px`,
+      };
+    },
   },
   watch: {
     isOpen(open) {
       if (open) {
         document.addEventListener("mousedown", this.maybeClose);
+        this.$nextTick(this.updatePosition);
+        window.addEventListener("scroll", this.updatePosition, true);
+        window.addEventListener("resize", this.updatePosition);
       } else {
         document.removeEventListener("mousedown", this.maybeClose);
+        window.removeEventListener("scroll", this.updatePosition, true);
+        window.removeEventListener("resize", this.updatePosition);
       }
     },
   },
@@ -162,18 +189,6 @@ export default Vue.extend({
       this.$emit("input", (e.target as HTMLInputElement).value);
       this.isOpen = true;
       this.activeIndex = -1;
-    },
-    moveDown() {
-      if (!this.isOpen) {
-        return this.open();
-      }
-      this.move(1);
-    },
-    moveUp() {
-      if (!this.isOpen) {
-        return this.open();
-      }
-      this.move(-1);
     },
     optionText(option: Option) {
       if (option !== null && typeof option === "object") {
@@ -205,13 +220,26 @@ export default Vue.extend({
       if (el) el.scrollIntoView({ block: "nearest" });
     },
     maybeClose(e: MouseEvent) {
-      if (!this.$el.contains(e.target)) {
+      const list = this.$refs.listbox as HTMLElement | undefined;
+      const inEl = this.$el.contains(e.target as Node);
+      const inList = list && list.contains(e.target as Node);
+      if (!inEl && !inList) {
         this.close();
       }
+    },
+    updatePosition() {
+      const rect = this.$el.getBoundingClientRect();
+      this.panelPosition = {
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+      };
     },
   },
   beforeDestroy() {
     document.removeEventListener("mousedown", this.maybeClose);
+    window.removeEventListener("scroll", this.updatePosition, true);
+    window.removeEventListener("resize", this.updatePosition);
   },
 });
 </script>

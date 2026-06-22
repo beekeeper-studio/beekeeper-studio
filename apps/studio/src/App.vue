@@ -19,10 +19,6 @@
       </template>
     </div>
     <portal-target
-      name="menus"
-      multiple
-    />
-    <portal-target
       name="modals"
       multiple
     />
@@ -49,6 +45,11 @@
       <license-expired-modal />
       <lifetime-license-expired-modal />
     </template>
+    <portal-target
+      name="menus"
+      multiple
+      class="portal-target-menus"
+    />
   </div>
 </template>
 
@@ -254,7 +255,9 @@ export default Vue.extend({
 })
 </script>
 
-<style>
-
+<style scoped>
+.portal-target-menus::v-deep > * {
+  z-index: 99999;
+}
 
 </style>
