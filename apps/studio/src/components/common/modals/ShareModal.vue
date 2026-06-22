@@ -2,7 +2,7 @@
   <base-modal name="share-modal" @opened="handleOpened">
     <template #title>{{ subject?.name || subject?.title || "Share" }}</template>
     <template v-if="subject">
-      <div class="search-members">
+      <div class="search-members" v-if="subject.canManage">
         <div class="input-wrapper">
           <multi-select
             ref="search"
@@ -472,6 +472,7 @@ export default Vue.extend({
 .search-members {
   display: flex;
   align-items: center;
+  margin-bottom: 1rem;
 
   .input-wrapper {
     position: relative;
@@ -516,8 +517,6 @@ h3 {
 }
 
 .member-access {
-  margin-top: 1rem;
-
   ul {
     list-style: none;
     margin: 0;
