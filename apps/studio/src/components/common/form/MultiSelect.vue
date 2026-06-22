@@ -49,7 +49,10 @@
           @mousedown.prevent="addOption(option)"
         >
           <slot name="option" :option="option" :index="index">
-            {{ optionText(option) }}
+            <span class="label">{{ optionText(option) }}</span>
+            <span class="hint" v-if="optionHint(option)">{{
+              optionHint(option)
+            }}</span>
           </slot>
         </li>
         <li
@@ -106,11 +109,12 @@ export default Vue.extend({
       type: Array as PropType<Option[]>,
       default: () => [],
     },
-    /**
-     * For object suggestions, the field to filter on. Plain string suggestions
-     * are filtered directly.
-     */
-    optionLabel: String,
+    /** Object key used to render the option text. Ignored for string suggestions. */
+    displayKey: String,
+    /** Object key used for filtering. Ignored for string suggestions. */
+    filterKey: String,
+    /** Object key used for the hint text. Ignored for string suggestions. */
+    hintKey: String,
     placeholder: {
       type: String,
       default: "",
@@ -143,7 +147,7 @@ export default Vue.extend({
         return suggestions;
       }
       return suggestions.filter((option) =>
-        this.optionText(option).toLowerCase().includes(query)
+        this.filterText(option).toLowerCase().includes(query)
       );
     },
     panelStyle() {
@@ -192,9 +196,21 @@ export default Vue.extend({
     },
     optionText(option: Option) {
       if (option !== null && typeof option === "object") {
-        return this.optionLabel ? String(option[this.optionLabel]) : "";
+        return this.displayKey ? String(option[this.displayKey]) : "";
       }
       return String(option);
+    },
+    filterText(option: Option) {
+      if (option !== null && typeof option === "object") {
+        return this.filterKey ? String(option[this.filterKey]) : "";
+      }
+      return String(option);
+    },
+    optionHint(option: Option) {
+      if (option !== null && typeof option === "object") {
+        return this.hintKey ? String(option[this.hintKey]) : "";
+      }
+      return "";
     },
     async move(delta: -1 | 1) {
       const count = this.filteredSuggestions.length;
@@ -319,6 +335,15 @@ export default Vue.extend({
   &.active {
     background: color-mix(in srgb, var(--theme-base) 5%, transparent);
   }
+}
+
+.hint {
+  margin-left: auto;
+  max-width: 50%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--text-light);
 }
 
 .empty {

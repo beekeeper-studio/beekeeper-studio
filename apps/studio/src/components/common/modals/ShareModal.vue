@@ -8,7 +8,9 @@
             ref="search"
             placeholder="Search a member"
             v-model="search"
-            option-label="searchable"
+            filter-key="searchable"
+            display-key="name"
+            hint-key="email"
             :suggestions="memberships"
             :selected-options="selectedMembers"
             @item-add="handleMemberAdd"
@@ -19,9 +21,6 @@
           >
             <template #empty-state v-if="loadingMemberships">
               Loading ...
-            </template>
-            <template #option="{ option }">
-              {{ option.name }} - {{ option.email }}
             </template>
             <template #selected-option="{ option }">
               {{ option.name }}
@@ -491,9 +490,16 @@ export default Vue.extend({
       border-radius: 0;
     }
 
+    .member {
+      display: flex;
+      justify-content: space-between;
+    }
+
     select {
       align-self: flex-end;
       border: none;
+      position: absolute;
+      right: 0;
     }
   }
 
@@ -599,10 +605,12 @@ h3 {
   0% {
     background-color: rgb(from var(--theme-primary) r g b / 10%);
   }
+
   /* Holds the solid 10% highlight for the first 30% of the animation time */
   30% {
     background-color: rgb(from var(--theme-primary) r g b / 10%);
   }
+
   /* Smoothly fades out to 0% (transparent) over the remaining 70% of the time */
   100% {
     background-color: rgb(from var(--theme-primary) r g b / 0%);
