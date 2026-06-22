@@ -226,7 +226,16 @@ module.exports = {
       environment: {
         "ELECTRON_SNAP": "true"
       },
-      plugs: ["default", "ssh-keys", "removable-media", "mount-observe"]
+      plugs: ["default", "ssh-keys", "removable-media", "mount-observe"],
+      // Bundle fonts so non-Latin text and emoji render correctly. "default"
+      // keeps electron-builder's standard stage packages.
+      stagePackages: [
+        "default",
+        "fonts-noto",
+        "fonts-noto-cjk",
+        "fonts-noto-color-emoji",
+        "fonts-liberation"
+      ]
     }
   },
   win: {
