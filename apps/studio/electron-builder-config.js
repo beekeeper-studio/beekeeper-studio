@@ -213,16 +213,21 @@ module.exports = {
     publish: [ 'github' ],
     fpm: rpmFpmOptions,
   },
-  snap: {
-    base: 'core22',
-    publish: [
-      'github',
-      'snapStore'
-    ],
-    environment: {
-      "ELECTRON_SNAP": "true"
-    },
-    plugs: ["default", "ssh-keys", "removable-media", "mount-observe"]
+  snapcraft: {
+    base: 'core24',
+    core24: {
+      // Build the core24 snap in an isolated LXD container. CI provisions LXD
+      // via canonical/setup-lxd on every Linux runner.
+      useLXD: true,
+      publish: [
+        'github',
+        'snapStore'
+      ],
+      environment: {
+        "ELECTRON_SNAP": "true"
+      },
+      plugs: ["default", "ssh-keys", "removable-media", "mount-observe"]
+    }
   },
   win: {
     icon: './public/icons/png/512x512.png',
