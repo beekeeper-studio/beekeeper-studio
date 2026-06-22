@@ -226,7 +226,22 @@ module.exports = {
       environment: {
         "ELECTRON_SNAP": "true"
       },
-      plugs: ["default", "ssh-keys", "removable-media", "mount-observe"],
+      // core24 drops browser-support from its default plug set and only
+      // auto-injects it when no custom plugs are given. Declare it explicitly
+      // (with allow-sandbox so Chromium's sandbox + /dev/shm work under strict
+      // confinement) alongside the interfaces the app needs.
+      plugs: [
+        "default",
+        "ssh-keys",
+        "removable-media",
+        "mount-observe",
+        {
+          "browser-support": {
+            interface: "browser-support",
+            "allow-sandbox": true
+          }
+        }
+      ],
       // Bundle fonts so non-Latin text and emoji render correctly. "default"
       // keeps electron-builder's standard stage packages.
       stagePackages: [
