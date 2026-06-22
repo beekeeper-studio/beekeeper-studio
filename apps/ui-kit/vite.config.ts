@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import vue from "@vitejs/plugin-vue2";
+import vue from "vite-ng-plugin-vue2";
 import { resolve } from "path";
 
 // https://vite.dev/config/
@@ -22,6 +22,10 @@ export default defineConfig({
       name: "BksUiKit",
       formats: ["es"],
       fileName: () => `[name].js`,
+      // Vite 8 names the merged lib CSS bundle after the package ("ui-kit.css")
+      // by default. Keep emitting "style.css" so the package exports map and
+      // consumers importing "@beekeeperstudio/ui-kit/style.css" keep working.
+      cssFileName: "style",
     },
     rollupOptions: {
       external: [
@@ -39,7 +43,6 @@ export default defineConfig({
         "@marimo-team/codemirror-languageserver",
       ],
       input: {
-        style: resolve(__dirname, "lib/style.scss"),
         index: resolve(__dirname, "lib/index.ts"),
         table: resolve(__dirname, "lib/components/table/define.ts"),
         "entity-list": resolve(
