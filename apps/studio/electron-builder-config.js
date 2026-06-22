@@ -175,6 +175,11 @@ module.exports = {
       'flatpak',
       'pacman'
     ],
+    // Align the installed .desktop filename with the WM_CLASS Electron reports at
+    // runtime (derived from desktopName in package.json) so desktop environments
+    // associate running windows with the launcher entry. Both resolve to
+    // beekeeper-studio.desktop / StartupWMClass=beekeeper-studio.
+    syncDesktopName: true,
     desktop: {
       entry: {
         'StartupWMClass': 'beekeeper-studio',
