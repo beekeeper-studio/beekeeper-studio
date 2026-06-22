@@ -1,44 +1,72 @@
 <template>
-  <base-modal
-    class="vue-dialog beekeeper-modal import-modal"
-    :name="name"
-    form-based
-    @opened="handleOpened"
-    @submit="importFromUrl"
-  >
-    <template #title>Import from URL</template>
-    <div v-if="importError" class="alert alert-danger">{{ importError }}</div>
-    <div class="form-group">
-      <label for="url">Paste URL</label>
-      <input
-        class="form-control"
-        ref="importInput"
-        type="text"
-        v-model="url"
+  <div class="import-button">
+    <a
+      class="btn btn-link btn-small"
+      :class="{ disabled }"
+      @click.prevent="!disabled && $modal.show('import-modal')"
+      href="#"
+    ><slot /></a>
+    <portal to="modals">
+      <modal
+        class="vue-dialog beekeeper-modal import-modal"
+        name="import-modal"
+        height="auto"
+        :scrollable="true"
+        @opened="$nextTick(() => $refs.importInput && $refs.importInput.select())"
       >
-    </div>
-    <template #footer>
-      <button
-        class="btn btn-flat"
-        type="button"
-        @click.prevent="hide"
-      >
-        Cancel
-      </button>
-      <button class="btn btn-primary" type="submit">Import</button>
-    </template>
-  </base-modal>
+        <form
+          v-kbd-trap="true"
+          @submit.prevent="importFromUrl"
+        >
+          <div class="dialog-content">
+            <div class="dialog-c-title">
+              Import from URL
+            </div>
+            <div
+              v-if="importError"
+              class="alert alert-danger"
+            >
+              {{ importError }}
+            </div>
+            <div class="form-group">
+              <label for="url">Paste URL</label>
+              <input
+                class="form-control"
+                ref="importInput"
+                type="text"
+                v-model="url"
+              >
+            </div>
+          </div>
+          <div class="vue-dialog-buttons">
+            <button
+              class="btn btn-flat"
+              type="button"
+              @click.prevent="$modal.hide('import-modal')"
+            >
+              Cancel
+            </button>
+            <button
+              class="btn btn-primary"
+              type="submit"
+              @click.prevent="importFromUrl"
+            >
+              Import
+            </button>
+          </div>
+        </form>
+      </modal>
+    </portal>
+  </div>
 </template>
 <script>
-import BaseModal from "@/components/common/modals/BaseModal.vue";
 export default {
-    components: { BaseModal },
     props: {
       config: Object,
-      name: {
-        type: String,
-        default: "import-modal",
-      },
+      disabled: {
+        type: Boolean,
+        default: false
+      }
     },
     data() {
       return {
@@ -47,13 +75,6 @@ export default {
       }
     },
     methods: {
-      hide() {
-        this.$modal.hide(this.name);
-      },
-      async handleOpened() {
-        await this.$nextTick();
-        this.$refs.importInput?.select()
-      },
       async importFromUrl() {
         try {
           const conf = await this.$util.send('appdb/saved/parseUrl', { url: this.url });
@@ -62,7 +83,7 @@ export default {
             this.importError = "Unable to determine database type from the URL";
           } else {
             this.url = null;
-            this.hide()
+            this.$modal.hide('import-modal')
           }
         } catch {
           this.importError = "Unable to parse url"

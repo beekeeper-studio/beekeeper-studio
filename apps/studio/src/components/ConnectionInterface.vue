@@ -31,9 +31,9 @@
                 <i class="material-icons">share</i>
                 Share
               </button>
-              <button class="btn btn-fab more-btn" @click="openMenu">
-                <i class="material-icons">more_vert</i>
-              </button>
+              <ImportButton :config="config" :disabled="editingDisabled">
+                Import from URL
+              </ImportButton>
             </div>
             <error-alert :error="errors" title="Please fix the following errors" />
             <form @action="submit" v-if="config">
@@ -277,7 +277,6 @@
       </div>
     </div>
     <loading-sso-modal v-model="loadingSSOModalOpened" @cancel="loadingSSOCanceled" />
-    <import-from-url-modal :config="config" name="import-from-url" />
   </div>
 </template>
 
@@ -306,7 +305,7 @@ import RedisForm from './connection/RedisForm.vue'
 import DynamoDbForm from './connection/DynamoDBForm.vue'
 import SnowflakeForm from './connection/SnowflakeForm.vue'
 import Split from 'split.js'
-import ImportFromUrlModal from '@/components/common/modals/ImportFromUrlModal.vue'
+import ImportButton from './connection/ImportButton.vue'
 import LoadingSSOModal from '@/components/common/modals/LoadingSSOModal.vue'
 import _ from 'lodash'
 import ErrorAlert from './common/ErrorAlert.vue'
@@ -328,7 +327,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportFromUrlModal, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpgradePanel, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm, DynamoDbForm, ContentPlaceholderHeading, SurrealDbForm, PrivacyBanner, SnowflakeForm
+  components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpgradePanel, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm, DynamoDbForm, ContentPlaceholderHeading, SurrealDbForm, PrivacyBanner, SnowflakeForm
   },
 
   data() {
@@ -653,19 +652,6 @@ export default Vue.extend({
     loadingSSOCanceled() {
       this.connection.azureCancelAuth();
     },
-    openMenu(event: MouseEvent) {
-      this.$bks.openMenu({
-        event,
-        item: null,
-        options: [
-          {
-            name: "Import from URL",
-            slug: "import-from-url",
-            handler: () => this.$modal.show("import-from-url"),
-          },
-        ],
-      });
-    },
     share() {
       this.trigger(AppEvent.openShareModal, {
         subjectId: this.config.id,
@@ -687,10 +673,6 @@ export default Vue.extend({
   .share-btn,
   &::v-deep .import-button {
     flex-shrink: 0;
-  }
-
-  .more-btn:not(:hover) {
-    background-color: transparent;
   }
 }
 </style>

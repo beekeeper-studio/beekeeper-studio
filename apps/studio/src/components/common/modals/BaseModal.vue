@@ -7,12 +7,7 @@
       @closed="$emit('closed')"
       class="base-modal-root"
     >
-      <component
-        :is="formBased ? 'form' : 'div'"
-        v-kbd-trap="true"
-        class="base-modal"
-        @submit.prevent="$emit('submit', $event)"
-      >
+      <div v-kbd-trap="true" class="base-modal">
         <div class="base-modal-header">
           <div class="base-modal-title">
             <slot name="title" :close="close" />
@@ -31,7 +26,7 @@
         <div class="base-modal-footer" v-if="$slots.footer">
           <slot name="footer" :close="close" />
         </div>
-      </component>
+      </div>
     </modal>
   </portal>
 </template>
@@ -45,8 +40,6 @@ export default Vue.extend({
       type: String,
       required: true,
     },
-    /** If true, the modal will use a <form> tag and emit a SubmitEvent. */
-    formBased: Boolean,
   },
   methods: {
     close() {
