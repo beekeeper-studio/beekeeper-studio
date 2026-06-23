@@ -4,7 +4,7 @@
       <span class="expand">IAM Authentication</span>
     </h4>
     <div class="advanced-body">
-      <div class="row gutter">
+      <div class="row">
         <div class="alert alert-info">
           <i class="material-icons-outlined">info</i>
           <div>
@@ -17,32 +17,15 @@
         </div>
       </div>
 
-      <div class="form-group col" v-show="showCli">
-        <div class="form-group">
-          <label for="cliPath">AWS CLI Path
-            <i
-              class="material-icons"
-              style="padding-left: 0.25rem"
-              v-tooltip="{
-                content:
-                  'You are signing in using the <code>AWS CLI</code>. Beekeeper Studio will attempt to use the AWS CLI tool at the specified path.',
-                html: true,
-              }"
-            >help_outlined</i>
-          </label>
-
-          <div class="alert alert-danger" v-show="!cliFound">
-            <i class="material-icons-outlined">warning</i>
-            <div>
-              NO CLI FOUND, Please refer to our
-              <a href="https://docs.beekeeperstudio.io/user_guide/connecting/amazon-rds">Beekeeper Docs</a>
-              for more information
-            </div>
-          </div>
-
-          <file-picker v-model="cliPath" />
-        </div>
-      </div>
+      <cli-path-picker
+        v-show="showCli"
+        tool-name="aws"
+        label="AWS CLI Path"
+        docs-href="https://docs.beekeeperstudio.io/user_guide/connecting/amazon-rds"
+        help-tooltip="You are signing in using the <code>AWS CLI</code>. Beekeeper Studio will attempt to use the AWS CLI tool at the specified path."
+        :value="cliPath"
+        @input="val => $set(config.iamAuthOptions, 'cliPath', val)"
+      />
 
       <div v-show="isRedshift" class="flex flex-middle mb-3">
         <h4
@@ -60,6 +43,15 @@
       <!-- PROFILE SELECT or TEXTBOX (fallback) -->
       <div v-show="isProfileAuth" class="form-group">
         <label>AWS Profile</label>
+
+        <div class="alert alert-warning alert-centered" v-show="profilesError">
+          <i class="material-icons">error_outline</i>
+          <div>
+            Unable to list AWS profiles from the selected CLI. Check it's installed
+            and up to date, or enter a profile name manually.
+          </div>
+        </div>
+
 
         <!-- Use SELECT only if we have a non-empty string[] of profiles -->
         <select
@@ -121,19 +113,18 @@
 
 <script>
 import MaskedInput from '@/components/MaskedInput.vue'
-import FilePicker from '@/components/common/form/FilePicker.vue'
+import CliPathPicker from '@/components/common/form/CliPathPicker.vue'
 
 export default {
   props: ['config', 'authType'],
   components: {
     MaskedInput,
-    FilePicker
+    CliPathPicker
   },
   data() {
     return {
       iamAuthenticationEnabled: this.config.iamAuthOptions?.iamAuthenticationEnabled,
       isServerless: this.config.redshiftOptions?.isServerless,
-      cliError: false,
       profilesError: false,
     };
   },
@@ -150,20 +141,15 @@ export default {
     isProfileAuth() {
       return ['iam_cli', 'iam_file'].includes(this.authType);
     },
-    cliFound() {
-      return !!this.config.iamAuthOptions?.cliPath && !this.cliError;
-    },
     hasProfiles() {
       const p = this.config.iamAuthOptions?.profiles;
-      return Array.isArray(p) && p.length > 0 && !this.profilesError;
+      return Array.isArray(p) && p.length > 0;
     },
-    cliPath: {
-      get() {
-        return this.config.iamAuthOptions?.cliPath;
-      },
-      set(value) {
-        this.config.iamAuthOptions.cliPath = value;
-      },
+    // Read-only getter; writes go through $set in the template to keep Vue 2
+    // reactivity working when cliPath is being added to iamAuthOptions for
+    // the first time (defaults to `{}`).
+    cliPath() {
+      return this.config.iamAuthOptions?.cliPath;
     },
   },
   methods: {
@@ -175,56 +161,58 @@ export default {
       this.$set(this.config.redshiftOptions, 'isServerless', !this.config.redshiftOptions.isServerless);
     },
 
-    async tryFindAWSCli() {
-      try {
-        const result = await this.$util.send('backup/whichDumpTool', { toolName: 'aws' });
-        if (result) {
-          this.$set(this.config.iamAuthOptions, 'cliPath', result);
-          this.cliError = false;
-          return result;
-        } else {
-          this.$set(this.config.iamAuthOptions, 'cliPath', null);
-          this.cliError = true;
-          return null;
-        }
-      } catch (e) {
-        this.$set(this.config.iamAuthOptions, 'cliPath', null);
-        this.cliError = true;
-        return null;
-      }
-    },
-
     async tryFindAWSProfiles(cliPath) {
+      // No CLI selected yet — nothing to discover, and not an error.
+      if (!cliPath) {
+        this.$set(this.config.iamAuthOptions, 'profiles', null);
+        this.profilesError = false;
+        return;
+      }
+
       try {
-        if (!cliPath) {
-          this.$set(this.config.iamAuthOptions, 'profiles', null);
-          this.profilesError = true;
-          return;
-        }
+        const result = await this.$util.send('aws/getProfiles', { cliPath });
 
-        const result = await this.$util.send('aws/getProfiles', { toolName: cliPath });
+        // aws/getProfiles spawns a subprocess; if cliPath changed during the
+        // await, this result corresponds to a path we no longer care about —
+        // drop it so it can't overwrite a fresher fetch.
+        if (this.cliPath !== cliPath) return;
 
-        if (Array.isArray(result) && result.length > 0) {
-          const unique = Array.from(new Set(result.map(String)));
-          this.$set(this.config.iamAuthOptions, 'profiles', unique);
-          this.profilesError = false;
+        const profiles = Array.isArray(result)
+          ? Array.from(new Set(result.map(String).map((s) => s.trim()).filter(Boolean)))
+          : [];
 
+        // The CLI ran successfully; clear any prior failure flag.
+        this.profilesError = false;
+
+        if (profiles.length > 0) {
+          this.$set(this.config.iamAuthOptions, 'profiles', profiles);
           if (!this.config.iamAuthOptions.awsProfile) {
-            this.$set(this.config.iamAuthOptions, 'awsProfile', unique[0]);
+            this.$set(this.config.iamAuthOptions, 'awsProfile', profiles[0]);
           }
         } else {
+          // CLI ran but reported no profiles — fall back to manual entry, no warning.
           this.$set(this.config.iamAuthOptions, 'profiles', null);
-          this.profilesError = true;
         }
       } catch (e) {
+        if (this.cliPath !== cliPath) return;
+        // The CLI invocation failed (missing / too old / broken). Surface it —
+        // the form still falls back to the manual profile input.
         this.$set(this.config.iamAuthOptions, 'profiles', null);
         this.profilesError = true;
       }
     },
   },
-  async mounted() {
-    const cliPath = await this.tryFindAWSCli();
-    await this.tryFindAWSProfiles(cliPath);
+  watch: {
+    // Refetch AWS profiles whenever cliPath changes, regardless of source
+    // (CliPathPicker auto-discovery, the Find action, a manual file pick, or
+    // late hydration). immediate: true covers the saved-from-prior-session
+    // case that the old mounted() hook handled.
+    cliPath: {
+      immediate: true,
+      handler(newPath) {
+        this.tryFindAWSProfiles(newPath);
+      },
+    },
   },
 };
 </script>

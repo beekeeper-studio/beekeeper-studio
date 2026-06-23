@@ -9,6 +9,25 @@
       class="top-panel"
       ref="topPanel"
     >
+      <div
+        v-if="querySelectionError"
+        class="query-parser-error"
+      >
+        <div class="alert alert-warning alert-small">
+          <i class="material-icons">error_outline</i>
+          <div class="alert-body">Run Current unavailable</div>
+          <div class="btn-group">
+            <a
+              @click.prevent="copyQuerySelectionError"
+              class="btn btn-flat btn-small"
+            >Copy error</a>
+            <a
+              @click.prevent="openTroubleshooting"
+              class="btn btn-flat btn-small"
+            >Report issue</a>
+          </div>
+        </div>
+      </div>
       <merge-manager
         v-if="query && query.id"
         :original-text="originalText"
@@ -196,7 +215,7 @@
               class="btn btn-primary btn-small"
               :v-tooltip="displayShortcut('queryEditor.primaryQueryAction')"
               @click.prevent="queryFunctions.primaryRead"
-              :disabled="runButtonDisabled"
+              :disabled="runButtonDisabled || (primaryIsCurrent && runCurrentDisabled)"
             >
               <x-label>{{ runPrimaryText() }}</x-label>
             </x-button>
@@ -207,18 +226,24 @@
             >
               <i class="material-icons">arrow_drop_down</i>
               <x-menu>
-                <x-menuitem @click.prevent="queryFunctions.primaryRead">
+                <x-menuitem
+                  @click.prevent="queryFunctions.primaryRead"
+                  :disabled="primaryIsCurrent && runCurrentDisabled"
+                >
                   <x-label>{{ runPrimaryText() }}</x-label>
                   <x-shortcut :value="displayShortcut('queryEditor.primaryQueryAction')" />
                 </x-menuitem>
-                <x-menuitem @click.prevent="queryFunctions.secondaryRead">
+                <x-menuitem
+                  @click.prevent="queryFunctions.secondaryRead"
+                  :disabled="primaryIsTab && runCurrentDisabled"
+                >
                   <x-label>{{ runSecondaryText() }}</x-label>
                   <x-shortcut :value="displayShortcut('queryEditor.secondaryQueryAction')" />
                 </x-menuitem>
                 <hr>
                 <x-menuitem
                   @click.prevent="queryFunctions.primaryWrite"
-                  :disabled="disableRunToFile"
+                  :disabled="disableRunToFile || (primaryIsCurrent && runCurrentDisabled)"
                 >
                   <x-label>{{ runPrimaryText(true) }}</x-label>
                   <x-shortcut :value="displayShortcut('queryEditor.primaryQueryToFileAction')" />
@@ -231,7 +256,7 @@
                 </x-menuitem>
                 <x-menuitem
                   @click.prevent="queryFunctions.secondaryWrite"
-                  :disabled="disableRunToFile"
+                  :disabled="disableRunToFile || (primaryIsTab && runCurrentDisabled)"
                 >
                   <x-label>{{ runSecondaryText(true) }}</x-label>
                   <x-shortcut :value="displayShortcut('queryEditor.secondaryQueryToFileAction')" />
@@ -529,7 +554,7 @@
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
 
-  import { canDeparameterize, convertParamsForReplacement, deparameterizeQuery } from '../lib/db/sql_tools'
+  import { canDeparameterize, convertParamsForReplacement, deparameterizeQuery, safelyIdentify } from '../lib/db/sql_tools'
   import { EditorMarker } from '@/lib/editor/utils'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
@@ -624,6 +649,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
         individualQueries: [],
         currentlySelectedQuery: null,
+        querySelectionError: null,
+
         queryMagic: queryMagicExtension(),
         isManualCommit: false,
         hasActiveTransaction: false,
@@ -762,6 +789,11 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         return this.tab.isRunning ||
           this.running ||
           (this.editingResult && this.changesCount > 0);
+      },
+      runCurrentDisabled() {
+        // When the sql parser failed to detect multiple queries,
+        // "run current" becomes useless.
+        return !!this.querySelectionError && !this.hasSelectedText;
       },
       changesCount() {
         return this.$refs.table?.pendingChangesCount;
@@ -1463,7 +1495,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
       },
       async submitCurrentQuery() {
-        if(this.runButtonDisabled) return;
+        if (this.runButtonDisabled) return;
+        if (this.runCurrentDisabled) return;
         this.runningType = 'current'
 
         if (this.hasSelectedText && this.primaryIsCurrent) {
@@ -1475,7 +1508,16 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           return await this.submitQuery(this.currentlySelectedQuery.text)
         }
 
-        const queries = identify(this.unsavedText, { strict: false, dialect: this.identifierDialect, paramTypes: this.paramTypes })
+        const { queries, error } = safelyIdentify(this.unsavedText, { dialect: this.identifierDialect, paramTypes: this.paramTypes })
+
+        // this should not theoretically be possible as there probably would have been a queryselection error,
+        // but if we somehow manage to get here, we need to panic
+        if (error) {
+          log.error(error);
+          this.querySelectionError = error;
+          return;
+        }
+
         if (queries.length > 0) {
           this.individualQueries = queries
           this.currentlySelectedQuery = queries[0]
@@ -1536,7 +1578,10 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         this.selectedResult = 0
         let identification = []
         try {
-          identification = identify(rawQuery, { strict: false, dialect: this.identifyDialect, identifyTables: true, identifyColumns: true })
+          const { queries: identification, error } = safelyIdentify(rawQuery, { dialect: this.identifyDialect, identifyTables: true, identifyColumns: true })
+          if (error) {
+            log.error("Unable to identify query.", error)
+          }
 
           if (this.canManageTransactions && identification.some((value: IdentifyResult) => value.executionType === "TRANSACTION")) {
             const startTransaction = identification.filter((value: IdentifyResult) => value.type === "BEGIN_TRANSACTION").length
@@ -1657,7 +1702,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         }
         const originalText = this.query?.text || this.tab.unsavedQueryText
         if (originalText) {
-          const queries = identify(originalText, { strict: false, dialect: this.identifierDialect, paramTypes: this.paramTypes })
+          // The run methods should catch any errors, so we don't need to do that here
+          const { queries } = safelyIdentify(originalText, { dialect: this.identifierDialect, paramTypes: this.paramTypes })
           if (queries.length > 0) {
             this.individualQueries = queries
             this.currentlySelectedQuery = queries[0]
@@ -1798,9 +1844,16 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
         return table?.columns.map((c) => c.columnName);
       },
-      handleQuerySelectionChange({ queries, selectedQuery }) {
+      handleQuerySelectionChange({ queries, selectedQuery, error }) {
         this.individualQueries = queries;
         this.currentlySelectedQuery = selectedQuery;
+        this.querySelectionError = error;
+      },
+      openTroubleshooting() {
+        window.main.openExternally('https://docs.beekeeperstudio.io/support/troubleshooting/')
+      },
+      copyQuerySelectionError() {
+        this.$native.clipboard.writeText(this.querySelectionError?.stack ?? this.querySelectionError?.message)
       },
       startTimer() {
         this.elapsedTime = 0;
@@ -2103,6 +2156,16 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
   // Hide the dot on the range highlight when not editing result
   .query-editor:not(.editing-result) ::v-deep .tabulator-range-active::after {
     visibility: hidden;
+  }
+
+  .query-parser-error {
+    margin-inline: 1rem;
+    margin-top: 0.5rem;
+    margin-bottom: -0.5rem;
+
+    .alert {
+      margin: 0;
+    }
   }
 </style>
 

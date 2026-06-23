@@ -85,6 +85,10 @@ If you're part of a large enterprise, they likely have documentation on how to d
     - Ensure that the group has a matching **AADUSER** on the database server
 - If you created your **AADUSER** with an alias, ie `CREATE AADUSER '<reallylongupn>' as 'shortername'`, you may still need to use the `<reallylongupn>` as the username from within Beekeeper
 
+### CLI path
+
+The path to the `az` binary is detected automatically — common install locations are checked, including Homebrew. If it isn't found, click **Find** to retry or pick the binary manually with the file picker.
+
 ## Service Principal Authentication
 
 !!! info "MS SQL Server Supported"

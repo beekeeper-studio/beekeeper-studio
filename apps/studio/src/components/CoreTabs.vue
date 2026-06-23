@@ -115,6 +115,7 @@
               :tab="tab"
               :active="activeTab?.id === tab.id"
               :table="slotProps.table"
+              @update-tab="updateTab"
             />
           </template>
         </tab-with-table>
@@ -1062,7 +1063,7 @@ export default Vue.extend({
     },
     async close(tab: TransportOpenTab, options?: CloseTabOptions) {
       if (this.closingTab) return; // prevent close modals queueing
-  
+
       if (tab.unsavedChanges && !options?.ignoreUnsavedChanges) {
         this.closingTab = tab
         const confirmed = await this.$confirmById(this.confirmModalId);
