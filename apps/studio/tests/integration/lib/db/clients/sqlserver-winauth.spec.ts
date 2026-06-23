@@ -56,6 +56,16 @@ hostCases.forEach(({ label, host }) => {
       expect(loginName).toBeTruthy()
     })
 
+    it('negotiates NTLM (not Kerberos, and not plain SQL auth)', async () => {
+      // The runner is not domain-joined and connects over localhost/hostname, so SSPI
+      // falls back to NTLM. Asserting the scheme catches a regression that silently
+      // degrades integrated auth into SQL authentication (which would report SQL).
+      const result = await connection.driverExecuteSingle(
+        'SELECT auth_scheme FROM sys.dm_exec_connections WHERE session_id = @@SPID'
+      )
+      expect(result.data.recordset[0].auth_scheme).toBe('NTLM')
+    })
+
     it('can execute a trivial query against master', async () => {
       const result = await connection.driverExecuteSingle('SELECT @@VERSION AS v')
       expect(String(result.data.recordset[0].v)).toMatch(/SQL Server/i)

@@ -38,6 +38,29 @@ fi
 echo "::endgroup::"
 
 cd /app/apps/studio
-exec yarn internal:integration \
+
+# Run the suite, capturing a machine-readable summary alongside the normal output.
+RESULT_FILE=/tmp/jest-kerberos.json
+set +e
+yarn internal:integration \
   --testPathPattern sqlserver-kerberos \
-  --runInBand --ci --forceExit --testTimeout=90000
+  --runInBand --ci --forceExit --testTimeout=90000 \
+  --json --outputFile="${RESULT_FILE}"
+JEST_RC=$?
+set -e
+
+# Hard guard against the silent-skip trap: the suite is gated on SQLSERVER_KERBEROS_TEST
+# via describe.skip, so if that env var failed to reach Jest the suite would skip and CI
+# would go green having tested nothing. A skipped suite is indistinguishable from a passing
+# one, so require that Kerberos tests actually executed and that none were skipped.
+node -e '
+  const fs = require("fs");
+  const r = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+  console.log(`jest: suites=${r.numTotalTestSuites} passed=${r.numPassedTests} ` +
+              `failed=${r.numFailedTests} skipped=${r.numPendingTests}`);
+  if (r.numTotalTestSuites < 1) { console.error("GUARD: no Kerberos suite ran"); process.exit(1); }
+  if (r.numPassedTests < 1) { console.error("GUARD: no Kerberos tests executed (suite skipped?)"); process.exit(1); }
+  if (r.numPendingTests > 0) { console.error("GUARD: Kerberos tests were skipped"); process.exit(1); }
+' "${RESULT_FILE}"
+
+exit "${JEST_RC}"
