@@ -11,6 +11,18 @@ permissions:
 # job needs nothing on the runner except Docker -- it runs the exact same command a developer
 # runs locally.
 on:
+  push:
+    branches:
+      - master
+      # Temporary: run directly on the development branch to validate the suite in CI.
+      # Remove before/at merge -- PRs are already covered by the pull_request trigger below.
+      - claude/kerberos-sqlserver-ci-tests-ujxon1
+    paths:
+      - 'apps/studio/src/lib/db/clients/sqlserver.ts'
+      - 'apps/studio/src/lib/db/types.ts'
+      - 'apps/studio/tests/integration/lib/db/clients/sqlserver-kerberos.spec.ts'
+      - 'dev/docker_sqlserver_kerberos/**'
+      - '.github/workflows/sqlserver-kerberos-tests.yaml'
   pull_request:
     paths:
       - 'apps/studio/src/lib/db/clients/sqlserver.ts'
@@ -19,6 +31,11 @@ on:
       - 'dev/docker_sqlserver_kerberos/**'
       - '.github/workflows/sqlserver-kerberos-tests.yaml'
   workflow_dispatch:
+
+# Only the latest commit per ref matters; cancel superseded in-progress runs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   sqlserver-kerberos:
