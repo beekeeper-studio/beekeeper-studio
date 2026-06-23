@@ -1,7 +1,16 @@
 import { MysqlClient } from "./mysql";
 import { FilterOptions, PrimaryKeyColumn, Routine, TableChanges } from "../models";
+import { IDbConnectionDatabase } from "../types";
+import { IDbConnectionServer } from "../backendTypes";
+import knexlib from "knex";
+import Client_StarRocks from "@/shared/lib/knex-starrocks";
 
 export class StarRocksClient extends MysqlClient {
+  constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
+    super(server, database);
+    this.knex = knexlib({ client: Client_StarRocks });
+  }
+
   // StarRocks' SQL transactions are too limited to wrap applyChanges in one transaction
   // Ref: https://docs.starrocks.io/docs/loading/SQL_transaction/#usage-notes
   async executeApplyChanges(changes: TableChanges): Promise<any[]> {

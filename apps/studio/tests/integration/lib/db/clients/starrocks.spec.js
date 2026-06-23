@@ -2,31 +2,7 @@ import { GenericContainer } from 'testcontainers'
 import mysql from 'mysql2/promise'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests } from './all'
-import { MysqlData } from '@shared/lib/dialects/mysql'
-
-// StarRocks reports itself as MySQL (dialectFor maps it to 'mysql'), but as a
-// columnar OLAP engine it lacks several MySQL features. Reuse the MySQL dialect
-// data and disable what StarRocks can't do for the common test suite.
-const StarRocksData = {
-  ...MysqlData,
-  disabledFeatures: {
-    ...MysqlData.disabledFeatures,
-    foreignKeys: true,
-    createIndex: true,
-    triggers: true,
-    generatedColumns: true,
-    transactions: true,
-    manualCommit: true,
-    // StarRocks ALTER is limited and asynchronous, and it rejects DDL inside a
-    // transaction. Disable the alter/rename common tests.
-    alter: {
-      everything: true,
-      renameSchema: true,
-      renameTable: true,
-      renameView: true,
-    },
-  },
-}
+import { StarRocksData } from '@shared/lib/dialects/starrocks'
 
 // StarRocks' all-in-one image bundles FE + BE. The BE registers a few seconds
 // after the FE accepts connections, and DDL fails until a backend is alive.
