@@ -137,7 +137,7 @@
     "ssh-config": "^5.1.0",
     "ssh2": "^1.14.0",
     "surrealdb": "^2.0.3",
-    "tabulator-tables": "^6.5.0",
+    "tabulator-tables": "^6.5.2",
     "tinyduration": "^3.2.4",
     "trino-client": "^0.2.9",
     "typeface-roboto": "^0.0.75",
