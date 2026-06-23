@@ -35,19 +35,19 @@ type LegacyFields = Partial<{
 function attachLegacySshColumns(): void {
   Column({ type: "varchar", nullable: true })(SavedConnection.prototype, "sshHost");
   Column({ type: "integer", nullable: true })(SavedConnection.prototype, "sshPort");
-  Column({ type: "varchar", nullable: true })(SavedConnection.prototype, "sshMode");;
+  Column({ type: "varchar", nullable: true })(SavedConnection.prototype, "sshMode");
   Column({ type: "varchar", nullable: true })(SavedConnection.prototype, "sshUsername");
   Column({ type: "varchar", nullable: true })(SavedConnection.prototype, "sshKeyfile");
   Column({ type: "varchar", nullable: true })(SavedConnection.prototype, "sshBastionHost");
-  Column({ type: "integer", nullable: true })(SavedConnection.prototype, "sshBastionHostPort");;
-  Column({ type: "varchar", nullable: true })(SavedConnection.prototype, "sshBastionMode");;
+  Column({ type: "integer", nullable: true })(SavedConnection.prototype, "sshBastionHostPort");
+  Column({ type: "varchar", nullable: true })(SavedConnection.prototype, "sshBastionMode");
   Column({ type: "varchar", nullable: true })(SavedConnection.prototype, "sshBastionUsername");
-  Column({ type: "varchar", nullable: true })(SavedConnection.prototype, "sshBastionKeyfile");;
+  Column({ type: "varchar", nullable: true })(SavedConnection.prototype, "sshBastionKeyfile");
 
   Column({ type: "varchar", nullable: true, transformer: [encrypt] })(SavedConnection.prototype, "sshPassword");
-  Column({ type: "varchar", nullable: true, transformer: [encrypt] })(SavedConnection.prototype, "sshKeyfilePassword");;
-  Column({ type: "varchar", nullable: true, transformer: [encrypt] })(SavedConnection.prototype, "sshBastionPassword");;
-  Column({ type: "varchar", nullable: true, transformer: [encrypt] })(SavedConnection.prototype, "sshBastionKeyfilePassword");;
+  Column({ type: "varchar", nullable: true, transformer: [encrypt] })(SavedConnection.prototype, "sshKeyfilePassword");
+  Column({ type: "varchar", nullable: true, transformer: [encrypt] })(SavedConnection.prototype, "sshBastionPassword");
+  Column({ type: "varchar", nullable: true, transformer: [encrypt] })(SavedConnection.prototype, "sshBastionKeyfilePassword");
 }
 
 async function buildConnection(fields: LegacyFields): Promise<SavedConnection> {
