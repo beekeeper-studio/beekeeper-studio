@@ -157,7 +157,7 @@ const pluginMenuFactories: MenuFactories = {
             manifest: context.manifest,
             menuItem,
             keybindingLabel: keyPath ?
-              getParsedKeybinding(window.bksConfig, keyPath, "xel")
+              getParsedKeybinding(window.bksConfig, keyPath, "context-menu")
               : undefined,
           });
         },

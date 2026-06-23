@@ -30,6 +30,7 @@ export type ConfigValue = IniValue | Record<string, IniValue>;
 
 export type KeybindingPath = DeepKeyOf<IBksConfig["keybindings"]>;
 
+/** A key must be an uppercased string */
 type ModifierMap = Record<string, string | ((isMac: boolean) => string)>;
 
 interface IBksConfigDebugInfo {
@@ -100,24 +101,6 @@ const vHotkeyModifierMap: ModifierMap = {
   WINDOWS: "windows",
 } as const;
 
-const xelModifierMap = {
-  CTRL: "Control",
-  CMD: "Meta",
-  CTRLORCMD: "Control",
-  CMDORCTRL: "Control",
-  CONTROL: "Control",
-  COMMAND: "Command",
-  CONTROLORCOMMAND: "Control",
-  COMMANDORCONTROL: "Control",
-  SHIFT: "Shift",
-  ALT: "Alt",
-  OPTION: "Alt",
-  ALTGR: "AltGraph",
-  SUPER: "Super",
-  META: "Meta",
-  WINDOWS: "Meta",
-} as const;
-
 export const tabulatorModifierMap = {
   CTRL: "ctrl",
   CMD: "ctrl",
@@ -169,8 +152,8 @@ const contextMenuModifierMap: ModifierMap = {
   ALTGR: "AltGraph",
   SUPER: "Super",
   META: "Meta",
-  PageUp: "PageUp",
-  PageDown: "PageDown",
+  PAGEUP: "PageUp",
+  PAGEDOWN: "PageDown",
   ENTER: "Enter"
 }
 
@@ -203,9 +186,6 @@ export function convertKeybinding(
     case "codemirror":
       modifierMap = codeMirrorModifierMap;
       joinChar = '-'
-      break;
-    case "xel":
-      modifierMap = xelModifierMap;
       break;
     case "tabulator":
       modifierMap = tabulatorModifierMap;
