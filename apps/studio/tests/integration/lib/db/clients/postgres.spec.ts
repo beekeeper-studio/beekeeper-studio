@@ -112,6 +112,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
         `);
 
       await util.knex("witharrays").insert({ id: 1, names: ['a', 'b', 'c'], normal: 'foo' })
+      await util.knex.raw(`INSERT INTO public.extra_moody_people (id, current_moods) VALUES (1, '{sad,happy}')`)
 
       // test table for issue-1442 "BUG: INTERVAL columns receive wrong value when cloning row"
       await util.knex.schema.createTable('test_intervals', (table) => {
@@ -291,6 +292,35 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       } else {
         const result = await util.connection.applyChanges({ updates, inserts: [], deletes: [] })
         expect(result).toMatchObject([{ id: 1, names: ['x', 'y', 'z'], normal: 'Bananas' }])
+      }
+    })
+
+    // regression test for Bug #4068 "BUG: unable to edit array of enums"
+    // pg returns custom enum arrays as PostgreSQL array literals ({val1,val2}) rather than
+    // JSON arrays. normalizeValue() must not throw when JSON.parse fails for these strings.
+    it("Should allow updating an enum array column when value is a PostgreSQL array literal", async () => {
+      const columns = await util.connection.listTableColumns("extra_moody_people")
+      const moodsColumn = columns.find((c) => c.columnName === "current_moods")
+
+      // {happy,ok} is the format pg returns for custom enum array columns (no registered parser)
+      const updates = [{
+        value: '{happy,ok}',
+        column: "current_moods",
+        columnObject: moodsColumn,
+        primaryKeys: [{ column: 'id', value: 1 }],
+        columnType: "this_is_a_mood",
+        table: "extra_moody_people",
+        schema: "public",
+      }]
+
+      if (util.connection.readOnlyMode) {
+        await expect(util.connection.applyChanges({ updates, inserts: [], deletes: [] })).rejects.toThrow(errorMessages.readOnly)
+      } else {
+        const result = await util.connection.applyChanges({ updates, inserts: [], deletes: [] })
+        expect(result).not.toBeNull()
+        expect(result.length).toBeGreaterThan(0)
+        // pg returns custom enum arrays as PostgreSQL array literals
+        expect(result[0].current_moods).toBeTruthy()
       }
     })
 

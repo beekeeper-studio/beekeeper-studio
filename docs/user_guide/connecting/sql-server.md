@@ -7,21 +7,41 @@ icon: material/database
 
 # How To Connect to SQL Server
 
-Beekeeper Studio supports several ways to authenticate to Microsoft SQL Server:
+Beekeeper Studio supports several ways to authenticate to Microsoft SQL Server.
+Pick the one that matches how your server is set up:
 
-1. **SQL Login** — a username and password managed by SQL Server. No extra setup.
-2. **Windows / Kerberos (Integrated)** — passwordless authentication using the
-   identity of the currently logged-in OS user (SSPI). Requires the prerequisites
-   described below.
-3. **Azure Active Directory / Entra ID** — see [Azure / Entra ID](azure-entraid.md).
+### SQL Login
 
-The **Domain** field on the connection form performs password-based **NTLM** and is
-distinct from integrated authentication — integrated authentication uses no username
-or password at all.
+A **username and password** managed by SQL Server itself. This is the default and
+works everywhere with **no extra setup** — no system packages, no Kerberos ticket.
+Choose this if your DBA gave you a SQL Server login, or for local/development
+instances using `sa`.
+
+### Domain (NTLM)
+
+Enter a **username, password, and Domain** on the connection form. This performs
+password-based **NTLM** authentication against a Windows domain account. It is
+distinct from integrated authentication: you still supply credentials, and it needs
+none of the system prerequisites below.
+
+### Windows / Kerberos (Integrated)
+
+**Passwordless** authentication using the identity of the currently logged-in OS
+user (SSPI). The username and password fields are hidden — the connection uses your
+current OS session. This mode is the only one that requires the
+[system prerequisites](#prerequisites-for-integrated-authentication) described below.
+
+### Azure Active Directory / Entra ID
+
+Sign in with an Azure / Entra ID identity (interactive browser, Azure CLI, service
+principal, and more). This is configured separately — see
+[Azure / Entra ID](azure-entraid.md) — and does **not** need the integrated-auth
+prerequisites.
 
 !!! info "Enterprise feature"
     Integrated Windows / Kerberos authentication is part of the paid Enterprise
-    Authentication feature set.
+    Authentication feature set. SQL Login and Domain (NTLM) are available in all
+    editions.
 
 ## Kerberos vs NTLM
 
@@ -38,7 +58,12 @@ connection — no username, no password — negotiates one of:
 Beekeeper Studio uses the same code path for both; the host environment determines
 which protocol is negotiated.
 
-## Prerequisites by operating system
+## Prerequisites for integrated authentication
+
+!!! warning "These apply only to Windows / Kerberos (Integrated) mode"
+    SQL Login, Domain (NTLM), and Azure / Entra ID need **none** of the packages
+    below. Only the passwordless **Windows / Kerberos (Integrated)** mode relies on a
+    system ODBC driver and a Kerberos client.
 
 ### Windows
 

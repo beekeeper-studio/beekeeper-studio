@@ -1278,112 +1278,103 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       )
     }
 
-    const { driver, legacy } = await this.findWindowsAuthDriver()
-    if (legacy) {
-      log.warn('Integrated authentication is using the legacy "{SQL Server}" ODBC driver, ' +
-        'which does not support TLS 1.2. Install "ODBC Driver 18 for SQL Server" (or 17) from Microsoft for secure connections.')
-    }
-
     const trustCert = this.dbConfig.options?.trustServerCertificate
     const server = this.dbConfig.server
     const port = this.dbConfig.port || 1433
     const CONNECT_TIMEOUT_S = 15
 
-    // Patch mssql's generated connection string before msnodesqlv8 uses it: mssql
-    // ignores the driver name, emits Trusted_Connection as a boolean (must be
-    // yes/no), and omits TrustServerCertificate.
-    const connecting = new sqlWindows.ConnectionPool({
-      ...this.dbConfig,
-      connectionTimeout: CONNECT_TIMEOUT_S * 1000,
-      beforeConnect: (cfg: any) => {
-        cfg.conn_str = cfg.conn_str
-          .replace(/Driver=[^;]*/i, `Driver={${driver}}`)
-          .replace(/Trusted_Connection=[^;]*/i, 'Trusted_Connection=yes')
-        if (trustCert) cfg.conn_str += ';TrustServerCertificate=yes'
-        cfg.conn_timeout = CONNECT_TIMEOUT_S
-      }
-    }).connect()
-
-    return await withDeadline(
-      connecting,
-      CONNECT_TIMEOUT_S * 1000,
-      `Integrated authentication timed out after ${CONNECT_TIMEOUT_S}s connecting to ${server},${port} with Driver={${driver}}. ` +
-      `The server is reachable but the SSPI/Kerberos login handshake did not complete in time. ` +
-      `Check the SQL Server SPN registration and that the current user's Kerberos ticket (kinit) or NTLM fallback can reach a domain controller.`
-    )
-  }
-
-  // Probe directly via msnodesqlv8 to (a) discover which ODBC driver is installed
-  // and (b) surface real connection errors -- mssql wraps native msnodesqlv8 errors
-  // into opaque strings. Prefers modern ODBC drivers (TLS 1.2 support).
-  private async findWindowsAuthDriver(): Promise<{ driver: string, legacy: boolean }> {
-    let rawSql: any
-    try {
-      rawSql = require('msnodesqlv8')
-    } catch {
-      throw new Error('Integrated authentication requires the msnodesqlv8 native module, which failed to load.')
-    }
-    const server = this.dbConfig.server
-    const port = this.dbConfig.port || 1433
-    const database = this.dbConfig.database || 'master'
-    const trustCert = this.dbConfig.options?.trustServerCertificate ? 'yes' : 'no'
-
+    // Driver discovery is folded into the real connect: try each candidate ODBC
+    // driver with the actual connection and keep the first that opens. A missing
+    // driver fails immediately at the ODBC driver-manager level (IM002, before any
+    // network or auth), so only the driver that is present completes a single SSPI/
+    // Kerberos handshake -- no throwaway probe connection, and the string that is
+    // validated IS the string used. Modern drivers first (TLS 1.2 support); the
+    // legacy built-in driver only exists on Windows and is a last resort.
     const candidates: { driver: string, legacy: boolean }[] = [
       { driver: 'ODBC Driver 18 for SQL Server', legacy: false },
       { driver: 'ODBC Driver 17 for SQL Server', legacy: false },
     ]
-    // The legacy built-in driver only exists on Windows; it's a last resort.
     if (process.platform === 'win32') {
       candidates.push({ driver: 'SQL Server', legacy: true })
     }
 
-    const PROBE_TIMEOUT_S = 10
-
-    for (const candidate of candidates) {
-      const connStr =
-        `Driver={${candidate.driver}};Server=${server},${port};Database=${database};` +
-        `Trusted_Connection=yes;TrustServerCertificate=${trustCert};`
-      const result: { ok: boolean, error?: string } = await new Promise((resolve) => {
-        let settled = false
-        const done = (r: { ok: boolean, error?: string }) => { if (!settled) { settled = true; resolve(r) } }
-        // JS-level fallback: the native conn_timeout does not reliably fire on a
-        // stalled handshake, so guarantee the probe resolves and the loop advances.
-        const timer = setTimeout(() => done({ ok: false, error: 'timeout' }), (PROBE_TIMEOUT_S + 2) * 1000)
-        rawSql.open({ conn_str: connStr, conn_timeout: PROBE_TIMEOUT_S }, (err: any, conn: any) => {
-          clearTimeout(timer)
-          if (err) {
-            const msgs = (Array.isArray(err) ? err : [err])
-              .map((e: any) => (typeof e?.message === 'string' ? e.message : String(e)))
-              .filter(Boolean).join('; ')
-            done({ ok: false, error: msgs })
-          } else {
-            conn.close(() => done({ ok: true }))
-          }
-        })
-      })
-
-      if (result.ok) return candidate
-
-      const isDriverMissing = result.error?.includes('Data source name not found') || result.error?.includes('IM002')
-      if (isDriverMissing) continue
-
-      // Real error (auth failure, server unreachable, timeout). Wrap timeouts with a
-      // diagnostic naming what timed out, where, and what to check.
-      if (/timeout|timed? out/i.test(result.error || '')) {
-        throw new Error(
-          `Integrated authentication probe timed out after ${PROBE_TIMEOUT_S}s using Driver={${candidate.driver}} against ${server},${port}. ` +
-          `TCP is reachable but the ODBC SSPI/Kerberos negotiation did not return. This usually means an SPN/Kerberos issue on the SQL Server or a blocked path to the domain controller.`
-        )
-      }
-      throw new Error(result.error)
+    // Set a connection-string clause, replacing it in place or appending it when
+    // mssql's generated string omits it -- so the discovered driver and
+    // Trusted_Connection are never silently dropped.
+    const setClause = (connStr: string, key: string, value: string): string => {
+      const re = new RegExp(`${key}=[^;]*`, 'i')
+      return re.test(connStr)
+        ? connStr.replace(re, `${key}=${value}`)
+        : `${connStr.replace(/;?\s*$/, '')};${key}=${value}`
     }
 
-    throw new Error(
+    // Flatten every nested message out of an mssql/msnodesqlv8 error so a missing
+    // driver can be told apart from a real auth/connect failure (mssql wraps native
+    // errors and exposes them via originalError / precedingErrors).
+    const errorText = (err: any): string => {
+      const parts: string[] = []
+      const visit = (e: any) => {
+        if (!e) return
+        if (typeof e === 'string') { parts.push(e); return }
+        if (typeof e.message === 'string') parts.push(e.message)
+        if (e.originalError) visit(e.originalError)
+        if (Array.isArray(e.precedingErrors)) e.precedingErrors.forEach(visit)
+      }
+      if (Array.isArray(err)) err.forEach(visit); else visit(err)
+      return parts.join('; ')
+    }
+    const isDriverMissing = (text: string): boolean =>
+      /IM002|IM003|data source name not found|specified driver could not be loaded|can'?t open lib|file not found/i.test(text)
+
+    const driverMissingError = () => new Error(
       (process.platform === 'win32'
         ? 'Integrated authentication requires an ODBC Driver for SQL Server. Install "ODBC Driver 18 for SQL Server" (or 17) from Microsoft.'
         : 'Integrated authentication requires unixODBC and the Microsoft "ODBC Driver 18 for SQL Server" installed on this machine.') +
       ` See ${WIN_AUTH_DOCS_URL} for setup.`
     )
+
+    for (let i = 0; i < candidates.length; i++) {
+      const candidate = candidates[i]
+      // mssql ignores the driver name and emits Trusted_Connection as a boolean
+      // (ODBC needs yes/no); set both, plus TrustServerCertificate when asked.
+      const connecting = new sqlWindows.ConnectionPool({
+        ...this.dbConfig,
+        connectionTimeout: CONNECT_TIMEOUT_S * 1000,
+        beforeConnect: (cfg: any) => {
+          cfg.conn_str = setClause(cfg.conn_str, 'Driver', `{${candidate.driver}}`)
+          cfg.conn_str = setClause(cfg.conn_str, 'Trusted_Connection', 'yes')
+          if (trustCert) cfg.conn_str = setClause(cfg.conn_str, 'TrustServerCertificate', 'yes')
+          cfg.conn_timeout = CONNECT_TIMEOUT_S
+        }
+      }).connect()
+
+      try {
+        const pool = await withDeadline(
+          connecting,
+          CONNECT_TIMEOUT_S * 1000,
+          `Integrated authentication timed out after ${CONNECT_TIMEOUT_S}s connecting to ${server},${port} with Driver={${candidate.driver}}. ` +
+          `The server is reachable but the SSPI/Kerberos login handshake did not complete in time. ` +
+          `Check the SQL Server SPN registration and that the current user's Kerberos ticket (kinit) or NTLM fallback can reach a domain controller.`
+        )
+        if (candidate.legacy) {
+          log.warn('Integrated authentication is using the legacy "{SQL Server}" ODBC driver, ' +
+            'which does not support TLS 1.2. Install "ODBC Driver 18 for SQL Server" (or 17) from Microsoft for secure connections.')
+        }
+        return pool
+      } catch (err) {
+        // A missing driver is not fatal while other candidates remain; advance to
+        // the next. Any other failure (auth, unreachable, or the withDeadline
+        // timeout above) is real and already carries a useful message.
+        if (isDriverMissing(errorText(err))) {
+          if (i < candidates.length - 1) continue
+          throw driverMissingError()
+        }
+        throw err instanceof Error ? err : new Error(errorText(err))
+      }
+    }
+
+    // Only reached if the candidate list is empty (it never is).
+    throw driverMissingError()
   }
 
   private async configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase, signal?: AbortSignal): Promise<any> { // changed to any for now, might need to make some changes
