@@ -1,6 +1,7 @@
 .turbo/
 .idea/
 .cache/
+.claude/
 .vscode/
 ./data/
 .local

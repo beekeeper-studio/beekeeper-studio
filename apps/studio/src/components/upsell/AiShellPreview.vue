@@ -12,7 +12,7 @@
         <!-- Always rendered to reserve vertical space, so the caret showing
              doesn't cause a layout jump. -->
         <div class="cc-thinking" aria-hidden="true">
-          <span class="cc-caret" v-show="step === 2"></span>
+          <span class="cc-caret" v-show="step === 2" />
         </div>
 
         <p
@@ -26,7 +26,7 @@
           class="cc-tool cc-step"
           :class="{ 'cc-step-show': step >= 4 }"
         >
-          <span class="cc-tool-bar"></span>
+          <span class="cc-tool-bar" />
           <span class="cc-tool-name">Get Columns</span>
           <span class="cc-tool-sep">&mdash;</span>
           <span class="cc-tool-meta">rental, 7 columns</span>
@@ -36,7 +36,7 @@
           class="cc-tool cc-step"
           :class="{ 'cc-step-show': step >= 5 }"
         >
-          <span class="cc-tool-bar"></span>
+          <span class="cc-tool-bar" />
           <span class="cc-tool-name">Get Columns</span>
           <span class="cc-tool-sep">&mdash;</span>
           <span class="cc-tool-meta">film, 13 columns</span>
@@ -46,17 +46,21 @@
           class="cc-runquery cc-step"
           :class="{ 'cc-step-show': step >= 6 }"
         >
-          <div class="cc-rq-head">Run Query</div>
+          <div class="cc-rq-head">
+            Run Query
+          </div>
           <div
             class="cc-sql cc-sql-reveal"
             :class="{ shown: step >= 7 }"
-          ><span class="kw">SELECT</span> f.title, <span class="kw">COUNT</span>(*) <span class="kw">AS</span> rentals
-  <span class="kw">FROM</span> <span class="id">rental</span> r
-  <span class="kw">JOIN</span> <span class="id">inventory</span> i <span class="kw">ON</span> r.inventory_id = i.inventory_id
-  <span class="kw">JOIN</span> <span class="id">film</span> f <span class="kw">ON</span> i.film_id = f.film_id
-  <span class="kw">GROUP BY</span> f.title
-  <span class="kw">ORDER BY</span> rentals <span class="kw">DESC</span>
-  <span class="kw">LIMIT</span> <span class="num">3</span>;</div>
+          >
+            <span class="kw">SELECT</span> f.title, <span class="kw">COUNT</span>(*) <span class="kw">AS</span> rentals
+            <span class="kw">FROM</span> <span class="id">rental</span> r
+            <span class="kw">JOIN</span> <span class="id">inventory</span> i <span class="kw">ON</span> r.inventory_id = i.inventory_id
+            <span class="kw">JOIN</span> <span class="id">film</span> f <span class="kw">ON</span> i.film_id = f.film_id
+            <span class="kw">GROUP BY</span> f.title
+            <span class="kw">ORDER BY</span> rentals <span class="kw">DESC</span>
+            <span class="kw">LIMIT</span> <span class="num">3</span>;
+          </div>
         </div>
 
         <div
@@ -68,9 +72,21 @@
               <tr><th>title</th><th>rentals</th></tr>
             </thead>
             <tbody>
-              <tr><td>BUCKET BROTHERHOOD</td><td class="num">34</td></tr>
-              <tr><td>ROCKETEER MOTHER</td><td class="num">33</td></tr>
-              <tr><td>SCALAWAG DUCK</td><td class="num">32</td></tr>
+              <tr>
+                <td>BUCKET BROTHERHOOD</td><td class="num">
+                  34
+                </td>
+              </tr>
+              <tr>
+                <td>ROCKETEER MOTHER</td><td class="num">
+                  33
+                </td>
+              </tr>
+              <tr>
+                <td>SCALAWAG DUCK</td><td class="num">
+                  32
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>

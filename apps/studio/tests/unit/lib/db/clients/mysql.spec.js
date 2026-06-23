@@ -35,6 +35,20 @@ describe("MySQL UNIT tests (no connection required)", () => {
       expect(parseIndexColumn(input)).toMatchObject(output)
     }
   })
+
+  // BUG: parseIndexColumn checks `str.endsWith('DESC')` to detect descending
+  // order, but with no preceding-whitespace requirement any column name that
+  // happens to end in the literal characters 'DESC' (e.g. 'FOODESC',
+  // 'PRODDESC', or just 'DESC' as a column name) gets the order silently
+  // flipped to DESC even when the user picked the plain ASC option.
+  it("should not flip ASC to DESC for column names that end in 'DESC'", () => {
+    expect(parseIndexColumn('FOODESC')).toMatchObject({
+      name: 'FOODESC', order: 'ASC', prefix: null,
+    })
+    expect(parseIndexColumn('DESC')).toMatchObject({
+      name: 'DESC', order: 'ASC', prefix: null,
+    })
+  })
 })
 
 describe("MysqlChangeBuilder", () => {

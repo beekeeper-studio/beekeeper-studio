@@ -166,25 +166,29 @@
               class="list-body"
             >
               <sidebar-folder
-                v-for="{ folder, connections, subfolders } in foldersWithConnections"
-                :key="`${folder.id}-${connections.length}`"
-                :title="`${folder.name} (${connections.length})`"
-                placeholder="No Items"
+                v-for="{ folder, items, subfolders } in foldersWithConnections"
+                :key="`${folder.id}-${items.length}`"
+                :name="folder.name"
+                :children-count="items.length"
+                :rename="renamingFolderId === folder.id"
+                :empty="items.length === 0 && subfolders.length === 0"
                 :expanded-initially="getFolderExpanded(folder.id)"
                 @toggle="onFolderToggle(folder.id, $event)"
-                @contextmenu.native.stop.prevent="showFolderContextMenu($event, folder)"
+                @contextmenu.native.prevent="showFolderContextMenu($event, folder)"
                 @header-drop="onConnectionFolderHeaderDrop(folder)"
+                @rename-submit="submitFolderRename(folder, $event)"
+                @rename-cancel="renamingFolderId = null"
               >
                 <Draggable
-                  :list="connections"
+                  :list="items"
                   group="connections"
                   ghost-class="drag-ghost"
-                  @start="onConnectionDragStart($event, connections)"
+                  @start="onConnectionDragStart($event, items)"
                   @end="draggingConnection = null"
-                  @change="onConnectionDrop($event, folder, connections)"
+                  @change="onConnectionDrop($event, folder, items)"
                 >
                   <connection-list-item
-                    v-for="c in connections"
+                    v-for="c in items"
                     :key="c.id"
                     :config="c"
                     :selected-config="selectedConfig"
@@ -199,14 +203,18 @@
                   />
                 </Draggable>
                 <sidebar-folder
-                  v-for="{ folder: subfolder, connections: subConnections } in subfolders"
+                  v-for="{ folder: subfolder, items: subConnections } in subfolders"
                   :key="`${subfolder.id}-${subConnections.length}`"
-                  :title="`${subfolder.name} (${subConnections.length})`"
-                  placeholder="No Items"
+                  :name="subfolder.name"
+                  :children-count="subConnections.length"
+                  :rename="renamingFolderId === subfolder.id"
+                  :empty="subConnections.length === 0"
                   :expanded-initially="getFolderExpanded(subfolder.id)"
                   @toggle="onFolderToggle(subfolder.id, $event)"
-                  @contextmenu.native.stop.prevent="showFolderContextMenu($event, subfolder)"
+                  @contextmenu.native.prevent="showFolderContextMenu($event, subfolder)"
                   @header-drop="onConnectionFolderHeaderDrop(subfolder)"
+                  @rename-submit="submitFolderRename(subfolder, $event)"
+                  @rename-cancel="renamingFolderId = null"
                 >
                   <Draggable
                     :list="subConnections"
@@ -354,6 +362,7 @@ import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import Split from 'split.js'
 import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
+import { getLonelyItems, isFolderListEmpty } from '@/common/utils/folderTree'
 import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
 import Draggable from 'vuedraggable'
@@ -389,7 +398,8 @@ export default {
     folderModalError: null,
     folderModalSubmitting: false,
     folderExpandedState: {},
-    draggingConnection: null
+    draggingConnection: null,
+    renamingFolderId: null,
   }),
   watch: {
     async sort(newSort) {
@@ -430,7 +440,7 @@ export default {
       }
     },
     empty() {
-      return !this.filteredConnections?.length && !this.folders?.length
+      return isFolderListEmpty(this.filteredConnections, this.folders)
     },
     noPins() {
       return !this.pinnedConnections?.length;
@@ -439,10 +449,7 @@ export default {
       return this.folders.filter((f) => !f.parentId).sort((a, b) => a.name.localeCompare(b.name))
     },
     lonelyConnections() {
-      const folderIds = this.folders.map((c) => c.id)
-      return [...this.filteredConnections]
-        .filter((config) => !config.connectionFolderId || !folderIds.includes(config.connectionFolderId))
-        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+      return getLonelyItems(this.folders, this.filteredConnections, 'connectionFolderId')
     },
     foldersWithConnections() {
       if (this.loading) return []
@@ -562,6 +569,11 @@ export default {
       this.$modal.show('connection-folder-modal')
     },
     showFolderContextMenu(event, folder) {
+      if (event.target.tagName === 'INPUT') {
+        return;
+      }
+      event.stopPropagation();
+
       const options = []
       if (this.isCloud && !folder.parentId) {
         options.push({ name: 'New Subfolder', handler: ({ item }) => this.createSubfolder(item) })
@@ -597,10 +609,20 @@ export default {
       })
     },
     renameFolder(folder) {
-      this.folderModalName = folder.name
-      this.folderModalItem = folder
-      this.folderModalError = null
-      this.$modal.show('connection-folder-modal')
+      this.renamingFolderId = folder.id
+    },
+    async submitFolderRename(folder, name) {
+      if (!name || name === folder.name) {
+        this.renamingFolderId = null
+        return
+      }
+      try {
+        await this.$store.dispatch('data/connectionFolders/save', { ...folder, name })
+      } catch (ex) {
+        this.$noty.error(`Rename error: ${ex.userMessage ?? ex.message}`)
+      } finally {
+        this.renamingFolderId = null
+      }
     },
     async moveFolderToParent(folder, newParent) {
       await this.$store.dispatch('data/connectionFolders/save', { ...folder, parentId: newParent.id })

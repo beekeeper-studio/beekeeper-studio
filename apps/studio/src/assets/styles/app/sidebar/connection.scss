@@ -76,8 +76,10 @@
     }
   }
   .connection-title {
-    overflow: hidden;
     padding-right: ($gutter-h * 0.75);
+    .title > span {
+      overflow: hidden;
+    }
     .subtitle {
       font-size: 80%;
       color: $text-lighter;
