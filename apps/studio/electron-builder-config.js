@@ -224,14 +224,8 @@ module.exports = {
   },
   snapcraft: {
     base: 'core24',
-    // electron-builder reads the snap publish targets from `snapcraft.publish`
-    // (the top level of this block), NOT from `core24.publish`. Nesting it under
-    // core24 leaves `snapcraft.publish` undefined, so findSnapPublishConfig falls
-    // through to its hard-coded `{ provider: 'snapStore' }` fallback and the .snap
-    // is published to the Snap Store only — never uploaded to the GitHub release.
-    // Keep it here as a plain string array: an object entry such as
-    // { provider: 'snapStore' } is detected as the snap-store config and would
-    // again suppress the GitHub upload.
+    // publish must live at the snapcraft top level, not under core24, or the
+    // .snap is only sent to the Snap Store and never the GitHub release.
     publish: [
       'github',
       'snapStore'
