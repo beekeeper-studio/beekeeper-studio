@@ -15,7 +15,7 @@ import MenuHandler from '@/background/NativeMenuBuilder'
 import { IGroupedUserSettings, UserSetting } from '@/common/appdb/models/user_setting'
 import Connection from '@/common/appdb/Connection'
 import Migration from '@/migration/index'
-import { buildWindow, buildBootstrapWindow, getActiveWindows, getCurrentWindow, BeekeeperWindow } from '@/background/WindowBuilder'
+import { buildWindow, getActiveWindows, getCurrentWindow, BeekeeperWindow } from '@/background/WindowBuilder'
 import platformInfo from '@/common/platform_info'
 import bksConfig from '@/common/bksConfig'
 
@@ -44,11 +44,15 @@ function initUserDirectory(d: string) {
 }
 
 let utilityProcess: Electron.UtilityProcess
+// Resolves when the utility process has finished booting (ORM connected) and posted
+// 'ready'. Used to gate port delivery so the renderer's first requests don't race an
+// unconnected backend now that the utility boots in parallel with the window.
+let utilityReady: Promise<void> | null = null;
 let newWindows: number[] = [];
 
 async function createUtilityProcess() {
   if (utilityProcess) {
-    return;
+    return utilityReady;
   }
 
   const args = {
@@ -85,13 +89,14 @@ async function createUtilityProcess() {
   })
 
   utilityProcess.postMessage({ type: 'init' });
-  return new Promise<void>((resolve, _reject) => {
+  utilityReady = new Promise<void>((resolve, _reject) => {
     utilityProcess.on('message', (msg: UtilProcMessage) => {
       if (msg.type === 'ready') {
         resolve()
       }
     })
   })
+  return utilityReady;
 }
 
 
@@ -198,7 +203,7 @@ app.on('activate', async (_event, hasVisibleWindows) => {
     if (!settings) throw "No settings initialized!"
     await createUtilityProcess()
 
-    buildWindow(settings)
+    buildWindow()
   }
 })
 
@@ -243,9 +248,9 @@ app.on('ready', async () => {
   // reconciled via attachSettings() once initBasics() resolves below.
   let bootstrapWindows: BeekeeperWindow[] = []
   if (options.length > 0) {
-    bootstrapWindows = options.map((option) => buildBootstrapWindow(option))
+    bootstrapWindows = options.map((option) => buildWindow(option))
   } else if (getActiveWindows().length === 0) {
-    bootstrapWindows = [buildBootstrapWindow()]
+    bootstrapWindows = [buildWindow()]
   }
   log.info(`window(s) created ${Math.round(process.uptime() * 1000)}ms after process start`)
 
@@ -253,13 +258,13 @@ app.on('ready', async () => {
   // work rather than blocking the window on it; the renderer requests ports lazily.
   initializeSecurity(app);
   initializeFileHelpers();
-  const utilityReady = createUtilityProcess()
+  const utilityBoot = createUtilityProcess()
 
   const settings = await initBasics()
   log.info(`settings ready ${Math.round(process.uptime() * 1000)}ms after process start`)
   bootstrapWindows.forEach((w) => w.attachSettings(settings))
 
-  await utilityReady
+  await utilityBoot
 })
 
 function createAndSendPorts(filter: boolean, utilDied = false) {
@@ -286,8 +291,11 @@ ipcMain.handle('requestPorts', async () => {
   if (!utilityProcess || !utilityProcess.pid) {
     log.info('NO UTIL PROCESS')
     utilityProcess = null;
-    await createUtilityProcess();
   }
+  // Wait for the utility to finish booting before sending ports, so the renderer's
+  // first requests don't hit an unconnected backend (createUtilityProcess resolves
+  // on the utility's 'ready' message, or immediately if it is already up).
+  await createUtilityProcess();
 
   if (newWindows.length > 0) {
     createAndSendPorts(true);
@@ -299,16 +307,16 @@ ipcMain.handle('requestPorts', async () => {
 // Open a connection from a file (e.g. ./sqlite.db)
 app.on('open-file', async (event, file) => {
   event.preventDefault();
-  const settings = await initBasics()
-  await buildWindow(settings, { url: file })
+  await initBasics()
+  buildWindow({ url: file })
 });
 
 // Open a connection from a url (e.g. postgres://host)
 app.on('open-url', async (event, url) => {
   event.preventDefault();
-  const settings = await initBasics()
+  await initBasics()
 
-  await buildWindow(settings, { url })
+  buildWindow({ url })
 });
 
 ipcMain.handle('isMaximized', () => {

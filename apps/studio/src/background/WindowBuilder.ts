@@ -30,15 +30,14 @@ export class BeekeeperWindow {
   private reloaded = false
   private appUrl: string
   public sId: string;
-  private settings: IGroupedUserSettings | null
   private maximizeOnShow = false
   private hadCachedState = false
 
-  // settings is optional: the first window at startup is constructed from the
-  // fast window-state cache BEFORE the settings DB is ready, then reconciled via
-  // attachSettings() once the real settings load.
-  constructor(openOptions: OpenOptions, settings?: IGroupedUserSettings) {
-    this.settings = settings ?? null
+  // The window is constructed from the fast window-state cache (the single source
+  // of truth for geometry/zoom/maximized) so it can show before the settings DB is
+  // ready. Theme color and a one-time migration of legacy DB window settings are
+  // reconciled via attachSettings() once the real settings load.
+  constructor(openOptions: OpenOptions) {
     const state = readWindowState()
     this.hadCachedState = windowStateExisted()
     const dark = electron.nativeTheme.shouldUseDarkColors || state.dark
@@ -121,13 +120,11 @@ export class BeekeeperWindow {
     this.win.on('maximize', () => {
       this.win.webContents.send(`maximize-${this.sId}`)
       saveWindowState({ maximized: true })
-      this.persistSetting('windowMaximized', true)
     })
 
     this.win.on('unmaximize', () => {
       this.win.webContents.send(`unmaximize-${this.sId}`)
       saveWindowState({ maximized: false })
-      this.persistSetting('windowMaximized', false)
     })
 
     this.win.on('enter-full-screen', () => {
@@ -193,13 +190,24 @@ export class BeekeeperWindow {
     return options
   }
 
-  // Reconciles the window with the authoritative settings once the DB has loaded,
-  // and refreshes the fast window-state cache so the next launch starts correct.
+  // Called once the settings DB has loaded. The window-state cache is the single
+  // source of truth for geometry/zoom/maximized, so this only (1) refreshes the
+  // cached frame color from the theme setting, and (2) performs a ONE-TIME migration
+  // of legacy DB window settings into the cache on the first launch with no cache
+  // (e.g. upgrading from a version that stored window state in the DB).
   attachSettings(settings: IGroupedUserSettings) {
-    this.settings = settings
     if (!this.win) return
 
     const dark = electron.nativeTheme.shouldUseDarkColors || settings.theme.value.toString().includes('dark')
+
+    if (this.hadCachedState) {
+      // Cache is authoritative; just keep the next launch's frame color current.
+      saveWindowState({ dark })
+      return
+    }
+
+    // No cache yet: seed it from the legacy DB window settings and apply them to
+    // the window that was built from defaults a moment ago.
     const zoomLevel = Number(settings.zoomLevel?.value) || 0
     const maximized = !!settings.windowMaximized.value
     const pos = settings.windowPosition.value as Record<string, any>
@@ -209,19 +217,9 @@ export class BeekeeperWindow {
 
     saveWindowState({ dark, zoomLevel, maximized, ...bounds })
 
-    // If there was no cache yet (first launch after upgrade) the window was built
-    // from defaults — reconcile it to the user's saved values now.
-    if (!this.hadCachedState) {
-      this.win.webContents.zoomLevel = zoomLevel
-      if (typeof bounds.x === "number") this.win.setBounds(bounds as Electron.Rectangle)
-      if (maximized && !this.win.isMaximized()) this.win.maximize()
-    }
-  }
-
-  private persistSetting(key: 'windowMaximized' | 'windowPosition', value: any) {
-    if (!this.settings) return
-    this.settings[key].value = value
-    this.settings[key].save().then(_.noop).catch(log.error)
+    this.win.webContents.zoomLevel = zoomLevel
+    if (typeof bounds.x === "number") this.win.setBounds(bounds as Electron.Rectangle)
+    if (maximized && !this.win.isMaximized()) this.win.maximize()
   }
 
   get webContents() {
@@ -253,7 +251,6 @@ export class BeekeeperWindow {
   windowMoveResizeListener(){
     const bounds = this.win.getNormalBounds()
     saveWindowState({ x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height })
-    this.persistSetting('windowPosition', bounds)
   }
 
   finishLoadListener() {
@@ -308,15 +305,10 @@ export function getActiveWindows(): BeekeeperWindow[] {
   return _.filter(windows, 'active')
 }
 
-export function buildWindow(settings: IGroupedUserSettings, options?: OpenOptions): BeekeeperWindow {
-  const win = new BeekeeperWindow(options || {}, settings)
-  windows.push(win)
-  return win
-}
-
-// Build and show a window from the fast window-state cache, before the settings
-// DB is ready. Call attachSettings() on the returned window once settings load.
-export function buildBootstrapWindow(options?: OpenOptions): BeekeeperWindow {
+// Build and show a window from the fast window-state cache. The window needs no
+// settings to construct; at startup call attachSettings() on the returned window
+// once the settings DB has loaded (for the theme color + one-time legacy migration).
+export function buildWindow(options?: OpenOptions): BeekeeperWindow {
   const win = new BeekeeperWindow(options || {})
   windows.push(win)
   return win

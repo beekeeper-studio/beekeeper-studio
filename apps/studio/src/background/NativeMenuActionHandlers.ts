@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import {AppEvent} from '../common/AppEvent'
 import { buildWindow, getActiveWindows, OpenOptions } from './WindowBuilder'
+import { saveWindowState } from './windowState'
 import { app } from 'electron'
 import { safeOpenExternal } from './lib/electron/safeOpenExternal'
 import platformInfo from '../common/platform_info'
@@ -53,8 +54,9 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
         window.webContents.zoomLevel = level
       }
     })
-    this.settings.zoomLevel.value = level
-    await this.settings.zoomLevel.save()
+    // Zoom is part of the window-state cache (the single source of truth), not the
+    // settings DB.
+    saveWindowState({ zoomLevel: level })
   }
 
   zoomreset = async (): Promise<void> => {
@@ -142,10 +144,11 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
   newWindow = (options: Electron.MenuItem|OpenOptions = {}): void => {
     // typescript isn't happy that url doesn't exist on MenuItem, which shouldn't matter because we're checking to see if it exists, but TS gonna TS.
     if ((options as any)?.url) {
-      return buildWindow(this.settings, <OpenOptions>options)
+      buildWindow(<OpenOptions>options)
+      return
     }
 
-    return buildWindow(this.settings)
+    buildWindow()
   }
 
   newQuery = (_1: Electron.MenuItem, win: ElectronWindow): void => {
