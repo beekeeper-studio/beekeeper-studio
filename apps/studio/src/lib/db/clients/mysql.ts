@@ -290,11 +290,6 @@ function filterDatabase(
   return true;
 }
 
-export type ExecuteApplyChangesOptions = {
-  /** Apply the changes in autocommit instead of wrapping them in a transaction. */
-  autocommit?: boolean;
-};
-
 export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConnection> {
   versionInfo: Version & {
     versionString: string;
@@ -916,33 +911,29 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     return databaseName;
   }
 
-  async executeApplyChanges(
+  async executeApplyChanges(changes: TableChanges, tabId?: number): Promise<any[]> {
+    if (tabId) {
+      return await this.runWithConnection(this.applyChangesRunner.bind(this, changes), tabId);
+    }
+    return await this.runWithTransaction(this.applyChangesRunner.bind(this, changes));
+  }
+
+  protected async applyChangesRunner(
     changes: TableChanges,
-    tabId?: number,
-    options: ExecuteApplyChangesOptions = {}
+    connection: mysql.PoolConnection
   ): Promise<any[]> {
     let results = [];
 
-    const run = async (connection: mysql.PoolConnection) => {
-      if (changes.inserts) {
-        await this.insertRows(changes.inserts, connection);
-      }
-
-      if (changes.updates) {
-        results = await this.updateValues(changes.updates, connection);
-      }
-
-      if (changes.deletes) {
-        await this.deleteRows(changes.deletes, connection);
-      }
+    if (changes.inserts) {
+      await this.insertRows(changes.inserts, connection);
     }
 
-    if (tabId) {
-      await this.runWithConnection(run, tabId);
-    } else if (options.autocommit) {
-      await this.runWithConnection(run);
-    } else {
-      await this.runWithTransaction(run);
+    if (changes.updates) {
+      results = await this.updateValues(changes.updates, connection);
+    }
+
+    if (changes.deletes) {
+      await this.deleteRows(changes.deletes, connection);
     }
 
     return results;

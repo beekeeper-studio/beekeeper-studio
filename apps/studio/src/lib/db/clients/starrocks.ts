@@ -1,18 +1,11 @@
-import { ExecuteApplyChangesOptions, MysqlClient } from "./mysql";
+import { MysqlClient } from "./mysql";
 import { FilterOptions, PrimaryKeyColumn, Routine, TableChanges } from "../models";
 
 export class StarRocksClient extends MysqlClient {
   // StarRocks' SQL transactions are too limited to wrap applyChanges in one transaction
   // Ref: https://docs.starrocks.io/docs/loading/SQL_transaction/#usage-notes
-  async executeApplyChanges(
-    changes: TableChanges,
-    tabId?: number,
-    options?: ExecuteApplyChangesOptions
-  ): Promise<any[]> {
-    return super.executeApplyChanges(changes, tabId, {
-      ...options,
-      autocommit: true,
-    });
+  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
+    return this.runWithConnection(this.applyChangesRunner.bind(this, changes));
   }
 
   // StarRocks (PRIMARY KEY model) does not expose primary keys via SHOW KEYS /
