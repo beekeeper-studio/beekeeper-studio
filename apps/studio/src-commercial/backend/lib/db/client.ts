@@ -26,6 +26,7 @@ import { SurrealDBClient } from "./clients/surrealdb";
 import { RedisClient } from '@/lib/db/clients/redis';
 import { BedrockClient } from '@/lib/db/clients/bedrock';
 import { DynamoDBClient } from "./clients/dynamodb";
+import { SnowflakeClient } from "./clients/snowflake";
 
 const clients = new Map<ConnectionType, any>([
   ['mysql', MysqlClient],
@@ -52,7 +53,8 @@ const clients = new Map<ConnectionType, any>([
   ['surrealdb', SurrealDBClient],
   ['redis', RedisClient],
   ['bedrock', BedrockClient],
-  ['dynamodb', DynamoDBClient]
+  ['dynamodb', DynamoDBClient],
+  ['snowflake', SnowflakeClient]
 ], );
 
 

@@ -328,4 +328,11 @@ export const CLIENTS: ClientConfig[] = [
       'cancelQuery',
     ],
   },
+  {
+    key: 'snowflake',
+    name: 'Snowflake',
+    disabledFeatures: [
+
+    ]
+  }
 ];

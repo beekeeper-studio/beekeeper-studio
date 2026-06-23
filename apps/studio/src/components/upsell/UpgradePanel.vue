@@ -20,7 +20,9 @@
 
       <!-- What you unlock -->
       <div class="unlock-section">
-        <div class="section-label">What you unlock by upgrading</div>
+        <div class="section-label">
+          What you unlock by upgrading
+        </div>
         <ul class="unlock-list">
           <li
             v-for="item in unlockList"
@@ -51,7 +53,9 @@
 
       <!-- Testimonial -->
       <figure class="testimonial">
-        <div class="avatar">MK</div>
+        <div class="avatar">
+          MK
+        </div>
         <div class="testimonial-body">
           <blockquote>
             “By far the most user-friendly DB GUI out there. Our whole team bought a license.”

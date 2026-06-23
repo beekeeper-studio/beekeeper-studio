@@ -1,6 +1,6 @@
 <template>
   <div class="ai-shell-upsell">
-    <div class="bg-glow" aria-hidden="true"></div>
+    <div class="bg-glow" aria-hidden="true" />
 
     <div class="compact-card">
       <div class="head-row">

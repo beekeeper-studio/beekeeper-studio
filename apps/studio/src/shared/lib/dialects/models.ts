@@ -4,7 +4,7 @@ import { Version } from '@/common/version'
 import { ExtendedTableColumn } from '@/lib/db/models'
 
 const communityDialects = ['postgresql', 'greengage', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery', 'bedrock', 'redis'] as const
-const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'sqlanywhere', 'surrealdb', 'trino', 'dynamodb'] as const
+const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'sqlanywhere', 'surrealdb', 'trino', 'dynamodb', 'snowflake'] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
 
@@ -67,7 +67,8 @@ export const DialectTitles: {[K in Dialect]: string} = {
   surrealdb: 'SurrealDB',
   bedrock: 'Bedrock',
   redis: 'Redis',
-  dynamodb: 'Amazon DynamoDB'
+  dynamodb: 'Amazon DynamoDB',
+  snowflake: 'Snowflake'
 }
 
 export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'redshift', 'mysql', 'oracledb', 'firebird', 'cassandra-knex']
@@ -83,7 +84,7 @@ export function KnexDialect(d: Dialect): KnexDialect {
   return d as KnexDialect
 }
 // REF: https://github.com/sql-formatter-org/sql-formatter/blob/master/docs/language.md#options
-export type FormatterDialect = 'postgresql' | 'mysql' | 'mariadb' | 'sql' | 'tsql' | 'redshift' | 'plsql' | 'db2' | 'sqlite' | 'trino'
+export type FormatterDialect = 'postgresql' | 'mysql' | 'mariadb' | 'sql' | 'tsql' | 'redshift' | 'plsql' | 'db2' | 'sqlite' | 'trino' | 'snowflake'
 export function FormatterDialect(d: Dialect): FormatterDialect {
   if (!d) return 'mysql'
   if (d === 'sqlserver') return 'tsql'
@@ -96,6 +97,7 @@ export function FormatterDialect(d: Dialect): FormatterDialect {
   if (d === 'duckdb') return 'sql'
   if (d === 'trino') return 'trino'
   if (d === 'surrealdb') return 'sql'
+  if (d === 'snowflake') return 'snowflake'
   return 'mysql' // we want this as the default
 }
 
@@ -171,6 +173,7 @@ export interface DialectData {
       dropColumn?: boolean
       renameColumn?: boolean
       alterColumn?: boolean
+      alterDefault?: boolean
       multiStatement?: boolean
       addConstraint?: boolean
       dropConstraint?: boolean
@@ -202,7 +205,6 @@ export interface DialectData {
     truncateElement?: boolean
     exportTable?: boolean
     createTable?: boolean
-    createDatabase?: boolean
     dropTable?: boolean
     dropSchema?: boolean
     collations?: boolean
@@ -215,6 +217,7 @@ export interface DialectData {
     }
     schema?: boolean
     multipleDatabases?: boolean
+    addDatabase?: boolean
     generatedColumns?: boolean
     transactions?: boolean
     chunkSizeStream?: boolean
