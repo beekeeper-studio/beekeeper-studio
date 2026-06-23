@@ -7,18 +7,30 @@
         <option value="default">
           Username / Password
         </option>
+        <option value="windows">
+          Windows / Kerberos (Integrated)
+        </option>
         <option :key="`${t.value}-${t.name}`" v-for="t in authTypes" :value="t.value">
           {{ t.name }}
         </option>
       </select>
     </div>
-    <common-server-inputs v-show="!azureAuthEnabled" :config="config">
+    <div v-show="windowsAuthEnabled" class="alert alert-info">
+      <i class="material-icons-outlined">info</i>
+      <div>
+        Integrated authentication uses the current OS login &mdash; no username or
+        password. On Linux and macOS it also requires unixODBC, the Microsoft ODBC
+        Driver 18 for SQL Server, and a valid Kerberos ticket (kinit).
+        <a href="https://docs.beekeeperstudio.io/user_guide/connecting/sql-server/">Setup guide</a>
+      </div>
+    </div>
+    <common-server-inputs v-show="!azureAuthEnabled" :config="config" :hide-credentials="windowsAuthEnabled">
       <div class="advanced-connection-settings">
         <h4 class="advanced-heading">
           SQL Server Options
         </h4>
         <div class="advanced-body">
-          <div class="form-group">
+          <div class="form-group" v-show="!windowsAuthEnabled">
             <label for="domain">
               Domain
               <i
@@ -71,12 +83,18 @@
     components: {CommonEntraId, CommonServerInputs, CommonAdvanced },
     props: ['config'],
     mounted() {
-      this.authType = this.config?.azureAuthOptions?.azureAuthType || 'default'
-      this.azureAuthEnabled = this.config?.azureAuthOptions?.azureAuthEnabled || false
+      if (this.config?.windowsAuthEnabled) {
+        this.authType = 'windows'
+        this.windowsAuthEnabled = true
+      } else {
+        this.authType = this.config?.azureAuthOptions?.azureAuthType || 'default'
+        this.azureAuthEnabled = this.config?.azureAuthOptions?.azureAuthEnabled || false
+      }
     },
     data() {
       return {
         azureAuthEnabled: false,
+        windowsAuthEnabled: false,
         authType: 'default',
         authTypes: AzureAuthTypes,
       }
@@ -85,25 +103,47 @@
       async authType() {
         if (this.authType === 'default') {
           this.azureAuthEnabled = false
+          this.windowsAuthEnabled = false
+          this.config.windowsAuthEnabled = false
+          this.config.azureAuthOptions.azureAuthType = undefined
+          return
+        }
+
+        // Integrated (Windows/Kerberos) and Azure auth are both paid features.
+        if (this.$store.getters.isCommunity) {
+          this.$root.$emit(AppEvent.upgradeModal, "Enterprise Authentication");
+          this.authType = 'default'
+          return
+        }
+
+        if (this.authType === 'windows') {
+          this.azureAuthEnabled = false
+          this.windowsAuthEnabled = true
+          this.config.windowsAuthEnabled = true
           this.config.azureAuthOptions.azureAuthType = undefined
         } else {
-          if (this.$store.getters.isCommunity) {
-            this.$root.$emit(AppEvent.upgradeModal, "Enterprise Authentication");
-            this.authType = 'default'
-          } else {
-            this.azureAuthEnabled = true
-            this.config.azureAuthOptions.azureAuthType = this.authType
-          }
+          this.azureAuthEnabled = true
+          this.windowsAuthEnabled = false
+          this.config.windowsAuthEnabled = false
+          this.config.azureAuthOptions.azureAuthType = this.authType
         }
       },
       azureAuthEnabled() {
         this.config.azureAuthOptions.azureAuthEnabled = this.azureAuthEnabled
       },
       config() {
-        if (this.config.azureAuthOptions.azureAuthEnabled) {
-          this.authType = this.config.azureAuthOptions.azureAuthType;
+        if (this.config.windowsAuthEnabled) {
+          this.authType = 'windows'
+          this.windowsAuthEnabled = true
+          this.azureAuthEnabled = false
+        } else if (this.config.azureAuthOptions?.azureAuthEnabled) {
+          this.authType = this.config.azureAuthOptions.azureAuthType
+          this.windowsAuthEnabled = false
+          this.azureAuthEnabled = true
         } else {
-          this.authType = 'default';
+          this.authType = 'default'
+          this.windowsAuthEnabled = false
+          this.azureAuthEnabled = false
         }
       },
     },

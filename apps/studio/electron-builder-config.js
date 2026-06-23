@@ -40,7 +40,11 @@ module.exports = {
   ],
   afterPack: "./build/afterPack.js",
   asarUnpack: [
-    'package.json'
+    'package.json',
+    // msnodesqlv8 ships a native ODBC addon used for SQL Server integrated
+    // (SSPI/Kerberos) auth. prebuild-install drops the binary under build/Release
+    // and/or prebuilds depending on platform, so unpack both.
+    '**/msnodesqlv8/**/*.node'
   ],
   extraResources: [
     {

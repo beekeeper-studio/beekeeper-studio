@@ -278,6 +278,9 @@ export interface IDbConnectionServerConfig {
   localHost?: string,
   localPort?: number,
   trustServerCertificate?: boolean
+  // SQL Server only. Use OS-level integrated authentication (SSPI/Kerberos/NTLM)
+  // via the native msnodesqlv8 ODBC driver instead of a username/password.
+  windowsAuthEnabled?: boolean
   instantClientLocation?: string
   oracleConfigLocation?: string
   options?: any

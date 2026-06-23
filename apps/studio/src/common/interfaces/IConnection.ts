@@ -53,6 +53,7 @@ export interface ISimpleConnection extends Transport {
   readOnlyMode: boolean
   labelColor?: Nullable<string>
   trustServerCertificate?: boolean
+  windowsAuthEnabled?: boolean
   serviceName: Nullable<string>
   options?: any
   redshiftOptions?: RedshiftOptions
