@@ -172,8 +172,8 @@ export function matches(obj: TransportOpenTab, other: TransportOpenTab): boolean
       // at a time.
       return obj.tabType === 'import-export-database'
     case 'query':
-      return (obj.queryId === other.queryId && obj.queryId !== null && other.queryId !== null) ||
-        (obj.usedQueryId === other.usedQueryId && obj.usedQueryId !== null && other.queryId !== null)
+      return (obj.queryId === other.queryId && !_.isNil(obj.queryId) && !_.isNil(other.queryId)) ||
+        (obj.usedQueryId === other.usedQueryId && !_.isNil(obj.usedQueryId) && !_.isNil(other.usedQueryId))
     case 'backup':
       return obj.tabType === 'backup';
     case 'restore':

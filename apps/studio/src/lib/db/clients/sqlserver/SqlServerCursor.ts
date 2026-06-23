@@ -1,4 +1,4 @@
-import { BeeCursor } from "../../models";
+import { BeeCursor, TableColumn } from "../../models";
 import { ConnectionPool, Request } from 'mssql';
 import { waitFor } from "../base/wait";
 
@@ -8,6 +8,7 @@ export class SqlServerCursor extends BeeCursor {
   private bufferReady = false;
   private error: Error | undefined;
   private rowBuffer: any[] = [];
+  private recordsets: any[];
 
 
   constructor(
@@ -16,6 +17,14 @@ export class SqlServerCursor extends BeeCursor {
     chunkSize: number
   ) {
     super(chunkSize)
+  }
+
+  get columns(): TableColumn[] | null {
+    if (!this.recordsets) return null;
+    return this.recordsets.map((r) => ({
+      columnName: r.name,
+      dataType: ''
+    }))
   }
 
   async start(): Promise<void> {
@@ -29,8 +38,8 @@ export class SqlServerCursor extends BeeCursor {
     this.request.query(this.query);
   }
 
-  private handleRecordset() {
-    // TODO: implement
+  private handleRecordset(set) {
+    this.recordsets = set;
   }
 
   private handleEnd() {

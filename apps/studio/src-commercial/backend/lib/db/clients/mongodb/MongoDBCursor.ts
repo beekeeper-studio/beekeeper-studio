@@ -1,6 +1,7 @@
-import { BeeCursor } from "@/lib/db/models";
+import { BeeCursor, TableColumn } from "@/lib/db/models";
 import { CursorResult, QueryLeaf } from "@queryleaf/lib";
 import { AggregationCursor } from "mongodb";
+import _ from "lodash";
 
 interface CursorOptions {
   query?: string,
@@ -13,10 +14,19 @@ export class MongoDBCursor extends BeeCursor {
   private readonly options: CursorOptions;
   private cursor: CursorResult;
   private error?: Error;
+  private fields?: string[];
 
   constructor(options: CursorOptions) {
     super(options.chunkSize);
     this.options = options;
+  }
+
+  get columns(): TableColumn[] | null {
+    if (!this.fields) return null;
+    return this.fields.map((f) => ({
+      columnName: f,
+      dataType: 'unknown'
+    }))
   }
 
   private handleError(error: Error) {
@@ -27,7 +37,6 @@ export class MongoDBCursor extends BeeCursor {
     if (this.options.queryLeaf) {
       this.cursor = await this.options.queryLeaf.executeCursor(this.options.query, { batchSize: this.chunkSize });
     } else if (this.options.cursor) {
-      // @ts-expect-error stupid peer dependencies
       this.cursor = this.options.cursor;
     } else {
       throw new Error('You need either a cursor or a queryleaf instance to be passed to the cursor');
@@ -42,9 +51,13 @@ export class MongoDBCursor extends BeeCursor {
     }
 
     if (await this.cursor.hasNext()) {
-      // we have to call this to trigger mongo to fetch the next batch 
+      // we have to call this to trigger mongo to fetch the next batch
       const firstDoc = await this.cursor.next();
       const rest = this.cursor.readBufferedDocuments();
+
+      if (!this.fields) {
+        this.fields = _.uniq(_.flatten(_.takeRight(rest, 10).map((obj) => Object.keys(obj))));
+      }
 
       return [firstDoc, ...rest].map((v) => Object.values(v));
     }
@@ -53,5 +66,5 @@ export class MongoDBCursor extends BeeCursor {
   async cancel(): Promise<void> {
     await this.cursor.close();
   }
-  
+
 }

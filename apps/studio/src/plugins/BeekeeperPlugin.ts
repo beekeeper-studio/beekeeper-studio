@@ -79,6 +79,8 @@ export const BeekeeperPlugin = {
       return this.dynamoConnectionLabel(config)
     } else if (config.connectionType === 'sqlanywhere' && config.sqlAnywhereOptions.mode === 'file') {
       return config.sqlAnywhereOptions.databaseFile || "./unknown.db"
+    } else if (config.connectionType === 'snowflake') {
+      return `${config.username || 'user'}@${config.snowflakeOptions?.accountId}/${config.defaultDatabase}`
     } else {
       let result = `${config.username || 'user'}@${config.host}:${config.port}`
 
@@ -109,6 +111,8 @@ export const BeekeeperPlugin = {
       return this.dynamoConnectionLabel(config)
     } else if (config.connectionType === 'sqlanywhere' && config.sqlAnywhereOptions.mode === 'file') {
       return window.main.basename(config.sqlAnywhereOptions.databaseFile || "./unknown.db")
+    } else if (config.connectionType === 'snowflake') {
+      connectionString = `${config.snowflakeOptions?.accountId}/${config.defaultDatabase}`;
     } else {
       if (config.defaultDatabase) {
         connectionString += `/${config.defaultDatabase}`
@@ -148,14 +152,29 @@ export const BeekeeperPlugin = {
       const description = connectionName
         ? `Paste a fresh CockroachDB JWT to connect to ${connectionName}. Beekeeper will send it as the password for this connection.`
         : 'Paste a fresh CockroachDB JWT. Beekeeper will send it as the password for this connection.';
+      const title = "CockroachDB JWT";
 
-      Vue.prototype.$modal.show('input-jwt-modal', {
+      Vue.prototype.$modal.show('input-ephemeral-modal', {
         description,
+        title,
         onSubmit: (token: string) => resolve({ token, cancelled: false }),
         onCancel: () => resolve({ cancelled: true }),
       })
     })
   },
+  async promptSnowflakeMFAPasscode(): Promise<{ passcode?: string, cancelled: boolean }> {
+    return new Promise((resolve) => {
+      const description = "Input the MFA passcode from your Authenticator App";
+      const title = "MFA Passcode";
+
+      Vue.prototype.$modal.show('input-ephemeral-modal', {
+        description,
+        title,
+        onSubmit: (passcode: string) => resolve({ passcode, cancelled: false }),
+        onCancel: () => resolve({ cancelled: true }),
+      });
+    })
+  }
 }
 
 export type BeekeeperPlugin = typeof BeekeeperPlugin
