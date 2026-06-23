@@ -104,7 +104,8 @@ describeKrb(`SQLServerClient -- real Kerberos via ${KRB_HOST}`, () => {
     // Proves the app got the MSSQLSvc service ticket specifically, not merely that some
     // Kerberos occurred. The ODBC/GSSAPI layer caches it in the same ccache kinit used.
     const tickets = klist()
-    expect(tickets).toMatch(new RegExp(EXPECTED_SPN.replace(/\./g, '\\.')))
+    // Literal substring match -- no regex, so no escaping concerns.
+    expect(tickets).toContain(EXPECTED_SPN)
   })
 
   it('can execute a trivial query against master', async () => {
