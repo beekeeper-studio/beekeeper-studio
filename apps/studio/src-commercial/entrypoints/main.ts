@@ -34,6 +34,9 @@ if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
 }
 
+log.transports.console.level = platformInfo.logLevel;
+log.transports.file.level = platformInfo.logLevel;
+
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
     fs.mkdirSync(d, { recursive: true })

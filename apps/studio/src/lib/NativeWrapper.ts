@@ -64,9 +64,6 @@ export const ElectronPlugin: NativePlugin = {
     }
   },
   files: {
-    open(path: string) {
-      return window.main.openPath(path)
-    },
     showItemInFolder(path: string) {
       window.main.showItemInFolder(path)
     }

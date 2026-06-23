@@ -2,7 +2,7 @@
   <div
     class="list-item"
     :title="title"
-    @contextmenu.stop.prevent="showContextMenu"
+    @contextmenu.prevent="showContextMenu"
   >
     <a
       href=""
@@ -14,7 +14,12 @@
       <span :class="`connection-label connection-label-color-${labelColor}`" />
       <div class="connection-title flex-col expand">
         <div class="title">
-          {{ label }}
+          <editable-text
+            :initial-value="label"
+            :rename="rename"
+            @submit="submitRename"
+            @cancel="rename = false"
+          />
         </div>
         <div class="subtitle">
           <span
@@ -67,8 +72,10 @@
 import TimeAgo from 'javascript-time-ago'
 import { mapGetters, mapState } from 'vuex'
 import { isUltimateType } from '@/common/interfaces/IConnection'
+import EditableText from '@/components/common/EditableText.vue'
 
 export default {
+  components: { EditableText },
   // recent list is 'recent connections'
   // if that is true, we need to find the companion saved connection
   props: [
@@ -81,7 +88,8 @@ export default {
   ],
   data: () => ({
     timeAgo: new TimeAgo('en-US'),
-    split: null
+    split: null,
+    rename: false,
   }),
   computed: {
     sshStartHost() {
@@ -174,6 +182,13 @@ export default {
       return window.main.pluralize(word, amount, flag)
     },
     showContextMenu(event) {
+      // Stop here and propagate the event if right clicking an input element
+      if (event.target.tagName === 'INPUT') {
+        return;
+      }
+
+      event.stopPropagation();
+
       const ultimateCheck = this.$store.getters.isUltimate
         ? true
         : !isUltimateType(this.displayConfig.connectionType)
@@ -192,6 +207,13 @@ export default {
         !this.isRecentList && {
           name: this.pinned ? 'Unpin' : 'Pin',
           handler: () => this.pinned ? this.unpin() : this.pin()
+        },
+        !this.isRecentList && {
+          name: "Rename",
+          slug: 'rename',
+          handler: () => {
+            this.rename = true;
+          },
         },
         {
           name: "Duplicate",
@@ -273,8 +295,37 @@ export default {
     },
     unpin() {
       this.$store.dispatch('pinnedConnections/remove', this.config);
-    }
+    },
+    async submitRename(name) {
+      if (!name || name === this.label) {
+        this.rename = false
+        return
+      }
+      try {
+        const updated = { ...this.savedConnection, name }
+        await this.$store.dispatch('data/connections/save', updated)
+      } catch (ex) {
+        this.$noty.error(`Rename error: ${ex.userMessage ?? ex.message}`)
+      } finally {
+        this.rename = false
+      }
+    },
   }
 
 }
 </script>
+<style lang="scss" scoped>
+.list-item .list-item-btn .connection-title {
+  min-width: 0;
+
+  .title {
+    position: relative;
+    width: 100%;
+    overflow: visible;
+  }
+
+  .editable-text {
+    width: 100%;
+  }
+}
+</style>

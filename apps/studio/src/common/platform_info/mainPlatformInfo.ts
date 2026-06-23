@@ -29,6 +29,15 @@ export function resolveAppVersion(appVersion): BksVersion {
 
 }
 
+const VALID = ['error', 'warn', 'info', 'verbose', 'debug', 'silly'];
+
+export function resolveLevel(env: any, isDev = false) {
+  const override = env.BKS_LOG_LEVEL?.toLowerCase() || undefined;
+  if (override && (VALID as string[]).includes(override)) return override;
+  if (env.NODE_ENV === 'development' || env.DEBUG || isDev) return 'silly';
+  return 'warn';
+}
+
 
 export function mainPlatformInfo(): IPlatformInfo {
 
@@ -116,6 +125,10 @@ export function mainPlatformInfo(): IPlatformInfo {
     // cloudUrl: isDevEnv ? 'https://staging.beekeeperstudio.io' : 'https://app.beekeeperstudio.io',
     // cloudUrl: 'https://app.beekeeperstudio.io',
     locale,
+    // Resolved here once so main, utility, and renderer all read the same
+    // value: main consumes platformInfo directly, utility receives it as a
+    // JSON env var when forked, renderer fetches it over IPC.
+    logLevel: resolveLevel(p.env, isDevEnv),
 
     cloudUrl: isDevEnv ? 'http://localhost:3000' : 'https://app.beekeeperstudio.io'
   }

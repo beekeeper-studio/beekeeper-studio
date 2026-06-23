@@ -88,9 +88,12 @@ import addPositionToItems from './20260227_add_position_to_items'
 import addBastionAuth from './20260324_add_bastion_auth'
 import sshConfig from './20260519_ssh_config'
 import addSshStoreKeyfilePassword from './20260519_add_ssh_store_keyfile_password'
+import addDynamodbOptions from './20260417_add_dynamodb_options'
 import addLicenseInvalidatedAt from './20260421_add_license_invalidated_at'
 import cleanupDuplicateLicenseKeys from './20260421_cleanup_duplicate_license_keys'
 import createTabulatorPersistence from './20260424_create_tabulator_persistence'
+import clearLogFiles from './20260527_clear_log_files'
+import addSnowflakeOptions from './20260501_add_snowflake_options'
 
 import ultimate from './ultimate/index'
 
@@ -140,9 +143,12 @@ const realMigrations = [
   sshConfig,
   addSshStoreKeyfilePassword,
   addOnboardingNotyShown,
+  addDynamodbOptions,
   addLicenseInvalidatedAt,
   cleanupDuplicateLicenseKeys,
   createTabulatorPersistence,
+  clearLogFiles,
+  addSnowflakeOptions
 ]
 
 // fixtures require the models

@@ -86,7 +86,8 @@
                   v-else-if="config.connectionType === 'sqlserver'"
                   :config="config"
                   :testing="testing"
-                  @error="connectionError = $event" />
+                  @error="connectionError = $event"
+                />
                 <big-query-form
                   v-else-if="config.connectionType === 'bigquery'"
                   :config="config"
@@ -144,6 +145,16 @@
                 />
                 <redis-form
                   v-else-if="config.connectionType === 'redis'"
+                  :config="config"
+                  :testing="testing"
+                />
+                <dynamo-db-form
+                  v-else-if="config.connectionType === 'dynamodb' && isUltimate"
+                  :config="config"
+                  :testing="testing"
+                />
+                <snowflake-form
+                  v-else-if="config.connectionType === 'snowflake' && isUltimate"
                   :config="config"
                   :testing="testing"
                 />
@@ -262,6 +273,8 @@ import SqlAnywhereForm from './connection/SqlAnywhereForm.vue'
 import TrinoForm from './connection/TrinoForm.vue'
 import SurrealDbForm from './connection/SurrealDBForm.vue'
 import RedisForm from './connection/RedisForm.vue'
+import DynamoDbForm from './connection/DynamoDBForm.vue'
+import SnowflakeForm from './connection/SnowflakeForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
 import LoadingSSOModal from '@/components/common/modals/LoadingSSOModal.vue'
@@ -285,7 +298,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpgradePanel, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm, ContentPlaceholderHeading, SurrealDbForm, PrivacyBanner
+  components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpgradePanel, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm, DynamoDbForm, ContentPlaceholderHeading, SurrealDbForm, PrivacyBanner, SnowflakeForm
   },
 
   data() {

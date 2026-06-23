@@ -28,7 +28,7 @@
             button-text="Choose Files"
             :options="{
               filters: [
-                { name: 'SQL files (*.sql)', extensions: ['sql'] },
+                { name: 'SQL files (*.sql, *.txt)', extensions: ['sql', 'txt'] },
                 { name: 'All files', extensions: ['*'] },
               ],
             }"

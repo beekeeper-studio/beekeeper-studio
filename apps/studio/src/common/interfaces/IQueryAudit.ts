@@ -7,7 +7,7 @@ export interface IQueryAuditUser {
 
 export interface IQueryAudit {
   id: number
-  version: number
+  revision: number
   action: 'create' | 'update' | 'destroy'
   createdAt: number
   user: IQueryAuditUser

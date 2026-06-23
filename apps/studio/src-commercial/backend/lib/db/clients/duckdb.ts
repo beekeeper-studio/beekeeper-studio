@@ -203,6 +203,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   // We only use one connection to be able to read and write at the same time
   // https://duckdb.org/docs/connect/concurrency#handling-concurrency
   connectionInstance: Connection;
+  _defaultSchema: string = "main";
   transcoders = [DuckDBBinaryTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
@@ -467,7 +468,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
 
   async listTableIndexes(
     table: string,
-    schema?: string
+    schema: string = this._defaultSchema
   ): Promise<TableIndex[]> {
     const { rows } = await this.driverExecuteSingle(
       `
@@ -484,7 +485,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
         WHERE table_name = ?
           AND schema_name = ?
       `,
-      { params: [table, schema || await this.defaultSchema()] }
+      { params: [table, schema] }
     );
 
     return rows.map((row) => ({
@@ -535,7 +536,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     return rows.map((row) => row.schema_name as string);
   }
 
-  async getTableReferences(table: string, schema: string): Promise<string[]> {
+  async getTableReferences(table: string, schema: string = this._defaultSchema): Promise<string[]> {
     const { rows } = await this.driverExecuteSingle(`
       WITH cte AS (
         SELECT rc.unique_constraint_name AS unique_constraint_name
@@ -552,13 +553,11 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
       FROM cte
       JOIN information_schema.key_column_usage kc
         ON cte.unique_constraint_name = kc.constraint_name
-    `, { params: [schema || await this.defaultSchema(), table] });
+    `, { params: [schema, table] });
     return rows.map((row) => row.table_name as string);
   }
 
-  async getOutgoingKeys(table: string, schema?: string): Promise<TableKey[]> {
-    const defaultSchema = schema || await this.defaultSchema();
-
+  async getOutgoingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     // Query to get outgoing foreign keys (from this table to other tables)
     const { rows } = await this.driverExecuteSingle(
       `
@@ -591,15 +590,13 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
         AND rc.constraint_name = kcu1.constraint_name
       ORDER BY from_schema, from_table, kcu1.constraint_name, from_column
     `,
-      { params: [defaultSchema, table] }
+      { params: [schema, table] }
     );
 
     return this.groupTableKeys(rows);
   }
 
-  async getIncomingKeys(table: string, schema?: string): Promise<TableKey[]> {
-    const defaultSchema = schema || await this.defaultSchema();
-
+  async getIncomingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     // Query to get incoming foreign keys (from other tables to this table)
     const { rows } = await this.driverExecuteSingle(
       `
@@ -632,7 +629,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
         AND rc.constraint_name = kcu1.constraint_name
       ORDER BY from_schema, from_table, kcu1.constraint_name, from_column
     `,
-      { params: [defaultSchema, table] }
+      { params: [schema, table] }
     );
 
     return this.groupTableKeys(rows);
@@ -678,14 +675,14 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   }
 
   async defaultSchema(): Promise<string> {
-    return "main";
+    return this._defaultSchema;
   }
 
   protected async rawExecuteQuery(
     q: string,
     options: any
   ): Promise<DuckDBResult | DuckDBResult[]> {
-    const queries = identify(q, { strict: false });
+    const queries = this.identifyCommands(q);
     const params = options.params;
     const results: DuckDBResult[] = [];
     const conn: Connection = options.connection || this.connectionInstance;
@@ -697,13 +694,11 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
 
       try {
         const statement = await conn.prepare(query.text);
-        let result: DuckDBMaterializedResult;
-
         if (params) {
           const { values, types } = this.buildStatementBindArgs(params)
           statement.bind(values, types);
         }
-        result = await statement.run();
+        const result: DuckDBMaterializedResult = await statement.run();
 
         const columnNames = result.columnNames();
         const columnTypes = result.columnTypes();
@@ -744,14 +739,14 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     return { values, types }
   }
 
-  async getPrimaryKey(table: string, schema: string): Promise<string> {
+  async getPrimaryKey(table: string, schema: string = this._defaultSchema): Promise<string> {
     const keys = await this.getPrimaryKeys(table, schema);
     return keys.length === 1 ? keys[0].columnName : null;
   }
 
   async getPrimaryKeys(
     table: string,
-    schema: string
+    schema: string = this._defaultSchema
   ): Promise<PrimaryKeyColumn[]> {
     const keys: PrimaryKeyColumn[] = [];
 
@@ -818,7 +813,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     throw new Error("Method not implemented.");
   }
 
-  async getTableCreateScript(table: string, schema: string): Promise<string> {
+  async getTableCreateScript(table: string, schema: string = this._defaultSchema): Promise<string> {
     const { rows } = await this.driverExecuteSingle(
       `
         SELECT sql
@@ -831,7 +826,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     return rows[0].sql as string;
   }
 
-  async getViewCreateScript(view: string, schema: string): Promise<string[]> {
+  async getViewCreateScript(view: string, schema: string = this._defaultSchema): Promise<string[]> {
     const { rows } = await this.driverExecuteSingle(
       `
         SELECT sql
@@ -887,7 +882,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   async setTableDescription(
     table: string,
     description: string,
-    schema: string
+    schema: string = this._defaultSchema
   ): Promise<string> {
     await this.driverExecuteSingle(
       `COMMENT ON TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(
@@ -999,7 +994,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   async dropElement(
     elementName: string,
     typeOfElement: DatabaseElement,
-    schema: string
+    schema: string = this._defaultSchema
   ): Promise<void> {
     let query: string;
 
@@ -1020,7 +1015,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     await this.driverExecuteSingle(`${query} ${schema}.${elementName}`);
   }
 
-  async truncateAllTables(schema: string): Promise<void> {
+  async truncateAllTables(schema: string = this._defaultSchema): Promise<void> {
     const tables = await this.listTables({ schema });
     for (const table of tables) {
       await this.truncateElement(table.name, DatabaseElement.TABLE, schema);
@@ -1033,7 +1028,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     limit: number,
     orderBy: OrderBy[],
     filters: string | TableFilter[],
-    schema: string,
+    schema: string = this._defaultSchema,
     selects?: string[]
   ): Promise<TableResult> {
     const query = await this.selectTopSql(
@@ -1064,7 +1059,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     limit: number,
     orderBy: OrderBy[],
     filters: string | TableFilter[],
-    schema: string,
+    schema: string = this._defaultSchema,
     selects?: string[]
   ): Promise<string> {
     const columns = await this.listTableColumns(table);
@@ -1087,7 +1082,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     orderBy: OrderBy[],
     filters: string | TableFilter[],
     chunkSize: number,
-    schema: string
+    schema: string = this._defaultSchema
   ): Promise<StreamResults> {
     const query = await this.selectTopSql(table, null, null, orderBy, filters, schema);
     const columns = await this.listTableColumns(table, schema);
@@ -1102,30 +1097,12 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   ): Promise<StreamResults> {
     const cursor = new DuckDBCursor(this.connectionInstance, query, chunkSize);
 
-    const { columns, totalRows } = await this.getColumnsAndTotalRows(query);
-
     return {
-      totalRows,
-      columns,
       cursor
     }
   }
 
-  async getColumnsAndTotalRows(query: string): Promise<ColumnsAndTotalRows> {
-    const [result] = await this.executeQuery(query)
-    const {fields, rowCount: totalRows} = result
-    const columns = fields.map(f => ({
-      columnName: f.name,
-      dataType: f.dataType
-    }))
-
-    return {
-      columns,
-      totalRows
-    }
-  }
-
-  async getTableLength(table: string, schema: string): Promise<number> {
+  async getTableLength(table: string, schema: string = this._defaultSchema): Promise<number> {
     const { countQuery, params } = buildSelectTopQuery(
       table,
       undefined,
@@ -1145,7 +1122,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   async duplicateTable(
     tableName: string,
     duplicateTableName: string,
-    schema: string
+    schema: string = this._defaultSchema
   ): Promise<void> {
     const query = await this.duplicateTableSql(tableName, duplicateTableName, schema);
     await this.driverExecuteSingle(query);

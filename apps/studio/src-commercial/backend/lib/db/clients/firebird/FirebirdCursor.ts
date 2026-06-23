@@ -1,4 +1,4 @@
-import { BeeCursor, OrderBy, TableFilter } from "@/lib/db/models";
+import { BeeCursor, OrderBy, TableColumn, TableFilter } from "@/lib/db/models";
 import rawLog from "@bksLogger";
 import { Connection } from "./NodeFirebirdWrapper";
 import Firebird from "node-firebird";
@@ -22,6 +22,11 @@ export class FirebirdCursor extends BeeCursor {
   constructor(options: FirebirdCursorOptions) {
     super(options.chunkSize);
     this.init(options);
+  }
+
+  // We don't support query streaming so we don't need the columns getter
+  get columns(): TableColumn[] | null {
+    return null
   }
 
   async init(options: FirebirdCursorOptions) {

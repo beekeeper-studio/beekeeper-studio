@@ -16,6 +16,31 @@ import { createFilteringAgent } from '@/lib/ssh/identitiesOnlyAgent';
 
 const isWindows = process.platform === 'win32';
 
+// Default OpenSSH identity files, in the same priority order ssh(1) uses.
+const DEFAULT_IDENTITY_FILES = [
+  'id_ed25519',
+  'id_ecdsa',
+  'id_rsa',
+  'id_dsa',
+];
+
+function findDefaultIdentityFile(): string | undefined {
+  const sshDir = path.join(os.homedir(), '.ssh');
+  for (const name of DEFAULT_IDENTITY_FILES) {
+    const candidate = path.join(sshDir, name);
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  return undefined;
+}
+
+function buildAuthHandler(opts: { useAgent: boolean; hasPrivateKey: boolean; hasPassword: boolean }): AuthenticationType[] {
+  const methods: AuthenticationType[] = ['none'];// always add none as a fallback for things like tailscale, #4358
+  if (opts.useAgent) methods.push('agent');
+  if (opts.hasPrivateKey) methods.push('publickey');
+  if (opts.hasPassword) methods.push('password');
+  return methods;
+}
+
 function maybeBuildFilteringAgent(
   identityFiles: string[] | undefined,
   identitiesOnly: boolean | undefined,

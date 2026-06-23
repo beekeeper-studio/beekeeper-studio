@@ -46,8 +46,6 @@ const pgErrors = {
   CANCELED: '57014',
 };
 
-const dataTypes: any = {}
-
 export interface STQOptions {
   table: string,
   orderBy?: OrderBy[],
@@ -90,7 +88,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   version: VersionInfo;
   conn: HasPool;
   _defaultSchema: string;
-  dataTypes: any;
+  dataTypes: any = {};
   transcoders = [GenericBinaryTranscoder];
   interval: NodeJS.Timeout;
 
@@ -344,7 +342,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   async listMaterializedViewColumns(table: string, schema: string = this._defaultSchema): Promise<TableColumn[]> {
     const clause = table ? `AND s.nspname = $1 AND t.relname = $2` : '';
     if (table && !schema) {
-      throw new Error("Cannot get columns for '${table}, no schema provided'")
+      throw new Error(`Cannot get columns for '${table}', no schema provided`)
     }
     const sql = `
       SELECT s.nspname, t.relname, a.attname,
@@ -1112,7 +1110,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       query: qs.query,
       params: qs.params,
       conn: this.conn,
-      chunkSize
+      chunkSize,
+      dataTypes: this.dataTypes
     }
 
     return {
@@ -1127,14 +1126,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       query: query,
       params: [],
       conn: this.conn,
-      chunkSize
+      chunkSize,
+      dataTypes: this.dataTypes
     }
 
-    const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
-
     return {
-      totalRows,
-      columns,
       cursor: new PsqlCursor(cursorOpts)
     }
   }
@@ -1379,7 +1375,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
 
   parseFields(fields: any[], rowResults: boolean) {
     return fields.map((field, idx) => {
-      field.dataType = dataTypes[field.dataTypeID] || 'user-defined'
+      field.dataType = this.dataTypes[field.dataTypeID] || 'user-defined'
       field.id = rowResults ? `c${idx}` : field.name
       return field
     })
@@ -1781,7 +1777,19 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   // so we need to turn the string representation back to an array
   private normalizeValue(value: string, column?: ExtendedTableColumn) {
     if (column?.array && _.isString(value)) {
-      return JSON.parse(value)
+      try {
+        return JSON.parse(value)
+      } catch {
+        // pg has no registered parser for custom enum array types (e.g. myenum[]) so it
+        // returns the raw PostgreSQL array literal like {val1,val2}. Reuse pg's built-in
+        // text-array parser (OID 1009) to decode it into a proper JS array, consistent
+        // with how pg handles built-in array types.
+        if (value.startsWith('{') && value.endsWith('}')) {
+          const parseTextArray = pg.types.getTypeParser(1009, 'text')
+          return parseTextArray(value)
+        }
+        return value
+      }
     }
     return value
   }
@@ -1791,14 +1799,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
 
     const data = await this.driverExecuteSingle(sql);
     return data.rows[0].schema;
-  }
-
-  private identifyCommands(queryText: string) {
-    try {
-      return identify(queryText);
-    } catch (err) {
-      return [];
-    }
   }
 
   parseQueryResultColumns(qr: QueryResult): BksField[] {

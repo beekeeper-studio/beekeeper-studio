@@ -91,8 +91,8 @@ describe('LocalConnectionFolderModule', () => {
 
       expect(result).toHaveLength(1)
       expect(result[0].folder).toEqual(folder)
-      expect(result[0].connections).toHaveLength(1)
-      expect(result[0].connections[0].id).toBe(10)
+      expect(result[0].items).toHaveLength(1)
+      expect(result[0].items[0].id).toBe(10)
     })
 
     it('groups connections under subfolders', () => {
@@ -109,12 +109,12 @@ describe('LocalConnectionFolderModule', () => {
       const result = (store.getters as any)['data/connectionFolders/foldersWithConnections'](connections)
 
       expect(result).toHaveLength(1)
-      expect(result[0].connections).toHaveLength(1)
-      expect(result[0].connections[0].id).toBe(10)
+      expect(result[0].items).toHaveLength(1)
+      expect(result[0].items[0].id).toBe(10)
       expect(result[0].subfolders).toHaveLength(1)
       expect(result[0].subfolders[0].folder).toEqual(child)
-      expect(result[0].subfolders[0].connections).toHaveLength(1)
-      expect(result[0].subfolders[0].connections[0].id).toBe(11)
+      expect(result[0].subfolders[0].items).toHaveLength(1)
+      expect(result[0].subfolders[0].items[0].id).toBe(11)
     })
 
     it('uses the connections passed as argument, not store state', () => {
@@ -128,9 +128,9 @@ describe('LocalConnectionFolderModule', () => {
 
       const result = (store.getters as any)['data/connectionFolders/foldersWithConnections'](sortedConnections)
 
-      expect(result[0].connections).toHaveLength(2)
-      expect(result[0].connections[0].id).toBe(20)
-      expect(result[0].connections[1].id).toBe(21)
+      expect(result[0].items).toHaveLength(2)
+      expect(result[0].items[0].id).toBe(20)
+      expect(result[0].items[1].id).toBe(21)
     })
   })
 })
