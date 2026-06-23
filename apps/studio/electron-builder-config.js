@@ -27,7 +27,17 @@ module.exports = {
   },
   generateUpdatesFilesForAllChannels: true,
   toolsets: {
-    appimage: "1.0.3"
+    // Keep the legacy FUSE2 AppImage runtime ("0.0.0", electron-builder's
+    // current default). The newer static type-2 runtime ("1.0.2"/"1.0.3")
+    // drops the libfuse2 dependency but regresses on systems with stable
+    // AppImageLauncher installed: the launch fails with
+    // "appimage_shall_not_be_integrated() failed" followed by
+    // "fuse: memory allocation failed" and a squashfuse usage dump, leaving
+    // the app unable to start. The only runtime-side fix is users upgrading
+    // AppImageLauncher to 3.0.0-alpha-4+, which we can't require.
+    // See AppImage/type2-runtime#121. Revisit when the static runtime is
+    // compatible with shipped AppImageLauncher versions.
+    appimage: "0.0.0"
   },
   directories: {
     output: "dist_electron"
