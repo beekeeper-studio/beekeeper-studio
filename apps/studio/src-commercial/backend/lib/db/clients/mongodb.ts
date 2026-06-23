@@ -28,6 +28,35 @@ interface QueryResult {
   arrayMode: boolean;
 }
 
+const DEFAULT_MONGO_PORT = 27017;
+
+// Extract the host/port a MongoDB URL points at so an SSH tunnel can forward to it.
+// Returns null for URLs the standard URL parser can't handle (e.g. multi-host
+// seed lists or mongodb+srv), where SSH tunnelling isn't supported anyway.
+export function parseMongoHost(url: string): { host: string; port: number } | null {
+  try {
+    const parsed = new URL(url);
+    if (!parsed.hostname) return null;
+    return {
+      host: parsed.hostname,
+      port: parsed.port ? parseInt(parsed.port, 10) : DEFAULT_MONGO_PORT,
+    };
+  } catch {
+    return null;
+  }
+}
+
+// Rewrite a MongoDB URL's host:port to point at the local end of an SSH tunnel.
+export function rewriteMongoUrlHost(url: string, localHost: string, localPort: number): string {
+  try {
+    const parsed = new URL(url);
+    parsed.host = `${localHost}:${localPort}`;
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
 const mongoContext = {
   getExecutionContext(): ExecutionContext {
     return null;
@@ -49,9 +78,31 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async connect(): Promise<void> {
+    // The MongoDB form only collects a connection URL, so config.host/config.port
+    // are never populated. The SSH tunnel forwards a local port to config.host:config.port,
+    // so derive them from the URL before the base class opens the tunnel.
+    if (this.server.config.ssh && !this.server.sshTunnel) {
+      const target = parseMongoHost(this.server.config.url);
+      if (target) {
+        this.server.config.host = target.host;
+        this.server.config.port = target.port;
+      }
+    }
+
     await super.connect();
 
-    this.conn = new MongoClient(this.server.config.url);
+    let url = this.server.config.url;
+
+    // Route the connection through the SSH tunnel's local endpoint.
+    if (this.server.sshTunnel) {
+      url = rewriteMongoUrlHost(
+        url,
+        this.server.config.localHost,
+        this.server.config.localPort
+      );
+    }
+
+    this.conn = new MongoClient(url);
 
     this.conn.on('connectionCreated', (event) => {
       log.debug('Pool connection %d acquired on %s', event.connectionId, event.address);
