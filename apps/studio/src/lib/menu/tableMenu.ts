@@ -293,9 +293,26 @@ export function pasteRange(range: RangeComponent) {
     delimiter: "\t",
   });
 
+  const data = parsedText.data as string[][];
+
   if (parsedText.errors.length > 0) {
     const cell = range.getCells()[0][0];
     setCellValue(cell, text);
+    return;
+  }
+
+  if (data.length === 1 && data[0].length === 1) {
+    const singleValue = data[0][0];
+    const selectedRows = range.getRows();
+    const selectedColumns = range.getColumns()
+    const selectedCells: CellComponent[][] = selectedRows.map(row =>
+      row.getCells().filter(cell => selectedColumns.includes(cell.getColumn()))
+    );
+    selectedCells.forEach((row) => {
+      row.forEach((selectedCells) => {
+        setCellValue(selectedCells, singleValue);
+      });
+    });
   } else {
     const table = range.getRows()[0].getTable();
     const rows = table.getRows("active").slice(range.getTopEdge());
@@ -313,7 +330,7 @@ export function pasteRange(range: RangeComponent) {
       return arr;
     });
 
-    parsedText.data.forEach((row: string[], rowIdx) => {
+    data.forEach((row: string[], rowIdx) => {
       row.forEach((text, colIdx) => {
         const cell = cells[rowIdx]?.[colIdx];
         if (!cell) return;
