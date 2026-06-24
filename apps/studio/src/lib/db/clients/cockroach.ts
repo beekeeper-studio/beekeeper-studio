@@ -4,10 +4,17 @@ import { PostgresClient, STQOptions } from "./postgresql";
 import _ from 'lodash';
 import { defaultCreateScript } from "./postgresql/scripts";
 import { CockroachConnection } from "./cockroach/CockroachConnection";
+import { IDbConnectionServer } from "../backendTypes";
+import { IDbConnectionDatabase } from "../types";
 
 
 export class CockroachClient extends PostgresClient {
   connection: CockroachConnection;
+
+  constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
+    super(server, database);
+    this.connection = new CockroachConnection({ server, database });
+  }
 
   async supportedFeatures(): Promise<SupportedFeatures> {
     return {
