@@ -1047,7 +1047,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       query: qs.query,
       params: qs.params,
       connection: this.connection,
-      chunkSize
+      chunkSize,
       dataTypes: this.dataTypes
     }
 
@@ -1063,7 +1063,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       query: query,
       params: [],
       connection: this.connection,
-      chunkSize
+      chunkSize,
       dataTypes: this.dataTypes
     }
 
