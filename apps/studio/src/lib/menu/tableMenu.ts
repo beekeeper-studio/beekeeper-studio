@@ -8,7 +8,8 @@ import {
 import { markdownTable } from "markdown-table";
 import { ElectronPlugin } from "@/lib/NativeWrapper";
 import Papa from "papaparse";
-import { stringifyRangeData, rowHeaderField, isNumericDataType, escapeSqlString } from "@/common/utils";
+import { stringifyRangeData, rowHeaderField, isNumericDataType } from "@/common/utils";
+import { defaultEscapeString } from "@shared/lib/dialects/models";
 import { escapeHtml } from "@shared/lib/tabulator";
 import _ from "lodash";
 // ?? not sure about this but :shrug:
@@ -113,6 +114,9 @@ export function createMenuItem(label: string, shortcut = "", ultimate = false) {
 export async function copyRanges(options: {
   ranges: RangeComponent[];
   type: "plain" | "tsv" | "json" | "markdown" | "columnName" | "asIn";
+  table?: string;
+  schema?: string;
+  escapeString?: (s: string, quote?: boolean) => string;
 }): Promise<void>;
 export async function copyRanges(options: {
   ranges: RangeComponent[];
@@ -125,9 +129,10 @@ export async function copyRanges(options: {
   type: "plain" | "tsv" | "json" | "markdown" | "sql" | "columnName" | "asIn";
   table?: string;
   schema?: string;
+  escapeString?: (s: string, quote?: boolean) => string;
 }) {
   let text = "";
-
+  
   const extractedData = extractRanges(options.ranges);
   const rangeData = extractedData.data;
   const stringifiedRangeData = stringifyRangeData(rangeData);
@@ -174,9 +179,11 @@ export async function copyRanges(options: {
       });
       const dataType = columns.find(c => c.columnName === colDataType)?.dataType
       const isNumericType = dataType ? isNumericDataType(dataType) : false
+
+      const escapeFn = options.escapeString || defaultEscapeString
       const textArr = rangeData.map(rd => {
         const [data] = Object.values(rd)
-        return isNumericType ? data : `'${escapeSqlString(data)}'`
+        return isNumericType ? data : `'${escapeFn(String(data))}'`
       })
       text = `(\n${textArr.join(',\n')}\n)`
       break
@@ -373,8 +380,9 @@ export function copyActionsMenu(options: {
   ranges: RangeComponent[];
   table?: string;
   schema?: string;
+  escapeString?: (s: string, quote?: boolean) => string;
 }) {
-  const { ranges, table, schema } = options;
+  const { ranges, table, schema, escapeString } = options;
   const columnCount = ranges[0].getColumns().length
   const copyActions = [
     {
@@ -412,7 +420,7 @@ export function copyActionsMenu(options: {
   if (columnCount === 1) {
     copyActions.push({
       label: createMenuItem("Copy for IN statement"),
-      action: () => copyRanges({ ranges, type: "asIn", table, schema }),
+      action: () => copyRanges({ ranges, type: "asIn", table, schema, escapeString }),
     })
   }
 

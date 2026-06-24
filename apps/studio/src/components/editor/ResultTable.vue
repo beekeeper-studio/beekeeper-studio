@@ -283,6 +283,7 @@ import { stringToTypedArray } from '@/common/utils'
                   ranges: cell.getTable().getRanges(),
                   table: this.result.tableName || "mytable",
                   schema: this.result.schema,
+                  escapeString: this.dialectData?.escapeString,
                 }),
                 ...this.getExtraPopupMenu('results.rowHeader', { transform: "tabulator" }),
               ];
@@ -293,6 +294,7 @@ import { stringToTypedArray } from '@/common/utils'
                   ranges: column.getTable().getRanges(),
                   table: this.result.tableName || "mytable",
                   schema: this.result.schema,
+                  escapeString: this.dialectData?.escapeString,
                 }),
                 { separator: true },
                 resizeAllColumnsToFitContent,
@@ -410,6 +412,7 @@ import { stringToTypedArray } from '@/common/utils'
               ranges: cell.getTable().getRanges(),
               table: this.result.tableName,
               schema: this.defaultSchema,
+              escapeString: this.dialectData?.escapeString,
             }),
             { separator: true },
             {
@@ -430,6 +433,7 @@ import { stringToTypedArray } from '@/common/utils'
               ranges: column.getTable().getRanges(),
               table: this.result.tableName,
               schema: this.defaultSchema,
+              escapeString: this.dialectData?.escapeString,
             }),
             { separator: true },
             ...commonColumnMenu,
