@@ -5,7 +5,7 @@ unitConfig.testMatch = ["**/tests/integration/**/*.spec.[jt]s?(x)"]
 const config = {
   ...unitConfig,
   testEnvironment: 'node',
-  setupFilesAfterEnv: [],
+  setupFilesAfterEnv: ['./tests/init/matchers.js'],
   silent: false,
   globals: {
     fetch: global.fetch,

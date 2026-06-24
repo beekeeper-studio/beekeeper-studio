@@ -136,7 +136,7 @@
     "sql-query-identifier": "^3.1.0",
     "sqlanywhere": "beekeeper-studio/node-sqlanywhere#54d1ef2052ccdfe963f0956a3e4d024ee6f1fd8d",
     "ssh-config": "^5.1.0",
-    "ssh2": "^1.14.0",
+    "ssh2": "^1.17.0",
     "surrealdb": "^2.0.3",
     "tabulator-tables": "^6.5.2",
     "tinyduration": "^3.2.4",

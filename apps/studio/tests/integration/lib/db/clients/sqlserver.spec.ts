@@ -4,6 +4,7 @@ import { runCommonTests, runReadOnlyTests } from './all'
 import { DatabaseElement, IDbConnectionServerConfig } from '@/lib/db/types'
 import fs from 'fs';
 import path from 'path';
+import { runCommonSshTests } from './ssh/commonSshTests';
 
 // SQL Server testing policy:
 // We test against SQL Server until it leaves mainstream support
@@ -393,3 +394,5 @@ function testWith(dockerTag: string, readonly: boolean) {
 }
 
 TEST_VERSIONS.forEach(({ version, readonly }) => testWith(version, readonly));
+
+runCommonSshTests("sqlserver");
