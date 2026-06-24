@@ -1271,13 +1271,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     chunkSize: number
   ): Promise<StreamResults> {
     const theCursor = new MysqlCursor(this.connection, query, [], chunkSize);
-    log.debug("results", theCursor);
-
-    const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
 
     return {
-      totalRows,
-      columns,
       cursor: theCursor,
     };
   }

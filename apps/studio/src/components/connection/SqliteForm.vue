@@ -31,6 +31,20 @@
               </div>
 
               <div
+                v-if="!runtimeExtensionsEnabled"
+                class="alert alert-warning"
+              >
+                <i class="material-icons">error_outline</i>
+                <span class="flex">
+                  <span class="expand">
+                    Runtime extensions are disabled. Configured extensions will be ignored until you set
+                    <code>allowRuntimeExtensions = true</code> under <code>[security]</code> in your user config file.
+                  </span>
+                  <a href="https://docs.beekeeperstudio.io/docs/sqlite#runtime-extensions">Learn more</a>
+                </span>
+              </div>
+
+              <div
                 v-if="extensionChosen"
               >
                 <div v-for="extension in extensions" :key="extension" class="alert">
@@ -54,7 +68,7 @@
                 </span>
               </div>
               <div class="row flex-middle">
-                <span class="expand"/>
+                <span class="expand" />
                 <div class="btn-group">
                   <button class="btn" @click.prevent.stop="loadExtension">
                     <i class="material-icons">add</i> Add Extension
@@ -98,6 +112,9 @@ export default Vue.extend({
     },
     extensions() {
       return this.sqliteRuntimeExtensions?.value
+    },
+    runtimeExtensionsEnabled() {
+      return this.$bksConfig.security.allowRuntimeExtensions
     }
   },
   methods: {

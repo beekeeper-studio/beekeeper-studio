@@ -2336,6 +2336,13 @@ function testWith(tag, socket = false, readonly = false, image = 'mysql', option
         await util.paramTest(['?']);
       })
     })
+
+    describe("queryStream double execution", () => {
+      it("should run the supplied query only once across the full stream lifecycle", async () => {
+        if (util.connection.readOnlyMode) return
+        await util.queryStreamDoubleExecutionTest()
+      })
+    })
   })
 
 }

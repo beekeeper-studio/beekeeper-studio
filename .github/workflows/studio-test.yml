@@ -102,6 +102,9 @@ jobs:
       - name: Check for bad log imports
         run: bin/check-for-electron-log-imports.sh
 
+      - name: Check for direct console.log calls
+        run: bin/check-for-console-logs.sh
+
       - name: Check for missing lodash imports
         run: bin/check-lodash.sh
 
@@ -148,10 +151,16 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Install libaio (for oracle)
+        if: matrix.chunk[0] == 'oracle.spec.js'
         run: sudo apt install libaio-dev
 
       - name: Symlink libaio v1 (for oracle)
+        if: matrix.chunk[0] == 'oracle.spec.js'
         run: sudo ln -s /usr/lib/x86_64-linux-gnu/libaio.so.1t64 /usr/lib/x86_64-linux-gnu/libaio.so.1
+
+      - name: Install PostgreSQL 15 (for postgres-backup)
+        if: matrix.chunk[0] == 'postgres-backup.spec.ts'
+        run: sudo bash bin/get-postgres-15.sh
 
       - name: Test
         uses: nick-fields/retry@v2

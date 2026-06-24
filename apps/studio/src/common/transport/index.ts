@@ -68,7 +68,7 @@ export interface TransportUsedQuery extends Transport {
   database: string;
   connectionHash: string;
   status: string;
-  numberOfRecords?: BigInt;
+  numberOfRecords?: bigint;
   workspaceId: number;
 }
 

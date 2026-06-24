@@ -1,8 +1,9 @@
-import { Pool } from "mysql2/typings/mysql";
+import { FieldPacket, OkPacket, Pool, RowDataPacket } from "mysql2/typings/mysql";
 import PoolConnection from "mysql2/typings/mysql/lib/PoolConnection";
 import Query from "mysql2/typings/mysql/lib/protocol/sequences/Query";
-import { BeeCursor } from "../../models";
+import { BeeCursor, TableColumn } from "../../models";
 import { waitFor } from "../base/wait";
+import _ from "lodash";
 import rawLog from '@bksLogger'
 import { MySqlConnection } from "./MySqlConnection";
 
@@ -20,6 +21,8 @@ export class MysqlCursor extends BeeCursor {
   private bufferReady = false;
   private end = false
   private error?: Error
+  private fields: FieldPacket[]
+
   constructor(
     private connection: MySqlConnection,
     private query: string,
@@ -30,6 +33,14 @@ export class MysqlCursor extends BeeCursor {
 
   }
 
+  get columns(): TableColumn[] | null {
+    if (!this.fields) return null;
+    return this.fields.map((f) => ({
+      columnName: f.name,
+      dataType: f.typeName
+    }))
+  }
+
   start(): Promise<void> {
     log.debug("start")
     const promise = new Promise<void>((resolve, reject) => {
@@ -37,6 +48,7 @@ export class MysqlCursor extends BeeCursor {
         connection.release
         const q = connection.query({ sql: this.query, values: this.params, rowsAsArray: true })
         q.on('result', this.handleRow.bind(this) )
+        q.on('fields', this.handleFields.bind(this))
         q.on('end', this.handleEnd.bind(this) )
         q.on('error', this.handleError.bind(this))
         this.cursor = { connection: connection, q: q}
@@ -46,8 +58,15 @@ export class MysqlCursor extends BeeCursor {
     return promise
   }
 
-  private handleRow(row: any) {
-    this.rowBuffer.push(row)
+  private handleFields(fields: FieldPacket[]) {
+    if (fields && _.isArray(fields)) {
+      this.fields = fields;
+    }
+  }
+
+  private handleRow(row: RowDataPacket | OkPacket) {
+    if ("fieldCount" in row) return;
+    this.rowBuffer.push(row as any[])
     if (this.rowBuffer.length >= this.chunkSize) {
       this.cursor?.connection.pause()
       this.bufferReady = true

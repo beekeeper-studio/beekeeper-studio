@@ -577,7 +577,7 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/azureGetAccountName': async function({ authId }: { authId: number }) {
     if (!authId) {
       throw new Error("authId is required");
-    };
+    }
     const cache = await TokenCache.findOneBy({id: authId})
     if (!cache) return null
     return cache.name

@@ -1,14 +1,14 @@
 <template>
-    <input
-      v-bind="$attrs"
-      v-tooltip="privacyMode ? 'Privacy Mode is enabled, disable it in the View menu to see this data' : null"
-      :type="computedType"
-      :value="displayedValue"
-      @input="handleInput"
-      :readonly="privacyMode"
-      class="form-control"
-    >
-  </template>
+  <input
+    v-bind="$attrs"
+    v-tooltip="privacyMode ? 'Privacy Mode is enabled, disable it in the View menu to see this data' : null"
+    :type="computedType"
+    :value="displayedValue"
+    @input="handleInput"
+    :readonly="privacyMode"
+    class="form-control"
+  >
+</template>
 
   <script>
   import { mapGetters } from 'vuex'

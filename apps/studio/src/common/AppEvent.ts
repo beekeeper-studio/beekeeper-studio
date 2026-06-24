@@ -82,6 +82,11 @@ export enum AppEvent {
   pluginMenuClicked = 'pluginMenuClicked',
   /** The database connection was lost unexpectedly. */
   connectionLost = 'connectionLost',
+  /** Open query edit history on a new / existing query tab.
+   * @example
+   * this.trigger(AppEvent.openQueryEditHistory, savedQueryId);
+   **/
+  openQueryEditHistory = 'openQueryEditHistory',
 }
 
 export interface RootBinding {
