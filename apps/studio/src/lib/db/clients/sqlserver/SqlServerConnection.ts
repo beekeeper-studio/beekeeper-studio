@@ -72,10 +72,9 @@ export class SqlServerConnection extends DatabaseConnection<
   }
 
   protected async doDisconnect(): Promise<void> {
-    if (!this.pool.connected) {
-      return;
+    if (this.pool && this.pool.connected) {
+      await this.pool.close();
     }
-    await this.pool.close();
   }
 
   protected async doGetClient(
