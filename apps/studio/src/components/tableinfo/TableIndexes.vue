@@ -170,7 +170,7 @@ export default Vue.extend({
       return this.connectionType !== 'mongodb';
     },
     enabled() {
-      return !this.usedConfig.readOnlyMode && !this.dialectData.disabledFeatures?.alter?.everything && !this.dialectData.disabledFeatures.indexes;
+      return !this.usedConfig.readOnlyMode && !this.dialectData.disabledFeatures?.alter?.everything && !this.dialectData.disabledFeatures?.alter?.indexes;
     },
     hotkeys() {
       if (!this.active) return {}

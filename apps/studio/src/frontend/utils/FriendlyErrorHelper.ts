@@ -15,6 +15,29 @@ const errorMappings = {
     {
       pattern: 'self signed certificate',
       help: "You might need to check 'Trust Server Certificate'"
+    },
+    {
+      // Integrated auth: the ODBC driver (and unixODBC on Linux/macOS) is missing.
+      pattern: 'odbc driver',
+      help: "Integrated authentication needs the Microsoft ODBC Driver 18 for SQL Server installed (plus unixODBC on Linux/macOS).",
+      link: "https://docs.beekeeperstudio.io/user_guide/connecting/sql-server/"
+    },
+    {
+      // Integrated auth: the native driver module failed to load.
+      pattern: 'msnodesqlv8',
+      help: "The native driver for integrated authentication could not load. On Linux/macOS install unixODBC and the Microsoft ODBC Driver 18 for SQL Server.",
+      link: "https://docs.beekeeperstudio.io/user_guide/connecting/sql-server/"
+    },
+    {
+      // Integrated auth: SSPI/Kerberos handshake failed or timed out.
+      pattern: 'sspi',
+      help: "Integrated (Kerberos/NTLM) authentication failed. Check for a valid Kerberos ticket (kinit) and that the server's SPN is registered. Connect by hostname/FQDN so Kerberos can match the SPN.",
+      link: "https://docs.beekeeperstudio.io/user_guide/connecting/sql-server/"
+    },
+    {
+      pattern: 'kerberos',
+      help: "Kerberos authentication failed. Check for a valid ticket (kinit), a registered server SPN, and a client clock in sync with the KDC.",
+      link: "https://docs.beekeeperstudio.io/user_guide/connecting/sql-server/"
     }
   ],
   'oracle': [
