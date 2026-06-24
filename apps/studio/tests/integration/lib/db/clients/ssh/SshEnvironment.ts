@@ -61,7 +61,16 @@ export const DB_CONFIGS: Partial<Record<ConnectionType, DbConfig>> = {
       MYSQL_ROOT_PASSWORD: "example",
       MYSQL_DATABASE: "test",
     },
-    waitStrategy: Wait.forLogMessage("ready for connections", 2),
+    healthCheck: {
+      test: [
+        "CMD-SHELL",
+        "mysqladmin ping -h 127.0.0.1 -P 3306 --protocol=tcp -uroot -pexample --silent",
+      ],
+      interval: 2000,
+      timeout: 3000,
+      retries: 30,
+      startPeriod: 10000,
+    },
   },
   mariadb: {
     image: "mariadb",
@@ -76,7 +85,16 @@ export const DB_CONFIGS: Partial<Record<ConnectionType, DbConfig>> = {
       MYSQL_ROOT_PASSWORD: "example",
       MYSQL_DATABASE: "test",
     },
-    waitStrategy: Wait.forLogMessage("ready for connections", 2),
+    healthCheck: {
+      test: [
+        "CMD-SHELL",
+        "mariadb-admin ping -h 127.0.0.1 -P 3306 --protocol=tcp -uroot -pexample --silent",
+      ],
+      interval: 2000,
+      timeout: 3000,
+      retries: 30,
+      startPeriod: 10000,
+    },
   },
   sqlserver: {
     image: "mcr.microsoft.com/mssql/server:2022-latest",
