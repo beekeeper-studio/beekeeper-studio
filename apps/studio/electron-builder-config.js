@@ -26,9 +26,6 @@ module.exports = {
     releaseNotesFile: "build/release-notes.md"
   },
   generateUpdatesFilesForAllChannels: true,
-  toolsets: {
-    appimage: "1.0.3"
-  },
   directories: {
     output: "dist_electron"
   },
