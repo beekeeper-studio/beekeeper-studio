@@ -2,7 +2,34 @@ import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FieldDescr
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import type { SshMode } from '@/common/interfaces/IConnection';
 
-export const DatabaseTypes = ['sqlite', 'sqlserver', 'redshift', 'cockroachdb', 'mysql', 'postgresql', 'mariadb', 'cassandra', 'scylladb', 'oracle', 'bigquery', 'firebird', 'tidb', 'libsql', 'clickhouse', 'duckdb', 'greengage', 'mongodb', 'sqlanywhere', 'surrealdb', 'redis', 'trino', 'bedrock', 'dynamodb'] as const
+export const DatabaseTypes = [
+  'sqlite',
+  'sqlserver',
+  'redshift',
+  'cockroachdb',
+  'mysql',
+  'postgresql',
+  'mariadb',
+  'cassandra',
+  'scylladb',
+  'oracle',
+  'bigquery',
+  'firebird',
+  'tidb',
+  'libsql',
+  'clickhouse',
+  'duckdb',
+  'greengage',
+  'mongodb',
+  'sqlanywhere',
+  'surrealdb',
+  'redis',
+  'trino',
+  'bedrock',
+  'dynamodb',
+  'snowflake'
+] as const
+
 export type ConnectionType = typeof DatabaseTypes[number]
 
 export const ConnectionTypes = [
@@ -29,7 +56,8 @@ export const ConnectionTypes = [
   { name: 'SurrealDB', value: 'surrealdb' },
   { name: 'Redis', value: 'redis' },
   { name: 'Bedrock', value: 'bedrock' },
-  { name: 'DynamoDB', value: 'dynamodb' }
+  { name: 'DynamoDB', value: 'dynamodb' },
+  { name: 'Snowflake', value: 'snowflake' }
 ]
 
 /** `value` should be recognized by codemirror */
@@ -86,6 +114,20 @@ export const AzureAuthTypes = [
   { name: 'Azure Service Principal Secret', value: AzureAuthType.ServicePrincipalSecret },
   { name: 'Azure CLI Authentication', value: AzureAuthType.CLI }
 ];
+
+export enum SnowflakeAuthType {
+  Default,
+  MFACode,
+  MFANotif,
+  Browser
+}
+
+export const SnowflakeAuthTypes = [
+  { name: 'Username / Password', value: SnowflakeAuthType.Default },
+  { name: 'SSO with Browser', value: SnowflakeAuthType.Browser },
+  { name: 'Multi-Factor Authentication with Code', value: SnowflakeAuthType.MFACode },
+  { name: 'Multi-Factor Authentication with Duo', value: SnowflakeAuthType.MFANotif }
+]
 
 export interface RedshiftOptions {
   clusterIdentifier?: string;
@@ -146,6 +188,13 @@ export interface SurrealDBOptions {
   protocol?: 'http' | 'https' | 'ws' | 'wss';
   namespace?: string;
   token?: string;
+}
+
+export interface SnowflakeOptions {
+  authType?: SnowflakeAuthType;
+  accountId?: string;
+  defaultWarehouse?: string;
+  passcode?: string;
 }
 
 export enum SurrealAuthType {
@@ -229,6 +278,9 @@ export interface IDbConnectionServerConfig {
   localHost?: string,
   localPort?: number,
   trustServerCertificate?: boolean
+  // SQL Server only. Use OS-level integrated authentication (SSPI/Kerberos/NTLM)
+  // via the native msnodesqlv8 ODBC driver instead of a username/password.
+  windowsAuthEnabled?: boolean
   instantClientLocation?: string
   oracleConfigLocation?: string
   options?: any
@@ -242,6 +294,7 @@ export interface IDbConnectionServerConfig {
   sqlAnywhereOptions?: SQLAnywhereOptions
   surrealDbOptions?: SurrealDBOptions
   dynamoDbOptions?: DynamoDBOptions
+  snowflakeOptions?: SnowflakeOptions
   runtimeExtensions?: string[]
 }
 

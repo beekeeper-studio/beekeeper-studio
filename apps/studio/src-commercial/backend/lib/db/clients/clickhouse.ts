@@ -1024,21 +1024,22 @@ export class ClickHouseClient extends BasicDatabaseClient<
     return { totalRows, columns, cursor };
   }
 
-  async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
-    const cursorOpts = {
-      query,
-      params: [],
-      client: await this.connection.getClient(),
-      chunkSize
-    }
+  async queryStream(_query: string, _chunkSize: number): Promise<StreamResults> {
+    // const cursorOpts = {
+    //   query,
+    //   params: [],
+    //   client: this.connection.getClient(),
+    //   chunkSize
+    // }
 
-    const { columns, totalRows } = await this.getColumnsAndTotalRows(query);
+    // const { columns, totalRows } = await this.getColumnsAndTotalRows(query);
 
-    return {
-      totalRows,
-      columns,
-      cursor: new ClickHouseCursor(cursorOpts)
-    }
+    // return {
+    //   totalRows,
+    //   columns,
+    //   cursor: new ClickHouseCursor(cursorOpts)
+    // }
+    throw new Error("Query Streaming is not currently supported for clickhouse")
   }
 
   wrapIdentifier(value: string): string {

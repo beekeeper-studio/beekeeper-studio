@@ -44,6 +44,23 @@ const mmsqlErrors = {
   CANCELED: 'ECANCEL',
 };
 
+// Setup guide for SQL Server integrated / Kerberos authentication prerequisites.
+const WIN_AUTH_DOCS_URL = 'https://docs.beekeeperstudio.io/user_guide/connecting/sql-server/'
+
+// Wrap a promise with a JS-level deadline. msnodesqlv8/ODBC's native conn_timeout
+// does NOT reliably cancel a stalled SQLDriverConnect -- it only covers the TCP
+// connect, not the post-connect TDS prelogin / SSPI handshake -- so a stalled
+// Kerberos/NTLM negotiation would otherwise hang indefinitely. This guarantees the
+// attempt rejects; the orphaned native handle may persist, but the app stays
+// responsive and surfaces a clear error instead of locking up.
+function withDeadline<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  let timer: NodeJS.Timeout;
+  const deadline = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), ms);
+  });
+  return Promise.race([promise, deadline]).finally(() => clearTimeout(timer)) as Promise<T>;
+}
+
 type SQLServerVersion = {
   supportOffsetFetch: boolean
   releaseYear: number
@@ -1216,14 +1233,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Reques
       rowCount: data.length,
       affectedRows: rowsAffected,
       text: command?.text
-    }
-  }
-
-  private identifyCommands(queryText: string) {
-    try {
-      return identify(queryText);
-    } catch (err) {
-      return [];
     }
   }
 

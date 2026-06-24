@@ -33,7 +33,7 @@ export class PsqlCursor extends BeeCursor {
   }
 
   get columns(): TableColumn[] | null {
-    if (this.fields) return null;
+    if (!this.fields) return null;
     return this.fields.map((f) => ({
       columnName: f.name,
       dataType: this.options.dataTypes[f.dataTypeID] || 'user-defined'

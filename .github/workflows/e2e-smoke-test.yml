@@ -39,7 +39,7 @@ jobs:
           echo "/opt/homebrew/opt/python@3.11/libexec/bin" >> $GITHUB_PATH
 
       - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
           cache: yarn

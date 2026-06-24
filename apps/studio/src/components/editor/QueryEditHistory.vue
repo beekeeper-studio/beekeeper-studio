@@ -53,7 +53,9 @@
           :key="group.heading"
           class="audit-group"
         >
-          <h3 class="group-heading">{{ group.heading }}</h3>
+          <h3 class="group-heading">
+            {{ group.heading }}
+          </h3>
           <ul>
             <li
               v-for="audit in group.items"
@@ -85,7 +87,7 @@
       <footer>
         <div>
           <label class="checkbox-group">
-            <input type="checkbox" v-model="showDiff" class="form-control" />
+            <input type="checkbox" v-model="showDiff" class="form-control">
             <span>Highlight changes</span>
           </label>
         </div>
