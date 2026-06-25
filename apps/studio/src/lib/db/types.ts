@@ -281,6 +281,9 @@ export interface IDbConnectionServerConfig {
   // SQL Server only. Use OS-level integrated authentication (SSPI/Kerberos/NTLM)
   // via the native msnodesqlv8 ODBC driver instead of a username/password.
   windowsAuthEnabled?: boolean
+  // SQL Server integrated auth only. Optional Kerberos SPN override (ODBC ServerSPN)
+  // for when the auto-derived MSSQLSvc/<host>:<port> is wrong (CNAME, LB, custom port).
+  kerberosSpn?: string
   instantClientLocation?: string
   oracleConfigLocation?: string
   options?: any

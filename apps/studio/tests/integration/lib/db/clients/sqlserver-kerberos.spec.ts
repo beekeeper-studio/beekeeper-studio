@@ -47,7 +47,11 @@ function klist(): string {
   }
 }
 
-function makeConfig(host: string, port = KRB_PORT): IDbConnectionServerConfig {
+function makeConfig(
+  host: string,
+  port = KRB_PORT,
+  overrides: Partial<IDbConnectionServerConfig> = {}
+): IDbConnectionServerConfig {
   return {
     client: 'sqlserver',
     host,
@@ -56,12 +60,19 @@ function makeConfig(host: string, port = KRB_PORT): IDbConnectionServerConfig {
     password: null,
     windowsAuthEnabled: true,
     trustServerCertificate: true,
+    // Exercise the form's SSL toggle -> ODBC Encrypt wiring for the integrated-auth path.
+    ssl: true,
     readOnlyMode: false,
+    ...overrides,
   } as IDbConnectionServerConfig
 }
 
-async function openConnection(host: string, port = KRB_PORT) {
-  const server = createServer(makeConfig(host, port))
+async function openConnection(
+  host: string,
+  port = KRB_PORT,
+  overrides: Partial<IDbConnectionServerConfig> = {}
+) {
+  const server = createServer(makeConfig(host, port, overrides))
   const connection = server.createConnection('master')
   await connection.connect()
   return { server, connection }
@@ -80,7 +91,7 @@ describeKrb(`SQLServerClient -- real Kerberos via ${KRB_HOST}`, () => {
     if (server) await server.disconnect()
   })
 
-  it('negotiates KERBEROS over a TCP connection', async () => {
+  it('negotiates KERBEROS over an encrypted TCP connection', async () => {
     const result = await connection.driverExecuteSingle(
       `SELECT auth_scheme, net_transport, encrypt_option
        FROM sys.dm_exec_connections WHERE session_id = @@SPID`
@@ -88,11 +99,24 @@ describeKrb(`SQLServerClient -- real Kerberos via ${KRB_HOST}`, () => {
     const row = result.data.recordset[0]
     expect(row.auth_scheme).toBe('KERBEROS')
     expect(row.net_transport).toBe('TCP')
-    // Documents the current TLS posture of the integrated-auth path: connectWindowsAuth()
-    // does not request channel encryption, so the TDS stream is unencrypted ('FALSE').
-    // Kerberos still protects the login handshake itself. Locking this value catches a
-    // regression in either direction (e.g. if encryption is later enabled by default).
-    expect(row.encrypt_option).toBe('FALSE')
+    // ssl: true above maps to the ODBC Encrypt clause, so the TDS stream is TLS-encrypted.
+    expect(row.encrypt_option).toBe('TRUE')
+  })
+
+  it('honors an explicit Service Principal Name (SPN) override', async () => {
+    // Proves the kerberosSpn -> ODBC ServerSPN wiring: forcing the correct SPN still
+    // negotiates KERBEROS. Real-world use is correcting a wrong auto-derived SPN.
+    const opened = await openConnection(KRB_HOST, KRB_PORT, {
+      kerberosSpn: `MSSQLSvc/${KRB_HOST}:${KRB_PORT}`,
+    })
+    try {
+      const result = await opened.connection.driverExecuteSingle(
+        'SELECT auth_scheme FROM sys.dm_exec_connections WHERE session_id = @@SPID'
+      )
+      expect(result.data.recordset[0].auth_scheme).toBe('KERBEROS')
+    } finally {
+      await opened.server.disconnect()
+    }
   })
 
   it('authenticates as exactly BKS\\testuser with no credentials supplied', async () => {

@@ -92,6 +92,7 @@ export default {
       sslRejectUnauthorized: config.sslRejectUnauthorized,
       trustServerCertificate: config.trustServerCertificate,
       windowsAuthEnabled: config.windowsAuthEnabled,
+      kerberosSpn: config.kerberosSpn,
       instantClientLocation: settings?.oracleInstantClient?.stringValue || undefined,
       oracleConfigLocation: settings?.oracleConfigLocation?.stringValue || undefined,
       options: config.options,

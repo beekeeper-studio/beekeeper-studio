@@ -24,7 +24,13 @@
         <a href="https://docs.beekeeperstudio.io/user_guide/connecting/sql-server/">Setup guide</a>
       </div>
     </div>
-    <common-server-inputs v-show="!azureAuthEnabled" :config="config" :hide-credentials="windowsAuthEnabled">
+    <common-server-inputs
+      v-show="!azureAuthEnabled"
+      :config="config"
+      :hide-credentials="windowsAuthEnabled"
+      :support-complex-s-s-l="!windowsAuthEnabled"
+      :ssl-help="windowsAuthEnabled ? 'Encrypts the connection (ODBC Encrypt). Certificate files do not apply to integrated auth; use Trust Server Certificate for self-signed certs.' : undefined"
+    >
       <div class="advanced-connection-settings">
         <h4 class="advanced-heading">
           SQL Server Options
@@ -64,9 +70,34 @@
           </div>
         </div>
       </div>
+      <div v-show="windowsAuthEnabled" class="advanced-connection-settings">
+        <h4 class="advanced-heading">
+          Kerberos Options
+        </h4>
+        <div class="advanced-body">
+          <div class="form-group">
+            <label for="kerberosSpn">
+              Service Principal Name (SPN) <span class="optional-text">(optional)</span>
+              <i
+                class="material-icons"
+                v-tooltip="'Override the Kerberos SPN when the auto-detected MSSQLSvc for the host and port is wrong (e.g. a CNAME, load balancer, or non-standard port). Leave blank to derive it automatically.'"
+              >help_outlined</i>
+            </label>
+            <input
+              id="kerberosSpn"
+              type="text"
+              v-model="config.kerberosSpn"
+              class="form-control"
+              placeholder="MSSQLSvc/db.example.com:1433"
+            >
+          </div>
+        </div>
+      </div>
     </common-server-inputs>
     <common-entra-id v-show="azureAuthEnabled" :auth-type="authType" :config="config" />
-    <common-advanced v-show="!azureAuthEnabled" :config="config" />
+    <!-- Kerberos requires the real FQDN/SPN; an SSH tunnel routes through localhost and
+         breaks SPN matching, so the tunnel is not offered for integrated auth. -->
+    <common-advanced v-show="!azureAuthEnabled && !windowsAuthEnabled" :config="config" />
   </div>
 </template>
 

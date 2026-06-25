@@ -1279,6 +1279,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     }
 
     const trustCert = this.dbConfig.options?.trustServerCertificate
+    const encrypt = this.dbConfig.options?.encrypt
+    const serverSpn = this.dbConfig.options?.serverSpn
     const server = this.dbConfig.server
     const port = this.dbConfig.port || 1433
     const CONNECT_TIMEOUT_S = 15
@@ -1343,7 +1345,12 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
         beforeConnect: (cfg: any) => {
           cfg.conn_str = setClause(cfg.conn_str, 'Driver', `{${candidate.driver}}`)
           cfg.conn_str = setClause(cfg.conn_str, 'Trusted_Connection', 'yes')
+          // Mirror the form's SSL toggle onto the ODBC Encrypt clause (set explicitly both
+          // ways so the toggle is deterministic regardless of driver defaults).
+          cfg.conn_str = setClause(cfg.conn_str, 'Encrypt', encrypt ? 'yes' : 'no')
           if (trustCert) cfg.conn_str = setClause(cfg.conn_str, 'TrustServerCertificate', 'yes')
+          // Override the Kerberos SPN the driver requests a ticket for, when provided.
+          if (serverSpn) cfg.conn_str = setClause(cfg.conn_str, 'ServerSPN', serverSpn)
           cfg.conn_timeout = CONNECT_TIMEOUT_S
         }
       }).connect()
@@ -1412,9 +1419,15 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       }
 
       // trustedConnection delegates auth to the OS (SSPI -> Kerberos/NTLM) via msnodesqlv8.
+      // encrypt mirrors the form's SSL toggle: connectWindowsAuth() turns it into the ODBC
+      // Encrypt clause. The SSL cert-file fields do not apply to the ODBC driver (it uses the
+      // system trust store), so only the toggle + TrustServerCertificate carry over.
       config.options = {
         trustedConnection: true,
         trustServerCertificate: server.config.trustServerCertificate,
+        encrypt: server.config.ssl,
+        // Optional SPN override for when the auto-derived MSSQLSvc/<host>:<port> is wrong.
+        serverSpn: server.config.kerberosSpn || undefined,
       };
 
       return config;

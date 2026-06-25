@@ -54,6 +54,7 @@ export interface ISimpleConnection extends Transport {
   labelColor?: Nullable<string>
   trustServerCertificate?: boolean
   windowsAuthEnabled?: boolean
+  kerberosSpn?: Nullable<string>
   serviceName: Nullable<string>
   options?: any
   redshiftOptions?: RedshiftOptions

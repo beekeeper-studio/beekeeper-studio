@@ -264,6 +264,11 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: 'boolean', nullable: false })
   windowsAuthEnabled = false
 
+  // SQL Server integrated auth only. Optional Kerberos SPN override for when the
+  // auto-derived MSSQLSvc/<host>:<port> is wrong (CNAME, load balancer, custom port).
+  @Column({ type: 'varchar', nullable: true })
+  kerberosSpn: Nullable<string> = null
+
   // oracle only.
   @Column({type: 'varchar', nullable: true})
   serviceName: Nullable<string> = null
