@@ -55,8 +55,8 @@
             </div>
             <div class="label">
               <span>Your team</span>
-              <div class="hint" v-if="teamPermission === 'restricted'">
-                Access is restricted to members listed below.
+              <div class="hint" v-if="teamPermission === 'no-access'">
+                Only team members that are listed below have access.
               </div>
             </div>
             <div class="access">
@@ -70,14 +70,14 @@
               >
                 <option value="view">can view</option>
                 <option value="edit">can edit</option>
-                <option value="restricted">restricted</option>
+                <option value="no-access">No access</option>
               </select>
               <template v-else>
                 <template v-if="teamPermission === 'view'">can view</template>
                 <template v-else-if="teamPermission === 'edit'">
                   can edit
                 </template>
-                <template v-else>restricted</template>
+                <template v-else>No access</template>
               </template>
             </div>
           </li>
@@ -171,7 +171,7 @@ import {
   IConnectionFolder,
 } from "@/common/interfaces/IQueryFolder";
 
-type Permission = "view" | "edit" | "restricted";
+type Permission = "view" | "edit" | "no-access";
 type AccessGrantLike = Pick<IAccessGrant, "canRead" | "canWrite">;
 type Subject =
   | ISavedQuery
@@ -187,7 +187,7 @@ export default Vue.extend({
       subjectType: null,
       membershipsLoaded: false,
       search: "",
-      permission: "view" as "none" | "view" | "edit",
+      permission: "view" as Permission,
       selectedMembers: [] as IMembership[],
       highlightedMembers: [] as number[], // the membership ids
       initiallyLoadingGrants: false,
@@ -282,7 +282,7 @@ export default Vue.extend({
       if (this.subject?.teamRead) {
         return "view";
       }
-      return "restricted";
+      return "no-access";
     },
   },
   watch: {
@@ -454,7 +454,7 @@ export default Vue.extend({
       if (grant.canRead) {
         return "view";
       }
-      return "restricted";
+      return "no-access";
     },
     isItYou(userId: number) {
       return userId === this.workspace.currentMembership.userId;
