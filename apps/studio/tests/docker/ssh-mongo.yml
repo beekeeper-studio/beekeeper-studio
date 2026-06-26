@@ -10,6 +10,12 @@ services:
       MONGO_INITDB_ROOT_USERNAME: beekeeper
       MONGO_INITDB_ROOT_PASSWORD: password
       MONGO_INITDB_DATABASE: bee
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+      start_period: 5s
     networks:
       # mongo is only reachable from the ssh container, never from the test runner
       - ssh_mongo

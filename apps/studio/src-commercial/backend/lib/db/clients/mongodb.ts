@@ -47,10 +47,16 @@ export function parseMongoHost(url: string): { host: string; port: number } | nu
 }
 
 // Rewrite a MongoDB URL's host:port to point at the local end of an SSH tunnel.
+// Forces directConnection so the driver talks to the tunnelled node directly
+// instead of running topology discovery and trying to reach the server's
+// self-reported address (which isn't routable through the tunnel).
 export function rewriteMongoUrlHost(url: string, localHost: string, localPort: number): string {
   try {
     const parsed = new URL(url);
     parsed.host = `${localHost}:${localPort}`;
+    if (!parsed.searchParams.has('directConnection')) {
+      parsed.searchParams.set('directConnection', 'true');
+    }
     return parsed.toString();
   } catch {
     return url;

@@ -19,7 +19,7 @@ describe("MongoDB SSH Tunnel Tests", () => {
     await TestOrmConnection.connect()
 
     environment = await new DockerComposeEnvironment("tests/docker", "ssh-mongo.yml")
-      .withWaitStrategy('test_ssh_mongo', Wait.forListeningPorts())
+      .withWaitStrategy('test_ssh_mongo', Wait.forHealthCheck())
       .withWaitStrategy('test_ssh_mongo_gateway', Wait.forListeningPorts())
       .up()
 
