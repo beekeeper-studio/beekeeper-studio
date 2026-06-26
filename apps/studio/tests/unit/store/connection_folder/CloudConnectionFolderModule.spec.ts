@@ -191,10 +191,10 @@ describe('CloudConnectionFolderModule', () => {
       // Roots are Team (2) and Personal (3); Shared Connections (4) is a subfolder of Team.
       expect(result).toHaveLength(2)
       const team = result.find((r: any) => r.folder.id === 2)
-      expect(team.connections.map((c: any) => c.id)).toEqual([10])
+      expect(team.items.map((c: any) => c.id)).toEqual([10])
       expect(team.subfolders).toHaveLength(1)
       expect(team.subfolders[0].folder.id).toBe(4)
-      expect(team.subfolders[0].connections.map((c: any) => c.id)).toEqual([11])
+      expect(team.subfolders[0].items.map((c: any) => c.id)).toEqual([11])
     })
   })
 })
