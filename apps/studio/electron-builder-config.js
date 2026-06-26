@@ -26,9 +26,6 @@ module.exports = {
     releaseNotesFile: "build/release-notes.md"
   },
   generateUpdatesFilesForAllChannels: true,
-  toolsets: {
-    appimage: "1.0.3"
-  },
   directories: {
     output: "dist_electron"
   },
@@ -224,14 +221,14 @@ module.exports = {
   },
   snapcraft: {
     base: 'core24',
+    publish: [
+      'github',
+      'snapStore'
+    ],
     core24: {
       // Build the core24 snap in an isolated LXD container. CI provisions LXD
       // via canonical/setup-lxd on every Linux runner.
       useLXD: true,
-      publish: [
-        'github',
-        'snapStore'
-      ],
       environment: {
         "ELECTRON_SNAP": "true"
       },

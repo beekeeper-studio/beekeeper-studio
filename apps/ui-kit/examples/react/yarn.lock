@@ -164,8 +164,27 @@
     "@babel/helper-validator-identifier" "^7.25.9"
 
 "@beekeeperstudio/ui-kit@link:../..":
-  version "0.0.0"
-  uid ""
+  version "0.3.2"
+  dependencies:
+    "@codemirror/autocomplete" "^6.18.4"
+    "@codemirror/commands" "^6.8.1"
+    "@codemirror/lang-html" "^6.4.9"
+    "@codemirror/lang-javascript" "^6.2.4"
+    "@codemirror/lang-json" "^6.0.1"
+    "@codemirror/lang-sql" "^6.8.0"
+    "@codemirror/language" "^6.11.0"
+    "@codemirror/lint" "^6.8.4"
+    "@codemirror/merge" "^6.12.1"
+    "@codemirror/search" "^6.5.10"
+    "@codemirror/state" "^6.5.2"
+    "@codemirror/view" "^6.36.2"
+    "@lezer/highlight" "^1.2.1"
+    "@marimo-team/codemirror-languageserver" "^1.15.25"
+    "@replit/codemirror-emacs" "^6.1.0"
+    "@replit/codemirror-vim" "^6.3.0"
+    "@surrealdb/codemirror" "^1.0.0-beta.21"
+    ansi-to-html "^0.7.2"
+    highlight.js "^11.11.1"
 
 "@codemirror/autocomplete@^6.0.0", "@codemirror/autocomplete@^6.18.4":
   version "6.18.6"
@@ -287,6 +306,17 @@
     "@codemirror/state" "^6.0.0"
     "@codemirror/view" "^6.35.0"
     crelt "^1.0.5"
+
+"@codemirror/merge@^6.12.1":
+  version "6.12.2"
+  resolved "https://registry.yarnpkg.com/@codemirror/merge/-/merge-6.12.2.tgz#00870b0451b555189e6dd91317d1ff218f28b414"
+  integrity sha512-V8JvyAPjHbPupqP7BeMcsdsYCbyPij74jxIbaIJDORI+VZzW44zFmon8bF+oxGWvOKhcRmkiUMXd8MxHr3YA2w==
+  dependencies:
+    "@codemirror/language" "^6.0.0"
+    "@codemirror/state" "^6.0.0"
+    "@codemirror/view" "^6.17.0"
+    "@lezer/highlight" "^1.0.0"
+    style-mod "^4.1.0"
 
 "@codemirror/search@^6.5.10":
   version "6.5.10"
@@ -2922,9 +2952,9 @@ word-wrap@^1.2.5:
   integrity sha512-BN22B5eaMMI9UMtjrGd5g5eCYPpCPDUy0FJXbYsaT5zYxjFOckS53SQDE3pWkVoWpHXVb3BrYcEN4Twa55B5cA==
 
 ws@^7.0.0:
-  version "7.5.10"
-  resolved "https://registry.yarnpkg.com/ws/-/ws-7.5.10.tgz#58b5c20dc281633f6c19113f39b349bd8bd558d9"
-  integrity sha512-+dbF1tHwZpXcbOJdVOkzLDxZP1ailvSxM6ZweXTegylPny803bFhA+vqBYw4s31NSAk4S2Qz+AKXK9a4wkdjcQ==
+  version "7.5.11"
+  resolved "https://registry.yarnpkg.com/ws/-/ws-7.5.11.tgz#9460daf1812bb81a423c5b9eac746941a86310fa"
+  integrity sha512-zS54Oen9bITtp7kp2XM3AydrCIq1D+HwJOuH+c+e4LfpL/lotP5osijd+UoMnxwAam1GN8R4KtLAyIrIcBNpiA==
 
 yallist@^3.0.2:
   version "3.1.1"
