@@ -1,4 +1,5 @@
 import Vue, { ComponentOptions } from "vue";
+import { divider } from "@beekeeperstudio/ui-kit";
 
 export const assignContextMenuToAllInputs: ComponentOptions<Vue> = {
   data() {
@@ -54,7 +55,7 @@ export const assignContextMenuToAllInputs: ComponentOptions<Vue> = {
               // Uses Chromium's native undo stack for inputs/textareas
               document.execCommand("undo");
             },
-            shortcut: this.ctrlOrCmd("z"),
+            shortcut: "Control+Z",
             write: true,
           },
           {
@@ -64,34 +65,34 @@ export const assignContextMenuToAllInputs: ComponentOptions<Vue> = {
               if (!el) return;
               document.execCommand("redo");
             },
-            shortcut: this.ctrlOrCmd("shift+z"),
+            shortcut: "Control+Shift+Z",
             write: true,
           },
-          { type: "divider" },
+          divider,
           {
             name: "Cut",
             handler: () => document.execCommand("cut"),
             class: selectionDepClass,
-            shortcut: this.ctrlOrCmd("x"),
+            shortcut: "Control+X",
             write: true,
           },
           {
             name: "Copy",
             handler: () => document.execCommand("copy"),
             class: selectionDepClass,
-            shortcut: this.ctrlOrCmd("c"),
+            shortcut: "Control+C",
           },
           {
             name: "Paste",
             handler: () => document.execCommand("paste"),
-            shortcut: this.ctrlOrCmd("v"),
+            shortcut: "Control+V",
             write: true,
           },
-          { type: "divider" },
+          divider,
           {
             name: "Select All",
             handler: () => document.execCommand("selectAll"),
-            shortcut: this.ctrlOrCmd("a"),
+            shortcut: "Control+A",
           },
         ],
       });

@@ -1895,7 +1895,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             : []),
           ...(window.platformInfo.isDevelopment && this.isCloud && this.query?.id
             ? [
-                { type: "divider" },
+                divider,
                 {
                   label: "[DEV] Make Fake Remote Change",
                   id: "fake-remote-change",

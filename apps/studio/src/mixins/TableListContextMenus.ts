@@ -3,6 +3,8 @@ import { IConnection } from "@/common/interfaces/IConnection";
 import { DatabaseElement } from "@/lib/db/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { DialectData } from "@shared/lib/dialects/models";
+import { divider, DividerItem } from "@beekeeperstudio/ui-kit";
+import { mapGetters } from "vuex";
 
 function disabled(...args: boolean[]) {
   return args.some((v) => v) ? 'disabled' : '';
@@ -32,20 +34,19 @@ export default {
             this.trigger(AppEvent.toggleHideEntity, item, true)
           }
         },
-        {
-          type: 'divider',
-        },
+        divider,
         {
           name: "SQL: Create",
           slug: 'sql-create',
           class: isBQClass,
           handler: this.routineMenuClick
         },
-      ] as ContextOption[],
+      ] as (ContextOption | DividerItem)[],
 
     }
   },
   computed: {
+    ...mapGetters(["isCommunity"]),
     tableMenuOptions() {
       const dialect: DialectData = this.$store.getters.dialectData;
       const dialectName: string = this.$store.getters.dialect;
@@ -79,14 +80,12 @@ export default {
           class: disabled(dialect.disabledFeatures?.importFromFile, usedConfig.readOnlyMode),
           title: disabledTitle(dialectName, 'Import', !!dialect.disabledFeatures?.importFromFile, usedConfig.readOnlyMode),
           slug: 'import',
-          ultimate: true,
+          icon: this.isCommunity ? 'stars' : undefined,
           handler: ({ item }) => {
             this.trigger(AppEvent.beginImport, { table: item })
           }
         },
-        {
-          type: 'divider'
-        },
+        divider,
         {
           name: "Copy Name",
           slug: 'copy-name',
@@ -102,9 +101,7 @@ export default {
           }
         },
 
-        {
-          type: 'divider'
-        },
+        divider,
         {
           name: "SQL: Create",
           slug: 'sql-create',
@@ -173,7 +170,7 @@ export default {
             this.$root.$emit(AppEvent.duplicateDatabaseTable, { item, action: 'duplicate' })
           }
         },
-      ] as ContextOption[]
+      ] as (ContextOption | DividerItem)[]
     },
     schemaMenuOptions() {
       const dialect: DialectData = this.$store.getters.dialectData;
@@ -186,7 +183,7 @@ export default {
             this.trigger(AppEvent.toggleHideSchema, item, true)
           },
         },
-        { type: 'divider' },
+        divider,
         {
           name: "Rename",
           slug: 'rename',
@@ -209,7 +206,7 @@ export default {
             this.$root.$emit(AppEvent.dropDatabaseElement, {item, action: 'truncate'})
           }
         },
-      ] as ContextOption[]
+      ] as (ContextOption | DividerItem)[]
     }
   },
   methods: {

@@ -110,10 +110,10 @@ export default {
           let name
           if (!folder.parentId) {
             const hasSubs = this.folders.some(f => f.parentId === folder.id)
-            name = hasSubs ? `Move to ${folder.name} (top level)` : `Move to ${folder.name}`
+            name = hasSubs ? `${folder.name} (top level)` : `${folder.name}`
           } else {
             const parentName = rootById[folder.parentId] || ''
-            name = `Move to ${parentName} \u2192 ${folder.name}`
+            name = `${parentName} \u2192 ${folder.name}`
           }
           return { name, slug: `move-${folder.id}`, handler: this.moveItem, folder }
         })
@@ -229,11 +229,15 @@ export default {
       ].filter(v => v)
 
       if (this.isCloud || this.folders.length > 0) {
-        options.push({ type: 'divider' })
+        const moveToOptions = [];
         if (!this.isCloud && this.config.connectionFolderId) {
-          options.push({ name: 'Move to top level', handler: () => this.moveToRoot() })
+          moveToOptions.push({ name: 'Move to top level', handler: () => this.moveToRoot() })
         }
-        options.push(...this.moveToOptions)
+        moveToOptions.push(...this.moveToOptions);
+        options.push({
+          name: "Move to ...",
+          items: moveToOptions,
+        });
       }
 
       this.$bks.openMenu({

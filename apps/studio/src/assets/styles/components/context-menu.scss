@@ -82,6 +82,7 @@
   color: $text-dark;
   &.disabled {
     opacity: 0.5;
+    pointer-events: none;
   }
   &:hover {
     background: rgba($theme-base, 0.05);

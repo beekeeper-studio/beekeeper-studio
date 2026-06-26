@@ -4,6 +4,7 @@ import { Manifest, OnViewRequestListener, PluginSnapshot } from "../types";
 import PluginStoreService from "./PluginStoreService";
 import WebPluginLoader from "./WebPluginLoader";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
+import { divider } from "@beekeeperstudio/ui-kit";
 import { PluginNotificationData, PluginViewContext } from "@beekeeperstudio/plugin";
 import { FileHelpers } from "@/types";
 import type Noty from "noty";
@@ -231,7 +232,7 @@ export default class WebPluginManager {
 
     return [
       ...options,
-      { type: "divider" },
+      divider,
       ...extraOptions,
     ]
   }

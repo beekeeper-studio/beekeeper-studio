@@ -31,6 +31,7 @@
 <script lang="ts">
 import _ from 'lodash'
 import { IQueryFolder } from '@/common/interfaces/IQueryFolder'
+import { divider } from '@beekeeperstudio/ui-kit'
 import Vue from 'vue'
 import { mapState, mapGetters } from 'vuex'
 import TimeAgo from 'javascript-time-ago'
@@ -137,16 +138,14 @@ export default Vue.extend({
           name: "View Edit History",
           handler: ({ item }) => this.$emit('open-history', item)
         },
-        {
-          type: 'divider'
-        },
+        divider,
         {
           name: "Export",
           handler: ({ item }) => this.$emit('export', item)
         },
       ]
       if (this.folders.length > 0) {
-        options.push({ type: 'divider' })
+        options.push(divider)
         if (!this.isCloud && this.item.queryFolderId) {
           options.push({ name: 'Move to top level', handler: ({ item }) => this.moveToRoot(item) })
         }
