@@ -24,7 +24,7 @@ password-based **NTLM** authentication against a Windows domain account. It is
 distinct from integrated authentication: you still supply credentials, and it needs
 none of the system prerequisites below.
 
-### Windows / Kerberos (Integrated)
+### Kerberos / Windows (via ODBC)
 
 **Passwordless** authentication using the identity of the currently logged-in OS
 user (SSPI). The username and password fields are hidden — the connection uses your
@@ -60,15 +60,15 @@ which protocol is negotiated.
 
 ## Prerequisites for integrated authentication
 
-!!! warning "These apply only to Windows / Kerberos (Integrated) mode"
+!!! warning "These apply only to Kerberos / Windows (via ODBC) mode"
     SQL Login, Domain (NTLM), and Azure / Entra ID need **none** of the packages
-    below. Only the passwordless **Windows / Kerberos (Integrated)** mode relies on a
+    below. Only the passwordless **Kerberos / Windows (via ODBC)** mode relies on a
     system ODBC driver and a Kerberos client.
 
 ### Windows
 
 Usually nothing extra is required. Windows ships an ODBC driver and SSPI support, so
-selecting **Windows / Kerberos (Integrated)** and connecting by hostname/FQDN works
+selecting **Kerberos / Windows (via ODBC)** and connecting by hostname/FQDN works
 out of the box on a domain-joined machine.
 
 If connections fail, install the latest
@@ -115,11 +115,28 @@ and obtain a Kerberos ticket with `kinit` as on Linux.
 ## Connecting
 
 1. Add a new SQL Server connection.
-2. Set **Authentication** to **Windows / Kerberos (Integrated)**. The username and
+2. Set **Authentication** to **Kerberos / Windows (via ODBC)**. The username and
    password fields are hidden — authentication uses your current OS identity.
 3. Enter the server **hostname or FQDN** (use the fully qualified name so Kerberos can
    match the SPN) and port.
 4. Connect.
+
+### ODBC Options
+
+The **ODBC Options** section exposes the settings specific to integrated authentication:
+
+- **Encryption** — how the ODBC driver encrypts the connection:
+    - **Off** — no encryption (the login is still encrypted, but query traffic is not).
+    - **On (trust server certificate)** — encrypts the whole connection and trusts the
+      server certificate without validating it. Works with self-signed certificates.
+    - **Strict (validate certificate)** — TLS 1.2+/TDS 8.0; validates the server
+      certificate. Requires **SQL Server 2022 or newer**. If the certificate is self-signed
+      or issued by a CA your OS does not trust, set **Server Certificate** to a copy of the
+      server's certificate (PEM/DER/CER) to pin it.
+- **Server Certificate** — (Strict only) a certificate file to pin the server against,
+  instead of OS trust-store validation.
+- **Service Principal Name (SPN)** — override the Kerberos SPN when the auto-derived
+  `MSSQLSvc/<host>:<port>` is wrong (e.g. a CNAME, load balancer, or non-standard port).
 
 ## Troubleshooting
 

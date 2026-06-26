@@ -8,7 +8,7 @@
           Username / Password
         </option>
         <option value="windows">
-          Windows / Kerberos (Integrated)
+          Kerberos / Windows (via ODBC)
         </option>
         <option :key="`${t.value}-${t.name}`" v-for="t in authTypes" :value="t.value">
           {{ t.name }}
@@ -30,12 +30,12 @@
       :hide-credentials="windowsAuthEnabled"
       :hide-ssl="windowsAuthEnabled"
     >
-      <div class="advanced-connection-settings">
+      <div v-show="!windowsAuthEnabled" class="advanced-connection-settings">
         <h4 class="advanced-heading">
           SQL Server Options
         </h4>
         <div class="advanced-body">
-          <div class="form-group" v-show="!windowsAuthEnabled">
+          <div class="form-group">
             <label for="domain">
               Domain
               <i
@@ -71,26 +71,42 @@
       </div>
       <div v-show="windowsAuthEnabled" class="advanced-connection-settings">
         <h4 class="advanced-heading">
-          Kerberos Options
+          ODBC Options
         </h4>
         <div class="advanced-body">
           <div class="form-group">
-            <label class="flex flex-middle">
-              <span class="expand">
-                Encrypt
-                <i
-                  class="material-icons"
-                  v-tooltip="'Encrypts the entire connection (TDS over TLS), not just the login. Leave off to send query traffic unencrypted. Use Trust Server Certificate for self-signed certificates.'"
-                >help_outlined</i>
-              </span>
-              <x-switch
-                @click.prevent="config.ssl = !config.ssl"
-                :toggled="config.ssl"
-              />
+            <label for="encryptionMode">
+              Encryption
+              <i
+                class="material-icons"
+                v-tooltip="'How the ODBC driver encrypts the connection. Off: no encryption. On: encrypt and trust the server certificate (no validation). Strict: TDS 8.0, validate the certificate (optionally pinned below); requires SQL Server 2022+.'"
+              >help_outlined</i>
             </label>
+            <select
+              id="encryptionMode"
+              class="form-control"
+              v-model="config.sqlServerOptions.encryptionMode"
+            >
+              <option value="off">Off (no encryption)</option>
+              <option value="on">On (trust server certificate)</option>
+              <option value="strict">Strict (validate certificate)</option>
+            </select>
+          </div>
+          <div
+            class="form-group"
+            v-if="config.sqlServerOptions.encryptionMode === 'strict'"
+          >
+            <label>
+              Server Certificate <span class="optional-text">(optional)</span>
+              <i
+                class="material-icons"
+                v-tooltip="'Pin the server\'s exact certificate (PEM/DER/CER). Required in Strict mode when the certificate is self-signed or issued by a CA the OS does not trust.'"
+              >help_outlined</i>
+            </label>
+            <file-picker v-model="config.sqlServerOptions.serverCertificate" />
           </div>
           <div class="form-group">
-            <label for="kerberosSpn">
+            <label for="serverSpn">
               Service Principal Name (SPN) <span class="optional-text">(optional)</span>
               <i
                 class="material-icons"
@@ -98,9 +114,9 @@
               >help_outlined</i>
             </label>
             <input
-              id="kerberosSpn"
+              id="serverSpn"
               type="text"
-              v-model="config.kerberosSpn"
+              v-model="config.sqlServerOptions.serverSpn"
               class="form-control"
               placeholder="MSSQLSvc/db.example.com:1433"
             >
@@ -118,6 +134,7 @@
 <script>
   import CommonServerInputs from './CommonServerInputs.vue'
   import CommonAdvanced from './CommonAdvanced.vue'
+  import FilePicker from '@/components/common/form/FilePicker.vue'
   import { AzureAuthTypes, AzureAuthType } from '@/lib/db/types';
   import { AppEvent } from '@/common/AppEvent'
   import _ from 'lodash'
@@ -125,12 +142,13 @@
   import CommonEntraId from "@/components/connection/CommonEntraId.vue";
 
   export default {
-    components: {CommonEntraId, CommonServerInputs, CommonAdvanced },
+    components: {CommonEntraId, CommonServerInputs, CommonAdvanced, FilePicker },
     props: ['config'],
     mounted() {
       if (this.config?.windowsAuthEnabled) {
         this.authType = 'windows'
         this.windowsAuthEnabled = true
+        this.ensureSqlServerOptions()
       } else {
         this.authType = this.config?.azureAuthOptions?.azureAuthType || 'default'
         this.azureAuthEnabled = this.config?.azureAuthOptions?.azureAuthEnabled || false
@@ -166,6 +184,7 @@
           this.windowsAuthEnabled = true
           this.config.windowsAuthEnabled = true
           this.config.azureAuthOptions.azureAuthType = undefined
+          this.ensureSqlServerOptions()
         } else {
           this.azureAuthEnabled = true
           this.windowsAuthEnabled = false
@@ -181,6 +200,7 @@
           this.authType = 'windows'
           this.windowsAuthEnabled = true
           this.azureAuthEnabled = false
+          this.ensureSqlServerOptions()
         } else if (this.config.azureAuthOptions?.azureAuthEnabled) {
           this.authType = this.config.azureAuthOptions.azureAuthType
           this.windowsAuthEnabled = false
@@ -189,6 +209,19 @@
           this.authType = 'default'
           this.windowsAuthEnabled = false
           this.azureAuthEnabled = false
+        }
+      },
+    },
+    methods: {
+      // Assign a fresh object with the keys pre-declared so Vue 2 tracks them reactively
+      // (the model default is an empty {}, whose later-added keys wouldn't be reactive),
+      // defaulting encryption to 'on' for a new integrated-auth connection.
+      ensureSqlServerOptions() {
+        this.config.sqlServerOptions = {
+          encryptionMode: 'on',
+          serverCertificate: undefined,
+          serverSpn: undefined,
+          ...(this.config.sqlServerOptions || {}),
         }
       },
     },

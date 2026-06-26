@@ -33,6 +33,12 @@ const EXPECTED_LOGIN = 'BKS\\testuser'
 // The service ticket the client must obtain for SQL Server (bare or :1433 form).
 const EXPECTED_SPN = `MSSQLSvc/${KRB_HOST}`
 
+type SqlServerOptions = {
+  encryptionMode?: 'off' | 'on' | 'strict'
+  serverCertificate?: string
+  serverSpn?: string
+}
+
 function kinit(): void {
   execFileSync('kinit', [`${KRB_USER}@${KRB_REALM}`], { input: `${KRB_PASS}\n` })
 }
@@ -50,7 +56,7 @@ function klist(): string {
 function makeConfig(
   host: string,
   port = KRB_PORT,
-  overrides: Partial<IDbConnectionServerConfig> = {}
+  sqlServerOptions: SqlServerOptions = { encryptionMode: 'on' }
 ): IDbConnectionServerConfig {
   return {
     client: 'sqlserver',
@@ -59,20 +65,17 @@ function makeConfig(
     user: null,
     password: null,
     windowsAuthEnabled: true,
-    trustServerCertificate: true,
-    // Exercise the form's SSL toggle -> ODBC Encrypt wiring for the integrated-auth path.
-    ssl: true,
+    sqlServerOptions,
     readOnlyMode: false,
-    ...overrides,
   } as IDbConnectionServerConfig
 }
 
 async function openConnection(
   host: string,
   port = KRB_PORT,
-  overrides: Partial<IDbConnectionServerConfig> = {}
+  sqlServerOptions: SqlServerOptions = { encryptionMode: 'on' }
 ) {
-  const server = createServer(makeConfig(host, port, overrides))
+  const server = createServer(makeConfig(host, port, sqlServerOptions))
   const connection = server.createConnection('master')
   await connection.connect()
   return { server, connection }
@@ -91,7 +94,7 @@ describeKrb(`SQLServerClient -- real Kerberos via ${KRB_HOST}`, () => {
     if (server) await server.disconnect()
   })
 
-  it('negotiates KERBEROS over an encrypted TCP connection', async () => {
+  it('negotiates KERBEROS over an encrypted TCP connection (encryptionMode on)', async () => {
     const result = await connection.driverExecuteSingle(
       `SELECT auth_scheme, net_transport, encrypt_option
        FROM sys.dm_exec_connections WHERE session_id = @@SPID`
@@ -99,15 +102,16 @@ describeKrb(`SQLServerClient -- real Kerberos via ${KRB_HOST}`, () => {
     const row = result.data.recordset[0]
     expect(row.auth_scheme).toBe('KERBEROS')
     expect(row.net_transport).toBe('TCP')
-    // ssl: true above maps to the ODBC Encrypt clause, so the TDS stream is TLS-encrypted.
+    // encryptionMode 'on' maps to ODBC Encrypt=yes, so the TDS stream is TLS-encrypted.
     expect(row.encrypt_option).toBe('TRUE')
   })
 
   it('honors an explicit Service Principal Name (SPN) override', async () => {
-    // Proves the kerberosSpn -> ODBC ServerSPN wiring: forcing the correct SPN still
-    // negotiates KERBEROS. Real-world use is correcting a wrong auto-derived SPN.
+    // Proves the sqlServerOptions.serverSpn -> ODBC ServerSPN wiring: forcing the correct
+    // SPN still negotiates KERBEROS. Real-world use is correcting a wrong auto-derived SPN.
     const opened = await openConnection(KRB_HOST, KRB_PORT, {
-      kerberosSpn: `MSSQLSvc/${KRB_HOST}:${KRB_PORT}`,
+      encryptionMode: 'on',
+      serverSpn: `MSSQLSvc/${KRB_HOST}:${KRB_PORT}`,
     })
     try {
       const result = await opened.connection.driverExecuteSingle(
