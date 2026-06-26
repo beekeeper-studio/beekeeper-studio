@@ -9,8 +9,8 @@ import {
   SQLExtensionsConfig,
 } from "./extensions";
 import { ExtensionConfiguration } from "@/components";
-import { Cassandra, MSSQL, MySQL, PostgreSQL, SQLite, StandardSQL } from "@codemirror/lang-sql";
-import { GreengageSQL, PartiQL } from "./customDialects";
+import { Cassandra, MySQL, PostgreSQL, SQLite, StandardSQL } from "@codemirror/lang-sql";
+import { GreengageSQL, PartiQL, SQLServer } from "./customDialects";
 
 export interface CompletionSource {
   defaultSchema?: string;
@@ -25,7 +25,7 @@ const langIdToDialect = {
   "text/x-cassandra": Cassandra,
   "text/x-sqlite": SQLite,
   "text/x-partiql": PartiQL,
-  "text/x-mssql": MSSQL
+  "text/x-mssql": SQLServer
 };
 
 export class SqlTextEditor extends TextEditor {

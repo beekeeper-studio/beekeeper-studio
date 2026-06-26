@@ -264,7 +264,7 @@ class CompletionLevel {
 
 export function nameCompletion(label: string, type: string, idQuote: string, idCaseInsensitive: boolean): Completion {
   if ((new RegExp("^[a-z_][a-z_\\d]*$", idCaseInsensitive ? "i" : "")).test(label)) return {label, type}
-  return {label, type, apply: idQuote + label + idQuote}
+  return {label, type, apply: idQuote + label + getClosingQuote(idQuote)}
 }
 
 export function buildCompletionLevels(schema: SQLNamespace,
