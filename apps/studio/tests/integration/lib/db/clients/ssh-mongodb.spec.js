@@ -11,6 +11,7 @@ describe("MongoDB SSH Tunnel Tests", () => {
   jest.setTimeout(dbtimeout)
 
   let sshContainer
+  let bastionContainer
   let connection
   let database
   let environment
@@ -21,9 +22,11 @@ describe("MongoDB SSH Tunnel Tests", () => {
     environment = await new DockerComposeEnvironment("tests/docker", "ssh-mongo.yml")
       .withWaitStrategy('test_ssh_mongo', Wait.forHealthCheck())
       .withWaitStrategy('test_ssh_mongo_gateway', Wait.forListeningPorts())
+      .withWaitStrategy('test_ssh_mongo_bastion', Wait.forListeningPorts())
       .up()
 
     sshContainer = environment.getContainer('test_ssh_mongo_gateway')
+    bastionContainer = environment.getContainer('test_ssh_mongo_bastion')
 
     const config = {
       connectionType: 'mongodb',
@@ -52,6 +55,45 @@ describe("MongoDB SSH Tunnel Tests", () => {
   it("should list tables through the tunnel", async () => {
     const tables = await database.listTables()
     expect(Array.isArray(tables)).toBe(true)
+  })
+
+  describe("Can SSH via bastion host", () => {
+    let bastionDatabase
+
+    beforeAll(async () => {
+      const config = {
+        connectionType: 'mongodb',
+        url: 'mongodb://beekeeper:password@mongo:27017/bee?authSource=admin',
+        sshEnabled: true,
+        sshMode: 'userpass',
+        // ssh is reachable from the bastion container via the bastion_ssh network (by container name)
+        sshHost: 'test_ssh_mongo_gateway',
+        sshPort: 2222,
+        sshUsername: 'beekeeper',
+        sshPassword: 'password',
+        // bastion is the only ssh container reachable from the test runner via its mapped port
+        sshBastionHost: bastionContainer.getHost(),
+        sshBastionHostPort: bastionContainer.getMappedPort(2222),
+        sshBastionMode: 'userpass',
+        sshBastionUsername: 'beekeeper',
+        sshBastionPassword: 'password',
+      }
+
+      const conn = ConnectionProvider.for(config)
+      bastionDatabase = conn.createConnection('bee')
+      await bastionDatabase.connect()
+    })
+
+    it("should read the server version through the bastion tunnel", async () => {
+      const version = await bastionDatabase.versionString()
+      expect(version).toBeTruthy()
+    })
+
+    afterAll(async () => {
+      if (bastionDatabase) {
+        await bastionDatabase.disconnect()
+      }
+    })
   })
 
   afterAll(async () => {
