@@ -28,8 +28,7 @@
       v-show="!azureAuthEnabled"
       :config="config"
       :hide-credentials="windowsAuthEnabled"
-      :support-complex-s-s-l="!windowsAuthEnabled"
-      :ssl-help="windowsAuthEnabled ? 'Encrypts the connection (ODBC Encrypt). Certificate files do not apply to integrated auth; use Trust Server Certificate for self-signed certs.' : undefined"
+      :hide-ssl="windowsAuthEnabled"
     >
       <div class="advanced-connection-settings">
         <h4 class="advanced-heading">
@@ -75,6 +74,21 @@
           Kerberos Options
         </h4>
         <div class="advanced-body">
+          <div class="form-group">
+            <label class="flex flex-middle">
+              <span class="expand">
+                Encrypt
+                <i
+                  class="material-icons"
+                  v-tooltip="'Encrypts the entire connection (TDS over TLS), not just the login. Leave off to send query traffic unencrypted. Use Trust Server Certificate for self-signed certificates.'"
+                >help_outlined</i>
+              </span>
+              <x-switch
+                @click.prevent="config.ssl = !config.ssl"
+                :toggled="config.ssl"
+              />
+            </label>
+          </div>
           <div class="form-group">
             <label for="kerberosSpn">
               Service Principal Name (SPN) <span class="optional-text">(optional)</span>
