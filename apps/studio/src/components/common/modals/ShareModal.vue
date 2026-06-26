@@ -1,53 +1,30 @@
 <template>
   <base-modal name="share-modal" @opened="handleOpened">
-    <template #title>{{ subject?.name || subject?.title || "Share" }}</template>
-    <template v-if="subject">
-      <div class="search-members" v-if="subject.canManage">
-        <div class="input-wrapper">
-          <multi-select
-            ref="search"
-            placeholder="Search a member"
-            v-model="search"
-            filter-key="searchable"
-            display-key="name"
-            hint-key="email"
-            :suggestions="memberships"
-            :selected-options="selectedMembers"
-            @item-add="handleMemberAdd"
-            @item-remove="handleMemberRemove"
-            @open="loadMembershipsOnce"
-            @keyup.esc.stop
-            @keydown.esc.stop
-          >
-            <template #empty-state v-if="loadingMemberships">
-              Loading ...
-            </template>
-            <template #selected-option="{ option }">
-              {{ option.name }}
-            </template>
-          </multi-select>
-          <select
-            v-show="search.length > 0 || selectedMembers.length > 0"
-            v-model="permission"
-            class="auto-width"
-          >
-            <option value="view">can view</option>
-            <option value="edit">can edit</option>
-          </select>
+    <template #title>
+      <div>
+        <div class="modal-title">
+          <template v-if="subject">
+            <i
+              :data-subject-type="subject.type"
+              class="material-icons subject-icon"
+            >
+              <template v-if="subject.type === 'Connection'">link</template>
+              <template v-else-if="subject.type === 'Query'">code</template>
+              <template v-else>folder</template>
+            </i>
+            <h2>
+              {{ subject.type === "Query" ? subject.title : subject.name }}
+            </h2>
+          </template>
+          <h2 v-else>Share</h2>
         </div>
-        <button
-          class="btn btn-primary btn-icon add-btn"
-          type="button"
-          :disabled="selectedMembers.length === 0 || savingGrants"
-          @click="addSelectedMembers"
-        >
-          <i class="material-icons">add</i>
-          Add
-        </button>
+        <div class="modal-subtitle">Share & Permissions</div>
       </div>
-
+    </template>
+    <template v-if="subject">
       <div class="member-access">
         <h3>Who has access</h3>
+
         <ul>
           <li class="access-grant">
             <div class="icon">
@@ -55,9 +32,20 @@
             </div>
             <div class="label">
               <span>Your team</span>
-              <div class="hint" v-if="teamPermission === 'no-access'">
-                Only team members that are listed below have access.
+              <div class="hint" v-if="teamPermission === 'edit'">
+                Your team has full editing access
               </div>
+              <div class="hint" v-else-if="teamPermission === 'view'">
+                Your team can view but not edit
+              </div>
+              <div class="hint" v-else-if="teamPermission === 'no-access'">
+                Only team members that are listed below have access
+              </div>
+              <div
+                class="hint error"
+                v-if="teamPermissionError"
+                v-text="teamPermissionError.userMessage"
+              />
             </div>
             <div class="access">
               <loading-spinner v-if="loadingTeamPermission" />
@@ -82,7 +70,7 @@
             </div>
           </li>
           <li class="access-grant">
-            <div class="icon">{{ subject.membership.name[0] }}</div>
+            <div class="icon">{{ getInitials(subject.membership.name) }}</div>
             <div class="label">
               <span>{{ subject.membership.name }}</span>
               <span v-if="isItYou(subject.membership.userId)"> (You)</span>
@@ -94,17 +82,12 @@
             class="access-grant"
             v-if="subject.membership.userId !== workspace.owner.id"
           >
-            <div class="icon">{{ workspace.owner.name[0] }}</div>
+            <div class="icon">{{ getInitials(workspace.owner.name) }}</div>
             <div class="label">
               <span>{{ workspace.owner.name }}</span>
               <span v-if="isItYou(workspace.owner.id)"> (You)</span>
             </div>
             <div class="access">Admin</div>
-          </li>
-          <li v-if="initiallyLoadingGrants" class="access-grant skeleton">
-            <div class="icon" />
-            <div class="label" />
-            <div class="access" />
           </li>
           <li
             class="access-grant"
@@ -114,7 +97,7 @@
               highlight: highlightedMembers.includes(grant.membershipId),
             }"
           >
-            <div class="icon">{{ grant.membership.name[0] }}</div>
+            <div class="icon">{{ getInitials(grant.membership.name) }}</div>
             <div class="label">
               {{ grant.membership.name }}
               <span v-if="isItYou(grant.membership)"> (You)</span>
@@ -147,7 +130,67 @@
               </template>
             </div>
           </li>
+          <li v-if="initiallyLoadingGrants" class="access-grant skeleton">
+            <div class="icon" />
+            <div class="label" />
+            <div class="access" />
+          </li>
+          <li v-if="initiallyLoadingGrants" class="access-grant skeleton">
+            <div class="icon" />
+            <div class="label" />
+            <div class="access" />
+          </li>
         </ul>
+      </div>
+
+      <div class="add-member-access" v-if="subject.canManage">
+        <div class="search-members">
+          <div class="form-group">
+            <label for="share-modal-search-member">Add member access</label>
+            <div class="input-wrapper">
+              <multi-select
+                input-id="share-modal-search-member"
+                ref="search"
+                placeholder="Search a member"
+                v-model="search"
+                filter-key="searchable"
+                display-key="name"
+                hint-key="email"
+                :suggestions="memberships"
+                :selected-options="selectedMembers"
+                @item-add="handleMemberAdd"
+                @item-remove="handleMemberRemove"
+                @open="loadMembershipsOnce"
+                @keyup.esc.stop
+                @keydown.esc.stop
+              >
+                <template #empty-state v-if="loadingMemberships">
+                  Loading ...
+                </template>
+                <template #selected-option="{ option }">
+                  {{ option.name }}
+                </template>
+              </multi-select>
+              <select
+                v-show="search.length > 0 || selectedMembers.length > 0"
+                v-model="permission"
+                class="auto-width"
+              >
+                <option value="view">can view</option>
+                <option value="edit">can edit</option>
+              </select>
+            </div>
+          </div>
+          <button
+            class="btn btn-primary btn-icon add-btn"
+            type="button"
+            :disabled="selectedMembers.length === 0 || savingGrants"
+            @click="addSelectedMembers"
+          >
+            <i class="material-icons">add</i>
+            Add
+          </button>
+        </div>
       </div>
     </template>
   </base-modal>
@@ -166,18 +209,18 @@ import _ from "lodash";
 import LoadingSpinner from "@/components/common/loading/LoadingSpinner.vue";
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { ICloudSavedConnection } from "@/common/interfaces/IConnection";
-import {
-  IQueryFolder,
-  IConnectionFolder,
-} from "@/common/interfaces/IQueryFolder";
+import { IFolder } from "@/common/interfaces/IQueryFolder";
+import rawLog from "@bksLogger";
+import { CloudError } from "@/lib/cloud/ClientHelpers";
 
 type Permission = "view" | "edit" | "no-access";
 type AccessGrantLike = Pick<IAccessGrant, "canRead" | "canWrite">;
 type Subject =
-  | ISavedQuery
-  | ICloudSavedConnection
-  | IQueryFolder
-  | IConnectionFolder;
+  | ({ type: "Connection" } & ICloudSavedConnection)
+  | ({ type: "Query" } & ISavedQuery)
+  | ({ type: "QueryFolder" | "ConnectionFolder" } & IFolder);
+
+const log = rawLog.scope("ShareModal.vue");
 
 export default Vue.extend({
   components: { BaseModal, MultiSelect, LoadingSpinner },
@@ -194,7 +237,7 @@ export default Vue.extend({
       loadingGrants: [] as number[], // the access grant ids
       loadingTeamPermission: false,
       savingGrants: false,
-      teamPermissionError: null as Error | null,
+      teamPermissionError: null as CloudError | null,
     };
   },
   computed: {
@@ -258,8 +301,12 @@ export default Vue.extend({
       }
       return [];
     },
-    subject(): Subject | undefined {
-      return this.items.find((i) => i.id === this.subjectId);
+    subject(): Subject | null {
+      const subject = this.items.find((i) => i.id === this.subjectId);
+      if (!subject) {
+        return null;
+      }
+      return { ...subject, type: this.subjectType };
     },
     subjectModulePath(): string {
       switch (this.subjectType) {
@@ -337,6 +384,9 @@ export default Vue.extend({
             },
           },
         });
+      } catch (e) {
+        log.error(e);
+        this.$noty.error(e.userMessage);
       } finally {
         this.initiallyLoadingGrants = false;
       }
@@ -379,6 +429,9 @@ export default Vue.extend({
       await this.$nextTick();
       try {
         await fn();
+      } catch (e) {
+        log.error(e);
+        this.$noty.error(e);
       } finally {
         this.loadingGrants = this.loadingGrants.filter((id) => id !== grantId);
       }
@@ -396,6 +449,7 @@ export default Vue.extend({
         });
       } catch (e) {
         this.teamPermissionError = e;
+        log.error(e);
       } finally {
         this.loadingTeamPermission = false;
       }
@@ -434,6 +488,9 @@ export default Vue.extend({
         });
         this.highlightedMembers = selectedMembers.map((m) => m.id);
         this.selectedMembers = [];
+      } catch (e) {
+        log.error(e);
+        this.$noty.error(e);
       } finally {
         this.savingGrants = false;
       }
@@ -459,6 +516,13 @@ export default Vue.extend({
     isItYou(userId: number) {
       return userId === this.workspace.currentMembership.userId;
     },
+    getInitials(name: string) {
+      const [first, last] = name.split(" ");
+      if (!last) {
+        return first[0];
+      }
+      return first[0] + last[0];
+    },
   },
   mounted() {
     this.registerHandlers(this.rootBindings);
@@ -470,67 +534,47 @@ export default Vue.extend({
 </script>
 
 <style scoped>
-.search-members {
+.modal-title {
   display: flex;
   align-items: center;
-  margin-bottom: 1rem;
+  gap: 0.5rem;
 
-  .input-wrapper {
-    position: relative;
-    flex-grow: 1;
-    display: flex;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
+  .subject-icon {
+    font-size: 1rem;
 
-    &::v-deep .multi-select {
-      flex-grow: 1;
+    &[data-subject-type="Query"] {
+      color: var(--brand-pink);
     }
 
-    ::v-deep input {
-      border: none;
-      padding-right: 0;
-      border-radius: 0;
-    }
-
-    .member {
-      display: flex;
-      justify-content: space-between;
-    }
-
-    select {
-      align-self: flex-end;
-      border: none;
-      position: absolute;
-      right: 0;
+    &[data-subject-type*="Folder"] {
+      color: var(--text-lighter);
     }
   }
+}
 
-  .add-btn {
-    flex-shrink: 0;
-    margin-left: 0.5rem;
-    align-self: flex-end;
-  }
+.modal-subtitle {
+  font-size: 1rem;
+  font-weight: normal;
+  color: var(--text-light);
+  font-size: 0.831rem;
+  line-height: normal;
+  margin-bottom: 0.25rem;
 }
 
 h3 {
-  font-size: 1rem;
+  font-size: 0.831rem;
+  text-transform: uppercase;
+  font-weight: bold;
   margin: 0;
+  margin-bottom: 0.25rem;
 }
 
-.member-access {
-  ul {
-    list-style: none;
-    margin: 0;
-    margin-top: 0.25rem;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-  }
-}
-
-.divider {
-  border-bottom: 1px solid var(--border-color);
-  margin-block: 1.25rem;
+.member-access ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .access-grant {
@@ -567,6 +611,9 @@ h3 {
     justify-content: center;
     border-radius: 9999px;
     text-transform: uppercase;
+    align-self: flex-start;
+    font-size: 0.95rem;
+    font-weight: 500;
 
     .material-icons-outlined {
       font-size: 1rem;
@@ -574,13 +621,19 @@ h3 {
   }
 
   .label {
-    flex-shrink: 0;
+    flex: 1;
     margin-inline: 1rem;
+    color: rgb(from var(--theme-base) r g b / 77%);
   }
 
   .hint {
+    font-size: 0.831rem;
     margin-top: 0.1rem;
     color: var(--text-light);
+
+    &.error {
+      color: var(--brand-danger);
+    }
   }
 
   select {
@@ -593,10 +646,60 @@ h3 {
     align-items: center;
     margin-left: auto;
     font-size: 0.875rem;
+    flex-shrink: 0;
 
-    /** Visually align the select and the plain text. */
+    /** Visually align the plain text. */
     &:not(:has(select)) {
       margin-right: 0.1rem;
+    }
+  }
+}
+
+.add-member-access {
+  margin-bottom: 0.5rem;
+
+  .search-members {
+    display: flex;
+    align-items: center;
+
+    .form-group {
+      flex-grow: 1;
+      margin-bottom: 0;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+
+      &::v-deep .multi-select {
+        flex-grow: 1;
+      }
+
+      ::v-deep input {
+        border: none;
+        padding-right: 0;
+        border-radius: 0;
+      }
+
+      .member {
+        display: flex;
+        justify-content: space-between;
+      }
+
+      select {
+        align-self: flex-end;
+        border: none;
+        position: absolute;
+        right: 0;
+      }
+    }
+
+    .add-btn {
+      flex-shrink: 0;
+      margin-left: 0.5rem;
+      align-self: flex-end;
     }
   }
 }

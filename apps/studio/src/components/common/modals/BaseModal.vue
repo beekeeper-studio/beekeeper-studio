@@ -71,7 +71,7 @@ export default Vue.extend({
 
 .base-modal-title {
   font-size: 1.1rem;
-  line-height: 1;
+  line-height: 1.8rem;
   font-weight: 500;
   margin: 0;
   display: flex;
@@ -81,12 +81,19 @@ export default Vue.extend({
   ::v-deep i.material-icons {
     font-size: 1.1rem;
   }
+
+  &::v-deep h2 {
+    margin: 0;
+    font-size: inherit;
+    font-weight: inherit;
+  }
 }
 
 .base-modal-close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  align-self: flex-start;
   width: 1.8rem;
   min-width: 1.8rem;
   height: 1.8rem;

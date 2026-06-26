@@ -10,6 +10,7 @@
       type="text"
       role="combobox"
       aria-autocomplete="list"
+      :id="inputId"
       :aria-expanded="isOpen ? 'true' : 'false'"
       :aria-controls="listboxId"
       :aria-activedescendant="
@@ -119,6 +120,7 @@ export default Vue.extend({
       type: String,
       default: "",
     },
+    inputId: String,
   },
   data() {
     return {
