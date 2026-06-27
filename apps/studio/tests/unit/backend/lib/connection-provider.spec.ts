@@ -252,6 +252,38 @@ Match user deploybot123
     expect(result.ssh.privateKey).toBe("/keys/match_user_key");
   });
 
+  it("surfaces a warning for a missing IdentityFile in agent mode", () => {
+    writeSshConfig(`
+Host alias
+  HostName real.example.com
+  IdentityFile /keys/definitely_missing_key
+`);
+    const result = connectionProvider.convertConfig(
+      makeConfig({ sshHost: "alias", sshMode: "agent" }),
+      "osuser",
+      {} as any
+    );
+    expect(result.sshConfigWarnings).toBeDefined();
+    expect(
+      result.sshConfigWarnings.some((w: string) => w.includes("definitely_missing_key"))
+    ).toBe(true);
+  });
+
+  it("does not warn about a missing IdentityFile when not in agent mode", () => {
+    writeSshConfig(`
+Host alias
+  HostName real.example.com
+  IdentityFile /keys/definitely_missing_key
+`);
+    const result = connectionProvider.convertConfig(
+      makeConfig({ sshHost: "alias", sshMode: "userpass", sshPassword: "x" }),
+      "osuser",
+      {} as any
+    );
+    const warnings = result.sshConfigWarnings || [];
+    expect(warnings.some((w: string) => w.includes("definitely_missing_key"))).toBe(false);
+  });
+
   it("agent (Automatic) mode without IdentityFile leaves identitiesOnly false and privateKey null", () => {
     writeSshConfig(`
 Host alias

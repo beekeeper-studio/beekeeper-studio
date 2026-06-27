@@ -160,7 +160,20 @@ Host myserver
     fs.chmodSync(configPath, 0o666);
 
     const result = readSshConfig("myserver", configPath);
-    expect(result).toEqual({ host: "myserver" });
+    expect(result.host).toBe("myserver");
+    expect(result.identityFile).toBeUndefined();
+    expect(result.warnings).toEqual([
+      expect.objectContaining({ code: "untrusted" }),
+    ]);
+  });
+
+  it("warns when the config cannot be parsed", () => {
+    const configPath = writeConfig(`Host myserver\n  IdentityFile "unterminated`);
+
+    const result = readSshConfig("myserver", configPath);
+    expect(result.warnings).toEqual([
+      expect.objectContaining({ code: "invalid" }),
+    ]);
   });
 
   itPosix("reads the config when owner-only and not group/world-writable", () => {
