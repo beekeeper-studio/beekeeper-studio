@@ -157,7 +157,7 @@ describe("connectTunnel SSH agent handling (#4193)", () => {
     expect(mockReadFileSync.mock.calls[0][0]).toContain(goodKey);
     expect(mockReadFileSync.mock.calls[0][0]).not.toContain("missing_key");
     expect(lastSshConfig.privateKey).toEqual(Buffer.from("KEY"));
-    expect(lastSshConfig.authHandler).toEqual(["agent", "publickey"]);
+    expect(lastSshConfig.authHandler).toEqual(["none", "agent", "publickey"]);
 
     fs.rmSync(dir, { recursive: true, force: true });
   });
