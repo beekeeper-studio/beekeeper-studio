@@ -5,6 +5,7 @@ import { IQueryFolder } from "@/common/interfaces/IQueryFolder";
 import { DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { safely } from "@/store/modules/data/StoreHelpers";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
+import { buildFolderTree } from "@/common/utils/folderTree";
 
 type State = DataState<IQueryFolder>
 
@@ -20,20 +21,8 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
     ...mutationsFor<IQueryFolder>({}, { field: 'name', direction: 'asc' }),
   },
   getters: {
-    foldersWithQueries: (state) => (queries: any[]) => {
-      const byPosition = (a: any, b: any) => a.position - b.position
-      const rootFolders = state.items.filter((f) => !f.parentId)
-      return rootFolders.map((folder) => ({
-        folder,
-        queries: queries.filter((q) => q.queryFolderId === folder.id).sort(byPosition),
-        subfolders: state.items
-          .filter((f) => f.parentId === folder.id)
-          .map((subfolder) => ({
-            folder: subfolder,
-            queries: queries.filter((q) => q.queryFolderId === subfolder.id).sort(byPosition)
-          }))
-      }))
-    }
+    foldersWithQueries: (state) => (queries: any[]) =>
+      buildFolderTree(state.items, queries, 'queryFolderId')
   },
   actions: {
     async load(context) {

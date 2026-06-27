@@ -280,9 +280,10 @@ import { stringToTypedArray } from '@/common/utils'
             contextMenu: (_e, cell) => {
               return [
                 ...copyActionsMenu({
-                  ranges: cell.getRanges(),
+                  ranges: cell.getTable().getRanges(),
                   table: this.result.tableName || "mytable",
                   schema: this.result.schema,
+                  escapeString: this.dialectData?.escapeString,
                 }),
                 ...this.getExtraPopupMenu('results.rowHeader', { transform: "tabulator" }),
               ];
@@ -293,6 +294,7 @@ import { stringToTypedArray } from '@/common/utils'
                   ranges: column.getTable().getRanges(),
                   table: this.result.tableName || "mytable",
                   schema: this.result.schema,
+                  escapeString: this.dialectData?.escapeString,
                 }),
                 { separator: true },
                 resizeAllColumnsToFitContent,
@@ -332,14 +334,14 @@ import { stringToTypedArray } from '@/common/utils'
           element.classList.add(classToAdd);
         }
       },
-      setAsNullMenuItem(range: RangeComponent) {
-        const areAllCellsReadOnly = range
-          .getColumns()
+      setAsNullMenuItem(ranges: RangeComponent[]) {
+        const areAllCellsReadOnly = ranges
+          .flatMap((range) => range.getColumns())
           .every((col) => !this.cellEditCheck(col));
         return {
           label: createMenuItem("Set as NULL"),
           action: () => {
-            const targets = range.getCells().flat().map((cell) => ({
+            const targets = ranges.flatMap((range) => range.getCells().flat()).map((cell) => ({
               row: cell.getRow(),
               field: cell.getField()
             }));
@@ -399,17 +401,18 @@ import { stringToTypedArray } from '@/common/utils'
         }
 
         const cellMenu = (_e, cell: CellComponent) => {
-          const ranges = cell.getRanges();
+          const ranges = cell.getTable().getRanges();
           const range = _.last(ranges);
 
           return [
             this.openEditorMenu(cell),
-            this.setAsNullMenuItem(range),
+            this.setAsNullMenuItem(ranges),
             { separator: true },
             ...copyActionsMenu({
-              ranges: cell.getRanges(),
+              ranges: cell.getTable().getRanges(),
               table: this.result.tableName,
               schema: this.defaultSchema,
+              escapeString: this.dialectData?.escapeString,
             }),
             { separator: true },
             {
@@ -427,9 +430,10 @@ import { stringToTypedArray } from '@/common/utils'
         const columnMenu = (_e, column) => {
           return [
             ...copyActionsMenu({
-              ranges: column.getRanges(),
+              ranges: column.getTable().getRanges(),
               table: this.result.tableName,
               schema: this.defaultSchema,
+              escapeString: this.dialectData?.escapeString,
             }),
             { separator: true },
             ...commonColumnMenu,

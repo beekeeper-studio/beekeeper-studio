@@ -16,6 +16,7 @@ import { QueryHandlers } from '@/handlers/queryHandlers';
 import { TabHistoryHandlers } from '@/handlers/tabHistoryHandlers'
 import { ExportHandlers } from '@commercial/backend/handlers/exportHandlers';
 import { BackupHandlers } from '@commercial/backend/handlers/backupHandlers';
+import { CliHandlers } from '@commercial/backend/handlers/cliHandlers';
 import { AwsHandlers } from '@commercial/backend/handlers/awsHandlers';
 import { ImportHandlers } from '@commercial/backend/handlers/importHandlers';
 import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
@@ -80,6 +81,7 @@ export const handlers: Handlers = {
   ...ImportHandlers,
   ...AppDbHandlers,
   ...BackupHandlers,
+  ...CliHandlers,
   ...AwsHandlers,
   ...FileHandlers,
   ...EnumHandlers,
@@ -159,7 +161,12 @@ async function runHandler(id: string, name: string, args: any) {
         try {
           state(args.sId).port.postMessage(replyArgs);
         } catch (e) {
-          log.error('ERROR SENDING MESSAGE: ', replyArgs, '\n\n\n ERROR: ', e)
+          log.error('ERROR SENDING MESSAGE: ', replyArgs, '\n\n\n ERROR: ', e?.message ?? e)
+          replyArgs.type = 'error';
+          replyArgs.stack = e?.stack;
+          replyArgs.error = e?.message ?? 'Error sending message from utility process, this may be a bug. Please file an issue if this persists.'
+          delete replyArgs.data
+          state(args.sId).port.postMessage(replyArgs)
         }
       });
   } else {

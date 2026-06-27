@@ -115,6 +115,7 @@
               :tab="tab"
               :active="activeTab?.id === tab.id"
               :table="slotProps.table"
+              @update-tab="updateTab"
             />
           </template>
         </tab-with-table>
@@ -400,6 +401,7 @@ export default Vue.extend({
        'dialectData': 'dialectData',
        'dialectTitle': 'dialectTitle',
        'newTabDropdownItems': 'tabs/newTabDropdownItems',
+       'getKeybindings': 'plugins/keybindings/getKeybindings',
     }),
     tabIcon() {
       return {
@@ -478,6 +480,7 @@ export default Vue.extend({
         'tab.switchTab7': this.handleSwitchTab.bind(this, 6),
         'tab.switchTab8': this.handleSwitchTab.bind(this, 7),
         'tab.switchTab9': this.handleSwitchTab.bind(this, 8),
+        ...this.getKeybindings("newTabDropdown"),
       })
       // FIXME (azmi): move this to default config file
       if(this.$config.isMac) {
@@ -1062,7 +1065,7 @@ export default Vue.extend({
     },
     async close(tab: TransportOpenTab, options?: CloseTabOptions) {
       if (this.closingTab) return; // prevent close modals queueing
-  
+
       if (tab.unsavedChanges && !options?.ignoreUnsavedChanges) {
         this.closingTab = tab
         const confirmed = await this.$confirmById(this.confirmModalId);
