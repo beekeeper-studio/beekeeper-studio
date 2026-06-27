@@ -55,6 +55,14 @@ function shouldPromptCockroachJwt(config: Nullable<IConnection>) {
     !config?.password;
 }
 
+// Surface non-fatal ~/.ssh/config issues (untrusted/invalid config, missing
+// IdentityFile) as warning toasts after a connect or test.
+function notifySshConfigWarnings(warnings?: string[]) {
+  for (const warning of warnings || []) {
+    Vue.prototype.$noty.warning(warning, { timeout: 8000 });
+  }
+}
+
 function shouldPromptSnowflakeMFA(config: Nullable<IConnection>) {
   return config?.connectionType === 'snowflake' &&
     config?.snowflakeOptions.authType === SnowflakeAuthType.MFACode;
@@ -463,7 +471,8 @@ const store = new Vuex.Store<State>({
       const resolvedConfig = await resolveEphemeralValues(config);
       if (!resolvedConfig) return false;
 
-      await Vue.prototype.$util.send('conn/test', { config: resolvedConfig, osUser: context.state.username });
+      const sshConfigWarnings = await Vue.prototype.$util.send('conn/test', { config: resolvedConfig, osUser: context.state.username });
+      notifySshConfigWarnings(sshConfigWarnings);
       return true;
     },
 
@@ -509,8 +518,10 @@ const store = new Vuex.Store<State>({
         const supportedFeatures = await context.state.connection.supportedFeatures();
         const versionString = await context.state.connection.versionString();
 
+        const serverConfig = await Vue.prototype.$util.send('conn/getServerConfig');
+        notifySshConfigWarnings(serverConfig?.sshConfigWarnings);
+
         if (supportedFeatures.backups) {
-          const serverConfig = await Vue.prototype.$util.send('conn/getServerConfig');
           context.dispatch('backups/setConnectionConfigs', { config: resolvedConfig, supportedFeatures, serverConfig });
         }
 

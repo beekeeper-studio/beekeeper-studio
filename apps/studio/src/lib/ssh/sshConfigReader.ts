@@ -7,6 +7,13 @@ import { resolveHomePathToAbsolute } from "@/handlers/utils";
 
 const log = rawLog.scope("ssh:config-reader");
 
+export type SshConfigWarningCode = "invalid" | "untrusted" | "missing_identity_file";
+
+export interface SshConfigWarning {
+  code: SshConfigWarningCode;
+  message: string;
+}
+
 export interface SshConfigResult {
   host: string;
   port?: number;
@@ -14,32 +21,37 @@ export interface SshConfigResult {
   identityFiles?: string[];
   identitiesOnly?: boolean;
   user?: string;
+  warnings?: SshConfigWarning[];
 }
 
-// Mirror OpenSSH: only honour a config that is owned by the current user (or
-// root) and not writable by group or others. `Match exec` runs arbitrary
-// commands via compute(), so an untrusted config must be ignored entirely.
-// POSIX-only — NTFS ACLs don't map to uid/mode bits, so on Windows (no
-// process.getuid) the file is trusted, matching ssh's own platform behaviour.
-function isConfigTrusted(configPath: string): boolean {
+// Display ~/.ssh/config instead of the absolute path when it's under home.
+function tildify(p: string): string {
+  const home = os.homedir();
+  return home && p.startsWith(home) ? `~${p.slice(home.length)}` : p;
+}
+
+// Returns a human-readable reason the config can't be trusted, or null if it's
+// fine. Mirrors OpenSSH: the config must be owned by the current user (or root)
+// and not writable by group or others. `Match exec` runs arbitrary commands via
+// compute(), so an untrusted config must be ignored entirely. POSIX-only — NTFS
+// ACLs don't map to uid/mode bits, so on Windows (no process.getuid) the file
+// is trusted, matching ssh's own platform behaviour.
+function configTrustIssue(configPath: string): string | null {
   const getuid = typeof process.getuid === "function" ? process.getuid : null;
-  if (!getuid) return true;
+  if (!getuid) return null;
   let stats: fs.Stats;
   try {
     stats = fs.statSync(configPath);
   } catch (err) {
-    log.warn(`Cannot stat ${configPath}, ignoring it: ${err.message}`);
-    return false;
+    return `it could not be read (${err.message})`;
   }
   if (stats.uid !== 0 && stats.uid !== getuid()) {
-    log.warn(`Ignoring ${configPath}: not owned by the current user`);
-    return false;
+    return "it is not owned by the current user";
   }
   if (stats.mode & 0o022) {
-    log.warn(`Ignoring ${configPath}: group/world-writable permissions`);
-    return false;
+    return "it is writable by group or other users";
   }
-  return true;
+  return null;
 }
 
 export function readSshConfig(
@@ -52,7 +64,16 @@ export function readSshConfig(
   if (!fs.existsSync(configPath)) {
     return endResult;
   }
-  if (!isConfigTrusted(configPath)) {
+
+  const trustIssue = configTrustIssue(configPath);
+  if (trustIssue) {
+    log.warn(`Ignoring ${configPath}: ${trustIssue}`);
+    endResult.warnings = [
+      {
+        code: "untrusted",
+        message: `${tildify(configPath)} was ignored because ${trustIssue}.`,
+      },
+    ];
     return endResult;
   }
 
@@ -89,6 +110,12 @@ export function readSshConfig(
     }
   } catch (err) {
     log.error("Failed to read or parse ~/.ssh/config:", err);
+    endResult.warnings = [
+      {
+        code: "invalid",
+        message: `${tildify(configPath)} could not be parsed and was ignored.`,
+      },
+    ];
   }
 
   return endResult;

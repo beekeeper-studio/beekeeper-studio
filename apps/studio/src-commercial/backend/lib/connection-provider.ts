@@ -4,6 +4,16 @@ import { IDbConnectionPublicServer } from '@/lib/db/serverTypes'
 import { IDbConnectionServerConfig, IDbConnectionServerSSHConfig } from '@/lib/db/types'
 import { createServer } from './db/server'
 import { readSshConfig } from '@/lib/ssh/sshConfigReader'
+import fs from 'fs'
+
+// In Automatic mode ssh tries each IdentityFile and skips missing ones; surface
+// that so the user knows a configured key was not used. Only relevant when the
+// keys are actually consumed (agent mode).
+function missingIdentityFileWarnings(identityFiles?: string[]): string[] {
+  return (identityFiles || [])
+    .filter((p) => !fs.existsSync(p))
+    .map((p) => `IdentityFile not found and skipped: ${p}`)
+}
 
 export default {
   convertConfig(config: IConnection, osUsername: string, settings: IGroupedUserSettings): IDbConnectionServerConfig {
@@ -26,6 +36,10 @@ export default {
       keepaliveInterval: config.sshKeepaliveInterval,
     } : null
 
+    // Non-fatal ~/.ssh/config issues to surface to the user (invalid/untrusted
+    // config, missing IdentityFile). Deduped and attached to the result.
+    const sshConfigWarnings: string[] = []
+
     // Resolve aliases via ~/.ssh/config for all modes: HostName, Port, and
     // User are filled in when the user typed an alias and left fields blank.
     // The chosen authentication mode is never overridden — only Automatic
@@ -36,6 +50,12 @@ export default {
         undefined,
         config.sshUsername ? config.sshUsername.trim() : undefined
       )
+      if (fileConfig.warnings) {
+        sshConfigWarnings.push(...fileConfig.warnings.map((w) => w.message))
+      }
+      if (config.sshMode === 'agent') {
+        sshConfigWarnings.push(...missingIdentityFileWarnings(fileConfig.identityFiles))
+      }
       if (fileConfig.host) {
         ssh.host = fileConfig.host
       }
@@ -60,6 +80,12 @@ export default {
         undefined,
         config.sshBastionUsername ? config.sshBastionUsername.trim() : undefined
       )
+      if (fileConfig.warnings) {
+        sshConfigWarnings.push(...fileConfig.warnings.map((w) => w.message))
+      }
+      if (config.sshBastionMode === 'agent') {
+        sshConfigWarnings.push(...missingIdentityFileWarnings(fileConfig.identityFiles))
+      }
       if (fileConfig.host) {
         ssh.bastionHost = fileConfig.host
       }
@@ -116,7 +142,8 @@ export default {
       surrealDbOptions: config.surrealDbOptions,
       snowflakeOptions: config.snowflakeOptions,
       dynamoDbOptions: config.dynamoDbOptions,
-      runtimeExtensions: sqliteExtension ? sqliteExtension as string[] : []
+      runtimeExtensions: sqliteExtension ? sqliteExtension as string[] : [],
+      sshConfigWarnings: sshConfigWarnings.length ? Array.from(new Set(sshConfigWarnings)) : undefined,
     }
   },
 
