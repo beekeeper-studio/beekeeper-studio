@@ -77,12 +77,9 @@
                   Current version
                 </span>
                 <time class="title" v-text="audit.time" />
-                <span v-if="audit.queryAudit.user.source === 'cloud'" class="editor-label">{{
-                  audit.queryAudit.user.name ||
-                  audit.queryAudit.user.username ||
-                  audit.queryAudit.user.email ||
-                  "Unknown"
-                }}</span>
+                <span v-if="isCloud && 'name' in audit.queryAudit.user" class="editor-label">
+                  {{ audit.queryAudit.user.name }}
+                </span>
               </button>
             </li>
           </ul>
@@ -194,7 +191,7 @@ export default Vue.extend({
   },
   computed: {
     ...mapState(["connectionType", "tables"]),
-    ...mapGetters(["dialectData"]),
+    ...mapGetters(["dialectData", "isCloud"]),
     hasUnsavedChanges(): boolean {
       return this.unsavedText !== null;
     },
