@@ -143,10 +143,21 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
 
     if (this.server.config.url) {
       url = this.server.config.url
+      // Route the user-provided URL through the SSH tunnel's local endpoint.
+      if (this.server.sshTunnel) {
+        const urlObj = new URL(url);
+        urlObj.hostname = this.server.config.localHost;
+        urlObj.port = this.server.config.localPort.toString();
+        url = urlObj.toString();
+      }
     } else {
       const urlObj = new URL('http://example.com/');
-      urlObj.hostname = this.server.config.host;
-      urlObj.port = this.server.config.port.toString();
+      urlObj.hostname = this.server.sshTunnel
+        ? this.server.config.localHost
+        : this.server.config.host;
+      urlObj.port = (this.server.sshTunnel
+        ? this.server.config.localPort
+        : this.server.config.port).toString();
       urlObj.protocol = this.server.config.ssl ? 'https:' : 'http:';
       url = urlObj.toString();
     }
