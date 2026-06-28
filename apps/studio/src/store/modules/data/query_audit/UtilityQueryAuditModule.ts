@@ -39,8 +39,8 @@ export const UtilQueryAuditModule: Module<State, RootState> = {
     async restore(
       _context,
       { queryId, auditId }: { queryId: number; auditId: number }
-    ): Promise<TransportFavoriteQuery> {
-      return await Vue.prototype.$util.send("appdb/queryAudit/restore", {
+    ): Promise<void> {
+      await Vue.prototype.$util.send("appdb/queryAudit/restore", {
         queryId,
         auditId,
       });

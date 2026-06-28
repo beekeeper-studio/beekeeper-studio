@@ -113,7 +113,7 @@
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
-import { mapGetters, mapState } from "vuex";
+import { mapGetters, mapState, mapActions } from "vuex";
 import MergeTextEditor from "@beekeeperstudio/ui-kit/vue/merge-text-editor";
 import {
   IQueryAudit,
@@ -287,6 +287,10 @@ export default Vue.extend({
     this.destroySplit();
   },
   methods: {
+    ...mapActions({
+      "restore": "data/queryAudits/restore",
+      "upsertQuery": "data/queries/upsert",
+    }),
     initSplit() {
       if (this.split) {
         return;
@@ -424,7 +428,7 @@ export default Vue.extend({
     },
     async confirmRestore(): Promise<void> {
       const queryId = this.queryId;
-      const auditId = this.selectedAuditId;
+      const auditId = this.selectedAudit.id;
       if (queryId == null || auditId == null) {
         return;
       }
@@ -446,12 +450,13 @@ export default Vue.extend({
         if (this.hasUnsavedChanges && this.selectedAuditId === latestAudit.id) {
           this.$emit("discardUnsavedChanges");
         } else {
-          const restored: ISavedQuery = await this.$store.dispatch(
-            "data/queryAudits/restore",
-            { queryId, auditId }
-          );
+          await this.restore({ queryId, auditId });
+          const restored = {
+            id: queryId,
+            text: this.selectedAudit.values.text,
+            title: this.selectedAudit.values.title,
+          };
           this.$store.commit("data/queries/upsert", restored);
-          await this.loadAudits();
           this.$emit("restore", restored);
         }
       } catch (e) {

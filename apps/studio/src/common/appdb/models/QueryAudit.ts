@@ -52,14 +52,13 @@ export class QueryAudit extends ApplicationEntity {
     };
   }
 
-  async restore(): Promise<{ query: FavoriteQuery }> {
+  async restore(): Promise<void> {
     const query = await FavoriteQuery.findOneByOrFail({
       id: this.favoriteQueryId,
     });
     query.title = this.title;
     query.text = this.text;
     await query.save();
-    return { query };
   }
 
   private static async getPreviousId(

@@ -232,12 +232,11 @@ export const AppDbHandlers = {
   }: {
     queryId: number;
     auditId: number;
-  }): Promise<TransportFavoriteQuery> {
+  }): Promise<void> {
     const audit = await QueryAudit.findOneByOrFail({
       id: auditId,
       favoriteQueryId: queryId,
     });
-    const { query } = await audit.restore();
-    return query;
+    await audit.restore();
   },
 };
