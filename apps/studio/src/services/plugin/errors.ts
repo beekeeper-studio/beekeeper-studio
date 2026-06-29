@@ -39,3 +39,10 @@ export const PluginSystemDisabledError = class extends Error {
     this.name = "PluginSystemDisabledError";
   }
 };
+
+export const InvalidPluginManifestError = class extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "InvalidPluginManifestError";
+  }
+};

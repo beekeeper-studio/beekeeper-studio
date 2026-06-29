@@ -4,6 +4,22 @@ import tmp from "tmp";
 import { utils as ssh2Utils } from "ssh2";
 import { loadAllowedPublicKeys } from "@/lib/ssh/sshKeyUtils";
 
+// Static ed25519 fixture generated with `ssh-keygen -t ed25519`. We do NOT use
+// ssh2's generateKeyPairSync here: it intermittently emits ed25519 keys that
+// ssh2's own parseKey can't read (mscdex/ssh2#1390), which made this test flaky.
+// A fixed, known-good key keeps it deterministic and still exercises the real
+// parse/derive path against ssh-keygen output (what users actually have).
+const PRIVATE_KEY = `-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+QyNTUxOQAAACC2lG8CqrSQ9fwwMqlCJXUPF1f0LhqVGwH6WFirTq/a2gAAAJhTilfNU4pX
+zQAAAAtzc2gtZWQyNTUxOQAAACC2lG8CqrSQ9fwwMqlCJXUPF1f0LhqVGwH6WFirTq/a2g
+AAAEB2Vg3yl/zjO5cnzVAtDwaYOijKRftatbamaYMey2PL/LaUbwKqtJD1/DAyqUIldQ8X
+V/QuGpUbAfpYWKtOr9raAAAAEGJrcy10ZXN0LWZpeHR1cmUBAgMEBQ==
+-----END OPENSSH PRIVATE KEY-----
+`;
+const PUBLIC_KEY = `ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILaUbwKqtJD1/DAyqUIldQ8XV/QuGpUbAfpYWKtOr9ra bks-test-fixture
+`;
+
 function pubBlob(pub: string): string {
   const parsed = ssh2Utils.parseKey(pub);
   if (parsed instanceof Error) throw parsed;
@@ -23,9 +39,7 @@ describe("loadAllowedPublicKeys", () => {
   });
 
   it("uses .pub sidecar when present", () => {
-    const { private: priv, public: pub } = (ssh2Utils as any).generateKeyPairSync(
-      "ed25519"
-    );
+    const priv = PRIVATE_KEY, pub = PUBLIC_KEY;
     const privPath = path.join(dir.name, "id_ed25519");
     fs.writeFileSync(privPath, priv);
     fs.writeFileSync(privPath + ".pub", pub);
@@ -36,9 +50,7 @@ describe("loadAllowedPublicKeys", () => {
   });
 
   it("derives public key from private key when sidecar is missing", () => {
-    const { private: priv, public: pub } = (ssh2Utils as any).generateKeyPairSync(
-      "ed25519"
-    );
+    const priv = PRIVATE_KEY, pub = PUBLIC_KEY;
     const privPath = path.join(dir.name, "id_ed25519");
     fs.writeFileSync(privPath, priv);
 
@@ -48,9 +60,7 @@ describe("loadAllowedPublicKeys", () => {
   });
 
   it("skips missing files but loads the rest", () => {
-    const { private: priv, public: pub } = (ssh2Utils as any).generateKeyPairSync(
-      "ed25519"
-    );
+    const priv = PRIVATE_KEY, pub = PUBLIC_KEY;
     const goodPath = path.join(dir.name, "good");
     fs.writeFileSync(goodPath, priv);
     const missingPath = path.join(dir.name, "missing");
