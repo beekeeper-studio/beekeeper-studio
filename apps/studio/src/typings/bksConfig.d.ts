@@ -473,6 +473,7 @@ declare interface IBksConfig {
             binaryEncoding: string;
         };
         layout: {
+            defaultSidebarItem: string;
             mainContentMinWidth: number;
             primarySidebarMinWidth: number;
             secondarySidebarMinWidth: number;
