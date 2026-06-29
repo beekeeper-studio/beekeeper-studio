@@ -85,12 +85,12 @@ export function readSshConfig(
     // evaluated against it. Without it, compute() falls back to the OS user and
     // those Match blocks never fire.
     //
-    // matchExec (default true, matching ssh(1)) controls whether `Match exec`
-    // runs its command. Operators can turn it off via [security]
-    // allowSshConfigMatchExec; Host and non-exec Match rules still apply.
+    // `Match exec` runs its command by default, matching ssh(1). Operators can
+    // turn it off via [security] disableSshConfigMatchExec; Host and non-exec
+    // Match rules still apply.
     const result = config.compute(
       user ? { Host: host, User: user } : host,
-      { ignoreCase: true, matchExec: bksConfig.security.allowSshConfigMatchExec }
+      { ignoreCase: true, matchExec: !bksConfig.security.disableSshConfigMatchExec }
     );
 
     if (result.hostname) {

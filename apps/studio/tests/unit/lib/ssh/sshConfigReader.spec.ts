@@ -5,13 +5,13 @@ import tmp from "tmp";
 
 // Lazily read via a getter so the value is resolved at call time (after this
 // initializes), not when jest evaluates the mock factory.
-let mockAllowSshConfigMatchExec = true;
+let mockDisableSshConfigMatchExec = false;
 jest.mock("@/common/bksConfig", () => ({
   __esModule: true,
   default: {
     security: {
-      get allowSshConfigMatchExec() {
-        return mockAllowSshConfigMatchExec;
+      get disableSshConfigMatchExec() {
+        return mockDisableSshConfigMatchExec;
       },
     },
   },
@@ -24,7 +24,7 @@ describe("readSshConfig", () => {
   const itPosix = typeof process.getuid === "function" ? it : it.skip;
 
   beforeEach(() => {
-    mockAllowSshConfigMatchExec = true;
+    mockDisableSshConfigMatchExec = false;
   });
 
   function writeConfig(content: string): string {
@@ -168,8 +168,8 @@ Match host myserver
     expect(result.identityFile).toBe("/keys/match_host_key");
   });
 
-  it("skips Match exec sections when [security] allowSshConfigMatchExec is false", () => {
-    mockAllowSshConfigMatchExec = false;
+  it("skips Match exec sections when [security] disableSshConfigMatchExec is true", () => {
+    mockDisableSshConfigMatchExec = true;
     const configPath = writeConfig(`
 Host myserver
   HostName real.example.com
@@ -185,8 +185,8 @@ Match exec "true"
     expect(result.identityFiles).not.toContain("/keys/exec_key");
   });
 
-  it("still applies non-exec Match rules when allowSshConfigMatchExec is false", () => {
-    mockAllowSshConfigMatchExec = false;
+  it("still applies non-exec Match rules when disableSshConfigMatchExec is true", () => {
+    mockDisableSshConfigMatchExec = true;
     const configPath = writeConfig(`
 Match host myserver
   IdentityFile /keys/match_host_key`);
