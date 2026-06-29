@@ -97,6 +97,10 @@ class SSHConnection {
     this.debug("Shutdown connections")
     for (const connection of this.connections) {
       connection.removeAllListeners()
+      // Swallow late errors (e.g. the remote resetting the socket, ECONNRESET)
+      // emitted while the connection is closing. Without a handler these would
+      // surface as unhandled 'error' events and crash the process.
+      connection.on('error', () => { /* ignore during teardown */ })
       connection.end()
     }
     return new Promise<void>((resolve) => {
@@ -279,6 +283,11 @@ class SSHConnection {
           if (error) {
             return reject(error)
           }
+          // Handle errors on both ends of the forward (e.g. the remote or the
+          // local client resetting the socket, ECONNRESET) so they don't
+          // surface as unhandled 'error' events and crash the process.
+          socket.on('error', () => { socket.destroy() })
+          stream.on('error', () => { stream.destroy?.() })
           socket.pipe(stream)
           stream.pipe(socket)
         })

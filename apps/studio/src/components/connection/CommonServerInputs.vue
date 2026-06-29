@@ -71,6 +71,7 @@
     </div>
 
     <common-ssl
+      v-if="!hideSsl"
       :config="config"
       :ssl-help="sslHelp"
       :support-complex-s-s-l="supportComplexSSL"
@@ -131,6 +132,12 @@ export default {
     },
     // Used by SqlServerForm to hide user/password when integrated auth is selected.
     hideCredentials: {
+      type: Boolean,
+      default: false
+    },
+    // Used by SqlServerForm to hide the SSL section when integrated auth provides its own
+    // Encrypt toggle (the ODBC driver only supports Encrypt + TrustServerCertificate).
+    hideSsl: {
       type: Boolean,
       default: false
     },

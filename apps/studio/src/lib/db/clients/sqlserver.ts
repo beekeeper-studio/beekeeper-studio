@@ -22,6 +22,7 @@ import {
 } from './utils';
 import logRaw from '@bksLogger'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor'
+import { buildWindowsAuthConnStr } from './sqlserverWinAuth'
 import { SqlServerData } from '@shared/lib/dialects/sqlserver'
 import { SqlServerChangeBuilder } from '@shared/lib/sql/change_builder/SqlServerChangeBuilder'
 import { joinFilters } from '@/common/utils';
@@ -1278,7 +1279,9 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       )
     }
 
-    const trustCert = this.dbConfig.options?.trustServerCertificate
+    const encryptionMode = this.dbConfig.options?.encryptionMode || 'on'
+    const serverCertificate = this.dbConfig.options?.serverCertificate
+    const serverSpn = this.dbConfig.options?.serverSpn
     const server = this.dbConfig.server
     const port = this.dbConfig.port || 1433
     const CONNECT_TIMEOUT_S = 15
@@ -1296,16 +1299,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     ]
     if (process.platform === 'win32') {
       candidates.push({ driver: 'SQL Server', legacy: true })
-    }
-
-    // Set a connection-string clause, replacing it in place or appending it when
-    // mssql's generated string omits it -- so the discovered driver and
-    // Trusted_Connection are never silently dropped.
-    const setClause = (connStr: string, key: string, value: string): string => {
-      const re = new RegExp(`${key}=[^;]*`, 'i')
-      return re.test(connStr)
-        ? connStr.replace(re, `${key}=${value}`)
-        : `${connStr.replace(/;?\s*$/, '')};${key}=${value}`
     }
 
     // Flatten every nested message out of an mssql/msnodesqlv8 error so a missing
@@ -1341,9 +1334,14 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
         ...this.dbConfig,
         connectionTimeout: CONNECT_TIMEOUT_S * 1000,
         beforeConnect: (cfg: any) => {
-          cfg.conn_str = setClause(cfg.conn_str, 'Driver', `{${candidate.driver}}`)
-          cfg.conn_str = setClause(cfg.conn_str, 'Trusted_Connection', 'yes')
-          if (trustCert) cfg.conn_str = setClause(cfg.conn_str, 'TrustServerCertificate', 'yes')
+          // Pin the discovered driver + Trusted_Connection, and translate the encryption mode
+          // and SPN into ODBC clauses (see buildWindowsAuthConnStr for the exact mapping).
+          cfg.conn_str = buildWindowsAuthConnStr(cfg.conn_str, {
+            driver: candidate.driver,
+            encryptionMode,
+            serverCertificate,
+            serverSpn,
+          })
           cfg.conn_timeout = CONNECT_TIMEOUT_S
         }
       }).connect()
@@ -1412,9 +1410,14 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       }
 
       // trustedConnection delegates auth to the OS (SSPI -> Kerberos/NTLM) via msnodesqlv8.
+      // The integrated-auth encryption/cert/SPN settings live in sqlServerOptions;
+      // connectWindowsAuth() translates encryptionMode into the ODBC Encrypt/strict clauses.
+      const sqlServerOptions = server.config.sqlServerOptions || {};
       config.options = {
         trustedConnection: true,
-        trustServerCertificate: server.config.trustServerCertificate,
+        encryptionMode: sqlServerOptions.encryptionMode || 'on',
+        serverCertificate: sqlServerOptions.serverCertificate || undefined,
+        serverSpn: sqlServerOptions.serverSpn || undefined,
       };
 
       return config;
