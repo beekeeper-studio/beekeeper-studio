@@ -311,6 +311,9 @@ export interface IDbConnectionServerConfig {
   dynamoDbOptions?: DynamoDBOptions
   snowflakeOptions?: SnowflakeOptions
   runtimeExtensions?: string[]
+  // Non-fatal ~/.ssh/config issues surfaced to the user (e.g. untrusted config,
+  // missing IdentityFile). Shown as warning toasts on connect/test.
+  sshConfigWarnings?: string[]
 }
 
 export interface IBasicDatabaseClient {
