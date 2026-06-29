@@ -570,7 +570,7 @@
   import MergeManager from '@/components/editor/MergeManager.vue'
   import { AppEvent } from '@/common/AppEvent'
   import { PropType } from 'vue'
-  import { TransportOpenTab, findQuery } from '@/common/transport/TransportOpenTab'
+  import { TransportOpenTab, findQuery, resolveEditorText } from '@/common/transport/TransportOpenTab'
   import { blankFavoriteQuery } from '@/common/transport'
   import { FieldEditData, TableOrView } from "@/lib/db/models";
   import { FormatterDialect, dialectFor, formatOptionsFor } from "@shared/lib/dialects/models"
@@ -1696,20 +1696,17 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         }
       },
       initializeQueries() {
-        if (!this.tab.unsavedChanges && this.query?.text) {
-          this.unsavedText = null
-        }
-        const originalText = this.query?.text || this.tab.unsavedQueryText
-        if (originalText) {
+        const { originalText, editorText } = resolveEditorText(this.tab, this.query?.text)
+        if (editorText) {
           // The run methods should catch any errors, so we don't need to do that here
-          const { queries } = safelyIdentify(originalText, { dialect: this.identifierDialect, paramTypes: this.paramTypes })
+          const { queries } = safelyIdentify(editorText, { dialect: this.identifierDialect, paramTypes: this.paramTypes })
           if (queries.length > 0) {
             this.individualQueries = queries
             this.currentlySelectedQuery = queries[0]
           }
 
           this.originalText = originalText
-          this.unsavedText = originalText
+          this.unsavedText = editorText
         }
       },
       fakeRemoteChange() {
