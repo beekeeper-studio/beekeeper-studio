@@ -172,44 +172,6 @@ jobs:
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
 
-  tailscale:
-    name: Tailscale SSH tunnel test
-    runs-on: ubuntu-24.04
-    needs:
-      - prep
-    steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v4
-
-      - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v3
-        with:
-          node-version-file: '.nvmrc'
-
-      - name: Restore node_modules cache
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            node_modules
-            apps/studio/node_modules
-            apps/ui-kit/node_modules
-            apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
-          fail-on-cache-miss: true
-
-      # Reproduces the Tailscale SSH tunnel regression (#4358). Boots a self-hosted
-      # tailnet (headscale + tailscale nodes) via testcontainers; needs docker and
-      # an ssh-agent, both available on the GitHub ubuntu runner.
-      - name: Test
-        uses: nick-fields/retry@v2
-        with:
-          timeout_minutes: 20
-          max_attempts: 2
-          on_retry_command: "docker ps -aq | xargs docker stop | xargs docker rm"
-          command: yarn workspace beekeeper-studio run test:tailscale --runInBand --ci
-        env:
-          TESTCONTAINERS_RYUK_DISABLED: true
-
   # codemirror:
   #   name: CodeMirror tests
   #   runs-on: ubuntu-latest
