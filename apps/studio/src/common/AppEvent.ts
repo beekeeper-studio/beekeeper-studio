@@ -84,6 +84,14 @@ export enum AppEvent {
    * this.trigger(AppEvent.openQueryEditHistory, savedQueryId);
    **/
   openQueryEditHistory = 'openQueryEditHistory',
+  /** Open a modal to move a file to a folder
+   * @example
+   * this.trigger(AppEvent.openMoveToModal, {
+   *   type: "connection",
+   *   value: this.config, // the connection config
+   * });
+   **/
+  openMoveToModal = 'openMoveToModal',
 }
 
 export interface RootBinding {

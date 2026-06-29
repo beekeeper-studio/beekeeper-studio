@@ -79,6 +79,7 @@ import TimeAgo from 'javascript-time-ago'
 import { mapGetters, mapState } from 'vuex'
 import { isUltimateType } from '@/common/interfaces/IConnection'
 import EditableText from '@/components/common/EditableText.vue'
+import { AppEvent } from '@/common/AppEvent';
 
 export default {
   components: { EditableText },
@@ -202,17 +203,12 @@ export default {
           slug: 'connect',
           handler: (blob) => this.doubleClick(blob.item)
         },
+        { type: "divider" },
         !this.isRecentList && {
           name: this.pinned ? 'Unpin' : 'Pin',
           handler: () => this.pinned ? this.unpin() : this.pin()
         },
-        !this.isRecentList && {
-          name: "Rename",
-          slug: 'rename',
-          handler: () => {
-            this.rename = true;
-          },
-        },
+        !this.isRecentList && { type: "divider" },
         {
           name: "Duplicate",
           slug: 'duplicate',
@@ -222,19 +218,28 @@ export default {
           name: `Copy ${this.connectionType}`,
           handler: this.copyUrl
         },
+        { type: "divider" },
+        !this.isRecentList && {
+          name: "Rename",
+          slug: 'rename',
+          handler: () => {
+            this.rename = true;
+          },
+        },
+        !this.isRecentList && this.folders.length > 0 && {
+          name: "Move to...",
+          handler: () => {
+            this.trigger(AppEvent.openMoveToModal, {
+              type: "connection",
+              value: this.config,
+            });
+          },
+        },
         {
           name: "Remove",
           handler: this.remove
         },
       ].filter(v => v)
-
-      if (this.isCloud || this.folders.length > 0) {
-        options.push({ type: 'divider' })
-        if (!this.isCloud && this.config.connectionFolderId) {
-          options.push({ name: 'Move to top level', handler: () => this.moveToRoot() })
-        }
-        options.push(...this.moveToOptions)
-      }
 
       this.$bks.openMenu({
         event,

@@ -3,11 +3,11 @@
     <modal
       :name="name"
       @before-open="$emit('before-open', $event)"
-      @opened="$emit('opened')"
+      @opened="handleOpened"
       @closed="$emit('closed')"
       class="base-modal-root"
     >
-      <div v-kbd-trap="true" class="base-modal">
+      <div v-kbd-trap="true" class="base-modal" ref="baseModal">
         <div class="base-modal-header">
           <div class="base-modal-title">
             <slot name="title" :close="close" />
@@ -16,6 +16,7 @@
             href="#"
             class="base-modal-close"
             @click.prevent="close"
+            ref="closeBtn"
           >
             <i class="material-icons">clear</i>
           </a>
@@ -40,10 +41,29 @@ export default Vue.extend({
       type: String,
       required: true,
     },
+    /** Query to find the first focusable element */
+    firstFocusable: {
+      type: String,
+      default: [
+        "a[href]:not(.base-modal-close)",
+        "button:not([disabled])",
+        "input:not([disabled])",
+        "select:not([disabled])",
+        "textarea:not([disabled])",
+        '[tabindex]:not([tabindex="-1"])',
+      ].join(","),
+    },
   },
   methods: {
     close() {
       this.$modal.hide(this.name);
+    },
+    handleOpened() {
+      const target =
+        this.$refs.baseModal.querySelector(this.firstFocusable) ??
+        this.$refs.closeBtn;
+      target.focus();
+      this.$emit("opened");
     },
   },
 });
@@ -51,7 +71,9 @@ export default Vue.extend({
 
 <style scoped>
 .base-modal-root ::v-deep .v--modal {
+  min-width: 36rem;
   min-height: 6rem;
+  width: auto !important;
 }
 
 .base-modal {
