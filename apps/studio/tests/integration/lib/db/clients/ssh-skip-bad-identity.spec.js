@@ -5,20 +5,13 @@
 // file that doesn't exist on disk), continuing until one identity
 // authenticates. A bad entry never aborts the connection.
 //
-// Beekeeper must mimic this exactly. Today it does not: connection-provider
-// copies the FIRST IdentityFile into ssh.privateKey, and tunnel.ts then
-// readFileSync()s it unconditionally. If that first entry is missing the read
-// throws ENOENT and the whole connection fails — even though the SSH agent
-// holds a perfectly good key that OpenSSH would have used.
-//
 // This test sets up the exact OpenSSH-faithful scenario:
 //   - a valid ed25519 key is loaded into a real ssh-agent and authorized on
 //     the server,
 //   - ~/.ssh/config lists a non-existent IdentityFile FIRST, then the valid
 //     key second, with IdentitiesOnly yes.
-// OpenSSH would skip the missing first entry and authenticate with the second.
-// Beekeeper currently errors out on the bad first entry, so this test FAILS
-// until the bug is fixed.
+// Beekeeper skips the missing first entry and authenticates with the second,
+// matching ssh(1).
 
 import { execSync } from 'child_process'
 import * as fs from 'fs'

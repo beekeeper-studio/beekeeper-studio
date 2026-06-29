@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import Vue from 'vue'
 import Vuex from 'vuex'
+import { escapeHtml } from '@shared/lib/tabulator'
 
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
@@ -56,11 +57,14 @@ function shouldPromptCockroachJwt(config: Nullable<IConnection>) {
 }
 
 // Surface non-fatal ~/.ssh/config issues (untrusted/invalid config, missing
-// IdentityFile) as warning toasts after a connect or test.
+// IdentityFile) as a single warning toast after a connect or test.
 function notifySshConfigWarnings(warnings?: string[]) {
-  for (const warning of warnings || []) {
-    Vue.prototype.$noty.warning(warning, { timeout: 8000 });
-  }
+  if (!warnings || warnings.length === 0) return;
+  const escaped = warnings.map((w) => escapeHtml(w));
+  const body = escaped.length === 1
+    ? `<strong>SSH config</strong><br>${escaped[0]}`
+    : `<strong>SSH config warnings</strong><ul class="noty-warning-list">${escaped.map((w) => `<li>${w}</li>`).join('')}</ul>`;
+  Vue.prototype.$noty.warning(body, { timeout: 8000, allowRawHtml: true });
 }
 
 function shouldPromptSnowflakeMFA(config: Nullable<IConnection>) {
