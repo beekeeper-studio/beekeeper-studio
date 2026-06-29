@@ -43,6 +43,9 @@ export class FavoriteQuery extends ApplicationEntity implements QueryLike, ISave
   @JoinColumn({ name: 'queryFolderId' })
   queryFolder?: QueryFolder
 
+  @OneToMany(() => QueryAudit, (audit) => audit.favoriteQuery)
+  queryAudits: QueryAudit[]
+
   @BeforeInsert()
   @BeforeUpdate()
   setDefaultDatabase(): void {

@@ -1,4 +1,13 @@
-import { Column, Entity, Index, ManyToOne } from "typeorm";
+import {
+  Column,
+  Entity,
+  Index,
+  IsNull,
+  LessThan,
+  LessThanOrEqual,
+  ManyToOne,
+  Not,
+} from "typeorm";
 import { ApplicationEntity } from "./application_entity";
 import { FavoriteQuery } from "./favorite_query";
 import { TransportQueryAuditDetail } from "@/common/transport/TransportQueryAudit";
@@ -25,11 +34,17 @@ export class QueryAudit extends ApplicationEntity {
   @Column({ type: "varchar", nullable: false })
   action: "create" | "update";
 
-  @Column({ type: "varchar", nullable: false })
-  title: string;
+  /** `title` can be null if it's not changed in this revision. Always use `getDetail`.
+   * @see {QueryAudit.getDetail}
+   **/
+  @Column({ type: "varchar", nullable: true })
+  title: string | null;
 
-  @Column({ type: "text", nullable: false })
-  text: string;
+  /** `text` can be null if it's not changed in this revision. Always use `getDetail`.
+   * @see {QueryAudit.getDetail}
+   **/
+  @Column({ type: "text", nullable: true, select: false })
+  text: string | null;
 
   static async getDetail(
     queryId: number,
@@ -44,11 +59,19 @@ export class QueryAudit extends ApplicationEntity {
       return null;
     }
 
+    const previousAuditId = await QueryAudit.getPreviousId(
+      queryId,
+      audit.revision
+    );
+    const { title, text } = await QueryAudit.resolveSnapshot(
+      queryId,
+      audit.revision
+    );
+
     return {
       ...audit,
-      user: { source: "util" },
-      previousAuditId: await QueryAudit.getPreviousId(queryId, audit.revision),
-      values: { title: audit.title, text: audit.text },
+      previousAuditId,
+      values: { title, text },
     };
   }
 
@@ -56,23 +79,60 @@ export class QueryAudit extends ApplicationEntity {
     const query = await FavoriteQuery.findOneByOrFail({
       id: this.favoriteQueryId,
     });
-    query.title = this.title;
-    query.text = this.text;
+    const { title, text } = await QueryAudit.resolveSnapshot(
+      this.favoriteQueryId,
+      this.revision
+    );
+    query.title = title;
+    query.text = text;
     await query.save();
+  }
+
+  private static async resolveSnapshot(
+    queryId: number,
+    revision: number
+  ): Promise<{ title: string; text: string }> {
+    const titleObj = await QueryAudit.findOne({
+      select: ["title"],
+      where: {
+        favoriteQueryId: queryId,
+        revision: LessThanOrEqual(revision),
+        title: Not(IsNull()),
+      },
+      order: {
+        revision: "DESC",
+      },
+    });
+    const textObj = await QueryAudit.findOne({
+      select: ["text"],
+      where: {
+        favoriteQueryId: queryId,
+        revision: LessThanOrEqual(revision),
+        text: Not(IsNull()),
+      },
+      order: {
+        revision: "DESC",
+      },
+    });
+    return {
+      title: titleObj?.title ?? "",
+      text: textObj?.text ?? "",
+    };
   }
 
   private static async getPreviousId(
     queryId: number,
     revision: number
   ): Promise<number | null> {
-    const audit = await QueryAudit.getRepository()
-      .createQueryBuilder("a")
-      .where("a.favoriteQueryId = :id AND a.revision < :v", {
-        id: queryId,
-        v: revision,
-      })
-      .orderBy("a.revision", "DESC")
-      .getOne();
+    const audit = await QueryAudit.findOne({
+      where: {
+        favoriteQueryId: queryId,
+        revision: LessThan(revision),
+      },
+      order: {
+        revision: "DESC",
+      },
+    });
     return audit?.id ?? null;
   }
 }

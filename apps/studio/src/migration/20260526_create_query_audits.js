@@ -7,8 +7,8 @@ export default {
         "favoriteQueryId" integer NOT NULL REFERENCES favorite_query (id) ON DELETE CASCADE,
         "revision" integer NOT NULL,
         "action" varchar NOT NULL,
-        "title" varchar NOT NULL,
-        "text" text NOT NULL,
+        "title" varchar,
+        "text" text,
         "createdAt" datetime NOT NULL DEFAULT (datetime('now')),
         "updatedAt" datetime NOT NULL DEFAULT (datetime('now')),
         "version" integer NOT NULL DEFAULT 0

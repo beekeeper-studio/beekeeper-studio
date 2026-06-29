@@ -77,8 +77,20 @@
                   Current version
                 </span>
                 <time class="title" v-text="audit.time" />
-                <span v-if="isCloud && 'name' in audit.queryAudit.user" class="editor-label">
+                <span
+                  v-if="isCloud && 'name' in audit.queryAudit.user"
+                  class="editor-label"
+                >
                   {{ audit.queryAudit.user.name }}
+                </span>
+                <span
+                  v-if="
+                    audit.queryAudit.revision > 1 &&
+                    audit.queryAudit.title != null
+                  "
+                  class="changed-the-title-to"
+                >
+                  Changed the title to "{{ audit.queryAudit.title }}"
                 </span>
               </button>
             </li>
@@ -288,8 +300,8 @@ export default Vue.extend({
   },
   methods: {
     ...mapActions({
-      "restore": "data/queryAudits/restore",
-      "upsertQuery": "data/queries/upsert",
+      restore: "data/queryAudits/restore",
+      upsertQuery: "data/queries/upsert",
     }),
     initSplit() {
       if (this.split) {
@@ -610,9 +622,14 @@ export default Vue.extend({
     margin: 0;
   }
 
-  .editor-label {
+  .editor-label,
+  .changed-the-title-to {
     color: var(--text-lighter);
     font-size: 0.8rem;
+  }
+
+  .changed-the-title-to {
+    font-style: italic;
   }
 
   .item {

@@ -30,6 +30,7 @@ import rawLog from "@bksLogger"
 import { validate } from "class-validator";
 import { QueryAudit } from "@/common/appdb/models/QueryAudit";
 import { IQueryAudit } from "@/common/interfaces/IQueryAudit";
+import { TransportQueryAudit, TransportQueryAuditDetail } from "@/common/transport/TransportQueryAudit";
 
 const log = rawLog.scope('Appdb handlers');
 
@@ -162,21 +163,13 @@ async function transformConn(obj: SavedConnection, cls: any): Promise<IConnectio
   return cls.merge(newObj, obj);
 }
 
-async function transformQueryAudit(obj: QueryAudit): Promise<TransportQueryAudit> {
-  if (_.isNil(obj)) return null;
-  return {
-    ...obj,
-    user: { source: "util" },
-  };
-}
-
 export const AppDbHandlers = {
   ...handlersFor<IConnection>('saved', SavedConnection, transformConn),
   ...handlersFor<IConnection>('used', UsedConnection, transformConn),
   ...handlersFor<TransportPinnedConn>('pinconn', PinnedConnection),
   ...handlersFor<TransportPinnedEntity>('pins', PinnedEntity),
   ...handlersFor<TransportFavoriteQuery>('query', FavoriteQuery),
-  ...handlersFor<IQueryAudit>('queryAudit', QueryAudit, transformQueryAudit),
+  ...handlersFor<TransportQueryAudit>('queryAudit', QueryAudit),
   ...handlersFor<TransportUsedQuery>('usedQuery', UsedQuery),
   ...handlersFor<TransportOpenTab>('tabs', OpenTab),
   ...handlersFor<TransportHiddenEntity>('hiddenEntity', HiddenEntity),
