@@ -131,12 +131,10 @@ import {
   IQueryAudit,
   IQueryAuditDetail,
 } from "@/common/interfaces/IQueryAudit";
-import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import type { Extension } from "@codemirror/state";
 import { monokaiInit } from "@uiw/codemirror-theme-monokai";
 import rawLog from "@bksLogger";
 import Split from "split.js";
-import { TransportFavoriteQuery } from "@/common/transport";
 
 const log = rawLog.scope("QueryEditHistory");
 
