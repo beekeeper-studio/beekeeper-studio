@@ -9750,6 +9750,14 @@ jws@^4.0.0, jws@^4.0.1:
     jwa "^2.0.1"
     safe-buffer "^5.0.1"
 
+kerberos@^2.0.1:
+  version "2.2.2"
+  resolved "https://registry.yarnpkg.com/kerberos/-/kerberos-2.2.2.tgz#8660fc3f85b4a6e5d065f7a254bf9b5b8ebed772"
+  integrity sha512-42O7+/1Zatsc3MkxaMPpXcIl/ukIrbQaGoArZEAr6GcEi2qhfprOBYOPhj+YvSMJkEkdpTjApUx+2DuWaKwRhg==
+  dependencies:
+    node-addon-api "^6.1.0"
+    prebuild-install "^7.1.2"
+
 "kerberos@^2.1.0 || ^7.0.0", kerberos@^7.0.0:
   version "7.0.0"
   resolved "https://registry.yarnpkg.com/kerberos/-/kerberos-7.0.0.tgz#c63faaefba237bbd7d4979f252d9e9605f83998e"
@@ -10589,6 +10597,11 @@ node-abi@^4.28.0:
   dependencies:
     semver "^7.6.3"
 
+node-addon-api@^6.1.0:
+  version "6.1.0"
+  resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-6.1.0.tgz#ac8470034e58e67d0c6f1204a18ae6995d9c0d76"
+  integrity sha512-+eawOlIgy680F0kBzPUNFhMZGtJ1YmqM6l4+Crf4IkImjYrO/mqPwRMh352g23uIaQKFItcQ64I7KMaJxHgAVA==
+
 node-addon-api@^7.0.0:
   version "7.1.1"
   resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-7.1.1.tgz#1aba6693b0f255258a049d621329329322aad558"
@@ -11306,7 +11319,7 @@ postgres-interval@^4.0.0:
   resolved "https://registry.yarnpkg.com/postgres-interval/-/postgres-interval-4.0.2.tgz#f0b86ab1392c27dadee9b3cc288de371ae2ac06b"
   integrity sha512-EMsphSQ1YkQqKZL2cuG0zHkmjCCzQqQ71l2GXITqRwjhRleCdv00bDk/ktaSi0LnlaPzAc3535KTrjXsTdtx7A==
 
-prebuild-install@^7.1.1, prebuild-install@^7.1.3:
+prebuild-install@^7.1.1, prebuild-install@^7.1.2, prebuild-install@^7.1.3:
   version "7.1.3"
   resolved "https://registry.yarnpkg.com/prebuild-install/-/prebuild-install-7.1.3.tgz#d630abad2b147443f20a212917beae68b8092eec"
   integrity sha512-8Mf2cbV7x1cXPUILADGI3wuhfqWvtiLA1iclTDbFRZkgRQS0NqsPZphna9V+HyTEadheuPmjaJMsbzKQFOzLug==

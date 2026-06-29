@@ -14,6 +14,7 @@ import { errors } from "@/lib/errors";
 import EventEmitter from "events";
 import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilderBase";
 import { QueryLeaf } from '@queryleaf/lib'
+import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import { MongoDBCursor } from './mongodb/MongoDBCursor';
 import { wrapIdentifier } from "@/lib/db/clients/postgresql";
 import knexlib from 'knex'
@@ -63,6 +64,20 @@ export function rewriteMongoUrlHost(url: string, localHost: string, localPort: n
   }
 }
 
+// Detect whether a MongoDB connection URL requests GSSAPI (Kerberos) auth.
+// Reads the authMechanism query param, falling back to a regex when the URL
+// can't be parsed (multi-host seed lists) since the query string still applies.
+export function urlUsesGssapi(url: string): boolean {
+  if (!url) return false;
+  try {
+    const mechanism = new URL(url).searchParams.get('authMechanism');
+    if (mechanism) return mechanism.toUpperCase() === 'GSSAPI';
+  } catch {
+    // fall through to the regex below
+  }
+  return /[?&]authMechanism=GSSAPI/i.test(url);
+}
+
 const mongoContext = {
   getExecutionContext(): ExecutionContext {
     return null;
@@ -84,6 +99,16 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async connect(): Promise<void> {
+    // Kerberos (GSSAPI) auth is an Enterprise feature. The Mongo form is URL-only,
+    // so there's no field to gate -- detect it from the connection URL and fail fast
+    // before opening the SSH tunnel or hitting the network.
+    if (urlUsesGssapi(this.server.config.url)) {
+      const status = await LicenseKey.getLicenseStatus();
+      if (!status.isUltimate) {
+        throw new Error("Kerberos (GSSAPI) authentication requires a Beekeeper Studio Enterprise license.");
+      }
+    }
+
     // The MongoDB form only collects a connection URL, so config.host/config.port
     // are never populated. The SSH tunnel forwards a local port to config.host:config.port,
     // so derive them from the URL before the base class opens the tunnel.
