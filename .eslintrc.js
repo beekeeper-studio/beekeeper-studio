@@ -70,6 +70,16 @@ module.exports = {
       {
         "selector": "MemberExpression[property.name='openExternal']",
         "message": "Do not call shell.openExternal directly. Use safeOpenExternal() from @/background/lib/electron/safeOpenExternal so the URL protocol allowlist is enforced."
+      },
+      {
+        // ssh2's generateKeyPairSync('ed25519') intermittently emits keys its
+        // own parseKey can't read (mscdex/ssh2#1390), causing flaky tests.
+        "selector": "CallExpression[callee.property.name='generateKeyPairSync'][arguments.0.value='ed25519']",
+        "message": "Do not use ssh2's generateKeyPairSync('ed25519') — it intermittently produces unparseable keys (mscdex/ssh2#1390). Use a static ed25519 fixture or ssh-keygen instead."
+      },
+      {
+        "selector": "CallExpression[callee.name='generateKeyPairSync'][arguments.0.value='ed25519']",
+        "message": "Do not use ssh2's generateKeyPairSync('ed25519') — it intermittently produces unparseable keys (mscdex/ssh2#1390). Use a static ed25519 fixture or ssh-keygen instead."
       }
     ]
   },
