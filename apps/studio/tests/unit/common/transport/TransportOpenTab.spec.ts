@@ -1,4 +1,4 @@
-import { matches, TransportOpenTab } from '@/common/transport/TransportOpenTab'
+import { matches, resolveEditorText, TransportOpenTab } from '@/common/transport/TransportOpenTab'
 
 function buildTab(overrides: Partial<TransportOpenTab> = {}): TransportOpenTab {
   return {
@@ -83,5 +83,38 @@ describe('TransportOpenTab.matches', () => {
       const b = buildTab({ queryId: 5 })
       expect(matches(a, b)).toBe(true)
     })
+  })
+})
+
+describe('TransportOpenTab.resolveEditorText', () => {
+  it('restores the auto-saved edits for a new (never-saved) query', () => {
+    const tab = buildTab({ unsavedChanges: true, unsavedQueryText: 'select 1' })
+    const { originalText, editorText } = resolveEditorText(tab, undefined)
+    expect(editorText).toBe('select 1')
+    expect(originalText).toBe('select 1')
+  })
+
+  it('shows the saved text when a saved query has no unsaved changes', () => {
+    const tab = buildTab({ unsavedChanges: false, unsavedQueryText: 'select 1' })
+    const { originalText, editorText } = resolveEditorText(tab, 'select * from users')
+    expect(editorText).toBe('select * from users')
+    expect(originalText).toBe('select * from users')
+  })
+
+  // This is the bug from the user report: edits to an existing saved query were
+  // auto-saved to unsavedQueryText, but on reopen the editor loaded the saved
+  // text and discarded the in-progress edits.
+  it('restores in-progress edits for a saved query left dirty, keeping the saved baseline', () => {
+    const tab = buildTab({ unsavedChanges: true, unsavedQueryText: 'select * from users where id = 1' })
+    const { originalText, editorText } = resolveEditorText(tab, 'select * from users')
+    expect(editorText).toBe('select * from users where id = 1')
+    expect(originalText).toBe('select * from users')
+  })
+
+  it('returns nulls when there is nothing to show', () => {
+    const tab = buildTab({ unsavedChanges: false })
+    const { originalText, editorText } = resolveEditorText(tab, undefined)
+    expect(editorText).toBeNull()
+    expect(originalText).toBeNull()
   })
 })
