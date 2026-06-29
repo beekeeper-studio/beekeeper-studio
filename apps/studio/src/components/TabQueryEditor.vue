@@ -290,6 +290,20 @@
         :message="runningText"
         v-if="running"
       />
+      <split-results-container
+        v-else-if="showSplitResults"
+        ref="splitResults"
+        :results="results"
+        :orientation="resultsSplitOrientation"
+        :query="query"
+        :tab="tab"
+        :active="active"
+        :focused-index="selectedResult"
+        :maximized-index="resultsMaximizedIndex"
+        :binary-encoding="$bksConfig.ui.general.binaryEncoding"
+        @focus-panel="onFocusPanel"
+        @toggle-maximize="onToggleMaximize"
+      />
       <result-table
         ref="table"
         v-else-if="showResultTable"
@@ -345,6 +359,8 @@
         :changes-count="$refs.table?.pendingChangesCount"
         :changes-string="$refs.table?.pendingChangesString"
         :result-editable="resultEditable"
+        :view-mode="resultsViewMode"
+        :split-orientation="resultsSplitOrientation"
         @editResults="editResults"
         @stopEditing="stopEditing"
         @saveChanges="saveChanges"
@@ -356,6 +372,7 @@
         @clipboardMarkdown="clipboardMarkdown"
         @submitCurrentQueryToFile="submitCurrentQueryToFile"
         @wrap-text="wrapText = !wrapText"
+        @layout-change="onLayoutChange"
         :execute-time="executeTime"
         :elapsed-time="elapsedTime"
         :active="active"
@@ -557,6 +574,7 @@
   import { EditorMarker } from '@/lib/editor/utils'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
+  import SplitResultsContainer from './editor/SplitResultsContainer.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
   import SqlTextEditor from "@beekeeperstudio/ui-kit/vue/sql-text-editor"
   import BksSuperFormatter from "@beekeeperstudio/ui-kit/vue/super-formatter"
@@ -570,7 +588,7 @@
   import MergeManager from '@/components/editor/MergeManager.vue'
   import { AppEvent } from '@/common/AppEvent'
   import { PropType } from 'vue'
-  import { TransportOpenTab, findQuery } from '@/common/transport/TransportOpenTab'
+  import { TransportOpenTab, findQuery, QueryTabContext, QueryResultsViewMode, QueryResultsSplitOrientation } from '@/common/transport/TransportOpenTab'
   import { blankFavoriteQuery } from '@/common/transport'
   import { FieldEditData, TableOrView } from "@/lib/db/models";
   import { FormatterDialect, dialectFor, formatOptionsFor } from "@shared/lib/dialects/models"
@@ -590,7 +608,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor, BksSuperFormatter, QueryEditHistory },
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor, BksSuperFormatter, QueryEditHistory, SplitResultsContainer },
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean
@@ -667,7 +685,11 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         },
         editingResult: false,
         resultsEditData: [],
-        resultEditableMap: []
+        resultEditableMap: [],
+
+        resultsViewMode: 'tabbed' as QueryResultsViewMode,
+        resultsSplitOrientation: 'horizontal' as QueryResultsSplitOrientation,
+        resultsMaximizedIndex: null as number | null,
       }
     },
     computed: {
@@ -926,6 +948,16 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       showResultTable() {
         return this.rowCount > 0
       },
+      /** Tabbed mode shows one ResultTable at a time. Split mode renders all
+       * results via SplitResultsContainer. Downgrades to tabbed when there is
+       * only one result. */
+      effectiveViewMode(): QueryResultsViewMode {
+        if (this.resultsViewMode === 'split' && this.results.length > 1) return 'split'
+        return 'tabbed'
+      },
+      showSplitResults() {
+        return this.effectiveViewMode === 'split' && this.results.length > 0
+      },
       entities() {
         return this.tables.map((t: TableOrView) => ({
           schema: t.schema,
@@ -988,6 +1020,14 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     watch: {
       selectedResult() {
         this.editingResult = false
+      },
+      'results.length'(newLength: number) {
+        if (
+          this.resultsMaximizedIndex !== null &&
+          this.resultsMaximizedIndex >= newLength
+        ) {
+          this.resultsMaximizedIndex = null
+        }
       },
       error() {
         this.errorMarker = null
@@ -1725,11 +1765,80 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       async switchPaneFocus(_event?: KeyboardEvent, target?: 'text-editor' | 'table') {
         if (target) {
           this.focusElement = target
-        } else {
-          this.focusElement = this.focusElement === 'text-editor'
-            ? 'table'
-            : 'text-editor'
+          return
         }
+
+        const inSplit = this.effectiveViewMode === 'split'
+
+        if (inSplit) {
+          // Cycle: editor -> panel 0 -> panel 1 -> ... -> editor
+          if (this.focusElement === 'text-editor') {
+            this.focusElement = 'table'
+            this.selectedResult = 0
+            this.$nextTick(() => {
+              (this.$refs.splitResults as any)?.focusPanel?.(this.selectedResult)
+            })
+            return
+          }
+
+          const visibleCount = this.resultsMaximizedIndex !== null ? 1 : this.results.length
+          const next = this.selectedResult + 1
+          if (next >= visibleCount) {
+            this.focusElement = 'text-editor'
+          } else {
+            this.selectedResult = next
+            this.$nextTick(() => {
+              (this.$refs.splitResults as any)?.focusPanel?.(this.selectedResult)
+            })
+          }
+          return
+        }
+
+        this.focusElement = this.focusElement === 'text-editor'
+          ? 'table'
+          : 'text-editor'
+      },
+      /** Status bar emits this when the user clicks a layout toggle button. */
+      onLayoutChange({ mode, orientation }: { mode: QueryResultsViewMode; orientation: QueryResultsSplitOrientation }) {
+        this.resultsViewMode = mode
+        this.resultsSplitOrientation = orientation
+        // Leaving split clears any maximized state.
+        if (mode !== 'split') this.resultsMaximizedIndex = null
+        this.persistLayoutState()
+      },
+      onFocusPanel(index: number) {
+        this.selectedResult = index
+        this.focusElement = 'table'
+      },
+      onToggleMaximize(maximizedIndex: number | null) {
+        this.resultsMaximizedIndex = maximizedIndex
+        if (maximizedIndex !== null) {
+          this.selectedResult = maximizedIndex
+        }
+        this.persistLayoutState()
+      },
+      restoreLayoutState() {
+        const ctx = (this.tab?.context || {}) as QueryTabContext
+        if (ctx.resultsViewMode === 'split' || ctx.resultsViewMode === 'tabbed') {
+          this.resultsViewMode = ctx.resultsViewMode
+        }
+        if (ctx.resultsSplitOrientation === 'horizontal' || ctx.resultsSplitOrientation === 'vertical') {
+          this.resultsSplitOrientation = ctx.resultsSplitOrientation
+        }
+        if (typeof ctx.resultsMaximizedIndex === 'number' || ctx.resultsMaximizedIndex === null) {
+          this.resultsMaximizedIndex = ctx.resultsMaximizedIndex ?? null
+        }
+      },
+      persistLayoutState() {
+        if (!this.tab) return
+        const next: QueryTabContext = {
+          ...(this.tab.context || {}),
+          resultsViewMode: this.resultsViewMode,
+          resultsSplitOrientation: this.resultsSplitOrientation,
+          resultsMaximizedIndex: this.resultsMaximizedIndex,
+        }
+        this.tab.context = next
+        this.$store.dispatch('tabs/save', this.tab)
       },
       blurTextEditor() {
         let timedOut = false
@@ -1973,6 +2082,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       this.registerHandlers(this.rootBindings)
     },
     async mounted() {
+      this.restoreLayoutState()
+
       const {
         primaryFunc,
         secondaryFunc,

@@ -129,6 +129,155 @@
       margin: 0 auto;
     }
 
+    .split-results-container {
+      display: flex;
+      flex: 1 1 100%;
+      min-height: 0;
+      overflow: hidden;
+
+      &.orientation-horizontal {
+        flex-direction: column;
+      }
+
+      &.orientation-vertical {
+        flex-direction: row;
+      }
+
+      &.is-maximized {
+        .split-results-pane {
+          flex: 1 1 100% !important;
+          flex-basis: 100% !important;
+        }
+      }
+    }
+
+    .split-results-pane {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .result-panel {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 100%;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      background: $query-editor-bg;
+
+      &.has-header {
+        .result-panel-header {
+          display: flex;
+          align-items: center;
+          gap: $gutter-h;
+          padding: ($gutter-h * 0.5) ($gutter-w * 0.75);
+          background: color.adjust($query-editor-bg, $lightness: 2%);
+          border-bottom: 1px solid $border-color;
+          font-size: 0.78rem;
+          line-height: 1;
+          user-select: none;
+          cursor: default;
+        }
+      }
+
+      &.is-focused.has-header .result-panel-header {
+        box-shadow: inset 2px 0 0 $brand-info;
+      }
+
+      .result-panel-label {
+        font-weight: 600;
+        color: $text;
+        white-space: nowrap;
+
+        .result-panel-label-total {
+          color: $text-lighter;
+          font-weight: 400;
+          margin-left: 2px;
+        }
+      }
+
+      .result-panel-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: $text-lighter;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        i.material-icons,
+        i.material-icons-outlined {
+          font-size: 14px;
+          line-height: 1;
+        }
+
+        .truncated-rows {
+          color: $brand-warning;
+        }
+      }
+
+      .expand {
+        flex: 1 1 auto;
+      }
+
+      .result-panel-maximize {
+        padding: 0 ($gutter-h * 0.5);
+        min-width: auto;
+        height: auto;
+
+        i.material-icons {
+          font-size: 14px;
+        }
+      }
+
+      .result-panel-body {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 100%;
+        min-height: 0;
+        overflow: hidden;
+
+        .result-table {
+          flex: 1 1 100%;
+          min-height: 0;
+        }
+
+        .message {
+          flex: 1 1 100%;
+        }
+      }
+    }
+  }
+
+  // Layout toggle inside the query status bar
+  .results-view-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+
+    .btn.btn-flat.btn-icon {
+      padding: 0 ($gutter-h * 0.5);
+      min-width: auto;
+      opacity: 0.55;
+
+      i.material-icons {
+        font-size: 15px;
+      }
+
+      &:hover {
+        opacity: 0.9;
+      }
+
+      &.active {
+        opacity: 1;
+        background: rgba($theme-base, 0.12);
+        color: $brand-info;
+      }
+    }
   }
 
   .BksSqlTextEditor {
@@ -174,8 +323,6 @@
   > div {
     display: table-cell;
     padding: $gutter-h;
-    padding-right: ($gutter-h - .2);
-    padding-bottom: ($gutter-h + .2);
   }
   .new {
     margin-right: $gutter-h;
