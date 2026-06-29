@@ -2,11 +2,30 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 import tmp from "tmp";
+
+// Lazily read via a getter so the value is resolved at call time (after this
+// initializes), not when jest evaluates the mock factory.
+let mockAllowSshConfigMatch = true;
+jest.mock("@/common/bksConfig", () => ({
+  __esModule: true,
+  default: {
+    security: {
+      get allowSshConfigMatch() {
+        return mockAllowSshConfigMatch;
+      },
+    },
+  },
+}));
+
 import { readSshConfig } from "@/lib/ssh/sshConfigReader";
 
 describe("readSshConfig", () => {
   // ssh-config ownership/permission checks are POSIX-specific (uid + mode bits).
   const itPosix = typeof process.getuid === "function" ? it : it.skip;
+
+  beforeEach(() => {
+    mockAllowSshConfigMatch = true;
+  });
 
   function writeConfig(content: string): string {
     const tmpFile = tmp.fileSync();
@@ -147,6 +166,20 @@ Match host myserver
 
     const result = readSshConfig("myserver", configPath);
     expect(result.identityFile).toBe("/keys/match_host_key");
+  });
+
+  it("ignores Match blocks when [security] allowSshConfigMatch is false", () => {
+    mockAllowSshConfigMatch = false;
+    const configPath = writeConfig(`
+Host myserver
+  HostName real.example.com
+Match host real.example.com
+  IdentityFile /keys/match_host_key`);
+
+    const result = readSshConfig("myserver", configPath);
+    // Host block still applies; the Match block is ignored entirely.
+    expect(result.host).toBe("real.example.com");
+    expect(result.identityFile).toBeUndefined();
   });
 
   // `Match exec` runs an arbitrary command via ssh-config's compute(). Mirror

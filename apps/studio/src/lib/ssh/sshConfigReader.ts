@@ -4,6 +4,7 @@ import os from "os";
 import SSHConfig from "ssh-config";
 import rawLog from "@bksLogger";
 import { resolveHomePathToAbsolute } from "@/handlers/utils";
+import bksConfig from "@/common/bksConfig";
 
 const log = rawLog.scope("ssh:config-reader");
 
@@ -80,6 +81,17 @@ export function readSshConfig(
   try {
     const raw = fs.readFileSync(configPath, "utf-8");
     const config = SSHConfig.parse(raw);
+    // `Match` blocks apply directives via dynamic criteria and `Match exec` runs
+    // arbitrary commands. Operators can disable Match processing entirely via
+    // [security] allowSshConfigMatch; drop the blocks so compute() never sees them.
+    if (!bksConfig.security.allowSshConfigMatch) {
+      for (let i = config.length - 1; i >= 0; i--) {
+        const line = config[i] as { param?: string };
+        if (line && typeof line.param === "string" && /^match$/i.test(line.param)) {
+          config.splice(i, 1);
+        }
+      }
+    }
     // Pass the connection username so `Match user`/`Match localuser` rules are
     // evaluated against it. Without it, compute() falls back to the OS user and
     // those Match blocks never fire.

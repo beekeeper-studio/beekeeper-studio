@@ -7,6 +7,11 @@ jest.mock("@commercial/backend/lib/db/server", () => ({
   createServer: jest.fn(),
 }));
 
+jest.mock("@/common/bksConfig", () => ({
+  __esModule: true,
+  default: { security: { allowSshConfigMatch: true } },
+}));
+
 import connectionProvider from "@commercial/backend/lib/connection-provider";
 
 function makeConfig(overrides: Record<string, unknown> = {}) {

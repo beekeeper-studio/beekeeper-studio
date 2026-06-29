@@ -456,6 +456,7 @@ declare interface IBksConfig {
         activityEvents: string[];
         activityReportIntervalSeconds: number;
         allowRuntimeExtensions: boolean;
+        allowSshConfigMatch: boolean;
         disconnectOnIdle: boolean;
         disconnectOnLock: boolean;
         disconnectOnSuspend: boolean;
