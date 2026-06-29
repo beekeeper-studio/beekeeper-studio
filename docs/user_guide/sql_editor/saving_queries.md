@@ -16,7 +16,7 @@ After that, you can type the name of the query (you can rename it later), and th
 
 ## Auto save
 
-Once a query has been saved, an `Auto Save` toggle appears next to the `Save` button in the Query Editor. Enable it and your edits are persisted automatically as you type, so there's no need to keep pressing `Ctrl+S`. The toggle is remembered across queries and sessions, and only affects queries that have already been saved — new, unnamed queries still go through the save dialog so you can name them first.
+Once a query has been saved, an `Auto Save` toggle appears next to the `Save` button in the Query Editor. Enable it and your edits to that query are persisted automatically as you type, so there's no need to keep pressing `Ctrl+S`. The toggle is set per query and remembered across sessions, and only applies to queries that have already been saved — new, unnamed queries still go through the save dialog so you can name them first.
 
 ## Open the saved queries
 

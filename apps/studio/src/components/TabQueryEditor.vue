@@ -831,10 +831,13 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       },
       autoSave: {
         get() {
-          return this.settings?.queryAutoSave?.value ?? false
+          return this.tab.autoSave ?? false
         },
         set(value) {
-          this.$store.dispatch('settings/save', { key: 'queryAutoSave', value })
+          // $set so the flag is reactive even on tabs that haven't persisted it
+          // yet, then debounce-persist it onto the tab.
+          this.$set(this.tab, 'autoSave', value)
+          this.saveTab()
         }
       },
       hasTitle() {

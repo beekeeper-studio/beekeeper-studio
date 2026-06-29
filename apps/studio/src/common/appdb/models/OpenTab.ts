@@ -6,7 +6,7 @@ import { ApplicationEntity } from "./application_entity";
 import { TabType, TransportOpenTab } from "@/common/transport/TransportOpenTab";
 
 
-const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName', 'entityType', 'titleScope', 'connectionId', 'workspaceId', 'position']
+const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName', 'entityType', 'titleScope', 'connectionId', 'workspaceId', 'position', 'autoSave']
 
 interface ConnectionIds {
   connectionId: number,
@@ -58,6 +58,10 @@ export class OpenTab extends ApplicationEntity {
 
   @Column({type: 'text', nullable: true})
   unsavedQueryText?: string
+
+  // Auto save persisted edits for an already-saved query in this tab
+  @Column({type: 'boolean', nullable: false, default: false})
+  autoSave = false
 
   // TABLE TAB
   @Column({type: 'varchar', length: 255, nullable: true})
