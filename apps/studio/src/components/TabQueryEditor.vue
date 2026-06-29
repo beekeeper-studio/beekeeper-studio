@@ -1577,7 +1577,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         this.selectedResult = 0
         let identification = []
         try {
-          const { queries: identification, error } = safelyIdentify(rawQuery, { dialect: this.identifyDialect, identifyTables: true, identifyColumns: true })
+          const { queries, error } = safelyIdentify(rawQuery, { dialect: this.identifyDialect, identifyTables: true, identifyColumns: true });
+          identification = queries;
           if (error) {
             log.error("Unable to identify query.", error)
           }
