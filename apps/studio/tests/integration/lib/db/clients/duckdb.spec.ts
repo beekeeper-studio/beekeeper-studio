@@ -93,6 +93,28 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
       expect(fields).toStrictEqual(expectedBksFields)
     })
 
+    it("should return enum values for enum columns", async () => {
+      // Named enum types and inline enums both expand to ENUM(...) in
+      // duckdb_columns.data_type, so the client parses values from there.
+      await util.knex.schema.raw(`CREATE TYPE duck_mood AS ENUM ('sad', 'ok', 'happy')`)
+      await util.knex.schema.raw(`
+        CREATE TABLE duck_enum_test (
+          id INTEGER PRIMARY KEY,
+          named_status duck_mood,
+          inline_status ENUM('pending', 'active', 'inactive'),
+          name VARCHAR
+        )
+      `)
+
+      const columns = await util.connection.listTableColumns('duck_enum_test')
+      const byName = (n: string) => columns.find((c) => c.columnName === n)
+
+      expect(byName('named_status').enumValues).toEqual(['sad', 'ok', 'happy'])
+      expect(byName('inline_status').enumValues).toEqual(['pending', 'active', 'inactive'])
+      expect(byName('name').enumValues).toBeUndefined()
+      expect(byName('id').enumValues).toBeUndefined()
+    })
+
     describe("Index Tests", () => {
       beforeAll(async () => {
         await util.knex.schema.raw(

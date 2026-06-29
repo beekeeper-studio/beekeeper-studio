@@ -544,6 +544,11 @@ import { stringToTypedArray } from '@/common/utils'
           ];
           if (editData?.nullable) values.push({ label: '(NULL)', value: null });
           result.editorParams['values'] = values;
+        } else if (editData?.enumValues?.length) {
+          result.editor = 'list';
+          const values = editData.enumValues.map((v) => ({ label: v, value: v }));
+          if (editData?.nullable) values.push({ label: '(NULL)', value: null });
+          result.editorParams['values'] = values;
         }
 
         const results = [];
