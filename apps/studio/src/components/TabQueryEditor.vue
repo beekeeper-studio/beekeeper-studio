@@ -204,6 +204,19 @@
             >
           </x-button>
           <x-button
+            v-if="query && query.id"
+            :toggled="autoSave"
+            class="btn btn-flat btn-small auto-save-btn"
+            @click.prevent="autoSave = !autoSave"
+            v-tooltip="'Automatically save edits to this query as you type'"
+          >
+            <x-label>Auto Save</x-label>
+            <input
+              type="checkbox"
+              v-model="autoSave"
+            >
+          </x-button>
+          <x-button
             @click.prevent="triggerSave"
             class="btn btn-flat btn-small"
           >
@@ -667,7 +680,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         },
         editingResult: false,
         resultsEditData: [],
-        resultEditableMap: []
+        resultEditableMap: [],
+        debouncedAutoSave: null as null | _.DebouncedFunc<() => void>,
       }
     },
     computed: {
@@ -814,6 +828,14 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       },
       hasText() {
         return !isEmpty(this.unsavedText)
+      },
+      autoSave: {
+        get() {
+          return this.settings?.queryAutoSave?.value ?? false
+        },
+        set(value) {
+          this.$store.dispatch('settings/save', { key: 'queryAutoSave', value })
+        }
       },
       hasTitle() {
         return this.query?.title && this.query.title.replace(/\s+/, '').length > 0
@@ -1013,6 +1035,14 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       unsavedText() {
         this.tab.unsavedQueryText = this.unsavedText
         this.saveTab()
+        if (this.autoSave) this.debouncedAutoSave()
+      },
+      autoSave(enabled) {
+        // When the user flips auto save on with edits already pending, persist
+        // them right away so there's nothing left unsaved.
+        if (enabled && this.query?.id && this.unsavedChanges) {
+          this.saveQuery({ auto: true })
+        }
       },
       remoteDeleted() {
         if (this.remoteDeleted) {
@@ -1382,7 +1412,21 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.$modal.show(`save-modal-${this.tab.id}`)
         }
       },
-      async saveQuery() {
+      autoSaveQuery() {
+        // Only auto save queries that already have an id and a title. New,
+        // unnamed queries still go through the save modal so the user can name
+        // them.
+        if (!this.autoSave) return
+        if (!this.query?.id) return
+        if (this.remoteDeleted) return
+        if (!this.unsavedChanges) return
+        if (!this.hasTitle || !this.hasText) return
+        this.saveQuery({ auto: true })
+      },
+      async saveQuery(options = {}) {
+        // `options` may be a DOM Event when called from a form submit handler,
+        // so read the flag defensively.
+        const auto = options?.auto === true
         if (this.remoteDeleted) return
         if (!this.hasTitle || !this.hasText) {
           this.saveError = new Error("You need both a title, and some query text.")
@@ -1416,7 +1460,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
               this.tab.title = this.query.title
               this.originalText = this.query.text
             })
-            this.$noty.success('Query Saved')
+            if (!auto) this.$noty.success('Query Saved')
           } catch (ex) {
             this.saveError = ex
             this.$noty.error(`Save Error: ${ex.message}`)
@@ -1971,6 +2015,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     },
     created() {
       this.registerHandlers(this.rootBindings)
+      // Per-instance debounce so concurrent query tabs don't share a timer.
+      this.debouncedAutoSave = _.debounce(this.autoSaveQuery, 1000)
     },
     async mounted() {
       const {
@@ -2027,6 +2073,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       if(this.split) {
         this.split.destroy()
       }
+      // Flush any pending auto save so closing a tab doesn't drop edits.
+      if (this.debouncedAutoSave) this.debouncedAutoSave.flush()
       this.connection.releaseConnection(this.tab.id)
       this.containerResizeObserver.disconnect()
       this.removeTransactionTimeoutListener();

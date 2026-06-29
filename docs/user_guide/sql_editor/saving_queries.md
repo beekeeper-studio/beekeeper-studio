@@ -14,6 +14,10 @@ You can save a query by pressing `Ctrl+S` or clicking the `Save` button at the b
 
 After that, you can type the name of the query (you can rename it later), and then click `Save`.
 
+## Auto save
+
+Once a query has been saved, an `Auto Save` toggle appears next to the `Save` button in the Query Editor. Enable it and your edits are persisted automatically as you type, so there's no need to keep pressing `Ctrl+S`. The toggle is remembered across queries and sessions, and only affects queries that have already been saved — new, unnamed queries still go through the save dialog so you can name them first.
+
 ## Open the saved queries
 
 You can open the Saved Queries panel by clicking the Saved Queries icon at the sidebar. After that, open the query with double click.
