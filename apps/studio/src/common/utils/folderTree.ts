@@ -64,6 +64,34 @@ export function getLonelyItems<T>(
     .sort(byPosition);
 }
 
+export interface FolderOption {
+  id: IFolder["id"];
+  label: string;
+}
+
+/**
+ * Flatten a folder list into a hierarchical set of options for a `<select>`,
+ * with root folders followed by their subfolders. Subfolders are indented so
+ * the nesting is visible. Useful for picking a destination folder.
+ */
+export function buildFolderOptions(folders: IFolder[]): FolderOption[] {
+  const byName = (a: IFolder, b: IFolder) => a.name.localeCompare(b.name);
+  const options: FolderOption[] = [];
+  folders
+    .filter((folder) => !folder.parentId)
+    .sort(byName)
+    .forEach((folder) => {
+      options.push({ id: folder.id, label: folder.name });
+      folders
+        .filter((f) => f.parentId === folder.id)
+        .sort(byName)
+        .forEach((subfolder) => {
+          options.push({ id: subfolder.id, label: `    ${subfolder.name}` });
+        });
+    });
+  return options;
+}
+
 /**
  * Whether a folder-backed list should render its empty state. A list with
  * folders but no items is NOT empty — the folders must still be shown.

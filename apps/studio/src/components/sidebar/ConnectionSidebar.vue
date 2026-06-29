@@ -531,8 +531,10 @@ export default {
       })
     },
     importFromLocal() {
-      console.log("triggering import")
       this.$root.$emit(AppEvent.promptConnectionImport)
+    },
+    importToFolder(folder) {
+      this.$root.$emit(AppEvent.promptConnectionImport, folder)
     },
     async refresh() {
       await this.$store.dispatch('refreshConnections')
@@ -583,6 +585,9 @@ export default {
         otherRoots.forEach(root => {
           options.push({ name: `Move to ${root.name}`, handler: ({ item }) => this.moveFolderToParent(item, root) })
         })
+      }
+      if (this.isCloud) {
+        options.push({ name: 'Import connections here', handler: ({ item }) => this.importToFolder(item) })
       }
       options.push(
         { name: 'Rename', handler: ({ item }) => this.renameFolder(item) },

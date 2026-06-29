@@ -345,6 +345,9 @@ export default {
     importFromComputer() {
       this.$root.$emit(AppEvent.promptSqlFilesImport)
     },
+    importToFolder(folder) {
+      this.$root.$emit(AppEvent.promptQueryImport, folder)
+    },
     maybeUnselect(e) {
       if (!this.selected) return
       if (this.$refs.wrapper.contains(e.target)) {
@@ -410,6 +413,9 @@ export default {
         otherRoots.forEach(root => {
           options.push({ name: `Move to ${root.name}`, handler: ({ item }) => this.moveFolderToParent(item, root) })
         })
+      }
+      if (this.isCloud) {
+        options.push({ name: 'Import queries here', handler: ({ item }) => this.importToFolder(item) })
       }
       options.push(
         { name: 'Rename', handler: ({ item }) => this.renameQueryFolder(item) },

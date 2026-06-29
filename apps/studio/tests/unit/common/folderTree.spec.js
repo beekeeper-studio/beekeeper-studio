@@ -1,4 +1,4 @@
-import { buildFolderTree, getLonelyItems, isFolderListEmpty } from "@/common/utils/folderTree"
+import { buildFolderTree, buildFolderOptions, getLonelyItems, isFolderListEmpty } from "@/common/utils/folderTree"
 
 const folders = [
   { id: 1, name: "Root A", parentId: null },
@@ -44,6 +44,21 @@ describe("buildFolderTree", () => {
     const connections = [{ id: 1, connectionFolderId: 5 }]
     const tree = buildFolderTree(connFolders, connections, "connectionFolderId")
     expect(tree[0].items.map((c) => c.id)).toEqual([1])
+  })
+})
+
+describe("buildFolderOptions", () => {
+  it("lists root folders alphabetically with subfolders nested and indented", () => {
+    const opts = buildFolderOptions(folders)
+    expect(opts).toEqual([
+      { id: 1, label: "Root A" },
+      { id: 3, label: "    Child of A" },
+      { id: 2, label: "Root B" },
+    ])
+  })
+
+  it("returns an empty array when there are no folders", () => {
+    expect(buildFolderOptions([])).toEqual([])
   })
 })
 

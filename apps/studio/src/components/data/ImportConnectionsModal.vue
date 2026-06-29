@@ -8,9 +8,23 @@
         Import Connections
       </div>
       <div class="dialog-c-subtitle">
-        Importing a connection will copy it from your local workspace into your cloud workspace. Imported connections are private to you by default.
+        Importing a connection will copy it from your local workspace into the selected folder of your cloud workspace. Imported connections are private to you by default.
       </div>
       <error-alert :error="error" />
+      <div class="form-group destination-folder">
+        <label for="import-connections-folder">Destination Folder</label>
+        <select
+          id="import-connections-folder"
+          v-model="targetFolderId"
+        >
+          <option :value="null">Personal (no folder)</option>
+          <option
+            v-for="opt in folderOptions"
+            :key="opt.id"
+            :value="opt.id"
+          >{{ opt.label }}</option>
+        </select>
+      </div>
       <div>
         <div class="list-group">
           <div class="list-body">
@@ -57,6 +71,7 @@
 </template>
 <script lang="ts">
 import { AppEvent } from '@/common/AppEvent'
+import { buildFolderOptions } from '@/common/utils/folderTree'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import Vue from 'vue'
 export default Vue.extend({
@@ -64,7 +79,8 @@ export default Vue.extend({
   data: () => ({
     connections: [],
     loading: false,
-    error: null
+    error: null,
+    targetFolderId: null
   }),
   mounted() {
     this.registerHandlers(this.rootBindings)
@@ -77,11 +93,18 @@ export default Vue.extend({
           handler: this.openModal
         }
       ]
+    },
+    folders() {
+      return this.$store.state['data/connectionFolders'].items
+    },
+    folderOptions() {
+      return buildFolderOptions(this.folders)
     }
   },
   methods: {
-    async openModal() {
-      console.log("opening modal!")
+    async openModal(folder?: { id: number }) {
+      await this.$store.dispatch('data/connectionFolders/load')
+      this.targetFolderId = folder?.id ?? null
       this.connections = (await this.$util.send('appdb/saved/find')).map((c) => {
         return {
           ...c,
@@ -97,8 +120,8 @@ export default Vue.extend({
       const candidates = this.connections.filter((c) => c.checked)
       try {
         await Promise.all(candidates.map((c) => {
-          // Clear id and connectionFolderId so the connection goes to the personal folder
-          const payload = {...c, id: null, connectionFolderId: null}
+          // Clear id so a copy is created, and assign the chosen destination folder
+          const payload = {...c, id: null, connectionFolderId: this.targetFolderId ?? null}
           return this.$store.dispatch('data/connections/save', payload)
         }))
         this.$modal.hide('import-connections')

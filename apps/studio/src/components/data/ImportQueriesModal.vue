@@ -9,12 +9,26 @@
         Import Queries
       </div>
       <div class="dialog-c-subtitle">
-        Importing a query will <strong>copy</strong> it from your local workspace into the personal folder of your team workspace.
+        Importing a query will <strong>copy</strong> it from your local workspace into the selected folder of your team workspace.
       </div>
       <error-alert
         :error="error"
         v-if="error"
       />
+      <div class="form-group destination-folder">
+        <label for="import-queries-folder">Destination Folder</label>
+        <select
+          id="import-queries-folder"
+          v-model="targetFolderId"
+        >
+          <option :value="null">Personal (no folder)</option>
+          <option
+            v-for="opt in folderOptions"
+            :key="opt.id"
+            :value="opt.id"
+          >{{ opt.label }}</option>
+        </select>
+      </div>
       <div>
         <div class="list-group">
           <div class="list-body">
@@ -68,6 +82,7 @@
 <script lang="ts">
 import { AppEvent } from '@/common/AppEvent'
 import { TransportFavoriteQuery } from '@/common/transport'
+import { buildFolderOptions } from '@/common/utils/folderTree'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import Vue from 'vue'
 export default Vue.extend({
@@ -78,7 +93,8 @@ export default Vue.extend({
   data: () => ({
     queries: [],
     loading: false,
-    error: null
+    error: null,
+    targetFolderId: null
   }),
   computed: {
     rootBindings() {
@@ -88,6 +104,12 @@ export default Vue.extend({
           handler: this.openModal
         }
       ]
+    },
+    folders() {
+      return this.$store.state['data/queryFolders'].items
+    },
+    folderOptions() {
+      return buildFolderOptions(this.folders)
     }
   },
   methods: {
@@ -95,8 +117,11 @@ export default Vue.extend({
       this.queries = []
       this.loading = false
       this.error = null
+      this.targetFolderId = null
     },
-    async openModal() {
+    async openModal(folder?: { id: number }) {
+      await this.$store.dispatch('data/queryFolders/load')
+      this.targetFolderId = folder?.id ?? null
       this.queries = (await this.$util.send('appdb/query/find')).map((q: TransportFavoriteQuery) => {
         return {
           ...q,
@@ -110,8 +135,8 @@ export default Vue.extend({
       const candidates = this.queries.filter((q) => q.checked)
       try {
         await Promise.all(candidates.map((q) => {
-          // Clear id and queryFolderId so the query goes to the personal folder
-          const payload = {...q, id: null, queryFolderId: null}
+          // Clear id so a copy is created, and assign the chosen destination folder
+          const payload = {...q, id: null, queryFolderId: this.targetFolderId ?? null}
           return this.$store.dispatch('data/queries/save', payload)
         }))
         this.$modal.hide('import-queries')
