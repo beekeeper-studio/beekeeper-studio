@@ -283,6 +283,7 @@ import ErrorAlert from './common/ErrorAlert.vue'
 import rawLog from '@bksLogger'
 import { mapGetters, mapState } from 'vuex'
 import { dialectFor } from '@shared/lib/dialects/models'
+import { escapeHtml } from '@shared/lib/tabulator'
 import { findClient } from '@/lib/db/clients'
 import { AzureAuthType } from '@/lib/db/types'
 import UpgradePanel from '@/components/upsell/UpgradePanel.vue'
@@ -449,6 +450,16 @@ export default Vue.extend({
     this.unregisterHandlers(this.rootBindings)
   },
   methods: {
+    // Surface non-fatal ~/.ssh/config issues (untrusted/invalid config, missing
+    // IdentityFile) as a single formatted warning toast.
+    notifySshConfigWarnings(warnings) {
+      if (!warnings || warnings.length === 0) return
+      const escaped = warnings.map((w) => escapeHtml(w))
+      const body = escaped.length === 1
+        ? `<strong>SSH config</strong><br>${escaped[0]}`
+        : `<strong>SSH config warnings</strong><ul class="noty-warning-list">${escaped.map((w) => `<li>${w}</li>`).join('')}</ul>`
+      this.$noty.warning(body, { timeout: 8000, allowRawHtml: true })
+    },
     async maybeLoadSqlite({ files }) {
       // cast to an array
       if (!files || !files.length) return
@@ -521,7 +532,8 @@ export default Vue.extend({
 
         const { auth, cancelled } = await this.$bks.unlock();
         if (cancelled) return;
-        await this.$store.dispatch('connect', { config: this.config, auth })
+        const sshConfigWarnings = await this.$store.dispatch('connect', { config: this.config, auth })
+        this.notifySshConfigWarnings(sshConfigWarnings)
       } catch (ex) {
         console.log("CONNECTION ERROR", ex)
         this.connectionError = ex
@@ -548,6 +560,7 @@ export default Vue.extend({
         this.connectionError = null
         const connected = await this.$store.dispatch('test', this.config)
         if (!connected) return false
+        this.notifySshConfigWarnings(connected)
         this.$noty.success("Connection looks good!")
         return true
       } catch (ex) {

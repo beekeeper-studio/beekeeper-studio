@@ -1,7 +1,6 @@
 import _ from 'lodash'
 import Vue from 'vue'
 import Vuex from 'vuex'
-import { escapeHtml } from '@shared/lib/tabulator'
 
 import ExportStoreModule from './modules/exports/ExportStoreModule'
 import SettingStoreModule from './modules/settings/SettingStoreModule'
@@ -54,17 +53,6 @@ function shouldPromptCockroachJwt(config: Nullable<IConnection>) {
   return config?.connectionType === 'cockroachdb' &&
     !!config?.options?.jwtAuthEnabled &&
     !config?.password;
-}
-
-// Surface non-fatal ~/.ssh/config issues (untrusted/invalid config, missing
-// IdentityFile) as a single warning toast after a connect or test.
-function notifySshConfigWarnings(warnings?: string[]) {
-  if (!warnings || warnings.length === 0) return;
-  const escaped = warnings.map((w) => escapeHtml(w));
-  const body = escaped.length === 1
-    ? `<strong>SSH config</strong><br>${escaped[0]}`
-    : `<strong>SSH config warnings</strong><ul class="noty-warning-list">${escaped.map((w) => `<li>${w}</li>`).join('')}</ul>`;
-  Vue.prototype.$noty.warning(body, { timeout: 8000, allowRawHtml: true });
 }
 
 function shouldPromptSnowflakeMFA(config: Nullable<IConnection>) {
@@ -475,9 +463,8 @@ const store = new Vuex.Store<State>({
       const resolvedConfig = await resolveEphemeralValues(config);
       if (!resolvedConfig) return false;
 
-      const sshConfigWarnings = await Vue.prototype.$util.send('conn/test', { config: resolvedConfig, osUser: context.state.username });
-      notifySshConfigWarnings(sshConfigWarnings);
-      return true;
+      // Returns any non-fatal ~/.ssh/config warnings; the component surfaces them.
+      return await Vue.prototype.$util.send('conn/test', { config: resolvedConfig, osUser: context.state.username });
     },
 
     async fetchUsername(context) {
@@ -523,7 +510,6 @@ const store = new Vuex.Store<State>({
         const versionString = await context.state.connection.versionString();
 
         const serverConfig = await Vue.prototype.$util.send('conn/getServerConfig');
-        notifySshConfigWarnings(serverConfig?.sshConfigWarnings);
 
         if (supportedFeatures.backups) {
           context.dispatch('backups/setConnectionConfigs', { config: resolvedConfig, supportedFeatures, serverConfig });
@@ -551,7 +537,8 @@ const store = new Vuex.Store<State>({
         await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id })
 
         await context.dispatch('checkVersion');
-        return true;
+        // Return any non-fatal ~/.ssh/config warnings; the component surfaces them.
+        return serverConfig?.sshConfigWarnings || [];
       } else {
         throw "No username provided"
       }
