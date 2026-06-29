@@ -141,7 +141,7 @@ export const SidebarModule: Module<State, RootState> = {
     initGlobalSidebarActiveItem(context) {
       if (getStoredGlobalSidebarActiveItem()) return;
 
-      const configDefault = window.bksConfig?.ui?.layout?.defaultSidebarItem;
+      const configDefault = window.bksConfig?.ui?.layout?.defaultGlobalSidebarItem;
       if (GLOBAL_SIDEBAR_ITEMS.includes(configDefault as GlobalSidebarActiveItem)) {
         context.commit("globalSidebarActiveItem", configDefault);
       }

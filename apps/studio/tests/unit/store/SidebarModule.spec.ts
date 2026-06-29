@@ -16,7 +16,7 @@ function createStore(): Store<any> {
 
 function setConfigDefault(value: string | undefined) {
   (window as any).bksConfig = {
-    ui: { layout: { defaultSidebarItem: value } },
+    ui: { layout: { defaultGlobalSidebarItem: value } },
   };
 }
 
