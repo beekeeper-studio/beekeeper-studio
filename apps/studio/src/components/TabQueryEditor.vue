@@ -1575,12 +1575,11 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         this.resultEditableMap = []
         this.editingResult = false
         this.selectedResult = 0
-        let identification = []
+        const { queries: identification, error } = safelyIdentify(rawQuery, { dialect: this.identifyDialect, identifyTables: true, identifyColumns: true });
+        if (error) {
+          log.error("Unable to identify query.", error)
+        }
         try {
-          const { queries: identification, error } = safelyIdentify(rawQuery, { dialect: this.identifyDialect, identifyTables: true, identifyColumns: true })
-          if (error) {
-            log.error("Unable to identify query.", error)
-          }
 
           if (this.canManageTransactions && identification.some((value: IdentifyResult) => value.executionType === "TRANSACTION")) {
             const startTransaction = identification.filter((value: IdentifyResult) => value.type === "BEGIN_TRANSACTION").length
