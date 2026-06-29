@@ -7,6 +7,7 @@ import {
   DownloaderReport,
 } from "nodejs-file-downloader";
 import { Manifest, PluginView, Release } from "./types";
+import { InvalidPluginManifestError } from "./errors";
 import extract from "extract-zip";
 import { tmpdir } from "os";
 
@@ -279,23 +280,7 @@ export default class PluginFileManager {
 
       try {
         const manifest = JSON.parse(manifestContent);
-        // The id is later used as a path segment (uninstall/update) and as an
-        // identity key. Trust the directory name we found it in, not the
-        // self-declared id: reject malformed ids and any manifest whose id does
-        // not match its own directory, so a plugin cannot redirect filesystem
-        // operations at another location.
-        if (!isValidPluginId(manifest.id)) {
-          log.warn(
-            `Plugin in "${dir}" has a missing or invalid id. Skipping.`
-          );
-          continue;
-        }
-        if (manifest.id !== dir) {
-          log.warn(
-            `Plugin in "${dir}" declares mismatched id "${manifest.id}". Skipping.`
-          );
-          continue;
-        }
+        this.validateManifest(manifest, dir);
         manifests.push(manifest);
       } catch (e) {
         log.error(`Failed to parse manifest for plugin "${dir}":`, e);
@@ -312,17 +297,28 @@ export default class PluginFileManager {
       { encoding: "utf-8" }
     );
     const manifest = JSON.parse(manifestContent);
-    // The id read from the manifest must be well-formed and match the directory
-    // it was installed into, so it can be safely reused as a path segment.
+    this.validateManifest(manifest, id);
+    return manifest;
+  }
+
+  /**
+   * Ensure a manifest's self-declared id is safe to reuse. The id is later used
+   * as a path segment (uninstall/update) and as an identity key, so it must be
+   * well-formed and match the directory it was installed into. Trusting the
+   * directory name over the self-declared id stops a plugin from redirecting
+   * filesystem operations at another location.
+   */
+  private validateManifest(manifest: Manifest, expectedId: string) {
     if (!isValidPluginId(manifest.id)) {
-      throw new Error(`Plugin "${id}" has a missing or invalid manifest id.`);
-    }
-    if (manifest.id !== id) {
-      throw new Error(
-        `Plugin manifest id "${manifest.id}" does not match expected id "${id}".`
+      throw new InvalidPluginManifestError(
+        `Plugin "${expectedId}" has a missing or invalid manifest id.`
       );
     }
-    return manifest;
+    if (manifest.id !== expectedId) {
+      throw new InvalidPluginManifestError(
+        `Plugin manifest id "${manifest.id}" does not match expected id "${expectedId}".`
+      );
+    }
   }
 
   getDirectoryOf(id: string) {
