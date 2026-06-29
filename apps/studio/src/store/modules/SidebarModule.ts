@@ -134,16 +134,15 @@ export const SidebarModule: Module<State, RootState> = {
 
     /**
      * Apply the configured default sidebar tab. A tab the user has previously
-     * selected is persisted to localStorage and always wins, so the config
-     * default only takes effect until they manually switch tabs for the first
-     * time. Dispatched during app init, once window.bksConfig is available.
+     * selected is persisted to localStorage and always wins, so the default
+     * only takes effect until they manually switch tabs for the first time.
+     * The caller supplies the default (from config) so the store stays
+     * decoupled from where it comes from.
      */
-    initGlobalSidebarActiveItem(context) {
+    applyDefaultGlobalSidebarActiveItem(context, item: GlobalSidebarActiveItem) {
       if (getStoredGlobalSidebarActiveItem()) return;
-
-      const configDefault = window.bksConfig?.ui?.layout?.defaultGlobalSidebarItem;
-      if (GLOBAL_SIDEBAR_ITEMS.includes(configDefault as GlobalSidebarActiveItem)) {
-        context.commit("globalSidebarActiveItem", configDefault);
+      if (GLOBAL_SIDEBAR_ITEMS.includes(item)) {
+        context.commit("globalSidebarActiveItem", item);
       }
     },
 

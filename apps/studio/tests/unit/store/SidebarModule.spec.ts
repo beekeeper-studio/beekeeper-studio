@@ -14,16 +14,9 @@ function createStore(): Store<any> {
   });
 }
 
-function setConfigDefault(value: string | undefined) {
-  (window as any).bksConfig = {
-    ui: { layout: { defaultGlobalSidebarItem: value } },
-  };
-}
-
 describe("SidebarModule global sidebar default tab", () => {
   beforeEach(() => {
     localStorage.clear();
-    delete (window as any).bksConfig;
   });
 
   it("defaults to 'tables' when nothing is stored or configured", () => {
@@ -31,34 +24,31 @@ describe("SidebarModule global sidebar default tab", () => {
     expect(store.state.sidebar.globalSidebarActiveItem).toBe("tables");
   });
 
-  it("applies the configured default when the user has no stored choice", () => {
-    setConfigDefault("queries");
+  it("applies the supplied default when the user has no stored choice", () => {
     const store = createStore();
 
-    // Before init the store falls back to 'tables' because bksConfig isn't
-    // read in the state factory.
+    // The state factory falls back to 'tables'; the configured default is
+    // applied by the component on connect.
     expect(store.state.sidebar.globalSidebarActiveItem).toBe("tables");
 
-    store.dispatch("sidebar/initGlobalSidebarActiveItem");
+    store.dispatch("sidebar/applyDefaultGlobalSidebarActiveItem", "queries");
     expect(store.state.sidebar.globalSidebarActiveItem).toBe("queries");
   });
 
-  it("keeps the user's stored choice over the configured default", () => {
+  it("keeps the user's stored choice over the supplied default", () => {
     localStorage.setItem(GLOBAL_SIDEBAR_ACTIVE_ITEM_KEY, JSON.stringify("history"));
-    setConfigDefault("queries");
 
     const store = createStore();
     expect(store.state.sidebar.globalSidebarActiveItem).toBe("history");
 
-    store.dispatch("sidebar/initGlobalSidebarActiveItem");
+    store.dispatch("sidebar/applyDefaultGlobalSidebarActiveItem", "queries");
     expect(store.state.sidebar.globalSidebarActiveItem).toBe("history");
   });
 
-  it("ignores an invalid configured default", () => {
-    setConfigDefault("nonsense");
+  it("ignores an invalid supplied default", () => {
     const store = createStore();
 
-    store.dispatch("sidebar/initGlobalSidebarActiveItem");
+    store.dispatch("sidebar/applyDefaultGlobalSidebarActiveItem", "nonsense");
     expect(store.state.sidebar.globalSidebarActiveItem).toBe("tables");
   });
 

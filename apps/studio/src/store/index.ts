@@ -733,7 +733,6 @@ const store = new Vuex.Store<State>({
       await context.dispatch('licenses/init')
       await context.dispatch('userEnums/init')
       await context.dispatch('updateWindowTitle')
-      context.dispatch('sidebar/initGlobalSidebarActiveItem')
     },
     licenseEntered(context) {
       context.dispatch('updateWindowTitle')
