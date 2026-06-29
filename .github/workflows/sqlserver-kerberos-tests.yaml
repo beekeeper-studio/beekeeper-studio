@@ -1,0 +1,50 @@
+name: SQL Server Kerberos integration test
+
+permissions:
+  contents: read
+
+# Heavy multi-container job (Samba AD DC + SQL Server on Linux + a dockerized Jest client),
+# so it runs only when the integrated-auth code or this suite changes, plus on demand. The
+# companion spec self-skips in the normal integration matrix unless SQLSERVER_KERBEROS_TEST=1.
+#
+# The entire environment lives in Docker (see dev/docker_sqlserver_kerberos/run.sh), so this
+# job needs nothing on the runner except Docker -- it runs the exact same command a developer
+# runs locally.
+on:
+  push:
+    branches:
+      - master
+      # Temporary: run directly on the development branch to validate the suite in CI.
+      # Remove before/at merge -- PRs are already covered by the pull_request trigger below.
+      - claude/kerberos-sqlserver-ci-tests-ujxon1
+    paths:
+      - 'apps/studio/src/lib/db/clients/sqlserver.ts'
+      - 'apps/studio/src/lib/db/types.ts'
+      - 'apps/studio/tests/integration/lib/db/clients/sqlserver-kerberos.spec.ts'
+      - 'dev/docker_sqlserver_kerberos/**'
+      - '.github/workflows/sqlserver-kerberos-tests.yaml'
+  pull_request:
+    paths:
+      - 'apps/studio/src/lib/db/clients/sqlserver.ts'
+      - 'apps/studio/src/lib/db/types.ts'
+      - 'apps/studio/tests/integration/lib/db/clients/sqlserver-kerberos.spec.ts'
+      - 'dev/docker_sqlserver_kerberos/**'
+      - '.github/workflows/sqlserver-kerberos-tests.yaml'
+  workflow_dispatch:
+
+# Only the latest commit per ref matters; cancel superseded in-progress runs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sqlserver-kerberos:
+    runs-on: ubuntu-24.04
+    # Tight enough that a stalled Kerberos handshake surfaces in minutes, not an hour.
+    timeout-minutes: 40
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Run the dockerized Kerberos integration test
+        run: bash dev/docker_sqlserver_kerberos/run.sh

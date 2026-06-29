@@ -1,4 +1,4 @@
-import { AzureAuthOptions, BigQueryOptions, CassandraOptions, DynamoDBOptions, LibSQLOptions, RedshiftOptions, ConnectionType, SQLAnywhereOptions, IamAuthOptions, SurrealDBOptions, SnowflakeOptions } from "@/lib/db/types"
+import { AzureAuthOptions, BigQueryOptions, CassandraOptions, DynamoDBOptions, LibSQLOptions, RedshiftOptions, ConnectionType, SQLAnywhereOptions, IamAuthOptions, SurrealDBOptions, SnowflakeOptions, SqlServerOptions } from "@/lib/db/types"
 import { Transport } from "../transport"
 
 export type SshMode = null | 'agent' | 'userpass' | 'keyfile'
@@ -53,6 +53,8 @@ export interface ISimpleConnection extends Transport {
   readOnlyMode: boolean
   labelColor?: Nullable<string>
   trustServerCertificate?: boolean
+  windowsAuthEnabled?: boolean
+  sqlServerOptions?: SqlServerOptions
   serviceName: Nullable<string>
   options?: any
   redshiftOptions?: RedshiftOptions

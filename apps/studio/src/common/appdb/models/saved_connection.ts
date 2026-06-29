@@ -6,7 +6,7 @@ import { ConnectionString } from 'connection-string'
 import log from '@bksLogger'
 import { AzureCredsEncryptTransformer, EncryptTransformer, SnowflakeOptionsTransformer, SurrealDbEncryptTransformer } from '../transformers/Transformers'
 import { IConnection, SshMode } from '@/common/interfaces/IConnection'
-import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, DynamoDBOptions, LibSQLOptions, RedshiftOptions, IamAuthOptions, SQLAnywhereOptions, SurrealDBOptions, SnowflakeOptions } from "@/lib/db/types"
+import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, DynamoDBOptions, LibSQLOptions, RedshiftOptions, IamAuthOptions, SQLAnywhereOptions, SurrealDBOptions, SnowflakeOptions, SqlServerOptions } from "@/lib/db/types"
 import { resolveHomePathToAbsolute } from "@/handlers/utils"
 import { ReadOnlyOrDefault } from "../validators/ReadOnlyOrDefault"
 import { ConnectionFolder } from './ConnectionFolder'
@@ -259,6 +259,15 @@ export class DbConnectionBase extends ApplicationEntity {
   // this is only for SQL Server.
   @Column({ type: 'boolean', nullable: false })
   trustServerCertificate = false
+
+  // SQL Server only. Integrated authentication (SSPI/Kerberos/NTLM) via msnodesqlv8.
+  @Column({ type: 'boolean', nullable: false })
+  windowsAuthEnabled = false
+
+  // SQL Server integrated auth only. Encryption mode, optional pinned server certificate,
+  // and optional SPN override for the Kerberos/Windows (ODBC) connection method.
+  @Column({ type: 'simple-json', nullable: false })
+  sqlServerOptions: SqlServerOptions = {}
 
   // oracle only.
   @Column({type: 'varchar', nullable: true})

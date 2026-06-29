@@ -1,5 +1,6 @@
 import { Module } from "vuex";
 import { State as RootState } from "@/store";
+import { KeybindingsModule } from "./KeybindingsModule";
 import {
   PluginEntriesModule,
   PluginEntriesState,
@@ -20,6 +21,7 @@ export const PluginsModule: Module<{}, RootState> = {
   namespaced: true,
   modules: {
     entries: PluginEntriesModule,
+    keybindings: KeybindingsModule,
     snapshots: PluginSnapshotsModule,
   },
   getters: {
