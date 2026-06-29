@@ -1,6 +1,7 @@
 import {
   Column,
   Entity,
+  EntityManager,
   Index,
   IsNull,
   LessThan,
@@ -35,16 +36,54 @@ export class QueryAudit extends ApplicationEntity {
   action: "create" | "update";
 
   /** `title` can be null if it's not changed in this revision. Always use `getDetail`.
-   * @see {QueryAudit.getDetail}
-   **/
+   * @see {QueryAudit.getDetail} **/
   @Column({ type: "varchar", nullable: true })
   title: string | null;
 
   /** `text` can be null if it's not changed in this revision. Always use `getDetail`.
-   * @see {QueryAudit.getDetail}
-   **/
+   * @see {QueryAudit.getDetail} **/
   @Column({ type: "text", nullable: true, select: false })
   text: string | null;
+
+  static async audit(options: {
+    transaction: EntityManager;
+    query: FavoriteQuery;
+    excludeTitle: boolean;
+    excludeText: boolean;
+  }): Promise<void> {
+    if (options.excludeTitle && options.excludeText) {
+      throw new Error("Cannot exclude both title and text");
+    }
+
+    const revision = await options.transaction
+      .getRepository(QueryAudit)
+      .createQueryBuilder("audit")
+      .select("COALESCE(MAX(audit.revision), 0)", "value")
+      .where("favoriteQueryId = :id", { id: options.query.id })
+      .getRawOne<{ value: number }>()
+      .then((r) => r.value);
+
+    const audit = options.transaction.getRepository(QueryAudit).create({
+      favoriteQueryId: options.query.id,
+      action: revision > 0 ? "update" : "create",
+      revision: revision + 1,
+      title: options.excludeTitle ? null : options.query.title,
+    });
+
+    await audit.save();
+
+    if (!options.excludeText) {
+      await options.transaction.query(
+        `
+        UPDATE query_audit
+        SET text = query.text
+        FROM (SELECT text FROM favorite_query WHERE id = ?) AS query
+        WHERE query_audit.id = ?
+        `,
+        [options.query.id, audit.id]
+      );
+    }
+  }
 
   static async getDetail(
     queryId: number,

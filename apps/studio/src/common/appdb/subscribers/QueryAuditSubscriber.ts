@@ -38,53 +38,18 @@ export class QueryAuditSubscriber
       return;
     }
 
-    const transaction = event.manager;
+    const isTitleAudited = await query.checkAudited("title");
+    const isTextAudited = await query.checkAudited("text");
 
-    const queryBuilder = transaction
-      .getRepository(FavoriteQuery)
-      .createQueryBuilder("q")
-      .where("q.id = :id", { id: query.id })
-      .orderBy("a.revision", "DESC");
-
-    const title = await queryBuilder
-      .select("q.title IS NOT a.title", "changed")
-      .leftJoin("q.queryAudits", "a", "a.title IS NOT NULL")
-      .getRawOne<{ changed: boolean }>();
-
-    const text = await queryBuilder
-      .select("q.text is not a.text", "changed")
-      .leftJoin("q.queryAudits", "a", "a.text IS NOT NULL")
-      .getRawOne<{ changed: boolean }>();
-
-    if (!title.changed && !text.changed) {
+    if (isTitleAudited && isTextAudited) {
       return;
     }
 
-    const revision = await transaction
-      .getRepository(QueryAudit)
-      .createQueryBuilder("audit")
-      .select("coalesce(max(audit.revision), 0)", "value")
-      .where("favoriteQueryId = :id", { id: query.id })
-      .getRawOne<{ value: number }>()
-      .then((r) => r.value);
-
-    const audit = await transaction.getRepository(QueryAudit).insert({
-      favoriteQueryId: query.id,
-      action: revision > 0 ? "update" : "create",
-      revision: revision + 1,
-      title: title.changed ? query.title : null,
+    await QueryAudit.audit({
+      transaction: event.manager,
+      query,
+      excludeTitle: isTitleAudited,
+      excludeText: isTextAudited,
     });
-
-    if (text.changed) {
-      await transaction.query(
-        `
-        UPDATE query_audit
-        SET text = query.text
-        FROM (SELECT text FROM favorite_query WHERE id = ?) AS query
-        WHERE query_audit.id = ?
-      `,
-        [query.id, audit.identifiers[0].id]
-      );
-    }
   }
 }
