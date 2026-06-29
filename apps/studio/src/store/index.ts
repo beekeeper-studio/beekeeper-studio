@@ -119,6 +119,10 @@ export interface State {
 
   pluginManagerStatus: WebPluginManagerStatus,
 
+  // Non-fatal ~/.ssh/config issues from the most recent connect/test, surfaced
+  // by the connection component as a warning toast.
+  sshConfigWarnings: string[],
+
   /** Set by VueX module */
   plugins?: PluginsState,
 }
@@ -151,6 +155,7 @@ const store = new Vuex.Store<State>({
     usedConfig: null,
     server: null,
     connected: false,
+    sshConfigWarnings: [],
     connectionType: null,
     supportedFeatures: null,
     database: null,
@@ -457,14 +462,20 @@ const store = new Vuex.Store<State>({
     webPluginManagerStatus(state, status: WebPluginManagerStatus) {
       state.pluginManagerStatus = status
     },
+    sshConfigWarnings(state, warnings: string[]) {
+      state.sshConfigWarnings = warnings || []
+    },
   },
   actions: {
     async test(context, config: IConnection) {
+      context.commit('sshConfigWarnings', []);
       const resolvedConfig = await resolveEphemeralValues(config);
       if (!resolvedConfig) return false;
 
-      // Returns any non-fatal ~/.ssh/config warnings; the component surfaces them.
-      return await Vue.prototype.$util.send('conn/test', { config: resolvedConfig, osUser: context.state.username });
+      // ~/.ssh/config warnings go to the store; the component watches and surfaces them.
+      const warnings = await Vue.prototype.$util.send('conn/test', { config: resolvedConfig, osUser: context.state.username });
+      context.commit('sshConfigWarnings', warnings);
+      return true;
     },
 
     async fetchUsername(context) {
@@ -500,6 +511,7 @@ const store = new Vuex.Store<State>({
     },
 
     async connect(context, { config, auth }: { config: IConnection, auth?: { input: string; mode: 'pin'; }}) {
+      context.commit('sshConfigWarnings', []);
       const resolvedConfig = await resolveEphemeralValues(config);
       if (!resolvedConfig) return false;
 
@@ -510,6 +522,7 @@ const store = new Vuex.Store<State>({
         const versionString = await context.state.connection.versionString();
 
         const serverConfig = await Vue.prototype.$util.send('conn/getServerConfig');
+        context.commit('sshConfigWarnings', serverConfig?.sshConfigWarnings || []);
 
         if (supportedFeatures.backups) {
           context.dispatch('backups/setConnectionConfigs', { config: resolvedConfig, supportedFeatures, serverConfig });
@@ -537,8 +550,7 @@ const store = new Vuex.Store<State>({
         await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id })
 
         await context.dispatch('checkVersion');
-        // Return any non-fatal ~/.ssh/config warnings; the component surfaces them.
-        return serverConfig?.sshConfigWarnings || [];
+        return true;
       } else {
         throw "No username provided"
       }

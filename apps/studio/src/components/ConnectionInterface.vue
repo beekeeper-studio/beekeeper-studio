@@ -321,7 +321,7 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapState(['workspaceId', 'connection']),
+    ...mapState(['workspaceId', 'connection', 'sshConfigWarnings']),
     ...mapState(['username']),
     ...mapState('data/connections', { 'connections': 'items' }),
     ...mapState('data/connectionFolders', { connectionFolders: 'items' }),
@@ -367,6 +367,9 @@ export default Vue.extend({
     },
   },
   watch: {
+    sshConfigWarnings(warnings) {
+      this.notifySshConfigWarnings(warnings)
+    },
     workspaceId() {
       this.$util.send('appdb/saved/new').then((conn) => {
         this.config = conn;
@@ -532,8 +535,7 @@ export default Vue.extend({
 
         const { auth, cancelled } = await this.$bks.unlock();
         if (cancelled) return;
-        const sshConfigWarnings = await this.$store.dispatch('connect', { config: this.config, auth })
-        this.notifySshConfigWarnings(sshConfigWarnings)
+        await this.$store.dispatch('connect', { config: this.config, auth })
       } catch (ex) {
         console.log("CONNECTION ERROR", ex)
         this.connectionError = ex
@@ -560,7 +562,6 @@ export default Vue.extend({
         this.connectionError = null
         const connected = await this.$store.dispatch('test', this.config)
         if (!connected) return false
-        this.notifySshConfigWarnings(connected)
         this.$noty.success("Connection looks good!")
         return true
       } catch (ex) {
