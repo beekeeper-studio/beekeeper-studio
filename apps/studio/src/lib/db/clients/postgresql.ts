@@ -407,7 +407,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
 
     const [data, enumValuesByType] = await Promise.all([
       this.driverExecuteSingle(sql, { params }),
-      this.listEnumValues(),
+      this.listEnumValues(table, schema),
     ]);
 
     return data.rows.map((row: any) => ({
@@ -429,19 +429,37 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     }));
   }
 
-  // Build a map of "schema.typename" -> ordered enum labels for every enum type.
+  // Build a map of "schema.typename" -> ordered enum labels.
+  // When a table is given, only the enum types referenced by that table's
+  // columns are fetched; otherwise every enum type in the database is loaded.
   // Wrapped so Postgres-compatible engines without pg_enum degrade to no dropdown.
-  protected async listEnumValues(): Promise<Map<string, string[]>> {
+  protected async listEnumValues(table?: string, schema?: string): Promise<Map<string, string[]>> {
     const map = new Map<string, string[]>();
     try {
+      // Restrict to the types this table actually uses. typelem unwraps
+      // array-of-enum columns, whose atttypid is the array type, not the enum.
+      const filter = table
+        ? `WHERE t.oid IN (
+             SELECT COALESCE(NULLIF(et.typelem, 0), et.oid)
+             FROM pg_attribute a
+             JOIN pg_class c ON c.oid = a.attrelid
+             JOIN pg_namespace cn ON cn.oid = c.relnamespace
+             JOIN pg_type et ON et.oid = a.atttypid
+             WHERE c.relname = $1 AND cn.nspname = $2
+               AND a.attnum > 0 AND NOT a.attisdropped
+           )`
+        : "";
       const sql = `
         SELECT n.nspname AS schema, t.typname AS typename, e.enumlabel AS label
         FROM pg_enum e
         JOIN pg_type t ON t.oid = e.enumtypid
         JOIN pg_namespace n ON n.oid = t.typnamespace
+        ${filter}
         ORDER BY n.nspname, t.typname, e.enumsortorder
       `;
-      const { rows } = await this.driverExecuteSingle(sql);
+      const { rows } = await this.driverExecuteSingle(sql, {
+        params: table ? [table, schema] : [],
+      });
       for (const row of rows) {
         const key = `${row.schema}.${row.typename}`;
         const existing = map.get(key);

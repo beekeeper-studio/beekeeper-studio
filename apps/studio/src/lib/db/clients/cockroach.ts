@@ -69,7 +69,7 @@ export class CockroachClient extends PostgresClient {
 
     const [data, enumValuesByType] = await Promise.all([
       this.driverExecuteSingle(sql, { params }),
-      this.listEnumValues(),
+      this.listEnumValues(table, schema),
     ]);
 
     return data.rows.map((row: any) => ({
