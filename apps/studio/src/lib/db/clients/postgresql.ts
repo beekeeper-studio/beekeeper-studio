@@ -394,6 +394,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
             udt_name || '(' || datetime_precision::varchar(255) || ')'
           ELSE udt_name
       END as data_type,
+        udt_schema,
         CASE
           WHEN data_type = 'ARRAY' THEN 'YES'
           ELSE 'NO'
@@ -404,7 +405,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       ORDER BY table_schema, table_name, ordinal_position
     `;
 
-    const data = await this.driverExecuteSingle(sql, { params });
+    const [data, enumValuesByType] = await Promise.all([
+      this.driverExecuteSingle(sql, { params }),
+      this.listEnumValues(),
+    ]);
 
     return data.rows.map((row: any) => ({
       schemaName: row.table_schema,
@@ -418,8 +422,39 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       generated: row.is_generated === "ALWAYS" || row.is_generated === "YES",
       array: row.is_array === "YES",
       comment: row.column_comment || null,
+      // For enum columns `data_type` is the udt_name (no precision suffix), so it
+      // matches the type name keyed schema-qualified below.
+      enumValues: enumValuesByType.get(`${row.udt_schema}.${row.data_type}`),
       bksField: this.parseTableColumn(row),
     }));
+  }
+
+  // Build a map of "schema.typename" -> ordered enum labels for every enum type.
+  // Wrapped so Postgres-compatible engines without pg_enum degrade to no dropdown.
+  protected async listEnumValues(): Promise<Map<string, string[]>> {
+    const map = new Map<string, string[]>();
+    try {
+      const sql = `
+        SELECT n.nspname AS schema, t.typname AS typename, e.enumlabel AS label
+        FROM pg_enum e
+        JOIN pg_type t ON t.oid = e.enumtypid
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        ORDER BY n.nspname, t.typname, e.enumsortorder
+      `;
+      const { rows } = await this.driverExecuteSingle(sql);
+      for (const row of rows) {
+        const key = `${row.schema}.${row.typename}`;
+        const existing = map.get(key);
+        if (existing) {
+          existing.push(row.label);
+        } else {
+          map.set(key, [row.label]);
+        }
+      }
+    } catch (err) {
+      log.warn("Could not load enum values from pg_enum", err);
+    }
+    return map;
   }
 
   async listTableTriggers(table: string, schema: string = this._defaultSchema): Promise<TableTrigger[]> {

@@ -591,6 +591,11 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       expect(arrayColumn.array).toBeTruthy()
       expect(enumColumn.array).toBeFalsy()
       expect(enumArrayColumn.array).toBeTruthy()
+
+      // enum values are fetched from pg_enum, in definition order
+      expect(enumColumn.enumValues).toEqual(['sad', 'ok', 'happy'])
+      expect(enumArrayColumn.enumValues).toEqual(['sad', 'ok', 'happy'])
+      expect(arrayColumn.enumValues).toBeUndefined()
     })
 
     it("should be able to list basic indexes", async () => {
