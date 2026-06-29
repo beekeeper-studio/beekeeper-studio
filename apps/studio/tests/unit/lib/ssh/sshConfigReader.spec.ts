@@ -5,13 +5,13 @@ import tmp from "tmp";
 
 // Lazily read via a getter so the value is resolved at call time (after this
 // initializes), not when jest evaluates the mock factory.
-let mockAllowSshConfigMatch = true;
+let mockAllowSshConfigMatchExec = true;
 jest.mock("@/common/bksConfig", () => ({
   __esModule: true,
   default: {
     security: {
-      get allowSshConfigMatch() {
-        return mockAllowSshConfigMatch;
+      get allowSshConfigMatchExec() {
+        return mockAllowSshConfigMatchExec;
       },
     },
   },
@@ -24,7 +24,7 @@ describe("readSshConfig", () => {
   const itPosix = typeof process.getuid === "function" ? it : it.skip;
 
   beforeEach(() => {
-    mockAllowSshConfigMatch = true;
+    mockAllowSshConfigMatchExec = true;
   });
 
   function writeConfig(content: string): string {
@@ -168,18 +168,31 @@ Match host myserver
     expect(result.identityFile).toBe("/keys/match_host_key");
   });
 
-  it("ignores Match blocks when [security] allowSshConfigMatch is false", () => {
-    mockAllowSshConfigMatch = false;
+  it("skips Match exec sections when [security] allowSshConfigMatchExec is false", () => {
+    mockAllowSshConfigMatchExec = false;
     const configPath = writeConfig(`
 Host myserver
   HostName real.example.com
-Match host real.example.com
+  IdentityFile /keys/host_key
+Match exec "true"
+  IdentityFile /keys/exec_key`);
+
+    const result = readSshConfig("myserver", configPath);
+    // Host block still applies; the Match exec block is skipped (its command
+    // is never run), so its IdentityFile is not added.
+    expect(result.host).toBe("real.example.com");
+    expect(result.identityFiles).toEqual(["/keys/host_key"]);
+    expect(result.identityFiles).not.toContain("/keys/exec_key");
+  });
+
+  it("still applies non-exec Match rules when allowSshConfigMatchExec is false", () => {
+    mockAllowSshConfigMatchExec = false;
+    const configPath = writeConfig(`
+Match host myserver
   IdentityFile /keys/match_host_key`);
 
     const result = readSshConfig("myserver", configPath);
-    // Host block still applies; the Match block is ignored entirely.
-    expect(result.host).toBe("real.example.com");
-    expect(result.identityFile).toBeUndefined();
+    expect(result.identityFile).toBe("/keys/match_host_key");
   });
 
   // `Match exec` runs an arbitrary command via ssh-config's compute(). Mirror

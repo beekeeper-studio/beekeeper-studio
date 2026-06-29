@@ -81,23 +81,16 @@ export function readSshConfig(
   try {
     const raw = fs.readFileSync(configPath, "utf-8");
     const config = SSHConfig.parse(raw);
-    // `Match` blocks apply directives via dynamic criteria and `Match exec` runs
-    // arbitrary commands. Operators can disable Match processing entirely via
-    // [security] allowSshConfigMatch; drop the blocks so compute() never sees them.
-    if (!bksConfig.security.allowSshConfigMatch) {
-      for (let i = config.length - 1; i >= 0; i--) {
-        const line = config[i] as { param?: string };
-        if (line && typeof line.param === "string" && /^match$/i.test(line.param)) {
-          config.splice(i, 1);
-        }
-      }
-    }
     // Pass the connection username so `Match user`/`Match localuser` rules are
     // evaluated against it. Without it, compute() falls back to the OS user and
     // those Match blocks never fire.
+    //
+    // matchExec (default true, matching ssh(1)) controls whether `Match exec`
+    // runs its command. Operators can turn it off via [security]
+    // allowSshConfigMatchExec; Host and non-exec Match rules still apply.
     const result = config.compute(
       user ? { Host: host, User: user } : host,
-      { ignoreCase: true }
+      { ignoreCase: true, matchExec: bksConfig.security.allowSshConfigMatchExec }
     );
 
     if (result.hostname) {

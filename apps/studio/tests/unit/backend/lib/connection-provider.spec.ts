@@ -9,7 +9,7 @@ jest.mock("@commercial/backend/lib/db/server", () => ({
 
 jest.mock("@/common/bksConfig", () => ({
   __esModule: true,
-  default: { security: { allowSshConfigMatch: true } },
+  default: { security: { allowSshConfigMatchExec: true } },
 }));
 
 import connectionProvider from "@commercial/backend/lib/connection-provider";
