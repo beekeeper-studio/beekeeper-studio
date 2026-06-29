@@ -19,16 +19,25 @@ interface State {
   secondarySidebarWidth: number;
   secondarySidebarOpen: boolean;
   secondaryActiveTabId?: string;
-  globalSidebarActiveItem: "tables" | "history" | "queries";
+  globalSidebarActiveItem: GlobalSidebarActiveItem;
 }
 
 const PRIMARY_SIDEBAR_OPEN_KEY = 'primarySidebarOpen-v2'
 const PRIMARY_SIDEBAR_WIDTH_KEY = "primarySidebarWidth-v3"
 const SECONDARY_SIDEBAR_OPEN_KEY = 'secondarySidebarOpen-v2'
 const SECONDARY_SIDEBAR_WIDTH_KEY = "secondarySidebarWidth-v3"
+const GLOBAL_SIDEBAR_ACTIVE_ITEM_KEY = "globalSidebarActiveItem-v1"
 
 const PRIMARY_SIDEBAR_INITIAL_WIDTH = 240 // in pixels
 const SECONDARY_SIDEBAR_INITIAL_WIDTH = 240 // in pixels
+
+type GlobalSidebarActiveItem = "tables" | "history" | "queries";
+const GLOBAL_SIDEBAR_ITEMS: GlobalSidebarActiveItem[] = ["tables", "history", "queries"];
+
+function getInitialGlobalSidebarActiveItem(): GlobalSidebarActiveItem {
+  const stored = SmartLocalStorage.getJSON(GLOBAL_SIDEBAR_ACTIVE_ITEM_KEY);
+  return GLOBAL_SIDEBAR_ITEMS.includes(stored) ? stored : "tables";
+}
 
 export const SidebarModule: Module<State, RootState> = {
   namespaced: true,
@@ -49,7 +58,7 @@ export const SidebarModule: Module<State, RootState> = {
     secondarySidebarWidth: SmartLocalStorage.getJSON(SECONDARY_SIDEBAR_WIDTH_KEY, SECONDARY_SIDEBAR_INITIAL_WIDTH),
     secondaryActiveTabId: "json-viewer",
 
-    globalSidebarActiveItem: "tables",
+    globalSidebarActiveItem: getInitialGlobalSidebarActiveItem(),
   }),
   getters: {
   },
@@ -61,7 +70,7 @@ export const SidebarModule: Module<State, RootState> = {
     primarySidebarWidth(state, width: number) {
       state.primarySidebarWidth = width
     },
-    globalSidebarActiveItem(state, item: "tables" | "history" | "queries") {
+    globalSidebarActiveItem(state, item: GlobalSidebarActiveItem) {
       state.globalSidebarActiveItem = item
     },
 
@@ -111,7 +120,8 @@ export const SidebarModule: Module<State, RootState> = {
       context.commit("secondaryActiveTabId", tabId);
     },
 
-    setGlobalSidebarActiveItem(context, item: "tables" | "history" | "queries") {
+    setGlobalSidebarActiveItem(context, item: GlobalSidebarActiveItem) {
+      SmartLocalStorage.addItem(GLOBAL_SIDEBAR_ACTIVE_ITEM_KEY, item);
       context.commit("globalSidebarActiveItem", item);
     },
 
