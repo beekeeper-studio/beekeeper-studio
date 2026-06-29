@@ -26,9 +26,6 @@ module.exports = {
     releaseNotesFile: "build/release-notes.md"
   },
   generateUpdatesFilesForAllChannels: true,
-  toolsets: {
-    appimage: "1.0.3"
-  },
   directories: {
     output: "dist_electron"
   },
@@ -40,7 +37,11 @@ module.exports = {
   ],
   afterPack: "./build/afterPack.js",
   asarUnpack: [
-    'package.json'
+    'package.json',
+    // msnodesqlv8 ships a native ODBC addon used for SQL Server integrated
+    // (SSPI/Kerberos) auth. prebuild-install drops the binary under build/Release
+    // and/or prebuilds depending on platform, so unpack both.
+    '**/msnodesqlv8/**/*.node'
   ],
   extraResources: [
     {
@@ -220,14 +221,14 @@ module.exports = {
   },
   snapcraft: {
     base: 'core24',
+    publish: [
+      'github',
+      'snapStore'
+    ],
     core24: {
       // Build the core24 snap in an isolated LXD container. CI provisions LXD
       // via canonical/setup-lxd on every Linux runner.
       useLXD: true,
-      publish: [
-        'github',
-        'snapStore'
-      ],
       environment: {
         "ELECTRON_SNAP": "true"
       },

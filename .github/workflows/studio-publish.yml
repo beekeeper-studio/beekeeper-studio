@@ -1,7 +1,7 @@
 name: Studio - Build & Publish
 
 permissions:
-  contents: read
+  contents: write # for the softprops action
   actions: write
   id-token: write
 
@@ -15,27 +15,18 @@ jobs:
   create_draft_release:
     runs-on: "ubuntu-22.04"
     outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-      assets_url: ${{ steps.create_release.outputs.assets_url }}
       id: ${{ steps.create_release.outputs.id }}
-      json: ${{ steps.create_release.outputs.json }}
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v1
 
-        # Requires us to use a github token with more power (to create drafts on another repo)
-      - name: Create or check draft release
+      - name: Create draft release
         id: create_release
-        uses: actions/github-script@v7
-        env:
-          TAG_NAME: ${{ github.ref_name }}
-          OWNER: 'beekeeper-studio'
-          REPO: 'beekeeper-studio'
+        uses: softprops/action-gh-release@v3
         with:
-          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
-          script: |
-            const script = require('./.github/scripts/create_draft_release.js')
-            await script({github, context, core}, process.env.OWNER, process.env.REPO, process.env.TAG_NAME)
+          draft: true
+          generate_release_notes: true
+
   # electron-builder comes built in with channels -- latest, beta, alpha.
   # To support these for deb, rpm, and snap, we need to extract the channel from the package version
   # outputs: latest, beta, alpha
@@ -311,7 +302,7 @@ jobs:
           # WIN_CERT_FILE and JSIGN_JAR are exported to $GITHUB_ENV by earlier steps
           PYTHON_PATH: "${{'$PYTHON_PATH' }}"
           PYTHONPATH: "${{ '$PYTHONPATH' }}"
-          GH_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           USE_SYSTEM_FPM: true
           SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
         run: yarn run electron:build --publish always
@@ -327,7 +318,7 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.mac_dev_pw }}
           PYTHON_PATH: "${{ matrix.os.type == 'macos' && steps.mac_python.outputs.python_path || '$PYTHON_PATH' }}"
           PYTHONPATH: "${{ matrix.os.type == 'macos' && steps.mac_python.outputs.python_path || '$PYTHONPATH' }}"
-          GH_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           USE_SYSTEM_FPM: true
           SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
         run: yarn run electron:build --publish always
@@ -338,10 +329,9 @@ jobs:
         env:
           RELEASE_ID: ${{needs.create_draft_release.outputs.id}}
         with:
-          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
           script: |
             const script = require('./.github/scripts/delete_latest_yml.js')
-            const assetsUrl = '${{ needs.create_draft_release.outputs.assets_url }}'
+            const assetsUrl = 'https://api.github.com/repos/beekeeper-studio/beekeeper-studio/releases/${{ needs.create_draft_release.outputs.id }}/assets'
             const channel = '${{needs.identify_channel.outputs.channel}}'
             await script({ github, core, context }, assetsUrl, channel)
 
@@ -365,7 +355,6 @@ jobs:
           ARCH: ${{ matrix.os.arch }}
           CHANNEL: ${{needs.identify_channel.outputs.channel}}
         with:
-          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
           script: |
             const fs = require('fs')
             const content = fs.readFileSync(`apps/studio/dist_electron/latest-mac.yml`, 'utf8')
@@ -401,7 +390,6 @@ jobs:
           INTEL_YML: ${{ needs.release.outputs.mac_x64_yml }}
           ARM_YML: ${{ needs.release.outputs.mac_arm64_yml }}
         with:
-          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
           script: |
             const fs = require('fs');
             const yaml = require('js-yaml');
@@ -437,7 +425,6 @@ jobs:
         env:
           RELEASE_ID: ${{ needs.create_draft_release.outputs.id }}
         with:
-          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
           script: |
             const fs = require('fs');
             const releaseId = process.env.RELEASE_ID;

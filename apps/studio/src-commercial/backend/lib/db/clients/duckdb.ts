@@ -10,6 +10,7 @@ import {
   buildDeleteQueries,
   buildSchemaFilter,
 } from "@/lib/db/clients/utils";
+import { parseQuotedEnumValues } from "@/lib/db/clients/enumParsers";
 import knexlib, { Knex } from "knex";
 import _ from "lodash";
 import rawLog from "@bksLogger";
@@ -449,6 +450,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
         defaultValue: row.column_default as string,
         hasDefault: !_.isNil(row.column_default),
         comment: row.comment as string,
+        enumValues: parseQuotedEnumValues(row.data_type as string),
         bksField: this.parseTableColumn({
           name: row.column_name as string,
           type: row.data_type as string,

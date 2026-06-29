@@ -20,6 +20,7 @@ import {
   ClientError, refreshTokenIfNeeded,
   errorMessages
 } from "./utils";
+import { parseQuotedEnumValues } from "./enumParsers";
 import {
   IDbConnectionDatabase,
   DatabaseElement,
@@ -491,6 +492,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       generationExpression: row.generation_expression,
       characterSet: row.character_set,
       collation: row.collation,
+      enumValues: parseQuotedEnumValues(row.column_type),
       bksField: this.parseTableColumn(row),
     }));
   }
@@ -1631,4 +1633,5 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
 
 export const testOnly = {
   parseFields,
+  parseEnumValues: parseQuotedEnumValues,
 };

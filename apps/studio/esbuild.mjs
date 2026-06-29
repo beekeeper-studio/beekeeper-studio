@@ -35,7 +35,7 @@ const externals = ['better-sqlite3', 'sqlite3',
         'oracledb', '@electron/remote', "@google-cloud/bigquery",
         'pg-query-stream', 'electron', '@duckdb/node-api',
         '@mongosh/browser-runtime-electron', '@mongosh/service-provider-node-driver',
-        'mongodb-client-encryption', 'sqlanywhere', 'ws', 'kerberos',
+        'mongodb-client-encryption', 'sqlanywhere', 'ws', 'kerberos', 'msnodesqlv8',
         ...ensureInstalled,
       ]
 

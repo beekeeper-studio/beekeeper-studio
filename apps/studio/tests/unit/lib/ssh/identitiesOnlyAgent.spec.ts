@@ -1,9 +1,17 @@
 import { utils as ssh2Utils, BaseAgent, OpenSSHAgent } from "ssh2";
 import { createFilteringAgent } from "@/lib/ssh/identitiesOnlyAgent";
 
-function makeKey() {
-  const { public: pub } = (ssh2Utils as any).generateKeyPairSync("ed25519");
-  const parsed = ssh2Utils.parseKey(pub);
+// Static ed25519 public keys (ssh-keygen). We deliberately avoid ssh2's
+// generateKeyPairSync, which intermittently emits ed25519 keys its own parseKey
+// can't read (mscdex/ssh2#1390) — that made these tests flaky.
+const PUBLIC_KEYS = [
+  "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOnHMHf4VaHPPteukYnEVzZVEMgbhodvJm7uSTUYWNez bks-test-fixture-1",
+  "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFJeZ1/S91hgvF/45m9O3Oh5cM9GIK7F6XAY3MA0z3Cl bks-test-fixture-2",
+  "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMtLAtRTFfXgC/ut/sFYyED0MqAfsauERdhf94yS9OWn bks-test-fixture-3",
+];
+
+function makeKey(index: number) {
+  const parsed = ssh2Utils.parseKey(PUBLIC_KEYS[index]);
   if (parsed instanceof Error) throw parsed;
   const key = Array.isArray(parsed) ? parsed[0] : parsed;
   return { key, blob: key.getPublicSSH().toString("base64") };
@@ -20,9 +28,9 @@ function callIdentities(agent: BaseAgent): Promise<any[]> {
 
 describe("createFilteringAgent", () => {
   it("filters agent identities to those matching the allowed set", async () => {
-    const a = makeKey();
-    const b = makeKey();
-    const c = makeKey();
+    const a = makeKey(0);
+    const b = makeKey(1);
+    const c = makeKey(2);
 
     jest
       .spyOn(OpenSSHAgent.prototype, "getIdentities")
@@ -46,8 +54,8 @@ describe("createFilteringAgent", () => {
   });
 
   it("does not filter when allowed set is empty", async () => {
-    const a = makeKey();
-    const b = makeKey();
+    const a = makeKey(0);
+    const b = makeKey(1);
 
     jest
       .spyOn(OpenSSHAgent.prototype, "getIdentities")
