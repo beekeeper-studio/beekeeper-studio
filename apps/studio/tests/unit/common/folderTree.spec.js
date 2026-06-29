@@ -52,7 +52,7 @@ describe("buildFolderOptions", () => {
     const opts = buildFolderOptions(folders)
     expect(opts).toEqual([
       { id: 1, label: "Root A" },
-      { id: 3, label: "    Child of A" },
+      { id: 3, label: "\u00A0\u00A0Child of A" },
       { id: 2, label: "Root B" },
     ])
   })

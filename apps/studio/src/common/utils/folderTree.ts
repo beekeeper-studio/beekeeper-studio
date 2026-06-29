@@ -75,6 +75,8 @@ export interface FolderOption {
  * the nesting is visible. Useful for picking a destination folder.
  */
 export function buildFolderOptions(folders: IFolder[]): FolderOption[] {
+  // Non-breaking spaces: leading regular spaces collapse in <option> rendering.
+  const indent = "\u00A0\u00A0";
   const byName = (a: IFolder, b: IFolder) => a.name.localeCompare(b.name);
   const options: FolderOption[] = [];
   folders
@@ -86,7 +88,7 @@ export function buildFolderOptions(folders: IFolder[]): FolderOption[] {
         .filter((f) => f.parentId === folder.id)
         .sort(byName)
         .forEach((subfolder) => {
-          options.push({ id: subfolder.id, label: `    ${subfolder.name}` });
+          options.push({ id: subfolder.id, label: `${indent}${subfolder.name}` });
         });
     });
   return options;

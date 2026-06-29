@@ -21,12 +21,16 @@
           id="import-queries-folder"
           v-model="targetFolderId"
         >
-          <option :value="null">Personal (no folder)</option>
+          <option :value="null">
+            Personal (no folder)
+          </option>
           <option
             v-for="opt in folderOptions"
             :key="opt.id"
             :value="opt.id"
-          >{{ opt.label }}</option>
+          >
+            {{ opt.label }}
+          </option>
         </select>
       </div>
       <div>
