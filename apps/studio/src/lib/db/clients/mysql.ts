@@ -20,6 +20,7 @@ import {
   ClientError, refreshTokenIfNeeded,
   errorMessages
 } from "./utils";
+import { parseQuotedEnumValues } from "./enumParsers";
 import {
   IDbConnectionDatabase,
   DatabaseElement,
@@ -259,48 +260,6 @@ function parseRowQueryResult(
   };
 }
 
-// MySQL/MariaDB store enum columns as a type string like `enum('a','b','c')`.
-// Pull the allowed values out of that definition so the UI can offer a dropdown.
-// Single quotes inside a value are doubled (`''`), and values may contain commas,
-// so we walk the quoted list rather than splitting naively. Returns undefined for
-// anything that isn't an enum (including `set(...)`).
-function parseEnumValues(columnType?: string | null): string[] | undefined {
-  if (!columnType) return undefined;
-  const match = /^enum\((.*)\)$/i.exec(columnType.trim());
-  if (!match) return undefined;
-
-  const body = match[1];
-  const values: string[] = [];
-  let current = "";
-  let inQuote = false;
-
-  for (let i = 0; i < body.length; i++) {
-    const char = body[i];
-    if (inQuote) {
-      if (char === "'") {
-        if (body[i + 1] === "'") {
-          // doubled single quote -> literal quote
-          current += "'";
-          i++;
-        } else {
-          inQuote = false;
-        }
-      } else {
-        current += char;
-      }
-    } else if (char === "'") {
-      inQuote = true;
-    } else if (char === ",") {
-      values.push(current);
-      current = "";
-    }
-    // ignore whitespace between items when outside quotes
-  }
-  values.push(current);
-
-  return values;
-}
-
 function filterDatabase(
   item: Record<string, any>,
   { database }: DatabaseFilterOptions = {},
@@ -533,7 +492,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       generationExpression: row.generation_expression,
       characterSet: row.character_set,
       collation: row.collation,
-      enumValues: parseEnumValues(row.column_type),
+      enumValues: parseQuotedEnumValues(row.column_type),
       bksField: this.parseTableColumn(row),
     }));
   }
@@ -1672,5 +1631,5 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
 
 export const testOnly = {
   parseFields,
-  parseEnumValues,
+  parseEnumValues: parseQuotedEnumValues,
 };
