@@ -33,6 +33,56 @@ function findDefaultIdentityFile(): string | undefined {
   return undefined;
 }
 
+// Read a single identity file, returning undefined (rather than throwing) when
+// the file is missing or unreadable. Mirrors ssh(1), which skips IdentityFile
+// entries it cannot use instead of aborting. See #4366.
+function tryReadKeyFile(candidate: string): Buffer | undefined {
+  const resolved = path.resolve(resolveHomePathToAbsolute(candidate));
+  if (!fs.existsSync(resolved)) {
+    log.warn(`Skipping IdentityFile that does not exist: ${resolved}`);
+    return undefined;
+  }
+  try {
+    return fs.readFileSync(resolved);
+  } catch (err) {
+    log.warn(`Skipping unreadable IdentityFile ${resolved}: ${err.message}`);
+    return undefined;
+  }
+}
+
+// Resolve the key used for publickey auth.
+//
+// Automatic mode mirrors ssh(1): the ~/.ssh/config IdentityFile entries are
+// tried in order, skipping any that can't be read (e.g. the file doesn't
+// exist), then falling back to the OpenSSH default identity files. A bad entry
+// must never abort the connection (#4366).
+//
+// Key File mode honours the user's explicit choice exactly — if they picked a
+// key that can't be read, that's a real error and is left to surface.
+function resolveKeyForAuth(opts: {
+  explicitKey?: string;
+  identityFiles?: string[];
+  useAgent: boolean;
+}): Buffer | undefined {
+  const { explicitKey, identityFiles, useAgent } = opts;
+
+  if (!useAgent) {
+    return explicitKey
+      ? fs.readFileSync(path.resolve(resolveHomePathToAbsolute(explicitKey)))
+      : undefined;
+  }
+
+  const ordered = identityFiles && identityFiles.length
+    ? identityFiles
+    : (explicitKey ? [explicitKey] : []);
+  for (const candidate of ordered) {
+    const buf = tryReadKeyFile(candidate);
+    if (buf) return buf;
+  }
+  const fallback = findDefaultIdentityFile();
+  return fallback ? tryReadKeyFile(fallback) : undefined;
+}
+
 function buildAuthHandler(opts: { useAgent: boolean; hasPrivateKey: boolean; hasPassword: boolean }): AuthenticationType[] {
   const methods: AuthenticationType[] = ['none'];// always add none as a fallback for things like tailscale, #4358
   if (opts.useAgent) methods.push('agent');
@@ -82,18 +132,6 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
         const haveAgent = ssh.useAgent && !!socketPath
         const bastionHaveAgent = ssh.bastionMode === 'agent' && !!socketPath
 
-        // Automatic mode: when neither the form nor ~/.ssh/config supplied a
-        // private key, fall back to the OpenSSH default identity files. This
-        // mirrors `ssh`'s behaviour of trying ~/.ssh/id_ed25519 etc.
-        let privateKeyPath = ssh.privateKey || undefined
-        if (!privateKeyPath && ssh.useAgent) {
-          privateKeyPath = findDefaultIdentityFile()
-        }
-        let bastionPrivateKeyPath = ssh.bastionPrivateKey || undefined
-        if (!bastionPrivateKeyPath && ssh.bastionMode === 'agent') {
-          bastionPrivateKeyPath = findDefaultIdentityFile()
-        }
-
         const sshConfig: Options = {
           endHost: ssh.host || '',
           endPort: ssh.port || undefined,
@@ -114,12 +152,22 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
           bindHost: '127.0.0.1'
         }
 
-        if (privateKeyPath) {
-          sshConfig.privateKey = fs.readFileSync(path.resolve(resolveHomePathToAbsolute(privateKeyPath)))
+        const privateKey = resolveKeyForAuth({
+          explicitKey: ssh.privateKey || undefined,
+          identityFiles: ssh.identityFiles,
+          useAgent: ssh.useAgent,
+        })
+        if (privateKey) {
+          sshConfig.privateKey = privateKey
         }
 
-        if (bastionPrivateKeyPath) {
-          sshConfig.bastionPrivateKey = fs.readFileSync(path.resolve(resolveHomePathToAbsolute(bastionPrivateKeyPath)))
+        const bastionPrivateKey = resolveKeyForAuth({
+          explicitKey: ssh.bastionPrivateKey || undefined,
+          identityFiles: ssh.bastionIdentityFiles,
+          useAgent: ssh.bastionMode === 'agent',
+        })
+        if (bastionPrivateKey) {
+          sshConfig.bastionPrivateKey = bastionPrivateKey
         }
 
         if (haveAgent) {

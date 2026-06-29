@@ -1020,6 +1020,11 @@ export default Vue.extend({
         ]
         if (column.nullable) values.push({ label: '(NULL)', value: null })
         result.editorParams['values'] = values
+      } else if (column.enumValues?.length) {
+        result.editor = 'list'
+        const values = column.enumValues.map((v) => ({ label: v, value: v }))
+        if (column.nullable) values.push({ label: '(NULL)', value: null })
+        result.editorParams['values'] = values
       }
       return result;
     },
