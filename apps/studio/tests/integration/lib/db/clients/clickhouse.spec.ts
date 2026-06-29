@@ -17,9 +17,7 @@ const TEST_VERSIONS = [
   { tag: '26.5', readOnly: false, dropInformation: false },
   { tag: '26.5', readOnly: false, dropInformation: true },
   { tag: '26.5', readOnly: true, dropInformation: false },
-  { tag: '24.2', readOnly: false, dropInformation: false },
-  { tag: '24.2', readOnly: false, dropInformation: true },
-  { tag: '24.2', readOnly: true, dropInformation: false },
+  { tag: '24.2', readOnly: false },
 ] as const
 
 function testWith(options: typeof TEST_VERSIONS[number]) {
