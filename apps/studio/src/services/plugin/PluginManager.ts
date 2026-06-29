@@ -173,6 +173,16 @@ export default class PluginManager extends Hookable {
         throw new NotFoundPluginError(`Plugin "${id}" not found in registry.`);
       }
 
+      // The plugin is downloaded into a directory named after the registry id.
+      // Refuse to install if the release manifest declares a different id, so
+      // the on-disk directory name and the manifest id can never diverge (which
+      // is what allows a manifest id to later target another path).
+      if (info.latestRelease.manifest.id !== id) {
+        throw new NotFoundPluginError(
+          `Plugin "${id}" manifest declares mismatched id "${info.latestRelease.manifest.id}".`
+        );
+      }
+
       if (!this.isPluginLoadable(info.latestRelease.manifest)) {
         throw new NotSupportedPluginError(
           `${info.latestRelease.manifest.name} requires Beekeeper Studio ≥ 5.5.0. Please update the app first.`
