@@ -1,5 +1,26 @@
-import { identify } from 'sql-query-identifier'
-import { Dialect } from 'sql-query-identifier/lib/defines';
+import { identify, Options } from 'sql-query-identifier'
+import { Dialect, IdentifyResult } from 'sql-query-identifier/lib/defines';
+
+export function safelyIdentify(
+  queryText: string,
+  options: Options
+): { queries: IdentifyResult[]; error: Error | null } {
+  try {
+    return { queries: identify(queryText, { strict: false, ...options }), error: null }
+  } catch (error) {
+    const fallback: IdentifyResult = {
+      start: 0,
+      end: queryText.length - 1,
+      text: queryText,
+      type: "UNKNOWN",
+      executionType: "UNKNOWN",
+      parameters: [],
+      tables: [],
+      columns: [],
+    }
+    return { queries: [fallback], error: error as Error }
+  }
+}
 
 // a function that takes in a string and a dialect,
 // if the string is determined to be most likely a query and it is quoted, we remove the quotes,
@@ -14,7 +35,8 @@ export function removeQueryQuotes(possibleQuery: string, dialect: Dialect): stri
   const unquotedQuery = possibleQuery.slice(1, possibleQuery.length - 1);
 
   // if the query is quoted and we can identify at least one valid sql statement, we'll unquote it.
-  if (isQuoted && identify(unquotedQuery, { strict: false, dialect })?.some((res) => res.type != 'UNKNOWN')) {
+  const { queries } = safelyIdentify(unquotedQuery, { dialect });
+  if (isQuoted && queries?.some((res) => res.type != 'UNKNOWN')) {
     return unquotedQuery;
   }
 

@@ -111,4 +111,39 @@ describe('UtilUsedConnectionModule.recordUsed', () => {
     expect(all[0].port).toBe(6543)
     expect(all[0].username).toBe('newuser')
   })
+
+  it('returns a config keyed on the saved_connection id when reconnecting', async () => {
+    // Open tabs, pins, and hidden entities are persisted keyed on
+    // `usedConfig.id`, which is whatever recordUsed returns. When connecting to
+    // a saved connection it must stay the saved_connection id across
+    // reconnects, otherwise everything keyed on it is orphaned on the next
+    // launch (the 5.8 "lost all my open queries" regression).
+
+    // Saved and used connections live in separate tables with independent id
+    // sequences. Create a couple of unrelated saved connections first so the
+    // target's saved_connection id doesn't coincidentally equal its
+    // used_connection id, which would make this assertion meaningless.
+    await buildSavedConnection({ name: 'filler 1' }).save()
+    await buildSavedConnection({ name: 'filler 2' }).save()
+
+    const saved = buildSavedConnection()
+    await saved.save()
+
+    // First connect creates the used_connection row.
+    await store.dispatch('data/usedconnections/recordUsed',
+      await asConfig(saved, WORKSPACE_ID))
+    await store.dispatch('data/usedconnections/load')
+
+    const used = (await UsedConnection.find())[0]
+    // Sanity: the two ids must differ for this test to prove anything.
+    expect(used.id).not.toBe(saved.id)
+
+    // Reconnect (the path every updating user hits - the used_connection
+    // already exists).
+    const result = await store.dispatch('data/usedconnections/recordUsed',
+      await asConfig(saved, WORKSPACE_ID))
+
+    expect(result.id).toBe(saved.id)
+    expect(result.id).not.toBe(used.id)
+  })
 })

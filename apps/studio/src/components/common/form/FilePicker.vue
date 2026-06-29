@@ -5,8 +5,9 @@
     <input
       :id="inputId"
       type="text"
-      class="form-control clickable"
+      class="form-control"
       placeholder="No file selected"
+      :class="{ clickable: !editable }"
       :title="value"
       :value="inputValue"
       :disabled="disabled"

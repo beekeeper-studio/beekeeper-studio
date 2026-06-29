@@ -188,6 +188,12 @@ export abstract class BaseCommandClient {
           required: true,
           controlOptions: {
             buttonLabel: `Choose ${this.toolName} binary`,
+            // macOS's native picker resolves a chosen symlink (e.g.
+            // /opt/homebrew/bin/az) to its version-pinned Homebrew target, which
+            // breaks after `brew upgrade`. noResolveAliases keeps the stable
+            // symlink path. Electron applies it on macOS and silently ignores it
+            // on Windows/Linux, so passing it unconditionally is safe.
+            properties: ['openFile', 'noResolveAliases'],
           },
           placeholder: 'Choose',
           valid: (config: BackupConfig): boolean => {
@@ -457,7 +463,7 @@ export abstract class BaseCommandClient {
       return null;
     }
 
-    return await Vue.prototype.$util.send('backup/whichDumpTool', { toolName: this.toolName });
+    return await Vue.prototype.$util.send('cli/which', { toolName: this.toolName });
   }
 
   private async _runCommand(command: Command): Promise<void> {

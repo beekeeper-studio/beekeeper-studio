@@ -13,7 +13,7 @@ import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import semver from "semver";
-import { PluginSystemError } from "@/lib/errors";
+import { PluginError, PluginSystemError } from "@/lib/errors";
 import { convertToManifestV1, isManifestV0, mapViewsAndMenuFromV0ToV1 } from "./utils";
 import { Hookable } from "./Hookable";
 
@@ -177,6 +177,17 @@ export default class PluginManager extends Hookable {
         throw new PluginSystemError(
           "PLUGIN_NOT_FOUND",
           `Plugin "${id}" not found in registry.`
+        );
+      }
+
+      // The plugin is downloaded into a directory named after the registry id.
+      // Refuse to install if the release manifest declares a different id, so
+      // the on-disk directory name and the manifest id can never diverge (which
+      // is what allows a manifest id to later target another path).
+      if (info.latestRelease.manifest.id !== id) {
+        throw new PluginError(
+          "MANIFEST_PARSE",
+          `Plugin "${id}" manifest declares mismatched id "${info.latestRelease.manifest.id}".`
         );
       }
 

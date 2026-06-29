@@ -91,6 +91,8 @@ export default {
       sslKeyFile: config.sslKeyFile,
       sslRejectUnauthorized: config.sslRejectUnauthorized,
       trustServerCertificate: config.trustServerCertificate,
+      windowsAuthEnabled: config.windowsAuthEnabled,
+      sqlServerOptions: config.sqlServerOptions,
       instantClientLocation: settings?.oracleInstantClient?.stringValue || undefined,
       oracleConfigLocation: settings?.oracleConfigLocation?.stringValue || undefined,
       options: config.options,
@@ -104,6 +106,7 @@ export default {
       libsqlOptions: config.libsqlOptions,
       sqlAnywhereOptions: config.sqlAnywhereOptions,
       surrealDbOptions: config.surrealDbOptions,
+      snowflakeOptions: config.snowflakeOptions,
       dynamoDbOptions: config.dynamoDbOptions,
       runtimeExtensions: sqliteExtension ? sqliteExtension as string[] : []
     }

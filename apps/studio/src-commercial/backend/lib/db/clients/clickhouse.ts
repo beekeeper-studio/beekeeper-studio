@@ -63,6 +63,9 @@ import { errors } from "@/lib/errors";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { ClickHouseCursor } from "./clickhouse/ClickHouseCursor";
+import { readFileSync } from 'fs';
+import { NodeClickHouseClientConfigOptions } from "@clickhouse/client/dist/config";
+import https from 'https'
 
 interface JSONResult {
   statement: IdentifyResult;
@@ -140,15 +143,26 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
 
     if (this.server.config.url) {
       url = this.server.config.url
+      // Route the user-provided URL through the SSH tunnel's local endpoint.
+      if (this.server.sshTunnel) {
+        const urlObj = new URL(url);
+        urlObj.hostname = this.server.config.localHost;
+        urlObj.port = this.server.config.localPort.toString();
+        url = urlObj.toString();
+      }
     } else {
       const urlObj = new URL('http://example.com/');
-      urlObj.hostname = this.server.config.host;
-      urlObj.port = this.server.config.port.toString();
+      urlObj.hostname = this.server.sshTunnel
+        ? this.server.config.localHost
+        : this.server.config.host;
+      urlObj.port = (this.server.sshTunnel
+        ? this.server.config.localPort
+        : this.server.config.port).toString();
       urlObj.protocol = this.server.config.ssl ? 'https:' : 'http:';
       url = urlObj.toString();
     }
 
-    this.client = createClient({
+    const config: NodeClickHouseClientConfigOptions = {
       url,
       username: this.server.config.user,
       password: this.server.config.password,
@@ -158,7 +172,34 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
         default_format: "JSONCompact",
       },
       request_timeout: 120_000, // 2 minutes
-    });
+    };
+    if (this.server.config.ssl) {
+      let hasCerts = false;
+      // ClickHouse client supports both one-way and mutual TLS authentication. If sslCertFile and sslKeyFile are provided, we will use mutual TLS, otherwise we will use one-way TLS.
+      if (this.server.config.sslCaFile) {
+        hasCerts = true;
+        if (this.server.config.sslCertFile && this.server.config.sslKeyFile) {
+          config.tls = {
+            ca_cert: readFileSync(this.server.config.sslCaFile),
+            cert: readFileSync(this.server.config.sslCertFile),
+            key: readFileSync(this.server.config.sslKeyFile),
+          };
+        } else {
+          config.tls = {
+            ca_cert: readFileSync(this.server.config.sslCaFile),
+          };
+        }
+      }
+
+      // Beekeeper's default behavior is to disable verification unless certificates are provided.
+      if (!hasCerts || !this.server.config.sslRejectUnauthorized) {
+        config.http_agent = new https.Agent({
+          rejectUnauthorized: false
+        });
+      }
+    }
+
+    this.client = createClient(config);
     const result = await this.driverExecuteSingle(
       "SELECT version() AS version"
     );
@@ -1047,21 +1088,22 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     return { totalRows, columns, cursor };
   }
 
-  async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
-    const cursorOpts = {
-      query,
-      params: [],
-      client: this.client,
-      chunkSize
-    }
+  async queryStream(_query: string, _chunkSize: number): Promise<StreamResults> {
+    // const cursorOpts = {
+    //   query,
+    //   params: [],
+    //   client: this.client,
+    //   chunkSize
+    // }
 
-    const { columns, totalRows } = await this.getColumnsAndTotalRows(query);
+    // const { columns, totalRows } = await this.getColumnsAndTotalRows(query);
 
-    return {
-      totalRows,
-      columns,
-      cursor: new ClickHouseCursor(cursorOpts)
-    }
+    // return {
+    //   totalRows,
+    //   columns,
+    //   cursor: new ClickHouseCursor(cursorOpts)
+    // }
+    throw new Error("Query Streaming is not currently supported for clickhouse")
   }
 
   wrapIdentifier(value: string): string {

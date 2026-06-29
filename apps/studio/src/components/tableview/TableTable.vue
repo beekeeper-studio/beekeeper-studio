@@ -146,6 +146,7 @@
             <x-button
               class="btn btn-primary btn-badge btn-icon"
               @click.prevent="saveChanges"
+              :disabled="running"
               :title="saveButtonText"
               :class="{'error': !!saveError}"
             >
@@ -166,7 +167,7 @@
             >
               <i class="material-icons">arrow_drop_down</i>
               <x-menu>
-                <x-menuitem @click.prevent="saveChanges">
+                <x-menuitem :disabled="running" @click.prevent="saveChanges">
                   <x-label>Apply</x-label>
                   <x-shortcut value="Control+S" />
                 </x-menuitem>
@@ -407,6 +408,7 @@ export default Vue.extend({
       // App.db row holding tabulator's column persistence.
       // Loaded by loadPersistence() and read synchronously by persistenceReader.
       persistenceRow: null as { id?: number; data: string } | null,
+      running: false
     };
   },
   computed: {
@@ -756,6 +758,9 @@ export default Vue.extend({
     this.registerHandlers(this.rootBindings)
   },
   methods: {
+    updateTab() {
+      this.$emit('update-tab', this.tab)
+    },
     async loadPersistence() {
       if (!this.tableId) {
         return;
@@ -824,22 +829,23 @@ export default Vue.extend({
       // to the FK table.
       const cellMenu = (keyDatas?: any[]) => {
         return (_e, cell: CellComponent) => {
-          const ranges = cell.getRanges();
+          const ranges = cell.getTable().getRanges()
           const range = _.last(ranges)
           const menu = [
             this.openEditorMenu(cell),
-            this.setAsNullMenuItem(range),
+            this.setAsNullMenuItem(ranges),
             { separator: true },
             this.quickFilterMenuItem(cell),
-            ...copyActionsMenu({
-              ranges,
-              table: this.table.name,
-              schema: this.table.schema,
-            }),
+              ...copyActionsMenu({
+                ranges,
+                table: this.table.name,
+                schema: this.table.schema,
+                escapeString: this.dialectData?.escapeString,
+              }),
             { separator: true },
             ...pasteActionsMenu(range),
             { separator: true },
-            ...this.rowActionsMenu(range),
+            ...this.rowActionsMenu(ranges),
             ...this.getExtraPopupMenu('tableTable.cell', { transform: "tabulator" }),
           ]
 
@@ -862,8 +868,7 @@ export default Vue.extend({
       }
 
       const columnMenu = (_e, column: ColumnComponent) => {
-        const ranges = (column as any).getRanges();
-        const range = _.last(ranges) as RangeComponent;
+        const ranges = column.getTable().getRanges();
         let hideColumnLabel = `Hide ${column.getDefinition().title}`
 
         if (hideColumnLabel.length > 33) {
@@ -871,12 +876,13 @@ export default Vue.extend({
         }
 
         return [
-          this.setAsNullMenuItem(range),
+          this.setAsNullMenuItem(ranges),
           { separator: true },
           ...copyActionsMenu({
             ranges,
             table: this.table.name,
             schema: this.table.schema,
+            escapeString: this.dialectData?.escapeString,
           }),
           { separator: true },
           ...commonColumnMenu,
@@ -1113,10 +1119,9 @@ export default Vue.extend({
         persistenceWriterFunc: this.persistenceWriter,
         rowHeader: {
           contextMenu: (_e, cell: CellComponent) => {
-            const ranges = cell.getRanges();
-            const range = _.last(ranges);
+            const ranges = cell.getTable().getRanges();
             return [
-              this.setAsNullMenuItem(range),
+              this.setAsNullMenuItem(ranges),
               { separator: true },
               ...copyActionsMenu({
                 ranges,
@@ -1124,20 +1129,20 @@ export default Vue.extend({
                 schema: this.table.schema,
               }),
               { separator: true },
-              ...this.rowActionsMenu(range),
+              ...this.rowActionsMenu(ranges),
               ...this.getExtraPopupMenu('tableTable.rowHeader', { transform: "tabulator" }),
             ]
           },
           headerContextMenu: () => {
             const ranges = this.tabulator.getRanges();
-            const range: RangeComponent = _.last(ranges)
             return [
-              this.setAsNullMenuItem(range),
+              this.setAsNullMenuItem(ranges),
               { separator: true },
               ...copyActionsMenu({
                 ranges,
                 table: this.table.name,
                 schema: this.table.schema,
+                escapeString: this.dialectData?.escapeString,
               }),
               { separator: true },
               resizeAllColumnsToFitContent,
@@ -1190,28 +1195,29 @@ export default Vue.extend({
       this.tableFilters = getFilters(this.tab) || [createTableFilter(this.table.columns?.[0]?.columnName)]
       this.filters = normalizeFilters(this.tableFilters || [])
     },
-    rowActionsMenu(range: RangeComponent) {
-      const rowRangeLabel = `${range.getTopEdge() + 1} - ${range.getBottomEdge() + 1}`
+    rowActionsMenu(ranges: RangeComponent[]) {
       const selectedRowsCount = this.getSelectedRows().length
+      let rowRangeLabel = "";
+      if (selectedRowsCount === 1) {
+        rowRangeLabel = "row";
+      } else if (ranges.length === 1) {
+        const top = ranges[0].getTopEdge() + 1;
+        const bottom = ranges[0].getBottomEdge() + 1;
+        rowRangeLabel = `rows ${top} - ${bottom}`;
+      } else {
+        rowRangeLabel = `${selectedRowsCount} selected rows`;
+      }
       return [
         {
-          label:
-            range.getTopEdge() === range.getBottomEdge()
-              ? createMenuItem("Clone row", "Control+D")
-              : createMenuItem(`Clone rows ${rowRangeLabel}`, "Control+D"),
+          label: createMenuItem(`Clone ${rowRangeLabel}`, "Control+D"),
           action: this.cellCloneRow.bind(this),
           disabled: !this.editable,
         },
         {
-          label:
-            selectedRowsCount > 1
-              ? createMenuItem(`Delete ${selectedRowsCount} selected rows`, "Delete")
-              : range.getTopEdge() === range.getBottomEdge()
-              ? createMenuItem("Delete row", "Delete")
-              : createMenuItem(`Delete rows ${rowRangeLabel}`, "Delete"),
+          label: createMenuItem(`Delete ${rowRangeLabel}`, "Delete"),
           action: () => {
             this.tabulator.rowManager.element.focus()
-            this.deleteTableSelection(undefined, range)
+            this.deleteTableSelection(undefined)
           },
           disabled: !this.editable,
         },
@@ -1227,18 +1233,18 @@ export default Vue.extend({
           action: () => {
             this.trigger(AppEvent.selectSecondarySidebarTab, 'json-viewer')
             this.trigger(AppEvent.toggleSecondarySidebar, true)
-            this.updateJsonViewer({ range })
+            this.updateJsonViewer({ range: _.last(ranges) })
           },
         },
       ]
     },
-    setAsNullMenuItem(range: RangeComponent) {
-      const areAllCellsPrimarykey = range
-        .getColumns()
+    setAsNullMenuItem(ranges: RangeComponent[]) {
+      const areAllCellsPrimarykey = ranges
+        .flatMap((range) => range.getColumns())
         .every((col) => this.isPrimaryKey(col.getField()));
       return {
         label: createMenuItem("Set as NULL"),
-        action: () => range.getCells().flat().forEach((cell) => {
+        action: () => ranges.flatMap((range) => range.getCells().flat()).forEach((cell) => {
           if (!this.isPrimaryKey(cell.getField())) cell.setValue(null);
         }),
         disabled: areAllCellsPrimarykey || !this.editable,
@@ -1253,7 +1259,7 @@ export default Vue.extend({
       switch(s) {
         case 'in': {
           const ranges = cell.getRanges();
-          const selectedCells = ranges.flatMap(range => range.getCells()).flat();
+          const selectedCells = ranges.flatMap(range => range.getCells().flat());
           const selectedValues = selectedCells
             .filter(c => c.getField() === cell.getField())
             .map(c => c.getValue())
@@ -1536,7 +1542,7 @@ export default Vue.extend({
       })
     },
     cellCloneRow(_e, cell: CellComponent) {
-      this.cloneSelection(_.last(cell.getRanges()))
+      this.cloneSelection()
     },
     cellAddCol(_e, field) {
       if (this.dialectData.disabledFeatures?.tableTable) {
@@ -1693,9 +1699,12 @@ export default Vue.extend({
         this.saveError = null
 
         // guard to make sure we don't do anything in readonly mode
-        if (!this.editable) return;
+        if (!this.editable && !this.running) return;
 
         let replaceData = false
+        this.running = true;
+        this.tab.isRunning = true;
+        this.updateTab();
 
         try {
           const payload = {
@@ -1753,6 +1762,9 @@ export default Vue.extend({
           return
         } finally {
           this.updateJsonViewerSidebar()
+          this.running = false;
+          this.tab.isRunning = false;
+          this.updateTab();
           if (!this.active) {
             this.forceRedraw = true
           }

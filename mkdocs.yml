@@ -151,10 +151,12 @@ nav:
     - user_guide/connecting/mongodb.md
     - user_guide/connecting/oracle-database.md
     - user_guide/connecting/redis.md
+    - SQL Server: user_guide/connecting/sql-server.md
     - SQLite: user_guide/connecting/sqlite.md
     - Trino: user_guide/connecting/trino.md
     - user_guide/connecting/surrealdb.md
     - user_guide/connecting/azure-entraid.md
+    - user_guide/connecting/snowflake.md
 
   - Features:
     - user_guide/sql_editor/editor.md

@@ -174,7 +174,12 @@ Examples:
 "@commercial" -> "./src-commercial"
 "@shared" -> "./src/shared"
 "assets" -> "./src/assets"
-"@bksLogger" -> "./src/lib/log/rendererLogger"
+"@bksLogger" -> resolved per-build:
+  - esbuild main+preload → "./src/lib/log/mainLogger"
+  - esbuild utility      → "./src/lib/log/utilityLogger"
+  - vite renderer        → "./src/lib/log/rendererLogger"
+  - jest                 → "./src/lib/log/mainLogger"
+  - tsc / IDE            → "./src/lib/log/bksLogger.d.ts" (ambient declaration; no runtime file)
 ```
 
 ## Database Support

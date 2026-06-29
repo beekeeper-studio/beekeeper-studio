@@ -2,7 +2,6 @@ import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
 import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
 import { AggregationCursor, Collection, Db, Document, MongoClient, ObjectId } from 'mongodb';
-import { identify } from 'sql-query-identifier';
 import rawLog from '@bksLogger';
 import { BksField, BksFieldType, CancelableQuery, ExtendedTableColumn, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableDelete, TableFilter, TableIndex, TableInsert, TableOrView, TableProperties, TableResult, TableTrigger, TableUpdate, TableUpdateResult } from "@/lib/db/models";
 import { CreateTableSpec, IndexAlterations, TableKey } from "@/shared/lib/dialects/models";
@@ -29,6 +28,41 @@ interface QueryResult {
   arrayMode: boolean;
 }
 
+const DEFAULT_MONGO_PORT = 27017;
+
+// Extract the host/port a MongoDB URL points at so an SSH tunnel can forward to it.
+// Returns null for URLs the standard URL parser can't handle (e.g. multi-host
+// seed lists or mongodb+srv), where SSH tunnelling isn't supported anyway.
+export function parseMongoHost(url: string): { host: string; port: number } | null {
+  try {
+    const parsed = new URL(url);
+    if (!parsed.hostname) return null;
+    return {
+      host: parsed.hostname,
+      port: parsed.port ? parseInt(parsed.port, 10) : DEFAULT_MONGO_PORT,
+    };
+  } catch {
+    return null;
+  }
+}
+
+// Rewrite a MongoDB URL's host:port to point at the local end of an SSH tunnel.
+// Forces directConnection so the driver talks to the tunnelled node directly
+// instead of running topology discovery and trying to reach the server's
+// self-reported address (which isn't routable through the tunnel).
+export function rewriteMongoUrlHost(url: string, localHost: string, localPort: number): string {
+  try {
+    const parsed = new URL(url);
+    parsed.host = `${localHost}:${localPort}`;
+    if (!parsed.searchParams.has('directConnection')) {
+      parsed.searchParams.set('directConnection', 'true');
+    }
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
 const mongoContext = {
   getExecutionContext(): ExecutionContext {
     return null;
@@ -46,12 +80,35 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, mongoContext, server, database);
+    this.dialect = 'psql';
   }
 
   async connect(): Promise<void> {
+    // The MongoDB form only collects a connection URL, so config.host/config.port
+    // are never populated. The SSH tunnel forwards a local port to config.host:config.port,
+    // so derive them from the URL before the base class opens the tunnel.
+    if (this.server.config.ssh && !this.server.sshTunnel) {
+      const target = parseMongoHost(this.server.config.url);
+      if (target) {
+        this.server.config.host = target.host;
+        this.server.config.port = target.port;
+      }
+    }
+
     await super.connect();
 
-    this.conn = new MongoClient(this.server.config.url);
+    let url = this.server.config.url;
+
+    // Route the connection through the SSH tunnel's local endpoint.
+    if (this.server.sshTunnel) {
+      url = rewriteMongoUrlHost(
+        url,
+        this.server.config.localHost,
+        this.server.config.localPort
+      );
+    }
+
+    this.conn = new MongoClient(url);
 
     this.conn.on('connectionCreated', (event) => {
       log.debug('Pool connection %d acquired on %s', event.connectionId, event.address);
@@ -235,7 +292,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   override async setElementName(elementName: string, newElementName: string, typeOfElement:DatabaseElement): Promise<void> {
     const db = this.conn.db(this.db);
 
-    if (typeOfElement == DatabaseElement.TABLE) {
+    if (typeOfElement === DatabaseElement.TABLE) {
       try {
         // Check if target name already exists
         const targetCollections = await db.listCollections({ name: newElementName }).toArray();
@@ -743,14 +800,6 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     return results;
   }
 
-  private identifyCommands(queryText: string) {
-    try {
-      return identify(queryText, { strict: false, dialect: 'psql' });
-    } catch (err) {
-      return [];
-    }
-  }
-
   async executeCommand(commandText: string, _options?: any): Promise<NgQueryResult[]> {
     const results: NgQueryResult[] = [];
 
@@ -900,7 +949,6 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     };
 
     return {
-      totalRows: 0,// need to figure this out
       columns,
       cursor: new MongoDBCursor(cursorOpts)
     };
@@ -913,15 +961,9 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       chunkSize
     };
 
-    const { columns, totalRows } = await this.getColumnsAndTotalRows(query);
-
     return {
-      totalRows,
-      columns,
       cursor: new MongoDBCursor(cursorOpts)
     }
-    log.error('MongoDB does not support querying');
-    return null;
   }
 
   wrapIdentifier(_value: string): string {
