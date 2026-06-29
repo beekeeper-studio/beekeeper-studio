@@ -15,6 +15,7 @@ import EventEmitter from "events";
 import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilderBase";
 import { QueryLeaf } from '@queryleaf/lib'
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
+import platformInfo from "@/common/platform_info";
 import { MongoDBCursor } from './mongodb/MongoDBCursor';
 import { wrapIdentifier } from "@/lib/db/clients/postgresql";
 import knexlib from 'knex'
@@ -101,8 +102,9 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   async connect(): Promise<void> {
     // Kerberos (GSSAPI) auth is an Enterprise feature. The Mongo form is URL-only,
     // so there's no field to gate -- detect it from the connection URL and fail fast
-    // before opening the SSH tunnel or hitting the network.
-    if (urlUsesGssapi(this.server.config.url)) {
+    // before opening the SSH tunnel or hitting the network. Skipped under testMode so the
+    // integration suite can exercise the real GSSAPI path (mirrors checkAllowReadOnly).
+    if (urlUsesGssapi(this.server.config.url) && !platformInfo.testMode) {
       const status = await LicenseKey.getLicenseStatus();
       if (!status.isUltimate) {
         throw new Error("Kerberos (GSSAPI) authentication requires a Beekeeper Studio Enterprise license.");
