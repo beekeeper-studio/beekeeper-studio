@@ -1174,6 +1174,59 @@ export class DBTestUtil {
     expect(this.fmt(multipleUpsertQuery)).toBe(this.fmt(expectedMultipleUpsertQueries[this.dbType]) ?? this.fmt(upsertQuery))
   }
 
+  async insertDefaultColumnQueryTest() {
+    // Databases that don't populate hasDefault in listTableColumns — the fix
+    // is a no-op for them, so there's nothing meaningful to exercise here.
+    const dbsWithoutHasDefault = [
+      'sqlite', 'libsql', 'bedrock',
+      'redis', 'mongodb', 'cassandra', 'scylladb', 'surrealdb', 'dynamodb',
+      'trino', // uses a backing Postgres; test knex is read-only
+    ]
+    if (dbsWithoutHasDefault.includes(this.dbType)) return
+
+    const tableName = this.dbType === 'firebird' ? 'TEST_DEFAULT_OMIT' : 'test_default_omit'
+
+    await this.knex.schema.dropTableIfExists(tableName)
+
+    if (this.dbType === 'clickhouse') {
+      await this.knex.schema.raw(
+        `CREATE TABLE \`${tableName}\` (id Int32, name String, status String DEFAULT 'pending') ENGINE = MergeTree() ORDER BY id`
+      )
+    } else {
+      await this.knex.schema.createTable(tableName, (t) => {
+        t.integer('id').primary()
+        t.string('name', 100).notNullable()
+        t.string('status', 20).notNullable().defaultTo('pending')
+      })
+    }
+
+    try {
+      const sql = await this.connection.getInsertQuery({
+        table: tableName,
+        schema: this.defaultSchema,
+        data: [{ id: 1, name: 'Alice', status: null }],
+      })
+
+      // With the fix, the DEFAULT column is omitted when the user supplies null.
+      expect(sql.toLowerCase()).not.toContain('status')
+      expect(sql.toLowerCase()).toContain('name')
+
+      // Execute the INSERT — the DB must apply the DEFAULT value.
+      await this.knex.raw(sql)
+      const rows: any[] = await this.knex(tableName).select()
+      expect(rows).toHaveLength(1)
+      // Firebird uppercases column names.
+      const statusVal: string = rows[0].status ?? rows[0].STATUS
+      expect(statusVal).toBe('pending')
+    } finally {
+      if (this.dbType === 'clickhouse') {
+        await this.knex.schema.raw(`DROP TABLE IF EXISTS \`${tableName}\``)
+      } else {
+        await this.knex.schema.dropTableIfExists(tableName)
+      }
+    }
+  }
+
   async buildCreatePrimaryKeysAndAutoIncrementTests() {
     const generator = new SqlGenerator(this.dialect, {
       dbConfig: this.connection.server.config,
