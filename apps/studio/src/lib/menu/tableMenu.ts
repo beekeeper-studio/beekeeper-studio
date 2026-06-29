@@ -9,6 +9,7 @@ import { markdownTable } from "markdown-table";
 import { ElectronPlugin } from "@/lib/NativeWrapper";
 import Papa from "papaparse";
 import { stringifyRangeData, rowHeaderField, isNumericDataType } from "@/common/utils";
+import { defaultEscapeString } from "@shared/lib/dialects/models";
 import { escapeHtml } from "@shared/lib/tabulator";
 import _ from "lodash";
 // ?? not sure about this but :shrug:
@@ -113,6 +114,9 @@ export function createMenuItem(label: string, shortcut = "", ultimate = false) {
 export async function copyRanges(options: {
   ranges: RangeComponent[];
   type: "plain" | "tsv" | "json" | "markdown" | "columnName" | "asIn";
+  table?: string;
+  schema?: string;
+  escapeString?: (s: string, quote?: boolean) => string;
 }): Promise<void>;
 export async function copyRanges(options: {
   ranges: RangeComponent[];
@@ -125,9 +129,10 @@ export async function copyRanges(options: {
   type: "plain" | "tsv" | "json" | "markdown" | "sql" | "columnName" | "asIn";
   table?: string;
   schema?: string;
+  escapeString?: (s: string, quote?: boolean) => string;
 }) {
   let text = "";
-
+  
   const extractedData = extractRanges(options.ranges);
   const rangeData = extractedData.data;
   const stringifiedRangeData = stringifyRangeData(rangeData);
@@ -173,10 +178,12 @@ export async function copyRanges(options: {
         schema: options.schema
       });
       const dataType = columns.find(c => c.columnName === colDataType)?.dataType
-      const isNumericType = isNumericDataType(dataType)
+      const isNumericType = dataType ? isNumericDataType(dataType) : false
+
+      const escapeFn = options.escapeString || defaultEscapeString
       const textArr = rangeData.map(rd => {
         const [data] = Object.values(rd)
-        return isNumericType ? data : `'${data}'`
+        return isNumericType ? data : `'${escapeFn(String(data))}'`
       })
       text = `(\n${textArr.join(',\n')}\n)`
       break
@@ -293,9 +300,26 @@ export function pasteRange(range: RangeComponent) {
     delimiter: "\t",
   });
 
+  const data = parsedText.data as string[][];
+
   if (parsedText.errors.length > 0) {
     const cell = range.getCells()[0][0];
     setCellValue(cell, text);
+    return;
+  }
+
+  if (data.length === 1 && data[0].length === 1) {
+    const singleValue = data[0][0];
+    const selectedRows = range.getRows();
+    const selectedColumns = range.getColumns()
+    const selectedCells: CellComponent[][] = selectedRows.map(row =>
+      row.getCells().filter(cell => selectedColumns.includes(cell.getColumn()))
+    );
+    selectedCells.forEach((row) => {
+      row.forEach((selectedCells) => {
+        setCellValue(selectedCells, singleValue);
+      });
+    });
   } else {
     const table = range.getRows()[0].getTable();
     const rows = table.getRows("active").slice(range.getTopEdge());
@@ -313,7 +337,7 @@ export function pasteRange(range: RangeComponent) {
       return arr;
     });
 
-    parsedText.data.forEach((row: string[], rowIdx) => {
+    data.forEach((row: string[], rowIdx) => {
       row.forEach((text, colIdx) => {
         const cell = cells[rowIdx]?.[colIdx];
         if (!cell) return;
@@ -356,8 +380,9 @@ export function copyActionsMenu(options: {
   ranges: RangeComponent[];
   table?: string;
   schema?: string;
+  escapeString?: (s: string, quote?: boolean) => string;
 }) {
-  const { ranges, table, schema } = options;
+  const { ranges, table, schema, escapeString } = options;
   const columnCount = ranges[0].getColumns().length
   const copyActions = [
     {
@@ -395,7 +420,7 @@ export function copyActionsMenu(options: {
   if (columnCount === 1) {
     copyActions.push({
       label: createMenuItem("Copy for IN statement"),
-      action: () => copyRanges({ ranges, type: "asIn", table, schema }),
+      action: () => copyRanges({ ranges, type: "asIn", table, schema, escapeString }),
     })
   }
 
