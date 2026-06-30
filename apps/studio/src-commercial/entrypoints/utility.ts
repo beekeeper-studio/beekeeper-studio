@@ -38,6 +38,7 @@ import {
   BundledPluginModule,
 } from '@commercial/backend/plugin-system/modules';
 import bksConfig from '@/common/bksConfig';
+import { PluginErrorCode, PluginSystemErrorCode } from '@/lib/errors';
 
 import * as sms from 'source-map-support'
 
@@ -70,8 +71,8 @@ interface Reply {
   type: 'reply' | 'error',
   data?: any,
   error?: string
-  errorName?: string
-  errorCode?: number
+  errorName?: "PluginSystemError" | "PluginError" | "Error"
+  errorCode?: PluginSystemErrorCode | PluginErrorCode
   stack?: string
 }
 
