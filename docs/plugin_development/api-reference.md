@@ -634,7 +634,7 @@ await openTab('query', { query: 'SELECT * FROM users' });
 
 // Open a table data tab
 await openTab('tableTable', {
-  table: 'users',
+  name: 'users',
   schema: 'public',
   filters: [
     { field: 'active', type: '=', value: 'true' }
@@ -643,7 +643,7 @@ await openTab('tableTable', {
 
 // Open a table structure tab
 await openTab('tableStructure', {
-  table: 'users',
+  name: 'users',
   schema: 'public'
 });
 ```
@@ -1217,7 +1217,7 @@ Represents the currently selected range in a data table.
 
 | Property   | Type            | Description |
 |------------|-----------------|-------------|
-| `table`    | `string`        | Table name |
+| `name`     | `string`        | Table name |
 | `schema`   | `string`        | Schema name (optional) |
 | `filters`  | `TableFilter[]` | Filters to apply (optional) |
 | `database` | `string`        | Database name (optional) |
@@ -1226,7 +1226,7 @@ Represents the currently selected range in a data table.
 
 | Property   | Type     | Description |
 |------------|----------|-------------|
-| `table`    | `string` | Table name |
+| `name`     | `string` | Table name |
 | `schema`   | `string` | Schema name (optional) |
 | `database` | `string` | Database name (optional) |
 
