@@ -291,6 +291,27 @@ function countCellsFromData(data: RangeData) {
   return data.reduce((acc, row) => acc + Object.keys(row).length, 0);
 }
 
+/**
+ * Read the clipboard and parse it as tab-separated rows. Returns `null` when
+ * the clipboard is empty. On a parse error the raw text is returned as a single
+ * cell so it can still be pasted into one row.
+ */
+export function readClipboardRows(): string[][] | null {
+  const text = ElectronPlugin.clipboard.readText();
+  if (!text) return null;
+
+  const parsed = Papa.parse(text, {
+    header: false,
+    delimiter: "\t",
+  });
+
+  if (parsed.errors.length > 0) {
+    return [[text]];
+  }
+
+  return parsed.data as string[][];
+}
+
 export function pasteRange(range: RangeComponent) {
   const text = ElectronPlugin.clipboard.readText();
   if (!text) return;
@@ -438,11 +459,21 @@ export function copyCellMenu(_e: any, cell: CellComponent) {
   ];
 }
 
-export function pasteActionsMenu(range: RangeComponent) {
-  return [
+export function pasteActionsMenu(
+  range: RangeComponent,
+  onPasteAsNewRows?: () => void
+) {
+  const actions = [
     {
       label: createMenuItem("Paste", "Control+V"),
       action: () => pasteRange(range),
     },
   ];
+  if (onPasteAsNewRows) {
+    actions.push({
+      label: createMenuItem("Paste as new rows", "Control+Shift+V"),
+      action: () => onPasteAsNewRows(),
+    });
+  }
+  return actions;
 }

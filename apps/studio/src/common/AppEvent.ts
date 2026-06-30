@@ -84,6 +84,8 @@ export enum AppEvent {
    * this.trigger(AppEvent.openQueryEditHistory, savedQueryId);
    **/
   openQueryEditHistory = 'openQueryEditHistory',
+  /** Paste clipboard contents as new rows in the active table's Data tab. */
+  pasteAsNewRows = 'pasteAsNewRows',
 }
 
 export interface RootBinding {

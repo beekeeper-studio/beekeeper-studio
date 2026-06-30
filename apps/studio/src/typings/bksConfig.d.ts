@@ -373,8 +373,10 @@ declare interface IBksConfig {
             copySelection: string;
             deleteSelection: string;
             jsonViewerSidebar: string;
+            nullSelection: string;
             openInSqlEditor: string;
             openQuickSearch: string;
+            pasteAsNewRows: string;
             pasteSelection: string;
             redo: string[];
             refresh: string[];
