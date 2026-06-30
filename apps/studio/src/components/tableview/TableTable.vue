@@ -336,11 +336,11 @@ import TableLength from '@/components/common/TableLength.vue'
 import { mapGetters, mapState } from 'vuex';
 import { TableUpdate, TableUpdateResult, ExtendedTableColumn } from '@/lib/db/models';
 import { dialectFor, formatOptionsFor, TableKey } from '@shared/lib/dialects/models'
-import { normalizeFilters, safeSqlFormat, createTableFilter, isNumericDataType, isDateDataType } from '@/common/utils'
+import { normalizeFilters, safeSqlFormat, createTableFilter, isNumericDataType, isDateDataType, rowHeaderField } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml, FormatterParams } from '@shared/lib/tabulator';
-import { copyRanges, pasteRange, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
+import { copyRanges, pasteRange, readClipboardRows, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
 import { tabulatorForTableData } from "@/common/tabulator";
 import { TransportTabulatorPersistence } from "@/common/transport/TransportTabulatorPersistence";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
@@ -478,6 +478,8 @@ export default Vue.extend({
         'general.pasteSelection': this.pasteSelection.bind(this),
         'general.cloneSelection': this.cloneSelection.bind(this),
         'general.deleteSelection': this.deleteTableSelection.bind(this),
+        'tableTable.pasteAsNewRows': this.pasteAsNewRowsShortcut.bind(this),
+        'tableTable.nullSelection': this.nullTableSelection.bind(this),
         'tableTable.nextPage': this.navigatePage.bind(this, 'next'),
         'tableTable.lastPage': this.navigatePage.bind(this, 'last'),
         'tableTable.previousPage': this.navigatePage.bind(this, 'prev'),
@@ -836,13 +838,14 @@ export default Vue.extend({
             this.setAsNullMenuItem(ranges),
             { separator: true },
             this.quickFilterMenuItem(cell),
-            ...copyActionsMenu({
-              ranges,
-              table: this.table.name,
-              schema: this.table.schema,
-            }),
+              ...copyActionsMenu({
+                ranges,
+                table: this.table.name,
+                schema: this.table.schema,
+                escapeString: this.dialectData?.escapeString,
+              }),
             { separator: true },
-            ...pasteActionsMenu(range),
+            ...pasteActionsMenu(range, this.editable ? () => this.handlePasteAsNewRows() : undefined),
             { separator: true },
             ...this.rowActionsMenu(ranges),
             ...this.getExtraPopupMenu('tableTable.cell', { transform: "tabulator" }),
@@ -881,6 +884,7 @@ export default Vue.extend({
             ranges,
             table: this.table.name,
             schema: this.table.schema,
+            escapeString: this.dialectData?.escapeString,
           }),
           { separator: true },
           ...commonColumnMenu,
@@ -1018,6 +1022,11 @@ export default Vue.extend({
         ]
         if (column.nullable) values.push({ label: '(NULL)', value: null })
         result.editorParams['values'] = values
+      } else if (column.enumValues?.length) {
+        result.editor = 'list'
+        const values = column.enumValues.map((v) => ({ label: v, value: v }))
+        if (column.nullable) values.push({ label: '(NULL)', value: null })
+        result.editorParams['values'] = values
       }
       return result;
     },
@@ -1054,11 +1063,23 @@ export default Vue.extend({
       if (!this.focusingTable() || !this.editable) return
       pasteRange(_.last(this.tabulator.getRanges()))
     },
+    pasteAsNewRowsShortcut() {
+      // Keyboard path is scoped to the focused grid, so it never reaches the
+      // wrong-tab noty (that's reserved for the menu item).
+      if (!this.focusingTable() || !this.editable) return
+      this.handlePasteAsNewRows()
+    },
     deleteTableSelection(_e: Event, range?: RangeComponent) {
       if (!this.focusingTable() || !this.editable) return
       const selectedRows = this.getSelectedRows()
       const rows = selectedRows.length > 0 ? selectedRows : (range ? range.getRows() : [])
       this.addRowsToPendingDeletes(rows);
+    },
+    nullTableSelection() {
+      // Backspace on a selected range nulls the cells (same as "Set as NULL").
+      // Guarded by focusingTable so it doesn't fire while editing a cell.
+      if (!this.focusingTable() || !this.editable) return
+      this.setRangesNull(this.tabulator.getRanges())
     },
     headerFormatter(_cell, formatterParams) {
       const { columnName, dataType } = formatterParams
@@ -1140,6 +1161,7 @@ export default Vue.extend({
                 ranges,
                 table: this.table.name,
                 schema: this.table.schema,
+                escapeString: this.dialectData?.escapeString,
               }),
               { separator: true },
               resizeAllColumnsToFitContent,
@@ -1211,7 +1233,7 @@ export default Vue.extend({
           disabled: !this.editable,
         },
         {
-          label: createMenuItem(`Delete ${rowRangeLabel} selected rows`, "Delete"),
+          label: createMenuItem(`Delete ${rowRangeLabel}`, "Delete"),
           action: () => {
             this.tabulator.rowManager.element.focus()
             this.deleteTableSelection(undefined)
@@ -1235,16 +1257,21 @@ export default Vue.extend({
         },
       ]
     },
+    nullableCellsInRanges(ranges: RangeComponent[]): CellComponent[] {
+      // cellEditCheck allows PKs on newly-inserted rows but blocks PKs on
+      // existing rows and generated/read-only cells.
+      return ranges
+        .flatMap((range) => range.getCells().flat())
+        .filter((cell) => this.cellEditCheck(cell));
+    },
+    setRangesNull(ranges: RangeComponent[]) {
+      this.nullableCellsInRanges(ranges).forEach((cell) => cell.setValue(null));
+    },
     setAsNullMenuItem(ranges: RangeComponent[]) {
-      const areAllCellsPrimarykey = ranges
-        .flatMap((range) => range.getColumns())
-        .every((col) => this.isPrimaryKey(col.getField()));
       return {
         label: createMenuItem("Set as NULL"),
-        action: () => ranges.flatMap((range) => range.getCells().flat()).forEach((cell) => {
-          if (!this.isPrimaryKey(cell.getField())) cell.setValue(null);
-        }),
-        disabled: areAllCellsPrimarykey || !this.editable,
+        action: () => this.setRangesNull(ranges),
+        disabled: this.nullableCellsInRanges(ranges).length === 0,
       }
     },
     isEditorMenuDisabled (cell: CellComponent) {
@@ -1565,6 +1592,39 @@ export default Vue.extend({
         this.addRowToPendingInserts(row)
         this.tabulator.scrollToRow(row, 'center', true)
       })
+    },
+    async handlePasteAsNewRows() {
+      if (!this.editable) {
+        this.$noty.error("Paste as new rows isn't available for read-only tables")
+        return
+      }
+
+      const parsed = readClipboardRows()
+      if (!parsed) return
+
+      // Map clipboard values positionally onto the visible data columns
+      const columns = this.tabulator
+        .getColumns()
+        .filter((col) => col.isVisible() && col.getField() !== rowHeaderField)
+
+      const rows = parsed
+        .filter((row) => row.some((value) => value !== ''))
+        .map((row) =>
+          row.reduce((acc, value, idx) => {
+            const col = columns[idx]
+            if (col) acc[col.getField()] = value
+            return acc
+          }, {})
+        )
+
+      if (rows.length === 0) return
+
+      const added = await this.tabulator.addData(rows, true)
+      added.forEach((row) => this.addRowToPendingInserts(row))
+
+      // New rows are added to the top, so scroll there to reveal them
+      const topRow = this.tabulator.getRows()[0]
+      if (topRow) this.tabulator.scrollToRow(topRow, 'top', false)
     },
     getSelectedRows() {
       const ranges: RangeComponent[] = this.tabulator.getRanges()
@@ -2152,30 +2212,28 @@ export default Vue.extend({
         this.handleTabInactive()
       }
     },
+    tabActiveBindings() {
+      return [
+        {
+          event: AppEvent.jsonViewerSidebarExpandPath,
+          handler: this.expandForeignKey,
+        },
+        {
+          event: AppEvent.jsonViewerSidebarValueChange,
+          handler: this.handleJsonValueChange,
+        },
+        {
+          event: AppEvent.pasteAsNewRows,
+          handler: this.handlePasteAsNewRows,
+        },
+      ]
+    },
     handleTabActive() {
       this.updateJsonViewerSidebar()
-      this.registerHandlers([
-        {
-          event: AppEvent.jsonViewerSidebarExpandPath,
-          handler: this.expandForeignKey,
-        },
-        {
-          event: AppEvent.jsonViewerSidebarValueChange,
-          handler: this.handleJsonValueChange,
-        },
-      ])
+      this.registerHandlers(this.tabActiveBindings())
     },
     handleTabInactive() {
-      this.unregisterHandlers([
-        {
-          event: AppEvent.jsonViewerSidebarExpandPath,
-          handler: this.expandForeignKey,
-        },
-        {
-          event: AppEvent.jsonViewerSidebarValueChange,
-          handler: this.handleJsonValueChange,
-        },
-      ])
+      this.unregisterHandlers(this.tabActiveBindings())
     },
     handleJsonValueChange({key, value}) {
       // this is just a safeguard, we shouldn't hit it but if we do it can save us from catastrophe

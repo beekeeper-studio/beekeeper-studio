@@ -394,6 +394,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
             udt_name || '(' || datetime_precision::varchar(255) || ')'
           ELSE udt_name
       END as data_type,
+        udt_schema,
         CASE
           WHEN data_type = 'ARRAY' THEN 'YES'
           ELSE 'NO'
@@ -404,7 +405,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       ORDER BY table_schema, table_name, ordinal_position
     `;
 
-    const data = await this.driverExecuteSingle(sql, { params });
+    const [data, enumValuesByType] = await Promise.all([
+      this.driverExecuteSingle(sql, { params }),
+      this.listEnumValues(table, schema),
+    ]);
 
     return data.rows.map((row: any) => ({
       schemaName: row.table_schema,
@@ -418,8 +422,57 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       generated: row.is_generated === "ALWAYS" || row.is_generated === "YES",
       array: row.is_array === "YES",
       comment: row.column_comment || null,
+      // For enum columns `data_type` is the udt_name (no precision suffix), so it
+      // matches the type name keyed schema-qualified below.
+      enumValues: enumValuesByType.get(`${row.udt_schema}.${row.data_type}`),
       bksField: this.parseTableColumn(row),
     }));
+  }
+
+  // Build a map of "schema.typename" -> ordered enum labels.
+  // When a table is given, only the enum types referenced by that table's
+  // columns are fetched; otherwise every enum type in the database is loaded.
+  // Wrapped so Postgres-compatible engines without pg_enum degrade to no dropdown.
+  protected async listEnumValues(table?: string, schema?: string): Promise<Map<string, string[]>> {
+    const map = new Map<string, string[]>();
+    try {
+      // Restrict to the types this table actually uses. typelem unwraps
+      // array-of-enum columns, whose atttypid is the array type, not the enum.
+      const filter = table
+        ? `WHERE t.oid IN (
+             SELECT COALESCE(NULLIF(et.typelem, 0), et.oid)
+             FROM pg_attribute a
+             JOIN pg_class c ON c.oid = a.attrelid
+             JOIN pg_namespace cn ON cn.oid = c.relnamespace
+             JOIN pg_type et ON et.oid = a.atttypid
+             WHERE c.relname = $1 AND cn.nspname = $2
+               AND a.attnum > 0 AND NOT a.attisdropped
+           )`
+        : "";
+      const sql = `
+        SELECT n.nspname AS schema, t.typname AS typename, e.enumlabel AS label
+        FROM pg_enum e
+        JOIN pg_type t ON t.oid = e.enumtypid
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        ${filter}
+        ORDER BY n.nspname, t.typname, e.enumsortorder
+      `;
+      const { rows } = await this.driverExecuteSingle(sql, {
+        params: table ? [table, schema] : [],
+      });
+      for (const row of rows) {
+        const key = `${row.schema}.${row.typename}`;
+        const existing = map.get(key);
+        if (existing) {
+          existing.push(row.label);
+        } else {
+          map.set(key, [row.label]);
+        }
+      }
+    } catch (err) {
+      log.warn("Could not load enum values from pg_enum", err);
+    }
+    return map;
   }
 
   async listTableTriggers(table: string, schema: string = this._defaultSchema): Promise<TableTrigger[]> {
@@ -1777,7 +1830,19 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   // so we need to turn the string representation back to an array
   private normalizeValue(value: string, column?: ExtendedTableColumn) {
     if (column?.array && _.isString(value)) {
-      return JSON.parse(value)
+      try {
+        return JSON.parse(value)
+      } catch {
+        // pg has no registered parser for custom enum array types (e.g. myenum[]) so it
+        // returns the raw PostgreSQL array literal like {val1,val2}. Reuse pg's built-in
+        // text-array parser (OID 1009) to decode it into a proper JS array, consistent
+        // with how pg handles built-in array types.
+        if (value.startsWith('{') && value.endsWith('}')) {
+          const parseTextArray = pg.types.getTypeParser(1009, 'text')
+          return parseTextArray(value)
+        }
+        return value
+      }
     }
     return value
   }

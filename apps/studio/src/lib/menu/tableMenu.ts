@@ -9,6 +9,7 @@ import { markdownTable } from "markdown-table";
 import { ElectronPlugin } from "@/lib/NativeWrapper";
 import Papa from "papaparse";
 import { stringifyRangeData, rowHeaderField, isNumericDataType } from "@/common/utils";
+import { defaultEscapeString } from "@shared/lib/dialects/models";
 import { escapeHtml } from "@shared/lib/tabulator";
 import _ from "lodash";
 // ?? not sure about this but :shrug:
@@ -103,8 +104,11 @@ export const commonColumnMenu = [
   resizeAllColumnsToFixedWidth,
 ];
 
-export function createMenuItem(label: string, shortcut = "", ultimate = false) {
+export function createMenuItem(label: string, shortcut: string | string[] = "", ultimate = false) {
   label = `<x-label>${escapeHtml(label)}</x-label>`;
+  if (typeof shortcut !== "string") {
+    shortcut = shortcut[0];
+  }
   if (shortcut) shortcut = `<x-shortcut value="${escapeHtml(shortcut)}" />`;
   const ultimateIcon = ultimate ? `<i class="material-icons menu-icon">stars</i>` : '';
   return `<x-menuitem>${label}${shortcut}${ultimateIcon}</x-menuitem>`;
@@ -113,6 +117,9 @@ export function createMenuItem(label: string, shortcut = "", ultimate = false) {
 export async function copyRanges(options: {
   ranges: RangeComponent[];
   type: "plain" | "tsv" | "json" | "markdown" | "columnName" | "asIn";
+  table?: string;
+  schema?: string;
+  escapeString?: (s: string, quote?: boolean) => string;
 }): Promise<void>;
 export async function copyRanges(options: {
   ranges: RangeComponent[];
@@ -125,6 +132,7 @@ export async function copyRanges(options: {
   type: "plain" | "tsv" | "json" | "markdown" | "sql" | "columnName" | "asIn";
   table?: string;
   schema?: string;
+  escapeString?: (s: string, quote?: boolean) => string;
 }) {
   let text = "";
 
@@ -173,10 +181,12 @@ export async function copyRanges(options: {
         schema: options.schema
       });
       const dataType = columns.find(c => c.columnName === colDataType)?.dataType
-      const isNumericType = isNumericDataType(dataType)
+      const isNumericType = dataType ? isNumericDataType(dataType) : false
+
+      const escapeFn = options.escapeString || defaultEscapeString
       const textArr = rangeData.map(rd => {
         const [data] = Object.values(rd)
-        return isNumericType ? data : `'${data}'`
+        return isNumericType ? data : `'${escapeFn(String(data))}'`
       })
       text = `(\n${textArr.join(',\n')}\n)`
       break
@@ -284,22 +294,32 @@ function countCellsFromData(data: RangeData) {
   return data.reduce((acc, row) => acc + Object.keys(row).length, 0);
 }
 
-export function pasteRange(range: RangeComponent) {
+/**
+ * Read the clipboard and parse it as tab-separated rows. Returns `null` when
+ * the clipboard is empty. On a parse error the raw text is returned as a single
+ * cell so it can still be pasted into one row.
+ */
+export function readClipboardRows(): string[][] | null {
   const text = ElectronPlugin.clipboard.readText();
-  if (!text) return;
+  if (!text) return null;
 
-  const parsedText = Papa.parse(text, {
+  const parsed = Papa.parse(text, {
     header: false,
     delimiter: "\t",
   });
 
-  const data = parsedText.data as string[][];
-
-  if (parsedText.errors.length > 0) {
-    const cell = range.getCells()[0][0];
-    setCellValue(cell, text);
-    return;
+  if (parsed.errors.length > 0) {
+    return [[text]];
   }
+
+  return parsed.data as string[][];
+}
+
+export function pasteRange(range: RangeComponent) {
+  // Same parsing as "paste as new rows" — the two only differ in the
+  // destination (overwrite existing cells here vs. insert new rows there).
+  const data = readClipboardRows();
+  if (!data) return;
 
   if (data.length === 1 && data[0].length === 1) {
     const singleValue = data[0][0];
@@ -373,8 +393,9 @@ export function copyActionsMenu(options: {
   ranges: RangeComponent[];
   table?: string;
   schema?: string;
+  escapeString?: (s: string, quote?: boolean) => string;
 }) {
-  const { ranges, table, schema } = options;
+  const { ranges, table, schema, escapeString } = options;
   const columnCount = ranges[0].getColumns().length
   const copyActions = [
     {
@@ -412,7 +433,7 @@ export function copyActionsMenu(options: {
   if (columnCount === 1) {
     copyActions.push({
       label: createMenuItem("Copy for IN statement"),
-      action: () => copyRanges({ ranges, type: "asIn", table, schema }),
+      action: () => copyRanges({ ranges, type: "asIn", table, schema, escapeString }),
     })
   }
 
@@ -430,11 +451,21 @@ export function copyCellMenu(_e: any, cell: CellComponent) {
   ];
 }
 
-export function pasteActionsMenu(range: RangeComponent) {
-  return [
+export function pasteActionsMenu(
+  range: RangeComponent,
+  onPasteAsNewRows?: () => void
+) {
+  const actions = [
     {
-      label: createMenuItem("Paste", "Control+V"),
+      label: createMenuItem("Paste", window.bksConfig.getKeybindings("context-menu", "general.pasteSelection")),
       action: () => pasteRange(range),
     },
   ];
+  if (onPasteAsNewRows) {
+    actions.push({
+      label: createMenuItem("Paste as new rows", window.bksConfig.getKeybindings("context-menu", "tableTable.pasteAsNewRows")),
+      action: () => onPasteAsNewRows(),
+    });
+  }
+  return actions;
 }

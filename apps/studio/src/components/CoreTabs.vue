@@ -401,6 +401,7 @@ export default Vue.extend({
        'dialectData': 'dialectData',
        'dialectTitle': 'dialectTitle',
        'newTabDropdownItems': 'tabs/newTabDropdownItems',
+       'getKeybindings': 'plugins/keybindings/getKeybindings',
     }),
     tabIcon() {
       return {
@@ -454,6 +455,7 @@ export default Vue.extend({
         { event: AppEvent.beginImport, handler: this.beginImport },
         { event: AppEvent.restoreDatabase, handler: this.restoreDatabase },
         { event: AppEvent.switchUserKeymap, handler: this.switchUserKeymap },
+        { event: AppEvent.pasteAsNewRows, handler: this.pasteAsNewRowsWrongTabCheck },
       ]
     },
     lastTab() {
@@ -479,6 +481,7 @@ export default Vue.extend({
         'tab.switchTab7': this.handleSwitchTab.bind(this, 6),
         'tab.switchTab8': this.handleSwitchTab.bind(this, 7),
         'tab.switchTab9': this.handleSwitchTab.bind(this, 8),
+        ...this.getKeybindings("newTabDropdown"),
       })
       // FIXME (azmi): move this to default config file
       if(this.$config.isMac) {
@@ -994,6 +997,13 @@ export default Vue.extend({
     },
     switchUserKeymap(value) {
       this.$store.dispatch('settings/save', { key: 'keymap', value: value });
+    },
+    pasteAsNewRowsWrongTabCheck() {
+      // The active table's Data tab handles this itself. Anywhere else, the
+      // action isn't applicable, so surface a hint.
+      if (this.activeTab?.tabType !== 'table') {
+        this.$noty.error("Paste as new rows is only available in a table's Data tab")
+      }
     },
     openTableBuilder() {
       if (this.connectionType === 'mongodb') {

@@ -51,7 +51,11 @@ function findPackageJson(name, fromDir) {
  */
 function productionClosure() {
   const shipped = new Set()
-  const stack = Object.keys(pkg.dependencies || {}).map((name) => ({ name, fromDir: studioDir }))
+  const roots = [
+    ...Object.keys(pkg.dependencies || {}),
+    ...Object.keys(pkg.optionalDependencies || {}),
+  ]
+  const stack = roots.map((name) => ({ name, fromDir: studioDir }))
   while (stack.length) {
     const { name, fromDir } = stack.pop()
     if (shipped.has(name)) continue

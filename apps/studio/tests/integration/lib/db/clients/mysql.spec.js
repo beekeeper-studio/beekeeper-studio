@@ -1889,6 +1889,9 @@ function testWith(tag, socket = false, readonly = false, image = 'mysql', option
         const initialColumns = await util.connection.listTableColumns("column_alter_test")
         expect(initialColumns[1].dataType).toContain("enum")
         expect(initialColumns[1].defaultValue).toBe("pending")
+        // enum values are parsed out of the column type string
+        expect(initialColumns[1].enumValues).toEqual(['pending', 'active', 'inactive'])
+        expect(initialColumns[2].enumValues).toBeUndefined() // varchar column
 
         // Alter the comment
         await util.connection.alterTable({
