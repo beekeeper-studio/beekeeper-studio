@@ -14,8 +14,18 @@
       <template v-else>Move</template>
     </template>
     <template v-if="target">
-      <label v-if="!isCloud" class="move-folder-row" :class="{ selected: selectedFolderId === null }">
-        <input class="move-folder-radio" type="radio" name="move-to-folder" :value="null" v-model="selectedFolderId" />
+      <label
+        v-if="!isCloud"
+        class="move-folder-row"
+        :class="{ selected: selectedFolderId === null }"
+      >
+        <input
+          class="move-folder-radio"
+          type="radio"
+          name="move-to-folder"
+          :value="null"
+          v-model="selectedFolderId"
+        />
         <i class="move-folder-icon material-icons">subdirectory_arrow_left</i>
         <span class="move-folder-name">(Top level)</span>
         <span v-if="currentFolderId === null" class="current-location">
@@ -23,10 +33,22 @@
         </span>
       </label>
 
-      <div class="move-folder-group" v-for="{ folder, subfolders } in folderTree" :key="folder.id">
-        <label class="move-folder-row" :class="{ selected: selectedFolderId === folder.id }">
-          <input class="move-folder-radio" type="radio" name="move-to-folder" :value="folder.id"
-            v-model="selectedFolderId" />
+      <div
+        class="move-folder-group"
+        v-for="{ folder, subfolders } in folderTree"
+        :key="folder.id"
+      >
+        <label
+          class="move-folder-row"
+          :class="{ selected: selectedFolderId === folder.id }"
+        >
+          <input
+            class="move-folder-radio"
+            type="radio"
+            name="move-to-folder"
+            :value="folder.id"
+            v-model="selectedFolderId"
+          />
           <i class="move-folder-icon material-icons">folder</i>
           <span class="move-folder-name">{{ folder.name }}</span>
           <span v-if="currentFolderId === folder.id" class="current-location">
@@ -34,13 +56,26 @@
           </span>
         </label>
         <template v-if="subfolders.length">
-          <label v-for="subfolder in subfolders" :key="subfolder.id" class="move-folder-row"
-            :class="{ selected: selectedFolderId === subfolder.id }" style="--node-depth: 1;">
-            <input class="move-folder-radio" type="radio" name="move-to-folder" :value="subfolder.id"
-              v-model="selectedFolderId" />
+          <label
+            v-for="subfolder in subfolders"
+            :key="subfolder.id"
+            class="move-folder-row"
+            :class="{ selected: selectedFolderId === subfolder.id }"
+            style="--node-depth: 1"
+          >
+            <input
+              class="move-folder-radio"
+              type="radio"
+              name="move-to-folder"
+              :value="subfolder.id"
+              v-model="selectedFolderId"
+            />
             <i class="move-folder-icon material-icons">folder</i>
             <span class="move-folder-name">{{ subfolder.name }}</span>
-            <span v-if="currentFolderId === subfolder.id" class="current-location">
+            <span
+              v-if="currentFolderId === subfolder.id"
+              class="current-location"
+            >
               (current location)
             </span>
           </label>
@@ -51,7 +86,11 @@
       <button class="btn btn-flat" type="button" @click.prevent="close">
         Cancel
       </button>
-      <button class="btn btn-primary" type="submit" :disabled="!canMove || saving">
+      <button
+        class="btn btn-primary"
+        type="submit"
+        :disabled="!canMove || saving"
+      >
         Move
       </button>
     </template>
@@ -209,10 +248,11 @@ export default Vue.extend({
   align-items: center;
   gap: 0.25rem;
 
-  [data-target-type=connectionFolder], [data-target-type=queryFolder] {
+  [data-target-type="connectionFolder"],
+  [data-target-type="queryFolder"] {
     color: var(--text-lighter);
   }
-  [data-target-type=query] {
+  [data-target-type="query"] {
     color: var(--brand-pink);
   }
 }
