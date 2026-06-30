@@ -39,6 +39,7 @@
     <plugin-controller :editor-font-size="editorFontSize" />
     <plugin-manager-modal />
     <keyboard-shortcuts-modal />
+    <move-to-modal />
     <confirmation-modal-manager />
     <lock-manager />
     <input-ephemeral-modal name="input-ephemeral-modal" />
@@ -88,6 +89,7 @@ import KeyboardShortcutsModal from '@/components/common/modals/KeyboardShortcuts
 import PluginController from '@/components/plugins/PluginController.vue'
 import LockManager from "@/components/managers/LockManager.vue";
 import InputEphemeralModal from "@/components/common/modals/InputEphemeralModal.vue";
+import MoveToModal from "@/components/common/modals/MoveToModal.vue";
 
 import rawLog from '@bksLogger'
 import { assignContextMenuToAllInputs } from './mixins/assignContextMenuToAllInputs'
@@ -104,7 +106,7 @@ export default Vue.extend({
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
     LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
     PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
-    InputEphemeralModal,
+    InputEphemeralModal, MoveToModal,
   },
   data() {
     return {
