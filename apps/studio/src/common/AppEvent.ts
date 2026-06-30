@@ -86,6 +86,14 @@ export enum AppEvent {
   openQueryEditHistory = 'openQueryEditHistory',
   /** Paste clipboard contents as new rows in the active table's Data tab. */
   pasteAsNewRows = 'pasteAsNewRows',
+  /** Open a modal to move a file to a folder
+   * @example
+   * this.trigger(AppEvent.openMoveFileModal, {
+   *   type: "connection",
+   *   value: this.config, // the connection config
+   * });
+   **/
+  openMoveFileModal = 'openMoveFileModal',
 }
 
 export interface RootBinding {
