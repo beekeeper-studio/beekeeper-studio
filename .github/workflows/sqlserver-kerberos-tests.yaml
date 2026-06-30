@@ -44,7 +44,7 @@ jobs:
     timeout-minutes: 40
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Run the dockerized Kerberos integration test
         run: bash dev/docker_sqlserver_kerberos/run.sh

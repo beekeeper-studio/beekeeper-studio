@@ -27,7 +27,7 @@ jobs:
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: setup LXD
         uses: canonical/setup-lxd@main
@@ -36,7 +36,7 @@ jobs:
         uses: samuelmeuli/action-snapcraft@v3
 
       - name: Install python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: 3.11
 
@@ -57,7 +57,7 @@ jobs:
           USE_SYSTEM_FPM: true
 
       - name: Upload snap artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: snap-${{ matrix.os }}
           path: apps/studio/dist_electron/*.snap
