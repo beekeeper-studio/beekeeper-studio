@@ -122,7 +122,10 @@ const commonArgs = {
   outdir: 'dist',
   bundle: true,
   external: ['*.woff', '*.woff2', '*.ttf', '*.svg', '*.png'],
-  sourcemap: true,
+  // Sourcemaps only in dev (watch). source-map-support is install()-ed only in
+  // dev/test, and the renderer ships no maps, so production maps are never
+  // consumed at runtime — generating + packaging them just bloats the app.
+  sourcemap: isWatching,
   minify: false,
   define: {
     'process.env.NODE_ENV': env

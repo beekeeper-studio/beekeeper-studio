@@ -36,7 +36,12 @@ module.exports = {
     'dist/**/*',
     'package.json',
     'public/icons/**/*',
-    '!**/node_gyp_bins/*'
+    '!**/node_gyp_bins/*',
+    // Sourcemaps are never read at runtime (source-map-support is dev-only),
+    // so don't ship them from dist/ or the dependency tree.
+    '!**/*.map',
+    // esbuild metafiles are a build/CI artifact for check:bundled-requires.
+    '!dist/metafile-*.json'
   ],
   afterPack: "./build/afterPack.js",
   asarUnpack: [
