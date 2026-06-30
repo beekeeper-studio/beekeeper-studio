@@ -35,6 +35,7 @@ export default class {
     this.forward(AppEvent.openPluginManager)
     this.forward(AppEvent.openKeyboardShortcuts)
     this.forward(AppEvent.pluginMenuClicked)
+    this.forward(AppEvent.pasteAsNewRows)
   }
 
   forward(event) {

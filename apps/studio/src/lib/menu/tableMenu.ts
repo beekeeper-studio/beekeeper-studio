@@ -291,22 +291,32 @@ function countCellsFromData(data: RangeData) {
   return data.reduce((acc, row) => acc + Object.keys(row).length, 0);
 }
 
-export function pasteRange(range: RangeComponent) {
+/**
+ * Read the clipboard and parse it as tab-separated rows. Returns `null` when
+ * the clipboard is empty. On a parse error the raw text is returned as a single
+ * cell so it can still be pasted into one row.
+ */
+export function readClipboardRows(): string[][] | null {
   const text = ElectronPlugin.clipboard.readText();
-  if (!text) return;
+  if (!text) return null;
 
-  const parsedText = Papa.parse(text, {
+  const parsed = Papa.parse(text, {
     header: false,
     delimiter: "\t",
   });
 
-  const data = parsedText.data as string[][];
-
-  if (parsedText.errors.length > 0) {
-    const cell = range.getCells()[0][0];
-    setCellValue(cell, text);
-    return;
+  if (parsed.errors.length > 0) {
+    return [[text]];
   }
+
+  return parsed.data as string[][];
+}
+
+export function pasteRange(range: RangeComponent) {
+  // Same parsing as "paste as new rows" — the two only differ in the
+  // destination (overwrite existing cells here vs. insert new rows there).
+  const data = readClipboardRows();
+  if (!data) return;
 
   if (data.length === 1 && data[0].length === 1) {
     const singleValue = data[0][0];
@@ -438,11 +448,21 @@ export function copyCellMenu(_e: any, cell: CellComponent) {
   ];
 }
 
-export function pasteActionsMenu(range: RangeComponent) {
-  return [
+export function pasteActionsMenu(
+  range: RangeComponent,
+  onPasteAsNewRows?: () => void
+) {
+  const actions = [
     {
       label: createMenuItem("Paste", "Control+V"),
       action: () => pasteRange(range),
     },
   ];
+  if (onPasteAsNewRows) {
+    actions.push({
+      label: createMenuItem("Paste as new rows", "Control+Shift+V"),
+      action: () => onPasteAsNewRows(),
+    });
+  }
+  return actions;
 }
