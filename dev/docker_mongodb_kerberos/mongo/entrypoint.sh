@@ -47,7 +47,7 @@ done
 
 # Create the Kerberos-mapped $external user via the localhost exception (allowed only while
 # no users exist yet). After this the exception closes.
-echo "Creating the $external Kerberos user ..."
+echo "Creating the \$external Kerberos user ..."
 mongosh --host localhost --quiet --file /usr/local/bin/setup.js \
   || echo "WARNING: setup.js failed -- the testuser@BKS.TEST login may be missing."
 
