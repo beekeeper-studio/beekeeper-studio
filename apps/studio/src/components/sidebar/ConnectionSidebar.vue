@@ -586,7 +586,6 @@ export default {
         },
         { name: 'Delete', handler: ({ item }) => this.deleteFolder(item) }
       ].filter(Boolean))
-      console.log(options)
       this.$bks.openMenu({ event, item: folder, options })
     },
     createSubfolder(parentFolder) {
