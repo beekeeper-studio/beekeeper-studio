@@ -104,8 +104,11 @@ export const commonColumnMenu = [
   resizeAllColumnsToFixedWidth,
 ];
 
-export function createMenuItem(label: string, shortcut = "", ultimate = false) {
+export function createMenuItem(label: string, shortcut: string | string[] = "", ultimate = false) {
   label = `<x-label>${escapeHtml(label)}</x-label>`;
+  if (typeof shortcut !== "string") {
+    shortcut = shortcut[0];
+  }
   if (shortcut) shortcut = `<x-shortcut value="${escapeHtml(shortcut)}" />`;
   const ultimateIcon = ultimate ? `<i class="material-icons menu-icon">stars</i>` : '';
   return `<x-menuitem>${label}${shortcut}${ultimateIcon}</x-menuitem>`;
@@ -132,7 +135,7 @@ export async function copyRanges(options: {
   escapeString?: (s: string, quote?: boolean) => string;
 }) {
   let text = "";
-  
+
   const extractedData = extractRanges(options.ranges);
   const rangeData = extractedData.data;
   const stringifiedRangeData = stringifyRangeData(rangeData);
@@ -454,13 +457,13 @@ export function pasteActionsMenu(
 ) {
   const actions = [
     {
-      label: createMenuItem("Paste", "Control+V"),
+      label: createMenuItem("Paste", window.bksConfig.getKeybindings("context-menu", "general.pasteSelection")),
       action: () => pasteRange(range),
     },
   ];
   if (onPasteAsNewRows) {
     actions.push({
-      label: createMenuItem("Paste as new rows", "Control+Shift+V"),
+      label: createMenuItem("Paste as new rows", window.bksConfig.getKeybindings("context-menu", "tableTable.pasteAsNewRows")),
       action: () => onPasteAsNewRows(),
     });
   }
