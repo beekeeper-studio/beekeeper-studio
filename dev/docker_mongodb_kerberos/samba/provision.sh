@@ -49,11 +49,13 @@ if [ ! -f /var/lib/samba/private/sam.ldb ]; then
 
   echo "::group::Exporting keytab to ${KEYTAB}"
   rm -f "${KEYTAB}"
-  # Full export writes an entry for every principal in the domain, including the
-  # mongodb/<fqdn> SPN entry keyed with the service account's key -- which is exactly what
-  # mongod needs to decrypt inbound service tickets. It is a throwaway test domain, so
-  # exporting everything is acceptable and avoids per-Samba-version SPN export quirks.
-  samba-tool domain exportkeytab "${KEYTAB}"
+  # Export the SPN principal specifically. A plain `exportkeytab` (no --principal) keys every
+  # entry by the account's sAMAccountName (mongosvc@BKS.TEST) and never emits the SPN form,
+  # so mongod's GSSAPI cannot acquire credentials for mongodb/<fqdn>@REALM and aborts on
+  # startup. Naming the principal makes Samba write the mongodb/<fqdn>@REALM entry mongod
+  # needs to decrypt inbound service tickets. The test client authenticates the user via
+  # password kinit, so it does not need any further entries here.
+  samba-tool domain exportkeytab "${KEYTAB}" --principal="mongodb/${MONGO_FQDN}"
   chmod 644 "${KEYTAB}"
   echo "Keytab principals:"
   klist -k "${KEYTAB}" || true

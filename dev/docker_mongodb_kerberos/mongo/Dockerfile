@@ -28,6 +28,11 @@ RUN set -eux; \
 
 # Build context is the parent dir (dev/docker_mongodb_kerberos) -- see
 # docker-compose.yml build.context.
+# Kerberos client config so mongod's GSSAPI resolves the realm (BKS.TEST) and keeps the SPN
+# literal. Without it the MIT krb5 library falls back to its stock default realm and DNS
+# canonicalization, producing a doubled-domain SPN (mongodb.bks.test.bks.test@ATHENA.MIT.EDU)
+# that has no keytab entry, and mongod aborts on startup.
+COPY krb5.conf /etc/krb5.conf
 COPY mongo/entrypoint.sh /usr/local/bin/kerberos-entrypoint.sh
 COPY mongo/setup.js /usr/local/bin/setup.js
 RUN chmod +x /usr/local/bin/kerberos-entrypoint.sh
