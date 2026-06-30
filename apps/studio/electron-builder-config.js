@@ -37,9 +37,11 @@ module.exports = {
     'package.json',
     'public/icons/**/*',
     '!**/node_gyp_bins/*',
-    // Sourcemaps are never read at runtime (source-map-support is dev-only),
-    // so don't ship them from dist/ or the dependency tree.
-    '!**/*.map',
+    // Ship our own sourcemaps (dist/*.map, scoped to our code by esbuild.mjs) so
+    // source-map-support can symbolicate production crash stacks, but drop the
+    // dependency tree's own ~3600 .map files — they only describe vendor code we
+    // don't symbolicate.
+    '!node_modules/**/*.map',
     // esbuild metafiles are a build/CI artifact for check:bundled-requires.
     '!dist/metafile-*.json'
   ],

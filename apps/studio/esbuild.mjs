@@ -5,6 +5,10 @@ import { spawn, exec, fork } from 'child_process'
 import path from 'path';
 import _ from 'lodash'
 import fs from 'fs'
+import { createRequire } from 'module'
+
+const require = createRequire(import.meta.url)
+const { SourceMapConsumer, SourceMapGenerator } = require('source-map')
 
 // NOTE: keep in sync with src/common/globals.ts -> plugins.ensureInstalled
 const ensureInstalled = [
@@ -65,6 +69,39 @@ const nodeExternals = nodeExternalsPlugin({
   forceExternalList: forceExternal,
 })
 
+// Keep sourcemaps scoped to our own code. esbuild emits one combined map for
+// the whole bundle; the vendor mappings are the overwhelming bulk of it and we
+// never need them. Rewrite each map to keep only the mappings whose source
+// resolves to our src/ + src-commercial/ tree, so production crash stacks still
+// resolve to our original TypeScript while bundled-dependency mappings are
+// dropped. (Done as a deterministic post-pass rather than esbuild's inline-map
+// plugin trick, which only partially works on current esbuild.)
+const ourSourceRoots = [path.resolve('./src'), path.resolve('./src-commercial')]
+async function keepOnlyOurSources(mapFile) {
+  if (!fs.existsSync(mapFile)) return
+  const map = JSON.parse(fs.readFileSync(mapFile))
+  const mapDir = path.dirname(path.resolve(mapFile))
+  const isOurs = (src) => {
+    if (!src) return false
+    const abs = path.resolve(mapDir, src)
+    return ourSourceRoots.some((root) => abs.startsWith(root + path.sep)) && fs.existsSync(abs)
+  }
+  const consumer = await new SourceMapConsumer(map)
+  const generator = new SourceMapGenerator({ file: map.file || path.basename(mapFile).replace(/\.map$/, '') })
+  consumer.eachMapping((m) => {
+    if (m.originalLine != null && isOurs(m.source)) {
+      generator.addMapping({
+        generated: { line: m.generatedLine, column: m.generatedColumn },
+        original: { line: m.originalLine, column: m.originalColumn },
+        source: m.source,
+        name: m.name || undefined,
+      })
+    }
+  })
+  if (consumer.destroy) consumer.destroy()
+  fs.writeFileSync(mapFile, generator.toString())
+}
+
 let electron = null
 /** @type {fs.FSWatcher[]} */
 const configWatchers = {}
@@ -122,10 +159,13 @@ const commonArgs = {
   outdir: 'dist',
   bundle: true,
   external: ['*.woff', '*.woff2', '*.ttf', '*.svg', '*.png'],
-  // Sourcemaps only in dev (watch). source-map-support is install()-ed only in
-  // dev/test, and the renderer ships no maps, so production maps are never
-  // consumed at runtime — generating + packaging them just bloats the app.
-  sourcemap: isWatching,
+  // Sourcemaps in every build. source-map-support is install()-ed in the main
+  // and utility processes (all environments), so shipping these lets production
+  // crash stacks resolve back to the original TypeScript. `keepOnlyOurSources`
+  // scopes the shipped maps to our own code, and sourcesContent is omitted
+  // (stacks resolve to file:line without embedding source text into the package).
+  sourcemap: true,
+  sourcesContent: false,
   minify: false,
   define: {
     'process.env.NODE_ENV': env
@@ -168,5 +208,8 @@ if(isWatching) {
   ])
   fs.writeFileSync('dist/metafile-main.json', JSON.stringify(main.metafile))
   fs.writeFileSync('dist/metafile-utility.json', JSON.stringify(utility.metafile))
+  for (const f of ['dist/main.js.map', 'dist/preload.js.map', 'dist/utility.js.map']) {
+    await keepOnlyOurSources(f)
+  }
 }
 // launch electron

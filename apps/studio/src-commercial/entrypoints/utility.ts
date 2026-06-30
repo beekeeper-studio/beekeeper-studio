@@ -41,9 +41,10 @@ import bksConfig from '@/common/bksConfig';
 
 import * as sms from 'source-map-support'
 
-if (platformInfo.env.development || platformInfo.env.test) {
-  sms.install()
-}
+// Installed in every environment: production ships sourcemaps too, so handler
+// error stacks forwarded to the renderer (replyArgs.stack) point at the
+// original TypeScript instead of bundled utility.js positions.
+sms.install()
 
 let ormConnection: ORMConnection;
 const pluginManager = new PluginManager({
