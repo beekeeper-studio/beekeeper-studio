@@ -7,7 +7,12 @@
       @closed="$emit('closed')"
       class="base-modal-root"
     >
-      <div v-kbd-trap="true" class="base-modal" ref="baseModal">
+      <form
+        v-kbd-trap="true"
+        class="base-modal"
+        ref="baseModal"
+        @submit.prevent="$emit('submit', $event)"
+      >
         <div class="base-modal-header">
           <div class="base-modal-title">
             <slot name="title" :close="close" />
@@ -27,7 +32,7 @@
         <div class="base-modal-footer">
           <slot name="footer" :close="close" />
         </div>
-      </div>
+      </form>
     </modal>
   </portal>
 </template>

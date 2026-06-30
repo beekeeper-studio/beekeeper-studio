@@ -1,102 +1,96 @@
 <template>
-  <base-modal :name="modalName" @closed="reset">
+  <base-modal :name="modalName" @submit="move">
     <template #title>
       <template v-if="target">
-        Move {{ target.type }} to ...
+        Move
+        <span class="target-name">
+          <i class="material-icons">{{ targetIcon }}</i>
+          {{ targetName }}
+        </span>
+        to
       </template>
-      <template v-else>
-        Move to ...
-      </template>
+      <template v-else>Move</template>
     </template>
     <template v-if="target">
-      <form
-        class="move-folder-list"
-        @submit.prevent="move"
+      <label
+        v-if="!isCloud"
+        class="move-folder-row"
+        :class="{ selected: selectedFolderId === null }"
+      >
+        <input
+          class="move-folder-radio"
+          type="radio"
+          name="move-to-folder"
+          :value="null"
+          v-model="selectedFolderId"
+        />
+        <i class="move-folder-icon material-icons">subdirectory_arrow_left</i>
+        <span class="move-folder-name">(Top level)</span>
+        <span v-if="currentFolderId === null" class="current-location">
+          (current location)
+        </span>
+      </label>
+
+      <div
+        class="move-folder-group"
+        v-for="{ folder, subfolders } in folderTree"
+        :key="folder.id"
       >
         <label
-          v-if="!isCloud"
           class="move-folder-row"
-          :class="{ selected: selectedFolderId === null }"
+          :class="{ selected: selectedFolderId === folder.id }"
         >
           <input
             class="move-folder-radio"
             type="radio"
             name="move-to-folder"
-            :value="null"
+            :value="folder.id"
             v-model="selectedFolderId"
-          >
-          <i class="move-folder-icon material-icons">subdirectory_arrow_left</i>
-          <span class="move-folder-name">(Top level)</span>
+          />
+          <i class="move-folder-icon material-icons">folder</i>
+          <span class="move-folder-name">{{ folder.name }}</span>
           <span
-            v-if="currentFolderId === null"
-            class="move-folder-current"
-          >(current location)</span>
+            v-if="currentFolderId === folder.id"
+            class="current-location"
+          >
+            (current location)
+          </span>
         </label>
-
-        <div
-          class="move-folder-group"
-          v-for="{ folder, subfolders } in folderTree"
-          :key="folder.id"
-        >
+        <template v-if="subfolders.length">
           <label
+            v-for="subfolder in subfolders"
+            :key="subfolder.id"
             class="move-folder-row"
-            :class="{ selected: selectedFolderId === folder.id }"
+            :class="{ selected: selectedFolderId === subfolder.id }"
+            style="--node-depth: 1;"
           >
             <input
               class="move-folder-radio"
               type="radio"
               name="move-to-folder"
-              :value="folder.id"
+              :value="subfolder.id"
               v-model="selectedFolderId"
-            >
+            />
             <i class="move-folder-icon material-icons">folder</i>
-            <span class="move-folder-name">{{ folder.name }}</span>
+            <span class="move-folder-name">{{ subfolder.name }}</span>
             <span
-              v-if="currentFolderId === folder.id"
-              class="move-folder-current"
-            >(current location)</span>
-          </label>
-          <div
-            class="move-folder-children"
-            v-if="subfolders.length"
-          >
-            <label
-              v-for="subfolder in subfolders"
-              :key="subfolder.id"
-              class="move-folder-row move-folder-row--child"
-              :class="{ selected: selectedFolderId === subfolder.id }"
+              v-if="currentFolderId === subfolder.id"
+              class="current-location"
             >
-              <input
-                class="move-folder-radio"
-                type="radio"
-                name="move-to-folder"
-                :value="subfolder.id"
-                v-model="selectedFolderId"
-              >
-              <i class="move-folder-icon material-icons">folder</i>
-              <span class="move-folder-name">{{ subfolder.name }}</span>
-              <span
-                v-if="currentFolderId === subfolder.id"
-                class="move-folder-current"
-              >(current location)</span>
-            </label>
-          </div>
-        </div>
-      </form>
+              (current location)
+            </span>
+          </label>
+        </template>
+      </div>
     </template>
     <template #footer="{ close }">
-      <button
-        class="btn btn-flat"
-        type="button"
-        @click.prevent="close"
-      >
+      <button class="btn btn-flat" type="button" @click.prevent="close">
         Cancel
       </button>
       <button
         class="btn btn-primary"
-        type="button"
+        type="submit"
         :disabled="!canMove || saving"
-        @click.prevent="move"
       >
         Move
       </button>
@@ -106,15 +100,15 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { mapGetters, mapState } from "vuex";
+import { mapActions, mapGetters, mapState } from "vuex";
 import BaseModal from "@/components/common/modals/BaseModal.vue";
 import { AppEvent } from "@/common/AppEvent";
 import { IConnection } from "@/common/interfaces/IConnection";
+import ISavedQuery from "@/common/interfaces/ISavedQuery";
 
-type Target = {
-  type: "connection";
-  value: IConnection;
-};
+type Target =
+  | { type: "connection"; value: IConnection }
+  | { type: "query"; value: ISavedQuery };
 
 export default Vue.extend({
   components: { BaseModal },
@@ -127,10 +121,26 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapState("data/connectionFolders", { folders: "items" }),
+    ...mapState("data/connectionFolders", { connectionFolders: "items" }),
+    ...mapState("data/queryFolders", { queryFolders: "items" }),
     ...mapGetters(["isCloud"]),
     rootBindings() {
       return [{ event: AppEvent.openMoveToModal, handler: this.open }];
+    },
+    folders() {
+      if (!this.target) return [];
+      return this.target.type === "query"
+        ? this.queryFolders
+        : this.connectionFolders;
+    },
+    targetIcon(): string {
+      return this.target?.type === "query" ? "code" : "link";
+    },
+    targetName(): string {
+      if (!this.target) return "";
+      return this.target.type === "query"
+        ? this.target.value.title
+        : this.target.value.name;
     },
     folderTree() {
       return this.folders
@@ -141,20 +151,31 @@ export default Vue.extend({
         }));
     },
     currentFolderId(): number | null {
-      return this.target?.value.connectionFolderId ?? null;
+      if (!this.target) return null;
+      return (
+        (this.target.type === "query"
+          ? this.target.value.queryFolderId
+          : this.target.value.connectionFolderId) ?? null
+      );
     },
     canMove(): boolean {
       return this.selectedFolderId !== this.currentFolderId;
     },
   },
   methods: {
+    ...mapActions("data/connectionFolders", {
+      moveConnectionToFolder: "moveToFolder",
+    }),
+    ...mapActions("data/queryFolders", {
+      moveQueryToFolder: "moveToFolder",
+    }),
     open(target: Target) {
       this.target = target;
-      this.selectedFolderId = target.value.connectionFolderId ?? null;
+      this.selectedFolderId =
+        (target.type === "query"
+          ? target.value.queryFolderId
+          : target.value.connectionFolderId) ?? null;
       this.$modal.show(this.modalName);
-    },
-    reset() {
-      this.target = null;
     },
     async move() {
       if (!this.canMove || this.saving) return;
@@ -164,10 +185,14 @@ export default Vue.extend({
           this.selectedFolderId == null
             ? null
             : this.folders.find((f) => f.id === this.selectedFolderId);
-        await this.$store.dispatch("data/connectionFolders/moveToFolder", {
-          connection: this.target.value,
-          folder,
-        });
+        if (this.target.type === "query") {
+          await this.moveQueryToFolder({ query: this.target.value, folder });
+        } else {
+          await this.moveConnectionToFolder({
+            connection: this.target.value,
+            folder,
+          });
+        }
         this.$modal.hide(this.modalName);
       } catch (ex) {
         this.$noty.error(`Move Error: ${ex.message}`);
@@ -186,37 +211,27 @@ export default Vue.extend({
 </script>
 
 <style scoped>
-/* Mirrors the connection sidebar folder tree (.folder-group / .folder-btn /
-   .list-item in app/sidebar/sidebar.scss) with self-contained class names so
-   nothing leaks in or out of the global sidebar styles. */
-.move-folder-list {
-  max-height: 18rem;
-  overflow-y: auto;
-  padding: 0.2rem 0;
-}
-
-.move-folder-group {
-  position: relative;
+.target-name {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .move-folder-row {
+  --node-depth: 0;
   position: relative;
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.25rem;
   margin: 0;
-  padding: 0 0.4rem;
-  height: 1.9rem;
+  padding-left: calc(0.45rem + (var(--node-depth) * 1.25rem));
+  height: 2rem;
   border-radius: 4px;
   color: rgb(from var(--theme-base) r g b / 77%);
   cursor: pointer;
 
   &:hover {
     background: rgb(from var(--theme-base) r g b / 3.5%);
-
-    & .move-folder-icon {
-      color: var(--text-dark);
-    }
   }
 
   &.selected {
@@ -231,12 +246,8 @@ export default Vue.extend({
   }
 }
 
-.move-folder-row--child {
-  padding-left: 0.8rem;
-}
-
 /* Visually hidden — selection state is shown via the row highlight + check icon. */
-input[type=radio].move-folder-radio {
+input[type="radio"].move-folder-radio {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -247,9 +258,7 @@ input[type=radio].move-folder-radio {
 
 .move-folder-icon {
   flex-shrink: 0;
-  font-size: 18px;
   color: rgb(from var(--theme-base) r g b / 37%);
-  transition: color 0.15s ease-in-out;
 }
 
 .move-folder-name {
@@ -259,27 +268,9 @@ input[type=radio].move-folder-radio {
   text-overflow: ellipsis;
 }
 
-.move-folder-current {
-  flex: 1 1 auto;
+.current-location {
   font-style: italic;
-  font-size: 0.85rem;
+  font-size: 0.831rem;
   color: var(--text-lighter);
-  white-space: nowrap;
-}
-
-/* Nested subfolders: indent and draw the vertical guide line, matching the
-   sidebar's `.folder-group > div:before`. */
-.move-folder-children {
-  position: relative;
-  margin-left: 0.8rem;
-
-  &::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 9px;
-    border-left: 1px solid rgb(from var(--theme-base) r g b / 8%);
-  }
 }
 </style>
