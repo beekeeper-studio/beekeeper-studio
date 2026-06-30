@@ -477,9 +477,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       connection,
     });
 
-    // The next AUTO_INCREMENT value is a table-level property, so it isn't returned by the
-    // per-column query above. Read it once (only when a specific table was requested) and
-    // attach it to that table's auto-increment column below.
+    // AUTO_INCREMENT is table-level, not returned by the per-column query above. Read it
+    // once (only for a specific table) and attach to its auto-increment column below.
     let autoIncrementValue: number | null = null;
     if (table) {
       const aiSql = `
@@ -496,8 +495,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
 
     return rows.map((row) => {
       const extra = _.isEmpty(row.extra) ? null : row.extra;
-      // `auto_increment` is the entire EXTRA value when present (it never co-occurs with
-      // other flags like ON UPDATE / GENERATED), so match it exactly.
+      // EXTRA is exactly `auto_increment` when present (never combined with other flags).
       const isAutoIncrement = !!extra && /^auto_increment$/i.test(String(extra).trim());
       return {
         tableName: row.table_name,
@@ -1311,8 +1309,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
   async alterTable(change: AlterTableSpec): Promise<void> {
     await this.runWithTransaction(async (connection) => {
       const sql = await this.alterTableSql(change);
-      // No SQL is produced when a change collects to nothing (e.g. an edit that was
-      // reverted to its original value). Skip execution rather than run an empty query.
+      // No SQL when the change collects to nothing (e.g. reverted to original value).
       if (!sql) return;
       return await this.driverExecuteSingle(sql, { connection });
     });

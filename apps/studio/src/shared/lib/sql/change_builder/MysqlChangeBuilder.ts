@@ -270,10 +270,8 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
     return []
   }
 
-  // Table-level AUTO_INCREMENT change. Runs after the column alterations (as the
-  // trailing statement in alterTable) so it applies once the schema is settled.
-  // Note: MySQL/MariaDB silently clamp the value to (highest existing value + 1)
-  // if a lower number is requested - the UI re-reads and reports the real value.
+  // Table-level AUTO_INCREMENT, emitted as the trailing statement after column alterations.
+  // MySQL/MariaDB clamp it up to (max existing + 1); the UI re-reads the real value.
   endSql(spec: AlterTableSpec): string | null {
     if (spec.autoIncrement === undefined || spec.autoIncrement === null) return null
     const value = Math.trunc(Number(spec.autoIncrement))
