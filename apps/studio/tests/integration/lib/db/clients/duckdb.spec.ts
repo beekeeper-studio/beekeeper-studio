@@ -272,6 +272,110 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         await util.queryStreamDoubleExecutionTest()
       })
     })
+
+    describe("TIMESTAMPTZ and UUID display tests", () => {
+      beforeAll(async () => {
+        await util.knex.raw(`
+          CREATE TABLE tz_uuid_types (
+            id INT PRIMARY KEY,
+            ts TIMESTAMPTZ,
+            uid UUID
+          )
+        `);
+        await util.knex.raw(`
+          INSERT INTO tz_uuid_types VALUES (
+            1,
+            TIMESTAMPTZ '2023-06-23 20:30:17.170+00',
+            UUID '550e8400-e29b-41d4-a716-446655440000'
+          )
+        `);
+      });
+
+      afterAll(async () => {
+        await util.knex.schema.dropTableIfExists("tz_uuid_types");
+      });
+
+      it("should return TIMESTAMPTZ as a readable string, not an object", async () => {
+        const { result: rows, fields } = await util.connection.selectTop(
+          'tz_uuid_types', 0, 10, [], [], util.defaultSchema, ["*"]
+        );
+
+        const tsField = fields.find(f => f.name === 'ts');
+        expect(tsField?.bksType).toBe('DUCKDB_TIMESTAMP_TZ');
+
+        const row = rows[0];
+        expect(typeof row['ts']).toBe('string');
+        expect(row['ts']).toMatch(/\d{4}-\d{2}-\d{2}/);
+        expect(row['ts']).not.toHaveProperty('micros');
+      });
+
+      it("should return UUID as a readable UUID string, not an object", async () => {
+        const { result: rows, fields } = await util.connection.selectTop(
+          'tz_uuid_types', 0, 10, [], [], util.defaultSchema, ["*"]
+        );
+
+        const uuidField = fields.find(f => f.name === 'uid');
+        expect(uuidField?.bksType).toBe('DUCKDB_UUID');
+
+        const row = rows[0];
+        expect(typeof row['uid']).toBe('string');
+        expect(row['uid']).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+        expect(row['uid']).toBe('550e8400-e29b-41d4-a716-446655440000');
+      });
+
+      it("should handle NULL TIMESTAMPTZ and UUID values", async () => {
+        await util.knex.raw(`INSERT INTO tz_uuid_types VALUES (2, NULL, NULL)`);
+
+        const { result: rows } = await util.connection.selectTop(
+          'tz_uuid_types', 0, 10, [], [], util.defaultSchema, ["*"]
+        );
+
+        const nullRow = rows.find((r: any) => r['id'] === 2);
+        expect(nullRow['ts']).toBeNull();
+        expect(nullRow['uid']).toBeNull();
+      });
+
+      it("should round-trip TIMESTAMPTZ and UUID values through applyChanges", async () => {
+        const { result: rows } = await util.connection.selectTop(
+          'tz_uuid_types', 0, 10, [], [], util.defaultSchema, ["*"]
+        );
+        const originalRow = rows.find((r: any) => r['id'] === 1);
+        const tsString = originalRow['ts'] as string;
+        const uuidString = originalRow['uid'] as string;
+
+        expect(typeof tsString).toBe('string');
+        expect(typeof uuidString).toBe('string');
+
+        await util.connection.applyChanges({
+          inserts: [],
+          updates: [
+            {
+              table: 'tz_uuid_types',
+              schema: util.defaultSchema,
+              primaryKeys: [{ column: 'id', value: 1 }],
+              column: 'ts',
+              value: tsString,
+            },
+            {
+              table: 'tz_uuid_types',
+              schema: util.defaultSchema,
+              primaryKeys: [{ column: 'id', value: 1 }],
+              column: 'uid',
+              value: uuidString,
+            },
+          ],
+          deletes: [],
+        });
+
+        const { result: updated } = await util.connection.selectTop(
+          'tz_uuid_types', 0, 10, [], [], util.defaultSchema, ["*"]
+        );
+        const updatedRow = updated.find((r: any) => r['id'] === 1);
+        expect(typeof updatedRow['ts']).toBe('string');
+        expect(typeof updatedRow['uid']).toBe('string');
+        expect(updatedRow['uid']).toBe('550e8400-e29b-41d4-a716-446655440000');
+      });
+    });
   });
 }
 
