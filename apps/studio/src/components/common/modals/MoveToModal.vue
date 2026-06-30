@@ -4,7 +4,9 @@
       <template v-if="target">
         Move
         <span class="target-name">
-          <i class="material-icons">{{ targetIcon }}</i>
+          <i class="material-icons" :data-target-type="target.type">
+            {{ targetIcon }}
+          </i>
           {{ targetName }}
         </span>
         to
@@ -12,18 +14,8 @@
       <template v-else>Move</template>
     </template>
     <template v-if="target">
-      <label
-        v-if="!isCloud"
-        class="move-folder-row"
-        :class="{ selected: selectedFolderId === null }"
-      >
-        <input
-          class="move-folder-radio"
-          type="radio"
-          name="move-to-folder"
-          :value="null"
-          v-model="selectedFolderId"
-        />
+      <label v-if="!isCloud" class="move-folder-row" :class="{ selected: selectedFolderId === null }">
+        <input class="move-folder-radio" type="radio" name="move-to-folder" :value="null" v-model="selectedFolderId" />
         <i class="move-folder-icon material-icons">subdirectory_arrow_left</i>
         <span class="move-folder-name">(Top level)</span>
         <span v-if="currentFolderId === null" class="current-location">
@@ -31,52 +23,24 @@
         </span>
       </label>
 
-      <div
-        class="move-folder-group"
-        v-for="{ folder, subfolders } in folderTree"
-        :key="folder.id"
-      >
-        <label
-          class="move-folder-row"
-          :class="{ selected: selectedFolderId === folder.id }"
-        >
-          <input
-            class="move-folder-radio"
-            type="radio"
-            name="move-to-folder"
-            :value="folder.id"
-            v-model="selectedFolderId"
-          />
+      <div class="move-folder-group" v-for="{ folder, subfolders } in folderTree" :key="folder.id">
+        <label class="move-folder-row" :class="{ selected: selectedFolderId === folder.id }">
+          <input class="move-folder-radio" type="radio" name="move-to-folder" :value="folder.id"
+            v-model="selectedFolderId" />
           <i class="move-folder-icon material-icons">folder</i>
           <span class="move-folder-name">{{ folder.name }}</span>
-          <span
-            v-if="currentFolderId === folder.id"
-            class="current-location"
-          >
+          <span v-if="currentFolderId === folder.id" class="current-location">
             (current location)
           </span>
         </label>
         <template v-if="subfolders.length">
-          <label
-            v-for="subfolder in subfolders"
-            :key="subfolder.id"
-            class="move-folder-row"
-            :class="{ selected: selectedFolderId === subfolder.id }"
-            style="--node-depth: 1;"
-          >
-            <input
-              class="move-folder-radio"
-              type="radio"
-              name="move-to-folder"
-              :value="subfolder.id"
-              v-model="selectedFolderId"
-            />
+          <label v-for="subfolder in subfolders" :key="subfolder.id" class="move-folder-row"
+            :class="{ selected: selectedFolderId === subfolder.id }" style="--node-depth: 1;">
+            <input class="move-folder-radio" type="radio" name="move-to-folder" :value="subfolder.id"
+              v-model="selectedFolderId" />
             <i class="move-folder-icon material-icons">folder</i>
             <span class="move-folder-name">{{ subfolder.name }}</span>
-            <span
-              v-if="currentFolderId === subfolder.id"
-              class="current-location"
-            >
+            <span v-if="currentFolderId === subfolder.id" class="current-location">
               (current location)
             </span>
           </label>
@@ -87,11 +51,7 @@
       <button class="btn btn-flat" type="button" @click.prevent="close">
         Cancel
       </button>
-      <button
-        class="btn btn-primary"
-        type="submit"
-        :disabled="!canMove || saving"
-      >
+      <button class="btn btn-primary" type="submit" :disabled="!canMove || saving">
         Move
       </button>
     </template>
@@ -105,10 +65,13 @@ import BaseModal from "@/components/common/modals/BaseModal.vue";
 import { AppEvent } from "@/common/AppEvent";
 import { IConnection } from "@/common/interfaces/IConnection";
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
+import { IFolder } from "@/common/interfaces/IQueryFolder";
 
 type Target =
   | { type: "connection"; value: IConnection }
-  | { type: "query"; value: ISavedQuery };
+  | { type: "query"; value: ISavedQuery }
+  | { type: "connectionFolder"; value: IFolder }
+  | { type: "queryFolder"; value: IFolder };
 
 export default Vue.extend({
   components: { BaseModal },
@@ -125,16 +88,30 @@ export default Vue.extend({
     ...mapState("data/queryFolders", { queryFolders: "items" }),
     ...mapGetters(["isCloud"]),
     rootBindings() {
-      return [{ event: AppEvent.openMoveToModal, handler: this.open }];
+      return [{ event: AppEvent.openMoveFileModal, handler: this.open }];
+    },
+    // Folder targets move themselves (re-parent); connection/query targets move
+    // into a folder. Folders are capped at 2 levels, so only subfolders are
+    // ever moved and their destinations are top level or another root.
+    isFolder(): boolean {
+      return (
+        this.target?.type === "connectionFolder" ||
+        this.target?.type === "queryFolder"
+      );
+    },
+    isQueryTarget(): boolean {
+      return (
+        this.target?.type === "query" || this.target?.type === "queryFolder"
+      );
     },
     folders() {
       if (!this.target) return [];
-      return this.target.type === "query"
-        ? this.queryFolders
-        : this.connectionFolders;
+      return this.isQueryTarget ? this.queryFolders : this.connectionFolders;
     },
     targetIcon(): string {
-      return this.target?.type === "query" ? "code" : "link";
+      if (!this.target) return "";
+      if (this.isFolder) return "folder";
+      return this.target.type === "query" ? "code" : "link";
     },
     targetName(): string {
       if (!this.target) return "";
@@ -147,11 +124,16 @@ export default Vue.extend({
         .filter((f) => !f.parentId)
         .map((folder) => ({
           folder,
-          subfolders: this.folders.filter((f) => f.parentId === folder.id),
+          // A folder being moved can't nest into a subfolder (2-level cap), so
+          // subfolders aren't shown as destinations for folder targets.
+          subfolders: this.isFolder
+            ? []
+            : this.folders.filter((f) => f.parentId === folder.id),
         }));
     },
     currentFolderId(): number | null {
       if (!this.target) return null;
+      if (this.isFolder) return this.target.value.parentId ?? null;
       return (
         (this.target.type === "query"
           ? this.target.value.queryFolderId
@@ -165,33 +147,44 @@ export default Vue.extend({
   methods: {
     ...mapActions("data/connectionFolders", {
       moveConnectionToFolder: "moveToFolder",
+      saveConnectionFolder: "save",
     }),
     ...mapActions("data/queryFolders", {
       moveQueryToFolder: "moveToFolder",
+      saveQueryFolder: "save",
     }),
     open(target: Target) {
       this.target = target;
-      this.selectedFolderId =
-        (target.type === "query"
-          ? target.value.queryFolderId
-          : target.value.connectionFolderId) ?? null;
+      this.selectedFolderId = this.currentFolderId;
       this.$modal.show(this.modalName);
     },
     async move() {
       if (!this.canMove || this.saving) return;
       this.saving = true;
       try {
-        const folder =
-          this.selectedFolderId == null
-            ? null
-            : this.folders.find((f) => f.id === this.selectedFolderId);
-        if (this.target.type === "query") {
-          await this.moveQueryToFolder({ query: this.target.value, folder });
-        } else {
-          await this.moveConnectionToFolder({
-            connection: this.target.value,
-            folder,
+        if (this.target.type === "queryFolder") {
+          await this.saveQueryFolder({
+            ...this.target.value,
+            parentId: this.selectedFolderId,
           });
+        } else if (this.target.type === "connectionFolder") {
+          await this.saveConnectionFolder({
+            ...this.target.value,
+            parentId: this.selectedFolderId,
+          });
+        } else {
+          const folder =
+            this.selectedFolderId == null
+              ? null
+              : this.folders.find((f) => f.id === this.selectedFolderId);
+          if (this.target.type === "query") {
+            await this.moveQueryToFolder({ query: this.target.value, folder });
+          } else {
+            await this.moveConnectionToFolder({
+              connection: this.target.value,
+              folder,
+            });
+          }
         }
         this.$modal.hide(this.modalName);
       } catch (ex) {
@@ -215,6 +208,13 @@ export default Vue.extend({
   display: flex;
   align-items: center;
   gap: 0.25rem;
+
+  [data-target-type=connectionFolder], [data-target-type=queryFolder] {
+    color: var(--text-lighter);
+  }
+  [data-target-type=query] {
+    color: var(--brand-pink);
+  }
 }
 
 .move-folder-row {

@@ -209,9 +209,9 @@ export default {
           },
         },
         !this.isRecentList && this.folders.length > 0 && {
-          name: "Move connection",
+          name: "Move",
           handler: () => {
-            this.trigger(AppEvent.openMoveToModal, {
+            this.trigger(AppEvent.openMoveFileModal, {
               type: "connection",
               value: this.config,
             });

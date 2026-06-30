@@ -97,9 +97,9 @@ export default Vue.extend({
           },
         },
         this.folders.length > 0 && {
-          name: "Move query",
+          name: "Move",
           handler: () => {
-            this.trigger(AppEvent.openMoveToModal, {
+            this.trigger(AppEvent.openMoveFileModal, {
               type: "query",
               value: this.item,
             })
