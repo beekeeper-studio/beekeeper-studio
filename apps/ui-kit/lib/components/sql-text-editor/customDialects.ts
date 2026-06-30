@@ -1,4 +1,4 @@
-import {PostgreSQL, SQLDialect} from "@codemirror/lang-sql";
+import {MSSQL, PostgreSQL, SQLDialect} from "@codemirror/lang-sql";
 
 const GREENGAGE_EXTRA_KEYWORDS = [
   "distributed", "exchange", "inclusive", "list", "protocol", "resource",
@@ -9,6 +9,11 @@ export const GreengageSQL = SQLDialect.define({
   ...PostgreSQL.spec,
   keywords: (PostgreSQL.spec.keywords || "") + " " + GREENGAGE_EXTRA_KEYWORDS,
 });
+
+export const SQLServer = SQLDialect.define({
+  ...MSSQL,
+  identifierQuotes: "[\""
+})
 
 // PartiQL — the SQL-compatible dialect AWS DynamoDB exposes via
 // ExecuteStatementCommand. Identifiers are double-quoted (PartiQL/ANSI style)

@@ -26,9 +26,6 @@ module.exports = {
     releaseNotesFile: "build/release-notes.md"
   },
   generateUpdatesFilesForAllChannels: true,
-  toolsets: {
-    appimage: "1.0.3"
-  },
   directories: {
     output: "dist_electron"
   },
@@ -40,7 +37,11 @@ module.exports = {
   ],
   afterPack: "./build/afterPack.js",
   asarUnpack: [
-    'package.json'
+    'package.json',
+    // msnodesqlv8 ships a native ODBC addon used for SQL Server integrated
+    // (SSPI/Kerberos) auth. prebuild-install drops the binary under build/Release
+    // and/or prebuilds depending on platform, so unpack both.
+    '**/msnodesqlv8/**/*.node'
   ],
   extraResources: [
     {
@@ -175,6 +176,11 @@ module.exports = {
       'flatpak',
       'pacman'
     ],
+    // Align the installed .desktop filename with the WM_CLASS Electron reports at
+    // runtime (derived from desktopName in package.json) so desktop environments
+    // associate running windows with the launcher entry. Both resolve to
+    // beekeeper-studio.desktop / StartupWMClass=beekeeper-studio.
+    syncDesktopName: true,
     desktop: {
       entry: {
         'StartupWMClass': 'beekeeper-studio',
@@ -213,16 +219,43 @@ module.exports = {
     publish: [ 'github' ],
     fpm: rpmFpmOptions,
   },
-  snap: {
-    base: 'core22',
+  snapcraft: {
+    base: 'core24',
     publish: [
       'github',
       'snapStore'
     ],
-    environment: {
-      "ELECTRON_SNAP": "true"
-    },
-    plugs: ["default", "ssh-keys", "removable-media", "mount-observe"]
+    core24: {
+      // Build the core24 snap in an isolated LXD container. CI provisions LXD
+      // via canonical/setup-lxd on every Linux runner.
+      useLXD: true,
+      environment: {
+        "ELECTRON_SNAP": "true"
+      },
+      // core24 drops browser-support from its default plug set. It must be
+      // declared so Chromium can use /dev/shm under strict confinement.
+      // Use the plain interface (not allow-sandbox: true) — the privileged
+      // form is denied auto-connection by snapd, so it would stay disconnected
+      // on both sideloaded and store installs. electron-builder appends
+      // --no-sandbox automatically when allow-sandbox isn't set, matching the
+      // previous core22 behaviour.
+      plugs: [
+        "default",
+        "ssh-keys",
+        "removable-media",
+        "mount-observe",
+        "browser-support"
+      ],
+      // Bundle fonts so non-Latin text and emoji render correctly. "default"
+      // keeps electron-builder's standard stage packages.
+      stagePackages: [
+        "default",
+        "fonts-noto",
+        "fonts-noto-cjk",
+        "fonts-noto-color-emoji",
+        "fonts-liberation"
+      ]
+    }
   },
   win: {
     icon: './public/icons/png/512x512.png',

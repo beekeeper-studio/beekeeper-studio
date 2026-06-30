@@ -39,6 +39,7 @@ import {
   TableUpdateResult,
 } from "@/lib/db/models";
 import { ClickHouseData } from "@shared/lib/dialects/clickhouse";
+import { parseClickHouseEnumValues } from "@/lib/db/clients/enumParsers";
 import _ from "lodash";
 import {
   createCancelablePromise,
@@ -143,10 +144,21 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
 
     if (this.server.config.url) {
       url = this.server.config.url
+      // Route the user-provided URL through the SSH tunnel's local endpoint.
+      if (this.server.sshTunnel) {
+        const urlObj = new URL(url);
+        urlObj.hostname = this.server.config.localHost;
+        urlObj.port = this.server.config.localPort.toString();
+        url = urlObj.toString();
+      }
     } else {
       const urlObj = new URL('http://example.com/');
-      urlObj.hostname = this.server.config.host;
-      urlObj.port = this.server.config.port.toString();
+      urlObj.hostname = this.server.sshTunnel
+        ? this.server.config.localHost
+        : this.server.config.host;
+      urlObj.port = (this.server.sshTunnel
+        ? this.server.config.localPort
+        : this.server.config.port).toString();
       urlObj.protocol = this.server.config.ssl ? 'https:' : 'http:';
       url = urlObj.toString();
     }
@@ -261,6 +273,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
         comment: row.comment,
         primaryKey: row.is_in_primary_key === 1,
         nullable: RE_NULLABLE.test(row.type),
+        enumValues: parseClickHouseEnumValues(row.type),
         bksField: this.parseTableColumn(row),
       };
     });

@@ -836,11 +836,12 @@ export default Vue.extend({
             this.setAsNullMenuItem(ranges),
             { separator: true },
             this.quickFilterMenuItem(cell),
-            ...copyActionsMenu({
-              ranges,
-              table: this.table.name,
-              schema: this.table.schema,
-            }),
+              ...copyActionsMenu({
+                ranges,
+                table: this.table.name,
+                schema: this.table.schema,
+                escapeString: this.dialectData?.escapeString,
+              }),
             { separator: true },
             ...pasteActionsMenu(range),
             { separator: true },
@@ -881,6 +882,7 @@ export default Vue.extend({
             ranges,
             table: this.table.name,
             schema: this.table.schema,
+            escapeString: this.dialectData?.escapeString,
           }),
           { separator: true },
           ...commonColumnMenu,
@@ -1018,6 +1020,11 @@ export default Vue.extend({
         ]
         if (column.nullable) values.push({ label: '(NULL)', value: null })
         result.editorParams['values'] = values
+      } else if (column.enumValues?.length) {
+        result.editor = 'list'
+        const values = column.enumValues.map((v) => ({ label: v, value: v }))
+        if (column.nullable) values.push({ label: '(NULL)', value: null })
+        result.editorParams['values'] = values
       }
       return result;
     },
@@ -1140,6 +1147,7 @@ export default Vue.extend({
                 ranges,
                 table: this.table.name,
                 schema: this.table.schema,
+                escapeString: this.dialectData?.escapeString,
               }),
               { separator: true },
               resizeAllColumnsToFitContent,
@@ -1211,7 +1219,7 @@ export default Vue.extend({
           disabled: !this.editable,
         },
         {
-          label: createMenuItem(`Delete ${rowRangeLabel} selected rows`, "Delete"),
+          label: createMenuItem(`Delete ${rowRangeLabel}`, "Delete"),
           action: () => {
             this.tabulator.rowManager.element.focus()
             this.deleteTableSelection(undefined)

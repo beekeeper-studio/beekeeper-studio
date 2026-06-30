@@ -381,6 +381,11 @@ declare interface IBksConfig {
             save: string;
             undo: string;
         };
+        plugins: {
+            "bks-ai-shell": {
+                "new-tab-dropdown-item": string;
+            };
+        };
         queryEditor: {
             closeTableFilter: string;
             copyResultSelection: string;
@@ -451,6 +456,7 @@ declare interface IBksConfig {
         activityEvents: string[];
         activityReportIntervalSeconds: number;
         allowRuntimeExtensions: boolean;
+        disableSshConfigMatchExec: boolean;
         disconnectOnIdle: boolean;
         disconnectOnLock: boolean;
         disconnectOnSuspend: boolean;
@@ -467,6 +473,7 @@ declare interface IBksConfig {
             binaryEncoding: string;
         };
         layout: {
+            defaultGlobalSidebarItem: string;
             mainContentMinWidth: number;
             primarySidebarMinWidth: number;
             secondarySidebarMinWidth: number;

@@ -170,6 +170,18 @@ export interface AzureAuthOptions {
   msiEndpoint?: string;
   cliPath?: string;
 }
+
+// SQL Server integrated authentication (Kerberos/Windows via the msnodesqlv8 ODBC driver).
+export type SqlServerEncryptionMode = 'off' | 'on' | 'strict'
+export interface SqlServerOptions {
+  // off -> Encrypt=no; on -> Encrypt=yes + TrustServerCertificate=yes (trust, no validation);
+  // strict -> Encrypt=strict (TDS 8.0, validates; optionally pins serverCertificate).
+  encryptionMode?: SqlServerEncryptionMode
+  // strict mode only: path to a PEM/DER/CER file to pin the server's certificate against.
+  serverCertificate?: string
+  // Optional ODBC ServerSPN override when the auto-derived MSSQLSvc/<host>:<port> is wrong.
+  serverSpn?: string
+}
 export interface LibSQLOptions {
   mode: 'url' | 'file';
   authToken?: string;
@@ -278,6 +290,12 @@ export interface IDbConnectionServerConfig {
   localHost?: string,
   localPort?: number,
   trustServerCertificate?: boolean
+  // SQL Server only. Use OS-level integrated authentication (SSPI/Kerberos/NTLM)
+  // via the native msnodesqlv8 ODBC driver instead of a username/password.
+  windowsAuthEnabled?: boolean
+  // SQL Server integrated auth only. Encryption mode, optional pinned server certificate,
+  // and optional SPN override -- consumed by connectWindowsAuth() / the ODBC conn string.
+  sqlServerOptions?: SqlServerOptions
   instantClientLocation?: string
   oracleConfigLocation?: string
   options?: any
@@ -293,6 +311,9 @@ export interface IDbConnectionServerConfig {
   dynamoDbOptions?: DynamoDBOptions
   snowflakeOptions?: SnowflakeOptions
   runtimeExtensions?: string[]
+  // Non-fatal ~/.ssh/config issues surfaced to the user (e.g. untrusted config,
+  // missing IdentityFile). Shown as warning toasts on connect/test.
+  sshConfigWarnings?: string[]
 }
 
 export interface IBasicDatabaseClient {
