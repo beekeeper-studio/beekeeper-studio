@@ -123,6 +123,7 @@ import DataMutators from '../../mixins/data_mutators'
 import { format } from 'sql-formatter'
 import _ from 'lodash'
 import Vue from 'vue'
+import Noty from 'noty'
 // import globals from '../../common/globals'
 import { vueEditor, vueFormatter, trashButton, TabulatorStateWatchers, moveRowHandle } from '@shared/lib/tabulator/helpers'
 import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter.vue'
@@ -471,10 +472,12 @@ export default Vue.extend({
             const docsUrl = this.usedConfig?.connectionType === 'mariadb'
               ? 'https://mariadb.com/kb/en/auto_increment/'
               : 'https://dev.mysql.com/doc/refman/8.0/en/alter-table.html'
-            this.$noty.info(
-              `The database clamped the auto-increment value to ${actual}. ` +
-              `<a href="${docsUrl}" target="_blank">Read more</a>`
-            )
+            this.$noty.info(`The database clamped the auto-increment value to ${actual}.`, {
+              timeout: 8000,
+              buttons: [
+                Noty.button('Read more', 'btn btn-flat', () => window.main.openExternally(docsUrl)),
+              ],
+            })
           }
         }
       } catch(ex) {
