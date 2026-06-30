@@ -1,0 +1,149 @@
+import Vue from 'vue'
+import Vuex from 'vuex'
+import { TestOrmConnection } from '@tests/lib/TestOrmConnection'
+import { SavedConnection } from '@/common/appdb/models/saved_connection'
+import { UsedConnection } from '@/common/appdb/models/used_connection'
+import { AppDbHandlers } from '@/handlers/appDbHandlers'
+import { UtilUsedConnectionModule } from '@/store/modules/data/used_connection/UtilityUsedConnectionModule'
+
+Vue.use(Vuex)
+
+const WORKSPACE_ID = -1
+
+function buildSavedConnection(overrides: Partial<SavedConnection> = {}): SavedConnection {
+  const c = new SavedConnection()
+  c.connectionType = 'postgresql'
+  c.name = 'My Saved Conn'
+  c.host = 'old-host.example.com'
+  c.port = 5432
+  c.username = 'olduser'
+  c.defaultDatabase = 'mydb'
+  Object.assign(c, overrides)
+  return c
+}
+
+// Build a plain object that mirrors what the renderer receives for a saved
+// connection. We can't just spread `saved` because several fields (e.g.
+// `connectionType`, `port`, `socketPath`) are implemented as getter/setters
+// backed by underscored fields - a raw spread would only copy the underscored
+// versions. Round-tripping through the find handler matches production, where
+// the renderer gets a plain object via `transformConn`.
+async function asConfig(saved: SavedConnection, workspaceId: number) {
+  const fetched = await AppDbHandlers['appdb/saved/findOneBy']({
+    options: { id: saved.id }
+  })
+  return { ...fetched, workspaceId }
+}
+
+function buildStore() {
+  return new Vuex.Store({
+    state: { workspaceId: WORKSPACE_ID },
+    modules: {
+      'data/usedconnections': UtilUsedConnectionModule,
+    }
+  })
+}
+
+describe('UtilUsedConnectionModule.recordUsed', () => {
+  let store: ReturnType<typeof buildStore>
+
+  beforeEach(async () => {
+    await TestOrmConnection.connect()
+
+    // Wire the Vuex action's $util.send to call the real AppDbHandlers
+    Vue.prototype.$util = {
+      send: async (channel: string, args: any) => {
+        const handler = (AppDbHandlers as any)[channel]
+        if (!handler) throw new Error(`No handler for ${channel}`)
+        return await handler(args)
+      }
+    }
+
+    store = buildStore()
+  })
+
+  afterEach(async () => {
+    await TestOrmConnection.disconnect()
+  })
+
+  it('creates a new used_connection on first use', async () => {
+    const saved = buildSavedConnection()
+    await saved.save()
+
+    await store.dispatch('data/usedconnections/recordUsed',
+      await asConfig(saved, WORKSPACE_ID))
+
+    const all = await UsedConnection.find()
+    expect(all).toHaveLength(1)
+    expect(all[0].connectionId).toBe(saved.id)
+    expect(all[0].host).toBe('old-host.example.com')
+  })
+
+  it('updates the used_connection details when the saved_connection has been edited', async () => {
+    // First, save and "use" a saved connection
+    const saved = buildSavedConnection()
+    await saved.save()
+
+    await store.dispatch('data/usedconnections/recordUsed',
+      await asConfig(saved, WORKSPACE_ID))
+
+    // Reload the store's items so the second recordUsed call sees the
+    // existing used_connection (mirrors what `data/usedconnections/load`
+    // does on app startup).
+    await store.dispatch('data/usedconnections/load')
+
+    // Now imagine the user edits the saved connection's host/port/etc.
+    saved.host = 'new-host.example.com'
+    saved.port = 6543
+    saved.username = 'newuser'
+    await saved.save()
+
+    // Connect again with the updated config
+    await store.dispatch('data/usedconnections/recordUsed',
+      await asConfig(saved, WORKSPACE_ID))
+
+    // There should still be exactly one used_connection, and it should
+    // reflect the *new* connection details.
+    const all = await UsedConnection.find()
+    expect(all).toHaveLength(1)
+    expect(all[0].connectionId).toBe(saved.id)
+    expect(all[0].host).toBe('new-host.example.com')
+    expect(all[0].port).toBe(6543)
+    expect(all[0].username).toBe('newuser')
+  })
+
+  it('returns a config keyed on the saved_connection id when reconnecting', async () => {
+    // Open tabs, pins, and hidden entities are persisted keyed on
+    // `usedConfig.id`, which is whatever recordUsed returns. When connecting to
+    // a saved connection it must stay the saved_connection id across
+    // reconnects, otherwise everything keyed on it is orphaned on the next
+    // launch (the 5.8 "lost all my open queries" regression).
+
+    // Saved and used connections live in separate tables with independent id
+    // sequences. Create a couple of unrelated saved connections first so the
+    // target's saved_connection id doesn't coincidentally equal its
+    // used_connection id, which would make this assertion meaningless.
+    await buildSavedConnection({ name: 'filler 1' }).save()
+    await buildSavedConnection({ name: 'filler 2' }).save()
+
+    const saved = buildSavedConnection()
+    await saved.save()
+
+    // First connect creates the used_connection row.
+    await store.dispatch('data/usedconnections/recordUsed',
+      await asConfig(saved, WORKSPACE_ID))
+    await store.dispatch('data/usedconnections/load')
+
+    const used = (await UsedConnection.find())[0]
+    // Sanity: the two ids must differ for this test to prove anything.
+    expect(used.id).not.toBe(saved.id)
+
+    // Reconnect (the path every updating user hits - the used_connection
+    // already exists).
+    const result = await store.dispatch('data/usedconnections/recordUsed',
+      await asConfig(saved, WORKSPACE_ID))
+
+    expect(result.id).toBe(saved.id)
+    expect(result.id).not.toBe(used.id)
+  })
+})

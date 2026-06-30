@@ -2,6 +2,9 @@
 // SSH agent mode must not attempt to read a private key file from disk.
 
 import type { IDbConnectionServerConfig, IDbConnectionServerSSHConfig } from "@/lib/db/types";
+import fs from "fs";
+import os from "os";
+import path from "path";
 
 const mockReadFileSync = jest.fn();
 const mockSshConnectionForward = jest.fn().mockResolvedValue({});
@@ -103,36 +106,6 @@ describe("connectTunnel SSH agent handling (#4193)", () => {
     mockReadFileSync.mockReturnValue(Buffer.from("KEY"));
   });
 
-  it("does not read the private key file when useAgent is true, even if privateKey is set", async () => {
-    const ssh = buildSsh({
-      useAgent: true,
-      // Mimics connection-provider populating privateKey from SSH config IdentityFile
-      privateKey: "/nonexistent/.ssh/id_rsa",
-    });
-
-    await connectTunnel(buildConfig(ssh));
-
-    expect(mockReadFileSync).not.toHaveBeenCalled();
-    expect(lastSshConfig.privateKey).toBeUndefined();
-    expect(lastSshConfig.agentForward).toBe(true);
-    expect(lastSshConfig.agentSocket).toBe("/tmp/test-agent.sock");
-  });
-
-  it("does not surface ENOENT when SSH agent mode is used and the IdentityFile path is missing", async () => {
-    mockReadFileSync.mockImplementation((p: string) => {
-      const err: any = new Error(`ENOENT: no such file or directory, open '${p}'`);
-      err.code = "ENOENT";
-      throw err;
-    });
-
-    const ssh = buildSsh({
-      useAgent: true,
-      privateKey: "/Users/anyone/.ssh/id_rsa",
-    });
-
-    await expect(connectTunnel(buildConfig(ssh))).resolves.toBeDefined();
-  });
-
   it("reads the private key file when useAgent is false and privateKey is set", async () => {
     const ssh = buildSsh({
       useAgent: false,
@@ -146,20 +119,6 @@ describe("connectTunnel SSH agent handling (#4193)", () => {
     expect(lastSshConfig.privateKey).toEqual(Buffer.from("KEY"));
   });
 
-  it("does not read the bastion private key file when bastionMode is 'agent'", async () => {
-    const ssh = buildSsh({
-      bastionHost: "bastion.example.com",
-      bastionMode: "agent",
-      bastionPrivateKey: "/nonexistent/bastion_key",
-    });
-
-    await connectTunnel(buildConfig(ssh));
-
-    expect(mockReadFileSync).not.toHaveBeenCalled();
-    expect(lastSshConfig.bastionPrivateKey).toBeUndefined();
-    expect(lastSshConfig.bastionAgentForward).toBe(true);
-  });
-
   it("reads the bastion private key file when bastionMode is 'keyfile'", async () => {
     const ssh = buildSsh({
       bastionHost: "bastion.example.com",
@@ -171,5 +130,53 @@ describe("connectTunnel SSH agent handling (#4193)", () => {
 
     expect(mockReadFileSync).toHaveBeenCalledTimes(1);
     expect(mockReadFileSync.mock.calls[0][0]).toContain("/keys/bastion_key");
+  });
+
+  // Regression for https://github.com/beekeeper-studio/beekeeper-studio/issues/4366
+  // Automatic (agent) mode must skip ~/.ssh/config IdentityFile entries it can't
+  // read, mirroring ssh(1), instead of throwing and aborting the connection.
+  it("agent mode skips a missing IdentityFile and reads the next existing one (#4366)", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bks-tunnel-4366-"));
+    const goodKey = path.join(dir, "id_ed25519");
+    fs.writeFileSync(goodKey, "PRIVATE KEY DATA");
+    const badKey = path.join(dir, "missing_key");
+
+    // connection-provider copies the first IdentityFile into privateKey and
+    // passes the full ordered list as identityFiles.
+    const ssh = buildSsh({
+      useAgent: true,
+      privateKey: badKey,
+      identityFiles: [badKey, goodKey],
+      identitiesOnly: false,
+    });
+
+    await connectTunnel(buildConfig(ssh));
+
+    // The missing entry is skipped; only the existing key is read.
+    expect(mockReadFileSync).toHaveBeenCalledTimes(1);
+    expect(mockReadFileSync.mock.calls[0][0]).toContain(goodKey);
+    expect(mockReadFileSync.mock.calls[0][0]).not.toContain("missing_key");
+    expect(lastSshConfig.privateKey).toEqual(Buffer.from("KEY"));
+    expect(lastSshConfig.authHandler).toEqual(["none", "agent", "publickey"]);
+
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("agent mode does not throw when the only IdentityFile is missing (#4366)", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bks-tunnel-4366b-"));
+    const badKey = path.join(dir, "missing_key");
+
+    const ssh = buildSsh({
+      useAgent: true,
+      privateKey: badKey,
+      identityFiles: [badKey],
+      identitiesOnly: false,
+    });
+
+    // Must resolve (fall back to the agent) rather than reject with ENOENT.
+    await expect(connectTunnel(buildConfig(ssh))).resolves.toBeDefined();
+    expect(mockReadFileSync.mock.calls.every((c) => !String(c[0]).includes("missing_key"))).toBe(true);
+
+    fs.rmSync(dir, { recursive: true, force: true });
   });
 });

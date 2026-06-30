@@ -1,6 +1,16 @@
 import { EditorSelection } from "@codemirror/state";
 import { SqlTextEditor } from "../../../lib/components/sql-text-editor/SqlTextEditor";
 import { vi } from "vitest";
+import * as sqlQueryIdentifier from "sql-query-identifier";
+
+// Wrap identify so individual tests can force it to throw via mockImplementationOnce
+vi.mock("sql-query-identifier", async (importOriginal) => {
+  const actual = (await importOriginal()) as typeof sqlQueryIdentifier;
+  return {
+    ...actual,
+    identify: vi.fn(actual.identify),
+  };
+});
 
 function initializeEditor(editor: SqlTextEditor, initialValue?: string) {
   const parent = document.createElement("div");
@@ -37,8 +47,6 @@ describe("querySelection", () => {
       new SqlTextEditor({ onQuerySelectionChange }),
       "SELECT 1;\nSELECT 2"
     );
-
-    onQuerySelectionChange.mockClear();
 
     // Move cursor to second query
     editor.view.dispatch({
@@ -110,6 +118,33 @@ describe("querySelection", () => {
         ]),
       })
     );
+
+    editor.destroy();
+  });
+
+  it("should fall back to a single whole-text query and report the error when identify throws", () => {
+    const onQuerySelectionChange = vi.fn();
+    const editor = initializeEditor(
+      new SqlTextEditor({ onQuerySelectionChange }),
+      "SELECT 1"
+    );
+
+    const error = new Error("parse failure");
+    vi.mocked(sqlQueryIdentifier.identify).mockImplementationOnce(() => {
+      throw error;
+    });
+
+    // Trigger a re-parse, which now throws and hits the fallback
+    editor.view.dispatch({
+      changes: { from: 8, insert: " WHERE" },
+    });
+
+    expect(onQuerySelectionChange).toHaveBeenCalledTimes(1);
+    const params = onQuerySelectionChange.mock.calls[0][0];
+    expect(params.error).toBe(error);
+    expect(params.queries).toHaveLength(1);
+    expect(params.queries[0].text).toBe("SELECT 1 WHERE");
+    expect(params.selectedQuery.text).toBe("SELECT 1 WHERE");
 
     editor.destroy();
   });

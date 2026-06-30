@@ -65,6 +65,7 @@
         <i class="material-icons">stars</i> Upgrade
       </a>
     </div>
+    <x-progressbar v-if="activeTab?.isLoading" />
     <div class="tab-content">
       <div class="empty-editor-group empty flex-col  expand">
         <div class="expand layout-center">
@@ -85,7 +86,7 @@
           :tab="tab"
           :tab-id="tab.id"
           @update-tab="updateTab"
-         />
+        />
         <Shell
           v-if="tab.tabType === 'shell'"
           :active="activeTab?.id === tab.id"
@@ -109,11 +110,12 @@
           :tab="tab"
           @close="close"
         >
-          <template v-slot:default="slotProps">
+          <template #default="slotProps">
             <TableTable
               :tab="tab"
               :active="activeTab?.id === tab.id"
               :table="slotProps.table"
+              @update-tab="updateTab"
             />
           </template>
         </tab-with-table>
@@ -122,7 +124,7 @@
           :tab="tab"
           @close="close"
         >
-          <template v-slot:default="slotProps">
+          <template #default="slotProps">
             <TableProperties
               :active="activeTab?.id === tab.id"
               :tab="tab"
@@ -271,7 +273,7 @@
     </portal>
 
     <confirmation-modal :id="confirmModalId">
-      <template v-slot:title>
+      <template #title>
         Really close
         <span
           class="tab-like"
@@ -281,7 +283,7 @@
         </span>
         ?
       </template>
-      <template v-slot:message>
+      <template #message>
         You will lose unsaved changes
       </template>
     </confirmation-modal>
@@ -399,6 +401,7 @@ export default Vue.extend({
        'dialectData': 'dialectData',
        'dialectTitle': 'dialectTitle',
        'newTabDropdownItems': 'tabs/newTabDropdownItems',
+       'getKeybindings': 'plugins/keybindings/getKeybindings',
     }),
     tabIcon() {
       return {
@@ -452,6 +455,7 @@ export default Vue.extend({
         { event: AppEvent.beginImport, handler: this.beginImport },
         { event: AppEvent.restoreDatabase, handler: this.restoreDatabase },
         { event: AppEvent.switchUserKeymap, handler: this.switchUserKeymap },
+        { event: AppEvent.pasteAsNewRows, handler: this.pasteAsNewRowsWrongTabCheck },
       ]
     },
     lastTab() {
@@ -477,6 +481,7 @@ export default Vue.extend({
         'tab.switchTab7': this.handleSwitchTab.bind(this, 6),
         'tab.switchTab8': this.handleSwitchTab.bind(this, 7),
         'tab.switchTab9': this.handleSwitchTab.bind(this, 8),
+        ...this.getKeybindings("newTabDropdown"),
       })
       // FIXME (azmi): move this to default config file
       if(this.$config.isMac) {
@@ -784,6 +789,10 @@ export default Vue.extend({
         this.$noty.error("You can only import data into a table")
         return;
       }
+      if (this.$store.getters.isCommunity) {
+        this.$root.$emit(AppEvent.upgradeModal, 'Import From File')
+        return;
+      }
       const t = { tabType: 'import-table' }
       t.title = table ? `Import Table: ${table.name}` : 'Create Table and Import Data'
       t.unsavedChanges = false
@@ -824,8 +833,8 @@ export default Vue.extend({
         error: false,
       }))
 
-      if (!files.every(({ file }) => file.name.endsWith('.sql'))) {
-        this.$noty.error('Only .sql files are supported')
+      if (!files.every(({ file }) => /\.(sql|txt)$/i.test(file.name))) {
+        this.$noty.error('Only .sql and .txt files are supported')
         return
       }
 
@@ -932,7 +941,7 @@ export default Vue.extend({
         try {
           // TODO (azmi): this process can take longer by accident. Consider
           // an ability to cancel reading file.
-          const text = await this.$util.send('file/read', { path: file.path, options: { encoding: 'utf8', flag: 'r' }})
+          const text = await this.$util.send('file/readSqlFile', { path: file.path })
           if (text) {
             const query = await this.$util.send('appdb/query/new');
             query.title = file.name
@@ -960,23 +969,21 @@ export default Vue.extend({
 
       const lastExportPath = await Vue.prototype.$settings.get("lastExportPath", await window.main.defaultExportPath(fileName));
 
-      const filePath = this.$native.dialog.showSaveDialogSync({
-        title: "Export Query",
-        defaultPath: lastExportPath,
-        filters: [
-          { name: 'SQL (*.sql)', extensions: ['sql'] },
-          { name: 'All Files (*.*)', extensions: ['*'] },
-        ],
-      })
-
-      // do nothing if canceled
-      if (!filePath) return
-
       const notyQueue = 'export-query'
       this.$noty.info('Exporting query',  { queue: notyQueue })
 
       try {
-        await this.$util.send('file/write', { path: filePath, text: query.text, options: { encoding: 'utf8' }})
+        const saved = await window.main.fileHelpers.save({
+          fileName: lastExportPath,
+          content: query.text,
+          filters: [
+            { name: 'SQL (*.sql)', extensions: ['sql'] },
+            { name: 'All Files (*.*)', extensions: ['*'] },
+          ],
+        })
+        if (saved === false) {
+          return
+        }
         this.$noty.success('Query exported!', { killer: notyQueue })
       } catch (e) {
         console.error(e)
@@ -990,6 +997,13 @@ export default Vue.extend({
     },
     switchUserKeymap(value) {
       this.$store.dispatch('settings/save', { key: 'keymap', value: value });
+    },
+    pasteAsNewRowsWrongTabCheck() {
+      // The active table's Data tab handles this itself. Anywhere else, the
+      // action isn't applicable, so surface a hint.
+      if (this.activeTab?.tabType !== 'table') {
+        this.$noty.error("Paste as new rows is only available in a table's Data tab")
+      }
     },
     openTableBuilder() {
       if (this.connectionType === 'mongodb') {
@@ -1059,7 +1073,7 @@ export default Vue.extend({
     },
     async close(tab: TransportOpenTab, options?: CloseTabOptions) {
       if (this.closingTab) return; // prevent close modals queueing
-  
+
       if (tab.unsavedChanges && !options?.ignoreUnsavedChanges) {
         this.closingTab = tab
         const confirmed = await this.$confirmById(this.confirmModalId);
@@ -1158,7 +1172,7 @@ export default Vue.extend({
       }
       this.addTab(tab)
     },
-    favoriteClick(item) {
+    async favoriteClick(item, options?: { openHistory?: boolean }) {
       const tab = {} as TransportOpenTab
       tab.tabType = 'query'
       tab.title = item.title
@@ -1166,10 +1180,16 @@ export default Vue.extend({
       tab.unsavedChanges = false
 
       const existing = this.tabItems.find((t) => matches(t, tab))
-      if (existing) return this.$store.dispatch('tabs/setActive', existing)
+      if (existing) {
+        await this.$store.dispatch('tabs/setActive', existing)
+      } else {
+        await this.addTab(tab)
+      }
 
-      this.addTab(tab)
-
+      if (options?.openHistory) {
+        await this.$nextTick()
+        this.trigger(AppEvent.openQueryEditHistory, item.id)
+      }
     },
     async createQueryFromItem(item) {
       const tab = {} as TransportOpenTab;

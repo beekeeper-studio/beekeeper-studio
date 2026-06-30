@@ -304,7 +304,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
 
    async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
     log.info('filters in listTables', filter)
-    const schemaFilter = buildSchemaFilter(filter, 'table_schema')
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema', (s) => this.wrapIdentifier(s))
     const whereClause = schemaFilter ? `WHERE ${schemaFilter}` : ''
     const sql = `select * from ${this.wrapIdentifier(this.db)}.information_schema.tables ${whereClause}`
     const result = await this.driverExecuteSingle(sql)

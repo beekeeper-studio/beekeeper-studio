@@ -110,15 +110,102 @@ Beekeeper supports tunneling your connection via SSH. To connect to a remote dat
 
 6. **Select your SSH Authentication method**:
 
-    * `SSH Agent` if your local machine is running an SSH Agent, you only need to provide the remote **SSH Username** of your ssh account on the server
+    * `Automatic` (default) — Beekeeper picks the right key for you, in the same order `ssh` itself does. See below.
 
-    * `Username and Password` to enter both your **SSH Username** and **SSH Password** (also see the _Save Passwords_ option, below)
+    * `Key File` — pick a specific **SSH Private key File** (and optionally enter the **Key File PassPhrase**). Use this when you want to override Automatic and authenticate with one specific key.
 
-    * `Key File` Select your **SSH Private key File** (and optionally enter your **Key File PassPhrase**) if you use your [SSH Public Key](https://stackoverflow.com/questions/7260/how-do-i-setup-public-key-authentication#answers-header) on the server for authentication
+    * `Username and Password` — enter both your **SSH Username** and **SSH Password**.
 
 7. **Enter a name for your Connection** (optionally check the **Save Passwords** checkbox) and Press **Save** to have Beekeeper remember all of the above for you
 
 8. **Press the Connect button** to access your database!
+
+### Automatic authentication (default)
+
+In **Automatic** mode, Beekeeper tries the same things `ssh` does, in this order, and uses the first one that works:
+
+1. **SSH agent.** Whatever your `SSH_AUTH_SOCK` (or PuTTY's pageant on Windows) is advertising.
+2. **`IdentityFile` from `~/.ssh/config`.** Used if the matching `Host` entry has one. Honors `IdentitiesOnly yes` — when set, the agent is restricted to keys whose public part matches an `IdentityFile`.
+3. **Default key.** The first of `~/.ssh/id_ed25519`, `~/.ssh/id_ecdsa`, `~/.ssh/id_rsa`, or `~/.ssh/id_dsa` that exists.
+
+When you select **Automatic** in the form, a small status row appears under the dropdown: **SSH agent › SSH config › Default key**. Each pill shows a check or x and reveals the discovered path on hover, so you can see at a glance which step will satisfy the connection.
+
+If you'd rather skip Automatic and pick a key explicitly, choose **Key File** and select the key yourself.
+
+### Other authentication methods
+
+* **Key File** — uses the **SSH Private key File** you select (and optional **Key File PassPhrase**). Beekeeper does **not** fall back to `IdentityFile` from `~/.ssh/config` in this mode — picking Key File means you want this specific key. Hostname/port/user from `~/.ssh/config` aliases still apply.
+* **Username & Password** — uses the form's **SSH Username** and **SSH Password**. Hostname/port/user from `~/.ssh/config` aliases still apply; no key files are tried.
+
+### Bastion (jump) host
+
+The Bastion section repeats the same three authentication modes (**Automatic**, **Key File**, **Username & Password**) with the same behaviour. The bastion is visually nested under the SSH section to make it clear that the bastion's credentials connect to the *bastion*, while the outer SSH fields connect to the *target* through it.
+
+### Using `~/.ssh/config`
+
+You can type a `Host` alias from your `~/.ssh/config` into the SSH Hostname or Bastion Host field. Beekeeper resolves the following keys from the matching `Host` and `Match` entries, regardless of which authentication mode you picked:
+
+| SSH config key | What Beekeeper uses it for                                          |
+| -------------- | ------------------------------------------------------------------- |
+| `HostName`     | The actual hostname/IP to connect to                                |
+| `Port`         | The SSH port                                                        |
+| `User`         | The SSH username                                                    |
+| `IdentityFile` | The private key(s) (Automatic mode only — step 2 of the auth chain) |
+| `IdentitiesOnly` | If `yes`, restricts the agent to keys matching `IdentityFile` (Automatic mode only) |
+
+Multiple `IdentityFile` entries are allowed. Beekeeper tries them in order and, like `ssh`, **skips any whose file doesn't exist** instead of failing the connection.
+
+For example, given this entry:
+
+```
+Host production
+  HostName db.internal.example.com
+  Port 22022
+  User admin
+  IdentityFile ~/.ssh/prod_ed25519
+  IdentitiesOnly yes
+```
+
+Type `production` into the **SSH Hostname** field, leave the other fields blank, pick **Automatic** as the auth method, and Beekeeper will fill in the rest — connecting to `db.internal.example.com:22022` as `admin`, restricted to the agent identity that matches `prod_ed25519`.
+
+When you also enter a value in the form, the form value wins — `~/.ssh/config` only fills in the fields you leave blank. The hostname itself is the one exception: an alias is always resolved to its real `HostName` so the connection can be made.
+
+#### `Match` blocks
+
+`Match` blocks are evaluated, and any of the resolved keys above that they set are applied. The supported match criteria are:
+
+| Criterion      | Matches against                                                |
+| -------------- | ------------------------------------------------------------- |
+| `all`          | Always matches                                                |
+| `host`         | The (possibly already-resolved) host name                    |
+| `originalhost` | The host alias you typed, before `HostName` resolution       |
+| `user`         | The SSH username for the connection                          |
+| `localuser`    | The local operating-system user running Beekeeper            |
+| `final`        | The final configuration pass                                 |
+| `exec`         | The exit status of a command (see the security note below)   |
+
+#### `Match exec` and config file permissions
+
+`Match exec` runs an arbitrary command, exactly as `ssh` does. To avoid running commands from a config you don't control, Beekeeper mirrors OpenSSH's safeguard: your `~/.ssh/config` is only read when it is **owned by you (or root) and not writable by group or other users** (e.g. `chmod 600`). A config with looser permissions is ignored entirely and a warning is logged. This check is POSIX-only; on Windows the file is always read. Note that `Match exec` is evaluated through your system shell, so its availability depends on the platform.
+
+#### Supported and unsupported `ssh_config` features
+
+**Supported**
+
+- `Host` aliases and `Match` blocks (`all`, `host`, `originalhost`, `user`, `localuser`, `final`, `exec`)
+- `HostName`, `Port`, `User`
+- `IdentityFile` (one or more; Automatic mode), with missing files skipped
+- `IdentitiesOnly`
+- Glob patterns and negation (`!`) in `Host` / `Match host` patterns
+
+**Not supported (ignored)**
+
+- `ProxyJump` / `ProxyCommand` — configure the bastion host explicitly in the connection form instead
+- `ForwardAgent`, `LocalForward`, `RemoteForward`, `DynamicForward`
+- `Include`d config files
+- Any other directive not listed under *Supported* above
+
+If you rely on `ProxyJump`, configure the bastion host explicitly in the connection form.
 
 ## File Associations
 

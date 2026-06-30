@@ -9,6 +9,25 @@
       class="top-panel"
       ref="topPanel"
     >
+      <div
+        v-if="querySelectionError"
+        class="query-parser-error"
+      >
+        <div class="alert alert-warning alert-small">
+          <i class="material-icons">error_outline</i>
+          <div class="alert-body">Run Current unavailable</div>
+          <div class="btn-group">
+            <a
+              @click.prevent="copyQuerySelectionError"
+              class="btn btn-flat btn-small"
+            >Copy error</a>
+            <a
+              @click.prevent="openTroubleshooting"
+              class="btn btn-flat btn-small"
+            >Report issue</a>
+          </div>
+        </div>
+      </div>
       <merge-manager
         v-if="query && query.id"
         :original-text="originalText"
@@ -39,6 +58,7 @@
         :is-focused="focusingElement === 'text-editor'"
         :markers="editorMarkers"
         :formatter-dialect="formatterDialect"
+        :formatter-dialect-options="formatterDialectOptions"
         :identifier-dialect="identifierDialect"
         :param-types="paramTypes"
         :keybindings="keybindings"
@@ -161,7 +181,6 @@
               <x-label>Rollback</x-label>
             </x-button>
           </x-buttons>
-
         </div>
 
         <div class="editor-help expand" />
@@ -196,7 +215,7 @@
               class="btn btn-primary btn-small"
               :v-tooltip="displayShortcut('queryEditor.primaryQueryAction')"
               @click.prevent="queryFunctions.primaryRead"
-              :disabled="runButtonDisabled"
+              :disabled="runButtonDisabled || (primaryIsCurrent && runCurrentDisabled)"
             >
               <x-label>{{ runPrimaryText() }}</x-label>
             </x-button>
@@ -207,18 +226,24 @@
             >
               <i class="material-icons">arrow_drop_down</i>
               <x-menu>
-                <x-menuitem @click.prevent="queryFunctions.primaryRead">
+                <x-menuitem
+                  @click.prevent="queryFunctions.primaryRead"
+                  :disabled="primaryIsCurrent && runCurrentDisabled"
+                >
                   <x-label>{{ runPrimaryText() }}</x-label>
                   <x-shortcut :value="displayShortcut('queryEditor.primaryQueryAction')" />
                 </x-menuitem>
-                <x-menuitem @click.prevent="queryFunctions.secondaryRead">
+                <x-menuitem
+                  @click.prevent="queryFunctions.secondaryRead"
+                  :disabled="primaryIsTab && runCurrentDisabled"
+                >
                   <x-label>{{ runSecondaryText() }}</x-label>
                   <x-shortcut :value="displayShortcut('queryEditor.secondaryQueryAction')" />
                 </x-menuitem>
                 <hr>
                 <x-menuitem
                   @click.prevent="queryFunctions.primaryWrite"
-                  :disabled="disableRunToFile"
+                  :disabled="disableRunToFile || (primaryIsCurrent && runCurrentDisabled)"
                 >
                   <x-label>{{ runPrimaryText(true) }}</x-label>
                   <x-shortcut :value="displayShortcut('queryEditor.primaryQueryToFileAction')" />
@@ -231,7 +256,7 @@
                 </x-menuitem>
                 <x-menuitem
                   @click.prevent="queryFunctions.secondaryWrite"
-                  :disabled="disableRunToFile"
+                  :disabled="disableRunToFile || (primaryIsTab && runCurrentDisabled)"
                 >
                   <x-label>{{ runSecondaryText(true) }}</x-label>
                   <x-shortcut :value="displayShortcut('queryEditor.secondaryQueryToFileAction')" />
@@ -268,15 +293,15 @@
       <result-table
         ref="table"
         v-else-if="showResultTable"
-        :editData="resultEditData"
-        :editingData="editingResult"
+        :edit-data="resultEditData"
+        :editing-data="editingResult"
         :focus="focusingElement === 'table'"
         :active="active"
         :table-height="tableHeight"
         :result="result"
         :query="query"
         :tab="tab"
-        :isManualCommit="isManualCommit"
+        :is-manual-commit="isManualCommit"
         :binary-encoding="$bksConfig.ui.general.binaryEncoding"
       />
       <div
@@ -312,12 +337,13 @@
       <!-- <span class="expand" v-if="!result"></span> -->
       <!-- STATUS BAR -->
       <query-editor-status-bar
+        v-if="!editHistoryOpen"
         v-model="selectedResult"
         :results="results"
         :running="running"
         :editing="editingResult"
-        :changesCount="$refs.table?.pendingChangesCount"
-        :changesString="$refs.table?.pendingChangesString"
+        :changes-count="$refs.table?.pendingChangesCount"
+        :changes-string="$refs.table?.pendingChangesString"
         :result-editable="resultEditable"
         @editResults="editResults"
         @stopEditing="stopEditing"
@@ -336,6 +362,14 @@
       />
     </div>
 
+    <query-edit-history
+      :open="editHistoryOpen"
+      :query-id="query?.id ?? null"
+      :unsaved-text="unsavedChanges ? unsavedText : null"
+      @close="editHistoryOpen = false"
+      @restore="handleEditHistoryRestore"
+    />
+
     <!-- Super-Formatter Modal -->
     <portal to="modals">
       <modal
@@ -353,6 +387,7 @@
           <bks-super-formatter
             :value="unsavedText"
             :formatter-dialect="formatterDialect"
+            :formatter-dialect-options="formatterDialectOptions"
             :identifier-dialect="identifierDialect"
             :can-add-presets="true"
             :clipboard="$native.clipboard"
@@ -418,8 +453,12 @@
               <div class="form-group" v-if="queryFolders && queryFolders.length > 0">
                 <label>Folder <i v-if="!isUltimate && !isCloud" class="material-icons menu-icon">stars</i></label>
                 <select v-model="query.queryFolderId" :disabled="!isUltimate && !isCloud">
-                  <option :value="null">No folder</option>
-                  <option v-for="f in queryFolders" :key="f.id" :value="f.id">{{ f.name }}</option>
+                  <option :value="null">
+                    No folder
+                  </option>
+                  <option v-for="f in queryFolders" :key="f.id" :value="f.id">
+                    {{ f.name }}
+                  </option>
                 </select>
               </div>
             </div>
@@ -514,7 +553,7 @@
   import { mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
 
-  import { canDeparameterize, convertParamsForReplacement, deparameterizeQuery } from '../lib/db/sql_tools'
+  import { canDeparameterize, convertParamsForReplacement, deparameterizeQuery, safelyIdentify } from '../lib/db/sql_tools'
   import { EditorMarker } from '@/lib/editor/utils'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
@@ -522,18 +561,19 @@
   import SqlTextEditor from "@beekeeperstudio/ui-kit/vue/sql-text-editor"
   import BksSuperFormatter from "@beekeeperstudio/ui-kit/vue/super-formatter"
   import SurrealTextEditor from "@beekeeperstudio/ui-kit/vue/surreal-text-editor"
-  import type { Entity } from "@beekeeperstudio/ui-kit";
+  import { divider, type Entity } from "@beekeeperstudio/ui-kit";
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
+  import QueryEditHistory from '@/components/editor/QueryEditHistory.vue'
   import rawlog from '@bksLogger'
   import ErrorAlert from './common/ErrorAlert.vue'
   import MergeManager from '@/components/editor/MergeManager.vue'
   import { AppEvent } from '@/common/AppEvent'
   import { PropType } from 'vue'
-  import { TransportOpenTab, findQuery } from '@/common/transport/TransportOpenTab'
+  import { TransportOpenTab, findQuery, resolveEditorText } from '@/common/transport/TransportOpenTab'
   import { blankFavoriteQuery } from '@/common/transport'
   import { FieldEditData, TableOrView } from "@/lib/db/models";
-  import { FormatterDialect, dialectFor } from "@shared/lib/dialects/models"
+  import { FormatterDialect, dialectFor, formatOptionsFor } from "@shared/lib/dialects/models"
   import { findSqlQueryIdentifierDialect } from "@/lib/editor/CodeMirrorPlugins";
   import { queryMagicExtension } from "@/lib/editor/extensions/queryMagicExtension";
   import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
@@ -550,7 +590,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor, BksSuperFormatter},
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor, BksSuperFormatter, QueryEditHistory },
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean
@@ -595,6 +635,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         vimKeymaps: [],
         formatterPresets: [],
         selectedFormatter: null,
+        editHistoryOpen: false,
         /**
          * NOTE: Use focusElement instead of focusingElement or blurTextEditor()
          * if we want to switch focus. Why two states? We need a feedback from
@@ -607,6 +648,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
         individualQueries: [],
         currentlySelectedQuery: null,
+        querySelectionError: null,
+
         queryMagic: queryMagicExtension(),
         isManualCommit: false,
         hasActiveTransaction: false,
@@ -639,7 +682,15 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       ...mapState('settings', ['settings']),
       ...mapState('tabs', { 'activeTab': 'active' }),
       ...mapGetters('popupMenu', ['getExtraPopupMenu']),
+      rootBindings() {
+        return [
+          { event: AppEvent.openQueryEditHistory, handler: this.handleOpenQueryEditHistory },
+        ];
+      },
       readOnly() {
+        if (this.tab.isLoading) {
+          return true;
+        }
         if (this.remoteDeleted) {
           return true;
         }
@@ -738,6 +789,11 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.running ||
           (this.editingResult && this.changesCount > 0);
       },
+      runCurrentDisabled() {
+        // When the sql parser failed to detect multiple queries,
+        // "run current" becomes useless.
+        return !!this.querySelectionError && !this.hasSelectedText;
+      },
       changesCount() {
         return this.$refs.table?.pendingChangesCount;
       },
@@ -808,8 +864,13 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           if (_.isEmpty(placeholders)) {
             return query;
           }
-          const values = Object.values(this.queryParameterValues) as string[];
-          const convertedParams = convertParamsForReplacement(placeholders, values);
+          // For positional (?) params pass an ordered array; for named params pass the
+          // full record keyed by placeholder so the mapping is stable regardless of how
+          // many times each name appears in the query.
+          const rawValues = placeholders.includes('?')
+            ? Object.values(this.queryParameterValues) as string[]
+            : this.queryParameterValues as Record<string, string>;
+          const convertedParams = convertParamsForReplacement(placeholders, rawValues);
           query = deparameterizeQuery(query, this.dialect, convertedParams, this.paramTypes);
         } catch (ex) {
           log.error("Unable to deparameterize query", ex)
@@ -877,6 +938,13 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       },
       formatterDialect() {
         return FormatterDialect(dialectFor(this.queryDialect))
+      },
+      formatterDialectOptions() {
+        // Only populated for dialects sql-formatter doesn't ship natively
+        // (currently just DynamoDB PartiQL). When null, the formatter falls
+        // back to the string `formatterDialect` prop above.
+        const opts = formatOptionsFor(dialectFor(this.queryDialect))
+        return 'dialect' in opts ? opts.dialect : null
       },
       paramTypes() {
         // TODO: Parameter replacement for redis
@@ -1234,7 +1302,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       },
       async editResults() {
         if (this.isCommunity) {
-          this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to edit query result data")
+          this.$root.$emit(AppEvent.upgradeModal, "Editable Query Results")
           return;
         }
         if (!this.resultsEditData[this.selectedResult]) {
@@ -1324,6 +1392,13 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             const payload = _.clone(this.query)
             payload.text = this.unsavedText
             payload.excerpt = payload.text.substr(0, 250)
+            if (payload.id) {
+              const latest = this.savedQueries.find(q => q.id === payload.id)
+              if (latest) {
+                payload.queryFolderId = latest.queryFolderId
+                payload.position = latest.position
+              }
+            }
             this.$modal.hide(`save-modal-${this.tab.id}`)
             const id = await this.$store.dispatch('data/queries/save', payload)
             this.tab.queryId = id
@@ -1385,7 +1460,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       },
       async submitQueryToFile() {
         if (this.isCommunity) {
-          this.$root.$emit(AppEvent.upgradeModal)
+          this.$root.$emit(AppEvent.upgradeModal, 'Query to File')
           return;
         }
 
@@ -1399,7 +1474,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       },
       async submitCurrentQueryToFile() {
         if (this.isCommunity) {
-          this.$root.$emit(AppEvent.upgradeModal)
+          this.$root.$emit(AppEvent.upgradeModal, 'Query to File')
           return;
         }
         if (this.runButtonDisabled) return;
@@ -1419,7 +1494,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
       },
       async submitCurrentQuery() {
-        if(this.runButtonDisabled) return;
+        if (this.runButtonDisabled) return;
+        if (this.runCurrentDisabled) return;
         this.runningType = 'current'
 
         if (this.hasSelectedText && this.primaryIsCurrent) {
@@ -1431,7 +1507,16 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           return await this.submitQuery(this.currentlySelectedQuery.text)
         }
 
-        const queries = identify(this.unsavedText, { strict: false, dialect: this.identifierDialect, paramTypes: this.paramTypes })
+        const { queries, error } = safelyIdentify(this.unsavedText, { dialect: this.identifierDialect, paramTypes: this.paramTypes })
+
+        // this should not theoretically be possible as there probably would have been a queryselection error,
+        // but if we somehow manage to get here, we need to panic
+        if (error) {
+          log.error(error);
+          this.querySelectionError = error;
+          return;
+        }
+
         if (queries.length > 0) {
           this.individualQueries = queries
           this.currentlySelectedQuery = queries[0]
@@ -1490,9 +1575,11 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         this.resultEditableMap = []
         this.editingResult = false
         this.selectedResult = 0
-        let identification = []
+        const { queries: identification, error } = safelyIdentify(rawQuery, { dialect: this.identifyDialect, identifyTables: true, identifyColumns: true });
+        if (error) {
+          log.error("Unable to identify query.", error)
+        }
         try {
-          identification = identify(rawQuery, { strict: false, dialect: this.identifyDialect, identifyTables: true, identifyColumns: true })
 
           if (this.canManageTransactions && identification.some((value: IdentifyResult) => value.executionType === "TRANSACTION")) {
             const startTransaction = identification.filter((value: IdentifyResult) => value.type === "BEGIN_TRANSACTION").length
@@ -1608,19 +1695,17 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         }
       },
       initializeQueries() {
-        if (!this.tab.unsavedChanges && this.query?.text) {
-          this.unsavedText = null
-        }
-        const originalText = this.query?.text || this.tab.unsavedQueryText
-        if (originalText) {
-          const queries = identify(originalText, { strict: false, dialect: this.identifierDialect, paramTypes: this.paramTypes })
+        const { originalText, editorText } = resolveEditorText(this.tab, this.query?.text)
+        if (editorText) {
+          // The run methods should catch any errors, so we don't need to do that here
+          const { queries } = safelyIdentify(editorText, { dialect: this.identifierDialect, paramTypes: this.paramTypes })
           if (queries.length > 0) {
             this.individualQueries = queries
             this.currentlySelectedQuery = queries[0]
           }
 
           this.originalText = originalText
-          this.unsavedText = originalText
+          this.unsavedText = editorText
         }
       },
       fakeRemoteChange() {
@@ -1754,9 +1839,16 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
         return table?.columns.map((c) => c.columnName);
       },
-      handleQuerySelectionChange({ queries, selectedQuery }) {
+      handleQuerySelectionChange({ queries, selectedQuery, error }) {
         this.individualQueries = queries;
         this.currentlySelectedQuery = selectedQuery;
+        this.querySelectionError = error;
+      },
+      openTroubleshooting() {
+        window.main.openExternally('https://docs.beekeeperstudio.io/support/troubleshooting/')
+      },
+      copyQuerySelectionError() {
+        this.$native.clipboard.writeText(this.querySelectionError?.stack ?? this.querySelectionError?.message)
       },
       startTimer() {
         this.elapsedTime = 0;
@@ -1785,10 +1877,47 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           {
             label: "Open Query Formatter",
             id: "formatter",
-            handler: this.formatterPreset
+            handler: this.formatterPreset,
           },
+          ...(this.query?.id && this.isCloud
+            ? [
+                divider,
+                {
+                  label: "View Edit History",
+                  id: "view-edit-history",
+                  handler: this.viewEditHistory,
+                },
+              ]
+            : []),
+          ...(window.platformInfo.isDevelopment && this.isCloud && this.query?.id
+            ? [
+                { type: "divider" },
+                {
+                  label: "[DEV] Make Fake Remote Change",
+                  id: "fake-remote-change",
+                  handler: this.fakeRemoteChange,
+                },
+              ]
+            : []),
           ...this.getExtraPopupMenu("editor.query", { transform: "ui-kit" }),
         ];
+      },
+      viewEditHistory() {
+        if (!this.query?.id) {
+          return;
+        }
+        this.editHistoryOpen = true;
+      },
+      handleOpenQueryEditHistory(savedQueryId) {
+        if (this.tab.queryId === savedQueryId) {
+          this.editHistoryOpen = true;
+        }
+      },
+      handleEditHistoryRestore(restored) {
+        this.fullQuery = restored;
+        this.unsavedText = restored.text;
+        this.originalText = restored.text;
+        this.editHistoryOpen = false;
       },
       getCommitModeVTooltip(options: {
         title: string;
@@ -1836,6 +1965,9 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         };
       }
     },
+    created() {
+      this.registerHandlers(this.rootBindings)
+    },
     async mounted() {
       const {
         primaryFunc,
@@ -1851,11 +1983,18 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         secondaryWrite: secondaryWriteFunc
       }
 
-      if (this.tab.queryId) {
-        this.fullQuery = await this.$store.dispatch('data/queries/findOne', this.tab.queryId);
-      } else if (this.tab.usedQueryId) {
-        this.fullQuery = await this.$store.dispatch('data/usedQueries/findOne', this.tab.usedQueryId);
+      try {
+        this.$set(this.tab, 'isLoading', true);
+
+        if (this.tab.queryId) {
+          this.fullQuery = await this.$store.dispatch('data/queries/findOne', this.tab.queryId);
+        } else if (this.tab.usedQueryId) {
+          this.fullQuery = await this.$store.dispatch('data/usedQueries/findOne', this.tab.usedQueryId);
+        }
+      } finally {
+        this.$set(this.tab, 'isLoading', false);
       }
+
       this.initializeQueries();
 
       if (this.shouldInitialize) {
@@ -1880,6 +2019,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       this.addTransactionTimeoutListener();
     },
     beforeDestroy() {
+      this.unregisterHandlers(this.rootBindings)
       if(this.split) {
         this.split.destroy()
       }
@@ -1893,6 +2033,17 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 <style lang="scss" scoped>
   @use "sass:color";
   @import '../assets/styles/app/_variables';
+
+  .query-editor {
+    position: relative;
+
+    & ::v-deep .query-edit-history {
+      position: absolute;
+      inset: 0;
+      // must do this to win over the split.js gutter
+      z-index: 21;
+    }
+  }
 
   label[for="commit-mode"] {
     color: var(--text);
@@ -1996,6 +2147,16 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
   // Hide the dot on the range highlight when not editing result
   .query-editor:not(.editing-result) ::v-deep .tabulator-range-active::after {
     visibility: hidden;
+  }
+
+  .query-parser-error {
+    margin-inline: 1rem;
+    margin-top: 0.5rem;
+    margin-bottom: -0.5rem;
+
+    .alert {
+      margin: 0;
+    }
   }
 </style>
 

@@ -32,7 +32,7 @@ import MultiTableExportStoreModule from './modules/exports/MultiTableExportModul
 import ImportStoreModule from './modules/imports/ImportStoreModule'
 import { BackupModule } from './modules/backup/BackupModule'
 import { CloudClient } from '@/lib/cloud/CloudClient'
-import { ConnectionTypes, SurrealAuthType } from '@/lib/db/types'
+import { ConnectionTypes, SnowflakeAuthType, SurrealAuthType } from '@/lib/db/types'
 import { SidebarModule } from './modules/SidebarModule'
 import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
 import { PopupMenuModule } from './modules/PopupMenuModule'
@@ -49,31 +49,42 @@ const tablesMatch = (t: TableOrView, t2: TableOrView) => {
     t2.entityType === t.entityType
 }
 
-const shouldPromptForCockroachJwt = (config: Nullable<IConnection>) => {
+function shouldPromptCockroachJwt(config: Nullable<IConnection>) {
   return config?.connectionType === 'cockroachdb' &&
     !!config?.options?.jwtAuthEnabled &&
     !config?.password;
 }
 
-const resolveJwtConfig = async (config: IConnection): Promise<IConnection | null> => {
-  const nextConfig = _.cloneDeep(config);
-
-  if (!shouldPromptForCockroachJwt(nextConfig)) {
-    return nextConfig;
-  }
-
-  const { token, cancelled } = await BeekeeperPlugin.promptJwtToken(
-    BeekeeperPlugin.buildConnectionName(config)
-  );
-
-  if (cancelled) {
-    return null;
-  }
-
-  nextConfig.password = token;
-  return nextConfig;
+function shouldPromptSnowflakeMFA(config: Nullable<IConnection>) {
+  return config?.connectionType === 'snowflake' &&
+    config?.snowflakeOptions.authType === SnowflakeAuthType.MFACode;
 }
 
+async function resolveEphemeralValues(config: IConnection): Promise<IConnection | null> {
+  if (shouldPromptCockroachJwt(config)) {
+    const { token, cancelled } = await BeekeeperPlugin.promptJwtToken(
+      BeekeeperPlugin.buildConnectionName(config)
+    );
+
+    if (cancelled) return null;
+
+    const resolvedConfig = _.cloneDeep(config);
+
+    resolvedConfig.password = token;
+    return resolvedConfig;
+  } else if (shouldPromptSnowflakeMFA(config)) {
+    const { passcode, cancelled } = await BeekeeperPlugin.promptSnowflakeMFAPasscode();
+
+    if (cancelled) return null;
+
+    const resolvedConfig = _.cloneDeep(config);
+
+    resolvedConfig.snowflakeOptions.passcode = passcode;
+    return resolvedConfig;
+  }
+
+  return config;
+}
 
 export interface State {
   connection: ElectronUtilityConnectionClient,
@@ -108,6 +119,10 @@ export interface State {
 
   pluginManagerStatus: WebPluginManagerStatus,
 
+  // Non-fatal ~/.ssh/config issues from the most recent connect/test, surfaced
+  // by the connection component as a warning toast.
+  sshConfigWarnings: string[],
+
   /** Set by VueX module */
   plugins?: PluginsState,
 }
@@ -140,6 +155,7 @@ const store = new Vuex.Store<State>({
     usedConfig: null,
     server: null,
     connected: false,
+    sshConfigWarnings: [],
     connectionType: null,
     supportedFeatures: null,
     database: null,
@@ -446,13 +462,19 @@ const store = new Vuex.Store<State>({
     webPluginManagerStatus(state, status: WebPluginManagerStatus) {
       state.pluginManagerStatus = status
     },
+    sshConfigWarnings(state, warnings: string[]) {
+      state.sshConfigWarnings = warnings || []
+    },
   },
   actions: {
     async test(context, config: IConnection) {
-      const resolvedConfig = await resolveJwtConfig(config);
+      context.commit('sshConfigWarnings', []);
+      const resolvedConfig = await resolveEphemeralValues(config);
       if (!resolvedConfig) return false;
 
-      await Vue.prototype.$util.send('conn/test', { config: resolvedConfig, osUser: context.state.username });
+      // ~/.ssh/config warnings go to the store; the component watches and surfaces them.
+      const warnings = await Vue.prototype.$util.send('conn/test', { config: resolvedConfig, osUser: context.state.username });
+      context.commit('sshConfigWarnings', warnings);
       return true;
     },
 
@@ -489,7 +511,8 @@ const store = new Vuex.Store<State>({
     },
 
     async connect(context, { config, auth }: { config: IConnection, auth?: { input: string; mode: 'pin'; }}) {
-      const resolvedConfig = await resolveJwtConfig(config);
+      context.commit('sshConfigWarnings', []);
+      const resolvedConfig = await resolveEphemeralValues(config);
       if (!resolvedConfig) return false;
 
       if (context.state.username) {
@@ -498,8 +521,10 @@ const store = new Vuex.Store<State>({
         const supportedFeatures = await context.state.connection.supportedFeatures();
         const versionString = await context.state.connection.versionString();
 
+        const serverConfig = await Vue.prototype.$util.send('conn/getServerConfig');
+        context.commit('sshConfigWarnings', serverConfig?.sshConfigWarnings || []);
+
         if (supportedFeatures.backups) {
-          const serverConfig = await Vue.prototype.$util.send('conn/getServerConfig');
           context.dispatch('backups/setConnectionConfigs', { config: resolvedConfig, supportedFeatures, serverConfig });
         }
 

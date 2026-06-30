@@ -4,7 +4,7 @@
       <i class="material-icons-outlined">info</i>
       <div v-if="showCli">
         You are signing in using the <b>'Azure CLI'</b> Beekeeper Studio will attempt to use the AZ tool in path specified.
-        <a href="https://docs.beekeeperstudio.io/docs/sqlite#runtime-extensions">Learn more</a>
+        <a href="https://docs.beekeeperstudio.io/user_guide/connecting/azure-entraid/#azure-cli-authentication">Learn more</a>
       </div>
       <div v-else>
         You are using azure authentication, depending on the authentication
@@ -12,30 +12,19 @@
         refer to our
         <a
           href="https://docs.beekeeperstudio.io/user_guide/connecting/azure-entraid"
-          >Beekeeper Docs</a
-        >
+        >Beekeeper Docs</a>
         for more information
       </div>
     </div>
     <div class="form-group col">
-      <div v-show="showCli" class="form-group">
-        <label for="cliPath">
-          Azure CLI Path (az)
-          </label
-        >
-        <file-picker v-model="config.azureAuthOptions.cliPath"/>
-        <div class="alert alert-danger" v-show="!cliFound">
-          <i class="material-icons-outlined">warning</i>
-          <div>
-            NO CLI FOUND, Please refer to our
-            <a
-              href="https://docs.beekeeperstudio.io/user_guide/connecting/azure-entraid"
-              >Beekeeper Docs</a
-            >
-            for more information
-          </div>
-        </div>
-      </div>
+      <cli-path-picker
+        v-show="showCli"
+        tool-name="az"
+        label="Azure CLI Path"
+        docs-href="https://docs.beekeeperstudio.io/user_guide/connecting/azure-entraid"
+        :value="config.azureAuthOptions.cliPath"
+        @input="val => $set(config.azureAuthOptions, 'cliPath', val)"
+      />
       <div class="form-group">
         <label for="server">
           Server
@@ -47,8 +36,7 @@
                 'This is the <code>\'Server name\'</code> field on your database in Azure, <br/> you might also think of this as the hostname. <br/> Eg. <code>example.database.windows.net</code>',
               html: true,
             }"
-            >help_outlined</i
-          >
+          >help_outlined</i>
         </label>
         <masked-input :value="config.host" @input="val => config.host = val" />
       </div>
@@ -59,16 +47,14 @@
           type="text"
           class="form-control"
           v-model="config.defaultDatabase"
-        />
+        >
       </div>
       <div
         class="advanced-connection-settings signed-in-as"
         v-if="hasAccessTokenCache"
       >
         <div class="advanced-body">
-          <span class="info"
-            >Signed in{{ accountName ? ` as ${privacyMode ? '*****' : accountName}` : "" }}</span
-          >
+          <span class="info">Signed in{{ accountName ? ` as ${privacyMode ? '*****' : accountName}` : "" }}</span>
           <button
             class="btn btn-flat btn-icon"
             type="button"
@@ -100,8 +86,7 @@
                 'This can be found in the <code>\'Microsoft Entra ID\'</code> section of Azure, <br/> in the Overview labelled <code>\'Tenant ID\'</code>',
               html: true,
             }"
-            >help_outlined</i
-          >
+          >help_outlined</i>
         </label>
         <masked-input :value="config.azureAuthOptions.tenantId" @input="val => config.azureAuthOptions.tenantId = val" />
       </div>
@@ -130,7 +115,7 @@ import MaskedInput from '@/components/MaskedInput.vue'
 import PasswordInput from '@/components/common/form/PasswordInput.vue'
 import CommonSsl from './CommonSsl.vue'
 import { mapState, mapGetters } from 'vuex'
-import FilePicker from '@/components/common/form/FilePicker.vue'
+import CliPathPicker from '@/components/common/form/CliPathPicker.vue'
 
 export default {
   props: {
@@ -146,7 +131,7 @@ export default {
     MaskedInput,
     PasswordInput,
     CommonSsl,
-    FilePicker
+    CliPathPicker
   },
   data() {
     return {
@@ -154,7 +139,6 @@ export default {
       accountName: null,
       signingOut: false,
       errorSigningOut: null,
-      cliError: false
     };
   },
   computed: {
@@ -175,9 +159,6 @@ export default {
     hasAccessTokenCache() {
       return Boolean(this.accountName);
     },
-    cliFound() {
-      return !!this.config?.azureAuthOptions?.cliPath && !this.cliError;
-    }
   },
   watch: {
     async authType() {
@@ -210,26 +191,6 @@ export default {
         this.signingOut = false;
       }
     },
-    async tryFindAzCli() {
-      if (!this.config.azureAuthOptions.cliPath) {
-        try {
-          const result = await this.$util.send('backup/whichDumpTool', {toolName: "az"});
-          if (result) {
-            this.$set(this.config.azureAuthOptions, 'cliPath', result);
-            this.cliError = false;
-          } else {
-            this.$set(this.config.azureAuthOptions, 'cliPath', null);
-            this.cliError = true;
-          }
-        } catch (e) {
-          this.$set(this.config.azureAuthOptions, 'cliPath', null);
-          this.cliError = true;
-        }
-      }
-    },
-  },
-  mounted() {
-    this.tryFindAzCli();
   },
 };
 </script>

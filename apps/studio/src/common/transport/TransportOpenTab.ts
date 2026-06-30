@@ -138,6 +138,30 @@ export function duplicate(obj: TransportOpenTab): TransportOpenTab {
   return result;
 }
 
+/**
+ * Decide what the query editor should show when a tab is (re)opened.
+ * - originalText: the saved baseline used for dirty-comparison / discard.
+ * - editorText:   what to load into the editor — the auto-saved in-progress
+ *                 edits when the tab was left dirty, otherwise the baseline.
+ *
+ * `savedText` is the text of the linked saved query (FavoriteQuery / cloud
+ * query), or null/undefined for a query that has never been saved.
+ */
+export function resolveEditorText(
+  obj: Pick<TransportOpenTab, 'unsavedChanges' | 'unsavedQueryText'>,
+  savedText?: string | null
+): { originalText: string | null; editorText: string | null } {
+  const baselineText = savedText || obj.unsavedQueryText || null
+  // When the tab was left dirty, the auto-saved edits live in unsavedQueryText.
+  // Restore those into the editor while keeping the saved text as the baseline,
+  // so the dirty indicator shows and discarding reverts to the saved version.
+  const editorText =
+    obj.unsavedChanges && obj.unsavedQueryText != null
+      ? obj.unsavedQueryText
+      : baselineText
+  return { originalText: baselineText, editorText }
+}
+
 export function findTable(obj: TransportOpenTab, tables: TableOrView[]): TableOrView | null {
   const result = tables.find((t) => {
     return obj.tableName === t.name &&
@@ -172,8 +196,8 @@ export function matches(obj: TransportOpenTab, other: TransportOpenTab): boolean
       // at a time.
       return obj.tabType === 'import-export-database'
     case 'query':
-      return (obj.queryId === other.queryId && obj.queryId !== null && other.queryId !== null) ||
-        (obj.usedQueryId === other.usedQueryId && obj.usedQueryId !== null && other.queryId !== null)
+      return (obj.queryId === other.queryId && !_.isNil(obj.queryId) && !_.isNil(other.queryId)) ||
+        (obj.usedQueryId === other.usedQueryId && !_.isNil(obj.usedQueryId) && !_.isNil(other.usedQueryId))
     case 'backup':
       return obj.tabType === 'backup';
     case 'restore':

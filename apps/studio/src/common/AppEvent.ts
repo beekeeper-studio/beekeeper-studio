@@ -79,6 +79,21 @@ export enum AppEvent {
   changedTheme = 'changedTheme',
   /** A plugin menu item was clicked in the native/client menu under the tools. */
   pluginMenuClicked = 'pluginMenuClicked',
+  /** Open query edit history on a new / existing query tab.
+   * @example
+   * this.trigger(AppEvent.openQueryEditHistory, savedQueryId);
+   **/
+  openQueryEditHistory = 'openQueryEditHistory',
+  /** Paste clipboard contents as new rows in the active table's Data tab. */
+  pasteAsNewRows = 'pasteAsNewRows',
+  /** Open a modal to move a file to a folder
+   * @example
+   * this.trigger(AppEvent.openMoveFileModal, {
+   *   type: "connection",
+   *   value: this.config, // the connection config
+   * });
+   **/
+  openMoveFileModal = 'openMoveFileModal',
 }
 
 export interface RootBinding {

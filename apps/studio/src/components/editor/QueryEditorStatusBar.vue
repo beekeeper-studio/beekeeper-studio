@@ -3,7 +3,7 @@
     :active="active"
     :class="{ 'empty': !results || results.length === 0, 'query-meta': true }"
   >
-    <slot name="left-actions"></slot>
+    <slot name="left-actions" />
     <template v-if="results?.length > 0">
       <div
         id="query-editor-statusbar"
@@ -353,7 +353,7 @@ export default {
       return !this.dialectData?.disabledFeatures?.resultEditing;
     },
     editButtonTooltip() {
-      if (this.usedConfig.readOnlyMode) {
+      if (this.usedConfig?.readOnlyMode) {
         return "Read Only Mode is enabled for this connection. Editing is disabled.";
       } else if (this.resultEditable) {
         return "Edit table data directly from query results";

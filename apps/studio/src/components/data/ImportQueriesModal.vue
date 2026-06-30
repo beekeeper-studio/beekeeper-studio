@@ -1,7 +1,7 @@
 <template>
   <modal
     name="import-queries"
-    class="vue-dialog beekeeper-modal"
+    class="vue-dialog beekeeper-modal import-queries-modal"
     @closed="clear"
   >
     <div class="dialog-content">
@@ -110,7 +110,8 @@ export default Vue.extend({
       const candidates = this.queries.filter((q) => q.checked)
       try {
         await Promise.all(candidates.map((q) => {
-          const payload = {...q, id: null}
+          // Clear id and queryFolderId so the query goes to the personal folder
+          const payload = {...q, id: null, queryFolderId: null}
           return this.$store.dispatch('data/queries/save', payload)
         }))
         this.$modal.hide('import-queries')
@@ -123,3 +124,19 @@ export default Vue.extend({
   }
 })
 </script>
+<style lang="scss">
+.import-queries-modal {
+  .v--modal {
+    display: flex;
+    flex-direction: column;
+  }
+  .dialog-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .vue-dialog-buttons {
+    flex-shrink: 0;
+  }
+}
+</style>

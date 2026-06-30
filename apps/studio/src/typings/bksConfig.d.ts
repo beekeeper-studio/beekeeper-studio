@@ -98,6 +98,21 @@ declare interface IBksConfig {
                 quoted: any[];
             };
         };
+        dynamodb: {
+            allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            columnSampleSize: number;
+            cursorFetchTimeout: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
+        };
         firebird: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
@@ -249,6 +264,21 @@ declare interface IBksConfig {
                 quoted: any[];
             };
         };
+        snowflake: {
+            allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            connectionTimeout: number;
+            idleTimeout: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
+        };
         sqlanywhere: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
@@ -333,6 +363,7 @@ declare interface IBksConfig {
         checkForUpdatesDisabled: boolean;
         checkForUpdatesInterval: number;
         dataSyncInterval: number;
+        downloadUserAgent: string;
         workspaceSyncInterval: number;
     };
     keybindings: {
@@ -349,6 +380,11 @@ declare interface IBksConfig {
             refresh: string[];
             save: string;
             undo: string;
+        };
+        plugins: {
+            "bks-ai-shell": {
+                "new-tab-dropdown-item": string;
+            };
         };
         queryEditor: {
             closeTableFilter: string;
@@ -399,7 +435,9 @@ declare interface IBksConfig {
             focusOnFilterInput: string;
             lastPage: string;
             nextPage: string;
+            nullSelection: string;
             openEditorModal: string;
+            pasteAsNewRows: string;
             previousPage: string;
         };
     };
@@ -417,6 +455,10 @@ declare interface IBksConfig {
         };
     };
     security: {
+        activityEvents: string[];
+        activityReportIntervalSeconds: number;
+        allowRuntimeExtensions: boolean;
+        disableSshConfigMatchExec: boolean;
         disconnectOnIdle: boolean;
         disconnectOnLock: boolean;
         disconnectOnSuspend: boolean;
@@ -433,6 +475,7 @@ declare interface IBksConfig {
             binaryEncoding: string;
         };
         layout: {
+            defaultGlobalSidebarItem: string;
             mainContentMinWidth: number;
             primarySidebarMinWidth: number;
             secondarySidebarMinWidth: number;
@@ -458,5 +501,5 @@ declare interface IBksConfig {
             maxColumnWidth: number;
         };
     };
-};
+}
 

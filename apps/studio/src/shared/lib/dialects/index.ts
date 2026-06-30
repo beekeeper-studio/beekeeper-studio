@@ -16,6 +16,8 @@ import { SqlAnywhereData } from "./anywhere";
 import { TrinoData } from "./trino";
 import { SurrealDBData } from "./surrealdb";
 import { RedisData } from "@shared/lib/dialects/redis";
+import { DynamoDBData } from "./dynamodb";
+import { SnowflakeData } from "./snowflake";
 
 export function getDialectData(dialect: Dialect): DialectData  {
   switch (dialect) {
@@ -53,6 +55,10 @@ export function getDialectData(dialect: Dialect): DialectData  {
       return SurrealDBData
     case 'redis':
       return RedisData
+    case 'dynamodb':
+      return DynamoDBData
+    case 'snowflake':
+      return SnowflakeData
     default:
       return SqliteData
   }

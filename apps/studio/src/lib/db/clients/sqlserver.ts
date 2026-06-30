@@ -22,6 +22,7 @@ import {
 } from './utils';
 import logRaw from '@bksLogger'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor'
+import { buildWindowsAuthConnStr } from './sqlserverWinAuth'
 import { SqlServerData } from '@shared/lib/dialects/sqlserver'
 import { SqlServerChangeBuilder } from '@shared/lib/sql/change_builder/SqlServerChangeBuilder'
 import { joinFilters } from '@/common/utils';
@@ -36,12 +37,30 @@ import { AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from '../serialization/transcoders';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
+import { safelyIdentify } from '../sql_tools';
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData
 const mmsqlErrors = {
   CANCELED: 'ECANCEL',
 };
+
+// Setup guide for SQL Server integrated / Kerberos authentication prerequisites.
+const WIN_AUTH_DOCS_URL = 'https://docs.beekeeperstudio.io/user_guide/connecting/sql-server/'
+
+// Wrap a promise with a JS-level deadline. msnodesqlv8/ODBC's native conn_timeout
+// does NOT reliably cancel a stalled SQLDriverConnect -- it only covers the TCP
+// connect, not the post-connect TDS prelogin / SSPI handshake -- so a stalled
+// Kerberos/NTLM negotiation would otherwise hang indefinitely. This guarantees the
+// attempt rejects; the orphaned native handle may persist, but the app stays
+// responsive and surfaces a clear error instead of locking up.
+function withDeadline<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  let timer: NodeJS.Timeout;
+  const deadline = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), ms);
+  });
+  return Promise.race([promise, deadline]).finally(() => clearTimeout(timer)) as Promise<T>;
+}
 
 type SQLServerVersion = {
   supportOffsetFetch: boolean
@@ -90,12 +109,12 @@ knex.client._escapeBinding = function (value: any, context: any) {
 export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transaction> {
   server: IDbConnectionServer
   database: IDbConnectionDatabase
-  defaultSchema: () => Promise<string>
   version: SQLServerVersion
   dbConfig: any
   readOnlyMode: boolean
   logger: any
   pool: ConnectionPool;
+  _defaultSchema: string = 'dbo';
   authService: AzureAuthService;
   transcoders = [GenericBinaryTranscoder];
 
@@ -103,9 +122,12 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     super(knex, SQLServerContext, server, database)
     this.dialect = 'mssql';
     this.readOnlyMode = server?.config?.readOnlyMode || false;
-    this.defaultSchema = async (): Promise<string> => 'dbo'
     this.logger = () => log
     this.createUpsertFunc = this.createUpsertSQL
+  }
+
+  async defaultSchema(): Promise<string> {
+    return this._defaultSchema;
   }
 
   async getVersion(): Promise<SQLServerVersion> {
@@ -122,7 +144,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async listTables(filter: FilterOptions): Promise<TableOrView[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'table_schema');
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT
         table_schema,
@@ -142,7 +164,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     }))
   }
 
-  async listTableColumns(table: string, schema: string): Promise<ExtendedTableColumn[]> {
+  async listTableColumns(table: string, schema: string = this._defaultSchema): Promise<ExtendedTableColumn[]> {
     const clauses = []
     if (table) clauses.push(`table_name = ${D.escapeString(table, true)}`)
     if (schema) clauses.push(`table_schema = ${D.escapeString(schema, true)}`)
@@ -261,7 +283,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       : this.genSelectOld(table, offset, limit, orderBy, filters, schema, selects);
   }
 
-  async listTableTriggers(table: string, schema: string) {
+  async listTableTriggers(table: string, schema: string = this._defaultSchema) {
     // SQL Server does not have information_schema for triggers, so other way around
     // is using sp_helptrigger stored procedure to fetch triggers related to table
     const qualified = `${D.wrapIdentifier(schema)}.${D.wrapIdentifier(table)}`;
@@ -288,7 +310,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     })
   }
 
-  async getPrimaryKeys(table: string, schema?: string) {
+  async getPrimaryKeys(table: string, schema: string = this._defaultSchema) {
     this.logger().debug('finding foreign key for', table)
     const sql = `
     SELECT COLUMN_NAME, ORDINAL_POSITION
@@ -310,8 +332,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     return res.length === 1 ? res[0].columnName : null
   }
 
-  async listTableIndexes(table: string, schema: string = null): Promise<TableIndex[]> {
-    schema = schema ?? await this.defaultSchema();
+  async listTableIndexes(table: string, schema: string = this._defaultSchema): Promise<TableIndex[]> {
     const sql = `
       SELECT
 
@@ -367,8 +388,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     return _.sortBy(result, 'id') as TableIndex[]
   }
 
-  async getTableProperties(table: string, schema: string = null): Promise<TableProperties> {
-    schema = schema ?? await this.defaultSchema();
+  async getTableProperties(table: string, schema: string = this._defaultSchema): Promise<TableProperties> {
     const triggers = await this.listTableTriggers(table, schema)
     const indexes = await this.listTableIndexes(table, schema)
     const description = await this.getTableDescription(table, schema)
@@ -561,7 +581,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     return result;
   }
 
-  async selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema: string, selects = ['*']) {
+  async selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema: string = this._defaultSchema, selects = ['*']) {
     const query = this.genSelectNew(table, null, null, orderBy, filters, schema, selects)
     const columns = await this.listTableColumns(table, schema)
     const rowCount = await this.getTableLength(table, schema)
@@ -573,7 +593,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     }
   }
 
-  async getTableLength(table: string, schema: string) {
+  async getTableLength(table: string, schema: string = this._defaultSchema) {
     const countQuery = this.genCountQuery(table, [], schema)
     const countResults = await this.driverExecuteSingle(countQuery)
     const rowWithTotal = countResults.data.recordset.find((row) => { return row.total })
@@ -581,8 +601,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     return totalRecords
   }
 
-  async setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = null): Promise<string> {
-    schema = schema ?? await this.defaultSchema();
+  async setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): Promise<string> {
     if (typeOfElement !== DatabaseElement.TABLE && typeOfElement !== DatabaseElement.VIEW) {
       return ''
     }
@@ -599,7 +618,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async listDatabases(filter: DatabaseFilterOptions) {
-    const databaseFilter = buildDatabaseFilter(filter, 'name');
+    const databaseFilter = buildDatabaseFilter(filter, 'name', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT name
       FROM sys.databases
@@ -702,6 +721,14 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async duplicateTable(tableName: string, duplicateTableName: string, schema = 'dbo') {
+    // duplicateTableSql produces a `SELECT ... INTO` statement. The query
+    // identifier classifies that as a plain SELECT, so the read-only guard in
+    // driverExecuteSingle never trips even though it creates a table. Enforce
+    // read-only mode explicitly here.
+    if (await this.checkAllowReadOnly() && this.readOnlyMode) {
+      throw new Error(errorMessages.readOnly)
+    }
+
     const sql = await this.duplicateTableSql(tableName, duplicateTableName, schema)
 
     await this.driverExecuteSingle(sql)
@@ -777,7 +804,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async listViews(filter?: FilterOptions): Promise<TableOrView[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'table_schema');
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT
         table_schema,
@@ -802,7 +829,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async listRoutines(filter?: FilterOptions): Promise<Routine[]> {
-    const schemaFilter = buildSchemaFilter(filter, 'r.routine_schema');
+    const schemaFilter = buildSchemaFilter(filter, 'r.routine_schema', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT
         r.specific_name as id,
@@ -864,7 +891,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async listSchemas(filter: FilterOptions) {
-    const schemaFilter = buildSchemaFilter(filter);
+    const schemaFilter = buildSchemaFilter(filter, 'schema_name', (s) => this.wrapIdentifier(s));
     const sql = `
       SELECT schema_name
       FROM INFORMATION_SCHEMA.SCHEMATA
@@ -890,10 +917,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
-    const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
     return {
-      totalRows,
-      columns,
       cursor: new SqlServerCursor(this.pool.request(), query, chunkSize),
     }
   }
@@ -997,7 +1021,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     return data.recordset.map((row) => row.definition)
   }
 
-  async setTableDescription(table: string, desc: string, schema: string) {
+  async setTableDescription(table: string, desc: string, schema: string = this._defaultSchema) {
     const existingDescription = await this.getTableDescription(table, schema)
     const f = existingDescription ? 'sp_updateextendedproperty' : 'sp_addextendedproperty'
     const sql = `
@@ -1078,7 +1102,12 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     await super.connect();
 
     this.dbConfig = await this.configDatabase(this.server, this.database, signal)
-    this.pool = await new ConnectionPool(this.dbConfig).connect();
+
+    if (this.server.config.windowsAuthEnabled) {
+      this.pool = await this.connectWindowsAuth()
+    } else {
+      this.pool = await new ConnectionPool(this.dbConfig).connect();
+    }
 
     this.pool.on('error', (err) => {
       if (err instanceof ConnectionError) {
@@ -1231,12 +1260,119 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     }
   }
 
-  private identifyCommands(queryText: string) {
+  // SQL Server integrated authentication (SSPI). The OS/ODBC layer negotiates the
+  // actual protocol: Kerberos when the host is domain-joined with a reachable KDC
+  // and a matching SPN (typically connecting by hostname/FQDN), otherwise NTLM.
+  // tedious cannot do this, so we route through the native msnodesqlv8 driver.
+  // Works on Windows (SSPI) and on Linux/macOS when unixODBC + the Microsoft ODBC
+  // Driver 18 + a Kerberos ticket (kinit) are configured on the host.
+  private async connectWindowsAuth(): Promise<ConnectionPool> {
+    let sqlWindows: any
     try {
-      return identify(queryText);
-    } catch (err) {
-      return [];
+      sqlWindows = require('mssql/msnodesqlv8')
+    } catch {
+      throw new Error(
+        (process.platform === 'win32'
+          ? 'Integrated authentication is unavailable: the msnodesqlv8 native module could not be loaded. Try reinstalling Beekeeper Studio.'
+          : 'Integrated authentication is unavailable: the msnodesqlv8 native module could not be loaded. Install unixODBC and the Microsoft ODBC Driver 18 for SQL Server, then reinstall Beekeeper Studio.') +
+        ` See ${WIN_AUTH_DOCS_URL} for setup.`
+      )
     }
+
+    const encryptionMode = this.dbConfig.options?.encryptionMode || 'on'
+    const serverCertificate = this.dbConfig.options?.serverCertificate
+    const serverSpn = this.dbConfig.options?.serverSpn
+    const server = this.dbConfig.server
+    const port = this.dbConfig.port || 1433
+    const CONNECT_TIMEOUT_S = 15
+
+    // Driver discovery is folded into the real connect: try each candidate ODBC
+    // driver with the actual connection and keep the first that opens. A missing
+    // driver fails immediately at the ODBC driver-manager level (IM002, before any
+    // network or auth), so only the driver that is present completes a single SSPI/
+    // Kerberos handshake -- no throwaway probe connection, and the string that is
+    // validated IS the string used. Modern drivers first (TLS 1.2 support); the
+    // legacy built-in driver only exists on Windows and is a last resort.
+    const candidates: { driver: string, legacy: boolean }[] = [
+      { driver: 'ODBC Driver 18 for SQL Server', legacy: false },
+      { driver: 'ODBC Driver 17 for SQL Server', legacy: false },
+    ]
+    if (process.platform === 'win32') {
+      candidates.push({ driver: 'SQL Server', legacy: true })
+    }
+
+    // Flatten every nested message out of an mssql/msnodesqlv8 error so a missing
+    // driver can be told apart from a real auth/connect failure (mssql wraps native
+    // errors and exposes them via originalError / precedingErrors).
+    const errorText = (err: any): string => {
+      const parts: string[] = []
+      const visit = (e: any) => {
+        if (!e) return
+        if (typeof e === 'string') { parts.push(e); return }
+        if (typeof e.message === 'string') parts.push(e.message)
+        if (e.originalError) visit(e.originalError)
+        if (Array.isArray(e.precedingErrors)) e.precedingErrors.forEach(visit)
+      }
+      if (Array.isArray(err)) err.forEach(visit); else visit(err)
+      return parts.join('; ')
+    }
+    const isDriverMissing = (text: string): boolean =>
+      /IM002|IM003|data source name not found|specified driver could not be loaded|can'?t open lib|file not found/i.test(text)
+
+    const driverMissingError = () => new Error(
+      (process.platform === 'win32'
+        ? 'Integrated authentication requires an ODBC Driver for SQL Server. Install "ODBC Driver 18 for SQL Server" (or 17) from Microsoft.'
+        : 'Integrated authentication requires unixODBC and the Microsoft "ODBC Driver 18 for SQL Server" installed on this machine.') +
+      ` See ${WIN_AUTH_DOCS_URL} for setup.`
+    )
+
+    for (let i = 0; i < candidates.length; i++) {
+      const candidate = candidates[i]
+      // mssql ignores the driver name and emits Trusted_Connection as a boolean
+      // (ODBC needs yes/no); set both, plus TrustServerCertificate when asked.
+      const connecting = new sqlWindows.ConnectionPool({
+        ...this.dbConfig,
+        connectionTimeout: CONNECT_TIMEOUT_S * 1000,
+        beforeConnect: (cfg: any) => {
+          // Pin the discovered driver + Trusted_Connection, and translate the encryption mode
+          // and SPN into ODBC clauses (see buildWindowsAuthConnStr for the exact mapping).
+          cfg.conn_str = buildWindowsAuthConnStr(cfg.conn_str, {
+            driver: candidate.driver,
+            encryptionMode,
+            serverCertificate,
+            serverSpn,
+          })
+          cfg.conn_timeout = CONNECT_TIMEOUT_S
+        }
+      }).connect()
+
+      try {
+        const pool = await withDeadline(
+          connecting,
+          CONNECT_TIMEOUT_S * 1000,
+          `Integrated authentication timed out after ${CONNECT_TIMEOUT_S}s connecting to ${server},${port} with Driver={${candidate.driver}}. ` +
+          `The server is reachable but the SSPI/Kerberos login handshake did not complete in time. ` +
+          `Check the SQL Server SPN registration and that the current user's Kerberos ticket (kinit) or NTLM fallback can reach a domain controller.`
+        )
+        if (candidate.legacy) {
+          log.warn('Integrated authentication is using the legacy "{SQL Server}" ODBC driver, ' +
+            'which does not support TLS 1.2. Install "ODBC Driver 18 for SQL Server" (or 17) from Microsoft for secure connections.')
+        }
+        return pool
+      } catch (err) {
+        // A missing driver is not fatal while other candidates remain; advance to
+        // the next. Any other failure (auth, unreachable, or the withDeadline
+        // timeout above) is real and already carries a useful message.
+        if (isDriverMissing(errorText(err))) {
+          if (i < candidates.length - 1) continue
+          throw driverMissingError()
+        }
+        throw err instanceof Error ? err : new Error(errorText(err))
+      }
+    }
+
+    // Only reached if the candidate list is empty (it never is).
+    throw driverMissingError()
   }
 
   private async configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase, signal?: AbortSignal): Promise<any> { // changed to any for now, might need to make some changes
@@ -1260,6 +1396,28 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
 
       config.options = {
         encrypt: true
+      };
+
+      return config;
+    }
+
+    if (server.config.windowsAuthEnabled) {
+      config.port = Number(server.config.port);
+
+      if (server.sshTunnel) {
+        config.server = server.config.localHost;
+        config.port = server.config.localPort;
+      }
+
+      // trustedConnection delegates auth to the OS (SSPI -> Kerberos/NTLM) via msnodesqlv8.
+      // The integrated-auth encryption/cert/SPN settings live in sqlServerOptions;
+      // connectWindowsAuth() translates encryptionMode into the ODBC Encrypt/strict clauses.
+      const sqlServerOptions = server.config.sqlServerOptions || {};
+      config.options = {
+        trustedConnection: true,
+        encryptionMode: sqlServerOptions.encryptionMode || 'on',
+        serverCertificate: sqlServerOptions.serverCertificate || undefined,
+        serverSpn: sqlServerOptions.serverSpn || undefined,
       };
 
       return config;
@@ -1413,7 +1571,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     return `'${value.replaceAll(/'/g, "''")}'`
   }
 
-  private genCountQuery(table: string, filters: string | TableFilter[], schema: string) {
+  private genCountQuery(table: string, filters: string | TableFilter[], schema: string = this._defaultSchema) {
     const filterString = _.isString(filters) ? `WHERE ${filters}` : this.buildFilterString(filters)
 
     const schemaString = schema ? `${this.wrapIdentifier(schema)}.` : ''
@@ -1435,7 +1593,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     return (data.recordsets[0] as any).schema
   }
 
-  private async listDefaultConstraints(table: string, schema: string) {
+  private async listDefaultConstraints(table: string, schema: string = this._defaultSchema) {
     const sql = `
       -- returns name of a column's default value constraint
       SELECT
@@ -1457,7 +1615,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
         sys.default_constraints
           ON all_columns.default_object_id = default_constraints.object_id
       WHERE
-        schemas.name = ${D.escapeString(schema || await this.defaultSchema(), true)}
+        schemas.name = ${D.escapeString(schema, true)}
         AND tables.name = ${D.escapeString(table, true)}
     `
     const { data } = await this.driverExecuteSingle(sql)
@@ -1471,8 +1629,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     })
   }
 
-  private async getTableDescription(table: string, schema: string | null = null) {
-    schema = schema ?? await this.defaultSchema();
+  private async getTableDescription(table: string, schema: string = this._defaultSchema) {
     const query = `SELECT *
       FROM fn_listextendedproperty (
         'MS_Description',

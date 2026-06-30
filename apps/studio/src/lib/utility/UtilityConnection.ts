@@ -1,6 +1,7 @@
 import { uuidv4 } from "../uuid";
 import rawLog from '@bksLogger';
 import _ from 'lodash';
+import { PluginError, PluginSystemError } from "../errors";
 
 const log = rawLog.scope('renderer/utilityconnection');
 
@@ -16,8 +17,8 @@ type Message = {
 
 export class UtilityConnection {
   private replyHandlers: Map<string, { resolve: any, reject: any }> = new Map();
-  private listeners: Array<{type: string, id: string, listener: Listener}> = new Array();
-  private messageQueue: Array<Message> = new Array();
+  private listeners: Array<{type: string, id: string, listener: Listener}> = [];
+  private messageQueue: Array<Message> = [];
   private port: MessagePort;
   private _sId: string;
   private portsRequested: boolean = false;
@@ -44,13 +45,20 @@ export class UtilityConnection {
 
       if (msgData.type === 'error') {
         // handle errors
-        const { id, error, stack } = msgData;
+        const { id, error, stack, errorName, errorCode } = msgData;
 
         const handler = this.replyHandlers.get(id);
         if (handler) {
           log.error('GOT ERROR BACK FOR REQUEST ID: ', id);
           this.replyHandlers.delete(id);
-          const err = new Error(error);
+          let err: Error;
+          if (errorName === "PluginSystemError") {
+            err = new PluginSystemError(errorCode, error);
+          } else if (errorName === "PluginError") {
+            err = new PluginError(errorCode, error);
+          } else {
+            err = new Error(error);
+          }
           err.stack = stack;
           handler.reject(err);
         }
