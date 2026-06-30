@@ -313,21 +313,10 @@ export function readClipboardRows(): string[][] | null {
 }
 
 export function pasteRange(range: RangeComponent) {
-  const text = ElectronPlugin.clipboard.readText();
-  if (!text) return;
-
-  const parsedText = Papa.parse(text, {
-    header: false,
-    delimiter: "\t",
-  });
-
-  const data = parsedText.data as string[][];
-
-  if (parsedText.errors.length > 0) {
-    const cell = range.getCells()[0][0];
-    setCellValue(cell, text);
-    return;
-  }
+  // Same parsing as "paste as new rows" — the two only differ in the
+  // destination (overwrite existing cells here vs. insert new rows there).
+  const data = readClipboardRows();
+  if (!data) return;
 
   if (data.length === 1 && data[0].length === 1) {
     const singleValue = data[0][0];

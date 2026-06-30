@@ -1257,23 +1257,21 @@ export default Vue.extend({
         },
       ]
     },
-    setRangesNull(ranges: RangeComponent[]) {
+    nullableCellsInRanges(ranges: RangeComponent[]): CellComponent[] {
       // cellEditCheck allows PKs on newly-inserted rows but blocks PKs on
       // existing rows and generated/read-only cells.
-      ranges
+      return ranges
         .flatMap((range) => range.getCells().flat())
-        .forEach((cell) => {
-          if (this.cellEditCheck(cell)) cell.setValue(null);
-        });
+        .filter((cell) => this.cellEditCheck(cell));
+    },
+    setRangesNull(ranges: RangeComponent[]) {
+      this.nullableCellsInRanges(ranges).forEach((cell) => cell.setValue(null));
     },
     setAsNullMenuItem(ranges: RangeComponent[]) {
-      const anyEditable = ranges
-        .flatMap((range) => range.getCells().flat())
-        .some((cell) => this.cellEditCheck(cell));
       return {
         label: createMenuItem("Set as NULL"),
         action: () => this.setRangesNull(ranges),
-        disabled: !anyEditable,
+        disabled: this.nullableCellsInRanges(ranges).length === 0,
       }
     },
     isEditorMenuDisabled (cell: CellComponent) {
