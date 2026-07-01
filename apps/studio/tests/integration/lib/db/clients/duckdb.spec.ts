@@ -4,6 +4,7 @@ import { runCommonTests } from "./all";
 import { IDbConnectionServerConfig } from "@/lib/db/types";
 import path from "path";
 import fs from "fs";
+import v8 from "v8";
 import _ from "lodash";
 
 const TEST_VERSIONS = [
@@ -114,6 +115,70 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
       expect(byName('name').enumValues).toBeUndefined()
       expect(byName('id').enumValues).toBeUndefined()
     })
+
+    // Replicates https://github.com/beekeeper-studio/beekeeper-studio/issues/4094
+    // TIMESTAMPTZ and UUID values are returned as @duckdb/node-api wrapper
+    // instances (DuckDBTimestampTZValue { micros }, DuckDBUUIDValue { hugeint }).
+    // Query results are posted from the utility process to the renderer over a
+    // MessagePort, which serializes them with the V8 structured clone
+    // algorithm. That strips the wrapper's prototype (and its toString), so
+    // the grid displays the internal representation — `{"micros":...}` and
+    // `{"hugeint":...}` — instead of a readable timestamp / UUID.
+    describe("TIMESTAMPTZ and UUID display values (#4094)", () => {
+      const UUID = "550e8400-e29b-41d4-a716-446655440000";
+
+      // Simulates the utility -> renderer process boundary (Electron
+      // MessagePort.postMessage uses the V8 serializer).
+      function crossProcessBoundary<T>(value: T): T {
+        return v8.deserialize(v8.serialize(value));
+      }
+
+      beforeAll(async () => {
+        await util.knex.schema.raw(`
+          CREATE TABLE tstz_uuid_test (
+            id INT PRIMARY KEY,
+            created_at TIMESTAMPTZ,
+            uid UUID
+          )
+        `);
+        await util.knex.schema.raw(`
+          INSERT INTO tstz_uuid_test VALUES
+          (1, TIMESTAMPTZ '2023-06-23 12:30:17.17+00', UUID '${UUID}')
+        `);
+      });
+
+      afterAll(async () => {
+        await util.knex.schema.dropTableIfExists("tstz_uuid_test");
+      });
+
+      it("table view (selectTop) keeps TIMESTAMPTZ and UUID readable in the renderer", async () => {
+        const { result } = await util.connection.selectTop(
+          "tstz_uuid_test", 0, 10, [], [], util.defaultSchema, ["*"]
+        );
+        const row = crossProcessBoundary(result[0]);
+
+        // The reported symptoms: internal driver representations leak through
+        expect(row.created_at).not.toHaveProperty("micros");
+        expect(row.uid).not.toHaveProperty("hugeint");
+
+        // What the user should see instead: readable values
+        expect(String(row.uid)).toBe(UUID);
+        expect(String(row.created_at)).toMatch(/2023/);
+      });
+
+      it("query tab (executeQuery) keeps TIMESTAMPTZ and UUID readable in the renderer", async () => {
+        const results = await util.connection.executeQuery(
+          `SELECT TIMESTAMPTZ '2023-06-23 12:30:17.17+00' AS ts, UUID '${UUID}' AS uid`
+        );
+        const row = crossProcessBoundary(results[0].rows[0]);
+
+        expect(row.c0).not.toHaveProperty("micros");
+        expect(row.c1).not.toHaveProperty("hugeint");
+
+        expect(String(row.c1)).toBe(UUID);
+        expect(String(row.c0)).toMatch(/2023/);
+      });
+    });
 
     describe("Index Tests", () => {
       beforeAll(async () => {
