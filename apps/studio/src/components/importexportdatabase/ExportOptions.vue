@@ -168,7 +168,7 @@ export default {
       )
     },
     filesToBeExported() {
-      return `${window.main.pluralize('files', this.tablesToExport.length, true)} will be created, one for each table exported`
+      return `${this.$pluralize('files', this.tablesToExport.length, true)} will be created, one for each table exported`
     },
     optionalFileName () {
       if (this.fileName) return `_${this.fileName}`

@@ -498,7 +498,7 @@ export default Vue.extend({
       return this.columnsWithFilterAndOrder.filter((c) => !c.filter).length
     },
     hiddenColumnMessage() {
-      return `${window.main.pluralize('column', this.hiddenColumnCount, true)} hidden`
+      return `${this.$pluralize('column', this.hiddenColumnCount, true)} hidden`
     },
     pendingChangesCount() {
       return this.pendingChanges.inserts.length
@@ -1791,7 +1791,7 @@ export default Vue.extend({
           }
 
           if (replaceData) {
-            const niceChanges = window.main.pluralize('change', this.pendingChangesCount, true);
+            const niceChanges = this.$pluralize('change', this.pendingChangesCount, true);
             this.$noty.success(`${niceChanges} successfully applied`)
             this.tabulator.replaceData()
           }

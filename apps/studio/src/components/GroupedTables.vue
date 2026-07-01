@@ -151,7 +151,7 @@ export default {
           if (hasGroups) {
             this.$nextTick(this.setSelectHeaderListener)
           }
-          return `<div class="group-header"><input name="group-header-select" class="select-group" type="checkbox" value="${sanValue}" /><span>${sanValue}</span> <span style="margin-left:10px;">(${count} ${window.main.pluralize('item', count)})</span> </div>`;
+          return `<div class="group-header"><input name="group-header-select" class="select-group" type="checkbox" value="${sanValue}" /><span>${sanValue}</span> <span style="margin-left:10px;">(${count} ${this.$pluralize('item', count)})</span> </div>`;
         } : null,
         columnDefaults: {
           resizable: false,

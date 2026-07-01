@@ -5,6 +5,7 @@ import { DataState, DataStore, mutationsFor } from "@/store/modules/data/DataMod
 import { safely } from "@/store/modules/data/StoreHelpers";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
 import { buildFolderTree } from "@/common/utils/folderTree";
+import { pluralize } from '@/vendor/pluralize';
 
 type State = DataState<IConnectionFolder>
 

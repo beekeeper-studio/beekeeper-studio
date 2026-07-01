@@ -130,7 +130,7 @@ export default Vue.extend({
       window.location.href = "https://app.beekeeperstudio.io"
     },
     workspaceText(blob: CredentialBlob) {
-      return window.main.pluralize("Workspace", blob.workspaces.length, true)
+      return this.$pluralize("Workspace", blob.workspaces.length, true)
     },
     showAccountsModal() {
       if (this.credentials.length) {

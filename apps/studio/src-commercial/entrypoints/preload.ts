@@ -9,7 +9,6 @@ import { execSync } from 'child_process';
 import 'electron-log/preload';
 import type { SaveFileOptions } from '@/backend/lib/FileHelpers';
 import type { NativePluginMenuItem } from '@/services/plugin/types';
-import { pluralize } from '@/vendor/pluralize';
 
 const electron = require('@electron/remote');
 
@@ -178,9 +177,6 @@ export const api = {
   },
   requestPorts() {
     ipcRenderer.invoke('requestPorts');
-  },
-  pluralize(word: string, count?: number, inclusive?: boolean) {
-    return pluralize(word, count, inclusive);
   },
   fileHelpers: {
     save(options: SaveFileOptions) {

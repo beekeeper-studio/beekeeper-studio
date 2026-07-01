@@ -194,7 +194,7 @@ import { stringToTypedArray } from '@/common/utils'
           const schema = v.schema ? `${v.schema}.` : "";
           return `${schema}${v.table}`
         })).map(([table, updates]) => {
-          return `${window.main.pluralize('update', updates.length, true)} to ${table}`;
+          return `${this.$pluralize('update', updates.length, true)} to ${table}`;
         });
 
         const lastUpdate = updateStrings.pop();
