@@ -222,6 +222,103 @@ Host myserver
     ]);
   });
 
+  // Include fixtures use absolute paths in their own tmp dir — relative
+  // patterns resolve against the real ~/.ssh, which tests must not touch.
+  function writeIncludeFile(dir: string, name: string, content: string): string {
+    const filePath = path.join(dir, name);
+    fs.writeFileSync(filePath, content, "utf-8");
+    fs.chmodSync(filePath, 0o600);
+    return filePath;
+  }
+
+  describe("Include directive", () => {
+    it("resolves directives from an included file", () => {
+      const dir = tmp.dirSync({ unsafeCleanup: true }).name;
+      const included = writeIncludeFile(dir, "extra.conf", `
+Host myserver
+  HostName real.example.com
+  IdentityFile /keys/included_key`);
+      const configPath = writeConfig(`Include ${included}`);
+
+      const result = readSshConfig("myserver", configPath);
+      expect(result.host).toBe("real.example.com");
+      expect(result.identityFile).toBe("/keys/included_key");
+    });
+
+    it("expands glob patterns", () => {
+      const dir = tmp.dirSync({ unsafeCleanup: true }).name;
+      writeIncludeFile(dir, "match.conf", `
+Host myserver
+  HostName from-glob.example.com`);
+      writeIncludeFile(dir, "skipped.txt", `
+Host myserver
+  Port 9999`);
+      const configPath = writeConfig(`Include ${path.join(dir, "*.conf")}`);
+
+      const result = readSshConfig("myserver", configPath);
+      expect(result.host).toBe("from-glob.example.com");
+      expect(result.port).toBeUndefined();
+    });
+
+    it("resolves includes nested multiple layers deep", () => {
+      const dir = tmp.dirSync({ unsafeCleanup: true }).name;
+      const inner = writeIncludeFile(dir, "inner.conf", `
+Host myserver
+  IdentityFile /keys/nested_key`);
+      const middle = writeIncludeFile(dir, "middle.conf", `Include ${inner}`);
+      const configPath = writeConfig(`Include ${middle}`);
+
+      const result = readSshConfig("myserver", configPath);
+      expect(result.identityFile).toBe("/keys/nested_key");
+    });
+
+    it("expands includes in configs with CRLF line endings", () => {
+      const dir = tmp.dirSync({ unsafeCleanup: true }).name;
+      const included = writeIncludeFile(dir, "extra.conf", `
+Host myserver
+  HostName crlf.example.com`);
+      const configPath = writeConfig(`Include ${included}\r\nHost other\r\n  Port 1\r\n`);
+
+      const result = readSshConfig("myserver", configPath);
+      expect(result.host).toBe("crlf.example.com");
+    });
+
+    it("ignores circular includes", () => {
+      const dir = tmp.dirSync({ unsafeCleanup: true }).name;
+      const aPath = path.join(dir, "a.conf");
+      const bPath = path.join(dir, "b.conf");
+      writeIncludeFile(dir, "a.conf", `Include ${bPath}
+Host myserver
+  Port 2200`);
+      writeIncludeFile(dir, "b.conf", `Include ${aPath}`);
+      const configPath = writeConfig(`Include ${aPath}`);
+
+      const result = readSshConfig("myserver", configPath);
+      expect(result.port).toBe(2200);
+      expect(result.warnings).toBeUndefined();
+    });
+
+    itPosix("skips an untrusted included file and warns", () => {
+      const dir = tmp.dirSync({ unsafeCleanup: true }).name;
+      const included = writeIncludeFile(dir, "loose.conf", `
+Host myserver
+  IdentityFile /keys/should_be_ignored`);
+      fs.chmodSync(included, 0o666);
+      const configPath = writeConfig(`
+Include ${included}
+Host myserver
+  HostName real.example.com`);
+
+      const result = readSshConfig("myserver", configPath);
+      // The trusted parts of the config still apply.
+      expect(result.host).toBe("real.example.com");
+      expect(result.identityFile).toBeUndefined();
+      expect(result.warnings).toEqual([
+        expect.objectContaining({ code: "untrusted" }),
+      ]);
+    });
+  });
+
   itPosix("reads the config when owner-only and not group/world-writable", () => {
     const configPath = writeConfig(`
 Host myserver
