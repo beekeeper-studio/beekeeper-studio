@@ -58,7 +58,8 @@ const singularRules: Array<Rule> = [
 ]
 
 function sanitizeWord(word: string, rules: Array<Rule>) {
-  for (const rule of rules) {
+  for (let i = rules.length - 1; i >= 0; i--) {
+    const rule = rules[i];
     if (rule[0].test(word)) {
       return replace(word, rule)
     }
@@ -96,7 +97,7 @@ function restoreCase(word: string, token: string) {
   return token.toLowerCase();
 }
 
-export function pluralize(word: string, count: number, inclusive: boolean) {
+export function pluralize(word: string, count: number, inclusive?: boolean) {
   const pluralized = count === 1 ?
     sanitizeWord(word, singularRules) :
     sanitizeWord(word, pluralRules);

@@ -80,7 +80,6 @@
   import { CellComponent, RangeComponent, RowComponent } from 'tabulator-tables'
   import { PropType } from 'vue'
   import { safeSqlFormat } from '@/common/utils'
-  import pluralize from 'pluralize'
 import { stringToTypedArray } from '@/common/utils'
 
   const log = rawLog.scope('ResultTable');
@@ -195,7 +194,7 @@ import { stringToTypedArray } from '@/common/utils'
           const schema = v.schema ? `${v.schema}.` : "";
           return `${schema}${v.table}`
         })).map(([table, updates]) => {
-          return `${pluralize('update', updates.length, true)} to ${table}`;
+          return `${window.main.pluralize('update', updates.length, true)} to ${table}`;
         });
 
         const lastUpdate = updateStrings.pop();

@@ -1,6 +1,5 @@
 import Vue from 'vue'
 import _ from 'lodash'
-import pluralize from 'pluralize'
 import { IConnectionFolder } from "@/common/interfaces/IQueryFolder";
 import { DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { safely } from "@/store/modules/data/StoreHelpers";

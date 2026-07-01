@@ -2,15 +2,14 @@ import { contextBridge, ipcRenderer, nativeImage } from 'electron';
 import { AppEvent } from '@/common/AppEvent';
 import path from 'path';
 import fs from 'fs';
-import { SettingsPlugin } from '@/plugins/SettingsPlugin';
 import { homedir } from 'os';
 import tls, { SecureVersion } from 'tls';
 import username from 'username';
 import { execSync } from 'child_process';
 import 'electron-log/preload';
-import pluralize from 'pluralize';
 import type { SaveFileOptions } from '@/backend/lib/FileHelpers';
 import type { NativePluginMenuItem } from '@/services/plugin/types';
+import { pluralize } from '@/vendor/pluralize';
 
 const electron = require('@electron/remote');
 

@@ -104,7 +104,6 @@ import { AppEvent } from '@/common/AppEvent'
 import { CredentialBlob } from '@/store/modules/CredentialsModule'
 import Vue from 'vue'
 import { mapState } from 'vuex'
-import pluralize from 'pluralize'
 import StatusBadge from './StatusBadge.vue'
 
 export default Vue.extend({
@@ -131,7 +130,7 @@ export default Vue.extend({
       window.location.href = "https://app.beekeeperstudio.io"
     },
     workspaceText(blob: CredentialBlob) {
-      return pluralize("Workspace", blob.workspaces.length, true)
+      return window.main.pluralize("Workspace", blob.workspaces.length, true)
     },
     showAccountsModal() {
       if (this.credentials.length) {
