@@ -1,8 +1,7 @@
 import { Transport } from ".";
 
 export interface TransportQueryAudit extends Transport {
-  revision: number;
-  action: "create" | "update" | "destroy";
+  action: "create" | "update";
   createdAt: Date;
   /** `null` if title has not changed. */
   title: string | null;

@@ -13,7 +13,7 @@ import { ApplicationEntity } from "./application_entity";
 import { FavoriteQuery } from "./favorite_query";
 import { TransportQueryAuditDetail } from "@/common/transport/TransportQueryAudit";
 
-@Entity({ name: "query_audit" })
+@Entity({ name: "query_audit", orderBy: { createdAt: "DESC", id: "DESC" } })
 export class QueryAudit extends ApplicationEntity {
   withProps(props?: any): QueryAudit {
     if (props) QueryAudit.merge(this, props);
@@ -29,149 +29,75 @@ export class QueryAudit extends ApplicationEntity {
   @ManyToOne(() => FavoriteQuery, { nullable: false, onDelete: "CASCADE" })
   favoriteQuery?: FavoriteQuery;
 
-  @Column({ type: "integer", nullable: false })
-  revision: number;
+  @Index()
+  @Column({ type: "integer", nullable: true })
+  previousAuditId: number | null;
 
   @Column({ type: "varchar", nullable: false })
   action: "create" | "update";
 
-  /** `title` can be null if it's not changed in this revision. Always use `getDetail`.
-   * @see {QueryAudit.getDetail} **/
+  /** `title` can be null if it's not changed. Always use `getDetail` to resolve it.
+   * @see {QueryAudit.fetchDetail} **/
   @Column({ type: "varchar", nullable: true })
   title: string | null;
 
-  /** `text` can be null if it's not changed in this revision. Always use `getDetail`.
-   * @see {QueryAudit.getDetail} **/
+  /** `text` can be null if it's not changed. Always use `getDetail` to resolve it.
+   * @see {QueryAudit.fetchDetail} **/
   @Column({ type: "text", nullable: true, select: false })
   text: string | null;
 
-  static async audit(options: {
-    transaction: EntityManager;
-    query: FavoriteQuery;
-    excludeTitle: boolean;
-    excludeText: boolean;
-  }): Promise<void> {
-    if (options.excludeTitle && options.excludeText) {
-      throw new Error("Cannot exclude both title and text");
-    }
-
-    const revision = await options.transaction
-      .getRepository(QueryAudit)
-      .createQueryBuilder("audit")
-      .select("COALESCE(MAX(audit.revision), 0)", "value")
-      .where("favoriteQueryId = :id", { id: options.query.id })
-      .getRawOne<{ value: number }>()
-      .then((r) => r.value);
-
-    const audit = options.transaction.getRepository(QueryAudit).create({
-      favoriteQueryId: options.query.id,
-      action: revision > 0 ? "update" : "create",
-      revision: revision + 1,
-      title: options.excludeTitle ? null : options.query.title,
-    });
-
-    await audit.save();
-
-    if (!options.excludeText) {
-      await options.transaction.query(
-        `
-        UPDATE query_audit
-        SET text = query.text
-        FROM (SELECT text FROM favorite_query WHERE id = ?) AS query
-        WHERE query_audit.id = ?
-        `,
-        [options.query.id, audit.id]
-      );
-    }
-  }
-
-  static async getDetail(
-    queryId: number,
-    auditId: number
-  ): Promise<TransportQueryAuditDetail | null> {
-    const audit = await QueryAudit.findOneBy({
-      id: auditId,
-      favoriteQueryId: queryId,
-    });
-
-    if (!audit) {
-      return null;
-    }
-
-    const previousAuditId = await QueryAudit.getPreviousId(
-      queryId,
-      audit.revision
-    );
-    const { title, text } = await QueryAudit.resolveSnapshot(
-      queryId,
-      audit.revision
-    );
-
-    return {
-      ...audit,
-      previousAuditId,
-      values: { title, text },
-    };
-  }
-
-  async restore(): Promise<void> {
-    const query = await FavoriteQuery.findOneByOrFail({
-      id: this.favoriteQueryId,
-    });
-    const { title, text } = await QueryAudit.resolveSnapshot(
-      this.favoriteQueryId,
-      this.revision
-    );
-    query.title = title;
-    query.text = text;
-    await query.save();
-  }
-
-  private static async resolveSnapshot(
-    queryId: number,
-    revision: number
-  ): Promise<{ title: string; text: string }> {
-    const titleObj = await QueryAudit.findOne({
+  private async resolveTitle(): Promise<string> {
+    return await QueryAudit.findOne({
       select: ["title"],
       where: {
-        favoriteQueryId: queryId,
-        revision: LessThanOrEqual(revision),
+        favoriteQueryId: this.favoriteQueryId,
+        createdAt: LessThanOrEqual(this.createdAt),
         title: Not(IsNull()),
       },
-      order: {
-        revision: "DESC",
-      },
-    });
+    }).then((q) => q.title);
+  }
+
+  private async resolveSnapshot(): Promise<{ text: string; title: string }> {
+    const title = await this.resolveTitle();
     const textObj = await QueryAudit.findOne({
       select: ["text"],
       where: {
-        favoriteQueryId: queryId,
-        revision: LessThanOrEqual(revision),
+        favoriteQueryId: this.favoriteQueryId,
+        createdAt: LessThanOrEqual(this.createdAt),
         text: Not(IsNull()),
       },
-      order: {
-        revision: "DESC",
-      },
     });
-    return {
-      title: titleObj?.title ?? "",
-      text: textObj?.text ?? "",
-    };
+    return { title, text: textObj?.text ?? "" };
   }
 
-  private static async getPreviousId(
-    queryId: number,
-    revision: number
-  ): Promise<number | null> {
-    const audit = await QueryAudit.findOne({
-      where: {
-        favoriteQueryId: queryId,
-        revision: LessThan(revision),
-      },
-      order: {
-        revision: "DESC",
-      },
-    });
-    return audit?.id ?? null;
+  async fetchDetail(): Promise<TransportQueryAuditDetail> {
+    return { ...this, values: await this.resolveSnapshot() };
+  }
+
+  /** @param updatedAt - apply query's `updatedAt` (for testing only). */
+  async restore(updatedAt?: Date): Promise<void> {
+    await FavoriteQuery.createQueryBuilder("query")
+      .update()
+      .set({
+        title: await this.resolveTitle(),
+        text: () =>
+          QueryAudit.createQueryBuilder()
+            .subQuery()
+            .select("text")
+            .from(QueryAudit, "audit")
+            .where("audit.favoriteQueryId = :queryId")
+            .andWhere("audit.createdAt <= :createdAt")
+            .andWhere("audit.text IS NOT NULL")
+            .orderBy("audit.createdAt", "DESC")
+            .limit(1)
+            .getQuery(),
+        updatedAt,
+      })
+      .where("id = :queryId")
+      .setParameters({
+        queryId: this.favoriteQueryId,
+        createdAt: this.createdAt,
+      })
+      .execute();
   }
 }

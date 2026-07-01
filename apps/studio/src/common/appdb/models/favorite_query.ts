@@ -57,16 +57,4 @@ export class FavoriteQuery extends ApplicationEntity implements QueryLike, ISave
       this.connectionHash = 'DEPRECATED'
     }
   }
-
-  /** Check if a field has been audited */
-  async checkAudited(field: "title" | "text"): Promise<boolean> {
-    return await FavoriteQuery
-      .createQueryBuilder("q")
-      .where("q.id = :id", { id: this.id })
-      .orderBy("a.revision", "DESC")
-      .leftJoin("q.queryAudits", "a", `a.${field} IS NOT NULL`)
-      .select(`q.${field} IS a.${field}`, "audited")
-      .getRawOne<{ audited: boolean }>()
-      .then((r) => r.audited);
-  }
 }

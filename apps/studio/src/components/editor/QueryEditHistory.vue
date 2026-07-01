@@ -85,7 +85,7 @@
                 </span>
                 <span
                   v-if="
-                    audit.queryAudit.revision > 1 &&
+                    audit.queryAudit.action === 'update' &&
                     audit.queryAudit.title != null
                   "
                   class="changed-the-title-to"
@@ -299,7 +299,6 @@ export default Vue.extend({
   methods: {
     ...mapActions({
       restore: "data/queryAudits/restore",
-      upsertQuery: "data/queries/upsert",
     }),
     initSplit() {
       if (this.split) {
@@ -444,7 +443,7 @@ export default Vue.extend({
       }
       const confirmed = await this.$confirm(
         "Restore this version?",
-        "The current query text will be replaced with this revision. This will create a new entry in the edit history.",
+        "The current query text will be replaced with this version. This will create a new entry in the edit history.",
         { confirmLabel: "Restore" }
       );
       if (!confirmed) {
@@ -461,13 +460,7 @@ export default Vue.extend({
           this.$emit("discardUnsavedChanges");
         } else {
           await this.restore({ queryId, auditId });
-          const restored = {
-            id: queryId,
-            text: this.selectedAudit.values.text,
-            title: this.selectedAudit.values.title,
-          };
-          this.$store.commit("data/queries/upsert", restored);
-          this.$emit("restore", restored);
+          this.$emit("restore");
         }
       } catch (e) {
         log.error(e);

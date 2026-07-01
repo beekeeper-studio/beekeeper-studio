@@ -5,7 +5,6 @@ import {
   TransportQueryAudit,
   TransportQueryAuditDetail,
 } from "@/common/transport/TransportQueryAudit";
-import { TransportFavoriteQuery } from "@/common/transport";
 
 interface State {
   pollError: null;
@@ -21,29 +20,20 @@ export const UtilQueryAuditModule: Module<State, RootState> = {
     async poll() {},
     async list(_context, queryId: number): Promise<TransportQueryAudit[]> {
       return await Vue.prototype.$util.send("appdb/queryAudit/find", {
-        options: {
-          where: { favoriteQueryId: queryId },
-          order: { revision: "DESC" },
-        },
+        options: { where: { favoriteQueryId: queryId } },
       });
     },
     async get(
       _context,
-      { queryId, auditId }: { queryId: number; auditId: number }
+      { auditId }: { auditId: number }
     ): Promise<TransportQueryAuditDetail> {
-      return await Vue.prototype.$util.send("appdb/queryAudit/get", {
-        queryId,
-        auditId,
-      });
+      return await Vue.prototype.$util.send("appdb/queryAudit/get", { auditId });
     },
     async restore(
       _context,
-      { queryId, auditId }: { queryId: number; auditId: number }
+      { auditId }: { auditId: number }
     ): Promise<void> {
-      await Vue.prototype.$util.send("appdb/queryAudit/restore", {
-        queryId,
-        auditId,
-      });
+      await Vue.prototype.$util.send("appdb/queryAudit/restore", { auditId });
     },
   },
 };

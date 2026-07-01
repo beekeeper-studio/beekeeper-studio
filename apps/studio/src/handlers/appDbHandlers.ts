@@ -29,7 +29,6 @@ import platformInfo from'@/common/platform_info';
 import rawLog from "@bksLogger"
 import { validate } from "class-validator";
 import { QueryAudit } from "@/common/appdb/models/QueryAudit";
-import { IQueryAudit } from "@/common/interfaces/IQueryAudit";
 import { TransportQueryAudit, TransportQueryAuditDetail } from "@/common/transport/TransportQueryAudit";
 
 const log = rawLog.scope('Appdb handlers');
@@ -210,26 +209,12 @@ export const AppDbHandlers = {
     cache = await cache.save();
     return cache.id;
   },
-  "appdb/queryAudit/get": async function ({
-    queryId,
-    auditId,
-  }: {
-    queryId: number;
-    auditId: number;
-  }): Promise<TransportQueryAuditDetail | null> {
-    return await QueryAudit.getDetail(queryId, auditId);
+  "appdb/queryAudit/get": async function ({ auditId }: { auditId: number; }): Promise<TransportQueryAuditDetail | null> {
+    const audit = await QueryAudit.findOneByOrFail({ id: auditId });
+    return await audit.fetchDetail();
   },
-  "appdb/queryAudit/restore": async function ({
-    queryId,
-    auditId,
-  }: {
-    queryId: number;
-    auditId: number;
-  }): Promise<void> {
-    const audit = await QueryAudit.findOneByOrFail({
-      id: auditId,
-      favoriteQueryId: queryId,
-    });
+  "appdb/queryAudit/restore": async function ({ auditId, }: { auditId: number; }): Promise<void> {
+    const audit = await QueryAudit.findOneByOrFail({ id: auditId });
     await audit.restore();
   },
 };
