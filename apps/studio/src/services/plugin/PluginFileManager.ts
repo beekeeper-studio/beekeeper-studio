@@ -7,7 +7,7 @@ import {
   DownloaderReport,
 } from "nodejs-file-downloader";
 import { Manifest, PluginView, Release } from "./types";
-import { InvalidPluginManifestError } from "./errors";
+import { PluginError } from "@/lib/errors";
 import extract from "extract-zip";
 import { tmpdir } from "os";
 
@@ -310,12 +310,14 @@ export default class PluginFileManager {
    */
   private validateManifest(manifest: Manifest, expectedId: string) {
     if (!isValidPluginId(manifest.id)) {
-      throw new InvalidPluginManifestError(
+      throw new PluginError(
+        "MANIFEST_PARSE",
         `Plugin "${expectedId}" has a missing or invalid manifest id.`
       );
     }
     if (manifest.id !== expectedId) {
-      throw new InvalidPluginManifestError(
+      throw new PluginError(
+        "MANIFEST_PARSE",
         `Plugin manifest id "${manifest.id}" does not match expected id "${expectedId}".`
       );
     }
