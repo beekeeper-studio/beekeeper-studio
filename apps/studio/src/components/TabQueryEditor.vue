@@ -15,7 +15,9 @@
       >
         <div class="alert alert-warning alert-small">
           <i class="material-icons">error_outline</i>
-          <div class="alert-body">Run Current unavailable</div>
+          <div class="alert-body">
+            Run Current unavailable
+          </div>
           <div class="btn-group">
             <a
               @click.prevent="copyQuerySelectionError"

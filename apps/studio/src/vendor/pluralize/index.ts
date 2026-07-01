@@ -4,7 +4,6 @@ type Rule = [RegExp, string];
 
 const pluralRules: Array<Rule> = [
   [/s?$/i, 's'],
-  [/[^\u0000-\u007F]$/i, '$0'],
   [/([^aeiou]ese)$/i, '$1'],
   [/(ax|test)is$/i, '$1es'],
   [/(alias|[^aou]us|t[lm]as|gas|ris)$/i, '$1es'],
@@ -25,7 +24,6 @@ const pluralRules: Array<Rule> = [
   [/\b((?:tit)?m|l)(?:ice|ouse)$/i, '$1ice'],
   [/(pe)(?:rson|ople)$/i, '$1ople'],
   [/(child)(?:ren)?$/i, '$1ren'],
-  [/eaux$/i, '$0'],
   [/m[ae]n$/i, 'men'],
   [/thou/i, 'you']
 ]
@@ -70,8 +68,8 @@ function sanitizeWord(word: string, rules: Array<Rule>) {
 
 function replace (word: string, rule: Rule) {
   return word.replace(rule[0], function (match, ...groups) {
-    var offset = groups[groups.length - 2];
-    var result = rule[1].replace(/\$(\d{1,2})/g, function (_, i) {
+    const offset = groups[groups.length - 2];
+    const result = rule[1].replace(/\$(\d{1,2})/g, function (_, i) {
       return groups[i - 1] || '';
     });
 

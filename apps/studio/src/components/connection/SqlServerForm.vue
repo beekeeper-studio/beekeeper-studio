@@ -87,9 +87,15 @@
               class="form-control"
               v-model="config.sqlServerOptions.encryptionMode"
             >
-              <option value="off">Off (no encryption)</option>
-              <option value="on">On (trust server certificate)</option>
-              <option value="strict">Strict (validate certificate)</option>
+              <option value="off">
+                Off (no encryption)
+              </option>
+              <option value="on">
+                On (trust server certificate)
+              </option>
+              <option value="strict">
+                Strict (validate certificate)
+              </option>
             </select>
           </div>
           <div
