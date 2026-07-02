@@ -188,6 +188,7 @@ export default {
   install(Vue) {
     Vue.prototype.$app = BeekeeperPlugin
     Vue.prototype.$bks = BeekeeperPlugin
+    Vue.prototype.$pluralize = pluralize;
 
     Vue.prototype.$confirm = function(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean> {
       return new Promise<boolean>((resolve, reject) => {
