@@ -580,25 +580,17 @@ export default {
       if (this.isCloud && !folder.parentId) {
         options.push({ name: 'New Subfolder', handler: ({ item }) => this.createSubfolder(item) })
       }
-      // =========== "Move to ..." options =========
       if (!canWrite) {
         // do nothing
-      } else if (folder.parentId) {
-        const otherRoots = this.rootFolders.filter(f => f.id !== folder.parentId)
-        otherRoots.forEach(root => {
-          options.push({ name: `Move to ${root.name}`, handler: ({ item }) => this.moveFolderToParent(item, root) })
-        })
       }
-      if (canWrite) {
-        options.push(
-          { name: 'Rename', handler: ({ item }) => this.renameFolder(item) },
-          { name: 'Delete', handler: ({ item }) => this.deleteFolder(item) }
-        )
-      }
-      // Root folders (Personal/Team) are not shareable
-      if (this.isCloud && folder.id && folder.parentId) {
-        options.push({ name: 'Share', slug: 'share', handler: ({ item }) => this.share(item) })
-      }
+      options.push(...[
+        { name: 'Rename', handler: ({ item }) => this.renameFolder(item) },
+        folder.parentId && {
+          name: 'Move',
+          handler: ({ item }) => this.trigger(AppEvent.openMoveFileModal, { type: 'connectionFolder', value: item }),
+        },
+        { name: 'Delete', handler: ({ item }) => this.deleteFolder(item) }
+      ].filter(Boolean))
       this.$bks.openMenu({ event, item: folder, options })
     },
     share(folder) {
@@ -640,9 +632,6 @@ export default {
       } finally {
         this.renamingFolderId = null
       }
-    },
-    async moveFolderToParent(folder, newParent) {
-      await this.$store.dispatch('data/connectionFolders/save', { ...folder, parentId: newParent.id })
     },
     async deleteFolder(folder) {
       if (await this.$confirm(`Delete folder "${folder.name}"?`)) {

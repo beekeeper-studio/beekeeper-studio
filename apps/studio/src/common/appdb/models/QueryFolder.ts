@@ -1,7 +1,7 @@
 import { Entity, Column, OneToMany, ManyToOne, JoinColumn, BeforeRemove, BeforeInsert, BeforeUpdate, Not, IsNull } from 'typeorm'
 import { ApplicationEntity } from './application_entity'
 import { FavoriteQuery } from './favorite_query'
-import pluralize from 'pluralize'
+import { pluralize } from '@/vendor/pluralize'
 
 @Entity({ name: 'query_folder' })
 export class QueryFolder extends ApplicationEntity {

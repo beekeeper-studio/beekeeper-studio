@@ -80,7 +80,6 @@
   import { CellComponent, RangeComponent, RowComponent } from 'tabulator-tables'
   import { PropType } from 'vue'
   import { safeSqlFormat } from '@/common/utils'
-  import pluralize from 'pluralize'
 import { stringToTypedArray } from '@/common/utils'
 
   const log = rawLog.scope('ResultTable');
@@ -195,7 +194,7 @@ import { stringToTypedArray } from '@/common/utils'
           const schema = v.schema ? `${v.schema}.` : "";
           return `${schema}${v.table}`
         })).map(([table, updates]) => {
-          return `${pluralize('update', updates.length, true)} to ${table}`;
+          return `${this.$pluralize('update', updates.length, true)} to ${table}`;
         });
 
         const lastUpdate = updateStrings.pop();
@@ -542,6 +541,11 @@ import { stringToTypedArray } from '@/common/utils'
             { label: 'false', value: this.dialectData.boolean?.false ?? false },
             { label: 'true', value: this.dialectData.boolean?.true ?? true },
           ];
+          if (editData?.nullable) values.push({ label: '(NULL)', value: null });
+          result.editorParams['values'] = values;
+        } else if (editData?.enumValues?.length) {
+          result.editor = 'list';
+          const values = editData.enumValues.map((v) => ({ label: v, value: v }));
           if (editData?.nullable) values.push({ label: '(NULL)', value: null });
           result.editorParams['values'] = values;
         }

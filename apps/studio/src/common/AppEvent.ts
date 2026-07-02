@@ -90,6 +90,16 @@ export enum AppEvent {
    * this.trigger(AppEvent.openShareModal, { subject: { type: "query", id: 1 } });
    */
   openShareModal = 'openShareModal',
+  /** Paste clipboard contents as new rows in the active table's Data tab. */
+  pasteAsNewRows = 'pasteAsNewRows',
+  /** Open a modal to move a file to a folder
+   * @example
+   * this.trigger(AppEvent.openMoveFileModal, {
+   *   type: "connection",
+   *   value: this.config, // the connection config
+   * });
+   **/
+  openMoveFileModal = 'openMoveFileModal',
 }
 
 export type OpenShareModalOptions =  {

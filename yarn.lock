@@ -4637,11 +4637,6 @@
     pg-protocol "*"
     pg-types "^2.2.0"
 
-"@types/pluralize@^0.0.30":
-  version "0.0.30"
-  resolved "https://registry.yarnpkg.com/@types/pluralize/-/pluralize-0.0.30.tgz#cddb9923240c20d15e6d5f98fd576ec856b9b3db"
-  integrity sha512-kVww6xZrW/db5BR9OqiT71J9huRdQ+z/r+LbDuT7/EK50mCmj5FoaIARnVv0rvjUS/YpDox0cDU9lpQT011VBA==
-
 "@types/readable-stream@^4.0.0":
   version "4.0.23"
   resolved "https://registry.yarnpkg.com/@types/readable-stream/-/readable-stream-4.0.23.tgz#fcd0f7472f45ceb43154f08f0083ccd1c76e53ce"
@@ -11226,11 +11221,6 @@ plist@3.1.0, plist@^3.0.5, plist@^3.1.0:
     base64-js "^1.5.1"
     xmlbuilder "^15.1.1"
 
-pluralize@^8.0.0:
-  version "8.0.0"
-  resolved "https://registry.yarnpkg.com/pluralize/-/pluralize-8.0.0.tgz#1a6fa16a38d12a1901e0320fa017051c539ce3b1"
-  integrity sha512-Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA==
-
 popper.js@^1.15.0, popper.js@^1.16.1:
   version "1.16.1"
   resolved "https://registry.yarnpkg.com/popper.js/-/popper.js-1.16.1.tgz#2a223cb3dc7b6213d740e40372be40de43e65b1b"
@@ -12566,10 +12556,9 @@ sqlstring@^2.3.2:
   resolved "https://registry.yarnpkg.com/sqlstring/-/sqlstring-2.3.3.tgz#2ddc21f03bce2c387ed60680e739922c65751d0c"
   integrity sha512-qC9iz2FlN7DQl3+wjwn3802RTyjCx7sDvfQEXchwa6CWOx07/WVfh91gBmQ9fahw8snwGEWU3xGzOt4tFyHLxg==
 
-ssh-config@^5.1.0:
+ssh-config@beekeeper-studio/ssh-config#86bbd4037bb1ac79ff38c672b3dd1f5d0bef5560:
   version "5.1.0"
-  resolved "https://registry.yarnpkg.com/ssh-config/-/ssh-config-5.1.0.tgz#e77d8b769eeb0448e0bdeaf2d5e50e61b147fd3f"
-  integrity sha512-z4fFE4MgCja706ajwYOg6uptS3BIu0TWSUj08UWLuwNB/awVktEA5LyOgIAmgazyDjyTULhlL2GaBv37k4zoxQ==
+  resolved "https://codeload.github.com/beekeeper-studio/ssh-config/tar.gz/86bbd4037bb1ac79ff38c672b3dd1f5d0bef5560"
 
 ssh-remote-port-forward@^1.0.4:
   version "1.0.4"
