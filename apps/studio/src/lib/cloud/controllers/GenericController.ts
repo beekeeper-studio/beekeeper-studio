@@ -50,13 +50,6 @@ export abstract class GenericController<T extends HasId> {
     return res(response, this.name)
   }
 
-  async createBulk(qs: Omit<T, 'id'>[]): Promise<T[]> {
-    if (qs.some((q) => q.id)) throw new CloudError(400, `Cannot create ${this.name} - it already has an ID`)
-
-    const response = await this.axios.post(url(this.path, 'bulk'), { [this.plural]: qs })
-    return res(response, this.plural)
-  }
-
   async update(q: T): Promise<T> {
     if (!q.id) throw new CloudError(400, `Must provide ID to update ${this.name}.`)
     const response = await this.axios.patch(url(this.path, q.id), q)

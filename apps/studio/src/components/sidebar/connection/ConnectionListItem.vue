@@ -259,7 +259,7 @@ export default {
     share() {
       this.trigger(AppEvent.openShareModal, {
         subjectId: this.savedConnection.id,
-        subjectType: "Connection",
+        subjectType: "connection",
       });
     },
     async copyUrl() {

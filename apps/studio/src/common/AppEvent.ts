@@ -1,5 +1,6 @@
 import Vue from "vue"
 import rawLog from '@bksLogger'
+import { SubjectType } from "@/lib/cloud/controllers/AccessGrantsController";
 
 const log = rawLog.scope('AppEvent')
 
@@ -104,7 +105,7 @@ export enum AppEvent {
 
 export type OpenShareModalOptions =  {
   subjectId: number;
-  subjectType: "Query" | "Connection" | "QueryFolder" | "ConnectionFolder";
+  subjectType: SubjectType;
 }
 
 export interface RootBinding {

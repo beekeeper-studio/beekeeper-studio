@@ -596,7 +596,7 @@ export default {
     share(folder) {
       this.trigger(AppEvent.openShareModal, {
         subjectId: folder.id,
-        subjectType: "ConnectionFolder",
+        subjectType: "connection_folder",
       });
     },
     createSubfolder(parentFolder) {

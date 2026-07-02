@@ -249,15 +249,7 @@ export default Vue.extend({
     ...mapState("data/queries", { queries: "items" }),
     ...mapState("data/connectionFolders", { connectionFolders: "items" }),
     ...mapState("data/queryFolders", { queryFolders: "items" }),
-    ...mapState("data/accessGrants", {
-      accessGrants(state: DataState<IAccessGrant>) {
-        return state.items.filter(
-          (grant) =>
-            grant.subjectId === this.subjectId &&
-            grant.subjectType === this.subjectType
-        );
-      },
-    }),
+    ...mapState("data/accessGrants", { accessGrants: "items" }),
     ...mapState("data/memberships", {
       memberships(state: DataState<IMembership>) {
         return state.items
@@ -287,16 +279,16 @@ export default Vue.extend({
       return [{ event: AppEvent.openShareModal, handler: this.open }];
     },
     items() {
-      if (this.subjectType === "Connection") {
+      if (this.subjectType === "connection") {
         return this.connections;
       }
-      if (this.subjectType === "Query") {
+      if (this.subjectType === "query") {
         return this.queries;
       }
-      if (this.subjectType === "ConnectionFolder") {
+      if (this.subjectType === "connectionFolder") {
         return this.connectionFolders;
       }
-      if (this.subjectType === "QueryFolder") {
+      if (this.subjectType === "queryFolder") {
         return this.queryFolders;
       }
       return [];
@@ -310,13 +302,13 @@ export default Vue.extend({
     },
     subjectModulePath(): string {
       switch (this.subjectType) {
-        case "Connection":
+        case "connection":
           return "data/connections";
-        case "Query":
+        case "query":
           return "data/queries";
-        case "ConnectionFolder":
+        case "connectionFolder":
           return "data/connectionFolders";
-        case "QueryFolder":
+        case "queryFolder":
           return "data/queryFolders";
         default:
           throw new Error(`Invalid subject type. Got "${this.subjectType}"`);
@@ -377,12 +369,8 @@ export default Vue.extend({
       await this.$nextTick();
       try {
         await this.loadAccessGrants({
-          extraParams: {
-            access_grant: {
-              subject_type: this.subjectType,
-              subject_id: this.subjectId,
-            },
-          },
+          subjectType: this.subjectType,
+          subjectId: this.subjectId,
         });
       } catch (e) {
         log.error(e);
@@ -407,21 +395,33 @@ export default Vue.extend({
         this.selectedMembers.splice(idx, 1);
       }
     },
-    changeAccess(grant: IAccessGrant, permission: Permission) {
-      if (this.grantToPermission(grant) === permission) {
+    changeAccess(accessGrant: IAccessGrant, permission: Permission) {
+      if (this.grantToPermission(accessGrant) === permission) {
         return; // nothing changed
       }
 
-      this.tryAccess(grant.id, async () => {
+      this.tryAccess(accessGrant.id, async () => {
         await this.saveAccessGrant({
-          ...grant,
-          ...this.permissionToGrant(permission),
+          accessGrant: {
+            ...accessGrant,
+            ...this.permissionToGrant(permission),
+          },
+          subject: {
+            subjectType: this.subjectType,
+            subjectId: this.subjectId,
+          },
         });
       });
     },
-    removeAccess(grant: IAccessGrant) {
-      this.tryAccess(grant.id, async () => {
-        await this.removeAccessGrant(grant);
+    removeAccess(accessGrant: IAccessGrant) {
+      this.tryAccess(accessGrant.id, async () => {
+        await this.removeAccessGrant({
+          accessGrant,
+          subject: {
+            subjectType: this.subjectType,
+            subjectId: this.subjectId,
+          }
+        });
       });
     },
     async tryAccess(grantId: number, fn: Function) {

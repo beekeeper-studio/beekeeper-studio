@@ -13,8 +13,6 @@ export interface IShareable {
   canWrite: boolean;
   /** Can I manage the share settings? */
   canManage: boolean;
-  /** Am I given an access grant? */
-  accessGrant: IAccessGrant | null;
   /** The user who created this */
   membership: IMembership;
 }

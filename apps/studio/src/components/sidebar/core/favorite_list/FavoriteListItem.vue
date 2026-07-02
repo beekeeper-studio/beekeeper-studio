@@ -129,7 +129,7 @@ export default Vue.extend({
     share() {
       this.trigger(AppEvent.openShareModal, {
         subjectId: this.item.id,
-        subjectType: "Query",
+        subjectType: "query",
       });
     },
     async submitRename(title) {

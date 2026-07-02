@@ -422,7 +422,7 @@ export default {
     share(folder) {
       this.trigger(AppEvent.openShareModal, {
         subjectId: folder.id,
-        subjectType: "QueryFolder",
+        subjectType: "query_folder",
       });
     },
     createSubfolder(parentFolder) {
