@@ -31,7 +31,7 @@
 <script lang="ts">
 import _ from 'lodash'
 import Vue from 'vue'
-import { mapState } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import TimeAgo from 'javascript-time-ago'
 import EditableText from '@/components/common/EditableText.vue'
 import { AppEvent } from '@/common/AppEvent'
@@ -44,6 +44,7 @@ export default Vue.extend({
     rename: false,
   }),
   computed: {
+    ...mapGetters(["isCloud"]),
     ...mapState('data/queryFolders', {'folders': 'items'}),
     truncatedText() {
       const excerpt: string = this.item.excerpt ?? ''
@@ -84,6 +85,12 @@ export default Vue.extend({
         },
         { type: 'divider' },
         {
+          name: "Share",
+          slug: 'share',
+          handler: this.share,
+          hideIf: !this.isCloud || !this.item.id,
+        },
+        {
           name: "Duplicate",
           handler: ({ item }) => this.$emit('duplicate', item)
         },
@@ -98,7 +105,7 @@ export default Vue.extend({
             this.rename = true;
           },
         },
-        this.folders.length > 0 && {
+        {
           name: "Move",
           handler: () => {
             this.trigger(AppEvent.openMoveFileModal, {
@@ -106,12 +113,13 @@ export default Vue.extend({
               value: this.item,
             })
           },
+          hideIf: this.folders.length === 0,
         },
         {
           name: "Delete",
           handler: ({ item }) => this.$emit('remove', item)
         },
-      ].filter(Boolean)
+      ].filter(({ hideIf }) => !hideIf)
 
       this.$bks.openMenu({
         item, event,

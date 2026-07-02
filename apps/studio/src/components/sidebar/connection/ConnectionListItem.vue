@@ -66,7 +66,6 @@
 import TimeAgo from 'javascript-time-ago'
 import { mapGetters, mapState } from 'vuex'
 import { isUltimateType } from '@/common/interfaces/IConnection'
-import { AppEvent } from '@/common/AppEvent'
 import EditableText from '@/components/common/EditableText.vue'
 import { ConnectionTypes } from "@/lib/db/types";
 import { AppEvent } from '@/common/AppEvent';
@@ -89,6 +88,7 @@ export default {
     rename: false,
   }),
   computed: {
+    ...mapGetters(["isCloud"]),
     ...mapState('data/connections', {'connectionConfigs': 'items'}),
     ...mapState('data/connectionFolders', {'folders': 'items'}),
     classList() {
@@ -184,44 +184,37 @@ export default {
           handler: (blob) => this.doubleClick(blob.item)
         },
         { type: "divider" },
-        !this.isRecentList && {
-          name: this.pinned ? 'Unpin' : 'Pin',
-          hideIf: this.isRecentList,
-          handler: () => this.pinned ? this.unpin() : this.pin()
-        },
         {
-          name: "Rename",
-          slug: 'rename',
-          hideIf: this.isRecentList || !canWrite,
-          handler: () => {
-            this.rename = true;
-          },
+          name: this.pinned ? 'Unpin' : 'Pin',
+          handler: () => this.pinned ? this.unpin() : this.pin(),
+          hideIf: this.isRecentList,
         },
-        !this.isRecentList && { type: "divider" },
+        { type: "divider", hideIf: this.isRecentList },
+        {
+          name: "Share",
+          slug: 'share',
+          handler: this.share,
+          hideIf: !this.isCloud || !this.savedConnection || !this.savedConnection.id,
+        },
         {
           name: "Duplicate",
           slug: 'duplicate',
           handler: this.duplicate
         },
         {
-          name: "Share",
-          slug: 'share',
-          hideIf: !this.isCloud || !this.savedConnection || !this.savedConnection.id,
-          handler: () => this.share()
-        },
-        {
           name: `Copy ${this.connectionType}`,
           handler: this.copyUrl
         },
         { type: "divider" },
-        !this.isRecentList && {
+        {
           name: "Rename",
           slug: 'rename',
           handler: () => {
             this.rename = true;
           },
+          hideIf: this.isRecentList || !canWrite,
         },
-        !this.isRecentList && this.folders.length > 0 && {
+        {
           name: "Move",
           handler: () => {
             this.trigger(AppEvent.openMoveFileModal, {
@@ -229,12 +222,13 @@ export default {
               value: this.config,
             });
           },
+          hideIf: this.isRecentList || this.folders.length === 0,
         },
         {
           name: "Delete",
           handler: this.remove
         },
-      ].filter(v => !v.hideIf)
+      ].filter(({ hideIf }) => !hideIf)
 
       this.$bks.openMenu({
         event,
