@@ -40,6 +40,10 @@ export default {
       { id: "bks-ai-shell", pkg: "@beekeeperstudio/bks-ai-shell" },
       { id: "bks-er-diagram", pkg: "@beekeeperstudio/bks-er-diagram" },
     ],
+    /** The signed integrity payload shipped inside every trusted plugin. */
+    signatureFilename: "signature.json",
+    /** Detached, ASCII-armored OpenPGP signature over `signature.json`'s bytes. */
+    signatureAscFilename: "signature.json.asc",
   }
 }
 

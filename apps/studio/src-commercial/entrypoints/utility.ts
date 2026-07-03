@@ -36,6 +36,7 @@ import _ from 'lodash';
 import {
   ConfigurationModule,
   BundledPluginModule,
+  SignatureModule,
 } from '@commercial/backend/plugin-system/modules';
 import bksConfig from '@/common/bksConfig';
 import { PluginErrorCode, PluginSystemErrorCode } from '@/lib/errors';
@@ -53,6 +54,9 @@ const pluginManager = new PluginManager({
     pluginsDirectory: platformInfo.pluginsDirectory,
   }),
 });
+pluginManager.registerModule(SignatureModule.with({
+  key: platformInfo.pluginPublicKey,
+}));
 pluginManager.registerModule(ConfigurationModule.with({ config: bksConfig }));
 pluginManager.registerModule(BundledPluginModule);
 

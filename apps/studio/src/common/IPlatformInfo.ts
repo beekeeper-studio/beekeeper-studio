@@ -46,4 +46,5 @@ export interface IPlatformInfo {
   // so BKS_LOG_LEVEL / DEBUG affect what the renderer actually emits.
   // Mirrors the LogLevel union from the shared logger library.
   logLevel?: 'error' | 'warn' | 'info' | 'verbose' | 'debug' | 'silly',
+  pluginPublicKey: string;
 }

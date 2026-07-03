@@ -6,6 +6,9 @@ export abstract class Hookable {
 
   registerModule(this: PluginManager, moduleCls: ModuleClass) {
     this.modules.push(new moduleCls({ manager: this }));
+    // Higher priority runs first. Sort is stable, so modules with equal
+    // priority keep their registration order.
+    this.modules.sort((a, b) => b.priority - a.priority);
   }
 
   /** Run all handlers for a side-effect hook (no return value). */

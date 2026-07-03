@@ -117,6 +117,7 @@ export class WebHost {
       loadable: true,
       origin: "unlisted",
       disableState: { disabled: false },
+      verified: "trusted",
     });
 
     // Initialize the manager

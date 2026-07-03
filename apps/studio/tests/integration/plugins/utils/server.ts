@@ -1,8 +1,17 @@
 import http from "http";
 import { Manifest } from "@/services/plugin";
-import { TestManifestOptions } from "./helpers";
 import JSZip from "jszip";
-import { Plugin } from "./registry";
+import { buildSignatureFiles } from "./signing";
+
+/**
+ * How the mock server signs the plugin zips it serves:
+ * - `none`: ship no signature (an unsigned plugin — the default).
+ * - `valid`: ship a valid `signature.json` + `.asc`.
+ * - `tampered`: sign the original files but ship a modified file, so the hash
+ *   no longer matches (contents tampered after signing).
+ * - `wrong-id`: ship a valid signature whose payload id is a different plugin.
+ */
+export type SignatureMode = "none" | "valid" | "tampered" | "wrong-id";
 
 export function createPluginServer() {
   const server = new MockPluginServer();
@@ -22,6 +31,12 @@ export class MockPluginServer {
   server: http.Server | null = null;
   readyListeners: Function[] = [];
   running = false;
+
+  /** Armored OpenPGP private key used to sign zips. Required for any mode
+   * other than "none". */
+  signingPrivateKey?: string;
+  /** How served zips are signed. Defaults to unsigned. */
+  signatureMode: SignatureMode = "none";
 
   async run() {
     if (this.server) {
@@ -88,8 +103,34 @@ export class MockPluginServer {
   private async createPluginZip(manifest: Manifest): Promise<Buffer> {
     const zip = new JSZip();
 
-    zip.file("manifest.json", JSON.stringify(manifest));
-    zip.file("index.html", "Hello, I'm inside an HTML file!");
+    const manifestContent = Buffer.from(JSON.stringify(manifest));
+    const indexContent = Buffer.from("Hello, I'm inside an HTML file!");
+    zip.file("manifest.json", manifestContent);
+    zip.file("index.html", indexContent);
+
+    if (this.signatureMode !== "none") {
+      if (!this.signingPrivateKey) {
+        throw new Error(
+          `signatureMode is "${this.signatureMode}" but no signingPrivateKey is set`
+        );
+      }
+      const { signatureJson, signatureAsc } = await buildSignatureFiles({
+        id: manifest.id,
+        version: manifest.version,
+        files: { "manifest.json": manifestContent, "index.html": indexContent },
+        privateKey: this.signingPrivateKey,
+        overrideId:
+          this.signatureMode === "wrong-id" ? "some-other-plugin" : undefined,
+      });
+
+      if (this.signatureMode === "tampered") {
+        // Sign the original files, then ship a modified one -> hash mismatch.
+        zip.file("index.html", Buffer.from("TAMPERED CONTENT"));
+      }
+
+      zip.file("signature.json", signatureJson);
+      zip.file("signature.json.asc", signatureAsc);
+    }
 
     return await zip.generateAsync({ type: "nodebuffer" });
   }

@@ -37,7 +37,8 @@ export type PluginErrorCode =
   | 'LOAD_ERROR'
   | 'API_NOT_SUPPORTED'
   | 'RUNTIME_EXCEPTION'
-  | 'DEPENDENCY_MISSING';
+  | 'DEPENDENCY_MISSING'
+  | 'SIGNATURE_INVALID';
 
 /**
  * Thrown by the plugin system itself — registry lookups, install/update

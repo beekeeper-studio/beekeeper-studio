@@ -26,14 +26,12 @@ import { tmpdir } from "os";
  */
 export function createFileManager(): PluginFileManager {
   return new PluginFileManager({
-    downloadDirectory: tmpDir(),
     pluginsDirectory: tmpDir(),
   });
 }
 
 /** Erase plugins data. */
 export function cleanFileManager(manager: PluginFileManager) {
-  cleanTmpDir(manager.options.downloadDirectory);
   cleanTmpDir(manager.options.pluginsDirectory);
 }
 
