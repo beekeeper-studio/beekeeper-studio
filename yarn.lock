@@ -12566,9 +12566,10 @@ sqlstring@^2.3.2:
   resolved "https://registry.yarnpkg.com/sqlstring/-/sqlstring-2.3.3.tgz#2ddc21f03bce2c387ed60680e739922c65751d0c"
   integrity sha512-qC9iz2FlN7DQl3+wjwn3802RTyjCx7sDvfQEXchwa6CWOx07/WVfh91gBmQ9fahw8snwGEWU3xGzOt4tFyHLxg==
 
-ssh-config@beekeeper-studio/ssh-config#86bbd4037bb1ac79ff38c672b3dd1f5d0bef5560:
-  version "5.1.0"
-  resolved "https://codeload.github.com/beekeeper-studio/ssh-config/tar.gz/86bbd4037bb1ac79ff38c672b3dd1f5d0bef5560"
+ssh-config@5.2.0:
+  version "5.2.0"
+  resolved "https://registry.yarnpkg.com/ssh-config/-/ssh-config-5.2.0.tgz#93501fc041a03c2a1e1ebd2124ceffc37de81e44"
+  integrity sha512-rvPlm2RlagYjTGP+maYV4nN513imsk0z/sRMMaPwNZqeLIbS9sM/uRCJlOHc8so+xJtdjQEnYUPCDP+92G+6Gg==
 
 ssh-remote-port-forward@^1.0.4:
   version "1.0.4"
