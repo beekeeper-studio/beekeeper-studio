@@ -489,6 +489,9 @@ export default Vue.extend({
       this.connectionError = null
     },
     async remove(config) {
+      if (!await this.$confirm(`Delete "${config.name}"?`, undefined, { variant: "danger" })) {
+        return
+      }
       if (this.config === config) {
         this.$util.send('appdb/saved/new').then((conn) => {
           this.config = conn;
