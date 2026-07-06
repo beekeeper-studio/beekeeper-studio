@@ -49,8 +49,6 @@ jobs:
     outputs:
       mac_x64_yml: ${{ steps.set_yaml.outputs.mac_x64_yml }}
       mac_arm64_yml: ${{ steps.set_yaml.outputs.mac_arm64_yml }}
-    env:
-      SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.snapcraft_token }}
 
     strategy:
       fail-fast: false
@@ -359,7 +357,7 @@ jobs:
             const fs = require('fs')
             const content = fs.readFileSync(`apps/studio/dist_electron/latest-mac.yml`, 'utf8')
             core.setOutput(`mac_${process.env.ARCH}_yml`, content)
-      - name: Upload DEB/RPM artifacts
+      - name: Upload DEB/RPM/snap artifacts
         uses: actions/upload-artifact@v6
         if: matrix.os.type == 'linux'
         with:
@@ -367,6 +365,7 @@ jobs:
           path: |
             apps/studio/dist_electron/*.deb
             apps/studio/dist_electron/*.rpm
+            apps/studio/dist_electron/*.snap
 
       - name: Cleanup artifacts
         if: ${{!startsWith(matrix.os.name, 'windows')}}
@@ -443,17 +442,42 @@ jobs:
                 'content-type': 'application/octet-stream'
               }
             });
+  # Publishing the snap to the store is done here as a final step rather than
+  # inside the build. This decouples it from the slow build matrix so it can be
+  # retried on its own when store credentials are stale or snapcraft is having a
+  # bad day, without rebuilding every platform.
   publish_snapcraft:
-    # The release pushes to edge. We need to promote the edge release if we have a stable release
     needs: [release, identify_channel]
     runs-on: ubuntu-latest
-    if: needs.identify_channel.outputs.channel == 'latest'
     env:
       SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.snapcraft_token }}
     steps:
       - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v3
+
+      - run: "rm -rf ./artifacts; mkdir artifacts"
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v7
+        with:
+          path: ./artifacts
+
+      # Every build pushes to edge; the stable channel is promoted separately
+      # below only for the latest channel.
+      - name: Upload snaps to edge
+        run: |
+          snaps=$(find ./artifacts -type f -name "*.snap")
+          if [ -z "$snaps" ]; then
+            echo "No .snap files found in artifacts" >&2
+            exit 1
+          fi
+          for snap in $snaps; do
+            echo "Uploading $snap to latest/edge"
+            snapcraft upload "$snap" --release latest/edge
+          done
+
       - name: Move release snap from edge to stable
+        if: needs.identify_channel.outputs.channel == 'latest'
         continue-on-error: true
         run: |
           snapcraft promote beekeeper-studio --from-channel "latest/edge" --to-channel "latest/stable" --yes
