@@ -43,6 +43,9 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
   paste(_1: Electron.MenuItem, win: ElectronWindow): void {
     if (win) win.webContents.paste()
   }
+  pasteAsNewRows(_1: Electron.MenuItem, win: ElectronWindow): void {
+    if (win) win.webContents.send(AppEvent.pasteAsNewRows)
+  }
   selectAll(_1: Electron.MenuItem, win: ElectronWindow): void {
     if (win) win.webContents.selectAll()
   }

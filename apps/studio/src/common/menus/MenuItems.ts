@@ -57,6 +57,16 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       registerAccelerator: false,
       role: 'paste',
     },
+    pasteAsNewRows: {
+      id: 'paste-as-new-rows',
+      label: 'Paste as new rows',
+      // Displayed only — the shortcut is handled by the table grid's own
+      // keymap so it stays scoped to the table and doesn't fire elsewhere
+      // (e.g. plain-text paste in the query editor).
+      accelerator: 'CommandOrControl+Shift+V',
+      registerAccelerator: false,
+      click: actionHandler.pasteAsNewRows,
+    },
 
     selectAll: {
       id: 'select-all',

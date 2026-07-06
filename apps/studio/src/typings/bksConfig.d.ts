@@ -435,7 +435,9 @@ declare interface IBksConfig {
             focusOnFilterInput: string;
             lastPage: string;
             nextPage: string;
+            nullSelection: string;
             openEditorModal: string;
+            pasteAsNewRows: string;
             previousPage: string;
         };
     };
@@ -473,6 +475,7 @@ declare interface IBksConfig {
             binaryEncoding: string;
         };
         layout: {
+            defaultGlobalSidebarItem: string;
             mainContentMinWidth: number;
             primarySidebarMinWidth: number;
             secondarySidebarMinWidth: number;

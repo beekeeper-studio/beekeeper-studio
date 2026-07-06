@@ -18,7 +18,7 @@ jobs:
       id: ${{ steps.create_release.outputs.id }}
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v5
 
       - name: Create draft release
         id: create_release
@@ -38,7 +38,7 @@ jobs:
       deb_codename: ${{steps.extract_channel.outputs.deb_codename}}
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v5
       - name: Extract Channel from package.json
         id: extract_channel
         run: bash ./.github/scripts/extract_channel.sh
@@ -87,7 +87,7 @@ jobs:
         if: matrix.os.type == 'linux'
 
       - name: Check out Git repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v5
 
       - name: Install flatpak tools
         if: matrix.os.setup_flatpak
@@ -140,7 +140,7 @@ jobs:
         env:
           OWNER: 'beekeeper-studio'
           REPO: 'beekeeper-studio'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs')
@@ -164,7 +164,7 @@ jobs:
 
 
       - name: "Install python 3.11 (NOT Mac)"
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: 3.11
         if: matrix.os.setup_python
@@ -224,7 +224,7 @@ jobs:
 
       - name: Cache node_modules
         id: cache-nm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             node_modules
@@ -325,7 +325,7 @@ jobs:
 
       - name: Delete latest-mac.yml
         if: matrix.os.type == 'macos'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           RELEASE_ID: ${{needs.create_draft_release.outputs.id}}
         with:
@@ -350,7 +350,7 @@ jobs:
       - name: Set yaml files
         id: set_yaml
         if: matrix.os.type == 'macos'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           ARCH: ${{ matrix.os.arch }}
           CHANNEL: ${{needs.identify_channel.outputs.channel}}
@@ -360,7 +360,7 @@ jobs:
             const content = fs.readFileSync(`apps/studio/dist_electron/latest-mac.yml`, 'utf8')
             core.setOutput(`mac_${process.env.ARCH}_yml`, content)
       - name: Upload DEB/RPM artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: matrix.os.type == 'linux'
         with:
           name: "${{matrix.os.type}}-${{matrix.os.arch}}"
@@ -385,7 +385,7 @@ jobs:
       - uses: actions/setup-node@v6
       - run: npm install js-yaml
       - name: Merge yml files
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           INTEL_YML: ${{ needs.release.outputs.mac_x64_yml }}
           ARM_YML: ${{ needs.release.outputs.mac_arm64_yml }}
@@ -421,7 +421,7 @@ jobs:
             const merge = mergeFiles();
             fs.writeFileSync('mac.yml', merge, 'utf8');
       - name: Upload fixed mac yml
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           RELEASE_ID: ${{ needs.create_draft_release.outputs.id }}
         with:
@@ -463,7 +463,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v5
 
       - uses: ruby/setup-ruby@v1
         with:
@@ -486,7 +486,7 @@ jobs:
       - run: "rm -rf ./artifacts; mkdir artifacts"
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: ./artifacts
 

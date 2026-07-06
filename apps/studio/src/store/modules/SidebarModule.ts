@@ -34,9 +34,16 @@ const SECONDARY_SIDEBAR_INITIAL_WIDTH = 240 // in pixels
 type GlobalSidebarActiveItem = "tables" | "history" | "queries";
 const GLOBAL_SIDEBAR_ITEMS: GlobalSidebarActiveItem[] = ["tables", "history", "queries"];
 
-function getInitialGlobalSidebarActiveItem(): GlobalSidebarActiveItem {
+function getStoredGlobalSidebarActiveItem(): GlobalSidebarActiveItem | null {
   const stored = SmartLocalStorage.getJSON(GLOBAL_SIDEBAR_ACTIVE_ITEM_KEY);
-  return GLOBAL_SIDEBAR_ITEMS.includes(stored) ? stored : "tables";
+  return GLOBAL_SIDEBAR_ITEMS.includes(stored) ? stored : null;
+}
+
+function getInitialGlobalSidebarActiveItem(): GlobalSidebarActiveItem {
+  // window.bksConfig isn't available yet when the store is constructed, so the
+  // configured default is applied later via the initGlobalSidebarActiveItem
+  // action. Fall back to "tables" until then.
+  return getStoredGlobalSidebarActiveItem() ?? "tables";
 }
 
 export const SidebarModule: Module<State, RootState> = {
@@ -123,6 +130,20 @@ export const SidebarModule: Module<State, RootState> = {
     setGlobalSidebarActiveItem(context, item: GlobalSidebarActiveItem) {
       SmartLocalStorage.addItem(GLOBAL_SIDEBAR_ACTIVE_ITEM_KEY, item);
       context.commit("globalSidebarActiveItem", item);
+    },
+
+    /**
+     * Apply the configured default sidebar tab. A tab the user has previously
+     * selected is persisted to localStorage and always wins, so the default
+     * only takes effect until they manually switch tabs for the first time.
+     * The caller supplies the default (from config) so the store stays
+     * decoupled from where it comes from.
+     */
+    applyDefaultGlobalSidebarActiveItem(context, item: GlobalSidebarActiveItem) {
+      if (getStoredGlobalSidebarActiveItem()) return;
+      if (GLOBAL_SIDEBAR_ITEMS.includes(item)) {
+        context.commit("globalSidebarActiveItem", item);
+      }
     },
 
     /**
