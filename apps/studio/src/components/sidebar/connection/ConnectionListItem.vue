@@ -79,6 +79,7 @@ import TimeAgo from 'javascript-time-ago'
 import { mapGetters, mapState } from 'vuex'
 import { isUltimateType } from '@/common/interfaces/IConnection'
 import EditableText from '@/components/common/EditableText.vue'
+import { AppEvent } from '@/common/AppEvent';
 
 export default {
   components: { EditableText },
@@ -100,24 +101,6 @@ export default {
   computed: {
     ...mapState('data/connections', {'connectionConfigs': 'items'}),
     ...mapState('data/connectionFolders', {'folders': 'items'}),
-    ...mapGetters(['isCloud']),
-    moveToOptions() {
-      const rootById = {}
-      this.folders.forEach(f => { if (!f.parentId) rootById[f.id] = f.name })
-      return this.folders
-        .filter(folder => folder.id !== this.config.connectionFolderId)
-        .map(folder => {
-          let name
-          if (!folder.parentId) {
-            const hasSubs = this.folders.some(f => f.parentId === folder.id)
-            name = hasSubs ? `${folder.name} (top level)` : `${folder.name}`
-          } else {
-            const parentName = rootById[folder.parentId] || ''
-            name = `${parentName} \u2192 ${folder.name}`
-          }
-          return { name, slug: `move-${folder.id}`, handler: this.moveItem, folder }
-        })
-    },
     classList() {
       return {
         'active': this.savedConnection && this.selectedConfig ? this.savedConnection === this.selectedConfig : false
@@ -202,17 +185,12 @@ export default {
           slug: 'connect',
           handler: (blob) => this.doubleClick(blob.item)
         },
+        { type: "divider" },
         !this.isRecentList && {
           name: this.pinned ? 'Unpin' : 'Pin',
           handler: () => this.pinned ? this.unpin() : this.pin()
         },
-        !this.isRecentList && {
-          name: "Rename",
-          slug: 'rename',
-          handler: () => {
-            this.rename = true;
-          },
-        },
+        !this.isRecentList && { type: "divider" },
         {
           name: "Duplicate",
           slug: 'duplicate',
@@ -222,47 +200,34 @@ export default {
           name: `Copy ${this.connectionType}`,
           handler: this.copyUrl
         },
+        { type: "divider" },
+        !this.isRecentList && {
+          name: "Rename",
+          slug: 'rename',
+          handler: () => {
+            this.rename = true;
+          },
+        },
+        !this.isRecentList && this.folders.length > 0 && {
+          name: "Move",
+          handler: () => {
+            this.trigger(AppEvent.openMoveFileModal, {
+              type: "connection",
+              value: this.config,
+            });
+          },
+        },
         {
-          name: "Remove",
+          name: "Delete",
           handler: this.remove
         },
       ].filter(v => v)
-
-      if (this.isCloud || this.folders.length > 0) {
-        const moveToOptions = [];
-        if (!this.isCloud && this.config.connectionFolderId) {
-          moveToOptions.push({ name: 'Move to top level', handler: () => this.moveToRoot() })
-        }
-        moveToOptions.push(...this.moveToOptions);
-        options.push({
-          name: "Move to ...",
-          items: moveToOptions,
-        });
-      }
 
       this.$bks.openMenu({
         event,
         item: this.config,
         options
       })
-    },
-    async moveToRoot() {
-      try {
-        await this.$store.dispatch('data/connectionFolders/moveToFolder', { connection: this.config, folder: null })
-      } catch (ex) {
-        this.$noty.error(`Move Error: ${ex.message}`)
-        console.error(ex)
-      }
-    },
-    async moveItem({ item, option }) {
-      try {
-        const folder = option.folder
-        if (!folder || !folder.id) return
-        await this.$store.dispatch('data/connectionFolders/moveToFolder', { connection: item, folder })
-      } catch(ex) {
-        this.$noty.error(`Move Error: ${ex.message}`)
-        console.error(ex)
-      }
     },
     async click() {
       if (this.savedConnection) {

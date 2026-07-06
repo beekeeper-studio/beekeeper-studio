@@ -105,6 +105,8 @@ export interface ExtendedTableColumn extends SchemaItem {
   characterSet?: string
   collation?: string
   array?: boolean
+  /** For enum columns, the allowed values in definition order. Undefined for non-enum types. */
+  enumValues?: string[]
   bksField: BksField
 }
 
@@ -281,6 +283,7 @@ export interface FieldEditData {
   array?: boolean;
   readOnlyReason?: FieldReadOnlyReason;
   dataType?: string;
+  enumValues?: string[];
   bksField?: BksField;
 }
 

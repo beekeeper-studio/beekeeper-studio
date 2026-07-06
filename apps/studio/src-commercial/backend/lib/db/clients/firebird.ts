@@ -254,9 +254,17 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
   async connect(): Promise<void> {
     await super.connect();
 
+    // Route through the SSH tunnel's local endpoint when a tunnel is active.
+    const host = this.server.sshTunnel
+      ? this.server.config.localHost
+      : this.server.config.host;
+    const port = this.server.sshTunnel
+      ? this.server.config.localPort
+      : this.server.config.port;
+
     const config = {
-      host: this.server.config.host,
-      port: this.server.config.port,
+      host,
+      port,
       user: this.server.config.user,
       password: this.server.config.password,
       database: this.database.database,
@@ -282,8 +290,8 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
     const knex = knexlib({
       client: Client_Firebird,
       connection: {
-        host: serverConfig.host,
-        port: serverConfig.port,
+        host,
+        port,
         user: serverConfig.user,
         password: serverConfig.password,
         database: this.database.database,

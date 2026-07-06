@@ -86,6 +86,11 @@
       ...mapState(['tables', 'database', 'connectionType']),
       ...mapGetters(['minimalMode']),
     },
+    created() {
+      // Apply the configured default tab on first connect. A previously stored
+      // user choice wins, so this is a no-op once the user has switched tabs.
+      this.applyDefaultGlobalSidebarActiveItem(this.$bksConfig.ui.layout.defaultGlobalSidebarItem)
+    },
     watch: {
       minimalMode() {
         if (this.minimalMode) {
@@ -120,6 +125,7 @@
       ...mapActions({
         setActiveItem: "sidebar/setGlobalSidebarActiveItem",
         setPrimarySidebarOpen: "sidebar/setPrimarySidebarOpen",
+        applyDefaultGlobalSidebarActiveItem: "sidebar/applyDefaultGlobalSidebarActiveItem",
       }),
     }
   }
