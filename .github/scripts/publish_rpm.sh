@@ -24,21 +24,15 @@ LOCAL_REPO_DIR=$(mktemp -d -t rpm-repo-XXXXXX)
 # Downloading all of it exhausts the runner's disk and wastes bandwidth on every
 # release. createrepo_c only needs the packages that actually changed to be
 # present on disk; existing packages are carried forward from their cached
-# metadata (see the --pkglist/--skip-stat below).
+# metadata (see --recycle-pkglist/--skip-stat below).
 echo "Syncing existing repo metadata from R2..."
 aws s3 sync "s3://$R2_BUCKET/repodata/" "$LOCAL_REPO_DIR/repodata/" --endpoint-url "$R2_ENDPOINT"
 
-# Build the list of packages the new metadata should contain. Start from the
-# packages already recorded in the existing metadata (their files stay in R2,
-# untouched), then append the new packages we are publishing in this run.
+# List of the NEW packages published in this run. The already-published packages
+# are picked up automatically from the existing metadata by --recycle-pkglist,
+# so they never need to be listed (or downloaded) here.
 PKGLIST="$LOCAL_REPO_DIR/pkglist.txt"
 : > "$PKGLIST"
-EXISTING_PRIMARY=$(find "$LOCAL_REPO_DIR/repodata" -name '*primary.xml.gz' | head -n 1 || true)
-if [ -n "$EXISTING_PRIMARY" ]; then
-    echo "Carrying forward existing packages from metadata..."
-    zcat "$EXISTING_PRIMARY" | grep -o '<location href="[^"]*"' \
-        | sed 's/<location href="//; s/"$//' >> "$PKGLIST"
-fi
 
 # Track which architecture directories received new packages so we can upload
 # just those back to R2.
@@ -78,15 +72,17 @@ done
 
 # Regenerate repository metadata (shared for all architectures).
 #
-# --pkglist    limits the metadata to exactly the packages we listed (existing +
-#              new); nothing gets silently dropped just because its file is not
-#              present locally.
-# --update     reuses the cached metadata for unchanged packages, so their .rpm
-#              files do not need to be re-read (or even downloaded).
-# --skip-stat  stops createrepo_c from stat()-ing the (absent) existing package
-#              files during the cache lookup.
+# --update           reuses the existing metadata for unchanged packages, so
+#                    their .rpm files do not need to be re-read (or downloaded).
+# --recycle-pkglist  carries every already-published package forward from the old
+#                    metadata, so nothing is dropped just because its file is not
+#                    present locally.
+# --pkglist          adds the new packages published in this run (unioned with the
+#                    recycled list above).
+# --skip-stat        stops createrepo_c from stat()-ing the (absent) existing
+#                    package files during the cache lookup.
 echo "Updating RPM repo metadata..."
-createrepo_c --update --skip-stat --pkglist "$PKGLIST" "$LOCAL_REPO_DIR/"
+createrepo_c --update --skip-stat --recycle-pkglist --pkglist "$PKGLIST" "$LOCAL_REPO_DIR/"
 
 # Sign the repository metadata
 echo "Signing repomd.xml..."
