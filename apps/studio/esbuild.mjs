@@ -1,15 +1,43 @@
 #!/usr/bin/env node
 import esbuild from 'esbuild';
+import { nodeExternalsPlugin } from 'esbuild-node-externals'
 import { spawn, exec, fork } from 'child_process'
 import path from 'path';
 import _ from 'lodash'
 import fs from 'fs'
+import { createRequire } from 'module'
+
+const require = createRequire(import.meta.url)
+const { SourceMapConsumer, SourceMapGenerator } = require('source-map')
 
 // NOTE: keep in sync with src/common/globals.ts -> plugins.ensureInstalled
 const ensureInstalled = [
   "@beekeeperstudio/bks-ai-shell",
   "@beekeeperstudio/bks-er-diagram",
 ];
+
+// Packages esbuild must leave as runtime require()s even though they are not
+// direct `dependencies`. Three kinds live here:
+//   - `electron`: provided by the runtime, kept in devDependencies.
+//   - optional/transitive drivers a bundled package may require() at runtime
+//     (e.g. mongodb -> kerberos / mongodb-client-encryption, knex -> the
+//     pg-query-stream / sqlite3 / mysql / sequelize dialects). The native ones
+//     ship inside a kept dependency's own subtree; bundling them would break
+//     the native binary, so they must stay external.
+//   - the bundled plugins, which ship via electron-builder `extraResources`
+//     rather than as node_modules.
+//
+// esbuild-node-externals matches string patterns by exact equality, so a regex
+// is needed to also cover subpath imports (e.g. `electron` and `electron/main`).
+const asExternalPattern = (name) =>
+  new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(/|$)`)
+
+const forceExternal = [
+  'electron',
+  'sqlite3', 'sequelize', 'mysql', 'pg-query-stream',
+  'mongodb-client-encryption', 'kerberos',
+  ...ensureInstalled,
+].map(asExternalPattern)
 
 const isWatching = process.argv[2] === 'watch';
 
@@ -29,15 +57,50 @@ try {
   throw new Error(err)
 }
 
-const externals = ['better-sqlite3', 'sqlite3',
-        'sequelize', 'reflect-metadata',
-        'cassandra-driver', 'mysql2', 'ssh2', 'mysql',
-        'oracledb', '@electron/remote', "@google-cloud/bigquery",
-        'pg-query-stream', 'electron', '@duckdb/node-api',
-        '@mongosh/browser-runtime-electron', '@mongosh/service-provider-node-driver',
-        'mongodb-client-encryption', 'sqlanywhere', 'ws', 'kerberos', 'msnodesqlv8',
-        ...ensureInstalled,
-      ]
+// Externalize exactly the packages that ship raw as node_modules. The
+// `dependencies` block in package.json is the single source of truth for that
+// set (native modules + anything that breaks when bundled); everything else
+// lives in devDependencies and gets bundled into dist/. This keeps the bundler
+// and electron-builder (which ships `dependencies` and prunes devDependencies)
+// in agreement by construction.
+const nodeExternals = nodeExternalsPlugin({
+  packagePath: path.resolve('./package.json'),
+  devDependencies: false,
+  forceExternalList: forceExternal,
+})
+
+// Keep sourcemaps scoped to our own code. esbuild emits one combined map for
+// the whole bundle; the vendor mappings are the overwhelming bulk of it and we
+// never need them. Rewrite each map to keep only the mappings whose source
+// resolves to our src/ + src-commercial/ tree, so production crash stacks still
+// resolve to our original TypeScript while bundled-dependency mappings are
+// dropped. (Done as a deterministic post-pass rather than esbuild's inline-map
+// plugin trick, which only partially works on current esbuild.)
+const ourSourceRoots = [path.resolve('./src'), path.resolve('./src-commercial')]
+async function keepOnlyOurSources(mapFile) {
+  if (!fs.existsSync(mapFile)) return
+  const map = JSON.parse(fs.readFileSync(mapFile))
+  const mapDir = path.dirname(path.resolve(mapFile))
+  const isOurs = (src) => {
+    if (!src) return false
+    const abs = path.resolve(mapDir, src)
+    return ourSourceRoots.some((root) => abs.startsWith(root + path.sep)) && fs.existsSync(abs)
+  }
+  const consumer = await new SourceMapConsumer(map)
+  const generator = new SourceMapGenerator({ file: map.file || path.basename(mapFile).replace(/\.map$/, '') })
+  consumer.eachMapping((m) => {
+    if (m.originalLine != null && isOurs(m.source)) {
+      generator.addMapping({
+        generated: { line: m.generatedLine, column: m.generatedColumn },
+        original: { line: m.originalLine, column: m.originalColumn },
+        source: m.source,
+        name: m.name || undefined,
+      })
+    }
+  })
+  if (consumer.destroy) consumer.destroy()
+  fs.writeFileSync(mapFile, generator.toString())
+}
 
 let electron = null
 /** @type {fs.FSWatcher[]} */
@@ -95,8 +158,14 @@ const commonArgs = {
   publicPath: '.',
   outdir: 'dist',
   bundle: true,
-  external: [...externals, '*.woff', '*.woff2', '*.ttf', '*.svg', '*.png'],
+  external: ['*.woff', '*.woff2', '*.ttf', '*.svg', '*.png'],
+  // Sourcemaps in every build. source-map-support is install()-ed in the main
+  // and utility processes (all environments), so shipping these lets production
+  // crash stacks resolve back to the original TypeScript. `keepOnlyOurSources`
+  // scopes the shipped maps to our own code, and sourcesContent is omitted
+  // (stacks resolve to file:line without embedding source text into the package).
   sourcemap: true,
+  sourcesContent: false,
   minify: false,
   define: {
     'process.env.NODE_ENV': env
@@ -116,14 +185,14 @@ const mainArgs = {
   ...commonArgs,
   entryPoints: ['src-commercial/entrypoints/main.ts', 'src-commercial/entrypoints/preload.ts'],
   alias: aliasFor('mainLogger.ts'),
-  plugins: [getElectronPlugin("Main")]
+  plugins: [nodeExternals, getElectronPlugin("Main")]
 }
 
 const utilityArgs = {
   ...commonArgs,
   entryPoints: ['src-commercial/entrypoints/utility.ts'],
   alias: aliasFor('utilityLogger.ts'),
-  plugins: [getElectronPlugin("Utility")]
+  plugins: [nodeExternals, getElectronPlugin("Utility")]
 }
 
 if(isWatching) {
@@ -131,9 +200,16 @@ if(isWatching) {
   const utility = await esbuild.context(utilityArgs)
   await Promise.all([main.watch(), utility.watch()])
 } else {
-  await Promise.all([
-    esbuild.build(mainArgs),
-    esbuild.build(utilityArgs),
+  // Emit metafiles so build/check-bundled-requires.cjs can verify that every
+  // package esbuild left as a runtime require() actually ships at runtime.
+  const [main, utility] = await Promise.all([
+    esbuild.build({ ...mainArgs, metafile: true }),
+    esbuild.build({ ...utilityArgs, metafile: true }),
   ])
+  fs.writeFileSync('dist/metafile-main.json', JSON.stringify(main.metafile))
+  fs.writeFileSync('dist/metafile-utility.json', JSON.stringify(utility.metafile))
+  for (const f of ['dist/main.js.map', 'dist/preload.js.map', 'dist/utility.js.map']) {
+    await keepOnlyOurSources(f)
+  }
 }
 // launch electron

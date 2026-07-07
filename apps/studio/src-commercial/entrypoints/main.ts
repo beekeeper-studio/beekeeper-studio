@@ -30,9 +30,10 @@ import { initializeSecurity } from '@/backend/lib/security'
 import { initializeFileHelpers } from '@/backend/lib/FileHelpers'
 import { safeOpenExternal } from '@/background/lib/electron/safeOpenExternal'
 
-if (platformInfo.env.development || platformInfo.env.test) {
-  sms.install()
-}
+// Installed in every environment: production ships sourcemaps too, so crash
+// stacks (including the ones the utility process forwards to the renderer) map
+// back to the original TypeScript instead of bundled positions.
+sms.install()
 
 log.transports.console.level = platformInfo.logLevel;
 log.transports.file.level = platformInfo.logLevel;

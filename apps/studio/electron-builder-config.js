@@ -33,7 +33,14 @@ module.exports = {
     'dist/**/*',
     'package.json',
     'public/icons/**/*',
-    '!**/node_gyp_bins/*'
+    '!**/node_gyp_bins/*',
+    // Ship our own sourcemaps (dist/*.map, scoped to our code by esbuild.mjs) so
+    // source-map-support can symbolicate production crash stacks, but drop the
+    // dependency tree's own ~3600 .map files — they only describe vendor code we
+    // don't symbolicate.
+    '!node_modules/**/*.map',
+    // esbuild metafiles are a build/CI artifact for check:bundled-requires.
+    '!dist/metafile-*.json'
   ],
   afterPack: "./build/afterPack.js",
   asarUnpack: [
