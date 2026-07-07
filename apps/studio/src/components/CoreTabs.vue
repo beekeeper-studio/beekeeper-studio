@@ -972,10 +972,12 @@ export default Vue.extend({
       const notyQueue = 'export-query'
       this.$noty.info('Exporting query',  { queue: notyQueue })
 
+      const fullQuery = await this.$store.dispatch('data/queries/findOne', query.id);
+
       try {
         const saved = await window.main.fileHelpers.save({
           fileName: lastExportPath,
-          content: query.text,
+          content: fullQuery.text,
           filters: [
             { name: 'SQL (*.sql)', extensions: ['sql'] },
             { name: 'All Files (*.*)', extensions: ['*'] },
