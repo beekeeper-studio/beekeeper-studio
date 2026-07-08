@@ -542,7 +542,7 @@ export default {
           name: 'Move',
           handler: ({ item }) => this.trigger(AppEvent.openMoveFileModal, { type: 'connectionFolder', value: item }),
         },
-        { name: 'Delete', handler: ({ item }) => this.deleteFolder(item) }
+        this.isCloud && folder.parentId && { name: 'Delete', handler: ({ item }) => this.deleteFolder(item) }
       ].filter(Boolean))
       this.$bks.openMenu({ event, item: folder, options })
     },
