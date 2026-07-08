@@ -378,7 +378,6 @@ export default {
       pinnedConnections: 'pinnedConnections/pinnedConnections',
       filteredConnections: 'data/connections/filteredConnections',
       privacyMode: 'settings/privacyMode',
-      personalRootFolderId: 'data/connectionFolders/personalRootId',
     }),
     connFilter: {
       get() {
@@ -511,9 +510,6 @@ export default {
       if (!this.isUltimate && !this.isCloud) {
         this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
-      }
-      if (!parentId) {
-        parentId = this.personalRootFolderId;
       }
       try {
         const folder = await this.createFolderData(parentId)

@@ -235,9 +235,6 @@ export default {
     ...mapState('tabs', {'activeTab': 'active'}),
     ...mapState('data/queries', {'savedQueries': 'items', 'queriesLoading': 'loading', 'queriesError': 'error', 'savedQueryFilter': 'filter', 'pendingSaveIds': 'pendingSaveIds'}),
     ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
-    ...mapGetters('data/queryFolders', {
-      personalRootFolderId: 'personalRootId',
-    }),
     filterQuery: {
       get() {
         return this.savedQueryFilter;
@@ -340,9 +337,6 @@ export default {
       if (!this.isUltimate && !this.isCloud) {
         this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
-      }
-      if (!parentId) {
-        parentId = this.personalRootFolderId
       }
       try {
         const folder = await this.createFolderData(parentId)

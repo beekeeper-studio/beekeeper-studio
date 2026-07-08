@@ -15,6 +15,9 @@ export const actions: ActionTree<DataState<IFolder>, {}> = {
       }
       name = `Untitled folder ${counter++}`;
     }
+    if (!parentId) {
+      parentId = context.getters.personalRootId;
+    }
     return await context.dispatch("save", { name, parentId });
   },
 };
