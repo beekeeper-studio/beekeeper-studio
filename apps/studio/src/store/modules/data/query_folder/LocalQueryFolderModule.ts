@@ -22,7 +22,8 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
   },
   getters: {
     foldersWithQueries: (state) => (queries: any[]) =>
-      buildFolderTree(state.items, queries, 'queryFolderId')
+      buildFolderTree(state.items, queries, 'queryFolderId'),
+    personalRootId: () => null,
   },
   actions: {
     async load(context) {

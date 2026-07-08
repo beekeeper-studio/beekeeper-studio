@@ -377,7 +377,8 @@ export default {
       activeWorkspaces: 'credentials/activeWorkspaces',
       pinnedConnections: 'pinnedConnections/pinnedConnections',
       filteredConnections: 'data/connections/filteredConnections',
-      privacyMode: 'settings/privacyMode'
+      privacyMode: 'settings/privacyMode',
+      personalRootFolderId: 'data/connectionFolders/personalRootId',
     }),
     connFilter: {
       get() {
@@ -511,8 +512,8 @@ export default {
         this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }
-      if (!parentId && this.isCloud && this.rootFolders.length > 0) {
-        parentId = this.rootFolders[0].id
+      if (!parentId) {
+        parentId = this.personalRootFolderId;
       }
       try {
         const folder = await this.saveFolder({
@@ -560,7 +561,6 @@ export default {
       })
     },
     renameFolder(folder) {
-      console.log(folder)
       this.renamingFolderId = folder.id
     },
     async submitFolderRename(folder, name) {

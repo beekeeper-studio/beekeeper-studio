@@ -16,7 +16,13 @@ export const CloudConnectionFolderModule: DataStore<IConnectionFolder, State> = 
   mutations: mutationsFor<IConnectionFolder>({}, { field: 'name', direction: 'asc'}),
   getters: {
     foldersWithConnections: (state) => (connections: any[]) =>
-      buildFolderTree(state.items, connections, 'connectionFolderId')
+      buildFolderTree(state.items, connections, 'connectionFolderId'),
+    personalRootId(state) {
+      const root = state.items.find(
+        (item) => !item.parentId && item.name === "Personal"
+      );
+      return root?.id;
+    },
   },
   actions: actionsFor<IConnectionFolder>('connectionFolders', {
     async poll() {

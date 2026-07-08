@@ -17,7 +17,13 @@ export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
   mutations: mutationsFor<IQueryFolder>({}, { field: 'name', direction: 'asc'}),
   getters: {
     foldersWithQueries: (state) => (queries: any[]) =>
-      buildFolderTree(state.items, queries, 'queryFolderId')
+      buildFolderTree(state.items, queries, 'queryFolderId'),
+    personalRootId(state) {
+      const root = state.items.find(
+        (item) => !item.parentId && item.name === "Personal"
+      );
+      return root?.id;
+    },
   },
   actions: actionsFor<IQueryFolder>('queryFolders', {
     async poll() {

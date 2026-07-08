@@ -22,7 +22,8 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
   },
   getters: {
     foldersWithConnections: (state) => (connections: any[]) =>
-      buildFolderTree(state.items, connections, 'connectionFolderId')
+      buildFolderTree(state.items, connections, 'connectionFolderId'),
+    personalRootId: () => null,
   },
   actions: {
     async load(context) {
