@@ -108,7 +108,7 @@
                     <i class="material-icons">save_alt</i>
                   </a>
                   <a
-                    @click.prevent="createFolder"
+                    @click.prevent="createFolder()"
                     title="New Folder"
                   >
                     <i class="material-icons-outlined">create_new_folder</i>
@@ -301,53 +301,6 @@
         </div>
       </div>
     </div>
-    <portal to="modals">
-      <modal
-        class="vue-dialog beekeeper-modal"
-        name="connection-folder-modal"
-        @closed="folderModalName = ''; folderModalItem = null; folderModalError = null"
-        @opened="$nextTick(() => $refs.folderNameInput && $refs.folderNameInput.focus())"
-        height="auto"
-        :scrollable="true"
-      >
-        <form @submit.prevent="submitFolderModal">
-          <div class="dialog-content" v-kbd-trap="true">
-            <div class="dialog-c-title">
-              {{ folderModalItem ? 'Rename Folder' : folderModalParentId ? 'New Subfolder' : 'New Folder' }}
-            </div>
-            <div class="form-group">
-              <label>Folder Name</label>
-              <input
-                ref="folderNameInput"
-                v-model="folderModalName"
-                type="text"
-                placeholder="Folder name"
-                @input="folderModalError = null"
-                @keydown.esc.prevent="$modal.hide('connection-folder-modal')"
-              >
-            </div>
-            <div class="form-group" v-if="isCloud && !folderModalItem && rootFolders.length > 0">
-              <label>Parent Folder</label>
-              <select v-model="folderModalParentId" @change="folderModalError = null">
-                <option v-for="f in rootFolders" :key="f.id" :value="f.id">
-                  {{ f.name }}
-                </option>
-              </select>
-            </div>
-            <error-alert v-if="folderModalError" :error="folderModalError" />
-          </div>
-          <div class="vue-dialog-buttons flex-between">
-            <span class="left" />
-            <span class="right">
-              <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('connection-folder-modal')">Cancel</button>
-              <button class="btn btn-primary" type="submit" :disabled="!folderModalName.trim() || folderModalSubmitting">
-                {{ folderModalItem ? 'Rename' : 'Create' }}
-              </button>
-            </span>
-          </div>
-        </form>
-      </modal>
-    </portal>
   </div>
 </template>
 
@@ -392,11 +345,6 @@ export default {
     sort: { field: 'name', order: 'asc' },
     sortInitialized: false,
     sizes: [33, 33, 33],
-    folderModalName: '',
-    folderModalItem: null,
-    folderModalParentId: null,
-    folderModalError: null,
-    folderModalSubmitting: false,
     folderExpandedState: {},
     draggingConnection: null,
     renamingFolderId: null,
@@ -504,6 +452,9 @@ export default {
     this.$nextTick(() => { this.sortInitialized = true })
   },
   methods: {
+    ...mapActions({
+      saveFolder: "data/connectionFolders/save",
+    }),
     getFolderExpanded(folderId) {
       const stored = this.folderExpandedState[folderId]
       return stored !== undefined ? stored : true
@@ -555,18 +506,24 @@ export default {
     getLabelClass(color) {
       return `label-${color}`
     },
-    createFolder() {
+    async createFolder(parentId = null) {
       if (!this.isUltimate && !this.isCloud) {
         this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }
-      this.folderModalName = ''
-      this.folderModalItem = null
-      this.folderModalError = null
-      this.folderModalParentId = (this.isCloud && this.rootFolders.length > 0)
-        ? this.rootFolders[0].id
-        : null
-      this.$modal.show('connection-folder-modal')
+      if (!parentId && this.isCloud && this.rootFolders.length > 0) {
+        parentId = this.rootFolders[0].id
+      }
+      try {
+        const folder = await this.saveFolder({
+          name: 'Untitled folder',
+          parentId,
+        })
+        await this.$nextTick();
+        this.renameFolder({ id: folder });
+      } catch (e) {
+        this.$noty.error(e.userMessage ?? e.message ?? 'Failed to create folder')
+      }
     },
     showFolderContextMenu(event, folder) {
       if (event.target.tagName === 'INPUT') {
@@ -593,11 +550,7 @@ export default {
         this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }
-      this.folderModalName = ''
-      this.folderModalItem = null
-      this.folderModalError = null
-      this.folderModalParentId = parentFolder.id
-      this.$modal.show('connection-folder-modal')
+      this.createFolder(parentFolder.id)
     },
     showLonelyContextMenu(event) {
       this.$bks.openMenu({
@@ -607,6 +560,7 @@ export default {
       })
     },
     renameFolder(folder) {
+      console.log(folder)
       this.renamingFolderId = folder.id
     },
     async submitFolderRename(folder, name) {
@@ -726,24 +680,6 @@ export default {
         }
       } catch (ex) {
         this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
-      }
-    },
-    async submitFolderModal() {
-      const name = this.folderModalName.trim()
-      if (!name) return
-      this.folderModalError = null
-      this.folderModalSubmitting = true
-      try {
-        if (this.folderModalItem) {
-          await this.$store.dispatch('data/connectionFolders/save', { ...this.folderModalItem, name })
-        } else {
-          await this.$store.dispatch('data/connectionFolders/save', { id: null, name, parentId: this.folderModalParentId ?? null })
-        }
-        this.$modal.hide('connection-folder-modal')
-      } catch (e) {
-        this.folderModalError = e.userMessage ?? e.message ?? 'Failed to save folder'
-      } finally {
-        this.folderModalSubmitting = false
       }
     },
   }
