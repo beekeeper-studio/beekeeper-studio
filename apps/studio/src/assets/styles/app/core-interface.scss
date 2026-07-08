@@ -45,6 +45,10 @@
       flex: 1 1 auto;
       min-width: 350px;
     }
+    &.main-content {
+      flex: 1 1 0;
+      min-width: 0;
+    }
     z-index: 1;
     min-width: 10rem;
   }

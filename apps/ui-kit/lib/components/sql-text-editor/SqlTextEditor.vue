@@ -104,6 +104,7 @@ export default Vue.extend({
 
       return [
         ...items,
+        divider,
         formatItem
       ];
     },

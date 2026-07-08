@@ -15,7 +15,9 @@
       >
         <div class="alert alert-warning alert-small">
           <i class="material-icons">error_outline</i>
-          <div class="alert-body">Run Current unavailable</div>
+          <div class="alert-body">
+            Run Current unavailable
+          </div>
           <div class="btn-group">
             <a
               @click.prevent="copyQuerySelectionError"
@@ -770,7 +772,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         return result.length ? result : null
       },
       runningText() {
-        return `Running ${this.runningType} (${window.main.pluralize('query', this.runningCount, true)})`
+        return `Running ${this.runningType} (${this.$pluralize('query', this.runningCount, true)})`
       },
       hasSelectedText() {
         return this.editor.initialized ? !!this.editor.selection : false

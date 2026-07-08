@@ -1,11 +1,11 @@
 import Vue from 'vue'
 import _ from 'lodash'
-import pluralize from 'pluralize'
 import { IQueryFolder } from "@/common/interfaces/IQueryFolder";
 import { DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { safely } from "@/store/modules/data/StoreHelpers";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
 import { buildFolderTree } from "@/common/utils/folderTree";
+import { pluralize } from '@/vendor/pluralize';
 
 type State = DataState<IQueryFolder>
 

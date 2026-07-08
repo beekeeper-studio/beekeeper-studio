@@ -238,6 +238,7 @@ export default {
             shortcut: "Control+Shift+Z",
             write: true,
           },
+          divider,
           {
             label: "Cut",
             id: "text-cut",
@@ -279,6 +280,7 @@ export default {
             class: selectionDepClass,
             write: true,
           },
+          divider,
           {
             label: "Select All",
             id: "text-select-all",
@@ -287,7 +289,6 @@ export default {
             },
             shortcut: "Control+A",
           },
-          divider,
           {
             label: this.readOnly ? "Find" : "Find & Replace",
             id: "text-find",

@@ -5,6 +5,7 @@ import { IConnection } from "@/common/interfaces/IConnection"
 import { isBksInternalColumn } from "@/common/utils"
 import store from '@/store'
 import TimeAgo from "javascript-time-ago"
+import { pluralize } from "@/vendor/pluralize"
 
 export interface ContextOption {
   name: string,
@@ -174,6 +175,9 @@ export const BeekeeperPlugin = {
         onCancel: () => resolve({ cancelled: true }),
       });
     })
+  },
+  pluralize(word: string, count: number, inclusive?: boolean): string {
+    return pluralize(word, count, inclusive);
   }
 }
 
@@ -184,6 +188,7 @@ export default {
   install(Vue) {
     Vue.prototype.$app = BeekeeperPlugin
     Vue.prototype.$bks = BeekeeperPlugin
+    Vue.prototype.$pluralize = pluralize;
 
     Vue.prototype.$confirm = function(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean> {
       return new Promise<boolean>((resolve, reject) => {
