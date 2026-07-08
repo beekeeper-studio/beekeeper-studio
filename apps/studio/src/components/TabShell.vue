@@ -205,7 +205,7 @@ export default Vue.extend({
       return result.length ? result : null
     },
     runningText() {
-      return `Running (${window.main.pluralize('command', this.runningCount, true)})`
+      return `Running (${this.$pluralize('command', this.runningCount, true)})`
     },
     result() {
       return this.results[this.selectedResult]

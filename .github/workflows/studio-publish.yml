@@ -538,6 +538,11 @@ jobs:
 
       - name: Publish RPM to R2
         if: needs.identify_channel.outputs.channel == 'latest'
+        # publish_rpm.sh syncs the repo metadata down, hands off to
+        # prepare_rpm_repo.sh to sign the new packages and rebuild the metadata,
+        # then syncs the new packages + metadata back up. The repo-building step
+        # has an offline test that needs no S3/credentials:
+        #   bash .github/scripts/test_prepare_rpm_repo.sh
         run: |
           .github/scripts/publish_rpm.sh $(find ./artifacts -type f -name "*.rpm")
         env:
