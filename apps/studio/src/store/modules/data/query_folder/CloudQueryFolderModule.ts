@@ -1,6 +1,7 @@
 import { IQueryFolder } from "@/common/interfaces/IQueryFolder";
 import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { buildFolderTree } from "@/common/utils/folderTree";
+import { actions } from "../FolderHelpers";
 
 
 
@@ -26,6 +27,7 @@ export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
     },
   },
   actions: actionsFor<IQueryFolder>('queryFolders', {
+    ...actions,
     async poll() {
       // empty on purpose
     },

@@ -454,7 +454,7 @@ export default {
   },
   methods: {
     ...mapActions({
-      saveFolder: "data/connectionFolders/save",
+      createFolderData: "data/connectionFolders/create",
     }),
     getFolderExpanded(folderId) {
       const stored = this.folderExpandedState[folderId]
@@ -516,10 +516,7 @@ export default {
         parentId = this.personalRootFolderId;
       }
       try {
-        const folder = await this.saveFolder({
-          name: 'Untitled folder',
-          parentId,
-        })
+        const folder = await this.createFolderData(parentId)
         await this.$nextTick();
         this.renameFolder({ id: folder });
       } catch (e) {
@@ -542,7 +539,7 @@ export default {
           name: 'Move',
           handler: ({ item }) => this.trigger(AppEvent.openMoveFileModal, { type: 'connectionFolder', value: item }),
         },
-        this.isCloud && folder.parentId && { name: 'Delete', handler: ({ item }) => this.deleteFolder(item) }
+        (!this.isCloud || (this.isCloud && folder.parentId)) && { name: 'Delete', handler: ({ item }) => this.deleteFolder(item) }
       ].filter(Boolean))
       this.$bks.openMenu({ event, item: folder, options })
     },

@@ -6,6 +6,7 @@ import { safely } from "@/store/modules/data/StoreHelpers";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
 import { buildFolderTree } from "@/common/utils/folderTree";
 import { pluralize } from '@/vendor/pluralize';
+import { actions } from '../FolderHelpers';
 
 type State = DataState<IConnectionFolder>
 
@@ -26,6 +27,7 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     personalRootId: () => null,
   },
   actions: {
+    ...actions,
     async load(context) {
       context.commit('error', null)
       await safely(context, async () => {

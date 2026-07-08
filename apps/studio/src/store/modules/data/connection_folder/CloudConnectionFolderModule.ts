@@ -2,6 +2,7 @@
 import { IConnectionFolder } from "@/common/interfaces/IQueryFolder";
 import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { buildFolderTree } from "@/common/utils/folderTree";
+import { actions } from "../FolderHelpers";
 
 type State = DataState<IConnectionFolder>
 
@@ -25,6 +26,7 @@ export const CloudConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     },
   },
   actions: actionsFor<IConnectionFolder>('connectionFolders', {
+    ...actions,
     async poll() {
       // empty on purpose
     },
