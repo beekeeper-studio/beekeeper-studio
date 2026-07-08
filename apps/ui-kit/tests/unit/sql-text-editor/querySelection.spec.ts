@@ -145,6 +145,33 @@ describe("querySelection", () => {
     editor.destroy();
   });
 
+  it("should detect numbered params on the first callback with a seeded dialect", () => {
+    const onQuerySelectionChange = vi.fn();
+    // Seed both a non-default dialect and numbered paramTypes at construction — the
+    // Postgres "$1" case, which is the most common real-world trigger for this bug.
+    // Exercises the dialect-seeded create() path alongside numbered param detection.
+    const editor = initializeEditor(
+      new SqlTextEditor({
+        onQuerySelectionChange,
+        identiferDialect: "psql",
+        paramTypes: { numbered: ["$"] },
+      }),
+      "SELECT * FROM users WHERE id = $1 AND org = $2"
+    );
+
+    editor.view.dispatch({
+      selection: EditorSelection.cursor(0),
+    });
+
+    expect(onQuerySelectionChange).toHaveBeenCalled();
+    const params = onQuerySelectionChange.mock.calls[0][0];
+    expect(params.selectedQuery.parameters).toEqual(
+      expect.arrayContaining(["$1", "$2"])
+    );
+
+    editor.destroy();
+  });
+
   it("should fall back to a single whole-text query and report the error when identify throws", () => {
     const onQuerySelectionChange = vi.fn();
     const editor = initializeEditor(
