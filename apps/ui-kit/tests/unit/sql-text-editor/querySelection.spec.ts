@@ -122,6 +122,29 @@ describe("querySelection", () => {
     editor.destroy();
   });
 
+  it("should detect parameters on the first callback for a freshly loaded query", () => {
+    const onQuerySelectionChange = vi.fn();
+    // Editor loaded with an existing (saved) query containing a named param, and paramTypes
+    // supplied at construction — mirrors loading a saved query then running it without editing.
+    const editor = initializeEditor(
+      new SqlTextEditor({ onQuerySelectionChange, paramTypes: { named: [":"] } }),
+      "SELECT * FROM users WHERE id = :id"
+    );
+
+    // First interaction (e.g. clicking Run/moving the cursor) fires the callback. The params
+    // must already be identified here — previously paramTypes lagged one transaction behind,
+    // so this first callback reported no parameters until the query was edited.
+    editor.view.dispatch({
+      selection: EditorSelection.cursor(0),
+    });
+
+    expect(onQuerySelectionChange).toHaveBeenCalled();
+    const params = onQuerySelectionChange.mock.calls[0][0];
+    expect(params.selectedQuery.parameters).toContain(":id");
+
+    editor.destroy();
+  });
+
   it("should fall back to a single whole-text query and report the error when identify throws", () => {
     const onQuerySelectionChange = vi.fn();
     const editor = initializeEditor(
