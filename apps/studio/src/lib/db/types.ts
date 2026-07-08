@@ -1,4 +1,4 @@
-import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FieldDescriptor, FieldEditData, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, ServerStatistics, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
+import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FieldDescriptor, FieldEditData, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, ServerStatistics, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult, TableOverview, TablesOverview } from './models';
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import type { SshMode } from '@/common/interfaces/IConnection';
 
@@ -346,6 +346,9 @@ export interface IBasicDatabaseClient {
   executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>,
   listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>,
   getTableProperties(table: string, schema?: string): Promise<TableProperties | null>,
+  getTableOverview(table: string, schema?: string): Promise<TableOverview | null>,
+  getTablesOverview(schema?: string): Promise<TablesOverview>,
+  optimizeTable(table: string, schema?: string): Promise<void>,
   getQuerySelectTop(table: string, limit: number, schema?: string): Promise<string>,
   listMaterializedViews(filter?: FilterOptions): Promise<TableOrView[]>,
   getPrimaryKey(table: string, schema?: string): Promise<string | null>,

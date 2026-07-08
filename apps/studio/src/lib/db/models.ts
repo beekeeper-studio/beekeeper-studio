@@ -88,6 +88,27 @@ export interface TableProperties {
   permissionWarnings?: string[]
 }
 
+export interface TableOverview {
+  schemaName?: string
+  tableName: string
+  rowCount: number
+  totalSize: number
+  tableSize: number
+  indexSize: number
+  freeSpace?: number | null
+  fragmentation?: number | null
+  canOptimize: boolean              // table
+  optimizationNote: string | null
+  permissionWarnings?: string[]
+}
+
+export interface TablesOverview {
+  tables: TableOverview[]
+  freeSpace?: number | null
+  canOptimize: boolean             // database-wide
+  optimizationNote: string | null
+}
+
 export interface TableColumn {
   columnName: string
   dataType: string
@@ -255,6 +276,11 @@ export interface SupportedFeatures {
   indexNullsNotDistinct: boolean; // for postgres 15 and above
   transactions: boolean;
   filterTypes: IncludedFilterTypes[];
+
+  tableOverview: boolean;
+  tablesOverview: boolean;
+  tableOptimization: boolean;
+  fragmentationStats: boolean;
 }
 
 export enum FieldReadOnlyReason {

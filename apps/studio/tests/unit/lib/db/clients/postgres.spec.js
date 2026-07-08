@@ -190,4 +190,149 @@ describe("Postgres UNIT tests (no connection required)", () => {
     expect(client.getTableOwner).toHaveBeenCalledWith('test_table', 'public');
   })
 
+  it("Should build a table overview from PostgreSQL stats", async () => {
+    client._defaultSchema = 'public';
+    client.version = { number: 150000 };
+    client.wrapTable = jest.fn().mockReturnValue('"public"."events"');
+    client.driverExecuteSingle = jest.fn().mockResolvedValue({
+      rows: [{
+        schema_name: 'public',
+        table_name: 'events',
+        row_count: '10000',
+        dead_tuples: '2500',
+        total_size: '4096',
+        table_size: '3072',
+        index_size: '1024',
+        free_space: null,
+        fragmentation: '0.25',
+      }]
+    });
+
+    const result = await client.getTableOverview('events', 'public');
+
+    expect(result).toEqual({
+      schemaName: 'public',
+      tableName: 'events',
+      rowCount: 10000,
+      totalSize: 4096,
+      indexSize: 1024,
+      tableSize: 3072,
+      freeSpace: null,
+      fragmentation: 0.25,
+      canOptimize: true,
+      optimizationNote: 'VACUUM ANALYZE can reclaim space from dead tuples and update planner statistics.',
+      permissionWarnings: undefined,
+    });
+    expect(client.driverExecuteSingle).toHaveBeenCalledWith(
+      expect.stringContaining('WHERE c.relname = $1'),
+      { params: ['events', 'public'] }
+    );
+  })
+
+  it("Should return a safe table overview when PostgreSQL stats are not accessible", async () => {
+    client._defaultSchema = 'public';
+    client.version = { number: 150000 };
+    client.wrapTable = jest.fn().mockReturnValue('"public"."private_table"');
+    client.driverExecuteSingle = jest.fn().mockRejectedValue(new Error('permission denied'));
+
+    const result = await client.getTableOverview('private_table', 'public');
+
+    expect(result).toEqual({
+      schemaName: 'public',
+      tableName: 'private_table',
+      rowCount: 0,
+      totalSize: 0,
+      indexSize: 0,
+      tableSize: 0,
+      freeSpace: null,
+      fragmentation: null,
+      canOptimize: false,
+      optimizationNote: null,
+      permissionWarnings: ['Unable to retrieve table overview due to insufficient permissions'],
+    });
+  })
+
+  it("Should build a database tables overview and mark optimizable PostgreSQL tables", async () => {
+    client._defaultSchema = 'public';
+    client.version = { number: 150000 };
+    client.driverExecuteSingle = jest.fn().mockResolvedValue({
+      rows: [
+        {
+          schema_name: 'public',
+          table_name: 'events',
+          row_count: '10000',
+          dead_tuples: '2500',
+          total_size: '4096',
+          table_size: '3072',
+          index_size: '1024',
+          free_space: null,
+          fragmentation: '0.25',
+        },
+        {
+          schema_name: 'public',
+          table_name: 'users',
+          row_count: '20',
+          dead_tuples: '0',
+          total_size: '512',
+          table_size: '512',
+          index_size: '0',
+          free_space: null,
+          fragmentation: null,
+        },
+      ]
+    });
+
+    const result = await client.getTablesOverview('public');
+
+    expect(result).toEqual({
+      tables: [
+        {
+          schemaName: 'public',
+          tableName: 'events',
+          rowCount: 10000,
+          totalSize: 4096,
+          tableSize: 3072,
+          indexSize: 1024,
+          freeSpace: null,
+          fragmentation: 0.25,
+          canOptimize: true,
+          optimizationNote: 'VACUUM ANALYZE can reclaim space from dead tuples and update planner statistics.',
+          permissionWarnings: undefined,
+        },
+        {
+          schemaName: 'public',
+          tableName: 'users',
+          rowCount: 20,
+          totalSize: 512,
+          tableSize: 512,
+          indexSize: 0,
+          freeSpace: null,
+          fragmentation: null,
+          canOptimize: false,
+          optimizationNote: null,
+          permissionWarnings: undefined,
+        },
+      ],
+      freeSpace: null,
+      canOptimize: true,
+      optimizationNote: 'VACUUM ANALYZE will process all tables that need optimization.',
+    });
+    expect(client.driverExecuteSingle).toHaveBeenCalledWith(
+      expect.stringContaining('AND n.nspname = $1'),
+      { params: ['public'] }
+    );
+  })
+
+  it("Should optimize either the whole PostgreSQL database or a single table", async () => {
+    client._defaultSchema = 'public';
+    client.wrapTable = jest.fn().mockReturnValue('"public"."events"');
+    client.driverExecuteSingle = jest.fn().mockResolvedValue({ rows: [] });
+
+    await client.optimizeTable(null, null);
+    await client.optimizeTable('events', 'public');
+
+    expect(client.driverExecuteSingle).toHaveBeenNthCalledWith(1, 'VACUUM ANALYZE');
+    expect(client.driverExecuteSingle).toHaveBeenNthCalledWith(2, 'VACUUM ANALYZE "public"."events"');
+  })
+
 })

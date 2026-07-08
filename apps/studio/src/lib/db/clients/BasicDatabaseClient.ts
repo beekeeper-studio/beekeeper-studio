@@ -1,4 +1,4 @@
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField, FieldDescriptor, FieldReadOnlyReason, ServerStatistics, FieldEditData } from '../models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField, FieldDescriptor, FieldReadOnlyReason, ServerStatistics, FieldEditData, TableOverview, TablesOverview } from '../models';
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries, applyChangesSql } from './utils';
 import { Knex } from 'knex';
@@ -305,6 +305,8 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   abstract executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>;
   abstract listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>;
   abstract getTableProperties(table: string, schema?: string): Promise<TableProperties | null>;
+  abstract getTableOverview(table: string, schema?: string): Promise<TableOverview | null>;
+  abstract getTablesOverview(schema?: string): Promise<TablesOverview>;
   abstract getQuerySelectTop(table: string, limit: number, schema?: string): Promise<string>;
   abstract listMaterializedViews(filter?: FilterOptions): Promise<TableOrView[]>;
   abstract getPrimaryKey(table: string, schema?: string): Promise<string | null>;
@@ -433,6 +435,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   }
 
   abstract truncateAllTables(schema?: string): Promise<void>;
+  abstract optimizeTable(table: string, schema?: string): Promise<void>;
   // ****************************************************************************
 
   // ****************************************************************************

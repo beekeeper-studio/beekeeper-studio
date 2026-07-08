@@ -60,6 +60,8 @@ import {
   TableResult,
   TableTrigger,
   TableUpdate,
+  TableOverview,
+  TablesOverview
 } from "../models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import BksConfig from "@/common/bksConfig";
@@ -896,6 +898,18 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       triggers,
       partitions: []
     };
+  }
+
+  async getTableOverview(_table: string, _schema?: string): Promise<TableOverview | null> {
+    return null;
+  }
+
+  async getTablesOverview(_schema?: string): Promise<TablesOverview> {
+    return [];
+  }
+
+  async optimizeTable(_table: string, _schema?: string): Promise<void> {
+    throw new Error('Table optimization is not supported for this database')
   }
 
   async createDatabase(
