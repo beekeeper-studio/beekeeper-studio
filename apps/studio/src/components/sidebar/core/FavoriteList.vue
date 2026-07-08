@@ -412,7 +412,7 @@ export default {
       }
     },
     async deleteFolder(folder) {
-      if (await this.$confirm(`Delete folder "${folder.name}"?`)) {
+      if (await this.$confirm(`Delete folder "${folder.name}"?`, undefined, { variant: "danger" })) {
         try {
           await this.$store.dispatch('data/queryFolders/remove', folder)
         } catch (e) {
