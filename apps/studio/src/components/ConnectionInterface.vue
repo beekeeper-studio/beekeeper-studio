@@ -158,6 +158,11 @@
                   :config="config"
                   :testing="testing"
                 />
+                <hana-form
+                  v-else-if="config.connectionType === 'hana' && isUltimate"
+                  :config="config"
+                  :testing="testing"
+                />
 
                 <!-- Set the database up in read only mode (or not, your choice) -->
                 <div class="form-group" v-if="!shouldUpsell">
@@ -275,6 +280,7 @@ import SurrealDbForm from './connection/SurrealDBForm.vue'
 import RedisForm from './connection/RedisForm.vue'
 import DynamoDbForm from './connection/DynamoDBForm.vue'
 import SnowflakeForm from './connection/SnowflakeForm.vue'
+import HanaForm from './connection/HanaForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
 import LoadingSSOModal from '@/components/common/modals/LoadingSSOModal.vue'
@@ -299,7 +305,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpgradePanel, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm, DynamoDbForm, ContentPlaceholderHeading, SurrealDbForm, PrivacyBanner, SnowflakeForm
+  components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpgradePanel, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm, DynamoDbForm, ContentPlaceholderHeading, SurrealDbForm, PrivacyBanner, SnowflakeForm, HanaForm
   },
 
   data() {

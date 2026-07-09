@@ -32,7 +32,7 @@ import { convertParamsForReplacement, deparameterizeQuery } from '@/lib/db/sql_t
 type ConnectionTypeQueries = Partial<Record<ConnectionType, string>>
 type DialectQueries = Record<Dialect, string>
 type Queries = ConnectionTypeQueries & DialectQueries
-type ExpectedQueries = Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'mongodb' | 'sqlanywhere' | 'surrealdb' | 'redis' | 'trino' | 'dynamodb' | 'bedrock'>
+type ExpectedQueries = Omit<Queries, 'redshift' | 'cassandra' | 'bigquery' | 'mongodb' | 'sqlanywhere' | 'surrealdb' | 'redis' | 'trino' | 'dynamodb' | 'bedrock' | 'hana'>
 
 /*
  * Make all properties lowercased. This is useful to even out column names
@@ -149,7 +149,7 @@ export class DBTestUtil {
 
     if (options.knex) {
       this.knex = options.knex
-    } else if (config.client === 'trino' || config.client === 'cassandra' || config.client === 'scylladb') {
+    } else if (config.client === 'trino' || config.client === 'cassandra' || config.client === 'scylladb' || config.client === 'hana') {
       this.knex = null
     } else if (config.client === 'sqlite' || config.client === 'duckdb') {
       this.knex = knex({

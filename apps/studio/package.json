@@ -59,6 +59,7 @@
     "@pdanpdan/vue-keyboard-trap": "^1.0.19",
     "@queryleaf/lib": "^0.2.3",
     "@redis/client": "^5.8.2",
+    "@sap/hana-client": "^2.29.25",
     "@surrealdb/codemirror": "^1.0.4",
     "@types/ini": "^4.1.0",
     "@types/semver": "^7.7.0",

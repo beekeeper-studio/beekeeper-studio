@@ -4,9 +4,9 @@ import { ApplicationEntity } from './application_entity'
 import { loadEncryptionKey } from '../../encryption_key'
 import { ConnectionString } from 'connection-string'
 import log from '@bksLogger'
-import { AzureCredsEncryptTransformer, EncryptTransformer, SnowflakeOptionsTransformer, SurrealDbEncryptTransformer } from '../transformers/Transformers'
+import { AzureCredsEncryptTransformer, EncryptTransformer, HanaOptionsEncryptTransformer, SnowflakeOptionsTransformer, SurrealDbEncryptTransformer } from '../transformers/Transformers'
 import { IConnection, SshMode } from '@/common/interfaces/IConnection'
-import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, DynamoDBOptions, LibSQLOptions, RedshiftOptions, IamAuthOptions, SQLAnywhereOptions, SurrealDBOptions, SnowflakeOptions, SqlServerOptions } from "@/lib/db/types"
+import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, DynamoDBOptions, LibSQLOptions, RedshiftOptions, IamAuthOptions, SQLAnywhereOptions, SurrealDBOptions, SnowflakeOptions, SqlServerOptions, HanaOptions } from "@/lib/db/types"
 import { resolveHomePathToAbsolute } from "@/handlers/utils"
 import { ReadOnlyOrDefault } from "../validators/ReadOnlyOrDefault"
 import { ConnectionFolder } from './ConnectionFolder'
@@ -15,6 +15,7 @@ const encrypt = new EncryptTransformer(loadEncryptionKey())
 const azureEncrypt = new AzureCredsEncryptTransformer(loadEncryptionKey())
 const surrealEncrypt = new SurrealDbEncryptTransformer(loadEncryptionKey())
 const snowflakeTransformer = new SnowflakeOptionsTransformer()
+const hanaEncrypt = new HanaOptionsEncryptTransformer(loadEncryptionKey())
 
 export interface ConnectionOptions {
   cluster?: string
@@ -118,6 +119,9 @@ export class DbConnectionBase extends ApplicationEntity {
         break
       case 'redis':
         port = 6379
+        break
+      case 'hana':
+        port = 30015
         break
       default:
         port = null
@@ -255,6 +259,9 @@ export class DbConnectionBase extends ApplicationEntity {
 
   @Column({ type: 'simple-json', nullable: false, transformer: [snowflakeTransformer] })
   snowflakeOptions: SnowflakeOptions = {};
+
+  @Column({ type: 'simple-json', nullable: false, transformer: [hanaEncrypt] })
+  hanaOptions: HanaOptions = {};
 
   // this is only for SQL Server.
   @Column({ type: 'boolean', nullable: false })

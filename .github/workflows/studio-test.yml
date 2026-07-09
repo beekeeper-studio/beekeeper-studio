@@ -162,6 +162,10 @@ jobs:
         if: matrix.chunk[0] == 'postgres-backup.spec.ts'
         run: sudo bash bin/get-postgres-15.sh
 
+      - name: Tune kernel (for SAP HANA)
+        if: matrix.chunk[0] == 'hana.spec.ts'
+        run: sudo sysctl -w fs.aio-max-nr=262144 vm.max_map_count=1000000 net.ipv4.ip_local_port_range="40000 60999"
+
       - name: Test
         uses: nick-fields/retry@v2
         with:

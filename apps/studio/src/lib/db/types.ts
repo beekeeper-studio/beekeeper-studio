@@ -27,7 +27,8 @@ export const DatabaseTypes = [
   'trino',
   'bedrock',
   'dynamodb',
-  'snowflake'
+  'snowflake',
+  'hana'
 ] as const
 
 export type ConnectionType = typeof DatabaseTypes[number]
@@ -57,7 +58,8 @@ export const ConnectionTypes = [
   { name: 'Redis', value: 'redis' },
   { name: 'Bedrock', value: 'bedrock' },
   { name: 'DynamoDB', value: 'dynamodb' },
-  { name: 'Snowflake', value: 'snowflake' }
+  { name: 'Snowflake', value: 'snowflake' },
+  { name: 'SAP HANA', value: 'hana' }
 ]
 
 /** `value` should be recognized by codemirror */
@@ -209,6 +211,31 @@ export interface SnowflakeOptions {
   passcode?: string;
 }
 
+export enum HanaAuthType {
+  Password,
+  Jwt,
+  Saml,
+  X509
+}
+
+export const HanaAuthTypes = [
+  // Also covers LDAP users -- the server decides how to validate the password.
+  { name: 'Username / Password', value: HanaAuthType.Password },
+  { name: 'JWT Token', value: HanaAuthType.Jwt },
+  { name: 'SAML Assertion', value: HanaAuthType.Saml },
+  { name: 'X.509 Client Certificate', value: HanaAuthType.X509 }
+]
+
+export interface HanaOptions {
+  authMethod?: HanaAuthType;
+  /** JWT token or SAML assertion, depending on authMethod */
+  token?: string;
+  /** PEM file containing the client certificate chain and private key */
+  x509CertPath?: string;
+  /** Password for the private key in x509CertPath, if encrypted */
+  x509CertPassword?: string;
+}
+
 export enum SurrealAuthType {
   Root,
   Namespace,
@@ -310,6 +337,7 @@ export interface IDbConnectionServerConfig {
   surrealDbOptions?: SurrealDBOptions
   dynamoDbOptions?: DynamoDBOptions
   snowflakeOptions?: SnowflakeOptions
+  hanaOptions?: HanaOptions
   runtimeExtensions?: string[]
   // Non-fatal ~/.ssh/config issues surfaced to the user (e.g. untrusted config,
   // missing IdentityFile). Shown as warning toasts on connect/test.
