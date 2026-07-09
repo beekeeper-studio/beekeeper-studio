@@ -69,6 +69,23 @@
         </draggable>
       </div>
     </div>
+
+    <div
+      class="connection-host"
+      v-show="sortedConfigs.length > 0"
+    >
+      <div class="icon-container">
+        <i class="material-icons-outlined link-icon">link</i>
+      </div>
+      <button
+        class="btn connection-string"
+        type="button"
+        @click="focusHostInput"
+        v-tooltip="`Your database connection, reached through the SSH tunnel above`"
+      >
+        {{ $bks.simpleConnectionString(config) }}
+      </button>
+    </div>
   </div>
 </template>
 
@@ -79,22 +96,24 @@ import FilePicker from "@/components/common/form/FilePicker.vue";
 import ExternalLink from "@/components/common/ExternalLink.vue";
 import MaskedInput from "@/components/MaskedInput.vue";
 import { TransportConnectionSshConfig } from "@/common/transport/TransportSshConfig";
+import { IConnection } from "@/common/interfaces/IConnection";
 import _ from "lodash";
+import { AppEvent } from "@/common/AppEvent";
 
 export default Vue.extend({
   components: { Draggable, FilePicker, ExternalLink, MaskedInput },
 
   props: {
-    sshConfigs: {
-      type: Array as PropType<TransportConnectionSshConfig[]>,
+    selectedPosition: Number,
+    config: {
+      type: Object as PropType<Partial<IConnection>>,
       required: true,
     },
-    selectedPosition: Number,
   },
 
   computed: {
     sortedConfigs(): TransportConnectionSshConfig[] {
-      return _.sortBy(this.sshConfigs || [], "position");
+      return _.sortBy(this.config.sshConfigs || [], "position");
     },
     rows() {
       const authLabels = {
@@ -120,6 +139,9 @@ export default Vue.extend({
         return;
       }
       this.$emit("reorder", { oldIndex, newIndex });
+    },
+    focusHostInput() {
+      this.trigger(AppEvent.focusConnectionHost);
     },
   },
 });
@@ -291,6 +313,46 @@ export default Vue.extend({
   i.material-icons {
     color: var(--text-lighter);
     font-size: 1.3em;
+  }
+}
+
+.connection-host {
+  margin-block: 0.1rem;
+  display: flex;
+  font-size: 0.831rem;
+
+  .icon-container {
+    width: 1.5rem;
+    min-width: 1.5rem;
+    padding-left: 0.05rem;
+  }
+
+  .link-icon {
+    font-size: 1em;
+    color: var(--text-lighter);
+    font-weight: 600;
+    margin-top: 0.4rem;
+    margin-left: -0.17rem;
+  }
+
+  .connection-string {
+    min-width: 0;
+    border-radius: 5px;
+    border: 1px dashed rgb(from var(--theme-base) r g b / 10%);
+    color: var(--text-lighter);
+    background-color: transparent;
+    display: inline-block;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    padding-inline: 0.5rem;
+    line-height: normal;
+    font-weight: 500;
+    flex-grow: 1;
+    text-align: left;
+
+    &:hover, &:focus {
+      background-color: rgb(from var(--theme-base) r g b / 5%);
+    }
   }
 }
 </style>

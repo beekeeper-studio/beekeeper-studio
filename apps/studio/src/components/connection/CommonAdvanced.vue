@@ -18,32 +18,16 @@
       </div>
 
       <ssh-jump-hosts
-        :ssh-configs="sshConfigs"
         v-bind:selected-position.sync="selectedPosition"
+        :config="config"
         @add="onAdd"
         @remove="onRemove"
         @reorder="onReorder"
       />
 
-      <div
-        class="connection-host"
-        v-show="sshConfigs.length > 0"
-      >
-        <div class="icon-container">
-          <i class="material-icons-outlined link-icon">link</i>
-        </div>
-        <button
-          class="btn connection-string"
-          type="button" @click="focusHostInput"
-          v-tooltip="`Your database connection, reached through the SSH tunnel above`"
-        >
-          {{ $bks.simpleConnectionString(config) }}
-        </button>
-      </div>
-      <!-- Edit form for the selected row -->
       <ssh-config-form
-        v-if="selectedConfig"
-        :ssh-config="selectedConfig"
+        v-if="selectedSshConfig"
+        :ssh="selectedSshConfig"
         @update="onUpdateSelected"
       />
 
@@ -101,7 +85,6 @@ import _ from 'lodash'
 import { TransportConnectionSshConfig, TransportSshConfig } from "@/common/transport/TransportSshConfig";
 import Vue, { PropType } from 'vue'
 import { IConnection } from '@/common/interfaces/IConnection'
-import { AppEvent } from '@/common/AppEvent'
 
 export default Vue.extend({
   props: {
@@ -124,7 +107,7 @@ export default Vue.extend({
     sshConfigs(): TransportConnectionSshConfig[] {
       return this.config.sshConfigs ?? [];
     },
-    selectedConfig(): TransportSshConfig | null {
+    selectedSshConfig(): TransportSshConfig | null {
       return this.sshConfigs.find(
         (join) => join.position === this.selectedPosition
       )?.sshConfig ?? null;
@@ -185,13 +168,12 @@ export default Vue.extend({
       const index = this.sshConfigs.findIndex(
         (join) => join.position === this.selectedPosition
       )
-      if (index === -1) return
+      if (index === -1) {
+        return
+      }
       const updated = [...this.sshConfigs]
       updated[index] = { ...updated[index], sshConfig }
       this.$set(this.config, 'sshConfigs', updated)
-    },
-    focusHostInput() {
-      this.trigger(AppEvent.focusConnectionHost);
     },
   },
 });
@@ -205,46 +187,6 @@ export default Vue.extend({
 }
 .alert-row {
   margin-inline: 0;
-}
-
-.connection-host {
-  margin-block: 0.1rem;
-  display: flex;
-  font-size: 0.831rem;
-
-  .icon-container {
-    width: 1.5rem;
-    min-width: 1.5rem;
-    padding-left: 0.05rem;
-  }
-
-  .link-icon {
-    font-size: 1em;
-    color: var(--text-lighter);
-    font-weight: 600;
-    margin-top: 0.4rem;
-    margin-left: -0.17rem;
-  }
-
-  .connection-string {
-    min-width: 0;
-    border-radius: 5px;
-    border: 1px dashed rgb(from var(--theme-base) r g b / 10%);
-    color: var(--text-lighter);
-    background-color: transparent;
-    display: inline-block;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    padding-inline: 0.5rem;
-    line-height: normal;
-    font-weight: 500;
-    flex-grow: 1;
-    text-align: left;
-
-    &:hover, &:focus {
-      background-color: rgb(from var(--theme-base) r g b / 5%);
-    }
-  }
 }
 
 .advanced-settings  {
