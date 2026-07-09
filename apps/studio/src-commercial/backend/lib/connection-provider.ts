@@ -18,23 +18,28 @@ function missingIdentityFileWarnings(identityFiles?: string[]): string[] {
 // Non-fatal ~/.ssh/config issues to surface to the user (invalid/untrusted
 // config, missing IdentityFile), collected across every hop in the chain.
 function collectSshConfigWarnings(ssh: IDbConnectionServerSSHConfig): string[] {
-  if (!ssh.enabled) return []
-  const warnings: string[] = []
-  for (const { sshConfig } of ssh.configs) {
-    if (!sshConfig.host) continue
+  if (!ssh.enabled) {
+    return [];
+  }
+
+  const sshConfigWarnings: string[] = []
+
+  for (const { sshConfig: config } of ssh.configs) {
+    if (!config.host) continue
     const fileConfig = readSshConfig(
-      sshConfig.host.trim(),
+      config.host.trim(),
       undefined,
-      sshConfig.username ? sshConfig.username.trim() : undefined
+      config.username ? config.username.trim() : undefined
     )
     if (fileConfig.warnings) {
-      warnings.push(...fileConfig.warnings.map((w) => w.message))
+      sshConfigWarnings.push(...fileConfig.warnings.map((w) => w.message))
     }
-    if (sshConfig.mode === 'agent') {
-      warnings.push(...missingIdentityFileWarnings(fileConfig.identityFiles))
+    if (config.mode === 'agent') {
+      sshConfigWarnings.push(...missingIdentityFileWarnings(fileConfig.identityFiles))
     }
   }
-  return Array.from(new Set(warnings))
+
+  return Array.from(new Set(sshConfigWarnings))
 }
 
 export default {
@@ -87,7 +92,7 @@ export default {
       snowflakeOptions: config.snowflakeOptions,
       dynamoDbOptions: config.dynamoDbOptions,
       runtimeExtensions: sqliteExtension ? sqliteExtension as string[] : [],
-      sshConfigWarnings: sshConfigWarnings.length ? sshConfigWarnings : undefined,
+      sshConfigWarnings,
     }
   },
 

@@ -41,130 +41,11 @@
         </button>
       </div>
       <!-- Edit form for the selected row -->
-      <template v-if="selectedConfig">
-        <div class="row gutter">
-          <div class="col s9 form-group">
-            <label>Hostname</label>
-            <input
-              type="text"
-              class="form-control"
-              v-model="selectedConfig.host"
-            />
-          </div>
-          <div class="col s3 form-group">
-            <label>Port</label>
-            <input
-              type="number"
-              class="form-control"
-              v-model.number="selectedConfig.port"
-            />
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Authentication</label>
-          <select
-            class="form-control"
-            v-model="selectedConfig.mode"
-          >
-            <option
-              v-for="option in sshModeOptions"
-              :key="option.mode"
-              :value="option.mode"
-            >
-              {{ option.label }}
-            </option>
-          </select>
-          <div class="hint">
-            <auto-mode-status
-              v-if="selectedConfig.mode === 'agent'"
-              :ssh-auth-sock="$config.sshAuthSock"
-              :is-windows="$config.isWindows"
-              :ssh-config-exists="$config.sshConfigExists"
-              :ssh-config-path="$config.sshDirectory"
-              :default-ssh-identity-file="$config.defaultSshIdentityFile"
-              :home-directory="$config.homeDirectory"
-            />
-          </div>
-          <div class="ssh-agent-indicator" v-if="selectedConfig.mode === 'agent'">
-            <platform-warning location="ssh-agent" />
-            <template v-if="agentStatus.ok && !agentStatus.warning" />
-            <div
-              v-else-if="agentStatus.warning === 'win-nix-agent-not-found'"
-              class="info"
-            >
-              <i class="material-icons-outlined">info</i>
-              <div>
-                We didn't find a *nix ssh-agent running, so we'll attempt to use
-                the PuTTY agent, pageant.
-              </div>
-            </div>
-            <div
-              v-else-if="agentStatus.warning === 'unsupported-snap'"
-              class="error"
-            >
-              <i class="material-icons">error_outline</i>
-              <div>
-                SSH Agent Forwarding is not possible with the Snap version of
-                Beekeeper Studio due to the security model of Snap apps.
-                <external-link :href="enableSshLink">Read more</external-link>
-              </div>
-            </div>
-            <div v-else class="warning">
-              <i class="material-icons">error_outline</i>
-              <div>You don't seem to have an SSH agent running.</div>
-            </div>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Username</label>
-          <masked-input
-            v-model="selectedConfig.username"
-            :privacyMode="privacyMode"
-          />
-        </div>
-        <div v-if="selectedConfig.mode === 'keyfile'" class="private-key gutter">
-          <div v-if="$config.isSnap && !$config.snapSshPlug" class="row">
-            <div class="alert alert-warning">
-              <i class="material-icons">error_outline</i>
-              <div>
-                Hey snap user! You need to
-                <external-link :href="enableSshLink"
-                  >enable SSH access</external-link
-                >, then restart Beekeeper to provide access to your .ssh
-                directory.
-              </div>
-            </div>
-          </div>
-          <platform-warning location="ssh-keyfile" />
-          <div class="row form-group">
-            <label>Private Key File</label>
-            <file-picker
-              v-model="selectedConfig.keyfile"
-              editable
-              :show-hidden-files="true"
-              :default-path="$config.sshDirectory"
-            />
-          </div>
-          <div class="row form-group">
-            <label for="sshKeyfilePassword">Key File PassPhrase <span class="hint">(Optional)</span></label>
-            <input
-              id="sshKeyfilePassword"
-              type="password"
-              class="form-control"
-              v-model="selectedConfig.keyfilePassword"
-            />
-          </div>
-        </div>
-        <div v-if="selectedConfig.mode === 'userpass'" class="form-group">
-          <label for="sshPassword">Password</label>
-          <input
-            id="sshPassword"
-            type="password"
-            class="form-control"
-            v-model="selectedConfig.password"
-          />
-        </div>
-      </template>
+      <ssh-config-form
+        v-if="selectedConfig"
+        :ssh-config="selectedConfig"
+        @update="onUpdateSelected"
+      />
 
       <details class="advanced-settings">
         <summary>
@@ -213,14 +94,9 @@
 </template>
 
 <script lang="ts">
-import FilePicker from '@/components/common/form/FilePicker.vue'
-import ExternalLink from '@/components/common/ExternalLink.vue'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
-import MaskedInput from '@/components/MaskedInput.vue'
-import PlatformWarning from './PlatformWarning.vue'
-import AutoModeStatus from './AutoModeStatus.vue'
-import { mapGetters } from 'vuex'
 import SshJumpHosts from '@/components/connection/SshJumpHosts.vue'
+import SshConfigForm from '@/components/connection/SshConfigForm.vue'
 import _ from 'lodash'
 import { TransportConnectionSshConfig, TransportSshConfig } from "@/common/transport/TransportSshConfig";
 import Vue, { PropType } from 'vue'
@@ -235,23 +111,16 @@ export default Vue.extend({
     },
   },
   components: {
-    FilePicker, ExternalLink,
-    ToggleFormArea, MaskedInput,
-    PlatformWarning, AutoModeStatus,
+    ToggleFormArea,
     SshJumpHosts,
+    SshConfigForm,
   },
   data() {
     return {
-      sshModeOptions: [
-        { label: "Automatic", mode: "agent" },
-        { label: "Key File", mode: 'keyfile' },
-        { label: "Username & Password", mode: "userpass" },
-      ],
       selectedPosition: this.config.sshConfigs?.[0]?.position ?? -1,
     }
   },
   computed: {
-    ...mapGetters('settings', ['privacyMode'] as const),
     sshConfigs(): TransportConnectionSshConfig[] {
       return this.config.sshConfigs ?? [];
     },
@@ -259,21 +128,6 @@ export default Vue.extend({
       return this.sshConfigs.find(
         (join) => join.position === this.selectedPosition
       )?.sshConfig ?? null;
-    },
-    agentStatus() {
-      if (this.$config.isSnap) {
-        return { ok: false, warning: "unsupported-snap" } as const;
-      }
-      if (this.$config.sshAuthSock) {
-        return { ok: true } as const;
-      }
-      if (this.$config.isWindows) {
-        return { ok: true, warning: "win-nix-agent-not-found" } as const;
-      }
-      return { ok: false, warning: "ssh-agent-not-running" } as const;
-    },
-    enableSshLink(): string {
-      return "https://docs.beekeeperstudio.io/installation/linux/#ssh-key-access-for-the-snap";
     },
   },
   methods: {
@@ -288,7 +142,6 @@ export default Vue.extend({
         {
           connectionId: this.config.id ?? null,
           position,
-          // Every field must exist up front to make them reactive
           sshConfig: {
             host: '',
             port: null,
@@ -327,6 +180,15 @@ export default Vue.extend({
       }
 
       this.$set(this.config, 'sshConfigs', reordered)
+    },
+    onUpdateSelected(sshConfig: TransportSshConfig) {
+      const index = this.sshConfigs.findIndex(
+        (join) => join.position === this.selectedPosition
+      )
+      if (index === -1) return
+      const updated = [...this.sshConfigs]
+      updated[index] = { ...updated[index], sshConfig }
+      this.$set(this.config, 'sshConfigs', updated)
     },
     focusHostInput() {
       this.trigger(AppEvent.focusConnectionHost);
@@ -382,31 +244,6 @@ export default Vue.extend({
     &:hover, &:focus {
       background-color: rgb(from var(--theme-base) r g b / 5%);
     }
-  }
-}
-
-.ssh-agent-indicator > div {
-  display: flex;
-  font-size: 0.76em;
-  gap: 0.4em;
-  padding-top: 0.5em;
-
-  .material-icons,
-  .material-icons-outlined {
-    font-size: 1.17em;
-    line-height: 0.9;
-  }
-
-  &.error {
-    color: var(--brand-danger);
-  }
-
-  &.info {
-    color: var(--brand-info);
-  }
-
-  &.warning {
-    color: var(--brand-warning);
   }
 }
 
