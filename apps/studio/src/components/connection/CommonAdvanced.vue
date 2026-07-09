@@ -48,8 +48,7 @@
             <input
               type="text"
               class="form-control"
-              :value="selectedConfig.host"
-              @input="updateSelectedSsh('host', $event.target.value)"
+              v-model="selectedConfig.host"
             />
           </div>
           <div class="col s3 form-group">
@@ -57,8 +56,7 @@
             <input
               type="number"
               class="form-control"
-              :value="selectedConfig.port"
-              @input="updateSelectedSsh('port', $event.target.value)"
+              v-model.number="selectedConfig.port"
             />
           </div>
         </div>
@@ -66,8 +64,7 @@
           <label>Authentication</label>
           <select
             class="form-control"
-            :value="selectedConfig.mode"
-            @change="updateSelectedSsh('mode', $event.target.value)"
+            v-model="selectedConfig.mode"
           >
             <option
               v-for="option in sshModeOptions"
@@ -121,9 +118,8 @@
         <div class="form-group">
           <label>Username</label>
           <masked-input
-            :value="selectedConfig.username"
+            v-model="selectedConfig.username"
             :privacyMode="privacyMode"
-            @input="updateSelectedSsh('username', $event)"
           />
         </div>
         <div v-if="selectedConfig.mode === 'keyfile'" class="private-key gutter">
@@ -143,30 +139,29 @@
           <div class="row form-group">
             <label>Private Key File</label>
             <file-picker
-              :value="selectedConfig.keyfile"
+              v-model="selectedConfig.keyfile"
               editable
               :show-hidden-files="true"
               :default-path="$config.sshDirectory"
-              @input="updateSelectedSsh('keyfile', $event)"
             />
           </div>
           <div class="row form-group">
-            <label>Key Passphrase <span class="hint">(Optional)</span></label>
+            <label for="sshKeyfilePassword">Key File PassPhrase <span class="hint">(Optional)</span></label>
             <input
+              id="sshKeyfilePassword"
               type="password"
               class="form-control"
-              :value="selectedConfig.keyfilePassword"
-              @input="updateSelectedSsh('keyfilePassword', $event.target.value)"
+              v-model="selectedConfig.keyfilePassword"
             />
           </div>
         </div>
         <div v-if="selectedConfig.mode === 'userpass'" class="form-group">
-          <label>Password</label>
+          <label for="sshPassword">Password</label>
           <input
+            id="sshPassword"
             type="password"
             class="form-control"
-            :value="selectedConfig.password"
-            @input="updateSelectedSsh('password', $event.target.value)"
+            v-model="selectedConfig.password"
           />
         </div>
       </template>
@@ -231,9 +226,6 @@ import { TransportConnectionSshConfig, TransportSshConfig } from "@/common/trans
 import Vue, { PropType } from 'vue'
 import { IConnection } from '@/common/interfaces/IConnection'
 import { AppEvent } from '@/common/AppEvent'
-import rawLog from '@bksLogger'
-
-const log = rawLog.scope('CommonAdvanced.vue');
 
 export default Vue.extend({
   props: {
@@ -296,7 +288,16 @@ export default Vue.extend({
         {
           connectionId: this.config.id ?? null,
           position,
-          sshConfig: { host: '', mode: 'agent', username: '' },
+          // Every field must exist up front to make them reactive
+          sshConfig: {
+            host: '',
+            port: null,
+            mode: 'agent',
+            username: '',
+            password: null,
+            keyfile: null,
+            keyfilePassword: null,
+          },
         },
       ])
       this.selectedPosition = position
@@ -326,19 +327,6 @@ export default Vue.extend({
       }
 
       this.$set(this.config, 'sshConfigs', reordered)
-    },
-    updateSelectedSsh(field: string, value: any) {
-      const index = this.sshConfigs.findIndex(
-        (join) => join.position === this.selectedPosition
-      );
-      if (index === -1) {
-        log.error(`No SSH config found at position ${this.selectedPosition}`);
-        return;
-      }
-      const updated = [...this.sshConfigs];
-      updated[index] = _.cloneDeep(updated[index]);
-      updated[index].sshConfig[field] = value;
-      this.$set(this.config, 'sshConfigs', updated);
     },
     focusHostInput() {
       this.trigger(AppEvent.focusConnectionHost);
