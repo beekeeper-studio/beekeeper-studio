@@ -23,6 +23,21 @@ const knex = knexlib({ client: 'pg' });
 // The largest LIMIT HANA accepts; OFFSET is only valid together with LIMIT.
 const MAX_LIMIT = '4294967295';
 
+// Filter operators accepted by buildFilterString (see TableFilterSymbols)
+const ALLOWED_FILTER_TYPES = [
+  '=', '!=', 'like', 'not like', '<', '<=', '>', '>=', 'in', 'is', 'is not'
+];
+
+// Coerces a value that ends up interpolated into LIMIT/OFFSET to a safe
+// non-negative integer.
+function safeCount(value: any): number {
+  const num = Math.trunc(Number(value));
+  if (!Number.isFinite(num) || num < 0) {
+    throw new Error(`Expected a non-negative number, got: ${value}`);
+  }
+  return num;
+}
+
 type HanaResult = {
   rows: Record<string, any>[];
   rowsAffected: number;
@@ -639,7 +654,7 @@ export class HanaClient extends BasicDatabaseClient<HanaResult> {
 
   async getQuerySelectTop(table: string, limit: number, schema?: string): Promise<string> {
     schema = schema ?? await this.defaultSchema();
-    return `SELECT * FROM ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)} LIMIT ${limit}`;
+    return `SELECT * FROM ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)} LIMIT ${safeCount(limit)}`;
   }
 
   async getTableLength(table: string, schema?: string): Promise<number> {
@@ -669,10 +684,10 @@ export class HanaClient extends BasicDatabaseClient<HanaResult> {
     // HANA only accepts OFFSET together with LIMIT
     let limitOffsetString = '';
     if (_.isNumber(limit)) {
-      limitOffsetString = `LIMIT ${limit}`;
-      if (_.isNumber(offset)) limitOffsetString += ` OFFSET ${offset}`;
+      limitOffsetString = `LIMIT ${safeCount(limit)}`;
+      if (_.isNumber(offset)) limitOffsetString += ` OFFSET ${safeCount(offset)}`;
     } else if (_.isNumber(offset)) {
-      limitOffsetString = `LIMIT ${MAX_LIMIT} OFFSET ${offset}`;
+      limitOffsetString = `LIMIT ${MAX_LIMIT} OFFSET ${safeCount(offset)}`;
     }
 
     const selectsString = selects && selects.length > 0
@@ -884,7 +899,8 @@ export class HanaClient extends BasicDatabaseClient<HanaResult> {
 
     return "ORDER BY " + (orderBy.map((item: { field: any, dir: any }) => {
       if (_.isObject(item)) {
-        return `${this.wrapIdentifier(item.field)} ${item.dir.toUpperCase()}`
+        const dir = `${item.dir}`.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+        return `${this.wrapIdentifier(item.field)} ${dir}`
       } else {
         return this.wrapIdentifier(item)
       }
@@ -895,13 +911,18 @@ export class HanaClient extends BasicDatabaseClient<HanaResult> {
     let filterString = ""
     if (filters && filters.length > 0) {
       const allFilters = filters.map((item) => {
+        const type = ALLOWED_FILTER_TYPES.find((t) => t === `${item.type}`.toLowerCase());
+        if (!type) {
+          throw new Error(`Unsupported filter type: ${item.type}`);
+        }
+
         let wrappedValue = _.isArray(item.value) ?
           `(${item.value.map((v) => D.escapeString(v, true)).join(',')})` :
           D.escapeString(item.value, true)
 
-        if (item.type.includes('is')) wrappedValue = 'NULL';
+        if (type.includes('is')) wrappedValue = 'NULL';
 
-        return `${this.wrapIdentifier(item.field)} ${item.type.toUpperCase()} ${wrappedValue}`
+        return `${this.wrapIdentifier(item.field)} ${type.toUpperCase()} ${wrappedValue}`
       })
       filterString = "WHERE " + joinFilters(allFilters, filters)
     }

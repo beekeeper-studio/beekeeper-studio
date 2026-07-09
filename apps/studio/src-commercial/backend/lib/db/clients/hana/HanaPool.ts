@@ -23,7 +23,11 @@ export class HanaConn {
     )(this.config);
     const id = await this.query(`SELECT CURRENT_CONNECTION AS "id" FROM DUMMY`);
     if (id && _.isArray(id)) {
-      this.connectionId = id[0]?.id?.toString();
+      const connectionId = id[0]?.id?.toString();
+      // interpolated into ALTER SYSTEM CANCEL WORK -- only accept a plain number
+      if (/^\d+$/.test(connectionId)) {
+        this.connectionId = connectionId;
+      }
     }
   }
 
@@ -118,6 +122,9 @@ export class HanaPool {
   // always cancel their own sessions. Falls back to force-disconnecting.
   async cancelConnection(conn: HanaConn) {
     try {
+      if (!conn.connectionId) {
+        throw new Error('No connection id captured for this session');
+      }
       const sibling = new HanaConn(this.config, this);
       await sibling.connect();
       try {
