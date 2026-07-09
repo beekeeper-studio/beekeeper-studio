@@ -324,7 +324,8 @@ describe("SAP HANA integration tests", () => {
     it("should get table properties", async () => {
       const props = await util.connection.getTableProperties('people', SCHEMA);
       expect(props.indexes.length).toBeGreaterThanOrEqual(1);
-      expect(props.relations.length).toBeGreaterThanOrEqual(2);
+      // getTableKeys returns outgoing keys: people -> addresses
+      expect(props.relations.length).toBe(1);
       expect(props.triggers.length).toBe(1);
     });
 
