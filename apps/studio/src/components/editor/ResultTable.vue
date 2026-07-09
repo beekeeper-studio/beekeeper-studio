@@ -80,7 +80,6 @@
   import { CellComponent, RangeComponent, RowComponent } from 'tabulator-tables'
   import { PropType } from 'vue'
   import { safeSqlFormat } from '@/common/utils'
-  import pluralize from 'pluralize'
 import { stringToTypedArray } from '@/common/utils'
 
   const log = rawLog.scope('ResultTable');
@@ -195,7 +194,7 @@ import { stringToTypedArray } from '@/common/utils'
           const schema = v.schema ? `${v.schema}.` : "";
           return `${schema}${v.table}`
         })).map(([table, updates]) => {
-          return `${pluralize('update', updates.length, true)} to ${table}`;
+          return `${this.$pluralize('update', updates.length, true)} to ${table}`;
         });
 
         const lastUpdate = updateStrings.pop();
@@ -283,6 +282,7 @@ import { stringToTypedArray } from '@/common/utils'
                   ranges: cell.getTable().getRanges(),
                   table: this.result.tableName || "mytable",
                   schema: this.result.schema,
+                  escapeString: this.dialectData?.escapeString,
                 }),
                 ...this.getExtraPopupMenu('results.rowHeader', { transform: "tabulator" }),
               ];
@@ -293,6 +293,7 @@ import { stringToTypedArray } from '@/common/utils'
                   ranges: column.getTable().getRanges(),
                   table: this.result.tableName || "mytable",
                   schema: this.result.schema,
+                  escapeString: this.dialectData?.escapeString,
                 }),
                 { separator: true },
                 resizeAllColumnsToFitContent,
@@ -404,12 +405,13 @@ import { stringToTypedArray } from '@/common/utils'
 
           return [
             this.openEditorMenu(cell),
-            this.setAsNullMenuItem(range),
+            this.setAsNullMenuItem(ranges),
             { separator: true },
             ...copyActionsMenu({
               ranges: cell.getTable().getRanges(),
               table: this.result.tableName,
               schema: this.defaultSchema,
+              escapeString: this.dialectData?.escapeString,
             }),
             { separator: true },
             {
@@ -430,6 +432,7 @@ import { stringToTypedArray } from '@/common/utils'
               ranges: column.getTable().getRanges(),
               table: this.result.tableName,
               schema: this.defaultSchema,
+              escapeString: this.dialectData?.escapeString,
             }),
             { separator: true },
             ...commonColumnMenu,
@@ -538,6 +541,11 @@ import { stringToTypedArray } from '@/common/utils'
             { label: 'false', value: this.dialectData.boolean?.false ?? false },
             { label: 'true', value: this.dialectData.boolean?.true ?? true },
           ];
+          if (editData?.nullable) values.push({ label: '(NULL)', value: null });
+          result.editorParams['values'] = values;
+        } else if (editData?.enumValues?.length) {
+          result.editor = 'list';
+          const values = editData.enumValues.map((v) => ({ label: v, value: v }));
           if (editData?.nullable) values.push({ label: '(NULL)', value: null });
           result.editorParams['values'] = values;
         }

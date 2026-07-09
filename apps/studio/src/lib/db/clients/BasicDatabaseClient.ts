@@ -283,6 +283,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
         nullable: tableColumn.nullable,
         array: tableColumn.array,
         dataType: tableColumn.dataType,
+        enumValues: tableColumn.enumValues,
         bksField: tableColumn.bksField,
       };
 

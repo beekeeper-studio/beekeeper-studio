@@ -283,6 +283,7 @@ import ErrorAlert from './common/ErrorAlert.vue'
 import rawLog from '@bksLogger'
 import { mapGetters, mapState } from 'vuex'
 import { dialectFor } from '@shared/lib/dialects/models'
+import { escapeHtml } from '@shared/lib/tabulator'
 import { findClient } from '@/lib/db/clients'
 import { AzureAuthType } from '@/lib/db/types'
 import UpgradePanel from '@/components/upsell/UpgradePanel.vue'
@@ -320,7 +321,7 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapState(['workspaceId', 'connection']),
+    ...mapState(['workspaceId', 'connection', 'sshConfigWarnings']),
     ...mapState(['username']),
     ...mapState('data/connections', { 'connections': 'items' }),
     ...mapState('data/connectionFolders', { connectionFolders: 'items' }),
@@ -366,6 +367,9 @@ export default Vue.extend({
     },
   },
   watch: {
+    sshConfigWarnings(warnings) {
+      this.notifySshConfigWarnings(warnings)
+    },
     workspaceId() {
       this.$util.send('appdb/saved/new').then((conn) => {
         this.config = conn;
@@ -448,6 +452,16 @@ export default Vue.extend({
     this.unregisterHandlers(this.rootBindings)
   },
   methods: {
+    // Surface non-fatal ~/.ssh/config issues (untrusted/invalid config, missing
+    // IdentityFile) as a single formatted warning toast.
+    notifySshConfigWarnings(warnings) {
+      if (!warnings || warnings.length === 0) return
+      const escaped = warnings.map((w) => escapeHtml(w))
+      const body = escaped.length === 1
+        ? `<strong>SSH config</strong><br>${escaped[0]}`
+        : `<strong>SSH config warnings</strong><ul class="noty-warning-list">${escaped.map((w) => `<li>${w}</li>`).join('')}</ul>`
+      this.$noty.warning(body, { timeout: 8000, allowRawHtml: true })
+    },
     async maybeLoadSqlite({ files }) {
       // cast to an array
       if (!files || !files.length) return
@@ -474,6 +488,9 @@ export default Vue.extend({
       this.connectionError = null
     },
     async remove(config) {
+      if (!await this.$confirm(`Delete "${config.name}"?`, undefined, { variant: "danger" })) {
+        return
+      }
       if (this.config === config) {
         this.$util.send('appdb/saved/new').then((conn) => {
           this.config = conn;

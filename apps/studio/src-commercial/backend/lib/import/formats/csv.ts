@@ -22,16 +22,11 @@ export default class extends Import {
 
         if (errors && errors.length > 0) {
           this.logger().error('csv file read error', errors)
-          if (Array.isArray(errors)) {
-            const errorSet = new Set()
-            errors.forEach(e => {
-              errorSet.add(e?.message || e)
-            })
-            this.error = Array.from(errorSet).join(', ');
-            parser.abort();
-          }
-          // I don't think this should be able to happen, we shall see
-          this.error = errors.join(', ');
+          const errorSet = new Set()
+          errors.forEach(e => {
+            errorSet.add(e?.message || String(e))
+          })
+          this.error = Array.from(errorSet).join(', ');
           parser.abort();
         }
 

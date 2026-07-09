@@ -369,7 +369,7 @@ export default {
       this.trigger('favoriteClick', item, { openHistory: true })
     },
     async remove(favorite) {
-      if (await this.$confirm("Really delete?")) {
+      if (await this.$confirm(`Delete "${favorite.name}"?`, undefined, { variant: "danger" })) {
         await this.$store.dispatch('data/queries/remove', favorite)
       }
     },
@@ -405,16 +405,14 @@ export default {
       if (this.isCloud && !folder.parentId) {
         options.push({ name: 'New Subfolder', handler: ({ item }) => this.createSubfolder(item) })
       }
-      if (folder.parentId) {
-        const otherRoots = this.rootFolders.filter(f => f.id !== folder.parentId)
-        otherRoots.forEach(root => {
-          options.push({ name: `Move to ${root.name}`, handler: ({ item }) => this.moveFolderToParent(item, root) })
-        })
-      }
-      options.push(
+      options.push(...[
         { name: 'Rename', handler: ({ item }) => this.renameQueryFolder(item) },
+        folder.parentId && {
+          name: 'Move',
+          handler: ({ item }) => this.trigger(AppEvent.openMoveFileModal, { type: 'queryFolder', value: item }),
+        },
         { name: 'Delete', handler: ({ item }) => this.deleteFolder(item) }
-      )
+      ].filter(Boolean))
       this.$bks.openMenu({ event, item: folder, options })
     },
     createSubfolder(parentFolder) {
@@ -456,9 +454,6 @@ export default {
       } finally {
         this.renamingFolderId = null
       }
-    },
-    async moveFolderToParent(folder, newParent) {
-      await this.$store.dispatch('data/queryFolders/save', { ...folder, parentId: newParent.id })
     },
     async deleteFolder(folder) {
       if (await this.$confirm(`Delete folder "${folder.name}"?`)) {

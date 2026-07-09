@@ -3,6 +3,39 @@ import { IConnection } from '@/common/interfaces/IConnection'
 import { IDbConnectionPublicServer } from '@/lib/db/serverTypes'
 import { IDbConnectionServerConfig, IDbConnectionServerSSHConfig } from '@/lib/db/types'
 import { createServer } from './db/server'
+import { readSshConfig } from '@/lib/ssh/sshConfigReader'
+import fs from 'fs'
+
+// In Automatic mode ssh tries each IdentityFile and skips missing ones; surface
+// that so the user knows a configured key was not used. Only relevant when the
+// keys are actually consumed (agent mode).
+function missingIdentityFileWarnings(identityFiles?: string[]): string[] {
+  return (identityFiles || [])
+    .filter((p) => !fs.existsSync(p))
+    .map((p) => `IdentityFile not found and skipped: ${p}`)
+}
+
+// Non-fatal ~/.ssh/config issues to surface to the user (invalid/untrusted
+// config, missing IdentityFile), collected across every hop in the chain.
+function collectSshConfigWarnings(ssh: IDbConnectionServerSSHConfig): string[] {
+  if (!ssh.enabled) return []
+  const warnings: string[] = []
+  for (const { sshConfig } of ssh.configs) {
+    if (!sshConfig.host) continue
+    const fileConfig = readSshConfig(
+      sshConfig.host.trim(),
+      undefined,
+      sshConfig.username ? sshConfig.username.trim() : undefined
+    )
+    if (fileConfig.warnings) {
+      warnings.push(...fileConfig.warnings.map((w) => w.message))
+    }
+    if (sshConfig.mode === 'agent') {
+      warnings.push(...missingIdentityFileWarnings(fileConfig.identityFiles))
+    }
+  }
+  return Array.from(new Set(warnings))
+}
 
 export default {
   convertConfig(config: IConnection, osUsername: string, settings: IGroupedUserSettings): IDbConnectionServerConfig {
@@ -12,6 +45,8 @@ export default {
       configs: config.sshConfigs || [],
       keepaliveInterval: config.sshKeepaliveInterval,
     }
+
+    const sshConfigWarnings = collectSshConfigWarnings(ssh)
 
     return {
       // @ts-ignore
@@ -34,6 +69,8 @@ export default {
       sslKeyFile: config.sslKeyFile,
       sslRejectUnauthorized: config.sslRejectUnauthorized,
       trustServerCertificate: config.trustServerCertificate,
+      windowsAuthEnabled: config.windowsAuthEnabled,
+      sqlServerOptions: config.sqlServerOptions,
       instantClientLocation: settings?.oracleInstantClient?.stringValue || undefined,
       oracleConfigLocation: settings?.oracleConfigLocation?.stringValue || undefined,
       options: config.options,
@@ -49,7 +86,8 @@ export default {
       surrealDbOptions: config.surrealDbOptions,
       snowflakeOptions: config.snowflakeOptions,
       dynamoDbOptions: config.dynamoDbOptions,
-      runtimeExtensions: sqliteExtension ? sqliteExtension as string[] : []
+      runtimeExtensions: sqliteExtension ? sqliteExtension as string[] : [],
+      sshConfigWarnings: sshConfigWarnings.length ? sshConfigWarnings : undefined,
     }
   },
 

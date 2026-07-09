@@ -6,7 +6,8 @@ import { SshOptions, Options, SSHConnection, BaseSshOptions } from '../../vendor
 import appConfig from '@/common/platform_info'
 import pf from 'portfinder'
 import _ from 'lodash'
-import type { BaseAgent } from 'ssh2'
+import os from 'os'
+import type { AuthenticationType, BaseAgent } from 'ssh2'
 import { IDbConnectionServerConfig } from './types';
 import { resolveHomePathToAbsolute } from '@/handlers/utils';
 import { IDbSshTunnel } from './backendTypes';
@@ -31,6 +32,56 @@ function findDefaultIdentityFile(): string | undefined {
     if (fs.existsSync(candidate)) return candidate;
   }
   return undefined;
+}
+
+// Read a single identity file, returning undefined (rather than throwing) when
+// the file is missing or unreadable. Mirrors ssh(1), which skips IdentityFile
+// entries it cannot use instead of aborting. See #4366.
+function tryReadKeyFile(candidate: string): Buffer | undefined {
+  const resolved = path.resolve(resolveHomePathToAbsolute(candidate));
+  if (!fs.existsSync(resolved)) {
+    log.warn(`Skipping IdentityFile that does not exist: ${resolved}`);
+    return undefined;
+  }
+  try {
+    return fs.readFileSync(resolved);
+  } catch (err) {
+    log.warn(`Skipping unreadable IdentityFile ${resolved}: ${err.message}`);
+    return undefined;
+  }
+}
+
+// Resolve the key used for publickey auth.
+//
+// Automatic mode mirrors ssh(1): the ~/.ssh/config IdentityFile entries are
+// tried in order, skipping any that can't be read (e.g. the file doesn't
+// exist), then falling back to the OpenSSH default identity files. A bad entry
+// must never abort the connection (#4366).
+//
+// Key File mode honours the user's explicit choice exactly — if they picked a
+// key that can't be read, that's a real error and is left to surface.
+function resolveKeyForAuth(opts: {
+  explicitKey?: string;
+  identityFiles?: string[];
+  useAgent: boolean;
+}): Buffer | undefined {
+  const { explicitKey, identityFiles, useAgent } = opts;
+
+  if (!useAgent) {
+    return explicitKey
+      ? fs.readFileSync(path.resolve(resolveHomePathToAbsolute(explicitKey)))
+      : undefined;
+  }
+
+  const ordered = identityFiles && identityFiles.length
+    ? identityFiles
+    : (explicitKey ? [explicitKey] : []);
+  for (const candidate of ordered) {
+    const buf = tryReadKeyFile(candidate);
+    if (buf) return buf;
+  }
+  const fallback = findDefaultIdentityFile();
+  return fallback ? tryReadKeyFile(fallback) : undefined;
 }
 
 function buildAuthHandler(opts: { useAgent: boolean; hasPrivateKey: boolean; hasPassword: boolean }): AuthenticationType[] {
@@ -91,7 +142,11 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
           let fileConfig: SshConfigResult | undefined;
           if (ssh.host) {
             try {
-              fileConfig = readSshConfig(ssh.host);
+              fileConfig = readSshConfig(
+                ssh.host,
+                undefined,
+                ssh.username ? ssh.username.trim() : undefined
+              );
             } catch (e) {
               log.error(`Could not read ssh config for ${ssh.host}: ${e.message}`);
             }
@@ -106,13 +161,19 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
 
           if (ssh.mode === "keyfile") {
             const keyfile = ssh.keyfile ?? "~/.ssh/id_rsa";
-            const privateKeyContent = fs.readFileSync(
-              path.resolve(resolveHomePathToAbsolute(keyfile))
-            );
+            const privateKey = resolveKeyForAuth({
+              explicitKey: keyfile,
+              useAgent: false,
+            });
             return {
               ...baseOptions,
-              privateKey: privateKeyContent,
+              privateKey,
               passphrase: ssh.keyfilePassword,
+              authHandler: buildAuthHandler({
+                useAgent: false,
+                hasPrivateKey: !!privateKey,
+                hasPassword: false,
+              }),
             };
           }
 
@@ -120,6 +181,11 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
             return {
               ...baseOptions,
               password: ssh.password,
+              authHandler: buildAuthHandler({
+                useAgent: false,
+                hasPrivateKey: false,
+                hasPassword: !!ssh.password,
+              }),
             };
           }
 
@@ -129,10 +195,20 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
             appConfig.sshAuthSock,
             undefined,
           );
+          const privateKey = resolveKeyForAuth({
+            identityFiles: fileConfig?.identityFiles,
+            useAgent: true,
+          });
           return {
             ...baseOptions,
             agentSocket: typeof agent === 'string' ? agent : undefined,
             agent: typeof agent === 'string' ? undefined : agent,
+            privateKey,
+            authHandler: buildAuthHandler({
+              useAgent: true,
+              hasPrivateKey: !!privateKey,
+              hasPassword: false,
+            }),
           };
         })
 
@@ -140,11 +216,12 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
         const sshConfig: Options = {
           endHost: end.host,
           endPort: end.port,
-          privateKey: end.mode === 'keyfile' ? end.privateKey : undefined,
+          privateKey: end.mode === 'password' ? undefined : end.privateKey,
           agentForward: end.mode === 'agent',
           passphrase: end.mode === 'keyfile' ? end.passphrase : undefined,
           username: end.username,
           password: end.mode === 'password' ? end.password : undefined,
+          authHandler: end.authHandler,
           skipAutoPrivateKey: true,
           noReadline: true,
           keepaliveInterval: config.ssh.keepaliveInterval,

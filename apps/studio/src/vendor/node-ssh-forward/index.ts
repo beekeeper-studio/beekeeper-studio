@@ -30,6 +30,7 @@ export type BaseSshOptions = {
   port?: number;
   username?: string;
   mode: 'password' | 'keyfile' | 'agent';
+  authHandler?: AuthenticationType[];
 };
 
 export type PasswordAuthSshOptions = BaseSshOptions & {
@@ -47,6 +48,8 @@ export type AgentAuthSshOptions = BaseSshOptions & {
   mode: 'agent';
   agentSocket?: string;
   agent?: BaseAgent;
+  // Automatic mode also offers publickey using the first usable IdentityFile.
+  privateKey?: string | Buffer;
 }
 
 export type SshOptions = PasswordAuthSshOptions | KeyFileAuthSshOptions | AgentAuthSshOptions;
@@ -117,6 +120,10 @@ class SSHConnection {
     this.debug("Shutdown connections")
     for (const connection of this.connections) {
       connection.removeAllListeners()
+      // Swallow late errors (e.g. the remote resetting the socket, ECONNRESET)
+      // emitted while the connection is closing. Without a handler these would
+      // surface as unhandled 'error' events and crash the process.
+      connection.on('error', () => { /* ignore during teardown */ })
       connection.end()
     }
     return new Promise<void>((resolve) => {
@@ -256,6 +263,11 @@ class SSHConnection {
           return reject(new Error('SSH Agent Socket is not provided, or is not set in the SSH_AUTH_SOCK env variable'))
         }
         options.agent = agent
+        options.privateKey = hop.privateKey
+      }
+
+      if (hop.authHandler && hop.authHandler.length) {
+        options.authHandler = hop.authHandler
       }
 
       if (sock) {
@@ -365,6 +377,11 @@ class SSHConnection {
           if (error) {
             return reject(error)
           }
+          // Handle errors on both ends of the forward (e.g. the remote or the
+          // local client resetting the socket, ECONNRESET) so they don't
+          // surface as unhandled 'error' events and crash the process.
+          socket.on('error', () => { socket.destroy() })
+          stream.on('error', () => { stream.destroy?.() })
           socket.pipe(stream)
           stream.pipe(socket)
         })

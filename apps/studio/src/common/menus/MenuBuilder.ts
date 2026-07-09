@@ -140,6 +140,7 @@ export default class extends DefaultMenu {
           this.menuItems.cut,
           this.menuItems.copy,
           this.menuItems.paste,
+          this.menuItems.pasteAsNewRows,
           this.menuItems.selectAll,
         ]
       } as Electron.MenuItemConstructorOptions,

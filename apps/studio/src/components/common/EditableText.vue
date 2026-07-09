@@ -15,7 +15,7 @@
       @click.stop.prevent
       @dblclick.stop
       @mousedown.stop
-    />
+    >
   </div>
 </template>
 <script lang="ts">

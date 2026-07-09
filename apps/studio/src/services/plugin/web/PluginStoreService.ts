@@ -13,6 +13,7 @@ import { ExtendedTableColumn, NgQueryResult, TableOrView } from "@/lib/db/models
 import _ from "lodash";
 import { SidebarTab } from "@/store/modules/SidebarModule";
 import {
+  Keybinding,
   Manifest,
   PluginMenuItem,
   PluginView,
@@ -151,6 +152,7 @@ export default class PluginStoreService {
   setTabDropdownItem(options: {
     menuItem: PluginMenuItem;
     manifest: Manifest;
+    keybindingLabel?: string;
   }): void {
     const ref: TabTypeConfig.PluginRef = {
       pluginId: options.manifest.id,
@@ -159,6 +161,7 @@ export default class PluginStoreService {
     const menuItem: TabTypeConfig.PluginConfig['menuItem'] = {
       label: options.menuItem.name,
       command: options.menuItem.command,
+      shortcut: options.keybindingLabel,
     }
     this.store.commit("tabs/setMenuItem", { ...ref, menuItem });
   }
@@ -324,13 +327,13 @@ export default class PluginStoreService {
     }
 
     if (options.type === "tableStructure") {
-      const table = this.findTableOrThrow(options.table, options.schema);
+      const table = this.findTableOrThrow(options.name, options.schema);
       this.appEventBus.emit(AppEvent.openTableProperties, { table });
       return;
     }
 
     if (options.type === "tableTable") {
-      const table = this.findTableOrThrow(options.table, options.schema);
+      const table = this.findTableOrThrow(options.name, options.schema);
       this.appEventBus.emit(AppEvent.loadTable, {
         table,
         filters: options.filters,
@@ -357,6 +360,14 @@ export default class PluginStoreService {
     this.store.commit("menuBar/remove", id);
   }
 
+  addKeybinding(keybinding: Keybinding) {
+    this.store.commit("plugins/keybindings/add", keybinding);
+  }
+
+  removeKeybinding(placement: Keybinding["placement"], handler: Keybinding["handler"]) {
+    this.store.commit("plugins/keybinding/remove", { placement, handler });
+  }
+  
   async loadSnapshots() {
     return await this.store.dispatch("plugins/snapshots/load");
   }
