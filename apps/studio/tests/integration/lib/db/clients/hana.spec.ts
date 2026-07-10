@@ -295,7 +295,7 @@ describe("SAP HANA integration tests", () => {
 
   describe("Query execution", () => {
     it("should execute an ad-hoc query", async () => {
-      const query = await util.connection.query(`SELECT "id", "email" FROM "${SCHEMA}"."people" ORDER BY "id"`);
+      const query = await util.connection.query(`SELECT "id", "email" FROM "${SCHEMA}"."people" ORDER BY "id"`, 0);
       const results = await query.execute();
 
       expect(results.length).toBe(1);
@@ -311,7 +311,7 @@ describe("SAP HANA integration tests", () => {
     });
 
     it("should cancel a query without breaking the pool", async () => {
-      const query = await util.connection.query(`SELECT COUNT(*) FROM "${SCHEMA}"."people"`);
+      const query = await util.connection.query(`SELECT COUNT(*) FROM "${SCHEMA}"."people"`, 0);
       await query.cancel();
 
       // pool should still serve new queries
