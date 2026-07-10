@@ -3,7 +3,7 @@ import { SavedConnection } from "@/common/appdb/models/saved_connection"
 import { UsedConnection } from "@/common/appdb/models/used_connection"
 import { IConnection } from "@/common/interfaces/IConnection"
 import { Transport, TransportCloudCredential, TransportFavoriteQuery, TransportLicenseKey, TransportPinnedConn, TransportUsedQuery, TransportFormatterPreset } from "@/common/transport";
-import { FindManyOptions, FindOneOptions, FindOptionsWhere, In, SaveOptions } from "typeorm";
+import { BaseEntity, EntityManager, FindManyOptions, FindOneOptions, FindOptionsWhere, In, SaveOptions } from "typeorm";
 import _ from 'lodash';
 import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
 import { UsedQuery } from "@/common/appdb/models/used_query";
@@ -13,6 +13,9 @@ import { HiddenEntity } from "@/common/appdb/models/HiddenEntity";
 import { FormatterPreset } from "@/common/appdb/models/FormatterPreset";
 import { QueryFolder } from "@/common/appdb/models/QueryFolder";
 import { ConnectionFolder } from "@/common/appdb/models/ConnectionFolder";
+import { SshConfig } from "@/common/appdb/models/SshConfig";
+import { ConnectionSshConfig } from "@/common/appdb/models/ConnectionSshConfig";
+import { TransportSshConfig, TransportConnectionSshConfig } from "@/common/transport/TransportSshConfig";
 import { IQueryFolder, IConnectionFolder } from "@/common/interfaces/IQueryFolder";
 import { HiddenSchema } from "@/common/appdb/models/HiddenSchema";
 import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
@@ -47,17 +50,21 @@ async function niceValidateOrReject(ent: any): Promise<void> {
   }
 }
 
-function handlersFor<T extends Transport>(name: string, cls: any, transform: (obj: T, cls: any) => Promise<T> = defaultTransform) {
+function handlersFor<T extends Transport>(name: string, cls: typeof BaseEntity, transform: (obj: T, cls: any) => Promise<T> = defaultTransform) {
 
   return {
     // this is so we can get defaults on objects
     [`appdb/${name}/new`]: async function({ init }: { init?: any }) {
       return await transform(new cls().withProps(init), cls);
     },
-    [`appdb/${name}/save`]: async function({ obj, options }: { obj: T | T[], options: SaveOptions }) {
-      // Use query builder to select all columns (including those marked select: false by default) 
+    [`appdb/${name}/save`]: async function({ obj, options }: { obj: T | T[], options?: SaveOptions & {
+      /** Pass this if you run custom queries and you want to include this method in your transaction. */
+      manager?: EntityManager
+    }}) {
+      // Use query builder to select all columns (including those marked select: false by default)
       // since all columns are required for validation checks.
-      const repo = cls.getRepository();
+      // Bind to the transaction's manager when provided so reads and writes share it.
+      const repo = options?.manager?.getRepository(cls) ?? cls.getRepository();
       const alias = "e";
       const allCols = repo.metadata.columns
       .map((c: { propertyPath: string }) => `${alias}.${c.propertyPath}`);
@@ -76,7 +83,7 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
             await niceValidateOrReject(newEnt);
             return newEnt;
           }));
-          return await Promise.all((await cls.save(newEnts, options)).map((e) => transform(e, cls)));
+          return await Promise.all((await repo.save(newEnts, options)).map((e) => transform(e, cls)));
       } else {
         let dbObj = obj.id
           ? await repo
@@ -92,7 +99,7 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
         }
         log.info(`Saving ${name}: `, dbObj);
         await niceValidateOrReject(dbObj);
-        await dbObj.save();
+        await repo.save(dbObj);
         return await transform(dbObj, cls);
       }
     },
@@ -176,6 +183,8 @@ export const AppDbHandlers = {
   ...handlersFor<TransportLicenseKey>('license', LicenseKey, transformLicense),
   ...handlersFor<IQueryFolder>('queryFolder', QueryFolder),
   ...handlersFor<IConnectionFolder>('connectionFolder', ConnectionFolder),
+  ...handlersFor<TransportSshConfig>('sshConfig', SshConfig),
+  ...handlersFor<TransportConnectionSshConfig>('connectionSshConfig', ConnectionSshConfig),
   ...handlersFor<TransportTabulatorPersistence>('tabulatorPersistence', TabulatorPersistence),
   'appdb/saved/parseUrl': async function({ url }: { url: string }) {
     const conn = new SavedConnection();
@@ -183,6 +192,75 @@ export const AppDbHandlers = {
       throw `Unable to parse ${url}`;
     }
     return defaultTransform(conn, SavedConnection);
+  },
+  'appdb/saved/saveWithSshConfigs': async function(item: IConnection): Promise<IConnection> {
+    return await SavedConnection.getRepository().manager.transaction(async (manager) => {
+      const incoming = item.sshConfigs ?? [];
+      const storeKeyfilePassword = item.sshStoreKeyfilePassword !== false;
+      const keptSshConfigIds: number[] = [];
+
+      // Strip sshConfigs so the connection's relation cascade does not run here;
+      // the join rows are managed explicitly below.
+      const saved = await AppDbHandlers['appdb/saved/save']({
+        obj: _.omit(item, 'sshConfigs') as IConnection,
+        options: { manager },
+      }) as IConnection;
+
+      for (let i = 0; i < incoming.length; i++) {
+        const join = incoming[i];
+        const fields = _.omit(
+          join.sshConfig, ['createdAt', 'updatedAt', 'version']
+        ) as Partial<TransportSshConfig>;
+
+        // Strip out the keyfile password
+        if (!storeKeyfilePassword) {
+          fields.keyfilePassword = null;
+        }
+
+        // Insert when no id is supplied, otherwise update the existing row.
+        const id = join.sshConfig?.id;
+        const sshConfig = id
+          ? await manager.findOneBy(SshConfig, { id })
+          : new SshConfig();
+        sshConfig.withProps(fields);
+        await manager.save(sshConfig);
+        keptSshConfigIds.push(sshConfig.id);
+
+        const link = await manager.findOneBy(ConnectionSshConfig, {
+          connectionId: saved.id,
+          sshConfigId: sshConfig.id,
+        }) || new ConnectionSshConfig();
+
+        link.withProps({
+          connectionId: saved.id,
+          sshConfigId: sshConfig.id,
+          position: join.position ?? i,
+        });
+
+        await manager.save(link);
+      }
+
+      // Drop links the payload omitted, plus their now-orphaned ssh_config rows.
+      const existingLinks = await manager.findBy(ConnectionSshConfig, {
+        connectionId: saved.id,
+      });
+      const staleLinks = existingLinks.filter(
+        (link) => !keptSshConfigIds.includes(link.sshConfigId)
+      );
+      if (staleLinks.length > 0) {
+        await manager.remove(staleLinks);
+        const orphans = await manager.findBy(SshConfig, {
+          id: In(staleLinks.map((l) => l.sshConfigId)),
+        });
+        if (orphans.length > 0) {
+          await manager.remove(orphans);
+        }
+      }
+
+      return await AppDbHandlers['appdb/saved/findOne']({
+        options: { where: { id: saved.id } }
+      });
+    });
   },
   'appdb/setting/set': async function({ key, value }: { key: string, value: string }) {
     let existing = await UserSetting.findOneBy({ key });

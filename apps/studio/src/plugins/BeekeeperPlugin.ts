@@ -89,14 +89,21 @@ export const BeekeeperPlugin = {
         result += `/${config.defaultDatabase}`
       }
 
-      if (config.sshHost) {
-        result += ` via ${config.sshUsername}@${config.sshHost}`
-        if (config.sshBastionHost) result += ` jump(${config.sshBastionHost})`
+      if (config.sshEnabled && config.sshConfigs?.length > 0) {
+        const sorted = [...config.sshConfigs].sort((a, b) => a.position - b.position)
+        const target = sorted[sorted.length - 1]?.sshConfig
+        if (target) {
+          result += ` via ${target.username}@${target.host}`
+        }
+        const hopCount = sorted.length - 1
+        if (hopCount > 0) {
+          result += ` (${hopCount} ${pluralize('jump', hopCount)})`
+        }
       }
       return result
     }
   },
-  simpleConnectionString(config: IConnection): string {
+  simpleConnectionString(config: Partial<IConnection>): string {
     if (config.socketPathEnabled) return config.socketPath;
 
     let connectionString = `${config.host}:${config.port}`;

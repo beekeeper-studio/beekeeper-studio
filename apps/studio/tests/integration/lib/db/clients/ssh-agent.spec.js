@@ -69,8 +69,6 @@ describe('SSH Tunnel Tests (agent mode, #4193)', () => {
       path.join(fakeHome, '.ssh', 'config'),
       `Host *\n  IdentityFile ${path.join(workDir, 'does-not-exist')}\n`,
     )
-    originalHome = process.env.HOME
-    process.env.HOME = fakeHome
 
     environment = await new DockerComposeEnvironment('tests/docker', 'ssh.yml')
       .withWaitStrategy('test_ssh_postgres', Wait.forLogMessage('database system is ready to accept connections', 2))
@@ -85,6 +83,11 @@ describe('SSH Tunnel Tests (agent mode, #4193)', () => {
       `mkdir -p /config/.ssh && echo '${publicKey}' >> /config/.ssh/authorized_keys && chmod 700 /config/.ssh && chmod 600 /config/.ssh/authorized_keys && chown -R abc:abc /config/.ssh`,
     ])
 
+    // Point HOME at the fake config only now. docker resolves its compose
+    // CLI plugin from $HOME, so swapping it earlier breaks up()/down().
+    originalHome = process.env.HOME
+    process.env.HOME = fakeHome
+
     const config = {
       connectionType: 'postgresql',
       host: 'postgres',
@@ -92,10 +95,16 @@ describe('SSH Tunnel Tests (agent mode, #4193)', () => {
       username: 'postgres',
       password: 'example',
       sshEnabled: true,
-      sshMode: 'agent',
-      sshHost: container.getHost(),
-      sshPort: container.getMappedPort(2222),
-      sshUsername: 'beekeeper',
+      sshConfigs: [
+        {
+          sshConfig: {
+            host: container.getHost(),
+            port: container.getMappedPort(2222),
+            mode: 'agent',
+            username: 'beekeeper',
+          },
+        },
+      ],
     }
 
     connection = ConnectionProvider.for(config)
@@ -114,13 +123,15 @@ describe('SSH Tunnel Tests (agent mode, #4193)', () => {
     if (database) {
       await database.disconnect()
     }
-    if (environment) {
-      await environment.stop()
-    }
+    // Restore HOME before down(): docker compose down needs the real $HOME
+    // to resolve its CLI plugin.
     if (originalHome === undefined) {
       delete process.env.HOME
     } else {
       process.env.HOME = originalHome
+    }
+    if (environment) {
+      await environment.down()
     }
     if (agentPid) {
       try { process.kill(agentPid) } catch (_e) { /* ignore */ }

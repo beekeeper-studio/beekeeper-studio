@@ -1,5 +1,6 @@
 import { AzureAuthOptions, BigQueryOptions, CassandraOptions, DynamoDBOptions, LibSQLOptions, RedshiftOptions, ConnectionType, SQLAnywhereOptions, IamAuthOptions, SurrealDBOptions, SnowflakeOptions, SqlServerOptions } from "@/lib/db/types"
 import { Transport } from "../transport"
+import { TransportConnectionSshConfig } from "../transport/TransportSshConfig"
 
 export type SshMode = null | 'agent' | 'userpass' | 'keyfile'
 
@@ -35,15 +36,6 @@ export interface ISimpleConnection extends Transport {
   defaultDatabase: Nullable<string>
   url: Nullable<string>
   sshEnabled: boolean
-  sshHost: Nullable<string>
-  sshPort: Nullable<number>
-  sshKeyfile: Nullable<string>
-  sshUsername: Nullable<string>
-  sshBastionHost: Nullable<string>
-  sshBastionHostPort: Nullable<number>
-  sshBastionMode: SshMode
-  sshBastionUsername: Nullable<string>
-  sshBastionKeyfile: Nullable<string>
   sshKeepaliveInterval: Nullable<number>
   ssl: boolean
   sslCaFile: Nullable<string>
@@ -74,13 +66,13 @@ export interface ISimpleConnection extends Transport {
 
 export interface IConnection extends ISimpleConnection {
   name: Nullable<string>
-
-  sshMode: SshMode
   password: Nullable<string>
-  sshPassword: Nullable<string>
-  sshKeyfilePassword: Nullable<string>
-  sshBastionPassword: Nullable<string>
-  sshBastionKeyfilePassword: Nullable<string>
+
+  /** Ordered list of SSH hop configs (jump hosts + target host), sorted by position ascending */
+  sshConfigs?: TransportConnectionSshConfig[]
+
+  /** When false, the client must NOT send keyfilePassword on sshConfigs to the cloud API. */
+  sshStoreKeyfilePassword?: boolean
 }
 
 export interface ICloudSavedConnection extends IConnection {

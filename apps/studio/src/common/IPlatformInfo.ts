@@ -32,6 +32,7 @@ export interface IPlatformInfo {
   userDirectory: string,
   downloadsDirectory: string,
   homeDirectory: string,
+  sshDirectory: string,
   pluginsDirectory: string,
   driverDepsDirectory: string,
   testMode: boolean,

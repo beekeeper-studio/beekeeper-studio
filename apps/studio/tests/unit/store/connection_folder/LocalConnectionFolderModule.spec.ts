@@ -55,7 +55,7 @@ describe('LocalConnectionFolderModule', () => {
       await store.dispatch('data/connectionFolders/moveToFolder', { connection, folder })
 
       const [, payload] = mockSend.mock.calls[0]
-      expect(payload.obj).not.toHaveProperty('connectionFolder')
+      expect(payload).not.toHaveProperty('connectionFolder')
     })
 
     it('preserves the connection id in the store after move', async () => {

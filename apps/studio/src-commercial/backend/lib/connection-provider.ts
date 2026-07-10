@@ -15,94 +15,43 @@ function missingIdentityFileWarnings(identityFiles?: string[]): string[] {
     .map((p) => `IdentityFile not found and skipped: ${p}`)
 }
 
+// Non-fatal ~/.ssh/config issues to surface to the user (invalid/untrusted
+// config, missing IdentityFile), collected across every hop in the chain.
+function collectSshConfigWarnings(ssh: IDbConnectionServerSSHConfig): string[] {
+  if (!ssh.enabled) {
+    return [];
+  }
+
+  const sshConfigWarnings: string[] = []
+
+  for (const { sshConfig: config } of ssh.configs) {
+    if (!config.host) continue
+    const fileConfig = readSshConfig(
+      config.host.trim(),
+      undefined,
+      config.username ? config.username.trim() : undefined
+    )
+    if (fileConfig.warnings) {
+      sshConfigWarnings.push(...fileConfig.warnings.map((w) => w.message))
+    }
+    if (config.mode === 'agent') {
+      sshConfigWarnings.push(...missingIdentityFileWarnings(fileConfig.identityFiles))
+    }
+  }
+
+  return Array.from(new Set(sshConfigWarnings))
+}
+
 export default {
   convertConfig(config: IConnection, osUsername: string, settings: IGroupedUserSettings): IDbConnectionServerConfig {
     const sqliteExtension = settings?.sqliteExtensionFile?.value || undefined
-    const ssh: IDbConnectionServerSSHConfig | null = config.sshEnabled ? {
-      host: config.sshHost ? config.sshHost.trim() : null,
-      port: config.sshPort,
-      user: config.sshUsername ? config.sshUsername.trim() : null,
-      password: config.sshMode === 'userpass' ? config.sshPassword : null,
-      privateKey: config.sshMode === 'keyfile' ? config.sshKeyfile : null,
-      passphrase: config.sshMode === 'keyfile' ? config.sshKeyfilePassword : null,
-      bastionHost: config.sshBastionHost ? config.sshBastionHost.trim() : null,
-      bastionPort: config.sshBastionHostPort,
-      bastionUser: config.sshBastionUsername ? config.sshBastionUsername.trim() : null,
-      bastionPassword: config.sshBastionMode === 'userpass' ? config.sshBastionPassword : null,
-      bastionPrivateKey: config.sshBastionMode === 'keyfile' ? config.sshBastionKeyfile : null,
-      bastionPassphrase: config.sshBastionMode === 'keyfile' ? config.sshBastionKeyfilePassword : null,
-      bastionMode: config.sshBastionMode,
-      useAgent: config.sshMode == 'agent',
+    const ssh: IDbConnectionServerSSHConfig = {
+      enabled: config.sshEnabled,
+      configs: config.sshConfigs || [],
       keepaliveInterval: config.sshKeepaliveInterval,
-    } : null
-
-    // Non-fatal ~/.ssh/config issues to surface to the user (invalid/untrusted
-    // config, missing IdentityFile). Deduped and attached to the result.
-    const sshConfigWarnings: string[] = []
-
-    // Resolve aliases via ~/.ssh/config for all modes: HostName, Port, and
-    // User are filled in when the user typed an alias and left fields blank.
-    // The chosen authentication mode is never overridden — only Automatic
-    // mode pulls credentials from ~/.ssh/config (IdentityFile / IdentitiesOnly).
-    if (ssh && config.sshHost) {
-      const fileConfig = readSshConfig(
-        config.sshHost.trim(),
-        undefined,
-        config.sshUsername ? config.sshUsername.trim() : undefined
-      )
-      if (fileConfig.warnings) {
-        sshConfigWarnings.push(...fileConfig.warnings.map((w) => w.message))
-      }
-      if (config.sshMode === 'agent') {
-        sshConfigWarnings.push(...missingIdentityFileWarnings(fileConfig.identityFiles))
-      }
-      if (fileConfig.host) {
-        ssh.host = fileConfig.host
-      }
-      if (fileConfig.port && !ssh.port) {
-        ssh.port = fileConfig.port
-      }
-      if (fileConfig.user && !ssh.user) {
-        ssh.user = fileConfig.user
-      }
-      if (config.sshMode === 'agent') {
-        if (fileConfig.identityFile && !ssh.privateKey) {
-          ssh.privateKey = fileConfig.identityFile
-        }
-        ssh.identityFiles = fileConfig.identityFiles
-        ssh.identitiesOnly = fileConfig.identitiesOnly === true
-      }
     }
 
-    if (ssh && config.sshBastionHost) {
-      const fileConfig = readSshConfig(
-        config.sshBastionHost.trim(),
-        undefined,
-        config.sshBastionUsername ? config.sshBastionUsername.trim() : undefined
-      )
-      if (fileConfig.warnings) {
-        sshConfigWarnings.push(...fileConfig.warnings.map((w) => w.message))
-      }
-      if (config.sshBastionMode === 'agent') {
-        sshConfigWarnings.push(...missingIdentityFileWarnings(fileConfig.identityFiles))
-      }
-      if (fileConfig.host) {
-        ssh.bastionHost = fileConfig.host
-      }
-      if (fileConfig.port && !ssh.bastionPort) {
-        ssh.bastionPort = fileConfig.port
-      }
-      if (fileConfig.user && !ssh.bastionUser) {
-        ssh.bastionUser = fileConfig.user
-      }
-      if (config.sshBastionMode === 'agent') {
-        if (fileConfig.identityFile && !ssh.bastionPrivateKey) {
-          ssh.bastionPrivateKey = fileConfig.identityFile
-        }
-        ssh.bastionIdentityFiles = fileConfig.identityFiles
-        ssh.bastionIdentitiesOnly = fileConfig.identitiesOnly === true
-      }
-    }
+    const sshConfigWarnings = collectSshConfigWarnings(ssh)
 
     return {
       // @ts-ignore
@@ -143,7 +92,7 @@ export default {
       snowflakeOptions: config.snowflakeOptions,
       dynamoDbOptions: config.dynamoDbOptions,
       runtimeExtensions: sqliteExtension ? sqliteExtension as string[] : [],
-      sshConfigWarnings: sshConfigWarnings.length ? Array.from(new Set(sshConfigWarnings)) : undefined,
+      sshConfigWarnings,
     }
   },
 

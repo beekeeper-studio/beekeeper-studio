@@ -23,16 +23,10 @@
         </div>
         <div class="subtitle">
           <span
-            class="bastion"
-            v-if="displayConfig.sshBastionHost && !privacyMode"
-          >
-            <span class="truncate">{{ displayConfig.sshBastionHost }}</span>&nbsp;>&nbsp;
-          </span>
-          <span
             class="ssh"
-            v-if="displayConfig.sshHost && !privacyMode"
+            v-if="displayConfig.sshEnabled && sshStartHost && !privacyMode"
           >
-            <span class="truncate">{{ displayConfig.sshHost }}</span>&nbsp;>&nbsp;
+            <span class="truncate">{{ sshStartHost }}</span>&nbsp;>&nbsp;
           </span>
           <span class="connection">
             <span>
@@ -99,6 +93,11 @@ export default {
     rename: false,
   }),
   computed: {
+    sshStartHost() {
+      if (!this.displayConfig.sshEnabled || !this.displayConfig.sshConfigs?.length) return null
+      const sorted = [...this.displayConfig.sshConfigs].sort((a, b) => a.position - b.position)
+      return sorted[0]?.sshConfig?.host ?? null
+    },
     ...mapState('data/connections', {'connectionConfigs': 'items'}),
     ...mapState('data/connectionFolders', {'folders': 'items'}),
     classList() {
@@ -162,6 +161,9 @@ export default {
     },
   },
   methods: {
+    pluralize(word, amount, flag) {
+      return window.main.pluralize(word, amount, flag)
+    },
     showContextMenu(event) {
       // Stop here and propagate the event if right clicking an input element
       if (event.target.tagName === 'INPUT') {

@@ -63,7 +63,8 @@ describe('ConnectionListItem displayConfig', () => {
       port: 5432,
       username: 'olduser',
       defaultDatabase: 'mydb',
-      sshHost: 'old-ssh.example.com',
+      sshEnabled: true,
+      sshConfigs: [{ position: 0, sshConfig: { host: 'old-ssh.example.com' } }],
       updatedAt: new Date(),
     }
 
@@ -77,8 +78,9 @@ describe('ConnectionListItem displayConfig', () => {
       port: 6543,
       username: 'newuser',
       defaultDatabase: 'mydb',
-      sshHost: 'new-ssh.example.com',
       labelColor: 'default',
+      sshEnabled: true,
+      sshConfigs: [{ position: 0, sshConfig: { host: 'new-ssh.example.com' } }],
     }
 
     const wrapper = mountItem({ config: usedConfig, isRecentList: true, saved: [saved] })
