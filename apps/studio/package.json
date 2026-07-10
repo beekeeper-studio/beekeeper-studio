@@ -162,6 +162,7 @@
     "yargs-parser": "^21.0.0"
   },
   "optionalDependencies": {
+    "kerberos": "^2.0.1",
     "msnodesqlv8": "^5.1.5"
   },
   "devDependencies": {
