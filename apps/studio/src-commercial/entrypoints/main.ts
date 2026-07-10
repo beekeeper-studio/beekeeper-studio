@@ -204,6 +204,11 @@ app.on('browser-window-created', (_event: electron.Event, window: electron.Brows
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
+  // beekeeperstudio:// deep links (e.g. cloud workspace sign-in from the
+  // web signup wizard). Packaged installers also register the scheme via
+  // electron-builder's `protocols` config.
+  app.setAsDefaultProtocolClient('beekeeperstudio')
+
   if (isDevelopment && !process.env.IS_TEST) {
 
     // Per: www.npmjs.com/package/electron-devtools-installer?activeTab=readme#what-extensions-can-i-use
@@ -281,7 +286,9 @@ app.on('open-file', async (event, file) => {
   await buildWindow(settings, { url: file })
 });
 
-// Open a connection from a url (e.g. postgres://host)
+// Open a connection from a url (e.g. postgres://host), or handle an
+// application deep link (beekeeperstudio://...) — the renderer decides
+// which one it received.
 app.on('open-url', async (event, url) => {
   event.preventDefault();
   const settings = await initBasics()

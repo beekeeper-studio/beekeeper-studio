@@ -93,6 +93,7 @@ import MoveToModal from "@/components/common/modals/MoveToModal.vue";
 
 import rawLog from '@bksLogger'
 import { assignContextMenuToAllInputs } from './mixins/assignContextMenuToAllInputs'
+import { parseAppUrl, AppUrlAction, CloudSignInAction } from '@/lib/appUrl'
 
 const log = rawLog.scope('app.vue')
 
@@ -184,6 +185,11 @@ export default Vue.extend({
     }
 
     if (this.url) {
+      const appAction = parseAppUrl(this.url)
+      if (appAction) {
+        await this.handleAppUrl(appAction)
+        return
+      }
       try {
         const { auth, cancelled  } = await this.$bks.unlock();
         if (cancelled) return;
@@ -197,6 +203,34 @@ export default Vue.extend({
 
   },
   methods: {
+    async handleAppUrl(action: AppUrlAction) {
+      if (action.type === 'cloud-signin') {
+        await this.cloudSignIn(action)
+      }
+    },
+    // Deep-link sign-in to a cloud workspace account, e.g. from the web
+    // signup wizard's "Open in the app" hand-off.
+    async cloudSignIn(action: CloudSignInAction) {
+      try {
+        const blob = await this.$store.dispatch('credentials/loginWithCode', { code: action.code })
+        if (blob.error) throw blob.error
+        this.$noty.success(`Signed in to workspace account ${blob.credential.email}`)
+        const workspace = action.workspaceId
+          ? blob.workspaces.find((w) => w.id === action.workspaceId)
+          : blob.workspaces[0]
+        if (workspace) {
+          this.$store.commit('workspaceId', workspace.id)
+          const lastUsed = this.$store.state.settings?.settings?.lastUsedWorkspace
+          if (lastUsed) {
+            this.$store.dispatch('settings/saveSetting', { ...lastUsed, _userValue: workspace.id.toString() })
+          }
+        }
+      } catch (error) {
+        log.error('cloud sign-in failed', error)
+        const detail = action.email ? ` for ${action.email}` : ''
+        this.$noty.error(`Workspace sign-in${detail} failed: ${error.message || error}. The link may have expired — get a new one from ${this.$config.cloudUrl}.`, { timeout: false, closeWith: ['button'] })
+      }
+    },
     notifyFreeTrial() {
       Noty.closeAll('trial')
       if (this.isTrial && this.isUltimate) {
