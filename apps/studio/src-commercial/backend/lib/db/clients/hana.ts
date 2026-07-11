@@ -306,6 +306,9 @@ export class HanaClient extends BasicDatabaseClient<HanaResult> {
 
   async listTableTriggers(table: string, schema?: string): Promise<TableTrigger[]> {
     schema = schema || await this.defaultSchema();
+    // HANA enforces foreign keys on column tables via internal triggers that
+    // show up in SYS.TRIGGERS; they have no SQLScript body (DEFINITION is
+    // NULL), so filter them out to list only user-defined triggers.
     const sql = `
       SELECT
         TRIGGER_NAME AS "name",
@@ -317,6 +320,7 @@ export class HanaClient extends BasicDatabaseClient<HanaResult> {
       FROM SYS.TRIGGERS
       WHERE SUBJECT_TABLE_NAME = ${D.escapeString(table, true)}
         AND SUBJECT_TABLE_SCHEMA = ${D.escapeString(schema, true)}
+        AND DEFINITION IS NOT NULL
       ORDER BY TRIGGER_NAME
     `;
 
