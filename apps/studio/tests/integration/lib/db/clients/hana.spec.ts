@@ -207,8 +207,7 @@ describe("SAP HANA integration tests", () => {
 
     it("should list table triggers", async () => {
       const triggers = await util.connection.listTableTriggers('people', SCHEMA);
-      expect(triggers.length).toBe(1);
-      expect(triggers[0].name).toBe('people_trigger');
+      expect(triggers.map((t) => t.name)).toEqual(['people_trigger']);
       expect(triggers[0].timing).toBe('AFTER');
       expect(triggers[0].manipulation).toBe('INSERT');
       expect(triggers[0].table).toBe('people');
@@ -326,7 +325,7 @@ describe("SAP HANA integration tests", () => {
       expect(props.indexes.length).toBeGreaterThanOrEqual(1);
       // getTableKeys returns outgoing keys: people -> addresses
       expect(props.relations.length).toBe(1);
-      expect(props.triggers.length).toBe(1);
+      expect(props.triggers.map((t) => t.name)).toEqual(['people_trigger']);
     });
 
     it("should generate a table create script", async () => {
