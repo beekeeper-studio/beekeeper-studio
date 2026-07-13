@@ -22,6 +22,7 @@ volumes:
   redis:
   greengage:
   greengage7:
+  hana:
 
 services:
   anywhere:
@@ -354,3 +355,36 @@ services:
     ports:
       - 8001:8000
     command: "-jar DynamoDBLocal.jar -sharedDb -inMemory"
+
+  # SAP HANA express edition. Needs ~8GB of free RAM and several minutes to
+  # boot on first start. SYSTEM password is set from dev/docker_hana/passwords.json.
+  # SQL ports (instance 90): 39013 = SYSTEMDB, 39041 = HXE tenant (connect here).
+  hana:
+    image: saplabs/hanaexpress:2.00.088.00.20251110.1
+    platform: linux/amd64
+    ulimits:
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    ports:
+      - 39013:39013
+      - 39041:39041
+    volumes:
+      - hana:/hana/mounts
+      - ./dev/docker_hana/passwords.json:/hana/password/passwords.json:ro
+    command:
+      - --passwords-url
+      - file:///hana/password/passwords.json
+      - --agree-to-sap-license
+      - --dont-check-system
+
+  # One-shot seeder: waits for the tenant to accept SQL, then loads
+  # dev/docker_hana/seed.sql once (skips when the schema already exists).
+  hana-seed:
+    image: saplabs/hanaexpress:2.00.088.00.20251110.1
+    platform: linux/amd64
+    depends_on:
+      - hana
+    entrypoint: ["/bin/bash", "/docker_init/seed.sh"]
+    volumes:
+      - ./dev/docker_hana:/docker_init:ro
