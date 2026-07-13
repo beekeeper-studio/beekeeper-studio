@@ -30,6 +30,7 @@ export type ConfigValue = IniValue | Record<string, IniValue>;
 
 export type KeybindingPath = DeepKeyOf<IBksConfig["keybindings"]>;
 
+/** A key must be an uppercased string */
 type ModifierMap = Record<string, string | ((isMac: boolean) => string)>;
 
 interface IBksConfigDebugInfo {
@@ -171,13 +172,13 @@ const contextMenuModifierMap: ModifierMap = {
   ALTGR: "AltGraph",
   SUPER: "Super",
   META: "Meta",
-  PageUp: "PageUp",
-  PageDown: "PageDown",
+  PAGEUP: "PageUp",
+  PAGEDOWN: "PageDown",
   ENTER: "Enter"
 }
 
 export function convertKeybinding(
-  target: KeybindingTarget,
+  target: Omit<KeybindingTarget, "ui">,
   keybinding: string,
   platform: Platform
 ): string;
@@ -187,7 +188,7 @@ export function convertKeybinding(
   platform: Platform
 ): string[];
 export function convertKeybinding(
-  target: "electron" | "v-hotkey" | "codemirror" | "ui" | "tabulator" | "context-menu",
+  target: KeybindingTarget,
   keybinding: string,
   platform: Platform
 ): string[] | string {
@@ -209,6 +210,7 @@ export function convertKeybinding(
     case "tabulator":
       modifierMap = tabulatorModifierMap;
       joinChar = ' + ';
+      break;
     case "ui":
       modifierMap = uiModifierMap;
       break;
@@ -267,10 +269,9 @@ export function convertKeybinding(
 }
 
 /**
- * Array that is parsed by ini.parse is not exactly an array because
- * it doesn't have `length` property. Testing it with `Array.isArray` or
- * `_.isArray` will fail. Use this to test it.
- */
+ * `ini.parse` encodes arrays as objects without a `.length` property.
+ * This checks whether a value matches that structure.
+ **/
 export function isIniArray(value: any): value is IniArray {
   return (
     _.isObject(value) &&
@@ -331,12 +332,11 @@ export class BksConfigProvider {
   }
 
   has(path: string): boolean {
-    return this.userConfig.has(path);
+    return !_.isNil(_.get(this.mergedConfig, path));
   }
 
   get(path: string): ConfigValue {
-    const { value } = this.resolvePath(path);
-    return value;
+    return this.resolvePath(path).value;
   }
 
   getAll(): IBksConfig {

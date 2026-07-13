@@ -33,6 +33,8 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       }
       this.options = other.options
       this.trustServerCertificate = other.trustServerCertificate
+      this.windowsAuthEnabled = other.windowsAuthEnabled
+      this.sqlServerOptions = other.sqlServerOptions
       this.redshiftOptions = other.redshiftOptions
       this.cassandraOptions = other.cassandraOptions
       this.socketPath = other.socketPath
@@ -45,6 +47,7 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       this.libsqlOptions = other.libsqlOptions
       this.sqlAnywhereOptions = other.sqlAnywhereOptions
       this.surrealDbOptions = other.surrealDbOptions
+      this.dynamoDbOptions = other.dynamoDbOptions
 
     }
 

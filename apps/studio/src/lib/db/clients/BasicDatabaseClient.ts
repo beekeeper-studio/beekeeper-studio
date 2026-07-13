@@ -4,16 +4,16 @@ import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQ
 import { Knex } from 'knex';
 import _ from 'lodash'
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
-import { identify } from 'sql-query-identifier';
 import { ConnectionType, DatabaseElement, IBasicDatabaseClient, IDbConnectionDatabase } from '../types';
 import rawLog from "@bksLogger";
 import connectTunnel from '../tunnel';
 import { IDbConnectionServer } from '../backendTypes';
 import platformInfo from '@/common/platform_info';
 import { LicenseKey } from '@/common/appdb/models/LicenseKey';
-import { IdentifyResult } from 'sql-query-identifier/lib/defines';
+import { Dialect as IdentifierDialect, IdentifyResult } from 'sql-query-identifier/lib/defines';
 import { Transcoder } from '../serialization/transcoders';
 import { ColumnReference, TableReference } from 'sql-query-identifier/lib/defines';
+import { safelyIdentify } from '../sql_tools';
 
 const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
@@ -41,11 +41,6 @@ interface TableMetadata {
   isEditable?: boolean,
   columns: ExtendedTableColumn[],
   pks: PrimaryKeyColumn[]
-}
-
-interface ColumnsAndTotalRows {
-  columns: TableColumn[]
-  totalRows: number
 }
 
 // this provides the ability to get the current tab information, plus provides
@@ -76,7 +71,7 @@ export interface BaseQueryResult {
 export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult, Conn = null> implements IBasicDatabaseClient {
   knex: Knex | null;
   contextProvider: AppContextProvider;
-  dialect: "mssql" | "sqlite" | "mysql" | "oracle" | "psql" | "bigquery" | "generic";
+  dialect: IdentifierDialect;
   // TODO (@day): this can be cleaned up when we fix configuration
   readOnlyMode = false;
   server: IDbConnectionServer;
@@ -207,7 +202,14 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   async getResultEditData(queryText: string, fields: FieldDescriptor[]): Promise<FieldEditData[]> {
     if (!queryText) throw new Error('No query text to identify for this result')
 
-    const commands = identify(queryText, { identifyTables: true, identifyColumns: true });
+    const { queries: commands, error } = safelyIdentify(queryText, { identifyTables: true, identifyColumns: true, dialect: this.dialect });
+
+    if (error) {
+      // We can't do anything with the fallback identify result, so we panic
+      log.error(error.message);
+      throw new Error('Error identifying query, please file an issue');
+    }
+
     if (commands.length !== 1) return [];
 
     const command = commands[0];
@@ -281,6 +283,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
         nullable: tableColumn.nullable,
         array: tableColumn.array,
         dataType: tableColumn.dataType,
+        enumValues: tableColumn.enumValues,
         bksField: tableColumn.bksField,
       };
 
@@ -352,6 +355,10 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
 
   async alterTable(change: AlterTableSpec): Promise<void> {
     const sql = await this.alterTableSql(change)
+    if (!sql) {
+      // No SQL generated (e.g., no changes or schemaless database)
+      return
+    }
     await this.executeQuery(sql)
   }
 
@@ -565,20 +572,6 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     }
   }
 
-  async getColumnsAndTotalRows(query: string): Promise<ColumnsAndTotalRows> {
-    const [result] = await this.executeQuery(query)
-    const {fields, rowCount: totalRows} = result
-    const columns = fields.map(f => ({
-      columnName: f.name,
-      dataType: f.dataType
-    }))
-
-    return {
-      columns,
-      totalRows
-    }
-  }
-
   protected abstract parseTableColumn(column: any): BksField
 
   protected parseQueryResultColumns(qr: RawResultType): BksField[] {
@@ -653,8 +646,23 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     return !isAllowedReadOnlyQuery(statements, this.readOnlyMode) && !options.overrideReadonly
   }
 
+  protected identifyCommands(queryText: string): IdentifyResult[] {
+    const { queries: commands, error } = safelyIdentify(queryText, { dialect: this.dialect });
+
+    if (error) {
+      log.error('Was not able to properly identify query: ', error.message);
+    }
+
+    return commands;
+  }
+
   async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
-    const statements = identify(q, { strict: false, dialect: this.dialect });
+    const { queries: statements, error } = safelyIdentify(q, { dialect: this.dialect });
+
+    if (error) {
+      log.warn('Was not able to correctly identify query: ', error.message);
+    }
+
     if (await this.checkAllowReadOnly() && this.violatesReadOnly(statements, options)) {
       throw new Error(errorMessages.readOnly);
     }
@@ -688,7 +696,12 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   }
 
   async driverExecuteMultiple(q: string, options: any = {}): Promise<RawResultType[]> {
-    const statements = identify(q, { strict: false, dialect: this.dialect });
+    const { queries: statements, error } = safelyIdentify(q, { dialect: this.dialect });
+
+    if (error) {
+      log.warn('Was not able to correctly identify query: ', error.message);
+    }
+
     if (await this.checkAllowReadOnly() && this.violatesReadOnly(statements, options)) {
       throw new Error(errorMessages.readOnly);
     }
@@ -805,7 +818,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
       const pks = await this.getPrimaryKeys(table.name, table.schema);
       const columns = await this.listTableColumns(table.name, table.schema);
       let isEditable = false;
-      if (!!pks?.length) {
+      if (pks?.length) {
         const hasTableWildcard = wildcards.some((w) => this.matchesTable(w, table));
         if (hasTopLevelWildcard || hasTableWildcard) {
           isEditable = true;

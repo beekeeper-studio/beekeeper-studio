@@ -628,7 +628,6 @@ describe('SurrealDB Integration Tests', () => {
 
 
       expect(stream.totalRows).toBeGreaterThan(0)
-      expect(stream.columns).toBeDefined()
       expect(stream.cursor).toBeDefined()
 
       await stream.cursor.start()
@@ -646,7 +645,6 @@ describe('SurrealDB Integration Tests', () => {
     it('should handle query streaming', async () => {
       const stream = await connection.queryStream('SELECT * FROM person WHERE age > 30', 1)
 
-      expect(stream.columns).toBeDefined()
       expect(stream.cursor).toBeDefined()
 
       await stream.cursor.start()
@@ -667,6 +665,93 @@ describe('SurrealDB Integration Tests', () => {
       const result = await query.execute()
       expect(result).toBeDefined()
       expect(result.length).toBeGreaterThan(0)
+    })
+  })
+
+  // FIXME: SurrealDB has two compounding bugs around queryStream:
+  //
+  // 1. apps/studio/src-commercial/backend/lib/db/clients/surrealdb.ts:660
+  //    blindly appends `LIMIT 1` (case-sensitive .includes('LIMIT') check)
+  //    for column inference, then executes that mutated query via
+  //    driverExecuteSingle. CREATE/UPDATE/DELETE statements get a
+  //    meaningless `LIMIT 1` glued on; ORDER BY semantics are dropped
+  //    from aggregate queries; the sample runs to completion so any side
+  //    effects fire twice when combined with the cursor.
+  //
+  // 2. apps/studio/src-commercial/backend/lib/db/clients/surrealdb/
+  //    SurrealDBCursor.ts:81 strips existing LIMIT/START clauses from the
+  //    user's query and reissues it on every chunk read with the cursor's
+  //    own pagination. Even after fixing (1), this would still corrupt
+  //    queries — the cursor needs to honour the user's query verbatim.
+  //
+  // The first test pins single-execution by running a side-effecting
+  // CREATE through queryStream and asserting the table only contains one
+  // record. The second test pins that the cursor surfaces every row in
+  // the requested order — the LIMIT 1 sample must not poison the cursor's
+  // view.
+  describe("queryStream double execution", () => {
+    it("should run a side-effecting CREATE only once across the full stream lifecycle", async () => {
+      const tableName = `qs_counter_${Date.now()}`
+
+      try {
+        await connection.executeQuery(`
+          DEFINE TABLE ${tableName} SCHEMAFULL;
+          DEFINE FIELD note ON TABLE ${tableName} TYPE string;
+          DEFINE FIELD value ON TABLE ${tableName} TYPE int;
+          DEFINE FIELD flag ON TABLE ${tableName} TYPE bool;
+        `)
+
+        const stream = await connection.queryStream(
+          `CREATE ${tableName} SET note = 'hello', value = 42, flag = true`,
+          100
+        )
+        try {
+          await stream.cursor.start()
+          for (let i = 0; i < 10; i++) {
+            const rows = await stream.cursor.read()
+            if (!rows || rows.length === 0) break
+          }
+          await stream.cursor.close()
+        } catch (_e) {
+          // The cursor (or the LIMIT-1 sample) may reject CREATE. The
+          // signal we care about is whether the resulting table has more
+          // than one row.
+        }
+
+        const result = await connection.executeQuery(`SELECT * FROM ${tableName}`)
+        const rows = result[0]?.rows ?? []
+        expect(rows.length).toBe(1)
+      } finally {
+        try {
+          await connection.executeQuery(`REMOVE TABLE ${tableName}`)
+        } catch (_e) {
+          // ignore
+        }
+      }
+    })
+
+    it("should stream all rows for a SELECT without an explicit LIMIT in user-requested order", async () => {
+      // person has 5 rows seeded in setupTestData() with ages 25..45.
+      const stream = await connection.queryStream(
+        'SELECT name, age FROM person ORDER BY age DESC',
+        100
+      )
+
+      const collected: any[][] = []
+      try {
+        await stream.cursor.start()
+        for (let i = 0; i < 50; i++) {
+          const rows = await stream.cursor.read()
+          if (!rows || rows.length === 0) break
+          collected.push(...rows)
+        }
+      } finally {
+        await stream.cursor.close()
+      }
+
+      expect(collected.length).toBe(5)
+      const ages = collected.map((row) => row.find((v) => typeof v === 'number'))
+      expect(ages).toEqual([45, 40, 35, 30, 25])
     })
   })
 })

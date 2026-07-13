@@ -20,6 +20,7 @@ import {
   ClientError, refreshTokenIfNeeded,
   errorMessages
 } from "./utils";
+import { parseQuotedEnumValues } from "./enumParsers";
 import {
   IDbConnectionDatabase,
   DatabaseElement,
@@ -218,14 +219,6 @@ async function configDatabase(
   }
 
   return config;
-}
-
-function identifyCommands(queryText: string) {
-  try {
-    return identify(queryText);
-  } catch (err) {
-    return [];
-  }
 }
 
 function isMultipleQuery(fields: any[]) {
@@ -499,6 +492,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       generationExpression: row.generation_expression,
       characterSet: row.character_set,
       collation: row.collation,
+      enumValues: parseQuotedEnumValues(row.column_type),
       bksField: this.parseTableColumn(row),
     }));
   }
@@ -1182,7 +1176,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       return [];
     }
 
-    const commands = identifyCommands(queryText);
+    const commands = this.identifyCommands(queryText);
 
     if (!isMultipleQuery(fields)) {
       return [
@@ -1437,13 +1431,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     chunkSize: number
   ): Promise<StreamResults> {
     const theCursor = new MysqlCursor(this.conn, query, [], chunkSize);
-    log.debug("results", theCursor);
-
-    const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
 
     return {
-      totalRows,
-      columns,
       cursor: theCursor,
     };
   }
@@ -1642,4 +1631,5 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
 
 export const testOnly = {
   parseFields,
+  parseEnumValues: parseQuotedEnumValues,
 };

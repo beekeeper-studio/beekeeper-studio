@@ -11,12 +11,15 @@
       <label for="defaultDatabase">Default Database</label>
       <input type="text" class="form-control" v-model="config.defaultDatabase">
     </div>
+    <common-advanced :config="config" />
   </div>
 </template>
 
 <script lang="ts">
+import CommonAdvanced from './CommonAdvanced.vue'
 
 export default {
+  components: { CommonAdvanced },
   props: ['config']
 }
 </script>

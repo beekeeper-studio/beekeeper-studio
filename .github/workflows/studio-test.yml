@@ -33,20 +33,20 @@ jobs:
           version: "1.7"
           force: true
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - id: set-test-chunks
         name: Set Chunks
         run: echo "test-chunks=$(./bin/get-db-files-as-json.sh)" >> $GITHUB_OUTPUT
 
       - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
 
       - name: Cache node_modules
         id: cache-nm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             node_modules
@@ -72,15 +72,15 @@ jobs:
     needs: [prep]
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
 
       - name: Restore node_modules cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: |
             node_modules
@@ -102,8 +102,14 @@ jobs:
       - name: Check for bad log imports
         run: bin/check-for-electron-log-imports.sh
 
+      - name: Check for direct console.log calls
+        run: bin/check-for-console-logs.sh
+
       - name: Check for missing lodash imports
         run: bin/check-lodash.sh
+
+      - name: Check shell scripts (shellcheck)
+        run: bin/check-shell-scripts.sh
 
       - name: Build UI Kit
         run: yarn lib:build
@@ -129,15 +135,15 @@ jobs:
         chunk: ${{ fromJson(needs.prep.outputs['test-chunks']) }}
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
 
       - name: Restore node_modules cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: |
             node_modules
@@ -148,10 +154,16 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Install libaio (for oracle)
+        if: matrix.chunk[0] == 'oracle.spec.js'
         run: sudo apt install libaio-dev
 
       - name: Symlink libaio v1 (for oracle)
+        if: matrix.chunk[0] == 'oracle.spec.js'
         run: sudo ln -s /usr/lib/x86_64-linux-gnu/libaio.so.1t64 /usr/lib/x86_64-linux-gnu/libaio.so.1
+
+      - name: Install PostgreSQL 15 (for postgres-backup)
+        if: matrix.chunk[0] == 'postgres-backup.spec.ts'
+        run: sudo bash bin/get-postgres-15.sh
 
       - name: Test
         uses: nick-fields/retry@v2
@@ -171,7 +183,7 @@ jobs:
   #     uses: actions/checkout@v2
 
   #   - name: Install Node.js, NPM and Yarn
-  #     uses: actions/setup-node@v3
+  #     uses: actions/setup-node@v6
   #     with:
   #       node-version-file: '.nvmrc'
   #       cache: yarn

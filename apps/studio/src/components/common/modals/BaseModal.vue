@@ -1,13 +1,27 @@
 <template>
   <portal to="modals">
-    <modal :name="name" class="base-modal-root">
-      <div v-kbd-trap="true" class="base-modal">
+    <modal
+      :name="name"
+      @before-open="$emit('before-open', $event)"
+      @opened="handleOpened"
+      @closed="$emit('closed')"
+      class="base-modal-root"
+    >
+      <form
+        v-kbd-trap="true"
+        class="base-modal"
+        ref="baseModal"
+        @submit.prevent="$emit('submit', $event)"
+      >
         <div class="base-modal-header">
-          <div class="base-modal-title"><slot name="title" :close="close" /></div>
+          <div class="base-modal-title">
+            <slot name="title" :close="close" />
+          </div>
           <a
             href="#"
             class="base-modal-close"
             @click.prevent="close"
+            ref="closeBtn"
           >
             <i class="material-icons">clear</i>
           </a>
@@ -18,7 +32,7 @@
         <div class="base-modal-footer">
           <slot name="footer" :close="close" />
         </div>
-      </div>
+      </form>
     </modal>
   </portal>
 </template>
@@ -32,10 +46,29 @@ export default Vue.extend({
       type: String,
       required: true,
     },
+    /** Query to find the first focusable element */
+    firstFocusable: {
+      type: String,
+      default: [
+        "a[href]:not(.base-modal-close)",
+        "button:not([disabled])",
+        "input:not([disabled])",
+        "select:not([disabled])",
+        "textarea:not([disabled])",
+        '[tabindex]:not([tabindex="-1"])',
+      ].join(","),
+    },
   },
   methods: {
     close() {
       this.$modal.hide(this.name);
+    },
+    handleOpened() {
+      const target =
+        this.$refs.baseModal.querySelector(this.firstFocusable) ??
+        this.$refs.closeBtn;
+      target.focus();
+      this.$emit("opened");
     },
   },
 });
@@ -43,7 +76,9 @@ export default Vue.extend({
 
 <style scoped>
 .base-modal-root ::v-deep .v--modal {
+  min-width: 36rem;
   min-height: 6rem;
+  width: auto !important;
 }
 
 .base-modal {
@@ -65,26 +100,27 @@ export default Vue.extend({
   line-height: 1;
   font-weight: 500;
   margin: 0;
-}
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 
-.base-modal-title i.material-icons {
-  vertical-align: middle;
-  font-size: 1.1rem;
+  ::v-deep i.material-icons {
+    font-size: 1.1rem;
+  }
 }
 
 .base-modal-close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.625rem;
-  min-width: 1.625rem;
-  height: 1.625rem;
-  line-height: 1.625rem;
-  border-radius: 1.625rem;
+  width: 1.8rem;
+  min-width: 1.8rem;
+  height: 1.8rem;
+  line-height: 1.8rem;
+  border-radius: 1.8rem;
   padding: 0;
   margin: 0;
-  margin-right: -0.35em;
-  text-align: center;
+  margin-right: -0.15em;
   box-shadow: none;
   user-select: none;
   transition: background 0.15s ease-in-out;

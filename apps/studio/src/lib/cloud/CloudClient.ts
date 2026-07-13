@@ -7,6 +7,7 @@ import axiosRetry from 'axios-retry'
 
 import { res } from './ClientHelpers';
 import { QueriesController } from "./controllers/QueriesController";
+import { QueryAuditsController } from "./controllers/QueryAuditsController";
 import { WorkspacesController } from './controllers/WorkspacesController';
 import { ConnectionFoldersController } from '@/lib/cloud/controllers/ConnectionFoldersController';
 import { QueryFoldersController } from '@/lib/cloud/controllers/QueryFoldersController';
@@ -71,6 +72,7 @@ export class CloudClient {
 
   axios: AxiosInstance
   public queries: QueriesController
+  public queryAudits: QueryAuditsController
   public connections: ConnectionsController
   public connectionFolders: ConnectionFoldersController
   public queryFolders: QueryFoldersController
@@ -95,6 +97,7 @@ export class CloudClient {
     axiosRetry(this.axios, { retries: 3, retryDelay: () => 2000, shouldResetTimeout: true})
 
     this.queries = new QueriesController(this.axios)
+    this.queryAudits = new QueryAuditsController(this.axios)
     this.connections = new ConnectionsController(this.axios)
     this.connectionFolders = new ConnectionFoldersController(this.axios)
     this.queryFolders = new QueryFoldersController(this.axios)
@@ -102,12 +105,12 @@ export class CloudClient {
     this.usedQueries = new UsedQueriesController(this.axios)
 
     this.axios.interceptors.request.use(request => {
-      log.debug('REQ', JSON.stringify(request, null, 2))
+      log.debug('REQ', request)
       return request
     })
 
     this.axios.interceptors.response.use(response => {
-      log.debug('RES:', JSON.stringify(response, null, 2))
+      log.debug('RES:', response)
       return response
     })
 

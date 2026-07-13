@@ -59,7 +59,7 @@
   import Converter from '../../mixins/data_converter'
   import Mutators from '../../mixins/data_mutators'
   import { escapeHtml, FormatterParams } from '@shared/lib/tabulator'
-  import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
+  import { dialectFor, formatOptionsFor } from '@shared/lib/dialects/models'
   import { FkLinkMixin } from '@/mixins/fk_click'
   import MagicColumnBuilder from '@/lib/magic/MagicColumnBuilder'
   import Papa from 'papaparse'
@@ -79,8 +79,7 @@
   import { FieldDescriptor, FieldEditData, FieldReadOnlyReasonStr, NgQueryResult, TableUpdate } from '@/lib/db/models'
   import { CellComponent, RangeComponent, RowComponent } from 'tabulator-tables'
   import { PropType } from 'vue'
-  import { format } from 'sql-formatter'
-  import pluralize from 'pluralize'
+  import { safeSqlFormat } from '@/common/utils'
 import { stringToTypedArray } from '@/common/utils'
 
   const log = rawLog.scope('ResultTable');
@@ -195,7 +194,7 @@ import { stringToTypedArray } from '@/common/utils'
           const schema = v.schema ? `${v.schema}.` : "";
           return `${schema}${v.table}`
         })).map(([table, updates]) => {
-          return `${pluralize('update', updates.length, true)} to ${table}`;
+          return `${this.$pluralize('update', updates.length, true)} to ${table}`;
         });
 
         const lastUpdate = updateStrings.pop();
@@ -280,9 +279,10 @@ import { stringToTypedArray } from '@/common/utils'
             contextMenu: (_e, cell) => {
               return [
                 ...copyActionsMenu({
-                  ranges: cell.getRanges(),
+                  ranges: cell.getTable().getRanges(),
                   table: this.result.tableName || "mytable",
                   schema: this.result.schema,
+                  escapeString: this.dialectData?.escapeString,
                 }),
                 ...this.getExtraPopupMenu('results.rowHeader', { transform: "tabulator" }),
               ];
@@ -293,6 +293,7 @@ import { stringToTypedArray } from '@/common/utils'
                   ranges: column.getTable().getRanges(),
                   table: this.result.tableName || "mytable",
                   schema: this.result.schema,
+                  escapeString: this.dialectData?.escapeString,
                 }),
                 { separator: true },
                 resizeAllColumnsToFitContent,
@@ -332,14 +333,14 @@ import { stringToTypedArray } from '@/common/utils'
           element.classList.add(classToAdd);
         }
       },
-      setAsNullMenuItem(range: RangeComponent) {
-        const areAllCellsReadOnly = range
-          .getColumns()
+      setAsNullMenuItem(ranges: RangeComponent[]) {
+        const areAllCellsReadOnly = ranges
+          .flatMap((range) => range.getColumns())
           .every((col) => !this.cellEditCheck(col));
         return {
           label: createMenuItem("Set as NULL"),
           action: () => {
-            const targets = range.getCells().flat().map((cell) => ({
+            const targets = ranges.flatMap((range) => range.getCells().flat()).map((cell) => ({
               row: cell.getRow(),
               field: cell.getField()
             }));
@@ -399,17 +400,18 @@ import { stringToTypedArray } from '@/common/utils'
         }
 
         const cellMenu = (_e, cell: CellComponent) => {
-          const ranges = cell.getRanges();
+          const ranges = cell.getTable().getRanges();
           const range = _.last(ranges);
 
           return [
             this.openEditorMenu(cell),
-            this.setAsNullMenuItem(range),
+            this.setAsNullMenuItem(ranges),
             { separator: true },
             ...copyActionsMenu({
-              ranges: cell.getRanges(),
+              ranges: cell.getTable().getRanges(),
               table: this.result.tableName,
               schema: this.defaultSchema,
+              escapeString: this.dialectData?.escapeString,
             }),
             { separator: true },
             {
@@ -427,9 +429,10 @@ import { stringToTypedArray } from '@/common/utils'
         const columnMenu = (_e, column) => {
           return [
             ...copyActionsMenu({
-              ranges: column.getRanges(),
+              ranges: column.getTable().getRanges(),
               table: this.result.tableName,
               schema: this.defaultSchema,
+              escapeString: this.dialectData?.escapeString,
             }),
             { separator: true },
             ...commonColumnMenu,
@@ -538,6 +541,11 @@ import { stringToTypedArray } from '@/common/utils'
             { label: 'false', value: this.dialectData.boolean?.false ?? false },
             { label: 'true', value: this.dialectData.boolean?.true ?? true },
           ];
+          if (editData?.nullable) values.push({ label: '(NULL)', value: null });
+          result.editorParams['values'] = values;
+        } else if (editData?.enumValues?.length) {
+          result.editor = 'list';
+          const values = editData.enumValues.map((v) => ({ label: v, value: v }));
           if (editData?.nullable) values.push({ label: '(NULL)', value: null });
           result.editorParams['values'] = values;
         }
@@ -843,7 +851,7 @@ import { stringToTypedArray } from '@/common/utils'
           };
 
           const sql = await this.connection.applyChangesSql(changes);
-          const formatted = format(sql, { language: FormatterDialect(this.queryDialect) })
+          const formatted = safeSqlFormat(sql, formatOptionsFor(this.queryDialect))
           this.$root.$emit(AppEvent.newTab, formatted);
         } catch (ex) {
           log.error(ex)

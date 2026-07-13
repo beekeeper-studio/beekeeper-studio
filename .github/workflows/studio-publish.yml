@@ -1,8 +1,9 @@
 name: Studio - Build & Publish
 
 permissions:
-  contents: read
+  contents: write # for the softprops action
   actions: write
+  id-token: write
 
 on:
   push:
@@ -14,42 +15,18 @@ jobs:
   create_draft_release:
     runs-on: "ubuntu-22.04"
     outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-      assets_url: ${{ steps.create_release.outputs.assets_url }}
       id: ${{ steps.create_release.outputs.id }}
-      json: ${{ steps.create_release.outputs.json }}
-      azure_client_id: ${{ steps.azure_creds.outputs.client_id }}
-      azure_tenant_id: ${{ steps.azure_creds.outputs.tenant_id }}
-      azure_keyvault_url: ${{ steps.azure_creds.outputs.keyvault_url }}
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v5
 
-        # Requires us to use a github token with more power (to create drafts on another repo)
-      - name: Create or check draft release
+      - name: Create draft release
         id: create_release
-        uses: actions/github-script@v7
-        env:
-          TAG_NAME: ${{ github.ref_name }}
-          OWNER: 'beekeeper-studio'
-          REPO: 'beekeeper-studio'
+        uses: softprops/action-gh-release@v3
         with:
-          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
-          script: |
-            const script = require('./.github/scripts/create_draft_release.js')
-            await script({github, context, core}, process.env.OWNER, process.env.REPO, process.env.TAG_NAME)
+          draft: true
+          generate_release_notes: true
 
-      - name: Extract Azure credentials from existing secrets
-        id: azure_creds
-        env:
-          KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
-        run: |
-          CLIENT_ID=$(echo "$KEYVAULT_AUTH" | jq -r '.id')
-          TENANT_ID=$(echo "$KEYVAULT_AUTH" | jq -r '.tenant')
-          KEYVAULT_URL=$(echo "$KEYVAULT_AUTH" | jq -r '.url')
-          echo "client_id=$CLIENT_ID" >> $GITHUB_OUTPUT
-          echo "tenant_id=$TENANT_ID" >> $GITHUB_OUTPUT
-          echo "keyvault_url=$KEYVAULT_URL" >> $GITHUB_OUTPUT
   # electron-builder comes built in with channels -- latest, beta, alpha.
   # To support these for deb, rpm, and snap, we need to extract the channel from the package version
   # outputs: latest, beta, alpha
@@ -61,7 +38,7 @@ jobs:
       deb_codename: ${{steps.extract_channel.outputs.deb_codename}}
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v5
       - name: Extract Channel from package.json
         id: extract_channel
         run: bash ./.github/scripts/extract_channel.sh
@@ -72,8 +49,6 @@ jobs:
     outputs:
       mac_x64_yml: ${{ steps.set_yaml.outputs.mac_x64_yml }}
       mac_arm64_yml: ${{ steps.set_yaml.outputs.mac_arm64_yml }}
-    env:
-      SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.snapcraft_token }}
 
     strategy:
       fail-fast: false
@@ -103,26 +78,52 @@ jobs:
             type: macos
     steps:
 
+      # core24 snaps always run a full `snapcraft pack --use-lxd` build, so every
+      # Linux runner needs an initialised LXD (previously only arm64 required it).
       - name: setup LXD
         uses: canonical/setup-lxd@main
-        if: matrix.os.type == 'linux' && matrix.os.arch == 'arm64'
+        if: matrix.os.type == 'linux'
 
       - name: Check out Git repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v5
 
       - name: Install flatpak tools
         if: matrix.os.setup_flatpak
         run: bash ./.github/scripts/install-build-deps.sh
 
-      - name: Install azuresigntool
-        run: 'dotnet tool install --global AzureSignTool --version 7.0.1'
+      - name: Set up Java (for jsign)
         if: matrix.os.type == 'windows'
-
-      - name: Azure Login
-        if: matrix.os.type == 'windows'
-        uses: azure/login@v2
+        uses: actions/setup-java@v5
         with:
-          creds: '{"clientId":"${{ needs.create_draft_release.outputs.azure_client_id }}","clientSecret":"${{ secrets.keyvault_auth_secret }}","subscriptionId":"${{ secrets.azure_subscription_id }}","tenantId":"${{ needs.create_draft_release.outputs.azure_tenant_id }}"}'
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install jsign
+        if: matrix.os.type == 'windows'
+        shell: powershell
+        env:
+          JSIGN_VERSION: '7.4'
+          JSIGN_SHA256: '2abf2ade9ea322acc2d60c24794eadc465ff9380938fca4c932d09e0b25f1c28'
+        run: |
+          $jar = "$env:RUNNER_TEMP\jsign.jar"
+          Invoke-WebRequest -Uri "https://github.com/ebourg/jsign/releases/download/$env:JSIGN_VERSION/jsign-$env:JSIGN_VERSION.jar" -OutFile $jar
+          $expected = ($env:JSIGN_SHA256 -replace '\s','').ToLower()
+          $actual = (Get-FileHash $jar -Algorithm SHA256).Hash.ToLower()
+          if ($actual -ne $expected) {
+            Write-Error "jsign checksum mismatch: expected $expected got $actual"
+            exit 1
+          }
+          "JSIGN_JAR=$jar" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Decode Windows code signing certificate
+        if: matrix.os.type == 'windows'
+        shell: powershell
+        env:
+          WIN_CODESIGN_CERT: ${{ secrets.win_codesign_cert }}
+        run: |
+          $cert = "$env:RUNNER_TEMP\codesign-cert.pem"
+          [IO.File]::WriteAllBytes($cert, [Convert]::FromBase64String($env:WIN_CODESIGN_CERT))
+          "WIN_CERT_FILE=$cert" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - uses: ruby/setup-ruby@v1
         with:
@@ -137,7 +138,7 @@ jobs:
         env:
           OWNER: 'beekeeper-studio'
           REPO: 'beekeeper-studio'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs')
@@ -161,7 +162,7 @@ jobs:
 
 
       - name: "Install python 3.11 (NOT Mac)"
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: 3.11
         if: matrix.os.setup_python
@@ -215,13 +216,13 @@ jobs:
           fi
 
       - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
 
       - name: Cache node_modules
         id: cache-nm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             node_modules
@@ -274,6 +275,18 @@ jobs:
         run: |
           echo "$DATA" | base64 --decode > ~/mac-certificate.p12
 
+      # Authenticate just before signing so the access token (1h lifetime) is
+      # fresh. token_format: access_token outputs the token jsign uses as its
+      # KMS store password, so no gcloud token minting is needed in sign.js.
+      - name: Authenticate to Google Cloud
+        id: auth
+        if: matrix.os.type == 'windows'
+        uses: google-github-actions/auth@v3
+        with:
+          token_format: access_token
+          workload_identity_provider: ${{ secrets.gcp_workload_identity_provider }}
+          service_account: ${{ secrets.gcp_service_account }}
+
         # Oh hello future Matthew, why do we split out windows build?
         # well CSC_LINK gets picked up EVEN THOUGH YOU HAVE
         # A CUSTOM sign.js. Obviously a bug, but this is a workaround
@@ -281,11 +294,13 @@ jobs:
       - name: Build & Publish (NT)
         if: matrix.os.type == 'windows'
         env:
-          KEYVAULT_URL: "${{ needs.create_draft_release.outputs.azure_keyvault_url }}"
-          KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
+          GCP_KMS_KEYRING: "${{ secrets.gcp_kms_keyring }}"
+          GCP_KMS_KEY: "${{ secrets.gcp_kms_key }}"
+          GCP_ACCESS_TOKEN: "${{ steps.auth.outputs.access_token }}"
+          # WIN_CERT_FILE and JSIGN_JAR are exported to $GITHUB_ENV by earlier steps
           PYTHON_PATH: "${{'$PYTHON_PATH' }}"
           PYTHONPATH: "${{ '$PYTHONPATH' }}"
-          GH_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           USE_SYSTEM_FPM: true
           SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
         run: yarn run electron:build --publish always
@@ -301,21 +316,20 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.mac_dev_pw }}
           PYTHON_PATH: "${{ matrix.os.type == 'macos' && steps.mac_python.outputs.python_path || '$PYTHON_PATH' }}"
           PYTHONPATH: "${{ matrix.os.type == 'macos' && steps.mac_python.outputs.python_path || '$PYTHONPATH' }}"
-          GH_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           USE_SYSTEM_FPM: true
           SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
         run: yarn run electron:build --publish always
 
       - name: Delete latest-mac.yml
         if: matrix.os.type == 'macos'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           RELEASE_ID: ${{needs.create_draft_release.outputs.id}}
         with:
-          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
           script: |
             const script = require('./.github/scripts/delete_latest_yml.js')
-            const assetsUrl = '${{ needs.create_draft_release.outputs.assets_url }}'
+            const assetsUrl = 'https://api.github.com/repos/beekeeper-studio/beekeeper-studio/releases/${{ needs.create_draft_release.outputs.id }}/assets'
             const channel = '${{needs.identify_channel.outputs.channel}}'
             await script({ github, core, context }, assetsUrl, channel)
 
@@ -334,24 +348,24 @@ jobs:
       - name: Set yaml files
         id: set_yaml
         if: matrix.os.type == 'macos'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           ARCH: ${{ matrix.os.arch }}
           CHANNEL: ${{needs.identify_channel.outputs.channel}}
         with:
-          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
           script: |
             const fs = require('fs')
             const content = fs.readFileSync(`apps/studio/dist_electron/latest-mac.yml`, 'utf8')
             core.setOutput(`mac_${process.env.ARCH}_yml`, content)
-      - name: Upload DEB/RPM artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload DEB/RPM/snap artifacts
+        uses: actions/upload-artifact@v6
         if: matrix.os.type == 'linux'
         with:
           name: "${{matrix.os.type}}-${{matrix.os.arch}}"
           path: |
             apps/studio/dist_electron/*.deb
             apps/studio/dist_electron/*.rpm
+            apps/studio/dist_electron/*.snap
 
       - name: Cleanup artifacts
         if: ${{!startsWith(matrix.os.name, 'windows')}}
@@ -367,15 +381,14 @@ jobs:
     needs: [release, create_draft_release, identify_channel]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v6
       - run: npm install js-yaml
       - name: Merge yml files
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           INTEL_YML: ${{ needs.release.outputs.mac_x64_yml }}
           ARM_YML: ${{ needs.release.outputs.mac_arm64_yml }}
         with:
-          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
           script: |
             const fs = require('fs');
             const yaml = require('js-yaml');
@@ -407,11 +420,10 @@ jobs:
             const merge = mergeFiles();
             fs.writeFileSync('mac.yml', merge, 'utf8');
       - name: Upload fixed mac yml
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           RELEASE_ID: ${{ needs.create_draft_release.outputs.id }}
         with:
-          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
           script: |
             const fs = require('fs');
             const releaseId = process.env.RELEASE_ID;
@@ -430,17 +442,42 @@ jobs:
                 'content-type': 'application/octet-stream'
               }
             });
+  # Publishing the snap to the store is done here as a final step rather than
+  # inside the build. This decouples it from the slow build matrix so it can be
+  # retried on its own when store credentials are stale or snapcraft is having a
+  # bad day, without rebuilding every platform.
   publish_snapcraft:
-    # The release pushes to edge. We need to promote the edge release if we have a stable release
     needs: [release, identify_channel]
     runs-on: ubuntu-latest
-    if: needs.identify_channel.outputs.channel == 'latest'
     env:
       SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.snapcraft_token }}
     steps:
       - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v3
+
+      - run: "rm -rf ./artifacts; mkdir artifacts"
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v7
+        with:
+          path: ./artifacts
+
+      # Every build pushes to edge; the stable channel is promoted separately
+      # below only for the latest channel.
+      - name: Upload snaps to edge
+        run: |
+          snaps=$(find ./artifacts -type f -name "*.snap")
+          if [ -z "$snaps" ]; then
+            echo "No .snap files found in artifacts" >&2
+            exit 1
+          fi
+          for snap in $snaps; do
+            echo "Uploading $snap to latest/edge"
+            snapcraft upload "$snap" --release latest/edge
+          done
+
       - name: Move release snap from edge to stable
+        if: needs.identify_channel.outputs.channel == 'latest'
         continue-on-error: true
         run: |
           snapcraft promote beekeeper-studio --from-channel "latest/edge" --to-channel "latest/stable" --yes
@@ -450,7 +487,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v5
 
       - uses: ruby/setup-ruby@v1
         with:
@@ -473,7 +510,7 @@ jobs:
       - run: "rm -rf ./artifacts; mkdir artifacts"
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: ./artifacts
 
@@ -501,6 +538,11 @@ jobs:
 
       - name: Publish RPM to R2
         if: needs.identify_channel.outputs.channel == 'latest'
+        # publish_rpm.sh syncs the repo metadata down, hands off to
+        # prepare_rpm_repo.sh to sign the new packages and rebuild the metadata,
+        # then syncs the new packages + metadata back up. The repo-building step
+        # has an offline test that needs no S3/credentials:
+        #   bash .github/scripts/test_prepare_rpm_repo.sh
         run: |
           .github/scripts/publish_rpm.sh $(find ./artifacts -type f -name "*.rpm")
         env:

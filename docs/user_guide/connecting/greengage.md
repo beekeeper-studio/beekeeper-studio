@@ -2,7 +2,7 @@
 title: GreengageDB
 summary: "Connect Beekeeper Studio to GreengageDB (PostgreSQL-compatible) — self-hosted and Docker"
 description: "GreengageDB is PostgreSQL-compatible, so connecting from Beekeeper Studio is very similar to Postgres. This guide covers Greengage-specific notes and common settings, including Greengage 6 and 7."
-icon: material/database
+icon: greengagedb
 ---
 
 # How To Connect to GreengageDB

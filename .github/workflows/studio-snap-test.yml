@@ -1,0 +1,64 @@
+name: Studio - Snap build test
+
+# Temporary workflow to validate the core24 snapcraft migration on both Linux
+# architectures without publishing. Safe to delete once the migration is merged.
+
+on:
+  push:
+    branches:
+      - claude/zen-ride-10fgtv
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  snap-build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-22.04-arm]
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v5
+
+      - name: setup LXD
+        uses: canonical/setup-lxd@main
+
+      - name: Install Snapcraft
+        uses: samuelmeuli/action-snapcraft@v3
+
+      - name: Install python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.11
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile --network-timeout 100000
+        env:
+          npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
+
+      - name: Build snap (no publish)
+        run: yarn run electron:build --publish never --linux snap
+        env:
+          SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
+          USE_SYSTEM_FPM: true
+
+      - name: Upload snap artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: snap-${{ matrix.os }}
+          path: apps/studio/dist_electron/*.snap
+          if-no-files-found: error

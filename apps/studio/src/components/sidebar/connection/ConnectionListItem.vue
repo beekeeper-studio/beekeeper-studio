@@ -2,7 +2,7 @@
   <div
     class="list-item"
     :title="title"
-    @contextmenu.stop.prevent="showContextMenu"
+    @contextmenu.prevent="showContextMenu"
   >
     <a
       href=""
@@ -14,7 +14,12 @@
       <span :class="`connection-label connection-label-color-${labelColor}`" />
       <div class="connection-title flex-col expand">
         <div class="title">
-          {{ label }}
+          <editable-text
+            :initial-value="label"
+            :rename="rename"
+            @submit="submitRename"
+            @cancel="rename = false"
+          />
         </div>
         <div class="subtitle">
           <span
@@ -73,8 +78,11 @@
 import TimeAgo from 'javascript-time-ago'
 import { mapGetters, mapState } from 'vuex'
 import { isUltimateType } from '@/common/interfaces/IConnection'
+import EditableText from '@/components/common/EditableText.vue'
+import { AppEvent } from '@/common/AppEvent';
 
 export default {
+  components: { EditableText },
   // recent list is 'recent connections'
   // if that is true, we need to find the companion saved connection
   props: [
@@ -87,29 +95,12 @@ export default {
   ],
   data: () => ({
     timeAgo: new TimeAgo('en-US'),
-    split: null
+    split: null,
+    rename: false,
   }),
   computed: {
     ...mapState('data/connections', {'connectionConfigs': 'items'}),
     ...mapState('data/connectionFolders', {'folders': 'items'}),
-    ...mapGetters(['isCloud']),
-    moveToOptions() {
-      const rootById = {}
-      this.folders.forEach(f => { if (!f.parentId) rootById[f.id] = f.name })
-      return this.folders
-        .filter(folder => folder.id !== this.config.connectionFolderId)
-        .map(folder => {
-          let name
-          if (!folder.parentId) {
-            const hasSubs = this.folders.some(f => f.parentId === folder.id)
-            name = hasSubs ? `Move to ${folder.name} (top level)` : `Move to ${folder.name}`
-          } else {
-            const parentName = rootById[folder.parentId] || ''
-            name = `Move to ${parentName} \u2192 ${folder.name}`
-          }
-          return { name, slug: `move-${folder.id}`, handler: this.moveItem, folder }
-        })
-    },
     classList() {
       return {
         'active': this.savedConnection && this.selectedConfig ? this.savedConnection === this.selectedConfig : false
@@ -172,6 +163,13 @@ export default {
   },
   methods: {
     showContextMenu(event) {
+      // Stop here and propagate the event if right clicking an input element
+      if (event.target.tagName === 'INPUT') {
+        return;
+      }
+
+      event.stopPropagation();
+
       const ultimateCheck = this.$store.getters.isUltimate
         ? true
         : !isUltimateType(this.displayConfig.connectionType)
@@ -187,10 +185,12 @@ export default {
           slug: 'connect',
           handler: (blob) => this.doubleClick(blob.item)
         },
+        { type: "divider" },
         !this.isRecentList && {
           name: this.pinned ? 'Unpin' : 'Pin',
           handler: () => this.pinned ? this.unpin() : this.pin()
         },
+        !this.isRecentList && { type: "divider" },
         {
           name: "Duplicate",
           slug: 'duplicate',
@@ -200,43 +200,34 @@ export default {
           name: `Copy ${this.connectionType}`,
           handler: this.copyUrl
         },
+        { type: "divider" },
+        !this.isRecentList && {
+          name: "Rename",
+          slug: 'rename',
+          handler: () => {
+            this.rename = true;
+          },
+        },
+        !this.isRecentList && this.folders.length > 0 && {
+          name: "Move",
+          handler: () => {
+            this.trigger(AppEvent.openMoveFileModal, {
+              type: "connection",
+              value: this.config,
+            });
+          },
+        },
         {
-          name: "Remove",
+          name: "Delete",
           handler: this.remove
         },
       ].filter(v => v)
-
-      if (this.isCloud || this.folders.length > 0) {
-        options.push({ type: 'divider' })
-        if (!this.isCloud && this.config.connectionFolderId) {
-          options.push({ name: 'Move to top level', handler: () => this.moveToRoot() })
-        }
-        options.push(...this.moveToOptions)
-      }
 
       this.$bks.openMenu({
         event,
         item: this.config,
         options
       })
-    },
-    async moveToRoot() {
-      try {
-        await this.$store.dispatch('data/connectionFolders/moveToFolder', { connection: this.config, folder: null })
-      } catch (ex) {
-        this.$noty.error(`Move Error: ${ex.message}`)
-        console.error(ex)
-      }
-    },
-    async moveItem({ item, option }) {
-      try {
-        const folder = option.folder
-        if (!folder || !folder.id) return
-        await this.$store.dispatch('data/connectionFolders/moveToFolder', { connection: item, folder })
-      } catch(ex) {
-        this.$noty.error(`Move Error: ${ex.message}`)
-        console.error(ex)
-      }
     },
     async click() {
       if (this.savedConnection) {
@@ -271,8 +262,37 @@ export default {
     },
     unpin() {
       this.$store.dispatch('pinnedConnections/remove', this.config);
-    }
+    },
+    async submitRename(name) {
+      if (!name || name === this.label) {
+        this.rename = false
+        return
+      }
+      try {
+        const updated = { ...this.savedConnection, name }
+        await this.$store.dispatch('data/connections/save', updated)
+      } catch (ex) {
+        this.$noty.error(`Rename error: ${ex.userMessage ?? ex.message}`)
+      } finally {
+        this.rename = false
+      }
+    },
   }
 
 }
 </script>
+<style lang="scss" scoped>
+.list-item .list-item-btn .connection-title {
+  min-width: 0;
+
+  .title {
+    position: relative;
+    width: 100%;
+    overflow: visible;
+  }
+
+  .editable-text {
+    width: 100%;
+  }
+}
+</style>

@@ -17,7 +17,7 @@ import { waitPromise } from "@/common/utils";
 export interface IConnectionHandlers {
   // Connection management from the store **************************************
   'conn/create': ({ config, auth, osUser, sId }: {config: IConnection, auth?: { input: string; mode: "pin" }, osUser: string, sId: string }) => Promise<void>,
-  'conn/test': ({ config, osUser, sId }: { config: IConnection, osUser: string, sId: string }) => Promise<void>,
+  'conn/test': ({ config, osUser, sId }: { config: IConnection, osUser: string, sId: string }) => Promise<string[]>,
   'conn/changeDatabase': ({ newDatabase, sId }: { newDatabase: string, sId: string }) => Promise<void>,
   'conn/clearConnection': ({ sId }: { sId: string}) => Promise<void>,
   'conn/getServerConfig': ({ sId }: { sId: string }) => Promise<IDbConnectionServerConfig>,
@@ -222,8 +222,10 @@ export const ConnHandlers: IConnectionHandlers = {
     state(sId).connectionAbortController = abortController;
     await server?.createConnection(config.defaultDatabase || undefined).connect(abortController.signal);
     abortController.abort();
+    const sshConfigWarnings = server.getServerConfig()?.sshConfigWarnings || [];
     server.disconnect();
     state(sId).connectionAbortController = null;
+    return sshConfigWarnings;
   },
 
   'conn/changeDatabase': async function({ newDatabase, sId }: { newDatabase: string, sId: string }) {
@@ -569,7 +571,7 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/azureGetAccountName': async function({ authId }: { authId: number }) {
     if (!authId) {
       throw new Error("authId is required");
-    };
+    }
     const cache = await TokenCache.findOneBy({id: authId})
     if (!cache) return null
     return cache.name

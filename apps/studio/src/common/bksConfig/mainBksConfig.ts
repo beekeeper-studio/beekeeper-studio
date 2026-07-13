@@ -187,10 +187,11 @@ export function loadConfig(file: ConfigFileName): IBksConfig | Partial<IBksConfi
       case "linux":
         systemConfigPath = "/etc/beekeeper-studio";
       break;
-      case "windows":
+      case "windows": {
         const programData = process.env.ProgramData || "C:\\ProgramData";
         systemConfigPath = path.join(programData, "beekeeper-studio");
-      break;
+        break;
+      }
     }
     if (!systemConfigPath) {
       log.warn(`Failed loading system config. Unable to determine system config path. platform: ${platformInfo.platform}`);

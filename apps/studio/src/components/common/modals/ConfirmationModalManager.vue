@@ -5,17 +5,18 @@
         v-if="!modal.noDisplay"
         :id="modal.id"
         :key="modal.id"
+        :variant="modal.variant"
       >
-        <template v-slot:title v-if="modal.title">
+        <template #title v-if="modal.title">
           {{ modal.title }}
         </template>
-        <template v-slot:message v-if="modal.message">
+        <template #message v-if="modal.message">
           {{ modal.message }}
         </template>
-        <template v-slot:confirm-label v-if="modal.confirmLabel">
+        <template #confirm-label v-if="modal.confirmLabel">
           {{ modal.confirmLabel }}
         </template>
-        <template v-slot:cancel-label v-if="modal.cancelLabel">
+        <template #cancel-label v-if="modal.cancelLabel">
           {{ modal.cancelLabel }}
         </template>
       </confirmation-modal>
@@ -35,6 +36,7 @@ interface ModalOptions {
   message?: string;
   confirmLabel?: string;
   cancelLabel?: string;
+  variant?: "normal" | "danger";
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -58,7 +60,7 @@ export default Vue.extend({
   components: { ConfirmationModal },
   data() {
     return {
-      modals: [],
+      modals: [] as ModalContext[],
       idCounter: 0,
     };
   },
@@ -93,13 +95,12 @@ export default Vue.extend({
     },
     async createModal(options: ModalOptions) {
       const modal: ModalContext = {
+        ...options,
         id: `${MODAL_NAME_PREFIX}-${this.idCounter++}`,
         title: options.title || DEFAULT_TITLE,
         message: options.message || DEFAULT_MESSAGE,
         cancelLabel: options.cancelLabel || DEFAULT_NO_LABEL,
         confirmLabel: options.confirmLabel || DEFAULT_YES_LABEL,
-        onConfirm: options.onConfirm,
-        onCancel: options.onCancel,
         noDisplay: false,
       }
       this.modals.push(modal);

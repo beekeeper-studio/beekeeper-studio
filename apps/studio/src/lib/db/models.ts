@@ -5,6 +5,7 @@ export abstract class BeeCursor {
   constructor(public chunkSize: number) {
 
   }
+  abstract get columns(): TableColumn[] | null
   abstract start(): Promise<void>
   abstract read(): Promise<any[][]>
   abstract cancel(): Promise<void>
@@ -27,8 +28,8 @@ export class NoOpCursor extends BeeCursor {
 }
 
 export interface StreamResults {
-  columns: TableColumn[],
-  totalRows: number,
+  columns?: TableColumn[],
+  totalRows?: number,
   cursor: BeeCursor
 }
 
@@ -104,6 +105,8 @@ export interface ExtendedTableColumn extends SchemaItem {
   characterSet?: string
   collation?: string
   array?: boolean
+  /** For enum columns, the allowed values in definition order. Undefined for non-enum types. */
+  enumValues?: string[]
   bksField: BksField
 }
 
@@ -280,6 +283,7 @@ export interface FieldEditData {
   array?: boolean;
   readOnlyReason?: FieldReadOnlyReason;
   dataType?: string;
+  enumValues?: string[];
   bksField?: BksField;
 }
 

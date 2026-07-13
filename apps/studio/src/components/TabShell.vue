@@ -17,7 +17,7 @@
         :is-focused="focusingElement === 'text-editor'"
         :auto-focus="true"
         :extensions="extensions"
-        :promptSymbol="promptSymbol"
+        :prompt-symbol="promptSymbol"
         :line-wrapping="wrapText"
         @clear="clear"
         @submitCommand="submitMongoCommand"
@@ -26,8 +26,8 @@
         @bks-shell-run-command="submitMongoCommand"
       />
       <!-- This is we so we have the separating line -->
-      <span class="expand"></span>
-      <div class="toolbar text-right"></div>
+      <span class="expand" />
+      <div class="toolbar text-right" />
     </div>
     <div class="not-supported" v-if="!enabled">
       <span class="title">
@@ -42,7 +42,7 @@
       ref="bottomPanel"
     >
       <progress-bar
-        :canCancel="false"
+        :can-cancel="false"
         :message="runningText"
         v-if="running"
       />
@@ -83,13 +83,13 @@
         class="layout-center expand"
         v-else
       >
-        <shortcut-hints :isMongo="true" />
+        <shortcut-hints :is-mongo="true" />
       </div>
       <!-- <span class="expand" v-if="!result"></span> -->
       <!-- STATUS BAR -->
       <query-editor-status-bar
         v-model="selectedResult"
-        :hideWrapText="true"
+        :hide-wrap-text="true"
         :results="results"
         :running="running"
         @download="download"
@@ -205,7 +205,7 @@ export default Vue.extend({
       return result.length ? result : null
     },
     runningText() {
-      return `Running (${window.main.pluralize('command', this.runningCount, true)})`
+      return `Running (${this.$pluralize('command', this.runningCount, true)})`
     },
     result() {
       return this.results[this.selectedResult]
