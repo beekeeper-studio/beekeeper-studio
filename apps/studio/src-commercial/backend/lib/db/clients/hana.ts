@@ -13,6 +13,7 @@ import _ from 'lodash';
 import { joinFilters } from '@/common/utils';
 import { HanaChangeBuilder } from '@/shared/lib/sql/change_builder/HanaChangeBuilder';
 import { HanaCursor } from './hana/HanaCursor';
+import { promisify } from 'util';
 
 const D = HanaData;
 const log = rawLog.scope('sap-hana');
@@ -39,7 +40,8 @@ function safeCount(value: any): number {
 }
 
 type HanaResult = {
-  rows: Record<string, any>[];
+  // object rows normally, arrays of values when arrayMode is set
+  rows: any[];
   rowsAffected: number;
   columns: any[];
   arrayMode: boolean;
@@ -575,7 +577,7 @@ export class HanaClient extends BasicDatabaseClient<HanaResult> {
     return {
       execute: async (): Promise<NgQueryResult[]> => {
         try {
-          return await this.executeQuery(queryText, { connection: conn })
+          return await this.executeQuery(queryText, { connection: conn, arrayMode: true })
         } finally {
           await conn.release();
         }
@@ -596,16 +598,30 @@ export class HanaClient extends BasicDatabaseClient<HanaResult> {
     const commands = this.identifyCommands(queryText);
 
     return data.map((result, idx) => {
-      const fields = result.rows && result.rows.length ? Object.keys(result.rows[0]).map((k) => ({
-        name: k,
-        id: k
-      })) : undefined;
+      let fields;
+      let rows = result.rows;
+
+      if (result.arrayMode) {
+        // rows are arrays with metadata alongside, so duplicate column names
+        // (SELECT a."id", b."id") survive under distinct field ids
+        fields = result.columns.map((column, i) => ({
+          id: `c${i}`,
+          name: column.columnName
+        }));
+        const fieldIds = fields.map((f) => f.id);
+        rows = result.rows.map((row) => _.zipObject(fieldIds, row));
+      } else {
+        fields = result.rows && result.rows.length ? Object.keys(result.rows[0]).map((k) => ({
+          name: k,
+          id: k
+        })) : undefined;
+      }
 
       const command = commands[idx]
       return {
         command: command?.type,
         text: command?.text,
-        rows: result.rows,
+        rows,
         fields,
         rowCount: result.rows?.length || 0,
         affectedRows: result.rowsAffected
@@ -863,6 +879,12 @@ export class HanaClient extends BasicDatabaseClient<HanaResult> {
       const results: HanaResult[] = [];
       for (const query of queries) {
         log.info('EXECUTING QUERY: ', query.text);
+
+        if (options.arrayMode) {
+          results.push(await this.execWithColumns(conn, query.text, autoCommit));
+          continue;
+        }
+
         const result = await conn.query(query.text, autoCommit);
 
         if (_.isNil(result)) {
@@ -878,6 +900,40 @@ export class HanaClient extends BasicDatabaseClient<HanaResult> {
     } finally {
       if (!options.connection) {
         await conn.release();
+      }
+    }
+  }
+
+  // Runs a statement through a prepared statement so column metadata is
+  // available: result-set rows come back as arrays alongside the column list,
+  // preserving duplicate column names across joins.
+  private async execWithColumns(conn: HanaConn, query: string, autoCommit: boolean): Promise<HanaResult> {
+    conn.setAutoCommit(autoCommit);
+    const statement = await conn.prepare(query);
+    try {
+      let columns = [];
+      try {
+        columns = statement.getColumnInfo() ?? [];
+      } catch (err) {
+        log.warn('Could not read statement metadata', err);
+      }
+
+      if (columns.length > 0) {
+        const rows = await promisify(statement.exec.bind(statement))({ rowsAsArray: true });
+        return { rows, columns, arrayMode: true, rowsAffected: 0 };
+      }
+
+      const result = await promisify(statement.exec.bind(statement))();
+      if (typeof result === 'number') {
+        return { rows: [], columns: [], arrayMode: false, rowsAffected: result };
+      }
+      // e.g. CALL results -- fall back to object rows
+      return { rows: Array.isArray(result) ? result : [], columns: [], arrayMode: false, rowsAffected: 0 };
+    } finally {
+      try {
+        await promisify(statement.drop.bind(statement))();
+      } catch (err) {
+        log.warn('Error dropping statement', err);
       }
     }
   }

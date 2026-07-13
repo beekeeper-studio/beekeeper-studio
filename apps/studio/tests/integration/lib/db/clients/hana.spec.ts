@@ -328,6 +328,20 @@ describe("SAP HANA integration tests", () => {
       expect(results[0].fields.map((f) => f.name)).toEqual(['id', 'email']);
     });
 
+    it("should preserve duplicate column names across joins", async () => {
+      const query = await util.connection.query(
+        `SELECT p."id", a."id" FROM "${SCHEMA}"."people" p JOIN "${SCHEMA}"."addresses" a ON p."address_id" = a."id" WHERE p."id" = 1`,
+        0
+      );
+      const results = await query.execute();
+
+      expect(results[0].fields.map((f) => f.name)).toEqual(['id', 'id']);
+      expect(results[0].fields.map((f) => f.id)).toEqual(['c0', 'c1']);
+      // both values survive under distinct field ids
+      const row = results[0].rows[0];
+      expect(Object.keys(row)).toEqual(['c0', 'c1']);
+    });
+
     it("should execute multiple statements in one query", async () => {
       const results = await util.connection.executeQuery(`SELECT 1 AS "a" FROM DUMMY; SELECT 2 AS "b" FROM DUMMY`);
       expect(results.length).toBe(2);

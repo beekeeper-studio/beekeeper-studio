@@ -54,10 +54,14 @@ export class HanaConn {
     )(query);
   }
 
+  setAutoCommit(autoCommit: boolean) {
+    this.rawConnection.setAutoCommit(autoCommit);
+  }
+
   // exec returns an array of row objects for SELECT, and the affected row
   // count (a number) for DML/DDL.
   async query(query: string, autoCommit = true) {
-    this.rawConnection.setAutoCommit(autoCommit);
+    this.setAutoCommit(autoCommit);
     return await promisify(
       this.rawConnection.exec.bind(this.rawConnection)
     )(query);
