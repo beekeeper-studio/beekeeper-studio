@@ -143,27 +143,6 @@ export const CredentialsModule: Module<State, RootState> = {
       context.commit('add', result)
       context.dispatch('setUserWorkspace')
     },
-    // Sign in with a short-lived code from a beekeeperstudio://cloud/signin
-    // deep link (the web app's "Open in the app" hand-off) instead of
-    // email/password.
-    async loginWithCode(context, { code }: { code: string }): Promise<CredentialBlob> {
-      const appId = (await Vue.prototype.$util.send('appdb/credential/findOneBy', {}))?.appId || genAppId()
-      const { token, email } = await CloudClient.exchangeLoginCode(window.platformInfo.cloudUrl, code, appId)
-      const existing = await Vue.prototype.$util.send('appdb/credential/findOneBy', { email })
-      let cred: TransportCloudCredential = existing || {
-        appId: null,
-        email: null,
-        token: null
-      };
-      cred.appId = appId
-      cred.email = email
-      cred.token = token
-      cred = await Vue.prototype.$util.send('appdb/credential/save', { obj: cred })
-      const result = await credentialToBlob(cred)
-      context.commit('add', result)
-      context.dispatch('setUserWorkspace')
-      return result
-    },
     async logout(context, blob: CredentialBlob) {
       await Vue.prototype.$util.send('appdb/credential/remove', { obj: blob.credential });
       await context.dispatch('load')

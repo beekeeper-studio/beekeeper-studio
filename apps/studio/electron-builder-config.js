@@ -111,11 +111,6 @@ module.exports = {
   ],
   protocols: [
     {
-      name: "Beekeeper Studio app URL scheme",
-      schemes: ["beekeeperstudio"],
-      role: "Viewer"
-    },
-    {
       name: "Amazon Redshift URL scheme",
       schemes: ["redshift"],
       role: "Editor"

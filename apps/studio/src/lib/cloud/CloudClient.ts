@@ -63,22 +63,6 @@ export class CloudClient {
     return res(response, 'token')
   }
 
-  // Exchanges a short-lived sign-in code (minted by the web app's
-  // "Open in the app" hand-off) for a regular app token, so the user
-  // doesn't re-enter their email and password.
-  static async exchangeLoginCode(baseUrl: string, code: string, app: string): Promise<{ token: string, email: string }> {
-    const cli = staticAxios(baseUrl)
-
-    const response = await cli.post('/api/login/exchange', {
-      code, app
-    })
-
-    return {
-      token: res(response, 'token'),
-      email: res(response, 'email'),
-    }
-  }
-
 
   public static async getLicense(baseUrl: string, email: string, key: string, installationId = "", platformInfo: IPlatformInfo) {
     const controller = new LicenseKeyController(staticAxios(baseUrl))
