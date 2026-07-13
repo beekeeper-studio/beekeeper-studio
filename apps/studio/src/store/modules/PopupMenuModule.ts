@@ -2,7 +2,7 @@ import { Module } from "vuex";
 import { State as RootState } from "../index";
 import _ from "lodash";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
-import { MenuItem } from "@beekeeperstudio/ui-kit";
+import { divider, DividerItem, MenuItem } from "@beekeeperstudio/ui-kit";
 import { CellComponent, ColumnComponent, MenuObject, MenuSeparator, RowComponent } from "tabulator-tables";
 import { createMenuItem } from "@/lib/menu/tableMenu";
 import Vue from "vue";
@@ -27,7 +27,7 @@ export const PopupMenuModule: Module<State, RootState> = {
         ) {
           if (options?.transform === "ui-kit") {
             return [
-              { id: "divider", type: "divider" },
+              divider,
               ...state.extraPopupMenu[menuId].map((item) => ({
                 ...item,
                 id: item.slug,
@@ -48,9 +48,9 @@ export const PopupMenuModule: Module<State, RootState> = {
             ] satisfies (MenuObject<TabulatorComponent> | MenuSeparator)[];
           } else {
             return [
-              { type: "divider" },
+              divider,
               ...state.extraPopupMenu[menuId],
-            ] satisfies ContextOption[];
+            ] satisfies (ContextOption | DividerItem)[];
           }
         }
         return [];
