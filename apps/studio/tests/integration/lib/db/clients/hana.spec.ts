@@ -283,12 +283,38 @@ describe("SAP HANA integration tests", () => {
       await stream.cursor.start();
       const allRows = [];
       let chunk = await stream.cursor.read();
+      expect(chunk.length).toBe(2);
       while (chunk.length > 0) {
         allRows.push(...chunk);
         chunk = await stream.cursor.read();
       }
       expect(allRows.length).toBe(5);
+      // ORDER BY id ASC -- first column of the first row is the lowest id
+      expect(Number(allRows[0][0])).toBe(1);
       await stream.cursor.cancel();
+    });
+
+    it("should stream ad-hoc query results", async () => {
+      const stream = await util.connection.queryStream(
+        `SELECT "id", "email" FROM "${SCHEMA}"."people" ORDER BY "id"`,
+        3
+      );
+
+      const cursor = stream.cursor;
+      await cursor.start();
+
+      // column metadata comes from the open result set
+      const columns = cursor.columns;
+      expect(columns.map((c) => c.columnName)).toEqual(['id', 'email']);
+
+      const chunk1 = await cursor.read();
+      expect(chunk1.length).toBe(3);
+      const chunk2 = await cursor.read();
+      expect(chunk2.length).toBe(2);
+      const chunk3 = await cursor.read();
+      expect(chunk3.length).toBe(0);
+
+      await cursor.cancel();
     });
   });
 

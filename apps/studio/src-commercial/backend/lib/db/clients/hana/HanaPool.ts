@@ -46,6 +46,14 @@ export class HanaConn {
     await this.pool.remove(this);
   }
 
+  // Prepares a statement for incremental fetching via Statement.execQuery()
+  // -> ResultSet. Callers own the statement and must drop() it when done.
+  async prepare(query: string) {
+    return await promisify(
+      this.rawConnection.prepare.bind(this.rawConnection)
+    )(query);
+  }
+
   // exec returns an array of row objects for SELECT, and the affected row
   // count (a number) for DML/DDL.
   async query(query: string, autoCommit = true) {

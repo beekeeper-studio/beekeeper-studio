@@ -712,23 +712,24 @@ export class HanaClient extends BasicDatabaseClient<HanaResult> {
     const columns = await this.listTableColumns(table, schema);
     const rowCount = await this.getTableLength(table, schema);
 
+    // one unpaginated query -- the cursor pulls rows from the server-side
+    // result set incrementally
+    const query = await this.selectTopSql(table, null, null, orderBy, filters, schema, ['*']);
     const conn = await this.pool.connect();
 
     return {
       totalRows: Number(rowCount),
       columns,
-      cursor: new HanaCursor(conn, {
-        schema,
-        table,
-        orderBy,
-        filters,
-        chunkSize
-      }, this)
+      cursor: new HanaCursor(conn, query, chunkSize)
     };
   }
 
-  queryStream(_query: string, _chunkSize: number): Promise<StreamResults> {
-    throw new Error('Method not implemented.');
+  async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
+    const conn = await this.pool.connect();
+
+    return {
+      cursor: new HanaCursor(conn, query, chunkSize)
+    };
   }
 
   async getTableCreateScript(table: string, schema?: string): Promise<string> {
