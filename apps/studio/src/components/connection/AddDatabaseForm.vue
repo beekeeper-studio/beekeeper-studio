@@ -30,7 +30,6 @@
         @keydown.enter.prevent.stop="save"
         type="text"
         placeholder="Database Name"
-        :disabled="disabled"
       >
     </div>
 
@@ -47,7 +46,6 @@
       <select
         v-model="selectedCharset"
         id="addDatabaseCollation"
-        :disabled="disabled"
       >
         <option
           v-for="charset in charsets"
@@ -64,7 +62,7 @@
       class="form-group"
       v-if="collations.length > 0"
     >
-      <select v-model="selectedCollation" :disabled="disabled">
+      <select v-model="selectedCollation">
         <option
           v-for="collation in collations"
           :key="collation"
@@ -80,14 +78,13 @@
         class="btn btn-flat"
         type="button"
         @click.prevent="$emit('cancel')"
-        :disabled="disabled"
       >
         Cancel
       </button>
       <button
         class="btn btn-primary save"
         type="submit"
-        :disabled="disabled || !databaseName"
+        :disabled="!databaseName"
       >
         Add
       </button>
@@ -99,12 +96,6 @@
   import { mapState } from 'vuex';
 
   export default {
-    props: {
-      disabled: {
-        type: Boolean,
-        default: false
-      }
-    },
     data() {
       return {
         charsets: [],

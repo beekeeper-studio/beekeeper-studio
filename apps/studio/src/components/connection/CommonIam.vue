@@ -25,7 +25,6 @@
         help-tooltip="You are signing in using the <code>AWS CLI</code>. Beekeeper Studio will attempt to use the AWS CLI tool at the specified path."
         :value="cliPath"
         @input="val => $set(config.iamAuthOptions, 'cliPath', val)"
-        :disabled="disabled"
       />
 
       <div v-show="isRedshift" class="flex flex-middle mb-3">
@@ -60,7 +59,6 @@
           v-if="hasProfiles"
           class="form-control"
           v-model="config.iamAuthOptions.awsProfile"
-          :disabled="disabled"
         >
           <option
             v-for="option in config.iamAuthOptions.profiles"
@@ -77,18 +75,17 @@
           class="form-control"
           placeholder="Enter AWS profile name (e.g., default, dev, prod)"
           v-model="config.iamAuthOptions.awsProfile"
-          :disabled="disabled"
         >
       </div>
 
       <div v-show="isKeyAuth">
         <div class="form-group">
           <label for="Access Key ID">Access Key ID</label>
-          <masked-input :value="config.iamAuthOptions.accessKeyId" @input="val => config.iamAuthOptions.accessKeyId = val" :type="'password'" :disabled="disabled" />
+          <masked-input :value="config.iamAuthOptions.accessKeyId" @input="val => config.iamAuthOptions.accessKeyId = val" :type="'password'" />
         </div>
         <div class="form-group">
           <label for="Secret Access Key">Secret Access Key</label>
-          <masked-input :value="config.iamAuthOptions.secretAccessKey" @input="val => config.iamAuthOptions.secretAccessKey = val" :type="'password'" :disabled="disabled" />
+          <masked-input :value="config.iamAuthOptions.secretAccessKey" @input="val => config.iamAuthOptions.secretAccessKey = val" :type="'password'" />
         </div>
       </div>
 

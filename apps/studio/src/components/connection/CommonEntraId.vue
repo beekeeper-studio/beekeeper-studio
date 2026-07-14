@@ -24,7 +24,6 @@
         docs-href="https://docs.beekeeperstudio.io/user_guide/connecting/azure-entraid"
         :value="config.azureAuthOptions.cliPath"
         @input="val => $set(config.azureAuthOptions, 'cliPath', val)"
-        :disabled="disabled"
       />
       <div class="form-group">
         <label for="server">
@@ -61,7 +60,7 @@
             class="btn btn-flat btn-icon"
             type="button"
             @click.prevent="signOut"
-            :disabled="disabled || signingOut"
+            :disabled="signingOut"
           >
             <i class="material-icons">logout</i>
             Sign out

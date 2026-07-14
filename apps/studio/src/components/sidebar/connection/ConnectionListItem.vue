@@ -21,15 +21,27 @@
             @cancel="rename = false"
           />
         </div>
-        <div class="subtitle">{{ connectionTypeName }}</div>
         <div class="subtitle">
-          <span>{{ privacyMode ? "******" : subtitleSimple }}</span>
-          <template v-if="displayConfig.sshEnabled && !privacyMode">
-            <span class="dot" />
-            <span>SSH</span>
-          </template>
+          <span
+            class="bastion"
+            v-if="displayConfig.sshBastionHost && !privacyMode"
+          >
+            <span class="truncate">{{ displayConfig.sshBastionHost }}</span>&nbsp;>&nbsp;
+          </span>
+          <span
+            class="ssh"
+            v-if="displayConfig.sshHost && !privacyMode"
+          >
+            <span class="truncate">{{ displayConfig.sshHost }}</span>&nbsp;>&nbsp;
+          </span>
+          <span class="connection">
+            <span>
+              {{ privacyMode ? '******' : subtitleSimple }}
+            </span>
+          </span>
         </div>
       </div>
+      <span class="badge"><span>{{ displayConfig.connectionType }}</span></span>
       <span
         v-if="!isRecentList"
         class="actions"
@@ -67,7 +79,6 @@ import TimeAgo from 'javascript-time-ago'
 import { mapGetters, mapState } from 'vuex'
 import { isUltimateType } from '@/common/interfaces/IConnection'
 import EditableText from '@/components/common/EditableText.vue'
-import { ConnectionTypes } from "@/lib/db/types";
 import { AppEvent } from '@/common/AppEvent';
 
 export default {
@@ -116,12 +127,6 @@ export default {
       }
 
       return 'Url'
-    },
-    connectionTypeName() {
-      const type = ConnectionTypes.find(
-        (t) => t.value === this.displayConfig.connectionType
-      );
-      return type ? type.name : this.displayConfig.connectionType;
     },
     subtitleSimple() {
       if (this.isRecentList) {
@@ -295,11 +300,6 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-.list-item .list-item-btn .connection-label {
-  height: auto;
-  align-self: stretch;
-}
-
 .list-item .list-item-btn .connection-title {
   min-width: 0;
 
@@ -307,32 +307,10 @@ export default {
     position: relative;
     width: 100%;
     overflow: visible;
-    line-height: 1;
   }
 
   .editable-text {
     width: 100%;
-  }
-
-  .subtitle {
-    line-height: 1.4;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-
-    .badge {
-      margin-left: 0.25rem;
-    }
-
-    .dot {
-      border-radius: 9999px;
-      min-width: initial;
-      width: 0.25rem;
-      height: 0.25rem;
-      margin-inline: 0.5rem;
-      align-self: center;
-      background-color: var(--text-lighter);
-    }
   }
 }
 </style>

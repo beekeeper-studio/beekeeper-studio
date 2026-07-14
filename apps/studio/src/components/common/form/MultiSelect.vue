@@ -50,10 +50,12 @@
           @mousedown.prevent="addOption(option)"
         >
           <slot name="option" :option="option" :index="index">
-            <span class="label">{{ optionText(option) }}</span>
-            <span class="hint" v-if="optionHint(option)">{{
-              optionHint(option)
-            }}</span>
+            <span
+              v-if="optionHighlight(index)"
+              class="label"
+              v-html="optionHighlight(index)"
+            ></span>
+            <span v-else class="label">{{ optionText(option) }}</span>
           </slot>
         </li>
         <li
@@ -90,8 +92,15 @@
 <script lang="ts">
 import Vue, { PropType } from "vue";
 import { Portal } from "portal-vue";
+import uFuzzy from "@leeoniya/ufuzzy";
+import { escapeHtml } from "@/shared/lib/tabulator";
 
 type Option = unknown;
+
+const uf = new uFuzzy({
+  intraMode: 0,
+  intraIns: Infinity,
+});
 
 export default Vue.extend({
   name: "MultiSelect",
@@ -110,17 +119,15 @@ export default Vue.extend({
       type: Array as PropType<Option[]>,
       default: () => [],
     },
-    /** Object key used to render the option text. Ignored for string suggestions. */
-    displayKey: String,
-    /** Object key used for filtering. Ignored for string suggestions. */
-    filterKey: String,
-    /** Object key used for the hint text. Ignored for string suggestions. */
-    hintKey: String,
+    /** Object key used for both display and filtering. Ignored for string suggestions. */
+    optionLabel: String,
     placeholder: {
       type: String,
       default: "",
     },
     inputId: String,
+    /** Focuses the input whenever this value changes. */
+    focusTrigger: null,
   },
   data() {
     return {
@@ -140,17 +147,38 @@ export default Vue.extend({
     activeOption() {
       return this.filteredSuggestions[this.activeIndex];
     },
-    filteredSuggestions() {
-      const query = this.value.trim().toLowerCase();
+    searchResult(): { options: Option[]; highlights: string[] } {
       const suggestions = this.suggestions.filter(
         (option) => !this.selectedOptions.includes(option)
       );
+      const query = this.value.trim();
       if (!query) {
-        return suggestions;
+        return { options: suggestions, highlights: [] };
       }
-      return suggestions.filter((option) =>
-        this.filterText(option).toLowerCase().includes(query)
-      );
+      const haystack = suggestions.map((option) => this.optionText(option));
+      const [idxs, info, order] = uf.search(haystack, query, 0, Infinity);
+      if (!idxs || !order || !info) {
+        return { options: [], highlights: [] };
+      }
+      const options: Option[] = [];
+      const highlights: string[] = [];
+      for (const infoIdx of order) {
+        options.push(suggestions[idxs[infoIdx]]);
+        highlights.push(
+          uFuzzy.highlight(
+            haystack[info.idx[infoIdx]],
+            info.ranges[infoIdx],
+            (part, matched) =>
+              matched
+                ? `<strong>${escapeHtml(part) ?? ""}</strong>`
+                : escapeHtml(part) ?? ""
+          )
+        );
+      }
+      return { options, highlights };
+    },
+    filteredSuggestions(): Option[] {
+      return this.searchResult.options;
     },
     panelStyle() {
       return {
@@ -162,6 +190,11 @@ export default Vue.extend({
     },
   },
   watch: {
+    focusTrigger() {
+      this.$nextTick(() => {
+        (this.$refs.input as HTMLInputElement).focus();
+      });
+    },
     isOpen(open) {
       if (open) {
         document.addEventListener("mousedown", this.maybeClose);
@@ -196,23 +229,14 @@ export default Vue.extend({
       this.isOpen = true;
       this.activeIndex = -1;
     },
+    optionHighlight(index: number) {
+      return this.searchResult.highlights[index];
+    },
     optionText(option: Option) {
       if (option !== null && typeof option === "object") {
-        return this.displayKey ? String(option[this.displayKey]) : "";
+        return this.optionLabel ? String(option[this.optionLabel]) : "";
       }
       return String(option);
-    },
-    filterText(option: Option) {
-      if (option !== null && typeof option === "object") {
-        return this.filterKey ? String(option[this.filterKey]) : "";
-      }
-      return String(option);
-    },
-    optionHint(option: Option) {
-      if (option !== null && typeof option === "object") {
-        return this.hintKey ? String(option[this.hintKey]) : "";
-      }
-      return "";
     },
     async move(delta: -1 | 1) {
       const count = this.filteredSuggestions.length;
@@ -337,6 +361,11 @@ export default Vue.extend({
   &.active {
     background: color-mix(in srgb, var(--theme-base) 5%, transparent);
   }
+}
+
+.option .label ::v-deep(strong) {
+  font-weight: 700;
+  color: var(--theme-base);
 }
 
 .hint {

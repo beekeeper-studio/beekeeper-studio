@@ -100,7 +100,7 @@
             <div class="icon">{{ getInitials(grant.membership.name) }}</div>
             <div class="label">
               {{ grant.membership.name }}
-              <span v-if="isItYou(grant.membership)"> (You)</span>
+              <span v-if="isItYou(grant.membership.userId)"> (You)</span>
             </div>
             <div class="access">
               <loading-spinner v-if="loadingGrants.includes(grant.id)" />
@@ -150,17 +150,14 @@
             <div class="input-wrapper">
               <multi-select
                 input-id="share-modal-search-member"
-                ref="search"
                 placeholder="Search a member"
                 v-model="search"
-                filter-key="searchable"
-                display-key="name"
-                hint-key="email"
+                option-label="name"
+                :focus-trigger="focusTrigger"
                 :suggestions="memberships"
                 :selected-options="selectedMembers"
                 @item-add="handleMemberAdd"
                 @item-remove="handleMemberRemove"
-                @open="loadMembershipsOnce"
                 @keyup.esc.stop
                 @keydown.esc.stop
               >
@@ -230,6 +227,7 @@ export default Vue.extend({
       subjectType: null,
       membershipsLoaded: false,
       search: "",
+      focusTrigger: 0,
       permission: "view" as Permission,
       selectedMembers: [] as IMembership[],
       highlightedMembers: [] as number[], // the membership ids
@@ -252,21 +250,16 @@ export default Vue.extend({
     ...mapState("data/accessGrants", { accessGrants: "items" }),
     ...mapState("data/memberships", {
       memberships(state: DataState<IMembership>) {
-        return state.items
-          .filter((member) => {
-            const accessGrants: IAccessGrant[] = this.accessGrants;
-            const subject: Subject = this.subject;
-            const isOwner = member.id === subject.membership.id;
-            const isGranted = accessGrants.some(
-              (grant) => grant.membershipId === member.id
-            );
-            const isAdmin = member.userId === this.workspace.owner.id;
-            return !isOwner && !isGranted && !isAdmin;
-          })
-          .map((member) => ({
-            ...member,
-            searchable: member.name.toLowerCase() + member.email.toLowerCase(),
-          }));
+        return state.items.filter((member) => {
+          const accessGrants: IAccessGrant[] = this.accessGrants;
+          const subject: Subject = this.subject;
+          const isOwner = member.id === subject.membership.id;
+          const isGranted = accessGrants.some(
+            (grant) => grant.membershipId === member.id
+          );
+          const isAdmin = member.userId === this.workspace.owner.id;
+          return !isOwner && !isGranted && !isAdmin;
+        });
       },
     }),
     ...mapState("data/accessGrants", {
@@ -324,11 +317,6 @@ export default Vue.extend({
       return "no-access";
     },
   },
-  watch: {
-    search() {
-      this.loadMembershipsOnce();
-    },
-  },
   methods: {
     ...mapActions("data/accessGrants", {
       loadAccessGrants: "load",
@@ -363,7 +351,9 @@ export default Vue.extend({
       this.$modal.show("share-modal");
     },
     async handleOpened() {
-      this.$refs.search.$el.querySelector("input").focus();
+      this.focusTrigger++;
+
+      this.loadMembershipsOnce();
 
       this.initiallyLoadingGrants = true;
       await this.$nextTick();
@@ -461,21 +451,7 @@ export default Vue.extend({
 
       const selectedMembers: IMembership[] = this.selectedMembers;
 
-      let canRead: boolean;
-      let canWrite: boolean;
-
-      if (this.permission === "none") {
-        canRead = false;
-        canWrite = false;
-      } else if (this.permission === "view") {
-        canRead = true;
-        canWrite = false;
-      } else if (this.permission === "edit") {
-        canRead = true;
-        canWrite = true;
-      } else {
-        throw new Error(`Invalid permission. Got "${this.permission}"`);
-      }
+      const { canRead, canWrite } = this.permissionToGrant(this.permission);
 
       try {
         this.savingGrants = true;
