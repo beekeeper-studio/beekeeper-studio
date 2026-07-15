@@ -1,6 +1,6 @@
 import Vue from "vue"
 import rawLog from '@bksLogger'
-import { SubjectType } from "@/lib/cloud/controllers/AccessGrantsController";
+import { ShareableModule } from "@/store/DataModules";
 
 const log = rawLog.scope('AppEvent')
 
@@ -88,7 +88,7 @@ export enum AppEvent {
   /** Open a share modal by passing the subject as the first parameter (See {@link OpenShareModalOptions}).
    * The subject should be available in the cloud.
    * @example
-   * this.trigger(AppEvent.openShareModal, { subject: { type: "query", id: 1 } });
+   * this.trigger(AppEvent.openShareModal, { id: 1, module: "data/queries" });
    */
   openShareModal = 'openShareModal',
   /** Paste clipboard contents as new rows in the active table's Data tab. */
@@ -104,14 +104,15 @@ export enum AppEvent {
 }
 
 export type OpenShareModalOptions =  {
-  subjectId: number;
-  subjectType: SubjectType;
+  id: number;
+  module: ShareableModule;
 }
 
 export interface RootBinding {
   event: string
   handler(arg: any): void
 }
+
 
 export const AppEventMixin = Vue.extend({
   methods:  {

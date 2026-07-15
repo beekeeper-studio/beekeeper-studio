@@ -1,5 +1,6 @@
 import { DataState, mutationsFor, DataStore, actionsFor } from "../DataModuleBase";
 import { havingCli } from "../StoreHelpers";
+import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import _ from 'lodash'
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 
@@ -20,9 +21,11 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
     // more mutations go here
     savedQueryFilter(state: State, str: string) {
       state.filter = str;
-    }
+    },
+    ...accessGrantMutations(),
   }, { field: 'title', direction: 'asc'}),
   actions: actionsFor<ISavedQuery>('queries', {
+    ...cloudAccessGrantActions('queries'),
     setSavedQueryFilter: _.debounce(function (context, filter) {
       context.commit('savedQueryFilter', filter);
     }, 500),

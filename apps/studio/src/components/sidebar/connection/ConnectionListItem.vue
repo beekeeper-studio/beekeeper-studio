@@ -263,8 +263,8 @@ export default {
     },
     share() {
       this.trigger(AppEvent.openShareModal, {
-        subjectId: this.savedConnection.id,
-        subjectType: "connection",
+        id: this.savedConnection.id,
+        module: "data/connections",
       });
     },
     async copyUrl() {

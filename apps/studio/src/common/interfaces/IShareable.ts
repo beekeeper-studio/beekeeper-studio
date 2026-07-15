@@ -15,4 +15,5 @@ export interface IShareable {
   canManage: boolean;
   /** The user who created this */
   membership: IMembership;
+  accessGrants?: IAccessGrant[];
 }

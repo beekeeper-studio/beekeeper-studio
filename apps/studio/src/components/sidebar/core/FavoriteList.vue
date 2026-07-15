@@ -421,8 +421,8 @@ export default {
     },
     share(folder) {
       this.trigger(AppEvent.openShareModal, {
-        subjectId: folder.id,
-        subjectType: "query_folder",
+        id: folder.id,
+        module: "data/queryFolders",
       });
     },
     createSubfolder(parentFolder) {

@@ -1,6 +1,7 @@
 
 import { IConnectionFolder } from "@/common/interfaces/IQueryFolder";
 import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
+import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import { buildFolderTree } from "@/common/utils/folderTree";
 
 type State = DataState<IConnectionFolder>
@@ -13,12 +14,13 @@ export const CloudConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     error: null,
     pollError: null
   },
-  mutations: mutationsFor<IConnectionFolder>({}, { field: 'name', direction: 'asc'}),
+  mutations: mutationsFor<IConnectionFolder>({ ...accessGrantMutations() }, { field: 'name', direction: 'asc'}),
   getters: {
     foldersWithConnections: (state) => (connections: any[]) =>
       buildFolderTree(state.items, connections, 'connectionFolderId')
   },
   actions: actionsFor<IConnectionFolder>('connectionFolders', {
+    ...cloudAccessGrantActions('connectionFolders'),
     async poll() {
       // empty on purpose
     },

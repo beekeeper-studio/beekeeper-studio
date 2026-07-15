@@ -671,8 +671,8 @@ export default Vue.extend({
     },
     share() {
       this.trigger(AppEvent.openShareModal, {
-        subjectId: this.config.id,
-        subjectType: "connection",
+        id: this.config.id,
+        module: "data/connections",
       });
     },
   },

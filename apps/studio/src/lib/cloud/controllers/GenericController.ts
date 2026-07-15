@@ -20,14 +20,11 @@ export abstract class GenericController<T extends HasId> {
   name: string
   plural: string
 
-  async list(updatedSince?: number, options?: { extraParams?: Record<string, unknown> }): Promise<T[]> {
+  async list(updatedSince?: number): Promise<T[]> {
     const params = updatedSince ? {
       updated_since: updatedSince,
       slim: true
     } : { slim: true }
-    if (options?.extraParams) {
-      Object.assign(params, options.extraParams);
-    }
     const response = await this.axios.get(url(this.path), { params })
     return res(response, this.plural)
   }
@@ -65,5 +62,12 @@ export abstract class GenericController<T extends HasId> {
     if (!q.id) throw new CloudError(400, `Cannot delete ${this.name} without an ID`)
     const response = await this.axios.delete(url(this.path, q.id))
     return res(response, 'success')
+  }
+
+  async import(qs: T[]): Promise<T[]> {
+    const response = await this.axios.post(url(this.path, "import"), {
+      [this.plural]: qs,
+    });
+    return res(response, this.plural);
   }
 }

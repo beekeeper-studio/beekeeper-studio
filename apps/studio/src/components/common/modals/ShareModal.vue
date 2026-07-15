@@ -4,16 +4,15 @@
       <div>
         <div class="modal-title">
           <template v-if="subject">
-            <i
-              :data-subject-type="subject.type"
-              class="material-icons subject-icon"
-            >
-              <template v-if="subject.type === 'Connection'">link</template>
-              <template v-else-if="subject.type === 'Query'">code</template>
+            <i :data-subject-module="subject.module" class="material-icons subject-icon">
+              <template v-if="subject.module === 'data/connections'">link</template>
+              <template v-else-if="subject.module === 'data/queries'">code</template>
               <template v-else>folder</template>
             </i>
             <h2>
-              {{ subject.type === "Query" ? subject.title : subject.name }}
+              {{
+                subject.module === "data/queries" ? subject.title : subject.name
+              }}
             </h2>
           </template>
           <h2 v-else>Share</h2>
@@ -41,21 +40,12 @@
               <div class="hint" v-else-if="teamPermission === 'no-access'">
                 Only team members that are listed below have access
               </div>
-              <div
-                class="hint error"
-                v-if="teamPermissionError"
-                v-text="teamPermissionError.userMessage"
-              />
+              <div class="hint error" v-if="teamPermissionError" v-text="teamPermissionError.userMessage" />
             </div>
             <div class="access">
               <loading-spinner v-if="loadingTeamPermission" />
-              <select
-                class="auto-width"
-                v-if="subject.canManage"
-                :value="teamPermission"
-                :disabled="loadingTeamPermission"
-                @change="changeTeamPermission($event.target.value)"
-              >
+              <select class="auto-width" v-if="subject.canManage" :value="teamPermission"
+                :disabled="loadingTeamPermission" @change="changeTeamPermission($event.target.value)">
                 <option value="view">can view</option>
                 <option value="edit">can edit</option>
                 <option value="no-access">No access</option>
@@ -78,10 +68,7 @@
             <div class="access">Owner</div>
           </li>
           <!-- We don't want to show admin if it's the same user as the owner -->
-          <li
-            class="access-grant"
-            v-if="subject.membership.userId !== workspace.owner.id"
-          >
+          <li class="access-grant" v-if="subject.membership.userId !== workspace.owner.id">
             <div class="icon">{{ getInitials(workspace.owner.name) }}</div>
             <div class="label">
               <span>{{ workspace.owner.name }}</span>
@@ -89,14 +76,9 @@
             </div>
             <div class="access">Admin</div>
           </li>
-          <li
-            class="access-grant"
-            v-for="grant of accessGrants"
-            :key="grant.id"
-            :class="{
-              highlight: highlightedMembers.includes(grant.membershipId),
-            }"
-          >
+          <li class="access-grant" v-for="grant of accessGrants" :key="grant.id" :class="{
+            highlight: highlightedMembers.includes(grant.membershipId),
+          }">
             <div class="icon">{{ getInitials(grant.membership.name) }}</div>
             <div class="label">
               {{ grant.membership.name }}
@@ -104,17 +86,11 @@
             </div>
             <div class="access">
               <loading-spinner v-if="loadingGrants.includes(grant.id)" />
-              <select
-                class="auto-width"
-                :value="grantToPermission(grant)"
-                @change="
-                  $event.target.value === 'remove'
-                    ? removeAccess(grant)
-                    : changeAccess(grant, $event.target.value)
-                "
-                v-if="subject.canManage"
-                :disabled="loadingGrants.includes(grant.id)"
-              >
+              <select class="auto-width" :value="grantToPermission(grant)" @change="
+                $event.target.value === 'remove'
+                  ? removeAccess(grant)
+                  : changeAccess(grant, $event.target.value)
+                " v-if="subject.canManage" :disabled="loadingGrants.includes(grant.id)">
                 <option value="view">can view</option>
                 <option value="edit">can edit</option>
                 <hr />
@@ -148,19 +124,10 @@
           <div class="form-group">
             <label for="share-modal-search-member">Add member access</label>
             <div class="input-wrapper">
-              <multi-select
-                input-id="share-modal-search-member"
-                placeholder="Search a member"
-                v-model="search"
-                option-label="name"
-                :focus-trigger="focusTrigger"
-                :suggestions="memberships"
-                :selected-options="selectedMembers"
-                @item-add="handleMemberAdd"
-                @item-remove="handleMemberRemove"
-                @keyup.esc.stop
-                @keydown.esc.stop
-              >
+              <multi-select input-id="share-modal-search-member" placeholder="Search a member" v-model="search"
+                option-label="name" :focus-trigger="focusTrigger" :suggestions="memberships"
+                :selected-options="selectedMembers" @item-add="handleMemberAdd" @item-remove="handleMemberRemove"
+                @keyup.esc.stop @keydown.esc.stop>
                 <template #empty-state v-if="loadingMemberships">
                   Loading ...
                 </template>
@@ -168,22 +135,14 @@
                   {{ option.name }}
                 </template>
               </multi-select>
-              <select
-                v-show="search.length > 0 || selectedMembers.length > 0"
-                v-model="permission"
-                class="auto-width"
-              >
+              <select v-show="search.length > 0 || selectedMembers.length > 0" v-model="permission" class="auto-width">
                 <option value="view">can view</option>
                 <option value="edit">can edit</option>
               </select>
             </div>
           </div>
-          <button
-            class="btn btn-primary btn-icon add-btn"
-            type="button"
-            :disabled="selectedMembers.length === 0 || savingGrants"
-            @click="addSelectedMembers"
-          >
+          <button class="btn btn-primary btn-icon add-btn" type="button"
+            :disabled="selectedMembers.length === 0 || savingGrants" @click="addSelectedMembers">
             <i class="material-icons">add</i>
             Add
           </button>
@@ -197,6 +156,7 @@
 import Vue from "vue";
 import BaseModal from "@/components/common/modals/BaseModal.vue";
 import { AppEvent, OpenShareModalOptions } from "@/common/AppEvent";
+import { ShareableModule } from "@/store/DataModules";
 import { mapActions, mapGetters, mapState } from "vuex";
 import { DataState } from "@/store/modules/data/DataModuleBase";
 import { IAccessGrant } from "@/common/interfaces/IAccessGrant";
@@ -213,9 +173,9 @@ import { CloudError } from "@/lib/cloud/ClientHelpers";
 type Permission = "view" | "edit" | "no-access";
 type AccessGrantLike = Pick<IAccessGrant, "canRead" | "canWrite">;
 type Subject =
-  | ({ type: "Connection" } & ICloudSavedConnection)
-  | ({ type: "Query" } & ISavedQuery)
-  | ({ type: "QueryFolder" | "ConnectionFolder" } & IFolder);
+  | ({ module: "data/connections" } & ICloudSavedConnection)
+  | ({ module: "data/queries" } & ISavedQuery)
+  | ({ module: "data/queryFolders" | "data/connectionFolders" } & IFolder);
 
 const log = rawLog.scope("ShareModal.vue");
 
@@ -224,7 +184,7 @@ export default Vue.extend({
   data() {
     return {
       subjectId: null,
-      subjectType: null,
+      module: null as ShareableModule | null,
       membershipsLoaded: false,
       search: "",
       focusTrigger: 0,
@@ -247,7 +207,9 @@ export default Vue.extend({
     ...mapState("data/queries", { queries: "items" }),
     ...mapState("data/connectionFolders", { connectionFolders: "items" }),
     ...mapState("data/queryFolders", { queryFolders: "items" }),
-    ...mapState("data/accessGrants", { accessGrants: "items" }),
+    accessGrants(): IAccessGrant[] {
+      return this.subject?.accessGrants ?? [];
+    },
     ...mapState("data/memberships", {
       memberships(state: DataState<IMembership>) {
         return state.items.filter((member) => {
@@ -262,9 +224,6 @@ export default Vue.extend({
         });
       },
     }),
-    ...mapState("data/accessGrants", {
-      accessGrantsError: "error",
-    }),
     ...mapState("data/memberships", {
       loadingMemberships: "loading",
     }),
@@ -272,40 +231,25 @@ export default Vue.extend({
       return [{ event: AppEvent.openShareModal, handler: this.open }];
     },
     items() {
-      if (this.subjectType === "connection") {
-        return this.connections;
+      switch (this.module) {
+        case "data/connections":
+          return this.connections;
+        case "data/queries":
+          return this.queries;
+        case "data/connectionFolders":
+          return this.connectionFolders;
+        case "data/queryFolders":
+          return this.queryFolders;
+        default:
+          return [];
       }
-      if (this.subjectType === "query") {
-        return this.queries;
-      }
-      if (this.subjectType === "connectionFolder") {
-        return this.connectionFolders;
-      }
-      if (this.subjectType === "queryFolder") {
-        return this.queryFolders;
-      }
-      return [];
     },
     subject(): Subject | null {
       const subject = this.items.find((i) => i.id === this.subjectId);
       if (!subject) {
         return null;
       }
-      return { ...subject, type: this.subjectType };
-    },
-    subjectModulePath(): string {
-      switch (this.subjectType) {
-        case "connection":
-          return "data/connections";
-        case "query":
-          return "data/queries";
-        case "connectionFolder":
-          return "data/connectionFolders";
-        case "queryFolder":
-          return "data/queryFolders";
-        default:
-          throw new Error(`Invalid subject type. Got "${this.subjectType}"`);
-      }
+      return { ...subject, module: this.module };
     },
     teamPermission(): Permission {
       if (this.subject?.teamWrite) {
@@ -318,18 +262,24 @@ export default Vue.extend({
     },
   },
   methods: {
-    ...mapActions("data/accessGrants", {
-      loadAccessGrants: "load",
-      saveAccessGrants: "saveMany",
-      saveAccessGrant: "save",
-      removeAccessGrant: "remove",
-    }),
+    loadAccessGrants(subjectId: number) {
+      return this.$store.dispatch(`${this.module}/loadAccessGrants`, subjectId);
+    },
+    saveAccessGrants(payload) {
+      return this.$store.dispatch(`${this.module}/saveAccessGrants`, payload);
+    },
+    saveAccessGrant(payload) {
+      return this.$store.dispatch(`${this.module}/saveAccessGrant`, payload);
+    },
+    removeAccessGrant(payload) {
+      return this.$store.dispatch(`${this.module}/removeAccessGrant`, payload);
+    },
     ...mapActions("data/memberships", {
       loadMemberships: "load",
     }),
     resetState() {
       this.subjectId = null;
-      this.subjectType = null;
+      this.module = null;
       this.membershipsLoaded = false;
       this.search = "";
       this.permission = "view";
@@ -346,8 +296,8 @@ export default Vue.extend({
         return;
       }
       this.resetState();
-      this.subjectId = options.subjectId;
-      this.subjectType = options.subjectType;
+      this.subjectId = options.id;
+      this.module = options.module;
       this.$modal.show("share-modal");
     },
     async handleOpened() {
@@ -358,10 +308,7 @@ export default Vue.extend({
       this.initiallyLoadingGrants = true;
       await this.$nextTick();
       try {
-        await this.loadAccessGrants({
-          subjectType: this.subjectType,
-          subjectId: this.subjectId,
-        });
+        await this.loadAccessGrants(this.subjectId);
       } catch (e) {
         log.error(e);
         this.$noty.error(e.userMessage);
@@ -396,10 +343,7 @@ export default Vue.extend({
             ...accessGrant,
             ...this.permissionToGrant(permission),
           },
-          subject: {
-            subjectType: this.subjectType,
-            subjectId: this.subjectId,
-          },
+          subjectId: this.subjectId,
         });
       });
     },
@@ -407,10 +351,7 @@ export default Vue.extend({
       this.tryAccess(accessGrant.id, async () => {
         await this.removeAccessGrant({
           accessGrant,
-          subject: {
-            subjectType: this.subjectType,
-            subjectId: this.subjectId,
-          }
+          subjectId: this.subjectId,
         });
       });
     },
@@ -432,7 +373,7 @@ export default Vue.extend({
       try {
         this.teamPermissionError = null;
         const { canRead, canWrite } = this.permissionToGrant(permission);
-        await this.$store.dispatch(`${this.subjectModulePath}/save`, {
+        await this.$store.dispatch(`${this.module}/save`, {
           id: this.subject.id,
           teamRead: canRead,
           teamWrite: canWrite,
@@ -457,7 +398,6 @@ export default Vue.extend({
         this.savingGrants = true;
         await this.saveAccessGrants({
           subjectId: this.subjectId,
-          subjectType: this.subjectType,
           canRead,
           canWrite,
           memberships: selectedMembers,
@@ -518,11 +458,11 @@ export default Vue.extend({
   .subject-icon {
     font-size: 1rem;
 
-    &[data-subject-type="Query"] {
+    &[data-subject-module="data/queries"] {
       color: var(--brand-pink);
     }
 
-    &[data-subject-type*="Folder"] {
+    &[data-subject-module*="Folders"] {
       color: var(--text-lighter);
     }
   }
