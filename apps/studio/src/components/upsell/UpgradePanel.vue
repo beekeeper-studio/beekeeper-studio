@@ -7,7 +7,12 @@
       </h3>
 
       <p class="intro">
-        <template v-if="featureName"><strong>{{ featureName }}</strong> is a paid feature. </template>Included with an upgrade:
+        <template v-if="featureName"><strong>{{ featureName }}</strong> is a paid feature. </template><a
+          v-if="demoUrl"
+          class="demo-link"
+          href="#"
+          @click.prevent="openDemo"
+        >See how it works<i class="material-icons">open_in_new</i></a> Included with an upgrade:
       </p>
 
       <div class="feature-columns">
@@ -69,6 +74,11 @@ export default Vue.extend({
       type: String,
       default: null
     },
+    // Optional demo/video URL; renders a "See how it works" link.
+    demoUrl: {
+      type: String,
+      default: null
+    },
     // When true, panel adds its own card chrome (border, radius) for inline placement.
     // When false, it's bare so the wrapping modal can supply its own chrome.
     standalone: {
@@ -82,6 +92,11 @@ export default Vue.extend({
     },
     rightColumn(): FeatureItem[] {
       return FEATURES.slice(Math.ceil(FEATURES.length / 2))
+    }
+  },
+  methods: {
+    openDemo() {
+      this.$native.openLink(this.demoUrl)
     }
   }
 })

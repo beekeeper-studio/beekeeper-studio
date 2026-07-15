@@ -44,6 +44,19 @@
     strong {
       color: $text-dark;
     }
+
+    .demo-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      color: $brand-secondary;
+      text-decoration: underline;
+      text-decoration-color: rgba($brand-secondary, 0.4);
+
+      i.material-icons {
+        font-size: 13px;
+      }
+    }
   }
 
   // Feature bullets, two columns

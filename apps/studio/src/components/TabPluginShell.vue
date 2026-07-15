@@ -1,10 +1,13 @@
 <template>
   <div
     v-if="isCommunity && tab.context.pluginId.startsWith('bks-')"
-    :class="isAiShellPlugin ? 'tab-upsell-wrapper tab-upsell-wrapper--ai-shell' : 'upgrade-panel-tab-wrapper'"
+    class="upgrade-panel-tab-wrapper"
   >
-    <ai-shell-upsell v-if="isAiShellPlugin" />
-    <upgrade-panel v-else :feature-name="tab.title || 'Plugins'" standalone />
+    <upgrade-panel
+      :feature-name="isAiShellPlugin ? 'AI Shell' : (tab.title || 'Plugins')"
+      :demo-url="isAiShellPlugin ? aiShellDemoUrl : null"
+      standalone
+    />
   </div>
   <div v-else class="plugin-shell" ref="container" v-hotkey="keymap">
     <div class="top-panel" ref="topPanel">
@@ -90,7 +93,6 @@ import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 import Vue from "vue";
 import { mapGetters } from "vuex";
 import UpgradePanel from "@/components/upsell/UpgradePanel.vue";
-import AiShellUpsell from "@/components/upsell/AiShellUpsell.vue";
 import type { OnViewRequestListenerParams } from "@/services/plugin/types";
 import { RunQueryResponse } from "@beekeeperstudio/plugin"
 import rawLog from '@bksLogger'
@@ -106,7 +108,6 @@ export default Vue.extend({
     ErrorAlert,
     IsolatedPluginView,
     UpgradePanel,
-    AiShellUpsell,
   },
   props: {
     tab: {
@@ -117,6 +118,7 @@ export default Vue.extend({
   },
   data() {
     return {
+      aiShellDemoUrl: "https://www.youtube.com/watch?v=pAhQUFDeiwc",
       results: [],
       runningCount: 1,
       selectedResult: 0,
