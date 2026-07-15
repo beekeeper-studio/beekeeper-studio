@@ -45,7 +45,8 @@ jobs:
       - name: Install flatpak tools
         if: "contains(matrix.os, 'ubuntu')"
         run: |
-          sudo apt install -y flatpak flatpak-builder rpm
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder rpm
           flatpak --user remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
       - name: Install fpm
