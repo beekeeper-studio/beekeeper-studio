@@ -701,7 +701,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         if (this.remoteDeleted) {
           return true;
         }
-        if (this.isCloud && !this.savedQuery.canWrite) {
+        if (this.isCloud && this.savedQuery && !this.savedQuery.canWrite) {
           return true;
         }
         return false;

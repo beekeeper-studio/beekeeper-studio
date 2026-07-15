@@ -449,7 +449,7 @@ export default Vue.extend({
 });
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .modal-title {
   display: flex;
   align-items: center;

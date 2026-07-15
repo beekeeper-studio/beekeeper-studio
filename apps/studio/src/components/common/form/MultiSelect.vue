@@ -286,7 +286,7 @@ export default Vue.extend({
 });
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .multi-select {
   position: relative;
 }
