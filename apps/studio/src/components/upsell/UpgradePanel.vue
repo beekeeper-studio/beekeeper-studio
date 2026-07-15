@@ -1,16 +1,13 @@
 <template>
   <div class="upgrade-panel" :class="{ 'upgrade-panel--standalone': standalone }">
     <div class="upgrade-panel-scroll">
-      <div class="upgrade-panel-header">
-        <h3 class="title">
-          <i class="material-icons">stars</i>
-          <span>Upgrade Beekeeper Studio</span>
-        </h3>
-      </div>
+      <h3 class="title">
+        <i v-if="featureName" class="material-icons">lock</i>
+        <span>{{ featureName ? 'Upgrade required' : 'Upgrade Beekeeper Studio' }}</span>
+      </h3>
 
-      <p class="text-muted intro">
-        <strong v-if="featureName">{{ featureName }} requires an upgrade.</strong>
-        Upgrade to get exclusive features:
+      <p class="intro">
+        <template v-if="featureName"><strong>{{ featureName }}</strong> is a paid feature. </template>Included with an upgrade:
       </p>
 
       <div class="feature-columns">

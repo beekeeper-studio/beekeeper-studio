@@ -3,36 +3,43 @@
 // Shared content panel used inside the upgrade modal AND inline in tabs
 // (e.g. multi-table export, import-from-file). The modal supplies its own
 // chrome; the standalone variant gives the panel a centered card look.
-// Content is intentionally plain: title, lead-in, two columns of feature
-// bullets, and the CTA buttons.
+//
+// Styled to match the app's standard dialogs (.vue-dialog metrics from
+// vendor/vue-js-modal.scss) so it reads as a system modal, not marketing:
+// same title sizing, content padding, and right-aligned button row.
 
 .upgrade-panel {
   width: 100%;
 
   .upgrade-panel-scroll {
-    padding: 2rem 2rem 1rem;
+    // Same as .vue-dialog .dialog-content
+    padding: $gutter-w * 1.5;
+    padding-bottom: $gutter-w;
   }
 
-  // Header
-  .upgrade-panel-header {
-    .title {
-      display: flex;
-      align-items: center;
-      margin: 0;
-      padding: 0;
-      font-size: 1.2em;
-      font-weight: 500;
-      color: $text-dark;
+  // Same metrics as .vue-dialog .dialog-c-title
+  .title {
+    display: flex;
+    align-items: center;
+    font-size: 1.1rem;
+    line-height: 1;
+    font-weight: 500;
+    margin: 0;
+    padding: 0 ($gutter-w * 2) $gutter-w 0; // right padding clears the close button
+    color: $text-dark;
 
-      i.material-icons {
-        margin-right: 1rem;
-        font-size: 1.2em;
-      }
+    i.material-icons {
+      font-size: 1.1rem;
+      margin-right: 0.5rem;
     }
   }
 
+  // Same metrics as .vue-dialog .dialog-c-subtitle
   .intro {
-    margin: 1.25rem 0 0.75rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: $text;
+    margin: 0 0 $gutter-w;
 
     strong {
       color: $text-dark;
@@ -42,7 +49,7 @@
   // Feature bullets, two columns
   .feature-columns {
     display: flex;
-    gap: 1rem;
+    gap: $gutter-w;
 
     .check-list {
       flex: 1 1 50%;
@@ -64,19 +71,20 @@
     }
   }
 
-  // CTAs — wraps the shared <UpsellButtons /> component
+  // CTAs — wraps the shared <UpsellButtons /> component, which right-aligns
+  // its buttons like .vue-dialog-buttons.
   .cta-row {
-    padding: 1rem 0;
+    padding: $gutter-w 0 $gutter-h;
   }
 
   // Standalone (inline in a tab): give the panel its own card chrome
-  // matching the modal's surface color so the two read the same.
+  // matching the modal's surface (see .v--modal) so the two read the same.
   &.upgrade-panel--standalone {
-    max-width: 620px;
+    max-width: 600px;
     margin: 24px auto;
     background: color.adjust($theme-bg, $lightness: 1%);
     border: 1px solid $border-color;
-    border-radius: 12px;
+    border-radius: 8px;
     overflow: hidden;
     align-self: center;
   }

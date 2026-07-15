@@ -23,16 +23,10 @@
     max-width: 620px;
     min-width: 0;
     flex-shrink: 0;
-    background:
-      linear-gradient(
-        180deg,
-        color.adjust($query-editor-bg, $lightness: 4%) 0%,
-        color.adjust($query-editor-bg, $lightness: 1%) 100%
-      );
-    border: 1px solid rgba($theme-base, 0.08);
-    border-radius: 14px;
+    background: color.adjust($theme-bg, $lightness: 1%);
+    border: 1px solid $border-color;
+    border-radius: 8px;
     padding: 1.4rem 1.7rem 1.2rem;
-    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45);
   }
 
   .head-row {
@@ -449,7 +443,7 @@
     padding: 0.6rem 1.2rem;
     background: rgba($theme-primary, 0.10);
     border-top: 1px solid rgba($theme-primary, 0.22);
-    border-radius: 0 0 14px 14px;
+    border-radius: 0 0 8px 8px;
     color: $text-dark;
     font-size: 0.78rem;
     line-height: 1.35;

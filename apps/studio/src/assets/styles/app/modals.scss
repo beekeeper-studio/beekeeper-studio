@@ -14,9 +14,9 @@
   }
 
   &.upgrade-modal {
+    // Standard dialog chrome; only add scroll handling for short windows.
     .v--modal {
       overflow: hidden;
-      border-radius: 12px;
       max-height: calc(100vh - 40px);
     }
     .v--modal-box {
@@ -24,7 +24,7 @@
       flex-direction: column;
     }
     .dialog-content.upgrade-modal-content {
-      padding: 0;
+      padding: 0; // the panel carries the standard dialog padding
       position: relative;
       display: flex;
       flex-direction: column;
@@ -41,16 +41,6 @@
       flex: 1 1 auto;
       min-height: 0;
       overflow-y: auto;
-    }
-    .upgrade-panel-header {
-      padding-right: 32px; // room for close button
-    }
-    .close-btn {
-      position: absolute;
-      top: 14px;
-      right: 14px;
-      z-index: 2;
-      color: $text-light;
     }
   }
 

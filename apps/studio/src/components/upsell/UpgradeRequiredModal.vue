@@ -4,7 +4,6 @@
       class="vue-dialog beekeeper-modal upgrade-modal"
       name="upgrade-modal"
       height="auto"
-      :width="modalWidth"
       @opened="focusDialog"
     >
       <div
@@ -37,8 +36,7 @@ export default Vue.extend({
   components: { UpgradePanel },
   data() {
     return {
-      featureName: null as string | null,
-      modalWidth: 620
+      featureName: null as string | null
     }
   },
   methods: {
