@@ -12,7 +12,6 @@
             input-id="Database"
             editable
             show-create-button
-            :disabled="disabled"
           />
 
           <toggle-form-area

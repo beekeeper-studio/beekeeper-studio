@@ -135,7 +135,7 @@
     <common-entra-id v-show="azureAuthEnabled" :auth-type="authType" :config="config" :disabled="disabled" />
     <!-- Kerberos requires the real FQDN/SPN; an SSH tunnel routes through localhost and
          breaks SPN matching, so the tunnel is not offered for integrated auth. -->
-    <common-advanced v-show="!azureAuthEnabled && !windowsAuthEnabled" :config="config" />
+    <common-advanced v-show="!azureAuthEnabled && !windowsAuthEnabled" :config="config" :disabled="disabled" />
   </div>
 </template>
 

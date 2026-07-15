@@ -96,7 +96,7 @@
             Close
           </button>
           <button
-            v-if="query.canWrite"
+            v-if="query?.canWrite"
             class="btn btn-primary"
             type="button"
             @click="confirmRestore"
