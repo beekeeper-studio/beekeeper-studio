@@ -17,18 +17,6 @@
   overflow-x: hidden;
   min-width: 0;
 
-  .bg-glow {
-    position: absolute;
-    top: -10%;
-    right: -5%;
-    width: 60%;
-    height: 80%;
-    background:
-      radial-gradient(circle at 60% 40%, rgba($brand-pink, 0.10), transparent 55%),
-      radial-gradient(circle at 30% 80%, rgba($brand-purple, 0.10), transparent 55%);
-    pointer-events: none;
-  }
-
   .compact-card {
     position: relative;
     width: 100%;
@@ -83,17 +71,14 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, rgba($brand-pink, 0.15), rgba($brand-purple, 0.15));
-    border: 1px solid rgba($brand-pink, 0.25);
+    background: rgba($theme-base, 0.06);
+    border: 1px solid $border-color;
     border-radius: 10px;
     flex-shrink: 0;
 
     .material-icons {
       font-size: 20px;
-      background: linear-gradient(135deg, $brand-pink, $brand-purple);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
+      color: $theme-primary;
     }
   }
 
@@ -197,7 +182,7 @@
     display: inline-block;
     width: 0.5rem;
     height: 0.85rem;
-    background: linear-gradient(135deg, $brand-pink, $brand-purple);
+    background: $theme-primary;
     border-radius: 1px;
     animation: cc-caret-blink 0.9s steps(2, end) infinite;
   }
@@ -263,8 +248,8 @@
     overflow-wrap: anywhere;
     min-width: 0;
 
-    .kw  { color: $brand-pink; }
-    .id  { color: $brand-secondary; }
+    .kw  { color: $brand-secondary; }
+    .id  { color: $text-dark; }
     .num { color: $brand-primary; }
     .str { color: $brand-primary; }
   }

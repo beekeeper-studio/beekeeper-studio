@@ -3,242 +3,70 @@
 // Shared content panel used inside the upgrade modal AND inline in tabs
 // (e.g. multi-table export, import-from-file). The modal supplies its own
 // chrome; the standalone variant gives the panel a centered card look.
+// Content is intentionally plain: title, lead-in, two columns of feature
+// bullets, and the CTA buttons.
 
 .upgrade-panel {
   width: 100%;
 
   .upgrade-panel-scroll {
-    padding: 22px 24px 4px;
+    padding: 2rem 2rem 1rem;
   }
 
   // Header
   .upgrade-panel-header {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-
-    .bk-badge {
-      width: 38px;
-      height: 38px;
-      display: block;
-      flex-shrink: 0;
-    }
-    .title-block {
-      flex: 1;
-      min-width: 0;
-      &.triggered {
-        align-self: flex-start;
-      }
-      .eyebrow {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        font-size: 11.5px;
-        color: $theme-primary;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        font-weight: 600;
-        margin-bottom: 2px;
-        .material-icons {
-          font-size: 13px;
-        }
-      }
-      .title {
-        margin: 0;
-        font-size: 18px;
-        font-weight: 500;
-        color: $text-dark;
-        letter-spacing: -0.1px;
-        line-height: 1.25;
-        padding-bottom: 0;
-      }
-    }
-    .indie-pill {
-      display: inline-flex;
+    .title {
+      display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 3px 8px;
-      font-size: 11px;
-      color: $text;
-      background: rgba($theme-base, 0.04);
-      border: 1px solid $border-color;
-      border-radius: 999px;
-      white-space: nowrap;
-      flex-shrink: 0;
-      .dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: $brand-success;
-      }
-    }
-  }
-  .subtitle {
-    margin: 6px 0 0;
-    padding-left: 52px;
-    font-size: 13px;
-    color: $text-light;
-    line-height: 1.5;
-  }
-
-  // What you unlock
-  .unlock-section {
-    padding-top: 18px;
-    .section-label {
-      font-size: 11px;
-      color: $text-lighter;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 10px;
-      font-weight: 600;
-    }
-    .unlock-list {
       margin: 0;
       padding: 0;
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .unlock-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 11px;
-      list-style: none;
-      padding: 0;
-      &:before { content: none; }
-      .unlock-icon {
-        font-size: 18px;
-        margin-top: 1px;
-        flex-shrink: 0;
-      }
-      .unlock-text {
-        min-width: 0;
-        font-size: 13px;
-        line-height: 1.45;
-      }
-      .unlock-title {
-        color: $text-dark;
-        font-weight: 600;
-        margin-right: 6px;
-      }
-      .unlock-blurb {
-        color: $text-light;
-      }
-    }
-    .unlock-more {
-      display: flex;
-      align-items: center;
-      gap: 11px;
-      padding-left: 29px;
-      list-style: none;
-      &:before { content: none; }
-      a {
-        font-size: 12.5px;
-        color: $text-light;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        .link-emphasis {
-          color: $brand-secondary;
-          text-decoration: underline;
-          text-decoration-color: rgba($brand-secondary, 0.4);
-          margin-left: 2px;
-        }
-        .material-icons {
-          font-size: 14px;
-          color: $brand-secondary;
-        }
+      font-size: 1.2em;
+      font-weight: 500;
+      color: $text-dark;
+
+      i.material-icons {
+        margin-right: 1rem;
+        font-size: 1.2em;
       }
     }
   }
 
-  // Testimonial
-  .testimonial {
-    margin: 18px 0 0;
-    padding: 14px 16px;
-    background: rgba($theme-base, 0.03);
-    border: 1px solid $border-color;
-    border-radius: 8px;
-    display: flex;
-    gap: 14px;
-    align-items: flex-start;
+  .intro {
+    margin: 1.25rem 0 0.75rem;
 
-    .avatar {
-      width: 36px;
-      height: 36px;
-      flex-shrink: 0;
-      border-radius: 50%;
-      background: linear-gradient(135deg, rgba($theme-primary, 0.22), rgba($brand-secondary, 0.18));
-      border: 1px solid $border-color;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    strong {
       color: $text-dark;
-      font-size: 14px;
-      font-weight: 600;
-      letter-spacing: 0.4px;
     }
-    .testimonial-body {
-      flex: 1;
-      min-width: 0;
-    }
-    blockquote {
+  }
+
+  // Feature bullets, two columns
+  .feature-columns {
+    display: flex;
+    gap: 1rem;
+
+    .check-list {
+      flex: 1 1 50%;
       margin: 0;
-      font-size: 13px;
-      line-height: 1.55;
-      color: $text-dark;
-      font-weight: 400;
-    }
-    figcaption {
-      margin-top: 6px;
-      font-size: 11.5px;
-      color: $text-light;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      .author {
-        color: $text;
-        font-weight: 600;
-      }
-      .sep {
-        color: $text-lighter;
+      padding-left: 0;
+
+      li {
+        list-style: none;
+        padding-bottom: 10px;
+
+        &:before {
+          font-family: "Material Icons";
+          content: "\e5ca";
+          margin-right: 0.5rem;
+          margin-bottom: -10px;
+          color: $brand-success;
+        }
       }
     }
   }
 
   // CTAs — wraps the shared <UpsellButtons /> component
   .cta-row {
-    margin-top: 18px;
-    padding: 16px 0 4px;
-    border-top: 1px solid $border-color;
-  }
-
-  // Lifetime license footer band
-  .lifetime-footer {
-    padding: 11px 24px;
-    background: rgba($theme-primary, 0.07);
-    border-top: 1px solid rgba($theme-primary, 0.18);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    font-size: 12.5px;
-    color: $text;
-    flex-shrink: 0;
-
-    .material-icons {
-      font-size: 18px;
-      color: $theme-primary;
-    }
-    strong {
-      color: $text-dark;
-      font-weight: 600;
-    }
-    .asterisk {
-      color: $text-light;
-    }
+    padding: 1rem 0;
   }
 
   // Standalone (inline in a tab): give the panel its own card chrome
