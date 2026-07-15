@@ -1,4 +1,4 @@
-import { buildFolderTree, getLonelyItems, isFolderListEmpty } from "@/common/utils/folderTree"
+import { buildFolderTree, getLonelyItems, isFolderListEmpty } from "../../../lib/components/folder-tree/folderTree"
 
 const folders = [
   { id: 1, name: "Root A", parentId: null },

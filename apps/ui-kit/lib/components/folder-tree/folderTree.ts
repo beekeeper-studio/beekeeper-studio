@@ -1,12 +1,17 @@
-import { IFolder } from "@/common/interfaces/IQueryFolder";
+export interface Folder {
+  id: number | null
+  name: string
+  expanded?: boolean
+  parentId?: number | null
+}
 
 export interface FolderTreeSubfolder<T> {
-  folder: IFolder;
+  folder: Folder;
   items: T[];
 }
 
 export interface FolderTreeNode<T> {
-  folder: IFolder;
+  folder: Folder;
   items: T[];
   subfolders: FolderTreeSubfolder<T>[];
 }
@@ -23,11 +28,11 @@ function byPosition(a: { position?: number }, b: { position?: number }) {
  * folder id (e.g. 'queryFolderId' or 'connectionFolderId').
  */
 export function buildFolderTree<T>(
-  folders: IFolder[],
+  folders: Folder[],
   items: T[],
   foreignKey: keyof T & string
 ): FolderTreeNode<T>[] {
-  const childrenOf = (folderId: IFolder["id"]) =>
+  const childrenOf = (folderId: Folder["id"]) =>
     items
       .filter((item) => (item[foreignKey] as unknown) === folderId)
       .sort(byPosition);
@@ -51,14 +56,14 @@ export function buildFolderTree<T>(
  * that no longer exists). Position-sorted.
  */
 export function getLonelyItems<T>(
-  folders: IFolder[],
+  folders: Folder[],
   items: T[],
   foreignKey: keyof T & string
 ): T[] {
   const folderIds = folders.map((f) => f.id);
   return [...items]
     .filter((item) => {
-      const id = item[foreignKey] as unknown as IFolder["id"];
+      const id = item[foreignKey] as unknown as Folder["id"];
       return !id || !folderIds.includes(id);
     })
     .sort(byPosition);
