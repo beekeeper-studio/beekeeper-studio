@@ -19,10 +19,6 @@
       </template>
     </div>
     <portal-target
-      name="menus"
-      multiple
-    />
-    <portal-target
       name="modals"
       multiple
     />
@@ -44,11 +40,17 @@
     <lock-manager />
     <input-ephemeral-modal name="input-ephemeral-modal" />
     <util-died-modal />
+    <share-modal />
     <template v-if="licensesInitialized">
       <trial-expired-modal />
       <license-expired-modal />
       <lifetime-license-expired-modal />
     </template>
+    <portal-target
+      name="menus"
+      multiple
+      class="portal-target-menus"
+    />
   </div>
 </template>
 
@@ -89,6 +91,7 @@ import KeyboardShortcutsModal from '@/components/common/modals/KeyboardShortcuts
 import PluginController from '@/components/plugins/PluginController.vue'
 import LockManager from "@/components/managers/LockManager.vue";
 import InputEphemeralModal from "@/components/common/modals/InputEphemeralModal.vue";
+import ShareModal from "@/components/common/modals/ShareModal.vue";
 import MoveToModal from "@/components/common/modals/MoveToModal.vue";
 
 import rawLog from '@bksLogger'
@@ -106,7 +109,7 @@ export default Vue.extend({
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
     LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
     PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
-    InputEphemeralModal, MoveToModal,
+    InputEphemeralModal, ShareModal, MoveToModal,
   },
   data() {
     return {
@@ -254,7 +257,9 @@ export default Vue.extend({
 })
 </script>
 
-<style>
-
+<style scoped>
+.portal-target-menus::v-deep > * {
+  z-index: 99999;
+}
 
 </style>

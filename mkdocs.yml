@@ -174,6 +174,7 @@ nav:
     - Diagrams: user_guide/entity-relationship-diagrams-erd.md
     - user_guide/backup-restore.md
     - Cloud Workspaces: user_guide/cloud-storage-team-workspaces.md
+    - Sharing & Permissions: user_guide/sharing.md
     - user_guide/security.md
     - Plugins: user_guide/plugins.md
     - Configuration: user_guide/configuration.md

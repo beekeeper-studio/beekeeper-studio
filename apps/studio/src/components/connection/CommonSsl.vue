@@ -8,6 +8,7 @@
         <x-switch
           @click.prevent="toggleSsl"
           :toggled="config.ssl"
+          :disabled="disabled"
         />
       </template>
 
@@ -28,7 +29,7 @@
             <label>CA Cert (optional)</label>
             <file-picker
               v-model="config.sslCaFile"
-              :disabled="!config.ssl"
+              :disabled="disabled || !config.ssl"
             />
           </div>
         </div>
@@ -38,7 +39,7 @@
             <label>Certificate (optional)</label>
             <file-picker
               v-model="config.sslCertFile"
-              :disabled="!config.ssl"
+              :disabled="disabled || !config.ssl"
             />
           </div>
         </div>
@@ -48,7 +49,7 @@
             <label>Key File (optional)</label>
             <file-picker
               v-model="config.sslKeyFile"
-              :disabled="!config.ssl"
+              :disabled="disabled || !config.ssl"
             />
           </div>
         </div>
@@ -64,6 +65,7 @@
                 type="checkbox"
                 name="rememberPassword"
                 v-model="config.sslRejectUnauthorized"
+                :disabled="disabled"
               >
               <span>Reject Unauthorized</span>
               <i
@@ -90,6 +92,7 @@
           <x-switch
             @click.prevent="toggleSsl"
             :toggled="config.ssl"
+            :disabled="disabled"
           />
         </h4>
       </div>
@@ -113,6 +116,10 @@ export default {
     supportComplexSSL: {
       type: Boolean,
       default: true
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
   },
   components: {

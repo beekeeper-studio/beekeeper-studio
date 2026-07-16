@@ -16,6 +16,9 @@ export const CloudQueryAuditModule: Module<State, RootState> = {
     pollError: null,
   },
   actions: {
+    async initialize() {
+      // noop
+    },
     async load() {},
     async poll() {},
     async list(context, queryId: number): Promise<IQueryAudit[]> {

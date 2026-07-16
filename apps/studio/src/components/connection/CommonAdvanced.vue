@@ -7,6 +7,7 @@
       <x-switch
         @click.prevent="config.sshEnabled = !config.sshEnabled"
         :toggled="config.sshEnabled"
+        :disabled="disabled"
       />
     </template>
     <template>
@@ -35,6 +36,7 @@
             <masked-input
               :value="config.sshBastionHost"
               @input="val => config.sshBastionHost = val"
+              :disabled="disabled"
             />
           </div>
           <div class="col s3 form-group">
@@ -43,6 +45,7 @@
               :value="config.sshBastionHostPort"
               @input="val => config.sshBastionHostPort = val"
               placeholder="22"
+              :disabled="disabled"
             />
           </div>
         </div>
@@ -52,6 +55,7 @@
           <select
             class="form-control"
             v-model="config.sshBastionMode"
+            :disabled="disabled"
           >
             <option
               v-for="option in sshModeOptions"
@@ -89,6 +93,7 @@
             <masked-input
               :value="config.sshBastionUsername"
               @input="val => config.sshBastionUsername = val"
+              :disabled="disabled"
             />
           </div>
           <platform-warning location="ssh-agent" />
@@ -111,6 +116,7 @@
                 <masked-input
                   :value="config.sshBastionUsername"
                   @input="val => config.sshBastionUsername = val"
+                  :disabled="disabled"
                 />
               </div>
             </div>
@@ -122,6 +128,7 @@
                 v-model="config.sshBastionKeyfile"
                 :show-hidden-files="true"
                 :default-path="filePickerDefaultPath"
+                :disabled="disabled"
               />
             </div>
             <div class="col s6 form-group">
@@ -130,6 +137,7 @@
                 type="password"
                 class="form-control"
                 v-model="config.sshBastionKeyfilePassword"
+                :disabled="disabled"
               >
             </div>
           </div>
@@ -151,6 +159,7 @@
               <masked-input
                 :value="config.sshBastionUsername"
                 @input="val => config.sshBastionUsername = val"
+                :disabled="disabled"
               />
             </div>
           </div>
@@ -161,6 +170,7 @@
                 class="form-control"
                 type="password"
                 v-model="config.sshBastionPassword"
+                :disabled="disabled"
               >
             </div>
           </div>
@@ -181,6 +191,7 @@
           <masked-input
             :value="config.sshHost"
             @input="val => config.sshHost = val"
+            :disabled="disabled"
           />
         </div>
         <div class="col s3 form-group">
@@ -189,6 +200,7 @@
             :value="config.sshPort"
             @input="val => config.sshPort = val"
             placeholder="22"
+            :disabled="disabled"
           />
         </div>
       </div>
@@ -197,6 +209,7 @@
         <select
           class="form-control"
           v-model="config.sshMode"
+          :disabled="disabled"
         >
           <option
             v-for="option in sshModeOptions"
@@ -233,6 +246,7 @@
           <masked-input
             :value="config.sshUsername"
             @input="val => config.sshUsername = val"
+            :disabled="disabled"
           />
         </div>
         <platform-warning location="ssh-agent" />
@@ -255,6 +269,7 @@
               <masked-input
                 :value="config.sshUsername"
                 @input="val => config.sshUsername = val"
+                :disabled="disabled"
               />
             </div>
           </div>
@@ -267,6 +282,7 @@
               v-model="config.sshKeyfile"
               :show-hidden-files="true"
               :default-path="filePickerDefaultPath"
+              :disabled="disabled"
             />
           </div>
           <div class="col s6 form-group">
@@ -275,6 +291,7 @@
               type="password"
               class="form-control"
               v-model="config.sshKeyfilePassword"
+              :disabled="disabled"
             >
           </div>
         </div>
@@ -295,6 +312,7 @@
             <masked-input
               :value="config.sshUsername"
               @input="val => config.sshUsername = val"
+              :disabled="disabled"
             />
           </div>
         </div>
@@ -305,6 +323,7 @@
               class="form-control"
               type="password"
               v-model="config.sshPassword"
+              :disabled="disabled"
             >
           </div>
         </div>
@@ -324,6 +343,7 @@
             v-model.number="config.sshKeepaliveInterval"
             name="sshKeepaliveInterval"
             placeholder="(in seconds)"
+            :disabled="disabled"
           >
         </div>
       </div>
@@ -339,7 +359,13 @@ import PlatformWarning from './PlatformWarning.vue'
 import AutoModeStatus from './AutoModeStatus.vue'
 
 export default {
-  props: ['config'],
+  props: {
+    config: Object,
+    disabled: {
+      type: Boolean,
+      default: false
+    }
+  },
   components: {
     FilePicker, ExternalLink,
     ToggleFormArea, MaskedInput,

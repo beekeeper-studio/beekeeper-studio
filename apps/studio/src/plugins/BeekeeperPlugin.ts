@@ -16,6 +16,9 @@ export interface ContextOption {
   shortcut?: string
   ultimate?: boolean
   title?: string | ((...args: any[]) => string)
+  /** If true, `disabled` class will be added to the item, and the `handler`
+   * will not be called. */
+  disabled?: boolean
 }
 
 interface MenuProps {
