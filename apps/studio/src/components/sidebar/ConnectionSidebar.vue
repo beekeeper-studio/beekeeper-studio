@@ -279,7 +279,6 @@ import ConnectionListItem from './connection/ConnectionListItem.vue'
 import SidebarLoading from '@/components/common/SidebarLoading.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import Split from 'split.js'
-import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
 import { getLonelyItems, isFolderListEmpty } from '@/common/utils/folderTree'
 import Tree from "../../../../ui-kit/lib/components/tree/Tree.vue";
@@ -295,7 +294,6 @@ export default {
     ConnectionListItem,
     SidebarLoading,
     ErrorAlert,
-    SidebarFolder,
     SidebarSortButtons,
     WorkspaceSidebar,
     Draggable,
@@ -498,22 +496,42 @@ export default {
       event.stopPropagation();
       event.preventDefault();
 
-      const options = []
       const canWrite = folder.canWrite ?? true;
-      if (this.isCloud && !folder.parentId) {
-        options.push({ name: 'New Subfolder', handler: ({ item }) => this.createSubfolder(item) })
+      const isRoot = !folder.parentId;
+      const options = [{
+        name: 'New Subfolder',
+        handler: ({ item }) => this.createSubfolder(item),
+      }];
+      console.log(folder)
+      if (!isRoot) {
+        options.push(...[
+          { type: "divider" },
+          {
+            name: "Share",
+            handler: ({ item }) => this.share(item),
+            hideIf: !this.isCloud || folder.personal,
+          },
+          {
+            type: "divider",
+            hideIf: !canWrite,
+          },
+          {
+            name: 'Rename',
+            handler: ({ item }) => this.renameFolder(item),
+            hideIf: !canWrite,
+          },
+          {
+            name: 'Move',
+            handler: ({ item }) => this.trigger(AppEvent.openMoveFileModal, { type: 'connectionFolder', value: item }),
+            hideIf: !canWrite,
+          },
+          {
+            name: 'Delete',
+            handler: ({ item }) => this.deleteFolder(item),
+            hideIf: !canWrite,
+          },
+        ].filter(({ hideIf }) => !hideIf));
       }
-      if (!canWrite) {
-        // do nothing
-      }
-      options.push(...[
-        { name: 'Rename', handler: ({ item }) => this.renameFolder(item) },
-        folder.parentId && {
-          name: 'Move',
-          handler: ({ item }) => this.trigger(AppEvent.openMoveFileModal, { type: 'connectionFolder', value: item }),
-        },
-        { name: 'Delete', handler: ({ item }) => this.deleteFolder(item) }
-      ].filter(Boolean))
       this.$bks.openMenu({ event, item: folder, options })
     },
     /** @param event {import("../../../../ui-kit/lib/components/tree/types").TreeNodeMoveEvent} */
