@@ -22,8 +22,12 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     undo: {
       id: 'undo',
       label: "Undo",
+      // Displayed only — the focused editor (CodeMirror, text inputs)
+      // handles the shortcut itself. Registering it would fire an extra
+      // webContents.undo() per keypress, undoing 2-3 steps at once.
       accelerator: "CommandOrControl+Z",
       click: actionHandler.undo,
+      registerAccelerator: false,
       role: 'undo',
     },
     redo: {
@@ -31,6 +35,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       label: "Redo",
       accelerator: platformInfo.isWindows ? 'Ctrl+Y' : 'Shift+CommandOrControl+Z',
       click: actionHandler.redo,
+      registerAccelerator: false,
       role: 'redo',
     },
     cut: {
