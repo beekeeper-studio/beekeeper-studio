@@ -114,6 +114,10 @@ export default defineConfig({
           __dirname,
           "lib/components/super-formatter/SuperFormatter.vue"
         ),
+        "vue/tree": resolve(
+          __dirname,
+          "lib/components/tree/Tree.vue"
+        ),
         "config/context-menu": resolve(__dirname, "lib/config/context-menu.ts"),
       },
     },

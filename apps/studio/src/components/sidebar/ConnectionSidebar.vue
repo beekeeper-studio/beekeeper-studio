@@ -165,106 +165,25 @@
               v-else
               class="list-body"
             >
-              <sidebar-folder
-                v-for="{ folder, items, subfolders } in foldersWithConnections"
-                :key="`${folder.id}-${items.length}`"
-                :name="folder.name"
-                :children-count="items.length"
-                :rename="renamingFolderId === folder.id"
-                :empty="items.length === 0 && subfolders.length === 0"
-                :expanded-initially="getFolderExpanded(folder.id)"
-                @toggle="onFolderToggle(folder.id, $event)"
-                @contextmenu.native.prevent="showFolderContextMenu($event, folder)"
-                @header-drop="onConnectionFolderHeaderDrop(folder)"
-                @rename-submit="submitFolderRename(folder, $event)"
-                @rename-cancel="renamingFolderId = null"
+              <tree
+                :folders="folders"
+                :items="connections ?? []"
+                item-parent-key="connectionFolderId"
+                @bks-tree-folder-contextmenu="showFolderContextMenu($event.event, $event.node.ref)"
+                @bks-tree-node-move="handleTreeNodeMove"
               >
-                <Draggable
-                  :list="items"
-                  group="connections"
-                  ghost-class="drag-ghost"
-                  @start="onConnectionDragStart($event, items)"
-                  @end="draggingConnection = null"
-                  @change="onConnectionDrop($event, folder, items)"
-                >
+                <template #item="{ node }">
                   <connection-list-item
-                    v-for="c in items"
-                    :key="c.id"
-                    :config="c"
+                    :config="node.ref"
                     :selected-config="selectedConfig"
-                    :show-duplicate="true"
-                    :pinned="pinnedConnections.includes(c)"
+                    :is-recent-list="false"
                     :privacy-mode="privacyMode"
-                    :class="{ 'drag-pending': (pendingSaveIds || []).includes(c.id) }"
                     @edit="edit"
-                    @remove="remove"
-                    @duplicate="duplicate"
+                    @remove="removeUsedConfig"
                     @doubleClick="connect"
                   />
-                </Draggable>
-                <sidebar-folder
-                  v-for="{ folder: subfolder, items: subConnections } in subfolders"
-                  :key="`${subfolder.id}-${subConnections.length}`"
-                  :name="subfolder.name"
-                  :children-count="subConnections.length"
-                  :rename="renamingFolderId === subfolder.id"
-                  :empty="subConnections.length === 0"
-                  :expanded-initially="getFolderExpanded(subfolder.id)"
-                  @toggle="onFolderToggle(subfolder.id, $event)"
-                  @contextmenu.native.prevent="showFolderContextMenu($event, subfolder)"
-                  @header-drop="onConnectionFolderHeaderDrop(subfolder)"
-                  @rename-submit="submitFolderRename(subfolder, $event)"
-                  @rename-cancel="renamingFolderId = null"
-                >
-                  <Draggable
-                    :list="subConnections"
-                    group="connections"
-                    ghost-class="drag-ghost"
-                    @start="onConnectionDragStart($event, subConnections)"
-                    @end="draggingConnection = null"
-                    @change="onConnectionDrop($event, subfolder, subConnections)"
-                  >
-                    <connection-list-item
-                      v-for="c in subConnections"
-                      :key="c.id"
-                      :config="c"
-                      :selected-config="selectedConfig"
-                      :show-duplicate="true"
-                      :pinned="pinnedConnections.includes(c)"
-                      :privacy-mode="privacyMode"
-                      :class="{ 'drag-pending': (pendingSaveIds || []).includes(c.id) }"
-                      @edit="edit"
-                      @remove="remove"
-                      @duplicate="duplicate"
-                      @doubleClick="connect"
-                    />
-                  </Draggable>
-                </sidebar-folder>
-              </sidebar-folder>
-              <Draggable
-                :list="lonelyConnections"
-                :group="isCloud ? { name: 'connections', put: false } : 'connections'"
-                ghost-class="drag-ghost"
-                @start="onConnectionDragStart($event, lonelyConnections)"
-                @end="draggingConnection = null"
-                @change="onConnectionDrop($event, null, lonelyConnections)"
-                @contextmenu.self.prevent="showLonelyContextMenu($event)"
-              >
-                <connection-list-item
-                  v-for="c in lonelyConnections"
-                  :key="c.id"
-                  :config="c"
-                  :selected-config="selectedConfig"
-                  :show-duplicate="true"
-                  :pinned="pinnedConnections.includes(c)"
-                  :privacy-mode="privacyMode"
-                  :class="{ 'drag-pending': (pendingSaveIds || []).includes(c.id) }"
-                  @edit="edit"
-                  @remove="remove"
-                  @duplicate="duplicate"
-                  @doubleClick="connect"
-                />
-              </Draggable>
+                </template>
+              </tree>
             </nav>
           </div>
         </div>
@@ -363,6 +282,7 @@ import Split from 'split.js'
 import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
 import { getLonelyItems, isFolderListEmpty } from '@/common/utils/folderTree'
+import Tree from "../../../../ui-kit/lib/components/tree/Tree.vue";
 import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
 import Draggable from 'vuedraggable'
@@ -378,7 +298,8 @@ export default {
     SidebarFolder,
     SidebarSortButtons,
     WorkspaceSidebar,
-    Draggable
+    Draggable,
+    Tree,
   },
   props: ['selectedConfig'],
   data: () => ({
@@ -414,7 +335,8 @@ export default {
       connectionsLoading: 'loading',
       connectionsError: 'error',
       connectionFilter: 'filter',
-      pendingSaveIds: 'pendingSaveIds'
+      pendingSaveIds: 'pendingSaveIds',
+      connections: 'items',
     }),
     ...mapState('data/connectionFolders', {
       folders: 'items',
@@ -574,6 +496,7 @@ export default {
         return;
       }
       event.stopPropagation();
+      event.preventDefault();
 
       const options = []
       const canWrite = folder.canWrite ?? true;
@@ -592,6 +515,33 @@ export default {
         { name: 'Delete', handler: ({ item }) => this.deleteFolder(item) }
       ].filter(Boolean))
       this.$bks.openMenu({ event, item: folder, options })
+    },
+    /** @param event {import("../../../../ui-kit/lib/components/tree/types").TreeNodeMoveEvent} */
+    async handleTreeNodeMove({ source, target, position, parentId }) {
+      try {
+        if (source.refType === 'folder') {
+          if (parentId === (source.ref.parentId ?? null)) return
+          await this.$store.dispatch('data/connectionFolders/save', {
+            ...source.ref,
+            parentId,
+          })
+        } else {
+          await this.$store.dispatch('data/connections/reorder', {
+            item: source.ref,
+            connectionFolderId: parentId,
+            position: this.treeDropSlot(target, position),
+          })
+        }
+      } catch (ex) {
+        this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
+      }
+    },
+    // `position.before`/`after` reference connection ids, and folders are not in
+    // that list — the tree renders subfolders above items. So dropping next to a
+    // folder only decides the parent, not the slot.
+    treeDropSlot(target, position) {
+      if (target.refType !== 'item') return { before: null }
+      return position === 'after' ? { after: target.id } : { before: target.id }
     },
     share(folder) {
       this.trigger(AppEvent.openShareModal, {
