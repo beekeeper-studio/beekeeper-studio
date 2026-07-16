@@ -2,6 +2,7 @@ import { TransportFavoriteQuery } from '@/common/transport';
 import _ from 'lodash'
 import Vue from 'vue'
 import { mutationsFor, DataState, DataStore, utilActionsFor } from '../DataModuleBase'
+import { accessGrantMutations, localAccessGrantActions } from '@/store/modules/data/access_grant/accessGrantStore'
 
 export const UtilQueryModule: DataStore<TransportFavoriteQuery, DataState<TransportFavoriteQuery>> = {
   namespaced: true,
@@ -17,9 +18,11 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, DataState<Transp
     // more mutations go here
     savedQueryFilter(state: DataState<TransportFavoriteQuery>, str: string) {
       state.filter = str;
-    }
+    },
+    ...accessGrantMutations(),
   }, { field: 'title', direction : 'asc'}),
   actions: utilActionsFor<TransportFavoriteQuery>('query', {
+    ...localAccessGrantActions(),
     setSavedQueryFilter: _.debounce(function (context, filter) {
       context.commit('savedQueryFilter', filter);
     }, 500),

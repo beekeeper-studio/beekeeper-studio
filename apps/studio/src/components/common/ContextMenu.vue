@@ -11,7 +11,7 @@
           :key="index"
           @click.stop="optionClicked(option, $event)"
           class="vue-simple-context-menu__item"
-          :class="[typeof option.class === 'function' ? option.class({ item }) : option.class, (option.type === 'divider' ? 'vue-simple-context-menu__divider' : '')]"
+          :class="[typeof option.class === 'function' ? option.class({ item }) : option.class, (option.type === 'divider' ? 'vue-simple-context-menu__divider' : ''), option.disabled ? 'disabled' : '']"
           :title="typeof option.title === 'function' ? option.title({ item }) : option.title"
         >
           <span v-html="option.name" />
@@ -114,7 +114,9 @@ export default Vue.extend({
       this.hideContextMenu()
     },
     optionClicked(option: ContextOption, event: any) {
-      option.handler({ item: this.item, option, event })
+      if (!option.disabled) {
+        option.handler({ item: this.item, option, event })
+      }
       this.hideContextMenu()
     },
     onEscKeyRelease(event) {

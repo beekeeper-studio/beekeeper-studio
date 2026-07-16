@@ -25,7 +25,7 @@
 
       <div class="form-group">
         <label for="connectionType">Connection Method</label>
-        <select v-model="connectionMethod">
+        <select v-model="connectionMethod" :disabled="disabled">
           <option value="manual">
             Manual Host and Port
           </option>
@@ -39,12 +39,13 @@
         <common-server-inputs
           :support-complex-s-s-l="false"
           ssl-help="Requires your wallet to be already set up in TNS_ADMIN" :config="config"
+          :disabled="disabled"
         />
         <div class="form-group">
           <label for="serviceName">Service Name</label>
-          <input type="text" class="form-control" v-model="config.serviceName">
+          <input type="text" class="form-control" v-model="config.serviceName" :disabled="disabled">
         </div>
-        <common-advanced :config="config" />
+        <common-advanced :config="config" :disabled="disabled" />
       </div>
       <div v-if="connectionMethod === 'connectionString'">
         <div class="form-group gutter">
@@ -52,16 +53,17 @@
           <textarea
             v-model="config.options.connectionString" name="connectionString" class="form-control" id=""
             cols="30" rows="5"
+            :disabled="disabled"
           />
         </div>
         <div class="row gutter">
           <div class="col s6 form-group">
             <label for="user">User (optional)</label>
-            <input type="text" name="user" v-model="config.username" class="form-control">
+            <input type="text" name="user" v-model="config.username" class="form-control" :disabled="disabled">
           </div>
           <div class="col s6 form-group">
             <label for="password">Password (optional)</label>
-            <input type="password" v-model="config.password" class="form-control">
+            <input type="password" v-model="config.password" class="form-control" :disabled="disabled">
           </div>
         </div>
         <br>
@@ -93,7 +95,13 @@ import { mapState } from 'vuex'
 
 export default Vue.extend({
   components: { CommonServerInputs, CommonAdvanced, SettingsInput },
-  props: ['config'],
+  props: {
+    config: Object,
+    disabled: {
+      type: Boolean,
+      default: false
+    }
+  },
   data: () => ({
     help: "Optional, but required for advanced functionality like Native Network Encryption.",
     oracleExpanded: true,

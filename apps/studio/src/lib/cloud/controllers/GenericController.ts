@@ -63,4 +63,11 @@ export abstract class GenericController<T extends HasId> {
     const response = await this.axios.delete(url(this.path, q.id))
     return res(response, 'success')
   }
+
+  async import(qs: T[]): Promise<T[]> {
+    const response = await this.axios.post(url(this.path, "import"), {
+      [this.plural]: qs,
+    });
+    return res(response, this.plural);
+  }
 }

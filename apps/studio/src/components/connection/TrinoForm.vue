@@ -1,7 +1,7 @@
 <template>
   <div class="trino-form">
     <div class="with-connection-type">
-      <common-server-inputs :config="config" />
+      <common-server-inputs :config="config" :disabled="disabled" />
     </div>
   </div>
 </template>
@@ -12,7 +12,13 @@
 
   export default {
     components: { CommonServerInputs },
-    props: ['config']
+    props: {
+      config: Object,
+      disabled: {
+        type: Boolean,
+        default: false
+      }
+    }
 
   }
 </script>
