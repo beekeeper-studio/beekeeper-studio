@@ -165,4 +165,9 @@ export default Vue.extend({
   width: 100%;
   overflow: visible;
 }
+
+/** --depth is from Tree.vue */
+.list-group .list-item .list-item-btn {
+  padding-left: calc(var(--depth) * 1.2rem);
+}
 </style>

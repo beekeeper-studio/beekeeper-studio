@@ -78,35 +78,19 @@
           class="list-body"
           ref="wrapper"
         >
-          <sidebar-folder
-            v-for="({ folder, items, subfolders }) in foldersWithQueries"
-            :key="`${folder.id}-${items.length}`"
-            :name="folder.name"
-            :children-count="items.length"
-            :rename="renamingFolderId === folder.id"
-            :empty="items.length === 0 && subfolders.length === 0"
-            :expanded-initially="getFolderExpanded(folder.id)"
-            @toggle="onFolderToggle(folder.id, $event)"
-            @contextmenu.native.prevent="showFolderContextMenu($event, folder)"
-            @header-drop="onQueryFolderHeaderDrop(folder)"
-            @rename-submit="submitFolderRename(folder, $event)"
-            @rename-cancel="renamingFolderId = null"
+          <tree
+            :folders="folders"
+            :items="savedQueries ?? []"
+            item-parent-key="queryFolderId"
+            @bks-tree-folder-contextmenu="showFolderContextMenu($event.event, $event.node.ref)"
+            @bks-tree-node-move="handleTreeNodeMove"
           >
-            <Draggable
-              :list="items"
-              group="queries"
-              ghost-class="drag-ghost"
-              @start="onQueryDragStart($event, items)"
-              @end="draggingQuery = null"
-              @change="onQueryDrop($event, folder, items)"
-            >
+            <template #item="{ node }">
               <favorite-list-item
-                v-for="item in items"
-                :key="item.id"
-                :item="item"
-                :active="isActive(item)"
-                :selected="selected === item"
-                :class="{ 'drag-pending': (pendingSaveIds || []).includes(item.id) }"
+                :item="node.ref"
+                :active="isActive(node.ref)"
+                :selected="selected === node.ref"
+                :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.ref.id) }"
                 @remove="remove"
                 @select="select"
                 @open="open"
@@ -114,70 +98,8 @@
                 @export="exportTo"
                 @duplicate="duplicate"
               />
-            </Draggable>
-            <sidebar-folder
-              v-for="({ folder: subfolder, items: subQueries }) in subfolders"
-              :key="`${subfolder.id}-${subQueries.length}`"
-              :name="subfolder.name"
-              :children-count="subQueries.length"
-              :rename="renamingFolderId === subfolder.id"
-              :empty="subQueries.length === 0"
-              :expanded-initially="getFolderExpanded(subfolder.id)"
-              @toggle="onFolderToggle(subfolder.id, $event)"
-              @contextmenu.native.prevent="showFolderContextMenu($event, subfolder)"
-              @header-drop="onQueryFolderHeaderDrop(subfolder)"
-              @rename-submit="submitFolderRename(subfolder, $event)"
-              @rename-cancel="renamingFolderId = null"
-            >
-              <Draggable
-                :list="subQueries"
-                group="queries"
-                ghost-class="drag-ghost"
-                @start="onQueryDragStart($event, subQueries)"
-                @end="draggingQuery = null"
-                @change="onQueryDrop($event, subfolder, subQueries)"
-              >
-                <favorite-list-item
-                  v-for="item in subQueries"
-                  :key="item.id"
-                  :item="item"
-                  :active="isActive(item)"
-                  :selected="selected === item"
-                  :class="{ 'drag-pending': (pendingSaveIds || []).includes(item.id) }"
-                  @remove="remove"
-                  @select="select"
-                  @open="open"
-                  @open-history="openHistory"
-                  @export="exportTo"
-                  @duplicate="duplicate"
-                />
-              </Draggable>
-            </sidebar-folder>
-          </sidebar-folder>
-          <Draggable
-            :list="lonelyQueries"
-            :group="isCloud ? { name: 'queries', put: false } : 'queries'"
-            ghost-class="drag-ghost"
-            @start="onQueryDragStart($event, lonelyQueries)"
-            @end="draggingQuery = null"
-            @change="onQueryDrop($event, null, lonelyQueries)"
-            @contextmenu.self.prevent="showLonelyContextMenu($event)"
-          >
-            <favorite-list-item
-              v-for="item in lonelyQueries"
-              :key="item.id"
-              :item="item"
-              :active="isActive(item)"
-              :selected="selected === item"
-              :class="{ 'drag-pending': (pendingSaveIds || []).includes(item.id) }"
-              @remove="remove"
-              @select="select"
-              @open="open"
-              @open-history="openHistory"
-              @export="exportTo"
-              @duplicate="duplicate"
-            />
-          </Draggable>
+            </template>
+          </tree>
         </nav>
         <div
           class="empty"
@@ -257,9 +179,10 @@ import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
 import { getLonelyItems, isFolderListEmpty } from '@/common/utils/folderTree'
 import Draggable from 'vuedraggable'
+import Tree from "../../../../../ui-kit/lib/components/tree/Tree.vue";
 
 export default {
-  components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder, Draggable },
+  components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder, Draggable, Tree },
   data: function () {
     return {
       checkedFavorites: [],
@@ -400,24 +323,71 @@ export default {
         return;
       }
       event.stopPropagation();
+      event.preventDefault();
 
-      const options = []
       const canWrite = folder.canWrite ?? true;
-      if (this.isCloud && !folder.parentId) {
-        options.push({ name: 'New Subfolder', handler: ({ item }) => this.createSubfolder(item) })
+      const isRoot = !folder.parentId;
+      const options = [{
+        name: 'New Subfolder',
+        handler: ({ item }) => this.createSubfolder(item),
+      }];
+      if (!isRoot) {
+        options.push(...[
+          { type: "divider" },
+          {
+            name: "Share",
+            handler: ({ item }) => this.share(item),
+            hideIf: !this.isCloud || folder.personal,
+          },
+          {
+            type: "divider",
+            hideIf: !canWrite,
+          },
+          {
+            name: 'Rename',
+            handler: ({ item }) => this.renameQueryFolder(item),
+            hideIf: !canWrite,
+          },
+          {
+            name: 'Move',
+            handler: ({ item }) => this.trigger(AppEvent.openMoveFileModal, { type: 'queryFolder', value: item }),
+            hideIf: !canWrite,
+          },
+          {
+            name: 'Delete',
+            handler: ({ item }) => this.deleteFolder(item),
+            hideIf: !canWrite,
+          },
+        ].filter(({ hideIf }) => !hideIf));
       }
-      if (!canWrite) {
-        // do nothing
-      }
-      options.push(...[
-        { name: 'Rename', handler: ({ item }) => this.renameQueryFolder(item) },
-        folder.parentId && {
-          name: 'Move',
-          handler: ({ item }) => this.trigger(AppEvent.openMoveFileModal, { type: 'queryFolder', value: item }),
-        },
-        { name: 'Delete', handler: ({ item }) => this.deleteFolder(item) }
-      ].filter(Boolean))
       this.$bks.openMenu({ event, item: folder, options })
+    },
+    /** @param event {import("../../../../../ui-kit/lib/components/tree/types").TreeNodeMoveEvent} */
+    async handleTreeNodeMove({ source, target, position, parentId }) {
+      try {
+        if (source.refType === 'folder') {
+          if (parentId === (source.ref.parentId ?? null)) return
+          await this.$store.dispatch('data/queryFolders/save', {
+            ...source.ref,
+            parentId,
+          })
+        } else {
+          await this.$store.dispatch('data/queries/reorder', {
+            item: source.ref,
+            queryFolderId: parentId,
+            position: this.treeDropSlot(target, position),
+          })
+        }
+      } catch (ex) {
+        this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
+      }
+    },
+    // `position.before`/`after` reference query ids, and folders are not in that
+    // list — the tree renders subfolders above items. So dropping next to a
+    // folder only decides the parent, not the slot.
+    treeDropSlot(target, position) {
+      if (target.refType !== 'item') return { before: null }
+      return position === 'after' ? { after: target.id } : { before: target.id }
     },
     share(folder) {
       this.trigger(AppEvent.openShareModal, {
