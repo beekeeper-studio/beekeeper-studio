@@ -333,6 +333,16 @@ export default {
       if (!this.sortInitialized) return
       await this.reorderBySort(newSort)
     },
+    loading() {
+      if (this.loading) {
+        return;
+      }
+      const ids = new Set(this.expandedFolderIds);
+      for (const folder of this.rootFolders) {
+        ids.add(folder.id)
+      }
+      this.expandedFolderIds = [...ids];
+    },
   },
   computed: {
     ...mapState('data/connections', {

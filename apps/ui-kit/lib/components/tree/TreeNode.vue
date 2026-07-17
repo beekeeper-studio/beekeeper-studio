@@ -26,9 +26,16 @@
       </slot>
     </div>
 
-    <template v-if="node.type === 'folder'">
+    <template v-if="node.type === 'folder' && expanded">
+      <div
+        v-if="!node.nodes?.length"
+        class="BksTree-empty"
+        :style="{ '--depth': depth + 1 }"
+      >
+        No items
+      </div>
       <tree-node
-        v-for="child of expanded ? node.nodes ?? [] : []"
+        v-for="child of node.nodes ?? []"
         :key="nodeKey(child)"
         :node="child"
         :internal-id="internalId"
@@ -191,6 +198,12 @@ export default Vue.extend({
 <style scoped lang="scss">
 .BksTree-node {
   position: relative;
+}
+
+.BksTree-empty {
+  padding-block: 0.25rem;
+  padding-left: calc(var(--depth) * 1rem + 1.3rem);
+  color: var(--bks-text-lighter);
 }
 
 .BksTree-row {

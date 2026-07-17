@@ -82,6 +82,7 @@
             :folders="folders"
             :items="savedQueries ?? []"
             item-parent-key="queryFolderId"
+            :expanded-folder-ids.sync="expandedFolderIds"
             @bks-tree-node-move="handleTreeNodeMove"
           >
             <template #empty>
@@ -198,7 +199,20 @@ export default {
       folderExpandedState: {},
       draggingQuery: null,
       renamingFolderId: null,
+      expandedFolderIds: [],
     }
+  },
+  watch: {
+    loading() {
+      if (this.loading) {
+        return;
+      }
+      const ids = new Set(this.expandedFolderIds);
+      for (const folder of this.rootFolders) {
+        ids.add(folder.id)
+      }
+      this.expandedFolderIds = [...ids];
+    },
   },
   mounted() {
     this.folderExpandedState = SmartLocalStorage.getJSON('queryFolderExpanded-v1', {})
