@@ -1,55 +1,42 @@
 <template>
-  <div class="BksTree-nodes">
+  <div class="BksTree-node">
     <div
-      class="BksTree-node"
-      v-for="node of nodes ?? []"
-      :key="nodeKey(node)"
+      class="BksTree-row"
+      draggable="true"
+      :style="{ '--depth': depth }"
+      :data-node-type="node.type"
+      :data-drop-target="dropTargetFor(node)"
+      @click="handleClick"
+      @dblclick="handleDblClick"
+      @dragstart="handleDragStart($event, node)"
+      @dragover="handleDragOver($event, node)"
+      @dragleave="handleDragLeave($event, node)"
+      @drop="handleDrop($event, node)"
+      @dragend="$emit('node-dragend')"
     >
-      <div
-        class="BksTree-row"
-        draggable="true"
-        :style="{ '--depth': depth }"
-        :data-node-type="node.refType"
-        :data-drop-target="dropTargetFor(node)"
-        @dragstart="handleDragStart($event, node)"
-        @dragover="handleDragOver($event, node)"
-        @dragleave="handleDragLeave($event, node)"
-        @drop="handleDrop($event, node)"
-        @dragend="$emit('node-dragend')"
+      <slot
+        v-if="node.type === 'folder'"
+        name="folder"
+        :props="folderProps"
       >
-        <button
-          v-if="node.refType === 'folder'"
-          class="folder"
-          type="button"
-          @click.prevent="toggleExpanded(node)"
-          @contextmenu="handleFolderContextmenu($event, node)"
-        >
-          <i
-            class="material-icons expand-icon"
-            :class="{ expanded: expandedFolderIds.includes(node.id) }"
-          >
-            keyboard_arrow_right
-          </i>
-          <i class="material-icons folder-icon">folder</i>
-          <span class="folder-name">
-            {{ node.ref.name }} ({{ node.nodes?.length ?? 0 }})
-          </span>
-        </button>
-        <slot v-else name="item" :node="node" :depth="depth">
-          {{ node.ref["name"] ?? node.id }}
-        </slot>
-      </div>
+        <tree-folder v-bind="folderProps" />
+      </slot>
+      <slot v-else name="item" :node="node" :depth="depth">
+        {{ node.ref["name"] ?? node.id }}
+      </slot>
+    </div>
 
+    <template v-if="node.type === 'folder'">
       <tree-node
-        v-if="node.refType === 'folder'"
-        :nodes="expandedFolderIds.includes(node.id) ? node.nodes : []"
+        v-for="child of expanded ? node.nodes ?? [] : []"
+        :key="nodeKey(child)"
+        :node="child"
         :internal-id="internalId"
         :expanded-folder-ids="expandedFolderIds"
         :drop-target="dropTarget"
         :can-drop="canDrop"
         :depth="depth + 1"
-        @toggle-expanded="toggleExpanded"
-        @folder-contextmenu="$emit('folder-contextmenu', $event)"
+        @toggle-expanded="$emit('toggle-expanded', $event)"
         @node-dragstart="$emit('node-dragstart', $event)"
         @node-dragover="$emit('node-dragover', $event)"
         @node-dragleave="$emit('node-dragleave', $event)"
@@ -63,26 +50,29 @@
           <slot name="item" v-bind="slotProps" />
         </template>
       </tree-node>
-    </div>
+    </template>
   </div>
 </template>
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
+import TreeFolder from "./TreeFolder.vue";
 import {
   DropPosition,
   DropTarget,
+  FolderNode,
   Node,
-  TreeFolderContextmenuEvent,
   nodeKey,
 } from "./types";
 
 export default Vue.extend({
   name: "TreeNode",
 
+  components: { TreeFolder },
+
   props: {
-    nodes: {
-      type: Array as PropType<Node[]>,
+    node: {
+      type: Object as PropType<Node>,
       required: true,
     },
     internalId: {
@@ -115,6 +105,19 @@ export default Vue.extend({
     dragMimeType(): string {
       return `application/x-bks-tree-${this.internalId}`;
     },
+
+    expanded(): boolean {
+      return this.expandedFolderIds.includes(this.node.id);
+    },
+
+    // Only rendered behind a type === "folder" guard.
+    folderProps(): { node: FolderNode; depth: number; expanded: boolean } {
+      return {
+        node: this.node as FolderNode,
+        depth: this.depth,
+        expanded: this.expanded,
+      };
+    },
   },
 
   methods: {
@@ -127,7 +130,7 @@ export default Vue.extend({
 
     zoneAt(event: DragEvent, node: Node): DropPosition {
       // Folders have no position, so they can only be dropped into.
-      if (node.refType === "folder") return "inside";
+      if (node.type === "folder") return "inside";
       const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
       const offset = (event.clientY - rect.top) / rect.height;
       return offset < 0.5 ? "before" : "after";
@@ -167,14 +170,20 @@ export default Vue.extend({
       this.$emit("node-drop", node);
     },
 
-    handleFolderContextmenu(event: MouseEvent, node: Node) {
-      const payload: TreeFolderContextmenuEvent = { event, node };
-      this.$emit("folder-contextmenu", payload);
+    handleClick(event: MouseEvent) {
+      if (this.node.type !== "folder") {
+        return;
+      }
+      const target = event.target as HTMLElement | null;
+      if (!target?.closest("[data-trigger-expand-on-click]")) {
+        return;
+      }
+      this.$emit("toggle-expanded", this.node);
     },
 
-    toggleExpanded(node: Node) {
-      this.$emit("toggle-expanded", node);
-    },
+    handleDblClick() {
+      this.$emit("toggle-expanded", this.node);
+    }
   },
 });
 </script>
@@ -213,51 +222,9 @@ export default Vue.extend({
   }
 }
 
-.folder {
-  display: flex;
-  align-items: center;
-  border: none;
-  background-color: transparent;
-  padding: 0;
-  width: 100%;
-  border-radius: 4px;
-  cursor: pointer;
-  color: rgb(from var(--bks-theme-base) r g b / 77%);
-  font-size: 1rem;
-  height: 1.75rem;
-  padding-left: calc(var(--depth) * 1rem);
-
-  &:hover {
-    background-color: rgb(from var(--bks-theme-base) r g b / 3.5%);
-
-    .expand-icon {
-      color: var(--bks-text-dark);
-    }
-  }
-}
-
-.folder-name {
-  margin-left: 0.5rem;
-}
-
 .empty-state {
   padding-block: 0.25rem;
   padding-left: 1.3rem;
   color: var(--bks-text-lighter);
-}
-
-.material-icons.folder-icon {
-  color: var(--bks-text-lighter);
-  font-size: 1rem;
-  margin-left: 0.25rem;
-}
-
-.material-icons.expand-icon {
-  color: var(--bks-text-lighter);
-  font-size: 1.25rem;
-
-  &.expanded {
-    transform: rotate(90deg);
-  }
 }
 </style>

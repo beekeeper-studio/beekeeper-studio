@@ -82,9 +82,14 @@
             :folders="folders"
             :items="savedQueries ?? []"
             item-parent-key="queryFolderId"
-            @bks-tree-folder-contextmenu="showFolderContextMenu($event.event, $event.node.ref)"
             @bks-tree-node-move="handleTreeNodeMove"
           >
+            <template #folder="{ props }">
+              <tree-folder
+                v-bind="props"
+                @contextmenu.native="showFolderContextMenu($event, props.node.ref)"
+              />
+            </template>
             <template #item="{ node }">
               <favorite-list-item
                 :item="node.ref"
@@ -180,9 +185,10 @@ import { AppEvent } from '@/common/AppEvent'
 import { getLonelyItems, isFolderListEmpty } from '@/common/utils/folderTree'
 import Draggable from 'vuedraggable'
 import Tree from "../../../../../ui-kit/lib/components/tree/Tree.vue";
+import TreeFolder from "../../../../../ui-kit/lib/components/tree/TreeFolder.vue";
 
 export default {
-  components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder, Draggable, Tree },
+  components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder, Draggable, Tree, TreeFolder },
   data: function () {
     return {
       checkedFavorites: [],
@@ -365,7 +371,7 @@ export default {
     /** @param event {import("../../../../../ui-kit/lib/components/tree/types").TreeNodeMoveEvent} */
     async handleTreeNodeMove({ source, target, position, parentId }) {
       try {
-        if (source.refType === 'folder') {
+        if (source.type === 'folder') {
           if (parentId === (source.ref.parentId ?? null)) return
           await this.$store.dispatch('data/queryFolders/save', {
             ...source.ref,
@@ -386,7 +392,7 @@ export default {
     // list — the tree renders subfolders above items. So dropping next to a
     // folder only decides the parent, not the slot.
     treeDropSlot(target, position) {
-      if (target.refType !== 'item') return { before: null }
+      if (target.type !== 'item') return { before: null }
       return position === 'after' ? { after: target.id } : { before: target.id }
     },
     share(folder) {

@@ -31,16 +31,16 @@ function byPosition(a: { position?: number }, b: { position?: number }) {
 export function buildTree<T>(
   folders: Folderable[],
   items: T[],
-  parentKey: keyof T & string
+  parentKey?: keyof T & string
 ): Tree {
   const folderIds = new Set(folders.map((folder) => folder.id));
-  const parentOf = (item: T) => (item[parentKey] ?? null) as Folderable["id"];
+  const parentOf = (item: T) => (!parentKey ? null : (item[parentKey] ?? null)) as Folderable["id"];
 
   const itemNode = (item: T): Node => ({
     id: (item as { id: number }).id,
     parentId: parentOf(item),
     ref: item,
-    refType: "item",
+    type: "item",
   });
 
   const itemsUnder = (folderId: Folderable["id"]) =>
@@ -56,7 +56,7 @@ export function buildTree<T>(
         id: folder.id,
         parentId: folder.parentId,
         ref: folder,
-        refType: "folder",
+        type: "folder",
         nodes: [
           ...(folder.id == null ? [] : nodesUnder(folder.id)),
           ...itemsUnder(folder.id),

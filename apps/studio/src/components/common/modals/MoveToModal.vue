@@ -35,54 +35,40 @@
         </span>
       </label>
 
-      <div
-        class="move-folder-group"
-        v-for="{ folder, subfolders } in folderTree"
-        :key="folder.id"
+      <tree
+        :folders="filteredFolders"
+        :expanded-folder-ids.sync="expandedFolderIds"
       >
-        <label
-          class="move-folder-row"
-          :class="{ selected: selectedFolderId === folder.id }"
-        >
-          <input
-            class="move-folder-radio"
-            type="radio"
-            name="move-to-folder"
-            :value="folder.id"
-            v-model="selectedFolderId"
-          >
-          <i class="move-folder-icon material-icons">folder</i>
-          <span class="move-folder-name">{{ folder.name }}</span>
-          <span v-if="currentFolderId === folder.id" class="current-location">
-            (current location)
-          </span>
-        </label>
-        <template v-if="subfolders.length">
+        <template #folder="{ props }">
           <label
-            v-for="subfolder in subfolders"
-            :key="subfolder.id"
             class="move-folder-row"
-            :class="{ selected: selectedFolderId === subfolder.id }"
-            style="--node-depth: 1"
+            :class="{
+              selected: selectedFolderId === props.node.ref.id,
+              empty: !props.node.nodes?.length,
+            }"
           >
             <input
               class="move-folder-radio"
               type="radio"
               name="move-to-folder"
-              :value="subfolder.id"
+              :disabled="
+                currentFolderId === props.node.ref.id ||
+                folderId === props.node.ref.id
+              "
+              :value="props.node.ref.id"
               v-model="selectedFolderId"
             >
-            <i class="move-folder-icon material-icons">folder</i>
-            <span class="move-folder-name">{{ subfolder.name }}</span>
-            <span
-              v-if="currentFolderId === subfolder.id"
-              class="current-location"
-            >
-              (current location)
-            </span>
+            <tree-folder v-bind="props" tag="div">
+              <span
+                v-if="currentFolderId === props.node.ref.id"
+                class="current-location"
+              >
+                (current location)
+              </span>
+            </tree-folder>
           </label>
         </template>
-      </div>
+      </tree>
     </template>
     <template #footer="{ close }">
       <button class="btn btn-flat" type="button" @click.prevent="close">
@@ -107,6 +93,10 @@ import { AppEvent } from "@/common/AppEvent";
 import { IConnection } from "@/common/interfaces/IConnection";
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { IFolder } from "@/common/interfaces/IQueryFolder";
+import Tree from "../../../../../ui-kit/lib/components/tree/Tree.vue";
+import TreeFolder from "../../../../../ui-kit/lib/components/tree/TreeFolder.vue";
+import rawLog from "@bksLogger";
+import { getAncestorsAndSelf } from "@/lib/data/folder";
 
 type Target =
   | { type: "connection"; value: IConnection }
@@ -114,14 +104,17 @@ type Target =
   | { type: "connectionFolder"; value: IFolder }
   | { type: "queryFolder"; value: IFolder };
 
+const log = rawLog.scope("MoveToModal.vue");
+
 export default Vue.extend({
-  components: { BaseModal },
+  components: { BaseModal, Tree, TreeFolder },
   data() {
     return {
       modalName: "move-to-modal",
       target: null as Target | null,
       selectedFolderId: null as number | null,
       saving: false,
+      expandedFolderIds: [],
     };
   },
   computed: {
@@ -131,23 +124,66 @@ export default Vue.extend({
     rootBindings() {
       return [{ event: AppEvent.openMoveFileModal, handler: this.open }];
     },
-    // Folder targets move themselves (re-parent); connection/query targets move
-    // into a folder. Folders are capped at 2 levels, so only subfolders are
-    // ever moved and their destinations are top level or another root.
     isFolder(): boolean {
       return (
         this.target?.type === "connectionFolder" ||
         this.target?.type === "queryFolder"
       );
     },
-    isQueryTarget(): boolean {
+    isTeamFolder() {
+      return this.isFolder && !this.target.value.personal;
+    },
+    isQuery(): boolean {
       return (
         this.target?.type === "query" || this.target?.type === "queryFolder"
       );
     },
-    folders() {
+    parent(): IFolder | null {
+      if (!this.target) {
+        return null;
+      }
+      if (this.target.type === "connectionFolder") {
+        return this.connectionFolders.find(
+          (folder: IFolder) => folder.id === this.target.value.parentId
+        );
+      }
+      if (this.target.type === "queryFolder") {
+        return this.queryFolders.find(
+          (folder: IFolder) => folder.id === this.target.value.parentId
+        );
+      }
+      if (this.target.type === "connection") {
+        return this.connectionFolders.find(
+          (folder: IFolder) =>
+            folder.id === this.target.value.connectionFolderId
+        );
+      }
+      if (this.target.type === "query") {
+        return this.queryFolders.find(
+          (folder: IFolder) => folder.id === this.target.value.queryFolderId
+        );
+      }
+      log.warn("Unknown target type:", this.target.type);
+      return null;
+    },
+    folders(): IFolder[] {
       if (!this.target) return [];
-      return this.isQueryTarget ? this.queryFolders : this.connectionFolders;
+      return this.isQuery ? this.queryFolders : this.connectionFolders;
+    },
+    filteredFolders() {
+      return this.folders.filter((folder: IFolder) => {
+        // Prevent moving a team folder to a personal folder
+        if (this.isTeamFolder && folder.personal) {
+          return false;
+        }
+
+        // Prevent moving a folder to its own children
+        if (this.isFolder && folder.parentId === this.target.value.id) {
+          return false;
+        }
+
+        return true;
+      });
     },
     targetIcon(): string {
       if (!this.target) return "";
@@ -160,17 +196,18 @@ export default Vue.extend({
         ? this.target.value.title
         : this.target.value.name;
     },
-    folderTree() {
-      return this.folders
-        .filter((f) => !f.parentId)
-        .map((folder) => ({
-          folder,
-          // A folder being moved can't nest into a subfolder (2-level cap), so
-          // subfolders aren't shown as destinations for folder targets.
-          subfolders: this.isFolder
-            ? []
-            : this.folders.filter((f) => f.parentId === folder.id),
-        }));
+    folderId(): number | null {
+      if (this.isFolder) {
+        return this.target.value.id;
+      }
+      if (this.target.type === "connection") {
+        return this.target.value.connectionFolderId;
+      }
+      if (this.target.type === "query") {
+        return this.target.value.queryFolderId;
+      }
+      log.warn("Unknown target type:", this.target.type);
+      return null;
     },
     currentFolderId(): number | null {
       if (!this.target) return null;
@@ -182,7 +219,7 @@ export default Vue.extend({
       );
     },
     canMove(): boolean {
-      return this.selectedFolderId !== this.currentFolderId;
+      return this.selectedFolderId !== null && this.selectedFolderId !== this.currentFolderId;
     },
   },
   methods: {
@@ -196,7 +233,14 @@ export default Vue.extend({
     }),
     open(target: Target) {
       this.target = target;
-      this.selectedFolderId = this.currentFolderId;
+      this.selectedFolderId = null;
+
+      // Expand anscestors
+      this.expandedFolderIds = getAncestorsAndSelf(
+        this.parent.id,
+        this.folders
+      ).map((f) => f.id);
+
       this.$modal.show(this.modalName);
     },
     async move() {
@@ -260,14 +304,11 @@ export default Vue.extend({
 }
 
 .move-folder-row {
-  --node-depth: 0;
   position: relative;
   display: flex;
   align-items: center;
   gap: 0.25rem;
   margin: 0;
-  padding-left: calc(0.45rem + (var(--node-depth) * 1.25rem));
-  height: 2rem;
   border-radius: 4px;
   color: rgb(from var(--theme-base) r g b / 77%);
   cursor: pointer;
@@ -285,6 +326,18 @@ export default Vue.extend({
   &:has(.move-folder-radio:focus-visible) {
     outline: 2px solid var(--theme-base);
     outline-offset: -2px;
+  }
+
+  &::v-deep .BksTree-folder:hover {
+    background-color: transparent;
+  }
+
+  &:has([disabled])::v-deep .BksTree-folder .name {
+    opacity: 0.5;
+  }
+
+  &.empty::v-deep .BksTree-folder .expand-icon {
+    visibility: hidden;
   }
 }
 
@@ -314,5 +367,10 @@ input[type="radio"].move-folder-radio {
   font-style: italic;
   font-size: 0.831rem;
   color: var(--text-lighter);
+}
+
+/** Tree component */
+::v-deep [data-node-empty="true"] .expand-icon {
+  visibility: hidden;
 }
 </style>

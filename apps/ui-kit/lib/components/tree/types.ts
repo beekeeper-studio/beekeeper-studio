@@ -6,10 +6,10 @@ export type Folderable = {
 
 type Ref = {
   ref: Folderable;
-  refType: "folder";
+  type: "folder";
 } | {
   ref: unknown;
-  refType: "item";
+  type: "item";
 };
 
 export type Node = Ref & {
@@ -17,6 +17,8 @@ export type Node = Ref & {
   parentId: number | null;
   nodes?: Node[];
 };
+
+export type FolderNode = Extract<Node, { type: "folder" }>;
 
 export type Tree = {
   nodes: Node[];
@@ -39,17 +41,11 @@ export type TreeNodeMoveEvent = {
   parentId: number | null;
 };
 
-export type TreeFolderContextmenuEvent = {
-  event: MouseEvent;
-  node: Node;
-};
-
-/** Folders and items have separate id spaces, so the refType is part of the key. */
+/** Folders and items have separate id spaces, so the type is part of the key. */
 export function nodeKey(node: Node): string {
-  return `${node.refType}-${node.id}`;
+  return `${node.type}-${node.id}`;
 }
 
 export interface TreeEventMap extends HTMLElementEventMap {
   "bks-tree-node-move": CustomEvent<TreeNodeMoveEvent>;
-  "bks-tree-folder-contextmenu": CustomEvent<TreeFolderContextmenuEvent>;
 }

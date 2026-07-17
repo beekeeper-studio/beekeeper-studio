@@ -10,8 +10,9 @@ const props = {
     type: Array as PropType<unknown[]>,
     default: () => [],
   },
-  itemParentKey: {
-    type: String,
+  itemParentKey: String,
+  expandedFolderIds: {
+    type: Array as PropType<number[]>,
     required: true,
   },
 };

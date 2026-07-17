@@ -1,13 +1,14 @@
 <template>
   <div class="BksUiKit BksTree">
-    <tree-nodes
-      :nodes="tree.nodes"
+    <tree-node
+      v-for="node of tree.nodes"
+      :key="nodeKey(node)"
+      :node="node"
       :internal-id="internalId"
       :expanded-folder-ids="expandedFolderIds"
       :drop-target="dropTarget"
       :can-drop="canDrop"
       @toggle-expanded="toggleExpanded"
-      @folder-contextmenu="$emit('bks-tree-folder-contextmenu', $event)"
       @node-dragstart="handleNodeDragStart"
       @node-dragover="handleNodeDragOver"
       @node-dragleave="handleNodeDragLeave"
@@ -20,7 +21,7 @@
       <template v-slot:item="slotProps">
         <slot name="item" v-bind="slotProps" />
       </template>
-    </tree-nodes>
+    </tree-node>
   </div>
 </template>
 
@@ -28,7 +29,7 @@
 import Vue from "vue";
 import props from "./props";
 import { buildTree } from "./tree";
-import TreeNodes from "./TreeNodes.vue";
+import TreeNode from "./TreeNode.vue";
 import { uuidv4 } from "../../utils/uuid";
 import {
   DropPosition,
@@ -43,11 +44,10 @@ const EXPAND_DELAY = 600;
 export default Vue.extend({
   props,
 
-  components: { TreeNodes },
+  components: { TreeNode },
 
   data() {
     return {
-      expandedFolderIds: [] as number[],
       internalId: uuidv4(),
       draggedNode: null as Node | null,
       dropTarget: null as DropTarget | null,
@@ -63,6 +63,8 @@ export default Vue.extend({
   },
 
   methods: {
+    nodeKey,
+
     containsKey(node: Node, key: string): boolean {
       if (nodeKey(node) === key) return true;
       return (node.nodes ?? []).some((child) => this.containsKey(child, key));
@@ -103,7 +105,9 @@ export default Vue.extend({
 
     handleNodeDragLeave(node: Node) {
       // A late dragleave must not wipe the next row's target.
-      if (this.dropTarget?.key !== nodeKey(node)) return;
+      if (this.dropTarget?.key !== nodeKey(node)) {
+        return;
+      }
       this.dropTarget = null;
       this.clearExpandTimer();
     },
@@ -132,16 +136,28 @@ export default Vue.extend({
 
     scheduleExpand(node: Node, position: DropPosition) {
       this.clearExpandTimer();
-      if (position !== "inside") return;
-      if (this.expandedFolderIds.includes(node.id)) return;
+
+      if (position !== "inside") {
+        return;
+      }
+
+      if (this.expandedFolderIds.includes(node.id)) {
+        return;
+      }
+
       this.expandTimer = setTimeout(() => {
-        this.expandedFolderIds.push(node.id);
+        this.$emit("update:expandedFolderIds", [
+          ...this.expandedFolderIds,
+          node.id,
+        ]);
         this.expandTimer = null;
       }, EXPAND_DELAY);
     },
 
     clearExpandTimer() {
-      if (!this.expandTimer) return;
+      if (!this.expandTimer) {
+        return;
+      }
       clearTimeout(this.expandTimer);
       this.expandTimer = null;
     },
@@ -149,9 +165,16 @@ export default Vue.extend({
     toggleExpanded(node: Node) {
       const index = this.expandedFolderIds.indexOf(node.id);
       if (index === -1) {
-        this.expandedFolderIds.push(node.id);
+        // add
+        this.$emit("update:expandedFolderIds", [
+          ...this.expandedFolderIds,
+          node.id,
+        ]);
       } else {
-        this.expandedFolderIds.splice(index, 1);
+        // remove
+        this.$emit("update:expandedFolderIds",
+          this.expandedFolderIds.toSpliced(index, 1)
+        );
       }
     },
   },

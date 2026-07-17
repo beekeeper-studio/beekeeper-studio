@@ -169,9 +169,15 @@
                 :folders="folders"
                 :items="connections ?? []"
                 item-parent-key="connectionFolderId"
-                @bks-tree-folder-contextmenu="showFolderContextMenu($event.event, $event.node.ref)"
+                :expanded-folder-ids.sync="expandedFolderIds"
                 @bks-tree-node-move="handleTreeNodeMove"
               >
+                <template #folder="{ props }">
+                  <tree-folder
+                    v-bind="props"
+                    @contextmenu.native="showFolderContextMenu($event, props.node.ref)"
+                  />
+                </template>
                 <template #item="{ node }">
                   <connection-list-item
                     :config="node.ref"
@@ -282,6 +288,7 @@ import Split from 'split.js'
 import { AppEvent } from '@/common/AppEvent'
 import { getLonelyItems, isFolderListEmpty } from '@/common/utils/folderTree'
 import Tree from "../../../../ui-kit/lib/components/tree/Tree.vue";
+import TreeFolder from "../../../../ui-kit/lib/components/tree/TreeFolder.vue";
 import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
 import Draggable from 'vuedraggable'
@@ -295,6 +302,7 @@ export default {
     SidebarLoading,
     ErrorAlert,
     SidebarSortButtons,
+    TreeFolder,
     WorkspaceSidebar,
     Draggable,
     Tree,
@@ -319,6 +327,7 @@ export default {
     folderExpandedState: {},
     draggingConnection: null,
     renamingFolderId: null,
+    expandedFolderIds: [],
   }),
   watch: {
     async sort(newSort) {
@@ -502,7 +511,6 @@ export default {
         name: 'New Subfolder',
         handler: ({ item }) => this.createSubfolder(item),
       }];
-      console.log(folder)
       if (!isRoot) {
         options.push(...[
           { type: "divider" },
@@ -537,7 +545,7 @@ export default {
     /** @param event {import("../../../../ui-kit/lib/components/tree/types").TreeNodeMoveEvent} */
     async handleTreeNodeMove({ source, target, position, parentId }) {
       try {
-        if (source.refType === 'folder') {
+        if (source.type === 'folder') {
           if (parentId === (source.ref.parentId ?? null)) return
           await this.$store.dispatch('data/connectionFolders/save', {
             ...source.ref,
@@ -558,7 +566,7 @@ export default {
     // that list — the tree renders subfolders above items. So dropping next to a
     // folder only decides the parent, not the slot.
     treeDropSlot(target, position) {
-      if (target.refType !== 'item') return { before: null }
+      if (target.type !== 'item') return { before: null }
       return position === 'after' ? { after: target.id } : { before: target.id }
     },
     share(folder) {

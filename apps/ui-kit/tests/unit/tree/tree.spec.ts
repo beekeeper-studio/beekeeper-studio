@@ -20,8 +20,8 @@ describe("buildFolderTree", () => {
     const tree = buildTree(folders, queries, "queryFolderId");
     expect(tree).toEqual({
       nodes: [
-        { id: 1, parentId: null, refType: "folder", ref: folders[0], nodes: [] },
-        { id: 2, parentId: null, refType: "folder", ref: folders[1], nodes: [] },
+        { id: 1, parentId: null, type: "folder", ref: folders[0], nodes: [] },
+        { id: 2, parentId: null, type: "folder", ref: folders[1], nodes: [] },
       ],
       orphanedNodes: [],
     });
@@ -35,9 +35,9 @@ describe("buildFolderTree", () => {
       {id: 1, queryFolderId: 1},
     ];
     const tree = buildTree(folders, queries, "queryFolderId");
-    expect(tree.nodes[0].refType).toStrictEqual("folder");
+    expect(tree.nodes[0].type).toStrictEqual("folder");
     expect(tree.nodes[0].ref).toStrictEqual(folders[0]);
-    expect(tree.nodes[0].nodes![0].refType).toStrictEqual("item");
+    expect(tree.nodes[0].nodes![0].type).toStrictEqual("item");
     expect(tree.nodes[0].nodes![0].ref).toStrictEqual(queries[0]);
   });
 
@@ -53,10 +53,10 @@ describe("buildFolderTree", () => {
         {
           id: 1,
           parentId: null,
-          refType: "folder",
+          type: "folder",
           ref: folders[0],
           nodes: [
-            { id: 2, parentId: 1, refType: "folder", ref: folders[1], nodes: [] },
+            { id: 2, parentId: 1, type: "folder", ref: folders[1], nodes: [] },
           ],
         },
       ],
@@ -76,11 +76,11 @@ describe("buildFolderTree", () => {
         {
           id: 1,
           parentId: null,
-          refType: "folder",
+          type: "folder",
           ref: folders[0],
           nodes: [
-            { id: 2, parentId: 1, refType: "folder", ref: folders[1], nodes: [] },
-            { id: 10, parentId: 1, refType: "item", ref: queries[0] },
+            { id: 2, parentId: 1, type: "folder", ref: folders[1], nodes: [] },
+            { id: 10, parentId: 1, type: "item", ref: queries[0] },
           ],
         },
       ],
@@ -101,22 +101,22 @@ describe("buildFolderTree", () => {
         {
           id: 1,
           parentId: null,
-          refType: "folder",
+          type: "folder",
           ref: folders[0],
           nodes: [
             {
               id: 2,
               parentId: 1,
-              refType: "folder",
+              type: "folder",
               ref: folders[1],
               nodes: [
                 {
                   id: 3,
                   parentId: 2,
-                  refType: "folder",
+                  type: "folder",
                   ref: folders[2],
                   nodes: [
-                    { id: 10, parentId: 3, refType: "item", ref: queries[0] },
+                    { id: 10, parentId: 3, type: "item", ref: queries[0] },
                   ],
                 },
               ],
@@ -140,11 +140,11 @@ describe("buildFolderTree", () => {
         {
           id: 1,
           parentId: null,
-          refType: "folder",
+          type: "folder",
           ref: folders[0],
           nodes: [
-            { id: 11, parentId: 1, refType: "item", ref: queries[1] },
-            { id: 10, parentId: 1, refType: "item", ref: queries[0] },
+            { id: 11, parentId: 1, type: "item", ref: queries[1] },
+            { id: 10, parentId: 1, type: "item", ref: queries[0] },
           ],
         },
       ],
@@ -161,10 +161,10 @@ describe("buildFolderTree", () => {
         {
           id: 5,
           parentId: null,
-          refType: "folder",
+          type: "folder",
           ref: folders[0],
           nodes: [
-            { id: 1, parentId: 5, refType: "item", ref: connections[0] },
+            { id: 1, parentId: 5, type: "item", ref: connections[0] },
           ],
         },
       ],
@@ -184,13 +184,13 @@ describe("buildFolderTree", () => {
         {
           id: 1,
           parentId: null,
-          refType: "folder",
+          type: "folder",
           ref: folders[0],
           nodes: [
-            { id: 10, parentId: 1, refType: "item", ref: queries[0] },
+            { id: 10, parentId: 1, type: "item", ref: queries[0] },
           ],
         },
-        { id: 11, parentId: null, refType: "item", ref: queries[1] },
+        { id: 11, parentId: null, type: "item", ref: queries[1] },
       ],
       orphanedNodes: [],
     });
@@ -208,15 +208,15 @@ describe("buildFolderTree", () => {
         {
           id: 1,
           parentId: null,
-          refType: "folder",
+          type: "folder",
           ref: folders[0],
           nodes: [
-            { id: 10, parentId: 1, refType: "item", ref: queries[0] },
+            { id: 10, parentId: 1, type: "item", ref: queries[0] },
           ],
         },
       ],
       orphanedNodes: [
-        { id: 99, parentId: 999, refType: "item", ref: queries[1] },
+        { id: 99, parentId: 999, type: "item", ref: queries[1] },
       ],
     });
   });
