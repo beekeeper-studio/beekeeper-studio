@@ -74,7 +74,7 @@
         />
         <sidebar-loading v-if="loading" />
         <nav
-          v-else-if="!empty"
+          v-else
           class="list-body"
           ref="wrapper"
         >
@@ -84,6 +84,21 @@
             item-parent-key="queryFolderId"
             @bks-tree-node-move="handleTreeNodeMove"
           >
+            <template #empty>
+              <div class="empty">
+                <span class="empty-title">No Saved Queries</span>
+                <span
+                  class="empty-actions"
+                  v-if="isCloud"
+                >
+                  <a
+                    class="btn btn-flat btn-block btn-icon"
+                    @click.prevent="importFromLocal"
+                    title="Import queries from local workspace"
+                  ><i class="material-icons">save_alt</i> Import</a>
+                </span>
+              </div>
+            </template>
             <template #folder="{ props }">
               <tree-folder
                 v-bind="props"
@@ -106,22 +121,6 @@
             </template>
           </tree>
         </nav>
-        <div
-          class="empty"
-          v-else
-        >
-          <span class="empty-title">No Saved Queries</span>
-          <span
-            class="empty-actions"
-            v-if="isCloud"
-          >
-            <a
-              class="btn btn-flat btn-block btn-icon"
-              @click.prevent="importFromLocal"
-              title="Import queries from local workspace"
-            ><i class="material-icons">save_alt</i> Import</a>
-          </span>
-        </div>
       </div>
     </div>
     <portal to="modals">
@@ -182,10 +181,8 @@ import SidebarLoading from '../../common/SidebarLoading.vue'
 import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
 import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
-import { getLonelyItems, isFolderListEmpty } from '@/common/utils/folderTree'
 import Draggable from 'vuedraggable'
-import Tree from "../../../../../ui-kit/lib/components/tree/Tree.vue";
-import TreeFolder from "../../../../../ui-kit/lib/components/tree/TreeFolder.vue";
+import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
 
 export default {
   components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder, Draggable, Tree, TreeFolder },
@@ -232,15 +229,6 @@ export default {
     },
     error() {
       return this.queriesError || this.foldersError || null
-    },
-    foldersWithQueries() {
-      return this.$store.getters['data/queryFolders/foldersWithQueries'](this.filteredQueries)
-    },
-    lonelyQueries() {
-      return getLonelyItems(this.folders, this.filteredQueries, 'queryFolderId')
-    },
-    empty() {
-      return isFolderListEmpty(this.filteredQueries, this.folders)
     },
     removeTitle() {
       return `Remove ${this.checkedFavorites.length} saved queries`;
@@ -368,7 +356,7 @@ export default {
       }
       this.$bks.openMenu({ event, item: folder, options })
     },
-    /** @param event {import("../../../../../ui-kit/lib/components/tree/types").TreeNodeMoveEvent} */
+    /** @param event {import("@beekeeperstudio/ui-kit").TreeNodeMoveEvent} */
     async handleTreeNodeMove({ source, target, position, parentId }) {
       try {
         if (source.type === 'folder') {

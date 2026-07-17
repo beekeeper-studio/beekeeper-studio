@@ -143,24 +143,6 @@
               :closable="true"
             />
             <sidebar-loading v-else-if="loading" />
-            <div
-              v-else-if="empty"
-              class="empty"
-            >
-              <div class="empty-title">
-                No Saved Connections
-              </div>
-              <div
-                class="empty-actions"
-                v-if="isCloud"
-              >
-                <a
-                  class="btn btn-flat btn-block btn-icon"
-                  @click.prevent="importFromLocal"
-                  title="Import connections from local workspace"
-                ><i class="material-icons">save_alt</i> Import</a>
-              </div>
-            </div>
             <nav
               v-else
               class="list-body"
@@ -172,6 +154,23 @@
                 :expanded-folder-ids.sync="expandedFolderIds"
                 @bks-tree-node-move="handleTreeNodeMove"
               >
+                <template #empty>
+                  <div class="empty">
+                    <div class="empty-title">
+                      No Saved Connections
+                    </div>
+                    <div
+                      class="empty-actions"
+                      v-if="isCloud"
+                    >
+                      <a
+                        class="btn btn-flat btn-block btn-icon"
+                        @click.prevent="importFromLocal"
+                        title="Import connections from local workspace"
+                      ><i class="material-icons">save_alt</i> Import</a>
+                    </div>
+                  </div>
+                </template>
                 <template #folder="{ props }">
                   <tree-folder
                     v-bind="props"
@@ -286,9 +285,7 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import Split from 'split.js'
 import { AppEvent } from '@/common/AppEvent'
-import { getLonelyItems, isFolderListEmpty } from '@/common/utils/folderTree'
-import Tree from "../../../../ui-kit/lib/components/tree/Tree.vue";
-import TreeFolder from "../../../../ui-kit/lib/components/tree/TreeFolder.vue";
+import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
 import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
 import Draggable from 'vuedraggable'
@@ -368,21 +365,11 @@ export default {
         this.$store.dispatch('data/connections/setConnectionFilter', newFilter);
       }
     },
-    empty() {
-      return isFolderListEmpty(this.filteredConnections, this.folders)
-    },
     noPins() {
       return !this.pinnedConnections?.length;
     },
     rootFolders() {
       return this.folders.filter((f) => !f.parentId).sort((a, b) => a.name.localeCompare(b.name))
-    },
-    lonelyConnections() {
-      return getLonelyItems(this.folders, this.filteredConnections, 'connectionFolderId')
-    },
-    foldersWithConnections() {
-      if (this.loading) return []
-      return this.$store.getters['data/connectionFolders/foldersWithConnections'](this.sortedConnections)
     },
     loading() {
       return this.connectionsLoading || this.foldersLoading
@@ -542,7 +529,7 @@ export default {
       }
       this.$bks.openMenu({ event, item: folder, options })
     },
-    /** @param event {import("../../../../ui-kit/lib/components/tree/types").TreeNodeMoveEvent} */
+    /** @param event {import("@beekeeperstudio/ui-kit").TreeNodeMoveEvent} */
     async handleTreeNodeMove({ source, target, position, parentId }) {
       try {
         if (source.type === 'folder') {

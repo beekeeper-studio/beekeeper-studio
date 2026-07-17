@@ -5,7 +5,6 @@ import { DataState, DataStore, mutationsFor } from "@/store/modules/data/DataMod
 import { safely } from "@/store/modules/data/StoreHelpers";
 import { accessGrantMutations, localAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
-import { buildFolderTree } from "@/common/utils/folderTree";
 import { pluralize } from '@/vendor/pluralize';
 
 type State = DataState<IConnectionFolder>
@@ -21,10 +20,6 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
   mutations: {
     ...mutationsFor<IConnectionFolder>({}, { field: 'name', direction: 'asc' }),
     ...accessGrantMutations(),
-  },
-  getters: {
-    foldersWithConnections: (state) => (connections: any[]) =>
-      buildFolderTree(state.items, connections, 'connectionFolderId')
   },
   actions: {
     ...localAccessGrantActions(),

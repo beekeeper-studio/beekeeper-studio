@@ -221,10 +221,4 @@ export default Vue.extend({
     bottom: 0;
   }
 }
-
-.empty-state {
-  padding-block: 0.25rem;
-  padding-left: 1.3rem;
-  color: var(--bks-text-lighter);
-}
 </style>

@@ -93,8 +93,7 @@ import { AppEvent } from "@/common/AppEvent";
 import { IConnection } from "@/common/interfaces/IConnection";
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { IFolder } from "@/common/interfaces/IQueryFolder";
-import Tree from "../../../../../ui-kit/lib/components/tree/Tree.vue";
-import TreeFolder from "../../../../../ui-kit/lib/components/tree/TreeFolder.vue";
+import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
 import rawLog from "@bksLogger";
 import { getAncestorsAndSelf } from "@/lib/data/folder";
 

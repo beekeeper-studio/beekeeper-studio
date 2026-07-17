@@ -1,34 +1,39 @@
 <template>
   <div class="BksUiKit BksTree">
-    <tree-node
-      v-for="node of tree.nodes"
-      :key="nodeKey(node)"
-      :node="node"
-      :internal-id="internalId"
-      :expanded-folder-ids="expandedFolderIds"
-      :drop-target="dropTarget"
-      :can-drop="canDrop"
-      @toggle-expanded="toggleExpanded"
-      @node-dragstart="handleNodeDragStart"
-      @node-dragover="handleNodeDragOver"
-      @node-dragleave="handleNodeDragLeave"
-      @node-drop="handleNodeDrop"
-      @node-dragend="resetDrag"
-    >
-      <template v-slot:folder="slotProps">
-        <slot name="folder" v-bind="slotProps" />
-      </template>
-      <template v-slot:item="slotProps">
-        <slot name="item" v-bind="slotProps" />
-      </template>
-    </tree-node>
+    <slot v-if="empty" name="empty">
+      <div class="BksTree-empty">No items</div>
+    </slot>
+    <template v-else>
+      <tree-node
+        v-for="node of tree.nodes"
+        :key="nodeKey(node)"
+        :node="node"
+        :internal-id="internalId"
+        :expanded-folder-ids="expandedFolderIds"
+        :drop-target="dropTarget"
+        :can-drop="canDrop"
+        @toggle-expanded="toggleExpanded"
+        @node-dragstart="handleNodeDragStart"
+        @node-dragover="handleNodeDragOver"
+        @node-dragleave="handleNodeDragLeave"
+        @node-drop="handleNodeDrop"
+        @node-dragend="resetDrag"
+      >
+        <template v-slot:folder="slotProps">
+          <slot name="folder" v-bind="slotProps" />
+        </template>
+        <template v-slot:item="slotProps">
+          <slot name="item" v-bind="slotProps" />
+        </template>
+      </tree-node>
+    </template>
   </div>
 </template>
 
 <script lang="ts">
 import Vue from "vue";
 import props from "./props";
-import { buildTree } from "./tree";
+import { buildTree, isFolderListEmpty } from "./tree";
 import TreeNode from "./TreeNode.vue";
 import { uuidv4 } from "../../utils/uuid";
 import {
@@ -59,6 +64,10 @@ export default Vue.extend({
     tree() {
       // @ts-expect-error
       return buildTree(this.folders, this.items, this.itemParentKey);
+    },
+
+    empty(): boolean {
+      return isFolderListEmpty(this.items, this.folders);
     },
   },
 
@@ -184,3 +193,11 @@ export default Vue.extend({
   },
 });
 </script>
+
+<style scoped lang="scss">
+.BksTree-empty {
+  padding-block: 0.25rem;
+  padding-left: 1.3rem;
+  color: var(--bks-text-lighter);
+}
+</style>
