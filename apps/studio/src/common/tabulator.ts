@@ -63,7 +63,7 @@ export function tabulatorForTableData(
     resizableColumnGuide: true,
     movableColumns: true,
     height: "100%",
-    editTriggerEvent: "dblclick",
+    editTriggerEvent: "click",
     debugInvalidComponentFuncs: false,
     history: true,
     keybindings: {
