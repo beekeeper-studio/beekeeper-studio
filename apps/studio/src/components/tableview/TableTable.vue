@@ -35,6 +35,7 @@
       <div
         class="table-view-wrapper"
         ref="tableViewWrapper"
+        @contextmenu="onTableWrapperContextMenu"
       >
         <div
           ref="table"
@@ -760,6 +761,40 @@ export default Vue.extend({
     this.registerHandlers(this.rootBindings)
   },
   methods: {
+    onTableWrapperContextMenu(e: MouseEvent) {
+      const target = e.target as HTMLElement;
+      // Do not show custom menu if click is on a row, header, row header, or corner.
+      // Tabulator handles its own context menus for those elements.
+      if (
+        target.closest('.tabulator-row') || 
+        target.closest('.tabulator-header') ||
+        target.closest('.tabulator-row-header') ||
+        target.closest('.tabulator-corner')
+      ) {
+        return;
+      }
+      
+      // Prevent default browser context menu on the empty space.
+      e.preventDefault();
+      
+      // Define context menu options for the empty space.
+      // We add an option to insert a new row to improve user experience.
+      const menuOptions = [
+        {
+          name: "Add row",
+          shortcut: this.$bksConfig.getKeybindings("context-menu", "general.addRow"),
+          handler: () => this.cellAddRow(),
+          disabled: !this.editable
+        }
+      ];
+      
+      // Open the global Beekeeper context menu component.
+      // @ts-ignore
+      this.$bks.openMenu({
+        event: e,
+        options: menuOptions
+      });
+    },
     updateTab() {
       this.$emit('update-tab', this.tab)
     },
