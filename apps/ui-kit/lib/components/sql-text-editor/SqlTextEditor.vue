@@ -52,6 +52,8 @@ export default Vue.extend({
       return new SqlTextEditor({
         identiferDialect: this.identifierDialect,
         paramTypes: this.paramTypes,
+        disableSchemaCompletion: this.disableAutocomplete,
+        disableKeywordCompletion: this.disableAutocomplete,
         onQuerySelectionChange: (params) => {
           this.selectedQuery = params.selectedQuery.text;
           this.$emit("bks-query-selection-change", params)
