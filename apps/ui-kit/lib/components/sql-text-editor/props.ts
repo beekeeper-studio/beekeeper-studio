@@ -65,6 +65,16 @@ export default {
   formatterModalId: {
     type: String,
     default: ''
+  },
+  /**
+   * Disable SQL autocomplete entirely (both schema-based and keyword-based
+   * completion). This is a workaround for performance issues on very large
+   * schemas where autocomplete can freeze/crash the app.
+   * See beekeeper-studio issue #4492.
+   */
+  disableAutocomplete: {
+    type: Boolean,
+    default: false
   }
 
   // --- replaced with languageId
