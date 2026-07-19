@@ -3,7 +3,7 @@ import { BksField, BksFieldType } from "../models";
 import rawLog from "@bksLogger";
 import type { DuckDBBlobValue } from "@duckdb/node-api";
 import { loadDuckDB } from "@shared/lib/knex-duckdb/loadDuckDB";
-import { ObjectId } from "mongodb";
+import { Decimal128, ObjectId } from "mongodb";
 
 const log = rawLog.scope("transcoders");
 
@@ -91,6 +91,36 @@ export const MongoDBObjectIdTranscoder: Transcoder<ObjectId, Uint8Array> = {
     return _.isTypedArray(value);
   }
 }
+
+export const MongoDBDecimal128Transcoder: Transcoder<Decimal128, string> = {
+  serialize(value) {
+    if (!(value instanceof Decimal128)) {
+      log.warn("MongoDBDecimal128Transcoder: cannot serialize non-decimal128 value");
+      return value;
+    }
+    // Decimal128.toString() yields the readable decimal (e.g. "12.34") rather
+    // than the raw { bytes } buffer the BSON value serializes to by default.
+    return value.toString();
+  },
+  deserialize(value) {
+    if (!_.isString(value)) {
+      log.warn("MongoDBDecimal128Transcoder: cannot deserialize non-string value");
+      return value;
+    }
+    return Decimal128.fromString(value);
+  },
+  serializeCheckByField(field: BksField): boolean {
+    return field.bksType === "DECIMAL";
+  },
+  deserializeCheckByValue(value): value is string {
+    // Display-only: deserializeValue picks a transcoder from the value alone
+    // with no field context, so claiming every string here would hijack all
+    // edited string write-backs. Scope this transcoder to the read/display
+    // path and leave write-back untouched.
+    void value;
+    return false;
+  },
+};
 
 export const GenericBinaryTranscoder: Transcoder<Buffer, Uint8Array> = {
   serialize(value) {
