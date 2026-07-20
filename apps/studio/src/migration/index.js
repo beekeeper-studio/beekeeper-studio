@@ -90,6 +90,7 @@ import addDynamodbOptions from './20260417_add_dynamodb_options'
 import addLicenseInvalidatedAt from './20260421_add_license_invalidated_at'
 import cleanupDuplicateLicenseKeys from './20260421_cleanup_duplicate_license_keys'
 import createTabulatorPersistence from './20260424_create_tabulator_persistence'
+import createQueryAudits from './20260526_create_query_audits'
 import clearLogFiles from './20260527_clear_log_files'
 import addSnowflakeOptions from './20260501_add_snowflake_options'
 import addWindowsAuthToConnections from './20260618_add_windows_auth_to_connections'
@@ -145,6 +146,7 @@ const realMigrations = [
   addLicenseInvalidatedAt,
   cleanupDuplicateLicenseKeys,
   createTabulatorPersistence,
+  createQueryAudits,
   clearLogFiles,
   addSnowflakeOptions,
   addWindowsAuthToConnections,
