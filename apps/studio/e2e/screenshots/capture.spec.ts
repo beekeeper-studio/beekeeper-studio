@@ -189,6 +189,19 @@ async function captureForDb(cfg: ScreenshotDbConfig) {
       });
     }
     await page.waitForTimeout(1000);
+    // Widen the JSON viewer sidebar so its contents are easier to read.
+    await page.evaluate(() => {
+      let root: any = null;
+      for (const el of Array.from(document.querySelectorAll("body *"))) {
+        if ((el as any).__vue__?.$root) { root = (el as any).__vue__.$root; break; }
+      }
+      try {
+        root?.$store?.dispatch("sidebar/setSecondarySidebarWidth", 460);
+      } catch (e) {
+        /* ignore */
+      }
+    });
+    await page.waitForTimeout(600);
     await shot(page, `beekeeper-${cfg.name}-table-json-sidebar.png`);
 
     // ---- View 3: table structure ----
