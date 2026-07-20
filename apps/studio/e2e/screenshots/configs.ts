@@ -9,6 +9,19 @@ export interface ScreenshotDbConfig {
   defaultDatabase: string;
   sampleTable: string;   // a seeded table to open / inspect
   query: string;         // a query to run in the editor view
+  jsonTable: string;     // demo table with a nested-JSON column (for the sidebar view)
+  jsonSetup: string;     // DDL + inserts to create jsonTable with nested JSON
+}
+
+// A demo table with a genuinely nested JSON column, so the JSON sidebar shows
+// nested structure. `jsonType` is the DB-specific JSON column type.
+function jsonSetup(jsonType: string): string {
+  return [
+    "DROP TABLE IF EXISTS user_profiles;",
+    `CREATE TABLE user_profiles (id INTEGER PRIMARY KEY, username VARCHAR(64), profile ${jsonType});`,
+    `INSERT INTO user_profiles (id, username, profile) VALUES (1, 'ada.lovelace', '{"name": {"first": "Ada", "last": "Lovelace"}, "roles": ["admin", "engineer"], "address": {"city": "London", "country": "UK", "geo": {"lat": 51.5074, "lng": -0.1278}}, "preferences": {"theme": "dark", "notifications": {"email": true, "sms": false}}}');`,
+    `INSERT INTO user_profiles (id, username, profile) VALUES (2, 'grace.hopper', '{"name": {"first": "Grace", "last": "Hopper"}, "roles": ["admin"], "address": {"city": "New York", "country": "USA", "geo": {"lat": 40.7128, "lng": -74.006}}, "preferences": {"theme": "light", "notifications": {"email": true, "sms": true}}}');`,
+  ].join("\n");
 }
 
 export const DB_CONFIGS: Record<string, ScreenshotDbConfig> = {
@@ -21,6 +34,8 @@ export const DB_CONFIGS: Record<string, ScreenshotDbConfig> = {
     defaultDatabase: "saklia",
     sampleTable: "film",
     query: "SELECT film_id, title, release_year, rating, length\nFROM film\nORDER BY title\nLIMIT 50;",
+    jsonTable: "user_profiles",
+    jsonSetup: jsonSetup("jsonb"),
   },
   mysql: {
     name: "mysql",
@@ -31,6 +46,8 @@ export const DB_CONFIGS: Record<string, ScreenshotDbConfig> = {
     defaultDatabase: "employees",
     sampleTable: "employees",
     query: "SELECT emp_no, first_name, last_name, gender, hire_date\nFROM employees\nORDER BY emp_no\nLIMIT 50;",
+    jsonTable: "user_profiles",
+    jsonSetup: jsonSetup("json"),
   },
 };
 

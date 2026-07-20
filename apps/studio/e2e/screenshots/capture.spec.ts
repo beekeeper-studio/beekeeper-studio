@@ -141,6 +141,21 @@ async function captureForDb(cfg: ScreenshotDbConfig) {
     // interface mount separately) and zoom the UI in a little.
     await setDarkTheme(page);
     await zoomIn(app);
+    // Set the JSON viewer sidebar width up front, before it is ever opened, so
+    // it renders wide (dispatching the width to an already-open sidebar does not
+    // resize it reactively).
+    await page.evaluate(() => {
+      let root: any = null;
+      for (const el of Array.from(document.querySelectorAll("body *"))) {
+        if ((el as any).__vue__?.$root) { root = (el as any).__vue__.$root; break; }
+      }
+      try {
+        root?.$store?.dispatch("sidebar/setSecondaryActiveTabId", "json-viewer");
+        root?.$store?.dispatch("sidebar/setSecondarySidebarWidth", 480);
+      } catch (e) {
+        /* ignore */
+      }
+    });
     await page.waitForTimeout(800);
 
     // ---- View 1: query editor with results ----
@@ -153,12 +168,30 @@ async function captureForDb(cfg: ScreenshotDbConfig) {
     await page.waitForTimeout(800);
     await shot(page, `beekeeper-${cfg.name}-query-editor.png`);
 
-    // ---- View 2: table data view + JSON sidebar ----
-    const tableItem = page
-      .locator("span.table-name.truncate", { hasText: cfg.sampleTable })
+    // ---- View 2: table data view + JSON sidebar (nested-JSON demo table) ----
+    // Create a small demo table with a nested JSON column so the JSON sidebar
+    // clearly shows nested structure.
+    await userAttemptsTo.openNewTab();
+    await userAttemptsTo.writeAQuery(cfg.jsonSetup, "1");
+    await userAttemptsTo.runQuery("1");
+    await page.waitForTimeout(2000);
+
+    // Refresh the entities list so the new table shows (some clients, e.g.
+    // MySQL, don't auto-refresh after DDL). TableList.vue's refresh button.
+    try {
+      await page.getByTitle("Refresh", { exact: true }).first().click({ timeout: 5000 });
+      await page.waitForTimeout(1500);
+    } catch (e) {
+      /* ignore */
+    }
+
+    // The new table now appears in the entities sidebar; open its data tab.
+    const jsonTableItem = page
+      .locator("span.table-name.truncate", { hasText: cfg.jsonTable })
       .first();
-    await tableItem.scrollIntoViewIfNeeded();
-    await tableItem
+    await jsonTableItem.waitFor({ state: "visible", timeout: 20000 });
+    await jsonTableItem.scrollIntoViewIfNeeded();
+    await jsonTableItem
       .locator('xpath=ancestor::span[contains(@class,"item-wrapper")]')
       .dblclick();
     // Wait for the data grid of the opened table (scope to visible rows; the
@@ -167,8 +200,8 @@ async function captureForDb(cfg: ScreenshotDbConfig) {
     await visibleRow.waitFor({ state: "visible", timeout: 30000 });
     await page.waitForTimeout(500);
 
-    // Select a data cell and use its "See details" context-menu action, which
-    // opens the JSON viewer secondary sidebar populated with that row (see
+    // Select the `profile` cell and use its "See details" context-menu action,
+    // which opens the JSON viewer secondary sidebar populated with that row (see
     // TableTable.vue -> AppEvent.selectSecondarySidebarTab/toggleSecondarySidebar).
     const cell = visibleRow.locator(".tabulator-cell").nth(2);
     await cell.click();
@@ -188,20 +221,7 @@ async function captureForDb(cfg: ScreenshotDbConfig) {
         root?.$emit("toggleSecondarySidebar", true);
       });
     }
-    await page.waitForTimeout(1000);
-    // Widen the JSON viewer sidebar so its contents are easier to read.
-    await page.evaluate(() => {
-      let root: any = null;
-      for (const el of Array.from(document.querySelectorAll("body *"))) {
-        if ((el as any).__vue__?.$root) { root = (el as any).__vue__.$root; break; }
-      }
-      try {
-        root?.$store?.dispatch("sidebar/setSecondarySidebarWidth", 460);
-      } catch (e) {
-        /* ignore */
-      }
-    });
-    await page.waitForTimeout(600);
+    await page.waitForTimeout(1200);
     await shot(page, `beekeeper-${cfg.name}-table-json-sidebar.png`);
 
     // ---- View 3: table structure ----
@@ -219,7 +239,11 @@ async function captureForDb(cfg: ScreenshotDbConfig) {
       root?.$emit("toggleSecondarySidebar", false);
     });
     await page.waitForTimeout(400);
-    await tableItem.click({ button: "right" });
+    const structureTableItem = page
+      .locator("span.table-name.truncate", { hasText: cfg.sampleTable })
+      .first();
+    await structureTableItem.scrollIntoViewIfNeeded();
+    await structureTableItem.click({ button: "right" });
     await page.waitForTimeout(400);
     try {
       await page.getByText("View Structure", { exact: false }).first().click({ timeout: 5000 });
