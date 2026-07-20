@@ -205,6 +205,9 @@ export default Vue.extend({
   computed: {
     ...mapState(["connectionType", "tables"]),
     ...mapGetters(["dialectData", "isCloud"]),
+    ...mapState("data/queries", {
+      queries: "items"
+    }),
     hasUnsavedChanges(): boolean {
       return this.unsavedText !== null;
     },
