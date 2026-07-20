@@ -371,6 +371,7 @@
       :unsaved-text="unsavedChanges ? unsavedText : null"
       @close="editHistoryOpen = false"
       @restore="handleEditHistoryRestore"
+      @discardUnsavedChanges="handleDiscardUnsavedChanges"
     />
 
     <!-- Super-Formatter Modal -->
@@ -553,7 +554,7 @@
   import _ from 'lodash'
   import Split from 'split.js'
   import Noty from 'noty'
-  import { mapGetters, mapState } from 'vuex'
+  import { mapActions, mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
 
   import { canDeparameterize, convertParamsForReplacement, deparameterizeQuery, safelyIdentify } from '../lib/db/sql_tools'
@@ -1063,6 +1064,9 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       }
     },
     methods: {
+      ...mapActions({
+        reloadQuery: "data/queries/reload",
+      }),
       updateTab() {
         this.$emit('update-tab', this.tab)
       },
@@ -1889,7 +1893,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             id: "formatter",
             handler: this.formatterPreset,
           },
-          ...(this.query?.id && this.isCloud
+          ...(this.query?.id
             ? [
                 divider,
                 {
@@ -1923,10 +1927,15 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.editHistoryOpen = true;
         }
       },
-      handleEditHistoryRestore(restored) {
-        this.fullQuery = restored;
-        this.unsavedText = restored.text;
-        this.originalText = restored.text;
+      async handleEditHistoryRestore() {
+        await this.reloadQuery(this.tab.queryId);
+        this.fullQuery = await this.$store.dispatch('data/queries/findOne', this.tab.queryId);
+        this.unsavedText = this.fullQuery.text;
+        this.originalText = this.fullQuery.text;
+        this.editHistoryOpen = false;
+      },
+      handleDiscardUnsavedChanges() {
+        this.unsavedText = this.originalText;
         this.editHistoryOpen = false;
       },
       getCommitModeVTooltip(options: {
