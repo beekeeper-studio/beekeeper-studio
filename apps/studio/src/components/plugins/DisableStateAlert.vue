@@ -23,6 +23,20 @@
     </div>
     <div
       class="alert-body"
+      v-else-if="snapshot.disableState.reason === 'unlisted-plugins-disabled'"
+    >
+      {{ snapshot.manifest.name }} is an unlisted plugin (not from the official
+      or community registry). Unlisted plugins are disabled via configuration.
+    </div>
+    <div
+      class="alert-body"
+      v-else-if="snapshot.disableState.reason === 'signature-invalid'"
+    >
+      {{ snapshot.manifest.name }} failed signature verification. Its files may
+      have been modified since it was signed. Reinstall it to continue.
+    </div>
+    <div
+      class="alert-body"
       v-else-if="snapshot.disableState.reason === 'disabled-by-config'"
     >
       {{ snapshot.manifest.name }} has been disabled via configuration.

@@ -61,6 +61,10 @@ module.exports = {
       to: 'production_pub.pem'
     },
     {
+      from: './extra_resources/plugin_signing_pub.asc',
+      to: 'plugin_signing_pub.asc'
+    },
+    {
       from: 'build/launcher-script.sh',
       to: 'launcher-script.sh'
     },

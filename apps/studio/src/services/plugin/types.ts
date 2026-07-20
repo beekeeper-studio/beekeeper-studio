@@ -207,12 +207,27 @@ export type WebPluginContext = {
   createNewTab(viewId: string, command: string, params?: JsonValue): void;
 }
 
+/**
+ * Signature-verification status of an installed plugin:
+ * - `trusted`: a valid signature covers the exact on-disk contents (or the
+ *   plugin is bundled with the app).
+ * - `absent`: no signature present, or no trusted key available to check it.
+ * - `invalid`: a signature is present but does not verify (tampered contents,
+ *   wrong id, ...).
+ */
+export type VerificationStatus = "trusted" | "absent" | "invalid";
+
 export type PluginSnapshot = {
   manifest: ManifestV1;
   /** Is this compatible with the current app version? */
   loadable: boolean;
   origin: PluginOrigin;
   disableState: DisableState;
+} & {
+  origin: "official";
+  /** Signature-verification status derived from disk.
+    * Set by the signature module. @see {SignatureModule} */
+  verified: VerificationStatus;
 };
 
 export type WebPluginManagerStatus = "initializing" | "ready" | "failed-to-initialize";
@@ -246,7 +261,9 @@ type DisableState =
       reason:
         | "plugin-system-disabled"
         | "community-plugins-disabled"
-        | "disabled-by-config";
+        | "unlisted-plugins-disabled"
+        | "disabled-by-config"
+        | "signature-invalid";
     };
 
 /**

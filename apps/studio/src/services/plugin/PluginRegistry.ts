@@ -56,6 +56,15 @@ export default class PluginRegistry {
     );
   }
 
+  async originOf(id: string): Promise<PluginOrigin> {
+    try {
+      const entry = await this.findEntry(id);
+      return entry.origin;
+    } catch {
+      return "unlisted";
+    }
+  }
+
   private async loadOfficialEntries() {
     if (this.officialDisabled || this.officialEntriesCached) {
       return;

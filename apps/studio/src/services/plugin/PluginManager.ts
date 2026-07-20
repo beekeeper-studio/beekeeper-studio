@@ -16,6 +16,7 @@ import semver from "semver";
 import { PluginError, PluginSystemError } from "@/lib/errors";
 import { convertToManifestV1, isManifestV0, mapViewsAndMenuFromV0ToV1 } from "./utils";
 import { Hookable } from "./Hookable";
+import { PluginDraft } from "./PluginDraft";
 
 const log = rawLog.scope("PluginManager");
 
@@ -57,6 +58,8 @@ export default class PluginManager extends Hookable {
 
     const installedPlugins = this.fileManager.scanPlugins().map(convertToManifestV1);
     this.manifests = installedPlugins;
+
+    await this.callHook("after-scan-plugins", installedPlugins);
 
     log.debug("Installed plugins:", installedPlugins);
 
@@ -164,13 +167,6 @@ export default class PluginManager extends Hookable {
 
     await this.callHook("before-install-plugin", id);
 
-    let update = false;
-
-    // If plugin is already installed, perform update
-    if (this.manifests.find((manifest) => manifest.id === id)) {
-      update = true;
-    }
-
     return await this.withPluginLock(id, async () => {
       const info = await this.registry.getRepository(id);
       if (!info) {
@@ -200,10 +196,14 @@ export default class PluginManager extends Hookable {
 
       log.debug(`Installing plugin "${id}" ${info.latestRelease.manifest.version}...`);
 
-      if (update) {
-        await this.fileManager.update(id, info.latestRelease);
-      } else {
-        await this.fileManager.download(id, info.latestRelease);
+      const draft = new PluginDraft(info.latestRelease);
+      try {
+        const targetDir = this.fileManager.getDirectoryOf(id);
+        await draft.stage();
+        await this.callHook("after-stage-plugin", draft);
+        await draft.install(targetDir);
+      } finally {
+        await draft.clean();
       }
 
       const manifest = this.fileManager.getManifest(id);

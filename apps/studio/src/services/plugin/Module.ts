@@ -1,15 +1,12 @@
 import type PluginManager from "./PluginManager";
-import type { PluginSnapshot } from "./types";
-
-export type PluginSourcePathParams = {
-  sourceDir: string;
-  id: string;
-  removeSourceDir: boolean;
-};
+import type { Manifest, PluginSnapshot } from "./types";
+import type { PluginDraft } from "./PluginDraft";
 
 export interface ModuleHookMap {
   "before-initialize": () => void | Promise<void>;
+  "after-scan-plugins": (plugins: Manifest[]) => void | Promise<void>;
   "before-install-plugin": (pluginId: string) => void | Promise<void>;
+  "after-stage-plugin": (draft: PluginDraft) => void | Promise<void>;
   "plugin-snapshots": (
     snapshots: PluginSnapshot[]
   ) => PluginSnapshot[] | Promise<PluginSnapshot[]>;
@@ -28,6 +25,8 @@ export type ModuleOptions = {
 
 export abstract class Module {
   manager: PluginManager;
+  /** Modules with a higher priority run their hooks first. Defaults to 0. */
+  readonly priority: number = 0;
   private _hooks: ModuleHook[] = [];
 
   constructor(options: ModuleOptions) {

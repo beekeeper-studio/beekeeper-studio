@@ -1,6 +1,6 @@
 import yargs from 'yargs-parser'
 import _ from 'lodash'
-import { existsSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 import { resolve, join } from 'path'
 import { IPlatformInfo } from '../IPlatformInfo'
 import { BksVersion } from '@/lib/license'
@@ -83,6 +83,12 @@ export function mainPlatformInfo(): IPlatformInfo {
     return parsedArgs['ozone-platform-hint'] === 'auto' &&
       sessionType === 'wayland' && !isWindows && !isMac
   }
+
+  const pluginPublicKeyPath = join(resourcesPath, "plugin_signing_pub.asc")
+  const pluginPublicKey = existsSync(pluginPublicKeyPath)
+    ? readFileSync(pluginPublicKeyPath, "utf-8")
+    : ""
+
    return {
     isWindows, isMac, isArm, oracleSupported,
     parsedArgs,
@@ -127,6 +133,7 @@ export function mainPlatformInfo(): IPlatformInfo {
     // value: main consumes platformInfo directly, utility receives it as a
     // JSON env var when forked, renderer fetches it over IPC.
     logLevel: resolveLevel(p.env, isDevEnv),
+    pluginPublicKey,
 
     cloudUrl: isDevEnv ? 'http://localhost:3000' : 'https://app.beekeeperstudio.io'
   }

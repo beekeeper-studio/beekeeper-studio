@@ -251,13 +251,14 @@ export default Vue.extend({
       const installedPlugins: PluginSnapshot[] = this.snapshots;
       const list: PluginRegistryEntry[] = [];
 
-      for (const { manifest, loadable } of installedPlugins) {
+      for (const { manifest, loadable, origin } of installedPlugins) {
         const data = {
           ...manifest,
           installed: true,
           installing: false,
           checkingForUpdates: null,
           loadable,
+          origin,
         };
 
         const entry = entries.find((entry) => entry.id === manifest.id);
@@ -294,7 +295,7 @@ export default Vue.extend({
 
       return list.map((item) => ({
         ...item,
-        origin: this.findPluginOrigin(item.id),
+        origin: (item as any).origin ?? this.findPluginOrigin(item.id),
       }));
     },
     open() {
