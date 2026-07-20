@@ -33,10 +33,17 @@ export type DropTarget = {
   position: DropPosition;
 };
 
+/**
+ * Where the source lands among its new siblings, relative to an item id.
+ * `{ before: null }` means the first slot.
+ */
+export type DropSlot = { before: number | null } | { after: number };
+
 export type TreeNodeMoveEvent = {
   source: Node;
   target: Node;
-  position: DropPosition;
+  /** Ready to hand straight to a reorder action. */
+  position: DropSlot;
   /** Folder id the source ends up under. null = tree root. */
   parentId: number | null;
 };

@@ -1,8 +1,9 @@
 import {
   buildTree,
+  dropSlot,
   isFolderListEmpty,
 } from "../../../lib/components/tree/tree";
-import { Folderable } from "../../../lib/components/tree/types";
+import { Folderable, Node } from "../../../lib/components/tree/types";
 
 type Item = {
   id: number;
@@ -237,5 +238,29 @@ describe("isFolderListEmpty", () => {
   it("is false when items exist even without folders", () => {
     const queries: Item[] = [{ id: 10, queryFolderId: null }];
     expect(isFolderListEmpty(queries, [])).toBe(false);
+  });
+});
+
+describe("dropSlot", () => {
+  const item = (id: number): Node => ({ id, parentId: null, type: "item", ref: {} });
+  const folder = (id: number): Node => ({
+    id,
+    parentId: null,
+    type: "folder",
+    ref: { id, name: `F${id}`, parentId: null },
+  });
+
+  it("anchors to the item dropped next to", () => {
+    expect(dropSlot(item(7), "before")).toEqual({ before: 7 });
+    expect(dropSlot(item(7), "after")).toEqual({ after: 7 });
+  });
+
+  // before/after reference item ids, and folders are not in that list — the tree
+  // renders subfolders above items. So a folder decides the parent, not the slot,
+  // and the item lands in the first slot of its new parent.
+  it("falls back to the first slot when dropped on a folder", () => {
+    expect(dropSlot(folder(3), "inside")).toEqual({ before: null });
+    expect(dropSlot(folder(3), "before")).toEqual({ before: null });
+    expect(dropSlot(folder(3), "after")).toEqual({ before: null });
   });
 });

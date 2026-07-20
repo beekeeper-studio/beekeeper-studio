@@ -12,7 +12,7 @@ Example of a Node object in json (simplified):
 
 */
 
-import { Folderable, Node, Tree } from "./types";
+import { DropPosition, DropSlot, Folderable, Node, Tree } from "./types";
 
 function byPosition(a: { position?: number }, b: { position?: number }) {
   return (a.position ?? 0) - (b.position ?? 0);
@@ -86,4 +86,18 @@ export function isFolderListEmpty(
   folders: unknown[] | undefined | null
 ): boolean {
   return !items?.length && !folders?.length;
+}
+
+/**
+ * Where a dropped node lands among its new siblings.
+ *
+ * A slot is only meaningful next to an item, because before/after reference item
+ * ids and folders are not in that list — subfolders render above items. So
+ * dropping next to a folder decides the parent, not the slot.
+ */
+export function dropSlot(target: Node, position: DropPosition): DropSlot {
+  if (target.type !== "item") {
+    return { before: null };
+  }
+  return position === "after" ? { after: target.id } : { before: target.id };
 }

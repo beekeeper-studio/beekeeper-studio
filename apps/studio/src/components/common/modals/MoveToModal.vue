@@ -51,10 +51,7 @@
               class="move-folder-radio"
               type="radio"
               name="move-to-folder"
-              :disabled="
-                currentFolderId === props.node.ref.id ||
-                folderId === props.node.ref.id
-              "
+              :disabled="currentFolderId === props.node.ref.id"
               :value="props.node.ref.id"
               v-model="selectedFolderId"
             >
@@ -95,7 +92,7 @@ import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { IFolder } from "@/common/interfaces/IQueryFolder";
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
 import rawLog from "@bksLogger";
-import { getAncestorsAndSelf } from "@/lib/data/folder";
+import { getSelfAndAnscestors, getSelfAndDescendants } from "@/lib/data/folder";
 
 type Target =
   | { type: "connection"; value: IConnection }
@@ -130,54 +127,32 @@ export default Vue.extend({
       );
     },
     isTeamFolder() {
-      return this.isFolder && !this.target.value.personal;
+      return this.isCloud && this.isFolder && !this.target.value.personal;
     },
-    isQuery(): boolean {
+    isQueryTarget(): boolean {
       return (
         this.target?.type === "query" || this.target?.type === "queryFolder"
       );
     },
-    parent(): IFolder | null {
-      if (!this.target) {
-        return null;
-      }
-      if (this.target.type === "connectionFolder") {
-        return this.connectionFolders.find(
-          (folder: IFolder) => folder.id === this.target.value.parentId
-        );
-      }
-      if (this.target.type === "queryFolder") {
-        return this.queryFolders.find(
-          (folder: IFolder) => folder.id === this.target.value.parentId
-        );
-      }
-      if (this.target.type === "connection") {
-        return this.connectionFolders.find(
-          (folder: IFolder) =>
-            folder.id === this.target.value.connectionFolderId
-        );
-      }
-      if (this.target.type === "query") {
-        return this.queryFolders.find(
-          (folder: IFolder) => folder.id === this.target.value.queryFolderId
-        );
-      }
-      log.warn("Unknown target type:", this.target.type);
-      return null;
-    },
-    folders(): IFolder[] {
+    folders() {
       if (!this.target) return [];
-      return this.isQuery ? this.queryFolders : this.connectionFolders;
+      return this.isQueryTarget ? this.queryFolders : this.connectionFolders;
     },
-    filteredFolders() {
+    excludedFolders(): WeakSet<IFolder> {
+      return new WeakSet(
+        this.isFolder
+          ? getSelfAndDescendants(this.target.value.id, this.folders)
+          : undefined
+      );
+    },
+    filteredFolders(): IFolder[] {
       return this.folders.filter((folder: IFolder) => {
         // Prevent moving a team folder to a personal folder
         if (this.isTeamFolder && folder.personal) {
           return false;
         }
 
-        // Prevent moving a folder to its own children
-        if (this.isFolder && folder.parentId === this.target.value.id) {
+        if (this.excludedFolders.has(folder)) {
           return false;
         }
 
@@ -195,19 +170,6 @@ export default Vue.extend({
         ? this.target.value.title
         : this.target.value.name;
     },
-    folderId(): number | null {
-      if (this.isFolder) {
-        return this.target.value.id;
-      }
-      if (this.target.type === "connection") {
-        return this.target.value.connectionFolderId;
-      }
-      if (this.target.type === "query") {
-        return this.target.value.queryFolderId;
-      }
-      log.warn("Unknown target type:", this.target.type);
-      return null;
-    },
     currentFolderId(): number | null {
       if (!this.target) return null;
       if (this.isFolder) return this.target.value.parentId ?? null;
@@ -218,7 +180,7 @@ export default Vue.extend({
       );
     },
     canMove(): boolean {
-      return this.selectedFolderId !== null && this.selectedFolderId !== this.currentFolderId;
+      return this.selectedFolderId !== this.currentFolderId;
     },
   },
   methods: {
@@ -232,11 +194,11 @@ export default Vue.extend({
     }),
     open(target: Target) {
       this.target = target;
-      this.selectedFolderId = null;
+      this.selectedFolderId = this.currentFolderId;
 
       // Expand anscestors
-      this.expandedFolderIds = getAncestorsAndSelf(
-        this.parent.id,
+      this.expandedFolderIds = getSelfAndAnscestors(
+        this.currentFolderId,
         this.folders
       ).map((f) => f.id);
 

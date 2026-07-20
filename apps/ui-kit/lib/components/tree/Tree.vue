@@ -33,7 +33,7 @@
 <script lang="ts">
 import Vue from "vue";
 import props from "./props";
-import { buildTree, isFolderListEmpty } from "./tree";
+import { buildTree, dropSlot, isFolderListEmpty } from "./tree";
 import TreeNode from "./TreeNode.vue";
 import { uuidv4 } from "../../utils/uuid";
 import {
@@ -131,7 +131,7 @@ export default Vue.extend({
       const payload: TreeNodeMoveEvent = {
         source,
         target,
-        position,
+        position: dropSlot(target, position),
         parentId: position === "inside" ? target.id : target.parentId,
       };
       this.$emit("bks-tree-node-move", payload);

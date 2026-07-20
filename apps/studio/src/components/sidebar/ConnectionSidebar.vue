@@ -508,7 +508,7 @@ export default {
         name: 'New Subfolder',
         handler: ({ item }) => this.createSubfolder(item),
       }];
-      if (!isRoot) {
+      if (!this.isCloud || !isRoot) {
         options.push(...[
           { type: "divider" },
           {
@@ -540,10 +540,12 @@ export default {
       this.$bks.openMenu({ event, item: folder, options })
     },
     /** @param event {import("@beekeeperstudio/ui-kit").TreeNodeMoveEvent} */
-    async handleTreeNodeMove({ source, target, position, parentId }) {
+    async handleTreeNodeMove({ source, position, parentId }) {
       try {
         if (source.type === 'folder') {
-          if (parentId === (source.ref.parentId ?? null)) return
+          if (parentId === (source.ref.parentId ?? null)) {
+            return
+          }
           await this.$store.dispatch('data/connectionFolders/save', {
             ...source.ref,
             parentId,
@@ -552,19 +554,12 @@ export default {
           await this.$store.dispatch('data/connections/reorder', {
             item: source.ref,
             connectionFolderId: parentId,
-            position: this.treeDropSlot(target, position),
+            position,
           })
         }
       } catch (ex) {
         this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
       }
-    },
-    // `position.before`/`after` reference connection ids, and folders are not in
-    // that list — the tree renders subfolders above items. So dropping next to a
-    // folder only decides the parent, not the slot.
-    treeDropSlot(target, position) {
-      if (target.type !== 'item') return { before: null }
-      return position === 'after' ? { after: target.id } : { before: target.id }
     },
     share(folder) {
       this.trigger(AppEvent.openShareModal, {
