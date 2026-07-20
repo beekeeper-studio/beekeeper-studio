@@ -7,7 +7,6 @@
       :data-node-type="node.type"
       :data-drop-target="dropTargetFor(node)"
       @click="handleClick"
-      @dblclick="handleDblClick"
       @dragstart="handleDragStart($event, node)"
       @dragover="handleDragOver($event, node)"
       @dragleave="handleDragLeave($event, node)"
@@ -177,20 +176,12 @@ export default Vue.extend({
       this.$emit("node-drop", node);
     },
 
-    handleClick(event: MouseEvent) {
+    handleClick() {
       if (this.node.type !== "folder") {
-        return;
-      }
-      const target = event.target as HTMLElement | null;
-      if (!target?.closest("[data-trigger-expand-on-click]")) {
         return;
       }
       this.$emit("toggle-expanded", this.node);
     },
-
-    handleDblClick() {
-      this.$emit("toggle-expanded", this.node);
-    }
   },
 });
 </script>
