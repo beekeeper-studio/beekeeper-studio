@@ -1,11 +1,12 @@
 import Vue from 'vue'
 import _ from 'lodash'
-import pluralize from 'pluralize'
 import { IConnectionFolder } from "@/common/interfaces/IQueryFolder";
 import { DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { safely } from "@/store/modules/data/StoreHelpers";
+import { accessGrantMutations, localAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
 import { buildFolderTree } from "@/common/utils/folderTree";
+import { pluralize } from '@/vendor/pluralize';
 
 type State = DataState<IConnectionFolder>
 
@@ -19,12 +20,17 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
   },
   mutations: {
     ...mutationsFor<IConnectionFolder>({}, { field: 'name', direction: 'asc' }),
+    ...accessGrantMutations(),
   },
   getters: {
     foldersWithConnections: (state) => (connections: any[]) =>
       buildFolderTree(state.items, connections, 'connectionFolderId')
   },
   actions: {
+    ...localAccessGrantActions(),
+    async initialize(context) {
+      await context.dispatch('load');
+    },
     async load(context) {
       context.commit('error', null)
       await safely(context, async () => {

@@ -369,7 +369,7 @@ export default {
       this.trigger('favoriteClick', item, { openHistory: true })
     },
     async remove(favorite) {
-      if (await this.$confirm("Really delete?")) {
+      if (await this.$confirm(`Delete "${favorite.name}"?`, undefined, { variant: "danger" })) {
         await this.$store.dispatch('data/queries/remove', favorite)
       }
     },
@@ -402,8 +402,12 @@ export default {
       event.stopPropagation();
 
       const options = []
+      const canWrite = folder.canWrite ?? true;
       if (this.isCloud && !folder.parentId) {
         options.push({ name: 'New Subfolder', handler: ({ item }) => this.createSubfolder(item) })
+      }
+      if (!canWrite) {
+        // do nothing
       }
       options.push(...[
         { name: 'Rename', handler: ({ item }) => this.renameQueryFolder(item) },
@@ -414,6 +418,12 @@ export default {
         { name: 'Delete', handler: ({ item }) => this.deleteFolder(item) }
       ].filter(Boolean))
       this.$bks.openMenu({ event, item: folder, options })
+    },
+    share(folder) {
+      this.trigger(AppEvent.openShareModal, {
+        id: folder.id,
+        module: "data/queryFolders",
+      });
     },
     createSubfolder(parentFolder) {
       if (!this.isUltimate && !this.isCloud) {

@@ -33,7 +33,7 @@ jobs:
           version: "1.7"
           force: true
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - id: set-test-chunks
         name: Set Chunks
@@ -46,7 +46,7 @@ jobs:
 
       - name: Cache node_modules
         id: cache-nm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             node_modules
@@ -72,7 +72,7 @@ jobs:
     needs: [prep]
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Node.js, NPM and Yarn
         uses: actions/setup-node@v6
@@ -108,6 +108,9 @@ jobs:
       - name: Check for missing lodash imports
         run: bin/check-lodash.sh
 
+      - name: Check shell scripts (shellcheck)
+        run: bin/check-shell-scripts.sh
+
       - name: Build UI Kit
         run: yarn lib:build
 
@@ -132,7 +135,7 @@ jobs:
         chunk: ${{ fromJson(needs.prep.outputs['test-chunks']) }}
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Node.js, NPM and Yarn
         uses: actions/setup-node@v6

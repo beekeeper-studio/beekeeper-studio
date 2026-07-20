@@ -441,6 +441,14 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
       const rows: any[] = []
 
       for await (const r of result) {
+        // The trino-client iterator doesn't throw on query failure - it
+        // yields the error response as a normal value, so without this
+        // check a failed query looks like a successful 0-row result.
+        if (r.error) {
+          const { errorName, message } = r.error
+          throw new Error(errorName ? `${errorName}: ${message}` : message)
+        }
+
         const { data: resultData, columns: resultColumns } = r
         columns = resultColumns
 

@@ -16,6 +16,9 @@ export const UtilQueryAuditModule: Module<State, RootState> = {
     pollError: null,
   },
   actions: {
+    async initialize() {
+      // noop
+    },
     async load() {},
     async poll() {},
     async list(_context, queryId: number): Promise<TransportQueryAudit[]> {

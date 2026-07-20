@@ -13,6 +13,7 @@
         class="form-control"
         placeholder="eg: example-project"
         v-model="config.bigQueryOptions.projectId"
+        :disabled="disabled"
       >
     </div>
     <div class="form-group">
@@ -22,6 +23,7 @@
         class="form-control"
         v-model="config.defaultDatabase"
         placeholder="(Optional)"
+        :disabled="disabled"
       >
     </div>
     <toggle-form-area
@@ -34,6 +36,7 @@
         <x-switch
           @click.prevent="devMode = !devMode"
           :toggled="devMode"
+          :disabled="disabled"
         />
       </template>
       <div class="form-group">
@@ -41,6 +44,7 @@
           type="text"
           class="form-control"
           v-model="config.host"
+          :disabled="disabled"
         >
       </div>
       <div class="form-group">
@@ -48,6 +52,7 @@
           type="text"
           class="form-control"
           v-model="config.port"
+          :disabled="disabled"
         >
       </div>
     </toggle-form-area>
@@ -71,7 +76,7 @@
         <label for="KeyFilename">
           Service Account's JSON Private Key
         </label>
-        <file-picker v-model="config.bigQueryOptions.keyFilename" />
+        <file-picker v-model="config.bigQueryOptions.keyFilename" :disabled="disabled" />
       </div>
     </toggle-form-area>
   </div>
@@ -112,6 +117,12 @@ export default Vue.extend({
       this.config.bigQueryOptions.iamAuthenticationEnabled = this.iamAuthenticationEnabled = !this.iamAuthenticationEnabled
     }
   },
-  props: ['config'],
+  props: {
+    config: Object,
+    disabled: {
+      type: Boolean,
+      default: false
+    }
+  },
 })
 </script>

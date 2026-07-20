@@ -1,6 +1,7 @@
 import { ICloudSavedConnection } from "@/common/interfaces/IConnection";
 import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { havingCli } from "@/store/modules/data/StoreHelpers";
+import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import _ from "lodash";
 
 type State = DataState<ICloudSavedConnection>
@@ -18,9 +19,11 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
   mutations: mutationsFor<ICloudSavedConnection>({
     connectionFilter(state: State, str: string) {
       state.filter = str;
-    }
+    },
+    ...accessGrantMutations(),
   }, { field: 'name', direction: 'asc'}),
   actions: actionsFor<ICloudSavedConnection>('connections', {
+    ...cloudAccessGrantActions('connections'),
     setConnectionFilter: _.debounce(function (context, filter) {
       context.commit('connectionFilter', filter);
     }, 500),

@@ -18,14 +18,20 @@
             <content-placeholder-heading />
           </div>
           <div class="card-flat padding" :class="determineLabelColor" v-else>
-            <div class="flex flex-between">
-              <h3 class="card-title" v-if="!pageTitle">
-                New Connection
-              </h3>
-              <h3 class="card-title" v-if="pageTitle">
+            <div class="connection-heading">
+              <h3 class="card-title">
                 {{ pageTitle }}
               </h3>
-              <ImportButton :config="config">
+              <button
+                v-if="isCloud && !isNewConnection"
+                type="button"
+                class="btn btn-link btn-icon btn-small share-btn"
+                @click="share"
+              >
+                <i class="material-icons">share</i>
+                Share
+              </button>
+              <ImportButton :config="config" :disabled="editingDisabled">
                 Import from URL
               </ImportButton>
             </div>
@@ -38,6 +44,7 @@
                   class="form-control custom-select"
                   v-model="config.connectionType"
                   id="connection-select"
+                  :disabled="editingDisabled"
                 >
                   <option disabled hidden value="null">
                     Select a connection type...
@@ -56,114 +63,135 @@
                   v-if="config.connectionType === 'cockroachdb'"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <mysql-form
                   v-else-if="['mysql', 'mariadb', 'tidb'].includes(config.connectionType)"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <bedrock-form
                   v-else-if="config.connectionType === 'bedrock'"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <postgres-form
                   v-else-if="['postgresql', 'greengage'].includes(config.connectionType)"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <redshift-form
                   v-else-if="config.connectionType === 'redshift'"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <sqlite-form
                   v-else-if="config.connectionType === 'sqlite'"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <sql-server-form
                   v-else-if="config.connectionType === 'sqlserver'"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                   @error="connectionError = $event"
                 />
                 <big-query-form
                   v-else-if="config.connectionType === 'bigquery'"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <firebird-form
                   v-else-if="config.connectionType === 'firebird' && isUltimate"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <oracle-form
                   v-if="config.connectionType === 'oracle' && isUltimate"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <cassandra-form
                   v-if="['cassandra', 'scylladb'].includes(config.connectionType) && isUltimate"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <click-house-form
                   v-else-if="config.connectionType === 'clickhouse' && isUltimate"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <trino-form
                   v-else-if="config.connectionType === 'trino' && isUltimate"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <lib-sql-form
                   v-else-if="config.connectionType === 'libsql' && isUltimate"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <mongo-db-form
                   v-else-if="config.connectionType === 'mongodb' && isUltimate"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <duck-db-form
                   v-else-if="config.connectionType === 'duckdb' && isUltimate"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <sql-anywhere-form
                   v-else-if="config.connectionType === 'sqlanywhere' && isUltimate"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <surreal-db-form
                   v-else-if="config.connectionType === 'surrealdb' && isUltimate"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <redis-form
                   v-else-if="config.connectionType === 'redis'"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <dynamo-db-form
                   v-else-if="config.connectionType === 'dynamodb' && isUltimate"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <snowflake-form
                   v-else-if="config.connectionType === 'snowflake' && isUltimate"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
 
                 <!-- Set the database up in read only mode (or not, your choice) -->
                 <div class="form-group" v-if="!shouldUpsell">
                   <label class="checkbox-group" for="readOnlyMode">
                     <input
-                      :disabled="!isUltimate"
+                      :disabled="!isUltimate || editingDisabled"
                       class="form-control"
                       id="readOnlyMode"
                       type="checkbox"
@@ -214,6 +242,7 @@
                   :folders="connectionFolders"
                   :is-ultimate="isUltimate"
                   :is-cloud="isCloud"
+                  :disabled="editingDisabled"
                   @save="save"
                 />
               </div>
@@ -331,6 +360,12 @@ export default Vue.extend({
       'usedConfigs': 'data/usedconnections/orderedUsedConfigs',
       privacyMode: 'settings/privacyMode'
     }),
+    editingDisabled() {
+      if (!this.isCloud) {
+        return false;
+      }
+      return !this.config.canWrite;
+    },
     communityConnectionTypes() {
       return this.$config.defaults.connectionTypes.filter((ct) => !isUltimateType(ct.value))
     },
@@ -347,8 +382,11 @@ export default Vue.extend({
       if (this.isUltimate) return false
       return isUltimateType(this.config.connectionType)
     },
+    isNewConnection() {
+      return _.isNil(this.config) || _.isNil(this.config.id);
+    },
     pageTitle() {
-      if (_.isNull(this.config) || _.isUndefined(this.config.id)) {
+      if (this.isNewConnection) {
         return "New Connection"
       } else {
         return this.config.name
@@ -489,6 +527,9 @@ export default Vue.extend({
       this.connectionError = null
     },
     async remove(config) {
+      if (!await this.$confirm(`Delete "${config.name}"?`, undefined, { variant: "danger" })) {
+        return
+      }
       if (this.config === config) {
         this.$util.send('appdb/saved/new').then((conn) => {
           this.config = conn;
@@ -628,8 +669,27 @@ export default Vue.extend({
     loadingSSOCanceled() {
       this.connection.azureCancelAuth();
     },
+    share() {
+      this.trigger(AppEvent.openShareModal, {
+        id: this.config.id,
+        module: "data/connections",
+      });
+    },
   },
 })
 </script>
 
-<style></style>
+<style scoped>
+.connection-heading {
+  display: flex;
+
+  h3 {
+    flex-grow: 1;
+  }
+
+  .share-btn,
+  &::v-deep .import-button {
+    flex-shrink: 0;
+  }
+}
+</style>

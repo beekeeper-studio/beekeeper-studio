@@ -1,6 +1,6 @@
 <template>
   <div class="with-connection-type">
-    <common-server-inputs :config="config">
+    <common-server-inputs :config="config" :disabled="disabled">
       <template #header>
         <div class="alert alert-warning">
           <i class="material-icons-outlined">warning</i>
@@ -8,7 +8,7 @@
         </div>
       </template>
     </common-server-inputs>
-    <common-advanced :config="config" />
+    <common-advanced :config="config" :disabled="disabled" />
   </div>
 </template>
 
@@ -19,7 +19,13 @@
 
   export default {
     components: { CommonServerInputs, CommonAdvanced },
-    props: ['config']
+    props: {
+      config: Object,
+      disabled: {
+        type: Boolean,
+        default: false
+      }
+    }
 
   }
 </script>

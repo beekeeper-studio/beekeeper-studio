@@ -15,7 +15,9 @@
       >
         <div class="alert alert-warning alert-small">
           <i class="material-icons">error_outline</i>
-          <div class="alert-body">Run Current unavailable</div>
+          <div class="alert-body">
+            Run Current unavailable
+          </div>
           <div class="btn-group">
             <a
               @click.prevent="copyQuerySelectionError"
@@ -206,6 +208,7 @@
           <x-button
             @click.prevent="triggerSave"
             class="btn btn-flat btn-small"
+            :disabled="readOnly"
           >
             Save
           </x-button>
@@ -583,6 +586,7 @@
   import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
   import { wait } from '@/shared/lib/wait'
+  import ISavedQuery from '@/common/interfaces/ISavedQuery'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -688,11 +692,17 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           { event: AppEvent.openQueryEditHistory, handler: this.handleOpenQueryEditHistory },
         ];
       },
+      savedQuery(): ISavedQuery | undefined {
+        return this.savedQueries.find((q) => q.id === this.tab.queryId);
+      },
       readOnly() {
         if (this.tab.isLoading) {
           return true;
         }
         if (this.remoteDeleted) {
+          return true;
+        }
+        if (this.isCloud && this.savedQuery && !this.savedQuery.canWrite) {
           return true;
         }
         return false;
@@ -771,7 +781,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         return result.length ? result : null
       },
       runningText() {
-        return `Running ${this.runningType} (${window.main.pluralize('query', this.runningCount, true)})`
+        return `Running ${this.runningType} (${this.$pluralize('query', this.runningCount, true)})`
       },
       hasSelectedText() {
         return this.editor.initialized ? !!this.editor.selection : false

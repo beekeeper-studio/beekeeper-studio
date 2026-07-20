@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 10
 
@@ -27,7 +27,7 @@ jobs:
 
       - name: Check if supported_databases.md changed
         id: check_changes
-        uses: actions/github-script@v6
+        uses: actions/github-script@v8
         with:
           script: |
             const { execSync } = require('child_process');
@@ -42,7 +42,7 @@ jobs:
       - name: Update README files if necessary
         if: steps.check_changes.outputs.changed == 'true'
         id: update_readme
-        uses: actions/github-script@v6
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');

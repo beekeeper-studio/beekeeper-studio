@@ -3,17 +3,17 @@
     <div class="form-group col">
       <label for="authenticationType">Authentication Method</label>
       <!-- need to take the value -->
-      <select name="" v-model="authType" id="">
+      <select name="" v-model="authType" id="" :disabled="disabled">
         <option :key="`${t.value}-${t.name}`" v-for="t in authTypes" :value="t.value" :selected="authType === t.value">
           {{ t.name }}
         </option>
       </select>
     </div>
-    <common-server-inputs v-show="showServerInputs" :config="config" :show-password-form="showPasswordForm" />
+    <common-server-inputs v-show="showServerInputs" :config="config" :show-password-form="showPasswordForm" :disabled="disabled" />
 
-    <common-iam v-show="iamAuthenticationEnabled" :auth-type="authType" :config="config" />
-    <common-entra-id v-show="azureAuthEnabled" :auth-type="authType" :config="config" />
-    <common-advanced :config="config" />
+    <common-iam v-show="iamAuthenticationEnabled" :auth-type="authType" :config="config" :disabled="disabled" />
+    <common-entra-id v-show="azureAuthEnabled" :auth-type="authType" :config="config" :disabled="disabled" />
+    <common-advanced :config="config" :disabled="disabled" />
   </div>
 </template>
 
@@ -30,7 +30,13 @@ import { mapGetters } from 'vuex';
 
 export default {
   components: {CommonEntraId, CommonServerInputs, CommonAdvanced, CommonIam},
-  props: ['config'],
+  props: {
+    config: Object,
+    disabled: {
+      type: Boolean,
+      default: false
+    }
+  },
   mounted() {
     this.azureAuthEnabled = this.config?.azureAuthOptions?.azureAuthEnabled || false
     if (this.authType !== 'default') {

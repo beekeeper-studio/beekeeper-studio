@@ -110,6 +110,7 @@
             Close
           </button>
           <button
+            v-if="query?.canWrite"
             class="btn btn-primary"
             type="button"
             @click="confirmRestore"
@@ -131,6 +132,7 @@ import {
   IQueryAudit,
   IQueryAuditDetail,
 } from "@/common/interfaces/IQueryAudit";
+import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import type { Extension } from "@codemirror/state";
 import { monokaiInit } from "@uiw/codemirror-theme-monokai";
 import rawLog from "@bksLogger";
@@ -145,6 +147,7 @@ interface AuditGroup {
 
 interface Audit {
   time: string;
+  user: string;
   isCurrentVersion: boolean;
   queryAudit: IQueryAudit;
 }
@@ -204,6 +207,9 @@ export default Vue.extend({
     ...mapGetters(["dialectData", "isCloud"]),
     hasUnsavedChanges(): boolean {
       return this.unsavedText !== null;
+    },
+    query(): ISavedQuery {
+      return this.queries.find((q) => q.id === this.queryId);
     },
     currentText(): string {
       if (this.selectedAuditId === "unsaved") {
@@ -354,6 +360,10 @@ export default Vue.extend({
         return `${month} ${day}, ${time}`;
       }
       return `${month} ${day} ${d.getFullYear()}`;
+    },
+    userLabel(audit: IQueryAudit): string {
+      const u = audit.user || {};
+      return u.name || u.username || u.email || "Unknown";
     },
     async loadAudits(): Promise<void> {
       const queryId = this.queryId;
