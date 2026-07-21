@@ -52,13 +52,3 @@ export function getDescendants(
 
   return getDescendants(root, filteredList);
 }
-
-export function getSelfAndDescendants(selfId: number, list: IFolder[]) {
-  const selfIndex = list.findIndex((item) => item.id === selfId);
-  if (selfIndex === -1) {
-    return [];
-  }
-  const self = list[selfIndex];
-  const filteredList = list.toSpliced(selfIndex, 1);
-  return [self, ...getDescendants(self.id, filteredList)];
-}

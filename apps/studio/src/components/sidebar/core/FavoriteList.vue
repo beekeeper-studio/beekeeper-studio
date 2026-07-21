@@ -82,7 +82,8 @@
             :folders="folders"
             :items="savedQueries ?? []"
             item-parent-key="queryFolderId"
-            :expanded-folder-ids.sync="expandedFolderIds"
+            :expanded-folder-ids="expandedFolderIds"
+            @update:expandedFolderIds="setExpandedFolderIds"
             @bks-tree-node-move="handleTreeNodeMove"
           >
             <template #empty>
@@ -176,17 +177,15 @@
 
 <script>
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
-import { SmartLocalStorage } from '@/common/LocalStorage'
 import { mapGetters, mapState } from 'vuex'
 import SidebarLoading from '../../common/SidebarLoading.vue'
 import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
-import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
-import Draggable from 'vuedraggable'
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
+import { SmartLocalStorage } from '@/common/LocalStorage'
 
 export default {
-  components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder, Draggable, Tree, TreeFolder },
+  components: { SidebarLoading, ErrorAlert, FavoriteListItem, Tree, TreeFolder },
   data: function () {
     return {
       checkedFavorites: [],
@@ -196,33 +195,41 @@ export default {
       folderModalParentId: null,
       folderModalError: null,
       folderModalSubmitting: false,
-      folderExpandedState: {},
+      expandedFolderIds: [],
       draggingQuery: null,
       renamingFolderId: null,
-      expandedFolderIds: [],
     }
   },
   watch: {
+    workspaceId() {
+      this.restoreExpandedFolderIds()
+    },
     loading() {
       if (this.loading) {
         return;
       }
-      const ids = new Set(this.expandedFolderIds);
-      for (const folder of this.rootFolders) {
-        ids.add(folder.id)
+      if (SmartLocalStorage.exists(this.expandedStorageKey)) {
+        return;
       }
-      this.expandedFolderIds = [...ids];
+      this.seedExpandedFolderIds();
     },
   },
   mounted() {
-    this.folderExpandedState = SmartLocalStorage.getJSON('queryFolderExpanded-v1', {})
+    SmartLocalStorage.remove('queryFolderExpanded-v1')
+    this.restoreExpandedFolderIds()
     document.addEventListener('mousedown', this.maybeUnselect)
   },
   beforeDestroy() {
     document.removeEventListener('mousedown', this.maybeUnselect)
   },
   computed: {
+    ...mapState(['workspaceId']),
     ...mapGetters(['workspace', 'isCloud', 'isUltimate']),
+    // v1 was a single workspace-agnostic map, so its expanded state can't be
+    // attributed to a workspace — it is dropped rather than migrated.
+    expandedStorageKey() {
+      return `queryFolderExpanded-v2-${this.workspaceId}`;
+    },
     ...mapGetters('data/queries', {'filteredQueries': 'filteredQueries'}),
     ...mapState('tabs', {'activeTab': 'active'}),
     ...mapState('data/queries', {'savedQueries': 'items', 'queriesLoading': 'loading', 'queriesError': 'error', 'savedQueryFilter': 'filter', 'pendingSaveIds': 'pendingSaveIds'}),
@@ -249,13 +256,19 @@ export default {
     }
   },
   methods: {
-    getFolderExpanded(folderId) {
-      const stored = this.folderExpandedState[folderId]
-      return stored !== undefined ? stored : true
+    setExpandedFolderIds(expandedFolderIds) {
+      this.expandedFolderIds = expandedFolderIds
+      SmartLocalStorage.addItem(this.expandedStorageKey, expandedFolderIds)
     },
-    onFolderToggle(folderId, expanded) {
-      this.$set(this.folderExpandedState, folderId, expanded)
-      SmartLocalStorage.addItem('queryFolderExpanded-v1', this.folderExpandedState)
+    restoreExpandedFolderIds() {
+      this.expandedFolderIds = SmartLocalStorage.getJSON(this.expandedStorageKey) ?? []
+    },
+    seedExpandedFolderIds() {
+      const ids = new Set(this.expandedFolderIds);
+      for (const folder of this.rootFolders) {
+        ids.add(folder.id)
+      }
+      this.expandedFolderIds = [...ids];
     },
     clearFilter() {
       this.filterQuery = null

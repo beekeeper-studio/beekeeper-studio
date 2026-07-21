@@ -151,7 +151,8 @@
                 :folders="folders"
                 :items="connections ?? []"
                 item-parent-key="connectionFolderId"
-                :expanded-folder-ids.sync="expandedFolderIds"
+                :expanded-folder-ids="expandedFolderIds"
+                @update:expandedFolderIds="setExpandedFolderIds"
                 @bks-tree-node-move="handleTreeNodeMove"
               >
                 <template #empty>
@@ -288,7 +289,6 @@ import { AppEvent } from '@/common/AppEvent'
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
 import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
-import Draggable from 'vuedraggable'
 import Noty from 'noty'
 
 const log = rawLog.scope('connection-sidebar');
@@ -301,7 +301,6 @@ export default {
     SidebarSortButtons,
     TreeFolder,
     WorkspaceSidebar,
-    Draggable,
     Tree,
   },
   props: ['selectedConfig'],
@@ -321,10 +320,9 @@ export default {
     folderModalParentId: null,
     folderModalError: null,
     folderModalSubmitting: false,
-    folderExpandedState: {},
+    expandedFolderIds: [],
     draggingConnection: null,
     renamingFolderId: null,
-    expandedFolderIds: [],
   }),
   watch: {
     async sort(newSort) {
@@ -333,18 +331,21 @@ export default {
       if (!this.sortInitialized) return
       await this.reorderBySort(newSort)
     },
+    workspaceId() {
+      this.restoreExpandedFolderIds()
+    },
     loading() {
       if (this.loading) {
         return;
       }
-      const ids = new Set(this.expandedFolderIds);
-      for (const folder of this.rootFolders) {
-        ids.add(folder.id)
+      if (SmartLocalStorage.exists(this.expandedStorageKey)) {
+        return;
       }
-      this.expandedFolderIds = [...ids];
+      this.seedExpandedFolderIds();
     },
   },
   computed: {
+    ...mapState(['workspaceId']),
     ...mapState('data/connections', {
       connectionsLoading: 'loading',
       connectionsError: 'error',
@@ -374,6 +375,11 @@ export default {
       set(newFilter) {
         this.$store.dispatch('data/connections/setConnectionFilter', newFilter);
       }
+    },
+    // v1 was a single workspace-agnostic map, so its expanded state can't be
+    // attributed to a workspace — it is dropped rather than migrated.
+    expandedStorageKey() {
+      return `connectionFolderExpanded-v2-${this.workspaceId}`;
     },
     noPins() {
       return !this.pinnedConnections?.length;
@@ -419,7 +425,8 @@ export default {
     },
   },
   async mounted() {
-    this.folderExpandedState = SmartLocalStorage.getJSON('connectionFolderExpanded-v1', {})
+    SmartLocalStorage.remove('connectionFolderExpanded-v1')
+    this.restoreExpandedFolderIds()
     this.buildSplit()
     const [field, order] = await Promise.all([
       this.$settings.get('connectionsSortBy', 'name'),
@@ -430,13 +437,19 @@ export default {
     this.$nextTick(() => { this.sortInitialized = true })
   },
   methods: {
-    getFolderExpanded(folderId) {
-      const stored = this.folderExpandedState[folderId]
-      return stored !== undefined ? stored : true
+    setExpandedFolderIds(expandedFolderIds) {
+      this.expandedFolderIds = expandedFolderIds
+      SmartLocalStorage.addItem(this.expandedStorageKey, expandedFolderIds)
     },
-    onFolderToggle(folderId, expanded) {
-      this.$set(this.folderExpandedState, folderId, expanded)
-      SmartLocalStorage.addItem('connectionFolderExpanded-v1', this.folderExpandedState)
+    restoreExpandedFolderIds() {
+      this.expandedFolderIds = SmartLocalStorage.getJSON(this.expandedStorageKey) ?? []
+    },
+    seedExpandedFolderIds() {
+      const ids = new Set(this.expandedFolderIds);
+      for (const folder of this.rootFolders) {
+        ids.add(folder.id)
+      }
+      this.expandedFolderIds = [...ids];
     },
     clearFilter() {
       this.connFilter = null;

@@ -1,8 +1,7 @@
 import { IShareable } from "./IShareable"
 import { IAccessGrant } from "./IAccessGrant"
-import { Folderable } from "@beekeeperstudio/ui-kit";
 
-export interface IFolder extends IShareable, Folderable {
+export interface IFolder extends IShareable {
   id: number | null
   name: string
   parentId: number | null

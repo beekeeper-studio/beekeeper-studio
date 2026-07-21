@@ -1,6 +1,6 @@
 <template>
   <component :is="tag" class="BksTree-folder" type="button">
-    <i class="material-icons expand-icon" :class="{ expanded }" data-trigger-expand-on-click>
+    <i class="material-icons expand-icon" :class="{ expanded }">
       keyboard_arrow_right
     </i>
     <i class="material-icons folder-icon">folder</i>

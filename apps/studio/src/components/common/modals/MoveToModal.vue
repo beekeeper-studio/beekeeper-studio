@@ -44,7 +44,7 @@
             class="move-folder-row"
             :class="{
               selected: selectedFolderId === props.node.ref.id,
-              empty: !props.node.nodes?.length,
+              empty: !props.node.children?.length,
             }"
           >
             <input
@@ -324,10 +324,5 @@ input[type="radio"].move-folder-radio {
   font-style: italic;
   font-size: 0.831rem;
   color: var(--text-lighter);
-}
-
-/** Tree component */
-::v-deep [data-node-empty="true"] .expand-icon {
-  visibility: hidden;
 }
 </style>
