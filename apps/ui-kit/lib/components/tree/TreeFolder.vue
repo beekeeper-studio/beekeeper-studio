@@ -9,35 +9,53 @@
     </i>
     <i class="material-icons folder-icon">folder</i>
     <span class="name">
-      {{ node.ref.name }} ({{ node.nodes?.length ?? 0 }})
+      <slot name="name">{{ node.ref.name }} ({{ count }})</slot>
     </span>
-    <slot />
   </component>
 </template>
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
-import { FolderNode } from "./types";
+import { ItemNode, Node } from "./types";
 
 export default Vue.extend({
   name: "TreeFolder",
 
   props: {
     node: {
-      type: Object as PropType<FolderNode>,
+      type: Object as PropType<Node>,
       required: true,
-    },
-    depth: {
-      type: Number,
-      default: 0,
     },
     expanded: {
       type: Boolean,
       default: false,
     },
+    descendantsMap: {
+      type: Map,
+      required: true,
+    },
+    allItems: {
+      type: Array as PropType<ItemNode[]>,
+      required: true,
+    },
     tag: {
       type: String,
       default: "button",
+    },
+  },
+
+  computed: {
+    count(): number {
+      if (!this.descendantsMap.has(this.node.id)) {
+        return 0;
+      }
+      const parentIds = this.descendantsMap.get(this.node.id)!;
+      const allItems: ItemNode[] = this.allItems;
+      return allItems.reduce(
+        (acc, item) =>
+          parentIds.has(item.parentId) ? acc + 1 : acc,
+        0
+      );
     },
   },
 });

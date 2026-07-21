@@ -1,9 +1,8 @@
 import {
-  buildTree,
-  dropSlot,
-  isFolderListEmpty,
+  buildDescendantsMap,
+  buildFolderNodes,
 } from "../../../lib/components/tree/tree";
-import { Folderable, Node } from "../../../lib/components/tree/types";
+import { Folder } from "../../../lib/components/tree/types";
 
 type Item = {
   id: number;
@@ -11,256 +10,68 @@ type Item = {
   [foreignKey: string]: number | null | undefined;
 };
 
-describe("buildFolderTree", () => {
-  it("includes empty root folders", () => {
-    const folders: Folderable[] = [
+describe("buildFolderNodes", () => {
+  it("returns one node per folder, keeping the folder reference", () => {
+    const folders: Folder[] = [
       { id: 1, name: "Root A", parentId: null },
       { id: 2, name: "Root B", parentId: null },
     ];
-    const queries: Item[] = [];
-    const tree = buildTree(folders, queries, "queryFolderId");
-    expect(tree).toEqual({
-      nodes: [
-        { id: 1, parentId: null, type: "folder", ref: folders[0], nodes: [] },
-        { id: 2, parentId: null, type: "folder", ref: folders[1], nodes: [] },
-      ],
-      orphanedNodes: [],
-    });
+    const tree = buildFolderNodes(folders);
+    expect(tree).toHaveLength(2);
+    expect(tree[0]).toMatchObject({ id: 1, ref: folders[0], children: [] });
+    expect(tree[1]).toMatchObject({ id: 2, ref: folders[1], children: [] });
+    expect(tree[0].ref).toBe(folders[0]);
   });
 
-  it("copies the reference of folders and items", () => {
-    const folders: Folderable[] = [
-      { id: 1, name: "Root A", parentId: null },
-    ];
-    const queries: Item[] = [
-      {id: 1, queryFolderId: 1},
-    ];
-    const tree = buildTree(folders, queries, "queryFolderId");
-    expect(tree.nodes[0].type).toStrictEqual("folder");
-    expect(tree.nodes[0].ref).toStrictEqual(folders[0]);
-    expect(tree.nodes[0].nodes![0].type).toStrictEqual("item");
-    expect(tree.nodes[0].nodes![0].ref).toStrictEqual(queries[0]);
-  });
-
-  it("only returns root folders at the top level", () => {
-    const folders: Folderable[] = [
+  it("links children as references to the same node objects", () => {
+    const folders: Folder[] = [
       { id: 1, name: "Root", parentId: null },
       { id: 2, name: "Child", parentId: 1 },
     ];
-    const queries: Item[] = [];
-    const tree = buildTree(folders, queries, "queryFolderId");
-    expect(tree).toEqual({
-      nodes: [
-        {
-          id: 1,
-          parentId: null,
-          type: "folder",
-          ref: folders[0],
-          nodes: [
-            { id: 2, parentId: 1, type: "folder", ref: folders[1], nodes: [] },
-          ],
-        },
-      ],
-      orphanedNodes: [],
-    });
+    const tree = buildFolderNodes(folders);
+    const [root, child] = tree;
+    expect(root.children).toHaveLength(1);
+    expect(root.children[0]).toBe(child);
+    expect(child.children).toEqual([]);
   });
 
-  it("puts subfolders before items within a folder", () => {
-    const folders: Folderable[] = [
-      { id: 1, name: "Root", parentId: null },
-      { id: 2, name: "Child", parentId: 1 },
-    ];
-    const queries: Item[] = [{ id: 10, queryFolderId: 1 }];
-    const tree = buildTree(folders, queries, "queryFolderId");
-    expect(tree).toEqual({
-      nodes: [
-        {
-          id: 1,
-          parentId: null,
-          type: "folder",
-          ref: folders[0],
-          nodes: [
-            { id: 2, parentId: 1, type: "folder", ref: folders[1], nodes: [] },
-            { id: 10, parentId: 1, type: "item", ref: queries[0] },
-          ],
-        },
-      ],
-      orphanedNodes: [],
-    });
-  });
-
-  it("nests folders to arbitrary depth", () => {
-    const folders: Folderable[] = [
+  it("keeps every folder in the flat array regardless of depth", () => {
+    const folders: Folder[] = [
       { id: 1, name: "Root", parentId: null },
       { id: 2, name: "Child", parentId: 1 },
       { id: 3, name: "Grandchild", parentId: 2 },
     ];
-    const queries: Item[] = [{ id: 10, queryFolderId: 3 }];
-    const tree = buildTree(folders, queries, "queryFolderId");
-    expect(tree).toEqual({
-      nodes: [
-        {
-          id: 1,
-          parentId: null,
-          type: "folder",
-          ref: folders[0],
-          nodes: [
-            {
-              id: 2,
-              parentId: 1,
-              type: "folder",
-              ref: folders[1],
-              nodes: [
-                {
-                  id: 3,
-                  parentId: 2,
-                  type: "folder",
-                  ref: folders[2],
-                  nodes: [
-                    { id: 10, parentId: 3, type: "item", ref: queries[0] },
-                  ],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-      orphanedNodes: [],
-    });
+    const tree = buildFolderNodes(folders);
+    expect(tree.map((node) => node.id)).toEqual([1, 2, 3]);
+    const byId = new Map(tree.map((node) => [node.id, node]));
+    expect(byId.get(1)!.children[0]).toBe(byId.get(2));
+    expect(byId.get(2)!.children[0]).toBe(byId.get(3));
   });
 
-  it("sorts items within a folder by position", () => {
-    const folders: Folderable[] = [{ id: 1, name: "Root", parentId: null }];
-    const queries: Item[] = [
-      { id: 10, queryFolderId: 1, position: 2 },
-      { id: 11, queryFolderId: 1, position: 1 },
+  it("leaves folders whose parent is missing without a parent link", () => {
+    const folders: Folder[] = [
+      { id: 1, name: "Root", parentId: null },
+      { id: 2, name: "Lost", parentId: 999 },
     ];
-    const tree = buildTree(folders, queries, "queryFolderId");
-    expect(tree).toEqual({
-      nodes: [
-        {
-          id: 1,
-          parentId: null,
-          type: "folder",
-          ref: folders[0],
-          nodes: [
-            { id: 11, parentId: 1, type: "item", ref: queries[1] },
-            { id: 10, parentId: 1, type: "item", ref: queries[0] },
-          ],
-        },
-      ],
-      orphanedNodes: [],
-    });
-  });
-
-  it("works with the connection foreign key too", () => {
-    const folders: Folderable[] = [{ id: 5, name: "C", parentId: null }];
-    const connections: Item[] = [{ id: 1, connectionFolderId: 5 }];
-    const tree = buildTree(folders, connections, "connectionFolderId");
-    expect(tree).toEqual({
-      nodes: [
-        {
-          id: 5,
-          parentId: null,
-          type: "folder",
-          ref: folders[0],
-          nodes: [
-            { id: 1, parentId: 5, type: "item", ref: connections[0] },
-          ],
-        },
-      ],
-      orphanedNodes: [],
-    });
-  });
-
-  it("places items with no parent at the root", () => {
-    const folders: Folderable[] = [{ id: 1, name: "Root", parentId: null }];
-    const queries: Item[] = [
-      { id: 10, queryFolderId: 1 },
-      { id: 11, queryFolderId: null },
-    ];
-    const tree = buildTree(folders, queries, "queryFolderId");
-    expect(tree).toEqual({
-      nodes: [
-        {
-          id: 1,
-          parentId: null,
-          type: "folder",
-          ref: folders[0],
-          nodes: [
-            { id: 10, parentId: 1, type: "item", ref: queries[0] },
-          ],
-        },
-        { id: 11, parentId: null, type: "item", ref: queries[1] },
-      ],
-      orphanedNodes: [],
-    });
-  });
-
-  it("collects items whose parent folder does not exist into orphanedNodes", () => {
-    const folders: Folderable[] = [{ id: 1, name: "Root", parentId: null }];
-    const queries: Item[] = [
-      { id: 10, queryFolderId: 1 },
-      { id: 99, queryFolderId: 999 },
-    ];
-    const tree = buildTree(folders, queries, "queryFolderId");
-    expect(tree).toEqual({
-      nodes: [
-        {
-          id: 1,
-          parentId: null,
-          type: "folder",
-          ref: folders[0],
-          nodes: [
-            { id: 10, parentId: 1, type: "item", ref: queries[0] },
-          ],
-        },
-      ],
-      orphanedNodes: [
-        { id: 99, parentId: 999, type: "item", ref: queries[1] },
-      ],
-    });
+    const tree = buildFolderNodes(folders);
+    expect(tree[0].children).toEqual([]);
+    expect(tree[1].children).toEqual([]);
   });
 });
 
-describe("isFolderListEmpty", () => {
-  it("is true only when there are no items and no folders", () => {
-    expect(isFolderListEmpty([], [])).toBe(true);
-    expect(isFolderListEmpty(null, undefined)).toBe(true);
-  });
+describe("buildDescendantsMap", () => {
+  const folders: Folder[] = [
+    { id: 1, name: "Root", parentId: null },
+    { id: 2, name: "Child", parentId: 1 },
+    { id: 3, name: "Grandchild", parentId: 2 },
+  ];
+  const nodes = buildFolderNodes(folders);
 
-  it("is false when folders exist even without items", () => {
-    const folders: Folderable[] = [{ id: 1, name: "Root", parentId: null }];
-    const queries: Item[] = [];
-    expect(isFolderListEmpty(queries, folders)).toBe(false);
-  });
-
-  it("is false when items exist even without folders", () => {
-    const queries: Item[] = [{ id: 10, queryFolderId: null }];
-    expect(isFolderListEmpty(queries, [])).toBe(false);
-  });
-});
-
-describe("dropSlot", () => {
-  const item = (id: number): Node => ({ id, parentId: null, type: "item", ref: {} });
-  const folder = (id: number): Node => ({
-    id,
-    parentId: null,
-    type: "folder",
-    ref: { id, name: `F${id}`, parentId: null },
-  });
-
-  it("anchors to the item dropped next to", () => {
-    expect(dropSlot(item(7), "before")).toEqual({ before: 7 });
-    expect(dropSlot(item(7), "after")).toEqual({ after: 7 });
-  });
-
-  // before/after reference item ids, and folders are not in that list — the tree
-  // renders subfolders above items. So a folder decides the parent, not the slot,
-  // and the item lands in the first slot of its new parent.
-  it("falls back to the first slot when dropped on a folder", () => {
-    expect(dropSlot(folder(3), "inside")).toEqual({ before: null });
-    expect(dropSlot(folder(3), "before")).toEqual({ before: null });
-    expect(dropSlot(folder(3), "after")).toEqual({ before: null });
+  it("maps each folder to all of its descendant ids", () => {
+    const expected = new Map<number, Set<number>>();
+    expected.set(1, new Set([2, 3]));
+    expected.set(2, new Set([3]));
+    expected.set(3, new Set());
+    expect(buildDescendantsMap(nodes)).toStrictEqual(expected);
   });
 });

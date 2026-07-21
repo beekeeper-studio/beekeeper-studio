@@ -5,43 +5,46 @@
       draggable="true"
       :style="{ '--depth': depth }"
       :data-node-type="node.type"
-      :data-drop-target="dropTargetFor(node)"
+      :data-drop-target="dropTargetPosition()"
       @click="handleClick"
-      @dragstart="handleDragStart($event, node)"
-      @dragover="handleDragOver($event, node)"
-      @dragleave="handleDragLeave($event, node)"
-      @drop="handleDrop($event, node)"
+      @dragstart="handleDragStart"
+      @dragover="handleDragOver"
+      @dragleave="handleDragLeave"
+      @drop="handleDrop"
       @dragend="$emit('node-dragend')"
     >
       <slot
         v-if="node.type === 'folder'"
         name="folder"
-        :props="folderProps"
+        :props="{ node, expanded, descendantsMap, allItems }"
       >
-        <tree-folder v-bind="folderProps" />
+        <tree-folder
+          :node="node"
+          :expanded="expanded"
+          :descendants-map="descendantsMap"
+          :all-items="allItems"
+        />
       </slot>
       <slot v-else name="item" :node="node" :depth="depth">
-        {{ node.ref["name"] ?? node.id }}
+        {{ node.ref["name"] ?? node.ref.id }}
       </slot>
     </div>
 
     <template v-if="node.type === 'folder' && expanded">
-      <div
-        v-if="!node.nodes?.length"
-        class="BksTree-empty"
-        :style="{ '--depth': depth + 1 }"
-      >
+      <div v-if="empty" class="BksTree-empty" :style="{ '--depth': depth + 1 }">
         No items
       </div>
       <tree-node
-        v-for="child of node.nodes ?? []"
-        :key="nodeKey(child)"
+        v-for="child of childNodes"
+        :key="`${child.type}-${child.id}`"
         :node="child"
+        :all-items="allItems"
+        :descendants-map="descendantsMap"
+        :depth="depth + 1"
         :internal-id="internalId"
         :expanded-folder-ids="expandedFolderIds"
         :drop-target="dropTarget"
         :can-drop="canDrop"
-        :depth="depth + 1"
         @toggle-expanded="$emit('toggle-expanded', $event)"
         @node-dragstart="$emit('node-dragstart', $event)"
         @node-dragover="$emit('node-dragover', $event)"
@@ -63,13 +66,8 @@
 <script lang="ts">
 import Vue, { PropType } from "vue";
 import TreeFolder from "./TreeFolder.vue";
-import {
-  DropPosition,
-  DropTarget,
-  FolderNode,
-  Node,
-  nodeKey,
-} from "./types";
+import { nodeKey } from "./tree";
+import { DragNode, DropPosition, DropTarget, ItemNode, Node } from "./types";
 
 export default Vue.extend({
   name: "TreeNode",
@@ -81,9 +79,13 @@ export default Vue.extend({
       type: Object as PropType<Node>,
       required: true,
     },
-    internalId: {
-      type: String as PropType<string>,
-      required: true,
+    allItems: {
+      type: Array as PropType<ItemNode[]>,
+      default: () => [],
+    },
+    descendantsMap: {
+      type: Object as PropType<Map<number, Set<number>>>,
+      default: () => new Map(),
     },
     expandedFolderIds: {
       type: Array as PropType<number[]>,
@@ -93,17 +95,53 @@ export default Vue.extend({
       type: Number,
       default: 0,
     },
+    internalId: {
+      type: String as PropType<string>,
+      required: true,
+    },
     dropTarget: {
       type: Object as PropType<DropTarget | null>,
       default: null,
     },
     canDrop: {
-      type: Function as PropType<(node: Node) => boolean>,
+      type: Function as PropType<(node: DragNode) => boolean>,
       required: true,
     },
   },
 
   computed: {
+    childItemNodes(): ItemNode[] {
+      if (this.node.type !== "folder") {
+        return [];
+      }
+      const folderId = this.node.id;
+      return this.allItems
+        .filter((item) => item.parentId === folderId)
+        .sort((a, b) => a.position - b.position);
+    },
+
+    childNodes(): Node[] {
+      if (this.node.type !== "folder") {
+        return [];
+      }
+      return [...this.node.children, ...this.childItemNodes];
+    },
+
+    empty(): boolean {
+      return this.childNodes.length === 0;
+    },
+
+    expanded(): boolean {
+      return (
+        this.node.type === "folder" &&
+        this.expandedFolderIds.includes(this.node.id)
+      );
+    },
+
+    dragNode(): DragNode {
+      return this.node;
+    },
+
     /**
      * dragover can only read `dataTransfer.types`, not getData(), so the tree id
      * has to live in the mime type for cross-tree drags to be rejectable.
@@ -111,32 +149,28 @@ export default Vue.extend({
     dragMimeType(): string {
       return `application/x-bks-tree-${this.internalId}`;
     },
-
-    expanded(): boolean {
-      return this.expandedFolderIds.includes(this.node.id);
-    },
-
-    // Only rendered behind a type === "folder" guard.
-    folderProps(): { node: FolderNode; depth: number; expanded: boolean } {
-      return {
-        node: this.node as FolderNode,
-        depth: this.depth,
-        expanded: this.expanded,
-      };
-    },
   },
 
   methods: {
-    nodeKey,
+    handleClick() {
+      if (this.node.type !== "folder") {
+        return;
+      }
+      this.$emit("toggle-expanded", this.dragNode);
+    },
 
-    dropTargetFor(node: Node): DropPosition | null {
-      if (this.dropTarget?.key !== nodeKey(node)) return null;
+    dropTargetPosition(): DropPosition | null {
+      if (this.dropTarget?.key !== nodeKey(this.dragNode)) {
+        return null;
+      }
       return this.dropTarget.position;
     },
 
-    zoneAt(event: DragEvent, node: Node): DropPosition {
+    zoneAt(event: DragEvent): DropPosition {
       // Folders have no position, so they can only be dropped into.
-      if (node.type === "folder") return "inside";
+      if (this.dragNode.type === "folder") {
+        return "inside";
+      }
       const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
       const offset = (event.clientY - rect.top) / rect.height;
       return offset < 0.5 ? "before" : "after";
@@ -146,41 +180,44 @@ export default Vue.extend({
       return !!event.dataTransfer?.types.includes(this.dragMimeType);
     },
 
-    handleDragStart(event: DragEvent, node: Node) {
+    handleDragStart(event: DragEvent) {
+      const node = this.dragNode;
       // Firefox refuses to start a drag without setData. The value is never read.
-      event.dataTransfer.setData(this.dragMimeType, String(node.id));
+      event.dataTransfer.setData(this.dragMimeType, String(node.ref.id));
       event.dataTransfer.effectAllowed = "move";
       this.$emit("node-dragstart", node);
     },
 
-    handleDragOver(event: DragEvent, node: Node) {
-      if (!this.isOurDrag(event)) return;
-      if (!this.canDrop(node)) return;
-      this.$emit("node-dragover", { node, position: this.zoneAt(event, node) });
+    handleDragOver(event: DragEvent) {
+      const node = this.dragNode;
+      if (!this.isOurDrag(event)) {
+        return;
+      }
+      if (!this.canDrop(node)) {
+        return;
+      }
+      this.$emit("node-dragover", { node, position: this.zoneAt(event) });
       // Skipping preventDefault on an invalid target is what gives us the
       // native no-drop cursor.
       event.preventDefault();
       event.dataTransfer.dropEffect = "move";
     },
 
-    handleDragLeave(event: DragEvent, node: Node) {
+    handleDragLeave(event: DragEvent) {
       const row = event.currentTarget as HTMLElement;
       // dragleave also fires when the pointer crosses into a child of the row.
-      if (row.contains(event.relatedTarget as HTMLElement | null)) return;
-      this.$emit("node-dragleave", node);
-    },
-
-    handleDrop(event: DragEvent, node: Node) {
-      if (!this.isOurDrag(event)) return;
-      event.preventDefault();
-      this.$emit("node-drop", node);
-    },
-
-    handleClick() {
-      if (this.node.type !== "folder") {
+      if (row.contains(event.relatedTarget as HTMLElement | null)) {
         return;
       }
-      this.$emit("toggle-expanded", this.node);
+      this.$emit("node-dragleave", this.dragNode);
+    },
+
+    handleDrop(event: DragEvent) {
+      if (!this.isOurDrag(event)) {
+        return;
+      }
+      event.preventDefault();
+      this.$emit("node-drop", this.dragNode);
     },
   },
 });

@@ -1,13 +1,16 @@
 <template>
   <div class="BksUiKit BksTree">
-    <slot v-if="empty" name="empty">
+    <slot v-if="rootNodes.length === 0" name="empty">
       <div class="BksTree-empty">No items</div>
     </slot>
     <template v-else>
       <tree-node
-        v-for="node of tree.nodes"
-        :key="nodeKey(node)"
+        v-for="node of rootNodes"
+        :key="`${node.type}-${node.id}`"
         :node="node"
+        :all-items="itemNodes"
+        :descendants-map="descendantsMap"
+        :depth="0"
         :internal-id="internalId"
         :expanded-folder-ids="expandedFolderIds"
         :drop-target="dropTarget"
@@ -33,15 +36,24 @@
 <script lang="ts">
 import Vue from "vue";
 import props from "./props";
-import { buildTree, dropSlot, isFolderListEmpty } from "./tree";
+import {
+  buildDescendantsMap,
+  buildFolderNodes,
+  buildItemNodes,
+  nodeKey,
+} from "./tree";
 import TreeNode from "./TreeNode.vue";
 import { uuidv4 } from "../../utils/uuid";
 import {
   DropPosition,
+  DropSlot,
   DropTarget,
+  FolderNode,
+  ItemNode,
   Node,
+  DragNode,
   TreeNodeMoveEvent,
-  nodeKey,
+  Item,
 } from "./types";
 
 const EXPAND_DELAY = 600;
@@ -54,43 +66,94 @@ export default Vue.extend({
   data() {
     return {
       internalId: uuidv4(),
-      draggedNode: null as Node | null,
+      draggedNode: null as DragNode | null,
       dropTarget: null as DropTarget | null,
       expandTimer: null as ReturnType<typeof setTimeout> | null,
     };
   },
 
   computed: {
-    tree() {
-      // @ts-expect-error
-      return buildTree(this.folders, this.items, this.itemParentKey);
+    folderNodes(): FolderNode[] {
+      return buildFolderNodes(this.folders);
     },
 
-    empty(): boolean {
-      return isFolderListEmpty(this.items, this.folders);
+    itemNodes(): ItemNode[] {
+      if (!this.itemParentKey) {
+        if (this.items.length > 0) {
+          console.warn(
+            "`itemParentKey` is not provided. Cannot map items to folders."
+          );
+        }
+        return [];
+      }
+      return buildItemNodes(this.items as Item[], this.itemParentKey);
+    },
+
+    descendantsMap(): Map<number, Set<number>> {
+      return buildDescendantsMap(this.folderNodes);
+    },
+
+    rootFolderNodes(): FolderNode[] {
+      return this.folderNodes.filter((node) => node.parentId == null);
+    },
+
+    rootItemNodes(): ItemNode[] {
+      return this.itemNodes
+        .filter((item) => item.parentId === null)
+        .sort((a, b) => a.position - b.position);
+    },
+
+    rootNodes(): Node[] {
+      return [...this.rootFolderNodes, ...this.rootItemNodes];
     },
   },
 
   methods: {
     nodeKey,
 
-    containsKey(node: Node, key: string): boolean {
-      if (nodeKey(node) === key) return true;
-      return (node.nodes ?? []).some((child) => this.containsKey(child, key));
+    isInSubtree(ancestorId: number, folderId: number | null): boolean {
+      if (folderId == null) {
+        return false;
+      }
+      if (folderId === ancestorId) {
+        return true;
+      }
+      return this.descendantsMap.get(ancestorId)?.has(folderId) ?? false;
     },
 
-    canDropOn(source: Node, target: Node): boolean {
-      // Rejects dropping onto itself, and onto any descendant — including
-      // before/after one, which would still reparent the folder under itself.
-      return !this.containsKey(source, nodeKey(target));
+    parentIdOf(node: DragNode): number | null {
+      if (node.type === "folder") {
+        return node.ref.parentId;
+      }
+      if (!this.itemParentKey) {
+        return null;
+      }
+      return node.ref[this.itemParentKey] ?? null;
     },
 
-    canDrop(target: Node): boolean {
-      if (!this.draggedNode) return false;
+    canDropOn(source: DragNode, target: DragNode): boolean {
+      // Dropping onto itself is always rejected. A folder additionally can't
+      // land anywhere inside its own subtree — that would reparent it under
+      // itself.
+      if (nodeKey(source) === nodeKey(target)) {
+        return false;
+      }
+      if (source.type !== "folder") {
+        return true;
+      }
+      const targetFolderId =
+        target.type === "folder" ? target.ref.id : this.parentIdOf(target);
+      return !this.isInSubtree(source.ref.id, targetFolderId);
+    },
+
+    canDrop(target: DragNode): boolean {
+      if (!this.draggedNode) {
+        return false;
+      }
       return this.canDropOn(this.draggedNode, target);
     },
 
-    handleNodeDragStart(node: Node) {
+    handleNodeDragStart(node: DragNode) {
       this.draggedNode = node;
     },
 
@@ -98,7 +161,7 @@ export default Vue.extend({
       node,
       position,
     }: {
-      node: Node;
+      node: DragNode;
       position: DropPosition;
     }) {
       const key = nodeKey(node);
@@ -112,7 +175,7 @@ export default Vue.extend({
       this.scheduleExpand(node, position);
     },
 
-    handleNodeDragLeave(node: Node) {
+    handleNodeDragLeave(node: DragNode) {
       // A late dragleave must not wipe the next row's target.
       if (this.dropTarget?.key !== nodeKey(node)) {
         return;
@@ -121,18 +184,28 @@ export default Vue.extend({
       this.clearExpandTimer();
     },
 
-    handleNodeDrop(target: Node) {
+    handleNodeDrop(target: DragNode) {
       const source = this.draggedNode;
       const position = this.dropTarget?.position;
       this.resetDrag();
       if (!source || !position || !this.canDropOn(source, target)) {
         return;
       }
+      let slot: DropSlot;
+      // NOTE: Folder positioning is not supported
+      if (target.type === "folder") {
+        slot = { before: null };
+      } else if (position === "after") {
+        slot = { after: target.ref.id };
+      } else {
+        slot = { before: target.ref.id };
+      }
       const payload: TreeNodeMoveEvent = {
         source,
         target,
-        position: dropSlot(target, position),
-        parentId: position === "inside" ? target.id : target.parentId,
+        position: slot,
+        parentId:
+          position === "inside" ? target.ref.id : this.parentIdOf(target),
       };
       this.$emit("bks-tree-node-move", payload);
     },
@@ -143,21 +216,21 @@ export default Vue.extend({
       this.clearExpandTimer();
     },
 
-    scheduleExpand(node: Node, position: DropPosition) {
+    scheduleExpand(node: DragNode, position: DropPosition) {
       this.clearExpandTimer();
 
       if (position !== "inside") {
         return;
       }
 
-      if (this.expandedFolderIds.includes(node.id)) {
+      if (this.expandedFolderIds.includes(node.ref.id)) {
         return;
       }
 
       this.expandTimer = setTimeout(() => {
         this.$emit("update:expandedFolderIds", [
           ...this.expandedFolderIds,
-          node.id,
+          node.ref.id,
         ]);
         this.expandTimer = null;
       }, EXPAND_DELAY);
@@ -171,13 +244,13 @@ export default Vue.extend({
       this.expandTimer = null;
     },
 
-    toggleExpanded(node: Node) {
-      const index = this.expandedFolderIds.indexOf(node.id);
+    toggleExpanded(node: DragNode) {
+      const index = this.expandedFolderIds.indexOf(node.ref.id);
       if (index === -1) {
         // add
         this.$emit("update:expandedFolderIds", [
           ...this.expandedFolderIds,
-          node.id,
+          node.ref.id,
         ]);
       } else {
         // remove

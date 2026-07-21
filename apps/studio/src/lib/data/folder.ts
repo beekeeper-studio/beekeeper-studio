@@ -21,10 +21,14 @@ export function getSelfAndAnscestors(
   return getSelfAndAnscestors(self.parentId, filteredList, returnList);
 }
 
-function getDescendants(
-  root: Map<number, IFolder[]>,
+export function getDescendants(
+  root: number | Map<number, IFolder[]>,
   list: IFolder[]
 ): IFolder[] {
+  if (typeof root === "number") {
+    root = new Map([[root, []]]);
+  }
+
   /** Descendants are excluded from this list. */
   const filteredList: IFolder[] = [];
   let foundDescendant = false;
@@ -56,5 +60,5 @@ export function getSelfAndDescendants(selfId: number, list: IFolder[]) {
   }
   const self = list[selfIndex];
   const filteredList = list.toSpliced(selfIndex, 1);
-  return [self, ...getDescendants(new Map([[self.id, []]]), filteredList)];
+  return [self, ...getDescendants(self.id, filteredList)];
 }

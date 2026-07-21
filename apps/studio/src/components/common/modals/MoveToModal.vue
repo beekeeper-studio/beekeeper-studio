@@ -56,12 +56,15 @@
               v-model="selectedFolderId"
             >
             <tree-folder v-bind="props" tag="div">
-              <span
-                v-if="currentFolderId === props.node.ref.id"
-                class="current-location"
-              >
-                (current location)
-              </span>
+              <template #name>
+                {{ props.node.ref.name }}
+                <span
+                  v-if="currentFolderId === props.node.ref.id"
+                  class="current-location"
+                >
+                  (current location)
+                </span>
+              </template>
             </tree-folder>
           </label>
         </template>
@@ -90,17 +93,16 @@ import { AppEvent } from "@/common/AppEvent";
 import { IConnection } from "@/common/interfaces/IConnection";
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { IFolder } from "@/common/interfaces/IQueryFolder";
-import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
-import rawLog from "@bksLogger";
-import { getSelfAndAnscestors, getSelfAndDescendants } from "@/lib/data/folder";
+// import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
+import TreeFolder from "../../../../../ui-kit/lib/components/tree/TreeFolder.vue";
+import Tree from "../../../../../ui-kit/lib/components/tree/Tree.vue";
+import { getDescendants, getSelfAndAnscestors } from "@/lib/data/folder";
 
 type Target =
   | { type: "connection"; value: IConnection }
   | { type: "query"; value: ISavedQuery }
   | { type: "connectionFolder"; value: IFolder }
   | { type: "queryFolder"; value: IFolder };
-
-const log = rawLog.scope("MoveToModal.vue");
 
 export default Vue.extend({
   components: { BaseModal, Tree, TreeFolder },
@@ -138,12 +140,8 @@ export default Vue.extend({
       if (!this.target) return [];
       return this.isQueryTarget ? this.queryFolders : this.connectionFolders;
     },
-    excludedFolders(): WeakSet<IFolder> {
-      return new WeakSet(
-        this.isFolder
-          ? getSelfAndDescendants(this.target.value.id, this.folders)
-          : undefined
-      );
+    descendants(): WeakSet<IFolder> {
+      return new WeakSet(getDescendants(this.target.value.id, this.folders));
     },
     filteredFolders(): IFolder[] {
       return this.folders.filter((folder: IFolder) => {
@@ -152,7 +150,7 @@ export default Vue.extend({
           return false;
         }
 
-        if (this.excludedFolders.has(folder)) {
+        if (this.isFolder && this.descendants.has(folder)) {
           return false;
         }
 

@@ -1,9 +1,9 @@
 import { PropType } from "vue";
-import { Folderable } from "./types";
+import { Folder } from "./types";
 
 const props = {
   folders: {
-    type: Array as PropType<Folderable[]>,
+    type: Array as PropType<Folder[]>,
     default: () => [],
   },
   items: {
