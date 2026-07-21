@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      vue: "vue/dist/vue.min.js",
+      // Aliasing `vue` here would defeat the external below.
       "@": resolve('./lib'),
     },
     dedupe: ["@codemirror/state", "@codemirror/view"],
@@ -29,6 +29,8 @@ export default defineConfig({
     },
     rollupOptions: {
       external: [
+        // A second copy of Vue makes $store undefined in host components.
+        "vue",
         "@codemirror/state",
         "@codemirror/view",
         "@codemirror/language",

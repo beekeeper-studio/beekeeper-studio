@@ -84,7 +84,7 @@ export default Vue.extend({
       default: () => [],
     },
     descendantsMap: {
-      type: Object as PropType<Map<number, Set<number>>>,
+      type: Map as PropType<Map<number, Set<number>>>,
       default: () => new Map(),
     },
     expandedFolderIds: {
