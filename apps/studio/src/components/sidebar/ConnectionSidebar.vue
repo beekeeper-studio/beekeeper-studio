@@ -285,9 +285,7 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import Split from 'split.js'
 import { AppEvent } from '@/common/AppEvent'
-// import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
-import TreeFolder from "../../../../ui-kit/lib/components/tree/TreeFolder.vue";
-import Tree from "../../../../ui-kit/lib/components/tree/Tree.vue";
+import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
 import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
 import Draggable from 'vuedraggable'

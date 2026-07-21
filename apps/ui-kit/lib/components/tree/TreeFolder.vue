@@ -1,10 +1,6 @@
 <template>
   <component :is="tag" class="BksTree-folder" type="button">
-    <i
-      class="material-icons expand-icon"
-      :class="{ expanded }"
-      data-trigger-expand-on-click
-    >
+    <i class="material-icons expand-icon" :class="{ expanded }" data-trigger-expand-on-click>
       keyboard_arrow_right
     </i>
     <i class="material-icons folder-icon">folder</i>
@@ -51,11 +47,12 @@ export default Vue.extend({
       }
       const parentIds = this.descendantsMap.get(this.node.id)!;
       const allItems: ItemNode[] = this.allItems;
-      return allItems.reduce(
-        (acc, item) =>
-          parentIds.has(item.parentId) ? acc + 1 : acc,
-        0
-      );
+      return allItems.reduce((acc, item) => {
+        if (parentIds.has(item.parentId) || this.node.id === item.parentId) {
+          return acc + 1;
+        }
+        return acc;
+      }, 0);
     },
   },
 });
