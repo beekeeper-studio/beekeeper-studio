@@ -3,6 +3,8 @@ import { havingCli } from "../StoreHelpers";
 import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import _ from 'lodash'
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
+import { buildTreeItemNodes } from "@/common/folderTree";
+import { itemMoveActions } from "@/store/modules/data/move/moveStore";
 
 
 type State = DataState<ISavedQuery>
@@ -26,6 +28,7 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
   }, { field: 'title', direction: 'asc'}),
   actions: actionsFor<ISavedQuery>('queries', {
     ...cloudAccessGrantActions('queries'),
+    ...itemMoveActions('queryFolderId'),
     setSavedQueryFilter: _.debounce(function (context, filter) {
       context.commit('savedQueryFilter', filter);
     }, 500),
@@ -113,6 +116,9 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
     }
   }),
   getters: {
+    nodes(state) {
+      return buildTreeItemNodes(state.items, 'queryFolderId')
+    },
     filteredQueries(state) {
       if (!state.filter) {
         return state.items;

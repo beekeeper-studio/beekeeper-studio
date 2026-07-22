@@ -36,12 +36,9 @@
       </label>
 
       <tree
-        :folders="filteredFolders"
-        :items="isQueryTarget ? savedQueries : connections"
-        :item-parent-key="
-          isQueryTarget ? 'queryFolderId' : 'connectionFolderId'
-        "
-        :expanded-folder-ids.sync="expandedFolderIds"
+        :folders="filteredFolderNodes"
+        :items="itemNodes"
+        :expanded-ids.sync="expandedIds"
       >
         <template #folder="{ props }">
           <button
@@ -93,7 +90,7 @@ import { IConnection } from "@/common/interfaces/IConnection";
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { IFolder } from "@/common/interfaces/IQueryFolder";
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
-import { getDescendants, getSelfAndAnscestors } from "@/lib/data/folder";
+import { FolderNodeWithRef, getSelfAndAnscestors } from "@/common/folderTree";
 
 type Target =
   | { type: "connection"; value: IConnection }
@@ -109,15 +106,19 @@ export default Vue.extend({
       target: null as Target | null,
       selectedFolderId: null as number | null,
       saving: false,
-      expandedFolderIds: [],
+      expandedIds: [],
     };
   },
   computed: {
     ...mapState("data/connectionFolders", { connectionFolders: "items" }),
     ...mapState("data/queryFolders", { queryFolders: "items" }),
-    ...mapState("data/connections", { connections: "items" }),
-    ...mapState("data/queries", { savedQueries: "items" }),
     ...mapGetters(["isCloud"]),
+    ...mapGetters({
+      connectionFolderNodes: "data/connectionFolders/nodes",
+      queryFolderNodes: "data/queryFolders/nodes",
+      connectionItemNodes: "data/connections/nodes",
+      queryItemNodes: "data/queries/nodes",
+    }),
     rootBindings() {
       return [{ event: AppEvent.openMoveFileModal, handler: this.open }];
     },
@@ -139,17 +140,33 @@ export default Vue.extend({
       if (!this.target) return [];
       return this.isQueryTarget ? this.queryFolders : this.connectionFolders;
     },
-    descendants(): WeakSet<IFolder> {
-      return new WeakSet(getDescendants(this.target.value.id, this.folders));
+    itemNodes() {
+      if (!this.target) {
+        return [];
+      }
+      if (this.isQueryTarget) {
+        return this.queryItemNodes;
+      }
+      return this.connectionItemNodes;
     },
-    filteredFolders(): IFolder[] {
-      return this.folders.filter((folder: IFolder) => {
+    folderNodes() {
+      if (!this.target) {
+        return [];
+      }
+      if (this.isQueryTarget) {
+        return this.queryFolderNodes;
+      }
+      return this.connectionFolderNodes;
+    },
+    filteredFolderNodes() {
+      return this.folderNodes.filter((node: FolderNodeWithRef) => {
         // Prevent moving a team folder to a personal folder
-        if (this.isTeamFolder && folder.personal) {
+        if (this.isTeamFolder && node.ref.personal) {
           return false;
         }
 
-        if (this.isFolder && this.descendants.has(folder)) {
+        // Prevent moving a folder to its own subfolders
+        if (this.isFolder && node.ref.parentId === this.target.value.id) {
           return false;
         }
 
@@ -181,23 +198,21 @@ export default Vue.extend({
     },
   },
   methods: {
-    ...mapActions("data/connectionFolders", {
-      moveConnectionToFolder: "moveToFolder",
-      saveConnectionFolder: "save",
-    }),
-    ...mapActions("data/queryFolders", {
-      moveQueryToFolder: "moveToFolder",
-      saveQueryFolder: "save",
+    ...mapActions({
+      moveConnectionFolder: "data/connectionFolders/move",
+      moveConnection: "data/connections/move",
+      moveQueryFolder: "data/queryFolders/move",
+      moveQuery: "data/queries/move",
     }),
     open(target: Target) {
       this.target = target;
       this.selectedFolderId = this.currentFolderId;
 
       // Expand anscestors
-      this.expandedFolderIds = getSelfAndAnscestors(
+      this.expandedIds = getSelfAndAnscestors(
         this.currentFolderId,
         this.folders
-      ).map((f) => f.id);
+      ).map((f) => `folder-${f.id}`);
 
       this.$modal.show(this.modalName);
     },
@@ -210,30 +225,22 @@ export default Vue.extend({
     async move() {
       if (!this.canMove || this.saving) return;
       this.saving = true;
+      const payload = {
+        sourceId: this.target.value.id,
+        targetId: this.selectedFolderId,
+        position: "inside",
+      };
       try {
         if (this.target.type === "queryFolder") {
-          await this.saveQueryFolder({
-            ...this.target.value,
-            parentId: this.selectedFolderId,
-          });
+          await this.moveQueryFolder(payload);
         } else if (this.target.type === "connectionFolder") {
-          await this.saveConnectionFolder({
-            ...this.target.value,
-            parentId: this.selectedFolderId,
-          });
+          await this.moveConnectionFolder(payload);
+        } else if (this.target.type === "query") {
+          await this.moveQuery(payload);
+        } else if (this.target.type === "connection") {
+          await this.moveConnection(payload);
         } else {
-          const folder =
-            this.selectedFolderId == null
-              ? null
-              : this.folders.find((f) => f.id === this.selectedFolderId);
-          if (this.target.type === "query") {
-            await this.moveQueryToFolder({ query: this.target.value, folder });
-          } else {
-            await this.moveConnectionToFolder({
-              connection: this.target.value,
-              folder,
-            });
-          }
+          throw new Error(`Cannot move an unknown target: ${this.target.type}`);
         }
         this.$modal.hide(this.modalName);
       } catch (ex) {

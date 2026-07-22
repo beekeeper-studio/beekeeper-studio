@@ -148,13 +148,10 @@
               class="list-body"
             >
               <tree
-                :folders="folders"
-                :items="connections ?? []"
-                item-parent-key="connectionFolderId"
-                draggable
-                :expanded-folder-ids="expandedFolderIds"
-                :undraggable-folder-ids="undraggableFolderIds"
-                @update:expandedFolderIds="setExpandedFolderIds"
+                :folders="folderNodes"
+                :items="itemNodes"
+                :expanded-ids="expandedIds"
+                @update:expandedIds="setExpandedIds"
                 @bks-tree-node-move="handleTreeNodeMove"
               >
                 <template #empty>
@@ -322,7 +319,7 @@ export default {
     folderModalParentId: null,
     folderModalError: null,
     folderModalSubmitting: false,
-    expandedFolderIds: [],
+    expandedIds: [],
     draggingConnection: null,
     renamingFolderId: null,
   }),
@@ -334,7 +331,7 @@ export default {
       await this.reorderBySort(newSort)
     },
     workspaceId() {
-      this.restoreExpandedFolderIds()
+      this.restoreExpandedIds()
     },
     loading() {
       if (this.loading) {
@@ -343,7 +340,7 @@ export default {
       if (SmartLocalStorage.exists(this.expandedStorageKey)) {
         return;
       }
-      this.seedExpandedFolderIds();
+      this.seedExpandedIds();
     },
   },
   computed: {
@@ -353,7 +350,6 @@ export default {
       connectionsError: 'error',
       connectionFilter: 'filter',
       pendingSaveIds: 'pendingSaveIds',
-      connections: 'items',
     }),
     ...mapState('data/connectionFolders', {
       folders: 'items',
@@ -361,6 +357,8 @@ export default {
       foldersError: 'error',
     }),
     ...mapGetters({
+      folderNodes: 'data/connectionFolders/nodes',
+      itemNodes: 'data/connections/nodes',
       usedConfigs: 'data/usedconnections/orderedUsedConfigs',
       settings: 'settings/settings',
       isCloud: 'isCloud',
@@ -385,13 +383,6 @@ export default {
     },
     noPins() {
       return !this.pinnedConnections?.length;
-    },
-    undraggableFolderIds() {
-      if (!this.isCloud) {
-        return [];
-      }
-      // Folders at the root ("Personal" and "Team")
-      return this.folders.filter((f) => !f.parentId).map((f) => f.id);
     },
     rootFolders() {
       return this.folders.filter((f) => !f.parentId).sort((a, b) => a.name.localeCompare(b.name))
@@ -435,7 +426,7 @@ export default {
   },
   async mounted() {
     SmartLocalStorage.remove('connectionFolderExpanded-v1')
-    this.restoreExpandedFolderIds()
+    this.restoreExpandedIds()
     this.buildSplit()
     const [field, order] = await Promise.all([
       this.$settings.get('connectionsSortBy', 'name'),
@@ -446,19 +437,23 @@ export default {
     this.$nextTick(() => { this.sortInitialized = true })
   },
   methods: {
-    setExpandedFolderIds(expandedFolderIds) {
-      this.expandedFolderIds = expandedFolderIds
-      SmartLocalStorage.addItem(this.expandedStorageKey, expandedFolderIds)
+    ...mapActions({
+      moveConnectionFolder: 'data/connectionFolders/move',
+      moveConnection: 'data/connections/move',
+    }),
+    setExpandedIds(expandedIds) {
+      this.expandedIds = expandedIds
+      SmartLocalStorage.addItem(this.expandedStorageKey, expandedIds)
     },
-    restoreExpandedFolderIds() {
-      this.expandedFolderIds = SmartLocalStorage.getJSON(this.expandedStorageKey) ?? []
+    restoreExpandedIds() {
+      this.expandedIds = SmartLocalStorage.getJSON(this.expandedStorageKey) ?? []
     },
-    seedExpandedFolderIds() {
-      const ids = new Set(this.expandedFolderIds);
+    seedExpandedIds() {
+      const ids = new Set(this.expandedIds);
       for (const folder of this.rootFolders) {
-        ids.add(folder.id)
+        ids.add(`folder-${folder.id}`)
       }
-      this.expandedFolderIds = [...ids];
+      this.expandedIds = [...ids];
     },
     clearFilter() {
       this.connFilter = null;
@@ -562,22 +557,17 @@ export default {
       this.$bks.openMenu({ event, item: folder, options })
     },
     /** @param event {import("@beekeeperstudio/ui-kit").TreeNodeMoveEvent} */
-    async handleTreeNodeMove({ source, position, parentId }) {
+    async handleTreeNodeMove({ source, target, position }) {
       try {
         if (source.type === 'folder') {
-          if (parentId === (source.ref.parentId ?? null)) {
-            return
+          // Folders have no ordering, so they land inside whatever folder the drop points at
+          let targetId = target.ref.connectionFolderId ?? null
+          if (target.type === 'folder') {
+            targetId = target.ref.id
           }
-          await this.$store.dispatch('data/connectionFolders/save', {
-            ...source.ref,
-            parentId,
-          })
+          await this.moveConnectionFolder({ sourceId: source.ref.id, targetId, position: 'inside' })
         } else {
-          await this.$store.dispatch('data/connections/reorder', {
-            item: source.ref,
-            connectionFolderId: parentId,
-            position,
-          })
+          await this.moveConnection({ sourceId: source.ref.id, targetId: target.ref.id, position })
         }
       } catch (ex) {
         if(ex.message.includes("[team_folder_in_personal_tree]")) {

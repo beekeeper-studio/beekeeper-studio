@@ -5,6 +5,8 @@ import { DataState, DataStore, mutationsFor } from "@/store/modules/data/DataMod
 import { safely } from "@/store/modules/data/StoreHelpers";
 import { accessGrantMutations, localAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
+import { buildTreeFolderNodes } from "@/common/folderTree";
+import { folderMoveActions } from "@/store/modules/data/move/moveStore";
 
 type State = DataState<IConnectionFolder>
 
@@ -22,6 +24,7 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
   },
   actions: {
     ...localAccessGrantActions(),
+    ...folderMoveActions(),
     async initialize(context) {
       await context.dispatch('load');
     },
@@ -64,9 +67,10 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
       r.createdAt = null
       return r
     },
-    async moveToFolder(context, { connection, folder }) {
-      const updated = { ...connection, connectionFolderId: folder?.id ?? null }
-      await context.dispatch('data/connections/save', updated, { root: true })
+  },
+  getters: {
+    nodes(state) {
+      return buildTreeFolderNodes(state.items)
     }
   }
 }

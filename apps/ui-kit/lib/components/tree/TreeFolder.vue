@@ -4,20 +4,20 @@
       keyboard_arrow_right
     </i>
     <i class="material-icons folder-icon">folder</i>
-    <span class="name">{{ node.ref.name }} ({{ count }})</span>
+    <span class="name">{{ node.name }} ({{ count }})</span>
   </component>
 </template>
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
-import { ItemNode, Node } from "./types";
+import { FolderNode, ItemNode } from "./types";
 
 export default Vue.extend({
   name: "TreeFolder",
 
   props: {
     node: {
-      type: Object as PropType<Node>,
+      type: Object as PropType<FolderNode>,
       required: true,
     },
     expanded: {
@@ -40,17 +40,17 @@ export default Vue.extend({
 
   computed: {
     count(): number {
-      if (!this.descendantsMap.has(this.node.ref.id)) {
+      const descendants = this.descendantsMap.get(this.node.id);
+      if (!descendants) {
         return 0;
       }
-      const parentIds = this.descendantsMap.get(this.node.ref.id)!;
       const allItems: ItemNode[] = this.allItems;
-      return allItems.reduce((acc, item) => {
-        if (parentIds.has(item.parentId) || this.node.ref.id === item.parentId) {
-          return acc + 1;
+      return allItems.filter((item) => {
+        if (item.parentId === null) {
+          return false;
         }
-        return acc;
-      }, 0);
+        return item.parentId === this.node.id || descendants.has(item.parentId);
+      }).length;
     },
   },
 });

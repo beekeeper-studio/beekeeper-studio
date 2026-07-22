@@ -79,13 +79,10 @@
           ref="wrapper"
         >
           <tree
-            :folders="folders"
-            :items="savedQueries ?? []"
-            item-parent-key="queryFolderId"
-            draggable
-            :expanded-folder-ids="expandedFolderIds"
-            :undraggable-folder-ids="undraggableFolderIds"
-            @update:expandedFolderIds="setExpandedFolderIds"
+            :folders="folderNodes"
+            :items="itemNodes"
+            :expanded-ids="expandedIds"
+            @update:expandedIds="setExpandedIds"
             @bks-tree-node-move="handleTreeNodeMove"
           >
             <template #empty>
@@ -179,7 +176,7 @@
 
 <script>
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
-import { mapGetters, mapState } from 'vuex'
+import { mapActions, mapGetters, mapState } from 'vuex'
 import SidebarLoading from '../../common/SidebarLoading.vue'
 import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
 import { AppEvent } from '@/common/AppEvent'
@@ -197,14 +194,14 @@ export default {
       folderModalParentId: null,
       folderModalError: null,
       folderModalSubmitting: false,
-      expandedFolderIds: [],
+      expandedIds: [],
       draggingQuery: null,
       renamingFolderId: null,
     }
   },
   watch: {
     workspaceId() {
-      this.restoreExpandedFolderIds()
+      this.restoreExpandedIds()
     },
     loading() {
       if (this.loading) {
@@ -213,12 +210,12 @@ export default {
       if (SmartLocalStorage.exists(this.expandedStorageKey)) {
         return;
       }
-      this.seedExpandedFolderIds();
+      this.seedExpandedIds();
     },
   },
   mounted() {
     SmartLocalStorage.remove('queryFolderExpanded-v1')
-    this.restoreExpandedFolderIds()
+    this.restoreExpandedIds()
     document.addEventListener('mousedown', this.maybeUnselect)
   },
   beforeDestroy() {
@@ -232,9 +229,10 @@ export default {
     expandedStorageKey() {
       return `queryFolderExpanded-v2-${this.workspaceId}`;
     },
-    ...mapGetters('data/queries', {'filteredQueries': 'filteredQueries'}),
+    ...mapGetters('data/queries', {'filteredQueries': 'filteredQueries', 'itemNodes': 'nodes'}),
+    ...mapGetters('data/queryFolders', {'folderNodes': 'nodes'}),
     ...mapState('tabs', {'activeTab': 'active'}),
-    ...mapState('data/queries', {'savedQueries': 'items', 'queriesLoading': 'loading', 'queriesError': 'error', 'savedQueryFilter': 'filter', 'pendingSaveIds': 'pendingSaveIds'}),
+    ...mapState('data/queries', {'queriesLoading': 'loading', 'queriesError': 'error', 'savedQueryFilter': 'filter', 'pendingSaveIds': 'pendingSaveIds'}),
     ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
     filterQuery: {
       get() {
@@ -247,13 +245,6 @@ export default {
     rootFolders() {
       return this.folders.filter((f) => !f.parentId).sort((a, b) => a.name.localeCompare(b.name))
     },
-    undraggableFolderIds() {
-      if (!this.isCloud) {
-        return []
-      }
-      // Folders at the root ("Personal" and "Team")
-      return this.rootFolders.map((f) => f.id)
-    },
     loading() {
       return this.queriesLoading || this.foldersLoading || null
     },
@@ -265,19 +256,23 @@ export default {
     }
   },
   methods: {
-    setExpandedFolderIds(expandedFolderIds) {
-      this.expandedFolderIds = expandedFolderIds
-      SmartLocalStorage.addItem(this.expandedStorageKey, expandedFolderIds)
+    ...mapActions({
+      moveQueryFolder: 'data/queryFolders/move',
+      moveQuery: 'data/queries/move',
+    }),
+    setExpandedIds(expandedIds) {
+      this.expandedIds = expandedIds
+      SmartLocalStorage.addItem(this.expandedStorageKey, expandedIds)
     },
-    restoreExpandedFolderIds() {
-      this.expandedFolderIds = SmartLocalStorage.getJSON(this.expandedStorageKey) ?? []
+    restoreExpandedIds() {
+      this.expandedIds = SmartLocalStorage.getJSON(this.expandedStorageKey) ?? []
     },
-    seedExpandedFolderIds() {
-      const ids = new Set(this.expandedFolderIds);
+    seedExpandedIds() {
+      const ids = new Set(this.expandedIds);
       for (const folder of this.rootFolders) {
-        ids.add(folder.id)
+        ids.add(`folder-${folder.id}`)
       }
-      this.expandedFolderIds = [...ids];
+      this.expandedIds = [...ids];
     },
     clearFilter() {
       this.filterQuery = null
@@ -393,22 +388,17 @@ export default {
       this.$bks.openMenu({ event, item: folder, options })
     },
     /** @param event {import("@beekeeperstudio/ui-kit").TreeNodeMoveEvent} */
-    async handleTreeNodeMove({ source, position, parentId }) {
+    async handleTreeNodeMove({ source, target, position }) {
       try {
         if (source.type === 'folder') {
-          if (parentId === (source.ref.parentId ?? null)) {
-            return
+          // Folders have no ordering, so they land inside whatever folder the drop points at
+          let targetId = target.ref.queryFolderId ?? null
+          if (target.type === 'folder') {
+            targetId = target.ref.id
           }
-          await this.$store.dispatch('data/queryFolders/save', {
-            ...source.ref,
-            parentId,
-          })
+          await this.moveQueryFolder({ sourceId: source.ref.id, targetId, position: 'inside' })
         } else {
-          await this.$store.dispatch('data/queries/reorder', {
-            item: source.ref,
-            queryFolderId: parentId,
-            position,
-          })
+          await this.moveQuery({ sourceId: source.ref.id, targetId: target.ref.id, position })
         }
       } catch (ex) {
         this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)

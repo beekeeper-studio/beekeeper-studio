@@ -8,12 +8,11 @@
         v-for="node of rootNodes"
         :key="node.id"
         :node="node"
-        :all-items="itemNodes"
+        :all-items="items"
         :descendants-map="descendantsMap"
         :depth="0"
         :internal-id="internalId"
-        :expanded-folder-ids="expandedFolderIds"
-        :draggable="draggable"
+        :expanded-ids="expandedIds"
         :drop-target="dropTarget"
         :can-drop="canDrop"
         @node-click="handleNodeClick"
@@ -37,22 +36,16 @@
 <script lang="ts">
 import Vue from "vue";
 import props from "./props";
-import {
-  buildDescendantsMap,
-  buildFolderNodes,
-  buildItemNodes,
-} from "./tree";
+import { buildDescendantsMap } from "./tree";
 import TreeNode from "./TreeNode.vue";
 import { uuidv4 } from "../../utils/uuid";
 import {
   DropPosition,
-  DropSlot,
   DropTarget,
   FolderNode,
   ItemNode,
   Node,
   TreeNodeMoveEvent,
-  Item,
 } from "./types";
 
 const EXPAND_DELAY = 600;
@@ -72,33 +65,17 @@ export default Vue.extend({
   },
 
   computed: {
-    folderNodes(): FolderNode[] {
-      return buildFolderNodes(this.folders);
-    },
-
-    itemNodes(): ItemNode[] {
-      if (!this.itemParentKey) {
-        if (this.items.length > 0) {
-          console.warn(
-            "`itemParentKey` is not provided. Cannot map items to folders."
-          );
-        }
-        return [];
-      }
-      return buildItemNodes(this.items as Item[], this.itemParentKey);
-    },
-
-    descendantsMap(): Map<number, Set<number>> {
-      return buildDescendantsMap(this.folderNodes);
+    descendantsMap(): Map<FolderNode["id"], Set<FolderNode["id"]>> {
+      return buildDescendantsMap(this.folders);
     },
 
     rootFolderNodes(): FolderNode[] {
-      return this.folderNodes.filter((node) => node.parentId == null);
+      return this.folders.filter((node) => node.parentId === null);
     },
 
     rootItemNodes(): ItemNode[] {
-      return this.itemNodes
-        .filter((item) => item.parentId === null)
+      return this.items
+        .filter((node) => node.parentId === null)
         .sort((a, b) => a.position - b.position);
     },
 
@@ -108,8 +85,11 @@ export default Vue.extend({
   },
 
   methods: {
-    isInSubtree(ancestorId: number, folderId: number | null): boolean {
-      if (folderId == null) {
+    isInSubtree(
+      ancestorId: FolderNode["id"],
+      folderId: FolderNode["id"] | null
+    ): boolean {
+      if (folderId === null) {
         return false;
       }
       if (folderId === ancestorId) {
@@ -128,12 +108,13 @@ export default Vue.extend({
       if (source.type !== "folder") {
         return true;
       }
-      if (this.undraggableFolderIds.includes(source.ref.id)) {
-        return false;
+      let targetFolderId: FolderNode["id"] | null;
+      if (target.type === "folder") {
+        targetFolderId = target.id;
+      } else {
+        targetFolderId = target.parentId;
       }
-      const targetFolderId =
-        target.type === "folder" ? target.ref.id : target.parentId;
-      return !this.isInSubtree(source.ref.id, targetFolderId);
+      return !this.isInSubtree(source.id, targetFolderId);
     },
 
     canDrop(target: Node): boolean {
@@ -187,21 +168,7 @@ export default Vue.extend({
       if (!source || !position || !this.canDropOn(source, target)) {
         return;
       }
-      let slot: DropSlot;
-      // NOTE: Folder positioning is not supported
-      if (target.type === "folder") {
-        slot = { before: null };
-      } else if (position === "after") {
-        slot = { after: target.ref.id };
-      } else {
-        slot = { before: target.ref.id };
-      }
-      const payload: TreeNodeMoveEvent = {
-        source,
-        target,
-        position: slot,
-        parentId: position === "inside" ? target.ref.id : target.parentId,
-      };
+      const payload: TreeNodeMoveEvent = { source, target, position };
       this.$emit("bks-tree-node-move", payload);
     },
 
@@ -214,19 +181,16 @@ export default Vue.extend({
     scheduleExpand(node: Node, position: DropPosition) {
       this.clearExpandTimer();
 
-      if (position !== "inside") {
+      if (position !== "inside" || node.type !== "folder") {
         return;
       }
 
-      if (this.expandedFolderIds.includes(node.ref.id)) {
+      if (this.expandedIds.includes(node.id)) {
         return;
       }
 
       this.expandTimer = setTimeout(() => {
-        this.$emit("update:expandedFolderIds", [
-          ...this.expandedFolderIds,
-          node.ref.id,
-        ]);
+        this.$emit("update:expandedIds", [...this.expandedIds, node.id]);
         this.expandTimer = null;
       }, EXPAND_DELAY);
     },
@@ -239,19 +203,14 @@ export default Vue.extend({
       this.expandTimer = null;
     },
 
-    toggleExpanded(node: Node) {
-      const index = this.expandedFolderIds.indexOf(node.ref.id);
+    toggleExpanded(node: FolderNode) {
+      const index = this.expandedIds.indexOf(node.id);
       if (index === -1) {
         // add
-        this.$emit("update:expandedFolderIds", [
-          ...this.expandedFolderIds,
-          node.ref.id,
-        ]);
+        this.$emit("update:expandedIds", [...this.expandedIds, node.id]);
       } else {
         // remove
-        this.$emit("update:expandedFolderIds",
-          this.expandedFolderIds.toSpliced(index, 1)
-        );
+        this.$emit("update:expandedIds", this.expandedIds.toSpliced(index, 1));
       }
     },
   },

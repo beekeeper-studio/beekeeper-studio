@@ -5,6 +5,8 @@ import { DataState, DataStore, mutationsFor } from "@/store/modules/data/DataMod
 import { safely } from "@/store/modules/data/StoreHelpers";
 import { accessGrantMutations, localAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
+import { buildTreeFolderNodes } from "@/common/folderTree";
+import { folderMoveActions } from "@/store/modules/data/move/moveStore";
 
 type State = DataState<IQueryFolder>
 
@@ -22,6 +24,7 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
   },
   actions: {
     ...localAccessGrantActions(),
+    ...folderMoveActions(),
     async initialize(context) {
       context.dispatch('load');
     },
@@ -64,9 +67,10 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
       r.createdAt = null
       return r
     },
-    async moveToFolder(context, { query, folder }) {
-      const updated = { ...query, queryFolderId: folder?.id ?? null }
-      await context.dispatch('data/queries/save', updated, { root: true })
+  },
+  getters: {
+    nodes(state) {
+      return buildTreeFolderNodes(state.items)
     }
   }
 }

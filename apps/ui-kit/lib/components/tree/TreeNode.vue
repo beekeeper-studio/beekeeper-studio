@@ -2,7 +2,7 @@
   <div class="BksTree-node">
     <div
       class="BksTree-row"
-      :draggable="draggable"
+      :draggable="node.draggable"
       :style="{ '--depth': depth }"
       :data-node-type="node.type"
       :data-drop-target="dropTargetPosition()"
@@ -26,7 +26,7 @@
         />
       </slot>
       <slot v-else name="item" :node="node" :depth="depth">
-        {{ node.ref["name"] ?? node.ref.id }}
+        {{ node.id }}
       </slot>
     </div>
 
@@ -42,8 +42,7 @@
         :descendants-map="descendantsMap"
         :depth="depth + 1"
         :internal-id="internalId"
-        :expanded-folder-ids="expandedFolderIds"
-        :draggable="draggable"
+        :expanded-ids="expandedIds"
         :drop-target="dropTarget"
         :can-drop="canDrop"
         @node-dragstart="$emit('node-dragstart', $event)"
@@ -68,7 +67,7 @@
 import Vue, { PropType } from "vue";
 import TreeFolder from "./TreeFolder.vue";
 import { zoneAt } from "./tree";
-import { DropPosition, DropTarget, ItemNode, Node } from "./types";
+import { DropPosition, DropTarget, FolderNode, ItemNode, Node } from "./types";
 
 export default Vue.extend({
   name: "TreeNode",
@@ -85,16 +84,12 @@ export default Vue.extend({
       default: () => [],
     },
     descendantsMap: {
-      type: Map as PropType<Map<number, Set<number>>>,
+      type: Map as PropType<Map<FolderNode["id"], Set<FolderNode["id"]>>>,
       default: () => new Map(),
     },
-    expandedFolderIds: {
-      type: Array as PropType<number[]>,
+    expandedIds: {
+      type: Array as PropType<FolderNode["id"][]>,
       required: true,
-    },
-    draggable: {
-      type: Boolean,
-      default: false,
     },
     depth: {
       type: Number,
@@ -119,7 +114,7 @@ export default Vue.extend({
       if (this.node.type !== "folder") {
         return [];
       }
-      const folderId = this.node.ref.id;
+      const folderId = this.node.id;
       return this.allItems
         .filter((item) => item.parentId === folderId)
         .sort((a, b) => a.position - b.position);
@@ -138,8 +133,7 @@ export default Vue.extend({
 
     expanded(): boolean {
       return (
-        this.node.type === "folder" &&
-        this.expandedFolderIds.includes(this.node.ref.id)
+        this.node.type === "folder" && this.expandedIds.includes(this.node.id)
       );
     },
 

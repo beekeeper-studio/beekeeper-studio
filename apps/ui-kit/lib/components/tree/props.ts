@@ -1,27 +1,18 @@
 import { PropType } from "vue";
-import { Folder } from "./types";
+import { FolderNode, ItemNode } from "./types";
 
 const props = {
   folders: {
-    type: Array as PropType<Folder[]>,
+    type: Array as PropType<FolderNode[]>,
     default: () => [],
   },
   items: {
-    type: Array as PropType<unknown[]>,
+    type: Array as PropType<ItemNode[]>,
     default: () => [],
   },
-  itemParentKey: String,
-  expandedFolderIds: {
-    type: Array as PropType<number[]>,
+  expandedIds: {
+    type: Array as PropType<FolderNode["id"][]>,
     required: true,
-  },
-  draggable: {
-    type: Boolean,
-    default: false,
-  },
-  undraggableFolderIds: {
-    type: Array as PropType<number[]>,
-    default: () => [],
   },
 };
 
