@@ -3,7 +3,7 @@ import {
   buildTreeItemNodes,
   getDescendants,
   getSelfAndAnscestors,
-} from "@/common/folderTree";
+} from "@/common/utils/folderTree";
 import { IFolder } from "@/common/interfaces/IQueryFolder";
 
 function folder(id: number, name: string, parentId: number | null): IFolder {
