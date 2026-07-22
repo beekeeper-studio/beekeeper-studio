@@ -15,7 +15,7 @@ export type Item = {
  * a flat array of these still describes the whole tree.
  */
 export type FolderNode = {
-  id: number;
+  id: `folder-${number}`;
   parentId: number | null;
   type: "folder";
   ref: Folder;
@@ -23,7 +23,7 @@ export type FolderNode = {
 };
 
 export type ItemNode = {
-  id: number;
+  id: `item-${number}`;
   parentId: number | null;
   type: "item";
   ref: Item;
@@ -32,18 +32,10 @@ export type ItemNode = {
 
 export type Node = FolderNode | ItemNode;
 
-/**
- * Lightweight descriptor carried by a drag. Folders and items have separate id
- * spaces, so `type` is part of the identity.
- */
-export type DragNode =
-  | { type: "folder"; ref: Folder }
-  | { type: "item"; ref: Item };
-
 export type DropPosition = "before" | "after" | "inside";
 
 export type DropTarget = {
-  key: string;
+  id: Node["id"];
   position: DropPosition;
 };
 
@@ -54,8 +46,8 @@ export type DropTarget = {
 export type DropSlot = { before: number | null } | { after: number };
 
 export type TreeNodeMoveEvent = {
-  source: DragNode;
-  target: DragNode;
+  source: Node;
+  target: Node;
   /** Ready to hand straight to a reorder action. */
   position: DropSlot;
   /** Folder id the source ends up under. null = tree root. */
@@ -64,4 +56,5 @@ export type TreeNodeMoveEvent = {
 
 export interface TreeEventMap extends HTMLElementEventMap {
   "bks-tree-node-move": CustomEvent<TreeNodeMoveEvent>;
+  "bks-tree-node-click": CustomEvent<Node>;
 }

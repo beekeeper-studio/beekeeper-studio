@@ -6,7 +6,7 @@
     <template v-else>
       <tree-node
         v-for="node of rootNodes"
-        :key="`${node.type}-${node.id}`"
+        :key="node.id"
         :node="node"
         :all-items="itemNodes"
         :descendants-map="descendantsMap"
@@ -15,7 +15,7 @@
         :expanded-folder-ids="expandedFolderIds"
         :drop-target="dropTarget"
         :can-drop="canDrop"
-        @toggle-expanded="toggleExpanded"
+        @node-click="handleNodeClick"
         @node-dragstart="handleNodeDragStart"
         @node-dragover="handleNodeDragOver"
         @node-dragleave="handleNodeDragLeave"
@@ -40,7 +40,6 @@ import {
   buildDescendantsMap,
   buildFolderNodes,
   buildItemNodes,
-  nodeKey,
 } from "./tree";
 import TreeNode from "./TreeNode.vue";
 import { uuidv4 } from "../../utils/uuid";
@@ -51,7 +50,6 @@ import {
   FolderNode,
   ItemNode,
   Node,
-  DragNode,
   TreeNodeMoveEvent,
   Item,
 } from "./types";
@@ -66,7 +64,7 @@ export default Vue.extend({
   data() {
     return {
       internalId: uuidv4(),
-      draggedNode: null as DragNode | null,
+      draggedNode: null as Node | null,
       dropTarget: null as DropTarget | null,
       expandTimer: null as ReturnType<typeof setTimeout> | null,
     };
@@ -109,8 +107,6 @@ export default Vue.extend({
   },
 
   methods: {
-    nodeKey,
-
     isInSubtree(ancestorId: number, folderId: number | null): boolean {
       if (folderId == null) {
         return false;
@@ -121,39 +117,36 @@ export default Vue.extend({
       return this.descendantsMap.get(ancestorId)?.has(folderId) ?? false;
     },
 
-    parentIdOf(node: DragNode): number | null {
-      if (node.type === "folder") {
-        return node.ref.parentId;
-      }
-      if (!this.itemParentKey) {
-        return null;
-      }
-      return node.ref[this.itemParentKey] ?? null;
-    },
-
-    canDropOn(source: DragNode, target: DragNode): boolean {
+    canDropOn(source: Node, target: Node): boolean {
       // Dropping onto itself is always rejected. A folder additionally can't
       // land anywhere inside its own subtree — that would reparent it under
       // itself.
-      if (nodeKey(source) === nodeKey(target)) {
+      if (source.id === target.id) {
         return false;
       }
       if (source.type !== "folder") {
         return true;
       }
       const targetFolderId =
-        target.type === "folder" ? target.ref.id : this.parentIdOf(target);
+        target.type === "folder" ? target.ref.id : target.parentId;
       return !this.isInSubtree(source.ref.id, targetFolderId);
     },
 
-    canDrop(target: DragNode): boolean {
+    canDrop(target: Node): boolean {
       if (!this.draggedNode) {
         return false;
       }
       return this.canDropOn(this.draggedNode, target);
     },
 
-    handleNodeDragStart(node: DragNode) {
+    handleNodeClick(node: Node) {
+      if (node.type === "folder") {
+        this.toggleExpanded(node);
+      }
+      this.$emit("bks-tree-node-click", node);
+    },
+
+    handleNodeDragStart(node: Node) {
       this.draggedNode = node;
     },
 
@@ -161,30 +154,29 @@ export default Vue.extend({
       node,
       position,
     }: {
-      node: DragNode;
+      node: Node;
       position: DropPosition;
     }) {
-      const key = nodeKey(node);
       if (
-        this.dropTarget?.key === key &&
+        this.dropTarget?.id === node.id &&
         this.dropTarget.position === position
       ) {
         return;
       }
-      this.dropTarget = { key, position };
+      this.dropTarget = { id: node.id, position };
       this.scheduleExpand(node, position);
     },
 
-    handleNodeDragLeave(node: DragNode) {
+    handleNodeDragLeave(node: Node) {
       // A late dragleave must not wipe the next row's target.
-      if (this.dropTarget?.key !== nodeKey(node)) {
+      if (this.dropTarget?.id !== node.id) {
         return;
       }
       this.dropTarget = null;
       this.clearExpandTimer();
     },
 
-    handleNodeDrop(target: DragNode) {
+    handleNodeDrop(target: Node) {
       const source = this.draggedNode;
       const position = this.dropTarget?.position;
       this.resetDrag();
@@ -204,8 +196,7 @@ export default Vue.extend({
         source,
         target,
         position: slot,
-        parentId:
-          position === "inside" ? target.ref.id : this.parentIdOf(target),
+        parentId: position === "inside" ? target.ref.id : target.parentId,
       };
       this.$emit("bks-tree-node-move", payload);
     },
@@ -216,7 +207,7 @@ export default Vue.extend({
       this.clearExpandTimer();
     },
 
-    scheduleExpand(node: DragNode, position: DropPosition) {
+    scheduleExpand(node: Node, position: DropPosition) {
       this.clearExpandTimer();
 
       if (position !== "inside") {
@@ -244,7 +235,7 @@ export default Vue.extend({
       this.expandTimer = null;
     },
 
-    toggleExpanded(node: DragNode) {
+    toggleExpanded(node: Node) {
       const index = this.expandedFolderIds.indexOf(node.ref.id);
       if (index === -1) {
         // add

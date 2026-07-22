@@ -6,7 +6,7 @@
       :style="{ '--depth': depth }"
       :data-node-type="node.type"
       :data-drop-target="dropTargetPosition()"
-      @click="handleClick"
+      @click="$emit('node-click', node)"
       @dragstart="handleDragStart"
       @dragover="handleDragOver"
       @dragleave="handleDragLeave"
@@ -36,7 +36,7 @@
       </div>
       <tree-node
         v-for="child of childNodes"
-        :key="`${child.type}-${child.id}`"
+        :key="child.id"
         :node="child"
         :all-items="allItems"
         :descendants-map="descendantsMap"
@@ -45,12 +45,12 @@
         :expanded-folder-ids="expandedFolderIds"
         :drop-target="dropTarget"
         :can-drop="canDrop"
-        @toggle-expanded="$emit('toggle-expanded', $event)"
         @node-dragstart="$emit('node-dragstart', $event)"
         @node-dragover="$emit('node-dragover', $event)"
         @node-dragleave="$emit('node-dragleave', $event)"
         @node-drop="$emit('node-drop', $event)"
         @node-dragend="$emit('node-dragend')"
+        @node-click="$emit('node-click', $event)"
       >
         <template v-slot:folder="slotProps">
           <slot name="folder" v-bind="slotProps" />
@@ -66,8 +66,8 @@
 <script lang="ts">
 import Vue, { PropType } from "vue";
 import TreeFolder from "./TreeFolder.vue";
-import { nodeKey } from "./tree";
-import { DragNode, DropPosition, DropTarget, ItemNode, Node } from "./types";
+import { zoneAt } from "./tree";
+import { DropPosition, DropTarget, ItemNode, Node } from "./types";
 
 export default Vue.extend({
   name: "TreeNode",
@@ -104,7 +104,7 @@ export default Vue.extend({
       default: null,
     },
     canDrop: {
-      type: Function as PropType<(node: DragNode) => boolean>,
+      type: Function as PropType<(node: Node) => boolean>,
       required: true,
     },
   },
@@ -114,7 +114,7 @@ export default Vue.extend({
       if (this.node.type !== "folder") {
         return [];
       }
-      const folderId = this.node.id;
+      const folderId = this.node.ref.id;
       return this.allItems
         .filter((item) => item.parentId === folderId)
         .sort((a, b) => a.position - b.position);
@@ -134,12 +134,8 @@ export default Vue.extend({
     expanded(): boolean {
       return (
         this.node.type === "folder" &&
-        this.expandedFolderIds.includes(this.node.id)
+        this.expandedFolderIds.includes(this.node.ref.id)
       );
-    },
-
-    dragNode(): DragNode {
-      return this.node;
     },
 
     /**
@@ -152,28 +148,11 @@ export default Vue.extend({
   },
 
   methods: {
-    handleClick() {
-      if (this.node.type !== "folder") {
-        return;
-      }
-      this.$emit("toggle-expanded", this.dragNode);
-    },
-
     dropTargetPosition(): DropPosition | null {
-      if (this.dropTarget?.key !== nodeKey(this.dragNode)) {
+      if (this.dropTarget?.id !== this.node.id) {
         return null;
       }
       return this.dropTarget.position;
-    },
-
-    zoneAt(event: DragEvent): DropPosition {
-      // Folders have no position, so they can only be dropped into.
-      if (this.dragNode.type === "folder") {
-        return "inside";
-      }
-      const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-      const offset = (event.clientY - rect.top) / rect.height;
-      return offset < 0.5 ? "before" : "after";
     },
 
     isOurDrag(event: DragEvent): boolean {
@@ -181,22 +160,23 @@ export default Vue.extend({
     },
 
     handleDragStart(event: DragEvent) {
-      const node = this.dragNode;
       // Firefox refuses to start a drag without setData. The value is never read.
-      event.dataTransfer.setData(this.dragMimeType, String(node.ref.id));
+      event.dataTransfer.setData(this.dragMimeType, this.node.id);
       event.dataTransfer.effectAllowed = "move";
-      this.$emit("node-dragstart", node);
+      this.$emit("node-dragstart", this.node);
     },
 
     handleDragOver(event: DragEvent) {
-      const node = this.dragNode;
       if (!this.isOurDrag(event)) {
         return;
       }
-      if (!this.canDrop(node)) {
+      if (!this.canDrop(this.node)) {
         return;
       }
-      this.$emit("node-dragover", { node, position: this.zoneAt(event) });
+      this.$emit("node-dragover", {
+        node: this.node,
+        position: zoneAt(this.node, event),
+      });
       // Skipping preventDefault on an invalid target is what gives us the
       // native no-drop cursor.
       event.preventDefault();
@@ -209,7 +189,7 @@ export default Vue.extend({
       if (row.contains(event.relatedTarget as HTMLElement | null)) {
         return;
       }
-      this.$emit("node-dragleave", this.dragNode);
+      this.$emit("node-dragleave", this.node);
     },
 
     handleDrop(event: DragEvent) {
@@ -217,7 +197,7 @@ export default Vue.extend({
         return;
       }
       event.preventDefault();
-      this.$emit("node-drop", this.dragNode);
+      this.$emit("node-drop", this.node);
     },
   },
 });

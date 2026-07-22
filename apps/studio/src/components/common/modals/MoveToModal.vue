@@ -37,36 +37,35 @@
 
       <tree
         :folders="filteredFolders"
+        :items="isQueryTarget ? savedQueries : connections"
+        :item-parent-key="
+          isQueryTarget ? 'queryFolderId' : 'connectionFolderId'
+        "
         :expanded-folder-ids.sync="expandedFolderIds"
       >
         <template #folder="{ props }">
-          <label
+          <button
+            type="button"
             class="move-folder-row"
+            @click="handleFolderClick($event, props.node.ref)"
             :class="{
               selected: selectedFolderId === props.node.ref.id,
               empty: !props.node.children?.length,
+              current: currentFolderId === props.node.ref.id,
             }"
           >
-            <input
-              class="move-folder-radio"
-              type="radio"
-              name="move-to-folder"
-              :disabled="currentFolderId === props.node.ref.id"
-              :value="props.node.ref.id"
-              v-model="selectedFolderId"
+            <tree-folder v-bind="props" tag="span" />
+            <span
+              v-if="currentFolderId === props.node.ref.id"
+              class="current-location"
             >
-            <tree-folder v-bind="props" tag="div">
-              <template #name>
-                {{ props.node.ref.name }}
-                <span
-                  v-if="currentFolderId === props.node.ref.id"
-                  class="current-location"
-                >
-                  (current location)
-                </span>
-              </template>
-            </tree-folder>
-          </label>
+              (current location)
+            </span>
+          </button>
+        </template>
+        <!-- Items are only here so folder counts include them. -->
+        <template #item>
+          <span />
         </template>
       </tree>
     </template>
@@ -116,6 +115,8 @@ export default Vue.extend({
   computed: {
     ...mapState("data/connectionFolders", { connectionFolders: "items" }),
     ...mapState("data/queryFolders", { queryFolders: "items" }),
+    ...mapState("data/connections", { connections: "items" }),
+    ...mapState("data/queries", { savedQueries: "items" }),
     ...mapGetters(["isCloud"]),
     rootBindings() {
       return [{ event: AppEvent.openMoveFileModal, handler: this.open }];
@@ -200,6 +201,12 @@ export default Vue.extend({
 
       this.$modal.show(this.modalName);
     },
+    handleFolderClick(event: MouseEvent, folder: IFolder) {
+      if (folder.id !== this.selectedFolderId) {
+        event.stopPropagation();
+        this.selectedFolderId = folder.id;
+      }
+    },
     async move() {
       if (!this.canMove || this.saving) return;
       this.saving = true;
@@ -265,10 +272,19 @@ export default Vue.extend({
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  width: 100%;
   margin: 0;
+  padding: 0;
+  border: none;
   border-radius: 4px;
+  background: transparent;
   color: rgb(from var(--theme-base) r g b / 77%);
+  font: inherit;
   cursor: pointer;
+
+  label& {
+    height: 1.75rem;
+  }
 
   &:hover {
     background: rgb(from var(--theme-base) r g b / 3.5%);
@@ -280,16 +296,22 @@ export default Vue.extend({
 
   /* The radio is visually hidden, so surface keyboard focus on the row.
      :focus-visible keeps this off for mouse clicks. */
+  &:focus-visible,
+  &:has(:focus-visible),
   &:has(.move-folder-radio:focus-visible) {
     outline: 2px solid var(--theme-base);
     outline-offset: -2px;
   }
 
-  &::v-deep .BksTree-folder:hover {
-    background-color: transparent;
+  &::v-deep .BksTree-folder {
+    width: auto;
+
+    &:hover {
+      background-color: transparent;
+    }
   }
 
-  &:has([disabled])::v-deep .BksTree-folder .name {
+  &.current::v-deep .BksTree-folder .name {
     opacity: 0.5;
   }
 

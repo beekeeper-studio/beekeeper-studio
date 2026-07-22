@@ -4,9 +4,7 @@
       keyboard_arrow_right
     </i>
     <i class="material-icons folder-icon">folder</i>
-    <span class="name">
-      <slot name="name">{{ node.ref.name }} ({{ count }})</slot>
-    </span>
+    <span class="name">{{ node.ref.name }} ({{ count }})</span>
   </component>
 </template>
 
@@ -42,13 +40,13 @@ export default Vue.extend({
 
   computed: {
     count(): number {
-      if (!this.descendantsMap.has(this.node.id)) {
+      if (!this.descendantsMap.has(this.node.ref.id)) {
         return 0;
       }
-      const parentIds = this.descendantsMap.get(this.node.id)!;
+      const parentIds = this.descendantsMap.get(this.node.ref.id)!;
       const allItems: ItemNode[] = this.allItems;
       return allItems.reduce((acc, item) => {
-        if (parentIds.has(item.parentId) || this.node.id === item.parentId) {
+        if (parentIds.has(item.parentId) || this.node.ref.id === item.parentId) {
           return acc + 1;
         }
         return acc;
