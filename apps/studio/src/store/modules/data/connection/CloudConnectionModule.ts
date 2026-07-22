@@ -2,7 +2,7 @@ import { ICloudSavedConnection } from "@/common/interfaces/IConnection";
 import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { havingCli } from "@/store/modules/data/StoreHelpers";
 import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
-import { buildTreeItemNodes } from "@/common/folderTree";
+import { buildTreeItemNodes } from "@/common/utils/folderTree";
 import { itemMoveActions } from "@/store/modules/data/move/moveStore";
 import _ from "lodash";
 

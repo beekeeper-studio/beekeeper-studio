@@ -90,7 +90,7 @@ import { IConnection } from "@/common/interfaces/IConnection";
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { IFolder } from "@/common/interfaces/IQueryFolder";
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
-import { FolderNodeWithRef, getSelfAndAnscestors } from "@/common/folderTree";
+import { FolderNodeWithRef, getSelfAndAnscestors } from "@/common/utils/folderTree";
 
 type Target =
   | { type: "connection"; value: IConnection }

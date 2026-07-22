@@ -3,7 +3,7 @@ import { havingCli } from "../StoreHelpers";
 import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import _ from 'lodash'
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
-import { buildTreeItemNodes } from "@/common/folderTree";
+import { buildTreeItemNodes } from "@/common/utils/folderTree";
 import { itemMoveActions } from "@/store/modules/data/move/moveStore";
 
 

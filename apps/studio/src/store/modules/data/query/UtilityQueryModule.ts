@@ -3,7 +3,7 @@ import _ from 'lodash'
 import Vue from 'vue'
 import { mutationsFor, DataState, DataStore, utilActionsFor } from '../DataModuleBase'
 import { accessGrantMutations, localAccessGrantActions } from '@/store/modules/data/access_grant/accessGrantStore'
-import { buildTreeItemNodes } from '@/common/folderTree'
+import { buildTreeItemNodes } from '@/common/utils/folderTree'
 import { itemMoveActions } from '@/store/modules/data/move/moveStore'
 
 export const UtilQueryModule: DataStore<TransportFavoriteQuery, DataState<TransportFavoriteQuery>> = {

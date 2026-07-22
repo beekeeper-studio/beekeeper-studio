@@ -2,7 +2,7 @@
 import { IConnectionFolder } from "@/common/interfaces/IQueryFolder";
 import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
-import { buildTreeFolderNodes } from "@/common/folderTree";
+import { buildTreeFolderNodes } from "@/common/utils/folderTree";
 import { folderMoveActions } from "@/store/modules/data/move/moveStore";
 
 type State = DataState<IConnectionFolder>

@@ -5,7 +5,7 @@ import { DataState, DataStore, mutationsFor } from "@/store/modules/data/DataMod
 import { safely } from "@/store/modules/data/StoreHelpers";
 import { accessGrantMutations, localAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
-import { buildTreeFolderNodes } from "@/common/folderTree";
+import { buildTreeFolderNodes } from "@/common/utils/folderTree";
 import { folderMoveActions } from "@/store/modules/data/move/moveStore";
 
 type State = DataState<IQueryFolder>
