@@ -151,7 +151,9 @@
                 :folders="folders"
                 :items="connections ?? []"
                 item-parent-key="connectionFolderId"
+                draggable
                 :expanded-folder-ids="expandedFolderIds"
+                :undraggable-folder-ids="undraggableFolderIds"
                 @update:expandedFolderIds="setExpandedFolderIds"
                 @bks-tree-node-move="handleTreeNodeMove"
               >
@@ -384,6 +386,13 @@ export default {
     noPins() {
       return !this.pinnedConnections?.length;
     },
+    undraggableFolderIds() {
+      if (!this.isCloud) {
+        return [];
+      }
+      // Folders at the root ("Personal" and "Team")
+      return this.folders.filter((f) => !f.parentId).map((f) => f.id);
+    },
     rootFolders() {
       return this.folders.filter((f) => !f.parentId).sort((a, b) => a.name.localeCompare(b.name))
     },
@@ -571,7 +580,13 @@ export default {
           })
         }
       } catch (ex) {
-        this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
+        if(ex.message.includes("[team_folder_in_personal_tree]")) {
+          this.$noty.error(
+            "You can't move this to your personal folder because it is shared with other workspace members."
+          );
+        } else {
+          this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
+        }
       }
     },
     share(folder) {

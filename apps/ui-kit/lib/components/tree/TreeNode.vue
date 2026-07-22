@@ -2,7 +2,7 @@
   <div class="BksTree-node">
     <div
       class="BksTree-row"
-      draggable="true"
+      :draggable="draggable"
       :style="{ '--depth': depth }"
       :data-node-type="node.type"
       :data-drop-target="dropTargetPosition()"
@@ -43,6 +43,7 @@
         :depth="depth + 1"
         :internal-id="internalId"
         :expanded-folder-ids="expandedFolderIds"
+        :draggable="draggable"
         :drop-target="dropTarget"
         :can-drop="canDrop"
         @node-dragstart="$emit('node-dragstart', $event)"
@@ -90,6 +91,10 @@ export default Vue.extend({
     expandedFolderIds: {
       type: Array as PropType<number[]>,
       required: true,
+    },
+    draggable: {
+      type: Boolean,
+      default: false,
     },
     depth: {
       type: Number,

@@ -82,7 +82,9 @@
             :folders="folders"
             :items="savedQueries ?? []"
             item-parent-key="queryFolderId"
+            draggable
             :expanded-folder-ids="expandedFolderIds"
+            :undraggable-folder-ids="undraggableFolderIds"
             @update:expandedFolderIds="setExpandedFolderIds"
             @bks-tree-node-move="handleTreeNodeMove"
           >
@@ -244,6 +246,13 @@ export default {
     },
     rootFolders() {
       return this.folders.filter((f) => !f.parentId).sort((a, b) => a.name.localeCompare(b.name))
+    },
+    undraggableFolderIds() {
+      if (!this.isCloud) {
+        return []
+      }
+      // Folders at the root ("Personal" and "Team")
+      return this.rootFolders.map((f) => f.id)
     },
     loading() {
       return this.queriesLoading || this.foldersLoading || null

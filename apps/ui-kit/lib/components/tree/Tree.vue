@@ -13,6 +13,7 @@
         :depth="0"
         :internal-id="internalId"
         :expanded-folder-ids="expandedFolderIds"
+        :draggable="draggable"
         :drop-target="dropTarget"
         :can-drop="canDrop"
         @node-click="handleNodeClick"
@@ -126,6 +127,9 @@ export default Vue.extend({
       }
       if (source.type !== "folder") {
         return true;
+      }
+      if (this.undraggableFolderIds.includes(source.ref.id)) {
+        return false;
       }
       const targetFolderId =
         target.type === "folder" ? target.ref.id : target.parentId;

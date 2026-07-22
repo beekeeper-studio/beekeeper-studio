@@ -15,6 +15,14 @@ const props = {
     type: Array as PropType<number[]>,
     required: true,
   },
+  draggable: {
+    type: Boolean,
+    default: false,
+  },
+  undraggableFolderIds: {
+    type: Array as PropType<number[]>,
+    default: () => [],
+  },
 };
 
 export default props;
