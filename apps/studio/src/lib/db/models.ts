@@ -170,7 +170,7 @@ export interface BksField {
   bksType: BksFieldType;
 }
 
-export type BksFieldType = 'BINARY' | 'UNKNOWN' | 'OBJECTID' | 'SURREALID';
+export type BksFieldType = 'BINARY' | 'UNKNOWN' | 'OBJECTID' | 'SURREALID' | 'DUCKDB_TIMESTAMP_TZ' | 'DUCKDB_UUID';
 
 export interface TableChanges {
   inserts: TableInsert[];

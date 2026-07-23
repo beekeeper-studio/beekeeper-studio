@@ -24,6 +24,7 @@ yarn-error.log
 cli.zip
 apps/studio/test-results
 *.db
+*.duckdb
 *.log
 *.orig
 surreal_data/
