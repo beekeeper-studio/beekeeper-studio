@@ -74,6 +74,22 @@ describe("Postgres UNIT tests (no connection required)", () => {
     expect(result).toBe(expected)
   })
 
+  it("Should quote explicit column names in select queries", () => {
+    const result = client.buildSelectTopQueries({
+      table: 'order',
+      schema: 'public',
+      selects: ['select', 'display name', 'quoted"column'],
+      filters: [],
+      orderBy: [],
+      limit: 1000,
+      offset: 0,
+    })
+
+    expect(result.query.replace(/\s+/g, ' ').trim()).toBe(
+      'SELECT "select", "display name", "quoted""column" FROM "public"."order" LIMIT 1000 OFFSET 0'
+    )
+  })
+
   it("Should generate correct alter table type change statement", async () => {
     const input = {
       table: 'foo',

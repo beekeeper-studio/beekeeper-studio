@@ -1496,7 +1496,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       })
     }
 
-    const selectSQL = `SELECT ${selects.join(', ')}`
+    const selectSQL = `SELECT ${selects.map(wrapIdentifier).join(', ')}`
     const baseSQL = `
       FROM ${wrapIdentifier(options.schema)}.${wrapIdentifier(options.table)}
       ${filterString}

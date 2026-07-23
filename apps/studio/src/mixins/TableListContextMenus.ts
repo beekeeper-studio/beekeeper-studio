@@ -1,8 +1,13 @@
 import { AppEvent } from "@/common/AppEvent";
 import { IConnection } from "@/common/interfaces/IConnection";
+import { safeSqlFormat } from "@/common/utils";
+import { TableOrView } from "@/lib/db/models";
 import { DatabaseElement } from "@/lib/db/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
-import { DialectData } from "@shared/lib/dialects/models";
+import { dialectFor, DialectData, formatOptionsFor } from "@shared/lib/dialects/models";
+import rawLog from "@bksLogger";
+
+const log = rawLog.scope("TableListContextMenus");
 
 function disabled(...args: boolean[]) {
   return args.some((v) => v) ? 'disabled' : '';
@@ -104,6 +109,11 @@ export default {
 
         {
           type: 'divider'
+        },
+        {
+          name: "SQL: Select *",
+          slug: 'sql-select',
+          handler: this.openSelectQuery
         },
         {
           name: "SQL: Create",
@@ -213,6 +223,37 @@ export default {
     }
   },
   methods: {
+    async openSelectQuery({ item }: { item: TableOrView }) {
+      try {
+        const connection = this.$store.state.connection;
+        const columns = item.entityType === 'materialized-view'
+          ? await connection.listMaterializedViewColumns(item.name, item.schema)
+          : await connection.listTableColumns(item.name, item.schema);
+        const columnNames = columns.length
+          ? columns.map(({ columnName }) => columnName)
+          : ['*'];
+        const query = await connection.selectTopSql(
+          item.name,
+          0,
+          1000,
+          [],
+          [],
+          item.schema,
+          columnNames,
+        );
+        const configuredDialect = this.$store.getters.dialectData?.queryDialectOverride
+          ?? this.$store.getters.dialect;
+        const formatted = safeSqlFormat(
+          query,
+          formatOptionsFor(dialectFor(configuredDialect)),
+        );
+
+        this.$root.$emit(AppEvent.newTab, formatted);
+      } catch (error) {
+        log.error("Error opening query tab:", error);
+        this.$noty.error("Unable to open query tab. See dev console for details.");
+      }
+    },
     routineMenuClick({ item, option }) {
       switch (option.slug) {
         case 'copy-name':
