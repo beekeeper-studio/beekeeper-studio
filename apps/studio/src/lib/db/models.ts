@@ -105,6 +105,8 @@ export interface ExtendedTableColumn extends SchemaItem {
   characterSet?: string
   collation?: string
   array?: boolean
+  // Table's next AUTO_INCREMENT value (MySQL/MariaDB). Null when not applicable.
+  autoIncrement?: number | null
   /** For enum columns, the allowed values in definition order. Undefined for non-enum types. */
   enumValues?: string[]
   bksField: BksField
