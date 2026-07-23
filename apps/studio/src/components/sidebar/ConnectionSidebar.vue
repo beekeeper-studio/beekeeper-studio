@@ -174,8 +174,21 @@
                 <template #folder="{ props }">
                   <tree-folder
                     v-bind="props"
+                    :tag="renamingFolderId === props.node.ref.id ? 'div': undefined"
                     @contextmenu.native="showFolderContextMenu($event, props.node.ref)"
-                  />
+                  >
+                    <template
+                      #name
+                      v-if="renamingFolderId === props.node.ref.id"
+                    >
+                      <editable-text
+                        rename
+                        :initial-value="props.node.ref.name"
+                        @submit="submitFolderRename(props.node.ref, $event)"
+                        @cancel="renamingFolderId = null"
+                      />
+                    </template>
+                  </tree-folder>
                 </template>
                 <template #item="{ node }">
                   <connection-list-item
@@ -288,6 +301,7 @@ import { AppEvent } from '@/common/AppEvent'
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
 import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
+import EditableText from '@/components/common/EditableText.vue'
 import Noty from 'noty'
 
 const log = rawLog.scope('connection-sidebar');
@@ -297,10 +311,11 @@ export default {
     ConnectionListItem,
     SidebarLoading,
     ErrorAlert,
-    SidebarSortButtons,
-    TreeFolder,
-    WorkspaceSidebar,
     Tree,
+    TreeFolder,
+    EditableText,
+    SidebarSortButtons,
+    WorkspaceSidebar,
   },
   props: ['selectedConfig'],
   data: () => ({
@@ -756,5 +771,18 @@ export default {
 }
 .drag-pending {
   opacity: 0.5;
+}
+::v-deep .BksTree-folder {
+  .name:has(.editable-text) {
+    overflow: visible;
+  }
+
+  .editable-text  {
+    width: 100%;
+
+    input {
+      top: 60%;
+    }
+  }
 }
 </style>

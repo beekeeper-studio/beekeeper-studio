@@ -1,10 +1,17 @@
 <template>
-  <component :is="tag" class="BksTree-folder" type="button">
-    <i class="material-icons expand-icon" :class="{ expanded }">
-      keyboard_arrow_right
+  <component
+    :is="tag"
+    class="BksTree-folder"
+    type="button"
+    :data-expanded="expanded"
+  >
+    <i class="material-icons expand-icon">
+      {{ expanded ? "keyboard_arrow_down" : "keyboard_arrow_right" }}
     </i>
     <i class="material-icons folder-icon">folder</i>
-    <span class="name">{{ node.name }} ({{ count }})</span>
+    <span class="name">
+      <slot name="name">{{ node.name }} ({{ count }})</slot>
+    </span>
   </component>
 </template>
 
@@ -70,6 +77,7 @@ export default Vue.extend({
   font-size: 1rem;
   height: 1.75rem;
   padding-left: calc(var(--depth) * 1rem);
+  padding-right: 0.8rem;
 
   &:hover {
     background-color: rgb(from var(--bks-theme-base) r g b / 3.5%);
@@ -82,6 +90,11 @@ export default Vue.extend({
 
 .name {
   margin-left: 0.5rem;
+  flex-grow: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .material-icons.folder-icon {
@@ -93,9 +106,5 @@ export default Vue.extend({
 .material-icons.expand-icon {
   color: var(--bks-text-lighter);
   font-size: 1.25rem;
-
-  &.expanded {
-    transform: rotate(90deg);
-  }
 }
 </style>

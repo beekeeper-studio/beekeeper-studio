@@ -104,7 +104,19 @@
               <tree-folder
                 v-bind="props"
                 @contextmenu.native="showFolderContextMenu($event, props.node.ref)"
-              />
+              >
+                <template
+                  #name
+                  v-if="renamingFolderId === props.node.ref.id"
+                >
+                  <editable-text
+                    rename
+                    :initial-value="props.node.ref.name"
+                    @submit="submitFolderRename(props.node.ref, $event)"
+                    @cancel="renamingFolderId = null"
+                  />
+                </template>
+              </tree-folder>
             </template>
             <template #item="{ node }">
               <favorite-list-item
@@ -182,9 +194,10 @@ import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
 import { AppEvent } from '@/common/AppEvent'
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
 import { SmartLocalStorage } from '@/common/LocalStorage'
+import EditableText from '@/components/common/EditableText.vue'
 
 export default {
-  components: { SidebarLoading, ErrorAlert, FavoriteListItem, Tree, TreeFolder },
+  components: { SidebarLoading, ErrorAlert, FavoriteListItem, Tree, TreeFolder, EditableText },
   data: function () {
     return {
       checkedFavorites: [],
@@ -535,5 +548,18 @@ export default {
 }
 .folder-drop-zone {
   min-height: 8px;
+}
+::v-deep .BksTree-folder {
+  .name:has(.editable-text) {
+    overflow: visible;
+  }
+
+  .editable-text  {
+    width: 100%;
+
+    input {
+      top: 60%;
+    }
+  }
 }
 </style>
