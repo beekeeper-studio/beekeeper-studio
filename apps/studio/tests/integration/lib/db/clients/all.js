@@ -408,6 +408,10 @@ export function runCommonTests(getUtil, opts = {}) {
       await getUtil().getInsertQueryTests()
     })
 
+    test("should omit DEFAULT columns with null values from INSERT query", async () => {
+      await getUtil().insertDefaultColumnQueryTest()
+    })
+
 
     describe("Alter Table Tests", () => {
       beforeEach(async () => {
