@@ -304,6 +304,9 @@ const store = new Vuex.Store<State>({
     isTrial(_state, _getters, _rootState, rootGetters) {
       return rootGetters['licenses/isTrial']
     },
+    canCreateFolders(_state, getters) {
+      return getters.isUltimate || getters.isCloud;
+    },
     expandFKDetailsByDefault(state) {
       return state.expandFKDetailsByDefault
     },
