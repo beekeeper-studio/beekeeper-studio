@@ -223,6 +223,15 @@
             Wrap Text
           </x-label>
         </x-menuitem>
+        <x-menuitem
+          togglable
+          :toggled="disableSqlAutocomplete"
+          @click.prevent="toggleDisableSqlAutocomplete"
+        >
+          <x-label class="flex-between">
+            Disable SQL Autocomplete
+          </x-label>
+        </x-menuitem>
       </x-menu>
     </x-button>
   </statusbar>
@@ -307,6 +316,9 @@ export default {
         this.$store.dispatch('settings/save', { key: 'hideResultsDropdown', value })
       }
     },
+    disableSqlAutocomplete() {
+      return this.settings?.disableSqlAutocomplete?.value ?? false
+    },
     rowCount() {
       return this.result && this.result.rows ? this.result.rows.length : 0
     },
@@ -363,6 +375,9 @@ export default {
     }
   },
   methods: {
+    toggleDisableSqlAutocomplete() {
+      this.$store.dispatch('settings/save', { key: 'disableSqlAutocomplete', value: !this.disableSqlAutocomplete })
+    },
     changeSelectedResult(direction) {
       const newIndex =  this.selectedResult + direction;
       if (newIndex >= 0 && newIndex < this.results?.length) {

@@ -72,6 +72,7 @@
         :columns-getter="columnsGetter"
         :default-schema="defaultSchema"
         :language-id="languageIdForDialect"
+        :disable-autocomplete="disableSqlAutocomplete"
         :clipboard="$native.clipboard"
         :replace-extensions="replaceExtensions"
         :context-menu-items="editorContextMenu"
@@ -719,6 +720,9 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       },
       editorComponent() {
         return this.connectionType === 'surrealdb' ? SurrealTextEditor : SqlTextEditor;
+      },
+      disableSqlAutocomplete() {
+        return this.settings?.disableSqlAutocomplete?.value ?? false;
       },
       enabled() {
         return !this.dialectData?.disabledFeatures?.queryEditor;
