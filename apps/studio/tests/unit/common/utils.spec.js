@@ -1,4 +1,4 @@
-import { checkEmptyFilters, isBlank, removeUnsortableColumnsFromSortBy, isNumericDataType, isDateDataType } from "@/common/utils"
+import { flattenErrorMessage, checkEmptyFilters, isBlank, removeUnsortableColumnsFromSortBy, isNumericDataType, isDateDataType } from "@/common/utils"
 import { PostgresData } from '@/shared/lib/dialects/postgresql'
 import { MysqlData } from '@/shared/lib/dialects/mysql'
 import { SqliteData } from '@/shared/lib/dialects/sqlite'
@@ -224,5 +224,45 @@ describe("isDateDataType", () => {
     expect(isDateDataType('int2(16,0)')).toBe(false)
     expect(isDateDataType('varchar(255)')).toBe(false)
     expect(isDateDataType('text')).toBe(false)
+  })
+})
+describe("flattenErrorMessage", () => {
+  it("returns the message of a plain error", () => {
+    expect(flattenErrorMessage(new Error("boom"))).toBe("boom")
+  })
+
+  it("includes nested originalError and precedingErrors messages", () => {
+    const err = new Error("Transaction has been aborted.")
+    err.precedingErrors = [new Error("Column 'created_at' cannot convert varchar to datetime")]
+    err.originalError = new Error("Request failed")
+    expect(flattenErrorMessage(err)).toBe(
+      "Transaction has been aborted.; Request failed; Column 'created_at' cannot convert varchar to datetime"
+    )
+  })
+
+  it("de-duplicates repeated messages", () => {
+    const err = new Error("same message")
+    err.originalError = new Error("same message")
+    expect(flattenErrorMessage(err)).toBe("same message")
+  })
+
+  it("handles strings and objects without a message", () => {
+    expect(flattenErrorMessage("plain string")).toBe("plain string")
+    expect(flattenErrorMessage({ code: 42 })).toBe("[object Object]")
+    expect(flattenErrorMessage(null)).toBe("")
+  })
+
+  it("survives circular error chains", () => {
+    const a = new Error("a")
+    const b = new Error("b")
+    a.originalError = b
+    b.originalError = a
+    expect(flattenErrorMessage(a)).toBe("a; b")
+  })
+
+  it("follows the standard cause property", () => {
+    const err = new Error("outer")
+    err.cause = new Error("inner cause")
+    expect(flattenErrorMessage(err)).toBe("outer; inner cause")
   })
 })

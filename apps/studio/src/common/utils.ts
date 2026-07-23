@@ -110,6 +110,31 @@ export function makeString(value: any): string {
   return _.toString(value);
 }
 
+// Flatten an error and any nested driver errors into a single message.
+// Drivers like mssql report the real failure (type mismatch, constraint
+// violation) via originalError / precedingErrors while the top-level
+// message is often just "Transaction has been aborted." — only the
+// message string survives the trip to the UI, so the detail has to be
+// folded in here.
+export function flattenErrorMessage(err: unknown): string {
+  const parts: string[] = []
+  const seen = new Set<unknown>()
+  const visit = (e: any) => {
+    if (!e || seen.has(e)) return
+    if (typeof e !== 'object') {
+      parts.push(String(e))
+      return
+    }
+    seen.add(e)
+    if (typeof e.message === 'string' && e.message) parts.push(e.message)
+    if (e.originalError) visit(e.originalError)
+    if (Array.isArray(e.precedingErrors)) e.precedingErrors.forEach(visit)
+    if (e.cause) visit(e.cause)
+  }
+  visit(err)
+  return _.uniq(parts).join('; ') || _.toString(err)
+}
+
 // Format SQL / SQL-like text using sql-formatter. Accepts both the classic
 // `{ language }` shape (built-in dialects like postgresql, mysql, trino) and
 // the v15 `{ dialect }` shape for custom dialect definitions (PartiQL). Falls
