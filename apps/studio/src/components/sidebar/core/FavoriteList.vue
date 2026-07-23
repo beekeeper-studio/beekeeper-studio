@@ -79,7 +79,7 @@
           ref="wrapper"
         >
           <tree
-            :folders="folderNodes"
+            :folders="draftingFolder ? folderNodesWithDraft : folderNodes"
             :items="itemNodes"
             :expanded-ids="expandedIds"
             @update:expandedIds="setExpandedIds"
@@ -103,6 +103,22 @@
             <template #folder="{ props }">
               <tree-folder
                 v-bind="props"
+                v-if="props.node.id === 'folder-draft'"
+                tag="div"
+              >
+                <template #name>
+                  <editable-text
+                    rename
+                    :initial-value="props.node.name"
+                    @submit="submitDraftFolder"
+                    @cancel="cancelDraftFolder"
+                  />
+                </template>
+              </tree-folder>
+              <tree-folder
+                v-bind="props"
+                v-else
+                :tag="renamingFolderId === props.node.ref.id ? 'div': undefined"
                 @contextmenu.native="showFolderContextMenu($event, props.node.ref)"
               >
                 <template
@@ -136,53 +152,6 @@
         </nav>
       </div>
     </div>
-    <portal to="modals">
-      <modal
-        class="vue-dialog beekeeper-modal"
-        name="query-folder-modal"
-        @closed="folderModalName = ''; folderModalItem = null; folderModalError = null"
-        @opened="$nextTick(() => $refs.folderNameInput && $refs.folderNameInput.focus())"
-        height="auto"
-        :scrollable="true"
-      >
-        <form @submit.prevent="submitFolderModal">
-          <div class="dialog-content" v-kbd-trap="true">
-            <div class="dialog-c-title">
-              {{ folderModalItem ? 'Rename Folder' : folderModalParentId ? 'New Subfolder' : 'New Folder' }}
-            </div>
-            <div class="form-group">
-              <label>Folder Name</label>
-              <input
-                ref="folderNameInput"
-                v-model="folderModalName"
-                type="text"
-                placeholder="Folder name"
-                @input="folderModalError = null"
-                @keydown.esc.prevent="$modal.hide('query-folder-modal')"
-              >
-            </div>
-            <div class="form-group" v-if="isCloud && !folderModalItem && rootFolders.length > 0">
-              <label>Parent Folder</label>
-              <select v-model="folderModalParentId" @change="folderModalError = null">
-                <option v-for="f in rootFolders" :key="f.id" :value="f.id">
-                  {{ f.name }}
-                </option>
-              </select>
-            </div>
-            <error-alert v-if="folderModalError" :error="folderModalError" />
-          </div>
-          <div class="vue-dialog-buttons flex-between">
-            <span class="left" />
-            <span class="right">
-              <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('query-folder-modal')">Cancel</button>
-              <button class="btn btn-primary" type="submit" :disabled="!folderModalName.trim() || folderModalSubmitting">
-                {{ folderModalItem ? 'Rename' : 'Create' }}
-              </button>
-            </span>
-          </div>
-        </form>
-      </modal>
-    </portal>
   </div>
 </template>
 
@@ -202,14 +171,11 @@ export default {
     return {
       checkedFavorites: [],
       selected: null,
-      folderModalName: '',
-      folderModalItem: null,
-      folderModalParentId: null,
-      folderModalError: null,
-      folderModalSubmitting: false,
       expandedIds: [],
       draggingQuery: null,
       renamingFolderId: null,
+      draftingFolder: false,
+      draftFolderParentId: null,
     }
   },
   watch: {
@@ -266,7 +232,40 @@ export default {
     },
     removeTitle() {
       return `Remove ${this.checkedFavorites.length} saved queries`;
-    }
+    },
+    folderNodesWithDraft() {
+      /** @type {import("@beekeeperstudio/ui-kit").FolderNode} */
+      const draftNode = {
+        id: "folder-draft",
+        parentId: this.draftFolderParentId
+          ? `folder-${this.draftFolderParentId}`
+          : null,
+        type: "folder",
+        name: "Untitled folder",
+        children: [],
+        draggable: false,
+      };
+
+      const parentIndex = this.folderNodes.findIndex((node) =>
+        node.ref.id === this.draftFolderParentId
+      );
+      if (parentIndex === -1) {
+        return [draftNode, ...this.folderNodes];
+      }
+
+      // dont mutate the original object
+      const parentNode = {
+        ...this.folderNodes[parentIndex],
+        children: [
+          draftNode,
+          ...this.folderNodes[parentIndex].children,
+        ],
+      };
+      return [
+        draftNode,
+        ...this.folderNodes.toSpliced(parentIndex, 1, parentNode),
+      ];
+    },
   },
   methods: {
     ...mapActions({
@@ -348,13 +347,52 @@ export default {
         this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }
-      this.folderModalName = ''
-      this.folderModalItem = null
-      this.folderModalError = null
-      this.folderModalParentId = (this.isCloud && this.rootFolders.length > 0)
-        ? this.rootFolders[0].id
-        : null
-      this.$modal.show('query-folder-modal')
+      if (this.isCloud) {
+        const parent = this.folders.find((f) => f.personal && !f.parentId);
+        if (!parent) {
+          this.$noty.error(
+            "No personal folder found. Right-click an existing folder and choose New Subfolder to create a folder instead."
+          );
+          return;
+        }
+        this.startDraftFolder(parent.id);
+      } else {
+        this.startDraftFolder(null);
+      }
+    },
+    startDraftFolder(parentId) {
+      this.draftFolderParentId = parentId
+      this.draftingFolder = true
+      if (parentId) {
+        this.expandFolder(parentId)
+      }
+    },
+    cancelDraftFolder() {
+      this.draftingFolder = false
+    },
+    expandFolder(folderId) {
+      const nodeId = `folder-${folderId}`
+      if (this.expandedIds.includes(nodeId)) {
+        return
+      }
+      this.setExpandedIds([...this.expandedIds, nodeId])
+    },
+    async submitDraftFolder(name) {
+      if (!name) {
+        this.cancelDraftFolder()
+        return
+      }
+      try {
+        await this.$store.dispatch('data/queryFolders/save', {
+          id: null,
+          parentId: this.draftFolderParentId,
+          name,
+        })
+      } catch (ex) {
+        this.$noty.error(`Create folder error: ${ex.userMessage ?? ex.message}`)
+      } finally {
+        this.cancelDraftFolder()
+      }
     },
     showFolderContextMenu(event, folder) {
       if (event.target.tagName === 'INPUT') {
@@ -367,7 +405,7 @@ export default {
       const isRoot = !folder.parentId;
       const options = [{
         name: 'New Subfolder',
-        handler: ({ item }) => this.createSubfolder(item),
+        handler: ({ item }) => this.startDraftFolder(item.id),
       }];
       if (!this.isCloud || !isRoot) {
         options.push(...[
@@ -422,17 +460,6 @@ export default {
         id: folder.id,
         module: "data/queryFolders",
       });
-    },
-    createSubfolder(parentFolder) {
-      if (!this.isUltimate && !this.isCloud) {
-        this.$root.$emit(AppEvent.upgradeModal, 'Folders')
-        return
-      }
-      this.folderModalName = ''
-      this.folderModalItem = null
-      this.folderModalError = null
-      this.folderModalParentId = parentFolder.id
-      this.$modal.show('query-folder-modal')
     },
     showLonelyContextMenu(event) {
       this.$bks.openMenu({
@@ -515,24 +542,6 @@ export default {
         }
       } catch (ex) {
         this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
-      }
-    },
-    async submitFolderModal() {
-      const name = this.folderModalName.trim()
-      if (!name) return
-      this.folderModalError = null
-      this.folderModalSubmitting = true
-      try {
-        if (this.folderModalItem) {
-          await this.$store.dispatch('data/queryFolders/save', { ...this.folderModalItem, name })
-        } else {
-          await this.$store.dispatch('data/queryFolders/save', { id: null, name, parentId: this.folderModalParentId ?? null })
-        }
-        this.$modal.hide('query-folder-modal')
-      } catch (e) {
-        this.folderModalError = e.userMessage ?? e.message ?? 'Failed to save folder'
-      } finally {
-        this.folderModalSubmitting = false
       }
     },
   }
