@@ -81,6 +81,9 @@ export class DbConnectionBase extends ApplicationEntity {
       case 'tidb':
         port = 4000
         break
+      case 'starrocks':
+        port = 9030
+        break
       case 'postgresql':
       case 'greengage':
         port = 5432

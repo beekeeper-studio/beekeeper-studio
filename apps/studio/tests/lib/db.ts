@@ -25,6 +25,7 @@ import { TestOrmConnection } from './TestOrmConnection'
 import { buffer as b, uint8 as u } from '@tests/utils'
 import Client_Oracledb from '@shared/lib/knex-oracledb'
 import Client_Firebird from '@shared/lib/knex-firebird'
+import Client_StarRocks from '@shared/lib/knex-starrocks'
 import { DuckDBBlobValue } from '@duckdb/node-api'
 import { parseVersion } from '@/common/version'
 import { convertParamsForReplacement, deparameterizeQuery } from '@/lib/db/sql_tools'
@@ -80,6 +81,7 @@ const KnexTypes: any = {
   'mysql': 'mysql2',
   "mariadb": "mysql2",
   "tidb": "mysql2",
+  "starrocks": Client_StarRocks,
   "sqlite": "better-sqlite3",
   "sqlserver": "mssql",
   "cockroachdb": "pg",
@@ -111,6 +113,12 @@ export interface Options {
   knex?: Knex
   knexClient?: Knex.Client
   queryTestsTableCreationQuery?: string
+  /**
+   * Override the DialectData used by the harness. Useful for dialects that
+   * reuse another dialect's identity (e.g. StarRocks reports as MySQL) but
+   * need a different set of disabledFeatures for the common tests.
+   */
+  dialectData?: DialectData
 }
 
 export class DBTestUtil {
@@ -142,7 +150,7 @@ export class DBTestUtil {
     }
 
     this.dialect = options.dialect
-    this.data = getDialectData(this.dialect)
+    this.data = options.dialectData || getDialectData(this.dialect)
     this.dbType = config.client || 'generic'
     this.options = options
     this.databaseName = database
@@ -579,6 +587,7 @@ export class DBTestUtil {
 
 
   async addDropTests() {
+    if (this.data.disabledFeatures?.alter?.everything) return expect.anything()
     const initial = {
       table: 'add_drop_test',
       adds: [
@@ -631,6 +640,7 @@ export class DBTestUtil {
   }
 
   async alterTableTests() {
+    if (this.data.disabledFeatures?.alter?.everything) return expect.anything()
 
     await this.knex.schema.dropTableIfExists("alter_test")
     await this.knex.schema.createTable("alter_test", (table) => {
@@ -907,8 +917,8 @@ export class DBTestUtil {
   }
 
   async uniqueKeyTests() {
-    // ClickHouse doesn't support traditional unique constraints
-    if (this.dbType === 'clickhouse') {
+    // ClickHouse and StarRocks don't support traditional unique constraints
+    if (this.dbType === 'clickhouse' || this.dbType === 'starrocks') {
       return expect.anything()
     }
 
@@ -1168,6 +1178,12 @@ export class DBTestUtil {
         INSERT ("id", "job_name", "hourly_rate")
         VALUES (source."id", source."job_name", source."hourly_rate");`,
     }
+
+    // StarRocks reuses MysqlClient, so its generated insert/upsert SQL is
+    // identical to MySQL's.
+    expectedInsertQueries.starrocks = expectedInsertQueries.mysql
+    expectedUpsertQueries.starrocks = expectedUpsertQueries.mysql
+    expectedMultipleUpsertQueries.starrocks = expectedMultipleUpsertQueries.mysql
 
     expect(insertQuery).toBe(expectedInsertQueries[this.dbType] ?? insertQuery)
     expect(this.fmt(upsertQuery)).toBe(this.fmt(expectedUpsertQueries[this.dbType]) ?? this.fmt(upsertQuery))
@@ -1847,7 +1863,8 @@ export class DBTestUtil {
     // cassandra and big query don't allow import so no need to test!
     // oracle doesn't want to find the table, so it doesn't get to have nice things
     // clickhouse and duckdb have its own import command we don't support yet
-    if (['cassandra', 'bigquery', 'oracle', 'clickhouse', 'duckdb', 'greengage'].includes(this.dialect)) {
+    // starrocks has no ON DUPLICATE KEY UPDATE, which the import upsert relies on
+    if (['cassandra', 'bigquery', 'oracle', 'clickhouse', 'duckdb', 'greengage'].includes(this.dialect) || this.dbType === 'starrocks') {
       return expect.anything()
     }
 
@@ -2316,7 +2333,7 @@ export class DBTestUtil {
     let idCol = 'id'
     let firstNameCol = 'firstname'
 
-    if (this.dbType === 'mysql' || this.dbType === 'mariadb' || this.dbType === 'tidb') {
+    if (this.dbType === 'mysql' || this.dbType === 'mariadb' || this.dbType === 'tidb' || this.dbType === 'starrocks') {
       wrap = (s) => `\`${s}\``
     } else if (this.dbType === 'sqlserver') {
       wrap = (s) => `[${s}]`
@@ -2374,8 +2391,9 @@ export class DBTestUtil {
       const { major, minor } = parseVersion(version.split("-")[0]);
       if (major === 5 && minor === 1) return expect.anything();
     }
-    // Skip if database doesn't support composite keys
-    if (this.data.disabledFeatures?.compositeKeys) {
+    // Skip if database doesn't support composite keys or foreign keys (this
+    // test exercises composite *foreign* keys specifically)
+    if (this.data.disabledFeatures?.compositeKeys || this.data.disabledFeatures?.foreignKeys) {
       return expect.anything();
     }
 
@@ -2513,9 +2531,12 @@ export class DBTestUtil {
     if (params.length === 1) {
       params = [params[0], params[0], params[0]];
     }
+    // ORDER BY id so the assertion is deterministic — distributed engines like
+    // StarRocks don't guarantee row order without it.
     let query = `
       SELECT * FROM test_param WHERE
-        data = ${params[0]};
+        data = ${params[0]}
+      ORDER BY id;
     `;
     let placeholders = [params[0]];
     let values = [`'Rose Tyler'`];

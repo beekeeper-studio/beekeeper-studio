@@ -3,7 +3,7 @@ import CodeMirror from 'codemirror'
 import { Version } from '@/common/version'
 import { ExtendedTableColumn } from '@/lib/db/models'
 
-const communityDialects = ['postgresql', 'greengage', 'sqlite', 'sqlserver', 'mysql', 'redshift', 'bigquery', 'bedrock', 'redis'] as const
+const communityDialects = ['postgresql', 'greengage', 'sqlite', 'sqlserver', 'mysql', 'starrocks', 'redshift', 'bigquery', 'bedrock', 'redis'] as const
 const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'sqlanywhere', 'surrealdb', 'trino', 'dynamodb', 'snowflake'] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
@@ -33,6 +33,8 @@ export function dialectFor(s: string): Dialect | null {
     case 'mariadb':
     case 'tidb':
       return 'mysql'
+    case 'starrocks':
+      return 'starrocks';
     case 'libsql':
       return 'sqlite'
     case 'mssql':
@@ -51,6 +53,7 @@ export const DialectTitles: {[K in Dialect]: string} = {
   postgresql: "Postgres",
   greengage: "GreengageDB",
   mysql: "MySQL",
+  starrocks: "StarRocks",
   sqlserver: "SQL Server",
   redshift: "Amazon Redshift",
   sqlite: "SQLite",
