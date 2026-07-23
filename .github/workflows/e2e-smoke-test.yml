@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, ubuntu-22.04, macos-latest, windows-latest]
 
     steps:
       - name: Check out Git repository
@@ -118,5 +118,141 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: test-results-${{ matrix.os }}
+          path: apps/studio/test-results
+          retention-days: 7
+
+  e2e-smoke-linux-docker:
+    name: E2E Smoke - ${{ matrix.distro }}
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ matrix.image }}
+      options: --shm-size=2gb
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Ubuntu (older LTS — 24.04 and 22.04 covered by native runners)
+          - distro: ubuntu-20.04
+            image: ubuntu:20.04
+            pkg-install: "apt-get update -qq && apt-get install -y git curl xvfb ca-certificates"
+          # Debian (3 releases back)
+          - distro: debian-bookworm
+            image: debian:bookworm
+            pkg-install: "apt-get update -qq && apt-get install -y git curl xvfb ca-certificates"
+          - distro: debian-bullseye
+            image: debian:bullseye
+            pkg-install: "apt-get update -qq && apt-get install -y git curl xvfb ca-certificates"
+          - distro: debian-buster
+            image: debian:buster
+            pkg-install: "apt-get update -qq && apt-get install -y git curl xvfb ca-certificates"
+          # Fedora (current + 1 back — no LTS, short release cycle)
+          - distro: fedora-41
+            image: fedora:41
+            pkg-install: "dnf install -y git curl xorg-x11-server-Xvfb ca-certificates"
+          - distro: fedora-40
+            image: fedora:40
+            pkg-install: "dnf install -y git curl xorg-x11-server-Xvfb ca-certificates"
+          # Arch Linux (rolling — only current makes sense)
+          - distro: arch-linux
+            image: archlinux:latest
+            pkg-install: "pacman -Syu --noconfirm git curl xorg-server ca-certificates"
+          # openSUSE Leap (3 releases back)
+          - distro: opensuse-leap-15.6
+            image: opensuse/leap:15.6
+            pkg-install: "zypper --non-interactive install git curl xorg-x11-server-extra ca-certificates"
+          - distro: opensuse-leap-15.5
+            image: opensuse/leap:15.5
+            pkg-install: "zypper --non-interactive install git curl xorg-x11-server-extra ca-certificates"
+          - distro: opensuse-leap-15.4
+            image: opensuse/leap:15.4
+            pkg-install: "zypper --non-interactive install git curl xorg-x11-server-extra ca-certificates"
+          # Rocky Linux / RHEL (2 major versions)
+          - distro: rocky-linux-9
+            image: rockylinux:9
+            pkg-install: "dnf install -y git curl xorg-x11-server-Xvfb ca-certificates"
+          - distro: rocky-linux-8
+            image: rockylinux:8
+            pkg-install: "dnf install -y git curl xorg-x11-server-Xvfb ca-certificates"
+
+    steps:
+      - name: Install base system dependencies
+        shell: bash
+        run: ${{ matrix.pkg-install }}
+
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Install Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+          cache: yarn
+
+      - name: Cache node_modules
+        id: cache-nm
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/studio/node_modules
+            apps/ui-kit/node_modules
+            apps/sqltools/node_modules
+          key: node-modules-${{ matrix.distro }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+
+      - name: Install dependencies
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: yarn install --frozen-lockfile --network-timeout 100000
+        env:
+          HUSKY: "0"
+          npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
+
+      - name: Install xvfb-maybe
+        run: npm install -g xvfb-maybe
+
+      - name: Cache Playwright browsers
+        id: cache-playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ matrix.distro }}-${{ hashFiles('yarn.lock') }}
+
+      - name: Install Playwright browsers
+        if: steps.cache-playwright.outputs.cache-hit != 'true'
+        run: yarn playwright install chromium
+
+      - name: Install Playwright system dependencies
+        run: yarn playwright install-deps chromium
+
+      - name: Build UI Kit
+        run: yarn lib:build
+
+      - name: Build App
+        run: yarn workspace beekeeper-studio build
+
+      - name: Run Tests
+        shell: bash
+        run: |
+          xvfb-maybe -a -s "-screen 0 1024x768x24" -- bash -c '
+            yarn workspace beekeeper-studio test:e2e:smoke
+          '
+        env:
+          ELECTRON_ENABLE_LOGGING: 1
+          ELECTRON_DISABLE_SANDBOX: 1
+          ELECTRON_EXTRA_LAUNCH_ARGS: "--disable-gpu"
+
+      - name: Upload test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.distro }}
           path: apps/studio/test-results
           retention-days: 7
