@@ -5,10 +5,11 @@ import rawLog from '@bksLogger';
 import {TokenCache} from '@/common/appdb/models/token_cache';
 import globals from '@/common/globals';
 import {AzureAuthOptions, AzureAuthType} from '../types';
-import {spawn} from 'child_process'
+import {exec, spawn} from 'child_process'
 import {getEntraOptions} from "@/lib/db/clients/utils";
 import {IDbConnectionServer} from "@/lib/db/backendTypes";
 import BksConfig from '@/common/bksConfig';
+import platformInfo from "@/common/platform_info";
 
 const log = rawLog.scope('auth/azure');
 
@@ -178,23 +179,25 @@ export class AzureAuthService {
     }
 
     return new Promise<AuthConfig>((resolve, reject) => {
-      const proc = spawn(options.cliPath, [
+    const commandArgs = [
         'account',
         'get-access-token',
         '--resource',
         BksConfig.azure.azSQLLoginScope,
         '--output',
         'json'
-      ], { shell: false });
+      ];
+      // Use exec on windows as spawn won't launch cmd files (e.g. azure cli) on windows with shell: false, see: CVE-2024-27980
+      const proc = platformInfo.isWindows ? exec(`"${options.cliPath}" ${commandArgs.join(' ')}`) : spawn(options.cliPath, commandArgs, { shell: false });
 
       let stdout = '';
       let stderr = '';
 
-      proc.stdout.on('data', (chunk) => {
+      proc.stdout?.on('data', (chunk) => {
         stdout += chunk.toString();
       });
 
-      proc.stderr.on('data', (chunk) => {
+      proc.stderr?.on('data', (chunk) => {
         stderr += chunk.toString();
       });
 

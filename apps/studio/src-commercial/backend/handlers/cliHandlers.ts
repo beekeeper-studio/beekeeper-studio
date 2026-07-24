@@ -1,4 +1,4 @@
-import { spawn } from "child_process";
+import { exec, spawn } from "child_process";
 import path from "path";
 import platformInfo from "@/common/platform_info";
 
@@ -25,19 +25,26 @@ export const CliHandlers: ICliHandlers = {
 
     // Pass the environment explicitly so we can prepend Homebrew bin dirs.
     const env = { ...process.env };
-    env.PATH = [...extraToolSearchDirs, env.PATH].filter(Boolean).join(path.delimiter);
+    const newPath = [...extraToolSearchDirs, env.Path].filter(Boolean).join(path.delimiter);
+    if (env.Path) {
+      // Windows is case-insensitive, so PATH is usually capitalized as Path
+      env.Path = newPath;
+    } else {
+      env.PATH = newPath;
+    }
 
     return new Promise((resolve, reject) => {
-      const proc = spawn(command, [toolName], { shell: false, env });
+      // Use exec on windows as spawn won't launch cmd files (e.g. azure cli) on windows with shell: false, see: CVE-2024-27980
+      const proc = platformInfo.isWindows ? exec(`${command} ${toolName}`, { env }) : spawn(command, [toolName], { shell: false, env });
 
       let stdout = '';
       let stderr = '';
 
-      proc.stdout.on('data', (chunk) => {
+      proc.stdout?.on('data', (chunk) => {
         stdout += chunk.toString();
       });
 
-      proc.stderr.on('data', (chunk) => {
+      proc.stderr?.on('data', (chunk) => {
         stderr += chunk.toString();
       });
 
