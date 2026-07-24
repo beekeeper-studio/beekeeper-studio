@@ -828,6 +828,9 @@
       max-width: 100%;
       overflow: hidden;
     }
+    &.vs--searching .vs__selected {
+      display: none;
+    }
     .vs__actions {
       padding: 0
     }
