@@ -72,7 +72,7 @@
   import EditorModal from '../tableview/EditorModal.vue'
   import { AppEvent } from "@/common/AppEvent";
   import XLSX from 'xlsx';
-  import { parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
+  import { parseRowDataForJsonViewer, UpdateOptions } from '@/lib/data/jsonViewer'
   import { vueEditor } from '@shared/lib/tabulator/helpers';
   import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
   import rawLog from '@bksLogger';
@@ -84,7 +84,7 @@ import { stringToTypedArray } from '@/common/utils'
 
   const log = rawLog.scope('ResultTable');
 
-  type TableUpdatePayload = TableUpdate & { key: string, field: string, oldValue: any };
+  type TableUpdatePayload = TableUpdate & { key: string, field: string, oldValue: any, rowIndex: number };
 
   type CellData = { cell: CellComponent, data: FieldEditData };
 
@@ -246,6 +246,15 @@ import { stringToTypedArray } from '@/common/utils'
       },
       selectedRowId() {
         return `${this.tableId ? `${this.tableId}.` : ''}tab-${this.tab.id}.row-${this.selectedRowPosition}`
+      },
+      selectedRowDataSigns() {
+        const signs = {};
+        for (const pendingUpdate of this.pendingChanges.updates) {
+          if (pendingUpdate.rowIndex === this.selectedRowPosition) {
+            signs[pendingUpdate.column] = "changed"
+          }
+        }
+        return signs
       },
       rootBindings() {
         return [
@@ -687,6 +696,7 @@ import { stringToTypedArray } from '@/common/utils'
           primaryKeys,
           oldValue: cell.getOldValue(),
           value: cell.getValue(),
+          rowIndex: cell.getRow().getPosition() || 0
         };
 
         // remove existing pending updates with identical pKey-column combo
@@ -1099,13 +1109,12 @@ import { stringToTypedArray } from '@/common/utils'
         this.tabulator.rowManager.getElement().focus();
       },
       updateJsonViewerSidebar() {
-        /** @type {import('@/lib/data/jsonViewer').UpdateOptions} */
-        const data = {
+        const data: UpdateOptions = {
           dataId: this.selectedRowId,
           value: this.selectedRowData,
           expandablePaths: [],
           editablePaths: [],
-          signs: {},
+          signs: this.selectedRowDataSigns,
         }
         this.trigger(AppEvent.updateJsonViewerSidebar, data)
       },
