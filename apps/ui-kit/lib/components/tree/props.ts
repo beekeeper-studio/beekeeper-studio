@@ -14,6 +14,10 @@ const props = {
     type: Array as PropType<FolderNode["id"][]>,
     required: true,
   },
+  filter: {
+    type: String,
+    default: "",
+  },
 };
 
 export default props;

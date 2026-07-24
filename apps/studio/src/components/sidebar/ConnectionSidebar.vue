@@ -149,8 +149,9 @@
             >
               <tree
                 :folders="draftingFolder ? folderNodesWithDraft : folderNodes"
-                :items="itemNodes"
+                :items="sortedItemNodes"
                 :expanded-ids="expandedIds"
+                :filter="connFilter"
                 @update:expandedIds="setExpandedIds"
                 @bks-tree-node-move="handleTreeNodeMove"
               >
@@ -383,7 +384,7 @@ export default {
         }
       }
     },
-    sortedConnections() {
+    sortedItemNodes() {
       let result = []
       if (this.sort.field === 'labelColor') {
         const mappings = {
@@ -396,9 +397,9 @@ export default {
           purple: 5,
           pink: 6
         }
-        result = _.orderBy(this.filteredConnections, (c) => mappings[c.labelColor])
+        result = _.orderBy(this.itemNodes, (n) => mappings[n.ref.labelColor])
       } else {
-        result = _.orderBy(this.filteredConnections, this.sort.field)
+        result = _.orderBy(this.itemNodes, `ref.${this.sort.field}`)
       }
       if (this.sort.order === 'desc') result = result.reverse()
       return result;

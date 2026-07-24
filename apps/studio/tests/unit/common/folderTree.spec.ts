@@ -64,22 +64,22 @@ describe("buildTreeFolderNodes", () => {
 describe("buildTreeItemNodes", () => {
   it("reads the parent folder from the given key", () => {
     const items = [
-      { id: 1, queryFolderId: 5, position: 2 },
-      { id: 2, queryFolderId: null, position: 1 },
-      { id: 3, position: 1 },
+      { id: 1, title: "One", queryFolderId: 5, position: 2 },
+      { id: 2, title: "Two", queryFolderId: null, position: 1 },
+      { id: 3, title: "Three", position: 1 },
     ];
-    const nodes = buildTreeItemNodes(items, "queryFolderId");
+    const nodes = buildTreeItemNodes(items, "queryFolderId", "title");
     expect(nodes.map((node) => node.parentId)).toEqual([
       "folder-5",
       null,
       null,
     ]);
-    expect(nodes[0]).toMatchObject({ id: "item-1", position: 2 });
+    expect(nodes[0]).toMatchObject({ id: "item-1", name: "One", position: 2 });
     expect(nodes[0].ref).toBe(items[0]);
   });
 
   it("defaults a missing position to 0", () => {
-    const [node] = buildTreeItemNodes([{ id: 1 }], "queryFolderId");
+    const [node] = buildTreeItemNodes([{ id: 1 }], "queryFolderId", "title");
     expect(node.position).toEqual(0);
   });
 });

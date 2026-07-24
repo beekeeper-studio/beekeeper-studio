@@ -45,7 +45,8 @@ export function buildTreeFolderNodes(folders: IFolder[]): FolderNodeWithRef[] {
 
 export function buildTreeItemNodes<T extends HasId & { position?: number }>(
   items: T[],
-  parentIdKey: string
+  parentIdKey: string,
+  nameKey: string
 ): ItemNodeWithRef<T>[] {
   return items.map((item) => {
     const parentId = item[parentIdKey];
@@ -53,6 +54,7 @@ export function buildTreeItemNodes<T extends HasId & { position?: number }>(
       id: `item-${item.id}` as ItemNode["id"],
       parentId: parentId ? `folder-${parentId}` : null,
       type: "item",
+      name: item[nameKey] ?? "",
       position: item.position ?? 0,
       ref: item,
       draggable: true,

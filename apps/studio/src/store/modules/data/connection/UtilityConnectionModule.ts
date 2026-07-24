@@ -104,7 +104,7 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
   }),
   getters: {
     nodes(state) {
-      return buildTreeItemNodes(state.items, 'connectionFolderId')
+      return buildTreeItemNodes(state.items, 'connectionFolderId', 'name')
     },
     filteredConnections(state) {
       if (!state.filter) {

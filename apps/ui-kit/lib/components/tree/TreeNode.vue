@@ -2,6 +2,7 @@
   <div class="BksTree-node">
     <div
       class="BksTree-row"
+      v-show="visible"
       :draggable="node.draggable"
       :style="{ '--depth': depth }"
       :data-node-type="node.type"
@@ -26,7 +27,7 @@
         />
       </slot>
       <slot v-else name="item" :node="node" :depth="depth">
-        {{ node.id }}
+        {{ node.name }}
       </slot>
     </div>
 
@@ -45,6 +46,7 @@
         :expanded-ids="expandedIds"
         :drop-target="dropTarget"
         :can-drop="canDrop"
+        :filter="filter"
         @node-dragstart="$emit('node-dragstart', $event)"
         @node-dragover="$emit('node-dragover', $event)"
         @node-dragleave="$emit('node-dragleave', $event)"
@@ -107,9 +109,28 @@ export default Vue.extend({
       type: Function as PropType<(node: Node) => boolean>,
       required: true,
     },
+    filter: {
+      type: String,
+      default: "",
+    },
   },
 
   computed: {
+    normalizedName(): string {
+      return this.node.name.toLowerCase();
+    },
+
+    normalizedFilter(): string {
+      return this.filter.toLowerCase();
+    },
+
+    visible(): boolean {
+      if (this.node.type === "folder" || !this.filter) {
+        return true;
+      }
+      return this.normalizedName.includes(this.normalizedFilter);
+    },
+
     childItemNodes(): ItemNode[] {
       if (this.node.type !== "folder") {
         return [];

@@ -103,7 +103,7 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, DataState<Transp
   }, {}, { text: true, title: true, database: true, excerpt: true, id: true }),
   getters: {
     nodes(state) {
-      return buildTreeItemNodes(state.items, 'queryFolderId')
+      return buildTreeItemNodes(state.items, 'queryFolderId', 'title')
     },
     filteredQueries(state) {
       if (!state.filter) {

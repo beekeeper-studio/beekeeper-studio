@@ -15,6 +15,7 @@ export type ItemNode = {
   id: `item-${number}`;
   parentId: `folder-${number}` | null;
   type: "item";
+  name: string;
   position: number;
   draggable: boolean;
 };

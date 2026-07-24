@@ -117,7 +117,7 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
   }),
   getters: {
     nodes(state) {
-      return buildTreeItemNodes(state.items, 'queryFolderId')
+      return buildTreeItemNodes(state.items, 'queryFolderId', 'title')
     },
     filteredQueries(state) {
       if (!state.filter) {

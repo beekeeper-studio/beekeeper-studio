@@ -15,6 +15,7 @@
         :expanded-ids="expandedIds"
         :drop-target="dropTarget"
         :can-drop="canDrop"
+        :filter="filter"
         @node-click="handleNodeClick"
         @node-dragstart="handleNodeDragStart"
         @node-dragover="handleNodeDragOver"
