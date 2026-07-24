@@ -59,6 +59,13 @@ export default {
           }
         },
         {
+          name: "Select 100 Rows",
+          slug: 'select-top-100',
+          handler: ({ item }) => {
+            this.$root.$emit(AppEvent.loadSelectTop, item)
+          }
+        },
+        {
           name: "View Structure",
           slug: 'view-structure',
           handler: ({ item }) => {
