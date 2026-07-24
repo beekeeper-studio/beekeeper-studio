@@ -168,6 +168,10 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.send(AppEvent.quickSearch)
   }
 
+  openDataTypeColors = (_1: Electron.MenuItem, win: ElectronWindow): void => {
+    if (win) win.webContents.send(AppEvent.openDataTypeColors)
+  }
+
   switchTheme = async (menuItem: Electron.MenuItem): Promise<void> => {
     const label = _.isString(menuItem) ? menuItem : menuItem.label
     this.settings.theme.userValue = label.toLowerCase().replaceAll(" ", "-")
