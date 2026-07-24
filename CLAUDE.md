@@ -113,6 +113,16 @@ assets/            # Styles, fonts, images
 - Connection pooling and SSH tunneling support
 - TypeORM used for app's internal SQLite database
 
+When implementing or modifying a database client, use these as reference
+implementations (in order of preference):
+1. `src/lib/db/clients/postgresql.ts` - the best reference driver
+2. `src/lib/db/clients/mysql.ts`
+3. `src/lib/db/clients/sqlserver.ts`
+
+For mostly read-only columnar/analytical databases, use
+`src/lib/db/clients/bigquery.ts` and
+`src-commercial/backend/lib/db/clients/snowflake.ts` as references.
+
 ### License Model
 - Community features: GPLv3 license
 - Paid features: Commercial EULA (code in `src-commercial/`)

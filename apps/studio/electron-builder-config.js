@@ -41,7 +41,10 @@ module.exports = {
     // msnodesqlv8 ships a native ODBC addon used for SQL Server integrated
     // (SSPI/Kerberos) auth. prebuild-install drops the binary under build/Release
     // and/or prebuilds depending on platform, so unpack both.
-    '**/msnodesqlv8/**/*.node'
+    '**/msnodesqlv8/**/*.node',
+    // @sap/hana-client loads its platform binary plus adjacent shared
+    // libraries from the prebuilt/<platform> directory at runtime.
+    '**/@sap/hana-client/prebuilt/**'
   ],
   extraResources: [
     {

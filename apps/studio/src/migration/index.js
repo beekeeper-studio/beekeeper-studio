@@ -16,6 +16,7 @@ import dev8 from './dev-8'
 import dev9 from './dev-9'
 import dev10 from './dev-10'
 import dev11Greengage from './dev-11-greengage'
+import dev12Hana from './dev-12-hana'
 import domains from './20200519'
 import encrypt from './20200917-encrypt-passwords'
 import sslFiles from './20201008-add-ssl-files'
@@ -95,6 +96,7 @@ import clearLogFiles from './20260527_clear_log_files'
 import addSnowflakeOptions from './20260501_add_snowflake_options'
 import addWindowsAuthToConnections from './20260618_add_windows_auth_to_connections'
 import addSqlServerOptions from './20260626_add_sqlserver_options'
+import addHanaOptions from './20260709_add_hana_options'
 
 import ultimate from './ultimate/index'
 
@@ -150,7 +152,8 @@ const realMigrations = [
   clearLogFiles,
   addSnowflakeOptions,
   addWindowsAuthToConnections,
-  addSqlServerOptions
+  addSqlServerOptions,
+  addHanaOptions
 ]
 
 // fixtures require the models
@@ -160,7 +163,7 @@ const fixtures = [
 
 const devMigrations = [
   dev1, dev2, dev3, dev4, dev5, dev6, dev7, dev8, dev9,
-  dev10, dev11Greengage
+  dev10, dev11Greengage, dev12Hana
 ]
 
 const migrations = [...realMigrations, ...fixtures, ...devMigrations]

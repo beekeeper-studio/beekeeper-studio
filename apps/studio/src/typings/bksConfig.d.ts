@@ -141,6 +141,19 @@ declare interface IBksConfig {
                 quoted: any[];
             };
         };
+        hana: {
+            allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
+        };
         libsql: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;

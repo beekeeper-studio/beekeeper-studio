@@ -26,6 +26,7 @@ import { RedisClient } from '@/lib/db/clients/redis';
 import { BedrockClient } from '@/lib/db/clients/bedrock';
 import { DynamoDBClient } from "./clients/dynamodb";
 import { SnowflakeClient } from "./clients/snowflake";
+import { HanaClient } from "./clients/hana";
 
 const clients = new Map<ConnectionType, any>([
   ['mysql', MysqlClient],
@@ -52,7 +53,8 @@ const clients = new Map<ConnectionType, any>([
   ['redis', RedisClient],
   ['bedrock', BedrockClient],
   ['dynamodb', DynamoDBClient],
-  ['snowflake', SnowflakeClient]
+  ['snowflake', SnowflakeClient],
+  ['hana', HanaClient]
 ], );
 
 

@@ -36,6 +36,7 @@ const externals = ['better-sqlite3', 'sqlite3',
         'pg-query-stream', 'electron', '@duckdb/node-api',
         '@mongosh/browser-runtime-electron', '@mongosh/service-provider-node-driver',
         'mongodb-client-encryption', 'sqlanywhere', 'ws', 'kerberos', 'msnodesqlv8',
+        '@sap/hana-client',
         ...ensureInstalled,
       ]
 
