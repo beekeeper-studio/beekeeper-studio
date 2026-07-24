@@ -29,7 +29,7 @@
         <div class="base-modal-body">
           <slot :close="close" />
         </div>
-        <div class="base-modal-footer" v-if="$slots.footer">
+        <div class="base-modal-footer" v-if="$scopedSlots.footer">
           <slot name="footer" :close="close" />
         </div>
       </form>

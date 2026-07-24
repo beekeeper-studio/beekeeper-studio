@@ -5,8 +5,8 @@ import { DataState, DataStore, mutationsFor } from "@/store/modules/data/DataMod
 import { safely } from "@/store/modules/data/StoreHelpers";
 import { accessGrantMutations, localAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
-import { buildFolderTree } from "@/common/utils/folderTree";
-import { pluralize } from '@/vendor/pluralize';
+import { buildTreeFolderNodes } from "@/common/utils/folderTree";
+import { folderMoveActions } from "@/store/modules/data/move/moveStore";
 
 type State = DataState<IConnectionFolder>
 
@@ -22,12 +22,9 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     ...mutationsFor<IConnectionFolder>({}, { field: 'name', direction: 'asc' }),
     ...accessGrantMutations(),
   },
-  getters: {
-    foldersWithConnections: (state) => (connections: any[]) =>
-      buildFolderTree(state.items, connections, 'connectionFolderId')
-  },
   actions: {
     ...localAccessGrantActions(),
+    ...folderMoveActions(),
     async initialize(context) {
       await context.dispatch('load');
     },
@@ -52,10 +49,6 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
       return updated.id
     },
     async remove(context, folder) {
-      const items = await Vue.prototype.$util.send('appdb/saved/find', { options: { where: { connectionFolderId: folder.id } } })
-      if (items.length > 0) {
-        throw new Error(`Cannot delete "${folder.name}" — move or remove its ${pluralize('connection', items.length, true)} first.`)
-      }
       await Vue.prototype.$util.send('appdb/connectionFolder/remove', { obj: folder })
       context.commit('remove', folder)
     },
@@ -74,9 +67,10 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
       r.createdAt = null
       return r
     },
-    async moveToFolder(context, { connection, folder }) {
-      const updated = { ...connection, connectionFolderId: folder?.id ?? null }
-      await context.dispatch('data/connections/save', updated, { root: true })
+  },
+  getters: {
+    nodes(state) {
+      return buildTreeFolderNodes(state.items)
     }
   }
 }

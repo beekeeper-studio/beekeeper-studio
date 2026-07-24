@@ -5,8 +5,8 @@ import { DataState, DataStore, mutationsFor } from "@/store/modules/data/DataMod
 import { safely } from "@/store/modules/data/StoreHelpers";
 import { accessGrantMutations, localAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
-import { buildFolderTree } from "@/common/utils/folderTree";
-import { pluralize } from '@/vendor/pluralize';
+import { buildTreeFolderNodes } from "@/common/utils/folderTree";
+import { folderMoveActions } from "@/store/modules/data/move/moveStore";
 
 type State = DataState<IQueryFolder>
 
@@ -22,12 +22,9 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
     ...mutationsFor<IQueryFolder>({}, { field: 'name', direction: 'asc' }),
     ...accessGrantMutations(),
   },
-  getters: {
-    foldersWithQueries: (state) => (queries: any[]) =>
-      buildFolderTree(state.items, queries, 'queryFolderId')
-  },
   actions: {
     ...localAccessGrantActions(),
+    ...folderMoveActions(),
     async initialize(context) {
       context.dispatch('load');
     },
@@ -52,10 +49,6 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
       return updated.id
     },
     async remove(context, folder) {
-      const items = await Vue.prototype.$util.send('appdb/query/find', { options: { where: { queryFolderId: folder.id } } })
-      if (items.length > 0) {
-        throw new Error(`Cannot delete "${folder.name}" — move or remove its ${pluralize('query', items.length, true)} first.`)
-      }
       await Vue.prototype.$util.send('appdb/queryFolder/remove', { obj: folder })
       context.commit('remove', folder)
     },
@@ -74,9 +67,10 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
       r.createdAt = null
       return r
     },
-    async moveToFolder(context, { query, folder }) {
-      const updated = { ...query, queryFolderId: folder?.id ?? null }
-      await context.dispatch('data/queries/save', updated, { root: true })
+  },
+  getters: {
+    nodes(state) {
+      return buildTreeFolderNodes(state.items)
     }
   }
 }

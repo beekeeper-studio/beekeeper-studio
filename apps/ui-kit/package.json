@@ -39,6 +39,7 @@
     "./super-formatter": "./dist/super-formatter.js",
     "./surreal-text-editor": "./dist/surreal-text-editor.js",
     "./merge-text-editor": "./dist/merge-text-editor.js",
+    "./tree": "./dist/tree.js",
     "./vue/table": "./dist/vue/table.js",
     "./vue/entity-list": "./dist/vue/entity-list.js",
     "./vue/sql-text-editor": "./dist/vue/sql-text-editor.js",
@@ -48,6 +49,7 @@
     "./vue/super-formatter": "./dist/vue/super-formatter.js",
     "./vue/surreal-text-editor": "./dist/vue/surreal-text-editor.js",
     "./vue/merge-text-editor": "./dist/vue/merge-text-editor.js",
+    "./vue/tree": "./dist/vue/tree.js",
     "./config/context-menu": "./dist/config/context-menu.js"
   },
   "scripts": {
@@ -75,7 +77,8 @@
     "@marimo-team/codemirror-languageserver": "^1.16.12",
     "@replit/codemirror-emacs": "^6.1.0",
     "@replit/codemirror-vim": "^6.3.0",
-    "@surrealdb/codemirror": "^1.0.0-beta.21"
+    "@surrealdb/codemirror": "^1.0.0-beta.21",
+    "vue": "^2.7.16"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.18.4",

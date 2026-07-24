@@ -4,12 +4,13 @@ import { IAccessGrant } from "./IAccessGrant"
 export interface IFolder extends IShareable {
   id: number | null
   name: string
-  expanded?: boolean
-  parentId?: number | null
+  parentId: number | null
   description?: string | null
   createdAt?: Date
   updatedAt?: Date
   accessGrants?: IAccessGrant[]
+  /** Is it a personal folder? */
+  personal: boolean;
 }
 
 export type IQueryFolder = IFolder

@@ -35,54 +35,36 @@
         </span>
       </label>
 
-      <div
-        class="move-folder-group"
-        v-for="{ folder, subfolders } in folderTree"
-        :key="folder.id"
+      <tree
+        :folders="filteredFolderNodes"
+        :items="itemNodes"
+        :expanded-ids.sync="expandedIds"
       >
-        <label
-          class="move-folder-row"
-          :class="{ selected: selectedFolderId === folder.id }"
-        >
-          <input
-            class="move-folder-radio"
-            type="radio"
-            name="move-to-folder"
-            :value="folder.id"
-            v-model="selectedFolderId"
-          >
-          <i class="move-folder-icon material-icons">folder</i>
-          <span class="move-folder-name">{{ folder.name }}</span>
-          <span v-if="currentFolderId === folder.id" class="current-location">
-            (current location)
-          </span>
-        </label>
-        <template v-if="subfolders.length">
-          <label
-            v-for="subfolder in subfolders"
-            :key="subfolder.id"
+        <template #folder="{ props }">
+          <button
+            type="button"
             class="move-folder-row"
-            :class="{ selected: selectedFolderId === subfolder.id }"
-            style="--node-depth: 1"
+            @click="handleFolderClick($event, props.node.ref)"
+            :class="{
+              selected: selectedFolderId === props.node.ref.id,
+              empty: !props.node.children?.length,
+              current: currentFolderId === props.node.ref.id,
+            }"
           >
-            <input
-              class="move-folder-radio"
-              type="radio"
-              name="move-to-folder"
-              :value="subfolder.id"
-              v-model="selectedFolderId"
-            >
-            <i class="move-folder-icon material-icons">folder</i>
-            <span class="move-folder-name">{{ subfolder.name }}</span>
+            <tree-folder v-bind="props" tag="span" />
             <span
-              v-if="currentFolderId === subfolder.id"
+              v-if="currentFolderId === props.node.ref.id"
               class="current-location"
             >
               (current location)
             </span>
-          </label>
+          </button>
         </template>
-      </div>
+        <!-- Items are only here so folder counts include them. -->
+        <template #item>
+          <span />
+        </template>
+      </tree>
     </template>
     <template #footer="{ close }">
       <button class="btn btn-flat" type="button" @click.prevent="close">
@@ -107,6 +89,8 @@ import { AppEvent } from "@/common/AppEvent";
 import { IConnection } from "@/common/interfaces/IConnection";
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { IFolder } from "@/common/interfaces/IQueryFolder";
+import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
+import { FolderNodeWithRef, getSelfAndAnscestors } from "@/common/utils/folderTree";
 
 type Target =
   | { type: "connection"; value: IConnection }
@@ -115,30 +99,37 @@ type Target =
   | { type: "queryFolder"; value: IFolder };
 
 export default Vue.extend({
-  components: { BaseModal },
+  components: { BaseModal, Tree, TreeFolder },
   data() {
     return {
       modalName: "move-to-modal",
       target: null as Target | null,
       selectedFolderId: null as number | null,
       saving: false,
+      expandedIds: [],
     };
   },
   computed: {
     ...mapState("data/connectionFolders", { connectionFolders: "items" }),
     ...mapState("data/queryFolders", { queryFolders: "items" }),
     ...mapGetters(["isCloud"]),
+    ...mapGetters({
+      connectionFolderNodes: "data/connectionFolders/nodes",
+      queryFolderNodes: "data/queryFolders/nodes",
+      connectionItemNodes: "data/connections/nodes",
+      queryItemNodes: "data/queries/nodes",
+    }),
     rootBindings() {
       return [{ event: AppEvent.openMoveFileModal, handler: this.open }];
     },
-    // Folder targets move themselves (re-parent); connection/query targets move
-    // into a folder. Folders are capped at 2 levels, so only subfolders are
-    // ever moved and their destinations are top level or another root.
     isFolder(): boolean {
       return (
         this.target?.type === "connectionFolder" ||
         this.target?.type === "queryFolder"
       );
+    },
+    isTeamFolder() {
+      return this.isCloud && this.isFolder && !this.target.value.personal;
     },
     isQueryTarget(): boolean {
       return (
@@ -148,6 +139,39 @@ export default Vue.extend({
     folders() {
       if (!this.target) return [];
       return this.isQueryTarget ? this.queryFolders : this.connectionFolders;
+    },
+    itemNodes() {
+      if (!this.target) {
+        return [];
+      }
+      if (this.isQueryTarget) {
+        return this.queryItemNodes;
+      }
+      return this.connectionItemNodes;
+    },
+    folderNodes() {
+      if (!this.target) {
+        return [];
+      }
+      if (this.isQueryTarget) {
+        return this.queryFolderNodes;
+      }
+      return this.connectionFolderNodes;
+    },
+    filteredFolderNodes() {
+      return this.folderNodes.filter((node: FolderNodeWithRef) => {
+        // Prevent moving a team folder to a personal folder
+        if (this.isTeamFolder && node.ref.personal) {
+          return false;
+        }
+
+        // Prevent moving a folder to its own subfolders
+        if (this.isFolder && node.ref.parentId === this.target.value.id) {
+          return false;
+        }
+
+        return true;
+      });
     },
     targetIcon(): string {
       if (!this.target) return "";
@@ -159,18 +183,6 @@ export default Vue.extend({
       return this.target.type === "query"
         ? this.target.value.title
         : this.target.value.name;
-    },
-    folderTree() {
-      return this.folders
-        .filter((f) => !f.parentId)
-        .map((folder) => ({
-          folder,
-          // A folder being moved can't nest into a subfolder (2-level cap), so
-          // subfolders aren't shown as destinations for folder targets.
-          subfolders: this.isFolder
-            ? []
-            : this.folders.filter((f) => f.parentId === folder.id),
-        }));
     },
     currentFolderId(): number | null {
       if (!this.target) return null;
@@ -186,46 +198,49 @@ export default Vue.extend({
     },
   },
   methods: {
-    ...mapActions("data/connectionFolders", {
-      moveConnectionToFolder: "moveToFolder",
-      saveConnectionFolder: "save",
-    }),
-    ...mapActions("data/queryFolders", {
-      moveQueryToFolder: "moveToFolder",
-      saveQueryFolder: "save",
+    ...mapActions({
+      moveConnectionFolder: "data/connectionFolders/move",
+      moveConnection: "data/connections/move",
+      moveQueryFolder: "data/queryFolders/move",
+      moveQuery: "data/queries/move",
     }),
     open(target: Target) {
       this.target = target;
       this.selectedFolderId = this.currentFolderId;
+
+      // Expand anscestors
+      this.expandedIds = getSelfAndAnscestors(
+        this.currentFolderId,
+        this.folders
+      ).map((f) => `folder-${f.id}`);
+
       this.$modal.show(this.modalName);
+    },
+    handleFolderClick(event: MouseEvent, folder: IFolder) {
+      if (folder.id !== this.selectedFolderId) {
+        event.stopPropagation();
+        this.selectedFolderId = folder.id;
+      }
     },
     async move() {
       if (!this.canMove || this.saving) return;
       this.saving = true;
+      const payload = {
+        sourceId: this.target.value.id,
+        targetId: this.selectedFolderId,
+        position: "inside",
+      };
       try {
         if (this.target.type === "queryFolder") {
-          await this.saveQueryFolder({
-            ...this.target.value,
-            parentId: this.selectedFolderId,
-          });
+          await this.moveQueryFolder(payload);
         } else if (this.target.type === "connectionFolder") {
-          await this.saveConnectionFolder({
-            ...this.target.value,
-            parentId: this.selectedFolderId,
-          });
+          await this.moveConnectionFolder(payload);
+        } else if (this.target.type === "query") {
+          await this.moveQuery(payload);
+        } else if (this.target.type === "connection") {
+          await this.moveConnection(payload);
         } else {
-          const folder =
-            this.selectedFolderId == null
-              ? null
-              : this.folders.find((f) => f.id === this.selectedFolderId);
-          if (this.target.type === "query") {
-            await this.moveQueryToFolder({ query: this.target.value, folder });
-          } else {
-            await this.moveConnectionToFolder({
-              connection: this.target.value,
-              folder,
-            });
-          }
+          throw new Error(`Cannot move an unknown target: ${this.target.type}`);
         }
         this.$modal.hide(this.modalName);
       } catch (ex) {
@@ -260,17 +275,23 @@ export default Vue.extend({
 }
 
 .move-folder-row {
-  --node-depth: 0;
   position: relative;
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  width: 100%;
   margin: 0;
-  padding-left: calc(0.45rem + (var(--node-depth) * 1.25rem));
-  height: 2rem;
+  padding: 0;
+  border: none;
   border-radius: 4px;
+  background: transparent;
   color: rgb(from var(--theme-base) r g b / 77%);
+  font: inherit;
   cursor: pointer;
+
+  label& {
+    height: 1.75rem;
+  }
 
   &:hover {
     background: rgb(from var(--theme-base) r g b / 3.5%);
@@ -282,9 +303,27 @@ export default Vue.extend({
 
   /* The radio is visually hidden, so surface keyboard focus on the row.
      :focus-visible keeps this off for mouse clicks. */
+  &:focus-visible,
+  &:has(:focus-visible),
   &:has(.move-folder-radio:focus-visible) {
     outline: 2px solid var(--theme-base);
     outline-offset: -2px;
+  }
+
+  &::v-deep .BksTree-folder {
+    width: auto;
+
+    &:hover {
+      background-color: transparent;
+    }
+  }
+
+  &.current::v-deep .BksTree-folder .name {
+    opacity: 0.5;
+  }
+
+  &.empty::v-deep .BksTree-folder .expand-icon {
+    visibility: hidden;
   }
 }
 
