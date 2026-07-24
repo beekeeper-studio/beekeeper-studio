@@ -95,6 +95,7 @@ import clearLogFiles from './20260527_clear_log_files'
 import addSnowflakeOptions from './20260501_add_snowflake_options'
 import addWindowsAuthToConnections from './20260618_add_windows_auth_to_connections'
 import addSqlServerOptions from './20260626_add_sqlserver_options'
+import addDataTypeColors from './20260724_add_data_type_colors'
 
 import ultimate from './ultimate/index'
 
@@ -150,7 +151,8 @@ const realMigrations = [
   clearLogFiles,
   addSnowflakeOptions,
   addWindowsAuthToConnections,
-  addSqlServerOptions
+  addSqlServerOptions,
+  addDataTypeColors
 ]
 
 // fixtures require the models
