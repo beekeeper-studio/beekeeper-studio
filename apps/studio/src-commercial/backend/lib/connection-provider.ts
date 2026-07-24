@@ -138,6 +138,7 @@ export default {
       azureAuthOptions: config.azureAuthOptions,
       authId: config.authId,
       libsqlOptions: config.libsqlOptions,
+      sqliteOptions: config.sqliteOptions,
       sqlAnywhereOptions: config.sqlAnywhereOptions,
       surrealDbOptions: config.surrealDbOptions,
       snowflakeOptions: config.snowflakeOptions,

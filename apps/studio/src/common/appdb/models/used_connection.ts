@@ -45,6 +45,7 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       // TEMP (@day): this is just till we fix the used conn duplication issue
       this.authId = other.authId
       this.libsqlOptions = other.libsqlOptions
+      this.sqliteOptions = other.sqliteOptions
       this.sqlAnywhereOptions = other.sqlAnywhereOptions
       this.surrealDbOptions = other.surrealDbOptions
       this.dynamoDbOptions = other.dynamoDbOptions
