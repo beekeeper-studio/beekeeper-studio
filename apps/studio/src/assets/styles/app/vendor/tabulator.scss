@@ -494,6 +494,16 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
         color: $text-dark;
       }
 
+      // Column headers are the reorder drag handle (movableColumns is enabled),
+      // so show a grab cursor on hover and a grabbing cursor while a column is
+      // being dragged. See issue #3165.
+      &:hover {
+        cursor: grab;
+      }
+      &.tabulator-moving {
+        cursor: grabbing;
+      }
+
       &:first-of-type .tabulator-col-content {
         padding-left: $gutter-w * 1.5;
       }

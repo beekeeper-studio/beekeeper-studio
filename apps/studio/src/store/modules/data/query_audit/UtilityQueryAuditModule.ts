@@ -1,7 +1,10 @@
+import Vue from "vue";
 import { Module } from "vuex";
-import { State as RootState } from "../../../index";
-import { IQueryAudit, IQueryAuditDetail } from "@/common/interfaces/IQueryAudit";
-import ISavedQuery from "@/common/interfaces/ISavedQuery";
+import { State as RootState } from "@/store";
+import {
+  TransportQueryAudit,
+  TransportQueryAuditDetail,
+} from "@/common/transport/TransportQueryAudit";
 
 interface State {
   pollError: null;
@@ -18,14 +21,22 @@ export const UtilQueryAuditModule: Module<State, RootState> = {
     },
     async load() {},
     async poll() {},
-    async list(): Promise<IQueryAudit[]> {
-      return [];
+    async list(_context, queryId: number): Promise<TransportQueryAudit[]> {
+      return await Vue.prototype.$util.send("appdb/queryAudit/find", {
+        options: { where: { favoriteQueryId: queryId } },
+      });
     },
-    async get(): Promise<IQueryAuditDetail | null> {
-      return null;
+    async get(
+      _context,
+      { auditId }: { auditId: number }
+    ): Promise<TransportQueryAuditDetail> {
+      return await Vue.prototype.$util.send("appdb/queryAudit/get", { auditId });
     },
-    async restore(): Promise<ISavedQuery | null> {
-      return null;
+    async restore(
+      _context,
+      { auditId }: { auditId: number }
+    ): Promise<void> {
+      await Vue.prototype.$util.send("appdb/queryAudit/restore", { auditId });
     },
   },
 };
