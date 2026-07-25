@@ -4,9 +4,8 @@ import _ from "lodash";
 export interface ConfigFileContents {
   defaultText: string;
   userText: string;
-  /** Null when no machine-wide admin config applies. */
-  systemText: string | null;
   userPath: string;
+  /** Null when no machine-wide admin config applies. */
   systemPath: string | null;
 }
 

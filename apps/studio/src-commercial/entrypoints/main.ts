@@ -200,7 +200,6 @@ ipcMain.handle('config:read', () => {
   return {
     defaultText: readOrEmpty(paths.default) ?? '',
     userText: readOrEmpty(paths.user) ?? '',
-    systemText: readOrEmpty(paths.system),
     userPath: paths.user,
     systemPath: paths.system,
   }

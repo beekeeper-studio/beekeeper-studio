@@ -62,6 +62,14 @@
             </button>
           </div>
           <div class="config-toolbar-right">
+            <span
+              class="config-hint config-admin-note"
+              v-if="systemPath"
+              :title="systemPath"
+            >
+              <i class="material-icons">admin_panel_settings</i>
+              Admin config in effect
+            </span>
             <span class="config-hint">{{ searchHint }}</span>
             <button
               class="btn btn-primary btn-small"
@@ -88,26 +96,14 @@
         <div class="config-panes">
           <div class="config-pane">
             <div class="config-pane-header">
-              <div class="config-pane-tabs" v-if="systemText !== null">
-                <button
-                  class="btn btn-flat btn-small"
-                  :class="{ active: referencePane === 'default' }"
-                  @click.prevent="referencePane = 'default'"
-                >Default</button>
-                <button
-                  class="btn btn-flat btn-small"
-                  :class="{ active: referencePane === 'system' }"
-                  @click.prevent="referencePane = 'system'"
-                >System (admin)</button>
-              </div>
-              <span class="config-pane-title" v-else>Default</span>
+              <span class="config-pane-title">Default</span>
               <span class="config-pane-subtitle">Read only</span>
             </div>
             <div class="config-pane-body">
               <text-editor
                 language-id="ini"
                 read-only
-                :value="referenceText"
+                :value="defaultText"
                 :line-numbers="true"
                 @bks-selection-change="selectedReferenceText = $event.value"
               />
@@ -184,12 +180,11 @@ export default Vue.extend({
       saving: false,
       savedNeedsRestart: false,
       maximized: false,
-      referencePane: "default" as "default" | "system",
       defaultText: "",
-      systemText: null as string | null,
       userText: "",
       savedText: "",
       userPath: "",
+      systemPath: null as string | null,
       selectedReferenceText: "",
       problems: [] as LocatedProblem[],
       debouncedValidate: null as null | (() => void) & { cancel: () => void },
@@ -201,11 +196,6 @@ export default Vue.extend({
     },
     dirty(): boolean {
       return this.userText !== this.savedText;
-    },
-    referenceText(): string {
-      return this.referencePane === "system"
-        ? this.systemText || ""
-        : this.defaultText;
     },
     markers(): EditorMarker[] {
       return this.problems.map((problem) => ({
@@ -301,10 +291,10 @@ export default Vue.extend({
     try {
       const contents = await window.main.config.read();
       this.defaultText = contents.defaultText;
-      this.systemText = contents.systemText;
       this.userText = contents.userText;
       this.savedText = contents.userText;
       this.userPath = contents.userPath;
+      this.systemPath = contents.systemPath;
       this.loaded = true;
       this.validate();
     } catch (e) {
@@ -373,6 +363,16 @@ export default Vue.extend({
 .config-toolbar-right {
   display: flex;
   align-items: center;
+}
+
+.config-admin-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  .material-icons {
+    font-size: 14px;
+  }
 }
 
 .config-banner {
