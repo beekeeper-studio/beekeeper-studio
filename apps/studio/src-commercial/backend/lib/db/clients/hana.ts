@@ -80,7 +80,9 @@ const hanaContext = {
 
 // System schemas hidden from listings. HANA tenants ship hundreds of
 // _SYS_*/SYS objects that would drown out user schemas in the sidebar.
-const SYSTEM_SCHEMA_FILTER = `SCHEMA_NAME NOT LIKE '\\_SYS\\_%' ESCAPE '\\' AND SCHEMA_NAME NOT IN ('SYS', 'SYSTEM')`;
+// The SYSTEM schema stays visible: it is the SYSTEM user's default working
+// schema and holds user-created objects, not catalog objects.
+const SYSTEM_SCHEMA_FILTER = `SCHEMA_NAME NOT LIKE '\\_SYS\\_%' ESCAPE '\\' AND SCHEMA_NAME <> 'SYS'`;
 
 export class HanaClient extends BasicDatabaseClient<HanaResult> {
   pool: HanaPool;
@@ -210,14 +212,12 @@ export class HanaClient extends BasicDatabaseClient<HanaResult> {
   }
 
   async listDatabases(_filter?: DatabaseFilterOptions): Promise<string[]> {
-    try {
-      // only available on SYSTEMDB or to privileged users
-      const { rows } = await this.driverExecuteSingle(`SELECT DATABASE_NAME AS "name" FROM SYS.M_DATABASES`);
-      return rows.map((row) => row.name);
-    } catch {
-      const { rows } = await this.driverExecuteSingle(`SELECT DATABASE_NAME AS "name" FROM SYS.M_DATABASE`);
-      return rows.map((row) => row.name);
-    }
+    // Only the connected database: switching requires reconnecting to the
+    // tenant's own SQL port, so sibling tenants (SYS.M_DATABASES) aren't
+    // reachable through this connection anyway. The single entry lets the UI
+    // display which database the connection landed in.
+    const { rows } = await this.driverExecuteSingle(`SELECT DATABASE_NAME AS "name" FROM SYS.M_DATABASE`);
+    return rows.map((row) => row.name);
   }
 
   async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
