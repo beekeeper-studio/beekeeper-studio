@@ -21,7 +21,7 @@ export interface EditorMarker extends EditorRange {
   element?: HTMLElement;
   /** @deprecated Use `decoration` instead. */
   onClick?: (event: MouseEvent) => void;
-  type: "error" | "highlight" | "custom"; // | "warning"
+  type: "error" | "warning" | "highlight" | "custom";
 }
 
 export interface LineGutter {
@@ -93,7 +93,7 @@ export interface ExtensionConfiguration {
   actionsKeymap?: any[];
 }
 
-export type LanguageId = "json" | "html" | "javascript" | "redis";
+export type LanguageId = "json" | "html" | "javascript" | "redis" | "ini";
 
 export interface LSContext {
   client: LanguageServerClient;

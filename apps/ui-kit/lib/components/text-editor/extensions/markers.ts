@@ -6,6 +6,7 @@
  * 
  * Marker types:
  * - "error": Red underline with optional tooltip message
+ * - "warning": Amber underline with optional tooltip message
  * - "highlight": Background highlight
  * - "custom": Custom decoration or widget element
  * 
@@ -85,10 +86,10 @@ const markersDecorationField = StateField.define<DecorationSet>({
             const from = posFromLineCol(transaction.state.doc, marker.from.line, marker.from.ch);
             const to = posFromLineCol(transaction.state.doc, marker.to.line, marker.to.ch);
 
-            if (marker.type === "error") {
+            if (marker.type === "error" || marker.type === "warning") {
               newDecorations.push(
                 Decoration.mark({
-                  class: "cm-error",
+                  class: marker.type === "error" ? "cm-error" : "cm-warning",
                   attributes: marker.message ? { title: marker.message } : undefined,
                 }).range(from, to)
               );

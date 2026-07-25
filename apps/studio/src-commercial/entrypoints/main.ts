@@ -15,9 +15,11 @@ import MenuHandler from '@/background/NativeMenuBuilder'
 import { IGroupedUserSettings, UserSetting } from '@/common/appdb/models/user_setting'
 import Connection from '@/common/appdb/Connection'
 import Migration from '@/migration/index'
-import { buildWindow, getActiveWindows, getCurrentWindow } from '@/background/WindowBuilder'
+import { buildWindow, getActiveWindows } from '@/background/WindowBuilder'
+import { buildConfigWindow } from '@/background/ConfigWindowBuilder'
 import platformInfo from '@/common/platform_info'
 import bksConfig from '@/common/bksConfig'
+import { getConfigFilePaths } from '@/common/bksConfig/mainBksConfig'
 
 import { AppEvent } from '@/common/AppEvent'
 import { ProtocolBuilder } from '@/background/lib/electron/ProtocolBuilder';
@@ -182,6 +184,51 @@ ipcMain.handle('bksConfigSource', () => {
   return bksConfig.source;
 })
 
+ipcMain.handle('config:read', () => {
+  const paths = getConfigFilePaths()
+
+  const readOrEmpty = (p: string | null) => {
+    if (!p || !fs.existsSync(p)) return null
+    try {
+      return fs.readFileSync(p, 'utf-8')
+    } catch (e) {
+      log.error(`Failed reading config for editor: ${p}`, e)
+      return null
+    }
+  }
+
+  return {
+    defaultText: readOrEmpty(paths.default) ?? '',
+    userText: readOrEmpty(paths.user) ?? '',
+    systemText: readOrEmpty(paths.system),
+    userPath: paths.user,
+    systemPath: paths.system,
+  }
+})
+
+ipcMain.handle('config:write', (_event, text: string) => {
+  const { user } = getConfigFilePaths()
+
+  // Write to a sibling temp file and rename, so a failure part way through
+  // can't leave a truncated config behind.
+  const tmp = `${user}.tmp`
+  fs.mkdirSync(path.dirname(user), { recursive: true })
+  fs.writeFileSync(tmp, text, 'utf-8')
+  fs.renameSync(tmp, user)
+  log.info(`Wrote user config to ${user}.`)
+
+  return { path: user }
+})
+
+ipcMain.handle('config:openWindow', async () => {
+  buildConfigWindow(await initBasics())
+})
+
+ipcMain.handle('config:restart', () => {
+  app.relaunch()
+  app.quit()
+})
+
 app.on('activate', async (_event, hasVisibleWindows) => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
@@ -289,32 +336,39 @@ app.on('open-url', async (event, url) => {
   await buildWindow(settings, { url })
 });
 
-ipcMain.handle('isMaximized', () => {
-  return getCurrentWindow().isMaximized();
+// Resolve from the sender rather than from focus: with the config editor open
+// there is more than one kind of window, and a focus lookup over the main
+// window list returns nothing when the config window is the focused one.
+function senderWindow(event: electron.IpcMainInvokeEvent): electron.BrowserWindow | null {
+  return electron.BrowserWindow.fromWebContents(event.sender)
+}
+
+ipcMain.handle('isMaximized', (event) => {
+  return senderWindow(event)?.isMaximized();
 })
 
-ipcMain.handle('isFullscreen', () => {
-  return getCurrentWindow().isFullscreen();
+ipcMain.handle('isFullscreen', (event) => {
+  return senderWindow(event)?.isFullScreen();
 })
 
-ipcMain.handle('setFullscreen', (_event, value) => {
-  getCurrentWindow().setFullscreen(value);
+ipcMain.handle('setFullscreen', (event, value) => {
+  senderWindow(event)?.setFullScreen(value);
 })
 
-ipcMain.handle('minimizeWindow', () => {
-  getCurrentWindow().minimizeWindow();
+ipcMain.handle('minimizeWindow', (event) => {
+  senderWindow(event)?.minimize();
 })
 
-ipcMain.handle('unmaximizeWindow', () => {
-  getCurrentWindow().unmaximizeWindow();
+ipcMain.handle('unmaximizeWindow', (event) => {
+  senderWindow(event)?.unmaximize();
 })
 
-ipcMain.handle('maximizeWindow', () => {
-  getCurrentWindow().maximizeWindow();
+ipcMain.handle('maximizeWindow', (event) => {
+  senderWindow(event)?.maximize();
 })
 
-ipcMain.handle('closeWindow', () => {
-  getCurrentWindow().closeWindow();
+ipcMain.handle('closeWindow', (event) => {
+  senderWindow(event)?.close();
 })
 
 // Exit cleanly on request from parent process in development mode.

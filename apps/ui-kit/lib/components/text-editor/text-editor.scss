@@ -20,6 +20,8 @@
   --bks-text-editor-def-fg-color: #fd971f;
   --bks-text-editor-error-bg-color: #{rgba($brand-danger, 0.1)};
   --bks-text-editor-error-fg-color: #{$brand-danger};
+  --bks-text-editor-warning-bg-color: #{rgba($brand-warning, 0.1)};
+  --bks-text-editor-warning-fg-color: #{$brand-warning};
   --bks-text-editor-fg-color: #{$text-dark};
   --bks-text-editor-focused-outline-color: #{$query-editor-bg};
   --bks-text-editor-foldgutter-fg-color: #{rgba($theme-base, 0.37)};

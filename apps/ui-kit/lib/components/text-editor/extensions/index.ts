@@ -222,6 +222,11 @@ export function extensions(config: ExtensionConfiguration = {}) {
         borderBottom: "1px solid var(--bks-text-editor-error-fg-color)",
         borderRadius: "2px",
       },
+      ".cm-warning": {
+        backgroundColor: "var(--bks-text-editor-warning-bg-color)",
+        borderBottom: "1px dashed var(--bks-text-editor-warning-fg-color)",
+        borderRadius: "2px",
+      },
       ".cm-highlight": {
         backgroundColor: "var(--bks-text-editor-highlight-bg-color)",
         borderRadius: "2px",

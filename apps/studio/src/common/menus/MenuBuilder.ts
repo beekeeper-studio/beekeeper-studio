@@ -63,6 +63,8 @@ export default class extends DefaultMenu {
         { type: 'separator' },
         this.menuItems.addBeekeeper,
         this.menuItems.devtools,
+        // Lives in the Beekeeper Studio menu on mac, alongside the other prefs
+        ...(!this.platformInfo.isMac ? [this.menuItems.editConfig] : []),
         // Moved to Beekeeper Studio menu for mac
         ...(!this.platformInfo.isMac ? [this.menuItems.checkForUpdate] : []),
         this.menuItems.restart,
@@ -89,6 +91,8 @@ export default class extends DefaultMenu {
         submenu: [
           this.menuItems.about,
           this.menuItems.checkForUpdate,
+          { type: 'separator' },
+          this.menuItems.editConfig,
           { type: 'separator' },
           { role: 'services' },
           { type: 'separator' },

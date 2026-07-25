@@ -5,6 +5,7 @@ import 'core-js/actual/typed-array/to-base64'
 import 'core-js/actual/typed-array/to-hex'
 
 import Vue from 'vue'
+import querystring from 'query-string'
 import VueHotkey from 'v-hotkey'
 import VModal from 'vue-js-modal'
 import VTooltip from 'v-tooltip'
@@ -41,6 +42,7 @@ import { WebPluginManager } from '@/services/plugin/web'
 import PluginStoreService from '@/services/plugin/web/PluginStoreService'
 import * as UIKit from '@beekeeperstudio/ui-kit'
 import ProductTourPlugin from '@/plugins/ProductTourPlugin'
+import { mountConfigEditor } from '@/lib/configEditor/mount'
 
 (async () => {
 
@@ -55,6 +57,18 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
 
   const log = rawLog.scope("main.ts")
   log.info("starting logging")
+
+  // The config editor is a second window sharing this entry point. It needs
+  // none of the app boot below — no utility process, no plugins, no store —
+  // so it mounts its own tiny app and returns.
+  const bootQuery = querystring.parse(window.location.search, { parseBooleans: true })
+  if (bootQuery.mode === 'config') {
+    // Statically imported on purpose: the renderer bundle is emitted as a
+    // single CJS file, so a dynamic import here would split out a chunk the
+    // browser can't load.
+    mountConfigEditor(bootQuery.theme as string)
+    return
+  }
 
   try {
 

@@ -154,6 +154,12 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       label: "Restart Beekeeper",
       click: actionHandler.restart
     },
+    editConfig: {
+      id: 'edit-config',
+      label: platformInfo.isMac ? "Settings…" : "Edit Config File",
+      accelerator: "CommandOrControl+,",
+      click: actionHandler.editConfig
+    },
     checkForUpdate: {
       id: 'updatecheck',
       label: 'Check for Software Updates',

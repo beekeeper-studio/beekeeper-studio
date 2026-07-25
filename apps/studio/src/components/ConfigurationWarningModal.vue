@@ -92,6 +92,13 @@
         >
           Close
         </button>
+        <button
+          class="btn btn-primary"
+          type="button"
+          @click.prevent="editConfig"
+        >
+          Edit Config
+        </button>
       </div>
     </modal>
   </portal>
@@ -121,6 +128,12 @@ export default Vue.extend({
     },
     bundledPluginIds() {
       return globals.plugins.ensureInstalled.map((p) => p.id).join(", ");
+    },
+  },
+  methods: {
+    editConfig() {
+      this.$modal.hide(this.modalName);
+      window.main.config.openWindow();
     },
   },
   async mounted() {

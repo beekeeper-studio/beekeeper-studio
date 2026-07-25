@@ -28,6 +28,7 @@ export interface IMenuActionHandler {
   about: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   devtools: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   restart: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  editConfig: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   opendocs: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   contactSupport: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   openGettingStarted: (menuItem: Electron.MenuItem, win: ElectronWindow) => void

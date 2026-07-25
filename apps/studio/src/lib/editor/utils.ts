@@ -12,7 +12,7 @@ export interface EditorMarker extends EditorRange {
   message?: string;
   element?: HTMLElement;
   onClick?: (event: MouseEvent) => void;
-  type: "error" | "highlight" | "custom"; // | "warning"
+  type: "error" | "warning" | "highlight" | "custom";
 }
 
 export interface LineGutter {

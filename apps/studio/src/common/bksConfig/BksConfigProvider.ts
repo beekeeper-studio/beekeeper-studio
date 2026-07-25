@@ -7,6 +7,9 @@ export interface BksConfigSource {
   defaultConfig: IBksConfig;
   systemConfig: Partial<IBksConfig>;
   userConfig: Partial<IBksConfig>;
+  /** Keys that still parse but are no longer honoured. Needed by the config
+   * editor so it can flag them while the user is typing. */
+  deprecatedConfig?: Partial<IBksConfig>;
   warnings: ConfigEntryDetailWarning[];
 }
 

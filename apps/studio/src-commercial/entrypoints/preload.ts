@@ -9,6 +9,7 @@ import { execSync } from 'child_process';
 import 'electron-log/preload';
 import type { SaveFileOptions } from '@/backend/lib/FileHelpers';
 import type { NativePluginMenuItem } from '@/services/plugin/types';
+import type { ConfigFileContents } from '@/common/bksConfig/configEditor';
 
 const electron = require('@electron/remote');
 
@@ -181,6 +182,20 @@ export const api = {
   fileHelpers: {
     save(options: SaveFileOptions) {
       return ipcRenderer.invoke('fileHelpers:save', options);
+    },
+  },
+  config: {
+    read(): Promise<ConfigFileContents> {
+      return ipcRenderer.invoke('config:read');
+    },
+    write(text: string): Promise<{ path: string }> {
+      return ipcRenderer.invoke('config:write', text);
+    },
+    openWindow(): Promise<void> {
+      return ipcRenderer.invoke('config:openWindow');
+    },
+    restart(): Promise<void> {
+      return ipcRenderer.invoke('config:restart');
     },
   },
   addNativeMenuItem(item: NativePluginMenuItem) {

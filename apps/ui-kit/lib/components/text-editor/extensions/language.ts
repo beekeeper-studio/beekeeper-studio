@@ -4,8 +4,9 @@ import { javascript } from "@codemirror/lang-javascript";
 import { Compartment } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { redis } from "./redis";
+import { ini } from "./ini";
 
-export type LanguageId = "json" | "html" | "javascript" | "redis";
+export type LanguageId = "json" | "html" | "javascript" | "redis" | "ini";
 
 const languageCompartment = new Compartment();
 
@@ -14,6 +15,7 @@ const languageMap = {
   html,
   javascript,
   redis,
+  ini,
 };
 
 export function language(languageId?: LanguageId) {

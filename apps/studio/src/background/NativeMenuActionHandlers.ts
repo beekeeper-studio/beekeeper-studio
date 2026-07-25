@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import {AppEvent} from '../common/AppEvent'
 import { buildWindow, getActiveWindows, OpenOptions } from './WindowBuilder'
+import { buildConfigWindow } from './ConfigWindowBuilder'
 import { app } from 'electron'
 import { safeOpenExternal } from './lib/electron/safeOpenExternal'
 import platformInfo from '../common/platform_info'
@@ -138,6 +139,10 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
   restart(): void {
     app.relaunch();
     app.quit();
+  }
+
+  editConfig = (): void => {
+    buildConfigWindow(this.settings)
   }
 
   // first argument when coming from the ipcRenderer when opening a new window via new database doesn't return the same arguments as going through menu natively
