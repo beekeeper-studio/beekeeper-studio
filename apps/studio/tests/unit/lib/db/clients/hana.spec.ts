@@ -63,6 +63,31 @@ describe("HanaClient (offline)", () => {
       expect(sql).toContain('SELECT *');
     });
 
+    it("restricts filter join operators to AND/OR", async () => {
+      const client = buildClient();
+      const sql = await client.selectTopSql(
+        'people', 0, 10, [],
+        [
+          { field: 'city', type: '=', value: 'a' },
+          { field: 'state', type: '=', value: 'b', op: "OR 1=1; DROP TABLE x --" as any },
+        ],
+        'BKTEST'
+      );
+      expect(sql).toContain(`"city" = 'a' AND "state" = 'b'`);
+      expect(sql).not.toContain('DROP TABLE');
+    });
+
+    it("restricts order by direction to ASC/DESC", async () => {
+      const client = buildClient();
+      const sql = await client.selectTopSql(
+        'people', 0, 10,
+        [{ field: 'name', dir: 'DESC; DROP TABLE x' as any }],
+        [], 'BKTEST'
+      );
+      expect(sql).toContain('ORDER BY "name" ASC');
+      expect(sql).not.toContain('DROP TABLE');
+    });
+
     it("rejects filter operators outside the allow-list", async () => {
       const client = buildClient();
       await expect(client.selectTopSql(

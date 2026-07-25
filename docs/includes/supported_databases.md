@@ -24,6 +24,7 @@
 | [Trino](https://trino.io/) / [Presto](https://prestodb.io/) | ⭐ Full Support                |           |    ✅    |    [Features](https://www.beekeeperstudio.io/db/trino-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/trino/) |
 | [SurrealDB](https://surrealdb.com/)                      | ⭐ Full Support               |           |    ✅    |      [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/surrealdb) |
 | [DynamoDB](https://aws.amazon.com/dynamodb/)             | 🧪 Beta Support               |           |    ✅    |      [Features](https://www.beekeeperstudio.io/db/dynamodb-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/dynamodb) |
+| [SAP HANA](https://www.sap.com/products/technology-platform/hana.html) | 🧪 Beta Support               |           |    ✅    |      [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/sap-hana) |
 | [Snowflake](https://www.snowflake.com/)                  | ⏳ Coming Soon                |           |    ✅    |   -- |
 
 
