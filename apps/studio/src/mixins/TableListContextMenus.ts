@@ -115,6 +115,13 @@ export default {
           }
         },
         {
+          name: "SQL: Select Top",
+          slug: 'select-top',
+          handler: ({ item }) => {
+            this.$root.$emit(AppEvent.loadSelectTop, item)
+          }
+        },
+        {
           name: "Rename",
           slug: 'rename',
           class: ({ item  }) => {
