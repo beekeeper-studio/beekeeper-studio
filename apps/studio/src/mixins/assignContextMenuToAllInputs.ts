@@ -21,6 +21,10 @@ export const assignContextMenuToAllInputs: ComponentOptions<Vue> = {
 
   methods: {
     ctxMenu_showContextMenu(event: MouseEvent) {
+      if (event.defaultPrevented) {
+        return;
+      }
+
       if (!this.ctxMenu_isTextInput(event.target)) {
         return;
       }
