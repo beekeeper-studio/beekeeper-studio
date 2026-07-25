@@ -10,6 +10,13 @@ export interface BksConfigSource {
   warnings: ConfigEntryDetailWarning[];
 }
 
+export interface BksConfigProviderParams {
+  source: BksConfigSource;
+  platformInfo: IPlatformInfo;
+  onOverwrite: (type: "user", content: string) => Promise<void>;
+  onGetContent: (type: "user") => Promise<string>;
+}
+
 export type BksConfig = BksConfigProvider & IBksConfig;
 
 export type IniArray = {
@@ -288,7 +295,8 @@ export class BksConfigProvider {
   private userConfig: Config;
   private mergedConfig: IBksConfig;
 
-  constructor(public readonly source: BksConfigSource, private platformInfo: IPlatformInfo) {
+  constructor(private readonly params: Readonly<BksConfigProviderParams>) {
+    const { source, platformInfo } = params;
     this.defaultConfig = new Config("default", source.defaultConfig);
     this.systemConfig = new Config("system", source.systemConfig);
     this.userConfig = new Config(
@@ -303,10 +311,24 @@ export class BksConfigProvider {
     );
   }
 
-  static create(source: BksConfigSource, platformInfo: IPlatformInfo) {
-    const provider = new BksConfigProvider(source, platformInfo);
+  static create(params: Readonly<BksConfigProviderParams>) {
+    const provider = new BksConfigProvider(params);
     Object.assign(provider, provider.mergedConfig);
     return provider as BksConfig;
+  }
+
+  get source(): BksConfigSource {
+    return this.params.source;
+  }
+
+  /** Replace the user config file with the given content. */
+  async overwrite(type: "user", content: string): Promise<void> {
+    return await this.params.onOverwrite(type, content);
+  }
+
+  /** Read the raw content of the user config file. Always returns the latest content from disk. */
+  async getContent(type: "user"): Promise<string> {
+    return await this.params.onGetContent(type);
   }
 
   has(path: string): boolean {
@@ -359,7 +381,7 @@ export class BksConfigProvider {
 
     if (isIniArray(keybindings)) {
       return Object.keys(keybindings).map((idx) =>
-        convertKeybinding(target, keybindings[idx], this.platformInfo.platform)
+        convertKeybinding(target, keybindings[idx], this.params.platformInfo.platform)
       );
     }
 
@@ -368,7 +390,7 @@ export class BksConfigProvider {
       return [];
     }
 
-    return convertKeybinding(target, keybindings, this.platformInfo.platform);
+    return convertKeybinding(target, keybindings, this.params.platformInfo.platform);
   }
 
   get warnings() {
