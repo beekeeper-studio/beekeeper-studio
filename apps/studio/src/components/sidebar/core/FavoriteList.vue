@@ -67,6 +67,7 @@
             </div>
           </div>
         </div>
+        <expired-folder-alert v-if="!canCreateFolders && folders.length > 0" />
         <error-alert
           v-if="error"
           :error="error"
@@ -249,6 +250,7 @@
 
 <script>
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
 import { SmartLocalStorage } from '@/common/LocalStorage'
 import { mapGetters, mapState } from 'vuex'
 import SidebarLoading from '../../common/SidebarLoading.vue'
@@ -259,7 +261,7 @@ import { getLonelyItems, isFolderListEmpty } from '@/common/utils/folderTree'
 import Draggable from 'vuedraggable'
 
 export default {
-  components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder, Draggable },
+  components: { SidebarLoading, ErrorAlert, ExpiredFolderAlert, FavoriteListItem, SidebarFolder, Draggable },
   data: function () {
     return {
       checkedFavorites: [],
@@ -282,7 +284,7 @@ export default {
     document.removeEventListener('mousedown', this.maybeUnselect)
   },
   computed: {
-    ...mapGetters(['workspace', 'isCloud', 'isUltimate']),
+    ...mapGetters(['workspace', 'isCloud', 'isUltimate', 'canCreateFolders']),
     ...mapGetters('data/queries', {'filteredQueries': 'filteredQueries'}),
     ...mapState('tabs', {'activeTab': 'active'}),
     ...mapState('data/queries', {'savedQueries': 'items', 'queriesLoading': 'loading', 'queriesError': 'error', 'savedQueryFilter': 'filter', 'pendingSaveIds': 'pendingSaveIds'}),
@@ -383,7 +385,7 @@ export default {
       this.checkedFavorites = [];
     },
     createFolder() {
-      if (!this.isUltimate && !this.isCloud) {
+      if (!this.canCreateFolders) {
         this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }
@@ -426,7 +428,7 @@ export default {
       });
     },
     createSubfolder(parentFolder) {
-      if (!this.isUltimate && !this.isCloud) {
+      if (!this.canCreateFolders) {
         this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }

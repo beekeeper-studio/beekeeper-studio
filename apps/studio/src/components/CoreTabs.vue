@@ -440,6 +440,7 @@ export default Vue.extend({
         { event: AppEvent.openTableProperties, handler: this.openTableProperties },
         { event: 'loadSettings', handler: this.openSettings },
         { event: 'loadTableCreate', handler: this.loadTableCreate },
+        { event: AppEvent.loadSelectTop, handler: this.loadSelectTop },
         { event: 'loadRoutineCreate', handler: this.loadRoutineCreate },
         { event: 'favoriteClick', handler: this.favoriteClick },
         { event: 'exportTable', handler: this.openExportModal },
@@ -738,6 +739,15 @@ export default Vue.extend({
       result.unsavedChanges = false
       result.unsavedQueryText = optionalText
       await this.addTab(result)
+    },
+    async loadSelectTop(table) {
+      try {
+        const query = await this.connection.selectTopSql(table.name, 0, 100, [], [], table.schema, ['*'])
+        this.createQuery(query.replace(/\s+/g, ' ').trim())
+      } catch (ex) {
+        this.$noty.error(`An error occured while loading the SQL for '${table.name}' - ${ex.message}`)
+        throw ex
+      }
     },
     async loadTableCreate(table) {
       let method = null
