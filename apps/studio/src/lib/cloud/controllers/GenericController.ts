@@ -82,6 +82,8 @@ export abstract class GenericController<T extends HasId> {
   async import(qs: T[]): Promise<T[]> {
     const response = await this.axios.post(url(this.path, "import"), {
       [this.plural]: qs,
+    }, {
+      timeout: 20000
     });
     return res(response, this.plural);
   }

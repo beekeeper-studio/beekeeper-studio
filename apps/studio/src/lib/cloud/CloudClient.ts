@@ -112,12 +112,12 @@ export class CloudClient {
     this.memberships = new MembershipsController(this.axios)
 
     this.axios.interceptors.request.use(request => {
-      log.debug('REQ', request)
+      // log.debug('REQ', request)
       return request
     })
 
     this.axios.interceptors.response.use(response => {
-      log.debug('RES:', response)
+      // log.debug('RES:', response)
       return response
     })
 

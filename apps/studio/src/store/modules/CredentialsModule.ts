@@ -13,7 +13,8 @@ function genAppId() {
 
 export interface WSWithClient {
   workspace: IWorkspace,
-  client: CloudClient
+  client: CloudClient,
+  credentialId: number
 }
 
 export interface CredentialBlob {
@@ -70,11 +71,13 @@ export const CredentialsModule: Module<State, RootState> = {
       const c: CredentialBlob[] = state.credentials
       const result = c.flatMap((cred) => {
         return cred.workspaces.map((ws) => ({
-          workspace: ws, client: cred.client
+          workspace: ws,
+          client: cred.client,
+          credentialId: cred.id
         }))
       })
       return [
-        { workspace: LocalWorkspace, client: null },
+        { workspace: LocalWorkspace, client: null, credentialId: null },
         ...result
       ]
     },

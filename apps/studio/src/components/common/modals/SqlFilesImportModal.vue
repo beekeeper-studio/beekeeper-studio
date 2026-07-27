@@ -21,18 +21,33 @@
           Studio saved queries. Any changes to the original .sql files will not be
           reflected in Beekeeper Studio.
         </div>
-        <div class="file-picker-wrapper">
-          <file-picker
-            v-model="files"
-            multiple
-            button-text="Choose Files"
-            :options="{
-              filters: [
-                { name: 'SQL files (*.sql, *.txt)', extensions: ['sql', 'txt'] },
-                { name: 'All files', extensions: ['*'] },
-              ],
-            }"
-          />
+        <div class="form-group">
+          <label for="import-type">Import Type</label>
+          <select
+            name="importType"
+            class="form-control custom-select"
+            v-model="importType"
+            id="import-type"
+          >
+            <option value="single">Individual Files</option>
+            <option value="recursive">Recursive Directory</option>
+          </select>
+          <div class="file-picker-wrapper">
+            <file-picker
+              v-model="files"
+              :multiple="isIndividual"
+              :button-text="buttonText"
+              :options="dialogOptions"
+            />
+          </div>
+          <div class="form-group" v-if="isCloud && rootFolders.length > 0 && !isIndividual">
+            <label>Parent Folder</label>
+            <select v-model="parentId">
+              <option v-for="f in rootFolders" :key="f.id" :value="f.id">
+                {{ f.name }}
+              </option>
+            </select>
+          </div>
         </div>
       </div>
       <div class="vue-dialog-buttons">
@@ -59,6 +74,7 @@
 <script>
 import FilePicker from "@/components/common/form/FilePicker.vue";
 import { AppEvent } from "@/common/AppEvent";
+import { mapGetters, mapState } from 'vuex'
 import _ from 'lodash';
 
 export default {
@@ -69,14 +85,44 @@ export default {
   data() {
     return {
       files: [],
+      importType: 'single',
+      parentId: null
     };
   },
   computed: {
+    ...mapGetters(['isCloud', 'isUltimate']),
+    ...mapState('data/queryFolders', {'folders': 'items'}),
     modalName() {
       return this.name || "sql-files-import";
     },
     rootBindings() {
       return [{ event: AppEvent.promptSqlFilesImport, handler: this.open }];
+    },
+    buttonText() {
+      return this.importType === 'single' ? 'Choose Files' : 'Choose Directory'
+    },
+    isIndividual() {
+      return this.importType === 'single';
+    },
+    dialogOptions() {
+      const result = {
+        filters: null,
+        properties: null
+      }
+
+      if (this.isIndividual) {
+        result.filters = [
+          { name: 'SQL files (*.sql, *.txt)', extensions: ['sql', 'txt'] },
+          { name: 'All files', extensions: ['*'] },
+        ]
+      } else {
+        result.properties = [ 'openDirectory' ]
+      }
+
+      return result;
+    },
+    rootFolders() {
+      return this.folders.filter((f) => !f.parentId).sort((a, b) => a.name.localeCompare(b.name))
     },
   },
   methods: {
@@ -89,7 +135,12 @@ export default {
     },
     submit() {
       const files = _.isArray(this.files) ? this.files : [this.files];
-      this.$emit("submit", files);
+      const config = {
+        type: this.importType,
+        parentId: this.parentId,
+        paths: files
+      };
+      this.$emit("submit", config);
       this.close();
     },
   },
