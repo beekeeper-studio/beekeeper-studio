@@ -9,19 +9,19 @@ import { IndexColumn } from '@shared/lib/dialects/models';
 import type { Stream } from 'stream';
 
 export function camelCaseObjectKeys(data) {
+  if (_.isArray(data)) return data.map(camelCaseObjectKeys);
   if (_.isPlainObject(data)) {
-    const result = _.deepMapKeys(data, (_value, key) => _.camelCase(key))
-    return result
+    return _.deepMapKeys(data, (_value, key) => _.camelCase(key))
   }
   return data
 }
 
-// I don't know why different, but don't want to edit.
 export function snakeCaseObjectKeys(data) {
-  const result = _.mapKeys(data, (_value, key) => {
-    return _.snakeCase(key)
-  })
-  return result
+  if (_.isArray(data)) return data.map(snakeCaseObjectKeys);
+  if (_.isPlainObject(data)) {
+    return _.deepMapKeys(data, (_value, key) => _.snakeCase(key))
+  }
+  return data
 }
 
 export function parseIndexColumn(str: string): IndexColumn {
