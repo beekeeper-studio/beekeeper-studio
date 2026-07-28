@@ -6,11 +6,11 @@ import type {
 import { HasId } from "@/common/interfaces/IGeneric";
 import { IFolder } from "@/common/interfaces/IQueryFolder";
 
-export interface FolderNodeWithRef extends FolderNode {
+export interface ExtendedFolderNode extends FolderNode {
   ref: IFolder;
 }
 
-export interface ItemNodeWithRef<T extends HasId = HasId> extends ItemNode {
+export interface ExtendedItemNode<T extends HasId = HasId> extends ItemNode {
   ref: T;
   /** The key that references the parent folder. Connection and Query use keys
    * like `connectionFolderId` or `queryFolderId` to reference the parent folder. */
@@ -21,8 +21,8 @@ export interface ItemNodeWithRef<T extends HasId = HasId> extends ItemNode {
  * `children` holds references to the same node objects, so a flat array still
  * describes the whole tree.
  */
-export function buildTreeFolderNodes(folders: IFolder[]): FolderNodeWithRef[] {
-  const nodes: FolderNodeWithRef[] = folders.map((folder) => ({
+export function buildTreeFolderNodes(folders: IFolder[]): ExtendedFolderNode[] {
+  const nodes: ExtendedFolderNode[] = folders.map((folder) => ({
     id: `folder-${folder.id}` as FolderNode["id"],
     parentId: folder.parentId ? `folder-${folder.parentId}` : null,
     type: "folder",
@@ -32,7 +32,7 @@ export function buildTreeFolderNodes(folders: IFolder[]): FolderNodeWithRef[] {
     draggable: true,
   }));
 
-  const byId = new Map<FolderNode["id"], FolderNodeWithRef>();
+  const byId = new Map<FolderNode["id"], ExtendedFolderNode>();
   for (const node of nodes) {
     byId.set(node.id, node);
   }
@@ -54,7 +54,7 @@ export function buildTreeItemNodes<T extends HasId & { position?: number }>(
   items: T[],
   parentIdKey: string,
   nameKey: string
-): ItemNodeWithRef<T>[] {
+): ExtendedItemNode<T>[] {
   return items.map((item) => {
     const parentId = item[parentIdKey];
     return {
@@ -72,7 +72,7 @@ export function buildTreeItemNodes<T extends HasId & { position?: number }>(
 
 /** Transform {@link TreeNodeMoveEvent} into a consumable payload for the reorder action. */
 export function parseReorderTarget(event: TreeNodeMoveEvent) {
-  const target = event.target as ItemNodeWithRef | FolderNodeWithRef;
+  const target = event.target as ExtendedItemNode | ExtendedFolderNode;
 
   if (target.type === "folder") {
     if (event.position !== "inside") {

@@ -5,10 +5,10 @@ import { DataState, DataStore, mutateActions, mutationsFor } from "@/store/modul
 import { safely } from "@/store/modules/data/StoreHelpers";
 import { accessGrantMutations, localAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
-import { buildTreeFolderNodes, FolderNodeWithRef } from "@/common/utils/folderTree";
+import { buildTreeFolderNodes, ExtendedFolderNode } from "@/common/utils/folderTree";
 
 type State = DataState<IConnectionFolder> & {
-  nodes: FolderNodeWithRef[]
+  nodes: ExtendedFolderNode[]
 }
 
 export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = {

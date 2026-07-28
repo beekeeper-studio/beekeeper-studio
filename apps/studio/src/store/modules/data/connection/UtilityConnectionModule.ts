@@ -1,12 +1,12 @@
 import { IConnection } from "@/common/interfaces/IConnection";
 import { DataState, DataStore, mutationsFor, utilActionsFor } from "@/store/modules/data/DataModuleBase";
 import { accessGrantMutations, localAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
-import { ItemNodeWithRef, buildTreeItemNodes } from "@/common/utils/folderTree";
+import { ExtendedItemNode, buildTreeItemNodes } from "@/common/utils/folderTree";
 import _ from "lodash";
 import Vue from "vue";
 
 type State = DataState<IConnection> & {
-  nodes: ItemNodeWithRef<IConnection>[]
+  nodes: ExtendedItemNode<IConnection>[]
 }
 
 export const UtilConnectionModule: DataStore<IConnection, State> = {

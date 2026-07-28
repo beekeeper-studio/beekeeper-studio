@@ -3,12 +3,12 @@ import { havingCli } from "../StoreHelpers";
 import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import _ from 'lodash'
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
-import { buildTreeItemNodes, ItemNodeWithRef } from "@/common/utils/folderTree";
+import { buildTreeItemNodes, ExtendedItemNode } from "@/common/utils/folderTree";
 
 
 type State = DataState<ISavedQuery> & {
   listOptions?: Record<string, unknown>
-  nodes: ItemNodeWithRef<ISavedQuery>[]
+  nodes: ExtendedItemNode<ISavedQuery>[]
 };
 
 export const CloudQueryModule: DataStore<ISavedQuery, State> = {

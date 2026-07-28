@@ -2,11 +2,11 @@
 import { IConnectionFolder } from "@/common/interfaces/IQueryFolder";
 import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
-import { buildTreeFolderNodes, FolderNodeWithRef } from "@/common/utils/folderTree";
+import { buildTreeFolderNodes, ExtendedFolderNode } from "@/common/utils/folderTree";
 
 type State = DataState<IConnectionFolder> & {
   listOptions?: Record<string, unknown>
-  nodes: FolderNodeWithRef[]
+  nodes: ExtendedFolderNode[]
 };
 
 export const CloudConnectionFolderModule: DataStore<IConnectionFolder, State> = {

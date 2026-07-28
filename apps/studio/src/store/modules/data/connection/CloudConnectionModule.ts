@@ -2,12 +2,12 @@ import { ICloudSavedConnection } from "@/common/interfaces/IConnection";
 import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { havingCli } from "@/store/modules/data/StoreHelpers";
 import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
-import { buildTreeItemNodes, ItemNodeWithRef } from "@/common/utils/folderTree";
+import { buildTreeItemNodes, ExtendedItemNode } from "@/common/utils/folderTree";
 import _ from "lodash";
 
 type State = DataState<ICloudSavedConnection> & {
   listOptions?: Record<string, unknown>
-  nodes: ItemNodeWithRef<ICloudSavedConnection>[]
+  nodes: ExtendedItemNode<ICloudSavedConnection>[]
 };
 
 export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
