@@ -6,9 +6,7 @@ import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { itemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 
 
-type State = DataState<ISavedQuery> & {
-  listOptions?: Record<string, unknown>
-};
+type State = DataState<ISavedQuery>;
 
 export const CloudQueryModule: DataStore<ISavedQuery, State> = {
   namespaced: true,

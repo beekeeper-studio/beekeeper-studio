@@ -10,6 +10,7 @@ import { State as RootState } from '../../index'
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
 import Vue from "vue";
 import { Transport } from "@/common/transport";
+import { ListOptions } from "@/lib/cloud/controllers/GenericController";
 
 export interface QueryModuleState {
   queryFolders: IQueryFolder[]
@@ -26,6 +27,7 @@ export interface DataState<T> {
   pollError: ClientError
   filter?: string
   pendingSaveIds?: number[]
+  listOptions?: ListOptions
 }
 
 
@@ -232,10 +234,10 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
     async initialize(context) {
       await context.dispatch("load");
     },
-    async load(context, options?: { extraParams?: Record<string, unknown> }) {
+    async load(context) {
       context.commit("error", null)
       await safelyDo(context, async (cli) => {
-        const items: any[] = await cli[scope].list(undefined, options)
+        const items: any[] = await cli[scope].list(undefined, context.state.listOptions)
         // this is to account for when the store module changes
         const rightItems = items.filter((i) => i.workspaceId === context.rootState.workspaceId)
         if (rightItems.length === items.length) {
@@ -251,7 +253,7 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
           // we just re-fetch everything. It's pretty heavy handed
           // we don't call load because that updates `loading`.
 
-          const items = await cli[scope].list()
+          const items = await cli[scope].list(undefined, context.state.listOptions)
           // this is to account for when the store module changes
           const rightItems = items.filter((item) => item.workspaceId === context.rootState.workspaceId)
           if (rightItems.length === items.length) {

@@ -5,9 +5,7 @@ import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/d
 import { itemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 import _ from "lodash";
 
-type State = DataState<ICloudSavedConnection> & {
-  listOptions?: Record<string, unknown>
-};
+type State = DataState<ICloudSavedConnection>;
 
 export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
   namespaced: true,

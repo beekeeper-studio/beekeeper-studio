@@ -4,9 +4,7 @@ import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/
 import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import { folderNodeModule } from "@/store/modules/data/tree/FolderNodeModule";
 
-type State = DataState<IConnectionFolder> & {
-  listOptions?: Record<string, unknown>
-};
+type State = DataState<IConnectionFolder>;
 
 export const CloudConnectionFolderModule: DataStore<IConnectionFolder, State> = {
   namespaced: true,

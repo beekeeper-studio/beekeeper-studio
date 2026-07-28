@@ -7,6 +7,10 @@ interface Changes {
   deleted: number
 }
 
+export type ListOptions = {
+  where: Record<string, unknown>
+}
+
 // function unixtime(date:Date): number {
 //   return (date.getTime() / 1000)
 // }
@@ -20,11 +24,12 @@ export abstract class GenericController<T extends HasId> {
   name: string
   plural: string
 
-  async list(updatedSince?: number): Promise<T[]> {
-    const params = updatedSince ? {
-      updated_since: updatedSince,
-      slim: true
-    } : { slim: true }
+  async list(updatedSince?: number, options?: ListOptions): Promise<T[]> {
+    const params = {
+      slim: true,
+      ...(updatedSince ? { updated_since: updatedSince } : {}),
+      ...options?.where,
+    }
     const response = await this.axios.get(url(this.path), { params })
     return res(response, this.plural)
   }

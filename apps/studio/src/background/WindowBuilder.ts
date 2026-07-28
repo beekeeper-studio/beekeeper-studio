@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import path from 'path'
-import { BrowserWindow, globalShortcut, Rectangle } from "electron"
+import { BrowserWindow, globalShortcut, Menu, Rectangle } from "electron"
 import electron from 'electron'
 import platformInfo from '../common/platform_info'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
@@ -156,6 +156,15 @@ class BeekeeperWindow {
     if ((platformInfo.env.development && !platformInfo.env.test) || platformInfo.debugEnabled) {
       globalShortcut.register('F12', this.win.webContents.toggleDevTools.bind(this.win.webContents))
       globalShortcut.register('CommandOrControl+Shift+I', this.win.webContents.toggleDevTools.bind(this.win.webContents))
+
+      this.win.webContents.on('context-menu', (_event, params) => {
+        Menu.buildFromTemplate([
+          {
+            label: 'Inspect Element',
+            click: () => this.win?.webContents.inspectElement(params.x, params.y),
+          },
+        ]).popup({ window: this.win })
+      })
 
       this.win.webContents.openDevTools()
     }

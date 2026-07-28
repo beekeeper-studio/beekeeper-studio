@@ -5,9 +5,7 @@ import { folderNodeModule } from "@/store/modules/data/tree/FolderNodeModule";
 
 
 
-type State = DataState<IQueryFolder> & {
-  listOptions?: Record<string, unknown>
-};
+type State = DataState<IQueryFolder>;
 
 export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
   namespaced: true,
