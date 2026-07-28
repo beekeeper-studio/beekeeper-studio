@@ -1,13 +1,12 @@
 import { IQueryFolder } from "@/common/interfaces/IQueryFolder";
 import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
-import { buildTreeFolderNodes, ExtendedFolderNode } from "@/common/utils/folderTree";
+import { folderNodeModule } from "@/store/modules/data/tree/FolderNodeModule";
 
 
 
 type State = DataState<IQueryFolder> & {
   listOptions?: Record<string, unknown>
-  nodes: ExtendedFolderNode[]
 };
 
 export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
@@ -18,26 +17,20 @@ export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
     error: null,
     pollError: null,
     listOptions: undefined,
-    nodes: [],
   },
   mutations: mutationsFor<IQueryFolder>({
     ...accessGrantMutations(),
-    nodes(state, nodes) {
-      state.nodes = nodes
-    },
   }, { field: 'name', direction: 'asc'}),
+  modules: {
+    nodes: folderNodeModule,
+  },
   actions: actionsFor<IQueryFolder>('queryFolders', {
     ...cloudAccessGrantActions('queryFolders'),
     async poll() {
       // empty on purpose
     },
-    async afterMutate(context) {
-      const nodes = buildTreeFolderNodes(context.state.items)
-      for (const node of nodes) {
-        // Disable dragging "Team" and "Personal" folders
-        node.draggable = !!node.ref.parentId
-      }
-      context.commit('nodes', nodes)
+    async afterMutate(context, { type, data }) {
+      context.commit(`nodes/${type}`, data)
     },
   })
 }

@@ -2,12 +2,11 @@ import { ICloudSavedConnection } from "@/common/interfaces/IConnection";
 import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { havingCli } from "@/store/modules/data/StoreHelpers";
 import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
-import { buildTreeItemNodes, ExtendedItemNode } from "@/common/utils/folderTree";
+import { itemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 import _ from "lodash";
 
 type State = DataState<ICloudSavedConnection> & {
   listOptions?: Record<string, unknown>
-  nodes: ExtendedItemNode<ICloudSavedConnection>[]
 };
 
 export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
@@ -20,21 +19,20 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
     filter: undefined,
     pendingSaveIds: [],
     listOptions: undefined,
-    nodes: [],
   },
   mutations: mutationsFor<ICloudSavedConnection>({
     connectionFilter(state: State, str: string) {
       state.filter = str;
     },
     ...accessGrantMutations(),
-    nodes(state, nodes) {
-      state.nodes = nodes
-    },
   }, { field: 'name', direction: 'asc'}),
+  modules: {
+    nodes: itemNodeModule('connectionFolderId', 'name'),
+  },
   actions: actionsFor<ICloudSavedConnection>('connections', {
     ...cloudAccessGrantActions('connections'),
-    async afterMutate(context) {
-      context.commit('nodes', buildTreeItemNodes(context.state.items, 'connectionFolderId', 'name'))
+    async afterMutate(context, { type, data }) {
+      context.commit(`nodes/${type}`, data)
     },
     setConnectionFilter: _.debounce(function (context, filter) {
       context.commit('connectionFilter', filter);

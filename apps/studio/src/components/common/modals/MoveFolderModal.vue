@@ -81,7 +81,7 @@ import BaseModal from "@/components/common/modals/BaseModal.vue";
 import { AppEvent } from "@/common/AppEvent";
 import { IFolder } from "@/common/interfaces/IQueryFolder";
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
-import { buildTreeFolderNodes, getSelfAndAnscestors } from "@/common/utils/folderTree";
+import { buildFolderNodes, getSelfAndAnscestors } from "@/common/utils/folderTree";
 
 type Target =
   | { type: "connectionFolder"; value: IFolder }
@@ -113,7 +113,7 @@ export default Vue.extend({
       return [{ event: AppEvent.openMoveFolderModal, handler: this.open }];
     },
     folderNodes() {
-      return buildTreeFolderNodes(
+      return buildFolderNodes(
         this.folders.filter((folder: IFolder) => {
           // Prevent moving a team folder to a personal folder
           if (this.isCloud && !this.target.value.personal && folder.personal) {

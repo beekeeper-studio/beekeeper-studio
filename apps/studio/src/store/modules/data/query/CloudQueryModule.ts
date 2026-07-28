@@ -3,12 +3,11 @@ import { havingCli } from "../StoreHelpers";
 import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import _ from 'lodash'
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
-import { buildTreeItemNodes, ExtendedItemNode } from "@/common/utils/folderTree";
+import { itemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 
 
 type State = DataState<ISavedQuery> & {
   listOptions?: Record<string, unknown>
-  nodes: ExtendedItemNode<ISavedQuery>[]
 };
 
 export const CloudQueryModule: DataStore<ISavedQuery, State> = {
@@ -21,7 +20,6 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
     filter: undefined,
     pendingSaveIds: [],
     listOptions: undefined,
-    nodes: [],
   },
   mutations: mutationsFor<ISavedQuery>({
     // more mutations go here
@@ -29,14 +27,14 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
       state.filter = str;
     },
     ...accessGrantMutations(),
-    nodes(state, nodes) {
-      state.nodes = nodes
-    },
   }, { field: 'title', direction: 'asc'}),
+  modules: {
+    nodes: itemNodeModule('queryFolderId', 'title'),
+  },
   actions: actionsFor<ISavedQuery>('queries', {
     ...cloudAccessGrantActions('queries'),
-    async afterMutate(context) {
-      context.commit('nodes', buildTreeItemNodes(context.state.items, 'queryFolderId', 'title'))
+    async afterMutate(context, { type, data }) {
+      context.commit(`nodes/${type}`, data)
     },
     setSavedQueryFilter: _.debounce(function (context, filter) {
       context.commit('savedQueryFilter', filter);

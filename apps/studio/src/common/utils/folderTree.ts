@@ -21,16 +21,8 @@ export interface ExtendedItemNode<T extends HasId = HasId> extends ItemNode {
  * `children` holds references to the same node objects, so a flat array still
  * describes the whole tree.
  */
-export function buildTreeFolderNodes(folders: IFolder[]): ExtendedFolderNode[] {
-  const nodes: ExtendedFolderNode[] = folders.map((folder) => ({
-    id: `folder-${folder.id}` as FolderNode["id"],
-    parentId: folder.parentId ? `folder-${folder.parentId}` : null,
-    type: "folder",
-    name: folder.name,
-    ref: folder,
-    children: [],
-    draggable: true,
-  }));
+export function buildFolderNodes(folders: IFolder[]): ExtendedFolderNode[] {
+  const nodes: ExtendedFolderNode[] = folders.map(buildFolderNode);
 
   const byId = new Map<FolderNode["id"], ExtendedFolderNode>();
   for (const node of nodes) {
@@ -50,7 +42,19 @@ export function buildTreeFolderNodes(folders: IFolder[]): ExtendedFolderNode[] {
   return nodes;
 }
 
-export function buildTreeItemNodes<T extends HasId & { position?: number }>(
+export function buildFolderNode(folder: IFolder): ExtendedFolderNode {
+  return {
+    id: `folder-${folder.id}` as FolderNode["id"],
+    parentId: folder.parentId ? `folder-${folder.parentId}` : null,
+    type: "folder",
+    name: folder.name,
+    ref: folder,
+    children: [],
+    draggable: true,
+  };
+}
+
+export function buildItemNodes<T extends HasId & { position?: number }>(
   items: T[],
   parentIdKey: string,
   nameKey: string

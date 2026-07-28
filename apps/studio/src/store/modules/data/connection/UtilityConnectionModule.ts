@@ -1,13 +1,11 @@
 import { IConnection } from "@/common/interfaces/IConnection";
 import { DataState, DataStore, mutationsFor, utilActionsFor } from "@/store/modules/data/DataModuleBase";
 import { accessGrantMutations, localAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
-import { ExtendedItemNode, buildTreeItemNodes } from "@/common/utils/folderTree";
+import { itemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 import _ from "lodash";
 import Vue from "vue";
 
-type State = DataState<IConnection> & {
-  nodes: ExtendedItemNode<IConnection>[]
-}
+type State = DataState<IConnection>
 
 export const UtilConnectionModule: DataStore<IConnection, State> = {
   namespaced: true,
@@ -18,21 +16,20 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
     pollError: null,
     filter: undefined,
     pendingSaveIds: [],
-    nodes: []
   },
   mutations: mutationsFor<IConnection>({
     connectionFilter(state: DataState<IConnection>, str: string) {
       state.filter = str;
     },
     ...accessGrantMutations(),
-    nodes(state, nodes) {
-      state.nodes = nodes
-    },
   }),
+  modules: {
+    nodes: itemNodeModule('connectionFolderId', 'name'),
+  },
   actions: utilActionsFor<IConnection>('saved', {
     ...localAccessGrantActions(),
-    async afterMutate(context) {
-      context.commit('nodes', buildTreeItemNodes(context.state.items, 'connectionFolderId', 'name'))
+    async afterMutate(context, { type, data }) {
+      context.commit(`nodes/${type}`, data)
     },
     setConnectionFilter: _.debounce(function (context, filter) {
       context.commit('connectionFilter', filter);

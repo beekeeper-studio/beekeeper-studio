@@ -332,18 +332,18 @@ export default {
   },
   computed: {
     ...mapState(['workspaceId']),
+    ...mapState('data/connections/nodes', { itemNodes: 'items' }),
+    ...mapState('data/connectionFolders/nodes', { folderNodes: 'items' }),
     ...mapState('data/connections', {
       connectionsLoading: 'loading',
       connectionsError: 'error',
       connectionFilter: 'filter',
       pendingSaveIds: 'pendingSaveIds',
-      itemNodes: 'nodes',
     }),
     ...mapState('data/connectionFolders', {
       folders: 'items',
       foldersLoading: 'loading',
       foldersError: 'error',
-      folderNodes: 'nodes',
     }),
     ...mapGetters({
       usedConfigs: 'data/usedconnections/orderedUsedConfigs',

@@ -1,6 +1,6 @@
 import {
-  buildTreeFolderNodes,
-  buildTreeItemNodes,
+  buildFolderNodes,
+  buildItemNodes,
   getDescendants,
   getSelfAndAnscestors,
   parseReorderTarget,
@@ -11,10 +11,10 @@ function folder(id: number, name: string, parentId: number | null): IFolder {
   return { id, name, parentId, personal: false };
 }
 
-describe("buildTreeFolderNodes", () => {
+describe("buildFolderNodes", () => {
   it("returns one node per folder, keeping the folder reference", () => {
     const folders = [folder(1, "Root A", null), folder(2, "Root B", null)];
-    const tree = buildTreeFolderNodes(folders);
+    const tree = buildFolderNodes(folders);
     expect(tree).toHaveLength(2);
     expect(tree[0]).toMatchObject({
       id: "folder-1",
@@ -28,7 +28,7 @@ describe("buildTreeFolderNodes", () => {
 
   it("links children as references to the same node objects", () => {
     const folders = [folder(1, "Root", null), folder(2, "Child", 1)];
-    const tree = buildTreeFolderNodes(folders);
+    const tree = buildFolderNodes(folders);
     const [root, child] = tree;
     expect(child.parentId).toEqual("folder-1");
     expect(root.children).toHaveLength(1);
@@ -37,7 +37,7 @@ describe("buildTreeFolderNodes", () => {
   });
 
   it("keeps every folder in the flat array regardless of depth", () => {
-    const tree = buildTreeFolderNodes([
+    const tree = buildFolderNodes([
       folder(1, "Root", null),
       folder(2, "Child", 1),
       folder(3, "Grandchild", 2),
@@ -53,7 +53,7 @@ describe("buildTreeFolderNodes", () => {
   });
 
   it("leaves folders whose parent is missing without a parent link", () => {
-    const tree = buildTreeFolderNodes([
+    const tree = buildFolderNodes([
       folder(1, "Root", null),
       folder(2, "Lost", 999),
     ]);
@@ -62,14 +62,14 @@ describe("buildTreeFolderNodes", () => {
   });
 });
 
-describe("buildTreeItemNodes", () => {
+describe("buildItemNodes", () => {
   it("reads the parent folder from the given key", () => {
     const items = [
       { id: 1, title: "One", queryFolderId: 5, position: 2 },
       { id: 2, title: "Two", queryFolderId: null, position: 1 },
       { id: 3, title: "Three", position: 1 },
     ];
-    const nodes = buildTreeItemNodes(items, "queryFolderId", "title");
+    const nodes = buildItemNodes(items, "queryFolderId", "title");
     expect(nodes.map((node) => node.parentId)).toEqual([
       "folder-5",
       null,
@@ -80,7 +80,7 @@ describe("buildTreeItemNodes", () => {
   });
 
   it("defaults a missing position to 0", () => {
-    const [node] = buildTreeItemNodes([{ id: 1 }], "queryFolderId", "title");
+    const [node] = buildItemNodes([{ id: 1 }], "queryFolderId", "title");
     expect(node.position).toEqual(0);
   });
 });
@@ -155,11 +155,11 @@ describe("getDescendants", () => {
 });
 
 describe("parseReorderTarget", () => {
-  const folderNodes = buildTreeFolderNodes([
+  const folderNodes = buildFolderNodes([
     folder(1, "Work", null),
     folder(2, "Staging", 1),
   ]);
-  const itemNodes = buildTreeItemNodes(
+  const itemNodes = buildItemNodes(
     [
       { id: 10, name: "Local", connectionFolderId: null, position: 1 },
       { id: 11, name: "Prod", connectionFolderId: 2, position: 2 },

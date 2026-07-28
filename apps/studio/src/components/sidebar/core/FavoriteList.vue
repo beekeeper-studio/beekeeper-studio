@@ -213,8 +213,10 @@ export default {
     },
     ...mapGetters('data/queries', {'filteredQueries': 'filteredQueries'}),
     ...mapState('tabs', {'activeTab': 'active'}),
-    ...mapState('data/queries', {'queriesLoading': 'loading', 'queriesError': 'error', 'savedQueryFilter': 'filter', 'pendingSaveIds': 'pendingSaveIds', 'itemNodes': 'nodes'}),
-    ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error', 'folderNodes': 'nodes'}),
+    ...mapState('data/queries/nodes', {'itemNodes': 'items'}),
+    ...mapState('data/queryFolders/nodes', {'folderNodes': 'items'}),
+    ...mapState('data/queries', {'queriesLoading': 'loading', 'queriesError': 'error', 'savedQueryFilter': 'filter', 'pendingSaveIds': 'pendingSaveIds'}),
+    ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
     filterQuery: {
       get() {
         return this.savedQueryFilter;

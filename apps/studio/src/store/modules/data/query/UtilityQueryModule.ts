@@ -3,11 +3,9 @@ import _ from 'lodash'
 import Vue from 'vue'
 import { mutationsFor, DataState, DataStore, utilActionsFor } from '../DataModuleBase'
 import { accessGrantMutations, localAccessGrantActions } from '@/store/modules/data/access_grant/accessGrantStore'
-import { buildTreeItemNodes, ExtendedItemNode } from '@/common/utils/folderTree'
+import { itemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 
-type State = DataState<TransportFavoriteQuery> & {
-  nodes: ExtendedItemNode<TransportFavoriteQuery>[]
-};
+type State = DataState<TransportFavoriteQuery>
 
 export const UtilQueryModule: DataStore<TransportFavoriteQuery, State> = {
   namespaced: true,
@@ -18,7 +16,6 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, State> = {
     pollError: null,
     filter: undefined, // maybe this can be more advanced? date filter?
     pendingSaveIds: [],
-    nodes: []
   },
   mutations: mutationsFor<TransportFavoriteQuery>({
     // more mutations go here
@@ -26,14 +23,14 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, State> = {
       state.filter = str;
     },
     ...accessGrantMutations(),
-    nodes(state, nodes) {
-      state.nodes = nodes
-    },
   }, { field: 'title', direction : 'asc'}),
+  modules: {
+    nodes: itemNodeModule('queryFolderId', 'title'),
+  },
   actions: utilActionsFor<TransportFavoriteQuery>('query', {
     ...localAccessGrantActions(),
-    async afterMutate(context) {
-      context.commit('nodes', buildTreeItemNodes(context.state.items, 'queryFolderId', 'title'))
+    async afterMutate(context, { type, data }) {
+      context.commit(`nodes/${type}`, data)
     },
     setSavedQueryFilter: _.debounce(function (context, filter) {
       context.commit('savedQueryFilter', filter);

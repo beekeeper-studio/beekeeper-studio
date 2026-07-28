@@ -5,11 +5,9 @@ import { DataState, DataStore, mutateActions, mutationsFor } from "@/store/modul
 import { safely } from "@/store/modules/data/StoreHelpers";
 import { accessGrantMutations, localAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
-import { buildTreeFolderNodes, ExtendedFolderNode } from "@/common/utils/folderTree";
+import { folderNodeModule } from "@/store/modules/data/tree/FolderNodeModule";
 
-type State = DataState<IQueryFolder> & {
-  nodes: ExtendedFolderNode[]
-}
+type State = DataState<IQueryFolder>
 
 export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
   namespaced: true,
@@ -18,20 +16,19 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
     loading: false,
     error: null,
     pollError: null,
-    nodes: [],
   },
   mutations: {
     ...mutationsFor<IQueryFolder>({}, { field: 'name', direction: 'asc' }),
     ...accessGrantMutations(),
-    nodes(state, nodes) {
-      state.nodes = nodes
-    },
+  },
+  modules: {
+    nodes: folderNodeModule,
   },
   actions: {
     ...localAccessGrantActions(),
     ...mutateActions<IQueryFolder>(),
-    async afterMutate(context) {
-      context.commit('nodes', buildTreeFolderNodes(context.state.items))
+    async afterMutate(context, { type, data }) {
+      context.commit(`nodes/${type}`, data)
     },
     async initialize(context) {
       context.dispatch('load');
