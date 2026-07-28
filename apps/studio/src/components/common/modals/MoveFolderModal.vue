@@ -4,7 +4,7 @@
       <template v-if="target">
         Move
         <span class="target-name">
-          <i class="material-icons" :data-target-type="target.type">folder</i>
+          <i class="material-icons">folder</i>
           {{ target.value.name }}
         </span>
         to
@@ -202,11 +202,7 @@ export default Vue.extend({
   display: flex;
   align-items: center;
   gap: 0.25rem;
-
-  [data-target-type="connectionFolder"],
-  [data-target-type="queryFolder"] {
-    color: var(--text-lighter);
-  }
+  color: var(--text-lighter);
 }
 
 .move-folder-row {
