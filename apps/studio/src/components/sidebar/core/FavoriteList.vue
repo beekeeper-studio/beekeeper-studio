@@ -166,6 +166,7 @@ import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
 import { AppEvent } from '@/common/AppEvent'
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
 import EditableText from '@/components/common/EditableText.vue'
+import { parseReorderTarget } from '@/common/utils/folderTree'
 
 export default {
   components: { SidebarLoading, ErrorAlert, ExpiredFolderAlert, FavoriteListItem, Tree, TreeFolder, EditableText },
@@ -271,8 +272,8 @@ export default {
   },
   methods: {
     ...mapActions({
-      moveQueryFolder: 'data/queryFolders/move',
-      moveQuery: 'data/queries/move',
+      saveFolder: 'data/queryFolders/save',
+      reorderQuery: 'data/queries/reorder',
     }),
     setExpandedIds(expandedIds) {
       this.expandedIds = expandedIds
@@ -441,20 +442,27 @@ export default {
       this.$bks.openMenu({ event, item: folder, options })
     },
     /** @param event {import("@beekeeperstudio/ui-kit").TreeNodeMoveEvent} */
-    async handleTreeNodeMove({ source, target, position }) {
+    async handleTreeNodeMove(event) {
+      const source = event.source;
+      const target = event.target;
       try {
-        if (source.type === 'folder') {
-          // Folders have no ordering, so they land inside whatever folder the drop points at
-          let targetId = target.ref.queryFolderId ?? null
-          if (target.type === 'folder') {
-            targetId = target.ref.id
-          }
-          await this.moveQueryFolder({ sourceId: source.ref.id, targetId, position: 'inside' })
-        } else {
-          await this.moveQuery({ sourceId: source.ref.id, targetId: target.ref.id, position })
+        if (source.type === 'folder' && target.type === 'folder') {
+          await this.saveFolder({ ...source.ref, parentId: target.ref.id });
+        } else if (source.type === 'item') {
+          const { parentId, position } = parseReorderTarget(event);
+          await this.reorderQuery({
+            item: source.ref,
+            queryFolderId: parentId,
+            position,
+          });
         }
       } catch (ex) {
-        this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
+        let errorMessage = `Move error: ${ex.userMessage ?? ex.message}`;
+        if (ex.message.includes("[team_folder_in_personal_tree]")) {
+          errorMessage =
+            "You can not move this to your personal folder because it is shared with other workspace members.";
+        }
+        this.$noty.error(errorMessage);
       }
     },
     share(folder) {

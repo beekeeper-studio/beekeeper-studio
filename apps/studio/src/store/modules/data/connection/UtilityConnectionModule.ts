@@ -2,7 +2,6 @@ import { IConnection } from "@/common/interfaces/IConnection";
 import { DataState, DataStore, mutationsFor, utilActionsFor } from "@/store/modules/data/DataModuleBase";
 import { accessGrantMutations, localAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import { buildTreeItemNodes } from "@/common/utils/folderTree";
-import { itemMoveActions } from "@/store/modules/data/move/moveStore";
 import _ from "lodash";
 import Vue from "vue";
 
@@ -26,7 +25,6 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
   }),
   actions: utilActionsFor<IConnection>('saved', {
     ...localAccessGrantActions(),
-    ...itemMoveActions('connectionFolderId'),
     setConnectionFilter: _.debounce(function (context, filter) {
       context.commit('connectionFilter', filter);
     }, 500),

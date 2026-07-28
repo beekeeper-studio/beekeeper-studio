@@ -4,7 +4,6 @@ import Vue from 'vue'
 import { mutationsFor, DataState, DataStore, utilActionsFor } from '../DataModuleBase'
 import { accessGrantMutations, localAccessGrantActions } from '@/store/modules/data/access_grant/accessGrantStore'
 import { buildTreeItemNodes } from '@/common/utils/folderTree'
-import { itemMoveActions } from '@/store/modules/data/move/moveStore'
 
 export const UtilQueryModule: DataStore<TransportFavoriteQuery, DataState<TransportFavoriteQuery>> = {
   namespaced: true,
@@ -25,7 +24,6 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, DataState<Transp
   }, { field: 'title', direction : 'asc'}),
   actions: utilActionsFor<TransportFavoriteQuery>('query', {
     ...localAccessGrantActions(),
-    ...itemMoveActions('queryFolderId'),
     setSavedQueryFilter: _.debounce(function (context, filter) {
       context.commit('savedQueryFilter', filter);
     }, 500),

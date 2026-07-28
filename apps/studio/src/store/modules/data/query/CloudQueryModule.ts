@@ -4,7 +4,6 @@ import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/d
 import _ from 'lodash'
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { buildTreeItemNodes } from "@/common/utils/folderTree";
-import { itemMoveActions } from "@/store/modules/data/move/moveStore";
 
 
 type State = DataState<ISavedQuery>
@@ -28,7 +27,6 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
   }, { field: 'title', direction: 'asc'}),
   actions: actionsFor<ISavedQuery>('queries', {
     ...cloudAccessGrantActions('queries'),
-    ...itemMoveActions('queryFolderId'),
     setSavedQueryFilter: _.debounce(function (context, filter) {
       context.commit('savedQueryFilter', filter);
     }, 500),

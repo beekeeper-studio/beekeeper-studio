@@ -3,6 +3,7 @@ import {
   buildTreeItemNodes,
   getDescendants,
   getSelfAndAnscestors,
+  parseReorderTarget,
 } from "@/common/utils/folderTree";
 import { IFolder } from "@/common/interfaces/IQueryFolder";
 
@@ -150,5 +151,61 @@ describe("getDescendants", () => {
     ] as IFolder[];
 
     expect(() => getDescendants(1, list)).not.toThrow();
+  });
+});
+
+describe("parseReorderTarget", () => {
+  const folderNodes = buildTreeFolderNodes([
+    folder(1, "Work", null),
+    folder(2, "Staging", 1),
+  ]);
+  const itemNodes = buildTreeItemNodes(
+    [
+      { id: 10, name: "Local", connectionFolderId: null, position: 1 },
+      { id: 11, name: "Prod", connectionFolderId: 2, position: 2 },
+    ],
+    "connectionFolderId",
+    "name"
+  );
+
+  it("lands first inside the folder it was dropped on", () => {
+    expect(
+      parseReorderTarget({
+        source: itemNodes[0],
+        target: folderNodes[1],
+        position: "inside",
+      })
+    ).toEqual({ parentId: 2, position: { before: null } });
+  });
+
+  it("inherits the folder of the sibling it lands after", () => {
+    expect(
+      parseReorderTarget({
+        source: itemNodes[0],
+        target: itemNodes[1],
+        position: "after",
+      })
+    ).toEqual({ parentId: 2, position: { after: 11 } });
+  });
+
+  it("inherits the top level from a sibling that has no folder", () => {
+    expect(
+      parseReorderTarget({
+        source: itemNodes[1],
+        target: itemNodes[0],
+        position: "before",
+      })
+    ).toEqual({ parentId: null, position: { before: 10 } });
+  });
+
+  it("refuses to order an item relative to a folder", () => {
+    // Folders have no position, so before/after has no meaning against one.
+    expect(() =>
+      parseReorderTarget({
+        source: itemNodes[0],
+        target: folderNodes[1],
+        position: "before",
+      })
+    ).toThrow();
   });
 });

@@ -276,6 +276,7 @@ import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
 import EditableText from '@/components/common/EditableText.vue'
 import Noty from 'noty'
+import { parseReorderTarget } from '@/common/utils/folderTree'
 
 const log = rawLog.scope('connection-sidebar');
 
@@ -458,8 +459,8 @@ export default {
   },
   methods: {
     ...mapActions({
-      moveConnectionFolder: 'data/connectionFolders/move',
-      moveConnection: 'data/connections/move',
+      saveFolder: 'data/connectionFolders/save',
+      reorderConnection: 'data/connections/reorder',
     }),
     setExpandedIds(expandedIds) {
       this.expandedIds = expandedIds
@@ -600,26 +601,27 @@ export default {
       this.$bks.openMenu({ event, item: folder, options })
     },
     /** @param event {import("@beekeeperstudio/ui-kit").TreeNodeMoveEvent} */
-    async handleTreeNodeMove({ source, target, position }) {
+    async handleTreeNodeMove(event) {
+      const source = event.source;
+      const target = event.target;
       try {
-        if (source.type === 'folder') {
-          // Folders have no ordering, so they land inside whatever folder the drop points at
-          let targetId = target.ref.connectionFolderId ?? null
-          if (target.type === 'folder') {
-            targetId = target.ref.id
-          }
-          await this.moveConnectionFolder({ sourceId: source.ref.id, targetId, position: 'inside' })
-        } else {
-          await this.moveConnection({ sourceId: source.ref.id, targetId: target.ref.id, position })
+        if (source.type === 'folder' && target.type === 'folder') {
+          await this.saveFolder({ ...source.ref, parentId: target.ref.id });
+        } else if (source.type === 'item') {
+          const { parentId, position } = parseReorderTarget(event);
+          await this.reorderConnection({
+            item: source.ref,
+            connectionFolderId: parentId,
+            position,
+          });
         }
       } catch (ex) {
-        if(ex.message.includes("[team_folder_in_personal_tree]")) {
-          this.$noty.error(
-            "You can't move this to your personal folder because it is shared with other workspace members."
-          );
-        } else {
-          this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
+        let errorMessage = `Move error: ${ex.userMessage ?? ex.message}`;
+        if (ex.message.includes("[team_folder_in_personal_tree]")) {
+          errorMessage =
+            "You can not move this to your personal folder because it is shared with other workspace members.";
         }
+        this.$noty.error(errorMessage);
       }
     },
     share(folder) {

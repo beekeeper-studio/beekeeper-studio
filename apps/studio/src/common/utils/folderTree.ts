@@ -1,4 +1,8 @@
-import type { FolderNode, ItemNode } from "@beekeeperstudio/ui-kit";
+import type {
+  FolderNode,
+  ItemNode,
+  TreeNodeMoveEvent,
+} from "@beekeeperstudio/ui-kit";
 import { HasId } from "@/common/interfaces/IGeneric";
 import { IFolder } from "@/common/interfaces/IQueryFolder";
 
@@ -8,6 +12,9 @@ export interface FolderNodeWithRef extends FolderNode {
 
 export interface ItemNodeWithRef<T extends HasId = HasId> extends ItemNode {
   ref: T;
+  /** The key that references the parent folder. Connection and Query use keys
+   * like `connectionFolderId` or `queryFolderId` to reference the parent folder. */
+  parentIdKey: string;
 }
 
 /**
@@ -53,6 +60,7 @@ export function buildTreeItemNodes<T extends HasId & { position?: number }>(
     return {
       id: `item-${item.id}` as ItemNode["id"],
       parentId: parentId ? `folder-${parentId}` : null,
+      parentIdKey,
       type: "item",
       name: item[nameKey] ?? "",
       position: item.position ?? 0,
@@ -60,6 +68,34 @@ export function buildTreeItemNodes<T extends HasId & { position?: number }>(
       draggable: true,
     };
   });
+}
+
+/** Transform {@link TreeNodeMoveEvent} into a consumable payload for the reorder action. */
+export function parseReorderTarget(event: TreeNodeMoveEvent) {
+  const target = event.target as ItemNodeWithRef | FolderNodeWithRef;
+
+  if (target.type === "folder") {
+    if (event.position !== "inside") {
+      throw new Error(
+        "Items can only be reordered within their own list, not moved relative to folders."
+      );
+    }
+
+    return { parentId: target.ref.id, position: { before: null } } as const;
+  }
+
+  if (target.type === "item") {
+    const parentId: number = target.ref[target.parentIdKey];
+    const targetId = target.ref.id;
+
+    if (event.position === "after") {
+      return { parentId, position: { after: targetId } } as const;
+    }
+
+    return { parentId, position: { before: targetId } } as const;
+  }
+
+  throw new Error(`Unknown target type "${target["type"]}"`);
 }
 
 export function getSelfAndAnscestors(

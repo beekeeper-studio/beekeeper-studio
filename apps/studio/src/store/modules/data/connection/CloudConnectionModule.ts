@@ -3,7 +3,6 @@ import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/
 import { havingCli } from "@/store/modules/data/StoreHelpers";
 import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import { buildTreeItemNodes } from "@/common/utils/folderTree";
-import { itemMoveActions } from "@/store/modules/data/move/moveStore";
 import _ from "lodash";
 
 type State = DataState<ICloudSavedConnection>
@@ -26,7 +25,6 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
   }, { field: 'name', direction: 'asc'}),
   actions: actionsFor<ICloudSavedConnection>('connections', {
     ...cloudAccessGrantActions('connections'),
-    ...itemMoveActions('connectionFolderId'),
     setConnectionFilter: _.debounce(function (context, filter) {
       context.commit('connectionFilter', filter);
     }, 500),
