@@ -67,6 +67,7 @@
             </div>
           </div>
         </div>
+        <expired-folder-alert v-if="!canCreateFolders && folders.length > 0" />
         <error-alert
           v-if="error"
           :error="error"
@@ -157,16 +158,17 @@
 
 <script>
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
+import { SmartLocalStorage } from '@/common/LocalStorage'
 import { mapActions, mapGetters, mapState } from 'vuex'
 import SidebarLoading from '../../common/SidebarLoading.vue'
 import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
 import { AppEvent } from '@/common/AppEvent'
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
-import { SmartLocalStorage } from '@/common/LocalStorage'
 import EditableText from '@/components/common/EditableText.vue'
 
 export default {
-  components: { SidebarLoading, ErrorAlert, FavoriteListItem, Tree, TreeFolder, EditableText },
+  components: { SidebarLoading, ErrorAlert, ExpiredFolderAlert, FavoriteListItem, Tree, TreeFolder, EditableText },
   data: function () {
     return {
       checkedFavorites: [],
@@ -202,7 +204,7 @@ export default {
   },
   computed: {
     ...mapState(['workspaceId']),
-    ...mapGetters(['workspace', 'isCloud', 'isUltimate']),
+    ...mapGetters(['workspace', 'isCloud', 'isUltimate', 'canCreateFolders']),
     // v1 was a single workspace-agnostic map, so its expanded state can't be
     // attributed to a workspace — it is dropped rather than migrated.
     expandedStorageKey() {
@@ -343,7 +345,7 @@ export default {
       this.checkedFavorites = [];
     },
     createFolder() {
-      if (!this.isUltimate && !this.isCloud) {
+      if (!this.canCreateFolders) {
         this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }

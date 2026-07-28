@@ -135,6 +135,9 @@
                 </x-button> -->
               </div>
             </div>
+            <expired-folder-alert
+              v-if="!canCreateFolders && folders.length > 0"
+            />
             <error-alert
               :error="error"
               v-if="error"
@@ -265,6 +268,7 @@ import { mapState, mapGetters, mapActions } from 'vuex'
 import ConnectionListItem from './connection/ConnectionListItem.vue'
 import SidebarLoading from '@/components/common/SidebarLoading.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
 import Split from 'split.js'
 import { AppEvent } from '@/common/AppEvent'
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
@@ -283,6 +287,8 @@ export default {
     Tree,
     TreeFolder,
     EditableText,
+    ExpiredFolderAlert,
+    SidebarFolder,
     SidebarSortButtons,
     WorkspaceSidebar,
   },
@@ -344,6 +350,7 @@ export default {
       settings: 'settings/settings',
       isCloud: 'isCloud',
       isUltimate: 'isUltimate',
+      canCreateFolders: 'canCreateFolders',
       activeWorkspaces: 'credentials/activeWorkspaces',
       pinnedConnections: 'pinnedConnections/pinnedConnections',
       filteredConnections: 'data/connections/filteredConnections',
@@ -513,7 +520,7 @@ export default {
       return `label-${color}`
     },
     createFolder() {
-      if (!this.isUltimate && !this.isCloud) {
+      if (!this.canCreateFolders) {
         this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }
@@ -787,5 +794,8 @@ export default {
       top: 60%;
     }
   }
+}
+::v-deep .alert.expired-folder-alert {
+  margin-inline: 0.8rem;
 }
 </style>
