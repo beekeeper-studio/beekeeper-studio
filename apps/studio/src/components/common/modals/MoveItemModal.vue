@@ -5,9 +5,9 @@
         Move
         <span class="target-name">
           <i class="material-icons" :data-target-type="target.type">
-            {{ targetIcon }}
+            {{ target.type === 'query' ? 'code' : 'link' }}
           </i>
-          {{ targetName }}
+          {{ target.type === 'query' ? target.value.title : target.value.name }}
         </span>
         to
       </template>
@@ -30,14 +30,13 @@
         >
         <i class="move-folder-icon material-icons">subdirectory_arrow_left</i>
         <span class="move-folder-name">(Top level)</span>
-        <span v-if="currentFolderId === null" class="current-location">
+        <span v-if="parentId === null" class="current-location">
           (current location)
         </span>
       </label>
 
       <tree
-        :folders="filteredFolderNodes"
-        :items="itemNodes"
+        :folders="folderNodes"
         :expanded-ids.sync="expandedIds"
       >
         <template #folder="{ props }">
@@ -48,21 +47,17 @@
             :class="{
               selected: selectedFolderId === props.node.ref.id,
               empty: !props.node.children?.length,
-              current: currentFolderId === props.node.ref.id,
+              invalid: !isValidTarget(props.node.ref.id),
             }"
           >
             <tree-folder v-bind="props" tag="span" />
             <span
-              v-if="currentFolderId === props.node.ref.id"
+              v-if="parentId === props.node.ref.id"
               class="current-location"
             >
               (current location)
             </span>
           </button>
-        </template>
-        <!-- Items are only here so folder counts include them. -->
-        <template #item>
-          <span />
         </template>
       </tree>
     </template>
@@ -73,7 +68,7 @@
       <button
         class="btn btn-primary"
         type="submit"
-        :disabled="!canMove || saving"
+        :disabled="!isValidTarget(selectedFolderId) || saving"
       >
         Move
       </button>
@@ -83,26 +78,24 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { mapActions, mapGetters, mapState } from "vuex";
+import { mapGetters } from "vuex";
 import BaseModal from "@/components/common/modals/BaseModal.vue";
 import { AppEvent } from "@/common/AppEvent";
 import { IConnection } from "@/common/interfaces/IConnection";
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { IFolder } from "@/common/interfaces/IQueryFolder";
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
-import { FolderNodeWithRef, getSelfAndAnscestors } from "@/common/utils/folderTree";
+import { getSelfAndAnscestors } from "@/common/utils/folderTree";
 
 type Target =
   | { type: "connection"; value: IConnection }
-  | { type: "query"; value: ISavedQuery }
-  | { type: "connectionFolder"; value: IFolder }
-  | { type: "queryFolder"; value: IFolder };
+  | { type: "query"; value: ISavedQuery };
 
 export default Vue.extend({
   components: { BaseModal, Tree, TreeFolder },
   data() {
     return {
-      modalName: "move-to-modal",
+      modalName: "move-item-modal",
       target: null as Target | null,
       selectedFolderId: null as number | null,
       saving: false,
@@ -110,107 +103,62 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapState("data/connectionFolders", { connectionFolders: "items" }),
-    ...mapState("data/queryFolders", { queryFolders: "items" }),
     ...mapGetters(["isCloud"]),
-    ...mapGetters({
-      connectionFolderNodes: "data/connectionFolders/nodes",
-      queryFolderNodes: "data/queryFolders/nodes",
-      connectionItemNodes: "data/connections/nodes",
-      queryItemNodes: "data/queries/nodes",
-    }),
-    rootBindings() {
-      return [{ event: AppEvent.openMoveFileModal, handler: this.open }];
-    },
-    isFolder(): boolean {
-      return (
-        this.target?.type === "connectionFolder" ||
-        this.target?.type === "queryFolder"
-      );
-    },
-    isTeamFolder() {
-      return this.isCloud && this.isFolder && !this.target.value.personal;
-    },
-    isQueryTarget(): boolean {
-      return (
-        this.target?.type === "query" || this.target?.type === "queryFolder"
-      );
-    },
     folders() {
-      if (!this.target) return [];
-      return this.isQueryTarget ? this.queryFolders : this.connectionFolders;
-    },
-    itemNodes() {
       if (!this.target) {
         return [];
       }
-      if (this.isQueryTarget) {
-        return this.queryItemNodes;
+      if (this.target.type === "query") {
+        return this.$store.state["data/queryFolders"].items;
       }
-      return this.connectionItemNodes;
+      return this.$store.state["data/connectionFolders"].items;
     },
     folderNodes() {
       if (!this.target) {
         return [];
       }
-      if (this.isQueryTarget) {
-        return this.queryFolderNodes;
+      if (this.target.type === "query") {
+        return this.$store.getters["data/queryFolders/nodes"];
       }
-      return this.connectionFolderNodes;
+      return this.$store.getters["data/connectionFolders/nodes"];
     },
-    filteredFolderNodes() {
-      return this.folderNodes.filter((node: FolderNodeWithRef) => {
-        // Prevent moving a team folder to a personal folder
-        if (this.isTeamFolder && node.ref.personal) {
-          return false;
-        }
-
-        // Prevent moving a folder to its own subfolders
-        if (this.isFolder && node.ref.parentId === this.target.value.id) {
-          return false;
-        }
-
-        return true;
-      });
+    rootBindings() {
+      return [{ event: AppEvent.openMoveFileModal, handler: this.open }];
     },
-    targetIcon(): string {
-      if (!this.target) return "";
-      if (this.isFolder) return "folder";
-      return this.target.type === "query" ? "code" : "link";
-    },
-    targetName(): string {
-      if (!this.target) return "";
-      return this.target.type === "query"
-        ? this.target.value.title
-        : this.target.value.name;
-    },
-    currentFolderId(): number | null {
-      if (!this.target) return null;
-      if (this.isFolder) return this.target.value.parentId ?? null;
-      return (
-        (this.target.type === "query"
-          ? this.target.value.queryFolderId
-          : this.target.value.connectionFolderId) ?? null
-      );
-    },
-    canMove(): boolean {
-      return this.selectedFolderId !== this.currentFolderId;
+    parentId(): number | null {
+      if (this.target.type === "query") {
+        return this.target.value.queryFolderId;
+      }
+      return this.target.value.connectionFolderId;
     },
   },
   methods: {
-    ...mapActions({
-      moveConnectionFolder: "data/connectionFolders/move",
-      moveConnection: "data/connections/move",
-      moveQueryFolder: "data/queryFolders/move",
-      moveQuery: "data/queries/move",
-    }),
+    async save() {
+      if (this.target.type === "query") {
+        await this.$store.dispatch("data/queries/reorder", {
+          item: this.target.value,
+          queryFolderId: this.selectedFolderId,
+          position: { before: null },
+        });
+      } else if (this.target.type === "connection") {
+        await this.$store.dispatch("data/connections/reorder", {
+          item: this.target.value,
+          connectionFolderId: this.selectedFolderId,
+          position: { before: null },
+        });
+      } else {
+        throw new Error(
+          `Cannot save: unsupported target type "${this.target.type}"`
+        );
+      }
+    },
     open(target: Target) {
       this.target = target;
-      this.selectedFolderId = this.currentFolderId;
+      this.selectedFolderId = this.parentId;
 
       // Expand anscestors
       this.expandedIds = getSelfAndAnscestors(
-        this.currentFolderId,
+        this.parentId,
         this.folders
       ).map((f) => `folder-${f.id}`);
 
@@ -223,31 +171,21 @@ export default Vue.extend({
       }
     },
     async move() {
-      if (!this.canMove || this.saving) return;
+      if (!this.isValidTarget(this.selectedFolderId) || this.saving) {
+        return;
+      }
       this.saving = true;
-      const payload = {
-        sourceId: this.target.value.id,
-        targetId: this.selectedFolderId,
-        position: "inside",
-      };
       try {
-        if (this.target.type === "queryFolder") {
-          await this.moveQueryFolder(payload);
-        } else if (this.target.type === "connectionFolder") {
-          await this.moveConnectionFolder(payload);
-        } else if (this.target.type === "query") {
-          await this.moveQuery(payload);
-        } else if (this.target.type === "connection") {
-          await this.moveConnection(payload);
-        } else {
-          throw new Error(`Cannot move an unknown target: ${this.target.type}`);
-        }
+        await this.save();
         this.$modal.hide(this.modalName);
       } catch (ex) {
         this.$noty.error(`Move Error: ${ex.message}`);
       } finally {
         this.saving = false;
       }
+    },
+    isValidTarget(folderId: number) {
+      return folderId !== this.parentId;
     },
   },
   mounted() {
@@ -265,10 +203,6 @@ export default Vue.extend({
   align-items: center;
   gap: 0.25rem;
 
-  [data-target-type="connectionFolder"],
-  [data-target-type="queryFolder"] {
-    color: var(--text-lighter);
-  }
   [data-target-type="query"] {
     color: var(--brand-pink);
   }
@@ -318,7 +252,7 @@ export default Vue.extend({
     }
   }
 
-  &.current::v-deep .BksTree-folder .name {
+  &.invalid::v-deep .BksTree-folder .name {
     opacity: 0.5;
   }
 

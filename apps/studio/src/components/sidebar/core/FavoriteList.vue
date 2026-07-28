@@ -428,7 +428,7 @@ export default {
           },
           {
             name: 'Move',
-            handler: ({ item }) => this.trigger(AppEvent.openMoveFileModal, { type: 'queryFolder', value: item }),
+            handler: ({ item }) => this.trigger(AppEvent.openMoveFolderModal, { type: 'queryFolder', value: item }),
             hideIf: !canWrite,
           },
           {

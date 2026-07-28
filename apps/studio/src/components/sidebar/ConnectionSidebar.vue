@@ -288,7 +288,6 @@ export default {
     TreeFolder,
     EditableText,
     ExpiredFolderAlert,
-    SidebarFolder,
     SidebarSortButtons,
     WorkspaceSidebar,
   },
@@ -588,7 +587,7 @@ export default {
           },
           {
             name: 'Move',
-            handler: ({ item }) => this.trigger(AppEvent.openMoveFileModal, { type: 'connectionFolder', value: item }),
+            handler: ({ item }) => this.trigger(AppEvent.openMoveFolderModal, { type: 'connectionFolder', value: item }),
             hideIf: !canWrite,
           },
           {
