@@ -118,9 +118,9 @@ export default Vue.extend({
         return [];
       }
       if (this.target.type === "query") {
-        return this.$store.getters["data/queryFolders/nodes"];
+        return this.$store.state["data/queryFolders"].nodes;
       }
-      return this.$store.getters["data/connectionFolders/nodes"];
+      return this.$store.state["data/connectionFolders"].nodes;
     },
     rootBindings() {
       return [{ event: AppEvent.openMoveFileModal, handler: this.open }];

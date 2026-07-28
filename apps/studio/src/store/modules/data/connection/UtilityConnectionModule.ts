@@ -1,11 +1,13 @@
 import { IConnection } from "@/common/interfaces/IConnection";
 import { DataState, DataStore, mutationsFor, utilActionsFor } from "@/store/modules/data/DataModuleBase";
 import { accessGrantMutations, localAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
-import { buildTreeItemNodes } from "@/common/utils/folderTree";
+import { ItemNodeWithRef, buildTreeItemNodes } from "@/common/utils/folderTree";
 import _ from "lodash";
 import Vue from "vue";
 
-type State = DataState<IConnection>
+type State = DataState<IConnection> & {
+  nodes: ItemNodeWithRef<IConnection>[]
+}
 
 export const UtilConnectionModule: DataStore<IConnection, State> = {
   namespaced: true,
@@ -15,16 +17,23 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
     error: null,
     pollError: null,
     filter: undefined,
-    pendingSaveIds: []
+    pendingSaveIds: [],
+    nodes: []
   },
   mutations: mutationsFor<IConnection>({
     connectionFilter(state: DataState<IConnection>, str: string) {
       state.filter = str;
     },
     ...accessGrantMutations(),
+    nodes(state, nodes) {
+      state.nodes = nodes
+    },
   }),
   actions: utilActionsFor<IConnection>('saved', {
     ...localAccessGrantActions(),
+    async afterMutate(context) {
+      context.commit('nodes', buildTreeItemNodes(context.state.items, 'connectionFolderId', 'name'))
+    },
     setConnectionFilter: _.debounce(function (context, filter) {
       context.commit('connectionFilter', filter);
     }, 500),
@@ -83,17 +92,17 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
         .map(c => ({ ...c }))
 
       // Optimistic update
-      context.commit('upsert', updates)
+      await context.dispatch('mutate', { type: 'upsert', data: updates })
 
       try {
         // Save all items
         const saved = await Promise.all(
           updates.map(c => Vue.prototype.$util.send('appdb/saved/save', { obj: c }))
         )
-        context.commit('upsert', saved)
+        await context.dispatch('mutate', { type: 'upsert', data: saved })
       } catch (e) {
         // Revert optimistic update using pre-mutation snapshots
-        context.commit('upsert', snapshot)
+        await context.dispatch('mutate', { type: 'upsert', data: snapshot })
         throw e
       }
 
@@ -101,9 +110,6 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
     }
   }),
   getters: {
-    nodes(state) {
-      return buildTreeItemNodes(state.items, 'connectionFolderId', 'name')
-    },
     filteredConnections(state) {
       if (!state.filter) {
         return state.items;

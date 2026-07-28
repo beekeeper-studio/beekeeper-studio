@@ -139,6 +139,18 @@ export function mutationsFor<T extends HasId>(obj: any = {}, sortBy?: SortSpec) 
   }
 }
 
+export function mutateActions<T>() {
+  return {
+    async mutate(context, options: MutatePayload<T>) {
+      context.commit(options.type, options.data);
+      await context.dispatch("afterMutate", options);
+    },
+    async afterMutate() {
+      // modules that derive state from items override this
+    },
+  }
+}
+
 export function utilActionsFor<T extends Transport>(type: string, other: any = {}, loadOptions: any = {}, findOneSelects: any = {}) {
   return {
     async initialize(context) {
@@ -210,10 +222,7 @@ export function utilActionsFor<T extends Transport>(type: string, other: any = {
       });
       return item;
     },
-    async mutate(context, options: MutatePayload<T>) {
-      context.commit(options.type, options.data);
-      await context.dispatch("afterMutate", options);
-    },
+    ...mutateActions<T>(),
     ...other
   }
 }
@@ -298,13 +307,7 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
       });
       return item;
     },
-    async mutate(context, options: MutatePayload<T>) {
-      context.commit(options.type, options.data);
-      await context.dispatch("afterMutate", options);
-    },
-    async afterMutate(_context, _options: MutatePayload<T>) {
-      // override this if needed
-    },
+    ...mutateActions<T>(),
     ...obj
   }
 }

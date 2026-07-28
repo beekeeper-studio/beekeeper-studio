@@ -337,15 +337,15 @@ export default {
       connectionsError: 'error',
       connectionFilter: 'filter',
       pendingSaveIds: 'pendingSaveIds',
+      itemNodes: 'nodes',
     }),
     ...mapState('data/connectionFolders', {
       folders: 'items',
       foldersLoading: 'loading',
       foldersError: 'error',
+      folderNodes: 'nodes',
     }),
     ...mapGetters({
-      folderNodes: 'data/connectionFolders/nodes',
-      itemNodes: 'data/connections/nodes',
       usedConfigs: 'data/usedconnections/orderedUsedConfigs',
       settings: 'settings/settings',
       isCloud: 'isCloud',

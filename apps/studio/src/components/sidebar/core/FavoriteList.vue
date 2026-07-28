@@ -211,11 +211,10 @@ export default {
     expandedStorageKey() {
       return `queryFolderExpanded-v2-${this.workspaceId}`;
     },
-    ...mapGetters('data/queries', {'filteredQueries': 'filteredQueries', 'itemNodes': 'nodes'}),
-    ...mapGetters('data/queryFolders', {'folderNodes': 'nodes'}),
+    ...mapGetters('data/queries', {'filteredQueries': 'filteredQueries'}),
     ...mapState('tabs', {'activeTab': 'active'}),
-    ...mapState('data/queries', {'queriesLoading': 'loading', 'queriesError': 'error', 'savedQueryFilter': 'filter', 'pendingSaveIds': 'pendingSaveIds'}),
-    ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
+    ...mapState('data/queries', {'queriesLoading': 'loading', 'queriesError': 'error', 'savedQueryFilter': 'filter', 'pendingSaveIds': 'pendingSaveIds', 'itemNodes': 'nodes'}),
+    ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error', 'folderNodes': 'nodes'}),
     filterQuery: {
       get() {
         return this.savedQueryFilter;
