@@ -9,7 +9,6 @@
         :key="node.id"
         :node="node"
         :all-items="items"
-        :descendants-map="descendantsMap"
         :depth="0"
         :internal-id="internalId"
         :expanded-ids="expandedIds"

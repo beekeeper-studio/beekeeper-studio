@@ -17,14 +17,9 @@
       <slot
         v-if="node.type === 'folder'"
         name="folder"
-        :props="{ node, expanded, descendantsMap, allItems }"
+        :props="{ node, expanded }"
       >
-        <tree-folder
-          :node="node"
-          :expanded="expanded"
-          :descendants-map="descendantsMap"
-          :all-items="allItems"
-        />
+        <tree-folder :node="node" :expanded="expanded" />
       </slot>
       <slot v-else name="item" :node="node" :depth="depth">
         {{ node.name }}
@@ -40,7 +35,6 @@
         :key="child.id"
         :node="child"
         :all-items="allItems"
-        :descendants-map="descendantsMap"
         :depth="depth + 1"
         :internal-id="internalId"
         :expanded-ids="expandedIds"
@@ -84,10 +78,6 @@ export default Vue.extend({
     allItems: {
       type: Array as PropType<ItemNode[]>,
       default: () => [],
-    },
-    descendantsMap: {
-      type: Map as PropType<Map<FolderNode["id"], Set<FolderNode["id"]>>>,
-      default: () => new Map(),
     },
     expandedIds: {
       type: Array as PropType<FolderNode["id"][]>,
