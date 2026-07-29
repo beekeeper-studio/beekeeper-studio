@@ -5,15 +5,13 @@
         Move
         <span class="target-name">
           <i class="material-icons" :data-target-type="target.type">
-            {{ target.type === 'query' ? 'code' : 'link' }}
+            {{ target.type === "query" ? "code" : "link" }}
           </i>
-          {{ target.type === 'query' ? target.value.title : target.value.name }}
+          {{ target.type === "query" ? target.value.title : target.value.name }}
         </span>
         to
       </template>
-      <template v-else>
-        Move
-      </template>
+      <template v-else>Move</template>
     </template>
     <template v-if="target">
       <label
@@ -27,7 +25,7 @@
           name="move-to-folder"
           :value="null"
           v-model="selectedFolderId"
-        >
+        />
         <i class="move-folder-icon material-icons">subdirectory_arrow_left</i>
         <span class="move-folder-name">(Top level)</span>
         <span v-if="parentId === null" class="current-location">
@@ -35,10 +33,7 @@
         </span>
       </label>
 
-      <tree
-        :folders="folderNodes"
-        :expanded-ids.sync="expandedIds"
-      >
+      <tree :folders="folderNodes" :expanded-ids.sync="expandedIds">
         <template #folder="{ props }">
           <button
             type="button"
@@ -62,16 +57,18 @@
       </tree>
     </template>
     <template #footer="{ close }">
-      <button class="btn btn-flat" type="button" @click.prevent="close">
-        Cancel
-      </button>
-      <button
-        class="btn btn-primary"
-        type="submit"
-        :disabled="!isValidTarget(selectedFolderId) || saving"
-      >
-        Move
-      </button>
+      <template v-if="target">
+        <button class="btn btn-flat" type="button" @click.prevent="close">
+          Cancel
+        </button>
+        <button
+          class="btn btn-primary"
+          type="submit"
+          :disabled="!isValidTarget(selectedFolderId) || saving"
+        >
+          Move
+        </button>
+      </template>
     </template>
   </base-modal>
 </template>
@@ -157,10 +154,9 @@ export default Vue.extend({
       this.selectedFolderId = this.parentId;
 
       // Expand anscestors
-      this.expandedIds = getSelfAndAnscestors(
-        this.parentId,
-        this.folders
-      ).map((f) => `folder-${f.id}`);
+      this.expandedIds = getSelfAndAnscestors(this.parentId, this.folders).map(
+        (f) => `folder-${f.id}`
+      );
 
       this.$modal.show(this.modalName);
     },

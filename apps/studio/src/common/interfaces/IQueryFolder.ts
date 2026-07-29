@@ -11,6 +11,8 @@ export interface IFolder extends IShareable {
   accessGrants?: IAccessGrant[]
   /** Is it a personal folder? */
   personal: boolean;
+  /** A default folder is made by the system */
+  default: boolean;
 }
 
 export type IQueryFolder = IFolder

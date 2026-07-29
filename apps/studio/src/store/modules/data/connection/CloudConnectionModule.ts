@@ -2,11 +2,12 @@ import { ICloudSavedConnection } from "@/common/interfaces/IConnection";
 import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { havingCli } from "@/store/modules/data/StoreHelpers";
 import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
-import { itemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
+import { ItemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 import _ from "lodash";
 
 type State = DataState<ICloudSavedConnection> & {
-  listOptions?: Record<string, unknown>
+  /** Folders whose connections have already been fetched. */
+  fetchedParentIds: number[];
 };
 
 export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
@@ -18,19 +19,47 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
     pollError: null,
     filter: undefined,
     pendingSaveIds: [],
-    listOptions: undefined,
+    fetchedParentIds: [],
   },
   mutations: mutationsFor<ICloudSavedConnection>({
     connectionFilter(state: State, str: string) {
       state.filter = str;
     },
+    fetchedParentIds(state: State, parentIds: number[]) {
+      state.fetchedParentIds = parentIds;
+    },
     ...accessGrantMutations(),
   }, { field: 'name', direction: 'asc'}),
   modules: {
-    nodes: itemNodeModule('connectionFolderId', 'name'),
+    nodes: ItemNodeModule('connectionFolderId', 'name'),
   },
   actions: actionsFor<ICloudSavedConnection>('connections', {
     ...cloudAccessGrantActions('connections'),
+    async initialize(context) {
+      // Reset the state
+      await context.dispatch("load", { params: { topLevel: true } });
+
+      const parentIds = context.state.items.map((c) => c.connectionFolderId);
+      context.commit('fetchedParentIds', _.uniq(parentIds));
+    },
+    async poll() {
+      // noop
+    },
+    async ensureChildrenLoaded(context, parentIds: number[]) {
+      const fetchedParentIds = context.state.fetchedParentIds;
+      const unfetchedParentIds = _.difference(parentIds, fetchedParentIds);
+      if (unfetchedParentIds.length === 0) {
+        return;
+      }
+      // marked before the fetch so overlapping calls don't refetch these
+      context.commit('fetchedParentIds', [
+        ...fetchedParentIds,
+        ...unfetchedParentIds,
+      ]);
+      await context.dispatch('loadMore', {
+        params: { connectionFolderId: unfetchedParentIds },
+      });
+    },
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
     },

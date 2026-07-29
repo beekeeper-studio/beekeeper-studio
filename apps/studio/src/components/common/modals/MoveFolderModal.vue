@@ -9,9 +9,7 @@
         </span>
         to
       </template>
-      <template v-else>
-        Move
-      </template>
+      <template v-else>Move</template>
     </template>
     <template v-if="target">
       <label
@@ -25,7 +23,7 @@
           name="move-to-folder"
           :value="null"
           v-model="selectedFolderId"
-        >
+        />
         <i class="move-folder-icon material-icons">subdirectory_arrow_left</i>
         <span class="move-folder-name">(Top level)</span>
         <span v-if="target.value.parentId === null" class="current-location">
@@ -33,10 +31,7 @@
         </span>
       </label>
 
-      <tree
-        :folders="folderNodes"
-        :expanded-ids.sync="expandedIds"
-      >
+      <tree :folders="folderNodes" :expanded-ids.sync="expandedIds">
         <template #folder="{ props }">
           <button
             type="button"
@@ -60,16 +55,18 @@
       </tree>
     </template>
     <template #footer="{ close }">
-      <button class="btn btn-flat" type="button" @click.prevent="close">
-        Cancel
-      </button>
-      <button
-        class="btn btn-primary"
-        type="submit"
-        :disabled="!isValidTarget(selectedFolderId) || saving"
-      >
-        Move
-      </button>
+      <template v-if="target">
+        <button class="btn btn-flat" type="button" @click.prevent="close">
+          Cancel
+        </button>
+        <button
+          class="btn btn-primary"
+          type="submit"
+          :disabled="!isValidTarget(selectedFolderId) || saving"
+        >
+          Move
+        </button>
+      </template>
     </template>
   </base-modal>
 </template>
@@ -81,7 +78,10 @@ import BaseModal from "@/components/common/modals/BaseModal.vue";
 import { AppEvent } from "@/common/AppEvent";
 import { IFolder } from "@/common/interfaces/IQueryFolder";
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
-import { buildFolderNodes, getSelfAndAnscestors } from "@/common/utils/folderTree";
+import {
+  buildFolderNodes,
+  getSelfAndAnscestors,
+} from "@/common/utils/folderTree";
 
 type Target =
   | { type: "connectionFolder"; value: IFolder }

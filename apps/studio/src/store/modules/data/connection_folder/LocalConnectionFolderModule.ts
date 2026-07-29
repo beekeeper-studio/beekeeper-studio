@@ -5,7 +5,8 @@ import { DataState, DataStore, mutateActions, mutationsFor } from "@/store/modul
 import { safely } from "@/store/modules/data/StoreHelpers";
 import { accessGrantMutations, localAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
-import { folderNodeModule } from "@/store/modules/data/tree/FolderNodeModule";
+import { FolderNodeModule } from "@/store/modules/data/tree/FolderNodeModule";
+import { SidebarModule } from "@/store/modules/data/tree/SidebarModule";
 
 type State = DataState<IConnectionFolder>
 
@@ -22,7 +23,8 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     ...accessGrantMutations(),
   },
   modules: {
-    nodes: folderNodeModule,
+    nodes: FolderNodeModule,
+    sidebar: SidebarModule,
   },
   actions: {
     ...localAccessGrantActions(),
@@ -31,7 +33,11 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
       context.commit(`nodes/${type}`, data)
     },
     async initialize(context) {
+      context.commit('sidebar/expandedIds', []);
       await context.dispatch('load');
+    },
+    async ensureLoaded() {
+      // noop
     },
     async load(context) {
       context.commit('error', null)

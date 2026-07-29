@@ -153,7 +153,7 @@
               <tree
                 :folders="draftingFolder ? folderNodesWithDraft : folderNodes"
                 :items="sortedItemNodes"
-                :expanded-ids="expandedIds"
+                :expanded-ids="expandedNodeIds"
                 :filter="connFilter"
                 @update:expandedIds="setExpandedIds"
                 @bks-tree-node-move="handleTreeNodeMove"
@@ -262,9 +262,8 @@
 
 <script>
 import _ from 'lodash'
-import { SmartLocalStorage } from '@/common/LocalStorage'
 import WorkspaceSidebar from './WorkspaceSidebar.vue'
-import { mapState, mapGetters, mapActions } from 'vuex'
+import { mapState, mapGetters, mapActions, mapMutations } from 'vuex'
 import ConnectionListItem from './connection/ConnectionListItem.vue'
 import SidebarLoading from '@/components/common/SidebarLoading.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
@@ -304,8 +303,6 @@ export default {
     sort: { field: 'name', order: 'asc' },
     sortInitialized: false,
     sizes: [33, 33, 33],
-    expandedIds: [],
-    draggingConnection: null,
     renamingFolderId: null,
     draftingFolder: false,
     draftFolderParentId: null,
@@ -317,21 +314,8 @@ export default {
       if (!this.sortInitialized) return
       await this.reorderBySort(newSort)
     },
-    workspaceId() {
-      this.restoreExpandedIds()
-    },
-    loading() {
-      if (this.loading) {
-        return;
-      }
-      if (SmartLocalStorage.exists(this.expandedStorageKey)) {
-        return;
-      }
-      this.seedExpandedIds();
-    },
   },
   computed: {
-    ...mapState(['workspaceId']),
     ...mapState('data/connections/nodes', { itemNodes: 'items' }),
     ...mapState('data/connectionFolders/nodes', { folderNodes: 'items' }),
     ...mapState('data/connections', {
@@ -344,6 +328,9 @@ export default {
       folders: 'items',
       foldersLoading: 'loading',
       foldersError: 'error',
+    }),
+    ...mapState('data/connectionFolders/sidebar', {
+      expandedFolderIds: 'expandedIds',
     }),
     ...mapGetters({
       usedConfigs: 'data/usedconnections/orderedUsedConfigs',
@@ -364,16 +351,11 @@ export default {
         this.$store.dispatch('data/connections/setConnectionFilter', newFilter);
       }
     },
-    // v1 was a single workspace-agnostic map, so its expanded state can't be
-    // attributed to a workspace — it is dropped rather than migrated.
-    expandedStorageKey() {
-      return `connectionFolderExpanded-v2-${this.workspaceId}`;
+    expandedNodeIds() {
+      return this.expandedFolderIds.map((id) => `folder-${id}`);
     },
     noPins() {
       return !this.pinnedConnections?.length;
-    },
-    rootFolders() {
-      return this.folders.filter((f) => !f.parentId).sort((a, b) => a.name.localeCompare(b.name))
     },
     loading() {
       return this.connectionsLoading || this.foldersLoading
@@ -446,8 +428,6 @@ export default {
     },
   },
   async mounted() {
-    SmartLocalStorage.remove('connectionFolderExpanded-v1')
-    this.restoreExpandedIds()
     this.buildSplit()
     const [field, order] = await Promise.all([
       this.$settings.get('connectionsSortBy', 'name'),
@@ -461,20 +441,19 @@ export default {
     ...mapActions({
       saveFolder: 'data/connectionFolders/save',
       reorderConnection: 'data/connections/reorder',
+      ensureConnectionsLoaded: 'data/connections/ensureChildrenLoaded',
+      ensureSubfoldersLoaded: 'data/connectionFolders/ensureLoaded',
     }),
-    setExpandedIds(expandedIds) {
-      this.expandedIds = expandedIds
-      SmartLocalStorage.addItem(this.expandedStorageKey, expandedIds)
-    },
-    restoreExpandedIds() {
-      this.expandedIds = SmartLocalStorage.getJSON(this.expandedStorageKey) ?? []
-    },
-    seedExpandedIds() {
-      const ids = new Set(this.expandedIds);
-      for (const folder of this.rootFolders) {
-        ids.add(`folder-${folder.id}`)
-      }
-      this.expandedIds = [...ids];
+    ...mapMutations({
+      setExpandedFolderIds: 'data/connectionFolders/sidebar/expandedIds',
+    }),
+    setExpandedIds(expandedNodeIds) {
+      const folderIds = this.folderNodes
+        .filter((node) => expandedNodeIds.includes(node.id))
+        .map((node) => node.ref.id)
+      this.setExpandedFolderIds(folderIds)
+      this.ensureConnectionsLoaded(folderIds)
+      this.ensureSubfoldersLoaded(folderIds)
     },
     clearFilter() {
       this.connFilter = null;
@@ -549,11 +528,10 @@ export default {
       this.draftingFolder = false
     },
     expandFolder(folderId) {
-      const nodeId = `folder-${folderId}`
-      if (this.expandedIds.includes(nodeId)) {
+      if (this.expandedFolderIds.includes(folderId)) {
         return
       }
-      this.setExpandedIds([...this.expandedIds, nodeId])
+      this.setExpandedIds([...this.expandedNodeIds, `folder-${folderId}`])
     },
     /** @param folder {import("@/common/interfaces/ISavedQuery").default} */
     showFolderContextMenu(event, folder) {
@@ -705,51 +683,6 @@ export default {
         n.show()
       } catch (ex) {
         this.$noty.error(`Reorder error: ${ex.message}`)
-      }
-    },
-    onConnectionDragStart(event, list) {
-      this.draggingConnection = list[event.oldIndex]
-    },
-    cloudRelativePosition(list, newIndex) {
-      const prev = list[newIndex - 1]
-      const next = list[newIndex + 1]
-      if (prev) return { after: prev.id }
-      if (next) return { before: next.id }
-      return { before: null }
-    },
-    async onConnectionFolderHeaderDrop(folder) {
-      if (!this.draggingConnection) return
-      try {
-        // Use reorder action for both local and cloud workspaces
-        await this.$store.dispatch('data/connections/reorder', {
-          item: this.draggingConnection,
-          connectionFolderId: folder.id,
-          position: { before: null }
-        })
-      } catch (ex) {
-        this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
-      }
-    },
-    async onConnectionDrop(event, folder, currentList) {
-      try {
-        if (event.added) {
-          const { element: item, newIndex } = event.added
-          // Use reorder action for both local and cloud workspaces
-          await this.$store.dispatch('data/connections/reorder', {
-            item,
-            connectionFolderId: folder?.id ?? null,
-            position: this.cloudRelativePosition(currentList, newIndex)
-          })
-        } else if (event.moved) {
-          const { element: item, newIndex } = event.moved
-          // Use reorder action for both local and cloud workspaces
-          await this.$store.dispatch('data/connections/reorder', {
-            item,
-            position: this.cloudRelativePosition(currentList, newIndex)
-          })
-        }
-      } catch (ex) {
-        this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
       }
     },
     async submitDraftFolder(name) {

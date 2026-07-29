@@ -26,7 +26,7 @@ function detachFromParent(items: Node[], node: Node) {
 /**
  * Used for tree visualization using <tree> component
  **/
-export const folderNodeModule: Module<State, RootState> = {
+export const FolderNodeModule: Module<State, RootState> = {
   namespaced: true,
   state() {
     return {

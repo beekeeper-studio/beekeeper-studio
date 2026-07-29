@@ -3,11 +3,12 @@ import { havingCli } from "../StoreHelpers";
 import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import _ from 'lodash'
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
-import { itemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
+import { ItemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 
 
 type State = DataState<ISavedQuery> & {
-  listOptions?: Record<string, unknown>
+  /** Folders whose queries have already been fetched. */
+  fetchedParentIds: number[];
 };
 
 export const CloudQueryModule: DataStore<ISavedQuery, State> = {
@@ -19,20 +20,47 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
     pollError: null,
     filter: undefined,
     pendingSaveIds: [],
-    listOptions: undefined,
+    fetchedParentIds: [],
   },
   mutations: mutationsFor<ISavedQuery>({
     // more mutations go here
     savedQueryFilter(state: State, str: string) {
       state.filter = str;
     },
+    fetchedParentIds(state: State, parentIds: number[]) {
+      state.fetchedParentIds = parentIds;
+    },
     ...accessGrantMutations(),
   }, { field: 'title', direction: 'asc'}),
   modules: {
-    nodes: itemNodeModule('queryFolderId', 'title'),
+    nodes: ItemNodeModule('queryFolderId', 'title'),
   },
   actions: actionsFor<ISavedQuery>('queries', {
     ...cloudAccessGrantActions('queries'),
+    async initialize(context) {
+      await context.dispatch("load", { params: { topLevel: true } });
+
+      const parentIds = context.state.items.map((q) => q.queryFolderId);
+      context.commit('fetchedParentIds', _.uniq(parentIds));
+    },
+    async poll() {
+      // noop
+    },
+    async ensureChildrenLoaded(context, parentIds: number[]) {
+      const fetchedParentIds = context.state.fetchedParentIds;
+      const unfetchedParentIds = _.difference(parentIds, fetchedParentIds);
+      if (unfetchedParentIds.length === 0) {
+        return;
+      }
+      // marked before the fetch so overlapping calls don't refetch these
+      context.commit('fetchedParentIds', [
+        ...fetchedParentIds,
+        ...unfetchedParentIds,
+      ]);
+      await context.dispatch('loadMore', {
+        params: { queryFolderId: unfetchedParentIds },
+      });
+    },
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
     },

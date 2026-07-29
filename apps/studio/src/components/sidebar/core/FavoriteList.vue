@@ -82,7 +82,7 @@
           <tree
             :folders="draftingFolder ? folderNodesWithDraft : folderNodes"
             :items="itemNodes"
-            :expanded-ids="expandedIds"
+            :expanded-ids="expandedNodeIds"
             @update:expandedIds="setExpandedIds"
             @bks-tree-node-move="handleTreeNodeMove"
           >
@@ -159,8 +159,7 @@
 <script>
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
-import { SmartLocalStorage } from '@/common/LocalStorage'
-import { mapActions, mapGetters, mapState } from 'vuex'
+import { mapActions, mapGetters, mapMutations, mapState } from 'vuex'
 import SidebarLoading from '../../common/SidebarLoading.vue'
 import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
 import { AppEvent } from '@/common/AppEvent'
@@ -174,49 +173,30 @@ export default {
     return {
       checkedFavorites: [],
       selected: null,
-      expandedIds: [],
       draggingQuery: null,
       renamingFolderId: null,
       draftingFolder: false,
       draftFolderParentId: null,
     }
   },
-  watch: {
-    workspaceId() {
-      this.restoreExpandedIds()
-    },
-    loading() {
-      if (this.loading) {
-        return;
-      }
-      if (SmartLocalStorage.exists(this.expandedStorageKey)) {
-        return;
-      }
-      this.seedExpandedIds();
-    },
-  },
   mounted() {
-    SmartLocalStorage.remove('queryFolderExpanded-v1')
-    this.restoreExpandedIds()
     document.addEventListener('mousedown', this.maybeUnselect)
   },
   beforeDestroy() {
     document.removeEventListener('mousedown', this.maybeUnselect)
   },
   computed: {
-    ...mapState(['workspaceId']),
     ...mapGetters(['workspace', 'isCloud', 'isUltimate', 'canCreateFolders']),
-    // v1 was a single workspace-agnostic map, so its expanded state can't be
-    // attributed to a workspace — it is dropped rather than migrated.
-    expandedStorageKey() {
-      return `queryFolderExpanded-v2-${this.workspaceId}`;
-    },
     ...mapGetters('data/queries', {'filteredQueries': 'filteredQueries'}),
     ...mapState('tabs', {'activeTab': 'active'}),
     ...mapState('data/queries/nodes', {'itemNodes': 'items'}),
     ...mapState('data/queryFolders/nodes', {'folderNodes': 'items'}),
     ...mapState('data/queries', {'queriesLoading': 'loading', 'queriesError': 'error', 'savedQueryFilter': 'filter', 'pendingSaveIds': 'pendingSaveIds'}),
     ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
+    ...mapState('data/queryFolders/sidebar', { expandedFolderIds: 'expandedIds' }),
+    expandedNodeIds() {
+      return this.expandedFolderIds.map((id) => `folder-${id}`);
+    },
     filterQuery: {
       get() {
         return this.savedQueryFilter;
@@ -224,9 +204,6 @@ export default {
       set(newFilter) {
         this.$store.dispatch('data/queries/setSavedQueryFilter', newFilter);
       }
-    },
-    rootFolders() {
-      return this.folders.filter((f) => !f.parentId).sort((a, b) => a.name.localeCompare(b.name))
     },
     loading() {
       return this.queriesLoading || this.foldersLoading || null
@@ -275,20 +252,19 @@ export default {
     ...mapActions({
       saveFolder: 'data/queryFolders/save',
       reorderQuery: 'data/queries/reorder',
+      ensureQueriesLoaded: 'data/queries/ensureChildrenLoaded',
+      ensureSubfoldersLoaded: 'data/queryFolders/ensureLoaded',
     }),
-    setExpandedIds(expandedIds) {
-      this.expandedIds = expandedIds
-      SmartLocalStorage.addItem(this.expandedStorageKey, expandedIds)
-    },
-    restoreExpandedIds() {
-      this.expandedIds = SmartLocalStorage.getJSON(this.expandedStorageKey) ?? []
-    },
-    seedExpandedIds() {
-      const ids = new Set(this.expandedIds);
-      for (const folder of this.rootFolders) {
-        ids.add(`folder-${folder.id}`)
-      }
-      this.expandedIds = [...ids];
+    ...mapMutations({
+      setExpandedFolderIds: 'data/queryFolders/sidebar/expandedIds',
+    }),
+    setExpandedIds(expandedNodeIds) {
+      const folderIds = this.folderNodes
+        .filter((node) => expandedNodeIds.includes(node.id))
+        .map((node) => node.ref.id)
+      this.setExpandedFolderIds(folderIds)
+      this.ensureQueriesLoaded(folderIds)
+      this.ensureSubfoldersLoaded(folderIds)
     },
     clearFilter() {
       this.filterQuery = null
@@ -375,11 +351,10 @@ export default {
       this.draftingFolder = false
     },
     expandFolder(folderId) {
-      const nodeId = `folder-${folderId}`
-      if (this.expandedIds.includes(nodeId)) {
+      if (this.expandedFolderIds.includes(folderId)) {
         return
       }
-      this.setExpandedIds([...this.expandedIds, nodeId])
+      this.setExpandedIds([...this.expandedNodeIds, `folder-${folderId}`])
     },
     async submitDraftFolder(name) {
       if (!name) {

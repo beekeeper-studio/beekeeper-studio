@@ -1,7 +1,7 @@
 import { IConnection } from "@/common/interfaces/IConnection";
 import { DataState, DataStore, mutationsFor, utilActionsFor } from "@/store/modules/data/DataModuleBase";
 import { accessGrantMutations, localAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
-import { itemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
+import { ItemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 import _ from "lodash";
 import Vue from "vue";
 
@@ -24,12 +24,15 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
     ...accessGrantMutations(),
   }),
   modules: {
-    nodes: itemNodeModule('connectionFolderId', 'name'),
+    nodes: ItemNodeModule('connectionFolderId', 'name'),
   },
   actions: utilActionsFor<IConnection>('saved', {
     ...localAccessGrantActions(),
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
+    },
+    async ensureChildrenLoaded() {
+      // noop
     },
     setConnectionFilter: _.debounce(function (context, filter) {
       context.commit('connectionFilter', filter);

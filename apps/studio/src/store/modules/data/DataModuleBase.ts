@@ -10,6 +10,7 @@ import { State as RootState } from '../../index'
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
 import Vue from "vue";
 import { Transport } from "@/common/transport";
+import { ListOptions } from "@/lib/cloud/controllers/GenericController";
 
 export interface QueryModuleState {
   queryFolders: IQueryFolder[]
@@ -232,7 +233,7 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
     async initialize(context) {
       await context.dispatch("load");
     },
-    async load(context, options?: { extraParams?: Record<string, unknown> }) {
+    async load(context, options?: ListOptions) {
       context.commit("error", null)
       await safelyDo(context, async (cli) => {
         const items: any[] = await cli[scope].list(undefined, options)
@@ -240,6 +241,17 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
         const rightItems = items.filter((i) => i.workspaceId === context.rootState.workspaceId)
         if (rightItems.length === items.length) {
           await context.dispatch('mutate', { type: 'replace', data: rightItems })
+        }
+      })
+    },
+    async loadMore(context, options?: ListOptions) {
+      context.commit("error", null)
+      await safelyDo(context, async (cli) => {
+        const items: any[] = await cli[scope].list(undefined, options)
+        // this is to account for when the store module changes
+        const rightItems = items.filter((i) => i.workspaceId === context.rootState.workspaceId)
+        if (rightItems.length === items.length) {
+          await context.dispatch('mutate', { type: 'upsert', data: rightItems })
         }
       })
     },

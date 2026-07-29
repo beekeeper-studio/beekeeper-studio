@@ -17,7 +17,7 @@ const asArray = <T>(value: T | T[]): T[] =>
 /**
  * Used for tree visualization using <tree> component
  **/
-export function itemNodeModule(
+export function ItemNodeModule(
   parentIdKey: string,
   nameKey: string
 ): Module<State, RootState> {

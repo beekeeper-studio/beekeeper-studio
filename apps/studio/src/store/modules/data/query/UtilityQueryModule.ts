@@ -3,7 +3,7 @@ import _ from 'lodash'
 import Vue from 'vue'
 import { mutationsFor, DataState, DataStore, utilActionsFor } from '../DataModuleBase'
 import { accessGrantMutations, localAccessGrantActions } from '@/store/modules/data/access_grant/accessGrantStore'
-import { itemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
+import { ItemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 
 type State = DataState<TransportFavoriteQuery>
 
@@ -25,12 +25,15 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, State> = {
     ...accessGrantMutations(),
   }, { field: 'title', direction : 'asc'}),
   modules: {
-    nodes: itemNodeModule('queryFolderId', 'title'),
+    nodes: ItemNodeModule('queryFolderId', 'title'),
   },
   actions: utilActionsFor<TransportFavoriteQuery>('query', {
     ...localAccessGrantActions(),
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
+    },
+    async ensureChildrenLoaded() {
+      // noop
     },
     setSavedQueryFilter: _.debounce(function (context, filter) {
       context.commit('savedQueryFilter', filter);
