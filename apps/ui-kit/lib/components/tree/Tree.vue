@@ -1,8 +1,6 @@
 <template>
   <div class="BksUiKit BksTree">
-    <slot v-if="rootNodes.length === 0" name="empty">
-      <div class="BksTree-empty">No items</div>
-    </slot>
+    <slot v-if="rootNodes.length === 0" name="empty" />
     <template v-else>
       <tree-node
         v-for="node of rootNodes"
@@ -27,6 +25,9 @@
         </template>
         <template v-slot:item="slotProps">
           <slot name="item" v-bind="slotProps" />
+        </template>
+        <template v-slot:folder-footer="slotProps">
+          <slot name="folder-footer" v-bind="slotProps" />
         </template>
       </tree-node>
     </template>
@@ -220,11 +221,3 @@ export default Vue.extend({
   },
 });
 </script>
-
-<style scoped lang="scss">
-.BksTree-empty {
-  padding-block: 0.25rem;
-  padding-left: 1.3rem;
-  color: var(--bks-text-lighter);
-}
-</style>

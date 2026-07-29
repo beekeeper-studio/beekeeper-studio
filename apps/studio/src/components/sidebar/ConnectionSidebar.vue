@@ -63,7 +63,7 @@
               @close="error = null"
               :closable="true"
             />
-            <sidebar-loading v-else-if="loading" />
+            <sidebar-loading v-else-if="initializing" />
             <nav
               v-else
               class="list-body"
@@ -145,7 +145,7 @@
               @close="error = null"
               :closable="true"
             />
-            <sidebar-loading v-else-if="loading" />
+            <sidebar-loading v-else-if="initializing" />
             <nav
               v-else
               class="list-body"
@@ -208,6 +208,15 @@
                       />
                     </template>
                   </tree-folder>
+                </template>
+                <template #folder-footer="{ node, depth }">
+                  <div
+                    v-if="loadingFolderIds.includes(node.ref.id)"
+                    class="tree-loading"
+                    :style="{ '--depth': depth }"
+                  >
+                    Loading
+                  </div>
                 </template>
                 <template #item="{ node }">
                   <connection-list-item
@@ -319,18 +328,30 @@ export default {
     ...mapState('data/connections/nodes', { itemNodes: 'items' }),
     ...mapState('data/connectionFolders/nodes', { folderNodes: 'items' }),
     ...mapState('data/connections', {
-      connectionsLoading: 'loading',
       connectionsError: 'error',
       connectionFilter: 'filter',
       pendingSaveIds: 'pendingSaveIds',
     }),
     ...mapState('data/connectionFolders', {
       folders: 'items',
-      foldersLoading: 'loading',
       foldersError: 'error',
     }),
     ...mapState('data/connectionFolders/sidebar', {
       expandedFolderIds: 'expandedIds',
+    }),
+    ...mapState({
+      loadingFolderIds(state) {
+        return [
+          ...state["data/connectionFolders"].fetchingIds,
+          ...state["data/connections"].fetchingIds,
+        ];
+      },
+      initializing(state) {
+        return (
+          state["data/connectionFolders"].initializing ||
+          state["data/connections"].initializing
+        );
+      },
     }),
     ...mapGetters({
       usedConfigs: 'data/usedconnections/orderedUsedConfigs',
@@ -356,9 +377,6 @@ export default {
     },
     noPins() {
       return !this.pinnedConnections?.length;
-    },
-    loading() {
-      return this.connectionsLoading || this.foldersLoading
     },
     error: {
       get() {
@@ -715,6 +733,22 @@ export default {
 }
 .drag-pending {
   opacity: 0.5;
+}
+.tree-loading {
+  padding-block: 0.25rem;
+  padding-left: calc(var(--depth) * 1rem + 1.3rem);
+  color: var(--text-lighter);
+}
+
+.tree-loading::after {
+  content: "...";
+  animation: dots 1s steps(2) infinite;
+}
+
+@keyframes dots {
+  0%   { content: "..."; }
+  50%  { content: ".."; }
+  100% { content: "..."; }
 }
 ::v-deep .BksTree-folder {
   .name:has(.editable-text) {

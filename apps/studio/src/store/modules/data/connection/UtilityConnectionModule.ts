@@ -2,10 +2,16 @@ import { IConnection } from "@/common/interfaces/IConnection";
 import { DataState, DataStore, mutationsFor, utilActionsFor } from "@/store/modules/data/DataModuleBase";
 import { accessGrantMutations, localAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import { ItemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
+import { SidebarModule } from "@/store/modules/data/tree/SidebarModule";
 import _ from "lodash";
 import Vue from "vue";
 
-type State = DataState<IConnection>
+type State = DataState<IConnection> & {
+  /** The default folders are being fetched. */
+  initializing: boolean;
+  /** Folders whose connections are being fetched right now. */
+  fetchingIds: number[];
+}
 
 export const UtilConnectionModule: DataStore<IConnection, State> = {
   namespaced: true,
@@ -16,20 +22,37 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
     pollError: null,
     filter: undefined,
     pendingSaveIds: [],
+    initializing: false,
+    fetchingIds: [],
   },
   mutations: mutationsFor<IConnection>({
     connectionFilter(state: DataState<IConnection>, str: string) {
       state.filter = str;
     },
+    initializing(state: State, initializing: boolean) {
+      state.initializing = initializing;
+    },
+    fetchingIds(state: State, ids: number[]) {
+      state.fetchingIds = ids;
+    },
     ...accessGrantMutations(),
   }),
   modules: {
     nodes: ItemNodeModule('connectionFolderId', 'name'),
+    sidebar: SidebarModule,
   },
   actions: utilActionsFor<IConnection>('saved', {
     ...localAccessGrantActions(),
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
+    },
+    async initialize(context) {
+      context.commit('initializing', true);
+      try {
+        await context.dispatch('load');
+      } finally {
+        context.commit('initializing', false);
+      }
     },
     async ensureChildrenLoaded() {
       // noop

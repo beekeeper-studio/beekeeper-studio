@@ -4,11 +4,16 @@ import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/d
 import _ from 'lodash'
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { ItemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
+import { SidebarModule } from "@/store/modules/data/tree/SidebarModule";
 
 
 type State = DataState<ISavedQuery> & {
   /** Folders whose queries have already been fetched. */
   fetchedParentIds: number[];
+  /** The default folders are being fetched. */
+  initializing: boolean;
+  /** Folders whose queries are being fetched right now. */
+  fetchingIds: number[];
 };
 
 export const CloudQueryModule: DataStore<ISavedQuery, State> = {
@@ -21,6 +26,8 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
     filter: undefined,
     pendingSaveIds: [],
     fetchedParentIds: [],
+    initializing: false,
+    fetchingIds: [],
   },
   mutations: mutationsFor<ISavedQuery>({
     // more mutations go here
@@ -30,18 +37,27 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
     fetchedParentIds(state: State, parentIds: number[]) {
       state.fetchedParentIds = parentIds;
     },
+    initializing(state: State, initializing: boolean) {
+      state.initializing = initializing;
+    },
+    fetchingIds(state: State, ids: number[]) {
+      state.fetchingIds = ids;
+    },
     ...accessGrantMutations(),
   }, { field: 'title', direction: 'asc'}),
   modules: {
     nodes: ItemNodeModule('queryFolderId', 'title'),
+    sidebar: SidebarModule,
   },
   actions: actionsFor<ISavedQuery>('queries', {
     ...cloudAccessGrantActions('queries'),
     async initialize(context) {
-      await context.dispatch("load", { params: { topLevel: true } });
-
-      const parentIds = context.state.items.map((q) => q.queryFolderId);
-      context.commit('fetchedParentIds', _.uniq(parentIds));
+      context.commit('initializing', true);
+      try {
+        await context.dispatch("load", { params: { default: true } });
+      } finally {
+        context.commit('initializing', false);
+      }
     },
     async poll() {
       // noop
@@ -57,9 +73,20 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
         ...fetchedParentIds,
         ...unfetchedParentIds,
       ]);
-      await context.dispatch('loadMore', {
-        params: { queryFolderId: unfetchedParentIds },
-      });
+      context.commit('fetchingIds', [
+        ...context.state.fetchingIds,
+        ...unfetchedParentIds,
+      ]);
+      try {
+        await context.dispatch('loadMore', {
+          params: { queryFolderId: unfetchedParentIds },
+        });
+      } finally {
+        context.commit(
+          'fetchingIds',
+          _.difference(context.state.fetchingIds, unfetchedParentIds)
+        );
+      }
     },
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)

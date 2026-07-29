@@ -73,7 +73,7 @@
           :error="error"
           title="Problem loading queries"
         />
-        <sidebar-loading v-if="loading" />
+        <sidebar-loading v-if="initializing" />
         <nav
           v-else
           class="list-body"
@@ -135,6 +135,15 @@
                 </template>
               </tree-folder>
             </template>
+            <template #folder-footer="{ node, depth }">
+              <div
+                v-if="loadingFolderIds.includes(node.ref.id)"
+                class="tree-loading"
+                :style="{ '--depth': depth }"
+              >
+                Loading
+              </div>
+            </template>
             <template #item="{ node }">
               <favorite-list-item
                 :item="node.ref"
@@ -191,9 +200,25 @@ export default {
     ...mapState('tabs', {'activeTab': 'active'}),
     ...mapState('data/queries/nodes', {'itemNodes': 'items'}),
     ...mapState('data/queryFolders/nodes', {'folderNodes': 'items'}),
-    ...mapState('data/queries', {'queriesLoading': 'loading', 'queriesError': 'error', 'savedQueryFilter': 'filter', 'pendingSaveIds': 'pendingSaveIds'}),
-    ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
-    ...mapState('data/queryFolders/sidebar', { expandedFolderIds: 'expandedIds' }),
+    ...mapState('data/queries', {'queriesError': 'error', 'savedQueryFilter': 'filter', 'pendingSaveIds': 'pendingSaveIds'}),
+    ...mapState('data/queryFolders', {'folders': 'items', 'foldersError': 'error'}),
+    ...mapState('data/queryFolders/sidebar', {
+      expandedFolderIds: 'expandedIds',
+    }),
+    ...mapState({
+      loadingFolderIds(state) {
+        return [
+          ...state["data/queryFolders"].fetchingIds,
+          ...state["data/queries"].fetchingIds,
+        ];
+      },
+      initializing(state) {
+        return (
+          state["data/queryFolders"].initializing ||
+          state["data/queries"].initializing
+        );
+      },
+    }),
     expandedNodeIds() {
       return this.expandedFolderIds.map((id) => `folder-${id}`);
     },
@@ -204,9 +229,6 @@ export default {
       set(newFilter) {
         this.$store.dispatch('data/queries/setSavedQueryFilter', newFilter);
       }
-    },
-    loading() {
-      return this.queriesLoading || this.foldersLoading || null
     },
     error() {
       return this.queriesError || this.foldersError || null
@@ -543,6 +565,22 @@ export default {
 }
 .folder-drop-zone {
   min-height: 8px;
+}
+.tree-loading {
+  padding-block: 0.25rem;
+  padding-left: calc(var(--depth) * 1rem + 1.3rem);
+  color: var(--text-lighter);
+}
+
+.tree-loading::after {
+  content: "...";
+  animation: dots 1s steps(2) infinite;
+}
+
+@keyframes dots {
+  0%   { content: "..."; }
+  50%  { content: ".."; }
+  100% { content: "..."; }
 }
 ::v-deep .BksTree-folder {
   .name:has(.editable-text) {

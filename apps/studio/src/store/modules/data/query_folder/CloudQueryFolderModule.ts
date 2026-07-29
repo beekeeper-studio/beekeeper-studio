@@ -8,6 +8,10 @@ import _ from "lodash";
 type State = DataState<IQueryFolder> & {
   /** Folders whose children have already been fetched. */
   fetchedIds: number[];
+  /** The default folders are being fetched. */
+  initializing: boolean;
+  /** Folders whose children are being fetched right now. */
+  fetchingIds: number[];
 };
 
 export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
@@ -18,10 +22,18 @@ export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
     error: null,
     pollError: null,
     fetchedIds: [],
+    initializing: false,
+    fetchingIds: [],
   },
   mutations: mutationsFor<IQueryFolder>({
     fetchedIds(state: State, ids: number[]) {
       state.fetchedIds = ids;
+    },
+    initializing(state: State, initializing: boolean) {
+      state.initializing = initializing;
+    },
+    fetchingIds(state: State, ids: number[]) {
+      state.fetchingIds = ids;
     },
     ...accessGrantMutations(),
   }, { field: 'name', direction: 'asc'}),
@@ -34,14 +46,22 @@ export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
     async initialize(context) {
       // Reset the state
       context.commit('sidebar/expandedIds', []);
-      await context.dispatch('load', { params: { topLevel: true } });
+      context.commit('initializing', true);
+      try {
+        await context.dispatch('load', { params: { default: true } });
+      } finally {
+        context.commit('initializing', false);
+      }
 
       // Expand default folders (Personal and Team)
-      const defaultIds = context.state.items
-        .filter((folder) => folder.default)
-        .map((folder) => folder.id);
+      const defaultIds = context.state.items.map((folder) => folder.id);
       context.commit('fetchedIds', defaultIds);
       context.commit('sidebar/expandedIds', defaultIds);
+      // The queries of these folders come with the default fetch, which can
+      // return none of them, so they can't mark themselves fetched.
+      context.commit('data/queries/fetchedParentIds', defaultIds, {
+        root: true,
+      });
     },
     async poll() {
       // empty on purpose
@@ -57,9 +77,20 @@ export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
         ...fetchedIds,
         ...unfetchedIds,
       ]);
-      await context.dispatch('loadMore', {
-        params: { parentId: unfetchedIds },
-      });
+      context.commit('fetchingIds', [
+        ...context.state.fetchingIds,
+        ...unfetchedIds,
+      ]);
+      try {
+        await context.dispatch('loadMore', {
+          params: { parentId: unfetchedIds },
+        });
+      } finally {
+        context.commit(
+          'fetchingIds',
+          _.difference(context.state.fetchingIds, unfetchedIds)
+        );
+      }
     },
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)

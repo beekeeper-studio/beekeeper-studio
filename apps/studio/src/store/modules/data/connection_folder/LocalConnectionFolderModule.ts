@@ -8,7 +8,12 @@ import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
 import { FolderNodeModule } from "@/store/modules/data/tree/FolderNodeModule";
 import { SidebarModule } from "@/store/modules/data/tree/SidebarModule";
 
-type State = DataState<IConnectionFolder>
+type State = DataState<IConnectionFolder> & {
+  /** The default folders are being fetched. */
+  initializing: boolean;
+  /** Folders whose children are being fetched right now. */
+  fetchingIds: number[];
+}
 
 export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = {
   namespaced: true,
@@ -17,10 +22,18 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     loading: false,
     error: null,
     pollError: null,
+    initializing: false,
+    fetchingIds: [],
   },
   mutations: {
     ...mutationsFor<IConnectionFolder>({}, { field: 'name', direction: 'asc' }),
     ...accessGrantMutations(),
+    initializing(state, initializing: boolean) {
+      state.initializing = initializing
+    },
+    fetchingIds(state, ids: number[]) {
+      state.fetchingIds = ids
+    },
   },
   modules: {
     nodes: FolderNodeModule,
@@ -34,7 +47,12 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     },
     async initialize(context) {
       context.commit('sidebar/expandedIds', []);
-      await context.dispatch('load');
+      context.commit('initializing', true);
+      try {
+        await context.dispatch('load');
+      } finally {
+        context.commit('initializing', false);
+      }
     },
     async ensureLoaded() {
       // noop

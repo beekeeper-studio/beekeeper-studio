@@ -3,11 +3,16 @@ import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/
 import { havingCli } from "@/store/modules/data/StoreHelpers";
 import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import { ItemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
+import { SidebarModule } from "@/store/modules/data/tree/SidebarModule";
 import _ from "lodash";
 
 type State = DataState<ICloudSavedConnection> & {
   /** Folders whose connections have already been fetched. */
   fetchedParentIds: number[];
+  /** The default folders are being fetched. */
+  initializing: boolean;
+  /** Folders whose connections are being fetched right now. */
+  fetchingIds: number[];
 };
 
 export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
@@ -20,6 +25,8 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
     filter: undefined,
     pendingSaveIds: [],
     fetchedParentIds: [],
+    initializing: false,
+    fetchingIds: [],
   },
   mutations: mutationsFor<ICloudSavedConnection>({
     connectionFilter(state: State, str: string) {
@@ -28,19 +35,28 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
     fetchedParentIds(state: State, parentIds: number[]) {
       state.fetchedParentIds = parentIds;
     },
+    initializing(state: State, initializing: boolean) {
+      state.initializing = initializing;
+    },
+    fetchingIds(state: State, ids: number[]) {
+      state.fetchingIds = ids;
+    },
     ...accessGrantMutations(),
   }, { field: 'name', direction: 'asc'}),
   modules: {
     nodes: ItemNodeModule('connectionFolderId', 'name'),
+    sidebar: SidebarModule,
   },
   actions: actionsFor<ICloudSavedConnection>('connections', {
     ...cloudAccessGrantActions('connections'),
     async initialize(context) {
       // Reset the state
-      await context.dispatch("load", { params: { topLevel: true } });
-
-      const parentIds = context.state.items.map((c) => c.connectionFolderId);
-      context.commit('fetchedParentIds', _.uniq(parentIds));
+      context.commit('initializing', true);
+      try {
+        await context.dispatch("load", { params: { default: true } });
+      } finally {
+        context.commit('initializing', false);
+      }
     },
     async poll() {
       // noop
@@ -56,9 +72,20 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
         ...fetchedParentIds,
         ...unfetchedParentIds,
       ]);
-      await context.dispatch('loadMore', {
-        params: { connectionFolderId: unfetchedParentIds },
-      });
+      context.commit('fetchingIds', [
+        ...context.state.fetchingIds,
+        ...unfetchedParentIds,
+      ]);
+      try {
+        await context.dispatch('loadMore', {
+          params: { connectionFolderId: unfetchedParentIds },
+        });
+      } finally {
+        context.commit(
+          'fetchingIds',
+          _.difference(context.state.fetchingIds, unfetchedParentIds)
+        );
+      }
     },
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
