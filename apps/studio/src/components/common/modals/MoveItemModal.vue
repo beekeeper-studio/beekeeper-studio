@@ -33,7 +33,11 @@
         </span>
       </label>
 
-      <tree :folders="folderNodes" :expanded-ids.sync="expandedIds">
+      <tree
+        :folders="folderNodes"
+        :expanded-ids="expandedIds"
+        @update:expandedIds="setExpandedIds"
+      >
         <template #folder="{ props }">
           <button
             type="button"
@@ -101,23 +105,23 @@ export default Vue.extend({
   },
   computed: {
     ...mapGetters(["isCloud"]),
+    folderPath() {
+      if (this.target?.type === "query") {
+        return "data/queryFolders";
+      }
+      return "data/connectionFolders";
+    },
     folders() {
       if (!this.target) {
         return [];
       }
-      if (this.target.type === "query") {
-        return this.$store.state["data/queryFolders"].items;
-      }
-      return this.$store.state["data/connectionFolders"].items;
+      return this.$store.state[this.folderPath].items;
     },
     folderNodes() {
       if (!this.target) {
         return [];
       }
-      if (this.target.type === "query") {
-        return this.$store.state["data/queryFolders/nodes"].items;
-      }
-      return this.$store.state["data/connectionFolders/nodes"].items;
+      return this.$store.state[`${this.folderPath}/nodes`].items;
     },
     rootBindings() {
       return [{ event: AppEvent.openMoveFileModal, handler: this.open }];
@@ -159,6 +163,20 @@ export default Vue.extend({
       );
 
       this.$modal.show(this.modalName);
+
+      // So every visible folder knows whether it has subfolders, which is what
+      // decides if it can be opened.
+      this.ensureLoaded(this.folders.map((folder: IFolder) => folder.id));
+    },
+    setExpandedIds(expandedIds: string[]) {
+      this.expandedIds = expandedIds;
+      const folderIds = this.folders
+        .filter((folder: IFolder) => expandedIds.includes(`folder-${folder.id}`))
+        .map((folder: IFolder) => folder.id);
+      this.ensureLoaded(folderIds);
+    },
+    ensureLoaded(folderIds: number[]) {
+      this.$store.dispatch(`${this.folderPath}/ensureLoaded`, folderIds);
     },
     handleFolderClick(event: MouseEvent, folder: IFolder) {
       if (folder.id !== this.selectedFolderId) {

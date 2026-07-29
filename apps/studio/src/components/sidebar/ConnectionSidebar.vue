@@ -334,6 +334,7 @@ export default {
     }),
     ...mapState('data/connectionFolders', {
       folders: 'items',
+      foldersLoading: 'loading',
       foldersError: 'error',
     }),
     ...mapState('data/connectionFolders/sidebar', {
@@ -342,15 +343,9 @@ export default {
     ...mapState({
       loadingFolderIds(state) {
         return [
-          ...state["data/connectionFolders"].fetchingIds,
-          ...state["data/connections"].fetchingIds,
+          ...state["data/connectionFolders"].folders.fetchingIds,
+          ...state["data/connections"].folders.fetchingIds,
         ];
-      },
-      initializing(state) {
-        return (
-          state["data/connectionFolders"].initializing ||
-          state["data/connections"].initializing
-        );
       },
     }),
     ...mapGetters({
@@ -374,6 +369,9 @@ export default {
     },
     expandedNodeIds() {
       return this.expandedFolderIds.map((id) => `folder-${id}`);
+    },
+    initializing() {
+      return this.folders.length === 0 && this.foldersLoading;
     },
     noPins() {
       return !this.pinnedConnections?.length;
@@ -459,7 +457,7 @@ export default {
     ...mapActions({
       saveFolder: 'data/connectionFolders/save',
       reorderConnection: 'data/connections/reorder',
-      ensureConnectionsLoaded: 'data/connections/ensureChildrenLoaded',
+      ensureConnectionsLoaded: 'data/connections/ensureLoaded',
       ensureSubfoldersLoaded: 'data/connectionFolders/ensureLoaded',
     }),
     ...mapMutations({

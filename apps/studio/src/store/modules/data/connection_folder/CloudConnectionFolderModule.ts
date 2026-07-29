@@ -2,18 +2,12 @@
 import { IConnectionFolder } from "@/common/interfaces/IQueryFolder";
 import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
+import { FolderFetchModule } from "@/store/modules/data/tree/FolderFetchModule";
 import { FolderNodeModule } from "@/store/modules/data/tree/FolderNodeModule";
 import { SidebarModule } from "@/store/modules/data/tree/SidebarModule";
 import _ from "lodash";
 
-type State = DataState<IConnectionFolder> & {
-  /** Folders whose children have already been fetched. */
-  fetchedIds: number[];
-  /** The default folders are being fetched. */
-  initializing: boolean;
-  /** Folders whose children are being fetched right now. */
-  fetchingIds: number[];
-};
+type State = DataState<IConnectionFolder>;
 
 export const CloudConnectionFolderModule: DataStore<IConnectionFolder, State> = {
   namespaced: true,
@@ -22,29 +16,17 @@ export const CloudConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     loading: false,
     error: null,
     pollError: null,
-    fetchedIds: [],
-    initializing: false,
-    fetchingIds: [],
   },
   mutations: {
     ...mutationsFor<IConnectionFolder>({}, { field: 'name', direction: 'asc'}),
     ...accessGrantMutations(),
-    fetchedIds(state, ids: number[]) {
-      state.fetchedIds = ids
-    },
-    initializing(state, initializing: boolean) {
-      state.initializing = initializing
-    },
-    fetchingIds(state, ids: number[]) {
-      state.fetchingIds = ids
-    },
   },
   modules: {
     nodes: FolderNodeModule,
     sidebar: SidebarModule,
+    folders: FolderFetchModule,
   },
-  actions: {
-    ...actionsFor<IConnectionFolder>('connectionFolders', {}),
+  actions: actionsFor<IConnectionFolder>('connectionFolders', {
     ...cloudAccessGrantActions('connectionFolders'),
     async poll() {
       // empty on purpose
@@ -52,39 +34,22 @@ export const CloudConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
     },
-    async initialize(context) {
-      // Reset the state
-      context.commit('sidebar/expandedIds', []);
-      context.commit('initializing', true);
-      try {
-        await context.dispatch('load', { params: { default: true } });
-      } finally {
-        context.commit('initializing', false);
-      }
-
-      // Expand default folders (Personal and Team)
-      const defaultIds = context.state.items.map((folder) => folder.id);
-      context.commit('fetchedIds', defaultIds);
-      context.commit('sidebar/expandedIds', defaultIds);
-      // The connections of these folders come with the default fetch, which
-      // can return none of them, so they can't mark themselves fetched.
-      context.commit('data/connections/fetchedParentIds', defaultIds, {
-        root: true,
-      });
+    async initialize() {
+      // noop
     },
     async ensureLoaded(context, parentIds: number[]) {
-      const fetchedIds = context.state.fetchedIds;
+      const fetchedIds = context.state.folders.fetchedIds;
       const unfetchedIds = _.difference(parentIds, fetchedIds);
       if (unfetchedIds.length === 0) {
         return;
       }
       // marked before the fetch so overlapping calls don't refetch these
-      context.commit('fetchedIds', [
+      context.commit('folders/fetchedIds', [
         ...fetchedIds,
         ...unfetchedIds,
       ]);
-      context.commit('fetchingIds', [
-        ...context.state.fetchingIds,
+      context.commit('folders/fetchingIds', [
+        ...context.state.folders.fetchingIds,
         ...unfetchedIds,
       ]);
       try {
@@ -93,11 +58,10 @@ export const CloudConnectionFolderModule: DataStore<IConnectionFolder, State> = 
         });
       } finally {
         context.commit(
-          'fetchingIds',
-          _.difference(context.state.fetchingIds, unfetchedIds)
+          'folders/fetchingIds',
+          _.difference(context.state.folders.fetchingIds, unfetchedIds)
         );
       }
     },
-  },
+  }),
 }
-

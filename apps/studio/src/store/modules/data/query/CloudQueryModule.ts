@@ -3,18 +3,11 @@ import { havingCli } from "../StoreHelpers";
 import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import _ from 'lodash'
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
+import { FolderFetchModule } from "@/store/modules/data/tree/FolderFetchModule";
 import { ItemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
-import { SidebarModule } from "@/store/modules/data/tree/SidebarModule";
 
 
-type State = DataState<ISavedQuery> & {
-  /** Folders whose queries have already been fetched. */
-  fetchedParentIds: number[];
-  /** The default folders are being fetched. */
-  initializing: boolean;
-  /** Folders whose queries are being fetched right now. */
-  fetchingIds: number[];
-};
+type State = DataState<ISavedQuery>;
 
 export const CloudQueryModule: DataStore<ISavedQuery, State> = {
   namespaced: true,
@@ -25,66 +18,49 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
     pollError: null,
     filter: undefined,
     pendingSaveIds: [],
-    fetchedParentIds: [],
-    initializing: false,
-    fetchingIds: [],
   },
   mutations: mutationsFor<ISavedQuery>({
     // more mutations go here
     savedQueryFilter(state: State, str: string) {
       state.filter = str;
     },
-    fetchedParentIds(state: State, parentIds: number[]) {
-      state.fetchedParentIds = parentIds;
-    },
-    initializing(state: State, initializing: boolean) {
-      state.initializing = initializing;
-    },
-    fetchingIds(state: State, ids: number[]) {
-      state.fetchingIds = ids;
-    },
     ...accessGrantMutations(),
   }, { field: 'title', direction: 'asc'}),
   modules: {
     nodes: ItemNodeModule('queryFolderId', 'title'),
-    sidebar: SidebarModule,
+    folders: FolderFetchModule,
   },
   actions: actionsFor<ISavedQuery>('queries', {
     ...cloudAccessGrantActions('queries'),
-    async initialize(context) {
-      context.commit('initializing', true);
-      try {
-        await context.dispatch("load", { params: { default: true } });
-      } finally {
-        context.commit('initializing', false);
-      }
+    async initialize() {
+      // noop
     },
     async poll() {
       // noop
     },
-    async ensureChildrenLoaded(context, parentIds: number[]) {
-      const fetchedParentIds = context.state.fetchedParentIds;
-      const unfetchedParentIds = _.difference(parentIds, fetchedParentIds);
-      if (unfetchedParentIds.length === 0) {
+    async ensureLoaded(context, parentIds: number[]) {
+      const fetchedIds = context.state.folders.fetchedIds;
+      const unfetchedIds = _.difference(parentIds, fetchedIds);
+      if (unfetchedIds.length === 0) {
         return;
       }
       // marked before the fetch so overlapping calls don't refetch these
-      context.commit('fetchedParentIds', [
-        ...fetchedParentIds,
-        ...unfetchedParentIds,
+      context.commit('folders/fetchedIds', [
+        ...fetchedIds,
+        ...unfetchedIds,
       ]);
-      context.commit('fetchingIds', [
-        ...context.state.fetchingIds,
-        ...unfetchedParentIds,
+      context.commit('folders/fetchingIds', [
+        ...context.state.folders.fetchingIds,
+        ...unfetchedIds,
       ]);
       try {
         await context.dispatch('loadMore', {
-          params: { queryFolderId: unfetchedParentIds },
+          params: { queryFolderId: unfetchedIds },
         });
       } finally {
         context.commit(
-          'fetchingIds',
-          _.difference(context.state.fetchingIds, unfetchedParentIds)
+          'folders/fetchingIds',
+          _.difference(context.state.folders.fetchingIds, unfetchedIds)
         );
       }
     },

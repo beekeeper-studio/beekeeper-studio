@@ -201,26 +201,23 @@ export default {
     ...mapState('data/queries/nodes', {'itemNodes': 'items'}),
     ...mapState('data/queryFolders/nodes', {'folderNodes': 'items'}),
     ...mapState('data/queries', {'queriesError': 'error', 'savedQueryFilter': 'filter', 'pendingSaveIds': 'pendingSaveIds'}),
-    ...mapState('data/queryFolders', {'folders': 'items', 'foldersError': 'error'}),
+    ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
     ...mapState('data/queryFolders/sidebar', {
       expandedFolderIds: 'expandedIds',
     }),
     ...mapState({
       loadingFolderIds(state) {
         return [
-          ...state["data/queryFolders"].fetchingIds,
-          ...state["data/queries"].fetchingIds,
+          ...state["data/queryFolders"].folders.fetchingIds,
+          ...state["data/queries"].folders.fetchingIds,
         ];
-      },
-      initializing(state) {
-        return (
-          state["data/queryFolders"].initializing ||
-          state["data/queries"].initializing
-        );
       },
     }),
     expandedNodeIds() {
       return this.expandedFolderIds.map((id) => `folder-${id}`);
+    },
+    initializing() {
+      return this.folders.length === 0 && this.foldersLoading;
     },
     filterQuery: {
       get() {
@@ -274,7 +271,7 @@ export default {
     ...mapActions({
       saveFolder: 'data/queryFolders/save',
       reorderQuery: 'data/queries/reorder',
-      ensureQueriesLoaded: 'data/queries/ensureChildrenLoaded',
+      ensureQueriesLoaded: 'data/queries/ensureLoaded',
       ensureSubfoldersLoaded: 'data/queryFolders/ensureLoaded',
     }),
     ...mapMutations({

@@ -3,15 +3,10 @@ import _ from 'lodash'
 import Vue from 'vue'
 import { mutationsFor, DataState, DataStore, utilActionsFor } from '../DataModuleBase'
 import { accessGrantMutations, localAccessGrantActions } from '@/store/modules/data/access_grant/accessGrantStore'
+import { FolderFetchModule } from "@/store/modules/data/tree/FolderFetchModule";
 import { ItemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
-import { SidebarModule } from "@/store/modules/data/tree/SidebarModule";
 
-type State = DataState<TransportFavoriteQuery> & {
-  /** The default folders are being fetched. */
-  initializing: boolean;
-  /** Folders whose queries are being fetched right now. */
-  fetchingIds: number[];
-}
+type State = DataState<TransportFavoriteQuery>
 
 export const UtilQueryModule: DataStore<TransportFavoriteQuery, State> = {
   namespaced: true,
@@ -22,40 +17,24 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, State> = {
     pollError: null,
     filter: undefined, // maybe this can be more advanced? date filter?
     pendingSaveIds: [],
-    initializing: false,
-    fetchingIds: [],
   },
   mutations: mutationsFor<TransportFavoriteQuery>({
     // more mutations go here
     savedQueryFilter(state: DataState<TransportFavoriteQuery>, str: string) {
       state.filter = str;
     },
-    initializing(state: State, initializing: boolean) {
-      state.initializing = initializing;
-    },
-    fetchingIds(state: State, ids: number[]) {
-      state.fetchingIds = ids;
-    },
     ...accessGrantMutations(),
   }, { field: 'title', direction : 'asc'}),
   modules: {
     nodes: ItemNodeModule('queryFolderId', 'title'),
-    sidebar: SidebarModule,
+    folders: FolderFetchModule,
   },
   actions: utilActionsFor<TransportFavoriteQuery>('query', {
     ...localAccessGrantActions(),
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
     },
-    async initialize(context) {
-      context.commit('initializing', true);
-      try {
-        await context.dispatch('load');
-      } finally {
-        context.commit('initializing', false);
-      }
-    },
-    async ensureChildrenLoaded() {
+    async ensureLoaded() {
       // noop
     },
     setSavedQueryFilter: _.debounce(function (context, filter) {

@@ -2,18 +2,11 @@ import { ICloudSavedConnection } from "@/common/interfaces/IConnection";
 import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { havingCli } from "@/store/modules/data/StoreHelpers";
 import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
+import { FolderFetchModule } from "@/store/modules/data/tree/FolderFetchModule";
 import { ItemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
-import { SidebarModule } from "@/store/modules/data/tree/SidebarModule";
 import _ from "lodash";
 
-type State = DataState<ICloudSavedConnection> & {
-  /** Folders whose connections have already been fetched. */
-  fetchedParentIds: number[];
-  /** The default folders are being fetched. */
-  initializing: boolean;
-  /** Folders whose connections are being fetched right now. */
-  fetchingIds: number[];
-};
+type State = DataState<ICloudSavedConnection>;
 
 export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
   namespaced: true,
@@ -24,66 +17,48 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
     pollError: null,
     filter: undefined,
     pendingSaveIds: [],
-    fetchedParentIds: [],
-    initializing: false,
-    fetchingIds: [],
   },
   mutations: mutationsFor<ICloudSavedConnection>({
     connectionFilter(state: State, str: string) {
       state.filter = str;
     },
-    fetchedParentIds(state: State, parentIds: number[]) {
-      state.fetchedParentIds = parentIds;
-    },
-    initializing(state: State, initializing: boolean) {
-      state.initializing = initializing;
-    },
-    fetchingIds(state: State, ids: number[]) {
-      state.fetchingIds = ids;
-    },
     ...accessGrantMutations(),
   }, { field: 'name', direction: 'asc'}),
   modules: {
     nodes: ItemNodeModule('connectionFolderId', 'name'),
-    sidebar: SidebarModule,
+    folders: FolderFetchModule,
   },
   actions: actionsFor<ICloudSavedConnection>('connections', {
     ...cloudAccessGrantActions('connections'),
-    async initialize(context) {
-      // Reset the state
-      context.commit('initializing', true);
-      try {
-        await context.dispatch("load", { params: { default: true } });
-      } finally {
-        context.commit('initializing', false);
-      }
+    async initialize() {
+      // noop
     },
     async poll() {
       // noop
     },
-    async ensureChildrenLoaded(context, parentIds: number[]) {
-      const fetchedParentIds = context.state.fetchedParentIds;
-      const unfetchedParentIds = _.difference(parentIds, fetchedParentIds);
-      if (unfetchedParentIds.length === 0) {
+    async ensureLoaded(context, parentIds: number[]) {
+      const fetchedIds = context.state.folders.fetchedIds;
+      const unfetchedIds = _.difference(parentIds, fetchedIds);
+      if (unfetchedIds.length === 0) {
         return;
       }
       // marked before the fetch so overlapping calls don't refetch these
-      context.commit('fetchedParentIds', [
-        ...fetchedParentIds,
-        ...unfetchedParentIds,
+      context.commit('folders/fetchedIds', [
+        ...fetchedIds,
+        ...unfetchedIds,
       ]);
-      context.commit('fetchingIds', [
-        ...context.state.fetchingIds,
-        ...unfetchedParentIds,
+      context.commit('folders/fetchingIds', [
+        ...context.state.folders.fetchingIds,
+        ...unfetchedIds,
       ]);
       try {
         await context.dispatch('loadMore', {
-          params: { connectionFolderId: unfetchedParentIds },
+          params: { connectionFolderId: unfetchedIds },
         });
       } finally {
         context.commit(
-          'fetchingIds',
-          _.difference(context.state.fetchingIds, unfetchedParentIds)
+          'folders/fetchingIds',
+          _.difference(context.state.folders.fetchingIds, unfetchedIds)
         );
       }
     },

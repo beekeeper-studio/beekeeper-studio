@@ -31,7 +31,11 @@
         </span>
       </label>
 
-      <tree :folders="folderNodes" :expanded-ids.sync="expandedIds">
+      <tree
+        :folders="folderNodes"
+        :expanded-ids="expandedIds"
+        @update:expandedIds="setExpandedIds"
+      >
         <template #folder="{ props }">
           <button
             type="button"
@@ -100,14 +104,17 @@ export default Vue.extend({
   },
   computed: {
     ...mapGetters(["isCloud"]),
+    folderPath() {
+      if (this.target?.type === "queryFolder") {
+        return "data/queryFolders";
+      }
+      return "data/connectionFolders";
+    },
     folders() {
       if (!this.target) {
         return [];
       }
-      if (this.target.type === "queryFolder") {
-        return this.$store.state["data/queryFolders"].items;
-      }
-      return this.$store.state["data/connectionFolders"].items;
+      return this.$store.state[this.folderPath].items;
     },
     rootBindings() {
       return [{ event: AppEvent.openMoveFolderModal, handler: this.open }];
@@ -160,6 +167,20 @@ export default Vue.extend({
       ).map((f) => `folder-${f.id}`);
 
       this.$modal.show(this.modalName);
+
+      // So every visible folder knows whether it has subfolders, which is what
+      // decides if it can be opened.
+      this.ensureLoaded(this.folders.map((folder: IFolder) => folder.id));
+    },
+    setExpandedIds(expandedIds: string[]) {
+      this.expandedIds = expandedIds;
+      const folderIds = this.folders
+        .filter((folder: IFolder) => expandedIds.includes(`folder-${folder.id}`))
+        .map((folder: IFolder) => folder.id);
+      this.ensureLoaded(folderIds);
+    },
+    ensureLoaded(folderIds: number[]) {
+      this.$store.dispatch(`${this.folderPath}/ensureLoaded`, folderIds);
     },
     handleFolderClick(event: MouseEvent, folder: IFolder) {
       if (folder.id !== this.selectedFolderId) {

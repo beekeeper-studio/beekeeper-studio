@@ -5,15 +5,11 @@ import { DataState, DataStore, mutateActions, mutationsFor } from "@/store/modul
 import { safely } from "@/store/modules/data/StoreHelpers";
 import { accessGrantMutations, localAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
+import { FolderFetchModule } from "@/store/modules/data/tree/FolderFetchModule";
 import { FolderNodeModule } from "@/store/modules/data/tree/FolderNodeModule";
 import { SidebarModule } from "@/store/modules/data/tree/SidebarModule";
 
-type State = DataState<IQueryFolder> & {
-  /** The default folders are being fetched. */
-  initializing: boolean;
-  /** Folders whose children are being fetched right now. */
-  fetchingIds: number[];
-}
+type State = DataState<IQueryFolder>
 
 export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
   namespaced: true,
@@ -22,21 +18,14 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
     loading: false,
     error: null,
     pollError: null,
-    initializing: false,
-    fetchingIds: [],
   },
   mutations: {
     ...mutationsFor<IQueryFolder>({}, { field: 'name', direction: 'asc' }),
     ...accessGrantMutations(),
-    initializing(state, initializing: boolean) {
-      state.initializing = initializing
-    },
-    fetchingIds(state, ids: number[]) {
-      state.fetchingIds = ids
-    },
   },
   modules: {
     nodes: FolderNodeModule,
+    folders: FolderFetchModule,
     sidebar: SidebarModule,
   },
   actions: {
@@ -45,14 +34,8 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
     },
-    async initialize(context) {
-      context.commit('sidebar/expandedIds', []);
-      context.commit('initializing', true);
-      try {
-        await context.dispatch('load');
-      } finally {
-        context.commit('initializing', false);
-      }
+    async initialize() {
+      // noop
     },
     async ensureLoaded() {
       // noop
