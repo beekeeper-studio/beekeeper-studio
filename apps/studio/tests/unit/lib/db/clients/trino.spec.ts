@@ -1,14 +1,20 @@
 const capturedQueries: string[] = []
+// When non-empty, the mocked query iterator yields these instead of the
+// default single-row result. Reset it in beforeEach.
+const mockQueryResults: Record<string, any>[] = []
 
 jest.mock('trino-client', () => {
   const mockQuery = jest.fn().mockImplementation((sql: string) => {
     capturedQueries.push(sql)
-    return Promise.resolve({
-      [Symbol.asyncIterator]: async function* () {
-        yield {
+    const results = mockQueryResults.length
+      ? [...mockQueryResults]
+      : [{
           data: [['1.0.0']],
           columns: [{ name: '_col0', type: 'varchar' }]
-        }
+        }]
+    return Promise.resolve({
+      [Symbol.asyncIterator]: async function* () {
+        yield* results
       }
     })
   })
@@ -183,5 +189,60 @@ describe('TrinoClient SQL escaping', () => {
     // Single quotes in values must be doubled to stay inside SQL string literals
     expect(sql).toContain("public''; DROP TABLE users --")
     expect(sql).toContain("test''; DROP TABLE users --")
+  })
+})
+
+describe('TrinoClient query error handling (bug #4489)', () => {
+  let client: TrinoClient
+
+  beforeEach(async () => {
+    jest.clearAllMocks()
+    mockQueryResults.length = 0
+    client = new TrinoClient(makeServer(), makeDatabase())
+    await client.connect()
+  })
+
+  it('should throw when trino yields an error result instead of returning 0 rows', async () => {
+    mockQueryResults.push({
+      id: 'q-1',
+      error: {
+        message: "line 1:1: mismatched input 'SELCT'",
+        errorCode: 1,
+        errorName: 'SYNTAX_ERROR',
+        errorType: 'USER_ERROR',
+      },
+    })
+
+    await expect(client.executeQuery('SELCT 1')).rejects.toThrow(
+      "SYNTAX_ERROR: line 1:1: mismatched input 'SELCT'"
+    )
+  })
+
+  it('should throw even when the error arrives after partial data', async () => {
+    mockQueryResults.push(
+      {
+        id: 'q-2',
+        data: [['partial']],
+        columns: [{ name: '_col0', type: 'varchar' }],
+      },
+      {
+        id: 'q-2',
+        error: {
+          message: 'Query exceeded per-node memory limit',
+          errorCode: 2,
+          errorName: 'EXCEEDED_LOCAL_MEMORY_LIMIT',
+          errorType: 'INSUFFICIENT_RESOURCES',
+        },
+      }
+    )
+
+    await expect(client.executeQuery('SELECT huge')).rejects.toThrow(
+      'EXCEEDED_LOCAL_MEMORY_LIMIT: Query exceeded per-node memory limit'
+    )
+  })
+
+  it('should still return rows for successful queries', async () => {
+    const results = await client.executeQuery('SELECT 1')
+    expect(results[0].rows).toEqual([{ _col0: '1.0.0' }])
   })
 })

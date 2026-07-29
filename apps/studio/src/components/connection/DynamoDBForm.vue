@@ -15,6 +15,7 @@
         id="authType"
         class="form-control"
         v-model="authType"
+        :disabled="disabled"
       >
         <option v-for="t in authTypes" :key="t.value" :value="t.value">
           {{ t.name }}
@@ -22,7 +23,7 @@
       </select>
     </div>
 
-    <common-iam :config="config" :auth-type="authType" />
+    <common-iam :config="config" :auth-type="authType" :disabled="disabled" />
 
     <div class="form-group">
       <label for="endpoint">
@@ -34,6 +35,7 @@
         class="form-control"
         placeholder="e.g. http://localhost:8000"
         v-model="endpoint"
+        :disabled="disabled"
       >
     </div>
   </div>
@@ -44,7 +46,14 @@ import CommonIam from './CommonIam.vue'
 import { IamAuthType, IamAuthTypes } from '@/lib/db/types'
 
 export default {
-  props: ['config', 'testing'],
+  props: {
+    config: Object,
+    testing: Boolean,
+    disabled: {
+      type: Boolean,
+      default: false
+    }
+  },
   components: { CommonIam },
   data() {
     return {

@@ -38,6 +38,7 @@ import {
   BundledPluginModule,
 } from '@commercial/backend/plugin-system/modules';
 import bksConfig from '@/common/bksConfig';
+import { PluginErrorCode, PluginSystemErrorCode } from '@/lib/errors';
 
 import * as sms from 'source-map-support'
 
@@ -70,6 +71,8 @@ interface Reply {
   type: 'reply' | 'error',
   data?: any,
   error?: string
+  errorName?: "PluginSystemError" | "PluginError" | "Error"
+  errorCode?: PluginSystemErrorCode | PluginErrorCode
   stack?: string
 }
 
@@ -155,6 +158,8 @@ async function runHandler(id: string, name: string, args: any) {
         replyArgs.type = 'error';
         replyArgs.stack = e?.stack;
         replyArgs.error = e?.message ?? e;
+        replyArgs.errorName = e?.name;
+        replyArgs.errorCode = e?.code;
         log.error("HANDLER: ERROR", e)
       })
       .finally(() => {

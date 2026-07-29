@@ -122,6 +122,56 @@ describe("querySelection", () => {
     editor.destroy();
   });
 
+  it("should detect parameters on the first callback for a freshly loaded query", () => {
+    const onQuerySelectionChange = vi.fn();
+    // Editor loaded with an existing (saved) query containing a named param, and paramTypes
+    // supplied at construction — mirrors loading a saved query then running it without editing.
+    const editor = initializeEditor(
+      new SqlTextEditor({ onQuerySelectionChange, paramTypes: { named: [":"] } }),
+      "SELECT * FROM users WHERE id = :id"
+    );
+
+    // First interaction (e.g. clicking Run/moving the cursor) fires the callback. The params
+    // must already be identified here — previously paramTypes lagged one transaction behind,
+    // so this first callback reported no parameters until the query was edited.
+    editor.view.dispatch({
+      selection: EditorSelection.cursor(0),
+    });
+
+    expect(onQuerySelectionChange).toHaveBeenCalled();
+    const params = onQuerySelectionChange.mock.calls[0][0];
+    expect(params.selectedQuery.parameters).toContain(":id");
+
+    editor.destroy();
+  });
+
+  it("should detect numbered params on the first callback with a seeded dialect", () => {
+    const onQuerySelectionChange = vi.fn();
+    // Seed both a non-default dialect and numbered paramTypes at construction — the
+    // Postgres "$1" case, which is the most common real-world trigger for this bug.
+    // Exercises the dialect-seeded create() path alongside numbered param detection.
+    const editor = initializeEditor(
+      new SqlTextEditor({
+        onQuerySelectionChange,
+        identiferDialect: "psql",
+        paramTypes: { numbered: ["$"] },
+      }),
+      "SELECT * FROM users WHERE id = $1 AND org = $2"
+    );
+
+    editor.view.dispatch({
+      selection: EditorSelection.cursor(0),
+    });
+
+    expect(onQuerySelectionChange).toHaveBeenCalled();
+    const params = onQuerySelectionChange.mock.calls[0][0];
+    expect(params.selectedQuery.parameters).toEqual(
+      expect.arrayContaining(["$1", "$2"])
+    );
+
+    editor.destroy();
+  });
+
   it("should fall back to a single whole-text query and report the error when identify throws", () => {
     const onQuerySelectionChange = vi.fn();
     const editor = initializeEditor(

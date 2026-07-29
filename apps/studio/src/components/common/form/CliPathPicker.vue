@@ -37,6 +37,7 @@
           type="button"
           v-tooltip="'Change path'"
           @click.prevent="openPicker"
+          :disabled="disabled"
         >
           <i class="material-icons">edit</i>
         </button>
@@ -45,6 +46,7 @@
           type="button"
           v-tooltip="'Clear'"
           @click.prevent="clearValue"
+          :disabled="disabled"
         >
           <i class="material-icons">close</i>
         </button>
@@ -67,14 +69,16 @@
         @input="onPick"
         :input-id="inputId"
         :options="filePickerOptions"
+        :disabled="disabled"
       >
         <template #actions>
           <div class="input-group-append">
             <a
               type="button"
               class="btn btn-flat btn-icon"
+              :class="{ disabled }"
               v-tooltip="`Automatically find ${toolName}`"
-              @click.prevent="findCli(true)"
+              @click.prevent="!disabled && findCli(true)"
             >
               <i class="material-icons">search</i>
               <span>Find</span>
@@ -110,6 +114,7 @@ export default {
     // Auto-run discovery when the component mounts. Discovery still backs off
     // when there's already a value, so it never clobbers a manual setting.
     autoDiscoverOnMount: { type: Boolean, default: true },
+    disabled: { type: Boolean, default: false },
   },
   data() {
     return { cliError: false }

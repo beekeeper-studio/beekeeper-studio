@@ -30,11 +30,11 @@
 </template>
 <script lang="ts">
 import _ from 'lodash'
-import { IQueryFolder } from '@/common/interfaces/IQueryFolder'
 import Vue from 'vue'
-import { mapState, mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import TimeAgo from 'javascript-time-ago'
 import EditableText from '@/components/common/EditableText.vue'
+import { AppEvent } from '@/common/AppEvent'
 
 export default Vue.extend({
   components: { EditableText },
@@ -44,28 +44,11 @@ export default Vue.extend({
     rename: false,
   }),
   computed: {
-    ...mapGetters(['isCloud']),
+    ...mapGetters(["isCloud"]),
     ...mapState('data/queryFolders', {'folders': 'items'}),
     truncatedText() {
       const excerpt: string = this.item.excerpt ?? ''
       return _.truncate(excerpt.trim().replaceAll('\n', ''), { length: 60 })
-    },
-    moveToOptions() {
-      const rootById: Record<number, string> = {}
-      this.folders.forEach((f: IQueryFolder) => { if (!f.parentId) rootById[f.id] = f.name })
-      return this.folders
-        .filter((folder: IQueryFolder) => folder.id !== this.item.queryFolderId)
-        .map((folder: IQueryFolder) => {
-          let name: string
-          if (!folder.parentId) {
-            const hasSubs = this.folders.some((f: IQueryFolder) => f.parentId === folder.id)
-            name = hasSubs ? `Move to ${folder.name} (top level)` : `Move to ${folder.name}`
-          } else {
-            const parentName = rootById[folder.parentId] || ''
-            name = `Move to ${parentName} \u2192 ${folder.name}`
-          }
-          return { name, handler: this.moveItem, folder }
-        })
     },
     subtitle() {
       const result = []
@@ -81,31 +64,6 @@ export default Vue.extend({
     }
   },
   methods: {
-    async moveToRoot(item) {
-      try {
-        const updated = _.clone(item)
-
-        updated.queryFolderId = null
-        await this.$store.dispatch('data/queries/save', updated)
-      } catch (ex) {
-        this.$noty.error(`Move Error: ${ex.message}`)
-        console.error(ex)
-      }
-    },
-    async moveItem({ item, option }) {
-      try {
-        const folder = option.folder
-        console.log("moving item!", folder)
-        if (!folder || !folder.id) return
-        const updated = _.clone(item)
-        updated.queryFolderId = folder.id
-        await this.$store.dispatch('data/queries/save', updated)
-
-      } catch (ex) {
-        this.$noty.error(`Move Error: ${ex.message}`)
-        console.error(ex)
-      }
-    },
     openContextMenu(event, item) {
       // Stop here and propagate the event if right clicking an input element
       if (event.target.tagName === 'INPUT') {
@@ -114,11 +72,33 @@ export default Vue.extend({
 
       event.stopPropagation();
 
+      const canWrite = this.item.canWrite ?? true;
+
       const options = [
         {
           name: "Open",
           handler: ({ item }) => this.$emit('open', item)
         },
+        {
+          name: "View Edit History",
+          handler: ({ item }) => this.$emit('open-history', item)
+        },
+        { type: 'divider' },
+        {
+          name: "Share",
+          slug: 'share',
+          handler: this.share,
+          hideIf: !this.isCloud || !this.item.id,
+        },
+        {
+          name: "Duplicate",
+          handler: ({ item }) => this.$emit('duplicate', item)
+        },
+        {
+          name: "Export",
+          handler: ({ item }) => this.$emit('export', item)
+        },
+        { type: 'divider' },
         {
           name: "Rename",
           handler: () => {
@@ -126,36 +106,31 @@ export default Vue.extend({
           },
         },
         {
-          name: "Duplicate",
-          handler: ({ item }) => this.$emit('duplicate', item)
+          name: "Move",
+          handler: () => {
+            this.trigger(AppEvent.openMoveFileModal, {
+              type: "query",
+              value: this.item,
+            })
+          },
+          hideIf: this.folders.length === 0,
         },
         {
           name: "Delete",
           handler: ({ item }) => this.$emit('remove', item)
         },
-        {
-          name: "View Edit History",
-          handler: ({ item }) => this.$emit('open-history', item)
-        },
-        {
-          type: 'divider'
-        },
-        {
-          name: "Export",
-          handler: ({ item }) => this.$emit('export', item)
-        },
-      ]
-      if (this.folders.length > 0) {
-        options.push({ type: 'divider' })
-        if (!this.isCloud && this.item.queryFolderId) {
-          options.push({ name: 'Move to top level', handler: ({ item }) => this.moveToRoot(item) })
-        }
-        options.push(...this.moveToOptions)
-      }
+      ].filter(({ hideIf }) => !hideIf)
+
       this.$bks.openMenu({
         item, event,
         options
       })
+    },
+    share() {
+      this.trigger(AppEvent.openShareModal, {
+        id: this.item.id,
+        module: "data/queries",
+      });
     },
     async submitRename(title) {
       if (!title || title === this.item.title) {

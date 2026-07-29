@@ -11,7 +11,7 @@ import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import migration from "@/migration/20250529_add_plugin_settings";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import { ConfigurationModule } from "@commercial/backend/plugin-system/modules";
-import { PluginSystemDisabledError } from "@/services/plugin/errors";
+import { PluginSystemError } from "@/lib/errors";
 import { createConfig } from "@tests/integration/utils/config";
 
 describe("Plugin Configuration Module", () => {
@@ -82,9 +82,9 @@ describe("Plugin Configuration Module", () => {
         community: [],
       });
       await expect(manager.installPlugin("official-plugin")).rejects.toThrow();
-      await expect(manager.installPlugin("community-plugin")).rejects.toThrow(
-        PluginSystemDisabledError
-      );
+      const promise = manager.installPlugin("community-plugin");
+      await expect(promise).rejects.toBeInstanceOf(PluginSystemError);
+      await expect(promise).rejects.toHaveProperty("code", "PLUGIN_SYSTEM_DISABLED");
       expect(fetchSpy).not.toHaveBeenCalled();
 
       fetchSpy.mockRestore();

@@ -16,6 +16,9 @@ export const CloudQueryAuditModule: Module<State, RootState> = {
     pollError: null,
   },
   actions: {
+    async initialize() {
+      // noop
+    },
     async load() {},
     async poll() {},
     async list(context, queryId: number): Promise<IQueryAudit[]> {
@@ -36,7 +39,7 @@ export const CloudQueryAuditModule: Module<State, RootState> = {
     async restore(
       context,
       { queryId, auditId }: { queryId: number; auditId: number }
-    ): Promise<ISavedQuery> {
+    ): Promise<void> {
       return await havingCli(
         context,
         (cli) => cli.queryAudits.restore(queryId, auditId),
