@@ -26,5 +26,9 @@ export const FolderFetchModule: Module<State, RootState> = {
     fetchingIds(state, ids: number[]) {
       state.fetchingIds = ids;
     },
+    reset(state) {
+      state.fetchedIds = [];
+      state.fetchingIds = [];
+    },
   },
 };

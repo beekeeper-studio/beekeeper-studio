@@ -727,10 +727,45 @@ const store = new Vuex.Store<State>({
       context.commit('tabActive', value)
     },
     async refreshConnections(context) {
-      context.dispatch('data/connectionFolders/load')
-      context.dispatch('data/connections/load')
+      const expandedIds = context.state['data/connectionFolders'].sidebar.expandedIds
+
+      context.commit('data/connections/folders/reset');
+      context.commit('data/connectionFolders/folders/reset');
+
+      await context.dispatch('data/connectionFolders/load', {
+        params: { default: true },
+      })
+
+      if (expandedIds.length > 0) {
+        context.dispatch('data/connections/load', {
+          params: { connectionFolderId: expandedIds },
+        })
+        context.dispatch('data/connectionFolders/loadMore', {
+          params: { parentId: expandedIds },
+        })
+      }
+
       await context.dispatch('pinnedConnections/loadPins');
       await context.dispatch('pinnedConnections/reorder');
+    },
+    async refreshQueries(context) {
+      const expandedIds = context.state['data/queryFolders'].sidebar.expandedIds
+
+      context.commit('data/queries/folders/reset');
+      context.commit('data/queryFolders/folders/reset');
+
+      await context.dispatch('data/queryFolders/load', {
+        params: { default: true },
+      })
+
+      if (expandedIds.length > 0) {
+        context.dispatch('data/queries/load', {
+          params: { queryFolderId: expandedIds },
+        })
+        context.dispatch('data/queryFolders/loadMore', {
+          params: { parentId: expandedIds },
+        })
+      }
     },
     async initRootStates(context) {
       await context.dispatch('fetchUsername')

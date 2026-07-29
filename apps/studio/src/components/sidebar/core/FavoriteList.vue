@@ -312,8 +312,8 @@ export default {
         this.selected = null
       }
     },
-    refresh() {
-      this.$store.dispatch("data/queries/load")
+    async refresh() {
+      await this.$store.dispatch('refreshQueries')
     },
     isActive(item) {
       return this.activeTab && this.activeTab.queryId === item.id
