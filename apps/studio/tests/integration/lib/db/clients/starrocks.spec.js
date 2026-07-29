@@ -12,13 +12,15 @@ async function waitForBackend(host, port) {
     let conn
     try {
       conn = await mysql.createConnection({ host, port, user: 'root', password: '' })
-      const [rows] = await conn.query('SHOW BACKENDS')
-      if (rows.some((r) => String(r.Alive) === 'true')) {
-        await conn.query('CREATE DATABASE IF NOT EXISTS test')
-        return
-      }
+      await conn.query('CREATE DATABASE IF NOT EXISTS test')
+      await conn.query(
+        'CREATE TABLE IF NOT EXISTS test._bk_probe (id int not null) ' +
+        'primary key(id) properties("replication_num" = "1")'
+      )
+      await conn.query('DROP TABLE test._bk_probe')
+      return
     } catch {
-      // FE not ready yet, retry
+      // FE/BE not ready yet, retry
     } finally {
       if (conn) {
         await conn.end()
@@ -26,7 +28,7 @@ async function waitForBackend(host, port) {
     }
     await new Promise((resolve) => setTimeout(resolve, 2000))
   }
-  throw new Error('StarRocks backend did not become alive in time')
+  throw new Error('StarRocks backend did not become ready in time')
 }
 
 describe("StarRocks Tests", () => {
