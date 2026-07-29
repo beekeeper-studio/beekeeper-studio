@@ -17,7 +17,7 @@ DATASET_BASE="https://raw.githubusercontent.com/StarRocks/demo/master/documentat
 MYSQL="mysql -h 127.0.0.1 -P $SR_QUERY_PORT -u root --skip-column-names"
 
 # Start StarRocks (FE + BE) using the image's own entrypoint.
-cd "$DEPLOY_DIR"
+cd "$DEPLOY_DIR" || exit
 ./entrypoint.sh &
 SR_PID=$!
 
@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS quickstart.weatherdata (
 );
 SQL
 
-  cd /tmp
+  cd /tmp || exit
   echo "[init] Downloading NYC crash dataset..."
   curl -fsSL -O "$DATASET_BASE/NYPD_Crash_Data.csv"
   echo "[init] Downloading weather dataset..."
