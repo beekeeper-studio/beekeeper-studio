@@ -66,7 +66,7 @@
                   :disabled="editingDisabled"
                 />
                 <mysql-form
-                  v-else-if="['mysql', 'mariadb', 'tidb'].includes(config.connectionType)"
+                  v-else-if="['mysql', 'mariadb', 'tidb', 'starrocks'].includes(config.connectionType)"
                   :config="config"
                   :testing="testing"
                   :disabled="editingDisabled"
