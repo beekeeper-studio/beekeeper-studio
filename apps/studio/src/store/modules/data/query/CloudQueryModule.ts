@@ -3,11 +3,12 @@ import { havingCli } from "../StoreHelpers";
 import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import _ from 'lodash'
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
-import { buildTreeItemNodes } from "@/common/utils/folderTree";
-import { itemMoveActions } from "@/store/modules/data/move/moveStore";
+import { itemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 
 
-type State = DataState<ISavedQuery>
+type State = DataState<ISavedQuery> & {
+  listOptions?: Record<string, unknown>
+};
 
 export const CloudQueryModule: DataStore<ISavedQuery, State> = {
   namespaced: true,
@@ -17,7 +18,8 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
     error: null,
     pollError: null,
     filter: undefined,
-    pendingSaveIds: []
+    pendingSaveIds: [],
+    listOptions: undefined,
   },
   mutations: mutationsFor<ISavedQuery>({
     // more mutations go here
@@ -26,20 +28,25 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
     },
     ...accessGrantMutations(),
   }, { field: 'title', direction: 'asc'}),
+  modules: {
+    nodes: itemNodeModule('queryFolderId', 'title'),
+  },
   actions: actionsFor<ISavedQuery>('queries', {
     ...cloudAccessGrantActions('queries'),
-    ...itemMoveActions('queryFolderId'),
+    async afterMutate(context, { type, data }) {
+      context.commit(`nodes/${type}`, data)
+    },
     setSavedQueryFilter: _.debounce(function (context, filter) {
       context.commit('savedQueryFilter', filter);
     }, 500),
     async saveMany(context, items: ISavedQuery[]) {
       // Mark items as pending to protect from poll overwrites
       items.forEach(item => context.commit('addPendingSave', item.id))
-      context.commit('upsert', items)
+      await context.dispatch('mutate', { type: 'upsert', data: items })
       try {
         return await havingCli(context, async (cli) => {
           const saved = await Promise.all(items.map(item => cli.queries.upsert(item)))
-          context.commit('upsert', saved)
+          await context.dispatch('mutate', { type: 'upsert', data: saved })
         })
       } finally {
         // Clear pending status
@@ -78,10 +85,13 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
       context.commit('addPendingSave', item.id)
 
       // Optimistic commit with numeric position
-      context.commit('upsert', {
-        ...existing,
-        queryFolderId: queryFolderId ?? existing.queryFolderId,
-        position: optimisticPosition
+      await context.dispatch('mutate', {
+        type: 'upsert',
+        data: {
+          ...existing,
+          queryFolderId: queryFolderId ?? existing.queryFolderId,
+          position: optimisticPosition
+        }
       })
 
       // Use dedicated reorder API that returns all affected positions
@@ -93,21 +103,24 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
             queryFolderId
           )
           // Update all affected items with their new positions and folder
-          affectedItems.forEach(affected => {
+          for (const affected of affectedItems) {
             const existing = context.state.items.find(q => q.id === affected.id)
             if (existing) {
-              context.commit('upsert', {
-                ...existing,
-                position: affected.position,
-                queryFolderId: affected.queryFolderId
+              await context.dispatch('mutate', {
+                type: 'upsert',
+                data: {
+                  ...existing,
+                  position: affected.position,
+                  queryFolderId: affected.queryFolderId
+                }
               })
             }
-          })
+          }
           return item.id
         })
       } catch (e) {
         // Revert optimistic update using pre-mutation snapshot
-        context.commit('upsert', snapshot)
+        await context.dispatch('mutate', { type: 'upsert', data: snapshot })
         throw e
       } finally {
         // Clear pending status
@@ -116,9 +129,6 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
     }
   }),
   getters: {
-    nodes(state) {
-      return buildTreeItemNodes(state.items, 'queryFolderId', 'title')
-    },
     filteredQueries(state) {
       if (!state.filter) {
         return state.items;

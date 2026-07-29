@@ -67,6 +67,7 @@
             </div>
           </div>
         </div>
+        <expired-folder-alert v-if="!canCreateFolders && folders.length > 0" />
         <error-alert
           v-if="error"
           :error="error"
@@ -157,16 +158,18 @@
 
 <script>
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
+import { SmartLocalStorage } from '@/common/LocalStorage'
 import { mapActions, mapGetters, mapState } from 'vuex'
 import SidebarLoading from '../../common/SidebarLoading.vue'
 import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
 import { AppEvent } from '@/common/AppEvent'
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
-import { SmartLocalStorage } from '@/common/LocalStorage'
 import EditableText from '@/components/common/EditableText.vue'
+import { parseReorderTarget } from '@/common/utils/folderTree'
 
 export default {
-  components: { SidebarLoading, ErrorAlert, FavoriteListItem, Tree, TreeFolder, EditableText },
+  components: { SidebarLoading, ErrorAlert, ExpiredFolderAlert, FavoriteListItem, Tree, TreeFolder, EditableText },
   data: function () {
     return {
       checkedFavorites: [],
@@ -202,15 +205,16 @@ export default {
   },
   computed: {
     ...mapState(['workspaceId']),
-    ...mapGetters(['workspace', 'isCloud', 'isUltimate']),
+    ...mapGetters(['workspace', 'isCloud', 'isUltimate', 'canCreateFolders']),
     // v1 was a single workspace-agnostic map, so its expanded state can't be
     // attributed to a workspace — it is dropped rather than migrated.
     expandedStorageKey() {
       return `queryFolderExpanded-v2-${this.workspaceId}`;
     },
-    ...mapGetters('data/queries', {'filteredQueries': 'filteredQueries', 'itemNodes': 'nodes'}),
-    ...mapGetters('data/queryFolders', {'folderNodes': 'nodes'}),
+    ...mapGetters('data/queries', {'filteredQueries': 'filteredQueries'}),
     ...mapState('tabs', {'activeTab': 'active'}),
+    ...mapState('data/queries/nodes', {'itemNodes': 'items'}),
+    ...mapState('data/queryFolders/nodes', {'folderNodes': 'items'}),
     ...mapState('data/queries', {'queriesLoading': 'loading', 'queriesError': 'error', 'savedQueryFilter': 'filter', 'pendingSaveIds': 'pendingSaveIds'}),
     ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
     filterQuery: {
@@ -269,8 +273,8 @@ export default {
   },
   methods: {
     ...mapActions({
-      moveQueryFolder: 'data/queryFolders/move',
-      moveQuery: 'data/queries/move',
+      saveFolder: 'data/queryFolders/save',
+      reorderQuery: 'data/queries/reorder',
     }),
     setExpandedIds(expandedIds) {
       this.expandedIds = expandedIds
@@ -343,7 +347,7 @@ export default {
       this.checkedFavorites = [];
     },
     createFolder() {
-      if (!this.isUltimate && !this.isCloud) {
+      if (!this.canCreateFolders) {
         this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }
@@ -426,7 +430,7 @@ export default {
           },
           {
             name: 'Move',
-            handler: ({ item }) => this.trigger(AppEvent.openMoveFileModal, { type: 'queryFolder', value: item }),
+            handler: ({ item }) => this.trigger(AppEvent.openMoveFolderModal, { type: 'queryFolder', value: item }),
             hideIf: !canWrite,
           },
           {
@@ -439,20 +443,27 @@ export default {
       this.$bks.openMenu({ event, item: folder, options })
     },
     /** @param event {import("@beekeeperstudio/ui-kit").TreeNodeMoveEvent} */
-    async handleTreeNodeMove({ source, target, position }) {
+    async handleTreeNodeMove(event) {
+      const source = event.source;
+      const target = event.target;
       try {
-        if (source.type === 'folder') {
-          // Folders have no ordering, so they land inside whatever folder the drop points at
-          let targetId = target.ref.queryFolderId ?? null
-          if (target.type === 'folder') {
-            targetId = target.ref.id
-          }
-          await this.moveQueryFolder({ sourceId: source.ref.id, targetId, position: 'inside' })
-        } else {
-          await this.moveQuery({ sourceId: source.ref.id, targetId: target.ref.id, position })
+        if (source.type === 'folder' && target.type === 'folder') {
+          await this.saveFolder({ ...source.ref, parentId: target.ref.id });
+        } else if (source.type === 'item') {
+          const { parentId, position } = parseReorderTarget(event);
+          await this.reorderQuery({
+            item: source.ref,
+            queryFolderId: parentId,
+            position,
+          });
         }
       } catch (ex) {
-        this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
+        let errorMessage = `Move error: ${ex.userMessage ?? ex.message}`;
+        if (ex.message.includes("[team_folder_in_personal_tree]")) {
+          errorMessage =
+            "You can not move this to your personal folder because it is shared with other workspace members.";
+        }
+        this.$noty.error(errorMessage);
       }
     },
     share(folder) {

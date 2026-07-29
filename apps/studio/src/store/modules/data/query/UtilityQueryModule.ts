@@ -3,10 +3,11 @@ import _ from 'lodash'
 import Vue from 'vue'
 import { mutationsFor, DataState, DataStore, utilActionsFor } from '../DataModuleBase'
 import { accessGrantMutations, localAccessGrantActions } from '@/store/modules/data/access_grant/accessGrantStore'
-import { buildTreeItemNodes } from '@/common/utils/folderTree'
-import { itemMoveActions } from '@/store/modules/data/move/moveStore'
+import { itemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 
-export const UtilQueryModule: DataStore<TransportFavoriteQuery, DataState<TransportFavoriteQuery>> = {
+type State = DataState<TransportFavoriteQuery>
+
+export const UtilQueryModule: DataStore<TransportFavoriteQuery, State> = {
   namespaced: true,
   state: {
     items: [],
@@ -14,7 +15,7 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, DataState<Transp
     error: null,
     pollError: null,
     filter: undefined, // maybe this can be more advanced? date filter?
-    pendingSaveIds: []
+    pendingSaveIds: [],
   },
   mutations: mutationsFor<TransportFavoriteQuery>({
     // more mutations go here
@@ -23,9 +24,14 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, DataState<Transp
     },
     ...accessGrantMutations(),
   }, { field: 'title', direction : 'asc'}),
+  modules: {
+    nodes: itemNodeModule('queryFolderId', 'title'),
+  },
   actions: utilActionsFor<TransportFavoriteQuery>('query', {
     ...localAccessGrantActions(),
-    ...itemMoveActions('queryFolderId'),
+    async afterMutate(context, { type, data }) {
+      context.commit(`nodes/${type}`, data)
+    },
     setSavedQueryFilter: _.debounce(function (context, filter) {
       context.commit('savedQueryFilter', filter);
     }, 500),
@@ -84,17 +90,17 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, DataState<Transp
         .map(q => ({ ...q }))
 
       // Optimistic update
-      context.commit('upsert', updates)
+      await context.dispatch('mutate', { type: 'upsert', data: updates })
 
       try {
         // Save all items
         const saved = await Promise.all(
           updates.map(q => Vue.prototype.$util.send('appdb/query/save', { obj: q }))
         )
-        context.commit('upsert', saved)
+        await context.dispatch('mutate', { type: 'upsert', data: saved })
       } catch (e) {
         // Revert optimistic update using pre-mutation snapshots
-        context.commit('upsert', snapshot)
+        await context.dispatch('mutate', { type: 'upsert', data: snapshot })
         throw e
       }
 
@@ -102,9 +108,6 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, DataState<Transp
     }
   }, {}, { text: true, title: true, database: true, excerpt: true, id: true }),
   getters: {
-    nodes(state) {
-      return buildTreeItemNodes(state.items, 'queryFolderId', 'title')
-    },
     filteredQueries(state) {
       if (!state.filter) {
         return state.items;

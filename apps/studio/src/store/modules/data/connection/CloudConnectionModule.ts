@@ -2,11 +2,12 @@ import { ICloudSavedConnection } from "@/common/interfaces/IConnection";
 import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { havingCli } from "@/store/modules/data/StoreHelpers";
 import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
-import { buildTreeItemNodes } from "@/common/utils/folderTree";
-import { itemMoveActions } from "@/store/modules/data/move/moveStore";
+import { itemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 import _ from "lodash";
 
-type State = DataState<ICloudSavedConnection>
+type State = DataState<ICloudSavedConnection> & {
+  listOptions?: Record<string, unknown>
+};
 
 export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
   namespaced: true,
@@ -16,7 +17,8 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
     error: null,
     pollError: null,
     filter: undefined,
-    pendingSaveIds: []
+    pendingSaveIds: [],
+    listOptions: undefined,
   },
   mutations: mutationsFor<ICloudSavedConnection>({
     connectionFilter(state: State, str: string) {
@@ -24,20 +26,25 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
     },
     ...accessGrantMutations(),
   }, { field: 'name', direction: 'asc'}),
+  modules: {
+    nodes: itemNodeModule('connectionFolderId', 'name'),
+  },
   actions: actionsFor<ICloudSavedConnection>('connections', {
     ...cloudAccessGrantActions('connections'),
-    ...itemMoveActions('connectionFolderId'),
+    async afterMutate(context, { type, data }) {
+      context.commit(`nodes/${type}`, data)
+    },
     setConnectionFilter: _.debounce(function (context, filter) {
       context.commit('connectionFilter', filter);
     }, 500),
     async saveMany(context, items: ICloudSavedConnection[]) {
       // Mark items as pending to protect from poll overwrites
       items.forEach(item => context.commit('addPendingSave', item.id))
-      context.commit('upsert', items)
+      await context.dispatch('mutate', { type: 'upsert', data: items })
       try {
         return await havingCli(context, async (cli) => {
           const saved = await Promise.all(items.map(item => cli.connections.upsert(item)))
-          context.commit('upsert', saved)
+          await context.dispatch('mutate', { type: 'upsert', data: saved })
         })
       } finally {
         // Clear pending status
@@ -76,10 +83,13 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
       context.commit('addPendingSave', item.id)
 
       // Optimistic commit with numeric position
-      context.commit('upsert', {
-        ...existing,
-        connectionFolderId: connectionFolderId ?? existing.connectionFolderId,
-        position: optimisticPosition
+      await context.dispatch('mutate', {
+        type: 'upsert',
+        data: {
+          ...existing,
+          connectionFolderId: connectionFolderId ?? existing.connectionFolderId,
+          position: optimisticPosition
+        }
       })
 
       // Use dedicated reorder API that returns all affected positions
@@ -91,21 +101,24 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
             connectionFolderId
           )
           // Update all affected items with their new positions and folder
-          affectedItems.forEach(affected => {
+          for (const affected of affectedItems) {
             const existing = context.state.items.find(c => c.id === affected.id)
             if (existing) {
-              context.commit('upsert', {
-                ...existing,
-                position: affected.position,
-                connectionFolderId: affected.connectionFolderId
+              await context.dispatch('mutate', {
+                type: 'upsert',
+                data: {
+                  ...existing,
+                  position: affected.position,
+                  connectionFolderId: affected.connectionFolderId
+                }
               })
             }
-          })
+          }
           return item.id
         })
       } catch (e) {
         // Revert optimistic update using pre-mutation snapshot
-        context.commit('upsert', snapshot)
+        await context.dispatch('mutate', { type: 'upsert', data: snapshot })
         throw e
       } finally {
         // Clear pending status
@@ -114,9 +127,6 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
     }
   }),
   getters: {
-    nodes(state) {
-      return buildTreeItemNodes(state.items, 'connectionFolderId', 'name')
-    },
     filteredConnections(state) {
       if (!state.filter) {
         return state.items;

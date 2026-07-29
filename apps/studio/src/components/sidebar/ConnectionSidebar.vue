@@ -135,6 +135,9 @@
                 </x-button> -->
               </div>
             </div>
+            <expired-folder-alert
+              v-if="!canCreateFolders && folders.length > 0"
+            />
             <error-alert
               :error="error"
               v-if="error"
@@ -265,6 +268,7 @@ import { mapState, mapGetters, mapActions } from 'vuex'
 import ConnectionListItem from './connection/ConnectionListItem.vue'
 import SidebarLoading from '@/components/common/SidebarLoading.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
 import Split from 'split.js'
 import { AppEvent } from '@/common/AppEvent'
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
@@ -272,6 +276,7 @@ import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
 import EditableText from '@/components/common/EditableText.vue'
 import Noty from 'noty'
+import { parseReorderTarget } from '@/common/utils/folderTree'
 
 const log = rawLog.scope('connection-sidebar');
 
@@ -283,6 +288,7 @@ export default {
     Tree,
     TreeFolder,
     EditableText,
+    ExpiredFolderAlert,
     SidebarSortButtons,
     WorkspaceSidebar,
   },
@@ -326,6 +332,8 @@ export default {
   },
   computed: {
     ...mapState(['workspaceId']),
+    ...mapState('data/connections/nodes', { itemNodes: 'items' }),
+    ...mapState('data/connectionFolders/nodes', { folderNodes: 'items' }),
     ...mapState('data/connections', {
       connectionsLoading: 'loading',
       connectionsError: 'error',
@@ -338,12 +346,11 @@ export default {
       foldersError: 'error',
     }),
     ...mapGetters({
-      folderNodes: 'data/connectionFolders/nodes',
-      itemNodes: 'data/connections/nodes',
       usedConfigs: 'data/usedconnections/orderedUsedConfigs',
       settings: 'settings/settings',
       isCloud: 'isCloud',
       isUltimate: 'isUltimate',
+      canCreateFolders: 'canCreateFolders',
       activeWorkspaces: 'credentials/activeWorkspaces',
       pinnedConnections: 'pinnedConnections/pinnedConnections',
       filteredConnections: 'data/connections/filteredConnections',
@@ -452,8 +459,8 @@ export default {
   },
   methods: {
     ...mapActions({
-      moveConnectionFolder: 'data/connectionFolders/move',
-      moveConnection: 'data/connections/move',
+      saveFolder: 'data/connectionFolders/save',
+      reorderConnection: 'data/connections/reorder',
     }),
     setExpandedIds(expandedIds) {
       this.expandedIds = expandedIds
@@ -513,7 +520,7 @@ export default {
       return `label-${color}`
     },
     createFolder() {
-      if (!this.isUltimate && !this.isCloud) {
+      if (!this.canCreateFolders) {
         this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }
@@ -581,7 +588,7 @@ export default {
           },
           {
             name: 'Move',
-            handler: ({ item }) => this.trigger(AppEvent.openMoveFileModal, { type: 'connectionFolder', value: item }),
+            handler: ({ item }) => this.trigger(AppEvent.openMoveFolderModal, { type: 'connectionFolder', value: item }),
             hideIf: !canWrite,
           },
           {
@@ -594,26 +601,27 @@ export default {
       this.$bks.openMenu({ event, item: folder, options })
     },
     /** @param event {import("@beekeeperstudio/ui-kit").TreeNodeMoveEvent} */
-    async handleTreeNodeMove({ source, target, position }) {
+    async handleTreeNodeMove(event) {
+      const source = event.source;
+      const target = event.target;
       try {
-        if (source.type === 'folder') {
-          // Folders have no ordering, so they land inside whatever folder the drop points at
-          let targetId = target.ref.connectionFolderId ?? null
-          if (target.type === 'folder') {
-            targetId = target.ref.id
-          }
-          await this.moveConnectionFolder({ sourceId: source.ref.id, targetId, position: 'inside' })
-        } else {
-          await this.moveConnection({ sourceId: source.ref.id, targetId: target.ref.id, position })
+        if (source.type === 'folder' && target.type === 'folder') {
+          await this.saveFolder({ ...source.ref, parentId: target.ref.id });
+        } else if (source.type === 'item') {
+          const { parentId, position } = parseReorderTarget(event);
+          await this.reorderConnection({
+            item: source.ref,
+            connectionFolderId: parentId,
+            position,
+          });
         }
       } catch (ex) {
-        if(ex.message.includes("[team_folder_in_personal_tree]")) {
-          this.$noty.error(
-            "You can't move this to your personal folder because it is shared with other workspace members."
-          );
-        } else {
-          this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
+        let errorMessage = `Move error: ${ex.userMessage ?? ex.message}`;
+        if (ex.message.includes("[team_folder_in_personal_tree]")) {
+          errorMessage =
+            "You can not move this to your personal folder because it is shared with other workspace members.";
         }
+        this.$noty.error(errorMessage);
       }
     },
     share(folder) {
@@ -787,5 +795,8 @@ export default {
       top: 60%;
     }
   }
+}
+::v-deep .alert.expired-folder-alert {
+  margin-inline: 0.8rem;
 }
 </style>

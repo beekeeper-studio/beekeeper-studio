@@ -24,6 +24,7 @@ export enum AppEvent {
   createTableFromFile = 'new_table_from_file',
   openTableProperties = 'loadTableProperties',
   loadTable = 'loadTable',
+  loadSelectTop = 'loadSelectTop',
   quickSearch = 'quickSearch',
   promptLogin = 'cloud_signin',
   promptCreateWorkspace = 'cloud_create_workspace',
@@ -93,7 +94,7 @@ export enum AppEvent {
   openShareModal = 'openShareModal',
   /** Paste clipboard contents as new rows in the active table's Data tab. */
   pasteAsNewRows = 'pasteAsNewRows',
-  /** Open a modal to move a file to a folder
+  /** Open a modal to move a connection or a saved query to a folder
    * @example
    * this.trigger(AppEvent.openMoveFileModal, {
    *   type: "connection",
@@ -101,6 +102,14 @@ export enum AppEvent {
    * });
    **/
   openMoveFileModal = 'openMoveFileModal',
+  /** Open a modal to move a folder to another folder
+   * @example
+   * this.trigger(AppEvent.openMoveFolderModal, {
+   *   type: "connectionFolder",
+   *   value: item, // the folder
+   * });
+   **/
+  openMoveFolderModal = 'openMoveFolderModal',
 }
 
 export type OpenShareModalOptions =  {

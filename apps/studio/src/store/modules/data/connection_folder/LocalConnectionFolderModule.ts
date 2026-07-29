@@ -1,12 +1,11 @@
 import Vue from 'vue'
 import _ from 'lodash'
 import { IConnectionFolder } from "@/common/interfaces/IQueryFolder";
-import { DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
+import { DataState, DataStore, mutateActions, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { safely } from "@/store/modules/data/StoreHelpers";
 import { accessGrantMutations, localAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
-import { buildTreeFolderNodes } from "@/common/utils/folderTree";
-import { folderMoveActions } from "@/store/modules/data/move/moveStore";
+import { folderNodeModule } from "@/store/modules/data/tree/FolderNodeModule";
 
 type State = DataState<IConnectionFolder>
 
@@ -22,9 +21,15 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     ...mutationsFor<IConnectionFolder>({}, { field: 'name', direction: 'asc' }),
     ...accessGrantMutations(),
   },
+  modules: {
+    nodes: folderNodeModule,
+  },
   actions: {
     ...localAccessGrantActions(),
-    ...folderMoveActions(),
+    ...mutateActions<IConnectionFolder>(),
+    async afterMutate(context, { type, data }) {
+      context.commit(`nodes/${type}`, data)
+    },
     async initialize(context) {
       await context.dispatch('load');
     },
@@ -33,7 +38,7 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
       await safely(context, async () => {
         const items = await Vue.prototype.$util.send('appdb/connectionFolder/find', { options: { order: { name: 'ASC' } } })
         if (context.rootState.workspaceId === LocalWorkspace.id) {
-          context.commit('upsert', items)
+          await context.dispatch('mutate', { type: 'upsert', data: items })
         }
       })
     },
@@ -45,20 +50,20 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     },
     async save(context, item) {
       const updated = await Vue.prototype.$util.send('appdb/connectionFolder/save', { obj: item })
-      context.commit('upsert', updated)
+      await context.dispatch('mutate', { type: 'upsert', data: updated })
       return updated.id
     },
     async remove(context, folder) {
       await Vue.prototype.$util.send('appdb/connectionFolder/remove', { obj: folder })
-      context.commit('remove', folder)
+      await context.dispatch('mutate', { type: 'remove', data: folder })
     },
     async reload(context, id) {
       const item = await Vue.prototype.$util.send('appdb/connectionFolder/findOneBy', { options: { id } })
       if (item) {
-        context.commit('upsert', item)
+        await context.dispatch('mutate', { type: 'upsert', data: item })
         return item.id
       }
-      context.commit('remove', id)
+      await context.dispatch('mutate', { type: 'remove', data: id })
       return null
     },
     async clone(_c, item) {
@@ -67,10 +72,5 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
       r.createdAt = null
       return r
     },
-  },
-  getters: {
-    nodes(state) {
-      return buildTreeFolderNodes(state.items)
-    }
   }
 }
