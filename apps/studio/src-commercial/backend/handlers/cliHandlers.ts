@@ -51,7 +51,7 @@ export const CliHandlers: ICliHandlers = {
 
       proc.on('close', (code) => {
         if (code === 0) {
-          const result = stdout.trim().split('\n')[0]; // pick first match
+          const result = stdout.trim().split(/\r?\n/)[0]; // pick first match
           resolve(result);
         } else {
           reject(`cli/which failed (code ${code})\nSTDERR: ${stderr}\nSTDOUT: ${stdout}`);

@@ -179,7 +179,7 @@ export class AzureAuthService {
     }
 
     return new Promise<AuthConfig>((resolve, reject) => {
-    const commandArgs = [
+      const commandArgs = [
         'account',
         'get-access-token',
         '--resource',
@@ -187,6 +187,11 @@ export class AzureAuthService {
         '--output',
         'json'
       ];
+
+      if (platformInfo.isWindows && /["\r\n]/.test(options.cliPath)) {
+        throw new Error('Invalid azure CLI Path');
+      }
+
       // spawn doesn't launch .cmd files, they need a shell, so we manually spawn
       // cmd to all .cmd files to be run on windows, but not allow for escaping into
       // the shell :)
