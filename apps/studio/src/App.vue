@@ -1,9 +1,8 @@
 <template>
-  <div class="style-wrapper">
+  <div class="style-wrapper" :style="{ '--bks-text-editor-font-size': `${editorFontSize}px` }">
     <div
       class="beekeeper-studio-wrapper"
       :class="{ 'beekeeper-studio-minimal-mode': $store.getters.minimalMode }"
-      :style="{ '--bks-text-editor-font-size': `${editorFontSize}px` }"
     >
       <titlebar />
       <template v-if="storeInitialized">

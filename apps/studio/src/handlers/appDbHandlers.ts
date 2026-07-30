@@ -28,6 +28,8 @@ import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import platformInfo from'@/common/platform_info';
 import rawLog from "@bksLogger"
 import { validate } from "class-validator";
+import { QueryAudit } from "@/common/appdb/models/QueryAudit";
+import { TransportQueryAudit, TransportQueryAuditDetail } from "@/common/transport/TransportQueryAudit";
 
 const log = rawLog.scope('Appdb handlers');
 
@@ -55,7 +57,7 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
       return await transform(new cls().withProps(init), cls);
     },
     [`appdb/${name}/save`]: async function({ obj, options }: { obj: T | T[], options: SaveOptions }) {
-      // Use query builder to select all columns (including those marked select: false by default) 
+      // Use query builder to select all columns (including those marked select: false by default)
       // since all columns are required for validation checks.
       const repo = cls.getRepository();
       const alias = "e";
@@ -169,6 +171,7 @@ export const AppDbHandlers = {
   ...handlersFor<TransportPinnedConn>('pinconn', PinnedConnection),
   ...handlersFor<TransportPinnedEntity>('pins', PinnedEntity),
   ...handlersFor<TransportFavoriteQuery>('query', FavoriteQuery),
+  ...handlersFor<TransportQueryAudit>('queryAudit', QueryAudit),
   ...handlersFor<TransportUsedQuery>('usedQuery', UsedQuery),
   ...handlersFor<TransportOpenTab>('tabs', OpenTab),
   ...handlersFor<TransportHiddenEntity>('hiddenEntity', HiddenEntity),
@@ -208,5 +211,13 @@ export const AppDbHandlers = {
     let cache = new TokenCache();
     cache = await cache.save();
     return cache.id;
+  },
+  "appdb/queryAudit/get": async function ({ auditId }: { auditId: number; }): Promise<TransportQueryAuditDetail | null> {
+    const audit = await QueryAudit.findOneByOrFail({ id: auditId });
+    return await audit.fetchDetail();
+  },
+  "appdb/queryAudit/restore": async function ({ auditId, }: { auditId: number; }): Promise<void> {
+    const audit = await QueryAudit.findOneByOrFail({ id: auditId });
+    await audit.restore();
   },
 };

@@ -3,6 +3,9 @@ import ISavedQuery from '@/common/interfaces/ISavedQuery'
 import { IQueryAudit, IQueryAuditDetail } from '@/common/interfaces/IQueryAudit'
 import { res, url } from '@/lib/cloud/ClientHelpers'
 
+// This can't extend GenericController because audits are nested under a query
+// (/queries/:id/audits) and `get` needs both ids; it follows the same
+// name/plural/path convention as the other controllers.
 export class QueryAuditsController {
   constructor(protected axios: AxiosInstance) {}
 

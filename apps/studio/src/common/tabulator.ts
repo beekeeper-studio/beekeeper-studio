@@ -63,7 +63,9 @@ export function tabulatorForTableData(
     resizableColumnGuide: true,
     movableColumns: true,
     height: "100%",
-    editTriggerEvent: "dblclick",
+    editTriggerEvent: window.bksConfig.ui.tableTable.editTrigger === "click" 
+      ? "click" 
+      : "dblclick",
     debugInvalidComponentFuncs: false,
     history: true,
     keybindings: {

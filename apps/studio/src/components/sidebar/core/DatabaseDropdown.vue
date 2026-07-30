@@ -17,22 +17,24 @@
         placeholder="Select a database..."
         class="dropdown-search"
       />
-      <a
-        v-if="supportsMultipleDatabases"
-        class="refresh"
-        @click.prevent="refreshDatabases"
-        :title="'Refresh Databases'"
-      >
-        <i class="material-icons" :class="{'refreshing-db-icon': isRefreshing }">{{ isRefreshing ? 'sync' : 'refresh' }}</i>
-      </a>
-      <a
-        v-if="!usedConfig?.readOnlyMode && supportsAddDatabase"
-        class="refresh"
-        @click.prevent="$modal.show('config-add-database')"
-        :title="'Add Database'"
-      >
-        <i class="material-icons">add</i>
-      </a>
+      <div class="db-actions">
+        <a
+          v-if="supportsMultipleDatabases"
+          class="refresh"
+          @click.prevent="refreshDatabases"
+          :title="'Refresh Databases'"
+        >
+          <i class="material-icons" :class="{'refreshing-db-icon': isRefreshing }">{{ isRefreshing ? 'sync' : 'refresh' }}</i>
+        </a>
+        <a
+          v-if="!usedConfig?.readOnlyMode && supportsAddDatabase"
+          class="refresh"
+          @click.prevent="$modal.show('config-add-database')"
+          :title="'Add Database'"
+        >
+          <i class="material-icons">add</i>
+        </a>
+      </div>
     </div>
     <portal to="modals">
       <modal
@@ -170,6 +172,24 @@
 </script>
 
 <style lang="scss" scoped>
+
+  .data-select-wrap {
+    position: relative;
+
+    .db-actions {
+      position: absolute;
+      right: 0;
+      display: flex;
+      align-items: center;
+      padding-right: 0.5rem;
+    }
+
+    .dropdown-search {
+      width: 100%;
+      padding-right: 3.5rem;
+    }
+  }
+
   .disabled-db-dropdown {
     pointer-events: none;
 
