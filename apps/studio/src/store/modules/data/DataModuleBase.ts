@@ -27,6 +27,7 @@ export interface DataState<T> {
   pollError: ClientError
   filter?: string
   pendingSaveIds?: number[]
+  searching?: boolean
 }
 
 
@@ -79,6 +80,9 @@ const buildBasicMutations = <T extends HasId>(sortBy?: SortSpec) => ({
   },
   pollError(state, error: Error | null) {
     state.pollError = error
+  },
+  searching(state, searching: boolean) {
+    state.searching = searching
   },
   addPendingSave(state, id: number) {
     if (!state.pendingSaveIds) state.pendingSaveIds = []
@@ -254,6 +258,20 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
           await context.dispatch('mutate', { type: 'upsert', data: rightItems })
         }
       })
+    },
+    async search(context, q: string) {
+      if (!q) {
+        return
+      }
+      context.commit('searching', true)
+      try {
+        await safelyDo(context, async (cli) => {
+          const items = await cli[scope].search(q)
+          await context.dispatch('mutate', { type: 'upsert', data: items })
+        })
+      } finally {
+        context.commit('searching', false)
+      }
     },
     // TODO THIS ISNT WORKING
     async poll(context) {

@@ -67,6 +67,10 @@
             </div>
           </div>
         </div>
+        <x-progressbar
+          v-show="searchInProgress"
+          style="margin-top: -5px;"
+        />
         <expired-folder-alert v-if="!canCreateFolders && folders.length > 0" />
         <error-alert
           v-if="error"
@@ -79,7 +83,29 @@
           class="list-body"
           ref="wrapper"
         >
+          <template v-if="cloudSearchMode">
+            <div
+              v-if="!searchInProgress && filteredQueries.length === 0"
+              class="empty"
+            >
+              <span class="empty-title">No Results</span>
+            </div>
+            <favorite-list-item
+              v-for="query in filteredQueries"
+              :key="query.id"
+              :item="query"
+              :active="isActive(query)"
+              :selected="selected === query"
+              @remove="remove"
+              @select="select"
+              @open="open"
+              @open-history="openHistory"
+              @export="exportTo"
+              @duplicate="duplicate"
+            />
+          </template>
           <tree
+            v-show="!cloudSearchMode"
             :folders="draftingFolder ? folderNodesWithDraft : folderNodes"
             :items="itemNodes"
             :expanded-ids="expandedNodeIds"
@@ -200,7 +226,12 @@ export default {
     ...mapState('tabs', {'activeTab': 'active'}),
     ...mapState('data/queries/nodes', {'itemNodes': 'items'}),
     ...mapState('data/queryFolders/nodes', {'folderNodes': 'items'}),
-    ...mapState('data/queries', {'queriesError': 'error', 'savedQueryFilter': 'filter', 'pendingSaveIds': 'pendingSaveIds'}),
+    ...mapState('data/queries', {
+      'queriesError': 'error',
+      'savedQueryFilter': 'filter',
+      'pendingSaveIds': 'pendingSaveIds',
+      searchInProgress: 'searching',
+    }),
     ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
     ...mapState('data/queryFolders/sidebar', {
       expandedFolderIds: 'expandedIds',
@@ -215,6 +246,11 @@ export default {
     }),
     expandedNodeIds() {
       return this.expandedFolderIds.map((id) => `folder-${id}`);
+    },
+    // Cloud lazy-loads folder contents, so a match can live in a folder that was
+    // never fetched. Searching hits the server and shows a flat result list.
+    cloudSearchMode() {
+      return this.isCloud && !!this.filterQuery;
     },
     initializing() {
       return this.folders.length === 0 && this.foldersLoading;

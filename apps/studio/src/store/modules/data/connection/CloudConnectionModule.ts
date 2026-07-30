@@ -17,6 +17,7 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
     pollError: null,
     filter: undefined,
     pendingSaveIds: [],
+    searching: false,
   },
   mutations: mutationsFor<ICloudSavedConnection>({
     connectionFilter(state: State, str: string) {
@@ -67,6 +68,7 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
     },
     setConnectionFilter: _.debounce(function (context, filter) {
       context.commit('connectionFilter', filter);
+      context.dispatch('search', filter);
     }, 500),
     async saveMany(context, items: ICloudSavedConnection[]) {
       // Mark items as pending to protect from poll overwrites

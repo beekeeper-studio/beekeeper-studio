@@ -18,6 +18,7 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
     pollError: null,
     filter: undefined,
     pendingSaveIds: [],
+    searching: false,
   },
   mutations: mutationsFor<ISavedQuery>({
     // more mutations go here
@@ -69,6 +70,7 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
     },
     setSavedQueryFilter: _.debounce(function (context, filter) {
       context.commit('savedQueryFilter', filter);
+      context.dispatch('search', filter);
     }, 500),
     async saveMany(context, items: ISavedQuery[]) {
       // Mark items as pending to protect from poll overwrites

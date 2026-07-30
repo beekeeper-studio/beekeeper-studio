@@ -37,6 +37,13 @@ export abstract class GenericController<T extends HasId> {
     return res(response, this.plural)
   }
 
+  async search(q: string): Promise<T[]> {
+    const response = await this.axios.get(url(this.path, 'search'), {
+      params: { q },
+    })
+    return res(response, this.plural)
+  }
+
   async changed(updatedSince: number): Promise<Changes> {
     const params = { updated_since: updatedSince }
     const response = await this.axios.get(url(this.path, 'changed'), { params })

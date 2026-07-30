@@ -170,4 +170,8 @@ export default Vue.extend({
 .list-group .list-item .list-item-btn {
   padding-left: calc(var(--depth) * 1.2rem);
 }
+
+.item-icon {
+  margin-left: 0.25rem;
+}
 </style>

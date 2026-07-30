@@ -36,6 +36,11 @@
         </div>
       </div>
 
+      <x-progressbar
+        v-show="searchInProgress"
+        style="margin-top: -5px;"
+      />
+
       <div class="connection-wrap expand flex-col">
         <!-- Pinned Connections -->
         <!-- TODO (day): should probably make a class for pinned connections-->
@@ -150,7 +155,29 @@
               v-else
               class="list-body"
             >
+              <template v-if="cloudSearchMode">
+                <div
+                  v-if="!searchInProgress && filteredConnections.length === 0"
+                  class="empty"
+                >
+                  <div class="empty-title">
+                    No Results
+                  </div>
+                </div>
+                <connection-list-item
+                  v-for="c in filteredConnections"
+                  :key="c.id"
+                  :config="c"
+                  :selected-config="selectedConfig"
+                  :is-recent-list="false"
+                  :privacy-mode="privacyMode"
+                  @edit="edit"
+                  @remove="removeUsedConfig"
+                  @doubleClick="connect"
+                />
+              </template>
               <tree
+                v-show="!cloudSearchMode"
                 :folders="draftingFolder ? folderNodesWithDraft : folderNodes"
                 :items="sortedItemNodes"
                 :expanded-ids="expandedNodeIds"
@@ -331,6 +358,7 @@ export default {
       connectionsError: 'error',
       connectionFilter: 'filter',
       pendingSaveIds: 'pendingSaveIds',
+      searchInProgress: 'searching',
     }),
     ...mapState('data/connectionFolders', {
       folders: 'items',
@@ -369,6 +397,11 @@ export default {
     },
     expandedNodeIds() {
       return this.expandedFolderIds.map((id) => `folder-${id}`);
+    },
+    // Cloud lazy-loads folder contents, so a match can live in a folder that was
+    // never fetched. Searching hits the server and shows a flat result list.
+    cloudSearchMode() {
+      return this.isCloud && !!this.connFilter;
     },
     initializing() {
       return this.folders.length === 0 && this.foldersLoading;
