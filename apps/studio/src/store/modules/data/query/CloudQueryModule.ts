@@ -55,7 +55,7 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
       ]);
       try {
         await context.dispatch('loadMore', {
-          params: { queryFolderId: unfetchedIds },
+          params: { queryFolderIds: unfetchedIds },
         });
       } finally {
         context.commit(

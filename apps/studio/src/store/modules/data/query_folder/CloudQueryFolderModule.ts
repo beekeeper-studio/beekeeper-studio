@@ -49,7 +49,7 @@ export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
       ]);
       try {
         await context.dispatch('loadMore', {
-          params: { parentId: unfetchedIds },
+          params: { parentIds: unfetchedIds },
         });
       } finally {
         context.commit(

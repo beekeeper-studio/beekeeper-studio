@@ -54,7 +54,7 @@ export const CloudConnectionFolderModule: DataStore<IConnectionFolder, State> = 
       ]);
       try {
         await context.dispatch('loadMore', {
-          params: { parentId: unfetchedIds },
+          params: { parentIds: unfetchedIds },
         });
       } finally {
         context.commit(

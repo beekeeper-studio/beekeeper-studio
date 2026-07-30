@@ -53,7 +53,7 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
       ]);
       try {
         await context.dispatch('loadMore', {
-          params: { connectionFolderId: unfetchedIds },
+          params: { connectionFolderIds: unfetchedIds },
         });
       } finally {
         context.commit(
