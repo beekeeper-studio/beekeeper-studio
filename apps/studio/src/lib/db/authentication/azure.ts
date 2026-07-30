@@ -5,7 +5,7 @@ import rawLog from '@bksLogger';
 import {TokenCache} from '@/common/appdb/models/token_cache';
 import globals from '@/common/globals';
 import {AzureAuthOptions, AzureAuthType} from '../types';
-import {exec, spawn} from 'child_process'
+import {spawn} from 'child_process'
 import {getEntraOptions} from "@/lib/db/clients/utils";
 import {IDbConnectionServer} from "@/lib/db/backendTypes";
 import BksConfig from '@/common/bksConfig';
@@ -191,7 +191,7 @@ export class AzureAuthService {
       // cmd to all .cmd files to be run on windows, but not allow for escaping into
       // the shell :)
       const proc = platformInfo.isWindows
-        ? spawn('cmd.exe', ['/c', options.cliPath, ...commandArgs], { shell: false })
+        ? spawn('cmd.exe', ['/d', '/s', '/c', `""${options.cliPath}" ${commandArgs.join(' ')}"`], { shell: false, windowsVerbatimArguments: true })
         : spawn(options.cliPath, commandArgs, { shell: false });
 
       let stdout = '';
