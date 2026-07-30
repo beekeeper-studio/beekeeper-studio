@@ -187,8 +187,12 @@ export class AzureAuthService {
         '--output',
         'json'
       ];
-      // Use exec on windows as spawn won't launch cmd files (e.g. azure cli) on windows with shell: false, see: CVE-2024-27980
-      const proc = platformInfo.isWindows ? exec(`"${options.cliPath}" ${commandArgs.join(' ')}`) : spawn(options.cliPath, commandArgs, { shell: false });
+      // spawn doesn't launch .cmd files, they need a shell, so we manually spawn
+      // cmd to all .cmd files to be run on windows, but not allow for escaping into
+      // the shell :)
+      const proc = platformInfo.isWindows
+        ? spawn('cmd.exe', ['/c', options.cliPath, ...commandArgs], { shell: false })
+        : spawn(options.cliPath, commandArgs, { shell: false });
 
       let stdout = '';
       let stderr = '';
