@@ -1,5 +1,6 @@
 import { IConnection } from "@/common/interfaces/IConnection";
 import { DataState, DataStore, mutationsFor, utilActionsFor } from "@/store/modules/data/DataModuleBase";
+import { accessGrantMutations, localAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import _ from "lodash";
 import Vue from "vue";
 
@@ -18,9 +19,11 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
   mutations: mutationsFor<IConnection>({
     connectionFilter(state: DataState<IConnection>, str: string) {
       state.filter = str;
-    }
+    },
+    ...accessGrantMutations(),
   }),
   actions: utilActionsFor<IConnection>('saved', {
+    ...localAccessGrantActions(),
     setConnectionFilter: _.debounce(function (context, filter) {
       context.commit('connectionFilter', filter);
     }, 500),

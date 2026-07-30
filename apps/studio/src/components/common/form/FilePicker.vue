@@ -33,6 +33,7 @@
       <a
         type="button"
         class="btn btn-flat"
+        :class="{disabled}"
         @click="openFilePickerDialog({ save: true })"
       >
         Create

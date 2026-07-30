@@ -87,8 +87,8 @@ describe('ConnectionListItem displayConfig', () => {
     expect(wrapper.vm['title']).toContain('new-host.example.com')
     expect(wrapper.vm['title']).toContain('newuser')
     expect(wrapper.vm['title']).not.toContain('old-host.example.com')
-    expect(wrapper.html()).toContain('new-ssh.example.com')
-    expect(wrapper.html()).not.toContain('old-ssh.example.com')
+    expect(wrapper.html()).toContain('new-host.example.com')
+    expect(wrapper.html()).not.toContain('old-host.example.com')
   })
 
   it('falls back to the snapshot when the linked saved connection is missing', () => {

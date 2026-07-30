@@ -135,6 +135,9 @@
                 </x-button> -->
               </div>
             </div>
+            <expired-folder-alert
+              v-if="!canCreateFolders && folders.length > 0"
+            />
             <error-alert
               :error="error"
               v-if="error"
@@ -359,6 +362,7 @@ import { mapState, mapGetters, mapActions } from 'vuex'
 import ConnectionListItem from './connection/ConnectionListItem.vue'
 import SidebarLoading from '@/components/common/SidebarLoading.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
 import Split from 'split.js'
 import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
@@ -375,6 +379,7 @@ export default {
     ConnectionListItem,
     SidebarLoading,
     ErrorAlert,
+    ExpiredFolderAlert,
     SidebarFolder,
     SidebarSortButtons,
     WorkspaceSidebar,
@@ -426,6 +431,7 @@ export default {
       settings: 'settings/settings',
       isCloud: 'isCloud',
       isUltimate: 'isUltimate',
+      canCreateFolders: 'canCreateFolders',
       activeWorkspaces: 'credentials/activeWorkspaces',
       pinnedConnections: 'pinnedConnections/pinnedConnections',
       filteredConnections: 'data/connections/filteredConnections',
@@ -556,7 +562,7 @@ export default {
       return `label-${color}`
     },
     createFolder() {
-      if (!this.isUltimate && !this.isCloud) {
+      if (!this.canCreateFolders) {
         this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }
@@ -568,6 +574,7 @@ export default {
         : null
       this.$modal.show('connection-folder-modal')
     },
+    /** @param folder {import("@/common/interfaces/ISavedQuery").default} */
     showFolderContextMenu(event, folder) {
       if (event.target.tagName === 'INPUT') {
         return;
@@ -575,8 +582,12 @@ export default {
       event.stopPropagation();
 
       const options = []
+      const canWrite = folder.canWrite ?? true;
       if (this.isCloud && !folder.parentId) {
         options.push({ name: 'New Subfolder', handler: ({ item }) => this.createSubfolder(item) })
+      }
+      if (!canWrite) {
+        // do nothing
       }
       options.push(...[
         { name: 'Rename', handler: ({ item }) => this.renameFolder(item) },
@@ -588,8 +599,14 @@ export default {
       ].filter(Boolean))
       this.$bks.openMenu({ event, item: folder, options })
     },
+    share(folder) {
+      this.trigger(AppEvent.openShareModal, {
+        id: folder.id,
+        module: "data/connectionFolders",
+      });
+    },
     createSubfolder(parentFolder) {
-      if (!this.isUltimate && !this.isCloud) {
+      if (!this.canCreateFolders) {
         this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }
@@ -759,5 +776,8 @@ export default {
 }
 .drag-pending {
   opacity: 0.5;
+}
+::v-deep .alert.expired-folder-alert {
+  margin-inline: 0.8rem;
 }
 </style>

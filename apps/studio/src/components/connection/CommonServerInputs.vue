@@ -11,6 +11,7 @@
           name=""
           v-model="config.socketPathEnabled"
           id=""
+          :disabled="disabled"
         >
           <option :value="false">
             Host and Port
@@ -33,6 +34,7 @@
           v-model="config.socketPath"
           type="text"
           name="socketPath"
+          :disabled="disabled"
         >
       </div>
       <div class="col s3 form-group" v-if="supportsSocketPathWithCustomPort">
@@ -41,6 +43,7 @@
           :value="config.port"
           :type="'number'"
           @input="val => config.port = val"
+          :disabled="disabled"
         />
       </div>
     </div>
@@ -53,6 +56,7 @@
         <masked-input
           :value="config.host"
           @input="val => config.host = val"
+          :disabled="disabled"
         />
       </div>
       <div class="col s3 form-group">
@@ -61,6 +65,7 @@
           :value="config.port"
           :type="'number'"
           @input="val => config.port = val"
+          :disabled="disabled"
         />
       </div>
     </div>
@@ -70,6 +75,7 @@
       :config="config"
       :ssl-help="sslHelp"
       :support-complex-s-s-l="supportComplexSSL"
+      :disabled="disabled"
     />
 
     <div v-if="!hideCredentials" class="row gutter">
@@ -78,11 +84,12 @@
         <masked-input
           :value="config.username"
           @input="val => config.username = val"
+          :disabled="disabled"
         />
       </div>
       <div class="col s6 form-group" v-show="showPasswordForm">
         <label for="password">{{ passwordLabel }}</label>
-        <password-input v-model="config.password" />
+        <password-input v-model="config.password" :disabled="disabled" />
       </div>
     </div>
     <slot />
@@ -99,6 +106,7 @@
         type="text"
         class="form-control"
         v-model="config.defaultDatabase"
+        :disabled="disabled"
       >
     </div>
   </div>
@@ -136,6 +144,10 @@ export default {
     passwordLabel: {
       type: String,
       default: 'Password'
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
   },
   components: {

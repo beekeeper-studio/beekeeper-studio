@@ -186,6 +186,16 @@ export const CLIENTS: ClientConfig[] = [
     ],
   },
   {
+    key: 'starrocks',
+    name: 'StarRocks',
+    defaultPort: 9030,
+    disabledFeatures: [
+      'server:schema',
+      'server:domain',
+      'server:socketPathWithCustomPort',
+    ],
+  },
+  {
     key: 'tidb',
     name: 'TiDB',
     defaultPort: 4000,

@@ -16,6 +16,7 @@ import dev8 from './dev-8'
 import dev9 from './dev-9'
 import dev10 from './dev-10'
 import dev11Greengage from './dev-11-greengage'
+import dev12 from './dev-12'
 import dev12Hana from './dev-12-hana'
 import domains from './20200519'
 import encrypt from './20200917-encrypt-passwords'
@@ -91,6 +92,7 @@ import addDynamodbOptions from './20260417_add_dynamodb_options'
 import addLicenseInvalidatedAt from './20260421_add_license_invalidated_at'
 import cleanupDuplicateLicenseKeys from './20260421_cleanup_duplicate_license_keys'
 import createTabulatorPersistence from './20260424_create_tabulator_persistence'
+import createQueryAudits from './20260526_create_query_audits'
 import clearLogFiles from './20260527_clear_log_files'
 import addSnowflakeOptions from './20260501_add_snowflake_options'
 import addWindowsAuthToConnections from './20260618_add_windows_auth_to_connections'
@@ -147,6 +149,7 @@ const realMigrations = [
   addLicenseInvalidatedAt,
   cleanupDuplicateLicenseKeys,
   createTabulatorPersistence,
+  createQueryAudits,
   clearLogFiles,
   addSnowflakeOptions,
   addWindowsAuthToConnections,
@@ -161,7 +164,7 @@ const fixtures = [
 
 const devMigrations = [
   dev1, dev2, dev3, dev4, dev5, dev6, dev7, dev8, dev9,
-  dev10, dev11Greengage, dev12Hana
+  dev10, dev11Greengage, dev12, dev12Hana
 ]
 
 const migrations = [...realMigrations, ...fixtures, ...devMigrations]

@@ -99,6 +99,7 @@ export default {
     rename: false,
   }),
   computed: {
+    ...mapGetters(["isCloud"]),
     ...mapState('data/connections', {'connectionConfigs': 'items'}),
     ...mapState('data/connectionFolders', {'folders': 'items'}),
     classList() {
@@ -170,9 +171,10 @@ export default {
 
       event.stopPropagation();
 
-      const ultimateCheck = this.$store.getters.isUltimate
+      const canConnect = this.$store.getters.isUltimate
         ? true
         : !isUltimateType(this.displayConfig.connectionType)
+      const canWrite = this.config.canWrite ?? true;
 
       const options = [
         {
@@ -180,17 +182,25 @@ export default {
           slug: 'view',
           handler: (blob) => this.click(blob.item)
         },
-        ultimateCheck && {
+        {
           name: 'Connect',
           slug: 'connect',
+          hideIf: !canConnect,
           handler: (blob) => this.doubleClick(blob.item)
         },
         { type: "divider" },
-        !this.isRecentList && {
+        {
           name: this.pinned ? 'Unpin' : 'Pin',
-          handler: () => this.pinned ? this.unpin() : this.pin()
+          handler: () => this.pinned ? this.unpin() : this.pin(),
+          hideIf: this.isRecentList,
         },
-        !this.isRecentList && { type: "divider" },
+        { type: "divider", hideIf: this.isRecentList },
+        {
+          name: "Share",
+          slug: 'share',
+          handler: this.share,
+          hideIf: !this.isCloud || !this.savedConnection || !this.savedConnection.id,
+        },
         {
           name: "Duplicate",
           slug: 'duplicate',
@@ -201,14 +211,15 @@ export default {
           handler: this.copyUrl
         },
         { type: "divider" },
-        !this.isRecentList && {
+        {
           name: "Rename",
           slug: 'rename',
           handler: () => {
             this.rename = true;
           },
+          hideIf: this.isRecentList || !canWrite,
         },
-        !this.isRecentList && this.folders.length > 0 && {
+        {
           name: "Move",
           handler: () => {
             this.trigger(AppEvent.openMoveFileModal, {
@@ -216,12 +227,13 @@ export default {
               value: this.config,
             });
           },
+          hideIf: this.isRecentList || this.folders.length === 0,
         },
         {
           name: "Delete",
           handler: this.remove
         },
-      ].filter(v => v)
+      ].filter(({ hideIf }) => !hideIf)
 
       this.$bks.openMenu({
         event,
@@ -248,6 +260,12 @@ export default {
     },
     duplicate() {
       this.$emit('duplicate', this.config)
+    },
+    share() {
+      this.trigger(AppEvent.openShareModal, {
+        id: this.savedConnection.id,
+        module: "data/connections",
+      });
     },
     async copyUrl() {
       try {

@@ -81,7 +81,7 @@ export default Vue.extend({
         }
         console.log("DataManager --> registering", module.path)
         this.$store.registerModule(module.path, choice)
-        this.$store.dispatch(`${module.path}/load`)
+        this.$store.dispatch(`${module.path}/initialize`)
       })
     },
   }
