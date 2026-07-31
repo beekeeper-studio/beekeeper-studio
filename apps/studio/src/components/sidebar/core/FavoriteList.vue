@@ -95,9 +95,12 @@
               :key="query.id"
               :item="query"
               :active="isActive(query)"
-              :selected="selected === query"
+              :selected="isChecked(query) || selected === query"
+              :checked="isChecked(query)"
+              :bulk-selection-active="checkedFavorites.length > 0"
               @remove="remove"
               @select="select"
+              @toggle-check="toggleChecked"
               @open="open"
               @open-history="openHistory"
               @export="exportTo"
@@ -174,10 +177,13 @@
               <favorite-list-item
                 :item="node.ref"
                 :active="isActive(node.ref)"
-                :selected="selected === node.ref"
+                :selected="isChecked(node.ref) || selected === node.ref"
+                :checked="isChecked(node.ref)"
+                :bulk-selection-active="checkedFavorites.length > 0"
                 :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.ref.id) }"
                 @remove="remove"
                 @select="select"
+                @toggle-check="toggleChecked"
                 @open="open"
                 @open-history="openHistory"
                 @export="exportTo"
@@ -187,6 +193,20 @@
           </tree>
         </nav>
       </div>
+    </div>
+    <div
+      class="toolbar btn-group row flex-right"
+      v-show="checkedFavorites.length > 0"
+    >
+      <a
+        class="btn btn-link"
+        @click="discardCheckedFavorites"
+      >Cancel</a>
+      <a
+        class="btn btn-primary"
+        :title="removeTitle"
+        @click="removeCheckedFavorites"
+      >Remove</a>
     </div>
   </div>
 </template>
@@ -200,7 +220,7 @@ import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
 import { AppEvent } from '@/common/AppEvent'
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
 import EditableText from '@/components/common/EditableText.vue'
-import { parseReorderTarget } from '@/common/utils/folderTree'
+import { parseReorderTarget, collectVisibleItemRefs } from '@/common/utils/folderTree'
 
 export default {
   components: { SidebarLoading, ErrorAlert, ExpiredFolderAlert, FavoriteListItem, Tree, TreeFolder, EditableText },
@@ -208,6 +228,7 @@ export default {
     return {
       checkedFavorites: [],
       selected: null,
+      selectionAnchor: null,
       draggingQuery: null,
       renamingFolderId: null,
       draftingFolder: false,
@@ -268,6 +289,16 @@ export default {
     },
     removeTitle() {
       return `Remove ${this.checkedFavorites.length} saved queries`;
+    },
+    flatVisibleQueries() {
+      if (this.cloudSearchMode) {
+        return this.filteredQueries
+      }
+      return collectVisibleItemRefs(
+        this.folderNodes,
+        this.itemNodes,
+        this.expandedNodeIds
+      )
     },
     folderNodesWithDraft() {
       /** @type {import("@beekeeperstudio/ui-kit").FolderNode} */
@@ -354,8 +385,45 @@ export default {
     isActive(item) {
       return this.activeTab && this.activeTab.queryId === item.id
     },
-    select(item) {
+    isChecked(item) {
+      return this.checkedFavorites.some((f) => f.id === item.id)
+    },
+    toggleChecked(item) {
+      const idx = this.checkedFavorites.findIndex((f) => f.id === item.id)
+      if (idx >= 0) {
+        this.checkedFavorites.splice(idx, 1)
+      } else {
+        this.checkedFavorites.push(item)
+      }
+      this.selectionAnchor = item
+    },
+    selectRange(anchor, item) {
+      const list = this.flatVisibleQueries
+      const anchorIndex = list.findIndex((i) => i.id === anchor.id)
+      const itemIndex = list.findIndex((i) => i.id === item.id)
+      if (anchorIndex < 0 || itemIndex < 0) return
+      const [start, end] = anchorIndex < itemIndex
+        ? [anchorIndex, itemIndex]
+        : [itemIndex, anchorIndex]
+      for (const query of list.slice(start, end + 1)) {
+        if (!this.isChecked(query)) {
+          this.checkedFavorites.push(query)
+        }
+      }
+    },
+    select(item, event) {
+      if (event?.shiftKey && this.selectionAnchor != null) {
+        this.selectRange(this.selectionAnchor, item)
+        this.selected = item
+        return
+      }
+      if (event?.metaKey || event?.ctrlKey) {
+        this.toggleChecked(item)
+        this.selected = item
+        return
+      }
       this.selected = item
+      this.selectionAnchor = item
     },
     open(item) {
       this.$root.$emit('favoriteClick', item)
@@ -369,13 +437,21 @@ export default {
       }
     },
     async removeCheckedFavorites() {
-      for(let i = 0; i < this.checkedFavorites.length; i++) {
-        await this.remove(this.checkedFavorites[i])
+      const count = this.checkedFavorites.length
+      if (count === 0) return
+      const message = count === 1
+        ? `Delete "${this.checkedFavorites[0].title}"?`
+        : `Delete ${count} saved queries?`
+      if (!await this.$confirm(message, undefined, { variant: 'danger' })) {
+        return
       }
-      this.checkedFavorites = [];
+      for (const favorite of [...this.checkedFavorites]) {
+        await this.$store.dispatch('data/queries/remove', favorite)
+      }
+      this.checkedFavorites = []
     },
     discardCheckedFavorites() {
-      this.checkedFavorites = [];
+      this.checkedFavorites = []
     },
     createFolder() {
       if (!this.canCreateFolders) {

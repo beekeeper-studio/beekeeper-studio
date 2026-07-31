@@ -75,6 +75,45 @@ export function buildItemNodes<T extends HasId & { position?: number }>(
 }
 
 /** Transform {@link TreeNodeMoveEvent} into a consumable payload for the reorder action. */
+/**
+ * Collect item refs in the same order the ui-kit Tree renders them (expanded
+ * folders only; subfolders before sibling items within a folder).
+ */
+export function collectVisibleItemRefs<T extends HasId>(
+  folderNodes: ExtendedFolderNode[],
+  itemNodes: ExtendedItemNode<T>[],
+  expandedIds: FolderNode["id"][]
+): T[] {
+  const result: T[] = [];
+
+  const childItems = (folderId: FolderNode["id"] | null) =>
+    itemNodes
+      .filter((item) => item.parentId === folderId)
+      .sort((a, b) => a.position - b.position);
+
+  const walkSiblings = (
+    siblings: Array<ExtendedFolderNode | ExtendedItemNode<T>>
+  ) => {
+    for (const node of siblings) {
+      if (node.type === "item") {
+        result.push(node.ref);
+      } else if (expandedIds.includes(node.id)) {
+        walkSiblings(
+          node.children as Array<ExtendedFolderNode | ExtendedItemNode<T>>
+        );
+        for (const item of childItems(node.id)) {
+          result.push(item.ref);
+        }
+      }
+    }
+  };
+
+  const rootFolders = folderNodes.filter((node) => node.parentId === null);
+  walkSiblings([...rootFolders, ...childItems(null)]);
+
+  return result;
+}
+
 export function parseReorderTarget(event: TreeNodeMoveEvent) {
   const target = event.target as ExtendedItemNode | ExtendedFolderNode;
 

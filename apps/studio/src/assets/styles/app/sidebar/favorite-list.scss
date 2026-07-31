@@ -66,6 +66,11 @@
     height: initial;
     line-height: initial;
     padding: $gutter-h ($gutter-w * 0.75);
+    &.bulk-selection-active {
+      .item-icon {
+        visibility: hidden;
+      }
+    }
     &:hover {
       transition: display 0.15s ease-in-out;
       .badge {
@@ -74,12 +79,12 @@
       .btn-fab {
         display: inline-flex;
       }
-      // .delete-checkbox {
-      //   display: block;
-      // }
-      // .item-icon {
-      //   visibility: hidden;
-      // }
+      .delete-checkbox {
+        display: block;
+      }
+      .item-icon {
+        visibility: hidden;
+      }
     }
     .btn-fab {
       display: none;
