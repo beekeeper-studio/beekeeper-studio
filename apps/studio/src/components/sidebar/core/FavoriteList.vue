@@ -106,10 +106,13 @@
                 :key="item.id"
                 :item="item"
                 :active="isActive(item)"
-                :selected="selected === item"
+                :selected="isChecked(item) || selected === item"
+                :checked="isChecked(item)"
+                :bulk-selection-active="checkedFavorites.length > 0"
                 :class="{ 'drag-pending': (pendingSaveIds || []).includes(item.id) }"
                 @remove="remove"
                 @select="select"
+                @toggle-check="toggleChecked"
                 @open="open"
                 @open-history="openHistory"
                 @export="exportTo"
@@ -143,10 +146,13 @@
                   :key="item.id"
                   :item="item"
                   :active="isActive(item)"
-                  :selected="selected === item"
+                  :selected="isChecked(item) || selected === item"
+                  :checked="isChecked(item)"
+                  :bulk-selection-active="checkedFavorites.length > 0"
                   :class="{ 'drag-pending': (pendingSaveIds || []).includes(item.id) }"
                   @remove="remove"
                   @select="select"
+                  @toggle-check="toggleChecked"
                   @open="open"
                   @open-history="openHistory"
                   @export="exportTo"
@@ -169,10 +175,13 @@
               :key="item.id"
               :item="item"
               :active="isActive(item)"
-              :selected="selected === item"
+              :selected="isChecked(item) || selected === item"
+              :checked="isChecked(item)"
+              :bulk-selection-active="checkedFavorites.length > 0"
               :class="{ 'drag-pending': (pendingSaveIds || []).includes(item.id) }"
               @remove="remove"
               @select="select"
+              @toggle-check="toggleChecked"
               @open="open"
               @open-history="openHistory"
               @export="exportTo"
@@ -197,6 +206,20 @@
           </span>
         </div>
       </div>
+    </div>
+    <div
+      class="toolbar btn-group row flex-right"
+      v-show="checkedFavorites.length > 0"
+    >
+      <a
+        class="btn btn-link"
+        @click="discardCheckedFavorites"
+      >Cancel</a>
+      <a
+        class="btn btn-primary"
+        :title="removeTitle"
+        @click="removeCheckedFavorites"
+      >Remove</a>
     </div>
     <portal to="modals">
       <modal
@@ -266,6 +289,7 @@ export default {
     return {
       checkedFavorites: [],
       selected: null,
+      selectionAnchor: null,
       folderModalName: '',
       folderModalItem: null,
       folderModalParentId: null,
@@ -317,7 +341,18 @@ export default {
     },
     removeTitle() {
       return `Remove ${this.checkedFavorites.length} saved queries`;
-    }
+    },
+    flatVisibleQueries() {
+      const result = []
+      for (const { items, subfolders } of this.foldersWithQueries) {
+        result.push(...items)
+        for (const { items: subItems } of subfolders) {
+          result.push(...subItems)
+        }
+      }
+      result.push(...this.lonelyQueries)
+      return result
+    },
   },
   methods: {
     getFolderExpanded(folderId) {
@@ -361,8 +396,45 @@ export default {
     isActive(item) {
       return this.activeTab && this.activeTab.queryId === item.id
     },
-    select(item) {
+    isChecked(item) {
+      return this.checkedFavorites.some((f) => f.id === item.id)
+    },
+    toggleChecked(item) {
+      const idx = this.checkedFavorites.findIndex((f) => f.id === item.id)
+      if (idx >= 0) {
+        this.checkedFavorites.splice(idx, 1)
+      } else {
+        this.checkedFavorites.push(item)
+      }
+      this.selectionAnchor = item
+    },
+    selectRange(anchor, item) {
+      const list = this.flatVisibleQueries
+      const anchorIndex = list.findIndex((i) => i.id === anchor.id)
+      const itemIndex = list.findIndex((i) => i.id === item.id)
+      if (anchorIndex < 0 || itemIndex < 0) return
+      const [start, end] = anchorIndex < itemIndex
+        ? [anchorIndex, itemIndex]
+        : [itemIndex, anchorIndex]
+      for (const query of list.slice(start, end + 1)) {
+        if (!this.isChecked(query)) {
+          this.checkedFavorites.push(query)
+        }
+      }
+    },
+    select(item, event) {
+      if (event?.shiftKey && this.selectionAnchor != null) {
+        this.selectRange(this.selectionAnchor, item)
+        this.selected = item
+        return
+      }
+      if (event?.metaKey || event?.ctrlKey) {
+        this.toggleChecked(item)
+        this.selected = item
+        return
+      }
       this.selected = item
+      this.selectionAnchor = item
     },
     open(item) {
       this.$root.$emit('favoriteClick', item)
@@ -376,13 +448,21 @@ export default {
       }
     },
     async removeCheckedFavorites() {
-      for(let i = 0; i < this.checkedFavorites.length; i++) {
-        await this.remove(this.checkedFavorites[i])
+      const count = this.checkedFavorites.length
+      if (count === 0) return
+      const message = count === 1
+        ? `Delete "${this.checkedFavorites[0].title}"?`
+        : `Delete ${count} saved queries?`
+      if (!await this.$confirm(message, undefined, { variant: 'danger' })) {
+        return
       }
-      this.checkedFavorites = [];
+      for (const favorite of [...this.checkedFavorites]) {
+        await this.$store.dispatch('data/queries/remove', favorite)
+      }
+      this.checkedFavorites = []
     },
     discardCheckedFavorites() {
-      this.checkedFavorites = [];
+      this.checkedFavorites = []
     },
     createFolder() {
       if (!this.canCreateFolders) {

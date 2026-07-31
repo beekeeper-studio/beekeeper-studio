@@ -9,10 +9,18 @@
         content: truncatedText,
         delay: { show: 500 },
       }"
-      @click.prevent="$emit('select', item)"
+      @click.prevent="$emit('select', item, $event)"
       @dblclick.prevent="$emit('open', item)"
-      :class="{active, selected}"
+      :class="{active, selected, 'bulk-selection-active': bulkSelectionActive}"
     >
+      <input
+        @click.stop=""
+        type="checkbox"
+        class="form-control delete-checkbox"
+        :class="{ shown: bulkSelectionActive }"
+        :checked="checked"
+        @change="$emit('toggle-check', item)"
+      >
       <i class="item-icon query material-icons">code</i>
       <div class="list-text">
         <div class="list-title flex-col">
@@ -38,7 +46,7 @@ import { AppEvent } from '@/common/AppEvent'
 
 export default Vue.extend({
   components: { EditableText },
-  props: ['item', 'selected', 'active'],
+  props: ['item', 'selected', 'active', 'checked', 'bulkSelectionActive'],
   data: () => ({
     timeAgo: new TimeAgo('en-US'),
     rename: false,
