@@ -231,4 +231,80 @@ Host myserver
     const result = readSshConfig("myserver", configPath);
     expect(result.identityFile).toBe("/keys/ok");
   });
+
+  describe("Include Directive", () => {
+    // Include fixtures need sibling files, so they get a directory rather than
+    // the standalone tmp file writeConfig() creates.
+    function configDir() {
+      const dir = tmp.dirSync({ unsafeCleanup: true }).name;
+      fs.mkdirSync(path.join(dir, "conf.d"));
+
+      function write(relativePath: string, content: string): string {
+        const filePath = path.join(dir, relativePath);
+        fs.writeFileSync(filePath, content, "utf-8");
+        fs.chmodSync(filePath, 0o600);
+        return filePath;
+      }
+
+      return { dir, write };
+    }
+
+    it("resolves a host defined in an included file", () => {
+      const { write } = configDir();
+      const included = write(
+        "conf.d/work.conf",
+        `Host work
+  HostName work.example.com
+  Port 2222`
+      );
+      const configPath = write("config", `Include ${included}`);
+
+      const result = readSshConfig("work", configPath);
+      expect(result).toEqual({ host: "work.example.com", port: 2222 });
+    });
+
+    it("merges every file matched by an Include glob", () => {
+      const { dir, write } = configDir();
+      write("conf.d/a.conf", `Host alpha\n  HostName alpha.example.com`);
+      write("conf.d/b.conf", `Host beta\n  HostName beta.example.com`);
+      const configPath = write(
+        "config",
+        `Include ${path.join(dir, "conf.d", "*.conf")}`
+      );
+
+      expect(readSshConfig("alpha", configPath).host).toBe("alpha.example.com");
+      expect(readSshConfig("beta", configPath).host).toBe("beta.example.com");
+    });
+
+    // The fixture dir is never the cwd, so a cwd-relative lookup matches nothing.
+    it("resolves a relative Include against the config's own directory", () => {
+      const { write } = configDir();
+      write("conf.d/work.conf", `Host work\n  HostName work.example.com`);
+      const configPath = write("config", `Include conf.d/*.conf`);
+
+      expect(readSshConfig("work", configPath).host).toBe("work.example.com");
+    });
+
+    // An untrusted fragment can inject `Match exec` just as the root config can.
+    itPosix("ignores an untrusted included file but keeps the rest", () => {
+      const { dir, write } = configDir();
+      write("conf.d/good.conf", `Host good\n  HostName good.example.com`);
+      const bad = write(
+        "conf.d/bad.conf",
+        `Host bad\n  HostName bad.example.com`
+      );
+      fs.chmodSync(bad, 0o666);
+      const configPath = write(
+        "config",
+        `Include ${path.join(dir, "conf.d", "*.conf")}`
+      );
+
+      const result = readSshConfig("good", configPath);
+      expect(result.host).toBe("good.example.com");
+      expect(result.warnings).toEqual([
+        expect.objectContaining({ code: "untrusted" }),
+      ]);
+      expect(readSshConfig("bad", configPath).host).toBe("bad");
+    });
+  });
 });

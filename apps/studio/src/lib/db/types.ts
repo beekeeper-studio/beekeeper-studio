@@ -16,6 +16,7 @@ export const DatabaseTypes = [
   'bigquery',
   'firebird',
   'tidb',
+  'starrocks',
   'libsql',
   'clickhouse',
   'duckdb',
@@ -35,6 +36,7 @@ export type ConnectionType = typeof DatabaseTypes[number]
 export const ConnectionTypes = [
   { name: 'MySQL', value: 'mysql' },
   { name: 'TiDB', value: 'tidb' },
+  { name: 'StarRocks', value: 'starrocks' },
   { name: 'MariaDB', value: 'mariadb' },
   { name: 'Postgres', value: 'postgresql' },
   { name: 'SQLite', value: 'sqlite' },

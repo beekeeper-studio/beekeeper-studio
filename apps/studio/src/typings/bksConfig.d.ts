@@ -318,6 +318,19 @@ declare interface IBksConfig {
                 quoted: any[];
             };
         };
+        starrocks: {
+            allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
+        };
         surrealdb: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
@@ -491,6 +504,7 @@ declare interface IBksConfig {
         };
         tableTable: {
             defaultColumnWidth: number;
+            editTrigger: string;
             largeFieldWidth: number;
             maxColumnWidth: number;
             maxInitialWidth: number;
