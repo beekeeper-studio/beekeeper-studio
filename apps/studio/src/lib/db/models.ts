@@ -374,6 +374,8 @@ export interface CommandSettingControl {
   infoTitle?: string;
   onValueChange?: (config: BackupConfig) => void;
   actions?: CommandControlAction[];
+  supportsTemplate?: boolean;
+  showPreview?: boolean;
 }
 
 export interface CommandControlAction {
