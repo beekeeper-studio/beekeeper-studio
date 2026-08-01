@@ -68,6 +68,13 @@ export const keymapTypes = [
   { name: "Vim", value: "vim" }
 ] as const
 
+/** Case for SQL keywords inserted by autocomplete */
+export const keywordCaseTypes = [
+  { name: "Preserve", value: "preserve" },
+  { name: "UPPERCASE", value: "upper" },
+  { name: "lowercase", value: "lower" }
+] as const
+
 // if you update this, you may need to update `translateOperator` in the mongodb driver
 export const TableFilterSymbols = [
     { value: '=', label: 'equals', type: 'standard' },

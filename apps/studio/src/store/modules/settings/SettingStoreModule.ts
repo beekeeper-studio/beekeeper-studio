@@ -87,6 +87,13 @@ const SettingStoreModule: Module<State, any> = {
         ? value
         : "default";
     },
+    /** The case for SQL keywords inserted by autocomplete */
+    keywordCase(state) {
+      const value = state.settings.keywordCase?.value as string;
+      return value && config.defaults.keywordCaseTypes.map((k) => k.value).includes(value)
+        ? value
+        : "preserve";
+    },
     sortOrder(state) {
       if (!state.settings.sortOrder) return 'id'
       return state.settings.sortOrder.value

@@ -1,5 +1,5 @@
 import { IPlatformInfo } from './common/IPlatformInfo';
-import { ConnectionTypes, keymapTypes } from './lib/db/types'
+import { ConnectionTypes, keymapTypes, keywordCaseTypes } from './lib/db/types'
 import globals from '@/common/globals'
 
 let platformInfo: IPlatformInfo;
@@ -43,6 +43,7 @@ export function buildConfig(platInfo: IPlatformInfo) {
     defaults: {
       connectionTypes: ConnectionTypes,
       keymapTypes: keymapTypes,
+      keywordCaseTypes: keywordCaseTypes,
     },
     maxResults: globals.maxResults
   }
@@ -57,6 +58,7 @@ export default {
 
   defaults: {
     connectionTypes: ConnectionTypes,
-    keymapTypes: keymapTypes
+    keymapTypes: keymapTypes,
+    keywordCaseTypes: keywordCaseTypes
   },
 }

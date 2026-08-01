@@ -3,9 +3,10 @@
 
 import {EditorState} from "@codemirror/state"
 import {CompletionContext, CompletionSource} from "@codemirror/autocomplete"
+import {EditorView} from "@codemirror/view"
 import {PostgreSQL, MySQL, SQLConfig, SQLDialect} from "@codemirror/lang-sql"
 import theIst from "ist"
-import { extensions as sql, SQLExtensionsConfig } from "../../../lib/components/sql-text-editor/extensions"
+import { extensions as sql, applyKeywordCase, SQLExtensionsConfig } from "../../../lib/components/sql-text-editor/extensions"
 import { SQLServer } from "../../../lib/components/sql-text-editor/customDialects"
 
 function get(doc: string, conf: SQLExtensionsConfig & {explicit?: boolean, keywords?: boolean} = {}) {
@@ -271,6 +272,56 @@ describe("SQL completion", () => {
 
   it("can transform keyword completions", async () => {
     ist((await get("s|", {keywords: true, keywordCompletion: l => ({label: l, type: "x"})}))!.options.every(c => c.type == "x"))
+  })
+
+  it("preserves lower-case keywords by default", async () => {
+    const options = (await get("s|", {keywords: true}))!.options
+    ist(options.some(c => c.label == "select"))
+    ist(!options.some(c => c.label == "SELECT"))
+  })
+
+  it("inserts lower-case keywords with keywordCase lower", async () => {
+    ist((await get("s|", {keywords: true, keywordCase: "lower"}))!.options.some(c => c.label == "select"))
+  })
+
+  it("inserts upper-case keywords with keywordCase upper", async () => {
+    ist((await get("s|", {keywords: true, keywordCase: "upper"}))!.options.some(c => c.label == "SELECT"))
+  })
+
+  it("upper-cases all SQL keywords with keywordCase upper", async () => {
+    const options = (await get("|", {keywords: true, explicit: true, keywordCase: "upper"}))!.options
+    const labels = options.map(c => c.label)
+    ist(["SELECT", "FROM", "WHERE", "INSERT", "UPDATE", "DELETE"].every(k => labels.includes(k)))
+  })
+
+  it("does not affect table name completion with keywordCase upper", () => {
+    ist(str(get("select u|", {schema: schema1, keywordCase: "upper"})), "products, users")
+  })
+
+  it("applies keyword case changes at runtime", async () => {
+    const parent = document.createElement("div")
+    const view = new EditorView({
+      parent,
+      state: EditorState.create({
+        doc: "s",
+        selection: {anchor: 1},
+        extensions: [sql({})],
+      }),
+    })
+    try {
+      const keywordLabels = async () => {
+        const source = view.state.languageDataAt<CompletionSource>("autocomplete", 1)[0]
+        return (await source(new CompletionContext(view.state, 1, true))).options.map(c => c.label)
+      }
+      ist((await keywordLabels()).some(c => c == "select"))
+      applyKeywordCase(view, "upper")
+      ist((await keywordLabels()).some(c => c == "SELECT"))
+      applyKeywordCase(view, "lower")
+      ist((await keywordLabels()).some(c => c == "select"))
+    } finally {
+      view.destroy()
+      parent.remove()
+    }
   })
 
   // ---------------------------------------------------------------------------

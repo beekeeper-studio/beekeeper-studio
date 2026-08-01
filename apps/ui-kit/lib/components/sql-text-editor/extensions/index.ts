@@ -7,6 +7,8 @@ import type { QuerySelectionChangeParams } from "./querySelection";
 import { Options } from "sql-query-identifier";
 
 export { applyEntities } from "./customSql";
+export { applyKeywordCase } from "./customSql";
+export type { KeywordCase } from "./customSql";
 export { applyDialect } from "./removeQueryQuotes";
 export { type ColumnsGetter } from "./sqlContextComplete";
 export type { QuerySelectionChangeParams };

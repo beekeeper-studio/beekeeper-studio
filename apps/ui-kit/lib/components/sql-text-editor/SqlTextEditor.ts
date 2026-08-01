@@ -5,7 +5,9 @@ import { Dialect } from "sql-query-identifier";
 import {
   applyDialect,
   applyEntities,
+  applyKeywordCase,
   extensions as sqlExtensions,
+  KeywordCase,
   SQLExtensionsConfig,
 } from "./extensions";
 import { ExtensionConfiguration } from "@/components";
@@ -57,6 +59,10 @@ export class SqlTextEditor extends TextEditor {
 
   setQueryIdentifierDialect(dialect: Dialect) {
     applyDialect(this.view, dialect);
+  }
+
+  setKeywordCase(keywordCase: KeywordCase) {
+    applyKeywordCase(this.view, keywordCase);
   }
 
   // --- Editor Setup ---
