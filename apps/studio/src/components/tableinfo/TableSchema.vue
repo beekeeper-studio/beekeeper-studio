@@ -459,7 +459,7 @@ export default Vue.extend({
         await this.connection.alterTable(changes);
 
         this.clearChanges()
-        await this.$store.dispatch('updateTableColumns', this.table)
+        const columns = await this.$store.dispatch('updateTableColumns', this.table)
         this.$nextTick(() => {
           this.initializeTabulator()
         })
@@ -467,7 +467,7 @@ export default Vue.extend({
 
         // MySQL/MariaDB clamp the value up to (max existing + 1); report if it was adjusted.
         if (requestedAutoIncrement !== undefined) {
-          const actual = this.readCurrentAutoIncrement()
+          const actual = this.readAutoIncrement(columns)
           if (actual != null && actual !== requestedAutoIncrement) {
             const docsUrl = this.usedConfig?.connectionType === 'mariadb'
               ? 'https://mariadb.com/kb/en/auto_increment/'
@@ -604,8 +604,10 @@ export default Vue.extend({
         return r
       })
     },
-    readCurrentAutoIncrement(): number | null {
-      const col = (this.table.columns || []).find((c) => !!c.extra && /^auto_increment$/i.test(String(c.extra).trim()))
+    // Reads from freshly fetched columns rather than `this.table`, which still holds the
+    // pre-alter values at this point.
+    readAutoIncrement(columns: ExtendedTableColumn[]): number | null {
+      const col = (columns || []).find((c) => !!c.extra && /^auto_increment$/i.test(String(c.extra).trim()))
       return col && col.autoIncrement != null ? Number(col.autoIncrement) : null
     },
     // Display state shows "auto_increment 1042"; the editor still opens with just the number.
