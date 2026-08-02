@@ -38,7 +38,7 @@
             }"
           >help_outlined</i>
         </label>
-        <masked-input :value="config.host" @input="val => config.host = val" />
+        <masked-input :value="config.host" @input="val => config.host = val" :disabled="disabled" />
       </div>
       <div class="form-group">
         <label for="database">Database</label>
@@ -47,6 +47,7 @@
           type="text"
           class="form-control"
           v-model="config.defaultDatabase"
+          :disabled="disabled"
         >
       </div>
       <div
@@ -73,6 +74,7 @@
           type="text"
           class="form-control"
           v-model="config.username"
+          :disabled="disabled"
         >
       </div>
       <div class="form-group" v-show="isServicePrincipal">
@@ -88,21 +90,21 @@
             }"
           >help_outlined</i>
         </label>
-        <masked-input :value="config.azureAuthOptions.tenantId" @input="val => config.azureAuthOptions.tenantId = val" />
+        <masked-input :value="config.azureAuthOptions.tenantId" @input="val => config.azureAuthOptions.tenantId = val" :disabled="disabled" />
       </div>
       <div class="form-group" v-show="isServicePrincipal">
         <label for="clientId">Client ID</label>
-        <masked-input :value="config.azureAuthOptions.clientId" @input="val => config.azureAuthOptions.clientId = val" />
+        <masked-input :value="config.azureAuthOptions.clientId" @input="val => config.azureAuthOptions.clientId = val" :disabled="disabled" />
       </div>
       <div class="row gutter">
         <div class="col s12 form-group" v-show="isServicePrincipal">
           <label for="clientSecret">Client Secret</label>
-          <password-input v-model="config.azureAuthOptions.clientSecret" />
+          <password-input v-model="config.azureAuthOptions.clientSecret" :disabled="disabled" />
         </div>
       </div>
       <div class="form-group" v-show="showMsiEndpoint">
         <label for="msiEndpoint">MSI Endpoint</label>
-        <masked-input :value="config.azureAuthOptions.msiEndpoint" @input="val => config.azureAuthOptions.msiEndpoint = val" />
+        <masked-input :value="config.azureAuthOptions.msiEndpoint" @input="val => config.azureAuthOptions.msiEndpoint = val" :disabled="disabled" />
       </div>
     </div>
   </div>
@@ -125,6 +127,10 @@ export default {
     supportComplexSSL: {
       type: Boolean,
       default: true
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
   },
   components: {

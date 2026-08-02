@@ -1,7 +1,7 @@
 import { Entity, Column, OneToMany, ManyToOne, JoinColumn, BeforeRemove, BeforeInsert, BeforeUpdate, Not, IsNull } from 'typeorm'
 import { ApplicationEntity } from './application_entity'
 import { SavedConnection } from './saved_connection'
-import pluralize from 'pluralize'
+import { pluralize } from '@/vendor/pluralize'
 
 @Entity({ name: 'connection_folder' })
 export class ConnectionFolder extends ApplicationEntity {

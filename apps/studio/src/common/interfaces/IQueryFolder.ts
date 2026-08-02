@@ -1,6 +1,7 @@
+import { IShareable } from "./IShareable"
+import { IAccessGrant } from "./IAccessGrant"
 
-
-export interface IFolder {
+export interface IFolder extends IShareable {
   id: number | null
   name: string
   expanded?: boolean
@@ -8,6 +9,7 @@ export interface IFolder {
   description?: string | null
   createdAt?: Date
   updatedAt?: Date
+  accessGrants?: IAccessGrant[]
 }
 
 export type IQueryFolder = IFolder

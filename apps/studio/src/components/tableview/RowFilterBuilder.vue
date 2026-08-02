@@ -72,6 +72,11 @@
               <i class="material-icons">code</i>
             </button>
           </div>
+          <span
+            v-else
+            class="btn-fab filter-mode-spacer"
+            aria-hidden="true"
+          />
           <div
             class="btn-wrap"
             v-for="(filter, index) in additionalFilters"

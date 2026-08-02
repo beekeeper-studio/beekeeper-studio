@@ -15,7 +15,9 @@
       >
         <div class="alert alert-warning alert-small">
           <i class="material-icons">error_outline</i>
-          <div class="alert-body">Run Current unavailable</div>
+          <div class="alert-body">
+            Run Current unavailable
+          </div>
           <div class="btn-group">
             <a
               @click.prevent="copyQuerySelectionError"
@@ -206,6 +208,7 @@
           <x-button
             @click.prevent="triggerSave"
             class="btn btn-flat btn-small"
+            :disabled="readOnly"
           >
             Save
           </x-button>
@@ -368,6 +371,7 @@
       :unsaved-text="unsavedChanges ? unsavedText : null"
       @close="editHistoryOpen = false"
       @restore="handleEditHistoryRestore"
+      @discardUnsavedChanges="handleDiscardUnsavedChanges"
     />
 
     <!-- Super-Formatter Modal -->
@@ -550,7 +554,7 @@
   import _ from 'lodash'
   import Split from 'split.js'
   import Noty from 'noty'
-  import { mapGetters, mapState } from 'vuex'
+  import { mapActions, mapGetters, mapState } from 'vuex'
   import { identify } from 'sql-query-identifier'
 
   import { canDeparameterize, convertParamsForReplacement, deparameterizeQuery, safelyIdentify } from '../lib/db/sql_tools'
@@ -582,6 +586,7 @@
   import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
   import { wait } from '@/shared/lib/wait'
+  import ISavedQuery from '@/common/interfaces/ISavedQuery'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -687,11 +692,17 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           { event: AppEvent.openQueryEditHistory, handler: this.handleOpenQueryEditHistory },
         ];
       },
+      savedQuery(): ISavedQuery | undefined {
+        return this.savedQueries.find((q) => q.id === this.tab.queryId);
+      },
       readOnly() {
         if (this.tab.isLoading) {
           return true;
         }
         if (this.remoteDeleted) {
+          return true;
+        }
+        if (this.isCloud && this.savedQuery && !this.savedQuery.canWrite) {
           return true;
         }
         return false;
@@ -770,7 +781,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         return result.length ? result : null
       },
       runningText() {
-        return `Running ${this.runningType} (${window.main.pluralize('query', this.runningCount, true)})`
+        return `Running ${this.runningType} (${this.$pluralize('query', this.runningCount, true)})`
       },
       hasSelectedText() {
         return this.editor.initialized ? !!this.editor.selection : false
@@ -1053,6 +1064,9 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       }
     },
     methods: {
+      ...mapActions({
+        reloadQuery: "data/queries/reload",
+      }),
       updateTab() {
         this.$emit('update-tab', this.tab)
       },
@@ -1879,7 +1893,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             id: "formatter",
             handler: this.formatterPreset,
           },
-          ...(this.query?.id && this.isCloud
+          ...(this.query?.id
             ? [
                 divider,
                 {
@@ -1913,10 +1927,15 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.editHistoryOpen = true;
         }
       },
-      handleEditHistoryRestore(restored) {
-        this.fullQuery = restored;
-        this.unsavedText = restored.text;
-        this.originalText = restored.text;
+      async handleEditHistoryRestore() {
+        await this.reloadQuery(this.tab.queryId);
+        this.fullQuery = await this.$store.dispatch('data/queries/findOne', this.tab.queryId);
+        this.unsavedText = this.fullQuery.text;
+        this.originalText = this.fullQuery.text;
+        this.editHistoryOpen = false;
+      },
+      handleDiscardUnsavedChanges() {
+        this.unsavedText = this.originalText;
         this.editHistoryOpen = false;
       },
       getCommitModeVTooltip(options: {

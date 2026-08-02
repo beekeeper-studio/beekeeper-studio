@@ -1,0 +1,45 @@
+name: MongoDB Kerberos integration test
+
+permissions:
+  contents: read
+
+# Heavy multi-container job (Samba AD DC + MongoDB Enterprise + a dockerized Jest client),
+# so it runs only when the MongoDB client/GSSAPI code or this suite changes, plus on demand.
+# The companion spec self-skips in the normal integration matrix unless MONGODB_KERBEROS_TEST=1.
+#
+# The entire environment lives in Docker (see dev/docker_mongodb_kerberos/run.sh), so this
+# job needs nothing on the runner except Docker -- it runs the exact same command a developer
+# runs locally.
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'apps/studio/src-commercial/backend/lib/db/clients/mongodb.ts'
+      - 'apps/studio/tests/integration/lib/db/clients/mongodb-kerberos.spec.ts'
+      - 'dev/docker_mongodb_kerberos/**'
+      - '.github/workflows/mongodb-kerberos-tests.yaml'
+  pull_request:
+    paths:
+      - 'apps/studio/src-commercial/backend/lib/db/clients/mongodb.ts'
+      - 'apps/studio/tests/integration/lib/db/clients/mongodb-kerberos.spec.ts'
+      - 'dev/docker_mongodb_kerberos/**'
+      - '.github/workflows/mongodb-kerberos-tests.yaml'
+  workflow_dispatch:
+
+# Only the latest commit per ref matters; cancel superseded in-progress runs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mongodb-kerberos:
+    runs-on: ubuntu-24.04
+    # Tight enough that a stalled Kerberos handshake surfaces in minutes, not an hour.
+    timeout-minutes: 40
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Run the dockerized Kerberos integration test
+        run: bash dev/docker_mongodb_kerberos/run.sh

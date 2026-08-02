@@ -67,6 +67,7 @@
             </div>
           </div>
         </div>
+        <expired-folder-alert v-if="!canCreateFolders && folders.length > 0" />
         <error-alert
           v-if="error"
           :error="error"
@@ -249,6 +250,7 @@
 
 <script>
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
 import { SmartLocalStorage } from '@/common/LocalStorage'
 import { mapGetters, mapState } from 'vuex'
 import SidebarLoading from '../../common/SidebarLoading.vue'
@@ -259,7 +261,7 @@ import { getLonelyItems, isFolderListEmpty } from '@/common/utils/folderTree'
 import Draggable from 'vuedraggable'
 
 export default {
-  components: { SidebarLoading, ErrorAlert, FavoriteListItem, SidebarFolder, Draggable },
+  components: { SidebarLoading, ErrorAlert, ExpiredFolderAlert, FavoriteListItem, SidebarFolder, Draggable },
   data: function () {
     return {
       checkedFavorites: [],
@@ -282,7 +284,7 @@ export default {
     document.removeEventListener('mousedown', this.maybeUnselect)
   },
   computed: {
-    ...mapGetters(['workspace', 'isCloud', 'isUltimate']),
+    ...mapGetters(['workspace', 'isCloud', 'isUltimate', 'canCreateFolders']),
     ...mapGetters('data/queries', {'filteredQueries': 'filteredQueries'}),
     ...mapState('tabs', {'activeTab': 'active'}),
     ...mapState('data/queries', {'savedQueries': 'items', 'queriesLoading': 'loading', 'queriesError': 'error', 'savedQueryFilter': 'filter', 'pendingSaveIds': 'pendingSaveIds'}),
@@ -369,7 +371,7 @@ export default {
       this.trigger('favoriteClick', item, { openHistory: true })
     },
     async remove(favorite) {
-      if (await this.$confirm("Really delete?")) {
+      if (await this.$confirm(`Delete "${favorite.name}"?`, undefined, { variant: "danger" })) {
         await this.$store.dispatch('data/queries/remove', favorite)
       }
     },
@@ -383,7 +385,7 @@ export default {
       this.checkedFavorites = [];
     },
     createFolder() {
-      if (!this.isUltimate && !this.isCloud) {
+      if (!this.canCreateFolders) {
         this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }
@@ -402,23 +404,31 @@ export default {
       event.stopPropagation();
 
       const options = []
+      const canWrite = folder.canWrite ?? true;
       if (this.isCloud && !folder.parentId) {
         options.push({ name: 'New Subfolder', handler: ({ item }) => this.createSubfolder(item) })
       }
-      if (folder.parentId) {
-        const otherRoots = this.rootFolders.filter(f => f.id !== folder.parentId)
-        otherRoots.forEach(root => {
-          options.push({ name: `Move to ${root.name}`, handler: ({ item }) => this.moveFolderToParent(item, root) })
-        })
+      if (!canWrite) {
+        // do nothing
       }
-      options.push(
+      options.push(...[
         { name: 'Rename', handler: ({ item }) => this.renameQueryFolder(item) },
+        folder.parentId && {
+          name: 'Move',
+          handler: ({ item }) => this.trigger(AppEvent.openMoveFileModal, { type: 'queryFolder', value: item }),
+        },
         { name: 'Delete', handler: ({ item }) => this.deleteFolder(item) }
-      )
+      ].filter(Boolean))
       this.$bks.openMenu({ event, item: folder, options })
     },
+    share(folder) {
+      this.trigger(AppEvent.openShareModal, {
+        id: folder.id,
+        module: "data/queryFolders",
+      });
+    },
     createSubfolder(parentFolder) {
-      if (!this.isUltimate && !this.isCloud) {
+      if (!this.canCreateFolders) {
         this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }
@@ -456,9 +466,6 @@ export default {
       } finally {
         this.renamingFolderId = null
       }
-    },
-    async moveFolderToParent(folder, newParent) {
-      await this.$store.dispatch('data/queryFolders/save', { ...folder, parentId: newParent.id })
     },
     async deleteFolder(folder) {
       if (await this.$confirm(`Delete folder "${folder.name}"?`)) {

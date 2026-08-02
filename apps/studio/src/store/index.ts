@@ -39,6 +39,7 @@ import { PopupMenuModule } from './modules/PopupMenuModule'
 import { WebPluginManagerStatus } from '@/services/plugin'
 import { MenuBarModule } from './modules/MenuBarModule'
 import { PluginsModule, PluginsState } from './modules/plugins'
+import { pluralize } from '@/vendor/pluralize'
 
 
 const log = RawLog.scope('store/index')
@@ -303,6 +304,9 @@ const store = new Vuex.Store<State>({
     isTrial(_state, _getters, _rootState, rootGetters) {
       return rootGetters['licenses/isTrial']
     },
+    canCreateFolders(_state, getters) {
+      return getters.isUltimate || getters.isCloud;
+    },
     expandFKDetailsByDefault(state) {
       return state.expandFKDetailsByDefault
     },
@@ -495,7 +499,7 @@ const store = new Vuex.Store<State>({
         : 'Beekeeper Studio'
       if (context.getters.isTrial && context.getters.isUltimate) {
         const days = context.rootGetters['licenses/licenseDaysLeft']
-        title += ` - Free Trial (${window.main.pluralize('day', days, true)} left)`
+        title += ` - Free Trial (${pluralize('day', days, true)} left)`
       }
       if (context.getters.isCommunity) {
         title += ' - Free Version'

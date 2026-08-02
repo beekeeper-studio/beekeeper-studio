@@ -221,9 +221,12 @@ module.exports = {
   },
   snapcraft: {
     base: 'core24',
+    // Only attach the built .snap to the GitHub release here. Pushing to the
+    // snap store is done as a separate final step (see publish_snapcraft in
+    // studio-publish.yml) so it can be retried without rebuilding when
+    // credentials are stale or the store is unavailable.
     publish: [
-      'github',
-      'snapStore'
+      'github'
     ],
     core24: {
       // Build the core24 snap in an isolated LXD container. CI provisions LXD

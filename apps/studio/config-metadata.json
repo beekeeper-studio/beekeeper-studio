@@ -80,7 +80,9 @@
         { "key": "focusOnFilterInput", "label": "Focus Filter Input" },
         { "key": "openEditorModal", "label": "Open Editor Modal" },
         { "key": "firstPage", "label": "First Page" },
-        { "key": "lastPage", "label": "Last Page" }
+        { "key": "lastPage", "label": "Last Page" },
+        { "key": "pasteAsNewRows", "label": "Paste clipboard as new rows"},
+        { "key": "nullSelection", "label": "Set selected cells to null"}
       ]
     },
     {

@@ -370,6 +370,7 @@
 <style scoped>
 .split-container {
   display: flex;
-  width: 100%;
+  flex: 1 1 0;
+  min-width: 0;
 }
 </style>

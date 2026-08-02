@@ -3,7 +3,7 @@
     <div class="form-group col">
       <label for="authenticationType">Authentication Method</label>
       <!-- need to take the value -->
-      <select name="" v-model="authType" id="">
+      <select name="" v-model="authType" id="" :disabled="disabled">
         <option value="default">
           Username / Password
         </option>
@@ -47,6 +47,7 @@
               type="text"
               v-model="config.domain"
               class="form-control"
+              :disabled="disabled"
             >
           </div>
           <div class="form-group">
@@ -59,6 +60,7 @@
                 name="trustServerCertificate"
                 v-model="config.trustServerCertificate"
                 id="trustServerCertificate"
+                :disabled="disabled"
               >
               Trust Server Certificate?
               <i
@@ -87,9 +89,15 @@
               class="form-control"
               v-model="config.sqlServerOptions.encryptionMode"
             >
-              <option value="off">Off (no encryption)</option>
-              <option value="on">On (trust server certificate)</option>
-              <option value="strict">Strict (validate certificate)</option>
+              <option value="off">
+                Off (no encryption)
+              </option>
+              <option value="on">
+                On (trust server certificate)
+              </option>
+              <option value="strict">
+                Strict (validate certificate)
+              </option>
             </select>
           </div>
           <div
@@ -124,10 +132,10 @@
         </div>
       </div>
     </common-server-inputs>
-    <common-entra-id v-show="azureAuthEnabled" :auth-type="authType" :config="config" />
+    <common-entra-id v-show="azureAuthEnabled" :auth-type="authType" :config="config" :disabled="disabled" />
     <!-- Kerberos requires the real FQDN/SPN; an SSH tunnel routes through localhost and
          breaks SPN matching, so the tunnel is not offered for integrated auth. -->
-    <common-advanced v-show="!azureAuthEnabled && !windowsAuthEnabled" :config="config" />
+    <common-advanced v-show="!azureAuthEnabled && !windowsAuthEnabled" :config="config" :disabled="disabled" />
   </div>
 </template>
 
@@ -143,7 +151,13 @@
 
   export default {
     components: {CommonEntraId, CommonServerInputs, CommonAdvanced, FilePicker },
-    props: ['config'],
+    props: {
+      config: Object,
+      disabled: {
+        type: Boolean,
+        default: false
+      }
+    },
     mounted() {
       if (this.config?.windowsAuthEnabled) {
         this.authType = 'windows'

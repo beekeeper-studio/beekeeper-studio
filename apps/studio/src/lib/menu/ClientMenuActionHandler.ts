@@ -25,6 +25,7 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   cut = () => send('cut')
   copy = () => send('copy')
   paste = () => send('paste')
+  pasteAsNewRows = () => send('pasteAsNewRows')
   selectAll = () => send('selectAll')
   zoomreset = () => send('zoomreset')
   zoomin = () => send('zoomin')

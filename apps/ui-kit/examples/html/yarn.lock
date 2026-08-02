@@ -3,7 +3,7 @@
 
 
 "@beekeeperstudio/ui-kit@link:../..":
-  version "0.3.1"
+  version "0.3.2"
   dependencies:
     "@codemirror/autocomplete" "^6.18.4"
     "@codemirror/commands" "^6.8.1"
@@ -13,6 +13,7 @@
     "@codemirror/lang-sql" "^6.8.0"
     "@codemirror/language" "^6.11.0"
     "@codemirror/lint" "^6.8.4"
+    "@codemirror/merge" "^6.12.1"
     "@codemirror/search" "^6.5.10"
     "@codemirror/state" "^6.5.2"
     "@codemirror/view" "^6.36.2"
@@ -144,6 +145,17 @@
     "@codemirror/state" "^6.0.0"
     "@codemirror/view" "^6.35.0"
     crelt "^1.0.5"
+
+"@codemirror/merge@^6.12.1":
+  version "6.12.2"
+  resolved "https://registry.yarnpkg.com/@codemirror/merge/-/merge-6.12.2.tgz#00870b0451b555189e6dd91317d1ff218f28b414"
+  integrity sha512-V8JvyAPjHbPupqP7BeMcsdsYCbyPij74jxIbaIJDORI+VZzW44zFmon8bF+oxGWvOKhcRmkiUMXd8MxHr3YA2w==
+  dependencies:
+    "@codemirror/language" "^6.0.0"
+    "@codemirror/state" "^6.0.0"
+    "@codemirror/view" "^6.17.0"
+    "@lezer/highlight" "^1.0.0"
+    style-mod "^4.1.0"
 
 "@codemirror/search@^6.5.10":
   version "6.5.10"
@@ -489,10 +501,10 @@ marked@^15.0.6:
   resolved "https://registry.yarnpkg.com/marked/-/marked-15.0.9.tgz#0ac0b42834a04f8c971a2fee36106694b29c0aad"
   integrity sha512-9AW/bn9DxQeZVjR52l5jsc0W2pwuhP04QaQewPvylil12Cfr2GBfWmgp6mu8i9Jy8UlBjqDZ9uMTDuJ8QOGZJA==
 
-nanoid@^3.3.8:
-  version "3.3.11"
-  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.11.tgz#4f4f112cefbe303202f2199838128936266d185b"
-  integrity sha512-N8SpfPUnUp1bK+PMYW8qSWdl9U+wwNWI4QKxOYDy9JAro3WMX7p2OeVRF9v+347pnakNevPmiHhNmZ2HbFA76w==
+nanoid@^3.3.16:
+  version "3.3.16"
+  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.16.tgz#a04d8ec4b1f10009d2d533947aefe4293737816c"
+  integrity sha512-bzlKTyNJ7+LdGIIwy8ijFpIqEQIvafahV7eYykJ8Cvh42EdJeODoJ6gUJXpQJvej1BddH8OqTXZNE/KfbWAu8Q==
 
 node-fetch@^2.6.1:
   version "2.7.0"
@@ -507,11 +519,11 @@ picocolors@^1.1.1:
   integrity sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==
 
 postcss@^8.4.27:
-  version "8.5.3"
-  resolved "https://registry.yarnpkg.com/postcss/-/postcss-8.5.3.tgz#1463b6f1c7fb16fe258736cba29a2de35237eafb"
-  integrity sha512-dle9A3yYxlBSrt8Fu+IpjGT8SY8hN0mlaA6GY8t0P5PjIOZemULz/E2Bnm/2dcUOena75OTNkHI76uZBNUUq3A==
+  version "8.5.22"
+  resolved "https://registry.yarnpkg.com/postcss/-/postcss-8.5.22.tgz#086a0d5685a715acf5950ebbcb1538faf3051697"
+  integrity sha512-KBDEIpLrvpv16pp3K0Fw+UCoZfopFjjgeB+0tA/aaThfEE74kKDLrgg603YvOWJyg3+WYtyq3xYsQWsIyZlPqQ==
   dependencies:
-    nanoid "^3.3.8"
+    nanoid "^3.3.16"
     picocolors "^1.1.1"
     source-map-js "^1.2.1"
 

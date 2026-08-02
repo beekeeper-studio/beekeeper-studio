@@ -44,7 +44,8 @@
   }
   .shortcut {
     padding-left: 5px;
-    color: color.adjust($text-dark, $lightness: -30%);
+    color: var(--text-dark);
+    opacity: 0.5;
   }
   i.material-icons.menu-icon   {
     margin-right:0!important;

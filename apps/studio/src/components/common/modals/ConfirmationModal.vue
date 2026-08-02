@@ -1,71 +1,56 @@
 <template>
-  <portal to="modals">
-    <modal
-      class="vue-dialog beekeeper-modal confirmation-modal"
-      :name="id"
-      @opened="opened"
-      @before-close="beforeClose"
-    >
-      <div v-kbd-trap="true">
-        <div class="dialog-content">
-          <div class="dialog-c-title">
-            <slot name="title">
-              Are you sure?
-            </slot>
-          </div>
-          <slot name="message">
-            <div>This action cannot be undone.</div>
-          </slot>
-        </div>
-        <div class="vue-dialog-buttons">
-          <button
-            class="btn btn-flat"
-            type="button"
-            ref="cancelBtn"
-            autofocus
-            @click.prevent="cancel"
-          >
-            <slot name="cancel-label">
-              Cancel
-            </slot>
-          </button>
-          <button
-            class="btn btn-primary"
-            type="button"
-            @click.prevent="confirm"
-          >
-            <slot name="confirm-label">
-              Confirm
-            </slot>
-          </button>
-        </div>
-      </div>
-    </modal>
-  </portal>
+  <base-modal :name="id" @submit="confirm">
+    <template #title>
+      <slot name="title">Are you sure?</slot>
+    </template>
+    <slot name="message">This action cannot be undone.</slot>
+    <template #footer>
+      <button class="btn btn-flat" type="button" @click.prevent="cancel">
+        <slot name="cancel-label">Cancel</slot>
+      </button>
+      <button class="btn btn-primary" type="submit" :data-variant="variant">
+        <slot name="confirm-label">Confirm</slot>
+      </button>
+    </template>
+  </base-modal>
 </template>
 
 <script lang="ts">
-import Vue from "vue";
-import { MODAL_CLOSE_EVENT, ModalCloseEventData } from "@/components/common/modals/utils";
+import Vue, { PropType } from "vue";
+import {
+  MODAL_CLOSE_EVENT,
+  ModalCloseEventData,
+} from "@/components/common/modals/utils";
+import BaseModal from "@/components/common/modals/BaseModal.vue";
 
 export default Vue.extend({
-  props: ['id'],
+  components: { BaseModal },
+  props: {
+    id: {
+      type: String,
+      required: true,
+    },
+    variant: {
+      type: String as PropType<"normal" | "danger">,
+      default: "normal",
+    },
+  },
   methods: {
-    opened() {
-      this.$refs.cancelBtn.focus()
-    },
-    beforeClose(e: { params?: boolean }) {
-      const event: ModalCloseEventData = {
-        modalId: this.id,
-        confirmed: e.params ?? false,
-      };
-      this.trigger(MODAL_CLOSE_EVENT, event);
-    },
     confirm() {
-      this.$modal.hide(this.id, true);
+      this.trigger(MODAL_CLOSE_EVENT, {
+        modalId: this.id,
+        confirmed: true,
+      } as ModalCloseEventData);
+
+      this.$modal.hide(this.id);
     },
     cancel() {
-      this.$modal.hide(this.id, false);
+      this.trigger(MODAL_CLOSE_EVENT, {
+        modalId: this.id,
+        confirmed: false,
+      } as ModalCloseEventData);
+
+      this.$modal.hide(this.id);
     },
   },
   mounted() {
@@ -75,3 +60,10 @@ export default Vue.extend({
   },
 });
 </script>
+
+<style scoped>
+.btn[data-variant=danger] {
+  background-color: var(--brand-danger);
+  color: white;
+}
+</style>
