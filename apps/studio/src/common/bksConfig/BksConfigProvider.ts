@@ -140,12 +140,12 @@ const uiModifierMap: ModifierMap = {
 
 const contextMenuModifierMap: ModifierMap = {
   CTRL: "Control",
-  CMD: "Control",
-  CTRLORCMD: "Control",
-  CMDORCTRL: "Control",
-  COMMAND: "Control",
-  CONTROLORCOMMAND: "Control",
-  COMMANDORCONTROL: "Control",
+  CMD: (isMac) => (isMac ? "Command" : "Control"),
+  CTRLORCMD: (isMac) => (isMac ? "Command" : "Control"),
+  CMDORCTRL: (isMac) => (isMac ? "Command" : "Control"),
+  COMMAND: (isMac) => (isMac ? "Command" : "Control"),
+  CONTROLORCOMMAND: (isMac) => (isMac ? "Command" : "Control"),
+  COMMANDORCONTROL: (isMac) => (isMac ? "Command" : "Control"),
   SHIFT: "Shift",
   ALT: "Alt",
   OPTION: "Alt",
@@ -217,10 +217,6 @@ export function convertKeybinding(
       mod = mod.toLowerCase();
       if (mod === "ctrlorcmd") {
         mod = platform === "mac" ? "meta" : "ctrl";
-      }
-
-      if (mod === "delete" && platform === "mac") {
-        mod = "backspace";
       }
     }
 

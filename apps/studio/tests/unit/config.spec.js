@@ -50,7 +50,13 @@ save = ctrlOrCmd+s
     expect(
       convertKeybinding("v-hotkey", "CTRLORCMD   +  SHIFT  + C", "linux")
     ).toBe("ctrl+shift+c");
-    expect(convertKeybinding("v-hotkey", "delete", "mac")).toBe("backspace");
+    expect(convertKeybinding("v-hotkey", "delete", "mac")).toBe("delete");
+    expect(convertKeybinding("context-menu", "ctrlOrCmd+backspace", "mac")).toBe(
+      "Command+Backspace"
+    );
+    expect(convertKeybinding("context-menu", "ctrlOrCmd+backspace", "linux")).toBe(
+      "Control+Backspace"
+    );
   });
 
   it("should detect unrecognized config keys", () => {
