@@ -55,7 +55,6 @@ describe('sql exporter', () => {
     orderedExporter.columns = columns;
 
     const result = orderedExporter.formatRow([10, 2, 1], columns);
-
     expect(result).toBe(`insert into "table" ("10", "2", "1") values (10, 2, 1)`);
   });
 
@@ -75,18 +74,14 @@ describe('sql exporter', () => {
     namedExporter.columns = columns;
 
     const result = namedExporter.formatRow([1], columns);
-    expect(result).toBe(
-      `insert into "table" ("") values (1)`
-    );
+    expect(result).toBe(`insert into "table" ("") values (1)`);
   });
 
   it("Should fall back to generated names when a column name is missing", () => {
     const columns = [{ dataType: "int" }];
 
     const result = exporter.formatRow([1], columns);
-    expect(result).toBe(
-      `insert into "table" ("col_1") values (1)`
-    );
+    expect(result).toBe(`insert into "table" ("col_1") values (1)`);
   });
 
   it("Should use DEFAULT for undefined values", () => {
@@ -104,9 +99,7 @@ describe('sql exporter', () => {
     undefinedExporter.columns = columns;
 
     const result = undefinedExporter.formatRow([undefined], columns);
-    expect(result).toBe(
-      `insert into "table" ("id") values (DEFAULT)`
-    );
+    expect(result).toBe(`insert into "table" ("id") values (DEFAULT)`);
   });
 
   it("Should reject undefined values for SQLite", () => {
