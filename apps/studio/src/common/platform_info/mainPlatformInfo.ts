@@ -93,7 +93,7 @@ export function mainPlatformInfo(): IPlatformInfo {
     isFlatpak: !!p.env.FLATPAK_ID || existsSync('/.flatpak-info'),
     isPortable: isWindows && p.env.PORTABLE_EXECUTABLE_DIR,
     isDevelopment: isDevEnv,
-    isAppImage: p.env.DESKTOPINTEGRATION === 'AppImageLauncher',
+    isAppImage: p.env.DESKTOPINTEGRATION === 'AppImageLauncher' || !!p.env.APPIMAGE,
     sshAuthSock: p.env.SSH_AUTH_SOCK,
     sshConfigExists: existsSync(join(homeDirectory, '.ssh', 'config')),
     defaultSshIdentityFile: ['id_ed25519', 'id_ecdsa', 'id_rsa', 'id_dsa']
