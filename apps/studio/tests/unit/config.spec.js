@@ -52,7 +52,7 @@ save = ctrlOrCmd+s
     ).toBe("ctrl+shift+c");
     expect(convertKeybinding("v-hotkey", "delete", "mac")).toBe("delete");
     expect(convertKeybinding("context-menu", "ctrlOrCmd+backspace", "mac")).toBe(
-      "Command+Backspace"
+      "Control+Backspace"
     );
     expect(convertKeybinding("context-menu", "ctrlOrCmd+backspace", "linux")).toBe(
       "Control+Backspace"

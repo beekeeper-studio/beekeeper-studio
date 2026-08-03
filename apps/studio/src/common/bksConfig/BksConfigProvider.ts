@@ -140,12 +140,12 @@ const uiModifierMap: ModifierMap = {
 
 const contextMenuModifierMap: ModifierMap = {
   CTRL: "Control",
-  CMD: (isMac) => (isMac ? "Command" : "Control"),
-  CTRLORCMD: (isMac) => (isMac ? "Command" : "Control"),
-  CMDORCTRL: (isMac) => (isMac ? "Command" : "Control"),
-  COMMAND: (isMac) => (isMac ? "Command" : "Control"),
-  CONTROLORCOMMAND: (isMac) => (isMac ? "Command" : "Control"),
-  COMMANDORCONTROL: (isMac) => (isMac ? "Command" : "Control"),
+  CMD: "Control",
+  CTRLORCMD: "Control",
+  CMDORCTRL: "Control",
+  COMMAND: "Control",
+  CONTROLORCOMMAND: "Control",
+  COMMANDORCONTROL: "Control",
   SHIFT: "Shift",
   ALT: "Alt",
   OPTION: "Alt",
