@@ -371,7 +371,8 @@ export default {
       this.trigger('favoriteClick', item, { openHistory: true })
     },
     async remove(favorite) {
-      if (await this.$confirm(`Delete "${favorite.name}"?`, undefined, { variant: "danger" })) {
+      const name = favorite.title || favorite.name
+      if (await this.$confirm(`Delete "${name}"?`, undefined, { variant: "danger" })) {
         await this.$store.dispatch('data/queries/remove', favorite)
       }
     },
