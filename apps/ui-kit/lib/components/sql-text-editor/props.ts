@@ -70,7 +70,7 @@ export default {
   /** Case for SQL keywords inserted by autocomplete */
   keywordCase: {
     type: String as PropType<KeywordCase>,
-    default: "preserve",
+    default: "lowercase",
   },
   // --- replaced with languageId
   // mode: {

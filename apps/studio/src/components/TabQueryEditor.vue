@@ -681,8 +681,10 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       ...mapGetters({
         'isCommunity': 'licenses/isCommunity',
         'userKeymap': 'settings/userKeymap',
-        'keywordCase': 'settings/keywordCase',
       }),
+      keywordCase() {
+        return this.$bksConfig.ui.queryEditor.keywordCase;
+      },
       ...mapState(['usedConfig', 'connectionType', 'database', 'tables', 'storeInitialized', 'connection']),
       ...mapState('data/queries', {'savedQueries': 'items'}),
       ...mapState('data/queryFolders', { queryFolders: 'items' }),

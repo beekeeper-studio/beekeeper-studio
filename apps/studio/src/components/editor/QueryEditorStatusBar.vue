@@ -214,18 +214,6 @@
         >
           <x-label>{{ t.name }}</x-label>
         </x-menuitem>
-        <x-menuitem disabled togglable>
-          <x-label>Autocomplete keyword case</x-label>
-        </x-menuitem>
-        <x-menuitem
-          :key="t.value"
-          v-for="t in keywordCaseTypes"
-          togglable
-          :toggled="t.value === keywordCase"
-          @click.prevent="keywordCase = t.value"
-        >
-          <x-label>{{ t.name }}</x-label>
-        </x-menuitem>
         <x-menuitem
           togglable
           :toggled="wrapText"
@@ -310,19 +298,6 @@ export default {
     },
     keymapTypes() {
       return this.$config.defaults.keymapTypes
-    },
-    keywordCase: {
-      get() {
-        const value = this.settings?.keywordCase?.value;
-        return value && this.keywordCaseTypes.map(k => k.value).includes(value) ? value : 'preserve';
-      },
-      set(value) {
-        if (value === this.keywordCase || !this.keywordCaseTypes.map(k => k.value).includes(value)) return;
-        this.$store.dispatch('settings/save', { key: 'keywordCase', value })
-      }
-    },
-    keywordCaseTypes() {
-      return this.$config.defaults.keywordCaseTypes
     },
     hasUsedDropdown: {
       get() {

@@ -12,7 +12,7 @@ import { sql } from "./vendor/@codemirror/lang-sql/src/sql";
 import { ColumnsGetter } from "./sqlContextComplete";
 import { completeConfig, setSchema } from "./vendor/@codemirror/lang-sql/src/complete";
 
-export type KeywordCase = "preserve" | "upper" | "lower";
+export type KeywordCase = "lowercase" | "uppercase";
 
 type SQLConfig = CMSQLConfig & {
   disableSchemaCompletion?: boolean;
@@ -50,7 +50,7 @@ function customSql(config: SQLConfig = {}) {
     keywordCaseCompartment.of(sql({
       ...config,
       upperCaseKeywords: config.keywordCase !== undefined
-        ? config.keywordCase === "upper"
+        ? config.keywordCase === "uppercase"
         : config.upperCaseKeywords,
     })),
   ];
@@ -62,7 +62,7 @@ function applyKeywordCase(view: EditorView, keywordCase: KeywordCase) {
     effects: keywordCaseCompartment.reconfigure(
       sql({
         ...config,
-        upperCaseKeywords: keywordCase === "upper",
+        upperCaseKeywords: keywordCase === "uppercase",
       })
     ),
   });
