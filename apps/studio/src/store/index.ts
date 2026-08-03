@@ -743,6 +743,8 @@ const store = new Vuex.Store<State>({
         context.dispatch('data/connectionFolders/loadMore', {
           params: { parentId: expandedIds },
         })
+        context.commit('data/connections/folders/fetchedIds', expandedIds);
+        context.commit('data/connectionFolders/folders/fetchedIds', expandedIds);
       }
 
       await context.dispatch('pinnedConnections/loadPins');
@@ -765,6 +767,8 @@ const store = new Vuex.Store<State>({
         context.dispatch('data/queryFolders/loadMore', {
           params: { parentId: expandedIds },
         })
+        context.commit('data/queries/folders/fetchedIds', expandedIds);
+        context.commit('data/queryFolders/folders/fetchedIds', expandedIds);
       }
     },
     async initRootStates(context) {
