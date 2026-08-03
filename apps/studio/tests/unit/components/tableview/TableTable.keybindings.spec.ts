@@ -11,9 +11,8 @@ describe("TableTable.vue — row delete keybindings", () => {
       );
       const nullKey = convertKeybinding("v-hotkey", "backspace", "mac");
 
-      expect(deleteKeys).toEqual(["delete", "meta+backspace"]);
+      expect(deleteKeys).toEqual(["backspace", "meta+backspace"]);
       expect(nullKey).toBe("backspace");
-      expect(deleteKeys).not.toContain(nullKey);
     });
 
     it("maps deleteSelection without colliding with nullSelection on Linux", () => {

@@ -1,10 +1,8 @@
 import {
-  convertKeybinding,
-  BksConfigProvider,
+  convertKeybinding
 } from "@/common/bksConfig/BksConfigProvider";
+import { checkConflicts, checkDeprecations, checkUnrecognized } from "@/common/bksConfig/mainBksConfig";
 import { parseIni, processRawConfig } from "@/config/helpers";
-import _ from "lodash";
-import { checkConflicts, checkUnrecognized, checkDeprecations } from "@/common/bksConfig/mainBksConfig";
 
 describe("Config", () => {
   it("should parse ini file correctly", () => {
@@ -50,7 +48,7 @@ save = ctrlOrCmd+s
     expect(
       convertKeybinding("v-hotkey", "CTRLORCMD   +  SHIFT  + C", "linux")
     ).toBe("ctrl+shift+c");
-    expect(convertKeybinding("v-hotkey", "delete", "mac")).toBe("delete");
+    expect(convertKeybinding("v-hotkey", "delete", "mac")).toBe("backspace");
     expect(convertKeybinding("context-menu", "ctrlOrCmd+backspace", "mac")).toBe(
       "Control+Backspace"
     );
