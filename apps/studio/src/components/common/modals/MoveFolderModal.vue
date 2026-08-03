@@ -31,7 +31,16 @@
         </span>
       </label>
 
+      <content-placeholder
+        v-if="loadingFolders"
+        :animated="true"
+        :rounded="false"
+      >
+        <content-placeholder-text :lines="4" />
+      </content-placeholder>
+
       <tree
+        v-else
         :folders="folderNodes"
         :expanded-ids="expandedIds"
         @update:expandedIds="setExpandedIds"
@@ -82,6 +91,8 @@ import BaseModal from "@/components/common/modals/BaseModal.vue";
 import { AppEvent } from "@/common/AppEvent";
 import { IFolder } from "@/common/interfaces/IQueryFolder";
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
+import ContentPlaceholder from "@/components/common/loading/ContentPlaceholder.vue";
+import ContentPlaceholderText from "@/components/common/loading/ContentPlaceholderText.vue";
 import {
   buildFolderNodes,
   getSelfAndAnscestors,
@@ -92,13 +103,20 @@ type Target =
   | { type: "queryFolder"; value: IFolder };
 
 export default Vue.extend({
-  components: { BaseModal, Tree, TreeFolder },
+  components: {
+    BaseModal,
+    Tree,
+    TreeFolder,
+    ContentPlaceholder,
+    ContentPlaceholderText,
+  },
   data() {
     return {
       modalName: "move-folder-modal",
       target: null as Target | null,
       selectedFolderId: null as number | null,
       saving: false,
+      loadingFolders: false,
       expandedIds: [],
     };
   },
@@ -156,7 +174,7 @@ export default Vue.extend({
         );
       }
     },
-    open(target: Target) {
+    async open(target: Target) {
       this.target = target;
       this.selectedFolderId = target.value.parentId;
 
@@ -168,19 +186,15 @@ export default Vue.extend({
 
       this.$modal.show(this.modalName);
 
-      // So every visible folder knows whether it has subfolders, which is what
-      // decides if it can be opened.
-      this.ensureLoaded(this.folders.map((folder: IFolder) => folder.id));
+      this.loadingFolders = true;
+      try {
+        await this.$store.dispatch(`${this.folderPath}/ensureAllLoaded`);
+      } finally {
+        this.loadingFolders = false;
+      }
     },
     setExpandedIds(expandedIds: string[]) {
       this.expandedIds = expandedIds;
-      const folderIds = this.folders
-        .filter((folder: IFolder) => expandedIds.includes(`folder-${folder.id}`))
-        .map((folder: IFolder) => folder.id);
-      this.ensureLoaded(folderIds);
-    },
-    ensureLoaded(folderIds: number[]) {
-      this.$store.dispatch(`${this.folderPath}/ensureLoaded`, folderIds);
     },
     handleFolderClick(event: MouseEvent, folder: IFolder) {
       if (folder.id !== this.selectedFolderId) {
@@ -250,7 +264,18 @@ export default Vue.extend({
   }
 
   &.selected {
-    background: rgb(from var(--theme-base) r g b / 10%);
+    background: rgb(from var(--theme-base) r g b / 8%);
+
+    &::before {
+      position: absolute;
+      top: 0;
+      left: -0.5rem;
+      bottom: 0;
+      width: 3px;
+      border-radius: 9999px;
+      content: "";
+      background: var(--theme-secondary);
+    }
   }
 
   /* The radio is visually hidden, so surface keyboard focus on the row.

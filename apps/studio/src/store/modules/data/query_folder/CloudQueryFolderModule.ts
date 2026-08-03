@@ -58,6 +58,10 @@ export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
         );
       }
     },
+    async ensureAllLoaded(context) {
+      await context.dispatch('load');
+      context.commit('folders/fetchedIds', context.state.items.map((f) => f.id));
+    },
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
     },

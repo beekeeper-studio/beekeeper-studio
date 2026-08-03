@@ -31,6 +31,10 @@ export const CloudConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     async poll() {
       // empty on purpose
     },
+    async ensureAllLoaded(context) {
+      await context.dispatch('load');
+      context.commit('folders/fetchedIds', context.state.items.map((f) => f.id));
+    },
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
     },

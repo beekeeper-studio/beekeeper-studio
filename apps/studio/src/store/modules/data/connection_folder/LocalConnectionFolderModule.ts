@@ -40,6 +40,9 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     async ensureLoaded() {
       // noop
     },
+    async ensureAllLoaded() {
+      // noop
+    },
     async load(context) {
       context.commit('error', null)
       await safely(context, async () => {
