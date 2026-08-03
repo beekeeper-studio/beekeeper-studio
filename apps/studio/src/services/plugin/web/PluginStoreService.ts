@@ -251,11 +251,11 @@ export default class PluginStoreService {
       workspaceId: this.store.state.workspaceId,
       connectionName: this.store.state.usedConfig.name || "",
       connectionType: this.store.state.connectionType,
-      dialectType: this.store.getters.dialect,
       databaseType: this.store.state.connectionType as DatabaseType,
       databaseName: this.store.state.database,
       defaultSchema: this.store.state.defaultSchema,
       readOnlyMode: this.store.state.usedConfig.readOnlyMode,
+      disabledFeatures: this.store.getters.dialectData.disabledFeatures,
     };
   }
 
