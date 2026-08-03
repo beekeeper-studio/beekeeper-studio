@@ -74,7 +74,6 @@ export function buildItemNodes<T extends HasId & { position?: number }>(
   });
 }
 
-/** Transform {@link TreeNodeMoveEvent} into a consumable payload for the reorder action. */
 /**
  * Collect item refs in the same order the ui-kit Tree renders them (expanded
  * folders only; subfolders before sibling items within a folder).
@@ -114,6 +113,7 @@ export function collectVisibleItemRefs<T extends HasId>(
   return result;
 }
 
+/** Transform {@link TreeNodeMoveEvent} into a consumable payload for the reorder action. */
 export function parseReorderTarget(event: TreeNodeMoveEvent) {
   const target = event.target as ExtendedItemNode | ExtendedFolderNode;
 
