@@ -190,4 +190,18 @@ describe("Postgres UNIT tests (no connection required)", () => {
     expect(client.getTableOwner).toHaveBeenCalledWith('test_table', 'public');
   })
 
+  it("Should fetch the create script for a specific routine overload using routineId", async () => {
+    client.driverExecuteSingle = jest.fn().mockResolvedValue({
+      rows: [{ pg_get_functiondef: 'CREATE OR REPLACE FUNCTION public.foo(a integer) ...' }]
+    });
+
+    const result = await client.getRoutineCreateScript('foo', 'function', 'public', 'foo_16385');
+
+    expect(client.driverExecuteSingle).toHaveBeenCalledWith(
+      expect.stringContaining('AND p.oid = $3::oid'),
+      { params: ['foo', 'public', '16385'] }
+    );
+    expect(result).toEqual(['CREATE OR REPLACE FUNCTION public.foo(a integer) ...']);
+  })
+
 })

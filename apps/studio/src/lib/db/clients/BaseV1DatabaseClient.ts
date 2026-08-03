@@ -46,7 +46,7 @@ export abstract class BaseV1DatabaseClient<RawResultType extends BaseQueryResult
     return [];
   }
 
-  async getRoutineCreateScript(_routine: string, _type: string, _schema?: string): Promise<string[]> {
+  async getRoutineCreateScript(_routine: string, _type: string, _schema?: string, _routineId?: string): Promise<string[]> {
     log.error("V1 Drivers do not support generating scripts");
     return [];
   }

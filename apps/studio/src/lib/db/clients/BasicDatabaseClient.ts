@@ -322,7 +322,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   async getMaterializedViewCreateScript(_view: string, _schema?: string): Promise<string[]> {
     return [];
   }
-  abstract getRoutineCreateScript(routine: string, type: string, schema?: string): Promise<string[]>;
+  abstract getRoutineCreateScript(routine: string, type: string, schema?: string, routineId?: string): Promise<string[]>;
 
   // This is just for Mongo, calling it createTable in case we want to use it for other dbs in the future
   async createTable(_table: CreateTableSpec): Promise<void> {

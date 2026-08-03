@@ -356,7 +356,7 @@ export interface IBasicDatabaseClient {
   getTableCreateScript(table: string, schema?: string): Promise<string>,
   getViewCreateScript(view: string, schema?: string): Promise<string[]>,
   getMaterializedViewCreateScript(view: string, schema?: string): Promise<string[]>,
-  getRoutineCreateScript(routine: string, type: string, schema?: string): Promise<string[]>,
+  getRoutineCreateScript(routine: string, type: string, schema?: string, routineId?: string): Promise<string[]>,
   createTable(table: CreateTableSpec): Promise<void>,
   getCollectionValidation(collection: string): Promise<any>,
   setCollectionValidation(params: any): Promise<void>,

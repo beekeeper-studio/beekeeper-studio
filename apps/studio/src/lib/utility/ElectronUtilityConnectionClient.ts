@@ -158,8 +158,8 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     return await Vue.prototype.$util.send('conn/getMaterializedViewCreateScript', { view, schema });
   }
 
-  async getRoutineCreateScript(routine: string, type: string, schema?: string): Promise<string[]> {
-    return await Vue.prototype.$util.send('conn/getRoutineCreateScript', { routine, type, schema });
+  async getRoutineCreateScript(routine: string, type: string, schema?: string, routineId?: string): Promise<string[]> {
+    return await Vue.prototype.$util.send('conn/getRoutineCreateScript', { routine, type, schema, routineId });
   }
 
   async createTable(table: CreateTableSpec): Promise<void> {

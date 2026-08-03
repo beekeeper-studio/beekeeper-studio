@@ -1003,7 +1003,7 @@ export default Vue.extend({
       }
     },
     async loadRoutineCreate(routine) {
-      const result = await this.connection.getRoutineCreateScript(routine.name, routine.type, routine.schema);
+      const result = await this.connection.getRoutineCreateScript(routine.name, routine.type, routine.schema, routine.id);
       const stringResult = safeFormat(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
       this.createQuery(stringResult);
     },

@@ -1030,7 +1030,30 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     return data.rows.map((row) => `${createViewSql}\n${row.pg_get_viewdef}`);
   }
 
-  async getRoutineCreateScript(routine: string, _type: string, schema: string = this._defaultSchema): Promise<string[]> {
+  async getRoutineCreateScript(routine: string, _type: string, schema: string = this._defaultSchema, routineId?: string): Promise<string[]> {
+    const oidMatch = routineId ? routineId.match(/\d+$/) : null;
+    const oid = oidMatch ? oidMatch[0] : null;
+
+    if (oid) {
+      const sql = `
+        SELECT pg_get_functiondef(p.oid)
+        FROM pg_proc p
+               LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+        WHERE proname = $1
+          AND n.nspname = $2
+          AND p.oid = $3::oid
+      `;
+
+      const params = [
+        routine,
+        schema,
+        oid,
+      ];
+
+      const data = await this.driverExecuteSingle(sql, { params });
+      return data.rows.map((row) => row.pg_get_functiondef);
+    }
+
     const sql = `
       SELECT pg_get_functiondef(p.oid)
       FROM pg_proc p
