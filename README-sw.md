@@ -15,7 +15,7 @@ Tunatoa binaries kwa MacOS, Windows, na Linux.
 Beekeeper Studio ni bure kupakua na inatoa vipengele vingi bila malipo, bila usajili, bila kujiandikisha, na bila kadi ya benki. Programu inatoa baadhi ya vipengele vya premium kwa bei nafuu ya leseni. [Soma zaidi hapa](https://beekeeperstudio.io/pricing)
 
 
-Sehemu kubwa ya code katika repo hii ni open source chini ya leseni ya GPLv3. Vipengele vya kulipia pia viko kwenye repo hii chini ya leseni ya kibiashara yenye source code inayopatikana.
+Sehemu kubwa ya code katika Hazina za msimbo (Repository) hii ni mradi huria (open source) chini ya leseni ya GPLv3. Vipengele vya kulipia pia viko kwenye repo hii chini ya leseni ya kibiashara yenye source code inayopatikana.
 
 Michango kutoka kwa jamii (community contributions) inakaribishwa!
 
@@ -25,32 +25,32 @@ Michango kutoka kwa jamii (community contributions) inakaribishwa!
 <!-- Don't edit this, it gets built automatically from docs/includes/supported_databases.md -->
 <!-- SUPPORT_BEGIN -->
 
-| Database                                                 | Support                      | Community | Paid Editions |                             Beekeeper Links |
+| Kazidata                                                 | Msaada                      | Community | Toleo la Kulipia |                             Beekeeper Links |
 | :------------------------------------------------------- | :--------------------------- | :-------: | :------: | -----------------------------------------: |
-| [PostgreSQL](https://postgresql.org)                     | ⭐ Full Support              |    ✅     |    ✅    |  [Features](https://beekeeperstudio.io/db/postgres-client) |
-| [MySQL](https://www.mysql.com/)                          | ⭐ Full Support              |    ✅     |    ✅    |  [Features](https://beekeeperstudio.io/db/mysql-client)|
-| [SQLite](https://sqlite.org)                             | ⭐ Full Support              |    ✅     |    ✅    |   [Features](https://beekeeperstudio.io/db/sqlite-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/sqlite) |
-| [SQL Server](https://www.microsoft.com/en-us/sql-server) | ⭐ Full Support              |    ✅     |    ✅    |   [Features](https://beekeeperstudio.io/db/sql-server-client)  |
-| [Amazon Redshift](https://aws.amazon.com/redshift/)      | ⭐ Full Support              |    ✅     |    ✅    |    [Features](https://beekeeperstudio.io/db/redshift-client) |
-| [CockroachDB](https://www.cockroachlabs.com/)            | ⭐ Full Support              |    ✅     |    ✅    | [Features](https://beekeeperstudio.io/db/cockroachdb-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/cockroachdb) |
-| [MariaDB](https://mariadb.org/)                          | ⭐ Full Support              |    ✅     |    ✅    |     [Features](https://beekeeperstudio.io/db/mariadb-client) |
-| [TiDB](https://pingcap.com/products/tidb/)               | ⭐ Full Support              |    ✅     |    ✅    |        [Features](https://beekeeperstudio.io/db/tidb-client) |
-| [Google BigQuery](https://cloud.google.com/bigquery)     | ⭐ Full Support             |    ✅      |    ✅    |    [Features](https://beekeeperstudio.io/db/google-big-query-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/bigquery) |
-| [Redis](https://redis.io/)                               | ⭐ Full Support               |    ✅    |    ✅    |       [Features](https://www.beekeeperstudio.io/db/redis-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/redis) |
-| [GreengageDB](https://greengagedb.org/)                  | ⭐ Full Support              |    ✅     |    ✅    |   [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/greengage) |
-| [Oracle Database](https://www.oracle.com/database/)      | ⭐ Full Support              |           |    ✅    |      [Features](https://beekeeperstudio.io/db/oracle-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/oracle) |
-| [Cassandra](http://cassandra.apache.org/)                | ⭐ Full Support              |           |    ✅    |   [Features](https://beekeeperstudio.io/db/cassandra-client) |
-| [ScyllaDB](https://www.scylladb.com/)                    | ⭐ Full Support (via Cassandra driver) |           |    ✅    |   Drop-in compatible with Cassandra |
-| [Firebird](https://firebirdsql.org/)                     | ⭐ Full Support              |           |    ✅    |    [Features](https://beekeeperstudio.io/db/firebird-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/firebird) |
-| [LibSQL](https://libsql.org/)                            | ⭐ Full Support               |          |    ✅    |      [Features](https://beekeeperstudio.io/db/libsql-client) |
-| [ClickHouse](https://clickhouse.tech/)                   | ⭐ Full Support                |         |    ✅    |  [Features](https://www.beekeeperstudio.io/db/clickhouse-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/clickhouse) |
-| [DuckDB](https://duckdb.org/)                            | ⭐ Full Support                |         |    ✅    |      [Features](https://www.beekeeperstudio.io/db/duckdb-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/duckdb) |
-| [SQL Anywhere](https://www.sap.com/products/technology-platform/sql-anywhere.html)  | ⭐ Full Support    |           |    ✅    |      [Features](https://www.beekeeperstudio.io/db/sql-anywhere-client/) |
-| [MongoDB](https://www.mongodb.com/)                      | ⭐ Full Support               |          |    ✅    |     [Features](https://www.beekeeperstudio.io/db/mongodb-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/mongodb) |
-| [Trino](https://trino.io/) / [Presto](https://prestodb.io/) | ⭐ Full Support                |           |    ✅    |    [Features](https://www.beekeeperstudio.io/db/trino-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/trino/) |
-| [SurrealDB](https://surrealdb.com/)                      | ⭐ Full Support               |           |    ✅    |      [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/surrealdb) |
-| [DynamoDB](https://aws.amazon.com/dynamodb/)             | 🧪 Beta Support               |           |    ✅    |      [Features](https://www.beekeeperstudio.io/db/dynamodb-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/dynamodb) |
-| [Snowflake](https://www.snowflake.com/)                  | ⏳ Coming Soon                |           |    ✅    |   -- |
+| [PostgreSQL](https://postgresql.org)                     | ⭐ Msaada Kamili              |    ✅     |    ✅    |  [Vipengele](https://beekeeperstudio.io/db/postgres-client) |
+| [MySQL](https://www.mysql.com/)                          | ⭐ Msaada Kamili              |    ✅     |    ✅    |  [Vipengele](https://beekeeperstudio.io/db/mysql-client)|
+| [SQLite](https://sqlite.org)                             | ⭐ Msaada Kamili              |    ✅     |    ✅    |   [Vipengele](https://beekeeperstudio.io/db/sqlite-client), [Nyaraka](https://docs.beekeeperstudio.io/user_guide/connecting/sqlite) |
+| [SQL Server](https://www.microsoft.com/en-us/sql-server) | ⭐ Msaada Kamili              |    ✅     |    ✅    |   [Vipengele](https://beekeeperstudio.io/db/sql-server-client)  |
+| [Amazon Redshift](https://aws.amazon.com/redshift/)      | ⭐ Msaada Kamili              |    ✅     |    ✅    |    [Vipengele](https://beekeeperstudio.io/db/redshift-client) |
+| [CockroachDB](https://www.cockroachlabs.com/)            | ⭐ Msaada Kamili              |    ✅     |    ✅    | [Vipengele](https://beekeeperstudio.io/db/cockroachdb-client), [Nyaraka](https://docs.beekeeperstudio.io/user_guide/connecting/cockroachdb) |
+| [MariaDB](https://mariadb.org/)                          | ⭐ Msaada Kamili              |    ✅     |    ✅    |     [Vipengele](https://beekeeperstudio.io/db/mariadb-client) |
+| [TiDB](https://pingcap.com/products/tidb/)               | ⭐ Msaada Kamili              |    ✅     |    ✅    |        [Vipengele](https://beekeeperstudio.io/db/tidb-client) |
+| [Google BigQuery](https://cloud.google.com/bigquery)     | ⭐ Msaada Kamili             |    ✅      |    ✅    |    [Vipengele](https://beekeeperstudio.io/db/google-big-query-client), [Nyaraka](https://docs.beekeeperstudio.io/user_guide/connecting/bigquery) |
+| [Redis](https://redis.io/)                               | ⭐ Msaada Kamili               |    ✅    |    ✅    |       [Vipengele](https://www.beekeeperstudio.io/db/redis-client/), [Nyaraka](https://docs.beekeeperstudio.io/user_guide/connecting/redis) |
+| [GreengageDB](https://greengagedb.org/)                  | ⭐ Msaada Kamili              |    ✅     |    ✅    |   [Nyaraka](https://docs.beekeeperstudio.io/user_guide/connecting/greengage) |
+| [Oracle Database](https://www.oracle.com/database/)      | ⭐ Msaada Kamili              |           |    ✅    |      [Vipengele](https://beekeeperstudio.io/db/oracle-client), [Nyaraka](https://docs.beekeeperstudio.io/user_guide/connecting/oracle) |
+| [Cassandra](http://cassandra.apache.org/)                | ⭐ Msaada Kamili             |           |    ✅    |   [Vipengele](https://beekeeperstudio.io/db/cassandra-client) |
+| [ScyllaDB](https://www.scylladb.com/)                    | ⭐ Msaada Kamili(kupitia Cassandra driver) |           |    ✅    |   Drop-in compatible with Cassandra |
+| [Firebird](https://firebirdsql.org/)                     | ⭐ Msaada Kamili             |           |    ✅    |    [Vipengele](https://beekeeperstudio.io/db/firebird-client), [Nyaraka](https://docs.beekeeperstudio.io/user_guide/connecting/firebird) |
+| [LibSQL](https://libsql.org/)                            | ⭐ Msaada Kamili              |          |    ✅    |      [Vipengele](https://beekeeperstudio.io/db/libsql-client) |
+| [ClickHouse](https://clickhouse.tech/)                   | ⭐ Msaada Kamili                |         |    ✅    |  [Vipengele](https://www.beekeeperstudio.io/db/clickhouse-client/), [Nyaraka](https://docs.beekeeperstudio.io/user_guide/connecting/clickhouse) |
+| [DuckDB](https://duckdb.org/)                            | ⭐ Msaada Kamili                |         |    ✅    |      [Vipengele](https://www.beekeeperstudio.io/db/duckdb-client/), [Nyaraka](https://docs.beekeeperstudio.io/user_guide/connecting/duckdb) |
+| [SQL Anywhere](https://www.sap.com/products/technology-platform/sql-anywhere.html)  | ⭐ Msaada Kamili    |           |    ✅    |      [Vipengele](https://www.beekeeperstudio.io/db/sql-anywhere-client/) |
+| [MongoDB](https://www.mongodb.com/)                      | ⭐ Msaada Kamili              |          |    ✅    |     [Vipengele](https://www.beekeeperstudio.io/db/mongodb-client/), [Nyaraka](https://docs.beekeeperstudio.io/user_guide/connecting/mongodb) |
+| [Trino](https://trino.io/) / [Presto](https://prestodb.io/) | ⭐ Msaada Kamili                |           |    ✅    |    [Vipengele](https://www.beekeeperstudio.io/db/trino-client/), [Nyaraka](https://docs.beekeeperstudio.io/user_guide/connecting/trino/)
+| [SurrealDB](https://surrealdb.com/)                      | ⭐ Msaada Kamili              |           |    ✅    |      [Nyaraka](https://docs.beekeeperstudio.io/user_guide/connecting/surrealdb) |
+| [DynamoDB](https://aws.amazon.com/dynamodb/)             | 🧪 Usaidizi wa Beta              |           |    ✅    |      [Vipengele](https://www.beekeeperstudio.io/db/dynamodb-client/), [Nyaraka](https://docs.beekeeperstudio.io/user_guide/connecting/dynamodb) |
+| [Snowflake](https://www.snowflake.com/)                  | ⏳ Inakuja hivi karibuni              |           |    ✅    |   -- 
 
 
 
@@ -69,16 +69,16 @@ Tungependa kufanya Beekeeper Studio kuwa bure kabisa kwa kila mtu, lakini kuteng
 
 Sehemu bora zaidi: Ni laini 🍫, haraka 🏎, na kwa kweli utafurahia kuitumia 🥰
 
-- Cross-platform kweli: Windows, MacOS, na Linux
-- Kihariri cha SQL chenye autocomplete na syntax highlighting
-- Interface yenye tabs ili uweze kufanya kazi nyingi kwa wakati mmoja
+- Inafanya kazi kwenye majukwaa mbalimbali: Windows, MacOS, na Linux
+- Kihariri cha SQL chenye ukamilishaji wa maandishi kiotomatiki (autocomplete) na kuangazia sintaksia (syntax highlighting)
+- Kiolesura (interface) yenye vichupo (tabs) ili uweze kufanya kazi nyingi kwa wakati mmoja
 - Panga na chuja data za jedwali (table data) ili kupata unachohitaji hasa
 - Njia za mkato za kibodi (keyboard shortcuts) zenye mantiki
-- Hifadhi queries kwa matumizi ya baadaye
-- Historia ya utekelezaji wa queries, ili uweze kupata ile query iliyofanya kazi siku 3 zilizopita
-- Dark theme nzuri sana
-- Import/Export
-- Backup/Restore
+- Hifadhi hoja (queries) kwa matumizi ya baadaye
+- Historia ya utekelezaji wa hoja (queries), ili uweze kupata ile hoja (query) iliyofanya kazi siku 3 zilizopita
+- Mandhari ya giza (Dark Theme) nzuri sana
+- Ingiza (Import) na Toa (Export) data
+- Nakala ya hifadhi (Backup)/Rejesha (Restore) ya hifadhidata (database)
 - Angalia data kama JSON
 - Na mengine mengi
 
