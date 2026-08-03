@@ -4,6 +4,7 @@ import { existsSync } from 'fs'
 import { resolve, join } from 'path'
 import { IPlatformInfo } from '../IPlatformInfo'
 import { BksVersion } from '@/lib/license'
+import { process } from '@tests/transformers/jest-raw-text-transformer'
 
 // TODO: Automatically enable wayland without flags once
 // we're confident it will 'just work' for all Wayland users.
@@ -93,7 +94,8 @@ export function mainPlatformInfo(): IPlatformInfo {
     isFlatpak: !!p.env.FLATPAK_ID || existsSync('/.flatpak-info'),
     isPortable: isWindows && p.env.PORTABLE_EXECUTABLE_DIR,
     isDevelopment: isDevEnv,
-    isAppImage: p.env.DESKTOPINTEGRATION === 'AppImageLauncher',
+    isAppImage: !!process.env.APPIMAGE,
+    isAppImageLauncher: process.env.DESKTOPINTEGRATION === 'AppImageLauncher',
     sshAuthSock: p.env.SSH_AUTH_SOCK,
     sshConfigExists: existsSync(join(homeDirectory, '.ssh', 'config')),
     defaultSshIdentityFile: ['id_ed25519', 'id_ecdsa', 'id_rsa', 'id_dsa']
