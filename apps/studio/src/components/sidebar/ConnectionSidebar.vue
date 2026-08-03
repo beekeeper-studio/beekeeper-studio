@@ -251,6 +251,7 @@
                     :selected-config="selectedConfig"
                     :is-recent-list="false"
                     :privacy-mode="privacyMode"
+                    :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.ref.id) }"
                     @edit="edit"
                     @remove="removeUsedConfig"
                     @doubleClick="connect"

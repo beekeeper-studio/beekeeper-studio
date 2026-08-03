@@ -109,6 +109,7 @@
             :folders="draftingFolder ? folderNodesWithDraft : folderNodes"
             :items="itemNodes"
             :expanded-ids="expandedNodeIds"
+            :filter="filterQuery"
             @update:expandedIds="setExpandedIds"
             @bks-tree-node-move="handleTreeNodeMove"
           >

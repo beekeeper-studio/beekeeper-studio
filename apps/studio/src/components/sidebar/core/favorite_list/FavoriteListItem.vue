@@ -104,6 +104,7 @@ export default Vue.extend({
           handler: () => {
             this.rename = true;
           },
+          hideIf: !canWrite,
         },
         {
           name: "Move",
