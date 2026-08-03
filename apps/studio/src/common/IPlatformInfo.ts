@@ -15,6 +15,7 @@ export interface IPlatformInfo {
   isPortable: string,
   isDevelopment: boolean,
   isAppImage: boolean,
+  isAppImageLauncher: boolean,
   sshAuthSock: string,
   sshConfigExists: boolean,
   defaultSshIdentityFile: string,
