@@ -223,6 +223,7 @@
                   <tree-folder
                     v-bind="props"
                     v-else
+                    :class="{ 'just-created': justCreatedFolderId === props.node.ref.id }"
                     :tag="renamingFolderId === props.node.ref.id ? 'div': undefined"
                     @contextmenu.native="showFolderContextMenu($event, props.node.ref)"
                   >
@@ -352,6 +353,8 @@ export default {
     renamingFolderId: null,
     draftingFolder: false,
     draftFolderParentId: null,
+    justCreatedFolderId: null,
+    justCreatedTimeout: null,
   }),
   watch: {
     async sort(newSort) {
@@ -496,6 +499,9 @@ export default {
     this.sort.order = order
     this.$nextTick(() => { this.sortInitialized = true })
   },
+  beforeDestroy() {
+    clearTimeout(this.justCreatedTimeout)
+  },
   methods: {
     ...mapActions({
       saveFolder: 'data/connectionFolders/save',
@@ -585,6 +591,13 @@ export default {
     },
     cancelDraftFolder() {
       this.draftingFolder = false
+    },
+    markJustCreated(folderId) {
+      clearTimeout(this.justCreatedTimeout)
+      this.justCreatedFolderId = folderId
+      this.justCreatedTimeout = setTimeout(() => {
+        this.justCreatedFolderId = null
+      }, 2000)
     },
     expandFolder(folderId) {
       if (this.expandedFolderIds.includes(folderId)) {
@@ -750,11 +763,12 @@ export default {
         return
       }
       try {
-        await this.$store.dispatch('data/connectionFolders/save', {
+        const id = await this.$store.dispatch('data/connectionFolders/save', {
           id: null,
           parentId: this.draftFolderParentId,
           name,
         })
+        this.markJustCreated(id)
       } catch (ex) {
         this.$noty.error(`Create folder error: ${ex.userMessage ?? ex.message}`)
       } finally {
@@ -790,6 +804,18 @@ export default {
     input {
       top: 60%;
     }
+  }
+}
+.just-created {
+  animation: just-created-fade 2s ease-out;
+}
+
+@keyframes just-created-fade {
+  from {
+    background: rgb(from var(--theme-primary) r g b / 25%);
+  }
+  to {
+    background: transparent;
   }
 }
 ::v-deep .alert.expired-folder-alert {

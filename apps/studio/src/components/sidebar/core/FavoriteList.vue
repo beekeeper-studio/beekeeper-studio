@@ -153,6 +153,7 @@
               <tree-folder
                 v-bind="props"
                 v-else
+                :class="{ 'just-created': justCreatedFolderId === props.node.ref.id }"
                 :tag="renamingFolderId === props.node.ref.id ? 'div': undefined"
                 @contextmenu.native="showFolderContextMenu($event, props.node.ref)"
               >
@@ -224,6 +225,8 @@ export default {
       renamingFolderId: null,
       draftingFolder: false,
       draftFolderParentId: null,
+      justCreatedFolderId: null,
+      justCreatedTimeout: null,
     }
   },
   mounted() {
@@ -231,6 +234,7 @@ export default {
   },
   beforeDestroy() {
     document.removeEventListener('mousedown', this.maybeUnselect)
+    clearTimeout(this.justCreatedTimeout)
   },
   computed: {
     ...mapGetters(['workspace', 'isCloud', 'isUltimate', 'canCreateFolders']),
@@ -417,6 +421,13 @@ export default {
     cancelDraftFolder() {
       this.draftingFolder = false
     },
+    markJustCreated(folderId) {
+      clearTimeout(this.justCreatedTimeout)
+      this.justCreatedFolderId = folderId
+      this.justCreatedTimeout = setTimeout(() => {
+        this.justCreatedFolderId = null
+      }, 2000)
+    },
     expandFolder(folderId) {
       if (this.expandedFolderIds.includes(folderId)) {
         return
@@ -429,11 +440,12 @@ export default {
         return
       }
       try {
-        await this.$store.dispatch('data/queryFolders/save', {
+        const id = await this.$store.dispatch('data/queryFolders/save', {
           id: null,
           parentId: this.draftFolderParentId,
           name,
         })
+        this.markJustCreated(id)
       } catch (ex) {
         this.$noty.error(`Create folder error: ${ex.userMessage ?? ex.message}`)
       } finally {
@@ -626,6 +638,19 @@ export default {
     input {
       top: 60%;
     }
+  }
+}
+
+.just-created {
+  animation: just-created-fade 2s ease-out;
+}
+
+@keyframes just-created-fade {
+  from {
+    background: rgb(from var(--theme-primary) r g b / 25%);
+  }
+  to {
+    background: transparent;
   }
 }
 
