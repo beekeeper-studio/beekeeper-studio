@@ -36,11 +36,6 @@
         </div>
       </div>
 
-      <x-progressbar
-        v-show="searchInProgress"
-        style="margin-top: -5px;"
-      />
-
       <div class="connection-wrap expand flex-col">
         <!-- Pinned Connections -->
         <!-- TODO (day): should probably make a class for pinned connections-->
@@ -156,13 +151,10 @@
               class="list-body"
             >
               <template v-if="cloudSearchMode">
-                <div
+                <div class="empty-state"
                   v-if="!searchInProgress && filteredConnections.length === 0"
-                  class="empty"
                 >
-                  <div class="empty-title">
-                    No Results
-                  </div>
+                  No connections match "{{ connFilter }}"
                 </div>
                 <connection-list-item
                   v-for="c in filteredConnections"
@@ -175,6 +167,17 @@
                   @remove="removeUsedConfig"
                   @doubleClick="connect"
                 />
+                <content-placeholder
+                  v-if="searchInProgress"
+                  :animated="true"
+                  :rounded="false"
+                  class="list-item"
+                >
+                  <content-placeholder-text
+                    :lines="2"
+                    class="list-item-btn"
+                  />
+                </content-placeholder>
               </template>
               <tree
                 v-show="!cloudSearchMode"
@@ -237,13 +240,15 @@
                   </tree-folder>
                 </template>
                 <template #folder-footer="{ node, depth }">
-                  <div
+                  <content-placeholder
                     v-if="loadingFolderIds.includes(node.ref.id)"
+                    :animated="true"
+                    :rounded="false"
                     class="tree-loading"
                     :style="{ '--depth': depth }"
                   >
-                    Loading
-                  </div>
+                    <content-placeholder-text :lines="1" />
+                  </content-placeholder>
                 </template>
                 <template #item="{ node }">
                   <connection-list-item
@@ -303,6 +308,8 @@ import WorkspaceSidebar from './WorkspaceSidebar.vue'
 import { mapState, mapGetters, mapActions, mapMutations } from 'vuex'
 import ConnectionListItem from './connection/ConnectionListItem.vue'
 import SidebarLoading from '@/components/common/SidebarLoading.vue'
+import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
+import ContentPlaceholderText from '@/components/common/loading/ContentPlaceholderText.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
 import Split from 'split.js'
@@ -320,6 +327,8 @@ export default {
   components: {
     ConnectionListItem,
     SidebarLoading,
+    ContentPlaceholder,
+    ContentPlaceholderText,
     ErrorAlert,
     Tree,
     TreeFolder,
@@ -767,20 +776,8 @@ export default {
   opacity: 0.5;
 }
 .tree-loading {
-  padding-block: 0.25rem;
+  margin-block: 0.5rem;
   padding-left: calc(var(--depth) * 1rem + 1.3rem);
-  color: var(--text-lighter);
-}
-
-.tree-loading::after {
-  content: "...";
-  animation: dots 1s steps(2) infinite;
-}
-
-@keyframes dots {
-  0%   { content: "..."; }
-  50%  { content: ".."; }
-  100% { content: "..."; }
 }
 ::v-deep .BksTree-folder {
   .name:has(.editable-text) {
@@ -797,5 +794,11 @@ export default {
 }
 ::v-deep .alert.expired-folder-alert {
   margin-inline: 0.8rem;
+}
+
+.empty-state {
+  padding-top: 0.25rem;
+  padding-left: 0.5rem;
+  font-size: 0.85rem;
 }
 </style>

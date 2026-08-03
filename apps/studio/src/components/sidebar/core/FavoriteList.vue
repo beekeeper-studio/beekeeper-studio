@@ -67,10 +67,6 @@
             </div>
           </div>
         </div>
-        <x-progressbar
-          v-show="searchInProgress"
-          style="margin-top: -5px;"
-        />
         <expired-folder-alert v-if="!canCreateFolders && folders.length > 0" />
         <error-alert
           v-if="error"
@@ -85,10 +81,10 @@
         >
           <template v-if="cloudSearchMode">
             <div
+              class="empty-state"
               v-if="!searchInProgress && filteredQueries.length === 0"
-              class="empty"
             >
-              <span class="empty-title">No Results</span>
+              No queries match "{{ filterQuery }}"
             </div>
             <favorite-list-item
               v-for="query in filteredQueries"
@@ -103,6 +99,17 @@
               @export="exportTo"
               @duplicate="duplicate"
             />
+            <content-placeholder
+              v-if="searchInProgress"
+              :animated="true"
+              :rounded="false"
+              class="list-item"
+            >
+              <content-placeholder-text
+                :lines="2"
+                class="list-item-btn"
+              />
+            </content-placeholder>
           </template>
           <tree
             v-show="!cloudSearchMode"
@@ -163,13 +170,15 @@
               </tree-folder>
             </template>
             <template #folder-footer="{ node, depth }">
-              <div
+              <content-placeholder
                 v-if="loadingFolderIds.includes(node.ref.id)"
+                :animated="true"
+                :rounded="false"
                 class="tree-loading"
                 :style="{ '--depth': depth }"
               >
-                Loading
-              </div>
+                <content-placeholder-text :lines="1" />
+              </content-placeholder>
             </template>
             <template #item="{ node }">
               <favorite-list-item
@@ -201,10 +210,12 @@ import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
 import { AppEvent } from '@/common/AppEvent'
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
 import EditableText from '@/components/common/EditableText.vue'
+import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
+import ContentPlaceholderText from '@/components/common/loading/ContentPlaceholderText.vue'
 import { parseReorderTarget } from '@/common/utils/folderTree'
 
 export default {
-  components: { SidebarLoading, ErrorAlert, ExpiredFolderAlert, FavoriteListItem, Tree, TreeFolder, EditableText },
+  components: { SidebarLoading, ErrorAlert, ExpiredFolderAlert, FavoriteListItem, Tree, TreeFolder, EditableText, ContentPlaceholder, ContentPlaceholderText },
   data: function () {
     return {
       checkedFavorites: [],
@@ -601,20 +612,8 @@ export default {
   min-height: 8px;
 }
 .tree-loading {
-  padding-block: 0.25rem;
+  margin-block: 1rem;
   padding-left: calc(var(--depth) * 1rem + 1.3rem);
-  color: var(--text-lighter);
-}
-
-.tree-loading::after {
-  content: "...";
-  animation: dots 1s steps(2) infinite;
-}
-
-@keyframes dots {
-  0%   { content: "..."; }
-  50%  { content: ".."; }
-  100% { content: "..."; }
 }
 ::v-deep .BksTree-folder {
   .name:has(.editable-text) {
@@ -628,5 +627,11 @@ export default {
       top: 60%;
     }
   }
+}
+
+.empty-state {
+  padding-top: 0.25rem;
+  padding-left: 0.5rem;
+  font-size: 0.85rem;
 }
 </style>
