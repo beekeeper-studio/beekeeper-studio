@@ -3,7 +3,6 @@
     v-hotkey="keymap"
     class="tabletable tabcontent flex-col"
     :class="{'view-only': !editable}"
-    @keydown.capture="handleDeleteSelectionKeydown"
   >
     <editor-modal
       ref="editorModal"
@@ -346,7 +345,6 @@ import { copyRanges, pasteRange, readClipboardRows, copyActionsMenu, pasteAction
 import { tabulatorForTableData } from "@/common/tabulator";
 import { TransportTabulatorPersistence } from "@/common/transport/TransportTabulatorPersistence";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
-import { matchesVHotkeyBinding } from "@/plugins/ConfigPlugin";
 import { ExpandablePath, parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
 import { stringToTypedArray, removeUnsortableColumnsFromSortBy } from "@/common/utils";
 import { UpdateOptions } from "@/lib/data/jsonViewer";
@@ -480,6 +478,7 @@ export default Vue.extend({
         'general.copySelection': this.copySelection.bind(this),
         'general.pasteSelection': this.pasteSelection.bind(this),
         'general.cloneSelection': this.cloneSelection.bind(this),
+        'general.deleteSelection': this.deleteTableSelection.bind(this),
         'tableTable.pasteAsNewRows': this.pasteAsNewRowsShortcut.bind(this),
         'tableTable.nullSelection': this.nullTableSelection.bind(this),
         'tableTable.nextPage': this.navigatePage.bind(this, 'next'),
@@ -1105,20 +1104,6 @@ export default Vue.extend({
       const selectedRows = this.getSelectedRows()
       const rows = selectedRows.length > 0 ? selectedRows : (range ? range.getRows() : [])
       this.addRowsToPendingDeletes(rows);
-    },
-    handleDeleteSelectionKeydown(e: KeyboardEvent) {
-      if (!this.active || !this.focusingTable() || !this.editable) return
-
-      const bindings = this.$bksConfig.getKeybindings('v-hotkey', 'general.deleteSelection')
-      const bindingList = Array.isArray(bindings) ? bindings : [bindings]
-
-      for (const binding of bindingList) {
-        if (matchesVHotkeyBinding(e, binding)) {
-          e.preventDefault()
-          this.deleteTableSelection(e)
-          return
-        }
-      }
     },
     nullTableSelection() {
       // Backspace on a selected range nulls the cells (same as "Set as NULL").
