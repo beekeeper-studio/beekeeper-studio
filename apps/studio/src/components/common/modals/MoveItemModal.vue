@@ -211,7 +211,7 @@ export default Vue.extend({
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .target-name {
   display: flex;
   align-items: center;
@@ -237,7 +237,7 @@ export default Vue.extend({
   font: inherit;
   cursor: pointer;
 
-  label& {
+  label {
     height: 1.75rem;
   }
 
