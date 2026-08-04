@@ -3,7 +3,7 @@ import { havingCli } from "../StoreHelpers";
 import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import _ from 'lodash'
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
-import { FolderFetchModule } from "@/store/modules/data/tree/FolderFetchModule";
+import { FolderFetchModule, treeActions } from "@/store/modules/data/tree/TreeModule";
 import { ItemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 
 
@@ -31,39 +31,15 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
     nodes: ItemNodeModule('queryFolderId', 'title'),
     folders: FolderFetchModule,
   },
-  actions: actionsFor<ISavedQuery>('queries', {
+  actions: {
+    ...actionsFor<ISavedQuery>('queries', {}),
     ...cloudAccessGrantActions('queries'),
+    ...treeActions<ISavedQuery>('queries', 'queryFolderIds'),
     async initialize() {
       // noop
     },
     async poll() {
       // noop
-    },
-    async ensureLoaded(context, parentIds: number[]) {
-      const fetchedIds = context.state.folders.fetchedIds;
-      const unfetchedIds = _.difference(parentIds, fetchedIds);
-      if (unfetchedIds.length === 0) {
-        return;
-      }
-      // marked before the fetch so overlapping calls don't refetch these
-      context.commit('folders/fetchedIds', [
-        ...fetchedIds,
-        ...unfetchedIds,
-      ]);
-      context.commit('folders/fetchingIds', [
-        ...context.state.folders.fetchingIds,
-        ...unfetchedIds,
-      ]);
-      try {
-        await context.dispatch('loadMore', {
-          params: { queryFolderIds: unfetchedIds },
-        });
-      } finally {
-        context.commit(
-          'folders/fetchingIds',
-          _.difference(context.state.folders.fetchingIds, unfetchedIds)
-        );
-      }
     },
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
@@ -160,7 +136,7 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
         context.commit('removePendingSave', item.id)
       }
     }
-  }),
+  },
   getters: {
     filteredQueries(state) {
       if (!state.filter) {

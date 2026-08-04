@@ -1,10 +1,8 @@
 import { IQueryFolder } from "@/common/interfaces/IQueryFolder";
 import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
-import { FolderFetchModule } from "@/store/modules/data/tree/FolderFetchModule";
+import { FolderFetchModule, treeActions } from "@/store/modules/data/tree/TreeModule";
 import { FolderNodeModule } from "@/store/modules/data/tree/FolderNodeModule";
-import { SidebarModule } from "@/store/modules/data/tree/SidebarModule";
-import _ from "lodash";
 
 type State = DataState<IQueryFolder>;
 
@@ -21,49 +19,36 @@ export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
   }, { field: 'name', direction: 'asc'}),
   modules: {
     nodes: FolderNodeModule,
-    sidebar: SidebarModule,
     folders: FolderFetchModule,
   },
-  actions: actionsFor<IQueryFolder>('queryFolders', {
+  actions: {
+    ...actionsFor<IQueryFolder>('queryFolders', {}),
     ...cloudAccessGrantActions('queryFolders'),
+    ...treeActions<IQueryFolder>('queryFolders', 'parentIds'),
+    /**
+     * Overrides the shared reset-and-reload: the default folders are the tree's
+     * roots, so they have no parent to be fetched under. They also have to land
+     * before their children — a node only links to a parent already in the tree.
+     **/
+    async refresh(context, parentIds: number[]) {
+      context.commit('folders/reset');
+      await context.dispatch('load', { params: { default: true } });
+
+      if (parentIds.length === 0) {
+        return;
+      }
+
+      await context.dispatch('loadMore', { params: { parentIds } });
+      context.commit('folders/fetchedIds', parentIds);
+    },
     async initialize() {
       // noop
     },
     async poll() {
       // empty on purpose
     },
-    async ensureLoaded(context, parentIds: number[]) {
-      const fetchedIds = context.state.folders.fetchedIds;
-      const unfetchedIds = _.difference(parentIds, fetchedIds);
-      if (unfetchedIds.length === 0) {
-        return;
-      }
-      // marked before the fetch so overlapping calls don't refetch these
-      context.commit('folders/fetchedIds', [
-        ...fetchedIds,
-        ...unfetchedIds,
-      ]);
-      context.commit('folders/fetchingIds', [
-        ...context.state.folders.fetchingIds,
-        ...unfetchedIds,
-      ]);
-      try {
-        await context.dispatch('loadMore', {
-          params: { parentIds: unfetchedIds },
-        });
-      } finally {
-        context.commit(
-          'folders/fetchingIds',
-          _.difference(context.state.folders.fetchingIds, unfetchedIds)
-        );
-      }
-    },
-    async ensureAllLoaded(context) {
-      await context.dispatch('load');
-      context.commit('folders/fetchedIds', context.state.items.map((f) => f.id));
-    },
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
     },
-  })
+  },
 }

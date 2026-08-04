@@ -248,17 +248,6 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
         }
       })
     },
-    async loadMore(context, options?: ListOptions) {
-      context.commit("error", null)
-      await safelyDo(context, async (cli) => {
-        const items: any[] = await cli[scope].list(undefined, options)
-        // this is to account for when the store module changes
-        const rightItems = items.filter((i) => i.workspaceId === context.rootState.workspaceId)
-        if (rightItems.length === items.length) {
-          await context.dispatch('mutate', { type: 'upsert', data: rightItems })
-        }
-      })
-    },
     async search(context, q: string) {
       if (!q) {
         return

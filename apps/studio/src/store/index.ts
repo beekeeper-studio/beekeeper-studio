@@ -34,6 +34,7 @@ import { BackupModule } from './modules/backup/BackupModule'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { ConnectionTypes, SnowflakeAuthType, SurrealAuthType } from '@/lib/db/types'
 import { SidebarModule } from './modules/SidebarModule'
+import { TreeExpansionState } from './modules/sidebar/TreeExpansionModule'
 import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
 import { PopupMenuModule } from './modules/PopupMenuModule'
 import { WebPluginManagerStatus } from '@/services/plugin'
@@ -126,6 +127,12 @@ export interface State {
 
   /** Set by VueX module */
   plugins?: PluginsState,
+
+  /** Set by VueX module. */
+  sidebar?: {
+    connections: TreeExpansionState
+    queries: TreeExpansionState
+  },
 }
 
 Vue.use(Vuex)
@@ -726,50 +733,48 @@ const store = new Vuex.Store<State>({
     async tabActive(context, value: CoreTab) {
       context.commit('tabActive', value)
     },
-    async refreshConnections(context) {
-      const expandedIds = context.state['data/connectionFolders'].sidebar.expandedIds
-
-      context.commit('data/connections/folders/reset');
-      context.commit('data/connectionFolders/folders/reset');
-
+    async initializeConnectionTree(context) {
       await context.dispatch('data/connectionFolders/load', {
         params: { default: true },
       })
-
-      if (expandedIds.length > 0) {
-        context.dispatch('data/connections/load', {
-          params: { connectionFolderIds: expandedIds },
-        })
-        context.dispatch('data/connectionFolders/loadMore', {
-          params: { parentIds: expandedIds },
-        })
-        context.commit('data/connections/folders/fetchedIds', expandedIds);
-        context.commit('data/connectionFolders/folders/fetchedIds', expandedIds);
-      }
+      const folderIds = context.state['data/connectionFolders']
+        .items.map((folder) => folder.id)
+      // the default folders start out expanded
+      context.commit('sidebar/connections/expandedIds', folderIds)
+      await Promise.all([
+        context.dispatch('data/connectionFolders/ensureLoaded', folderIds),
+        context.dispatch('data/connections/ensureLoaded', folderIds),
+      ])
+    },
+    async initializeQueryTree(context) {
+      await context.dispatch('data/queryFolders/load', {
+        params: { default: true },
+      })
+      const folderIds = context.state['data/queryFolders']
+        .items.map((folder) => folder.id)
+      // the default folders start out expanded
+      context.commit('sidebar/queries/expandedIds', folderIds)
+      await Promise.all([
+        context.dispatch('data/queryFolders/ensureLoaded', folderIds),
+        context.dispatch('data/queries/ensureLoaded', folderIds),
+      ])
+    },
+    async refreshConnections(context) {
+      const expandedIds = context.state.sidebar.connections.expandedIds
+      await Promise.all([
+        context.dispatch('data/connectionFolders/refresh', expandedIds),
+        context.dispatch('data/connections/refresh', expandedIds),
+      ])
 
       await context.dispatch('pinnedConnections/loadPins');
       await context.dispatch('pinnedConnections/reorder');
     },
     async refreshQueries(context) {
-      const expandedIds = context.state['data/queryFolders'].sidebar.expandedIds
-
-      context.commit('data/queries/folders/reset');
-      context.commit('data/queryFolders/folders/reset');
-
-      await context.dispatch('data/queryFolders/load', {
-        params: { default: true },
-      })
-
-      if (expandedIds.length > 0) {
-        context.dispatch('data/queries/load', {
-          params: { queryFolderIds: expandedIds },
-        })
-        context.dispatch('data/queryFolders/loadMore', {
-          params: { parentIds: expandedIds },
-        })
-        context.commit('data/queries/folders/fetchedIds', expandedIds);
-        context.commit('data/queryFolders/folders/fetchedIds', expandedIds);
-      }
+      const expandedIds = context.state.sidebar.queries.expandedIds
+      await Promise.all([
+        context.dispatch('data/queryFolders/refresh', expandedIds),
+        context.dispatch('data/queries/refresh', expandedIds),
+      ])
     },
     async initRootStates(context) {
       await context.dispatch('fetchUsername')

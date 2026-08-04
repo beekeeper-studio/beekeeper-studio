@@ -384,7 +384,7 @@ export default {
       foldersLoading: 'loading',
       foldersError: 'error',
     }),
-    ...mapState('data/connectionFolders/sidebar', {
+    ...mapState('sidebar/connections', {
       expandedFolderIds: 'expandedIds',
     }),
     ...mapState({
@@ -516,7 +516,7 @@ export default {
       ensureSubfoldersLoaded: 'data/connectionFolders/ensureLoaded',
     }),
     ...mapMutations({
-      setExpandedFolderIds: 'data/connectionFolders/sidebar/expandedIds',
+      setExpandedFolderIds: 'sidebar/connections/expandedIds',
     }),
     setExpandedIds(expandedNodeIds) {
       const folderIds = this.folderNodes

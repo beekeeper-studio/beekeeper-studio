@@ -2,6 +2,7 @@ import _ from "lodash";
 import { Module } from "vuex";
 import { State as RootState } from "../index";
 import { SmartLocalStorage } from "@/common/LocalStorage";
+import { TreeExpansionModule } from "./sidebar/TreeExpansionModule";
 
 export interface SidebarTab {
   id: string;
@@ -48,6 +49,10 @@ function getInitialGlobalSidebarActiveItem(): GlobalSidebarActiveItem {
 
 export const SidebarModule: Module<State, RootState> = {
   namespaced: true,
+  modules: {
+    connections: TreeExpansionModule,
+    queries: TreeExpansionModule,
+  },
   state: () => ({
     tabs: [
       {

@@ -1,7 +1,7 @@
 import { IConnection } from "@/common/interfaces/IConnection";
 import { DataState, DataStore, mutationsFor, utilActionsFor } from "@/store/modules/data/DataModuleBase";
 import { accessGrantMutations, localAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
-import { FolderFetchModule } from "@/store/modules/data/tree/FolderFetchModule";
+import { FolderFetchModule } from "@/store/modules/data/tree/TreeModule";
 import { ItemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 import _ from "lodash";
 import Vue from "vue";
@@ -28,10 +28,14 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
     nodes: ItemNodeModule('connectionFolderId', 'name'),
     folders: FolderFetchModule,
   },
-  actions: utilActionsFor<IConnection>('saved', {
+  actions: {
+    ...utilActionsFor<IConnection>('saved', {}),
     ...localAccessGrantActions(),
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
+    },
+    async refresh(context) {
+      await context.dispatch('load');
     },
     async ensureLoaded() {
       // noop
@@ -110,7 +114,7 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
 
       return item.id
     }
-  }),
+  },
   getters: {
     filteredConnections(state) {
       if (!state.filter) {

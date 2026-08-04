@@ -3,7 +3,7 @@ import _ from 'lodash'
 import Vue from 'vue'
 import { mutationsFor, DataState, DataStore, utilActionsFor } from '../DataModuleBase'
 import { accessGrantMutations, localAccessGrantActions } from '@/store/modules/data/access_grant/accessGrantStore'
-import { FolderFetchModule } from "@/store/modules/data/tree/FolderFetchModule";
+import { FolderFetchModule } from "@/store/modules/data/tree/TreeModule";
 import { ItemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 
 type State = DataState<TransportFavoriteQuery>
@@ -29,10 +29,14 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, State> = {
     nodes: ItemNodeModule('queryFolderId', 'title'),
     folders: FolderFetchModule,
   },
-  actions: utilActionsFor<TransportFavoriteQuery>('query', {
+  actions: {
+    ...utilActionsFor<TransportFavoriteQuery>('query', {}, {}, { text: true, title: true, database: true, excerpt: true, id: true }),
     ...localAccessGrantActions(),
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
+    },
+    async refresh(context) {
+      await context.dispatch('load');
     },
     async ensureLoaded() {
       // noop
@@ -111,7 +115,7 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, State> = {
 
       return item.id
     }
-  }, {}, { text: true, title: true, database: true, excerpt: true, id: true }),
+  },
   getters: {
     filteredQueries(state) {
       if (!state.filter) {

@@ -248,7 +248,7 @@ export default {
       searchInProgress: 'searching',
     }),
     ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
-    ...mapState('data/queryFolders/sidebar', {
+    ...mapState('sidebar/queries', {
       expandedFolderIds: 'expandedIds',
     }),
     ...mapState({
@@ -326,7 +326,7 @@ export default {
       ensureSubfoldersLoaded: 'data/queryFolders/ensureLoaded',
     }),
     ...mapMutations({
-      setExpandedFolderIds: 'data/queryFolders/sidebar/expandedIds',
+      setExpandedFolderIds: 'sidebar/queries/expandedIds',
     }),
     setExpandedIds(expandedNodeIds) {
       const folderIds = this.folderNodes

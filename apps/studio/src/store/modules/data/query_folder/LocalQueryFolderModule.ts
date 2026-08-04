@@ -5,9 +5,8 @@ import { DataState, DataStore, mutateActions, mutationsFor } from "@/store/modul
 import { safely } from "@/store/modules/data/StoreHelpers";
 import { accessGrantMutations, localAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
-import { FolderFetchModule } from "@/store/modules/data/tree/FolderFetchModule";
+import { FolderFetchModule } from "@/store/modules/data/tree/TreeModule";
 import { FolderNodeModule } from "@/store/modules/data/tree/FolderNodeModule";
-import { SidebarModule } from "@/store/modules/data/tree/SidebarModule";
 
 type State = DataState<IQueryFolder>
 
@@ -26,7 +25,6 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
   modules: {
     nodes: FolderNodeModule,
     folders: FolderFetchModule,
-    sidebar: SidebarModule,
   },
   actions: {
     ...localAccessGrantActions(),
@@ -36,6 +34,9 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
     },
     async initialize() {
       // noop
+    },
+    async refresh(context) {
+      await context.dispatch('load');
     },
     async ensureLoaded() {
       // noop
