@@ -466,7 +466,10 @@ export default {
       }];
       if (!this.isCloud || !isRoot) {
         options.push(...[
-          { type: "divider" },
+          {
+            type: "divider",
+            hideIf: !this.isCloud || folder.personal,
+          },
           {
             name: "Share",
             handler: ({ item }) => this.share(item),
