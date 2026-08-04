@@ -95,7 +95,7 @@ import ContentPlaceholder from "@/components/common/loading/ContentPlaceholder.v
 import ContentPlaceholderText from "@/components/common/loading/ContentPlaceholderText.vue";
 import {
   buildFolderNodes,
-  getSelfAndAnscestors,
+  getSelfAndAncestors,
 } from "@/common/utils/folderTree";
 
 type Target =
@@ -179,7 +179,7 @@ export default Vue.extend({
       this.selectedFolderId = target.value.parentId;
 
       // Expand anscestors
-      this.expandedIds = getSelfAndAnscestors(
+      this.expandedIds = getSelfAndAncestors(
         target.value.parentId,
         this.folders
       ).map((f) => `folder-${f.id}`);

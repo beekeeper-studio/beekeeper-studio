@@ -221,7 +221,6 @@ export default {
     return {
       checkedFavorites: [],
       selected: null,
-      draggingQuery: null,
       renamingFolderId: null,
       draftingFolder: false,
       draftFolderParentId: null,
@@ -526,13 +525,6 @@ export default {
         module: "data/queryFolders",
       });
     },
-    showLonelyContextMenu(event) {
-      this.$bks.openMenu({
-        event,
-        item: null,
-        options: [{ name: 'New Folder', handler: () => this.createFolder() }]
-      })
-    },
     async duplicate(query) {
       const cloned = await this.$store.dispatch('data/queries/clone', query)
       cloned.title = 'Copy of ' + cloned.title
@@ -564,64 +556,13 @@ export default {
         }
       }
     },
-    onQueryDragStart(event, list) {
-      this.draggingQuery = list[event.oldIndex]
-    },
-    cloudRelativePosition(list, newIndex) {
-      const prev = list[newIndex - 1]
-      const next = list[newIndex + 1]
-      if (prev) return { after: prev.id }
-      if (next) return { before: next.id }
-      return { before: null }
-    },
-    async onQueryFolderHeaderDrop(folder) {
-      if (!this.draggingQuery) return
-      try {
-        // Use reorder action for both local and cloud workspaces
-        await this.$store.dispatch('data/queries/reorder', {
-          item: this.draggingQuery,
-          queryFolderId: folder.id,
-          position: { before: null }
-        })
-      } catch (ex) {
-        this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
-      }
-    },
-    async onQueryDrop(event, folder, currentList) {
-      try {
-        if (event.added) {
-          const { element: item, newIndex } = event.added
-          // Use reorder action for both local and cloud workspaces
-          await this.$store.dispatch('data/queries/reorder', {
-            item,
-            queryFolderId: folder?.id ?? null,
-            position: this.cloudRelativePosition(currentList, newIndex)
-          })
-        } else if (event.moved) {
-          const { element: item, newIndex } = event.moved
-          // Use reorder action for both local and cloud workspaces
-          await this.$store.dispatch('data/queries/reorder', {
-            item,
-            position: this.cloudRelativePosition(currentList, newIndex)
-          })
-        }
-      } catch (ex) {
-        this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
-      }
-    },
   }
 }
 </script>
 
 <style lang="scss" scoped>
-.drag-ghost {
-  opacity: 0.4;
-}
 .drag-pending {
   opacity: 0.5;
-}
-.folder-drop-zone {
-  min-height: 8px;
 }
 .tree-loading {
   margin-block: 1rem;

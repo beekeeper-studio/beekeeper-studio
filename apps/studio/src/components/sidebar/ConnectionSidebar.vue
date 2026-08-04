@@ -786,12 +786,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.drag-ghost {
-  opacity: 0.4;
-}
-.folder-drop-zone {
-  min-height: 8px;
-}
 .drag-pending {
   opacity: 0.5;
 }

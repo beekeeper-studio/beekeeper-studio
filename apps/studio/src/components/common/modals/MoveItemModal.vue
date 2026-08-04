@@ -97,7 +97,7 @@ import { IFolder } from "@/common/interfaces/IQueryFolder";
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
 import ContentPlaceholder from "@/components/common/loading/ContentPlaceholder.vue";
 import ContentPlaceholderText from "@/components/common/loading/ContentPlaceholderText.vue";
-import { getSelfAndAnscestors } from "@/common/utils/folderTree";
+import { getSelfAndAncestors } from "@/common/utils/folderTree";
 
 type Target =
   | { type: "connection"; value: IConnection }
@@ -176,7 +176,7 @@ export default Vue.extend({
       this.selectedFolderId = this.parentId;
 
       // Expand anscestors
-      this.expandedIds = getSelfAndAnscestors(this.parentId, this.folders).map(
+      this.expandedIds = getSelfAndAncestors(this.parentId, this.folders).map(
         (f) => `folder-${f.id}`
       );
 
