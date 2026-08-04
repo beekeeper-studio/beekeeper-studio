@@ -7,6 +7,7 @@
       @closed="$emit('closed')"
       class="base-modal-root"
     >
+      <x-progressbar v-if="loading" />
       <form
         v-kbd-trap="true"
         class="base-modal"
@@ -58,6 +59,8 @@ export default Vue.extend({
         '[tabindex]:not([tabindex="-1"])',
       ].join(","),
     },
+    /** Show loading indicator */
+    loading: Boolean,
   },
   methods: {
     close() {
@@ -74,7 +77,7 @@ export default Vue.extend({
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .base-modal-root ::v-deep .v--modal {
   min-width: 36rem;
   min-height: 6rem;
@@ -158,5 +161,10 @@ export default Vue.extend({
   justify-content: flex-end;
   padding-inline: 1.2rem;
   padding-bottom: 0.8rem;
+}
+
+x-progressbar {
+  // Avoid shifting the other elements down
+  position: absolute;
 }
 </style>

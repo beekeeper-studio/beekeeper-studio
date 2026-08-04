@@ -1,5 +1,5 @@
 <template>
-  <base-modal :name="modalName" @submit="move">
+  <base-modal :name="modalName" @submit="move" :loading="loadingFolders">
     <template #title>
       <template v-if="target">
         Move
@@ -30,14 +30,6 @@
           (current location)
         </span>
       </label>
-
-      <content-placeholder
-        v-if="loadingFolders"
-        :animated="true"
-        :rounded="false"
-      >
-        <content-placeholder-text :lines="4" />
-      </content-placeholder>
 
       <tree
         v-else
