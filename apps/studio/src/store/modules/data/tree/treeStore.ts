@@ -3,6 +3,7 @@ import _ from "lodash";
 import { State as RootState } from "@/store";
 import { ClientError } from "@/store/modules/data/StoreHelpers";
 import { HasId } from "@/common/interfaces/IGeneric";
+import { IFolder } from "@/common/interfaces/IQueryFolder";
 
 type FolderFetchState = {
   /** Folders whose children have already been fetched. */
@@ -37,7 +38,7 @@ export const FolderFetchModule: Module<FolderFetchState, RootState> = {
 };
 
 /** State of a data module hosting a {@link FolderFetchModule} under `folders`. */
-type OwnerState<T extends HasId> = {
+type OwnerState<T> = {
   loading: boolean;
   error: ClientError;
   folders: FolderFetchState;
@@ -57,7 +58,7 @@ type OwnerState<T extends HasId> = {
  *  }
  * ```
  **/
-export function folderableActions<T extends HasId>(): ActionTree<
+export function folderableActions<T extends IFolder>(): ActionTree<
   OwnerState<T>,
   RootState
 > {
@@ -69,6 +70,21 @@ export function folderableActions<T extends HasId>(): ActionTree<
     },
     async loadDefaultFolders(context) {
       await context.dispatch("loadMore", { params: { default: true } });
+
+      const personalIdx = context.state.items.findIndex(
+        (f) => f.default && f.personal
+      );
+
+      if (personalIdx === -1) {
+        return;
+      }
+
+      // Make sure the personal folder is first
+      const sorted = [
+        context.state.items[personalIdx],
+        ...context.state.items.toSpliced(personalIdx, 1),
+      ];
+      await context.dispatch("mutate", { type: "set", data: sorted });
     },
   };
 }
