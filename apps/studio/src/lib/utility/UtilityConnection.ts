@@ -25,7 +25,7 @@ export class UtilityConnection {
 
   public get sId() {
     return this._sId;
-  } 
+  }
 
   public async hasWorkingPort(): Promise<boolean> {
     return new Promise((resolve, reject) => {
