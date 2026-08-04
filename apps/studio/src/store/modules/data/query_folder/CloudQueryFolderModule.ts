@@ -24,22 +24,14 @@ export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
   actions: {
     ...actionsFor<IQueryFolder>('queryFolders', {}),
     ...cloudAccessGrantActions('queryFolders'),
-    ...treeActions<IQueryFolder>('queryFolders', 'parentIds'),
-    /**
-     * Overrides the shared reset-and-reload: the default folders are the tree's
-     * roots, so they have no parent to be fetched under. They also have to land
-     * before their children — a node only links to a parent already in the tree.
-     **/
+    ...treeActions<IQueryFolder>('parentIds'),
     async refresh(context, parentIds: number[]) {
-      context.commit('folders/reset');
-      await context.dispatch('load', { params: { default: true } });
-
-      if (parentIds.length === 0) {
-        return;
-      }
-
-      await context.dispatch('loadMore', { params: { parentIds } });
-      context.commit('folders/fetchedIds', parentIds);
+      await context.dispatch("resetTree");
+      await context.dispatch("loadDefaultFolders");
+      await context.dispatch("loadByParentIds", parentIds);
+    },
+    async loadDefaultFolders(context) {
+      await context.dispatch("loadMore", { params: { default: true } });
     },
     async initialize() {
       // noop

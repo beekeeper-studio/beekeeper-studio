@@ -32,7 +32,7 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
   actions: {
     ...actionsFor<ICloudSavedConnection>('connections', {}),
     ...cloudAccessGrantActions('connections'),
-    ...treeActions<ICloudSavedConnection>('connections', 'connectionFolderIds'),
+    ...treeActions<ICloudSavedConnection>('connectionFolderIds'),
     async initialize() {
       // noop
     },
@@ -91,8 +91,10 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
       // Mark as pending to protect from poll overwrites
       context.commit('addPendingSave', item.id)
 
-      // Optimistic commit with numeric position
-      await context.dispatch('mutate', {
+      // Optimistic commit with numeric position. Not awaited: `mutate` applies
+      // both the item and node commits synchronously, and waiting would hold
+      // the reorder request back a turn.
+      context.dispatch('mutate', {
         type: 'upsert',
         data: {
           ...existing,

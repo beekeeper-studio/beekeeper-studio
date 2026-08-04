@@ -170,6 +170,11 @@ export function utilActionsFor<T extends Transport>(type: string, other: any = {
         }
       })
     },
+    /** Local `load` already reads the whole table and merges it, so there is
+     * nothing further to page in. */
+    async loadMore(context) {
+      await context.dispatch('load');
+    },
     async poll() {
       // do nothing, locally we don't need to poll.
       // nothing else can change anything.
@@ -245,6 +250,19 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
         const rightItems = items.filter((i) => i.workspaceId === context.rootState.workspaceId)
         if (rightItems.length === items.length) {
           await context.dispatch('mutate', { type: 'replace', data: rightItems })
+        }
+      })
+    },
+    /** Like `load`, but adds to what is already in the store instead of
+     * replacing it, so a fetched subtree doesn't drop its siblings. */
+    async loadMore(context, options?: ListOptions) {
+      context.commit("error", null)
+      await safelyDo(context, async (cli) => {
+        const items: any[] = await cli[scope].list(undefined, options)
+        // this is to account for when the store module changes
+        const rightItems = items.filter((i) => i.workspaceId === context.rootState.workspaceId)
+        if (rightItems.length === items.length) {
+          await context.dispatch('mutate', { type: 'upsert', data: rightItems })
         }
       })
     },

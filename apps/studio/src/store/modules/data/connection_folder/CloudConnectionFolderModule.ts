@@ -26,13 +26,17 @@ export const CloudConnectionFolderModule: DataStore<IConnectionFolder, State> = 
   actions: {
     ...actionsFor<IConnectionFolder>('connectionFolders', {}),
     ...cloudAccessGrantActions('connectionFolders'),
-    ...treeActions<IConnectionFolder>('connectionFolders', 'parentIds'),
+    ...treeActions<IConnectionFolder>('parentIds'),
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
     },
     async refresh(context, parentIds: number[]) {
-      await context.dispatch("resetAndReloadByParentIds", parentIds);
-      await context.dispatch('load', { params: { default: true } });
+      await context.dispatch("resetTree");
+      await context.dispatch("loadDefaultFolders");
+      await context.dispatch("loadByParentIds", parentIds);
+    },
+    async loadDefaultFolders(context) {
+      await context.dispatch("loadMore", { params: { default: true } });
     },
     async poll() {
       // empty on purpose

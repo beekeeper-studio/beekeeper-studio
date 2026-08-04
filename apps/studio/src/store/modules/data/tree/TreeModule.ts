@@ -1,8 +1,7 @@
 import { ActionTree, Module } from "vuex";
 import _ from "lodash";
 import { State as RootState } from "@/store";
-import { ClientError, safelyDo } from "@/store/modules/data/StoreHelpers";
-import { ListOptions } from "@/lib/cloud/controllers/GenericController";
+import { ClientError } from "@/store/modules/data/StoreHelpers";
 import { HasId } from "@/common/interfaces/IGeneric";
 
 type FolderFetchState = {
@@ -49,17 +48,18 @@ type OwnerState<T extends HasId> = {
  * Actions for models that support tree structure or nested folders.
  **/
 export function treeActions<T extends HasId>(
-  scope: "connections" | "queries" | "connectionFolders" | "queryFolders",
   paramsKey: "connectionFolderIds" | "queryFolderIds" | "parentIds"
 ): ActionTree<OwnerState<T>, RootState> {
   return {
     async refresh(context, parentIds: number[]) {
-      await context.dispatch("resetAndReloadByParentIds", parentIds);
+      await context.dispatch("resetTree");
+      await context.dispatch("loadByParentIds", parentIds);
     },
-    async resetAndReloadByParentIds(context, parentIds: number[]) {
+    async resetTree(context) {
       await context.dispatch("mutate", { type: "set", data: [] });
       context.commit("folders/reset");
-
+    },
+    async loadByParentIds(context, parentIds: number[]) {
       if (parentIds.length === 0) {
         return;
       }
@@ -106,24 +106,6 @@ export function treeActions<T extends HasId>(
           ...unfetchedIds,
         ]);
       }
-    },
-    /** Like `load`, but adds to what is already in the store instead of
-     * replacing it, so a fetched subtree doesn't drop its siblings. */
-    async loadMore(context, options?: ListOptions) {
-      context.commit("error", null);
-      await safelyDo(context, async (cli) => {
-        const items: any[] = await cli[scope].list(undefined, options);
-        // this is to account for when the store module changes
-        const rightItems = items.filter(
-          (i) => i.workspaceId === context.rootState.workspaceId
-        );
-        if (rightItems.length === items.length) {
-          await context.dispatch("mutate", {
-            type: "upsert",
-            data: rightItems,
-          });
-        }
-      });
     },
   };
 }
