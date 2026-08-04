@@ -735,11 +735,17 @@ const store = new Vuex.Store<State>({
     },
     async initializeConnectionTree(context) {
       if (context.getters.isCloud) {
+        await Promise.all([
+          context.dispatch('data/connectionFolders/refresh', []),
+          context.dispatch('data/connections/refresh', []),
+        ]);
+
         await context.dispatch('data/connectionFolders/loadDefaultFolders');
         const folderIds = context.state['data/connectionFolders']
           .items.map((folder) => folder.id)
         // the default folders start out expanded
         context.commit('sidebar/connections/expandedIds', folderIds)
+
         await Promise.all([
           context.dispatch('data/connectionFolders/ensureLoaded', folderIds),
           context.dispatch('data/connections/ensureLoaded', folderIds),
@@ -754,11 +760,17 @@ const store = new Vuex.Store<State>({
     },
     async initializeQueryTree(context) {
       if (context.getters.isCloud) {
+        await Promise.all([
+          context.dispatch('data/queryFolders/refresh', []),
+          context.dispatch('data/queries/refresh', []),
+        ]);
+
         await context.dispatch('data/queryFolders/loadDefaultFolders');
         const folderIds = context.state['data/queryFolders']
           .items.map((folder) => folder.id)
         // the default folders start out expanded
         context.commit('sidebar/queries/expandedIds', folderIds)
+
         await Promise.all([
           context.dispatch('data/queryFolders/ensureLoaded', folderIds),
           context.dispatch('data/queries/ensureLoaded', folderIds),
