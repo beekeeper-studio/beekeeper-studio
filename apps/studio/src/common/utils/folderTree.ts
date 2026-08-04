@@ -156,7 +156,7 @@ export function parseReorderTarget(event: TreeNodeMoveEvent) {
   throw new Error(`Unknown target type "${target["type"]}"`);
 }
 
-export function getSelfAndAnscestors(
+export function getSelfAndAncestors(
   selfId: number,
   list: IFolder[],
   returnList: IFolder[] = []
@@ -171,40 +171,8 @@ export function getSelfAndAnscestors(
 
   returnList.push(self);
 
-  /** Anscestors are excluded from this list. */
+  /** Ancestors are excluded from this list. */
   const filteredList = list.toSpliced(index, 1);
 
-  return getSelfAndAnscestors(self.parentId, filteredList, returnList);
-}
-
-export function getDescendants(
-  root: number | Map<number, IFolder[]>,
-  list: IFolder[]
-): IFolder[] {
-  if (typeof root === "number") {
-    root = new Map([[root, []]]);
-  }
-
-  /** Descendants are excluded from this list. */
-  const filteredList: IFolder[] = [];
-  let foundDescendant = false;
-
-  for (const item of list) {
-    if (root.has(item.parentId)) {
-      root.get(item.parentId).push(item);
-      if (!root.has(item.id)) {
-        root.set(item.id, []);
-      }
-      foundDescendant = true;
-    } else {
-      filteredList.push(item);
-    }
-  }
-
-  /** End when we don't find a descendant. */
-  if (!foundDescendant) {
-    return [...root.values()].flat();
-  }
-
-  return getDescendants(root, filteredList);
+  return getSelfAndAncestors(self.parentId, filteredList, returnList);
 }

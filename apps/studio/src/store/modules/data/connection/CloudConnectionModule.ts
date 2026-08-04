@@ -1,8 +1,8 @@
 import { ICloudSavedConnection } from "@/common/interfaces/IConnection";
 import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { havingCli } from "@/store/modules/data/StoreHelpers";
-import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
-import { FolderFetchModule } from "@/store/modules/data/tree/FolderFetchModule";
+import { accessGrantMutations, accessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
+import { FolderFetchModule, treeActions } from "@/store/modules/data/tree/treeStore";
 import { ItemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 import _ from "lodash";
 
@@ -29,39 +29,15 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
     nodes: ItemNodeModule('connectionFolderId', 'name'),
     folders: FolderFetchModule,
   },
-  actions: actionsFor<ICloudSavedConnection>('connections', {
-    ...cloudAccessGrantActions('connections'),
+  actions: {
+    ...actionsFor<ICloudSavedConnection>('connections', {}),
+    ...accessGrantActions('connections'),
+    ...treeActions<ICloudSavedConnection>('connectionFolderIds'),
     async initialize() {
       // noop
     },
     async poll() {
       // noop
-    },
-    async ensureLoaded(context, parentIds: number[]) {
-      const fetchedIds = context.state.folders.fetchedIds;
-      const unfetchedIds = _.difference(parentIds, fetchedIds);
-      if (unfetchedIds.length === 0) {
-        return;
-      }
-      // marked before the fetch so overlapping calls don't refetch these
-      context.commit('folders/fetchedIds', [
-        ...fetchedIds,
-        ...unfetchedIds,
-      ]);
-      context.commit('folders/fetchingIds', [
-        ...context.state.folders.fetchingIds,
-        ...unfetchedIds,
-      ]);
-      try {
-        await context.dispatch('loadMore', {
-          params: { connectionFolderIds: unfetchedIds },
-        });
-      } finally {
-        context.commit(
-          'folders/fetchingIds',
-          _.difference(context.state.folders.fetchingIds, unfetchedIds)
-        );
-      }
     },
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
@@ -115,8 +91,10 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
       // Mark as pending to protect from poll overwrites
       context.commit('addPendingSave', item.id)
 
-      // Optimistic commit with numeric position
-      await context.dispatch('mutate', {
+      // Optimistic commit with numeric position. Not awaited: `mutate` applies
+      // both the item and node commits synchronously, and waiting would hold
+      // the reorder request back a turn.
+      context.dispatch('mutate', {
         type: 'upsert',
         data: {
           ...existing,
@@ -158,7 +136,7 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
         context.commit('removePendingSave', item.id)
       }
     }
-  }),
+  },
   getters: {
     filteredConnections(state) {
       if (!state.filter) {

@@ -33,7 +33,16 @@
         </span>
       </label>
 
+      <content-placeholder
+        v-if="loadingFolders"
+        :animated="true"
+        :rounded="false"
+      >
+        <content-placeholder-text :lines="4" />
+      </content-placeholder>
+
       <tree
+        v-else
         :folders="folderNodes"
         :expanded-ids="expandedIds"
         @update:expandedIds="setExpandedIds"
@@ -86,20 +95,29 @@ import { IConnection } from "@/common/interfaces/IConnection";
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { IFolder } from "@/common/interfaces/IQueryFolder";
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
-import { getSelfAndAnscestors } from "@/common/utils/folderTree";
+import ContentPlaceholder from "@/components/common/loading/ContentPlaceholder.vue";
+import ContentPlaceholderText from "@/components/common/loading/ContentPlaceholderText.vue";
+import { getSelfAndAncestors } from "@/common/utils/folderTree";
 
 type Target =
   | { type: "connection"; value: IConnection }
   | { type: "query"; value: ISavedQuery };
 
 export default Vue.extend({
-  components: { BaseModal, Tree, TreeFolder },
+  components: {
+    BaseModal,
+    Tree,
+    TreeFolder,
+    ContentPlaceholder,
+    ContentPlaceholderText,
+  },
   data() {
     return {
       modalName: "move-item-modal",
       target: null as Target | null,
       selectedFolderId: null as number | null,
       saving: false,
+      loadingFolders: false,
       expandedIds: [],
     };
   },
@@ -121,7 +139,7 @@ export default Vue.extend({
       if (!this.target) {
         return [];
       }
-      return this.$store.state[`${this.folderPath}/nodes`].items;
+      return this.$store.state[this.folderPath].nodes.items;
     },
     rootBindings() {
       return [{ event: AppEvent.openMoveFileModal, handler: this.open }];
@@ -153,30 +171,26 @@ export default Vue.extend({
         );
       }
     },
-    open(target: Target) {
+    async open(target: Target) {
       this.target = target;
       this.selectedFolderId = this.parentId;
 
       // Expand anscestors
-      this.expandedIds = getSelfAndAnscestors(this.parentId, this.folders).map(
+      this.expandedIds = getSelfAndAncestors(this.parentId, this.folders).map(
         (f) => `folder-${f.id}`
       );
 
       this.$modal.show(this.modalName);
 
-      // So every visible folder knows whether it has subfolders, which is what
-      // decides if it can be opened.
-      this.ensureLoaded(this.folders.map((folder: IFolder) => folder.id));
+      this.loadingFolders = true;
+      try {
+        await this.$store.dispatch(`${this.folderPath}/ensureAllLoaded`);
+      } finally {
+        this.loadingFolders = false;
+      }
     },
     setExpandedIds(expandedIds: string[]) {
       this.expandedIds = expandedIds;
-      const folderIds = this.folders
-        .filter((folder: IFolder) => expandedIds.includes(`folder-${folder.id}`))
-        .map((folder: IFolder) => folder.id);
-      this.ensureLoaded(folderIds);
-    },
-    ensureLoaded(folderIds: number[]) {
-      this.$store.dispatch(`${this.folderPath}/ensureLoaded`, folderIds);
     },
     handleFolderClick(event: MouseEvent, folder: IFolder) {
       if (folder.id !== this.selectedFolderId) {
@@ -211,7 +225,7 @@ export default Vue.extend({
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .target-name {
   display: flex;
   align-items: center;
@@ -237,7 +251,7 @@ export default Vue.extend({
   font: inherit;
   cursor: pointer;
 
-  label& {
+  label {
     height: 1.75rem;
   }
 
@@ -246,7 +260,18 @@ export default Vue.extend({
   }
 
   &.selected {
-    background: rgb(from var(--theme-base) r g b / 10%);
+    background: rgb(from var(--theme-base) r g b / 8%);
+
+    &::before {
+      position: absolute;
+      top: 0;
+      left: -0.5rem;
+      bottom: 0;
+      width: 3px;
+      border-radius: 9999px;
+      content: "";
+      background: var(--theme-secondary);
+    }
   }
 
   /* The radio is visually hidden, so surface keyboard focus on the row.

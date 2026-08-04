@@ -67,10 +67,6 @@
             </div>
           </div>
         </div>
-        <x-progressbar
-          v-show="searchInProgress"
-          style="margin-top: -5px;"
-        />
         <expired-folder-alert v-if="!canCreateFolders && folders.length > 0" />
         <error-alert
           v-if="error"
@@ -85,10 +81,10 @@
         >
           <template v-if="cloudSearchMode">
             <div
+              class="empty-state"
               v-if="!searchInProgress && filteredQueries.length === 0"
-              class="empty"
             >
-              <span class="empty-title">No Results</span>
+              No queries match "{{ filterQuery }}"
             </div>
             <favorite-list-item
               v-for="query in filteredQueries"
@@ -106,6 +102,17 @@
               @export="exportTo"
               @duplicate="duplicate"
             />
+            <content-placeholder
+              v-if="searchInProgress"
+              :animated="true"
+              :rounded="false"
+              class="list-item"
+            >
+              <content-placeholder-text
+                :lines="2"
+                class="list-item-btn"
+              />
+            </content-placeholder>
           </template>
           <tree
             v-show="!cloudSearchMode"
@@ -113,6 +120,7 @@
             :items="itemNodes"
             :expanded-ids="expandedNodeIds"
             :selected-ids="selectedIds"
+            :filter="filterQuery"
             @update:expandedIds="setExpandedIds"
             @update:selectedIds="setSelectedIds"
             @bks-tree-node-move="handleTreeNodeMove"
@@ -150,6 +158,7 @@
               <tree-folder
                 v-bind="props"
                 v-else
+                :class="{ 'just-created': justCreatedFolderId === props.node.ref.id }"
                 :tag="renamingFolderId === props.node.ref.id ? 'div': undefined"
                 @contextmenu.native="showFolderContextMenu($event, props.node.ref)"
               >
@@ -167,13 +176,15 @@
               </tree-folder>
             </template>
             <template #folder-footer="{ node, depth }">
-              <div
+              <content-placeholder
                 v-if="loadingFolderIds.includes(node.ref.id)"
+                :animated="true"
+                :rounded="false"
                 class="tree-loading"
                 :style="{ '--depth': depth }"
               >
-                Loading
-              </div>
+                <content-placeholder-text :lines="1" />
+              </content-placeholder>
             </template>
             <template #item="{ node, selected: treeSelected, bulkSelectionActive }">
               <favorite-list-item
@@ -223,10 +234,12 @@ import { AppEvent } from '@/common/AppEvent'
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
 import { rangeSelectVisibleIds, toggleSelectedId } from "@/common/utils/folderTree";
 import EditableText from '@/components/common/EditableText.vue'
+import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
+import ContentPlaceholderText from '@/components/common/loading/ContentPlaceholderText.vue'
 import { parseReorderTarget } from '@/common/utils/folderTree'
 
 export default {
-  components: { SidebarLoading, ErrorAlert, ExpiredFolderAlert, FavoriteListItem, Tree, TreeFolder, EditableText },
+  components: { SidebarLoading, ErrorAlert, ExpiredFolderAlert, FavoriteListItem, Tree, TreeFolder, EditableText, ContentPlaceholder, ContentPlaceholderText },
   data: function () {
     return {
       selectedIds: [],
@@ -236,6 +249,8 @@ export default {
       renamingFolderId: null,
       draftingFolder: false,
       draftFolderParentId: null,
+      justCreatedFolderId: null,
+      justCreatedTimeout: null,
     }
   },
   mounted() {
@@ -243,6 +258,7 @@ export default {
   },
   beforeDestroy() {
     document.removeEventListener('mousedown', this.maybeUnselect)
+    clearTimeout(this.justCreatedTimeout)
   },
   computed: {
     ...mapGetters(['workspace', 'isCloud', 'isUltimate', 'canCreateFolders']),
@@ -257,7 +273,7 @@ export default {
       searchInProgress: 'searching',
     }),
     ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
-    ...mapState('data/queryFolders/sidebar', {
+    ...mapState('sidebar/queries', {
       expandedFolderIds: 'expandedIds',
     }),
     ...mapState({
@@ -344,7 +360,7 @@ export default {
       ensureSubfoldersLoaded: 'data/queryFolders/ensureLoaded',
     }),
     ...mapMutations({
-      setExpandedFolderIds: 'data/queryFolders/sidebar/expandedIds',
+      setExpandedFolderIds: 'sidebar/queries/expandedIds',
     }),
     setExpandedIds(expandedNodeIds) {
       const folderIds = this.folderNodes
@@ -491,6 +507,13 @@ export default {
     cancelDraftFolder() {
       this.draftingFolder = false
     },
+    markJustCreated(folderId) {
+      clearTimeout(this.justCreatedTimeout)
+      this.justCreatedFolderId = folderId
+      this.justCreatedTimeout = setTimeout(() => {
+        this.justCreatedFolderId = null
+      }, 2000)
+    },
     expandFolder(folderId) {
       if (this.expandedFolderIds.includes(folderId)) {
         return
@@ -503,11 +526,12 @@ export default {
         return
       }
       try {
-        await this.$store.dispatch('data/queryFolders/save', {
+        const id = await this.$store.dispatch('data/queryFolders/save', {
           id: null,
           parentId: this.draftFolderParentId,
           name,
         })
+        this.markJustCreated(id)
       } catch (ex) {
         this.$noty.error(`Create folder error: ${ex.userMessage ?? ex.message}`)
       } finally {
@@ -588,13 +612,6 @@ export default {
         module: "data/queryFolders",
       });
     },
-    showLonelyContextMenu(event) {
-      this.$bks.openMenu({
-        event,
-        item: null,
-        options: [{ name: 'New Folder', handler: () => this.createFolder() }]
-      })
-    },
     async duplicate(query) {
       const cloned = await this.$store.dispatch('data/queries/clone', query)
       cloned.title = 'Copy of ' + cloned.title
@@ -626,80 +643,17 @@ export default {
         }
       }
     },
-    onQueryDragStart(event, list) {
-      this.draggingQuery = list[event.oldIndex]
-    },
-    cloudRelativePosition(list, newIndex) {
-      const prev = list[newIndex - 1]
-      const next = list[newIndex + 1]
-      if (prev) return { after: prev.id }
-      if (next) return { before: next.id }
-      return { before: null }
-    },
-    async onQueryFolderHeaderDrop(folder) {
-      if (!this.draggingQuery) return
-      try {
-        // Use reorder action for both local and cloud workspaces
-        await this.$store.dispatch('data/queries/reorder', {
-          item: this.draggingQuery,
-          queryFolderId: folder.id,
-          position: { before: null }
-        })
-      } catch (ex) {
-        this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
-      }
-    },
-    async onQueryDrop(event, folder, currentList) {
-      try {
-        if (event.added) {
-          const { element: item, newIndex } = event.added
-          // Use reorder action for both local and cloud workspaces
-          await this.$store.dispatch('data/queries/reorder', {
-            item,
-            queryFolderId: folder?.id ?? null,
-            position: this.cloudRelativePosition(currentList, newIndex)
-          })
-        } else if (event.moved) {
-          const { element: item, newIndex } = event.moved
-          // Use reorder action for both local and cloud workspaces
-          await this.$store.dispatch('data/queries/reorder', {
-            item,
-            position: this.cloudRelativePosition(currentList, newIndex)
-          })
-        }
-      } catch (ex) {
-        this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
-      }
-    },
   }
 }
 </script>
 
 <style lang="scss" scoped>
-.drag-ghost {
-  opacity: 0.4;
-}
 .drag-pending {
   opacity: 0.5;
 }
-.folder-drop-zone {
-  min-height: 8px;
-}
 .tree-loading {
-  padding-block: 0.25rem;
+  margin-block: 1rem;
   padding-left: calc(var(--depth) * 1rem + 1.3rem);
-  color: var(--text-lighter);
-}
-
-.tree-loading::after {
-  content: "...";
-  animation: dots 1s steps(2) infinite;
-}
-
-@keyframes dots {
-  0%   { content: "..."; }
-  50%  { content: ".."; }
-  100% { content: "..."; }
 }
 ::v-deep .BksTree-folder {
   .name:has(.editable-text) {
@@ -713,5 +667,24 @@ export default {
       top: 60%;
     }
   }
+}
+
+.just-created {
+  animation: just-created-fade 2s ease-out;
+}
+
+@keyframes just-created-fade {
+  from {
+    background: rgb(from var(--theme-primary) r g b / 25%);
+  }
+  to {
+    background: transparent;
+  }
+}
+
+.empty-state {
+  padding-top: 0.25rem;
+  padding-left: 0.5rem;
+  font-size: 0.85rem;
 }
 </style>

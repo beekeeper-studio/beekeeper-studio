@@ -112,6 +112,7 @@ export default Vue.extend({
           handler: () => {
             this.rename = true;
           },
+          hideIf: !canWrite,
         },
         {
           name: "Move",
@@ -165,7 +166,7 @@ export default Vue.extend({
 .list-text {
   flex-grow: 1;
   font-size: 1rem;
-
+  min-width: 0;
 }
 
 .list-item-btn .list-text .list-title {

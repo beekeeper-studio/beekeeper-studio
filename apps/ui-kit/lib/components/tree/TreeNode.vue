@@ -1,10 +1,19 @@
 <template>
-  <div class="BksTree-node">
+  <div
+    class="BksTree-node"
+    :class="[
+      `BksTree-node-${node.type}`,
+      {
+        'BksTree-node-expanded': expanded,
+        'BksTree-node-empty': empty,
+      },
+    ]"
+    :style="{ '--depth': depth }"
+  >
     <div
       class="BksTree-row"
       v-show="visible"
       :draggable="node.draggable"
-      :style="{ '--depth': depth }"
       :data-node-type="node.type"
       :data-drop-target="dropTargetPosition()"
       @click="handleRowClick"
@@ -158,6 +167,10 @@ export default Vue.extend({
       return [...this.node.children, ...this.childItemNodes];
     },
 
+    empty(): boolean {
+      return this.node.type === "folder" && this.childNodes.length === 0;
+    },
+
     expanded(): boolean {
       return (
         this.node.type === "folder" && this.expandedIds.includes(this.node.id)
@@ -259,6 +272,22 @@ export default Vue.extend({
 <style scoped lang="scss">
 .BksTree-node {
   position: relative;
+}
+
+.BksTree-node-folder.BksTree-node-expanded:not(.BksTree-node-empty)::before {
+  content: "";
+  visibility: hidden;
+  position: absolute;
+  top: 3cap;
+  left: calc((var(--depth) * 1rem) + 0.6rem);
+  bottom: 0;
+  width: 1px;
+  background: rgb(from var(--bks-border-color) r g b / 0.1);
+}
+
+.BksTree:hover
+  .BksTree-node-folder.BksTree-node-expanded:not(.BksTree-node-empty)::before {
+  visibility: visible;
 }
 
 .BksTree-row {

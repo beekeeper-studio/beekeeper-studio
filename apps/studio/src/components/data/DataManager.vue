@@ -5,7 +5,7 @@
 import _ from 'lodash'
 import {DataModules} from '@/store/DataModules'
 import Vue from 'vue'
-import { mapGetters, mapState } from 'vuex'
+import { mapActions, mapGetters, mapState } from 'vuex'
 
 
 export default Vue.extend({
@@ -57,6 +57,7 @@ export default Vue.extend({
     }
   },
   methods: {
+    ...mapActions(['initializeConnectionTree', 'initializeQueryTree']),
     saveTab: _.debounce(function() {
       this.$store.dispatch('tabs/save', this.activeTab)
     }, 500),
@@ -84,36 +85,8 @@ export default Vue.extend({
         this.$store.dispatch(`${module.path}/initialize`)
       })
 
-      this.loadConnectionTree()
-      this.loadQueryTree()
-    },
-    async loadConnectionTree() {
-      // load default folders
-      await this.$store.dispatch('data/connectionFolders/load', {
-        params: { default: true },
-      })
-      const folderIds = this.$store.state['data/connectionFolders']
-        .items.map((folder) => folder.id)
-      // expand default folders
-      this.$store.commit('data/connectionFolders/sidebar/expandedIds', folderIds)
-      await Promise.all([
-        this.$store.dispatch('data/connectionFolders/ensureLoaded', folderIds),
-        this.$store.dispatch('data/connections/ensureLoaded', folderIds),
-      ])
-    },
-    async loadQueryTree() {
-      // load default folders
-      await this.$store.dispatch('data/queryFolders/load', {
-        params: { default: true },
-      })
-      // expand default folders
-      const folderIds = this.$store.state['data/queryFolders']
-        .items.map((folder) => folder.id)
-      this.$store.commit('data/queryFolders/sidebar/expandedIds', folderIds)
-      await Promise.all([
-        this.$store.dispatch('data/queryFolders/ensureLoaded', folderIds),
-        this.$store.dispatch('data/queries/ensureLoaded', folderIds),
-      ])
+      this.initializeConnectionTree()
+      this.initializeQueryTree()
     },
   }
 })

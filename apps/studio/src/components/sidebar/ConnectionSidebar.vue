@@ -36,11 +36,6 @@
         </div>
       </div>
 
-      <x-progressbar
-        v-show="searchInProgress"
-        style="margin-top: -5px;"
-      />
-
       <div class="connection-wrap expand flex-col">
         <!-- Pinned Connections -->
         <!-- TODO (day): should probably make a class for pinned connections-->
@@ -156,19 +151,18 @@
               class="list-body"
             >
               <template v-if="cloudSearchMode">
-                <div
+                <div class="empty-state"
                   v-if="!searchInProgress && filteredConnections.length === 0"
-                  class="empty"
                 >
-                  <div class="empty-title">
-                    No Results
-                  </div>
+                  No connections match "{{ connFilter }}"
                 </div>
                 <connection-list-item
                   v-for="c in filteredConnections"
                   :key="c.id"
                   :config="c"
                   :selected-config="selectedConfig"
+                  :show-duplicate="true"
+                  :pinned="pinnedConnections.includes(c)"
                   :is-recent-list="false"
                   :privacy-mode="privacyMode"
                   :checked="isChecked(c)"
@@ -178,8 +172,20 @@
                   @remove="remove"
                   @select="select"
                   @toggle-check="toggleChecked"
+                  @duplicate="duplicate"
                   @doubleClick="connect"
                 />
+                <content-placeholder
+                  v-if="searchInProgress"
+                  :animated="true"
+                  :rounded="false"
+                  class="list-item"
+                >
+                  <content-placeholder-text
+                    :lines="2"
+                    class="list-item-btn"
+                  />
+                </content-placeholder>
               </template>
               <tree
                 v-show="!cloudSearchMode"
@@ -227,6 +233,7 @@
                   <tree-folder
                     v-bind="props"
                     v-else
+                    :class="{ 'just-created': justCreatedFolderId === props.node.ref.id }"
                     :tag="renamingFolderId === props.node.ref.id ? 'div': undefined"
                     @contextmenu.native="showFolderContextMenu($event, props.node.ref)"
                   >
@@ -244,18 +251,22 @@
                   </tree-folder>
                 </template>
                 <template #folder-footer="{ node, depth }">
-                  <div
+                  <content-placeholder
                     v-if="loadingFolderIds.includes(node.ref.id)"
+                    :animated="true"
+                    :rounded="false"
                     class="tree-loading"
                     :style="{ '--depth': depth }"
                   >
-                    Loading
-                  </div>
+                    <content-placeholder-text :lines="1" />
+                  </content-placeholder>
                 </template>
                 <template #item="{ node, selected: treeSelected, bulkSelectionActive }">
                   <connection-list-item
                     :config="node.ref"
                     :selected-config="selectedConfig"
+                    :show-duplicate="true"
+                    :pinned="pinnedConnectionIds.includes(node.ref.id)"
                     :is-recent-list="false"
                     :privacy-mode="privacyMode"
                     :checked="treeSelected"
@@ -265,6 +276,8 @@
                     @remove="remove"
                     @select="select"
                     @toggle-check="toggleChecked"
+                    :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.ref.id) }"
+                    @duplicate="duplicate"
                     @doubleClick="connect"
                   />
                 </template>
@@ -328,6 +341,8 @@ import WorkspaceSidebar from './WorkspaceSidebar.vue'
 import { mapState, mapGetters, mapActions, mapMutations } from 'vuex'
 import ConnectionListItem from './connection/ConnectionListItem.vue'
 import SidebarLoading from '@/components/common/SidebarLoading.vue'
+import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
+import ContentPlaceholderText from '@/components/common/loading/ContentPlaceholderText.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
 import Split from 'split.js'
@@ -346,6 +361,8 @@ export default {
   components: {
     ConnectionListItem,
     SidebarLoading,
+    ContentPlaceholder,
+    ContentPlaceholderText,
     ErrorAlert,
     Tree,
     TreeFolder,
@@ -371,6 +388,8 @@ export default {
     renamingFolderId: null,
     draftingFolder: false,
     draftFolderParentId: null,
+    justCreatedFolderId: null,
+    justCreatedTimeout: null,
   }),
   watch: {
     async sort(newSort) {
@@ -394,7 +413,7 @@ export default {
       foldersLoading: 'loading',
       foldersError: 'error',
     }),
-    ...mapState('data/connectionFolders/sidebar', {
+    ...mapState('sidebar/connections', {
       expandedFolderIds: 'expandedIds',
     }),
     ...mapState({
@@ -426,6 +445,9 @@ export default {
     },
     expandedNodeIds() {
       return this.expandedFolderIds.map((id) => `folder-${id}`);
+    },
+    pinnedConnectionIds() {
+      return this.pinnedConnections.map((pinned) => pinned.id);
     },
     // Cloud lazy-loads folder contents, so a match can live in a folder that was
     // never fetched. Searching hits the server and shows a flat result list.
@@ -527,6 +549,9 @@ export default {
     this.sort.order = order
     this.$nextTick(() => { this.sortInitialized = true })
   },
+  beforeDestroy() {
+    clearTimeout(this.justCreatedTimeout)
+  },
   methods: {
     ...mapActions({
       saveFolder: 'data/connectionFolders/save',
@@ -535,7 +560,7 @@ export default {
       ensureSubfoldersLoaded: 'data/connectionFolders/ensureLoaded',
     }),
     ...mapMutations({
-      setExpandedFolderIds: 'data/connectionFolders/sidebar/expandedIds',
+      setExpandedFolderIds: 'sidebar/connections/expandedIds',
     }),
     setExpandedIds(expandedNodeIds) {
       const folderIds = this.folderNodes
@@ -675,6 +700,13 @@ export default {
     },
     cancelDraftFolder() {
       this.draftingFolder = false
+    },
+    markJustCreated(folderId) {
+      clearTimeout(this.justCreatedTimeout)
+      this.justCreatedFolderId = folderId
+      this.justCreatedTimeout = setTimeout(() => {
+        this.justCreatedFolderId = null
+      }, 2000)
     },
     expandFolder(folderId) {
       if (this.expandedFolderIds.includes(folderId)) {
@@ -840,11 +872,12 @@ export default {
         return
       }
       try {
-        await this.$store.dispatch('data/connectionFolders/save', {
+        const id = await this.$store.dispatch('data/connectionFolders/save', {
           id: null,
           parentId: this.draftFolderParentId,
           name,
         })
+        this.markJustCreated(id)
       } catch (ex) {
         this.$noty.error(`Create folder error: ${ex.userMessage ?? ex.message}`)
       } finally {
@@ -856,30 +889,12 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.drag-ghost {
-  opacity: 0.4;
-}
-.folder-drop-zone {
-  min-height: 8px;
-}
 .drag-pending {
   opacity: 0.5;
 }
 .tree-loading {
-  padding-block: 0.25rem;
+  margin-block: 0.5rem;
   padding-left: calc(var(--depth) * 1rem + 1.3rem);
-  color: var(--text-lighter);
-}
-
-.tree-loading::after {
-  content: "...";
-  animation: dots 1s steps(2) infinite;
-}
-
-@keyframes dots {
-  0%   { content: "..."; }
-  50%  { content: ".."; }
-  100% { content: "..."; }
 }
 ::v-deep .BksTree-folder {
   .name:has(.editable-text) {
@@ -894,7 +909,25 @@ export default {
     }
   }
 }
+.just-created {
+  animation: just-created-fade 2s ease-out;
+}
+
+@keyframes just-created-fade {
+  from {
+    background: rgb(from var(--theme-primary) r g b / 25%);
+  }
+  to {
+    background: transparent;
+  }
+}
 ::v-deep .alert.expired-folder-alert {
   margin-inline: 0.8rem;
+}
+
+.empty-state {
+  padding-top: 0.25rem;
+  padding-left: 0.5rem;
+  font-size: 0.85rem;
 }
 </style>
