@@ -259,7 +259,7 @@
                     :privacy-mode="privacyMode"
                     :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.ref.id) }"
                     @edit="edit"
-                    @remove="removeUsedConfig"
+                    @remove="remove"
                     @doubleClick="connect"
                   />
                 </template>
