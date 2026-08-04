@@ -19,7 +19,10 @@ export function camelCaseObjectKeys(data) {
 export function snakeCaseObjectKeys(data) {
   if (_.isArray(data)) return data.map(snakeCaseObjectKeys);
   if (_.isPlainObject(data)) {
-    return _.deepMapKeys(data, (_value, key) => _.snakeCase(key))
+    return _.mapValues(
+      _.mapKeys(data, (_v, k) => _.snakeCase(k)),
+      snakeCaseObjectKeys
+    )
   }
   return data
 }

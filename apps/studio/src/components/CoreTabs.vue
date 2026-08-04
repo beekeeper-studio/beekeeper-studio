@@ -909,20 +909,8 @@ export default Vue.extend({
 
       noty.close()
     },
-    async importSqlFiles(importConfig: { paths: string[], parentId: number, type: string }) {
-      if (importConfig.type === 'single') {
-        await this.importIndividualFiles(importConfig.paths);
-      } else {
-        await this.importDirectoryRecursively(importConfig.paths[0], importConfig.parentId)
-      }
-    },
-    async importDirectoryRecursively(dir: string, parentId: number) {
-      const warnings = await this.$util.send('file/importDirectory', { dir, parentId });
-
-      await this.$store.dispatch('data/queryFolders/load');
-      await this.$store.dispatch('data/queries/load');
-    },
-    async importIndividualFiles(paths: string[]) {
+    async importSqlFiles(importConfig: { paths: string[], parentId: number }) {
+      const { paths, parentId } = importConfig;
       const files = paths.map((path) => ({
         path,
         name: path.replace(/^.*[\\/]/, '').replace(/\.sql$/, ''),
@@ -969,6 +957,7 @@ export default Vue.extend({
             const query = await this.$util.send('appdb/query/new');
             query.title = file.name
             query.text = text
+            query.queryFolderId = parentId
             await this.$store.dispatch('data/queries/save', query)
           } else {
             files[i].error = true
