@@ -734,26 +734,40 @@ const store = new Vuex.Store<State>({
       context.commit('tabActive', value)
     },
     async initializeConnectionTree(context) {
-      await context.dispatch('data/connectionFolders/loadDefaultFolders');
-      const folderIds = context.state['data/connectionFolders']
-        .items.map((folder) => folder.id)
-      // the default folders start out expanded
-      context.commit('sidebar/connections/expandedIds', folderIds)
-      await Promise.all([
-        context.dispatch('data/connectionFolders/ensureLoaded', folderIds),
-        context.dispatch('data/connections/ensureLoaded', folderIds),
-      ])
+      if (context.getters.isCloud) {
+        await context.dispatch('data/connectionFolders/loadDefaultFolders');
+        const folderIds = context.state['data/connectionFolders']
+          .items.map((folder) => folder.id)
+        // the default folders start out expanded
+        context.commit('sidebar/connections/expandedIds', folderIds)
+        await Promise.all([
+          context.dispatch('data/connectionFolders/ensureLoaded', folderIds),
+          context.dispatch('data/connections/ensureLoaded', folderIds),
+        ])
+      } else {
+        await Promise.all([
+          context.dispatch('data/connectionFolders/load'),
+          context.dispatch('data/connections/load'),
+        ])
+      }
     },
     async initializeQueryTree(context) {
-      await context.dispatch('data/queryFolders/loadDefaultFolders');
-      const folderIds = context.state['data/queryFolders']
-        .items.map((folder) => folder.id)
-      // the default folders start out expanded
-      context.commit('sidebar/queries/expandedIds', folderIds)
-      await Promise.all([
-        context.dispatch('data/queryFolders/ensureLoaded', folderIds),
-        context.dispatch('data/queries/ensureLoaded', folderIds),
-      ])
+      if (context.getters.isCloud) {
+        await context.dispatch('data/queryFolders/loadDefaultFolders');
+        const folderIds = context.state['data/queryFolders']
+          .items.map((folder) => folder.id)
+        // the default folders start out expanded
+        context.commit('sidebar/queries/expandedIds', folderIds)
+        await Promise.all([
+          context.dispatch('data/queryFolders/ensureLoaded', folderIds),
+          context.dispatch('data/queries/ensureLoaded', folderIds),
+        ])
+      } else {
+        await Promise.all([
+          context.dispatch('data/queryFolders/load'),
+          context.dispatch('data/queries/load'),
+        ])
+      }
     },
     async refreshConnections(context) {
       const expandedIds = context.state.sidebar.connections.expandedIds
