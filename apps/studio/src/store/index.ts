@@ -738,10 +738,10 @@ const store = new Vuex.Store<State>({
 
       if (expandedIds.length > 0) {
         context.dispatch('data/connections/load', {
-          params: { connectionFolderId: expandedIds },
+          params: { connectionFolderIds: expandedIds },
         })
         context.dispatch('data/connectionFolders/loadMore', {
-          params: { parentId: expandedIds },
+          params: { parentIds: expandedIds },
         })
         context.commit('data/connections/folders/fetchedIds', expandedIds);
         context.commit('data/connectionFolders/folders/fetchedIds', expandedIds);
@@ -762,10 +762,10 @@ const store = new Vuex.Store<State>({
 
       if (expandedIds.length > 0) {
         context.dispatch('data/queries/load', {
-          params: { queryFolderId: expandedIds },
+          params: { queryFolderIds: expandedIds },
         })
         context.dispatch('data/queryFolders/loadMore', {
-          params: { parentId: expandedIds },
+          params: { parentIds: expandedIds },
         })
         context.commit('data/queries/folders/fetchedIds', expandedIds);
         context.commit('data/queryFolders/folders/fetchedIds', expandedIds);
