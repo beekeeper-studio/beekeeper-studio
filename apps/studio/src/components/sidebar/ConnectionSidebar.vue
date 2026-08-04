@@ -161,10 +161,13 @@
                   :key="c.id"
                   :config="c"
                   :selected-config="selectedConfig"
+                  :show-duplicate="true"
+                  :pinned="pinnedConnections.includes(c)"
                   :is-recent-list="false"
                   :privacy-mode="privacyMode"
                   @edit="edit"
                   @remove="removeUsedConfig"
+                  @duplicate="duplicate"
                   @doubleClick="connect"
                 />
                 <content-placeholder
@@ -255,11 +258,14 @@
                   <connection-list-item
                     :config="node.ref"
                     :selected-config="selectedConfig"
+                    :show-duplicate="true"
+                    :pinned="pinnedConnections.includes(node.ref)"
                     :is-recent-list="false"
                     :privacy-mode="privacyMode"
                     :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.ref.id) }"
                     @edit="edit"
                     @remove="remove"
+                    @duplicate="duplicate"
                     @doubleClick="connect"
                   />
                 </template>
