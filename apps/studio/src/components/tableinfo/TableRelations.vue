@@ -27,13 +27,13 @@
           <div class="actions">
             <a
               @click.prevent="$emit('refresh')"
-              v-tooltip="`${ctrlOrCmd('r')} or F5`"
+              v-tooltip="$bksConfigUI.getKeybindingLabel('general.refresh')"
               class="btn btn-link btn-fab"
             ><i class="material-icons">refresh</i></a>
             <a
               v-if="enabled && canAdd"
               @click.prevent="addRow"
-              v-tooltip="ctrlOrCmd('n')"
+              v-tooltip="$bksConfigUI.getKeybindingLabel('general.addRow')"
               class="btn btn-primary btn-fab"
             ><i class="material-icons">add</i></a>
           </div>
