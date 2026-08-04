@@ -20,7 +20,7 @@ describe('sql exporter', () => {
       "",
       [],
       {},
-      {}
+      { preserveColumnOrder: true }
     );
 
     const columns = [
@@ -35,6 +35,29 @@ describe('sql exporter', () => {
     expect(result).toBe(`insert into "table" ("id", "name", "age") values (1, 'Alice', 20)`);
   });
 
+  it("Should keep Knex's default column order unless enabled", () => {
+    const defaultExporter = new SqlExporter(
+      "./tmp/sql.export",
+      { connectionType: "postgresql" },
+      { name: "table" },
+      "",
+      "",
+      [],
+      {},
+      { preserveColumnOrder: false }
+    );
+
+    const columns = [
+      { columnName: "id", dataType: "int" },
+      { columnName: "name", dataType: "varchar" },
+      { columnName: "age", dataType: "int" },
+    ];
+    defaultExporter.columns = columns;
+
+    const result = defaultExporter.formatRow([1, "Alice", 20], columns);
+    expect(result).toBe(`insert into "table" ("age", "id", "name") values (20, 1, 'Alice')`);
+  });
+
   it("Should preserve the order of numeric-looking column names", () => {
     const orderedExporter = new SqlExporter(
       "./tmp/sql.export",
@@ -44,7 +67,7 @@ describe('sql exporter', () => {
       "",
       [],
       {},
-      {}
+      { preserveColumnOrder: true }
     );
 
     const columns = [
@@ -67,7 +90,7 @@ describe('sql exporter', () => {
       "",
       [],
       {},
-      {}
+      { preserveColumnOrder: true }
     );
 
     const columns = [{ columnName: "", dataType: "int" }];
@@ -93,7 +116,7 @@ describe('sql exporter', () => {
       "",
       [],
       {},
-      {}
+      { preserveColumnOrder: true }
     );
     const columns = [{ columnName: "id", dataType: "int" }];
     undefinedExporter.columns = columns;
@@ -111,7 +134,7 @@ describe('sql exporter', () => {
       "",
       [],
       {},
-      {}
+      { preserveColumnOrder: true }
     );
     const columns = [{ columnName: "id", dataType: "int" }];
     sqliteExporter.columns = columns;

@@ -8,7 +8,8 @@ import { ExportOptions } from '../models';
 
 interface OutputOptionsSql {
   createTable: boolean,
-  schema: boolean
+  schema: boolean,
+  preserveColumnOrder: boolean
 }
 export class SqlExporter extends Export {
   public static extension = "sql"
@@ -99,6 +100,11 @@ export class SqlExporter extends Export {
       knex = knex.withSchema(this.table.schema)
     }
 
+    if (this.outputOptions.preserveColumnOrder !== true) {
+      const row = this.rowToObject(sanitized)
+      return knex.insert(row).toQuery()
+    }
+
     const columnNames = this.getColumnNames(sanitized.length, columns)
     const values = sanitized.map(value => {
       if (value === undefined) {
@@ -110,7 +116,7 @@ export class SqlExporter extends Export {
 
         return this.knex.raw("DEFAULT")
       }
-    
+
       if (_.isPlainObject(value)) {
         return JSON.stringify(value)
       }
