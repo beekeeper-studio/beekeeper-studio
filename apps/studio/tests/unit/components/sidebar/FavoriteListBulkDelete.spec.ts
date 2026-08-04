@@ -10,13 +10,13 @@ const q1 = { id: 1, title: "Query 1", queryFolderId: null };
 const q2 = { id: 2, title: "Query 2", queryFolderId: null };
 const q3 = { id: 3, title: "Query 3", queryFolderId: null };
 
-function createStore(queries = [q1, q2, q3]) {
+function createStore(queries = [q1, q2, q3], { isCloud = false, filter = undefined } = {}) {
   const remove = jest.fn().mockResolvedValue(undefined);
   const itemNodes = buildItemNodes(queries, "queryFolderId", "title");
   const store = new Vuex.Store({
     getters: {
       workspace: () => ({}),
-      isCloud: () => false,
+      isCloud: () => isCloud,
       isUltimate: () => false,
       canCreateFolders: () => true,
     },
@@ -31,7 +31,7 @@ function createStore(queries = [q1, q2, q3]) {
           items: queries,
           loading: false,
           error: null,
-          filter: undefined,
+          filter,
           pendingSaveIds: [],
           searching: false,
           folders: { fetchingIds: [] },
@@ -101,70 +101,52 @@ function mountFavoriteList(store: Store<unknown>) {
 }
 
 describe("FavoriteList bulk delete", () => {
-  it("toggleChecked adds and removes items by id", () => {
+  it("toggleChecked adds and removes selectedIds", () => {
     const { store } = createStore();
     const { wrapper } = mountFavoriteList(store);
     const vm = wrapper.vm as any;
 
     vm.toggleChecked(q1);
     expect(vm.isChecked(q1)).toBe(true);
-    expect(vm.checkedFavorites).toHaveLength(1);
+    expect(vm.selectedIds).toEqual(["item-1"]);
 
     vm.toggleChecked(q2);
-    expect(vm.checkedFavorites).toHaveLength(2);
+    expect(vm.selectedIds).toEqual(["item-1", "item-2"]);
 
     vm.toggleChecked(q1);
     expect(vm.isChecked(q1)).toBe(false);
-    expect(vm.checkedFavorites).toHaveLength(1);
-    expect(vm.checkedFavorites[0].id).toBe(2);
+    expect(vm.selectedIds).toEqual(["item-2"]);
   });
 
-  it("selectRange selects contiguous visible items", () => {
-    const { store } = createStore();
+  it("cloud search select with shiftKey uses range selection from the anchor", () => {
+    const { store } = createStore([q1, q2, q3], { isCloud: true, filter: "q" });
     const { wrapper } = mountFavoriteList(store);
     const vm = wrapper.vm as any;
 
-    vm.selectionAnchor = q1;
-    vm.selectRange(q1, q3);
-
-    expect(vm.checkedFavorites.map((q: { id: number }) => q.id)).toEqual([
-      1, 2, 3,
-    ]);
-  });
-
-  it("select with shiftKey uses range selection from the anchor", () => {
-    const { store } = createStore();
-    const { wrapper } = mountFavoriteList(store);
-    const vm = wrapper.vm as any;
-
-    vm.selectionAnchor = q1;
+    vm.cloudSelectionAnchorId = "item-1";
     vm.select(q3, { shiftKey: true });
 
-    expect(vm.checkedFavorites.map((q: { id: number }) => q.id)).toEqual([
-      1, 2, 3,
-    ]);
+    expect(vm.selectedIds).toEqual(["item-1", "item-2", "item-3"]);
     expect(vm.selected).toBe(q3);
   });
 
-  it("select with metaKey toggles bulk selection", () => {
-    const { store } = createStore();
+  it("cloud search select with metaKey toggles bulk selection", () => {
+    const { store } = createStore([q1, q2], { isCloud: true, filter: "q" });
     const { wrapper } = mountFavoriteList(store);
     const vm = wrapper.vm as any;
 
     vm.select(q1, { metaKey: true });
     vm.select(q2, { metaKey: true });
 
-    expect(vm.checkedFavorites.map((q: { id: number }) => q.id)).toEqual([
-      1, 2,
-    ]);
+    expect(vm.selectedIds).toEqual(["item-1", "item-2"]);
   });
 
-  it("removeCheckedFavorites shows one confirm and removes all checked items", async () => {
+  it("removeCheckedFavorites shows one confirm and removes all selected items", async () => {
     const { store, remove } = createStore();
     const { wrapper, confirm } = mountFavoriteList(store);
     const vm = wrapper.vm as any;
 
-    vm.checkedFavorites = [q1, q2];
+    vm.selectedIds = ["item-1", "item-2"];
 
     await vm.removeCheckedFavorites();
 
@@ -175,7 +157,7 @@ describe("FavoriteList bulk delete", () => {
     expect(remove).toHaveBeenCalledTimes(2);
     expect(remove).toHaveBeenCalledWith(expect.anything(), q1);
     expect(remove).toHaveBeenCalledWith(expect.anything(), q2);
-    expect(vm.checkedFavorites).toHaveLength(0);
+    expect(vm.selectedIds).toHaveLength(0);
   });
 
   it("removeCheckedFavorites uses the item title when deleting one query", async () => {
@@ -183,7 +165,7 @@ describe("FavoriteList bulk delete", () => {
     const { wrapper, confirm } = mountFavoriteList(store);
     const vm = wrapper.vm as any;
 
-    vm.checkedFavorites = [q1];
+    vm.selectedIds = ["item-1"];
 
     await vm.removeCheckedFavorites();
 
@@ -199,12 +181,12 @@ describe("FavoriteList bulk delete", () => {
     const vm = wrapper.vm as any;
 
     confirm.mockResolvedValue(false);
-    vm.checkedFavorites = [q1, q2];
+    vm.selectedIds = ["item-1", "item-2"];
 
     await vm.removeCheckedFavorites();
 
     expect(confirm).toHaveBeenCalledTimes(1);
     expect(remove).not.toHaveBeenCalled();
-    expect(vm.checkedFavorites).toHaveLength(2);
+    expect(vm.selectedIds).toHaveLength(2);
   });
 });

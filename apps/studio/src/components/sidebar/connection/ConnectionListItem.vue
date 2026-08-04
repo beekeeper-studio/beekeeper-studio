@@ -8,9 +8,18 @@
       href=""
       class="list-item-btn"
       :class="classList"
-      @click.prevent="click(config)"
+      @click.prevent="handleClick($event)"
       @dblclick.prevent="doubleClick(config)"
     >
+      <input
+        v-if="!isRecentList"
+        @click.stop=""
+        type="checkbox"
+        class="form-control delete-checkbox"
+        :class="{ shown: bulkSelectionActive }"
+        :checked="checked"
+        @change="$emit('toggle-check', config)"
+      >
       <span :class="`connection-label connection-label-color-${labelColor}`" />
       <div class="connection-title flex-col expand">
         <div class="title">
@@ -91,7 +100,10 @@ export default {
     'selectedConfig',
     'showDuplicate',
     'pinned',
-    'privacyMode'
+    'privacyMode',
+    'checked',
+    'bulkSelectionActive',
+    'selected',
   ],
   data: () => ({
     timeAgo: new TimeAgo('en-US'),
@@ -104,7 +116,9 @@ export default {
     ...mapState('data/connectionFolders', {'folders': 'items'}),
     classList() {
       return {
-        'active': this.savedConnection && this.selectedConfig ? this.savedConnection === this.selectedConfig : false
+        'active': this.savedConnection && this.selectedConfig ? this.savedConnection === this.selectedConfig : false,
+        'selected': this.selected,
+        'bulk-selection-active': this.bulkSelectionActive,
       }
     },
     labelColor() {
@@ -247,6 +261,14 @@ export default {
       } else {
         this.$emit('edit', this.config)
       }
+    },
+    handleClick(event) {
+      if (event.metaKey || event.ctrlKey || event.shiftKey) {
+        this.$emit('select', this.config, event)
+        return
+      }
+      this.$emit('select', this.config, event)
+      this.click()
     },
     async doubleClick() {
       if (this.savedConnection) {

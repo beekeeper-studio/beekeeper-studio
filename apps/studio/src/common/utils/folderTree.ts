@@ -3,6 +3,44 @@ import type {
   ItemNode,
   TreeNodeMoveEvent,
 } from "@beekeeperstudio/ui-kit";
+import { collectVisibleItemIds } from "@beekeeperstudio/ui-kit/tree";
+
+export { collectVisibleItemIds };
+
+export function toggleSelectedId(
+  selectedIds: ItemNode["id"][],
+  id: ItemNode["id"]
+): ItemNode["id"][] {
+  const index = selectedIds.indexOf(id);
+  if (index === -1) {
+    return [...selectedIds, id];
+  }
+  return selectedIds.toSpliced(index, 1);
+}
+
+export function rangeSelectVisibleIds(
+  selectedIds: ItemNode["id"][],
+  anchorId: ItemNode["id"],
+  targetId: ItemNode["id"],
+  visibleIds: ItemNode["id"][]
+): ItemNode["id"][] {
+  const anchorIndex = visibleIds.indexOf(anchorId);
+  const targetIndex = visibleIds.indexOf(targetId);
+  if (anchorIndex < 0 || targetIndex < 0) {
+    return selectedIds;
+  }
+  const [start, end] =
+    anchorIndex < targetIndex
+      ? [anchorIndex, targetIndex]
+      : [targetIndex, anchorIndex];
+  const next = [...selectedIds];
+  for (const id of visibleIds.slice(start, end + 1)) {
+    if (!next.includes(id)) {
+      next.push(id);
+    }
+  }
+  return next;
+}
 import { HasId } from "@/common/interfaces/IGeneric";
 import { IFolder } from "@/common/interfaces/IQueryFolder";
 
@@ -83,34 +121,11 @@ export function collectVisibleItemRefs<T extends HasId>(
   itemNodes: ExtendedItemNode<T>[],
   expandedIds: FolderNode["id"][]
 ): T[] {
-  const result: T[] = [];
-
-  const childItems = (folderId: FolderNode["id"] | null) =>
-    itemNodes
-      .filter((item) => item.parentId === folderId)
-      .sort((a, b) => a.position - b.position);
-
-  const walkSiblings = (
-    siblings: Array<ExtendedFolderNode | ExtendedItemNode<T>>
-  ) => {
-    for (const node of siblings) {
-      if (node.type === "item") {
-        result.push(node.ref);
-      } else if (expandedIds.includes(node.id)) {
-        walkSiblings(
-          node.children as Array<ExtendedFolderNode | ExtendedItemNode<T>>
-        );
-        for (const item of childItems(node.id)) {
-          result.push(item.ref);
-        }
-      }
-    }
-  };
-
-  const rootFolders = folderNodes.filter((node) => node.parentId === null);
-  walkSiblings([...rootFolders, ...childItems(null)]);
-
-  return result;
+  const visibleIds = collectVisibleItemIds(folderNodes, itemNodes, expandedIds);
+  const byId = new Map(itemNodes.map((node) => [node.id, node.ref]));
+  return visibleIds
+    .map((id) => byId.get(id))
+    .filter((ref): ref is T => ref !== undefined);
 }
 
 /** Transform {@link TreeNodeMoveEvent} into a consumable payload for the reorder action. */

@@ -39,4 +39,5 @@ export type TreeNodeMoveEvent = {
 export interface TreeEventMap extends HTMLElementEventMap {
   "bks-tree-node-move": CustomEvent<TreeNodeMoveEvent>;
   "bks-tree-node-click": CustomEvent<Node>;
+  "update:selectedIds": CustomEvent<Node["id"][]>;
 }

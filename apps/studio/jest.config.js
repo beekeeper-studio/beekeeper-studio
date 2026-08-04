@@ -27,6 +27,8 @@ module.exports = {
     '^@libsql/core/(.*)': resolve(__dirname, '../../node_modules/@libsql/core/lib-cjs/$1'),
     '^@marimo-team/codemirror-languageserver$':
       '<rootDir>/tests/__mocks__/marimo-codemirror-languageserver.js',
+    '^@beekeeperstudio/ui-kit/lib/(.*)$': '<rootDir>/../ui-kit/lib/$1',
+    '^@beekeeperstudio/ui-kit/vue/(.*)$': '<rootDir>/../ui-kit/lib/vue/$1',
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@shared(.*)$': '<rootDir>/src/shared/$1',
     '^@commercial(.*)$': '<rootDir>/src-commercial/$1',

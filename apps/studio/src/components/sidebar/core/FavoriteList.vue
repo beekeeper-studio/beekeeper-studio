@@ -97,7 +97,7 @@
               :active="isActive(query)"
               :selected="isChecked(query) || selected === query"
               :checked="isChecked(query)"
-              :bulk-selection-active="checkedFavorites.length > 0"
+              :bulk-selection-active="bulkSelectionActive"
               @remove="remove"
               @select="select"
               @toggle-check="toggleChecked"
@@ -112,7 +112,9 @@
             :folders="draftingFolder ? folderNodesWithDraft : folderNodes"
             :items="itemNodes"
             :expanded-ids="expandedNodeIds"
+            :selected-ids="selectedIds"
             @update:expandedIds="setExpandedIds"
+            @update:selectedIds="setSelectedIds"
             @bks-tree-node-move="handleTreeNodeMove"
           >
             <template #empty>
@@ -173,13 +175,13 @@
                 Loading
               </div>
             </template>
-            <template #item="{ node }">
+            <template #item="{ node, selected: treeSelected, bulkSelectionActive }">
               <favorite-list-item
                 :item="node.ref"
                 :active="isActive(node.ref)"
-                :selected="isChecked(node.ref) || selected === node.ref"
-                :checked="isChecked(node.ref)"
-                :bulk-selection-active="checkedFavorites.length > 0"
+                :selected="treeSelected || selected === node.ref"
+                :checked="treeSelected"
+                :bulk-selection-active="bulkSelectionActive"
                 :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.ref.id) }"
                 @remove="remove"
                 @select="select"
@@ -196,7 +198,7 @@
     </div>
     <div
       class="toolbar btn-group row flex-right"
-      v-show="checkedFavorites.length > 0"
+      v-show="bulkSelectionActive"
     >
       <a
         class="btn btn-link"
@@ -219,16 +221,17 @@ import SidebarLoading from '../../common/SidebarLoading.vue'
 import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
 import { AppEvent } from '@/common/AppEvent'
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
+import { rangeSelectVisibleIds, toggleSelectedId } from "@/common/utils/folderTree";
 import EditableText from '@/components/common/EditableText.vue'
-import { parseReorderTarget, collectVisibleItemRefs } from '@/common/utils/folderTree'
+import { parseReorderTarget } from '@/common/utils/folderTree'
 
 export default {
   components: { SidebarLoading, ErrorAlert, ExpiredFolderAlert, FavoriteListItem, Tree, TreeFolder, EditableText },
   data: function () {
     return {
-      checkedFavorites: [],
+      selectedIds: [],
       selected: null,
-      selectionAnchor: null,
+      cloudSelectionAnchorId: null,
       draggingQuery: null,
       renamingFolderId: null,
       draftingFolder: false,
@@ -288,17 +291,16 @@ export default {
       return this.queriesError || this.foldersError || null
     },
     removeTitle() {
-      return `Remove ${this.checkedFavorites.length} saved queries`;
+      return `Remove ${this.selectedIds.length} saved queries`;
     },
-    flatVisibleQueries() {
-      if (this.cloudSearchMode) {
-        return this.filteredQueries
-      }
-      return collectVisibleItemRefs(
-        this.folderNodes,
-        this.itemNodes,
-        this.expandedNodeIds
-      )
+    bulkSelectionActive() {
+      return this.selectedIds.length > 0
+    },
+    selectedItems() {
+      const byId = new Map(this.itemNodes.map((node) => [node.id, node.ref]))
+      return this.selectedIds
+        .map((id) => byId.get(id))
+        .filter((item) => item != null)
     },
     folderNodesWithDraft() {
       /** @type {import("@beekeeperstudio/ui-kit").FolderNode} */
@@ -352,6 +354,12 @@ export default {
       this.ensureQueriesLoaded(folderIds)
       this.ensureSubfoldersLoaded(folderIds)
     },
+    setSelectedIds(selectedIds) {
+      this.selectedIds = selectedIds
+    },
+    itemNodeId(item) {
+      return `item-${item.id}`
+    },
     clearFilter() {
       this.filterQuery = null
     },
@@ -386,34 +394,35 @@ export default {
       return this.activeTab && this.activeTab.queryId === item.id
     },
     isChecked(item) {
-      return this.checkedFavorites.some((f) => f.id === item.id)
+      return this.selectedIds.includes(this.itemNodeId(item))
     },
     toggleChecked(item) {
-      const idx = this.checkedFavorites.findIndex((f) => f.id === item.id)
-      if (idx >= 0) {
-        this.checkedFavorites.splice(idx, 1)
-      } else {
-        this.checkedFavorites.push(item)
-      }
-      this.selectionAnchor = item
-    },
-    selectRange(anchor, item) {
-      const list = this.flatVisibleQueries
-      const anchorIndex = list.findIndex((i) => i.id === anchor.id)
-      const itemIndex = list.findIndex((i) => i.id === item.id)
-      if (anchorIndex < 0 || itemIndex < 0) return
-      const [start, end] = anchorIndex < itemIndex
-        ? [anchorIndex, itemIndex]
-        : [itemIndex, anchorIndex]
-      for (const query of list.slice(start, end + 1)) {
-        if (!this.isChecked(query)) {
-          this.checkedFavorites.push(query)
-        }
-      }
+      this.setSelectedIds(
+        toggleSelectedId(this.selectedIds, this.itemNodeId(item))
+      )
+      this.cloudSelectionAnchorId = this.itemNodeId(item)
     },
     select(item, event) {
-      if (event?.shiftKey && this.selectionAnchor != null) {
-        this.selectRange(this.selectionAnchor, item)
+      if (!this.cloudSearchMode) {
+        if (!event?.metaKey && !event?.ctrlKey && !event?.shiftKey) {
+          this.selected = item
+        }
+        return
+      }
+
+      const nodeId = this.itemNodeId(item)
+      if (event?.shiftKey && this.cloudSelectionAnchorId != null) {
+        const visibleIds = this.filteredQueries.map((query) =>
+          this.itemNodeId(query)
+        )
+        this.setSelectedIds(
+          rangeSelectVisibleIds(
+            this.selectedIds,
+            this.cloudSelectionAnchorId,
+            nodeId,
+            visibleIds
+          )
+        )
         this.selected = item
         return
       }
@@ -423,7 +432,7 @@ export default {
         return
       }
       this.selected = item
-      this.selectionAnchor = item
+      this.cloudSelectionAnchorId = nodeId
     },
     open(item) {
       this.$root.$emit('favoriteClick', item)
@@ -437,21 +446,22 @@ export default {
       }
     },
     async removeCheckedFavorites() {
-      const count = this.checkedFavorites.length
+      const items = this.selectedItems
+      const count = items.length
       if (count === 0) return
       const message = count === 1
-        ? `Delete "${this.checkedFavorites[0].title}"?`
+        ? `Delete "${items[0].title}"?`
         : `Delete ${count} saved queries?`
       if (!await this.$confirm(message, undefined, { variant: 'danger' })) {
         return
       }
-      for (const favorite of [...this.checkedFavorites]) {
+      for (const favorite of items) {
         await this.$store.dispatch('data/queries/remove', favorite)
       }
-      this.checkedFavorites = []
+      this.selectedIds = []
     },
     discardCheckedFavorites() {
-      this.checkedFavorites = []
+      this.selectedIds = []
     },
     createFolder() {
       if (!this.canCreateFolders) {
