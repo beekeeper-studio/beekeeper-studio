@@ -286,8 +286,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
         r.routine_schema as routine_schema,
         r.routine_name as name,
         r.routine_type as routine_type,
-        r.data_type as data_type
+        r.data_type as data_type,
+        p.oid::text as oid
       FROM INFORMATION_SCHEMA.ROUTINES r
+      LEFT JOIN pg_catalog.pg_proc p
+        ON r.specific_name::text = p.proname || '_' || p.oid::text
       where r.routine_schema not in ('sys', 'information_schema',
                                      'pg_catalog', 'performance_schema')
         ${schemaFilter ? `AND ${schemaFilter}` : ''}
@@ -329,6 +332,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
         returnType: row.data_type,
         entityType: 'routine',
         id: row.id,
+        oid: row.oid,
         routineParams: params.map((p, i) => {
           return {
             name: p.parameter_name || `arg${i + 1}`,
