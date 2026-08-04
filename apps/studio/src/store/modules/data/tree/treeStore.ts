@@ -45,6 +45,35 @@ type OwnerState<T extends HasId> = {
 };
 
 /**
+ * Actions for the folder models themselves. Use in pairs with `treeActions`.
+ *
+ * @example
+ * ```ts
+ *  const vuexModule = {
+ *    actions: {
+ *      ...treeActions("connectionFolderIds"),
+ *      ...folderableActions(),
+ *    },
+ *  }
+ * ```
+ **/
+export function folderableActions<T extends HasId>(): ActionTree<
+  OwnerState<T>,
+  RootState
+> {
+  return {
+    async refresh(context, parentIds: number[]) {
+      await context.dispatch("resetTree");
+      await context.dispatch("loadDefaultFolders");
+      await context.dispatch("loadByParentIds", parentIds);
+    },
+    async loadDefaultFolders(context) {
+      await context.dispatch("loadMore", { params: { default: true } });
+    },
+  };
+}
+
+/**
  * Actions for models that support tree structure or nested folders.
  **/
 export function treeActions<T extends HasId>(
@@ -64,7 +93,9 @@ export function treeActions<T extends HasId>(
         return;
       }
 
-      await context.dispatch("loadMore", { params: { [paramsKey]: parentIds } });
+      await context.dispatch("loadMore", {
+        params: { [paramsKey]: parentIds },
+      });
       context.commit("folders/fetchedIds", parentIds);
     },
     /** Pulls the whole tree in one request, for callers that need every folder

@@ -3,9 +3,9 @@ import _ from 'lodash'
 import { IQueryFolder } from "@/common/interfaces/IQueryFolder";
 import { DataState, DataStore, mutateActions, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { safely } from "@/store/modules/data/StoreHelpers";
-import { accessGrantMutations, localAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
+import { accessGrantActions, accessGrantMutations } from "@/store/modules/data/access_grant/accessGrantStore";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
-import { FolderFetchModule } from "@/store/modules/data/tree/TreeModule";
+import { FolderFetchModule, folderableActions, treeActions } from "@/store/modules/data/tree/treeStore";
 import { FolderNodeModule } from "@/store/modules/data/tree/FolderNodeModule";
 
 type State = DataState<IQueryFolder>
@@ -27,21 +27,14 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
     folders: FolderFetchModule,
   },
   actions: {
-    ...localAccessGrantActions(),
+    ...accessGrantActions('queryFolders'),
     ...mutateActions<IQueryFolder>(),
+    ...treeActions<IQueryFolder>('parentIds'),
+    ...folderableActions<IQueryFolder>(),
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
     },
     async initialize() {
-      // noop
-    },
-    async refresh(context) {
-      await context.dispatch('load');
-    },
-    async ensureLoaded() {
-      // noop
-    },
-    async ensureAllLoaded() {
       // noop
     },
     async load(context) {
@@ -52,6 +45,9 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
           await context.dispatch('mutate', { type: 'upsert', data: items })
         }
       })
+    },
+    async loadMore(context) {
+      await context.dispatch('load');
     },
     async poll() {
       // no-op for local

@@ -1,9 +1,9 @@
 import { DataState, mutationsFor, DataStore, actionsFor } from "../DataModuleBase";
 import { havingCli } from "../StoreHelpers";
-import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
+import { accessGrantMutations, accessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import _ from 'lodash'
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
-import { FolderFetchModule, treeActions } from "@/store/modules/data/tree/TreeModule";
+import { FolderFetchModule, treeActions } from "@/store/modules/data/tree/treeStore";
 import { ItemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 
 
@@ -33,7 +33,7 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
   },
   actions: {
     ...actionsFor<ISavedQuery>('queries', {}),
-    ...cloudAccessGrantActions('queries'),
+    ...accessGrantActions('queries'),
     ...treeActions<ISavedQuery>('queryFolderIds'),
     async initialize() {
       // noop

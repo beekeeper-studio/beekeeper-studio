@@ -1,8 +1,8 @@
 import { ICloudSavedConnection } from "@/common/interfaces/IConnection";
 import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { havingCli } from "@/store/modules/data/StoreHelpers";
-import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
-import { FolderFetchModule, treeActions } from "@/store/modules/data/tree/TreeModule";
+import { accessGrantMutations, accessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
+import { FolderFetchModule, treeActions } from "@/store/modules/data/tree/treeStore";
 import { ItemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 import _ from "lodash";
 
@@ -31,7 +31,7 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
   },
   actions: {
     ...actionsFor<ICloudSavedConnection>('connections', {}),
-    ...cloudAccessGrantActions('connections'),
+    ...accessGrantActions('connections'),
     ...treeActions<ICloudSavedConnection>('connectionFolderIds'),
     async initialize() {
       // noop
