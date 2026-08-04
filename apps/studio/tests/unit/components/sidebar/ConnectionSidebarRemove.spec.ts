@@ -1,5 +1,6 @@
 import ConnectionSidebar from "@/components/sidebar/ConnectionSidebar.vue";
 import { buildItemNodes } from "@/common/utils/folderTree";
+import { TreeExpansionModule } from "@/store/modules/sidebar/TreeExpansionModule";
 import { shallowMount } from "@vue/test-utils";
 import fs from "fs";
 import path from "path";
@@ -79,15 +80,12 @@ function createStore() {
             namespaced: true,
             state: { items: [] },
           },
-          sidebar: {
-            namespaced: true,
-            state: { expandedIds: [] },
-            mutations: {
-              expandedIds(state, ids) {
-                state.expandedIds = ids;
-              },
-            },
-          },
+        },
+      },
+      sidebar: {
+        namespaced: true,
+        modules: {
+          connections: TreeExpansionModule,
         },
       },
       "data/usedconnections": {

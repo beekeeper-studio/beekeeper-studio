@@ -1,5 +1,6 @@
 import FavoriteList from "@/components/sidebar/core/FavoriteList.vue";
 import { buildItemNodes } from "@/common/utils/folderTree";
+import { TreeExpansionModule } from "@/store/modules/sidebar/TreeExpansionModule";
 import { shallowMount } from "@vue/test-utils";
 import Vue from "vue";
 import Vuex, { Store } from "vuex";
@@ -60,15 +61,12 @@ function createStore(queries = [q1, q2, q3], { isCloud = false, filter = undefin
             namespaced: true,
             state: { items: [] },
           },
-          sidebar: {
-            namespaced: true,
-            state: { expandedIds: [] },
-            mutations: {
-              expandedIds(state, ids) {
-                state.expandedIds = ids;
-              },
-            },
-          },
+        },
+      },
+      sidebar: {
+        namespaced: true,
+        modules: {
+          queries: TreeExpansionModule,
         },
       },
     },

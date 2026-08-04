@@ -1,9 +1,11 @@
+import { HasId } from "@/common/interfaces/IGeneric";
+import { IFolder } from "@/common/interfaces/IQueryFolder";
 import type {
   FolderNode,
   ItemNode,
   TreeNodeMoveEvent,
 } from "@beekeeperstudio/ui-kit";
-import { collectVisibleItemIds } from "@beekeeperstudio/ui-kit/tree";
+import { collectVisibleItemIds } from "@beekeeperstudio/ui-kit/tree/helpers";
 
 export { collectVisibleItemIds };
 
@@ -41,8 +43,6 @@ export function rangeSelectVisibleIds(
   }
   return next;
 }
-import { HasId } from "@/common/interfaces/IGeneric";
-import { IFolder } from "@/common/interfaces/IQueryFolder";
 
 export interface ExtendedFolderNode extends FolderNode {
   ref: IFolder;
