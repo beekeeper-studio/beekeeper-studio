@@ -166,7 +166,7 @@
                   :is-recent-list="false"
                   :privacy-mode="privacyMode"
                   @edit="edit"
-                  @remove="removeUsedConfig"
+                  @remove="remove"
                   @duplicate="duplicate"
                   @doubleClick="connect"
                 />
@@ -259,7 +259,7 @@
                     :config="node.ref"
                     :selected-config="selectedConfig"
                     :show-duplicate="true"
-                    :pinned="pinnedConnections.includes(node.ref)"
+                    :pinned="pinnedConnectionIds.includes(node.ref.id)"
                     :is-recent-list="false"
                     :privacy-mode="privacyMode"
                     :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.ref.id) }"
@@ -416,6 +416,9 @@ export default {
     },
     expandedNodeIds() {
       return this.expandedFolderIds.map((id) => `folder-${id}`);
+    },
+    pinnedConnectionIds() {
+      return this.pinnedConnections.map((pinned) => pinned.id);
     },
     // Cloud lazy-loads folder contents, so a match can live in a folder that was
     // never fetched. Searching hits the server and shows a flat result list.

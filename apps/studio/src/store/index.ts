@@ -745,6 +745,7 @@ const store = new Vuex.Store<State>({
           context.dispatch('data/connections/ensureLoaded', folderIds),
         ])
       } else {
+        context.commit('sidebar/connections/expandedIds', [])
         await Promise.all([
           context.dispatch('data/connectionFolders/load'),
           context.dispatch('data/connections/load'),
@@ -763,6 +764,7 @@ const store = new Vuex.Store<State>({
           context.dispatch('data/queries/ensureLoaded', folderIds),
         ])
       } else {
+        context.commit('sidebar/queries/expandedIds', [])
         await Promise.all([
           context.dispatch('data/queryFolders/load'),
           context.dispatch('data/queries/load'),
