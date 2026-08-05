@@ -151,9 +151,9 @@
               v-else
               class="list-body"
             >
-              <template v-if="cloudSearchMode">
+              <template v-if="searching">
                 <div class="empty-state"
-                  v-if="!searchInProgress && filteredConnections.length === 0"
+                  v-if="!fetchingResults && filteredConnections.length === 0"
                 >
                   No connections match "{{ connFilter }}"
                 </div>
@@ -172,7 +172,7 @@
                   @doubleClick="connect"
                 />
                 <content-placeholder
-                  v-if="searchInProgress"
+                  v-if="fetchingResults"
                   :animated="true"
                   :rounded="false"
                   class="list-item"
@@ -184,11 +184,10 @@
                 </content-placeholder>
               </template>
               <tree
-                v-show="!cloudSearchMode"
+                v-show="!searching"
                 :folders="folderNodes"
                 :items="sortedItemNodes"
                 :expanded-ids="expandedNodeIds"
-                :filter="connFilter"
                 @update:expandedIds="setExpandedIds"
                 @bks-tree-node-move="handleTreeNodeMove"
               >
@@ -376,7 +375,7 @@ export default {
       connectionsError: 'error',
       connectionFilter: 'filter',
       pendingSaveIds: 'pendingSaveIds',
-      searchInProgress: 'searching',
+      fetchingResults: 'searching',
     }),
     ...mapState('data/connectionFolders', {
       folders: 'items',
@@ -420,10 +419,8 @@ export default {
     pinnedConnectionIds() {
       return this.pinnedConnections.map((pinned) => pinned.id);
     },
-    // Cloud lazy-loads folder contents, so a match can live in a folder that was
-    // never fetched. Searching hits the server and shows a flat result list.
-    cloudSearchMode() {
-      return this.isCloud && !!this.connFilter;
+    searching() {
+      return !!this.connFilter;
     },
     initializing() {
       return this.folders.length === 0 && this.foldersLoading;

@@ -79,6 +79,9 @@ export function folderableActions<T extends IFolder>(): ActionTree<
       await context.dispatch("mutate", { type: "upsert", data: draft });
     },
     async stopDrafting(context) {
+      if (!context.state.draft) {
+        return;
+      }
       await context.dispatch("mutate", {
         type: "remove",
         data: context.state.draft,

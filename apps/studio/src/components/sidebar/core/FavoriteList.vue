@@ -79,10 +79,10 @@
           class="list-body"
           ref="wrapper"
         >
-          <template v-if="cloudSearchMode">
+          <template v-if="searching">
             <div
               class="empty-state"
-              v-if="!searchInProgress && filteredQueries.length === 0"
+              v-if="!fetchingResults && filteredQueries.length === 0"
             >
               No queries match "{{ filterQuery }}"
             </div>
@@ -100,7 +100,7 @@
               @duplicate="duplicate"
             />
             <content-placeholder
-              v-if="searchInProgress"
+              v-if="fetchingResults"
               :animated="true"
               :rounded="false"
               class="list-item"
@@ -112,11 +112,10 @@
             </content-placeholder>
           </template>
           <tree
-            v-show="!cloudSearchMode"
+            v-show="!searching"
             :folders="folderNodes"
             :items="sortedItemNodes"
             :expanded-ids="expandedNodeIds"
-            :filter="filterQuery"
             @update:expandedIds="setExpandedIds"
             @bks-tree-node-move="handleTreeNodeMove"
           >
@@ -244,7 +243,7 @@ export default {
       'queriesError': 'error',
       'savedQueryFilter': 'filter',
       'pendingSaveIds': 'pendingSaveIds',
-      searchInProgress: 'searching',
+      fetchingResults: 'searching',
     }),
     ...mapState('data/queryFolders', {
       'folders': 'items',
@@ -274,10 +273,8 @@ export default {
       }
       return _.sortBy(this.itemNodes, 'ref.title')
     },
-    // Cloud lazy-loads folder contents, so a match can live in a folder that was
-    // never fetched. Searching hits the server and shows a flat result list.
-    cloudSearchMode() {
-      return this.isCloud && !!this.filterQuery;
+    searching() {
+      return !!this.filterQuery;
     },
     initializing() {
       return this.folders.length === 0 && this.foldersLoading;
