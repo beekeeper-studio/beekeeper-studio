@@ -6,9 +6,16 @@ import type {
 import { HasId } from "@/common/interfaces/IGeneric";
 import { IFolder } from "@/common/interfaces/IQueryFolder";
 
-export interface ExtendedFolderNode extends FolderNode {
-  ref: IFolder;
-}
+export type ExtendedFolderNode =
+  (FolderNode & { ref: IFolder })
+  | DraftFolderNode;
+
+/** A draft folder is a folder that's being created */
+export type DraftFolderNode = FolderNode & {
+  id: `folder-draft-${number}`;
+  ref: Pick<IFolder, "parentId">;
+  draft: true;
+};
 
 export interface ExtendedItemNode<T extends HasId = HasId> extends ItemNode {
   ref: T;
@@ -52,6 +59,19 @@ export function buildFolderNode(folder: IFolder): ExtendedFolderNode {
     children: [],
     draggable: true,
   };
+}
+
+export function buildDraftFolderNode(parentId?: number): DraftFolderNode {
+  return {
+    id: `folder-draft-${parentId}` as DraftFolderNode["id"],
+    parentId: parentId ? `folder-${parentId}` : null,
+    type: "folder",
+    name: "Untitled folder",
+    ref: { parentId },
+    children: [],
+    draggable: true,
+    draft: true,
+  }
 }
 
 export function buildItemNodes<T extends HasId & { position?: number }>(

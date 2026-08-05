@@ -2,10 +2,10 @@
 import { IConnectionFolder } from "@/common/interfaces/IQueryFolder";
 import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { accessGrantMutations, accessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
-import { FolderFetchModule, folderableActions, treeActions } from "@/store/modules/data/tree/treeStore";
+import { FolderFetchModule, FolderableState, folderableActions, folderableMutations, treeActions } from "@/store/modules/data/tree/treeStore";
 import { FolderNodeModule } from "@/store/modules/data/tree/FolderNodeModule";
 
-type State = DataState<IConnectionFolder>;
+type State = DataState<IConnectionFolder> & FolderableState<IConnectionFolder>;
 
 export const CloudConnectionFolderModule: DataStore<IConnectionFolder, State> = {
   namespaced: true,
@@ -14,10 +14,12 @@ export const CloudConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     loading: false,
     error: null,
     pollError: null,
+    draft: null,
   },
   mutations: {
     ...mutationsFor<IConnectionFolder>({}, { field: 'name', direction: 'asc'}),
     ...accessGrantMutations(),
+    ...folderableMutations(),
   },
   modules: {
     nodes: FolderNodeModule,

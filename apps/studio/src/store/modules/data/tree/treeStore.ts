@@ -1,4 +1,4 @@
-import { ActionTree, Module } from "vuex";
+import { ActionTree, Module, MutationTree } from "vuex";
 import _ from "lodash";
 import { State as RootState } from "@/store";
 import { ClientError } from "@/store/modules/data/StoreHelpers";
@@ -38,11 +38,13 @@ export const FolderFetchModule: Module<FolderFetchState, RootState> = {
 };
 
 /** State of a data module hosting a {@link FolderFetchModule} under `folders`. */
-type OwnerState<T> = {
+export type FolderableState<T> = {
   loading: boolean;
   error: ClientError;
-  folders: FolderFetchState;
   items: T[];
+  draft: T | null;
+  /** Must have `FolderFetchModule` as a submodule */
+  folders?: FolderFetchState;
 };
 
 /**
@@ -59,7 +61,7 @@ type OwnerState<T> = {
  * ```
  **/
 export function folderableActions<T extends IFolder>(): ActionTree<
-  OwnerState<T>,
+  FolderableState<T>,
   RootState
 > {
   return {
@@ -86,6 +88,36 @@ export function folderableActions<T extends IFolder>(): ActionTree<
       ];
       await context.dispatch("mutate", { type: "set", data: sorted });
     },
+    async startDrafting(context, parentId?: number) {
+      if (context.state.draft) {
+        await context.dispatch("stopDrafting");
+      }
+      // @ts-expect-error
+      const draft: IFolder = {
+        id: null,
+        parentId,
+        name: "Untitled folder",
+      };
+      context.commit("draft", draft);
+      await context.dispatch("mutate", { type: "upsert", data: draft });
+    },
+    async stopDrafting(context) {
+      await context.dispatch("mutate", {
+        type: "remove",
+        data: context.state.draft,
+      });
+      context.commit("draft", null);
+    },
+  };
+}
+
+export function folderableMutations<T extends IFolder>(): MutationTree<
+  FolderableState<T>
+> {
+  return {
+    draft(state, draft: T | null) {
+      state.draft = draft;
+    },
   };
 }
 
@@ -94,7 +126,7 @@ export function folderableActions<T extends IFolder>(): ActionTree<
  **/
 export function treeActions<T extends HasId>(
   paramsKey: "connectionFolderIds" | "queryFolderIds" | "parentIds"
-): ActionTree<OwnerState<T>, RootState> {
+): ActionTree<FolderableState<T>, RootState> {
   return {
     async refresh(context, parentIds: number[]) {
       await context.dispatch("resetTree");

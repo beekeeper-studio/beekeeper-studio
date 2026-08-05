@@ -5,10 +5,10 @@ import { DataState, DataStore, mutateActions, mutationsFor } from "@/store/modul
 import { safely } from "@/store/modules/data/StoreHelpers";
 import { accessGrantActions, accessGrantMutations } from "@/store/modules/data/access_grant/accessGrantStore";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
-import { FolderFetchModule, folderableActions, treeActions } from "@/store/modules/data/tree/treeStore";
+import { FolderFetchModule, FolderableState, folderableActions, folderableMutations, treeActions } from "@/store/modules/data/tree/treeStore";
 import { FolderNodeModule } from "@/store/modules/data/tree/FolderNodeModule";
 
-type State = DataState<IConnectionFolder>
+type State = DataState<IConnectionFolder> & FolderableState<IConnectionFolder>
 
 export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = {
   namespaced: true,
@@ -17,10 +17,12 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     loading: false,
     error: null,
     pollError: null,
+    draft: null,
   },
   mutations: {
     ...mutationsFor<IConnectionFolder>({}, { field: 'name', direction: 'asc' }),
     ...accessGrantMutations(),
+    ...folderableMutations(),
   },
   modules: {
     nodes: FolderNodeModule,
