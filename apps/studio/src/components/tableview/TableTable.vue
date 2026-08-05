@@ -35,6 +35,7 @@
       <div
         class="table-view-wrapper"
         ref="tableViewWrapper"
+        @contextmenu="onTableWrapperContextMenu"
       >
         <div
           ref="table"
@@ -94,14 +95,14 @@
           <a
             v-if="(this.page > 1)"
             @click="page = 1"
-            v-tooltip="$bksConfig.keybindings.tableTable.firstPage"
+            v-tooltip="$bksConfigUI.getKeybindingLabel('tableTable.firstPage')"
           ><i
             class="material-icons"
           >first_page</i></a>
           <a
             v-if="(this.page > 1)"
             @click="page = page - 1"
-            v-tooltip="$bksConfig.keybindings.tableTable.previousPage"
+            v-tooltip="$bksConfigUI.getKeybindingLabel('tableTable.previousPage')"
           ><i
             class="material-icons"
           >navigate_before</i></a>
@@ -112,12 +113,12 @@
           <a
             v-if="hasNextPage"
             @click="page = page + 1"
-            v-tooltip="$bksConfig.keybindings.tableTable.nextPage"
+            v-tooltip="$bksConfigUI.getKeybindingLabel('tableTable.nextPage')"
           ><i class="material-icons">navigate_next</i></a>
           <a
             v-if="hasNextPage && canJumpToLastPage"
             @click="jumpToLastPage"
-            v-tooltip="$bksConfig.keybindings.tableTable.lastPage"
+            v-tooltip="$bksConfigUI.getKeybindingLabel('tableTable.lastPage')"
           >
             <i class="material-icons">last_page</i>
           </a>
@@ -207,7 +208,7 @@
 
         <!-- Actions -->
         <x-button
-          v-tooltip="`Refresh Table (${$bksConfig.keybindings.general.refresh})`"
+          v-tooltip="`Refresh Table (${$bksConfigUI.getKeybindingLabel('general.refresh')})`"
           class="btn btn-flat"
           @click="refreshTable"
         >
@@ -526,7 +527,7 @@ export default Vue.extend({
     addRowTooltip() {
       return this.usedConfig.readOnlyMode ?
         "Read Only Mode is enabled for this connection. Cannot add rows." :
-        `Add row (${this.$bksConfig.keybindings.general.addRow})`;
+        `Add row (${this.$bksConfigUI.getKeybindingLabel("general.addRow")})`;
     },
     readOnlyNotice() {
       if (this.usedConfig.readOnlyMode) {
@@ -760,6 +761,35 @@ export default Vue.extend({
     this.registerHandlers(this.rootBindings)
   },
   methods: {
+    onTableWrapperContextMenu(e: MouseEvent) {
+      const target = e.target as HTMLElement;
+      // Do not show custom menu if click is on a row, header, row header, or corner.
+      // Tabulator handles its own context menus for those elements.
+      if (target.closest('.tabulator-row, .tabulator-header, .tabulator-row-header, .tabulator-corner')) {
+        return;
+      }
+      
+      // Prevent default browser context menu on the empty space.
+      e.preventDefault();
+      
+      // Define context menu options for the empty space.
+      // We add an option to insert a new row to improve user experience.
+      const menuOptions = [
+        {
+          name: "Add row",
+          shortcut: this.$bksConfig.getKeybindings("context-menu", "general.addRow"),
+          handler: () => this.cellAddRow(),
+          disabled: !this.editable
+        }
+      ];
+      
+      // Open the global Beekeeper context menu component.
+      // @ts-ignore
+      this.$bks.openMenu({
+        event: e,
+        options: menuOptions
+      });
+    },
     updateTab() {
       this.$emit('update-tab', this.tab)
     },
