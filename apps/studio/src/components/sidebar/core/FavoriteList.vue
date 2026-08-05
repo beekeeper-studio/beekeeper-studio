@@ -479,11 +479,18 @@ export default {
     },
     /** @param event {import("@beekeeperstudio/ui-kit").TreeNodeMoveEvent} */
     async handleTreeNodeMove(event) {
+      /** @type {import("@/common/utils/folderTree").ExtendedNode} */
       const source = event.source;
+      /** @type {import("@/common/utils/folderTree").ExtendedNode} */
       const target = event.target;
       try {
-        if (source.type === 'folder' && target.type === 'folder') {
-          await this.saveFolder({ ...source.ref, parentId: target.ref.id });
+        if (source.type === 'folder') {
+          await this.saveFolder({
+            ...source.ref,
+            parentId: target.type === 'folder'
+              ? target.ref.id
+              : target.ref[target.parentIdKey] ?? null
+          });
         } else if (source.type === 'item') {
           const { parentId, position } = parseReorderTarget(event);
           await this.reorderQuery({

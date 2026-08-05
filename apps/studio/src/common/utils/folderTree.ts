@@ -6,6 +6,8 @@ import type {
 import { HasId } from "@/common/interfaces/IGeneric";
 import { IFolder } from "@/common/interfaces/IQueryFolder";
 
+export type ExtendedNode = ExtendedFolderNode | ExtendedItemNode;
+
 export type ExtendedFolderNode = FolderNode & { ref: IFolder };
 
 export interface ExtendedItemNode<T extends HasId = HasId> extends ItemNode {
