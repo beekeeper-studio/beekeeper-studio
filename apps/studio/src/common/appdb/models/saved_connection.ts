@@ -6,7 +6,7 @@ import { ConnectionString } from 'connection-string'
 import log from '@bksLogger'
 import { AzureCredsEncryptTransformer, EncryptTransformer, SnowflakeOptionsTransformer, SurrealDbEncryptTransformer } from '../transformers/Transformers'
 import { IConnection, SshMode } from '@/common/interfaces/IConnection'
-import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, DynamoDBOptions, LibSQLOptions, RedshiftOptions, IamAuthOptions, SQLAnywhereOptions, SurrealDBOptions, SnowflakeOptions, SqlServerOptions } from "@/lib/db/types"
+import { AzureAuthOptions, AzureAuthType, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, DynamoDBOptions, LibSQLOptions, RedshiftOptions, IamAuthOptions, SQLAnywhereOptions, SurrealDBOptions, SnowflakeOptions, SqlServerOptions } from "@/lib/db/types"
 import { resolveHomePathToAbsolute } from "@/handlers/utils"
 import { ReadOnlyOrDefault } from "../validators/ReadOnlyOrDefault"
 import { ConnectionFolder } from './ConnectionFolder'
@@ -422,7 +422,70 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
       const parsed = new ConnectionString(encodedUrl)
       const parsedUncoded = new ConnectionString(url)
 
-      this.connectionType = parsed.protocol as ConnectionType || this.connectionType || 'postgresql'
+      const protocol = parsed.protocol as string
+      this.connectionType = (protocol === 'mssql' ? 'sqlserver' : protocol) as ConnectionType || this.connectionType || 'postgresql'
+      if (this.connectionType === 'mongodb') {
+        // MongoDB's driver consumes the complete URI, including options such as
+        // authSource and replicaSet, rather than the split connection fields.
+        this.url = url
+      }
+
+      if (this.connectionType === 'sqlserver') {
+        const getParameter = (name: string): string | undefined => {
+          const value = parsedUncoded.params?.[name]
+          if (Array.isArray(value)) return value[0]
+          return typeof value === 'string' ? value : undefined
+        }
+        const auth = getParameter('auth')?.toLowerCase() || 'password'
+        this.domain = getParameter('domain') || this.domain
+
+        this.windowsAuthEnabled = false
+        this.azureAuthOptions = {}
+
+        switch (auth) {
+          case 'password':
+          case 'sql-password':
+            break
+          case 'windows':
+          case 'kerberos': {
+            const encryptionMode = getParameter('encryption')?.toLowerCase() || 'on'
+            if (!['off', 'on', 'strict'].includes(encryptionMode)) {
+              throw new Error(`Unsupported SQL Server encryption mode: ${encryptionMode}`)
+            }
+            this.windowsAuthEnabled = true
+            this.sqlServerOptions = {
+              encryptionMode: encryptionMode as SqlServerOptions['encryptionMode'],
+              serverCertificate: getParameter('serverCertificate'),
+              serverSpn: getParameter('serverSpn'),
+            }
+            break
+          }
+          case 'azure-sso':
+            this.azureAuthOptions = {
+              azureAuthEnabled: true,
+              azureAuthType: AzureAuthType.AccessToken,
+            }
+            break
+          case 'azure-service-principal':
+            this.azureAuthOptions = {
+              azureAuthEnabled: true,
+              azureAuthType: AzureAuthType.ServicePrincipalSecret,
+              tenantId: getParameter('tenantId'),
+              clientId: getParameter('clientId'),
+              clientSecret: getParameter('clientSecret'),
+            }
+            break
+          case 'azure-cli':
+            this.azureAuthOptions = {
+              azureAuthEnabled: true,
+              azureAuthType: AzureAuthType.CLI,
+              cliPath: getParameter('cliPath'),
+            }
+            break
+          default:
+            throw new Error(`Unsupported SQL Server authentication method: ${auth}`)
+        }
+      }
       if (parsed.hostname && parsed.hostname.includes('redshift.amazonaws.com')) {
         this.connectionType = 'redshift'
       }
