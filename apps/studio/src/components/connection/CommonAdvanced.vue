@@ -11,6 +11,16 @@
       />
     </template>
     <template>
+      <div
+        v-if="sshDetailsFilledButDisabled"
+        class="row alert-row"
+      >
+        <div class="alert alert-info">
+          <i class="material-icons-outlined">warning</i>
+          <div>SSH details are filled in, but the SSH tunnel is disabled. Enable it above to use these settings.</div>
+        </div>
+      </div>
+
       <div class="row alert-row">
         <div class="alert alert-info">
           <i class="material-icons-outlined">info</i>
@@ -383,6 +393,20 @@ export default {
       homeDirectory: platformInfo.homeDirectory,
       hostTooltip: "Hostname or IP. A <code>Host</code> alias from <code>~/.ssh/config</code> resolves to <code>HostName</code>, <code>Port</code>, and <code>User</code> from the matching entry.",
       usernameTooltip: "If blank, falls back to <code>User</code> from <code>~/.ssh/config</code>, then your OS username.",
+    }
+  },
+  computed: {
+    sshDetailsFilledButDisabled() {
+      const c = this.config
+      const hasDetails = !!(
+        c.sshHost ||
+        c.sshBastionHost ||
+        c.sshUsername ||
+        c.sshKeyfile ||
+        c.sshPassword ||
+        c.sshBastionUsername
+      )
+      return hasDetails && !c.sshEnabled
     }
   },
   methods: {
