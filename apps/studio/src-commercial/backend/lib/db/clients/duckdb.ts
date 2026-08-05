@@ -50,7 +50,7 @@ import { DuckDBChangeBuilder } from "@shared/lib/sql/change_builder/DuckDBChange
 import { DuckDBData } from "@shared/lib/dialects/duckdb";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { TableKey } from "@shared/lib/dialects/models";
-import { DuckDBBinaryTranscoder } from "@/lib/db/serialization/transcoders";
+import { DuckDBBinaryTranscoder, DuckDBTimestampTZTranscoder, DuckDBUUIDTranscoder } from "@/lib/db/serialization/transcoders";
 
 const log = rawLog.scope("duckdb");
 
@@ -205,7 +205,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   // https://duckdb.org/docs/connect/concurrency#handling-concurrency
   connectionInstance: Connection;
   _defaultSchema: string = "main";
-  transcoders = [DuckDBBinaryTranscoder];
+  transcoders = [DuckDBBinaryTranscoder, DuckDBTimestampTZTranscoder, DuckDBUUIDTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(null, duckDBContext, server, database);
@@ -1049,10 +1049,13 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   }
 
   protected parseQueryResultColumns(qr: DuckDBResult): BksField[] {
-    return qr.columns.map((c) => ({
-      name: c.name,
-      bksType: c.type.typeId === DuckDBTypeId.BLOB ? "BINARY" : "UNKNOWN",
-    }));
+    return qr.columns.map((c) => {
+      let bksType: BksFieldType = "UNKNOWN";
+      if (c.type.typeId === DuckDBTypeId.BLOB) bksType = "BINARY";
+      else if (c.type.typeId === DuckDBTypeId.TIMESTAMP_TZ) bksType = "DUCKDB_TIMESTAMP_TZ";
+      else if (c.type.typeId === DuckDBTypeId.UUID) bksType = "DUCKDB_UUID";
+      return { name: c.name, bksType };
+    });
   }
 
   async selectTopSql(
