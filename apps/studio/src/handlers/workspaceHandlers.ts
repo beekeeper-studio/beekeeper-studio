@@ -8,6 +8,7 @@ import { promises as fs } from 'fs';
 import { IQueryFolder } from "@/common/interfaces/IQueryFolder";
 import { IDirectoryImportStats } from "@/common/interfaces/IDirectoryImportStats";
 import rawLog from "@bksLogger";
+import { AppDbHandlers } from "./appDbHandlers";
 
 const log = rawLog.scope("workspaceHandlers")
 
@@ -21,6 +22,11 @@ const SQL_FILE_EXTENSIONS = new Set(['.sql', '.txt']);
 // I'm also not sure what size the cloud can actually handle
 const MAX_BATCH_BYTES = 50 * 1024 * 1024;
 const MAX_BATCH_ROWS = 100;
+
+interface ImportFunctions {
+  importFolders(folders: IQueryFolder[]): Promise<IQueryFolder[]>,
+  importQueries(queries: ISavedQuery[]): Promise<ISavedQuery[]>,
+}
 
 export interface IWorkspaceHandlers {
   "workspace/setActive": ({ sId, wId, credentialId }: { sId: string, wId: number, credentialId: number }) => Promise<void>,
@@ -57,20 +63,34 @@ export const WorkspaceHandlers: IWorkspaceHandlers = {
       throw new Error('file/importDirectory called with non directory path');
     }
 
-    // TODO (@day): we probably want to do this locally as well
-    const client = state(sId).cloudClient;
+    const funcs = getImportFuncs(sId);
 
-    if (!client) {
-      throw new Error('Could not access cloud');
-    }
-
-    const stats = await importDirectory(client, dir, parentId);
+    const stats = await importDirectory(funcs, dir, parentId);
 
     return stats;
   }
 }
 
-async function importDirectory(client: CloudClient, dir: string, parentId: number | null, importDir: boolean = true): Promise<IDirectoryImportStats> {
+function getImportFuncs(sId: string): ImportFunctions {
+  const client = state(sId).cloudClient;
+  if (client) {
+    return {
+      importFolders: client.queryFolders.import,
+      importQueries: client.queries.import
+    }
+  } else {
+    return {
+      importFolders: (folders: IQueryFolder[]) => {
+        return AppDbHandlers["appdb/queryFolder/save"]({ obj: folders, options: {} })
+      },
+      importQueries: (queries: ISavedQuery[]) => {
+        return AppDbHandlers["appdb/query/save"]({ obj: queries, options: {} })
+      }
+    }
+  }
+}
+
+async function importDirectory(funcs: ImportFunctions, dir: string, parentId: number | null, importDir: boolean = true): Promise<IDirectoryImportStats> {
   const stats: IDirectoryImportStats = {
     warnings: [],
     directories: 0,
@@ -87,7 +107,7 @@ async function importDirectory(client: CloudClient, dir: string, parentId: numbe
 
     try {
       log.info('IMPORTING: ', parent);
-      [parent] = await client.queryFolders.import([parent]);
+      [parent] = await funcs.importFolders([parent]);
 
       stats.directories += 1;
       parentId = parent.id;
@@ -129,7 +149,7 @@ async function importDirectory(client: CloudClient, dir: string, parentId: numbe
 
       if (currentQueries.length && (stat.size + currentBatchBytes > MAX_BATCH_BYTES || currentBatchRows + 1 > MAX_BATCH_ROWS)) {
         try {
-          await client.queries.import(currentQueries);
+          await funcs.importQueries(currentQueries);
           stats.queries += currentQueries.length;
         } catch (e) {
           stats.warnings.push(`Failed to import ${currentQueries.length} queries: ${e.message}`)
@@ -159,7 +179,7 @@ async function importDirectory(client: CloudClient, dir: string, parentId: numbe
 
     if (currentQueries && currentQueries.length > 0) {
       try {
-        await client.queries.import(currentQueries);
+        await funcs.importQueries(currentQueries);
         stats.queries += currentQueries.length;
       } catch (e) {
         stats.warnings.push(`Failed to import ${currentQueries.length} queries: ${e.message}`)
@@ -174,7 +194,7 @@ async function importDirectory(client: CloudClient, dir: string, parentId: numbe
     for (const child of childDirNames) {
       const dirPath = path.join(dir, child);
 
-      const childStats = await importDirectory(client, dirPath, parentId);
+      const childStats = await importDirectory(funcs, dirPath, parentId);
 
       stats.queries += childStats.queries;
       stats.directories += childStats.directories;
