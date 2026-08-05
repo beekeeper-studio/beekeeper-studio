@@ -483,6 +483,8 @@ export default {
       const source = event.source;
       /** @type {import("@/common/utils/folderTree").ExtendedNode} */
       const target = event.target;
+      let reorderPayload = null;
+      let error = null;
       try {
         if (source.type === 'folder') {
           // Dropped beside a node, the folder joins whatever holds that node.
@@ -497,17 +499,38 @@ export default {
           await this.saveFolder({ ...source.ref, parentId });
         } else if (source.type === 'item') {
           const { parentId, position } = parseReorderTarget(event);
-          await this.reorderQuery({
+          reorderPayload = {
             item: source.ref,
             queryFolderId: parentId,
             position,
-          });
+          };
+          await this.reorderQuery(reorderPayload);
         }
       } catch (ex) {
-        let errorMessage = `Move error: ${ex.userMessage ?? ex.message}`;
-        if (ex.message.includes("[team_folder_in_personal_tree]")) {
+        error = ex;
+      }
+
+      if (error?.message.includes("[confirm_personal_move]")) {
+        const confirmed = await this.$confirm(
+          "Move to your personal folder?",
+          `All workspace members will lose access to "${source.name}".`
+        );
+        if (!confirmed) {
+          return;
+        }
+        error = null;
+        try {
+          await this.reorderQuery({ ...reorderPayload, confirm: true });
+        } catch (ex) {
+          error = ex;
+        }
+      }
+
+      if (error) {
+        let errorMessage = `Move error: ${error.userMessage ?? error.message}`;
+        if (error.message.includes("[team_folder_in_personal_tree]")) {
           errorMessage =
-            "You can not move this to your personal folder because it is shared with other workspace members.";
+            "You can not move a team folder to your personal folder because it is shared with other workspace members.";
         }
         this.$noty.error(errorMessage);
       }
