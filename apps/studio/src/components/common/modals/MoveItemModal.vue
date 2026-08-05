@@ -166,11 +166,7 @@ export default Vue.extend({
     async open(target: Target) {
       this.target = target;
       this.selectedFolderId = this.parentId;
-
-      // Expand anscestors
-      this.expandedIds = getSelfAndAncestors(this.parentId, this.folders).map(
-        (f) => `folder-${f.id}`
-      );
+      this.expandedIds = [];
 
       this.$modal.show(this.modalName);
 
@@ -180,6 +176,11 @@ export default Vue.extend({
       } finally {
         this.loadingFolders = false;
       }
+
+      // Expand ancestors
+      this.expandedIds = getSelfAndAncestors(this.parentId, this.folders).map(
+        (f) => `folder-${f.id}`
+      );
     },
     setExpandedIds(expandedIds: string[]) {
       this.expandedIds = expandedIds;
