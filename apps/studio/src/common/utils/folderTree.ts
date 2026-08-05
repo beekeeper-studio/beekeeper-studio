@@ -6,16 +6,7 @@ import type {
 import { HasId } from "@/common/interfaces/IGeneric";
 import { IFolder } from "@/common/interfaces/IQueryFolder";
 
-export type ExtendedFolderNode =
-  (FolderNode & { ref: IFolder })
-  | DraftFolderNode;
-
-/** A draft folder is a folder that's being created */
-export type DraftFolderNode = FolderNode & {
-  id: `folder-draft-${number}`;
-  ref: Pick<IFolder, "parentId">;
-  draft: true;
-};
+export type ExtendedFolderNode = FolderNode & { ref: IFolder };
 
 export interface ExtendedItemNode<T extends HasId = HasId> extends ItemNode {
   ref: T;
@@ -24,26 +15,46 @@ export interface ExtendedItemNode<T extends HasId = HasId> extends ItemNode {
   parentIdKey: string;
 }
 
+/** A draft folder has no id until it is saved. */
+export function isDraftFolder(folder: Pick<IFolder, "id">): boolean {
+  return folder.id == null;
+}
+
 /**
  * `children` holds references to the same node objects, so a flat array still
  * describes the whole tree.
  */
 export function buildFolderNodes(folders: IFolder[]): ExtendedFolderNode[] {
   const nodes: ExtendedFolderNode[] = folders.map(buildFolderNode);
+  let draftIdx: number = -1;
 
   const byId = new Map<FolderNode["id"], ExtendedFolderNode>();
   for (const node of nodes) {
     byId.set(node.id, node);
   }
 
-  for (const node of nodes) {
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if (isDraftFolder(node.ref)) {
+      draftIdx = i;
+    }
     if (node.parentId === null) {
       continue;
     }
     const parent = byId.get(node.parentId);
     if (parent && parent !== node) {
-      parent.children.push(node);
+      if (isDraftFolder(node.ref)) {
+        parent.children.unshift(node);
+      } else {
+        parent.children.push(node);
+      }
     }
+  }
+
+  // The tree renders root folders in array order, so the draft leads the list.
+  if (draftIdx !== -1) {
+    const draft = nodes.splice(draftIdx, 1)[0];
+    nodes.unshift(draft);
   }
 
   return nodes;
@@ -59,19 +70,6 @@ export function buildFolderNode(folder: IFolder): ExtendedFolderNode {
     children: [],
     draggable: true,
   };
-}
-
-export function buildDraftFolderNode(parentId?: number): DraftFolderNode {
-  return {
-    id: `folder-draft-${parentId}` as DraftFolderNode["id"],
-    parentId: parentId ? `folder-${parentId}` : null,
-    type: "folder",
-    name: "Untitled folder",
-    ref: { parentId },
-    children: [],
-    draggable: true,
-    draft: true,
-  }
 }
 
 export function buildItemNodes<T extends HasId & { position?: number }>(
