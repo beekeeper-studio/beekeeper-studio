@@ -740,7 +740,6 @@ const store = new Vuex.Store<State>({
           context.dispatch('data/connections/refresh', []),
         ]);
 
-        await context.dispatch('data/connectionFolders/loadDefaultFolders');
         const folderIds = context.state['data/connectionFolders']
           .items.map((folder) => folder.id)
         // the default folders start out expanded
@@ -765,7 +764,6 @@ const store = new Vuex.Store<State>({
           context.dispatch('data/queries/refresh', []),
         ]);
 
-        await context.dispatch('data/queryFolders/loadDefaultFolders');
         const folderIds = context.state['data/queryFolders']
           .items.map((folder) => folder.id)
         // the default folders start out expanded
