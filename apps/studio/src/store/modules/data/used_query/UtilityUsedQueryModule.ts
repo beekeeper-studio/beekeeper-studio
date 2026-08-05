@@ -20,6 +20,8 @@ export const UtilUsedQueryModule: DataStore<TransportUsedQuery, DataState<Transp
       status: true,
       numberOfRecords: true,
       workspaceId: true,
-      excerpt: true
+      excerpt: true,
+      origin: true,
+      pluginId: true
     })
 }

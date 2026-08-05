@@ -245,7 +245,10 @@ export default class WebPluginLoader {
 
         // ======== WRITE ACTIONS ===========
         case "runQuery":
-          response.result = await this.pluginStore.runQuery(response.args.query);
+          response.result = await this.pluginStore.runQuery(
+            response.args.query,
+            this.context.manifest.id
+          );
           break;
         case "setData":
         case "setEncryptedData": {
