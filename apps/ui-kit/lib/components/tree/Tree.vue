@@ -75,9 +75,7 @@ export default Vue.extend({
     },
 
     rootItemNodes(): ItemNode[] {
-      return this.items
-        .filter((node) => node.parentId === null)
-        .sort((a, b) => a.position - b.position);
+      return this.items.filter((node) => node.parentId === null)
     },
 
     rootNodes(): Node[] {

@@ -72,7 +72,7 @@ export function buildFolderNode(folder: IFolder): ExtendedFolderNode {
   };
 }
 
-export function buildItemNodes<T extends HasId & { position?: number }>(
+export function buildItemNodes<T extends HasId>(
   items: T[],
   parentIdKey: string,
   nameKey: string
@@ -85,7 +85,6 @@ export function buildItemNodes<T extends HasId & { position?: number }>(
       parentIdKey,
       type: "item",
       name: item[nameKey] ?? "",
-      position: item.position ?? 0,
       ref: item,
       draggable: true,
     };

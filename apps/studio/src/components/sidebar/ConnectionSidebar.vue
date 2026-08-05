@@ -115,6 +115,7 @@
                   </a>
                   <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
                   <sidebar-sort-buttons
+                    v-if="!isCloud"
                     v-model="sort"
                     :sort-options="sortables"
                   />
@@ -444,6 +445,11 @@ export default {
       }
     },
     sortedItemNodes() {
+      // Cloud has no sort buttons — drag and drop is the only way to reorder,
+      // and it lands in `position`.
+      if (this.isCloud) {
+        return _.sortBy(this.itemNodes, 'ref.position')
+      }
       let result = []
       if (this.sort.field === 'labelColor') {
         const mappings = {

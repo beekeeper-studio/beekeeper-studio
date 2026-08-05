@@ -136,9 +136,7 @@ export default Vue.extend({
         return [];
       }
       const folderId = this.node.id;
-      return this.allItems
-        .filter((item) => item.parentId === folderId)
-        .sort((a, b) => a.position - b.position);
+      return this.allItems.filter((item) => item.parentId === folderId);
     },
 
     childNodes(): Node[] {

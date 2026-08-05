@@ -7,7 +7,8 @@ import {
 import { IFolder } from "@/common/interfaces/IQueryFolder";
 
 function folder(id: number, name: string, parentId: number | null): IFolder {
-  return { id, name, parentId, personal: false };
+  // The sharing fields on IFolder play no part in building nodes.
+  return { id, name, parentId, personal: false } as IFolder;
 }
 
 describe("buildFolderNodes", () => {
@@ -64,9 +65,9 @@ describe("buildFolderNodes", () => {
 describe("buildItemNodes", () => {
   it("reads the parent folder from the given key", () => {
     const items = [
-      { id: 1, title: "One", queryFolderId: 5, position: 2 },
-      { id: 2, title: "Two", queryFolderId: null, position: 1 },
-      { id: 3, title: "Three", position: 1 },
+      { id: 1, title: "One", queryFolderId: 5 },
+      { id: 2, title: "Two", queryFolderId: null },
+      { id: 3, title: "Three" },
     ];
     const nodes = buildItemNodes(items, "queryFolderId", "title");
     expect(nodes.map((node) => node.parentId)).toEqual([
@@ -74,13 +75,8 @@ describe("buildItemNodes", () => {
       null,
       null,
     ]);
-    expect(nodes[0]).toMatchObject({ id: "item-1", name: "One", position: 2 });
+    expect(nodes[0]).toMatchObject({ id: "item-1", name: "One" });
     expect(nodes[0].ref).toBe(items[0]);
-  });
-
-  it("defaults a missing position to 0", () => {
-    const [node] = buildItemNodes([{ id: 1 }], "queryFolderId", "title");
-    expect(node.position).toEqual(0);
   });
 });
 

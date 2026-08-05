@@ -114,7 +114,7 @@
           <tree
             v-show="!cloudSearchMode"
             :folders="folderNodes"
-            :items="itemNodes"
+            :items="sortedItemNodes"
             :expanded-ids="expandedNodeIds"
             :filter="filterQuery"
             @update:expandedIds="setExpandedIds"
@@ -203,6 +203,7 @@
 </template>
 
 <script>
+import _ from 'lodash'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
 import { mapActions, mapGetters, mapMutations, mapState } from 'vuex'
@@ -264,6 +265,14 @@ export default {
     }),
     expandedNodeIds() {
       return this.expandedFolderIds.map((id) => `folder-${id}`);
+    },
+    sortedItemNodes() {
+      // Cloud has no sort buttons — drag and drop is the only way to reorder,
+      // and it lands in `position`.
+      if (this.isCloud) {
+        return _.sortBy(this.itemNodes, 'ref.position')
+      }
+      return _.sortBy(this.itemNodes, 'ref.title')
     },
     // Cloud lazy-loads folder contents, so a match can live in a folder that was
     // never fetched. Searching hits the server and shows a flat result list.
