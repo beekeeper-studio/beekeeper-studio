@@ -5,7 +5,8 @@ import { DataState, DataStore, mutateActions, mutationsFor } from "@/store/modul
 import { safely } from "@/store/modules/data/StoreHelpers";
 import { accessGrantActions, accessGrantMutations } from "@/store/modules/data/access_grant/accessGrantStore";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
-import { FolderFetchModule, FolderableState, folderableActions, folderableMutations, treeActions } from "@/store/modules/data/tree/treeStore";
+import { FolderFetchModule, treeActions } from "@/store/modules/data/tree/treeStore";
+import { FolderableState, folderableActions, folderableMutations } from "@/store/modules/data/tree/folderableStore";
 import { FolderNodeModule } from "@/store/modules/data/tree/FolderNodeModule";
 
 type State = DataState<IConnectionFolder> & FolderableState<IConnectionFolder>

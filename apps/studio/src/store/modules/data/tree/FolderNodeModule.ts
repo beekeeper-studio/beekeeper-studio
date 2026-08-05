@@ -6,6 +6,7 @@ import {
   ExtendedFolderNode as Node,
   buildFolderNode,
   buildFolderNodes,
+  isDraftFolder,
 } from "@/common/utils/folderTree";
 
 type State = {
@@ -50,7 +51,11 @@ export const FolderNodeModule: Module<State, RootState> = {
         const existing = state.items.find((i) => i.id === node.id);
 
         if (!existing) {
-          state.items.push(node);
+          if (isDraftFolder(folder)) {
+            state.items.unshift(node);
+          } else {
+            state.items.push(node);
+          }
           attaching.push(node);
           continue;
         }
@@ -71,7 +76,11 @@ export const FolderNodeModule: Module<State, RootState> = {
       for (const node of attaching) {
         const parent = state.items.find((i) => i.id === node.parentId);
         if (parent) {
-          parent.children.push(node);
+          if (isDraftFolder(node.ref)) {
+            parent.children.unshift(node);
+          } else {
+            parent.children.push(node);
+          }
         }
       }
     },
