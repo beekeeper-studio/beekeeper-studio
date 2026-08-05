@@ -586,6 +586,10 @@ export default {
       const options = [{
         name: 'New Subfolder',
         handler: ({ item }) => {
+          if (!this.canCreateFolders) {
+            this.$root.$emit(AppEvent.upgradeModal, 'Folders');
+            return;
+          }
           this.startDrafting(item.id);
           this.expandFolder(item.id);
         },
