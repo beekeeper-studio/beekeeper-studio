@@ -11,6 +11,7 @@
         :internal-id="internalId"
         :expanded-ids="expandedIds"
         :drop-target="dropTarget"
+        :dragged-node="draggedNode"
         :can-drop="canDrop"
         :filter="filter"
         @node-click="handleNodeClick"
@@ -37,7 +38,7 @@
 <script lang="ts">
 import Vue from "vue";
 import props from "./props";
-import { buildDescendantsMap } from "./tree";
+import { buildDescendantsMap, destinationOf } from "./tree";
 import TreeNode from "./TreeNode.vue";
 import { uuidv4 } from "../../utils/uuid";
 import {
@@ -97,30 +98,29 @@ export default Vue.extend({
       return this.descendantsMap.get(ancestorId)?.has(folderId) ?? false;
     },
 
-    canDropOn(source: Node, target: Node): boolean {
-      // Dropping onto itself is always rejected. A folder additionally can't
-      // land anywhere inside its own subtree — that would reparent it under
-      // itself.
+    canDropOn(source: Node, target: Node, position: DropPosition): boolean {
       if (source.id === target.id) {
         return false;
       }
+      // An item can be reordered among its siblings, so landing back in the
+      // folder it came from is a real move for it, unlike for a folder.
       if (source.type !== "folder") {
         return true;
       }
-      let targetFolderId: FolderNode["id"] | null;
-      if (target.type === "folder") {
-        targetFolderId = target.id;
-      } else {
-        targetFolderId = target.parentId;
+      const destination = destinationOf(target, position);
+      if (destination === source.parentId) {
+        return false;
       }
-      return !this.isInSubtree(source.id, targetFolderId);
+      // A folder can't land inside its own subtree — that would reparent it
+      // under itself.
+      return !this.isInSubtree(source.id, destination);
     },
 
-    canDrop(target: Node): boolean {
+    canDrop(target: Node, position: DropPosition): boolean {
       if (!this.draggedNode) {
         return false;
       }
-      return this.canDropOn(this.draggedNode, target);
+      return this.canDropOn(this.draggedNode, target, position);
     },
 
     handleNodeClick(node: Node) {
@@ -164,7 +164,7 @@ export default Vue.extend({
       const source = this.draggedNode;
       const position = this.dropTarget?.position;
       this.resetDrag();
-      if (!source || !position || !this.canDropOn(source, target)) {
+      if (!source || !position || !this.canDropOn(source, target, position)) {
         return;
       }
       const payload: TreeNodeMoveEvent = { source, target, position };

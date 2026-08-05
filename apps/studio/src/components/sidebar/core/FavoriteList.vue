@@ -485,12 +485,16 @@ export default {
       const target = event.target;
       try {
         if (source.type === 'folder') {
-          await this.saveFolder({
-            ...source.ref,
-            parentId: target.type === 'folder'
+          // Dropped beside a node, the folder joins whatever holds that node.
+          let parentId
+          if (target.type === 'folder') {
+            parentId = event.position === 'inside'
               ? target.ref.id
-              : target.ref[target.parentIdKey] ?? null
-          });
+              : target.ref.parentId
+          } else {
+            parentId = target.ref[target.parentIdKey] ?? null
+          }
+          await this.saveFolder({ ...source.ref, parentId });
         } else if (source.type === 'item') {
           const { parentId, position } = parseReorderTarget(event);
           await this.reorderQuery({
