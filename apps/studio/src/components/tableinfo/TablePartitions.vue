@@ -20,13 +20,13 @@
             <a
               @click.prevent="refreshPartitions"
               class="btn btn-link btn-fab"
-              v-tooltip="`${ctrlOrCmd('r')} or F5`"
+              v-tooltip="$bksConfigUI.getKeybindingLabel('general.refresh')"
             ><i class="material-icons">refresh</i></a>
             <a
               v-if="editable"
               @click.prevent="addRow"
               class="btn btn-primary btn-fab"
-              v-tooltip="ctrlOrCmd('n')"
+              v-tooltip="$bksConfigUI.getKeybindingLabel('general.addRow')"
             ><i class="material-icons">add</i></a>
           </div>
         </div>
