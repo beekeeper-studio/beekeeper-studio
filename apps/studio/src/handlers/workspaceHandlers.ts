@@ -75,8 +75,12 @@ function getImportFuncs(sId: string): ImportFunctions {
   const client = state(sId).cloudClient;
   if (client) {
     return {
-      importFolders: client.queryFolders.import,
-      importQueries: client.queries.import
+      importFolders: (folders: IQueryFolder[]) => {
+        return client.queryFolders.import(folders);
+      },
+      importQueries: (queries: ISavedQuery[]) => {
+        return client.queries.import(queries)
+      }
     }
   } else {
     return {

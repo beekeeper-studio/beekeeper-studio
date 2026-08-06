@@ -45,10 +45,9 @@
           </div>
           <div class="form-group">
             <label>Parent Folder</label>
-            <folder-tree-picker
-              folder-path="data/queryFolders"
+            <in-app-folder-picker
               v-model="parentId"
-              :show-top-level="!isCloud"
+              folder-path="data/queryFolders"
             />
           </div>
         </div>
@@ -120,7 +119,7 @@
 
 <script lang="ts">
 import FilePicker from "@/components/common/form/FilePicker.vue";
-import FolderTreePicker from "@/components/common/FolderTreePicker.vue";
+import InAppFolderPicker from "@/components/common/form/InAppFolderPicker.vue";
 import { AppEvent } from "@/common/AppEvent";
 import { mapState, mapGetters } from 'vuex'
 import _ from 'lodash';
@@ -132,7 +131,7 @@ const log = rawLog.scope('SqlFilesImport')
 export default {
   components: {
     FilePicker,
-    FolderTreePicker,
+    InAppFolderPicker,
   },
   props: ["name"],
   data() {
