@@ -32,7 +32,6 @@
       </label>
 
       <tree
-        v-else
         :folders="folderNodes"
         :expanded-ids="expandedIds"
         @update:expandedIds="setExpandedIds"
