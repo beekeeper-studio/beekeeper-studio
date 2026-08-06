@@ -6,7 +6,7 @@
     <a
       class="list-item-btn"
       v-tooltip.bottom.delay="{
-        content: truncatedText,
+        content: title,
         delay: { show: 500 },
       }"
       @click.prevent="$emit('select', item)"
@@ -44,11 +44,26 @@ export default Vue.extend({
     rename: false,
   }),
   computed: {
-    ...mapGetters(["isCloud"]),
+    ...mapGetters(["isCloud", "workspace"]),
     ...mapState('data/queryFolders', {'folders': 'items'}),
     truncatedText() {
       const excerpt: string = this.item.excerpt ?? ''
       return _.truncate(excerpt.trim().replaceAll('\n', ''), { length: 60 })
+    },
+    title() {
+      return `Created by ${this.author}, ${this.truncatedText}`;
+    },
+    author() {
+      if (!this.isCloud) {
+        return "You";
+      }
+      if (!this.item || !this.item.membership) {
+        return "Unknown";
+      }
+      if (this.item.membership.userId === this.workspace.currentMembership.userId) {
+        return "You";
+      }
+      return this.item.membership.name;
     },
     subtitle() {
       const result = []
@@ -104,6 +119,7 @@ export default Vue.extend({
           handler: () => {
             this.rename = true;
           },
+          hideIf: !canWrite,
         },
         {
           name: "Move",
@@ -157,12 +173,21 @@ export default Vue.extend({
 .list-text {
   flex-grow: 1;
   font-size: 1rem;
-
+  min-width: 0;
 }
 
 .list-item-btn .list-text .list-title {
   position: relative;
   width: 100%;
   overflow: visible;
+}
+
+/** --depth is from Tree.vue */
+.list-group .list-item .list-item-btn {
+  padding-left: calc(var(--depth) * 1.2rem);
+}
+
+.item-icon {
+  margin-left: 0.25rem;
 }
 </style>

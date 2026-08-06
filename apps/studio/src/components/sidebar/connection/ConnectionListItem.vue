@@ -1,7 +1,7 @@
 <template>
   <div
     class="list-item"
-    :title="title"
+    v-tooltip="title"
     @contextmenu.prevent="showContextMenu"
   >
     <a
@@ -117,7 +117,7 @@ export default {
     rename: false,
   }),
   computed: {
-    ...mapGetters(["isCloud"]),
+    ...mapGetters(["isCloud", "workspace"]),
     ...mapState('data/connections', {'connectionConfigs': 'items'}),
     ...mapState('data/connectionFolders', {'folders': 'items'}),
     classList() {
@@ -156,8 +156,8 @@ export default {
     },
     title() {
       return this.privacyMode ?
-        'Connection details hidden by Privacy Mode' :
-        this.$bks.buildConnectionString(this.displayConfig)
+        `Created by ${this.author}` :
+        `Created by ${this.author}, ${this.$bks.buildConnectionString(this.displayConfig)}`;
     },
     savedConnection() {
 
@@ -189,6 +189,20 @@ export default {
       return saved?.id != null &&
         saved.id === startupHighlight?.id &&
         saved.workspaceId === startupHighlight?.workspaceId
+    },
+    author() {
+      if (!this.isCloud) {
+        return "You";
+      }
+      if (!this.displayConfig || !this.displayConfig.membership) {
+        return "Unknown";
+      }
+      if (
+        this.displayConfig.membership.userId === this.workspace.currentMembership.userId
+      ) {
+        return "You";
+      }
+      return this.displayConfig.membership.name;
     },
   },
   methods: {
@@ -341,5 +355,14 @@ export default {
   .editable-text {
     width: 100%;
   }
+}
+
+/** --depth is from Tree.vue */
+.list-group .list-item .list-item-btn {
+  padding-left: calc(var(--depth) * 1.15rem);
+}
+
+.connection-label {
+  margin-left: 0.5rem;
 }
 </style>
