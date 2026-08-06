@@ -50,6 +50,23 @@
               folder-path="data/queryFolders"
             />
           </div>
+          <div v-if="!isIndividual" class="form-group">
+            <label class="checkbox form-row">
+              <input
+                v-model="preserveRoot"
+                type="checkbox"
+              >
+              Preserve Root
+              <i
+                class="material-icons"
+                v-tooltip="{
+                  content: `Import Root directory, otherwise import children at the root of the parent folder`
+                }"
+              >
+              help_outlined
+              </i>
+            </label>
+          </div>
         </div>
         <div v-else>
           <div v-if="!importFinished" class="importing-state">
@@ -142,7 +159,8 @@ export default {
       importing: false,
       importFinished: false,
       importStats: null,
-      warningsExpanded: false
+      warningsExpanded: false,
+      preserveRoot: true
     };
   },
   computed: {
@@ -209,8 +227,11 @@ export default {
       this.importing = true;
       const dir = _.isArray(this.files) ? this.files[0] : this.files;
       try {
-        log.info('IMPORTING: ', dir, this.parentId)
-        const stats: IDirectoryImportStats = await this.$util.send('workspace/importDirectory', { dir, parentId: this.parentId });
+        const stats: IDirectoryImportStats = await this.$util.send('workspace/importDirectory', {
+          dir,
+          parentId: this.parentId,
+          preserveRoot: this.preserveRoot
+        });
 
         await this.$store.dispatch('refreshQueries');
 

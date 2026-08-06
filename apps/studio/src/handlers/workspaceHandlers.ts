@@ -30,7 +30,7 @@ interface ImportFunctions {
 
 export interface IWorkspaceHandlers {
   "workspace/setActive": ({ sId, wId, credentialId }: { sId: string, wId: number, credentialId: number }) => Promise<void>,
-  "workspace/importDirectory": ({ sId, dir, parentId }: { sId: string, dir: string, parentId: number }) => Promise<IDirectoryImportStats>
+  "workspace/importDirectory": ({ sId, dir, parentId, preserveRoot }: { sId: string, dir: string, parentId: number, preserveRoot: boolean }) => Promise<IDirectoryImportStats>
 }
 
 export const WorkspaceHandlers: IWorkspaceHandlers = {
@@ -53,7 +53,7 @@ export const WorkspaceHandlers: IWorkspaceHandlers = {
     const client = new CloudClient(options);
     state(sId).cloudClient = client;
   },
-  'workspace/importDirectory': async function({ dir, parentId, sId }: { dir: string, parentId: number, sId: string }): Promise<IDirectoryImportStats> {
+  'workspace/importDirectory': async function({ dir, parentId, sId, preserveRoot }: { dir: string, parentId: number, sId: string, preserveRoot: boolean }): Promise<IDirectoryImportStats> {
     if (typeof dir !== 'string' || dir.length === 0) {
       // throw?
     }
@@ -65,7 +65,7 @@ export const WorkspaceHandlers: IWorkspaceHandlers = {
 
     const funcs = getImportFuncs(sId);
 
-    const stats = await importDirectory(funcs, dir, parentId);
+    const stats = await importDirectory(funcs, dir, parentId, preserveRoot);
 
     return stats;
   }
