@@ -46,6 +46,14 @@ export default defineConfig({
       },
     }
   },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        api: 'modern-compiler',
+        silenceDeprecations: ['import', 'global-builtin'],
+      }
+    }
+  },
   server: {
     port: 3003, // Development server port
     strictPort: true, // Fail loudly if 3003 is taken (e.g. a stale dev server) instead of silently using another port
