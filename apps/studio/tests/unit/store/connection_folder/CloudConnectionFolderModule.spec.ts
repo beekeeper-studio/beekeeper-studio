@@ -176,25 +176,4 @@ describe('CloudConnectionFolderModule', () => {
       expect(store.state['data/connectionFolders'].loading).toBe(false)
     })
   })
-
-  describe('foldersWithConnections getter', () => {
-    it('nests the subfolder under its parent', async () => {
-      const { store } = buildStore()
-      await store.dispatch('data/connectionFolders/load')
-
-      const connections = [
-        { id: 10, connectionFolderId: 2, position: 0 },
-        { id: 11, connectionFolderId: 4, position: 0 },
-      ]
-      const result = store.getters['data/connectionFolders/foldersWithConnections'](connections)
-
-      // Roots are Team (2) and Personal (3); Shared Connections (4) is a subfolder of Team.
-      expect(result).toHaveLength(2)
-      const team = result.find((r: any) => r.folder.id === 2)
-      expect(team.items.map((c: any) => c.id)).toEqual([10])
-      expect(team.subfolders).toHaveLength(1)
-      expect(team.subfolders[0].folder.id).toBe(4)
-      expect(team.subfolders[0].items.map((c: any) => c.id)).toEqual([11])
-    })
-  })
 })

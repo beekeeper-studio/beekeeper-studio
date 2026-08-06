@@ -119,6 +119,7 @@ export default Vue.extend({
           handler: () => {
             this.rename = true;
           },
+          hideIf: !canWrite,
         },
         {
           name: "Move",
@@ -172,12 +173,21 @@ export default Vue.extend({
 .list-text {
   flex-grow: 1;
   font-size: 1rem;
-
+  min-width: 0;
 }
 
 .list-item-btn .list-text .list-title {
   position: relative;
   width: 100%;
   overflow: visible;
+}
+
+/** --depth is from Tree.vue */
+.list-group .list-item .list-item-btn {
+  padding-left: calc(var(--depth) * 1.2rem);
+}
+
+.item-icon {
+  margin-left: 0.25rem;
 }
 </style>
