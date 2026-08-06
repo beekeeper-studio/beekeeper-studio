@@ -98,7 +98,7 @@
         <button
           class="btn btn-primary"
           type="button"
-          :disabled="files.length === 0 || parentId === null"
+          :disabled="files.length === 0 || (isCloud && parentId === null)"
           @click="submit"
         >
           Import
