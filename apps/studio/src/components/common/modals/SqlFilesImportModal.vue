@@ -30,43 +30,49 @@
               id="import-type"
             >
               <option value="single">Individual Files</option>
-              <option value="recursive">Recursive Directory</option>
+              <option value="recursive">Recursive Directory*</option>
             </select>
           </div>
-          <div class="form-group">
-            <label for="importFiles">{{importType === 'single' ? 'Files' : 'Directory'}}</label>
-            <file-picker
-              v-model="files"
-              :multiple="isIndividual"
-              :directory="!isIndividual"
-              :button-text="buttonText"
-              :options="dialogOptions"
-            />
-          </div>
-          <div class="form-group">
-            <label>Parent Folder</label>
-            <in-app-folder-picker
-              v-model="parentId"
-              folder-path="data/queryFolders"
-            />
-          </div>
-          <div v-if="!isIndividual" class="form-group">
-            <label class="checkbox form-row">
-              <input
-                v-model="preserveRoot"
-                type="checkbox"
-              >
-              Preserve Root
-              <i
-                class="material-icons"
-                v-tooltip="{
-                  content: `Import Root directory, otherwise import children at the root of the parent folder`
-                }"
-              >
-              help_outlined
-              </i>
-            </label>
-          </div>
+          <template v-if="isIndividual || isUltimate">
+            <div class="form-group">
+              <label for="importFiles">{{importType === 'single' ? 'Files' : 'Directory'}}</label>
+              <file-picker
+                v-model="files"
+                :multiple="isIndividual"
+                :directory="!isIndividual"
+                :button-text="buttonText"
+                :options="dialogOptions"
+              />
+            </div>
+            <div class="form-group">
+              <label>Parent Folder</label>
+              <in-app-folder-picker
+                v-model="parentId"
+                folder-path="data/queryFolders"
+              />
+            </div>
+            <div v-if="!isIndividual" class="form-group">
+              <label class="checkbox form-row">
+                <input
+                  v-model="preserveRoot"
+                  type="checkbox"
+                >
+                Preserve Root
+                <i
+                  class="material-icons"
+                  v-tooltip="{
+                    content: `Import Root directory, otherwise import children at the root of the parent folder`
+                  }"
+                >
+                help_outlined
+                </i>
+              </label>
+            </div>
+          </template>
+          <upgrade-panel v-else
+            standalone
+            :feature-name="'Recursive Import'"
+          />
         </div>
         <div v-else>
           <div v-if="!importFinished" class="importing-state">
@@ -137,6 +143,7 @@
 <script lang="ts">
 import FilePicker from "@/components/common/form/FilePicker.vue";
 import InAppFolderPicker from "@/components/common/form/InAppFolderPicker.vue";
+import UpgradePanel from "@/components/upsell/UpgradePanel.vue";
 import { AppEvent } from "@/common/AppEvent";
 import { mapState, mapGetters } from 'vuex'
 import _ from 'lodash';
@@ -149,6 +156,7 @@ export default {
   components: {
     FilePicker,
     InAppFolderPicker,
+    UpgradePanel
   },
   props: ["name"],
   data() {
@@ -165,7 +173,7 @@ export default {
   },
   computed: {
     ...mapState('data/queryFolders', {'folders': 'items'}),
-    ...mapGetters(["isCloud"]),
+    ...mapGetters(["isCloud", "isUltimate"]),
     modalName() {
       return this.name || "sql-files-import";
     },
