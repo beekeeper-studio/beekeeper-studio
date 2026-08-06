@@ -128,7 +128,7 @@ export function mainPlatformInfo(): IPlatformInfo {
     // JSON env var when forked, renderer fetches it over IPC.
     logLevel: resolveLevel(p.env, isDevEnv),
 
-    cloudUrl: isDevEnv ? 'https://superman-parted-submerge.ngrok-free.dev' : 'https://app.beekeeperstudio.io'
+    cloudUrl: isDevEnv ? 'http://localhost:3000' : 'https://app.beekeeperstudio.io'
   }
 }
 
