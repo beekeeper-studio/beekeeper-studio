@@ -16,6 +16,7 @@ Let's build a simple "Hello World" plugin! You'll create a new tab that shows "H
 -   Basic HTML, CSS, and JavaScript knowledge
 -   Node.js and npm/yarn installed
 -   Beekeeper Studio installed
+-   **[The plugin system enabled](../user_guide/configuration.md)**
 
 ## Quick Start (2 Options)
 
