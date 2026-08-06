@@ -142,6 +142,7 @@ export default {
       surrealDbOptions: config.surrealDbOptions,
       snowflakeOptions: config.snowflakeOptions,
       dynamoDbOptions: config.dynamoDbOptions,
+      hanaOptions: config.hanaOptions,
       runtimeExtensions: sqliteExtension ? sqliteExtension as string[] : [],
       sshConfigWarnings: sshConfigWarnings.length ? Array.from(new Set(sshConfigWarnings)) : undefined,
     }

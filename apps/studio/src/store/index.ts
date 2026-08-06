@@ -547,6 +547,16 @@ const store = new Vuex.Store<State>({
           await context.dispatch('updateNamespaceList');
         }
         await context.dispatch('updateDatabaseList')
+        // Single-database dialects (e.g. SAP HANA) can connect without a
+        // database name in the config; reflect the server-reported database
+        // so the sidebar doesn't present an unselected state.
+        if (
+          !context.state.database &&
+          context.getters.dialectData?.disabledFeatures?.multipleDatabases &&
+          context.state.databaseList?.length === 1
+        ) {
+          context.commit('database', context.state.databaseList[0])
+        }
         await context.dispatch('updateTables')
         await context.dispatch('updateRoutines')
         context.dispatch('updateWindowTitle', config)

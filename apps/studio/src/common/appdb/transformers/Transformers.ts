@@ -1,7 +1,7 @@
 import { ValueTransformer } from 'typeorm';
 import Encryptor, { SimpleEncryptor } from 'simple-encryptor'
 import { AzureAuthOptions } from '../models/saved_connection';
-import { SnowflakeOptions, SurrealDBOptions } from '@/lib/db/types';
+import { HanaOptions, SnowflakeOptions, SurrealDBOptions } from '@/lib/db/types';
 import _ from 'lodash'
 import rawLog from '@bksLogger'
 
@@ -49,6 +49,39 @@ export class SurrealDbEncryptTransformer implements ValueTransformer {
     return value;
   }
 
+}
+
+export class HanaOptionsEncryptTransformer implements ValueTransformer {
+  private encryptor: SimpleEncryptor;
+
+  constructor(key: string) {
+    this.encryptor = Encryptor(key);
+  }
+
+  to(value: HanaOptions): HanaOptions {
+    const newVal = _.cloneDeep(value);
+    if (newVal?.token) {
+      newVal.token = this.encryptor.encrypt(newVal.token);
+    }
+
+    if (newVal?.x509CertPassword) {
+      newVal.x509CertPassword = this.encryptor.encrypt(newVal.x509CertPassword);
+    }
+
+    return newVal;
+  }
+
+  from(value: HanaOptions): HanaOptions {
+    if (value?.token) {
+      value.token = this.encryptor.decrypt(value.token);
+    }
+
+    if (value?.x509CertPassword) {
+      value.x509CertPassword = this.encryptor.decrypt(value.x509CertPassword);
+    }
+
+    return value;
+  }
 }
 
 export class SnowflakeOptionsTransformer implements ValueTransformer {

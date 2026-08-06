@@ -334,5 +334,14 @@ export const CLIENTS: ClientConfig[] = [
     disabledFeatures: [
 
     ]
+  },
+  {
+    key: 'hana',
+    name: 'SAP HANA',
+    defaultPort: 30015,
+    disabledFeatures: [
+      'server:socketPath',
+      'server:domain'
+    ]
   }
 ];

@@ -4,7 +4,7 @@ import { Version } from '@/common/version'
 import { ExtendedTableColumn } from '@/lib/db/models'
 
 const communityDialects = ['postgresql', 'greengage', 'sqlite', 'sqlserver', 'mysql', 'starrocks', 'redshift', 'bigquery', 'bedrock', 'redis'] as const
-const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'sqlanywhere', 'surrealdb', 'trino', 'dynamodb', 'snowflake'] as const
+const ultimateDialects = ['oracle', 'cassandra', 'firebird', 'clickhouse', 'mongodb', 'duckdb', 'sqlanywhere', 'surrealdb', 'trino', 'dynamodb', 'snowflake', 'hana'] as const
 
 export const Dialects = [...communityDialects, ...ultimateDialects] as const
 
@@ -70,7 +70,8 @@ export const DialectTitles: {[K in Dialect]: string} = {
   bedrock: 'Bedrock',
   redis: 'Redis',
   dynamodb: 'Amazon DynamoDB',
-  snowflake: 'Snowflake'
+  snowflake: 'Snowflake',
+  hana: 'SAP HANA'
 }
 
 export const KnexDialects = ['postgres', 'sqlite3', 'mssql', 'redshift', 'mysql', 'oracledb', 'firebird', 'cassandra-knex']
@@ -83,6 +84,9 @@ export function KnexDialect(d: Dialect): KnexDialect {
   if (d === 'oracle') return 'oracledb'
   if (d === 'cassandra') return 'cassandra-knex'
   if (d === 'greengage') return 'postgres'
+  // knex is only used as a query builder for HANA; pg matches HANA's
+  // double-quoted identifiers and LIMIT/OFFSET syntax.
+  if (d === 'hana') return 'postgres'
   return d as KnexDialect
 }
 // REF: https://github.com/sql-formatter-org/sql-formatter/blob/master/docs/language.md#options
@@ -100,6 +104,7 @@ export function FormatterDialect(d: Dialect): FormatterDialect {
   if (d === 'trino') return 'trino'
   if (d === 'surrealdb') return 'sql'
   if (d === 'snowflake') return 'snowflake'
+  if (d === 'hana') return 'sql'
   return 'mysql' // we want this as the default
 }
 

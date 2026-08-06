@@ -19,6 +19,7 @@ import { RedisData } from "@shared/lib/dialects/redis";
 import { DynamoDBData } from "./dynamodb";
 import { SnowflakeData } from "./snowflake";
 import { StarRocksData } from "./starrocks";
+import { HanaData } from "./hana";
 
 export function getDialectData(dialect: Dialect): DialectData  {
   switch (dialect) {
@@ -62,6 +63,8 @@ export function getDialectData(dialect: Dialect): DialectData  {
       return SnowflakeData
     case 'starrocks':
       return StarRocksData
+    case 'hana':
+      return HanaData
     default:
       return SqliteData
   }
