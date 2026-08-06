@@ -285,6 +285,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
         }
       ]
     },
+    dataTypeColors: {
+      id: 'data-type-colors',
+      label: 'Data type colors...',
+      click: actionHandler.openDataTypeColors,
+    },
     enterLicense: {
       id: 'enter-license',
       label: "Manage License Keys",

@@ -50,6 +50,8 @@ const SettingStoreModule: Module<State, any> = {
 
       const setting = context.state.settings[key] || await Vue.prototype.$util.send('appdb/setting/new');
       if (_.isBoolean(value)) setting.valueType = UserSettingValueType.boolean;
+      if (_.isArray(value)) setting.valueType = UserSettingValueType.array;
+      if (_.isPlainObject(value)) setting.valueType = UserSettingValueType.object;
       setValue(setting, value);
       setting.key = key;
       const newSetting = await Vue.prototype.$util.send('appdb/setting/save', { obj: setting });

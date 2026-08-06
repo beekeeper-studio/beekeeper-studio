@@ -27,6 +27,8 @@ export interface FormatterParams {
   fkOnClick: false | ((_e: Event, cell: { [key: string]: any }) => void);
   isPK: boolean;
   binaryEncoding: string; // or boolean, depending on actual type
+  dataType?: string;
+  dataTypeColors?: boolean;
 }
 
 export interface YesNoParams {
@@ -87,4 +89,3 @@ export default {
     }
   }
 }
-

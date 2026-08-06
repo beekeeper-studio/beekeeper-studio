@@ -77,3 +77,27 @@ body.theme-solarized {
   @import './themes/solarized-light/theme.scss';
   @import './themes/scssvars-to-cssprops.scss';
 }
+
+body.theme-system {
+  @media (prefers-color-scheme: light) {
+    .style-wrapper {
+      --bks-data-type-color-text: var(--bks-data-type-color-text-light);
+      --bks-data-type-color-number: var(--bks-data-type-color-number-light);
+      --bks-data-type-color-date-time: var(--bks-data-type-color-date-time-light);
+      --bks-data-type-color-boolean: var(--bks-data-type-color-boolean-light);
+      --bks-data-type-color-binary: var(--bks-data-type-color-binary-light);
+      --bks-data-type-color-other: var(--bks-data-type-color-other-light);
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .style-wrapper {
+      --bks-data-type-color-text: var(--bks-data-type-color-text-dark);
+      --bks-data-type-color-number: var(--bks-data-type-color-number-dark);
+      --bks-data-type-color-date-time: var(--bks-data-type-color-date-time-dark);
+      --bks-data-type-color-boolean: var(--bks-data-type-color-boolean-dark);
+      --bks-data-type-color-binary: var(--bks-data-type-color-binary-dark);
+      --bks-data-type-color-other: var(--bks-data-type-color-other-dark);
+    }
+  }
+}

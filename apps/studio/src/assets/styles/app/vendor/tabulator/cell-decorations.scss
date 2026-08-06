@@ -6,3 +6,35 @@
     text-decoration-color: $text-light;
   }
 }
+
+.data-type-colors-enabled .tabulator-cell {
+  &.data-type-text > pre,
+  &.data-type-text > .cell-link-wrapper {
+    color: var(--bks-data-type-color-text);
+  }
+
+  &.data-type-number > pre,
+  &.data-type-number > .cell-link-wrapper {
+    color: var(--bks-data-type-color-number);
+  }
+
+  &.data-type-date-time > pre,
+  &.data-type-date-time > .cell-link-wrapper {
+    color: var(--bks-data-type-color-date-time);
+  }
+
+  &.data-type-boolean > pre,
+  &.data-type-boolean > .cell-link-wrapper {
+    color: var(--bks-data-type-color-boolean);
+  }
+
+  &.data-type-binary > pre,
+  &.data-type-binary > .cell-link-wrapper {
+    color: var(--bks-data-type-color-binary);
+  }
+
+  &.data-type-other > pre,
+  &.data-type-other > .cell-link-wrapper {
+    color: var(--bks-data-type-color-other);
+  }
+}
