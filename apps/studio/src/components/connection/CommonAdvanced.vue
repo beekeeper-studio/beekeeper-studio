@@ -15,7 +15,7 @@
         v-if="sshDetailsFilledButDisabled"
         class="row alert-row"
       >
-        <div class="alert alert-info">
+        <div class="alert alert-warning">
           <i class="material-icons-outlined">warning</i>
           <div>SSH details are filled in, but the SSH tunnel is disabled. Enable it above to use these settings.</div>
         </div>
