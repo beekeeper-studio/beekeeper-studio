@@ -13,7 +13,8 @@ function genAppId() {
 
 export interface WSWithClient {
   workspace: IWorkspace,
-  client: CloudClient
+  client: CloudClient,
+  credentialId: number
 }
 
 export interface CredentialBlob {
@@ -70,11 +71,13 @@ export const CredentialsModule: Module<State, RootState> = {
       const c: CredentialBlob[] = state.credentials
       const result = c.flatMap((cred) => {
         return cred.workspaces.map((ws) => ({
-          workspace: ws, client: cred.client
+          workspace: ws,
+          client: cred.client,
+          credentialId: cred.id
         }))
       })
       return [
-        { workspace: LocalWorkspace, client: null },
+        { workspace: LocalWorkspace, client: null, credentialId: null },
         ...result
       ]
     },
@@ -151,12 +154,26 @@ export const CredentialsModule: Module<State, RootState> = {
     async setUserWorkspace(context) {
       const settingsResponse = context.rootGetters['settings/lastUsedWorkspace']
       if (!settingsResponse) return
-      const lastUsedWorkspace = settingsResponse.value
+      const lastUsedWorkspace = Number(settingsResponse.value)
       const { workspaces } = context.getters
 
-      if (lastUsedWorkspace !== -1 && workspaces.length > 1) {
-        if (workspaces.filter(v => v?.workspace?.id === lastUsedWorkspace) != null) context.commit('workspaceId', lastUsedWorkspace, { root: true })
+      if (lastUsedWorkspace === LocalWorkspace.id) {
+        await Vue.prototype.$util.send('workspace/setActive', {
+          wId: LocalWorkspace.id
+        })
+        return
       }
+
+      const match = workspaces.find((v: WSWithClient) => v?.workspace?.id === lastUsedWorkspace)
+
+      if (!match) return
+
+      await Vue.prototype.$util.send('workspace/setActive', {
+        wId: match.workspace.id,
+        credentialId: match.credentialId
+      })
+
+      context.commit('workspaceId', lastUsedWorkspace, { root: true })
     },
     async createWorkspace(context, payload: { blobId: number, name: string }) {
       const client = context.state.credentials.find((c) => c.id === payload.blobId).client

@@ -1263,7 +1263,10 @@ export default Vue.extend({
           disabled: !this.editable,
         },
         {
-          label: createMenuItem(`Delete ${rowRangeLabel}`, "Delete"),
+          label: createMenuItem(
+            `Delete ${rowRangeLabel}`,
+            this.$bksConfig.getKeybindings("context-menu", "general.deleteSelection"),
+          ),
           action: () => {
             this.tabulator.rowManager.element.focus()
             this.deleteTableSelection(undefined)

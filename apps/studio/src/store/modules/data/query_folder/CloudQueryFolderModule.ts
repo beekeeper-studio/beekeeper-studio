@@ -1,11 +1,11 @@
 import { IQueryFolder } from "@/common/interfaces/IQueryFolder";
 import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
-import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
-import { buildFolderTree } from "@/common/utils/folderTree";
+import { accessGrantMutations, accessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
+import { FolderFetchModule, treeActions } from "@/store/modules/data/tree/treeStore";
+import { FolderableState, folderableActions, folderableMutations } from "@/store/modules/data/tree/folderableStore";
+import { FolderNodeModule } from "@/store/modules/data/tree/FolderNodeModule";
 
-
-
-type State = DataState<IQueryFolder>
+type State = DataState<IQueryFolder> & FolderableState<IQueryFolder>;
 
 export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
   namespaced: true,
@@ -13,21 +13,31 @@ export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
     items: [],
     loading: false,
     error: null,
-    pollError: null
+    pollError: null,
+    draft: null,
   },
-  mutations: mutationsFor<IQueryFolder>({ ...accessGrantMutations() }, { field: 'name', direction: 'asc'}),
-  getters: {
-    foldersWithQueries: (state) => (queries: any[]) =>
-      buildFolderTree(state.items, queries, 'queryFolderId')
+  mutations: {
+    ...mutationsFor<IQueryFolder>({}, { field: 'name', direction: 'asc'}),
+    ...accessGrantMutations(),
+    ...folderableMutations(),
   },
-  actions: actionsFor<IQueryFolder>('queryFolders', {
-    ...cloudAccessGrantActions('queryFolders'),
+  modules: {
+    nodes: FolderNodeModule,
+    folders: FolderFetchModule,
+  },
+  actions: {
+    ...actionsFor<IQueryFolder>('queryFolders', {}),
+    ...accessGrantActions('queryFolders'),
+    ...treeActions<IQueryFolder>('parentIds'),
+    ...folderableActions<IQueryFolder>(),
+    async initialize() {
+      // noop
+    },
     async poll() {
       // empty on purpose
     },
-    async moveToFolder(context, { query, folder }) {
-      const updated = { ...query, queryFolderId: folder?.id ?? null }
-      await context.dispatch('data/queries/save', updated, { root: true })
-    }
-  })
+    async afterMutate(context, { type, data }) {
+      context.commit(`nodes/${type}`, data)
+    },
+  },
 }
