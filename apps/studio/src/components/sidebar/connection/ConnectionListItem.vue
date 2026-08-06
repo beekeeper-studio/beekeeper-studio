@@ -327,4 +327,13 @@ export default {
     width: 100%;
   }
 }
+
+/** --depth is from Tree.vue */
+.list-group .list-item .list-item-btn {
+  padding-left: calc(var(--depth) * 1.15rem);
+}
+
+.connection-label {
+  margin-left: 0.5rem;
+}
 </style>

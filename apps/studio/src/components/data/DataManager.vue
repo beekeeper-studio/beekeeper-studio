@@ -5,7 +5,7 @@
 import _ from 'lodash'
 import {DataModules} from '@/store/DataModules'
 import Vue from 'vue'
-import { mapGetters, mapState } from 'vuex'
+import { mapActions, mapGetters, mapState } from 'vuex'
 
 
 export default Vue.extend({
@@ -57,6 +57,7 @@ export default Vue.extend({
     }
   },
   methods: {
+    ...mapActions(['initializeConnectionTree', 'initializeQueryTree']),
     saveTab: _.debounce(function() {
       this.$store.dispatch('tabs/save', this.activeTab)
     }, 500),
@@ -83,6 +84,9 @@ export default Vue.extend({
         this.$store.registerModule(module.path, choice)
         this.$store.dispatch(`${module.path}/initialize`)
       })
+
+      this.initializeConnectionTree()
+      this.initializeQueryTree()
     },
   }
 })

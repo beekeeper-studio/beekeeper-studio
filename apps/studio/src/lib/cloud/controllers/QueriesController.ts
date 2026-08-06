@@ -19,10 +19,11 @@ export class QueriesController extends GenericController<ISavedQuery> {
     return new AccessGrantsController(this.axios, this.path, queryId);
   }
 
-  async reorder(id: number, position: { before?: number | null; after?: number } | number, queryFolderId?: number | null): Promise<ReorderResult[]> {
+  async reorder(id: number, position: { before?: number | null; after?: number } | number, queryFolderId?: number | null, confirm?: boolean): Promise<ReorderResult[]> {
     const response = await this.axios.patch(url(this.path, id, 'reorder'), {
       position,
-      queryFolderId
+      queryFolderId,
+      confirm
     })
     return res(response, 'queries')
   }
