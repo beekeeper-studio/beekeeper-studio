@@ -39,6 +39,9 @@ function buildBksMock() {
 function mountItem(opts: { config: any; isRecentList: boolean; saved?: any[]; startupHighlightConfig?: any }) {
   return shallowMount(ConnectionListItem as any, {
     store: buildStore(opts.saved ?? []),
+    directives: {
+      tooltip: {},
+    },
     propsData: {
       config: opts.config,
       isRecentList: opts.isRecentList,
