@@ -6,7 +6,7 @@
     <a
       class="list-item-btn"
       v-tooltip.bottom.delay="{
-        content: truncatedText,
+        content: title,
         delay: { show: 500 },
       }"
       @click.prevent="$emit('select', item)"
@@ -44,11 +44,26 @@ export default Vue.extend({
     rename: false,
   }),
   computed: {
-    ...mapGetters(["isCloud"]),
+    ...mapGetters(["isCloud", "workspace"]),
     ...mapState('data/queryFolders', {'folders': 'items'}),
     truncatedText() {
       const excerpt: string = this.item.excerpt ?? ''
       return _.truncate(excerpt.trim().replaceAll('\n', ''), { length: 60 })
+    },
+    title() {
+      return `Created by ${this.author}, ${this.truncatedText}`;
+    },
+    author() {
+      if (!this.isCloud) {
+        return "You";
+      }
+      if (!this.item || !this.item.membership) {
+        return "Unknown";
+      }
+      if (this.item.membership.userId === this.workspace.currentMembership.userId) {
+        return "You";
+      }
+      return this.item.membership.name;
     },
     subtitle() {
       const result = []

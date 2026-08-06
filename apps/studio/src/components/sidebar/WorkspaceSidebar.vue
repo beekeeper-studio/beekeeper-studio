@@ -117,13 +117,10 @@ components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, ContentP
       }
       await this.$util.send('workspace/setActive', { wId: blob.workspace.id, credentialId: blob.credentialId });
       this.$store.commit('workspaceId', blob.workspace.id)
-      const defaultWorkspace = {
-        ...this.settings['lastUsedWorkspace'],
-        ...{
-          _userValue: blob.workspace.id.toString()
-        }
-      }
-      this.$store.dispatch('settings/saveSetting', defaultWorkspace)
+      this.$store.dispatch('settings/save', {
+        key: "lastUsedWorkspace",
+        value: blob.workspace.id.toString(),
+      })
     }
   },
   mounted() {
