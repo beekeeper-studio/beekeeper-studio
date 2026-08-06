@@ -58,6 +58,9 @@
       &.active {
         background-color: rgba($theme-base, 0.06);
       }
+      &.startup-highlight {
+        background-color: rgba($brand-primary, 0.12);
+      }
     }
     .actions-btn {
       min-width: 0;
@@ -110,6 +113,29 @@
           @include truncate;
           margin: 0 0.2rem;
         }
+      }
+    }
+  }
+  .connection-meta {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    gap: ($gutter-h * 0.5);
+    margin-left: ($gutter-w * 1);
+
+    .startup-highlight-indicator {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      flex: 0 0 18px;
+      color: rgba($brand-primary, 0.7);
+      cursor: default;
+      line-height: 1;
+
+      .material-icons {
+        font-size: 14px;
       }
     }
   }

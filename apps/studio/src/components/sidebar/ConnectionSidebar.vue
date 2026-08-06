@@ -73,6 +73,7 @@
                 :key="c.id"
                 :config="c"
                 :selected-config="selectedConfig"
+                :startup-highlight-config="startupHighlightConfig"
                 :show-duplicate="true"
                 :pinned="true"
                 :privacy-mode="privacyMode"
@@ -195,6 +196,7 @@
                     :key="c.id"
                     :config="c"
                     :selected-config="selectedConfig"
+                    :startup-highlight-config="startupHighlightConfig"
                     :show-duplicate="true"
                     :pinned="pinnedConnections.includes(c)"
                     :privacy-mode="privacyMode"
@@ -232,6 +234,7 @@
                       :key="c.id"
                       :config="c"
                       :selected-config="selectedConfig"
+                      :startup-highlight-config="startupHighlightConfig"
                       :show-duplicate="true"
                       :pinned="pinnedConnections.includes(c)"
                       :privacy-mode="privacyMode"
@@ -258,6 +261,7 @@
                   :key="c.id"
                   :config="c"
                   :selected-config="selectedConfig"
+                  :startup-highlight-config="startupHighlightConfig"
                   :show-duplicate="true"
                   :pinned="pinnedConnections.includes(c)"
                   :privacy-mode="privacyMode"
@@ -385,7 +389,7 @@ export default {
     WorkspaceSidebar,
     Draggable
   },
-  props: ['selectedConfig'],
+  props: ['selectedConfig', 'startupHighlightConfig'],
   data: () => ({
     split: null,
     sortables: {

@@ -7,7 +7,11 @@
       <titlebar />
       <template v-if="storeInitialized">
         <!-- TODO (@day): need to come up with a better way to check this. Just set a 'connected' flag? -->
-        <connection-interface v-if="!connected" />
+        <connection-interface
+          v-if="!connected"
+          :startup-highlight-enabled="!startupHighlightApplied"
+          @startup-highlight-applied="startupHighlightApplied = true"
+        />
         <core-interface
           @databaseSelected="databaseSelected"
           v-else
@@ -116,6 +120,7 @@ export default Vue.extend({
       interval: null,
       licenseInterval: null,
       runningWayland: false,
+      startupHighlightApplied: false,
     }
   },
   computed: {
