@@ -128,3 +128,14 @@ Beekeeper Studio proporciona asociaciones de archivos para que puedas hacer lo s
 - Abre URLs y archivos desde la terminal:
   - Mac: `open postgresql://user@host/database` o `open ./example.db`
   - Linux: `xdg-open postgresql://user@host/database` o `xdg-open ./example.db`
+
+## Conexiones desde la linea de comandos
+
+Pasa una URL de conexion o un archivo de base de datos directamente al ejecutable de Beekeeper Studio. Se admiten argumentos posicionales, `--url` y su abreviatura `-u`:
+
+```bash
+beekeeper-studio 'postgresql://user@host/database'
+beekeeper-studio --url 'mysql://user@host/database'
+beekeeper-studio ./example.db
+```
+

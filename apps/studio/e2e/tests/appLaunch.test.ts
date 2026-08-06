@@ -17,4 +17,14 @@ test.describe("App Launch", () => {
         await electronApp.close();
     });
 
+    test("opens a connection URL from command-line arguments", async () => {
+        const connectionUrl = "postgresql://cli-user@localhost/cli-db";
+        electronApp = await launchElectron(["--url", connectionUrl]);
+        window = await electronApp.firstWindow();
+
+        expect(new URL(window.url()).searchParams.get("url")).toBe(connectionUrl);
+
+        await electronApp.close();
+    });
+
 });
