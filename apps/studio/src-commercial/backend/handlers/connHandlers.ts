@@ -70,7 +70,7 @@ export interface IConnectionHandlers {
   'conn/getTableCreateScript': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<string>,
   'conn/getViewCreateScript': ({ view, schema, sId }: { view: string, schema?: string, sId: string }) => Promise<string[]>,
   'conn/getMaterializedViewCreateScript': ({ view, schema, sId }: { view: string, schema?: string, sId: string }) => Promise<string[]>,
-  'conn/getRoutineCreateScript': ({ routine, type, schema, sId }: { routine: string, type: string, schema?: string, sId: string }) => Promise<string[]>,
+  'conn/getRoutineCreateScript': ({ routine, type, schema, id, sId }: { routine: string, type: string, schema?: string, id?: string, sId: string }) => Promise<string[]>,
   'conn/createTable': ({ table }: { table: CreateTableSpec }) => Promise<void>,
   'conn/getCollectionValidation': ({ collection, sId }: { collection: string, sId: string }) => Promise<any>,
   'conn/setCollectionValidation': ({ params, sId }: { params: any, sId: string }) => Promise<void>,
@@ -428,9 +428,9 @@ export const ConnHandlers: IConnectionHandlers = {
     return await state(sId).connection.getMaterializedViewCreateScript(view, schema);
   },
 
-  'conn/getRoutineCreateScript': async function({ routine, type, schema, sId }: { routine: string, type: string, schema?: string, sId: string }) {
+  'conn/getRoutineCreateScript': async function({ routine, type, schema, id, sId }: { routine: string, type: string, schema?: string, id?: string, sId: string }) {
     checkConnection(sId);
-    return await state(sId).connection.getRoutineCreateScript(routine, type, schema);
+    return await state(sId).connection.getRoutineCreateScript(routine, type, schema, id);
   },
 
   'conn/createTable': async function({ table, sId }: { table: CreateTableSpec, sId: string }) {

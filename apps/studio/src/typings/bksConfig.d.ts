@@ -384,7 +384,7 @@ declare interface IBksConfig {
             addRow: string;
             cloneSelection: string;
             copySelection: string;
-            deleteSelection: string;
+            deleteSelection: string[];
             jsonViewerSidebar: string;
             openInSqlEditor: string;
             openQuickSearch: string;

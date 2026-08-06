@@ -732,6 +732,41 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
       expect(selfRefKey.onDelete).toBe('SET DEFAULT');
     })
 
+    // regression test: SQL Create must resolve the selected overload, not the first one
+    it("should generate the create script for the selected routine overload", async () => {
+      if (util.connection.readOnlyMode) return;
+
+      await util.knex.raw(`
+        CREATE FUNCTION public.overload_test(integer) RETURNS integer
+          LANGUAGE sql IMMUTABLE AS 'SELECT $1::integer + 1';
+        CREATE FUNCTION public.overload_test(text) RETURNS text
+          LANGUAGE sql IMMUTABLE AS 'SELECT $1::text || ''!''';
+      `);
+
+      const routines = await util.connection.listRoutines({ schema: 'public' });
+      const overloads = routines.filter((r) => r.name === 'overload_test');
+
+      expect(overloads.length).toBe(2);
+      expect(overloads[0].oid).toBeTruthy();
+      expect(overloads[1].oid).toBeTruthy();
+      expect(overloads[0].oid).not.toEqual(overloads[1].oid);
+
+      const textOverload = overloads.find((r) => r.routineParams?.[0]?.type === 'text');
+      const intOverload = overloads.find((r) => r.routineParams?.[0]?.type === 'integer');
+
+      const textDef = await util.connection.getRoutineCreateScript(
+        textOverload.name, textOverload.type, textOverload.schema, textOverload.oid
+      );
+      const intDef = await util.connection.getRoutineCreateScript(
+        intOverload.name, intOverload.type, intOverload.schema, intOverload.oid
+      );
+
+      expect(textDef[0]).toContain('RETURNS text');
+      expect(intDef[0]).toContain('RETURNS integer');
+      expect(textDef[0]).not.toContain('RETURNS integer');
+      expect(intDef[0]).not.toContain('RETURNS text');
+    })
+
     describe("Common Tests", () => {
       if (readonly) {
         runReadOnlyTests(() => util)

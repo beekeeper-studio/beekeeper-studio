@@ -47,9 +47,6 @@ export interface CloudClientOptions {
 const staticAxios = (baseUrl) => axios.create({
   baseURL: baseUrl,
   timeout: 5000,
-  headers: {
-    "ngrok-skip-browser-warning": true
-  },
   transformRequest: [snakeCaseData, ...defaultTransformRequest],
   transformResponse: [...defaultTransformResponse, camelCaseData],
   validateStatus: (status) => status < 500
@@ -95,7 +92,6 @@ export class CloudClient {
         token: options.token,
         app: options.app,
         clientVersion: options.clientVersion,
-        "ngrok-skip-browser-warning": true
       },
       validateStatus: (status) => status < 500
     })
