@@ -15,7 +15,9 @@ Tunatoa binaries kwa MacOS, Windows, na Linux.
 Beekeeper Studio ni bure kupakua na inatoa vipengele vingi bila malipo, bila usajili, bila kujiandikisha, na bila kadi ya benki. Programu inatoa baadhi ya vipengele vya premium kwa bei nafuu ya leseni. [Soma zaidi hapa](https://beekeeperstudio.io/pricing)
 
 
+
 Sehemu kubwa ya code katika Hazina za msimbo (Repository) hii ni mradi huria (open source) chini ya leseni ya GPLv3. Vipengele vya kulipia pia viko kwenye repo hii chini ya leseni ya kibiashara yenye source code inayopatikana.
+
 
 Michango kutoka kwa jamii (community contributions) inakaribishwa!
 
