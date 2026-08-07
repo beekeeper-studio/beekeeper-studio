@@ -38,8 +38,9 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
     async initialize() {
       // noop
     },
-    async poll() {
-      // noop
+    async poll(context) {
+      const expandedFolderIds = context.rootState.sidebar.queries.expandedIds
+      await context.dispatch('refresh', expandedFolderIds)
     },
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)

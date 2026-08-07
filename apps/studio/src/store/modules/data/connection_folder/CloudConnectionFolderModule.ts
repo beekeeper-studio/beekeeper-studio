@@ -34,8 +34,9 @@ export const CloudConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
     },
-    async poll() {
-      // empty on purpose
+    async poll(context) {
+      const expandedFolderIds = context.rootState.sidebar.connections.expandedIds
+      await context.dispatch('refresh', expandedFolderIds)
     },
     async initialize() {
       // noop
