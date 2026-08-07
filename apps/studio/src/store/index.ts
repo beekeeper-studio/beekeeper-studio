@@ -747,8 +747,8 @@ const store = new Vuex.Store<State>({
         context.commit('sidebar/connections/expandedIds', folderIds)
 
         await Promise.all([
-          context.dispatch('data/connectionFolders/ensureLoaded', folderIds),
-          context.dispatch('data/connections/ensureLoaded', folderIds),
+          context.dispatch('data/connectionFolders/loadByParentIds', folderIds),
+          context.dispatch('data/connections/loadByParentIds', folderIds),
         ])
       } else {
         context.commit('sidebar/connections/expandedIds', [])
@@ -765,15 +765,15 @@ const store = new Vuex.Store<State>({
           context.dispatch('data/queries/refresh', []),
         ]);
 
-        const folderIds = context.state['data/queryFolders'].items
+        const expandedFolderIds = context.state['data/queryFolders'].items
           .filter((folder) => folder.default)
           .map((folder) => folder.id)
         // the default folders start out expanded
-        context.commit('sidebar/queries/expandedIds', folderIds)
+        context.commit('sidebar/queries/expandedIds', expandedFolderIds)
 
         await Promise.all([
-          context.dispatch('data/queryFolders/ensureLoaded', folderIds),
-          context.dispatch('data/queries/ensureLoaded', folderIds),
+          context.dispatch('data/queryFolders/loadByParentIds', expandedFolderIds),
+          context.dispatch('data/queries/loadByParentIds', expandedFolderIds),
         ])
       } else {
         context.commit('sidebar/queries/expandedIds', [])

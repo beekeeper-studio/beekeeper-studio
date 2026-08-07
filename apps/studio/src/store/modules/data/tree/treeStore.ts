@@ -20,7 +20,7 @@
  *   },
  * }
  *
- * store.dispatch("data/connections/ensureLoaded", [1, 2])
+ * store.dispatch("data/connections/loadByParentIds", [1, 2])
  * ```
  **/
 
@@ -31,32 +31,25 @@ import { HasId } from "@/common/interfaces/IGeneric";
 import { ClientError } from "@/store/modules/data/StoreHelpers";
 
 export type FolderFetchState = {
-  /** Folders whose children have already been fetched. */
-  fetchedIds: number[];
   /** Folders whose children are being fetched right now. */
   fetchingIds: number[];
 };
 
 /**
- * Which folders this module has already fetched the children of
+ * Which folders this module is fetching the children of
  **/
 export const FolderFetchModule: Module<FolderFetchState, RootState> = {
   namespaced: true,
   state() {
     return {
-      fetchedIds: [],
       fetchingIds: [],
     };
   },
   mutations: {
-    fetchedIds(state, ids: number[]) {
-      state.fetchedIds = ids;
-    },
     fetchingIds(state, ids: number[]) {
       state.fetchingIds = ids;
     },
     reset(state) {
-      state.fetchedIds = [];
       state.fetchingIds = [];
     },
   },
@@ -84,53 +77,24 @@ export function treeActions<T extends HasId>(
       context.commit("folders/reset");
     },
     async loadByParentIds(context, parentIds: number[]) {
+      parentIds = _.difference(parentIds, context.state.folders.fetchingIds);
+
       if (parentIds.length === 0) {
         return;
       }
 
-      await context.dispatch("loadMore", {
-        params: { [paramsKey]: parentIds },
-      });
-      context.commit("folders/fetchedIds", parentIds);
-    },
-    /** Pulls the whole tree in one request, for callers that need every folder
-     * up front rather than the expanded ones. */
-    async ensureAllLoaded(context) {
-      await context.dispatch("load");
-      context.commit(
-        "folders/fetchedIds",
-        context.state.items.map((item) => item.id)
-      );
-    },
-    async ensureLoaded(context, parentIds: number[]) {
-      const { fetchedIds, fetchingIds } = context.state.folders;
-      const unfetchedIds = _.difference(parentIds, fetchedIds, fetchingIds);
-      if (unfetchedIds.length === 0) {
-        return;
-      }
+      context.commit("folders/fetchingIds", [
+        ...context.state.folders.fetchingIds,
+        ...parentIds,
+      ]);
 
-      context.commit("folders/fetchingIds", [...fetchingIds, ...unfetchedIds]);
-
-      let fetched: boolean;
       try {
-        await context.dispatch("loadMore", {
-          params: { [paramsKey]: unfetchedIds },
-        });
-        fetched = !context.state.error;
-      } catch {
-        fetched = false;
+        await context.dispatch("load", { scope: { [paramsKey]: parentIds } });
       } finally {
         context.commit(
           "folders/fetchingIds",
-          _.difference(context.state.folders.fetchingIds, unfetchedIds)
+          _.difference(context.state.folders.fetchingIds, parentIds)
         );
-      }
-
-      if (fetched) {
-        context.commit("folders/fetchedIds", [
-          ...context.state.folders.fetchedIds,
-          ...unfetchedIds,
-        ]);
       }
     },
   };

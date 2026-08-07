@@ -359,6 +359,7 @@ export default {
     renamingFolderId: null,
     justCreatedFolderId: null,
     justCreatedTimeout: null,
+    loadingFolderIds: [],
   }),
   watch: {
     async sort(newSort) {
@@ -385,14 +386,6 @@ export default {
     }),
     ...mapState('sidebar/connections', {
       expandedFolderIds: 'expandedIds',
-    }),
-    ...mapState({
-      loadingFolderIds(state) {
-        return [
-          ...state["data/connectionFolders"].folders.fetchingIds,
-          ...state["data/connections"].folders.fetchingIds,
-        ];
-      },
     }),
     ...mapGetters({
       usedConfigs: 'data/usedconnections/orderedUsedConfigs',
@@ -484,8 +477,8 @@ export default {
     ...mapActions({
       saveFolder: 'data/connectionFolders/save',
       reorderConnection: 'data/connections/reorder',
-      ensureConnectionsLoaded: 'data/connections/ensureLoaded',
-      ensureSubfoldersLoaded: 'data/connectionFolders/ensureLoaded',
+      loadConnections: 'data/connections/loadByParentIds',
+      loadConnectionFolders: 'data/connectionFolders/loadByParentIds',
       startDrafting: 'data/connectionFolders/startDrafting',
       stopDrafting: 'data/connectionFolders/stopDrafting',
     }),
@@ -496,9 +489,20 @@ export default {
       const folderIds = this.folderNodes
         .filter((node) => expandedNodeIds.includes(node.id))
         .map((node) => node.ref.id)
+      const expandingIds = _.difference(folderIds, this.expandedFolderIds)
       this.setExpandedFolderIds(folderIds)
-      this.ensureConnectionsLoaded(folderIds)
-      this.ensureSubfoldersLoaded(folderIds)
+      this.loadFolders(expandingIds)
+    },
+    async loadFolders(ids) {
+      try {
+        this.loadingFolderIds = [...this.loadingFolderIds, ...ids]
+        await Promise.all([
+          this.loadConnections(ids),
+          this.loadConnectionFolders(ids),
+        ]);
+      } finally {
+        this.loadingFolderIds = _.difference(this.loadingFolderIds, ids)
+      }
     },
     clearFilter() {
       this.connFilter = null;

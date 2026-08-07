@@ -49,9 +49,6 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
         }
       })
     },
-    async loadMore(context) {
-      await context.dispatch('load');
-    },
     async poll() {
       // no-op for local
     },

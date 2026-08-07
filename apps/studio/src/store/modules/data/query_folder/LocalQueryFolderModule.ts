@@ -49,9 +49,6 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
         }
       })
     },
-    async loadMore(context) {
-      await context.dispatch('load');
-    },
     async poll() {
       // no-op for local
     },
