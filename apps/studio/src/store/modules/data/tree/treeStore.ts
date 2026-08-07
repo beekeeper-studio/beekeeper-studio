@@ -16,7 +16,7 @@
  *   },
  *   actions: {
  *     ...actionsFor<ICloudSavedConnection>("connections", {}),
- *     ...treeActions<ICloudSavedConnection>("connectionFolderIds", "connectionFolderId"),
+ *     ...treeActions<ICloudSavedConnection>({ plural: "connectionFolderIds", singular: "connectionFolderId" }),
  *   },
  * }
  *
@@ -64,10 +64,10 @@ export type TreeState<T> = {
 /**
  * Actions for models that support tree structure or nested folders.
  **/
-export function treeActions<T extends HasId>(
-  paramsKey: "connectionFolderIds" | "queryFolderIds" | "parentIds",
-  parentIdKey: "connectionFolderId" | "queryFolderId" | "parentId"
-): ActionTree<TreeState<T>, RootState> {
+export function treeActions<T extends HasId>(parentKeys: {
+  plural: "connectionFolderIds" | "queryFolderIds" | "parentIds",
+  singular: "connectionFolderId" | "queryFolderId" | "parentId"
+}): ActionTree<TreeState<T>, RootState> {
   return {
     async refresh(context, parentIds: number[]) {
       await context.dispatch("resetTree");
@@ -90,7 +90,12 @@ export function treeActions<T extends HasId>(
       ]);
 
       try {
-        await context.dispatch("load", { scope: { [paramsKey]: parentIds } });
+        await context.dispatch("load", {
+          params: { [parentKeys.plural]: parentIds },
+          replaceIf(item: T) {
+            return parentIds.includes(item[parentKeys.singular]);
+          },
+        });
       } finally {
         context.commit(
           "folders/fetchingIds",
@@ -105,7 +110,7 @@ export function treeActions<T extends HasId>(
       }
 
       const stale = context.state.items.filter((item) =>
-        parentIds.includes(item[parentIdKey])
+        parentIds.includes(item[parentKeys.singular])
       );
 
       if (stale.length === 0) {

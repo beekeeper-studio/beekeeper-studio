@@ -31,7 +31,7 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
   actions: {
     ...utilActionsFor<IConnection>('saved', {}),
     ...accessGrantActions('connections'),
-    ...treeActions<IConnection>('connectionFolderIds', 'connectionFolderId'),
+    ...treeActions<IConnection>({ plural: 'connectionFolderIds', singular: 'connectionFolderId' }),
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
     },

@@ -28,7 +28,7 @@ export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
   actions: {
     ...actionsFor<IQueryFolder>('queryFolders', {}),
     ...accessGrantActions('queryFolders'),
-    ...treeActions<IQueryFolder>('parentIds', 'parentId'),
+    ...treeActions<IQueryFolder>({ plural: 'parentIds', singular: 'parentId' }),
     ...folderableActions<IQueryFolder>(),
     async initialize() {
       // noop

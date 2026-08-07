@@ -32,7 +32,7 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
   actions: {
     ...actionsFor<ICloudSavedConnection>('connections', {}),
     ...accessGrantActions('connections'),
-    ...treeActions<ICloudSavedConnection>('connectionFolderIds', 'connectionFolderId'),
+    ...treeActions<ICloudSavedConnection>({ plural: 'connectionFolderIds', singular: 'connectionFolderId' }),
     async initialize() {
       // noop
     },
