@@ -33,14 +33,14 @@ export interface DataState<T> {
 
 
 /**
- * Payload for full or scoped replacement operations.
+ * Payload for full or partial replacement operations.
  * - An array replaces all existing items.
- * - An object with a `scope` replaces only items matching the scope filter,
- *   preserving all other items outside that scope.
+ * - `replaceIf` decides what a missing item means: an existing item absent from
+ *   `items` is only removed when the predicate accepts it.
  */
 export type ReplacePayload<T> =
   | T[]
-  | { items: T[]; scope?: Record<string, unknown> }
+  | { items: T[]; replaceIf?: (item: T) => boolean }
 
 export type MutatePayload<T> =
   | { type: 'set'; data: T | T[] }
@@ -121,6 +121,7 @@ const buildBasicMutations = <T extends HasId>(sortBy?: SortSpec) => ({
   },
   replace(state, payload: ReplacePayload<T>) {
     const items = _.isArray(payload) ? payload : payload.items
+    const replaceIf = _.isArray(payload) ? undefined : payload.replaceIf
 
     const pendingIds = state.pendingSaveIds || []
     const itemIds = items.map((i) => i.id)
@@ -131,7 +132,7 @@ const buildBasicMutations = <T extends HasId>(sortBy?: SortSpec) => ({
     const toInsert = items.filter((i) => !stateIds.includes(i.id))
     const toRemove = state.items
       .filter((i) => !itemIds.includes(i.id))
-      .filter((i) => !("scope" in payload) || _.isMatch(i, payload.scope))
+      .filter((i) => !replaceIf || replaceIf(i))
       .map((i) => i.id)
 
     // Don't remove items that have pending saves
@@ -253,19 +254,16 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
     async initialize(context) {
       await context.dispatch("load");
     },
-    async load(context, options: Partial<ListOptions> & { scope?: Record<string, unknown> } = {}) {
+    async load(context, options: Partial<ListOptions> & { replaceIf?: (item: T) => boolean } = {}) {
       context.commit("error", null)
       await safelyDo(context, async (cli) => {
-        const items: any[] = await cli[scope].list(undefined, {
-          ...options,
-          params: { ...options.params, ...options.scope },
-        })
+        const items: any[] = await cli[scope].list(undefined, options)
         // this is to account for when the store module changes
         const rightItems = items.filter((i) => i.workspaceId === context.rootState.workspaceId)
         if (rightItems.length === items.length) {
           await context.dispatch('mutate', {
             type: 'replace',
-            data: options.scope ? { items: rightItems, scope: options.scope } : rightItems,
+            data: { items: rightItems, replaceIf: options.replaceIf },
           })
         }
       })

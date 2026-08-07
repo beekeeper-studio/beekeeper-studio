@@ -29,7 +29,7 @@ export const CloudConnectionFolderModule: DataStore<IConnectionFolder, State> = 
   actions: {
     ...actionsFor<IConnectionFolder>('connectionFolders', {}),
     ...accessGrantActions('connectionFolders'),
-    ...treeActions<IConnectionFolder>('parentIds', 'parentId'),
+    ...treeActions<IConnectionFolder>({ plural: 'parentIds', singular: 'parentId' }),
     ...folderableActions<IConnectionFolder>(),
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)

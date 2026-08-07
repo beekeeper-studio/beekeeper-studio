@@ -96,22 +96,23 @@ export const FolderNodeModule: Module<State, RootState> = {
     set(state, folders: IFolder | IFolder[]) {
       state.items = buildFolderNodes(asArray(folders));
     },
-    /** A scoped payload only speaks for its own slice, so nodes outside it survive. */
     replace(state, payload: ReplacePayload<IFolder>) {
-      const { items, scope } = _.isArray(payload)
-        ? { items: payload, scope: null }
+      const { items, replaceIf } = _.isArray(payload)
+        ? { items: payload, replaceIf: null }
         : payload;
 
-      if (!scope) {
+      if (!replaceIf) {
         state.items = buildFolderNodes(items);
         return;
       }
 
       const ids = items.map((i) => `folder-${i.id}`);
-      const stale = state.items.filter(
-        (i) => !ids.includes(i.id) && _.isMatch(i.ref, scope)
-      );
-      applyRemove(state, stale.map((i) => i.id));
+      const staleItems = state
+        .items
+        .filter((i) => !ids.includes(i.id) && replaceIf(i.ref))
+        .map((i) => i.id);
+
+      applyRemove(state, staleItems);
       applyUpsert(state, items);
     },
     upsert(state, folders: IFolder | IFolder[]) {

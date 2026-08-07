@@ -49,18 +49,18 @@ export function ItemNodeModule(
       },
       /** A scoped payload only speaks for its own slice, so nodes outside it survive. */
       replace(state, payload: ReplacePayload<HasId>) {
-        const { items, scope } = _.isArray(payload)
-          ? { items: payload, scope: null }
+        const { items, replaceIf } = _.isArray(payload)
+          ? { items: payload, replaceIf: null }
           : payload;
 
-        if (!scope) {
+        if (!replaceIf) {
           state.items = buildItemNodes(items, parentIdKey, nameKey);
           return;
         }
 
         const ids = items.map((i) => `item-${i.id}`);
         const kept = state.items.filter(
-          (i) => ids.includes(i.id) || !_.isMatch(i.ref, scope)
+          (i) => ids.includes(i.id) || !replaceIf(i.ref)
         );
         state.items = applyUpsert(kept, items);
       },
