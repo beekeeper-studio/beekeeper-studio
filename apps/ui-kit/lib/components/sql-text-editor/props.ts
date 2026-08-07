@@ -2,6 +2,7 @@ import { Entity } from "../types";
 import { PropType } from "vue";
 import { DialectOptions, FormatOptions, FormatOptionsWithLanguage } from "sql-formatter";
 import { Options } from "sql-query-identifier";
+import type { KeywordCase } from "./extensions";
 import props from "../text-editor/props";
 
 export default {
@@ -65,8 +66,12 @@ export default {
   formatterModalId: {
     type: String,
     default: ''
-  }
-
+  },
+  /** Case for SQL keywords inserted by autocomplete */
+  keywordCase: {
+    type: String as PropType<KeywordCase>,
+    default: "lowercase",
+  },
   // --- replaced with languageId
   // mode: {
   //   type: textEditorMixin.props.mode,
