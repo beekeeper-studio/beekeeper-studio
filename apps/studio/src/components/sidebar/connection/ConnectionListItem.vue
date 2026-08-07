@@ -46,7 +46,7 @@
         <span
           v-if="isStartupHighlighted"
           class="startup-highlight-indicator"
-          v-tooltip="'Last used connection'"
+          role="img"
           aria-label="Last used connection"
           @mousedown.stop.prevent
           @mouseup.stop

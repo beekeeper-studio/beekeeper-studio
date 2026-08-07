@@ -378,9 +378,11 @@ export default Vue.extend({
       privacyMode: 'settings/privacyMode'
     }),
     startupHighlightDataReady() {
+      // Dynamic workspace modules can briefly be unregistered while switching
+      // workspaces, so undefined loading state must not count as ready.
       return this.workspaceContextReady &&
-        !this.connectionsLoading &&
-        !this.usedConnectionsLoading &&
+        this.connectionsLoading === false &&
+        this.usedConnectionsLoading === false &&
         !this.connectionsError &&
         !this.usedConnectionsError
     },
@@ -526,14 +528,18 @@ export default Vue.extend({
     initializeStartupHighlight() {
       if (!this.startupHighlightEnabled || !this.startupHighlightDataReady) return
 
-      this.$emit('startup-highlight-applied')
       const lastUsed = this.usedConfigs[0]
       if (!lastUsed?.connectionId) return
 
-      this.startupHighlightConfig = this.connections.find((connection) =>
+      const matchingConnection = this.connections.find((connection) =>
         connection.id === lastUsed.connectionId &&
         connection.workspaceId === lastUsed.workspaceId
-      ) || null
+      )
+      // Wait for the matching workspace connection to load before marking the highlight applied.
+      if (!matchingConnection) return
+
+      this.startupHighlightConfig = matchingConnection
+      this.$emit('startup-highlight-applied')
     },
     // Surface non-fatal ~/.ssh/config issues (untrusted/invalid config, missing
     // IdentityFile) as a single formatted warning toast.
