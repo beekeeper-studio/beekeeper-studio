@@ -187,6 +187,9 @@ export function utilActionsFor<T extends Transport>(type: string, other: any = {
         }
       })
     },
+    async search() {
+      // no-op, only the cloud module supports server-side search
+    },
     async poll() {
       // do nothing, locally we don't need to poll.
       // nothing else can change anything.
