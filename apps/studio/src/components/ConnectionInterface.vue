@@ -213,7 +213,8 @@
                       type="button"
                       @click.prevent="testConnection"
                     >
-                      Test
+                      <loading-spinner v-if="testing" :size="12" />
+                      <template v-else>Test</template>
                     </button>
                     <button
                       :disabled="testing || connecting"
@@ -321,6 +322,7 @@ import { AppEvent } from '@/common/AppEvent'
 import { isUltimateType } from '@/common/interfaces/IConnection'
 import { SmartLocalStorage } from '@/common/LocalStorage'
 import ContentPlaceholderHeading from '@/components/common/loading/ContentPlaceholderHeading.vue'
+import LoadingSpinner from '@/components/common/loading/LoadingSpinner.vue'
 import { FriendlyErrorHelper } from '@/frontend/utils/FriendlyErrorHelper'
 import PrivacyBanner from './PrivacyBanner.vue'
 
@@ -328,7 +330,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpgradePanel, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm, DynamoDbForm, ContentPlaceholderHeading, SurrealDbForm, PrivacyBanner, SnowflakeForm
+  components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpgradePanel, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm, DynamoDbForm, ContentPlaceholderHeading, SurrealDbForm, PrivacyBanner, SnowflakeForm, LoadingSpinner
   },
 
   data() {
@@ -607,7 +609,7 @@ export default Vue.extend({
         return true
       } catch (ex) {
         this.connectionError = ex
-        this.$noty.error("Error establishing a connection")
+        this.$noty.error(`Error establishing a connection: ${ex?.message ?? ex}`)
       } finally {
         this.testing = false
         this.afterConnect()
