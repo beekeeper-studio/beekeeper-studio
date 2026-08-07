@@ -32,7 +32,7 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, State> = {
   actions: {
     ...utilActionsFor<TransportFavoriteQuery>('query', {}, {}, { text: true, title: true, database: true, excerpt: true, id: true }),
     ...accessGrantActions('queries'),
-    ...treeActions<TransportFavoriteQuery>('queryFolderIds'),
+    ...treeActions<TransportFavoriteQuery>('queryFolderIds', 'queryFolderId'),
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
     },

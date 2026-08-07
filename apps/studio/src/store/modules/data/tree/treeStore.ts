@@ -16,7 +16,7 @@
  *   },
  *   actions: {
  *     ...actionsFor<ICloudSavedConnection>("connections", {}),
- *     ...treeActions<ICloudSavedConnection>("connectionFolderIds"),
+ *     ...treeActions<ICloudSavedConnection>("connectionFolderIds", "connectionFolderId"),
  *   },
  * }
  *
@@ -65,7 +65,8 @@ export type TreeState<T> = {
  * Actions for models that support tree structure or nested folders.
  **/
 export function treeActions<T extends HasId>(
-  paramsKey: "connectionFolderIds" | "queryFolderIds" | "parentIds"
+  paramsKey: "connectionFolderIds" | "queryFolderIds" | "parentIds",
+  parentIdKey: "connectionFolderId" | "queryFolderId" | "parentId"
 ): ActionTree<TreeState<T>, RootState> {
   return {
     async refresh(context, parentIds: number[]) {
@@ -96,6 +97,22 @@ export function treeActions<T extends HasId>(
           _.difference(context.state.folders.fetchingIds, parentIds)
         );
       }
+    },
+    /** Drops a collapsed folder's children so the next expand refetches them. */
+    async unloadByParentIds(context, parentIds: number[]) {
+      if (parentIds.length === 0) {
+        return;
+      }
+
+      const stale = context.state.items.filter((item) =>
+        parentIds.includes(item[parentIdKey])
+      );
+
+      if (stale.length === 0) {
+        return;
+      }
+
+      await context.dispatch("mutate", { type: "remove", data: stale });
     },
   };
 }

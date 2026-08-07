@@ -32,7 +32,7 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
   actions: {
     ...accessGrantActions('connectionFolders'),
     ...mutateActions<IConnectionFolder>(),
-    ...treeActions<IConnectionFolder>('parentIds'),
+    ...treeActions<IConnectionFolder>('parentIds', 'parentId'),
     ...folderableActions<IConnectionFolder>(),
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)

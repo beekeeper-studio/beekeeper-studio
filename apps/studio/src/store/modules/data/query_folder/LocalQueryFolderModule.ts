@@ -32,7 +32,7 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
   actions: {
     ...accessGrantActions('queryFolders'),
     ...mutateActions<IQueryFolder>(),
-    ...treeActions<IQueryFolder>('parentIds'),
+    ...treeActions<IQueryFolder>('parentIds', 'parentId'),
     ...folderableActions<IQueryFolder>(),
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
