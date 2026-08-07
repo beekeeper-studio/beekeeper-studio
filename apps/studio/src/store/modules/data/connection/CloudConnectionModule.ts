@@ -37,6 +37,10 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
       // noop
     },
     async poll(context) {
+      if (context.rootState.connected) {
+        return
+      }
+
       const expandedFolderIds = context.rootState.sidebar.connections.expandedIds
       await context.dispatch('loadByParentIds', expandedFolderIds)
     },

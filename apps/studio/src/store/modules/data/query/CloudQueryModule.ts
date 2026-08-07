@@ -39,6 +39,10 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
       // noop
     },
     async poll(context) {
+      if (!context.rootState.connected) {
+        return
+      }
+
       const expandedFolderIds = context.rootState.sidebar.queries.expandedIds
       await context.dispatch('loadByParentIds', expandedFolderIds)
     },
