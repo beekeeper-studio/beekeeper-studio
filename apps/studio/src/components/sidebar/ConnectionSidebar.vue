@@ -73,6 +73,7 @@
                 :key="c.id"
                 :config="c"
                 :selected-config="selectedConfig"
+                :startup-highlight-config="startupHighlightConfig"
                 :show-duplicate="true"
                 :pinned="true"
                 :privacy-mode="privacyMode"
@@ -162,6 +163,7 @@
                   :key="c.id"
                   :config="c"
                   :selected-config="selectedConfig"
+                  :startup-highlight-config="startupHighlightConfig"
                   :show-duplicate="true"
                   :pinned="pinnedConnections.includes(c)"
                   :is-recent-list="false"
@@ -258,6 +260,7 @@
                   <connection-list-item
                     :config="node.ref"
                     :selected-config="selectedConfig"
+                    :startup-highlight-config="startupHighlightConfig"
                     :show-duplicate="true"
                     :pinned="pinnedConnectionIds.includes(node.ref.id)"
                     :is-recent-list="false"
@@ -344,7 +347,7 @@ export default {
     SidebarSortButtons,
     WorkspaceSidebar,
   },
-  props: ['selectedConfig'],
+  props: ['selectedConfig', 'startupHighlightConfig'],
   data: () => ({
     split: null,
     sortables: {

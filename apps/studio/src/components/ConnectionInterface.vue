@@ -5,6 +5,7 @@
       <sidebar class="connection-sidebar" ref="sidebar" v-show="sidebarShown">
         <connection-sidebar
           :selected-config="config"
+          :startup-highlight-config="startupHighlightConfig"
           @remove="remove"
           @duplicate="duplicate"
           @edit="edit"
@@ -328,6 +329,12 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
+  props: {
+    startupHighlightEnabled: {
+      type: Boolean,
+      default: true,
+    },
+  },
   components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpgradePanel, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm, DynamoDbForm, ContentPlaceholderHeading, SurrealDbForm, PrivacyBanner, SnowflakeForm
   },
 
@@ -347,19 +354,38 @@ export default Vue.extend({
       loadingSSOModalOpened: false,
       version: this.$config.appVersion,
       isConfigReady: false,
+      workspaceContextReady: false,
+      startupHighlightConfig: null,
     }
   },
   computed: {
     ...mapState(['workspaceId', 'connection', 'sshConfigWarnings']),
     ...mapState(['username']),
-    ...mapState('data/connections', { 'connections': 'items' }),
+    ...mapState('data/connections', {
+      'connections': 'items',
+      'connectionsLoading': 'loading',
+      'connectionsError': 'error'
+    }),
     ...mapState('data/connectionFolders', { connectionFolders: 'items' }),
+    ...mapState('data/usedconnections', {
+      usedConnectionsLoading: 'loading',
+      usedConnectionsError: 'error'
+    }),
     ...mapGetters(['isUltimate', 'isCloud']),
     ...mapGetters('licenses', ['isTrial', 'trialLicense']),
     ...mapGetters({
       'usedConfigs': 'data/usedconnections/orderedUsedConfigs',
       privacyMode: 'settings/privacyMode'
     }),
+    startupHighlightDataReady() {
+      // Dynamic workspace modules can briefly be unregistered while switching
+      // workspaces, so undefined loading state must not count as ready.
+      return this.workspaceContextReady &&
+        this.connectionsLoading === false &&
+        this.usedConnectionsLoading === false &&
+        !this.connectionsError &&
+        !this.usedConnectionsError
+    },
     editingDisabled() {
       if (!this.isCloud) {
         return false;
@@ -417,6 +443,11 @@ export default Vue.extend({
       deep: true,
       handler() {
         this.connectionError = null
+      }
+    },
+    startupHighlightDataReady(ready) {
+      if (ready) {
+        this.initializeStartupHighlight()
       }
     },
     'config.connectionType'(newConnectionType) {
@@ -483,6 +514,9 @@ export default Vue.extend({
     await this.$store.dispatch('pinnedConnections/loadPins')
     await this.$store.dispatch('pinnedConnections/reorder')
     await this.$store.dispatch('credentials/load')
+    await this.$nextTick()
+    this.workspaceContextReady = true
+    this.initializeStartupHighlight()
   },
   beforeDestroy() {
     if (this.split) {
@@ -491,6 +525,22 @@ export default Vue.extend({
     this.unregisterHandlers(this.rootBindings)
   },
   methods: {
+    initializeStartupHighlight() {
+      if (!this.startupHighlightEnabled || !this.startupHighlightDataReady) return
+
+      const lastUsed = this.usedConfigs[0]
+      if (!lastUsed?.connectionId) return
+
+      const matchingConnection = this.connections.find((connection) =>
+        connection.id === lastUsed.connectionId &&
+        connection.workspaceId === lastUsed.workspaceId
+      )
+      // Wait for the matching workspace connection to load before marking the highlight applied.
+      if (!matchingConnection) return
+
+      this.startupHighlightConfig = matchingConnection
+      this.$emit('startup-highlight-applied')
+    },
     // Surface non-fatal ~/.ssh/config issues (untrusted/invalid config, missing
     // IdentityFile) as a single formatted warning toast.
     notifySshConfigWarnings(warnings) {
@@ -576,7 +626,10 @@ export default Vue.extend({
 
         const { auth, cancelled } = await this.$bks.unlock();
         if (cancelled) return;
-        await this.$store.dispatch('connect', { config: this.config, auth })
+        const connected = await this.$store.dispatch('connect', { config: this.config, auth })
+        if (connected) {
+          this.startupHighlightConfig = null
+        }
       } catch (ex) {
         console.log("CONNECTION ERROR", ex)
         this.connectionError = ex
