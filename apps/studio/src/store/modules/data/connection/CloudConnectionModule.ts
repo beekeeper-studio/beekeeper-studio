@@ -36,8 +36,9 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
     async initialize() {
       // noop
     },
-    async poll() {
-      // noop
+    async poll(context) {
+      const expandedFolderIds = context.rootState.sidebar.connections.expandedIds
+      await context.dispatch('refresh', expandedFolderIds)
     },
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
