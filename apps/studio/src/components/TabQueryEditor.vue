@@ -1403,7 +1403,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           return
         } else {
           try {
-            const payload = _.clone(this.query)
+            const payload = _.pick(this.query, 'text', 'excerpt', 'id') as ISavedQuery;
             payload.text = this.unsavedText
             payload.excerpt = payload.text.substr(0, 250)
             if (payload.id) {
