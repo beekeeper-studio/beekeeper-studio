@@ -6,6 +6,7 @@ import {
   ExtendedItemNode as Node,
   buildItemNodes,
 } from "@/common/utils/folderTree";
+import { ReplacePayload } from "@/store/modules/data/DataModuleBase";
 
 type State = {
   items: Node[];
@@ -21,6 +22,20 @@ export function ItemNodeModule(
   parentIdKey: string,
   nameKey: string
 ): Module<State, RootState> {
+  function applyUpsert(existing: Node[], items: HasId[]): Node[] {
+    const next = [...existing];
+    const nodes = buildItemNodes(items, parentIdKey, nameKey);
+    for (const node of nodes) {
+      const index = next.findIndex((i) => i.id === node.id);
+      if (index === -1) {
+        next.push(node);
+      } else {
+        next.splice(index, 1, node);
+      }
+    }
+    return next;
+  }
+
   return {
     namespaced: true,
     state() {
@@ -32,21 +47,25 @@ export function ItemNodeModule(
       set(state, items: HasId | HasId[]) {
         state.items = buildItemNodes(asArray(items), parentIdKey, nameKey);
       },
-      replace(state, items: HasId[]) {
-        state.items = buildItemNodes(items, parentIdKey, nameKey);
+      /** A scoped payload only speaks for its own slice, so nodes outside it survive. */
+      replace(state, payload: ReplacePayload<HasId>) {
+        const { items, scope } = _.isArray(payload)
+          ? { items: payload, scope: null }
+          : payload;
+
+        if (!scope) {
+          state.items = buildItemNodes(items, parentIdKey, nameKey);
+          return;
+        }
+
+        const ids = items.map((i) => `item-${i.id}`);
+        const kept = state.items.filter(
+          (i) => ids.includes(i.id) || !_.isMatch(i.ref, scope)
+        );
+        state.items = applyUpsert(kept, items);
       },
       upsert(state, items: HasId | HasId[]) {
-        const next = [...state.items];
-        const nodes = buildItemNodes(asArray(items), parentIdKey, nameKey);
-        for (const node of nodes) {
-          const index = next.findIndex((i) => i.id === node.id);
-          if (index === -1) {
-            next.push(node);
-          } else {
-            next.splice(index, 1, node);
-          }
-        }
-        state.items = next;
+        state.items = applyUpsert(state.items, asArray(items));
       },
       remove(state, items: HasId | HasId[] | number) {
         const ids = asArray(items).map(
