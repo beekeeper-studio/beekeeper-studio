@@ -35,8 +35,10 @@ export const CloudConnectionFolderModule: DataStore<IConnectionFolder, State> = 
       context.commit(`nodes/${type}`, data)
     },
     async poll(context) {
-      const expandedFolderIds = context.rootState.sidebar.connections.expandedIds
-      await context.dispatch('loadByParentIds', expandedFolderIds)
+      if (!context.rootState.connected) {
+        const expandedFolderIds = context.rootState.sidebar.connections.expandedIds
+        await context.dispatch('loadByParentIds', expandedFolderIds)
+      }
     },
     async initialize() {
       // noop

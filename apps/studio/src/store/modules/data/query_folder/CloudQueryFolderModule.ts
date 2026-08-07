@@ -34,8 +34,10 @@ export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
       // noop
     },
     async poll(context) {
-      const expandedFolderIds = context.rootState.sidebar.queries.expandedIds
-      await context.dispatch('loadByParentIds', expandedFolderIds)
+      if (context.rootState.connected) {
+        const expandedFolderIds = context.rootState.sidebar.queries.expandedIds
+        await context.dispatch('loadByParentIds', expandedFolderIds)
+      }
     },
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
