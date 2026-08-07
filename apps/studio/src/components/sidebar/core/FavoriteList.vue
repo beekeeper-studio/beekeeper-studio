@@ -180,6 +180,15 @@
                 <content-placeholder-text :lines="1" />
               </content-placeholder>
             </template>
+            <template #folder-empty="{ node, depth }">
+              <div
+                v-if="!loadingFolderIds.includes(node.ref.id)"
+                class="tree-empty"
+                :style="{ '--depth': depth }"
+              >
+                No items
+              </div>
+            </template>
             <template #item="{ node }">
               <favorite-list-item
                 :item="node.ref"
@@ -591,8 +600,14 @@ export default {
   opacity: 0.5;
 }
 .tree-loading {
-  margin-block: 1rem;
+  margin-top: 0.45rem;
+  margin-bottom: -0.7rem;
   padding-left: calc(var(--depth) * 1rem + 1.3rem);
+}
+.tree-empty {
+  padding-left: calc(var(--depth) * 1rem + 0.55rem);
+  margin-block: 0.25rem;
+  opacity: 0.6;
 }
 ::v-deep .BksTree-folder {
   .name:has(.editable-text) {
