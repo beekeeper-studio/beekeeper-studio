@@ -810,7 +810,7 @@ export default {
 .tree-loading {
   margin-top: 0.45rem;
   margin-bottom: -0.7rem;
-  padding-left: calc(var(--depth) * 1rem + 1.3rem);
+  padding-left: calc(var(--depth) * 1rem + 0.55rem);
 }
 .tree-empty {
   padding-left: calc(var(--depth) * 1rem + 0.55rem);
