@@ -34,7 +34,7 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
   actions: {
     ...actionsFor<ISavedQuery>('queries', {}),
     ...accessGrantActions('queries'),
-    ...treeActions<ISavedQuery>('queryFolderIds'),
+    ...treeActions<ISavedQuery>('queryFolderIds', 'queryFolderId'),
     async initialize() {
       // noop
     },

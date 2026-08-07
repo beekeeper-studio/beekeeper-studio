@@ -13,7 +13,7 @@
  *   },
  *   actions: {
  *     ...actionsFor<IConnectionFolder>("connectionFolders", {}),
- *     ...treeActions<IConnectionFolder>("parentIds"),
+ *     ...treeActions<IConnectionFolder>("parentIds", "parentId"),
  *     ...folderableActions<IConnectionFolder>(),
  *   },
  * }

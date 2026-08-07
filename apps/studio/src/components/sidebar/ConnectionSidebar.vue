@@ -479,6 +479,8 @@ export default {
       reorderConnection: 'data/connections/reorder',
       loadConnections: 'data/connections/loadByParentIds',
       loadConnectionFolders: 'data/connectionFolders/loadByParentIds',
+      unloadConnections: 'data/connections/unloadByParentIds',
+      unloadConnectionFolders: 'data/connectionFolders/unloadByParentIds',
       startDrafting: 'data/connectionFolders/startDrafting',
       stopDrafting: 'data/connectionFolders/stopDrafting',
     }),
@@ -490,8 +492,10 @@ export default {
         .filter((node) => expandedNodeIds.includes(node.id))
         .map((node) => node.ref.id)
       const expandingIds = _.difference(folderIds, this.expandedFolderIds)
+      const collapsingIds = _.difference(this.expandedFolderIds, folderIds)
       this.setExpandedFolderIds(folderIds)
       this.loadFolders(expandingIds)
+      this.unloadFolders(collapsingIds)
     },
     async loadFolders(ids) {
       try {
@@ -503,6 +507,10 @@ export default {
       } finally {
         this.loadingFolderIds = _.difference(this.loadingFolderIds, ids)
       }
+    },
+    unloadFolders(ids) {
+      this.unloadConnections(ids);
+      this.unloadConnectionFolders(ids);
     },
     clearFilter() {
       this.connFilter = null;

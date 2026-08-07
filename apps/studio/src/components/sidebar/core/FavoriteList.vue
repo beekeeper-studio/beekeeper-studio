@@ -293,6 +293,8 @@ export default {
       reorderQuery: 'data/queries/reorder',
       loadQueries: 'data/queries/loadByParentIds',
       loadQueryFolders: 'data/queryFolders/loadByParentIds',
+      unloadQueries: 'data/queries/unloadByParentIds',
+      unloadQueryFolders: 'data/queryFolders/unloadByParentIds',
       startDrafting: 'data/queryFolders/startDrafting',
       stopDrafting: 'data/queryFolders/stopDrafting',
     }),
@@ -304,8 +306,10 @@ export default {
         .filter((node) => expandedNodeIds.includes(node.id))
         .map((node) => node.ref.id)
       const expandingIds = _.difference(folderIds, this.expandedFolderIds)
+      const collapsingIds = _.difference(this.expandedFolderIds, folderIds)
       this.setExpandedFolderIds(folderIds)
       this.loadFolders(expandingIds)
+      this.unloadFolders(collapsingIds)
     },
     async loadFolders(ids) {
       try {
@@ -317,6 +321,10 @@ export default {
       } finally {
         this.loadingFolderIds = _.difference(this.loadingFolderIds, ids)
       }
+    },
+    unloadFolders(ids) {
+      this.unloadQueries(ids);
+      this.unloadQueryFolders(ids);
     },
     clearFilter() {
       this.filterQuery = null
