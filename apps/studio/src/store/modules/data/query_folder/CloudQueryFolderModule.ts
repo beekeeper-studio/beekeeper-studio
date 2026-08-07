@@ -28,13 +28,14 @@ export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
   actions: {
     ...actionsFor<IQueryFolder>('queryFolders', {}),
     ...accessGrantActions('queryFolders'),
-    ...treeActions<IQueryFolder>('parentIds'),
+    ...treeActions<IQueryFolder>({ plural: 'parentIds', singular: 'parentId' }),
     ...folderableActions<IQueryFolder>(),
     async initialize() {
       // noop
     },
-    async poll() {
-      // empty on purpose
+    async poll(context) {
+      const expandedFolderIds = context.rootState.sidebar.queries.expandedIds
+      await context.dispatch('loadByParentIds', expandedFolderIds)
     },
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)

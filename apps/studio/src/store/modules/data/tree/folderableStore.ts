@@ -13,7 +13,7 @@
  *   },
  *   actions: {
  *     ...actionsFor<IConnectionFolder>("connectionFolders", {}),
- *     ...treeActions<IConnectionFolder>("parentIds"),
+ *     ...treeActions<IConnectionFolder>({ plural: "parentIds", singular: "parentId" }),
  *     ...folderableActions<IConnectionFolder>(),
  *   },
  * }
@@ -47,7 +47,7 @@ export function folderableActions<T extends IFolder>(): ActionTree<
       await context.dispatch("loadByParentIds", parentIds);
     },
     async loadDefaultFolders(context) {
-      await context.dispatch("loadMore", { params: { default: true } });
+      await context.dispatch("load", { params: { default: true } });
 
       const personalIdx = context.state.items.findIndex(
         (f) => f.default && f.personal

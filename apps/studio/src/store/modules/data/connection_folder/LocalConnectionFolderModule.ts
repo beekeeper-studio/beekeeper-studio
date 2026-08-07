@@ -32,7 +32,7 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
   actions: {
     ...accessGrantActions('connectionFolders'),
     ...mutateActions<IConnectionFolder>(),
-    ...treeActions<IConnectionFolder>('parentIds'),
+    ...treeActions<IConnectionFolder>({ plural: 'parentIds', singular: 'parentId' }),
     ...folderableActions<IConnectionFolder>(),
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
@@ -48,9 +48,6 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
           await context.dispatch('mutate', { type: 'upsert', data: items })
         }
       })
-    },
-    async loadMore(context) {
-      await context.dispatch('load');
     },
     async poll() {
       // no-op for local

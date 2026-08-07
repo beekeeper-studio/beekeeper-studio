@@ -34,12 +34,13 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
   actions: {
     ...actionsFor<ISavedQuery>('queries', {}),
     ...accessGrantActions('queries'),
-    ...treeActions<ISavedQuery>('queryFolderIds'),
+    ...treeActions<ISavedQuery>({ plural: 'queryFolderIds', singular: 'queryFolderId' }),
     async initialize() {
       // noop
     },
-    async poll() {
-      // noop
+    async poll(context) {
+      const expandedFolderIds = context.rootState.sidebar.queries.expandedIds
+      await context.dispatch('loadByParentIds', expandedFolderIds)
     },
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
