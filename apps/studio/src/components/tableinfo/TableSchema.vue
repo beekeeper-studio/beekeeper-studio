@@ -28,12 +28,12 @@
           <div class="actions">
             <a
               @click.prevent="refreshColumns"
-              v-tooltip="`${ctrlOrCmd('r')} or F5`"
+              v-tooltip="$bksConfigUI.getKeybindingLabel('general.refresh')"
               class="btn btn-link btn-fab"
             ><i class="material-icons">refresh</i></a>
             <a
               v-if="editable"
-              v-tooltip="ctrlOrCmd('n')"
+              v-tooltip="$bksConfigUI.getKeybindingLabel('general.addRow')"
               @click.prevent="addRow"
               class="btn btn-primary btn-fab"
             ><i class="material-icons">add</i></a>
@@ -692,4 +692,3 @@ export default Vue.extend({
   },
 })
 </script>
-

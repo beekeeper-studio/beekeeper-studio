@@ -1,4 +1,5 @@
 import { IConnection } from "@/common/interfaces/IConnection";
+import { CloudClient } from "@/lib/cloud/CloudClient";
 import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient";
 import { CancelableQuery } from "@/lib/db/models";
 import { IDbConnectionPublicServer } from "@/lib/db/serverTypes";
@@ -29,6 +30,9 @@ class State {
   exports: Map<string, Export> = new Map();
   imports: Map<string, ImportClass> = new Map();
   backupProc: ChildProcessWithoutNullStreams = null;
+
+  cloudClient: CloudClient = null;
+  workspaceId: number = null;
 
   connectionAbortController: AbortController = null;
 

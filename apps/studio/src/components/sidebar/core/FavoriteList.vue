@@ -73,104 +73,25 @@
           :error="error"
           title="Problem loading queries"
         />
-        <sidebar-loading v-if="loading" />
+        <sidebar-loading v-if="initializing" />
         <nav
-          v-else-if="!empty"
+          v-else
           class="list-body"
           ref="wrapper"
         >
-          <sidebar-folder
-            v-for="({ folder, items, subfolders }) in foldersWithQueries"
-            :key="`${folder.id}-${items.length}`"
-            :name="folder.name"
-            :children-count="items.length"
-            :rename="renamingFolderId === folder.id"
-            :empty="items.length === 0 && subfolders.length === 0"
-            :expanded-initially="getFolderExpanded(folder.id)"
-            @toggle="onFolderToggle(folder.id, $event)"
-            @contextmenu.native.prevent="showFolderContextMenu($event, folder)"
-            @header-drop="onQueryFolderHeaderDrop(folder)"
-            @rename-submit="submitFolderRename(folder, $event)"
-            @rename-cancel="renamingFolderId = null"
-          >
-            <Draggable
-              :list="items"
-              group="queries"
-              ghost-class="drag-ghost"
-              @start="onQueryDragStart($event, items)"
-              @end="draggingQuery = null"
-              @change="onQueryDrop($event, folder, items)"
+          <template v-if="searching">
+            <div
+              class="empty-state"
+              v-if="!fetchingResults && filteredQueries.length === 0"
             >
-              <favorite-list-item
-                v-for="item in items"
-                :key="item.id"
-                :item="item"
-                :active="isActive(item)"
-                :selected="selected === item"
-                :class="{ 'drag-pending': (pendingSaveIds || []).includes(item.id) }"
-                @remove="remove"
-                @select="select"
-                @open="open"
-                @open-history="openHistory"
-                @export="exportTo"
-                @duplicate="duplicate"
-              />
-            </Draggable>
-            <sidebar-folder
-              v-for="({ folder: subfolder, items: subQueries }) in subfolders"
-              :key="`${subfolder.id}-${subQueries.length}`"
-              :name="subfolder.name"
-              :children-count="subQueries.length"
-              :rename="renamingFolderId === subfolder.id"
-              :empty="subQueries.length === 0"
-              :expanded-initially="getFolderExpanded(subfolder.id)"
-              @toggle="onFolderToggle(subfolder.id, $event)"
-              @contextmenu.native.prevent="showFolderContextMenu($event, subfolder)"
-              @header-drop="onQueryFolderHeaderDrop(subfolder)"
-              @rename-submit="submitFolderRename(subfolder, $event)"
-              @rename-cancel="renamingFolderId = null"
-            >
-              <Draggable
-                :list="subQueries"
-                group="queries"
-                ghost-class="drag-ghost"
-                @start="onQueryDragStart($event, subQueries)"
-                @end="draggingQuery = null"
-                @change="onQueryDrop($event, subfolder, subQueries)"
-              >
-                <favorite-list-item
-                  v-for="item in subQueries"
-                  :key="item.id"
-                  :item="item"
-                  :active="isActive(item)"
-                  :selected="selected === item"
-                  :class="{ 'drag-pending': (pendingSaveIds || []).includes(item.id) }"
-                  @remove="remove"
-                  @select="select"
-                  @open="open"
-                  @open-history="openHistory"
-                  @export="exportTo"
-                  @duplicate="duplicate"
-                />
-              </Draggable>
-            </sidebar-folder>
-          </sidebar-folder>
-          <Draggable
-            :list="lonelyQueries"
-            :group="isCloud ? { name: 'queries', put: false } : 'queries'"
-            ghost-class="drag-ghost"
-            @start="onQueryDragStart($event, lonelyQueries)"
-            @end="draggingQuery = null"
-            @change="onQueryDrop($event, null, lonelyQueries)"
-            @contextmenu.self.prevent="showLonelyContextMenu($event)"
-          >
+              No queries match "{{ filterQuery }}"
+            </div>
             <favorite-list-item
-              v-for="item in lonelyQueries"
-              :key="item.id"
-              :item="item"
-              :active="isActive(item)"
-              :selected="selected === item"
-              :class="{ 'drag-pending': (pendingSaveIds || []).includes(item.id) }"
+              v-for="query in filteredQueries"
+              :key="query.id"
+              :item="query"
+              :active="isActive(query)"
+              :selected="selected === query"
               @remove="remove"
               @select="select"
               @open="open"
@@ -178,117 +99,186 @@
               @export="exportTo"
               @duplicate="duplicate"
             />
-          </Draggable>
-        </nav>
-        <div
-          class="empty"
-          v-else
-        >
-          <span class="empty-title">No Saved Queries</span>
-          <span
-            class="empty-actions"
-            v-if="isCloud"
+            <content-placeholder
+              v-if="fetchingResults"
+              :animated="true"
+              :rounded="false"
+              class="list-item"
+            >
+              <content-placeholder-text
+                :lines="2"
+                class="list-item-btn"
+              />
+            </content-placeholder>
+          </template>
+          <tree
+            v-show="!searching"
+            :folders="folderNodes"
+            :items="sortedItemNodes"
+            :expanded-ids="expandedNodeIds"
+            @update:expandedIds="setExpandedIds"
+            @bks-tree-node-move="handleTreeNodeMove"
           >
-            <a
-              class="btn btn-flat btn-block btn-icon"
-              @click.prevent="importFromLocal"
-              title="Import queries from local workspace"
-            ><i class="material-icons">save_alt</i> Import</a>
-          </span>
-        </div>
+            <template #empty>
+              <div class="empty">
+                <span class="empty-title">No Saved Queries</span>
+                <span
+                  class="empty-actions"
+                  v-if="isCloud"
+                >
+                  <a
+                    class="btn btn-flat btn-block btn-icon"
+                    @click.prevent="importFromLocal"
+                    title="Import queries from local workspace"
+                  ><i class="material-icons">save_alt</i> Import</a>
+                </span>
+              </div>
+            </template>
+            <template #folder="{ props }">
+              <tree-folder
+                v-bind="props"
+                v-if="props.node.ref === draft"
+                tag="div"
+              >
+                <template #name>
+                  <editable-text
+                    rename
+                    :initial-value="props.node.name"
+                    @submit="commitDraft"
+                    @cancel="stopDrafting"
+                  />
+                </template>
+              </tree-folder>
+              <tree-folder
+                v-bind="props"
+                v-else
+                :class="{ 'just-created': justCreatedFolderId === props.node.ref.id }"
+                :tag="renamingFolderId === props.node.ref.id ? 'div': undefined"
+                @contextmenu.native="showFolderContextMenu($event, props.node.ref)"
+              >
+                <template
+                  #name
+                  v-if="renamingFolderId === props.node.ref.id"
+                >
+                  <editable-text
+                    rename
+                    :initial-value="props.node.ref.name"
+                    @submit="submitFolderRename(props.node.ref, $event)"
+                    @cancel="renamingFolderId = null"
+                  />
+                </template>
+              </tree-folder>
+            </template>
+            <template #folder-footer="{ node, depth }">
+              <content-placeholder
+                v-if="loadingFolderIds.includes(node.ref.id)"
+                :animated="true"
+                :rounded="false"
+                class="tree-loading"
+                :style="{ '--depth': depth }"
+              >
+                <content-placeholder-text :lines="1" />
+              </content-placeholder>
+            </template>
+            <template #item="{ node }">
+              <favorite-list-item
+                :item="node.ref"
+                :active="isActive(node.ref)"
+                :selected="selected === node.ref"
+                :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.ref.id) }"
+                @remove="remove"
+                @select="select"
+                @open="open"
+                @open-history="openHistory"
+                @export="exportTo"
+                @duplicate="duplicate"
+              />
+            </template>
+          </tree>
+        </nav>
       </div>
     </div>
-    <portal to="modals">
-      <modal
-        class="vue-dialog beekeeper-modal"
-        name="query-folder-modal"
-        @closed="folderModalName = ''; folderModalItem = null; folderModalError = null"
-        @opened="$nextTick(() => $refs.folderNameInput && $refs.folderNameInput.focus())"
-        height="auto"
-        :scrollable="true"
-      >
-        <form @submit.prevent="submitFolderModal">
-          <div class="dialog-content" v-kbd-trap="true">
-            <div class="dialog-c-title">
-              {{ folderModalItem ? 'Rename Folder' : folderModalParentId ? 'New Subfolder' : 'New Folder' }}
-            </div>
-            <div class="form-group">
-              <label>Folder Name</label>
-              <input
-                ref="folderNameInput"
-                v-model="folderModalName"
-                type="text"
-                placeholder="Folder name"
-                @input="folderModalError = null"
-                @keydown.esc.prevent="$modal.hide('query-folder-modal')"
-              >
-            </div>
-            <div class="form-group" v-if="isCloud && !folderModalItem && rootFolders.length > 0">
-              <label>Parent Folder</label>
-              <select v-model="folderModalParentId" @change="folderModalError = null">
-                <option v-for="f in rootFolders" :key="f.id" :value="f.id">
-                  {{ f.name }}
-                </option>
-              </select>
-            </div>
-            <error-alert v-if="folderModalError" :error="folderModalError" />
-          </div>
-          <div class="vue-dialog-buttons flex-between">
-            <span class="left" />
-            <span class="right">
-              <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('query-folder-modal')">Cancel</button>
-              <button class="btn btn-primary" type="submit" :disabled="!folderModalName.trim() || folderModalSubmitting">
-                {{ folderModalItem ? 'Rename' : 'Create' }}
-              </button>
-            </span>
-          </div>
-        </form>
-      </modal>
-    </portal>
   </div>
 </template>
 
 <script>
+import _ from 'lodash'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
-import { SmartLocalStorage } from '@/common/LocalStorage'
-import { mapGetters, mapState } from 'vuex'
+import { mapActions, mapGetters, mapMutations, mapState } from 'vuex'
 import SidebarLoading from '../../common/SidebarLoading.vue'
 import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
-import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
-import { getLonelyItems, isFolderListEmpty } from '@/common/utils/folderTree'
-import Draggable from 'vuedraggable'
+import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
+import EditableText from '@/components/common/EditableText.vue'
+import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
+import ContentPlaceholderText from '@/components/common/loading/ContentPlaceholderText.vue'
+import { parseReorderTarget } from '@/common/utils/folderTree'
 
 export default {
-  components: { SidebarLoading, ErrorAlert, ExpiredFolderAlert, FavoriteListItem, SidebarFolder, Draggable },
+  components: { SidebarLoading, ErrorAlert, ExpiredFolderAlert, FavoriteListItem, Tree, TreeFolder, EditableText, ContentPlaceholder, ContentPlaceholderText },
   data: function () {
     return {
       checkedFavorites: [],
       selected: null,
-      folderModalName: '',
-      folderModalItem: null,
-      folderModalParentId: null,
-      folderModalError: null,
-      folderModalSubmitting: false,
-      folderExpandedState: {},
-      draggingQuery: null,
       renamingFolderId: null,
+      justCreatedFolderId: null,
+      justCreatedTimeout: null,
     }
   },
   mounted() {
-    this.folderExpandedState = SmartLocalStorage.getJSON('queryFolderExpanded-v1', {})
     document.addEventListener('mousedown', this.maybeUnselect)
   },
   beforeDestroy() {
     document.removeEventListener('mousedown', this.maybeUnselect)
+    clearTimeout(this.justCreatedTimeout)
   },
   computed: {
     ...mapGetters(['workspace', 'isCloud', 'isUltimate', 'canCreateFolders']),
     ...mapGetters('data/queries', {'filteredQueries': 'filteredQueries'}),
     ...mapState('tabs', {'activeTab': 'active'}),
-    ...mapState('data/queries', {'savedQueries': 'items', 'queriesLoading': 'loading', 'queriesError': 'error', 'savedQueryFilter': 'filter', 'pendingSaveIds': 'pendingSaveIds'}),
-    ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
+    ...mapState('data/queries/nodes', {'itemNodes': 'items'}),
+    ...mapState('data/queryFolders/nodes', {'folderNodes': 'items'}),
+    ...mapState('data/queries', {
+      'queriesError': 'error',
+      'savedQueryFilter': 'filter',
+      'pendingSaveIds': 'pendingSaveIds',
+      fetchingResults: 'searching',
+    }),
+    ...mapState('data/queryFolders', {
+      'folders': 'items',
+      'foldersLoading': 'loading',
+      'foldersError': 'error',
+      'draft': 'draft',
+    }),
+    ...mapState('sidebar/queries', {
+      expandedFolderIds: 'expandedIds',
+    }),
+    ...mapState({
+      loadingFolderIds(state) {
+        return [
+          ...state["data/queryFolders"].folders.fetchingIds,
+          ...state["data/queries"].folders.fetchingIds,
+        ];
+      },
+    }),
+    expandedNodeIds() {
+      return this.expandedFolderIds.map((id) => `folder-${id}`);
+    },
+    sortedItemNodes() {
+      // Cloud has no sort buttons — drag and drop is the only way to reorder,
+      // and it lands in `position`.
+      if (this.isCloud) {
+        return _.sortBy(this.itemNodes, 'ref.position')
+      }
+      return _.sortBy(this.itemNodes, 'ref.title')
+    },
+    searching() {
+      return !!this.filterQuery;
+    },
+    initializing() {
+      return this.folders.length === 0 && this.foldersLoading;
+    },
     filterQuery: {
       get() {
         return this.savedQueryFilter;
@@ -297,36 +287,32 @@ export default {
         this.$store.dispatch('data/queries/setSavedQueryFilter', newFilter);
       }
     },
-    rootFolders() {
-      return this.folders.filter((f) => !f.parentId).sort((a, b) => a.name.localeCompare(b.name))
-    },
-    loading() {
-      return this.queriesLoading || this.foldersLoading || null
-    },
     error() {
       return this.queriesError || this.foldersError || null
     },
-    foldersWithQueries() {
-      return this.$store.getters['data/queryFolders/foldersWithQueries'](this.filteredQueries)
-    },
-    lonelyQueries() {
-      return getLonelyItems(this.folders, this.filteredQueries, 'queryFolderId')
-    },
-    empty() {
-      return isFolderListEmpty(this.filteredQueries, this.folders)
-    },
     removeTitle() {
       return `Remove ${this.checkedFavorites.length} saved queries`;
-    }
+    },
   },
   methods: {
-    getFolderExpanded(folderId) {
-      const stored = this.folderExpandedState[folderId]
-      return stored !== undefined ? stored : true
-    },
-    onFolderToggle(folderId, expanded) {
-      this.$set(this.folderExpandedState, folderId, expanded)
-      SmartLocalStorage.addItem('queryFolderExpanded-v1', this.folderExpandedState)
+    ...mapActions({
+      saveFolder: 'data/queryFolders/save',
+      reorderQuery: 'data/queries/reorder',
+      ensureQueriesLoaded: 'data/queries/ensureLoaded',
+      ensureSubfoldersLoaded: 'data/queryFolders/ensureLoaded',
+      startDrafting: 'data/queryFolders/startDrafting',
+      stopDrafting: 'data/queryFolders/stopDrafting',
+    }),
+    ...mapMutations({
+      setExpandedFolderIds: 'sidebar/queries/expandedIds',
+    }),
+    setExpandedIds(expandedNodeIds) {
+      const folderIds = this.folderNodes
+        .filter((node) => expandedNodeIds.includes(node.id))
+        .map((node) => node.ref.id)
+      this.setExpandedFolderIds(folderIds)
+      this.ensureQueriesLoaded(folderIds)
+      this.ensureSubfoldersLoaded(folderIds)
     },
     clearFilter() {
       this.filterQuery = null
@@ -355,8 +341,8 @@ export default {
         this.selected = null
       }
     },
-    refresh() {
-      this.$store.dispatch("data/queries/load")
+    async refresh() {
+      await this.$store.dispatch('refreshQueries')
     },
     isActive(item) {
       return this.activeTab && this.activeTab.queryId === item.id
@@ -371,7 +357,8 @@ export default {
       this.trigger('favoriteClick', item, { openHistory: true })
     },
     async remove(favorite) {
-      if (await this.$confirm(`Delete "${favorite.name}"?`, undefined, { variant: "danger" })) {
+      const name = favorite.title || favorite.name
+      if (await this.$confirm(`Delete "${name}"?`, undefined, { variant: "danger" })) {
         await this.$store.dispatch('data/queries/remove', favorite)
       }
     },
@@ -389,61 +376,168 @@ export default {
         this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }
-      this.folderModalName = ''
-      this.folderModalItem = null
-      this.folderModalError = null
-      this.folderModalParentId = (this.isCloud && this.rootFolders.length > 0)
-        ? this.rootFolders[0].id
-        : null
-      this.$modal.show('query-folder-modal')
+      if (this.isCloud) {
+        const parent = this.folders.find((f) => f.personal && !f.parentId);
+        if (!parent) {
+          this.$noty.error(
+            "No personal folder found. Right-click an existing folder and choose New Subfolder to create a folder instead."
+          );
+          return;
+        }
+        this.startDrafting(parent.id);
+        this.expandFolder(parent.id);
+      } else {
+        this.startDrafting(null);
+      }
+    },
+    markJustCreated(folderId) {
+      clearTimeout(this.justCreatedTimeout)
+      this.justCreatedFolderId = folderId
+      this.justCreatedTimeout = setTimeout(() => {
+        this.justCreatedFolderId = null
+      }, 2000)
+    },
+    expandFolder(folderId) {
+      if (this.expandedFolderIds.includes(folderId)) {
+        return
+      }
+      this.setExpandedIds([...this.expandedNodeIds, `folder-${folderId}`])
+    },
+    async commitDraft(name = "") {
+      if (!name.trim()) {
+        this.stopDrafting()
+        return
+      }
+      try {
+        const id = await this.$store.dispatch('data/queryFolders/save', {
+          id: null,
+          parentId: this.draft.parentId ?? null,
+          name,
+        })
+        this.markJustCreated(id)
+      } catch (ex) {
+        this.$noty.error(`Create folder error: ${ex.userMessage ?? ex.message}`)
+      } finally {
+        this.stopDrafting()
+      }
     },
     showFolderContextMenu(event, folder) {
       if (event.target.tagName === 'INPUT') {
         return;
       }
       event.stopPropagation();
+      event.preventDefault();
 
-      const options = []
       const canWrite = folder.canWrite ?? true;
-      if (this.isCloud && !folder.parentId) {
-        options.push({ name: 'New Subfolder', handler: ({ item }) => this.createSubfolder(item) })
-      }
-      if (!canWrite) {
-        // do nothing
-      }
-      options.push(...[
-        { name: 'Rename', handler: ({ item }) => this.renameQueryFolder(item) },
-        folder.parentId && {
-          name: 'Move',
-          handler: ({ item }) => this.trigger(AppEvent.openMoveFileModal, { type: 'queryFolder', value: item }),
+      const isRoot = !folder.parentId;
+      const options = [{
+        name: 'New Subfolder',
+        handler: ({ item }) => {
+          if (!this.canCreateFolders) {
+            this.$root.$emit(AppEvent.upgradeModal, 'Folders');
+            return;
+          }
+          this.startDrafting(item.id);
+          this.expandFolder(item.id);
         },
-        { name: 'Delete', handler: ({ item }) => this.deleteFolder(item) }
-      ].filter(Boolean))
+      }];
+      if (!this.isCloud || !isRoot) {
+        options.push(...[
+          {
+            type: "divider",
+            hideIf: !this.isCloud || folder.personal,
+          },
+          {
+            name: "Share",
+            handler: ({ item }) => this.share(item),
+            hideIf: !this.isCloud || folder.personal,
+          },
+          {
+            type: "divider",
+            hideIf: !canWrite,
+          },
+          {
+            name: 'Rename',
+            handler: ({ item }) => this.renameQueryFolder(item),
+            hideIf: !canWrite,
+          },
+          {
+            name: 'Move',
+            handler: ({ item }) => this.trigger(AppEvent.openMoveFolderModal, { type: 'queryFolder', value: item }),
+            hideIf: !canWrite,
+          },
+          {
+            name: 'Delete',
+            handler: ({ item }) => this.deleteFolder(item),
+            hideIf: !canWrite,
+          },
+        ].filter(({ hideIf }) => !hideIf));
+      }
       this.$bks.openMenu({ event, item: folder, options })
+    },
+    /** @param event {import("@beekeeperstudio/ui-kit").TreeNodeMoveEvent} */
+    async handleTreeNodeMove(event) {
+      /** @type {import("@/common/utils/folderTree").ExtendedNode} */
+      const source = event.source;
+      /** @type {import("@/common/utils/folderTree").ExtendedNode} */
+      const target = event.target;
+      let reorderPayload = null;
+      let error = null;
+      try {
+        if (source.type === 'folder') {
+          // Dropped beside a node, the folder joins whatever holds that node.
+          let parentId
+          if (target.type === 'folder') {
+            parentId = event.position === 'inside'
+              ? target.ref.id
+              : target.ref.parentId
+          } else {
+            parentId = target.ref[target.parentIdKey] ?? null
+          }
+          await this.saveFolder({ ...source.ref, parentId });
+        } else if (source.type === 'item') {
+          const { parentId, position } = parseReorderTarget(event);
+          reorderPayload = {
+            item: source.ref,
+            queryFolderId: parentId,
+            position,
+          };
+          await this.reorderQuery(reorderPayload);
+        }
+      } catch (ex) {
+        error = ex;
+      }
+
+      if (error?.message.includes("[confirm_personal_move]")) {
+        const confirmed = await this.$confirm(
+          "Move to your personal folder?",
+          `All workspace members will lose access to "${source.name}".`
+        );
+        if (!confirmed) {
+          return;
+        }
+        error = null;
+        try {
+          await this.reorderQuery({ ...reorderPayload, confirm: true });
+        } catch (ex) {
+          error = ex;
+        }
+      }
+
+      if (error) {
+        let errorMessage = `Move error: ${error.userMessage ?? error.message}`;
+        if (error.message.includes("[team_folder_in_personal_tree]")) {
+          errorMessage =
+            "You can not move a team folder to your personal folder because it is shared with other workspace members.";
+        }
+        this.$noty.error(errorMessage);
+      }
     },
     share(folder) {
       this.trigger(AppEvent.openShareModal, {
         id: folder.id,
         module: "data/queryFolders",
       });
-    },
-    createSubfolder(parentFolder) {
-      if (!this.canCreateFolders) {
-        this.$root.$emit(AppEvent.upgradeModal, 'Folders')
-        return
-      }
-      this.folderModalName = ''
-      this.folderModalItem = null
-      this.folderModalError = null
-      this.folderModalParentId = parentFolder.id
-      this.$modal.show('query-folder-modal')
-    },
-    showLonelyContextMenu(event) {
-      this.$bks.openMenu({
-        event,
-        item: null,
-        options: [{ name: 'New Folder', handler: () => this.createFolder() }]
-      })
     },
     async duplicate(query) {
       const cloned = await this.$store.dispatch('data/queries/clone', query)
@@ -476,81 +570,48 @@ export default {
         }
       }
     },
-    onQueryDragStart(event, list) {
-      this.draggingQuery = list[event.oldIndex]
-    },
-    cloudRelativePosition(list, newIndex) {
-      const prev = list[newIndex - 1]
-      const next = list[newIndex + 1]
-      if (prev) return { after: prev.id }
-      if (next) return { before: next.id }
-      return { before: null }
-    },
-    async onQueryFolderHeaderDrop(folder) {
-      if (!this.draggingQuery) return
-      try {
-        // Use reorder action for both local and cloud workspaces
-        await this.$store.dispatch('data/queries/reorder', {
-          item: this.draggingQuery,
-          queryFolderId: folder.id,
-          position: { before: null }
-        })
-      } catch (ex) {
-        this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
-      }
-    },
-    async onQueryDrop(event, folder, currentList) {
-      try {
-        if (event.added) {
-          const { element: item, newIndex } = event.added
-          // Use reorder action for both local and cloud workspaces
-          await this.$store.dispatch('data/queries/reorder', {
-            item,
-            queryFolderId: folder?.id ?? null,
-            position: this.cloudRelativePosition(currentList, newIndex)
-          })
-        } else if (event.moved) {
-          const { element: item, newIndex } = event.moved
-          // Use reorder action for both local and cloud workspaces
-          await this.$store.dispatch('data/queries/reorder', {
-            item,
-            position: this.cloudRelativePosition(currentList, newIndex)
-          })
-        }
-      } catch (ex) {
-        this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
-      }
-    },
-    async submitFolderModal() {
-      const name = this.folderModalName.trim()
-      if (!name) return
-      this.folderModalError = null
-      this.folderModalSubmitting = true
-      try {
-        if (this.folderModalItem) {
-          await this.$store.dispatch('data/queryFolders/save', { ...this.folderModalItem, name })
-        } else {
-          await this.$store.dispatch('data/queryFolders/save', { id: null, name, parentId: this.folderModalParentId ?? null })
-        }
-        this.$modal.hide('query-folder-modal')
-      } catch (e) {
-        this.folderModalError = e.userMessage ?? e.message ?? 'Failed to save folder'
-      } finally {
-        this.folderModalSubmitting = false
-      }
-    },
   }
 }
 </script>
 
 <style lang="scss" scoped>
-.drag-ghost {
-  opacity: 0.4;
-}
 .drag-pending {
   opacity: 0.5;
 }
-.folder-drop-zone {
-  min-height: 8px;
+.tree-loading {
+  margin-block: 1rem;
+  padding-left: calc(var(--depth) * 1rem + 1.3rem);
+}
+::v-deep .BksTree-folder {
+  .name:has(.editable-text) {
+    overflow: visible;
+  }
+
+  .editable-text  {
+    width: 100%;
+
+    input {
+      top: 60%;
+    }
+  }
+}
+
+.just-created {
+  animation: just-created-fade 2s ease-out;
+}
+
+@keyframes just-created-fade {
+  from {
+    background: rgb(from var(--theme-primary) r g b / 25%);
+  }
+  to {
+    background: transparent;
+  }
+}
+
+.empty-state {
+  padding-top: 0.25rem;
+  padding-left: 0.5rem;
+  font-size: 0.85rem;
 }
 </style>

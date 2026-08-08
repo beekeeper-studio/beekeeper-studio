@@ -286,8 +286,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
         r.routine_schema as routine_schema,
         r.routine_name as name,
         r.routine_type as routine_type,
-        r.data_type as data_type
+        r.data_type as data_type,
+        p.oid::text as oid
       FROM INFORMATION_SCHEMA.ROUTINES r
+      LEFT JOIN pg_catalog.pg_proc p
+        ON r.specific_name::text = p.proname || '_' || p.oid::text
       where r.routine_schema not in ('sys', 'information_schema',
                                      'pg_catalog', 'performance_schema')
         ${schemaFilter ? `AND ${schemaFilter}` : ''}
@@ -329,6 +332,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
         returnType: row.data_type,
         entityType: 'routine',
         id: row.id,
+        oid: row.oid,
         routineParams: params.map((p, i) => {
           return {
             name: p.parameter_name || `arg${i + 1}`,
@@ -1030,18 +1034,20 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     return data.rows.map((row) => `${createViewSql}\n${row.pg_get_viewdef}`);
   }
 
-  async getRoutineCreateScript(routine: string, _type: string, schema: string = this._defaultSchema): Promise<string[]> {
+  async getRoutineCreateScript(routine: string, _type: string, schema: string = this._defaultSchema, id?: string): Promise<string[]> {
     const sql = `
       SELECT pg_get_functiondef(p.oid)
       FROM pg_proc p
              LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
       WHERE proname = $1
         AND n.nspname = $2
+        ${id ? 'AND p.oid = $3::oid' : ''}
     `;
 
     const params = [
       routine,
       schema,
+      ...(id ? [id] : []),
     ];
 
     const data = await this.driverExecuteSingle(sql, { params });

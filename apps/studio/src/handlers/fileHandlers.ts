@@ -3,8 +3,10 @@ import path from 'path';
 import platformInfo from '@/common/platform_info';
 
 const VIMRC_FILENAME = '.beekeeper.vimrc';
-const MAX_SQL_FILE_BYTES = 50 * 1024 * 1024; // 50 MB — sanity cap on a single saved query.
+// queries are limited to 2_000_000 characters, so the upper limit is 4x that amount
+const MAX_SQL_FILE_BYTES = 4 * 2_000_000;
 const SQL_FILE_EXTENSIONS = new Set(['.sql', '.txt']);
+
 
 export interface IFileHandlers {
   /**
@@ -23,36 +25,44 @@ export interface IFileHandlers {
 }
 
 export const FileHandlers: IFileHandlers = {
-  "config/readVimrc": async function (): Promise<string | null> {
-    const vimrcPath = path.join(platformInfo.userDirectory, VIMRC_FILENAME);
-    try {
-      return await fs.readFile(vimrcPath, { encoding: 'utf-8' });
-    } catch (e: any) {
-      if (e?.code === 'ENOENT') return null;
-      throw e;
-    }
-  },
+    "config/readVimrc": async function(): Promise<string | null> {
+      const vimrcPath = path.join(platformInfo.userDirectory, VIMRC_FILENAME);
+      try {
+        return await fs.readFile(vimrcPath, { encoding: 'utf-8' });
+      } catch (e: any) {
+        if (e?.code === 'ENOENT') return null;
+        throw e;
+      }
+    },
 
-  "file/readSqlFile": async function ({ path: targetPath }: { path: string }): Promise<string> {
-    if (typeof targetPath !== 'string' || targetPath.length === 0) {
-      throw new Error('readSqlFile requires a path');
-    }
-    const ext = path.extname(targetPath).toLowerCase();
-    if (!SQL_FILE_EXTENSIONS.has(ext)) {
-      const allowed = [...SQL_FILE_EXTENSIONS].join(', ');
-      throw new Error(
-        `readSqlFile only accepts ${allowed} files, got "${ext || '(none)'}"`
-      );
-    }
-    const stat = await fs.stat(targetPath);
-    if (!stat.isFile()) {
-      throw new Error(`readSqlFile target is not a regular file: ${targetPath}`);
-    }
-    if (stat.size > MAX_SQL_FILE_BYTES) {
-      throw new Error(
-        `readSqlFile target exceeds ${MAX_SQL_FILE_BYTES} bytes: ${targetPath}`
-      );
-    }
-    return await fs.readFile(targetPath, { encoding: 'utf-8' });
-  },
+    "file/readSqlFile": async function({ path: targetPath }: { path: string; }): Promise<string> {
+      if (typeof targetPath !== 'string' || targetPath.length === 0) {
+        throw new Error('readSqlFile requires a path');
+      }
+      const ext = path.extname(targetPath).toLowerCase();
+      if (!SQL_FILE_EXTENSIONS.has(ext)) {
+        const allowed = [...SQL_FILE_EXTENSIONS].join(', ');
+        throw new Error(
+          `readSqlFile only accepts ${allowed} files, got "${ext || '(none)'}"`
+        );
+      }
+      const stat = await fs.stat(targetPath);
+      if (!stat.isFile()) {
+        throw new Error(`readSqlFile target is not a regular file: ${targetPath}`);
+      }
+      if (stat.size > MAX_SQL_FILE_BYTES) {
+        throw new Error(
+          `readSqlFile target exceeds ${MAX_SQL_FILE_BYTES} bytes: ${targetPath}`
+        );
+      }
+      const contents = await fs.readFile(targetPath, { encoding: 'utf-8' });
+
+      if (contents.length > 2_000_000) {
+        throw new Error(
+          `readSqlFile target exceeds length 2000000 characters: ${targetPath}`
+        );
+      }
+
+      return contents;
+    },
 };
