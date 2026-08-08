@@ -5,7 +5,7 @@
   >
     <a
       class="list-item-btn"
-      v-tooltip.bottom.delay="{
+      v-tooltip.right.delay="{
         content: title,
         delay: { show: 500 },
       }"
@@ -68,11 +68,11 @@ export default Vue.extend({
     subtitle() {
       const result = []
       if (this.item.user?.name) result.push(`${this.item.user.name}`)
-      if (this.item.createdAt) {
-        if (_.isNumber(this.item.createdAt)) {
-          result.push(this.timeAgo.format(new Date(this.item.createdAt * 1000)))
+      if (this.item.updatedAt) {
+        if (_.isNumber(this.item.updatedAt)) {
+          result.push(this.timeAgo.format(new Date(this.item.updatedAt * 1000)))
         } else {
-          result.push(this.timeAgo.format(this.item.createdAt))
+          result.push(this.timeAgo.format(this.item.updatedAt))
         }
       }
       return result.join(" ")
