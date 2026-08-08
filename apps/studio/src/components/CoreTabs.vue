@@ -328,7 +328,7 @@ import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.
 import Shell from './TabShell.vue'
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
-import { TabTypeConfig, TransportOpenTab, TransportPluginTab, setFilters, matches, duplicate, TabType } from '@/common/transport/TransportOpenTab'
+import { TabTypeConfig, TransportOpenTab, TransportPluginTab, setFilters, matches, duplicate } from '@/common/transport/TransportOpenTab'
 import { wait } from '@/shared/lib/wait'
 
 export default Vue.extend({
@@ -909,7 +909,8 @@ export default Vue.extend({
 
       noty.close()
     },
-    async importSqlFiles(paths: string[]) {
+    async importSqlFiles(importConfig: { paths: string[], parentId: number }) {
+      const { paths, parentId } = importConfig;
       const files = paths.map((path) => ({
         path,
         name: path.replace(/^.*[\\/]/, '').replace(/\.sql$/, ''),
@@ -956,6 +957,7 @@ export default Vue.extend({
             const query = await this.$util.send('appdb/query/new');
             query.title = file.name
             query.text = text
+            query.queryFolderId = parentId
             await this.$store.dispatch('data/queries/save', query)
           } else {
             files[i].error = true
