@@ -6,6 +6,7 @@ import { PropsToType, VueWrapper } from "../utilTypes";
 import { TreeEventMap } from "./types";
 
 export * from "./types";
+export { collectVisibleItemIds, buildDescendantsMap, zoneAt, toggleSelectedId, rangeSelectVisibleIds } from "./tree";
 
 export interface TreeElement
   extends PropsToType<typeof props>,

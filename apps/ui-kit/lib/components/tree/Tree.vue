@@ -10,11 +10,14 @@
         :depth="0"
         :internal-id="internalId"
         :expanded-ids="expandedIds"
+        :selected-ids="selectedIds"
+        :bulk-selection-active="bulkSelectionActive"
         :drop-target="dropTarget"
         :dragged-node="draggedNode"
         :can-drop="canDrop"
         :filter="filter"
         @node-click="handleNodeClick"
+        @item-selection-click="handleItemSelectionClick"
         @node-dragstart="handleNodeDragStart"
         @node-dragover="handleNodeDragOver"
         @node-dragleave="handleNodeDragLeave"
@@ -38,7 +41,7 @@
 <script lang="ts">
 import Vue from "vue";
 import props from "./props";
-import { buildDescendantsMap, destinationOf } from "./tree";
+import { buildDescendantsMap, collectVisibleItemIds, rangeSelectVisibleIds, toggleSelectedId, destinationOf } from "./tree";
 import TreeNode from "./TreeNode.vue";
 import { uuidv4 } from "../../utils/uuid";
 import {
@@ -63,7 +66,16 @@ export default Vue.extend({
       draggedNode: null as Node | null,
       dropTarget: null as DropTarget | null,
       expandTimer: null as ReturnType<typeof setTimeout> | null,
+      selectionAnchorId: null as ItemNode["id"] | null,
     };
+  },
+
+  watch: {
+    selectedIds(ids: Node["id"][] | undefined) {
+      if (!ids?.length) {
+        this.selectionAnchorId = null;
+      }
+    },
   },
 
   computed: {
@@ -81,6 +93,10 @@ export default Vue.extend({
 
     rootNodes(): Node[] {
       return [...this.rootFolderNodes, ...this.rootItemNodes];
+    },
+
+    bulkSelectionActive(): boolean {
+      return (this.selectedIds?.length ?? 0) > 0;
     },
   },
 
@@ -128,6 +144,41 @@ export default Vue.extend({
         this.toggleExpanded(node);
       }
       this.$emit("bks-tree-node-click", node);
+    },
+
+    handleItemSelectionClick(node: ItemNode, event: MouseEvent) {
+      if (!this.selectedIds) {
+        return;
+      }
+
+      const { metaKey, ctrlKey, shiftKey } = event;
+
+      if (shiftKey && this.selectionAnchorId != null) {
+        const visibleIds = collectVisibleItemIds(
+          this.folders,
+          this.items,
+          this.expandedIds
+        );
+        this.$emit(
+          "update:selectedIds",
+          rangeSelectVisibleIds(
+            this.selectedIds,
+            this.selectionAnchorId,
+            node.id,
+            visibleIds
+          )
+        );
+        this.selectionAnchorId = node.id;
+        return;
+      }
+
+      if (metaKey || ctrlKey) {
+        this.$emit(
+          "update:selectedIds",
+          toggleSelectedId(this.selectedIds, node.id)
+        );
+        this.selectionAnchorId = node.id;
+      }
     },
 
     handleNodeDragStart(node: Node) {

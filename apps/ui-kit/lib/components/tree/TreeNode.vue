@@ -16,7 +16,8 @@
       :draggable="node.draggable"
       :data-node-type="node.type"
       :data-drop-target="dropTargetPosition()"
-      @click="$emit('node-click', node)"
+      @click="handleRowClick"
+      @click.capture="handleRowClickCapture"
       @dragstart="handleDragStart"
       @dragover="handleDragOver"
       @dragleave="handleDragLeave"
@@ -30,7 +31,14 @@
       >
         <tree-folder :node="node" :expanded="expanded" />
       </slot>
-      <slot v-else name="item" :node="node" :depth="depth">
+      <slot
+        v-else
+        name="item"
+        :node="node"
+        :depth="depth"
+        :selected="isSelected"
+        :bulk-selection-active="bulkSelectionActive"
+      >
         {{ node.name }}
       </slot>
     </div>
@@ -44,6 +52,8 @@
         :depth="depth + 1"
         :internal-id="internalId"
         :expanded-ids="expandedIds"
+        :selected-ids="selectedIds"
+        :bulk-selection-active="bulkSelectionActive"
         :drop-target="dropTarget"
         :dragged-node="draggedNode"
         :can-drop="canDrop"
@@ -54,6 +64,7 @@
         @node-drop="$emit('node-drop', $event)"
         @node-dragend="$emit('node-dragend')"
         @node-click="$emit('node-click', $event)"
+        @item-selection-click="forwardItemSelectionClick"
       >
         <template v-slot:folder="slotProps">
           <slot name="folder" v-bind="slotProps" />
@@ -93,6 +104,14 @@ export default Vue.extend({
     expandedIds: {
       type: Array as PropType<FolderNode["id"][]>,
       required: true,
+    },
+    selectedIds: {
+      type: Array as PropType<Node["id"][]>,
+      default: undefined,
+    },
+    bulkSelectionActive: {
+      type: Boolean,
+      default: false,
     },
     depth: {
       type: Number,
@@ -163,6 +182,13 @@ export default Vue.extend({
       );
     },
 
+    isSelected(): boolean {
+      return (
+        this.node.type === "item" &&
+        (this.selectedIds?.includes(this.node.id) ?? false)
+      );
+    },
+
     /**
      * dragover can only read `dataTransfer.types`, not getData(), so the tree id
      * has to live in the mime type for cross-tree drags to be rejectable.
@@ -173,6 +199,26 @@ export default Vue.extend({
   },
 
   methods: {
+    handleRowClick() {
+      this.$emit("node-click", this.node);
+    },
+
+    handleRowClickCapture(event: MouseEvent) {
+      if (this.node.type !== "item" || !this.selectedIds) {
+        return;
+      }
+      const { metaKey, ctrlKey, shiftKey } = event;
+      if (!metaKey && !ctrlKey && !shiftKey) {
+        return;
+      }
+      event.stopPropagation();
+      this.$emit("item-selection-click", this.node, event);
+    },
+
+    forwardItemSelectionClick(node: ItemNode, event: MouseEvent) {
+      this.$emit("item-selection-click", node, event);
+    },
+
     dropTargetPosition(): DropPosition | null {
       if (this.dropTarget?.id !== this.node.id) {
         return null;

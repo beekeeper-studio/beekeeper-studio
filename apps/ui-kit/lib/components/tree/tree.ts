@@ -1,4 +1,4 @@
-import { DropPosition, FolderNode, Node } from "./types";
+import { DropPosition, FolderNode, ItemNode, Node } from "./types";
 
 export function zoneAt(
   source: Node | null,
@@ -63,4 +63,78 @@ export function buildDescendantsMap(
     map.set(node.id, descendantsOf(node));
   }
   return map;
+}
+
+/**
+ * Collect item node ids in the same order the Tree renders them (expanded
+ * folders only; subfolders before sibling items within a folder).
+ */
+export function collectVisibleItemIds(
+  folderNodes: FolderNode[],
+  itemNodes: ItemNode[],
+  expandedIds: FolderNode["id"][]
+): ItemNode["id"][] {
+  const result: ItemNode["id"][] = [];
+
+  const childItems = (folderId: FolderNode["id"] | null) =>
+    itemNodes
+      .filter((item) => item.parentId === folderId)
+      .sort((a, b) => a.position - b.position);
+
+  const walkFolder = (folder: FolderNode) => {
+    if (!expandedIds.includes(folder.id)) {
+      return;
+    }
+    for (const child of folder.children) {
+      walkFolder(child);
+    }
+    for (const item of childItems(folder.id)) {
+      result.push(item.id);
+    }
+  };
+
+  const rootFolders = folderNodes.filter((node) => node.parentId === null);
+  for (const folder of rootFolders) {
+    walkFolder(folder);
+  }
+  for (const item of childItems(null)) {
+    result.push(item.id);
+  }
+
+  return result;
+}
+
+export function toggleSelectedId(
+  selectedIds: ItemNode["id"][],
+  id: ItemNode["id"]
+): ItemNode["id"][] {
+  const index = selectedIds.indexOf(id);
+  if (index === -1) {
+    return [...selectedIds, id];
+  }
+  return selectedIds.toSpliced(index, 1);
+}
+
+export function rangeSelectVisibleIds(
+  selectedIds: ItemNode["id"][],
+  anchorId: ItemNode["id"],
+  targetId: ItemNode["id"],
+  visibleIds: ItemNode["id"][]
+): ItemNode["id"][] {
+  const anchorIndex = visibleIds.indexOf(anchorId);
+  const targetIndex = visibleIds.indexOf(targetId);
+  if (anchorIndex < 0 || targetIndex < 0) {
+    return selectedIds;
+  }
+  const [start, end] =
+    anchorIndex < targetIndex
+      ? [anchorIndex, targetIndex]
+      : [targetIndex, anchorIndex];
+  const next = [...selectedIds];
+  for (const id of visibleIds.slice(start, end + 1)) {
+    if (!next.includes(id)) {
+      next.push(id);
+    }
+  }
+  return next;
 }

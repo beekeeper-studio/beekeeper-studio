@@ -1,10 +1,48 @@
+import { HasId } from "@/common/interfaces/IGeneric";
+import { IFolder } from "@/common/interfaces/IQueryFolder";
 import type {
   FolderNode,
   ItemNode,
   TreeNodeMoveEvent,
 } from "@beekeeperstudio/ui-kit";
-import { HasId } from "@/common/interfaces/IGeneric";
-import { IFolder } from "@/common/interfaces/IQueryFolder";
+import { collectVisibleItemIds } from "@beekeeperstudio/ui-kit/tree/helpers";
+
+export { collectVisibleItemIds };
+
+export function toggleSelectedId(
+  selectedIds: ItemNode["id"][],
+  id: ItemNode["id"]
+): ItemNode["id"][] {
+  const index = selectedIds.indexOf(id);
+  if (index === -1) {
+    return [...selectedIds, id];
+  }
+  return selectedIds.toSpliced(index, 1);
+}
+
+export function rangeSelectVisibleIds(
+  selectedIds: ItemNode["id"][],
+  anchorId: ItemNode["id"],
+  targetId: ItemNode["id"],
+  visibleIds: ItemNode["id"][]
+): ItemNode["id"][] {
+  const anchorIndex = visibleIds.indexOf(anchorId);
+  const targetIndex = visibleIds.indexOf(targetId);
+  if (anchorIndex < 0 || targetIndex < 0) {
+    return selectedIds;
+  }
+  const [start, end] =
+    anchorIndex < targetIndex
+      ? [anchorIndex, targetIndex]
+      : [targetIndex, anchorIndex];
+  const next = [...selectedIds];
+  for (const id of visibleIds.slice(start, end + 1)) {
+    if (!next.includes(id)) {
+      next.push(id);
+    }
+  }
+  return next;
+}
 
 export type ExtendedNode = ExtendedFolderNode | ExtendedItemNode;
 
@@ -91,6 +129,22 @@ export function buildItemNodes<T extends HasId>(
       draggable: true,
     };
   });
+}
+
+/**
+ * Collect item refs in the same order the ui-kit Tree renders them (expanded
+ * folders only; subfolders before sibling items within a folder).
+ */
+export function collectVisibleItemRefs<T extends HasId>(
+  folderNodes: ExtendedFolderNode[],
+  itemNodes: ExtendedItemNode<T>[],
+  expandedIds: FolderNode["id"][]
+): T[] {
+  const visibleIds = collectVisibleItemIds(folderNodes, itemNodes, expandedIds);
+  const byId = new Map(itemNodes.map((node) => [node.id, node.ref]));
+  return visibleIds
+    .map((id) => byId.get(id))
+    .filter((ref): ref is T => ref !== undefined);
 }
 
 /** Transform {@link TreeNodeMoveEvent} into a consumable payload for the reorder action. */

@@ -166,8 +166,13 @@
                   :pinned="pinnedConnections.includes(c)"
                   :is-recent-list="false"
                   :privacy-mode="privacyMode"
+                  :checked="isChecked(c)"
+                  :selected="isChecked(c)"
+                  :bulk-selection-active="bulkSelectionActive"
                   @edit="edit"
                   @remove="remove"
+                  @select="select"
+                  @toggle-check="toggleChecked"
                   @duplicate="duplicate"
                   @doubleClick="connect"
                 />
@@ -188,7 +193,10 @@
                 :folders="folderNodes"
                 :items="sortedItemNodes"
                 :expanded-ids="expandedNodeIds"
+                :selected-ids="selectedIds"
+                :filter="connFilter"
                 @update:expandedIds="setExpandedIds"
+                @update:selectedIds="setSelectedIds"
                 @bks-tree-node-move="handleTreeNodeMove"
               >
                 <template #empty>
@@ -254,7 +262,7 @@
                     <content-placeholder-text :lines="1" />
                   </content-placeholder>
                 </template>
-                <template #item="{ node }">
+                <template #item="{ node, selected: treeSelected, bulkSelectionActive }">
                   <connection-list-item
                     :config="node.ref"
                     :selected-config="selectedConfig"
@@ -262,9 +270,14 @@
                     :pinned="pinnedConnectionIds.includes(node.ref.id)"
                     :is-recent-list="false"
                     :privacy-mode="privacyMode"
-                    :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.ref.id) }"
+                    :checked="treeSelected"
+                    :selected="treeSelected"
+                    :bulk-selection-active="bulkSelectionActive"
                     @edit="edit"
                     @remove="remove"
+                    @select="select"
+                    @toggle-check="toggleChecked"
+                    :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.ref.id) }"
                     @duplicate="duplicate"
                     @doubleClick="connect"
                   />
@@ -305,6 +318,20 @@
           </div>
         </div>
       </div>
+      <div
+        class="toolbar btn-group row flex-right"
+        v-show="bulkSelectionActive"
+      >
+        <a
+          class="btn btn-link"
+          @click="discardCheckedConnections"
+        >Cancel</a>
+        <a
+          class="btn btn-primary"
+          :title="removeTitle"
+          @click="removeCheckedConnections"
+        >Remove</a>
+      </div>
     </div>
   </div>
 </template>
@@ -322,6 +349,7 @@ import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
 import Split from 'split.js'
 import { AppEvent } from '@/common/AppEvent'
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
+import { rangeSelectVisibleIds, toggleSelectedId } from "@/common/utils/folderTree";
 import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
 import EditableText from '@/components/common/EditableText.vue'
@@ -347,6 +375,8 @@ export default {
   props: ['selectedConfig'],
   data: () => ({
     split: null,
+    selectedIds: [],
+    cloudSelectionAnchorId: null,
     sortables: {
       labelColor: "Color",
       id: "Created",
@@ -421,6 +451,18 @@ export default {
     },
     searching() {
       return !!this.connFilter;
+    },
+    bulkSelectionActive() {
+      return this.selectedIds.length > 0
+    },
+    removeTitle() {
+      return `Remove ${this.selectedIds.length} saved connections`;
+    },
+    selectedItems() {
+      const byId = new Map(this.itemNodes.map((node) => [node.id, node.ref]))
+      return this.selectedIds
+        .map((id) => byId.get(id))
+        .filter((item) => item != null)
     },
     initializing() {
       return this.folders.length === 0 && this.foldersLoading;
@@ -499,6 +541,65 @@ export default {
       this.setExpandedFolderIds(folderIds)
       this.ensureConnectionsLoaded(folderIds)
       this.ensureSubfoldersLoaded(folderIds)
+    },
+    setSelectedIds(selectedIds) {
+      this.selectedIds = selectedIds
+    },
+    itemNodeId(config) {
+      return `item-${config.id}`
+    },
+    isChecked(config) {
+      return this.selectedIds.includes(this.itemNodeId(config))
+    },
+    toggleChecked(config) {
+      this.setSelectedIds(
+        toggleSelectedId(this.selectedIds, this.itemNodeId(config))
+      )
+      this.cloudSelectionAnchorId = this.itemNodeId(config)
+    },
+    select(config, event) {
+      if (!this.cloudSearchMode) {
+        return
+      }
+
+      const nodeId = this.itemNodeId(config)
+      if (event?.shiftKey && this.cloudSelectionAnchorId != null) {
+        const visibleIds = this.filteredConnections.map((connection) =>
+          this.itemNodeId(connection)
+        )
+        this.setSelectedIds(
+          rangeSelectVisibleIds(
+            this.selectedIds,
+            this.cloudSelectionAnchorId,
+            nodeId,
+            visibleIds
+          )
+        )
+        return
+      }
+      if (event?.metaKey || event?.ctrlKey) {
+        this.toggleChecked(config)
+        return
+      }
+      this.cloudSelectionAnchorId = nodeId
+    },
+    async removeCheckedConnections() {
+      const items = this.selectedItems
+      const count = items.length
+      if (count === 0) return
+      const message = count === 1
+        ? `Delete "${items[0].name || 'connection'}"?`
+        : `Delete ${count} saved connections?`
+      if (!await this.$confirm(message, undefined, { variant: 'danger' })) {
+        return
+      }
+      for (const config of items) {
+        await this.$store.dispatch('data/connections/remove', config)
+      }
+      this.selectedIds = []
+    },
+    discardCheckedConnections() {
+      this.selectedIds = []
     },
     clearFilter() {
       this.connFilter = null;
