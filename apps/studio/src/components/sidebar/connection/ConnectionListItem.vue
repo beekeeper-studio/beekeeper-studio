@@ -1,7 +1,7 @@
 <template>
   <div
     class="list-item"
-    v-tooltip="title"
+    v-tooltip.right="title"
     @contextmenu.prevent="showContextMenu"
   >
     <a
