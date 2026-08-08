@@ -5840,10 +5840,10 @@ before-after-hook@^3.0.2:
   resolved "https://registry.yarnpkg.com/before-after-hook/-/before-after-hook-3.0.2.tgz#d5665a5fa8b62294a5aa0a499f933f4a1016195d"
   integrity sha512-Nik3Sc0ncrMK4UUdXQmAnRtzmNQTAAXmXIopizwZ1W1t8QmfJj+zL4OA2I7XPTPW5z5TDqv4hRo/JzouDJnX3A==
 
-better-sqlite3@^12.5.0:
-  version "12.6.2"
-  resolved "https://registry.yarnpkg.com/better-sqlite3/-/better-sqlite3-12.6.2.tgz#770649f28a62e543a360f3dfa1afe4cc944b1937"
-  integrity sha512-8VYKM3MjCa9WcaSAI3hzwhmyHVlH8tiGFwf0RlTsZPWJ1I5MkzjiudCo4KC4DxOaL/53A5B1sI/IbldNFDbsKA==
+"better-sqlite3@npm:better-sqlite3-multiple-ciphers@^12.5.0":
+  version "12.11.1"
+  resolved "https://registry.yarnpkg.com/better-sqlite3-multiple-ciphers/-/better-sqlite3-multiple-ciphers-12.11.1.tgz#5db42c7ff1eae7d5fb878fe91c229c63ae3a050a"
+  integrity sha512-pG72+3VkUipnmYx4LwQqoOXNG2CJ1HlmDrlvqgr7xQHgsE+cz5rAZEiaJHnUKTHaGfGifggA/C0Sv9qZlUrfow==
   dependencies:
     bindings "^1.5.0"
     prebuild-install "^7.1.1"
