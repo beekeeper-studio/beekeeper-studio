@@ -672,7 +672,9 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         },
         editingResult: false,
         resultsEditData: [],
-        resultEditableMap: []
+        resultEditableMap: [],
+        pollInterval: null,
+        queryDeleted: false
       }
     },
     computed: {
@@ -733,7 +735,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         return this.storeInitialized && this.active && !this.initialized
       },
       remoteDeleted() {
-        return this.storeInitialized && this.tab.queryId && !this.query
+        return this.storeInitialized && this.tab.queryId && this.queryDeleted
       },
       query() {
         return this.fullQuery ?? this.blankQuery
@@ -994,7 +996,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       },
       primaryIsCurrent() {
         return this.$bksConfig.ui.queryEditor?.primaryQueryAction.toLowerCase() === 'submitcurrentquery';
-      },
+      }
     },
     watch: {
       selectedResult() {
@@ -1045,11 +1047,19 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         // this.$nextTick doesn't work in this case.
         if (this.active) {
           setTimeout(this.selectEditor, 0)
+
+          this.maybePollOriginalText();
         }
 
         if (!this.active) {
           this.focusElement = 'none'
           this.$modal.hide(`save-modal-${this.tab.id}`)
+
+
+          if (!_.isNil(this.pollInterval)) {
+            clearInterval(this.pollInterval)
+            this.pollInterval = null;
+          }
         }
       },
       async focusElement(element, oldElement) {
@@ -1982,6 +1992,53 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             },
           }
         };
+      },
+      maybePollOriginalText() {
+        if (this.tab.queryId && this.isCloud) {
+          this.pollInterval = setInterval(async () => {
+            let query: ISavedQuery;
+            try {
+              query = await this.$store.dispatch('data/queries/findOne', this.tab.queryId);
+            } catch (e) {
+              if (e?.status === 404) {
+                this.handleQueryDeleted();
+                return;
+              }
+
+              log.error('Error polling saved query', e);
+              return;
+            }
+
+            if (!query) return;
+
+            if (this.tab.title !== query.title) {
+              this.tab.title = query.title;
+              this.updateTab();
+            }
+
+            if (_.trim(this.originalText) !== _.trim(query.text)) {
+              if (!this.unsavedChanges) {
+                this.originalText = query.text;
+                this.unsavedText = query.text;
+
+                if (this.hasTitle) {
+                  this.$noty.info(`${this.query.title} updated from cloud`);
+                }
+              }
+              this.query.text = query.text;
+            }
+          }, this.$bksConfig.general.workspaceSyncInterval)
+        }
+      },
+      handleQueryDeleted() {
+        this.queryDeleted = true;
+        this.fullQuery = null;
+        this.originalText = "";
+        this.unsavedText = "";
+        if (!_.isNil(this.pollInterval)) {
+          clearInterval(this.pollInterval);
+          this.pollInterval = null;
+        }
       }
     },
     created() {
@@ -2007,6 +2064,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
         if (this.tab.queryId) {
           this.fullQuery = await this.$store.dispatch('data/queries/findOne', this.tab.queryId);
+
+          this.maybePollOriginalText();
         } else if (this.tab.usedQueryId) {
           this.fullQuery = await this.$store.dispatch('data/usedQueries/findOne', this.tab.usedQueryId);
         }
@@ -2045,6 +2104,9 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       this.connection.releaseConnection(this.tab.id)
       this.containerResizeObserver.disconnect()
       this.removeTransactionTimeoutListener();
+      if (!_.isNil(this.pollInterval)) {
+        clearInterval(this.pollInterval);
+      }
     },
   }
 </script>
