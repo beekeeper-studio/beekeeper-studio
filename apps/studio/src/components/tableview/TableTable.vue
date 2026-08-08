@@ -95,14 +95,14 @@
           <a
             v-if="(this.page > 1)"
             @click="page = 1"
-            v-tooltip="$bksConfig.keybindings.tableTable.firstPage"
+            v-tooltip="$bksConfigUI.getKeybindingLabel('tableTable.firstPage')"
           ><i
             class="material-icons"
           >first_page</i></a>
           <a
             v-if="(this.page > 1)"
             @click="page = page - 1"
-            v-tooltip="$bksConfig.keybindings.tableTable.previousPage"
+            v-tooltip="$bksConfigUI.getKeybindingLabel('tableTable.previousPage')"
           ><i
             class="material-icons"
           >navigate_before</i></a>
@@ -113,12 +113,12 @@
           <a
             v-if="hasNextPage"
             @click="page = page + 1"
-            v-tooltip="$bksConfig.keybindings.tableTable.nextPage"
+            v-tooltip="$bksConfigUI.getKeybindingLabel('tableTable.nextPage')"
           ><i class="material-icons">navigate_next</i></a>
           <a
             v-if="hasNextPage && canJumpToLastPage"
             @click="jumpToLastPage"
-            v-tooltip="$bksConfig.keybindings.tableTable.lastPage"
+            v-tooltip="$bksConfigUI.getKeybindingLabel('tableTable.lastPage')"
           >
             <i class="material-icons">last_page</i>
           </a>
@@ -208,7 +208,7 @@
 
         <!-- Actions -->
         <x-button
-          v-tooltip="`Refresh Table (${$bksConfig.keybindings.general.refresh})`"
+          v-tooltip="`Refresh Table (${$bksConfigUI.getKeybindingLabel('general.refresh')})`"
           class="btn btn-flat"
           @click="refreshTable"
         >
@@ -527,7 +527,7 @@ export default Vue.extend({
     addRowTooltip() {
       return this.usedConfig.readOnlyMode ?
         "Read Only Mode is enabled for this connection. Cannot add rows." :
-        `Add row (${this.$bksConfig.keybindings.general.addRow})`;
+        `Add row (${this.$bksConfigUI.getKeybindingLabel("general.addRow")})`;
     },
     readOnlyNotice() {
       if (this.usedConfig.readOnlyMode) {
@@ -1263,7 +1263,10 @@ export default Vue.extend({
           disabled: !this.editable,
         },
         {
-          label: createMenuItem(`Delete ${rowRangeLabel}`, "Delete"),
+          label: createMenuItem(
+            `Delete ${rowRangeLabel}`,
+            this.$bksConfig.getKeybindings("context-menu", "general.deleteSelection"),
+          ),
           action: () => {
             this.tabulator.rowManager.element.focus()
             this.deleteTableSelection(undefined)

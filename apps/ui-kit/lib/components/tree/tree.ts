@@ -1,13 +1,46 @@
 import { DropPosition, FolderNode, ItemNode, Node } from "./types";
 
-export function zoneAt(node: Node, event: DragEvent): DropPosition {
-  // Folders have no position, so they can only be dropped into.
-  if (node.type === "folder") {
-    return "inside";
-  }
+export function zoneAt(
+  source: Node | null,
+  target: Node,
+  event: DragEvent
+): DropPosition {
   const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
   const offset = (event.clientY - rect.top) / rect.height;
-  return offset < 0.5 ? "before" : "after";
+
+  if (target.type !== "folder") {
+    return offset < 0.5 ? "before" : "after";
+  }
+
+  // Only a folder can land beside a folder. An item has nowhere to sit between
+  // two folders, so it always goes in.
+  if (source?.type !== "folder") {
+    return "inside";
+  }
+
+  // The outer quarters land beside the folder, the middle half lands in it.
+  if (offset < 0.25) {
+    return "before";
+  }
+  if (offset > 0.75) {
+    return "after";
+  }
+  return "inside";
+}
+
+/**
+ * The folder a node lands in. Dropping beside a node means joining whatever
+ * holds it, which is how a nested folder is reachable without dragging all the
+ * way back to its parent's row.
+ */
+export function destinationOf(
+  target: Node,
+  position: DropPosition
+): FolderNode["id"] | null {
+  if (target.type === "folder" && position === "inside") {
+    return target.id;
+  }
+  return target.parentId;
 }
 
 function descendantsOf(node: FolderNode): Set<FolderNode["id"]> {

@@ -63,7 +63,7 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
       }
     },
     // Reorder action for drag/drop - uses dedicated reorder API that returns all affected positions
-    async reorder(context, { item, position, queryFolderId }) {
+    async reorder(context, { item, position, queryFolderId, confirm }) {
       // Get the full item from state for optimistic update
       const existing = context.state.items.find(q => q.id === item.id)
       if (!existing) return
@@ -111,7 +111,8 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
           const affectedItems = await cli.queries.reorder(
             item.id,
             position,
-            queryFolderId
+            queryFolderId,
+            confirm
           )
           // Update all affected items with their new positions and folder
           for (const affected of affectedItems) {

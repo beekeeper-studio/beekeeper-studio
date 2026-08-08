@@ -55,6 +55,7 @@
         :selected-ids="selectedIds"
         :bulk-selection-active="bulkSelectionActive"
         :drop-target="dropTarget"
+        :dragged-node="draggedNode"
         :can-drop="canDrop"
         :filter="filter"
         @node-dragstart="$emit('node-dragstart', $event)"
@@ -124,8 +125,14 @@ export default Vue.extend({
       type: Object as PropType<DropTarget | null>,
       default: null,
     },
+    draggedNode: {
+      type: Object as PropType<Node | null>,
+      default: null,
+    },
     canDrop: {
-      type: Function as PropType<(node: Node) => boolean>,
+      type: Function as PropType<
+        (node: Node, position: DropPosition) => boolean
+      >,
       required: true,
     },
     filter: {
@@ -155,9 +162,7 @@ export default Vue.extend({
         return [];
       }
       const folderId = this.node.id;
-      return this.allItems
-        .filter((item) => item.parentId === folderId)
-        .sort((a, b) => a.position - b.position);
+      return this.allItems.filter((item) => item.parentId === folderId);
     },
 
     childNodes(): Node[] {
@@ -236,13 +241,14 @@ export default Vue.extend({
       if (!this.isOurDrag(event)) {
         return;
       }
-      if (!this.canDrop(this.node)) {
+      // The zone decides where the node lands, so it decides whether the drop
+      // is legal at all — the same row can be valid at its edge and not in its
+      // middle.
+      const position = zoneAt(this.draggedNode, this.node, event);
+      if (!this.canDrop(this.node, position)) {
         return;
       }
-      this.$emit("node-dragover", {
-        node: this.node,
-        position: zoneAt(this.node, event),
-      });
+      this.$emit("node-dragover", { node: this.node, position });
       // Skipping preventDefault on an invalid target is what gives us the
       // native no-drop cursor.
       event.preventDefault();

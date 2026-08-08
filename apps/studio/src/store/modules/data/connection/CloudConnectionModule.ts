@@ -61,7 +61,7 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
       }
     },
     // Reorder action for drag/drop - uses dedicated reorder API that returns all affected positions
-    async reorder(context, { item, position, connectionFolderId }) {
+    async reorder(context, { item, position, connectionFolderId, confirm }) {
       // Get the full item from state for optimistic update
       const existing = context.state.items.find(c => c.id === item.id)
       if (!existing) return
@@ -109,7 +109,8 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
           const affectedItems = await cli.connections.reorder(
             item.id,
             position,
-            connectionFolderId
+            connectionFolderId,
+            confirm
           )
           // Update all affected items with their new positions and folder
           for (const affected of affectedItems) {

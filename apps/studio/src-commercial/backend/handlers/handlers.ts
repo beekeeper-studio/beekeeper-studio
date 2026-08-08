@@ -11,6 +11,7 @@ import { IBackupHandlers } from "./backupHandlers";
 import { ICliHandlers } from "./cliHandlers";
 import { IEnumHandlers } from "./enumHandlers";
 import { IAwsHandlers } from "./awsHandlers";
+import { IWorkspaceHandlers } from "@/handlers/workspaceHandlers";
 
 export interface Handlers
   extends IConnectionHandlers,
@@ -23,4 +24,6 @@ export interface Handlers
     IFileHandlers,
     IEnumHandlers,
     ITempHandlers,
-    IAwsHandlers {}
+    IAwsHandlers,
+    IWorkspaceHandlers
+    {}

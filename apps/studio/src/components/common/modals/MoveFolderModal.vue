@@ -1,5 +1,5 @@
 <template>
-  <base-modal :name="modalName" @submit="move">
+  <base-modal :name="modalName" @submit="move" :loading="loadingFolders">
     <template #title>
       <template v-if="target">
         Move
@@ -31,16 +31,7 @@
         </span>
       </label>
 
-      <content-placeholder
-        v-if="loadingFolders"
-        :animated="true"
-        :rounded="false"
-      >
-        <content-placeholder-text :lines="4" />
-      </content-placeholder>
-
       <tree
-        v-else
         :folders="folderNodes"
         :expanded-ids="expandedIds"
         @update:expandedIds="setExpandedIds"
@@ -177,12 +168,7 @@ export default Vue.extend({
     async open(target: Target) {
       this.target = target;
       this.selectedFolderId = target.value.parentId;
-
-      // Expand anscestors
-      this.expandedIds = getSelfAndAncestors(
-        target.value.parentId,
-        this.folders
-      ).map((f) => `folder-${f.id}`);
+      this.expandedIds = [];
 
       this.$modal.show(this.modalName);
 
@@ -192,6 +178,12 @@ export default Vue.extend({
       } finally {
         this.loadingFolders = false;
       }
+
+      // Expand ancestors
+      this.expandedIds = getSelfAndAncestors(
+        target.value.parentId,
+        this.folders
+      ).map((f) => `folder-${f.id}`);
     },
     setExpandedIds(expandedIds: string[]) {
       this.expandedIds = expandedIds;

@@ -43,6 +43,7 @@ module.exports = {
     '^@commercial(.*)$': '<rootDir>/src-commercial/$1',
     '^@bksLogger$': '<rootDir>/src/lib/log/mainLogger.ts',
     '^@tests(.*)$': '<rootDir>/tests/$1',
+    '^@beekeeperstudio/ui-kit$': resolve(__dirname, '../ui-kit/lib/index.ts'),
   },
   // serializer for snapshots
   snapshotSerializers: [

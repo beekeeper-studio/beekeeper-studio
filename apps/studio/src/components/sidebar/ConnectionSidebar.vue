@@ -115,6 +115,7 @@
                   </a>
                   <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
                   <sidebar-sort-buttons
+                    v-if="!isCloud"
                     v-model="sort"
                     :sort-options="sortables"
                   />
@@ -150,9 +151,9 @@
               v-else
               class="list-body"
             >
-              <template v-if="cloudSearchMode">
+              <template v-if="searching">
                 <div class="empty-state"
-                  v-if="!searchInProgress && filteredConnections.length === 0"
+                  v-if="!fetchingResults && filteredConnections.length === 0"
                 >
                   No connections match "{{ connFilter }}"
                 </div>
@@ -176,7 +177,7 @@
                   @doubleClick="connect"
                 />
                 <content-placeholder
-                  v-if="searchInProgress"
+                  v-if="fetchingResults"
                   :animated="true"
                   :rounded="false"
                   class="list-item"
@@ -188,8 +189,8 @@
                 </content-placeholder>
               </template>
               <tree
-                v-show="!cloudSearchMode"
-                :folders="draftingFolder ? folderNodesWithDraft : folderNodes"
+                v-show="!searching"
+                :folders="folderNodes"
                 :items="sortedItemNodes"
                 :expanded-ids="expandedNodeIds"
                 :selected-ids="selectedIds"
@@ -218,15 +219,15 @@
                 <template #folder="{ props }">
                   <tree-folder
                     v-bind="props"
-                    v-if="props.node.id === 'folder-draft'"
+                    v-if="props.node.ref === draft"
                     tag="div"
                   >
                     <template #name>
                       <editable-text
                         rename
                         :initial-value="props.node.name"
-                        @submit="submitDraftFolder"
-                        @cancel="cancelDraftFolder"
+                        @submit="commitDraft"
+                        @cancel="stopDrafting"
                       />
                     </template>
                   </tree-folder>
@@ -386,8 +387,6 @@ export default {
     sortInitialized: false,
     sizes: [33, 33, 33],
     renamingFolderId: null,
-    draftingFolder: false,
-    draftFolderParentId: null,
     justCreatedFolderId: null,
     justCreatedTimeout: null,
   }),
@@ -406,12 +405,13 @@ export default {
       connectionsError: 'error',
       connectionFilter: 'filter',
       pendingSaveIds: 'pendingSaveIds',
-      searchInProgress: 'searching',
+      fetchingResults: 'searching',
     }),
     ...mapState('data/connectionFolders', {
       folders: 'items',
       foldersLoading: 'loading',
       foldersError: 'error',
+      draft: 'draft',
     }),
     ...mapState('sidebar/connections', {
       expandedFolderIds: 'expandedIds',
@@ -449,10 +449,8 @@ export default {
     pinnedConnectionIds() {
       return this.pinnedConnections.map((pinned) => pinned.id);
     },
-    // Cloud lazy-loads folder contents, so a match can live in a folder that was
-    // never fetched. Searching hits the server and shows a flat result list.
-    cloudSearchMode() {
-      return this.isCloud && !!this.connFilter;
+    searching() {
+      return !!this.connFilter;
     },
     bulkSelectionActive() {
       return this.selectedIds.length > 0
@@ -486,6 +484,11 @@ export default {
       }
     },
     sortedItemNodes() {
+      // Cloud has no sort buttons — drag and drop is the only way to reorder,
+      // and it lands in `position`.
+      if (this.isCloud) {
+        return _.sortBy(this.itemNodes, 'ref.position')
+      }
       let result = []
       if (this.sort.field === 'labelColor') {
         const mappings = {
@@ -504,39 +507,6 @@ export default {
       }
       if (this.sort.order === 'desc') result = result.reverse()
       return result;
-    },
-    folderNodesWithDraft() {
-      /** @type {import("@beekeeperstudio/ui-kit").FolderNode} */
-      const draftNode = {
-        id: "folder-draft",
-        parentId: this.draftFolderParentId
-          ? `folder-${this.draftFolderParentId}`
-          : null,
-        type: "folder",
-        name: "Untitled folder",
-        children: [],
-        draggable: false,
-      };
-
-      const parentIndex = this.folderNodes.findIndex((node) =>
-        node.ref.id === this.draftFolderParentId
-      );
-      if (parentIndex === -1) {
-        return [draftNode, ...this.folderNodes];
-      }
-
-      // dont mutate the original object
-      const parentNode = {
-        ...this.folderNodes[parentIndex],
-        children: [
-          draftNode,
-          ...this.folderNodes[parentIndex].children,
-        ],
-      };
-      return [
-        draftNode,
-        ...this.folderNodes.toSpliced(parentIndex, 1, parentNode),
-      ];
     },
   },
   async mounted() {
@@ -558,6 +528,8 @@ export default {
       reorderConnection: 'data/connections/reorder',
       ensureConnectionsLoaded: 'data/connections/ensureLoaded',
       ensureSubfoldersLoaded: 'data/connectionFolders/ensureLoaded',
+      startDrafting: 'data/connectionFolders/startDrafting',
+      stopDrafting: 'data/connectionFolders/stopDrafting',
     }),
     ...mapMutations({
       setExpandedFolderIds: 'sidebar/connections/expandedIds',
@@ -686,20 +658,11 @@ export default {
           );
           return;
         }
-        this.startDraftFolder(parent.id);
+        this.startDrafting(parent.id);
+        this.expandFolder(parent.id);
       } else {
-        this.startDraftFolder(null);
+        this.startDrafting(null);
       }
-    },
-    startDraftFolder(parentId) {
-      this.draftFolderParentId = parentId
-      this.draftingFolder = true
-      if (parentId) {
-        this.expandFolder(parentId)
-      }
-    },
-    cancelDraftFolder() {
-      this.draftingFolder = false
     },
     markJustCreated(folderId) {
       clearTimeout(this.justCreatedTimeout)
@@ -726,7 +689,14 @@ export default {
       const isRoot = !folder.parentId;
       const options = [{
         name: 'New Subfolder',
-        handler: ({ item }) => this.startDraftFolder(item.id),
+        handler: ({ item }) => {
+          if (!this.canCreateFolders) {
+            this.$root.$emit(AppEvent.upgradeModal, 'Folders');
+            return;
+          }
+          this.startDrafting(item.id);
+          this.expandFolder(item.id);
+        },
       }];
       if (!this.isCloud || !isRoot) {
         options.push(...[
@@ -764,24 +734,58 @@ export default {
     },
     /** @param event {import("@beekeeperstudio/ui-kit").TreeNodeMoveEvent} */
     async handleTreeNodeMove(event) {
+      /** @type {import("@/common/utils/folderTree").ExtendedNode} */
       const source = event.source;
+      /** @type {import("@/common/utils/folderTree").ExtendedNode} */
       const target = event.target;
+      let reorderPayload = null;
+      let error = null;
       try {
-        if (source.type === 'folder' && target.type === 'folder') {
-          await this.saveFolder({ ...source.ref, parentId: target.ref.id });
+        if (source.type === 'folder') {
+          // Dropped beside a node, the folder joins whatever holds that node.
+          let parentId
+          if (target.type === 'folder') {
+            parentId = event.position === 'inside'
+              ? target.ref.id
+              : target.ref.parentId
+          } else {
+            parentId = target.ref[target.parentIdKey] ?? null
+          }
+          await this.saveFolder({ ...source.ref, parentId });
         } else if (source.type === 'item') {
           const { parentId, position } = parseReorderTarget(event);
-          await this.reorderConnection({
+          reorderPayload = {
             item: source.ref,
             connectionFolderId: parentId,
             position,
-          });
+          };
+          await this.reorderConnection(reorderPayload);
         }
       } catch (ex) {
-        let errorMessage = `Move error: ${ex.userMessage ?? ex.message}`;
-        if (ex.message.includes("[team_folder_in_personal_tree]")) {
+        error = ex;
+      }
+
+      if (error?.message.includes("[confirm_personal_move]")) {
+        const confirmed = await this.$confirm(
+          "Move to your personal folder?",
+          `All workspace members will lose access to "${source.name}".`
+        );
+        if (!confirmed) {
+          return;
+        }
+        error = null;
+        try {
+          await this.reorderConnection({ ...reorderPayload, confirm: true });
+        } catch (ex) {
+          error = ex;
+        }
+      }
+
+      if (error) {
+        let errorMessage = `Move error: ${error.userMessage ?? error.message}`;
+        if (error.message.includes("[team_folder_in_personal_tree]")) {
           errorMessage =
-            "You can not move this to your personal folder because it is shared with other workspace members.";
+            "You can not move a team folder to your personal folder because it is shared with other workspace members.";
         }
         this.$noty.error(errorMessage);
       }
@@ -869,22 +873,22 @@ export default {
         this.$noty.error(`Reorder error: ${ex.message}`)
       }
     },
-    async submitDraftFolder(name) {
-      if (!name) {
-        this.cancelDraftFolder()
+    async commitDraft(name = "") {
+      if (!name.trim()) {
+        this.stopDrafting()
         return
       }
       try {
         const id = await this.$store.dispatch('data/connectionFolders/save', {
           id: null,
-          parentId: this.draftFolderParentId,
+          parentId: this.draft.parentId ?? null,
           name,
         })
         this.markJustCreated(id)
       } catch (ex) {
         this.$noty.error(`Create folder error: ${ex.userMessage ?? ex.message}`)
       } finally {
-        this.cancelDraftFolder()
+        this.stopDrafting()
       }
     },
   }

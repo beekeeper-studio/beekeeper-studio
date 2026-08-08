@@ -398,7 +398,8 @@ describe("CloudConnectionModule reorder", () => {
       expect(mockClient.connections.reorder).toHaveBeenCalledWith(
         3,
         { after: 1 },
-        null
+        null,
+        undefined
       );
 
       // Store should have the updated position

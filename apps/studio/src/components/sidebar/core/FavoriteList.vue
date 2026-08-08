@@ -79,10 +79,10 @@
           class="list-body"
           ref="wrapper"
         >
-          <template v-if="cloudSearchMode">
+          <template v-if="searching">
             <div
               class="empty-state"
-              v-if="!searchInProgress && filteredQueries.length === 0"
+              v-if="!fetchingResults && filteredQueries.length === 0"
             >
               No queries match "{{ filterQuery }}"
             </div>
@@ -103,7 +103,7 @@
               @duplicate="duplicate"
             />
             <content-placeholder
-              v-if="searchInProgress"
+              v-if="fetchingResults"
               :animated="true"
               :rounded="false"
               class="list-item"
@@ -115,9 +115,9 @@
             </content-placeholder>
           </template>
           <tree
-            v-show="!cloudSearchMode"
-            :folders="draftingFolder ? folderNodesWithDraft : folderNodes"
-            :items="itemNodes"
+            v-show="!searching"
+            :folders="folderNodes"
+            :items="sortedItemNodes"
             :expanded-ids="expandedNodeIds"
             :selected-ids="selectedIds"
             :filter="filterQuery"
@@ -143,15 +143,15 @@
             <template #folder="{ props }">
               <tree-folder
                 v-bind="props"
-                v-if="props.node.id === 'folder-draft'"
+                v-if="props.node.ref === draft"
                 tag="div"
               >
                 <template #name>
                   <editable-text
                     rename
                     :initial-value="props.node.name"
-                    @submit="submitDraftFolder"
-                    @cancel="cancelDraftFolder"
+                    @submit="commitDraft"
+                    @cancel="stopDrafting"
                   />
                 </template>
               </tree-folder>
@@ -225,6 +225,7 @@
 </template>
 
 <script>
+import _ from 'lodash'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
 import { mapActions, mapGetters, mapMutations, mapState } from 'vuex'
@@ -247,8 +248,6 @@ export default {
       cloudSelectionAnchorId: null,
       draggingQuery: null,
       renamingFolderId: null,
-      draftingFolder: false,
-      draftFolderParentId: null,
       justCreatedFolderId: null,
       justCreatedTimeout: null,
     }
@@ -270,9 +269,14 @@ export default {
       'queriesError': 'error',
       'savedQueryFilter': 'filter',
       'pendingSaveIds': 'pendingSaveIds',
-      searchInProgress: 'searching',
+      fetchingResults: 'searching',
     }),
-    ...mapState('data/queryFolders', {'folders': 'items', 'foldersLoading': 'loading', 'foldersError': 'error'}),
+    ...mapState('data/queryFolders', {
+      'folders': 'items',
+      'foldersLoading': 'loading',
+      'foldersError': 'error',
+      'draft': 'draft',
+    }),
     ...mapState('sidebar/queries', {
       expandedFolderIds: 'expandedIds',
     }),
@@ -287,10 +291,16 @@ export default {
     expandedNodeIds() {
       return this.expandedFolderIds.map((id) => `folder-${id}`);
     },
-    // Cloud lazy-loads folder contents, so a match can live in a folder that was
-    // never fetched. Searching hits the server and shows a flat result list.
-    cloudSearchMode() {
-      return this.isCloud && !!this.filterQuery;
+    sortedItemNodes() {
+      // Cloud has no sort buttons — drag and drop is the only way to reorder,
+      // and it lands in `position`.
+      if (this.isCloud) {
+        return _.sortBy(this.itemNodes, 'ref.position')
+      }
+      return _.sortBy(this.itemNodes, 'ref.title')
+    },
+    searching() {
+      return !!this.filterQuery;
     },
     initializing() {
       return this.folders.length === 0 && this.foldersLoading;
@@ -318,39 +328,6 @@ export default {
         .map((id) => byId.get(id))
         .filter((item) => item != null)
     },
-    folderNodesWithDraft() {
-      /** @type {import("@beekeeperstudio/ui-kit").FolderNode} */
-      const draftNode = {
-        id: "folder-draft",
-        parentId: this.draftFolderParentId
-          ? `folder-${this.draftFolderParentId}`
-          : null,
-        type: "folder",
-        name: "Untitled folder",
-        children: [],
-        draggable: false,
-      };
-
-      const parentIndex = this.folderNodes.findIndex((node) =>
-        node.ref.id === this.draftFolderParentId
-      );
-      if (parentIndex === -1) {
-        return [draftNode, ...this.folderNodes];
-      }
-
-      // dont mutate the original object
-      const parentNode = {
-        ...this.folderNodes[parentIndex],
-        children: [
-          draftNode,
-          ...this.folderNodes[parentIndex].children,
-        ],
-      };
-      return [
-        draftNode,
-        ...this.folderNodes.toSpliced(parentIndex, 1, parentNode),
-      ];
-    },
   },
   methods: {
     ...mapActions({
@@ -358,6 +335,8 @@ export default {
       reorderQuery: 'data/queries/reorder',
       ensureQueriesLoaded: 'data/queries/ensureLoaded',
       ensureSubfoldersLoaded: 'data/queryFolders/ensureLoaded',
+      startDrafting: 'data/queryFolders/startDrafting',
+      stopDrafting: 'data/queryFolders/stopDrafting',
     }),
     ...mapMutations({
       setExpandedFolderIds: 'sidebar/queries/expandedIds',
@@ -457,7 +436,8 @@ export default {
       this.trigger('favoriteClick', item, { openHistory: true })
     },
     async remove(favorite) {
-      if (await this.$confirm(`Delete "${favorite.name}"?`, undefined, { variant: "danger" })) {
+      const name = favorite.title || favorite.name
+      if (await this.$confirm(`Delete "${name}"?`, undefined, { variant: "danger" })) {
         await this.$store.dispatch('data/queries/remove', favorite)
       }
     },
@@ -492,20 +472,11 @@ export default {
           );
           return;
         }
-        this.startDraftFolder(parent.id);
+        this.startDrafting(parent.id);
+        this.expandFolder(parent.id);
       } else {
-        this.startDraftFolder(null);
+        this.startDrafting(null);
       }
-    },
-    startDraftFolder(parentId) {
-      this.draftFolderParentId = parentId
-      this.draftingFolder = true
-      if (parentId) {
-        this.expandFolder(parentId)
-      }
-    },
-    cancelDraftFolder() {
-      this.draftingFolder = false
     },
     markJustCreated(folderId) {
       clearTimeout(this.justCreatedTimeout)
@@ -520,22 +491,22 @@ export default {
       }
       this.setExpandedIds([...this.expandedNodeIds, `folder-${folderId}`])
     },
-    async submitDraftFolder(name) {
-      if (!name) {
-        this.cancelDraftFolder()
+    async commitDraft(name = "") {
+      if (!name.trim()) {
+        this.stopDrafting()
         return
       }
       try {
         const id = await this.$store.dispatch('data/queryFolders/save', {
           id: null,
-          parentId: this.draftFolderParentId,
+          parentId: this.draft.parentId ?? null,
           name,
         })
         this.markJustCreated(id)
       } catch (ex) {
         this.$noty.error(`Create folder error: ${ex.userMessage ?? ex.message}`)
       } finally {
-        this.cancelDraftFolder()
+        this.stopDrafting()
       }
     },
     showFolderContextMenu(event, folder) {
@@ -549,7 +520,14 @@ export default {
       const isRoot = !folder.parentId;
       const options = [{
         name: 'New Subfolder',
-        handler: ({ item }) => this.startDraftFolder(item.id),
+        handler: ({ item }) => {
+          if (!this.canCreateFolders) {
+            this.$root.$emit(AppEvent.upgradeModal, 'Folders');
+            return;
+          }
+          this.startDrafting(item.id);
+          this.expandFolder(item.id);
+        },
       }];
       if (!this.isCloud || !isRoot) {
         options.push(...[
@@ -587,24 +565,58 @@ export default {
     },
     /** @param event {import("@beekeeperstudio/ui-kit").TreeNodeMoveEvent} */
     async handleTreeNodeMove(event) {
+      /** @type {import("@/common/utils/folderTree").ExtendedNode} */
       const source = event.source;
+      /** @type {import("@/common/utils/folderTree").ExtendedNode} */
       const target = event.target;
+      let reorderPayload = null;
+      let error = null;
       try {
-        if (source.type === 'folder' && target.type === 'folder') {
-          await this.saveFolder({ ...source.ref, parentId: target.ref.id });
+        if (source.type === 'folder') {
+          // Dropped beside a node, the folder joins whatever holds that node.
+          let parentId
+          if (target.type === 'folder') {
+            parentId = event.position === 'inside'
+              ? target.ref.id
+              : target.ref.parentId
+          } else {
+            parentId = target.ref[target.parentIdKey] ?? null
+          }
+          await this.saveFolder({ ...source.ref, parentId });
         } else if (source.type === 'item') {
           const { parentId, position } = parseReorderTarget(event);
-          await this.reorderQuery({
+          reorderPayload = {
             item: source.ref,
             queryFolderId: parentId,
             position,
-          });
+          };
+          await this.reorderQuery(reorderPayload);
         }
       } catch (ex) {
-        let errorMessage = `Move error: ${ex.userMessage ?? ex.message}`;
-        if (ex.message.includes("[team_folder_in_personal_tree]")) {
+        error = ex;
+      }
+
+      if (error?.message.includes("[confirm_personal_move]")) {
+        const confirmed = await this.$confirm(
+          "Move to your personal folder?",
+          `All workspace members will lose access to "${source.name}".`
+        );
+        if (!confirmed) {
+          return;
+        }
+        error = null;
+        try {
+          await this.reorderQuery({ ...reorderPayload, confirm: true });
+        } catch (ex) {
+          error = ex;
+        }
+      }
+
+      if (error) {
+        let errorMessage = `Move error: ${error.userMessage ?? error.message}`;
+        if (error.message.includes("[team_folder_in_personal_tree]")) {
           errorMessage =
-            "You can not move this to your personal folder because it is shared with other workspace members.";
+            "You can not move a team folder to your personal folder because it is shared with other workspace members.";
         }
         this.$noty.error(errorMessage);
       }

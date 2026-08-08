@@ -740,9 +740,9 @@ const store = new Vuex.Store<State>({
           context.dispatch('data/connections/refresh', []),
         ]);
 
-        await context.dispatch('data/connectionFolders/loadDefaultFolders');
-        const folderIds = context.state['data/connectionFolders']
-          .items.map((folder) => folder.id)
+        const folderIds = context.state['data/connectionFolders'].items
+          .filter((folder) => folder.default)
+          .map((folder) => folder.id)
         // the default folders start out expanded
         context.commit('sidebar/connections/expandedIds', folderIds)
 
@@ -765,9 +765,9 @@ const store = new Vuex.Store<State>({
           context.dispatch('data/queries/refresh', []),
         ]);
 
-        await context.dispatch('data/queryFolders/loadDefaultFolders');
-        const folderIds = context.state['data/queryFolders']
-          .items.map((folder) => folder.id)
+        const folderIds = context.state['data/queryFolders'].items
+          .filter((folder) => folder.default)
+          .map((folder) => folder.id)
         // the default folders start out expanded
         context.commit('sidebar/queries/expandedIds', folderIds)
 

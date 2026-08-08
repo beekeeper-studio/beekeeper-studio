@@ -1,11 +1,36 @@
+/**
+ * Fetches only the children of folders the user has expanded, instead of the
+ * whole tree.
+ *
+ * Requires `mutationsFor`, `actionsFor` (or `utilActionsFor`), and
+ * `FolderFetchModule` under `folders`.
+ *
+ * @example
+ * ```ts
+ * export const CloudConnectionModule = {
+ *   modules: {
+ *     folders: FolderFetchModule,
+ *   },
+ *   mutations: {
+ *     ...mutationsFor<ICloudSavedConnection>({}),
+ *   },
+ *   actions: {
+ *     ...actionsFor<ICloudSavedConnection>("connections", {}),
+ *     ...treeActions<ICloudSavedConnection>("connectionFolderIds"),
+ *   },
+ * }
+ *
+ * store.dispatch("data/connections/ensureLoaded", [1, 2])
+ * ```
+ **/
+
 import { ActionTree, Module } from "vuex";
 import _ from "lodash";
 import { State as RootState } from "@/store";
-import { ClientError } from "@/store/modules/data/StoreHelpers";
 import { HasId } from "@/common/interfaces/IGeneric";
-import { IFolder } from "@/common/interfaces/IQueryFolder";
+import { ClientError } from "@/store/modules/data/StoreHelpers";
 
-type FolderFetchState = {
+export type FolderFetchState = {
   /** Folders whose children have already been fetched. */
   fetchedIds: number[];
   /** Folders whose children are being fetched right now. */
@@ -37,64 +62,18 @@ export const FolderFetchModule: Module<FolderFetchState, RootState> = {
   },
 };
 
-/** State of a data module hosting a {@link FolderFetchModule} under `folders`. */
-type OwnerState<T> = {
-  loading: boolean;
+export type TreeState<T> = {
   error: ClientError;
-  folders: FolderFetchState;
   items: T[];
+  folders: FolderFetchState;
 };
-
-/**
- * Actions for the folder models themselves. Use in pairs with `treeActions`.
- *
- * @example
- * ```ts
- *  const vuexModule = {
- *    actions: {
- *      ...treeActions("connectionFolderIds"),
- *      ...folderableActions(),
- *    },
- *  }
- * ```
- **/
-export function folderableActions<T extends IFolder>(): ActionTree<
-  OwnerState<T>,
-  RootState
-> {
-  return {
-    async refresh(context, parentIds: number[]) {
-      await context.dispatch("resetTree");
-      await context.dispatch("loadDefaultFolders");
-      await context.dispatch("loadByParentIds", parentIds);
-    },
-    async loadDefaultFolders(context) {
-      await context.dispatch("loadMore", { params: { default: true } });
-
-      const personalIdx = context.state.items.findIndex(
-        (f) => f.default && f.personal
-      );
-
-      if (personalIdx === -1) {
-        return;
-      }
-
-      // Make sure the personal folder is first
-      const sorted = [
-        context.state.items[personalIdx],
-        ...context.state.items.toSpliced(personalIdx, 1),
-      ];
-      await context.dispatch("mutate", { type: "set", data: sorted });
-    },
-  };
-}
 
 /**
  * Actions for models that support tree structure or nested folders.
  **/
 export function treeActions<T extends HasId>(
   paramsKey: "connectionFolderIds" | "queryFolderIds" | "parentIds"
-): ActionTree<OwnerState<T>, RootState> {
+): ActionTree<TreeState<T>, RootState> {
   return {
     async refresh(context, parentIds: number[]) {
       await context.dispatch("resetTree");
