@@ -398,7 +398,7 @@ export default {
       this.cloudSelectionAnchorId = this.itemNodeId(item)
     },
     select(item, event) {
-      if (!this.cloudSearchMode) {
+      if (!this.searching) {
         if (!event?.metaKey && !event?.ctrlKey && !event?.shiftKey) {
           this.selected = item
         }

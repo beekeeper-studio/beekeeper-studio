@@ -158,7 +158,7 @@ describe("ConnectionSidebar remove handlers", () => {
     const source = fs.readFileSync(sourcePath, "utf8");
 
     const cloudSearchBlock = source.match(
-      /v-if="cloudSearchMode"[\s\S]*?<\/template>\s*<tree/
+      /v-if="searching"[\s\S]*?<\/template>\s*<tree/
     )?.[0];
     const treeItemBlock = source.match(
       /#item="\{ node, selected: treeSelected, bulkSelectionActive \}"[\s\S]*?<\/template>\s*<\/tree>/

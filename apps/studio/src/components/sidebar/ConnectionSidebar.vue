@@ -337,24 +337,23 @@
 </template>
 
 <script>
-import _ from 'lodash'
-import WorkspaceSidebar from './WorkspaceSidebar.vue'
-import { mapState, mapGetters, mapActions, mapMutations } from 'vuex'
-import ConnectionListItem from './connection/ConnectionListItem.vue'
+import { AppEvent } from '@/common/AppEvent'
+import { parseReorderTarget, rangeSelectVisibleIds, toggleSelectedId } from "@/common/utils/folderTree"
+import EditableText from '@/components/common/EditableText.vue'
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
 import SidebarLoading from '@/components/common/SidebarLoading.vue'
 import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
 import ContentPlaceholderText from '@/components/common/loading/ContentPlaceholderText.vue'
-import ErrorAlert from '@/components/common/ErrorAlert.vue'
-import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
-import Split from 'split.js'
-import { AppEvent } from '@/common/AppEvent'
-import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
-import { rangeSelectVisibleIds, toggleSelectedId } from "@/common/utils/folderTree";
+import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree"
 import rawLog from '@bksLogger'
-import SidebarSortButtons from '../common/SidebarSortButtons.vue'
-import EditableText from '@/components/common/EditableText.vue'
+import _ from 'lodash'
 import Noty from 'noty'
-import { parseReorderTarget } from '@/common/utils/folderTree'
+import Split from 'split.js'
+import { mapActions, mapGetters, mapMutations, mapState } from 'vuex'
+import SidebarSortButtons from '../common/SidebarSortButtons.vue'
+import WorkspaceSidebar from './WorkspaceSidebar.vue'
+import ConnectionListItem from './connection/ConnectionListItem.vue'
 
 const log = rawLog.scope('connection-sidebar');
 
@@ -558,7 +557,7 @@ export default {
       this.cloudSelectionAnchorId = this.itemNodeId(config)
     },
     select(config, event) {
-      if (!this.cloudSearchMode) {
+      if (!this.searching) {
         return
       }
 
