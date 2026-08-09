@@ -337,7 +337,7 @@ import TableLength from '@/components/common/TableLength.vue'
 import { mapGetters, mapState } from 'vuex';
 import { TableUpdate, TableUpdateResult, ExtendedTableColumn } from '@/lib/db/models';
 import { dialectFor, formatOptionsFor, TableKey } from '@shared/lib/dialects/models'
-import { normalizeFilters, safeSqlFormat, createTableFilter, isNumericDataType, isDateDataType, rowHeaderField } from '@/common/utils'
+import { normalizeFilters, safeSqlFormat, createTableFilter, isNumericDataType, isDateDataType, rowHeaderField, joinFilters } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml, FormatterParams } from '@shared/lib/tabulator';
@@ -2062,12 +2062,32 @@ export default Vue.extend({
     },
     async jumpToLastPage() {
       try {
-        const totalRows = await this.connection.getTableLength(this.table.name, this.table.schema); // -> SELECT (*) FROM table
+        let totalRows: number
 
-        const lastPage = Math.ceil(totalRows / this.limit);
+        if (Array.isArray(this.filters) && this.filters.length > 0) {
+          const allFilters: string[] = []
+          for (const filter of this.filters) {
+            allFilters.push(await this.connection.getQueryForFilter(filter))
+          }
+          const count = await this.connection.getFilteredDataCount(
+            this.table.name,
+            this.table.schema,
+            joinFilters(allFilters, this.filters)
+          )
+          totalRows = Number(count) || 0
+        } else if (_.isString(this.filters) && this.filters) {
+          const count = await this.connection.getFilteredDataCount(
+            this.table.name,
+            this.table.schema,
+            this.filters
+          )
+          totalRows = Number(count) || 0
+        } else {
+          totalRows = await this.connection.getTableLength(this.table.name, this.table.schema)
+        }
 
-        this.page = lastPage;
-
+        const lastPage = Math.max(1, Math.ceil(totalRows / this.limit))
+        this.page = lastPage
       } catch (error) {
         console.error("Error jumping to the last page:", error);
       }
