@@ -82,7 +82,7 @@
           <template v-if="searching">
             <div
               class="empty-state"
-              v-if="!fetchingResults && filteredQueries.length === 0"
+              v-if="!typing && !fetchingResults && filteredQueries.length === 0"
             >
               No queries match "{{ filterQuery }}"
             </div>
@@ -100,7 +100,7 @@
               @duplicate="duplicate"
             />
             <content-placeholder
-              v-if="fetchingResults"
+              v-if="fetchingResults || typing"
               :animated="true"
               :rounded="false"
               class="list-item"
@@ -236,7 +236,13 @@ export default {
       loadingFolderIds: [],
       drafting: false,
       draftParentId: null,
+      filterQuery: "",
     }
+  },
+  watch: {
+    filterQuery(value) {
+      this.setSavedQueryFilter(value);
+    },
   },
   mounted() {
     document.addEventListener('mousedown', this.maybeUnselect)
@@ -291,13 +297,8 @@ export default {
     initializing() {
       return this.folders.length === 0 && this.foldersLoading;
     },
-    filterQuery: {
-      get() {
-        return this.savedQueryFilter;
-      },
-      set(newFilter) {
-        this.$store.dispatch('data/queries/setSavedQueryFilter', newFilter);
-      }
+    typing() {
+      return this.filterQuery !== this.savedQueryFilter;
     },
     error() {
       return this.queriesError || this.foldersError || null
@@ -314,6 +315,7 @@ export default {
       loadQueryFolders: 'data/queryFolders/loadByParentIds',
       unloadQueries: 'data/queries/unloadByParentIds',
       unloadQueryFolders: 'data/queryFolders/unloadByParentIds',
+      setSavedQueryFilter: 'data/queries/setSavedQueryFilter',
     }),
     ...mapMutations({
       setExpandedFolderIds: 'sidebar/queries/expandedIds',
