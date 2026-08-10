@@ -113,7 +113,7 @@
           </template>
           <tree
             v-show="!searching"
-            :folders="folderNodes"
+            :folders="extendedFolderNodes"
             :items="sortedItemNodes"
             :expanded-ids="expandedNodeIds"
             @update:expandedIds="setExpandedIds"
@@ -222,7 +222,7 @@ import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
 import EditableText from '@/components/common/EditableText.vue'
 import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
 import ContentPlaceholderText from '@/components/common/loading/ContentPlaceholderText.vue'
-import { parseReorderTarget } from '@/common/utils/folderTree'
+import { buildFolderNodes, parseReorderTarget } from '@/common/utils/folderTree'
 
 export default {
   components: { SidebarLoading, ErrorAlert, ExpiredFolderAlert, FavoriteListItem, Tree, TreeFolder, EditableText, ContentPlaceholder, ContentPlaceholderText },
@@ -234,6 +234,8 @@ export default {
       justCreatedFolderId: null,
       justCreatedTimeout: null,
       loadingFolderIds: [],
+      drafting: false,
+      draftParentId: null,
     }
   },
   mounted() {
@@ -259,11 +261,19 @@ export default {
       'folders': 'items',
       'foldersLoading': 'loading',
       'foldersError': 'error',
-      'draft': 'draft',
     }),
     ...mapState('sidebar/queries', {
       expandedFolderIds: 'expandedIds',
     }),
+    draft() {
+      return { id: null, parentId: this.draftParentId, name: 'Untitled folder' };
+    },
+    extendedFolderNodes() {
+      if (this.drafting) {
+        return buildFolderNodes([this.draft, ...this.folders]);
+      }
+      return this.folderNodes;
+    },
     expandedNodeIds() {
       return this.expandedFolderIds.map((id) => `folder-${id}`);
     },
@@ -304,8 +314,6 @@ export default {
       loadQueryFolders: 'data/queryFolders/loadByParentIds',
       unloadQueries: 'data/queries/unloadByParentIds',
       unloadQueryFolders: 'data/queryFolders/unloadByParentIds',
-      startDrafting: 'data/queryFolders/startDrafting',
-      stopDrafting: 'data/queryFolders/stopDrafting',
     }),
     ...mapMutations({
       setExpandedFolderIds: 'sidebar/queries/expandedIds',
@@ -410,6 +418,13 @@ export default {
       } else {
         this.startDrafting(null);
       }
+    },
+    startDrafting(parentId) {
+      this.draftParentId = parentId
+      this.drafting = true
+    },
+    stopDrafting() {
+      this.drafting = false
     },
     markJustCreated(folderId) {
       clearTimeout(this.justCreatedTimeout)

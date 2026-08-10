@@ -6,7 +6,6 @@ import {
   ExtendedFolderNode as Node,
   buildFolderNode,
   buildFolderNodes,
-  isDraftFolder,
 } from "@/common/utils/folderTree";
 import { ReplacePayload } from "@/store/modules/data/DataModuleBase";
 
@@ -34,11 +33,7 @@ function applyUpsert(state: State, folders: IFolder[]) {
     const existing = state.items.find((i) => i.id === node.id);
 
     if (!existing) {
-      if (isDraftFolder(folder)) {
-        state.items.unshift(node);
-      } else {
-        state.items.push(node);
-      }
+      state.items.push(node);
       attaching.push(node);
       continue;
     }
@@ -59,11 +54,7 @@ function applyUpsert(state: State, folders: IFolder[]) {
   for (const node of attaching) {
     const parent = state.items.find((i) => i.id === node.parentId);
     if (parent) {
-      if (isDraftFolder(node.ref)) {
-        parent.children.unshift(node);
-      } else {
-        parent.children.push(node);
-      }
+      parent.children.push(node);
     }
   }
 }

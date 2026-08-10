@@ -185,7 +185,7 @@
               </template>
               <tree
                 v-show="!searching"
-                :folders="folderNodes"
+                :folders="extendedFolderNodes"
                 :items="sortedItemNodes"
                 :expanded-ids="expandedNodeIds"
                 @update:expandedIds="setExpandedIds"
@@ -335,7 +335,7 @@ import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
 import EditableText from '@/components/common/EditableText.vue'
 import Noty from 'noty'
-import { parseReorderTarget } from '@/common/utils/folderTree'
+import { buildFolderNodes, parseReorderTarget } from '@/common/utils/folderTree'
 
 const log = rawLog.scope('connection-sidebar');
 
@@ -369,6 +369,8 @@ export default {
     justCreatedFolderId: null,
     justCreatedTimeout: null,
     loadingFolderIds: [],
+    drafting: false,
+    draftParentId: null,
   }),
   watch: {
     async sort(newSort) {
@@ -391,7 +393,6 @@ export default {
       folders: 'items',
       foldersLoading: 'loading',
       foldersError: 'error',
-      draft: 'draft',
     }),
     ...mapState('sidebar/connections', {
       expandedFolderIds: 'expandedIds',
@@ -414,6 +415,15 @@ export default {
       set(newFilter) {
         this.$store.dispatch('data/connections/setConnectionFilter', newFilter);
       }
+    },
+    draft() {
+      return { id: null, parentId: this.draftParentId, name: 'Untitled folder' };
+    },
+    extendedFolderNodes() {
+      if (this.drafting) {
+        return buildFolderNodes([this.draft, ...this.folders]);
+      }
+      return this.folderNodes;
     },
     expandedNodeIds() {
       return this.expandedFolderIds.map((id) => `folder-${id}`);
@@ -490,8 +500,6 @@ export default {
       loadConnectionFolders: 'data/connectionFolders/loadByParentIds',
       unloadConnections: 'data/connections/unloadByParentIds',
       unloadConnectionFolders: 'data/connectionFolders/unloadByParentIds',
-      startDrafting: 'data/connectionFolders/startDrafting',
-      stopDrafting: 'data/connectionFolders/stopDrafting',
     }),
     ...mapMutations({
       setExpandedFolderIds: 'sidebar/connections/expandedIds',
@@ -583,6 +591,13 @@ export default {
       } else {
         this.startDrafting(null);
       }
+    },
+    startDrafting(parentId) {
+      this.draftParentId = parentId
+      this.drafting = true
+    },
+    stopDrafting() {
+      this.drafting = false
     },
     markJustCreated(folderId) {
       clearTimeout(this.justCreatedTimeout)
