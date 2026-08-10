@@ -35,6 +35,7 @@
         :original-text="originalText"
         :query="query"
         :unsaved-text="unsavedText"
+        :pending-remote-changes="pendingRemoteChanges"
         @change="onChange"
         @mergeAccepted="originalText = query.text"
       />
@@ -369,6 +370,7 @@
       :open="editHistoryOpen"
       :query-id="query?.id ?? null"
       :unsaved-text="unsavedChanges ? unsavedText : null"
+      :pending-remote-changes="pendingRemoteChanges"
       @close="editHistoryOpen = false"
       @restore="handleEditHistoryRestore"
       @discardUnsavedChanges="handleDiscardUnsavedChanges"
@@ -742,6 +744,10 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       },
       queryTitle() {
         return this.query?.title
+      },
+      // the query object changed in the background
+      pendingRemoteChanges() {
+        return this.query.text !== this.originalText
       },
       showDryRun() {
         return this.dialect == 'bigquery'
