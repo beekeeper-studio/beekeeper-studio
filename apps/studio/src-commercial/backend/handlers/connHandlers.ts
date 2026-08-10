@@ -13,6 +13,9 @@ import { AzureAuthService } from "@/lib/db/authentication/azure";
 import bksConfig from "@/common/bksConfig";
 import { UserPin } from "@/common/appdb/models/UserPin";
 import { waitPromise } from "@/common/utils";
+import rawLog from "@bksLogger";
+
+const log = rawLog.scope('ConnHandlers');
 
 export interface IConnectionHandlers {
   // Connection management from the store **************************************
@@ -176,7 +179,20 @@ export const ConnHandlers: IConnectionHandlers = {
     const settings = await UserSetting.all();
     const server = ConnectionProvider.for(config, osUser, settings);
     const connection = server.createConnection(database);
-    await connection.connect(abortController.signal);
+    try {
+      await connection.connect(abortController.signal);
+    } catch (e) {
+      // A failed connect can still have opened sockets, pools or an ssh tunnel. Nothing
+      // else holds a reference to `server` yet, so tear it down here or it leaks for
+      // every failed attempt.
+      try {
+        server.disconnect();
+      } catch (disconnectError) {
+        log.error('Error cleaning up after a failed connection', disconnectError);
+      }
+      state(sId).connectionAbortController = null;
+      throw e;
+    }
     // HACK (@day): this is because of type fuckery, need to actually just recreate the object but I'm lazy rn and it's late
     connection.connectionType = config.connectionType ?? (config as any)._connectionType;
 
@@ -272,7 +288,13 @@ export const ConnHandlers: IConnectionHandlers = {
   },
 
   'conn/connect': getDriverHandler('connect'),
-  'conn/disconnect': getDriverHandler('disconnect'),
+  // Not `getDriverHandler` - the renderer always holds a connection client, so it sends
+  // this even when nothing is open (disconnecting, or rolling back a failed connect).
+  // Blowing up on a missing connection would mask the error that caused the disconnect.
+  'conn/disconnect': async function({ sId }: { sId: string }) {
+    if (!state(sId).connection) return;
+    await state(sId).connection.disconnect();
+  },
 
   'conn/listTables': async function({ filter, sId }: { filter?: FilterOptions, sId: string }) {
     checkConnection(sId);

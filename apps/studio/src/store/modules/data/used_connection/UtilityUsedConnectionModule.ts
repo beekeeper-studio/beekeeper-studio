@@ -52,7 +52,10 @@ export const UtilUsedConnectionModule: DataStore<IConnection, State> = {
         });
       } else {
         const id = await context.dispatch('save', config);
-        config = context.state.items.find((item) => item.id === id);
+        // `save` upserts the saved row into `items`, but don't trust the lookup to hit -
+        // a concurrent `load` replaces the whole list, and returning nothing here strands
+        // the app with `connected: true` and no `usedConfig` to render the UI from.
+        config = context.state.items.find((item) => item.id === id) ?? { ...config, id: config.id ?? id };
       }
       return config;
     },
