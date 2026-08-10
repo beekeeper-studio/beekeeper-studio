@@ -1417,7 +1417,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           return
         } else {
           try {
-            const payload = _.pick(this.query, 'text', 'excerpt', 'id', 'title') as ISavedQuery;
+            const payload = _.omit(this.query, 'teamRead', 'teamWrite', 'canRead', 'canWrite', 'canManage', 'membership', 'accessGrants') as ISavedQuery;
             payload.text = this.unsavedText
             payload.excerpt = payload.text.substr(0, 250)
             if (payload.id) {
