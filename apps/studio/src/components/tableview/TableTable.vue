@@ -2105,6 +2105,9 @@ export default Vue.extend({
 
       // Re-fetch table keys on explicit refresh to pick up schema changes (issue #3775)
       await this.getTableKeys()
+      // Re-fetch column metadata on explicit refresh so renames show up without
+      // reopening the connection (issue #4567). No-ops when columns are unchanged.
+      await this.$store.dispatch('updateTableColumns', this.table)
 
       await this.tabulator.replaceData()
       const layout = this.tabulator.getColumnLayout();
