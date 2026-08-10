@@ -1,6 +1,7 @@
 import { test, expect, _electron as electron, ElectronApplication, Page } from '@playwright/test';
 import * as path from 'path';
 import * as os from 'os';
+import * as fs from 'fs';
 
 async function launch(): Promise<{ app: ElectronApplication; win: Page }> {
   const app = await electron.launch({
@@ -18,6 +19,7 @@ async function launch(): Promise<{ app: ElectronApplication; win: Page }> {
 
 test('restores in-progress edits to a SAVED query after relaunch', async () => {
   const dbFile = path.join(os.tmpdir(), `bks-restore-${Date.now()}.db`);
+  fs.writeFileSync(dbFile, '');
   const dbName = path.basename(dbFile);
   const SAVED = 'select 1 as original_saved_text;';
   const EDITED = 'select 999 as restored_after_relaunch;';

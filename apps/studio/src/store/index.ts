@@ -93,6 +93,7 @@ export interface State {
   usedConfig: Nullable<IConnection>,
   server: Nullable<IDbConnectionPublicServer>,
   connected: boolean,
+  connecting: boolean,
   connectionType: Nullable<string>,
   supportedFeatures: Nullable<SupportedFeatures>,
   database: Nullable<string>,
@@ -163,6 +164,7 @@ const store = new Vuex.Store<State>({
     usedConfig: null,
     server: null,
     connected: false,
+    connecting: false,
     sshConfigWarnings: [],
     connectionType: null,
     supportedFeatures: null,
@@ -378,6 +380,9 @@ const store = new Vuex.Store<State>({
       state.supportedFeatures = null
       state.server = null
       state.database = null
+      state.connectionType = null
+      state.defaultSchema = null
+      state.versionString = null
       state.databaseList = []
       state.namespace = null
       state.namespaceList = []
@@ -458,6 +463,9 @@ const store = new Vuex.Store<State>({
     connected(state, connected: boolean) {
       state.connected = connected;
     },
+    connecting(state, connecting: boolean) {
+      state.connecting = connecting;
+    },
     supportedFeatures(state, features: SupportedFeatures) {
       state.supportedFeatures = features;
     },
@@ -522,48 +530,79 @@ const store = new Vuex.Store<State>({
     },
 
     async connect(context, { config, auth }: { config: IConnection, auth?: { input: string; mode: 'pin'; }}) {
-      context.commit('sshConfigWarnings', []);
-      const resolvedConfig = await resolveEphemeralValues(config);
-      if (!resolvedConfig) return false;
+      // A second connect while one is pending would race it for the single
+      // utility-process connection slot: whichever attempt finishes last wins
+      // state, and a stale failure surfaces its error over the winner's session.
+      if (context.state.connecting) {
+        throw new Error('A connection attempt is already in progress');
+      }
+      context.commit('connecting', true);
+      try {
+        context.commit('sshConfigWarnings', []);
+        const resolvedConfig = await resolveEphemeralValues(config);
+        if (!resolvedConfig) return false;
 
-      if (context.state.username) {
+        if (!context.state.username) {
+          throw "No username provided"
+        }
+
         await Vue.prototype.$util.send('conn/create', { config: resolvedConfig, auth, osUser: context.state.username })
-        const defaultSchema = await context.state.connection.defaultSchema();
-        const supportedFeatures = await context.state.connection.supportedFeatures();
-        const versionString = await context.state.connection.versionString();
 
-        const serverConfig = await Vue.prototype.$util.send('conn/getServerConfig');
-        context.commit('sshConfigWarnings', serverConfig?.sshConfigWarnings || []);
+        // The server connection exists from here on: any bootstrap failure
+        // below must tear it down and rethrow, so the caller stays on the
+        // connection screen with the error instead of landing in a
+        // half-connected core interface.
+        try {
+          const defaultSchema = await context.state.connection.defaultSchema();
+          const supportedFeatures = await context.state.connection.supportedFeatures();
+          const versionString = await context.state.connection.versionString();
 
-        if (supportedFeatures.backups) {
-          context.dispatch('backups/setConnectionConfigs', { config: resolvedConfig, supportedFeatures, serverConfig });
+          const serverConfig = await Vue.prototype.$util.send('conn/getServerConfig');
+          context.commit('sshConfigWarnings', serverConfig?.sshConfigWarnings || []);
+
+          const usedConfig = await context.dispatch('data/usedconnections/recordUsed', resolvedConfig)
+
+          context.commit('defaultSchema', defaultSchema);
+          context.commit('connectionType', config.connectionType);
+          context.commit('supportedFeatures', supportedFeatures);
+          context.commit('versionString', versionString);
+          context.commit('newConnection', usedConfig)
+
+          if (usedConfig.connectionType === 'surrealdb' &&
+            usedConfig.surrealDbOptions?.authType === SurrealAuthType.Root) {
+            await context.dispatch('updateNamespaceList');
+          }
+          await context.dispatch('updateDatabaseList')
+          await context.dispatch('updateTables')
+          await context.dispatch('updateRoutines')
+
+          if (supportedFeatures.backups) {
+            context.dispatch('backups/setConnectionConfigs', { config: resolvedConfig, supportedFeatures, serverConfig });
+          }
+
+          window.main.enableConnectionMenuItems();
+          // The connection is fully bootstrapped - only now switch the UI
+          // over to the core interface.
+          context.commit('connected', true);
+          context.dispatch('updateWindowTitle', usedConfig)
+        } catch (ex) {
+          await Vue.prototype.$util.send('conn/disconnect').catch(() => null)
+          await Vue.prototype.$util.send('conn/clearConnection').catch(() => null)
+          context.commit('clearConnection')
+          throw ex
         }
 
-        window.main.enableConnectionMenuItems();
-
-        context.commit('defaultSchema', defaultSchema);
-        context.commit('connectionType', config.connectionType);
-        context.commit('connected', true);
-        context.commit('supportedFeatures', supportedFeatures);
-        context.commit('versionString', versionString);
-        config = await context.dispatch('data/usedconnections/recordUsed', resolvedConfig)
-        context.commit('newConnection', config)
-
-        if (context.state.usedConfig.connectionType === 'surrealdb' &&
-          context.state.usedConfig.surrealDbOptions?.authType === SurrealAuthType.Root) {
-          await context.dispatch('updateNamespaceList');
+        // Post-connect housekeeping - failures here shouldn't kick the user
+        // back out of an otherwise working connection.
+        try {
+          await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id })
+          await context.dispatch('checkVersion');
+        } catch (ex) {
+          log.error('post-connect housekeeping failed', ex)
         }
-        await context.dispatch('updateDatabaseList')
-        await context.dispatch('updateTables')
-        await context.dispatch('updateRoutines')
-        context.dispatch('updateWindowTitle', config)
-
-        await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id })
-
-        await context.dispatch('checkVersion');
         return true;
-      } else {
-        throw "No username provided"
+      } finally {
+        context.commit('connecting', false);
       }
     },
     async checkVersion(context) {

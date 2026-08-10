@@ -1,5 +1,7 @@
 import { DBTestUtil } from "../../../../lib/db";
-import { writeFileSync } from "fs";
+import { writeFileSync, existsSync } from "fs";
+import path from "path";
+import os from "os";
 import tmp from "tmp";
 import { runCommonTests, runReadOnlyTests } from "./all";
 import knex from "knex";
@@ -292,5 +294,38 @@ describe('SQLite - invalid db file', () => {
   test('should throw error on connecting', () => {
     expect.assertions(1)
     return expect(util.connection.connect()).rejects.toHaveProperty('message', 'file is not a database')
+  })
+})
+
+describe('SQLite - missing db file', () => {
+  let dbName
+  /** @type {DBTestUtil} */
+  let util
+
+  beforeAll(() => {
+    dbName = path.join(os.tmpdir(), `bks-missing-${Date.now()}.db`)
+
+    util = new DBTestUtil({
+      client: 'sqlite',
+    },
+    dbName,
+    {
+      dialect: "sqlite",
+      knex: knex({
+        client: "better-sqlite3",
+        connection: {
+          filename: dbName,
+        },
+      }),
+    })
+  })
+
+  afterAll(async () => {
+    await util?.disconnect()
+  })
+
+  test('should throw error on connecting instead of creating the file', async () => {
+    await expect(util.connection.connect()).rejects.toThrow(/Database file not found/)
+    expect(existsSync(dbName)).toBe(false)
   })
 })
