@@ -592,7 +592,11 @@ export default {
         return
       }
       try {
-        await this.$store.dispatch('data/queryFolders/save', { ...folder, name })
+        await this.$store.dispatch('data/queryFolders/save', {
+          id: folder.id,
+          parentId: folder.parentId,
+          name,
+        })
       } catch (ex) {
         this.$noty.error(`Rename error: ${ex.userMessage ?? ex.message}`)
       } finally {

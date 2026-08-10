@@ -458,14 +458,11 @@
               </div>
               <div class="form-group" v-if="queryFolders && queryFolders.length > 0">
                 <label>Folder <i v-if="!isUltimate && !isCloud" class="material-icons menu-icon">stars</i></label>
-                <select v-model="query.queryFolderId" :disabled="!isUltimate && !isCloud">
-                  <option :value="null">
-                    No folder
-                  </option>
-                  <option v-for="f in queryFolders" :key="f.id" :value="f.id">
-                    {{ f.name }}
-                  </option>
-                </select>
+                <in-app-folder-picker
+                  v-model="query.queryFolderId"
+                  :disabled="!isUltimate && !isCloud"
+                  folder-path="data/queryFolders"
+                />
               </div>
             </div>
           </div>
@@ -567,6 +564,7 @@
   import SqlTextEditor from "@beekeeperstudio/ui-kit/vue/sql-text-editor"
   import BksSuperFormatter from "@beekeeperstudio/ui-kit/vue/super-formatter"
   import SurrealTextEditor from "@beekeeperstudio/ui-kit/vue/surreal-text-editor"
+  import InAppFolderPicker from "@/components/common/form/InAppFolderPicker.vue"
   import { divider, type Entity } from "@beekeeperstudio/ui-kit";
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
@@ -597,7 +595,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor, BksSuperFormatter, QueryEditHistory },
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor, BksSuperFormatter, QueryEditHistory, InAppFolderPicker },
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean
@@ -1419,7 +1417,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           return
         } else {
           try {
-            const payload = _.pick(this.query, 'text', 'excerpt', 'id') as ISavedQuery;
+            const payload = _.pick(this.query, 'text', 'excerpt', 'id', 'title') as ISavedQuery;
             payload.text = this.unsavedText
             payload.excerpt = payload.text.substr(0, 250)
             if (payload.id) {
