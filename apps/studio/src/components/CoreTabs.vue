@@ -1089,9 +1089,15 @@ export default Vue.extend({
       if (this.closingTab) return; // prevent close modals queueing
 
       if (tab.unsavedChanges && !options?.ignoreUnsavedChanges) {
+        let confirmed = false
         this.closingTab = tab
-        const confirmed = await this.$confirmById(this.confirmModalId);
-        this.closingTab = null
+        try {
+          confirmed = await this.$confirmById(this.confirmModalId);
+        } finally {
+          // Never leave this set - it gates every close, so a stuck value
+          // silently disables tab closing for the rest of the session.
+          this.closingTab = null
+        }
         if (!confirmed) return
       }
 
