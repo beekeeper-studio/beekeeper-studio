@@ -153,7 +153,7 @@
             >
               <template v-if="searching">
                 <div class="empty-state"
-                  v-if="!fetchingResults && filteredConnections.length === 0"
+                  v-if="!typing && !fetchingResults && filteredConnections.length === 0"
                 >
                   No connections match "{{ connFilter }}"
                 </div>
@@ -172,7 +172,7 @@
                   @doubleClick="connect"
                 />
                 <content-placeholder
-                  v-if="fetchingResults"
+                  v-if="fetchingResults || typing"
                   :animated="true"
                   :rounded="false"
                   class="list-item"
@@ -371,6 +371,7 @@ export default {
     loadingFolderIds: [],
     drafting: false,
     draftParentId: null,
+    connFilter: "",
   }),
   watch: {
     async sort(newSort) {
@@ -378,6 +379,9 @@ export default {
       await this.$settings.set('connectionsSortBy', newSort.field)
       if (!this.sortInitialized) return
       await this.reorderBySort(newSort)
+    },
+    connFilter(value) {
+      this.setConnectionFilter(value);
     },
   },
   computed: {
@@ -408,13 +412,8 @@ export default {
       filteredConnections: 'data/connections/filteredConnections',
       privacyMode: 'settings/privacyMode'
     }),
-    connFilter: {
-      get() {
-        return this.connectionFilter;
-      },
-      set(newFilter) {
-        this.$store.dispatch('data/connections/setConnectionFilter', newFilter);
-      }
+    typing() {
+      return this.connFilter !== this.connectionFilter;
     },
     draft() {
       return { id: null, parentId: this.draftParentId, name: 'Untitled folder' };
@@ -500,6 +499,7 @@ export default {
       loadConnectionFolders: 'data/connectionFolders/loadByParentIds',
       unloadConnections: 'data/connections/unloadByParentIds',
       unloadConnectionFolders: 'data/connectionFolders/unloadByParentIds',
+      setConnectionFilter: 'data/connections/setConnectionFilter',
     }),
     ...mapMutations({
       setExpandedFolderIds: 'sidebar/connections/expandedIds',
