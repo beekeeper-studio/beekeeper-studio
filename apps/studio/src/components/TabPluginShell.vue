@@ -81,7 +81,6 @@
 import Split from "split.js";
 import ProgressBar from "@/components/editor/ProgressBar.vue";
 import ResultTable from "@/components/editor/ResultTable.vue";
-import ShortcutHints from "@/components/editor/ShortcutHints.vue";
 import QueryEditorStatusBar from "@/components/editor/QueryEditorStatusBar.vue";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
 import { PropType } from "vue";
@@ -101,7 +100,6 @@ export default Vue.extend({
   components: {
     ResultTable,
     ProgressBar,
-    ShortcutHints,
     QueryEditorStatusBar,
     ErrorAlert,
     IsolatedPluginView,
