@@ -34,7 +34,11 @@ export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
       // noop
     },
     async poll(context) {
-      if (context.rootState.connected) {
+      if (
+          context.rootState.connected
+          && context.rootState.sidebar.globalSidebarActiveItem === "queries"
+          && context.rootState.sidebar.primarySidebarOpen
+      ) {
         const expandedFolderIds = context.rootState.sidebar.queries.expandedIds
         await context.dispatch('loadByParentIds', expandedFolderIds)
       }
