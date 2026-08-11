@@ -32,7 +32,7 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
   actions: {
     ...accessGrantActions('queryFolders'),
     ...mutateActions<IQueryFolder>(),
-    ...treeActions<IQueryFolder>('parentIds'),
+    ...treeActions<IQueryFolder>({ plural: 'parentIds', singular: 'parentId' }),
     ...folderableActions<IQueryFolder>(),
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
@@ -48,9 +48,6 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
           await context.dispatch('mutate', { type: 'upsert', data: items })
         }
       })
-    },
-    async loadMore(context) {
-      await context.dispatch('load');
     },
     async poll() {
       // no-op for local

@@ -224,6 +224,7 @@ export default {
       renamingFolderId: null,
       justCreatedFolderId: null,
       justCreatedTimeout: null,
+      loadingFolderIds: [],
     }
   },
   mounted() {
@@ -253,14 +254,6 @@ export default {
     }),
     ...mapState('sidebar/queries', {
       expandedFolderIds: 'expandedIds',
-    }),
-    ...mapState({
-      loadingFolderIds(state) {
-        return [
-          ...state["data/queryFolders"].folders.fetchingIds,
-          ...state["data/queries"].folders.fetchingIds,
-        ];
-      },
     }),
     expandedNodeIds() {
       return this.expandedFolderIds.map((id) => `folder-${id}`);
@@ -298,8 +291,10 @@ export default {
     ...mapActions({
       saveFolder: 'data/queryFolders/save',
       reorderQuery: 'data/queries/reorder',
-      ensureQueriesLoaded: 'data/queries/ensureLoaded',
-      ensureSubfoldersLoaded: 'data/queryFolders/ensureLoaded',
+      loadQueries: 'data/queries/loadByParentIds',
+      loadQueryFolders: 'data/queryFolders/loadByParentIds',
+      unloadQueries: 'data/queries/unloadByParentIds',
+      unloadQueryFolders: 'data/queryFolders/unloadByParentIds',
       startDrafting: 'data/queryFolders/startDrafting',
       stopDrafting: 'data/queryFolders/stopDrafting',
     }),
@@ -310,9 +305,26 @@ export default {
       const folderIds = this.folderNodes
         .filter((node) => expandedNodeIds.includes(node.id))
         .map((node) => node.ref.id)
+      const expandingIds = _.difference(folderIds, this.expandedFolderIds)
+      const collapsingIds = _.difference(this.expandedFolderIds, folderIds)
       this.setExpandedFolderIds(folderIds)
-      this.ensureQueriesLoaded(folderIds)
-      this.ensureSubfoldersLoaded(folderIds)
+      this.loadFolders(expandingIds)
+      this.unloadFolders(collapsingIds)
+    },
+    async loadFolders(ids) {
+      try {
+        this.loadingFolderIds = [...this.loadingFolderIds, ...ids]
+        await Promise.all([
+          this.loadQueries(ids),
+          this.loadQueryFolders(ids),
+        ]);
+      } finally {
+        this.loadingFolderIds = _.difference(this.loadingFolderIds, ids)
+      }
+    },
+    unloadFolders(ids) {
+      this.unloadQueries(ids);
+      this.unloadQueryFolders(ids);
     },
     clearFilter() {
       this.filterQuery = null

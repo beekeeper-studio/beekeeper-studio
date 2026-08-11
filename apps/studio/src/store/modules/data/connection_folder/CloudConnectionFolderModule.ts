@@ -29,13 +29,14 @@ export const CloudConnectionFolderModule: DataStore<IConnectionFolder, State> = 
   actions: {
     ...actionsFor<IConnectionFolder>('connectionFolders', {}),
     ...accessGrantActions('connectionFolders'),
-    ...treeActions<IConnectionFolder>('parentIds'),
+    ...treeActions<IConnectionFolder>({ plural: 'parentIds', singular: 'parentId' }),
     ...folderableActions<IConnectionFolder>(),
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
     },
-    async poll() {
-      // empty on purpose
+    async poll(context) {
+      const expandedFolderIds = context.rootState.sidebar.connections.expandedIds
+      await context.dispatch('loadByParentIds', expandedFolderIds)
     },
     async initialize() {
       // noop
