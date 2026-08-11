@@ -87,6 +87,14 @@ export class PluginMenuManager {
       const keyPath = `plugins.${this.context.manifest.id}.${menuItem.command}` as const;
       const hasKeybinding = window.bksConfig.has('keybindings.' + keyPath);
 
+      // A Tools-menu item registers its keybinding as a native menu
+      // accelerator, which Electron captures globally. If the same command also
+      // appears somewhere that registers a renderer-level handler for the same
+      // chord, both fire and the command runs twice — one keypress, two tabs.
+      // The accelerator already covers every context, so it wins.
+      const nativeAcceleratorHandles =
+        hasKeybinding && placement.includes("menubar.tools");
+
       placement.forEach((placement) => {
         const factory = pluginMenuFactories[placement];
         if (!factory) {
@@ -99,9 +107,12 @@ export class PluginMenuManager {
           keyPath: hasKeybinding ? keyPath : undefined,
         });
 
+        const registerKeybinding =
+          hasKeybinding && !nativeAcceleratorHandles;
+
         if (action === 'add') {
           handler.add();
-          if (handler.keybindingHandler && hasKeybinding) {
+          if (handler.keybindingHandler && registerKeybinding) {
             this.context.store.addKeybinding({
               placement,
               path: keyPath,
@@ -113,7 +124,7 @@ export class PluginMenuManager {
 
         if (action === 'remove') {
           handler.remove();
-          if (handler.keybindingHandler && hasKeybinding) {
+          if (handler.keybindingHandler && registerKeybinding) {
             this.context.store.removeKeybinding(
               placement,
               handler.keybindingHandler
