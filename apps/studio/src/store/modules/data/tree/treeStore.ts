@@ -81,7 +81,7 @@ export function treeActions<T extends HasId>(parentKeys: {
       parentIds = _.difference(parentIds, context.state.folders.fetchingIds);
 
       if (parentIds.length === 0) {
-        return;
+        return { error: null };
       }
 
       context.commit("folders/fetchingIds", [
@@ -89,11 +89,16 @@ export function treeActions<T extends HasId>(parentKeys: {
         ...parentIds,
       ]);
 
+      let error: ClientError | null = null;
+
       try {
         await context.dispatch("load", {
           params: { [parentKeys.plural]: parentIds },
           replaceIf(item: T) {
             return parentIds.includes(item[parentKeys.singular]);
+          },
+          onError(fetchError: ClientError) {
+            error = fetchError;
           },
         });
       } finally {
@@ -102,6 +107,8 @@ export function treeActions<T extends HasId>(parentKeys: {
           _.difference(context.state.folders.fetchingIds, parentIds)
         );
       }
+
+      return { error };
     },
     /** Drops a collapsed folder's children so the next expand refetches them. */
     async unloadByParentIds(context, parentIds: number[]) {

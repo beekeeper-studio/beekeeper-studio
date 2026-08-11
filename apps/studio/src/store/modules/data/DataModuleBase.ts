@@ -42,6 +42,11 @@ export type ReplacePayload<T> =
   | T[]
   | { items: T[]; replaceIf?: (item: T) => boolean }
 
+export type LoadOptions<T> = Partial<ListOptions> & {
+  replaceIf?: (item: T) => boolean
+  onError?: (error: ClientError) => void
+}
+
 export type MutatePayload<T> =
   | { type: 'set'; data: T | T[] }
   | { type: 'upsert'; data: T | T[] }
@@ -178,14 +183,14 @@ export function utilActionsFor<T extends Transport>(type: string, other: any = {
     async initialize(context) {
       await context.dispatch('load');
     },
-    async load(context) {
+    async load(context, options: LoadOptions<T> = {}) {
       context.commit("error", null);
       await safely(context, async () => {
         const items = await Vue.prototype.$util.send(`appdb/${type}/find`, { options: loadOptions });
         if (context.rootState.workspaceId === LocalWorkspace.id) {
           await context.dispatch('mutate', { type: 'upsert', data: items });
         }
-      })
+      }, options.onError)
     },
     async search() {
       // no-op, only the cloud module supports server-side search
@@ -257,7 +262,7 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
     async initialize(context) {
       await context.dispatch("load");
     },
-    async load(context, options: Partial<ListOptions> & { replaceIf?: (item: T) => boolean } = {}) {
+    async load(context, options: LoadOptions<T> = {}) {
       context.commit("error", null)
       await safelyDo(context, async (cli) => {
         const items: any[] = await cli[scope].list(undefined, options)
@@ -269,7 +274,7 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
             data: { items: rightItems, replaceIf: options.replaceIf },
           })
         }
-      })
+      }, options.onError)
     },
     async search(context, q: string) {
       if (!q) {

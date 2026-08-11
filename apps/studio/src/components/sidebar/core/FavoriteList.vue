@@ -69,7 +69,7 @@
         </div>
         <expired-folder-alert v-if="!canCreateFolders && folders.length > 0" />
         <error-alert
-          v-if="error"
+          v-if="error && error !== pollError && !errorList.includes(error)"
           :error="error"
           title="Problem loading queries"
         />
@@ -169,6 +169,17 @@
                 </template>
               </tree-folder>
             </template>
+            <template #folder-header="{ node, depth }">
+              <error-alert
+                v-if="errors[node.ref.id]"
+                :error="errors[node.ref.id]"
+                title="Problem loading folder"
+                class="tree-error"
+                :style="{ '--depth': depth }"
+                :closable="true"
+                @close="setFolderError(node.ref.id, null)"
+              />
+            </template>
             <template #folder-footer="{ node, depth }">
               <content-placeholder
                 v-if="loadingFolderIds.includes(node.ref.id)"
@@ -182,7 +193,7 @@
             </template>
             <template #folder-empty="{ node, depth }">
               <div
-                v-if="!loadingFolderIds.includes(node.ref.id)"
+                v-if="!loadingFolderIds.includes(node.ref.id) && !errors[node.ref.id]"
                 class="tree-empty"
                 :style="{ '--depth': depth }"
               >
@@ -234,6 +245,7 @@ export default {
       justCreatedFolderId: null,
       justCreatedTimeout: null,
       loadingFolderIds: [],
+      errors: {},
       drafting: false,
       draftParentId: null,
       filterQuery: "",
@@ -259,6 +271,7 @@ export default {
     ...mapState('data/queryFolders/nodes', {'folderNodes': 'items'}),
     ...mapState('data/queries', {
       'queriesError': 'error',
+      'queriesPollError': 'pollError',
       'savedQueryFilter': 'filter',
       'pendingSaveIds': 'pendingSaveIds',
       fetchingResults: 'searching',
@@ -267,6 +280,7 @@ export default {
       'folders': 'items',
       'foldersLoading': 'loading',
       'foldersError': 'error',
+      'foldersPollError': 'pollError',
     }),
     ...mapState('sidebar/queries', {
       expandedFolderIds: 'expandedIds',
@@ -303,8 +317,14 @@ export default {
     error() {
       return this.queriesError || this.foldersError || null
     },
+    pollError() {
+      return this.queriesPollError || this.foldersPollError || null
+    },
     removeTitle() {
       return `Remove ${this.checkedFavorites.length} saved queries`;
+    },
+    errorList() {
+      return Object.values(this.errors);
     },
   },
   methods: {
@@ -333,10 +353,16 @@ export default {
     async loadFolders(ids) {
       try {
         this.loadingFolderIds = [...this.loadingFolderIds, ...ids]
-        await Promise.all([
+        const results = await Promise.all([
           this.loadQueries(ids),
           this.loadQueryFolders(ids),
         ]);
+        const error = results.map((result) => result.error).find(Boolean)
+        if (error) {
+          this.setFolderErrors(ids, error);
+        } else {
+          this.setFolderErrors(ids, null);
+        }
       } finally {
         this.loadingFolderIds = _.difference(this.loadingFolderIds, ids)
       }
@@ -344,6 +370,15 @@ export default {
     unloadFolders(ids) {
       this.unloadQueries(ids);
       this.unloadQueryFolders(ids);
+      this.setFolderErrors(ids, null);
+    },
+    setFolderErrors(ids, error) {
+      for (const id of ids) {
+        this.setFolderError(id, error);
+      }
+    },
+    setFolderError(id, error) {
+      this.$set(this.errors, id, error);
     },
     clearFilter() {
       this.filterQuery = null
@@ -629,6 +664,10 @@ export default {
   padding-left: calc(var(--depth) * 1rem + 0.55rem);
   margin-block: 0.25rem;
   opacity: 0.6;
+}
+::v-deep .alert.error-alert.tree-error {
+  margin-left: calc(var(--depth) * 1rem + 0.55rem);
+  margin-right: 0.55rem;
 }
 ::v-deep .BksTree-folder {
   .name:has(.editable-text) {
