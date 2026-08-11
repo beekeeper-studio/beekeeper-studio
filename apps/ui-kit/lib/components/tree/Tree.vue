@@ -27,6 +27,9 @@
         <template v-slot:item="slotProps">
           <slot name="item" v-bind="slotProps" />
         </template>
+        <template v-slot:folder-header="slotProps">
+          <slot name="folder-header" v-bind="slotProps" />
+        </template>
         <template v-slot:folder-footer="slotProps">
           <slot name="folder-footer" v-bind="slotProps" />
         </template>

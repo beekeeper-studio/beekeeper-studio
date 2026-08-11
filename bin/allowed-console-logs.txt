@@ -16,7 +16,6 @@ apps/studio/src/components/data/DataManager.vue::console.log("DataManager checki
 apps/studio/src/components/data/DataManager.vue::console.log("DataManager --> registering", module.path)
 apps/studio/src/components/data/DataManager.vue::console.log("DataManager --> unregistering", module.path)
 apps/studio/src/components/data/DataManager.vue::console.log('mount and refresh: ', this.workspace)
-apps/studio/src/components/data/ImportConnectionsModal.vue::console.log("opening modal!")
 apps/studio/src/components/data/WorkspaceSignInModal.vue::console.log("open modal with ", email)
 apps/studio/src/components/editor/MergeManager.vue::console.log("Apply Patch", this.unsavedText, patch)
 apps/studio/src/components/editor/MergeManager.vue::console.log("Make Patch: ", this.originalText, this.query.text)
