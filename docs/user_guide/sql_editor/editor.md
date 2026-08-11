@@ -97,9 +97,11 @@ In the commercial edition of Beekeeper Studio, you can also select `Run To File`
 
 ## Keyboard Shortcuts
 
-Beekeeper Studio has a built-in keyboard shortcuts reference. Open it from the `Help` menu to see all available shortcuts organized by category.
+Beekeeper Studio has a built-in keyboard shortcuts reference. Open it from the `Help` menu, or from the **View all shortcuts** link on an empty tab, to see all available shortcuts organized by category. It is generated from your live configuration, so it is the complete reference and reflects any keybindings you have customised.
 
 ![Keyboard Shortcuts modal](../../assets/images/keyboard-shortcuts-modal.png)
+
+For a written list of the most useful defaults, see [Keyboard Shortcuts](keyboard-shortcuts.md).
 
 ## Editor Font Size
 

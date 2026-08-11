@@ -160,6 +160,7 @@ nav:
 
   - Features:
     - user_guide/sql_editor/editor.md
+    - user_guide/sql_editor/keyboard-shortcuts.md
     - user_guide/sql-query-formatter.md
     - user_guide/sql_editor/manual-transaction-management.md
     - user_guide/sql_editor/editing-data.md
