@@ -69,7 +69,7 @@
         </div>
         <expired-folder-alert v-if="!canCreateFolders && folders.length > 0" />
         <error-alert
-          v-if="error && error !== pollError && !errorList.includes(error)"
+          v-if="error && !isPollError && !errorList.includes(error)"
           :error="error"
           title="Problem loading queries"
         />
@@ -325,6 +325,12 @@ export default {
     },
     errorList() {
       return Object.values(this.errors);
+    },
+    isPollError() {
+      return (
+        this.queriesError === this.queriesPollError ||
+        this.foldersPollError === this.foldersPollError
+      );
     },
   },
   methods: {
