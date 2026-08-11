@@ -2,6 +2,7 @@ import _ from 'lodash'
 import { Mutators } from '../lib/data/tools'
 import { TabulatorFormatterParams } from '@/common/tabulator'
 import helpers, { escapeHtml } from '@shared/lib/tabulator'
+import { isDateDataType, normalizeDataType } from '@/common/utils'
 export const NULL = '(NULL)'
 import {CellComponent} from 'tabulator-tables'
 
@@ -65,7 +66,26 @@ export default {
       }
       
       const nullValue = emptyResult(cellValue)
-      return nullValue ? nullValue : escapeHtml(this.niceString(cellValue, true))
+      if (nullValue) return nullValue
+
+      const tooltip = escapeHtml(this.niceString(cellValue, true))
+      const relative = this.relativeTimeFor(
+        cell.getColumn().getDefinition().dataType,
+        cell.getValue()
+      )
+      return relative ? `${tooltip}<br>${escapeHtml(relative)}` : tooltip
+    },
+    relativeTimeFor(dataType: string | undefined, value: unknown): string | null {
+      // dataType is absent for query results that aren't backed by a table
+      if (!dataType || _.isNil(value)) return null
+      if (!isDateDataType(dataType)) return null
+      // Intervals are durations, not points in time -- nothing to compare to now.
+      if (normalizeDataType(dataType).startsWith('interval')) return null
+
+      const date = value instanceof Date ? value : new Date(String(value))
+      if (isNaN(date.getTime())) return null
+
+      return this.$bks.timeAgo(date)
     },
     cellFormatter(
       cell: CellComponent,

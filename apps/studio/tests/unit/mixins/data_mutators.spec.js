@@ -64,3 +64,31 @@ describe("cellFormatter", () => {
   })
 
 })
+
+describe("relativeTimeFor", () => {
+  // $bks.timeAgo is provided app-wide by BeekeeperPlugin
+  const ctx = { $bks: { timeAgo: () => '3 days ago' } }
+  const relativeTimeFor = (dt, v) => mutators.methods.relativeTimeFor.call(ctx, dt, v)
+
+  it("should describe date columns relative to now", () => {
+    expect(relativeTimeFor('timestamp with time zone', '2026-08-09T14:30:00Z')).toBe('3 days ago')
+    expect(relativeTimeFor('date', new Date('2026-08-09'))).toBe('3 days ago')
+  })
+
+  it("should ignore non-date columns", () => {
+    expect(relativeTimeFor('text', '2026-08-09')).toBe(null)
+    expect(relativeTimeFor('int4', 123)).toBe(null)
+  })
+
+  // Intervals are durations, not points in time
+  it("should ignore intervals", () => {
+    expect(relativeTimeFor('interval', '1 day')).toBe(null)
+    expect(relativeTimeFor('interval year to month', '1 year')).toBe(null)
+  })
+
+  it("should handle missing or unparseable values", () => {
+    expect(relativeTimeFor(undefined, '2026-08-09')).toBe(null)
+    expect(relativeTimeFor('date', null)).toBe(null)
+    expect(relativeTimeFor('date', 'not a date')).toBe(null)
+  })
+})
