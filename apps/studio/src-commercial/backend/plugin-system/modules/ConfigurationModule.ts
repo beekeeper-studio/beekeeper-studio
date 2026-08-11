@@ -62,6 +62,18 @@ export class ConfigurationModule extends Module {
         return snapshot;
       }
 
+      // An explicit per-plugin `disabled` always wins. It has to be checked
+      // before the allow list: on the shipped default config the plugin system
+      // is disabled and the bundled plugins are allow-listed, and the allow-list
+      // branch below returns early. Without this the snapshot would report an
+      // admin-disabled plugin as enabled while the app refuses to load it.
+      if (this.options.config.plugins?.[snapshot.manifest.id]?.disabled) {
+        return {
+          ...snapshot,
+          disableState: { disabled: true, reason: "disabled-by-config" },
+        };
+      }
+
       if (this.options.config.pluginSystem.disabled) {
         if (this.options.config.pluginSystem.allow.includes(snapshot.manifest.id)) {
           return snapshot;
@@ -83,13 +95,6 @@ export class ConfigurationModule extends Module {
             disabled: true,
             reason: "community-plugins-disabled",
           },
-        };
-      }
-
-      if (this.options.config.plugins?.[snapshot.manifest.id]?.disabled) {
-        return {
-          ...snapshot,
-          disableState: { disabled: true, reason: "disabled-by-config" },
         };
       }
 

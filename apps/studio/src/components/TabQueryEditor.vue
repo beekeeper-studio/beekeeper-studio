@@ -1389,7 +1389,9 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         if (!this.aiShellEnabled) return
 
         if (this.isCommunity) {
-          this.trigger(AppEvent.upgradeModal, `the ${AI_SHELL_NAME}`)
+          // Must match a title in UpgradePanel's FEATURES list, otherwise the
+          // panel prepends a synthetic entry and the AI Shell shows up twice.
+          this.trigger(AppEvent.upgradeModal, AI_SHELL_NAME)
           return
         }
 

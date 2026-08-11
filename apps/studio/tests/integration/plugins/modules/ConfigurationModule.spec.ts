@@ -115,6 +115,92 @@ describe("Plugin Configuration Module", () => {
     });
   });
 
+  describe("Disable a specific plugin", () => {
+    it("can disable a plugin via [plugins.<id>]", async () => {
+      const config = createConfig(`
+        [pluginSystem]
+        disabled = false
+
+        [plugins.official-plugin]
+        disabled = true
+      `);
+
+      const manager = createPluginManager();
+      await manager.initialize();
+      await manager.installPlugin("official-plugin");
+
+      const manager2 = createPluginManager();
+      manager2.registerModule(ConfigurationModule.with({ config }));
+      await manager2.initialize();
+
+      const plugins = await manager2.getPlugins();
+      const officialPlugin = plugins.find(
+        (p) => p.manifest.id === "official-plugin"
+      );
+      expect(officialPlugin.disableState).toStrictEqual({
+        disabled: true,
+        reason: "disabled-by-config",
+      });
+    });
+
+    // This is the shipped default posture: the plugin system is off and the
+    // bundled plugins are allow-listed. An explicit per-plugin `disabled` must
+    // still win, otherwise the resolved snapshot claims the plugin is enabled
+    // while the app refuses to load it.
+    it("wins over the plugin system allow list", async () => {
+      const config = createConfig(`
+        [pluginSystem]
+        disabled = true
+        allow[] = official-plugin
+
+        [plugins.official-plugin]
+        disabled = true
+      `);
+
+      const manager = createPluginManager();
+      await manager.initialize();
+      await manager.installPlugin("official-plugin");
+
+      const manager2 = createPluginManager();
+      manager2.registerModule(ConfigurationModule.with({ config }));
+      await manager2.initialize();
+
+      const plugins = await manager2.getPlugins();
+      const officialPlugin = plugins.find(
+        (p) => p.manifest.id === "official-plugin"
+      );
+      expect(officialPlugin.disableState).toStrictEqual({
+        disabled: true,
+        reason: "disabled-by-config",
+      });
+    });
+
+    it("leaves an allow-listed plugin enabled when it is not disabled", async () => {
+      const config = createConfig(`
+        [pluginSystem]
+        disabled = true
+        allow[] = official-plugin
+
+        [plugins.official-plugin]
+        disabled = false
+      `);
+
+      const manager = createPluginManager();
+      await manager.initialize();
+      await manager.installPlugin("official-plugin");
+
+      const manager2 = createPluginManager();
+      manager2.registerModule(ConfigurationModule.with({ config }));
+      await manager2.initialize();
+
+      const plugins = await manager2.getPlugins();
+      const officialPlugin = plugins.find(
+        (p) => p.manifest.id === "official-plugin"
+      );
+      expect(officialPlugin.disableState).toStrictEqual({ disabled: false });
+    });
+  });
+
   describe("Disable community plugins", () => {
     const config = createConfig(`
       [pluginSystem]
