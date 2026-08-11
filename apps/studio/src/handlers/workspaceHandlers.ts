@@ -18,6 +18,8 @@ const log = rawLog.scope("workspaceHandlers")
 const MAX_SQL_FILE_BYTES = 4 * 2_000_000;
 const SQL_FILE_EXTENSIONS = new Set(['.sql', '.txt']);
 
+const SKIP_DIR_NAMES = new Set(['.git']);
+
 // I am just assuming that big batches might be an issue, so we have the ability to cap here
 // as well as cap the amount of rows so we don't piss off the active record transaction
 // I'm also not sure what size the cloud can actually handle
@@ -202,14 +204,18 @@ async function importDirectory(funcs: ImportFunctions, dir: string, parentId: nu
     const childDirNames = await getDirChildren(dir, true);
 
     for (const child of childDirNames) {
-      const dirPath = path.join(dir, child);
+      if (!SKIP_DIR_NAMES.has(child)) {
+        const dirPath = path.join(dir, child);
 
-      const childStats = await importDirectory(funcs, dirPath, parentId);
+        const childStats = await importDirectory(funcs, dirPath, parentId);
 
-      stats.queries += childStats.queries;
-      stats.directories += childStats.directories;
-      if (childStats.warnings.length) {
-        stats.warnings.push(...childStats.warnings);
+        stats.queries += childStats.queries;
+        stats.directories += childStats.directories;
+        if (childStats.warnings.length) {
+          stats.warnings.push(...childStats.warnings);
+        }
+      } else {
+        stats.warnings.push(`Skipping folder: ${child}`);
       }
     }
   }
