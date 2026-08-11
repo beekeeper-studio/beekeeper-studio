@@ -329,7 +329,7 @@ export default {
     isPollError() {
       return (
         this.queriesError === this.queriesPollError ||
-        this.foldersPollError === this.foldersPollError
+        this.foldersError === this.foldersPollError
       );
     },
   },
