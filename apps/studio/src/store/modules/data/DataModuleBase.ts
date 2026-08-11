@@ -32,10 +32,20 @@ export interface DataState<T> {
 
 
 
+/**
+ * Payload for full or partial replacement operations.
+ * - An array replaces all existing items.
+ * - `replaceIf` decides what a missing item means: an existing item absent from
+ *   `items` is only removed when the predicate accepts it.
+ */
+export type ReplacePayload<T> =
+  | T[]
+  | { items: T[]; replaceIf?: (item: T) => boolean }
+
 export type MutatePayload<T> =
   | { type: 'set'; data: T | T[] }
   | { type: 'upsert'; data: T | T[] }
-  | { type: 'replace'; data: T[] }
+  | { type: 'replace'; data: ReplacePayload<T> }
   | { type: 'remove'; data: T | T[] | number }
 
 export interface DataStoreMutations<T, X extends DataState<T>> extends MutationTree<X> {
@@ -109,7 +119,10 @@ const buildBasicMutations = <T extends HasId>(sortBy?: SortSpec) => ({
     const sorted = sortBy ? _.sortBy(stateItems, sortBy.field) : stateItems
     state.items = sortBy?.direction === 'desc' ? sorted.reverse() : sorted
   },
-  replace(state, items: T[]) {
+  replace(state, payload: ReplacePayload<T>) {
+    const items = _.isArray(payload) ? payload : payload.items
+    const replaceIf = _.isArray(payload) ? undefined : payload.replaceIf
+
     const pendingIds = state.pendingSaveIds || []
     const itemIds = items.map((i) => i.id)
     const stateIds = state.items.map((i) => i.id)
@@ -117,10 +130,14 @@ const buildBasicMutations = <T extends HasId>(sortBy?: SortSpec) => ({
     // Don't update items that have pending saves - keep local optimistic version
     const toUpdate = items.filter((i) => stateIds.includes(i.id) && !pendingIds.includes(i.id))
     const toInsert = items.filter((i) => !stateIds.includes(i.id))
+    const toRemove = state.items
+      .filter((i) => !itemIds.includes(i.id))
+      .filter((i) => !replaceIf || replaceIf(i))
+      .map((i) => i.id)
 
     // Don't remove items that have pending saves
     const stateItems = _.reject(state.items, (item) =>
-      !itemIds.includes(item.id) && !pendingIds.includes(item.id)
+      toRemove.includes(item.id) && !pendingIds.includes(item.id)
     )
     const upsertable = [...toUpdate, ...toInsert]
     upsertable.forEach((i) => upsert(stateItems, i))
@@ -170,10 +187,8 @@ export function utilActionsFor<T extends Transport>(type: string, other: any = {
         }
       })
     },
-    /** Local `load` already reads the whole table and merges it, so there is
-     * nothing further to page in. */
-    async loadMore(context) {
-      await context.dispatch('load');
+    async search() {
+      // no-op, only the cloud module supports server-side search
     },
     async poll() {
       // do nothing, locally we don't need to poll.
@@ -242,27 +257,17 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
     async initialize(context) {
       await context.dispatch("load");
     },
-    async load(context, options?: ListOptions) {
+    async load(context, options: Partial<ListOptions> & { replaceIf?: (item: T) => boolean } = {}) {
       context.commit("error", null)
       await safelyDo(context, async (cli) => {
         const items: any[] = await cli[scope].list(undefined, options)
         // this is to account for when the store module changes
         const rightItems = items.filter((i) => i.workspaceId === context.rootState.workspaceId)
         if (rightItems.length === items.length) {
-          await context.dispatch('mutate', { type: 'replace', data: rightItems })
-        }
-      })
-    },
-    /** Like `load`, but adds to what is already in the store instead of
-     * replacing it, so a fetched subtree doesn't drop its siblings. */
-    async loadMore(context, options?: ListOptions) {
-      context.commit("error", null)
-      await safelyDo(context, async (cli) => {
-        const items: any[] = await cli[scope].list(undefined, options)
-        // this is to account for when the store module changes
-        const rightItems = items.filter((i) => i.workspaceId === context.rootState.workspaceId)
-        if (rightItems.length === items.length) {
-          await context.dispatch('mutate', { type: 'upsert', data: rightItems })
+          await context.dispatch('mutate', {
+            type: 'replace',
+            data: { items: rightItems, replaceIf: options.replaceIf },
+          })
         }
       })
     },

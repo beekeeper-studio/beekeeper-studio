@@ -153,7 +153,7 @@
             >
               <template v-if="searching">
                 <div class="empty-state"
-                  v-if="!fetchingResults && filteredConnections.length === 0"
+                  v-if="!typing && !fetchingResults && filteredConnections.length === 0"
                 >
                   No connections match "{{ connFilter }}"
                 </div>
@@ -172,7 +172,7 @@
                   @doubleClick="connect"
                 />
                 <content-placeholder
-                  v-if="fetchingResults"
+                  v-if="fetchingResults || typing"
                   :animated="true"
                   :rounded="false"
                   class="list-item"
@@ -185,7 +185,7 @@
               </template>
               <tree
                 v-show="!searching"
-                :folders="folderNodes"
+                :folders="extendedFolderNodes"
                 :items="sortedItemNodes"
                 :expanded-ids="expandedNodeIds"
                 @update:expandedIds="setExpandedIds"
@@ -253,6 +253,15 @@
                   >
                     <content-placeholder-text :lines="1" />
                   </content-placeholder>
+                </template>
+                <template #folder-empty="{ node, depth }">
+                  <div
+                    v-if="!loadingFolderIds.includes(node.ref.id)"
+                    class="tree-empty"
+                    :style="{ '--depth': depth }"
+                  >
+                    No items
+                  </div>
                 </template>
                 <template #item="{ node }">
                   <connection-list-item
@@ -326,7 +335,7 @@ import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
 import EditableText from '@/components/common/EditableText.vue'
 import Noty from 'noty'
-import { parseReorderTarget } from '@/common/utils/folderTree'
+import { buildFolderNodes, parseReorderTarget } from '@/common/utils/folderTree'
 
 const log = rawLog.scope('connection-sidebar');
 
@@ -359,6 +368,10 @@ export default {
     renamingFolderId: null,
     justCreatedFolderId: null,
     justCreatedTimeout: null,
+    loadingFolderIds: [],
+    drafting: false,
+    draftParentId: null,
+    connFilter: "",
   }),
   watch: {
     async sort(newSort) {
@@ -366,6 +379,9 @@ export default {
       await this.$settings.set('connectionsSortBy', newSort.field)
       if (!this.sortInitialized) return
       await this.reorderBySort(newSort)
+    },
+    connFilter(value) {
+      this.setConnectionFilter(value);
     },
   },
   computed: {
@@ -381,18 +397,9 @@ export default {
       folders: 'items',
       foldersLoading: 'loading',
       foldersError: 'error',
-      draft: 'draft',
     }),
     ...mapState('sidebar/connections', {
       expandedFolderIds: 'expandedIds',
-    }),
-    ...mapState({
-      loadingFolderIds(state) {
-        return [
-          ...state["data/connectionFolders"].folders.fetchingIds,
-          ...state["data/connections"].folders.fetchingIds,
-        ];
-      },
     }),
     ...mapGetters({
       usedConfigs: 'data/usedconnections/orderedUsedConfigs',
@@ -405,13 +412,17 @@ export default {
       filteredConnections: 'data/connections/filteredConnections',
       privacyMode: 'settings/privacyMode'
     }),
-    connFilter: {
-      get() {
-        return this.connectionFilter;
-      },
-      set(newFilter) {
-        this.$store.dispatch('data/connections/setConnectionFilter', newFilter);
+    typing() {
+      return this.connFilter !== this.connectionFilter;
+    },
+    draft() {
+      return { id: null, parentId: this.draftParentId, name: 'Untitled folder' };
+    },
+    extendedFolderNodes() {
+      if (this.drafting) {
+        return buildFolderNodes([this.draft, ...this.folders]);
       }
+      return this.folderNodes;
     },
     expandedNodeIds() {
       return this.expandedFolderIds.map((id) => `folder-${id}`);
@@ -484,10 +495,11 @@ export default {
     ...mapActions({
       saveFolder: 'data/connectionFolders/save',
       reorderConnection: 'data/connections/reorder',
-      ensureConnectionsLoaded: 'data/connections/ensureLoaded',
-      ensureSubfoldersLoaded: 'data/connectionFolders/ensureLoaded',
-      startDrafting: 'data/connectionFolders/startDrafting',
-      stopDrafting: 'data/connectionFolders/stopDrafting',
+      loadConnections: 'data/connections/loadByParentIds',
+      loadConnectionFolders: 'data/connectionFolders/loadByParentIds',
+      unloadConnections: 'data/connections/unloadByParentIds',
+      unloadConnectionFolders: 'data/connectionFolders/unloadByParentIds',
+      setConnectionFilter: 'data/connections/setConnectionFilter',
     }),
     ...mapMutations({
       setExpandedFolderIds: 'sidebar/connections/expandedIds',
@@ -496,9 +508,26 @@ export default {
       const folderIds = this.folderNodes
         .filter((node) => expandedNodeIds.includes(node.id))
         .map((node) => node.ref.id)
+      const expandingIds = _.difference(folderIds, this.expandedFolderIds)
+      const collapsingIds = _.difference(this.expandedFolderIds, folderIds)
       this.setExpandedFolderIds(folderIds)
-      this.ensureConnectionsLoaded(folderIds)
-      this.ensureSubfoldersLoaded(folderIds)
+      this.loadFolders(expandingIds)
+      this.unloadFolders(collapsingIds)
+    },
+    async loadFolders(ids) {
+      try {
+        this.loadingFolderIds = [...this.loadingFolderIds, ...ids]
+        await Promise.all([
+          this.loadConnections(ids),
+          this.loadConnectionFolders(ids),
+        ]);
+      } finally {
+        this.loadingFolderIds = _.difference(this.loadingFolderIds, ids)
+      }
+    },
+    unloadFolders(ids) {
+      this.unloadConnections(ids);
+      this.unloadConnectionFolders(ids);
     },
     clearFilter() {
       this.connFilter = null;
@@ -562,6 +591,13 @@ export default {
       } else {
         this.startDrafting(null);
       }
+    },
+    startDrafting(parentId) {
+      this.draftParentId = parentId
+      this.drafting = true
+    },
+    stopDrafting() {
+      this.drafting = false
     },
     markJustCreated(folderId) {
       clearTimeout(this.justCreatedTimeout)
@@ -799,8 +835,14 @@ export default {
   opacity: 0.5;
 }
 .tree-loading {
-  margin-block: 0.5rem;
-  padding-left: calc(var(--depth) * 1rem + 1.3rem);
+  margin-top: 0.45rem;
+  margin-bottom: -0.7rem;
+  padding-left: calc(var(--depth) * 1rem + 0.55rem);
+}
+.tree-empty {
+  padding-left: calc(var(--depth) * 1rem + 0.55rem);
+  margin-block: 0.25rem;
+  opacity: 0.6;
 }
 ::v-deep .BksTree-folder {
   .name:has(.editable-text) {

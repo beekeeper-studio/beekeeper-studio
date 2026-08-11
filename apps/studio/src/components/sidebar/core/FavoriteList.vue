@@ -82,7 +82,7 @@
           <template v-if="searching">
             <div
               class="empty-state"
-              v-if="!fetchingResults && filteredQueries.length === 0"
+              v-if="!typing && !fetchingResults && filteredQueries.length === 0"
             >
               No queries match "{{ filterQuery }}"
             </div>
@@ -100,7 +100,7 @@
               @duplicate="duplicate"
             />
             <content-placeholder
-              v-if="fetchingResults"
+              v-if="fetchingResults || typing"
               :animated="true"
               :rounded="false"
               class="list-item"
@@ -113,7 +113,7 @@
           </template>
           <tree
             v-show="!searching"
-            :folders="folderNodes"
+            :folders="extendedFolderNodes"
             :items="sortedItemNodes"
             :expanded-ids="expandedNodeIds"
             @update:expandedIds="setExpandedIds"
@@ -180,6 +180,15 @@
                 <content-placeholder-text :lines="1" />
               </content-placeholder>
             </template>
+            <template #folder-empty="{ node, depth }">
+              <div
+                v-if="!loadingFolderIds.includes(node.ref.id)"
+                class="tree-empty"
+                :style="{ '--depth': depth }"
+              >
+                No items
+              </div>
+            </template>
             <template #item="{ node }">
               <favorite-list-item
                 :item="node.ref"
@@ -213,7 +222,7 @@ import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
 import EditableText from '@/components/common/EditableText.vue'
 import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
 import ContentPlaceholderText from '@/components/common/loading/ContentPlaceholderText.vue'
-import { parseReorderTarget } from '@/common/utils/folderTree'
+import { buildFolderNodes, parseReorderTarget } from '@/common/utils/folderTree'
 
 export default {
   components: { SidebarLoading, ErrorAlert, ExpiredFolderAlert, FavoriteListItem, Tree, TreeFolder, EditableText, ContentPlaceholder, ContentPlaceholderText },
@@ -224,7 +233,16 @@ export default {
       renamingFolderId: null,
       justCreatedFolderId: null,
       justCreatedTimeout: null,
+      loadingFolderIds: [],
+      drafting: false,
+      draftParentId: null,
+      filterQuery: "",
     }
+  },
+  watch: {
+    filterQuery(value) {
+      this.setSavedQueryFilter(value);
+    },
   },
   mounted() {
     document.addEventListener('mousedown', this.maybeUnselect)
@@ -249,19 +267,19 @@ export default {
       'folders': 'items',
       'foldersLoading': 'loading',
       'foldersError': 'error',
-      'draft': 'draft',
     }),
     ...mapState('sidebar/queries', {
       expandedFolderIds: 'expandedIds',
     }),
-    ...mapState({
-      loadingFolderIds(state) {
-        return [
-          ...state["data/queryFolders"].folders.fetchingIds,
-          ...state["data/queries"].folders.fetchingIds,
-        ];
-      },
-    }),
+    draft() {
+      return { id: null, parentId: this.draftParentId, name: 'Untitled folder' };
+    },
+    extendedFolderNodes() {
+      if (this.drafting) {
+        return buildFolderNodes([this.draft, ...this.folders]);
+      }
+      return this.folderNodes;
+    },
     expandedNodeIds() {
       return this.expandedFolderIds.map((id) => `folder-${id}`);
     },
@@ -279,13 +297,8 @@ export default {
     initializing() {
       return this.folders.length === 0 && this.foldersLoading;
     },
-    filterQuery: {
-      get() {
-        return this.savedQueryFilter;
-      },
-      set(newFilter) {
-        this.$store.dispatch('data/queries/setSavedQueryFilter', newFilter);
-      }
+    typing() {
+      return this.filterQuery !== this.savedQueryFilter;
     },
     error() {
       return this.queriesError || this.foldersError || null
@@ -298,10 +311,11 @@ export default {
     ...mapActions({
       saveFolder: 'data/queryFolders/save',
       reorderQuery: 'data/queries/reorder',
-      ensureQueriesLoaded: 'data/queries/ensureLoaded',
-      ensureSubfoldersLoaded: 'data/queryFolders/ensureLoaded',
-      startDrafting: 'data/queryFolders/startDrafting',
-      stopDrafting: 'data/queryFolders/stopDrafting',
+      loadQueries: 'data/queries/loadByParentIds',
+      loadQueryFolders: 'data/queryFolders/loadByParentIds',
+      unloadQueries: 'data/queries/unloadByParentIds',
+      unloadQueryFolders: 'data/queryFolders/unloadByParentIds',
+      setSavedQueryFilter: 'data/queries/setSavedQueryFilter',
     }),
     ...mapMutations({
       setExpandedFolderIds: 'sidebar/queries/expandedIds',
@@ -310,9 +324,26 @@ export default {
       const folderIds = this.folderNodes
         .filter((node) => expandedNodeIds.includes(node.id))
         .map((node) => node.ref.id)
+      const expandingIds = _.difference(folderIds, this.expandedFolderIds)
+      const collapsingIds = _.difference(this.expandedFolderIds, folderIds)
       this.setExpandedFolderIds(folderIds)
-      this.ensureQueriesLoaded(folderIds)
-      this.ensureSubfoldersLoaded(folderIds)
+      this.loadFolders(expandingIds)
+      this.unloadFolders(collapsingIds)
+    },
+    async loadFolders(ids) {
+      try {
+        this.loadingFolderIds = [...this.loadingFolderIds, ...ids]
+        await Promise.all([
+          this.loadQueries(ids),
+          this.loadQueryFolders(ids),
+        ]);
+      } finally {
+        this.loadingFolderIds = _.difference(this.loadingFolderIds, ids)
+      }
+    },
+    unloadFolders(ids) {
+      this.unloadQueries(ids);
+      this.unloadQueryFolders(ids);
     },
     clearFilter() {
       this.filterQuery = null
@@ -389,6 +420,13 @@ export default {
       } else {
         this.startDrafting(null);
       }
+    },
+    startDrafting(parentId) {
+      this.draftParentId = parentId
+      this.drafting = true
+    },
+    stopDrafting() {
+      this.drafting = false
     },
     markJustCreated(folderId) {
       clearTimeout(this.justCreatedTimeout)
@@ -554,7 +592,11 @@ export default {
         return
       }
       try {
-        await this.$store.dispatch('data/queryFolders/save', { ...folder, name })
+        await this.$store.dispatch('data/queryFolders/save', {
+          id: folder.id,
+          parentId: folder.parentId,
+          name,
+        })
       } catch (ex) {
         this.$noty.error(`Rename error: ${ex.userMessage ?? ex.message}`)
       } finally {
@@ -579,8 +621,14 @@ export default {
   opacity: 0.5;
 }
 .tree-loading {
-  margin-block: 1rem;
-  padding-left: calc(var(--depth) * 1rem + 1.3rem);
+  margin-top: 0.45rem;
+  margin-bottom: -0.7rem;
+  padding-left: calc(var(--depth) * 1rem + 0.55rem);
+}
+.tree-empty {
+  padding-left: calc(var(--depth) * 1rem + 0.55rem);
+  margin-block: 0.25rem;
+  opacity: 0.6;
 }
 ::v-deep .BksTree-folder {
   .name:has(.editable-text) {

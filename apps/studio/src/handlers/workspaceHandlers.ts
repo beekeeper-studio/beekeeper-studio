@@ -9,6 +9,7 @@ import { IQueryFolder } from "@/common/interfaces/IQueryFolder";
 import { IDirectoryImportStats } from "@/common/interfaces/IDirectoryImportStats";
 import rawLog from "@bksLogger";
 import { AppDbHandlers } from "./appDbHandlers";
+import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
 
 const log = rawLog.scope("workspaceHandlers")
 
@@ -35,6 +36,11 @@ export interface IWorkspaceHandlers {
 
 export const WorkspaceHandlers: IWorkspaceHandlers = {
   "workspace/setActive": async function({ sId, wId, credentialId }: { sId: string, wId: number, credentialId: number }): Promise<void> {
+    if (wId === LocalWorkspace.id) {
+      state(sId).cloudClient = null;
+      return;
+    }
+
     const cred = await CloudCredential.findOneBy({ id: credentialId });
 
     if (!cred) {
