@@ -206,6 +206,21 @@
               v-model="dryRun"
             >
           </x-button>
+          <!-- Wrapper carries the tooltip: a disabled x-button has
+               pointer-events: none, so it can't show one itself. -->
+          <span
+            class="ask-ai-btn-wrap"
+            v-tooltip="aiShellUnavailableReason"
+          >
+            <x-button
+              class="btn btn-flat btn-small ask-ai-btn"
+              :disabled="!aiShellEnabled"
+              @click.prevent="askAi"
+            >
+              <i class="material-icons">auto_awesome</i>
+              <x-label>Ask AI</x-label>
+            </x-button>
+          </span>
           <x-button
             @click.prevent="triggerSave"
             class="btn btn-flat btn-small"
@@ -321,7 +336,26 @@
         class="message"
         v-else-if="errors"
       >
-        <error-alert :error="errors" />
+        <error-alert :error="errors">
+          <template #actions>
+            <!-- Only for query execution failures. A failed save isn't a SQL
+                 problem, so it doesn't get this. -->
+            <div
+              v-if="error"
+              class="ai-shell-error-actions"
+              v-tooltip="aiShellUnavailableReason"
+            >
+              <x-button
+                class="btn btn-flat btn-small"
+                :disabled="!aiShellEnabled"
+                @click.prevent="debugWithAi"
+              >
+                <i class="material-icons">auto_awesome</i>
+                <x-label>Debug with AI</x-label>
+              </x-button>
+            </div>
+          </template>
+        </error-alert>
       </div>
       <div
         class="message"
@@ -419,6 +453,15 @@
         </div>
       </modal>
     </portal>
+
+    <!-- Ask AI Modal -->
+    <ask-ai-modal
+      :modal-name="askAiModalName"
+      :query="askAiQuery"
+      :is-selection="askAiIsSelection"
+      @send="sendAiQuestion"
+      @closed="selectEditor"
+    />
 
     <!-- Save Modal -->
     <portal to="modals">
@@ -587,6 +630,9 @@
 import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
   import { wait } from '@/shared/lib/wait'
   import ISavedQuery from '@/common/interfaces/ISavedQuery'
+  import AskAiModal from '@/components/editor/AskAiModal.vue'
+  import aiShell from '@/mixins/aiShell'
+  import { AI_SHELL_NAME, AiShellCommand } from '@/common/aiShell'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -595,7 +641,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor, BksSuperFormatter, QueryEditHistory, InAppFolderPicker },
+    mixins: [aiShell],
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor, BksSuperFormatter, QueryEditHistory, InAppFolderPicker, AskAiModal },
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean
@@ -674,7 +721,9 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         resultsEditData: [],
         resultEditableMap: [],
         pollInterval: null,
-        queryDeleted: false
+        queryDeleted: false,
+        askAiQuery: "",
+        askAiIsSelection: false
       }
     },
     computed: {
@@ -791,6 +840,9 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       },
       hasSelectedText() {
         return this.editor.initialized ? !!this.editor.selection : false
+      },
+      askAiModalName() {
+        return `ask-ai-modal-${this.tab.id}`
       },
       runButtonTooltip() {
         if (this.tab.isRunning || this.running) {
@@ -1309,6 +1361,54 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       },
       handleEditorSelectionChange(detail) {
         this.editor.selection = detail.value
+      },
+      // Hand the failed query and its error to the AI Shell. The plugin owns
+      // the prompt — we only pass structured data.
+      debugWithAi() {
+        if (!this.aiShellEnabled || !this.error) return
+
+        const err = this.error
+        const error = { message: err.message || err.toString() }
+        if (err.marker) {
+          error.line = err.marker.line
+          error.ch = err.marker.ch
+        }
+        if (err.position) {
+          error.position = Number(err.position)
+        }
+
+        this.openAiShell({
+          command: AiShellCommand.debugQueryError,
+          params: {
+            query: this.queryForExecution || this.unsavedText,
+            error,
+          },
+        })
+      },
+      askAi() {
+        if (!this.aiShellEnabled) return
+
+        if (this.isCommunity) {
+          this.trigger(AppEvent.upgradeModal, `the ${AI_SHELL_NAME}`)
+          return
+        }
+
+        this.askAiIsSelection = this.hasSelectedText
+        // A blank query editor is padded with newlines, so trim before showing
+        // and sending it.
+        const text = this.hasSelectedText ? this.editor.selection : this.unsavedText
+        this.askAiQuery = (text || '').trim()
+        this.$modal.show(this.askAiModalName)
+      },
+      sendAiQuestion(question) {
+        this.openAiShell({
+          command: AiShellCommand.askQuestion,
+          params: {
+            query: this.askAiQuery,
+            isSelection: this.askAiIsSelection,
+            question,
+          },
+        })
       },
       saveTab: _.debounce(function() {
         this.$store.dispatch('tabs/save', this.tab)

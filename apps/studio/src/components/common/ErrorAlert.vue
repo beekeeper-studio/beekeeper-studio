@@ -37,6 +37,9 @@
           title="More information about this error"
         >Learn more about this error</a>
       </div>
+      <!-- Callers can hang their own actions off an error. This component
+           stays generic — it knows nothing about what goes in here. -->
+      <slot name="actions" />
     </div>
   </div>
 </template>
