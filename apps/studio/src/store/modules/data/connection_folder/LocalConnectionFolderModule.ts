@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import _ from 'lodash'
 import { IConnectionFolder } from "@/common/interfaces/IQueryFolder";
-import { DataState, DataStore, mutateActions, mutationsFor } from "@/store/modules/data/DataModuleBase";
+import { DataState, DataStore, LoadOptions, mutateActions, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { safely } from "@/store/modules/data/StoreHelpers";
 import { accessGrantActions, accessGrantMutations } from "@/store/modules/data/access_grant/accessGrantStore";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
@@ -38,14 +38,14 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     async initialize() {
       // noop
     },
-    async load(context) {
+    async load(context, options: LoadOptions<IConnectionFolder> = {}) {
       context.commit('error', null)
       await safely(context, async () => {
         const items = await Vue.prototype.$util.send('appdb/connectionFolder/find', { options: { order: { name: 'ASC' } } })
         if (context.rootState.workspaceId === LocalWorkspace.id) {
           await context.dispatch('mutate', { type: 'upsert', data: items })
         }
-      })
+      }, options.onError)
     },
     async poll() {
       // no-op for local

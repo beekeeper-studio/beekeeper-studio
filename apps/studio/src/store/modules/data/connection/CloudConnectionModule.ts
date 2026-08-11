@@ -39,7 +39,10 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
     async poll(context) {
       if (!context.rootState.connected) {
         const expandedFolderIds = context.rootState.sidebar.connections.expandedIds
-        await context.dispatch('loadByParentIds', expandedFolderIds)
+        const result = await context.dispatch('loadByParentIds', expandedFolderIds)
+        if (result.error) {
+          context.commit("pollError", result.error);
+        }
       }
     },
     async afterMutate(context, { type, data }) {

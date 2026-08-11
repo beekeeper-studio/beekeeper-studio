@@ -45,7 +45,10 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
           && context.rootState.sidebar.primarySidebarOpen
       ) {
         const expandedFolderIds = context.rootState.sidebar.queries.expandedIds
-        await context.dispatch('loadByParentIds', expandedFolderIds)
+        const result = await context.dispatch('loadByParentIds', expandedFolderIds)
+        if (result.error) {
+          context.commit("pollError", result.error);
+        }
       }
     },
     async afterMutate(context, { type, data }) {
