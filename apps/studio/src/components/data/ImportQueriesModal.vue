@@ -1,56 +1,51 @@
 <template>
-  <modal
+  <base-modal
     name="import-queries"
-    class="vue-dialog beekeeper-modal import-queries-modal"
-    @closed="clear"
+    class="import-queries-modal"
+    :loading="loading"
+    @submit="doImport"
   >
-    <div class="dialog-content">
-      <div class="dialog-c-title">
-        Import Queries
+    <template #title>
+      Import Queries
+    </template>
+    <p class="import-queries-subtitle">
+      Importing a query will <strong>copy</strong> it from your local workspace into the personal folder of your team workspace.
+    </p>
+    <error-alert
+      :error="error"
+      v-if="error"
+    />
+    <div class="query-list">
+      <div
+        v-if="!queries || !queries.length"
+        class="query-item"
+      >
+        Import not available: You don't have any queries in your local workspace.
       </div>
-      <div class="dialog-c-subtitle">
-        Importing a query will <strong>copy</strong> it from your local workspace into the personal folder of your team workspace.
-      </div>
-      <error-alert
-        :error="error"
-        v-if="error"
-      />
-      <div>
-        <div class="list-group">
-          <div class="list-body">
-            <div
-              v-if="!queries || !queries.length"
-              class="list-item"
-            >
-              Import not available: You don't have any queries in your local workspace.
-            </div>
-            <div
-              class="list-item"
-              v-for="query in queries"
-              :key="query.id"
-            >
-              <label
-                :for="`cb-${query.id}`"
-                class="checkbox-group"
-              >
-                <input
-                  type="checkbox"
-                  class="form-control"
-                  :name="`cb-${query.id}`"
-                  :id="`cb-${query.id}`"
-                  v-model="query.checked"
-                >
-                <span>{{ query.title }}</span>
-              </label>
-            </div>
-          </div>
-        </div>
+      <div
+        class="query-item"
+        v-for="query in queries"
+        :key="query.id"
+      >
+        <label
+          :for="`cb-${query.id}`"
+          class="checkbox-group"
+        >
+          <input
+            type="checkbox"
+            class="form-control"
+            :name="`cb-${query.id}`"
+            :id="`cb-${query.id}`"
+            v-model="query.checked"
+          >
+          <span>{{ query.title }}</span>
+        </label>
       </div>
     </div>
-    <div class="vue-dialog-buttons">
+    <template #footer="{ close }">
       <button
         class="btn btn-flat"
-        @click.prevent="$modal.hide('import-queries')"
+        @click.prevent="close"
       >
         Close
       </button>
@@ -62,16 +57,18 @@
       >
         {{ loading ? '...' : 'Import' }}
       </button>
-    </div>
-  </modal>
+    </template>
+  </base-modal>
 </template>
 <script lang="ts">
 import { AppEvent } from '@/common/AppEvent'
 import { TransportFavoriteQuery } from '@/common/transport'
+import BaseModal from '@/components/common/modals/BaseModal.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import Vue from 'vue'
+
 export default Vue.extend({
-  components: { ErrorAlert },
+  components: { ErrorAlert, BaseModal },
   mounted() {
     this.registerHandlers(this.rootBindings)
   },
@@ -125,18 +122,19 @@ export default Vue.extend({
 })
 </script>
 <style lang="scss">
-.import-queries-modal {
-  .v--modal {
-    display: flex;
-    flex-direction: column;
-  }
-  .dialog-content {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-  }
-  .vue-dialog-buttons {
-    flex-shrink: 0;
-  }
+.import-queries-subtitle {
+  color: var(--text-light);
+  margin-bottom: 0.5rem;
+}
+
+.query-list {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.query-item {
+  display: flex;
+  align-items: center;
+  line-height: 1.6;
 }
 </style>
