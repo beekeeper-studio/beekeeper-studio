@@ -357,6 +357,13 @@ export function isDateDataType (dataType) {
   return dateLikeStarts.some(t => base.startsWith(t))
 }
 
+export function isJsonDataType (dataType) {
+  // dataType is frequently absent for query results that aren't backed by a table
+  if (!dataType) return false
+  const base = normalizeDataType(dataType)
+  return base === 'json' || base === 'jsonb'
+}
+
 export function isNumericDataType (dataType) {
   if (isDateDataType(dataType)) return false
   const base = normalizeDataType(dataType)

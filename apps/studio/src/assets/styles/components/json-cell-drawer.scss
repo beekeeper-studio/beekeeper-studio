@@ -1,0 +1,105 @@
+.json-cell-drawer {
+  --hoz-gutter: 1rem;
+
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-width: 100%;
+  min-width: 10rem;
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-height: 2.35rem;
+    padding-left: var(--hoz-gutter);
+    padding-right: var(--hoz-gutter);
+
+    .header-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 0;
+    }
+
+    // Actions keep full width; the column name truncates instead.
+    .header-group.actions {
+      flex-shrink: 0;
+    }
+
+    .column-name {
+      font-weight: bold;
+      color: $text-dark;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
+
+    // Matches the flattened treatment the same badge gets in the table headers
+    // (see .tabulator-col .badge) rather than the global pill.
+    .column-data-type {
+      flex-shrink: 0;
+      background: transparent;
+      color: $text-lighter;
+      padding: 0;
+      margin: 0;
+    }
+
+    .read-only-hint {
+      color: $text-light;
+      font-size: 0.85rem;
+    }
+  }
+
+  .text-editor-wrapper {
+    flex: 1 1 auto;
+    height: 100%;
+    position: relative;
+
+    .BksTextEditor {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      width: 100%;
+      padding-left: 1rem;
+
+      --bks-text-editor-bg-color: #{$theme-bg};
+      --bks-text-editor-gutter-bg-color: #{$theme-bg};
+    }
+  }
+
+  // Own row above the buttons: sharing one pushes them out of a narrow sidebar.
+  .error-message {
+    display: block;
+    padding: 0.35rem var(--hoz-gutter) 0;
+    color: $brand-danger;
+    font-size: 0.85rem;
+    line-height: 1.35;
+    // Parse errors are one long unbroken string.
+    overflow-wrap: anywhere;
+  }
+
+  .footer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem var(--hoz-gutter);
+
+    .expand {
+      flex: 1 1 auto;
+    }
+
+    .btn {
+      margin: 0;
+      flex-shrink: 0;
+    }
+  }
+
+  .empty-text {
+    padding: 0.5rem var(--hoz-gutter);
+    color: $text-light;
+  }
+}

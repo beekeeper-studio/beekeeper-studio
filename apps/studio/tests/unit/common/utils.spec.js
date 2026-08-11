@@ -1,4 +1,4 @@
-import { checkEmptyFilters, isBlank, removeUnsortableColumnsFromSortBy, isNumericDataType, isDateDataType } from "@/common/utils"
+import { checkEmptyFilters, isBlank, removeUnsortableColumnsFromSortBy, isNumericDataType, isDateDataType, isJsonDataType } from "@/common/utils"
 import { PostgresData } from '@/shared/lib/dialects/postgresql'
 import { MysqlData } from '@/shared/lib/dialects/mysql'
 import { SqliteData } from '@/shared/lib/dialects/sqlite'
@@ -204,6 +204,29 @@ describe("isNumericDataType", () => {
     expect(isNumericDataType('interval')).toBe(false)
     expect(isNumericDataType('INTERVAL')).toBe(false)
     expect(isNumericDataType('interval year to month')).toBe(false)
+  })
+})
+
+describe("isJsonDataType", () => {
+  it("should all be json types", () => {
+    expect(isJsonDataType('json')).toBe(true)
+    expect(isJsonDataType('jsonb')).toBe(true)
+    expect(isJsonDataType('JSONB')).toBe(true)
+    expect(isJsonDataType(' json ')).toBe(true)
+  })
+
+  it("should not be json types", () => {
+    expect(isJsonDataType('text')).toBe(false)
+    expect(isJsonDataType('varchar(255)')).toBe(false)
+    expect(isJsonDataType('jsonpath')).toBe(false)
+    expect(isJsonDataType('_json')).toBe(false)
+  })
+
+  // dataType is absent for query results that aren't backed by a table
+  it("should handle a missing data type", () => {
+    expect(isJsonDataType(undefined)).toBe(false)
+    expect(isJsonDataType(null)).toBe(false)
+    expect(isJsonDataType('')).toBe(false)
   })
 })
 

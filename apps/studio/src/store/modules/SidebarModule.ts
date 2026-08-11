@@ -63,6 +63,10 @@ export const SidebarModule: Module<State, RootState> = {
         id: "json-viewer",
         label: "JSON Viewer",
       },
+      {
+        id: "json-cell",
+        label: "JSON Editor",
+      },
     ],
 
     // PRIMARY SIDEBAR

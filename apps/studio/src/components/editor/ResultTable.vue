@@ -61,6 +61,7 @@
   import { escapeHtml, FormatterParams } from '@shared/lib/tabulator'
   import { dialectFor, formatOptionsFor } from '@shared/lib/dialects/models'
   import { FkLinkMixin } from '@/mixins/fk_click'
+  import { JsonCellDrawerMixin } from '@/mixins/json_cell_drawer'
   import MagicColumnBuilder from '@/lib/magic/MagicColumnBuilder'
   import Papa from 'papaparse'
   import { mapState, mapGetters } from 'vuex'
@@ -79,7 +80,7 @@
   import { FieldDescriptor, FieldEditData, FieldReadOnlyReasonStr, NgQueryResult, TableUpdate } from '@/lib/db/models'
   import { CellComponent, RangeComponent, RowComponent } from 'tabulator-tables'
   import { PropType } from 'vue'
-  import { safeSqlFormat } from '@/common/utils'
+  import { safeSqlFormat, isJsonDataType } from '@/common/utils'
 import { stringToTypedArray } from '@/common/utils'
 
   const log = rawLog.scope('ResultTable');
@@ -102,7 +103,7 @@ import { stringToTypedArray } from '@/common/utils'
 
   export default {
     components: { EditorModal },
-    mixins: [Converter, Mutators, FkLinkMixin],
+    mixins: [Converter, Mutators, FkLinkMixin, JsonCellDrawerMixin],
     data() {
       return {
         tabulator: null,
@@ -378,6 +379,7 @@ import { stringToTypedArray } from '@/common/utils'
         const eventParams = { cell, isReadOnly };
         this.$refs.editorModal.openModal(cell.getValue(), undefined, eventParams)
       },
+
       onSaveEditorModal(content: string, _l: any, cell: CellComponent){
         const editData = this.editData?.get(cell.getField());
         const isBinary = editData?.bksField?.bksType === 'BINARY' || _.isTypedArray(cell.getValue());
@@ -533,6 +535,15 @@ import { stringToTypedArray } from '@/common/utils'
           ...magicStuff
         }
 
+        // Don't touch `editable` here -- paste uses it as its permission check
+        // (see setCellValue in lib/menu/tableMenu).
+        if (isJsonDataType(editData?.dataType)) {
+          result['cellDblClick'] = (_e, cell: CellComponent) => this.openJsonCellDrawer(cell, {
+            dataType: editData?.dataType,
+            readOnly: !this.cellEditCheck(cell),
+          })
+        }
+
         if (column.dataType === 'INTERVAL') {
           // add interval sorter
           result['sorter'] = this.intervalSorter;
@@ -572,10 +583,11 @@ import { stringToTypedArray } from '@/common/utils'
       editorType(dataType: string) {
         const ne = vueEditor(NullableInputEditorVue)
 
+        // No inline editor: json/jsonb open the cell drawer on double click.
+        if (isJsonDataType(dataType)) return false
+
         switch (dataType?.toLowerCase() ?? '') {
           case 'text':
-          case 'json':
-          case 'jsonb':
           case 'tsvector':
             return 'textarea'
           case 'bool':
