@@ -37,7 +37,9 @@ import { SidebarModule, State as SidebarState } from './modules/SidebarModule'
 import { TreeExpansionState } from './modules/sidebar/TreeExpansionModule'
 import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
 import { PopupMenuModule } from './modules/PopupMenuModule'
-import { WebPluginManagerStatus } from '@/services/plugin'
+import { PluginSnapshot, WebPluginManagerStatus } from '@/services/plugin'
+import { pluginUnavailableReason } from '@/services/plugin/availability'
+import { AI_SHELL_NAME, AI_SHELL_PLUGIN_ID } from '@/common/aiShell'
 import { MenuBarModule } from './modules/MenuBarModule'
 import { PluginsModule, PluginsState } from './modules/plugins'
 import { pluralize } from '@/vendor/pluralize'
@@ -322,9 +324,27 @@ const store = new Vuex.Store<State>({
     },
     aiShellAvailable(_state, getters) {
       return getters["tabs/newTabDropdownItems"].some(
-        ({ config }) => config.pluginId === "bks-ai-shell"
+        ({ config }) => config.pluginId === AI_SHELL_PLUGIN_ID
       );
-    }
+    },
+    aiShellPromoDismissed(_state, getters) {
+      return !_.isEmpty(getters["settings/settings"]["aiShellPromoDismissed"]?.value);
+    },
+    aiShellSnapshot(_state, _getters, _rootState, rootGetters): PluginSnapshot | undefined {
+      return rootGetters["plugins/snapshots/snapshotsById"][AI_SHELL_PLUGIN_ID];
+    },
+    /**
+     * A sentence explaining why the AI Shell can't be used, or `null` when it
+     * can. Derived from the plugin's resolved snapshot — see
+     * `services/plugin/availability` for why raw config flags are the wrong
+     * thing to read here.
+     */
+    aiShellUnavailableReason(_state, getters): string | null {
+      return pluginUnavailableReason(getters.aiShellSnapshot, AI_SHELL_NAME);
+    },
+    aiShellEnabled(_state, getters): boolean {
+      return getters.aiShellUnavailableReason === null;
+    },
   },
   mutations: {
     storeInitialized(state, b: boolean) {
@@ -826,6 +846,12 @@ const store = new Vuex.Store<State>({
     setAiShellHintShown(context) {
       context.dispatch("settings/save", {
         key: "tabDropdownAIShellHintShown",
+        value: new Date(),
+      });
+    },
+    dismissAiShellPromo(context) {
+      context.dispatch("settings/save", {
+        key: "aiShellPromoDismissed",
         value: new Date(),
       });
     },

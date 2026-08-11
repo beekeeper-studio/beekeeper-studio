@@ -51,11 +51,10 @@
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
-import { LoadViewParams } from "@beekeeperstudio/plugin";
 import { ThemeChangedNotification } from "@beekeeperstudio/plugin";
 import rawLog from "@bksLogger";
 import { mapGetters, mapState } from "vuex";
-import type { PluginSnapshot } from "@/services/plugin/types";
+import type { HostPluginViewContext, PluginSnapshot } from "@/services/plugin/types";
 import DisableStateAlert from "./DisableStateAlert.vue";
 import { AppEvent } from "@/common/AppEvent";
 
@@ -80,7 +79,7 @@ export default Vue.extend({
       required: true,
     },
     command: String,
-    params: null as PropType<LoadViewParams>,
+    params: null as PropType<HostPluginViewContext["params"]>,
     onRequest: Function,
   },
   data() {

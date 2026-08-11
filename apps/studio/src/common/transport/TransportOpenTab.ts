@@ -4,6 +4,7 @@ import _ from "lodash";
 import ISavedQuery from "../interfaces/ISavedQuery";
 import { JsonValue } from "@/types";
 import { LoadViewParams } from "@beekeeperstudio/plugin";
+import { AiShellTaskParams } from "@/common/aiShell";
 
 export type PluginTabType = 'plugin-base' | 'plugin-shell';
 export type CoreTabType = 'query' | 'table' | 'table-properties' | 'settings' | 'table-builder' | 'backup' | 'import-export-database' | 'restore' | 'import-table' | 'shell'
@@ -55,15 +56,29 @@ export type TransportPluginTab = TransportOpenTab<PluginTabContext>;
 export type PluginTabContext = {
   pluginId: string;
   pluginTabTypeId: string;
-  /** A plugin can save the state of the tab here. For example, an AI plugin
-     * can save the chat conversation here */
+  /**
+   * A plugin can save the state of the tab here. For example, an AI plugin
+   * can save the chat conversation here.
+   *
+   * NOTE: the `getViewState`/`setViewState` requests read and write `state`,
+   * not `data`. `data` is kept for tabs persisted before that rename.
+   */
+  state?: JsonValue;
+  /** @deprecated use {@link state} */
   data?: JsonValue;
   /** The command to execute on the plugin. Plugins cannot change this.
    * @since 5.4.0 */
   command?: string;
-  /** Parameters to be passed to the plugin. Plugins cannot change this.
-   * @since 5.4.0 */
-  params?: LoadViewParams;
+  /**
+   * Parameters to be passed to the plugin. Plugins cannot change this.
+   *
+   * These are persisted with the tab and re-delivered every time the plugin's
+   * iframe mounts, so a plugin acting on them must guarantee it only does so
+   * once (it has per-tab view state available for exactly that).
+   *
+   * @since 5.4.0
+   */
+  params?: LoadViewParams | AiShellTaskParams;
 };
 
 export namespace TabTypeConfig {

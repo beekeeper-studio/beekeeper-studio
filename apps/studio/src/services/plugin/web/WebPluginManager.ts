@@ -1,15 +1,15 @@
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import rawLog from "@bksLogger";
-import { Manifest, OnViewRequestListener, PluginSnapshot } from "../types";
+import { HostPluginViewContext, Manifest, OnViewRequestListener, PluginSnapshot } from "../types";
 import PluginStoreService from "./PluginStoreService";
 import WebPluginLoader from "./WebPluginLoader";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
-import { PluginNotificationData, PluginViewContext } from "@beekeeperstudio/plugin";
-import { FileHelpers } from "@/types";
+import { PluginNotificationData } from "@beekeeperstudio/plugin";
+import { FileHelpers, JsonValue } from "@/types";
 import type Noty from "noty";
 import { AppEvent } from "@/common/AppEvent";
 import { WebPluginCommandExecutor } from "./WebPluginCommandExecutor";
-import { convertToManifestV1, mapViewsAndMenuFromV0ToV1 } from "../utils";
+import { convertToManifestV1, isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
 
 const log = rawLog.scope("WebPluginManager");
 
@@ -139,7 +139,7 @@ export default class WebPluginManager {
    * Please call this BEFORE the iframe is loaded. Don't forget to unregister
    * it with `unregisterIframe` when not used.
    * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/load_event} */
-  registerIframe(pluginId: string, iframe: HTMLIFrameElement, context: PluginViewContext) {
+  registerIframe(pluginId: string, iframe: HTMLIFrameElement, context: HostPluginViewContext) {
     const loader = this.loaders.get(pluginId);
     if (!loader) {
       throw new Error("Plugin not found: " + pluginId);
@@ -254,6 +254,46 @@ export default class WebPluginManager {
     return loader.onDispose(fn);
   }
 
+  /**
+   * Open a new tab for a plugin view, optionally handing it a command and
+   * structured params to act on.
+   *
+   * This is the one path for opening a plugin tab programmatically — callers
+   * shouldn't be assembling tab objects themselves.
+   *
+   * @param viewId defaults to the plugin's first shell view (or its first view
+   *   if it has none), which is what single-view plugins like the AI Shell want.
+   */
+  openTab(
+    pluginId: string,
+    options: { viewId?: string; command?: string; params?: JsonValue } = {}
+  ) {
+    const snapshot = this.pluginStore.getSnapshot(pluginId);
+    if (!snapshot) {
+      throw new Error("Plugin not found: " + pluginId);
+    }
+
+    const { manifest } = snapshot;
+    const views = isManifestV0(manifest)
+      ? mapViewsAndMenuFromV0ToV1(manifest).views
+      : manifest.capabilities.views;
+
+    const viewId =
+      options.viewId ??
+      (views.find((v) => v.type.includes("shell")) ?? views[0])?.id;
+
+    if (!viewId) {
+      throw new Error(`Plugin "${pluginId}" has no views to open.`);
+    }
+
+    this.pluginStore.createPluginTab({
+      manifest,
+      viewId,
+      command: options.command,
+      params: options.params,
+    });
+  }
+
   execute(pluginId: string, command: string) {
     const loader = this.loaders.get(pluginId);
     if (!loader) {
@@ -285,7 +325,7 @@ export default class WebPluginManager {
         this.pluginStore.appEventBus.emit(
           AppEvent.newCustomTab,
           this.pluginStore.buildPluginTabInit({
-            manifest,
+            manifest: snapshot.manifest,
             viewId,
             command,
             params,

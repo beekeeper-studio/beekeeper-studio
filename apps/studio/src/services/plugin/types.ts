@@ -1,4 +1,6 @@
 import type { RequestPayload, ResponsePayload } from "@beekeeperstudio/plugin/dist/internal";
+import type { LoadViewParams } from "@beekeeperstudio/plugin";
+import type { AiShellTaskParams } from "@/common/aiShell";
 import PluginStoreService from "./web/PluginStoreService";
 import rawLog from "@bksLogger";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
@@ -221,6 +223,20 @@ export type WebPluginViewInstance = {
   iframe: HTMLIFrameElement;
   context: any;
 }
+
+/**
+ * The view context the host hands to a plugin iframe.
+ *
+ * Wider than the SDK's `PluginViewContext` because the host also passes
+ * structured task params (see `common/aiShell`) that the SDK doesn't have types
+ * for yet.
+ *
+ * NOTE(follow-up): drop this once `@beekeeperstudio/plugin` covers those params.
+ */
+export type HostPluginViewContext = {
+  command?: string;
+  params?: LoadViewParams | AiShellTaskParams;
+};
 
 export type Keybinding = {
   placement: PluginMenuItemPlacement;

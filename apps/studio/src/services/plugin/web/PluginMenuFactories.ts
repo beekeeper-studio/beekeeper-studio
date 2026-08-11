@@ -200,7 +200,7 @@ const pluginMenuFactories: MenuFactories = {
         },
         remove: () => {
           context.store.removeMenuBarItem(id);
-          window.main.removeMenuBarItem(id);
+          window.main.removeNativeMenuItem(id);
         },
       };
     },
