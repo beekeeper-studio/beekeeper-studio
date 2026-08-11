@@ -36,6 +36,7 @@
     </div>
 
     <template v-if="node.type === 'folder' && expanded">
+      <slot name="folder-header" :node="node" :depth="depth + 1" />
       <tree-node
         v-for="child of childNodes"
         :key="child.id"
@@ -60,6 +61,9 @@
         </template>
         <template v-slot:item="slotProps">
           <slot name="item" v-bind="slotProps" />
+        </template>
+        <template v-slot:folder-header="slotProps">
+          <slot name="folder-header" v-bind="slotProps" />
         </template>
         <template v-slot:folder-footer="slotProps">
           <slot name="folder-footer" v-bind="slotProps" />
