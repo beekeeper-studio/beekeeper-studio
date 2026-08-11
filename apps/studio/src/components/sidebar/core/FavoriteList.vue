@@ -176,7 +176,6 @@
                 title="Problem loading folder"
                 class="tree-error"
                 :style="{ '--depth': depth }"
-                :closable="true"
                 @close="setFolderError(node.ref.id, null)"
               />
             </template>

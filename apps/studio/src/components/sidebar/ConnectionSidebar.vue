@@ -58,7 +58,7 @@
             </div>
             <error-alert
               :error="error"
-              v-if="error && error !== pollError && !errorList.includes(error)"
+              v-if="error && !isPollError && !errorList.includes(error)"
               title="Problem loading connections"
               @close="error = null"
               :closable="true"
@@ -141,7 +141,7 @@
             />
             <error-alert
               :error="error"
-              v-if="error && error !== pollError && !errorList.includes(error)"
+              v-if="error && !isPollError && !errorList.includes(error)"
               title="Problem loading connections"
               @close="error = null"
               :closable="true"
@@ -250,7 +250,6 @@
                     title="Problem loading folder"
                     class="tree-error"
                     :style="{ '--depth': depth }"
-                    :closable="true"
                     @close="setFolderError(node.ref.id, null)"
                   />
                 </template>
@@ -496,6 +495,12 @@ export default {
     },
     errorList() {
       return Object.values(this.errors);
+    },
+    isPollError() {
+      return (
+        this.connectionsError === this.connectionsPollError ||
+        this.foldersError === this.foldersPollError
+      );
     },
   },
   async mounted() {
