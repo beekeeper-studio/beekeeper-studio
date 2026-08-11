@@ -5,10 +5,7 @@
   >
     <a
       class="list-item-btn"
-      v-tooltip.right.delay="{
-        content: title,
-        delay: { show: 500 },
-      }"
+      :title="title"
       @click.prevent="$emit('select', item)"
       @dblclick.prevent="$emit('open', item)"
       :class="{active, selected}"
