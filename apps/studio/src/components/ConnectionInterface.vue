@@ -23,7 +23,7 @@
                 {{ pageTitle }}
               </h3>
               <button
-                v-if="isCloud && !isNewConnection"
+                v-if="!isNewConnection"
                 type="button"
                 class="btn btn-link btn-icon btn-small share-btn"
                 @click="share"

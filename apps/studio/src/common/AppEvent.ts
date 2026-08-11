@@ -87,7 +87,8 @@ export enum AppEvent {
    **/
   openQueryEditHistory = 'openQueryEditHistory',
   /** Open a share modal by passing the subject as the first parameter (See {@link OpenShareModalOptions}).
-   * The subject should be available in the cloud.
+   * The subject may be local or in the cloud - the modal picks one of three states
+   * depending on whether a cloud workspace is available.
    * @example
    * this.trigger(AppEvent.openShareModal, { id: 1, module: "data/queries" });
    */

@@ -207,6 +207,15 @@
             >
           </x-button>
           <x-button
+            @click.prevent="triggerShare"
+            class="btn btn-flat btn-small"
+            :disabled="remoteDeleted"
+            v-tooltip="'Share this query with your team'"
+          >
+            Share
+          </x-button>
+
+          <x-button
             @click.prevent="triggerSave"
             class="btn btn-flat btn-small"
             :disabled="readOnly"
@@ -425,7 +434,7 @@
       <modal
         class="vue-dialog beekeeper-modal"
         :name="`save-modal-${tab.id}`"
-        @closed="selectEditor"
+        @closed="onSaveModalClosed"
         @opened="selectTitleInput"
         height="auto"
         :scrollable="true"
@@ -619,6 +628,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         error: null,
         errorMarker: null,
         saveError: null,
+        // Set when Share is clicked on a tab that hasn't been saved yet.
+        shareAfterSave: false,
         info: null,
         split: null,
         elapsedTime: 0,
@@ -1410,6 +1421,24 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.$modal.show(`save-modal-${this.tab.id}`)
         }
       },
+      // A query has to exist before it can be shared, so an unsaved tab saves
+      // first and opens the share modal once it has an id.
+      triggerShare() {
+        if (this.query?.id) {
+          this.openShareModal(this.query.id)
+        } else {
+          this.shareAfterSave = true
+          this.triggerSave()
+        }
+      },
+      openShareModal(id) {
+        this.trigger(AppEvent.openShareModal, { id, module: 'data/queries' })
+      },
+      onSaveModalClosed() {
+        // Cancelling the save abandons a pending share too.
+        this.shareAfterSave = false
+        this.selectEditor()
+      },
       async saveQuery() {
         if (this.remoteDeleted) return
         if (!this.hasTitle || !this.hasText) {
@@ -1417,6 +1446,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           return
         } else {
           try {
+            // Read before hiding the modal - the close handler clears the flag.
+            const shareAfterSave = this.shareAfterSave
             const payload = _.omit(this.query, 'teamRead', 'teamWrite', 'canRead', 'canWrite', 'canManage', 'membership', 'accessGrants') as ISavedQuery;
             payload.text = this.unsavedText
             payload.excerpt = payload.text.substr(0, 250)
@@ -1445,7 +1476,13 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
               this.originalText = this.query.text
             })
             this.$noty.success('Query Saved')
+
+            if (shareAfterSave) {
+              this.shareAfterSave = false
+              this.openShareModal(id)
+            }
           } catch (ex) {
+            this.shareAfterSave = false
             this.saveError = ex
             this.$noty.error(`Save Error: ${ex.message}`)
           }

@@ -213,7 +213,7 @@ export default {
           name: "Share",
           slug: 'share',
           handler: this.share,
-          hideIf: !this.isCloud || !this.savedConnection || !this.savedConnection.id,
+          hideIf: !this.savedConnection || !this.savedConnection.id,
         },
         {
           name: "Duplicate",

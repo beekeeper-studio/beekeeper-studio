@@ -103,7 +103,7 @@ export default Vue.extend({
           name: "Share",
           slug: 'share',
           handler: this.share,
-          hideIf: !this.isCloud || !this.item.id,
+          hideIf: !this.item.id,
         },
         {
           name: "Duplicate",

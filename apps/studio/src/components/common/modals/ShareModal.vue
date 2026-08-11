@@ -1,5 +1,6 @@
 <template>
-  <base-modal name="share-modal" @opened="handleOpened" :loading="initiallyLoadingGrants">
+  <base-modal name="share-modal" @opened="handleOpened" @submit="handleSubmit"
+    :loading="initiallyLoadingGrants">
     <template #title>
       <div>
         <div class="modal-title">
@@ -17,10 +18,10 @@
           </template>
           <h2 v-else>Share</h2>
         </div>
-        <div class="modal-subtitle">Share & Permissions</div>
+        <div class="modal-subtitle">{{ subtitle }}</div>
       </div>
     </template>
-    <template v-if="subject">
+    <template v-if="subject && mode === 'share'">
       <div class="member-access">
         <h3>Who has access</h3>
 
@@ -139,6 +140,78 @@
         </div>
       </div>
     </template>
+
+    <template v-else-if="subject && mode === 'move'">
+      <p class="mode-subtitle">
+        {{ subjectNoun }} lives in your local workspace. Copy it to a team workspace to share it with
+        colleagues. The local copy stays where it is.
+      </p>
+      <error-alert :error="copyError" />
+      <div class="form-group">
+        <label for="share-modal-workspace">Workspace</label>
+        <select id="share-modal-workspace" v-model="targetWorkspaceId">
+          <option v-for="blob of cloudWorkspaces" :key="blob.workspace.id" :value="blob.workspace.id">
+            {{ blob.workspace.name }}
+          </option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="share-modal-folder">
+          Folder
+          <loading-spinner v-if="loadingFolders" />
+        </label>
+        <select id="share-modal-folder" v-model="targetFolderId" :disabled="loadingFolders">
+          <option :value="null">Personal (no folder)</option>
+          <option v-for="folder of targetFolders" :key="folder.id" :value="folder.id">
+            {{ folder.name }}
+          </option>
+        </select>
+      </div>
+    </template>
+
+    <template v-else-if="subject">
+      <p class="mode-subtitle">
+        Sharing is part of team workspaces. Connections and saved queries sync to everyone on the
+        team, with view or edit access set per person.
+      </p>
+
+      <div class="member-access preview" aria-hidden="true">
+        <h3>Who has access</h3>
+        <ul>
+          <li class="access-grant" v-for="row of previewGrants" :key="row.label">
+            <div class="icon">
+              <i v-if="row.icon" class="material-icons-outlined">{{ row.icon }}</i>
+              <template v-else>{{ row.initials }}</template>
+            </div>
+            <div class="label">
+              <span>{{ row.label }}</span>
+              <div class="hint" v-if="row.hint" v-text="row.hint" />
+            </div>
+            <div class="access">{{ row.access }}</div>
+          </li>
+        </ul>
+      </div>
+
+      <ul class="promote-points">
+        <li v-for="point of promotePoints" :key="point">
+          <i class="material-icons">check</i>
+          <span>{{ point }}</span>
+        </li>
+      </ul>
+    </template>
+
+    <template #footer="{ close }" v-if="subject && mode !== 'share'">
+      <a class="btn btn-flat" :href="learnMoreUrl">Learn more</a>
+      <div class="expand" />
+      <button class="btn btn-flat" type="button" @click.prevent="close">Cancel</button>
+      <button v-if="mode === 'move'" class="btn btn-primary" type="button"
+        :disabled="!targetWorkspaceId || loadingFolders || copying" @click.prevent="copyToWorkspace">
+        {{ copying ? "Copying..." : "Copy to workspace" }}
+      </button>
+      <button v-else class="btn btn-primary" type="button" @click.prevent="promote">
+        {{ promoteLabel }}
+      </button>
+    </template>
   </base-modal>
 </template>
 
@@ -157,6 +230,9 @@ import LoadingSpinner from "@/components/common/loading/LoadingSpinner.vue";
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { ICloudSavedConnection } from "@/common/interfaces/IConnection";
 import { IFolder } from "@/common/interfaces/IQueryFolder";
+import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
+import { WSWithClient } from "@/store/modules/CredentialsModule";
+import ErrorAlert from "@/components/common/ErrorAlert.vue";
 import rawLog from "@bksLogger";
 import { CloudError } from "@/lib/cloud/ClientHelpers";
 
@@ -167,14 +243,48 @@ type Subject =
   | ({ module: "data/queries" } & ISavedQuery)
   | ({ module: "data/queryFolders" | "data/connectionFolders" } & IFolder);
 
+/**
+ * Which of the three states the modal is in:
+ * - `share`: the subject already lives in a cloud workspace, so show real permissions.
+ * - `move`: a workspace account is signed in, but the subject is local. Offer to copy it up.
+ * - `promote`: no cloud workspace is reachable. Pitch workspaces.
+ */
+type Mode = "share" | "move" | "promote";
+
+/** Fields that only make sense on the local/original copy of an item. */
+const NON_TRANSFERABLE = [
+  "module",
+  "id",
+  "workspaceId",
+  "createdAt",
+  "updatedAt",
+  "position",
+  "teamRead",
+  "teamWrite",
+  "canRead",
+  "canWrite",
+  "canManage",
+  "membership",
+  "accessGrants",
+];
+
+const LEARN_MORE_URL = "https://beekeeperstudio.io/workspaces";
+
 const log = rawLog.scope("ShareModal.vue");
 
 export default Vue.extend({
-  components: { BaseModal, MultiSelect, LoadingSpinner },
+  components: { BaseModal, MultiSelect, LoadingSpinner, ErrorAlert },
   data() {
     return {
       subjectId: null,
       module: null as ShareableModule | null,
+      targetWorkspaceId: null as number | null,
+      targetFolders: [] as IFolder[],
+      targetFolderId: null as number | null,
+      loadingFolders: false,
+      copying: false,
+      copyError: null as CloudError | null,
+      learnMoreUrl: LEARN_MORE_URL,
       membershipsLoaded: false,
       search: "",
       focusTrigger: 0,
@@ -189,7 +299,80 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapGetters(["isCloud", "workspace"]),
+    ...mapGetters(["isCloud", "workspace", "isCommunity"]),
+    mode(): Mode {
+      if (this.isCloud) return "share";
+      if (this.cloudWorkspaces.length > 0) return "move";
+      return "promote";
+    },
+    /** Every cloud workspace reachable with the signed-in credentials. */
+    cloudWorkspaces(): WSWithClient[] {
+      // Community users get bounced out of cloud workspaces by the license
+      // module, so there is nothing to offer them here.
+      if (this.isCommunity) return [];
+      const workspaces: WSWithClient[] = this.$store.getters["credentials/workspaces"] ?? [];
+      return workspaces.filter(({ workspace }) => workspace.id !== LocalWorkspace.id);
+    },
+    targetWorkspace(): WSWithClient | undefined {
+      return this.cloudWorkspaces.find(
+        ({ workspace }) => workspace.id === this.targetWorkspaceId
+      );
+    },
+    subtitle(): string {
+      if (this.mode === "share") return "Share & Permissions";
+      if (this.mode === "move") return "Copy to a team workspace";
+      return "Team workspaces";
+    },
+    subjectNoun(): string {
+      switch (this.module) {
+        case "data/queries":
+          return "This query";
+        case "data/connections":
+          return "This connection";
+        default:
+          return "This folder";
+      }
+    },
+    /** Fake rows so the pitch shows the real mechanism, not a bullet list. */
+    previewGrants() {
+      return [
+        {
+          icon: "people_alt",
+          label: "Your team",
+          hint: "Everyone in the workspace can edit",
+          access: "can edit",
+        },
+        { icon: "person", label: "You", access: "Owner" },
+        { initials: "AR", label: "Alex Rivera", access: "can view" },
+      ];
+    },
+    ...mapState("credentials", { cloudCredentials: "credentials" }),
+    /**
+     * What the pitch's primary button should do. Being signed in with no
+     * workspaces yet is a real state - a new account starts there.
+     */
+    promoteAction(): "upgrade" | "createWorkspace" | "signIn" {
+      if (this.isCommunity) return "upgrade";
+      if (this.cloudCredentials.length > 0) return "createWorkspace";
+      return "signIn";
+    },
+    promoteLabel(): string {
+      switch (this.promoteAction) {
+        case "upgrade":
+          return "See plans";
+        case "createWorkspace":
+          return "Create a workspace";
+        default:
+          return "Sign in";
+      }
+    },
+    promotePoints(): string[] {
+      return [
+        "Share connections without sending credentials over chat",
+        "Saved queries stay in sync for the whole team",
+        "Grant view or edit access per person",
+      ];
+    },
     ...mapState("data/connections", {
       connections: "items",
       loadingConnections: "loading",
@@ -202,9 +385,11 @@ export default Vue.extend({
     },
     ...mapState("data/memberships", {
       memberships(state: DataState<IMembership>) {
+        const subject: Subject = this.subject;
+        // Local subjects have no membership - there is nobody to share with.
+        if (!subject?.membership) return [];
         return state.items.filter((member) => {
           const accessGrants: IAccessGrant[] = this.accessGrants;
-          const subject: Subject = this.subject;
           const isOwner = member.id === subject.membership.id;
           const isGranted = accessGrants.some(
             (grant) => grant.membershipId === member.id
@@ -280,11 +465,14 @@ export default Vue.extend({
       this.loadingTeamPermission = false;
       this.savingGrants = false;
       this.teamPermissionError = null;
+      this.targetWorkspaceId = null;
+      this.targetFolders = [];
+      this.targetFolderId = null;
+      this.loadingFolders = false;
+      this.copying = false;
+      this.copyError = null;
     },
     async open(options: OpenShareModalOptions) {
-      if (!this.isCloud) {
-        return;
-      }
       this.resetState();
       this.subjectId = options.id;
       this.module = options.module;
@@ -292,6 +480,17 @@ export default Vue.extend({
     },
     async handleOpened() {
       this.focusTrigger++;
+
+      if (this.mode === "move") {
+        // resetState nulled this, so assigning always trips the watcher that
+        // loads the folder list.
+        this.targetWorkspaceId = this.cloudWorkspaces[0]?.workspace.id ?? null;
+        return;
+      }
+
+      if (this.mode !== "share") {
+        return;
+      }
 
       this.loadMembershipsOnce();
 
@@ -304,6 +503,79 @@ export default Vue.extend({
         this.$noty.error(e.userMessage);
       } finally {
         this.initiallyLoadingGrants = false;
+      }
+    },
+    /** Folders come from the target workspace, which is not the active one. */
+    async loadTargetFolders() {
+      const blob: WSWithClient | undefined = this.targetWorkspace;
+      this.targetFolders = [];
+      this.targetFolderId = null;
+      if (!blob) return;
+
+      this.loadingFolders = true;
+      try {
+        const client = blob.client.cloneWithWorkspace(blob.workspace.id);
+        const scope =
+          this.module === "data/queries" ? "queryFolders" : "connectionFolders";
+        this.targetFolders = await client[scope].list();
+      } catch (e) {
+        log.error("Could not load folders for target workspace", e);
+        this.copyError = e;
+      } finally {
+        this.loadingFolders = false;
+      }
+    },
+    async copyToWorkspace() {
+      const blob: WSWithClient | undefined = this.targetWorkspace;
+      if (!blob || !this.subject) return;
+
+      this.copying = true;
+      this.copyError = null;
+      try {
+        const client = blob.client.cloneWithWorkspace(blob.workspace.id);
+        // The local record already carries everything the cloud API wants -
+        // only the local-only bookkeeping fields need dropping. The workspace
+        // itself is set by the client's workspace_id param.
+        const payload: any = _.omit(this.subject, NON_TRANSFERABLE);
+
+        if (this.module === "data/queries") {
+          await client.queries.create({
+            ...payload,
+            queryFolderId: this.targetFolderId,
+          });
+        } else {
+          await client.connections.create({
+            ...payload,
+            connectionFolderId: this.targetFolderId,
+          });
+        }
+
+        this.$noty.success(`Copied to ${blob.workspace.name}`);
+        this.$modal.hide("share-modal");
+      } catch (e) {
+        log.error("Could not copy subject to workspace", e);
+        this.copyError = e;
+      } finally {
+        this.copying = false;
+      }
+    },
+    /** Enter confirms the copy. The other two states have nothing to submit. */
+    handleSubmit() {
+      if (this.mode === "move" && this.targetWorkspaceId && !this.copying) {
+        this.copyToWorkspace();
+      }
+    },
+    promote() {
+      this.$modal.hide("share-modal");
+      switch (this.promoteAction) {
+        case "upgrade":
+          this.trigger(AppEvent.upgradeModal, "Cloud Workspaces");
+          break;
+        case "createWorkspace":
+          this.trigger(AppEvent.promptCreateWorkspace);
+          break;
+        default:
+          this.trigger(AppEvent.promptLogin);
       }
     },
     async loadMembershipsOnce() {
@@ -428,6 +700,11 @@ export default Vue.extend({
         return first[0];
       }
       return first[0] + last[0];
+    },
+  },
+  watch: {
+    targetWorkspaceId() {
+      this.loadTargetFolders();
     },
   },
   mounted() {
@@ -592,6 +869,52 @@ h3 {
       align-self: flex-end;
     }
   }
+}
+
+.mode-subtitle {
+  color: var(--text-light);
+  margin-bottom: 1rem;
+}
+
+/** The pitch reuses the real access list, rendered inert. */
+.member-access.preview {
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.8;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+}
+
+.promote-points {
+  list-style: none;
+  margin: 1rem 0 0.5rem;
+  padding: 0;
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding-block: 0.25rem;
+    color: rgb(from var(--theme-base) r g b / 77%);
+  }
+
+  .material-icons {
+    font-size: 1rem;
+    line-height: 1.4;
+    color: var(--brand-success);
+    flex-shrink: 0;
+  }
+}
+
+label ::v-deep .spinner {
+  display: inline-block;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+}
+
+.expand {
+  flex-grow: 1;
 }
 
 @keyframes highlightFadeOut {
