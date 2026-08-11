@@ -1994,7 +1994,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         };
       },
       maybePollOriginalText() {
-        if (this.tab.queryId && this.isCloud) {
+        if (this.tab.queryId && this.isCloud && _.isNil(this.pollInterval)) {
           this.pollInterval = setInterval(async () => {
             let query: ISavedQuery;
             try {
