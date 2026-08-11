@@ -33,7 +33,7 @@ import ImportStoreModule from './modules/imports/ImportStoreModule'
 import { BackupModule } from './modules/backup/BackupModule'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { ConnectionTypes, SnowflakeAuthType, SurrealAuthType } from '@/lib/db/types'
-import { SidebarModule } from './modules/SidebarModule'
+import { SidebarModule, State as SidebarState } from './modules/SidebarModule'
 import { TreeExpansionState } from './modules/sidebar/TreeExpansionModule'
 import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
 import { PopupMenuModule } from './modules/PopupMenuModule'
@@ -129,10 +129,7 @@ export interface State {
   plugins?: PluginsState,
 
   /** Set by VueX module. */
-  sidebar?: {
-    connections: TreeExpansionState
-    queries: TreeExpansionState
-  },
+  sidebar?: SidebarState
 }
 
 Vue.use(Vuex)

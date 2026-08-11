@@ -6,7 +6,7 @@ import { safely } from "@/store/modules/data/StoreHelpers";
 import { accessGrantActions, accessGrantMutations } from "@/store/modules/data/access_grant/accessGrantStore";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
 import { FolderFetchModule, treeActions } from "@/store/modules/data/tree/treeStore";
-import { FolderableState, folderableActions, folderableMutations } from "@/store/modules/data/tree/folderableStore";
+import { FolderableState, folderableActions } from "@/store/modules/data/tree/folderableStore";
 import { FolderNodeModule } from "@/store/modules/data/tree/FolderNodeModule";
 
 type State = DataState<IQueryFolder> & FolderableState<IQueryFolder>
@@ -18,12 +18,10 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
     loading: false,
     error: null,
     pollError: null,
-    draft: null,
   },
   mutations: {
     ...mutationsFor<IQueryFolder>({}, { field: 'name', direction: 'asc' }),
     ...accessGrantMutations(),
-    ...folderableMutations(),
   },
   modules: {
     nodes: FolderNodeModule,

@@ -153,7 +153,7 @@
             >
               <template v-if="searching">
                 <div class="empty-state"
-                  v-if="!fetchingResults && filteredConnections.length === 0"
+                  v-if="!typing && !fetchingResults && filteredConnections.length === 0"
                 >
                   No connections match "{{ connFilter }}"
                 </div>
@@ -172,7 +172,7 @@
                   @doubleClick="connect"
                 />
                 <content-placeholder
-                  v-if="fetchingResults"
+                  v-if="fetchingResults || typing"
                   :animated="true"
                   :rounded="false"
                   class="list-item"
@@ -185,7 +185,7 @@
               </template>
               <tree
                 v-show="!searching"
-                :folders="folderNodes"
+                :folders="extendedFolderNodes"
                 :items="sortedItemNodes"
                 :expanded-ids="expandedNodeIds"
                 @update:expandedIds="setExpandedIds"
@@ -253,6 +253,15 @@
                   >
                     <content-placeholder-text :lines="1" />
                   </content-placeholder>
+                </template>
+                <template #folder-empty="{ node, depth }">
+                  <div
+                    v-if="!loadingFolderIds.includes(node.ref.id)"
+                    class="tree-empty"
+                    :style="{ '--depth': depth }"
+                  >
+                    No items
+                  </div>
                 </template>
                 <template #item="{ node }">
                   <connection-list-item
@@ -326,7 +335,7 @@ import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
 import EditableText from '@/components/common/EditableText.vue'
 import Noty from 'noty'
-import { parseReorderTarget } from '@/common/utils/folderTree'
+import { buildFolderNodes, parseReorderTarget } from '@/common/utils/folderTree'
 
 const log = rawLog.scope('connection-sidebar');
 
@@ -360,6 +369,9 @@ export default {
     justCreatedFolderId: null,
     justCreatedTimeout: null,
     loadingFolderIds: [],
+    drafting: false,
+    draftParentId: null,
+    connFilter: "",
   }),
   watch: {
     async sort(newSort) {
@@ -367,6 +379,9 @@ export default {
       await this.$settings.set('connectionsSortBy', newSort.field)
       if (!this.sortInitialized) return
       await this.reorderBySort(newSort)
+    },
+    connFilter(value) {
+      this.setConnectionFilter(value);
     },
   },
   computed: {
@@ -382,7 +397,6 @@ export default {
       folders: 'items',
       foldersLoading: 'loading',
       foldersError: 'error',
-      draft: 'draft',
     }),
     ...mapState('sidebar/connections', {
       expandedFolderIds: 'expandedIds',
@@ -398,13 +412,17 @@ export default {
       filteredConnections: 'data/connections/filteredConnections',
       privacyMode: 'settings/privacyMode'
     }),
-    connFilter: {
-      get() {
-        return this.connectionFilter;
-      },
-      set(newFilter) {
-        this.$store.dispatch('data/connections/setConnectionFilter', newFilter);
+    typing() {
+      return this.connFilter !== this.connectionFilter;
+    },
+    draft() {
+      return { id: null, parentId: this.draftParentId, name: 'Untitled folder' };
+    },
+    extendedFolderNodes() {
+      if (this.drafting) {
+        return buildFolderNodes([this.draft, ...this.folders]);
       }
+      return this.folderNodes;
     },
     expandedNodeIds() {
       return this.expandedFolderIds.map((id) => `folder-${id}`);
@@ -481,8 +499,7 @@ export default {
       loadConnectionFolders: 'data/connectionFolders/loadByParentIds',
       unloadConnections: 'data/connections/unloadByParentIds',
       unloadConnectionFolders: 'data/connectionFolders/unloadByParentIds',
-      startDrafting: 'data/connectionFolders/startDrafting',
-      stopDrafting: 'data/connectionFolders/stopDrafting',
+      setConnectionFilter: 'data/connections/setConnectionFilter',
     }),
     ...mapMutations({
       setExpandedFolderIds: 'sidebar/connections/expandedIds',
@@ -574,6 +591,13 @@ export default {
       } else {
         this.startDrafting(null);
       }
+    },
+    startDrafting(parentId) {
+      this.draftParentId = parentId
+      this.drafting = true
+    },
+    stopDrafting() {
+      this.drafting = false
     },
     markJustCreated(folderId) {
       clearTimeout(this.justCreatedTimeout)
@@ -811,8 +835,14 @@ export default {
   opacity: 0.5;
 }
 .tree-loading {
-  margin-block: 0.5rem;
-  padding-left: calc(var(--depth) * 1rem + 1.3rem);
+  margin-top: 0.45rem;
+  margin-bottom: -0.7rem;
+  padding-left: calc(var(--depth) * 1rem + 0.55rem);
+}
+.tree-empty {
+  padding-left: calc(var(--depth) * 1rem + 0.55rem);
+  margin-block: 0.25rem;
+  opacity: 0.6;
 }
 ::v-deep .BksTree-folder {
   .name:has(.editable-text) {
