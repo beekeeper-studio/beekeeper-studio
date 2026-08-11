@@ -34,7 +34,8 @@
     <plugin-controller :editor-font-size="editorFontSize" />
     <plugin-manager-modal />
     <keyboard-shortcuts-modal />
-    <move-to-modal />
+    <move-item-modal />
+    <move-folder-modal />
     <confirmation-modal-manager />
     <lock-manager />
     <input-ephemeral-modal name="input-ephemeral-modal" />
@@ -91,7 +92,8 @@ import PluginController from '@/components/plugins/PluginController.vue'
 import LockManager from "@/components/managers/LockManager.vue";
 import InputEphemeralModal from "@/components/common/modals/InputEphemeralModal.vue";
 import ShareModal from "@/components/common/modals/ShareModal.vue";
-import MoveToModal from "@/components/common/modals/MoveToModal.vue";
+import MoveItemModal from "@/components/common/modals/MoveItemModal.vue";
+import MoveFolderModal from "@/components/common/modals/MoveFolderModal.vue";
 
 import rawLog from '@bksLogger'
 import { assignContextMenuToAllInputs } from './mixins/assignContextMenuToAllInputs'
@@ -108,7 +110,7 @@ export default Vue.extend({
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
     LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
     PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
-    InputEphemeralModal, ShareModal, MoveToModal,
+    InputEphemeralModal, ShareModal, MoveItemModal, MoveFolderModal,
   },
   data() {
     return {

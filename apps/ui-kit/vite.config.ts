@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      vue: "vue/dist/vue.min.js",
+      // Aliasing `vue` here would defeat the external below.
       "@": resolve('./lib'),
     },
     dedupe: ["@codemirror/state", "@codemirror/view"],
@@ -29,6 +29,8 @@ export default defineConfig({
     },
     rollupOptions: {
       external: [
+        // A second copy of Vue makes $store undefined in host components.
+        "vue",
         "@codemirror/state",
         "@codemirror/view",
         "@codemirror/language",
@@ -81,6 +83,7 @@ export default defineConfig({
           __dirname,
           "lib/components/merge-text-editor/define.ts"
         ),
+        tree: resolve(__dirname, "lib/components/tree/define.ts"),
         "vue/table": resolve(__dirname, "lib/components/table/Table.vue"),
         "vue/entity-list": resolve(
           __dirname,
@@ -114,6 +117,7 @@ export default defineConfig({
           __dirname,
           "lib/components/super-formatter/SuperFormatter.vue"
         ),
+        "vue/tree": resolve(__dirname, "lib/vue/tree.ts"),
         "config/context-menu": resolve(__dirname, "lib/config/context-menu.ts"),
       },
     },

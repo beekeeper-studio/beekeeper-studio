@@ -375,7 +375,6 @@ declare interface IBksConfig {
     general: {
         checkForUpdatesDisabled: boolean;
         checkForUpdatesInterval: number;
-        dataSyncInterval: number;
         downloadUserAgent: string;
         workspaceSyncInterval: number;
     };
@@ -384,7 +383,7 @@ declare interface IBksConfig {
             addRow: string;
             cloneSelection: string;
             copySelection: string;
-            deleteSelection: string;
+            deleteSelection: string[];
             jsonViewerSidebar: string;
             openInSqlEditor: string;
             openQuickSearch: string;

@@ -1,5 +1,5 @@
 <template>
-  <base-modal name="share-modal" @opened="handleOpened">
+  <base-modal name="share-modal" @opened="handleOpened" :loading="initiallyLoadingGrants">
     <template #title>
       <div>
         <div class="modal-title">
@@ -105,16 +105,6 @@
                 </template>
               </template>
             </div>
-          </li>
-          <li v-if="initiallyLoadingGrants" class="access-grant skeleton">
-            <div class="icon" />
-            <div class="label" />
-            <div class="access" />
-          </li>
-          <li v-if="initiallyLoadingGrants" class="access-grant skeleton">
-            <div class="icon" />
-            <div class="label" />
-            <div class="access" />
           </li>
         </ul>
       </div>
@@ -500,22 +490,6 @@ h3 {
 
   &.highlight {
     animation: highlightFadeOut 2s ease-out forwards;
-  }
-
-  &.skeleton {
-    .label {
-      background-color: rgb(from var(--theme-base) r g b / 10%);
-      width: 20ch;
-      height: 1rem;
-      border-radius: 4px;
-    }
-
-    .access {
-      background-color: rgb(from var(--theme-base) r g b / 10%);
-      width: 5ch;
-      height: 1rem;
-      border-radius: 4px;
-    }
   }
 
   .icon {
