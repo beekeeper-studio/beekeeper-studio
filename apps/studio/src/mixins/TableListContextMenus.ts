@@ -3,7 +3,7 @@ import { IConnection } from "@/common/interfaces/IConnection";
 import { DatabaseElement } from "@/lib/db/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { DialectData } from "@shared/lib/dialects/models";
-import { divider, DividerItem } from "@beekeeperstudio/ui-kit";
+import { divider } from "@beekeeperstudio/ui-kit";
 import { mapGetters } from "vuex";
 
 function disabled(...args: boolean[]) {
@@ -41,7 +41,7 @@ export default {
           class: isBQClass,
           handler: this.routineMenuClick
         },
-      ] as (ContextOption | DividerItem)[],
+      ] as ContextOption[],
 
     }
   },
@@ -177,7 +177,7 @@ export default {
             this.$root.$emit(AppEvent.duplicateDatabaseTable, { item, action: 'duplicate' })
           }
         },
-      ] as (ContextOption | DividerItem)[]
+      ] as ContextOption[]
     },
     schemaMenuOptions() {
       const dialect: DialectData = this.$store.getters.dialectData;
@@ -213,7 +213,7 @@ export default {
             this.$root.$emit(AppEvent.dropDatabaseElement, {item, action: 'truncate'})
           }
         },
-      ] as (ContextOption | DividerItem)[]
+      ] as ContextOption[]
     }
   },
   methods: {

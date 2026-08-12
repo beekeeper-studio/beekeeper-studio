@@ -1,8 +1,8 @@
 import { Module } from "vuex";
 import { State as RootState } from "../index";
 import _ from "lodash";
-import { ContextOption } from "@/plugins/BeekeeperPlugin";
-import { divider, DividerItem, MenuItem } from "@beekeeperstudio/ui-kit";
+import { ContextItem, ContextOption, toMenuItem } from "@/plugins/BeekeeperPlugin";
+import { divider, MenuItem } from "@beekeeperstudio/ui-kit";
 import { CellComponent, ColumnComponent, MenuObject, MenuSeparator, RowComponent } from "tabulator-tables";
 import { createMenuItem } from "@/lib/menu/tableMenu";
 import Vue from "vue";
@@ -10,7 +10,7 @@ import Vue from "vue";
 type TabulatorComponent = RowComponent | ColumnComponent | CellComponent;
 
 interface State {
-  extraPopupMenu: { [menuId: string]: ContextOption[] };
+  extraPopupMenu: { [menuId: string]: ContextItem[] };
 }
 
 export const PopupMenuModule: Module<State, RootState> = {
@@ -28,12 +28,7 @@ export const PopupMenuModule: Module<State, RootState> = {
           if (options?.transform === "ui-kit") {
             return [
               divider,
-              ...state.extraPopupMenu[menuId].map((item) => ({
-                ...item,
-                id: item.slug,
-                label: item.name,
-                handler: item.handler,
-              })),
+              ...state.extraPopupMenu[menuId].map(toMenuItem),
             ] satisfies MenuItem[];
           } else if (options?.transform === "tabulator") {
             return [
@@ -50,7 +45,7 @@ export const PopupMenuModule: Module<State, RootState> = {
             return [
               divider,
               ...state.extraPopupMenu[menuId],
-            ] satisfies (ContextOption | DividerItem)[];
+            ] satisfies ContextOption[];
           }
         }
         return [];
@@ -58,7 +53,7 @@ export const PopupMenuModule: Module<State, RootState> = {
     },
   },
   mutations: {
-    add(state, options: { menuId: string; item: ContextOption }) {
+    add(state, options: { menuId: string; item: ContextItem }) {
       if (
         state.extraPopupMenu[options.menuId]?.find(
           (i) => i.slug === options.item.slug

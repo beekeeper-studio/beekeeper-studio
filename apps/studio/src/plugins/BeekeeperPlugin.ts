@@ -7,7 +7,9 @@ import store from '@/store'
 import TimeAgo from "javascript-time-ago"
 import { pluralize } from "@/vendor/pluralize"
 
-export interface ContextOption {
+export type ContextOption = ContextItem | DividerItem;
+
+export type ContextItem = {
   name: string,
   slug: string
   handler: (...any) => void
@@ -34,13 +36,17 @@ interface MenuProps {
   event: Event
 }
 
-function isDivider(option: ContextOption | DividerItem): option is DividerItem {
+function isDivider(option: ContextOption): option is DividerItem {
   return "type" in option && option.type === "divider"
 }
 
 /** Convert a studio ContextOption into a UI Kit MenuItem, preserving the legacy
  * `handler({ item, option, event })` call convention. */
-function toMenuItem(option: ContextOption): MenuItem {
+export function toMenuItem(option: ContextOption): MenuItem {
+  if (isDivider(option)) {
+    return option
+  }
+
   return {
     id: option.slug,
     label: option.name,
@@ -80,9 +86,7 @@ export const BeekeeperPlugin = {
   openMenu(args: MenuProps): void {
     const getExtraPopupMenu = store.getters["popupMenu/getExtraPopupMenu"];
     const extra: (ContextOption | DividerItem)[] = getExtraPopupMenu(args.id) ?? [];
-    const options = [...args.options, ...extra].map((option) =>
-      isDivider(option) ? option : toMenuItem(option)
-    )
+    const options = [...args.options, ...extra].map(toMenuItem)
     openMenu({
       options,
       item: args.item,
