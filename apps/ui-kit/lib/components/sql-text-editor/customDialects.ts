@@ -1,4 +1,12 @@
-import {MSSQL, PostgreSQL, SQLDialect} from "@codemirror/lang-sql";
+import {
+  Cassandra,
+  MSSQL,
+  MySQL,
+  PostgreSQL,
+  SQLDialect,
+  SQLite,
+  StandardSQL,
+} from "@codemirror/lang-sql";
 
 const GREENGAGE_EXTRA_KEYWORDS = [
   "distributed", "exchange", "inclusive", "list", "protocol", "resource",
@@ -51,3 +59,19 @@ export const PartiQL = SQLDialect.define({
   operatorChars: "*+-%<>!=&|~^/",
   identifierQuotes: "\"",
 });
+
+/**
+ * The dialect used for each `languageId`. This is the single source of truth
+ * for which CodeMirror SQL dialect backs each Beekeeper language mode, so
+ * tests can exercise exactly what the editor wires up per database.
+ */
+export const langIdToDialect = {
+  "text/x-sql": StandardSQL,
+  "text/x-pgsql": PostgreSQL,
+  "text/x-ggsql": GreengageSQL,
+  "text/x-mysql": MySQL,
+  "text/x-cassandra": Cassandra,
+  "text/x-sqlite": SQLite,
+  "text/x-partiql": PartiQL,
+  "text/x-mssql": SQLServer,
+} as const;
