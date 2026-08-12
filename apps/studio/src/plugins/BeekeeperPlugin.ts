@@ -29,7 +29,7 @@ export type ContextItem = {
 interface MenuProps {
   /** The id of the menu. Not to be confused with the `elementId`. */
   id?: string
-  options: (ContextOption | DividerItem)[],
+  options: ContextOption[],
   /** A CSS selector for the element the menu is attached to. @default body */
   elementId?: string
   item: any,
@@ -85,7 +85,7 @@ export const BeekeeperPlugin = {
   },
   openMenu(args: MenuProps): void {
     const getExtraPopupMenu = store.getters["popupMenu/getExtraPopupMenu"];
-    const extra: (ContextOption | DividerItem)[] = getExtraPopupMenu(args.id) ?? [];
+    const extra: ContextOption[] = getExtraPopupMenu(args.id) ?? [];
     const options = [...args.options, ...extra].map(toMenuItem)
     openMenu({
       options,
