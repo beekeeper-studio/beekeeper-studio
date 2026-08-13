@@ -73,7 +73,13 @@ export default Vue.extend({
         }
       }
       return result.join(" ")
-    }
+    },
+    folder() {
+      return this.folders.find((f) => f.id === this.item.queryFolderId);
+    },
+    isPersonal() {
+      return this.folder?.personal;
+    },
   },
   methods: {
     openContextMenu(event, item) {
@@ -100,7 +106,7 @@ export default Vue.extend({
           name: "Share",
           slug: 'share',
           handler: this.share,
-          hideIf: !this.isCloud || !this.item.id,
+          hideIf: !this.isCloud || !this.item.id || this.isPersonal,
         },
         {
           name: "Duplicate",
