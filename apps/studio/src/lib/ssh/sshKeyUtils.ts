@@ -26,6 +26,22 @@ export function loadAllowedPublicKeys(
   return result;
 }
 
+export function canParseKey(keyPath: string): boolean {
+  try {
+    const data = fs.readFileSync(keyPath);
+    const parsed = ssh2Utils.parseKey(data);
+    if (parsed instanceof Error) {
+      log.warn(`Could not parse ${keyPath}: ${parsed.message}`);
+      return false;
+    }
+  } catch (err) {
+    log.warn(`Error checking key file ${keyPath}: ${err.message}`);
+    return false;
+  }
+
+  return true;
+}
+
 function readPublicKeyBlob(
   filePath: string,
   passphrase?: string
