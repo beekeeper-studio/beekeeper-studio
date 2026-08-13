@@ -1,8 +1,9 @@
-import {Completion, CompletionContext, CompletionSource} from "@codemirror/autocomplete"
+import {Completion, CompletionContext, CompletionSource, completeFromList, ifNotIn} from "@codemirror/autocomplete"
 import {EditorState, Facet, StateEffect, StateField, Text} from "@codemirror/state"
 import {syntaxTree} from "@codemirror/language"
 import {SyntaxNode} from "@lezer/common"
 import {type SQLDialect, SQLNamespace} from "@codemirror/lang-sql"
+import {Keyword, Type} from "./sql.grammar.terms"
 
 // ==== BEGIN CUSTOM PATCH ====
 export const schemaCompletionFilter = Facet.define<typeof optionsFilter>()
@@ -98,7 +99,7 @@ function getAliases(doc: Text, at: SyntaxNode) {
 }
 
 function maybeQuoteCompletions(openingQuote: string, closingQuote: string, completions: readonly Completion[]) {
-  return completions.map(c => ({...c, label: c.label[0] == openingQuote ? c.label : openingQuote + c.label + closingQuote, apply: undefined}))
+  return completions.map(c => ({...c, label: c.label[0] == openingQuote ? c.label : openingQuote + escapeIdentifier(c.label, closingQuote) + closingQuote, apply: undefined}))
 }
 
 const Span = /^\w*$/, QuotedSpan = /^[`'"\[]?\w*[`'"\]]?$/
@@ -262,17 +263,46 @@ class CompletionLevel {
 
 }
 
+/**
+ * When identifier completions get quoted:
+ * - "auto" (default): only names the dialect can't reference bare — special
+ *   characters always, and MixedCase only when the dialect case-folds
+ *   unquoted identifiers (`caseInsensitiveIdentifiers` unset, e.g. Postgres).
+ * - "always": additionally quote anything that isn't all-lowercase,
+ *   regardless of dialect.
+ */
+export type IdentifierQuoting = "auto" | "always"
+
+/**
+ * Resolve the quote character and case tolerance identifier completions use
+ * for a dialect. `quoteIdentifiers: "always"` drops the dialect's case
+ * tolerance, so MixedCase names get quoted even where they don't need it.
+ */
+export function identifierCompletionParams(dialect?: SQLDialect, quoteIdentifiers?: IdentifierQuoting) {
+  return {
+    idQuote: dialect?.spec.identifierQuotes?.[0] || '"',
+    idCaseInsensitive: !!dialect?.spec.caseInsensitiveIdentifiers && quoteIdentifiers != "always",
+  }
+}
+
+// Doubling the closing quote is the escape every supported backend uses for
+// a quote character inside a quoted name: `a"b` → "a""b", a]b → [a]]b].
+function escapeIdentifier(name: string, closingQuote: string) {
+  return name.split(closingQuote).join(closingQuote + closingQuote)
+}
+
 export function nameCompletion(label: string, type: string, idQuote: string, idCaseInsensitive: boolean): Completion {
   if ((new RegExp("^[a-z_][a-z_\\d]*$", idCaseInsensitive ? "i" : "")).test(label)) return {label, type}
-  return {label, type, apply: idQuote + label + getClosingQuote(idQuote)}
+  let closingQuote = getClosingQuote(idQuote)
+  return {label, type, apply: idQuote + escapeIdentifier(label, closingQuote) + closingQuote}
 }
 
 export function buildCompletionLevels(schema: SQLNamespace,
                                    tables?: readonly Completion[], schemas?: readonly Completion[],
                                    defaultTableName?: string, defaultSchemaName?: string,
-                                   dialect?: SQLDialect) {
-  let idQuote = dialect?.spec.identifierQuotes?.[0] || '"'
-  let top = new CompletionLevel(idQuote, !!dialect?.spec.caseInsensitiveIdentifiers)
+                                   dialect?: SQLDialect, quoteIdentifiers?: IdentifierQuoting) {
+  let {idQuote, idCaseInsensitive} = identifierCompletionParams(dialect, quoteIdentifiers)
+  let top = new CompletionLevel(idQuote, idCaseInsensitive)
   let defaultSchema = defaultSchemaName ? top.child(defaultSchemaName) : null
 
   top.addNamespace(schema)
@@ -313,7 +343,8 @@ export const completionLevels = StateField.define<{use: boolean; top: Completion
             undefined,
             config.defaultTableName,
             config.defaultSchemaName,
-            config.dialect
+            config.dialect,
+            config.quoteIdentifiers
           ),
           // HACK: Use when setSchema is triggered
           use: true,
@@ -328,6 +359,7 @@ type SupportedCompleteConfig = {
   defaultTableName?: string;
   defaultSchemaName?: string;
   dialect?: SQLDialect;
+  quoteIdentifiers?: IdentifierQuoting;
 }
 
 export const completeConfig = Facet.define<
@@ -348,8 +380,8 @@ function getClosingQuote(openingQuote: string) {
 export function completeFromSchema(schema: SQLNamespace,
                                    tables?: readonly Completion[], schemas?: readonly Completion[],
                                    defaultTableName?: string, defaultSchemaName?: string,
-                                   dialect?: SQLDialect): CompletionSource {
-  let {top, defaultSchema} = buildCompletionLevels(schema, tables, schemas, defaultTableName, defaultSchemaName, dialect)
+                                   dialect?: SQLDialect, quoteIdentifiers?: IdentifierQuoting): CompletionSource {
+  let {top, defaultSchema} = buildCompletionLevels(schema, tables, schemas, defaultTableName, defaultSchemaName, dialect, quoteIdentifiers)
   return async (context: CompletionContext) => {
     let {parents, from, quoted, empty, aliases} = sourceContext(context.state, context.pos)
     if (empty && !context.explicit) return null
@@ -399,4 +431,45 @@ export function completeFromSchema(schema: SQLNamespace,
       }
     }
   }
+}
+
+/**
+ * How completed keywords and built-in functions are cased:
+ * - "preserve" (default): match the typed prefix — an all-uppercase prefix
+ *   (`SEL`, `GROUP_C`) completes uppercase, anything else completes the
+ *   stored (lowercase) form.
+ * - "upper" / "lower": force one case regardless of what was typed.
+ */
+export type KeywordCasing = "preserve" | "upper" | "lower"
+
+function completionType(tokenType: number) {
+  return tokenType == Type ? "type" : tokenType == Keyword ? "keyword" : "variable"
+}
+
+function defaultKeyword(label: string, type: string): Completion { return {label, type, boost: -1} }
+
+// An uppercase letter and no lowercase ones (`SEL`, `GROUP_C`, `@@ERR`).
+const AllUpperWord = /^[^a-z]*[A-Z][^a-z]*$/
+
+/**
+ * Replaces @codemirror/lang-sql's keywordCompletionSource: casing is decided
+ * per completion run (see KeywordCasing) instead of fixed at build time.
+ */
+export function keywordCompletionSource(dialect: SQLDialect, casing: KeywordCasing = "preserve",
+                                        build?: (label: string, type: string) => Completion): CompletionSource {
+  // `dialect.dialect.words` is the internal token map the upstream keyword
+  // source reads. Unlike `dialect.spec`, it includes the SQL92 fallback words
+  // for dialects defined without keyword lists (e.g. StandardSQL).
+  const words = (dialect as unknown as {dialect: {words: {[word: string]: number}}}).dialect.words
+  const make = build || defaultKeyword
+  const stored = completeFromList(Object.keys(words).map(w => make(w, completionType(words[w]))))
+  const upper = completeFromList(Object.keys(words).map(w => make(w.toUpperCase(), completionType(words[w]))))
+  return ifNotIn(["QuotedIdentifier", "String", "LineComment", "BlockComment", "."], (context) => {
+    let useUpper = casing == "upper"
+    if (casing == "preserve") {
+      const typed = context.matchBefore(/\w+$/)
+      useUpper = !!typed && AllUpperWord.test(typed.text)
+    }
+    return (useUpper ? upper : stored)(context)
+  })
 }

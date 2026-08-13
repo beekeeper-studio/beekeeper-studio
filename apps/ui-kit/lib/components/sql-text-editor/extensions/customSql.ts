@@ -3,16 +3,15 @@
  * schema at runtime with applyEntities().
  */
 
-import { SQLConfig as CMSQLConfig } from "@codemirror/lang-sql";
 import { Facet, StateEffect, StateField } from "@codemirror/state";
 import { Entity } from "../../types";
 import { EditorView } from "@codemirror/view";
 import { buildSchema } from "../utils";
-import { sql } from "./vendor/@codemirror/lang-sql/src/sql";
+import { sql, SQLConfig as VendorSQLConfig } from "./vendor/@codemirror/lang-sql/src/sql";
 import { ColumnsGetter } from "./sqlContextComplete";
 import { completeConfig, setSchema } from "./vendor/@codemirror/lang-sql/src/complete";
 
-type SQLConfig = CMSQLConfig & {
+type SQLConfig = VendorSQLConfig & {
   disableSchemaCompletion?: boolean;
   disableKeywordCompletion?: boolean;
   columnsGetter?: ColumnsGetter;
@@ -51,11 +50,8 @@ function applyEntities(
   entities: Entity[] = [],
   defaultSchema?: string
 ) {
-  const schema = buildSchema(
-    entities,
-    defaultSchema,
-    view.state.facet(completeConfig).dialect
-  );
+  const { dialect, quoteIdentifiers } = view.state.facet(completeConfig);
+  const schema = buildSchema(entities, defaultSchema, dialect, quoteIdentifiers);
   view.dispatch({
     effects: [
       setEntities.of(entities),
