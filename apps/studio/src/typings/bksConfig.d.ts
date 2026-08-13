@@ -493,6 +493,10 @@ declare interface IBksConfig {
             secondarySidebarMinWidth: number;
         };
         queryEditor: {
+            autocomplete: {
+                keywordCasing: string;
+                quoteIdentifiers: string;
+            };
             defaultFormatter: string;
             maxResults: number;
             primaryQueryAction: string;

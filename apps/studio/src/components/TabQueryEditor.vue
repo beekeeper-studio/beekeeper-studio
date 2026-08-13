@@ -73,6 +73,8 @@
         :columns-getter="columnsGetter"
         :default-schema="defaultSchema"
         :language-id="languageIdForDialect"
+        :keyword-casing="autocompleteKeywordCasing"
+        :quote-identifiers="autocompleteQuoteIdentifiers"
         :clipboard="$native.clipboard"
         :replace-extensions="replaceExtensions"
         :context-menu-items="editorContextMenu"
@@ -1000,6 +1002,14 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       },
       primaryIsCurrent() {
         return this.$bksConfig.ui.queryEditor?.primaryQueryAction.toLowerCase() === 'submitcurrentquery';
+      },
+      autocompleteKeywordCasing() {
+        const value = String(this.$bksConfig.ui.queryEditor?.autocomplete?.keywordCasing ?? '').toLowerCase();
+        return ['preserve', 'upper', 'lower'].includes(value) ? value : 'preserve';
+      },
+      autocompleteQuoteIdentifiers() {
+        const value = String(this.$bksConfig.ui.queryEditor?.autocomplete?.quoteIdentifiers ?? '').toLowerCase();
+        return ['auto', 'always'].includes(value) ? value : 'auto';
       }
     },
     watch: {

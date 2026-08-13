@@ -3,6 +3,7 @@ import { PropType } from "vue";
 import { DialectOptions, FormatOptions, FormatOptionsWithLanguage } from "sql-formatter";
 import { Options } from "sql-query-identifier";
 import props from "../text-editor/props";
+import { KeywordCasing, IdentifierQuoting } from "./extensions";
 
 export default {
   /** Entities for autocompletion */
@@ -46,6 +47,24 @@ export default {
   identifierDialect: {
     type: String as PropType<Options["dialect"]>,
     default: "generic",
+  },
+  /**
+   * Casing of completed keywords and built-in functions. "preserve" matches
+   * the typed prefix (SEL -> SELECT, sel -> select); "upper"/"lower" force
+   * one case.
+   */
+  keywordCasing: {
+    type: String as PropType<KeywordCasing>,
+    default: "preserve",
+  },
+  /**
+   * When completed identifiers get quoted. "auto" quotes only names the
+   * dialect can't reference bare; "always" also quotes anything that isn't
+   * all-lowercase.
+   */
+  quoteIdentifiers: {
+    type: String as PropType<IdentifierQuoting>,
+    default: "auto",
   },
   paramTypes: {
     type: Object as PropType<Options["paramTypes"]>,
