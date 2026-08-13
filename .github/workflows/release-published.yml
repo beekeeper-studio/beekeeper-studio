@@ -8,6 +8,10 @@ name: Release - Publish Channels
 #   - publish deb/rpm to the apt/rpm repos
 #   - upload the snap to the store
 #
+# Slack: posts to #appevents when publishing starts and succeeds, and to
+# #production-alerts when any job fails (secrets slack_appevents_webhook /
+# slack_production_alerts_webhook, one incoming-webhook URL per channel).
+#
 # workflow_dispatch re-runs any of it idempotently for a given tag - use it to
 # backfill the mirror or heal a partial run.
 
@@ -31,8 +35,21 @@ concurrency:
 
 env:
   TAG: ${{ github.event.release.tag_name || inputs.tag }}
+  RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
 jobs:
+  notify_start:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v5
+      - name: Notify Slack (publishing started)
+        run: >
+          bash ./.github/scripts/notify_slack.sh
+          ":hourglass_flowing_sand: Publishing release \`$TAG\` — <$RUN_URL|workflow run>"
+        env:
+          SLACK_WEBHOOK: ${{ secrets.slack_appevents_webhook }}
+
   # Channel comes from the tag itself (v1.2.3 -> latest, v1.2.3-beta.1 -> beta)
   # rather than the release's prerelease checkbox, so a mis-flagged publish
   # can't ship a beta to stable channels.
@@ -195,3 +212,31 @@ jobs:
         continue-on-error: true
         run: |
           snapcraft promote beekeeper-studio --from-channel "latest/edge" --to-channel "latest/stable" --yes
+
+  notify_result:
+    needs: [identify_channel, mirror_downloads, publish_repositories, publish_snapcraft]
+    if: always()
+    runs-on: ubuntu-24.04
+    env:
+      RESULTS: "identify_channel:${{ needs.identify_channel.result }} mirror_downloads:${{ needs.mirror_downloads.result }} publish_repositories:${{ needs.publish_repositories.result }} publish_snapcraft:${{ needs.publish_snapcraft.result }}"
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v5
+
+      - name: Notify Slack (publishing failed)
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: |
+          failed=$(tr ' ' '\n' <<<"$RESULTS" | grep -vE ':(success|skipped)$' | xargs echo)
+          bash ./.github/scripts/notify_slack.sh ":rotating_light: Release publishing FAILED for \`$TAG\` ($failed) — <$RUN_URL|workflow run>"
+        env:
+          SLACK_WEBHOOK: ${{ secrets.slack_production_alerts_webhook }}
+
+      # skipped counts as success: publish_repositories is skipped on purpose
+      # for beta/alpha releases.
+      - name: Notify Slack (publishing succeeded)
+        if: ${{ !(contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) }}
+        run: >
+          bash ./.github/scripts/notify_slack.sh
+          ":white_check_mark: Release \`$TAG\` published — downloads mirror and channels updated. <$RUN_URL|workflow run>"
+        env:
+          SLACK_WEBHOOK: ${{ secrets.slack_appevents_webhook }}
