@@ -13,6 +13,7 @@
 </template>
 <script lang="ts">
 import Vue from 'vue'
+import _ from 'lodash'
 import { mapState } from 'vuex'
 import { joinFilters } from "@/common/utils"
 import {
@@ -30,7 +31,20 @@ export default Vue.extend({
     fetchGeneration: 0,
   }),
   computed: {
-    ...mapState(['connection']),
+    ...mapState(['connection', 'connectionType']),
+    dbConfigKey() {
+      return this.connectionType === 'postgresql' ? 'postgres' : this.connectionType
+    },
+    canAutoFetchRecordCount() {
+      return this.$bksConfig.db[this.dbConfigKey].autoFetchRecordCount
+    },
+    hasActiveFilters() {
+      return (
+        Array.isArray(this.filters) && this.filters.length > 0
+      ) || (
+        _.isString(this.filters) && this.filters.length > 0
+      )
+    },
     fetchKey() {
       return buildRecordCountCacheKey(this.table, this.filters)
     },
@@ -77,6 +91,9 @@ export default Vue.extend({
 
       this.error = null
       this.totalRecords = null
+
+      if (!this.canAutoFetchRecordCount || this.hasActiveFilters) return
+
       this.fetchTotalRecords()
     },
     refreshTotalRecords() {
