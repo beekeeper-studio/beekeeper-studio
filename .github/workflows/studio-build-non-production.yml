@@ -98,7 +98,9 @@ jobs:
             apps/studio/node_modules
             apps/ui-kit/node_modules
             apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          # matrix.os keeps caches from different runner images apart:
+          # node_modules holds native modules compiled for one exact image.
+          key: node-modules-${{ matrix.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
 
       - name: Clean cache
         if: steps.cache-nm.outputs.cache-hit != 'true'

@@ -53,7 +53,9 @@ jobs:
             apps/studio/node_modules
             apps/ui-kit/node_modules
             apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          # matrix.os keeps caches from different runner images apart:
+          # node_modules holds native modules compiled for one exact image.
+          key: node-modules-${{ matrix.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
 
       - name: Install dependencies
         if: steps.cache-nm.outputs.cache-hit != 'true'
@@ -77,7 +79,7 @@ jobs:
             ~/.cache/ms-playwright
             ~/Library/Caches/ms-playwright
             ~/AppData/Local/ms-playwright
-          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('yarn.lock') }}
+          key: playwright-${{ matrix.os }}-${{ runner.arch }}-${{ hashFiles('yarn.lock') }}
 
       - name: Install Playwright browsers
         if: steps.cache-playwright.outputs.cache-hit != 'true'
