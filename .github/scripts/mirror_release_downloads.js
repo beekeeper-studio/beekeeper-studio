@@ -17,6 +17,9 @@
  *   R2_BUCKET        - target bucket name
  *   R2_ENDPOINT      - S3-compatible endpoint URL
  *   PUBLIC_BASE_URL  - public origin serving the bucket (custom domain)
+ *   LATEST_TAG       - tag GitHub reports as the latest release (resolved by
+ *                      the workflow before this script runs); latest.json is
+ *                      only written when it matches the mirrored tag
  *   AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY - R2 credentials
  */
 
@@ -43,14 +46,7 @@ function assetEntry(asset, urlBase) {
   const name = asset.name
   const extension = name.split('.').pop()
 
-  let arch = 'x86_64'
-  if (name.includes('arm64') || name.includes('aarch64')) {
-    arch = 'arm64'
-  } else if (name.includes('armhf')) {
-    arch = 'armhf'
-  } else if (name.includes('armv7l')) {
-    arch = 'armv7l'
-  }
+  const arch = name.includes('arm64') || name.includes('aarch64') ? 'arm64' : 'x86_64'
 
   const type = extension === 'exe' && name.includes('portable') ? 'portable' : 'installer'
 
@@ -80,7 +76,7 @@ function main() {
     console.error('usage: mirror_release_downloads.js <tag>')
     process.exit(1)
   }
-  for (const name of ['GH_TOKEN', 'R2_BUCKET', 'R2_ENDPOINT', 'PUBLIC_BASE_URL']) {
+  for (const name of ['GH_TOKEN', 'R2_BUCKET', 'R2_ENDPOINT', 'PUBLIC_BASE_URL', 'LATEST_TAG']) {
     if (!process.env[name]) {
       console.error(`missing required env: ${name}`)
       process.exit(1)
@@ -108,19 +104,22 @@ function main() {
     }
 
     // Binaries never change once released - cache them hard. Each asset is
-    // downloaded and uploaded individually so a glance at the log shows
-    // exactly how far a run got.
+    // downloaded, uploaded, and deleted individually: the log shows exactly
+    // how far a run got, and disk usage stays at one asset instead of the
+    // whole release.
     release.assets.forEach((asset, i) => {
       const progress = `[${i + 1}/${release.assets.length}] ${asset.name}`
+      const file = path.join(workdir, asset.name)
       console.log(`${progress}: downloading`)
       run('gh', ['release', 'download', tag, '--repo', REPO, '--dir', workdir, '--pattern', asset.name])
       console.log(`${progress}: uploading`)
       upload(
-        path.join(workdir, asset.name),
+        file,
         `s3://${R2_BUCKET}/${prefix}/${asset.name}`,
         asset.contentType,
         'public, max-age=31536000, immutable'
       )
+      fs.rmSync(file)
       console.log(`${progress}: done`)
     })
 
@@ -128,10 +127,11 @@ function main() {
     // one rule covers prereleases, re-published old versions, and
     // near-simultaneous publishes: drafts and prereleases are never "latest",
     // and whatever order concurrent runs finish in, the manifest converges on
-    // the canonical latest.
-    const latestTag = capture('gh', ['api', `repos/${REPO}/releases/latest`, '--jq', '.tag_name'])
-    if (latestTag !== tag) {
-      console.log(`${tag} is not the latest release (${latestTag} is): assets mirrored, latest.json untouched.`)
+    // the canonical latest. The lookup itself happens in an earlier workflow
+    // step (so a bad API response fails the run before any downloads); this
+    // script only compares.
+    if (process.env.LATEST_TAG !== tag) {
+      console.log(`${tag} is not the latest release (${process.env.LATEST_TAG} is): assets mirrored, latest.json untouched.`)
       return
     }
 

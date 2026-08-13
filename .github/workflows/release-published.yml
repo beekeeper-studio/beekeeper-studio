@@ -54,10 +54,23 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v5
 
+      # Resolved before mirroring so a bad API response fails the run early,
+      # and the mirror script itself only mirrors. latest.json is written only
+      # when the published tag matches this.
+      - name: Determine latest release
+        id: latest_release
+        run: |
+          latest=$(gh api repos/beekeeper-studio/beekeeper-studio/releases/latest --jq '.tag_name')
+          echo "Latest release: $latest"
+          echo "tag=$latest" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Mirror release assets to R2
         run: node ./.github/scripts/mirror_release_downloads.js "$TAG"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LATEST_TAG: ${{ steps.latest_release.outputs.tag }}
           R2_BUCKET: beekeeper-downloads
           R2_ENDPOINT: ${{ secrets.cloudflare_endpoint }}
           PUBLIC_BASE_URL: https://downloads.beekeeperstudio.io
