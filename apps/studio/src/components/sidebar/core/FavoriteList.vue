@@ -246,6 +246,7 @@ export default {
       loadingFolderIds: [],
       errors: {},
       drafting: false,
+      draftType: null,
       draftParentId: null,
       filterQuery: "",
     }
@@ -455,13 +456,18 @@ export default {
           );
           return;
         }
-        this.startDrafting(parent.id);
+        this.startDrafting("folder", parent.id);
         this.expandFolder(parent.id);
       } else {
-        this.startDrafting(null);
+        this.startDrafting("folder", null);
       }
     },
-    startDrafting(parentId) {
+    /**
+     * @param type {"folder" | "query"}
+     * @param parentId {number}
+     */
+    startDrafting(type, parentId) {
+      this.draftType = type
       this.draftParentId = parentId
       this.drafting = true
     },
@@ -508,16 +514,29 @@ export default {
 
       const canWrite = folder.canWrite ?? true;
       const isRoot = !folder.parentId;
+      /** @type {import('@/plugins/BeekeeperPlugin').ContextOption } */
       const options = [{
-        name: 'New Subfolder',
-        handler: ({ item }) => {
-          if (!this.canCreateFolders) {
-            this.$root.$emit(AppEvent.upgradeModal, 'Folders');
-            return;
+        name: "Create",
+        items: [
+          {
+            name: 'Folder',
+            handler: ({ item }) => {
+              if (!this.canCreateFolders) {
+                this.$root.$emit(AppEvent.upgradeModal, 'Folders');
+                return;
+              }
+              this.startDrafting("folder", item.id);
+              this.expandFolder(item.id);
+            },
+          },
+          {
+            name: 'Query',
+            handler: ({ item }) => {
+              this.startDrafting("query", item.id);
+              this.expandFolder(item.id);
+            },
           }
-          this.startDrafting(item.id);
-          this.expandFolder(item.id);
-        },
+        ],
       }];
       if (!this.isCloud || !isRoot) {
         options.push(...[
