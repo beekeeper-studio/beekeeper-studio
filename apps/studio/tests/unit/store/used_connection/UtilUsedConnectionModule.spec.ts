@@ -146,4 +146,38 @@ describe('UtilUsedConnectionModule.recordUsed', () => {
     expect(result.id).toBe(saved.id)
     expect(result.id).not.toBe(used.id)
   })
+
+  it('never resolves to a nullish config', async () => {
+    // The root `connect` action commits whatever this returns as `usedConfig`, and the
+    // entire connected UI is keyed on it - the connection button renders `v-if="config"`,
+    // and `connect` reads `usedConfig.connectionType`/`.workspaceId` straight after.
+    // Handing back `undefined` puts the app in the core interface with no connection.
+    const saved = buildSavedConnection()
+    await saved.save()
+    const config = await asConfig(saved, WORKSPACE_ID)
+
+    // Drop the upsert so the post-save lookup misses, the way a concurrent `load`
+    // does by replacing `items` between the save and the lookup.
+    const lossyStore = new Vuex.Store({
+      state: { workspaceId: WORKSPACE_ID },
+      modules: {
+        'data/usedconnections': {
+          ...UtilUsedConnectionModule,
+          mutations: {
+            ...UtilUsedConnectionModule.mutations,
+            upsert() { /* swallow the saved row */ },
+          },
+        },
+      }
+    })
+
+    // No known used_connection, so `recordUsed` takes the insert-then-look-it-up branch.
+    lossyStore.commit('data/usedconnections/set', [])
+
+    const result = await lossyStore.dispatch('data/usedconnections/recordUsed', config)
+
+    expect(result).toBeTruthy()
+    expect(result.connectionType).toBe('postgresql')
+    expect(result.id).toBe(saved.id)
+  })
 })

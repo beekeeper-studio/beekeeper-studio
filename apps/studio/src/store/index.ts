@@ -543,7 +543,7 @@ const store = new Vuex.Store<State>({
         if (!resolvedConfig) return false;
 
         if (!context.state.username) {
-          throw "No username provided"
+          throw new Error("No username provided")
         }
 
         await Vue.prototype.$util.send('conn/create', { config: resolvedConfig, auth, osUser: context.state.username })
@@ -566,7 +566,24 @@ const store = new Vuex.Store<State>({
           context.commit('connectionType', config.connectionType);
           context.commit('supportedFeatures', supportedFeatures);
           context.commit('versionString', versionString);
+          // `usedConfig` is what the connected UI is keyed on (the connection
+          // button, the window title, tab history), so it is committed before
+          // `connected` - otherwise the core interface renders with no
+          // connection. Watchers on it must be `immediate` for the same reason.
           context.commit('newConnection', usedConfig)
+
+          // `connected` is the switch between the connection screen and the
+          // core interface. Entity loading below deliberately runs after it so
+          // the sidebar can show its own "Loading tables..." state instead of
+          // stalling on the connection screen; a failure there still rolls the
+          // whole connection back.
+          window.main.enableConnectionMenuItems();
+          context.commit('connected', true);
+          context.dispatch('updateWindowTitle', usedConfig)
+
+          if (supportedFeatures.backups) {
+            context.dispatch('backups/setConnectionConfigs', { config: resolvedConfig, supportedFeatures, serverConfig });
+          }
 
           if (usedConfig.connectionType === 'surrealdb' &&
             usedConfig.surrealDbOptions?.authType === SurrealAuthType.Root) {
@@ -575,20 +592,9 @@ const store = new Vuex.Store<State>({
           await context.dispatch('updateDatabaseList')
           await context.dispatch('updateTables')
           await context.dispatch('updateRoutines')
-
-          if (supportedFeatures.backups) {
-            context.dispatch('backups/setConnectionConfigs', { config: resolvedConfig, supportedFeatures, serverConfig });
-          }
-
-          window.main.enableConnectionMenuItems();
-          // The connection is fully bootstrapped - only now switch the UI
-          // over to the core interface.
-          context.commit('connected', true);
-          context.dispatch('updateWindowTitle', usedConfig)
         } catch (ex) {
-          await Vue.prototype.$util.send('conn/disconnect').catch(() => null)
-          await Vue.prototype.$util.send('conn/clearConnection').catch(() => null)
-          context.commit('clearConnection')
+          log.error("Connection failed after the connection was opened, disconnecting", ex)
+          await context.dispatch('rollbackConnection')
           throw ex
         }
 
@@ -605,6 +611,30 @@ const store = new Vuex.Store<State>({
         context.commit('connecting', false);
       }
     },
+    /**
+     * Return the app to a clean disconnected state after `connect` fails partway
+     * through. Closes the backend connection that `conn/create` already opened and
+     * undoes any commits made, so the user lands back on the connection screen
+     * instead of an empty core interface.
+     */
+    async rollbackConnection(context) {
+      try {
+        await Vue.prototype.$util.send('conn/disconnect');
+      } catch (ex) {
+        log.error("Error disconnecting a failed connection", ex)
+      }
+
+      try {
+        await Vue.prototype.$util.send('conn/clearConnection');
+      } catch (ex) {
+        log.error("Error clearing a failed connection", ex)
+      }
+
+      window.main.disableConnectionMenuItems();
+      context.commit('clearConnection')
+      context.commit('newConnection', null)
+      await context.dispatch('updateWindowTitle')
+    },
     async checkVersion(context) {
       const data = context.getters['dialectData'];
       if (data?.versionWarnings && data?.versionWarnings.length > 0) {
@@ -620,7 +650,7 @@ const store = new Vuex.Store<State>({
     },
     async reconnect(context) {
       if (context.state.connection) {
-        if (shouldPromptForCockroachJwt(context.state.usedConfig)) {
+        if (shouldPromptCockroachJwt(context.state.usedConfig)) {
           return await context.dispatch('connect', { config: context.state.usedConfig });
         }
 
