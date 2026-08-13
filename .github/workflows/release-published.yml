@@ -13,7 +13,8 @@ name: Release - Publish Channels
 # slack_production_alerts_webhook, one incoming-webhook URL per channel).
 #
 # workflow_dispatch re-runs any of it idempotently for a given tag - use it to
-# backfill the mirror or heal a partial run.
+# backfill the mirror or heal a partial run. The checkboxes select which
+# publish paths run; a release event always runs all of them.
 
 permissions:
   contents: read
@@ -26,6 +27,18 @@ on:
       tag:
         description: "Release tag to publish (e.g. v5.4.2)"
         required: true
+      mirror:
+        description: "Mirror downloads to R2 + refresh latest.json"
+        type: boolean
+        default: true
+      repositories:
+        description: "Publish deb/rpm repositories"
+        type: boolean
+        default: true
+      snap:
+        description: "Publish snap to the store"
+        type: boolean
+        default: true
 
 # Serialize near-simultaneous publishes. The mirror script's latest-release
 # guard makes any completion order converge on GitHub's canonical latest.
@@ -66,6 +79,7 @@ jobs:
         run: bash ./.github/scripts/extract_channel.sh "${TAG#v}"
 
   mirror_downloads:
+    if: github.event_name == 'release' || inputs.mirror
     runs-on: ubuntu-24.04
     steps:
       - name: Check out Git repository
@@ -103,7 +117,7 @@ jobs:
 
   publish_repositories:
     needs: identify_channel
-    if: needs.identify_channel.outputs.channel == 'latest'
+    if: (github.event_name == 'release' || inputs.repositories) && needs.identify_channel.outputs.channel == 'latest'
     runs-on: ubuntu-24.04
     steps:
       - name: Check out Git repository
@@ -178,6 +192,7 @@ jobs:
 
   publish_snapcraft:
     needs: identify_channel
+    if: github.event_name == 'release' || inputs.snap
     runs-on: ubuntu-latest
     env:
       SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.snapcraft_token }}
