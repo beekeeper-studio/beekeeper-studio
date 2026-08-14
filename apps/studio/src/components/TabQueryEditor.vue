@@ -211,6 +211,14 @@
             >
           </x-button>
           <x-button
+            v-if="aiShellAvailable"
+            @click.prevent="askAi"
+            class="btn btn-flat btn-small ask-ai"
+          >
+            <i class="material-icons">auto_awesome</i> Ask AI
+          </x-button>
+
+          <x-button
             @click.prevent="triggerSave"
             class="btn btn-flat btn-small"
             :disabled="readOnly"
@@ -682,7 +690,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       }
     },
     computed: {
-      ...mapGetters(['dialect', 'dialectData', 'defaultSchema', 'isUltimate', 'isCloud']),
+      ...mapGetters(['dialect', 'dialectData', 'defaultSchema', 'isUltimate', 'isCloud', 'aiShellAvailable']),
       ...mapGetters({
         'isCommunity': 'licenses/isCommunity',
         'userKeymap': 'settings/userKeymap',
@@ -1475,6 +1483,14 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       onChange(text) {
         this.unsavedText = text
       },
+      askAi() {
+        const sql = this.hasSelectedText
+          ? this.editor.selection
+          : this.unsavedText;
+        this.$bksPlugin.execute('bks-ai-shell', 'new-tab-dropdown-item', {
+          message: "```sql\n" + sql + "\n```\nHelp me with the above query" ,
+        });
+      },
       escapeRegExp(string) {
         return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
       },
@@ -1923,6 +1939,20 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         }
         return [
           ...items,
+          ...(this.aiShellAvailable
+            ? [
+                {
+                  label: "Ask AI",
+                  id: "ask-ai",
+                  handler: this.askAi,
+                },
+              ]
+            : []),
+          {
+            label: "Open Query Formatter",
+            id: "formatter",
+            handler: this.formatterPreset,
+          },
           ...(this.query?.id
             ? [
                 divider,
@@ -1935,7 +1965,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             : []),
           ...(window.platformInfo.isDevelopment && this.isCloud && this.query?.id
             ? [
-                { type: "divider" },
+                divider,
                 {
                   label: "[DEV] Make Fake Remote Change",
                   id: "fake-remote-change",
@@ -2258,6 +2288,11 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     .alert {
       margin: 0;
     }
+  }
+
+  .ask-ai .material-icons {
+    font-size: 1rem;
+    margin-right: 0.25rem;
   }
 </style>
 
