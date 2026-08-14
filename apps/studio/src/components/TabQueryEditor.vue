@@ -1017,8 +1017,9 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         // Same [db.<type>] section naming as processRawConfig (postgres, not postgresql)
         const dbType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
         const value = this.$bksConfig.db?.[dbType]?.autocompleteQuoteCharacter;
-        // Blank means the database's convention; the editor also rejects
+        // 0 or -1 selects the database's convention; the editor also rejects
         // characters the dialect doesn't recognize as identifier quotes.
+        if (value === 0 || value === -1 || value === '0' || value === '-1') return undefined;
         return typeof value === 'string' && value.trim() ? value.trim() : undefined;
       }
     },

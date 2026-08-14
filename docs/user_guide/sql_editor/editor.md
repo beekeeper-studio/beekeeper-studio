@@ -48,7 +48,7 @@ The quote character itself can be changed per database with `autocompleteQuoteCh
 autocompleteQuoteCharacter = "
 ```
 
-If left blank, the database's convention applies. Only characters the database accepts as identifier quotes are honored (SQL Server accepts `[` or `"`, SQLite accepts `"` or a backtick) — anything else falls back to the convention, so autocomplete never writes a name your database can't parse.
+A value of `0` or `-1` (the shipped default) selects the database's convention. Only characters the database accepts as identifier quotes are honored (SQL Server accepts `[` or `"`, SQLite accepts `"` or a backtick) — anything else falls back to the convention, so autocomplete never writes a name your database can't parse.
 
 ## Run Contexts
 
