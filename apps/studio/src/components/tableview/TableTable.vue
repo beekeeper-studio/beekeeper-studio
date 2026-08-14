@@ -329,7 +329,6 @@ import LoadingSpinner from "@/components/common/loading/LoadingSpinner.vue"
 import rawLog from '@bksLogger'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
-import globals from '@/common/globals';
 import {AppEvent} from '../../common/AppEvent';
 import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
@@ -768,10 +767,10 @@ export default Vue.extend({
       if (target.closest('.tabulator-row, .tabulator-header, .tabulator-row-header, .tabulator-corner')) {
         return;
       }
-      
+
       // Prevent default browser context menu on the empty space.
       e.preventDefault();
-      
+
       // Define context menu options for the empty space.
       // We add an option to insert a new row to improve user experience.
       const menuOptions = [
@@ -782,7 +781,7 @@ export default Vue.extend({
           disabled: !this.editable
         }
       ];
-      
+
       // Open the global Beekeeper context menu component.
       // @ts-ignore
       this.$bks.openMenu({
@@ -1012,10 +1011,10 @@ export default Vue.extend({
         },
         mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connectionType)),
         dataType: column.dataType,
-        minWidth: globals.minColumnWidth,
+        minWidth: this.$bksConfig.ui.tableTable.minColumnWidth,
         width: columnWidth,
-        maxWidth: globals.maxColumnWidth,
-        maxInitialWidth: globals.maxInitialWidth,
+        maxWidth: this.$bksConfig.ui.tableTable.maxColumnWidth,
+        maxInitialWidth: this.$bksConfig.ui.tableTable.maxInitialWidth,
         resizable: 'header',
         cssClass,
         editable: this.cellEditCheck,
