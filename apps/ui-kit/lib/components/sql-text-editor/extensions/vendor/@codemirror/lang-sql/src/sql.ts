@@ -6,7 +6,8 @@ import { CompletionSource } from "@codemirror/autocomplete"
 import { LanguageSupport } from "@codemirror/language"
 
 export type SQLConfig = BaseSQLConfig & {
-  /** How completed keywords are cased. Default "preserve": match typed case. */
+  /** How completed keywords are cased. Default "preserve": follow the typed
+   * prefix, uppercase when there is no prefix. */
   keywordCasing?: KeywordCasing
   /** When identifier completions get quoted. Default "auto": only when the dialect needs it. */
   quoteIdentifiers?: IdentifierQuoting

@@ -446,9 +446,10 @@ export function completeFromSchema(schema: SQLNamespace,
 
 /**
  * How completed keywords and built-in functions are cased:
- * - "preserve" (default): match the typed prefix — an all-uppercase prefix
- *   (`SEL`, `GROUP_C`) completes uppercase, anything else completes the
- *   stored (lowercase) form.
+ * - "preserve" (default): follow the typed prefix — a prefix containing a
+ *   lowercase letter (`sel`, `Sel`) completes lowercase, an uppercase prefix
+ *   (`SEL`, `GROUP_C`) or no prefix at all (explicit completion, e.g.
+ *   Ctrl+Space) completes uppercase.
  * - "upper" / "lower": force one case regardless of what was typed.
  */
 export type KeywordCasing = "preserve" | "upper" | "lower"
@@ -458,9 +459,6 @@ function completionType(tokenType: number) {
 }
 
 function defaultKeyword(label: string, type: string): Completion { return {label, type, boost: -1} }
-
-// An uppercase letter and no lowercase ones (`SEL`, `GROUP_C`, `@@ERR`).
-const AllUpperWord = /^[^a-z]*[A-Z][^a-z]*$/
 
 /**
  * Replaces @codemirror/lang-sql's keywordCompletionSource: casing is decided
@@ -478,8 +476,10 @@ export function keywordCompletionSource(dialect: SQLDialect, casing: KeywordCasi
   return ifNotIn(["QuotedIdentifier", "String", "LineComment", "BlockComment", "."], (context) => {
     let useUpper = casing == "upper"
     if (casing == "preserve") {
+      // Uppercase unless the prefix contains a lowercase letter: only an
+      // explicitly lowercase prefix asks for lowercase keywords.
       const typed = context.matchBefore(/\w+$/)
-      useUpper = !!typed && AllUpperWord.test(typed.text)
+      useUpper = !typed || !/[a-z]/.test(typed.text)
     }
     return (useUpper ? upper : stored)(context)
   })

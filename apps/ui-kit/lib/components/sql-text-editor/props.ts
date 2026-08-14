@@ -49,9 +49,9 @@ export default {
     default: "generic",
   },
   /**
-   * Casing of completed keywords and built-in functions. "preserve" matches
-   * the typed prefix (SEL -> SELECT, sel -> select); "upper"/"lower" force
-   * one case.
+   * Casing of completed keywords and built-in functions. "preserve" follows
+   * the typed prefix (SEL -> SELECT, sel -> select; uppercase when there is
+   * no prefix); "upper"/"lower" force one case.
    */
   keywordCasing: {
     type: String as PropType<KeywordCasing>,

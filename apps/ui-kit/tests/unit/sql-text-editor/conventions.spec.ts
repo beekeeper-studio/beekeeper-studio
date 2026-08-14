@@ -26,9 +26,10 @@
  * - Leading-digit names (`2fa`) stay quoted everywhere. MySQL technically
  *   allows a bare leading digit, but quoting is conservative-correct.
  * - Keywords and built-in functions insert matching the case the user typed:
- *   an all-uppercase prefix completes uppercase (`SEL` → `SELECT`,
- *   `CONC` → `CONCAT`), anything else inserts the stored (lowercase) form.
- *   No per-dialect opinion is imposed.
+ *   a prefix containing a lowercase letter completes lowercase
+ *   (`sel` → `select`), an all-uppercase prefix (`SEL`, `GROUP_C`) or no
+ *   prefix at all (explicit completion, e.g. Ctrl+Space) completes
+ *   uppercase. No per-dialect opinion is imposed.
  *
  * Configuration contract (ui-kit side of Phase 3 — `[ui.queryEditor.autocomplete]`):
  * - `keywordCasing`: "preserve" (default, match typed case) | "upper" | "lower"
@@ -210,10 +211,10 @@ describe("keyword and function casing conventions", () => {
       expect(opts).not.toContain("SELECT")
     })
 
-    it(`${dialectName}: no prefix (explicit) keeps the stored form`, async () => {
+    it(`${dialectName}: no prefix (explicit, e.g. Ctrl+Space) completes uppercase`, async () => {
       const opts = await optionsFor("|", { keywords: true, dialect: DIALECTS[dialectName], explicit: true })
-      expect(opts).toContain("select")
-      expect(opts).not.toContain("SELECT")
+      expect(opts).toContain("SELECT")
+      expect(opts).not.toContain("select")
     })
   }
 

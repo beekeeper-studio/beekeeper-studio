@@ -33,7 +33,7 @@ When a suggestion is accepted, Beekeeper writes the name the way your database e
 -   Table and column names are only quoted when the database actually requires it — names with spaces or special characters, for example.
 -   PostgreSQL folds unquoted names to lowercase, so MixedCase names like `FilmActor` are completed quoted (`"FilmActor"`). MySQL, SQL Server, and SQLite all reference MixedCase names fine without quotes, so no quotes are added there.
 -   When quoting is needed, each database gets its conventional style: `"double quotes"` for PostgreSQL and SQLite, `` `backticks` `` for MySQL/MariaDB, and `[brackets]` for SQL Server.
--   Keywords and built-in functions match the case you type: `SEL` completes to `SELECT`, `sel` completes to `select`.
+-   Keywords and built-in functions match the case you type: `SEL` completes to `SELECT`, `sel` completes to `select`. With no prefix to match — like triggering `Ctrl+Space` on a blank spot — keywords complete uppercase.
 
 ### Configuring autocomplete
 
