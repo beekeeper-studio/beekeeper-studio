@@ -10,6 +10,13 @@ export type SQLConfig = BaseSQLConfig & {
   keywordCasing?: KeywordCasing
   /** When identifier completions get quoted. Default "auto": only when the dialect needs it. */
   quoteIdentifiers?: IdentifierQuoting
+  /**
+   * The quote character identifier completions are wrapped in, when quoting
+   * happens. Honored only if the dialect recognizes it as an identifier quote
+   * (e.g. `"` instead of `[` for SQL Server); otherwise the dialect's default
+   * applies.
+   */
+  quoteCharacter?: string
 }
 
 /// Returns a completion sources that provides schema-based completion
@@ -17,7 +24,8 @@ export type SQLConfig = BaseSQLConfig & {
 export function schemaCompletionSource(config: SQLConfig): CompletionSource {
   return config.schema ? completeFromSchema(config.schema, config.tables, config.schemas,
                                             config.defaultTable, config.defaultSchema,
-                                            config.dialect || StandardSQL, config.quoteIdentifiers)
+                                            config.dialect || StandardSQL, config.quoteIdentifiers,
+                                            config.quoteCharacter)
     : () => null
 }
 
@@ -27,6 +35,7 @@ function schemaCompletion(config: SQLConfig): Extension {
     defaultSchemaName: config.defaultSchema,
     dialect: config.dialect || StandardSQL,
     quoteIdentifiers: config.quoteIdentifiers,
+    quoteCharacter: config.quoteCharacter,
   }), (config.dialect || StandardSQL).language.data.of({
     autocomplete: schemaCompletionSource(config)
   })] : []

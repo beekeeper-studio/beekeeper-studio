@@ -75,6 +75,7 @@
         :language-id="languageIdForDialect"
         :keyword-casing="autocompleteKeywordCasing"
         :quote-identifiers="autocompleteQuoteIdentifiers"
+        :quote-character="autocompleteQuoteCharacter"
         :clipboard="$native.clipboard"
         :replace-extensions="replaceExtensions"
         :context-menu-items="editorContextMenu"
@@ -1010,6 +1011,14 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       autocompleteQuoteIdentifiers() {
         const value = String(this.$bksConfig.ui.queryEditor?.autocomplete?.quoteIdentifiers ?? '').toLowerCase();
         return ['auto', 'always'].includes(value) ? value : 'auto';
+      },
+      autocompleteQuoteCharacter() {
+        // Same [db.<type>] section naming as processRawConfig (postgres, not postgresql)
+        const dbType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
+        const value = this.$bksConfig.db?.[dbType]?.autocompleteQuoteCharacter;
+        // Blank means the database's convention; the editor also rejects
+        // characters the dialect doesn't recognize as identifier quotes.
+        return typeof value === 'string' && value.trim() ? value.trim() : undefined;
       }
     },
     watch: {

@@ -50,8 +50,8 @@ function applyEntities(
   entities: Entity[] = [],
   defaultSchema?: string
 ) {
-  const { dialect, quoteIdentifiers } = view.state.facet(completeConfig);
-  const schema = buildSchema(entities, defaultSchema, dialect, quoteIdentifiers);
+  const { dialect, quoteIdentifiers, quoteCharacter } = view.state.facet(completeConfig);
+  const schema = buildSchema(entities, defaultSchema, dialect, quoteIdentifiers, quoteCharacter);
   view.dispatch({
     effects: [
       setEntities.of(entities),

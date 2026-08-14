@@ -66,6 +66,15 @@ export default {
     type: String as PropType<IdentifierQuoting>,
     default: "auto",
   },
+  /**
+   * The quote character used when completions quote an identifier. Honored
+   * only if the dialect recognizes it as an identifier quote (e.g. `"`
+   * instead of `[` for SQL Server); otherwise the dialect's default applies.
+   */
+  quoteCharacter: {
+    type: String,
+    default: undefined,
+  },
   paramTypes: {
     type: Object as PropType<Options["paramTypes"]>,
   },

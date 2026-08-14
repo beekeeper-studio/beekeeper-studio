@@ -54,6 +54,7 @@ export default Vue.extend({
         paramTypes: this.paramTypes,
         keywordCasing: this.keywordCasing,
         quoteIdentifiers: this.quoteIdentifiers,
+        quoteCharacter: this.quoteCharacter,
         onQuerySelectionChange: (params) => {
           this.selectedQuery = params.selectedQuery.text;
           this.$emit("bks-query-selection-change", params)

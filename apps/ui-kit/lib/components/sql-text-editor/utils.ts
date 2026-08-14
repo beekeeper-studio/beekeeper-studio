@@ -16,9 +16,10 @@ export { getAliases };
 export function columnsToCompletions(
   columns: string[],
   dialect?: SQLDialect,
-  quoteIdentifiers?: IdentifierQuoting
+  quoteIdentifiers?: IdentifierQuoting,
+  quoteCharacter?: string
 ): Completion[] {
-  const { idQuote, idCaseInsensitive } = identifierCompletionParams(dialect, quoteIdentifiers);
+  const { idQuote, idCaseInsensitive } = identifierCompletionParams(dialect, quoteIdentifiers, quoteCharacter);
   return columns.map((column) => ({
     ...nameCompletion(column, "column", idQuote, idCaseInsensitive),
     boost: 10 // Higher than keywords/tables
@@ -33,10 +34,11 @@ export function buildSchema(
   entities: Entity[],
   defaultSchema?: string,
   dialect?: SQLDialect,
-  quoteIdentifiers?: IdentifierQuoting
+  quoteIdentifiers?: IdentifierQuoting,
+  quoteCharacter?: string
 ): SQLNamespace {
   const tables: SQLNamespace = {};
-  const { idQuote, idCaseInsensitive } = identifierCompletionParams(dialect, quoteIdentifiers);
+  const { idQuote, idCaseInsensitive } = identifierCompletionParams(dialect, quoteIdentifiers, quoteCharacter);
 
   entities.forEach((entity) => {
     // Only include table-like entities

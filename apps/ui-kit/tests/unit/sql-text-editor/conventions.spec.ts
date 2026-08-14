@@ -46,12 +46,13 @@ const MYSQL = langIdToDialect["text/x-mysql"]
 const MSSQL = langIdToDialect["text/x-mssql"]
 const SQLITE = langIdToDialect["text/x-sqlite"]
 
-/** Extra keys are the Phase-3 ui-kit configuration contract. */
+/**
+ * `keywordCasing`, `quoteIdentifiers`, and `quoteCharacter` come from
+ * SQLExtensionsConfig itself — the configuration contract under test.
+ */
 type ConventionsConfig = SQLExtensionsConfig & {
   explicit?: boolean
   keywords?: boolean
-  keywordCasing?: "preserve" | "upper" | "lower"
-  quoteIdentifiers?: "auto" | "always"
 }
 
 async function optionsFor(doc: string, conf: ConventionsConfig = {}): Promise<string[]> {
@@ -240,6 +241,62 @@ describe("keyword and function casing conventions", () => {
 // Configuration contract (Phase 3): user overrides via
 // [ui.queryEditor.autocomplete] flow into the editor as these options.
 // ---------------------------------------------------------------------------
+
+describe("quote character overrides", () => {
+  it("sqlserver: quoteCharacter '\"' switches bracket quoting to ANSI quotes", async () => {
+    const opts = await optionsFor("select |", {
+      schema: { "my table": ["id"], 'a"b': ["id"] },
+      dialect: MSSQL,
+      explicit: true,
+      quoteCharacter: '"',
+    })
+    expect(opts).toContain('"my table"')
+    // Escaping follows the chosen quote, not the dialect default.
+    expect(opts).toContain('"a""b"')
+  })
+
+  it("sqlite: quoteCharacter '`' switches to MySQL-compat backticks", async () => {
+    const opts = await optionsFor("select |", {
+      schema: { "my table": ["id"] },
+      dialect: SQLITE,
+      explicit: true,
+      quoteCharacter: "`",
+    })
+    expect(opts).toEqual(["`my table`"])
+  })
+
+  it("postgresql: an unrecognized quoteCharacter falls back to the dialect default", async () => {
+    // Backticks aren't valid identifier quotes in PostgreSQL; inserting them
+    // would produce SQL the database rejects.
+    const opts = await optionsFor("select |", {
+      schema: { "my table": ["id"] },
+      dialect: PG,
+      explicit: true,
+      quoteCharacter: "`",
+    })
+    expect(opts).toEqual(['"my table"'])
+  })
+
+  it("mysql: '\"' is a string quote, not an identifier quote — falls back to backticks", async () => {
+    const opts = await optionsFor("select |", {
+      schema: { "my table": ["id"] },
+      dialect: MYSQL,
+      explicit: true,
+      quoteCharacter: '"',
+    })
+    expect(opts).toEqual(["`my table`"])
+  })
+
+  it("does not affect names that need no quoting", async () => {
+    const opts = await optionsFor("select |", {
+      schema: { plain_name: ["id"] },
+      dialect: MSSQL,
+      explicit: true,
+      quoteCharacter: '"',
+    })
+    expect(opts).toEqual(["plain_name"])
+  })
+})
 
 describe("autocomplete configuration overrides", () => {
   it("keywordCasing=upper forces uppercase regardless of typed case", async () => {

@@ -277,10 +277,17 @@ export type IdentifierQuoting = "auto" | "always"
  * Resolve the quote character and case tolerance identifier completions use
  * for a dialect. `quoteIdentifiers: "always"` drops the dialect's case
  * tolerance, so MixedCase names get quoted even where they don't need it.
+ * `quoteCharacter` overrides which quote gets inserted, but only when the
+ * dialect recognizes that character as an identifier quote (e.g. `"` instead
+ * of `[` for SQL Server) — anything else would produce SQL the database
+ * rejects, so it falls back to the dialect's first quote.
  */
-export function identifierCompletionParams(dialect?: SQLDialect, quoteIdentifiers?: IdentifierQuoting) {
+export function identifierCompletionParams(dialect?: SQLDialect, quoteIdentifiers?: IdentifierQuoting,
+                                           quoteCharacter?: string) {
+  let recognized = dialect?.spec.identifierQuotes || '"'
+  let validOverride = quoteCharacter?.length == 1 && recognized.includes(quoteCharacter)
   return {
-    idQuote: dialect?.spec.identifierQuotes?.[0] || '"',
+    idQuote: validOverride ? quoteCharacter : recognized[0],
     idCaseInsensitive: !!dialect?.spec.caseInsensitiveIdentifiers && quoteIdentifiers != "always",
   }
 }
@@ -300,8 +307,9 @@ export function nameCompletion(label: string, type: string, idQuote: string, idC
 export function buildCompletionLevels(schema: SQLNamespace,
                                    tables?: readonly Completion[], schemas?: readonly Completion[],
                                    defaultTableName?: string, defaultSchemaName?: string,
-                                   dialect?: SQLDialect, quoteIdentifiers?: IdentifierQuoting) {
-  let {idQuote, idCaseInsensitive} = identifierCompletionParams(dialect, quoteIdentifiers)
+                                   dialect?: SQLDialect, quoteIdentifiers?: IdentifierQuoting,
+                                   quoteCharacter?: string) {
+  let {idQuote, idCaseInsensitive} = identifierCompletionParams(dialect, quoteIdentifiers, quoteCharacter)
   let top = new CompletionLevel(idQuote, idCaseInsensitive)
   let defaultSchema = defaultSchemaName ? top.child(defaultSchemaName) : null
 
@@ -344,7 +352,8 @@ export const completionLevels = StateField.define<{use: boolean; top: Completion
             config.defaultTableName,
             config.defaultSchemaName,
             config.dialect,
-            config.quoteIdentifiers
+            config.quoteIdentifiers,
+            config.quoteCharacter
           ),
           // HACK: Use when setSchema is triggered
           use: true,
@@ -360,6 +369,7 @@ type SupportedCompleteConfig = {
   defaultSchemaName?: string;
   dialect?: SQLDialect;
   quoteIdentifiers?: IdentifierQuoting;
+  quoteCharacter?: string;
 }
 
 export const completeConfig = Facet.define<
@@ -380,8 +390,9 @@ function getClosingQuote(openingQuote: string) {
 export function completeFromSchema(schema: SQLNamespace,
                                    tables?: readonly Completion[], schemas?: readonly Completion[],
                                    defaultTableName?: string, defaultSchemaName?: string,
-                                   dialect?: SQLDialect, quoteIdentifiers?: IdentifierQuoting): CompletionSource {
-  let {top, defaultSchema} = buildCompletionLevels(schema, tables, schemas, defaultTableName, defaultSchemaName, dialect, quoteIdentifiers)
+                                   dialect?: SQLDialect, quoteIdentifiers?: IdentifierQuoting,
+                                   quoteCharacter?: string): CompletionSource {
+  let {top, defaultSchema} = buildCompletionLevels(schema, tables, schemas, defaultTableName, defaultSchemaName, dialect, quoteIdentifiers, quoteCharacter)
   return async (context: CompletionContext) => {
     let {parents, from, quoted, empty, aliases} = sourceContext(context.state, context.pos)
     if (empty && !context.explicit) return null
