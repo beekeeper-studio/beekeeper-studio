@@ -86,9 +86,27 @@ export default Vue.extend({
         shortcut: "Control+Shift+F",
       };
 
-      if (this.allowPresets && this.presets?.length > 0) {
-        const currentFormatterId = this.formatterConfig?.id;
+      const currentFormatterId = this.formatterConfig?.id;
+      const presetItems =
+        this.allowPresets && this.presets?.length > 0
+          ? this.presets.map((preset) => ({
+              label: `${preset.name}${preset.id === currentFormatterId ? ' *' : ''}`,
+              id: `format-preset-${preset.id}`,
+              handler: () => this.applyAndFormatPreset(preset),
+            }))
+          : [];
+      // "Custom..." hands off to the embedding app (e.g. a formatter modal).
+      const customItems = this.allowPresets
+        ? [
+            {
+              label: "Custom...",
+              id: "format-custom",
+              handler: () => this.$emit("bks-open-custom-formatter"),
+            },
+          ]
+        : [];
 
+      if (presetItems.length || customItems.length) {
         formatItem.items = [
           {
             label: "Format with current config",
@@ -96,12 +114,8 @@ export default Vue.extend({
             handler: this.formatSql,
             shortcut: "Control+Shift+F"
           },
-          divider,
-          ...this.presets.map((preset) => ({
-            label: `${preset.name}${preset.id === currentFormatterId ? ' *' : ''}`,
-            id: `format-preset-${preset.id}`,
-            handler: () => this.applyAndFormatPreset(preset),
-          }))
+          ...(presetItems.length ? [divider, ...presetItems] : []),
+          ...(customItems.length ? [divider, ...customItems] : []),
         ];
       }
 

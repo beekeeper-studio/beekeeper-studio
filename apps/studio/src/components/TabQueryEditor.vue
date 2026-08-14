@@ -88,6 +88,7 @@
         @bks-blur="onTextEditorBlur?.()"
         @bks-query-selection-change="handleQuerySelectionChange"
         @bks-apply-preset="applyPreset"
+        @bks-open-custom-formatter="formatterPreset"
       />
       <span class="expand" />
       <div
@@ -1921,11 +1922,6 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         }
         return [
           ...items,
-          {
-            label: "Open Query Formatter",
-            id: "formatter",
-            handler: this.formatterPreset,
-          },
           ...(this.query?.id
             ? [
                 divider,
