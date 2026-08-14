@@ -57,7 +57,7 @@
                   </option>
                 </select>
               </div>
-              <div v-if="!shouldUpsell">
+              <div v-if="config.connectionType && !shouldUpsell">
                 <!-- INDIVIDUAL DB CONFIGS -->
                 <postgres-form
                   v-if="config.connectionType === 'cockroachdb'"
