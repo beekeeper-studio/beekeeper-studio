@@ -135,8 +135,9 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
         const ssh: IDbConnectionServerSSHConfig = config.ssh
 
         const socketPath = appConfig.sshAuthSock || undefined
-        const haveAgent = ssh.useAgent && !!socketPath
-        const bastionHaveAgent = ssh.bastionMode === 'agent' && !!socketPath
+        const hasSocketOrPageant = !!socketPath || isWindows
+        const haveAgent = ssh.useAgent && hasSocketOrPageant
+        const bastionHaveAgent = ssh.bastionMode === 'agent' && hasSocketOrPageant
 
         const sshConfig: Options = {
           endHost: ssh.host || '',
