@@ -89,6 +89,13 @@ jobs:
         with:
           node-version-file: '.nvmrc'
 
+      # ImageOS identifies the runner image (e.g. ubuntu22, win22, macos14), so
+      # caches never cross runner image versions: node_modules holds native
+      # modules compiled for one exact image.
+      - name: Compute runner image cache id
+        shell: bash
+        run: echo "RUNNER_IMAGE_ID=${ImageOS:-unknown}" >> "$GITHUB_ENV"
+
       - name: Cache node_modules
         id: cache-nm
         uses: actions/cache@v5
@@ -98,9 +105,7 @@ jobs:
             apps/studio/node_modules
             apps/ui-kit/node_modules
             apps/sqltools/node_modules
-          # matrix.os keeps caches from different runner images apart:
-          # node_modules holds native modules compiled for one exact image.
-          key: node-modules-${{ matrix.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
 
       - name: Clean cache
         if: steps.cache-nm.outputs.cache-hit != 'true'
