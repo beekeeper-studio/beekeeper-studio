@@ -308,6 +308,12 @@ const store = new Vuex.Store<State>({
     isTrial(_state, _getters, _rootState, rootGetters) {
       return rootGetters['licenses/isTrial']
     },
+    isLifetime(_state, _getters, _rootState, rootGetters) {
+      return rootGetters['licenses/isLifetime']
+    },
+    canAccessCloudWorkspaces(_state, _getters, _rootState, rootGetters) {
+      return rootGetters['licenses/canAccessCloudWorkspaces']
+    },
     canCreateFolders(_state, getters) {
       return getters.isUltimate || getters.isCloud;
     },
