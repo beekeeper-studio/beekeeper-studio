@@ -448,6 +448,7 @@ export default Vue.extend({
         { event: AppEvent.toggleHideSchema, handler: this.toggleHideSchema },
         { event: AppEvent.deleteDatabaseElement, handler: this.deleteDatabaseElement },
         { event: AppEvent.dropDatabaseElement, handler: this.dropDatabaseElement },
+        { event: AppEvent.dropDatabasesConfirmed, handler: this.dropDatabases },
         { event: AppEvent.duplicateDatabaseTable, handler: this.duplicateDatabaseTable },
         { event: AppEvent.dropzoneDrop, handler: this.handleDropzoneDrop },
         { event: AppEvent.promptQueryExport, handler: this.handlePromptQueryExport },
@@ -499,6 +500,24 @@ export default Vue.extend({
     async updateTab(tab: TransportOpenTab) {
       const newTab = Object.assign({}, tab);
       await this.$store.commit('tabs/replaceTab', newTab);
+    },
+    async dropDatabases(databases) {
+      try {
+        for (const dbName of databases) {
+          await this.connection.dropElement(dbName, "DATABASE")
+        }
+
+        this.$noty.success(
+          `${databases.length} database${
+            databases.length > 1 ? "s" : ""
+          } dropped successfully`
+        )
+
+        await this.$store.dispatch("updateDatabaseList")
+      } catch (ex) {
+        this.$noty.error(`Error dropping databases: ${ex.message}`)
+        await this.$store.dispatch("updateDatabaseList")
+      }
     },
     showUpgradeModal() {
       this.$root.$emit(AppEvent.upgradeModal)

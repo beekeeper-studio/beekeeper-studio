@@ -611,8 +611,17 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     return `EXEC sp_rename ${elementName}, ${newElementName};`
   }
 
-  async dropElement (elementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema) {
-    const sql = `DROP ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
+  async dropElement(
+    elementName: string,
+    typeOfElement: DatabaseElement,
+    schema: string = this._defaultSchema
+  ) {
+    const sql =
+      typeOfElement === DatabaseElement.SCHEMA ||
+      typeOfElement === DatabaseElement.DATABASE
+        ? `DROP ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(elementName)}`
+        : `DROP ${D.wrapLiteral(typeOfElement)} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
+
     await this.driverExecuteSingle(sql)
   }
 

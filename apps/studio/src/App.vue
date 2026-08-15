@@ -30,6 +30,7 @@
     <workspace-rename-modal />
     <workspace-delete-modal />
     <import-queries-modal />
+    <drop-databases-modal />
     <import-connections-modal />
     <plugin-controller :editor-font-size="editorFontSize" />
     <plugin-manager-modal />
@@ -88,6 +89,7 @@ import type { LicenseStatus } from "@/lib/license";
 import { SmartLocalStorage } from '@/common/LocalStorage';
 import PluginManagerModal from '@/components/plugins/PluginManagerModal.vue'
 import KeyboardShortcutsModal from '@/components/common/modals/KeyboardShortcutsModal.vue'
+import DropDatabasesModal from '@/components/common/modals/DropDatabasesModal.vue'
 import PluginController from '@/components/plugins/PluginController.vue'
 import LockManager from "@/components/managers/LockManager.vue";
 import InputEphemeralModal from "@/components/common/modals/InputEphemeralModal.vue";
@@ -106,8 +108,8 @@ export default Vue.extend({
   components: {
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
     DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
-    UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
+    UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal, DropDatabasesModal,
     LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
     PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
     InputEphemeralModal, ShareModal, MoveItemModal, MoveFolderModal,

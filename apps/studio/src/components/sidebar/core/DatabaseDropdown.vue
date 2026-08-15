@@ -27,6 +27,18 @@
           <i class="material-icons" :class="{'refreshing-db-icon': isRefreshing }">{{ isRefreshing ? 'sync' : 'refresh' }}</i>
         </a>
         <a
+          v-if="
+            supportsMultipleDatabases &&
+            !usedConfig?.readOnlyMode &&
+            availableDatabases.length
+          "
+          class="refresh"
+          @click.prevent="openDropDatabasesModal"
+          :title="'Drop Databases'"
+        >
+          <i class="material-icons">delete</i>
+        </a>
+        <a
           v-if="!usedConfig?.readOnlyMode && supportsAddDatabase"
           class="refresh"
           @click.prevent="$modal.show('config-add-database')"
@@ -122,6 +134,12 @@
         } finally {
           this.isRefreshing = false
         }
+      },
+        openDropDatabasesModal() {
+    this.$root.$emit(AppEvent.dropDatabases, {
+      databases: this.availableDatabases,
+      currentDatabase: this.selectedDatabase
+    })
       },
       async databaseCreated(db) {
         this.$modal.hide('config-add-database')
