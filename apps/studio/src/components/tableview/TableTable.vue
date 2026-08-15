@@ -800,7 +800,7 @@ export default Vue.extend({
       try {
         const row: TransportTabulatorPersistence = await this.$util.send(
           "appdb/tabulatorPersistence/findOneBy",
-          { persistenceID: this.tableId, type: "columns" }
+          { options: { persistenceID: this.tableId, type: "columns" } }
         );
         this.persistenceRow = row ? { id: row.id, data: row.data } : null;
       } catch (e) {
