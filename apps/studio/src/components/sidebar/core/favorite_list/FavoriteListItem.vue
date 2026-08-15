@@ -10,6 +10,7 @@
         delay: { show: 500 },
       }"
       @click.prevent="$emit('select', item, $event)"
+      :title="title"
       @dblclick.prevent="$emit('open', item)"
       :class="{active, selected, 'bulk-selection-active': bulkSelectionActive}"
     >
@@ -37,12 +38,12 @@
   </div>
 </template>
 <script lang="ts">
+import { AppEvent } from '@/common/AppEvent'
+import EditableText from '@/components/common/EditableText.vue'
+import TimeAgo from 'javascript-time-ago'
 import _ from 'lodash'
 import Vue from 'vue'
 import { mapGetters, mapState } from 'vuex'
-import TimeAgo from 'javascript-time-ago'
-import EditableText from '@/components/common/EditableText.vue'
-import { AppEvent } from '@/common/AppEvent'
 
 export default Vue.extend({
   components: { EditableText },
@@ -76,15 +77,21 @@ export default Vue.extend({
     subtitle() {
       const result = []
       if (this.item.user?.name) result.push(`${this.item.user.name}`)
-      if (this.item.createdAt) {
-        if (_.isNumber(this.item.createdAt)) {
-          result.push(this.timeAgo.format(new Date(this.item.createdAt * 1000)))
+      if (this.item.updatedAt) {
+        if (_.isNumber(this.item.updatedAt)) {
+          result.push(this.timeAgo.format(new Date(this.item.updatedAt * 1000)))
         } else {
-          result.push(this.timeAgo.format(this.item.createdAt))
+          result.push(this.timeAgo.format(this.item.updatedAt))
         }
       }
       return result.join(" ")
-    }
+    },
+    folder() {
+      return this.folders.find((f) => f.id === this.item.queryFolderId);
+    },
+    isPersonal() {
+      return this.folder?.personal;
+    },
   },
   methods: {
     openContextMenu(event, item) {
@@ -111,7 +118,7 @@ export default Vue.extend({
           name: "Share",
           slug: 'share',
           handler: this.share,
-          hideIf: !this.isCloud || !this.item.id,
+          hideIf: !this.isCloud || !this.item.id || this.isPersonal,
         },
         {
           name: "Duplicate",

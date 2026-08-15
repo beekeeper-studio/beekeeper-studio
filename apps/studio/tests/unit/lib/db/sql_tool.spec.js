@@ -192,3 +192,28 @@ describe("SQL Formatter", () => {
     });
   });
 });
+
+describe("Postgres dollar-quoted function bodies", () => {
+  // Regression for #4550: run-current-query (Ctrl+Shift+Enter) on a line inside
+  // a CREATE FUNCTION ... $$ ... $$ must not merge the function with the next
+  // statement. The $$ ... $$ body must be treated as part of the function.
+  it("splits a $$-quoted function and the following statement separately", () => {
+    const sql = [
+      "create table test_table (test_id int);",
+      "insert into test_table select * from generate_series(1, 10);",
+      "",
+      "create or replace function getTest(int) returns setof test_table as $$",
+      "  select * from test_table where test_id in ($1);",
+      "$$ language sql;",
+      "",
+      "select * from getTest(1);",
+    ].join("\n");
+    const result = splitQueries(sql, "psql");
+    expect(result.length).toBe(4);
+    // The trailing statement must be the standalone SELECT, not glued to the function:
+    expect(result[3].text).toMatch(/select \* from getTest\(1\)/);
+    // And the function statement must end at the $$ ... language sql; line,
+    // not swallow the trailing select:
+    expect(result[2].text).toMatch(/\$\$ language sql;/);
+  });
+});

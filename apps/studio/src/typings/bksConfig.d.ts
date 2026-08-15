@@ -375,7 +375,6 @@ declare interface IBksConfig {
     general: {
         checkForUpdatesDisabled: boolean;
         checkForUpdatesInterval: number;
-        dataSyncInterval: number;
         downloadUserAgent: string;
         workspaceSyncInterval: number;
     };
