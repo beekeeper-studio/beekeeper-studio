@@ -154,9 +154,19 @@
               {{ conn.name }}
             </button>
           </div>
+          <div
+            v-if="displayedConnections.length === 0"
+            class="quick-switcher-empty"
+          >
+            No other connections to switch to
+          </div>
         </div>
         <div class="quick-switcher-footer">
-          <button class="quick-switcher-item more" @click.stop="toggleMore">
+          <button
+            class="quick-switcher-item more"
+            :disabled="!hasMoreConnections"
+            @click.stop="toggleMore"
+          >
             <span class="label">{{ showingMore ? 'less' : 'more' }}</span>
             <span style="font-size: 22px;">
               {{ showingMore ? '‹' : '›' }}
@@ -220,6 +230,17 @@ export default {
       return connections.filter(conn =>
         conn.id !== this.config.id || conn.workspaceId !== this.config.workspaceId
       );
+    },
+
+    hasMoreConnections() {
+      if (this.showingMore) {
+        return true;
+      }
+      const recentCount = this.displayedConnections.length;
+      const savedCount = this.savedConnections.filter(conn =>
+        conn.id !== this.config.id || conn.workspaceId !== this.config.workspaceId
+      ).length;
+      return savedCount > recentCount;
     },
     classes() {
       const result = {
