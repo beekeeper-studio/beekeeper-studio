@@ -701,3 +701,19 @@
   flex-grow: 1;
   max-height: calc(50vh - 70px);
 }
+
+.quick-switcher-empty {
+  padding: 12px 6px;
+  color: $text-lighter;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.quick-switcher-item:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+
+  &:hover {
+    background: none;
+  }
+}
