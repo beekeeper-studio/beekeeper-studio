@@ -23,17 +23,12 @@ function folderNode(
   };
 }
 
-function itemNode(
-  id: number,
-  parentId: number | null,
-  position = 0
-): ItemNode {
+function itemNode(id: number, parentId: number | null): ItemNode {
   return {
     id: `item-${id}`,
     parentId: parentId === null ? null : `folder-${parentId}`,
     type: "item",
     name: `Item ${id}`,
-    position,
     draggable: true,
   };
 }
@@ -69,10 +64,10 @@ describe("collectVisibleItemIds", () => {
   const rootFolder = folderNode(1, null, [childFolder]);
   const folders = [rootFolder, childFolder];
   const items = [
-    itemNode(1, null, 0),
-    itemNode(2, null, 1),
-    itemNode(3, 1, 0),
-    itemNode(4, 2, 0),
+    itemNode(1, null),
+    itemNode(2, null),
+    itemNode(3, 1),
+    itemNode(4, 2),
   ];
 
   it("returns root items when no folders are expanded", () => {

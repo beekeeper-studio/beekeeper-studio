@@ -77,9 +77,7 @@ export function collectVisibleItemIds(
   const result: ItemNode["id"][] = [];
 
   const childItems = (folderId: FolderNode["id"] | null) =>
-    itemNodes
-      .filter((item) => item.parentId === folderId)
-      .sort((a, b) => a.position - b.position);
+    itemNodes.filter((item) => item.parentId === folderId);
 
   const walkFolder = (folder: FolderNode) => {
     if (!expandedIds.includes(folder.id)) {
