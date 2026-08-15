@@ -74,6 +74,8 @@ interface Reply {
   error?: string
   errorName?: "PluginSystemError" | "PluginError" | "Error"
   errorCode?: PluginSystemErrorCode | PluginErrorCode
+  errorDetail?: string
+  errorHint?: string
   stack?: string
 }
 
@@ -162,6 +164,8 @@ async function runHandler(id: string, name: string, args: any) {
         replyArgs.error = e?.message ?? e;
         replyArgs.errorName = e?.name;
         replyArgs.errorCode = e?.code;
+        replyArgs.errorDetail = e?.detail
+        replyArgs.errorHint = e?.hint
         log.error("HANDLER: ERROR", e)
       })
       .finally(() => {
