@@ -635,9 +635,6 @@ export default Vue.extend({
         this.lastFocused.focus()
       }
     },
-    openContextMenu(event, item) {
-      this.contextEvent = { event, item }
-    },
     async setActiveTab(tab: TransportOpenTab) {
       const switchingTab = tab.id !== this.activeTab?.id
       if (switchingTab) {

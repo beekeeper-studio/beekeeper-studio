@@ -121,7 +121,7 @@
     "scrollyfills": "^1.0.0",
     "split.js": "^1.5.11",
     "sql-formatter": "15.7.3",
-    "sql-query-identifier": "^2.10.0",
+    "sql-query-identifier": "^3.2.0",
     "tabulator-tables": "^6.5.0",
     "tinyduration": "^3.2.4",
     "typescript": "~5.8.3",

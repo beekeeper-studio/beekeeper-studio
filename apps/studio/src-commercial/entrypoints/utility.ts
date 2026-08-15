@@ -37,7 +37,6 @@ import {
   ConfigurationModule,
   BundledPluginModule,
 } from '@commercial/backend/plugin-system/modules';
-import bksConfig from '@/common/bksConfig';
 import { PluginErrorCode, PluginSystemErrorCode } from '@/lib/errors';
 
 import * as sms from 'source-map-support'
@@ -54,7 +53,7 @@ const pluginManager = new PluginManager({
     pluginsDirectory: platformInfo.pluginsDirectory,
   }),
 });
-pluginManager.registerModule(ConfigurationModule.with({ config: bksConfig }));
+pluginManager.registerModule(ConfigurationModule.with({ config: BksConfig }));
 pluginManager.registerModule(BundledPluginModule);
 
 const driverDepManager = new DriverDepManager({

@@ -23,7 +23,7 @@
                 {{ pageTitle }}
               </h3>
               <button
-                v-if="isCloud && !isNewConnection"
+                v-if="isCloud && !isNewConnection && !isPersonal"
                 type="button"
                 class="btn btn-link btn-icon btn-small share-btn"
                 @click="share"
@@ -397,6 +397,12 @@ export default Vue.extend({
     },
     determineLabelColor() {
       return this.config.labelColor == "default" ? '' : `connection-label-color-${this.config.labelColor}`
+    },
+    folder() {
+      return this.connectionFolders.find((f) => f.id === this.config.connectionFolderId);
+    },
+    isPersonal() {
+      return this.folder?.personal;
     },
     rootBindings() {
       return [
