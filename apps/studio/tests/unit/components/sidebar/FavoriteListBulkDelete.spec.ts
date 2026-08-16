@@ -40,7 +40,7 @@ function createStore(queries = [q1, q2, q3], { isCloud = false, filter = undefin
         getters: {
           filteredQueries: (state) => state.items,
         },
-        actions: { remove },
+        actions: { remove, setSavedQueryFilter: jest.fn() },
         modules: {
           nodes: {
             namespaced: true,
@@ -116,12 +116,37 @@ describe("FavoriteList bulk delete", () => {
     expect(vm.selectedIds).toEqual(["item-2"]);
   });
 
+  it("unfiltered shiftKey select ranges visible tree items", () => {
+    const { store } = createStore([q1, q2, q3]);
+    const { wrapper } = mountFavoriteList(store);
+    const vm = wrapper.vm as any;
+
+    vm.select(q1, {});
+    vm.select(q3, { shiftKey: true });
+
+    expect(vm.selectedIds).toEqual(["item-1", "item-2", "item-3"]);
+    expect(vm.selected).toBe(q3);
+  });
+
   it("cloud search select with shiftKey uses range selection from the anchor", () => {
     const { store } = createStore([q1, q2, q3], { isCloud: true, filter: "q" });
     const { wrapper } = mountFavoriteList(store);
     const vm = wrapper.vm as any;
 
+    vm.filterQuery = "q";
     vm.cloudSelectionAnchorId = "item-1";
+    vm.select(q3, { shiftKey: true });
+
+    expect(vm.selectedIds).toEqual(["item-1", "item-2", "item-3"]);
+    expect(vm.selected).toBe(q3);
+  });
+
+  it("cloud search shiftKey without an anchor ranges from the first filtered query", () => {
+    const { store } = createStore([q1, q2, q3], { isCloud: true, filter: "q" });
+    const { wrapper } = mountFavoriteList(store);
+    const vm = wrapper.vm as any;
+
+    vm.filterQuery = "q";
     vm.select(q3, { shiftKey: true });
 
     expect(vm.selectedIds).toEqual(["item-1", "item-2", "item-3"]);
@@ -133,6 +158,7 @@ describe("FavoriteList bulk delete", () => {
     const { wrapper } = mountFavoriteList(store);
     const vm = wrapper.vm as any;
 
+    vm.filterQuery = "q";
     vm.select(q1, { metaKey: true });
     vm.select(q2, { metaKey: true });
 

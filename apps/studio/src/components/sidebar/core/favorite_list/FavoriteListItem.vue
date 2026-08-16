@@ -15,12 +15,13 @@
       :class="{active, selected, 'bulk-selection-active': bulkSelectionActive}"
     >
       <input
-        @click.stop=""
+        draggable="false"
+        @mousedown.stop.prevent
+        @click.stop="onCheckboxClick($event)"
         type="checkbox"
         class="form-control delete-checkbox"
         :class="{ shown: bulkSelectionActive }"
         :checked="checked"
-        @change="$emit('toggle-check', item)"
       >
       <i class="item-icon query material-icons">code</i>
       <div class="list-text">
@@ -94,6 +95,13 @@ export default Vue.extend({
     },
   },
   methods: {
+    onCheckboxClick(event) {
+      if (event.shiftKey || event.metaKey || event.ctrlKey) {
+        this.$emit('select', this.item, event)
+        return
+      }
+      this.$emit('toggle-check', this.item)
+    },
     openContextMenu(event, item) {
       // Stop here and propagate the event if right clicking an input element
       if (event.target.tagName === 'INPUT') {

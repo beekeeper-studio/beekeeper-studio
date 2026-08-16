@@ -161,7 +161,7 @@ describe("ConnectionSidebar remove handlers", () => {
       /v-if="searching"[\s\S]*?<\/template>\s*<tree/
     )?.[0];
     const treeItemBlock = source.match(
-      /#item="\{ node, selected: treeSelected, bulkSelectionActive \}"[\s\S]*?<\/template>\s*<\/tree>/
+      /#item="\{ node \}"[\s\S]*?<\/template>\s*<\/tree>/
     )?.[0];
     const recentBlock = source.match(
       /recent-connection-list[\s\S]*?@remove="removeUsedConfig"/

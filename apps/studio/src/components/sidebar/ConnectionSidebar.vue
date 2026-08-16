@@ -193,10 +193,8 @@
                 :folders="extendedFolderNodes"
                 :items="sortedItemNodes"
                 :expanded-ids="expandedNodeIds"
-                :selected-ids="selectedIds"
                 :filter="connFilter"
                 @update:expandedIds="setExpandedIds"
-                @update:selectedIds="setSelectedIds"
                 @bks-tree-node-move="handleTreeNodeMove"
               >
                 <template #empty>
@@ -281,7 +279,7 @@
                     No items
                   </div>
                 </template>
-                <template #item="{ node, selected: treeSelected, bulkSelectionActive }">
+                <template #item="{ node }">
                   <connection-list-item
                     :config="node.ref"
                     :selected-config="selectedConfig"
@@ -289,8 +287,8 @@
                     :pinned="pinnedConnectionIds.includes(node.ref.id)"
                     :is-recent-list="false"
                     :privacy-mode="privacyMode"
-                    :checked="treeSelected"
-                    :selected="treeSelected"
+                    :checked="isChecked(node.ref)"
+                    :selected="isChecked(node.ref)"
                     :bulk-selection-active="bulkSelectionActive"
                     @edit="edit"
                     @remove="remove"
@@ -357,7 +355,7 @@
 
 <script>
 import { AppEvent } from '@/common/AppEvent'
-import { buildFolderNodes, parseReorderTarget, rangeSelectVisibleIds, toggleSelectedId } from "@/common/utils/folderTree"
+import { buildFolderNodes, collectVisibleItemIds, parseReorderTarget, rangeSelectVisibleIds, toggleSelectedId } from "@/common/utils/folderTree"
 import EditableText from '@/components/common/EditableText.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
@@ -477,6 +475,18 @@ export default {
     },
     bulkSelectionActive() {
       return this.selectedIds.length > 0
+    },
+    visibleItemIds() {
+      if (this.searching) {
+        return this.filteredConnections.map((connection) =>
+          this.itemNodeId(connection)
+        )
+      }
+      return collectVisibleItemIds(
+        this.extendedFolderNodes,
+        this.sortedItemNodes,
+        this.expandedNodeIds
+      )
     },
     removeTitle() {
       return `Remove ${this.selectedIds.length} saved connections`;
@@ -626,24 +636,22 @@ export default {
       this.cloudSelectionAnchorId = this.itemNodeId(config)
     },
     select(config, event) {
-      if (!this.searching) {
-        return
-      }
-
       const nodeId = this.itemNodeId(config)
-      if (event?.shiftKey && this.cloudSelectionAnchorId != null) {
-        const visibleIds = this.filteredConnections.map((connection) =>
-          this.itemNodeId(connection)
-        )
-        this.setSelectedIds(
-          rangeSelectVisibleIds(
-            this.selectedIds,
-            this.cloudSelectionAnchorId,
-            nodeId,
-            visibleIds
+      if (event?.shiftKey) {
+        const visibleIds = this.visibleItemIds
+        const anchorId = this.cloudSelectionAnchorId ?? visibleIds[0]
+        if (anchorId != null) {
+          this.setSelectedIds(
+            rangeSelectVisibleIds(
+              this.selectedIds,
+              anchorId,
+              nodeId,
+              visibleIds
+            )
           )
-        )
-        return
+          this.cloudSelectionAnchorId = nodeId
+          return
+        }
       }
       if (event?.metaKey || event?.ctrlKey) {
         this.toggleChecked(config)

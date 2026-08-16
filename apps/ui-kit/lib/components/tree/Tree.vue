@@ -80,9 +80,15 @@ export default Vue.extend({
   },
 
   watch: {
-    selectedIds(ids: Node["id"][] | undefined) {
+    selectedIds(ids: Node["id"][] | undefined, oldIds: Node["id"][] | undefined) {
       if (!ids?.length) {
         this.selectionAnchorId = null;
+        return;
+      }
+      const previous = oldIds ?? [];
+      const added = ids.filter((id) => !previous.includes(id));
+      if (added.length === 1) {
+        this.selectionAnchorId = added[0];
       }
     },
   },
@@ -151,6 +157,8 @@ export default Vue.extend({
     handleNodeClick(node: Node) {
       if (node.type === "folder") {
         this.toggleExpanded(node);
+      } else {
+        this.selectionAnchorId = node.id;
       }
       this.$emit("bks-tree-node-click", node);
     },
@@ -162,17 +170,21 @@ export default Vue.extend({
 
       const { metaKey, ctrlKey, shiftKey } = event;
 
-      if (shiftKey && this.selectionAnchorId != null) {
+      if (shiftKey) {
         const visibleIds = collectVisibleItemIds(
           this.folders,
           this.items,
           this.expandedIds
         );
+        const anchorId = this.selectionAnchorId ?? visibleIds[0];
+        if (anchorId == null) {
+          return;
+        }
         this.$emit(
           "update:selectedIds",
           rangeSelectVisibleIds(
             this.selectedIds,
-            this.selectionAnchorId,
+            anchorId,
             node.id,
             visibleIds
           )

@@ -18,6 +18,7 @@
       :data-drop-target="dropTargetPosition()"
       @click="handleRowClick"
       @click.capture="handleRowClickCapture"
+      @mousedown.capture="handleRowMouseDownCapture"
       @dragstart="handleDragStart"
       @dragover="handleDragOver"
       @dragleave="handleDragLeave"
@@ -214,6 +215,19 @@ export default Vue.extend({
       this.$emit("node-click", this.node);
     },
 
+    handleRowMouseDownCapture(event: MouseEvent) {
+      if (this.node.type !== "item" || !this.selectedIds) {
+        return;
+      }
+      const { metaKey, ctrlKey, shiftKey } = event;
+      if (!metaKey && !ctrlKey && !shiftKey) {
+        return;
+      }
+      // Cancel the nested checkbox toggle before click. stopPropagation on
+      // click capture would otherwise leave the native default in place.
+      event.preventDefault();
+    },
+
     handleRowClickCapture(event: MouseEvent) {
       if (this.node.type !== "item" || !this.selectedIds) {
         return;
@@ -222,6 +236,9 @@ export default Vue.extend({
       if (!metaKey && !ctrlKey && !shiftKey) {
         return;
       }
+      // preventDefault stops a nested checkbox from toggling after range-select
+      // checks the clicked row (native click default still runs without it).
+      event.preventDefault();
       event.stopPropagation();
       this.$emit("item-selection-click", this.node, event);
     },

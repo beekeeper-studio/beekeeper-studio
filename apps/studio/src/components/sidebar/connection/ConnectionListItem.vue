@@ -13,12 +13,13 @@
     >
       <input
         v-if="!isRecentList"
-        @click.stop=""
+        draggable="false"
+        @mousedown.stop.prevent
+        @click.stop="onCheckboxClick($event)"
         type="checkbox"
         class="form-control delete-checkbox"
         :class="{ shown: bulkSelectionActive }"
         :checked="checked"
-        @change="$emit('toggle-check', config)"
       >
       <span :class="`connection-label connection-label-color-${labelColor}`" />
       <div class="connection-title flex-col expand">
@@ -289,6 +290,13 @@ export default {
       }
       this.$emit('select', this.config, event)
       this.click()
+    },
+    onCheckboxClick(event) {
+      if (event.shiftKey || event.metaKey || event.ctrlKey) {
+        this.$emit('select', this.config, event)
+        return
+      }
+      this.$emit('toggle-check', this.config)
     },
     async doubleClick() {
       if (this.savedConnection) {

@@ -119,10 +119,8 @@
             :folders="extendedFolderNodes"
             :items="sortedItemNodes"
             :expanded-ids="expandedNodeIds"
-            :selected-ids="selectedIds"
             :filter="filterQuery"
             @update:expandedIds="setExpandedIds"
-            @update:selectedIds="setSelectedIds"
             @bks-tree-node-move="handleTreeNodeMove"
           >
             <template #empty>
@@ -205,12 +203,12 @@
                 No items
               </div>
             </template>
-            <template #item="{ node, selected: treeSelected, bulkSelectionActive }">
+            <template #item="{ node }">
               <favorite-list-item
                 :item="node.ref"
                 :active="isActive(node.ref)"
-                :selected="treeSelected || selected === node.ref"
-                :checked="treeSelected"
+                :selected="isChecked(node.ref) || selected === node.ref"
+                :checked="isChecked(node.ref)"
                 :bulk-selection-active="bulkSelectionActive"
                 :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.ref.id) }"
                 @remove="remove"
@@ -245,7 +243,7 @@
 
 <script>
 import { AppEvent } from '@/common/AppEvent'
-import { buildFolderNodes, parseReorderTarget, rangeSelectVisibleIds, toggleSelectedId } from "@/common/utils/folderTree"
+import { buildFolderNodes, collectVisibleItemIds, parseReorderTarget, rangeSelectVisibleIds, toggleSelectedId } from "@/common/utils/folderTree"
 import EditableText from '@/components/common/EditableText.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
@@ -349,6 +347,16 @@ export default {
     },
     bulkSelectionActive() {
       return this.selectedIds.length > 0
+    },
+    visibleItemIds() {
+      if (this.searching) {
+        return this.filteredQueries.map((query) => this.itemNodeId(query))
+      }
+      return collectVisibleItemIds(
+        this.extendedFolderNodes,
+        this.sortedItemNodes,
+        this.expandedNodeIds
+      )
     },
     selectedItems() {
       const byId = new Map(this.itemNodes.map((node) => [node.id, node.ref]))
@@ -468,28 +476,23 @@ export default {
       this.cloudSelectionAnchorId = this.itemNodeId(item)
     },
     select(item, event) {
-      if (!this.searching) {
-        if (!event?.metaKey && !event?.ctrlKey && !event?.shiftKey) {
-          this.selected = item
-        }
-        return
-      }
-
       const nodeId = this.itemNodeId(item)
-      if (event?.shiftKey && this.cloudSelectionAnchorId != null) {
-        const visibleIds = this.filteredQueries.map((query) =>
-          this.itemNodeId(query)
-        )
-        this.setSelectedIds(
-          rangeSelectVisibleIds(
-            this.selectedIds,
-            this.cloudSelectionAnchorId,
-            nodeId,
-            visibleIds
+      if (event?.shiftKey) {
+        const visibleIds = this.visibleItemIds
+        const anchorId = this.cloudSelectionAnchorId ?? visibleIds[0]
+        if (anchorId != null) {
+          this.setSelectedIds(
+            rangeSelectVisibleIds(
+              this.selectedIds,
+              anchorId,
+              nodeId,
+              visibleIds
+            )
           )
-        )
-        this.selected = item
-        return
+          this.selected = item
+          this.cloudSelectionAnchorId = nodeId
+          return
+        }
       }
       if (event?.metaKey || event?.ctrlKey) {
         this.toggleChecked(item)
