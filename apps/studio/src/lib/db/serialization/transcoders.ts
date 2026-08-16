@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { BksField } from "../models";
 import rawLog from "@bksLogger";
-import { DuckDBBlobValue } from "@duckdb/node-api";
+import { DuckDBBlobValue, DuckDBTimestampTZValue, DuckDBUUIDValue } from "@duckdb/node-api";
 import { ObjectId } from "mongodb";
 import { RecordId, StringRecordId } from "surrealdb";
 
@@ -109,6 +109,46 @@ export const LibSQLBinaryTranscoder: Transcoder<
   },
   deserializeCheckByValue(value): value is Uint8Array {
     return _.isTypedArray(value);
+  },
+};
+
+export const DuckDBTimestampTZTranscoder: Transcoder<DuckDBTimestampTZValue, string> = {
+  serialize(value) {
+    if (_.isNil(value)) return value;
+    if (!(value instanceof DuckDBTimestampTZValue)) {
+      log.warn("DuckDBTimestampTZTranscoder: unexpected value type");
+      return String(value);
+    }
+    return value.toString();
+  },
+  deserialize(value) {
+    return value as any;
+  },
+  serializeCheckByField(field): boolean {
+    return field.bksType === 'DUCKDB_TIMESTAMP_TZ';
+  },
+  deserializeCheckByValue(_value): _value is string {
+    return false;
+  },
+};
+
+export const DuckDBUUIDTranscoder: Transcoder<DuckDBUUIDValue, string> = {
+  serialize(value) {
+    if (_.isNil(value)) return value;
+    if (!(value instanceof DuckDBUUIDValue)) {
+      log.warn("DuckDBUUIDTranscoder: unexpected value type");
+      return String(value);
+    }
+    return value.toString();
+  },
+  deserialize(value) {
+    return value as any;
+  },
+  serializeCheckByField(field): boolean {
+    return field.bksType === 'DUCKDB_UUID';
+  },
+  deserializeCheckByValue(_value): _value is string {
+    return false;
   },
 };
 
