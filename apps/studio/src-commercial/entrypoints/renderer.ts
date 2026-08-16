@@ -20,7 +20,6 @@ import store from '@/store/index'
 import ConfigPlugin from '@/plugins/ConfigPlugin'
 import { VueElectronPlugin } from '@/lib/NativeWrapper'
 import AppEventHandler from '@/lib/events/AppEventHandler'
-import xlsx from 'xlsx'
 import TimeAgo from 'javascript-time-ago'
 import en from 'javascript-time-ago/locale/en'
 import VueClipboard from 'vue-clipboard2'
@@ -112,7 +111,6 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
     // (window as any).sql = SQL;
     // (window as any).hint = Hint;
     // (window as any).SQLHint = SQLHint;
-    (window as any).XLSX = xlsx;
     Vue.config.devtools = window.platformInfo.isDevelopment;
     // @ts-ignore
     // window.platformInfo = window.main.platformInfo
