@@ -834,7 +834,7 @@ export default Vue.extend({
       }
 
       const serialized = JSON.stringify(data);
-      if (serialized === this.persistenceRow.data) return;
+      if (serialized === this.persistenceRow?.data) return;
 
       const existingId = this.persistenceRow?.id;
       this.persistenceRow = { id: existingId, data: serialized };
