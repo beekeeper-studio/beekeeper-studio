@@ -88,7 +88,6 @@
         @bks-blur="onTextEditorBlur?.()"
         @bks-query-selection-change="handleQuerySelectionChange"
         @bks-apply-preset="applyPreset"
-        @bks-open-custom-formatter="formatterPreset"
       />
       <span class="expand" />
       <div

@@ -34,7 +34,7 @@
  * Configuration contract (ui-kit side of Phase 3 — `[ui.queryEditor.autocomplete]`):
  * - `keywordCasing`: "preserve" (default, match typed case) | "upper" | "lower"
  * - `quoteIdentifiers`: "auto" (default, per-database rules above) | "always"
- *   ("always" restores the previous behavior: quote anything not all-lowercase)
+ *   ("always" quotes every completed identifier, no exceptions)
  */
 
 import { EditorState } from "@codemirror/state"
@@ -320,6 +320,26 @@ describe("autocomplete configuration overrides", () => {
       quoteIdentifiers: "always",
     })
     expect(opts).toEqual(["`MixedCase`"])
+  })
+
+  it("quoteIdentifiers=always quotes every name, even all-lowercase ones", async () => {
+    const opts = await optionsFor("select |", {
+      schema: { lower_case: ["id"] },
+      dialect: MYSQL,
+      explicit: true,
+      quoteIdentifiers: "always",
+    })
+    expect(opts).toEqual(["`lower_case`"])
+  })
+
+  it("quoteIdentifiers=always quotes columns too", async () => {
+    const opts = await optionsFor("select people.|", {
+      schema: { people: ["first_name", "FirstName"] },
+      dialect: PG,
+      quoteIdentifiers: "always",
+    })
+    expect(opts).toContain('"first_name"')
+    expect(opts).toContain('"FirstName"')
   })
 
   it("quoteIdentifiers=auto is the default per-database behavior", async () => {

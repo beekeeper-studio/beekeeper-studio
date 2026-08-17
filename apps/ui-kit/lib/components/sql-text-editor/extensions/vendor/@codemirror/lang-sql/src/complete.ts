@@ -113,7 +113,7 @@ class CompletionLevel {
   children: {[name: string]: CompletionLevel} | undefined = undefined
   private _labelMap?: Map<string, number>
 
-  constructor(readonly idQuote: string, readonly idCaseInsensitive: boolean) {}
+  constructor(readonly idQuote: string, readonly idCaseInsensitive: boolean, readonly alwaysQuote = false) {}
 
   child(name: string) {
     let children = this.children || (this.children = Object.create(null))
@@ -127,13 +127,13 @@ class CompletionLevel {
       }
 
       if (!this._labelMap.has(name)) {
-        const completion = nameCompletion(name, "type", this.idQuote, this.idCaseInsensitive)
+        const completion = nameCompletion(name, "type", this.idQuote, this.idCaseInsensitive, this.alwaysQuote)
         this._labelMap.set(name, this.list.length)
         this.list.push(completion)
       }
     }
 
-    return (children[name] = new CompletionLevel(this.idQuote, this.idCaseInsensitive))
+    return (children[name] = new CompletionLevel(this.idQuote, this.idCaseInsensitive, this.alwaysQuote))
   }
 
   maybeChild(name: string) {
@@ -157,7 +157,7 @@ class CompletionLevel {
 
   addCompletions(completions: readonly (Completion | string)[]) {
     for (let option of completions)
-      this.addCompletion(typeof option == "string" ? nameCompletion(option, "property", this.idQuote, this.idCaseInsensitive) : option)
+      this.addCompletion(typeof option == "string" ? nameCompletion(option, "property", this.idQuote, this.idCaseInsensitive, this.alwaysQuote) : option)
   }
 
   addNamespace(namespace: SQLNamespace) {
@@ -268,15 +268,13 @@ class CompletionLevel {
  * - "auto" (default): only names the dialect can't reference bare — special
  *   characters always, and MixedCase only when the dialect case-folds
  *   unquoted identifiers (`caseInsensitiveIdentifiers` unset, e.g. Postgres).
- * - "always": additionally quote anything that isn't all-lowercase,
- *   regardless of dialect.
+ * - "always": every completed identifier, regardless of dialect.
  */
 export type IdentifierQuoting = "auto" | "always"
 
 /**
- * Resolve the quote character and case tolerance identifier completions use
- * for a dialect. `quoteIdentifiers: "always"` drops the dialect's case
- * tolerance, so MixedCase names get quoted even where they don't need it.
+ * Resolve the quoting parameters identifier completions use for a dialect.
+ * `quoteIdentifiers: "always"` quotes every completed name unconditionally.
  * `quoteCharacter` overrides which quote gets inserted, but only when the
  * dialect recognizes that character as an identifier quote (e.g. `"` instead
  * of `[` for SQL Server) — anything else would produce SQL the database
@@ -288,7 +286,8 @@ export function identifierCompletionParams(dialect?: SQLDialect, quoteIdentifier
   let validOverride = quoteCharacter?.length == 1 && recognized.includes(quoteCharacter)
   return {
     idQuote: validOverride ? quoteCharacter : recognized[0],
-    idCaseInsensitive: !!dialect?.spec.caseInsensitiveIdentifiers && quoteIdentifiers != "always",
+    idCaseInsensitive: !!dialect?.spec.caseInsensitiveIdentifiers,
+    alwaysQuote: quoteIdentifiers == "always",
   }
 }
 
@@ -298,8 +297,9 @@ function escapeIdentifier(name: string, closingQuote: string) {
   return name.split(closingQuote).join(closingQuote + closingQuote)
 }
 
-export function nameCompletion(label: string, type: string, idQuote: string, idCaseInsensitive: boolean): Completion {
-  if ((new RegExp("^[a-z_][a-z_\\d]*$", idCaseInsensitive ? "i" : "")).test(label)) return {label, type}
+export function nameCompletion(label: string, type: string, idQuote: string, idCaseInsensitive: boolean,
+                               alwaysQuote = false): Completion {
+  if (!alwaysQuote && (new RegExp("^[a-z_][a-z_\\d]*$", idCaseInsensitive ? "i" : "")).test(label)) return {label, type}
   let closingQuote = getClosingQuote(idQuote)
   return {label, type, apply: idQuote + escapeIdentifier(label, closingQuote) + closingQuote}
 }
@@ -309,8 +309,8 @@ export function buildCompletionLevels(schema: SQLNamespace,
                                    defaultTableName?: string, defaultSchemaName?: string,
                                    dialect?: SQLDialect, quoteIdentifiers?: IdentifierQuoting,
                                    quoteCharacter?: string) {
-  let {idQuote, idCaseInsensitive} = identifierCompletionParams(dialect, quoteIdentifiers, quoteCharacter)
-  let top = new CompletionLevel(idQuote, idCaseInsensitive)
+  let {idQuote, idCaseInsensitive, alwaysQuote} = identifierCompletionParams(dialect, quoteIdentifiers, quoteCharacter)
+  let top = new CompletionLevel(idQuote, idCaseInsensitive, alwaysQuote)
   let defaultSchema = defaultSchemaName ? top.child(defaultSchemaName) : null
 
   top.addNamespace(schema)
