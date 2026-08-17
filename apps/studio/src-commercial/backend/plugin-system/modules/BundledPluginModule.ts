@@ -1,9 +1,11 @@
 import path from "path";
 import fs from "fs";
+import semver from "semver";
 import rawLog from "@bksLogger";
 import platformInfo from "@/common/platform_info";
 import globals from "@/common/globals";
 import { Module, type ModuleOptions } from "@/services/plugin/Module";
+import type { Manifest } from "@/services/plugin/types";
 
 const log = rawLog.scope("BundledPluginModule");
 
@@ -29,7 +31,7 @@ export class BundledPluginModule extends Module {
   private async installBundledPlugins() {
     for (const { pkg } of globals.plugins.ensureInstalled) {
       try {
-        await this.ensureInstall(pkg);
+        await this.ensureInstalled(pkg);
       } catch (e) {
         log.error(`Error installing plugin ${pkg}`, e);
       }
@@ -41,7 +43,7 @@ export class BundledPluginModule extends Module {
    *
    * @param pkg Package name (e.g., "@beekeeperstudio/bks-ai-shell")
    */
-  private async ensureInstall(pkg: string) {
+  private async ensureInstalled(pkg: string) {
     log.info(`Resolving ${pkg}`);
 
     const pluginPath = BundledPluginModule.resolve(pkg);
@@ -59,21 +61,22 @@ export class BundledPluginModule extends Module {
     const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
     const pluginId = manifest.id;
 
-    // Have installed before?
-    if (this.manager.pluginSettings[pluginId]) {
-      log.info(
-        `Plugin "${pluginId}" is previously installed, skipping.`
-      );
+    // Already installed
+    const dst = path.join(pluginsDirectory, pluginId);
+    if (fs.existsSync(dst)) {
+      if (this.isInstalledPluginOutdated(manifest)) {
+        log.info(`Updating plugin ${pluginId} to v${manifest.version}`);
+        fs.rmSync(dst, { recursive: true, force: true });
+        fs.cpSync(pluginPath, dst, { recursive: true });
+      }
+      // This must be set, otherwise the plugin will be copied again
+      await this.manager.setPluginAutoUpdateEnabled(pluginId, true);
       return;
     }
 
-    const dst = path.join(pluginsDirectory, pluginId);
-    if (fs.existsSync(dst)) {
-      // This must be set, otherwise the plugin will be copied again
-      await this.manager.setPluginAutoUpdateEnabled(pluginId, true);
-      log.info(
-        `Plugin "${pluginId}" installation directory already exists on disk.`
-      );
+    // Uninstalled by the user, so don't bring it back.
+    if (this.manager.pluginSettings[pluginId]) {
+      log.info(`Plugin "${pluginId}" is previously installed, skipping.`);
       return;
     }
 
@@ -82,6 +85,19 @@ export class BundledPluginModule extends Module {
 
     // This must be set, otherwise the plugin will be copied again
     await this.manager.setPluginAutoUpdateEnabled(pluginId, true);
+  }
+
+  /** Compare a bundled manifest against the one installed on disk. */
+  private isInstalledPluginOutdated(manifest: Manifest): boolean {
+    const installedPath = path.join(
+      this.manager.fileManager.getDirectoryOf(manifest),
+      "manifest.json"
+    );
+    const installed = JSON.parse(fs.readFileSync(installedPath, "utf-8"));
+    return semver.gt(
+      semver.coerce(manifest.version),
+      semver.coerce(installed.version)
+    );
   }
 
   /**

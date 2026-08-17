@@ -1,7 +1,10 @@
 import PluginFileManager from "@/services/plugin/PluginFileManager";
 import PluginManager from "@/services/plugin/PluginManager";
 import { createPluginServer } from "@tests/integration/plugins/utils/server";
-import { createFileManager, cleanFileManager } from "@tests/integration/plugins/utils/fileManager";
+import {
+  createFileManager,
+  cleanFileManager,
+} from "@tests/integration/plugins/utils/fileManager";
 import { MockPluginRepositoryService } from "@tests/integration/plugins/utils/registry";
 import PluginRegistry from "@/services/plugin/PluginRegistry";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
@@ -11,6 +14,14 @@ import fs from "fs";
 import path from "path";
 import { BundledPluginModule } from "@commercial/backend/plugin-system/modules/BundledPluginModule";
 
+function bundledVersion(pkg: string): string {
+  const manifestPath = path.join(
+    BundledPluginModule.resolve(pkg),
+    "manifest.json"
+  );
+  return JSON.parse(fs.readFileSync(manifestPath, "utf-8")).version;
+}
+
 describe("BundledPluginModule", () => {
   const server = createPluginServer();
   const repositoryService = new MockPluginRepositoryService(server);
@@ -18,12 +29,36 @@ describe("BundledPluginModule", () => {
 
   let fileManager: PluginFileManager;
 
+  /**
+   * Put a bundled plugin on disk, as if the user had installed it. Pass a
+   * version to rewrite the manifest, or "latest" to keep the bundled one.
+   */
+  function copyBundledPlugin(pkg: string, version: string) {
+    const source = BundledPluginModule.resolve(pkg);
+    const manifestPath = path.join(source, "manifest.json");
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+    const directory = path.join(
+      fileManager.options.pluginsDirectory,
+      manifest.id
+    );
+
+    fs.cpSync(source, directory, { recursive: true });
+
+    if (version !== "latest") {
+      manifest.version = version;
+      fs.writeFileSync(
+        path.join(directory, "manifest.json"),
+        JSON.stringify(manifest)
+      );
+    }
+  }
+
   function createPluginManager() {
     return new PluginManager({
       fileManager,
       registry,
       appVersion: "9.9.9",
-    })
+    });
   }
 
   beforeAll(async () => {
@@ -51,16 +86,8 @@ describe("BundledPluginModule", () => {
   it("can install plugins manually", async () => {
     // Plugins are detected by a folder containing a manifest.json.
     // Here we copy from node_modules, but any source works.
-    fs.cpSync(
-      BundledPluginModule.resolve("@beekeeperstudio/bks-ai-shell"),
-      path.join(fileManager.options.pluginsDirectory, "bks-ai-shell"),
-      { recursive: true }
-    );
-    fs.cpSync(
-      BundledPluginModule.resolve("@beekeeperstudio/bks-er-diagram"),
-      path.join(fileManager.options.pluginsDirectory, "bks-er-diagram"),
-      { recursive: true }
-    );
+    copyBundledPlugin("@beekeeperstudio/bks-ai-shell", "latest");
+    copyBundledPlugin("@beekeeperstudio/bks-er-diagram", "latest");
 
     // Check if the plugins are installed
     const manager = createPluginManager();
@@ -92,5 +119,26 @@ describe("BundledPluginModule", () => {
     manager2.registerModule(BundledPluginModule);
     await manager2.initialize();
     await expect(manager2.getPlugins()).resolves.toHaveLength(0);
+  });
+
+  it("ensures bundled plugins are updated", async () => {
+    // v0 plugins should be in the .config/plugins folder
+    copyBundledPlugin("@beekeeperstudio/bks-ai-shell", "0.0.0");
+    copyBundledPlugin("@beekeeperstudio/bks-er-diagram", "0.0.0");
+
+    // Initialize plugin system
+    const manager2 = createPluginManager();
+    manager2.registerModule(BundledPluginModule);
+    await manager2.initialize();
+
+    // Verify they're updated
+    const updated = await manager2.getPlugins();
+    expect(updated).toHaveLength(2);
+    expect(updated[0].manifest.version).toBe(
+      bundledVersion("@beekeeperstudio/bks-ai-shell")
+    );
+    expect(updated[1].manifest.version).toBe(
+      bundledVersion("@beekeeperstudio/bks-er-diagram")
+    );
   });
 });

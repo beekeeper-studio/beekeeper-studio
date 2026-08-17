@@ -323,7 +323,10 @@ export default class PluginFileManager {
     }
   }
 
-  getDirectoryOf(id: string) {
+  getDirectoryOf(id: string | Manifest) {
+    if (typeof id === "object") {
+      id = id.id;
+    }
     const pluginsRoot = path.resolve(this.options.pluginsDirectory);
     const resolved = path.resolve(pluginsRoot, id);
     // Must be strictly *inside* the plugins directory. This rejects traversal
