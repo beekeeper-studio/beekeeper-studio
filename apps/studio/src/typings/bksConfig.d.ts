@@ -494,6 +494,7 @@ declare interface IBksConfig {
         };
         queryEditor: {
             defaultFormatter: string;
+            keywordCase: string;
             maxResults: number;
             primaryQueryAction: string;
             secondaryQueryAction: string;

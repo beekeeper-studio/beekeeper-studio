@@ -42,6 +42,10 @@ export default Vue.extend({
       if (!this.textEditor) return;
       this.applyCompletionSource();
     },
+    keywordCase() {
+      if (!this.textEditor) return;
+      this.textEditor.setKeywordCase(this.keywordCase);
+    },
     formatterConfig() {
       this.formatSql()
     }
@@ -52,6 +56,7 @@ export default Vue.extend({
       return new SqlTextEditor({
         identiferDialect: this.identifierDialect,
         paramTypes: this.paramTypes,
+        keywordCase: this.keywordCase,
         onQuerySelectionChange: (params) => {
           this.selectedQuery = params.selectedQuery.text;
           this.$emit("bks-query-selection-change", params)

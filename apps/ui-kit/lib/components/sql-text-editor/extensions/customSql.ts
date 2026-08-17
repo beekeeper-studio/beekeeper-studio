@@ -4,7 +4,7 @@
  */
 
 import { SQLConfig as CMSQLConfig } from "@codemirror/lang-sql";
-import { Facet, StateEffect, StateField } from "@codemirror/state";
+import { Compartment, Facet, StateEffect, StateField } from "@codemirror/state";
 import { Entity } from "../../types";
 import { EditorView } from "@codemirror/view";
 import { buildSchema } from "../utils";
@@ -12,10 +12,13 @@ import { sql } from "./vendor/@codemirror/lang-sql/src/sql";
 import { ColumnsGetter } from "./sqlContextComplete";
 import { completeConfig, setSchema } from "./vendor/@codemirror/lang-sql/src/complete";
 
+export type KeywordCase = "lowercase" | "uppercase";
+
 type SQLConfig = CMSQLConfig & {
   disableSchemaCompletion?: boolean;
   disableKeywordCompletion?: boolean;
   columnsGetter?: ColumnsGetter;
+  keywordCase?: KeywordCase;
 };
 
 const setEntities = StateEffect.define<Entity[]>();
@@ -34,6 +37,8 @@ export const configFacet = Facet.define<SQLConfig, SQLConfig>({
   combine: (values) => values[0],
 });
 
+const keywordCaseCompartment = new Compartment();
+
 /**
  * Get all base SQL extensions
  */
@@ -42,8 +47,25 @@ function customSql(config: SQLConfig = {}) {
     // we regiter entities so it can be used by other sql extensions like sqlContextComplete
     entities,
     configFacet.of(config),
-    sql(config),
+    keywordCaseCompartment.of(sql({
+      ...config,
+      upperCaseKeywords: config.keywordCase !== undefined
+        ? config.keywordCase === "uppercase"
+        : config.upperCaseKeywords,
+    })),
   ];
+}
+
+function applyKeywordCase(view: EditorView, keywordCase: KeywordCase) {
+  const config = view.state.facet(configFacet);
+  view.dispatch({
+    effects: keywordCaseCompartment.reconfigure(
+      sql({
+        ...config,
+        upperCaseKeywords: keywordCase === "uppercase",
+      })
+    ),
+  });
 }
 
 function applyEntities(
@@ -64,4 +86,4 @@ function applyEntities(
   });
 }
 
-export { entities, applyEntities, customSql as sql, SQLConfig };
+export { entities, applyEntities, applyKeywordCase, customSql as sql, SQLConfig };
