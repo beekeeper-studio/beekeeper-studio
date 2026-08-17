@@ -26,18 +26,30 @@ The default key combo to manually trigger autocomplete is `Ctrl+Space`.
 
 ![Image Alt Tag](../../assets/images/using-the-sql-editor-11.gif)
 
-### What completions insert
+### Identifier quoting
 
-When a suggestion is accepted, Beekeeper writes the name the way your database expects it:
+- Beekeeper Studio will automatically add `"quotes"` to identifiers when it thinks they are required, eg `"MixedCaseTableName"` in PostgreSQL.
+- Beekeeper Studio will pick the quote character `"`, `` ` ``, or `[`, depending on engine conventions.
 
--   Table and column names are only quoted when the database actually requires it — names with spaces or special characters, for example.
--   PostgreSQL folds unquoted names to lowercase, so MixedCase names like `FilmActor` are completed quoted (`"FilmActor"`). MySQL, SQL Server, and SQLite all reference MixedCase names fine without quotes, so no quotes are added there.
--   When quoting is needed, each database gets its conventional style: `"double quotes"` for PostgreSQL and SQLite, `` `backticks` `` for MySQL/MariaDB, and `[brackets]` for SQL Server.
--   Keywords and built-in functions match the case you type: `SEL` completes to `SELECT`, `sel` completes to `select`. With no prefix to match — like triggering `Ctrl+Space` on a blank spot — keywords complete uppercase.
+Some specific examples:
+
+- **PostgreSQL** mixed-case identifiers will be quoted, for example `"MyTable"`.
+- **MySQL** mixed-case identifiers will **not** be quoted (they work fine).
+- **SQL Server** defaults to using `[brackets]` for quotes.
+- **MySQL & MariaDB** defaults to `` `backticks` `` for quotes.
+
+!!! note "You can 'always quote', or change your preferred quote character using the [autocomplete configuration](#configuring-autocomplete)."
+
+
+### Keyword case selection
+
+Do you prefer `SELECT`, or `select`? By default Beekeeper Studio will match the case you use when typing, so if you type `SE`, it will autocomplete `SELECT` for example.
+
+!!! note "Configure this behavior using the [autocomplete configuration](#configuring-autocomplete)"
 
 ### Configuring autocomplete
 
-You can adjust these behaviors with the [config file](../configuration.md). These are the defaults:
+You can adjust autocomplete behaviors with the [config file](../configuration.md). These are the defaults:
 
 {% ini-include section="ui.queryEditor.autocomplete" %}
 
@@ -48,7 +60,7 @@ The quote character itself can be changed per database with `autocompleteQuoteCh
 autocompleteQuoteCharacter = "
 ```
 
-A value of `0` or `-1` (the shipped default) selects the database's convention. Only characters the database accepts as identifier quotes are honored (SQL Server accepts `[` or `"`, SQLite accepts `"` or a backtick) — anything else falls back to the convention, so autocomplete never writes a name your database can't parse.
+A value of `0` (the shipped default) selects the database's convention. Only characters the database accepts as identifier quotes are honored (SQL Server accepts `[` or `"`, SQLite accepts `"` or a backtick) — anything else falls back to the convention, so autocomplete never writes a name your database can't parse.
 
 ## Run Contexts
 
