@@ -782,16 +782,6 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
       border-color: rgba($statusbar-text, 0.25);
     }
   }
-  .page-size-select {
-    width: auto;
-    flex-shrink: 0;
-    margin-right: ($gutter-h * 1.5);
-    padding-right: 0;
-    select {
-      padding-left: $gutter-h;
-      padding-right: 1.1rem;
-    }
-  }
 }
 
 .tabulator-menu {

@@ -92,24 +92,6 @@
         class="tabulator-paginator"
       >
         <div class="flex-center flex-middle flex">
-          <div
-            class="select-wrap page-size-select"
-            v-tooltip="'Rows per page'"
-          >
-            <select
-              :value="limit"
-              @change="setPageSize($event.target.value)"
-              class="form-control"
-            >
-              <option
-                v-for="size in pageSizeOptions"
-                :key="size"
-                :value="size"
-              >
-                {{ size }} rows
-              </option>
-            </select>
-          </div>
           <a
             v-if="(this.page > 1)"
             @click="page = 1"
@@ -276,6 +258,23 @@
             </x-menuitem>
             <x-menuitem @click="openQueryTab">
               <x-label>Copy view to SQL</x-label>
+            </x-menuitem>
+            <hr>
+            <x-menuitem
+              disabled
+              togglable
+            >
+              <x-label>Rows per page</x-label>
+            </x-menuitem>
+            <x-menuitem
+              v-for="size in pageSizeOptions"
+              :key="size"
+              togglable
+              :toggled="size === limit"
+              @toggle.prevent
+              @click.prevent="setPageSize(size)"
+            >
+              <x-label>{{ size }}</x-label>
             </x-menuitem>
           </x-menu>
         </x-button>
@@ -893,7 +892,7 @@ export default Vue.extend({
         log.warn("table page size save failed", e);
       }
     },
-    setPageSize(size: number | string) {
+    setPageSize(size: number) {
       const newSize = Number(size);
       if (!_.isFinite(newSize) || newSize < 1 || newSize === this.limit) return;
 
