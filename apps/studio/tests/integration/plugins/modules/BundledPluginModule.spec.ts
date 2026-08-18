@@ -12,14 +12,49 @@ import migration from "@/migration/20250529_add_plugin_settings";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import fs from "fs";
 import path from "path";
-import { BundledPluginModule } from "@commercial/backend/plugin-system/modules/BundledPluginModule";
+import {
+  BundledPlugin,
+  BundledPluginModule,
+} from "@commercial/backend/plugin-system/modules/BundledPluginModule";
 
-function bundledVersion(pkg: string): string {
-  const manifestPath = path.join(
-    BundledPluginModule.resolve(pkg),
-    "manifest.json"
+function readJson(...paths: string[]) {
+  const content = fs.readFileSync(path.join(...paths), { encoding: "utf-8" });
+  return JSON.parse(content);
+}
+
+function installV0Plugins(fileManager: PluginFileManager) {
+  const aiShellPath = path.join(
+    fileManager.options.pluginsDirectory,
+    "bks-ai-shell"
   );
-  return JSON.parse(fs.readFileSync(manifestPath, "utf-8")).version;
+  const erDiagramPath = path.join(
+    fileManager.options.pluginsDirectory,
+    "bks-er-diagram"
+  );
+  fs.cpSync(
+    BundledPlugin.resolve("@beekeeperstudio/bks-ai-shell"),
+    aiShellPath,
+    { recursive: true }
+  );
+  fs.cpSync(
+    BundledPlugin.resolve("@beekeeperstudio/bks-er-diagram"),
+    erDiagramPath,
+    { recursive: true }
+  );
+  fs.writeFileSync(
+    path.join(aiShellPath, "manifest.json"),
+    JSON.stringify({
+      ...readJson(aiShellPath, "manifest.json"),
+      version: "0.0.0",
+    })
+  );
+  fs.writeFileSync(
+    path.join(erDiagramPath, "manifest.json"),
+    JSON.stringify({
+      ...readJson(erDiagramPath, "manifest.json"),
+      version: "0.0.0",
+    })
+  );
 }
 
 describe("BundledPluginModule", () => {
@@ -28,34 +63,6 @@ describe("BundledPluginModule", () => {
   const registry = new PluginRegistry(repositoryService);
 
   let fileManager: PluginFileManager;
-
-  /**
-   * Put a bundled plugin on disk, as if the user had installed it. Pass a
-   * version to rewrite the manifest, or "latest" to keep the bundled one.
-   */
-  function copyBundledPlugin(pkg: string, version: string) {
-    const source = BundledPluginModule.resolve(pkg);
-    const manifestPath = path.join(source, "manifest.json");
-    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
-
-    fs.cpSync(
-      source,
-      path.join(fileManager.options.pluginsDirectory, manifest.id),
-      { recursive: true }
-    );
-
-    if (version !== "latest") {
-      manifest.version = version;
-      fs.writeFileSync(
-        path.join(
-          fileManager.options.pluginsDirectory,
-          manifest.id,
-          "manifest.json"
-        ),
-        JSON.stringify(manifest)
-      );
-    }
-  }
 
   function createPluginManager() {
     return new PluginManager({
@@ -90,8 +97,16 @@ describe("BundledPluginModule", () => {
   it("can install plugins manually", async () => {
     // Plugins are detected by a folder containing a manifest.json.
     // Here we copy from node_modules, but any source works.
-    copyBundledPlugin("@beekeeperstudio/bks-ai-shell", "latest");
-    copyBundledPlugin("@beekeeperstudio/bks-er-diagram", "latest");
+    fs.cpSync(
+      BundledPlugin.resolve("@beekeeperstudio/bks-ai-shell"),
+      path.join(fileManager.options.pluginsDirectory, "bks-ai-shell"),
+      { recursive: true }
+    );
+    fs.cpSync(
+      BundledPlugin.resolve("@beekeeperstudio/bks-er-diagram"),
+      path.join(fileManager.options.pluginsDirectory, "bks-er-diagram"),
+      { recursive: true }
+    );
 
     // Check if the plugins are installed
     const manager = createPluginManager();
@@ -126,23 +141,27 @@ describe("BundledPluginModule", () => {
   });
 
   it("ensures bundled plugins are updated", async () => {
-    // v0 plugins should be in the .config/plugins folder
-    copyBundledPlugin("@beekeeperstudio/bks-ai-shell", "0.0.0");
-    copyBundledPlugin("@beekeeperstudio/bks-er-diagram", "0.0.0");
+    installV0Plugins(fileManager);
+
+    const bundledAiShell = readJson(
+      BundledPlugin.resolve("@beekeeperstudio/bks-ai-shell"),
+      "manifest.json"
+    );
+
+    const bundledErDiagram = readJson(
+      BundledPlugin.resolve("@beekeeperstudio/bks-er-diagram"),
+      "manifest.json"
+    );
 
     // Initialize plugin system
-    const manager2 = createPluginManager();
-    manager2.registerModule(BundledPluginModule);
-    await manager2.initialize();
+    const manager = createPluginManager();
+    manager.registerModule(BundledPluginModule);
+    await manager.initialize();
 
     // Verify they're updated
-    const updated = await manager2.getPlugins();
+    const updated = await manager.getPlugins();
     expect(updated).toHaveLength(2);
-    expect(updated[0].manifest.version).toBe(
-      bundledVersion("@beekeeperstudio/bks-ai-shell")
-    );
-    expect(updated[1].manifest.version).toBe(
-      bundledVersion("@beekeeperstudio/bks-er-diagram")
-    );
+    expect(updated[0].manifest.version).toBe(bundledAiShell.version);
+    expect(updated[1].manifest.version).toBe(bundledErDiagram.version);
   });
 });
