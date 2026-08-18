@@ -225,6 +225,44 @@ function testWith(dockerTag: string, readonly: boolean) {
       })
     })
 
+    // A reservation whose transaction never began is the state the typed
+    // BEGIN TRAN flow leaves behind, and it's also reachable whenever UI
+    // state drifts from driver state. commitTransaction/rollbackTransaction
+    // pop the reservation BEFORE calling into the driver, so on that state
+    // they throw ENOTBEGUN after already dropping the reservation: the tab
+    // still shows an active transaction but no longer holds a connection,
+    // and every escape hatch (Commit, Rollback, toggling back to Auto) keeps
+    // failing. Both methods must treat a never-begun transaction as a
+    // graceful no-op and leave the tab with a usable reservation.
+    describe("Reserved connection state machine", () => {
+      const tabId = 902
+
+      afterEach(async () => {
+        await util.connection.releaseConnection(tabId)
+      })
+
+      it("commitTransaction on a reserved but never-begun connection must not throw or drop the reservation", async () => {
+        if (readonly) return
+
+        await util.connection.reserveConnection(tabId)
+
+        await util.connection.commitTransaction(tabId)
+
+        // the tab must still hold its reservation afterwards
+        await expect(util.connection.reserveConnection(tabId)).rejects.toThrow()
+      })
+
+      it("rollbackTransaction on a reserved but never-begun connection must not throw or drop the reservation", async () => {
+        if (readonly) return
+
+        await util.connection.reserveConnection(tabId)
+
+        await util.connection.rollbackTransaction(tabId)
+
+        await expect(util.connection.reserveConnection(tabId)).rejects.toThrow()
+      })
+    })
+
     describe("queryStream double execution", () => {
       it("should run the supplied query only once across the full stream lifecycle", async () => {
         if (util.connection.readOnlyMode) return
