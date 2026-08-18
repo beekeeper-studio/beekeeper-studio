@@ -17,6 +17,11 @@
           <slot />
           <span class="expand" />
           <div class="actions">
+            <copy-structure-button
+              :columns="tableColumns"
+              :rows="tableData"
+              label="Partitions"
+            />
             <a
               @click.prevent="refreshPartitions"
               class="btn btn-link btn-fab"
@@ -94,6 +99,7 @@ import _ from 'lodash';
 import { TabulatorStateWatchers, vueEditor, trashButton } from '@shared/lib/tabulator/helpers'
 import StatusBar from '../common/StatusBar.vue'
 import ErrorAlert from '../common/ErrorAlert.vue'
+import CopyStructureButton from './CopyStructureButton.vue'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import { AppEvent } from '@/common/AppEvent';
 import { FormatterDialect } from '@shared/lib/dialects/models';
@@ -103,7 +109,8 @@ import { mapState } from 'vuex';
 export default Vue.extend({
 	components: {
     StatusBar,
-    ErrorAlert
+    ErrorAlert,
+    CopyStructureButton
   },
   mixins: [DataMutators],
   props: ['table', 'tabID', 'active', 'tabState', 'properties'],

@@ -26,6 +26,11 @@
           <slot />
           <span class="expand" />
           <div class="actions">
+            <copy-structure-button
+              :columns="tableColumns"
+              :rows="tableData"
+              label="Columns"
+            />
             <a
               @click.prevent="refreshColumns"
               v-tooltip="$bksConfigUI.getKeybindingLabel('general.refresh')"
@@ -134,6 +139,7 @@ import { AppEvent } from '@/common/AppEvent'
 import StatusBar from '../common/StatusBar.vue'
 import { AlterTableSpec, FormatterDialect } from '@shared/lib/dialects/models'
 import ErrorAlert from '../common/ErrorAlert.vue'
+import CopyStructureButton from './CopyStructureButton.vue'
 import rawLog from '@bksLogger'
 import { escapeHtml } from '@shared/lib/tabulator'
 import { ExtendedTableColumn } from '@/lib/db/models'
@@ -152,7 +158,8 @@ const FakeCell = {
 export default Vue.extend({
   components: {
     StatusBar,
-    ErrorAlert
+    ErrorAlert,
+    CopyStructureButton
   },
   mixins: [DataMutators],
   props: ["table", "tabID", "active", "primaryKeys", "tabState"],

@@ -15,7 +15,12 @@
           <div class="table-title">
             <h2>Triggers</h2>
           </div>
-          <div class="table-actions">
+          <div class="actions">
+            <copy-structure-button
+              :columns="tableColumns"
+              :rows="tableData"
+              label="Triggers"
+            />
             <!-- <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Trigger</a> -->
           </div>
         </div>
@@ -40,6 +45,7 @@
 import {Tabulator, TabulatorFull} from 'tabulator-tables'
 import data_mutators from '../../mixins/data_mutators'
 import StatusBar from '../common/StatusBar.vue'
+import CopyStructureButton from './CopyStructureButton.vue'
 import { mapGetters, mapState } from 'vuex'
 import { SelectableCellMixin } from '@/mixins/selectableCell';
 import { copyCellMenu } from '@/lib/menu/tableMenu';
@@ -48,6 +54,7 @@ import { copyCellMenu } from '@/lib/menu/tableMenu';
 export default {
   components: {
     StatusBar,
+    CopyStructureButton,
   },
   mixins: [data_mutators, SelectableCellMixin],
   props: ["table", "tabId", "active", "properties"],

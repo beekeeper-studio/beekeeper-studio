@@ -25,6 +25,11 @@
           </div>
           <div class="expand" />
           <div class="actions">
+            <copy-structure-button
+              :columns="tableColumns"
+              :rows="tableData"
+              label="Relations"
+            />
             <a
               @click.prevent="$emit('refresh')"
               v-tooltip="$bksConfigUI.getKeybindingLabel('general.refresh')"
@@ -113,6 +118,7 @@ import { format } from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
 import rawLog from '@bksLogger'
 import ErrorAlert from '../common/ErrorAlert.vue'
+import CopyStructureButton from './CopyStructureButton.vue'
 const log = rawLog.scope('TableRelations');
 import { escapeHtml } from '@shared/lib/tabulator'
 import { SelectableCellMixin } from '@/mixins/selectableCell';
@@ -123,7 +129,8 @@ export default Vue.extend({
   props: ["table", "tabId", "active", "properties", 'tabState'],
   components: {
     StatusBar,
-    ErrorAlert
+    ErrorAlert,
+    CopyStructureButton
   },
   data() {
     return {
