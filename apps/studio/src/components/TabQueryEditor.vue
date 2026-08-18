@@ -73,6 +73,9 @@
         :columns-getter="columnsGetter"
         :default-schema="defaultSchema"
         :language-id="languageIdForDialect"
+        :keyword-casing="autocompleteKeywordCasing"
+        :quote-identifiers="autocompleteQuoteIdentifiers"
+        :quote-character="autocompleteQuoteCharacter"
         :clipboard="$native.clipboard"
         :replace-extensions="replaceExtensions"
         :context-menu-items="editorContextMenu"
@@ -1062,6 +1065,23 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       },
       primaryIsCurrent() {
         return this.$bksConfig.ui.queryEditor?.primaryQueryAction.toLowerCase() === 'submitcurrentquery';
+      },
+      autocompleteKeywordCasing() {
+        const value = String(this.$bksConfig.ui.queryEditor?.autocomplete?.keywordCasing ?? '').toLowerCase();
+        return ['preserve', 'upper', 'lower'].includes(value) ? value : 'preserve';
+      },
+      autocompleteQuoteIdentifiers() {
+        const value = String(this.$bksConfig.ui.queryEditor?.autocomplete?.quoteIdentifiers ?? '').toLowerCase();
+        return ['auto', 'always'].includes(value) ? value : 'auto';
+      },
+      autocompleteQuoteCharacter() {
+        // Same [db.<type>] section naming as processRawConfig (postgres, not postgresql)
+        const dbType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
+        const value = this.$bksConfig.db?.[dbType]?.autocompleteQuoteCharacter;
+        // 0 or -1 selects the database's convention; the editor also rejects
+        // characters the dialect doesn't recognize as identifier quotes.
+        if (value === 0 || value === -1 || value === '0' || value === '-1') return undefined;
+        return typeof value === 'string' && value.trim() ? value.trim() : undefined;
       }
     },
     watch: {
