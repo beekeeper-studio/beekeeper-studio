@@ -297,12 +297,10 @@ export default {
       return this.expandedFolderIds.map((id) => `folder-${id}`);
     },
     sortedItemNodes() {
-      // Cloud has no sort buttons — drag and drop is the only way to reorder,
-      // and it lands in `position`.
-      if (this.isCloud) {
-        return _.sortBy(this.itemNodes, 'ref.position')
-      }
-      return _.sortBy(this.itemNodes, 'ref.title')
+      // Drag and drop is the only way to reorder queries, and it lands in
+      // `position`. Sorting by title here would outrank it, so a drag would
+      // save but never show.
+      return _.sortBy(this.itemNodes, (n) => n.ref.position ?? 0)
     },
     searching() {
       return !!this.filterQuery;
