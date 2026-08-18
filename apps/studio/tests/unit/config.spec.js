@@ -3,8 +3,22 @@ import {
 } from "@/common/bksConfig/BksConfigProvider";
 import { checkConflicts, checkDeprecations, checkUnrecognized } from "@/common/bksConfig/mainBksConfig";
 import { parseIni, processRawConfig } from "@/config/helpers";
+import fullConfigIni from "../../default.config.ini";
 
 describe("Config", () => {
+  it("should parse the table page size options as positive numbers", () => {
+    const config = processRawConfig(parseIni(fullConfigIni));
+    const { pageSize, pageSizeOptions } = config.ui.tableTable;
+
+    expect(typeof pageSize).toBe("number");
+    expect(Array.isArray(pageSizeOptions)).toBe(true);
+    expect(pageSizeOptions).toContain(pageSize);
+    pageSizeOptions.forEach((size) => {
+      expect(typeof size).toBe("number");
+      expect(size).toBeGreaterThan(0);
+    });
+  });
+
   it("should parse ini file correctly", () => {
     const parsed = parseIni(`
 [general]

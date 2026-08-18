@@ -540,6 +540,7 @@ declare interface IBksConfig {
             maxInitialWidth: number;
             minColumnWidth: number;
             pageSize: number;
+            pageSizeOptions: number[];
         };
         tableTriggers: {
             maxColumnWidth: number;

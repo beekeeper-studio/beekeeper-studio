@@ -92,6 +92,24 @@
         class="tabulator-paginator"
       >
         <div class="flex-center flex-middle flex">
+          <div
+            class="select-wrap page-size-select"
+            v-tooltip="'Rows per page'"
+          >
+            <select
+              :value="limit"
+              @change="setPageSize($event.target.value)"
+              class="form-control"
+            >
+              <option
+                v-for="size in pageSizeOptions"
+                :key="size"
+                :value="size"
+              >
+                {{ size }} rows
+              </option>
+            </select>
+          </div>
           <a
             v-if="(this.page > 1)"
             @click="page = 1"
@@ -408,6 +426,11 @@ export default Vue.extend({
       // App.db row holding tabulator's column persistence.
       // Loaded by loadPersistence() and read synchronously by persistenceReader.
       persistenceRow: null as { id?: number; data: string } | null,
+
+      // App.db row holding the rows-per-page choice for this table.
+      pageSizeRow: null as { id?: number; data: string } | null,
+      // Per-table rows-per-page override. Null means use the configured default.
+      pageSize: null as number | null,
       running: false
     };
   },
@@ -420,7 +443,17 @@ export default Vue.extend({
       return this.$bksConfig.db[dbType].allowSkipToLastPage;
     },
     limit() {
-      return this.$bksConfig.ui.tableTable.pageSize
+      return this.pageSize ?? this.$bksConfig.ui.tableTable.pageSize
+    },
+    pageSizeOptions() {
+      // castArray keeps a user config of `pageSizeOptions = 50` (no `[]`) usable.
+      const configured = _.castArray(this.$bksConfig.ui.tableTable.pageSizeOptions ?? [])
+      const options = [
+        ...configured,
+        this.$bksConfig.ui.tableTable.pageSize,
+        this.limit,
+      ]
+      return _.uniq(options.map(Number).filter((n) => _.isFinite(n) && n > 0)).sort((a, b) => a - b)
     },
     isEmpty() {
       return _.isEmpty(this.data);
@@ -808,6 +841,74 @@ export default Vue.extend({
         this.persistenceRow = null;
       }
     },
+    async loadPageSize() {
+      if (!this.tableId) {
+        return;
+      }
+
+      try {
+        const row: TransportTabulatorPersistence = await this.$util.send(
+          "appdb/tabulatorPersistence/findOneBy",
+          { options: { persistenceID: this.tableId, type: "pageSize" } }
+        );
+        this.pageSizeRow = row ? { id: row.id, data: row.data } : null;
+        const stored = row ? Number(JSON.parse(row.data)) : null;
+        this.pageSize = _.isFinite(stored) && stored > 0 ? stored : null;
+      } catch (e) {
+        log.warn("table page size load failed", e);
+        this.pageSizeRow = null;
+        this.pageSize = null;
+      }
+    },
+    async savePageSize(size: number) {
+      if (!this.tableId) {
+        return;
+      }
+
+      const serialized = JSON.stringify(size);
+      if (serialized === this.pageSizeRow?.data) return;
+
+      try {
+        if (!this.pageSizeRow?.id) {
+          // Another tab on the same table may already own the row, and
+          // (persistenceID, type) is unique.
+          const existing: TransportTabulatorPersistence = await this.$util.send(
+            "appdb/tabulatorPersistence/findOneBy",
+            { options: { persistenceID: this.tableId, type: "pageSize" } }
+          );
+          if (existing) {
+            this.pageSizeRow = { id: existing.id, data: existing.data };
+          }
+        }
+        const saved = await this.$util.send("appdb/tabulatorPersistence/save", {
+          obj: {
+            id: this.pageSizeRow?.id,
+            persistenceID: this.tableId,
+            type: "pageSize",
+            data: serialized,
+          },
+        });
+        this.pageSizeRow = { id: saved?.id ?? this.pageSizeRow?.id, data: serialized };
+      } catch (e) {
+        log.warn("table page size save failed", e);
+      }
+    },
+    setPageSize(size: number | string) {
+      const newSize = Number(size);
+      if (!_.isFinite(newSize) || newSize < 1 || newSize === this.limit) return;
+
+      this.pageSize = newSize;
+      // Offsets and cursors from the old page size no longer line up.
+      this.paginationStates = [null];
+      this.rawPage = 1;
+      this.savePageSize(newSize);
+
+      if (!this.tabulator) return;
+      // Tabulator's setPageSize also jumps back to page 1, which reloads the data.
+      Promise.resolve(this.tabulator.setPageSize(newSize)).catch((e) => {
+        log.warn("unable to apply page size", e);
+      });
+    },
     persistenceReader(id: string, type: string) {
       if (this.persistenceRow) {
         try {
@@ -1158,6 +1259,7 @@ export default Vue.extend({
       await this.$store.dispatch('updateTableColumns', this.table)
       await this.getTableKeys();
       await this.loadPersistence();
+      await this.loadPageSize();
 
       this.tabulator = tabulatorForTableData(this.$refs.table, {
         table: this.table.name,
@@ -1963,7 +2065,7 @@ export default Vue.extend({
             const response = await this.connection.selectTop(
               this.table.name,
               offset,
-              this.limit + 1, // +1 to check if there is a next page
+              limit + 1, // +1 to check if there is a next page
               orderBy,
               filters,
               this.table.schema,
@@ -1984,7 +2086,7 @@ export default Vue.extend({
             //  { allowFilter: this.isCassandra }
             //);
 
-            this.hasNextPage = response.result.length > this.limit
+            this.hasNextPage = response.result.length > limit
 
             if (this.hasNextPage) {
               response.result.pop()
