@@ -15,11 +15,11 @@
         v-if="!isRecentList"
         draggable="false"
         @mousedown.stop.prevent
-        @click.stop="onCheckboxClick($event)"
+        @click.stop="$emit('select', config, $event)"
         type="checkbox"
         class="form-control delete-checkbox"
         :class="{ shown: bulkSelectionActive }"
-        :checked="checked"
+        :checked="selected"
       >
       <span :class="`connection-label connection-label-color-${labelColor}`" />
       <div class="connection-title flex-col expand">
@@ -102,7 +102,6 @@ export default {
     'showDuplicate',
     'pinned',
     'privacyMode',
-    'checked',
     'bulkSelectionActive',
     'selected',
   ],
@@ -290,13 +289,6 @@ export default {
       }
       this.$emit('select', this.config, event)
       this.click()
-    },
-    onCheckboxClick(event) {
-      if (event.shiftKey || event.metaKey || event.ctrlKey) {
-        this.$emit('select', this.config, event)
-        return
-      }
-      this.$emit('toggle-check', this.config)
     },
     async doubleClick() {
       if (this.savedConnection) {

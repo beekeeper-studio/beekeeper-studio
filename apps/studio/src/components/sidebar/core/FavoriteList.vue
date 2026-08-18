@@ -77,7 +77,6 @@
         <nav
           v-else
           class="list-body"
-          ref="wrapper"
         >
           <template v-if="searching">
             <div
@@ -91,12 +90,10 @@
               :key="query.id"
               :item="query"
               :active="isActive(query)"
-              :selected="isChecked(query) || selected === query"
-              :checked="isChecked(query)"
+              :selected="selectedIds.includes(itemNodeId(query))"
               :bulk-selection-active="bulkSelectionActive"
               @remove="remove"
               @select="select"
-              @toggle-check="toggleChecked"
               @open="open"
               @open-history="openHistory"
               @export="exportTo"
@@ -207,13 +204,11 @@
               <favorite-list-item
                 :item="node.ref"
                 :active="isActive(node.ref)"
-                :selected="isChecked(node.ref) || selected === node.ref"
-                :checked="isChecked(node.ref)"
+                :selected="selectedIds.includes(node.id)"
                 :bulk-selection-active="bulkSelectionActive"
                 :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.ref.id) }"
                 @remove="remove"
                 @select="select"
-                @toggle-check="toggleChecked"
                 @open="open"
                 @open-history="openHistory"
                 @export="exportTo"
@@ -260,7 +255,6 @@ export default {
   data: function () {
     return {
       selectedIds: [],
-      selected: null,
       cloudSelectionAnchorId: null,
       draggingQuery: null,
       renamingFolderId: null,
@@ -278,11 +272,7 @@ export default {
       this.setSavedQueryFilter(value);
     },
   },
-  mounted() {
-    document.addEventListener('mousedown', this.maybeUnselect)
-  },
   beforeDestroy() {
-    document.removeEventListener('mousedown', this.maybeUnselect)
     clearTimeout(this.justCreatedTimeout)
   },
   computed: {
@@ -450,22 +440,11 @@ export default {
     importFromComputer() {
       this.$root.$emit(AppEvent.promptSqlFilesImport)
     },
-    maybeUnselect(e) {
-      if (!this.selected) return
-      if (this.$refs.wrapper.contains(e.target)) {
-        return
-      } else {
-        this.selected = null
-      }
-    },
     async refresh() {
       await this.$store.dispatch('refreshQueries')
     },
     isActive(item) {
       return this.activeTab && this.activeTab.queryId === item.id
-    },
-    isChecked(item) {
-      return this.selectedIds.includes(this.itemNodeId(item))
     },
     toggleChecked(item) {
       this.setSelectedIds(
@@ -487,17 +466,16 @@ export default {
               visibleIds
             )
           )
-          this.selected = item
           this.cloudSelectionAnchorId = nodeId
           return
         }
       }
-      if (event?.metaKey || event?.ctrlKey) {
+      // Checkbox clicks and cmd/ctrl-clicks toggle bulk selection. A plain
+      // row click only updates the range-select anchor.
+      if (event?.metaKey || event?.ctrlKey || event?.target?.type === 'checkbox') {
         this.toggleChecked(item)
-        this.selected = item
         return
       }
-      this.selected = item
       this.cloudSelectionAnchorId = nodeId
     },
     open(item) {

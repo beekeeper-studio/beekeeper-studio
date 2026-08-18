@@ -17,11 +17,11 @@
       <input
         draggable="false"
         @mousedown.stop.prevent
-        @click.stop="onCheckboxClick($event)"
+        @click.stop="$emit('select', item, $event)"
         type="checkbox"
         class="form-control delete-checkbox"
         :class="{ shown: bulkSelectionActive }"
-        :checked="checked"
+        :checked="selected"
       >
       <i class="item-icon query material-icons">code</i>
       <div class="list-text">
@@ -48,7 +48,7 @@ import { mapGetters, mapState } from 'vuex'
 
 export default Vue.extend({
   components: { EditableText },
-  props: ['item', 'selected', 'active', 'checked', 'bulkSelectionActive'],
+  props: ['item', 'selected', 'active', 'bulkSelectionActive'],
   data: () => ({
     timeAgo: new TimeAgo('en-US'),
     rename: false,
@@ -95,13 +95,6 @@ export default Vue.extend({
     },
   },
   methods: {
-    onCheckboxClick(event) {
-      if (event.shiftKey || event.metaKey || event.ctrlKey) {
-        this.$emit('select', this.item, event)
-        return
-      }
-      this.$emit('toggle-check', this.item)
-    },
     openContextMenu(event, item) {
       // Stop here and propagate the event if right clicking an input element
       if (event.target.tagName === 'INPUT') {

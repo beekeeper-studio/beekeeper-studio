@@ -166,13 +166,11 @@
                   :pinned="pinnedConnections.includes(c)"
                   :is-recent-list="false"
                   :privacy-mode="privacyMode"
-                  :checked="isChecked(c)"
-                  :selected="isChecked(c)"
+                  :selected="selectedIds.includes(itemNodeId(c))"
                   :bulk-selection-active="bulkSelectionActive"
                   @edit="edit"
                   @remove="remove"
                   @select="select"
-                  @toggle-check="toggleChecked"
                   @duplicate="duplicate"
                   @doubleClick="connect"
                 />
@@ -287,13 +285,11 @@
                     :pinned="pinnedConnectionIds.includes(node.ref.id)"
                     :is-recent-list="false"
                     :privacy-mode="privacyMode"
-                    :checked="isChecked(node.ref)"
-                    :selected="isChecked(node.ref)"
+                    :selected="selectedIds.includes(node.id)"
                     :bulk-selection-active="bulkSelectionActive"
                     @edit="edit"
                     @remove="remove"
                     @select="select"
-                    @toggle-check="toggleChecked"
                     :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.ref.id) }"
                     @duplicate="duplicate"
                     @doubleClick="connect"
@@ -609,9 +605,6 @@ export default {
     itemNodeId(config) {
       return `item-${config.id}`
     },
-    isChecked(config) {
-      return this.selectedIds.includes(this.itemNodeId(config))
-    },
     toggleChecked(config) {
       this.setSelectedIds(
         toggleSelectedId(this.selectedIds, this.itemNodeId(config))
@@ -636,7 +629,10 @@ export default {
           return
         }
       }
-      if (event?.metaKey || event?.ctrlKey) {
+      // Checkbox clicks and cmd/ctrl-clicks toggle bulk selection. A plain
+      // row click only updates the range-select anchor (and still opens the
+      // connection via the list item).
+      if (event?.metaKey || event?.ctrlKey || event?.target?.type === 'checkbox') {
         this.toggleChecked(config)
         return
       }
