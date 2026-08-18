@@ -116,6 +116,16 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   _defaultSchema: string = 'dbo';
   authService: AzureAuthService;
   transcoders = [GenericBinaryTranscoder];
+  // Reserved connections are mssql Transaction wrappers, which can't execute
+  // anything until begin() is called; tracks the tabs whose wrapper has begun.
+  private begunTransactions = new Set<number>();
+
+  // Pure transaction-control statements that map onto the mssql driver's
+  // Transaction API. Anything carrying extra content (or a savepoint-style
+  // named ROLLBACK) falls through to text execution instead.
+  private static readonly BEGIN_STATEMENT = /^begin(\s+(tran|transaction)(\s+[^\s;]+)?)?$/i;
+  private static readonly COMMIT_STATEMENT = /^commit(\s+(tran|transaction|work)(\s+[^\s;]+)?)?$/i;
+  private static readonly ROLLBACK_STATEMENT = /^rollback(\s+(tran|transaction|work))?$/i;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, SQLServerContext, server, database)
@@ -232,12 +242,74 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
 
   async query(queryText: string, tabId: number) {
     const hasReserved = this.reservedConnections.has(tabId);
-    const queryRequest: Request = hasReserved ? this.reservedConnections.get(tabId).request() : this.pool.request();
     log.info("HAS RESERVED: ", hasReserved, "For query: ", queryText)
+
+    if (!hasReserved) {
+      const queryRequest: Request = this.pool.request();
+      return {
+        execute: async(): Promise<NgQueryResult[]> => {
+          try {
+            return await this.executeQuery(queryText, { arrayRowMode: true, connection: queryRequest })
+          } catch (err) {
+            if (err.code === mmsqlErrors.CANCELED) {
+              err.sqlectronError = 'CANCELED_BY_USER';
+            }
+
+            throw err;
+          }
+        },
+        async cancel() {
+          if (!queryRequest) {
+            throw new Error('Query not ready to be canceled')
+          }
+
+          queryRequest.cancel()
+        },
+      }
+    }
+
+    // Reserved connections are mssql Transaction wrappers: they refuse every
+    // request until begin() is called (ENOTBEGUN) and track commit/rollback
+    // themselves, so a textual BEGIN TRAN/COMMIT/ROLLBACK can't just be sent
+    // as SQL. Translate those statements to the driver API and run everything
+    // else on the wrapper's request as usual. A textual BEGIN TRAN inside an
+    // already-begun transaction still executes as SQL, so T-SQL @@TRANCOUNT
+    // nesting on the pinned connection is left to the user.
+    const statements = this.identifyCommands(queryText);
+    let currentRequest: Request = null;
+    let canceled = false;
+
     return {
-      execute: async(): Promise<NgQueryResult[]> => {
+      execute: async (): Promise<NgQueryResult[]> => {
         try {
-          return await this.executeQuery(queryText, { arrayRowMode: true, connection: queryRequest })
+          const results: NgQueryResult[] = [];
+          for (const statement of statements) {
+            if (canceled) break;
+            const sqlText = statement.text.trim().replace(/;+\s*$/, '');
+            const begun = this.begunTransactions.has(tabId);
+
+            if (!begun && statement.type === 'BEGIN_TRANSACTION' && SQLServerClient.BEGIN_STATEMENT.test(sqlText)) {
+              await this.startTransaction(tabId);
+              results.push(this.parseRowQueryResult([], 0, statement, null, true));
+              continue;
+            }
+            if (begun && statement.type === 'COMMIT' && SQLServerClient.COMMIT_STATEMENT.test(sqlText)) {
+              await this.commitTransaction(tabId);
+              results.push(this.parseRowQueryResult([], 0, statement, null, true));
+              continue;
+            }
+            if (begun && statement.type === 'ROLLBACK' && SQLServerClient.ROLLBACK_STATEMENT.test(sqlText)) {
+              await this.rollbackTransaction(tabId);
+              results.push(this.parseRowQueryResult([], 0, statement, null, true));
+              continue;
+            }
+
+            // commitTransaction/rollbackTransaction reserve a fresh wrapper,
+            // so the reservation has to be looked up per statement
+            currentRequest = this.peekConnection(tabId).request();
+            results.push(...await this.executeQuery(statement.text, { arrayRowMode: true, connection: currentRequest }));
+          }
+          return results;
         } catch (err) {
           if (err.code === mmsqlErrors.CANCELED) {
             err.sqlectronError = 'CANCELED_BY_USER';
@@ -246,12 +318,13 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
           throw err;
         }
       },
-      async cancel() {
-        if (!queryRequest) {
+      cancel: async () => {
+        canceled = true;
+        if (!currentRequest) {
           throw new Error('Query not ready to be canceled')
         }
 
-        queryRequest.cancel()
+        currentRequest.cancel()
       },
     }
   }
@@ -1194,6 +1267,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
 
   async releaseConnection(tabId: number): Promise<void> {
     const conn = this.popConnection(tabId);
+    this.begunTransactions.delete(tabId);
     if (conn) {
       try {
         // This may throw if the connection hasn't been begun yet, so just to be safe we'll catch
@@ -1203,19 +1277,28 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async startTransaction(tabId: number): Promise<void> {
+    if (this.begunTransactions.has(tabId)) return;
     const conn = this.peekConnection(tabId);
     await conn.begin();
+    this.begunTransactions.add(tabId);
   }
 
   async commitTransaction(tabId: number): Promise<void> {
+    // A reservation whose transaction never began has nothing to commit;
+    // leave the reservation in place so the tab stays usable.
+    if (!this.begunTransactions.has(tabId)) return;
     const conn = this.popConnection(tabId);
+    this.begunTransactions.delete(tabId);
     await conn.commit();
     // commit releases the connection annoyingly so we have to re reserve one
     await this.reserveConnection(tabId);
   }
 
   async rollbackTransaction(tabId: number): Promise<void> {
+    // Same as commitTransaction: nothing ever began, so nothing to roll back.
+    if (!this.begunTransactions.has(tabId)) return;
     const conn = this.popConnection(tabId);
+    this.begunTransactions.delete(tabId);
     await conn.rollback();
     // rollback also releases the connection so we have to re reserve the connection
     await this.reserveConnection(tabId);

@@ -1643,6 +1643,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         if (error) {
           log.error("Unable to identify query.", error)
         }
+        let typedTransactionEnd = false
         try {
 
           if (this.canManageTransactions && identification.some((value: IdentifyResult) => value.executionType === "TRANSACTION")) {
@@ -1655,7 +1656,10 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
               this.enteredTransactionFromIdent = true;
               this.hasActiveTransaction = true;
             } else if (this.isManualCommit && this.hasActiveTransaction && endTransaction > startTransaction) {
-              await this.toggleCommitMode();
+              // The typed COMMIT/ROLLBACK has to run on the reserved connection
+              // that owns the transaction, so leave manual mode only after the
+              // statement has executed (see below).
+              typedTransactionEnd = true;
             }
           }
         } catch (ex) {
@@ -1686,6 +1690,14 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           const queryStartTime = new Date()
           const results = await this.runningQuery.execute();
           const queryEndTime = new Date()
+
+          if (typedTransactionEnd) {
+            // The COMMIT/ROLLBACK above already ended the transaction, so
+            // there is nothing to roll back: just drop the reservation and
+            // flip back to auto-commit.
+            this.hasActiveTransaction = false;
+            await this.toggleCommitMode();
+          }
 
           // https://github.com/beekeeper-studio/beekeeper-studio/issues/1435
           if (!document.hasFocus() && window.Notification && Notification.permission === "granted") {
