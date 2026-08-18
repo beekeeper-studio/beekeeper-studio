@@ -37,17 +37,21 @@ describe("BundledPluginModule", () => {
     const source = BundledPluginModule.resolve(pkg);
     const manifestPath = path.join(source, "manifest.json");
     const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
-    const directory = path.join(
-      fileManager.options.pluginsDirectory,
-      manifest.id
-    );
 
-    fs.cpSync(source, directory, { recursive: true });
+    fs.cpSync(
+      source,
+      path.join(fileManager.options.pluginsDirectory, manifest.id),
+      { recursive: true }
+    );
 
     if (version !== "latest") {
       manifest.version = version;
       fs.writeFileSync(
-        path.join(directory, "manifest.json"),
+        path.join(
+          fileManager.options.pluginsDirectory,
+          manifest.id,
+          "manifest.json"
+        ),
         JSON.stringify(manifest)
       );
     }
