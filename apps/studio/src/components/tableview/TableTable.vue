@@ -260,21 +260,23 @@
               <x-label>Copy view to SQL</x-label>
             </x-menuitem>
             <hr>
-            <x-menuitem
-              disabled
-              togglable
-            >
-              <x-label>Rows per page</x-label>
-            </x-menuitem>
-            <x-menuitem
-              v-for="size in pageSizeOptions"
-              :key="size"
-              togglable
-              :toggled="size === limit"
-              @toggle.prevent
-              @click.prevent="setPageSize(size)"
-            >
-              <x-label>{{ size }}</x-label>
+            <x-menuitem @click="keepMenuOpenForSubmenu">
+              <x-label>
+                Rows per page
+                <i class="material-icons menu-icon">arrow_right</i>
+              </x-label>
+              <x-menu>
+                <x-menuitem
+                  v-for="size in pageSizeOptions"
+                  :key="size"
+                  togglable
+                  :toggled="size === limit"
+                  @toggle.prevent
+                  @click.prevent="setPageSize(size)"
+                >
+                  <x-label>{{ size }}</x-label>
+                </x-menuitem>
+              </x-menu>
             </x-menuitem>
           </x-menu>
         </x-button>
@@ -890,6 +892,16 @@ export default Vue.extend({
         this.pageSizeRow = { id: saved?.id ?? this.pageSizeRow?.id, data: serialized };
       } catch (e) {
         log.warn("table page size save failed", e);
+      }
+    },
+    keepMenuOpenForSubmenu(event: Event) {
+      // Xel's x-button closes its menu on any menuitem click, including a
+      // click on an item that only opens a submenu. Swallow clicks on the
+      // submenu parent itself; clicks on the submenu's items still bubble
+      // up and close the menu.
+      const target = event.target as HTMLElement;
+      if (target.closest("x-menuitem") === event.currentTarget) {
+        event.stopPropagation();
       }
     },
     setPageSize(size: number) {
