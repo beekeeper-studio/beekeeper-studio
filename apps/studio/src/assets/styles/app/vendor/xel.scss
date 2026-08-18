@@ -816,8 +816,11 @@ x-menu {
     margin: ($gutter-h * 0.75) 0;
     box-sizing: border-box;
     background: transparent;
-    border-top: 1px solid $border-color;
+    // Same divider as the ui-kit context menu (.BksContextMenu-item-divider):
+    // reset all borders first, then draw the top one. The reverse order kept
+    // menu separators invisible.
     border: 0;
+    border-top: 1px solid $border-color;
     + hr, &:last-child {
       display: none;
     }

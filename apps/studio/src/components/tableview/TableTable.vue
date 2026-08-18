@@ -259,6 +259,7 @@
             <x-menuitem @click="openQueryTab">
               <x-label>Copy view to SQL</x-label>
             </x-menuitem>
+            <hr>
             <x-menuitem @click="keepMenuOpenForSubmenu">
               <x-label>
                 Rows per page
