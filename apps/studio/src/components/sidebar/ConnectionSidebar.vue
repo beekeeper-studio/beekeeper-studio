@@ -520,29 +520,12 @@ export default {
       return this.connectionsPollError || this.foldersPollError || null
     },
     sortedItemNodes() {
-      // Cloud has no sort buttons — drag and drop is the only way to reorder,
-      // and it lands in `position`.
-      if (this.isCloud) {
-        return _.sortBy(this.itemNodes, 'ref.position')
-      }
-      let result = []
-      if (this.sort.field === 'labelColor') {
-        const mappings = {
-          default: -1,
-          red: 0,
-          orange: 1,
-          yellow: 2,
-          green: 3,
-          blue: 4,
-          purple: 5,
-          pink: 6
-        }
-        result = _.orderBy(this.itemNodes, (n) => mappings[n.ref.labelColor])
-      } else {
-        result = _.orderBy(this.itemNodes, `ref.${this.sort.field}`)
-      }
-      if (this.sort.order === 'desc') result = result.reverse()
-      return result;
+      // Rendered order always comes from `position`. The sort buttons are a
+      // one-shot action: `reorderBySort` rewrites `position` for every
+      // connection and offers an undo. Deriving the rendered order from
+      // `sort.field` here instead would permanently outrank `position`, so a
+      // drag would save but never show.
+      return _.sortBy(this.itemNodes, (n) => n.ref.position ?? 0)
     },
     errorList() {
       return Object.values(this.errors);
