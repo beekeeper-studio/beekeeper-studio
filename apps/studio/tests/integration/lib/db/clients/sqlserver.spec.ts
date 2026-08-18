@@ -143,6 +143,88 @@ function testWith(dockerTag: string, readonly: boolean) {
       })
     })
 
+    // Running BEGIN TRAN in a query tab must switch the tab into
+    // manual-commit mode and open a transaction, not error.
+    //
+    // TabQueryEditor.submitQuery performs this flow when the editor text
+    // contains an unbalanced BEGIN_TRANSACTION statement:
+    //   1. flips the tab into manual-commit mode (UI state),
+    //   2. reserves a connection for the tab (conn/reserveConnection) WITHOUT
+    //      calling startTransaction — the user's own BEGIN TRAN is what is
+    //      supposed to open the transaction,
+    //   3. executes the raw editor text through conn/query with the tab id,
+    //      which routes it to the reserved connection.
+    // The reserved connection therefore must accept a typed BEGIN TRAN, keep
+    // the statements that follow inside that transaction, and let the Commit
+    // button (commitTransaction) make the work durable.
+    describe("Typed BEGIN TRAN (manual-commit query-tab flow)", () => {
+      const tabId = 901
+
+      beforeEach(async () => {
+        await util.knex.schema.dropTableIfExists("typed_begin_tran")
+        await util.knex.schema.createTable("typed_begin_tran", (table) => {
+          table.integer("id").primary().notNullable()
+          table.specificType("name", "varchar(255)")
+        })
+      })
+
+      afterEach(async () => {
+        await util.connection.releaseConnection(tabId)
+        await util.knex.schema.dropTableIfExists("typed_begin_tran")
+      })
+
+      it("should run a typed BEGIN TRAN on a freshly reserved connection, then commit", async () => {
+        if (readonly) return
+
+        await util.connection.reserveConnection(tabId)
+
+        // The user's own BEGIN TRAN, exactly as the query tab submits it
+        const begin = await util.connection.query("BEGIN TRAN", tabId)
+        await begin.execute()
+
+        const insert = await util.connection.query(
+          "INSERT INTO [dbo].[typed_begin_tran] (id, name) VALUES (1, 'typed begin tran')",
+          tabId
+        )
+        await insert.execute()
+
+        // From outside the transaction (another tab / no reservation) the
+        // uncommitted row must not be visible
+        const outsideBefore = await util.connection.query("SELECT * FROM [dbo].[typed_begin_tran]")
+        const beforeCommit = await outsideBefore.execute()
+        expect(beforeCommit[0].rows.length).toBe(0)
+
+        // The Commit button
+        await util.connection.commitTransaction(tabId)
+
+        const outsideAfter = await util.connection.query("SELECT * FROM [dbo].[typed_begin_tran]")
+        const afterCommit = await outsideAfter.execute()
+        expect(afterCommit[0].rows.length).toBe(1)
+      })
+
+      it("should run a typed BEGIN TRAN and discard the work via the Rollback button", async () => {
+        if (readonly) return
+
+        await util.connection.reserveConnection(tabId)
+
+        const begin = await util.connection.query("BEGIN TRAN", tabId)
+        await begin.execute()
+
+        const insert = await util.connection.query(
+          "INSERT INTO [dbo].[typed_begin_tran] (id, name) VALUES (2, 'rolled back')",
+          tabId
+        )
+        await insert.execute()
+
+        // The Rollback button
+        await util.connection.rollbackTransaction(tabId)
+
+        const outside = await util.connection.query("SELECT * FROM [dbo].[typed_begin_tran]")
+        const results = await outside.execute()
+        expect(results[0].rows.length).toBe(0)
+      })
+    })
+
     describe("queryStream double execution", () => {
       it("should run the supplied query only once across the full stream lifecycle", async () => {
         if (util.connection.readOnlyMode) return
