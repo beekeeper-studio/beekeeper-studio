@@ -103,6 +103,10 @@
   --bks-text-editor-panel-bg-color: var(--bks-query-editor-bg);
   --bks-text-editor-panel-fg-color: var(--bks-text-dark);
 
+  // Vim status line
+  --bks-text-editor-vim-panel-bg-color: var(--bks-text-editor-panel-bg-color);
+  --bks-text-editor-vim-panel-fg-color: var(--bks-text-editor-panel-fg-color);
+
   // Context Menu
   --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: -5%)};
   --bks-text-editor-context-menu-fg-color: #{$text-dark};
@@ -221,6 +225,39 @@
     background-image: none; // reset cm style
     background-color: var(--bks-text-editor-button-bg-color);
     text-transform: capitalize;
+  }
+
+  // Vim's status line: the current mode, any pending keys, and the ':' ex
+  // and '/' search inputs. Rendered by @replit/codemirror-vim as a codemirror
+  // panel, so it only carries layout styles of its own.
+  .cm-vim-panel {
+    border-top: 1px solid var(--bks-border-color);
+    background-color: var(--bks-text-editor-vim-panel-bg-color);
+    color: var(--bks-text-editor-vim-panel-fg-color);
+    font-family: $font-family-mono;
+    font-size: 12px;
+    align-items: center;
+    gap: 0.5rem;
+
+    input {
+      flex: 1;
+      min-width: 0;
+      padding: 0;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+    }
+
+    button {
+      padding: 0;
+      border: none;
+      background: none;
+      color: inherit;
+      font: inherit;
+      cursor: default;
+    }
   }
 
   .cm-panel.cm-search {

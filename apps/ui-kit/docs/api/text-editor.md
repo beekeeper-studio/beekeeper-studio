@@ -17,13 +17,48 @@
 | `lsConfig`          | `LanguageServerConfiguration`                             | Configure the Language Server Protocol integration. See [Language Server Configuration](#language-server-configuration) below.                                                                                                            | `undefined` | ✅     |
 | `replaceExtensions` | `Extension[] \| (extensions: Extension[]) => Extension[]` | Replace or modify the default CodeMirror extensions used by the editor. Accepts either a full list of extensions or a function to transform the default list.                                                                             | `undefined` | ✅     |
 | `vimConfig`         | `object`                                                  | Configure vim mode.                                                                                                                                                                                                                       | `undefined` | ⚠️     |
-| `vimKeymaps`        | `array`                                                   | Configure custom key mappings in vim. See documentation in `texteditor/mixin.ts` for more details.                                                                                                                                        | `undefined` | ⚠️     |
+| `vimKeymaps`        | `VimDirective[]`                                          | Configure vim from the host app: mappings (recursive or `noremap`), `unmap`, `mapclear` and `set`. See [Vim Directives](#vim-directives) below.                                                                                           | `undefined` | ⚠️     |
 | `foldGutter`        | `boolean`                                                 | Enable code folding in the editor.                                                                                                                                                                                                        | `false`     | ⚠️     |
 | `clipboard`         | `Clipboard`                                               | Custom clipboard handler for the editor used in vim. If provided, it must implement a `write` method to copy text to the clipboard. See [MDN Clipboard API](https://developer.mozilla.org/en-US/docs/Web/API/Clipboard) for more details. | `undefined` | ⚠️     |
 | `height`            | `number`                                                  | **[Deprecated]** Use CSS to control the editor height instead.                                                                                                                                                                            | `undefined` | ❌     |
 
 <!-- Not sure if autofocus should be here, see https://github.com/beekeeper-studio/beekeeper-studio/issues/3051 -->
 <!-- | `autoFocus`         | `boolean`                                                 | Automatically focus the editor when it regains window focus after blur.                                                                                                                                                                   | `false`     | ⚠️     | -->
+
+### Vim Directives
+
+`vimKeymaps` takes a list of directives, applied in order. Anything without a
+`type` is a mapping.
+
+| Directive | Fields | Vim equivalent |
+| --- | --- | --- |
+| mapping | `lhs`, `rhs`, `mode?`, `noremap?` | `map` / `nmap` / `nnoremap` / … |
+| `type: 'unmap'` | `lhs`, `mode?` | `unmap` / `nunmap` / … |
+| `type: 'mapclear'` | `mode?` | `mapclear` / `nmapclear` / … |
+| `type: 'set'` | `name`, `value` | `set name`, `set noname`, `set name=value` |
+
+`mode` is `'normal'`, `'insert'` or `'visual'`; leaving it out means every
+mode. Set `noremap` whenever the `rhs` contains the `lhs`, which would
+otherwise expand without end.
+
+```js
+const vimKeymaps = [
+  { lhs: ';', rhs: ':' },
+  { lhs: 'y', rhs: '"*y', mode: 'normal', noremap: true },
+  { type: 'set', name: 'ignorecase', value: true },
+]
+```
+
+Note that vim mappings are registered on a process-global vim instance shared
+by every editor on the page, so the last configuration applied wins.
+
+### Vim Status Line
+
+With `keymap="vim"` the editor renders CodeMirror's vim status panel along the
+bottom: the current mode, pending keys, and the `:` and `/` input lines. Style
+it with the `.cm-vim-panel` class or the
+`--bks-text-editor-vim-panel-bg-color` and
+`--bks-text-editor-vim-panel-fg-color` variables.
 
 ### Language Server Configuration
 

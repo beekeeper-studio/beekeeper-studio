@@ -12,6 +12,7 @@
         v-bind.sync="editor"
         :vim-config="vimConfig"
         :vim-keymaps="vimKeymaps"
+        :clipboard="$native.clipboard"
         :keymap="userKeymap"
         :output="mongoOutputResult"
         :is-focused="focusingElement === 'text-editor'"
@@ -123,7 +124,7 @@ import MergeManager from '@/components/editor/MergeManager.vue'
 import { AppEvent } from '@/common/AppEvent'
 import { PropType } from 'vue'
 import { TransportOpenTab } from '@/common/transport/TransportOpenTab'
-import { getVimKeymapsFromVimrc } from '@/lib/editor/vim';
+import { vimExCommands } from '@/lib/editor/vimExCommands';
 
 const log = rawlog.scope('query-editor')
 
@@ -229,29 +230,22 @@ export default Vue.extend({
    keybindings() {
       const keybindings: any = {}
 
-      if(this.userKeymap === "vim") {
+      keybindings["Esc"] = this.cancelQuery
+
+      if (this.userKeymap === "vim") {
+        // Vim is registered ahead of these bindings, so it takes Esc whenever
+        // it means something there. In plain normal mode vim reports Esc as
+        // unhandled and it reaches cancelQuery. Ctrl-Esc stays bound for
+        // anyone used to it.
         keybindings["Ctrl-Esc"] = this.cancelQuery
-      } else {
-        keybindings["Esc"] = this.cancelQuery
       }
 
       return keybindings
     },
     vimConfig() {
-      const exCommands = [
-        { name: "quit", prefix: "q", handler: this.close },
-        { name: "qa", prefix: "qa", handler: () => this.$root.$emit(AppEvent.closeAllTabs) },
-        { name: "tabnew", prefix: "tabnew", handler: (_cn, params) => {
-          if(params.args && params.args.length > 0){
-            let queryName = params.args[0]
-            this.$root.$emit(AppEvent.newTab,"", queryName)
-            return
-          }
-          this.$root.$emit(AppEvent.newTab)
-        }},
-      ]
-
-      return { exCommands }
+      // The same table every tab registers. A shell tab has nothing to save,
+      // so it simply never listens for AppEvent.vimWrite.
+      return vimExCommands(this.trigger)
     },
     showResultTable() {
       return this.rowCount > 0
@@ -422,8 +416,21 @@ export default Vue.extend({
       }
     },
     updateTextEditorFocus(focused: boolean) {
-      if (!focused) {
-        this.onTextEditorBlur?.()
+      if (focused) {
+        // Clicking into the editor is just as much a focus change as asking
+        // for it, so keep both the intent and the actual state in step.
+        this.focusElement = 'text-editor'
+        this.focusingElement = 'text-editor'
+        return
+      }
+      // An app-initiated blur is waiting on this callback and updates the
+      // state itself. Any other blur means the editor really has lost focus,
+      // and leaving focusingElement stale would stop us ever handing it
+      // back. See #3446.
+      if (this.onTextEditorBlur) {
+        this.onTextEditorBlur()
+      } else if (this.focusingElement === 'text-editor') {
+        this.focusingElement = 'none'
       }
     },
     async switchPaneFocus(_event?: KeyboardEvent, target?: 'text-editor' | 'table') {
@@ -470,12 +477,16 @@ export default Vue.extend({
     })
     this.containerResizeObserver.observe(this.$refs.container)
 
+    // Applying the vimrc reconfigures the editor's keymap, which rebuilds the
+    // vim extension underneath whatever has focus. Let it land before
+    // focusing rather than after. See #2990.
+    await this.$store.dispatch('vim/load');
+    this.vimKeymaps = this.$store.getters['vim/directives'];
+
     if (this.active) {
       await this.$nextTick()
       this.focusElement = 'text-editor'
     }
-
-    this.vimKeymaps = await getVimKeymapsFromVimrc();
   },
   beforeDestroy() {
     if(this.split) {

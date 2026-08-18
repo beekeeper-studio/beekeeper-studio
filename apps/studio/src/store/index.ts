@@ -40,6 +40,7 @@ import { PopupMenuModule } from './modules/PopupMenuModule'
 import { WebPluginManagerStatus } from '@/services/plugin'
 import { MenuBarModule } from './modules/MenuBarModule'
 import { PluginsModule, PluginsState } from './modules/plugins'
+import { VimStoreModule } from './modules/VimStoreModule'
 import { pluralize } from '@/vendor/pluralize'
 
 
@@ -154,6 +155,7 @@ const store = new Vuex.Store<State>({
     popupMenu: PopupMenuModule,
     menuBar: MenuBarModule,
     plugins: PluginsModule,
+    vim: VimStoreModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),

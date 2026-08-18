@@ -119,6 +119,12 @@ export default {
     },
     applyKeymap() {
       this.textEditor.setKeymap(this.keymap, this.vimOptions);
+      // Reconfiguring the keymap compartment rebuilds the vim extension, and
+      // that can leave the editor without dom focus. Put it back if the editor
+      // is meant to have it.
+      if (this.isFocused) {
+        this.textEditor.focus();
+      }
     },
     applyLineWrapping() {
       this.textEditor.setLineWrapping(this.lineWrapping);

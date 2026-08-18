@@ -5,7 +5,7 @@
       <a
         v-if="canCancel"
         @click.prevent="$emit('cancel')"
-        title="Cancel Query Execution (Esc)"
+        :title="`Cancel Query Execution (${cancelKey})`"
         class="cancel-query btn btn-flat"
       >Cancel</a>
     </div>
@@ -23,6 +23,15 @@
         type: Boolean,
         required: false,
         default: true
+      },
+      /**
+       * In vim mode Esc only reaches cancel from normal mode, so Ctrl-Esc is
+       * the key that always works and the one worth advertising.
+       */
+      cancelKey: {
+        type: String,
+        required: false,
+        default: 'Esc'
       }
     }
   }
