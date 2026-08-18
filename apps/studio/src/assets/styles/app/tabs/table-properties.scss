@@ -53,7 +53,14 @@ $cell-success:           $row-add;
     .table-title {
       display: flex;
       flex-grow: 1;
+      align-items: baseline;
+      gap: 10px;
       color: $text-dark;
+      .filter-match-label {
+        font-size: 12.5px;
+        color: $text-light;
+        white-space: nowrap;
+      }
     }
     h2 {
       margin: 0;
@@ -69,6 +76,151 @@ $cell-success:           $row-add;
       }
       .btn-fab.btn-link {
         margin-left: $gutter-w;
+      }
+    }
+
+    // Toolbar row: search / copy / refresh | add
+    .table-info-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .toolbar-btn {
+        margin: 0;
+        cursor: pointer;
+        @include noselect;
+      }
+
+      .table-info-filter {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        height: 30px;
+        padding: 0 8px 0 10px;
+        background: rgba($theme-base, 0.04);
+        border: 1px solid rgba($theme-base, 0.09);
+        border-radius: 6px;
+        transition: border-color 0.15s ease-in-out;
+        &:focus-within {
+          border-color: rgba($theme-primary, 0.5);
+        }
+        .search-icon {
+          flex: none;
+          font-size: 16px;
+          color: $text-lighter;
+        }
+        .filter-input {
+          width: 148px;
+          height: 100%;
+          padding: 0;
+          border: 0;
+          background: transparent;
+          box-shadow: none;
+          font-size: 13px;
+          color: $text-dark;
+          &:focus {
+            border: 0;
+            box-shadow: none;
+          }
+        }
+        .clear-filter {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex: none;
+          width: 16px;
+          height: 16px;
+          padding: 0;
+          border: 0;
+          border-radius: 999px;
+          background: transparent;
+          color: $text-light;
+          cursor: pointer;
+          &.is-hidden {
+            visibility: hidden;
+          }
+          &:hover {
+            background: rgba($theme-base, 0.12);
+            color: $text-dark;
+          }
+          i {
+            font-size: 12px;
+          }
+        }
+      }
+
+      .copy-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 30px;
+        line-height: 28px;
+        padding: 0 4px 0 10px;
+        background: transparent;
+        border: 1px solid rgba($theme-base, 0.09);
+        border-radius: 6px;
+        box-shadow: none;
+        font-size: 13px;
+        font-weight: 400;
+        color: $text;
+        &:hover, &:focus {
+          background: rgba($theme-base, 0.06);
+          color: $text-dark;
+        }
+        .material-icons {
+          font-size: 15px;
+          font-weight: normal;
+        }
+        .material-icons.dropdown-icon {
+          font-size: 16px;
+          margin-left: -2px;
+          color: $text-light;
+        }
+      }
+
+      .refresh-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
+        &:hover, &:focus {
+          background: rgba($theme-base, 0.07);
+        }
+        .material-icons {
+          font-size: 16px;
+          color: $text-light;
+        }
+      }
+
+      .toolbar-divider {
+        flex: none;
+        width: 1px;
+        height: 20px;
+        margin: 0 3px;
+        background: rgba($theme-base, 0.1);
+      }
+
+      .add-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 30px;
+        padding: 0 13px 0 10px;
+        border-radius: 6px;
+        background: $theme-primary;
+        font-size: 13px;
+        font-weight: 500;
+        color: rgba(black, 0.87);
+        &:hover, &:focus {
+          background: color.adjust($theme-primary, $lightness: 6%);
+          color: rgba(black, 0.87);
+        }
+        .material-icons {
+          font-size: 15px;
+          color: rgba(black, 0.87);
+        }
       }
     }
   }

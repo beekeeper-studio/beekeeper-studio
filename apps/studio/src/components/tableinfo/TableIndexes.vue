@@ -29,21 +29,21 @@
           <div class="table-subheader">
             <div class="table-title">
               <h2>Indexes</h2>
+              <span
+                class="filter-match-label"
+                v-if="filterMatches"
+              >{{ filterMatches.matched }} of {{ filterMatches.total }} match</span>
             </div>
             <span class="expand" />
-            <div class="actions">
-              <a
-                @click.prevent="$emit('refresh')"
-                v-tooltip="$bksConfigUI.getKeybindingLabel('general.refresh')"
-                class="btn btn-link btn-fab"
-              ><i class="material-icons">refresh</i></a>
-              <a
-                v-if="enabled"
-                @click.prevent="addRow"
-                v-tooltip="$bksConfigUI.getKeybindingLabel('general.addRow')"
-                class="btn btn-primary btn-fab"
-              ><i class="material-icons">add</i></a>
-            </div>
+            <table-info-toolbar
+              :tabulator="tabulator"
+              filter-placeholder="Filter indexes"
+              :show-add="enabled"
+              add-label="Index"
+              @add="addRow"
+              @refresh="$emit('refresh')"
+              @matches="filterMatches = $event"
+            />
           </div>
           <div
             class="table-indexes"
@@ -122,6 +122,7 @@ import rawLog from '@bksLogger'
 import { format } from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
 import ErrorAlert from '../common/ErrorAlert.vue'
+import TableInfoToolbar from './TableInfoToolbar.vue'
 import { TableIndex } from '@/lib/db/models'
 import { mapGetters, mapState } from 'vuex'
 const log = rawLog.scope('TableIndexVue')
@@ -143,6 +144,7 @@ export default Vue.extend({
   components: {
     StatusBar,
     ErrorAlert,
+    TableInfoToolbar,
   },
   mixins: [data_mutators, SelectableCellMixin],
   props: ["table", "tabId", "active", "properties", 'tabState'],
@@ -154,6 +156,7 @@ export default Vue.extend({
       removedRows: [],
       loading: false,
       error: null,
+      filterMatches: null,
     }
   },
   watch: {

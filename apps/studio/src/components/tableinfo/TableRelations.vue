@@ -22,21 +22,21 @@
         <div class="table-subheader">
           <div class="table-title">
             <h2>Relations</h2>
+            <span
+              class="filter-match-label"
+              v-if="filterMatches"
+            >{{ filterMatches.matched }} of {{ filterMatches.total }} match</span>
           </div>
           <div class="expand" />
-          <div class="actions">
-            <a
-              @click.prevent="$emit('refresh')"
-              v-tooltip="$bksConfigUI.getKeybindingLabel('general.refresh')"
-              class="btn btn-link btn-fab"
-            ><i class="material-icons">refresh</i></a>
-            <a
-              v-if="enabled && canAdd"
-              @click.prevent="addRow"
-              v-tooltip="$bksConfigUI.getKeybindingLabel('general.addRow')"
-              class="btn btn-primary btn-fab"
-            ><i class="material-icons">add</i></a>
-          </div>
+          <table-info-toolbar
+            :tabulator="tabulator"
+            filter-placeholder="Filter relations"
+            :show-add="enabled && canAdd"
+            add-label="Relation"
+            @add="addRow"
+            @refresh="$emit('refresh')"
+            @matches="filterMatches = $event"
+          />
         </div>
         <div
           class="table-relations"
@@ -113,6 +113,7 @@ import { format } from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
 import rawLog from '@bksLogger'
 import ErrorAlert from '../common/ErrorAlert.vue'
+import TableInfoToolbar from './TableInfoToolbar.vue'
 const log = rawLog.scope('TableRelations');
 import { escapeHtml } from '@shared/lib/tabulator'
 import { SelectableCellMixin } from '@/mixins/selectableCell';
@@ -123,7 +124,8 @@ export default Vue.extend({
   props: ["table", "tabId", "active", "properties", 'tabState'],
   components: {
     StatusBar,
-    ErrorAlert
+    ErrorAlert,
+    TableInfoToolbar
   },
   data() {
     return {
@@ -131,7 +133,8 @@ export default Vue.extend({
       newRows: [],
       removedRows: [],
       error: null,
-      loading: false
+      loading: false,
+      filterMatches: null
     }
   },
   computed: {

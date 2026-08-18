@@ -22,22 +22,22 @@
         <div class="table-subheader">
           <div class="table-title">
             <h2>Columns</h2>
+            <span
+              class="filter-match-label"
+              v-if="filterMatches"
+            >{{ filterMatches.matched }} of {{ filterMatches.total }} match</span>
           </div>
           <slot />
           <span class="expand" />
-          <div class="actions">
-            <a
-              @click.prevent="refreshColumns"
-              v-tooltip="$bksConfigUI.getKeybindingLabel('general.refresh')"
-              class="btn btn-link btn-fab"
-            ><i class="material-icons">refresh</i></a>
-            <a
-              v-if="editable"
-              v-tooltip="$bksConfigUI.getKeybindingLabel('general.addRow')"
-              @click.prevent="addRow"
-              class="btn btn-primary btn-fab"
-            ><i class="material-icons">add</i></a>
-          </div>
+          <table-info-toolbar
+            :tabulator="tabulator"
+            filter-placeholder="Filter columns"
+            :show-add="editable"
+            add-label="Column"
+            @add="addRow"
+            @refresh="refreshColumns"
+            @matches="filterMatches = $event"
+          />
         </div>
         <div ref="tableSchema" />
         <!-- Tabulator can be slow to open especially for some really large column counts. Let the user know. -->
@@ -134,6 +134,7 @@ import { AppEvent } from '@/common/AppEvent'
 import StatusBar from '../common/StatusBar.vue'
 import { AlterTableSpec, FormatterDialect } from '@shared/lib/dialects/models'
 import ErrorAlert from '../common/ErrorAlert.vue'
+import TableInfoToolbar from './TableInfoToolbar.vue'
 import rawLog from '@bksLogger'
 import { escapeHtml } from '@shared/lib/tabulator'
 import { ExtendedTableColumn } from '@/lib/db/models'
@@ -152,7 +153,8 @@ const FakeCell = {
 export default Vue.extend({
   components: {
     StatusBar,
-    ErrorAlert
+    ErrorAlert,
+    TableInfoToolbar
   },
   mixins: [DataMutators],
   props: ["table", "tabID", "active", "primaryKeys", "tabState"],
@@ -165,6 +167,7 @@ export default Vue.extend({
       newRows: [],
       removedRows: [],
       error: null,
+      filterMatches: null,
       reorderedRows: Array.from(new Set()),
       initialColumns: []
     }
