@@ -2389,6 +2389,11 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     background-color: transparent;
     box-shadow: none;
     padding-inline: 0.15rem;
+    max-width: 100%;
+
+    .material-icons {
+      flex-shrink: 0;
+    }
 
     .label {
       display: none;
