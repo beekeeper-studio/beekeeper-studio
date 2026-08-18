@@ -1888,7 +1888,12 @@ export default Vue.extend({
       ];
       const limit = this.tabulator.getPageSize() ?? this.limit;
       const offset = (this.tabulator.getPage() - 1) * limit;
-      const selects = ["*"];
+      // column hiding and reordering are front-end only, so bake the
+      // displayed columns into the generated query
+      const visibleColumns = this.columnsWithFilterAndOrder
+        .filter((c) => c.filter)
+        .map((c) => c.name);
+      const selects = visibleColumns.length ? visibleColumns : ["*"];
 
       // like if you change a filter
       if (page && page !== this.page) {
