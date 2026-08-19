@@ -1,14 +1,14 @@
 import Papa from "papaparse";
 import { markdownTable } from "markdown-table";
 import _ from "lodash";
-import { ColumnDefinition } from "tabulator-tables";
+import { ColumnDefinition, Tabulator } from "tabulator-tables";
 
 export type StructureCopyFormat = "csv" | "json" | "markdown";
 
-export const structureCopyFormats: { format: StructureCopyFormat; label: string }[] = [
-  { format: "csv", label: "Copy as CSV" },
-  { format: "json", label: "Copy as JSON" },
-  { format: "markdown", label: "Copy as Markdown" },
+export const structureCopyFormats: { format: StructureCopyFormat; name: string }[] = [
+  { format: "csv", name: "CSV" },
+  { format: "json", name: "JSON" },
+  { format: "markdown", name: "Markdown" },
 ];
 
 export interface StructureColumn {
@@ -18,21 +18,31 @@ export interface StructureColumn {
 
 /**
  * Tabulator columns that only render row controls (the drag handle, the trash
- * button) have no data behind them, so they're dropped before copying.
+ * button) have no data behind them, so they're dropped.
  */
 function isDataColumn(column: ColumnDefinition): boolean {
   return !!column && !!column.field && column.field !== "trash-button" && !column.rowHandle;
 }
 
-/** Turn tabulator column definitions into the columns we actually copy. */
+/** Turn tabulator column definitions into the columns we copy and search. */
 export function structureColumns(columns: ColumnDefinition[]): StructureColumn[] {
   return (columns || [])
     .filter(isDataColumn)
     .map((c) => ({ field: c.field, title: _.toString(c.title) || c.field }));
 }
 
+/** The columns a live tabulator instance is actually showing. */
+export function tabulatorStructureColumns(tabulator: Tabulator): StructureColumn[] {
+  if (!tabulator) return [];
+  const definitions = tabulator
+    .getColumns()
+    .filter((column) => column.isVisible())
+    .map((column) => column.getDefinition());
+  return structureColumns(definitions);
+}
+
 /** Flatten a cell value into something that fits in a csv / markdown cell. */
-function stringifyValue(value: any): string {
+export function stringifyValue(value: any): string {
   if (_.isNil(value)) return "";
   if (_.isArray(value)) return value.map(stringifyValue).join(", ");
   if (_.isDate(value)) return value.toISOString();
@@ -79,4 +89,25 @@ export function formatStructure(
   }
 
   return markdownTable([headers, ...cells.map((row) => row.map(escapeMarkdown))]);
+}
+
+export interface StructureFilterParams {
+  /** Already lowercased and trimmed by the caller */
+  term: string;
+  fields: string[];
+}
+
+/**
+ * Tabulator filter function. A row is kept when any of the searched fields
+ * contains the term, so it reads as a plain "find it anywhere" search rather
+ * than a per-column match.
+ */
+export function structureFilter(
+  row: Record<string, any>,
+  params: StructureFilterParams
+): boolean {
+  if (!params.term) return true;
+  return params.fields.some((field) =>
+    stringifyValue(row[field]).toLowerCase().includes(params.term)
+  );
 }

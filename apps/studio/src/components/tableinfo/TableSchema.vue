@@ -26,11 +26,7 @@
           <slot />
           <span class="expand" />
           <div class="actions">
-            <copy-structure-button
-              :columns="tableColumns"
-              :rows="tableData"
-              label="Columns"
-            />
+            <table-info-filter :tabulator="tabulator" />
             <a
               @click.prevent="refreshColumns"
               v-tooltip="$bksConfigUI.getKeybindingLabel('general.refresh')"
@@ -139,7 +135,7 @@ import { AppEvent } from '@/common/AppEvent'
 import StatusBar from '../common/StatusBar.vue'
 import { AlterTableSpec, FormatterDialect } from '@shared/lib/dialects/models'
 import ErrorAlert from '../common/ErrorAlert.vue'
-import CopyStructureButton from './CopyStructureButton.vue'
+import TableInfoFilter from './TableInfoFilter.vue'
 import rawLog from '@bksLogger'
 import { escapeHtml } from '@shared/lib/tabulator'
 import { ExtendedTableColumn } from '@/lib/db/models'
@@ -159,7 +155,7 @@ export default Vue.extend({
   components: {
     StatusBar,
     ErrorAlert,
-    CopyStructureButton
+    TableInfoFilter
   },
   mixins: [DataMutators],
   props: ["table", "tabID", "active", "primaryKeys", "tabState"],

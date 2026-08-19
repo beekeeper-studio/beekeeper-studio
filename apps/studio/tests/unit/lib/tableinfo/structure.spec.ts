@@ -1,7 +1,9 @@
 import {
   formatStructure,
   structureColumns,
-} from "@/lib/tableinfo/copyStructure";
+  structureFilter,
+  tabulatorStructureColumns,
+} from "@/lib/tableinfo/structure";
 
 // A trimmed down version of what TableSchema.vue hands to tabulator
 const schemaColumnDefs: any[] = [
@@ -149,5 +151,69 @@ describe("formatStructure", () => {
         "| ---- | ---- | -------- | ------------- | ------- |",
       ].join("\n")
     );
+  });
+});
+
+describe("tabulatorStructureColumns", () => {
+  function fakeTabulator(columns: any[]) {
+    return {
+      getColumns: () => columns.map((c) => ({
+        isVisible: () => c.visible !== false,
+        getDefinition: () => c,
+      })),
+    } as any;
+  }
+
+  it("reads the definitions off a live tabulator", () => {
+    expect(tabulatorStructureColumns(fakeTabulator(schemaColumnDefs))).toEqual(
+      structureColumns(schemaColumnDefs)
+    );
+  });
+
+  it("skips hidden columns", () => {
+    const columns = tabulatorStructureColumns(
+      fakeTabulator([
+        { field: "columnName", title: "Name" },
+        { field: "dataType", title: "Type", visible: false },
+      ])
+    );
+    expect(columns).toEqual([{ field: "columnName", title: "Name" }]);
+  });
+
+  it("handles a tab whose table isn't mounted yet", () => {
+    expect(tabulatorStructureColumns(null)).toEqual([]);
+  });
+});
+
+describe("structureFilter", () => {
+  const fields = ["columnName", "dataType"];
+
+  it("keeps rows matching any searched field", () => {
+    expect(structureFilter(schemaRows[0], { term: "int", fields })).toBe(true);
+    expect(structureFilter(schemaRows[1], { term: "nam", fields })).toBe(true);
+  });
+
+  it("drops rows that match nothing", () => {
+    expect(structureFilter(schemaRows[0], { term: "zzz", fields })).toBe(false);
+  });
+
+  it("ignores fields that aren't searched", () => {
+    // defaultValue holds the term, but it isn't in `fields`
+    expect(
+      structureFilter(schemaRows[0], { term: "nextval", fields })
+    ).toBe(false);
+  });
+
+  it("keeps everything when the term is empty", () => {
+    expect(structureFilter(schemaRows[0], { term: "", fields })).toBe(true);
+  });
+
+  it("searches flattened values, like index columns", () => {
+    const row = { columns: ["a", "b DESC"] };
+    expect(structureFilter(row, { term: "b desc", fields: ["columns"] })).toBe(true);
+  });
+
+  it("tolerates rows missing a searched field", () => {
+    expect(structureFilter({}, { term: "a", fields })).toBe(false);
   });
 });

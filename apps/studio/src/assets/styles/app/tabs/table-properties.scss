@@ -64,6 +64,33 @@ $cell-success:           $row-add;
       display: flex;
       align-items: center;
       padding: 0;
+      .table-info-filter {
+        position: relative;
+        display: flex;
+        align-items: center;
+        .filter-input {
+          width: 180px;
+          padding-right: 1.5rem;
+        }
+        .clear-filter {
+          position: absolute;
+          right: 0;
+          display: flex;
+          align-items: center;
+          height: 100%;
+          padding: 0 4px;
+          border: 0;
+          background: transparent;
+          color: rgba($theme-base, 0.5);
+          cursor: pointer;
+          &:hover {
+            color: $text-dark;
+          }
+          i {
+            font-size: 1.05rem;
+          }
+        }
+      }
       .btn-fab {
         margin-left: $gutter-h;
       }

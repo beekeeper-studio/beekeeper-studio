@@ -32,11 +32,7 @@
             </div>
             <span class="expand" />
             <div class="actions">
-              <copy-structure-button
-                :columns="tableColumns"
-                :rows="tableData"
-                label="Indexes"
-              />
+              <table-info-filter :tabulator="tabulator" />
               <a
                 @click.prevent="$emit('refresh')"
                 v-tooltip="$bksConfigUI.getKeybindingLabel('general.refresh')"
@@ -127,7 +123,7 @@ import rawLog from '@bksLogger'
 import { format } from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
 import ErrorAlert from '../common/ErrorAlert.vue'
-import CopyStructureButton from './CopyStructureButton.vue'
+import TableInfoFilter from './TableInfoFilter.vue'
 import { TableIndex } from '@/lib/db/models'
 import { mapGetters, mapState } from 'vuex'
 const log = rawLog.scope('TableIndexVue')
@@ -149,7 +145,7 @@ export default Vue.extend({
   components: {
     StatusBar,
     ErrorAlert,
-    CopyStructureButton,
+    TableInfoFilter,
   },
   mixins: [data_mutators, SelectableCellMixin],
   props: ["table", "tabId", "active", "properties", 'tabState'],
