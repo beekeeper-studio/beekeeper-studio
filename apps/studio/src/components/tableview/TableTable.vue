@@ -800,7 +800,7 @@ export default Vue.extend({
       try {
         const row: TransportTabulatorPersistence = await this.$util.send(
           "appdb/tabulatorPersistence/findOneBy",
-          { persistenceID: this.tableId, type: "columns" }
+          { options: { persistenceID: this.tableId, type: "columns" } }
         );
         this.persistenceRow = row ? { id: row.id, data: row.data } : null;
       } catch (e) {
@@ -828,31 +828,31 @@ export default Vue.extend({
         return false;
       }
     },
-    persistenceWriter(_id: string, type: string, data: unknown) {
+    async persistenceWriter(_id: string, type: string, data: unknown) {
       if (!this.tableId) {
         return;
       }
 
       const serialized = JSON.stringify(data);
+      if (serialized === this.persistenceRow?.data) return;
+
       const existingId = this.persistenceRow?.id;
       this.persistenceRow = { id: existingId, data: serialized };
-      this.$util
-        .send("appdb/tabulatorPersistence/save", {
+      try {
+        const saved = await this.$util.send("appdb/tabulatorPersistence/save", {
           obj: {
             id: existingId,
             persistenceID: this.tableId,
             type,
             data: serialized,
           },
-        })
-        .then((saved: TransportTabulatorPersistence) => {
-          if (saved) {
-            this.persistenceRow.id = saved.id;
-          }
-        })
-        .catch(
-          (e: unknown) => log.warn("tabulator persistence save failed", e)
-        );
+        });
+        if (saved) {
+          this.persistenceRow.id = saved.id;
+        }
+      } catch (e) {
+        log.warn("tabulator persistence save failed", e)
+      }
     },
     createColumnFromProps(column) {
       // 1. add a column for a real column
@@ -1888,7 +1888,12 @@ export default Vue.extend({
       ];
       const limit = this.tabulator.getPageSize() ?? this.limit;
       const offset = (this.tabulator.getPage() - 1) * limit;
-      const selects = ["*"];
+      // column hiding and reordering are front-end only, so bake the
+      // displayed columns into the generated query
+      const visibleColumns = this.columnsWithFilterAndOrder
+        .filter((c) => c.filter)
+        .map((c) => c.name);
+      const selects = visibleColumns.length ? visibleColumns : ["*"];
 
       // like if you change a filter
       if (page && page !== this.page) {

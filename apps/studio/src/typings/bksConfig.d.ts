@@ -10,6 +10,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -25,6 +26,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -40,6 +42,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -55,6 +58,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -70,6 +74,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             connectionTimeout: number;
             idleTimeout: number;
             manualTransactionTimeout: number;
@@ -87,6 +92,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -102,6 +108,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -117,6 +124,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             columnSampleSize: number;
             cursorFetchTimeout: number;
             manualTransactionTimeout: number;
@@ -134,6 +142,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -149,6 +158,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             connectionTimeout: number;
             idleTimeout: number;
             manualTransactionTimeout: number;
@@ -166,6 +176,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -181,6 +192,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             connectTimeout: number;
             manualTransactionTimeout: number;
             maxConnections: number;
@@ -197,6 +209,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -212,6 +225,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             connectTimeout: number;
             manualTransactionTimeout: number;
             maxConnections: number;
@@ -228,6 +242,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -243,6 +258,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             connectionTimeout: number;
             idleTimeout: number;
             manualTransactionTimeout: number;
@@ -260,6 +276,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -275,6 +292,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             connectionTimeout: number;
             idleTimeout: number;
             manualTransactionTimeout: number;
@@ -292,6 +310,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -307,6 +326,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             connectionTimeout: number;
             idleTimeout: number;
             manualTransactionTimeout: number;
@@ -324,6 +344,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -339,6 +360,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -354,6 +376,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -369,6 +392,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -384,6 +408,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             connectionTimeout: number;
             manualTransactionTimeout: number;
             maxConnections: number;
@@ -400,6 +425,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -415,6 +441,7 @@ declare interface IBksConfig {
             autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -547,6 +574,10 @@ declare interface IBksConfig {
             secondarySidebarMinWidth: number;
         };
         queryEditor: {
+            autocomplete: {
+                keywordCasing: string;
+                quoteIdentifiers: string;
+            };
             defaultFormatter: string;
             maxResults: number;
             primaryQueryAction: string;
