@@ -56,7 +56,10 @@ export function stringifyValue(value: any): string {
  * like structure (a check constraint, a trigger body) has to be neutralized.
  */
 function escapeMarkdown(value: string): string {
-  return value.replace(/\|/g, "\\|").replace(/\r\n|\r|\n/g, "<br>");
+  return value
+    .replace(/\\/g, "\\\\")
+    .replace(/\|/g, "\\|")
+    .replace(/\r\n|\r|\n/g, "<br>");
 }
 
 export function formatStructure(

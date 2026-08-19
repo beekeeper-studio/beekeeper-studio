@@ -93,6 +93,14 @@ describe("formatStructure", () => {
     expect(formatStructure(rows, cols, "markdown")).toContain("a \\| b<br>c");
   });
 
+  it("neutralizes backslashes in markdown so they can't un-escape a pipe", () => {
+    // Unescaped, `\|` would come out as `\\|`: an escaped backslash followed
+    // by a live pipe, which splits the cell.
+    const rows = [{ condition: "a \\| b" }];
+    const cols = structureColumns([{ field: "condition", title: "Condition" } as any]);
+    expect(formatStructure(rows, cols, "markdown")).toContain("a \\\\\\| b");
+  });
+
   it("copies as json keyed by column title", () => {
     expect(JSON.parse(formatStructure(schemaRows, columns, "json"))).toEqual([
       {
