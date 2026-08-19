@@ -406,6 +406,11 @@ declare interface IBksConfig {
         workspaceSyncInterval: number;
     };
     keybindings: {
+        connectionScreen: {
+            closeWindow: string;
+            focusFilter: string[];
+            newConnection: string;
+        };
         general: {
             addRow: string;
             cloneSelection: string;
@@ -413,7 +418,7 @@ declare interface IBksConfig {
             deleteSelection: string[];
             jsonViewerSidebar: string;
             openInSqlEditor: string;
-            openQuickSearch: string;
+            openQuickSearch: string[];
             pasteSelection: string;
             redo: string[];
             refresh: string[];
@@ -428,6 +433,7 @@ declare interface IBksConfig {
         queryEditor: {
             closeTableFilter: string;
             copyResultSelection: string;
+            formatQuery: string;
             manualCommit: string;
             manualRollback: string;
             openTableFilter: string;
@@ -459,17 +465,18 @@ declare interface IBksConfig {
             nextTab: string[];
             previousTab: string[];
             reopenLastClosedTab: string;
-            switchTab1: string;
-            switchTab2: string;
-            switchTab3: string;
-            switchTab4: string;
-            switchTab5: string;
-            switchTab6: string;
-            switchTab7: string;
-            switchTab8: string;
-            switchTab9: string;
+            switchTab1: string[];
+            switchTab2: string[];
+            switchTab3: string[];
+            switchTab4: string[];
+            switchTab5: string[];
+            switchTab6: string[];
+            switchTab7: string[];
+            switchTab8: string[];
+            switchTab9: string[];
         };
         tableTable: {
+            discardChanges: string;
             firstPage: string;
             focusOnFilterInput: string;
             lastPage: string;

@@ -138,7 +138,12 @@ export function extensions(config: ExtensionConfiguration = {}) {
     }),
     keymap.of([
       ...closeBracketsKeymap,
-      ...defaultKeymap,
+      // Mod-[ / Mod-] belong to the host app (tab navigation); keeping the
+      // indentLess/indentMore bindings would make the same keypress indent AND
+      // switch tabs. Indentation is still available via Tab / Shift-Tab.
+      ...defaultKeymap.filter(
+        (binding) => binding.key !== "Mod-[" && binding.key !== "Mod-]"
+      ),
       ...searchKeymap,
       ...historyKeymap,
       ...foldKeymap,

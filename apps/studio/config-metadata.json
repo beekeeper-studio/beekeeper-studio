@@ -68,7 +68,8 @@
         { "key": "openTableFilter", "label": "Open Table Filter" },
         { "key": "closeTableFilter", "label": "Close Table Filter" },
         { "key": "manualCommit", "label": "Manual Commit" },
-        { "key": "manualRollback", "label": "Manual Rollback" }
+        { "key": "manualRollback", "label": "Manual Rollback" },
+        { "key": "formatQuery", "label": "Format Query" }
       ]
     },
     {
@@ -82,7 +83,8 @@
         { "key": "firstPage", "label": "First Page" },
         { "key": "lastPage", "label": "Last Page" },
         { "key": "pasteAsNewRows", "label": "Paste clipboard as new rows"},
-        { "key": "nullSelection", "label": "Set selected cells to null"}
+        { "key": "nullSelection", "label": "Set selected cells to null"},
+        { "key": "discardChanges", "label": "Discard Pending Changes" }
       ]
     },
     {
@@ -90,6 +92,15 @@
       "label": "Result Table",
       "properties": [
         { "key": "openEditorModal", "label": "Open Editor Modal" }
+      ]
+    },
+    {
+      "key": "keybindings.connectionScreen",
+      "label": "Connection Screen",
+      "properties": [
+        { "key": "focusFilter", "label": "Focus Connection Filter" },
+        { "key": "newConnection", "label": "New Connection" },
+        { "key": "closeWindow", "label": "Close Window" }
       ]
     }
   ]
