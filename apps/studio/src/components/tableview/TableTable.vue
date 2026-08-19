@@ -181,19 +181,16 @@
           </x-buttons>
         </template>
         <span
-          v-else
-          class="hidden-column-count bks-tooltip-wrapper statusbar-item hoverable"
+          v-else-if="hiddenColumnCount"
+          class="hidden-column-count statusbar-item hoverable"
+          v-tooltip="hiddenColumnMessage"
         >
           <a
             tabindex="0"
             @click.prevent="showColumnFilterModal"
-            v-if="hiddenColumnCount"
           >
             <i class="material-icons">visibility_off</i>
           </a>
-          <div class="bks-tooltip bks-tooltip-top-center">
-            <span>{{ hiddenColumnMessage }}</span>
-          </div>
         </span>
 
         <template v-if="!editable">
