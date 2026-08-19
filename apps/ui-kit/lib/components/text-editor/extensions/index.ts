@@ -231,16 +231,22 @@ export function extensions(config: ExtensionConfiguration = {}) {
         backgroundColor: "var(--bks-query-editor-bg)",
         color: "var(--bks-text-dark)",
       },
+      // Every EditorView.theme gets its own generated scope class, and they
+      // all sit at the same specificity, so a plain ".cm-panels" rule is
+      // decided purely by which theme mounted last -- and the app appends its
+      // own theme after this one. Qualifying with & lifts these above any
+      // single-class rule so the outcome does not depend on mount order.
+      //
       // The panel container is a direct child of .cm-editor, so inheriting
       // picks up whatever background the host app themed the editor with.
       // codemirror's own base theme would otherwise paint it #f5f5f5 with
       // black text, which shows straight through the vim status line because
       // its input inherits the background.
-      ".cm-panels": {
+      "&.cm-editor .cm-panels": {
         backgroundColor: "var(--bks-text-editor-vim-panel-bg-color)",
         color: "var(--bks-text-editor-vim-panel-fg-color)",
       },
-      ".cm-panels-bottom": {
+      "&.cm-editor .cm-panels-bottom": {
         // Neutral and translucent so it reads against a light or a dark
         // editor. --bks-border-color would fall into the same trap as the
         // colours above and resolve against the light defaults.
@@ -251,7 +257,7 @@ export function extensions(config: ExtensionConfiguration = {}) {
       // the base theme @replit/codemirror-vim ships.
       // Note this element also carries the generic .cm-panel class, whose rule
       // above resolves to white, so this needs to outrank it.
-      ".cm-panels .cm-panel.cm-vim-panel": {
+      "&.cm-editor .cm-panels .cm-panel.cm-vim-panel": {
         backgroundColor: "var(--bks-text-editor-vim-panel-bg-color)",
         color: "var(--bks-text-editor-vim-panel-fg-color)",
         fontFamily: "var(--bks-text-editor-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace)",
@@ -265,7 +271,7 @@ export function extensions(config: ExtensionConfiguration = {}) {
         minHeight: "0",
         lineHeight: "1.5",
       },
-      ".cm-panels .cm-vim-panel input, .cm-panels .cm-vim-panel button": {
+      "&.cm-editor .cm-panels .cm-vim-panel input, &.cm-editor .cm-panels .cm-vim-panel button": {
         boxSizing: "border-box",
         height: "auto",
         margin: "0",
@@ -277,11 +283,11 @@ export function extensions(config: ExtensionConfiguration = {}) {
         font: "inherit",
         lineHeight: "inherit",
       },
-      ".cm-panels .cm-vim-panel input": {
+      "&.cm-editor .cm-panels .cm-vim-panel input": {
         flex: "1",
         minWidth: "0",
       },
-      ".cm-panels .cm-vim-panel button": {
+      "&.cm-editor .cm-panels .cm-vim-panel button": {
         cursor: "default",
       },
       // Autocomplete hints
