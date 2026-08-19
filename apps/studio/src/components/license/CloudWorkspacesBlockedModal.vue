@@ -7,9 +7,7 @@
         </div>
         <div>
           <p>
-            This license includes lifetime access to the app, but the
-            subscription period has ended. Cloud Workspaces are a hosted
-            service, only available while a subscription is active.
+            You have a lifetime license, but your subscription has ended. Cloud Workspaces are only available to active subscribers.
           </p>
           <p>
             Existing workspace data (saved queries and connections) can be
@@ -25,7 +23,7 @@
           Open Dashboard
         </button>
         <button class="btn btn-primary" type="button" @click.prevent="renew">
-          Renew Subscription
+          Buy License
         </button>
       </div>
     </modal>
