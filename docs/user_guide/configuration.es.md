@@ -38,7 +38,7 @@ Decide que archivo cambiar (usuario o administrador). Si el archivo aun no exist
 ; Las lineas que comienzan con punto y coma son comentarios
 
 [ui.tableTable]
-pageSize = 200                          ; Mostrar mas filas por pagina
+defaultPageSize = 200                   ; Mostrar mas filas por pagina
 
 ```
 

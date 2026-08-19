@@ -444,14 +444,14 @@ export default Vue.extend({
       return this.$bksConfig.db[dbType].allowSkipToLastPage;
     },
     limit() {
-      return this.pageSize ?? this.$bksConfig.ui.tableTable.pageSize
+      return this.pageSize ?? this.$bksConfig.ui.tableTable.defaultPageSize
     },
     pageSizeOptions() {
       // castArray keeps a user config of `pageSizeOptions = 50` (no `[]`) usable.
       const configured = _.castArray(this.$bksConfig.ui.tableTable.pageSizeOptions ?? [])
       const options = [
         ...configured,
-        this.$bksConfig.ui.tableTable.pageSize,
+        this.$bksConfig.ui.tableTable.defaultPageSize,
         this.limit,
       ]
       return _.uniq(options.map(Number).filter((n) => _.isFinite(n) && n > 0)).sort((a, b) => a - b)

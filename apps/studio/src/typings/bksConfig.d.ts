@@ -534,12 +534,12 @@ declare interface IBksConfig {
         };
         tableTable: {
             defaultColumnWidth: number;
+            defaultPageSize: number;
             editTrigger: string;
             largeFieldWidth: number;
             maxColumnWidth: number;
             maxInitialWidth: number;
             minColumnWidth: number;
-            pageSize: number;
             pageSizeOptions: number[];
         };
         tableTriggers: {

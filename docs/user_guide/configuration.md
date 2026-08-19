@@ -38,7 +38,7 @@ Decide which file to change (user or administrator). If the file doesn't exist y
 ; Lines starting with semicolons are comments
 
 [ui.tableTable]
-pageSize = 200                          ; Show more rows per page
+defaultPageSize = 200                   ; Show more rows per page
 
 ```
 

@@ -8,11 +8,11 @@ import fullConfigIni from "../../default.config.ini";
 describe("Config", () => {
   it("should parse the table page size options as positive numbers", () => {
     const config = processRawConfig(parseIni(fullConfigIni));
-    const { pageSize, pageSizeOptions } = config.ui.tableTable;
+    const { defaultPageSize, pageSizeOptions } = config.ui.tableTable;
 
-    expect(typeof pageSize).toBe("number");
+    expect(typeof defaultPageSize).toBe("number");
     expect(Array.isArray(pageSizeOptions)).toBe(true);
-    expect(pageSizeOptions).toContain(pageSize);
+    expect(pageSizeOptions).toContain(defaultPageSize);
     pageSizeOptions.forEach((size) => {
       expect(typeof size).toBe("number");
       expect(size).toBeGreaterThan(0);
@@ -342,7 +342,7 @@ maxResults = 100
 submitAllQuery = ctrlOrCmd+enter
 
 [ui.tableTable]
-pageSize = 100
+defaultPageSize = 100
     `);
 
     const userConfig = parseIni(`
