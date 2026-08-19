@@ -1,5 +1,8 @@
 <template>
-  <div class="sidebar-wrap row">
+  <div
+    class="sidebar-wrap row"
+    @keydown="handleKeydown"
+  >
     <workspace-sidebar />
 
     <!-- QUICK CONNECT -->
@@ -19,6 +22,7 @@
         <div class="filter">
           <div class="filter-wrap">
             <input
+              ref="filterInput"
               class="filter-input"
               type="text"
               placeholder="Filter"
@@ -76,6 +80,8 @@
                 :show-duplicate="true"
                 :pinned="true"
                 :privacy-mode="privacyMode"
+                :data-nav-key="`pinned-${c.id}`"
+                :class="{ 'keyboard-cursor': cursorKey === `pinned-${c.id}` }"
                 @edit="edit"
                 @remove="remove"
                 @duplicate="duplicate"
@@ -166,6 +172,8 @@
                   :pinned="pinnedConnections.includes(c)"
                   :is-recent-list="false"
                   :privacy-mode="privacyMode"
+                  :data-nav-key="`filtered-${c.id}`"
+                  :class="{ 'keyboard-cursor': cursorKey === `filtered-${c.id}` }"
                   @edit="edit"
                   @remove="remove"
                   @duplicate="duplicate"
@@ -226,7 +234,11 @@
                   <tree-folder
                     v-bind="props"
                     v-else
-                    :class="{ 'just-created': justCreatedFolderId === props.node.ref.id }"
+                    :class="{
+                      'just-created': justCreatedFolderId === props.node.ref.id,
+                      'keyboard-cursor': cursorKey === props.node.id,
+                    }"
+                    :data-nav-key="props.node.id"
                     :tag="renamingFolderId === props.node.ref.id ? 'div': undefined"
                     @contextmenu.native="showFolderContextMenu($event, props.node.ref)"
                   >
@@ -281,7 +293,11 @@
                     :pinned="pinnedConnectionIds.includes(node.ref.id)"
                     :is-recent-list="false"
                     :privacy-mode="privacyMode"
-                    :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.ref.id) }"
+                    :data-nav-key="node.id"
+                    :class="{
+                      'drag-pending': (pendingSaveIds || []).includes(node.ref.id),
+                      'keyboard-cursor': cursorKey === node.id,
+                    }"
                     @edit="edit"
                     @remove="remove"
                     @duplicate="duplicate"
@@ -316,6 +332,8 @@
                 :is-recent-list="true"
                 :show-duplicate="false"
                 :privacy-mode="privacyMode"
+                :data-nav-key="`recent-${c.id}`"
+                :class="{ 'keyboard-cursor': cursorKey === `recent-${c.id}` }"
                 @edit="edit"
                 @remove="removeUsedConfig"
                 @doubleClick="connect"
@@ -383,6 +401,7 @@ export default {
     drafting: false,
     draftParentId: null,
     connFilter: "",
+    cursorKey: null,
   }),
   watch: {
     async sort(newSort) {
@@ -393,6 +412,7 @@ export default {
     },
     connFilter(value) {
       this.setConnectionFilter(value);
+      this.cursorKey = null;
     },
   },
   computed: {
@@ -479,6 +499,50 @@ export default {
     errorList() {
       return Object.values(this.errors);
     },
+    // Every row reachable with the arrow keys, in the rendered order:
+    // pinned, saved (flat list while filtering, otherwise the visible part
+    // of the folder tree), recent.
+    navigableRows() {
+      if (this.initializing) return [];
+      if (this.searching) {
+        return (this.filteredConnections || []).map((c) => ({
+          kind: 'connection',
+          key: `filtered-${c.id}`,
+          ref: c,
+        }));
+      }
+      const rows = [];
+      if (!this.noPins) {
+        this.pinnedConnections.forEach((c) => {
+          rows.push({ kind: 'connection', key: `pinned-${c.id}`, ref: c });
+        });
+      }
+      const visit = (node) => {
+        if (node.type === 'folder') {
+          if (!node.ref.id) return; // draft folder being named
+          rows.push({ kind: 'folder', key: node.id, node });
+          if (this.expandedNodeIds.includes(node.id)) {
+            // Mirrors TreeNode rendering: subfolders first, then items
+            node.children.forEach(visit);
+            this.sortedItemNodes
+              .filter((item) => item.parentId === node.id)
+              .forEach(visit);
+          }
+        } else {
+          rows.push({ kind: 'connection', key: node.id, ref: node.ref });
+        }
+      };
+      this.extendedFolderNodes
+        .filter((node) => node.parentId === null)
+        .forEach(visit);
+      this.sortedItemNodes
+        .filter((node) => node.parentId === null)
+        .forEach(visit);
+      this.usedConfigs.forEach((c) => {
+        rows.push({ kind: 'connection', key: `recent-${c.id}`, ref: c });
+      });
+      return rows;
+    },
     isPollError() {
       return (
         this.connectionsError === this.connectionsPollError ||
@@ -554,6 +618,82 @@ export default {
     },
     clearFilter() {
       this.connFilter = null;
+    },
+    focusFilter() {
+      const input = this.$refs.filterInput;
+      if (!input) return;
+      input.focus();
+      input.select();
+    },
+    handleKeydown(event) {
+      const target = event.target;
+      // Rename fields and other inputs keep their own keys; only the filter
+      // input participates in list navigation.
+      const isEditable = target && (
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable ||
+        (target.tagName === 'INPUT' && target !== this.$refs.filterInput)
+      );
+      if (isEditable) return;
+
+      const rows = this.navigableRows;
+      if (!rows.length) return;
+      const index = rows.findIndex((row) => row.key === this.cursorKey);
+
+      switch (event.key) {
+        case 'ArrowDown':
+        case 'ArrowUp': {
+          event.preventDefault();
+          const delta = event.key === 'ArrowDown' ? 1 : -1;
+          const next = index === -1
+            ? (delta === 1 ? 0 : rows.length - 1)
+            : Math.min(rows.length - 1, Math.max(0, index + delta));
+          this.cursorKey = rows[next].key;
+          this.scrollCursorIntoView();
+          break;
+        }
+        case 'Enter': {
+          if (index === -1) return;
+          event.preventDefault();
+          this.activateRow(rows[index]);
+          break;
+        }
+        case 'ArrowRight':
+        case 'ArrowLeft': {
+          if (index === -1) return;
+          const row = rows[index];
+          if (row.kind !== 'folder') return;
+          event.preventDefault();
+          const expanded = this.expandedNodeIds.includes(row.node.id);
+          if (event.key === 'ArrowRight' && !expanded) {
+            this.setExpandedIds([...this.expandedNodeIds, row.node.id]);
+          } else if (event.key === 'ArrowLeft' && expanded) {
+            this.setExpandedIds(this.expandedNodeIds.filter((id) => id !== row.node.id));
+          }
+          break;
+        }
+      }
+    },
+    activateRow(row) {
+      if (row.kind === 'folder') {
+        const expanded = this.expandedNodeIds.includes(row.node.id);
+        if (expanded) {
+          this.setExpandedIds(this.expandedNodeIds.filter((id) => id !== row.node.id));
+        } else {
+          this.setExpandedIds([...this.expandedNodeIds, row.node.id]);
+        }
+        return;
+      }
+      // While a cloud search is still in flight the list is stale
+      if (this.searching && (this.typing || this.fetchingResults)) return;
+      this.connect(row.ref);
+    },
+    scrollCursorIntoView() {
+      this.$nextTick(() => {
+        if (!this.cursorKey) return;
+        const el = this.$el.querySelector(`[data-nav-key="${CSS.escape(this.cursorKey)}"]`);
+        el?.scrollIntoView({ block: 'nearest' });
+      });
     },
     buildSplit() {
       if (this.split) this.split.destroy()
@@ -856,6 +996,11 @@ export default {
 <style lang="scss" scoped>
 .drag-pending {
   opacity: 0.5;
+}
+::v-deep .keyboard-cursor .list-item-btn,
+::v-deep .BksTree-folder.keyboard-cursor {
+  background: rgb(from var(--theme-base) r g b / 10%);
+  box-shadow: inset 0 0 0 1px rgb(from var(--theme-primary) r g b / 60%);
 }
 .tree-loading {
   margin-top: 0.45rem;

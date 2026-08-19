@@ -1,9 +1,13 @@
 <template>
-  <div class="interface connection-interface">
+  <div
+    class="interface connection-interface"
+    v-hotkey="keymap"
+  >
     <privacy-banner class="privacyBanner" :privacy-mode="privacyMode" />
     <div class="interface-wrap row">
       <sidebar class="connection-sidebar" ref="sidebar" v-show="sidebarShown">
         <connection-sidebar
+          ref="connectionSidebar"
           :selected-config="config"
           @remove="remove"
           @duplicate="duplicate"
@@ -409,6 +413,13 @@ export default Vue.extend({
         { event: AppEvent.dropzoneDrop, handler: this.maybeLoadSqlite },
       ]
     },
+    keymap() {
+      return this.$vHotkeyKeymap({
+        'connectionScreen.focusFilter': this.focusConnectionFilter,
+        'connectionScreen.newConnection': this.create,
+        'connectionScreen.closeWindow': this.closeWindow,
+      })
+    },
   },
   watch: {
     sshConfigWarnings(warnings) {
@@ -489,6 +500,9 @@ export default Vue.extend({
     await this.$store.dispatch('pinnedConnections/loadPins')
     await this.$store.dispatch('pinnedConnections/reorder')
     await this.$store.dispatch('credentials/load')
+
+    // Type-to-filter straight away, arrow keys take it from there
+    this.$nextTick(() => this.focusConnectionFilter())
   },
   beforeDestroy() {
     if (this.split) {
@@ -526,6 +540,12 @@ export default Vue.extend({
       this.$util.send('appdb/saved/new').then((conn) => {
         this.config = conn;
       })
+    },
+    focusConnectionFilter() {
+      this.$refs.connectionSidebar?.focusFilter()
+    },
+    async closeWindow() {
+      await window.main.closeWindow()
     },
     edit(config) {
       this.config = _.clone(config)
