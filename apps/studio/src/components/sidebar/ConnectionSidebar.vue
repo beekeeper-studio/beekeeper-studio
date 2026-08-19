@@ -455,7 +455,7 @@ export default {
         id: null,
         connectionFolderId: this.draftParentId,
         name: 'Untitled connection',
-        connectionType: 'postgresql',
+        connectionType: 'sqlite',
       };
     },
     extendedFolderNodes() {
@@ -471,9 +471,9 @@ export default {
           'connectionFolderId',
           'name'
         );
-        return [draftNode, ...this.sortedItemNodes];
+        return [draftNode, ...this.itemNodes];
       }
-      return this.sortedItemNodes;
+      return this.itemNodes;
     },
     expandedNodeIds() {
       return this.expandedFolderIds.map((id) => `folder-${id}`);
@@ -505,14 +505,6 @@ export default {
     },
     pollError() {
       return this.connectionsPollError || this.foldersPollError || null
-    },
-    sortedItemNodes() {
-      // Rendered order always comes from `position`. The sort buttons are a
-      // one-shot action: `reorderBySort` rewrites `position` for every
-      // connection and offers an undo. Deriving the rendered order from
-      // `sort.field` here instead would permanently outrank `position`, so a
-      // drag would save but never show.
-      return _.sortBy(this.itemNodes, (n) => n.ref.position ?? 0)
     },
     errorList() {
       return Object.values(this.errors);
