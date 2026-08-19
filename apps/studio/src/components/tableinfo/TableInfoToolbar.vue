@@ -16,7 +16,7 @@
         <x-menuitem
           v-for="option in formats"
           :key="option.format"
-          @click.prevent="copy(option.format)"
+          @click.prevent="$emit('copy', option.format)"
         >
           <x-label>Copy as {{ option.name }}</x-label>
         </x-menuitem>
@@ -42,17 +42,12 @@
 import Vue from 'vue'
 import { Tabulator } from 'tabulator-tables'
 import TableInfoFilter from './TableInfoFilter.vue'
-import {
-  formatStructure,
-  structureCopyFormats,
-  StructureCopyFormat,
-  tabulatorStructureColumns,
-} from '@/lib/tableinfo/structure'
+import { structureCopyFormats } from '@/lib/tableinfo/structure'
 
 export default Vue.extend({
   components: { TableInfoFilter },
   props: {
-    /** The live tabulator instance behind the tab's grid */
+    /** The live tabulator instance behind the tab's grid, only handed on to the filter */
     tabulator: {
       type: Object as () => Tabulator,
       default: null,
@@ -75,16 +70,6 @@ export default Vue.extend({
   computed: {
     formats() {
       return structureCopyFormats
-    },
-  },
-  methods: {
-    /** Copies the grid as filtered and sorted on screen. */
-    copy(format: StructureCopyFormat) {
-      if (!this.tabulator) return
-      const columns = tabulatorStructureColumns(this.tabulator)
-      this.$native.clipboard.writeText(
-        formatStructure(this.tabulator.getData('active'), columns, format)
-      )
     },
   },
 })

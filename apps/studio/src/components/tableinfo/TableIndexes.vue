@@ -41,6 +41,7 @@
               :show-add="enabled"
               add-label="Index"
               @add="addRow"
+              @copy="copyStructure"
               @refresh="$emit('refresh')"
               @matches="filterMatches = $event"
             />
@@ -129,6 +130,7 @@ const log = rawLog.scope('TableIndexVue')
 import { escapeHtml } from '@shared/lib/tabulator'
 import { parseIndexColumn as mysqlParseIndexColumn } from '@/common/utils'
 import { SelectableCellMixin } from '@/mixins/selectableCell';
+import { StructureCopyMixin } from '@/mixins/structureCopy';
 import { copyCellMenu } from '@/lib/menu/tableMenu';
 
 interface State {
@@ -146,7 +148,7 @@ export default Vue.extend({
     ErrorAlert,
     TableInfoToolbar,
   },
-  mixins: [data_mutators, SelectableCellMixin],
+  mixins: [data_mutators, SelectableCellMixin, StructureCopyMixin],
   props: ["table", "tabId", "active", "properties", 'tabState'],
   data(): State {
     return {

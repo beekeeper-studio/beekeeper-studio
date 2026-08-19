@@ -35,6 +35,7 @@
             :show-add="editable"
             add-label="Column"
             @add="addRow"
+            @copy="copyStructure"
             @refresh="refreshColumns"
             @matches="filterMatches = $event"
           />
@@ -138,6 +139,7 @@ import TableInfoToolbar from './TableInfoToolbar.vue'
 import rawLog from '@bksLogger'
 import { escapeHtml } from '@shared/lib/tabulator'
 import { ExtendedTableColumn } from '@/lib/db/models'
+import { StructureCopyMixin } from '@/mixins/structureCopy'
 
 const log = rawLog.scope('table-schema')
 
@@ -156,7 +158,7 @@ export default Vue.extend({
     ErrorAlert,
     TableInfoToolbar
   },
-  mixins: [DataMutators],
+  mixins: [DataMutators, StructureCopyMixin],
   props: ["table", "tabID", "active", "primaryKeys", "tabState"],
   data() {
     return {

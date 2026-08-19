@@ -22,6 +22,7 @@
           <table-info-toolbar
             :tabulator="tabulator"
             filter-placeholder="Filter triggers"
+            @copy="copyStructure"
             @refresh="$emit('refresh')"
             @matches="filterMatches = $event"
           />
@@ -50,6 +51,7 @@ import StatusBar from '../common/StatusBar.vue'
 import TableInfoToolbar from './TableInfoToolbar.vue'
 import { mapGetters, mapState } from 'vuex'
 import { SelectableCellMixin } from '@/mixins/selectableCell';
+import { StructureCopyMixin } from '@/mixins/structureCopy';
 import { copyCellMenu } from '@/lib/menu/tableMenu';
 
 
@@ -58,7 +60,7 @@ export default {
     StatusBar,
     TableInfoToolbar,
   },
-  mixins: [data_mutators, SelectableCellMixin],
+  mixins: [data_mutators, SelectableCellMixin, StructureCopyMixin],
   props: ["table", "tabId", "active", "properties"],
   data() {
     return {

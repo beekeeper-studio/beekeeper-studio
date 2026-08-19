@@ -32,58 +32,38 @@ const localVue = createLocalVue();
 localVue.directive("tooltip", {});
 
 function mountToolbar(propsData: Record<string, any>) {
-  const writeText = jest.fn();
-  const wrapper = mount(TableInfoToolbar, {
+  return mount(TableInfoToolbar, {
     localVue,
     propsData,
     mocks: {
-      $native: { clipboard: { writeText } },
       $bksConfigUI: { getKeybindingLabel: () => "" },
     },
   });
-  return { wrapper, writeText };
 }
 
 describe("TableInfoToolbar", () => {
   it("offers the copy formats in design order", () => {
-    const { wrapper } = mountToolbar({ tabulator: fakeTabulator() });
+    const wrapper = mountToolbar({ tabulator: fakeTabulator() });
     const labels = wrapper.findAll("x-menuitem").wrappers.map((w) => w.text());
     expect(labels).toEqual(["Copy as Markdown", "Copy as CSV", "Copy as JSON"]);
   });
 
-  it("copies the grid as shown on screen, not the full data set", () => {
-    const { wrapper, writeText } = mountToolbar({ tabulator: fakeTabulator() });
+  it("emits copy with the chosen format", () => {
+    const wrapper = mountToolbar({ tabulator: fakeTabulator() });
 
     wrapper.findAll("x-menuitem").at(1).trigger("click"); // CSV
-    expect(writeText).toHaveBeenCalledTimes(1);
-    expect(writeText.mock.calls[0][0]).toEqual(
-      "Name,Type\r\nuser_name,varchar(255)"
-    );
-  });
-
-  it("copies json keyed by column titles", () => {
-    const { wrapper, writeText } = mountToolbar({ tabulator: fakeTabulator() });
-
     wrapper.findAll("x-menuitem").at(2).trigger("click"); // JSON
-    expect(JSON.parse(writeText.mock.calls[0][0])).toEqual([
-      { Name: "user_name", Type: "varchar(255)" },
-    ]);
-  });
-
-  it("does nothing when the table isn't mounted yet", () => {
-    const { wrapper, writeText } = mountToolbar({ tabulator: null });
-    wrapper.findAll("x-menuitem").at(0).trigger("click");
-    expect(writeText).not.toHaveBeenCalled();
+    expect(wrapper.emitted("copy")).toEqual([["csv"], ["json"]]);
   });
 
   it("emits refresh", () => {
-    const { wrapper } = mountToolbar({ tabulator: fakeTabulator() });
+    const wrapper = mountToolbar({ tabulator: fakeTabulator() });
     wrapper.find(".refresh-btn").trigger("click");
     expect(wrapper.emitted("refresh")).toHaveLength(1);
   });
 
   it("only offers add where the tab supports it", async () => {
-    const { wrapper } = mountToolbar({
+    const wrapper = mountToolbar({
       tabulator: fakeTabulator(),
       showAdd: true,
       addLabel: "Column",
@@ -99,7 +79,7 @@ describe("TableInfoToolbar", () => {
   });
 
   it("relays match counts from the filter", async () => {
-    const { wrapper } = mountToolbar({ tabulator: fakeTabulator() });
+    const wrapper = mountToolbar({ tabulator: fakeTabulator() });
 
     wrapper.find("input").setValue("user");
     await new Promise((resolve) => setTimeout(resolve, 330));

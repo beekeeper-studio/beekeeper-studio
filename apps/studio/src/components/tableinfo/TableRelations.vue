@@ -34,6 +34,7 @@
             :show-add="enabled && canAdd"
             add-label="Relation"
             @add="addRow"
+            @copy="copyStructure"
             @refresh="$emit('refresh')"
             @matches="filterMatches = $event"
           />
@@ -117,10 +118,11 @@ import TableInfoToolbar from './TableInfoToolbar.vue'
 const log = rawLog.scope('TableRelations');
 import { escapeHtml } from '@shared/lib/tabulator'
 import { SelectableCellMixin } from '@/mixins/selectableCell';
+import { StructureCopyMixin } from '@/mixins/structureCopy';
 import { copyCellMenu } from '@/lib/menu/tableMenu';
 
 export default Vue.extend({
-  mixins: [SelectableCellMixin],
+  mixins: [SelectableCellMixin, StructureCopyMixin],
   props: ["table", "tabId", "active", "properties", 'tabState'],
   components: {
     StatusBar,

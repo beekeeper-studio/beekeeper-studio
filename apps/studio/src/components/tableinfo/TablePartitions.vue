@@ -26,6 +26,7 @@
             :show-add="editable"
             add-label="Partition"
             @add="addRow"
+            @copy="copyStructure"
             @refresh="refreshPartitions"
             @matches="filterMatches = $event"
           />
@@ -100,6 +101,7 @@ import { AppEvent } from '@/common/AppEvent';
 import { FormatterDialect } from '@shared/lib/dialects/models';
 import { format } from 'sql-formatter';
 import { mapState } from 'vuex';
+import { StructureCopyMixin } from '@/mixins/structureCopy';
 
 export default Vue.extend({
 	components: {
@@ -107,7 +109,7 @@ export default Vue.extend({
     ErrorAlert,
     TableInfoToolbar
   },
-  mixins: [DataMutators],
+  mixins: [DataMutators, StructureCopyMixin],
   props: ['table', 'tabID', 'active', 'tabState', 'properties'],
   data() {
     return {
