@@ -1257,6 +1257,14 @@ export default Vue.extend({
       }
       return [
         {
+          label: createMenuItem(
+            "Add row",
+            this.$bksConfig.getKeybindings("context-menu", "general.addRow"),
+          ),
+          action: this.cellAddRow.bind(this),
+          disabled: !this.editable,
+        },
+        {
           label: createMenuItem(`Clone ${rowRangeLabel}`, "Control+D"),
           action: this.cellCloneRow.bind(this),
           disabled: !this.editable,
