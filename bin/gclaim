@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# gclaim — claim a branch's work as a single commit of your own.
+#
+# Checks out a branch, squashes everything committed since it forked from the
+# base branch into one commit authored by you (per git config user.name/email),
+# and opens the normal `git commit` editor with a blank message — no
+# accumulated messages from the squashed commits.
+#
+# Usage:
+#   gclaim [<branch>] [<base>]
+#
+#   <branch>  Branch to squash. Defaults to the current branch.
+#   <base>    Branch it forked from. Defaults to origin's default branch
+#             (origin/HEAD), falling back to main/master.
+#
+# The squash is a soft reset, so nothing in the working tree is touched. If
+# you abort the commit editor, the branch is left reset with all changes
+# staged; recover the original tip with: git reset --hard ORIG_HEAD
+
+set -euo pipefail
+
+die() {
+  echo "gclaim: $*" >&2
+  exit 1
+}
+
+usage() {
+  sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'
+}
+
+case "${1:-}" in
+  -h|--help) usage; exit 0 ;;
+esac
+
+branch="${1:-}"
+base="${2:-}"
+
+git rev-parse --git-dir >/dev/null 2>&1 || die "not inside a git repository"
+
+# A dirty tree would silently fold uncommitted changes into the squash commit.
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  die "working tree has uncommitted changes; commit or stash them first"
+fi
+
+if [[ -n "$branch" ]]; then
+  git checkout "$branch"
+else
+  branch=$(git symbolic-ref --quiet --short HEAD) \
+    || die "detached HEAD; pass a branch name"
+fi
+
+# Resolve the base branch the fork point is measured against.
+if [[ -z "$base" ]]; then
+  if origin_head=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD); then
+    base="$origin_head" # e.g. origin/master
+  else
+    for candidate in main master; do
+      if git show-ref --verify --quiet "refs/heads/$candidate"; then
+        base="$candidate"
+        break
+      fi
+    done
+  fi
+  [[ -n "$base" ]] || die "could not detect a base branch; pass one explicitly"
+fi
+
+git rev-parse --verify --quiet "$base^{commit}" >/dev/null \
+  || die "base '$base' is not a valid ref"
+
+fork_point=$(git merge-base "$base" HEAD) \
+  || die "no common ancestor between '$branch' and '$base'"
+
+count=$(git rev-list --count "$fork_point..HEAD")
+[[ "$count" -gt 0 ]] || die "'$branch' has no commits beyond '$base'; nothing to squash"
+
+author=$(git config user.name || true)
+echo "Squashing $count commit(s) on '$branch' (forked from '$base' at ${fork_point:0:10})"
+echo "New commit will be authored by: ${author:-<git config user.name>}"
+
+git reset --soft "$fork_point"
+
+# A fresh `git commit` (not --amend, no -m) gets today's date, your
+# authorship, and an empty message in the editor.
+if ! git commit; then
+  echo >&2
+  echo "gclaim: commit aborted. Your changes are still staged." >&2
+  echo "  retry:  git commit" >&2
+  echo "  undo:   git reset --hard ORIG_HEAD" >&2
+  exit 1
+fi
