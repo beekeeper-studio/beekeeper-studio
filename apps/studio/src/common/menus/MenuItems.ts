@@ -225,7 +225,9 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     disconnect: {
       id: 'disconnect',
       label: "Disconnect",
-      accelerator: "Shift+CommandOrControl+Q",
+      // Not Shift+CommandOrControl+Q: while the item is disabled (connection
+      // screen) macOS passes that combo through to the system Log Out shortcut.
+      accelerator: "Shift+CommandOrControl+D",
       click: actionHandler.disconnect,
       enabled: false,
     },
