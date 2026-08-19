@@ -114,7 +114,7 @@
           <tree
             v-show="!searching"
             :folders="extendedFolderNodes"
-            :items="sortedItemNodes"
+            :items="extendedItemNodes"
             :expanded-ids="expandedNodeIds"
             @update:expandedIds="setExpandedIds"
             @bks-tree-node-move="handleTreeNodeMove"
@@ -137,7 +137,7 @@
             <template #folder="{ props }">
               <tree-folder
                 v-bind="props"
-                v-if="props.node.ref === draft"
+                v-if="props.node.ref === draftFolder"
                 tag="div"
               >
                 <template #name>
@@ -152,7 +152,10 @@
               <tree-folder
                 v-bind="props"
                 v-else
-                :class="{ 'just-created': justCreatedFolderId === props.node.ref.id }"
+                :class="{
+                  'commited': commitedType === 'folder'
+                    && commitedId === props.node.ref.id,
+                }"
                 :tag="renamingFolderId === props.node.ref.id ? 'div': undefined"
                 @contextmenu.native="showFolderContextMenu($event, props.node.ref)"
               >
@@ -201,10 +204,22 @@
             </template>
             <template #item="{ node }">
               <favorite-list-item
+                v-if="node.ref === draftItem"
+                :item="draftItem"
+                draft
+                @submit-draft="commitDraft"
+                @cancel-draft="stopDrafting"
+              />
+              <favorite-list-item
+                v-else
                 :item="node.ref"
                 :active="isActive(node.ref)"
                 :selected="selected === node.ref"
-                :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.ref.id) }"
+                :class="{
+                  'drag-pending': (pendingSaveIds || []).includes(node.ref.id),
+                  'commited': commitedType === 'item'
+                    && commitedId === node.ref.id,
+                }"
                 @remove="remove"
                 @select="select"
                 @open="open"
@@ -232,7 +247,7 @@ import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
 import EditableText from '@/components/common/EditableText.vue'
 import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
 import ContentPlaceholderText from '@/components/common/loading/ContentPlaceholderText.vue'
-import { buildFolderNodes, parseReorderTarget } from '@/common/utils/folderTree'
+import { buildItemNode, buildFolderNodes, parseReorderTarget } from '@/common/utils/folderTree'
 
 export default {
   components: { SidebarLoading, ErrorAlert, ExpiredFolderAlert, FavoriteListItem, Tree, TreeFolder, EditableText, ContentPlaceholder, ContentPlaceholderText },
@@ -241,11 +256,14 @@ export default {
       checkedFavorites: [],
       selected: null,
       renamingFolderId: null,
-      justCreatedFolderId: null,
-      justCreatedTimeout: null,
+      commitedId: null,
+      commitedType: null,
+      commitedTimeout: null,
       loadingFolderIds: [],
       errors: {},
       drafting: false,
+      /** @type { 'folder' | 'item' | null } */
+      draftType: null,
       draftParentId: null,
       filterQuery: "",
     }
@@ -260,7 +278,7 @@ export default {
   },
   beforeDestroy() {
     document.removeEventListener('mousedown', this.maybeUnselect)
-    clearTimeout(this.justCreatedTimeout)
+    clearTimeout(this.commitedTimeout)
   },
   computed: {
     ...mapGetters(['workspace', 'isCloud', 'isUltimate', 'canCreateFolders']),
@@ -284,14 +302,32 @@ export default {
     ...mapState('sidebar/queries', {
       expandedFolderIds: 'expandedIds',
     }),
-    draft() {
+    draftFolder() {
       return { id: null, parentId: this.draftParentId, name: 'Untitled folder' };
     },
+    draftItem() {
+      return {
+        id: null,
+        queryFolderId: this.draftParentId,
+        title: 'Untitled query',
+        text: '',
+        excerpt: '',
+      };
+    },
     extendedFolderNodes() {
-      if (this.drafting) {
-        return buildFolderNodes([this.draft, ...this.folders]);
+      if (this.drafting && this.draftType === 'folder') {
+        return buildFolderNodes([this.draftFolder, ...this.folders]);
       }
       return this.folderNodes;
+    },
+    extendedItemNodes() {
+      if (this.drafting && this.draftType === "item") {
+        return [
+          buildItemNode(this.draftItem, "queryFolderId", "title"),
+          ...this.sortedItemNodes,
+        ];
+      }
+      return this.sortedItemNodes;
     },
     expandedNodeIds() {
       return this.expandedFolderIds.map((id) => `folder-${id}`);
@@ -333,6 +369,7 @@ export default {
   methods: {
     ...mapActions({
       saveFolder: 'data/queryFolders/save',
+      saveQuery: 'data/queries/save',
       reorderQuery: 'data/queries/reorder',
       loadQueries: 'data/queries/loadByParentIds',
       loadQueryFolders: 'data/queryFolders/loadByParentIds',
@@ -453,24 +490,27 @@ export default {
           );
           return;
         }
-        this.startDrafting(parent.id);
+        this.startDrafting("folder", parent.id);
         this.expandFolder(parent.id);
       } else {
-        this.startDrafting(null);
+        this.startDrafting("folder", null);
       }
     },
-    startDrafting(parentId) {
+    startDrafting(type, parentId) {
+      this.draftType = type
       this.draftParentId = parentId
       this.drafting = true
     },
     stopDrafting() {
       this.drafting = false
     },
-    markJustCreated(folderId) {
-      clearTimeout(this.justCreatedTimeout)
-      this.justCreatedFolderId = folderId
-      this.justCreatedTimeout = setTimeout(() => {
-        this.justCreatedFolderId = null
+    markCommited(type, id) {
+      clearTimeout(this.commitedTimeout)
+      this.commitedType = type
+      this.commitedId = id
+      this.commitedTimeout = setTimeout(() => {
+        this.commitedType = null
+        this.commitedId = null
       }, 2000)
     },
     expandFolder(folderId) {
@@ -480,19 +520,21 @@ export default {
       this.setExpandedIds([...this.expandedNodeIds, `folder-${folderId}`])
     },
     async commitDraft(name = "") {
+      if (!this.drafting) {
+        return;
+      }
       if (!name.trim()) {
         this.stopDrafting()
         return
       }
+      const type = this.draftType
       try {
-        const id = await this.$store.dispatch('data/queryFolders/save', {
-          id: null,
-          parentId: this.draft.parentId ?? null,
-          name,
-        })
-        this.markJustCreated(id)
+        const id = type === "folder"
+          ? await this.saveFolder({ ...this.draftFolder, name })
+          : await this.saveQuery({ ...this.draftItem, title: name })
+        this.markCommited(type, id)
       } catch (ex) {
-        this.$noty.error(`Create folder error: ${ex.userMessage ?? ex.message}`)
+        this.$noty.error(`Create ${type === "folder" ? "folder" : "query"} error: ${ex.userMessage ?? ex.message}`)
       } finally {
         this.stopDrafting()
       }
@@ -506,17 +548,26 @@ export default {
 
       const canWrite = folder.canWrite ?? true;
       const isRoot = !folder.parentId;
-      const options = [{
-        name: 'New Subfolder',
-        handler: ({ item }) => {
-          if (!this.canCreateFolders) {
-            this.$root.$emit(AppEvent.upgradeModal, 'Folders');
-            return;
-          }
-          this.startDrafting(item.id);
-          this.expandFolder(item.id);
+      const options = [
+        {
+          name: "New Folder",
+          handler: ({ item }) => {
+            if (!this.canCreateFolders) {
+              this.$root.$emit(AppEvent.upgradeModal, 'Folders');
+              return;
+            }
+            this.startDrafting("folder", item.id);
+            this.expandFolder(item.id);
+          },
         },
-      }];
+        {
+          name: "New Query",
+          handler: ({item}) => {
+            this.startDrafting("item", item.id);
+            this.expandFolder(item.id);
+          },
+        },
+      ];
       if (!this.isCloud || !isRoot) {
         options.push(...[
           {
@@ -686,11 +737,11 @@ export default {
   }
 }
 
-.just-created {
-  animation: just-created-fade 2s ease-out;
+.commited {
+  animation: commited-fade 2s ease-out;
 }
 
-@keyframes just-created-fade {
+@keyframes commited-fade {
   from {
     background: rgb(from var(--theme-primary) r g b / 25%);
   }
