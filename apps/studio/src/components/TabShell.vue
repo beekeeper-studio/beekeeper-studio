@@ -417,10 +417,11 @@ export default Vue.extend({
     },
     updateTextEditorFocus(focused: boolean) {
       if (focused) {
-        // Clicking into the editor is just as much a focus change as asking
-        // for it, so keep both the intent and the actual state in step.
+        // Only reconcile intent. focusingElement drives the is-focused prop,
+        // which the editor treats as a command, so writing an observed focus
+        // into it makes the editor grab focus back from whatever legitimately
+        // took it.
         this.focusElement = 'text-editor'
-        this.focusingElement = 'text-editor'
         return
       }
       // An app-initiated blur is waiting on this callback and updates the

@@ -1420,10 +1420,13 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         this.textEditor?.focus()
       },
       handleTextEditorFocus() {
-        // Clicking into the editor is just as much a focus change as asking
-        // for it, so keep both the intent and the actual state in step.
+        // Only reconcile intent. focusingElement drives the is-focused prop,
+        // which the editor treats as a command rather than a report, so
+        // writing an observed focus straight into it makes the editor grab
+        // focus back from whatever legitimately took it. The vim ex prompt
+        // refocuses the editor as it closes, which lands after a modal opened
+        // by the command has focused its own input.
         this.focusElement = 'text-editor'
-        this.focusingElement = 'text-editor'
       },
       handleTextEditorBlur() {
         // An app-initiated blur is waiting on this and updates the state
@@ -1437,7 +1440,14 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         }
       },
       selectTitleInput() {
-        this.$refs.titleInput.select()
+        // Wait a tick: the vim ex prompt hands focus back to the editor while
+        // closing, so claim it after that has settled.
+        this.$nextTick(() => {
+          const input = this.$refs.titleInput
+          if (!input) return
+          input.focus()
+          input.select()
+        })
       },
       selectFirstParameter() {
         if (!this.$refs['paramInput'] || this.$refs['paramInput'].length === 0) return
