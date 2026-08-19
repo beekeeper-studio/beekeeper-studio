@@ -13,13 +13,21 @@ const COLUMNS = [
  */
 function fakeTabulator(initialColumns: any[] = COLUMNS) {
   let columns = initialColumns;
-  const listeners: Record<string, (() => void)[]> = {};
+  const listeners: Record<string, ((...args: any[]) => void)[]> = {};
+  const allRows = [{ columnName: "id" }, { columnName: "user_name" }, { columnName: "created_at" }];
+  const activeRows = [{ columnName: "user_name" }];
   return {
     setFilter: jest.fn(),
     clearFilter: jest.fn(),
-    on(event: string, callback: () => void) {
+    on(event: string, callback: (...args: any[]) => void) {
       listeners[event] = listeners[event] || [];
       listeners[event].push(callback);
+    },
+    off(event: string, callback: (...args: any[]) => void) {
+      listeners[event] = (listeners[event] || []).filter((c) => c !== callback);
+    },
+    getData(mode?: string) {
+      return mode === "active" ? activeRows : allRows;
     },
     getColumns: () =>
       columns.map((c) => ({ isVisible: () => true, getDefinition: () => c })),
@@ -27,6 +35,9 @@ function fakeTabulator(initialColumns: any[] = COLUMNS) {
     finishBuilding(built: any[] = COLUMNS) {
       columns = built;
       (listeners.tableBuilt || []).forEach((callback) => callback());
+    },
+    fire(event: string, ...args: any[]) {
+      (listeners[event] || []).forEach((callback) => callback(...args));
     },
   };
 }
@@ -158,6 +169,53 @@ describe("TableInfoFilter", () => {
       "columnName",
       "dataType",
     ]);
+    wrapper.destroy();
+  });
+
+  it("reports how many rows matched", async () => {
+    const tabulator = fakeTabulator();
+    const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });
+
+    await type(wrapper, "user");
+    await settle();
+
+    const emitted = wrapper.emitted("matches");
+    expect(emitted[emitted.length - 1]).toEqual([{ matched: 1, total: 3 }]);
+    wrapper.destroy();
+  });
+
+  it("reports null once the filter is cleared", async () => {
+    const tabulator = fakeTabulator();
+    const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });
+
+    await type(wrapper, "user");
+    await settle();
+    wrapper.find("button").trigger("click");
+    await wrapper.vm.$nextTick();
+
+    const emitted = wrapper.emitted("matches");
+    expect(emitted[emitted.length - 1]).toEqual([null]);
+    wrapper.destroy();
+  });
+
+  it("refreshes the count when the data reloads under an active filter", async () => {
+    const tabulator = fakeTabulator();
+    const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });
+
+    await type(wrapper, "user");
+    await settle();
+    const countBefore = wrapper.emitted("matches").length;
+
+    // replaceData on a filtered table fires dataFiltered
+    tabulator.fire("dataFiltered", [], []);
+    expect(wrapper.emitted("matches").length).toEqual(countBefore + 1);
+
+    // but not when no filter is applied
+    wrapper.find("button").trigger("click");
+    await wrapper.vm.$nextTick();
+    const countAfterClear = wrapper.emitted("matches").length;
+    tabulator.fire("dataFiltered", [], []);
+    expect(wrapper.emitted("matches").length).toEqual(countAfterClear);
     wrapper.destroy();
   });
 

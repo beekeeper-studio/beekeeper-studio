@@ -14,11 +14,17 @@
         <div class="table-subheader">
           <div class="table-title">
             <h2>Triggers</h2>
+            <span
+              class="filter-match-label"
+              v-if="filterMatches"
+            >{{ filterMatches.matched }} of {{ filterMatches.total }} match</span>
           </div>
-          <div class="actions">
-            <table-info-filter :tabulator="tabulator" />
-            <!-- <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Trigger</a> -->
-          </div>
+          <table-info-toolbar
+            :tabulator="tabulator"
+            filter-placeholder="Filter triggers"
+            @refresh="$emit('refresh')"
+            @matches="filterMatches = $event"
+          />
         </div>
         <div
           class="table-triggers"
@@ -41,7 +47,7 @@
 import {Tabulator, TabulatorFull} from 'tabulator-tables'
 import data_mutators from '../../mixins/data_mutators'
 import StatusBar from '../common/StatusBar.vue'
-import TableInfoFilter from './TableInfoFilter.vue'
+import TableInfoToolbar from './TableInfoToolbar.vue'
 import { mapGetters, mapState } from 'vuex'
 import { SelectableCellMixin } from '@/mixins/selectableCell';
 import { copyCellMenu } from '@/lib/menu/tableMenu';
@@ -50,14 +56,15 @@ import { copyCellMenu } from '@/lib/menu/tableMenu';
 export default {
   components: {
     StatusBar,
-    TableInfoFilter,
+    TableInfoToolbar,
   },
   mixins: [data_mutators, SelectableCellMixin],
   props: ["table", "tabId", "active", "properties"],
   data() {
     return {
       tabulator: null,
-      tableTriggers: null
+      tableTriggers: null,
+      filterMatches: null
     }
   },
   computed: {

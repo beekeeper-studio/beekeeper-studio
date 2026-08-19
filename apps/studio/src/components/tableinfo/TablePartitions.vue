@@ -13,23 +13,22 @@
         <div class="table-subheader">
           <div class="table-title">
             <h2>Partitions</h2>
+            <span
+              class="filter-match-label"
+              v-if="filterMatches"
+            >{{ filterMatches.matched }} of {{ filterMatches.total }} match</span>
           </div>
           <slot />
           <span class="expand" />
-          <div class="actions">
-            <table-info-filter :tabulator="tabulator" />
-            <a
-              @click.prevent="refreshPartitions"
-              class="btn btn-link btn-fab"
-              v-tooltip="$bksConfigUI.getKeybindingLabel('general.refresh')"
-            ><i class="material-icons">refresh</i></a>
-            <a
-              v-if="editable"
-              @click.prevent="addRow"
-              class="btn btn-primary btn-fab"
-              v-tooltip="$bksConfigUI.getKeybindingLabel('general.addRow')"
-            ><i class="material-icons">add</i></a>
-          </div>
+          <table-info-toolbar
+            :tabulator="tabulator"
+            filter-placeholder="Filter partitions"
+            :show-add="editable"
+            add-label="Partition"
+            @add="addRow"
+            @refresh="refreshPartitions"
+            @matches="filterMatches = $event"
+          />
         </div>
         <div ref="tablePartitions" />
       </div>
@@ -95,7 +94,7 @@ import _ from 'lodash';
 import { TabulatorStateWatchers, vueEditor, trashButton } from '@shared/lib/tabulator/helpers'
 import StatusBar from '../common/StatusBar.vue'
 import ErrorAlert from '../common/ErrorAlert.vue'
-import TableInfoFilter from './TableInfoFilter.vue'
+import TableInfoToolbar from './TableInfoToolbar.vue'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import { AppEvent } from '@/common/AppEvent';
 import { FormatterDialect } from '@shared/lib/dialects/models';
@@ -106,7 +105,7 @@ export default Vue.extend({
 	components: {
     StatusBar,
     ErrorAlert,
-    TableInfoFilter
+    TableInfoToolbar
   },
   mixins: [DataMutators],
   props: ['table', 'tabID', 'active', 'tabState', 'properties'],
@@ -119,6 +118,7 @@ export default Vue.extend({
       editedCells: [],
       expressionTemplate: null,
       error: null,
+      filterMatches: null,
     }
   },
   watch: {

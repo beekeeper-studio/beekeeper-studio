@@ -1,5 +1,6 @@
 <template>
   <div class="table-info-filter">
+    <i class="material-icons search-icon">search</i>
     <input
       class="filter-input"
       type="text"
@@ -14,7 +15,7 @@
       v-show="query"
       @click.prevent="clear"
     >
-      <i class="material-icons">cancel</i>
+      <i class="material-icons">close</i>
     </button>
   </div>
 </template>
@@ -56,13 +57,23 @@ export default Vue.extend({
     query() {
       this.debouncedApply()
     },
-    tabulator(tabulator) {
-      // A rebuilt table starts out unfiltered. It also isn't filterable until
-      // it has finished building, so try now and again once it reports built
-      // -- whichever happens first wins, the other is a no-op.
-      this.applied = false
-      if (tabulator) tabulator.on('tableBuilt', this.apply)
-      this.apply()
+    tabulator: {
+      immediate: true,
+      handler(tabulator: Tabulator, old: Tabulator) {
+        if (old) {
+          old.off('tableBuilt', this.apply)
+          old.off('dataFiltered', this.onDataFiltered)
+        }
+        // A rebuilt table starts out unfiltered. It also isn't filterable
+        // until it has finished building, so try now and again once it
+        // reports built -- whichever happens first wins.
+        this.applied = false
+        if (tabulator) {
+          tabulator.on('tableBuilt', this.apply)
+          tabulator.on('dataFiltered', this.onDataFiltered)
+        }
+        this.apply()
+      },
     },
   },
   created() {
@@ -78,9 +89,10 @@ export default Vue.extend({
 
       if (!term) {
         if (this.applied) {
-          this.tabulator.clearFilter(false)
           this.applied = false
+          this.tabulator.clearFilter(false)
         }
+        this.$emit('matches', null)
         return
       }
 
@@ -91,6 +103,17 @@ export default Vue.extend({
 
       this.tabulator.setFilter(structureFilter, { term, fields })
       this.applied = true
+      this.emitMatches()
+    },
+    /** Keeps the match count fresh when the data reloads under an active filter. */
+    onDataFiltered() {
+      if (this.applied) this.emitMatches()
+    },
+    emitMatches() {
+      this.$emit('matches', {
+        matched: this.tabulator.getData('active').length,
+        total: this.tabulator.getData().length,
+      })
     },
     clear() {
       this.query = ''

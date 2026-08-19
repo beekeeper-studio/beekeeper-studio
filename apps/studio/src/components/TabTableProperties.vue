@@ -47,7 +47,6 @@
           v-show="pill.id === activePill"
           v-for="(pill) in pills"
           :key="pill.id"
-          :ref="`pill-${pill.id}`"
           @actionCompleted="refresh"
           @refresh="refresh"
         >
@@ -113,14 +112,6 @@
                 <x-menuitem @click.prevent="openTable">
                   <x-label>View Data</x-label>
                 </x-menuitem>
-                <hr v-if="copyOptions.length">
-                <x-menuitem
-                  v-for="option in copyOptions"
-                  :key="option.format"
-                  @click.prevent="copyStructure(option.format)"
-                >
-                  <x-label>{{ option.label }}</x-label>
-                </x-menuitem>
                 <template v-for="item in extraPopupMenu">
                   <hr v-if="item.type === 'divider'" :key="item.slug">
                   <x-menuitem
@@ -165,7 +156,6 @@ import TableSchemaValidationVue from './tableinfo/TableSchemaValidation.vue'
 import TableLength from '@/components/common/TableLength.vue'
 import { format as humanBytes } from 'bytes'
 import { AppEvent } from '@/common/AppEvent'
-import { formatStructure, structureCopyFormats, tabulatorStructureColumns } from '@/lib/tableinfo/structure'
 import { mapState, mapGetters } from 'vuex'
 import rawLog from '@bksLogger'
 
@@ -185,7 +175,6 @@ export default {
       rawPills: [
         {
           id: 'schema',
-          copyable: true,
           name: "Columns",
           needsProperties: false,
           needsPartitions: false,
@@ -194,7 +183,6 @@ export default {
         },
         {
           id: 'indexes',
-          copyable: true,
           name: "Indexes",
           tableOnly: true,
           needsIndexes: true,
@@ -205,7 +193,6 @@ export default {
         },
         {
           id: 'relations',
-          copyable: true,
           name: "Relations",
           tableOnly: true,
           needsRelations: true,
@@ -216,7 +203,6 @@ export default {
         },
         {
           id: 'triggers',
-          copyable: true,
           name: "Triggers",
           tableOnly: true,
           needsTriggers: true,
@@ -227,7 +213,6 @@ export default {
         },
         {
           id: 'partitions',
-          copyable: true,
           name: 'Partitions',
           tableOnly: true,
           needsProperties: true,
@@ -334,14 +319,6 @@ export default {
     extraPopupMenu() {
       return this.getExtraPopupMenu('structure.statusbar');
     },
-    copyOptions() {
-      const pill = this.pills.find((p) => p.id === this.activePill)
-      if (!pill?.copyable) return []
-      return structureCopyFormats.map(({ format, name }) => ({
-        format,
-        label: `Copy ${pill.name} as ${name}`,
-      }))
-    },
   },
   methods: {
     close() {
@@ -407,20 +384,6 @@ export default {
     },
     async openTable() {
       this.$root.$emit("loadTable", { table: this.table })
-    },
-    activePillTabulator() {
-      const refs = this.$refs[`pill-${this.activePill}`]
-      const component = Array.isArray(refs) ? refs[0] : refs
-      return component?.tabulator
-    },
-    /** Copies the active pill's grid, as filtered and sorted on screen. */
-    copyStructure(format) {
-      const tabulator = this.activePillTabulator()
-      if (!tabulator) return
-      const columns = tabulatorStructureColumns(tabulator)
-      this.$native.clipboard.writeText(
-        formatStructure(tabulator.getData('active'), columns, format)
-      )
     },
     /** @param {import('@/plugins/BeekeeperPlugin').ContextOption} item */
     handleExtraStatusbarMenuClick(event, item) {

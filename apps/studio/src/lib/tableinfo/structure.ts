@@ -6,9 +6,9 @@ import { ColumnDefinition, Tabulator } from "tabulator-tables";
 export type StructureCopyFormat = "csv" | "json" | "markdown";
 
 export const structureCopyFormats: { format: StructureCopyFormat; name: string }[] = [
+  { format: "markdown", name: "Markdown" },
   { format: "csv", name: "CSV" },
   { format: "json", name: "JSON" },
-  { format: "markdown", name: "Markdown" },
 ];
 
 export interface StructureColumn {
