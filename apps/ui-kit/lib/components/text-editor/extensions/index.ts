@@ -231,6 +231,53 @@ export function extensions(config: ExtensionConfiguration = {}) {
         backgroundColor: "var(--bks-query-editor-bg)",
         color: "var(--bks-text-dark)",
       },
+      // codemirror's base theme paints the panel container #f5f5f5 with black
+      // text whenever the editor is not flagged as a dark theme, which shows
+      // straight through the vim status line because its input inherits the
+      // background. Set it explicitly instead of relying on that default.
+      ".cm-panels": {
+        backgroundColor: "var(--bks-text-editor-vim-panel-bg-color)",
+        color: "var(--bks-text-editor-vim-panel-fg-color)",
+      },
+      ".cm-panels-bottom": {
+        borderTop: "1px solid var(--bks-border-color)",
+      },
+      // Vim's status line: current mode, pending keys, and the ':' and '/'
+      // inputs. These live here rather than in the stylesheet so they outrank
+      // the base theme @replit/codemirror-vim ships.
+      ".cm-panels .cm-vim-panel": {
+        backgroundColor: "var(--bks-text-editor-vim-panel-bg-color)",
+        color: "var(--bks-text-editor-vim-panel-fg-color)",
+        fontFamily: "var(--bks-text-editor-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace)",
+        fontSize: "var(--bks-text-editor-font-size, 0.875rem)",
+        // The mode label and the ':' input swap places in here, so pin the
+        // metrics to stop the bar changing height as you type a command.
+        boxSizing: "border-box",
+        alignItems: "center",
+        gap: "0.5rem",
+        padding: "2px 10px",
+        minHeight: "0",
+        lineHeight: "1.5",
+      },
+      ".cm-panels .cm-vim-panel input, .cm-panels .cm-vim-panel button": {
+        boxSizing: "border-box",
+        height: "auto",
+        margin: "0",
+        padding: "0",
+        border: "none",
+        outline: "none",
+        background: "transparent",
+        color: "inherit",
+        font: "inherit",
+        lineHeight: "inherit",
+      },
+      ".cm-panels .cm-vim-panel input": {
+        flex: "1",
+        minWidth: "0",
+      },
+      ".cm-panels .cm-vim-panel button": {
+        cursor: "default",
+      },
       // Autocomplete hints
       ".cm-tooltip": {
         backgroundColor: "var(--bks-text-editor-context-menu-bg-color)",

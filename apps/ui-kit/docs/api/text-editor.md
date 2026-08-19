@@ -55,10 +55,14 @@ by every editor on the page, so the last configuration applied wins.
 ### Vim Status Line
 
 With `keymap="vim"` the editor renders CodeMirror's vim status panel along the
-bottom: the current mode, pending keys, and the `:` and `/` input lines. Style
-it with the `.cm-vim-panel` class or the
-`--bks-text-editor-vim-panel-bg-color` and
-`--bks-text-editor-vim-panel-fg-color` variables.
+bottom: the current mode, pending keys, and the `:` and `/` input lines.
+
+Recolour it with `--bks-text-editor-vim-panel-bg-color` and
+`--bks-text-editor-vim-panel-fg-color`, which default to the editor's own
+background and foreground. Overriding the `.cm-vim-panel` class from a
+stylesheet is not reliable: CodeMirror injects both its own panel defaults and
+the ones `@replit/codemirror-vim` ships as themes, and those outrank plain
+selectors. The variables are applied from the editor's theme so they win.
 
 ### Language Server Configuration
 
