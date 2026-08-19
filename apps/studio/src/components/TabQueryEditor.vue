@@ -1682,7 +1682,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
           // Dry run is for bigquery, allows query cost estimations
-          this.runningQuery = await this.connection.query(query, this.tab.id, { dryRun: this.dryRun });
+          this.runningQuery = await this.connection.query(query, this.tab.id, { dryRun: this.dryRun }, this.hasActiveTransaction);
           const queryStartTime = new Date()
           const results = await this.runningQuery.execute();
           const queryEndTime = new Date()
