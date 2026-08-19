@@ -183,6 +183,13 @@ export const AppDbHandlers = {
   ...handlersFor<IQueryFolder>('queryFolder', QueryFolder),
   ...handlersFor<IConnectionFolder>('connectionFolder', ConnectionFolder),
   ...handlersFor<TransportTabulatorPersistence>('tabulatorPersistence', TabulatorPersistence),
+  // (persistenceID, type) is unique, so callers don't need to track row ids.
+  'appdb/tabulatorPersistence/upsert': async function({ obj }: { obj: Pick<TransportTabulatorPersistence, 'persistenceID' | 'type' | 'data'> }) {
+    await TabulatorPersistence.getRepository().upsert(
+      _.pick(obj, ['persistenceID', 'type', 'data']),
+      ['persistenceID', 'type']
+    );
+  },
   'appdb/saved/parseUrl': async function({ url }: { url: string }) {
     const conn = new SavedConnection();
     if (!conn.parse(url)) {

@@ -424,12 +424,10 @@ export default Vue.extend({
       selectedRowData: {},
       expandablePaths: [],
 
-      // App.db row holding tabulator's column persistence.
+      // Serialized tabulator column persistence from app.db.
       // Loaded by loadPersistence() and read synchronously by persistenceReader.
-      persistenceRow: null as { id?: number; data: string } | null,
+      persistedColumnData: null as string | null,
 
-      // App.db row holding the rows-per-page choice for this table.
-      pageSizeRow: null as { id?: number; data: string } | null,
       // Per-table rows-per-page override. Null means use the configured default.
       pageSize: null as number | null,
       running: false
@@ -836,10 +834,10 @@ export default Vue.extend({
           "appdb/tabulatorPersistence/findOneBy",
           { options: { persistenceID: this.tableId, type: "columns" } }
         );
-        this.persistenceRow = row ? { id: row.id, data: row.data } : null;
+        this.persistedColumnData = row?.data ?? null;
       } catch (e) {
         log.warn("tabulator persistence load failed", e);
-        this.persistenceRow = null;
+        this.persistedColumnData = null;
       }
     },
     async loadPageSize() {
@@ -852,12 +850,10 @@ export default Vue.extend({
           "appdb/tabulatorPersistence/findOneBy",
           { options: { persistenceID: this.tableId, type: "pageSize" } }
         );
-        this.pageSizeRow = row ? { id: row.id, data: row.data } : null;
         const stored = row ? Number(JSON.parse(row.data)) : null;
         this.pageSize = _.isFinite(stored) && stored > 0 ? stored : null;
       } catch (e) {
         log.warn("table page size load failed", e);
-        this.pageSizeRow = null;
         this.pageSize = null;
       }
     },
@@ -866,30 +862,14 @@ export default Vue.extend({
         return;
       }
 
-      const serialized = JSON.stringify(size);
-      if (serialized === this.pageSizeRow?.data) return;
-
       try {
-        if (!this.pageSizeRow?.id) {
-          // Another tab on the same table may already own the row, and
-          // (persistenceID, type) is unique.
-          const existing: TransportTabulatorPersistence = await this.$util.send(
-            "appdb/tabulatorPersistence/findOneBy",
-            { options: { persistenceID: this.tableId, type: "pageSize" } }
-          );
-          if (existing) {
-            this.pageSizeRow = { id: existing.id, data: existing.data };
-          }
-        }
-        const saved = await this.$util.send("appdb/tabulatorPersistence/save", {
+        await this.$util.send("appdb/tabulatorPersistence/upsert", {
           obj: {
-            id: this.pageSizeRow?.id,
             persistenceID: this.tableId,
             type: "pageSize",
-            data: serialized,
+            data: JSON.stringify(size),
           },
         });
-        this.pageSizeRow = { id: saved?.id ?? this.pageSizeRow?.id, data: serialized };
       } catch (e) {
         log.warn("table page size save failed", e);
       }
@@ -921,9 +901,9 @@ export default Vue.extend({
       });
     },
     persistenceReader(id: string, type: string) {
-      if (this.persistenceRow) {
+      if (this.persistedColumnData) {
         try {
-          return JSON.parse(this.persistenceRow.data);
+          return JSON.parse(this.persistedColumnData);
         } catch (e) {
           log.error(e);
           return false;
@@ -946,22 +926,17 @@ export default Vue.extend({
       }
 
       const serialized = JSON.stringify(data);
-      if (serialized === this.persistenceRow?.data) return;
+      if (serialized === this.persistedColumnData) return;
 
-      const existingId = this.persistenceRow?.id;
-      this.persistenceRow = { id: existingId, data: serialized };
+      this.persistedColumnData = serialized;
       try {
-        const saved = await this.$util.send("appdb/tabulatorPersistence/save", {
+        await this.$util.send("appdb/tabulatorPersistence/upsert", {
           obj: {
-            id: existingId,
             persistenceID: this.tableId,
             type,
             data: serialized,
           },
         });
-        if (saved) {
-          this.persistenceRow.id = saved.id;
-        }
       } catch (e) {
         log.warn("tabulator persistence save failed", e)
       }
