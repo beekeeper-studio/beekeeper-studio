@@ -49,6 +49,8 @@ export enum AppEvent {
   backupDatabase = 'backupDatabase',
   restoreDatabase = 'restoreDatabase',
   upgradeModal = 'upgradeModal',
+  /** Triggered when a lifetime (expired subscription) license tries to use cloud workspaces */
+  cloudWorkspacesBlocked = 'cloudWorkspacesBlocked',
   toggleExpandTableList = 'toggleExpandTableList',
   togglePinTableList = 'togglePinTableList',
   dropzoneEnter = 'dropzoneEnter',
