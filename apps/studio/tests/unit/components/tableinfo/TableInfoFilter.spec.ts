@@ -172,6 +172,19 @@ describe("TableInfoFilter", () => {
     wrapper.destroy();
   });
 
+  it("keeps the clear button in the layout so the box width never changes", async () => {
+    const tabulator = fakeTabulator();
+    const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });
+
+    // present but invisible while empty -- its 16px slot is always reserved
+    expect(wrapper.find(".clear-filter").exists()).toBe(true);
+    expect(wrapper.find(".clear-filter").classes()).toContain("is-hidden");
+
+    await type(wrapper, "user");
+    expect(wrapper.find(".clear-filter").classes()).not.toContain("is-hidden");
+    wrapper.destroy();
+  });
+
   it("reports how many rows matched", async () => {
     const tabulator = fakeTabulator();
     const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });

@@ -136,6 +136,9 @@ $cell-success:           $row-add;
           background: transparent;
           color: $text-light;
           cursor: pointer;
+          &.is-hidden {
+            visibility: hidden;
+          }
           &:hover {
             background: rgba($theme-base, 0.12);
             color: $text-dark;

@@ -8,11 +8,12 @@
       :placeholder="placeholder"
       v-model="query"
     >
+    <!-- Kept in the layout when empty so the box doesn't grow on first keystroke -->
     <button
       class="clear-filter"
+      :class="{ 'is-hidden': !query }"
       type="button"
       title="Clear filter"
-      v-show="query"
       @click.prevent="clear"
     >
       <i class="material-icons">close</i>
