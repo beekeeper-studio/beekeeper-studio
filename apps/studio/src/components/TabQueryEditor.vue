@@ -56,6 +56,7 @@
       </div>
       <component
         :is="editorComponent"
+        ref="editor"
         :value="unsavedText"
         :read-only="readOnly"
         :is-focused="focusingElement === 'text-editor'"
@@ -916,7 +917,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         const keybindings = this.$CMKeymap({
           'general.save': this.triggerSave,
           'queryEditor.primaryQueryAction': this.queryFunctions.primaryRead,
-          'queryEditor.secondaryQueryAction': this.queryFunctions.secondaryRead
+          'queryEditor.secondaryQueryAction': this.queryFunctions.secondaryRead,
+          'queryEditor.formatQuery': this.formatQuery,
         })
 
         if(this.userKeymap === "vim") {
@@ -1114,6 +1116,10 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       },
       formatterPreset() {
         this.handleFormatterPresetModal({ showFormatter: true })
+      },
+      formatQuery() {
+        // SurrealTextEditor has no formatter
+        this.$refs.editor?.formatSql?.()
       },
       handleFormatterPresetModal({ showFormatter }){
         if (showFormatter) {

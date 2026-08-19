@@ -485,6 +485,7 @@ export default Vue.extend({
         'tableTable.previousPage': this.navigatePage.bind(this, 'prev'),
         'tableTable.firstPage': this.navigatePage.bind(this, 'first'),
         'tableTable.openEditorModal': this.openEditorMenuByShortcut.bind(this),
+        'tableTable.discardChanges': this.discardChangesShortcut.bind(this),
       })
     },
 
@@ -1858,6 +1859,10 @@ export default Vue.extend({
             this.forceRedraw = true
           }
         }
+    },
+    discardChangesShortcut() {
+      if (!this.pendingChangesCount) return
+      this.discardChanges()
     },
     discardChanges() {
       this.saveError = null

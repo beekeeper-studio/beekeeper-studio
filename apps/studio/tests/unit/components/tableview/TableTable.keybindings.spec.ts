@@ -46,6 +46,7 @@ describe("TableTable.vue — row delete keybindings", () => {
         nullTableSelection: jest.fn(),
         navigatePage: jest.fn(),
         openEditorMenuByShortcut: jest.fn(),
+        discardChangesShortcut: jest.fn(),
       };
     }
 
