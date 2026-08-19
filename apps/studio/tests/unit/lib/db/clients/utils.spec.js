@@ -65,6 +65,31 @@ describe("buildSelectTopQuery", () => {
           params: ["3", "9", "john"]
         }
       },
+      // Falsy values must stay bound to their placeholders instead of being
+      // dropped, which left an unbound `?` or misaligned every param after it
+      {
+        params: ['info', 0, 10, null, [
+          { field: 'count', type: '=', value: 0 },
+          { op: 'AND', field: 'name', type: '=', value: '' },
+          { op: 'AND', field: 'id', type: '>', value: '3' },
+        ]],
+        result: {
+          countQuery: 'select count(*) as total from `info` where `count` = ? and `name` = ? and `id` > ?',
+          query: 'select * from `info` where `count` = ? and `name` = ? and `id` > ? limit 10 offset 0',
+          params: [0, "", "3"]
+        }
+      },
+      {
+        params: ['info', 0, 10, null, [
+          { field: 'flag', type: 'is not', value: null },
+          { op: 'AND', field: 'id', type: 'in', value: ['0', '', 'x'] },
+        ]],
+        result: {
+          countQuery: 'select count(*) as total from `info` where `flag` is not null and `id` in (?,?,?)',
+          query: 'select * from `info` where `flag` is not null and `id` in (?,?,?) limit 10 offset 0',
+          params: ["0", "", "x"]
+        }
+      },
     ]
 
     const trimQuery = query => {

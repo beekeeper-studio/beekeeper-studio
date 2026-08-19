@@ -1121,6 +1121,10 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     if (filters && _.isArray(filters) && filters.length > 0) {
       const filtersWithParams = [];
       const filtersWithoutParams = [];
+      // Collected in lockstep with paramCounter: dropping falsy values
+      // (null, 0, '', false) leaves an unbound {pN} or misaligns every
+      // param after it.
+      const paramValues = [];
       filters.forEach((item) => {
         const column = columns.find((c) => c.columnName === item.field);
         const field = column?.dataType.toUpperCase().includes("BINARY")
@@ -1137,6 +1141,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
                 .join(",")
             : ClickHouseData.escapeString(item.value, true);
 
+          paramValues.push(...(_.isArray(item.value) ? item.value : [item.value]));
           filtersWithParams.push(
             `${field} ${item.type.toUpperCase()} (${params})`
           );
@@ -1147,6 +1152,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
           filtersWithParams.push(`${field} ${item.type.toUpperCase()} NULL`);
           filtersWithoutParams.push(`${field} ${item.type.toUpperCase()} NULL`);
         } else {
+          paramValues.push(item.value);
           filtersWithParams.push(
             `${field} ${item.type.toUpperCase()} {p${paramCounter++}: Dynamic}`
           );
@@ -1162,14 +1168,9 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       filterString = "WHERE " + joinFilters(filtersWithParams, filters);
       fullFilterString = "WHERE " + joinFilters(filtersWithoutParams, filters);
 
-      filters
-        .filter((item) => !!item.value)
-        .flatMap((item) => {
-          return _.isArray(item.value) ? item.value : [item.value];
-        })
-        .forEach((str, idx) => {
-          filterParams[`p${idx}`] = str;
-        });
+      paramValues.forEach((value, idx) => {
+        filterParams[`p${idx}`] = value;
+      });
     }
     return {
       filterString,

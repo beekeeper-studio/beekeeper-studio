@@ -1476,6 +1476,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     if (_.isString(filters)) {
       filterString = `WHERE ${filters}`
     } else if (filters && filters.length > 0) {
+      // Params must be collected in lockstep with placeholder numbering:
+      // dropping falsy values (null, 0, '', false) leaves an unbound $n or
+      // misaligns every param after it ("there is no parameter $1").
       let paramIdx = 1
       const allFilters = filters.map((item) => {
         if (item.type === 'in' && _.isArray(item.value)) {
@@ -1485,6 +1488,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
               : `$${paramIdx + idx}`
           })
           paramIdx += values.length
+          params.push(...item.value)
           return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} (${values.join(',')})`
         } else if (item.type.includes('is')) {
           return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} NULL`
@@ -1493,13 +1497,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
           ? knex.raw('?', [item.value]).toQuery()
           : `$${paramIdx}`
         paramIdx += 1
+        params.push(item.value)
         return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} ${value}`
       })
       filterString = "WHERE " + joinFilters(allFilters, filters)
-
-      params = filters.filter((item) => !!item.value).flatMap((item) => {
-        return _.isArray(item.value) ? item.value : [item.value]
-      })
     }
 
     const selectSQL = `SELECT ${selects.join(', ')}`

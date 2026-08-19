@@ -121,8 +121,11 @@ export function getEntraOptions(server, extra): AuthOptions {
 
 export function buildFilterString(filters: TableFilter[], columns = [], wrapIdentifier: (s: string) => string) {
   let filterString = ""
-  let filterParams = []
+  const filterParams = []
   if (filters && _.isArray(filters) && filters.length > 0) {
+    // Params must be collected in lockstep with placeholder emission: dropping
+    // falsy values (null, 0, '', false) leaves an unbound placeholder or
+    // misaligns every param after it.
     const allFilters = filters.map((item) => {
       const column = columns.find((c) => c.columnName === item.field)
       const field = column?.dataType.toUpperCase().includes('BINARY') ?
@@ -134,19 +137,17 @@ export function buildFilterString(filters: TableFilter[], columns = [], wrapIden
           item.value.map(() => '?').join(',')
           : '?'
 
+        filterParams.push(...(_.isArray(item.value) ? item.value : [item.value]))
         return `${field} ${item.type.toUpperCase()} (${questionMarks})`
       } else if (item.type.includes('is')) {
         return `${field} ${item.type.toUpperCase()} NULL`
       }
+      filterParams.push(item.value)
       return `${field} ${item.type.toUpperCase()} ?`
     })
     filterString = "WHERE " + joinFilters(allFilters, filters)
 
     log.info('FILTER: ', filterString)
-
-    filterParams = filters.filter((item) => !!item.value).flatMap((item) => {
-      return _.isArray(item.value) ? item.value : [item.value]
-    })
   }
   return {
     filterString, filterParams

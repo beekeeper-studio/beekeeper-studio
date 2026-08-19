@@ -204,4 +204,49 @@ describe("Postgres UNIT tests (no connection required)", () => {
     expect(result).toEqual(['CREATE OR REPLACE FUNCTION public.foo(a integer) ...']);
   })
 
+  describe("buildSelectTopQueries param binding", () => {
+    it("should bind falsy filter values instead of dropping them", () => {
+      // Regression: falsy values (null, 0, '') were filtered out of params
+      // while the SQL still contained their placeholder, causing
+      // "there is no parameter $1" from the server.
+      const cases = [
+        { value: 0 },
+        { value: '' },
+        { value: null },
+        { value: false },
+      ]
+      cases.forEach(({ value }) => {
+        const result = client.buildSelectTopQueries({
+          table: 'orders',
+          schema: 'public',
+          offset: 0,
+          limit: 1,
+          filters: [{ field: 'customer_id', type: '=', value }],
+        })
+        expect(result.query).toContain('$1')
+        expect(result.params).toStrictEqual([value])
+      })
+    })
+
+    it("should keep placeholders and params aligned across mixed filters", () => {
+      const result = client.buildSelectTopQueries({
+        table: 'orders',
+        schema: 'public',
+        offset: 0,
+        limit: 10,
+        filters: [
+          { field: 'a', type: '=', value: '' },
+          { op: 'AND', field: 'b', type: 'is', value: null },
+          { op: 'AND', field: 'c', type: 'in', value: ['0', '', 'x'] },
+          { op: 'AND', field: 'd', type: '>', value: '5' },
+        ],
+      })
+      expect(result.query).toContain('"a" = $1')
+      expect(result.query).toContain('"b" IS NULL')
+      expect(result.query).toContain('"c" IN ($2,$3,$4)')
+      expect(result.query).toContain('"d" > $5')
+      expect(result.params).toStrictEqual(['', '0', '', 'x', '5'])
+    })
+  })
+
 })

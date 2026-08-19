@@ -2231,6 +2231,12 @@ export default Vue.extend({
     // to fetch multiple paths
     async expandForeignKey(expandablePath: ExpandablePath) {
       const { path, tableKey } = expandablePath
+      const value = _.get(this.selectedRowData, path)
+      // Nothing to look up when the FK value is missing (e.g. a NULL column)
+      if (_.isNil(value)) {
+        this.removeExpandablePath(expandablePath)
+        return
+      }
       try {
         const table = await this.connection.selectTop(
           tableKey.toTable,
@@ -2240,7 +2246,7 @@ export default Vue.extend({
           [{
             field: tableKey.toColumn,
             type: '=',
-            value: _.get(this.selectedRowData, path),
+            value,
           }],
           tableKey.toSchema,
           ['*']
@@ -2263,9 +2269,10 @@ export default Vue.extend({
         log.error(e)
       }
 
-      // Remove the path from the list of expandable paths
-      const filteredExpandablePaths = this.expandablePaths.filter((p) => p !== expandablePath)
-      this.expandablePaths = filteredExpandablePaths
+      this.removeExpandablePath(expandablePath)
+    },
+    removeExpandablePath(expandablePath: ExpandablePath) {
+      this.expandablePaths = this.expandablePaths.filter((p) => p !== expandablePath)
       this.selectedRow.setExpandablePaths((expandablePaths: ExpandablePath[]) => expandablePaths.filter((p) => p !== expandablePath))
 
       this.updateJsonViewerSidebar()

@@ -341,7 +341,6 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   async selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[] = ['*']): Promise<string> {
     let orderByString = ""
     let filterString = ""
-    let params: (string | string[])[] = []
 
     if (orderBy && orderBy.length > 0) {
       orderByString = "ORDER BY " + (orderBy.map((item) => {
@@ -356,26 +355,19 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     if (_.isString(filters)) {
       filterString = `WHERE ${filters}`
     } else if (filters && filters.length > 0) {
-      let paramIdx = 1
       const allFilters = filters.map((item) => {
         if (item.type === 'in' && _.isArray(item.value)) {
-          const values = item.value.map((v, idx) => {
+          const values = item.value.map((v) => {
             return knex.raw('?', [v]).toQuery();
           })
-          paramIdx += values.length
           return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} (${values.join(',')})`
         } else if (item.type.includes('is')) {
           return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} NULL`
         }
         const value = knex.raw('?', [item.value]);
-        paramIdx += 1
         return `${wrapIdentifier(item.field)} ${item.type.toUpperCase()} ${value}`
       })
       filterString = "WHERE " + joinFilters(allFilters, filters)
-
-      params = filters.filter((item) => !!item.value).flatMap((item) => {
-        return _.isArray(item.value) ? item.value : [item.value]
-      })
     }
 
     const selectSQL = `SELECT ${selects.join(', ')}`
