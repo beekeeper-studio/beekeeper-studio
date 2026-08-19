@@ -6,11 +6,17 @@ import { clearRecordCountCache } from "@/components/common/tableLengthCache";
 
 Vue.use(Vuex);
 
-function createBksConfig(autoFetchRecordCount = true) {
+function createBksConfig(
+  autoFetchRecordCount = true,
+  autoFetchFilteredRecordCount = false
+) {
   return {
     db: {
-      postgres: { autoFetchRecordCount },
-      default: { autoFetchRecordCount: false },
+      postgres: { autoFetchRecordCount, autoFetchFilteredRecordCount },
+      default: {
+        autoFetchRecordCount: false,
+        autoFetchFilteredRecordCount: false,
+      },
     },
   };
 }
@@ -26,10 +32,14 @@ describe("TableLength.vue", () => {
 
   function createWrapper(
     props: Record<string, unknown> = {},
-    options: { autoFetchRecordCount?: boolean } = {}
+    options: {
+      autoFetchRecordCount?: boolean;
+      autoFetchFilteredRecordCount?: boolean;
+    } = {}
   ) {
     const autoFetch = options.autoFetchRecordCount ?? true;
-    bksConfig = createBksConfig(autoFetch);
+    const autoFetchFiltered = options.autoFetchFilteredRecordCount ?? false;
+    bksConfig = createBksConfig(autoFetch, autoFetchFiltered);
 
     return mount(TableLength, {
       store,
@@ -79,12 +89,59 @@ describe("TableLength.vue", () => {
     expect(getTableLength).not.toHaveBeenCalled();
   });
 
-  it("does not auto-fetch when filters change even if auto-fetch is enabled", async () => {
+  it("auto-fetches the filtered count when autoFetchFilteredRecordCount is enabled", async () => {
+    const wrapper = createWrapper(
+      { filters: [] },
+      { autoFetchFilteredRecordCount: true }
+    );
+
+    await Vue.nextTick();
+    await Vue.nextTick();
+    getTableLength.mockClear();
+
+    await wrapper.setProps({
+      filters: [{ field: "id", type: "=", value: "1" }],
+    });
+
+    await Vue.nextTick();
+    await Vue.nextTick();
+
+    expect(getQueryForFilter).toHaveBeenCalled();
+    expect(getFilteredDataCount).toHaveBeenCalledWith(
+      "users",
+      "public",
+      expect.any(String)
+    );
+    expect(getTableLength).not.toHaveBeenCalled();
+  });
+
+  it("does not auto-fetch filtered count when autoFetchFilteredRecordCount is disabled", async () => {
     const wrapper = createWrapper({ filters: [] });
 
     await Vue.nextTick();
     await Vue.nextTick();
     getTableLength.mockClear();
+
+    await wrapper.setProps({
+      filters: [{ field: "id", type: "=", value: "1" }],
+    });
+
+    await Vue.nextTick();
+    await Vue.nextTick();
+
+    expect(getQueryForFilter).not.toHaveBeenCalled();
+    expect(getFilteredDataCount).not.toHaveBeenCalled();
+    expect(getTableLength).not.toHaveBeenCalled();
+  });
+
+  it("does not auto-fetch filtered count when autoFetchRecordCount is disabled even if filtered auto-fetch is enabled", async () => {
+    const wrapper = createWrapper(
+      { filters: [] },
+      { autoFetchRecordCount: false, autoFetchFilteredRecordCount: true }
+    );
+
+    await Vue.nextTick();
+    await Vue.nextTick();
 
     await wrapper.setProps({
       filters: [{ field: "id", type: "=", value: "1" }],
@@ -178,9 +235,10 @@ describe("TableLength.vue", () => {
   });
 
   it("fetches filtered count on manual click when filters are active", async () => {
-    const wrapper = createWrapper({
-      filters: [{ field: "id", type: "=", value: "1" }],
-    });
+    const wrapper = createWrapper(
+      { filters: [{ field: "id", type: "=", value: "1" }] },
+      { autoFetchRecordCount: false }
+    );
 
     await Vue.nextTick();
     await Vue.nextTick();

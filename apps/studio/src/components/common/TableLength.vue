@@ -13,7 +13,6 @@
 </template>
 <script lang="ts">
 import Vue from 'vue'
-import _ from 'lodash'
 import { mapState } from 'vuex'
 import { joinFilters } from "@/common/utils"
 import {
@@ -38,11 +37,14 @@ export default Vue.extend({
     canAutoFetchRecordCount() {
       return this.$bksConfig.db[this.dbConfigKey].autoFetchRecordCount
     },
+    canAutoFetchFilteredRecordCount() {
+      return this.$bksConfig.db[this.dbConfigKey].autoFetchFilteredRecordCount
+    },
     hasActiveFilters() {
       return (
         Array.isArray(this.filters) && this.filters.length > 0
       ) || (
-        _.isString(this.filters) && this.filters.length > 0
+        typeof this.filters === 'string' && this.filters.length > 0
       )
     },
     fetchKey() {
@@ -92,7 +94,8 @@ export default Vue.extend({
       this.error = null
       this.totalRecords = null
 
-      if (!this.canAutoFetchRecordCount || this.hasActiveFilters) return
+      if (!this.canAutoFetchRecordCount) return
+      if (this.hasActiveFilters && !this.canAutoFetchFilteredRecordCount) return
 
       this.fetchTotalRecords()
     },

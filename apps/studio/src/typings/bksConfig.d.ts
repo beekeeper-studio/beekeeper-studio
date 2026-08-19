@@ -7,6 +7,7 @@ declare interface IBksConfig {
     db: {
         bedrock: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             manualTransactionTimeout: number;
@@ -21,6 +22,7 @@ declare interface IBksConfig {
         };
         bigquery: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             manualTransactionTimeout: number;
@@ -35,6 +37,7 @@ declare interface IBksConfig {
         };
         cassandra: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             manualTransactionTimeout: number;
@@ -49,6 +52,7 @@ declare interface IBksConfig {
         };
         clickhouse: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             manualTransactionTimeout: number;
@@ -63,6 +67,7 @@ declare interface IBksConfig {
         };
         cockroachdb: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             connectionTimeout: number;
@@ -79,6 +84,7 @@ declare interface IBksConfig {
         };
         default: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             manualTransactionTimeout: number;
@@ -93,6 +99,7 @@ declare interface IBksConfig {
         };
         duckdb: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             manualTransactionTimeout: number;
@@ -107,6 +114,7 @@ declare interface IBksConfig {
         };
         dynamodb: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             columnSampleSize: number;
@@ -123,6 +131,7 @@ declare interface IBksConfig {
         };
         firebird: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             manualTransactionTimeout: number;
@@ -137,6 +146,7 @@ declare interface IBksConfig {
         };
         greengage: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             connectionTimeout: number;
@@ -153,6 +163,7 @@ declare interface IBksConfig {
         };
         libsql: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             manualTransactionTimeout: number;
@@ -167,6 +178,7 @@ declare interface IBksConfig {
         };
         mariadb: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             connectTimeout: number;
@@ -182,6 +194,7 @@ declare interface IBksConfig {
         };
         mongodb: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             manualTransactionTimeout: number;
@@ -196,6 +209,7 @@ declare interface IBksConfig {
         };
         mysql: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             connectTimeout: number;
@@ -211,6 +225,7 @@ declare interface IBksConfig {
         };
         oracle: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             manualTransactionTimeout: number;
@@ -225,6 +240,7 @@ declare interface IBksConfig {
         };
         postgres: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             connectionTimeout: number;
@@ -241,6 +257,7 @@ declare interface IBksConfig {
         };
         redis: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             manualTransactionTimeout: number;
@@ -255,6 +272,7 @@ declare interface IBksConfig {
         };
         redshift: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             connectionTimeout: number;
@@ -271,6 +289,7 @@ declare interface IBksConfig {
         };
         scylladb: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             manualTransactionTimeout: number;
@@ -285,6 +304,7 @@ declare interface IBksConfig {
         };
         snowflake: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             connectionTimeout: number;
@@ -301,6 +321,7 @@ declare interface IBksConfig {
         };
         sqlanywhere: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             manualTransactionTimeout: number;
@@ -315,6 +336,7 @@ declare interface IBksConfig {
         };
         sqlite: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             manualTransactionTimeout: number;
@@ -329,6 +351,7 @@ declare interface IBksConfig {
         };
         sqlserver: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             manualTransactionTimeout: number;
@@ -343,6 +366,7 @@ declare interface IBksConfig {
         };
         starrocks: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             manualTransactionTimeout: number;
@@ -357,6 +381,7 @@ declare interface IBksConfig {
         };
         surrealdb: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             connectionTimeout: number;
@@ -372,6 +397,7 @@ declare interface IBksConfig {
         };
         tidb: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             manualTransactionTimeout: number;
@@ -386,6 +412,7 @@ declare interface IBksConfig {
         };
         trino: {
             allowSkipToLastPage: boolean;
+            autoFetchFilteredRecordCount: boolean;
             autoFetchRecordCount: boolean;
             autoRollbackWarningWindow: number;
             manualTransactionTimeout: number;
