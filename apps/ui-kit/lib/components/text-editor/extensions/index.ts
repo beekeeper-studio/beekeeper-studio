@@ -250,7 +250,7 @@ export function extensions(config: ExtensionConfiguration = {}) {
         // Neutral and translucent so it reads against a light or a dark
         // editor. --bks-border-color would fall into the same trap as the
         // colours above and resolve against the light defaults.
-        borderTop: "1px solid rgba(128, 128, 128, 0.35)",
+        borderTop: "var(--bks-text-editor-vim-panel-border)",
       },
       // Vim's status line: current mode, pending keys, and the ':' and '/'
       // inputs. These live here rather than in the stylesheet so they outrank
@@ -261,7 +261,10 @@ export function extensions(config: ExtensionConfiguration = {}) {
         backgroundColor: "var(--bks-text-editor-vim-panel-bg-color)",
         color: "var(--bks-text-editor-vim-panel-fg-color)",
         fontFamily: "var(--bks-text-editor-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace)",
-        fontSize: "var(--bks-text-editor-font-size, 0.875rem)",
+        fontSize: "var(--bks-text-editor-vim-panel-font-size)",
+        // Matches the top border, so the bar reads as its own strip rather
+        // than running into the toolbar underneath the editor.
+        borderBottom: "var(--bks-text-editor-vim-panel-border)",
         // The mode label and the ':' input swap places in here, so pin the
         // metrics to stop the bar changing height as you type a command.
         boxSizing: "border-box",

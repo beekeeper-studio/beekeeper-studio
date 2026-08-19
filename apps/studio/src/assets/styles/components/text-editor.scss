@@ -1,7 +1,15 @@
 @import "./text-editor-plugins/partial-read-only.scss";
 
 .BksTextEditor {
-  padding: 0.75rem 0;
+  // The padding belongs on the scroller rather than the root. Codemirror's
+  // panels are siblings of the scroller inside the editor, so padding here
+  // leaves the vim status line floating away from the editor's edges instead
+  // of sitting flush against the toolbar below it.
+  padding: 0;
+
+  .cm-scroller {
+    padding: 0.75rem 0;
+  }
   &.remove-json-root-brackets .CodeMirror-code {
     & > div:first-child, & > div:last-child {
       display: none;

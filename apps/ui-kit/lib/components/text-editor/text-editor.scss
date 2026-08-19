@@ -110,6 +110,10 @@
   // resolve to $query-editor-bg, which is white.
   --bks-text-editor-vim-panel-bg-color: inherit;
   --bks-text-editor-vim-panel-fg-color: inherit;
+  // Deliberately not --bks-text-editor-font-size: that follows the user's
+  // editor font size setting, which makes the status line grow with it.
+  --bks-text-editor-vim-panel-font-size: 0.875rem;
+  --bks-text-editor-vim-panel-border: 1px solid rgba(128, 128, 128, 0.35);
 
   // Context Menu
   --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: -5%)};
