@@ -231,21 +231,27 @@ export function extensions(config: ExtensionConfiguration = {}) {
         backgroundColor: "var(--bks-query-editor-bg)",
         color: "var(--bks-text-dark)",
       },
-      // codemirror's base theme paints the panel container #f5f5f5 with black
-      // text whenever the editor is not flagged as a dark theme, which shows
-      // straight through the vim status line because its input inherits the
-      // background. Set it explicitly instead of relying on that default.
+      // The panel container is a direct child of .cm-editor, so inheriting
+      // picks up whatever background the host app themed the editor with.
+      // codemirror's own base theme would otherwise paint it #f5f5f5 with
+      // black text, which shows straight through the vim status line because
+      // its input inherits the background.
       ".cm-panels": {
         backgroundColor: "var(--bks-text-editor-vim-panel-bg-color)",
         color: "var(--bks-text-editor-vim-panel-fg-color)",
       },
       ".cm-panels-bottom": {
-        borderTop: "1px solid var(--bks-border-color)",
+        // Neutral and translucent so it reads against a light or a dark
+        // editor. --bks-border-color would fall into the same trap as the
+        // colours above and resolve against the light defaults.
+        borderTop: "1px solid rgba(128, 128, 128, 0.35)",
       },
       // Vim's status line: current mode, pending keys, and the ':' and '/'
       // inputs. These live here rather than in the stylesheet so they outrank
       // the base theme @replit/codemirror-vim ships.
-      ".cm-panels .cm-vim-panel": {
+      // Note this element also carries the generic .cm-panel class, whose rule
+      // above resolves to white, so this needs to outrank it.
+      ".cm-panels .cm-panel.cm-vim-panel": {
         backgroundColor: "var(--bks-text-editor-vim-panel-bg-color)",
         color: "var(--bks-text-editor-vim-panel-fg-color)",
         fontFamily: "var(--bks-text-editor-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace)",
