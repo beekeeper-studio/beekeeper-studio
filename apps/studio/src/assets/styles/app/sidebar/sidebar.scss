@@ -314,6 +314,17 @@
   &.list-body-empty {
     flex: 0;
   }
+  &:focus {
+    outline: none;
+  }
+}
+// arrow-key navigation cursor (matches .list-item-btn.selected)
+.keyboard-cursor {
+  .list-item-btn,
+  .folder-btn {
+    background: rgba($theme-base, 0.1);
+    border-radius: 4px;
+  }
 }
 .list-group {
   display: flex;

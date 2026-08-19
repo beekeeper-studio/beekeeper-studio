@@ -8,7 +8,9 @@
     :data-component="itemComponent"
     :estimate-size="estimateItemHeight"
     :keeps="keeps"
-    :extra-props="{ onExpand: handleExpand, onPin: handlePin }"
+    :extra-props="{ onExpand: handleExpand, onPin: handlePin, cursorKey: selectedSidebarItem }"
+    tabindex="0"
+    @keydown.native="handleKeydown"
   />
 </template>
 
@@ -286,6 +288,93 @@ export default Vue.extend({
     handleScrollEnd() {
       this.updateTableColumnsInRange(true);
     },
+    /** Focus the list and place the cursor, so arrow keys work right away.
+     * Called from the filter input in TableList. */
+    focusList() {
+      this.$refs.vList.$el.focus();
+      const index = this.cursorIndex === -1 ? 0 : this.cursorIndex;
+      if (this.displayItems[index]) {
+        this.setCursor(index);
+      }
+    },
+    setCursor(index: number) {
+      const item = this.displayItems[index];
+      if (!item) return;
+      this.$store.commit("selectSidebarItem", item.key);
+      this.$nextTick(() => {
+        const el = this.$el.querySelector(
+          `[data-nav-key="${CSS.escape(item.key)}"]`
+        );
+        if (el) {
+          el.scrollIntoView({ block: "nearest" });
+        } else {
+          // outside the rendered window of the virtual list
+          this.$refs.vList.scrollToIndex(index);
+        }
+      });
+    },
+    handleKeydown(event: KeyboardEvent) {
+      const target = event.target as HTMLElement;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      if (!this.displayItems.length) return;
+      const index = this.cursorIndex;
+
+      switch (event.key) {
+        case "ArrowDown":
+        case "ArrowUp": {
+          event.preventDefault();
+          const delta = event.key === "ArrowDown" ? 1 : -1;
+          const next =
+            index === -1
+              ? delta === 1
+                ? 0
+                : this.displayItems.length - 1
+              : Math.min(
+                  this.displayItems.length - 1,
+                  Math.max(0, index + delta)
+                );
+          this.setCursor(next);
+          break;
+        }
+        case "Enter": {
+          if (index === -1) return;
+          event.preventDefault();
+          const item = this.displayItems[index];
+          if (item.type === "table") {
+            this.$root.$emit(AppEvent.loadTable, { table: item.entity });
+          } else {
+            this.handleExpand(event, item);
+          }
+          break;
+        }
+        case "ArrowRight": {
+          if (index === -1) return;
+          event.preventDefault();
+          const item = this.displayItems[index];
+          if (!item.expanded) this.handleExpand(event, item);
+          break;
+        }
+        case "ArrowLeft": {
+          if (index === -1) return;
+          event.preventDefault();
+          const item = this.displayItems[index];
+          if (item.expanded) {
+            this.handleExpand(event, item);
+          } else if (item.parent?.type === "schema") {
+            const parentIndex = this.displayItems.indexOf(item.parent);
+            if (parentIndex !== -1) this.setCursor(parentIndex);
+          }
+          break;
+        }
+      }
+    },
   },
   computed: {
     resizeObserver() {
@@ -315,8 +404,14 @@ export default Vue.extend({
       minimalMode: "minimalMode",
       hiddenEntities: "hideEntities/databaseEntities",
       hiddenSchemas: "hideEntities/databaseSchemas",
+      selectedSidebarItem: "selectedSidebarItem",
     }),
     ...mapState("pins", ["pins"]),
+    cursorIndex(): number {
+      return this.displayItems.findIndex(
+        (item: Item) => item.key === this.selectedSidebarItem
+      );
+    },
   },
   watch: {
     schemaTables() {

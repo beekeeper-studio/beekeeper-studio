@@ -4,6 +4,8 @@
     v-show="!source.hidden"
     :expanded="source.expanded"
     :schema="source.entity"
+    :data-nav-key="source.key"
+    :class="{ 'keyboard-cursor': cursorKey === source.key }"
     @expand="onExpand($event, source)"
     @contextmenu.prevent.stop="
       $bks.openMenu({
@@ -22,6 +24,8 @@
     :table="source.entity"
     :pinned="source.pinned"
     :loading-columns="source.loadingColumns"
+    :data-nav-key="source.key"
+    :class="{ 'keyboard-cursor': cursorKey === source.key }"
     @expand="onExpand($event, source)"
     @pin="onPin($event, source)"
     @contextmenu.prevent.stop="
@@ -39,6 +43,8 @@
     :expanded="source.expanded"
     :routine="source.entity"
     :pinned="source.pinned"
+    :data-nav-key="source.key"
+    :class="{ 'keyboard-cursor': cursorKey === source.key }"
     @expand="onExpand($event, source)"
     @pin="onPin($event, source)"
     @contextmenu.prevent.stop="
@@ -63,6 +69,6 @@ export default Vue.extend({
     StatelessRoutineListItem,
     StatelessSidebarFolder,
   },
-  props: ["source", "onExpand", "onPin"],
+  props: ["source", "onExpand", "onPin", "cursorKey"],
 });
 </script>

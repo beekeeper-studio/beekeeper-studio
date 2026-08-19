@@ -12,6 +12,7 @@
             type="text"
             placeholder="Filter"
             v-model="filterQuery"
+            @keydown.down.prevent="focusEntityList"
           >
           <x-buttons class="filter-actions">
             <x-button
@@ -159,7 +160,7 @@
         </div>
       </div>
 
-      <virtual-table-list />
+      <virtual-table-list ref="virtualList" />
 
       <!-- TODO (gregory): Make the 'no tables div nicer' -->
       <div
@@ -316,6 +317,9 @@
     methods: {
       clearFilter() {
         this.filterQuery = null
+      },
+      focusEntityList() {
+        this.$refs.virtualList?.focusList()
       },
       toggleExpandCollapse() {
         this.isExpanded = !this.isExpanded
