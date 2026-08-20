@@ -26,6 +26,7 @@ import { TokenCache } from "@/common/appdb/models/token_cache";
 import { CloudCredential } from "@/common/appdb/models/CloudCredential";
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import platformInfo from'@/common/platform_info';
+import { isConnectionScope } from "@/handlers/utils";
 import rawLog from "@bksLogger"
 import { validate } from "class-validator";
 import { QueryAudit } from "@/common/appdb/models/QueryAudit";
@@ -49,7 +50,13 @@ async function niceValidateOrReject(ent: any): Promise<void> {
   }
 }
 
-function handlersFor<T extends Transport>(name: string, cls: any, transform: (obj: T, cls: any) => Promise<T> = defaultTransform) {
+// `connectionScoped` marks entities whose rows belong to one saved connection
+// (tabs, pins, hidden entities, query history). Those are never written
+// without a real connection id - see isConnectionScope.
+function handlersFor<T extends Transport>(name: string, cls: any, transform: (obj: T, cls: any) => Promise<T> = defaultTransform, connectionScoped = false) {
+
+  const unscoped = (obj: T) =>
+    connectionScoped && !isConnectionScope((obj as { connectionId?: unknown }).connectionId);
 
   return {
     // this is so we can get defaults on objects
@@ -64,6 +71,11 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
       const allCols = repo.metadata.columns
       .map((c: { propertyPath: string }) => `${alias}.${c.propertyPath}`);
       if (_.isArray(obj)) {
+          const dropped = obj.filter(unscoped);
+          if (dropped.length) {
+            log.warn(`Not saving ${dropped.length} ${name} row(s) with no connection`);
+            obj = obj.filter((e) => !unscoped(e));
+          }
           const ids = obj.map((e) => e.id);
           const dbEntities = await repo.createQueryBuilder(alias).select(allCols).where(`${alias}.id IN (:...ids)`, { ids }).getMany();
           const newEnts = await Promise.all(obj.map(async (e) => {
@@ -80,6 +92,10 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
           }));
           return await Promise.all((await cls.save(newEnts, options)).map((e) => transform(e, cls)));
       } else {
+        if (unscoped(obj)) {
+          log.warn(`Not saving ${name} with no connection`);
+          return obj;
+        }
         let dbObj = obj.id
           ? await repo
               .createQueryBuilder(alias)
@@ -168,15 +184,15 @@ async function transformConn(obj: SavedConnection, cls: any): Promise<IConnectio
 export const AppDbHandlers = {
   ...handlersFor<IConnection>('saved', SavedConnection, transformConn),
   ...handlersFor<IConnection>('used', UsedConnection, transformConn),
-  ...handlersFor<TransportPinnedConn>('pinconn', PinnedConnection),
-  ...handlersFor<TransportPinnedEntity>('pins', PinnedEntity),
+  ...handlersFor<TransportPinnedConn>('pinconn', PinnedConnection, defaultTransform, true),
+  ...handlersFor<TransportPinnedEntity>('pins', PinnedEntity, defaultTransform, true),
   ...handlersFor<TransportFavoriteQuery>('query', FavoriteQuery),
   ...handlersFor<TransportQueryAudit>('queryAudit', QueryAudit),
-  ...handlersFor<TransportUsedQuery>('usedQuery', UsedQuery),
-  ...handlersFor<TransportOpenTab>('tabs', OpenTab),
-  ...handlersFor<TransportHiddenEntity>('hiddenEntity', HiddenEntity),
+  ...handlersFor<TransportUsedQuery>('usedQuery', UsedQuery, defaultTransform, true),
+  ...handlersFor<TransportOpenTab>('tabs', OpenTab, defaultTransform, true),
+  ...handlersFor<TransportHiddenEntity>('hiddenEntity', HiddenEntity, defaultTransform, true),
   ...handlersFor<TransportFormatterPreset>('formatterPreset', FormatterPreset),
-  ...handlersFor<TransportHiddenSchema>('hiddenSchema', HiddenSchema),
+  ...handlersFor<TransportHiddenSchema>('hiddenSchema', HiddenSchema, defaultTransform, true),
   ...handlersFor<TransportUserSetting>('setting', UserSetting, transformSetting),
   ...handlersFor<TransportCloudCredential>('credential', CloudCredential),
   ...handlersFor<TransportLicenseKey>('license', LicenseKey, transformLicense),

@@ -42,7 +42,11 @@ function buildStore(connectCalls: any[]) {
       },
     },
     modules: {
-      'data/connections': { namespaced: true, state: { items: [] } },
+      'data/connections': {
+        namespaced: true,
+        state: { items: [] },
+        actions: { remove: jest.fn() },
+      },
       'data/connectionFolders': { namespaced: true, state: { items: [] } },
       licenses: {
         namespaced: true,
@@ -51,7 +55,7 @@ function buildStore(connectCalls: any[]) {
       settings: { namespaced: true, getters: { privacyMode: () => false } },
       pinnedConnections: {
         namespaced: true,
-        actions: { loadPins: jest.fn(), reorder: jest.fn() },
+        actions: { loadPins: jest.fn(), reorder: jest.fn(), remove: jest.fn() },
       },
       credentials: { namespaced: true, actions: { load: jest.fn() } },
     },
@@ -100,6 +104,7 @@ describe('ConnectionInterface', () => {
           },
         },
         $bks: { unlock: async () => ({ auth: null, cancelled: false }) },
+        $confirm: async () => true,
         $noty: { error: jest.fn(), success: jest.fn(), warning: jest.fn() },
         registerHandlers: jest.fn(),
         unregisterHandlers: jest.fn(),
@@ -161,5 +166,25 @@ describe('ConnectionInterface', () => {
     const { config } = connectCalls[0]
     expect(config.id).toBe(saved.id)
     expect(config.host).toBe('saved.example.com')
+  })
+
+  it('clears the form when the connection being edited is deleted', async () => {
+    const saved = await AppDbHandlers['appdb/saved/save']({
+      obj: {
+        connectionType: 'postgresql',
+        name: 'Doomed',
+        host: 'doomed.example.com',
+        workspaceId: WORKSPACE_ID,
+      },
+      options: {},
+    } as any)
+
+    // The screen edits a copy, so `remove` can't compare by identity.
+    await wrapper.vm.edit({ ...saved, workspaceId: WORKSPACE_ID })
+    expect(wrapper.vm.config.id).toBe(saved.id)
+
+    await wrapper.vm.remove({ ...saved, workspaceId: WORKSPACE_ID })
+
+    expect(wrapper.vm.config.id).toBeNull()
   })
 })

@@ -551,10 +551,9 @@ export default Vue.extend({
       if (!await this.$confirm(`Delete "${config.name}"?`, undefined, { variant: "danger" })) {
         return
       }
-      if (this.config === config) {
-        this.$util.send('appdb/saved/new').then((conn) => {
-          this.config = conn;
-        })
+      // the form holds a copy of the connection, never the row itself
+      if (this.config?.id === config.id && this.config?.workspaceId === config.workspaceId) {
+        this.config = await this.$util.send('appdb/saved/new');
       }
       if (config.azureAuthOptions?.authId) {
         await this.$util.send('appdb/cache/remove', { authId: config.azureAuthOptions.authId });

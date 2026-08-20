@@ -4,6 +4,7 @@ import { TableFilter, TableOrView } from "@/lib/db/models";
 import { Column, Entity, LessThan, Not, IsNull, DeleteDateColumn, BeforeInsert, BeforeUpdate } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
 import { TabType, TransportOpenTab } from "@/common/transport/TransportOpenTab";
+import { isConnectionScope } from "@/handlers/utils";
 
 
 const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName', 'entityType', 'titleScope', 'connectionId', 'workspaceId', 'position']
@@ -191,6 +192,7 @@ export class OpenTab extends ApplicationEntity {
 
   static async getHistory(connectionIds: ConnectionIds, limit = 10): Promise<TransportOpenTab[]> {
     const { connectionId, workspaceId } = connectionIds
+    if (!isConnectionScope(connectionId)) return []
     return await this.find({
       where: {
         connectionId,
@@ -206,6 +208,7 @@ export class OpenTab extends ApplicationEntity {
 
   static async clearOldDeletedTabs(connectionIds: ConnectionIds, xDays: number): Promise<void> {
     const { connectionId, workspaceId } = connectionIds
+    if (!isConnectionScope(connectionId)) return
     const deletedAtThreshold = new Date()
     deletedAtThreshold.setDate(deletedAtThreshold.getDate() - xDays)
 
@@ -218,6 +221,7 @@ export class OpenTab extends ApplicationEntity {
 
   static async getClosedHistory(connectionIds: ConnectionIds): Promise<TransportOpenTab> {
     const { connectionId, workspaceId } = connectionIds
+    if (!isConnectionScope(connectionId)) return null
     return await this.findOne({
           where: {
             deletedAt: Not(IsNull()),

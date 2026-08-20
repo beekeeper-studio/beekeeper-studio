@@ -101,7 +101,10 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
         if(this.showAllHistory){
           return this.history;
         } else {
-          return this.history.filter(item => item.connectionId === (this.usedConfig?.id ?? -1));
+          // an unsaved connection has no id, and so no history of its own
+          return this.usedConfig?.id
+            ? this.history.filter(item => item.connectionId === this.usedConfig.id)
+            : [];
         }
       },
     },
