@@ -135,22 +135,13 @@ describe("FavoriteList duplicate", () => {
     expect(findOne).toHaveBeenCalledWith(expect.anything(), 1);
     expect(clone).toHaveBeenCalledWith(expect.anything(), query);
     expect(save).toHaveBeenCalledTimes(1);
-    expect(save.mock.calls[0][1]).toEqual(
-      expect.objectContaining({
-        id: null,
-        title: "Copy of Query 1",
-        text: "SELECT 1",
-        excerpt: "SELECT 1",
-        queryFolderId: 5,
-        position: 2,
-        database: "mydb",
-      })
-    );
-    expect(save.mock.calls[0][1]).not.toHaveProperty("membership");
-    expect(save.mock.calls[0][1]).not.toHaveProperty("canWrite");
-    expect(save.mock.calls[0][1]).not.toHaveProperty("createdAt");
-    expect(save.mock.calls[0][1]).not.toHaveProperty("updatedAt");
-    expect(save.mock.calls[0][1]).not.toHaveProperty("version");
+    expect(save.mock.calls[0][1]).toEqual({
+      title: "Copy of Query 1",
+      text: "SELECT 1",
+      excerpt: "SELECT 1",
+      queryFolderId: 5,
+      position: 2,
+    });
     expect(vm.$noty.success).toHaveBeenCalledWith("Query duplicated");
     wrapper.destroy();
   });

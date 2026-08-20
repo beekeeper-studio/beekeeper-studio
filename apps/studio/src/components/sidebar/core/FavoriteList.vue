@@ -622,9 +622,8 @@ export default {
         cloned.title = 'Copy of ' + cloned.title
         cloned.text = fullQuery.text
         cloned.excerpt = fullQuery.excerpt ?? cloned.excerpt
-        const payload = _.omit(cloned, [
-          'teamRead', 'teamWrite', 'canRead', 'canWrite', 'canManage', 'membership', 'accessGrants',
-          'createdAt', 'updatedAt', 'version',
+        const payload = _.pick(cloned, [
+          'title', 'text', 'excerpt', 'queryFolderId', 'position',
         ])
         await this.$store.dispatch('data/queries/save', payload)
         this.$noty.success('Query duplicated')
