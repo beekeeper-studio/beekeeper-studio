@@ -5,10 +5,7 @@
   >
     <a
       class="list-item-btn"
-      v-tooltip.bottom.delay="{
-        content: title,
-        delay: { show: 500 },
-      }"
+      :title="title"
       @click.prevent="$emit('select', item)"
       @dblclick.prevent="$emit('open', item)"
       :class="{active, selected}"
@@ -68,15 +65,21 @@ export default Vue.extend({
     subtitle() {
       const result = []
       if (this.item.user?.name) result.push(`${this.item.user.name}`)
-      if (this.item.createdAt) {
-        if (_.isNumber(this.item.createdAt)) {
-          result.push(this.timeAgo.format(new Date(this.item.createdAt * 1000)))
+      if (this.item.updatedAt) {
+        if (_.isNumber(this.item.updatedAt)) {
+          result.push(this.timeAgo.format(new Date(this.item.updatedAt * 1000)))
         } else {
-          result.push(this.timeAgo.format(this.item.createdAt))
+          result.push(this.timeAgo.format(this.item.updatedAt))
         }
       }
       return result.join(" ")
-    }
+    },
+    folder() {
+      return this.folders.find((f) => f.id === this.item.queryFolderId);
+    },
+    isPersonal() {
+      return this.folder?.personal;
+    },
   },
   methods: {
     openContextMenu(event, item) {
@@ -103,7 +106,7 @@ export default Vue.extend({
           name: "Share",
           slug: 'share',
           handler: this.share,
-          hideIf: !this.isCloud || !this.item.id,
+          hideIf: !this.isCloud || !this.item.id || this.isPersonal,
         },
         {
           name: "Duplicate",

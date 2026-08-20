@@ -192,7 +192,7 @@ export default Vue.extend({
       this.nested = true;
     }
 
-    await this.$store.dispatch(`${this.folderPath}/ensureAllLoaded`);
+    await this.$store.dispatch(`${this.folderPath}/load`);
   },
 })
 </script>

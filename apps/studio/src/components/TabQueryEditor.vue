@@ -35,6 +35,7 @@
         :original-text="originalText"
         :query="query"
         :unsaved-text="unsavedText"
+        :pending-remote-changes="pendingRemoteChanges"
         @change="onChange"
         @mergeAccepted="originalText = query.text"
       />
@@ -72,6 +73,9 @@
         :columns-getter="columnsGetter"
         :default-schema="defaultSchema"
         :language-id="languageIdForDialect"
+        :keyword-casing="autocompleteKeywordCasing"
+        :quote-identifiers="autocompleteQuoteIdentifiers"
+        :quote-character="autocompleteQuoteCharacter"
         :clipboard="$native.clipboard"
         :replace-extensions="replaceExtensions"
         :context-menu-items="editorContextMenu"
@@ -205,6 +209,14 @@
               v-model="dryRun"
             >
           </x-button>
+          <x-button
+            v-if="aiShellAvailable"
+            @click.prevent="askAi"
+            class="btn btn-flat btn-small ask-ai"
+          >
+            <i class="material-icons">auto_awesome</i> Ask AI
+          </x-button>
+
           <x-button
             @click.prevent="triggerSave"
             class="btn btn-flat btn-small"
@@ -369,6 +381,7 @@
       :open="editHistoryOpen"
       :query-id="query?.id ?? null"
       :unsaved-text="unsavedChanges ? unsavedText : null"
+      :pending-remote-changes="pendingRemoteChanges"
       @close="editHistoryOpen = false"
       @restore="handleEditHistoryRestore"
       @discardUnsavedChanges="handleDiscardUnsavedChanges"
@@ -456,14 +469,11 @@
               </div>
               <div class="form-group" v-if="queryFolders && queryFolders.length > 0">
                 <label>Folder <i v-if="!isUltimate && !isCloud" class="material-icons menu-icon">stars</i></label>
-                <select v-model="query.queryFolderId" :disabled="!isUltimate && !isCloud">
-                  <option :value="null">
-                    No folder
-                  </option>
-                  <option v-for="f in queryFolders" :key="f.id" :value="f.id">
-                    {{ f.name }}
-                  </option>
-                </select>
+                <in-app-folder-picker
+                  v-model="query.queryFolderId"
+                  :disabled="!isUltimate && !isCloud"
+                  folder-path="data/queryFolders"
+                />
               </div>
             </div>
           </div>
@@ -565,6 +575,7 @@
   import SqlTextEditor from "@beekeeperstudio/ui-kit/vue/sql-text-editor"
   import BksSuperFormatter from "@beekeeperstudio/ui-kit/vue/super-formatter"
   import SurrealTextEditor from "@beekeeperstudio/ui-kit/vue/surreal-text-editor"
+  import InAppFolderPicker from "@/components/common/form/InAppFolderPicker.vue"
   import { divider, type Entity } from "@beekeeperstudio/ui-kit";
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
@@ -595,7 +606,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
   export default {
     // this.queryText holds the current editor value, always
-    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor, BksSuperFormatter, QueryEditHistory },
+    components: { ResultTable, ProgressBar, ShortcutHints, QueryEditorStatusBar, ErrorAlert, MergeManager, SqlTextEditor, SurrealTextEditor, BksSuperFormatter, QueryEditHistory, InAppFolderPicker },
     props: {
       tab: Object as PropType<TransportOpenTab>,
       active: Boolean
@@ -672,11 +683,13 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         },
         editingResult: false,
         resultsEditData: [],
-        resultEditableMap: []
+        resultEditableMap: [],
+        pollInterval: null,
+        queryDeleted: false
       }
     },
     computed: {
-      ...mapGetters(['dialect', 'dialectData', 'defaultSchema', 'isUltimate', 'isCloud']),
+      ...mapGetters(['dialect', 'dialectData', 'defaultSchema', 'isUltimate', 'isCloud', 'aiShellAvailable']),
       ...mapGetters({
         'isCommunity': 'licenses/isCommunity',
         'userKeymap': 'settings/userKeymap',
@@ -733,13 +746,17 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         return this.storeInitialized && this.active && !this.initialized
       },
       remoteDeleted() {
-        return this.storeInitialized && this.tab.queryId && !this.query
+        return this.storeInitialized && this.tab.queryId && this.queryDeleted
       },
       query() {
         return this.fullQuery ?? this.blankQuery
       },
       queryTitle() {
         return this.query?.title
+      },
+      // the query object changed in the background
+      pendingRemoteChanges() {
+        return this.query.text !== this.originalText
       },
       showDryRun() {
         return this.dialect == 'bigquery'
@@ -995,6 +1012,23 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       primaryIsCurrent() {
         return this.$bksConfig.ui.queryEditor?.primaryQueryAction.toLowerCase() === 'submitcurrentquery';
       },
+      autocompleteKeywordCasing() {
+        const value = String(this.$bksConfig.ui.queryEditor?.autocomplete?.keywordCasing ?? '').toLowerCase();
+        return ['preserve', 'upper', 'lower'].includes(value) ? value : 'preserve';
+      },
+      autocompleteQuoteIdentifiers() {
+        const value = String(this.$bksConfig.ui.queryEditor?.autocomplete?.quoteIdentifiers ?? '').toLowerCase();
+        return ['auto', 'always'].includes(value) ? value : 'auto';
+      },
+      autocompleteQuoteCharacter() {
+        // Same [db.<type>] section naming as processRawConfig (postgres, not postgresql)
+        const dbType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
+        const value = this.$bksConfig.db?.[dbType]?.autocompleteQuoteCharacter;
+        // 0 or -1 selects the database's convention; the editor also rejects
+        // characters the dialect doesn't recognize as identifier quotes.
+        if (value === 0 || value === -1 || value === '0' || value === '-1') return undefined;
+        return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+      }
     },
     watch: {
       selectedResult() {
@@ -1045,11 +1079,19 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         // this.$nextTick doesn't work in this case.
         if (this.active) {
           setTimeout(this.selectEditor, 0)
+
+          this.maybePollOriginalText();
         }
 
         if (!this.active) {
           this.focusElement = 'none'
           this.$modal.hide(`save-modal-${this.tab.id}`)
+
+
+          if (!_.isNil(this.pollInterval)) {
+            clearInterval(this.pollInterval)
+            this.pollInterval = null;
+          }
         }
       },
       async focusElement(element, oldElement) {
@@ -1403,7 +1445,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           return
         } else {
           try {
-            const payload = _.clone(this.query)
+            const payload = _.omit(this.query, 'teamRead', 'teamWrite', 'canRead', 'canWrite', 'canManage', 'membership', 'accessGrants') as ISavedQuery;
             payload.text = this.unsavedText
             payload.excerpt = payload.text.substr(0, 250)
             if (payload.id) {
@@ -1439,6 +1481,14 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       },
       onChange(text) {
         this.unsavedText = text
+      },
+      askAi() {
+        const sql = this.hasSelectedText
+          ? this.editor.selection
+          : this.unsavedText;
+        this.$bksPlugin.execute('bks-ai-shell', 'new-tab-dropdown-item', {
+          message: "```sql\n" + sql + "\n```\nHelp me with the above query" ,
+        });
       },
       escapeRegExp(string) {
         return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
@@ -1888,6 +1938,15 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         }
         return [
           ...items,
+          ...(this.aiShellAvailable
+            ? [
+                {
+                  label: "Ask AI",
+                  id: "ask-ai",
+                  handler: this.askAi,
+                },
+              ]
+            : []),
           {
             label: "Open Query Formatter",
             id: "formatter",
@@ -1905,7 +1964,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             : []),
           ...(window.platformInfo.isDevelopment && this.isCloud && this.query?.id
             ? [
-                { type: "divider" },
+                divider,
                 {
                   label: "[DEV] Make Fake Remote Change",
                   id: "fake-remote-change",
@@ -1982,6 +2041,53 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             },
           }
         };
+      },
+      maybePollOriginalText() {
+        if (this.active && this.tab.queryId && this.isCloud && _.isNil(this.pollInterval)) {
+          this.pollInterval = setInterval(async () => {
+            let query: ISavedQuery;
+            try {
+              query = await this.$store.dispatch('data/queries/findOne', this.tab.queryId);
+            } catch (e) {
+              if (e?.status === 404) {
+                this.handleQueryDeleted();
+                return;
+              }
+
+              log.error('Error polling saved query', e);
+              return;
+            }
+
+            if (!query) return;
+
+            if (this.tab.title !== query.title) {
+              this.tab.title = query.title;
+              this.updateTab();
+            }
+
+            if (_.trim(this.originalText) !== _.trim(query.text)) {
+              if (!this.unsavedChanges) {
+                this.originalText = query.text;
+                this.unsavedText = query.text;
+
+                if (this.hasTitle) {
+                  this.$noty.info(`${this.query.title} updated from cloud`);
+                }
+              }
+              this.query.text = query.text;
+            }
+          }, this.$bksConfig.general.workspaceSyncInterval)
+        }
+      },
+      handleQueryDeleted() {
+        this.queryDeleted = true;
+        this.fullQuery = null;
+        this.originalText = "";
+        this.unsavedText = "";
+        if (!_.isNil(this.pollInterval)) {
+          clearInterval(this.pollInterval);
+          this.pollInterval = null;
+        }
       }
     },
     created() {
@@ -2007,6 +2113,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
         if (this.tab.queryId) {
           this.fullQuery = await this.$store.dispatch('data/queries/findOne', this.tab.queryId);
+
+          this.maybePollOriginalText();
         } else if (this.tab.usedQueryId) {
           this.fullQuery = await this.$store.dispatch('data/usedQueries/findOne', this.tab.usedQueryId);
         }
@@ -2045,6 +2153,9 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       this.connection.releaseConnection(this.tab.id)
       this.containerResizeObserver.disconnect()
       this.removeTransactionTimeoutListener();
+      if (!_.isNil(this.pollInterval)) {
+        clearInterval(this.pollInterval);
+      }
     },
   }
 </script>
@@ -2176,6 +2287,11 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     .alert {
       margin: 0;
     }
+  }
+
+  .ask-ai .material-icons {
+    font-size: 1rem;
+    margin-right: 0.25rem;
   }
 </style>
 

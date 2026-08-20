@@ -52,6 +52,9 @@ export default Vue.extend({
       return new SqlTextEditor({
         identiferDialect: this.identifierDialect,
         paramTypes: this.paramTypes,
+        keywordCasing: this.keywordCasing,
+        quoteIdentifiers: this.quoteIdentifiers,
+        quoteCharacter: this.quoteCharacter,
         onQuerySelectionChange: (params) => {
           this.selectedQuery = params.selectedQuery.text;
           this.$emit("bks-query-selection-change", params)
@@ -85,7 +88,6 @@ export default Vue.extend({
 
       if (this.allowPresets && this.presets?.length > 0) {
         const currentFormatterId = this.formatterConfig?.id;
-
         formatItem.items = [
           {
             label: "Format with current config",
