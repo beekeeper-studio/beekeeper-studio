@@ -565,7 +565,6 @@
   import Split from 'split.js'
   import Noty from 'noty'
   import { mapActions, mapGetters, mapState } from 'vuex'
-  import { identify } from 'sql-query-identifier'
 
   import { canDeparameterize, convertParamsForReplacement, deparameterizeQuery, safelyIdentify } from '../lib/db/sql_tools'
   import { EditorMarker } from '@/lib/editor/utils'
@@ -585,7 +584,7 @@
   import MergeManager from '@/components/editor/MergeManager.vue'
   import { AppEvent } from '@/common/AppEvent'
   import { PropType } from 'vue'
-  import { TransportOpenTab, findQuery, resolveEditorText } from '@/common/transport/TransportOpenTab'
+  import { TransportOpenTab, resolveEditorText } from '@/common/transport/TransportOpenTab'
   import { blankFavoriteQuery } from '@/common/transport'
   import { FieldEditData, TableOrView } from "@/lib/db/models";
   import { FormatterDialect, dialectFor, formatOptionsFor } from "@shared/lib/dialects/models"
@@ -1639,6 +1638,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         this.resultEditableMap = []
         this.editingResult = false
         this.selectedResult = 0
+        let shouldToggle = false;
         const { queries: identification, error } = safelyIdentify(rawQuery, { dialect: this.identifyDialect, identifyTables: true, identifyColumns: true });
         if (error) {
           log.error("Unable to identify query.", error)
@@ -1655,7 +1655,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
               this.enteredTransactionFromIdent = true;
               this.hasActiveTransaction = true;
             } else if (this.isManualCommit && this.hasActiveTransaction && endTransaction > startTransaction) {
-              await this.toggleCommitMode();
+              shouldToggle = true;
             }
           }
         } catch (ex) {
@@ -1682,10 +1682,15 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
           // Dry run is for bigquery, allows query cost estimations
-          this.runningQuery = await this.connection.query(query, this.tab.id, { dryRun: this.dryRun}, this.hasActiveTransaction);
+          this.runningQuery = await this.connection.query(query, this.tab.id, { dryRun: this.dryRun }, this.hasActiveTransaction);
           const queryStartTime = new Date()
           const results = await this.runningQuery.execute();
           const queryEndTime = new Date()
+
+          if (shouldToggle) {
+            this.hasActiveTransaction = false;
+            await this.toggleCommitMode();
+          }
 
           // https://github.com/beekeeper-studio/beekeeper-studio/issues/1435
           if (!document.hasFocus() && window.Notification && Notification.permission === "granted") {
@@ -1730,8 +1735,10 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             excerpt: query.substr(0, 250),
             numberOfRecords: totalRows,
             queryId: this.query?.id,
-            connectionId: this.usedConfig.id
-          }
+            // sessions on a never-saved connection have no saved_connection
+            // id; -1 is the column default and cannot collide with one
+            connectionId: this.usedConfig.id ?? -1
+          } as any;
 
           if(lastQuery && isDuplicate){
             queryObj.updatedAt = new Date();

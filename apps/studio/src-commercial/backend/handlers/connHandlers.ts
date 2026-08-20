@@ -606,6 +606,7 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/releaseConnection': async function({ tabId, sId }: { tabId: number, sId: string }) {
     checkConnection(sId);
     await state(sId).connection.releaseConnection(tabId);
+    clearTransactionTimeout(sId, tabId);
   },
 
   'conn/startTransaction': async function({ tabId, sId }: { tabId: number, sId: string }) {
