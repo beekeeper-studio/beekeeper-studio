@@ -159,6 +159,13 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
 
     const utility = new UtilityConnection()
 
+    // A dropped database connection can come back on any request, so it is caught here
+    // rather than at each call site. Setting connError raises the reconnect prompt in
+    // LostConnectionModal.
+    utility.onConnectionLost((error) => {
+      store.commit('setConnError', error.message)
+    })
+
     Vue.config.productionTip = false
     Vue.use(VueHotkey, {
       "pageup": 33,

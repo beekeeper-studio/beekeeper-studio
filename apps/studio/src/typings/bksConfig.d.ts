@@ -328,6 +328,7 @@ declare interface IBksConfig {
             };
         };
         sqlserver: {
+            acquireTimeout: number;
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
             autocompleteQuoteCharacter: number;
@@ -340,6 +341,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         starrocks: {
             allowSkipToLastPage: boolean;

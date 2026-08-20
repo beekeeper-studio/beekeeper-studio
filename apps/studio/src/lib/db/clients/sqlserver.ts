@@ -37,6 +37,7 @@ import { AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from '../serialization/transcoders';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
+import { ConnectionLostError } from '@/lib/errors';
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData
@@ -46,6 +47,50 @@ const mmsqlErrors = {
 
 // Setup guide for SQL Server integrated / Kerberos authentication prerequisites.
 const WIN_AUTH_DOCS_URL = 'https://docs.beekeeperstudio.io/user_guide/connecting/sql-server/'
+
+// How long to wait for a well-behaved pool close before forcing it. A pool holding a
+// request that will never come back cannot close on its own -- see closePool().
+const POOL_CLOSE_TIMEOUT_MS = 5000
+
+// mssql/tedious codes that mean the connection itself is gone, not that the statement
+// failed. ETIMEOUT is deliberately absent: it is also how a merely slow query reports,
+// and treating that as a dropped connection would prompt for a reconnect that is not
+// needed.
+const CONNECTION_LOST_CODES = ['ECONNCLOSED', 'ENOTOPEN', 'ESOCKET', 'ECONNRESET', 'EPIPE']
+
+/**
+ * Did this failure mean the connection is gone?
+ *
+ * Two shapes reach us. mssql raises a ConnectionError (or one of the codes above) when
+ * tedious saw the socket close. A connection dropped silently -- firewall, VPN, suspended
+ * machine -- produces neither, because both ends still believe the socket is open; the
+ * pool's liveness probe simply never answers and tarn eventually abandons the acquire with
+ * its own TimeoutError. That abandoned acquire is the only way a silently dropped
+ * connection announces itself, so it counts too.
+ */
+function isConnectionLost(err: any): boolean {
+  if (!err) return false
+  if (err instanceof ConnectionError) return true
+  if (CONNECTION_LOST_CODES.includes(err.code)) return true
+  // A request that outlives requestTimeout is cancelled, and tedious raises this when even
+  // the cancel goes unanswered (see its cancelTimeout()). A slow query on a healthy
+  // connection cancels fine and reports "Timeout: Request failed to complete in Xms"
+  // instead, so this message is what separates a dead connection from a slow one.
+  if (err.code === 'ETIMEOUT' && /failed to cancel request/i.test(err.message ?? '')) return true
+  // tarn's TimeoutError sets neither name nor code, so the class name is what is left to
+  // match on. Nothing was sent when it fires: the query never got a connection.
+  return err.constructor?.name === 'TimeoutError'
+}
+
+function asConnectionLostError(err: any): ConnectionLostError {
+  // tarn's message for an abandoned acquire is "operation timed out for an unknown
+  // reason", which says nothing to a user staring at a query that will not run.
+  const detail = err?.constructor?.name === 'TimeoutError'
+    ? 'The connection to SQL Server stopped responding.'
+    : `The connection to SQL Server was lost${err?.message ? `: ${err.message}` : '.'}`
+
+  return new ConnectionLostError(detail, { cause: err })
+}
 
 // Wrap a promise with a JS-level deadline. msnodesqlv8/ODBC's native conn_timeout
 // does NOT reliably cancel a stalled SQLDriverConnect -- it only covers the TCP
@@ -232,7 +277,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
 
   async query(queryText: string, tabId: number) {
     const hasReserved = this.reservedConnections.has(tabId);
-    const queryRequest: Request = hasReserved ? this.reservedConnections.get(tabId).request() : this.pool.request();
+    const queryRequest: Request = hasReserved ? this.reservedConnections.get(tabId).request() : this.requirePool().request();
     log.info("HAS RESERVED: ", hasReserved, "For query: ", queryText)
     return {
       execute: async(): Promise<NgQueryResult[]> => {
@@ -588,7 +633,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     return {
       totalRows: Number(rowCount),
       columns,
-      cursor: new SqlServerCursor(this.pool.request(), query, chunkSize)
+      cursor: new SqlServerCursor(this.requirePool().request(), query, chunkSize)
     }
   }
 
@@ -691,7 +736,19 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       return { connection, data, rowsAffected, columns, rows, arrayMode }
     };
 
-    return runQuery(options.connection ? options.connection : this.pool.request());
+    try {
+      return await runQuery(options.connection ? options.connection : this.requirePool().request());
+    } catch (err) {
+      // Every query in the client funnels through here, so this is the one place that has
+      // to tell "the connection is gone" apart from "the statement failed". Without it a
+      // dropped connection surfaces as tarn's "operation timed out for an unknown reason",
+      // which nothing upstream can act on.
+      if (isConnectionLost(err)) {
+        log.error('Connection lost while running query', err)
+        throw asConnectionLostError(err)
+      }
+      throw err
+    }
   }
 
   async truncateAllTables(schema: string = this._defaultSchema) {
@@ -915,7 +972,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
 
   async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
     return {
-      cursor: new SqlServerCursor(this.pool.request(), query, chunkSize),
+      cursor: new SqlServerCursor(this.requirePool().request(), query, chunkSize),
     }
   }
 
@@ -1060,7 +1117,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async importStepZero(table: TableOrView): Promise<any> {
-    const transaction = new sql.Transaction(this.pool)
+    const transaction = new sql.Transaction(this.requirePool())
 
     return {
       transaction,
@@ -1099,6 +1156,11 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   /* helper functions and settings below! */
 
   async connect(signal?: AbortSignal): Promise<void> {
+    // Reconnecting after a dropped connection lands here with the old pool still around,
+    // and that pool may be holding a connection that will never answer again. Retire it
+    // first so a reconnect cannot inherit the state it is meant to escape.
+    await this.closePool();
+
     await super.connect();
 
     this.dbConfig = await this.configDatabase(this.server, this.database, signal)
@@ -1123,9 +1185,89 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async disconnect(): Promise<void> {
-    await this.pool.close();
+    await this.closePool();
 
     await super.disconnect();
+  }
+
+  /**
+   * The pool is null between a disconnect and the next connect, and anything that reaches
+   * for it in that window is a caller whose connection went away underneath it.
+   */
+  private requirePool(): ConnectionPool {
+    if (!this.pool) {
+      throw new ConnectionLostError('The connection to SQL Server was lost')
+    }
+    return this.pool
+  }
+
+  /**
+   * Retire the current pool, and do it in bounded time.
+   *
+   * ConnectionPool.close() waits for every checked-out connection to be handed back, and a
+   * request sitting on a connection that stopped answering is never handed back -- so the
+   * close never settles. Disconnect and Reconnect both go through here, which is why a
+   * dropped connection used to leave the app with no way out but a restart.
+   *
+   * So: ask nicely, and if the pool has not closed by the deadline, close the underlying
+   * connections directly. That fails the stuck request and lets the close finish.
+   */
+  private async closePool(): Promise<void> {
+    const pool = this.pool
+    if (!pool) return
+
+    // Dropped before awaiting anything, so a query racing the disconnect fails fast
+    // instead of reaching into a pool that is on its way out.
+    this.pool = null
+    // Reserved connections are transactions on this pool; they go with it. Rolling them
+    // back would mean talking to a connection that is being retired precisely because it
+    // may not answer.
+    this.reservedConnections.clear()
+
+    const closing = pool.close()
+    // close() rejects here only via the deadline; a genuine close error still needs
+    // swallowing, since the pool is being discarded either way.
+    closing.catch(() => undefined)
+
+    try {
+      await withDeadline(closing, POOL_CLOSE_TIMEOUT_MS, 'pool close timed out')
+      return
+    } catch (err) {
+      log.warn('Pool did not close cleanly, closing its connections directly', err)
+    }
+
+    SQLServerClient.destroyPooledConnections(pool)
+
+    try {
+      await withDeadline(closing, POOL_CLOSE_TIMEOUT_MS, 'pool close timed out')
+    } catch (err) {
+      // The pool is unreferenced from here on; a socket the OS has yet to reap is a
+      // better outcome than a disconnect that never returns.
+      log.warn('Abandoning pool that would not close', err)
+    }
+  }
+
+  /**
+   * Close the tedious connections a pool is holding, reaching past mssql to tarn's own
+   * lists. There is no public way to do this: mssql only exposes close(), which is exactly
+   * the call that cannot finish here.
+   */
+  private static destroyPooledConnections(pool: ConnectionPool): void {
+    const tarnPool: any = (pool as any).pool
+    const resources = [...(tarnPool?.used ?? []), ...(tarnPool?.free ?? [])]
+
+    if (!resources.length) {
+      log.warn('No pooled connections found to close directly')
+      return
+    }
+
+    for (const entry of resources) {
+      try {
+        entry?.resource?.close?.()
+      } catch (err) {
+        log.warn('Failed to close a pooled connection', err)
+      }
+    }
   }
 
   async listCharsets() {
@@ -1188,7 +1330,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       throw new Error(errorMessages.maxReservedConnections)
     }
 
-    const conn = this.pool.transaction();
+    const conn = this.requirePool().transaction();
     this.pushConnection(tabId, conn);
   }
 
@@ -1376,13 +1518,20 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   private async configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase, signal?: AbortSignal): Promise<any> { // changed to any for now, might need to make some changes
+    // requestTimeout also bounds the `SELECT 1` liveness probe the pool runs before it
+    // hands out a pooled connection, which is what lets a silently dropped connection be
+    // noticed at all. 0 in the config means no limit; mssql maps Infinity onto tedious's
+    // own "no timeout" value.
+    const requestTimeout = BksConfig.db.sqlserver.requestTimeout
+
     const config: any = {
       server: server.config.host,
       database: database.database,
-      requestTimeout: Infinity,
+      requestTimeout: requestTimeout > 0 ? requestTimeout : Infinity,
       appName: 'beekeeperstudio',
       pool: {
-        max: BksConfig.db.sqlserver.maxConnections
+        max: BksConfig.db.sqlserver.maxConnections,
+        acquireTimeoutMillis: BksConfig.db.sqlserver.acquireTimeout,
       }
     };
 

@@ -1,7 +1,7 @@
 import { uuidv4 } from "../uuid";
 import rawLog from '@bksLogger';
 import _ from 'lodash';
-import { PluginError, PluginSystemError } from "../errors";
+import { ConnectionLostError, PluginError, PluginSystemError } from "../errors";
 
 const log = rawLog.scope('renderer/utilityconnection');
 
@@ -22,6 +22,17 @@ export class UtilityConnection {
   private port: MessagePort;
   private _sId: string;
   private portsRequested: boolean = false;
+  private connectionLostHandler?: (error: ConnectionLostError) => void;
+
+  /**
+   * Called whenever the utility process reports that a database connection is gone.
+   * Every request shares this port, so this is the one spot that sees such a failure no
+   * matter which call it came back on. Set by the renderer entrypoint, which raises the
+   * reconnect prompt.
+   */
+  public onConnectionLost(handler: (error: ConnectionLostError) => void) {
+    this.connectionLostHandler = handler;
+  }
 
   public get sId() {
     return this._sId;
@@ -56,6 +67,9 @@ export class UtilityConnection {
             err = new PluginSystemError(errorCode, error);
           } else if (errorName === "PluginError") {
             err = new PluginError(errorCode, error);
+          } else if (errorName === "ConnectionLostError") {
+            err = new ConnectionLostError(error);
+            this.connectionLostHandler?.(err as ConnectionLostError);
           } else {
             err = new Error(error);
           }

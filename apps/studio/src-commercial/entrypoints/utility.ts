@@ -71,8 +71,8 @@ interface Reply {
   type: 'reply' | 'error',
   data?: any,
   error?: string
-  errorName?: "PluginSystemError" | "PluginError" | "Error"
-  errorCode?: PluginSystemErrorCode | PluginErrorCode
+  errorName?: "PluginSystemError" | "PluginError" | "ConnectionLostError" | "Error"
+  errorCode?: PluginSystemErrorCode | PluginErrorCode | "CONNECTION_LOST"
   stack?: string
 }
 

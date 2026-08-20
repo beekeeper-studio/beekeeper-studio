@@ -76,3 +76,26 @@ export class PluginError extends Error {
     }
   }
 }
+
+/**
+ * Thrown when the connection to the database is gone rather than the statement
+ * having failed: the socket was closed, or a pooled connection stopped
+ * answering because a firewall, a VPN or a suspended machine dropped the flow
+ * underneath it.
+ *
+ * Carries a name and a code so it survives the trip from the utility process to
+ * the renderer, where it raises the reconnect prompt.
+ */
+export class ConnectionLostError extends Error {
+  public readonly code = 'CONNECTION_LOST';
+
+  constructor(message?: string, options?: ErrorOptions) {
+    super(message, options);
+    // Set explicitly rather than from this.constructor.name: the name travels
+    // over the port as a plain string and must survive minified builds.
+    this.name = 'ConnectionLostError';
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, ConnectionLostError);
+    }
+  }
+}
