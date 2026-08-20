@@ -230,21 +230,17 @@ export default Vue.extend({
    keybindings() {
       const keybindings: any = {}
 
+      // Vim is registered ahead of these bindings, so only a plain normal
+      // mode Esc reaches cancelQuery. Ctrl-Esc stays bound too.
       keybindings["Esc"] = this.cancelQuery
-
       if (this.userKeymap === "vim") {
-        // Vim is registered ahead of these bindings, so it takes Esc whenever
-        // it means something there. In plain normal mode vim reports Esc as
-        // unhandled and it reaches cancelQuery. Ctrl-Esc stays bound for
-        // anyone used to it.
         keybindings["Ctrl-Esc"] = this.cancelQuery
       }
 
       return keybindings
     },
     vimConfig() {
-      // The same table every tab registers. A shell tab has nothing to save,
-      // so it simply never listens for AppEvent.vimWrite.
+      // A shell tab has nothing to save, so it never listens for vimWrite.
       return vimExCommands(this.trigger)
     },
     showResultTable() {
@@ -417,17 +413,13 @@ export default Vue.extend({
     },
     updateTextEditorFocus(focused: boolean) {
       if (focused) {
-        // Only reconcile intent. focusingElement drives the is-focused prop,
-        // which the editor treats as a command, so writing an observed focus
-        // into it makes the editor grab focus back from whatever legitimately
-        // took it.
+        // Only reconcile intent; focusingElement drives is-focused, which the
+        // editor treats as a command rather than a report.
         this.focusElement = 'text-editor'
         return
       }
-      // An app-initiated blur is waiting on this callback and updates the
-      // state itself. Any other blur means the editor really has lost focus,
-      // and leaving focusingElement stale would stop us ever handing it
-      // back. See #3446.
+      // An app-initiated blur updates the state itself; any other blur means
+      // the editor really lost focus and stale state would strand it (#3446).
       if (this.onTextEditorBlur) {
         this.onTextEditorBlur()
       } else if (this.focusingElement === 'text-editor') {
@@ -478,9 +470,8 @@ export default Vue.extend({
     })
     this.containerResizeObserver.observe(this.$refs.container)
 
-    // Applying the vimrc reconfigures the editor's keymap, which rebuilds the
-    // vim extension underneath whatever has focus. Let it land before
-    // focusing rather than after. See #2990.
+    // Reconfiguring the keymap rebuilds the vim extension underneath whatever
+    // has focus, so let it land before focusing (#2990).
     await this.$store.dispatch('vim/load');
     this.vimKeymaps = this.$store.getters['vim/directives'];
 

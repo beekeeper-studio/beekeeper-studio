@@ -119,9 +119,7 @@ export default {
     },
     applyKeymap() {
       this.textEditor.setKeymap(this.keymap, this.vimOptions);
-      // Reconfiguring the keymap compartment rebuilds the vim extension, and
-      // that can leave the editor without dom focus. Put it back if the editor
-      // is meant to have it.
+      // Rebuilding the vim extension can drop dom focus.
       if (this.isFocused) {
         this.textEditor.focus();
       }
@@ -211,12 +209,17 @@ export default {
             this.textEditor.execCommand("findAndReplace")
           }
         },
-        {
-          key: "Mod-r",
-          run: () => {
-            this.textEditor.execCommand("findAndReplace")
+        // Mod-r is vim's redo. Vim is registered ahead of this keymap so it
+        // should win anyway, but claiming the key at all leaves nothing
+        // between a precedence change and silently breaking redo.
+        ...(this.keymap === "vim" ? [] : [
+          {
+            key: "Mod-r",
+            run: () => {
+              this.textEditor.execCommand("findAndReplace")
+            }
           }
-        },
+        ]),
         ...this.internalActionsKeymap
       ]
 

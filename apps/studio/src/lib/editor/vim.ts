@@ -1,16 +1,12 @@
 export type VimMode = "normal" | "insert" | "visual";
 
-/**
- * A directive parsed out of `.beekeeper.vimrc`. The shapes match the
- * `vimKeymaps` prop of the ui-kit text editor, which applies them in order.
- */
+/** Directives match the ui-kit editor's `vimKeymaps` prop, applied in order. */
 export type IMapping = {
   type?: "map";
   mappingMode: string;
   lhs: string;
   rhs: string;
   mode?: VimMode;
-  /** `noremap` and friends: don't re-expand the rhs through other mappings. */
   noremap?: boolean;
 };
 
@@ -34,7 +30,7 @@ export type IVimOption = {
 export type VimDirective = IMapping | IUnmapping | IMapClear | IVimOption;
 
 export interface VimrcParseError {
-  /** 1-based, so it lines up with what an editor shows. */
+  /** 1-based. */
   line: number;
   text: string;
   reason: string;
@@ -101,10 +97,8 @@ function parseSet(token: string): IVimOption | string {
 }
 
 /**
- * Parse the contents of a `.beekeeper.vimrc`, one entry per line.
- *
- * Anything unrecognised is collected in `errors` rather than thrown, so a
- * single bad line never costs the user the rest of their config.
+ * Parse a `.beekeeper.vimrc`. Unrecognised lines land in `errors` rather than
+ * throwing, so one bad line does not cost the user the rest of their config.
  */
 export function parseVimrc(vimrcContents: string[]): VimrcParseResult {
   const directives: VimDirective[] = [];
@@ -118,8 +112,8 @@ export function parseVimrc(vimrcContents: string[]): VimrcParseResult {
     const line = index + 1;
     const text = (rawLine ?? "").trim();
 
-    // Blank lines and vim comments, which start with a double quote. A quote
-    // anywhere else on the line is part of the mapping (e.g. the "* register).
+    // Only a leading quote is a comment; elsewhere it is part of the mapping,
+    // as in the "* register.
     if (!text || text.startsWith('"')) return;
 
     const mapleader = text.match(MAPLEADER);
@@ -140,8 +134,7 @@ export function parseVimrc(vimrcContents: string[]): VimrcParseResult {
       const lhs = args[0].replace(LEADER, leader);
       const rhs = args.slice(1).join(" ");
 
-      // A recursive mapping whose rhs contains its own lhs expands forever.
-      // Vim has the same problem, which is what the noremap family is for.
+      // A recursive mapping containing its own lhs expands forever.
       if (!noremap && rhs.includes(lhs)) {
         fail(
           line,
@@ -200,10 +193,9 @@ export function parseVimrc(vimrcContents: string[]): VimrcParseResult {
 }
 
 /**
- * Later mappings win, matching how sourcing a vimrc twice behaves. The
- * survivor keeps the later position so that an unmap written between the two
- * still runs first. Only plain mappings collapse: unmap, mapclear and set are
- * order-sensitive and stay exactly as written.
+ * Later mappings win, and keep the later position so an unmap written between
+ * the two still runs first. Only plain mappings collapse; unmap, mapclear and
+ * set are order-sensitive.
  */
 function dedupeMappings(directives: VimDirective[]): VimDirective[] {
   const result: VimDirective[] = [];
@@ -229,9 +221,4 @@ function dedupeMappings(directives: VimDirective[]): VimDirective[] {
   });
 
   return result;
-}
-
-/** @deprecated Use `parseVimrc`, which also reports what it could not parse. */
-export function createVimCommands(vimrcContents: string[]): VimDirective[] {
-  return parseVimrc(vimrcContents).directives;
 }

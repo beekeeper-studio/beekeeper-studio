@@ -6,11 +6,7 @@ export type IMapping = {
   rhs: string;
   /** 'normal', 'insert' or 'visual'. Omitted means every mode. */
   mode?: string;
-  /**
-   * When true the mapping is non-recursive, i.e. `nnoremap` rather than
-   * `nmap`. Recursive mappings whose rhs contains their own lhs loop forever,
-   * so anything referencing a register or the lhs itself wants this.
-   */
+  /** `nnoremap` rather than `nmap`. */
   noremap?: boolean;
 };
 
@@ -28,15 +24,10 @@ export type IMapClear = {
 export type IVimOption = {
   type: "set";
   name: string;
-  /** `true`/`false` for boolean options, a string for `set name=value`. */
   value: string | boolean;
 };
 
-/**
- * One entry of the `vimKeymaps` prop. A bare mapping object (no `type`) is
- * treated as a `map`, so callers written against the older array-of-mappings
- * shape keep working unchanged.
- */
+/** A bare mapping (no `type`) is a `map`, keeping the older prop shape valid. */
 export type VimDirective =
   | (IMapping & { type?: "map" })
   | IUnmapping
@@ -56,9 +47,8 @@ export function applyConfig(codeMirrorVimInstance: any, config: Config) {
   }
 }
 
+// codemirror distinguishes "every mode" from an explicit one by argument count.
 function modeArgs(mode?: string): string[] {
-  // codemirror's map/unmap treat a missing context as "every mode", and it
-  // distinguishes that from an explicit one by argument count.
   return mode ? [mode] : [];
 }
 
@@ -172,30 +162,18 @@ export class Register {
   }
 }
 
-/**
- * Mappings live on the global Vim singleton, not on an editor instance, and
- * every mapping is pushed onto one shared keymap. Applying the same config on
- * each keymap reconfigure would stack duplicates, so remember what is already
- * applied and only touch the singleton when it actually changes.
- */
+// Mappings live on the global Vim singleton and stack up, so only touch it
+// when the config actually changes.
 let appliedKeymapSignature: string | null = null;
 let appliedMappings: { lhs: string; mode?: string }[] = [];
-
-/** Exported for tests. */
-export function resetAppliedKeymaps(): void {
-  appliedKeymapSignature = null;
-  appliedMappings = [];
-}
 
 function applyKeymaps(vim: any, directives: VimDirective[]): void {
   const signature = JSON.stringify(directives);
   if (signature === appliedKeymapSignature) return;
 
-  // Undo only the mappings added here. codemirror records its keymap's length
-  // once at startup and derives "which entries are user defined" by
-  // subtracting it, so removing anything that was there originally leaves that
-  // arithmetic negative and breaks both mapclear and noremap lookups.
-  // mapclear() is unusable for the same reason.
+  // Only ever remove mappings added here. Codemirror derives "user defined"
+  // by subtracting the keymap length it recorded at startup, so removing a
+  // built-in makes that negative and breaks mapclear and noremap lookups.
   appliedMappings.forEach(({ lhs, mode }) => {
     try {
       vim.unmap(lhs, ...modeArgs(mode));
@@ -234,16 +212,13 @@ export function extendVimOnCodeMirror(
     console.error("vimKeymaps must be an array");
   }
 
-  // The * register is global and can only be defined once: codemirror throws
-  // on a second attempt and the first definition sticks for the rest of the
-  // session. Registering without a clipboard would therefore leave "*y and
-  // "*p permanently broken for every editor on the page, so wait for an
-  // editor that actually has one.
+  // The * register is global and sticks to whoever defines it first, so wait
+  // for an editor that actually has a clipboard.
   if (clipboard) {
     try {
       codeMirrorVimInstance.defineRegister("*", new Register(clipboard));
     } catch (e) {
-      // Already defined, which is the common case on the second editor.
+      // Already defined.
     }
   }
 }

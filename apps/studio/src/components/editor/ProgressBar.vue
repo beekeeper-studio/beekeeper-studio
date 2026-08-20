@@ -24,10 +24,7 @@
         required: false,
         default: true
       },
-      /**
-       * In vim mode Esc only reaches cancel from normal mode, so Ctrl-Esc is
-       * the key that always works and the one worth advertising.
-       */
+      /** In vim mode Esc only cancels from normal mode, so advertise Ctrl-Esc. */
       cancelKey: {
         type: String,
         required: false,

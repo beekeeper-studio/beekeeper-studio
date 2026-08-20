@@ -651,7 +651,6 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         onTextEditorBlur: null,
         wrapText: false,
         vimKeymaps: [],
-        /** The ui-kit editor instance, from bks-initialized. */
         textEditor: null,
         formatterPresets: [],
         selectedFormatter: null,
@@ -925,14 +924,11 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           'queryEditor.secondaryQueryAction': this.queryFunctions.secondaryRead
         })
 
+        // Vim is registered ahead of these bindings, so it takes Esc when it
+        // means something there and only a plain normal mode Esc reaches
+        // cancelQuery. Ctrl-Esc stays bound for anyone used to it.
         keybindings["Esc"] = this.cancelQuery
-
         if (this.userKeymap === "vim") {
-          // The vim keymap is registered ahead of these bindings, so vim takes
-          // Esc whenever it means something there: leaving insert or visual
-          // mode. In plain normal mode vim reports Esc as unhandled, so it
-          // reaches cancelQuery, which does nothing unless a query is running.
-          // Ctrl-Esc stays bound for anyone used to it.
           keybindings["Ctrl-Esc"] = this.cancelQuery
         }
 
@@ -1413,26 +1409,20 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         const data = this.$refs.table.clipboard('md')
       },
       selectEditor() {
+        // The assignment is a no-op if intent was already 'text-editor', so
+        // ask the editor directly too.
         this.focusElement = 'text-editor'
-        // focusElement only drives focus when it changes. If the editor lost
-        // dom focus while the app still believed it had it, the assignment
-        // above is a no-op, so ask the editor directly as well.
         this.textEditor?.focus()
       },
       handleTextEditorFocus() {
-        // Only reconcile intent. focusingElement drives the is-focused prop,
-        // which the editor treats as a command rather than a report, so
-        // writing an observed focus straight into it makes the editor grab
-        // focus back from whatever legitimately took it. The vim ex prompt
-        // refocuses the editor as it closes, which lands after a modal opened
-        // by the command has focused its own input.
+        // Only reconcile intent. focusingElement drives is-focused, which the
+        // editor treats as a command, so writing observed focus into it makes
+        // the editor grab focus back from whatever legitimately took it.
         this.focusElement = 'text-editor'
       },
       handleTextEditorBlur() {
-        // An app-initiated blur is waiting on this and updates the state
-        // itself. Any other blur means the editor no longer has focus, and
-        // leaving focusingElement stale would keep us from ever giving it
-        // back. See #3446.
+        // An app-initiated blur updates the state itself; any other blur means
+        // the editor really lost focus and stale state would strand it (#3446).
         if (this.onTextEditorBlur) {
           this.onTextEditorBlur()
         } else if (this.focusingElement === 'text-editor') {
@@ -1440,8 +1430,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         }
       },
       selectTitleInput() {
-        // Wait a tick: the vim ex prompt hands focus back to the editor while
-        // closing, so claim it after that has settled.
+        // The vim ex prompt refocuses the editor as it closes, so claim the
+        // input after that settles.
         this.$nextTick(() => {
           const input = this.$refs.titleInput
           if (!input) return
@@ -1809,8 +1799,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.close()
         }
       },
-      // :w and :x are broadcast to every tab, because vim's ex commands are
-      // registered globally. Only the tab in front should act on them.
+      // Broadcast to every tab, so only the active one acts.
       handleVimWrite() {
         if (this.active) this.triggerSave()
       },
@@ -2169,9 +2158,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       })
       this.containerResizeObserver.observe(this.$refs.container)
 
-      // Applying the vimrc reconfigures the editor's keymap, and that rebuilds
-      // the vim extension underneath whatever has focus. Let it land before
-      // focusing rather than after. See #2990.
+      // Reconfiguring the keymap rebuilds the vim extension underneath
+      // whatever has focus, so let it land before focusing (#2990).
       await this.$store.dispatch('vim/load')
       this.vimKeymaps = this.$store.getters['vim/directives']
 

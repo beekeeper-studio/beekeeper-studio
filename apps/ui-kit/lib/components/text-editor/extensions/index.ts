@@ -231,42 +231,29 @@ export function extensions(config: ExtensionConfiguration = {}) {
         backgroundColor: "var(--bks-query-editor-bg)",
         color: "var(--bks-text-dark)",
       },
-      // Every EditorView.theme gets its own generated scope class, and they
-      // all sit at the same specificity, so a plain ".cm-panels" rule is
-      // decided purely by which theme mounted last -- and the app appends its
-      // own theme after this one. Qualifying with & lifts these above any
-      // single-class rule so the outcome does not depend on mount order.
-      //
-      // The panel container is a direct child of .cm-editor, so inheriting
-      // picks up whatever background the host app themed the editor with.
-      // codemirror's own base theme would otherwise paint it #f5f5f5 with
-      // black text, which shows straight through the vim status line because
-      // its input inherits the background.
+      // Panels inherit from .cm-editor so they follow whatever theme the host
+      // app gave codemirror; otherwise codemirror's base theme paints them
+      // #f5f5f5 on black. The & qualifier matters: every EditorView.theme gets
+      // one generated scope class, so an unqualified ".cm-panels" ties on
+      // specificity and loses to whichever theme mounted last.
       "&.cm-editor .cm-panels": {
         backgroundColor: "var(--bks-text-editor-vim-panel-bg-color)",
         color: "var(--bks-text-editor-vim-panel-fg-color)",
       },
       "&.cm-editor .cm-panels-bottom": {
-        // Neutral and translucent so it reads against a light or a dark
-        // editor. --bks-border-color would fall into the same trap as the
-        // colours above and resolve against the light defaults.
         borderTop: "var(--bks-text-editor-vim-panel-border)",
       },
-      // Vim's status line: current mode, pending keys, and the ':' and '/'
-      // inputs. These live here rather than in the stylesheet so they outrank
-      // the base theme @replit/codemirror-vim ships.
-      // Note this element also carries the generic .cm-panel class, whose rule
-      // above resolves to white, so this needs to outrank it.
+      // The vim status line. Here rather than in the stylesheet so it outranks
+      // both the base theme @replit/codemirror-vim ships and the .cm-panel
+      // rule above, which resolves to white.
       "&.cm-editor .cm-panels .cm-panel.cm-vim-panel": {
         backgroundColor: "var(--bks-text-editor-vim-panel-bg-color)",
         color: "var(--bks-text-editor-vim-panel-fg-color)",
         fontFamily: "var(--bks-text-editor-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace)",
         fontSize: "var(--bks-text-editor-vim-panel-font-size)",
-        // Matches the top border, so the bar reads as its own strip rather
-        // than running into the toolbar underneath the editor.
         borderBottom: "var(--bks-text-editor-vim-panel-border)",
-        // The mode label and the ':' input swap places in here, so pin the
-        // metrics to stop the bar changing height as you type a command.
+        // The mode label and the ':' input swap places here, so pin the
+        // metrics to stop the bar resizing as you type a command.
         boxSizing: "border-box",
         alignItems: "center",
         gap: "0.5rem",

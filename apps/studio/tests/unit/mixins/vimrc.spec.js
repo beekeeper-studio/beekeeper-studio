@@ -1,4 +1,4 @@
-import { parseVimrc, createVimCommands } from "../../../../studio/src/lib/editor/vim"
+import { parseVimrc } from "../../../../studio/src/lib/editor/vim"
 
 const mapping = (mappingMode, lhs, rhs, mode, noremap = false) =>
   ({ mappingMode, lhs, rhs, mode, noremap })
@@ -41,12 +41,6 @@ describe("Vimrc parsing", () => {
     ])
 
     expect(directives).toHaveLength(2)
-  })
-
-  it("still exposes createVimCommands", () => {
-    expect(createVimCommands(["nmap gl $"])).toEqual([
-      mapping("nmap", "gl", "$", "normal"),
-    ])
   })
 })
 
