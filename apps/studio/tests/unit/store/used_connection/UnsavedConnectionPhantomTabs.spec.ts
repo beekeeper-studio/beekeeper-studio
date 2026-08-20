@@ -136,12 +136,10 @@ describe('connecting without saving (phantom tabs)', () => {
     const usedConfig = await store.dispatch(
       'data/usedconnections/recordUsed', config)
     store.commit('newConnection', usedConfig)
-    if (usedConfig.id) {
-      await Handlers['appdb/tabhistory/clearDeletedTabs']({
-        workspaceId: WORKSPACE_ID,
-        connectionId: usedConfig.id
-      })
-    }
+    await Handlers['appdb/tabhistory/clearDeletedTabs']({
+      workspaceId: WORKSPACE_ID,
+      connectionId: usedConfig.id
+    })
     await store.dispatch('tabs/load')
     return usedConfig
   }
