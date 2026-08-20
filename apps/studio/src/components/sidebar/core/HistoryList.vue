@@ -101,7 +101,7 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
         if(this.showAllHistory){
           return this.history;
         } else {
-          return this.history.filter(item => item.connectionId === this.usedConfig?.id);
+          return this.history.filter(item => item.connectionId === (this.usedConfig?.id ?? -1));
         }
       },
     },

@@ -555,7 +555,12 @@ const store = new Vuex.Store<State>({
         await context.dispatch('updateRoutines')
         context.dispatch('updateWindowTitle', config)
 
-        await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id })
+        // no id means the connection was never saved: there is no
+        // per-connection tab history to prune, and a null id must not reach
+        // the delete query
+        if (context.state.usedConfig.id) {
+          await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id })
+        }
 
         await context.dispatch('checkVersion');
         return true;

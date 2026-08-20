@@ -15,23 +15,19 @@ const WORKSPACE_ID = -1
 
 const Handlers = { ...AppDbHandlers, ...TabHistoryHandlers }
 
-// Replicates the "phantom tabs" bug: connecting to a connection that was
-// never saved surfaces (and then corrupts) the open tabs of an unrelated
-// *saved* connection.
+// Regression tests for the "phantom tabs" bug: connecting to a connection
+// that was never saved surfaced (and then corrupted) the open tabs of an
+// unrelated *saved* connection.
 //
-// Root cause: for an unsaved config, `recordUsed` returns the new
-// used_connection row, so `usedConfig.id` is a used_connection PK. Tabs,
-// pins, hidden entities, and tab history are all keyed on `usedConfig.id`
-// in a column that normally holds a saved_connection PK. The two tables
-// have independent id sequences, so whenever a used_connection id happens
-// to equal some saved_connection id (very likely - both are small
-// autoincrement ints), the unsaved session reads and writes that saved
-// connection's tabs.
-//
-// These tests are marked `it.failing` because they assert the *correct*
-// behavior, which the current code does not implement. When the bug is
-// fixed they will start reporting "passing test marked failing" - at that
-// point flip them to plain `it(...)`.
+// Root cause: for an unsaved config, `recordUsed` returned the new
+// used_connection row, so `usedConfig.id` was a used_connection PK. Tabs,
+// pins, hidden entities, and tab history are all persisted keyed on
+// `usedConfig.id` in a column that holds saved_connection PKs. The two
+// tables have independent id sequences, so whenever a used_connection id
+// happened to equal some saved_connection id, the unsaved session read and
+// wrote that saved connection's tabs. Sessions on a never-saved connection
+// must have `usedConfig.id` null, which disables per-connection persistence
+// instead of borrowing another connection's key.
 
 function buildSavedConnection(overrides: Partial<SavedConnection> = {}): SavedConnection {
   const c = new SavedConnection()
@@ -123,60 +119,71 @@ describe('connecting without saving (phantom tabs)', () => {
     await TestOrmConnection.disconnect()
   })
 
-  // Simulates the exact flow of the root `connect` action for an unsaved
-  // config: recordUsed, then newConnection (store/index.ts:552-553).
-  async function connectUnsaved() {
-    const config = await store.dispatch(
-      'data/usedconnections/recordUsed', await unsavedSnowflakeConfig())
-    store.commit('newConnection', config)
-    return config
+  // Simulates the exact flow of the root `connect` action: recordUsed, then
+  // the newConnection mutation, then pruning old deleted tabs (guarded on
+  // usedConfig.id, as in store/index.ts).
+  async function connectWith(config: any) {
+    const usedConfig = await store.dispatch(
+      'data/usedconnections/recordUsed', config)
+    store.commit('newConnection', usedConfig)
+    if (usedConfig.id) {
+      await Handlers['appdb/tabhistory/clearDeletedTabs']({
+        workspaceId: WORKSPACE_ID,
+        connectionId: usedConfig.id
+      })
+    }
+    await store.dispatch('tabs/load')
+    return usedConfig
   }
 
-  it.failing('does not surface a saved connection\'s tabs in an unsaved-connection session', async () => {
+  async function connectUnsaved() {
+    return await connectWith(await unsavedSnowflakeConfig())
+  }
+
+  it('does not surface a saved connection\'s tabs in an unsaved-connection session', async () => {
     // The user's saved ClickHouse connection, with open tabs.
     const saved = buildSavedConnection()
     await saved.save()
     await openTabFor(saved.id, 'clickhouse query 1')
     await openTabFor(saved.id, 'clickhouse query 2')
 
-    // New Snowflake connection, connected without saving.
+    // New Snowflake connection, connected without saving. Its used_connection
+    // row is the first one, so its PK equals the ClickHouse saved_connection
+    // id - the collision that used to leak the tabs.
     const usedConfig = await connectUnsaved()
 
-    // Documents the collision mechanism: usedConfig.id is the used_connection
-    // PK, which here (first used_connection row vs first saved_connection row)
-    // equals the ClickHouse saved_connection id.
-    expect(usedConfig.id).toBe(saved.id)
-
-    // TabModule.load keys on usedConfig.id, so the Snowflake session gets the
-    // ClickHouse tabs. Correct behavior: no tabs.
-    await store.dispatch('tabs/load')
+    // An unsaved session has no saved_connection id, so no persistence key.
+    expect(usedConfig.id).toBeNull()
     expect((store.state as any).tabs.tabs).toHaveLength(0)
+
+    // It is still recorded for the recent-connections list, unlinked from
+    // any saved connection.
+    const used = await UsedConnection.find()
+    expect(used).toHaveLength(1)
+    expect(used[0].connectionId).toBeNull()
   })
 
-  it.failing('does not write unsaved-session tabs into a saved connection\'s tab set', async () => {
+  it('does not write unsaved-session tabs into a saved connection\'s tab set', async () => {
     const saved = buildSavedConnection()
     await saved.save()
 
     await connectUnsaved()
 
     // User opens a tab while connected to the unsaved Snowflake connection.
-    // TabModule.add persists it with connectionId = usedConfig.id.
     await store.dispatch('tabs/add', {
       item: { tabType: 'query', title: 'snowflake scratch', position: 1 }
     })
 
     // Later: connect to the saved ClickHouse connection.
-    const config = await store.dispatch(
-      'data/usedconnections/recordUsed', await asConfig(saved))
-    store.commit('newConnection', config)
-    await store.dispatch('tabs/load')
+    const config = await connectWith(await asConfig(saved))
+    expect(config.id).toBe(saved.id)
 
-    // Correct behavior: the Snowflake tab does not leak into this session.
+    // The Snowflake tab does not leak into this session.
     const titles = (store.state as any).tabs.tabs.map((t: any) => t.title)
     expect(titles).not.toContain('snowflake scratch')
   })
 
-  it.failing('does not purge a saved connection\'s closed-tab history on unsaved connect', async () => {
+  it('does not purge a saved connection\'s closed-tab history on unsaved connect', async () => {
     const saved = buildSavedConnection()
     await saved.save()
 
@@ -193,20 +200,62 @@ describe('connecting without saving (phantom tabs)', () => {
       .where('id = :id', { id: tab.id })
       .execute()
 
-    const usedConfig = await connectUnsaved()
-
-    // The connect action runs this right after recordUsed
-    // (store/index.ts:564) - with the colliding id it hard-deletes the
-    // ClickHouse connection's history.
-    await Handlers['appdb/tabhistory/clearDeletedTabs']({
-      workspaceId: WORKSPACE_ID,
-      connectionId: usedConfig.id
-    })
+    await connectUnsaved()
 
     const history = await OpenTab.getClosedHistory({
       connectionId: saved.id,
       workspaceId: WORKSPACE_ID
     })
     expect(history).toBeTruthy()
+  })
+
+  it('reconnecting from the recent list to a never-saved connection stays unkeyed', async () => {
+    const saved = buildSavedConnection()
+    await saved.save()
+    await openTabFor(saved.id, 'clickhouse query')
+
+    await connectUnsaved()
+    await store.dispatch('data/usedconnections/load')
+
+    // The recent-connections list passes the used_connection row itself to
+    // `connect` when there is no saved connection to resolve it to
+    // (ConnectionListItem.savedConnection).
+    const recent = (store.state as any)['data/usedconnections'].items[0]
+    expect(recent.connectionId).toBeNull()
+
+    const usedConfig = await connectWith({ ...recent })
+
+    // Its used_connection PK (which equals the ClickHouse saved id here)
+    // must not become the session's persistence key...
+    expect(usedConfig.id).toBeNull()
+    expect((store.state as any).tabs.tabs).toHaveLength(0)
+
+    // ...and the row is updated in place: not duplicated, and not stamped
+    // with its own PK as a saved_connection reference.
+    const used = await UsedConnection.find()
+    expect(used).toHaveLength(1)
+    expect(used[0].connectionId).toBeNull()
+  })
+
+  it('first connect of a saved connection does not hijack an unrelated used_connection row', async () => {
+    // An unsaved session creates used_connection row 1.
+    await connectUnsaved()
+
+    const saved = buildSavedConnection()
+    await saved.save()
+    expect(saved.id).toBe(1) // same small-int id space as the used row
+
+    await store.dispatch('data/usedconnections/load')
+    await connectWith(await asConfig(saved))
+
+    // The saved connection gets its own used_connection row; the Snowflake
+    // row is not overwritten with ClickHouse details or linked to the saved
+    // connection just because the ids coincide.
+    const used = await UsedConnection.find({ order: { id: 'ASC' } })
+    expect(used).toHaveLength(2)
+    expect(used[0].connectionId).toBeNull()
+    expect(used[0].connectionType).toBe('snowflake')
+    expect(used[1].connectionId).toBe(saved.id)
+    expect(used[1].connectionType).toBe('clickhouse')
   })
 })

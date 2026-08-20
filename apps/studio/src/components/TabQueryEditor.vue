@@ -1735,7 +1735,9 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             excerpt: query.substr(0, 250),
             numberOfRecords: totalRows,
             queryId: this.query?.id,
-            connectionId: this.usedConfig.id
+            // sessions on a never-saved connection have no saved_connection
+            // id; -1 is the column default and cannot collide with one
+            connectionId: this.usedConfig.id ?? -1
           } as any;
 
           if(lastQuery && isDuplicate){
