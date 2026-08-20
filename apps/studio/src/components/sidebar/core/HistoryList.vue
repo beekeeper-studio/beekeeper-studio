@@ -27,6 +27,32 @@
           <input type="checkbox" id="show-all-history-checkbox" v-model="showAllHistory">
           <label for="show-all-history-checkbox" class="show-all-history-text">Show all</label>
         </div>
+        <!-- Cloud history does not include query origin metadata because the cloud backend does not support it. -->
+        <div
+          v-if="!isCloud"
+          class="form-group history-origin-container"
+        >
+          <label for="history-origin-filter">Query origin</label>
+          <div class="select-wrap">
+            <select
+              id="history-origin-filter"
+              name="Query Origin"
+              class="form-control"
+              v-model="selectedOrigin"
+            >
+              <option value="all">
+                All
+              </option>
+              <option
+                v-for="origin in originOptions"
+                :key="origin.value"
+                :value="origin.value"
+              >
+                {{ origin.label }}
+              </option>
+            </select>
+          </div>
+        </div>
         <error-alert
           v-if="error"
           :error="error"
@@ -56,7 +82,10 @@
               :title="item.excerpt"
               :class="{selected: item === selected}"
             >
-              <i class="item-icon query material-icons">code</i>
+              <i
+                class="item-icon query material-icons"
+                :title="`${originInfo(item).label} query`"
+              >{{ originInfo(item).icon }}</i>
               <!-- <input @click.stop="" type="checkbox" :value="item" class="form-control delete-checkbox" v-model="checkedHistoryQueries" v-bind:class="{ shown: checkedHistoryQueries.length > 0 }"> -->
               <div class="list-title flex-col">
                 <span class="item-text expand truncate">{{ nicelySized(item.excerpt) }}</span>
@@ -77,9 +106,10 @@
 <script>
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago';
-  import { mapState } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import ErrorAlert from '@/components/common/ErrorAlert.vue';
 import SidebarLoading from '@/components/common/SidebarLoading.vue'
+import { QUERY_ORIGIN_OPTIONS } from '@/common/interfaces/QueryOrigin'
 
   export default {
   components: { ErrorAlert, SidebarLoading },
@@ -88,21 +118,24 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
         checkedHistoryQueries: [],
         timeAgo: new TimeAgo('en-US'),
         selected: null,
-        showAllHistory: false
+        showAllHistory: false,
+        selectedOrigin: 'all',
+        originOptions: QUERY_ORIGIN_OPTIONS
       }
     },
     computed: {
+      ...mapGetters(['isCloud']),
       ...mapState(['usedConfig']),
       ...mapState('data/usedQueries', { 'history': 'items', 'loading': 'loading', 'error': 'error'},),
       removeTitle() {
         return `Remove ${this.checkedHistoryQueries.length} saved history queries`;
       },
       currentHistory(){
-        if(this.showAllHistory){
-          return this.history;
-        } else {
-          return this.history.filter(item => item.connectionId === this.usedConfig?.id);
-        }
+        return this.history.filter(item => {
+          const matchesConnection = this.showAllHistory || item.connectionId === this.usedConfig?.id
+          const matchesOrigin = this.isCloud || this.selectedOrigin === 'all' || item.origin === this.selectedOrigin
+          return matchesConnection && matchesOrigin
+        })
       },
     },
     mounted() {
@@ -146,6 +179,12 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
           return `${text.substring(0, 128)}...`
         } else {
           return text
+        }
+      },
+      originInfo(item) {
+        return this.originOptions.find(origin => origin.value === item.origin) || {
+          label: 'Unknown',
+          icon: 'code'
         }
       },
       select(item) {
