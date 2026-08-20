@@ -18,6 +18,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         bigquery: {
             allowSkipToLastPage: boolean;
@@ -32,6 +33,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: string[];
             };
+            requestTimeout: number;
         };
         cassandra: {
             allowSkipToLastPage: boolean;
@@ -46,6 +48,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         clickhouse: {
             allowSkipToLastPage: boolean;
@@ -60,6 +63,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         cockroachdb: {
             allowSkipToLastPage: boolean;
@@ -76,6 +80,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         default: {
             allowSkipToLastPage: boolean;
@@ -90,6 +95,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         duckdb: {
             allowSkipToLastPage: boolean;
@@ -104,6 +110,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         dynamodb: {
             allowSkipToLastPage: boolean;
@@ -120,6 +127,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         firebird: {
             allowSkipToLastPage: boolean;
@@ -134,6 +142,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         greengage: {
             allowSkipToLastPage: boolean;
@@ -150,6 +159,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         libsql: {
             allowSkipToLastPage: boolean;
@@ -164,6 +174,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         mariadb: {
             allowSkipToLastPage: boolean;
@@ -179,6 +190,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         mongodb: {
             allowSkipToLastPage: boolean;
@@ -193,6 +205,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         mysql: {
             allowSkipToLastPage: boolean;
@@ -208,6 +221,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         oracle: {
             allowSkipToLastPage: boolean;
@@ -222,6 +236,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         postgres: {
             allowSkipToLastPage: boolean;
@@ -238,6 +253,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         redis: {
             allowSkipToLastPage: boolean;
@@ -252,6 +268,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         redshift: {
             allowSkipToLastPage: boolean;
@@ -268,6 +285,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         scylladb: {
             allowSkipToLastPage: boolean;
@@ -282,6 +300,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         snowflake: {
             allowSkipToLastPage: boolean;
@@ -298,6 +317,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         sqlanywhere: {
             allowSkipToLastPage: boolean;
@@ -312,6 +332,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         sqlite: {
             allowSkipToLastPage: boolean;
@@ -326,6 +347,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         sqlserver: {
             acquireTimeout: number;
@@ -356,6 +378,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         surrealdb: {
             allowSkipToLastPage: boolean;
@@ -371,6 +394,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         tidb: {
             allowSkipToLastPage: boolean;
@@ -385,6 +409,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
         trino: {
             allowSkipToLastPage: boolean;
@@ -399,6 +424,7 @@ declare interface IBksConfig {
                 positional: boolean;
                 quoted: any[];
             };
+            requestTimeout: number;
         };
     };
     general: {

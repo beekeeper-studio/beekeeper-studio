@@ -78,8 +78,48 @@ type ResultType = {
   arrayMode: boolean;
 };
 
+import { POOL_CLOSE_TIMEOUT_MS, lostConnection, withDeadline } from './lostConnection';
+
 const log = rawLog.scope("mysql");
 const logger = () => log;
+
+// mysql2 reports a dead socket through these, whether the peer closed it or the driver
+// noticed mid-protocol. None of them mean the statement was at fault.
+const CONNECTION_LOST_CODES = [
+  'PROTOCOL_CONNECTION_LOST',
+  'PROTOCOL_ENQUEUE_AFTER_FATAL_ERROR',
+  'PROTOCOL_ENQUEUE_AFTER_QUIT',
+  'ECONNRESET',
+  'EPIPE',
+  'ETIMEDOUT',
+  'ECONNREFUSED',
+  'EHOSTUNREACH',
+]
+
+// mysql2's code when a query outruns its timeout. It does not mean the connection is dead
+// -- a genuinely slow query reports the same way -- but the connection is still owed a
+// reply that may yet arrive, so it is never safe to reuse afterwards.
+const QUERY_TIMEOUT_CODE = 'PROTOCOL_SEQUENCE_TIMEOUT'
+
+function isQueryTimeout(err: any): boolean {
+  return err?.code === QUERY_TIMEOUT_CODE
+}
+
+function isConnectionLost(err: any): boolean {
+  if (!err) return false
+  if (CONNECTION_LOST_CODES.includes(err.code)) return true
+  return err.fatal === true
+}
+
+/**
+ * A connection that cannot be trusted for the next query, whether or not it is provably
+ * dead. Both cases have to leave the pool rather than go back into it: mysql2 does not
+ * check a connection before handing it out, so anything returned here is what the next
+ * query gets.
+ */
+function isUnusableAfter(err: any): boolean {
+  return isConnectionLost(err) || isQueryTimeout(err)
+}
 
 const context: AppContextProvider = {
   getExecutionContext(): ExecutionContext {
@@ -314,6 +354,11 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
   }
 
   async connect() {
+    // Reconnecting after a dropped connection lands here with the old pool still around,
+    // and it may be holding a connection that will never answer again. Retire it first so a
+    // reconnect cannot inherit the state it is meant to escape.
+    await this.closePool();
+
     await super.connect();
     const dbConfig = await configDatabase(this.server, this.database);
     logger().debug("create driver client for mysql with config %j", dbConfig);
@@ -353,9 +398,97 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     if(this.interval){
       clearInterval(this.interval);
     }
-    this.conn?.pool.end();
+    await this.closePool();
 
     await super.disconnect();
+  }
+
+  /**
+   * The pool is null between a disconnect and the next connect, and anything reaching for
+   * it in that window is a caller whose connection went away underneath it.
+   */
+  private requirePool(): mysql.Pool {
+    if (!this.conn?.pool) {
+      throw lostConnection('The connection to the database was lost.');
+    }
+    return this.conn.pool;
+  }
+
+  /**
+   * Retire the current pool, and do it in bounded time.
+   *
+   * pool.end() sends a quit to every connection it holds, and on a connection already
+   * waiting on a query that will never answer, that quit queues behind it forever -- so the
+   * close never settles. Both disconnect and reconnect go through here, so an unbounded
+   * wait would strand the app exactly when it is trying to recover.
+   */
+  private async closePool(): Promise<void> {
+    const pool = this.conn?.pool;
+    if (!pool) return;
+
+    // Dropped before awaiting anything, so a query racing the disconnect fails fast
+    // instead of reaching into a pool that is on its way out.
+    this.conn = null;
+    this.reservedConnections.clear();
+
+    const closing = new Promise<void>((resolve, reject) => {
+      pool.end((err) => (err ? reject(err) : resolve()));
+    });
+    // closing rejects here only via the deadline; a genuine close error still needs
+    // swallowing, since the pool is being discarded either way.
+    closing.catch(() => undefined);
+
+    try {
+      await withDeadline(closing, POOL_CLOSE_TIMEOUT_MS, 'pool close timed out');
+      return;
+    } catch (err) {
+      logger().warn('Pool did not close cleanly, closing its connections directly', err);
+    }
+
+    try {
+      MysqlClient.destroyPooledConnections(pool);
+    } catch (err) {
+      // Best effort by definition. A disconnect that is already struggling must not be
+      // turned into a thrown one -- connect() awaits this too, so a throw here would break
+      // the reconnect it exists to guarantee.
+      logger().warn('Could not close pooled connections directly', err);
+    }
+
+    try {
+      await withDeadline(closing, POOL_CLOSE_TIMEOUT_MS, 'pool close timed out');
+    } catch (err) {
+      // The pool is unreferenced from here on; a socket the OS has yet to reap is a better
+      // outcome than a disconnect that never returns.
+      logger().warn('Abandoning pool that would not close', err);
+    }
+  }
+
+  /**
+   * Destroy the connections a pool is holding, reaching past mysql2's public surface to its
+   * own list. There is no public way to do this: end() is exactly the call that cannot
+   * finish, and it works by queueing a quit behind the query that is already stuck.
+   */
+  private static destroyPooledConnections(pool: mysql.Pool): void {
+    // mysql2 keeps these in a Queue, not an array: length plus get(i), so it is read that
+    // way rather than iterated.
+    const connections: any = (pool as any)._allConnections;
+    const count = typeof connections?.length === 'number' ? connections.length : 0;
+
+    if (!count || typeof connections.get !== 'function') {
+      logger().warn('No pooled connections found to close directly');
+      return;
+    }
+
+    for (let i = 0; i < count; i++) {
+      try {
+        // Reach for the socket rather than Connection.destroy(): that is a graceful
+        // stream.end(), and the FIN it sends goes nowhere on a dropped connection, leaving
+        // the socket half-open and the stuck query still waiting.
+        connections.get(i)?.stream?.destroy?.();
+      } catch (err) {
+        logger().warn('Failed to close a pooled connection', err);
+      }
+    }
   }
 
   async versionString() {
@@ -1216,6 +1349,10 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
             sql: query,
             values: params,
             rowsAsArray: options.rowsAsArray,
+            // Without a deadline a query on a silently dropped connection waits forever:
+            // the socket still looks open, so mysql2 keeps waiting for a reply that is
+            // never coming. 0 means no limit, which mysql2 reads as no timer.
+            timeout: Math.max(0, BksConfig.db[this.connectionType]?.requestTimeout || 0) || undefined,
           },
           (err, data, fields) => {
             if (err && err.code === mysqlErrors.EMPTY_QUERY) {
@@ -1232,13 +1369,35 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
         );
       });
 
-    return options.connection
-      ? runQuery(options.connection)
-      : this.runWithConnection(runQuery);
+    try {
+      return options.connection
+        ? await runQuery(options.connection)
+        : await this.runWithConnection(runQuery);
+    } catch (err) {
+      // Every query funnels through here, so this is the one place that has to tell "the
+      // connection is gone" apart from "the statement failed". Only the first should raise
+      // the reconnect prompt; a query that outran its timeout on a healthy connection is
+      // reported as what it is.
+      if (isConnectionLost(err)) {
+        logger().error('Connection lost while running query', err)
+        throw lostConnection(
+          `The connection to the database was lost${err?.message ? `: ${err.message}` : '.'}`,
+          err
+        )
+      }
+      if (isQueryTimeout(err)) {
+        const limit = BksConfig.db[this.connectionType]?.requestTimeout
+        throw new Error(
+          `The query did not finish within ${limit}ms and was abandoned. ` +
+          `Raise requestTimeout under [db.${this.connectionType}] to allow longer queries.`
+        )
+      }
+      throw err
+    }
   }
 
   async runWithConnection<T>(run: (connection: mysql.PoolConnection) => Promise<T>, tabId?: number): Promise<T> {
-    const { pool } = this.conn;
+    const pool = this.requirePool();
     const hasReserved = this.reservedConnections.has(tabId);
     let conn: mysql.PoolConnection;
     if (hasReserved) {
@@ -1260,8 +1419,22 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
 
     try {
       return await run(conn);
+    } catch (err) {
+      // mysql2 hands a pooled connection straight to the next caller without checking it,
+      // so one whose socket is gone -- or one still owed a reply after its timeout expired
+      // -- would wedge every query after this one. destroy() drops it instead, and the pool
+      // opens a fresh connection on the next acquire.
+      if (!hasReserved && isUnusableAfter(err)) {
+        try {
+          conn.destroy();
+        } catch (destroyErr) {
+          logger().warn('Failed to destroy an unusable connection', destroyErr);
+        }
+        conn = null;
+      }
+      throw err;
     } finally {
-      if (!hasReserved) {
+      if (!hasReserved && conn) {
         conn.release();
       }
     }
@@ -1528,7 +1701,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     }
 
     return new Promise((resolve, reject) => {
-      this.conn.pool.getConnection((err, conn) => {
+      this.requirePool().getConnection((err, conn) => {
         if (!err) {
           try {
             this.pushConnection(tabId, conn);

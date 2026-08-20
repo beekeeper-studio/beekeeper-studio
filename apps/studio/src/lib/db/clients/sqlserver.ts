@@ -37,6 +37,7 @@ import { AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from '../serialization/transcoders';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
+import { POOL_CLOSE_TIMEOUT_MS, lostConnection, withDeadline } from './lostConnection';
 import { ConnectionLostError } from '@/lib/errors';
 const log = logRaw.scope('sql-server')
 
@@ -47,10 +48,6 @@ const mmsqlErrors = {
 
 // Setup guide for SQL Server integrated / Kerberos authentication prerequisites.
 const WIN_AUTH_DOCS_URL = 'https://docs.beekeeperstudio.io/user_guide/connecting/sql-server/'
-
-// How long to wait for a well-behaved pool close before forcing it. A pool holding a
-// request that will never come back cannot close on its own -- see closePool().
-const POOL_CLOSE_TIMEOUT_MS = 5000
 
 // mssql/tedious codes that mean the connection itself is gone, not that the statement
 // failed. ETIMEOUT is deliberately absent: it is also how a merely slow query reports,
@@ -77,33 +74,26 @@ function isConnectionLost(err: any): boolean {
   // connection cancels fine and reports "Timeout: Request failed to complete in Xms"
   // instead, so this message is what separates a dead connection from a slow one.
   if (err.code === 'ETIMEOUT' && /failed to cancel request/i.test(err.message ?? '')) return true
-  // tarn's TimeoutError sets neither name nor code, so the class name is what is left to
-  // match on. Nothing was sent when it fires: the query never got a connection.
-  return err.constructor?.name === 'TimeoutError'
+  return isPoolAcquireTimeout(err)
+}
+
+/**
+ * The pool gave up handing out a connection. tarn's TimeoutError sets neither name nor
+ * code, so the class name is what is left to match on. Nothing was sent when it fires:
+ * the query never got a connection.
+ */
+function isPoolAcquireTimeout(err: any): boolean {
+  return err?.constructor?.name === 'TimeoutError'
 }
 
 function asConnectionLostError(err: any): ConnectionLostError {
   // tarn's message for an abandoned acquire is "operation timed out for an unknown
   // reason", which says nothing to a user staring at a query that will not run.
-  const detail = err?.constructor?.name === 'TimeoutError'
+  const detail = isPoolAcquireTimeout(err)
     ? 'The connection to SQL Server stopped responding.'
     : `The connection to SQL Server was lost${err?.message ? `: ${err.message}` : '.'}`
 
-  return new ConnectionLostError(detail, { cause: err })
-}
-
-// Wrap a promise with a JS-level deadline. msnodesqlv8/ODBC's native conn_timeout
-// does NOT reliably cancel a stalled SQLDriverConnect -- it only covers the TCP
-// connect, not the post-connect TDS prelogin / SSPI handshake -- so a stalled
-// Kerberos/NTLM negotiation would otherwise hang indefinitely. This guarantees the
-// attempt rejects; the orphaned native handle may persist, but the app stays
-// responsive and surfaces a clear error instead of locking up.
-function withDeadline<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
-  let timer: NodeJS.Timeout;
-  const deadline = new Promise<never>((_resolve, reject) => {
-    timer = setTimeout(() => reject(new Error(message)), ms);
-  });
-  return Promise.race([promise, deadline]).finally(() => clearTimeout(timer)) as Promise<T>;
+  return lostConnection(detail, err)
 }
 
 type SQLServerVersion = {
@@ -739,6 +729,17 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     try {
       return await runQuery(options.connection ? options.connection : this.requirePool().request());
     } catch (err) {
+      // A pool that ran out of connections looks identical to one whose connection stopped
+      // answering -- both end as an abandoned acquire. Prompting to reconnect would be
+      // wrong here, and acting on it would kill the queries that are holding the pool.
+      if (isPoolAcquireTimeout(err) && this.poolIsSaturated()) {
+        throw new Error(
+          `No connection was available within ${BksConfig.db.sqlserver.acquireTimeout}ms. ` +
+          `All ${BksConfig.db.sqlserver.maxConnections} connections are running a query. ` +
+          `Wait for one to finish, or raise maxConnections under [db.sqlserver].`
+        )
+      }
+
       // Every query in the client funnels through here, so this is the one place that has
       // to tell "the connection is gone" apart from "the statement failed". Without it a
       // dropped connection surfaces as tarn's "operation timed out for an unknown reason",
@@ -1191,6 +1192,20 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   /**
+   * Was every connection busy with a real query when the acquire gave up?
+   *
+   * A connection being validated belongs to neither of tarn's lists, so a full `used` list
+   * means the pool was simply saturated rather than holding a connection that stopped
+   * answering.
+   */
+  private poolIsSaturated(): boolean {
+    const tarnPool: any = (this.pool as any)?.pool
+    const max = (this.pool as any)?.config?.pool?.max
+    if (typeof tarnPool?.numUsed !== 'function' || typeof max !== 'number') return false
+    return tarnPool.numUsed() >= max
+  }
+
+  /**
    * The pool is null between a disconnect and the next connect, and anything that reaches
    * for it in that window is a caller whose connection went away underneath it.
    */
@@ -1236,7 +1251,14 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       log.warn('Pool did not close cleanly, closing its connections directly', err)
     }
 
-    SQLServerClient.destroyPooledConnections(pool)
+    try {
+      SQLServerClient.destroyPooledConnections(pool)
+    } catch (err) {
+      // Best effort by definition. A disconnect that is already struggling must not be
+      // turned into a thrown one -- connect() awaits this too, so a throw here would break
+      // the reconnect it exists to guarantee.
+      log.warn('Could not close pooled connections directly', err)
+    }
 
     try {
       await withDeadline(closing, POOL_CLOSE_TIMEOUT_MS, 'pool close timed out')
@@ -1253,8 +1275,13 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
    * the call that cannot finish here.
    */
   private static destroyPooledConnections(pool: ConnectionPool): void {
+    // Array.isArray rather than ?? []: a future tarn that keeps these as anything but
+    // arrays would make the spread throw, and this runs on the path that exists to stop a
+    // disconnect from failing.
     const tarnPool: any = (pool as any).pool
-    const resources = [...(tarnPool?.used ?? []), ...(tarnPool?.free ?? [])]
+    const used = Array.isArray(tarnPool?.used) ? tarnPool.used : []
+    const free = Array.isArray(tarnPool?.free) ? tarnPool.free : []
+    const resources = [...used, ...free]
 
     if (!resources.length) {
       log.warn('No pooled connections found to close directly')
@@ -1263,7 +1290,11 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
 
     for (const entry of resources) {
       try {
-        entry?.resource?.close?.()
+        // Both backends expose close(), with different signatures: tedious takes no
+        // argument and reports completion by event, msnodesqlv8 (integrated auth) takes a
+        // callback. Passing one satisfies the native driver and is ignored by tedious --
+        // the same shapes mssql's own _poolDestroy uses for each.
+        entry?.resource?.close?.(() => undefined)
       } catch (err) {
         log.warn('Failed to close a pooled connection', err)
       }
@@ -1489,6 +1520,11 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       }).connect()
 
       try {
+        // msnodesqlv8/ODBC's native conn_timeout does NOT reliably cancel a stalled
+        // SQLDriverConnect -- it only covers the TCP connect, not the post-connect TDS
+        // prelogin / SSPI handshake -- so a stalled Kerberos/NTLM negotiation would
+        // otherwise hang indefinitely. The orphaned native handle may persist, but the app
+        // stays responsive and surfaces a clear error instead of locking up.
         const pool = await withDeadline(
           connecting,
           CONNECT_TIMEOUT_S * 1000,
@@ -1518,16 +1554,20 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   private async configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase, signal?: AbortSignal): Promise<any> { // changed to any for now, might need to make some changes
-    // requestTimeout also bounds the `SELECT 1` liveness probe the pool runs before it
-    // hands out a pooled connection, which is what lets a silently dropped connection be
-    // noticed at all. 0 in the config means no limit; mssql maps Infinity onto tedious's
-    // own "no timeout" value.
-    const requestTimeout = BksConfig.db.sqlserver.requestTimeout
+    // With tedious, requestTimeout also bounds the `SELECT 1` liveness probe the pool runs
+    // before handing out a pooled connection, which is what lets a silently dropped
+    // connection be noticed at all.
+    //
+    // 0 means no limit, and both backends read 0 that way: tedious treats it as no timer,
+    // and msnodesqlv8 divides it into ODBC's query_timeout, where 0 is likewise unlimited.
+    // Infinity would only work for tedious -- msnodesqlv8 would pass Infinity/1000 to the
+    // native layer -- so 0 is the sentinel here.
+    const requestTimeout = Math.max(0, BksConfig.db.sqlserver.requestTimeout || 0)
 
     const config: any = {
       server: server.config.host,
       database: database.database,
-      requestTimeout: requestTimeout > 0 ? requestTimeout : Infinity,
+      requestTimeout,
       appName: 'beekeeperstudio',
       pool: {
         max: BksConfig.db.sqlserver.maxConnections,

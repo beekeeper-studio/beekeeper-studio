@@ -31,7 +31,46 @@ import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 
 const PD = PostgresData
 
+import { POOL_CLOSE_TIMEOUT_MS, lostConnection, withDeadline } from './lostConnection';
+
 const log = logRaw.scope('postgresql')
+
+// pg surfaces a dead socket through the error code when the peer closed it, and through
+// its own message when the client had already given up on that connection. None of these
+// mean the statement was at fault.
+const CONNECTION_LOST_CODES = ['ECONNRESET', 'EPIPE', 'ETIMEDOUT', 'ECONNREFUSED', 'ENOTFOUND', 'EHOSTUNREACH', '57P01', '57P02', '57P03', '08006', '08003', '08000']
+
+const CONNECTION_LOST_MESSAGES = [
+  'connection terminated',
+  'client has encountered a connection error',
+  'connection ended unexpectedly',
+  'server closed the connection unexpectedly',
+]
+
+// pg's own wording when query_timeout elapses. It does not mean the connection is dead --
+// a genuinely slow query reports the same way -- but the client is left waiting on a reply
+// that may still arrive, so the connection is never safe to reuse afterwards.
+const QUERY_TIMEOUT_MESSAGE = 'query read timeout'
+
+function isQueryTimeout(err: any): boolean {
+  return (err?.message ?? '').toLowerCase().includes(QUERY_TIMEOUT_MESSAGE)
+}
+
+function isConnectionLost(err: any): boolean {
+  if (!err) return false
+  if (CONNECTION_LOST_CODES.includes(err.code)) return true
+  const message = (err.message ?? '').toLowerCase()
+  return CONNECTION_LOST_MESSAGES.some((m) => message.includes(m))
+}
+
+/**
+ * A connection that cannot be trusted for the next query, whether or not it is provably
+ * dead. Both cases have to leave the pool rather than go back into it: pg does not check a
+ * connection before handing it out, so anything returned here is what the next query gets.
+ */
+function isUnusableAfter(err: any): boolean {
+  return isConnectionLost(err) || isQueryTimeout(err)
+}
 
 const knex = knexlib({ client: 'pg' })
 const escapeBinding = knex.client._escapeBinding;
@@ -132,6 +171,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     if (!this.server && !this.database) {
       return;
     }
+    // Reconnecting after a dropped connection lands here with the old pool still around,
+    // and it may be holding a client that will never answer again. Retire it first so a
+    // reconnect cannot inherit the state it is meant to escape.
+    await this.closePool();
+
     await super.connect();
 
     const dbConfig = await this.configDatabase(this.server, this.database);
@@ -198,7 +242,91 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       clearInterval(this.interval);
     }
     await super.disconnect();
-    this.conn.pool.end();
+    await this.closePool();
+  }
+
+  /**
+   * The pool is null between a disconnect and the next connect, and anything reaching for
+   * it in that window is a caller whose connection went away underneath it.
+   */
+  private requirePool(): pg.Pool {
+    if (!this.conn?.pool) {
+      throw lostConnection('The connection to the database was lost.')
+    }
+    return this.conn.pool
+  }
+
+  /**
+   * Retire the current pool, and do it in bounded time.
+   *
+   * pool.end() waits for every checked-out client to be released, and a client sitting on
+   * a query that will never answer is never released -- so the close never settles. Both
+   * disconnect and reconnect go through here, so an unbounded wait would strand the app
+   * exactly when it is trying to recover.
+   */
+  private async closePool(): Promise<void> {
+    const pool = this.conn?.pool
+    if (!pool) return
+
+    // Dropped before awaiting anything, so a query racing the disconnect fails fast
+    // instead of reaching into a pool that is on its way out.
+    this.conn = null
+    this.reservedConnections.clear()
+
+    const closing = pool.end()
+    // end() rejects here only via the deadline; a genuine close error still needs
+    // swallowing, since the pool is being discarded either way.
+    closing.catch(() => undefined)
+
+    try {
+      await withDeadline(closing, POOL_CLOSE_TIMEOUT_MS, 'pool close timed out')
+      return
+    } catch (err) {
+      log.warn('Pool did not close cleanly, closing its clients directly', err)
+    }
+
+    try {
+      PostgresClient.destroyPooledClients(pool)
+    } catch (err) {
+      // Best effort by definition. A disconnect that is already struggling must not be
+      // turned into a thrown one -- connect() awaits this too, so a throw here would break
+      // the reconnect it exists to guarantee.
+      log.warn('Could not close pooled clients directly', err)
+    }
+
+    try {
+      await withDeadline(closing, POOL_CLOSE_TIMEOUT_MS, 'pool close timed out')
+    } catch (err) {
+      // The pool is unreferenced from here on; a socket the OS has yet to reap is a better
+      // outcome than a disconnect that never returns.
+      log.warn('Abandoning pool that would not close', err)
+    }
+  }
+
+  /**
+   * End the clients a pool is holding, reaching past pg-pool's public surface to its own
+   * list. There is no public way to do this: end() is exactly the call that cannot finish.
+   */
+  private static destroyPooledClients(pool: pg.Pool): void {
+    // Array.isArray rather than a null check: a future pg-pool that keeps this as anything
+    // but an array would make the iteration throw, on the path that exists to stop a
+    // disconnect from failing.
+    const clients: any[] = Array.isArray((pool as any)._clients) ? (pool as any)._clients : []
+
+    if (!clients.length) {
+      log.warn('No pooled clients found to close directly')
+      return
+    }
+
+    for (const client of clients) {
+      try {
+        // Destroy the socket rather than ending politely: a terminate message would have
+        // to reach a server that is no longer listening.
+        client?.connection?.stream?.destroy?.()
+      } catch (err) {
+        log.warn('Failed to close a pooled client', err)
+      }
+    }
   }
 
   async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
@@ -1352,12 +1480,14 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   async reserveConnection(tabId: number) {
     this.throwIfHasConnection(tabId);
 
-    const connectionType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
+    const connectionType = this.configSection;
     if (this.reservedConnections.size >= BksConfig.db[connectionType].maxReservedConnections) {
       throw new Error(errorMessages.maxReservedConnections)
     }
 
-    const conn = await this.conn.pool.connect();
+    const conn = await this.requirePool().connect();
+    // Held until the tab releases it, so it needs the same guard as runWithConnection.
+    PostgresClient.guardClientErrors(conn);
     this.pushConnection(tabId, conn);
   }
 
@@ -1384,6 +1514,32 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   }
 
   protected async rawExecuteQuery(q: string, options: { connection?: PoolClient, tabId?: number }): Promise<QueryResult | QueryResult[]> {
+    try {
+      return await this.rawExecuteQueryInner(q, options)
+    } catch (err) {
+      // Every query funnels through here, so this is the one place that has to tell "the
+      // connection is gone" apart from "the statement failed". Only the first should raise
+      // the reconnect prompt; a query that outran query_timeout on a healthy connection is
+      // reported as what it is.
+      if (isConnectionLost(err)) {
+        log.error('Connection lost while running query', err)
+        throw lostConnection(
+          `The connection to the database was lost${err?.message ? `: ${err.message}` : '.'}`,
+          err
+        )
+      }
+      if (isQueryTimeout(err)) {
+        const limit = BksConfig.db[this.configSection]?.requestTimeout
+        throw new Error(
+          `The query did not finish within ${limit}ms and was abandoned. ` +
+          `Raise requestTimeout under [db.${this.configSection}] to allow longer queries.`
+        )
+      }
+      throw err
+    }
+  }
+
+  private async rawExecuteQueryInner(q: string, options: { connection?: PoolClient, tabId?: number }): Promise<QueryResult | QueryResult[]> {
     const hasReserved = this.reservedConnections.has(options?.tabId)
     if (options?.tabId && hasReserved) {
       const conn = this.peekConnection(options?.tabId);
@@ -1403,12 +1559,38 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   // this will manage the connection for you, but won't call rollback
   // on an error, for that use `runWithTransaction`
   async runWithConnection<T>(child: (c: PoolClient) => Promise<T>): Promise<T> {
-    const connection = await this.conn.pool.connect()
+    const connection = await this.requirePool().connect()
+    const unguard = PostgresClient.guardClientErrors(connection)
+    let unusable = false
     try {
       return await child(connection)
+    } catch (err) {
+      // pg hands a pooled client straight to the next caller without checking it, so a
+      // client whose socket is gone -- or one still owed a reply after query_timeout gave
+      // up -- would wedge every query after this one. release(err) drops it instead, and
+      // the pool opens a fresh connection on the next acquire.
+      unusable = isUnusableAfter(err)
+      throw err
     } finally {
-      connection.release()
+      // A client going back to the pool gets pg-pool's own idle-error handling; one being
+      // dropped keeps ours, since its socket may still have an error left to emit.
+      if (!unusable) unguard()
+      connection.release(unusable || undefined)
     }
+  }
+
+  /**
+   * Keep a checked-out client's socket errors from becoming an unhandled 'error' event.
+   *
+   * pg-pool only guards clients while they sit idle in the pool. A client that is checked
+   * out when its socket dies emits on itself, and with no listener Node turns that into a
+   * thrown error from nowhere -- which is exactly what happens when a connection drops
+   * mid-query. The error still reaches the caller through the query's own rejection.
+   */
+  private static guardClientErrors(client: PoolClient): () => void {
+    const swallow = (err: Error) => log.warn('Client error on a checked-out connection', err)
+    client.on('error', swallow)
+    return () => client.removeListener('error', swallow)
   }
 
   // this will run your SQL wrapped in a transaction, making sure to manage the connection pool
@@ -1594,7 +1776,31 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     return this.configurePool(config, server, null);
   }
 
+  /**
+   * The [db.*] section this client reads. Everything in this family -- cockroach, redshift,
+   * greengage -- names its section after its connection type; only postgresql differs.
+   */
+  protected get configSection(): string {
+    return this.connectionType === 'postgresql' ? 'postgres' : this.connectionType
+  }
+
   protected configurePool(config: PoolConfig, server: IDbConnectionServer, tempUser: string) {
+    // Every Postgres-family client funnels through here, so the dropped-connection
+    // settings are applied once for postgres, cockroach, redshift and greengage.
+    //
+    // query_timeout is what puts a floor under a silently dropped connection: pg has no
+    // liveness check when it hands a pooled client out, so without a deadline the query
+    // simply waits forever on a socket that still looks open. 0 means no limit.
+    const requestTimeout = Math.max(0, BksConfig.db[this.configSection]?.requestTimeout || 0)
+    if (requestTimeout > 0) {
+      config.query_timeout = requestTimeout
+    }
+
+    // TCP keepalive is off by default in pg. It will not catch a dropped connection
+    // quickly -- the probe interval is the OS's to decide -- but it is what eventually
+    // errors a socket nobody is talking on, rather than leaving it open forever.
+    config.keepAlive = true
+
     if (tempUser) {
       config.user = tempUser
     } else if (server.config.user) {
