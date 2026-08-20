@@ -5840,13 +5840,12 @@ before-after-hook@^3.0.2:
   resolved "https://registry.yarnpkg.com/before-after-hook/-/before-after-hook-3.0.2.tgz#d5665a5fa8b62294a5aa0a499f933f4a1016195d"
   integrity sha512-Nik3Sc0ncrMK4UUdXQmAnRtzmNQTAAXmXIopizwZ1W1t8QmfJj+zL4OA2I7XPTPW5z5TDqv4hRo/JzouDJnX3A==
 
-"better-sqlite3@npm:better-sqlite3-multiple-ciphers@^12.5.0":
-  version "12.11.1"
-  resolved "https://registry.yarnpkg.com/better-sqlite3-multiple-ciphers/-/better-sqlite3-multiple-ciphers-12.11.1.tgz#5db42c7ff1eae7d5fb878fe91c229c63ae3a050a"
-  integrity sha512-pG72+3VkUipnmYx4LwQqoOXNG2CJ1HlmDrlvqgr7xQHgsE+cz5rAZEiaJHnUKTHaGfGifggA/C0Sv9qZlUrfow==
+"better-sqlite3@npm:better-sqlite3-multiple-ciphers@^13.0.3":
+  version "13.0.3"
+  resolved "https://registry.yarnpkg.com/better-sqlite3-multiple-ciphers/-/better-sqlite3-multiple-ciphers-13.0.3.tgz#d5f78549288f22169a2d7ddd4c30511650abdeb4"
+  integrity sha512-UYabM82r1J84TLWc/SszoHs6XopWpl/2HCg3Nui1JUaFXg/VLswzkPowYiRhK/4CftI8dgtikwyZQecMldrGxQ==
   dependencies:
-    bindings "^1.5.0"
-    prebuild-install "^7.1.1"
+    node-addon-api "^8.0.0"
 
 big-integer@^1.6.43, big-integer@^1.6.48, big-integer@^1.6.51:
   version "1.6.52"
@@ -10615,6 +10614,11 @@ node-addon-api@^7.0.0:
   resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-7.1.1.tgz#1aba6693b0f255258a049d621329329322aad558"
   integrity sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ==
 
+node-addon-api@^8.0.0:
+  version "8.9.2"
+  resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-8.9.2.tgz#db7ac94a13ffd9b55e6cb04584bd5ef8e1d74b18"
+  integrity sha512-VijLXbi3UACN69I0JVXJsX4tjACjNoQDgv2gTF6sx2wWEi8tkSg2eX8p5gSIFi8z2+DL3oHmY6OyKce38SDolg==
+
 node-addon-api@^8.5.0:
   version "8.5.0"
   resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-8.5.0.tgz#c91b2d7682fa457d2e1c388150f0dff9aafb8f3f"
@@ -11322,7 +11326,7 @@ postgres-interval@^4.0.0:
   resolved "https://registry.yarnpkg.com/postgres-interval/-/postgres-interval-4.0.2.tgz#f0b86ab1392c27dadee9b3cc288de371ae2ac06b"
   integrity sha512-EMsphSQ1YkQqKZL2cuG0zHkmjCCzQqQ71l2GXITqRwjhRleCdv00bDk/ktaSi0LnlaPzAc3535KTrjXsTdtx7A==
 
-prebuild-install@^7.1.1, prebuild-install@^7.1.2, prebuild-install@^7.1.3:
+prebuild-install@^7.1.2, prebuild-install@^7.1.3:
   version "7.1.3"
   resolved "https://registry.yarnpkg.com/prebuild-install/-/prebuild-install-7.1.3.tgz#d630abad2b147443f20a212917beae68b8092eec"
   integrity sha512-8Mf2cbV7x1cXPUILADGI3wuhfqWvtiLA1iclTDbFRZkgRQS0NqsPZphna9V+HyTEadheuPmjaJMsbzKQFOzLug==

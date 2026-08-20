@@ -69,7 +69,7 @@
     "axios-retry": "^3.2.4",
     "base64-url": "^2.3.3",
     "bcryptjs": "^3.0.2",
-    "better-sqlite3": "npm:better-sqlite3-multiple-ciphers@^12.5.0",
+    "better-sqlite3": "npm:better-sqlite3-multiple-ciphers@^13.0.3",
     "builder-util-runtime": "^9.1.1",
     "bytes": "^3.1.0",
     "cassandra-driver": "^4.6.4",
