@@ -27,18 +27,12 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       this.sslCertFile = other.sslCertFile
       this.sslKeyFile = other.sslKeyFile
       this.readOnlyMode = other.readOnlyMode
-      const explicitConnectionId = (other as Partial<UsedConnection>).connectionId
-      if (!_.isUndefined(explicitConnectionId)) {
-        // an explicit saved_connection reference (possibly null, for
-        // connections that were never saved) always wins over inferring it
-        // from `id` - `id` is only a saved_connection id when the caller
-        // passes a saved connection, never when it passes a used_connection
-        this.connectionId = explicitConnectionId
-        if (other.workspaceId) {
-          this.workspaceId = other.workspaceId
-        }
-      } else if (other.id && other.workspaceId) {
-        this.connectionId = other.id
+      // `connectionId` is always passed explicitly by the caller: it's a
+      // saved_connection reference, or null for a connection that was never
+      // saved. It is never inferred from `id`, which belongs to a different
+      // id sequence entirely (see UtilUsedConnectionModule.recordUsed).
+      this.connectionId = (other as Partial<UsedConnection>).connectionId ?? null
+      if (!_.isNil(other.workspaceId)) {
         this.workspaceId = other.workspaceId
       }
       this.options = other.options

@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
+import _ from 'lodash'
 import { TestOrmConnection } from '@tests/lib/TestOrmConnection'
 import { SavedConnection } from '@/common/appdb/models/saved_connection'
 import { UsedConnection } from '@/common/appdb/models/used_connection'
@@ -57,6 +58,15 @@ async function unsavedSnowflakeConfig() {
     username: 'app',
     defaultDatabase: 'ANALYTICS',
   }
+}
+
+// Mirror of ConnectionInterface.configFrom: the connection screen turns a
+// recent-connections row into a brand new, unsaved connection before it hands
+// anything over to `connect`.
+async function asUnsavedConfig(recent: any) {
+  const init = _.omit(recent, ['id', 'connectionId', 'createdAt', 'updatedAt', 'version'])
+  const fresh = await AppDbHandlers['appdb/saved/new']({ init })
+  return { ...fresh, id: null }
 }
 
 async function openTabFor(connectionId: number, title: string): Promise<OpenTab> {
@@ -217,24 +227,38 @@ describe('connecting without saving (phantom tabs)', () => {
     await connectUnsaved()
     await store.dispatch('data/usedconnections/load')
 
-    // The recent-connections list passes the used_connection row itself to
-    // `connect` when there is no saved connection to resolve it to
-    // (ConnectionListItem.savedConnection).
+    // The recent-connections list row for a connection that was never saved.
+    // Its PK equals the ClickHouse saved id here - the collision that used to
+    // leak the tabs.
     const recent = (store.state as any)['data/usedconnections'].items[0]
     expect(recent.connectionId).toBeNull()
+    expect(recent.id).toBe(saved.id)
 
-    const usedConfig = await connectWith({ ...recent })
+    const usedConfig = await connectWith(await asUnsavedConfig(recent))
 
-    // Its used_connection PK (which equals the ClickHouse saved id here)
-    // must not become the session's persistence key...
+    // Nothing from the used_connection row becomes the session's
+    // persistence key...
     expect(usedConfig.id).toBeNull()
     expect((store.state as any).tabs.tabs).toHaveLength(0)
 
-    // ...and the row is updated in place: not duplicated, and not stamped
-    // with its own PK as a saved_connection reference.
+    // ...and the row is reused rather than duplicated in the recent list.
     const used = await UsedConnection.find()
     expect(used).toHaveLength(1)
     expect(used[0].connectionId).toBeNull()
+  })
+
+  it('refuses to record a used_connection as if it were a saved one', async () => {
+    await connectUnsaved()
+    await store.dispatch('data/usedconnections/load')
+    const recent = (store.state as any)['data/usedconnections'].items[0]
+
+    // The connection screen is responsible for converting a recent-list row
+    // into a new unsaved connection (ConnectionInterface.configFrom). If one
+    // ever gets through, fail loudly rather than key the session on an id
+    // from the wrong table.
+    await expect(
+      store.dispatch('data/usedconnections/recordUsed', { ...recent })
+    ).rejects.toThrow(/used_connection/)
   })
 
   it('first connect of a saved connection does not hijack an unrelated used_connection row', async () => {

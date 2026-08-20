@@ -357,7 +357,6 @@ export default Vue.extend({
     ...mapGetters(['isUltimate', 'isCloud']),
     ...mapGetters('licenses', ['isTrial', 'trialLicense']),
     ...mapGetters({
-      'usedConfigs': 'data/usedconnections/orderedUsedConfigs',
       privacyMode: 'settings/privacyMode'
     }),
     editingDisabled() {
@@ -527,8 +526,24 @@ export default Vue.extend({
         this.config = conn;
       })
     },
-    edit(config) {
-      this.config = _.clone(config)
+    // The recent-connections list hands over a used_connection row whenever
+    // the connection behind it was never saved (or has since been deleted).
+    // used_connection ids come from their own sequence, while everything the
+    // core interface persists per-connection (tabs, pins, hidden entities,
+    // tab history) is keyed on a saved_connection id - so a used_connection
+    // must never leave this screen. Turn it into a brand new, unsaved
+    // connection with the same details instead.
+    async configFrom(config) {
+      // a saved connection, or a new one built on this screen
+      if (_.isUndefined(config.connectionId)) return config
+
+      const init = _.omit(config, ['id', 'connectionId', 'createdAt', 'updatedAt', 'version'])
+      const unsaved = await this.$util.send('appdb/saved/new', { init })
+      unsaved.id = null
+      return unsaved
+    },
+    async edit(config) {
+      this.config = _.clone(await this.configFrom(config))
       this.errors = null
       this.connectionError = null
     },
@@ -571,15 +586,6 @@ export default Vue.extend({
       this.connectionError = null
       try {
         this.connecting = true
-        // If this is an existing used connection that doesn't have an associated saved connection
-        // we need to see if changes have been made to the config
-        if (this.config.connectionId === null && this.config.id) {
-          const oldConfig = this.usedConfigs.find((c) => c.id === this.config.id);
-          if (!_.isEqual(this.config, oldConfig)) {
-            this.config.id = null;
-          }
-        }
-
         const { auth, cancelled } = await this.$bks.unlock();
         if (cancelled) return;
         await this.$store.dispatch('connect', { config: this.config, auth })
@@ -594,7 +600,7 @@ export default Vue.extend({
       }
     },
     async handleConnect(config) {
-      this.config = config
+      this.config = await this.configFrom(config)
       await this.submit()
     },
     async testConnection() {
@@ -633,12 +639,6 @@ export default Vue.extend({
         }
 
         const id = await this.$store.dispatch('data/connections/save', this.config)
-
-        // This feels wrong but it works. It's undefined on savedConnections
-        if (this.config.connectionId === null) {
-          this.config.connectionId = id;
-          await this.$store.dispatch('data/usedconnections/save', this.config);
-        }
 
         this.$noty.success("Connection Saved")
         // we want to fetch the saved one in case it's changed
