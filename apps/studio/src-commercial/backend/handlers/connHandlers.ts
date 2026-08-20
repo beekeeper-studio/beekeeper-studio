@@ -606,6 +606,7 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/releaseConnection': async function({ tabId, sId }: { tabId: number, sId: string }) {
     checkConnection(sId);
     await state(sId).connection.releaseConnection(tabId);
+    // the tab no longer holds the connection the pending timeout would roll back
     clearTransactionTimeout(sId, tabId);
   },
 
