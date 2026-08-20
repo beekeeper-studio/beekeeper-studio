@@ -11,6 +11,7 @@
 | [TiDB](https://pingcap.com/products/tidb/)               | ⭐ Soporte Completo          |    ✅     |    ✅    |        [Caracteristicas](https://beekeeperstudio.io/db/tidb-client) |
 | [Google BigQuery](https://cloud.google.com/bigquery)     | ⭐ Soporte Completo          |    ✅     |    ✅    |    [Caracteristicas](https://beekeeperstudio.io/db/google-big-query-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/bigquery) |
 | [Redis](https://redis.io/)                               | ⭐ Soporte Completo          |    ✅     |    ✅    |       [Caracteristicas](https://www.beekeeperstudio.io/db/redis-client/) |
+| [Valkey](https://valkey.io/)                             | ⭐ Soporte Completo (via driver de Redis) |    ✅     |    ✅    |       [Documentacion](https://docs.beekeeperstudio.io/user_guide/connecting/valkey) |
 | [GreengageDB](https://greengagedb.org/)                  | ⭐ Soporte Completo          |    ✅     |    ✅    |   [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/greengage) |
 | [Oracle Database](https://www.oracle.com/database/)      | ⭐ Soporte Completo          |           |    ✅    |      [Caracteristicas](https://beekeeperstudio.io/db/oracle-client), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/oracle) |
 | [Cassandra](http://cassandra.apache.org/)                | ⭐ Soporte Completo          |           |    ✅    |   [Caracteristicas](https://beekeeperstudio.io/db/cassandra-client) |

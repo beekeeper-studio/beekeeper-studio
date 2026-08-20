@@ -24,6 +24,7 @@ import { SQLAnywhereClient } from "./clients/anywhere";
 import { TrinoClient } from "./clients/trino";
 import { SurrealDBClient } from "./clients/surrealdb";
 import { RedisClient } from '@/lib/db/clients/redis';
+import { ValkeyClient } from '@/lib/db/clients/valkey';
 import { BedrockClient } from '@/lib/db/clients/bedrock';
 import { DynamoDBClient } from "./clients/dynamodb";
 import { SnowflakeClient } from "./clients/snowflake";
@@ -52,6 +53,7 @@ const clients = new Map<ConnectionType, any>([
   ['trino', TrinoClient],
   ['surrealdb', SurrealDBClient],
   ['redis', RedisClient],
+  ['valkey', ValkeyClient],
   ['bedrock', BedrockClient],
   ['dynamodb', DynamoDBClient],
   ['snowflake', SnowflakeClient]

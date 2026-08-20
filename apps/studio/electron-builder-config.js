@@ -154,6 +154,11 @@ module.exports = {
       "name": "Redis URL scheme",
       "schemes": ["redis", "rediss"],
       "role": "Editor"
+    },
+    {
+      "name": "Valkey URL scheme",
+      "schemes": ["valkey", "valkeys"],
+      "role": "Editor"
     }
   ],
   mac: {

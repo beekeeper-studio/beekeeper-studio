@@ -165,6 +165,38 @@ describe("Saved Connection", () => {
         host: "localhost",
         defaultDatabase: "db"
       },
+      "redis://localhost:6379/0": {
+        connectionType: "redis",
+        host: "localhost",
+        port: 6379,
+        defaultDatabase: "0",
+        ssl: false
+      },
+      "rediss://user:secret@redis.example.test:6380/1": {
+        connectionType: "redis",
+        username: "user",
+        password: "secret",
+        host: "redis.example.test",
+        port: 6380,
+        defaultDatabase: "1",
+        ssl: true
+      },
+      "valkey://localhost:6379/0": {
+        connectionType: "valkey",
+        host: "localhost",
+        port: 6379,
+        defaultDatabase: "0",
+        ssl: false
+      },
+      "valkeys://user:secret@valkey.example.test:6380/1": {
+        connectionType: "valkey",
+        username: "user",
+        password: "secret",
+        host: "valkey.example.test",
+        port: 6380,
+        defaultDatabase: "1",
+        ssl: true
+      },
     }
 
     Object.keys(testCases).forEach(url => {

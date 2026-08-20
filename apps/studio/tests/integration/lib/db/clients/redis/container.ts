@@ -1,27 +1,50 @@
 import { dbtimeout } from "@tests/lib/db";
 import { GenericContainer, Wait } from "testcontainers";
-import { IDbConnectionServerConfig } from "@/lib/db/types";
+import { ConnectionType, IDbConnectionServerConfig } from "@/lib/db/types";
 import path from 'path';
 import { __spreadArray } from "tslib";
+
+type RedisFlavor = {
+  /** Which client the connection should be created with */
+  client: ConnectionType;
+  /** Docker image, without the tag */
+  image: string;
+  /** Name of the CLI binary shipped in that image */
+  cli: string;
+};
+
+export const REDIS: RedisFlavor = {
+  client: 'redis',
+  image: 'redis',
+  cli: 'redis-cli',
+};
+
+export const VALKEY: RedisFlavor = {
+  client: 'valkey',
+  image: 'valkey/valkey',
+  cli: 'valkey-cli',
+};
 
 export const RedisTestDriver = {
   container: null,
   config: null,
+  flavor: REDIS as RedisFlavor,
 
-  async start(dockerTag = 'latest') {
+  async start(dockerTag = 'latest', flavor: RedisFlavor = REDIS) {
     const startupTimeout = dbtimeout * 2;
+    this.flavor = flavor;
 
     // Path to the redis data script in the dev folder
     const redisInitPath = path.resolve("./dev/docker_redis/");
 
-    this.container = await new GenericContainer(`redis:${dockerTag}`)
+    this.container = await new GenericContainer(`${flavor.image}:${dockerTag}`)
       .withBindMounts([{
         source: redisInitPath,
         target: "/docker_init",
         mode: "rw"
       }])
       .withHealthCheck({
-        test: ["CMD", "redis-cli", "ping"],
+        test: ["CMD", flavor.cli, "ping"],
         interval: 2000,
         timeout: 3000,
         retries: 10,
@@ -33,7 +56,7 @@ export const RedisTestDriver = {
       .start();
 
     const config: IDbConnectionServerConfig = {
-      client: 'redis',
+      client: flavor.client,
       host: this.container.getHost(),
       port: this.container.getMappedPort(6379),
       user: null,
@@ -59,8 +82,10 @@ export const RedisTestDriver = {
 
   async loadTestData() {
     // Execute the data.sh script inside the container
-    const result = await this.container.exec(['sh', '/docker_init/data.sh']);
-    console.log('Redis test data loaded:', result);
+    const result = await this.container.exec(['sh', '/docker_init/data.sh'], {
+      env: { REDIS_CLI: this.flavor.cli },
+    });
+    console.log('Test data loaded:', result);
   },
 
   async stop() {

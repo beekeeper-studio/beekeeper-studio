@@ -296,7 +296,9 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
 
   async versionString(): Promise<string> {
     const info = await this.getInfo();
-    return info.redis_version || "Unknown";
+    // Valkey pins `redis_version` at the version it forked from (7.2.x) for
+    // compatibility and reports its real version separately, so prefer that.
+    return info.valkey_version || info.redis_version || "Unknown";
   }
 
   async supportedFeatures(): Promise<SupportedFeatures> {

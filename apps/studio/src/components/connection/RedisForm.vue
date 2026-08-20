@@ -3,7 +3,7 @@
     <div class="alert alert-warning">
       <i class="material-icons">warning</i>
       <span>
-        Redis support is still in beta. Please report any problems on <a href="https://github.com/beekeeper-studio/beekeeper-studio/issues/new/choose">our issue tracker</a>.
+        {{ label }} support is still in beta. Please report any problems on <a href="https://github.com/beekeeper-studio/beekeeper-studio/issues/new/choose">our issue tracker</a>.
       </span>
     </div>
     
@@ -31,6 +31,12 @@ export default {
     disabled: {
       type: Boolean,
       default: false,
+    },
+  },
+  computed: {
+    // Valkey is wire-compatible with Redis and shares this form
+    label() {
+      return this.config.connectionType === 'valkey' ? 'Valkey' : 'Redis'
     },
   },
 };

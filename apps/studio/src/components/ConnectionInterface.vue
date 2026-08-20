@@ -169,7 +169,7 @@
                   :disabled="editingDisabled"
                 />
                 <redis-form
-                  v-else-if="config.connectionType === 'redis'"
+                  v-else-if="['redis', 'valkey'].includes(config.connectionType)"
                   :config="config"
                   :testing="testing"
                   :disabled="editingDisabled"

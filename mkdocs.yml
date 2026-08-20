@@ -155,6 +155,7 @@ nav:
     - SQLite: user_guide/connecting/sqlite.md
     - Trino: user_guide/connecting/trino.md
     - user_guide/connecting/surrealdb.md
+    - Valkey: user_guide/connecting/valkey.md
     - user_guide/connecting/azure-entraid.md
     - user_guide/connecting/snowflake.md
 

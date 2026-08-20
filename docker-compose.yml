@@ -20,6 +20,7 @@ volumes:
   mongodb:
   anywhere:
   redis:
+  valkey:
   greengage:
   greengage7:
   starrocks:
@@ -322,6 +323,17 @@ services:
       - redis:/data
       - ./dev/docker_redis:/docker_init
     command: sh -c 'redis-server & sleep 3 && /docker_init/data.sh && wait'
+
+  valkey:
+    image: valkey/valkey:latest
+    ports:
+      - 6380:6379
+    environment:
+      - REDIS_CLI=valkey-cli
+    volumes:
+      - valkey:/data
+      - ./dev/docker_redis:/docker_init
+    command: sh -c 'valkey-server & sleep 3 && /docker_init/data.sh && wait'
 
   clickhouse25:
     image: clickhouse/clickhouse-server:25.6.1

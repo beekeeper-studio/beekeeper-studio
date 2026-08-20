@@ -43,6 +43,8 @@ export function dialectFor(s: string): Dialect | null {
       return 'cassandra'
     case 'bedrock':
       return 'sqlite'
+    case 'valkey':
+      return 'redis'
     default:
       return Dialects.find((d) => d === s) || null
   }

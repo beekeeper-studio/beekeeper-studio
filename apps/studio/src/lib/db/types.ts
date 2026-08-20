@@ -25,6 +25,7 @@ export const DatabaseTypes = [
   'sqlanywhere',
   'surrealdb',
   'redis',
+  'valkey',
   'trino',
   'bedrock',
   'dynamodb',
@@ -57,6 +58,7 @@ export const ConnectionTypes = [
   { name: 'Trino', value: 'trino' },
   { name: 'SurrealDB', value: 'surrealdb' },
   { name: 'Redis', value: 'redis' },
+  { name: 'Valkey', value: 'valkey' },
   { name: 'Bedrock', value: 'bedrock' },
   { name: 'DynamoDB', value: 'dynamodb' },
   { name: 'Snowflake', value: 'snowflake' }

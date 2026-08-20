@@ -398,6 +398,20 @@ declare interface IBksConfig {
                 quoted: any[];
             };
         };
+        valkey: {
+            allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
+        };
     };
     general: {
         checkForUpdatesDisabled: boolean;

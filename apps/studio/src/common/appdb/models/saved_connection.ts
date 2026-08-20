@@ -30,6 +30,8 @@ function parseConnectionType(t: Nullable<ConnectionType>) {
     psql: 'postgresql',
     postgres: 'postgresql',
     mssql: 'sqlserver',
+    rediss: 'redis',
+    valkeys: 'valkey',
   }
   const allowed = ConnectionTypes.map(c => c.value)
   const result = mapping[t] || t
@@ -120,6 +122,7 @@ export class DbConnectionBase extends ApplicationEntity {
         port = 8123
         break
       case 'redis':
+      case 'valkey':
         port = 6379
         break
       default:
@@ -452,6 +455,11 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
       }
 
       if (cleanedUrl.startsWith('https://')) {
+        this.ssl = true
+      }
+
+      // rediss:// and valkeys:// are the TLS variants of their schemes
+      if (['rediss', 'valkeys'].includes(parsed.protocol as string)) {
         this.ssl = true
       }
 
