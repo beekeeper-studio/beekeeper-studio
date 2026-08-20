@@ -20,15 +20,8 @@
         </div>
 
         <div class="table-subheader">
-          <div class="table-title">
-            <h2>Relations</h2>
-            <span
-              class="filter-match-label"
-              v-if="filterMatches"
-            >{{ filterMatches.matched }} of {{ filterMatches.total }} match</span>
-          </div>
-          <div class="expand" />
           <table-info-toolbar
+            title="Relations"
             :tabulator="tabulator"
             filter-placeholder="Filter relations"
             :show-add="enabled && canAdd"
@@ -36,7 +29,6 @@
             @add="addRow"
             @copy="copyStructure"
             @refresh="$emit('refresh')"
-            @matches="filterMatches = $event"
           />
         </div>
         <div
@@ -135,8 +127,7 @@ export default Vue.extend({
       newRows: [],
       removedRows: [],
       error: null,
-      loading: false,
-      filterMatches: null
+      loading: false
     }
   },
   computed: {

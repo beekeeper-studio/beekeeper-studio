@@ -2,19 +2,27 @@
   <div class="table-info-filter">
     <i class="material-icons search-icon">search</i>
     <input
+      ref="input"
       class="filter-input"
       type="text"
       spellcheck="false"
       :placeholder="placeholder"
       v-model="query"
+      @keydown.esc.prevent="close"
+      @blur="onBlur"
     >
-    <!-- Kept in the layout when empty so the box doesn't grow on first keystroke -->
+    <!-- The count and the clear button toggle with `visibility` so the input
+         never changes width mid-typing -->
+    <span
+      class="filter-matches"
+      :class="{ 'is-hidden': !matches }"
+    >{{ matchLabel }}</span>
     <button
       class="clear-filter"
       :class="{ 'is-hidden': !query }"
       type="button"
       title="Clear filter"
-      @click.prevent="clear"
+      @click.prevent="close"
     >
       <i class="material-icons">close</i>
     </button>
@@ -49,10 +57,17 @@ export default Vue.extend({
     return {
       query: '',
       applied: false,
+      matches: null as { matched: number; total: number },
       // Debounced per instance, not on the prototype: every structure tab
       // mounts its own filter and they must not share a timer.
       debouncedApply: null as _.DebouncedFunc<() => void>,
     }
+  },
+  computed: {
+    matchLabel() {
+      if (!this.matches) return ''
+      return `${this.matches.matched}/${this.matches.total}`
+    },
   },
   watch: {
     query() {
@@ -80,8 +95,18 @@ export default Vue.extend({
   created() {
     this.debouncedApply = _.debounce(this.apply, DEBOUNCE_MS)
   },
+  mounted() {
+    this.$refs.input.focus()
+  },
   beforeDestroy() {
+    // The field only exists while the search is open. Closing must never
+    // leave a filtered table with no visible cause.
     this.debouncedApply.cancel()
+    if (this.tabulator) {
+      this.tabulator.off('tableBuilt', this.apply)
+      this.tabulator.off('dataFiltered', this.onDataFiltered)
+      if (this.applied) this.tabulator.clearFilter(false)
+    }
   },
   methods: {
     apply() {
@@ -93,7 +118,7 @@ export default Vue.extend({
           this.applied = false
           this.tabulator.clearFilter(false)
         }
-        this.$emit('matches', null)
+        this.matches = null
         return
       }
 
@@ -104,22 +129,28 @@ export default Vue.extend({
 
       this.tabulator.setFilter(structureFilter, { term, fields })
       this.applied = true
-      this.emitMatches()
+      this.updateMatches()
     },
     /** Keeps the match count fresh when the data reloads under an active filter. */
     onDataFiltered() {
-      if (this.applied) this.emitMatches()
+      if (this.applied) this.updateMatches()
     },
-    emitMatches() {
-      this.$emit('matches', {
+    updateMatches() {
+      this.matches = {
         matched: this.tabulator.getData('active').length,
         total: this.tabulator.getData().length,
-      })
+      }
     },
-    clear() {
+    onBlur() {
+      // Tabbing or clicking away from an empty field collapses it; with a
+      // query typed the field stays, since it explains the filtered table.
+      if (!this.query.trim()) this.$emit('close')
+    },
+    close() {
       this.query = ''
       this.debouncedApply.cancel()
       this.apply()
+      this.$emit('close')
     },
   },
 })

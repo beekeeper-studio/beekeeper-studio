@@ -27,15 +27,8 @@
         </div>
         <div class="content-wrap">
           <div class="table-subheader">
-            <div class="table-title">
-              <h2>Indexes</h2>
-              <span
-                class="filter-match-label"
-                v-if="filterMatches"
-              >{{ filterMatches.matched }} of {{ filterMatches.total }} match</span>
-            </div>
-            <span class="expand" />
             <table-info-toolbar
+              title="Indexes"
               :tabulator="tabulator"
               filter-placeholder="Filter indexes"
               :show-add="enabled"
@@ -43,7 +36,6 @@
               @add="addRow"
               @copy="copyStructure"
               @refresh="$emit('refresh')"
-              @matches="filterMatches = $event"
             />
           </div>
           <div
@@ -158,7 +150,6 @@ export default Vue.extend({
       removedRows: [],
       loading: false,
       error: null,
-      filterMatches: null,
     }
   },
   watch: {

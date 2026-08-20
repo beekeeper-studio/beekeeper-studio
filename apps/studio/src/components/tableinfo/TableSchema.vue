@@ -20,16 +20,8 @@
         </div>
 
         <div class="table-subheader">
-          <div class="table-title">
-            <h2>Columns</h2>
-            <span
-              class="filter-match-label"
-              v-if="filterMatches"
-            >{{ filterMatches.matched }} of {{ filterMatches.total }} match</span>
-          </div>
-          <slot />
-          <span class="expand" />
           <table-info-toolbar
+            title="Columns"
             :tabulator="tabulator"
             filter-placeholder="Filter columns"
             :show-add="editable"
@@ -37,8 +29,9 @@
             @add="addRow"
             @copy="copyStructure"
             @refresh="refreshColumns"
-            @matches="filterMatches = $event"
-          />
+          >
+            <slot />
+          </table-info-toolbar>
         </div>
         <div ref="tableSchema" />
         <!-- Tabulator can be slow to open especially for some really large column counts. Let the user know. -->
@@ -169,7 +162,6 @@ export default Vue.extend({
       newRows: [],
       removedRows: [],
       error: null,
-      filterMatches: null,
       reorderedRows: Array.from(new Set()),
       initialColumns: []
     }

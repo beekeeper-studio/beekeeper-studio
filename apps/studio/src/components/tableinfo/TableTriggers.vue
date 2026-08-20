@@ -12,19 +12,12 @@
           </div>
         </div>
         <div class="table-subheader">
-          <div class="table-title">
-            <h2>Triggers</h2>
-            <span
-              class="filter-match-label"
-              v-if="filterMatches"
-            >{{ filterMatches.matched }} of {{ filterMatches.total }} match</span>
-          </div>
           <table-info-toolbar
+            title="Triggers"
             :tabulator="tabulator"
             filter-placeholder="Filter triggers"
             @copy="copyStructure"
             @refresh="$emit('refresh')"
-            @matches="filterMatches = $event"
           />
         </div>
         <div
@@ -65,8 +58,7 @@ export default {
   data() {
     return {
       tabulator: null,
-      tableTriggers: null,
-      filterMatches: null
+      tableTriggers: null
     }
   },
   computed: {

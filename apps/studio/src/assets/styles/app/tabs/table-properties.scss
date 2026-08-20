@@ -79,11 +79,13 @@ $cell-success:           $row-add;
       }
     }
 
-    // Toolbar row: search / copy / refresh | add
+    // Toolbar row: title + search | refresh / copy / add
     .table-info-toolbar {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 16px;
+      flex: 1;
+      min-width: 0;
 
       .toolbar-btn {
         margin: 0;
@@ -91,11 +93,49 @@ $cell-success:           $row-add;
         @include noselect;
       }
 
+      // Both sides of the row are pinned to 30px so opening the search
+      // (26px icon -> 30px field) never changes the row's height.
+      .toolbar-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1;
+        min-width: 0;
+        height: 30px;
+        color: $text-dark;
+        h2 {
+          margin: 0;
+          white-space: nowrap;
+        }
+      }
+
+      .search-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        &:hover, &:focus {
+          background: rgba($theme-base, 0.07);
+        }
+        .material-icons {
+          font-size: 16px;
+          color: $text-light;
+        }
+      }
+
       .table-info-filter {
         display: flex;
         align-items: center;
         gap: 7px;
         height: 30px;
+        // Width comes from the container, never from the field's contents,
+        // so the box stays put while the count and clear button appear.
+        flex: 1;
+        min-width: 0;
+        max-width: 380px;
         padding: 0 8px 0 10px;
         background: rgba($theme-base, 0.04);
         border: 1px solid rgba($theme-base, 0.09);
@@ -110,7 +150,8 @@ $cell-success:           $row-add;
           color: $text-lighter;
         }
         .filter-input {
-          width: 148px;
+          flex: 1;
+          min-width: 0;
           height: 100%;
           padding: 0;
           border: 0;
@@ -121,6 +162,17 @@ $cell-success:           $row-add;
           &:focus {
             border: 0;
             box-shadow: none;
+          }
+        }
+        .filter-matches {
+          flex: none;
+          min-width: 3em;
+          text-align: right;
+          font-size: 12px;
+          color: $text-lighter;
+          white-space: nowrap;
+          &.is-hidden {
+            visibility: hidden;
           }
         }
         .clear-filter {
@@ -149,32 +201,38 @@ $cell-success:           $row-add;
         }
       }
 
+      .toolbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        flex: none;
+        height: 30px;
+      }
+
       .copy-btn {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 4px;
         height: 30px;
         line-height: 28px;
-        padding: 0 4px 0 10px;
+        padding: 0 7px 0 8px;
         background: transparent;
-        border: 1px solid rgba($theme-base, 0.09);
+        border: 0;
         border-radius: 6px;
         box-shadow: none;
-        font-size: 13px;
-        font-weight: 400;
         color: $text;
         &:hover, &:focus {
-          background: rgba($theme-base, 0.06);
+          background: rgba($theme-base, 0.07);
           color: $text-dark;
         }
         .material-icons {
           font-size: 15px;
           font-weight: normal;
+          color: $text-light;
         }
         .material-icons.dropdown-icon {
-          font-size: 16px;
+          font-size: 14px;
           margin-left: -2px;
-          color: $text-light;
         }
       }
 
@@ -194,19 +252,14 @@ $cell-success:           $row-add;
         }
       }
 
-      .toolbar-divider {
-        flex: none;
-        width: 1px;
-        height: 20px;
-        margin: 0 3px;
-        background: rgba($theme-base, 0.1);
-      }
-
+      // No divider before the add button: separation comes from the gap and
+      // the add button being the only filled control.
       .add-btn {
         display: inline-flex;
         align-items: center;
         gap: 6px;
         height: 30px;
+        margin-left: 8px;
         padding: 0 13px 0 10px;
         border-radius: 6px;
         background: $theme-primary;

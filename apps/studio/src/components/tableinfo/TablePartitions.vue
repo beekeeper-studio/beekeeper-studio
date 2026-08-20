@@ -11,16 +11,8 @@
         />
 
         <div class="table-subheader">
-          <div class="table-title">
-            <h2>Partitions</h2>
-            <span
-              class="filter-match-label"
-              v-if="filterMatches"
-            >{{ filterMatches.matched }} of {{ filterMatches.total }} match</span>
-          </div>
-          <slot />
-          <span class="expand" />
           <table-info-toolbar
+            title="Partitions"
             :tabulator="tabulator"
             filter-placeholder="Filter partitions"
             :show-add="editable"
@@ -28,8 +20,9 @@
             @add="addRow"
             @copy="copyStructure"
             @refresh="refreshPartitions"
-            @matches="filterMatches = $event"
-          />
+          >
+            <slot />
+          </table-info-toolbar>
         </div>
         <div ref="tablePartitions" />
       </div>
@@ -120,7 +113,6 @@ export default Vue.extend({
       editedCells: [],
       expressionTemplate: null,
       error: null,
-      filterMatches: null,
     }
   },
   watch: {

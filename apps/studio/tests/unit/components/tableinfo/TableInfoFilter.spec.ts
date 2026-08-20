@@ -17,6 +17,7 @@ function fakeTabulator(initialColumns: any[] = COLUMNS) {
   const allRows = [{ columnName: "id" }, { columnName: "user_name" }, { columnName: "created_at" }];
   const activeRows = [{ columnName: "user_name" }];
   return {
+    activeRows,
     setFilter: jest.fn(),
     clearFilter: jest.fn(),
     on(event: string, callback: (...args: any[]) => void) {
@@ -91,7 +92,18 @@ describe("TableInfoFilter", () => {
     wrapper.destroy();
   });
 
-  it("clears the filter as soon as the clear button is clicked", async () => {
+  it("focuses the input as soon as it opens", () => {
+    const tabulator = fakeTabulator();
+    const wrapper = mount(TableInfoFilter, {
+      propsData: { tabulator },
+      attachTo: document.body,
+    });
+
+    expect(document.activeElement).toBe(wrapper.find("input").element);
+    wrapper.destroy();
+  });
+
+  it("clears the filter and closes when the clear button is clicked", async () => {
     const tabulator = fakeTabulator();
     const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });
 
@@ -101,11 +113,41 @@ describe("TableInfoFilter", () => {
     wrapper.find("button").trigger("click");
     await wrapper.vm.$nextTick();
     expect(tabulator.clearFilter).toHaveBeenCalledTimes(1);
+    expect(wrapper.emitted("close")).toHaveLength(1);
 
     // the queued debounce must not put the filter back
     await settle();
     expect(tabulator.setFilter).toHaveBeenCalledTimes(1);
     expect(tabulator.clearFilter).toHaveBeenCalledTimes(1);
+    wrapper.destroy();
+  });
+
+  it("clears the filter and closes on escape", async () => {
+    const tabulator = fakeTabulator();
+    const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });
+
+    await type(wrapper, "user");
+    await settle();
+
+    wrapper.find("input").trigger("keydown.esc");
+    await wrapper.vm.$nextTick();
+    expect(tabulator.clearFilter).toHaveBeenCalledTimes(1);
+    expect(wrapper.emitted("close")).toHaveLength(1);
+    wrapper.destroy();
+  });
+
+  it("closes on blur only while the field is empty", async () => {
+    const tabulator = fakeTabulator();
+    const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });
+
+    // with a query, the open field explains the filtered table -- keep it
+    await type(wrapper, "user");
+    wrapper.find("input").trigger("blur");
+    expect(wrapper.emitted("close")).toBeUndefined();
+
+    await type(wrapper, "");
+    wrapper.find("input").trigger("blur");
+    expect(wrapper.emitted("close")).toHaveLength(1);
     wrapper.destroy();
   });
 
@@ -122,6 +164,18 @@ describe("TableInfoFilter", () => {
     wrapper.destroy();
   });
 
+  it("clears an applied filter when the field unmounts", async () => {
+    const tabulator = fakeTabulator();
+    const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });
+
+    await type(wrapper, "user");
+    await settle();
+    wrapper.destroy();
+
+    // closing the search must never leave a filtered table behind
+    expect(tabulator.clearFilter).toHaveBeenCalledTimes(1);
+  });
+
   it("leaves an unfiltered table alone", async () => {
     const tabulator = fakeTabulator();
     const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });
@@ -132,6 +186,7 @@ describe("TableInfoFilter", () => {
     expect(tabulator.setFilter).not.toHaveBeenCalled();
     expect(tabulator.clearFilter).not.toHaveBeenCalled();
     wrapper.destroy();
+    expect(tabulator.clearFilter).not.toHaveBeenCalled();
   });
 
   it("re-applies to a table the tab rebuilt underneath it", async () => {
@@ -172,42 +227,31 @@ describe("TableInfoFilter", () => {
     wrapper.destroy();
   });
 
-  it("keeps the clear button in the layout so the box width never changes", async () => {
+  it("hides the count and clear button with visibility so the input never shifts", async () => {
     const tabulator = fakeTabulator();
     const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });
 
-    // present but invisible while empty -- its 16px slot is always reserved
+    // present but invisible while empty -- their slots are always reserved
     expect(wrapper.find(".clear-filter").exists()).toBe(true);
     expect(wrapper.find(".clear-filter").classes()).toContain("is-hidden");
+    expect(wrapper.find(".filter-matches").exists()).toBe(true);
+    expect(wrapper.find(".filter-matches").classes()).toContain("is-hidden");
 
     await type(wrapper, "user");
     expect(wrapper.find(".clear-filter").classes()).not.toContain("is-hidden");
+    await settle();
+    expect(wrapper.find(".filter-matches").classes()).not.toContain("is-hidden");
     wrapper.destroy();
   });
 
-  it("reports how many rows matched", async () => {
+  it("shows how many rows matched inside the field", async () => {
     const tabulator = fakeTabulator();
     const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });
 
     await type(wrapper, "user");
     await settle();
 
-    const emitted = wrapper.emitted("matches");
-    expect(emitted[emitted.length - 1]).toEqual([{ matched: 1, total: 3 }]);
-    wrapper.destroy();
-  });
-
-  it("reports null once the filter is cleared", async () => {
-    const tabulator = fakeTabulator();
-    const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });
-
-    await type(wrapper, "user");
-    await settle();
-    wrapper.find("button").trigger("click");
-    await wrapper.vm.$nextTick();
-
-    const emitted = wrapper.emitted("matches");
-    expect(emitted[emitted.length - 1]).toEqual([null]);
+    expect(wrapper.find(".filter-matches").text()).toEqual("1/3");
     wrapper.destroy();
   });
 
@@ -217,18 +261,13 @@ describe("TableInfoFilter", () => {
 
     await type(wrapper, "user");
     await settle();
-    const countBefore = wrapper.emitted("matches").length;
+    expect(wrapper.find(".filter-matches").text()).toEqual("1/3");
 
     // replaceData on a filtered table fires dataFiltered
+    tabulator.activeRows.length = 0;
     tabulator.fire("dataFiltered", [], []);
-    expect(wrapper.emitted("matches").length).toEqual(countBefore + 1);
-
-    // but not when no filter is applied
-    wrapper.find("button").trigger("click");
     await wrapper.vm.$nextTick();
-    const countAfterClear = wrapper.emitted("matches").length;
-    tabulator.fire("dataFiltered", [], []);
-    expect(wrapper.emitted("matches").length).toEqual(countAfterClear);
+    expect(wrapper.find(".filter-matches").text()).toEqual("0/3");
     wrapper.destroy();
   });
 
