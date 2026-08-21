@@ -7,24 +7,18 @@ import { DbConnectionBase } from './saved_connection'
 export class UsedConnection extends DbConnectionBase implements ISimpleConnection {
 
   /**
-   * Record that `config` was just connected to. Called by the backend once
-   * the connection is actually up - a failed attempt is not a "use".
-   *
-   * `config.id` must be a saved_connection id (or null for a connection that
-   * was never saved). used_connection has its own id sequence, and every
-   * per-connection thing the app persists - tabs, pins, hidden entities, tab
-   * history - is keyed on the saved_connection id, so a used_connection must
-   * never be passed in here as the config.
-   *
-   * A saved connection keeps one row, refreshed with the latest details on
-   * each connect. Anything else has no stable identity to match on and gets
-   * a fresh row every time; the recent list copes with the duplicates.
+    This tracks that someone connected to a database.
+    Either - it's a saved connection, or it's a quick connect (no id)
+    So we return an existing record (with updated internals), or a new record
+
+    Really this whole model should be killed as we're duplicating a lot of stuff
+    from the saved connection table, the only thing extra it provides is for quick connect
    */
   static async recordUse(config: IConnection): Promise<UsedConnection> {
     if (!_.isUndefined((config as Partial<UsedConnection>).connectionId)) {
       throw new Error("recordUse was handed a used_connection. Connect with a saved connection, or a new unsaved one.")
     }
-    
+
     const savedConnectionId = config.id ?? null
     const existing = savedConnectionId
       ? await UsedConnection.findOneBy({ connectionId: savedConnectionId, workspaceId: config.workspaceId })
