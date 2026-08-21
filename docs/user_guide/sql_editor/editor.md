@@ -241,3 +241,79 @@ nnoremap y "*y
 
 Written as `nmap y "*y` the `y` on the right expands back into the mapping
 itself, without end. That case is reported as an error instead of applied.
+
+## Minimal Emacs Mode
+
+Minimal Emacs is the third option in the same cog menu as Vim mode. It adds the
+small set of emacs bindings that macOS gives every text field, plus the ones
+GNOME adds when its key theme is set to Emacs. It is not a full emacs keymap:
+there are no `C-x` chords, no `M-x`, no incremental search, and no prefix
+arguments.
+
+| Key | Effect |
+| --- | --- |
+| `Ctrl+B` / `Ctrl+F` | Back / forward one character |
+| `Ctrl+P` / `Ctrl+N` | Previous / next line |
+| `Ctrl+A` / `Ctrl+E` | Start / end of line |
+| `Alt+B` / `Alt+F` | Back / forward one word |
+| `Ctrl+D` / `Ctrl+H` | Delete the character after / before the cursor |
+| `Ctrl+K` | Kill to the end of the line |
+| `Ctrl+U` | Kill to the start of the line |
+| `Alt+D` | Kill the next word |
+| `Alt+Backspace`, `Ctrl+Backspace` | Kill the previous word |
+| `Ctrl+W` | Cut the selection, or kill the previous word when nothing is selected |
+| `Alt+W` | Copy the selection |
+| `Ctrl+Y` | Yank the most recent kill |
+
+Holding `Shift` with any of the motion keys extends the selection instead of
+moving the cursor.
+
+### The kill ring
+
+`Ctrl+K`, `Ctrl+U`, `Alt+D`, `Alt+Backspace` and `Ctrl+W` put what they remove
+onto a kill ring, and `Ctrl+Y` puts it back. Consecutive kills join into one
+entry, so `Ctrl+K` three times followed by `Ctrl+Y` restores all three lines.
+Anything else in between starts a new entry.
+
+`Ctrl+W` and `Alt+W` also write to the system clipboard, matching cut and copy
+under GNOME's Emacs key theme. `Ctrl+K` does not, matching emacs and macOS.
+
+### macOS only keys
+
+| Key | Effect |
+| --- | --- |
+| `Ctrl+O` | Open a line below the cursor |
+| `Ctrl+T` | Transpose the surrounding characters |
+| `Ctrl+V` | Page down |
+| `Ctrl+L` | Centre the cursor in the window |
+
+These four are bound on macOS only. Elsewhere the same keys are paste, new tab,
+quick search and select editor, and none of them is part of GNOME's Emacs key
+theme.
+
+macOS also provides most of the shared table above in every text field already,
+so on a Mac this mode mainly adds the word motions and the kill ring.
+
+### Shortcuts it takes over
+
+While the editor has focus the emacs binding wins, which is how GNOME's Emacs
+key theme behaves in every GTK app. Elsewhere in the app the shortcuts are
+unchanged. On Windows and Linux:
+
+| Key | Normally | Instead |
+| --- | --- | --- |
+| `Ctrl+A` | Select all | Start of line. Select All is still on the editor's right-click menu |
+| `Ctrl+F` | Find and replace | Forward one character. Find and replace stays on `Ctrl+R` |
+| `Ctrl+K` | Quick search | Kill to end of line. Quick search stays on `Ctrl+O` |
+| `Ctrl+P` | Quick search | Previous line |
+| `Ctrl+N` | Add row | Next line |
+| `Ctrl+W` | Close tab | Cut. Closing a tab stays on `Ctrl+Shift+W` |
+
+On macOS none of these collide, since the app's shortcuts use `Cmd`.
+
+Unlike vim mode, `Ctrl+P` is not reserved for quick search here, because
+`Ctrl+P` is the only way to move up a line in this keymap. Any of these can be
+moved: the bindings are configurable in `user.config.ini` under
+`[keybindings.general]` and `[keybindings.quickSearch]`.
+
+`Esc` cancels a running query, the same as in the default editor.

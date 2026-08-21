@@ -193,3 +193,82 @@ nnoremap y "*y
 
 Escrito como `nmap y "*y`, la `y` de la derecha se vuelve a expandir en el
 propio mapeo, sin fin. Ese caso se informa como error en lugar de aplicarse.
+
+## Modo Emacs minimo
+
+Emacs minimo es la tercera opcion del mismo menu de engranaje que el modo Vim.
+Agrega el pequeno conjunto de atajos de emacs que macOS ofrece en cualquier
+campo de texto, mas los que GNOME agrega cuando su tema de teclas se establece
+en Emacs. No es un teclado emacs completo: no hay combinaciones `C-x`, ni
+`M-x`, ni busqueda incremental, ni argumentos de prefijo.
+
+| Tecla | Efecto |
+| --- | --- |
+| `Ctrl+B` / `Ctrl+F` | Atras / adelante un caracter |
+| `Ctrl+P` / `Ctrl+N` | Linea anterior / siguiente |
+| `Ctrl+A` / `Ctrl+E` | Inicio / fin de linea |
+| `Alt+B` / `Alt+F` | Atras / adelante una palabra |
+| `Ctrl+D` / `Ctrl+H` | Borra el caracter posterior / anterior al cursor |
+| `Ctrl+K` | Corta hasta el fin de la linea |
+| `Ctrl+U` | Corta hasta el inicio de la linea |
+| `Alt+D` | Corta la palabra siguiente |
+| `Alt+Backspace`, `Ctrl+Backspace` | Corta la palabra anterior |
+| `Ctrl+W` | Corta la seleccion, o la palabra anterior si no hay seleccion |
+| `Alt+W` | Copia la seleccion |
+| `Ctrl+Y` | Pega el ultimo corte |
+
+Manteniendo `Shift` con cualquiera de las teclas de movimiento se extiende la
+seleccion en lugar de mover el cursor.
+
+### El anillo de cortes
+
+`Ctrl+K`, `Ctrl+U`, `Alt+D`, `Alt+Backspace` y `Ctrl+W` colocan lo que quitan en
+un anillo de cortes, y `Ctrl+Y` lo devuelve. Los cortes consecutivos se unen en
+una sola entrada, de modo que `Ctrl+K` tres veces seguido de `Ctrl+Y` restaura
+las tres lineas. Cualquier otra accion intermedia inicia una entrada nueva.
+
+`Ctrl+W` y `Alt+W` tambien escriben en el portapapeles del sistema, igual que
+cortar y copiar con el tema de teclas Emacs de GNOME. `Ctrl+K` no lo hace, igual
+que en emacs y macOS.
+
+### Teclas solo de macOS
+
+| Tecla | Efecto |
+| --- | --- |
+| `Ctrl+O` | Abre una linea debajo del cursor |
+| `Ctrl+T` | Intercambia los caracteres contiguos |
+| `Ctrl+V` | Avanza una pagina |
+| `Ctrl+L` | Centra el cursor en la ventana |
+
+Estas cuatro se asignan solo en macOS. En otros sistemas esas mismas teclas son
+pegar, pestana nueva, busqueda rapida y seleccionar editor, y ninguna forma
+parte del tema de teclas Emacs de GNOME.
+
+macOS ya ofrece la mayoria de la tabla anterior en cualquier campo de texto, asi
+que en un Mac este modo aporta sobre todo los movimientos por palabra y el
+anillo de cortes.
+
+### Atajos que reemplaza
+
+Mientras el editor tiene el foco gana la asignacion de emacs, que es como se
+comporta el tema de teclas Emacs de GNOME en cualquier aplicacion GTK. En el
+resto de la aplicacion los atajos no cambian. En Windows y Linux:
+
+| Tecla | Normalmente | En su lugar |
+| --- | --- | --- |
+| `Ctrl+A` | Seleccionar todo | Inicio de linea. Seleccionar todo sigue en el menu contextual del editor |
+| `Ctrl+F` | Buscar y reemplazar | Adelante un caracter. Buscar y reemplazar queda en `Ctrl+R` |
+| `Ctrl+K` | Busqueda rapida | Corta hasta el fin de la linea. La busqueda rapida queda en `Ctrl+O` |
+| `Ctrl+P` | Busqueda rapida | Linea anterior |
+| `Ctrl+N` | Agregar fila | Linea siguiente |
+| `Ctrl+W` | Cerrar pestana | Cortar. Cerrar la pestana queda en `Ctrl+Shift+W` |
+
+En macOS ninguno de estos entra en conflicto, ya que los atajos de la aplicacion
+usan `Cmd`.
+
+A diferencia del modo vim, aqui `Ctrl+P` no se reserva para la busqueda rapida,
+porque `Ctrl+P` es la unica forma de subir una linea en este teclado. Cualquiera
+de estos se puede mover: las asignaciones son configurables en `user.config.ini`
+bajo `[keybindings.general]` y `[keybindings.quickSearch]`.
+
+`Esc` cancela una consulta en ejecucion, igual que en el editor predeterminado.

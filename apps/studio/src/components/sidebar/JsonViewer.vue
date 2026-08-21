@@ -48,6 +48,7 @@
     <div class="text-editor-wrapper">
       <text-editor
         language-id="json"
+        :keymap="userKeymap"
         :fold-all="foldAll"
         :unfold-all="unfoldAll"
         :value="text"
@@ -367,6 +368,7 @@ export default Vue.extend({
       ]
     },
     ...mapGetters(["expandFKDetailsByDefault"]),
+    ...mapGetters({ userKeymap: "settings/userKeymap" }),
   },
   methods: {
     replacer(_key: string, value: unknown) {

@@ -27,13 +27,15 @@ export default {
   forceInitialize: null,
   /**
    * Configure the keymap to use. The default is 'default'. Other possible
-   * values are 'vim', 'emacs'.
+   * values are 'vim', 'emacs', and 'minimal-emacs'. 'emacs' is the full emacs
+   * keymap; 'minimal-emacs' is the small set of bindings macOS and GNOME
+   * provide in every text field.
    */
   keymap: {
     type: String as PropType<Keymap>,
     validator(value: Keymap) {
       // NOTE: compared to v1, this doesn't support 'sublime'
-      return ["default", "vim", "emacs"].includes(value);
+      return ["default", "vim", "emacs", "minimal-emacs"].includes(value);
     },
     default: "default",
   },

@@ -5,6 +5,7 @@ import { vim } from "@replit/codemirror-vim";
 import * as VimLib from "@replit/codemirror-vim";
 import { Keymap } from "../types";
 import { Clipboard, Config, extendVimOnCodeMirror, VimDirective } from "./vim";
+import { minimalEmacs } from "./minimalEmacs";
 
 const Vim = VimLib.Vim;
 
@@ -46,6 +47,8 @@ function buildKeymap(keymap: Keymap, options: VimOptions = {}): Extension {
     extendVimOnCodeMirror(Vim, options.config, options.keymaps, options.clipboard);
   } else if (keymap === "emacs") {
     extension = emacs();
+  } else if (keymap === "minimal-emacs") {
+    extension = minimalEmacs();
   }
 
   return extension;

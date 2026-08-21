@@ -65,7 +65,8 @@ export const ConnectionTypes = [
 /** `value` should be recognized by codemirror */
 export const keymapTypes = [
   { name: "Default", value: "default" },
-  { name: "Vim", value: "vim" }
+  { name: "Vim", value: "vim" },
+  { name: "Minimal Emacs", value: "minimal-emacs" }
 ] as const
 
 // if you update this, you may need to update `translateOperator` in the mongodb driver

@@ -9,7 +9,7 @@ export default {
   keymap: {
     type: String as PropType<Keymap>,
     validater(value: Keymap) {
-      return ["default", "vim", "emacs"].includes(value);
+      return ["default", "vim", "emacs", "minimal-emacs"].includes(value);
     },
     default: "default"
   },

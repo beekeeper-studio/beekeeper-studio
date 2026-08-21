@@ -65,6 +65,7 @@
             <label for="schema-editor">JSON Schema</label>
             <text-editor
               language-id="json"
+              :keymap="userKeymap"
               :value="schemaJSON"
               @bks-value-change="schemaJSON = $event.value"
               class="schema-editor"
@@ -111,7 +112,7 @@
 </template>
 
 <script>
-import { mapState } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import TextEditor from '@beekeeperstudio/ui-kit/vue/text-editor'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import StatusBar from '@/components/common/StatusBar.vue'
@@ -156,6 +157,7 @@ export default {
   },
   computed: {
     ...mapState(['connection']),
+    ...mapGetters({ userKeymap: 'settings/userKeymap' }),
     hotkeys() {
       return this.$vHotkeyKeymap({
         'general.refresh': this.refresh,

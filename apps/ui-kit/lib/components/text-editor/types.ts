@@ -53,7 +53,9 @@ export interface ExtendedFeatureOptions extends FeatureOptions {
   semanticTokensEnabled?: boolean;
 }
 
-export type Keymap = "default" | "vim" | "emacs";
+/** `emacs` is the full keymap from @replit/codemirror-emacs. `minimal-emacs`
+ *  is the much smaller macOS/GNOME set, see extensions/minimalEmacs.ts. */
+export type Keymap = "default" | "vim" | "emacs" | "minimal-emacs";
 
 export type Keybindings = {
   [key: string]: () => void;
