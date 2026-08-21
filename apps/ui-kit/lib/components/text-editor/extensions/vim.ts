@@ -1,7 +1,6 @@
 import _ from "lodash";
 
 export type IMapping = {
-  mappingMode?: string;
   lhs: string;
   rhs: string;
   /** 'normal', 'insert' or 'visual'. Omitted means every mode. */
@@ -171,9 +170,8 @@ function applyKeymaps(vim: any, directives: VimDirective[]): void {
   const signature = JSON.stringify(directives);
   if (signature === appliedKeymapSignature) return;
 
-  // Only ever remove mappings added here. Codemirror derives "user defined"
-  // by subtracting the keymap length it recorded at startup, so removing a
-  // built-in makes that negative and breaks mapclear and noremap lookups.
+  // Only remove mappings added here. Codemirror spots user mappings by
+  // keymap length, so removing a built-in breaks mapclear and noremap.
   appliedMappings.forEach(({ lhs, mode }) => {
     try {
       vim.unmap(lhs, ...modeArgs(mode));

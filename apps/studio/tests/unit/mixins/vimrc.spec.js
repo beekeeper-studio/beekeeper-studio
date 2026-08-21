@@ -1,7 +1,6 @@
 import { parseVimrc } from "../../../../studio/src/lib/editor/vim"
 
-const mapping = (mappingMode, lhs, rhs, mode, noremap = false) =>
-  ({ mappingMode, lhs, rhs, mode, noremap })
+const mapping = (lhs, rhs, mode, noremap = false) => ({ lhs, rhs, mode, noremap })
 
 describe("Vimrc parsing", () => {
   it("parses the map commands into directives", () => {
@@ -16,12 +15,12 @@ describe("Vimrc parsing", () => {
 
     expect(errors).toEqual([])
     expect(directives).toEqual([
-      mapping("nmap", "gl", "$", "normal"),
-      mapping("nmap", "gh", "^", "normal"),
-      mapping("nmap", "Y", "y$", "normal"),
-      mapping("nmap", "J", ":tabp", "normal"),
-      mapping("nmap", "K", ":tabn", "normal"),
-      mapping("vmap", "K", ":m '<-2gv=gv", "visual"),
+      mapping("gl", "$", "normal"),
+      mapping("gh", "^", "normal"),
+      mapping("Y", "y$", "normal"),
+      mapping("J", ":tabp", "normal"),
+      mapping("K", ":tabn", "normal"),
+      mapping("K", ":m '<-2gv=gv", "visual"),
     ])
   })
 
@@ -31,7 +30,16 @@ describe("Vimrc parsing", () => {
       "nmap gl $",
     ])
 
-    expect(directives).toEqual([mapping("nmap", "gl", "$", "normal")])
+    expect(directives).toEqual([mapping("gl", "$", "normal")])
+  })
+
+  it("lets a later noremap supersede an earlier map for the same key", () => {
+    const { directives } = parseVimrc([
+      "nmap gl ^",
+      "nnoremap gl $",
+    ])
+
+    expect(directives).toEqual([mapping("gl", "$", "normal", true)])
   })
 
   it("treats the same key in different modes as separate mappings", () => {
@@ -55,7 +63,7 @@ describe("Vimrc parsing: whitespace and comments", () => {
     ])
 
     expect(errors).toEqual([])
-    expect(directives).toEqual([mapping("nmap", "gl", "$", "normal")])
+    expect(directives).toEqual([mapping("gl", "$", "normal")])
   })
 
   it("accepts tabs and runs of spaces as separators", () => {
@@ -67,9 +75,9 @@ describe("Vimrc parsing: whitespace and comments", () => {
 
     expect(errors).toEqual([])
     expect(directives).toEqual([
-      mapping("nmap", "gl", "$", "normal"),
-      mapping("nmap", "gh", "^", "normal"),
-      mapping("nmap", "Y", "y$", "normal"),
+      mapping("gl", "$", "normal"),
+      mapping("gh", "^", "normal"),
+      mapping("Y", "y$", "normal"),
     ])
   })
 
@@ -77,7 +85,7 @@ describe("Vimrc parsing: whitespace and comments", () => {
     const { directives, errors } = parseVimrc(['nnoremap y "*y'])
 
     expect(errors).toEqual([])
-    expect(directives).toEqual([mapping("nnoremap", "y", '"*y', "normal", true)])
+    expect(directives).toEqual([mapping("y", '"*y', "normal", true)])
   })
 })
 
@@ -92,10 +100,10 @@ describe("Vimrc parsing: noremap", () => {
 
     expect(errors).toEqual([])
     expect(directives).toEqual([
-      mapping("noremap", "gl", "$", undefined, true),
-      mapping("nnoremap", "gh", "^", "normal", true),
-      mapping("inoremap", "jk", "<Esc>", "insert", true),
-      mapping("vnoremap", "p", "P", "visual", true),
+      mapping("gl", "$", undefined, true),
+      mapping("gh", "^", "normal", true),
+      mapping("jk", "<Esc>", "insert", true),
+      mapping("p", "P", "visual", true),
     ])
   })
 
@@ -152,7 +160,7 @@ describe("Vimrc parsing: unmap and mapclear", () => {
 
     expect(directives).toEqual([
       { type: "unmap", lhs: "gl", mode: "normal" },
-      mapping("nmap", "gl", "^", "normal"),
+      mapping("gl", "^", "normal"),
     ])
   })
 
@@ -202,7 +210,7 @@ describe("Vimrc parsing: leader", () => {
   it("expands <leader> to a backslash by default", () => {
     const { directives } = parseVimrc(["nmap <leader>w :w<CR>"])
 
-    expect(directives).toEqual([mapping("nmap", "\\w", ":w<CR>", "normal")])
+    expect(directives).toEqual([mapping("\\w", ":w<CR>", "normal")])
   })
 
   it("honours mapleader", () => {
@@ -211,7 +219,7 @@ describe("Vimrc parsing: leader", () => {
       "nmap <leader>w :w<CR>",
     ])
 
-    expect(directives).toEqual([mapping("nmap", ",w", ":w<CR>", "normal")])
+    expect(directives).toEqual([mapping(",w", ":w<CR>", "normal")])
   })
 
   it("honours g:mapleader and an unspaced assignment", () => {
@@ -220,7 +228,7 @@ describe("Vimrc parsing: leader", () => {
       "nmap <Leader>w :w<CR>",
     ])
 
-    expect(directives).toEqual([mapping("nmap", " w", ":w<CR>", "normal")])
+    expect(directives).toEqual([mapping(" w", ":w<CR>", "normal")])
   })
 
   it("only applies mapleader to mappings that follow it", () => {

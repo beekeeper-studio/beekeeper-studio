@@ -231,11 +231,8 @@ export function extensions(config: ExtensionConfiguration = {}) {
         backgroundColor: "var(--bks-query-editor-bg)",
         color: "var(--bks-text-dark)",
       },
-      // Panels inherit from .cm-editor so they follow whatever theme the host
-      // app gave codemirror; otherwise codemirror's base theme paints them
-      // #f5f5f5 on black. The & qualifier matters: every EditorView.theme gets
-      // one generated scope class, so an unqualified ".cm-panels" ties on
-      // specificity and loses to whichever theme mounted last.
+      // Inherit so panels follow the app's codemirror theme, or codemirror
+      // paints them #f5f5f5. The & is what outranks the app's own theme.
       "&.cm-editor .cm-panels": {
         backgroundColor: "var(--bks-text-editor-vim-panel-bg-color)",
         color: "var(--bks-text-editor-vim-panel-fg-color)",
@@ -243,9 +240,8 @@ export function extensions(config: ExtensionConfiguration = {}) {
       "&.cm-editor .cm-panels-bottom": {
         borderTop: "var(--bks-text-editor-vim-panel-border)",
       },
-      // The vim status line. Here rather than in the stylesheet so it outranks
-      // both the base theme @replit/codemirror-vim ships and the .cm-panel
-      // rule above, which resolves to white.
+      // Here rather than the stylesheet so it outranks the vim package's own
+      // theme and the .cm-panel rule above, which resolves to white.
       "&.cm-editor .cm-panels .cm-panel.cm-vim-panel": {
         backgroundColor: "var(--bks-text-editor-vim-panel-bg-color)",
         color: "var(--bks-text-editor-vim-panel-fg-color)",
@@ -253,7 +249,7 @@ export function extensions(config: ExtensionConfiguration = {}) {
         fontSize: "var(--bks-text-editor-vim-panel-font-size)",
         borderBottom: "var(--bks-text-editor-vim-panel-border)",
         // The mode label and the ':' input swap places here, so pin the
-        // metrics to stop the bar resizing as you type a command.
+        // metrics or the bar resizes as you type a command.
         boxSizing: "border-box",
         alignItems: "center",
         gap: "0.5rem",

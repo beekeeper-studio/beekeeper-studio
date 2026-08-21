@@ -209,9 +209,8 @@ export default {
             this.textEditor.execCommand("findAndReplace")
           }
         },
-        // Mod-r is vim's redo. Vim is registered ahead of this keymap so it
-        // should win anyway, but claiming the key at all leaves nothing
-        // between a precedence change and silently breaking redo.
+        // Mod-r is vim's redo, and duplicates Mod-f above. Vim should win on
+        // precedence anyway, but claiming it risks silently breaking redo.
         ...(this.keymap === "vim" ? [] : [
           {
             key: "Mod-r",

@@ -13,10 +13,8 @@ export interface VimExCommandConfig {
 type Trigger = (event: AppEvent, ...args: any[]) => void;
 
 /**
- * Ex commands live on a process-global vim singleton, so handlers cannot close
- * over a tab -- each mount would overwrite the last, and `:w` would save the
- * wrong tab (#1930). Emitting keeps the table identical everywhere and lets
- * the active tab decide. Tabs that don't support a command don't listen.
+ * Ex commands are global, so a handler that captured a tab would be overwritten
+ * by the next tab to mount and `:w` would save the wrong one (#1930).
  */
 export function vimExCommands(trigger: Trigger): VimExCommandConfig {
   return {
@@ -49,13 +47,11 @@ export function vimExCommands(trigger: Trigger): VimExCommandConfig {
 }
 
 /**
- * Vim binds <C-p> to "up", swallowing quick search (#3446). Mapped rather than
- * unmapped, because removing a built-in breaks mapclear and noremap. Applied
- * ahead of the user's vimrc, so `nnoremap <C-p> k` takes the key back.
+ * Vim binds <C-p> to "up", which swallowed quick search (#3446). Mapped rather
+ * than unmapped, because removing a built-in breaks mapclear and noremap.
  */
 export const DEFAULT_VIM_MAPPINGS = [
   {
-    mappingMode: "nmap",
     lhs: "<C-p>",
     rhs: ":bksquicksearch<CR>",
     mode: "normal" as const,

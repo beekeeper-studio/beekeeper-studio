@@ -3,7 +3,6 @@ export type VimMode = "normal" | "insert" | "visual";
 /** Directives match the ui-kit editor's `vimKeymaps` prop, applied in order. */
 export type IMapping = {
   type?: "map";
-  mappingMode: string;
   lhs: string;
   rhs: string;
   mode?: VimMode;
@@ -97,8 +96,8 @@ function parseSet(token: string): IVimOption | string {
 }
 
 /**
- * Parse a `.beekeeper.vimrc`. Unrecognised lines land in `errors` rather than
- * throwing, so one bad line does not cost the user the rest of their config.
+ * Unrecognised lines go to `errors` instead of throwing, so one bad line
+ * doesn't cost the user the rest of their config.
  */
 export function parseVimrc(vimrcContents: string[]): VimrcParseResult {
   const directives: VimDirective[] = [];
@@ -112,8 +111,8 @@ export function parseVimrc(vimrcContents: string[]): VimrcParseResult {
     const line = index + 1;
     const text = (rawLine ?? "").trim();
 
-    // Only a leading quote is a comment; elsewhere it is part of the mapping,
-    // as in the "* register.
+    // Only a leading quote starts a comment. Elsewhere it's part of the
+    // mapping, as in the "* register.
     if (!text || text.startsWith('"')) return;
 
     const mapleader = text.match(MAPLEADER);
@@ -144,7 +143,7 @@ export function parseVimrc(vimrcContents: string[]): VimrcParseResult {
         return;
       }
 
-      directives.push({ mappingMode: command, lhs, rhs, mode, noremap });
+      directives.push({ lhs, rhs, mode, noremap });
       return;
     }
 
@@ -193,9 +192,8 @@ export function parseVimrc(vimrcContents: string[]): VimrcParseResult {
 }
 
 /**
- * Later mappings win, and keep the later position so an unmap written between
- * the two still runs first. Only plain mappings collapse; unmap, mapclear and
- * set are order-sensitive.
+ * Later mappings win, and take the later position so an unmap written between
+ * the two still runs first. Only mappings collapse; the rest stay in order.
  */
 function dedupeMappings(directives: VimDirective[]): VimDirective[] {
   const result: VimDirective[] = [];
@@ -211,7 +209,7 @@ function dedupeMappings(directives: VimDirective[]): VimDirective[] {
       (candidate) =>
         !("type" in candidate && candidate.type) &&
         (candidate as IMapping).lhs === mapping.lhs &&
-        (candidate as IMapping).mappingMode === mapping.mappingMode
+        (candidate as IMapping).mode === mapping.mode
     );
 
     if (superseded !== -1) {

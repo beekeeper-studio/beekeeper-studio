@@ -924,9 +924,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           'queryEditor.secondaryQueryAction': this.queryFunctions.secondaryRead
         })
 
-        // Vim is registered ahead of these bindings, so it takes Esc when it
-        // means something there and only a plain normal mode Esc reaches
-        // cancelQuery. Ctrl-Esc stays bound for anyone used to it.
+        // Vim is registered first, so only a plain normal mode Esc gets here.
+        // Ctrl-Esc stays bound for anyone used to it.
         keybindings["Esc"] = this.cancelQuery
         if (this.userKeymap === "vim") {
           keybindings["Ctrl-Esc"] = this.cancelQuery
@@ -1415,9 +1414,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         this.textEditor?.focus()
       },
       handleTextEditorFocus() {
-        // Only reconcile intent. focusingElement drives is-focused, which the
-        // editor treats as a command, so writing observed focus into it makes
-        // the editor grab focus back from whatever legitimately took it.
+        // Set intent only. focusingElement drives is-focused, which the editor
+        // obeys, so echoing focus here steals it back from modals.
         this.focusElement = 'text-editor'
       },
       handleTextEditorBlur() {
