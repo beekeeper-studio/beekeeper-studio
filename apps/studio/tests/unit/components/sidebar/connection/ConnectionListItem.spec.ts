@@ -36,12 +36,16 @@ function buildBksMock() {
   }
 }
 
-function mountItem(opts: { config: any; isRecentList: boolean; saved?: any[] }) {
+function mountItem(opts: { config: any; isRecentList: boolean; saved?: any[]; startupHighlightConfig?: any }) {
   return shallowMount(ConnectionListItem as any, {
     store: buildStore(opts.saved ?? []),
+    directives: {
+      tooltip: {},
+    },
     propsData: {
       config: opts.config,
       isRecentList: opts.isRecentList,
+      startupHighlightConfig: opts.startupHighlightConfig,
       selectedConfig: null,
       showDuplicate: false,
       pinned: false,
@@ -130,5 +134,42 @@ describe('ConnectionListItem displayConfig', () => {
 
     expect(wrapper.vm['displayConfig']).toBe(saved)
     expect(wrapper.vm['title']).toContain('saved-host.example.com')
+  })
+})
+
+describe('ConnectionListItem startup highlight', () => {
+  const saved = {
+    id: 7,
+    workspaceId: -1,
+    name: 'My DB',
+    connectionType: 'postgresql',
+    host: 'saved-host.example.com',
+    port: 5432,
+    defaultDatabase: 'mydb',
+    labelColor: 'default',
+  }
+
+  it('highlights a saved connection with the matching id and workspace', () => {
+    const wrapper = mountItem({
+      config: saved,
+      isRecentList: false,
+      startupHighlightConfig: { id: 7, workspaceId: -1 },
+    })
+
+    expect(wrapper.vm['isStartupHighlighted']).toBe(true)
+    expect(wrapper.find('a').classes()).toContain('startup-highlight')
+    expect(wrapper.find('.startup-highlight-indicator').exists()).toBe(true)
+  })
+
+  it('does not highlight a connection from a different workspace', () => {
+    const wrapper = mountItem({
+      config: saved,
+      isRecentList: false,
+      startupHighlightConfig: { id: 7, workspaceId: 42 },
+    })
+
+    expect(wrapper.vm['isStartupHighlighted']).toBe(false)
+    expect(wrapper.find('a').classes()).not.toContain('startup-highlight')
+    expect(wrapper.find('.startup-highlight-indicator').exists()).toBe(false)
   })
 })
