@@ -592,14 +592,6 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     };
   }
 
-  private identifyCommands(queryText) {
-    try {
-      return identify(queryText);
-    } catch (err) {
-      return [];
-    }
-  }
-
   private parseFields(fields, _row) {
     return fields.map((field) => {
       field.dataType = dataTypesToMatchTypeCode[field?.type?.code] || 'user-defined'
@@ -819,8 +811,21 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
         const value = row[key];
         const typeCode = typeByColumn[key].code;
 
-        if (typeCode == cassandra.types.dataTypes.list) {
+        if (typeCode == cassandra.types.dataTypes.list || typeCode == cassandra.types.dataTypes.set) {
           row[key] = value?.map((v) => this.convertValueByType(v, typeByColumn[key].info.code));
+          return;
+        }
+
+        if (typeCode == cassandra.types.dataTypes.map) {
+          const [keyType, valueType] = typeByColumn[key].info;
+          const converted = {};
+          if (value) {
+            Object.entries(value).forEach(([k, v]) => {
+              const convertedKey = this.convertValueByType(k, keyType.code);
+              converted[convertedKey as string] = this.convertValueByType(v, valueType.code);
+            });
+          }
+          row[key] = converted;
           return;
         }
 

@@ -1,0 +1,115 @@
+import { IConnection } from "@/common/interfaces/IConnection";
+import { CommandClients, commandClientsFor } from "@/lib/db/CommandClient";
+import { BackupConfig } from "@/lib/db/models/BackupConfig";
+import { IDbConnectionServerConfig } from "@/lib/db/types";
+import tmp from 'tmp';
+import { DBTestUtil } from "../../../../lib/db";
+import { BackupTestConfig, runBackupTests } from "./all";
+import { installUtilStub, UtilStub } from "./setup";
+
+const TEST_CONFIGS: Array<BackupTestConfig> = [
+  {
+    description: "Plain text backup, no system tables",
+    backup: {
+      nosys: true,
+    },
+    restore: {}
+  },
+  {
+    description: "Plain text backup, data only, newlines, with row-ids",
+    backup: {
+      dataOnly: true,
+      newlines: true,
+      preserveRowIds: true
+    },
+    restore: {}
+  },
+  {
+    description: "Backup with spaces in filename",
+    backup: {
+      filename: "sqlite dump with spaces"
+    },
+    restore: {}
+  },
+  {
+    description: "Backup with parens & brackets in filename",
+    backup: {
+      filename: "backup (sqlite) [2026-05-19]"
+    },
+    restore: {}
+  },
+  {
+    description: "Backup with spaces in output directory and filename",
+    backup: {
+      filename: "sqlite dump"
+    },
+    restore: {},
+    outputDirSuffix: "sqlite backups (test)"
+  }
+]
+
+function testWith(description: string, backupConfig: Partial<BackupConfig>, restoreConfig: Partial<BackupConfig>, outputDirSuffix?: string) {
+  describe(`SQLite: Can Create and restore backups: ${description}`, () => {
+    let config: IDbConnectionServerConfig;
+    let util: DBTestUtil;
+    let clients: CommandClients;
+    let stub: UtilStub;
+
+    beforeAll(async () => {
+      stub = installUtilStub();
+      const dbfile = tmp.fileSync();
+
+      config = {
+        client: 'sqlite'
+      } as IDbConnectionServerConfig;
+      util = new DBTestUtil(config, dbfile.name, { dialect: 'sqlite' });
+      await util.setupdb();
+
+      clients = commandClientsFor('sqlite');
+
+      clients.backup.serverConfig = config;
+      clients.restore.serverConfig = config;
+
+      const iConn: IConnection = {
+        defaultDatabase: dbfile.name
+      } as IConnection;
+
+      clients.backup.connConfig = iConn;
+      clients.backup.database = iConn.defaultDatabase;
+      clients.restore.connConfig = iConn;
+      clients.restore.database = iConn.defaultDatabase;
+    })
+
+    describe("Common Tests", () => {
+      runBackupTests(() => {
+        const skipDataChecks = backupConfig.schemaOnly;
+        return {
+          dialect: 'sqlite',
+          backup: clients.backup,
+          restore: clients.restore,
+          backupConfig,
+          restoreConfig,
+          outputDirSuffix,
+          beforeRestore: skipDataChecks ? undefined : async () => {
+            if (backupConfig.dataOnly) {
+              await util.knex.raw('DELETE FROM test_param');
+            } else {
+              await util.knex.raw('DROP TABLE IF EXISTS test_param');
+            }
+          },
+          verifyRestore: skipDataChecks ? undefined : async () => {
+            const rows = await util.knex('test_param').where({ data: 'River Song' });
+            expect(rows.length).toBeGreaterThan(0);
+          },
+        }
+      })
+    })
+
+    afterAll(async () => {
+      await util?.disconnect();
+      await stub?.dispose();
+    })
+  })
+}
+
+TEST_CONFIGS.forEach(({description, backup, restore, outputDirSuffix}) => testWith(description, backup, restore, outputDirSuffix))

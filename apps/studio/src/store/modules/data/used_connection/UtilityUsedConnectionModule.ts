@@ -31,8 +31,25 @@ export const UtilUsedConnectionModule: DataStore<IConnection, State> = {
       });
       log.debug("Found used config", lastUsedConnection);
       if (lastUsedConnection) {
-        lastUsedConnection.updatedAt = new Date();
-        await context.dispatch('save', lastUsedConnection);
+        // Overlay the latest connection details from `config` (which is the
+        // saved connection the user is connecting to) onto the existing
+        // used_connection row, so subsequent reads reflect the current
+        // host/port/credentials/etc., not the snapshot from the first connect.
+        //
+        // NOTE: return `config` (the saved connection) unchanged - do NOT swap
+        // it for the used_connection row. Open tabs, pins, and hidden entities
+        // are all persisted keyed on `usedConfig.id`. The saved_connection and
+        // used_connection tables have independent id sequences, so returning
+        // the used_connection here changes that key and orphans everything on
+        // the next launch.
+        await context.dispatch('save', {
+          ...config,
+          id: lastUsedConnection.id,
+          connectionId: config.id,
+          workspaceId: config.workspaceId,
+          createdAt: lastUsedConnection.createdAt,
+          updatedAt: new Date(),
+        });
       } else {
         const id = await context.dispatch('save', config);
         config = context.state.items.find((item) => item.id === id);

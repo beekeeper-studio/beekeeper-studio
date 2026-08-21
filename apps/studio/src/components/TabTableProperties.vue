@@ -50,7 +50,7 @@
           @actionCompleted="refresh"
           @refresh="refresh"
         >
-          <template v-slot:footer>
+          <template #footer>
             <div class="statusbar-info col flex expand">
               <x-button
                 @click.prevent="openData"
@@ -98,7 +98,7 @@
             </div>
           </template>
 
-          <template v-slot:actions>
+          <template #actions>
             <x-button
               class="actions-btn btn btn-flat"
               title="Actions"
@@ -185,6 +185,7 @@ export default {
           id: 'indexes',
           name: "Indexes",
           tableOnly: true,
+          needsIndexes: true,
           needsProperties: true,
           needsPartitions: false,
           component: TableIndexesVue,
@@ -282,6 +283,10 @@ export default {
           return false
         }
 
+        if (p.needsIndexes && this.dialectData?.disabledFeatures?.indexes) {
+          return false
+        }
+
         if (p.needsTriggers && this.dialectData?.disabledFeatures?.triggers) {
           return false
         }
@@ -294,7 +299,7 @@ export default {
         if (p.mongoOnly && this.dialect !== 'mongodb') {
           return false
         }
-        
+
         if (p.tableOnly) {
           return isTable
         }
@@ -366,11 +371,11 @@ export default {
     },
     showPermissionWarnings() {
       if (!this.properties?.permissionWarnings?.length) return
-      
+
       const warnings = this.properties.permissionWarnings
       const message = `Some table information couldn't be displayed due to insufficient permissions:\n\n• ${warnings.join('\n• ')}`
-      
-      this.$noty.warning(message, { 
+
+      this.$noty.warning(message, {
         timeout: 8000,
         modal: false,
         layout: 'center',

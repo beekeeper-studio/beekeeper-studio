@@ -16,7 +16,7 @@
  */
 
 import * as path from 'path'
-import { Client, type ConnectConfig } from 'ssh2'
+import { BaseAgent, Client, type AuthenticationType, type ConnectConfig } from 'ssh2'
 import * as net from 'net'
 import * as fs from 'fs'
 import * as os from 'os'
@@ -40,7 +40,10 @@ interface Options {
   passphrase?: string
   endPort?: number
   endHost: string
-  agentSocket?: string,
+  agent?: string | BaseAgent
+  bastionAgent?: string | BaseAgent
+  authHandler?: AuthenticationType[]
+  bastionAuthHandler?: AuthenticationType[]
   skipAutoPrivateKey?: boolean
   noReadline?: boolean
   keepaliveInterval?: number
@@ -49,6 +52,8 @@ interface Options {
 
 type ConnectOptions = ConnectConfig & {
   stream?: NodeJS.ReadableStream
+  agent?: string | BaseAgent
+  authHandler?: AuthenticationType[]
 }
 
 interface ForwardingOptions {
@@ -92,6 +97,10 @@ class SSHConnection {
     this.debug("Shutdown connections")
     for (const connection of this.connections) {
       connection.removeAllListeners()
+      // Swallow late errors (e.g. the remote resetting the socket, ECONNRESET)
+      // emitted while the connection is closing. Without a handler these would
+      // surface as unhandled 'error' events and crash the process.
+      connection.on('error', () => { /* ignore during teardown */ })
       connection.end()
     }
     return new Promise<void>((resolve) => {
@@ -197,11 +206,14 @@ class SSHConnection {
           }
         }
 
-        const agentSock = this.options.agentSocket ? this.options.agentSocket : agentDefault
-        if (agentSock == null) {
-          throw new Error('SSH Agent Socket is not provided, or is not set in the SSH_AUTH_SOCK env variable')
+        const agent = options.agent ?? agentDefault
+        if (agent == null) {
+          throw new Error('SSH Agent is not provided, or SSH_AUTH_SOCK is not set in the env')
         }
-        config['agent'] = agentSock
+        config['agent'] = agent
+      }
+      if (options.authHandler && options.authHandler.length) {
+        config['authHandler'] = options.authHandler
       }
       if (options.stream) {
         config['sock'] = options.stream
@@ -241,6 +253,8 @@ class SSHConnection {
       privateKey: this.options.privateKey,
       passphrase: this.options.passphrase,
       agentForward: this.options.agentForward,
+      agent: this.options.agent,
+      authHandler: this.options.authHandler,
     }
   }
 
@@ -253,6 +267,8 @@ class SSHConnection {
       privateKey: this.options.bastionPrivateKey,
       passphrase: this.options.bastionPassphrase,
       agentForward: this.options.bastionAgentForward,
+      agent: this.options.bastionAgent,
+      authHandler: this.options.bastionAuthHandler,
     }
   }
 
@@ -267,6 +283,11 @@ class SSHConnection {
           if (error) {
             return reject(error)
           }
+          // Handle errors on both ends of the forward (e.g. the remote or the
+          // local client resetting the socket, ECONNRESET) so they don't
+          // surface as unhandled 'error' events and crash the process.
+          socket.on('error', () => { socket.destroy() })
+          stream.on('error', () => { stream.destroy?.() })
           socket.pipe(stream)
           stream.pipe(socket)
         })

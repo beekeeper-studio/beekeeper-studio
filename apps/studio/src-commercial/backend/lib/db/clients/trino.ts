@@ -304,7 +304,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
 
    async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
     log.info('filters in listTables', filter)
-    const schemaFilter = buildSchemaFilter(filter, 'table_schema')
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema', (s) => this.wrapIdentifier(s))
     const whereClause = schemaFilter ? `WHERE ${schemaFilter}` : ''
     const sql = `select * from ${this.wrapIdentifier(this.db)}.information_schema.tables ${whereClause}`
     const result = await this.driverExecuteSingle(sql)
@@ -441,6 +441,14 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
       const rows: any[] = []
 
       for await (const r of result) {
+        // The trino-client iterator doesn't throw on query failure - it
+        // yields the error response as a normal value, so without this
+        // check a failed query looks like a successful 0-row result.
+        if (r.error) {
+          const { errorName, message } = r.error
+          throw new Error(errorName ? `${errorName}: ${message}` : message)
+        }
+
         const { data: resultData, columns: resultColumns } = r
         columns = resultColumns
 

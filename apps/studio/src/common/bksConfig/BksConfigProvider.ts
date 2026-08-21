@@ -17,7 +17,7 @@ export type IniArray = {
 };
 
 export interface ConfigEntryDetailWarning {
-  type: "unrecognized-key" | "system-user-conflict" | "unknown-allow-plugin";
+  type: "unrecognized-key" | "system-user-conflict" | "unknown-allow-plugin" | "deprecated-key";
   sourceName: "system" | "user";
   section: string;
   path: string;
@@ -30,6 +30,7 @@ export type ConfigValue = IniValue | Record<string, IniValue>;
 
 export type KeybindingPath = DeepKeyOf<IBksConfig["keybindings"]>;
 
+/** A key must be an uppercased string */
 type ModifierMap = Record<string, string | ((isMac: boolean) => string)>;
 
 interface IBksConfigDebugInfo {
@@ -137,8 +138,27 @@ const uiModifierMap: ModifierMap = {
   PAGEDOWN: "PageDown",
 };
 
+const contextMenuModifierMap: ModifierMap = {
+  CTRL: "Control",
+  CMD: "Control",
+  CTRLORCMD: "Control",
+  CMDORCTRL: "Control",
+  COMMAND: "Control",
+  CONTROLORCOMMAND: "Control",
+  COMMANDORCONTROL: "Control",
+  SHIFT: "Shift",
+  ALT: "Alt",
+  OPTION: "Alt",
+  ALTGR: "AltGraph",
+  SUPER: "Super",
+  META: "Meta",
+  PAGEUP: "PageUp",
+  PAGEDOWN: "PageDown",
+  ENTER: "Enter"
+}
+
 export function convertKeybinding(
-  target: KeybindingTarget,
+  target: Omit<KeybindingTarget, "ui">,
   keybinding: string,
   platform: Platform
 ): string;
@@ -148,7 +168,7 @@ export function convertKeybinding(
   platform: Platform
 ): string[];
 export function convertKeybinding(
-  target: "electron" | "v-hotkey" | "codemirror" | "ui",
+  target: KeybindingTarget,
   keybinding: string,
   platform: Platform
 ): string[] | string {
@@ -170,8 +190,13 @@ export function convertKeybinding(
     case "tabulator":
       modifierMap = tabulatorModifierMap;
       joinChar = ' + ';
+      break;
     case "ui":
       modifierMap = uiModifierMap;
+      break;
+    case "context-menu":
+      modifierMap = contextMenuModifierMap;
+      joinChar = '+'
       break;
     default:
       log.error("Unrecognized target for keybinding conversion: ", target)
@@ -206,8 +231,8 @@ export function convertKeybinding(
     if (target === "tabulator" && !modifierMap[key]) {
       mod = mod.toLowerCase();
     }
-    
-    if (target === "ui" && !modifierMap[key]) {
+
+    if ((target === "ui" || target === "context-menu") && !modifierMap[key]) {
       mod = _.upperFirst(mod.toLowerCase());
     }
 
@@ -222,10 +247,9 @@ export function convertKeybinding(
 }
 
 /**
- * Array that is parsed by ini.parse is not exactly an array because
- * it doesn't have `length` property. Testing it with `Array.isArray` or
- * `_.isArray` will fail. Use this to test it.
- */
+ * `ini.parse` encodes arrays as objects without a `.length` property.
+ * This checks whether a value matches that structure.
+ **/
 export function isIniArray(value: any): value is IniArray {
   return (
     _.isObject(value) &&
@@ -286,12 +310,11 @@ export class BksConfigProvider {
   }
 
   has(path: string): boolean {
-    return this.userConfig.has(path);
+    return !_.isNil(_.get(this.mergedConfig, path));
   }
 
   get(path: string): ConfigValue {
-    const { value } = this.resolvePath(path);
-    return value;
+    return this.resolvePath(path).value;
   }
 
   getAll(): IBksConfig {

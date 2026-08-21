@@ -83,7 +83,7 @@
               :language-id="language.languageId"
               :line-wrapping="wrapText"
               :is-focused="editorFocus"
-              :readOnly="isReadOnly"
+              :read-only="isReadOnly"
               :replace-extensions="replaceExtensions"
               @focus="editorFocus = $event"
               @bks-value-change="content = $event.value"

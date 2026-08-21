@@ -285,6 +285,7 @@ $button-height:     $statusbar-height * 0.72;
       > span {
         text-overflow: ellipsis;
         overflow: hidden;
+        max-width: 30rem;
       }
     }
   }

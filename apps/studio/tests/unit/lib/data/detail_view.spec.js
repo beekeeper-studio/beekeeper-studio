@@ -24,6 +24,32 @@ describe("Detail View", () => {
     expect(findKeyPosition(jsonStr, ["staff_id", "store_id"])).toBe(64);
   });
 
+  it("should locate keys that contain regex metacharacters", () => {
+    // Regression: the key was interpolated into a RegExp unescaped, so a
+    // key like "a.b" (the "." matched any char) could resolve to a
+    // different sibling line. Dotted/domain-style keys are common in JSON
+    // payloads (URLs, config, hostnames).
+    const dotted = JSON.stringify({ axb: 1, "a.b": 2 }, null, 2);
+    const dottedLines = dotted.split("\n");
+    const dottedPos = findKeyPosition(dotted, ["a.b"]);
+    expect(dottedPos).toBe(dottedLines.findIndex((l) => l.includes('"a.b"')));
+    expect(dottedLines[dottedPos]).toContain('"a.b"');
+
+    // Nested dotted key
+    const nested = JSON.stringify(
+      { config: { "api.example.com": { port: 8080 } } },
+      null,
+      2
+    );
+    const nestedPos = findKeyPosition(nested, ["config", "api.example.com"]);
+    expect(nested.split("\n")[nestedPos]).toContain("api.example.com");
+
+    // "+" is a regex quantifier — must match the literal key, not "aa+b"
+    const plus = JSON.stringify({ ab: 1, "a+b": 2 }, null, 2);
+    const plusPos = findKeyPosition(plus, ["a+b"]);
+    expect(plus.split("\n")[plusPos]).toContain('"a+b"');
+  });
+
   it("should find a value info in a line of JSON text", () => {
     const lines = jsonStr.split("\n");
     expect(findValueInfo(lines[15])).toStrictEqual({

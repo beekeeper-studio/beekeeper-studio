@@ -26,6 +26,42 @@ The default key combo to manually trigger autocomplete is `Ctrl+Space`.
 
 ![Image Alt Tag](../../assets/images/using-the-sql-editor-11.gif)
 
+### Identifier quoting
+
+- Beekeeper Studio will automatically add `"quotes"` to identifiers when it thinks they are required, eg `"MixedCaseTableName"` in PostgreSQL.
+- Beekeeper Studio will pick the quote character `"`, `` ` ``, or `[`, depending on engine conventions.
+
+Some specific examples:
+
+- **PostgreSQL** mixed-case identifiers will be quoted, for example `"MyTable"`.
+- **MySQL** mixed-case identifiers will **not** be quoted (they work fine).
+- **SQL Server** defaults to using `[brackets]` for quotes.
+- **MySQL & MariaDB** defaults to `` `backticks` `` for quotes.
+
+!!! note "You can 'always quote', or change your preferred quote character using the [autocomplete configuration](#configuring-autocomplete)."
+
+
+### Keyword case selection
+
+Do you prefer `SELECT`, or `select`? By default Beekeeper Studio will match the case you use when typing, so if you type `SE`, it will autocomplete `SELECT` for example.
+
+!!! note "Configure this behavior using the [autocomplete configuration](#configuring-autocomplete)"
+
+### Configuring autocomplete
+
+You can adjust autocomplete behaviors with the [config file](../configuration.md). These are the defaults:
+
+{% ini-include section="ui.queryEditor.autocomplete" %}
+
+The quote character itself can be changed per database with `autocompleteQuoteCharacter` — useful if, say, your team prefers ANSI double quotes over brackets in SQL Server:
+
+```ini
+[db.sqlserver]
+autocompleteQuoteCharacter = "
+```
+
+A value of `0` (the shipped default) selects the database's convention. Only characters the database accepts as identifier quotes are honored (SQL Server accepts `[` or `"`, SQLite accepts `"` or a backtick) — anything else falls back to the convention, so autocomplete never writes a name your database can't parse.
+
 ## Run Contexts
 
 If you like writing big long SQL scripts with multiple queries in the same editor pane (I know I do), you might want to only run a portion of your script at a time.
@@ -45,6 +81,10 @@ Transactions run within the query editor will be automatically detected by Beeke
 There is also a [Manual Transaction Mode](./manual-transaction-management.md) that allows you to manually handle every step of this process.
 
 This functionality is currently only available for Postgres, CockroachDB, Redshift, MySQL, MariaDB, SQLServer, Firebird, and Oracle.
+
+## Editing Query Results
+
+After running your queries, you may want to make some quick changes to the data that you have selected. This can be done directly in the result table as long as the necessary data to generate an update query is present. Just hit `Edit Data` in the bottom right and go nuts! Learn more about this feature [here](./editing-data.md)
 
 ## Query Parameters
 

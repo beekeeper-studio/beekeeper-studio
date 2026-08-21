@@ -4,9 +4,11 @@ import { Manifest, OnViewRequestListener, PluginSnapshot } from "../types";
 import PluginStoreService from "./PluginStoreService";
 import WebPluginLoader from "./WebPluginLoader";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
-import { PluginNotificationData, PluginViewContext } from "@beekeeperstudio/plugin";
+import { divider } from "@beekeeperstudio/ui-kit";
+import { JsonValue, PluginNotificationData, PluginViewContext } from "@beekeeperstudio/plugin";
 import { FileHelpers } from "@/types";
 import type Noty from "noty";
+import { AppEvent } from "@/common/AppEvent";
 import { WebPluginCommandExecutor } from "./WebPluginCommandExecutor";
 import { convertToManifestV1, mapViewsAndMenuFromV0ToV1 } from "../utils";
 
@@ -230,7 +232,7 @@ export default class WebPluginManager {
 
     return [
       ...options,
-      { type: "divider" },
+      divider,
       ...extraOptions,
     ]
   }
@@ -253,7 +255,7 @@ export default class WebPluginManager {
     return loader.onDispose(fn);
   }
 
-  execute(pluginId: string, command: string) {
+  execute(pluginId: string, command: string, params?: JsonValue) {
     const loader = this.loaders.get(pluginId);
     if (!loader) {
       throw new Error(
@@ -261,7 +263,7 @@ export default class WebPluginManager {
       );
     }
     const executor = new WebPluginCommandExecutor(loader.context);
-    executor.execute(command);
+    executor.execute(command, params);
   }
 
 
@@ -280,6 +282,17 @@ export default class WebPluginManager {
       fileHelpers: this.fileHelpers,
       noty: this.noty,
       confirm: this.confirm,
+      createNewTab: (viewId, command, params) => {
+        this.pluginStore.appEventBus.emit(
+          AppEvent.newCustomTab,
+          this.pluginStore.buildPluginTabInit({
+            manifest,
+            viewId,
+            command,
+            params,
+          })
+        );
+      },
     });
     await loader.load(snapshot);
     this.loaders.set(snapshot.manifest.id, loader);

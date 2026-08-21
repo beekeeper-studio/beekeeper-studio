@@ -32,7 +32,6 @@
       </div>
     </modal>
   </portal>
-  
 </template>
 
 <script lang="ts">

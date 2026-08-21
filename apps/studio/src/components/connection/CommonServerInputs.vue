@@ -11,6 +11,7 @@
           name=""
           v-model="config.socketPathEnabled"
           id=""
+          :disabled="disabled"
         >
           <option :value="false">
             Host and Port
@@ -33,6 +34,7 @@
           v-model="config.socketPath"
           type="text"
           name="socketPath"
+          :disabled="disabled"
         >
       </div>
       <div class="col s3 form-group" v-if="supportsSocketPathWithCustomPort">
@@ -41,6 +43,7 @@
           :value="config.port"
           :type="'number'"
           @input="val => config.port = val"
+          :disabled="disabled"
         />
       </div>
     </div>
@@ -53,6 +56,7 @@
         <masked-input
           :value="config.host"
           @input="val => config.host = val"
+          :disabled="disabled"
         />
       </div>
       <div class="col s3 form-group">
@@ -61,27 +65,31 @@
           :value="config.port"
           :type="'number'"
           @input="val => config.port = val"
+          :disabled="disabled"
         />
       </div>
     </div>
 
     <common-ssl
+      v-if="!hideSsl"
       :config="config"
       :ssl-help="sslHelp"
-      :supportComplexSSL="supportComplexSSL"
+      :support-complex-s-s-l="supportComplexSSL"
+      :disabled="disabled"
     />
 
-    <div class="row gutter">
+    <div v-if="!hideCredentials" class="row gutter">
       <div class="col form-group" :class="[showPasswordForm ? 's6' : 's12']">
         <label for="user">User</label>
         <masked-input
           :value="config.username"
           @input="val => config.username = val"
+          :disabled="disabled"
         />
       </div>
       <div class="col s6 form-group" v-show="showPasswordForm">
         <label for="password">{{ passwordLabel }}</label>
-        <password-input v-model="config.password" />
+        <password-input v-model="config.password" :disabled="disabled" />
       </div>
     </div>
     <slot />
@@ -98,6 +106,7 @@
         type="text"
         class="form-control"
         v-model="config.defaultDatabase"
+        :disabled="disabled"
       >
     </div>
   </div>
@@ -121,9 +130,24 @@ export default {
       type: Boolean,
       default: true
     },
+    // Used by SqlServerForm to hide user/password when integrated auth is selected.
+    hideCredentials: {
+      type: Boolean,
+      default: false
+    },
+    // Used by SqlServerForm to hide the SSL section when integrated auth provides its own
+    // Encrypt toggle (the ODBC driver only supports Encrypt + TrustServerCertificate).
+    hideSsl: {
+      type: Boolean,
+      default: false
+    },
     passwordLabel: {
       type: String,
       default: 'Password'
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
   },
   components: {

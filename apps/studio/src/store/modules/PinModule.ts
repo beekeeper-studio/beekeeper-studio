@@ -75,7 +75,7 @@ export const PinModule: Module<State, RootState> = {
       // this used to be !p.hasId(), hopefully this still works? the alternative is ugly
       const unsavedPins = context.state.pins.filter((p)=> !p.id)
       await Promise.all(unsavedPins.map((p) => {
-        p.connectionId === usedConfig.id && p.workspaceId === usedConfig.id &&
+        return p.connectionId === usedConfig.id && p.workspaceId === usedConfig.id &&
           Vue.prototype.$util.send('appdb/pins/save', { obj: p });
       }))
     },

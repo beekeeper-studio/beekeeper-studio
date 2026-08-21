@@ -5,6 +5,7 @@
 import Vue from 'vue'
 import Noty from 'noty'
 import { mapGetters, mapActions, mapState } from 'vuex'
+import logoUrl from '@/assets/logo.svg'
 
 export default Vue.extend({
   data: () => {
@@ -94,7 +95,7 @@ export default Vue.extend({
 
       const n = new Noty({
         text: `<div class="noty-onboarding-title">
-                <img class="noty-onboarding-logo" src="/src/assets/logo.svg">
+                <img class="noty-onboarding-logo" src="${logoUrl}">
                 Welcome to Beekeeper Studio!
               </div>
               <div class="noty-onboarding-body">

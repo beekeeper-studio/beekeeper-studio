@@ -22,7 +22,7 @@ export class LicenseKeyController {
     const params = {
       email
     }
-    log.info("license key get")
+    log.debug("license key get")
 
     // Initialize headers object
     const headers = {};
@@ -48,13 +48,14 @@ export class LicenseKeyController {
       headers['X-Installation-Id'] = encodedInstallationInfo;
       log.info("made headers")
     }
-    log.info("making request for license", key, installationId, headers)
+    log.debug("making request for license", key, installationId, headers)
 
     const response = await this.axios.get(url(this.path, key), {
       params,
       headers
     });
 
+    log.debug("license key request made, got response with status", response.status)
 
     return res(response, 'licenseKey');
   }

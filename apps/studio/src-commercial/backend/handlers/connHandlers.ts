@@ -17,7 +17,7 @@ import { waitPromise } from "@/common/utils";
 export interface IConnectionHandlers {
   // Connection management from the store **************************************
   'conn/create': ({ config, auth, osUser, sId }: {config: IConnection, auth?: { input: string; mode: "pin" }, osUser: string, sId: string }) => Promise<void>,
-  'conn/test': ({ config, osUser, sId }: { config: IConnection, osUser: string, sId: string }) => Promise<void>,
+  'conn/test': ({ config, osUser, sId }: { config: IConnection, osUser: string, sId: string }) => Promise<string[]>,
   'conn/changeDatabase': ({ newDatabase, sId }: { newDatabase: string, sId: string }) => Promise<void>,
   'conn/clearConnection': ({ sId }: { sId: string}) => Promise<void>,
   'conn/getServerConfig': ({ sId }: { sId: string }) => Promise<IDbConnectionServerConfig>,
@@ -70,7 +70,7 @@ export interface IConnectionHandlers {
   'conn/getTableCreateScript': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<string>,
   'conn/getViewCreateScript': ({ view, schema, sId }: { view: string, schema?: string, sId: string }) => Promise<string[]>,
   'conn/getMaterializedViewCreateScript': ({ view, schema, sId }: { view: string, schema?: string, sId: string }) => Promise<string[]>,
-  'conn/getRoutineCreateScript': ({ routine, type, schema, sId }: { routine: string, type: string, schema?: string, sId: string }) => Promise<string[]>,
+  'conn/getRoutineCreateScript': ({ routine, type, schema, id, sId }: { routine: string, type: string, schema?: string, id?: string, sId: string }) => Promise<string[]>,
   'conn/createTable': ({ table }: { table: CreateTableSpec }) => Promise<void>,
   'conn/getCollectionValidation': ({ collection, sId }: { collection: string, sId: string }) => Promise<any>,
   'conn/setCollectionValidation': ({ params, sId }: { params: any, sId: string }) => Promise<void>,
@@ -222,8 +222,10 @@ export const ConnHandlers: IConnectionHandlers = {
     state(sId).connectionAbortController = abortController;
     await server?.createConnection(config.defaultDatabase || undefined).connect(abortController.signal);
     abortController.abort();
+    const sshConfigWarnings = server.getServerConfig()?.sshConfigWarnings || [];
     server.disconnect();
     state(sId).connectionAbortController = null;
+    return sshConfigWarnings;
   },
 
   'conn/changeDatabase': async function({ newDatabase, sId }: { newDatabase: string, sId: string }) {
@@ -426,9 +428,9 @@ export const ConnHandlers: IConnectionHandlers = {
     return await state(sId).connection.getMaterializedViewCreateScript(view, schema);
   },
 
-  'conn/getRoutineCreateScript': async function({ routine, type, schema, sId }: { routine: string, type: string, schema?: string, sId: string }) {
+  'conn/getRoutineCreateScript': async function({ routine, type, schema, id, sId }: { routine: string, type: string, schema?: string, id?: string, sId: string }) {
     checkConnection(sId);
-    return await state(sId).connection.getRoutineCreateScript(routine, type, schema);
+    return await state(sId).connection.getRoutineCreateScript(routine, type, schema, id);
   },
 
   'conn/createTable': async function({ table, sId }: { table: CreateTableSpec, sId: string }) {
@@ -569,7 +571,7 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/azureGetAccountName': async function({ authId }: { authId: number }) {
     if (!authId) {
       throw new Error("authId is required");
-    };
+    }
     const cache = await TokenCache.findOneBy({id: authId})
     if (!cache) return null
     return cache.name
@@ -604,6 +606,7 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/releaseConnection': async function({ tabId, sId }: { tabId: number, sId: string }) {
     checkConnection(sId);
     await state(sId).connection.releaseConnection(tabId);
+    clearTransactionTimeout(sId, tabId);
   },
 
   'conn/startTransaction': async function({ tabId, sId }: { tabId: number, sId: string }) {

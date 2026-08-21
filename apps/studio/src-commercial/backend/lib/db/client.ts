@@ -6,6 +6,7 @@ import { SQLServerClient } from '@/lib/db/clients/sqlserver';
 import { SqliteClient } from '@/lib/db/clients/sqlite';
 import { MariaDBClient } from '@/lib/db/clients/mariadb';
 import { TiDBClient } from '@/lib/db/clients/tidb';
+import { StarRocksClient } from '@/lib/db/clients/starrocks';
 import { RedshiftClient } from '@/lib/db/clients/redshift';
 import { CockroachClient } from '@/lib/db/clients/cockroach';
 import { GreengageClient } from '@/lib/db/clients/greengage';
@@ -24,6 +25,8 @@ import { TrinoClient } from "./clients/trino";
 import { SurrealDBClient } from "./clients/surrealdb";
 import { RedisClient } from '@/lib/db/clients/redis';
 import { BedrockClient } from '@/lib/db/clients/bedrock';
+import { DynamoDBClient } from "./clients/dynamodb";
+import { SnowflakeClient } from "./clients/snowflake";
 
 const clients = new Map<ConnectionType, any>([
   ['mysql', MysqlClient],
@@ -33,6 +36,7 @@ const clients = new Map<ConnectionType, any>([
   ['redshift', RedshiftClient],
   ['mariadb', MariaDBClient],
   ['tidb', TiDBClient],
+  ['starrocks', StarRocksClient],
   ['cockroachdb', CockroachClient],
   ['greengage', GreengageClient],
   ['bigquery', BigQueryClient],
@@ -48,7 +52,9 @@ const clients = new Map<ConnectionType, any>([
   ['trino', TrinoClient],
   ['surrealdb', SurrealDBClient],
   ['redis', RedisClient],
-  ['bedrock', BedrockClient]
+  ['bedrock', BedrockClient],
+  ['dynamodb', DynamoDBClient],
+  ['snowflake', SnowflakeClient]
 ], );
 
 

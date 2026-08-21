@@ -1,7 +1,7 @@
 // Copyright (c) 2015 The SQLECTRON Team
 import _ from 'lodash'
 import logRaw from '@bksLogger'
-import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate, BuildInsertOptions } from '../models'
+import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate, BuildInsertOptions, OrderBy } from '../models'
 import { joinFilters } from '@/common/utils'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 import { fromIni } from "@aws-sdk/credential-providers";
@@ -43,51 +43,66 @@ export function joinQueries(queries) {
   return results.join("")
 }
 
-export function buildSchemaFilter(filter, schemaField = 'schema_name') {
+export function buildSchemaFilter(filter, schemaField, wrapIdentifier: (s: string) => string = ansiWrapIdentifier) {
   if (!filter) return null
   const { schema, only, ignore } = filter
+  const field = wrapIdentifierPath(schemaField, wrapIdentifier);
 
   if (schema) {
-    return `${schemaField} = '${escapeString(schema)}'`;
+    return `${field} = '${escapeString(schema)}'`;
   }
 
   const where = [];
 
   if (only && only.length) {
-    where.push(`${schemaField} IN (${only.map((name) => `'${escapeString(name)}'`).join(',')})`);
+    where.push(`${field} IN (${only.map((name) => `'${escapeString(name)}'`).join(',')})`);
   }
 
   if (ignore && ignore.length) {
-    where.push(`${schemaField} NOT IN (${ignore.map((name) => `'${escapeString(name)}'`).join(',')})`);
+    where.push(`${field} NOT IN (${ignore.map((name) => `'${escapeString(name)}'`).join(',')})`);
   }
 
   return where.join(' AND ');
 }
 
-export function buildDatabaseFilter(filter, databaseField) {
+export function buildDatabaseFilter(filter, databaseField, wrapIdentifier: (s: string) => string = ansiWrapIdentifier) {
   if (!filter) {
     return null
   }
   const { only, ignore, database } = filter
+  const field = wrapIdentifierPath(databaseField, wrapIdentifier);
 
   if (database) {
-    return `${databaseField} = '${database}'`;
+    return `${field} = '${escapeString(database)}'`;
   }
 
   const where = [];
 
   if (only && only.length) {
-    where.push(`${databaseField} IN (${only.map((name) => `'${name}'`).join(',')})`);
+    where.push(`${field} IN (${only.map((name) => `'${escapeString(name)}'`).join(',')})`);
   }
 
   if (ignore && ignore.length) {
-    where.push(`${databaseField} NOT IN (${ignore.map((name) => `'${name}'`).join(',')})`);
+    where.push(`${field} NOT IN (${ignore.map((name) => `'${escapeString(name)}'`).join(',')})`);
   }
 
   return where.join(' AND ');
 }
 
-function wrapIdentifier(value) {
+// Wraps a dotted identifier path (e.g. "r.routine_schema") by applying
+// `wrap` to each segment. Single-segment paths pass through one wrap call.
+function wrapIdentifierPath(path: string, wrap: (s: string) => string): string {
+  return path.split('.').map(wrap).join('.');
+}
+
+// ANSI SQL identifier quoting. Safe default: every dialect that currently
+// calls the filter helpers (PG, SQL Server, Trino, DuckDB, SQL Anywhere)
+// accepts double-quoted identifiers.
+function ansiWrapIdentifier(value: string): string {
+  return `"${value.replace(/"/g, '""')}"`;
+}
+
+function defaultWrapIdentifier(value) {
   return (value !== '*' ? `\`${value.replace(/`/g, '``')}\`` : '*');
 }
 
@@ -104,7 +119,7 @@ export function getEntraOptions(server, extra): AuthOptions {
   };
 }
 
-export function buildFilterString(filters: TableFilter[], columns = []) {
+export function buildFilterString(filters: TableFilter[], columns = [], wrapIdentifier: (s: string) => string) {
   let filterString = ""
   let filterParams = []
   if (filters && _.isArray(filters) && filters.length > 0) {
@@ -149,16 +164,27 @@ export function applyChangesSql(changes: TableChanges, knex: any): string {
     return queries.endsWith(';') ? queries : `${queries};`
 }
 
-export function buildSelectTopQuery(table, offset, limit, orderBy, filters, countTitle = 'total', columns = [], selects = ['*']) {
+export function buildSelectTopQuery(
+  table: string,
+  offset: number,
+  limit: number,
+  orderBy: OrderBy[],
+  filters: string | TableFilter[],
+  countTitle = 'total',
+  columns = [],
+  selects = ['*'],
+  schema?: string,
+  wrapIdentifier: (s: string) => string = defaultWrapIdentifier
+) {
   log.debug('building selectTop for', table, offset, limit, orderBy, selects)
   let orderByString = ""
 
   if (orderBy && orderBy.length > 0) {
     orderByString = "ORDER BY " + (orderBy.map((item: any) => {
       if (_.isObject(item)) {
-        return `\`${item['field']}\` ${item['dir'].toUpperCase()}`
+        return `${wrapIdentifier(item['field'])} ${item['dir'].toUpperCase()}`
       } else {
-        return `\`${item}\``
+        return wrapIdentifier(item)
       }
     })).join(",")
   }
@@ -167,14 +193,14 @@ export function buildSelectTopQuery(table, offset, limit, orderBy, filters, coun
   if (_.isString(filters)) {
     filterString = `WHERE ${filters}`
   } else {
-    const filterBlob = buildFilterString(filters, columns)
+    const filterBlob = buildFilterString(filters, columns, wrapIdentifier)
     filterString = filterBlob.filterString
     filterParams = filterBlob.filterParams
   }
 
   const selectSQL = `SELECT ${selects.map((s) => wrapIdentifier(s)).join(", ")}`
   const baseSQL = `
-    FROM \`${table}\`
+    FROM ${schema ? `${wrapIdentifier(schema)}.` : ''}${wrapIdentifier(table)}
     ${filterString}
   `
   const countSQL = `
@@ -461,7 +487,7 @@ export async function getAWSCLIToken(server: IDbConnectionServerConfig, options:
   }
 
   return new Promise<string>((resolve, reject) => {
-    const proc = spawn(sanitizeCommandPath(options.cliPath), [
+    const proc = spawn(options.cliPath, [
       'rds',
       'generate-db-auth-token',
       '--hostname',
@@ -473,7 +499,7 @@ export async function getAWSCLIToken(server: IDbConnectionServerConfig, options:
       '--username',
       server.user,
       ...extraArgs
-    ], { shell: true });
+    ], { shell: false });
 
     let stdout = '';
     let stderr = '';

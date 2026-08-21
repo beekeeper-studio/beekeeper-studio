@@ -68,7 +68,6 @@
   .toolbar {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
     background: $query-editor-bg;
     padding: $gutter-h $gutter-w;
     z-index: 1;
@@ -174,6 +173,8 @@
   > div {
     display: table-cell;
     padding: $gutter-h;
+    padding-right: ($gutter-h - .2);
+    padding-bottom: ($gutter-h + .2);
   }
   .new {
     margin-right: $gutter-h;

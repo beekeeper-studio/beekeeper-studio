@@ -45,7 +45,7 @@ export default {
       return cellValue.map(cv => `<span class="mapper-pill">${cv}</span>`).join('')
     },
     cellTooltip(_event, cell: CellComponent) {
-      const params: TabulatorFormatterParams = cell.getColumn().getDefinition().formatterParams || {}
+      const params: TabulatorFormatterParams = cell.getColumn().getDefinition().formatterParams as any || {}
       const binaryEncoding = params.binaryEncoding
       let cellValue = cell.getValue()
       if (cellValue instanceof Uint8Array) {

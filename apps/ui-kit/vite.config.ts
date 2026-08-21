@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import vue from "@vitejs/plugin-vue2";
+import vue from "vite-ng-plugin-vue2";
 import { resolve } from "path";
 
 // https://vite.dev/config/
@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      vue: "vue/dist/vue.min.js",
+      // Aliasing `vue` here would defeat the external below.
       "@": resolve('./lib'),
     },
     dedupe: ["@codemirror/state", "@codemirror/view"],
@@ -22,9 +22,15 @@ export default defineConfig({
       name: "BksUiKit",
       formats: ["es"],
       fileName: () => `[name].js`,
+      // Vite 8 names the merged lib CSS bundle after the package ("ui-kit.css")
+      // by default. Keep emitting "style.css" so the package exports map and
+      // consumers importing "@beekeeperstudio/ui-kit/style.css" keep working.
+      cssFileName: "style",
     },
     rollupOptions: {
       external: [
+        // A second copy of Vue makes $store undefined in host components.
+        "vue",
         "@codemirror/state",
         "@codemirror/view",
         "@codemirror/language",
@@ -33,12 +39,12 @@ export default defineConfig({
         "@codemirror/lint",
         "@codemirror/lang-sql",
         "@codemirror/autocomplete",
+        "@codemirror/merge",
         "@replit/codemirror-emacs",
         "@replit/codemirror-vim",
         "@marimo-team/codemirror-languageserver",
       ],
       input: {
-        style: resolve(__dirname, "lib/style.scss"),
         index: resolve(__dirname, "lib/index.ts"),
         table: resolve(__dirname, "lib/components/table/define.ts"),
         "entity-list": resolve(
@@ -73,6 +79,11 @@ export default defineConfig({
           __dirname,
           "lib/components/text-editor/define.ts"
         ),
+        "merge-text-editor": resolve(
+          __dirname,
+          "lib/components/merge-text-editor/define.ts"
+        ),
+        tree: resolve(__dirname, "lib/components/tree/define.ts"),
         "vue/table": resolve(__dirname, "lib/components/table/Table.vue"),
         "vue/entity-list": resolve(
           __dirname,
@@ -98,10 +109,15 @@ export default defineConfig({
           __dirname,
           "lib/components/surreal-text-editor/SurrealTextEditor.vue"
         ),
+        "vue/merge-text-editor": resolve(
+          __dirname,
+          "lib/components/merge-text-editor/MergeTextEditor.vue"
+        ),
         "vue/super-formatter": resolve(
           __dirname,
           "lib/components/super-formatter/SuperFormatter.vue"
         ),
+        "vue/tree": resolve(__dirname, "lib/vue/tree.ts"),
         "config/context-menu": resolve(__dirname, "lib/config/context-menu.ts"),
       },
     },

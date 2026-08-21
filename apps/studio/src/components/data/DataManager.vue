@@ -5,7 +5,7 @@
 import _ from 'lodash'
 import {DataModules} from '@/store/DataModules'
 import Vue from 'vue'
-import { mapGetters, mapState } from 'vuex'
+import { mapActions, mapGetters, mapState } from 'vuex'
 
 
 export default Vue.extend({
@@ -15,7 +15,7 @@ export default Vue.extend({
   mounted() {
     this.mountAndRefresh()
     this.$store.commit('storeInitialized', true)
-    this.interval = setInterval(this.poll, this.$bksConfig.general.dataSyncInterval)
+    this.interval = setInterval(this.poll, this.$bksConfig.general.workspaceSyncInterval)
   },
   beforeDestroy() {
     if (this.interval) clearInterval(this.interval);
@@ -57,6 +57,7 @@ export default Vue.extend({
     }
   },
   methods: {
+    ...mapActions(['initializeConnectionTree', 'initializeQueryTree']),
     saveTab: _.debounce(function() {
       this.$store.dispatch('tabs/save', this.activeTab)
     }, 500),
@@ -81,8 +82,11 @@ export default Vue.extend({
         }
         console.log("DataManager --> registering", module.path)
         this.$store.registerModule(module.path, choice)
-        this.$store.dispatch(`${module.path}/load`)
+        this.$store.dispatch(`${module.path}/initialize`)
       })
+
+      this.initializeConnectionTree()
+      this.initializeQueryTree()
     },
   }
 })

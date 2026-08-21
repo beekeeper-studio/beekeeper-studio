@@ -11,8 +11,10 @@
     <div class="host-port-user-password">
       <div class="form-group col">
         <label for="protocol">Protocol</label>
-        <select name="protocol" id="protocolSelect" v-model="config.surrealDbOptions.protocol">
-          <option :value="undefined" disabled hidden>Select a protocol...</option>
+        <select name="protocol" id="protocolSelect" v-model="config.surrealDbOptions.protocol" :disabled="disabled">
+          <option :value="undefined" disabled hidden>
+            Select a protocol...
+          </option>
           <option :key="`${p}`" v-for="p in protocols" :value="p">
             {{ p }}
           </option>
@@ -26,6 +28,7 @@
           <masked-input
             :value="config.host"
             @input="val => config.host = val"
+            :disabled="disabled"
           />
         </div>
         <div class="form-group col s3">
@@ -34,14 +37,17 @@
             :value="config.port"
             :type="'number'"
             @input="val => config.port = val"
+            :disabled="disabled"
           />
         </div>
       </div>
     </div>
     <div class="form-group col">
       <label for="authenticationType">Authentication Method</label>
-      <select name="authMethod" id="surrealAuthMethod" v-model="config.surrealDbOptions.authType">
-        <option :value="undefined" disabled hidden>Select...</option>
+      <select name="authMethod" id="surrealAuthMethod" v-model="config.surrealDbOptions.authType" :disabled="disabled">
+        <option :value="undefined" disabled hidden>
+          Select...
+        </option>
         <option :key="`${t.value}-${t.name}`" v-for="t in authTypes" :value="t.value">
           {{ t.name }}
         </option>
@@ -53,17 +59,18 @@
         <masked-input
           :value="config.username"
           @input="val => config.username = val"
+          :disabled="disabled"
         />
       </div>
       <div class="col s6 form-group">
         <label for="password">Password</label>
-        <password-input v-model="config.password" />
+        <password-input v-model="config.password" :disabled="disabled" />
       </div>
     </div>
     <div v-else class="row gutter">
       <div class="form-group col">
         <label for="token">Token</label>
-        <password-input v-model="config.surrealDbOptions.token" />
+        <password-input v-model="config.surrealDbOptions.token" :disabled="disabled" />
       </div>
     </div>
     <div class="row gutter">
@@ -74,6 +81,7 @@
           type="text"
           class="form-control"
           v-model="config.surrealDbOptions.namespace"
+          :disabled="disabled"
         >
       </div>
       <div class="form-group col s6">
@@ -83,10 +91,11 @@
           type="text"
           class="form-control"
           v-model="config.defaultDatabase"
+          :disabled="disabled"
         >
       </div>
     </div>
-    <common-advanced :config="config" />
+    <common-advanced :config="config" :disabled="disabled" />
   </div>
 </template>
 
@@ -100,7 +109,13 @@ import PasswordInput from '@/components/common/form/PasswordInput.vue'
 
 export default Vue.extend({
   components: { CommonServerInputs, MaskedInput, PasswordInput, CommonAdvanced },
-  props: ['config'],
+  props: {
+    config: Object,
+    disabled: {
+      type: Boolean,
+      default: false
+    }
+  },
   data() {
     return {
       authTypes: SurrealAuthTypes,

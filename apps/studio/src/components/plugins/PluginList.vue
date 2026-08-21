@@ -19,7 +19,9 @@
           <template v-if="plugin.error.toString?.().includes('not compatible')">
             {{ plugin.error.toString().split("Please upgrade")[0] }}
           </template>
-          <template v-else>{{ plugin.error }}</template>
+          <template v-else>
+            {{ plugin.error }}
+          </template>
         </div>
         <div class="description">
           {{ plugin.description }}

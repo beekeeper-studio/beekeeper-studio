@@ -1,12 +1,15 @@
 import Vue from 'vue'
 import _ from 'lodash'
-import pluralize from 'pluralize'
 import { IConnectionFolder } from "@/common/interfaces/IQueryFolder";
-import { DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
+import { DataState, DataStore, LoadOptions, mutateActions, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { safely } from "@/store/modules/data/StoreHelpers";
+import { accessGrantActions, accessGrantMutations } from "@/store/modules/data/access_grant/accessGrantStore";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
+import { FolderFetchModule, treeActions } from "@/store/modules/data/tree/treeStore";
+import { FolderableState, folderableActions } from "@/store/modules/data/tree/folderableStore";
+import { FolderNodeModule } from "@/store/modules/data/tree/FolderNodeModule";
 
-type State = DataState<IConnectionFolder>
+type State = DataState<IConnectionFolder> & FolderableState<IConnectionFolder>
 
 export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = {
   namespaced: true,
@@ -18,32 +21,31 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
   },
   mutations: {
     ...mutationsFor<IConnectionFolder>({}, { field: 'name', direction: 'asc' }),
+    ...accessGrantMutations(),
   },
-  getters: {
-    foldersWithConnections: (state) => (connections: any[]) => {
-      const byPosition = (a: any, b: any) => a.position - b.position
-      const rootFolders = state.items.filter((f) => !f.parentId)
-      return rootFolders.map((folder) => ({
-        folder,
-        connections: connections.filter((c) => c.connectionFolderId === folder.id).sort(byPosition),
-        subfolders: state.items
-          .filter((f) => f.parentId === folder.id)
-          .map((subfolder) => ({
-            folder: subfolder,
-            connections: connections.filter((c) => c.connectionFolderId === subfolder.id).sort(byPosition)
-          }))
-      }))
-    }
+  modules: {
+    nodes: FolderNodeModule,
+    folders: FolderFetchModule,
   },
   actions: {
-    async load(context) {
+    ...accessGrantActions('connectionFolders'),
+    ...mutateActions<IConnectionFolder>(),
+    ...treeActions<IConnectionFolder>({ plural: 'parentIds', singular: 'parentId' }),
+    ...folderableActions<IConnectionFolder>(),
+    async afterMutate(context, { type, data }) {
+      context.commit(`nodes/${type}`, data)
+    },
+    async initialize() {
+      // noop
+    },
+    async load(context, options: LoadOptions<IConnectionFolder> = {}) {
       context.commit('error', null)
       await safely(context, async () => {
         const items = await Vue.prototype.$util.send('appdb/connectionFolder/find', { options: { order: { name: 'ASC' } } })
         if (context.rootState.workspaceId === LocalWorkspace.id) {
-          context.commit('upsert', items)
+          await context.dispatch('mutate', { type: 'upsert', data: items })
         }
-      })
+      }, options.onError)
     },
     async poll() {
       // no-op for local
@@ -53,24 +55,20 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     },
     async save(context, item) {
       const updated = await Vue.prototype.$util.send('appdb/connectionFolder/save', { obj: item })
-      context.commit('upsert', updated)
+      await context.dispatch('mutate', { type: 'upsert', data: updated })
       return updated.id
     },
     async remove(context, folder) {
-      const items = await Vue.prototype.$util.send('appdb/saved/find', { options: { where: { connectionFolderId: folder.id } } })
-      if (items.length > 0) {
-        throw new Error(`Cannot delete "${folder.name}" — move or remove its ${pluralize('connection', items.length, true)} first.`)
-      }
       await Vue.prototype.$util.send('appdb/connectionFolder/remove', { obj: folder })
-      context.commit('remove', folder)
+      await context.dispatch('mutate', { type: 'remove', data: folder })
     },
     async reload(context, id) {
       const item = await Vue.prototype.$util.send('appdb/connectionFolder/findOneBy', { options: { id } })
       if (item) {
-        context.commit('upsert', item)
+        await context.dispatch('mutate', { type: 'upsert', data: item })
         return item.id
       }
-      context.commit('remove', id)
+      await context.dispatch('mutate', { type: 'remove', data: id })
       return null
     },
     async clone(_c, item) {
@@ -79,9 +77,5 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
       r.createdAt = null
       return r
     },
-    async moveToFolder(context, { connection, folder }) {
-      const updated = { ...connection, connectionFolderId: folder?.id ?? null }
-      await context.dispatch('data/connections/save', updated, { root: true })
-    }
   }
 }

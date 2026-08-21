@@ -16,6 +16,7 @@ export interface IMenuActionHandler {
   cut: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   copy: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   paste: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  pasteAsNewRows: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   selectAll?: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   zoomreset: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   zoomin: (menuItem: Electron.MenuItem, win: ElectronWindow) => void

@@ -127,7 +127,8 @@ export default {
       return Array.from(this.$refs.nav.getElementsByTagName("*"))
     },
     ...mapGetters('menuBar', ['menus', 'connectionMenuItems']),
-    ...mapState(['connected'])
+    ...mapState(['connected']),
+    ...mapState('tabs', { activeTab: 'active' })
   },
   watch: {
     menuActive() {
@@ -143,7 +144,9 @@ export default {
   },
   methods: {
     isMenuItemDisabled(itemId){
-      return this.connectionMenuItems.includes(itemId) && !this.connected;
+      if (this.connectionMenuItems.includes(itemId) && !this.connected) return true;
+      if (itemId === 'paste-as-new-rows') return this.activeTab?.tabType !== 'table';
+      return false;
     },
     visibleSubmenuItems(menu) {
       return (menu.submenu || []).filter(item => item.visible !== false);

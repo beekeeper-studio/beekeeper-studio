@@ -12,6 +12,15 @@ import { TextEditorBlurEvent, TextEditorFocusEvent, TextEditorInitializedEvent, 
 export default {
   props,
 
+  emits: [
+    "bks-value-change",
+    "bks-selection-change",
+    "bks-focus",
+    "bks-blur",
+    "bks-lsp-ready",
+    "bks-initialized",
+  ],
+
   data() {
     return {
       textEditor: null,
@@ -229,6 +238,7 @@ export default {
             shortcut: "Control+Shift+Z",
             write: true,
           },
+          divider,
           {
             label: "Cut",
             id: "text-cut",
@@ -270,6 +280,7 @@ export default {
             class: selectionDepClass,
             write: true,
           },
+          divider,
           {
             label: "Select All",
             id: "text-select-all",
@@ -278,9 +289,8 @@ export default {
             },
             shortcut: "Control+A",
           },
-          divider,
           {
-            label: "Find & Replace",
+            label: this.readOnly ? "Find" : "Find & Replace",
             id: "text-find",
             handler: () => {
               this.textEditor.execCommand("findAndReplace");

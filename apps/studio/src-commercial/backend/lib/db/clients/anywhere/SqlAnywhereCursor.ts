@@ -1,4 +1,4 @@
-import { BeeCursor, OrderBy, TableFilter } from "@/lib/db/models";
+import { BeeCursor, OrderBy, TableColumn, TableFilter } from "@/lib/db/models";
 import { SqlAnywhereConn } from "./SqlAnywherePool";
 import rawLog from '@bksLogger';
 import { SQLAnywhereClient } from "../anywhere";
@@ -28,6 +28,11 @@ export class SqlAnywhereCursor extends BeeCursor {
     this.client = client;
   }
 
+  // We don't support query streaming so we don't need the columns getter
+  get columns(): TableColumn[] | null {
+    return null;
+  }
+
   async start(): Promise<void> {
     log.info('Starting cursor');
     this.cursorPos = 0;
@@ -37,7 +42,7 @@ export class SqlAnywhereCursor extends BeeCursor {
     try {
       const offset = this.cursorPos * this.chunkSize;
       const limit = this.chunkSize;
-      
+
       // Generate SQL for paginated query
       const sql = await this.client.selectTopSql(
         this.options.table,
@@ -48,16 +53,16 @@ export class SqlAnywhereCursor extends BeeCursor {
         this.options.schema,
         ['*']
       );
-      
+
       // Execute the query
       const result = await this.conn.query(sql);
       this.cursorPos++;
-      
+
       // If no results, return empty array
       if (!result || result.length === 0) {
         return [];
       }
-      
+
       // Convert rows to array format expected by BeeCursor
       return result.map(row => Object.values(row));
     } catch (err) {
