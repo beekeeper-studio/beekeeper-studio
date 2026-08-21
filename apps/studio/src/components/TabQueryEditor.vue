@@ -85,7 +85,8 @@
         @bks-initialized="handleEditorInitialized"
         @bks-value-change="unsavedText = $event.value"
         @bks-selection-change="handleEditorSelectionChange"
-        @bks-blur="onTextEditorBlur?.()"
+        @bks-focus="handleTextEditorFocus"
+        @bks-blur="handleTextEditorBlur"
         @bks-query-selection-change="handleQuerySelectionChange"
         @bks-apply-preset="applyPreset"
       />
@@ -311,6 +312,7 @@
       <progress-bar
         @cancel="cancelQuery"
         :message="runningText"
+        :cancel-key="userKeymap === 'vim' ? 'Ctrl-Esc' : 'Esc'"
         v-if="running"
       />
       <result-table
@@ -599,7 +601,7 @@
   import { FormatterDialect, dialectFor, formatOptionsFor } from "@shared/lib/dialects/models"
   import { findSqlQueryIdentifierDialect } from "@/lib/editor/CodeMirrorPlugins";
   import { queryMagicExtension } from "@/lib/editor/extensions/queryMagicExtension";
-  import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
+  import { vimExCommands } from "@/lib/editor/vimExCommands";
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
   import { SmartLocalStorage } from '@/common/LocalStorage';
   import { IdentifyResult } from 'sql-query-identifier/lib/defines'
@@ -658,6 +660,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         onTextEditorBlur: null,
         wrapText: false,
         vimKeymaps: [],
+        textEditor: null,
         formatterPresets: [],
         selectedFormatter: null,
         editHistoryOpen: false,
@@ -712,6 +715,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       rootBindings() {
         return [
           { event: AppEvent.openQueryEditHistory, handler: this.handleOpenQueryEditHistory },
+          { event: AppEvent.vimWrite, handler: this.handleVimWrite },
+          { event: AppEvent.vimWriteQuit, handler: this.handleVimWriteQuit },
         ];
       },
       updatedByName() {
@@ -956,32 +961,17 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           'queryEditor.secondaryQueryAction': this.queryFunctions.secondaryRead
         })
 
-        if(this.userKeymap === "vim") {
+        // Vim is registered first, so only a plain normal mode Esc gets here.
+        // Ctrl-Esc stays bound for anyone used to it.
+        keybindings["Esc"] = this.cancelQuery
+        if (this.userKeymap === "vim") {
           keybindings["Ctrl-Esc"] = this.cancelQuery
-        } else {
-          keybindings["Esc"] = this.cancelQuery
         }
 
         return keybindings
       },
       vimConfig() {
-        const exCommands = [
-          { name: "write", prefix: "w", handler: this.triggerSave },
-          { name: "quit", prefix: "q", handler: this.close },
-          { name: "qa", prefix: "qa", handler: () => this.$root.$emit(AppEvent.closeAllTabs) },
-          { name: "x", prefix: "x", handler: this.writeQuit },
-          { name: "wq", prefix: "wq", handler: this.writeQuit },
-          { name: "tabnew", prefix: "tabnew", handler: (_cn, params) => {
-            if(params.args && params.args.length > 0){
-              let queryName = params.args[0]
-              this.$root.$emit(AppEvent.newTab,"", queryName)
-              return
-            }
-            this.$root.$emit(AppEvent.newTab)
-          }},
-        ]
-
-        return { exCommands }
+        return vimExCommands(this.trigger)
       },
       editorMarkers() {
         const markers = []
@@ -1381,8 +1371,9 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.updateEditorHeight()
         })
       },
-      handleEditorInitialized() {
+      handleEditorInitialized(event) {
         this.editor.initialized = true
+        this.textEditor = event?.detail?.editor ?? event?.editor ?? null
 
         // Setup query magic data providers
         this.queryMagic.setDefaultSchemaGetter(() => this.defaultSchema);
@@ -1477,10 +1468,34 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         const data = this.$refs.table.clipboard('md')
       },
       selectEditor() {
+        // The assignment is a no-op if intent was already 'text-editor', so
+        // ask the editor directly too.
+        this.focusElement = 'text-editor'
+        this.textEditor?.focus()
+      },
+      handleTextEditorFocus() {
+        // Set intent only. focusingElement drives is-focused, which the editor
+        // obeys, so echoing focus here steals it back from modals.
         this.focusElement = 'text-editor'
       },
+      handleTextEditorBlur() {
+        // An app-initiated blur updates the state itself; any other blur means
+        // the editor really lost focus and stale state would strand it (#3446).
+        if (this.onTextEditorBlur) {
+          this.onTextEditorBlur()
+        } else if (this.focusingElement === 'text-editor') {
+          this.focusingElement = 'none'
+        }
+      },
       selectTitleInput() {
-        this.$refs.titleInput.select()
+        // The vim ex prompt refocuses the editor as it closes, so claim the
+        // input after that settles.
+        this.$nextTick(() => {
+          const input = this.$refs.titleInput
+          if (!input) return
+          input.focus()
+          input.select()
+        })
       },
       selectFirstParameter() {
         if (!this.$refs['paramInput'] || this.$refs['paramInput'].length === 0) return
@@ -1848,6 +1863,13 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.close()
         }
       },
+      // Broadcast to every tab, so only the active one acts.
+      handleVimWrite() {
+        if (this.active) this.triggerSave()
+      },
+      handleVimWriteQuit() {
+        if (this.active) this.writeQuit()
+      },
       async switchPaneFocus(_event?: KeyboardEvent, target?: 'text-editor' | 'table') {
         if (target) {
           this.focusElement = target
@@ -2202,12 +2224,15 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       })
       this.containerResizeObserver.observe(this.$refs.container)
 
+      // Reconfiguring the keymap rebuilds the vim extension underneath
+      // whatever has focus, so let it land before focusing (#2990).
+      await this.$store.dispatch('vim/load')
+      this.vimKeymaps = this.$store.getters['vim/directives']
+
       if (this.active) {
         await this.$nextTick()
         this.focusElement = 'text-editor'
       }
-
-      this.vimKeymaps = await getVimKeymapsFromVimrc()
 
       // Load formatter presets for context menu
       this.getPresets(this.$bksConfig.ui.queryEditor.defaultFormatter)
