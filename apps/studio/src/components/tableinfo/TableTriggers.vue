@@ -13,9 +13,9 @@
         </div>
         <div class="table-subheader">
           <table-info-toolbar
-            title="Triggers"
-            :tabulator="tabulator"
+            :search-suffix="structureFilterSuffix"
             filter-placeholder="Filter triggers"
+            @search="setStructureFilterQuery"
             @copy="copyStructure"
             @refresh="$emit('refresh')"
           />
@@ -45,6 +45,7 @@ import TableInfoToolbar from './TableInfoToolbar.vue'
 import { mapGetters, mapState } from 'vuex'
 import { SelectableCellMixin } from '@/mixins/selectableCell';
 import { StructureCopyMixin } from '@/mixins/structureCopy';
+import { StructureFilterMixin } from '@/mixins/structureFilter';
 import { copyCellMenu } from '@/lib/menu/tableMenu';
 
 
@@ -53,7 +54,7 @@ export default {
     StatusBar,
     TableInfoToolbar,
   },
-  mixins: [data_mutators, SelectableCellMixin, StructureCopyMixin],
+  mixins: [data_mutators, SelectableCellMixin, StructureCopyMixin, StructureFilterMixin],
   props: ["table", "tabId", "active", "properties"],
   data() {
     return {

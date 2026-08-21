@@ -28,11 +28,11 @@
         <div class="content-wrap">
           <div class="table-subheader">
             <table-info-toolbar
-              title="Indexes"
-              :tabulator="tabulator"
+              :search-suffix="structureFilterSuffix"
               filter-placeholder="Filter indexes"
               :show-add="enabled"
               add-label="Index"
+              @search="setStructureFilterQuery"
               @add="addRow"
               @copy="copyStructure"
               @refresh="$emit('refresh')"
@@ -123,6 +123,7 @@ import { escapeHtml } from '@shared/lib/tabulator'
 import { parseIndexColumn as mysqlParseIndexColumn } from '@/common/utils'
 import { SelectableCellMixin } from '@/mixins/selectableCell';
 import { StructureCopyMixin } from '@/mixins/structureCopy';
+import { StructureFilterMixin } from '@/mixins/structureFilter';
 import { copyCellMenu } from '@/lib/menu/tableMenu';
 
 interface State {
@@ -140,7 +141,7 @@ export default Vue.extend({
     ErrorAlert,
     TableInfoToolbar,
   },
-  mixins: [data_mutators, SelectableCellMixin, StructureCopyMixin],
+  mixins: [data_mutators, SelectableCellMixin, StructureCopyMixin, StructureFilterMixin],
   props: ["table", "tabId", "active", "properties", 'tabState'],
   data(): State {
     return {

@@ -1,18 +1,10 @@
 <template>
   <div class="table-info-toolbar">
     <div class="toolbar-title">
-      <h2>{{ title }}</h2>
-      <a
-        v-if="!searchOpen"
-        class="toolbar-btn search-btn"
-        :title="filterPlaceholder"
-        @click.prevent="searchOpen = true"
-      ><i class="material-icons">search</i></a>
       <table-info-filter
-        v-else
-        :tabulator="tabulator"
         :placeholder="filterPlaceholder"
-        @close="searchOpen = false"
+        :suffix="searchSuffix"
+        @search="$emit('search', $event)"
       />
     </div>
     <slot />
@@ -50,26 +42,20 @@
 
 <script lang="ts">
 import Vue from 'vue'
-import { Tabulator } from 'tabulator-tables'
 import TableInfoFilter from './TableInfoFilter.vue'
 import { structureCopyFormats } from '@/lib/tableinfo/structure'
 
 export default Vue.extend({
   components: { TableInfoFilter },
   props: {
-    /** Tab heading, e.g. 'Columns' */
-    title: {
-      type: String,
-      required: true,
-    },
-    /** The live tabulator instance behind the tab's grid, only handed on to the filter */
-    tabulator: {
-      type: Object as () => Tabulator,
-      default: null,
-    },
     filterPlaceholder: {
       type: String,
       default: 'Filter',
+    },
+    /** Rendered after the search input, e.g. a match count like '11/14' */
+    searchSuffix: {
+      type: String,
+      default: '',
     },
     /** The add button is per tab: not every grid supports adding rows. */
     showAdd: {
@@ -84,7 +70,6 @@ export default Vue.extend({
   },
   data() {
     return {
-      searchOpen: false,
     }
   },
   computed: {

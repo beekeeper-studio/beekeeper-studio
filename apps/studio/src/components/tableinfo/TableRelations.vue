@@ -21,11 +21,11 @@
 
         <div class="table-subheader">
           <table-info-toolbar
-            title="Relations"
-            :tabulator="tabulator"
+            :search-suffix="structureFilterSuffix"
             filter-placeholder="Filter relations"
             :show-add="enabled && canAdd"
             add-label="Relation"
+            @search="setStructureFilterQuery"
             @add="addRow"
             @copy="copyStructure"
             @refresh="$emit('refresh')"
@@ -111,10 +111,11 @@ const log = rawLog.scope('TableRelations');
 import { escapeHtml } from '@shared/lib/tabulator'
 import { SelectableCellMixin } from '@/mixins/selectableCell';
 import { StructureCopyMixin } from '@/mixins/structureCopy';
+import { StructureFilterMixin } from '@/mixins/structureFilter';
 import { copyCellMenu } from '@/lib/menu/tableMenu';
 
 export default Vue.extend({
-  mixins: [SelectableCellMixin, StructureCopyMixin],
+  mixins: [SelectableCellMixin, StructureCopyMixin, StructureFilterMixin],
   props: ["table", "tabId", "active", "properties", 'tabState'],
   components: {
     StatusBar,

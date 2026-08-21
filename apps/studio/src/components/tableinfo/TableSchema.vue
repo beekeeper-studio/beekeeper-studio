@@ -21,11 +21,11 @@
 
         <div class="table-subheader">
           <table-info-toolbar
-            title="Columns"
-            :tabulator="tabulator"
+            :search-suffix="structureFilterSuffix"
             filter-placeholder="Filter columns"
             :show-add="editable"
             add-label="Column"
+            @search="setStructureFilterQuery"
             @add="addRow"
             @copy="copyStructure"
             @refresh="refreshColumns"
@@ -133,6 +133,7 @@ import rawLog from '@bksLogger'
 import { escapeHtml } from '@shared/lib/tabulator'
 import { ExtendedTableColumn } from '@/lib/db/models'
 import { StructureCopyMixin } from '@/mixins/structureCopy'
+import { StructureFilterMixin } from '@/mixins/structureFilter'
 
 const log = rawLog.scope('table-schema')
 
@@ -151,7 +152,7 @@ export default Vue.extend({
     ErrorAlert,
     TableInfoToolbar
   },
-  mixins: [DataMutators, StructureCopyMixin],
+  mixins: [DataMutators, StructureCopyMixin, StructureFilterMixin],
   props: ["table", "tabID", "active", "primaryKeys", "tabState"],
   data() {
     return {

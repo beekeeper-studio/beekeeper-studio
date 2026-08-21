@@ -1,235 +1,53 @@
 import { mount, Wrapper } from "@vue/test-utils";
 import TableInfoFilter from "@/components/tableinfo/TableInfoFilter.vue";
 
-const COLUMNS = [
-  { field: "columnName", title: "Name" },
-  { field: "dataType", title: "Type" },
-  { field: "trash-button", title: null },
-];
-
-/**
- * Stands in for a tabulator instance. The real one can't be built under jest,
- * and everything this component touches is on this surface.
- */
-function fakeTabulator(initialColumns: any[] = COLUMNS) {
-  let columns = initialColumns;
-  const listeners: Record<string, ((...args: any[]) => void)[]> = {};
-  const allRows = [{ columnName: "id" }, { columnName: "user_name" }, { columnName: "created_at" }];
-  const activeRows = [{ columnName: "user_name" }];
-  return {
-    activeRows,
-    setFilter: jest.fn(),
-    clearFilter: jest.fn(),
-    on(event: string, callback: (...args: any[]) => void) {
-      listeners[event] = listeners[event] || [];
-      listeners[event].push(callback);
-    },
-    off(event: string, callback: (...args: any[]) => void) {
-      listeners[event] = (listeners[event] || []).filter((c) => c !== callback);
-    },
-    getData(mode?: string) {
-      return mode === "active" ? activeRows : allRows;
-    },
-    getColumns: () =>
-      columns.map((c) => ({ isVisible: () => true, getDefinition: () => c })),
-    // test helpers, not part of the tabulator api
-    finishBuilding(built: any[] = COLUMNS) {
-      columns = built;
-      (listeners.tableBuilt || []).forEach((callback) => callback());
-    },
-    fire(event: string, ...args: any[]) {
-      (listeners[event] || []).forEach((callback) => callback(...args));
-    },
-  };
-}
-
-const DEBOUNCE = 250;
-const settle = () => new Promise((resolve) => setTimeout(resolve, DEBOUNCE + 80));
-
 async function type(wrapper: Wrapper<any>, value: string) {
   wrapper.find("input").setValue(value);
   await wrapper.vm.$nextTick();
 }
 
 describe("TableInfoFilter", () => {
-  it("filters on the searched fields once typing settles", async () => {
-    const tabulator = fakeTabulator();
-    const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });
+  it("emits search with the raw text as the user types", async () => {
+    const wrapper = mount(TableInfoFilter);
+
+    await type(wrapper, "  User ");
+    // trimming and matching are the grid owner's business, not the input's
+    expect(wrapper.emitted("search")).toEqual([["  User "]]);
+    wrapper.destroy();
+  });
+
+  it("clears and emits an empty search from the clear button", async () => {
+    const wrapper = mount(TableInfoFilter);
 
     await type(wrapper, "user");
-    expect(tabulator.setFilter).not.toHaveBeenCalled();
-
-    await settle();
-    expect(tabulator.setFilter).toHaveBeenCalledTimes(1);
-    const [, params] = tabulator.setFilter.mock.calls[0];
-    // trash-button is not a searchable field
-    expect(params).toEqual({ term: "user", fields: ["columnName", "dataType"] });
-    wrapper.destroy();
-  });
-
-  it("collapses rapid typing into a single pass", async () => {
-    const tabulator = fakeTabulator();
-    const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });
-
-    for (const value of ["u", "us", "use", "user"]) {
-      await type(wrapper, value);
-    }
-    await settle();
-
-    expect(tabulator.setFilter).toHaveBeenCalledTimes(1);
-    expect(tabulator.setFilter.mock.calls[0][1].term).toEqual("user");
-    wrapper.destroy();
-  });
-
-  it("lowercases and trims the term", async () => {
-    const tabulator = fakeTabulator();
-    const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });
-
-    await type(wrapper, "  User  ");
-    await settle();
-
-    expect(tabulator.setFilter.mock.calls[0][1].term).toEqual("user");
-    wrapper.destroy();
-  });
-
-  it("focuses the input as soon as it opens", () => {
-    const tabulator = fakeTabulator();
-    const wrapper = mount(TableInfoFilter, {
-      propsData: { tabulator },
-      attachTo: document.body,
-    });
-
-    expect(document.activeElement).toBe(wrapper.find("input").element);
-    wrapper.destroy();
-  });
-
-  it("clears the filter and closes when the clear button is clicked", async () => {
-    const tabulator = fakeTabulator();
-    const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });
-
-    await type(wrapper, "user");
-    await settle();
-
     wrapper.find("button").trigger("click");
     await wrapper.vm.$nextTick();
-    expect(tabulator.clearFilter).toHaveBeenCalledTimes(1);
-    expect(wrapper.emitted("close")).toHaveLength(1);
 
-    // the queued debounce must not put the filter back
-    await settle();
-    expect(tabulator.setFilter).toHaveBeenCalledTimes(1);
-    expect(tabulator.clearFilter).toHaveBeenCalledTimes(1);
+    expect((wrapper.find("input").element as HTMLInputElement).value).toEqual("");
+    expect(wrapper.emitted("search")).toEqual([["user"], [""]]);
     wrapper.destroy();
   });
 
-  it("clears the filter and closes on escape", async () => {
-    const tabulator = fakeTabulator();
-    const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });
+  it("clears on escape", async () => {
+    const wrapper = mount(TableInfoFilter);
 
     await type(wrapper, "user");
-    await settle();
-
     wrapper.find("input").trigger("keydown.esc");
     await wrapper.vm.$nextTick();
-    expect(tabulator.clearFilter).toHaveBeenCalledTimes(1);
-    expect(wrapper.emitted("close")).toHaveLength(1);
+
+    expect((wrapper.find("input").element as HTMLInputElement).value).toEqual("");
+    expect(wrapper.emitted("search")).toEqual([["user"], [""]]);
     wrapper.destroy();
   });
 
-  it("closes on blur only while the field is empty", async () => {
-    const tabulator = fakeTabulator();
-    const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });
-
-    // with a query, the open field explains the filtered table -- keep it
-    await type(wrapper, "user");
-    wrapper.find("input").trigger("blur");
-    expect(wrapper.emitted("close")).toBeUndefined();
-
-    await type(wrapper, "");
-    wrapper.find("input").trigger("blur");
-    expect(wrapper.emitted("close")).toHaveLength(1);
+  it("shows the suffix it is given", async () => {
+    const wrapper = mount(TableInfoFilter, { propsData: { suffix: "11/14" } });
+    expect(wrapper.find(".filter-matches").text()).toEqual("11/14");
     wrapper.destroy();
   });
 
-  it("clears the filter when the input is emptied", async () => {
-    const tabulator = fakeTabulator();
-    const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });
-
-    await type(wrapper, "user");
-    await settle();
-    await type(wrapper, "");
-    await settle();
-
-    expect(tabulator.clearFilter).toHaveBeenCalledTimes(1);
-    wrapper.destroy();
-  });
-
-  it("clears an applied filter when the field unmounts", async () => {
-    const tabulator = fakeTabulator();
-    const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });
-
-    await type(wrapper, "user");
-    await settle();
-    wrapper.destroy();
-
-    // closing the search must never leave a filtered table behind
-    expect(tabulator.clearFilter).toHaveBeenCalledTimes(1);
-  });
-
-  it("leaves an unfiltered table alone", async () => {
-    const tabulator = fakeTabulator();
-    const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });
-
-    await type(wrapper, "   ");
-    await settle();
-
-    expect(tabulator.setFilter).not.toHaveBeenCalled();
-    expect(tabulator.clearFilter).not.toHaveBeenCalled();
-    wrapper.destroy();
-    expect(tabulator.clearFilter).not.toHaveBeenCalled();
-  });
-
-  it("re-applies to a table the tab rebuilt underneath it", async () => {
-    const first = fakeTabulator();
-    const wrapper = mount(TableInfoFilter, { propsData: { tabulator: first } });
-
-    await type(wrapper, "user");
-    await settle();
-    expect(first.setFilter).toHaveBeenCalledTimes(1);
-
-    const second = fakeTabulator();
-    wrapper.setProps({ tabulator: second });
-    await wrapper.vm.$nextTick();
-
-    expect(second.setFilter).toHaveBeenCalledTimes(1);
-    expect(second.setFilter.mock.calls[0][1].term).toEqual("user");
-    wrapper.destroy();
-  });
-
-  it("waits for a still-building table instead of filtering on no columns", async () => {
-    // filtering on an empty field list would match nothing and hide every row
-    const tabulator = fakeTabulator([]);
-    const wrapper = mount(TableInfoFilter, { propsData: { tabulator: null } });
-
-    await type(wrapper, "user");
-    await settle();
-
-    wrapper.setProps({ tabulator });
-    await wrapper.vm.$nextTick();
-    expect(tabulator.setFilter).not.toHaveBeenCalled();
-
-    tabulator.finishBuilding();
-    expect(tabulator.setFilter).toHaveBeenCalledTimes(1);
-    expect(tabulator.setFilter.mock.calls[0][1].fields).toEqual([
-      "columnName",
-      "dataType",
-    ]);
-    wrapper.destroy();
-  });
-
-  it("hides the count and clear button with visibility so the input never shifts", async () => {
-    const tabulator = fakeTabulator();
-    const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });
+  it("hides the suffix and clear button with visibility so the input never shifts", async () => {
+    const wrapper = mount(TableInfoFilter);
 
     // present but invisible while empty -- their slots are always reserved
     expect(wrapper.find(".clear-filter").exists()).toBe(true);
@@ -239,53 +57,10 @@ describe("TableInfoFilter", () => {
 
     await type(wrapper, "user");
     expect(wrapper.find(".clear-filter").classes()).not.toContain("is-hidden");
-    await settle();
+
+    wrapper.setProps({ suffix: "1/3" });
+    await wrapper.vm.$nextTick();
     expect(wrapper.find(".filter-matches").classes()).not.toContain("is-hidden");
     wrapper.destroy();
-  });
-
-  it("shows how many rows matched inside the field", async () => {
-    const tabulator = fakeTabulator();
-    const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });
-
-    await type(wrapper, "user");
-    await settle();
-
-    expect(wrapper.find(".filter-matches").text()).toEqual("1/3");
-    wrapper.destroy();
-  });
-
-  it("refreshes the count when the data reloads under an active filter", async () => {
-    const tabulator = fakeTabulator();
-    const wrapper = mount(TableInfoFilter, { propsData: { tabulator } });
-
-    await type(wrapper, "user");
-    await settle();
-    expect(wrapper.find(".filter-matches").text()).toEqual("1/3");
-
-    // replaceData on a filtered table fires dataFiltered
-    tabulator.activeRows.length = 0;
-    tabulator.fire("dataFiltered", [], []);
-    await wrapper.vm.$nextTick();
-    expect(wrapper.find(".filter-matches").text()).toEqual("0/3");
-    wrapper.destroy();
-  });
-
-  it("gives each tab its own debounce timer", async () => {
-    const a = fakeTabulator();
-    const b = fakeTabulator();
-    const wrapperA = mount(TableInfoFilter, { propsData: { tabulator: a } });
-    const wrapperB = mount(TableInfoFilter, { propsData: { tabulator: b } });
-
-    await type(wrapperA, "user");
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    // a shared timer would cancel the pending call for A
-    await type(wrapperB, "type");
-    await settle();
-
-    expect(a.setFilter).toHaveBeenCalledTimes(1);
-    expect(b.setFilter).toHaveBeenCalledTimes(1);
-    wrapperA.destroy();
-    wrapperB.destroy();
   });
 });

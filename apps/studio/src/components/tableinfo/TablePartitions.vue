@@ -12,11 +12,11 @@
 
         <div class="table-subheader">
           <table-info-toolbar
-            title="Partitions"
-            :tabulator="tabulator"
+            :search-suffix="structureFilterSuffix"
             filter-placeholder="Filter partitions"
             :show-add="editable"
             add-label="Partition"
+            @search="setStructureFilterQuery"
             @add="addRow"
             @copy="copyStructure"
             @refresh="refreshPartitions"
@@ -95,6 +95,7 @@ import { FormatterDialect } from '@shared/lib/dialects/models';
 import { format } from 'sql-formatter';
 import { mapState } from 'vuex';
 import { StructureCopyMixin } from '@/mixins/structureCopy';
+import { StructureFilterMixin } from '@/mixins/structureFilter';
 
 export default Vue.extend({
 	components: {
@@ -102,7 +103,7 @@ export default Vue.extend({
     ErrorAlert,
     TableInfoToolbar
   },
-  mixins: [DataMutators, StructureCopyMixin],
+  mixins: [DataMutators, StructureCopyMixin, StructureFilterMixin],
   props: ['table', 'tabID', 'active', 'tabState', 'properties'],
   data() {
     return {
