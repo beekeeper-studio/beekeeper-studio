@@ -209,17 +209,14 @@
               v-model="dryRun"
             >
           </x-button>
-          <div class="history-btn-wrapper">
-            <x-button
-              v-if="queryId"
-              @click.prevent="viewEditHistory"
-              class="btn btn-flat btn-small history-btn"
-              v-tooltip="updatedTooltip"
-            >
-              <i class="material-icons">history</i>
-              <span class="label">{{ updatedText }}</span>
-            </x-button>
-          </div>
+          <x-button
+            v-if="queryId"
+            @click.prevent="viewEditHistory"
+            class="btn btn-flat btn-small history-btn"
+            v-tooltip="updatedTooltip"
+          >
+            <i class="material-icons">history</i>
+          </x-button>
           <x-button
             v-if="aiShellAvailable"
             @click.prevent="askAi"
@@ -745,19 +742,6 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         }
 
         return `Updated at ${time}`;
-      },
-      updatedText() {
-        if (!this.updatedAt) {
-          return;
-        }
-
-        const ago = `${this.$bks.timeAgo(this.updatedAt, "mini")} ago`;
-
-        if (this.isCloud && this.updatedByName) {
-          return `${this.updatedByName} ${ago}`;
-        }
-
-        return ago;
       },
       readOnly() {
         if (this.tab.isLoading) {
@@ -2398,47 +2382,13 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     margin: 0;
   }
 
-  .history-btn-wrapper {
-    container: query-editor-history-btn-wrapper / inline-size;
-    flex-grow: 1;
-    min-width: 2rem;
-  }
-
   .btn.history-btn {
-    gap: 0.25rem;
     background-color: transparent;
     box-shadow: none;
     padding-inline: 0.15rem;
-    max-width: 100%;
 
-    .material-icons {
-      flex-shrink: 0;
-    }
-
-    .label {
-      display: none;
-      font-weight: 400;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    &:not(:hover) {
-      .material-icons {
-        color: var(--text-lighter);
-      }
-
-      .label {
-        color: var(--text-light);
-      }
-    }
-  }
-
-  // 76px fits the icon plus the longest time string, "11mo ago"
-  @container query-editor-history-btn-wrapper (min-width: 76px) {
-    .btn.history-btn .label {
-      display: inline;
+    &:not(:hover) .material-icons {
+      color: var(--text-lighter);
     }
   }
 </style>
