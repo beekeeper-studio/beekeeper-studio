@@ -14,7 +14,7 @@
       <div class="list-text">
         <div class="list-title flex-col">
           <editable-text
-            :initial-value="item.title"
+            :initial-value="item.name"
             :rename="rename"
             @submit="submitRename"
             @cancel="rename = false"
@@ -152,7 +152,7 @@ export default Vue.extend({
       });
     },
     async submitRename(title) {
-      if (!title || title === this.item.title) {
+      if (!title || title === this.item.name) {
         this.rename = false;
         return;
       }
@@ -160,7 +160,7 @@ export default Vue.extend({
       try {
         await this.$store.dispatch('data/queries/save', {
           id: this.item.id,
-          title,
+          name: title,
         });
       } catch (ex) {
         this.$noty.error(`Rename error: ${ex.userMessage ?? ex.message}`)

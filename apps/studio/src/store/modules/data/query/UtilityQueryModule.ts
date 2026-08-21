@@ -24,13 +24,13 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, State> = {
       state.filter = str;
     },
     ...accessGrantMutations(),
-  }, { field: 'title', direction : 'asc'}),
+  }, { field: 'name', direction : 'asc'}),
   modules: {
-    nodes: ItemNodeModule('queryFolderId', 'title'),
+    nodes: ItemNodeModule('queryFolderId'),
     folders: FolderFetchModule,
   },
   actions: {
-    ...utilActionsFor<TransportFavoriteQuery>('query', {}, {}, { text: true, title: true, database: true, excerpt: true, id: true }),
+    ...utilActionsFor<TransportFavoriteQuery>('query', {}, {}, { text: true, name: true, database: true, excerpt: true, id: true }),
     ...accessGrantActions('queries'),
     ...treeActions<TransportFavoriteQuery>({ plural: 'queryFolderIds', singular: 'queryFolderId' }),
     async afterMutate(context, { type, data }) {
@@ -121,12 +121,12 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, State> = {
       }
 
       const startsWithFilter = _(state.items)
-        .filter((item) => _.startsWith(item.title.toLowerCase(), state.filter))
+        .filter((item) => _.startsWith(item.name.toLowerCase(), state.filter))
         .value();
 
       const containsFilter = _(state.items)
         .difference(startsWithFilter)
-        .filter((item) => item.title.toLowerCase().includes(state.filter.toLowerCase()))
+        .filter((item) => item.name.toLowerCase().includes(state.filter.toLowerCase()))
         .value();
 
       return _.concat(startsWithFilter, containsFilter);

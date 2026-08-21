@@ -65,11 +65,11 @@ describe("buildFolderNodes", () => {
 describe("buildItemNodes", () => {
   it("reads the parent folder from the given key", () => {
     const items = [
-      { id: 1, title: "One", queryFolderId: 5 },
-      { id: 2, title: "Two", queryFolderId: null },
-      { id: 3, title: "Three" },
+      { id: 1, name: "One", queryFolderId: 5 },
+      { id: 2, name: "Two", queryFolderId: null },
+      { id: 3, name: "Three" },
     ];
-    const nodes = buildItemNodes(items, "queryFolderId", "title");
+    const nodes = buildItemNodes(items, "queryFolderId");
     expect(nodes.map((node) => node.parentId)).toEqual([
       "folder-5",
       null,
@@ -129,8 +129,7 @@ describe("parseReorderTarget", () => {
       { id: 10, name: "Local", connectionFolderId: null, position: 1 },
       { id: 11, name: "Prod", connectionFolderId: 2, position: 2 },
     ],
-    "connectionFolderId",
-    "name"
+    "connectionFolderId"
   );
 
   it("lands first inside the folder it was dropped on", () => {

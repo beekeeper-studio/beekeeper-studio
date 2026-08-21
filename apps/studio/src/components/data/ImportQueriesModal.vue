@@ -38,7 +38,7 @@
             :id="`cb-${query.id}`"
             v-model="query.checked"
           >
-          <span>{{ query.title }}</span>
+          <span>{{ query.name }}</span>
         </label>
       </div>
     </div>

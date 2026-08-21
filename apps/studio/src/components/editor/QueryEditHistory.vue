@@ -92,11 +92,11 @@
                 <span
                   v-if="
                     audit.queryAudit.action === 'update' &&
-                    audit.queryAudit.title != null
+                    audit.queryAudit.name != null
                   "
                   class="changed-the-title-to"
                 >
-                  Changed the title to "{{ audit.queryAudit.title }}"
+                  Changed the name to "{{ audit.queryAudit.name }}"
                 </span>
               </button>
             </li>

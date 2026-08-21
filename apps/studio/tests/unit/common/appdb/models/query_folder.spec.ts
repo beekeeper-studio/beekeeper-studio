@@ -5,7 +5,7 @@ import { validate } from 'class-validator'
 
 function buildQuery(overrides: Partial<FavoriteQuery> = {}): FavoriteQuery {
   const q = new FavoriteQuery()
-  q.title = 'Test Query'
+  q.name = 'Test Query'
   q.text = 'SELECT 1'
   q.excerpt = 'SELECT 1'
   q.connectionHash = 'test-hash'

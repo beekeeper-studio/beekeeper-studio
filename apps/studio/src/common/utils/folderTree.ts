@@ -56,8 +56,7 @@ export function buildFolderNode(folder: IFolder): ExtendedFolderNode {
 
 export function buildItemNodes<T extends HasId>(
   items: T[],
-  parentIdKey: string,
-  nameKey: string
+  parentIdKey: string
 ): ExtendedItemNode<T>[] {
   return items.map((item) => {
     const parentId = item[parentIdKey];
@@ -66,7 +65,7 @@ export function buildItemNodes<T extends HasId>(
       parentId: parentId ? `folder-${parentId}` : null,
       parentIdKey,
       type: "item",
-      name: item[nameKey] ?? "",
+      name: item["name"] ?? "",
       ref: item,
       draggable: true,
     };

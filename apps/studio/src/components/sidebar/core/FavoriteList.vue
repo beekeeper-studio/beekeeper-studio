@@ -426,7 +426,7 @@ export default {
       this.trigger('favoriteClick', item, { openHistory: true })
     },
     async remove(favorite) {
-      const name = favorite.title || favorite.name
+      const name = favorite.name
       if (await this.$confirm(`Delete "${name}"?`, undefined, { variant: "danger" })) {
         await this.$store.dispatch('data/queries/remove', favorite)
       }
@@ -617,7 +617,7 @@ export default {
     },
     async duplicate(query) {
       const cloned = await this.$store.dispatch('data/queries/clone', query)
-      cloned.title = 'Copy of ' + cloned.title
+      cloned.name = 'Copy of ' + cloned.name
       await this.$store.dispatch('data/queries/save', cloned)
       this.$noty.success('Query duplicated')
     },

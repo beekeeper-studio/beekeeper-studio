@@ -2,14 +2,26 @@ import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import { AppDbHandlers } from "@/handlers/appDbHandlers";
 import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
 import { QueryAudit } from "@/common/appdb/models/QueryAudit";
-import migration from "@/migration/20260526_create_query_audits";
+import createQueryAudits from "@/migration/20260526_create_query_audits";
+import renameQueryTitleToName from "@/migration/20260821_rename_query_title_to_name";
+
+/** `synchronize` builds the current schema, so step the columns back to their
+ * pre-rename names before replaying the migrations that expect them. */
+async function runAuditMigrations() {
+  const runner = TestOrmConnection.connection.connection.createQueryRunner();
+  await runner.query(`ALTER TABLE favorite_query RENAME COLUMN "name" TO "title"`);
+  await runner.query(`ALTER TABLE query_audit RENAME COLUMN "name" TO "title"`);
+  await createQueryAudits.run(runner);
+  await renameQueryTitleToName.run(runner);
+  await runner.release();
+}
 
 async function createQuery(
-  title: string,
+  name: string,
   text: string
 ): Promise<FavoriteQuery> {
   const query = FavoriteQuery.create();
-  query.title = title;
+  query.name = name;
   query.text = text;
   query.excerpt = text;
   await query.save();
@@ -24,9 +36,7 @@ function fastForward(date: Date) {
 describe("QueryAudit", () => {
   beforeAll(async () => {
     await TestOrmConnection.connect();
-    const runner = TestOrmConnection.connection.connection.createQueryRunner();
-    await migration.run(runner);
-    await runner.release();
+    await runAuditMigrations();
   });
 
   afterAll(async () => {
@@ -47,7 +57,7 @@ describe("QueryAudit", () => {
     expect(audits[0].action).toBe("create");
   });
 
-  it("records an update audit when title or text changes", async () => {
+  it("records an update audit when name or text changes", async () => {
     const query = await createQuery("Test", "SELECT 1;");
     query.text = "SELECT 2;";
     await query.save();
@@ -66,23 +76,23 @@ describe("QueryAudit", () => {
     await query.save();
 
     // Latest
-    query.title = "Renamed";
+    query.name = "Renamed";
     query.updatedAt = fastForward(query.updatedAt);
     await query.save();
 
     const audits = await QueryAudit.find({
-      select: ["action", "title", "text", "createdAt"],
+      select: ["action", "name", "text", "createdAt"],
     });
 
     const [latest, middle, oldest] = audits;
 
-    expect(latest.title).toBe("Renamed");
+    expect(latest.name).toBe("Renamed");
     expect(latest.text).toBeNull();
 
-    expect(middle.title).toBeNull();
+    expect(middle.name).toBeNull();
     expect(middle.text).toBe("SELECT 2;");
 
-    expect(oldest.title).toBe("Test");
+    expect(oldest.name).toBe("Test");
     expect(oldest.text).toBe("SELECT 1;");
   });
 
@@ -131,12 +141,12 @@ describe("QueryAudit", () => {
     expect(audits.map((a) => a.action)).toStrictEqual(["update", "update", "create"]);
   });
 
-  it("restores both title and text from the selected revision", async () => {
+  it("restores both name and text from the selected revision", async () => {
     // audits[4]
     const query = await createQuery("A", "x");
 
     // audits[3]
-    query.title = "B";
+    query.name = "B";
     query.updatedAt = fastForward(query.updatedAt);
     await query.save();
 
@@ -146,7 +156,7 @@ describe("QueryAudit", () => {
     await query.save();
 
     // audits[1]
-    query.title = "C";
+    query.name = "C";
     query.updatedAt = fastForward(query.updatedAt);
     await query.save();
 
@@ -158,11 +168,11 @@ describe("QueryAudit", () => {
     const audits = await QueryAudit.find();
     await audits[2].restore();
 
-    const { title, text } = await FavoriteQuery.findOne({
-      select: ["title", "text"],
+    const { name, text } = await FavoriteQuery.findOne({
+      select: ["name", "text"],
       where: { id: query.id },
     });
-    expect(title).toBe("B");
+    expect(name).toBe("B");
     expect(text).toBe("y");
   });
 
@@ -191,9 +201,7 @@ describe("Query Audit migration", () => {
     const query = await createQuery("Test", "SELECT 1;");
 
     // Run migration
-    const runner = TestOrmConnection.connection.connection.createQueryRunner();
-    await migration.run(runner);
-    await runner.release();
+    await runAuditMigrations();
 
     // After migration, we should have a single audit
     await expect(QueryAudit.count()).resolves.toBe(1);
