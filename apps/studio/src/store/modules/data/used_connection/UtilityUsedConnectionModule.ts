@@ -4,11 +4,6 @@ import _ from "lodash";
 import { safely } from "../StoreHelpers";
 import Vue from "vue";
 
-// A connection with nothing saved behind it gets a fresh row on every connect,
-// so the rows pile up. Nothing is deleted - the recent list just shows the
-// most recent handful.
-const RECENT_LIMIT = 10;
-
 type State = DataState<IConnection>;
 
 // Rows are written by the backend (UsedConnection.recordUse, from conn/create)
@@ -34,7 +29,8 @@ export const UtilUsedConnectionModule: DataStore<IConnection, State> = {
   }),
   getters: {
     orderedUsedConfigs(state) {
-      return _.sortBy(state.items, 'updatedAt').reverse().slice(0, RECENT_LIMIT)
+      const limit = window.bksConfig.ui.connectionSidebar.recentConnectionsLimit
+      return _.sortBy(state.items, 'updatedAt').reverse().slice(0, limit)
     }
   }
 }

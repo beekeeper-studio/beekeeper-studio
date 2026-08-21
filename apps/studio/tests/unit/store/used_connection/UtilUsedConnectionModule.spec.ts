@@ -5,6 +5,7 @@ import { SavedConnection } from '@/common/appdb/models/saved_connection'
 import { UsedConnection } from '@/common/appdb/models/used_connection'
 import { AppDbHandlers } from '@/handlers/appDbHandlers'
 import { UtilUsedConnectionModule } from '@/store/modules/data/used_connection/UtilityUsedConnectionModule'
+import { createConfig } from '@tests/integration/utils/config'
 
 Vue.use(Vuex)
 
@@ -59,6 +60,7 @@ describe('UsedConnection.recordUse', () => {
       }
     }
 
+    ;(window as any).bksConfig = createConfig()
     store = buildStore()
   })
 
@@ -109,10 +111,13 @@ describe('UsedConnection.recordUse', () => {
     expect(all[0].username).toBe('newuser')
   })
 
-  it('shows only the 10 most recent connections, without deleting any', async () => {
+  it('shows only the configured number of recent connections, without deleting any', async () => {
     // A connection with nothing saved behind it gets a fresh row on every
-    // connect, so the rows pile up. The list shows the newest 10; the rest
-    // stay in the table.
+    // connect, so the rows pile up. The list shows the newest
+    // ui.connectionSidebar.recentConnectionsLimit; the rest stay in the table.
+    const limit = (window as any).bksConfig.ui.connectionSidebar.recentConnectionsLimit
+    expect(limit).toBe(10)
+
     for (let i = 0; i < 13; i++) {
       const fresh = await AppDbHandlers['appdb/saved/new']({
         init: { connectionType: 'postgresql', host: `quick-${i}.example.com` }
@@ -124,7 +129,7 @@ describe('UsedConnection.recordUse', () => {
 
     await store.dispatch('data/usedconnections/load')
     const listed = store.getters['data/usedconnections/orderedUsedConfigs']
-    expect(listed).toHaveLength(10)
+    expect(listed).toHaveLength(limit)
 
     // Newest first, oldest three left off the end.
     const hosts = listed.map((c: any) => c.host)
