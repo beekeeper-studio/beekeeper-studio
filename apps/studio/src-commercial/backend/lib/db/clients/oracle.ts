@@ -42,6 +42,7 @@ import {
 import rawLog from '@bksLogger'
 import { createCancelablePromise, joinFilters } from '@/common/utils';
 import { errors } from '@/lib/errors';
+import { POOL_CLOSE_TIMEOUT_MS, lostConnection, requestTimeoutFor, withDeadline } from '@/lib/db/clients/lostConnection';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 import platformInfo from '@/common/platform_info';
 import { OracleCursor } from './oracle/OracleCursor';
@@ -53,6 +54,34 @@ import Client_Oracledb from '@shared/lib/knex-oracledb';
 import fs from 'fs';
 
 const log = rawLog.scope('oracle')
+
+// oracledb normalises driver-level failures onto NJS codes: NJS-500 is a closed connection
+// and NJS-501 lost contact with the server. The thick driver's DPI equivalents and the
+// server-side ORA codes are matched too, since a message can carry either.
+const CONNECTION_LOST_CODES = ['NJS-500', 'NJS-501', 'NJS-503', 'DPI-1010', 'DPI-1080']
+const CONNECTION_LOST_ORA = ['ORA-03113', 'ORA-03114', 'ORA-12570', 'ORA-12571', 'ORA-00028']
+
+// The call exceeded connection.callTimeout. NJS-123 in thin mode, DPI-1067 in thick.
+const CALL_TIMEOUT_CODES = ['NJS-123', 'DPI-1067']
+
+function codeOf(err: any): string {
+  // oracledb puts the code on the error for thin mode, but a thick-mode error may only
+  // carry it in the message, so both are read.
+  const text = `${err?.code ?? ''} ${err?.message ?? ''}`
+  return text
+}
+
+function isCallTimeout(err: any): boolean {
+  const text = codeOf(err)
+  return CALL_TIMEOUT_CODES.some((c) => text.includes(c))
+}
+
+function isConnectionLost(err: any): boolean {
+  if (!err) return false
+  const text = codeOf(err)
+  return CONNECTION_LOST_CODES.some((c) => text.includes(c))
+    || CONNECTION_LOST_ORA.some((c) => text.includes(c))
+}
 
 
 oracle.fetchAsString = [oracle.CLOB]
@@ -778,6 +807,11 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
   }
 
   async connect() {
+    // Reconnecting after a dropped connection lands here with the old pool still around,
+    // and it may be holding a connection that will never answer again. Retire it first so a
+    // reconnect cannot inherit the state it is meant to escape.
+    await this.closePool();
+
     await super.connect();
 
     const cliLocation = this.platformPath(this.server.config.instantClientLocation)
@@ -871,8 +905,55 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
   }
 
   async disconnect() {
-    await this.pool?.close(1);
+    await this.closePool();
     await super.disconnect();
+  }
+
+  /**
+   * Take a connection from the pool with the configured deadline applied.
+   *
+   * callTimeout is a per-connection attribute rather than a pool setting, so it has to be
+   * set on every connection handed out. Without it a query on a connection the network
+   * dropped waits forever: the socket still looks open, so oracledb keeps waiting for a
+   * reply that is never coming.
+   */
+  private async acquireConnection(): Promise<oracle.Connection> {
+    if (!this.pool) {
+      throw lostConnection('The connection to Oracle was lost.')
+    }
+    const connection = await this.pool.getConnection()
+    // 0 is oracledb's own "no timeout", which is also what requestTimeout = 0 means.
+    connection.callTimeout = requestTimeoutFor('oracle')
+    return connection
+  }
+
+  /**
+   * Retire the current pool, and do it in bounded time.
+   *
+   * close(1) drains for a second and then forces, which is normally enough -- but the
+   * force still has to unwind connections that may be mid-call, so it is not something to
+   * wait on indefinitely. Both disconnect and reconnect go through here, so an unbounded
+   * wait would strand the app exactly when it is trying to recover.
+   */
+  private async closePool(): Promise<void> {
+    const pool = this.pool
+    if (!pool) return
+
+    // Dropped before awaiting anything, so a query racing the disconnect fails fast
+    // instead of reaching into a pool that is on its way out.
+    this.pool = null
+    this.reservedConnections.clear()
+
+    const closing = pool.close(1)
+    closing.catch(() => undefined)
+
+    try {
+      await withDeadline(closing, POOL_CLOSE_TIMEOUT_MS, 'pool close timed out')
+    } catch (err) {
+      // The pool is unreferenced from here on; a connection the driver has yet to unwind
+      // is a better outcome than a disconnect that never returns.
+      log.warn('Abandoning pool that would not close', err)
+    }
   }
 
   async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
@@ -994,7 +1075,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     const hasReserved = this.reservedConnections.has(tabId);
     return {
       execute: (async () => {
-        connection = hasReserved ? this.peekConnection(tabId) : await this.pool.getConnection()
+        connection = hasReserved ? this.peekConnection(tabId) : await this.acquireConnection()
         try {
           const data = await Promise.race([
             cancelable.wait(),
@@ -1101,6 +1182,25 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
   }
 
   protected async rawExecuteQuery(query: string, options: any): Promise<DriverResult | DriverResult[]> {
+    try {
+      return await this.rawExecuteQueryInner(query, options)
+    } catch (err) {
+      // Every query funnels through here, so this is the one place that has to tell "the
+      // connection is gone" apart from "the statement failed". A call that merely outran
+      // callTimeout is left as oracledb reported it: the connection may be healthy and the
+      // query simply slow, and prompting to reconnect would be wrong.
+      if (isConnectionLost(err) && !isCallTimeout(err)) {
+        log.error('Connection lost while running query', err)
+        throw lostConnection(
+          `The connection to Oracle was lost${err?.message ? `: ${err.message}` : '.'}`,
+          err
+        )
+      }
+      throw err
+    }
+  }
+
+  private async rawExecuteQueryInner(query: string, options: any): Promise<DriverResult | DriverResult[]> {
       const realQueries: string[] = _.isArray(query) ? query : [query]
       const infos = _.flatMap(realQueries.map((q) => this.identifyCommands(q)))
       // TODO - use `executeMany` if no SELECT queries are present
@@ -1127,7 +1227,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
         const c = this.peekConnection(options?.tabId);
         return await runQuery(c);
       } else {
-        const c = options.connection ?? await this.pool.getConnection();
+        const c = options.connection ?? await this.acquireConnection();
         return await withClosable(c, runQuery);
       }
   }
@@ -1139,7 +1239,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
       throw new Error(errorMessages.maxReservedConnections)
     }
 
-    const conn = await this.pool.getConnection();
+    const conn = await this.acquireConnection();
     this.pushConnection(tabId, conn);
   }
 

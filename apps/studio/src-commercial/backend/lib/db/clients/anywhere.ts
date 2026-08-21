@@ -5,6 +5,7 @@ import { DatabaseElement, IDbConnectionDatabase } from '@/lib/db/types';
 import { TableKey } from '@/shared/lib/dialects/models';
 import { ChangeBuilderBase } from '@/shared/lib/sql/change_builder/ChangeBuilderBase';
 import rawLog from '@bksLogger';
+import { lostConnection, underRequestDeadline } from '@/lib/db/clients/lostConnection';
 import knexlib from 'knex';
 import { identify } from 'sql-query-identifier';
 import { buildDeleteQueries, buildInsertQuery, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries } from '@/lib/db/clients/utils';
@@ -17,6 +18,23 @@ import { SqlAnywhereCursor } from './anywhere/SqlAnywhereCursor';
 
 const D = SqlAnywhereData;
 const log = rawLog.scope('sql-anywhere');
+
+// The sqlanywhere driver surfaces a dead connection through these. Nothing here means the
+// statement was at fault.
+const CONNECTION_LOST_PATTERNS = [
+  'connection was terminated',
+  'connection is closed',
+  'not connected',
+  'communication error',
+  'connection error',
+  'econnreset',
+  'epipe',
+]
+
+function isConnectionLost(err: any): boolean {
+  if (!err) return false
+  return CONNECTION_LOST_PATTERNS.some((p) => `${err.message ?? ''}`.toLowerCase().includes(p))
+}
 // only using this for now
 const knex = knexlib({ client: 'mssql' });
 
@@ -1220,7 +1238,12 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
       const results: SQLAnywhereResult[] = [];
       for (const query of queries) {
         log.info('EXECUTING QUERY: ', query.text);
-        const result = await connection.query(query.text, autoCommit);
+        // The driver has no timeout of its own, so this deadline is the only thing that
+        // ends a query on a connection the network dropped: the socket still looks open, so
+        // the driver keeps waiting for a reply that is never coming.
+        const result = await underRequestDeadline('sqlanywhere', () =>
+          connection.query(query.text, autoCommit)
+        );
         log.info('RECEIVED RESULT: ', result);
 
         if (!result) {
@@ -1238,7 +1261,28 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
       return results;
     }
 
-    const results = await runQuery(conn);
+    let results: SQLAnywhereResult[];
+    try {
+      results = await runQuery(conn);
+    } catch (err) {
+      // The abandoned query is still owed a reply, and a dropped connection has nothing
+      // left to give, so neither goes back to the pool for the next query to inherit.
+      if (!options.connection) {
+        try {
+          await conn.drop();
+        } catch (dropErr) {
+          log.warn('Failed to drop an unusable connection', dropErr);
+        }
+      }
+      if (isConnectionLost(err)) {
+        log.error('Connection lost while running query', err);
+        throw lostConnection(
+          `The connection to SQL Anywhere was lost${err?.message ? `: ${err.message}` : '.'}`,
+          err
+        );
+      }
+      throw err;
+    }
     if (!options.connection) {
       await conn.release()
     }

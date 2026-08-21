@@ -1,4 +1,5 @@
 import rawLog from "@bksLogger"
+import { lostConnection, underRequestDeadline } from "@/lib/db/clients/lostConnection"
 import { readFileSync } from "fs"
 import { IDbConnectionDatabase } from "@/lib/db/types"
 import {
@@ -65,6 +66,17 @@ interface TrinoResult extends BaseQueryResult {
 }
 
 const log = rawLog.scope("trino")
+
+// trino-client talks HTTP over axios, which has no timeout set, so a dropped connection
+// surfaces as one of these once the socket finally errors -- or as nothing at all, which
+// is what the request deadline is for.
+const CONNECTION_LOST_CODES = ['ECONNRESET', 'EPIPE', 'ETIMEDOUT', 'ECONNREFUSED', 'ENOTFOUND', 'EHOSTUNREACH', 'ECONNABORTED']
+
+function isConnectionLost(err: any): boolean {
+  if (!err) return false
+  if (CONNECTION_LOST_CODES.includes(err.code)) return true
+  return CONNECTION_LOST_CODES.includes(err.cause?.code)
+}
 const knex = null
 const trinoContext = {
   getExecutionContext(): ExecutionContext {
@@ -434,6 +446,26 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
 
   async rawExecuteQuery(sql: string): Promise<TrinoResult> {
     try {
+      // Trino polls for results over HTTP, and trino-client sets no timeout on those
+      // requests, so a dropped connection leaves the poll waiting on a socket that still
+      // looks open. The deadline covers the whole run, not just the first request, since
+      // any poll in the sequence can be the one that never comes back.
+      return await underRequestDeadline('trino', () => this.runQuery(sql))
+    } catch (err) {
+      if (isConnectionLost(err)) {
+        log.error('Connection lost while running query', err)
+        throw lostConnection(
+          `The connection to Trino was lost${err?.message ? `: ${err.message}` : '.'}`,
+          err
+        )
+      }
+      log.error(err)
+      throw err
+    }
+  }
+
+  private async runQuery(sql: string): Promise<TrinoResult> {
+    {
       // The trino query parser doesn't particularly like semicolons. Who can blame it?
       const result: AsyncIterableIterator<QueryResult> = await this.client.query(sql.trim().replace(/;$/, ''))
 
@@ -469,9 +501,6 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
         rows: this.rowsToObject(columns, rows),
         arrayMode: false
       }
-    } catch (err) {
-      log.error(err)
-      throw err
     }
   }
 

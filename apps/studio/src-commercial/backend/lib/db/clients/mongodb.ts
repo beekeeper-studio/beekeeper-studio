@@ -11,6 +11,7 @@ import { ElectronRuntime as MongoRuntime } from '@mongosh/browser-runtime-electr
 import { NodeDriverServiceProvider } from '@mongosh/service-provider-node-driver';
 import { createCancelablePromise } from "@/common/utils";
 import { errors } from "@/lib/errors";
+import { lostConnection, requestTimeoutFor } from "@/lib/db/clients/lostConnection";
 import EventEmitter from "events";
 import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilderBase";
 import { QueryLeaf } from '@queryleaf/lib'
@@ -23,6 +24,21 @@ import knexlib from 'knex'
 const knex = knexlib({ client: 'pg' })
 
 const log = rawLog.scope('mongodb');
+
+// The driver's own names for a failure that is the connection rather than the query. Its
+// topology monitor reconnects on its own once a server comes back, so these are what the
+// user sees in the window before that happens.
+const CONNECTION_LOST_NAMES = [
+  'MongoNetworkError',
+  'MongoNetworkTimeoutError',
+  'MongoServerSelectionError',
+  'MongoNotConnectedError',
+  'MongoTopologyClosedError',
+]
+
+function isConnectionLost(err: any): boolean {
+  return !!err && CONNECTION_LOST_NAMES.includes(err.name)
+}
 
 interface QueryResult {
   columns: { name: string }[]
@@ -135,7 +151,16 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       );
     }
 
-    this.conn = new MongoClient(url);
+    // socketTimeoutMS is unset by default, so an operation on a connection the network
+    // dropped waits forever: the socket still looks open, so the driver keeps waiting for a
+    // reply that is never coming. A URL that sets it already wins -- that is the user being
+    // explicit, and the option object would otherwise silently override them.
+    const requestTimeout = requestTimeoutFor('mongodb')
+    const socketTimeoutSetInUrl = /[?&]socketTimeoutMS=/i.test(url)
+    this.conn = new MongoClient(
+      url,
+      requestTimeout > 0 && !socketTimeoutSetInUrl ? { socketTimeoutMS: requestTimeout } : {}
+    );
 
     this.conn.on('connectionCreated', (event) => {
       log.debug('Pool connection %d acquired on %s', event.connectionId, event.address);
@@ -745,6 +770,12 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
           if (canceling) {
             canceling = false;
             err.sqlectronError = 'CANCELED_BY_USER';
+          } else if (isConnectionLost(err)) {
+            log.error('Connection lost while running query', err);
+            throw lostConnection(
+              `The connection to MongoDB was lost${err?.message ? `: ${err.message}` : '.'}`,
+              err
+            );
           }
 
           throw err;
@@ -828,6 +859,24 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   }
 
   async executeCommand(commandText: string, _options?: any): Promise<NgQueryResult[]> {
+    try {
+      return await this.executeCommandInner(commandText);
+    } catch (err) {
+      // The shell path does not go through query(), so it needs the same translation:
+      // a connection that is gone should raise the reconnect prompt rather than surface as
+      // a driver error nothing upstream can act on.
+      if (isConnectionLost(err)) {
+        log.error('Connection lost while running command', err);
+        throw lostConnection(
+          `The connection to MongoDB was lost${err?.message ? `: ${err.message}` : '.'}`,
+          err
+        );
+      }
+      throw err;
+    }
+  }
+
+  private async executeCommandInner(commandText: string): Promise<NgQueryResult[]> {
     const results: NgQueryResult[] = [];
 
     const listener = {

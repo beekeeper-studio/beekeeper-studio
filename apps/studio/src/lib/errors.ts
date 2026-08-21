@@ -99,3 +99,24 @@ export class ConnectionLostError extends Error {
     }
   }
 }
+
+/**
+ * Thrown when a query was abandoned because it outran the configured
+ * requestTimeout. The connection may be perfectly healthy and the query simply
+ * slow, so this never prompts to reconnect -- but the connection is still owed a
+ * reply that may yet arrive, so whoever catches this must drop it rather than
+ * return it to a pool.
+ */
+export class QueryTimeoutError extends Error {
+  public readonly code = 'QUERY_TIMEOUT';
+
+  constructor(message?: string, options?: ErrorOptions) {
+    super(message, options);
+    // Set explicitly rather than from this.constructor.name: the name travels
+    // over the port as a plain string and must survive minified builds.
+    this.name = 'QueryTimeoutError';
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, QueryTimeoutError);
+    }
+  }
+}

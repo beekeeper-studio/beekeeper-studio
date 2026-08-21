@@ -1,4 +1,5 @@
-import { ConnectionLostError } from '@/lib/errors'
+import { ConnectionLostError, QueryTimeoutError } from '@/lib/errors'
+import BksConfig from '@/common/bksConfig'
 
 /**
  * Shared helpers for the case where a database connection dies without saying so.
@@ -35,4 +36,45 @@ export function withDeadline<T>(promise: Promise<T>, ms: number, message: string
  */
 export function lostConnection(detail: string, cause?: unknown): ConnectionLostError {
   return new ConnectionLostError(detail, cause === undefined ? undefined : { cause })
+}
+
+/**
+ * The configured per-query deadline for a [db.*] section, in milliseconds. 0 means no
+ * limit, which is also what a negative or unparsable value collapses to.
+ */
+export function requestTimeoutFor(section: string): number {
+  return Math.max(0, BksConfig.db[section]?.requestTimeout || 0)
+}
+
+/** The error a query gets when it outran requestTimeout, worded the same everywhere. */
+export function queryTimeout(section: string, ms: number, cause?: unknown): QueryTimeoutError {
+  return new QueryTimeoutError(
+    `The query did not finish within ${ms}ms and was abandoned. ` +
+    `Raise requestTimeout under [db.${section}] to allow longer queries.`,
+    cause === undefined ? undefined : { cause }
+  )
+}
+
+/**
+ * Run a driver call under the configured deadline.
+ *
+ * For drivers that offer no timeout of their own, which is most of the smaller ones. The
+ * call is NOT cancelled -- nothing in these drivers can cancel one -- so the connection is
+ * still owed a reply when this rejects, and the caller must drop it rather than hand it
+ * back to a pool.
+ */
+export async function underRequestDeadline<T>(section: string, run: () => Promise<T>): Promise<T> {
+  const ms = requestTimeoutFor(section)
+  if (!ms) return await run()
+
+  const running = run()
+  // The abandoned call settles later with nobody listening.
+  running.catch(() => undefined)
+
+  try {
+    return await withDeadline(running, ms, 'request deadline')
+  } catch (err) {
+    if ((err as Error)?.message === 'request deadline') throw queryTimeout(section, ms)
+    throw err
+  }
 }

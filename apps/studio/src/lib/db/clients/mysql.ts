@@ -78,7 +78,7 @@ type ResultType = {
   arrayMode: boolean;
 };
 
-import { POOL_CLOSE_TIMEOUT_MS, lostConnection, withDeadline } from './lostConnection';
+import { POOL_CLOSE_TIMEOUT_MS, lostConnection, queryTimeout, requestTimeoutFor, withDeadline } from './lostConnection';
 
 const log = rawLog.scope("mysql");
 const logger = () => log;
@@ -1352,7 +1352,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
             // Without a deadline a query on a silently dropped connection waits forever:
             // the socket still looks open, so mysql2 keeps waiting for a reply that is
             // never coming. 0 means no limit, which mysql2 reads as no timer.
-            timeout: Math.max(0, BksConfig.db[this.connectionType]?.requestTimeout || 0) || undefined,
+            timeout: requestTimeoutFor(this.connectionType) || undefined,
           },
           (err, data, fields) => {
             if (err && err.code === mysqlErrors.EMPTY_QUERY) {
@@ -1386,11 +1386,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
         )
       }
       if (isQueryTimeout(err)) {
-        const limit = BksConfig.db[this.connectionType]?.requestTimeout
-        throw new Error(
-          `The query did not finish within ${limit}ms and was abandoned. ` +
-          `Raise requestTimeout under [db.${this.connectionType}] to allow longer queries.`
-        )
+        throw queryTimeout(this.connectionType, requestTimeoutFor(this.connectionType), err)
       }
       throw err
     }

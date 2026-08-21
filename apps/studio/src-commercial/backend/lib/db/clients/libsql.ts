@@ -1,5 +1,6 @@
 import _ from "lodash";
 import rawLog from "@bksLogger";
+import { lostConnection } from "@/lib/db/clients/lostConnection";
 import { SqliteClient, SqliteResult } from "@/lib/db/clients/sqlite";
 import Client_Libsql from "@shared/lib/knex-libsql";
 import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient";
@@ -13,6 +14,28 @@ import { NgQueryResult, BksField } from "@/lib/db/models";
 import { LibSQLBinaryTranscoder } from "@/lib/db/serialization/transcoders";
 
 const log = rawLog.scope("libsql");
+
+// libsql's sync API is better-sqlite3 compatible, so a remote statement blocks in native
+// code until it returns. That rules out a request deadline -- a JS timer cannot fire while
+// the event loop is blocked -- so a remote connection that is dropped silently still waits
+// for the driver's own error. These are what that error looks like when it arrives.
+const CONNECTION_LOST_PATTERNS = [
+  'hrana',
+  'websocket',
+  'connection closed',
+  'connection reset',
+  'stream closed',
+  'econnreset',
+  'epipe',
+  'failed to connect',
+  'error communicating with the server',
+]
+
+function isConnectionLost(err: any): boolean {
+  if (!err) return false
+  const text = `${err.code ?? ''} ${err.message ?? ''}`.toLowerCase()
+  return CONNECTION_LOST_PATTERNS.some((p) => text.includes(p))
+}
 const knex = createSQLiteKnex(Client_Libsql);
 
 export class LibSQLClient extends SqliteClient {
@@ -99,7 +122,20 @@ export class LibSQLClient extends SqliteClient {
   ): Promise<SqliteResult | SqliteResult[]> {
     const connection = options.connection || this._rawConnection;
     const ownOptions = { ...options, connection };
-    return await super.rawExecuteQuery(q, ownOptions)
+    try {
+      return await super.rawExecuteQuery(q, ownOptions)
+    } catch (err) {
+      // Only remote databases have a connection to lose; a local file cannot be dropped by
+      // a network.
+      if (this.isRemote && isConnectionLost(err)) {
+        log.error('Connection lost while running query', err);
+        throw lostConnection(
+          `The connection to the libSQL server was lost${err?.message ? `: ${err.message}` : '.'}`,
+          err
+        );
+      }
+      throw err
+    }
   }
 
   // @ts-expect-error not fully typed

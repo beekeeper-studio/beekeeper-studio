@@ -1,4 +1,5 @@
 import electronLog from "@bksLogger";
+import { lostConnection, underRequestDeadline } from '@/lib/db/clients/lostConnection';
 import knexlib, { Knex } from "knex";
 import Client_Firebird from "@shared/lib/knex-firebird";
 import Firebird from "node-firebird";
@@ -71,6 +72,25 @@ type FirebirdResult = {
 const TRIM_END_CHAR = false;
 
 const log = electronLog.scope("firebird");
+
+// node-firebird reports a dead socket through these. Nothing here means the statement was
+// at fault.
+const CONNECTION_LOST_PATTERNS = [
+  'connection shutdown',
+  'connection lost',
+  'error reading data from the connection',
+  'error writing data to the connection',
+  'net_read_err',
+  'net_write_err',
+  'econnreset',
+  'epipe',
+]
+
+function isConnectionLost(err: any): boolean {
+  if (!err) return false
+  const message = `${err.message ?? ''} ${err.gdscode ?? ''}`.toLowerCase()
+  return CONNECTION_LOST_PATTERNS.some((p) => message.includes(p))
+}
 
 const context = {
   getExecutionContext(): ExecutionContext {
@@ -1192,7 +1212,12 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
       const query = queries[index];
 
       const runQuery = async () => {
-        const data = await conn.query(query.text, params, options.rowAsArray);
+        // node-firebird has no timeout of its own, so this deadline is the only thing that
+        // ends a query on a connection the network dropped: the socket still looks open, so
+        // the driver keeps waiting for a reply that is never coming.
+        const data = await underRequestDeadline('firebird', () =>
+          conn.query(query.text, params, options.rowAsArray)
+        );
         results.push({
           columns: data.meta,
           rows: data.rows,
@@ -1201,7 +1226,23 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
         });
       };
 
-      await runQuery();
+      try {
+        await runQuery();
+      } catch (err) {
+        // The abandoned query is still owed a reply, and a dropped connection has nothing
+        // left to give, so neither goes back to the pool for the next query to inherit.
+        if (!hasReserved && conn instanceof Connection) {
+          conn.destroy();
+        }
+        if (isConnectionLost(err)) {
+          log.error('Connection lost while running query', err);
+          throw lostConnection(
+            `The connection to Firebird was lost${err?.message ? `: ${err.message}` : '.'}`,
+            err
+          );
+        }
+        throw err;
+      }
     }
 
     if (!hasReserved && conn instanceof Connection) {

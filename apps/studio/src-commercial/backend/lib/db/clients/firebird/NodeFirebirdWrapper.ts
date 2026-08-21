@@ -1,5 +1,8 @@
 import Firebird from "node-firebird";
 import _ from "lodash";
+import rawLog from "@bksLogger";
+
+const log = rawLog.scope("firebird-wrapper");
 
 export interface Result {
   rows: any[];
@@ -81,6 +84,35 @@ export class Connection {
         resolve();
       });
     });
+  }
+
+  /**
+   * Drop this connection instead of returning it to the pool.
+   *
+   * release() is node-firebird's detach, which hands the connection back for the next query
+   * to use -- wrong for one that is wedged or dead. Destroying the socket makes the driver
+   * mark the connection closed, and the pool evicts a closed connection rather than
+   * reusing it.
+   */
+  destroy(): void {
+    const database = this.database as any;
+    const connection = database?.connection;
+    try {
+      if (connection) {
+        // How the pool decides, on the detach below, whether to reuse a connection or drop
+        // it: a connection marked closed is evicted rather than handed to the next query.
+        // node-firebird never sets this itself -- it only ever clears it -- so setting it
+        // here is what makes the difference. Doing it in the same tick as the destroy also
+        // keeps the detach from racing the socket's own close event.
+        connection._isClosed = true;
+        connection._socket?.destroy?.();
+      }
+      // Detach anyway, so the pool runs its bookkeeping and frees the slot this connection
+      // was holding. Marked closed, this sends nothing over the wire.
+      database?.detach?.();
+    } catch (err) {
+      log.warn("Failed to destroy a Firebird connection", err);
+    }
   }
 
   async query(query: string, params?: any[], rowAsArray?: boolean): Promise<Result> {

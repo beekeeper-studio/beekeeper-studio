@@ -31,7 +31,7 @@ import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 
 const PD = PostgresData
 
-import { POOL_CLOSE_TIMEOUT_MS, lostConnection, withDeadline } from './lostConnection';
+import { POOL_CLOSE_TIMEOUT_MS, lostConnection, queryTimeout, requestTimeoutFor, withDeadline } from './lostConnection';
 
 const log = logRaw.scope('postgresql')
 
@@ -1529,11 +1529,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
         )
       }
       if (isQueryTimeout(err)) {
-        const limit = BksConfig.db[this.configSection]?.requestTimeout
-        throw new Error(
-          `The query did not finish within ${limit}ms and was abandoned. ` +
-          `Raise requestTimeout under [db.${this.configSection}] to allow longer queries.`
-        )
+        throw queryTimeout(this.configSection, requestTimeoutFor(this.configSection), err)
       }
       throw err
     }
@@ -1791,7 +1787,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     // query_timeout is what puts a floor under a silently dropped connection: pg has no
     // liveness check when it hands a pooled client out, so without a deadline the query
     // simply waits forever on a socket that still looks open. 0 means no limit.
-    const requestTimeout = Math.max(0, BksConfig.db[this.configSection]?.requestTimeout || 0)
+    const requestTimeout = requestTimeoutFor(this.configSection)
     if (requestTimeout > 0) {
       config.query_timeout = requestTimeout
     }
