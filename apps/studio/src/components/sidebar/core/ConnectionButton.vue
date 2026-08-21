@@ -49,9 +49,7 @@
               <i class="material-icons">swap_horiz</i>
               Switch Connection
             </span>
-            <span style="font-size: 22px;">
-              {{ isQuickSwitcherVisible ? '‹' : '›' }}
-            </span>
+            <span style="font-size: 22px;">›</span>
           </x-label>
         </x-menuitem>
       </x-menu>
@@ -168,9 +166,7 @@
             @click.stop="toggleMore"
           >
             <span class="label">{{ showingMore ? 'less' : 'more' }}</span>
-            <span style="font-size: 22px;">
-              {{ showingMore ? '‹' : '›' }}
-            </span>
+            <span style="font-size: 22px;">›</span>
           </button>
         </div>
       </div>
