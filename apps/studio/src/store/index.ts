@@ -651,6 +651,10 @@ const store = new Vuex.Store<State>({
         if (updated?.length) {
           context.commit('table', { ...table, columns })
         }
+        // Returned so callers can read what the database actually reports. The commit
+        // above replaces the table object, so a caller holding it as a prop won't see
+        // the new columns until the next render.
+        return columns
       } finally {
         context.commit("columnsLoading", null)
       }
