@@ -8,12 +8,19 @@
               Saved Queries
             </div>
             <div class="actions">
-              <a
-                @click.prevent="createFolder"
-                title="New Folder"
+              <x-button
+                title="New query or folder"
               >
-                <i class="material-icons-outlined">create_new_folder</i>
-              </a>
+                <i class="material-icons">add</i>
+                <x-menu style="--align: end;">
+                  <x-menuitem @click.prevent="createQuery">
+                    <x-label>New query</x-label>
+                  </x-menuitem>
+                  <x-menuitem @click.prevent="createFolder">
+                    <x-label>New folder</x-label>
+                  </x-menuitem>
+                </x-menu>
+              </x-button>
               <x-button
                 title="Import queries"
               >
@@ -78,6 +85,7 @@
           v-else
           class="list-body"
           ref="wrapper"
+          @contextmenu.prevent="showRootContextMenu"
         >
           <template v-if="searching">
             <div
@@ -248,6 +256,9 @@ import EditableText from '@/components/common/EditableText.vue'
 import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
 import ContentPlaceholderText from '@/components/common/loading/ContentPlaceholderText.vue'
 import { buildItemNode, buildFolderNodes, parseReorderTarget } from '@/common/utils/folderTree'
+import rawLog from '@bksLogger'
+
+const log = rawLog.scope('FavoriteList')
 
 export default {
   components: { SidebarLoading, ErrorAlert, ExpiredFolderAlert, FavoriteListItem, Tree, TreeFolder, EditableText, ContentPlaceholder, ContentPlaceholderText },
@@ -287,6 +298,7 @@ export default {
     ...mapState('data/queries/nodes', {'itemNodes': 'items'}),
     ...mapState('data/queryFolders/nodes', {'folderNodes': 'items'}),
     ...mapState('data/queries', {
+      'queries': 'items',
       'queriesError': 'error',
       'queriesPollError': 'pollError',
       'savedQueryFilter': 'filter',
@@ -424,7 +436,7 @@ export default {
       this.filterQuery = null
     },
     createQuery() {
-      this.$root.$emit(AppEvent.newTab)
+      this.startRootDraft("item");
     },
     exportTo(query) {
       this.$root.$emit(AppEvent.promptQueryExport, query)
@@ -482,19 +494,38 @@ export default {
         this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }
-      if (this.isCloud) {
-        const parent = this.folders.find((f) => f.personal && !f.parentId);
-        if (!parent) {
-          this.$noty.error(
-            "No personal folder found. Right-click an existing folder and choose New Subfolder to create a folder instead."
-          );
-          return;
-        }
-        this.startDrafting("folder", parent.id);
-        this.expandFolder(parent.id);
-      } else {
-        this.startDrafting("folder", null);
+      this.startRootDraft("folder");
+    },
+    startRootDraft(type) {
+      if (!this.isCloud) {
+        this.startDrafting(type, null);
+        return;
       }
+      const parent = this.folders.find((f) => f.personal && !f.parentId);
+      if (!parent) {
+        this.$noty.error(
+          "No personal folder found. Right-click an existing folder and choose New Subfolder to create a folder instead."
+        );
+        return;
+      }
+      this.startDrafting(type, parent.id);
+      this.expandFolder(parent.id);
+    },
+    showRootContextMenu(event) {
+      this.$bks.openMenu({
+        event,
+        item: null,
+        options: [
+          {
+            name: "New Folder",
+            handler: () => this.createFolder(),
+          },
+          {
+            name: "New Query",
+            handler: () => this.startRootDraft("item"),
+          },
+        ],
+      });
     },
     startDrafting(type, parentId) {
       this.draftType = type
@@ -533,6 +564,14 @@ export default {
           ? await this.saveFolder({ ...this.draftFolder, name })
           : await this.saveQuery({ ...this.draftItem, title: name })
         this.markCommited(type, id)
+        if (type === "item") {
+          const query = this.queries.find((q) => q.id === id)
+          if (query) {
+            this.open(query)
+          } else {
+            log.warn(`Saved query ${id} not found, cannot open it.`)
+          }
+        }
       } catch (ex) {
         this.$noty.error(`Create ${type === "folder" ? "folder" : "query"} error: ${ex.userMessage ?? ex.message}`)
       } finally {
