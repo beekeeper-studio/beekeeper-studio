@@ -180,7 +180,7 @@ async function importDirectory(funcs: ImportFunctions, dir: string, parentId: nu
 
       const query: ISavedQuery = {
         queryFolderId: parentId,
-        title: fileName,
+        name: fileName,
         text: fileContents
       } as ISavedQuery;
 

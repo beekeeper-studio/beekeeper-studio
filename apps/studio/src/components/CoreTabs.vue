@@ -952,7 +952,7 @@ export default Vue.extend({
           const text = await this.$util.send('file/readSqlFile', { path: file.path })
           if (text) {
             const query = await this.$util.send('appdb/query/new');
-            query.title = file.name
+            query.name = file.name
             query.text = text
             query.queryFolderId = parentId
             await this.$store.dispatch('data/queries/save', query)
@@ -973,7 +973,7 @@ export default Vue.extend({
       }
     },
     async handlePromptQueryExport(query) {
-      const safeFilename = query.title.replace(/[/\\?%*:|"<>]/g, '_');
+      const safeFilename = query.name.replace(/[/\\?%*:|"<>]/g, '_');
       const fileName = `${safeFilename}.sql`;
 
       const lastExportPath = await Vue.prototype.$settings.get("lastExportPath", await window.main.defaultExportPath(fileName));

@@ -70,15 +70,15 @@ describe('ConnectionSidebar render order', () => {
 })
 
 describe('FavoriteList render order', () => {
-  it('orders by position, not alphabetically by title', () => {
+  it('orders by position, not alphabetically by name', () => {
     const nodes = [
-      itemNode(1, 3, { title: 'alpha' }),
-      itemNode(2, 1, { title: 'zulu' }),
-      itemNode(3, 2, { title: 'mike' }),
+      itemNode(1, 3, { name: 'alpha' }),
+      itemNode(2, 1, { name: 'zulu' }),
+      itemNode(3, 2, { name: 'mike' }),
     ]
 
-    const titles = renderOrder(FavoriteList, nodes).map((n: any) => n.ref.title)
+    const names = renderOrder(FavoriteList, nodes).map((n: any) => n.ref.name)
 
-    expect(titles).toEqual(['zulu', 'mike', 'alpha'])
+    expect(names).toEqual(['zulu', 'mike', 'alpha'])
   })
 })

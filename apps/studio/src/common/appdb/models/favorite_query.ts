@@ -14,7 +14,7 @@ export class FavoriteQuery extends ApplicationEntity implements QueryLike, ISave
   }
 
   @Column({type: "varchar", nullable: false})
-  title!: string
+  name!: string
 
   @MaxLength(2_000_000, { message: `Queries have a max length of 2,000,000 characters.` })
   @Column({type: "text", nullable: false, select: false})

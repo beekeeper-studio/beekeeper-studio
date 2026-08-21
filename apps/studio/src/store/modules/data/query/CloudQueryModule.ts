@@ -26,9 +26,9 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
       state.filter = str;
     },
     ...accessGrantMutations(),
-  }, { field: 'title', direction: 'asc'}),
+  }, { field: 'name', direction: 'asc'}),
   modules: {
-    nodes: ItemNodeModule('queryFolderId', 'title'),
+    nodes: ItemNodeModule('queryFolderId'),
     folders: FolderFetchModule,
   },
   actions: {
@@ -157,12 +157,12 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
       }
 
       const startsWithFilter = _(state.items)
-        .filter((item) => _.startsWith(item.title.toLowerCase(), state.filter))
+        .filter((item) => _.startsWith(item.name.toLowerCase(), state.filter))
         .value();
 
       const containsFilter = _(state.items)
         .difference(startsWithFilter)
-        .filter((item) => item.title.toLowerCase().includes(state.filter.toLowerCase()))
+        .filter((item) => item.name.toLowerCase().includes(state.filter.toLowerCase()))
         .value();
 
       return _.concat(startsWithFilter, containsFilter);

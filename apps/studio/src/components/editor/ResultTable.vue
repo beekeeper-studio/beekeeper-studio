@@ -966,7 +966,7 @@ import { stringToTypedArray } from '@/common/utils'
       download(format) {
         let formatter = format;
         const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss');
-        const title = this.query.title ? _.snakeCase(this.query.title) : 'query_results';
+        const title = this.query.name ? _.snakeCase(this.query.name) : 'query_results';
 
         if(format === 'md'){
           formatter = (rows, options, setFileContents) => {
