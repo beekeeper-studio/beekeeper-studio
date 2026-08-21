@@ -9,12 +9,7 @@ export function resolveHomePathToAbsolute(filename: string): string {
   return path.join(homedir(), filename.substring(2));
 }
 
-/*
-  We only want to save pins/tabs/etc against a valid connectionId.
-  That means: not null, > 0. 
-  We use 0 or -1 as a "fake" id when we need it, hence the check here.
-
-*/
-export function isConnectionScope(connectionId: unknown): connectionId is number {
+// null, undefined, 0 and -1 all mean "no connection"
+export function isValidConnectionId(connectionId: unknown): connectionId is number {
   return typeof connectionId === 'number' && connectionId > 0;
 }

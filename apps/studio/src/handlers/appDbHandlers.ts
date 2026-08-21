@@ -26,7 +26,7 @@ import { TokenCache } from "@/common/appdb/models/token_cache";
 import { CloudCredential } from "@/common/appdb/models/CloudCredential";
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import platformInfo from'@/common/platform_info';
-import { isConnectionScope } from "@/handlers/utils";
+import { isValidConnectionId } from "@/handlers/utils";
 import rawLog from "@bksLogger"
 import { validate } from "class-validator";
 import { QueryAudit } from "@/common/appdb/models/QueryAudit";
@@ -50,12 +50,9 @@ async function niceValidateOrReject(ent: any): Promise<void> {
   }
 }
 
-// `connectionScoped` is a helper to make sure we're dealing with a `SavedConnection`.
-// That way we know we can save pins,tabs,etc against the model.
-function handlersFor<T extends Transport>(name: string, cls: any, transform: (obj: T, cls: any) => Promise<T> = defaultTransform, connectionScoped = false) {
+function handlersFor<T extends Transport>(name: string, cls: any, transform: (obj: T, cls: any) => Promise<T> = defaultTransform, requiresConnectionId = false) {
 
-  const unscoped = (obj: T) =>
-    connectionScoped && !isConnectionScope((obj as { connectionId?: unknown }).connectionId);
+  const hasConnectionId = (obj: T) => isValidConnectionId((obj as { connectionId?: unknown }).connectionId);
 
   return {
     // this is so we can get defaults on objects
@@ -70,10 +67,10 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
       const allCols = repo.metadata.columns
       .map((c: { propertyPath: string }) => `${alias}.${c.propertyPath}`);
       if (_.isArray(obj)) {
-          const dropped = obj.filter(unscoped);
-          if (dropped.length) {
-            log.warn(`Not saving ${dropped.length} ${name} row(s) with no connection`);
-            obj = obj.filter((e) => !unscoped(e));
+          if (requiresConnectionId) {
+            const missing = obj.filter((e) => !hasConnectionId(e));
+            if (missing.length) log.warn(`Not saving ${missing.length} ${name} row(s) without a connectionId`);
+            obj = obj.filter(hasConnectionId);
           }
           const ids = obj.map((e) => e.id);
           const dbEntities = await repo.createQueryBuilder(alias).select(allCols).where(`${alias}.id IN (:...ids)`, { ids }).getMany();
@@ -91,8 +88,8 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
           }));
           return await Promise.all((await cls.save(newEnts, options)).map((e) => transform(e, cls)));
       } else {
-        if (unscoped(obj)) {
-          log.warn(`Not saving ${name} with no connection`);
+        if (requiresConnectionId && !hasConnectionId(obj)) {
+          log.warn(`Not saving ${name} without a connectionId`);
           return obj;
         }
         let dbObj = obj.id
