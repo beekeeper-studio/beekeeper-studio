@@ -616,10 +616,20 @@ export default {
       });
     },
     async duplicate(query) {
-      const cloned = await this.$store.dispatch('data/queries/clone', query)
-      cloned.title = 'Copy of ' + cloned.title
-      await this.$store.dispatch('data/queries/save', cloned)
-      this.$noty.success('Query duplicated')
+      try {
+        const fullQuery = await this.$store.dispatch('data/queries/findOne', query.id)
+        const cloned = await this.$store.dispatch('data/queries/clone', query)
+        cloned.title = 'Copy of ' + cloned.title
+        cloned.text = fullQuery.text
+        cloned.excerpt = fullQuery.excerpt ?? cloned.excerpt
+        const payload = _.pick(cloned, [
+          'title', 'text', 'excerpt', 'queryFolderId', 'position',
+        ])
+        await this.$store.dispatch('data/queries/save', payload)
+        this.$noty.success('Query duplicated')
+      } catch (ex) {
+        this.$noty.error(`Could not duplicate query: ${ex.message}`)
+      }
     },
     renameQueryFolder(folder) {
       this.renamingFolderId = folder.id
