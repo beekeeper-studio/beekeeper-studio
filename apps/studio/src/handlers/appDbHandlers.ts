@@ -26,7 +26,6 @@ import { TokenCache } from "@/common/appdb/models/token_cache";
 import { CloudCredential } from "@/common/appdb/models/CloudCredential";
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import platformInfo from'@/common/platform_info';
-import { isValidConnectionId } from "@/handlers/utils";
 import rawLog from "@bksLogger"
 import { validate } from "class-validator";
 import { QueryAudit } from "@/common/appdb/models/QueryAudit";
@@ -50,9 +49,7 @@ async function niceValidateOrReject(ent: any): Promise<void> {
   }
 }
 
-function handlersFor<T extends Transport>(name: string, cls: any, transform: (obj: T, cls: any) => Promise<T> = defaultTransform, requiresConnectionId = false) {
-
-  const hasConnectionId = (obj: T) => isValidConnectionId((obj as { connectionId?: unknown }).connectionId);
+function handlersFor<T extends Transport>(name: string, cls: any, transform: (obj: T, cls: any) => Promise<T> = defaultTransform) {
 
   return {
     // this is so we can get defaults on objects
@@ -67,11 +64,6 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
       const allCols = repo.metadata.columns
       .map((c: { propertyPath: string }) => `${alias}.${c.propertyPath}`);
       if (_.isArray(obj)) {
-          if (requiresConnectionId) {
-            const missing = obj.filter((e) => !hasConnectionId(e));
-            if (missing.length) log.warn(`Not saving ${missing.length} ${name} row(s) without a connectionId`);
-            obj = obj.filter(hasConnectionId);
-          }
           const ids = obj.map((e) => e.id);
           const dbEntities = await repo.createQueryBuilder(alias).select(allCols).where(`${alias}.id IN (:...ids)`, { ids }).getMany();
           const newEnts = await Promise.all(obj.map(async (e) => {
@@ -88,10 +80,6 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
           }));
           return await Promise.all((await cls.save(newEnts, options)).map((e) => transform(e, cls)));
       } else {
-        if (requiresConnectionId && !hasConnectionId(obj)) {
-          log.warn(`Not saving ${name} without a connectionId`);
-          return obj;
-        }
         let dbObj = obj.id
           ? await repo
               .createQueryBuilder(alias)
@@ -180,15 +168,15 @@ async function transformConn(obj: SavedConnection, cls: any): Promise<IConnectio
 export const AppDbHandlers = {
   ...handlersFor<IConnection>('saved', SavedConnection, transformConn),
   ...handlersFor<IConnection>('used', UsedConnection, transformConn),
-  ...handlersFor<TransportPinnedConn>('pinconn', PinnedConnection, defaultTransform, true),
-  ...handlersFor<TransportPinnedEntity>('pins', PinnedEntity, defaultTransform, true),
+  ...handlersFor<TransportPinnedConn>('pinconn', PinnedConnection),
+  ...handlersFor<TransportPinnedEntity>('pins', PinnedEntity),
   ...handlersFor<TransportFavoriteQuery>('query', FavoriteQuery),
   ...handlersFor<TransportQueryAudit>('queryAudit', QueryAudit),
-  ...handlersFor<TransportUsedQuery>('usedQuery', UsedQuery, defaultTransform, true),
-  ...handlersFor<TransportOpenTab>('tabs', OpenTab, defaultTransform, true),
-  ...handlersFor<TransportHiddenEntity>('hiddenEntity', HiddenEntity, defaultTransform, true),
+  ...handlersFor<TransportUsedQuery>('usedQuery', UsedQuery),
+  ...handlersFor<TransportOpenTab>('tabs', OpenTab),
+  ...handlersFor<TransportHiddenEntity>('hiddenEntity', HiddenEntity),
   ...handlersFor<TransportFormatterPreset>('formatterPreset', FormatterPreset),
-  ...handlersFor<TransportHiddenSchema>('hiddenSchema', HiddenSchema, defaultTransform, true),
+  ...handlersFor<TransportHiddenSchema>('hiddenSchema', HiddenSchema),
   ...handlersFor<TransportUserSetting>('setting', UserSetting, transformSetting),
   ...handlersFor<TransportCloudCredential>('credential', CloudCredential),
   ...handlersFor<TransportLicenseKey>('license', LicenseKey, transformLicense),

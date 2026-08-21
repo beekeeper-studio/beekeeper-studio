@@ -1,4 +1,5 @@
 import _ from 'lodash'
+import { IsInt, Min } from "class-validator";
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { TableFilter, TableOrView } from "@/lib/db/models";
 import { Column, Entity, LessThan, Not, IsNull, DeleteDateColumn, BeforeInsert, BeforeUpdate } from "typeorm";
@@ -70,6 +71,8 @@ export class OpenTab extends ApplicationEntity {
   @Column({type: 'varchar', nullable: true})
   entityType?: string
 
+  @IsInt({ message: 'connectionId must be a saved connection id' })
+  @Min(1, { message: 'connectionId must be a saved connection id' })
   @Column({ type: 'integer', nullable: false })
   connectionId
 

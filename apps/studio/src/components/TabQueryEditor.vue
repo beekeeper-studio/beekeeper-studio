@@ -1796,8 +1796,6 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             excerpt: query.substr(0, 250),
             numberOfRecords: totalRows,
             queryId: this.query?.id,
-            // null on a never-saved connection: the handler drops query
-            // history that isn't keyed on a real connection
             connectionId: this.usedConfig.id
           } as any;
 
@@ -1806,7 +1804,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             queryObj.id = lastQuery.id;
           }
 
-          this.$store.dispatch('data/usedQueries/save', queryObj)
+          if (this.usedConfig.id) this.$store.dispatch('data/usedQueries/save', queryObj)
 
           log.debug('identification', identification)
           const found = identification.find(i => {
