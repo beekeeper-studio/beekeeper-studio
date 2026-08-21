@@ -227,8 +227,8 @@
                     v-bind="props"
                     v-else
                     :class="{
-                      'commited': commitedType === 'folder'
-                        && commitedId === props.node.ref.id,
+                      'committed': committedType === 'folder'
+                        && committedId === props.node.ref.id,
                     }"
                     :tag="renamingFolderId === props.node.ref.id ? 'div': undefined"
                     @contextmenu.native="showFolderContextMenu($event, props.node.ref)"
@@ -294,8 +294,8 @@
                     :privacy-mode="privacyMode"
                     :class="{
                       'drag-pending': (pendingSaveIds || []).includes(node.ref.id),
-                      'commited': commitedType === 'item'
-                        && commitedId === node.ref.id,
+                      'committed': committedType === 'item'
+                        && committedId === node.ref.id,
                     }"
                     @edit="edit"
                     @remove="remove"
@@ -391,9 +391,9 @@ export default {
     sortInitialized: false,
     sizes: [33, 33, 33],
     renamingFolderId: null,
-    commitedId: null,
-    commitedType: null,
-    commitedTimeout: null,
+    committedId: null,
+    committedType: null,
+    committedTimeout: null,
     loadingFolderIds: [],
     errors: {},
     drafting: false,
@@ -527,7 +527,7 @@ export default {
     this.$nextTick(() => { this.sortInitialized = true })
   },
   beforeDestroy() {
-    clearTimeout(this.commitedTimeout)
+    clearTimeout(this.committedTimeout)
   },
   methods: {
     ...mapActions({
@@ -654,13 +654,13 @@ export default {
     stopDrafting() {
       this.drafting = false
     },
-    markCommited(type, id) {
-      clearTimeout(this.commitedTimeout)
-      this.commitedType = type
-      this.commitedId = id
-      this.commitedTimeout = setTimeout(() => {
-        this.commitedType = null
-        this.commitedId = null
+    markCommitted(type, id) {
+      clearTimeout(this.committedTimeout)
+      this.committedType = type
+      this.committedId = id
+      this.committedTimeout = setTimeout(() => {
+        this.committedType = null
+        this.committedId = null
       }, 2000)
     },
     expandFolder(folderId) {
@@ -884,7 +884,7 @@ export default {
         const id = type === 'folder'
           ? await this.saveFolder({ ...this.draftFolder, name })
           : await this.saveConnection({ ...this.draftItem, name })
-        this.markCommited(type, id)
+        this.markCommitted(type, id)
         if (type === 'item') {
           this.edit(this.connections.find((c) => c.id === id))
         }
@@ -929,11 +929,11 @@ export default {
     }
   }
 }
-.commited {
-  animation: commited-fade 2s ease-out;
+.committed {
+  animation: committed-fade 2s ease-out;
 }
 
-@keyframes commited-fade {
+@keyframes committed-fade {
   from {
     background: rgb(from var(--theme-primary) r g b / 25%);
   }
