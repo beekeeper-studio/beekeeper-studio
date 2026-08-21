@@ -1,4 +1,55 @@
+import Vue from "vue";
+import TimeAgo from "javascript-time-ago";
+import en from "javascript-time-ago/locale/en";
+import { shallowMount } from "@vue/test-utils";
 import TableTable from "@/components/tableview/TableTable.vue";
+import store from "@/store";
+import { AppEventMixin } from "@/common/AppEvent";
+import { ConfigMetadataProvider } from "@/common/bksConfig/ConfigMetadataProvider";
+import platformInfo from "@/common/platform_info";
+import { AppDbHandlers } from "@/handlers/appDbHandlers";
+import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
+import { createConfig } from "@tests/integration/utils/config";
+
+const handlers = AppDbHandlers as Record<string, any>;
+
+TimeAgo.addDefaultLocale(en);
+
+Vue.mixin(AppEventMixin);
+
+function mountTableTable(tableName: string) {
+  store.commit("newConnection", {
+    id: 1,
+    connectionType: "postgresql",
+    defaultDatabase: "banana",
+  });
+
+  const $bksConfig = createConfig();
+  const $bksConfigUI = new ConfigMetadataProvider({
+    bksConfig: $bksConfig,
+    platformInfo,
+  });
+  const wrapper = shallowMount(TableTable, {
+    store,
+    propsData: {
+      active: false,
+      tab: { id: 1 },
+      table: { name: tableName, schema: "public", columns: [] },
+    },
+    mocks: {
+      $util: {
+        send(name: string, args: unknown) {
+          return handlers[name](args);
+        },
+      },
+      $bksConfig,
+      $bksConfigUI,
+      $pluralize: (word: string) => word,
+    },
+  });
+
+  return wrapper.vm as any;
+}
 
 // Regression coverage for #4222.
 // `buildPendingInserts` used to JSON.stringify every postgres jsonb cell, even
@@ -129,5 +180,40 @@ describe("TableTable.vue — refreshTable re-fetches columns (#4567)", () => {
     await refreshTable.call(ctx);
 
     expect(ctx.$store.dispatch).toHaveBeenCalledWith("updateTableColumns", table);
+  });
+});
+
+describe("TableTable.vue — loadPersistence filters by tableId", () => {
+  beforeEach(async () => {
+    await TestOrmConnection.connect();
+  });
+
+  afterEach(async () => {
+    await TestOrmConnection.disconnect();
+  });
+
+  it("reads back the layout persisted for this table", async () => {
+    // public.one has to land first: the bug returned whichever row was
+    // inserted first, whatever table was asked for.
+    const one = mountTableTable("one");
+    await one.persistenceWriter(one.tableId, "columns", ["one"]);
+
+    const two = mountTableTable("two");
+    await two.persistenceWriter(two.tableId, "columns", ["two"]);
+
+    const vm = mountTableTable("two");
+    await vm.loadPersistence();
+
+    expect(vm.persistenceReader(vm.tableId, "columns")).toEqual(["two"]);
+  });
+
+  it("reads back nothing when this table has no persisted layout", async () => {
+    const one = mountTableTable("one");
+    await one.persistenceWriter(one.tableId, "columns", ["one"]);
+
+    const vm = mountTableTable("other");
+    await vm.loadPersistence();
+
+    expect(vm.persistenceReader(vm.tableId, "columns")).toBe(false);
   });
 });

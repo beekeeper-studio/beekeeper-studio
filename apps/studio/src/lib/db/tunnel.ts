@@ -10,7 +10,7 @@ import { IDbConnectionServerConfig, IDbConnectionServerSSHConfig } from './types
 import { resolveHomePathToAbsolute } from '@/handlers/utils';
 import { IDbSshTunnel } from './backendTypes';
 import os from 'os';
-import { loadAllowedPublicKeys } from '@/lib/ssh/sshKeyUtils';
+import { canParseKey, loadAllowedPublicKeys } from '@/lib/ssh/sshKeyUtils';
 import { createFilteringAgent } from '@/lib/ssh/identitiesOnlyAgent';
 import type { AuthenticationType, BaseAgent } from 'ssh2';
 
@@ -28,7 +28,7 @@ function findDefaultIdentityFile(): string | undefined {
   const sshDir = path.join(os.homedir(), '.ssh');
   for (const name of DEFAULT_IDENTITY_FILES) {
     const candidate = path.join(sshDir, name);
-    if (fs.existsSync(candidate)) return candidate;
+    if (fs.existsSync(candidate) && canParseKey(candidate)) return candidate;
   }
   return undefined;
 }
@@ -42,6 +42,12 @@ function tryReadKeyFile(candidate: string): Buffer | undefined {
     log.warn(`Skipping IdentityFile that does not exist: ${resolved}`);
     return undefined;
   }
+
+  if (!canParseKey(resolved)) {
+    log.warn(`Skipping unparseable IdentityFile ${resolved}`);
+    return undefined;
+  }
+
   try {
     return fs.readFileSync(resolved);
   } catch (err) {
@@ -129,8 +135,9 @@ export default function connectTunnel(config: IDbConnectionServerConfig): Promis
         const ssh: IDbConnectionServerSSHConfig = config.ssh
 
         const socketPath = appConfig.sshAuthSock || undefined
-        const haveAgent = ssh.useAgent && !!socketPath
-        const bastionHaveAgent = ssh.bastionMode === 'agent' && !!socketPath
+        const hasSocketOrPageant = !!socketPath || isWindows
+        const haveAgent = ssh.useAgent && hasSocketOrPageant
+        const bastionHaveAgent = ssh.bastionMode === 'agent' && hasSocketOrPageant
 
         const sshConfig: Options = {
           endHost: ssh.host || '',

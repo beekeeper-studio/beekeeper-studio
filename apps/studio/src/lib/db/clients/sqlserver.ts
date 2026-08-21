@@ -2,7 +2,6 @@
 import { readFileSync } from 'fs';
 import { parse as bytesParse } from 'bytes'
 import sql, { ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, Request, Transaction } from 'mssql'
-import { identify } from 'sql-query-identifier'
 import knexlib from 'knex'
 import BksConfig from "@/common/bksConfig";
 import _ from 'lodash'
@@ -82,6 +81,7 @@ type SQLServerResult = {
 interface ExecuteOptions {
   arrayRowMode?: boolean
   connection?: Request
+  tabId?: number
 }
 
 const SQLServerContext = {
@@ -217,17 +217,37 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     return this.version.versionString.split(" \n\t")[0]
   }
 
-  async executeQuery(queryText: string, options: ExecuteOptions = {}) {
-    // NOTE (@day): we were apparently not even setting multiple on the request, so this is gonna be single for now
-    const { data, rowsAffected } = await this.driverExecuteSingle(queryText, options);
+  async executeQuery(queryText: string, options: ExecuteOptions = {}): Promise<NgQueryResult[]> {
+    const commands = this.identifyCommands(queryText);
 
-    const commands = this.identifyCommands(queryText)
+    const results: NgQueryResult[] = [];
 
-    // Executing only non select queries will not return results.
-    // So we "fake" there is at least one result.
-    const results = !data.recordsets.length && rowsAffected > 0 ? [[] as any] : data.recordsets as IRecordSet<any>
+    for (const query of commands) {
+      if (query.executionType === 'TRANSACTION' && !_.isNil(options.tabId)) {
+        switch (query.type) {
+          case "BEGIN_TRANSACTION":
+            await this.startTransaction(options.tabId);
+            break;
+          case "COMMIT":
+            await this.commitTransaction(options.tabId);
+            break;
+          case "ROLLBACK":
+            await this.rollbackTransaction(options.tabId);
+            break;
+        }
+        continue;
+      }
 
-    return results.map((result, idx) => this.parseRowQueryResult(result, rowsAffected, commands[idx], result?.columns, options.arrayRowMode))
+      const { data, rowsAffected } = await this.driverExecuteSingle(query.text, options);
+
+      const raw = !data.recordsets.length && rowsAffected > 0 ? [[] as any] : data.recordsets as IRecordSet<any>
+
+      const parsed = raw.map((result) => this.parseRowQueryResult(result, rowsAffected, query, result?.columns, options.arrayRowMode))
+
+      results.push(...parsed);
+    }
+
+    return results;
   }
 
   async query(queryText: string, tabId: number) {
@@ -237,7 +257,11 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     return {
       execute: async(): Promise<NgQueryResult[]> => {
         try {
-          return await this.executeQuery(queryText, { arrayRowMode: true, connection: queryRequest })
+          return await this.executeQuery(queryText, {
+            arrayRowMode: true,
+            connection: queryRequest,
+            tabId
+          })
         } catch (err) {
           if (err.code === mmsqlErrors.CANCELED) {
             err.sqlectronError = 'CANCELED_BY_USER';

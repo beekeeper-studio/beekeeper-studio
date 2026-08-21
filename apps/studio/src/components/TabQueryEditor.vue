@@ -73,6 +73,9 @@
         :columns-getter="columnsGetter"
         :default-schema="defaultSchema"
         :language-id="languageIdForDialect"
+        :keyword-casing="autocompleteKeywordCasing"
+        :quote-identifiers="autocompleteQuoteIdentifiers"
+        :quote-character="autocompleteQuoteCharacter"
         :clipboard="$native.clipboard"
         :replace-extensions="replaceExtensions"
         :context-menu-items="editorContextMenu"
@@ -91,104 +94,104 @@
         class="toolbar text-right"
         ref="toolbar"
       >
-        <div class="actions" v-if="canManageTransactions">
-          <transition name="fade-swap">
-            <x-buttons
-              id="commit-mode"
-              class="selectbutton"
-              v-if="!hasActiveTransaction"
-            >
-              <x-button
-                :toggled="!isManualCommit"
-                @click.prevent="toggleCommitMode('auto')"
-                v-tooltip="getCommitModeVTooltip({
-                  title: 'Auto commit mode',
-                  description: 'This is the way it works by default. No need to worry about it.',
-                })"
+        <div class="actions secondary-actions">
+          <div v-if="canManageTransactions">
+            <transition name="fade-swap">
+              <x-buttons
+                id="commit-mode"
+                class="selectbutton"
+                v-if="!hasActiveTransaction"
               >
-                <span class="togglebutton-content">
-                  {{ !isManualCommit ? 'Auto Commit' : 'Auto' }}
-                </span>
-              </x-button>
-              <x-button
-                :toggled="isManualCommit"
-                @click.prevent="toggleCommitMode('manual')"
-                v-tooltip="getCommitModeVTooltip({
-                  title: 'Manual commit mode',
-                  description: 'Write actions will require you to manually commit your changes',
-                  learnMoreLink: 'https://docs.beekeeperstudio.io/user_guide/sql_editor/manual-transaction-management',
-                })"
+                <x-button
+                  :toggled="!isManualCommit"
+                  @click.prevent="toggleCommitMode('auto')"
+                  v-tooltip="getCommitModeVTooltip({
+                    title: 'Auto commit mode',
+                    description: 'This is the way it works by default. No need to worry about it.',
+                  })"
+                >
+                  <span class="togglebutton-content">
+                    {{ !isManualCommit ? 'Auto Commit' : 'Auto' }}
+                  </span>
+                </x-button>
+                <x-button
+                  :toggled="isManualCommit"
+                  @click.prevent="toggleCommitMode('manual')"
+                  v-tooltip="getCommitModeVTooltip({
+                    title: 'Manual commit mode',
+                    description: 'Write actions will require you to manually commit your changes',
+                    learnMoreLink: 'https://docs.beekeeperstudio.io/user_guide/sql_editor/manual-transaction-management',
+                  })"
+                >
+                  <span class="togglebutton-content">
+                    {{ isManualCommit ? 'Manual Commit' : 'Manual' }}
+                  </span>
+                </x-button>
+              </x-buttons>
+            </transition>
+            <transition name="fade-swap">
+              <div
+                v-if="hasActiveTransaction"
+                class="transaction-indicator"
+                v-tooltip="{
+                  ...getCommitModeVTooltip({
+                    title: `<i class='material-icons'>commit</i><span>Transaction active</span>`,
+                    description: 'Once committed or rolled back, it will be deactivated.',
+                    learnMoreLink: 'https://docs.beekeeperstudio.io/user_guide/sql_editor/manual-transaction-management',
+                    className: 'transaction-active',
+                    show: showTransactionActiveTooltip,
+                    onClose() {
+                      showTransactionActiveTooltip = false
+                    },
+                  }),
+                }"
               >
-                <span class="togglebutton-content">
-                  {{ isManualCommit ? 'Manual Commit' : 'Manual' }}
-                </span>
+                <i class="material-icons">commit</i>
+                <span>Transaction active</span>
+              </div>
+            </transition>
+          </div>
+
+          <div v-if="canManageTransactions && isManualCommit" class="btn-group">
+            <x-buttons v-show="!hasActiveTransaction">
+              <x-button
+                @click.prevent="manualBegin"
+                class="btn btn-flat btn-small"
+              >
+                Begin
               </x-button>
             </x-buttons>
-          </transition>
-          <transition name="fade-swap">
-            <div
-              v-if="hasActiveTransaction"
-              class="transaction-indicator"
-              v-tooltip="{
-                ...getCommitModeVTooltip({
-                  title: `<i class='material-icons'>commit</i><span>Transaction active</span>`,
-                  description: 'Once committed or rolled back, it will be deactivated.',
-                  learnMoreLink: 'https://docs.beekeeperstudio.io/user_guide/sql_editor/manual-transaction-management',
-                  className: 'transaction-active',
-                  show: showTransactionActiveTooltip,
-                  onClose() {
-                    showTransactionActiveTooltip = false
-                  },
-                }),
-              }"
-            >
-              <i class="material-icons">commit</i>
-              <span>Transaction active</span>
-            </div>
-          </transition>
+
+            <x-buttons v-show="showKeepAlive">
+              <x-button
+                @click.prevent="keepAliveTransaction"
+                class="btn btn-flat btn-small"
+              >
+                <x-label>Keep Alive</x-label>
+              </x-button>
+            </x-buttons>
+            <x-buttons>
+              <x-button
+                @click.prevent="manualCommit"
+                class="btn btn-flat btn-small"
+                :disabled="!hasActiveTransaction"
+              >
+                <x-label>Commit</x-label>
+              </x-button>
+            </x-buttons>
+            <x-buttons>
+              <x-button
+                @click.prevent="manualRollback"
+                class="btn btn-flat btn-small"
+                :disabled="!hasActiveTransaction"
+              >
+                <x-label>Rollback</x-label>
+              </x-button>
+            </x-buttons>
+          </div>
         </div>
 
-        <div v-if="canManageTransactions && isManualCommit" class="actions btn-group">
-          <x-buttons v-show="!hasActiveTransaction">
-            <x-button
-              @click.prevent="manualBegin"
-              class="btn btn-flat btn-small"
-            >
-              Begin
-            </x-button>
-          </x-buttons>
-
-          <x-buttons v-show="showKeepAlive">
-            <x-button
-              @click.prevent="keepAliveTransaction"
-              class="btn btn-flat btn-small"
-            >
-              <x-label>Keep Alive</x-label>
-            </x-button>
-          </x-buttons>
-          <x-buttons>
-            <x-button
-              @click.prevent="manualCommit"
-              class="btn btn-flat btn-small"
-              :disabled="!hasActiveTransaction"
-            >
-              <x-label>Commit</x-label>
-            </x-button>
-          </x-buttons>
-          <x-buttons>
-            <x-button
-              @click.prevent="manualRollback"
-              class="btn btn-flat btn-small"
-              :disabled="!hasActiveTransaction"
-            >
-              <x-label>Rollback</x-label>
-            </x-button>
-          </x-buttons>
-        </div>
-
-        <div class="editor-help expand" />
-        <div class="expand" />
-        <div class="actions btn-group">
+        <div class="actions primary-actions btn-group">
           <x-button
             v-if="showDryRun"
             class="btn btn-flat btn-small dry-run-btn"
@@ -206,6 +209,22 @@
               v-model="dryRun"
             >
           </x-button>
+          <x-button
+            v-if="queryId"
+            @click.prevent="viewEditHistory"
+            class="btn btn-flat btn-small history-btn"
+            v-tooltip="updatedTooltip"
+          >
+            <i class="material-icons">history</i>
+          </x-button>
+          <x-button
+            v-if="aiShellAvailable"
+            @click.prevent="askAi"
+            class="btn btn-flat btn-small ask-ai"
+          >
+            <i class="material-icons">auto_awesome</i> Ask AI
+          </x-button>
+
           <x-button
             @click.prevent="triggerSave"
             class="btn btn-flat btn-small"
@@ -553,8 +572,8 @@
   import _ from 'lodash'
   import Split from 'split.js'
   import Noty from 'noty'
+  import dateFormat from 'dateformat'
   import { mapActions, mapGetters, mapState } from 'vuex'
-  import { identify } from 'sql-query-identifier'
 
   import { canDeparameterize, convertParamsForReplacement, deparameterizeQuery, safelyIdentify } from '../lib/db/sql_tools'
   import { EditorMarker } from '@/lib/editor/utils'
@@ -574,7 +593,7 @@
   import MergeManager from '@/components/editor/MergeManager.vue'
   import { AppEvent } from '@/common/AppEvent'
   import { PropType } from 'vue'
-  import { TransportOpenTab, findQuery, resolveEditorText } from '@/common/transport/TransportOpenTab'
+  import { TransportOpenTab, resolveEditorText } from '@/common/transport/TransportOpenTab'
   import { blankFavoriteQuery } from '@/common/transport'
   import { FieldEditData, TableOrView } from "@/lib/db/models";
   import { FormatterDialect, dialectFor, formatOptionsFor } from "@shared/lib/dialects/models"
@@ -602,6 +621,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     },
     data() {
       return {
+        latestAudit: null,
         results: [],
         running: false,
         runningCount: 1,
@@ -678,7 +698,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       }
     },
     computed: {
-      ...mapGetters(['dialect', 'dialectData', 'defaultSchema', 'isUltimate', 'isCloud']),
+      ...mapGetters(['dialect', 'dialectData', 'defaultSchema', 'isUltimate', 'isCloud', 'aiShellAvailable']),
       ...mapGetters({
         'isCommunity': 'licenses/isCommunity',
         'userKeymap': 'settings/userKeymap',
@@ -694,8 +714,33 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           { event: AppEvent.openQueryEditHistory, handler: this.handleOpenQueryEditHistory },
         ];
       },
-      savedQuery(): ISavedQuery | undefined {
-        return this.savedQueries.find((q) => q.id === this.tab.queryId);
+      updatedByName() {
+        return this.latestAudit?.user?.name;
+      },
+      updatedAt() {
+        if (!this.latestAudit) {
+          return null;
+        }
+
+        // the cloud api sends float seconds since epoch, appdb sends a Date
+        if (typeof this.latestAudit.createdAt === "number") {
+          return new Date(this.latestAudit.createdAt * 1000);
+        }
+
+        return this.latestAudit.createdAt;
+      },
+      updatedTooltip() {
+        if (!this.updatedAt) {
+          return;
+        }
+
+        const time = dateFormat(this.updatedAt, "d mmm yyyy HH:MM:ss");
+
+        if (this.isCloud && this.updatedByName) {
+          return `Updated by ${this.updatedByName} at ${time}`;
+        }
+
+        return `Updated at ${time}`;
       },
       readOnly() {
         if (this.tab.isLoading) {
@@ -704,7 +749,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         if (this.remoteDeleted) {
           return true;
         }
-        if (this.isCloud && this.savedQuery && !this.savedQuery.canWrite) {
+        if (this.isCloud && this.query.id && !this.query.canWrite) {
           return true;
         }
         return false;
@@ -738,7 +783,10 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         return this.storeInitialized && this.tab.queryId && this.queryDeleted
       },
       query() {
-        return this.fullQuery ?? this.blankQuery
+        return this.fullQuery || this.savedQueries.find((q) => q.id === this.tab.queryId) || this.blankQuery
+      },
+      queryId() {
+        return this.query.id
       },
       queryTitle() {
         return this.query?.title
@@ -1000,9 +1048,32 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       },
       primaryIsCurrent() {
         return this.$bksConfig.ui.queryEditor?.primaryQueryAction.toLowerCase() === 'submitcurrentquery';
+      },
+      autocompleteKeywordCasing() {
+        const value = String(this.$bksConfig.ui.queryEditor?.autocomplete?.keywordCasing ?? '').toLowerCase();
+        return ['preserve', 'upper', 'lower'].includes(value) ? value : 'preserve';
+      },
+      autocompleteQuoteIdentifiers() {
+        const value = String(this.$bksConfig.ui.queryEditor?.autocomplete?.quoteIdentifiers ?? '').toLowerCase();
+        return ['auto', 'always'].includes(value) ? value : 'auto';
+      },
+      autocompleteQuoteCharacter() {
+        // Same [db.<type>] section naming as processRawConfig (postgres, not postgresql)
+        const dbType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
+        const value = this.$bksConfig.db?.[dbType]?.autocompleteQuoteCharacter;
+        // 0 or -1 selects the database's convention; the editor also rejects
+        // characters the dialect doesn't recognize as identifier quotes.
+        if (value === 0 || value === -1 || value === '0' || value === '-1') return undefined;
+        return typeof value === 'string' && value.trim() ? value.trim() : undefined;
       }
     },
     watch: {
+      queryId: {
+        immediate: true,
+        handler() {
+          this.loadLatestAudit();
+        },
+      },
       selectedResult() {
         this.editingResult = false
       },
@@ -1080,7 +1151,24 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     methods: {
       ...mapActions({
         reloadQuery: "data/queries/reload",
+        listQueryAudits: "data/queryAudits/list",
       }),
+      async loadLatestAudit() {
+        if (!this.queryId) {
+          return;
+        }
+
+        try {
+          const audits = await this.listQueryAudits({
+            queryId: this.queryId,
+            limit: 1,
+          });
+          this.latestAudit = audits[0] ?? null;
+        } catch (e) {
+          log.error("failed loading the latest query audit", e);
+          this.latestAudit = null;
+        }
+      },
       updateTab() {
         this.$emit('update-tab', this.tab)
       },
@@ -1454,6 +1542,14 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       onChange(text) {
         this.unsavedText = text
       },
+      askAi() {
+        const sql = this.hasSelectedText
+          ? this.editor.selection
+          : this.unsavedText;
+        this.$bksPlugin.execute('bks-ai-shell', 'new-tab-dropdown-item', {
+          message: "```sql\n" + sql + "\n```\nHelp me with the above query" ,
+        });
+      },
       escapeRegExp(string) {
         return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
       },
@@ -1603,6 +1699,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         this.resultEditableMap = []
         this.editingResult = false
         this.selectedResult = 0
+        let shouldToggle = false;
         const { queries: identification, error } = safelyIdentify(rawQuery, { dialect: this.identifyDialect, identifyTables: true, identifyColumns: true });
         if (error) {
           log.error("Unable to identify query.", error)
@@ -1619,7 +1716,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
               this.enteredTransactionFromIdent = true;
               this.hasActiveTransaction = true;
             } else if (this.isManualCommit && this.hasActiveTransaction && endTransaction > startTransaction) {
-              await this.toggleCommitMode();
+              shouldToggle = true;
             }
           }
         } catch (ex) {
@@ -1646,10 +1743,15 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
           // Dry run is for bigquery, allows query cost estimations
-          this.runningQuery = await this.connection.query(query, this.tab.id, { dryRun: this.dryRun}, this.hasActiveTransaction);
+          this.runningQuery = await this.connection.query(query, this.tab.id, { dryRun: this.dryRun }, this.hasActiveTransaction);
           const queryStartTime = new Date()
           const results = await this.runningQuery.execute();
           const queryEndTime = new Date()
+
+          if (shouldToggle) {
+            this.hasActiveTransaction = false;
+            await this.toggleCommitMode();
+          }
 
           // https://github.com/beekeeper-studio/beekeeper-studio/issues/1435
           if (!document.hasFocus() && window.Notification && Notification.permission === "granted") {
@@ -1695,7 +1797,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             numberOfRecords: totalRows,
             queryId: this.query?.id,
             connectionId: this.usedConfig.id
-          }
+          } as any;
 
           if(lastQuery && isDuplicate){
             queryObj.updatedAt = new Date();
@@ -1902,6 +2004,15 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         }
         return [
           ...items,
+          ...(this.aiShellAvailable
+            ? [
+                {
+                  label: "Ask AI",
+                  id: "ask-ai",
+                  handler: this.askAi,
+                },
+              ]
+            : []),
           {
             label: "Open Query Formatter",
             id: "formatter",
@@ -1919,7 +2030,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             : []),
           ...(window.platformInfo.isDevelopment && this.isCloud && this.query?.id
             ? [
-                { type: "divider" },
+                divider,
                 {
                   label: "[DEV] Make Fake Remote Change",
                   id: "fake-remote-change",
@@ -2014,6 +2125,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             }
 
             if (!query) return;
+
+            this.fullQuery = query;
 
             if (this.tab.title !== query.title) {
               this.tab.title = query.title;
@@ -2241,6 +2354,46 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
     .alert {
       margin: 0;
+    }
+  }
+
+  .ask-ai .material-icons {
+    font-size: 1rem;
+    margin-right: 0.25rem;
+  }
+
+  .toolbar x-button {
+    white-space: nowrap;
+  }
+
+  .query-editor .toolbar .actions.secondary-actions {
+    margin: 0;
+    overflow-x: auto;
+
+    &::-webkit-scrollbar {
+      height: 1px;
+    }
+
+    .btn-group {
+      display: flex;
+      margin-left: 0.25rem;
+      margin-right: 0;
+    }
+  }
+
+  .query-editor .toolbar .actions.primary-actions {
+    flex-grow: 1;
+    justify-content: flex-end;
+    margin: 0;
+  }
+
+  .btn.history-btn {
+    background-color: transparent;
+    box-shadow: none;
+    padding-inline: 0.15rem;
+
+    &:not(:hover) .material-icons {
+      color: var(--text-lighter);
     }
   }
 </style>
