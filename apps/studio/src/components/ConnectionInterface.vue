@@ -534,8 +534,9 @@ export default Vue.extend({
       The goal of this method is to take a `UsedConnection` and generate a blank `SavedConnection` (no ID), so CoreInterface gets the right thing.
     */
     async configFrom(config) {
-      // Hacky way to determine we have a `SavedConnection` already
-      if (_.isUndefined(config.connectionId)) return config
+      // Hacky way to determine we have a `SavedConnection` already.
+      // The form edits a copy, never the sidebar's own object.
+      if (_.isUndefined(config.connectionId)) return _.clone(config)
 
       const init = _.omit(config, ['id', 'connectionId', 'createdAt', 'updatedAt', 'version'])
       const unsaved = await this.$util.send('appdb/saved/new', { init })
@@ -543,7 +544,7 @@ export default Vue.extend({
       return unsaved
     },
     async edit(config) {
-      this.config = _.clone(await this.configFrom(config))
+      this.config = await this.configFrom(config)
       this.errors = null
       this.connectionError = null
     },
