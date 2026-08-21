@@ -393,7 +393,7 @@ export default Vue.extend({
       try {
         const queryAudits: IQueryAudit[] = await this.$store.dispatch(
           "data/queryAudits/list",
-          queryId
+          { queryId }
         );
         this.queryAudits = queryAudits;
         if (queryAudits.length === 0) {
