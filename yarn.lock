@@ -5234,9 +5234,9 @@
     source-map "0.5.6"
     tsconfig "^7.0.0"
 
-"@vue/web-component-wrapper@beekeeper-studio/vue-web-component-wrapper#635e4b427b90e199c273b194cf9db6b744d63e95":
+"@vue/web-component-wrapper@git+https://github.com/beekeeper-studio/vue-web-component-wrapper.git#635e4b427b90e199c273b194cf9db6b744d63e95":
   version "1.3.0-bks.7"
-  resolved "https://codeload.github.com/beekeeper-studio/vue-web-component-wrapper/tar.gz/635e4b427b90e199c273b194cf9db6b744d63e95"
+  resolved "git+https://github.com/beekeeper-studio/vue-web-component-wrapper.git#635e4b427b90e199c273b194cf9db6b744d63e95"
 
 "@xmldom/xmldom@^0.8.8":
   version "0.8.13"
@@ -6165,9 +6165,9 @@ cassandra-driver@^4.6.4:
     adm-zip "~0.5.10"
     long "~5.2.3"
 
-cassandra-knex@beekeeper-studio/cassandra-knex#1bac17636e3451f0f7aaa62fb92c8a9539f5ee4a:
+"cassandra-knex@git+https://github.com/beekeeper-studio/cassandra-knex.git#1bac17636e3451f0f7aaa62fb92c8a9539f5ee4a":
   version "0.1.0"
-  resolved "https://codeload.github.com/beekeeper-studio/cassandra-knex/tar.gz/1bac17636e3451f0f7aaa62fb92c8a9539f5ee4a"
+  resolved "git+https://github.com/beekeeper-studio/cassandra-knex.git#1bac17636e3451f0f7aaa62fb92c8a9539f5ee4a"
   dependencies:
     cassandra-driver "^4.6.4"
     lodash "^4.17.21"
@@ -10740,9 +10740,9 @@ normalize-url@^6.0.1:
   resolved "https://registry.yarnpkg.com/normalize-url/-/normalize-url-6.1.0.tgz#40d0885b535deffe3f3147bec877d05fe4c5668a"
   integrity sha512-DlL+XwOy3NxAQ8xuC0okPgK46iuVNAK01YN7RueYBqqFeGsBjV9XmCAzAdgt+667bCl5kPh9EqKKDwnaPG1I7A==
 
-noty@beekeeper-studio/noty#dc27550d340dd53480cf861d5ad4e7e292107ad6:
+"noty@git+https://github.com/beekeeper-studio/noty.git#dc27550d340dd53480cf861d5ad4e7e292107ad6":
   version "3.2.0-beta"
-  resolved "https://codeload.github.com/beekeeper-studio/noty/tar.gz/dc27550d340dd53480cf861d5ad4e7e292107ad6"
+  resolved "git+https://github.com/beekeeper-studio/noty.git#dc27550d340dd53480cf861d5ad4e7e292107ad6"
 
 npm-run-path@^2.0.0:
   version "2.0.2"
@@ -12592,9 +12592,9 @@ sql-query-identifier@^3.2.0:
   resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-3.2.0.tgz#c2e184258da21b821d8404ece45892a8709b4f17"
   integrity sha512-DUIx0pyyPYIJzFCuD5euzHOjj1n9BxTEkq8iXOHgOTd/RwuKsHUMhn0tb6pAwJR2rccy925Fhe4NaDDadIjTUQ==
 
-sqlanywhere@beekeeper-studio/node-sqlanywhere#54d1ef2052ccdfe963f0956a3e4d024ee6f1fd8d:
+"sqlanywhere@git+https://github.com/beekeeper-studio/node-sqlanywhere.git#54d1ef2052ccdfe963f0956a3e4d024ee6f1fd8d":
   version "2.0.4"
-  resolved "https://codeload.github.com/beekeeper-studio/node-sqlanywhere/tar.gz/54d1ef2052ccdfe963f0956a3e4d024ee6f1fd8d"
+  resolved "git+https://github.com/beekeeper-studio/node-sqlanywhere.git#54d1ef2052ccdfe963f0956a3e4d024ee6f1fd8d"
   dependencies:
     help "^3.0.2"
     nan "^2.24.0"
@@ -14121,9 +14121,9 @@ wsl-utils@^0.1.0:
   dependencies:
     is-wsl "^3.1.0"
 
-xel@beekeeper-studio/xel:
+"xel@git+https://github.com/beekeeper-studio/xel.git#137f79035d4379a4bdd98efd3f12d6683ec42375":
   version "0.0.220"
-  resolved "https://codeload.github.com/beekeeper-studio/xel/tar.gz/137f79035d4379a4bdd98efd3f12d6683ec42375"
+  resolved "git+https://github.com/beekeeper-studio/xel.git#137f79035d4379a4bdd98efd3f12d6683ec42375"
 
 "xlsx@https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz":
   version "0.20.3"

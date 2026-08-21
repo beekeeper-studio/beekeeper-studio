@@ -107,7 +107,7 @@
     "@types/codemirror": "^0.0.97",
     "@types/lodash": "^4.14.159",
     "@types/tabulator-tables": "^6.3.4",
-    "@vue/web-component-wrapper": "beekeeper-studio/vue-web-component-wrapper#635e4b427b90e199c273b194cf9db6b744d63e95",
+    "@vue/web-component-wrapper": "git+https://github.com/beekeeper-studio/vue-web-component-wrapper.git#635e4b427b90e199c273b194cf9db6b744d63e95",
     "codemirror": "^5.63.1",
     "concurrently": "^8.2.2",
     "cross-spawn": "^7.0.6",
