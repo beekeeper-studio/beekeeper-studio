@@ -6,6 +6,35 @@ import { DbConnectionBase } from './saved_connection'
 @Entity({ name: 'used_connection' })
 export class UsedConnection extends DbConnectionBase implements ISimpleConnection {
 
+  /**
+   * Record that `config` was just connected to. Called by the backend once
+   * the connection is actually up - a failed attempt is not a "use".
+   *
+   * `config.id` must be a saved_connection id (or null for a connection that
+   * was never saved). used_connection has its own id sequence, and every
+   * per-connection thing the app persists - tabs, pins, hidden entities, tab
+   * history - is keyed on the saved_connection id, so a used_connection must
+   * never be passed in here as the config.
+   *
+   * A saved connection keeps one row, refreshed with the latest details on
+   * each connect. Anything else has no stable identity to match on and gets
+   * a fresh row every time; the recent list copes with the duplicates.
+   */
+  static async recordUse(config: IConnection): Promise<UsedConnection> {
+    if (!_.isUndefined((config as Partial<UsedConnection>).connectionId)) {
+      throw new Error("recordUse was handed a used_connection. Connect with a saved connection, or a new unsaved one.")
+    }
+
+    const savedConnectionId = config.id ?? null
+    const existing = savedConnectionId
+      ? await UsedConnection.findOneBy({ connectionId: savedConnectionId, workspaceId: config.workspaceId })
+      : null
+
+    const used = existing ?? new UsedConnection()
+    used.withProps({ ...config, connectionId: savedConnectionId } as IConnection)
+    return await used.save()
+  }
+
   withProps(other: IConnection): UsedConnection {
     if (other) {
       this.connectionType = other.connectionType
@@ -30,7 +59,7 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       // `connectionId` is always passed explicitly by the caller: it's a
       // saved_connection reference, or null for a connection that was never
       // saved. It is never inferred from `id`, which belongs to a different
-      // id sequence entirely (see UtilUsedConnectionModule.recordUsed).
+      // id sequence entirely (see recordUse above).
       this.connectionId = (other as Partial<UsedConnection>).connectionId ?? null
       if (!_.isNil(other.workspaceId)) {
         this.workspaceId = other.workspaceId

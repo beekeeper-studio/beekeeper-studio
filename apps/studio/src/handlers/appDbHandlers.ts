@@ -50,9 +50,8 @@ async function niceValidateOrReject(ent: any): Promise<void> {
   }
 }
 
-// `connectionScoped` marks entities whose rows belong to one saved connection
-// (tabs, pins, hidden entities, query history). Those are never written
-// without a real connection id - see isConnectionScope.
+// `connectionScoped` is a helper to make sure we're dealing with a `SavedConnection`.
+// That way we know we can save pins,tabs,etc against the model.
 function handlersFor<T extends Transport>(name: string, cls: any, transform: (obj: T, cls: any) => Promise<T> = defaultTransform, connectionScoped = false) {
 
   const unscoped = (obj: T) =>

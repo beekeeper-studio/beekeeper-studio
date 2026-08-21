@@ -9,12 +9,12 @@ export function resolveHomePathToAbsolute(filename: string): string {
   return path.join(homedir(), filename.substring(2));
 }
 
-// Tabs, pins, hidden entities and query history are all keyed on a
-// saved_connection id. null, undefined, 0 and -1 all mean "no connection" -
-// a session on a connection that was never saved, or a caller that lost track
-// of the id. Nothing may be written or deleted under one of those: -1 is a
-// shared bucket every unsaved session would pile into, and an absent id can
-// widen a connection-scoped delete into an unscoped one.
+/*
+  We only want to save pins/tabs/etc against a valid connectionId.
+  That means: not null, > 0. 
+  We use 0 or -1 as a "fake" id when we need it, hence the check here.
+
+*/
 export function isConnectionScope(connectionId: unknown): connectionId is number {
   return typeof connectionId === 'number' && connectionId > 0;
 }

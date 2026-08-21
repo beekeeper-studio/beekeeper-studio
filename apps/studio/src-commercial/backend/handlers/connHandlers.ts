@@ -9,6 +9,7 @@ import { uuidv4 } from "@/lib/uuid";
 import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
 import { TokenCache } from "@/common/appdb/models/token_cache";
 import { SavedConnection } from "@/common/appdb/models/saved_connection";
+import { UsedConnection } from "@/common/appdb/models/used_connection";
 import { AzureAuthService } from "@/lib/db/authentication/azure";
 import bksConfig from "@/common/bksConfig";
 import { UserPin } from "@/common/appdb/models/UserPin";
@@ -177,6 +178,7 @@ export const ConnHandlers: IConnectionHandlers = {
     const server = ConnectionProvider.for(config, osUser, settings);
     const connection = server.createConnection(database);
     await connection.connect(abortController.signal);
+    await UsedConnection.recordUse(config);
     // HACK (@day): this is because of type fuckery, need to actually just recreate the object but I'm lazy rn and it's late
     connection.connectionType = config.connectionType ?? (config as any)._connectionType;
 

@@ -63,7 +63,7 @@ function buildStore(connectCalls: any[]) {
 }
 
 // A recent-connections row for a connection that was never saved, built the
-// way recordUsed builds one.
+// way the backend builds one on connect.
 async function buildRecentRow(overrides: any = {}) {
   const fresh = await AppDbHandlers['appdb/saved/new']({
     init: {

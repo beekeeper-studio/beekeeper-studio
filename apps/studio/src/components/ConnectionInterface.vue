@@ -526,15 +526,15 @@ export default Vue.extend({
         this.config = conn;
       })
     },
-    // The recent-connections list hands over a used_connection row whenever
-    // the connection behind it was never saved (or has since been deleted).
-    // used_connection ids come from their own sequence, while everything the
-    // core interface persists per-connection (tabs, pins, hidden entities,
-    // tab history) is keyed on a saved_connection id - so a used_connection
-    // must never leave this screen. Turn it into a brand new, unsaved
-    // connection with the same details instead.
+    /*
+      The CoreInterface should ONLY ever receive a `SavedConnection`, not a `UsedConnection`.
+      Why? It loads tabs/pins/history based on the `id`, so if we give it the wrong model
+      then it loads content from another connection. That's bad.
+
+      The goal of this method is to take a `UsedConnection` and generate a blank `SavedConnection` (no ID), so CoreInterface gets the right thing.
+    */
     async configFrom(config) {
-      // a saved connection, or a new one built on this screen
+      // Hacky way to determine we have a `SavedConnection` already
       if (_.isUndefined(config.connectionId)) return config
 
       const init = _.omit(config, ['id', 'connectionId', 'createdAt', 'updatedAt', 'version'])

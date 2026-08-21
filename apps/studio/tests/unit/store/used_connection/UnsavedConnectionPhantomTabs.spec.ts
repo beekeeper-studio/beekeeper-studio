@@ -20,7 +20,7 @@ const Handlers = { ...AppDbHandlers, ...TabHistoryHandlers }
 // that was never saved surfaced (and then corrupted) the open tabs of an
 // unrelated *saved* connection.
 //
-// Root cause: for an unsaved config, `recordUsed` returned the new
+// Root cause: for an unsaved config, the renderer's recordUsed returned the new
 // used_connection row, so `usedConfig.id` was a used_connection PK. Tabs,
 // pins, hidden entities, and tab history are all persisted keyed on
 // `usedConfig.id` in a column that holds saved_connection PKs. The two
@@ -129,12 +129,12 @@ describe('connecting without saving (phantom tabs)', () => {
     await TestOrmConnection.disconnect()
   })
 
-  // Simulates the exact flow of the root `connect` action: recordUsed, then
-  // the newConnection mutation, then pruning old deleted tabs (guarded on
-  // usedConfig.id, as in store/index.ts).
+  // Simulates the flow of a connect: the backend records the use as part of
+  // conn/create, then the root `connect` action commits the config and prunes
+  // old deleted tabs (as in store/index.ts).
   async function connectWith(config: any) {
-    const usedConfig = await store.dispatch(
-      'data/usedconnections/recordUsed', config)
+    await UsedConnection.recordUse(config)
+    const usedConfig = config
     store.commit('newConnection', usedConfig)
     await Handlers['appdb/tabhistory/clearDeletedTabs']({
       workspaceId: WORKSPACE_ID,
@@ -239,10 +239,13 @@ describe('connecting without saving (phantom tabs)', () => {
     expect(usedConfig.id).toBeNull()
     expect((store.state as any).tabs.tabs).toHaveLength(0)
 
-    // ...and the row is reused rather than duplicated in the recent list.
+    // A connection with nothing saved behind it has no identity to match on,
+    // so it gets its own row every time. A duplicate in the recent list is the
+    // accepted cost of not guessing at which fields make two connections the
+    // same; what matters is that neither row is linked to a saved connection.
     const used = await UsedConnection.find()
-    expect(used).toHaveLength(1)
-    expect(used[0].connectionId).toBeNull()
+    expect(used).toHaveLength(2)
+    expect(used.map((u) => u.connectionId)).toEqual([null, null])
   })
 
   it('refuses to record a used_connection as if it were a saved one', async () => {
@@ -252,11 +255,9 @@ describe('connecting without saving (phantom tabs)', () => {
 
     // The connection screen is responsible for converting a recent-list row
     // into a new unsaved connection (ConnectionInterface.configFrom). If one
-    // ever gets through, fail loudly rather than key the session on an id
-    // from the wrong table.
-    await expect(
-      store.dispatch('data/usedconnections/recordUsed', { ...recent })
-    ).rejects.toThrow(/used_connection/)
+    // ever reaches the backend, fail loudly rather than key the session on an
+    // id from the wrong table.
+    await expect(UsedConnection.recordUse({ ...recent })).rejects.toThrow(/used_connection/)
   })
 
   it('first connect of a saved connection does not hijack an unrelated used_connection row', async () => {
