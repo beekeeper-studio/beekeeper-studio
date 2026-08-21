@@ -166,8 +166,11 @@
                   :pinned="pinnedConnections.includes(c)"
                   :is-recent-list="false"
                   :privacy-mode="privacyMode"
+                  :selected="selectedIds.includes(itemNodeId(c))"
+                  :bulk-selection-active="bulkSelectionActive"
                   @edit="edit"
                   @remove="remove"
+                  @select="select"
                   @duplicate="duplicate"
                   @doubleClick="connect"
                 />
@@ -188,6 +191,7 @@
                 :folders="extendedFolderNodes"
                 :items="sortedItemNodes"
                 :expanded-ids="expandedNodeIds"
+                :filter="connFilter"
                 @update:expandedIds="setExpandedIds"
                 @bks-tree-node-move="handleTreeNodeMove"
               >
@@ -281,9 +285,12 @@
                     :pinned="pinnedConnectionIds.includes(node.ref.id)"
                     :is-recent-list="false"
                     :privacy-mode="privacyMode"
-                    :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.ref.id) }"
+                    :selected="selectedIds.includes(node.id)"
+                    :bulk-selection-active="bulkSelectionActive"
                     @edit="edit"
                     @remove="remove"
+                    @select="select"
+                    :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.ref.id) }"
                     @duplicate="duplicate"
                     @doubleClick="connect"
                   />
@@ -324,28 +331,42 @@
           </div>
         </div>
       </div>
+      <div
+        class="toolbar btn-group row flex-right"
+        v-show="bulkSelectionActive"
+      >
+        <a
+          class="btn btn-link"
+          @click="discardCheckedConnections"
+        >Cancel</a>
+        <a
+          class="btn btn-primary"
+          :title="removeTitle"
+          @click="removeCheckedConnections"
+        >Remove</a>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
-import _ from 'lodash'
-import WorkspaceSidebar from './WorkspaceSidebar.vue'
-import { mapState, mapGetters, mapActions, mapMutations } from 'vuex'
-import ConnectionListItem from './connection/ConnectionListItem.vue'
+import { AppEvent } from '@/common/AppEvent'
+import { buildFolderNodes, collectVisibleItemIds, parseReorderTarget, rangeSelectVisibleIds, toggleSelectedId } from "@/common/utils/folderTree"
+import EditableText from '@/components/common/EditableText.vue'
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
 import SidebarLoading from '@/components/common/SidebarLoading.vue'
 import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
 import ContentPlaceholderText from '@/components/common/loading/ContentPlaceholderText.vue'
-import ErrorAlert from '@/components/common/ErrorAlert.vue'
-import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
-import Split from 'split.js'
-import { AppEvent } from '@/common/AppEvent'
-import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
+import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree"
 import rawLog from '@bksLogger'
-import SidebarSortButtons from '../common/SidebarSortButtons.vue'
-import EditableText from '@/components/common/EditableText.vue'
+import _ from 'lodash'
 import Noty from 'noty'
-import { buildFolderNodes, parseReorderTarget } from '@/common/utils/folderTree'
+import Split from 'split.js'
+import { mapActions, mapGetters, mapMutations, mapState } from 'vuex'
+import SidebarSortButtons from '../common/SidebarSortButtons.vue'
+import WorkspaceSidebar from './WorkspaceSidebar.vue'
+import ConnectionListItem from './connection/ConnectionListItem.vue'
 
 const log = rawLog.scope('connection-sidebar');
 
@@ -366,6 +387,8 @@ export default {
   props: ['selectedConfig'],
   data: () => ({
     split: null,
+    selectedIds: [],
+    cloudSelectionAnchorId: null,
     sortables: {
       labelColor: "Color",
       id: "Created",
@@ -445,6 +468,30 @@ export default {
     },
     searching() {
       return !!this.connFilter;
+    },
+    bulkSelectionActive() {
+      return this.selectedIds.length > 0
+    },
+    visibleItemIds() {
+      if (this.searching) {
+        return this.filteredConnections.map((connection) =>
+          this.itemNodeId(connection)
+        )
+      }
+      return collectVisibleItemIds(
+        this.extendedFolderNodes,
+        this.sortedItemNodes,
+        this.expandedNodeIds
+      )
+    },
+    removeTitle() {
+      return `Remove ${this.selectedIds.length} saved connections`;
+    },
+    selectedItems() {
+      const byId = new Map(this.itemNodes.map((node) => [node.id, node.ref]))
+      return this.selectedIds
+        .map((id) => byId.get(id))
+        .filter((item) => item != null)
     },
     initializing() {
       return this.folders.length === 0 && this.foldersLoading;
@@ -551,6 +598,63 @@ export default {
     },
     setFolderError(id, error) {
       this.$set(this.errors, id, error);
+    },
+    setSelectedIds(selectedIds) {
+      this.selectedIds = selectedIds
+    },
+    itemNodeId(config) {
+      return `item-${config.id}`
+    },
+    toggleChecked(config) {
+      this.setSelectedIds(
+        toggleSelectedId(this.selectedIds, this.itemNodeId(config))
+      )
+      this.cloudSelectionAnchorId = this.itemNodeId(config)
+    },
+    select(config, event) {
+      const nodeId = this.itemNodeId(config)
+      if (event?.shiftKey) {
+        const visibleIds = this.visibleItemIds
+        const anchorId = this.cloudSelectionAnchorId ?? visibleIds[0]
+        if (anchorId != null) {
+          this.setSelectedIds(
+            rangeSelectVisibleIds(
+              this.selectedIds,
+              anchorId,
+              nodeId,
+              visibleIds
+            )
+          )
+          this.cloudSelectionAnchorId = nodeId
+          return
+        }
+      }
+      // Checkbox clicks and cmd/ctrl-clicks toggle bulk selection. A plain
+      // row click only updates the range-select anchor (and still opens the
+      // connection via the list item).
+      if (event?.metaKey || event?.ctrlKey || event?.target?.type === 'checkbox') {
+        this.toggleChecked(config)
+        return
+      }
+      this.cloudSelectionAnchorId = nodeId
+    },
+    async removeCheckedConnections() {
+      const items = this.selectedItems
+      const count = items.length
+      if (count === 0) return
+      const message = count === 1
+        ? `Delete "${items[0].name || 'connection'}"?`
+        : `Delete ${count} saved connections?`
+      if (!await this.$confirm(message, undefined, { variant: 'danger' })) {
+        return
+      }
+      for (const config of items) {
+        await this.$store.dispatch('data/connections/remove', config)
+      }
+      this.selectedIds = []
+    },
+    discardCheckedConnections() {
+      this.selectedIds = []
     },
     clearFilter() {
       this.connFilter = null;

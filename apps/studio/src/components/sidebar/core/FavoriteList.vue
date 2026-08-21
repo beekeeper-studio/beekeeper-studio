@@ -77,7 +77,6 @@
         <nav
           v-else
           class="list-body"
-          ref="wrapper"
         >
           <template v-if="searching">
             <div
@@ -91,7 +90,8 @@
               :key="query.id"
               :item="query"
               :active="isActive(query)"
-              :selected="selected === query"
+              :selected="selectedIds.includes(itemNodeId(query))"
+              :bulk-selection-active="bulkSelectionActive"
               @remove="remove"
               @select="select"
               @open="open"
@@ -116,6 +116,7 @@
             :folders="extendedFolderNodes"
             :items="sortedItemNodes"
             :expanded-ids="expandedNodeIds"
+            :filter="filterQuery"
             @update:expandedIds="setExpandedIds"
             @bks-tree-node-move="handleTreeNodeMove"
           >
@@ -203,7 +204,8 @@
               <favorite-list-item
                 :item="node.ref"
                 :active="isActive(node.ref)"
-                :selected="selected === node.ref"
+                :selected="selectedIds.includes(node.id)"
+                :bulk-selection-active="bulkSelectionActive"
                 :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.ref.id) }"
                 @remove="remove"
                 @select="select"
@@ -217,29 +219,44 @@
         </nav>
       </div>
     </div>
+    <div
+      class="toolbar btn-group row flex-right"
+      v-show="bulkSelectionActive"
+    >
+      <a
+        class="btn btn-link"
+        @click="discardCheckedFavorites"
+      >Cancel</a>
+      <a
+        class="btn btn-primary"
+        :title="removeTitle"
+        @click="removeCheckedFavorites"
+      >Remove</a>
+    </div>
   </div>
 </template>
 
 <script>
-import _ from 'lodash'
+import { AppEvent } from '@/common/AppEvent'
+import { buildFolderNodes, collectVisibleItemIds, parseReorderTarget, rangeSelectVisibleIds, toggleSelectedId } from "@/common/utils/folderTree"
+import EditableText from '@/components/common/EditableText.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
+import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
+import ContentPlaceholderText from '@/components/common/loading/ContentPlaceholderText.vue'
+import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree"
+import _ from 'lodash'
 import { mapActions, mapGetters, mapMutations, mapState } from 'vuex'
 import SidebarLoading from '../../common/SidebarLoading.vue'
 import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
-import { AppEvent } from '@/common/AppEvent'
-import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
-import EditableText from '@/components/common/EditableText.vue'
-import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
-import ContentPlaceholderText from '@/components/common/loading/ContentPlaceholderText.vue'
-import { buildFolderNodes, parseReorderTarget } from '@/common/utils/folderTree'
 
 export default {
   components: { SidebarLoading, ErrorAlert, ExpiredFolderAlert, FavoriteListItem, Tree, TreeFolder, EditableText, ContentPlaceholder, ContentPlaceholderText },
   data: function () {
     return {
-      checkedFavorites: [],
-      selected: null,
+      selectedIds: [],
+      cloudSelectionAnchorId: null,
+      draggingQuery: null,
       renamingFolderId: null,
       justCreatedFolderId: null,
       justCreatedTimeout: null,
@@ -255,11 +272,7 @@ export default {
       this.setSavedQueryFilter(value);
     },
   },
-  mounted() {
-    document.addEventListener('mousedown', this.maybeUnselect)
-  },
   beforeDestroy() {
-    document.removeEventListener('mousedown', this.maybeUnselect)
     clearTimeout(this.justCreatedTimeout)
   },
   computed: {
@@ -318,7 +331,26 @@ export default {
       return this.queriesPollError || this.foldersPollError || null
     },
     removeTitle() {
-      return `Remove ${this.checkedFavorites.length} saved queries`;
+      return `Remove ${this.selectedIds.length} saved queries`;
+    },
+    bulkSelectionActive() {
+      return this.selectedIds.length > 0
+    },
+    visibleItemIds() {
+      if (this.searching) {
+        return this.filteredQueries.map((query) => this.itemNodeId(query))
+      }
+      return collectVisibleItemIds(
+        this.extendedFolderNodes,
+        this.sortedItemNodes,
+        this.expandedNodeIds
+      )
+    },
+    selectedItems() {
+      const byId = new Map(this.itemNodes.map((node) => [node.id, node.ref]))
+      return this.selectedIds
+        .map((id) => byId.get(id))
+        .filter((item) => item != null)
     },
     errorList() {
       return Object.values(this.errors);
@@ -383,6 +415,12 @@ export default {
     setFolderError(id, error) {
       this.$set(this.errors, id, error);
     },
+    setSelectedIds(selectedIds) {
+      this.selectedIds = selectedIds
+    },
+    itemNodeId(item) {
+      return `item-${item.id}`
+    },
     clearFilter() {
       this.filterQuery = null
     },
@@ -402,22 +440,43 @@ export default {
     importFromComputer() {
       this.$root.$emit(AppEvent.promptSqlFilesImport)
     },
-    maybeUnselect(e) {
-      if (!this.selected) return
-      if (this.$refs.wrapper.contains(e.target)) {
-        return
-      } else {
-        this.selected = null
-      }
-    },
     async refresh() {
       await this.$store.dispatch('refreshQueries')
     },
     isActive(item) {
       return this.activeTab && this.activeTab.queryId === item.id
     },
-    select(item) {
-      this.selected = item
+    toggleChecked(item) {
+      this.setSelectedIds(
+        toggleSelectedId(this.selectedIds, this.itemNodeId(item))
+      )
+      this.cloudSelectionAnchorId = this.itemNodeId(item)
+    },
+    select(item, event) {
+      const nodeId = this.itemNodeId(item)
+      if (event?.shiftKey) {
+        const visibleIds = this.visibleItemIds
+        const anchorId = this.cloudSelectionAnchorId ?? visibleIds[0]
+        if (anchorId != null) {
+          this.setSelectedIds(
+            rangeSelectVisibleIds(
+              this.selectedIds,
+              anchorId,
+              nodeId,
+              visibleIds
+            )
+          )
+          this.cloudSelectionAnchorId = nodeId
+          return
+        }
+      }
+      // Checkbox clicks and cmd/ctrl-clicks toggle bulk selection. A plain
+      // row click only updates the range-select anchor.
+      if (event?.metaKey || event?.ctrlKey || event?.target?.type === 'checkbox') {
+        this.toggleChecked(item)
+        return
+      }
+      this.cloudSelectionAnchorId = nodeId
     },
     open(item) {
       this.$root.$emit('favoriteClick', item)
@@ -432,13 +491,22 @@ export default {
       }
     },
     async removeCheckedFavorites() {
-      for(let i = 0; i < this.checkedFavorites.length; i++) {
-        await this.remove(this.checkedFavorites[i])
+      const items = this.selectedItems
+      const count = items.length
+      if (count === 0) return
+      const message = count === 1
+        ? `Delete "${items[0].title}"?`
+        : `Delete ${count} saved queries?`
+      if (!await this.$confirm(message, undefined, { variant: 'danger' })) {
+        return
       }
-      this.checkedFavorites = [];
+      for (const favorite of items) {
+        await this.$store.dispatch('data/queries/remove', favorite)
+      }
+      this.selectedIds = []
     },
     discardCheckedFavorites() {
-      this.checkedFavorites = [];
+      this.selectedIds = []
     },
     createFolder() {
       if (!this.canCreateFolders) {

@@ -5,11 +5,24 @@
   >
     <a
       class="list-item-btn"
+      v-tooltip.bottom.delay="{
+        content: title,
+        delay: { show: 500 },
+      }"
+      @click.prevent="$emit('select', item, $event)"
       :title="title"
-      @click.prevent="$emit('select', item)"
       @dblclick.prevent="$emit('open', item)"
-      :class="{active, selected}"
+      :class="{active, selected, 'bulk-selection-active': bulkSelectionActive}"
     >
+      <input
+        draggable="false"
+        @mousedown.stop.prevent
+        @click.stop="$emit('select', item, $event)"
+        type="checkbox"
+        class="form-control delete-checkbox"
+        :class="{ shown: bulkSelectionActive }"
+        :checked="selected"
+      >
       <i class="item-icon query material-icons">code</i>
       <div class="list-text">
         <div class="list-title flex-col">
@@ -26,16 +39,16 @@
   </div>
 </template>
 <script lang="ts">
+import { AppEvent } from '@/common/AppEvent'
+import EditableText from '@/components/common/EditableText.vue'
+import TimeAgo from 'javascript-time-ago'
 import _ from 'lodash'
 import Vue from 'vue'
 import { mapGetters, mapState } from 'vuex'
-import TimeAgo from 'javascript-time-ago'
-import EditableText from '@/components/common/EditableText.vue'
-import { AppEvent } from '@/common/AppEvent'
 
 export default Vue.extend({
   components: { EditableText },
-  props: ['item', 'selected', 'active'],
+  props: ['item', 'selected', 'active', 'bulkSelectionActive'],
   data: () => ({
     timeAgo: new TimeAgo('en-US'),
     rename: false,
