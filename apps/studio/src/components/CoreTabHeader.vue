@@ -13,7 +13,7 @@
         @mousedown="mousedown"
         @click.middle.prevent="maybeClose"
         @contextmenu="$bks.openMenu({id: headerContextMenuId, item: tab, options: contextOptions, event: $event})"
-        :class="{ active: selected, 'active-transaction': isTransaction }"
+        :class="{ active: selected, visible: visible, 'active-transaction': isTransaction }"
       >
         <tab-icon :tab="tab" />
         <span
@@ -88,7 +88,7 @@ import _ from 'lodash'
 
   export default {
   components: { TabIcon },
-    props: ['tab', 'tabsCount', 'selected'],
+    props: ['tab', 'tabsCount', 'selected', 'visible', 'split'],
     data() {
       return {
         unsaved: false,
@@ -161,6 +161,9 @@ import _ from 'lodash'
           { name: 'Close All', slug: 'close-all', handler: ({item}) => this.$emit('closeAll', item)},
           { name: "Close Tabs to Right", slug: 'close-to-right', handler: ({item}) => this.$emit('closeToRight', item)},
           { name: "Duplicate", slug: 'duplicate', handler: ({item}) => this.$emit('duplicate', item) },
+          this.split && this.visible
+            ? { name: "Close Split View", slug: 'close-split', handler: () => this.$emit('closeSplit') }
+            : { name: "Split Right", slug: 'split-right', handler: ({item}) => this.$emit('splitRight', item) },
           { name: "Copy Entity Name", slug: 'copy-name', handler: ({item}) => this.$emit('copyName', item), class: copyNameClass },
         ];
       },

@@ -18,7 +18,11 @@
           :tab="tab"
           :tabs-count="tabItems.length"
           :selected="activeTab?.id === tab.id"
+          :visible="isVisible(tab)"
+          :split="!!splitTab"
           @click="click"
+          @splitRight="splitRight"
+          @closeSplit="closeSplit"
           @close="close"
           @closeAll="closeAll"
           @closeOther="closeOther"
@@ -66,19 +70,30 @@
       </a>
     </div>
     <x-progressbar v-if="activeTab?.isLoading" />
-    <div class="tab-content">
+    <div
+      class="tab-content"
+      ref="tabContent"
+      :class="{'split-view': !!splitTab}"
+    >
       <div class="empty-editor-group empty flex-col  expand">
         <div class="expand layout-center">
           <shortcut-hints />
         </div>
       </div>
       <div
+        v-if="splitTab"
+        class="split-divider"
+        @mousedown.prevent="startSplitDrag"
+      />
+      <div
         v-for="(tab, idx) in tabItems"
         class="tab-pane"
         :id="'tab-' + idx"
         :key="tab.id"
-        :class="{active: (activeTab?.id === tab.id)}"
-        v-show="activeTab?.id === tab.id"
+        :class="paneClass(tab)"
+        :style="paneStyle(tab)"
+        v-show="isVisible(tab)"
+        @mousedown.capture="focusPaneFor(tab)"
       >
         <QueryEditor
           v-if="tab.tabType === 'query'"
@@ -374,9 +389,40 @@ export default Vue.extend({
       duplicateTableName: null,
       closingTab: null,
       confirmModalId: 'core-tabs-close-confirmation',
+      // split view state. `splitTabId` is the tab pinned into the right pane,
+      // `primaryTabId` the one in the left pane. Both null = no split.
+      splitTabId: null,
+      primaryTabId: null,
+      focusedPane: 'left',
+      splitRatio: 50,
     }
   },
   watch: {
+    activeTab(nu: TransportOpenTab) {
+      if (!nu || !this.splitTab) return
+      // a tab already on screen just takes focus, anything else lands in
+      // whichever pane has focus. Never let the same tab fill both panes.
+      if (nu.id === this.splitTabId) {
+        this.focusedPane = 'right'
+      } else if (nu.id === this.primaryTab?.id) {
+        this.focusedPane = 'left'
+      } else if (this.focusedPane === 'right') {
+        this.splitTabId = nu.id
+      } else {
+        this.primaryTabId = nu.id
+      }
+    },
+    tabItems() {
+      if (!this.splitTabId) return
+      // drop the split if either half went away
+      if (this.tabItems.length < 2 || !this.tabItems.some((t) => t.id === this.splitTabId)) {
+        this.closeSplit()
+        return
+      }
+      if (this.primaryTabId && !this.tabItems.some((t) => t.id === this.primaryTabId)) {
+        this.primaryTabId = null
+      }
+    },
     async usedConfig() {
       await this.$store.dispatch('tabs/load')
       if (!this.tabItems?.length) {
@@ -459,6 +505,17 @@ export default Vue.extend({
         { event: AppEvent.pasteAsNewRows, handler: this.pasteAsNewRowsWrongTabCheck },
       ]
     },
+    splitTab() {
+      if (!this.splitTabId) return null
+      return this.tabItems.find((t) => t.id === this.splitTabId) || null
+    },
+    primaryTab() {
+      if (!this.splitTab) return this.activeTab
+      const pinned = this.tabItems.find((t) => t.id === this.primaryTabId)
+      if (pinned) return pinned
+      if (this.activeTab && this.activeTab.id !== this.splitTab.id) return this.activeTab
+      return this.tabItems.find((t) => t.id !== this.splitTab.id) || null
+    },
     lastTab() {
       return this.tabItems[this.tabItems.length - 1];
     },
@@ -473,6 +530,7 @@ export default Vue.extend({
         'tab.nextTab': this.nextTab,
         'tab.previousTab': this.previousTab,
         'tab.reopenLastClosedTab': this.reopenLastClosedTab,
+        'tab.toggleSplit': this.toggleSplit,
         'tab.switchTab1': this.handleSwitchTab.bind(this, 0),
         'tab.switchTab2': this.handleSwitchTab.bind(this, 1),
         'tab.switchTab3': this.handleSwitchTab.bind(this, 2),
@@ -496,6 +554,77 @@ export default Vue.extend({
     this.$root.$refs.CoreTabs = this;
   },
   methods: {
+    isVisible(tab: TransportOpenTab) {
+      if (this.splitTab) {
+        return tab.id === this.splitTab.id || tab.id === this.primaryTab?.id
+      }
+      return this.activeTab?.id === tab.id
+    },
+    paneClass(tab: TransportOpenTab) {
+      return {
+        active: this.isVisible(tab),
+        'split-left': !!this.splitTab && tab.id === this.primaryTab?.id,
+        'split-right': !!this.splitTab && tab.id === this.splitTab.id,
+        'split-focused': !!this.splitTab && this.activeTab?.id === tab.id,
+      }
+    },
+    paneStyle(tab: TransportOpenTab) {
+      if (!this.splitTab || tab.id !== this.primaryTab?.id) return {}
+      return { flexBasis: `${this.splitRatio}%` }
+    },
+    focusPaneFor(tab: TransportOpenTab) {
+      if (!this.splitTab) return
+      const pane = tab.id === this.splitTab.id ? 'right' : 'left'
+      if (this.focusedPane === pane) return
+      this.focusedPane = pane
+      this.setActiveTab(tab)
+    },
+    splitRight(tab: TransportOpenTab) {
+      if (this.tabItems.length < 2) {
+        this.$noty.info("Open another tab to use split view")
+        return
+      }
+      if (this.splitTab?.id === tab.id) return
+      const left = this.primaryTab && this.primaryTab.id !== tab.id
+        ? this.primaryTab
+        : this.tabItems.find((t) => t.id !== tab.id)
+      this.primaryTabId = left?.id
+      this.splitTabId = tab.id
+      this.focusedPane = 'right'
+      this.setActiveTab(tab)
+    },
+    closeSplit() {
+      this.splitTabId = null
+      this.primaryTabId = null
+      this.focusedPane = 'left'
+    },
+    toggleSplit() {
+      if (this.splitTab) {
+        this.closeSplit()
+        return
+      }
+      // split the active tab against its neighbour
+      const other = this.tabItems[this.activeIdx + 1] || this.tabItems[this.activeIdx - 1]
+      if (other) this.splitRight(other)
+      else this.$noty.info("Open another tab to use split view")
+    },
+    startSplitDrag() {
+      const container = this.$refs.tabContent as HTMLElement
+      if (!container) return
+      const move = (e: MouseEvent) => {
+        const rect = container.getBoundingClientRect()
+        const pct = ((e.clientX - rect.left) / rect.width) * 100
+        this.splitRatio = Math.min(85, Math.max(15, pct))
+      }
+      const up = () => {
+        document.removeEventListener('mousemove', move)
+        document.removeEventListener('mouseup', up)
+        document.body.classList.remove('split-dragging')
+      }
+      document.addEventListener('mousemove', move)
+      document.addEventListener('mouseup', up)
+      document.body.classList.add('split-dragging')
+    },
     async updateTab(tab: TransportOpenTab) {
       const newTab = Object.assign({}, tab);
       await this.$store.commit('tabs/replaceTab', newTab);

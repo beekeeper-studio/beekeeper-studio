@@ -459,6 +459,7 @@ declare interface IBksConfig {
             nextTab: string[];
             previousTab: string[];
             reopenLastClosedTab: string;
+            toggleSplit: string;
             switchTab1: string;
             switchTab2: string;
             switchTab3: string;

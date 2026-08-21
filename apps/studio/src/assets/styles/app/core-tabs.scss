@@ -31,6 +31,61 @@
       z-index: 1;
     }
   }
+
+  // Split view: two panes side by side, separated by a draggable divider.
+  .tab-content.split-view {
+    flex-direction: row;
+
+    .empty-editor-group {
+      display: none;
+    }
+
+    .tab-pane.split-left,
+    .tab-pane.split-right {
+      position: relative;
+      top: auto;
+      left: auto;
+      right: auto;
+      bottom: auto;
+      min-width: 0;
+      height: 100%;
+    }
+    .tab-pane.split-left {
+      order: 0;
+      flex: 0 0 50%;
+    }
+    .tab-pane.split-right {
+      order: 2;
+      flex: 1 1 auto;
+    }
+
+    // dim the pane that doesn't have focus a touch, so it's obvious where
+    // keystrokes are going
+    .tab-pane.split-left:not(.split-focused)::after,
+    .tab-pane.split-right:not(.split-focused)::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      background: rgba(0, 0, 0, 0.08);
+      z-index: 10;
+    }
+
+    .split-divider {
+      order: 1;
+      flex: 0 0 4px;
+      z-index: 2;
+      cursor: col-resize;
+      background: var(--border-color, rgba(128, 128, 128, 0.25));
+
+      &:hover {
+        background: $theme-primary;
+      }
+    }
+  }
   .tabs-header {
     display: flex;
     align-items: center;
@@ -113,6 +168,14 @@
             display: inline-block;
           }
 
+        }
+      }
+      // tab shown in the unfocused half of a split view
+      &.visible:not(.active) {
+        background: rgba($query-editor-bg, 0.6);
+        color: $text-dark;
+        .tab-close .close {
+          display: inline-block;
         }
       }
       &.active-transaction {
@@ -564,6 +627,11 @@
   .core-tabs .nav-tabs .nav-link.active {
     font-weight: inherit;
   }
+}
+
+body.split-dragging {
+  cursor: col-resize;
+  user-select: none;
 }
 
 .tab-upsell-wrapper {
