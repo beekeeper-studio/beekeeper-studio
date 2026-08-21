@@ -106,7 +106,7 @@ export const BeekeeperPlugin = {
     if (config.socketPathEnabled) return config.socketPath;
 
     if (config.connectionType?.match(/sqlite|libsql|duckdb/)) {
-      return config.defaultDatabase || "./unknown.db"
+      return config.defaultDatabase || ":memory:"
     } else if (config.connectionType === 'mongodb') {
       return config.url
     } else if (config.connectionType === 'dynamodb') {
@@ -134,7 +134,7 @@ export const BeekeeperPlugin = {
 
     let connectionString = `${config.host}:${config.port}`;
     if (config.connectionType?.match(/sqlite|libsql|duckdb/)) {
-      return window.main.basename(config.defaultDatabase || "./unknown.db")
+      return window.main.basename(config.defaultDatabase || ":memory:")
     } else if (config.connectionType === 'cockroachdb' && config.options?.cluster) {
       connectionString = `${config.options.cluster}/${config.defaultDatabase || 'cloud'}`
     } else if (config.connectionType === 'bigquery') {
