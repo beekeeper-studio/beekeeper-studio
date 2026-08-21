@@ -1804,7 +1804,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             queryObj.id = lastQuery.id;
           }
 
-          this.$store.dispatch('data/usedQueries/save', queryObj)
+          if (this.usedConfig.id) this.$store.dispatch('data/usedQueries/save', queryObj)
 
           log.debug('identification', identification)
           const found = identification.find(i => {
