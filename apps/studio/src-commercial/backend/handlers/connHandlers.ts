@@ -178,9 +178,9 @@ export const ConnHandlers: IConnectionHandlers = {
     const server = ConnectionProvider.for(config, osUser, settings);
     const connection = server.createConnection(database);
     await connection.connect(abortController.signal);
-    await UsedConnection.recordUse(config);
     // HACK (@day): this is because of type fuckery, need to actually just recreate the object but I'm lazy rn and it's late
     connection.connectionType = config.connectionType ?? (config as any)._connectionType;
+    await UsedConnection.recordUse(config);
 
     state(sId).server = server;
     state(sId).usedConfig = config;

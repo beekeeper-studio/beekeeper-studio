@@ -24,7 +24,7 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
     if (!_.isUndefined((config as Partial<UsedConnection>).connectionId)) {
       throw new Error("recordUse was handed a used_connection. Connect with a saved connection, or a new unsaved one.")
     }
-
+    
     const savedConnectionId = config.id ?? null
     const existing = savedConnectionId
       ? await UsedConnection.findOneBy({ connectionId: savedConnectionId, workspaceId: config.workspaceId })
