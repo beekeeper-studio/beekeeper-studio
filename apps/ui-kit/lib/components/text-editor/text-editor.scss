@@ -103,6 +103,14 @@
   --bks-text-editor-panel-bg-color: var(--bks-query-editor-bg);
   --bks-text-editor-panel-fg-color: var(--bks-text-dark);
 
+  // Vim status line. Inherit, so the bar follows whatever theme the host app
+  // gave codemirror; naming a colour would resolve to $query-editor-bg (white).
+  --bks-text-editor-vim-panel-bg-color: inherit;
+  --bks-text-editor-vim-panel-fg-color: inherit;
+  // Not --bks-text-editor-font-size, which tracks the user's font size setting.
+  --bks-text-editor-vim-panel-font-size: 0.875rem;
+  --bks-text-editor-vim-panel-border: 1px solid rgba(128, 128, 128, 0.35);
+
   // Context Menu
   --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: -5%)};
   --bks-text-editor-context-menu-fg-color: #{$text-dark};

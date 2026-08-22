@@ -561,6 +561,9 @@ declare interface IBksConfig {
         minPinLength: number;
     };
     ui: {
+        connectionSidebar: {
+            recentConnectionsLimit: number;
+        };
         export: {
             errorNoticeTimeout: number;
         };

@@ -165,6 +165,36 @@ And then you're off to the races with a vim editor in Beekeeper!
 
 Whichever editor you prefer will be preserved across all connections/restarts/etc.
 
+### The status line
+
+In vim mode the editor shows a status line along the bottom with the current
+mode, any keys waiting on the rest of a command, and the count prefix. It is
+also where `:` commands and `/` searches are typed.
+
+### Ex commands
+
+| Command | Effect |
+| --- | --- |
+| `:w`, `:write` | Save the current query |
+| `:q`, `:quit` | Close the current tab |
+| `:qa` | Close every tab |
+| `:x`, `:wq` | Save, then close the tab |
+| `:tabnew [name]` | Open a new tab, optionally with a name |
+
+These act on the tab you are typing in.
+
+### Cancelling a running query
+
+`Esc` cancels a running query. In vim mode it only does that from normal mode
+with nothing pending, so leaving insert or visual mode behaves as it should.
+`Ctrl-Esc` cancels a query from any mode.
+
+### Ctrl+P
+
+Vim binds `Ctrl+P` to "move up" in every mode. In Beekeeper Studio it stays on
+quick search instead, since `k` already moves up. To take it back, add
+`nnoremap <C-p> k` to your `.beekeeper.vimrc`.
+
 ### Customisation
 
 You can also add your own keybindings and motions to the vim editor by placing a `.beekeeper.vimrc` file in the `userDirectory` for Beekeeper Studio and writing out your custom mappings.
@@ -184,4 +214,30 @@ nmap gh ^
 
 These commands add motions for `gl` to go to the end of a line, and `gh` to go to the beginning of a line
 
-We currently only support the `nmap`, `imap`, and `vmap` commands, but we hope to introduce more in the future!
+Lines beginning with `"` are comments, and blank lines are skipped. Supported
+commands:
+
+| Command | Notes |
+| --- | --- |
+| `map`, `nmap`, `imap`, `vmap` | Recursive mappings |
+| `noremap`, `nnoremap`, `inoremap`, `vnoremap` | Non-recursive mappings |
+| `unmap`, `nunmap`, `iunmap`, `vunmap` | Remove a mapping |
+| `mapclear`, `nmapclear`, `imapclear`, `vmapclear` | Remove every custom mapping |
+| `set` | Vim options, e.g. `set ignorecase`, `set nonumber`, `set tabstop=4` |
+| `let mapleader` | What `<leader>` expands to. Defaults to `\` |
+
+Anything that cannot be parsed is reported in a notification naming the line,
+and the rest of the file still applies.
+
+#### Yanking to the system clipboard
+
+The `*` register is connected to the system clipboard, so `"*y` and `"*p` work
+as they would in vim. To make a plain `y` use it, the mapping has to be
+non-recursive:
+
+```
+nnoremap y "*y
+```
+
+Written as `nmap y "*y` the `y` on the right expands back into the mapping
+itself, without end. That case is reported as an error instead of applied.
