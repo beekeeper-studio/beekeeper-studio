@@ -22,7 +22,7 @@ import {
 } from './tableLengthCache'
 
 export default Vue.extend({
-  props: ['table', 'filters'],
+  props: ['table', 'tableId', 'filters'],
   data: () => ({
     totalRecords: null,
     fetchingTotalRecords: false,
@@ -47,8 +47,8 @@ export default Vue.extend({
         typeof this.filters === 'string' && this.filters.length > 0
       )
     },
-    fetchKey() {
-      return buildRecordCountCacheKey(this.table, this.filters)
+    cacheKey() {
+      return buildRecordCountCacheKey(this.tableId, this.filters)
     },
     hoverTitle() {
       if (this.error) return this.error.message
@@ -63,7 +63,7 @@ export default Vue.extend({
     }
   },
   watch: {
-    fetchKey: {
+    cacheKey: {
       handler(newKey, oldKey) {
         if (!newKey || newKey === oldKey) return
         this.scheduleFetch()
@@ -72,7 +72,9 @@ export default Vue.extend({
     },
   },
   methods: {
-    applyCachedResult(cacheKey: string) {
+    applyCachedResult(cacheKey: string | null) {
+      if (!cacheKey) return false
+
       const cached = getCachedRecordCount(cacheKey)
       if (!cached) return false
 
@@ -80,16 +82,18 @@ export default Vue.extend({
       this.error = cached.error
       return true
     },
-    cacheResult(cacheKey: string) {
+    cacheResult(cacheKey: string | null) {
+      if (!cacheKey) return
+
       setCachedRecordCount(cacheKey, {
         totalRecords: this.totalRecords,
         error: this.error,
       })
     },
     scheduleFetch() {
-      if (!this.table || !this.fetchKey) return
+      if (!this.table || !this.cacheKey) return
 
-      if (this.applyCachedResult(this.fetchKey)) return
+      if (this.applyCachedResult(this.cacheKey)) return
 
       this.error = null
       this.totalRecords = null
@@ -104,9 +108,9 @@ export default Vue.extend({
       this.fetchTotalRecords(true)
     },
     async fetchTotalRecords(bypassCache = false) {
-      if (!this.table || !this.fetchKey) return
+      if (!this.table) return
 
-      const cacheKey = this.fetchKey
+      const cacheKey = this.cacheKey
       if (!bypassCache && this.applyCachedResult(cacheKey)) return
 
       const generation = ++this.fetchGeneration

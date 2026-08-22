@@ -6,13 +6,12 @@ export type RecordCountCacheEntry = {
 const recordCountCache = new Map<string, RecordCountCacheEntry>()
 
 export function buildRecordCountCacheKey(
-  table: { name: string, schema?: string } | null | undefined,
+  tableId: string | null | undefined,
   filters: unknown,
 ) {
-  if (!table) return null
-  const tablePart = `${table.schema ?? ''}:${table.name}`
+  if (!tableId) return null
   const filtersPart = JSON.stringify(filters ?? null)
-  return `${tablePart}:${filtersPart}`
+  return `${tableId}:${filtersPart}`
 }
 
 export function getCachedRecordCount(cacheKey: string) {

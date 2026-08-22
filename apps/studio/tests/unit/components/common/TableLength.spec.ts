@@ -6,6 +6,9 @@ import { clearRecordCountCache } from "@/components/common/tableLengthCache";
 
 Vue.use(Vuex);
 
+const defaultTableId =
+  "workspace-1.connection-1.db-testdb.schema-public.table-users";
+
 function createBksConfig(
   autoFetchRecordCount = true,
   autoFetchFilteredRecordCount = false
@@ -48,6 +51,7 @@ describe("TableLength.vue", () => {
       },
       propsData: {
         table,
+        tableId: defaultTableId,
         ...props,
       },
     });
@@ -164,6 +168,8 @@ describe("TableLength.vue", () => {
 
     await wrapper.setProps({
       table: { name: "orders", schema: "public" },
+      tableId:
+        "workspace-1.connection-1.db-testdb.schema-public.table-orders",
     });
 
     await Vue.nextTick();
@@ -189,7 +195,7 @@ describe("TableLength.vue", () => {
     expect(getTableLength).not.toHaveBeenCalled();
   });
 
-  it("reuses cached count when remounted for the same table and filters", async () => {
+  it("reuses cached count when remounted for the same tableId and filters", async () => {
     const wrapper = createWrapper();
 
     await Vue.nextTick();
@@ -204,6 +210,41 @@ describe("TableLength.vue", () => {
     await Vue.nextTick();
 
     expect(getTableLength).not.toHaveBeenCalled();
+  });
+
+  it("does not auto-fetch when tableId is null (quick connect)", async () => {
+    const wrapper = createWrapper({ tableId: null });
+
+    await Vue.nextTick();
+    await Vue.nextTick();
+    expect(getTableLength).not.toHaveBeenCalled();
+
+    await wrapper.trigger("click");
+    await Vue.nextTick();
+    await Vue.nextTick();
+
+    expect(getTableLength).toHaveBeenCalledWith("users", "public");
+  });
+
+  it("does not share cache across different tableIds with the same table name", async () => {
+    const wrapper = createWrapper({
+      tableId: "workspace-1.connection-1.db-a.schema-public.table-users",
+    });
+
+    await Vue.nextTick();
+    await Vue.nextTick();
+    expect(getTableLength).toHaveBeenCalledTimes(1);
+
+    wrapper.destroy();
+    getTableLength.mockClear();
+
+    createWrapper({
+      tableId: "workspace-1.connection-2.db-a.schema-public.table-users",
+    });
+    await Vue.nextTick();
+    await Vue.nextTick();
+
+    expect(getTableLength).toHaveBeenCalledTimes(1);
   });
 
   it("fetches again on manual click", async () => {
@@ -274,6 +315,8 @@ describe("TableLength.vue", () => {
 
     await wrapper.setProps({
       table: { name: "orders", schema: "public" },
+      tableId:
+        "workspace-1.connection-1.db-testdb.schema-public.table-orders",
     });
 
     await Vue.nextTick();
