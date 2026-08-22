@@ -114,7 +114,7 @@
           <tree
             v-show="!searching"
             :folders="extendedFolderNodes"
-            :items="sortedItemNodes"
+            :items="itemNodes"
             :expanded-ids="expandedNodeIds"
             @update:expandedIds="setExpandedIds"
             @bks-tree-node-move="handleTreeNodeMove"
@@ -295,12 +295,6 @@ export default {
     },
     expandedNodeIds() {
       return this.expandedFolderIds.map((id) => `folder-${id}`);
-    },
-    sortedItemNodes() {
-      // Drag and drop is the only way to reorder queries, and it lands in
-      // `position`. Sorting by title here would outrank it, so a drag would
-      // save but never show.
-      return _.sortBy(this.itemNodes, (n) => n.ref.position ?? 0)
     },
     searching() {
       return !!this.filterQuery;
