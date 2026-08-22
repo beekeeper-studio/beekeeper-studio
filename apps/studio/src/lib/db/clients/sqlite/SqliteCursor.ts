@@ -35,6 +35,18 @@ export class SqliteCursor extends BeeCursor {
 
   protected _createConnection(path: string) {
     this.database = new Sqlite(path)
+    const key = this.options?.cipherKey
+    if (key && path !== ':memory:') {
+      // PRAGMA cipher selects the encryption scheme and PRAGMA legacy the
+      // compatibility revision; both must run before PRAGMA key
+      if (this.options?.cipher) {
+        this.database.pragma(`cipher = '${String(this.options.cipher).replace(/'/g, "''")}'`)
+      }
+      if (this.options?.cipherCompatibility != null) {
+        this.database.pragma(`legacy = ${Number(this.options.cipherCompatibility)}`)
+      }
+      this.database.pragma(`key = '${String(key).replace(/'/g, "''")}'`)
+    }
   }
 
   protected _prepareStatement(query: string) {

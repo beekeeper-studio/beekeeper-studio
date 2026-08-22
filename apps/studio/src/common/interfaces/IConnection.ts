@@ -1,4 +1,4 @@
-import { AzureAuthOptions, BigQueryOptions, CassandraOptions, DynamoDBOptions, LibSQLOptions, RedshiftOptions, ConnectionType, SQLAnywhereOptions, IamAuthOptions, SurrealDBOptions, SnowflakeOptions, SqlServerOptions } from "@/lib/db/types"
+import { AzureAuthOptions, BigQueryOptions, CassandraOptions, DynamoDBOptions, LibSQLOptions, RedshiftOptions, ConnectionType, SQLAnywhereOptions, IamAuthOptions, SurrealDBOptions, SnowflakeOptions, SqliteOptions, SqlServerOptions } from "@/lib/db/types"
 import { Transport } from "../transport"
 import { IShareable } from "./IShareable"
 import { IAccessGrant } from "./IAccessGrant"
@@ -66,6 +66,7 @@ export interface ISimpleConnection extends Transport {
   azureAuthOptions?: AzureAuthOptions
   authId?: number
   libsqlOptions?: LibSQLOptions
+  sqliteOptions?: SqliteOptions
   sqlAnywhereOptions?: SQLAnywhereOptions
   surrealDbOptions?: SurrealDBOptions
   dynamoDbOptions?: DynamoDBOptions
