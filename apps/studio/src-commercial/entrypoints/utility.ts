@@ -164,23 +164,27 @@ async function runHandler(id: string, name: string, args: any) {
         log.error("HANDLER: ERROR", e)
       })
       .finally(() => {
+        const s = state(args.sId);
+        if (!s || !s.port) return;
         try {
-          state(args.sId).port.postMessage(replyArgs);
+          s.port.postMessage(replyArgs);
         } catch (e) {
           log.error('ERROR SENDING MESSAGE: ', replyArgs, '\n\n\n ERROR: ', e?.message ?? e)
           replyArgs.type = 'error';
           replyArgs.stack = e?.stack;
           replyArgs.error = e?.message ?? 'Error sending message from utility process, this may be a bug. Please file an issue if this persists.'
           delete replyArgs.data
-          state(args.sId).port.postMessage(replyArgs)
+          s.port.postMessage(replyArgs)
         }
       });
   } else {
     replyArgs.type = 'error';
     replyArgs.error = `Invalid handler name: ${name}`;
 
+    const s = state(args.sId);
+    if (!s || !s.port) return;
     try {
-      state(args.sId).port.postMessage(replyArgs);
+      s.port.postMessage(replyArgs);
     } catch (e) {
       log.error('ERROR SENDING MESSAGE: ', replyArgs, '\n\n\n ERROR: ', e)
     }
@@ -195,6 +199,16 @@ async function initState(sId: string, port: MessagePortMain) {
   state(sId).port.on('message', ({ data }) => {
     const { id, name, args } = data;
     runHandler(id, name, args);
+  })
+
+  state(sId).port.on('close', () => {
+    log.info(`Port closed for sId ${sId}, disconnecting DB`);
+    const conn = state(sId)?.connection;
+    if (conn) {
+      conn.disconnect().catch((e: any) => log.error('Error disconnecting on port close', e));
+      process.parentPort.postMessage({ type: 'reopen-window' });
+    }
+    removeState(sId);
   })
 
   state(sId).port.start();
