@@ -51,6 +51,11 @@
 }
 .noty_theme__mint.noty_type__error {
   color: color.adjust($brand-danger, $lightness: 5%);
+
+  .noty_body {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
 }
 .noty_theme__mint.noty_type__info,
 .noty_theme__mint.noty_type__information {

@@ -116,7 +116,10 @@ export default {
     ...mapState('data/connectionFolders', {'folders': 'items'}),
     classList() {
       return {
-        'active': this.savedConnection && this.selectedConfig ? this.savedConnection === this.selectedConfig : false,
+        // the connection screen edits a copy, so compare by key, not identity
+        'active': !!this.savedConnection && !!this.selectedConfig &&
+          this.savedConnection.id === this.selectedConfig.id &&
+          this.savedConnection.workspaceId === this.selectedConfig.workspaceId
         'selected': this.selected,
         'bulk-selection-active': this.bulkSelectionActive,
       }

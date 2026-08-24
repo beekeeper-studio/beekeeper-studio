@@ -681,6 +681,17 @@
   &:hover {
     background: rgba($theme-base, 0.05);
   }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+    pointer-events: none;
+  }
+}
+
+.quick-switcher-empty {
+  color: $text-lighter;
+  text-align: left;
 }
 
 .quick-switcher-header {
