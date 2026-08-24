@@ -119,7 +119,7 @@ export default {
         // the connection screen edits a copy, so compare by key, not identity
         'active': !!this.savedConnection && !!this.selectedConfig &&
           this.savedConnection.id === this.selectedConfig.id &&
-          this.savedConnection.workspaceId === this.selectedConfig.workspaceId
+          this.savedConnection.workspaceId === this.selectedConfig.workspaceId,
         'selected': this.selected,
         'bulk-selection-active': this.bulkSelectionActive,
       }
