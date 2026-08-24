@@ -183,6 +183,13 @@ When the legacy trees are empty:
 - **2026-08-24, queryAudit.spec.ts (integration canary)**: only change needed
   was the explicit vitest import. TypeORM + better-sqlite3 (native, Electron
   ABI) load fine inside the forked electron worker.
+- **2026-08-24, mariadb.spec.js (first testcontainers spec, 82 tests)**: the
+  standard conversions were all it needed — vitest imports, `@tests/` aliases
+  for the moved-tree imports, and the two `jest.setTimeout` calls swapped for
+  `vi.setConfig` (the top one sets `hookTimeout` too since the container
+  starts in `beforeAll`). testcontainers works unmodified in the forked
+  electron worker: container start, mapped ports, and stop/cleanup all behave
+  the same as under jest.
 - **2026-08-24, sqlite.spec.js (first DB spec, 192 tests)**: the spec itself
   needed only the vitest import — `runCommonTests`/`runReadOnlyTests` and
   `DBTestUtil` run unmodified on both runners (that's why `globals: true` went
