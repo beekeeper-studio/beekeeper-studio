@@ -57,15 +57,12 @@ export function sql(config: SQLConfig = {}) {
 
   if (!config.disableSchemaCompletion) {
     extensions.push(schemaCompletion(config));
-    console.log('enabled schema completion')
   }
 
   if (!config.disableKeywordCompletion) {
     extensions.push(lang.language.data.of({
       autocomplete: keywordCompletionSource(lang, casing, config.keywordCompletion)
     }));
-
-    console.log('enabled keyword completion')
   }
 
   return new LanguageSupport(lang.language, extensions);
