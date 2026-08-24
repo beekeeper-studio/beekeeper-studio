@@ -1,5 +1,6 @@
 /* eslint-disable */
 var integrationConfig = require('./jest.integration.config')
 
-integrationConfig.testPathIgnorePatterns = ["/tests\/integration\/lib\/db/", "/codemirror/"]
+// spread instead of replace so the migrated-to-vitest ignores survive
+integrationConfig.testPathIgnorePatterns = [...integrationConfig.testPathIgnorePatterns, "/tests\/integration\/lib\/db/"]
 module.exports = integrationConfig

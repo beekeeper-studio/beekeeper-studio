@@ -1,4 +1,4 @@
-import TableCompiler from 'knex/lib/schema/tablecompiler'
+import TableCompiler from 'knex/lib/schema/tablecompiler.js'
 import { isObject } from 'lodash';
 
 /* 

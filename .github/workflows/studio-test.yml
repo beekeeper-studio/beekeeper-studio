@@ -131,6 +131,14 @@ jobs:
       - name: Non-DB Integration Tests
         run: yarn workspace beekeeper-studio run test:ci --ci --silent
 
+      # Specs listed in apps/studio/tests/vitest-migrated.json run under vitest
+      # instead of jest (see apps/studio/tests/VITEST_MIGRATION.md)
+      - name: Unit Tests (Vitest)
+        run: yarn workspace beekeeper-studio run vitest:unit --silent
+
+      - name: Non-DB Integration Tests (Vitest)
+        run: yarn workspace beekeeper-studio run vitest:ci --silent
+
       - name: Unit Tests (UI Kit)
         run: yarn workspace @beekeeperstudio/ui-kit run test --silent
 
@@ -186,7 +194,10 @@ jobs:
           timeout_minutes: 20
           max_attempts: 2
           on_retry_command: "docker ps -aq | xargs docker stop | xargs docker rm"
-          command: yarn workspace beekeeper-studio run test:integration --runInBand --ci ${{ matrix.chunk[1] }}
+          # No --runInBand/--ci: both are no-ops for jest here (maxWorkers: 1 in
+          # config, no snapshots) and unknown flags are fatal for chunks that
+          # integration-tests.sh dispatches to vitest.
+          command: yarn workspace beekeeper-studio run test:integration ${{ matrix.chunk[1] }}
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
 

@@ -17,7 +17,7 @@ Beekeeper Studio is a cross-platform SQL editor and database manager built with 
 - **Frontend**: Vue.js 2.7, TypeScript, Vuex for state management
 - **Desktop**: Electron 31.7.3
 - **Build**: ESBuild (main process), Vite (renderer process)
-- **Testing**: Jest, Playwright
+- **Testing**: Jest + Vitest side by side (migrating Jest → Vitest; see `apps/studio/tests/VITEST_MIGRATION.md`), Playwright
 - **Styling**: SCSS with multiple themes
 
 ### Key Entry Points
@@ -53,6 +53,9 @@ yarn test:integration     # Integration tests
 yarn test:e2e             # End-to-end tests with Playwright
 yarn test:ci              # CI-specific test configuration
 yarn test:codemirror      # CodeMirror-specific tests
+yarn vitest:unit          # Unit tests migrated to Vitest (tests/vitest-migrated.json)
+yarn vitest:integration   # Integration tests migrated to Vitest
+yarn vitest:ci            # Migrated integration tests minus docker-DB specs
 
 # Linting
 yarn all:lint             # Lint all workspaces
@@ -129,6 +132,7 @@ assets/            # Styles, fonts, images
 - **Vite**: `apps/studio/vite.config.mjs` (renderer process build)
 - **TypeScript**: `apps/studio/tsconfig.json`
 - **Jest**: `apps/studio/jest.config.js` (plus specialized configs)
+- **Vitest**: `apps/studio/vitest.config.mjs` family + `vitest.shared.mjs` (migrated specs listed in `apps/studio/tests/vitest-migrated.json`)
 - **Electron Builder**: `apps/studio/electron-builder-config.js`
 
 ## Running Tests

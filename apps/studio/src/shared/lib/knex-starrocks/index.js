@@ -12,9 +12,9 @@
 // Only the schema/table/column compilers are overridden here; everything else
 // is inherited from mysql2.
 
-import Client_MySQL2 from "knex/lib/dialects/mysql2";
-import TableCompiler_MySQL from "knex/lib/dialects/mysql/schema/mysql-tablecompiler";
-import ColumnCompiler_MySQL from "knex/lib/dialects/mysql/schema/mysql-columncompiler";
+import Client_MySQL2 from "knex/lib/dialects/mysql2/index.js";
+import TableCompiler_MySQL from "knex/lib/dialects/mysql/schema/mysql-tablecompiler.js";
+import ColumnCompiler_MySQL from "knex/lib/dialects/mysql/schema/mysql-columncompiler.js";
 
 class TableCompiler_StarRocks extends TableCompiler_MySQL {
   createQuery(columns, ifNot, like) {
