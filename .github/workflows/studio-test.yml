@@ -73,6 +73,21 @@ jobs:
           HUSKY: "0"
           npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
 
+  new-tests-are-vitest:
+    name: New tests use vitest
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # Jest is being replaced by vitest; new specs must go in
+      # apps/studio/tests/vitest/ (see apps/studio/tests/VITEST_MIGRATION.md)
+      - name: Check new specs land in tests/vitest
+        run: bin/check-for-new-jest-tests.sh
+
   unit:
     name: Unit tests
     runs-on: ubuntu-24.04
@@ -131,8 +146,8 @@ jobs:
       - name: Non-DB Integration Tests
         run: yarn workspace beekeeper-studio run test:ci --ci --silent
 
-      # Specs listed in apps/studio/tests/vitest-migrated.json run under vitest
-      # instead of jest (see apps/studio/tests/VITEST_MIGRATION.md)
+      # Specs under apps/studio/tests/vitest/ run under vitest instead of jest
+      # (see apps/studio/tests/VITEST_MIGRATION.md)
       - name: Unit Tests (Vitest)
         run: yarn workspace beekeeper-studio run vitest:unit --silent
 

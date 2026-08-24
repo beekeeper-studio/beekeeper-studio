@@ -1,5 +1,0 @@
-[
-  "tests/unit/components/tableinfo/TableInfoFilter.spec.ts",
-  "tests/integration/lib/models/queryAudit.spec.ts",
-  "tests/integration/lib/db/clients/sqlite.spec.js"
-]

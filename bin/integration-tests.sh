@@ -6,12 +6,12 @@ BINBASE=`dirname $0`
 BASE=`pwd`
 LOCATION="$BASE/.instant"
 
-# Specs listed in apps/studio/tests/vitest-migrated.json run under vitest
-# instead of jest (see apps/studio/tests/VITEST_MIGRATION.md). The vitest path
-# skips the oracle instant-client setup below — no migrated spec needs it yet.
+# Specs under apps/studio/tests/vitest/ run under vitest instead of jest (see
+# apps/studio/tests/VITEST_MIGRATION.md). The vitest path skips the oracle
+# instant-client setup below — no migrated spec needs it yet.
 SPEC="${1:-}"
 SPEC_REL="${SPEC#apps/studio/}"
-if [ -n "$SPEC" ] && grep -qF "\"$SPEC_REL\"" apps/studio/tests/vitest-migrated.json; then
+if [[ "$SPEC_REL" == tests/vitest/* ]]; then
   exec yarn workspace beekeeper-studio vitest:integration "$SPEC_REL"
 fi
 

@@ -1,74 +1,85 @@
 # Jest → Vitest migration guide
 
-Studio is migrating its test suites from Jest to Vitest incrementally. Both
-runners are installed and run side by side: specs listed in
-`tests/vitest-migrated.json` run under Vitest and are automatically ignored by
-Jest; everything else stays on Jest until it is ported. The end state is a
-Jest-free repo (deleting `@vue/vue2-jest`, `ts-jest`, `babel-jest`,
-`jest-environment-jsdom` and friends), reached one PR at a time.
+Studio is moving its tests from Jest to Vitest, one spec at a time. Both
+runners are installed while that happens:
+
+- **Vitest** runs everything in `tests/vitest/` (`tests/vitest/unit/`,
+  `tests/vitest/integration/`).
+- **Jest** runs the legacy trees (`tests/unit/`, `tests/integration/`) and
+  never looks inside `tests/vitest/`.
+
+So a spec's directory tells you which runner owns it. Migrating a spec means
+moving it into `tests/vitest/` and porting its Jest APIs. There is no
+registration list to maintain.
+
+**New tests always go in `tests/vitest/`.** CI fails any PR that adds a spec
+file to the legacy jest trees (`bin/check-for-new-jest-tests.sh`; e2e is
+exempt). The migration is done when the legacy trees are empty and Jest is
+uninstalled.
 
 ## Why
 
-`@vue/vue2-jest` is unsupported and the Jest transform chain
-(babel-jest/ts-jest) duplicates what Vite already does for the renderer build.
-`apps/ui-kit` already runs Vitest, and the studio renderer already builds with
-Vite + `vite-ng-plugin-vue2`, so Vitest reuses the production toolchain.
+`@vue/vue2-jest` is unsupported, and the Jest transform chain
+(babel-jest/ts-jest) duplicates work Vite already does for the renderer build.
+Vitest reuses the production Vite toolchain, which `apps/ui-kit` already uses
+for its tests.
 
-## Layout
+## Where things live
 
-| File | Purpose |
+| File | What it is |
 | --- | --- |
-| `tests/vitest-migrated.json` | Single source of truth: specs that run under Vitest |
-| `vitest.shared.mjs` | Plugins (vue2 SFC, raw-`.ini`), aliases (derived from `vite.config.mjs` + test-only overrides: `@tests`, ui-kit source, `@bksLogger` → mainLogger), pool settings |
-| `vitest.config.mjs` | Unit suite (jsdom) — Vitest side of `jest.config.js` |
-| `vitest.integration.config.mjs` | Integration suite (node) — side of `jest.integration.config.js` |
-| `vitest.ci.config.mjs` | Integration minus docker-DB specs — side of `jest.ci.config.js` |
+| `tests/vitest/` | All vitest specs (`unit/`, `integration/`) |
+| `vitest.shared.mjs` | Shared plugins, aliases, and pool settings |
+| `vitest.config.mjs` | Unit suite (jsdom) — vitest twin of `jest.config.js` |
+| `vitest.integration.config.mjs` | Integration suite (node) — twin of `jest.integration.config.js` |
+| `vitest.ci.config.mjs` | Integration minus docker-DB specs — twin of `jest.ci.config.js` |
 | `tests/init/vitest-env-setup.mjs` | Logger init (twin of `tests/init/env-setup.js`) |
 | `tests/init/vitest-integration-setup.mjs` | localStorage stub (twin of the jest `globals` block) |
 
-Scripts (also available from the repo root): `yarn vitest:unit`,
+Scripts (work from the repo root too): `yarn vitest:unit`,
 `yarn vitest:integration`, `yarn vitest:ci`. They use the same
-Electron-as-Node wrapper as the jest scripts — the `forks` pool forks the
-electron binary with `ELECTRON_RUN_AS_NODE=1` inherited, so native modules
-(better-sqlite3 etc., built for Electron's ABI by `install-app-deps`) load in
-workers. Extra CLI args pass through: `yarn vitest:unit path/to/spec` filters
-by path substring, `--silent` works, `-t "name"` filters by test name.
+Electron-as-Node wrapper as the jest scripts, so native modules
+(better-sqlite3 etc.) load correctly in workers. Extra CLI args pass through:
+`yarn vitest:unit path/to/spec` filters by path substring, `--silent` works,
+`-t "name"` filters by test name.
 
 ## How to migrate a spec
 
-1. Add the spec's path (relative to `apps/studio`) to
-   `tests/vitest-migrated.json`. That's the only registration step — Vitest
-   picks it up and Jest starts ignoring it.
-2. Add explicit imports at the top of the spec:
+1. `git mv` the spec from `tests/unit/...` or `tests/integration/...` to the
+   same path under `tests/vitest/`. Both runners pick up the change
+   automatically.
+2. Fix any relative imports that pointed back into the old tree — use the
+   `@tests/` alias (e.g. `@tests/lib/db`,
+   `@tests/integration/lib/db/clients/all`). Shared helpers stay where they
+   are; only the spec moves.
+3. Add explicit vitest imports at the top of the file:
    `import { describe, it, expect, vi, beforeAll, afterAll, beforeEach, afterEach } from "vitest"`
-   (whichever the file uses). Vitest `globals` are **on** — required because
-   shared helpers (`tests/lib/db.ts`, `tests/integration/lib/db/clients/all.js`)
-   call `describe`/`test`/`expect` ambiently and are consumed by specs on both
-   runners, so they can't import from `vitest` while jest still loads them.
-   Spec files still import explicitly: it makes runner ownership obvious, and
-   tsconfig keeps `"types": ["jest"]` (adding `vitest/globals` alongside it
-   would clash), so ambient `vi` wouldn't typecheck anyway.
-3. Convert Jest APIs (table below).
-4. Run it: `yarn vitest:unit <path>` (or `vitest:integration`), then run the
-   matching jest suite and confirm its total file count dropped by one
-   (`yarn internal:integration --listTests` shows jest's collection without
-   running anything).
-5. Anything surprising you had to do → add it to the findings log at the
-   bottom of this file.
+   (whichever the file uses).
+4. Convert Jest APIs using the table below.
+5. Run it: `yarn vitest:unit <path>` (or `vitest:integration`). Then confirm
+   jest no longer collects it: `yarn internal:integration --listTests` (or the
+   unit equivalent) should show one fewer file.
+6. Hit anything surprising? Add it to the findings log at the bottom.
 
-### DB specs and the CI matrix
+Note on globals: vitest `globals` are on because shared helpers
+(`tests/lib/db.ts`, `tests/integration/lib/db/clients/all.js`) call
+`describe`/`expect` ambiently and are still loaded by jest too, so they can't
+import from `vitest` yet. Spec files still import explicitly — it makes runner
+ownership obvious, and tsconfig still has `"types": ["jest"]`, so an ambient
+`vi` wouldn't typecheck anyway.
 
-Docker-DB specs (`tests/integration/lib/db/**`) need no extra CI wiring:
-`bin/integration-tests.sh` checks the chunk path against
-`tests/vitest-migrated.json` and routes migrated specs to
-`yarn vitest:integration <path>`, everything else to jest as before. The
-per-database matrix in `studio-test.yml` is unchanged (chunks come from
-`bin/get-db-files-as-json.sh` either way). Two caveats:
+### Docker-DB specs and CI
 
-- The vitest branch of the dispatch skips the oracle instant-client setup; when
-  `oracle.spec.js` migrates, move the dispatch below that setup or gate it.
-- `sqlserver-winauth` / kerberos flows call `internal:integration` directly and
-  bypass the dispatch — migrating those specs means updating
+DB specs need no extra CI wiring. The per-database matrix collects specs from
+both trees (`bin/get-db-files-as-json.sh`), and `bin/integration-tests.sh`
+routes each chunk by path: `tests/vitest/**` goes to `yarn
+vitest:integration`, everything else to jest. Two caveats:
+
+- The vitest branch of that dispatch skips the oracle instant-client setup.
+  When `oracle.spec.js` migrates, move the dispatch below that setup or gate
+  it.
+- The `sqlserver-winauth` and kerberos flows call `internal:integration`
+  directly and bypass the dispatch. Migrating those specs means updating
   `windows-login-tests.yaml` / `dev/docker_*_kerberos/tests/entrypoint.sh` in
   the same PR.
 
@@ -78,7 +89,7 @@ per-database matrix in `studio-test.yml` is unchanged (chunks come from
 | --- | --- | --- |
 | `jest.fn()` / `jest.spyOn()` | `vi.fn()` / `vi.spyOn()` | drop-in |
 | `jest.mock(path, factory)` | `vi.mock(path, factory)` | hoisting caveat below |
-| `jest.requireActual(path)` | `vi.mock(path, async (importOriginal) => { const actual = await importOriginal(); ... })` | factory becomes async; house example in `apps/ui-kit/tests/unit/sql-text-editor/querySelection.spec.ts` |
+| `jest.requireActual(path)` | `vi.mock(path, async (importOriginal) => { const actual = await importOriginal(); ... })` | factory becomes async; example in `apps/ui-kit/tests/unit/sql-text-editor/querySelection.spec.ts` |
 | `jest.setTimeout(ms)` | `vi.setConfig({ testTimeout: ms, hookTimeout: ms })` | jest's version governed hooks too — set both |
 | `jest.Mock` (type) | `import type { Mock } from "vitest"` | all current uses are bare (no generics) |
 | `jest.clearAllMocks()` etc. | `vi.clearAllMocks()` etc. | drop-in (`reset`/`restore` too) |
@@ -87,68 +98,75 @@ per-database matrix in `studio-test.yml` is unchanged (chunks come from
 | `/** @jest-environment jsdom */` | `/** @vitest-environment jsdom */` | 3 files use this today |
 | `fail("msg")` | `expect.fail("msg")` | `fail` was already undefined under jest-circus; 4 call sites in `mongodb.spec.ts` |
 
-## Gotchas (known ahead of time)
+## Gotchas
 
-- **`vi.mock` factories are hoisted above imports *and* module body.** A
-  factory that reads a top-level `const mockFoo = ...` throws a TDZ error
-  under Vitest even though Jest tolerated it. Move the values into
-  `vi.hoisted(() => ({ ... }))`. Vitest's error message names the offending
+- **`vi.mock` factories are hoisted above imports and the module body.** A
+  factory that reads a top-level `const mockFoo = ...` throws a TDZ error,
+  even though Jest tolerated it. Move those values into
+  `vi.hoisted(() => ({ ... }))`. The error message names the offending
   variable. Known files with this shape: `tests/unit/lib/db/tunnel.spec.ts`
   (worst case), the ssh* integration specs, several `tests/unit/security/*`
   specs.
-- **`require()` is not defined in test files.** Vitest transforms specs as
-  ESM. Convert bare `require(...)` to static imports (or `await import(...)`
-  when combined with `vi.resetModules()`). Files affected today:
+- **`require()` doesn't exist in test files.** Vitest transforms specs as
+  ESM. Convert bare `require(...)` to static imports, or `await import(...)`
+  when paired with `vi.resetModules()`. Files affected today:
   security.spec.ts, saved_connection.spec.js, sqlite.exploit.spec.ts,
   webPluginLoader.exploit.spec.ts, protocolBuilder.exploit.spec.ts,
   node-ssh-forward.spec.ts, oracle.spec.js, clearLogFilesMigration.spec.ts,
-  ssh-agent*.spec.js, ssh-skip-bad-identity.spec.js. (Stray `require()` in
-  **src** is handled by the `commonjs()` plugin in `vitest.shared.mjs` — same
-  as the renderer build — so don't rewrite src for this.)
-- **`commonjs()` hoists lazy `require()` into eager imports.** A
-  `try { require('optional-native') } catch` guard in src becomes a hard
-  top-level dependency once the plugin transforms it. Convert such sites to
-  `await import(...)` (stays lazy everywhere); `sqlserver.ts`'s
-  `mssql/msnodesqlv8` load is the reference example.
-- **Deep imports into packages need exact file paths.** Externalized deps
-  resolve with node-ESM rules: `knex/lib/schema/compiler` fails, it must be
-  `knex/lib/schema/compiler.js` (and directory entries `.../index.js`). CJS
-  and the app bundlers tolerate the extensionless form, so these only surface
-  under vitest. All `knex/lib/*` imports were fixed repo-wide already.
+  ssh-agent*.spec.js, ssh-skip-bad-identity.spec.js. Stray `require()` in
+  **src** is fine — the `commonjs()` plugin handles it, same as the renderer
+  build.
+- **The `commonjs()` plugin turns lazy `require()` in src into eager
+  imports.** A `try { require('optional-native') } catch` guard becomes a
+  hard top-level dependency. Convert such sites to `await import(...)`, which
+  stays lazy everywhere; `sqlserver.ts`'s `mssql/msnodesqlv8` load is the
+  reference example.
+- **Deep imports into packages need exact file paths.**
+  `knex/lib/schema/compiler` fails; it must be `knex/lib/schema/compiler.js`
+  (and directory entries need `/index.js`). CJS and the app bundlers tolerate
+  the extensionless form, so this only surfaces under vitest. All
+  `knex/lib/*` imports were fixed repo-wide already.
 - **`vite:oxc` rejects invalid TypeScript that ts-jest/babel let through.**
-  Example fixed already: a parameter that was both optional and defaulted
+  Example already fixed: a parameter that was both optional and defaulted
   (`selects?: string[] = ['*']`, TS1015) in `mongodb.ts`. If a spec's import
   graph hits such a file, fix the TypeScript — don't work around the
   transform.
 - **CLI flags differ.** No `--ci`, no `--runInBand` (serial comes from
   `fileParallelism: false` in the shared config), no `--forceExit` (forked
   workers are force-terminated after teardown), no `--testPathPattern`
-  (positional path substrings instead). `--silent`, `--testTimeout`,
+  (use positional path substrings instead). `--silent`, `--testTimeout`, and
   `--reporter=json --outputFile=...` (jest-compatible schema) all exist.
 - **SFC `<style>` blocks now go through Vite** (vue2-jest skipped them).
   Vitest's default `css: false` stubs the output, and the `assets` alias from
   the renderer config is in `vitest.shared.mjs`, so scss imports resolve.
-- **Aliases dropped on purpose** (jest needed them, vitest resolves the real
-  packages): the `@marimo-team/codemirror-languageserver` stub and the
+- **Two jest aliases were dropped on purpose** because vitest resolves the
+  real packages: the `@marimo-team/codemirror-languageserver` stub and the
   `@libsql/core` → `lib-cjs` remap. If a migrated spec trips on either,
   re-add the mapping in `vitest.shared.mjs` and note it below.
-- **Unhandled rejections between tests fail the run** (Vitest is stricter
+- **Unhandled rejections between tests fail the run** (vitest is stricter
   than Jest 29). Fix the leak in the test rather than reaching for
   `dangerouslyIgnoreUnhandledErrors`.
 
 ## End-state cleanup (for the final PR)
 
-Remove: `jest`, `@types/jest`, `@vue/vue2-jest`, `babel-jest`,
-`jest-environment-jsdom`, `jest-serializer-vue`, `jest-transform-stub`,
-`jest-watch-typeahead`, `ts-jest`; the five `jest.*.config.js` files;
-`tests/transformers/jest-raw-text-transformer.js`; `tests/vitest-migrated.json`
-plumbing (configs then glob whole directories); the jest-side steps in
-`.github/workflows/studio-test.yml`; `--testPathPattern`/`--runInBand`/`--ci`
-flags in `windows-login-tests.yaml` and the kerberos docker entrypoints
-(`dev/docker_*_kerberos/tests/entrypoint.sh` also gate on
-`node_modules/jest` and parse jest's JSON reporter output — vitest's json
-reporter emits the same fields). Switch `tsconfig.json` `"types": ["jest"]` to
-`["vitest/globals"]` if globals get turned on.
+When the legacy trees are empty:
+
+- Remove the packages: `jest`, `@types/jest`, `@vue/vue2-jest`, `babel-jest`,
+  `jest-environment-jsdom`, `jest-serializer-vue`, `jest-transform-stub`,
+  `jest-watch-typeahead`, `ts-jest`.
+- Delete the five `jest.*.config.js` files and
+  `tests/transformers/jest-raw-text-transformer.js`.
+- Move the specs up a level (`tests/vitest/unit/` → `tests/unit/`) and delete
+  `bin/check-for-new-jest-tests.sh` plus its workflow job.
+- Remove the jest-side steps in `.github/workflows/studio-test.yml` and the
+  jest dispatch in `bin/integration-tests.sh` / `bin/get-db-files-as-json.sh`.
+- Update `windows-login-tests.yaml` and the kerberos docker entrypoints
+  (`dev/docker_*_kerberos/tests/entrypoint.sh`): drop
+  `--testPathPattern`/`--runInBand`/`--ci` flags, the `node_modules/jest`
+  gate, and the jest JSON-reporter parsing (vitest's json reporter emits the
+  same fields).
+- Switch `tsconfig.json` `"types": ["jest"]` to `["vitest/globals"]` if
+  globals stay on.
 
 ## Findings log (append as you port)
 

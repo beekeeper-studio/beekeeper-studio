@@ -4,16 +4,6 @@ import vue from 'vite-ng-plugin-vue2'
 import commonjs from 'vite-plugin-commonjs'
 import viteConfig from './vite.config.mjs'
 
-// Specs listed here run under vitest and are ignored by jest (the jest.*.config.js
-// files read the same list). Migrating a spec = port its jest APIs + add it here.
-export const migratedSpecs = JSON.parse(
-  readFileSync(resolve(__dirname, 'tests/vitest-migrated.json'), 'utf8')
-)
-
-export function migrated(prefix) {
-  return migratedSpecs.filter((p) => p.startsWith(prefix))
-}
-
 // Importing a .ini file yields its raw text as the default export.
 // Replaces tests/transformers/jest-raw-text-transformer.js.
 function rawIni() {

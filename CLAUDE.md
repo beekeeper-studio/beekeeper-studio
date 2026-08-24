@@ -17,7 +17,7 @@ Beekeeper Studio is a cross-platform SQL editor and database manager built with 
 - **Frontend**: Vue.js 2.7, TypeScript, Vuex for state management
 - **Desktop**: Electron 31.7.3
 - **Build**: ESBuild (main process), Vite (renderer process)
-- **Testing**: Jest + Vitest side by side (migrating Jest → Vitest; see `apps/studio/tests/VITEST_MIGRATION.md`), Playwright
+- **Testing**: Jest + Vitest side by side (migrating Jest → Vitest; see `apps/studio/tests/VITEST_MIGRATION.md`), Playwright. **All new tests must be Vitest specs in `apps/studio/tests/vitest/` — CI fails PRs that add specs to the legacy jest trees** (`tests/unit/`, `tests/integration/`; e2e is exempt).
 - **Styling**: SCSS with multiple themes
 
 ### Key Entry Points
@@ -53,9 +53,9 @@ yarn test:integration     # Integration tests
 yarn test:e2e             # End-to-end tests with Playwright
 yarn test:ci              # CI-specific test configuration
 yarn test:codemirror      # CodeMirror-specific tests
-yarn vitest:unit          # Unit tests migrated to Vitest (tests/vitest-migrated.json)
-yarn vitest:integration   # Integration tests migrated to Vitest
-yarn vitest:ci            # Migrated integration tests minus docker-DB specs
+yarn vitest:unit          # Vitest unit tests (tests/vitest/unit)
+yarn vitest:integration   # Vitest integration tests (tests/vitest/integration)
+yarn vitest:ci            # Vitest integration tests minus docker-DB specs
 
 # Linting
 yarn all:lint             # Lint all workspaces
@@ -132,7 +132,7 @@ assets/            # Styles, fonts, images
 - **Vite**: `apps/studio/vite.config.mjs` (renderer process build)
 - **TypeScript**: `apps/studio/tsconfig.json`
 - **Jest**: `apps/studio/jest.config.js` (plus specialized configs)
-- **Vitest**: `apps/studio/vitest.config.mjs` family + `vitest.shared.mjs` (migrated specs listed in `apps/studio/tests/vitest-migrated.json`)
+- **Vitest**: `apps/studio/vitest.config.mjs` family + `vitest.shared.mjs` (runs everything under `apps/studio/tests/vitest/`)
 - **Electron Builder**: `apps/studio/electron-builder-config.js`
 
 ## Running Tests
@@ -142,8 +142,10 @@ Always run tests from the appropriate directory:
 - From apps/studio: `yarn test:unit`, `yarn test:integration`, `yarn test:e2e`
 
 Test files are organized in `apps/studio/tests/`:
-- `unit/` - Unit tests
-- `integration/` - Integration tests
+- `vitest/unit/` - Unit tests (Vitest — put new unit tests here)
+- `vitest/integration/` - Integration tests (Vitest — put new integration tests here)
+- `unit/` - Legacy unit tests still on Jest (migrate, don't add)
+- `integration/` - Legacy integration tests still on Jest (migrate, don't add)
 - `e2e/` - End-to-end tests with Playwright
 
 ## Development Workflow

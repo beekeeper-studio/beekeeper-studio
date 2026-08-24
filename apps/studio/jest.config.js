@@ -3,19 +3,14 @@ const path = require('path')
 const { resolve } = require('path')
 /* eslint-enable */
 
-// Specs already migrated to vitest (see vitest.config.mjs); jest must skip them
-// so they run exactly once.
-const migratedToVitest = require('./tests/vitest-migrated.json').map(
-  (p) => '<rootDir>/' + p.replace(/\./g, '\\.')
-)
-
 /** @type {import('@jest/types').Config.InitialOptions} */
 module.exports = {
   maxWorkers: 1,
 
-  // '/node_modules/' is jest's default; it has to be restated because setting
-  // testPathIgnorePatterns replaces the default rather than extending it.
-  testPathIgnorePatterns: ['/node_modules/', ...migratedToVitest],
+  // Specs migrated to vitest live under tests/vitest/ (see
+  // tests/VITEST_MIGRATION.md); jest's testMatch globs below never reach them,
+  // so no extra ignores are needed.
+  testPathIgnorePatterns: ['/node_modules/'],
 
   moduleFileExtensions: [
     'js',

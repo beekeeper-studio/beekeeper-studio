@@ -1,8 +1,9 @@
 import { defineConfig } from 'vitest/config'
-import { plugins, resolveOptions, baseTest, migrated } from './vitest.shared.mjs'
+import { plugins, resolveOptions, baseTest } from './vitest.shared.mjs'
 
 // Integration tests (vitest side of the jest.integration.config.js suite).
-// Only specs listed in tests/vitest-migrated.json run here; jest keeps the rest.
+// Specs live under tests/vitest/integration/; jest keeps everything still in
+// tests/integration/.
 export default defineConfig({
   plugins,
   resolve: resolveOptions,
@@ -11,7 +12,7 @@ export default defineConfig({
     environment: 'node',
     // for specs that opt into jsdom via an @vitest-environment docblock
     environmentOptions: { jsdom: { url: 'http://localhost' } },
-    include: migrated('tests/integration/'),
+    include: ['tests/vitest/integration/**/*.spec.?([mc])[jt]s?(x)'],
     setupFiles: [
       './tests/init/vitest-env-setup.mjs',
       './tests/init/vitest-integration-setup.mjs',

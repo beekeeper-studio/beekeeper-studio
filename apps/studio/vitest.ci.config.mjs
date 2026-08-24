@@ -7,7 +7,7 @@ export default mergeConfig(
   integrationConfig,
   defineConfig({
     test: {
-      exclude: ['tests/integration/lib/db/**'],
+      exclude: ['tests/vitest/integration/lib/db/**'],
     },
   })
 )
