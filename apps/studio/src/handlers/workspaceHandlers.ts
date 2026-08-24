@@ -9,6 +9,7 @@ import { IQueryFolder } from "@/common/interfaces/IQueryFolder";
 import { IDirectoryImportStats } from "@/common/interfaces/IDirectoryImportStats";
 import rawLog from "@bksLogger";
 import { AppDbHandlers } from "./appDbHandlers";
+import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
 
 const log = rawLog.scope("workspaceHandlers")
 
@@ -16,6 +17,8 @@ const log = rawLog.scope("workspaceHandlers")
 // queries are limited to 2_000_000 characters, so the upper limit is 4x that amount
 const MAX_SQL_FILE_BYTES = 4 * 2_000_000;
 const SQL_FILE_EXTENSIONS = new Set(['.sql', '.txt']);
+
+const SKIP_DIR_NAMES = new Set(['.git']);
 
 // I am just assuming that big batches might be an issue, so we have the ability to cap here
 // as well as cap the amount of rows so we don't piss off the active record transaction
@@ -35,6 +38,11 @@ export interface IWorkspaceHandlers {
 
 export const WorkspaceHandlers: IWorkspaceHandlers = {
   "workspace/setActive": async function({ sId, wId, credentialId }: { sId: string, wId: number, credentialId: number }): Promise<void> {
+    if (wId === LocalWorkspace.id) {
+      state(sId).cloudClient = null;
+      return;
+    }
+
     const cred = await CloudCredential.findOneBy({ id: credentialId });
 
     if (!cred) {
@@ -196,14 +204,18 @@ async function importDirectory(funcs: ImportFunctions, dir: string, parentId: nu
     const childDirNames = await getDirChildren(dir, true);
 
     for (const child of childDirNames) {
-      const dirPath = path.join(dir, child);
+      if (!SKIP_DIR_NAMES.has(child)) {
+        const dirPath = path.join(dir, child);
 
-      const childStats = await importDirectory(funcs, dirPath, parentId);
+        const childStats = await importDirectory(funcs, dirPath, parentId);
 
-      stats.queries += childStats.queries;
-      stats.directories += childStats.directories;
-      if (childStats.warnings.length) {
-        stats.warnings.push(...childStats.warnings);
+        stats.queries += childStats.queries;
+        stats.directories += childStats.directories;
+        if (childStats.warnings.length) {
+          stats.warnings.push(...childStats.warnings);
+        }
+      } else {
+        stats.warnings.push(`Skipping folder: ${child}`);
       }
     }
   }

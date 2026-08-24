@@ -1,12 +1,12 @@
 import Vue from 'vue'
 import _ from 'lodash'
 import { IConnectionFolder } from "@/common/interfaces/IQueryFolder";
-import { DataState, DataStore, mutateActions, mutationsFor } from "@/store/modules/data/DataModuleBase";
+import { DataState, DataStore, LoadOptions, mutateActions, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { safely } from "@/store/modules/data/StoreHelpers";
 import { accessGrantActions, accessGrantMutations } from "@/store/modules/data/access_grant/accessGrantStore";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
 import { FolderFetchModule, treeActions } from "@/store/modules/data/tree/treeStore";
-import { FolderableState, folderableActions, folderableMutations } from "@/store/modules/data/tree/folderableStore";
+import { FolderableState, folderableActions } from "@/store/modules/data/tree/folderableStore";
 import { FolderNodeModule } from "@/store/modules/data/tree/FolderNodeModule";
 
 type State = DataState<IConnectionFolder> & FolderableState<IConnectionFolder>
@@ -18,12 +18,10 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     loading: false,
     error: null,
     pollError: null,
-    draft: null,
   },
   mutations: {
     ...mutationsFor<IConnectionFolder>({}, { field: 'name', direction: 'asc' }),
     ...accessGrantMutations(),
-    ...folderableMutations(),
   },
   modules: {
     nodes: FolderNodeModule,
@@ -32,7 +30,7 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
   actions: {
     ...accessGrantActions('connectionFolders'),
     ...mutateActions<IConnectionFolder>(),
-    ...treeActions<IConnectionFolder>('parentIds'),
+    ...treeActions<IConnectionFolder>({ plural: 'parentIds', singular: 'parentId' }),
     ...folderableActions<IConnectionFolder>(),
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
@@ -40,17 +38,14 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
     async initialize() {
       // noop
     },
-    async load(context) {
+    async load(context, options: LoadOptions<IConnectionFolder> = {}) {
       context.commit('error', null)
       await safely(context, async () => {
         const items = await Vue.prototype.$util.send('appdb/connectionFolder/find', { options: { order: { name: 'ASC' } } })
         if (context.rootState.workspaceId === LocalWorkspace.id) {
           await context.dispatch('mutate', { type: 'upsert', data: items })
         }
-      })
-    },
-    async loadMore(context) {
-      await context.dispatch('load');
+      }, options.onError)
     },
     async poll() {
       // no-op for local

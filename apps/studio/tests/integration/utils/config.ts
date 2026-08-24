@@ -14,7 +14,7 @@ import defaultConfigIni from "../../../default.config.ini";
  * `);
  * bksConfig.get("pluginSystem.disabled"); // true
  **/
-export function createConfig(text: string) {
+export function createConfig(text: string = "") {
   return BksConfigProvider.create(
     {
       // @ts-expect-error should match the type
