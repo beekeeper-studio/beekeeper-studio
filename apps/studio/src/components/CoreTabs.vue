@@ -69,7 +69,7 @@
     <div class="tab-content">
       <div class="empty-editor-group empty flex-col  expand">
         <div class="expand layout-center">
-          <shortcut-hints />
+          <shortcut-hints type="core-tabs" />
         </div>
       </div>
       <div
