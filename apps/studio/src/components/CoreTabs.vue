@@ -328,7 +328,7 @@ import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.
 import Shell from './TabShell.vue'
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
-import { TabTypeConfig, TransportOpenTab, TransportPluginTab, setFilters, matches, duplicate, TabType } from '@/common/transport/TransportOpenTab'
+import { TabTypeConfig, TransportOpenTab, TransportPluginTab, setFilters, matches, duplicate } from '@/common/transport/TransportOpenTab'
 import { wait } from '@/shared/lib/wait'
 
 export default Vue.extend({
@@ -635,9 +635,6 @@ export default Vue.extend({
         this.lastFocused.focus()
       }
     },
-    openContextMenu(event, item) {
-      this.contextEvent = { event, item }
-    },
     async setActiveTab(tab: TransportOpenTab) {
       const switchingTab = tab.id !== this.activeTab?.id
       if (switchingTab) {
@@ -909,7 +906,8 @@ export default Vue.extend({
 
       noty.close()
     },
-    async importSqlFiles(paths: string[]) {
+    async importSqlFiles(importConfig: { paths: string[], parentId: number }) {
+      const { paths, parentId } = importConfig;
       const files = paths.map((path) => ({
         path,
         name: path.replace(/^.*[\\/]/, '').replace(/\.sql$/, ''),
@@ -956,6 +954,7 @@ export default Vue.extend({
             const query = await this.$util.send('appdb/query/new');
             query.title = file.name
             query.text = text
+            query.queryFolderId = parentId
             await this.$store.dispatch('data/queries/save', query)
           } else {
             files[i].error = true
@@ -1003,7 +1002,7 @@ export default Vue.extend({
       }
     },
     async loadRoutineCreate(routine) {
-      const result = await this.connection.getRoutineCreateScript(routine.name, routine.type, routine.schema);
+      const result = await this.connection.getRoutineCreateScript(routine.name, routine.type, routine.schema, routine.oid);
       const stringResult = safeFormat(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
       this.createQuery(stringResult);
     },
@@ -1087,9 +1086,15 @@ export default Vue.extend({
       if (this.closingTab) return; // prevent close modals queueing
 
       if (tab.unsavedChanges && !options?.ignoreUnsavedChanges) {
+        let confirmed = false
         this.closingTab = tab
-        const confirmed = await this.$confirmById(this.confirmModalId);
-        this.closingTab = null
+        try {
+          confirmed = await this.$confirmById(this.confirmModalId);
+        } finally {
+          // Never leave this set - it gates every close, so a stuck value
+          // silently disables tab closing for the rest of the session.
+          this.closingTab = null
+        }
         if (!confirmed) return
       }
 

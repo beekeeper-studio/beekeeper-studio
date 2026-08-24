@@ -8,7 +8,7 @@ The Beekeeper SQL Query Formatter is a great way to ensure your SQL meets strict
 
 ## Getting Started
 
-Right click on the editor window and select **Open Query Formatter** or click the button next to **Save** and **Run** to open the formatter. From there, you can select and update any of the presets available.
+Right click on the editor window and select **Format Query → Custom...** or click the button next to **Save** and **Run** to open the formatter. From there, you can select and update any of the presets available. The **Format Query** menu also lists your saved presets directly, so you can apply one without opening the formatter.
 
 ![Formatter](../assets/images/sql-query-formatter/formatter-modal.png)
 

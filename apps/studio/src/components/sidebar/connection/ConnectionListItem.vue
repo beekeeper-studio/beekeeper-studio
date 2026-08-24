@@ -99,12 +99,15 @@ export default {
     rename: false,
   }),
   computed: {
-    ...mapGetters(["isCloud"]),
+    ...mapGetters(["isCloud", "workspace"]),
     ...mapState('data/connections', {'connectionConfigs': 'items'}),
     ...mapState('data/connectionFolders', {'folders': 'items'}),
     classList() {
       return {
-        'active': this.savedConnection && this.selectedConfig ? this.savedConnection === this.selectedConfig : false
+        // the connection screen edits a copy, so compare by key, not identity
+        'active': !!this.savedConnection && !!this.selectedConfig &&
+          this.savedConnection.id === this.selectedConfig.id &&
+          this.savedConnection.workspaceId === this.selectedConfig.workspaceId
       }
     },
     labelColor() {
@@ -137,8 +140,8 @@ export default {
     },
     title() {
       return this.privacyMode ?
-        'Connection details hidden by Privacy Mode' :
-        this.$bks.buildConnectionString(this.displayConfig)
+        `Created by ${this.author}` :
+        `Created by ${this.author}, ${this.$bks.buildConnectionString(this.displayConfig)}`;
     },
     savedConnection() {
 
@@ -153,6 +156,12 @@ export default {
         return this.config
       }
     },
+    folder() {
+      return this.folders.find((f) => f.id === this.savedConnection.connectionFolderId);
+    },
+    isPersonal() {
+      return this.folder?.personal;
+    },
     // For display purposes only: prefer the linked saved connection when this
     // is a recent-list row, so edits to the saved connection (host, port, ssh,
     // etc.) propagate to the recent connections list. Falls back to the
@@ -160,6 +169,20 @@ export default {
     // recent entry).
     displayConfig() {
       return this.savedConnection || this.config
+    },
+    author() {
+      if (!this.isCloud) {
+        return "You";
+      }
+      if (!this.displayConfig || !this.displayConfig.membership) {
+        return "Unknown";
+      }
+      if (
+        this.displayConfig.membership.userId === this.workspace.currentMembership.userId
+      ) {
+        return "You";
+      }
+      return this.displayConfig.membership.name;
     },
   },
   methods: {
@@ -199,7 +222,7 @@ export default {
           name: "Share",
           slug: 'share',
           handler: this.share,
-          hideIf: !this.isCloud || !this.savedConnection || !this.savedConnection.id,
+          hideIf: !this.isCloud || !this.savedConnection || !this.savedConnection.id || this.isPersonal,
         },
         {
           name: "Duplicate",
@@ -312,5 +335,14 @@ export default {
   .editable-text {
     width: 100%;
   }
+}
+
+/** --depth is from Tree.vue */
+.list-group .list-item .list-item-btn {
+  padding-left: calc(var(--depth) * 1.15rem);
+}
+
+.connection-label {
+  margin-left: 0.5rem;
 }
 </style>

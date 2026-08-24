@@ -44,6 +44,13 @@ jobs:
         with:
           node-version-file: '.nvmrc'
 
+      # ImageOS identifies the runner image (e.g. ubuntu22, ubuntu24), so caches
+      # never cross runner image versions: node_modules holds native modules
+      # compiled for one exact image.
+      - name: Compute runner image cache id
+        shell: bash
+        run: echo "RUNNER_IMAGE_ID=${ImageOS:-unknown}" >> "$GITHUB_ENV"
+
       - name: Cache node_modules
         id: cache-nm
         uses: actions/cache@v5
@@ -53,7 +60,7 @@ jobs:
             apps/studio/node_modules
             apps/ui-kit/node_modules
             apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
 
       - name: Install dependencies
         if: steps.cache-nm.outputs.cache-hit != 'true'
@@ -79,6 +86,10 @@ jobs:
         with:
           node-version-file: '.nvmrc'
 
+      - name: Compute runner image cache id
+        shell: bash
+        run: echo "RUNNER_IMAGE_ID=${ImageOS:-unknown}" >> "$GITHUB_ENV"
+
       - name: Restore node_modules cache
         uses: actions/cache/restore@v5
         with:
@@ -87,7 +98,7 @@ jobs:
             apps/studio/node_modules
             apps/ui-kit/node_modules
             apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
           fail-on-cache-miss: true
 
       - name: Lint
@@ -142,6 +153,10 @@ jobs:
         with:
           node-version-file: '.nvmrc'
 
+      - name: Compute runner image cache id
+        shell: bash
+        run: echo "RUNNER_IMAGE_ID=${ImageOS:-unknown}" >> "$GITHUB_ENV"
+
       - name: Restore node_modules cache
         uses: actions/cache/restore@v5
         with:
@@ -150,7 +165,7 @@ jobs:
             apps/studio/node_modules
             apps/ui-kit/node_modules
             apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
           fail-on-cache-miss: true
 
       - name: Install libaio (for oracle)
