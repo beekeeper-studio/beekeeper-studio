@@ -357,7 +357,7 @@
         class="layout-center expand"
         v-else
       >
-        <shortcut-hints />
+        <shortcut-hints type="query-editor" />
       </div>
       <!-- <span class="expand" v-if="!result"></span> -->
       <!-- STATUS BAR -->
