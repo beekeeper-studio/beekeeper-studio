@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import vue from 'vite-ng-plugin-vue2'
+import viteConfig from './vite.config.mjs'
 
 // Specs listed here run under vitest and are ignored by jest (the jest.*.config.js
 // files read the same list). Migrating a spec = port its jest APIs + add it here.
@@ -28,21 +29,27 @@ function rawIni() {
 
 export const plugins = [vue(), rawIni()]
 
-// Ports jest.config.js moduleNameMapper. Array form: order matters, regexes keep
-// jest's anchored semantics. The ui-kit alias points at lib source, same as jest;
-// subpath imports (@beekeeperstudio/ui-kit/vue/*) fall through to the workspace
-// package's exports map, which needs `yarn lib:build` first (same as CI).
-// Not ported (jest CJS-resolver workarounds; vitest resolves the packages' own
-// `import` conditions): the @marimo-team/codemirror-languageserver stub and the
-// @libsql/core -> lib-cjs remap. Re-add here if a migrated spec trips on them.
+// Path aliases come from the renderer vite config (one source of truth for @,
+// @shared, @commercial, assets) with test-only entries prepended — array form is
+// first-match-wins:
+// - @beekeeperstudio/ui-kit resolves to lib source, same as jest did; regex with
+//   $ anchor because an object-form key is a prefix match and would also rewrite
+//   subpath imports (@beekeeperstudio/ui-kit/vue/* must keep resolving through
+//   the built dist, which needs `yarn lib:build` first, same as CI).
+// - @tests exists only for tests.
+// - @bksLogger maps to mainLogger (jest parity); the renderer's rendererLogger
+//   entry is filtered out rather than shadowed.
+// Not ported from jest's moduleNameMapper (CJS-resolver workarounds; vitest
+// resolves the packages' own `import` conditions): the
+// @marimo-team/codemirror-languageserver stub and the @libsql/core -> lib-cjs
+// remap. Re-add here if a migrated spec trips on them.
 export const alias = [
   { find: /^@beekeeperstudio\/ui-kit$/, replacement: resolve(__dirname, '../ui-kit/lib/index.ts') },
-  { find: /^@shared(.*)$/, replacement: resolve(__dirname, 'src/shared') + '$1' },
-  { find: /^@commercial(.*)$/, replacement: resolve(__dirname, 'src-commercial') + '$1' },
   { find: /^@tests(.*)$/, replacement: resolve(__dirname, 'tests') + '$1' },
   { find: '@bksLogger', replacement: resolve(__dirname, 'src/lib/log/mainLogger.ts') },
-  { find: 'assets', replacement: resolve(__dirname, 'src/assets') },
-  { find: /^@\/(.*)$/, replacement: resolve(__dirname, 'src') + '/$1' },
+  ...Object.entries(viteConfig.resolve.alias)
+    .filter(([find]) => find !== '@bksLogger')
+    .map(([find, replacement]) => ({ find, replacement })),
 ]
 
 export const resolveOptions = {

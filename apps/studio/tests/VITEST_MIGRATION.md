@@ -19,7 +19,7 @@ Vite + `vite-ng-plugin-vue2`, so Vitest reuses the production toolchain.
 | File | Purpose |
 | --- | --- |
 | `tests/vitest-migrated.json` | Single source of truth: specs that run under Vitest |
-| `vitest.shared.mjs` | Plugins (vue2 SFC, raw-`.ini`), aliases, pool settings |
+| `vitest.shared.mjs` | Plugins (vue2 SFC, raw-`.ini`), aliases (derived from `vite.config.mjs` + test-only overrides: `@tests`, ui-kit source, `@bksLogger` → mainLogger), pool settings |
 | `vitest.config.mjs` | Unit suite (jsdom) — Vitest side of `jest.config.js` |
 | `vitest.integration.config.mjs` | Integration suite (node) — side of `jest.integration.config.js` |
 | `vitest.ci.config.mjs` | Integration minus docker-DB specs — side of `jest.ci.config.js` |
