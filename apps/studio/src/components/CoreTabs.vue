@@ -530,7 +530,20 @@ export default Vue.extend({
           this.$noty.success(`${this.dbAction} completed successfully`)
 
         } catch (ex) {
-          this.$noty.error(`Error performing ${this.dbAction}: ${ex.message}`)
+          const notificationMessage = [
+            `Error performing ${this.dbAction}: ${ex.message}`,
+            ex.detail && `DETAIL: ${ex.detail}`,
+            ex.hint && `HINT: ${ex.hint}`,
+          ].filter(Boolean).join('\n')
+
+          this.$noty.error(notificationMessage, {
+            timeout: 3500,
+            callbacks: {
+              onClick: () => {
+                this.$native.clipboard.writeText(notificationMessage)
+              },
+            },
+          })
         }
       })
     },
