@@ -625,8 +625,7 @@ export default Vue.extend({
       const paths = []
       for (const column of this.table.columns) {
         const isPrimaryKey = this.isPrimaryKey(column.columnName);
-        // Primary keys are editable by default (unless dialect explicitly disables this feature)
-        const canEditPrimaryKeys = this.dialectData.disabledFeatures?.readOnlyPrimaryKeys !== false;
+        const canEditPrimaryKeys = !this.dialectData.disabledFeatures?.primaryKeyEditing;
 
         if((isPrimaryKey && !canEditPrimaryKeys) || this.isForeignKey(column.columnName) || this.isGeneratedColumn(column.columnName)) {
           continue
@@ -1334,8 +1333,7 @@ export default Vue.extend({
       const pendingDelete = _.find(this.pendingChanges.deletes, (item) => _.isEqual(item.primaryKeys, primaryKeys))
 
       const isPrimaryKey = this.isPrimaryKey(cell.getField());
-      // Primary keys are editable by default unless explicitly disabled by the dialect
-      const canEditPrimaryKeys = this.dialectData.disabledFeatures?.readOnlyPrimaryKeys !== false;
+      const canEditPrimaryKeys = !this.dialectData.disabledFeatures?.primaryKeyEditing;
       return this.editable && (!isPrimaryKey || canEditPrimaryKeys) && !pendingDelete;
     },
     insertionCellCheck(cell: CellComponent) {

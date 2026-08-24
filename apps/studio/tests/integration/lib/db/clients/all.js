@@ -415,7 +415,7 @@ export function runCommonTests(getUtil, opts = {}) {
     test("should allow editing VARCHAR primary key", async () => {
       if (dbReadOnlyMode) return
       // Skip for databases that don't support PK editing
-      if (getUtil().data.disabledFeatures?.readOnlyPrimaryKeys === false) return
+      if (getUtil().data.disabledFeatures?.primaryKeyEditing) return
 
       await itShouldAllowEditingVarcharPrimaryKey(getUtil())
     })
@@ -423,7 +423,7 @@ export function runCommonTests(getUtil, opts = {}) {
     test("should allow editing composite primary key", async () => {
       if (dbReadOnlyMode) return
       // Skip for databases that don't support PK editing
-      if (getUtil().data.disabledFeatures?.readOnlyPrimaryKeys === false) return
+      if (getUtil().data.disabledFeatures?.primaryKeyEditing) return
 
       await itShouldAllowEditingCompositePrimaryKey(getUtil())
     })
@@ -431,7 +431,7 @@ export function runCommonTests(getUtil, opts = {}) {
     test("should update with correct WHERE clause using old PK value", async () => {
       if (dbReadOnlyMode) return
       // Skip for databases that don't support PK editing
-      if (getUtil().data.disabledFeatures?.readOnlyPrimaryKeys === false) return
+      if (getUtil().data.disabledFeatures?.primaryKeyEditing) return
 
       await itShouldUpdateWithOldPKInWhereClause(getUtil())
     })
@@ -439,7 +439,7 @@ export function runCommonTests(getUtil, opts = {}) {
     test("should handle duplicate PK constraint violations", async () => {
       if (dbReadOnlyMode) return
       // Skip for databases that don't support PK editing
-      if (getUtil().data.disabledFeatures?.readOnlyPrimaryKeys === false) return
+      if (getUtil().data.disabledFeatures?.primaryKeyEditing) return
 
       await itShouldHandleDuplicatePKError(getUtil())
     })

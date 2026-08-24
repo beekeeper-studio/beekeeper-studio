@@ -192,7 +192,7 @@ export interface DialectData {
     foreignKeys?: boolean
     compositeKeys?: boolean    // Whether composite keys are supported
     schemaValidation?: boolean  // Whether schema validation features are disabled
-    readOnlyPrimaryKeys?: boolean  // Set to false to disable primary key editing (default: editable)
+    primaryKeyEditing?: boolean  // Set to true when primary keys cannot be edited in the table view (default: editable)
   },
   notices?: {
     infoSchema?: string
