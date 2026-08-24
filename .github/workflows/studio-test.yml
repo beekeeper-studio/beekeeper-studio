@@ -194,7 +194,10 @@ jobs:
           timeout_minutes: 20
           max_attempts: 2
           on_retry_command: "docker ps -aq | xargs docker stop | xargs docker rm"
-          command: yarn workspace beekeeper-studio run test:integration --runInBand --ci ${{ matrix.chunk[1] }}
+          # No --runInBand/--ci: both are no-ops for jest here (maxWorkers: 1 in
+          # config, no snapshots) and unknown flags are fatal for chunks that
+          # integration-tests.sh dispatches to vitest.
+          command: yarn workspace beekeeper-studio run test:integration ${{ matrix.chunk[1] }}
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
 

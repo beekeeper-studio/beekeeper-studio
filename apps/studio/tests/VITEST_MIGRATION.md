@@ -41,15 +41,36 @@ by path substring, `--silent` works, `-t "name"` filters by test name.
    picks it up and Jest starts ignoring it.
 2. Add explicit imports at the top of the spec:
    `import { describe, it, expect, vi, beforeAll, afterAll, beforeEach, afterEach } from "vitest"`
-   (whichever the file uses). Globals are intentionally **off** in the vitest
-   configs while both runners coexist — `@types/jest` and `vitest/globals`
-   declare clashing ambient types, and the import makes runner ownership
-   obvious per file.
+   (whichever the file uses). Vitest `globals` are **on** — required because
+   shared helpers (`tests/lib/db.ts`, `tests/integration/lib/db/clients/all.js`)
+   call `describe`/`test`/`expect` ambiently and are consumed by specs on both
+   runners, so they can't import from `vitest` while jest still loads them.
+   Spec files still import explicitly: it makes runner ownership obvious, and
+   tsconfig keeps `"types": ["jest"]` (adding `vitest/globals` alongside it
+   would clash), so ambient `vi` wouldn't typecheck anyway.
 3. Convert Jest APIs (table below).
 4. Run it: `yarn vitest:unit <path>` (or `vitest:integration`), then run the
-   matching jest suite and confirm its total file count dropped by one.
+   matching jest suite and confirm its total file count dropped by one
+   (`yarn internal:integration --listTests` shows jest's collection without
+   running anything).
 5. Anything surprising you had to do → add it to the findings log at the
    bottom of this file.
+
+### DB specs and the CI matrix
+
+Docker-DB specs (`tests/integration/lib/db/**`) need no extra CI wiring:
+`bin/integration-tests.sh` checks the chunk path against
+`tests/vitest-migrated.json` and routes migrated specs to
+`yarn vitest:integration <path>`, everything else to jest as before. The
+per-database matrix in `studio-test.yml` is unchanged (chunks come from
+`bin/get-db-files-as-json.sh` either way). Two caveats:
+
+- The vitest branch of the dispatch skips the oracle instant-client setup; when
+  `oracle.spec.js` migrates, move the dispatch below that setup or gate it.
+- `sqlserver-winauth` / kerberos flows call `internal:integration` directly and
+  bypass the dispatch — migrating those specs means updating
+  `windows-login-tests.yaml` / `dev/docker_*_kerberos/tests/entrypoint.sh` in
+  the same PR.
 
 ## API conversion table
 
@@ -81,7 +102,24 @@ by path substring, `--silent` works, `-t "name"` filters by test name.
   security.spec.ts, saved_connection.spec.js, sqlite.exploit.spec.ts,
   webPluginLoader.exploit.spec.ts, protocolBuilder.exploit.spec.ts,
   node-ssh-forward.spec.ts, oracle.spec.js, clearLogFilesMigration.spec.ts,
-  ssh-agent*.spec.js, ssh-skip-bad-identity.spec.js.
+  ssh-agent*.spec.js, ssh-skip-bad-identity.spec.js. (Stray `require()` in
+  **src** is handled by the `commonjs()` plugin in `vitest.shared.mjs` — same
+  as the renderer build — so don't rewrite src for this.)
+- **`commonjs()` hoists lazy `require()` into eager imports.** A
+  `try { require('optional-native') } catch` guard in src becomes a hard
+  top-level dependency once the plugin transforms it. Convert such sites to
+  `await import(...)` (stays lazy everywhere); `sqlserver.ts`'s
+  `mssql/msnodesqlv8` load is the reference example.
+- **Deep imports into packages need exact file paths.** Externalized deps
+  resolve with node-ESM rules: `knex/lib/schema/compiler` fails, it must be
+  `knex/lib/schema/compiler.js` (and directory entries `.../index.js`). CJS
+  and the app bundlers tolerate the extensionless form, so these only surface
+  under vitest. All `knex/lib/*` imports were fixed repo-wide already.
+- **`vite:oxc` rejects invalid TypeScript that ts-jest/babel let through.**
+  Example fixed already: a parameter that was both optional and defaulted
+  (`selects?: string[] = ['*']`, TS1015) in `mongodb.ts`. If a spec's import
+  graph hits such a file, fix the TypeScript — don't work around the
+  transform.
 - **CLI flags differ.** No `--ci`, no `--runInBand` (serial comes from
   `fileParallelism: false` in the shared config), no `--forceExit` (forked
   workers are force-terminated after teardown), no `--testPathPattern`
@@ -127,3 +165,16 @@ reporter emits the same fields). Switch `tsconfig.json` `"types": ["jest"]` to
 - **2026-08-24, queryAudit.spec.ts (integration canary)**: only change needed
   was the explicit vitest import. TypeORM + better-sqlite3 (native, Electron
   ABI) load fine inside the forked electron worker.
+- **2026-08-24, sqlite.spec.js (first DB spec, 192 tests)**: the spec itself
+  needed only the vitest import — `runCommonTests`/`runReadOnlyTests` and
+  `DBTestUtil` run unmodified on both runners (that's why `globals: true` went
+  in). Its import graph (`tests/lib/db.ts` → `createServer` → every client)
+  surfaced four one-time fixes, each now a gotcha above: 17 extensionless
+  `knex/lib/*` imports made ESM-exact; `commonjs()` added to the vitest
+  plugins for src's bare `require()`s; sqlserver.ts's guarded
+  `require('mssql/msnodesqlv8')` converted to a lazy `await import` (the
+  plugin had hoisted it eagerly); one invalid optional+defaulted parameter in
+  mongodb.ts fixed for `vite:oxc`. Verified alongside: the jest side of the
+  matrix still passes with docker (mysql.spec.js, 642 tests) and jest
+  collection dropped by exactly the migrated files
+  (`internal:integration --listTests` = 44).

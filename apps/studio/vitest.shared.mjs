@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import vue from 'vite-ng-plugin-vue2'
+import commonjs from 'vite-plugin-commonjs'
 import viteConfig from './vite.config.mjs'
 
 // Specs listed here run under vitest and are ignored by jest (the jest.*.config.js
@@ -27,7 +28,10 @@ function rawIni() {
   }
 }
 
-export const plugins = [vue(), rawIni()]
+// commonjs() mirrors vite.config.mjs: parts of src still use bare require()
+// (e.g. src/shared/lib/knex-bigquery/index.js), which the ESM transform would
+// otherwise leave undefined at runtime.
+export const plugins = [vue(), commonjs(), rawIni()]
 
 // Path aliases come from the renderer vite config (one source of truth for @,
 // @shared, @commercial, assets) with test-only entries prepended — array form is
@@ -63,7 +67,12 @@ export const resolveOptions = {
 // process.execPath (the electron binary) and ELECTRON_RUN_AS_NODE=1 is inherited,
 // so workers are node-mode electron with the right native-module ABI.
 // fileParallelism false = jest maxWorkers: 1.
+// globals on because shared helpers (tests/lib/db.ts, tests/integration/lib/db/
+// clients/all.js) call describe/test/expect ambiently and are consumed by specs
+// on BOTH runners — they can't `import from 'vitest'` while jest still loads
+// them. Migrated spec files still import explicitly (see VITEST_MIGRATION.md).
 export const baseTest = {
+  globals: true,
   pool: 'forks',
   fileParallelism: false,
 }
