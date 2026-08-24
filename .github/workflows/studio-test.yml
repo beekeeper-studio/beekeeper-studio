@@ -131,6 +131,14 @@ jobs:
       - name: Non-DB Integration Tests
         run: yarn workspace beekeeper-studio run test:ci --ci --silent
 
+      # Specs listed in apps/studio/tests/vitest-migrated.json run under vitest
+      # instead of jest (see apps/studio/tests/VITEST_MIGRATION.md)
+      - name: Unit Tests (Vitest)
+        run: yarn workspace beekeeper-studio run vitest:unit --silent
+
+      - name: Non-DB Integration Tests (Vitest)
+        run: yarn workspace beekeeper-studio run vitest:ci --silent
+
       - name: Unit Tests (UI Kit)
         run: yarn workspace @beekeeperstudio/ui-kit run test --silent
 
