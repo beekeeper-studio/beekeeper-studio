@@ -159,7 +159,8 @@ jobs:
 
 
   integration:
-    name: 🥞 ${{ matrix.chunk[0] }}
+    # ✌️ = vitest spec, 🥞 = still on jest
+    name: ${{ startsWith(matrix.chunk[1], 'apps/studio/tests/vitest/') && '✌️' || '🥞' }} ${{ matrix.chunk[0] }}
     runs-on: ubuntu-24.04
     needs:
       - prep
