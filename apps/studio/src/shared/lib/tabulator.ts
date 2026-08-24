@@ -23,12 +23,11 @@ interface KeyData {
 }
 
 export interface FormatterParams {
-  fk: KeyData[] | false;
-  fkOnClick: false | ((_e: Event, cell: { [key: string]: any }) => void);
-  isPK: boolean;
-  binaryEncoding: string; // or boolean, depending on actual type
+  fk?: KeyData[] | false;
+  fkOnClick?: false | ((_e: Event, cell: { [key: string]: any }) => void);
+  isPK?: boolean;
+  binaryEncoding?: string; // or boolean, depending on actual type
   dataType?: string;
-  dataTypeColors?: boolean;
 }
 
 export interface YesNoParams {

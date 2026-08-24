@@ -1,19 +1,10 @@
 import _ from 'lodash'
 import { Mutators } from '../lib/data/tools'
 import { TabulatorFormatterParams } from '@/common/tabulator'
-import helpers, { escapeHtml } from '@shared/lib/tabulator'
+import helpers, { escapeHtml, FormatterParams } from '@shared/lib/tabulator'
 export const NULL = '(NULL)'
 import {CellComponent} from 'tabulator-tables'
-import { dataTypeColorFamily, DataTypeColorFamily } from '@/common/dataTypeColors'
-
-const dataTypeColorClasses: Record<DataTypeColorFamily, string> = {
-  text: 'data-type-text',
-  number: 'data-type-number',
-  dateTime: 'data-type-date-time',
-  boolean: 'data-type-boolean',
-  binary: 'data-type-binary',
-  other: 'data-type-other',
-}
+import { getDataTypeColorFamily } from '@/common/dataTypeColors'
 
 export function buildNullValue(text: string) {
   return `<span class="null-value">(${escapeHtml(text)})</span>`
@@ -79,19 +70,15 @@ export default {
     },
     cellFormatter(
       cell: CellComponent,
-      params: { fk?: any[], isPK?: boolean, fkOnClick?: (e: MouseEvent, cell: CellComponent) => void, binaryEncoding?: string, dataType?: string, dataTypeColors?: boolean } = {},
+      params: FormatterParams = {},
       onRendered: (func: () => void) => void
     ) {
       const classNames = []
       let cellValue = cell.getValue()
-      const cellElement = cell.getElement()
 
-      if (params.dataTypeColors) {
-        cellElement.classList.remove(...Object.values(dataTypeColorClasses))
-      }
-
-      if (params.dataTypeColors && !_.isNil(cellValue) && !(_.isString(cellValue) && _.isEmpty(cellValue))) {
-        cellElement.classList.add(dataTypeColorClasses[dataTypeColorFamily(params.dataType, cellValue)])
+      if (params.dataType && !_.isNil(cellValue) && !(_.isString(cellValue) && _.isEmpty(cellValue))) {
+        const dataType = getDataTypeColorFamily(params.dataType, cellValue);
+        classNames.push(`data-type-${dataType}`)
       }
 
       if (cellValue instanceof Uint8Array) {

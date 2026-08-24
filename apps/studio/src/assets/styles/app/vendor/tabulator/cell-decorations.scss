@@ -7,34 +7,34 @@
   }
 }
 
-.data-type-colors-enabled .tabulator-cell {
-  &.data-type-text > pre,
-  &.data-type-text > .cell-link-wrapper {
-    color: var(--bks-data-type-color-text);
+.tabulator-cell {
+  &.data-type-string > pre,
+  &.data-type-string > .cell-link-wrapper {
+    color: var(--bks-text-editor-fg-color);
   }
 
   &.data-type-number > pre,
   &.data-type-number > .cell-link-wrapper {
-    color: var(--bks-data-type-color-number);
+    color: var(--bks-text-editor-number-fg-color);
   }
 
-  &.data-type-date-time > pre,
-  &.data-type-date-time > .cell-link-wrapper {
-    color: var(--bks-data-type-color-date-time);
+  &.data-type-dateTime > pre,
+  &.data-type-dateTime > .cell-link-wrapper {
+    color: var(--bks-text-editor-keyword-fg-color);
   }
 
   &.data-type-boolean > pre,
   &.data-type-boolean > .cell-link-wrapper {
-    color: var(--bks-data-type-color-boolean);
+    color: var(--bks-text-editor-variable-2-fg-color);
   }
 
   &.data-type-binary > pre,
   &.data-type-binary > .cell-link-wrapper {
-    color: var(--bks-data-type-color-binary);
+    color: var(--bks-text-editor-typeName-fg-color);
   }
 
   &.data-type-other > pre,
   &.data-type-other > .cell-link-wrapper {
-    color: var(--bks-data-type-color-other);
+    color: var(--bks-text-editor-fg-color);
   }
 }

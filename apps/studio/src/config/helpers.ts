@@ -2,6 +2,8 @@ import ini from "ini";
 import _ from "lodash";
 import { DatabaseTypes } from "../lib/db/types";
 
+const TableSections = ["tableTable", "resultTable"];
+
 // https://stackoverflow.com/a/175787/10012118
 function isNumeric(str: unknown): boolean {
   if (typeof str != "string") return false; // we only process strings!
@@ -57,6 +59,14 @@ function processRawConfig(config: Record<string, unknown>): Record<string, unkno
     for (const d of DatabaseTypes) {
       const section = d === "postgresql" ? "postgres" : d;
       populateDefaults(config, `db.${section}`, "db.default")
+    }
+  }
+
+  const uiObj = config.ui as Record<string, unknown> | undefined;
+
+  if (uiObj && _.has(uiObj, "table.default")) {
+    for (const section of TableSections) {
+      populateDefaults(config, `ui.${section}`, "ui.table.default")
     }
   }
 

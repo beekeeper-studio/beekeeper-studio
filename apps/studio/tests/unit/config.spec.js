@@ -450,6 +450,29 @@ initialSort = false
     expect(processedConfig).toMatchObject(expected);
   })
 
+  it("Should create defaults for [ui.table.default] for all table sections", () => {
+    const rawConfig = parseIni(`
+[ui.table.default]
+dataTypeColors = false
+
+[ui.resultTable]
+dataTypeColors = true
+    `);
+
+    const processedConfig = processRawConfig(rawConfig);
+
+    expect(processedConfig).toMatchObject({
+      ui: {
+        tableTable: {
+          dataTypeColors: false,
+        },
+        resultTable: {
+          dataTypeColors: true,
+        },
+      },
+    });
+  })
+
   it("Should properly parse param types from config", () => {
     const rawConfig = parseIni(`
 [db.default.paramTypes]

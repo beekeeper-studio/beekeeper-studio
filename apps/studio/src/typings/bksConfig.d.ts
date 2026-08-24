@@ -532,10 +532,19 @@ declare interface IBksConfig {
             primaryQueryAction: string;
             secondaryQueryAction: string;
         };
+        resultTable: {
+            dataTypeColors: boolean;
+        };
+        table: {
+            default: {
+                dataTypeColors: boolean;
+            };
+        };
         tableList: {
             itemHeight: number;
         };
         tableTable: {
+            dataTypeColors: boolean;
             defaultColumnWidth: number;
             editTrigger: string;
             largeFieldWidth: number;

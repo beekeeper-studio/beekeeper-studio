@@ -1,5 +1,5 @@
 <template>
-  <div class="style-wrapper" :class="{ 'data-type-colors-enabled': dataTypeColors.enabled }" :style="dataTypeColorStyle">
+  <div class="style-wrapper" :style="{ '--bks-text-editor-font-size': `${editorFontSize}px` }">
     <div
       class="beekeeper-studio-wrapper"
       :class="{ 'beekeeper-studio-minimal-mode': $store.getters.minimalMode }"
@@ -34,7 +34,6 @@
     <plugin-controller :editor-font-size="editorFontSize" />
     <plugin-manager-modal />
     <keyboard-shortcuts-modal />
-    <data-type-colors-modal />
     <move-item-modal />
     <move-folder-modal />
     <confirmation-modal-manager />
@@ -97,8 +96,6 @@ import InputEphemeralModal from "@/components/common/modals/InputEphemeralModal.
 import ShareModal from "@/components/common/modals/ShareModal.vue";
 import MoveItemModal from "@/components/common/modals/MoveItemModal.vue";
 import MoveFolderModal from "@/components/common/modals/MoveFolderModal.vue";
-import DataTypeColorsModal from '@/components/common/modals/DataTypeColorsModal.vue'
-import { dataTypeColorPalette, normalizeDataTypeColorSettings } from '@/common/dataTypeColors'
 
 import rawLog from '@bksLogger'
 import { assignContextMenuToAllInputs } from './mixins/assignContextMenuToAllInputs'
@@ -116,7 +113,7 @@ export default Vue.extend({
     LifetimeLicenseExpiredModal, CloudWorkspacesBlockedModal,
     WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
     PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
-    InputEphemeralModal, ShareModal, MoveItemModal, MoveFolderModal, DataTypeColorsModal,
+    InputEphemeralModal, ShareModal, MoveItemModal, MoveFolderModal,
   },
   data() {
     return {
@@ -143,38 +140,6 @@ export default Vue.extend({
     }),
     editorFontSize() {
       return this.$store.state.settings?.settings?.editorFontSize?.value || 14
-    },
-    dataTypeColors() {
-      return normalizeDataTypeColorSettings(this.$store.state.settings?.settings?.dataTypeColors?.value)
-    },
-    dataTypeColorStyle() {
-      const { light, dark } = this.dataTypeColors
-      const activePalette = this.themeValue === 'system'
-        ? null
-        : dataTypeColorPalette(this.dataTypeColors, this.themeValue)
-      return {
-        '--bks-text-editor-font-size': `${this.editorFontSize}px`,
-        '--bks-data-type-color-text-light': light.text,
-        '--bks-data-type-color-number-light': light.number,
-        '--bks-data-type-color-date-time-light': light.dateTime,
-        '--bks-data-type-color-boolean-light': light.boolean,
-        '--bks-data-type-color-binary-light': light.binary,
-        '--bks-data-type-color-other-light': light.other,
-        '--bks-data-type-color-text-dark': dark.text,
-        '--bks-data-type-color-number-dark': dark.number,
-        '--bks-data-type-color-date-time-dark': dark.dateTime,
-        '--bks-data-type-color-boolean-dark': dark.boolean,
-        '--bks-data-type-color-binary-dark': dark.binary,
-        '--bks-data-type-color-other-dark': dark.other,
-        ...(activePalette && {
-          '--bks-data-type-color-text': activePalette.text,
-          '--bks-data-type-color-number': activePalette.number,
-          '--bks-data-type-color-date-time': activePalette.dateTime,
-          '--bks-data-type-color-boolean': activePalette.boolean,
-          '--bks-data-type-color-binary': activePalette.binary,
-          '--bks-data-type-color-other': activePalette.other,
-        }),
-      }
     }
   },
   watch: {

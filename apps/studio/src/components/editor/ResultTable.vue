@@ -298,7 +298,6 @@ import { stringToTypedArray } from '@/common/utils'
                 { separator: true },
                 resizeAllColumnsToFitContent,
                 resizeAllColumnsToFixedWidth,
-                this.dataTypeColorsMenuItem(),
                 ...this.getExtraPopupMenu('results.corner', { transform: "tabulator" }),
               ];
             },
@@ -437,7 +436,6 @@ import { stringToTypedArray } from '@/common/utils'
             }),
             { separator: true },
             ...commonColumnMenu,
-            this.dataTypeColorsMenuItem(),
             { separator: true },
             filterMenuItem,
             ...this.getExtraPopupMenu('results.columnHeader', { transform: "tabulator" }),
@@ -480,8 +478,7 @@ import { stringToTypedArray } from '@/common/utils'
           fkOnClick: undefined,
           isPK: editData?.isPK,
           binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
-          dataType: editData?.dataType ?? column.dataType,
-          dataTypeColors: true,
+          dataType: this.$bksConfig.ui.resultTable.dataTypeColors ? editData?.dataType ?? column.dataType : undefined,
         }
 
         let headerTooltip = escapeHtml(column.name);
@@ -572,12 +569,6 @@ import { stringToTypedArray } from '@/common/utils'
             ${dataTypeStr}
           </span>
         `;
-      },
-      dataTypeColorsMenuItem() {
-        return {
-          label: createMenuItem('Data type colors...'),
-          action: () => this.$root.$emit(AppEvent.openDataTypeColors),
-        }
       },
       editorType(dataType: string) {
         const ne = vueEditor(NullableInputEditorVue)

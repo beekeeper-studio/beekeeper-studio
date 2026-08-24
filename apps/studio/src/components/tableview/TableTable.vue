@@ -914,7 +914,6 @@ export default Vue.extend({
           }),
           { separator: true },
           ...commonColumnMenu,
-          this.dataTypeColorsMenuItem(),
           { separator: true },
           {
             label: createMenuItem(hideColumnLabel),
@@ -996,8 +995,7 @@ export default Vue.extend({
         fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1].find((k) => !k.isComposite) ?? keyDatas[0][1][0], cell)),
         isPK: isPK,
         binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
-        dataType: column.dataType,
-        dataTypeColors: true,
+        dataType: this.$bksConfig.ui.tableTable.dataTypeColors ? column.dataType : undefined,
       }
 
       const result = {
@@ -1144,12 +1142,6 @@ export default Vue.extend({
     isPrimaryKey(column) {
       return this.primaryKeys?.includes(column);
     },
-    dataTypeColorsMenuItem() {
-      return {
-        label: createMenuItem('Data type colors...'),
-        action: () => this.$root.$emit(AppEvent.openDataTypeColors),
-      }
-    },
     isForeignKey(column: string) {
       const keyDatas: any[] = Object.entries(this.tableKeys).filter((entry) => entry[0] === column);
       return keyDatas && keyDatas.length > 0
@@ -1201,7 +1193,6 @@ export default Vue.extend({
               { separator: true },
               resizeAllColumnsToFitContent,
               resizeAllColumnsToFixedWidth,
-              this.dataTypeColorsMenuItem(),
               this.openColumnFilterMenuItem,
               ...this.getExtraPopupMenu('tableTable.corner', { transform: "tabulator" }),
             ]
