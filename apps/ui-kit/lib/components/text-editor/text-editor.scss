@@ -30,6 +30,8 @@
   --bks-text-editor-guttermarker-subtle-fg-color: #{rgba($theme-base, 0.25)};
   --bks-text-editor-header-fg-color: #ae81ff;
   --bks-text-editor-highlight-bg-color: #{rgba($brand-warning, 0.3)};
+  --bks-text-editor-indent-marker-bg-color: #{rgba($theme-base, 0.1)};
+  --bks-text-editor-indent-marker-active-bg-color: #{rgba($theme-base, 0.2)};
   --bks-text-editor-keyword-fg-color: #{$brand-pink};
   --bks-text-editor-linenumber-fg-color: #{rgba($theme-base, 0.25)};
   --bks-text-editor-link-fg-color: #ae81ff;

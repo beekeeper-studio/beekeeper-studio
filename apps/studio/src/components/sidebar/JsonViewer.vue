@@ -58,6 +58,7 @@
         :line-gutters="lineGutters"
         :line-numbers="false"
         :fold-gutters="true"
+        indentation-markers
       />
     </div>
     <div class="empty-text">

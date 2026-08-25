@@ -192,6 +192,7 @@ export default {
         markers: this.markers,
         lineGutters: this.lineGutters,
         foldGutters: this.foldGutters,
+        indentationMarkers: this.indentationMarkers,
         actionsKeymap: this.getActionsKeymap()
       });
 
