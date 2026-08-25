@@ -1,3 +1,4 @@
+import { markRaw } from "vue";
 import { TextEditor } from "./TextEditor";
 import props from "./props";
 import {
@@ -194,7 +195,13 @@ export default {
         actionsKeymap: this.getActionsKeymap()
       });
 
-      this.textEditor = textEditor;
+      // markRaw keeps the editor out of Vue's reactive tree. Vue's isPlainObject
+      // is a loose Object.prototype.toString check, so a class instance
+      // qualifies and observe() would walk the whole CodeMirror graph --
+      // installing reactive getters/setters on the doc, state and parser, and
+      // re-observing parser objects created during tokenizing. Nothing watches
+      // or computes on textEditor; every consumer uses it imperatively.
+      this.textEditor = markRaw(textEditor);
 
       this.initialized?.();
 

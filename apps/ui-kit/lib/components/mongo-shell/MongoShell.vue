@@ -3,6 +3,7 @@
 </template>
 
 <script lang="ts">
+import { markRaw } from 'vue';
 import { TextEditor } from '../text-editor/TextEditor';
 import { monokaiInit } from '@uiw/codemirror-theme-monokai';
 import { Annotation, EditorState, Compartment } from '@codemirror/state';
@@ -316,7 +317,8 @@ export default {
         vimOptions: this.vimOptions,
       })
 
-      this.textEditor = textEditor;
+      // See the note in text-editor/mixin.ts: keep the editor un-observed.
+      this.textEditor = markRaw(textEditor);
 
       const length = this.textEditor.getLength();
 
