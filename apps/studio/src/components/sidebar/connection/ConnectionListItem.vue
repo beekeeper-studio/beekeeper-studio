@@ -1,7 +1,7 @@
 <template>
   <div
     class="list-item"
-    v-tooltip="title"
+    :title="title"
     @contextmenu.prevent="showContextMenu"
   >
     <a
@@ -122,8 +122,11 @@ export default {
     ...mapState('data/connectionFolders', {'folders': 'items'}),
     classList() {
       return {
-        'active': this.savedConnection && this.selectedConfig ? this.savedConnection === this.selectedConfig : false,
-        'startup-highlight': this.isStartupHighlighted
+        // the connection screen edits a copy, so compare by key, not identity
+        'active': !!this.savedConnection && !!this.selectedConfig &&
+          this.savedConnection.id === this.selectedConfig.id &&
+          this.savedConnection.workspaceId === this.selectedConfig.workspaceId,
+        'startup-highlight': this.isStartupHighlighted,
       }
     },
     labelColor() {
@@ -171,6 +174,12 @@ export default {
       } else {
         return this.config
       }
+    },
+    folder() {
+      return this.folders.find((f) => f.id === this.savedConnection.connectionFolderId);
+    },
+    isPersonal() {
+      return this.folder?.personal;
     },
     // For display purposes only: prefer the linked saved connection when this
     // is a recent-list row, so edits to the saved connection (host, port, ssh,
@@ -242,7 +251,7 @@ export default {
           name: "Share",
           slug: 'share',
           handler: this.share,
-          hideIf: !this.isCloud || !this.savedConnection || !this.savedConnection.id,
+          hideIf: !this.isCloud || !this.savedConnection || !this.savedConnection.id || this.isPersonal,
         },
         {
           name: "Duplicate",

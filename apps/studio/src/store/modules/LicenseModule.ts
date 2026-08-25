@@ -74,7 +74,16 @@ export const LicenseModule: Module<State, RootState>  = {
       // this means a license with lifetime perms, but is no longer valid for software updates
       // so the user has to use an older version of the app.
       return state.status.isValidDateExpired
-    }
+    },
+    isLifetime(state) {
+      // a paid license past its subscription period, still valid for app usage
+      return state.status.isLifetime
+    },
+    canAccessCloudWorkspaces(state) {
+      // cloud workspaces need an active subscription, lifetime-only licenses
+      // (and community users) don't get them
+      return state.status.canAccessCloudWorkspaces
+    },
   },
   mutations: {
     set(state, licenses: TransportLicenseKey[]) {
@@ -232,6 +241,12 @@ export const LicenseModule: Module<State, RootState>  = {
       context.commit('set', licenses)
       context.commit('setStatus', status)
       context.commit('setNow', new Date())
+      // Licenses on lifetime terms don't include cloud workspaces, so if the
+      // subscription lapsed while a cloud workspace was active, drop back to
+      // the local workspace.
+      if (context.getters.isLifetime && context.rootState.workspaceId !== -1) {
+        context.commit('workspaceId', -1, { root: true })
+      }
     },
   }
 }

@@ -36,7 +36,13 @@ function buildBksMock() {
   }
 }
 
-function mountItem(opts: { config: any; isRecentList: boolean; saved?: any[]; startupHighlightConfig?: any }) {
+function mountItem(opts: {
+  config: any;
+  isRecentList: boolean;
+  saved?: any[];
+  selectedConfig?: any;
+  startupHighlightConfig?: any;
+}) {
   return shallowMount(ConnectionListItem as any, {
     store: buildStore(opts.saved ?? []),
     directives: {
@@ -46,7 +52,7 @@ function mountItem(opts: { config: any; isRecentList: boolean; saved?: any[]; st
       config: opts.config,
       isRecentList: opts.isRecentList,
       startupHighlightConfig: opts.startupHighlightConfig,
-      selectedConfig: null,
+      selectedConfig: opts.selectedConfig ?? null,
       showDuplicate: false,
       pinned: false,
       privacyMode: false,
@@ -171,5 +177,39 @@ describe('ConnectionListItem startup highlight', () => {
     expect(wrapper.vm['isStartupHighlighted']).toBe(false)
     expect(wrapper.find('a').classes()).not.toContain('startup-highlight')
     expect(wrapper.find('.startup-highlight-indicator').exists()).toBe(false)
+  })
+})
+
+describe('ConnectionListItem active state', () => {
+  const saved = {
+    id: 7,
+    workspaceId: -1,
+    name: 'My DB',
+    connectionType: 'postgresql',
+    host: 'db.example.com',
+    port: 5432,
+    labelColor: 'default',
+  }
+
+  it('highlights the row the connection screen is editing', () => {
+    // The connection screen edits a *copy* of the row, so this can never be
+    // an identity comparison.
+    const wrapper = mountItem({
+      config: saved,
+      isRecentList: false,
+      selectedConfig: { ...saved },
+    })
+
+    expect(wrapper.vm['classList'].active).toBe(true)
+  })
+
+  it('does not highlight a different connection', () => {
+    const wrapper = mountItem({
+      config: saved,
+      isRecentList: false,
+      selectedConfig: { ...saved, id: 8 },
+    })
+
+    expect(wrapper.vm['classList'].active).toBe(false)
   })
 })

@@ -24,7 +24,7 @@
                 {{ pageTitle }}
               </h3>
               <button
-                v-if="isCloud && !isNewConnection"
+                v-if="isCloud && !isNewConnection && !isPersonal"
                 type="button"
                 class="btn btn-link btn-icon btn-small share-btn"
                 @click="share"
@@ -374,7 +374,6 @@ export default Vue.extend({
     ...mapGetters(['isUltimate', 'isCloud']),
     ...mapGetters('licenses', ['isTrial', 'trialLicense']),
     ...mapGetters({
-      'usedConfigs': 'data/usedconnections/orderedUsedConfigs',
       privacyMode: 'settings/privacyMode'
     }),
     startupHighlightDataReady() {
@@ -423,6 +422,12 @@ export default Vue.extend({
     },
     determineLabelColor() {
       return this.config.labelColor == "default" ? '' : `connection-label-color-${this.config.labelColor}`
+    },
+    folder() {
+      return this.connectionFolders.find((f) => f.id === this.config.connectionFolderId);
+    },
+    isPersonal() {
+      return this.folder?.personal;
     },
     rootBindings() {
       return [
@@ -571,8 +576,25 @@ export default Vue.extend({
         this.config = conn;
       })
     },
-    edit(config) {
-      this.config = _.clone(config)
+    /*
+      The CoreInterface should ONLY ever receive a `SavedConnection`, not a `UsedConnection`.
+      Why? It loads tabs/pins/history based on the `id`, so if we give it the wrong model
+      then it loads content from another connection. That's bad.
+
+      The goal of this method is to take a `UsedConnection` and generate a blank `SavedConnection` (no ID), so CoreInterface gets the right thing.
+    */
+    async configFrom(config) {
+      // Hacky way to determine we have a `SavedConnection` already.
+      // The form edits a copy, never the sidebar's own object.
+      if (_.isUndefined(config.connectionId)) return _.clone(config)
+
+      const init = _.omit(config, ['id', 'connectionId', 'createdAt', 'updatedAt', 'version'])
+      const unsaved = await this.$util.send('appdb/saved/new', { init })
+      unsaved.id = null
+      return unsaved
+    },
+    async edit(config) {
+      this.config = await this.configFrom(config)
       this.errors = null
       this.connectionError = null
     },
@@ -580,10 +602,9 @@ export default Vue.extend({
       if (!await this.$confirm(`Delete "${config.name}"?`, undefined, { variant: "danger" })) {
         return
       }
-      if (this.config === config) {
-        this.$util.send('appdb/saved/new').then((conn) => {
-          this.config = conn;
-        })
+      // the form holds a copy of the connection, never the row itself
+      if (this.config?.id === config.id && this.config?.workspaceId === config.workspaceId) {
+        this.config = await this.$util.send('appdb/saved/new');
       }
       if (config.azureAuthOptions?.authId) {
         await this.$util.send('appdb/cache/remove', { authId: config.azureAuthOptions.authId });
@@ -615,15 +636,6 @@ export default Vue.extend({
       this.connectionError = null
       try {
         this.connecting = true
-        // If this is an existing used connection that doesn't have an associated saved connection
-        // we need to see if changes have been made to the config
-        if (this.config.connectionId === null && this.config.id) {
-          const oldConfig = this.usedConfigs.find((c) => c.id === this.config.id);
-          if (!_.isEqual(this.config, oldConfig)) {
-            this.config.id = null;
-          }
-        }
-
         const { auth, cancelled } = await this.$bks.unlock();
         if (cancelled) return;
         const connected = await this.$store.dispatch('connect', { config: this.config, auth })
@@ -641,7 +653,7 @@ export default Vue.extend({
       }
     },
     async handleConnect(config) {
-      this.config = config
+      this.config = await this.configFrom(config)
       await this.submit()
     },
     async testConnection() {
@@ -680,12 +692,6 @@ export default Vue.extend({
         }
 
         const id = await this.$store.dispatch('data/connections/save', this.config)
-
-        // This feels wrong but it works. It's undefined on savedConnections
-        if (this.config.connectionId === null) {
-          this.config.connectionId = id;
-          await this.$store.dispatch('data/usedconnections/save', this.config);
-        }
 
         this.$noty.success("Connection Saved")
         // we want to fetch the saved one in case it's changed

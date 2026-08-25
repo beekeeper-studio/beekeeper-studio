@@ -31,6 +31,12 @@
           <i class="material-icons">close</i>
         </button>
       </header>
+      <div v-if="pendingRemoteChanges" class="alert alert-warning">
+        <i class="material-icons">error_outline</i>
+        <div class="alert-body">
+          This query has been updated by someone else. Restore is unavailable until those changes are merged or discarded.
+        </div>
+      </div>
       <div class="audit-groups">
         <x-progressbar v-show="loadingList" />
         <section v-if="hasUnsavedChanges" class="audit-group">
@@ -167,6 +173,10 @@ export default Vue.extend({
       type: String as PropType<string | null>,
       default: null,
     },
+    pendingRemoteChanges: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     return {
@@ -237,7 +247,12 @@ export default Vue.extend({
       return mode === "text/x-redis" ? "redis" : mode;
     },
     canRestore() {
-      if (this.loadingList || this.restoring || !this.selectedAuditId) {
+      if (
+        this.loadingList ||
+        this.restoring ||
+        !this.selectedAuditId ||
+        this.pendingRemoteChanges
+      ) {
         return false;
       }
 
@@ -378,7 +393,7 @@ export default Vue.extend({
       try {
         const queryAudits: IQueryAudit[] = await this.$store.dispatch(
           "data/queryAudits/list",
-          queryId
+          { queryId }
         );
         this.queryAudits = queryAudits;
         if (queryAudits.length === 0) {
