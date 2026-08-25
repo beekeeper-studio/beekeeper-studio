@@ -1,79 +1,69 @@
 <template>
-  <portal to="modals">
-    <modal
-      :name="modalName"
-      :class="['vue-dialog', 'beekeeper-modal', 'keyboard-shortcuts-modal']"
-    >
-      <div v-kbd-trap="true">
-        <div class="dialog-content">
-          <div class="dialog-c-title">
-            Keyboard Shortcuts
-          </div>
-          <a class="close-btn btn btn-fab" href="#" @click.prevent="close">
-            <i class="material-icons">clear</i>
-          </a>
-          <div class="search-wrapper">
-            <input
-              type="text"
-              placeholder="Search shortcuts"
-              v-model="searchQuery"
-            >
-            <span
-              v-show="searchQuery"
-              class="clear"
-              @click="searchQuery = ''"
-            >
-              <i class="material-icons">cancel</i>
-            </span>
-          </div>
-          <div class="kbd-content">
+  <base-modal :name="modalName">
+    <template #title>
+      Keyboard Shortcuts
+    </template>
+    <div class="kbd-body">
+      <div class="search-wrapper">
+        <input
+          type="text"
+          placeholder="Search shortcuts"
+          v-model="searchQuery"
+        >
+        <span
+          v-show="searchQuery"
+          class="clear"
+          @click="searchQuery = ''"
+        >
+          <i class="material-icons">cancel</i>
+        </span>
+      </div>
+      <div class="kbd-content">
+        <div
+          v-for="section in filteredSections"
+          :key="section.sectionKey"
+          class="kbd-section"
+        >
+          <h3 class="kbd-section-title">
+            {{ section.label }}
+          </h3>
+          <div class="kbd-list">
             <div
-              v-for="section in filteredSections"
-              :key="section.sectionKey"
-              class="kbd-section"
+              v-for="action in section.actions"
+              :key="action.key"
+              class="kbd-item"
             >
-              <h3 class="kbd-section-title">
-                {{ section.label }}
-              </h3>
-              <div class="kbd-list">
+              <div
+                v-if="action.highlight"
+                class="kbd-label"
+                v-html="action.highlight"
+              />
+              <div v-else class="kbd-label">
+                {{ action.label }}
+              </div>
+              <div class="kbd-keys">
                 <div
-                  v-for="action in section.actions"
-                  :key="action.key"
-                  class="kbd-item"
+                  v-for="(keybinding, kbIdx) in action.keybindings"
+                  :key="kbIdx"
+                  class="kbd-keybinding"
                 >
-                  <div
-                    v-if="action.highlight"
-                    class="kbd-label"
-                    v-html="action.highlight"
-                  />
-                  <div v-else class="kbd-label">
-                    {{ action.label }}
-                  </div>
-                  <div class="kbd-keys">
-                    <div
-                      v-for="(keybinding, kbIdx) in action.keybindings"
-                      :key="kbIdx"
-                      class="kbd-keybinding"
-                    >
-                      <span v-for="(key, keyIdx) in keybinding" :key="keyIdx">{{
-                        key
-                      }}</span>
-                    </div>
-                  </div>
+                  <span v-for="(key, keyIdx) in keybinding" :key="keyIdx">{{
+                    key
+                  }}</span>
                 </div>
               </div>
             </div>
-            <div
-              v-if="!filteredSections.length"
-              class="no-matching-results"
-            >
-              No matching results
-            </div>
           </div>
         </div>
+        <div
+          v-if="!filteredSections.length"
+          class="no-matching-results"
+        >
+          No matching results
+        </div>
       </div>
-    </modal>
-  </portal>
+    </div>
+  </base-modal>
 </template>
 
 <script lang="ts">
@@ -82,6 +72,7 @@ import uFuzzy from "@leeoniya/ufuzzy";
 import { AppEvent } from "@/common/AppEvent";
 import { escapeHtml } from "@shared/lib/tabulator";
 import type { KeybindingSection } from "@/types";
+import BaseModal from "@/components/common/modals/BaseModal.vue";
 
 type SectionAction = KeybindingSection["actions"][number];
 type FilteredAction = SectionAction & { highlight?: string };
@@ -95,6 +86,7 @@ const uf = new uFuzzy({
 });
 
 export default Vue.extend({
+  components: { BaseModal },
   data() {
     return {
       modalName: "keyboard-shortcuts-modal",
@@ -165,15 +157,13 @@ export default Vue.extend({
       this.searchQuery = "";
       this.$modal.show(this.modalName);
     },
-    close() {
-      this.$modal.hide(this.modalName);
-    },
   },
 });
 </script>
 
 <style scoped>
-.dialog-content {
+.kbd-body {
+  --kbd-border-color: color-mix(in srgb, var(--border-color) 40%, transparent);
   height: 70vh;
   display: flex;
   flex-direction: column;
@@ -238,13 +228,13 @@ export default Vue.extend({
   text-transform: uppercase;
   color: var(--text-dark);
   background-color: hsl(from var(--theme-bg) h s calc(l + 1));
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--kbd-border-color);
 }
 
 .kbd-item {
   display: flex;
   justify-content: space-between;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--kbd-border-color);
   padding-block: 0.65rem;
 }
 

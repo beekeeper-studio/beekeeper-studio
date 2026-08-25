@@ -90,6 +90,7 @@ export interface ExtensionConfiguration {
   markers?: EditorMarker[];
   lineGutters?: LineGutter[];
   foldGutters?: boolean;
+  indentationMarkers?: boolean;
   actionsKeymap?: any[];
 }
 

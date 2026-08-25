@@ -5,6 +5,7 @@ import { SavedConnection } from '@/common/appdb/models/saved_connection'
 import { UsedConnection } from '@/common/appdb/models/used_connection'
 import { AppDbHandlers } from '@/handlers/appDbHandlers'
 import { UtilUsedConnectionModule } from '@/store/modules/data/used_connection/UtilityUsedConnectionModule'
+import { createConfig } from '@tests/integration/utils/config'
 
 Vue.use(Vuex)
 
@@ -44,7 +45,7 @@ function buildStore() {
   })
 }
 
-describe('UtilUsedConnectionModule.recordUsed', () => {
+describe('UsedConnection.recordUse', () => {
   let store: ReturnType<typeof buildStore>
 
   beforeEach(async () => {
@@ -59,6 +60,7 @@ describe('UtilUsedConnectionModule.recordUsed', () => {
       }
     }
 
+    ;(window as any).bksConfig = createConfig()
     store = buildStore()
   })
 
@@ -70,8 +72,7 @@ describe('UtilUsedConnectionModule.recordUsed', () => {
     const saved = buildSavedConnection()
     await saved.save()
 
-    await store.dispatch('data/usedconnections/recordUsed',
-      await asConfig(saved, WORKSPACE_ID))
+    await UsedConnection.recordUse(await asConfig(saved, WORKSPACE_ID))
 
     const all = await UsedConnection.find()
     expect(all).toHaveLength(1)
@@ -84,10 +85,9 @@ describe('UtilUsedConnectionModule.recordUsed', () => {
     const saved = buildSavedConnection()
     await saved.save()
 
-    await store.dispatch('data/usedconnections/recordUsed',
-      await asConfig(saved, WORKSPACE_ID))
+    await UsedConnection.recordUse(await asConfig(saved, WORKSPACE_ID))
 
-    // Reload the store's items so the second recordUsed call sees the
+    // Reload the store's items so the second recordUse call sees the
     // existing used_connection (mirrors what `data/usedconnections/load`
     // does on app startup).
     await store.dispatch('data/usedconnections/load')
@@ -99,8 +99,7 @@ describe('UtilUsedConnectionModule.recordUsed', () => {
     await saved.save()
 
     // Connect again with the updated config
-    await store.dispatch('data/usedconnections/recordUsed',
-      await asConfig(saved, WORKSPACE_ID))
+    await UsedConnection.recordUse(await asConfig(saved, WORKSPACE_ID))
 
     // There should still be exactly one used_connection, and it should
     // reflect the *new* connection details.
@@ -112,38 +111,31 @@ describe('UtilUsedConnectionModule.recordUsed', () => {
     expect(all[0].username).toBe('newuser')
   })
 
-  it('returns a config keyed on the saved_connection id when reconnecting', async () => {
-    // Open tabs, pins, and hidden entities are persisted keyed on
-    // `usedConfig.id`, which is whatever recordUsed returns. When connecting to
-    // a saved connection it must stay the saved_connection id across
-    // reconnects, otherwise everything keyed on it is orphaned on the next
-    // launch (the 5.8 "lost all my open queries" regression).
+  it('shows only the configured number of recent connections, without deleting any', async () => {
+    // A connection with nothing saved behind it gets a fresh row on every
+    // connect, so the rows pile up. The list shows the newest
+    // ui.connectionSidebar.recentConnectionsLimit; the rest stay in the table.
+    const limit = (window as any).bksConfig.ui.connectionSidebar.recentConnectionsLimit
+    expect(limit).toBe(10)
 
-    // Saved and used connections live in separate tables with independent id
-    // sequences. Create a couple of unrelated saved connections first so the
-    // target's saved_connection id doesn't coincidentally equal its
-    // used_connection id, which would make this assertion meaningless.
-    await buildSavedConnection({ name: 'filler 1' }).save()
-    await buildSavedConnection({ name: 'filler 2' }).save()
+    for (let i = 0; i < 13; i++) {
+      const fresh = await AppDbHandlers['appdb/saved/new']({
+        init: { connectionType: 'postgresql', host: `quick-${i}.example.com` }
+      })
+      await UsedConnection.recordUse({ ...fresh, id: null, workspaceId: WORKSPACE_ID })
+    }
 
-    const saved = buildSavedConnection()
-    await saved.save()
+    expect(await UsedConnection.count()).toBe(13)
 
-    // First connect creates the used_connection row.
-    await store.dispatch('data/usedconnections/recordUsed',
-      await asConfig(saved, WORKSPACE_ID))
     await store.dispatch('data/usedconnections/load')
+    const listed = store.getters['data/usedconnections/orderedUsedConfigs']
+    expect(listed).toHaveLength(limit)
 
-    const used = (await UsedConnection.find())[0]
-    // Sanity: the two ids must differ for this test to prove anything.
-    expect(used.id).not.toBe(saved.id)
-
-    // Reconnect (the path every updating user hits - the used_connection
-    // already exists).
-    const result = await store.dispatch('data/usedconnections/recordUsed',
-      await asConfig(saved, WORKSPACE_ID))
-
-    expect(result.id).toBe(saved.id)
-    expect(result.id).not.toBe(used.id)
+    // Newest first, oldest three left off the end.
+    const hosts = listed.map((c: any) => c.host)
+    expect(hosts[0]).toBe('quick-12.example.com')
+    expect(hosts).toContain('quick-3.example.com')
+    expect(hosts).not.toContain('quick-2.example.com')
+    expect(hosts).not.toContain('quick-0.example.com')
   })
 })

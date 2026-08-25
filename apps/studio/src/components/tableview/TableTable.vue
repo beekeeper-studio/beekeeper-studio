@@ -181,19 +181,16 @@
           </x-buttons>
         </template>
         <span
-          v-else
-          class="hidden-column-count bks-tooltip-wrapper statusbar-item hoverable"
+          v-else-if="hiddenColumnCount"
+          class="hidden-column-count statusbar-item hoverable"
+          v-tooltip="hiddenColumnMessage"
         >
           <a
             tabindex="0"
             @click.prevent="showColumnFilterModal"
-            v-if="hiddenColumnCount"
           >
             <i class="material-icons">visibility_off</i>
           </a>
-          <div class="bks-tooltip bks-tooltip-top-center">
-            <span>{{ hiddenColumnMessage }}</span>
-          </div>
         </span>
 
         <template v-if="!editable">
@@ -1257,6 +1254,14 @@ export default Vue.extend({
       }
       return [
         {
+          label: createMenuItem(
+            "Add row",
+            this.$bksConfig.getKeybindings("context-menu", "general.addRow"),
+          ),
+          action: this.cellAddRow.bind(this),
+          disabled: !this.editable,
+        },
+        {
           label: createMenuItem(`Clone ${rowRangeLabel}`, "Control+D"),
           action: this.cellCloneRow.bind(this),
           disabled: !this.editable,
@@ -1888,7 +1893,12 @@ export default Vue.extend({
       ];
       const limit = this.tabulator.getPageSize() ?? this.limit;
       const offset = (this.tabulator.getPage() - 1) * limit;
-      const selects = ["*"];
+      // column hiding and reordering are front-end only, so bake the
+      // displayed columns into the generated query
+      const visibleColumns = this.columnsWithFilterAndOrder
+        .filter((c) => c.filter)
+        .map((c) => c.name);
+      const selects = visibleColumns.length ? visibleColumns : ["*"];
 
       // like if you change a filter
       if (page && page !== this.page) {

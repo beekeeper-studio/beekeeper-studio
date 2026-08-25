@@ -42,6 +42,22 @@ export class LicenseStatus {
     return this.condition.includes("Expired support date");
   }
 
+  /**
+   * A paid license whose subscription (support) period has ended, but which
+   * still grants lifetime usage of app versions released within that period.
+   */
+  get isLifetime() {
+    return this.isSupportDateExpired && !this.isValidDateExpired;
+  }
+
+  /**
+   * Cloud Workspaces are a hosted service and require an active
+   * subscription. Lifetime licenses only cover use of the app itself.
+   */
+  get canAccessCloudWorkspaces() {
+    return this.isUltimate && !this.isLifetime;
+  }
+
   get maxAllowedVersion() {
     return parseVersion(this.license?.maxAllowedAppRelease?.tagName?.slice(1) ?? '0.0.0');
   }
