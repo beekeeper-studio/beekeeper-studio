@@ -9,11 +9,7 @@
               <template v-else-if="subject.module === 'data/queries'">code</template>
               <template v-else>folder</template>
             </i>
-            <h2>
-              {{
-                subject.module === "data/queries" ? subject.title : subject.name
-              }}
-            </h2>
+            <h2>{{ subject.name }}</h2>
           </template>
           <h2 v-else>Share</h2>
         </div>

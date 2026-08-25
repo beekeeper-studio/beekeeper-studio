@@ -25,7 +25,7 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
     ...accessGrantMutations(),
   }),
   modules: {
-    nodes: ItemNodeModule('connectionFolderId', 'name'),
+    nodes: ItemNodeModule('connectionFolderId'),
     folders: FolderFetchModule,
   },
   actions: {

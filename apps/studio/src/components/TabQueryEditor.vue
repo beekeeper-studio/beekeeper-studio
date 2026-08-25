@@ -475,7 +475,7 @@
                   ref="titleInput"
                   name="title"
                   class="form-control"
-                  v-model="query.title"
+                  v-model="query.name"
                   autofocus
                 >
               </div>
@@ -762,8 +762,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         return false;
       },
       queryTabTitle() {
-        if (this.tab.query && this.tab.query.title) {
-          return this.tab.query.title;
+        if (this.tab.query && this.tab.query.name) {
+          return this.tab.query.name;
         }
 
         return ''
@@ -796,7 +796,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         return this.query.id
       },
       queryTitle() {
-        return this.query?.title
+        return this.query?.name
       },
       // the query object changed in the background
       pendingRemoteChanges() {
@@ -888,7 +888,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         return !isEmpty(this.unsavedText)
       },
       hasTitle() {
-        return this.query?.title && this.query.title.replace(/\s+/, '').length > 0
+        return this.query?.name && this.query.name.replace(/\s+/, '').length > 0
       },
       splitElements() {
         return [
@@ -1348,7 +1348,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       initialize() {
         this.initialized = true
         // TODO (matthew): Add hint options for all tables and columns\
-        this.query.title = this.activeTab?.title
+        this.query.name = this.activeTab?.title
 
         if (this.split) {
           this.split.destroy();
@@ -1552,7 +1552,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
             this.$nextTick(async () => {
               this.unsavedText = this.query.text
-              this.tab.title = this.query.title
+              this.tab.title = this.query.name
               this.originalText = this.query.text
             })
             this.$noty.success('Query Saved')
@@ -1580,7 +1580,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         const connectionType = this.connectionType === 'postgresql' ? 'postgres' : this.connectionType;
         this.transactionTimeoutWarningListenerId = this.$util.addListener(`transactionTimeoutWarning/${this.tab.id}`, () => {
           this.showKeepAlive = true;
-          this.warningNoty = this.$noty.warning(`The Transaction in ${this.tab?.query?.title ?? this.tab?.title } will be automatically rolled back soon!`, {
+          this.warningNoty = this.$noty.warning(`The Transaction in ${this.tab?.query?.name ?? this.tab?.title } will be automatically rolled back soon!`, {
             buttons: [
               Noty.button('Show Tab', "btn btn-primary", () => {
                 this.$store.dispatch('tabs/setActive', this.tab);
@@ -1614,7 +1614,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         // run the currently highlighted text (if any) to a file, else all sql
         const query_sql = this.hasSelectedText && this.primaryIsTab ? this.editor.selection : this.unsavedText;
         if (this.runButtonDisabled) return;
-        const saved_name = this.hasTitle ? this.query.title : null
+        const saved_name = this.hasTitle ? this.query.name : null
         const tab_title = this.tab.title // e.g. "Query #1"
         const queryName = saved_name || tab_title
         this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
@@ -1635,7 +1635,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         } else {
           query_sql = this.unsavedText
         }
-        const saved_name = this.hasTitle ? this.query.title : null
+        const saved_name = this.hasTitle ? this.query.name : null
         const tab_title = this.tab.title // e.g. "Query #1"
         const queryName = saved_name || tab_title
         this.trigger( AppEvent.beginExport, { query: query_sql, queryName: queryName });
@@ -2158,8 +2158,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
             this.fullQuery = query;
 
-            if (this.tab.title !== query.title) {
-              this.tab.title = query.title;
+            if (this.tab.title !== query.name) {
+              this.tab.title = query.name;
               this.updateTab();
             }
 
@@ -2169,7 +2169,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
                 this.unsavedText = query.text;
 
                 if (this.hasTitle) {
-                  this.$noty.info(`${this.query.title} updated from cloud`);
+                  this.$noty.info(`${this.query.name} updated from cloud`);
                 }
               }
               this.query.text = query.text;

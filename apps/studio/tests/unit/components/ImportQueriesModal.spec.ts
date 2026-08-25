@@ -52,7 +52,7 @@ describe("ImportQueriesModal.vue", () => {
     // A query that lives inside a local folder, selected for import.
     const localQuery = {
       id: 42,
-      title: "My Query",
+      name: "My Query",
       text: "select 1",
       queryFolderId: 5,
       checked: true,
@@ -66,7 +66,7 @@ describe("ImportQueriesModal.vue", () => {
     expect(payload.queryFolderId).toBeNull();
     expect(payload.id).toBeNull();
     // The rest of the query is preserved on the copy.
-    expect(payload.title).toBe("My Query");
+    expect(payload.name).toBe("My Query");
     expect(payload.text).toBe("select 1");
   });
 
@@ -75,14 +75,14 @@ describe("ImportQueriesModal.vue", () => {
 
     await wrapper.setData({
       queries: [
-        { id: 1, title: "Keep", queryFolderId: 3, checked: true },
-        { id: 2, title: "Skip", queryFolderId: 3, checked: false },
+        { id: 1, name: "Keep", queryFolderId: 3, checked: true },
+        { id: 2, name: "Skip", queryFolderId: 3, checked: false },
       ],
     });
 
     await wrapper.vm.doImport();
 
     expect(saveDispatch).toHaveBeenCalledTimes(1);
-    expect(saveDispatch.mock.calls[0][1].title).toBe("Keep");
+    expect(saveDispatch.mock.calls[0][1].name).toBe("Keep");
   });
 });
