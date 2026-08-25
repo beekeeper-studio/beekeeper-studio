@@ -13,6 +13,8 @@
 @import './app/variables';
 @import './app/flex-grid';
 @import './app/base';
+@import './themes/default';
+@import './themes/solarized';
 @import './themes/themes.css';
 
 body.theme-system {

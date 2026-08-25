@@ -1,0 +1,16 @@
+/* ===== Palette ===== */
+[data-theme="solarized"],
+[data-theme="solarized-dark"] {
+  --color-sky-300: #8dc6f6;
+  --color-sky-600: #268bd2;
+}
+
+/* ===== Light ===== */
+[data-theme="solarized"] {
+  --cell-number-fg-color: var(--color-sky-600);
+}
+
+/* ===== Dark ===== */
+[data-theme="solarized-dark"] {
+  --cell-number-fg-color: var(--color-sky-300);
+}
