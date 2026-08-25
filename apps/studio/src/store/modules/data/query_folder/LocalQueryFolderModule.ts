@@ -1,13 +1,15 @@
 import Vue from 'vue'
 import _ from 'lodash'
 import { IQueryFolder } from "@/common/interfaces/IQueryFolder";
-import { DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
+import { DataState, DataStore, LoadOptions, mutateActions, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { safely } from "@/store/modules/data/StoreHelpers";
+import { accessGrantActions, accessGrantMutations } from "@/store/modules/data/access_grant/accessGrantStore";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
-import { buildFolderTree } from "@/common/utils/folderTree";
-import { pluralize } from '@/vendor/pluralize';
+import { FolderFetchModule, treeActions } from "@/store/modules/data/tree/treeStore";
+import { FolderableState, folderableActions } from "@/store/modules/data/tree/folderableStore";
+import { FolderNodeModule } from "@/store/modules/data/tree/FolderNodeModule";
 
-type State = DataState<IQueryFolder>
+type State = DataState<IQueryFolder> & FolderableState<IQueryFolder>
 
 export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
   namespaced: true,
@@ -19,20 +21,31 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
   },
   mutations: {
     ...mutationsFor<IQueryFolder>({}, { field: 'name', direction: 'asc' }),
+    ...accessGrantMutations(),
   },
-  getters: {
-    foldersWithQueries: (state) => (queries: any[]) =>
-      buildFolderTree(state.items, queries, 'queryFolderId')
+  modules: {
+    nodes: FolderNodeModule,
+    folders: FolderFetchModule,
   },
   actions: {
-    async load(context) {
+    ...accessGrantActions('queryFolders'),
+    ...mutateActions<IQueryFolder>(),
+    ...treeActions<IQueryFolder>({ plural: 'parentIds', singular: 'parentId' }),
+    ...folderableActions<IQueryFolder>(),
+    async afterMutate(context, { type, data }) {
+      context.commit(`nodes/${type}`, data)
+    },
+    async initialize() {
+      // noop
+    },
+    async load(context, options: LoadOptions<IQueryFolder> = {}) {
       context.commit('error', null)
       await safely(context, async () => {
         const items = await Vue.prototype.$util.send('appdb/queryFolder/find', { options: { order: { name: 'ASC' } } })
         if (context.rootState.workspaceId === LocalWorkspace.id) {
-          context.commit('upsert', items)
+          await context.dispatch('mutate', { type: 'upsert', data: items })
         }
-      })
+      }, options.onError)
     },
     async poll() {
       // no-op for local
@@ -42,24 +55,20 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
     },
     async save(context, item) {
       const updated = await Vue.prototype.$util.send('appdb/queryFolder/save', { obj: item })
-      context.commit('upsert', updated)
+      await context.dispatch('mutate', { type: 'upsert', data: updated })
       return updated.id
     },
     async remove(context, folder) {
-      const items = await Vue.prototype.$util.send('appdb/query/find', { options: { where: { queryFolderId: folder.id } } })
-      if (items.length > 0) {
-        throw new Error(`Cannot delete "${folder.name}" — move or remove its ${pluralize('query', items.length, true)} first.`)
-      }
       await Vue.prototype.$util.send('appdb/queryFolder/remove', { obj: folder })
-      context.commit('remove', folder)
+      await context.dispatch('mutate', { type: 'remove', data: folder })
     },
     async reload(context, id) {
       const item = await Vue.prototype.$util.send('appdb/queryFolder/findOneBy', { options: { id } })
       if (item) {
-        context.commit('upsert', item)
+        await context.dispatch('mutate', { type: 'upsert', data: item })
         return item.id
       }
-      context.commit('remove', id)
+      await context.dispatch('mutate', { type: 'remove', data: id })
       return null
     },
     async clone(_c, item) {
@@ -68,9 +77,5 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
       r.createdAt = null
       return r
     },
-    async moveToFolder(context, { query, folder }) {
-      const updated = { ...query, queryFolderId: folder?.id ?? null }
-      await context.dispatch('data/queries/save', updated, { root: true })
-    }
   }
 }

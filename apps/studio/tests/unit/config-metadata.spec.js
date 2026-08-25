@@ -128,4 +128,27 @@ describe("Config Metadata", () => {
     });
     expect(() => bksConfigUI.getKeybindingSections()).not.toThrow();
   });
+
+  it.each([
+    ["single shortcut", "general.addRow", "Ctrl+N"],
+    ["multiple shortcuts", "general.refresh", "F5, Ctrl+R"],
+  ])("Should format %s correctly in labels", (_name, path, expected) => {
+    const raw = parseIni(fullConfigIni);
+    const processed = processRawConfig(raw);
+    const source = {
+      defaultConfig: processed,
+      systemConfig: {},
+      userConfig: {},
+      warnings: [],
+    };
+
+    const bksConfig = BksConfigProvider.create(source, linuxPlatformInfo);
+    const bksConfigUI = new ConfigMetadataProvider({
+      bksConfig,
+      metadata: fullMetadata,
+      platformInfo: linuxPlatformInfo,
+    });
+
+    expect(bksConfigUI.getKeybindingLabel(path)).toBe(expected);
+  });
 });

@@ -69,7 +69,7 @@
     <div class="tab-content">
       <div class="empty-editor-group empty flex-col  expand">
         <div class="expand layout-center">
-          <shortcut-hints />
+          <shortcut-hints type="core-tabs" />
         </div>
       </div>
       <div
@@ -328,7 +328,7 @@ import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.
 import Shell from './TabShell.vue'
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
-import { TabTypeConfig, TransportOpenTab, TransportPluginTab, setFilters, matches, duplicate, TabType } from '@/common/transport/TransportOpenTab'
+import { TabTypeConfig, TransportOpenTab, TransportPluginTab, setFilters, matches, duplicate } from '@/common/transport/TransportOpenTab'
 import { wait } from '@/shared/lib/wait'
 
 export default Vue.extend({
@@ -440,6 +440,7 @@ export default Vue.extend({
         { event: AppEvent.openTableProperties, handler: this.openTableProperties },
         { event: 'loadSettings', handler: this.openSettings },
         { event: 'loadTableCreate', handler: this.loadTableCreate },
+        { event: AppEvent.loadSelectTop, handler: this.loadSelectTop },
         { event: 'loadRoutineCreate', handler: this.loadRoutineCreate },
         { event: 'favoriteClick', handler: this.favoriteClick },
         { event: 'exportTable', handler: this.openExportModal },
@@ -529,7 +530,20 @@ export default Vue.extend({
           this.$noty.success(`${this.dbAction} completed successfully`)
 
         } catch (ex) {
-          this.$noty.error(`Error performing ${this.dbAction}: ${ex.message}`)
+          const notificationMessage = [
+            `Error performing ${this.dbAction}: ${ex.message}`,
+            ex.detail && `DETAIL: ${ex.detail}`,
+            ex.hint && `HINT: ${ex.hint}`,
+          ].filter(Boolean).join('\n')
+
+          this.$noty.error(notificationMessage, {
+            timeout: 3500,
+            callbacks: {
+              onClick: () => {
+                this.$native.clipboard.writeText(notificationMessage)
+              },
+            },
+          })
         }
       })
     },
@@ -634,9 +648,6 @@ export default Vue.extend({
         this.lastFocused.focus()
       }
     },
-    openContextMenu(event, item) {
-      this.contextEvent = { event, item }
-    },
     async setActiveTab(tab: TransportOpenTab) {
       const switchingTab = tab.id !== this.activeTab?.id
       if (switchingTab) {
@@ -738,6 +749,15 @@ export default Vue.extend({
       result.unsavedChanges = false
       result.unsavedQueryText = optionalText
       await this.addTab(result)
+    },
+    async loadSelectTop(table) {
+      try {
+        const query = await this.connection.selectTopSql(table.name, 0, 100, [], [], table.schema, ['*'])
+        this.createQuery(query.replace(/\s+/g, ' ').trim())
+      } catch (ex) {
+        this.$noty.error(`An error occured while loading the SQL for '${table.name}' - ${ex.message}`)
+        throw ex
+      }
     },
     async loadTableCreate(table) {
       let method = null
@@ -899,7 +919,8 @@ export default Vue.extend({
 
       noty.close()
     },
-    async importSqlFiles(paths: string[]) {
+    async importSqlFiles(importConfig: { paths: string[], parentId: number }) {
+      const { paths, parentId } = importConfig;
       const files = paths.map((path) => ({
         path,
         name: path.replace(/^.*[\\/]/, '').replace(/\.sql$/, ''),
@@ -946,6 +967,7 @@ export default Vue.extend({
             const query = await this.$util.send('appdb/query/new');
             query.title = file.name
             query.text = text
+            query.queryFolderId = parentId
             await this.$store.dispatch('data/queries/save', query)
           } else {
             files[i].error = true
@@ -993,7 +1015,7 @@ export default Vue.extend({
       }
     },
     async loadRoutineCreate(routine) {
-      const result = await this.connection.getRoutineCreateScript(routine.name, routine.type, routine.schema);
+      const result = await this.connection.getRoutineCreateScript(routine.name, routine.type, routine.schema, routine.oid);
       const stringResult = safeFormat(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
       this.createQuery(stringResult);
     },
@@ -1077,9 +1099,15 @@ export default Vue.extend({
       if (this.closingTab) return; // prevent close modals queueing
 
       if (tab.unsavedChanges && !options?.ignoreUnsavedChanges) {
+        let confirmed = false
         this.closingTab = tab
-        const confirmed = await this.$confirmById(this.confirmModalId);
-        this.closingTab = null
+        try {
+          confirmed = await this.$confirmById(this.confirmModalId);
+        } finally {
+          // Never leave this set - it gates every close, so a stuck value
+          // silently disables tab closing for the rest of the session.
+          this.closingTab = null
+        }
         if (!confirmed) return
       }
 

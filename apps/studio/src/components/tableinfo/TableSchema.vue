@@ -20,24 +20,18 @@
         </div>
 
         <div class="table-subheader">
-          <div class="table-title">
-            <h2>Columns</h2>
-          </div>
-          <slot />
-          <span class="expand" />
-          <div class="actions">
-            <a
-              @click.prevent="refreshColumns"
-              v-tooltip="`${ctrlOrCmd('r')} or F5`"
-              class="btn btn-link btn-fab"
-            ><i class="material-icons">refresh</i></a>
-            <a
-              v-if="editable"
-              v-tooltip="ctrlOrCmd('n')"
-              @click.prevent="addRow"
-              class="btn btn-primary btn-fab"
-            ><i class="material-icons">add</i></a>
-          </div>
+          <table-info-toolbar
+            :search-suffix="structureFilterSuffix"
+            filter-placeholder="Filter columns"
+            :show-add="editable"
+            add-label="Column"
+            @search="setStructureFilterQuery"
+            @add="addRow"
+            @copy="copyStructure"
+            @refresh="refreshColumns"
+          >
+            <slot />
+          </table-info-toolbar>
         </div>
         <div ref="tableSchema" />
         <!-- Tabulator can be slow to open especially for some really large column counts. Let the user know. -->
@@ -134,9 +128,12 @@ import { AppEvent } from '@/common/AppEvent'
 import StatusBar from '../common/StatusBar.vue'
 import { AlterTableSpec, FormatterDialect } from '@shared/lib/dialects/models'
 import ErrorAlert from '../common/ErrorAlert.vue'
+import TableInfoToolbar from './TableInfoToolbar.vue'
 import rawLog from '@bksLogger'
 import { escapeHtml } from '@shared/lib/tabulator'
 import { ExtendedTableColumn } from '@/lib/db/models'
+import { StructureCopyMixin } from '@/mixins/structureCopy'
+import { StructureFilterMixin } from '@/mixins/structureFilter'
 
 const log = rawLog.scope('table-schema')
 
@@ -152,9 +149,10 @@ const FakeCell = {
 export default Vue.extend({
   components: {
     StatusBar,
-    ErrorAlert
+    ErrorAlert,
+    TableInfoToolbar
   },
-  mixins: [DataMutators],
+  mixins: [DataMutators, StructureCopyMixin, StructureFilterMixin],
   props: ["table", "tabID", "active", "primaryKeys", "tabState"],
   data() {
     return {
@@ -560,4 +558,3 @@ export default Vue.extend({
   },
 })
 </script>
-

@@ -255,6 +255,7 @@ export default class PluginStoreService {
       databaseName: this.store.state.database,
       defaultSchema: this.store.state.defaultSchema,
       readOnlyMode: this.store.state.usedConfig.readOnlyMode,
+      disabledFeatures: this.store.getters.dialectData.disabledFeatures,
     };
   }
 

@@ -1,10 +1,13 @@
 import { DataState, mutationsFor, DataStore, actionsFor } from "../DataModuleBase";
 import { havingCli } from "../StoreHelpers";
+import { accessGrantMutations, accessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
 import _ from 'lodash'
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
+import { FolderFetchModule, treeActions } from "@/store/modules/data/tree/treeStore";
+import { ItemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 
 
-type State = DataState<ISavedQuery>
+type State = DataState<ISavedQuery>;
 
 export const CloudQueryModule: DataStore<ISavedQuery, State> = {
   namespaced: true,
@@ -14,26 +17,55 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
     error: null,
     pollError: null,
     filter: undefined,
-    pendingSaveIds: []
+    pendingSaveIds: [],
+    searching: false,
   },
   mutations: mutationsFor<ISavedQuery>({
     // more mutations go here
     savedQueryFilter(state: State, str: string) {
       state.filter = str;
-    }
+    },
+    ...accessGrantMutations(),
   }, { field: 'title', direction: 'asc'}),
-  actions: actionsFor<ISavedQuery>('queries', {
+  modules: {
+    nodes: ItemNodeModule('queryFolderId', 'title'),
+    folders: FolderFetchModule,
+  },
+  actions: {
+    ...actionsFor<ISavedQuery>('queries', {}),
+    ...accessGrantActions('queries'),
+    ...treeActions<ISavedQuery>({ plural: 'queryFolderIds', singular: 'queryFolderId' }),
+    async initialize() {
+      // noop
+    },
+    async poll(context) {
+      if (
+          context.rootState.connected
+          && context.rootState.sidebar.globalSidebarActiveItem === "queries"
+          && context.rootState.sidebar.primarySidebarOpen
+      ) {
+        const expandedFolderIds = context.rootState.sidebar.queries.expandedIds
+        const result = await context.dispatch('loadByParentIds', expandedFolderIds)
+        if (result.error) {
+          context.commit("pollError", result.error);
+        }
+      }
+    },
+    async afterMutate(context, { type, data }) {
+      context.commit(`nodes/${type}`, data)
+    },
     setSavedQueryFilter: _.debounce(function (context, filter) {
       context.commit('savedQueryFilter', filter);
+      context.dispatch('search', filter);
     }, 500),
     async saveMany(context, items: ISavedQuery[]) {
       // Mark items as pending to protect from poll overwrites
       items.forEach(item => context.commit('addPendingSave', item.id))
-      context.commit('upsert', items)
+      await context.dispatch('mutate', { type: 'upsert', data: items })
       try {
         return await havingCli(context, async (cli) => {
           const saved = await Promise.all(items.map(item => cli.queries.upsert(item)))
-          context.commit('upsert', saved)
+          await context.dispatch('mutate', { type: 'upsert', data: saved })
         })
       } finally {
         // Clear pending status
@@ -41,7 +73,7 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
       }
     },
     // Reorder action for drag/drop - uses dedicated reorder API that returns all affected positions
-    async reorder(context, { item, position, queryFolderId }) {
+    async reorder(context, { item, position, queryFolderId, confirm }) {
       // Get the full item from state for optimistic update
       const existing = context.state.items.find(q => q.id === item.id)
       if (!existing) return
@@ -71,11 +103,16 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
       // Mark as pending to protect from poll overwrites
       context.commit('addPendingSave', item.id)
 
-      // Optimistic commit with numeric position
-      context.commit('upsert', {
-        ...existing,
-        queryFolderId: queryFolderId ?? existing.queryFolderId,
-        position: optimisticPosition
+      // Optimistic commit with numeric position. Not awaited: `mutate` applies
+      // both the item and node commits synchronously, and waiting would hold
+      // the reorder request back a turn.
+      context.dispatch('mutate', {
+        type: 'upsert',
+        data: {
+          ...existing,
+          queryFolderId: queryFolderId ?? existing.queryFolderId,
+          position: optimisticPosition
+        }
       })
 
       // Use dedicated reorder API that returns all affected positions
@@ -84,31 +121,35 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
           const affectedItems = await cli.queries.reorder(
             item.id,
             position,
-            queryFolderId
+            queryFolderId,
+            confirm
           )
           // Update all affected items with their new positions and folder
-          affectedItems.forEach(affected => {
+          for (const affected of affectedItems) {
             const existing = context.state.items.find(q => q.id === affected.id)
             if (existing) {
-              context.commit('upsert', {
-                ...existing,
-                position: affected.position,
-                queryFolderId: affected.queryFolderId
+              await context.dispatch('mutate', {
+                type: 'upsert',
+                data: {
+                  ...existing,
+                  position: affected.position,
+                  queryFolderId: affected.queryFolderId
+                }
               })
             }
-          })
+          }
           return item.id
         })
       } catch (e) {
         // Revert optimistic update using pre-mutation snapshot
-        context.commit('upsert', snapshot)
+        await context.dispatch('mutate', { type: 'upsert', data: snapshot })
         throw e
       } finally {
         // Clear pending status
         context.commit('removePendingSave', item.id)
       }
     }
-  }),
+  },
   getters: {
     filteredQueries(state) {
       if (!state.filter) {

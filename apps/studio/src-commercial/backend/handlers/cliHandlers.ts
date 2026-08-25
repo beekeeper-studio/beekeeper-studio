@@ -25,7 +25,11 @@ export const CliHandlers: ICliHandlers = {
 
     // Pass the environment explicitly so we can prepend Homebrew bin dirs.
     const env = { ...process.env };
-    env.PATH = [...extraToolSearchDirs, env.PATH].filter(Boolean).join(path.delimiter);
+    if (env.Path && platformInfo.isWindows) {
+      env.Path = [...extraToolSearchDirs, env.Path].filter(Boolean).join(path.delimiter);
+    } else {
+      env.PATH = [...extraToolSearchDirs, env.PATH].filter(Boolean).join(path.delimiter);
+    }
 
     return new Promise((resolve, reject) => {
       const proc = spawn(command, [toolName], { shell: false, env });
@@ -33,11 +37,11 @@ export const CliHandlers: ICliHandlers = {
       let stdout = '';
       let stderr = '';
 
-      proc.stdout.on('data', (chunk) => {
+      proc.stdout?.on('data', (chunk) => {
         stdout += chunk.toString();
       });
 
-      proc.stderr.on('data', (chunk) => {
+      proc.stderr?.on('data', (chunk) => {
         stderr += chunk.toString();
       });
 
@@ -47,7 +51,7 @@ export const CliHandlers: ICliHandlers = {
 
       proc.on('close', (code) => {
         if (code === 0) {
-          const result = stdout.trim().split('\n')[0]; // pick first match
+          const result = stdout.trim().split(/\r?\n/)[0]; // pick first match
           resolve(result);
         } else {
           reject(`cli/which failed (code ${code})\nSTDERR: ${stderr}\nSTDOUT: ${stdout}`);

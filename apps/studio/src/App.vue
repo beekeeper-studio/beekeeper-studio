@@ -1,9 +1,8 @@
 <template>
-  <div class="style-wrapper">
+  <div class="style-wrapper" :style="{ '--bks-text-editor-font-size': `${editorFontSize}px` }">
     <div
       class="beekeeper-studio-wrapper"
       :class="{ 'beekeeper-studio-minimal-mode': $store.getters.minimalMode }"
-      :style="{ '--bks-text-editor-font-size': `${editorFontSize}px` }"
     >
       <titlebar />
       <template v-if="storeInitialized">
@@ -18,10 +17,6 @@
         <upgrade-required-modal />
       </template>
     </div>
-    <portal-target
-      name="menus"
-      multiple
-    />
     <portal-target
       name="modals"
       multiple
@@ -39,16 +34,24 @@
     <plugin-controller :editor-font-size="editorFontSize" />
     <plugin-manager-modal />
     <keyboard-shortcuts-modal />
-    <move-to-modal />
+    <move-item-modal />
+    <move-folder-modal />
     <confirmation-modal-manager />
     <lock-manager />
     <input-ephemeral-modal name="input-ephemeral-modal" />
     <util-died-modal />
+    <share-modal />
     <template v-if="licensesInitialized">
       <trial-expired-modal />
       <license-expired-modal />
       <lifetime-license-expired-modal />
+      <cloud-workspaces-blocked-modal />
     </template>
+    <portal-target
+      name="menus"
+      multiple
+      class="portal-target-menus"
+    />
   </div>
 </template>
 
@@ -82,6 +85,7 @@ import UtilDiedModal from '@/components/UtilDiedModal.vue'
 import TrialExpiredModal from '@/components/license/TrialExpiredModal.vue'
 import LicenseExpiredModal from '@/components/license/LicenseExpiredModal.vue'
 import LifetimeLicenseExpiredModal from '@/components/license/LifetimeLicenseExpiredModal.vue'
+import CloudWorkspacesBlockedModal from '@/components/license/CloudWorkspacesBlockedModal.vue'
 import type { LicenseStatus } from "@/lib/license";
 import { SmartLocalStorage } from '@/common/LocalStorage';
 import PluginManagerModal from '@/components/plugins/PluginManagerModal.vue'
@@ -89,7 +93,9 @@ import KeyboardShortcutsModal from '@/components/common/modals/KeyboardShortcuts
 import PluginController from '@/components/plugins/PluginController.vue'
 import LockManager from "@/components/managers/LockManager.vue";
 import InputEphemeralModal from "@/components/common/modals/InputEphemeralModal.vue";
-import MoveToModal from "@/components/common/modals/MoveToModal.vue";
+import ShareModal from "@/components/common/modals/ShareModal.vue";
+import MoveItemModal from "@/components/common/modals/MoveItemModal.vue";
+import MoveFolderModal from "@/components/common/modals/MoveFolderModal.vue";
 
 import rawLog from '@bksLogger'
 import { assignContextMenuToAllInputs } from './mixins/assignContextMenuToAllInputs'
@@ -104,9 +110,10 @@ export default Vue.extend({
     DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
-    LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
+    LifetimeLicenseExpiredModal, CloudWorkspacesBlockedModal,
+    WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
     PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
-    InputEphemeralModal, MoveToModal,
+    InputEphemeralModal, ShareModal, MoveItemModal, MoveFolderModal,
   },
   data() {
     return {
@@ -254,7 +261,9 @@ export default Vue.extend({
 })
 </script>
 
-<style>
-
+<style scoped>
+.portal-target-menus::v-deep > * {
+  z-index: 99999;
+}
 
 </style>

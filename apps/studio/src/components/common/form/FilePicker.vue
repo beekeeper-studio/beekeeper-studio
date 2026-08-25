@@ -33,6 +33,7 @@
       <a
         type="button"
         class="btn btn-flat"
+        :class="{disabled}"
         @click="openFilePickerDialog({ save: true })"
       >
         Create
@@ -95,6 +96,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    directory: {
+      type: Boolean,
+      default: false
+    }
   },
   computed: {
     hasOtherActions() {
@@ -120,12 +125,18 @@ export default {
       }
 
       const dialogConfig = {
-        properties: ['openFile']
+        properties: []
       }
 
       const effectiveDefault = this.defaultPath || (typeof this.value === 'string' ? this.value : '')
       if (effectiveDefault.toString().length > 0) {
         dialogConfig.defaultPath = effectiveDefault
+      }
+
+      if (this.directory) {
+        dialogConfig.properties.push('openDirectory')
+      } else {
+        dialogConfig.properties.push('openFile')
       }
 
       if (this.showHiddenFiles) {

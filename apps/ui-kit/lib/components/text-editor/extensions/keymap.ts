@@ -4,7 +4,7 @@ import { emacs } from "@replit/codemirror-emacs";
 import { vim } from "@replit/codemirror-vim";
 import * as VimLib from "@replit/codemirror-vim";
 import { Keymap } from "../types";
-import { Clipboard, Config, extendVimOnCodeMirror, IMapping } from "./vim";
+import { Clipboard, Config, extendVimOnCodeMirror, VimDirective } from "./vim";
 
 const Vim = VimLib.Vim;
 
@@ -32,7 +32,7 @@ export function applyKeymap(view: EditorView, keymap: Keymap, options: VimOption
 
 export interface VimOptions {
   config?: Config;
-  keymaps?: IMapping[];
+  keymaps?: VimDirective[];
   clipboard?: Clipboard;
 }
 
@@ -40,7 +40,9 @@ function buildKeymap(keymap: Keymap, options: VimOptions = {}): Extension {
   let extension: Extension = [];
 
   if (keymap === "vim") {
-    extension = vim();
+    // status renders codemirror's own bottom panel: the current mode, any
+    // pending keys, and the : and / input lines.
+    extension = vim({ status: true });
     extendVimOnCodeMirror(Vim, options.config, options.keymaps, options.clipboard);
   } else if (keymap === "emacs") {
     extension = emacs();

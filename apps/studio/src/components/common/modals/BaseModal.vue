@@ -7,6 +7,7 @@
       @closed="$emit('closed')"
       class="base-modal-root"
     >
+      <x-progressbar v-if="loading" />
       <form
         v-kbd-trap="true"
         class="base-modal"
@@ -29,7 +30,7 @@
         <div class="base-modal-body">
           <slot :close="close" />
         </div>
-        <div class="base-modal-footer">
+        <div class="base-modal-footer" v-if="$scopedSlots.footer">
           <slot name="footer" :close="close" />
         </div>
       </form>
@@ -58,6 +59,8 @@ export default Vue.extend({
         '[tabindex]:not([tabindex="-1"])',
       ].join(","),
     },
+    /** Show loading indicator */
+    loading: Boolean,
   },
   methods: {
     close() {
@@ -74,10 +77,11 @@ export default Vue.extend({
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .base-modal-root ::v-deep .v--modal {
   min-width: 36rem;
   min-height: 6rem;
+  max-width: 550px;
   width: auto !important;
 }
 
@@ -97,7 +101,7 @@ export default Vue.extend({
 
 .base-modal-title {
   font-size: 1.1rem;
-  line-height: 1;
+  line-height: 1.8rem;
   font-weight: 500;
   margin: 0;
   display: flex;
@@ -107,12 +111,19 @@ export default Vue.extend({
   ::v-deep i.material-icons {
     font-size: 1.1rem;
   }
+
+  &::v-deep h2 {
+    margin: 0;
+    font-size: inherit;
+    font-weight: inherit;
+  }
 }
 
 .base-modal-close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  align-self: flex-start;
   width: 1.8rem;
   min-width: 1.8rem;
   height: 1.8rem;
@@ -150,5 +161,10 @@ export default Vue.extend({
   justify-content: flex-end;
   padding-inline: 1.2rem;
   padding-bottom: 0.8rem;
+}
+
+x-progressbar {
+  // Avoid shifting the other elements down
+  position: absolute;
 }
 </style>
