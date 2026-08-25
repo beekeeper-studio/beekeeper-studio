@@ -1,5 +1,5 @@
 import { Entity, Column, Index, BeforeInsert, BeforeUpdate } from 'typeorm'
-import { MaxLength } from 'class-validator';
+import { IsInt, MaxLength, Min } from 'class-validator';
 import { ApplicationEntity  } from './application_entity'
 import type { QueryOrigin } from '../../interfaces/QueryOrigin'
 
@@ -33,6 +33,8 @@ export class UsedQuery extends ApplicationEntity {
   @Column({ type: 'integer', nullable: false, default: -1 })
   workspaceId = -1
 
+  @IsInt({ message: 'connectionId must be a saved connection id' })
+  @Min(1, { message: 'connectionId must be a saved connection id' })
   @Column({ type: "integer", nullable: false, default: -1 })
   connectionId = -1
 

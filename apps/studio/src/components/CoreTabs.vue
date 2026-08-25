@@ -69,7 +69,7 @@
     <div class="tab-content">
       <div class="empty-editor-group empty flex-col  expand">
         <div class="expand layout-center">
-          <shortcut-hints />
+          <shortcut-hints type="core-tabs" />
         </div>
       </div>
       <div
@@ -530,7 +530,20 @@ export default Vue.extend({
           this.$noty.success(`${this.dbAction} completed successfully`)
 
         } catch (ex) {
-          this.$noty.error(`Error performing ${this.dbAction}: ${ex.message}`)
+          const notificationMessage = [
+            `Error performing ${this.dbAction}: ${ex.message}`,
+            ex.detail && `DETAIL: ${ex.detail}`,
+            ex.hint && `HINT: ${ex.hint}`,
+          ].filter(Boolean).join('\n')
+
+          this.$noty.error(notificationMessage, {
+            timeout: 3500,
+            callbacks: {
+              onClick: () => {
+                this.$native.clipboard.writeText(notificationMessage)
+              },
+            },
+          })
         }
       })
     },
@@ -634,9 +647,6 @@ export default Vue.extend({
       if (this.lastFocused) {
         this.lastFocused.focus()
       }
-    },
-    openContextMenu(event, item) {
-      this.contextEvent = { event, item }
     },
     async setActiveTab(tab: TransportOpenTab) {
       const switchingTab = tab.id !== this.activeTab?.id
@@ -1089,9 +1099,15 @@ export default Vue.extend({
       if (this.closingTab) return; // prevent close modals queueing
 
       if (tab.unsavedChanges && !options?.ignoreUnsavedChanges) {
+        let confirmed = false
         this.closingTab = tab
-        const confirmed = await this.$confirmById(this.confirmModalId);
-        this.closingTab = null
+        try {
+          confirmed = await this.$confirmById(this.confirmModalId);
+        } finally {
+          // Never leave this set - it gates every close, so a stuck value
+          // silently disables tab closing for the rest of the session.
+          this.closingTab = null
+        }
         if (!confirmed) return
       }
 

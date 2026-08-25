@@ -181,19 +181,16 @@
           </x-buttons>
         </template>
         <span
-          v-else
-          class="hidden-column-count bks-tooltip-wrapper statusbar-item hoverable"
+          v-else-if="hiddenColumnCount"
+          class="hidden-column-count statusbar-item hoverable"
+          v-tooltip="hiddenColumnMessage"
         >
           <a
             tabindex="0"
             @click.prevent="showColumnFilterModal"
-            v-if="hiddenColumnCount"
           >
             <i class="material-icons">visibility_off</i>
           </a>
-          <div class="bks-tooltip bks-tooltip-top-center">
-            <span>{{ hiddenColumnMessage }}</span>
-          </div>
         </span>
 
         <template v-if="!editable">
@@ -329,7 +326,6 @@ import LoadingSpinner from "@/components/common/loading/LoadingSpinner.vue"
 import rawLog from '@bksLogger'
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago'
-import globals from '@/common/globals';
 import {AppEvent} from '../../common/AppEvent';
 import { vueEditor } from '@shared/lib/tabulator/helpers';
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
@@ -337,7 +333,7 @@ import TableLength from '@/components/common/TableLength.vue'
 import { mapGetters, mapState } from 'vuex';
 import { TableUpdate, TableUpdateResult, ExtendedTableColumn } from '@/lib/db/models';
 import { dialectFor, formatOptionsFor, TableKey } from '@shared/lib/dialects/models'
-import { normalizeFilters, safeSqlFormat, createTableFilter, isNumericDataType, isDateDataType, rowHeaderField } from '@/common/utils'
+import { normalizeFilters, safeSqlFormat, createTableFilter, isNumericDataType, isDateDataType, rowHeaderField, joinFilters } from '@/common/utils'
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml, FormatterParams } from '@shared/lib/tabulator';
@@ -768,10 +764,10 @@ export default Vue.extend({
       if (target.closest('.tabulator-row, .tabulator-header, .tabulator-row-header, .tabulator-corner')) {
         return;
       }
-      
+
       // Prevent default browser context menu on the empty space.
       e.preventDefault();
-      
+
       // Define context menu options for the empty space.
       // We add an option to insert a new row to improve user experience.
       const menuOptions = [
@@ -782,7 +778,7 @@ export default Vue.extend({
           disabled: !this.editable
         }
       ];
-      
+
       // Open the global Beekeeper context menu component.
       // @ts-ignore
       this.$bks.openMenu({
@@ -801,7 +797,7 @@ export default Vue.extend({
       try {
         const row: TransportTabulatorPersistence = await this.$util.send(
           "appdb/tabulatorPersistence/findOneBy",
-          { persistenceID: this.tableId, type: "columns" }
+          { options: { persistenceID: this.tableId, type: "columns" } }
         );
         this.persistenceRow = row ? { id: row.id, data: row.data } : null;
       } catch (e) {
@@ -829,31 +825,31 @@ export default Vue.extend({
         return false;
       }
     },
-    persistenceWriter(_id: string, type: string, data: unknown) {
+    async persistenceWriter(_id: string, type: string, data: unknown) {
       if (!this.tableId) {
         return;
       }
 
       const serialized = JSON.stringify(data);
+      if (serialized === this.persistenceRow?.data) return;
+
       const existingId = this.persistenceRow?.id;
       this.persistenceRow = { id: existingId, data: serialized };
-      this.$util
-        .send("appdb/tabulatorPersistence/save", {
+      try {
+        const saved = await this.$util.send("appdb/tabulatorPersistence/save", {
           obj: {
             id: existingId,
             persistenceID: this.tableId,
             type,
             data: serialized,
           },
-        })
-        .then((saved: TransportTabulatorPersistence) => {
-          if (saved) {
-            this.persistenceRow.id = saved.id;
-          }
-        })
-        .catch(
-          (e: unknown) => log.warn("tabulator persistence save failed", e)
-        );
+        });
+        if (saved) {
+          this.persistenceRow.id = saved.id;
+        }
+      } catch (e) {
+        log.warn("tabulator persistence save failed", e)
+      }
     },
     createColumnFromProps(column) {
       // 1. add a column for a real column
@@ -1012,10 +1008,10 @@ export default Vue.extend({
         },
         mutatorData: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connectionType)),
         dataType: column.dataType,
-        minWidth: globals.minColumnWidth,
+        minWidth: this.$bksConfig.ui.tableTable.minColumnWidth,
         width: columnWidth,
-        maxWidth: globals.maxColumnWidth,
-        maxInitialWidth: globals.maxInitialWidth,
+        maxWidth: this.$bksConfig.ui.tableTable.maxColumnWidth,
+        maxInitialWidth: this.$bksConfig.ui.tableTable.maxInitialWidth,
         resizable: 'header',
         cssClass,
         editable: this.cellEditCheck,
@@ -1257,6 +1253,14 @@ export default Vue.extend({
         rowRangeLabel = `${selectedRowsCount} selected rows`;
       }
       return [
+        {
+          label: createMenuItem(
+            "Add row",
+            this.$bksConfig.getKeybindings("context-menu", "general.addRow"),
+          ),
+          action: this.cellAddRow.bind(this),
+          disabled: !this.editable,
+        },
         {
           label: createMenuItem(`Clone ${rowRangeLabel}`, "Control+D"),
           action: this.cellCloneRow.bind(this),
@@ -1889,7 +1893,12 @@ export default Vue.extend({
       ];
       const limit = this.tabulator.getPageSize() ?? this.limit;
       const offset = (this.tabulator.getPage() - 1) * limit;
-      const selects = ["*"];
+      // column hiding and reordering are front-end only, so bake the
+      // displayed columns into the generated query
+      const visibleColumns = this.columnsWithFilterAndOrder
+        .filter((c) => c.filter)
+        .map((c) => c.name);
+      const selects = visibleColumns.length ? visibleColumns : ["*"];
 
       // like if you change a filter
       if (page && page !== this.page) {
@@ -2062,12 +2071,32 @@ export default Vue.extend({
     },
     async jumpToLastPage() {
       try {
-        const totalRows = await this.connection.getTableLength(this.table.name, this.table.schema); // -> SELECT (*) FROM table
+        let totalRows: number
 
-        const lastPage = Math.ceil(totalRows / this.limit);
+        if (Array.isArray(this.filters) && this.filters.length > 0) {
+          const allFilters: string[] = []
+          for (const filter of this.filters) {
+            allFilters.push(await this.connection.getQueryForFilter(filter))
+          }
+          const count = await this.connection.getFilteredDataCount(
+            this.table.name,
+            this.table.schema,
+            joinFilters(allFilters, this.filters)
+          )
+          totalRows = Number(count) || 0
+        } else if (_.isString(this.filters) && this.filters) {
+          const count = await this.connection.getFilteredDataCount(
+            this.table.name,
+            this.table.schema,
+            this.filters
+          )
+          totalRows = Number(count) || 0
+        } else {
+          totalRows = await this.connection.getTableLength(this.table.name, this.table.schema)
+        }
 
-        this.page = lastPage;
-
+        const lastPage = Math.max(1, Math.ceil(totalRows / this.limit))
+        this.page = lastPage
       } catch (error) {
         console.error("Error jumping to the last page:", error);
       }
@@ -2085,6 +2114,9 @@ export default Vue.extend({
 
       // Re-fetch table keys on explicit refresh to pick up schema changes (issue #3775)
       await this.getTableKeys()
+      // Re-fetch column metadata on explicit refresh so renames show up without
+      // reopening the connection (issue #4567). No-ops when columns are unchanged.
+      await this.$store.dispatch('updateTableColumns', this.table)
 
       await this.tabulator.replaceData()
       const layout = this.tabulator.getColumnLayout();

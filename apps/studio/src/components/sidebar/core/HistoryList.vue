@@ -131,10 +131,16 @@ import { QUERY_ORIGIN_OPTIONS } from '@/common/interfaces/QueryOrigin'
         return `Remove ${this.checkedHistoryQueries.length} saved history queries`;
       },
       currentHistory(){
-        return this.history.filter(item => {
-          const matchesConnection = this.showAllHistory || item.connectionId === this.usedConfig?.id
+        const connectionHistory = this.showAllHistory
+          ? this.history
+          // an unsaved connection has no id, and so no history of its own
+          : this.usedConfig?.id
+            ? this.history.filter(item => item.connectionId === this.usedConfig.id)
+            : []
+
+        return connectionHistory.filter(item => {
           const matchesOrigin = this.isCloud || this.selectedOrigin === 'all' || item.origin === this.selectedOrigin
-          return matchesConnection && matchesOrigin
+          return matchesOrigin
         })
       },
     },
