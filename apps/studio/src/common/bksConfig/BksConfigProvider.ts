@@ -94,23 +94,24 @@ const electronModifierMap = {
 const vHotkeyModifierMap: ModifierMap = {
   CTRL: "ctrl",
   CMD: "cmd",
-  CTRLORCMD: "ctrlOrCmd",
-  CMDORCTRL: "ctrlOrCmd",
+  CTRLORCMD: (isMac) => (isMac ? "meta" : "ctrl"),
+  CMDORCTRL: (isMac) => (isMac ? "meta" : "ctrl"),
   CONTROL: "ctrl",
   COMMAND: "cmd",
-  CONTROLORCOMMAND: "ctrlOrCmd",
-  COMMANDORCONTROL: "ctrlOrCmd",
+  CONTROLORCOMMAND: (isMac) => (isMac ? "meta" : "ctrl"),
+  COMMANDORCONTROL: (isMac) => (isMac ? "meta" : "ctrl"),
   SHIFT: "shift",
   ALT: "alt",
-  ALTORCMD: "altOrCmd",
-  CMDORALT: "altOrCmd",
-  ALTORCOMMAND: "altOrCmd",
-  COMMANDORALT: "altOrCmd",
+  ALTORCMD: (isMac) => (isMac ? "meta" : "alt"),
+  CMDORALT: (isMac) => (isMac ? "meta" : "alt"),
+  ALTORCOMMAND: (isMac) => (isMac ? "meta" : "alt"),
+  COMMANDORALT: (isMac) => (isMac ? "meta" : "alt"),
   OPTION: "option",
   ALTGR: "altgr",
   SUPER: "super",
   META: "meta",
   WINDOWS: "windows",
+  DELETE: (isMac) => (isMac ? "backspace" : "delete"),
 } as const;
 
 export const tabulatorModifierMap = {
@@ -227,23 +228,11 @@ export function convertKeybinding(
   for (const _key of keybinding.split("+")) {
     const key = _key.toUpperCase().trim();
 
-    let mod = modifierMap[key] ?? key;
-
-    if (typeof mod === "function") {
-      mod = mod(platform === "mac");
-    }
+    const mappedMod = modifierMap[key];
+    let mod = typeof mappedMod === "function" ? mappedMod(platform === "mac") : (mappedMod ?? key);
 
     if (target === "v-hotkey") {
       mod = mod.toLowerCase();
-      if (mod === "ctrlorcmd") {
-        mod = platform === "mac" ? "meta" : "ctrl";
-      } else if (mod === "altorcmd") {
-        mod = platform === "mac" ? "meta" : "alt";
-      }
-
-      if (mod === "delete" && platform === "mac") {
-        mod = "backspace";
-      }
     }
 
     if (target === "codemirror" && !modifierMap[key]) {
