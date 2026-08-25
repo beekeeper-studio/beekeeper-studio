@@ -52,17 +52,22 @@ interface Feature {
   tooltip?: string
 }
 
+// Ordered by demand: the middle of the list follows visitor counts for the
+// matching /features page on the website (90 days to 2026-08-25), highest
+// first. Features with no feature page follow, and the two ends are fixed —
+// lifetime access leads, the catch-all closes.
 const PAID_FEATURES: Feature[] = [
   { label: 'Lifetime access', tooltip: LIFETIME_TOOLTIP },
+  { label: 'SQL AI shell' },
   { label: 'Import from file' },
   { label: 'Export multiple tables' },
   { label: 'Unlimited table filters' },
   { label: 'JSON row view' },
-  { label: 'Read-only connections' },
   { label: 'Cloud sync' },
-  { label: 'SQL AI shell' },
+  { label: 'Read-only connections' },
   { label: 'Connection folders' },
   { label: '10 more databases' },
+  { label: '…and much more' },
 ]
 
 export default Vue.extend({
