@@ -76,7 +76,7 @@ export default {
       let cellValue = cell.getValue()
 
       if (params.bksType && !_.isNil(cellValue) && !(_.isString(cellValue) && _.isEmpty(cellValue))) {
-        classNames.push(`data-type-${params.bksType.toLowerCase()}`)
+        classNames.push(`bks-type-${params.bksType.toLowerCase()}`)
       }
 
       if (cellValue instanceof Uint8Array) {

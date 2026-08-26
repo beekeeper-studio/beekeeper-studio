@@ -10,9 +10,11 @@
   --color-blue-600: #227DBD;
   --color-blue-700: #17537E;
 
+  --color-pink-300: #EDAFCD;
   --color-pink-400: #E072A8;
   --color-pink-500: #D33682;
   --color-pink-700: #7F204E;
+  --color-pink-800: #5F183B;
 
   --color-green-400: #AAB84D;
   --color-green-500: #859900;
@@ -25,14 +27,4 @@
   --color-orange-300: #EAB7A2;
   --color-orange-500: #CB4B16;
   --color-orange-800: #5B220A;
-}
-
-/* ===== Light ===== */
-[data-theme="solarized"] {
-  --cell-number-fg-color: var(--color-blue-700);
-}
-
-/* ===== Dark ===== */
-[data-theme="solarized-dark"] {
-  --cell-number-fg-color: var(--color-blue-300);
 }
