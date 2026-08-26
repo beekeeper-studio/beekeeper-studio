@@ -23,7 +23,15 @@
       border-bottom: solid 1px $brand-danger;
     }
   }
-  .top-panel, .bottom-panel {
+  .top-panel {
+    padding-top: $gutter-h * 1.5;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-height: 200px;
+  }
+  .bottom-panel {
     overflow: hidden;
     display: flex;
     flex-direction: column;

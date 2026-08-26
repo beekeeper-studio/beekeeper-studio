@@ -18,13 +18,16 @@
         role="menuitem"
       >
         <div
-          v-if="typeof checkedOptions[option.id] === 'boolean'"
-          class="BksContextMenu-item-icon-container BksContextMenu-item-checkbox-icon"
-          :class="{ 'BksContextMenu-item-checked': checkedOptions[option.id] }"
+          v-if="hasCheckboxes && option.type !== 'divider'"
+          class="BksContextMenu-item-check"
         >
-          <i class="material-icons">
-            {{ checkedOptions[option.id] ? 'check_box' : 'check_box_outline_blank' }}
-          </i>
+          <i class="material-icons" v-if="Boolean(checkedOptions[option.id])">check</i>
+        </div>
+        <div
+          v-if="option.prefixIcon"
+          class="BksContextMenu-item-icon-container BksContextMenu-item-prefix-icon"
+        >
+          <i class="material-icons">{{ option.prefixIcon }}</i>
         </div>
         <div
           v-if="typeof option.label === 'object'"
@@ -79,6 +82,9 @@ export default Vue.extend({
   },
 
   computed: {
+    hasCheckboxes(): boolean {
+      return (this.options || []).some(o => o && typeof o.checked === 'boolean')
+    },
     menuElements() {
       if (this.$refs.menu) {
         return Array.from(this.$refs.menu.getElementsByTagName("*"))
@@ -110,7 +116,7 @@ export default Vue.extend({
       menu.classList.add('BksContextMenu-active')
 
       this.options.forEach((option) => {
-        if (typeof option.checked === 'boolean') {
+        if (option && option.id && typeof option.checked === 'boolean') {
           this.$set(this.checkedOptions, option.id, option.checked)
         }
       })
@@ -141,16 +147,42 @@ export default Vue.extend({
         return { left, top }
       }
 
+      let targetRect: DOMRect | null = null
+      if (event?.target && (event.target as HTMLElement).closest) {
+        const group = (event.target as HTMLElement).closest('x-buttons, .btn-group, .add-tab-group, .btn-group-run')
+        const btn = (event.target as HTMLElement).closest('button, a, .btn, .btn-new-table, .btn-fab, .add-tab-dropdown, .btn-run-dropdown, x-button')
+        if (group) {
+          targetRect = group.getBoundingClientRect()
+        } else if (btn) {
+          targetRect = btn.getBoundingClientRect()
+        }
+      }
+
+      if (targetRect) {
+        if ((this.menuWidth + targetRect.left) >= window.innerWidth) {
+          left = Math.max(8, targetRect.right - this.menuWidth)
+        } else {
+          left = targetRect.left
+        }
+
+        if ((this.menuHeight + targetRect.bottom + 4) >= window.innerHeight) {
+          top = Math.max(8, targetRect.top - this.menuHeight - 4)
+        } else {
+          top = targetRect.bottom + 4
+        }
+        return { left, top }
+      }
+
       if ((this.menuWidth + event.pageX) >= window.innerWidth) {
         left = event.pageX - this.menuWidth + 2
       } else {
         left = event.pageX - 2
       }
 
-      if ((this.menuHeight + event.pageY) >= window.innerHeight) {
-        top = event.pageY - this.menuHeight + 2
+      if ((this.menuHeight + event.pageY + 4) >= window.innerHeight) {
+        top = event.pageY - this.menuHeight - 2
       } else {
-        top = event.pageY - 2
+        top = event.pageY + 4
       }
 
       return { left, top }
@@ -184,7 +216,7 @@ export default Vue.extend({
       }
       if (typeof this.checkedOptions[option.id] !== 'undefined') {
         const checked = !this.checkedOptions[option.id]
-        this.checkedOptions[option.id] = checked
+        this.$set(this.checkedOptions, option.id, checked)
       }
       if (option.disabled) return;
       option.handler?.(event, this.item, option)

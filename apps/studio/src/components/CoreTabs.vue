@@ -33,28 +33,16 @@
         <a
           @click.prevent="createQuery(null)"
           class="btn-fab add-query"
-        ><i class=" material-icons">add</i></a>
-        <x-button
+          title="New Query"
+        ><i class="material-icons">add</i></a>
+        <a
           class="btn-fab add-tab-dropdown"
-          menu
           v-if="newTabDropdownItems.length > 1"
+          @click.prevent.stop="openNewTabMenu($event)"
+          title="New Tab Options"
         >
           <i class="material-icons">arrow_drop_down</i>
-          <x-menu>
-            <template v-for="(menuItem, index) in newTabDropdownItems">
-              <x-menuitem
-                :key="index"
-                @click.prevent="createTab(menuItem.config)"
-              >
-                <x-label>
-                  <i class="material-icons">{{ menuItem.config.icon }}</i>
-                  {{ menuItem.label }}
-                </x-label>
-                <x-shortcut v-if="menuItem.shortcut" :value="menuItem.shortcut" />
-              </x-menuitem>
-            </template>
-          </x-menu>
-        </x-button>
+        </a>
       </span>
       <a
         @click.prevent="showUpgradeModal"
@@ -496,6 +484,21 @@ export default Vue.extend({
     this.$root.$refs.CoreTabs = this;
   },
   methods: {
+    openNewTabMenu(event: MouseEvent) {
+      const options = this.newTabDropdownItems.map((item: any) => ({
+        label: item.label,
+        slug: item.config.tabType || item.config.type,
+        shortcut: item.shortcut,
+        handler: () => {
+          this.createTab(item.config)
+        }
+      }))
+      this.$bks.openMenu({
+        event,
+        item: null,
+        options,
+      })
+    },
     async updateTab(tab: TransportOpenTab) {
       const newTab = Object.assign({}, tab);
       await this.$store.commit('tabs/replaceTab', newTab);

@@ -9,6 +9,8 @@
   .btn-upgrade {
     margin-right: 0.8rem;
     margin-left: auto;
+    flex: 0 0 auto;
+    flex-shrink: 0;
   }
 
   .tab-content, .tab-pane {
@@ -17,6 +19,7 @@
     flex-direction: column;
     height: 100%;
     background: $query-editor-bg;
+    overflow: hidden;
   }
   .tab-pane {
     display: none;
@@ -35,29 +38,66 @@
     display: flex;
     align-items: center;
     background: $tabs-bg;
+    overflow: hidden;
 
     .add-tab-group {
+      -webkit-app-region: no-drag;
+      flex: 0 0 auto;
+      flex-shrink: 0;
+      margin-left: 4px;
       transition: all 0.2s ease-in-out;
-      border: 1px solid transparent;
+      border: 1px solid rgba($theme-base, 0.08);
+      background: rgba($theme-base, 0.04);
       border-radius: 9999px;
-      display: flex;
+      overflow: hidden;
+      display: inline-flex;
+      align-items: center;
+      padding: 1px;
 
+      &:hover,
       &:has(.add-tab-dropdown:hover) {
-        border-color: var(--border-color);
+        border-color: rgba($theme-base, 0.16);
+        background: rgba($theme-base, 0.08);
       }
 
-      .btn-fab > i {
-        font-size: 1.145rem;
-      }
-    }
-    // -webkit-app-region: drag;
-    .add-query {
-      i {
-        transition: all 0.2s ease-in-out;
-      }
-      &:hover {
-        i {
+      .btn-fab {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 24px;
+        width: 24px;
+        height: 24px;
+        border-radius: 9999px;
+        cursor: pointer;
+        color: $text-light;
+        transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        transform: none !important;
+
+        &:hover, &:focus {
+          background: rgba($theme-base, 0.18) !important;
           color: $text-dark;
+          transform: none !important;
+
+          > i {
+            transform: scale(1.08);
+          }
+        }
+
+        &:active {
+          background: rgba($theme-base, 0.28) !important;
+          transform: scale(0.95) !important;
+        }
+
+        > i {
+          font-size: 1.15rem;
+          line-height: 1;
+          transition: transform 0.15s ease, color 0.15s ease;
+        }
+      }
+
+      .add-tab-dropdown {
+        > i {
+          font-size: 1.25rem;
         }
       }
     }
@@ -68,9 +108,12 @@
     flex-wrap: nowrap;
     margin: 0;
     height: $tab-height;
+    flex: 0 1 auto;
+    min-width: 0;
     -webkit-app-region: no-drag;
     .nav-item-wrap {
       min-width: 28px;
+      flex-shrink: 1;
       overflow: hidden;
     }
     .nav-item-wrap-chosen {
@@ -192,16 +235,36 @@
       align-items: center;
       justify-content: center;
       height: 100%;
-      min-width: 28px;
-      background: linear-gradient(-90deg, rgba(color.adjust($theme-bg, $lightness: 3%), 100%) 80%, rgba(color.adjust($theme-bg, $lightness: 3%), 0) 100%);
+      min-width: 30px;
+      padding-right: 3px;
+      background: linear-gradient(-90deg, rgba(color.adjust($theme-bg, $lightness: 3%), 100%) 75%, rgba(color.adjust($theme-bg, $lightness: 3%), 0) 100%);
     }
     .tab-close {
-      position: absolute;
-      right: 0;
-      display: flex;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 24px;
+      width: 20px;
+      height: 20px;
+      min-width: 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      color: $text;
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+
+      &:hover {
+        background: rgba(127, 127, 127, 0.25);
+        color: $text-dark;
+
+        .material-icons {
+          color: $text-dark;
+          transform: scale(1.15);
+        }
+      }
+
+      &:active {
+        background: rgba(127, 127, 127, 0.4);
+        transform: scale(0.92);
+      }
 
       .close {
         display: none;
@@ -211,12 +274,11 @@
         display: inline-block;
       }
       .material-icons {
-        position: absolute;
-
-        font-size: 12px;
+        font-size: 13px;
         font-weight: bold;
-        color: $text;
-        transition: none;
+        color: inherit;
+        line-height: 1;
+        transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease;
       }
       &.unsaved {
         .unsaved-icon {

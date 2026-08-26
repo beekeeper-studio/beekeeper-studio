@@ -141,89 +141,17 @@
     <x-button
       class="btn btn-flat btn-icon end"
       :disabled="results?.length === 0"
-      menu
+      @click.prevent="openDownloadMenu($event)"
     >
       Download <i class="material-icons">arrow_drop_down</i>
-      <x-menu>
-        <x-menuitem @click.prevent="download('csv')">
-          <x-label>Download as CSV</x-label>
-        </x-menuitem>
-        <x-menuitem @click.prevent="download('xlsx')">
-          <x-label>Download as Excel</x-label>
-        </x-menuitem>
-        <x-menuitem @click.prevent="download('json')">
-          <x-label>Download as JSON</x-label>
-        </x-menuitem>
-        <x-menuitem @click.prevent="download('md')">
-          <x-label>Download as Markdown</x-label>
-        </x-menuitem>
-        <span
-          v-if="dialect !== 'mongodb'"
-          v-tooltip="{
-            content: downloadFullTooltip
-          }"
-        >
-          <x-menuitem
-            @click.prevent="$event => submitCurrentQueryToFile()"
-            :disabled="!(result && result.truncated)"
-          >
-            <x-label>Download Full Resultset</x-label>
-            <i
-              v-if="$store.getters.isCommunity"
-              class="material-icons menu-icon"
-            >stars</i>
-          </x-menuitem>
-        </span>
-        <hr>
-        <x-menuitem
-          title="Probably don't do this with large results (500+)"
-          @click.prevent="copyToClipboard"
-        >
-          <x-label>Copy to Clipboard (TSV / Excel)</x-label>
-        </x-menuitem>
-        <x-menuitem
-          title="Probably don't do this with large results (500+)"
-          @click.prevent="copyToClipboardJson"
-        >
-          <x-label>Copy to Clipboard (JSON)</x-label>
-        </x-menuitem>
-        <x-menuitem
-          title="Probably don't do this with large results (500+)"
-          @click.prevent="copyToClipboardMarkdown"
-        >
-          <x-label>Copy to Clipboard (Markdown)</x-label>
-        </x-menuitem>
-      </x-menu>
     </x-button>
     <x-button
       class="actions-btn btn btn-flat settings-btn"
-      menu
+      @click.prevent="openSettingsMenu($event)"
+      title="Editor Settings"
     >
       <i class="material-icons">settings</i>
       <i class="material-icons">arrow_drop_down</i>
-      <x-menu>
-        <x-menuitem disabled togglable>
-          <x-label>Editor keymap</x-label>
-        </x-menuitem>
-        <x-menuitem
-          :key="t.value"
-          v-for="t in keymapTypes"
-          togglable
-          :toggled="t.value === userKeymap"
-          @click.prevent="userKeymap = t.value"
-        >
-          <x-label>{{ t.name }}</x-label>
-        </x-menuitem>
-        <x-menuitem
-          togglable
-          :toggled="wrapText"
-          @click.prevent="$emit('wrap-text')"
-        >
-          <x-label class="flex-between">
-            Wrap Text
-          </x-label>
-        </x-menuitem>
-      </x-menu>
     </x-button>
   </statusbar>
 </template>
@@ -412,6 +340,78 @@ export default {
     },
     submitCurrentQueryToFile() {
       this.$emit('submitCurrentQueryToFile')
+    },
+    openSettingsMenu(event) {
+      const options = [
+        {
+          id: 'editor-keymap-header',
+          label: 'Editor keymap',
+          disabled: true,
+        },
+        ...this.keymapTypes.map(t => ({
+          id: `keymap-${t.value}`,
+          label: t.name,
+          checked: t.value === this.userKeymap,
+          handler: () => {
+            this.userKeymap = t.value;
+          },
+        })),
+        {
+          id: 'wrap-text',
+          label: 'Wrap Text',
+          checked: Boolean(this.wrapText),
+          handler: () => {
+            this.$emit('wrap-text');
+          },
+        },
+      ];
+      this.$bks.openMenu({ event, item: null, options });
+    },
+    openDownloadMenu(event) {
+      const options = [
+        {
+          label: 'Download as CSV',
+          handler: () => this.download('csv'),
+        },
+        {
+          label: 'Download as Excel',
+          handler: () => this.download('xlsx'),
+        },
+        {
+          label: 'Download as JSON',
+          handler: () => this.download('json'),
+        },
+        {
+          label: 'Download as Markdown',
+          handler: () => this.download('md'),
+        },
+      ];
+
+      if (this.dialect !== 'mongodb') {
+        options.push({
+          label: 'Download Full Resultset',
+          disabled: !(this.result && this.result.truncated),
+          handler: () => this.submitCurrentQueryToFile(),
+        });
+      }
+
+      options.push(
+        { type: 'divider' },
+        {
+          label: 'Copy to Clipboard (TSV / Excel)',
+          handler: () => this.copyToClipboard(),
+        },
+        {
+          label: 'Copy to Clipboard (JSON)',
+          handler: () => this.copyToClipboardJson(),
+        },
+        {
+          label: 'Copy to Clipboard (Markdown)',
+          handler: () => this.copyToClipboardMarkdown(),
+        }
+      );
+
+      this.$bks.openMenu({ event, item: null, options });
     },
   }
 }

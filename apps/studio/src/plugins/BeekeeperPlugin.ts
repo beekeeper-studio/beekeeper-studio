@@ -10,18 +10,24 @@ import { pluralize } from "@/vendor/pluralize"
 export type ContextOption = ContextItem | DividerItem;
 
 export type ContextItem = {
-  name: string,
-  slug: string
-  handler: (...any) => void
+  name?: string,
+  label?: string,
+  slug?: string,
+  id?: string,
+  handler?: (...any) => void
   class?: string | ((...args: any[]) => string)
   shortcut?: string
   title?: string | ((...args: any[]) => string)
   /** Material icon name rendered on the trailing edge of the item */
   icon?: string
+  /** Material icon name rendered on the leading edge (prefix) of the item */
+  prefixIcon?: string
   /** Disable the item. The handler will not fire and the item appears greyed out. */
   disabled?: boolean
   /** Keep the menu open after this item is clicked */
   keepOpen?: boolean
+  /** Checked state for checkbox items */
+  checked?: boolean
   /** Child items. When present, this item opens a submenu. */
   items?: ContextOption[]
 }
@@ -40,24 +46,28 @@ function isDivider(option: ContextOption): option is DividerItem {
   return "type" in option && option.type === "divider"
 }
 
-/** Convert a studio ContextOption into a UI Kit MenuItem, preserving the legacy
- * `handler({ item, option, event })` call convention. */
-export function toMenuItem(option: ContextOption): MenuItem {
+export function toMenuItem(option: any): MenuItem {
   if (isDivider(option)) {
     return option
   }
 
   return {
-    id: option.slug,
-    label: option.name,
+    id: option.slug || option.id || (typeof option.label === 'string' ? option.label : option.name) || String(Math.random()),
+    label: option.name ?? option.label,
     class: option.class,
     shortcut: option.shortcut,
     title: option.title,
     icon: option.icon,
+    prefixIcon: option.prefixIcon,
     disabled: option.disabled,
     keepOpen: option.keepOpen,
     items: option.items?.map(toMenuItem),
-    handler: (event, item) => option.handler({ item, option, event }),
+    checked: option.checked,
+    handler: (event, item, menuItem) => {
+      if (typeof option.handler === 'function') {
+        option.handler({ item, option, event, checked: menuItem?.checked })
+      }
+    },
   }
 }
 

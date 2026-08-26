@@ -17,24 +17,156 @@ hr {
 .BksContextMenu-list {
   background: var(--menu-bg);
   color: $text;
+  padding: 4px;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  min-width: 0;
+  width: max-content;
+  max-width: calc(100vw - 16px);
 }
 
 .BksContextMenu-item {
   color: $text-dark;
-  &.disabled {
-    opacity: 0.5;
+  border-radius: 4px;
+  padding: 6px 14px;
+  margin: 1px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  min-height: 32px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s ease-in-out, color 0.12s ease-in-out;
+
+  &.disabled, &.BksContextMenu-item-disabled {
+    opacity: 0.45;
     pointer-events: none;
   }
+
   &:hover {
-    background: rgba($theme-base, 0.05);
+    background: rgba($theme-base, 0.14) !important;
+    color: $text-dark;
+
+    .BksContextMenu-item-shortcut {
+      color: $text-dark;
+      opacity: 0.85;
+    }
+
+    .BksContextMenu-item-icon-container i {
+      opacity: 1;
+      transform: scale(1.1);
+    }
   }
+
+  &:active {
+    background: rgba($theme-base, 0.22) !important;
+  }
+
+  &.BksContextMenu-item-divider {
+    min-height: 0 !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: 4px 0 !important;
+    border: 0 !important;
+    border-top: 1px solid rgba($theme-base, 0.08) !important;
+    pointer-events: none !important;
+    background: transparent !important;
+
+    &:hover {
+      background: transparent !important;
+    }
+  }
+}
+
+.BksContextMenu-item-label {
+  flex: 1 1 auto;
+  text-align: left;
+  margin-right: 20px;
+  white-space: nowrap;
 }
 
 .BksContextMenu-item-shortcut {
+  flex: 0 0 auto;
+  font-size: 0.85rem;
+  margin-left: auto;
+  opacity: 0.55;
   color: $text-dark;
-  opacity: 0.5;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  transition: opacity 0.12s ease-in-out;
 }
 
 .BksContextMenu-item-divider, hr {
-  border-top: 1px solid $border-color;
+  min-height: 0 !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: 4px 0 !important;
+  border: 0 !important;
+  border-top: 1px solid rgba($theme-base, 0.08) !important;
+  pointer-events: none !important;
+  background: transparent !important;
+}
+
+.BksContextMenu-item-check {
+  width: 18px;
+  min-width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+
+  i {
+    font-size: 16px;
+    font-weight: normal;
+    line-height: 1;
+    color: inherit;
+  }
+}
+
+.BksContextMenu-item-prefix-icon {
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  margin-right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+
+  i {
+    font-size: 18px;
+    line-height: 1;
+    color: inherit;
+    opacity: 0.85;
+  }
+}
+
+.BksContextMenu-item-submenu-icon {
+  margin-left: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+
+  i {
+    font-size: 18px;
+    line-height: 1;
+    opacity: 0.7;
+  }
+}
+
+.BksContextMenu-item.red {
+  color: #ff6b6b;
+
+  .BksContextMenu-item-prefix-icon i {
+    color: #ff6b6b;
+  }
+
+  &:hover {
+    background: rgba(255, 107, 107, 0.15) !important;
+    color: #ff8585;
+  }
 }

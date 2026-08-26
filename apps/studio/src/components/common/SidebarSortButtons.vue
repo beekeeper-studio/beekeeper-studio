@@ -35,14 +35,18 @@
 
 <style lang="scss" scoped>
   .sort-buttons {
-    display: flex;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
     .btn.actions-btn {
       min-width: 0;
       padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       &:hover {
         background-color: inherit;
       }
-
     }
   }
 </style>

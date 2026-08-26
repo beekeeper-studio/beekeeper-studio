@@ -9,7 +9,7 @@
   >
     <x-button
       class="btn btn-link btn-icon"
-      menu
+      @click.prevent="openOptionsMenu($event)"
     >
       <i class="material-icons">link</i>
       <span class="connection-name truncate expand">
@@ -19,40 +19,6 @@
         class="connection-type badge truncate"
         v-tooltip="databaseVersion"
       >{{ connectionType }}</span>
-      <x-menu @close="isQuickSwitcherVisible = false">
-        <x-menuitem
-          @click.prevent="disconnect(false)"
-          class="red"
-        >
-          <x-label><i class="material-icons">power_settings_new</i>Disconnect</x-label>
-        </x-menuitem>
-        <x-menuitem @click.prevent="$modal.show('config-save-modal')">
-          <x-label v-if="config.id">
-            <i class="material-icons">edit</i>Edit Connection
-          </x-label>
-          <x-label v-else>
-            <i class="material-icons">save</i>Save Connection
-          </x-label>
-        </x-menuitem>
-        <!-- FIXME: Let's not use connection.connectionType -->
-        <x-menuitem
-          v-if="connection.connectionType === 'libsql' && connection.server.config.libsqlOptions.syncUrl"
-          @click.prevent="syncDatabase"
-        >
-          <x-label>
-            <i class="material-icons">sync</i>Sync Database
-          </x-label>
-        </x-menuitem>
-        <x-menuitem @click.stop.prevent="showQuickSwitcher">
-          <x-label class="flex items-center justify-between">
-            <span class="flex items-center">
-              <i class="material-icons">swap_horiz</i>
-              Switch Connection
-            </span>
-            <span style="font-size: 22px;">›</span>
-          </x-label>
-        </x-menuitem>
-      </x-menu>
     </x-button>
     <portal to="modals">
       <modal
@@ -298,6 +264,55 @@ export default {
     },
     toggleMore() {
       this.showingMore = !this.showingMore;
+    },
+    openOptionsMenu(event) {
+      this.populateRecentConnections();
+
+      const switchItems = this.recentConnections.length > 0
+        ? this.recentConnections.map(conn => ({
+            id: `switch-conn-${conn.id}`,
+            label: conn.name,
+            handler: () => this.selectConnection(conn),
+          }))
+        : [{
+            id: 'no-recent',
+            label: 'No recent connections',
+            disabled: true,
+          }];
+
+      const options = [
+        {
+          id: 'disconnect',
+          label: 'Disconnect',
+          prefixIcon: 'power_settings_new',
+          class: 'red',
+          handler: () => this.disconnect(false),
+        },
+        {
+          id: 'edit-connection',
+          label: this.config.id ? 'Edit Connection' : 'Save Connection',
+          prefixIcon: this.config.id ? 'edit' : 'save',
+          handler: () => this.$modal.show('config-save-modal'),
+        },
+      ];
+
+      if (this.connection?.connectionType === 'libsql' && this.connection?.server?.config?.libsqlOptions?.syncUrl) {
+        options.push({
+          id: 'sync-db',
+          label: 'Sync Database',
+          prefixIcon: 'sync',
+          handler: () => this.syncDatabase(),
+        });
+      }
+
+      options.push({
+        id: 'switch-connection',
+        label: 'Switch Connection',
+        prefixIcon: 'swap_horiz',
+        items: switchItems,
+      });
+
+      this.$bks.openMenu({ event, item: null, options });
     },
     populateRecentConnections() {
       if (!this.config.id || !this.config.workspaceId) {

@@ -21,26 +21,12 @@
                   </x-menuitem>
                 </x-menu>
               </x-button>
-              <x-button
+              <a
+                @click.prevent.stop="openImportMenu($event)"
                 title="Import queries"
               >
                 <i class="material-icons">save_alt</i>
-                <x-menu style="--align: end;">
-                  <x-menuitem @click.prevent="importFromComputer">
-                    <x-label>Import .sql files into Saved Queries</x-label>
-                  </x-menuitem>
-                  <x-menuitem
-                    v-if="isCloud"
-                    @click.prevent="importFromLocal"
-                  >
-                    <x-label>Import from local workspace</x-label>
-                    <i
-                      v-if="$store.getters.isCommunity"
-                      class="material-icons menu-icon"
-                    >stars</i>
-                  </x-menuitem>
-                </x-menu>
-              </x-button>
+              </a>
               <a
                 class=""
                 @click.prevent="refresh"
@@ -440,6 +426,25 @@ export default {
     },
     exportTo(query) {
       this.$root.$emit(AppEvent.promptQueryExport, query)
+    },
+    openImportMenu(event) {
+      const options = [
+        {
+          name: 'Import .sql files into Saved Queries',
+          label: 'Import .sql files into Saved Queries',
+          icon: 'file_upload',
+          handler: () => this.importFromComputer(),
+        },
+      ];
+      if (this.isCloud) {
+        options.push({
+          name: 'Import from local workspace',
+          label: 'Import from local workspace',
+          icon: this.$store.getters.isCommunity ? 'stars' : 'save_alt',
+          handler: () => this.importFromLocal(),
+        });
+      }
+      this.$bks.openMenu({ event, item: null, options });
     },
     importFromLocal() {
       if (!this.isCloud) {

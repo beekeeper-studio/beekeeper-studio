@@ -16,6 +16,8 @@ export interface BaseMenuItem<Item = unknown> {
   title?: string | ((options: { item: Item }) => string)
   /** Material icon name rendered on the trailing edge of the item */
   icon?: string
+  /** Material icon name rendered on the leading edge (prefix) of the item */
+  prefixIcon?: string
 }
 
 export interface CheckedMenuItem<Item = unknown> extends BaseMenuItem<Item> {
@@ -42,13 +44,37 @@ export interface MenuProps<Item = unknown> {
 
 export const divider: DividerItem = { type: 'divider', id: 'divider' }
 
+let lastMenuCloseTime = 0
+let lastClosedTarget: EventTarget | null = null
+
 export function openMenu<Item>(args: MenuProps<Item>) {
   if (isEmpty(args.options)) return
+
+  const target = args.event?.target
+  const isRecentCloseOnSameTarget =
+    Date.now() - lastMenuCloseTime < 400 &&
+    Boolean(target && lastClosedTarget) &&
+    (lastClosedTarget === target ||
+      (lastClosedTarget instanceof Element &&
+        target instanceof Element &&
+        (lastClosedTarget.contains(target) ||
+          target.contains(lastClosedTarget) ||
+          (Boolean(lastClosedTarget.closest('button, .btn, .btn-new-table, .btn-fab, .btn-run-dropdown, .add-tab-dropdown, x-button')) &&
+            lastClosedTarget.closest('button, .btn, .btn-new-table, .btn-fab, .btn-run-dropdown, .add-tab-dropdown, x-button') ===
+              target.closest('button, .btn, .btn-new-table, .btn-fab, .btn-run-dropdown, .add-tab-dropdown, x-button')))))
+
+  if (isRecentCloseOnSameTarget) {
+    lastClosedTarget = null
+    return
+  }
+
   const ContextComponent = Vue.extend(ContextMenu)
   const cMenu = new ContextComponent({
     propsData: args
   })
-  cMenu.$on('close', () => {
+  cMenu.$on('close', (closedOnTarget?: EventTarget) => {
+    lastMenuCloseTime = Date.now()
+    lastClosedTarget = closedOnTarget || null
     cMenu.$off()
     cMenu.$destroy()
   })

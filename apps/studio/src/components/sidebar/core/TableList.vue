@@ -13,47 +13,25 @@
             placeholder="Filter"
             v-model="filterQuery"
           >
-          <x-buttons class="filter-actions">
-            <x-button
-              @click="clearFilter"
+          <div class="filter-actions">
+            <button
+              class="btn-clear"
+              @click.prevent="clearFilter"
               v-if="filterQuery"
+              title="Clear Filter"
             >
               <i class="clear material-icons">cancel</i>
-            </x-button>
-            <x-button
-              v-if="this.dialect != 'mongodb'"
+            </button>
+            <button
+              v-if="dialect != 'mongodb'"
               :title="entitiesHidden ? 'Filter active' : 'No filters'"
               class="btn btn-fab btn-link action-item"
               :class="{active: entitiesHidden}"
-              menu
+              @click.prevent.stop="openFilterMenu($event)"
             >
               <i class="material-icons-outlined">filter_alt</i>
-              <x-menu style="--target-align: right;">
-                <label>
-                  <input
-                    type="checkbox"
-                    v-model="showTables"
-                  >
-                  <span>Tables</span>
-                </label>
-                <label>
-                  <input
-                    type="checkbox"
-                    v-model="showViews"
-                  >
-                  <span>Views</span>
-                </label>
-                <label v-if="supportsRoutines">
-                  <input
-                    type="checkbox"
-                    v-model="showRoutines"
-                  >
-                  <span>Routines</span>
-                </label>
-                <x-menuitem />
-              </x-menu>
-            </x-button>
-          </x-buttons>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -124,38 +102,16 @@
             <i class="material-icons">refresh</i>
           </button>
 
-          <x-button
+          <button
             v-if="!usedConfig?.readOnlyMode"
-            class="settings-btn"
-            menu
+            class="btn-new-table"
+            @click.prevent.stop="openNewTableMenu($event)"
+            :title="createDisabled ? `Creating tables is not supported for ${dialect}` : (newTableOrCollection + ' Options')"
+            :disabled="tablesLoading || createDisabled"
           >
             <i class="material-icons">add</i>
-            <i class="material-icons">arrow_drop_down</i>
-            <x-menu>
-              <x-menuitem
-                :disabled="tablesLoading || createDisabled"
-                @click.prevent="newTable"
-                :title="createDisabled ? `Creating tables is not supported for ${dialect}` : ''"
-              >
-                <x-label>
-                  {{ newTableOrCollection }}
-                </x-label>
-              </x-menuitem>
-              <x-menuitem
-                :disabled="tablesLoading || createDisabled"
-                @click.prevent="newTableFromFile"
-                :title="createDisabled ? `Creating tables is not supported for ${dialect}` : ''"
-              >
-                <x-label>
-                  {{ newTableOrCollection }} from File
-                  <i
-                    v-if="$store.getters.isCommunity"
-                    class="material-icons menu-icon"
-                  >stars</i>
-                </x-label>
-              </x-menuitem>
-            </x-menu>
-          </x-button>
+            <i class="material-icons arrow">arrow_drop_down</i>
+          </button>
         </div>
       </div>
 
@@ -293,6 +249,40 @@
       loadedWithPins() {
         return !this.tablesLoading && this.pinnedEntities.length > 0
       },
+      filterMenuOptions() {
+        const options: any[] = [
+          {
+            label: "Tables",
+            id: 'tables',
+            checked: Boolean(this.showTables),
+            keepOpen: true,
+            handler: () => {
+              this.showTables = !this.showTables
+            },
+          },
+          {
+            label: "Views",
+            id: 'views',
+            checked: Boolean(this.showViews),
+            keepOpen: true,
+            handler: () => {
+              this.showViews = !this.showViews
+            },
+          },
+        ];
+        if (this.supportsRoutines) {
+          options.push({
+            label: "Routines",
+            id: 'routines',
+            checked: Boolean(this.showRoutines),
+            keepOpen: true,
+            handler: () => {
+              this.showRoutines = !this.showRoutines
+            },
+          });
+        }
+        return options;
+      },
       rootBindings() {
         return [
           { event: AppEvent.togglePinTableList, handler: this.togglePinTableList },
@@ -348,11 +338,34 @@
           this.$noty.error(`Unable to refresh tables ${ex.message}`)
         }
       },
+      openNewTableMenu(event: MouseEvent) {
+        if (this.tablesLoading || this.createDisabled) return;
+        const options = [
+          {
+            name: this.newTableOrCollection,
+            label: this.newTableOrCollection,
+            handler: () => this.newTable(),
+          },
+          {
+            name: `${this.newTableOrCollection} from File`,
+            label: `${this.newTableOrCollection} from File`,
+            handler: () => this.newTableFromFile(),
+          },
+        ];
+        this.$bks.openMenu({ event, item: null, options });
+      },
       newTable() {
         this.$root.$emit(AppEvent.createTable)
       },
       newTableFromFile() {
         this.$root.$emit(AppEvent.createTableFromFile)
+      },
+      openFilterMenu(event: MouseEvent) {
+        this.$bks.openMenu({
+          event,
+          item: null,
+          options: this.filterMenuOptions,
+        });
       },
       maybeUnselect(e) {
         if (this.selectedSidebarItem) {

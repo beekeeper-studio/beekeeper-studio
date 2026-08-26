@@ -389,9 +389,16 @@ x-button {
   border-radius: $btn-border-radius;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.15s ease-in-out,
-              color 0.15s ease-in-out,;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   --trigger-effect: ripple;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0px) scale(0.98);
+  }
   &:focus::before {
     position: absolute;
     top: 0;

@@ -32,8 +32,8 @@ export default Vue.extend({
     }
   },
   methods: {
-    hideContextMenu() {
-      this.$emit('close')
+    hideContextMenu(target?: EventTarget) {
+      this.$emit('close', target)
     },
     onEscKeyRelease(event) {
       if (event.keyCode === 27) {
@@ -41,9 +41,9 @@ export default Vue.extend({
       }
     },
     maybeHideMenu(event) {
-      const clickOutside = !this.$refs.container.$el.contains(event.target)
+      const clickOutside = !this.$refs.container?.$el?.contains(event.target)
       if (clickOutside) {
-        this.hideContextMenu()
+        this.hideContextMenu(event.target)
       }
     },
     getContainer() {

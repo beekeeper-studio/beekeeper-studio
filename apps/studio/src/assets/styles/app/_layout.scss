@@ -103,19 +103,32 @@ x-buttons > x-button[menu].btn {
 .btn-primary {
   background: $theme-base;
   color: rgba($theme-bg, 0.87);
-  transition: background 0.15s ease-in-out;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   &:hover, &:focus {
-    background: rgba($theme-base, 0.87);
+    background: rgba($theme-base, 0.9);
     color: $theme-bg;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px);
+  }
+  &:active {
+    transform: translateY(0px) scale(0.98);
+    box-shadow: none;
   }
 }
 
 .btn-brand {
   color: #181818;
   background: $theme-primary;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   &:hover, &:focus {
-    background: $theme-primary;
+    background: color.adjust($theme-primary, $lightness: 5%);
     color: #000;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+  &:active {
+    transform: translateY(0px) scale(0.98);
+    box-shadow: none;
   }
 }
 
@@ -126,8 +139,15 @@ x-buttons > x-button[menu].btn {
   color: $theme-base;
   background: transparent;
   box-shadow: none;
+  border-radius: 4px;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   &:hover, &:focus {
-    background: rgba($theme-base, 0.06);
+    background: rgba($theme-base, 0.1);
+    color: $text-dark;
+  }
+  &:active {
+    background: rgba($theme-base, 0.2);
+    transform: scale(0.96);
   }
 }
 .btn-icon {
@@ -143,15 +163,27 @@ x-buttons > x-button[menu].btn {
 .btn-info {
   background: $brand-info;
   color: rgba(black, 0.87);
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   &:hover, &:focus {
     background: color.adjust($brand-info, $lightness: 8%);
     color: rgba(black, 0.87);
+    transform: translateY(-1px);
+  }
+  &:active {
+    transform: translateY(0px) scale(0.98);
   }
 }
 .btn-danger {
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   &:hover {
     background: $brand-danger;
     color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+  &:active {
+    transform: translateY(0px) scale(0.98);
+    box-shadow: none;
   }
 }
 .btn-large {
@@ -164,14 +196,62 @@ x-buttons > x-button[menu].btn {
   @include btn-small;
 }
 x-buttons {
+  display: inline-flex;
+  align-items: stretch;
   border-radius: 6px;
   overflow: hidden;
-  > x-button.btn-small {
-    border-radius: 0;
+  vertical-align: middle;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px);
   }
-}
-x-buttons > x-button.btn-rounded {
-  border-radius: 6px !important;
+
+  &:active {
+    transform: translateY(0px) scale(0.98);
+    box-shadow: none;
+  }
+
+  > x-button {
+    border-radius: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+    transition: background 0.15s ease-in-out, color 0.15s ease-in-out;
+
+    &:first-child {
+      border-top-left-radius: 6px !important;
+      border-bottom-left-radius: 6px !important;
+    }
+
+    &:last-child {
+      border-top-right-radius: 6px !important;
+      border-bottom-right-radius: 6px !important;
+    }
+
+    &.btn-run-dropdown,
+    &:not(:first-child) {
+      border-left: 1px solid rgba($theme-bg, 0.3) !important;
+      padding: 0 4px !important;
+      min-width: 24px !important;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+
+      .material-icons {
+        font-size: 20px;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+  }
+
+  > x-button.btn-rounded {
+    border-radius: 6px !important;
+  }
 }
 .btn-block {
   display: flex;
@@ -186,31 +266,45 @@ x-buttons > x-button.btn-rounded {
   width: $fab-size;
   height: $fab-size;
   line-height: $fab-size;
-  border-radius: $fab-size;
+  border-radius: 6px;
   padding: 0;
   margin: 0;
   text-align: center;
   box-shadow: none;
   @include noselect;
   @include layout-center;
-  transition: background 0.15s ease-in-out;
-  &:hover, &:focus {
-    background: rgba($theme-base, 0.1);
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  &:hover {
+    background: rgba($theme-base, 0.14);
+    transform: translateY(-1px) scale(1.05);
+    .material-icons, .material-icons-outlined {
+      color: $text-dark;
+      transform: scale(1.06);
+    }
+  }
+  &:focus {
+    outline: none;
+    box-shadow: none;
+  }
+  &:focus:not(:hover) {
+    background: transparent;
+  }
+  &:active {
+    background: rgba($theme-base, 0.24);
+    transform: translateY(0px) scale(0.95);
   }
   .material-icons, .material-icons-outlined {
-    font-size: 20px;
-    color: $text-dark;
+    font-size: 18px;
+    color: $text-light;
+    transition: transform 0.18s ease, color 0.18s ease;
   }
   &.btn-primary {
     background: $theme-primary;
     .material-icons {
       color: rgba(black, 0.87);
     }
-    &:hover, &:focus {
+    &:hover {
       background: color.adjust($theme-primary, $lightness: -8%);
-      .material-icons {
-        color: rgba(black, 0.87);
-      }
     }
   }
 }
@@ -842,28 +936,45 @@ input[type=file] {
   margin: 0;
   width: 100%;
   border: 0;
-  --vs-controls-color: #{$input-highlight};
-  --vs-border-color: #{$border-color};
+  cursor: pointer;
+  outline: none !important;
 
-  --vs-dropdown-bg: #{$theme-bg};
+  --vs-controls-color: #{$input-highlight};
+  --vs-border-color: transparent;
+
+  --vs-dropdown-bg: #{color.adjust($theme-bg, $lightness: 4%)};
   --vs-dropdown-color: #{$text};
   --vs-dropdown-option-color: #{$text};
 
-  --vs-selected-bg: #{$input-highlight};
+  --vs-selected-bg: transparent;
   --vs-selected-color: #{$text};
 
   --vs-search-input-color: #{$text};
 
-  --vs-dropdown-option--active-bg: #{$input-highlight};
-  --vs-dropdown-option--active-color: #{$theme-base};
+  --vs-dropdown-option--active-bg: rgba($theme-base, 0.14);
+  --vs-dropdown-option--active-color: #{$text-dark};
+
+  &:focus,
+  &:focus-within,
+  &:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+  }
 
   .vs__clear{
     display: none;
   }
   .vs__dropdown-toggle{
-    border: unset;
+    border: none !important;
     padding: 0;
     background: unset;
+    cursor: pointer;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+  .vs__selected-options {
+    cursor: pointer;
+    outline: none !important;
   }
   .vs__selected {
     position: absolute;
@@ -873,14 +984,72 @@ input[type=file] {
     text-overflow: ellipsis;
     max-width: 100%;
     overflow: hidden;
+    cursor: pointer;
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
   }
   &.vs--searching .vs__selected {
     display: none;
   }
   .vs__actions {
-    padding: 0
+    padding: 0;
+    cursor: pointer;
   }
+  .vs__open-indicator {
+    cursor: pointer;
+  }
+  .vs__search,
   input {
-    border: unset;
+    border: none !important;
+    cursor: pointer;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  .vs__dropdown-menu {
+    background: color.adjust($theme-bg, $lightness: 4%);
+    border: 1px solid rgba($theme-base, 0.12);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    margin-top: 4px;
+    padding: 4px;
+    overflow: hidden;
+    transform-origin: top center;
+    outline: none !important;
+  }
+
+  .vs__dropdown-option {
+    border-radius: 4px;
+    padding: 6px 12px;
+    margin: 1px 0;
+    color: $text;
+    cursor: pointer;
+    transition: background 0.12s ease-in-out, color 0.12s ease-in-out;
+
+    &.vs__dropdown-option--highlight {
+      background: rgba($theme-base, 0.14) !important;
+      color: $text-dark !important;
+    }
+
+    &.vs__dropdown-option--selected {
+      background: rgba($theme-base, 0.08);
+      color: $text-dark;
+    }
+  }
+
+  .vs__fade-enter-active {
+    transition: opacity 0.18s cubic-bezier(0.4, 0, 0.2, 1), transform 0.18s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  .vs__fade-leave-active {
+    transition: opacity 0.14s cubic-bezier(0.4, 0, 0.2, 1), transform 0.14s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  .vs__fade-enter-from,
+  .vs__fade-enter,
+  .vs__fade-leave-to {
+    opacity: 0 !important;
+    transform: translateY(-4px) scaleY(0.96) !important;
   }
 }

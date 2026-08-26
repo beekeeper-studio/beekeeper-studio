@@ -3,6 +3,7 @@
     display: flex;
     flex-direction: column;
     background: $global-sidebar-bg;
+
     &:hover {
       .nav-item {
         &.refresh {
@@ -100,6 +101,7 @@
       font-size: 18px;
       color: rgba($theme-base, 0.38);
       transition: color 0.15s ease-in-out;
+      -webkit-app-region: no-drag;
       &.active {
         color: $text-dark;
       }
@@ -110,7 +112,18 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: background 0.15s ease-in-out;
+        transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      &:hover {
+        color: $text-dark;
+        > span {
+          background: rgba($theme-base, 0.12);
+          transform: scale(1.08);
+        }
+      }
+      &:active > span {
+        background: rgba($theme-base, 0.22);
+        transform: scale(0.95);
       }
       .material-icons {
         font-size: 24px;

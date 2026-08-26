@@ -236,7 +236,7 @@
             Save
           </x-button>
 
-          <x-buttons class="" v-tooltip="runButtonTooltip">
+          <x-buttons class="btn-group-run" v-tooltip="runButtonTooltip">
             <x-button
               class="btn btn-primary btn-small"
               :v-tooltip="displayShortcut('queryEditor.primaryQueryAction')"
@@ -246,54 +246,12 @@
               <x-label>{{ runPrimaryText() }}</x-label>
             </x-button>
             <x-button
-              class="btn btn-primary btn-small"
+              class="btn btn-primary btn-small btn-run-dropdown"
               :disabled="runButtonDisabled"
-              menu
+              @click.prevent.stop="openRunMenu($event)"
+              title="Run Options"
             >
               <i class="material-icons">arrow_drop_down</i>
-              <x-menu>
-                <x-menuitem
-                  @click.prevent="queryFunctions.primaryRead"
-                  :disabled="primaryIsCurrent && runCurrentDisabled"
-                >
-                  <x-label>{{ runPrimaryText() }}</x-label>
-                  <x-shortcut :value="displayShortcut('queryEditor.primaryQueryAction')" />
-                </x-menuitem>
-                <x-menuitem
-                  @click.prevent="queryFunctions.secondaryRead"
-                  :disabled="primaryIsTab && runCurrentDisabled"
-                >
-                  <x-label>{{ runSecondaryText() }}</x-label>
-                  <x-shortcut :value="displayShortcut('queryEditor.secondaryQueryAction')" />
-                </x-menuitem>
-                <hr>
-                <x-menuitem
-                  @click.prevent="queryFunctions.primaryWrite"
-                  :disabled="disableRunToFile || (primaryIsCurrent && runCurrentDisabled)"
-                >
-                  <x-label>{{ runPrimaryText(true) }}</x-label>
-                  <x-shortcut :value="displayShortcut('queryEditor.primaryQueryToFileAction')" />
-                  <i
-                    v-if="isCommunity"
-                    class="material-icons menu-icon "
-                  >
-                    stars
-                  </i>
-                </x-menuitem>
-                <x-menuitem
-                  @click.prevent="queryFunctions.secondaryWrite"
-                  :disabled="disableRunToFile || (primaryIsTab && runCurrentDisabled)"
-                >
-                  <x-label>{{ runSecondaryText(true) }}</x-label>
-                  <x-shortcut :value="displayShortcut('queryEditor.secondaryQueryToFileAction')" />
-                  <i
-                    v-if="isCommunity"
-                    class="material-icons menu-icon"
-                  >
-                    stars
-                  </i>
-                </x-menuitem>
-              </x-menu>
             </x-button>
           </x-buttons>
         </div>
@@ -1205,6 +1163,45 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         }
 
         return `${runText}${writeText}`
+      },
+      openRunMenu(event: MouseEvent) {
+        if (this.runButtonDisabled) return;
+        const options = [
+          {
+            name: this.runPrimaryText(),
+            label: this.runPrimaryText(),
+            shortcut: this.displayShortcut('queryEditor.primaryQueryAction'),
+            disabled: this.primaryIsCurrent && this.runCurrentDisabled,
+            handler: () => this.queryFunctions.primaryRead(),
+          },
+          {
+            name: this.runSecondaryText(),
+            label: this.runSecondaryText(),
+            shortcut: this.displayShortcut('queryEditor.secondaryQueryAction'),
+            disabled: this.primaryIsTab && this.runCurrentDisabled,
+            handler: () => this.queryFunctions.secondaryRead(),
+          },
+          {
+            type: 'divider',
+          },
+          {
+            name: this.runPrimaryText(true),
+            label: this.runPrimaryText(true),
+            shortcut: this.displayShortcut('queryEditor.primaryQueryToFileAction'),
+            disabled: this.disableRunToFile || (this.primaryIsCurrent && this.runCurrentDisabled),
+            icon: this.isCommunity ? 'stars' : undefined,
+            handler: () => this.queryFunctions.primaryWrite(),
+          },
+          {
+            name: this.runSecondaryText(true),
+            label: this.runSecondaryText(true),
+            shortcut: this.displayShortcut('queryEditor.secondaryQueryToFileAction'),
+            disabled: this.disableRunToFile || (this.primaryIsTab && this.runCurrentDisabled),
+            icon: this.isCommunity ? 'stars' : undefined,
+            handler: () => this.queryFunctions.secondaryWrite(),
+          },
+        ];
+        this.$bks.openMenu({ event, item: null, options });
       },
       getQueryActions() {
         let primaryFunc = this.submitCurrentQuery

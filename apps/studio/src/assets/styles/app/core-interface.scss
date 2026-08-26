@@ -34,11 +34,13 @@
     width: $sidebar-w;
     // min-width: $sidebar-min-w;
     max-width: $sidebar-max-w;
+    overflow: hidden !important;
   }
   .primary-sidebar, .secondary-sidebar {
-    min-width: auto;
+    min-width: 0;
     flex: none;
     max-width: none;
+    overflow: hidden !important;
   }
   .page-content {
     &:not(.main-content) {

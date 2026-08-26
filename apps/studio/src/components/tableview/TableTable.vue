@@ -93,14 +93,14 @@
       >
         <div class="flex-center flex-middle flex">
           <a
-            v-if="(this.page > 1)"
+            v-if="page && page > 1"
             @click="page = 1"
             v-tooltip="$bksConfigUI.getKeybindingLabel('tableTable.firstPage')"
           ><i
             class="material-icons"
           >first_page</i></a>
           <a
-            v-if="(this.page > 1)"
+            v-if="page && page > 1"
             @click="page = page - 1"
             v-tooltip="$bksConfigUI.getKeybindingLabel('tableTable.previousPage')"
           ><i
@@ -214,49 +214,18 @@
         <x-button
           class="btn btn-flat"
           v-tooltip="addRowTooltip"
-          :disabled="usedConfig.readOnlyMode"
+          :disabled="isReadOnly"
           @click.prevent="cellAddRow"
         >
           <i class="material-icons">add</i>
         </x-button>
         <x-button
           class="actions-btn btn btn-flat"
+          @click.prevent="openTableSettingsMenu($event)"
+          title="Table Settings"
         >
           <i class="material-icons">settings</i>
           <i class="material-icons">arrow_drop_down</i>
-          <x-menu>
-            <x-menuitem
-              v-if="isCassandra"
-              @click="cassandraAllowFilter = !this.isCassandra"
-            >
-              <x-label>
-                <i class="material-icons">{{ this.isCassandra ? 'check' : 'horizontal_rule' }}</i>
-                Allow Filtering
-              </x-label>
-            </x-menuitem>
-            <x-menuitem @click="exportTable" :disabled="dialectData?.disabledFeatures?.exportTable">
-              <x-label>Export whole table</x-label>
-            </x-menuitem>
-
-            <x-menuitem @click="exportFiltered" :disabled="dialectData?.disabledFeatures?.exportTable">
-              <x-label>Export filtered view</x-label>
-            </x-menuitem>
-            <x-menuitem @click="showColumnFilterModal">
-              <x-label>Hide columns ({{ hiddenColumnCount }})</x-label>
-            </x-menuitem>
-            <x-menuitem @click="importTab" :disabled="dialectData?.disabledFeatures?.importFromFile || usedConfig.readOnlyMode">
-              <x-label>
-                Import from file
-                <i
-                  v-if="$store.getters.isCommunity"
-                  class="material-icons menu-icon"
-                >stars</i>
-              </x-label>
-            </x-menuitem>
-            <x-menuitem @click="openQueryTab">
-              <x-label>Copy view to SQL</x-label>
-            </x-menuitem>
-          </x-menu>
         </x-button>
       </div>
     </statusbar>
@@ -513,6 +482,9 @@ export default Vue.extend({
     },
     hasPendingDeletes() {
       return this.pendingChanges.deletes.length > 0
+    },
+    isReadOnly() {
+      return Boolean(this.usedConfig?.readOnlyMode);
     },
     editable() {
       return !this.usedConfig.readOnlyMode &&
@@ -1056,7 +1028,7 @@ export default Vue.extend({
       }
       return result;
     },
-    handleTab(e: KeyboardEvent) {
+    handleTab(_e: KeyboardEvent) {
       // do nothing?
       log.debug('tab pressed')
 
@@ -1196,7 +1168,7 @@ export default Vue.extend({
               ...this.getExtraPopupMenu('tableTable.corner', { transform: "tabulator" }),
             ]
           },
-        },
+        } as any,
         columns: this.tableColumns,
         ajaxURL: "http://fake",
         sortMode: 'remote',
@@ -1602,7 +1574,7 @@ export default Vue.extend({
 
       })
     },
-    cellCloneRow(_e, cell: CellComponent) {
+    cellCloneRow(_e, _cell: CellComponent) {
       this.cloneSelection()
     },
     cellAddCol(_e, field) {
@@ -1703,7 +1675,8 @@ export default Vue.extend({
 
         this.primaryKeys.forEach((pk: string) => {
           const cell = row.getCell(pk)
-          const isBinary = cell.getColumn().getDefinition().dataType.toUpperCase().includes('BINARY')
+          const def = cell.getColumn().getDefinition() as any
+          const isBinary = Boolean(def?.dataType && String(def.dataType).toUpperCase().includes('BINARY'))
           let value = cell.getValue();
           if (isBinary) {
             try {
@@ -2167,6 +2140,44 @@ export default Vue.extend({
       }
 
       this.trigger(AppEvent.updateJsonViewerSidebar, updatedData)
+    },
+    openTableSettingsMenu(event) {
+      const options = [];
+      if (this.isCassandra) {
+        options.push({
+          label: 'Allow Filtering',
+          checked: Boolean(this.cassandraAllowFilter),
+          handler: () => {
+            this.cassandraAllowFilter = !this.isCassandra;
+          },
+        });
+      }
+      options.push(
+        {
+          label: 'Export whole table',
+          disabled: Boolean(this.dialectData?.disabledFeatures?.exportTable),
+          handler: () => this.exportTable(),
+        },
+        {
+          label: 'Export filtered view',
+          disabled: Boolean(this.dialectData?.disabledFeatures?.exportTable),
+          handler: () => this.exportFiltered(),
+        },
+        {
+          label: `Hide columns (${this.hiddenColumnCount})`,
+          handler: () => this.showColumnFilterModal(),
+        },
+        {
+          label: 'Import from file',
+          disabled: Boolean(this.dialectData?.disabledFeatures?.importFromFile || this.usedConfig.readOnlyMode),
+          handler: () => this.importTab(),
+        },
+        {
+          label: 'Copy view to SQL',
+          handler: () => this.openQueryTab(),
+        }
+      );
+      this.$bks.openMenu({ event, item: null, options });
     },
     exportTable() {
       this.trigger(AppEvent.beginExport, { table: this.table })
