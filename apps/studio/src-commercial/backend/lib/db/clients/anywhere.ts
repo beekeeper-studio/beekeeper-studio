@@ -14,6 +14,7 @@ import _ from 'lodash';
 import { joinFilters } from '@/common/utils';
 import { SqlAnywhereChangeBuilder } from '@/shared/lib/sql/change_builder/SqlAnywhereChangeBuilder';
 import { SqlAnywhereCursor } from './anywhere/SqlAnywhereCursor';
+import { inferBksFieldType } from "@/lib/db/bksField";
 
 const D = SqlAnywhereData;
 const log = rawLog.scope('sql-anywhere');
@@ -1257,7 +1258,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
   protected parseTableColumn(column: any): BksField {
     return {
       name: column.column_name,
-      bksType: column.data_type.includes('varbinary') ? 'BINARY' : 'UNKNOWN',
+      bksType: inferBksFieldType(column.data_type),
     };
   }
 

@@ -17,6 +17,7 @@ import { BigQueryCursor } from './bigquery/BigQueryCursor';
 import { BigQueryData } from '@shared/lib/dialects/bigquery';
 import { IDbConnectionServer } from '../backendTypes';
 import _ from 'lodash';
+import { inferBksFieldType } from '../bksField';
 const { wrapIdentifier } = BigQueryData;
 const log = rawLog.scope('bigquery')
 
@@ -680,6 +681,6 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   }
 
   parseTableColumn(column: any): BksField {
-    return { name: column.name, bksType: 'UNKNOWN' }
+    return { name: column.name, bksType: inferBksFieldType(column.type ?? column.dataType) }
   }
 }

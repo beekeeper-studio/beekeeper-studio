@@ -18,6 +18,7 @@ import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilder
 import { SnowflakeChangeBuilder } from "@/shared/lib/sql/change_builder/SnowflakeChangeBuilder";
 import { SnowflakeCursor } from "./snowflake/SnowflakeCursor";
 import { IndexColumn } from "@beekeeperstudio/plugin";
+import { inferBksFieldType } from "@/lib/db/bksField";
 
 const log = rawLog.scope('snowflake')
 
@@ -1034,7 +1035,7 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
   protected parseTableColumn(column: any): BksField {
     return {
       name: column.name,
-      bksType: "UNKNOWN"
+      bksType: inferBksFieldType(column.type ?? column.dataType)
     }
   }
 

@@ -67,6 +67,7 @@ import { ClickHouseCursor } from "./clickhouse/ClickHouseCursor";
 import { readFileSync } from 'fs';
 import { NodeClickHouseClientConfigOptions } from "@clickhouse/client/dist/config";
 import https from 'https'
+import { inferBksFieldType } from "@/lib/db/bksField";
 
 interface JSONResult {
   statement: IdentifyResult;
@@ -84,6 +85,7 @@ type JSONOrStreamResult = JSONResult | StreamResult;
 
 interface ResultColumn {
   name: string;
+  type?: string;
 }
 
 interface BaseResult {
@@ -124,7 +126,19 @@ const clickhouseContext = {
 const knex = knexlib({ client: ClickhouseKnexClient });
 
 const RE_NULLABLE = /^Nullable\((.*)\)$/;
+const RE_TYPE_WRAPPER = /^(?:Nullable|LowCardinality)\((.*)\)$/;
 const RE_SELECT_FORMAT = /^\s*SELECT.+FORMAT\s+(\w+)\s*;?$/is;
+
+/** Nullable(String) and LowCardinality(String) wrap the type we actually care about. */
+function unwrapType(type?: string): string {
+  let unwrapped = type;
+  let match = RE_TYPE_WRAPPER.exec(unwrapped);
+  while (match) {
+    unwrapped = match[1];
+    match = RE_TYPE_WRAPPER.exec(unwrapped);
+  }
+  return unwrapped;
+}
 
 export class ClickHouseClient extends BasicDatabaseClient<Result> {
   version: string;
@@ -1268,7 +1282,11 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     );
   }
 
-  parseTableColumn(column: { name: string }): BksField {
-    return { name: column.name, bksType: "UNKNOWN" };
+  parseQueryResultColumns(qr: Result): BksField[] {
+    return qr.columns.map((column) => this.parseTableColumn(column));
+  }
+
+  parseTableColumn(column: { name: string; type?: string }): BksField {
+    return { name: column.name, bksType: inferBksFieldType(unwrapType(column.type)) };
   }
 }

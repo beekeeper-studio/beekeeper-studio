@@ -14,6 +14,7 @@ import { SurrealConn, SurrealPool } from "./surrealdb/SurrealDBPool";
 import _ from "lodash";
 import { surrealEscapeValue } from "@/shared/lib/dialects/surrealdb";
 import { uuidv4 } from "@/lib/uuid";
+import { inferBksFieldType } from "@/lib/db/bksField";
 
 const log = rawLog.scope('SurrealDB');
 
@@ -855,7 +856,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     const isRecord = column.kind.startsWith('record<') || column.name === 'id';
     return {
       name: column.name,
-      bksType: isRecord ? 'SURREALID' : 'UNKNOWN'
+      bksType: isRecord ? 'SURREALID' : inferBksFieldType(column.kind)
     }
   }
 

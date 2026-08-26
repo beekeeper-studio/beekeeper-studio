@@ -30,12 +30,11 @@ import {createCancelablePromise} from "@/common/utils";
 import { errors } from "@/lib/errors";
 import { identify } from "sql-query-identifier";
 import { MySqlChangeBuilder } from "@shared/lib/sql/change_builder/MysqlChangeBuilder";
-import { AlterTableSpec, IndexColumn, TableKey } from "@shared/lib/dialects/models";
+import { AlterTableSpec, IndexColumn, SchemaItem, TableKey } from "@shared/lib/dialects/models";
 import { MysqlData } from "@shared/lib/dialects/mysql";
 import {
   CancelableQuery,
   DatabaseFilterOptions,
-  ExtendedTableColumn,
   FilterOptions,
   ImportFuncOptions,
   NgQueryResult,
@@ -51,7 +50,6 @@ import {
   TableColumn,
   TableDelete,
   BksField,
-  BksFieldType,
   TableFilter,
   TableIndex,
   TableInsert,
@@ -70,8 +68,10 @@ import { Version, isVersionLessThanOrEqual, parseVersion } from "@/common/versio
 import globals from '../../../common/globals';
 import {AzureAuthService} from "@/lib/db/authentication/azure";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
+import { MysqlColumnIdentifier } from "./mysql/MySqlColumnIdentifier";
+import { RawTableColumn } from "../serialization/ColumnIdentifier";
 
-type ResultType = {
+export type ResultType = {
   tableName?: string
   rows: any[];
   columns: mysql.FieldPacket[];
@@ -109,29 +109,6 @@ function getRealError(conn, err) {
   }
   return err;
 }
-
-const binaryTypes = [
-  mysql.Types.STRING, // aka CHAR or BINARY
-  mysql.Types.VAR_STRING, // aka VARCHAR or VARBINARY
-  mysql.Types.TINY_BLOB,
-  mysql.Types.BLOB,
-  mysql.Types.MEDIUM_BLOB,
-  mysql.Types.LONG_BLOB,
-]
-
-const binaryDataTypes = [
-  'binary',
-  'varbinary',
-  'tinyblob',
-  'blob',
-  'mediumblob',
-  'longblob',
-]
-
-// Ref: https://github.com/sidorares/node-mysql2/blob/master/lib/constants/field_flags.js
-const FieldFlags = {
-  BINARY: 128,
-};
 
 async function configDatabase(
   server: IDbConnectionServer,
@@ -300,6 +277,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     pool: mysql.Pool;
   };
   transcoders = [GenericBinaryTranscoder];
+  columnIdentifier = MysqlColumnIdentifier;
 
   interval: NodeJS.Timeout
 
@@ -442,11 +420,11 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     });
   }
 
-  async listTableColumns(
+  protected async listTableColumnsRunner(
     table?: string,
     _schema?: string,
     connection?: Connection
-  ): Promise<ExtendedTableColumn[]> {
+  ): Promise<RawTableColumn[]> {
     const hasGeneratedSupport = this.connectionType == 'mariadb' ?
      !isVersionLessThanOrEqual(this.versionInfo, { major: 10, minor: 2, patch: 4 }):
      !isVersionLessThanOrEqual(this.versionInfo, { major: 5, minor: 7, patch: 5 });
@@ -493,7 +471,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       characterSet: row.character_set,
       collation: row.collation,
       enumValues: parseQuotedEnumValues(row.column_type),
-      bksField: this.parseTableColumn(row),
     }));
   }
 
@@ -1614,20 +1591,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
   }
 
   protected parseQueryResultColumns(qr: ResultType): BksField[] {
-    return qr.columns.map((column) => {
-      let bksType: BksFieldType = 'UNKNOWN';
-      if (binaryTypes.includes(column.type) && ((column.flags as number) & FieldFlags.BINARY)) {
-        bksType = 'BINARY';
-      }
-      return { name: column.name, bksType }
-    })
-  }
-
-  parseTableColumn(column: { column_name: string; data_type: string }): BksField {
-    return {
-      name: column.column_name,
-      bksType: binaryDataTypes.includes(column.data_type) ? 'BINARY' : 'UNKNOWN',
-    };
+    return new MysqlColumnIdentifier().identifyResultColumns(qr)
   }
 }
 

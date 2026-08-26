@@ -58,6 +58,7 @@ import { FirebirdCursor } from "./firebird/FirebirdCursor";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { GenericBinaryTranscoder } from "@/lib/db/serialization/transcoders";
 import BksConfig from "@/common/bksConfig";
+import { inferBksFieldType } from "@/lib/db/bksField";
 
 type FirebirdResult = {
   rows: any[];
@@ -83,6 +84,24 @@ const context = {
   ): Promise<number | string> {
     return null;
   },
+};
+
+// Ref: https://github.com/hgourvest/node-firebird/blob/3aba6c3bb605c9e4a260a572d6395d1b431dee8a/lib/wire/const.js#L221
+const SQL_TYPES: Record<number, BksFieldType> = {
+  448: 'STRING',   // SQL_VARYING
+  452: 'STRING',   // SQL_TEXT
+  480: 'NUMBER',   // SQL_DOUBLE
+  482: 'NUMBER',   // SQL_FLOAT
+  496: 'NUMBER',   // SQL_LONG
+  500: 'NUMBER',   // SQL_SHORT
+  510: 'DATETIME', // SQL_TIMESTAMP
+  520: 'BINARY',   // SQL_BLOB
+  530: 'NUMBER',   // SQL_D_FLOAT
+  560: 'DATETIME', // SQL_TYPE_TIME
+  570: 'DATETIME', // SQL_TYPE_DATE
+  580: 'NUMBER',   // SQL_INT64
+  32752: 'NUMBER', // SQL_INT128
+  32764: 'BOOLEAN',// SQL_BOOLEAN
 };
 
 const FIELD_TYPE_QUERY = (
@@ -1480,21 +1499,16 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
   }
 
   parseQueryResultColumns(qr: FirebirdResult): BksField[] {
-    return qr.columns.map((column) => {
-      let bksType: BksFieldType = 'UNKNOWN';
-      // 520 is SQL_BLOB
-      // Ref: https://github.com/hgourvest/node-firebird/blob/3aba6c3bb605c9e4a260a572d6395d1b431dee8a/lib/wire/const.js#L230
-      if (column.type === 520) {
-        bksType = 'BINARY';
-      }
-      return { name: column.field, bksType };
-    });
+    return qr.columns.map((column) => ({
+      name: column.field,
+      bksType: SQL_TYPES[column.type] ?? 'UNKNOWN',
+    }));
   }
 
   parseTableColumn(column: { FIELD_TYPE: string, RDB$FIELD_NAME: string }): BksField {
     return {
       name: column.RDB$FIELD_NAME,
-      bksType: column.FIELD_TYPE === "BLOB" ? "BINARY" : "UNKNOWN",
+      bksType: inferBksFieldType(column.FIELD_TYPE),
     };
   }
 }

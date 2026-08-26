@@ -28,6 +28,7 @@ import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import {AzureAuthService} from "@/lib/db/authentication/azure";
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
+import { inferBksFieldType } from '../bksField';
 
 const PD = PostgresData
 
@@ -1862,10 +1863,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
 
   parseQueryResultColumns(qr: QueryResult): BksField[] {
     return qr.columns.map((column) => {
-      let bksType: BksFieldType = 'UNKNOWN';
-      if (column.dataTypeID === pg.types.builtins.BYTEA) {
-        bksType = 'BINARY'
-      }
+      const bksType: BksFieldType = column.dataTypeID === pg.types.builtins.BYTEA
+        ? 'BINARY'
+        : inferBksFieldType(this.dataTypes[column.dataTypeID]);
       return { name: column.name, bksType };
     })
   }
@@ -1873,7 +1873,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   parseTableColumn(column: { column_name: string; data_type: string }): BksField {
     return {
       name: column.column_name,
-      bksType: column.data_type === 'bytea' ? 'BINARY' : 'UNKNOWN',
+      bksType: inferBksFieldType(column.data_type),
     };
   }
 }

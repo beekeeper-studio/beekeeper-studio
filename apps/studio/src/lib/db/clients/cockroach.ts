@@ -5,6 +5,7 @@ import _ from 'lodash';
 import { defaultCreateScript } from "./postgresql/scripts";
 import BksConfig from '@/common/bksConfig';
 import { IDbConnectionServer } from "../backendTypes";
+import { inferBksFieldType } from '../bksField';
 
 
 export class CockroachClient extends PostgresClient {
@@ -236,7 +237,7 @@ export class CockroachClient extends PostgresClient {
   parseTableColumn(column: { column_name: string, data_type: string }): BksField {
     return {
       name: column.column_name,
-      bksType: column.data_type === 'bytea' ? 'BINARY' : 'UNKNOWN',
+      bksType: inferBksFieldType(column.data_type),
     }
   }
 }

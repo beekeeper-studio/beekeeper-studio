@@ -4,7 +4,7 @@ import { SqliteData } from "@shared/lib/dialects/sqlite";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SqliteChangeBuilder } from "@shared/lib/sql/change_builder/SqliteChangeBuilder";
 import Database from "better-sqlite3";
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, QueryResult, TableInsert, TableUpdate, TableDelete, ImportFuncOptions, BksField, BksFieldType } from "../models";
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, QueryResult, TableInsert, TableUpdate, TableDelete, ImportFuncOptions, BksField } from "../models";
 import { DatabaseElement, IDbConnectionDatabase } from "../types";
 import { ClientError } from "./utils";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient"; import { buildInsertQueries, buildDeleteQueries, buildSelectTopQuery } from './utils';
@@ -19,6 +19,7 @@ import { GenericBinaryTranscoder } from "../serialization/transcoders";
 
 import rawLog from '@bksLogger'
 import bksConfig from '@/common/bksConfig';
+import { inferBksFieldType } from "../bksField";
 const log = rawLog.scope('sqlite');
 
 const knex = createSQLiteKnex();
@@ -807,10 +808,6 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   parseTableColumn(column: { name: string, type: string }): BksField {
-    let bksType: BksFieldType = "UNKNOWN";
-    if (column.type === "BLOB") {
-      bksType = "BINARY";
-    }
-    return { name: column.name, bksType };
+    return { name: column.name, bksType: inferBksFieldType(column.type) };
   }
 }

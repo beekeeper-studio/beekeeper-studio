@@ -52,6 +52,7 @@ import { IdentifyResult } from "sql-query-identifier/lib/defines"
 import { errors } from "@/lib/errors"
 import { IDbConnectionServer } from "@/lib/db/backendTypes"
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase"
+import { inferBksFieldType } from "@/lib/db/bksField";
 
 interface ResultColumn {
   name: string
@@ -739,6 +740,6 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
   }
 
   parseTableColumn(column: TableColumn): BksField {
-    return { name: column.columnName, bksType: "UNKNOWN" }
+    return { name: column.columnName, bksType: inferBksFieldType(column.dataType) }
   }
 }

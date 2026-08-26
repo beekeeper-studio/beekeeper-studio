@@ -18,6 +18,7 @@ import { CassandraCursor } from "./cassandra/CassandraCursor";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import _ from "lodash";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
+import { inferBksFieldType } from "@/lib/db/bksField";
 
 const log = rawLog.scope("cassandra");
 const logger = () => log;
@@ -794,7 +795,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
   parseTableColumn(column: { column_name: string; type: string }): BksField {
     return {
       name: column.column_name,
-      bksType: column.type.includes('blob') ? 'BINARY' : 'UNKNOWN',
+      bksType: inferBksFieldType(column.type),
     };
   }
 

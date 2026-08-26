@@ -51,6 +51,7 @@ import { IDbConnectionServer } from '@/lib/db/backendTypes';
 import { GenericBinaryTranscoder } from '@/lib/db/serialization/transcoders';
 import Client_Oracledb from '@shared/lib/knex-oracledb';
 import fs from 'fs';
+import { inferBksFieldType } from "@/lib/db/bksField";
 
 const log = rawLog.scope('oracle')
 
@@ -1166,10 +1167,9 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
 
   parseQueryResultColumns(qr: DriverResult): BksField[] {
     return qr.columns.map((column) => {
-      let bksType: BksFieldType = 'UNKNOWN';
-      if (column.dbType === oracle.DB_TYPE_BLOB) {
-        bksType = 'BINARY'
-      }
+      const bksType: BksFieldType = column.dbType === oracle.DB_TYPE_BLOB
+        ? 'BINARY'
+        : inferBksFieldType(column.dbTypeName)
       return { name: column.name, bksType }
     })
   }
@@ -1177,7 +1177,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
   parseTableColumn(column: { COLUMN_NAME: string; DATA_TYPE: string }): BksField {
     return {
       name: column.COLUMN_NAME,
-      bksType: column.DATA_TYPE === 'BLOB' ? 'BINARY' : 'UNKNOWN',
+      bksType: inferBksFieldType(column.DATA_TYPE),
     }
   }
 }

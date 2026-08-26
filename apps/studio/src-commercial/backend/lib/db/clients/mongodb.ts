@@ -19,6 +19,7 @@ import platformInfo from "@/common/platform_info";
 import { MongoDBCursor } from './mongodb/MongoDBCursor';
 import { wrapIdentifier } from "@/lib/db/clients/postgresql";
 import knexlib from 'knex'
+import { bksTypeForValue, inferBksFieldType } from "@/lib/db/bksField";
 
 const knex = knexlib({ client: 'pg' })
 
@@ -466,10 +467,9 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   parseQueryResultColumns(row: any): BksField[] {
     if (!row) return;
     return Object.keys(row).map((column) => {
-      let bksType: BksFieldType = 'UNKNOWN';
-      if (row[column] instanceof ObjectId) {
-        bksType = 'OBJECTID';
-      }
+      const bksType: BksFieldType = row[column] instanceof ObjectId
+        ? 'OBJECTID'
+        : bksTypeForValue(row[column]);
       return { name: column, bksType };
     })
   }
@@ -1006,7 +1006,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   protected parseTableColumn(column: { field: string, type: string }): BksField {
     return {
       name: column.field,
-      bksType: column.type === 'objectid' ? 'OBJECTID' : 'UNKNOWN'
+      bksType: column.type === 'objectid' ? 'OBJECTID' : inferBksFieldType(column.type)
     }
   }
 

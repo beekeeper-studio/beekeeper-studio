@@ -6,7 +6,7 @@ import platformInfo from '../../src/common/platform_info'
 import { AlterTableSpec, Dialect, DialectData, dialectFor, FormatterDialect, Schema, SchemaItemChange, TableKey } from '@shared/lib/dialects/models'
 import { getDialectData } from '@shared/lib/dialects/'
 import _ from 'lodash'
-import { TableIndex, TableOrView } from '@/lib/db/models'
+import { BksField, BksFieldType, TableIndex, TableOrView } from '@/lib/db/models'
 export const dbtimeout = 120000
 import '../../src/common/initializers/big_int_initializer.ts'
 import { safeSqlFormat } from '@/common/utils'
@@ -73,6 +73,13 @@ function normalizeTableKeys(
     toColumn: Array.isArray(key.toColumn) ? key.toColumn.map((c) => c.toLowerCase()) : key.toColumn.toLowerCase(),
     fromColumn: Array.isArray(key.fromColumn) ? key.fromColumn.map((c) => c.toLowerCase()) : key.fromColumn.toLowerCase(),
   }));
+}
+
+function bksTypesByColumn(fields: BksField[]): Record<string, BksFieldType> {
+  return fields.reduce((acc, field) => {
+    acc[field.name.toLowerCase()] = field.bksType
+    return acc
+  }, {})
 }
 
 const KnexTypes: any = {
@@ -1984,7 +1991,7 @@ export class DBTestUtil {
     expect(ArrayBuffer.isView(data)).toBe(true)
     expect(Buffer.from(data)).toEqual(b`deadbeef`)
     expect(result.fields).toEqual([
-      { name: ID, bksType: 'UNKNOWN' },
+      { name: ID, bksType: 'NUMBER' },
       { name: BIN, bksType: 'BINARY' },
     ])
 
@@ -2021,9 +2028,58 @@ export class DBTestUtil {
     const bksFields = columns.map(c => c.bksField)
 
     expect(bksFields).toStrictEqual([
-      { name: ID, bksType: 'UNKNOWN' },
+      { name: ID, bksType: 'NUMBER' },
       { name: BIN, bksType: 'BINARY' },
     ])
+  }
+
+  /**
+   * One column per bksType, spelled by knex in whatever the dialect calls it.
+   */
+  async bksTypeTests() {
+    const table = 'bks_types'
+    const binaryColumn = !this.data.disabledFeatures?.binaryColumn
+
+    await this.knex.schema.createTable(table, (t) => {
+      t.integer('num_col').primary().notNullable()
+      t.string('str_col')
+      if (this.dbType === 'firebird') {
+        // knex asks for `datetime`, which firebird doesn't know about
+        t.specificType('datetime_col', 'timestamp')
+      } else {
+        t.dateTime('datetime_col')
+      }
+      t.boolean('bool_col')
+      if (binaryColumn) {
+        t.binary('bin_col', 8)
+      }
+    })
+
+    try {
+      const columns = await this.connection.listTableColumns(table, this.defaultSchema)
+      const bksFields = columns.map((c) => ({
+        ...c.bksField,
+        name: c.bksField.name.toLowerCase(),
+      }));
+      const fields = _.keyBy(bksFields, "name");
+
+      expect(fields.num_col.bksType).toBe('NUMBER')
+      expect(fields.str_col.bksType).toBe('STRING')
+      expect(fields.datetime_col.bksType).toBe('DATETIME')
+
+      // oracle has no boolean type, so knex asks for number(1) instead
+      if (this.dbType === "oracle") {
+        expect(fields.bool_col.bksType).toBe('NUMBER')
+      } else {
+        expect(fields.bool_col.bksType).toBe('BOOLEAN')
+      }
+
+      if (binaryColumn) {
+        expect(fields.bin_col.bksType).toBe('BINARY')
+      }
+    } finally {
+      await this.knex.schema.dropTable(table)
+    }
   }
 
   async getQueryForFilterTest() {

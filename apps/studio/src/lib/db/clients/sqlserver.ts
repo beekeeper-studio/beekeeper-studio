@@ -36,6 +36,7 @@ import { AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from '../serialization/transcoders';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
+import { inferBksFieldType } from '../bksField';
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData
@@ -1675,6 +1676,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
           type === sql.Image
       ) {
         bksType = 'BINARY'
+      } else {
+        bksType = parseBksType(type?.declaration)
       }
       return { name: column.name, bksType }
     })
@@ -1683,9 +1686,17 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   parseTableColumn(column: { column_name: string; data_type: string }): BksField {
     return {
       name: column.column_name,
-      bksType: column.data_type.includes('varbinary') ? 'BINARY' : 'UNKNOWN',
+      bksType: parseBksType(column.data_type),
     };
   }
+}
+
+// bit is how sql server spells boolean, and the driver hands us real booleans for it
+function parseBksType(dataType?: string): BksFieldType {
+  if (dataType?.toLowerCase() === 'bit') {
+    return 'BOOLEAN'
+  }
+  return inferBksFieldType(dataType)
 }
 
 export default async function (server: IDbConnectionServer, database: IDbConnectionDatabase) {

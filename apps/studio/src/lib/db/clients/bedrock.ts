@@ -29,6 +29,7 @@ import { parseVersion } from "@/common/version";
 import { buildSelectTopQuery } from "./utils";
 import { createSQLiteKnex } from "./sqlite/utils";
 import rawLog from "@bksLogger";
+import { inferBksFieldType } from "../bksField";
 
 const log = rawLog.scope("bedrock");
 const SD = SqliteData;
@@ -348,7 +349,7 @@ export class BedrockClient extends MysqlClient {
   parseTableColumn(row: { name: string; type: string }): BksField {
     return {
       name: row.name,
-      bksType: row.type?.toUpperCase() === "BLOB" ? "BINARY" : "UNKNOWN",
+      bksType: inferBksFieldType(row.type),
     };
   }
 }

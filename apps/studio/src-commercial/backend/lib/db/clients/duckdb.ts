@@ -40,7 +40,6 @@ import {
   TableUpdateResult,
   TableColumn,
   BksField,
-  BksFieldType,
   DatabaseEntity,
 } from "@/lib/db/models";
 import { joinFilters } from "@/common/utils";
@@ -51,6 +50,7 @@ import { DuckDBData } from "@shared/lib/dialects/duckdb";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { TableKey } from "@shared/lib/dialects/models";
 import { DuckDBBinaryTranscoder } from "@/lib/db/serialization/transcoders";
+import { inferBksFieldType } from "@/lib/db/bksField";
 
 const log = rawLog.scope("duckdb");
 
@@ -1051,7 +1051,9 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   protected parseQueryResultColumns(qr: DuckDBResult): BksField[] {
     return qr.columns.map((c) => ({
       name: c.name,
-      bksType: c.type.typeId === DuckDBTypeId.BLOB ? "BINARY" : "UNKNOWN",
+      bksType: c.type.typeId === DuckDBTypeId.BLOB
+        ? "BINARY"
+        : inferBksFieldType(DuckDBTypeId[c.type.typeId]),
     }));
   }
 
@@ -1154,11 +1156,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   }
 
   protected parseTableColumn(column: { name: string, type: string }): BksField {
-    let bksType: BksFieldType = "UNKNOWN";
-    if (column.type === "BLOB") {
-      bksType = "BINARY";
-    }
-    return { name: column.name, bksType };
+    return { name: column.name, bksType: inferBksFieldType(column.type) };
   }
 
   wrapIdentifier(value: string): string {
