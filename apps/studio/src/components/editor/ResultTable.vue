@@ -478,7 +478,7 @@ import { stringToTypedArray } from '@/common/utils'
           fkOnClick: undefined,
           isPK: editData?.isPK,
           binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
-          dataType: this.$bksConfig.ui.resultTable.dataTypeColors ? editData?.dataType ?? column.dataType : undefined,
+          bksType: this.$bksConfig.ui.resultTable.dataTypeColors ? editData?.bksField?.bksType : undefined,
         }
 
         let headerTooltip = escapeHtml(column.name);

@@ -4,7 +4,6 @@ import { TabulatorFormatterParams } from '@/common/tabulator'
 import helpers, { escapeHtml, FormatterParams } from '@shared/lib/tabulator'
 export const NULL = '(NULL)'
 import {CellComponent} from 'tabulator-tables'
-import { getDataTypeColorFamily } from '@/common/dataTypeColors'
 
 export function buildNullValue(text: string) {
   return `<span class="null-value">(${escapeHtml(text)})</span>`
@@ -76,9 +75,8 @@ export default {
       const classNames = []
       let cellValue = cell.getValue()
 
-      if (params.dataType && !_.isNil(cellValue) && !(_.isString(cellValue) && _.isEmpty(cellValue))) {
-        const dataType = getDataTypeColorFamily(params.dataType, cellValue);
-        classNames.push(`data-type-${dataType}`)
+      if (params.bksType && !_.isNil(cellValue) && !(_.isString(cellValue) && _.isEmpty(cellValue))) {
+        classNames.push(`data-type-${params.bksType.toLowerCase()}`)
       }
 
       if (cellValue instanceof Uint8Array) {

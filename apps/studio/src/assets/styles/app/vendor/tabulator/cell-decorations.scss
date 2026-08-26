@@ -8,33 +8,17 @@
 }
 
 .tabulator-cell {
-  &.data-type-string > pre,
-  &.data-type-string > .cell-link-wrapper {
-    color: var(--cell-string-fg-color);
-  }
-
-  &.data-type-number > pre,
-  &.data-type-number > .cell-link-wrapper {
-    color: var(--cell-number-fg-color);
-  }
-
-  &.data-type-dateTime > pre,
-  &.data-type-dateTime > .cell-link-wrapper {
-    color: var(--cell-dateTime-fg-color);
-  }
-
-  &.data-type-boolean > pre,
-  &.data-type-boolean > .cell-link-wrapper {
-    color: var(--cell-boolean-fg-color);
-  }
-
   &.data-type-binary > pre,
   &.data-type-binary > .cell-link-wrapper {
     color: var(--cell-binary-fg-color);
   }
 
-  &.data-type-other > pre,
-  &.data-type-other > .cell-link-wrapper {
+  &.data-type-unknown > pre,
+  &.data-type-unknown > .cell-link-wrapper,
+  &.data-type-objectid > pre,
+  &.data-type-objectid > .cell-link-wrapper,
+  &.data-type-surrealid > pre,
+  &.data-type-surrealid > .cell-link-wrapper {
     color: var(--cell-other-fg-color);
   }
 }
