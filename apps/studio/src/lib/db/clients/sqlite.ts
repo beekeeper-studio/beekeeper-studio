@@ -4,7 +4,7 @@ import { SqliteData } from "@shared/lib/dialects/sqlite";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SqliteChangeBuilder } from "@shared/lib/sql/change_builder/SqliteChangeBuilder";
 import Database from "better-sqlite3";
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, QueryResult, TableInsert, TableUpdate, TableDelete, ImportFuncOptions, BksField, BksFieldType } from "../models";
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, StreamResults, QueryResult, TableInsert, TableUpdate, TableDelete, ImportFuncOptions } from "../models";
 import { DatabaseElement, IDbConnectionDatabase } from "../types";
 import { ClientError } from "./utils";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient"; import { buildInsertQueries, buildDeleteQueries, buildSelectTopQuery } from './utils';
@@ -19,6 +19,8 @@ import { GenericBinaryTranscoder } from "../serialization/transcoders";
 
 import rawLog from '@bksLogger'
 import bksConfig from '@/common/bksConfig';
+import { SqliteColumnIdentifier } from "./sqlite/SqliteColumnIdentifier";
+import { RawTableColumn } from "../serialization/ColumnIdentifier";
 const log = rawLog.scope('sqlite');
 
 const knex = createSQLiteKnex();
@@ -47,6 +49,7 @@ export type SqliteResult = {
 const SD = SqliteData;
 
 export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
+  columnIdentifier = new SqliteColumnIdentifier();
   version: SqliteResult;
   databasePath: string;
   dialectData = SD;
@@ -145,7 +148,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return Promise.resolve([]); // DOES NOT SUPPORT IT
   }
 
-  async listTableColumns(table?: string, _schema?: string): Promise<ExtendedTableColumn[]> {
+  protected async listTableColumnsRunner(table?: string, _schema?: string): Promise<RawTableColumn[]> {
     if (table) {
       const sql = `PRAGMA table_xinfo(${SD.escapeString(table, true)})`;
 
@@ -490,12 +493,9 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return Number(totalRecords)
   }
 
-  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult> {
+  protected async selectTopRunner(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<SqliteResult> {
     const query = await this.selectTopSql(table, offset, limit, orderBy, filters, schema, selects);
-    const result = await this.driverExecuteSingle(query);
-    const fields = this.parseQueryResultColumns(result);
-    const rows = await this.serializeQueryResult(result, fields);
-    return { result: rows, fields };
+    return await this.driverExecuteSingle(query);
   }
 
   async selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[]): Promise<string> {
@@ -718,7 +718,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     db.close()
   }
 
-  private dataToColumns(data: any[], tableName: string): ExtendedTableColumn[] {
+  private dataToColumns(data: any[], tableName: string): RawTableColumn[] {
     return data.map((row) => {
       const defaultValue = row.dflt_value === 'NULL' ? null : row.dflt_value
       return {
@@ -730,7 +730,6 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         ordinalPosition: Number(row.cid),
         hasDefault: !_.isNil(defaultValue),
         generated: Number(row.hidden) === 2 || Number(row.hidden) === 3,
-        bksField: this.parseTableColumn(row),
       }
     })
   }
@@ -802,15 +801,4 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return true
   }
 
-  parseQueryResultColumns(qr: SqliteResult): BksField[] {
-    return qr.columns.map(this.parseTableColumn);
-  }
-
-  parseTableColumn(column: { name: string, type: string }): BksField {
-    let bksType: BksFieldType = "UNKNOWN";
-    if (column.type === "BLOB") {
-      bksType = "BINARY";
-    }
-    return { name: column.name, bksType };
-  }
 }

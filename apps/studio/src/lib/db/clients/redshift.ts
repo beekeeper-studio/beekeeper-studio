@@ -1,7 +1,8 @@
 import { PoolConfig } from "pg";
 import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from "../authentication/amazon-redshift";
 import { DatabaseElement } from "../types";
-import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TableProperties, ExtendedTableColumn, TableIndex } from "../models";
+import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TableProperties, TableIndex } from "../models";
+import { RawTableColumn } from "../serialization/ColumnIdentifier";
 import { PostgresClient, STQOptions } from "./postgresql";
 import {escapeString, resolveAWSCredentials} from "./utils";
 import pg from 'pg';
@@ -31,7 +32,7 @@ export class RedshiftClient extends PostgresClient {
     return [];
   }
 
-  async listTableColumns(table?: string, schema: string = this._defaultSchema): Promise<ExtendedTableColumn[]> {
+  protected async listTableColumnsRunner(table?: string, schema: string = this._defaultSchema): Promise<RawTableColumn[]> {
     // Reference: https://docs.aws.amazon.com/redshift/latest/dg/r_SVV_COLUMNS.html
     if (table && !schema) {
       throw new Error(`Table '${table}' provided for listTableColumns, but no schema name`);
@@ -79,7 +80,6 @@ export class RedshiftClient extends PostgresClient {
       generated: null, // Redshift does not support generated columns in svv_columns
       array: null, // Redshift does not support arrays
       comment: row.column_comment || null,
-      bksField: this.parseTableColumn(row),
     }));
   }
 

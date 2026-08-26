@@ -1,5 +1,5 @@
 import { ProvidedAuth, RecordId } from "surrealdb";
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, BksField, CancelableQuery, BksFieldType, TableChanges, TableUpdateResult, TableInsert, TableUpdate, TableDelete } from "@/lib/db/models";
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, StreamResults, CancelableQuery, TableChanges, TableUpdateResult, TableInsert, TableUpdate, TableDelete } from "@/lib/db/models";
 import { TableKey } from "@/shared/lib/dialects/models";
 import { _baseTest } from "@playwright/test";
 import { DatabaseElement, IDbConnectionDatabase, SurrealAuthType } from "@/lib/db/types";
@@ -14,6 +14,8 @@ import { SurrealConn, SurrealPool } from "./surrealdb/SurrealDBPool";
 import _ from "lodash";
 import { surrealEscapeValue } from "@/shared/lib/dialects/surrealdb";
 import { uuidv4 } from "@/lib/uuid";
+import { SurrealDBColumnIdentifier } from "./surrealdb/SurrealDBColumnIdentifier";
+import { RawTableColumn } from "@/lib/db/serialization/ColumnIdentifier";
 
 const log = rawLog.scope('SurrealDB');
 
@@ -65,6 +67,7 @@ const surrealContext = {
 }
 
 export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
+  columnIdentifier = new SurrealDBColumnIdentifier();
   version: SurrealDBResult;
   pool: SurrealPool;
   connectionString: string;
@@ -232,7 +235,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     return [];
   }
 
-  async listTableColumns(table?: string, _schema?: string): Promise<ExtendedTableColumn[]> {
+  protected async listTableColumnsRunner(table?: string, _schema?: string): Promise<RawTableColumn[]> {
     if (!table) {
       const tables = await this.listTables();
       const allColumns: ExtendedTableColumn[] = [];
@@ -315,8 +318,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
           ordinalPosition: ordinalPosition++,
           hasDefault: !!fieldInfo.default,
           generated: false,
-          bksField: this.parseTableColumn(fieldInfo)
-        } as ExtendedTableColumn;
+        } as RawTableColumn;
       }).filter((v) => !!v)
     } catch (err) {
       log.error(`Error extracting table columns for ${table}`, err);
@@ -567,13 +569,9 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
 
   }
 
-  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[]): Promise<TableResult> {
+  protected async selectTopRunner(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[]): Promise<SurrealDBQueryResult> {
     const sql = await this.selectTopSql(table, offset, limit, orderBy, filters, _schema, selects);
-    const result = await this.driverExecuteSingle(sql);
-    const fields = this.parseQueryResultColumns(result);
-    const rows = await this.serializeQueryResult(result, fields);
-
-    return { result: rows, fields }
+    return await this.driverExecuteSingle(sql);
   }
 
   async selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[]): Promise<string> {
@@ -851,26 +849,6 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     }
   }
 
-  protected parseTableColumn(column: SurrealFieldInfo): BksField {
-    const isRecord = column.kind.startsWith('record<') || column.name === 'id';
-    return {
-      name: column.name,
-      bksType: isRecord ? 'SURREALID' : 'UNKNOWN'
-    }
-  }
-
-  parseQueryResultColumns(qr: SurrealDBQueryResult): BksField[] {
-    const row = qr.rows[0];
-    return qr.columns.map((column) => {
-      let bksType: BksFieldType = 'UNKNOWN';
-
-      if (row[column.name] instanceof RecordId) {
-        bksType = 'SURREALID';
-      }
-      // TODO (@day): may need to do some analysis here
-      return { name: column.name, bksType }
-    })
-  }
 
   private normalizeValue(value: string, column?: ExtendedTableColumn) {
     if (column.dataType === 'string' && _.isString(value)) {

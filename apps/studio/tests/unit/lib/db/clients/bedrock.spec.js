@@ -32,9 +32,9 @@ describe("Bedrock UNIT tests (no connection required)", () => {
   });
 
   describe("parseTableColumn", () => {
-    it("returns a minimal BksField for non-binary columns", () => {
+    it("infers the bks type from the column type", () => {
       const result = client.parseTableColumn({ name: "id", type: "INTEGER" });
-      expect(result).toEqual({ name: "id", bksType: "UNKNOWN" });
+      expect(result).toEqual({ name: "id", bksType: "NUMBER" });
     });
 
     it("maps BLOB columns to BINARY", () => {
@@ -88,9 +88,12 @@ describe("Bedrock UNIT tests (no connection required)", () => {
     });
 
     it("embeds a BksField on every column", () => {
-      for (const col of columns) {
-        expect(col.bksField).toEqual({ name: col.columnName, bksType: "UNKNOWN" });
-      }
+      expect(columns.map((col) => col.bksField)).toEqual([
+        { name: "id", bksType: "NUMBER" },
+        { name: "name", bksType: "STRING" },
+        { name: "deleted_null_literal", bksType: "STRING" },
+        { name: "total", bksType: "NUMBER" },
+      ]);
     });
   });
 });

@@ -147,6 +147,10 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     return [];
   }
 
+  protected async listTableColumnsRunner() {
+    return null;
+  }
+
   async listTableColumns(table?: string, _schema?: string): Promise<ExtendedTableColumn[]> {
     // Lists all columns in a table
     const [metadata] = await this.client.dataset(this.db).table(table).getMetadata()
@@ -463,6 +467,10 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     // TODO (@day): does this even work? It's what we were doing before lol
     const [metadata] = await this.client.dataset(this.database.database).table(table).getMetadata()
     return Number(metadata.numRows)
+  }
+
+  protected async selectTopRunner(): Promise<BigQueryResult> {
+    return null;
   }
 
   async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[]): Promise<TableResult> {

@@ -153,6 +153,10 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     return Promise.resolve([]); // TODO (@will): make sure cassandra doesn't actually do this
   }
 
+  protected async listTableColumnsRunner() {
+    return null;
+  }
+
   async listTableColumns(table?: string, _schema?: string): Promise<ExtendedTableColumn[]> {
     let sql: string;
     const params = [table];
@@ -437,6 +441,10 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
 
   getTableLength(_table: string, _schema?: string): Promise<number> {
     throw new Error("Method not implemented.");
+  }
+
+  protected async selectTopRunner(): Promise<CassandraResult> {
+    return null;
   }
 
   // keyspace takes the place of schema here

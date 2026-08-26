@@ -15,7 +15,7 @@ import knexlib, { Knex } from "knex";
 import _ from "lodash";
 import rawLog from "@bksLogger";
 import { Client_DuckDB as DuckDBKnexClient } from "@shared/lib/knex-duckdb";
-import { DuckDBInstance as Database, DuckDBConnection as Connection, DuckDBMaterializedResult, DuckDBType, DuckDBValue, DuckDBListValue, DuckDBTypeId, DuckDBBlobValue, DuckDBBlobType } from "@duckdb/node-api";
+import { DuckDBInstance as Database, DuckDBConnection as Connection, DuckDBMaterializedResult, DuckDBType, DuckDBValue, DuckDBListValue, DuckDBBlobValue, DuckDBBlobType } from "@duckdb/node-api";
 import { identify } from "sql-query-identifier";
 import {
   CancelableQuery,
@@ -34,13 +34,10 @@ import {
   TableIndex,
   TableOrView,
   TableProperties,
-  TableResult,
   TableTrigger,
   TableUpdate,
   TableUpdateResult,
   TableColumn,
-  BksField,
-  BksFieldType,
   DatabaseEntity,
 } from "@/lib/db/models";
 import { joinFilters } from "@/common/utils";
@@ -51,6 +48,8 @@ import { DuckDBData } from "@shared/lib/dialects/duckdb";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { TableKey } from "@shared/lib/dialects/models";
 import { DuckDBBinaryTranscoder } from "@/lib/db/serialization/transcoders";
+import { DuckDBColumnIdentifier } from "./duckdb/DuckDBColumnIdentifier";
+import { RawTableColumn } from "@/lib/db/serialization/ColumnIdentifier";
 
 const log = rawLog.scope("duckdb");
 
@@ -93,7 +92,7 @@ interface ColumnsAndTotalRows {
   totalRows: number
 }
 
-type DuckDBResult<Mode = "object"> = Mode extends "array" ? DuckDBResultArrayData : DuckDBResultObjectData;
+export type DuckDBResult<Mode = "object"> = Mode extends "array" ? DuckDBResultArrayData : DuckDBResultObjectData;
 
 function buildFilterString(
   filters: TableFilter[],
@@ -198,6 +197,7 @@ function buildSelectTopQuery(
 }
 
 export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
+  columnIdentifier = new DuckDBColumnIdentifier();
   version: string;
   databasePath: string;
   databaseInstance: Database;
@@ -405,10 +405,10 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     return []; // Not supported yet. https://github.com/duckdb/duckdb/discussions/3638
   }
 
-  async listTableColumns(
+  protected async listTableColumnsRunner(
     table?: string,
     schema?: string
-  ): Promise<ExtendedTableColumn[]> {
+  ): Promise<RawTableColumn[]> {
     const params: { column: string; value: string }[] = [];
     let query = `
         SELECT
@@ -440,7 +440,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
       params: [...params.map((p) => p.value)],
     });
     return rows.map(
-      (row): ExtendedTableColumn => ({
+      (row): RawTableColumn => ({
         schemaName: row.schema_name as string,
         tableName: row.table_name as string,
         columnName: row.column_name as string,
@@ -451,10 +451,6 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
         hasDefault: !_.isNil(row.column_default),
         comment: row.comment as string,
         enumValues: parseQuotedEnumValues(row.data_type as string),
-        bksField: this.parseTableColumn({
-          name: row.column_name as string,
-          type: row.data_type as string,
-        }),
       })
     );
   }
@@ -1024,7 +1020,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     }
   }
 
-  async selectTop(
+  protected async selectTopRunner(
     table: string,
     offset: number,
     limit: number,
@@ -1032,7 +1028,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     filters: string | TableFilter[],
     schema: string = this._defaultSchema,
     selects?: string[]
-  ): Promise<TableResult> {
+  ): Promise<DuckDBResult> {
     const query = await this.selectTopSql(
       table,
       offset,
@@ -1042,17 +1038,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
       schema,
       selects
     );
-    const result = await this.driverExecuteSingle(query);
-    const fields = this.parseQueryResultColumns(result);
-    const rows = await this.serializeQueryResult(result, fields);
-    return { result: rows, fields };
-  }
-
-  protected parseQueryResultColumns(qr: DuckDBResult): BksField[] {
-    return qr.columns.map((c) => ({
-      name: c.name,
-      bksType: c.type.typeId === DuckDBTypeId.BLOB ? "BINARY" : "UNKNOWN",
-    }));
+    return await this.driverExecuteSingle(query);
   }
 
   async selectTopSql(
@@ -1151,14 +1137,6 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
       CREATE TABLE ${schema}.${duplicateTableName}
       AS SELECT * FROM ${schema}.${tableName}
     `;
-  }
-
-  protected parseTableColumn(column: { name: string, type: string }): BksField {
-    let bksType: BksFieldType = "UNKNOWN";
-    if (column.type === "BLOB") {
-      bksType = "BINARY";
-    }
-    return { name: column.name, bksType };
   }
 
   wrapIdentifier(value: string): string {

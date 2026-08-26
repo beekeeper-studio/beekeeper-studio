@@ -350,6 +350,10 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     return query
   }
 
+  protected async selectTopRunner(): Promise<DriverResult> {
+    return null;
+  }
+
   async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = null, selects: string[] = ['*']): Promise<TableResult> {
     schema = schema ? schema : await this.defaultSchema();
     const query = this.genSelect(table, offset, limit, orderBy, filters, schema, false, selects)
@@ -949,6 +953,10 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
         entityType: 'view'
       }
     })
+  }
+
+  protected async listTableColumnsRunner() {
+    return null;
   }
 
   async listTableColumns(table?: string, schema?: string): Promise<ExtendedTableColumn[]> {

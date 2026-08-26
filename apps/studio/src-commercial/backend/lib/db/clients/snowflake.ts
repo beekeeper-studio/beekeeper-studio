@@ -5,7 +5,7 @@ import * as snowflake from "snowflake-sdk";
 import { Connection, ConnectionOptions, Pool, PoolOptions } from "snowflake-sdk"
 import BksConfig from "@/common/bksConfig";
 import rawLog from '@bksLogger'
-import { BksField, CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FieldDescriptor, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableDelete, TableFilter, TableIndex, TableInsert, TableOrView, TableProperties, TableResult, TableTrigger, TableUpdate, TableUpdateResult } from "@/lib/db/models";
+import { CancelableQuery, DatabaseFilterOptions, FieldDescriptor, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableDelete, TableFilter, TableIndex, TableInsert, TableOrView, TableProperties, TableTrigger, TableUpdate, TableUpdateResult } from "@/lib/db/models";
 import { buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildSelectTopQuery, buildUpdateQueries, errorMessages, escapeString } from "@/lib/db/clients/utils";
 import _ from "lodash";
 import { TableKey } from "@/shared/lib/dialects/models";
@@ -18,10 +18,12 @@ import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilder
 import { SnowflakeChangeBuilder } from "@/shared/lib/sql/change_builder/SnowflakeChangeBuilder";
 import { SnowflakeCursor } from "./snowflake/SnowflakeCursor";
 import { IndexColumn } from "@beekeeperstudio/plugin";
+import { SnowflakeColumnIdentifier } from "./snowflake/SnowflakeColumnIdentifier";
+import { RawTableColumn } from "@/lib/db/serialization/ColumnIdentifier";
 
 const log = rawLog.scope('snowflake')
 
-interface SnowflakeResult {
+export interface SnowflakeResult {
   columns: { name: string, type?: string | number | any }[]
   rows: Record<string, any>[];
   arrayMode: boolean;
@@ -50,6 +52,7 @@ export interface VersionInfo {
 }
 
 export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connection> {
+  columnIdentifier = new SnowflakeColumnIdentifier();
 
   pool: Pool<Connection>;
   version: VersionInfo;
@@ -267,7 +270,7 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
     return await this.listTableColumns(table, schema);
   }
 
-  async listTableColumns(table: string, schema: string = this._defaultSchema): Promise<ExtendedTableColumn[]> {
+  protected async listTableColumnsRunner(table: string, schema: string = this._defaultSchema): Promise<RawTableColumn[]> {
     const ident = this.wrapTable(table, schema);
     const sql = `
       DESCRIBE TABLE ${ident}
@@ -288,7 +291,6 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
       comment: row.comment,
       generated: row.kind === 'VIRTUAL',
       generationExpression: row.expression,
-      bksField: this.parseTableColumn(row)
     }))
   }
 
@@ -602,7 +604,7 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
     return this.knex.raw(query, params).toQuery();
   }
 
-  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult> {
+  protected async selectTopRunner(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<SnowflakeResult> {
     const columns = await this.listTableColumns(table, schema);
     const queries = buildSelectTopQuery(
       table,
@@ -617,12 +619,7 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
       this.wrapIdentifier
     );
     const { query, params } = queries;
-    const result = await this.driverExecuteSingle(query, { params });
-    const fields = columns.map((v) => v.bksField).filter((v) => selects && selects.length > 0 ? selects.includes(v.name) : true);
-    const rows = await this.serializeQueryResult(result, fields);
-    return {
-      result: rows, fields
-    }
+    return await this.driverExecuteSingle(query, { params });
   }
 
   async selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults> {
@@ -1029,13 +1026,6 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
   wrapIdentifier(value: string): string {
     if (!value || value === '*') return value;
     return `"${value.replaceAll(/"/g, '""')}"`;
-  }
-
-  protected parseTableColumn(column: any): BksField {
-    return {
-      name: column.name,
-      bksType: "UNKNOWN"
-    }
   }
 
   private async insertRows(rawInserts: TableInsert[], connection: Connection) {

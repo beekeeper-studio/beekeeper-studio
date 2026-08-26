@@ -30,12 +30,14 @@ import {
   ExecutionContext,
   QueryLogOptions
 } from './BasicDatabaseClient'
-import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportFuncOptions, DatabaseEntity, BksFieldType, BksField, IncludedFilterTypes } from '../models';
+import { FilterOptions, OrderBy, TableFilter, TableIndex, TableProperties, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportFuncOptions, DatabaseEntity, IncludedFilterTypes } from '../models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
 import { AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from '../serialization/transcoders';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
+import { SqlServerColumnIdentifier } from './sqlserver/SqlServerColumnIdentifier';
+import { RawTableColumn } from '../serialization/ColumnIdentifier';
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData
@@ -68,7 +70,7 @@ type SQLServerVersion = {
 
 type ColumnMetadata = sql.IColumnMetadata[number]
 
-type SQLServerResult = {
+export type SQLServerResult = {
   connection: Request,
   data: sql.IResult<any>,
   // Number of changes made by the query
@@ -106,6 +108,7 @@ knex.client._escapeBinding = function (value: any, context: any) {
 // DO NOT USE CONCAT() in sql, not compatible with Sql Server <= 2008
 // SQL Server < 2012 might eventually need its own class.
 export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transaction> {
+  columnIdentifier = new SqlServerColumnIdentifier();
   server: IDbConnectionServer
   database: IDbConnectionDatabase
   version: SQLServerVersion
@@ -163,7 +166,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     }))
   }
 
-  async listTableColumns(table: string, schema: string = this._defaultSchema): Promise<ExtendedTableColumn[]> {
+  protected async listTableColumnsRunner(table: string, schema: string = this._defaultSchema): Promise<RawTableColumn[]> {
     const clauses = []
     if (table) clauses.push(`table_name = ${D.escapeString(table, true)}`)
     if (schema) clauses.push(`table_schema = ${D.escapeString(schema, true)}`)
@@ -209,7 +212,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       nullable: row.is_nullable === 'YES',
       defaultValue: row.column_default,
       generated: row.is_generated === 'YES',
-      bksField: this.parseTableColumn(row),
     }))
   }
 
@@ -280,16 +282,14 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     }
   }
 
-  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema: string = this._defaultSchema, selects = ['*']): Promise<TableResult> {
+  protected async selectTopRunner(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema: string = this._defaultSchema, selects = ['*']): Promise<SQLServerResult> {
     this.logger().debug("filters", filters)
     const query = await this.selectTopSql(table, offset, limit, orderBy, filters, schema, selects)
     this.logger().debug(query)
 
     const result = await this.driverExecuteSingle(query)
     this.logger().debug(result)
-    const fields = this.parseQueryResultColumns(result)
-    const rows = await this.serializeQueryResult(result, fields)
-    return { result: rows, fields }
+    return result
   }
 
   async selectTopSql(
@@ -1664,28 +1664,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     return data.recordset[0].MS_Description
   }
 
-  parseQueryResultColumns(qr: SQLServerResult): BksField[] {
-    return Object.keys(qr.columns).map((key) => {
-      const column = qr.columns[key]
-      let bksType: BksFieldType = 'UNKNOWN'
-      const type = column.type
-      if (
-        type === sql.VarBinary ||
-          type === sql.Binary ||
-          type === sql.Image
-      ) {
-        bksType = 'BINARY'
-      }
-      return { name: column.name, bksType }
-    })
-  }
-
-  parseTableColumn(column: { column_name: string; data_type: string }): BksField {
-    return {
-      name: column.column_name,
-      bksType: column.data_type.includes('varbinary') ? 'BINARY' : 'UNKNOWN',
-    };
-  }
 }
 
 export default async function (server: IDbConnectionServer, database: IDbConnectionDatabase) {
