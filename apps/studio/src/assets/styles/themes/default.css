@@ -36,8 +36,7 @@
 }
 
 /* ===== Dark ===== */
-[data-theme="dark"],
-[data-theme="system-dark"] {
+[data-theme-type="dark"] {
   --cell-string-fg-color: var(--color-white);
   --cell-number-fg-color: var(--color-blue-400);
   --cell-dateTime-fg-color: var(--color-yellow-400);

@@ -212,14 +212,21 @@ export default Vue.extend({
 
   },
   methods: {
-    applyTheme() {
+    getTheme() {
       if (this.themeValue === "system") {
-        document.documentElement.dataset.theme = this.darkMediaQuery.matches
-          ? 'system-dark'
-          : 'system-light'
-      } else {
-        document.documentElement.dataset.theme = this.themeValue
+        return this.darkMediaQuery.matches ? "system-dark" : "system-light";
       }
+      return this.themeValue || "system";
+    },
+    getThemeType() {
+      if (this.themeValue === "system") {
+        return this.darkMediaQuery.matches ? "dark" : "light";
+      }
+      return this.themeValue.includes("dark") ? "dark" : "light";
+    },
+    applyTheme() {
+      document.documentElement.dataset.theme = this.getTheme();
+      document.documentElement.dataset.themeType = this.getThemeType();
     },
     notifyFreeTrial() {
       Noty.closeAll('trial')

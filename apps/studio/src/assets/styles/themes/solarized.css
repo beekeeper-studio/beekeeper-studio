@@ -1,16 +1,38 @@
 /* ===== Palette ===== */
 [data-theme="solarized"],
 [data-theme="solarized-dark"] {
-  --color-sky-300: #8dc6f6;
-  --color-sky-600: #268bd2;
+  --color-black: #002B36;
+  --color-white: #DDD6C1;
+
+  --color-blue-300: #A8D1ED;
+  --color-blue-400: #67AEE0;
+  --color-blue-500: #268BD2;
+  --color-blue-600: #227DBD;
+  --color-blue-700: #17537E;
+
+  --color-pink-400: #E072A8;
+  --color-pink-500: #D33682;
+  --color-pink-700: #7F204E;
+
+  --color-green-400: #AAB84D;
+  --color-green-500: #859900;
+  --color-green-700: #505C00;
+
+  --color-yellow-400: #CBAC4D;
+  --color-yellow-500: #B58900;
+  --color-yellow-700: #6D5200;
+
+  --color-orange-300: #EAB7A2;
+  --color-orange-500: #CB4B16;
+  --color-orange-800: #5B220A;
 }
 
 /* ===== Light ===== */
 [data-theme="solarized"] {
-  --cell-number-fg-color: var(--color-sky-600);
+  --cell-number-fg-color: var(--color-blue-700);
 }
 
 /* ===== Dark ===== */
 [data-theme="solarized-dark"] {
-  --cell-number-fg-color: var(--color-sky-300);
+  --cell-number-fg-color: var(--color-blue-300);
 }
