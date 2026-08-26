@@ -112,6 +112,10 @@ export enum AppEvent {
    * });
    **/
   openMoveFolderModal = 'openMoveFolderModal',
+  /** Vim's `:w`. Broadcast, so only the active tab should act on it. */
+  vimWrite = 'vimWrite',
+  /** Vim's `:x` and `:wq`. Broadcast, so only the active tab should act. */
+  vimWriteQuit = 'vimWriteQuit',
 }
 
 export type OpenShareModalOptions =  {

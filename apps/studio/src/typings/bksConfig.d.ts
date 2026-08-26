@@ -507,6 +507,9 @@ declare interface IBksConfig {
         minPinLength: number;
     };
     ui: {
+        connectionSidebar: {
+            recentConnectionsLimit: number;
+        };
         export: {
             errorNoticeTimeout: number;
         };
@@ -521,6 +524,8 @@ declare interface IBksConfig {
         };
         queryEditor: {
             autocomplete: {
+                disableKeywordCompletion: boolean;
+                disableSchemaCompletion: boolean;
                 keywordCasing: string;
                 quoteIdentifiers: string;
             };

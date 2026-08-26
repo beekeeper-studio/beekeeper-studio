@@ -75,6 +75,14 @@ export default {
     type: String,
     default: undefined,
   },
+  disableSchemaCompletion: {
+    type: Boolean,
+    default: false
+  },
+  disableKeywordCompletion: {
+    type: Boolean,
+    default: false
+  },
   paramTypes: {
     type: Object as PropType<Options["paramTypes"]>,
   },

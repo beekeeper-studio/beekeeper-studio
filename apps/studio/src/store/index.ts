@@ -40,6 +40,7 @@ import { PopupMenuModule } from './modules/PopupMenuModule'
 import { WebPluginManagerStatus } from '@/services/plugin'
 import { MenuBarModule } from './modules/MenuBarModule'
 import { PluginsModule, PluginsState } from './modules/plugins'
+import { VimStoreModule } from './modules/VimStoreModule'
 import { pluralize } from '@/vendor/pluralize'
 
 
@@ -154,6 +155,7 @@ const store = new Vuex.Store<State>({
     popupMenu: PopupMenuModule,
     menuBar: MenuBarModule,
     plugins: PluginsModule,
+    vim: VimStoreModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),
@@ -549,8 +551,9 @@ const store = new Vuex.Store<State>({
         context.commit('connected', true);
         context.commit('supportedFeatures', supportedFeatures);
         context.commit('versionString', versionString);
-        config = await context.dispatch('data/usedconnections/recordUsed', resolvedConfig)
-        context.commit('newConnection', config)
+        // conn/create recorded the use; pick up the new/updated recent row
+        await context.dispatch('data/usedconnections/load')
+        context.commit('newConnection', resolvedConfig)
 
         if (context.state.usedConfig.connectionType === 'surrealdb' &&
           context.state.usedConfig.surrealDbOptions?.authType === SurrealAuthType.Root) {
@@ -559,7 +562,7 @@ const store = new Vuex.Store<State>({
         await context.dispatch('updateDatabaseList')
         await context.dispatch('updateTables')
         await context.dispatch('updateRoutines')
-        context.dispatch('updateWindowTitle', config)
+        context.dispatch('updateWindowTitle', resolvedConfig)
 
         await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id })
 

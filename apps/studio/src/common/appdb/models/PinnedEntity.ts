@@ -1,4 +1,5 @@
 import { IConnection } from "@/common/interfaces/IConnection";
+import { IsInt, Min } from "class-validator";
 import { TransportPinnedEntity } from "@/common/transport/TransportPinnedEntity";
 import _ from "lodash";
 import { Column, Entity } from "typeorm";
@@ -60,6 +61,8 @@ export class PinnedEntity extends ApplicationEntity {
   @Column({type: 'float', nullable: false, default: 1})
   position = 99.0
 
+  @IsInt({ message: 'connectionId must be a saved connection id' })
+  @Min(1, { message: 'connectionId must be a saved connection id' })
   @Column({type: 'integer', nullable: false})
   connectionId
 
