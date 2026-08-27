@@ -40,14 +40,15 @@
 
 .BksContextMenu-item {
   display: flex;
-  padding: 6px 12px;
+  padding: 6px 14px;
   border-radius: 4px;
   margin: 1px 0;
   font-size: 0.9rem;
-  min-height: 28px;
+  min-height: 32px;
   color: $text-dark;
   cursor: pointer;
   align-items: center;
+  justify-content: flex-start;
   white-space: nowrap;
   transition: background-color 0.12s ease-in-out, color 0.12s ease-in-out;
 
@@ -80,7 +81,6 @@
 .BksContextMenu-item-label {
   flex: 0 1 auto;
   text-align: left;
-  margin-right: 14px;
   white-space: nowrap;
 }
 
@@ -90,20 +90,30 @@
   line-height: 1;
   color: rgba($text-dark, 0.55);
   margin-left: auto;
+  padding-left: 20px;
   letter-spacing: 0.5px;
   white-space: nowrap;
 }
 
 .BksContextMenu-item-trailing-icon {
-  margin-left: 8px;
-  display: flex;
+  margin-left: 10px;
+  width: 18px;
+  min-width: 18px;
+  height: 18px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
 
   i {
-    font-size: 16px;
+    font-size: 17px;
     line-height: 1;
+    height: 17px;
+    width: 17px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateY(1.5px);
     color: inherit;
     opacity: 0.8;
   }

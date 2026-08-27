@@ -28,12 +28,13 @@ hr {
 .BksContextMenu-item {
   color: $text-dark;
   border-radius: 4px;
-  padding: 6px 12px;
+  padding: 6px 14px;
   margin: 1px 0;
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   font-size: 0.9rem;
-  min-height: 28px;
+  min-height: 32px;
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.12s ease-in-out, color 0.12s ease-in-out;
@@ -54,7 +55,7 @@ hr {
 
     .BksContextMenu-item-icon-container i {
       opacity: 1;
-      transform: scale(1.1);
+      transform: translateY(1.5px) scale(1.08);
     }
   }
 
@@ -81,7 +82,6 @@ hr {
 .BksContextMenu-item-label {
   flex: 0 1 auto;
   text-align: left;
-  margin-right: 14px;
   white-space: nowrap;
 }
 
@@ -89,6 +89,7 @@ hr {
   flex: 0 0 auto;
   font-size: 0.85rem;
   margin-left: auto;
+  padding-left: 20px;
   opacity: 0.55;
   color: $text-dark;
   letter-spacing: 0.5px;
@@ -97,15 +98,24 @@ hr {
 }
 
 .BksContextMenu-item-trailing-icon {
-  margin-left: 8px;
-  display: flex;
+  margin-left: 10px;
+  width: 18px;
+  min-width: 18px;
+  height: 18px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
 
   i {
-    font-size: 16px;
+    font-size: 17px;
     line-height: 1;
+    height: 17px;
+    width: 17px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateY(1.5px);
     opacity: 0.75;
     transition: transform 0.12s ease, opacity 0.12s ease;
   }
