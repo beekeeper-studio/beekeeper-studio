@@ -171,7 +171,7 @@
       }
     },
     computed: {
-      ...mapGetters(['filteredTables', 'filteredRoutines', 'dialectData', 'dialect']),
+      ...mapGetters(['filteredTables', 'filteredRoutines', 'dialectData', 'dialect', 'isCommunity']),
       ...mapState({currentDatabase: 'database', 'usedConfig': 'usedConfig'}),
       ...mapState(['selectedSidebarItem', 'tables', 'routines', 'database', 'tablesLoading', 'supportedFeatures', 'connectionType']),
       ...mapGetters({
@@ -349,6 +349,7 @@
           {
             name: `${this.newTableOrCollection} from File`,
             label: `${this.newTableOrCollection} from File`,
+            icon: this.isCommunity ? 'stars' : undefined,
             handler: () => this.newTableFromFile(),
           },
         ];

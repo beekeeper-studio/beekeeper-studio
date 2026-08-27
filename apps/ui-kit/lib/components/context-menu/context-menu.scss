@@ -20,7 +20,7 @@
   font-size: 0.85rem;
   text-transform: none;
   font-weight: 400;
-  min-width: 0;
+  min-width: 180px;
   width: max-content;
   max-width: calc(100vw - 16px);
   border: 0;
@@ -81,7 +81,7 @@
 .BksContextMenu-item-label {
   flex: 1 1 auto;
   text-align: left;
-  margin-right: 20px;
+  margin-right: 32px;
   white-space: nowrap;
 }
 
@@ -91,7 +91,30 @@
   line-height: 1;
   color: rgba($text-dark, 0.55);
   margin-left: auto;
+  letter-spacing: 0.5px;
   white-space: nowrap;
+}
+
+.BksContextMenu-item-trailing-icon {
+  margin-left: 12px;
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+
+  .BksContextMenu-item-label + & {
+    margin-left: auto;
+  }
+
+  i {
+    font-size: 18px;
+    line-height: 1;
+    color: inherit;
+    opacity: 0.8;
+  }
 }
 
 .BksContextMenu-item-icon-container i {
@@ -139,6 +162,9 @@
 
 .BksContextMenu-item-submenu-icon {
   margin-left: 12px;
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;

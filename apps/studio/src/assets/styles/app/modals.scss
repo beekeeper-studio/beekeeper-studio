@@ -16,7 +16,10 @@
   // The vendor stylesheet forces `width: 100% !important` on every modal, so
   // vue-js-modal's width prop can't reach it — cap the width here instead.
   &.upgrade-modal .v--modal {
-    max-width: 520px;
+    max-width: 620px;
+    border-radius: 12px;
+    background: transparent;
+    box-shadow: none;
   }
 
   &.sql-files-import-modal, &.wait-sso-modal {

@@ -1,111 +1,332 @@
 @use "sass:color";
+@use "../../app/mixins" as *;
 
-// Shared upgrade prompt used inside the upgrade modal AND inline in tabs
-// (multi-table export, import-from-file, backup, plugins, AI shell).
-//
-// The panel renders standard dialog markup — .dialog-content, .dialog-c-title,
-// .dialog-c-subtitle — so it inherits the chrome every other dialog in the app
-// gets from vue-js-modal.scss. Only the bits that don't exist elsewhere live
-// here: the feature list, the link row, and the standalone card surface.
-
+.upgrade-modal,
 .upgrade-panel {
-  width: 100%;
-  // Set explicitly: outside a modal the panel would otherwise inherit whatever
-  // text color the surrounding tab pane happens to use.
   color: $text;
+  box-sizing: border-box;
 
-  .dialog-c-title {
-    color: $text-dark;
+  .upgrade-modal-content {
+    background: #181818 !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    position: relative !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6) !important;
   }
 
-  .dialog-c-subtitle {
-    margin: 0;
-  }
-
-  // Two-column checklist of what a paid license includes.
-  .upgrade-feature-list {
-    margin: $gutter-w 0 0;
+  .close-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.7);
     padding: 0;
-    list-style: none;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    column-gap: $gutter-w * 1.5;
-    row-gap: $gutter-h;
+    z-index: 10;
+    transition: background 0.15s ease, color 0.15s ease;
 
-    li {
-      display: flex;
-      align-items: center;
-      gap: $gutter-h * 1.25;
-      font-size: 0.875rem;
-      color: $text;
+    &:hover {
+      background: rgba(255, 255, 255, 0.16);
+      color: #ffffff;
     }
 
     .material-icons {
-      font-size: 16px;
-      color: $text-lighter;
+      font-size: 18px;
+    }
+  }
+
+  .upgrade-modal-scroll {
+    padding: 24px 24px 18px;
+  }
+
+  .upgrade-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    .bk-badge {
+      width: 42px;
+      height: 42px;
       flex-shrink: 0;
     }
+
+    .title-block {
+      flex: 1;
+      min-width: 0;
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.8px;
+        color: var(--theme-primary, #f5c518);
+        text-transform: uppercase;
+        margin-bottom: 2px;
+
+        .material-icons {
+          font-size: 13px;
+          color: var(--theme-primary, #f5c518);
+        }
+      }
+
+      .title {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 600;
+        color: #ffffff;
+        letter-spacing: -0.2px;
+        line-height: 1.25;
+        padding-bottom: 0;
+      }
+    }
   }
 
-  .upgrade-panel-links {
-    margin: $gutter-w 0 0;
-    font-size: 0.8rem;
+  .subtitle {
+    margin: 8px 0 0;
+    padding-left: 56px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
     line-height: 1.5;
+  }
 
-    a {
-      display: inline-flex;
+  .unlock-section {
+    margin-top: 20px;
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.45);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .unlock-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .unlock-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      list-style: none;
+      padding: 0;
+
+      &:before {
+        content: none;
+      }
+
+      .unlock-icon {
+        font-size: 18px;
+        line-height: 1.3;
+        flex-shrink: 0;
+      }
+
+      .unlock-text {
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .unlock-title {
+        color: #ffffff;
+        font-weight: 600;
+        margin-right: 6px;
+      }
+
+      .unlock-blurb {
+        color: rgba(255, 255, 255, 0.65);
+      }
+    }
+
+    .unlock-more {
+      display: flex;
       align-items: center;
-      gap: $gutter-h * 0.875;
-      color: $text;
-      text-decoration: none;
+      gap: 4px;
+      padding-left: 30px;
+      font-size: 12.5px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 2px;
+      list-style: none;
 
-      span {
-        text-decoration: underline;
-        text-decoration-color: rgba($theme-base, 0.25);
+      &:before {
+        content: none;
       }
-      &:hover span {
-        text-decoration-color: currentColor;
-      }
-      .material-icons {
-        font-size: 16px;
-        color: $text-lighter;
+
+      a {
+        color: #38bdf8;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-weight: 500;
+
+        &:hover {
+          text-decoration: underline;
+        }
+
+        .material-icons {
+          font-size: 14px;
+        }
       }
     }
   }
 
-  // The shared upsell buttons are this panel's dialog footer, so give them the
-  // same metrics .vue-dialog-buttons uses everywhere else.
-  > .upsell-buttons {
-    padding: 0 $gutter-w $gutter-w;
-    padding-left: $gutter-w * 1.5;
-  }
-
-  // Standalone (inline in a tab, or on the connection screen): the panel
-  // supplies the card surface a modal would otherwise provide.
-  &.upgrade-panel--standalone {
-    max-width: 520px;
-    margin: 1.5rem auto;
-    background: color.adjust($theme-bg, $lightness: 1%);
+  .testimonial {
+    margin: 18px 0 0;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
-    @include card-shadow;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
 
-    // Panels with a preview in the slot need more room.
-    &.upgrade-panel--wide {
-      max-width: 620px;
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #233433;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.85);
+      flex-shrink: 0;
+    }
+
+    .testimonial-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    blockquote {
+      margin: 0;
+      font-size: 13.5px;
+      line-height: 1.45;
+      color: #ffffff;
+      font-weight: 400;
+    }
+
+    figcaption {
+      margin-top: 6px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.55);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      .author {
+        color: rgba(255, 255, 255, 0.85);
+        font-weight: 500;
+      }
+
+      .sep {
+        color: rgba(255, 255, 255, 0.35);
+      }
+
+      .role {
+        color: rgba(255, 255, 255, 0.55);
+      }
     }
   }
-}
 
-// Wrapper used by tabs to center the standalone panel and provide breathing
-// room. `safe center` keeps the top of a tall panel reachable — the wrapper
-// falls back to top-aligned scrolling instead of clipping it.
-.upgrade-panel-tab-wrapper {
-  width: 100%;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  display: flex;
-  align-items: safe center;
-  justify-content: center;
-  padding: 0 1.5rem;
+  .cta-row {
+    margin-top: 18px;
+
+    .actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+
+      .btn-trial {
+        background: #252525;
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 6px;
+        padding: 7px 18px;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background 0.15s ease;
+
+        &:hover {
+          background: #333333;
+        }
+      }
+
+      .btn-upgrade {
+        background: #ffffff;
+        color: #000000;
+        border: none;
+        border-radius: 6px;
+        padding: 7px 20px;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        text-decoration: none;
+        transition: opacity 0.15s ease;
+
+        &:hover {
+          opacity: 0.9;
+          color: #000000;
+        }
+      }
+    }
+  }
+
+  .lifetime-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: #221e10;
+    border-top: 1px solid rgba(245, 197, 24, 0.25);
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 12.5px;
+    line-height: 1.4;
+    border-radius: 0 0 12px 12px;
+
+    .material-icons {
+      font-size: 16px;
+      color: var(--theme-primary, #f5c518);
+      flex-shrink: 0;
+    }
+
+    strong {
+      color: #ffffff;
+      font-weight: 600;
+    }
+  }
+
+  // Standalone inline panel in tabs
+  &.upgrade-panel--standalone {
+    max-width: 620px;
+    margin: 1.5rem auto;
+    background: #181818;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+  }
 }

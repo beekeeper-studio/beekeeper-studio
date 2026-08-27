@@ -1,90 +1,144 @@
 <template>
   <div
-    class="upgrade-panel vue-dialog"
+    class="upgrade-panel"
     :class="{ 'upgrade-panel--standalone': standalone, 'upgrade-panel--wide': wide }"
   >
-    <div class="dialog-content">
-      <h3 class="dialog-c-title">
-        {{ headingText }}
-      </h3>
-      <p class="dialog-c-subtitle">
-        {{ descriptionText }}
+    <div class="upgrade-modal-scroll">
+      <!-- Header -->
+      <div class="upgrade-modal-header">
+        <img class="bk-badge" :src="logoUrl" alt="Beekeeper Studio">
+        <div class="title-block" :class="{ triggered }">
+          <div v-if="triggered" class="eyebrow">
+            <i class="material-icons">lock</i>
+            <span>UPGRADE REQUIRED</span>
+          </div>
+          <h2 class="title">
+            {{ headingText }}
+          </h2>
+        </div>
+      </div>
+      <p v-if="triggered" class="subtitle">
+        … plus a bunch of other intuitive and useful features.
       </p>
+
       <slot />
-      <ul
-        v-if="showFeatures"
-        class="upgrade-feature-list"
-      >
-        <li
-          v-for="feature in features"
-          :key="feature.label"
-          v-tooltip="feature.tooltip || false"
-        >
-          <i class="material-icons">check</i>
-          <span>{{ feature.label }}</span>
-        </li>
-      </ul>
-      <p class="upgrade-panel-links">
-        <a
-          href="#"
-          @click.prevent="learnMore"
-        >
-          <i class="material-icons">open_in_new</i>
-          <span>Full list of paid features</span>
-        </a>
-      </p>
+
+      <!-- What you unlock -->
+      <div v-if="showFeatures" class="unlock-section">
+        <div class="section-label">WHAT YOU UNLOCK BY UPGRADING</div>
+        <ul class="unlock-list">
+          <li
+            v-for="item in unlockList"
+            :key="item.id"
+            class="unlock-item"
+          >
+            <i
+              class="material-icons unlock-icon"
+              :style="{ color: item.color }"
+            >{{ item.icon }}</i>
+            <div class="unlock-text">
+              <strong class="unlock-title">{{ item.title }}</strong>
+              <span v-if="item.blurb" class="unlock-blurb">{{ item.blurb }}</span>
+            </div>
+          </li>
+          <li class="unlock-more">
+            <span>…and much, much more</span>
+            <a
+              href="#"
+              @click.prevent="learnMore"
+            >
+              see the full list <i class="material-icons">arrow_forward</i>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Testimonial -->
+      <figure class="testimonial">
+        <div class="avatar">MK</div>
+        <div class="testimonial-body">
+          <blockquote>
+            “By far the most user-friendly DB GUI out there. Our whole team bought a license.”
+          </blockquote>
+          <figcaption>
+            <span class="author">Matt K</span>
+            <span class="sep">·</span>
+            <span class="role">Engineering Lead, MinnHealth</span>
+          </figcaption>
+        </div>
+      </figure>
+
+      <!-- CTAs -->
+      <div class="cta-row">
+        <div class="actions">
+          <button
+            class="btn btn-trial"
+            @click.prevent="startTrial"
+          >Start Free Trial</button>
+          <button
+            class="btn btn-upgrade"
+            @click.prevent="buyLicense"
+          >Upgrade</button>
+        </div>
+      </div>
     </div>
-    <upsell-buttons @started-trial="$emit('started-trial')" />
+
+    <!-- Lifetime license footer band -->
+    <div class="lifetime-footer" v-tooltip="'Subscribe for 12+ months and get lifetime access to any version released within your subscription period.'">
+      <i class="material-icons">all_inclusive</i>
+      <span>
+        <strong>Lifetime license</strong> - included as part of every subscription.*
+      </span>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
 import Vue from 'vue'
-import UpsellButtons from './common/UpsellButtons.vue'
+import logoUrl from '@/assets/logo.svg'
+import { AppEvent } from '@/common/AppEvent'
 
+const PRICING_URL = 'https://www.beekeeperstudio.io/pricing'
 const UPGRADE_URL = 'https://www.beekeeperstudio.io/upgrade'
 
-const LIFETIME_TOOLTIP =
-  'Subscribe for 12+ months and get lifetime access to any version released within your subscription period.'
-
-interface Feature {
-  label: string
-  tooltip?: string
-}
-
-// Ordered by demand: the middle of the list follows visitor counts for the
-// matching /features page on the website (90 days to 2026-08-25), highest
-// first. Features with no feature page follow, and the two ends are fixed —
-// lifetime access leads, the catch-all closes.
-const PAID_FEATURES: Feature[] = [
-  { label: 'Lifetime access', tooltip: LIFETIME_TOOLTIP },
-  { label: 'SQL AI shell' },
-  { label: 'Import from file' },
-  { label: 'Export multiple tables' },
-  { label: 'Unlimited table filters' },
-  { label: 'JSON row view' },
-  { label: 'Cloud sync' },
-  { label: 'Connection folders' },
-  { label: '10 more databases' },
-  { label: '…and much more' },
-]
+const CORE_FEATURES = [
+  {
+    id: 'ai',
+    title: 'SQL AI Shell',
+    blurb: 'Bring your own model; Claude, OpenAI, Gemini, or local.',
+    icon: 'auto_awesome',
+    color: '#ff78f7'
+  },
+  {
+    id: 'json',
+    title: 'JSON Sidebar',
+    blurb: 'View any row as JSON and expand foreign keys inline.',
+    icon: 'data_object',
+    color: '#38bdf8'
+  },
+  {
+    id: 'organize',
+    title: 'Folders',
+    blurb: 'Folders, drag-and-drop reordering, color coding.',
+    icon: 'folder',
+    color: '#94a3b8'
+  },
+  {
+    id: 'workspaces',
+    title: 'Cloud Workspaces',
+    blurb: 'Sync connections across devices, share a Team folder.',
+    icon: 'cloud',
+    color: '#38bdf8'
+  }
+] as const
 
 export default Vue.extend({
-  components: { UpsellButtons },
   props: {
-    // Name of the feature the user just tried to use, e.g. "Backup & Restore".
-    // Drives the heading; leave null for a generic prompt.
     featureName: {
       type: String,
       default: null
     },
-    // Full heading override, for surfaces that need their own wording.
     title: {
-      type: String,
-      default: null
-    },
-    // Body copy override, shown in place of the community-edition sentence.
-    description: {
       type: String,
       default: null
     },
@@ -92,36 +146,63 @@ export default Vue.extend({
       type: Boolean,
       default: true
     },
-    // When true, the panel adds its own card chrome (surface, radius, shadow)
-    // for inline placement. When false it's bare, so a modal supplies chrome.
     standalone: {
       type: Boolean,
       default: false
     },
-    // Wider card, for panels with a preview in the default slot.
     wide: {
       type: Boolean,
       default: false
     }
   },
+  data() {
+    return {
+      logoUrl
+    }
+  },
   computed: {
-    features(): Feature[] {
-      return PAID_FEATURES
+    triggered(): boolean {
+      return !!this.featureName || !!this.title
     },
     headingText(): string {
       if (this.title) return this.title
-      if (this.featureName) return `${this.featureName} needs a paid license`
+      if (this.featureName) return `Unlock ${this.featureName}`
       return 'Upgrade Beekeeper Studio'
     },
-    descriptionText(): string {
-      if (this.description) return this.description
-      if (!this.showFeatures) return 'Not included in the Community Edition.'
-      return this.featureName
-        ? 'Not included in the Community Edition. A paid license also includes:'
-        : 'A paid license includes:'
+    unlockList(): Array<{ id: string, title: string, blurb?: string, icon: string, color: string }> {
+      if (this.featureName) {
+        const featureId = this.featureName.toLowerCase().replace(/[^a-z0-9]/g, '')
+        const matchingCore = CORE_FEATURES.find(
+          (f) => f.title.toLowerCase() === this.featureName!.toLowerCase()
+        )
+
+        const topItem = {
+          id: matchingCore ? matchingCore.id : `featured-${featureId}`,
+          title: this.featureName,
+          blurb: matchingCore ? matchingCore.blurb : undefined,
+          icon: 'workspace_premium',
+          color: '#f5c518'
+        }
+
+        const rest = CORE_FEATURES.filter(
+          (f) => f.title.toLowerCase() !== this.featureName!.toLowerCase()
+        )
+
+        return [topItem, ...rest]
+      }
+
+      return [...CORE_FEATURES]
     }
   },
   methods: {
+    startTrial() {
+      this.$store.dispatch('licenses/add', { trial: true })
+      this.$emit('started-trial')
+    },
+    buyLicense() {
+      this.$native.openLink(PRICING_URL)
+      this.$root.$emit(AppEvent.enterLicense)
+    },
     learnMore() {
       this.$native.openLink(UPGRADE_URL)
     }

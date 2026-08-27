@@ -85,6 +85,9 @@ export default Vue.extend({
     hasCheckboxes(): boolean {
       return (this.options || []).some(o => o && typeof o.checked === 'boolean')
     },
+    hasTrailingIcons(): boolean {
+      return (this.options || []).some(o => o && Boolean(o.icon))
+    },
     menuElements() {
       if (this.$refs.menu) {
         return Array.from(this.$refs.menu.getElementsByTagName("*"))

@@ -1,0 +1,230 @@
+@use "sass:color";
+@use "../../app/mixins" as *;
+
+.ai-shell-upsell {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: 1.5rem 1rem;
+  color: $text;
+  box-sizing: border-box;
+
+  .compact-card {
+    position: relative;
+    width: 100%;
+    max-width: 620px;
+    background: #181818;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+    padding: 24px 24px 0;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  .head-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 8px;
+
+    .mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #3b1e4e, #2a1b38);
+      border: 1px solid rgba(255, 120, 247, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+
+      .material-icons {
+        font-size: 22px;
+        color: #ff78f7;
+      }
+    }
+
+    .title-block {
+      flex: 1;
+      min-width: 0;
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.8px;
+        color: var(--theme-primary, #f5c518);
+        text-transform: uppercase;
+        margin-bottom: 2px;
+
+        .material-icons {
+          font-size: 13px;
+          color: var(--theme-primary, #f5c518);
+        }
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #ffffff;
+        letter-spacing: -0.2px;
+        line-height: 1.3;
+      }
+    }
+  }
+
+  .lede {
+    margin: 0 0 16px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.65);
+    line-height: 1.5;
+  }
+
+  .pills {
+    list-style: none;
+    margin: 16px 0 12px;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 6px 12px;
+    font-size: 12.5px;
+    color: $text-dark;
+  }
+
+  .pill-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+
+    .material-icons {
+      font-size: 15px;
+      color: #00d68f;
+    }
+
+    span {
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.85);
+      white-space: nowrap;
+    }
+
+    & + .pill-row::before {
+      content: "·";
+      color: rgba(255, 255, 255, 0.3);
+      margin-right: 6px;
+    }
+  }
+
+  .testimonial {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 8px 0 16px;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    line-height: 1.4;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+
+    .stars {
+      color: var(--theme-primary, #f5c518);
+      font-size: 12px;
+      letter-spacing: 1px;
+      flex-shrink: 0;
+    }
+
+    .quote {
+      color: #ffffff;
+      flex: 0 1 auto;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .attr {
+      color: rgba(255, 255, 255, 0.45);
+      flex-shrink: 0;
+    }
+  }
+
+  .cta-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 14px;
+    margin-bottom: 16px;
+
+    .btn-trial {
+      background: #252525;
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      padding: 7px 16px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s ease;
+
+      &:hover {
+        background: #333333;
+        color: #ffffff;
+      }
+    }
+
+    .btn-upgrade {
+      background: #ffffff;
+      color: #000000;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 18px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.15s ease;
+
+      &:hover {
+        opacity: 0.9;
+        color: #000000;
+      }
+    }
+  }
+
+  .lifetime-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 16px -24px 0;
+    padding: 10px 20px;
+    background: #221e10;
+    border-top: 1px solid rgba(245, 197, 24, 0.25);
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 12.5px;
+    line-height: 1.4;
+
+    .material-icons {
+      font-size: 16px;
+      color: var(--theme-primary, #f5c518);
+      flex-shrink: 0;
+    }
+
+    strong {
+      color: #ffffff;
+      font-weight: 600;
+    }
+  }
+}
