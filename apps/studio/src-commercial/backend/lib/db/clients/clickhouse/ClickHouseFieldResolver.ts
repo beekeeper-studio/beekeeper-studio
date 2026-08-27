@@ -1,3 +1,8 @@
+/**
+ * Reference for data types:
+ * https://clickhouse.com/docs/reference/data-types
+ */
+
 import {
   FieldResolver,
   RawTableColumn,
@@ -5,50 +10,20 @@ import {
 import { BksFieldType } from "@/lib/db/models";
 import { Result } from "../clickhouse";
 
+const NUMBER = /^(?:u?int(?:8|16|32|64|128|256)|float(?:32|64)|bfloat16|decimal(?:32|64|128|256)?)$/;
+
+const DATETIME = /^(?:date(?:32)?|datetime(?:64)?|time(?:64)?)$/;
+
+const STRING = /^(?:string|fixedstring|uuid|json|enum(?:8|16)?|ipv4|ipv6)$/;
+
+const BOOLEAN = /^bool(?:ean)?$/;
+
 const RE_TYPE_WRAPPER = /^(?:Nullable|LowCardinality)\((.*)\)$/;
-
-const numberTypes = [
-  "int8",
-  "int16",
-  "int32",
-  "int64",
-  "int128",
-  "int256",
-  "uint8",
-  "uint16",
-  "uint32",
-  "uint64",
-  "uint128",
-  "uint256",
-  "float32",
-  "float64",
-  "decimal",
-  "decimal32",
-  "decimal64",
-  "decimal128",
-  "decimal256",
-];
-
-const dateTimeTypes = ["date", "date32", "datetime", "datetime64"];
-
-const stringTypes = [
-  "string",
-  "fixedstring",
-  "uuid",
-  "json",
-  "enum8",
-  "enum16",
-];
 
 /** Nullable(String) and LowCardinality(String) wrap the type we actually care about. */
 function unwrapType(type?: string): string {
-  let unwrapped = type;
-  let match = RE_TYPE_WRAPPER.exec(unwrapped);
-  while (match) {
-    unwrapped = match[1];
-    match = RE_TYPE_WRAPPER.exec(unwrapped);
-  }
-  return unwrapped;
+  const match = type && RE_TYPE_WRAPPER.exec(type);
+  return match ? unwrapType(match[1]) : (type as string);
 }
 
 export class ClickHouseFieldResolver extends FieldResolver<Result> {
@@ -67,19 +42,19 @@ export class ClickHouseFieldResolver extends FieldResolver<Result> {
     const declaration = unwrapType(rawType)?.toLowerCase() ?? "";
     const type = declaration.split("(")[0].trim();
 
-    if (type === "bool" || type === "boolean") {
+    if (BOOLEAN.test(type)) {
       return "BOOLEAN";
     }
 
-    if (numberTypes.includes(type)) {
+    if (NUMBER.test(type)) {
       return "NUMBER";
     }
 
-    if (dateTimeTypes.includes(type)) {
+    if (DATETIME.test(type)) {
       return "DATETIME";
     }
 
-    if (stringTypes.includes(type)) {
+    if (STRING.test(type)) {
       return "STRING";
     }
 
