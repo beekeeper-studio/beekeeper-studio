@@ -62,13 +62,13 @@ export function toMenuItem(option: ContextOption): MenuItem {
 }
 
 export const BeekeeperPlugin = {
-  timeAgo(date: Date) {
+  timeAgo(date: Date, style?: string) {
     if (date > new Date('2888-01-01')) {
       return 'forever'
     }
     const ta = new TimeAgo('en-US')
 
-    return ta.format(date)
+    return ta.format(date, style)
 
   },
   closeTab(id?: string) {

@@ -13,45 +13,10 @@
     }
   }
 
-  &.upgrade-modal {
-    .v--modal {
-      overflow: hidden;
-      border-radius: 12px;
-      max-height: calc(100vh - 40px);
-    }
-    .v--modal-box {
-      display: flex;
-      flex-direction: column;
-    }
-    .dialog-content.upgrade-modal-content {
-      padding: 0;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      flex: 1 1 auto;
-      min-height: 0;
-    }
-    .upgrade-panel {
-      display: flex;
-      flex-direction: column;
-      flex: 1 1 auto;
-      min-height: 0;
-    }
-    .upgrade-panel-scroll {
-      flex: 1 1 auto;
-      min-height: 0;
-      overflow-y: auto;
-    }
-    .upgrade-panel-header {
-      padding-right: 32px; // room for close button
-    }
-    .close-btn {
-      position: absolute;
-      top: 14px;
-      right: 14px;
-      z-index: 2;
-      color: $text-light;
-    }
+  // The vendor stylesheet forces `width: 100% !important` on every modal, so
+  // vue-js-modal's width prop can't reach it — cap the width here instead.
+  &.upgrade-modal .v--modal {
+    max-width: 520px;
   }
 
   &.sql-files-import-modal, &.wait-sso-modal {

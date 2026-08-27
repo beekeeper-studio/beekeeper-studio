@@ -1,4 +1,5 @@
 import { IConnection } from "@/common/interfaces/IConnection";
+import { IsInt, Min } from "class-validator";
 import { TransportHiddenEntity } from "@/common/transport/TransportHidden";
 import _ from "lodash";
 import { Column, Entity } from "typeorm";
@@ -54,6 +55,8 @@ export class HiddenEntity extends ApplicationEntity {
   @Column({type: 'varchar', nullable: false})
   entityType: 'table' | 'view' | 'routine' | 'materialized-view'
 
+  @IsInt({ message: 'connectionId must be a saved connection id' })
+  @Min(1, { message: 'connectionId must be a saved connection id' })
   @Column({type: 'integer', nullable: false})
   connectionId: number
 

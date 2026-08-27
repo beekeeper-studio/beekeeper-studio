@@ -16,13 +16,17 @@ jest.mock('@/common/platform_info', () => ({
 
 const capturedConfigs: any[] = []
 
+// What the mocked ssh2 Client does once connect() is called. Defaults to a successful connection; individual tests override it to emit errors.
+const mockConnectSuccess = (client: any) => setImmediate(() => client.emit('ready'))
+let mockOnConnect = mockConnectSuccess
+
 jest.mock('ssh2', () => {
   const actual = jest.requireActual('ssh2')
   const { EventEmitter } = require('events')
   class MockClient extends EventEmitter {
     connect(cfg: any) {
       capturedConfigs.push(cfg)
-      setImmediate(() => this.emit('ready'))
+      mockOnConnect(this)
     }
     end() {}
   }
@@ -70,5 +74,46 @@ describe('SSHConnection Windows agent branch', () => {
     expect(cfg.agent).toBeDefined()
     // This is the exact check ssh2's internal isAgent() performs.
     expect(cfg.agent instanceof BaseAgent).toBe(true)
+  })
+})
+
+// Regression tests #4661: when no agent is running (Pageant not started on windows)
+describe('SSHConnection agent error handling', () => {
+  const connectionOptions = {
+    endHost: '127.0.0.1',
+    endPort: 22,
+    username: 'x',
+    skipAutoPrivateKey: true,
+    noReadline: true,
+  }
+
+  afterEach(() => {
+    mockOnConnect = mockConnectSuccess
+  })
+
+  it('ignores a non-fatal agent error and connects', async () => {
+    mockOnConnect = (client: any) => setImmediate(() => {
+      const err: any = new Error('Failed to retrieve identities from agent')
+      err.level = 'agent'
+      client.emit('error', err)
+      setImmediate(() => client.emit('ready'))
+    })
+
+    const conn = new SSHConnection(connectionOptions)
+    await expect(conn.forward({ fromPort: 0, toPort: 22 })).resolves.toBeDefined()
+    await conn.shutdown()
+  })
+
+  it('still rejects when authentication ultimately fails', async () => {
+    mockOnConnect = (client: any) => setImmediate(() => {
+      const err: any = new Error('All configured authentication methods failed')
+      err.level = 'client-authentication'
+      client.emit('error', err)
+    })
+
+    const conn = new SSHConnection(connectionOptions)
+    await expect(conn.forward({ fromPort: 0, toPort: 22 }))
+      .rejects.toThrow('All configured authentication methods failed')
+    await conn.shutdown()
   })
 })

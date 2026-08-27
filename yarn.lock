@@ -3805,6 +3805,11 @@
   resolved "https://registry.yarnpkg.com/@replit/codemirror-emacs/-/codemirror-emacs-6.1.0.tgz#662dffc3b354c47cbf930219f8cb75cfc9e7f6fe"
   integrity sha512-74DITnht6Cs6sHg02PQ169IKb1XgtyhI9sLD0JeOFco6Ds18PT+dkD8+DgXBDokne9UIFKsBbKPnpFRAz60/Lw==
 
+"@replit/codemirror-indentation-markers@^6.5.3":
+  version "6.5.3"
+  resolved "https://registry.yarnpkg.com/@replit/codemirror-indentation-markers/-/codemirror-indentation-markers-6.5.3.tgz#1cfe5c557c45dd7f2988cbee278f17607010591b"
+  integrity sha512-hL5Sfvw3C1vgg7GolLe/uxX5T3tmgOA3ZzqlMv47zjU1ON51pzNWiVbS22oh6crYhtVhv8b3gdXwoYp++2ilHw==
+
 "@replit/codemirror-vim@^6.3.0":
   version "6.3.0"
   resolved "https://registry.yarnpkg.com/@replit/codemirror-vim/-/codemirror-vim-6.3.0.tgz#1bcde09f25bcb1c4f96d2cd50ea07f9f71fc9ec4"
