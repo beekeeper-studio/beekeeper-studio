@@ -37,9 +37,9 @@ $editor-statusbar:         $theme-base;
   background: $theme-bg;
   color: $text;
 }
-.material-icons {
-  // font-weight: 600;
-}
+// .material-icons {
+//   font-weight: 600;
+// }
 select {
   background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(0,0,0, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
   option {
@@ -762,6 +762,8 @@ x-switch {
   --bks-table-icon-color: #{$theme-primary};
 
   --bks-text-editor-bg-color: #{$query-editor-bg};
+  --bks-text-editor-activeline-bg-color: #{rgba($theme-base, 0.06)};
+  --bks-text-editor-activeline-gutter-bg-color: transparent;
   --bks-text-editor-error-bg-color: #{rgba($brand-danger, 0.1)};
   --bks-text-editor-error-fg-color: #{$brand-danger};
   --bks-text-editor-fg-color: #{$text-dark};
@@ -779,6 +781,7 @@ x-switch {
   --bks-text-editor-variable-2-fg-color: #{$brand-secondary};
   --bks-text-editor-selected-bg-color: #{rgba($theme-base, 0.25)};
   --bks-text-editor-linenumber-fg-color: #{rgba($theme-base, 0.15)};
+  --bks-text-editor-linenumber-active-fg-color: #{$text-dark};
   --bks-text-editor-number-fg-color: #{$brand-primary};
   --bks-text-editor-string-fg-color: #{$brand-primary};
   --bks-text-editor-cursor-bg-color: #{$text-dark};
