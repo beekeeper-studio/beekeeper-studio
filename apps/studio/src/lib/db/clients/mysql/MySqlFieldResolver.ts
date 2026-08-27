@@ -1,5 +1,5 @@
 import mysql from "mysql2";
-import { ColumnIdentifier, RawTableColumn } from "@/lib/db/serialization/ColumnIdentifier";
+import { FieldResolver, RawTableColumn } from "@/lib/db/serialization/FieldResolver";
 import { BksFieldType } from "@/lib/db/models";
 import { ResultType } from "@/lib/db/clients/mysql";
 
@@ -89,8 +89,8 @@ const FieldFlags = {
   BINARY: 128,
 };
 
-export class MysqlColumnIdentifier extends ColumnIdentifier<ResultType> {
-  protected identifyResultColumnType(field: mysql.FieldPacket): BksFieldType {
+export class MysqlFieldResolver extends FieldResolver<ResultType> {
+  protected resolveRuntimeColumnType(field: mysql.FieldPacket): BksFieldType {
     if (
       binaryTypes.includes(field.type) &&
       (field.flags as number) & FieldFlags.BINARY
@@ -113,7 +113,7 @@ export class MysqlColumnIdentifier extends ColumnIdentifier<ResultType> {
     return "UNKNOWN";
   }
 
-  protected identifyListedColumnType(column: RawTableColumn): BksFieldType {
+  protected resolveDeclaredColumnType(column: RawTableColumn): BksFieldType {
     const declaration = column.dataType?.toLowerCase() ?? "";
     const type = declaration.split("(")[0].trim();
 

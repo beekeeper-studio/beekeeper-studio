@@ -48,8 +48,8 @@ import { IdentifyResult } from "sql-query-identifier/lib/defines"
 import { errors } from "@/lib/errors"
 import { IDbConnectionServer } from "@/lib/db/backendTypes"
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase"
-import { TrinoColumnIdentifier } from "./trino/TrinoColumnIdentifier";
-import { RawTableColumn } from "@/lib/db/serialization/ColumnIdentifier";
+import { TrinoFieldResolver } from "./trino/TrinoFieldResolver";
+import { RawTableColumn } from "@/lib/db/serialization/FieldResolver";
 
 interface ResultColumn {
   name: string
@@ -74,7 +74,7 @@ const trinoContext = {
 }
 
 export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
-  columnIdentifier = new TrinoColumnIdentifier();
+  fieldResolver = new TrinoFieldResolver();
   version: string
   client: any
   supportsTransaction: boolean

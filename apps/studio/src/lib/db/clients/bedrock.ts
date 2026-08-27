@@ -26,8 +26,8 @@ import _ from "lodash";
 import { parseVersion } from "@/common/version";
 import { buildSelectTopQuery } from "./utils";
 import { createSQLiteKnex } from "./sqlite/utils";
-import { BedrockColumnIdentifier } from "./bedrock/BedrockColumnIdentifier";
-import { RawTableColumn } from "../serialization/ColumnIdentifier";
+import { BedrockFieldResolver } from "./bedrock/BedrockFieldResolver";
+import { RawTableColumn } from "../serialization/FieldResolver";
 import rawLog from "@bksLogger";
 
 const log = rawLog.scope("bedrock");
@@ -52,7 +52,7 @@ interface PragmaColumnRow {
 }
 
 export class BedrockClient extends MysqlClient {
-  columnIdentifier = new BedrockColumnIdentifier();
+  fieldResolver = new BedrockFieldResolver();
   dialectData = SqliteData;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {

@@ -1,7 +1,7 @@
 import {
-  ColumnIdentifier,
+  FieldResolver,
   RawTableColumn,
-} from "@/lib/db/serialization/ColumnIdentifier";
+} from "@/lib/db/serialization/FieldResolver";
 import { BksFieldType } from "@/lib/db/models";
 import { SnowflakeResult } from "../snowflake";
 
@@ -45,15 +45,15 @@ const stringTypes = [
   "variant",
 ];
 
-export class SnowflakeColumnIdentifier extends ColumnIdentifier<SnowflakeResult> {
-  protected identifyResultColumnType(column: {
+export class SnowflakeFieldResolver extends FieldResolver<SnowflakeResult> {
+  protected resolveRuntimeColumnType(column: {
     name: string;
     type?: string | number | any;
   }): BksFieldType {
     return this.identifyType(column.type);
   }
 
-  protected identifyListedColumnType(column: RawTableColumn): BksFieldType {
+  protected resolveDeclaredColumnType(column: RawTableColumn): BksFieldType {
     return this.identifyType(column.dataType);
   }
 

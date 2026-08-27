@@ -1,14 +1,14 @@
 import {
-  ColumnIdentifier,
+  FieldResolver,
   RawTableColumn,
-} from "@/lib/db/serialization/ColumnIdentifier";
+} from "@/lib/db/serialization/FieldResolver";
 import { BksField, BksFieldType } from "@/lib/db/models";
 import { DynamoQueryResult } from "../dynamodb";
 
-export class DynamoDBColumnIdentifier extends ColumnIdentifier<DynamoQueryResult> {
+export class DynamoDBFieldResolver extends FieldResolver<DynamoQueryResult> {
   // Scans report no attribute types, so the values decide.
-  identifyResultColumns(qr: DynamoQueryResult): BksField[] {
-    const row = qr.rows[0];
+  resolveQueryResult(queryResult: DynamoQueryResult): BksField[] {
+    const row = queryResult.rows[0];
     if (!row) {
       return [];
     }
@@ -20,7 +20,7 @@ export class DynamoDBColumnIdentifier extends ColumnIdentifier<DynamoQueryResult
 
   // Listed columns carry the readable label from `dynamoTypeLabel`, not the
   // short code the SDK uses.
-  protected identifyListedColumnType(column: RawTableColumn): BksFieldType {
+  protected resolveDeclaredColumnType(column: RawTableColumn): BksFieldType {
     switch (column.dataType?.toLowerCase()) {
       case "string":
         return "STRING";

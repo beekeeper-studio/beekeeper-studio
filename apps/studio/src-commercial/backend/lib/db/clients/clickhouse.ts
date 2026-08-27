@@ -64,8 +64,8 @@ import { ClickHouseCursor } from "./clickhouse/ClickHouseCursor";
 import { readFileSync } from 'fs';
 import { NodeClickHouseClientConfigOptions } from "@clickhouse/client/dist/config";
 import https from 'https'
-import { ClickHouseColumnIdentifier } from "./clickhouse/ClickHouseColumnIdentifier";
-import { RawTableColumn } from "@/lib/db/serialization/ColumnIdentifier";
+import { ClickHouseFieldResolver } from "./clickhouse/ClickHouseFieldResolver";
+import { RawTableColumn } from "@/lib/db/serialization/FieldResolver";
 
 interface JSONResult {
   statement: IdentifyResult;
@@ -129,7 +129,7 @@ const RE_SELECT_FORMAT = /^\s*SELECT.+FORMAT\s+(\w+)\s*;?$/is;
 export class ClickHouseClient extends BasicDatabaseClient<Result> {
   version: string;
   client: NodeClickHouseClient;
-  columnIdentifier = new ClickHouseColumnIdentifier();
+  fieldResolver = new ClickHouseFieldResolver();
   supportsTransaction: boolean;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {

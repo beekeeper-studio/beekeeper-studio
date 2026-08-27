@@ -19,8 +19,8 @@ import platformInfo from "@/common/platform_info";
 import { MongoDBCursor } from './mongodb/MongoDBCursor';
 import { wrapIdentifier } from "@/lib/db/clients/postgresql";
 import knexlib from 'knex'
-import { MongoDBColumnIdentifier } from "./mongodb/MongoDBColumnIdentifier";
-import { RawTableColumn } from "@/lib/db/serialization/ColumnIdentifier";
+import { MongoDBFieldResolver } from "./mongodb/MongoDBFieldResolver";
+import { RawTableColumn } from "@/lib/db/serialization/FieldResolver";
 
 const knex = knexlib({ client: 'pg' })
 
@@ -91,7 +91,7 @@ const mongoContext = {
 }
 
 export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
-  columnIdentifier = new MongoDBColumnIdentifier();
+  fieldResolver = new MongoDBFieldResolver();
   conn: MongoClient;
   runtime: MongoRuntime;
   queryLeaf: QueryLeaf;

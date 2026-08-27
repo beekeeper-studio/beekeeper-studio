@@ -54,8 +54,8 @@ import { FirebirdCursor } from "./firebird/FirebirdCursor";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { GenericBinaryTranscoder } from "@/lib/db/serialization/transcoders";
 import BksConfig from "@/common/bksConfig";
-import { FirebirdColumnIdentifier } from "./firebird/FirebirdColumnIdentifier";
-import { RawTableColumn } from "@/lib/db/serialization/ColumnIdentifier";
+import { FirebirdFieldResolver } from "./firebird/FirebirdFieldResolver";
+import { RawTableColumn } from "@/lib/db/serialization/FieldResolver";
 
 export type FirebirdResult = {
   rows: any[];
@@ -221,7 +221,7 @@ interface FirebirdReservedConnection {
 }
 
 export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, FirebirdReservedConnection> {
-  columnIdentifier = new FirebirdColumnIdentifier();
+  fieldResolver = new FirebirdFieldResolver();
   version: any;
   pool: Pool;
   firebirdOptions: Firebird.Options;

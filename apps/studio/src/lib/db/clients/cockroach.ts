@@ -1,6 +1,6 @@
 import pg, { PoolConfig } from "pg";
 import { FilterOptions, SupportedFeatures, TableIndex, TableOrView, TablePartition, TableProperties, TableTrigger } from "../models";
-import { RawTableColumn } from "../serialization/ColumnIdentifier";
+import { RawTableColumn } from "../serialization/FieldResolver";
 import { PostgresClient, STQOptions } from "./postgresql";
 import _ from 'lodash';
 import { defaultCreateScript } from "./postgresql/scripts";

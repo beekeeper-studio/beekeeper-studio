@@ -20,8 +20,8 @@ import { createClient, RedisClientType } from "redis";
 import { getTransformReply } from "@redis/client/dist/lib/commander";
 import COMMANDS from "@redis/client/dist/lib/commands";
 import type { Command } from "@redis/client/dist/lib/RESP/types";
-import { RedisColumnIdentifier } from "./redis/RedisColumnIdentifier";
-import { RawTableColumn } from "../serialization/ColumnIdentifier";
+import { RedisFieldResolver } from "./redis/RedisFieldResolver";
+import { RawTableColumn } from "../serialization/FieldResolver";
 import { IDbConnectionServer } from "../backendTypes";
 import { IDbConnectionDatabase } from "../types";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
@@ -224,7 +224,7 @@ function makeGenericResult(result: unknown, command: string) {
 }
 
 export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
-  columnIdentifier = new RedisColumnIdentifier();
+  fieldResolver = new RedisFieldResolver();
   redis: RedisClientType;
   respVersion: 2 | 3 = 2; // This is the default for most instances
 

@@ -2,7 +2,7 @@ import { PoolConfig } from "pg";
 import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from "../authentication/amazon-redshift";
 import { DatabaseElement } from "../types";
 import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TableProperties, TableIndex } from "../models";
-import { RawTableColumn } from "../serialization/ColumnIdentifier";
+import { RawTableColumn } from "../serialization/FieldResolver";
 import { PostgresClient, STQOptions } from "./postgresql";
 import {escapeString, resolveAWSCredentials} from "./utils";
 import pg from 'pg';

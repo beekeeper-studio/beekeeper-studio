@@ -1,7 +1,7 @@
 import {
-  ColumnIdentifier,
+  FieldResolver,
   RawTableColumn,
-} from "@/lib/db/serialization/ColumnIdentifier";
+} from "@/lib/db/serialization/FieldResolver";
 import { BksFieldType } from "@/lib/db/models";
 import { Result } from "../clickhouse";
 
@@ -51,15 +51,15 @@ function unwrapType(type?: string): string {
   return unwrapped;
 }
 
-export class ClickHouseColumnIdentifier extends ColumnIdentifier<Result> {
-  protected identifyResultColumnType(column: {
+export class ClickHouseFieldResolver extends FieldResolver<Result> {
+  protected resolveRuntimeColumnType(column: {
     name: string;
     type?: string;
   }): BksFieldType {
     return this.identifyType(column.type);
   }
 
-  protected identifyListedColumnType(column: RawTableColumn): BksFieldType {
+  protected resolveDeclaredColumnType(column: RawTableColumn): BksFieldType {
     return this.identifyType(column.dataType);
   }
 

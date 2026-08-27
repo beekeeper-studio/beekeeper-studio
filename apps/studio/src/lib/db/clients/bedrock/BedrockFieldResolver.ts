@@ -1,30 +1,20 @@
-import {
-  ColumnIdentifier,
-  RawTableColumn,
-} from "@/lib/db/serialization/ColumnIdentifier";
 import { BksFieldType } from "@/lib/db/models";
-import { SqliteResult } from "@/lib/db/clients/sqlite";
+import { RawTableColumn } from "@/lib/db/serialization/FieldResolver";
+import { MysqlFieldResolver } from "@/lib/db/clients/mysql/MySqlFieldResolver";
 
-export class SqliteColumnIdentifier extends ColumnIdentifier<SqliteResult> {
-  protected identifyResultColumnType(column: {
-    name: string;
-    type?: string;
-  }): BksFieldType {
-    return this.identifyType(column.type);
-  }
-
-  protected identifyListedColumnType(column: RawTableColumn): BksFieldType {
-    return this.identifyType(column.dataType);
-  }
-
+/**
+ * Bedrock speaks the MySQL protocol, so result columns are identified the MySQL
+ * way, but its listed columns come from sqlite's `PRAGMA table_xinfo`.
+ */
+export class BedrockFieldResolver extends MysqlFieldResolver {
   // Sqlite has no strict column types, so this follows the type affinity rules.
   // See https://www.sqlite.org/datatype3.html#determination_of_column_affinity
-  private identifyType(rawType?: string): BksFieldType {
-    if (!rawType) {
+  protected resolveDeclaredColumnType(column: RawTableColumn): BksFieldType {
+    if (!column.dataType) {
       return "UNKNOWN";
     }
 
-    const declaration = rawType.toLowerCase();
+    const declaration = column.dataType.toLowerCase();
 
     if (/bool/.test(declaration)) {
       return "BOOLEAN";

@@ -1,7 +1,7 @@
 import {
-  ColumnIdentifier,
+  FieldResolver,
   RawTableColumn,
-} from "@/lib/db/serialization/ColumnIdentifier";
+} from "@/lib/db/serialization/FieldResolver";
 import { BksField, BksFieldType } from "@/lib/db/models";
 import { FirebirdResult } from "../firebird";
 
@@ -40,22 +40,22 @@ const dateTimeTypes = ["date", "time", "timestamp"];
 
 const stringTypes = ["char", "varchar", "cstring"];
 
-export class FirebirdColumnIdentifier extends ColumnIdentifier<FirebirdResult> {
-  identifyResultColumns(qr: FirebirdResult): BksField[] {
-    return qr.columns.map((column) => ({
+export class FirebirdFieldResolver extends FieldResolver<FirebirdResult> {
+  resolveQueryResult(queryResult: FirebirdResult): BksField[] {
+    return queryResult.columns.map((column) => ({
       name: column.field,
-      bksType: this.identifyResultColumnType(column),
+      bksType: this.resolveRuntimeColumnType(column),
     }));
   }
 
-  protected identifyResultColumnType(column: {
+  protected resolveRuntimeColumnType(column: {
     name: string;
     type?: number;
   }): BksFieldType {
     return SQL_TYPES[column.type] ?? "UNKNOWN";
   }
 
-  protected identifyListedColumnType(column: RawTableColumn): BksFieldType {
+  protected resolveDeclaredColumnType(column: RawTableColumn): BksFieldType {
     return this.identifyType(column.dataType);
   }
 

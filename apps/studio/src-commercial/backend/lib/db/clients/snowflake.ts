@@ -18,8 +18,8 @@ import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilder
 import { SnowflakeChangeBuilder } from "@/shared/lib/sql/change_builder/SnowflakeChangeBuilder";
 import { SnowflakeCursor } from "./snowflake/SnowflakeCursor";
 import { IndexColumn } from "@beekeeperstudio/plugin";
-import { SnowflakeColumnIdentifier } from "./snowflake/SnowflakeColumnIdentifier";
-import { RawTableColumn } from "@/lib/db/serialization/ColumnIdentifier";
+import { SnowflakeFieldResolver } from "./snowflake/SnowflakeFieldResolver";
+import { RawTableColumn } from "@/lib/db/serialization/FieldResolver";
 
 const log = rawLog.scope('snowflake')
 
@@ -52,7 +52,7 @@ export interface VersionInfo {
 }
 
 export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connection> {
-  columnIdentifier = new SnowflakeColumnIdentifier();
+  fieldResolver = new SnowflakeFieldResolver();
 
   pool: Pool<Connection>;
   version: VersionInfo;

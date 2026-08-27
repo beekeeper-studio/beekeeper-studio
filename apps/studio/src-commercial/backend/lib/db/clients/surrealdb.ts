@@ -14,8 +14,8 @@ import { SurrealConn, SurrealPool } from "./surrealdb/SurrealDBPool";
 import _ from "lodash";
 import { surrealEscapeValue } from "@/shared/lib/dialects/surrealdb";
 import { uuidv4 } from "@/lib/uuid";
-import { SurrealDBColumnIdentifier } from "./surrealdb/SurrealDBColumnIdentifier";
-import { RawTableColumn } from "@/lib/db/serialization/ColumnIdentifier";
+import { SurrealDBFieldResolver } from "./surrealdb/SurrealDBFieldResolver";
+import { RawTableColumn } from "@/lib/db/serialization/FieldResolver";
 
 const log = rawLog.scope('SurrealDB');
 
@@ -67,7 +67,7 @@ const surrealContext = {
 }
 
 export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
-  columnIdentifier = new SurrealDBColumnIdentifier();
+  fieldResolver = new SurrealDBFieldResolver();
   version: SurrealDBResult;
   pool: SurrealPool;
   connectionString: string;

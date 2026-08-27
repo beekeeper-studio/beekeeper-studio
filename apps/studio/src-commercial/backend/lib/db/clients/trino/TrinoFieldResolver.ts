@@ -1,7 +1,7 @@
 import {
-  ColumnIdentifier,
+  FieldResolver,
   RawTableColumn,
-} from "@/lib/db/serialization/ColumnIdentifier";
+} from "@/lib/db/serialization/FieldResolver";
 import { BksFieldType } from "@/lib/db/models";
 import { TrinoResult } from "../trino";
 
@@ -20,15 +20,15 @@ const dateTimeTypes = ["date", "time", "timestamp", "interval"];
 
 const stringTypes = ["char", "varchar", "json", "uuid", "ipaddress"];
 
-export class TrinoColumnIdentifier extends ColumnIdentifier<TrinoResult> {
-  protected identifyResultColumnType(column: {
+export class TrinoFieldResolver extends FieldResolver<TrinoResult> {
+  protected resolveRuntimeColumnType(column: {
     name: string;
     type?: string;
   }): BksFieldType {
     return this.identifyType(column.type);
   }
 
-  protected identifyListedColumnType(column: RawTableColumn): BksFieldType {
+  protected resolveDeclaredColumnType(column: RawTableColumn): BksFieldType {
     return this.identifyType(column.dataType);
   }
 

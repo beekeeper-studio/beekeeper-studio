@@ -1,8 +1,8 @@
 import { RecordId } from "surrealdb";
 import {
-  ColumnIdentifier,
+  FieldResolver,
   RawTableColumn,
-} from "@/lib/db/serialization/ColumnIdentifier";
+} from "@/lib/db/serialization/FieldResolver";
 import { BksField, BksFieldType } from "@/lib/db/models";
 import { SurrealDBQueryResult } from "../surrealdb";
 
@@ -12,11 +12,11 @@ const dateTimeTypes = ["datetime", "duration"];
 
 const stringTypes = ["string", "uuid"];
 
-export class SurrealDBColumnIdentifier extends ColumnIdentifier<SurrealDBQueryResult> {
+export class SurrealDBFieldResolver extends FieldResolver<SurrealDBQueryResult> {
   // Surreal reports no types for a result, so the values decide.
-  identifyResultColumns(qr: SurrealDBQueryResult): BksField[] {
-    const row = qr.rows[0];
-    return qr.columns.map((column) => {
+  resolveQueryResult(queryResult: SurrealDBQueryResult): BksField[] {
+    const row = queryResult.rows[0];
+    return queryResult.columns.map((column) => {
       let bksType: BksFieldType = "UNKNOWN";
       if (row?.[column.name] instanceof RecordId) {
         bksType = "SURREALID";
@@ -26,7 +26,7 @@ export class SurrealDBColumnIdentifier extends ColumnIdentifier<SurrealDBQueryRe
     });
   }
 
-  protected identifyListedColumnType(column: RawTableColumn): BksFieldType {
+  protected resolveDeclaredColumnType(column: RawTableColumn): BksFieldType {
     if (column.dataType?.startsWith("record<") || column.columnName === "id") {
       return "SURREALID";
     }

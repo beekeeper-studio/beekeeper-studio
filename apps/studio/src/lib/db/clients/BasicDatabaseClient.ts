@@ -12,7 +12,7 @@ import platformInfo from '@/common/platform_info';
 import { LicenseKey } from '@/common/appdb/models/LicenseKey';
 import { Dialect as IdentifierDialect, IdentifyResult } from 'sql-query-identifier/lib/defines';
 import { Transcoder } from '../serialization/transcoders';
-import { ColumnIdentifier, RawTableColumn } from '../serialization/ColumnIdentifier';
+import { FieldResolver, RawTableColumn } from '../serialization/FieldResolver';
 import { ColumnReference, TableReference } from 'sql-query-identifier/lib/defines';
 import { safelyIdentify } from '../sql_tools';
 
@@ -82,7 +82,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   connErrHandler: (msg: string) => void = null;
   reservedConnections: Map<number, Conn> = new Map<number, Conn>();
   transcoders: Transcoder<any, any>[] = [];
-  columnIdentifier = new ColumnIdentifier();
+  fieldResolver = new FieldResolver();
 
   constructor(knex: Knex | null, contextProvider: AppContextProvider, server: IDbConnectionServer, database: IDbConnectionDatabase) {
     this.knex = knex;
@@ -176,9 +176,10 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
 
   async listTableColumns(table?: string, schema?: string, connection?: any): Promise<ExtendedTableColumn[]> {
     const columns = await this.listTableColumnsRunner(table, schema, connection);
-    return columns.map((column) => ({
+    const fields = this.fieldResolver.resolveListTableColumns(columns);
+    return columns.map((column, index) => ({
       ...column,
-      bksField: this.columnIdentifier.identifyListedColumn(column),
+      bksField: fields[index],
     }));
   }
 
@@ -455,7 +456,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
 
   async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult> {
     const result = await this.selectTopRunner(table, offset, limit, orderBy, filters, schema, selects);
-    const fields = this.columnIdentifier.identifyResultColumns(result);
+    const fields = this.fieldResolver.resolveQueryResult(result);
     const rows = await this.serializeQueryResult(result, fields);
     return { result: rows, fields };
   }

@@ -48,8 +48,8 @@ import { DuckDBData } from "@shared/lib/dialects/duckdb";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { TableKey } from "@shared/lib/dialects/models";
 import { DuckDBBinaryTranscoder } from "@/lib/db/serialization/transcoders";
-import { DuckDBColumnIdentifier } from "./duckdb/DuckDBColumnIdentifier";
-import { RawTableColumn } from "@/lib/db/serialization/ColumnIdentifier";
+import { DuckDBFieldResolver } from "./duckdb/DuckDBFieldResolver";
+import { RawTableColumn } from "@/lib/db/serialization/FieldResolver";
 
 const log = rawLog.scope("duckdb");
 
@@ -197,7 +197,7 @@ function buildSelectTopQuery(
 }
 
 export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
-  columnIdentifier = new DuckDBColumnIdentifier();
+  fieldResolver = new DuckDBFieldResolver();
   version: string;
   databasePath: string;
   databaseInstance: Database;

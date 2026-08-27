@@ -1,8 +1,8 @@
 import pg from "pg";
 import {
-  ColumnIdentifier,
+  FieldResolver,
   RawTableColumn,
-} from "@/lib/db/serialization/ColumnIdentifier";
+} from "@/lib/db/serialization/FieldResolver";
 import { BksFieldType } from "@/lib/db/models";
 import { QueryResult } from "@/lib/db/clients/postgresql";
 
@@ -44,13 +44,13 @@ const stringTypes = [
   "xml",
 ];
 
-export class PostgresColumnIdentifier extends ColumnIdentifier<QueryResult> {
+export class PostgresFieldResolver extends FieldResolver<QueryResult> {
   /** Postgres reports result column types as oids, which the client resolves. */
   constructor(private dataTypes: () => Record<number, string>) {
     super();
   }
 
-  protected identifyResultColumnType(column: {
+  protected resolveRuntimeColumnType(column: {
     name: string;
     dataTypeID?: number;
   }): BksFieldType {
@@ -60,7 +60,7 @@ export class PostgresColumnIdentifier extends ColumnIdentifier<QueryResult> {
     return this.identifyType(this.dataTypes()[column.dataTypeID]);
   }
 
-  protected identifyListedColumnType(column: RawTableColumn): BksFieldType {
+  protected resolveDeclaredColumnType(column: RawTableColumn): BksFieldType {
     return this.identifyType(column.dataType);
   }
 

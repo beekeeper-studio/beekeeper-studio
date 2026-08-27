@@ -53,8 +53,8 @@ import { resolveAWSCredentials } from '@/lib/db/clients/utils';
 import { createCancelablePromise } from '@/common/utils';
 import { errors } from '@/lib/errors';
 import { DynamoDBCursor } from './dynamodb/DynamoDBCursor';
-import { DynamoDBColumnIdentifier } from './dynamodb/DynamoDBColumnIdentifier';
-import { RawTableColumn } from '@/lib/db/serialization/ColumnIdentifier';
+import { DynamoDBFieldResolver } from './dynamodb/DynamoDBFieldResolver';
+import { RawTableColumn } from '@/lib/db/serialization/FieldResolver';
 import BksConfig from '@/common/bksConfig';
 import { identify } from 'sql-query-identifier';
 
@@ -96,7 +96,7 @@ function inferTypeFromValue(value: any): string {
 }
 
 export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
-  columnIdentifier = new DynamoDBColumnIdentifier();
+  fieldResolver = new DynamoDBFieldResolver();
   raw: AWSDynamoDBClient;
   doc: DynamoDBDocumentClient;
   region: string;

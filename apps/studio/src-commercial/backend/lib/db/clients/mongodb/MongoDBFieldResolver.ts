@@ -1,7 +1,7 @@
 import {
-  ColumnIdentifier,
+  FieldResolver,
   RawTableColumn,
-} from "@/lib/db/serialization/ColumnIdentifier";
+} from "@/lib/db/serialization/FieldResolver";
 import { BksField, BksFieldType } from "@/lib/db/models";
 import { Binary, ObjectId } from "mongodb";
 import { QueryResult } from "../mongodb";
@@ -12,9 +12,9 @@ const numberTypes = ["double", "int", "long", "decimal"];
 
 const dateTimeTypes = ["date", "timestamp"];
 
-export class MongoDBColumnIdentifier extends ColumnIdentifier<QueryResult> {
-  identifyResultColumns(qr: QueryResult): BksField[] {
-    const row = qr.rows[0];
+export class MongoDBFieldResolver extends FieldResolver<QueryResult> {
+  resolveQueryResult(queryResult: QueryResult): BksField[] {
+    const row = queryResult.rows[0];
     if (!row) {
       return [];
     }
@@ -24,7 +24,7 @@ export class MongoDBColumnIdentifier extends ColumnIdentifier<QueryResult> {
     }));
   }
 
-  protected identifyListedColumnType(column: RawTableColumn): BksFieldType {
+  protected resolveDeclaredColumnType(column: RawTableColumn): BksFieldType {
     const type = column.dataType?.toLowerCase() ?? "";
 
     if (type === "objectid") {

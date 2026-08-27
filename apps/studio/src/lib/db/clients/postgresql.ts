@@ -28,8 +28,8 @@ import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import {AzureAuthService} from "@/lib/db/authentication/azure";
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
-import { PostgresColumnIdentifier } from './postgresql/PostgresColumnIdentifier';
-import { RawTableColumn } from '../serialization/ColumnIdentifier';
+import { PostgresFieldResolver } from './postgresql/PostgresFieldResolver';
+import { RawTableColumn } from '../serialization/FieldResolver';
 
 const PD = PostgresData
 
@@ -87,7 +87,7 @@ const postgresContext = {
 };
 
 export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient> {
-  columnIdentifier = new PostgresColumnIdentifier(() => this.dataTypes);
+  fieldResolver = new PostgresFieldResolver(() => this.dataTypes);
   version: VersionInfo;
   conn: HasPool;
   _defaultSchema: string;

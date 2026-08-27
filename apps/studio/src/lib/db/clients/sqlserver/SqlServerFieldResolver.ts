@@ -1,8 +1,8 @@
 import sql from "mssql";
 import {
-  ColumnIdentifier,
+  FieldResolver,
   RawTableColumn,
-} from "@/lib/db/serialization/ColumnIdentifier";
+} from "@/lib/db/serialization/FieldResolver";
 import { BksField, BksFieldType } from "@/lib/db/models";
 import { SQLServerResult } from "@/lib/db/clients/sqlserver";
 
@@ -49,19 +49,19 @@ const binaryDataTypes = [
   "rowversion",
 ];
 
-export class SqlServerColumnIdentifier extends ColumnIdentifier<SQLServerResult> {
+export class SqlServerFieldResolver extends FieldResolver<SQLServerResult> {
   // The driver hands us column metadata keyed by name, not as an array.
-  identifyResultColumns(qr: SQLServerResult): BksField[] {
-    return Object.keys(qr.columns).map((key) => {
-      const column = qr.columns[key];
+  resolveQueryResult(queryResult: SQLServerResult): BksField[] {
+    return Object.keys(queryResult.columns).map((key) => {
+      const column = queryResult.columns[key];
       return {
         name: column.name,
-        bksType: this.identifyResultColumnType(column),
+        bksType: this.resolveRuntimeColumnType(column),
       };
     });
   }
 
-  protected identifyResultColumnType(column: {
+  protected resolveRuntimeColumnType(column: {
     name: string;
     type?: any;
   }): BksFieldType {
@@ -71,7 +71,7 @@ export class SqlServerColumnIdentifier extends ColumnIdentifier<SQLServerResult>
     return this.identifyType(column.type?.declaration);
   }
 
-  protected identifyListedColumnType(column: RawTableColumn): BksFieldType {
+  protected resolveDeclaredColumnType(column: RawTableColumn): BksFieldType {
     return this.identifyType(column.dataType);
   }
 

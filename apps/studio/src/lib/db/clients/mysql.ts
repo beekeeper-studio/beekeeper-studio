@@ -65,8 +65,8 @@ import { Version, isVersionLessThanOrEqual, parseVersion } from "@/common/versio
 import globals from '../../../common/globals';
 import {AzureAuthService} from "@/lib/db/authentication/azure";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
-import { MysqlColumnIdentifier } from "./mysql/MySqlColumnIdentifier";
-import { RawTableColumn } from "../serialization/ColumnIdentifier";
+import { MysqlFieldResolver } from "./mysql/MySqlFieldResolver";
+import { RawTableColumn } from "../serialization/FieldResolver";
 
 export type ResultType = {
   tableName?: string
@@ -274,7 +274,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     pool: mysql.Pool;
   };
   transcoders = [GenericBinaryTranscoder];
-  columnIdentifier = new MysqlColumnIdentifier();
+  fieldResolver = new MysqlFieldResolver();
 
   interval: NodeJS.Timeout
 

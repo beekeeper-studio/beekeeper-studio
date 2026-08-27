@@ -36,8 +36,8 @@ import { AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from '../serialization/transcoders';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
-import { SqlServerColumnIdentifier } from './sqlserver/SqlServerColumnIdentifier';
-import { RawTableColumn } from '../serialization/ColumnIdentifier';
+import { SqlServerFieldResolver } from './sqlserver/SqlServerFieldResolver';
+import { RawTableColumn } from '../serialization/FieldResolver';
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData
@@ -108,7 +108,7 @@ knex.client._escapeBinding = function (value: any, context: any) {
 // DO NOT USE CONCAT() in sql, not compatible with Sql Server <= 2008
 // SQL Server < 2012 might eventually need its own class.
 export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transaction> {
-  columnIdentifier = new SqlServerColumnIdentifier();
+  fieldResolver = new SqlServerFieldResolver();
   server: IDbConnectionServer
   database: IDbConnectionDatabase
   version: SQLServerVersion

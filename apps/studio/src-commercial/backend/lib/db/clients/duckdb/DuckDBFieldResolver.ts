@@ -1,7 +1,7 @@
 import {
-  ColumnIdentifier,
+  FieldResolver,
   RawTableColumn,
-} from "@/lib/db/serialization/ColumnIdentifier";
+} from "@/lib/db/serialization/FieldResolver";
 import { BksFieldType } from "@/lib/db/models";
 import { DuckDBType, DuckDBTypeId } from "@duckdb/node-api";
 import { DuckDBResult } from "../duckdb";
@@ -38,8 +38,8 @@ const dateTimeTypes = [
 
 const stringTypes = ["varchar", "enum", "uuid"];
 
-export class DuckDBColumnIdentifier extends ColumnIdentifier<DuckDBResult> {
-  protected identifyResultColumnType(column: {
+export class DuckDBFieldResolver extends FieldResolver<DuckDBResult> {
+  protected resolveRuntimeColumnType(column: {
     name: string;
     type: DuckDBType;
   }): BksFieldType {
@@ -49,7 +49,7 @@ export class DuckDBColumnIdentifier extends ColumnIdentifier<DuckDBResult> {
     return this.identifyType(DuckDBTypeId[column.type.typeId]);
   }
 
-  protected identifyListedColumnType(column: RawTableColumn): BksFieldType {
+  protected resolveDeclaredColumnType(column: RawTableColumn): BksFieldType {
     return this.identifyType(column.dataType);
   }
 

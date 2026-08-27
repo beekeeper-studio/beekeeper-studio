@@ -1,19 +1,19 @@
 import {
-  ColumnIdentifier,
+  FieldResolver,
   RawTableColumn,
-} from "@/lib/db/serialization/ColumnIdentifier";
+} from "@/lib/db/serialization/FieldResolver";
 import { BksFieldType } from "@/lib/db/models";
 import { RedisQueryResult } from "@/lib/db/clients/redis";
 
-export class RedisColumnIdentifier extends ColumnIdentifier<RedisQueryResult> {
-  protected identifyResultColumnType(column: {
+export class RedisFieldResolver extends FieldResolver<RedisQueryResult> {
+  protected resolveRuntimeColumnType(column: {
     name: string;
     type?: string;
   }): BksFieldType {
     return this.identifyType(column.type);
   }
 
-  protected identifyListedColumnType(column: RawTableColumn): BksFieldType {
+  protected resolveDeclaredColumnType(column: RawTableColumn): BksFieldType {
     return this.identifyType(column.dataType);
   }
 

@@ -19,8 +19,8 @@ import { GenericBinaryTranscoder } from "../serialization/transcoders";
 
 import rawLog from '@bksLogger'
 import bksConfig from '@/common/bksConfig';
-import { SqliteColumnIdentifier } from "./sqlite/SqliteColumnIdentifier";
-import { RawTableColumn } from "../serialization/ColumnIdentifier";
+import { SqliteFieldResolver } from "./sqlite/SqliteFieldResolver";
+import { RawTableColumn } from "../serialization/FieldResolver";
 const log = rawLog.scope('sqlite');
 
 const knex = createSQLiteKnex();
@@ -49,7 +49,7 @@ export type SqliteResult = {
 const SD = SqliteData;
 
 export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
-  columnIdentifier = new SqliteColumnIdentifier();
+  fieldResolver = new SqliteFieldResolver();
   version: SqliteResult;
   databasePath: string;
   dialectData = SD;
