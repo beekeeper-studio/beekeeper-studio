@@ -7,13 +7,14 @@
   box-sizing: border-box;
 
   .upgrade-modal-content {
-    background: #181818 !important;
+    background: color.adjust($theme-bg, $lightness: 1%) !important;
+    color: $text !important;
     border-radius: 12px !important;
     overflow: hidden !important;
     padding: 0 !important;
     position: relative !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6) !important;
+    border: 1px solid $border-color !important;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35) !important;
   }
 
   .close-btn {
@@ -23,20 +24,20 @@
     width: 30px;
     height: 30px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba($theme-base, 0.08);
     border: none;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    color: rgba(255, 255, 255, 0.7);
+    color: $text-light;
     padding: 0;
     z-index: 10;
     transition: background 0.15s ease, color 0.15s ease;
 
     &:hover {
-      background: rgba(255, 255, 255, 0.16);
-      color: #ffffff;
+      background: rgba($theme-base, 0.16);
+      color: $text-dark;
     }
 
     .material-icons {
@@ -70,13 +71,13 @@
         font-size: 11px;
         font-weight: 700;
         letter-spacing: 0.8px;
-        color: var(--theme-primary, #f5c518);
+        color: $theme-primary;
         text-transform: uppercase;
         margin-bottom: 2px;
 
         .material-icons {
           font-size: 13px;
-          color: var(--theme-primary, #f5c518);
+          color: $theme-primary;
         }
       }
 
@@ -84,7 +85,7 @@
         margin: 0;
         font-size: 20px;
         font-weight: 600;
-        color: #ffffff;
+        color: $text-dark;
         letter-spacing: -0.2px;
         line-height: 1.25;
         padding-bottom: 0;
@@ -96,7 +97,7 @@
     margin: 8px 0 0;
     padding-left: 56px;
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.6);
+    color: $text-light;
     line-height: 1.5;
   }
 
@@ -106,7 +107,7 @@
     .section-label {
       font-size: 11px;
       font-weight: 700;
-      color: rgba(255, 255, 255, 0.45);
+      color: $text-lighter;
       letter-spacing: 0.8px;
       text-transform: uppercase;
       margin-bottom: 12px;
@@ -144,13 +145,13 @@
       }
 
       .unlock-title {
-        color: #ffffff;
+        color: $text-dark;
         font-weight: 600;
         margin-right: 6px;
       }
 
       .unlock-blurb {
-        color: rgba(255, 255, 255, 0.65);
+        color: $text-light;
       }
     }
 
@@ -160,7 +161,7 @@
       gap: 4px;
       padding-left: 30px;
       font-size: 12.5px;
-      color: rgba(255, 255, 255, 0.6);
+      color: $text-light;
       margin-top: 2px;
       list-style: none;
 
@@ -169,7 +170,7 @@
       }
 
       a {
-        color: #38bdf8;
+        color: $brand-secondary;
         text-decoration: none;
         display: inline-flex;
         align-items: center;
@@ -190,8 +191,8 @@
   .testimonial {
     margin: 18px 0 0;
     padding: 14px 16px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba($theme-base, 0.03);
+    border: 1px solid $border-color;
     border-radius: 8px;
     display: flex;
     gap: 14px;
@@ -201,14 +202,14 @@
       width: 36px;
       height: 36px;
       border-radius: 50%;
-      background: #233433;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: linear-gradient(135deg, rgba($theme-primary, 0.22), rgba($brand-secondary, 0.18));
+      border: 1px solid $border-color;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 13px;
       font-weight: 600;
-      color: rgba(255, 255, 255, 0.85);
+      color: $text-dark;
       flex-shrink: 0;
     }
 
@@ -221,29 +222,29 @@
       margin: 0;
       font-size: 13.5px;
       line-height: 1.45;
-      color: #ffffff;
+      color: $text-dark;
       font-weight: 400;
     }
 
     figcaption {
       margin-top: 6px;
       font-size: 12px;
-      color: rgba(255, 255, 255, 0.55);
+      color: $text-light;
       display: flex;
       align-items: center;
       gap: 6px;
 
       .author {
-        color: rgba(255, 255, 255, 0.85);
-        font-weight: 500;
+        color: $text;
+        font-weight: 600;
       }
 
       .sep {
-        color: rgba(255, 255, 255, 0.35);
+        color: $text-lighter;
       }
 
       .role {
-        color: rgba(255, 255, 255, 0.55);
+        color: $text-light;
       }
     }
   }
@@ -257,39 +258,9 @@
       justify-content: flex-end;
       gap: 10px;
 
-      .btn-trial {
-        background: #252525;
-        color: #ffffff;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 6px;
-        padding: 7px 18px;
-        font-weight: 600;
-        font-size: 13px;
-        cursor: pointer;
-        text-decoration: none;
-        transition: background 0.15s ease;
-
-        &:hover {
-          background: #333333;
-        }
-      }
-
-      .btn-upgrade {
-        background: #ffffff;
-        color: #000000;
-        border: none;
-        border-radius: 6px;
-        padding: 7px 20px;
-        font-weight: 600;
-        font-size: 13px;
-        cursor: pointer;
-        text-decoration: none;
-        transition: opacity 0.15s ease;
-
-        &:hover {
-          opacity: 0.9;
-          color: #000000;
-        }
+      .btn {
+        margin: 0;
+        white-space: nowrap;
       }
     }
   }
@@ -300,21 +271,21 @@
     justify-content: center;
     gap: 8px;
     padding: 10px 20px;
-    background: #221e10;
-    border-top: 1px solid rgba(245, 197, 24, 0.25);
-    color: rgba(255, 255, 255, 0.85);
+    background: rgba($theme-primary, 0.08);
+    border-top: 1px solid rgba($theme-primary, 0.22);
+    color: $text;
     font-size: 12.5px;
     line-height: 1.4;
     border-radius: 0 0 12px 12px;
 
     .material-icons {
       font-size: 16px;
-      color: var(--theme-primary, #f5c518);
+      color: $theme-primary;
       flex-shrink: 0;
     }
 
     strong {
-      color: #ffffff;
+      color: $text-dark;
       font-weight: 600;
     }
   }
@@ -323,10 +294,10 @@
   &.upgrade-panel--standalone {
     max-width: 620px;
     margin: 1.5rem auto;
-    background: #181818;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: color.adjust($theme-bg, $lightness: 1%);
+    border: 1px solid $border-color;
     border-radius: 12px;
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
     overflow: hidden;
   }
 }

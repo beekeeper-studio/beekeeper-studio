@@ -72,11 +72,11 @@
       <div class="cta-row">
         <div class="actions">
           <button
-            class="btn btn-trial"
+            class="btn btn-flat"
             @click.prevent="startTrial"
           >Start Free Trial</button>
           <button
-            class="btn btn-upgrade"
+            class="btn btn-primary"
             @click.prevent="buyLicense"
           >Upgrade</button>
         </div>
