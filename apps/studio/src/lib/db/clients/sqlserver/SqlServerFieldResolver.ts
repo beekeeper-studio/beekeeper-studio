@@ -40,11 +40,8 @@ export class SqlServerFieldResolver extends FieldResolver<SQLServerResult> {
     if (binaryTypes.includes(column.type as (typeof binaryTypes)[number])) {
       return "BINARY";
     }
-
-    // The type factory carries `declaration` at runtime, but @types/mssql
-    // leaves it off.
-    const { declaration } = column.type as { declaration?: string };
-    return this.identifyType(declaration);
+    // The type factory carries `declaration` at runtime, but @types/mssql leaves it off.
+    return this.identifyType(column.type["declaration"]);
   }
 
   protected resolveDeclaredColumnType(column: RawTableColumn) {

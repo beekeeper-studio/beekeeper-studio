@@ -7,7 +7,6 @@ import {
   FieldResolver,
   RawTableColumn,
 } from "@/lib/db/serialization/FieldResolver";
-import { BksFieldType } from "@/lib/db/models";
 import { Binary, ObjectId } from "mongodb";
 import { QueryResult } from "../mongodb";
 
@@ -28,30 +27,49 @@ export class MongoDBFieldResolver extends FieldResolver<QueryResult> {
     if (!row) {
       return [];
     }
-    return Object.keys(row).map((column) => {
-      const value = row[column];
-      let bksType: BksFieldType = "UNKNOWN";
-
-      if (value instanceof ObjectId) {
-        bksType = "OBJECTID";
-      } else if (typeof value === "number" || typeof value === "bigint") {
-        bksType = "NUMBER";
-      } else if (typeof value === "boolean") {
-        bksType = "BOOLEAN";
-      } else if (value instanceof Date) {
-        bksType = "DATETIME";
-      } else if (
-        value instanceof Binary ||
-        value instanceof ArrayBuffer ||
-        ArrayBuffer.isView(value)
-      ) {
-        bksType = "BINARY";
-      } else if (typeof value === "string") {
-        bksType = "STRING";
-      }
-
-      return { name: column, bksType };
+    return _.map(row, (name) => {
+      const column = { name };
+      const bksType = this.resolveRuntimeColumnType(column, queryResult);
+      return { name, bksType } as const;
     });
+  }
+
+  protected resolveRuntimeColumnType(
+    column: QueryResult["columns"][number],
+    queryResult: QueryResult
+  ) {
+    const row = queryResult.rows[0];
+    const value = row?.[column.name];
+
+    if (
+      value instanceof Binary ||
+      value instanceof ArrayBuffer ||
+      ArrayBuffer.isView(value)
+    ) {
+      return "BINARY";
+    }
+
+    if (typeof value === "string") {
+      return "STRING";
+    }
+
+    if (typeof value === "number" || typeof value === "bigint") {
+      return "NUMBER";
+    }
+
+    if (value instanceof Date) {
+      return "DATETIME";
+    }
+
+    if (typeof value === "boolean") {
+      return "BOOLEAN";
+    }
+
+    if (value instanceof ObjectId) {
+      return "OBJECTID";
+    }
+
+    return "UNKNOWN";
   }
 
   protected resolveDeclaredColumnType(column: RawTableColumn) {
