@@ -1,57 +1,32 @@
+/**
+ * Reference for data types:
+ * https://learn.microsoft.com/en-us/sql/t-sql/data-types/data-types-transact-sql
+ */
+
 import sql from "mssql";
 import {
   FieldResolver,
   RawTableColumn,
 } from "@/lib/db/serialization/FieldResolver";
-import { BksField, BksFieldType } from "@/lib/db/models";
-import { SQLServerResult } from "@/lib/db/clients/sqlserver";
+import { BksFieldType } from "@/lib/db/models";
+import { ResultColumn, SQLServerResult } from "@/lib/db/clients/sqlserver";
 
 const binaryTypes = [sql.VarBinary, sql.Binary, sql.Image];
 
-const numberDataTypes = [
-  "tinyint",
-  "smallint",
-  "int",
-  "bigint",
-  "decimal",
-  "numeric",
-  "money",
-  "smallmoney",
-  "float",
-  "real",
-];
-
-const dateTimeDataTypes = [
-  "date",
-  "datetime",
-  "datetime2",
-  "smalldatetime",
-  "datetimeoffset",
-  "time",
-];
-
-const stringDataTypes = [
-  "char",
-  "varchar",
-  "text",
-  "nchar",
-  "nvarchar",
-  "ntext",
-  "xml",
-  "uniqueidentifier",
-];
-
-const binaryDataTypes = [
-  "binary",
-  "varbinary",
-  "image",
-  "timestamp",
-  "rowversion",
-];
+const regex = {
+  // timestamp is the synonym for the rowversion data type, not a date.
+  binary: /^(?:binary|varbinary|image|timestamp|rowversion)$/,
+  string: /^(?:n?char|n?varchar|n?text|xml|uniqueidentifier|sysname)$/,
+  number:
+    /^(?:tinyint|smallint|int|bigint|decimal|numeric|(?:small)?money|float|real)$/,
+  datetime: /^(?:date|datetime2?|smalldatetime|datetimeoffset|time)$/,
+  // bit is how sql server spells boolean
+  boolean: /^bit$/,
+};
 
 export class SqlServerFieldResolver extends FieldResolver<SQLServerResult> {
   // The driver hands us column metadata keyed by name, not as an array.
-  resolveQueryResult(queryResult: SQLServerResult): BksField[] {
+  resolveQueryResult(queryResult: SQLServerResult) {
     return Object.keys(queryResult.columns).map((key) => {
       const column = queryResult.columns[key];
       return {
@@ -61,17 +36,18 @@ export class SqlServerFieldResolver extends FieldResolver<SQLServerResult> {
     });
   }
 
-  protected resolveRuntimeColumnType(column: {
-    name: string;
-    type?: any;
-  }): BksFieldType {
-    if (binaryTypes.includes(column.type)) {
+  protected resolveRuntimeColumnType(column: ResultColumn) {
+    if (binaryTypes.includes(column.type as (typeof binaryTypes)[number])) {
       return "BINARY";
     }
-    return this.identifyType(column.type?.declaration);
+
+    // The type factory carries `declaration` at runtime, but @types/mssql
+    // leaves it off.
+    const { declaration } = column.type as { declaration?: string };
+    return this.identifyType(declaration);
   }
 
-  protected resolveDeclaredColumnType(column: RawTableColumn): BksFieldType {
+  protected resolveDeclaredColumnType(column: RawTableColumn) {
     return this.identifyType(column.dataType);
   }
 
@@ -80,26 +56,24 @@ export class SqlServerFieldResolver extends FieldResolver<SQLServerResult> {
     // Strips the arguments of varchar(255) and decimal(18,3).
     const type = declaration.split("(")[0].trim();
 
-    // bit is how sql server spells boolean, and the driver hands us real
-    // booleans for it
-    if (type === "bit") {
-      return "BOOLEAN";
-    }
-
-    if (binaryDataTypes.includes(type)) {
+    if (regex.binary.test(type)) {
       return "BINARY";
     }
 
-    if (numberDataTypes.includes(type)) {
+    if (regex.string.test(type)) {
+      return "STRING";
+    }
+
+    if (regex.number.test(type)) {
       return "NUMBER";
     }
 
-    if (dateTimeDataTypes.includes(type)) {
+    if (regex.datetime.test(type)) {
       return "DATETIME";
     }
 
-    if (stringDataTypes.includes(type)) {
-      return "STRING";
+    if (regex.boolean.test(type)) {
+      return "BOOLEAN";
     }
 
     return "UNKNOWN";

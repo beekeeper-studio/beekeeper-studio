@@ -1,7 +1,14 @@
+/**
+ * Reference for data types:
+ * https://dev.mysql.com/doc/refman/8.4/en/data-types.html
+ */
+
 import mysql from "mysql2";
-import { FieldResolver, RawTableColumn } from "@/lib/db/serialization/FieldResolver";
-import { BksFieldType } from "@/lib/db/models";
-import { ResultType } from "@/lib/db/clients/mysql";
+import {
+  FieldResolver,
+  RawTableColumn,
+} from "@/lib/db/serialization/FieldResolver";
+import { ResultColumn, ResultType } from "@/lib/db/clients/mysql";
 
 const binaryTypes = [
   mysql.Types.STRING, // aka CHAR or BINARY
@@ -47,50 +54,22 @@ const stringTypes = [
   mysql.Types.JSON,
 ];
 
-const binaryDataTypes = [
-  "binary",
-  "varbinary",
-  "tinyblob",
-  "blob",
-  "mediumblob",
-  "longblob",
-];
+const regex = {
+  binary: /^(?:binary|varbinary|(?:tiny|medium|long)?blob)\b/,
+  string: /^(?:char|varchar|(?:tiny|medium|long)?text|enum|set|json)\b/,
+  // The (1) is the only thing telling a boolean apart from a tinyint.
+  number:
+    /^(?!tinyint\s*\(\s*1\s*\))(?:tinyint|smallint|mediumint|int(?:eger)?|bigint|decimal|numeric|float|double|real|bit)\b/,
+  datetime: /^(?:date|datetime|timestamp|time|year)\b/,
+  boolean: /^tinyint\s*\(\s*1\s*\)/,
+};
 
-const numberDataTypes = [
-  "tinyint",
-  "smallint",
-  "mediumint",
-  "int",
-  "integer",
-  "bigint",
-  "decimal",
-  "numeric",
-  "float",
-  "double",
-  "real",
-  "bit",
-];
-
-const dateTimeDataTypes = ["date", "datetime", "timestamp", "time", "year"];
-
-const stringDataTypes = [
-  "char",
-  "varchar",
-  "tinytext",
-  "text",
-  "mediumtext",
-  "longtext",
-  "enum",
-  "set",
-];
-
-// Ref: https://github.com/sidorares/node-mysql2/blob/master/lib/constants/field_flags.js
 const FieldFlags = {
   BINARY: 128,
 };
 
 export class MysqlFieldResolver extends FieldResolver<ResultType> {
-  protected resolveRuntimeColumnType(field: mysql.FieldPacket): BksFieldType {
+  protected resolveRuntimeColumnType(field: ResultColumn) {
     if (
       binaryTypes.includes(field.type) &&
       (field.flags as number) & FieldFlags.BINARY
@@ -113,29 +92,27 @@ export class MysqlFieldResolver extends FieldResolver<ResultType> {
     return "UNKNOWN";
   }
 
-  protected resolveDeclaredColumnType(column: RawTableColumn): BksFieldType {
-    const declaration = column.dataType?.toLowerCase() ?? "";
-    const type = declaration.split("(")[0].trim();
+  protected resolveDeclaredColumnType(column: RawTableColumn) {
+    const declaration = column.dataType?.toLowerCase().trim() ?? "";
 
-    if (binaryDataTypes.includes(type)) {
+    if (regex.binary.test(declaration)) {
       return "BINARY";
     }
 
-    // NOTE: There is no boolean type, mysql spells it tinyint(1)
-    if (/^tinyint\s*\(\s*1\s*\)/.test(declaration)) {
-      return "BOOLEAN";
+    if (regex.string.test(declaration)) {
+      return "STRING";
     }
 
-    if (numberDataTypes.includes(type)) {
+    if (regex.number.test(declaration)) {
       return "NUMBER";
     }
 
-    if (dateTimeDataTypes.includes(type)) {
+    if (regex.datetime.test(declaration)) {
       return "DATETIME";
     }
 
-    if (stringDataTypes.includes(type)) {
-      return "STRING";
+    if (regex.boolean.test(declaration)) {
+      return "BOOLEAN";
     }
 
     return "UNKNOWN";

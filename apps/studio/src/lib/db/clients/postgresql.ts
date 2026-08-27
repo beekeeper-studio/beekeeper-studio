@@ -68,10 +68,12 @@ interface STQResults {
 
 }
 
+export type ResultColumn = FieldDef
+
 export interface QueryResult {
   pgResult: PgQueryResult
   rows: any[]
-  columns: FieldDef[]
+  columns: ResultColumn[]
   command: PgQueryResult['command']
   rowCount: PgQueryResult['rowCount']
   arrayMode: boolean
@@ -87,11 +89,11 @@ const postgresContext = {
 };
 
 export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient> {
-  fieldResolver = new PostgresFieldResolver(() => this.dataTypes);
+  fieldResolver = new PostgresFieldResolver();
   version: VersionInfo;
   conn: HasPool;
   _defaultSchema: string;
-  dataTypes: any = {};
+  dataTypes: Record<number, string> = {};
   transcoders = [GenericBinaryTranscoder];
   interval: NodeJS.Timeout;
 
@@ -193,6 +195,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     this._defaultSchema = await this.getSchema();
     this.version = await this.getVersion();
     this.dataTypes = await this.getTypes();
+    this.fieldResolver.setOidTypes(this.dataTypes);
     this.database.connected = true;
   }
 

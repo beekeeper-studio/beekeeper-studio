@@ -1,6 +1,19 @@
-import { BksFieldType } from "@/lib/db/models";
+/**
+ * Reference for data types:
+ * https://dev.mysql.com/doc/refman/8.4/en/data-types.html (result columns)
+ * https://www.sqlite.org/datatype3.html (listed columns)
+ */
+
 import { RawTableColumn } from "@/lib/db/serialization/FieldResolver";
 import { MysqlFieldResolver } from "@/lib/db/clients/mysql/MySqlFieldResolver";
+
+const regex = {
+  binary: /blob/,
+  string: /char|clob|text|string/,
+  number: /int|real|floa|doub|num|dec/,
+  datetime: /date|time/,
+  boolean: /bool/,
+};
 
 /**
  * Bedrock speaks the MySQL protocol, so result columns are identified the MySQL
@@ -8,32 +21,31 @@ import { MysqlFieldResolver } from "@/lib/db/clients/mysql/MySqlFieldResolver";
  */
 export class BedrockFieldResolver extends MysqlFieldResolver {
   // Sqlite has no strict column types, so this follows the type affinity rules.
-  // See https://www.sqlite.org/datatype3.html#determination_of_column_affinity
-  protected resolveDeclaredColumnType(column: RawTableColumn): BksFieldType {
+  protected resolveDeclaredColumnType(column: RawTableColumn) {
     if (!column.dataType) {
       return "UNKNOWN";
     }
 
     const declaration = column.dataType.toLowerCase();
 
-    if (/bool/.test(declaration)) {
-      return "BOOLEAN";
-    }
-
-    if (/date|time/.test(declaration)) {
-      return "DATETIME";
-    }
-
-    if (/blob/.test(declaration)) {
+    if (regex.binary.test(declaration)) {
       return "BINARY";
     }
 
-    if (/char|clob|text|string/.test(declaration)) {
+    if (regex.string.test(declaration)) {
       return "STRING";
     }
 
-    if (/int|real|floa|doub|num|dec/.test(declaration)) {
+    if (regex.number.test(declaration)) {
       return "NUMBER";
+    }
+
+    if (regex.datetime.test(declaration)) {
+      return "DATETIME";
+    }
+
+    if (regex.boolean.test(declaration)) {
+      return "BOOLEAN";
     }
 
     return "UNKNOWN";

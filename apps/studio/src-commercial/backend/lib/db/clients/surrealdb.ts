@@ -51,9 +51,13 @@ export interface SurrealDBResult {
   time: string;
 }
 
+export interface ResultColumn {
+  name: string;
+}
+
 export interface SurrealDBQueryResult {
   rows: any[];
-  columns: { name: string }[];
+  columns: ResultColumn[];
   arrayMode: boolean;
 }
 

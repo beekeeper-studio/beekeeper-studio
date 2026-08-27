@@ -68,10 +68,12 @@ import { IdentifyResult } from "sql-query-identifier/lib/defines";
 import { MysqlFieldResolver } from "./mysql/MySqlFieldResolver";
 import { RawTableColumn } from "../serialization/FieldResolver";
 
+export type ResultColumn = mysql.FieldPacket
+
 export type ResultType = {
   tableName?: string
   rows: any[];
-  columns: mysql.FieldPacket[];
+  columns: ResultColumn[];
   arrayMode: boolean;
 };
 

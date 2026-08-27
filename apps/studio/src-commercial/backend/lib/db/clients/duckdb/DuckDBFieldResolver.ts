@@ -1,82 +1,105 @@
+/**
+ * Reference for data types:
+ * https://duckdb.org/docs/stable/sql/data_types/overview
+ */
+
 import {
   FieldResolver,
   RawTableColumn,
 } from "@/lib/db/serialization/FieldResolver";
 import { BksFieldType } from "@/lib/db/models";
-import { DuckDBType, DuckDBTypeId } from "@duckdb/node-api";
-import { DuckDBResult } from "../duckdb";
+import { DuckDBTypeId } from "@duckdb/node-api";
+import { DuckDBResult, ResultColumn } from "../duckdb";
 
-const numberTypes = [
-  "tinyint",
-  "smallint",
-  "integer",
-  "bigint",
-  "hugeint",
-  "utinyint",
-  "usmallint",
-  "uinteger",
-  "ubigint",
-  "uhugeint",
-  "float",
-  "double",
-  "decimal",
-  "bignum",
-  "bit",
-];
+const regex = {
+  binary: /^blob$/,
+  string: /^(?:varchar|enum|uuid|json)$/,
+  number:
+    /^(?:u?(?:tinyint|smallint|integer|bigint|hugeint)|float|double|decimal|bignum|bit)$/,
+  datetime: /^(?:date|time(?:_tz)?|timestamp(?:_(?:s|ms|ns|tz))?|interval)$/,
+  boolean: /^boolean$/,
+};
 
-const dateTimeTypes = [
-  "date",
-  "time",
-  "timestamp",
-  "timestamp_s",
-  "timestamp_ms",
-  "timestamp_ns",
-  "timestamp_tz",
-  "time_tz",
-  "interval",
-];
+const typeIds: Record<DuckDBTypeId, BksFieldType> = {
+  // binary
+  [DuckDBTypeId.BLOB]: "BINARY",
 
-const stringTypes = ["varchar", "enum", "uuid"];
+  // string
+  [DuckDBTypeId.VARCHAR]: "STRING",
+  [DuckDBTypeId.ENUM]: "STRING",
+  [DuckDBTypeId.UUID]: "STRING",
+
+  // number
+  [DuckDBTypeId.TINYINT]: "NUMBER",
+  [DuckDBTypeId.SMALLINT]: "NUMBER",
+  [DuckDBTypeId.INTEGER]: "NUMBER",
+  [DuckDBTypeId.BIGINT]: "NUMBER",
+  [DuckDBTypeId.HUGEINT]: "NUMBER",
+  [DuckDBTypeId.UTINYINT]: "NUMBER",
+  [DuckDBTypeId.USMALLINT]: "NUMBER",
+  [DuckDBTypeId.UINTEGER]: "NUMBER",
+  [DuckDBTypeId.UBIGINT]: "NUMBER",
+  [DuckDBTypeId.UHUGEINT]: "NUMBER",
+  [DuckDBTypeId.FLOAT]: "NUMBER",
+  [DuckDBTypeId.DOUBLE]: "NUMBER",
+  [DuckDBTypeId.DECIMAL]: "NUMBER",
+  [DuckDBTypeId.BIGNUM]: "NUMBER",
+  [DuckDBTypeId.BIT]: "NUMBER",
+
+  // datetime
+  [DuckDBTypeId.DATE]: "DATETIME",
+  [DuckDBTypeId.TIME]: "DATETIME",
+  [DuckDBTypeId.TIME_TZ]: "DATETIME",
+  [DuckDBTypeId.TIMESTAMP]: "DATETIME",
+  [DuckDBTypeId.TIMESTAMP_S]: "DATETIME",
+  [DuckDBTypeId.TIMESTAMP_MS]: "DATETIME",
+  [DuckDBTypeId.TIMESTAMP_NS]: "DATETIME",
+  [DuckDBTypeId.TIMESTAMP_TZ]: "DATETIME",
+  [DuckDBTypeId.INTERVAL]: "DATETIME",
+
+  // boolean
+  [DuckDBTypeId.BOOLEAN]: "BOOLEAN",
+
+  // unknown
+  [DuckDBTypeId.INVALID]: "UNKNOWN",
+  [DuckDBTypeId.LIST]: "UNKNOWN",
+  [DuckDBTypeId.STRUCT]: "UNKNOWN",
+  [DuckDBTypeId.MAP]: "UNKNOWN",
+  [DuckDBTypeId.ARRAY]: "UNKNOWN",
+  [DuckDBTypeId.UNION]: "UNKNOWN",
+  [DuckDBTypeId.ANY]: "UNKNOWN",
+  [DuckDBTypeId.SQLNULL]: "UNKNOWN",
+};
 
 export class DuckDBFieldResolver extends FieldResolver<DuckDBResult> {
-  protected resolveRuntimeColumnType(column: {
-    name: string;
-    type: DuckDBType;
-  }): BksFieldType {
-    if (column.type.typeId === DuckDBTypeId.BLOB) {
-      return "BINARY";
-    }
-    return this.identifyType(DuckDBTypeId[column.type.typeId]);
+  protected resolveRuntimeColumnType(column: ResultColumn) {
+    return typeIds[column.type.typeId] ?? "UNKNOWN";
   }
 
-  protected resolveDeclaredColumnType(column: RawTableColumn): BksFieldType {
-    return this.identifyType(column.dataType);
-  }
-
-  private identifyType(rawType?: string): BksFieldType {
-    const declaration = rawType?.toLowerCase() ?? "";
+  protected resolveDeclaredColumnType(column: RawTableColumn) {
+    const declaration = column.dataType?.toLowerCase() ?? "";
     // Strips the arguments of DECIMAL(18,3), ENUM('a','b'), VARCHAR[], and the
     // trailing modifiers of TIMESTAMP WITH TIME ZONE.
     const type = declaration.split(/[([ ]/)[0].trim();
 
-    if (type === "boolean") {
-      return "BOOLEAN";
-    }
-
-    if (type === "blob") {
+    if (regex.binary.test(type)) {
       return "BINARY";
     }
 
-    if (numberTypes.includes(type)) {
+    if (regex.string.test(type)) {
+      return "STRING";
+    }
+
+    if (regex.number.test(type)) {
       return "NUMBER";
     }
 
-    if (dateTimeTypes.includes(type)) {
+    if (regex.datetime.test(type)) {
       return "DATETIME";
     }
 
-    if (stringTypes.includes(type)) {
-      return "STRING";
+    if (regex.boolean.test(type)) {
+      return "BOOLEAN";
     }
 
     return "UNKNOWN";

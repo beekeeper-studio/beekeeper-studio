@@ -81,7 +81,7 @@ interface StreamResult {
 
 type JSONOrStreamResult = JSONResult | StreamResult;
 
-interface ResultColumn {
+export interface ResultColumn {
   name: string;
   type?: string;
 }

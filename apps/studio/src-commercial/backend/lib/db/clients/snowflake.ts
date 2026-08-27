@@ -23,8 +23,13 @@ import { RawTableColumn } from "@/lib/db/serialization/FieldResolver";
 
 const log = rawLog.scope('snowflake')
 
+export interface ResultColumn {
+  name: string;
+  type?: string | number | any;
+}
+
 export interface SnowflakeResult {
-  columns: { name: string, type?: string | number | any }[]
+  columns: ResultColumn[]
   rows: Record<string, any>[];
   arrayMode: boolean;
   rowCount: number;

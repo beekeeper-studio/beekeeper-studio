@@ -2017,7 +2017,7 @@ export class DBTestUtil {
     const columns = await this.connection.listTableColumns('bks_types', this.defaultSchema)
     const fields = columns.map((c) => c.bksField);
     const { num, str, datetime, bool, bin }
-      = _.keyBy(fields, "name");
+      = _.keyBy(fields, (f) => f.name.toLowerCase());
 
     expect(num.bksType).toBe('NUMBER')
     expect(str.bksType).toBe('STRING')

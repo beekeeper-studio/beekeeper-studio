@@ -68,7 +68,7 @@ type SQLServerVersion = {
   versionString: any
 }
 
-type ColumnMetadata = sql.IColumnMetadata[number]
+export type ResultColumn = sql.IColumnMetadata[number]
 
 export type SQLServerResult = {
   connection: Request,
@@ -76,7 +76,7 @@ export type SQLServerResult = {
   // Number of changes made by the query
   rowsAffected: number
   rows: Record<string, any>[];
-  columns: ColumnMetadata[];
+  columns: ResultColumn[];
   arrayMode: boolean;
 }
 

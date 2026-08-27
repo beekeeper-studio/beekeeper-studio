@@ -38,9 +38,11 @@ const sqliteContext = {
   }
 }
 
+export type ResultColumn = Database.ColumnDefinition
+
 export type SqliteResult = {
   rows: any[][] | Record<string, any>[],
-  columns: Database.ColumnDefinition[],
+  columns: ResultColumn[],
   statement: Statement,
   // Number of changes made by the query
   changes: number

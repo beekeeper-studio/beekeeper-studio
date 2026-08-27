@@ -60,8 +60,12 @@ import { identify } from 'sql-query-identifier';
 
 const log = rawLog.scope('dynamodb');
 
+export interface ResultColumn {
+  name: string;
+}
+
 export interface DynamoQueryResult {
-  columns: { name: string }[];
+  columns: ResultColumn[];
   rows: Record<string, any>[];
   arrayMode: boolean;
 }

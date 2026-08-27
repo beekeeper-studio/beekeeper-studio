@@ -34,6 +34,8 @@ import REDIS_COMMAND_DOCS from "@beekeeperstudio/ui-kit/lib/components/text-edit
 
 export type RedisQueryResult = BaseQueryResult;
 
+export type ResultColumn = RedisQueryResult["columns"][number];
+
 type RedisSocketConfig = Parameters<typeof createClient>[0]["socket"];
 
 const log = rawLog.scope("redis");

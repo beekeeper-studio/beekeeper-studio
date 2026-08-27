@@ -1,34 +1,29 @@
+/**
+ * Reference for data types:
+ * https://trino.io/docs/current/language/types.html
+ */
+
 import {
   FieldResolver,
   RawTableColumn,
 } from "@/lib/db/serialization/FieldResolver";
 import { BksFieldType } from "@/lib/db/models";
-import { TrinoResult } from "../trino";
+import { ResultColumn, TrinoResult } from "../trino";
 
-const numberTypes = [
-  "tinyint",
-  "smallint",
-  "integer",
-  "int",
-  "bigint",
-  "real",
-  "double",
-  "decimal",
-];
-
-const dateTimeTypes = ["date", "time", "timestamp", "interval"];
-
-const stringTypes = ["char", "varchar", "json", "uuid", "ipaddress"];
+const regex = {
+  binary: /^varbinary$/,
+  string: /^(?:char|varchar|json|uuid|ipaddress|variant)$/,
+  number: /^(?:tinyint|smallint|int(?:eger)?|bigint|real|double|decimal)$/,
+  datetime: /^(?:date|time|timestamp|interval)$/,
+  boolean: /^boolean$/,
+};
 
 export class TrinoFieldResolver extends FieldResolver<TrinoResult> {
-  protected resolveRuntimeColumnType(column: {
-    name: string;
-    type?: string;
-  }): BksFieldType {
+  protected resolveRuntimeColumnType(column: ResultColumn) {
     return this.identifyType(column.type);
   }
 
-  protected resolveDeclaredColumnType(column: RawTableColumn): BksFieldType {
+  protected resolveDeclaredColumnType(column: RawTableColumn) {
     return this.identifyType(column.dataType);
   }
 
@@ -38,24 +33,24 @@ export class TrinoFieldResolver extends FieldResolver<TrinoResult> {
     // timestamp with time zone.
     const type = declaration.split(/[( ]/)[0].trim();
 
-    if (type === "boolean") {
-      return "BOOLEAN";
-    }
-
-    if (type === "varbinary") {
+    if (regex.binary.test(type)) {
       return "BINARY";
     }
 
-    if (numberTypes.includes(type)) {
+    if (regex.string.test(type)) {
+      return "STRING";
+    }
+
+    if (regex.number.test(type)) {
       return "NUMBER";
     }
 
-    if (dateTimeTypes.includes(type)) {
+    if (regex.datetime.test(type)) {
       return "DATETIME";
     }
 
-    if (stringTypes.includes(type)) {
-      return "STRING";
+    if (regex.boolean.test(type)) {
+      return "BOOLEAN";
     }
 
     return "UNKNOWN";

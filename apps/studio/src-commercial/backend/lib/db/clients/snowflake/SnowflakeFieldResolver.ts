@@ -1,59 +1,30 @@
+/**
+ * Reference for data types:
+ * https://docs.snowflake.com/en/sql-reference/intro-summary-data-types
+ */
+
 import {
   FieldResolver,
   RawTableColumn,
 } from "@/lib/db/serialization/FieldResolver";
 import { BksFieldType } from "@/lib/db/models";
-import { SnowflakeResult } from "../snowflake";
+import { ResultColumn, SnowflakeResult } from "../snowflake";
 
-// The driver reports its own type names ("fixed", "text"), which do not always
-// match the ones `DESCRIBE TABLE` spells out.
-const numberTypes = [
-  "fixed",
-  "real",
-  "number",
-  "decimal",
-  "numeric",
-  "int",
-  "integer",
-  "bigint",
-  "smallint",
-  "tinyint",
-  "byteint",
-  "float",
-  "float4",
-  "float8",
-  "double",
-  "double precision",
-];
-
-const dateTimeTypes = [
-  "date",
-  "time",
-  "datetime",
-  "timestamp",
-  "timestamp_ltz",
-  "timestamp_ntz",
-  "timestamp_tz",
-];
-
-const stringTypes = [
-  "text",
-  "string",
-  "varchar",
-  "char",
-  "character",
-  "variant",
-];
+const regex = {
+  binary: /^(?:binary|varbinary)$/,
+  string: /^(?:text|string|varchar|char(?:acter)?|variant|object|array|uuid)$/,
+  number:
+    /^(?:fixed|number|decimal|numeric|decfloat|int(?:eger)?|bigint|smallint|tinyint|byteint|float[48]?|real|double(?: precision)?)$/,
+  datetime: /^(?:date|time|datetime|timestamp(?:_(?:ltz|ntz|tz))?)$/,
+  boolean: /^boolean$/,
+};
 
 export class SnowflakeFieldResolver extends FieldResolver<SnowflakeResult> {
-  protected resolveRuntimeColumnType(column: {
-    name: string;
-    type?: string | number | any;
-  }): BksFieldType {
+  protected resolveRuntimeColumnType(column: ResultColumn) {
     return this.identifyType(column.type);
   }
 
-  protected resolveDeclaredColumnType(column: RawTableColumn): BksFieldType {
+  protected resolveDeclaredColumnType(column: RawTableColumn) {
     return this.identifyType(column.dataType);
   }
 
@@ -62,24 +33,24 @@ export class SnowflakeFieldResolver extends FieldResolver<SnowflakeResult> {
     // Strips the arguments of VARCHAR(16777216) and NUMBER(38,0).
     const type = declaration.split("(")[0].trim();
 
-    if (type === "boolean") {
-      return "BOOLEAN";
-    }
-
-    if (type === "binary" || type === "varbinary") {
+    if (regex.binary.test(type)) {
       return "BINARY";
     }
 
-    if (numberTypes.includes(type)) {
+    if (regex.string.test(type)) {
+      return "STRING";
+    }
+
+    if (regex.number.test(type)) {
       return "NUMBER";
     }
 
-    if (dateTimeTypes.includes(type)) {
+    if (regex.datetime.test(type)) {
       return "DATETIME";
     }
 
-    if (stringTypes.includes(type)) {
-      return "STRING";
+    if (regex.boolean.test(type)) {
+      return "BOOLEAN";
     }
 
     return "UNKNOWN";

@@ -70,8 +70,13 @@ const duckDBContext = {
 type RowObject = Record<string, DuckDBValue>;
 type RowArray = DuckDBValue[];
 
+export interface ResultColumn {
+  name: string;
+  type: DuckDBType;
+}
+
 interface DuckDBResultBase {
-  columns: { name: string; type: DuckDBType }[];
+  columns: ResultColumn[];
   statement: IdentifyResult;
   rowCount: number;
   rowsChanged: number;

@@ -1,24 +1,33 @@
+/**
+ * Reference for data types:
+ * https://www.sqlite.org/datatype3.html
+ */
+
 import {
   FieldResolver,
   RawTableColumn,
 } from "@/lib/db/serialization/FieldResolver";
 import { BksFieldType } from "@/lib/db/models";
-import { SqliteResult } from "@/lib/db/clients/sqlite";
+import { ResultColumn, SqliteResult } from "@/lib/db/clients/sqlite";
+
+const regex = {
+  binary: /blob/,
+  string: /char|clob|text|string/,
+  number: /int|real|floa|doub|num|dec/,
+  datetime: /date|time/,
+  boolean: /bool/,
+};
 
 export class SqliteFieldResolver extends FieldResolver<SqliteResult> {
-  protected resolveRuntimeColumnType(column: {
-    name: string;
-    type?: string;
-  }): BksFieldType {
+  protected resolveRuntimeColumnType(column: ResultColumn) {
     return this.identifyType(column.type);
   }
 
-  protected resolveDeclaredColumnType(column: RawTableColumn): BksFieldType {
+  protected resolveDeclaredColumnType(column: RawTableColumn) {
     return this.identifyType(column.dataType);
   }
 
   // Sqlite has no strict column types, so this follows the type affinity rules.
-  // See https://www.sqlite.org/datatype3.html#determination_of_column_affinity
   private identifyType(rawType?: string): BksFieldType {
     if (!rawType) {
       return "UNKNOWN";
@@ -26,24 +35,24 @@ export class SqliteFieldResolver extends FieldResolver<SqliteResult> {
 
     const declaration = rawType.toLowerCase();
 
-    if (/bool/.test(declaration)) {
-      return "BOOLEAN";
-    }
-
-    if (/date|time/.test(declaration)) {
-      return "DATETIME";
-    }
-
-    if (/blob/.test(declaration)) {
+    if (regex.binary.test(declaration)) {
       return "BINARY";
     }
 
-    if (/char|clob|text|string/.test(declaration)) {
+    if (regex.string.test(declaration)) {
       return "STRING";
     }
 
-    if (/int|real|floa|doub|num|dec/.test(declaration)) {
+    if (regex.number.test(declaration)) {
       return "NUMBER";
+    }
+
+    if (regex.datetime.test(declaration)) {
+      return "DATETIME";
+    }
+
+    if (regex.boolean.test(declaration)) {
+      return "BOOLEAN";
     }
 
     return "UNKNOWN";

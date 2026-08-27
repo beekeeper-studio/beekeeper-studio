@@ -1,32 +1,40 @@
+/**
+ * Reference for data types:
+ * https://surrealdb.com/docs/surrealql/datamodel
+ */
+
 import { RecordId } from "surrealdb";
 import {
   FieldResolver,
   RawTableColumn,
 } from "@/lib/db/serialization/FieldResolver";
-import { BksField, BksFieldType } from "@/lib/db/models";
-import { SurrealDBQueryResult } from "../surrealdb";
+import { ResultColumn, SurrealDBQueryResult } from "../surrealdb";
 
-const numberTypes = ["int", "float", "decimal", "number"];
-
-const dateTimeTypes = ["datetime", "duration"];
-
-const stringTypes = ["string", "uuid"];
+const regex = {
+  binary: /^bytes$/,
+  string: /^(?:string|uuid)$/,
+  number: /^(?:int|float|decimal|number)$/,
+  datetime: /^(?:datetime|duration)$/,
+  boolean: /^bool$/,
+};
 
 export class SurrealDBFieldResolver extends FieldResolver<SurrealDBQueryResult> {
   // Surreal reports no types for a result, so the values decide.
-  resolveQueryResult(queryResult: SurrealDBQueryResult): BksField[] {
+  // TODO (@day): may need to do some analysis here
+  protected resolveRuntimeColumnType(
+    column: ResultColumn,
+    queryResult: SurrealDBQueryResult
+  ) {
     const row = queryResult.rows[0];
-    return queryResult.columns.map((column) => {
-      let bksType: BksFieldType = "UNKNOWN";
-      if (row?.[column.name] instanceof RecordId) {
-        bksType = "SURREALID";
-      }
-      // TODO (@day): may need to do some analysis here
-      return { name: column.name, bksType };
-    });
+    const value = row?.[column.name];
+
+    if (value instanceof RecordId) {
+      return "SURREALID";
+    }
+    return "UNKNOWN";
   }
 
-  protected resolveDeclaredColumnType(column: RawTableColumn): BksFieldType {
+  protected resolveDeclaredColumnType(column: RawTableColumn) {
     if (column.dataType?.startsWith("record<") || column.columnName === "id") {
       return "SURREALID";
     }
@@ -38,24 +46,24 @@ export class SurrealDBFieldResolver extends FieldResolver<SurrealDBQueryResult> 
       .split("<")[0]
       .trim();
 
-    if (type === "bool") {
-      return "BOOLEAN";
-    }
-
-    if (type === "bytes") {
+    if (regex.binary.test(type)) {
       return "BINARY";
     }
 
-    if (numberTypes.includes(type)) {
+    if (regex.string.test(type)) {
+      return "STRING";
+    }
+
+    if (regex.number.test(type)) {
       return "NUMBER";
     }
 
-    if (dateTimeTypes.includes(type)) {
+    if (regex.datetime.test(type)) {
       return "DATETIME";
     }
 
-    if (stringTypes.includes(type)) {
-      return "STRING";
+    if (regex.boolean.test(type)) {
+      return "BOOLEAN";
     }
 
     return "UNKNOWN";

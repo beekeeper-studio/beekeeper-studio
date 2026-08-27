@@ -51,7 +51,7 @@ import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderB
 import { TrinoFieldResolver } from "./trino/TrinoFieldResolver";
 import { RawTableColumn } from "@/lib/db/serialization/FieldResolver";
 
-interface ResultColumn {
+export interface ResultColumn {
   name: string
   type: string
 }
