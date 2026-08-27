@@ -216,13 +216,13 @@ export default Vue.extend({
       if (this.themeValue === "system") {
         return this.darkMediaQuery.matches ? "system-dark" : "system-light";
       }
-      return this.themeValue || "system";
+      return this.themeValue || "system-light";
     },
     getThemeType() {
       if (this.themeValue === "system") {
         return this.darkMediaQuery.matches ? "dark" : "light";
       }
-      return this.themeValue.includes("dark") ? "dark" : "light";
+      return this.themeValue?.includes("dark") ? "dark" : "light";
     },
     applyTheme() {
       document.documentElement.dataset.theme = this.getTheme();
