@@ -1,50 +1,50 @@
 @use "sass:color";
 // Theme
 // -----------------------------
-$theme-bg:           #f6f8fa;
+$theme-bg:           #f8f8f8;
 $theme-base:         black;
-$theme-primary:      #e5a00d;
-$theme-secondary:    #0284c7;
+$theme-primary:      color.adjust(#fad83b, $lightness: -10%);
+$theme-secondary:    #0099ff;
 
 // Colors
 // -----------------------------
-$text-dark:          rgba($theme-base, 0.88);
-$text:               rgba($theme-base, 0.68);
-$text-light:         rgba($theme-base, 0.52);
-$text-lighter:       rgba($theme-base, 0.38);
-$text-hint:          rgba($theme-base, 0.38);
-$text-disabled:      rgba($theme-base, 0.38);
+$text-dark:          rgba($theme-base, 0.87);
+$text:               rgba($theme-base, 0.67);
+$text-light:         rgba($theme-base, 0.57);
+$text-lighter:       rgba($theme-base, 0.37);
+$text-hint:          rgba($theme-base, 0.37);
+$text-disabled:      rgba($theme-base, 0.37);
 
-$brand-info:         #0284c7;
-$brand-success:      #16a34a;
-$brand-warning:      #d97706;
-$brand-danger:       #ef4444;
-$brand-default:      rgba($theme-base, 0.52);
-$brand-purple:       #9333ea;
-$brand-pink:         #db2777;
+$brand-info:         #3498db;
+$brand-success:      #15db95;
+$brand-warning:      #dc700c;
+$brand-danger:       #ff5d59;
+$brand-default:      rgba($theme-base, 0.57);
+$brand-purple:       #9858ff;
+$brand-pink:         #ff00f0;
 $brand-primary:      $theme-primary;
 $brand-secondary:    $theme-secondary;
 
 // App
-$border-color:              rgba($theme-base, 0.09);
+$border-color:              rgba($theme-base, 0.15);
 $link-color:                $text-dark;
 $placeholder:               $text-hint;
-$selection:                 rgba(59, 130, 246, 0.18);
-$input-highlight:           rgba($theme-base, 0.16);
+$selection:                 rgba($theme-primary, 0.2);
+$input-highlight:           rgba($theme-base, 0.27);
 
-$db-select-text:            $text-dark;
-$query-editor-bg:           #ffffff;
-$row-handle-selected:       #e2e8f0;
-$row-handle-hover:          #f1f5f9;
+$db-select-text:            white;
+$query-editor-bg:           white;
+$row-handle-selected: color.adjust($query-editor-bg, $lightness: -10%);
+$row-handle-hover:          color.adjust($query-editor-bg, $lightness: -5%);
 
 $titlebar-bg:               transparent;
-$global-sidebar-bg:         #eaedf1;
-$sidebar-bg:                #f6f8fa;
-$sidebar-heading-bg:        #eaedf1;
-$tabs-bg:                   #eaedf1;
-$statusbar-bg:              #f1f3f6;
-$statusbar-text:            $text-dark;
-$statusbar-text-default:    $text-dark;
+$global-sidebar-bg:         transparent;
+$sidebar-bg:                color.adjust($theme-bg, $lightness: -3%);
+$sidebar-heading-bg:        $theme-bg;
+$tabs-bg:                   transparent;
+$statusbar-bg:              rgba($theme-base, 0.1);
+// $statusbar-bg:             rgba($theme-primary, 0.4);
+$statusbar-text:            $theme-base;
 
-$grouped-tables-base:       #f1f3f6;
-$grouped-tables-light:      #e5e7eb;
+$grouped-tables-base: color.adjust($theme-bg, $lightness: -2%);
+$grouped-tables-light: color.adjust($grouped-tables-base, $lightness: -2%);

@@ -208,30 +208,12 @@ x-buttons {
 .core-tabs {
   .tabs-header {
     background: $tabs-bg;
-    border-bottom: 1px solid $border-color;
   }
   .nav-tabs {
     .nav-link {
-      background: rgba(0, 0, 0, 0.04);
-      border: 1px solid transparent;
-      border-bottom: none;
-      border-radius: 6px 6px 0 0;
-      color: $text;
-      margin-right: 2px;
-      transition: background 0.15s ease-in-out, color 0.15s ease-in-out;
-
-      &:hover {
-        background: rgba(0, 0, 0, 0.07);
-        color: $text-dark;
-      }
-
+      background: $tab-link;
       &.active {
         background: $query-editor-bg;
-        border: 1px solid $border-color;
-        border-bottom-color: $query-editor-bg;
-        color: $text-dark;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-
         .tab-action {
           background: linear-gradient(
             90deg,
@@ -248,8 +230,8 @@ x-buttons {
       border-radius: 0 6px 0 0;
       background: linear-gradient(
         90deg,
-        rgba(230, 230, 230, 0) 0%,
-        rgba(230, 230, 230, 1) 20%
+        rgba($tab-link,0) 0%,
+        rgba($tab-link,1) 20%
       );
     }
     .tab-close {
@@ -261,33 +243,6 @@ x-buttons {
       }
     }
   }
-}
-
-.statusbar {
-  background: $statusbar-bg !important;
-  border-top: 1px solid $border-color;
-  color: $text-dark;
-
-  .statusbar-item {
-    color: $text-dark;
-  }
-}
-
-.query-editor-footer,
-.editor-actions {
-  border-top: 1px solid $border-color;
-  background: #f8fafc;
-}
-
-.sidebar,
-.primary-sidebar,
-.secondary-sidebar {
-  border-right: 1px solid $border-color;
-}
-
-.global-sidebar {
-  border-right: 1px solid $border-color;
-  background: $global-sidebar-bg;
 }
 
 // Tabulator
@@ -610,125 +565,6 @@ x-switch {
   }
 }
 
-& {
-  // Brand colors
-  --bks-brand-info: #{$brand-info};
-  --bks-brand-success: #{$brand-success};
-  --bks-brand-warning: #{$brand-warning};
-  --bks-brand-danger: #{$brand-danger};
-  --bks-brand-default: #{$brand-default};
-  --bks-brand-purple: #{$brand-purple};
-  --bks-brand-pink: #{$brand-pink};
-  --bks-brand-primary: #{$brand-primary};
-  --bks-brand-secondary: #{$brand-secondary};
-
-  // App colors
-  --bks-border-color: #{$border-color};
-  --bks-link-color: #{$link-color};
-  --bks-placeholder: #{$placeholder};
-  --bks-selection: #{$selection};
-  --bks-input-highlight: #{$input-highlight};
-
-  // Editor colors
-  --bks-query-editor-bg: #{$query-editor-bg};
-  --bks-db-select-text: #{$db-select-text};
-
-  // Table editing colors
-  --bks-row-handle-selected: #{$row-handle-selected};
-  --bks-row-handle-hover: #{$row-handle-hover};
-  --bks-row-highlight: #{$row-highlight};
-  --bks-row-add: #{$row-add};
-  --bks-row-delete: #{$row-delete};
-  --bks-row-error: #{$row-error};
-
-  --bks-cell-edited: #{$cell-edited};
-  --bks-cell-error: #{$cell-error};
-  --bks-cell-success: #{$cell-success};
-
-  // Layout colors
-  --bks-titlebar-bg: #{$titlebar-bg};
-  --bks-global-sidebar-bg: #{$global-sidebar-bg};
-  --bks-sidebar-bg: #{$sidebar-bg};
-  --bks-sidebar-heading-bg: #{$sidebar-heading-bg};
-  --bks-tabs-bg: #{$tabs-bg};
-  --bks-grouped-tables-base: #{$grouped-tables-base};
-  --bks-grouped-tables-light: #{$grouped-tables-light};
-
-  --bks-statusbar-bg: #{$statusbar-bg};
-  --bks-statusbar-text: #{$statusbar-text};
-  --bks-statusbar-text-default: #{$statusbar-text-default};
-
-  // CodeMirror 6 text editor variables for Light Mode
-  --bks-text-editor-bg-color: #{$query-editor-bg};
-  --bks-text-editor-fg-color: #1e293b;
-  --bks-text-editor-activeline-bg-color: #f1f5f9;
-  --bks-text-editor-activeline-gutter-bg-color: #e2e8f0;
-  --bks-text-editor-selected-bg-color: rgba(59, 130, 246, 0.18);
-  --bks-text-editor-matchingselection-bg-color: rgba(59, 130, 246, 0.08);
-  --bks-text-editor-searchmatch-bg-color: rgba(251, 191, 36, 0.35);
-  --bks-text-editor-searchmatch-selected-bg-color: rgba(245, 158, 11, 0.5);
-
-  --bks-text-editor-cursor-bg-color: #0f172a;
-  --bks-text-editor-gutter-bg-color: #f8fafc;
-  --bks-text-editor-gutter-border-color: #e2e8f0;
-  --bks-text-editor-linenumber-fg-color: #94a3b8;
-  --bks-text-editor-foldgutter-fg-color: #94a3b8;
-  --bks-text-editor-foldgutter-fg-color-hover: #1e293b;
-
-  --bks-text-editor-indent-marker-bg-color: rgba(0, 0, 0, 0.06);
-  --bks-text-editor-indent-marker-active-bg-color: rgba(0, 0, 0, 0.15);
-
-  --bks-text-editor-keyword-fg-color: #9333ea;
-  --bks-text-editor-builtin-fg-color: #0284c7;
-  --bks-text-editor-string-fg-color: #16a34a;
-  --bks-text-editor-number-fg-color: #d97706;
-  --bks-text-editor-comment-fg-color: #64748b;
-  --bks-text-editor-type-fg-color: #0284c7;
-  --bks-text-editor-typeName-fg-color: #0284c7;
-  --bks-text-editor-class-fg-color: #0284c7;
-  --bks-text-editor-variable-fg-color: #2563eb;
-  --bks-text-editor-variable-2-fg-color: #2563eb;
-  --bks-text-editor-variableName-fg-color: #1e293b;
-  --bks-text-editor-sql-field-fg-color: #2563eb;
-  --bks-text-editor-sql-alias-fg-color: #1e293b;
-  --bks-text-editor-operator-fg-color: #0f172a;
-  --bks-text-editor-punctuation-fg-color: #64748b;
-  --bks-text-editor-bracket-fg-color: #334155;
-  --bks-text-editor-def-fg-color: #d97706;
-  --bks-text-editor-atom-fg-color: #7c3aed;
-  --bks-text-editor-matchingbracket-fg-color: #0f172a;
-  --bks-text-editor-matchingbracket-bg-color: rgba(59, 130, 246, 0.15);
-
-  --bks-text-editor-context-menu-bg-color: #ffffff;
-  --bks-text-editor-context-menu-fg-color: #1e293b;
-  --bks-text-editor-context-menu-item-bg-color-hover: rgba(0, 0, 0, 0.06);
-  --bks-text-editor-context-menu-item-bg-color-active: rgba(0, 0, 0, 0.12);
-  --bks-text-editor-context-menu-item-fg-color-active: #0f172a;
-
-  --bks-mongo-shell-mongo-prompt-fg: #{$theme-primary};
-  --bks-mongo-shell-ansi-output-fg: #{$text-dark};
-}
-
 .BksTextEditor {
   font-weight: 500;
-
-  .cm-activeLine {
-    background-color: #f1f5f9 !important;
-  }
-
-  .cm-activeLineGutter {
-    background-color: #e2e8f0 !important;
-    color: #1e293b !important;
-    font-weight: 600;
-  }
-
-  .cm-gutters {
-    background-color: #f8fafc !important;
-    border-right: 1px solid #e2e8f0 !important;
-    color: #94a3b8;
-  }
-
-  .cm-selectionBackground {
-    background-color: rgba(59, 130, 246, 0.18) !important;
-  }
 }
