@@ -7,7 +7,6 @@ import { havingCli, safely, safelyDo, upsert } from "./StoreHelpers";
 import { ClientError } from '@/store/modules/data/StoreHelpers'
 import { ActionContext, ActionTree, Module, MutationTree } from "vuex";
 import { State as RootState } from '../../index'
-import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
 import Vue from "vue";
 import { Transport } from "@/common/transport";
 import { ListOptions } from "@/lib/cloud/controllers/GenericController";
@@ -76,7 +75,7 @@ export interface DataStoreMutations<T, X extends DataState<T>> extends MutationT
 
 
 export interface DataStore<T, X extends DataState<T>> extends Module<X, RootState> {
-  state: X
+  state: X | (() => X)
   mutations: DataStoreMutations<T, X>
   actions: DataStoreActions<T, X>
 }
@@ -187,9 +186,7 @@ export function utilActionsFor<T extends Transport>(type: string, other: any = {
       context.commit("error", null);
       await safely(context, async () => {
         const items = await Vue.prototype.$util.send(`appdb/${type}/find`, { options: loadOptions });
-        if (context.rootState.workspaceId === LocalWorkspace.id) {
-          await context.dispatch('mutate', { type: 'upsert', data: items });
-        }
+        await context.dispatch('mutate', { type: 'upsert', data: items });
       }, options.onError)
     },
     async search() {

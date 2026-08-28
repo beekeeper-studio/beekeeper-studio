@@ -42,9 +42,7 @@ export const LocalConnectionFolderModule: DataStore<IConnectionFolder, State> = 
       context.commit('error', null)
       await safely(context, async () => {
         const items = await Vue.prototype.$util.send('appdb/connectionFolder/find', { options: { order: { name: 'ASC' } } })
-        if (context.rootState.workspaceId === LocalWorkspace.id) {
-          await context.dispatch('mutate', { type: 'upsert', data: items })
-        }
+        await context.dispatch('mutate', { type: 'upsert', data: items })
       }, options.onError)
     },
     async poll() {

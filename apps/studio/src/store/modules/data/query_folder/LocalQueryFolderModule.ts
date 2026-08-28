@@ -4,7 +4,6 @@ import { IQueryFolder } from "@/common/interfaces/IQueryFolder";
 import { DataState, DataStore, LoadOptions, mutateActions, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { safely } from "@/store/modules/data/StoreHelpers";
 import { accessGrantActions, accessGrantMutations } from "@/store/modules/data/access_grant/accessGrantStore";
-import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
 import { FolderFetchModule, treeActions } from "@/store/modules/data/tree/treeStore";
 import { FolderableState, folderableActions } from "@/store/modules/data/tree/folderableStore";
 import { FolderNodeModule } from "@/store/modules/data/tree/FolderNodeModule";
@@ -13,11 +12,13 @@ type State = DataState<IQueryFolder> & FolderableState<IQueryFolder>
 
 export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
   namespaced: true,
-  state: {
-    items: [],
-    loading: false,
-    error: null,
-    pollError: null,
+  state() {
+    return {
+      items: [],
+      loading: false,
+      error: null,
+      pollError: null,
+    }
   },
   mutations: {
     ...mutationsFor<IQueryFolder>({}, { field: 'name', direction: 'asc' }),
@@ -42,9 +43,7 @@ export const LocalQueryFolderModule: DataStore<IQueryFolder, State> = {
       context.commit('error', null)
       await safely(context, async () => {
         const items = await Vue.prototype.$util.send('appdb/queryFolder/find', { options: { order: { name: 'ASC' } } })
-        if (context.rootState.workspaceId === LocalWorkspace.id) {
-          await context.dispatch('mutate', { type: 'upsert', data: items })
-        }
+        await context.dispatch('mutate', { type: 'upsert', data: items })
       }, options.onError)
     },
     async poll() {

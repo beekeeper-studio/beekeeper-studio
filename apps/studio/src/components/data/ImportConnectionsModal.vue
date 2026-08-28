@@ -13,25 +13,10 @@
     </p>
     <error-alert :error="error" />
     <div class="connection-list">
-      <div
-        class="connection-item"
-        v-for="connection in connections"
-        :key="connection.id"
-      >
-        <label
-          :for="`c-${connection.id}`"
-          class="checkbox-group"
-        >
-          <input
-            type="checkbox"
-            v-model="connection.checked"
-            class="form-control"
-            :id="`c-${connection.id}`"
-            :name="`c-${connection.id}`"
-          >
-          <span>{{ connection.name }}</span>
-        </label>
-      </div>
+      <local-item-tree-picker
+        :type="'connection'"
+        v-model="selectedConnections"
+      />
     </div>
     <template #footer="{ close }">
       <button
@@ -52,16 +37,18 @@
   </base-modal>
 </template>
 <script lang="ts">
+import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import BaseModal from '@/components/common/modals/BaseModal.vue'
-import Vue from 'vue'
+import LocalItemTreePicker from '@/components/common/LocalItemTreePicker.vue'
+
 export default Vue.extend({
-  components: { ErrorAlert, BaseModal },
+  components: { ErrorAlert, BaseModal, LocalItemTreePicker },
   data: () => ({
-    connections: [],
     loading: false,
-    error: null
+    error: null,
+    selectedConnections: []
   }),
   mounted() {
     this.registerHandlers(this.rootBindings)
@@ -81,23 +68,18 @@ export default Vue.extend({
   },
   methods: {
     async openModal() {
-      this.connections = (await this.$util.send('appdb/saved/find')).map((c) => {
-        return {
-          ...c,
-          checked: false
-        }
-      })
+      this.selectedConnections = [];
       this.error = null
       this.$modal.show('import-connections')
     },
     async doImport() {
       this.loading = true
       this.error = null
-      const candidates = this.connections.filter((c) => c.checked)
       try {
-        await Promise.all(candidates.map((c) => {
+        await Promise.all(this.selectedConnections.map(async (id: number) => {
+          const conn = await this.findLocal(id);
           // Clear id and connectionFolderId so the connection goes to the personal folder
-          const payload = {...c, id: null, connectionFolderId: null}
+          const payload = {...conn, id: null, connectionFolderId: null}
           return this.$store.dispatch('data/connections/save', payload)
         }))
         this.$modal.hide('import-connections')
@@ -106,6 +88,9 @@ export default Vue.extend({
       } finally {
         this.loading = false
       }
+    },
+    async findLocal(id: number) {
+      return await this.$util.send('appdb/connection/findOneBy', { options: { id }});
     }
   }
 })

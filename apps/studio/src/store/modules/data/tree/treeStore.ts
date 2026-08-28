@@ -80,7 +80,7 @@ export function treeActions<T extends HasId>(parentKeys: {
     async loadByParentIds(context, parentIds: number[]) {
       parentIds = _.difference(parentIds, context.state.folders.fetchingIds);
 
-      if (parentIds.length === 0) {
+      if (parentIds.length === 0 && context.state.folders.fetchingIds.length > 0) {
         return { error: null };
       }
 
