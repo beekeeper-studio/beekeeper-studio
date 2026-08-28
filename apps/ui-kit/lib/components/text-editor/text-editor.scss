@@ -4,8 +4,8 @@
 @use 'sass:color';
 
 :root {
-  --bks-text-editor-activeline-bg-color: #{rgba($theme-base, 0.04)};
-  --bks-text-editor-activeline-gutter-bg-color: transparent;
+  --bks-text-editor-activeline-bg-color: #{rgba($theme-base, 0.08)};
+  --bks-text-editor-activeline-gutter-bg-color: #{rgba($theme-base, 0.08)};
   --bks-text-editor-atom-fg-color: #ae81ff;
   --bks-text-editor-bg-color: #{$query-editor-bg};
   --bks-text-editor-bracket-fg-color: #{$text};

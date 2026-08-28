@@ -74,8 +74,8 @@ You can customize the appearance of the Text Editor by overriding the CSS variab
 
 ```css
 .BksTextEditor {
-  --bks-text-editor-activeline-bg-color: rgba(0, 0, 0, 0.03);
-  --bks-text-editor-activeline-gutter-bg-color: rgba(0, 0, 0, 0.03);
+  --bks-text-editor-activeline-bg-color: rgba(0, 0, 0, 0.08);
+  --bks-text-editor-activeline-gutter-bg-color: rgba(0, 0, 0, 0.08);
   --bks-text-editor-atom-fg-color: #ae81ff;
   --bks-text-editor-bg-color: white;
   --bks-text-editor-bracket-fg-color: rgba(0, 0, 0, 0.67);

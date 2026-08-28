@@ -762,8 +762,8 @@ x-switch {
   --bks-table-icon-color: #{$theme-primary};
 
   --bks-text-editor-bg-color: #{$query-editor-bg};
-  --bks-text-editor-activeline-bg-color: #{rgba($theme-base, 0.06)};
-  --bks-text-editor-activeline-gutter-bg-color: transparent;
+  --bks-text-editor-activeline-bg-color: #{rgba($theme-base, 0.08)};
+  --bks-text-editor-activeline-gutter-bg-color: #{rgba($theme-base, 0.08)};
   --bks-text-editor-error-bg-color: #{rgba($brand-danger, 0.1)};
   --bks-text-editor-error-fg-color: #{$brand-danger};
   --bks-text-editor-fg-color: #{$text-dark};

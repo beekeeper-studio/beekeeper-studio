@@ -566,8 +566,8 @@ x-switch {
 }
 
 & {
-  --bks-text-editor-activeline-bg-color: #{rgba($theme-base, 0.04)};
-  --bks-text-editor-activeline-gutter-bg-color: transparent;
+  --bks-text-editor-activeline-bg-color: #{rgba($theme-base, 0.08)};
+  --bks-text-editor-activeline-gutter-bg-color: #{rgba($theme-base, 0.08)};
   --bks-text-editor-linenumber-fg-color: #{rgba($theme-base, 0.25)};
   --bks-text-editor-linenumber-active-fg-color: #{$text-dark};
 }
