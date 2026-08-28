@@ -65,6 +65,8 @@ export const cssVars = [
   "--bks-text-editor-guttermarker-subtle-fg-color",
   "--bks-text-editor-header-fg-color",
   "--bks-text-editor-highlight-bg-color",
+  "--bks-text-editor-indent-marker-bg-color",
+  "--bks-text-editor-indent-marker-active-bg-color",
   "--bks-text-editor-keyword-fg-color",
   "--bks-text-editor-linenumber-fg-color",
   "--bks-text-editor-link-fg-color",

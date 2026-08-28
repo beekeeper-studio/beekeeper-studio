@@ -578,6 +578,8 @@ declare interface IBksConfig {
         };
         queryEditor: {
             autocomplete: {
+                disableKeywordCompletion: boolean;
+                disableSchemaCompletion: boolean;
                 keywordCasing: string;
                 quoteIdentifiers: string;
             };
