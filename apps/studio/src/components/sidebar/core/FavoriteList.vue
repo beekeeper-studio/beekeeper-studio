@@ -281,7 +281,7 @@ export default {
   },
   watch: {
     filterQuery(value) {
-      this.setSavedQueryFilter(value);
+      this.setQueryFilter(value);
     },
   },
   mounted() {
@@ -301,7 +301,7 @@ export default {
       'queries': 'items',
       'queriesError': 'error',
       'queriesPollError': 'pollError',
-      'savedQueryFilter': 'filter',
+      'queryFilter': 'filter',
       'pendingSaveIds': 'pendingSaveIds',
       fetchingResults: 'searching',
     }),
@@ -357,7 +357,7 @@ export default {
       return this.folders.length === 0 && this.foldersLoading;
     },
     typing() {
-      return this.filterQuery !== this.savedQueryFilter;
+      return this.filterQuery !== this.queryFilter;
     },
     error() {
       return this.queriesError || this.foldersError || null
@@ -387,7 +387,7 @@ export default {
       loadQueryFolders: 'data/queryFolders/loadByParentIds',
       unloadQueries: 'data/queries/unloadByParentIds',
       unloadQueryFolders: 'data/queryFolders/unloadByParentIds',
-      setSavedQueryFilter: 'data/queries/setSavedQueryFilter',
+      setQueryFilter: 'data/queries/setQueryFilter',
     }),
     ...mapMutations({
       setExpandedFolderIds: 'sidebar/queries/expandedIds',

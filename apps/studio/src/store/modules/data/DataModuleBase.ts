@@ -10,6 +10,9 @@ import { State as RootState } from '../../index'
 import Vue from "vue";
 import { Transport } from "@/common/transport";
 import { ListOptions } from "@/lib/cloud/controllers/GenericController";
+import rawLog from "@bksLogger";
+
+const log = rawLog.scope('DataModuleBase');
 
 export interface QueryModuleState {
   queryFolders: IQueryFolder[]
@@ -185,11 +188,15 @@ export function utilActionsFor<T extends Transport>(type: string, other: any = {
     async load(context, options: LoadOptions<T> = {}) {
       context.commit("error", null);
       await safely(context, async () => {
-        const findOpts = _.isNil(options.params) ? { ...loadOptions } : {
+        const findOpts = {
           ...loadOptions,
-          where: options.params
+          ...(options.params ? { params: options.params } : {})
         };
-        const items = await Vue.prototype.$util.send(`appdb/${type}/find`, { options: loadOptions });
+        if (type === 'saved') {
+          log.info('load called with options: ', options)
+        }
+        const items = await Vue.prototype.$util.send(`appdb/${type}/find`, { options: findOpts });
+        log.info(`Util loaded ${items.length} items`)
         await context.dispatch('mutate', { type: 'upsert', data: items });
       }, options.onError)
     },

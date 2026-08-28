@@ -34,7 +34,7 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, State> = {
   actions: {
     ...utilActionsFor<TransportFavoriteQuery>('query', {}, {}, { text: true, title: true, database: true, excerpt: true, id: true }),
     ...accessGrantActions('queries'),
-    ...treeActions<TransportFavoriteQuery>({ plural: 'queryFolderIds', singular: 'queryFolderId' }),
+    ...treeActions<TransportFavoriteQuery>({ plural: 'queryFolderIds', singular: 'queryFolderId' }, true),
     async initialize() {
       // noop
     },
