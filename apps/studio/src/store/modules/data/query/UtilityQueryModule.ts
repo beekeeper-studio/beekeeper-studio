@@ -43,6 +43,7 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, State> = {
     },
     setQueryFilter: _.debounce(function (context, filter) {
       context.commit('queryFilter', filter);
+      context.dispatch('search', filter);
     }, 500),
 
     // Reorder action for drag/drop - matches cloud module interface

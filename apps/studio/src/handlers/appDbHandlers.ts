@@ -152,6 +152,33 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
       // Support both direct options or wrapped in { options: ... }
       const options = 'options' in args ? args.options : args;
       return await cls.count(options);
+    },
+    [`appdb/${name}/search`]: async function({ searchText }: { searchText: string }) {
+      if (!cls.searchableFields || cls.searchableFields.length === 0) {
+        throw new Error(`You need to configure the searchable fields for model ${name}`);
+      }
+
+      let builder = cls
+        .createQueryBuilder("c");
+
+      for (let i = 0; i < cls.searchableFields.length; i++) {
+        const field = cls.searchableFields[i];
+        const query = `LOWER(c.${field}) LIKE :q`;
+        const params = { q: `%${searchText}%`};
+        if (i === 0) {
+          builder = builder.where(query, params);
+        } else {
+          builder = builder.orWhere(query, params);
+        }
+      }
+
+      const result = await builder
+        .orderBy(`c.${cls.searchableFields[0]}`, 'ASC')
+        .getMany();
+
+      return await Promise.all(result.map(async (value) => {
+        return await transform(value, cls);
+      }));
     }
   }
 }
@@ -238,12 +265,12 @@ export const AppDbHandlers = {
     cache = await cache.save();
     return cache.id;
   },
-  "appdb/queryAudit/get": async function ({ auditId }: { auditId: number; }): Promise<TransportQueryAuditDetail | null> {
+  'appdb/queryAudit/get': async function ({ auditId }: { auditId: number; }): Promise<TransportQueryAuditDetail | null> {
     const audit = await QueryAudit.findOneByOrFail({ id: auditId });
     return await audit.fetchDetail();
   },
-  "appdb/queryAudit/restore": async function ({ auditId, }: { auditId: number; }): Promise<void> {
+  'appdb/queryAudit/restore': async function ({ auditId, }: { auditId: number; }): Promise<void> {
     const audit = await QueryAudit.findOneByOrFail({ id: auditId });
     await audit.restore();
-  },
+  }
 };

@@ -279,6 +279,7 @@ export class DbConnectionBase extends ApplicationEntity {
 
 @Entity({ name: 'saved_connection' })
 export class SavedConnection extends DbConnectionBase implements IConnection {
+  static readonly searchableFields: string[] = [ 'name' ];
 
   withProps(props?: any): SavedConnection {
 

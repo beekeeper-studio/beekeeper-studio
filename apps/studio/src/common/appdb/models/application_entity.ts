@@ -2,6 +2,8 @@ import _ from 'lodash'
 import {VersionColumn, PrimaryGeneratedColumn, UpdateDateColumn, CreateDateColumn, BaseEntity} from 'typeorm'
 
 export abstract class ApplicationEntity extends BaseEntity {
+  static readonly searchableFields: string[] = []
+
   constructor() {
     super()
   }

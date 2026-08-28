@@ -1,21 +1,23 @@
 <template>
   <div>
-    <div class="filter">
-      <div class="filter-wrap">
-        <input
-          class="filter-input"
-          type="text"
-          placeholder="Filter"
-          v-model="filterText"
-        >
-        <x-buttons class="filter-actions">
-          <x-button
-            @click="clearFilter"
-            v-if="filterText"
+    <div class="fixed">
+      <div class="filter">
+        <div class="filter-wrap">
+          <input
+            class="filter-input"
+            type="text"
+            placeholder="Filter"
+            v-model="filterText"
           >
-            <i class="clear material-icons">cancel</i>
-          </x-button>
-        </x-buttons>
+          <x-buttons class="filter-actions">
+            <x-button
+              @click="clearFilter"
+              v-if="filterText"
+            >
+              <i class="clear material-icons">cancel</i>
+            </x-button>
+          </x-buttons>
+        </div>
       </div>
     </div>
     <template v-if="searching">
@@ -36,8 +38,8 @@
         >
           <input
             type="checkbox"
-            :checked="isSelected(node)"
-            @click.stop="toggleSelected(node)"
+            :checked="isSelected(item.id)"
+            @click.stop="toggleSelected(item.id)"
             :name="`cb-${item.id}`"
             :id="`cb-${item.id}`"
           >
@@ -107,8 +109,8 @@
         >
           <input
             type="checkbox"
-            :checked="isSelected(node)"
-            @click.stop="toggleSelected(node)"
+            :checked="isSelected(node.ref.id)"
+            @click.stop="toggleSelected(node.ref.id)"
             :name="`cb-${node.ref.id}`"
             :id="`cb-${node.ref.id}`"
           >
@@ -204,7 +206,7 @@ export default Vue.extend({
       return this.$store.state[this.itemPath]?.searching;
     },
     filteredItems() {
-      return this.$store.getters[this.itemPath]?.[`filtered${_.upperFirst(this.plural)}`] ?? [];
+      return this.$store.getters[`${this.itemPath}/filtered${_.upperFirst(this.plural)}`] ?? [];
     }
   },
   methods: {
@@ -266,11 +268,10 @@ export default Vue.extend({
       this.unloadItems(ids);
       this.unloadItemFolders(ids);
     },
-    isSelected(node) {
-      return this.value.includes(node.ref.id);
+    isSelected(id: number) {
+      return this.value.includes(id);
     },
-    toggleSelected(node) {
-      const id = node.ref.id;
+    toggleSelected(id: number) {
       let newValue: number[];
       if (this.value.includes(id)) {
         newValue = this.value.filter((v) => v !== id);

@@ -42,6 +42,7 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
     },
     setConnectionFilter: _.debounce(function (context, filter) {
       context.commit('connectionFilter', filter);
+      context.dispatch('search', filter);
     }, 500),
 
     // Reorder action for drag/drop - matches cloud module interface
