@@ -22,7 +22,7 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
   },
   mutations: mutationsFor<ISavedQuery>({
     // more mutations go here
-    savedQueryFilter(state: State, str: string) {
+    queryFilter(state: State, str: string) {
       state.filter = str;
     },
     ...accessGrantMutations(),
@@ -54,8 +54,8 @@ export const CloudQueryModule: DataStore<ISavedQuery, State> = {
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
     },
-    setSavedQueryFilter: _.debounce(function (context, filter) {
-      context.commit('savedQueryFilter', filter);
+    setQueryFilter: _.debounce(function (context, filter) {
+      context.commit('queryFilter', filter);
       context.dispatch('search', filter);
     }, 500),
     async saveMany(context, items: ISavedQuery[]) {

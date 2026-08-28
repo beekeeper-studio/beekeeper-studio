@@ -22,7 +22,7 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, State> = {
   },
   mutations: mutationsFor<TransportFavoriteQuery>({
     // more mutations go here
-    savedQueryFilter(state: DataState<TransportFavoriteQuery>, str: string) {
+    queryFilter(state: DataState<TransportFavoriteQuery>, str: string) {
       state.filter = str;
     },
     ...accessGrantMutations(),
@@ -41,8 +41,8 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, State> = {
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
     },
-    setSavedQueryFilter: _.debounce(function (context, filter) {
-      context.commit('savedQueryFilter', filter);
+    setQueryFilter: _.debounce(function (context, filter) {
+      context.commit('queryFilter', filter);
     }, 500),
 
     // Reorder action for drag/drop - matches cloud module interface

@@ -35,9 +35,6 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
     },
-    async refresh(context) {
-      await context.dispatch('load');
-    },
     setConnectionFilter: _.debounce(function (context, filter) {
       context.commit('connectionFilter', filter);
     }, 500),
