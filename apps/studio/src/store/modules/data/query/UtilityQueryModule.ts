@@ -10,13 +10,15 @@ type State = DataState<TransportFavoriteQuery>
 
 export const UtilQueryModule: DataStore<TransportFavoriteQuery, State> = {
   namespaced: true,
-  state: {
-    items: [],
-    loading: false,
-    error: null,
-    pollError: null,
-    filter: undefined, // maybe this can be more advanced? date filter?
-    pendingSaveIds: [],
+  state() {
+    return {
+      items: [],
+      loading: false,
+      error: null,
+      pollError: null,
+      filter: undefined, // maybe this can be more advanced? date filter?
+      pendingSaveIds: [],
+    }
   },
   mutations: mutationsFor<TransportFavoriteQuery>({
     // more mutations go here
@@ -33,11 +35,11 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, State> = {
     ...utilActionsFor<TransportFavoriteQuery>('query', {}, {}, { text: true, title: true, database: true, excerpt: true, id: true }),
     ...accessGrantActions('queries'),
     ...treeActions<TransportFavoriteQuery>({ plural: 'queryFolderIds', singular: 'queryFolderId' }),
+    async initialize() {
+      // noop
+    },
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
-    },
-    async refresh(context) {
-      await context.dispatch('load');
     },
     setSavedQueryFilter: _.debounce(function (context, filter) {
       context.commit('savedQueryFilter', filter);
