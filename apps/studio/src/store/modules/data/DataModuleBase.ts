@@ -200,8 +200,17 @@ export function utilActionsFor<T extends Transport>(type: string, other: any = {
         await context.dispatch('mutate', { type: 'upsert', data: items });
       }, options.onError)
     },
-    async search() {
-      // no-op, only the cloud module supports server-side search
+    async search(context, q: string) {
+      if (!q) {
+        return
+      }
+      context.commit('searching', true)
+      try {
+        const items = await Vue.prototype.$util.send(`appdb/${type}/search`, { searchText: q });
+        await context.dispatch('mutate', { type: 'upsert', data: items })
+      } finally {
+        context.commit('searching', false)
+      }
     },
     async poll() {
       // do nothing, locally we don't need to poll.
