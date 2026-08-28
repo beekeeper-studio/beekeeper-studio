@@ -292,13 +292,13 @@ export function extensions(config: ExtensionConfiguration = {}) {
       },
       // Autocomplete hints
       ".cm-tooltip": {
-        backgroundColor: "var(--bks-text-editor-context-menu-bg-color)",
-        color: "var(--bks-text-editor-context-menu-fg-color)",
-        borderColor: "var(--bks-text-editor-context-menu-border-color)",
+        backgroundColor: "var(--bks-context-menu-bg-color)",
+        color: "var(--bks-context-menu-fg-color)",
+        borderColor: "var(--bks-context-menu-border-color)",
       },
       ".cm-tooltip-autocomplete ul li[aria-selected]": {
-        backgroundColor: "var(--bks-text-editor-context-menu-item-bg-color-active)",
-        color: "var(--bks-text-editor-context-menu-item-fg-color-active)",
+        backgroundColor: "var(--bks-context-menu-item-bg-color-active)",
+        color: "var(--bks-context-menu-item-fg-color-active)",
         padding: "0.2rem 0.4rem",
       },
     }),
