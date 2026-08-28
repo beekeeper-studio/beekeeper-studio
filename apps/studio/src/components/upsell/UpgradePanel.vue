@@ -1,170 +1,124 @@
 <template>
-  <div class="upgrade-panel" :class="{ 'upgrade-panel--standalone': standalone }">
-    <div class="upgrade-panel-scroll">
-      <!-- Header -->
-      <div class="upgrade-panel-header">
-        <img class="bk-badge" :src="logoUrl" alt="Beekeeper Studio">
-        <div class="title-block" :class="{ triggered }">
-          <div v-if="triggered" class="eyebrow">
-            <i class="material-icons">lock</i>
-            <span>Upgrade required</span>
-          </div>
-          <h2 class="title">
-            {{ triggered ? `Unlock ${featureName}` : 'Upgrade Beekeeper Studio' }}
-          </h2>
-        </div>
-      </div>
-      <p v-if="triggered" class="subtitle">
-        … plus a bunch of other intuitive and useful features.
+  <div
+    class="upgrade-panel vue-dialog"
+    :class="{ 'upgrade-panel--standalone': standalone, 'upgrade-panel--wide': wide }"
+  >
+    <div class="dialog-content">
+      <h3 class="dialog-c-title">
+        {{ headingText }}
+      </h3>
+      <p class="dialog-c-subtitle">
+        {{ descriptionText }}
       </p>
-
-      <!-- What you unlock -->
-      <div class="unlock-section">
-        <div class="section-label">
-          What you unlock by upgrading
-        </div>
-        <ul class="unlock-list">
-          <li
-            v-for="item in unlockList"
-            :key="item.id"
-            class="unlock-item"
-          >
-            <i
-              class="material-icons unlock-icon"
-              :style="{ color: item.color }"
-            >{{ item.icon }}</i>
-            <div class="unlock-text">
-              <span class="unlock-title">{{ item.title }}</span>
-              <span v-if="item.blurb" class="unlock-blurb">{{ item.blurb }}</span>
-            </div>
-          </li>
-          <li class="unlock-more">
-            <a
-              href="#"
-              @click.prevent="learnMore"
-            >
-              …and much, much more
-              <span class="link-emphasis">see the full list</span>
-              <i class="material-icons">arrow_forward</i>
-            </a>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Testimonial -->
-      <figure class="testimonial">
-        <div class="avatar">
-          MK
-        </div>
-        <div class="testimonial-body">
-          <blockquote>
-            “By far the most user-friendly DB GUI out there. Our whole team bought a license.”
-          </blockquote>
-          <figcaption>
-            <span class="author">Matt K</span>
-            <span class="sep">·</span>
-            <span class="role">Engineering Lead, MinnHealth</span>
-          </figcaption>
-        </div>
-      </figure>
-
-      <!-- CTAs -->
-      <div class="cta-row">
-        <UpsellButtons @started-trial="$emit('started-trial')" />
-      </div>
+      <slot />
+      <ul
+        v-if="showFeatures"
+        class="upgrade-feature-list"
+      >
+        <li
+          v-for="feature in features"
+          :key="feature.label"
+          v-tooltip="feature.tooltip || false"
+        >
+          <i class="material-icons">check</i>
+          <span>{{ feature.label }}</span>
+        </li>
+      </ul>
+      <p class="upgrade-panel-links">
+        <a
+          href="#"
+          @click.prevent="learnMore"
+        >
+          <i class="material-icons">open_in_new</i>
+          <span>Full list of paid features</span>
+        </a>
+      </p>
     </div>
-
-    <!-- Lifetime license footer band -->
-    <div class="lifetime-footer" v-tooltip="'Subscribe for 12+ months and get lifetime access to any version released within your subscription period.'">
-      <i class="material-icons">all_inclusive</i>
-      <span>
-        <strong>Lifetime license</strong>
-        - included as part of every subscription.<span class="asterisk">*</span>
-      </span>
-    </div>
+    <upsell-buttons @started-trial="$emit('started-trial')" />
   </div>
 </template>
 
 <script lang="ts">
 import Vue from 'vue'
 import UpsellButtons from './common/UpsellButtons.vue'
-import logoUrl from '@/assets/logo.svg'
 
 const UPGRADE_URL = 'https://www.beekeeperstudio.io/upgrade'
 
-const FEATURES = [
-  {
-    id: 'ai',
-    title: 'SQL AI Shell',
-    blurb: 'Bring your own model; Claude, OpenAI, Gemini, or local.',
-    icon: 'auto_awesome',
-    color: 'var(--bks-brand-pink, #ff78f7)'
-  },
-  {
-    id: 'json',
-    title: 'JSON Sidebar',
-    blurb: 'View any row as JSON and expand foreign keys inline.',
-    icon: 'data_object',
-    color: 'var(--bks-item-view, #4ad0ff)'
-  },
-  {
-    id: 'organize',
-    title: 'Folders',
-    blurb: 'Folders, drag-and-drop reordering, color coding.',
-    icon: 'folder',
-    color: 'var(--bks-text, rgba(255,255,255,0.67))'
-  },
-  {
-    id: 'workspaces',
-    title: 'Cloud Workspaces',
-    blurb: 'Sync connections across devices, share a Team folder.',
-    icon: 'cloud',
-    color: 'var(--bks-brand-secondary, #4ad0ff)'
-  }
-] as const
+const LIFETIME_TOOLTIP =
+  'Subscribe for 12+ months and get lifetime access to any version released within your subscription period.'
+
+interface Feature {
+  label: string
+  tooltip?: string
+}
+
+// Ordered by demand: the middle of the list follows visitor counts for the
+// matching /features page on the website (90 days to 2026-08-25), highest
+// first. Features with no feature page follow, and the two ends are fixed —
+// lifetime access leads, the catch-all closes.
+const PAID_FEATURES: Feature[] = [
+  { label: 'Lifetime access', tooltip: LIFETIME_TOOLTIP },
+  { label: 'SQL AI shell' },
+  { label: 'Import from file' },
+  { label: 'Export multiple tables' },
+  { label: 'Unlimited table filters' },
+  { label: 'JSON row view' },
+  { label: 'Cloud sync' },
+  { label: 'Connection folders' },
+  { label: '10 more databases' },
+  { label: '…and much more' },
+]
 
 export default Vue.extend({
   components: { UpsellButtons },
   props: {
+    // Name of the feature the user just tried to use, e.g. "Backup & Restore".
+    // Drives the heading; leave null for a generic prompt.
     featureName: {
       type: String,
       default: null
     },
-    // When true, panel adds its own card chrome (border, radius) for inline placement.
-    // When false, it's bare so the wrapping modal can supply its own chrome.
+    // Full heading override, for surfaces that need their own wording.
+    title: {
+      type: String,
+      default: null
+    },
+    // Body copy override, shown in place of the community-edition sentence.
+    description: {
+      type: String,
+      default: null
+    },
+    showFeatures: {
+      type: Boolean,
+      default: true
+    },
+    // When true, the panel adds its own card chrome (surface, radius, shadow)
+    // for inline placement. When false it's bare, so a modal supplies chrome.
     standalone: {
+      type: Boolean,
+      default: false
+    },
+    // Wider card, for panels with a preview in the default slot.
+    wide: {
       type: Boolean,
       default: false
     }
   },
-  data() {
-    return { logoUrl }
-  },
   computed: {
-    triggered(): boolean {
-      return !!this.featureName
+    features(): Feature[] {
+      return PAID_FEATURES
     },
-    unlockList(): Array<{ id: string, title: string, blurb: string, icon: string, color: string }> {
-      const match = this.featureName
-        ? FEATURES.find((f) => f.title.toLowerCase() === this.featureName!.toLowerCase())
-        : null
-
-      if (match) {
-        return [match, ...FEATURES.filter((f) => f.id !== match.id)]
-      }
-
-      if (this.featureName) {
-        const synthetic = {
-          id: 'synthetic',
-          title: this.featureName,
-          blurb: '',
-          icon: 'workspace_premium',
-          color: 'var(--bks-theme-primary, #fad83b)'
-        }
-        return [synthetic, ...FEATURES]
-      }
-
-      return [...FEATURES]
+    headingText(): string {
+      if (this.title) return this.title
+      if (this.featureName) return `${this.featureName} needs a paid license`
+      return 'Upgrade Beekeeper Studio'
+    },
+    descriptionText(): string {
+      if (this.description) return this.description
+      if (!this.showFeatures) return 'Not included in the Community Edition.'
+      return this.featureName
+        ? 'Not included in the Community Edition. A paid license also includes:'
+        : 'A paid license includes:'
     }
   },
   methods: {
