@@ -119,6 +119,10 @@ export default {
     },
     applyKeymap() {
       this.textEditor.setKeymap(this.keymap, this.vimOptions);
+      // Rebuilding the vim extension can drop dom focus.
+      if (this.isFocused) {
+        this.textEditor.focus();
+      }
     },
     applyLineWrapping() {
       this.textEditor.setLineWrapping(this.lineWrapping);
@@ -187,6 +191,7 @@ export default {
         markers: this.markers,
         lineGutters: this.lineGutters,
         foldGutters: this.foldGutters,
+        indentationMarkers: this.indentationMarkers,
         actionsKeymap: this.getActionsKeymap()
       });
 
@@ -205,12 +210,16 @@ export default {
             this.textEditor.execCommand("findAndReplace")
           }
         },
-        {
-          key: "Mod-r",
-          run: () => {
-            this.textEditor.execCommand("findAndReplace")
+        // Mod-r is vim's redo, and duplicates Mod-f above. Vim should win on
+        // precedence anyway, but claiming it risks silently breaking redo.
+        ...(this.keymap === "vim" ? [] : [
+          {
+            key: "Mod-r",
+            run: () => {
+              this.textEditor.execCommand("findAndReplace")
+            }
           }
-        },
+        ]),
         ...this.internalActionsKeymap
       ]
 

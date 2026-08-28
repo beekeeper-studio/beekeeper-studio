@@ -9,6 +9,7 @@ import { uuidv4 } from "@/lib/uuid";
 import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
 import { TokenCache } from "@/common/appdb/models/token_cache";
 import { SavedConnection } from "@/common/appdb/models/saved_connection";
+import { UsedConnection } from "@/common/appdb/models/used_connection";
 import { AzureAuthService } from "@/lib/db/authentication/azure";
 import bksConfig from "@/common/bksConfig";
 import { UserPin } from "@/common/appdb/models/UserPin";
@@ -179,6 +180,7 @@ export const ConnHandlers: IConnectionHandlers = {
     await connection.connect(abortController.signal);
     // HACK (@day): this is because of type fuckery, need to actually just recreate the object but I'm lazy rn and it's late
     connection.connectionType = config.connectionType ?? (config as any)._connectionType;
+    await UsedConnection.recordUse(config);
 
     state(sId).server = server;
     state(sId).usedConfig = config;
@@ -606,6 +608,7 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/releaseConnection': async function({ tabId, sId }: { tabId: number, sId: string }) {
     checkConnection(sId);
     await state(sId).connection.releaseConnection(tabId);
+    clearTransactionTimeout(sId, tabId);
   },
 
   'conn/startTransaction': async function({ tabId, sId }: { tabId: number, sId: string }) {
