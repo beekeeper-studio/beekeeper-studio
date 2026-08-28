@@ -28,9 +28,9 @@
         <div class="list-title flex-col">
           <editable-text
             :initial-value="item.title"
-            :rename="rename"
+            :rename="draft || rename"
             @submit="submitRename"
-            @cancel="rename = false"
+            @cancel="cancelRename"
           />
         </div>
         <div class="database subtitle"><span>{{ subtitle }}</span></div>
@@ -40,15 +40,29 @@
 </template>
 <script lang="ts">
 import { AppEvent } from '@/common/AppEvent'
+import ISavedQuery from '@/common/interfaces/ISavedQuery'
+import { TransportFavoriteQuery } from '@/common/transport'
 import EditableText from '@/components/common/EditableText.vue'
 import TimeAgo from 'javascript-time-ago'
 import _ from 'lodash'
-import Vue from 'vue'
+import Vue, { PropType } from 'vue'
 import { mapGetters, mapState } from 'vuex'
+
+type Query = ISavedQuery | TransportFavoriteQuery;
+type Draft = Partial<Query> & Pick<Query, 'title' | 'queryFolderId'>;
 
 export default Vue.extend({
   components: { EditableText },
-  props: ['item', 'selected', 'active', 'bulkSelectionActive'],
+  props: {
+    item: {
+      type: Object as PropType<Query | Draft>,
+      required: true,
+    },
+    selected: Boolean,
+    active: Boolean,
+    draft: Boolean,
+    bulkSelectionActive: Boolean,
+  },
   data: () => ({
     timeAgo: new TimeAgo('en-US'),
     rename: false,
@@ -98,6 +112,10 @@ export default Vue.extend({
     openContextMenu(event, item) {
       // Stop here and propagate the event if right clicking an input element
       if (event.target.tagName === 'INPUT') {
+        return;
+      }
+
+      if (this.draft) {
         return;
       }
 
@@ -165,6 +183,10 @@ export default Vue.extend({
       });
     },
     async submitRename(title) {
+      if (this.draft) {
+        this.$emit('submit-draft', title)
+        return;
+      }
       if (!title || title === this.item.title) {
         this.rename = false;
         return;
@@ -180,6 +202,13 @@ export default Vue.extend({
       } finally {
         this.rename = false;
       }
+    },
+    cancelRename() {
+      if (this.draft) {
+        this.$emit('cancel-draft');
+        return;
+      }
+      this.rename = false;
     },
   }
 

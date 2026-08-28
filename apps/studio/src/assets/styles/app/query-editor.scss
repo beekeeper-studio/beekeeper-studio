@@ -168,13 +168,12 @@
 .shortcut-item {
   display: table-row;
   color: $text-lighter;
-  text-align: right;
   font-size: 95%;
   > div {
     display: table-cell;
     padding: $gutter-h;
     padding-right: ($gutter-h - .2);
-    padding-bottom: ($gutter-h + .2);
+    padding-block: 0.6rem;
   }
   .new {
     margin-right: $gutter-h;
