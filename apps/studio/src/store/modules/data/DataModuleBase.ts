@@ -185,6 +185,10 @@ export function utilActionsFor<T extends Transport>(type: string, other: any = {
     async load(context, options: LoadOptions<T> = {}) {
       context.commit("error", null);
       await safely(context, async () => {
+        const findOpts = _.isNil(options.params) ? { ...loadOptions } : {
+          ...loadOptions,
+          where: options.params
+        };
         const items = await Vue.prototype.$util.send(`appdb/${type}/find`, { options: loadOptions });
         await context.dispatch('mutate', { type: 'upsert', data: items });
       }, options.onError)
