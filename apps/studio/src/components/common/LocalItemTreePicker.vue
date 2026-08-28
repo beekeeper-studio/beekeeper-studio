@@ -1,6 +1,64 @@
 <template>
   <div>
+    <div class="filter">
+      <div class="filter-wrap">
+        <input
+          class="filter-input"
+          type="text"
+          placeholder="Filter"
+          v-model="filterText"
+        >
+        <x-buttons class="filter-actions">
+          <x-button
+            @click="clearFilter"
+            v-if="filterText"
+          >
+            <i class="clear material-icons">cancel</i>
+          </x-button>
+        </x-buttons>
+      </div>
+    </div>
+    <template v-if="searching">
+      <div
+        class="empty-state"
+        v-if="!typing && !fetchingResults && filteredItems.length === 0"
+      >
+        No items match "{{ filterText }}"
+      </div>
+      <div
+        class="item"
+        v-for="item in filteredItems"
+        :key="item.id"
+      >
+        <label
+          :for="`cb-${item.id}`"
+          class="checkbox-group"
+        >
+          <input
+            type="checkbox"
+            :checked="isSelected(node)"
+            @click.stop="toggleSelected(node)"
+            :name="`cb-${item.id}`"
+            :id="`cb-${item.id}`"
+          >
+          {{ item.name ?? item.title }}
+        </label>
+      </div>
+      <content-placeholder
+        v-if="fetchingResults || typing"
+        :animated="true"
+        :rounded="false"
+        class="list-item"
+      >
+        <content-placeholder-text
+          :lines="2"
+          class="list-item-btn"
+        />
+      </content-placeholder>
+
+    </template>
     <tree
+      v-else
       :folders="folderNodes"
       :items="itemNodes"
       :expanded-ids="expandedNodeIds"
@@ -44,13 +102,15 @@
       </template>
       <template #item="{ node }">
         <label
-          :for="`item-${node.ref.id}`"
+          :for="`cb-${node.ref.id}`"
           class="checkbox-group"
         >
           <input
             type="checkbox"
             :checked="isSelected(node)"
             @click.stop="toggleSelected(node)"
+            :name="`cb-${node.ref.id}`"
+            :id="`cb-${node.ref.id}`"
           >
           {{ node.ref.name ?? node.ref.title }}
         </label>
@@ -83,6 +143,7 @@ export default Vue.extend({
       idTrackerPath: 'local/expandedIds',
       loadingFolderIds: [],
       errors: {},
+      filterText: null
     }
   },
   props: {
@@ -95,6 +156,11 @@ export default Vue.extend({
       default: () => []
     }
   },
+  watch: {
+    filterText(value) {
+      this.$store.dispatch(`${this.itemPath}/set${_.upperFirst(this.type)}Filter`, value);
+    }
+  },
   computed: {
     paths() {
       const modulePaths = {
@@ -103,6 +169,9 @@ export default Vue.extend({
       }
 
       return modulePaths[this.type];
+    },
+    plural() {
+      return this.type === 'query' ? 'queries' : 'connections';
     },
     itemPath() {
       return `local/${this.paths[0]}`;
@@ -121,6 +190,21 @@ export default Vue.extend({
     },
     itemNodes() {
       return this.$store.state[this.itemPath]?.nodes?.items ?? [];
+    },
+    itemFilter() {
+      return this.$store.state[this.itemPath]?.filter;
+    },
+    searching() {
+      return !!this.filterText;
+    },
+    typing() {
+      return this.filterText !== this.itemFilter;
+    },
+    fetchingResults() {
+      return this.$store.state[this.itemPath]?.searching;
+    },
+    filteredItems() {
+      return this.$store.getters[this.itemPath]?.[`filtered${_.upperFirst(this.plural)}`] ?? [];
     }
   },
   methods: {
@@ -194,7 +278,11 @@ export default Vue.extend({
         newValue = [...this.value, id];
       }
       this.$emit('input', newValue)
-    }
+    },
+    clearFilter() {
+      this.filterText = null
+    },
+
   },
   beforeMount() {
     // mount local vuex modules
@@ -241,5 +329,10 @@ export default Vue.extend({
 label.checkbox-group {
   display: flex;
   padding-left: calc(var(--depth) * 1.2rem);
+}
+.item {
+  display: flex;
+  align-items: center;
+  line-height: 1.6;
 }
 </style>

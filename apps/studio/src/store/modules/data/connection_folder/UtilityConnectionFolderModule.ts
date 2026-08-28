@@ -10,11 +10,13 @@ type State = DataState<IConnectionFolder> & FolderableState<IConnectionFolder>
 
 export const UtilConnectionFolderModule: DataStore<IConnectionFolder, State> = {
   namespaced: true,
-  state: {
-    items: [],
-    loading: false,
-    error: null,
-    pollError: null,
+  state() {
+    return {
+      items: [],
+      loading: false,
+      error: null,
+      pollError: null,
+    }
   },
   mutations: {
     ...mutationsFor<IConnectionFolder>({}, { field: 'name', direction: 'asc' }),

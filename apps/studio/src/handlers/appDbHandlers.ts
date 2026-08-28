@@ -3,7 +3,7 @@ import { SavedConnection } from "@/common/appdb/models/saved_connection"
 import { UsedConnection } from "@/common/appdb/models/used_connection"
 import { IConnection } from "@/common/interfaces/IConnection"
 import { Transport, TransportCloudCredential, TransportFavoriteQuery, TransportLicenseKey, TransportPinnedConn, TransportUsedQuery, TransportFormatterPreset } from "@/common/transport";
-import { FindManyOptions, FindOneOptions, FindOptionsWhere, In, SaveOptions } from "typeorm";
+import { FindManyOptions, FindOneOptions, FindOptionsWhere, In, IsNull, SaveOptions } from "typeorm";
 import _ from 'lodash';
 import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
 import { UsedQuery } from "@/common/appdb/models/used_query";
@@ -32,6 +32,29 @@ import { QueryAudit } from "@/common/appdb/models/QueryAudit";
 import { TransportQueryAudit, TransportQueryAuditDetail } from "@/common/transport/TransportQueryAudit";
 
 const log = rawLog.scope('Appdb handlers');
+
+const pluralKeys = [
+  'connectionFolderIds',
+  'queryFolderIds',
+  'parentIds'
+]
+
+function paramsToWhere(params: Record<string, any>): FindOptionsWhere<any> {
+  const where = {};
+  for (const key of pluralKeys) {
+    if (key in params) {
+      const singular = key.replace(/Ids$/, 'Id');
+      log.info('params: ', params)
+      if (params[key] && params[key].length > 0) {
+        where[singular] = In(params[key]);
+      } else {
+        where[singular] = IsNull();
+      }
+    }
+  }
+
+  return where;
+}
 
 async function defaultTransform<T extends Transport>(obj: T, cls: any) {
   if (_.isNil(obj)) {
@@ -112,6 +135,9 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
       }
     },
     [`appdb/${name}/find`]: async function({ options }: { options?: FindManyOptions<any> }) {
+      if (options && !options.where && "params" in options) {
+        options.where = paramsToWhere(options.params);
+      }
       return await Promise.all((await cls.find(options)).map(async (value) => {
         return await transform(value, cls);
       }))

@@ -10,13 +10,15 @@ type State = DataState<IConnection>
 
 export const UtilConnectionModule: DataStore<IConnection, State> = {
   namespaced: true,
-  state: {
-    items: [],
-    loading: false,
-    error: null,
-    pollError: null,
-    filter: undefined,
-    pendingSaveIds: [],
+  state() {
+    return {
+      items: [],
+      loading: false,
+      error: null,
+      pollError: null,
+      filter: undefined,
+      pendingSaveIds: [],
+    }
   },
   mutations: mutationsFor<IConnection>({
     connectionFilter(state: DataState<IConnection>, str: string) {
@@ -31,7 +33,10 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
   actions: {
     ...utilActionsFor<IConnection>('saved', {}),
     ...accessGrantActions('connections'),
-    ...treeActions<IConnection>({ plural: 'connectionFolderIds', singular: 'connectionFolderId' }),
+    ...treeActions<IConnection>({ plural: 'connectionFolderIds', singular: 'connectionFolderId' }, true),
+    initialize() {
+      // no-op
+    },
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
     },
