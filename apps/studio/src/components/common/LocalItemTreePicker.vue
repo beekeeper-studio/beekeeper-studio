@@ -327,6 +327,7 @@ export default Vue.extend({
 </script>
 
 <style lang="scss" scoped>
+@import '../../shared/assets/styles/_variables';
 label.checkbox-group {
   display: flex;
   padding-left: calc(var(--depth) * 1.2rem);
@@ -335,5 +336,68 @@ label.checkbox-group {
   display: flex;
   align-items: center;
   line-height: 1.6;
+}
+
+.filter {
+  position: relative;
+  margin-bottom: $gutter-h;
+  .filter-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    border: 1px solid $border-color;
+    border-radius: 4px;
+  }
+  .filter-input {
+    border: 0;
+    padding-right: 0;
+  }
+  .filter-actions {
+    display: inline-flex;
+    padding: 0 0 0 ($gutter-h * 0.5);
+    x-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      background: transparent;
+      box-shadow: none;
+      width: 26px;
+      cursor: pointer;
+      --trigger-effect: none;
+      &:before {
+        display: none!important;
+      }
+      &:hover, &:focus {
+        box-shadow: none;
+        .material-icons, .material-icons-outlined {
+          color: $text-dark;
+        }
+      }
+      &.btn-fab {
+        margin-right: 2px;
+        line-height: 22px;
+        height: 22px;
+        width: 22px;
+        min-width: 22px;
+        border-radius: 22px;
+        border: 0;
+        &.active {
+          background: rgba($theme-base, 0.1);
+          .material-icons {
+            color: $theme-primary;
+          }
+        }
+
+      }
+
+      .material-icons, .material-icons-outlined {
+        font-size: 14px;
+        line-height: 26px;
+        width: 14px;
+        color: rgba($theme-base, 0.5);
+      }
+    }
+  }
 }
 </style>
