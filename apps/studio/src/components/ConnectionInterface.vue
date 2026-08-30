@@ -44,7 +44,7 @@
                   class="form-control custom-select"
                   v-model="config.connectionType"
                   id="connection-select"
-                  :disabled="editingDisabled"
+                  disabled
                 >
                   <option disabled hidden value="null">
                     Select a connection type...
@@ -277,6 +277,7 @@
       </div>
     </div>
     <loading-sso-modal v-model="loadingSSOModalOpened" @cancel="loadingSSOCanceled" />
+    <new-connection-modal @select="createWithType" />
   </div>
 </template>
 
@@ -307,6 +308,7 @@ import SnowflakeForm from './connection/SnowflakeForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
 import LoadingSSOModal from '@/components/common/modals/LoadingSSOModal.vue'
+import NewConnectionModal from '@/components/common/modals/NewConnectionModal.vue'
 import _ from 'lodash'
 import ErrorAlert from './common/ErrorAlert.vue'
 import rawLog from '@bksLogger'
@@ -328,7 +330,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpgradePanel, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm, DynamoDbForm, ContentPlaceholderHeading, SurrealDbForm, PrivacyBanner, SnowflakeForm
+  components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpgradePanel, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, NewConnectionModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm, DynamoDbForm, ContentPlaceholderHeading, SurrealDbForm, PrivacyBanner, SnowflakeForm
   },
 
   data() {
@@ -522,7 +524,10 @@ export default Vue.extend({
 
     },
     create() {
-      this.$util.send('appdb/saved/new').then((conn) => {
+      this.$modal.show('new-connection-modal')
+    },
+    createWithType(connectionType) {
+      this.$util.send('appdb/saved/new', { init: { connectionType } }).then((conn) => {
         this.config = conn;
       })
     },
