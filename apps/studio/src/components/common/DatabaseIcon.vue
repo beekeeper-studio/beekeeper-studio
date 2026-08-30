@@ -10,7 +10,7 @@
       <path :d="icon.path" :fill="`#${icon.hex}`" />
     </svg>
     <img v-else-if="icon" :src="icon" :alt="type" />
-    <i v-else class="material-icons no-icon">cloud</i>
+    <i v-else class="material-icons-outlined default-icon">table_rows</i>
   </span>
 </template>
 
@@ -99,7 +99,7 @@ i.material-icons {
   font-size: 1em;
 }
 
-.no-icon {
-  color: var(--text-lighter);
+.default-icon {
+  color: hsl(from var(--theme-base) h s calc(l + 80));
 }
 </style>
