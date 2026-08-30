@@ -76,6 +76,8 @@
         :keyword-casing="autocompleteKeywordCasing"
         :quote-identifiers="autocompleteQuoteIdentifiers"
         :quote-character="autocompleteQuoteCharacter"
+        :disable-keyword-completion="disableKeywordCompletion"
+        :disable-schema-completion="disableSchemaCompletion"
         :clipboard="$native.clipboard"
         :replace-extensions="replaceExtensions"
         :context-menu-items="editorContextMenu"
@@ -1055,7 +1057,13 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         // characters the dialect doesn't recognize as identifier quotes.
         if (value === 0 || value === -1 || value === '0' || value === '-1') return undefined;
         return typeof value === 'string' && value.trim() ? value.trim() : undefined;
-      }
+      },
+      disableKeywordCompletion() {
+        return this.$bksConfig.ui.queryEditor?.autocomplete?.disableKeywordCompletion;
+      },
+      disableSchemaCompletion() {
+        return this.$bksConfig.ui.queryEditor?.autocomplete?.disableSchemaCompletion;
+      },
     },
     watch: {
       queryId: {
