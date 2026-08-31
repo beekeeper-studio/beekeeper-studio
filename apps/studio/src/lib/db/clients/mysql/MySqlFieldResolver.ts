@@ -64,17 +64,22 @@ const regex = {
   boolean: /^tinyint\s*\(\s*1\s*\)/,
 };
 
-const FieldFlags = {
-  BINARY: 128,
-};
+// The BINARY flag is also set on binary-collated text (e.g. utf8mb4_bin), so
+// only the charset tells a real binary column apart. Ref: issue #2640.
+const BINARY_CHARSET = 63;
 
 export class MysqlFieldResolver extends FieldResolver<ResultType> {
   protected resolveRuntimeColumnType(field: ResultColumn) {
     if (
       binaryTypes.includes(field.type) &&
-      (field.flags as number) & FieldFlags.BINARY
+      field.characterSet === BINARY_CHARSET
     ) {
       return "BINARY";
+    }
+
+    // The (1) is the only thing telling a boolean apart from a tinyint.
+    if (field.type === mysql.Types.TINY && field.columnLength === 1) {
+      return "BOOLEAN";
     }
 
     if (numberTypes.includes(field.type)) {
