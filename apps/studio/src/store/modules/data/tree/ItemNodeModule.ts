@@ -1,10 +1,10 @@
 import { Module } from "vuex";
 import _ from "lodash";
 import { State as RootState } from "@/store";
+import { HasId } from "@/common/interfaces/IGeneric";
 import {
   ExtendedItemNode as Node,
   buildItemNodes,
-  Item,
 } from "@/common/utils/folderTree";
 import { ReplacePayload } from "@/store/modules/data/DataModuleBase";
 
@@ -22,7 +22,7 @@ export function ItemNodeModule(
   parentIdKey: string,
   nameKey: string
 ): Module<State, RootState> {
-  function applyUpsert(existing: Node[], items: Item[]): Node[] {
+  function applyUpsert(existing: Node[], items: HasId[]): Node[] {
     const next = [...existing];
     const nodes = buildItemNodes(items, parentIdKey, nameKey);
     for (const node of nodes) {
@@ -33,7 +33,7 @@ export function ItemNodeModule(
         next.splice(index, 1, node);
       }
     }
-    return _.sortBy(next, (node) => node.ref.position ?? 0);
+    return next;
   }
 
   return {
@@ -44,19 +44,17 @@ export function ItemNodeModule(
       };
     },
     mutations: {
-      set(state, items: Item | Item[]) {
-        const nodes = buildItemNodes(asArray(items), parentIdKey, nameKey);
-        state.items = _.sortBy(nodes, (n) => n.ref.position ?? 0);
+      set(state, items: HasId | HasId[]) {
+        state.items = buildItemNodes(asArray(items), parentIdKey, nameKey);
       },
       /** A scoped payload only speaks for its own slice, so nodes outside it survive. */
-      replace(state, payload: ReplacePayload<Item>) {
+      replace(state, payload: ReplacePayload<HasId>) {
         const { items, replaceIf } = _.isArray(payload)
           ? { items: payload, replaceIf: null }
           : payload;
 
         if (!replaceIf) {
-          const nodes = buildItemNodes(items, parentIdKey, nameKey);
-          state.items = _.sortBy(nodes, (n) => n.ref.position ?? 0);
+          state.items = buildItemNodes(items, parentIdKey, nameKey);
           return;
         }
 
@@ -66,10 +64,10 @@ export function ItemNodeModule(
         );
         state.items = applyUpsert(kept, items);
       },
-      upsert(state, items: Item | Item[]) {
+      upsert(state, items: HasId | HasId[]) {
         state.items = applyUpsert(state.items, asArray(items));
       },
-      remove(state, items: Item | Item[] | number) {
+      remove(state, items: HasId | HasId[] | number) {
         const ids = asArray(items).map(
           (item) => `item-${_.isNumber(item) ? item : item.id}`
         );

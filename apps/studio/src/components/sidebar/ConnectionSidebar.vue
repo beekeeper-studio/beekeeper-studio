@@ -186,7 +186,7 @@
               <tree
                 v-show="!searching"
                 :folders="extendedFolderNodes"
-                :items="extendedItemNodes"
+                :items="sortedItemNodes"
                 :expanded-ids="expandedNodeIds"
                 @update:expandedIds="setExpandedIds"
                 @bks-tree-node-move="handleTreeNodeMove"
@@ -211,7 +211,7 @@
                 <template #folder="{ props }">
                   <tree-folder
                     v-bind="props"
-                    v-if="props.node.ref === draftFolder"
+                    v-if="props.node.ref === draft"
                     tag="div"
                   >
                     <template #name>
@@ -226,10 +226,7 @@
                   <tree-folder
                     v-bind="props"
                     v-else
-                    :class="{
-                      'committed': committedType === 'folder'
-                        && committedId === props.node.ref.id,
-                    }"
+                    :class="{ 'just-created': justCreatedFolderId === props.node.ref.id }"
                     :tag="renamingFolderId === props.node.ref.id ? 'div': undefined"
                     @contextmenu.native="showFolderContextMenu($event, props.node.ref)"
                   >
@@ -278,25 +275,13 @@
                 </template>
                 <template #item="{ node }">
                   <connection-list-item
-                    v-if="node.ref === draftItem"
-                    :config="draftItem"
-                    :draft="true"
-                    @submit-draft="commitDraft"
-                    @cancel-draft="stopDrafting"
-                  />
-                  <connection-list-item
-                    v-else
                     :config="node.ref"
                     :selected-config="selectedConfig"
                     :show-duplicate="true"
                     :pinned="pinnedConnectionIds.includes(node.ref.id)"
                     :is-recent-list="false"
                     :privacy-mode="privacyMode"
-                    :class="{
-                      'drag-pending': (pendingSaveIds || []).includes(node.ref.id),
-                      'committed': committedType === 'item'
-                        && committedId === node.ref.id,
-                    }"
+                    :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.ref.id) }"
                     @edit="edit"
                     @remove="remove"
                     @duplicate="duplicate"
@@ -360,7 +345,7 @@ import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
 import EditableText from '@/components/common/EditableText.vue'
 import Noty from 'noty'
-import { buildItemNode, buildFolderNodes, parseReorderTarget } from '@/common/utils/folderTree'
+import { buildFolderNodes, parseReorderTarget } from '@/common/utils/folderTree'
 
 const log = rawLog.scope('connection-sidebar');
 
@@ -391,15 +376,12 @@ export default {
     sortInitialized: false,
     sizes: [33, 33, 33],
     renamingFolderId: null,
-    committedId: null,
-    committedType: null,
-    committedTimeout: null,
+    justCreatedFolderId: null,
+    justCreatedTimeout: null,
     loadingFolderIds: [],
     errors: {},
     drafting: false,
     draftParentId: null,
-    /** @type { 'folder' | 'item' | null } */
-    draftType: null,
     connFilter: "",
   }),
   watch: {
@@ -417,7 +399,6 @@ export default {
     ...mapState('data/connections/nodes', { itemNodes: 'items' }),
     ...mapState('data/connectionFolders/nodes', { folderNodes: 'items' }),
     ...mapState('data/connections', {
-      connections: 'items',
       connectionsError: 'error',
       connectionsPollError: 'pollError',
       connectionFilter: 'filter',
@@ -447,33 +428,14 @@ export default {
     typing() {
       return this.connFilter !== this.connectionFilter;
     },
-    draftFolder() {
+    draft() {
       return { id: null, parentId: this.draftParentId, name: 'Untitled folder' };
     },
-    draftItem() {
-      return {
-        id: null,
-        connectionFolderId: this.draftParentId,
-        name: 'Untitled connection',
-        connectionType: 'sqlite',
-      };
-    },
     extendedFolderNodes() {
-      if (this.drafting && this.draftType === 'folder') {
-        return buildFolderNodes([this.draftFolder, ...this.folders]);
+      if (this.drafting) {
+        return buildFolderNodes([this.draft, ...this.folders]);
       }
       return this.folderNodes;
-    },
-    extendedItemNodes() {
-      if (this.drafting && this.draftType === 'item') {
-        const draftNode = buildItemNode(
-          this.draftItem,
-          'connectionFolderId',
-          'name'
-        );
-        return [draftNode, ...this.itemNodes];
-      }
-      return this.itemNodes;
     },
     expandedNodeIds() {
       return this.expandedFolderIds.map((id) => `folder-${id}`);
@@ -506,6 +468,14 @@ export default {
     pollError() {
       return this.connectionsPollError || this.foldersPollError || null
     },
+    sortedItemNodes() {
+      // Rendered order always comes from `position`. The sort buttons are a
+      // one-shot action: `reorderBySort` rewrites `position` for every
+      // connection and offers an undo. Deriving the rendered order from
+      // `sort.field` here instead would permanently outrank `position`, so a
+      // drag would save but never show.
+      return _.sortBy(this.itemNodes, (n) => n.ref.position ?? 0)
+    },
     errorList() {
       return Object.values(this.errors);
     },
@@ -527,12 +497,11 @@ export default {
     this.$nextTick(() => { this.sortInitialized = true })
   },
   beforeDestroy() {
-    clearTimeout(this.committedTimeout)
+    clearTimeout(this.justCreatedTimeout)
   },
   methods: {
     ...mapActions({
       saveFolder: 'data/connectionFolders/save',
-      saveConnection: 'data/connections/save',
       reorderConnection: 'data/connections/reorder',
       loadConnections: 'data/connections/loadByParentIds',
       loadConnectionFolders: 'data/connectionFolders/loadByParentIds',
@@ -636,31 +605,28 @@ export default {
         const parent = this.folders.find((f) => f.personal && !f.parentId);
         if (!parent) {
           this.$noty.error(
-            "No personal folder found. Right-click an existing folder and choose New Folder to create a folder instead."
+            "No personal folder found. Right-click an existing folder and choose New Subfolder to create a folder instead."
           );
           return;
         }
-        this.startDrafting('folder', parent.id);
+        this.startDrafting(parent.id);
         this.expandFolder(parent.id);
       } else {
-        this.startDrafting('folder', null);
+        this.startDrafting(null);
       }
     },
-    startDrafting(type, parentId) {
-      this.draftType = type
+    startDrafting(parentId) {
       this.draftParentId = parentId
       this.drafting = true
     },
     stopDrafting() {
       this.drafting = false
     },
-    markCommitted(type, id) {
-      clearTimeout(this.committedTimeout)
-      this.committedType = type
-      this.committedId = id
-      this.committedTimeout = setTimeout(() => {
-        this.committedType = null
-        this.committedId = null
+    markJustCreated(folderId) {
+      clearTimeout(this.justCreatedTimeout)
+      this.justCreatedFolderId = folderId
+      this.justCreatedTimeout = setTimeout(() => {
+        this.justCreatedFolderId = null
       }, 2000)
     },
     expandFolder(folderId) {
@@ -680,25 +646,13 @@ export default {
       const canWrite = folder.canWrite ?? true;
       const isRoot = !folder.parentId;
       const options = [{
-        name: 'New Folder',
+        name: 'New Subfolder',
         handler: ({ item }) => {
           if (!this.canCreateFolders) {
             this.$root.$emit(AppEvent.upgradeModal, 'Folders');
             return;
           }
-          this.startDrafting('folder', item.id);
-          this.expandFolder(item.id);
-        },
-      }, {
-        name: 'New Connection',
-        handler: ({ item }) => {
-          this.startDrafting('item', item.id);
-          this.expandFolder(item.id);
-        },
-      }, {
-        name: 'New Connection',
-        handler: ({ item }) => {
-          this.$emit('create', { connectionFolderId: item.id });
+          this.startDrafting(item.id);
           this.expandFolder(item.id);
         },
       }];
@@ -878,24 +832,19 @@ export default {
       }
     },
     async commitDraft(name = "") {
-      if (!this.drafting) {
-        return
-      }
       if (!name.trim()) {
         this.stopDrafting()
         return
       }
-      const type = this.draftType
       try {
-        const id = type === 'folder'
-          ? await this.saveFolder({ ...this.draftFolder, name })
-          : await this.saveConnection({ ...this.draftItem, name })
-        this.markCommitted(type, id)
-        if (type === 'item') {
-          this.edit(this.connections.find((c) => c.id === id))
-        }
+        const id = await this.$store.dispatch('data/connectionFolders/save', {
+          id: null,
+          parentId: this.draft.parentId ?? null,
+          name,
+        })
+        this.markJustCreated(id)
       } catch (ex) {
-        this.$noty.error(`Create ${type === 'folder' ? 'folder' : 'connection'} error: ${ex.userMessage ?? ex.message}`)
+        this.$noty.error(`Create folder error: ${ex.userMessage ?? ex.message}`)
       } finally {
         this.stopDrafting()
       }
@@ -935,11 +884,11 @@ export default {
     }
   }
 }
-.committed {
-  animation: committed-fade 2s ease-out;
+.just-created {
+  animation: just-created-fade 2s ease-out;
 }
 
-@keyframes committed-fade {
+@keyframes just-created-fade {
   from {
     background: rgb(from var(--theme-primary) r g b / 25%);
   }

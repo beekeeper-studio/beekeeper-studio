@@ -16,9 +16,9 @@
         <div class="title">
           <editable-text
             :initial-value="label"
-            :rename="draft || rename"
+            :rename="rename"
             @submit="submitRename"
-            @cancel="cancelRename"
+            @cancel="rename = false"
           />
         </div>
         <div class="subtitle">
@@ -91,8 +91,7 @@ export default {
     'selectedConfig',
     'showDuplicate',
     'pinned',
-    'privacyMode',
-    'draft',
+    'privacyMode'
   ],
   data: () => ({
     timeAgo: new TimeAgo('en-US'),
@@ -190,10 +189,6 @@ export default {
     showContextMenu(event) {
       // Stop here and propagate the event if right clicking an input element
       if (event.target.tagName === 'INPUT') {
-        return;
-      }
-
-      if (this.draft) {
         return;
       }
 
@@ -309,18 +304,7 @@ export default {
     unpin() {
       this.$store.dispatch('pinnedConnections/remove', this.config);
     },
-    cancelRename() {
-      if (this.draft) {
-        this.$emit('cancel-draft');
-        return;
-      }
-      this.rename = false
-    },
     async submitRename(name) {
-      if (this.draft) {
-        this.$emit('submit-draft', name);
-        return;
-      }
       if (!name || name === this.label) {
         this.rename = false
         return

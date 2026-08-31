@@ -6,15 +6,11 @@ import type {
 import { HasId } from "@/common/interfaces/IGeneric";
 import { IFolder } from "@/common/interfaces/IQueryFolder";
 
-export type Item = HasId & {
-  position?: number;
-};
-
 export type ExtendedNode = ExtendedFolderNode | ExtendedItemNode;
 
 export type ExtendedFolderNode = FolderNode & { ref: IFolder };
 
-export interface ExtendedItemNode<T extends Item = Item> extends ItemNode {
+export interface ExtendedItemNode<T extends HasId = HasId> extends ItemNode {
   ref: T;
   /** The key that references the parent folder. Connection and Query use keys
    * like `connectionFolderId` or `queryFolderId` to reference the parent folder. */
@@ -58,7 +54,7 @@ export function buildFolderNode(folder: IFolder): ExtendedFolderNode {
   };
 }
 
-export function buildItemNodes<T extends Item>(
+export function buildItemNodes<T extends HasId>(
   items: T[],
   parentIdKey: string,
   nameKey: string
@@ -67,23 +63,6 @@ export function buildItemNodes<T extends Item>(
 }
 
 export function buildItemNode<T extends HasId>(
-  item: T,
-  parentIdKey: string,
-  nameKey: string
-): ExtendedItemNode<T> {
-  const parentId = item[parentIdKey];
-  return {
-    id: `item-${item.id}` as ItemNode["id"],
-    parentId: parentId ? `folder-${parentId}` : null,
-    parentIdKey,
-    type: "item",
-    name: item[nameKey] ?? "",
-    ref: item,
-    draggable: true,
-  };
-}
-
-export function buildItemNode<T extends Item>(
   item: T,
   parentIdKey: string,
   nameKey: string
