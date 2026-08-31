@@ -23,9 +23,15 @@ describe("Postgres UNIT tests (no connection required)", () => {
       fields: [{id: 'c0', name: 'foo', dataType: 'user-defined'}],
       rowCount: 2,
       affectedRows: undefined,
-      command: 'SELECT'
+      command: 'SELECT',
+      text: 'SELECT foo FROM bar'
     }
-    expect(client.parseRowQueryResult(data, undefined, true)).toStrictEqual(expected)
+
+    const command = {
+      type: 'SELECT',
+      text: 'SELECT foo FROM bar'
+    }
+    expect(client.parseRowQueryResult(data, command, true)).toStrictEqual(expected)
   })
 
   it("should parseRowQueryResult when object", () => {
@@ -40,9 +46,15 @@ describe("Postgres UNIT tests (no connection required)", () => {
       fields: [{id: 'foo', name: 'foo', dataType: 'user-defined'}],
       rowCount: 2,
       affectedRows: undefined,
-      command: 'SELECT'
+      command: 'SELECT',
+      text: 'SELECT foo FROM bar'
     }
-    expect(client.parseRowQueryResult(data, undefined, false)).toStrictEqual(expected)
+
+    const command = {
+      type: 'SELECT',
+      text: 'SELECT foo FROM bar'
+    }
+    expect(client.parseRowQueryResult(data, command, false)).toStrictEqual(expected)
   })
 
   it("Should generate correct alter table rename statement", async () => {
@@ -159,7 +171,7 @@ describe("Postgres UNIT tests (no connection required)", () => {
     expect(result.indexSize).toBe(0);
     expect(result.size).toBe(0);
     expect(result.description).toBeNull();
-    
+
     // Verify that permission warnings are included
     expect(result.permissionWarnings).toBeDefined();
     expect(result.permissionWarnings).toContain('Unable to retrieve table size and description due to insufficient permissions');
@@ -176,6 +188,20 @@ describe("Postgres UNIT tests (no connection required)", () => {
     expect(client.listTableTriggers).toHaveBeenCalledWith('test_table', 'public');
     expect(client.listTablePartitions).toHaveBeenCalledWith('test_table', 'public');
     expect(client.getTableOwner).toHaveBeenCalledWith('test_table', 'public');
+  })
+
+  it("Should fetch the create script for the specific routine overload", async () => {
+    client.driverExecuteSingle = jest.fn().mockResolvedValue({
+      rows: [{ pg_get_functiondef: 'CREATE OR REPLACE FUNCTION public.foo(a integer) ...' }]
+    });
+
+    const result = await client.getRoutineCreateScript('foo', 'function', 'public', '16385');
+
+    expect(client.driverExecuteSingle).toHaveBeenCalledWith(
+      expect.stringContaining('AND p.oid = $3::oid'),
+      { params: ['foo', 'public', '16385'] }
+    );
+    expect(result).toEqual(['CREATE OR REPLACE FUNCTION public.foo(a integer) ...']);
   })
 
 })

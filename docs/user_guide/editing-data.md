@@ -23,9 +23,10 @@ This view allows you to:
 The table view provides a spreadsheet-like experience for selecting, copying, and pasting data. Beekeeper supports many spreadsheet-like interaction primitives.
 
 1. Select arbitrary ranges of cells using click & drag, ctrl-click, and shift-click.
-2. Hide columns by right clicking the header and choosing `hide column`
-3. Resize columns, either one at a time, or together
-4. Copy and paste ranges of cells from Excel or Google Sheets with native keyboard shortcuts
+2. Clear selected cell ranges and set them to `NULL` by pressing `backspace`.
+3. Hide columns by right clicking the header and choosing `hide column`
+4. Resize columns, either one at a time, or together
+5. Copy and paste ranges of cells from Excel or Google Sheets with native keyboard shortcuts
 
 
 ## Filtering The Table View
@@ -111,8 +112,9 @@ To commit a change, click the `Apply` in the bottom right of the screen. To disc
 
 You can clone, delete, and create new rows of data pretty easily.
 
-Right click a row (or multiple rows) to delete or clone.
-Click the `+` button at the bottom right to add a new row. New rows will be added to the end of the table, even though they appear at the top of the UI for convenience.
+- **Delete or Clone**: Right-click a row (or multiple selected rows) to delete or clone them.
+- **Add a Single Row**: Click the `+` button at the bottom right to add a new row. New rows will be added to the end of the table, even though they appear at the top of the UI for convenience.
+- **Paste as New Rows**: Copy multi-row data from Excel, Google Sheets, or another table, then right-click any cell and choose `Paste as new rows` (or press `ctrl+shift+v` / `cmd+shift+v`). Beekeeper Studio positionally maps the clipboard values to the visible table columns and stages the new rows at the end of the table.
 
 ## Copying Data
 

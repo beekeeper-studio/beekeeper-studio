@@ -1,66 +1,63 @@
 <template>
-  <modal
+  <base-modal
     name="import-connections"
-    class="vue-dialog beekeeper-modal"
+    class="import-connections-modal"
+    :loading="loading"
+    @submit="doImport"
   >
-    <div class="dialog-content">
-      <div class="dialog-c-title">
-        Import Connections
-      </div>
-      <div class="dialog-c-subtitle">
-        Importing a connection will copy it from your local workspace into your cloud workspace. Imported connections are private to you by default.
-      </div>
-      <error-alert :error="error" />
-      <div>
-        <div class="list-group">
-          <div class="list-body">
-            <div
-              class="list-item"
-              v-for="connection in connections"
-              :key="connection.id"
-            >
-              <label
-                :for="`c-${connection.id}`"
-                class="checkbox-group"
-              >
-                <input
-                  type="checkbox"
-                  v-model="connection.checked"
-                  class="form-control"
-                  :id="`c-${connection.id}`"
-                  :name="`c-${connection.id}`"
-                >
-                <span>{{ connection.name }}</span>
-
-              </label>
-            </div>
-          </div>
-        </div>
+    <template #title>
+      Import Connections
+    </template>
+    <p class="import-connections-subtitle">
+      Importing a connection will copy it from your local workspace into your cloud workspace. Imported connections are private to you by default.
+    </p>
+    <error-alert :error="error" />
+    <div class="connection-list">
+      <div
+        class="connection-item"
+        v-for="connection in connections"
+        :key="connection.id"
+      >
+        <label
+          :for="`c-${connection.id}`"
+          class="checkbox-group"
+        >
+          <input
+            type="checkbox"
+            v-model="connection.checked"
+            class="form-control"
+            :id="`c-${connection.id}`"
+            :name="`c-${connection.id}`"
+          >
+          <span>{{ connection.name }}</span>
+        </label>
       </div>
     </div>
-    <div class="vue-dialog-buttons">
+    <template #footer="{ close }">
       <button
         class="btn btn-flat"
-        @click.prevent="$modal.hide('import-connections')"
+        type="button"
+        @click.prevent="close"
       >
         Close
       </button>
       <button
         :disabled="loading"
         class="btn btn-primary"
-        @click.prevent="doImport"
+        type="submit"
       >
         {{ loading ? '...' : 'Import' }}
       </button>
-    </div>
-  </modal>
+    </template>
+  </base-modal>
 </template>
 <script lang="ts">
 import { AppEvent } from '@/common/AppEvent'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import BaseModal from '@/components/common/modals/BaseModal.vue'
 import Vue from 'vue'
 export default Vue.extend({
-  components: { ErrorAlert },
+  components: { ErrorAlert, BaseModal },
   data: () => ({
     connections: [],
     loading: false,
@@ -68,6 +65,9 @@ export default Vue.extend({
   }),
   mounted() {
     this.registerHandlers(this.rootBindings)
+  },
+  beforeDestroy() {
+    this.unregisterHandlers(this.rootBindings)
   },
   computed: {
     rootBindings() {
@@ -81,7 +81,6 @@ export default Vue.extend({
   },
   methods: {
     async openModal() {
-      console.log("opening modal!")
       this.connections = (await this.$util.send('appdb/saved/find')).map((c) => {
         return {
           ...c,
@@ -111,3 +110,20 @@ export default Vue.extend({
   }
 })
 </script>
+<style lang="scss" scoped>
+.import-connections-subtitle {
+  color: var(--text-light);
+  margin-bottom: 0.5rem;
+}
+
+.connection-list {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.connection-item {
+  display: flex;
+  align-items: center;
+  line-height: 1.6;
+}
+</style>

@@ -29,6 +29,8 @@
   --input-highlight: #{$input-highlight};
 
   --query-editor-bg: #{$query-editor-bg};
+  --menu-bg: color-mix(in srgb, var(--theme-bg) 95%, #fff);
+  --menu-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.08), 0 6px 15px rgba(0, 0, 0, 0.12);
 
   --scrollbar-track: #{$scrollbar-track};
   --scrollbar-thumb: #{$scrollbar-thumb};

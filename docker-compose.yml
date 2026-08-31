@@ -14,6 +14,7 @@ volumes:
   cockroachdb:
   oracle18:
   cassandra:
+  scylladb:
   bigquery:
   firebird:
   mongodb:
@@ -21,6 +22,7 @@ volumes:
   redis:
   greengage:
   greengage7:
+  starrocks:
 
 services:
   anywhere:
@@ -257,6 +259,21 @@ services:
   # select * from system_schema.keyspaces; # gets all keyspaces
   # https://www.folkstalk.com/2022/09/get-all-keyspaces-in-cassandra-with-code-examples.html
   # Create keyspace https://www.tutorialspoint.com/cassandra/cassandra_create_keyspace.htm
+  scylladb:
+    image: scylladb/scylla:2025.1.4
+    platform: linux/amd64
+    entrypoint: [ "/docker-entrypoint.initdb.d/entry.sh" ]
+    command: --reactor-backend epoll --smp 1 --memory 1G --overprovisioned 1 --api-address 0.0.0.0
+    ports:
+      - 9043:9042  # Different host port to run alongside Cassandra
+    volumes:
+      - scylladb:/var/lib/scylla
+      - ./dev/docker_scylladb_init:/docker-entrypoint.initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'DESCRIBE KEYSPACES'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
   bigquery:
     image: ghcr.io/goccy/bigquery-emulator:latest
     platform: linux/amd64
@@ -331,3 +348,25 @@ services:
     command: import --conn http://surrealdb:8000 --user root --pass root --ns test --db test /seed.surql
     volumes:
       - ./dev/docker_surrealdb_init/seed.surql:/seed.surql:ro
+
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
+    platform: linux/amd64
+    ports:
+      - 8001:8000
+    command: "-jar DynamoDBLocal.jar -sharedDb -inMemory"
+
+  # StarRocks (FE + BE in one container). MySQL protocol on 9030, FE http on 8030.
+  # The command layers the quick start sample data loader on top of the image's
+  # own ./entrypoint.sh; data is loaded once and persisted in the starrocks volume.
+  # See https://docs.starrocks.io/docs/quick_start/shared-nothing/
+  starrocks:
+    image: starrocks/allin1-ubuntu
+    ports:
+      - 9030:9030
+      - 8030:8030
+      - 8040:8040
+    volumes:
+      - starrocks:/data/deploy/starrocks
+      - ./dev/docker_starrocks/init.sh:/init.sh:ro
+    command: ["bash", "/init.sh"]

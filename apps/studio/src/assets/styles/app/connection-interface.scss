@@ -92,7 +92,7 @@
       color: $text-dark;
       margin: 0 0 $gutter-h;
     }
-    .btn {
+    .save-actions .btn {
       margin-left: 0.5rem;
     }
     .form-group {
@@ -163,6 +163,26 @@
     margin-right: $gutter-h * 0.5;
     margin-top: -$gutter-h;
     margin-bottom: -$gutter-h;
+  }
+  &.bastion-host {
+
+    .advanced-heading {
+      font-size: 0.831rem;
+      font-weight: 500;
+    }
+
+    .btn-toggle {
+      margin-right: 0;
+      min-width: 1.7rem;
+      width: 1.7rem;
+      min-height: 1.7rem;
+      height: 1.7rem;
+
+      .material-icons {
+        font-size: 1.2rem;
+        color: var(--text);
+      }
+    }
   }
 }
 .advanced-heading {

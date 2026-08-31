@@ -85,6 +85,7 @@
           :key="c.columnName"
           v-for="(c, i) in table.columns"
           class="sub-item"
+          @contextmenu.prevent.stop="openColumnMenu(c, $event)"
         >
           <span
             class="title truncate"
@@ -256,6 +257,21 @@ export default {
     },
     unpin() {
       this.trigger(AppEvent.togglePinTableList, this.table, false);
+    },
+    openColumnMenu(column, event) {
+      this.$bks.openMenu({
+        event,
+        item: column,
+        options: [
+          {
+            name: "Copy Name",
+            slug: 'copy-name',
+            handler: ({ item }) => {
+              this.$copyText(item.columnName)
+            }
+          },
+        ]
+      })
     }
   }
 }

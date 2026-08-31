@@ -61,7 +61,7 @@ export class MySqlRestoreClient extends BaseCommandClient {
   buildCommand(): Command {
     /* use the SQL command variant for sql-format and mysqlimport for the delimited-text format
       SQL format:
-      `source dump.sql` 
+      `source dump.sql`
 
       Delimited-text:
       **ACTUALLY** it may be easier to use mysqlimport as the SQL statement seems to only allow single table imports.
@@ -74,7 +74,7 @@ export class MySqlRestoreClient extends BaseCommandClient {
       options: [
         `--verbose`,
         `--user=${BaseCommandClient.username}`,
-        `--password=${BaseCommandClient.quotedPassword}`,
+        `--password=${BaseCommandClient._password ?? ''}`,
       ]
     });
 
@@ -110,13 +110,13 @@ export class MySqlRestoreClient extends BaseCommandClient {
       command.options.push(BaseCommandClient.connectionType == 'mariadb' ? '--skip-ssl' : '--ssl-mode=DISABLED');
     }
 
-    command.options.push(`--execute="SOURCE ${this._config.inputPath}"`);
+    command.options.push(`--execute=SOURCE ${this._config.inputPath}`);
 
     return command;
   }
 
 
-  // NOTE (@day): this is for if we want to support the delimited-text format in the future. It will require more work though. 
+  // NOTE (@day): this is for if we want to support the delimited-text format in the future. It will require more work though.
   buildToolCommand(): Command {
     const command = new Command({
       isSql: false,
@@ -126,7 +126,7 @@ export class MySqlRestoreClient extends BaseCommandClient {
       options: [
         `--verbose`,
         `--user=${BaseCommandClient.username}`,
-        `--password=${BaseCommandClient.quotedPassword}`
+        `--password=${BaseCommandClient._password ?? ''}`
       ]
     });
 

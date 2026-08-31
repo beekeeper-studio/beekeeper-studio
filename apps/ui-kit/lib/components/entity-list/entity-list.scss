@@ -150,6 +150,12 @@
     }
 
     .drag-handle.draggable {
+      cursor: grab;
+
+      &:active {
+        cursor: grabbing;
+      }
+
       .dh {
         display: none;
       }

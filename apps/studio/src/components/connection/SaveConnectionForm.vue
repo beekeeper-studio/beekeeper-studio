@@ -11,15 +11,17 @@
         type="text"
         v-model="config.name"
         placeholder="Connection Name"
+        :disabled="disabled"
       >
     </div>
 
     <div class="form-group" v-if="folders && folders.length > 0">
       <label>Folder <i v-if="!isUltimate && !isCloud" class="material-icons menu-icon">stars</i></label>
-      <select v-model="config.connectionFolderId" :disabled="!isUltimate && !isCloud">
-        <option :value="null">No folder</option>
-        <option v-for="f in folders" :key="f.id" :value="f.id">{{ f.name }}</option>
-      </select>
+      <in-app-folder-picker
+        v-model="config.connectionFolderId"
+        :disabled="disabled || (!isUltimate && !isCloud)"
+        folder-path="data/connectionFolders"
+      />
     </div>
 
     <div class="row flex-middle">
@@ -33,6 +35,7 @@
           type="checkbox"
           name="rememberPassword"
           v-model="config.rememberPassword"
+          :disabled="disabled"
         >
         <span>Save Passwords</span>
         <i
@@ -44,6 +47,7 @@
       <ColorPicker
         :value="config.labelColor"
         v-model="config.labelColor"
+        :disabled="disabled"
       />
     </div>
 
@@ -52,12 +56,14 @@
         v-if="canCancel"
         class="btn btn-flat"
         @click.prevent="$emit('cancel')"
+        :disabled="disabled"
       >
         Cancel
       </button>
       <button
         class="btn btn-primary save"
         @click.prevent="save"
+        :disabled="disabled"
       >
         Save
       </button>
@@ -66,9 +72,11 @@
 </template>
 <script>
 import ColorPicker from '../common/form/ColorPicker.vue';
+import InAppFolderPicker from '../common/form/InAppFolderPicker.vue'
+
 export default {
-  components: { ColorPicker },
-  props: ['config', 'canCancel', 'selectInput', 'folders', 'isUltimate', 'isCloud'],
+  components: { ColorPicker, InAppFolderPicker },
+  props: ['config', 'canCancel', 'selectInput', 'folders', 'isUltimate', 'isCloud', 'disabled'],
   mounted(){
     if(this.selectInput) {
       const $input = this.$refs.nameInput

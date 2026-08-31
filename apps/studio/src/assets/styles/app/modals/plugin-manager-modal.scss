@@ -13,18 +13,19 @@
   }
 
   .dialog-c-title {
-    margin-top: $gutter-h;
+    padding-top: $gutter-h;
     padding-inline: $gutter-h;
   }
 
   .dialog-content {
     height: 100%;
     padding: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   .plugin-manager-content {
     overflow: hidden;
-    height: calc(100% - 34px);
     display: flex;
   }
 
@@ -32,10 +33,13 @@
     padding: 0.5rem 0 0;
     flex-grow: 1;
     flex-basis: 35%;
+    display: flex;
+    flex-direction: column;
 
     >.description {
       padding-inline: $gutter-h;
       line-height: 1.5rem;
+      margin-bottom: 0.5rem;
     }
   }
 
@@ -45,11 +49,10 @@
 
   .plugin-list {
     list-style-type: none;
-    padding: 0;
+    padding: 0 0 0.5rem;
     margin: 0;
     display: flex;
     flex-direction: column;
-    margin-top: 1rem;
     overflow-y: auto;
     min-width: 400px;
 
@@ -86,6 +89,8 @@
         }
 
         .author {
+          display: flex;
+          align-items: center;
           font-size: 0.875rem;
           color: rgba($theme-base, 0.7);
         }

@@ -31,15 +31,17 @@ import { UserEnumsModule } from './modules/UserEnumsModule'
 import MultiTableExportStoreModule from './modules/exports/MultiTableExportModule'
 import ImportStoreModule from './modules/imports/ImportStoreModule'
 import { BackupModule } from './modules/backup/BackupModule'
-import globals from '@/common/globals'
 import { CloudClient } from '@/lib/cloud/CloudClient'
-import { ConnectionTypes, SurrealAuthType } from '@/lib/db/types'
-import { SidebarModule } from './modules/SidebarModule'
+import { ConnectionTypes, SnowflakeAuthType, SurrealAuthType } from '@/lib/db/types'
+import { SidebarModule, State as SidebarState } from './modules/SidebarModule'
+import { TreeExpansionState } from './modules/sidebar/TreeExpansionModule'
 import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
 import { PopupMenuModule } from './modules/PopupMenuModule'
 import { WebPluginManagerStatus } from '@/services/plugin'
 import { MenuBarModule } from './modules/MenuBarModule'
-import { PluginsModule } from './modules/plugins'
+import { PluginsModule, PluginsState } from './modules/plugins'
+import { VimStoreModule } from './modules/VimStoreModule'
+import { pluralize } from '@/vendor/pluralize'
 
 
 const log = RawLog.scope('store/index')
@@ -50,6 +52,42 @@ const tablesMatch = (t: TableOrView, t2: TableOrView) => {
     t2.entityType === t.entityType
 }
 
+function shouldPromptCockroachJwt(config: Nullable<IConnection>) {
+  return config?.connectionType === 'cockroachdb' &&
+    !!config?.options?.jwtAuthEnabled &&
+    !config?.password;
+}
+
+function shouldPromptSnowflakeMFA(config: Nullable<IConnection>) {
+  return config?.connectionType === 'snowflake' &&
+    config?.snowflakeOptions.authType === SnowflakeAuthType.MFACode;
+}
+
+async function resolveEphemeralValues(config: IConnection): Promise<IConnection | null> {
+  if (shouldPromptCockroachJwt(config)) {
+    const { token, cancelled } = await BeekeeperPlugin.promptJwtToken(
+      BeekeeperPlugin.buildConnectionName(config)
+    );
+
+    if (cancelled) return null;
+
+    const resolvedConfig = _.cloneDeep(config);
+
+    resolvedConfig.password = token;
+    return resolvedConfig;
+  } else if (shouldPromptSnowflakeMFA(config)) {
+    const { passcode, cancelled } = await BeekeeperPlugin.promptSnowflakeMFAPasscode();
+
+    if (cancelled) return null;
+
+    const resolvedConfig = _.cloneDeep(config);
+
+    resolvedConfig.snowflakeOptions.passcode = passcode;
+    return resolvedConfig;
+  }
+
+  return config;
+}
 
 export interface State {
   connection: ElectronUtilityConnectionClient,
@@ -83,6 +121,16 @@ export interface State {
   namespaceList: string[],
 
   pluginManagerStatus: WebPluginManagerStatus,
+
+  // Non-fatal ~/.ssh/config issues from the most recent connect/test, surfaced
+  // by the connection component as a warning toast.
+  sshConfigWarnings: string[],
+
+  /** Set by VueX module */
+  plugins?: PluginsState,
+
+  /** Set by VueX module. */
+  sidebar?: SidebarState
 }
 
 Vue.use(Vuex)
@@ -107,12 +155,14 @@ const store = new Vuex.Store<State>({
     popupMenu: PopupMenuModule,
     menuBar: MenuBarModule,
     plugins: PluginsModule,
+    vim: VimStoreModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),
     usedConfig: null,
     server: null,
     connected: false,
+    sshConfigWarnings: [],
     connectionType: null,
     supportedFeatures: null,
     database: null,
@@ -260,8 +310,20 @@ const store = new Vuex.Store<State>({
     isTrial(_state, _getters, _rootState, rootGetters) {
       return rootGetters['licenses/isTrial']
     },
+    isLifetime(_state, _getters, _rootState, rootGetters) {
+      return rootGetters['licenses/isLifetime']
+    },
+    canAccessCloudWorkspaces(_state, _getters, _rootState, rootGetters) {
+      return rootGetters['licenses/canAccessCloudWorkspaces']
+    },
+    canCreateFolders(_state, getters) {
+      return getters.isUltimate || getters.isCloud;
+    },
     expandFKDetailsByDefault(state) {
       return state.expandFKDetailsByDefault
+    },
+    onboardingNotyShown(_state, getters) {
+      return !_.isEmpty(getters["settings/settings"]["onboardingNotyShown"]?.value);
     },
     aiShellHintShown(_state, getters) {
       return !_.isEmpty(getters["settings/settings"]["tabDropdownAIShellHintShown"]?.value);
@@ -416,10 +478,20 @@ const store = new Vuex.Store<State>({
     webPluginManagerStatus(state, status: WebPluginManagerStatus) {
       state.pluginManagerStatus = status
     },
+    sshConfigWarnings(state, warnings: string[]) {
+      state.sshConfigWarnings = warnings || []
+    },
   },
   actions: {
     async test(context, config: IConnection) {
-      await Vue.prototype.$util.send('conn/test', { config, osUser: context.state.username });
+      context.commit('sshConfigWarnings', []);
+      const resolvedConfig = await resolveEphemeralValues(config);
+      if (!resolvedConfig) return false;
+
+      // ~/.ssh/config warnings go to the store; the component watches and surfaces them.
+      const warnings = await Vue.prototype.$util.send('conn/test', { config: resolvedConfig, osUser: context.state.username });
+      context.commit('sshConfigWarnings', warnings);
+      return true;
     },
 
     async fetchUsername(context) {
@@ -439,7 +511,7 @@ const store = new Vuex.Store<State>({
         : 'Beekeeper Studio'
       if (context.getters.isTrial && context.getters.isUltimate) {
         const days = context.rootGetters['licenses/licenseDaysLeft']
-        title += ` - Free Trial (${window.main.pluralize('day', days, true)} left)`
+        title += ` - Free Trial (${pluralize('day', days, true)} left)`
       }
       if (context.getters.isCommunity) {
         title += ' - Free Version'
@@ -455,15 +527,21 @@ const store = new Vuex.Store<State>({
     },
 
     async connect(context, { config, auth }: { config: IConnection, auth?: { input: string; mode: 'pin'; }}) {
+      context.commit('sshConfigWarnings', []);
+      const resolvedConfig = await resolveEphemeralValues(config);
+      if (!resolvedConfig) return false;
+
       if (context.state.username) {
-        await Vue.prototype.$util.send('conn/create', { config, auth, osUser: context.state.username })
+        await Vue.prototype.$util.send('conn/create', { config: resolvedConfig, auth, osUser: context.state.username })
         const defaultSchema = await context.state.connection.defaultSchema();
         const supportedFeatures = await context.state.connection.supportedFeatures();
         const versionString = await context.state.connection.versionString();
 
+        const serverConfig = await Vue.prototype.$util.send('conn/getServerConfig');
+        context.commit('sshConfigWarnings', serverConfig?.sshConfigWarnings || []);
+
         if (supportedFeatures.backups) {
-          const serverConfig = await Vue.prototype.$util.send('conn/getServerConfig');
-          context.dispatch('backups/setConnectionConfigs', { config, supportedFeatures, serverConfig });
+          context.dispatch('backups/setConnectionConfigs', { config: resolvedConfig, supportedFeatures, serverConfig });
         }
 
         window.main.enableConnectionMenuItems();
@@ -473,8 +551,9 @@ const store = new Vuex.Store<State>({
         context.commit('connected', true);
         context.commit('supportedFeatures', supportedFeatures);
         context.commit('versionString', versionString);
-        config = await context.dispatch('data/usedconnections/recordUsed', config)
-        context.commit('newConnection', config)
+        // conn/create recorded the use; pick up the new/updated recent row
+        await context.dispatch('data/usedconnections/load')
+        context.commit('newConnection', resolvedConfig)
 
         if (context.state.usedConfig.connectionType === 'surrealdb' &&
           context.state.usedConfig.surrealDbOptions?.authType === SurrealAuthType.Root) {
@@ -483,11 +562,12 @@ const store = new Vuex.Store<State>({
         await context.dispatch('updateDatabaseList')
         await context.dispatch('updateTables')
         await context.dispatch('updateRoutines')
-        context.dispatch('updateWindowTitle', config)
+        context.dispatch('updateWindowTitle', resolvedConfig)
 
         await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id })
 
         await context.dispatch('checkVersion');
+        return true;
       } else {
         throw "No username provided"
       }
@@ -507,8 +587,14 @@ const store = new Vuex.Store<State>({
     },
     async reconnect(context) {
       if (context.state.connection) {
+        if (shouldPromptForCockroachJwt(context.state.usedConfig)) {
+          return await context.dispatch('connect', { config: context.state.usedConfig });
+        }
+
         await context.state.connection.connect();
+        return true;
       }
+      return false;
     },
     async disconnect(context) {
       if (context.state.connection) {
@@ -653,22 +739,78 @@ const store = new Vuex.Store<State>({
     async tabActive(context, value: CoreTab) {
       context.commit('tabActive', value)
     },
+    async initializeConnectionTree(context) {
+      if (context.getters.isCloud) {
+        await Promise.all([
+          context.dispatch('data/connectionFolders/refresh', []),
+          context.dispatch('data/connections/refresh', []),
+        ]);
+
+        const folderIds = context.state['data/connectionFolders'].items
+          .filter((folder) => folder.default)
+          .map((folder) => folder.id)
+        // the default folders start out expanded
+        context.commit('sidebar/connections/expandedIds', folderIds)
+
+        await Promise.all([
+          context.dispatch('data/connectionFolders/loadByParentIds', folderIds),
+          context.dispatch('data/connections/loadByParentIds', folderIds),
+        ])
+      } else {
+        context.commit('sidebar/connections/expandedIds', [])
+        await Promise.all([
+          context.dispatch('data/connectionFolders/load'),
+          context.dispatch('data/connections/load'),
+        ])
+      }
+    },
+    async initializeQueryTree(context) {
+      if (context.getters.isCloud) {
+        await Promise.all([
+          context.dispatch('data/queryFolders/refresh', []),
+          context.dispatch('data/queries/refresh', []),
+        ]);
+
+        const expandedFolderIds = context.state['data/queryFolders'].items
+          .filter((folder) => folder.default)
+          .map((folder) => folder.id)
+        // the default folders start out expanded
+        context.commit('sidebar/queries/expandedIds', expandedFolderIds)
+
+        await Promise.all([
+          context.dispatch('data/queryFolders/loadByParentIds', expandedFolderIds),
+          context.dispatch('data/queries/loadByParentIds', expandedFolderIds),
+        ])
+      } else {
+        context.commit('sidebar/queries/expandedIds', [])
+        await Promise.all([
+          context.dispatch('data/queryFolders/load'),
+          context.dispatch('data/queries/load'),
+        ])
+      }
+    },
     async refreshConnections(context) {
-      context.dispatch('data/connectionFolders/load')
-      context.dispatch('data/connections/load')
+      const expandedIds = context.state.sidebar.connections.expandedIds
+      await Promise.all([
+        context.dispatch('data/connectionFolders/refresh', expandedIds),
+        context.dispatch('data/connections/refresh', expandedIds),
+      ])
+
       await context.dispatch('pinnedConnections/loadPins');
       await context.dispatch('pinnedConnections/reorder');
+    },
+    async refreshQueries(context) {
+      const expandedIds = context.state.sidebar.queries.expandedIds
+      await Promise.all([
+        context.dispatch('data/queryFolders/refresh', expandedIds),
+        context.dispatch('data/queries/refresh', expandedIds),
+      ])
     },
     async initRootStates(context) {
       await context.dispatch('fetchUsername')
       await context.dispatch('licenses/init')
       await context.dispatch('userEnums/init')
       await context.dispatch('updateWindowTitle')
-      setInterval(
-        () => context.dispatch('licenses/sync'),
-        globals.licenseCheckInterval
-      )
-      await context.dispatch('plugins/initialize')
     },
     licenseEntered(context) {
       context.dispatch('updateWindowTitle')
@@ -683,6 +825,12 @@ const store = new Vuex.Store<State>({
     },
     toggleExpandFKDetailsByDefault(context, value?: boolean) {
       context.dispatch('toggleFlag', { flag: 'expandFKDetailsByDefault', value })
+    },
+    setOnboardingNotyShown(context) {
+      context.dispatch('settings/save', {
+        key: 'onboardingNotyShown',
+        value: new Date(),
+      });
     },
     setAiShellHintShown(context) {
       context.dispatch("settings/save", {

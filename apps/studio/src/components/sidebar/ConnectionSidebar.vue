@@ -53,20 +53,17 @@
               </div>
               <span class="expand" />
               <div class="actions">
-                <a @click="togglePrivacyMode" :title="privacyMode ? 'Disable Privacy Mode' : 'Enable Privacy Mode'">
-                  <i class="material-icons">{{ privacyMode ? 'visibility_off' : 'visibility' }}</i>
-                </a>
                 <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
               </div>
             </div>
             <error-alert
               :error="error"
-              v-if="error"
+              v-if="error && !isPollError && !errorList.includes(error)"
               title="Problem loading connections"
               @close="error = null"
               :closable="true"
             />
-            <sidebar-loading v-else-if="loading" />
+            <sidebar-loading v-if="initializing" />
             <nav
               v-else
               class="list-body"
@@ -116,11 +113,9 @@
                   >
                     <i class="material-icons-outlined">create_new_folder</i>
                   </a>
-                  <a @click="togglePrivacyMode" :title="privacyMode ? 'Disable Privacy Mode' : 'Enable Privacy Mode'">
-                    <i class="material-icons">{{ privacyMode ? 'visibility_off' : 'visibility' }}</i>
-                  </a>
                   <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
                   <sidebar-sort-buttons
+                    v-if="!isCloud"
                     v-model="sort"
                     :sort-options="sortables"
                   />
@@ -141,128 +136,159 @@
                 </x-button> -->
               </div>
             </div>
+            <expired-folder-alert
+              v-if="!canCreateFolders && folders.length > 0"
+            />
             <error-alert
               :error="error"
-              v-if="error"
+              v-if="error && !isPollError && !errorList.includes(error)"
               title="Problem loading connections"
               @close="error = null"
               :closable="true"
             />
-            <sidebar-loading v-else-if="loading" />
-            <div
-              v-else-if="empty"
-              class="empty"
-            >
-              <div class="empty-title">
-                No Saved Connections
-              </div>
-              <div
-                class="empty-actions"
-                v-if="isCloud"
-              >
-                <a
-                  class="btn btn-flat btn-block btn-icon"
-                  @click.prevent="importFromLocal"
-                  title="Import connections from local workspace"
-                ><i class="material-icons">save_alt</i> Import</a>
-              </div>
-            </div>
+            <sidebar-loading v-if="initializing" />
             <nav
               v-else
               class="list-body"
             >
-              <sidebar-folder
-                v-for="{ folder, connections, subfolders } in foldersWithConnections"
-                :key="`${folder.id}-${connections.length}`"
-                :title="`${folder.name} (${connections.length})`"
-                placeholder="No Items"
-                :expanded-initially="getFolderExpanded(folder.id)"
-                @toggle="onFolderToggle(folder.id, $event)"
-                @contextmenu.native.stop.prevent="showFolderContextMenu($event, folder)"
-                @header-drop="onConnectionFolderHeaderDrop(folder)"
-              >
-                <Draggable
-                  :list="connections"
-                  group="connections"
-                  ghost-class="drag-ghost"
-                  @start="onConnectionDragStart($event, connections)"
-                  @end="draggingConnection = null"
-                  @change="onConnectionDrop($event, folder, connections)"
+              <template v-if="searching">
+                <div class="empty-state"
+                  v-if="!typing && !fetchingResults && filteredConnections.length === 0"
                 >
-                  <connection-list-item
-                    v-for="c in connections"
-                    :key="c.id"
-                    :config="c"
-                    :selected-config="selectedConfig"
-                    :show-duplicate="true"
-                    :pinned="pinnedConnections.includes(c)"
-                    :privacy-mode="privacyMode"
-                    :class="{ 'drag-pending': (pendingSaveIds || []).includes(c.id) }"
-                    @edit="edit"
-                    @remove="remove"
-                    @duplicate="duplicate"
-                    @doubleClick="connect"
-                  />
-                </Draggable>
-                <sidebar-folder
-                  v-for="{ folder: subfolder, connections: subConnections } in subfolders"
-                  :key="`${subfolder.id}-${subConnections.length}`"
-                  :title="`${subfolder.name} (${subConnections.length})`"
-                  placeholder="No Items"
-                  :expanded-initially="getFolderExpanded(subfolder.id)"
-                  @toggle="onFolderToggle(subfolder.id, $event)"
-                  @contextmenu.native.stop.prevent="showFolderContextMenu($event, subfolder)"
-                  @header-drop="onConnectionFolderHeaderDrop(subfolder)"
-                >
-                  <Draggable
-                    :list="subConnections"
-                    group="connections"
-                    ghost-class="drag-ghost"
-                    @start="onConnectionDragStart($event, subConnections)"
-                    @end="draggingConnection = null"
-                    @change="onConnectionDrop($event, subfolder, subConnections)"
-                  >
-                    <connection-list-item
-                      v-for="c in subConnections"
-                      :key="c.id"
-                      :config="c"
-                      :selected-config="selectedConfig"
-                      :show-duplicate="true"
-                      :pinned="pinnedConnections.includes(c)"
-                      :privacy-mode="privacyMode"
-                      :class="{ 'drag-pending': (pendingSaveIds || []).includes(c.id) }"
-                      @edit="edit"
-                      @remove="remove"
-                      @duplicate="duplicate"
-                      @doubleClick="connect"
-                    />
-                  </Draggable>
-                </sidebar-folder>
-              </sidebar-folder>
-              <Draggable
-                :list="lonelyConnections"
-                :group="isCloud ? { name: 'connections', put: false } : 'connections'"
-                ghost-class="drag-ghost"
-                @start="onConnectionDragStart($event, lonelyConnections)"
-                @end="draggingConnection = null"
-                @change="onConnectionDrop($event, null, lonelyConnections)"
-                @contextmenu.self.prevent="showLonelyContextMenu($event)"
-              >
+                  No connections match "{{ connFilter }}"
+                </div>
                 <connection-list-item
-                  v-for="c in lonelyConnections"
+                  v-for="c in filteredConnections"
                   :key="c.id"
                   :config="c"
                   :selected-config="selectedConfig"
                   :show-duplicate="true"
                   :pinned="pinnedConnections.includes(c)"
+                  :is-recent-list="false"
                   :privacy-mode="privacyMode"
-                  :class="{ 'drag-pending': (pendingSaveIds || []).includes(c.id) }"
                   @edit="edit"
                   @remove="remove"
                   @duplicate="duplicate"
                   @doubleClick="connect"
                 />
-              </Draggable>
+                <content-placeholder
+                  v-if="fetchingResults || typing"
+                  :animated="true"
+                  :rounded="false"
+                  class="list-item"
+                >
+                  <content-placeholder-text
+                    :lines="2"
+                    class="list-item-btn"
+                  />
+                </content-placeholder>
+              </template>
+              <tree
+                v-show="!searching"
+                :folders="extendedFolderNodes"
+                :items="sortedItemNodes"
+                :expanded-ids="expandedNodeIds"
+                @update:expandedIds="setExpandedIds"
+                @bks-tree-node-move="handleTreeNodeMove"
+              >
+                <template #empty>
+                  <div class="empty">
+                    <div class="empty-title">
+                      No Saved Connections
+                    </div>
+                    <div
+                      class="empty-actions"
+                      v-if="isCloud"
+                    >
+                      <a
+                        class="btn btn-flat btn-block btn-icon"
+                        @click.prevent="importFromLocal"
+                        title="Import connections from local workspace"
+                      ><i class="material-icons">save_alt</i> Import</a>
+                    </div>
+                  </div>
+                </template>
+                <template #folder="{ props }">
+                  <tree-folder
+                    v-bind="props"
+                    v-if="props.node.ref === draft"
+                    tag="div"
+                  >
+                    <template #name>
+                      <editable-text
+                        rename
+                        :initial-value="props.node.name"
+                        @submit="commitDraft"
+                        @cancel="stopDrafting"
+                      />
+                    </template>
+                  </tree-folder>
+                  <tree-folder
+                    v-bind="props"
+                    v-else
+                    :class="{ 'just-created': justCreatedFolderId === props.node.ref.id }"
+                    :tag="renamingFolderId === props.node.ref.id ? 'div': undefined"
+                    @contextmenu.native="showFolderContextMenu($event, props.node.ref)"
+                  >
+                    <template
+                      #name
+                      v-if="renamingFolderId === props.node.ref.id"
+                    >
+                      <editable-text
+                        rename
+                        :initial-value="props.node.ref.name"
+                        @submit="submitFolderRename(props.node.ref, $event)"
+                        @cancel="renamingFolderId = null"
+                      />
+                    </template>
+                  </tree-folder>
+                </template>
+                <template #folder-header="{ node, depth }">
+                  <error-alert
+                    v-if="errors[node.ref.id]"
+                    :error="errors[node.ref.id]"
+                    title="Problem loading folder"
+                    class="tree-error"
+                    :style="{ '--depth': depth }"
+                    @close="setFolderError(node.ref.id, null)"
+                  />
+                </template>
+                <template #folder-footer="{ node, depth }">
+                  <content-placeholder
+                    v-if="loadingFolderIds.includes(node.ref.id)"
+                    :animated="true"
+                    :rounded="false"
+                    class="tree-loading"
+                    :style="{ '--depth': depth }"
+                  >
+                    <content-placeholder-text :lines="1" />
+                  </content-placeholder>
+                </template>
+                <template #folder-empty="{ node, depth }">
+                  <div
+                    v-if="!loadingFolderIds.includes(node.ref.id) && !errors[node.ref.id]"
+                    class="tree-empty"
+                    :style="{ '--depth': depth }"
+                  >
+                    No items
+                  </div>
+                </template>
+                <template #item="{ node }">
+                  <connection-list-item
+                    :config="node.ref"
+                    :selected-config="selectedConfig"
+                    :show-duplicate="true"
+                    :pinned="pinnedConnectionIds.includes(node.ref.id)"
+                    :is-recent-list="false"
+                    :privacy-mode="privacyMode"
+                    :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.ref.id) }"
+                    @edit="edit"
+                    @remove="remove"
+                    @duplicate="duplicate"
+                    @doubleClick="connect"
+                  />
+                </template>
+              </tree>
             </nav>
           </div>
         </div>
@@ -299,65 +325,27 @@
         </div>
       </div>
     </div>
-    <portal to="modals">
-      <modal
-        class="vue-dialog beekeeper-modal"
-        name="connection-folder-modal"
-        @closed="folderModalName = ''; folderModalItem = null"
-        @opened="$nextTick(() => $refs.folderNameInput && $refs.folderNameInput.focus())"
-        height="auto"
-        :scrollable="true"
-      >
-        <form @submit.prevent="submitFolderModal">
-          <div class="dialog-content" v-kbd-trap="true">
-            <div class="dialog-c-title">{{ folderModalItem ? 'Rename Folder' : folderModalParentId ? 'New Subfolder' : 'New Folder' }}</div>
-            <div class="form-group">
-              <label>Folder Name</label>
-              <input
-                ref="folderNameInput"
-                v-model="folderModalName"
-                type="text"
-                placeholder="Folder name"
-                @keydown.esc.prevent="$modal.hide('connection-folder-modal')"
-              >
-            </div>
-            <div class="form-group" v-if="isCloud && !folderModalItem && rootFolders.length > 0">
-              <label>Parent Folder</label>
-              <select v-model="folderModalParentId">
-                <option v-for="f in rootFolders" :key="f.id" :value="f.id">{{ f.name }}</option>
-              </select>
-            </div>
-          </div>
-          <div class="vue-dialog-buttons flex-between">
-            <span class="left" />
-            <span class="right">
-              <button class="btn btn-flat" type="button" @click.prevent="$modal.hide('connection-folder-modal')">Cancel</button>
-              <button class="btn btn-primary" type="submit" :disabled="!folderModalName.trim()">
-                {{ folderModalItem ? 'Rename' : 'Create' }}
-              </button>
-            </span>
-          </div>
-        </form>
-      </modal>
-    </portal>
   </div>
 </template>
 
 <script>
 import _ from 'lodash'
-import { SmartLocalStorage } from '@/common/LocalStorage'
 import WorkspaceSidebar from './WorkspaceSidebar.vue'
-import { mapState, mapGetters, mapActions } from 'vuex'
+import { mapState, mapGetters, mapActions, mapMutations } from 'vuex'
 import ConnectionListItem from './connection/ConnectionListItem.vue'
 import SidebarLoading from '@/components/common/SidebarLoading.vue'
+import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
+import ContentPlaceholderText from '@/components/common/loading/ContentPlaceholderText.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
+import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
 import Split from 'split.js'
-import SidebarFolder from '@/components/common/SidebarFolder.vue'
 import { AppEvent } from '@/common/AppEvent'
+import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
 import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
-import Draggable from 'vuedraggable'
+import EditableText from '@/components/common/EditableText.vue'
 import Noty from 'noty'
+import { buildFolderNodes, parseReorderTarget } from '@/common/utils/folderTree'
 
 const log = rawLog.scope('connection-sidebar');
 
@@ -365,11 +353,15 @@ export default {
   components: {
     ConnectionListItem,
     SidebarLoading,
+    ContentPlaceholder,
+    ContentPlaceholderText,
     ErrorAlert,
-    SidebarFolder,
+    Tree,
+    TreeFolder,
+    EditableText,
+    ExpiredFolderAlert,
     SidebarSortButtons,
     WorkspaceSidebar,
-    Draggable
   },
   props: ['selectedConfig'],
   data: () => ({
@@ -383,11 +375,14 @@ export default {
     sort: { field: 'name', order: 'asc' },
     sortInitialized: false,
     sizes: [33, 33, 33],
-    folderModalName: '',
-    folderModalItem: null,
-    folderModalParentId: null,
-    folderExpandedState: {},
-    draggingConnection: null
+    renamingFolderId: null,
+    justCreatedFolderId: null,
+    justCreatedTimeout: null,
+    loadingFolderIds: [],
+    errors: {},
+    drafting: false,
+    draftParentId: null,
+    connFilter: "",
   }),
   watch: {
     async sort(newSort) {
@@ -396,58 +391,66 @@ export default {
       if (!this.sortInitialized) return
       await this.reorderBySort(newSort)
     },
+    connFilter(value) {
+      this.setConnectionFilter(value);
+    },
   },
   computed: {
+    ...mapState('data/connections/nodes', { itemNodes: 'items' }),
+    ...mapState('data/connectionFolders/nodes', { folderNodes: 'items' }),
     ...mapState('data/connections', {
-      connectionsLoading: 'loading',
       connectionsError: 'error',
+      connectionsPollError: 'pollError',
       connectionFilter: 'filter',
-      pendingSaveIds: 'pendingSaveIds'
+      pendingSaveIds: 'pendingSaveIds',
+      fetchingResults: 'searching',
     }),
     ...mapState('data/connectionFolders', {
       folders: 'items',
       foldersLoading: 'loading',
       foldersError: 'error',
+      foldersPollError: 'pollError',
     }),
-    ...mapState('settings', ['privacyMode']),
+    ...mapState('sidebar/connections', {
+      expandedFolderIds: 'expandedIds',
+    }),
     ...mapGetters({
       usedConfigs: 'data/usedconnections/orderedUsedConfigs',
       settings: 'settings/settings',
       isCloud: 'isCloud',
       isUltimate: 'isUltimate',
+      canCreateFolders: 'canCreateFolders',
       activeWorkspaces: 'credentials/activeWorkspaces',
       pinnedConnections: 'pinnedConnections/pinnedConnections',
-      filteredConnections: 'data/connections/filteredConnections'
+      filteredConnections: 'data/connections/filteredConnections',
+      privacyMode: 'settings/privacyMode'
     }),
-    connFilter: {
-      get() {
-        return this.connectionFilter;
-      },
-      set(newFilter) {
-        this.$store.dispatch('data/connections/setConnectionFilter', newFilter);
-      }
+    typing() {
+      return this.connFilter !== this.connectionFilter;
     },
-    empty() {
-      return !this.filteredConnections?.length
+    draft() {
+      return { id: null, parentId: this.draftParentId, name: 'Untitled folder' };
+    },
+    extendedFolderNodes() {
+      if (this.drafting) {
+        return buildFolderNodes([this.draft, ...this.folders]);
+      }
+      return this.folderNodes;
+    },
+    expandedNodeIds() {
+      return this.expandedFolderIds.map((id) => `folder-${id}`);
+    },
+    pinnedConnectionIds() {
+      return this.pinnedConnections.map((pinned) => pinned.id);
+    },
+    searching() {
+      return !!this.connFilter;
+    },
+    initializing() {
+      return this.folders.length === 0 && this.foldersLoading;
     },
     noPins() {
       return !this.pinnedConnections?.length;
-    },
-    rootFolders() {
-      return this.folders.filter((f) => !f.parentId).sort((a, b) => a.name.localeCompare(b.name))
-    },
-    lonelyConnections() {
-      const folderIds = this.folders.map((c) => c.id)
-      return [...this.filteredConnections]
-        .filter((config) => !config.connectionFolderId || !folderIds.includes(config.connectionFolderId))
-        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-    },
-    foldersWithConnections() {
-      if (this.loading) return []
-      return this.$store.getters['data/connectionFolders/foldersWithConnections'](this.sortedConnections)
-    },
-    loading() {
-      return this.connectionsLoading || this.foldersLoading
     },
     error: {
       get() {
@@ -462,29 +465,28 @@ export default {
         }
       }
     },
-    sortedConnections() {
-      let result = []
-      if (this.sort.field === 'labelColor') {
-        const mappings = {
-          default: -1,
-          red: 0,
-          orange: 1,
-          yellow: 2,
-          green: 3,
-          blue: 4,
-          purple: 5,
-          pink: 6
-        }
-        result = _.orderBy(this.filteredConnections, (c) => mappings[c.labelColor])
-      } else {
-        result = _.orderBy(this.filteredConnections, this.sort.field)
-      }
-      if (this.sort.order === 'desc') result = result.reverse()
-      return result;
+    pollError() {
+      return this.connectionsPollError || this.foldersPollError || null
+    },
+    sortedItemNodes() {
+      // Rendered order always comes from `position`. The sort buttons are a
+      // one-shot action: `reorderBySort` rewrites `position` for every
+      // connection and offers an undo. Deriving the rendered order from
+      // `sort.field` here instead would permanently outrank `position`, so a
+      // drag would save but never show.
+      return _.sortBy(this.itemNodes, (n) => n.ref.position ?? 0)
+    },
+    errorList() {
+      return Object.values(this.errors);
+    },
+    isPollError() {
+      return (
+        this.connectionsError === this.connectionsPollError ||
+        this.foldersError === this.foldersPollError
+      );
     },
   },
   async mounted() {
-    this.folderExpandedState = SmartLocalStorage.getJSON('connectionFolderExpanded-v1', {})
     this.buildSplit()
     const [field, order] = await Promise.all([
       this.$settings.get('connectionsSortBy', 'name'),
@@ -494,17 +496,61 @@ export default {
     this.sort.order = order
     this.$nextTick(() => { this.sortInitialized = true })
   },
+  beforeDestroy() {
+    clearTimeout(this.justCreatedTimeout)
+  },
   methods: {
     ...mapActions({
-      togglePrivacyMode: 'settings/togglePrivacyMode',
+      saveFolder: 'data/connectionFolders/save',
+      reorderConnection: 'data/connections/reorder',
+      loadConnections: 'data/connections/loadByParentIds',
+      loadConnectionFolders: 'data/connectionFolders/loadByParentIds',
+      unloadConnections: 'data/connections/unloadByParentIds',
+      unloadConnectionFolders: 'data/connectionFolders/unloadByParentIds',
+      setConnectionFilter: 'data/connections/setConnectionFilter',
     }),
-    getFolderExpanded(folderId) {
-      const stored = this.folderExpandedState[folderId]
-      return stored !== undefined ? stored : true
+    ...mapMutations({
+      setExpandedFolderIds: 'sidebar/connections/expandedIds',
+    }),
+    setExpandedIds(expandedNodeIds) {
+      const folderIds = this.folderNodes
+        .filter((node) => expandedNodeIds.includes(node.id))
+        .map((node) => node.ref.id)
+      const expandingIds = _.difference(folderIds, this.expandedFolderIds)
+      const collapsingIds = _.difference(this.expandedFolderIds, folderIds)
+      this.setExpandedFolderIds(folderIds)
+      this.loadFolders(expandingIds)
+      this.unloadFolders(collapsingIds)
     },
-    onFolderToggle(folderId, expanded) {
-      this.$set(this.folderExpandedState, folderId, expanded)
-      SmartLocalStorage.addItem('connectionFolderExpanded-v1', this.folderExpandedState)
+    async loadFolders(ids) {
+      try {
+        this.loadingFolderIds = [...this.loadingFolderIds, ...ids]
+        const results = await Promise.all([
+          this.loadConnections(ids),
+          this.loadConnectionFolders(ids),
+        ]);
+        const error = results.map((result) => result.error).find(Boolean)
+        if (error) {
+          this.setFolderErrors(ids, error);
+        } else {
+          this.setFolderErrors(ids, null);
+        }
+      } finally {
+        this.loadingFolderIds = _.difference(this.loadingFolderIds, ids)
+      }
+    },
+    unloadFolders(ids) {
+      this.unloadConnections(ids);
+      this.unloadConnectionFolders(ids);
+      this.setFolderErrors(ids, null);
+    },
+    setFolderErrors(ids, error) {
+      for (const id of ids) {
+        this.setFolderError(id, error);
+      }
+    },
+    setFolderError(id, error) {
+      this.$set(this.errors, id, error);
     },
     clearFilter() {
       this.connFilter = null;
@@ -550,58 +596,179 @@ export default {
       return `label-${color}`
     },
     createFolder() {
-      if (!this.isUltimate && !this.isCloud) {
-        this.$root.$emit(AppEvent.upgradeModal, 'Upgrade to organize your connections into folders')
+      if (!this.canCreateFolders) {
+        this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }
-      this.folderModalName = ''
-      this.folderModalItem = null
-      this.folderModalParentId = (this.isCloud && this.rootFolders.length > 0)
-        ? this.rootFolders[0].id
-        : null
-      this.$modal.show('connection-folder-modal')
+      if (this.isCloud) {
+        // Find personal folder
+        const parent = this.folders.find((f) => f.personal && !f.parentId);
+        if (!parent) {
+          this.$noty.error(
+            "No personal folder found. Right-click an existing folder and choose New Subfolder to create a folder instead."
+          );
+          return;
+        }
+        this.startDrafting(parent.id);
+        this.expandFolder(parent.id);
+      } else {
+        this.startDrafting(null);
+      }
     },
+    startDrafting(parentId) {
+      this.draftParentId = parentId
+      this.drafting = true
+    },
+    stopDrafting() {
+      this.drafting = false
+    },
+    markJustCreated(folderId) {
+      clearTimeout(this.justCreatedTimeout)
+      this.justCreatedFolderId = folderId
+      this.justCreatedTimeout = setTimeout(() => {
+        this.justCreatedFolderId = null
+      }, 2000)
+    },
+    expandFolder(folderId) {
+      if (this.expandedFolderIds.includes(folderId)) {
+        return
+      }
+      this.setExpandedIds([...this.expandedNodeIds, `folder-${folderId}`])
+    },
+    /** @param folder {import("@/common/interfaces/ISavedQuery").default} */
     showFolderContextMenu(event, folder) {
-      const options = []
-      if (this.isCloud && !folder.parentId) {
-        options.push({ name: 'New Subfolder', handler: ({ item }) => this.createSubfolder(item) })
+      if (event.target.tagName === 'INPUT') {
+        return;
       }
-      if (folder.parentId) {
-        const otherRoots = this.rootFolders.filter(f => f.id !== folder.parentId)
-        otherRoots.forEach(root => {
-          options.push({ name: `Move to ${root.name}`, handler: ({ item }) => this.moveFolderToParent(item, root) })
-        })
+      event.stopPropagation();
+      event.preventDefault();
+
+      const canWrite = folder.canWrite ?? true;
+      const isRoot = !folder.parentId;
+      const options = [{
+        name: 'New Subfolder',
+        handler: ({ item }) => {
+          if (!this.canCreateFolders) {
+            this.$root.$emit(AppEvent.upgradeModal, 'Folders');
+            return;
+          }
+          this.startDrafting(item.id);
+          this.expandFolder(item.id);
+        },
+      }];
+      if (!this.isCloud || !isRoot) {
+        options.push(...[
+          {
+            type: "divider",
+            hideIf: !this.isCloud || folder.personal,
+          },
+          {
+            name: "Share",
+            handler: ({ item }) => this.share(item),
+            hideIf: !this.isCloud || folder.personal,
+          },
+          {
+            type: "divider",
+            hideIf: !canWrite,
+          },
+          {
+            name: 'Rename',
+            handler: ({ item }) => this.renameFolder(item),
+            hideIf: !canWrite,
+          },
+          {
+            name: 'Move',
+            handler: ({ item }) => this.trigger(AppEvent.openMoveFolderModal, { type: 'connectionFolder', value: item }),
+            hideIf: !canWrite,
+          },
+          {
+            name: 'Delete',
+            handler: ({ item }) => this.deleteFolder(item),
+            hideIf: !canWrite,
+          },
+        ].filter(({ hideIf }) => !hideIf));
       }
-      options.push(
-        { name: 'Rename', handler: ({ item }) => this.renameFolder(item) },
-        { name: 'Delete', handler: ({ item }) => this.deleteFolder(item) }
-      )
       this.$bks.openMenu({ event, item: folder, options })
     },
-    createSubfolder(parentFolder) {
-      if (!this.isUltimate && !this.isCloud) {
-        this.$root.$emit(AppEvent.upgradeModal, 'Upgrade to organize your connections into folders')
-        return
+    /** @param event {import("@beekeeperstudio/ui-kit").TreeNodeMoveEvent} */
+    async handleTreeNodeMove(event) {
+      /** @type {import("@/common/utils/folderTree").ExtendedNode} */
+      const source = event.source;
+      /** @type {import("@/common/utils/folderTree").ExtendedNode} */
+      const target = event.target;
+      let reorderPayload = null;
+      let error = null;
+      try {
+        if (source.type === 'folder') {
+          // Dropped beside a node, the folder joins whatever holds that node.
+          let parentId
+          if (target.type === 'folder') {
+            parentId = event.position === 'inside'
+              ? target.ref.id
+              : target.ref.parentId
+          } else {
+            parentId = target.ref[target.parentIdKey] ?? null
+          }
+          await this.saveFolder({ ...source.ref, parentId });
+        } else if (source.type === 'item') {
+          const { parentId, position } = parseReorderTarget(event);
+          reorderPayload = {
+            item: source.ref,
+            connectionFolderId: parentId,
+            position,
+          };
+          await this.reorderConnection(reorderPayload);
+        }
+      } catch (ex) {
+        error = ex;
       }
-      this.folderModalName = ''
-      this.folderModalItem = null
-      this.folderModalParentId = parentFolder.id
-      this.$modal.show('connection-folder-modal')
+
+      if (error?.message.includes("[confirm_personal_move]")) {
+        const confirmed = await this.$confirm(
+          "Move to your personal folder?",
+          `All workspace members will lose access to "${source.name}".`
+        );
+        if (!confirmed) {
+          return;
+        }
+        error = null;
+        try {
+          await this.reorderConnection({ ...reorderPayload, confirm: true });
+        } catch (ex) {
+          error = ex;
+        }
+      }
+
+      if (error) {
+        let errorMessage = `Move error: ${error.userMessage ?? error.message}`;
+        if (error.message.includes("[team_folder_in_personal_tree]")) {
+          errorMessage =
+            "You can not move a team folder to your personal folder because it is shared with other workspace members.";
+        }
+        this.$noty.error(errorMessage);
+      }
     },
-    showLonelyContextMenu(event) {
-      this.$bks.openMenu({
-        event,
-        item: null,
-        options: [{ name: 'New Folder', handler: () => this.createFolder() }]
-      })
+    share(folder) {
+      this.trigger(AppEvent.openShareModal, {
+        id: folder.id,
+        module: "data/connectionFolders",
+      });
     },
     renameFolder(folder) {
-      this.folderModalName = folder.name
-      this.folderModalItem = folder
-      this.$modal.show('connection-folder-modal')
+      this.renamingFolderId = folder.id
     },
-    async moveFolderToParent(folder, newParent) {
-      await this.$store.dispatch('data/connectionFolders/save', { ...folder, parentId: newParent.id })
+    async submitFolderRename(folder, name) {
+      if (!name || name === folder.name) {
+        this.renamingFolderId = null
+        return
+      }
+      try {
+        await this.$store.dispatch('data/connectionFolders/save', { ...folder, name })
+      } catch (ex) {
+        this.$noty.error(`Rename error: ${ex.userMessage ?? ex.message}`)
+      } finally {
+        this.renamingFolderId = null
+      }
     },
     async deleteFolder(folder) {
       if (await this.$confirm(`Delete folder "${folder.name}"?`)) {
@@ -664,73 +831,78 @@ export default {
         this.$noty.error(`Reorder error: ${ex.message}`)
       }
     },
-    onConnectionDragStart(event, list) {
-      this.draggingConnection = list[event.oldIndex]
-    },
-    cloudRelativePosition(list, newIndex) {
-      const prev = list[newIndex - 1]
-      const next = list[newIndex + 1]
-      if (prev) return { after: prev.id }
-      if (next) return { before: next.id }
-      return { before: null }
-    },
-    async onConnectionFolderHeaderDrop(folder) {
-      if (!this.draggingConnection) return
+    async commitDraft(name = "") {
+      if (!name.trim()) {
+        this.stopDrafting()
+        return
+      }
       try {
-        // Use reorder action for both local and cloud workspaces
-        await this.$store.dispatch('data/connections/reorder', {
-          item: this.draggingConnection,
-          connectionFolderId: folder.id,
-          position: { before: null }
+        const id = await this.$store.dispatch('data/connectionFolders/save', {
+          id: null,
+          parentId: this.draft.parentId ?? null,
+          name,
         })
+        this.markJustCreated(id)
       } catch (ex) {
-        this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
+        this.$noty.error(`Create folder error: ${ex.userMessage ?? ex.message}`)
+      } finally {
+        this.stopDrafting()
       }
-    },
-    async onConnectionDrop(event, folder, currentList) {
-      try {
-        if (event.added) {
-          const { element: item, newIndex } = event.added
-          // Use reorder action for both local and cloud workspaces
-          await this.$store.dispatch('data/connections/reorder', {
-            item,
-            connectionFolderId: folder?.id ?? null,
-            position: this.cloudRelativePosition(currentList, newIndex)
-          })
-        } else if (event.moved) {
-          const { element: item, newIndex } = event.moved
-          // Use reorder action for both local and cloud workspaces
-          await this.$store.dispatch('data/connections/reorder', {
-            item,
-            position: this.cloudRelativePosition(currentList, newIndex)
-          })
-        }
-      } catch (ex) {
-        this.$noty.error(`Move error: ${ex.userMessage ?? ex.message}`)
-      }
-    },
-    async submitFolderModal() {
-      const name = this.folderModalName.trim()
-      if (!name) return
-      if (this.folderModalItem) {
-        await this.$store.dispatch('data/connectionFolders/save', { ...this.folderModalItem, name })
-      } else {
-        await this.$store.dispatch('data/connectionFolders/save', { id: null, name, parentId: this.folderModalParentId ?? null })
-      }
-      this.$modal.hide('connection-folder-modal')
     },
   }
 }
 </script>
 
 <style lang="scss" scoped>
-.drag-ghost {
-  opacity: 0.4;
-}
-.folder-drop-zone {
-  min-height: 8px;
-}
 .drag-pending {
   opacity: 0.5;
+}
+.tree-loading {
+  margin-top: 0.45rem;
+  margin-bottom: -0.7rem;
+  padding-left: calc(var(--depth) * 1rem + 0.55rem);
+}
+.tree-empty {
+  padding-left: calc(var(--depth) * 1rem + 0.55rem);
+  margin-block: 0.25rem;
+  opacity: 0.6;
+}
+::v-deep .alert.error-alert.tree-error {
+  margin-left: calc(var(--depth) * 1rem + 0.55rem);
+  margin-right: 0.55rem;
+}
+::v-deep .BksTree-folder {
+  .name:has(.editable-text) {
+    overflow: visible;
+  }
+
+  .editable-text  {
+    width: 100%;
+
+    input {
+      top: 60%;
+    }
+  }
+}
+.just-created {
+  animation: just-created-fade 2s ease-out;
+}
+
+@keyframes just-created-fade {
+  from {
+    background: rgb(from var(--theme-primary) r g b / 25%);
+  }
+  to {
+    background: transparent;
+  }
+}
+::v-deep .alert.expired-folder-alert {
+  margin-inline: 0.8rem;
+}
+
+.empty-state {
+  padding-top: 0.25rem;
+  padding-left: 0.5rem;
+  font-size: 0.85rem;
 }
 </style>

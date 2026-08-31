@@ -37,6 +37,7 @@ import { UtilityConnection } from '@/lib/utility/UtilityConnection'
 import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
 import App from '@/App.vue'
 import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModule'
+import { PersistenceGuardTabulatorModule } from '@/plugins/PersistenceGuardTabulatorModule'
 import { WebPluginManager } from '@/services/plugin/web'
 import PluginStoreService from '@/services/plugin/web/PluginStoreService'
 import * as UIKit from '@beekeeperstudio/ui-kit'
@@ -46,7 +47,13 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
 
   await window.main.requestPlatformInfo();
   await window.main.requestBksConfigSource();
-  rawLog.transports.console.level = "info"
+  // Main resolves BKS_LOG_LEVEL / DEBUG / NODE_ENV and hands the result
+  // back via platformInfo; apply it now so renderer messages above the
+  // renderer-side default (warn in prod, info in dev) start flowing.
+  const resolvedLevel = window.platformInfo.logLevel || 'warn'
+  rawLog.transports.console.level = resolvedLevel
+  if (rawLog.transports.ipc) rawLog.transports.ipc.level = resolvedLevel
+
   const log = rawLog.scope("main.ts")
   log.info("starting logging")
 
@@ -98,7 +105,7 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
     Tabulator.defaultOptions.layout = "fitDataFill";
     Tabulator.defaultOptions.popupContainer = ".beekeeper-studio-wrapper";
     Tabulator.defaultOptions.headerSortClickElement = 'icon';
-    Tabulator.registerModule([HeaderSortTabulatorModule, KeyListenerTabulatorModule, ForeignCacheTabulatorModule]);
+    Tabulator.registerModule([HeaderSortTabulatorModule, KeyListenerTabulatorModule, ForeignCacheTabulatorModule, PersistenceGuardTabulatorModule]);
     // Tabulator.prototype.bindModules([EditModule]);
 
     (window as any).$ = $;
@@ -180,6 +187,10 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
     const app = new Vue({
       render: h => h(App),
       store,
+      mounted() {
+        VTooltip.options.defaultBoundariesElement =
+          document.querySelector(".beekeeper-studio-wrapper") as HTMLElement;
+      },
     })
 
     Vue.prototype.$util = utility;

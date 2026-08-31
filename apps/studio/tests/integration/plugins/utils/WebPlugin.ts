@@ -1,4 +1,4 @@
-import { Manifest } from "@/services/plugin/types";
+import { ManifestV1 as Manifest } from "@/services/plugin/types";
 
 /**
  * Represents a plugin in tests.

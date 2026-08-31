@@ -11,6 +11,7 @@
           name=""
           v-model="config.socketPathEnabled"
           id=""
+          :disabled="disabled"
         >
           <option :value="false">
             Host and Port
@@ -33,15 +34,16 @@
           v-model="config.socketPath"
           type="text"
           name="socketPath"
+          :disabled="disabled"
         >
       </div>
       <div class="col s3 form-group" v-if="supportsSocketPathWithCustomPort">
         <label for="port">Port</label>
         <masked-input
           :value="config.port"
-          :privacy-mode="privacyMode"
           :type="'number'"
           @input="val => config.port = val"
+          :disabled="disabled"
         />
       </div>
     </div>
@@ -53,53 +55,47 @@
         <label for="Host">Host</label>
         <masked-input
           :value="config.host"
-          :privacy-mode="privacyMode"
           @input="val => config.host = val"
+          :disabled="disabled"
         />
       </div>
       <div class="col s3 form-group">
         <label for="port">Port</label>
         <masked-input
           :value="config.port"
-          :privacy-mode="privacyMode"
           :type="'number'"
           @input="val => config.port = val"
+          :disabled="disabled"
         />
       </div>
     </div>
 
     <common-ssl
+      v-if="!hideSsl"
       :config="config"
       :ssl-help="sslHelp"
-      :supportComplexSSL="supportComplexSSL"
+      :support-complex-s-s-l="supportComplexSSL"
+      :disabled="disabled"
     />
 
-    <div class="row gutter">
+    <div v-if="!hideCredentials" class="row gutter">
       <div class="col form-group" :class="[showPasswordForm ? 's6' : 's12']">
         <label for="user">User</label>
         <masked-input
           :value="config.username"
-          :privacy-mode="privacyMode"
           @input="val => config.username = val"
+          :disabled="disabled"
         />
       </div>
       <div class="col s6 form-group" v-show="showPasswordForm">
-        <label for="password">Password</label>
-        <input
-          :type="togglePasswordInputType"
-          v-model="config.password"
-          class="password form-control"
-        >
-        <i
-          @click.prevent="togglePassword"
-          class="material-icons password-icon"
-        >{{ togglePasswordIcon }}</i>
+        <label for="password">{{ passwordLabel }}</label>
+        <password-input v-model="config.password" :disabled="disabled" />
       </div>
     </div>
     <slot />
     <div class="form-group expand">
       <label
-        v-if="config.connectionType !== 'cassandra'"
+        v-if="!['cassandra', 'scylladb'].includes(config.connectionType)"
         for="defaultDatabase"
       >Default {{ topLevelEntityName }}</label>
       <label
@@ -110,6 +106,7 @@
         type="text"
         class="form-control"
         v-model="config.defaultDatabase"
+        :disabled="disabled"
       >
     </div>
   </div>
@@ -118,8 +115,8 @@
 <script>
 import { findClient } from '@/lib/db/clients'
 import MaskedInput from '@/components/MaskedInput.vue'
+import PasswordInput from '@/components/common/form/PasswordInput.vue'
 import CommonSsl from './CommonSsl.vue'
-import { mapState } from 'vuex'
 
 export default {
   props: {
@@ -132,25 +129,33 @@ export default {
     showPasswordForm: {
       type: Boolean,
       default: true
+    },
+    // Used by SqlServerForm to hide user/password when integrated auth is selected.
+    hideCredentials: {
+      type: Boolean,
+      default: false
+    },
+    // Used by SqlServerForm to hide the SSL section when integrated auth provides its own
+    // Encrypt toggle (the ODBC driver only supports Encrypt + TrustServerCertificate).
+    hideSsl: {
+      type: Boolean,
+      default: false
+    },
+    passwordLabel: {
+      type: String,
+      default: 'Password'
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
   },
   components: {
     MaskedInput,
+    PasswordInput,
     CommonSsl
   },
-  data() {
-    return {
-      showPassword: false,
-    }
-  },
   computed: {
-    ...mapState('settings', ['privacyMode']),
-    togglePasswordIcon() {
-      return this.showPassword ? "visibility_off" : "visibility"
-    },
-    togglePasswordInputType() {
-      return this.showPassword ? "text" : "password"
-    },
     supportsSocketPath() {
       return findClient(this.config.connectionType).supportsSocketPath
     },
@@ -171,9 +176,6 @@ export default {
         return;
       }
     },
-    togglePassword() {
-      this.showPassword = !this.showPassword
-    }
   }
 }
 </script>

@@ -2,11 +2,27 @@
 declare interface IBksConfig {
     azure: {
         azSQLLoginScope: string;
+        ssoPrompt: string;
     };
     db: {
+        bedrock: {
+            allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
+            paramTypes: {
+                named: string[];
+                numbered: string[];
+                positional: boolean;
+                quoted: any[];
+            };
+        };
         bigquery: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -20,6 +36,7 @@ declare interface IBksConfig {
         cassandra: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -33,6 +50,7 @@ declare interface IBksConfig {
         clickhouse: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -46,6 +64,7 @@ declare interface IBksConfig {
         cockroachdb: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             connectionTimeout: number;
             idleTimeout: number;
             manualTransactionTimeout: number;
@@ -61,6 +80,7 @@ declare interface IBksConfig {
         default: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -71,10 +91,26 @@ declare interface IBksConfig {
                 quoted: any[];
             };
         };
-        default_parsed: any;
         duckdb: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
+        };
+        dynamodb: {
+            allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
+            columnSampleSize: number;
+            cursorFetchTimeout: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -88,6 +124,7 @@ declare interface IBksConfig {
         firebird: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -101,6 +138,7 @@ declare interface IBksConfig {
         greengage: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             connectionTimeout: number;
             idleTimeout: number;
             manualTransactionTimeout: number;
@@ -116,6 +154,7 @@ declare interface IBksConfig {
         libsql: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -129,6 +168,7 @@ declare interface IBksConfig {
         mariadb: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             connectTimeout: number;
             manualTransactionTimeout: number;
             maxConnections: number;
@@ -143,6 +183,7 @@ declare interface IBksConfig {
         mongodb: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -156,6 +197,7 @@ declare interface IBksConfig {
         mysql: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             connectTimeout: number;
             manualTransactionTimeout: number;
             maxConnections: number;
@@ -170,6 +212,7 @@ declare interface IBksConfig {
         oracle: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -183,6 +226,7 @@ declare interface IBksConfig {
         postgres: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             connectionTimeout: number;
             idleTimeout: number;
             manualTransactionTimeout: number;
@@ -198,6 +242,7 @@ declare interface IBksConfig {
         redis: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -211,6 +256,7 @@ declare interface IBksConfig {
         redshift: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             connectionTimeout: number;
             idleTimeout: number;
             manualTransactionTimeout: number;
@@ -223,9 +269,40 @@ declare interface IBksConfig {
                 quoted: any[];
             };
         };
+        scylladb: {
+            allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
+        };
+        snowflake: {
+            allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
+            connectionTimeout: number;
+            idleTimeout: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
+        };
         sqlanywhere: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -239,6 +316,7 @@ declare interface IBksConfig {
         sqlite: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -252,6 +330,7 @@ declare interface IBksConfig {
         sqlserver: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -262,9 +341,24 @@ declare interface IBksConfig {
                 quoted: any[];
             };
         };
+        starrocks: {
+            allowSkipToLastPage: boolean;
+            autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
+            manualTransactionTimeout: number;
+            maxConnections: number;
+            maxReservedConnections: number;
+            paramTypes: {
+                named: any[];
+                numbered: any[];
+                positional: boolean;
+                quoted: any[];
+            };
+        };
         surrealdb: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             connectionTimeout: number;
             manualTransactionTimeout: number;
             maxConnections: number;
@@ -279,6 +373,7 @@ declare interface IBksConfig {
         tidb: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -292,6 +387,7 @@ declare interface IBksConfig {
         trino: {
             allowSkipToLastPage: boolean;
             autoRollbackWarningWindow: number;
+            autocompleteQuoteCharacter: number;
             manualTransactionTimeout: number;
             maxConnections: number;
             maxReservedConnections: number;
@@ -306,7 +402,7 @@ declare interface IBksConfig {
     general: {
         checkForUpdatesDisabled: boolean;
         checkForUpdatesInterval: number;
-        dataSyncInterval: number;
+        downloadUserAgent: string;
         workspaceSyncInterval: number;
     };
     keybindings: {
@@ -314,7 +410,8 @@ declare interface IBksConfig {
             addRow: string;
             cloneSelection: string;
             copySelection: string;
-            deleteSelection: string;
+            deleteSelection: string[];
+            jsonViewerSidebar: string;
             openInSqlEditor: string;
             openQuickSearch: string;
             pasteSelection: string;
@@ -323,19 +420,24 @@ declare interface IBksConfig {
             save: string;
             undo: string;
         };
+        plugins: {
+            "bks-ai-shell": {
+                "new-tab-dropdown-item": string;
+            };
+        };
         queryEditor: {
             closeTableFilter: string;
             copyResultSelection: string;
             manualCommit: string;
             manualRollback: string;
             openTableFilter: string;
+            primaryQueryAction: string[];
+            primaryQueryToFileAction: string;
+            secondaryQueryAction: string[];
+            secondaryQueryToFileAction: string;
             selectEditor: string;
             selectNextResult: string;
             selectPreviousResult: string;
-            submitCurrentQuery: string[];
-            submitCurrentQueryToFile: string;
-            submitQueryToFile: string;
-            submitTabQuery: string[];
             switchPaneFocus: string;
         };
         quickSearch: {
@@ -347,6 +449,9 @@ declare interface IBksConfig {
             openInBackground: string;
             selectDown: string[];
             selectUp: string[];
+        };
+        resultTable: {
+            openEditorModal: string;
         };
         tab: {
             closeTab: string;
@@ -369,9 +474,16 @@ declare interface IBksConfig {
             focusOnFilterInput: string;
             lastPage: string;
             nextPage: string;
+            nullSelection: string;
             openEditorModal: string;
+            pasteAsNewRows: string;
             previousPage: string;
         };
+    };
+    pluginSystem: {
+        allow: string[];
+        communityDisabled: boolean;
+        disabled: boolean;
     };
     plugins: {
         "bks-ai-shell": {
@@ -382,6 +494,10 @@ declare interface IBksConfig {
         };
     };
     security: {
+        activityEvents: string[];
+        activityReportIntervalSeconds: number;
+        allowRuntimeExtensions: boolean;
+        disableSshConfigMatchExec: boolean;
         disconnectOnIdle: boolean;
         disconnectOnLock: boolean;
         disconnectOnSuspend: boolean;
@@ -391,6 +507,9 @@ declare interface IBksConfig {
         minPinLength: number;
     };
     ui: {
+        connectionSidebar: {
+            recentConnectionsLimit: number;
+        };
         export: {
             errorNoticeTimeout: number;
         };
@@ -398,19 +517,29 @@ declare interface IBksConfig {
             binaryEncoding: string;
         };
         layout: {
+            defaultGlobalSidebarItem: string;
             mainContentMinWidth: number;
             primarySidebarMinWidth: number;
             secondarySidebarMinWidth: number;
         };
         queryEditor: {
+            autocomplete: {
+                disableKeywordCompletion: boolean;
+                disableSchemaCompletion: boolean;
+                keywordCasing: string;
+                quoteIdentifiers: string;
+            };
             defaultFormatter: string;
             maxResults: number;
+            primaryQueryAction: string;
+            secondaryQueryAction: string;
         };
         tableList: {
             itemHeight: number;
         };
         tableTable: {
             defaultColumnWidth: number;
+            editTrigger: string;
             largeFieldWidth: number;
             maxColumnWidth: number;
             maxInitialWidth: number;
@@ -421,5 +550,5 @@ declare interface IBksConfig {
             maxColumnWidth: number;
         };
     };
-};
+}
 

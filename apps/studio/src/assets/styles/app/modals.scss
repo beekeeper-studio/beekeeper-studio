@@ -13,56 +13,13 @@
     }
   }
 
-  &.upgrade-modal {
-    .dialog-content {
-      padding: 2rem 2rem 1rem;
-    }
-    .dialog-c-title {
-      font-size: 1.2em;
-    }
-    .checkbox-wrapper {
-      margin-left: auto;
-      margin-right: auto;
-      ul.check-list {
-        padding-left: 0;
-        li {
-          padding-bottom: 10px;
-          &:before {
-            font-family: "Material Icons";
-            content: "\e5ca";
-            margin-right: 0.5rem;
-            margin-bottom: -10px;
-            color: $brand-success;
-          }
-          list-style: none;
-        }
-      }
-      > p {
-        margin-bottom: 0;
-      }
-    }
-    .check-list {
-      margin-bottom: 0;
-    }
-    .vue-dialog-buttons {
-      justify-content: stretch;
-      padding-left: 0;
-      padding-right: 0;
-      padding-top: 1rem;
-      & > div {
-        width: 100%;
-      }
-      .actions {
-        justify-content: flex-end;
-      }
-    }
-    .close-btn {
-      top: 1.5rem;
-      right: 1.5rem;
-    }
+  // The vendor stylesheet forces `width: 100% !important` on every modal, so
+  // vue-js-modal's width prop can't reach it — cap the width here instead.
+  &.upgrade-modal .v--modal {
+    max-width: 520px;
   }
 
-  &.confirmation-modal, &.sql-files-import-modal, &.wait-sso-modal {
+  &.sql-files-import-modal, &.wait-sso-modal {
     .v--modal {
       width: auto !important;
       min-height: 0px;

@@ -35,6 +35,50 @@ describe("MySQL UNIT tests (no connection required)", () => {
       expect(parseIndexColumn(input)).toMatchObject(output)
     }
   })
+
+  describe("parseEnumValues", () => {
+    it("parses a simple enum definition", () => {
+      expect(testOnly.parseEnumValues("enum('a','b','c')")).toEqual(['a', 'b', 'c'])
+    })
+
+    it("is case-insensitive on the ENUM keyword", () => {
+      expect(testOnly.parseEnumValues("ENUM('x','y')")).toEqual(['x', 'y'])
+    })
+
+    it("keeps commas that appear inside values", () => {
+      expect(testOnly.parseEnumValues("enum('a,b','c')")).toEqual(['a,b', 'c'])
+    })
+
+    it("unescapes doubled single quotes", () => {
+      expect(testOnly.parseEnumValues("enum('o''clock','noon')")).toEqual(["o'clock", 'noon'])
+    })
+
+    it("handles a single value", () => {
+      expect(testOnly.parseEnumValues("enum('only')")).toEqual(['only'])
+    })
+
+    it("returns undefined for non-enum types", () => {
+      expect(testOnly.parseEnumValues("varchar(20)")).toBeUndefined()
+      expect(testOnly.parseEnumValues("int")).toBeUndefined()
+      expect(testOnly.parseEnumValues("set('x','y')")).toBeUndefined()
+      expect(testOnly.parseEnumValues(undefined)).toBeUndefined()
+      expect(testOnly.parseEnumValues(null)).toBeUndefined()
+    })
+  })
+
+  // BUG: parseIndexColumn checks `str.endsWith('DESC')` to detect descending
+  // order, but with no preceding-whitespace requirement any column name that
+  // happens to end in the literal characters 'DESC' (e.g. 'FOODESC',
+  // 'PRODDESC', or just 'DESC' as a column name) gets the order silently
+  // flipped to DESC even when the user picked the plain ASC option.
+  it("should not flip ASC to DESC for column names that end in 'DESC'", () => {
+    expect(parseIndexColumn('FOODESC')).toMatchObject({
+      name: 'FOODESC', order: 'ASC', prefix: null,
+    })
+    expect(parseIndexColumn('DESC')).toMatchObject({
+      name: 'DESC', order: 'ASC', prefix: null,
+    })
+  })
 })
 
 describe("MysqlChangeBuilder", () => {
@@ -79,5 +123,72 @@ describe("MysqlChangeBuilder", () => {
 
     expect(builder.reorderColumns(initArr, updatedArr)).toEqual(`ALTER TABLE \`beans\` ${updatedArrStuff.join(',')};`)
   }))
+
+  describe("ddl() CHARACTER SET / COLLATE handling (issue #4082)", () => {
+    const existingVarchar = {
+      columnName: 'my_field',
+      dataType: 'varchar(4)',
+      nullable: true,
+      characterSet: 'utf8mb4',
+      collation: 'utf8mb4_general_ci',
+    }
+
+    it("does not emit CHARACTER SET or COLLATE when changing varchar to INT", () => {
+      const updated = { ...existingVarchar, dataType: 'INT UNSIGNED' }
+      const result = builder.ddl(existingVarchar, updated)
+      expect(result).toContain('MODIFY `my_field` INT UNSIGNED')
+      expect(result).not.toContain('CHARACTER SET')
+      expect(result).not.toContain('COLLATE')
+    })
+
+    it("retains CHARACTER SET and COLLATE when changing varchar(4) to varchar(100)", () => {
+      const updated = { ...existingVarchar, dataType: 'varchar(100)' }
+      const result = builder.ddl(existingVarchar, updated)
+      expect(result).toContain('CHARACTER SET utf8mb4')
+      expect(result).toContain('COLLATE utf8mb4_general_ci')
+    })
+
+    it.each([
+      ['DATETIME'],
+      ['DECIMAL(10,2)'],
+      ['JSON'],
+      ['BLOB'],
+      ['BIGINT'],
+      ['DATE'],
+      ['VARBINARY(255)'],
+    ])("does not emit CHARACTER SET or COLLATE when changing varchar to %s", (dataType) => {
+      const updated = { ...existingVarchar, dataType }
+      const result = builder.ddl(existingVarchar, updated)
+      expect(result).not.toContain('CHARACTER SET')
+      expect(result).not.toContain('COLLATE')
+    })
+
+    it.each([
+      ['TEXT'],
+      ['MEDIUMTEXT'],
+      ['LONGTEXT'],
+      ['TINYTEXT'],
+      ["ENUM('a','b')"],
+      ["SET('a','b')"],
+      ['CHAR(10)'],
+    ])("retains CHARACTER SET and COLLATE when changing varchar to %s", (dataType) => {
+      const updated = { ...existingVarchar, dataType }
+      const result = builder.ddl(existingVarchar, updated)
+      expect(result).toContain('CHARACTER SET utf8mb4')
+      expect(result).toContain('COLLATE utf8mb4_general_ci')
+    })
+
+    it("emits no charset clauses when the existing column has none, regardless of new type", () => {
+      const existing = {
+        columnName: 'my_field',
+        dataType: 'varchar(4)',
+        nullable: true,
+      }
+      const updated = { ...existing, dataType: 'varchar(100)' }
+      const result = builder.ddl(existing, updated)
+      expect(result).not.toContain('CHARACTER SET')
+      expect(result).not.toContain('COLLATE')
+    })
+  })
 })
 

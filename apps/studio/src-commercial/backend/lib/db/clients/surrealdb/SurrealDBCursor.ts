@@ -1,5 +1,6 @@
-import { BeeCursor } from "@/lib/db/models";
+import { BeeCursor, TableColumn } from "@/lib/db/models";
 import rawLog from '@bksLogger';
+import { Frame } from "surrealdb";
 import { SurrealConn, SurrealPool } from "./SurrealDBPool";
 
 const log = rawLog.scope('surrealdb/cursor');
@@ -12,83 +13,87 @@ interface CursorOptions {
 
 export class SurrealDBCursor extends BeeCursor {
   private readonly options: CursorOptions;
-  private offset = 0;
-  private hasMoreData = true;
-  private error?: Error;
   private client?: SurrealConn;
+  private iterator?: AsyncIterator<Frame<unknown, false>>;
+  private _columns: TableColumn[] | null = null;
+  private error?: Error;
+  private done = false;
 
   constructor(options: CursorOptions) {
     super(options.chunkSize);
     this.options = options;
   }
 
+  get columns(): TableColumn[] | null {
+    return this._columns;
+  }
+
   async start(): Promise<void> {
-    // SurrealDB doesn't have native cursor support, so we'll simulate it
-    // by tracking offset and using LIMIT/START clauses
     this.client = await this.options.conn.connect();
-    this.offset = 0;
-    this.hasMoreData = true;
+    const query = this.client.query(this.options.query);
+    this.iterator = query.stream<unknown>()[Symbol.asyncIterator]();
   }
 
   async read(): Promise<any[][]> {
-    if (this.error) {
-      throw this.error;
-    }
+    if (this.error) throw this.error;
+    if (this.done || !this.iterator) return [];
 
-    if (!this.hasMoreData) {
-      return [];
-    }
-
+    const rows: any[][] = [];
     try {
-      // Modify the query to add LIMIT and START clauses
-      const paginatedQuery = this.addPaginationToQuery(this.options.query, this.offset, this.chunkSize);
-
-      const result = await this.client.query(paginatedQuery);
-
-      // Extract rows from the result
-      const queryResult = result[0];
-      const rows = Array.isArray(queryResult) ? queryResult : [queryResult];
-
-      // Convert to array format (similar to other cursor implementations)
-      const arrayRows: any[][] = rows.map(row => {
-        if (typeof row === 'object' && row !== null) {
-          return Object.values(row);
+      while (rows.length < this.chunkSize) {
+        const next = await this.iterator.next();
+        if (next.done) {
+          this.done = true;
+          break;
         }
-        return [row];
-      });
-
-      // Update pagination state
-      this.offset += arrayRows.length;
-      this.hasMoreData = arrayRows.length === this.chunkSize;
-
-      return arrayRows;
-    } catch (error) {
-      this.error = error as Error;
-      throw error;
+        const frame = next.value;
+        if (frame.isValue()) {
+          const value = frame.value;
+          if (!this._columns) {
+            this._columns = this.getColumns(value);
+          }
+          rows.push(this.toRow(value));
+        } else if (frame.isError()) {
+          frame.throw();
+        }
+      }
+    } catch (err) {
+      this.error = err as Error;
+      throw err;
     }
+
+    return rows;
   }
 
   async cancel(): Promise<void> {
-    // SurrealDB doesn't have built-in query cancellation
-    // We'll just mark as cancelled
-    this.hasMoreData = false;
-    this.client?.release();
+    this.done = true;
+    try {
+      await this.iterator?.return?.();
+    } catch (err) {
+      log.warn('Error closing SurrealDB stream iterator', err);
+    }
+    try {
+      await this.client?.release();
+    } catch (err) {
+      log.warn('Error releasing SurrealDB connection', err);
+    }
     log.debug('SurrealDB cursor cancelled');
   }
 
-  private addPaginationToQuery(query: string, offset: number, limit: number): string {
-    // Remove existing LIMIT and START clauses if they exist
-    const cleanQuery = query.replace(/\s+LIMIT\s+\d+/gi, '').replace(/\s+START\s+\d+/gi, '');
-
-    // Add our pagination
-    let paginatedQuery = cleanQuery;
-    if (limit > 0) {
-      paginatedQuery += ` LIMIT ${limit}`;
-      if (offset > 0) {
-        paginatedQuery += ` START ${offset}`;
-      }
+  private getColumns(value: unknown): TableColumn[] {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      return Object.keys(value as Record<string, unknown>).map((name) => ({
+        columnName: name,
+        dataType: 'unknown',
+      }));
     }
+    return [{ columnName: 'value', dataType: 'unknown' }];
+  }
 
-    return paginatedQuery;
+  private toRow(value: unknown): any[] {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      return Object.values(value as Record<string, unknown>);
+    }
+    return [value];
   }
 }

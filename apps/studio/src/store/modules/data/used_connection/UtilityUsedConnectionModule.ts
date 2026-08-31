@@ -1,14 +1,13 @@
 import { IConnection } from "@/common/interfaces/IConnection";
 import { DataState, DataStore, mutationsFor, utilActionsFor } from "@/store/modules/data/DataModuleBase";
 import _ from "lodash";
-import rawLog from "@bksLogger";
 import { safely } from "../StoreHelpers";
 import Vue from "vue";
 
-const log = rawLog.scope('data/usedconnections');
-
 type State = DataState<IConnection>;
 
+// Rows are written by the backend (UsedConnection.recordUse, from conn/create)
+// once a connection is actually up. This module only reads them.
 // NOTE (@day): may need to add a custom action for removeUsedConfig that also deletes the tokencache?
 export const UtilUsedConnectionModule: DataStore<IConnection, State> = {
   namespaced: true,
@@ -20,25 +19,6 @@ export const UtilUsedConnectionModule: DataStore<IConnection, State> = {
   },
   mutations: mutationsFor<IConnection>(),
   actions: utilActionsFor<IConnection>('used', {
-    async recordUsed(context, config: IConnection) {
-      log.debug("Recording used config for: ", config)
-      const lastUsedConnection = context.state.items.find(c => {
-        return config.id &&
-          config.workspaceId &&
-          ((!c.connectionId && c.id === config.id) || 
-            (c.connectionId && c.connectionId === config.id)) &&
-          c.workspaceId === config.workspaceId;
-      });
-      log.debug("Found used config", lastUsedConnection);
-      if (lastUsedConnection) {
-        lastUsedConnection.updatedAt = new Date();
-        await context.dispatch('save', lastUsedConnection);
-      } else {
-        const id = await context.dispatch('save', config);
-        config = context.state.items.find((item) => item.id === id);
-      }
-      return config;
-    },
     async load(context) {
       context.commit("error", null);
       await safely(context, async () => {
@@ -49,7 +29,8 @@ export const UtilUsedConnectionModule: DataStore<IConnection, State> = {
   }),
   getters: {
     orderedUsedConfigs(state) {
-      return _.sortBy(state.items, 'updatedAt').reverse()
+      const limit = window.bksConfig.ui.connectionSidebar.recentConnectionsLimit
+      return _.sortBy(state.items, 'updatedAt').reverse().slice(0, limit)
     }
   }
 }

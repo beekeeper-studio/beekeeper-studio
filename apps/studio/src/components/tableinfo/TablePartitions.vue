@@ -11,24 +11,18 @@
         />
 
         <div class="table-subheader">
-          <div class="table-title">
-            <h2>Partitions</h2>
-          </div>
-          <slot />
-          <span class="expand" />
-          <div class="actions">
-            <a
-              @click.prevent="refreshPartitions"
-              class="btn btn-link btn-fab"
-              v-tooltip="`${ctrlOrCmd('r')} or F5`"
-            ><i class="material-icons">refresh</i></a>
-            <a
-              v-if="editable"
-              @click.prevent="addRow"
-              class="btn btn-primary btn-fab"
-              v-tooltip="ctrlOrCmd('n')"
-            ><i class="material-icons">add</i></a>
-          </div>
+          <table-info-toolbar
+            :search-suffix="structureFilterSuffix"
+            filter-placeholder="Filter partitions"
+            :show-add="editable"
+            add-label="Partition"
+            @search="setStructureFilterQuery"
+            @add="addRow"
+            @copy="copyStructure"
+            @refresh="refreshPartitions"
+          >
+            <slot />
+          </table-info-toolbar>
         </div>
         <div ref="tablePartitions" />
       </div>
@@ -94,18 +88,22 @@ import _ from 'lodash';
 import { TabulatorStateWatchers, vueEditor, trashButton } from '@shared/lib/tabulator/helpers'
 import StatusBar from '../common/StatusBar.vue'
 import ErrorAlert from '../common/ErrorAlert.vue'
+import TableInfoToolbar from './TableInfoToolbar.vue'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import { AppEvent } from '@/common/AppEvent';
 import { FormatterDialect } from '@shared/lib/dialects/models';
 import { format } from 'sql-formatter';
 import { mapState } from 'vuex';
+import { StructureCopyMixin } from '@/mixins/structureCopy';
+import { StructureFilterMixin } from '@/mixins/structureFilter';
 
 export default Vue.extend({
 	components: {
     StatusBar,
-    ErrorAlert
+    ErrorAlert,
+    TableInfoToolbar
   },
-  mixins: [DataMutators],
+  mixins: [DataMutators, StructureCopyMixin, StructureFilterMixin],
   props: ['table', 'tabID', 'active', 'tabState', 'properties'],
   data() {
     return {

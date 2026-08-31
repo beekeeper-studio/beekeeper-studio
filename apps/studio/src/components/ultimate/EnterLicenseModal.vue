@@ -20,12 +20,14 @@
             <i class="material-icons-outlined">info</i>
             <span>Entering a license will unlock premium features such as Oracle, DuckDB, and ClickHouse connections,
               JSON view, multi-table features, and more. <a
-                href="https://docs.beekeeperstudio.io/support/upgrading-from-the-community-edition/">Learn
+                href="https://docs.beekeeperstudio.io/support/upgrading-from-the-community-edition/"
+              >Learn
                 more</a>.</span>
           </div>
           <p>You don't have any licenses registered with the application at the moment. Register a new license below.</p>
-          <p class="text-muted small" v-if="trialLicense">Free trial expiry: {{ timeAgo(trialLicense.validUntil) }}, on {{
-            trialLicense.validUntil.toLocaleDateString() }}
+          <p class="text-muted small" v-if="trialLicense">
+            Free trial expiry: {{ timeAgo(trialLicense.validUntil) }}, on {{
+              trialLicense.validUntil.toLocaleDateString() }}
           </p>
           <error-alert :error=" error" />
           <div class="form-group">

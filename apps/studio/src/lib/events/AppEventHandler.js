@@ -16,6 +16,8 @@ export default class {
     window.main.on(AppEvent.disconnect, this.disconnect.bind(this))
     window.main.on(AppEvent.beekeeperAdded, this.addBeekeeper.bind(this))
     window.main.on(AppEvent.switchLicenseState, this.switchLicenseState.bind(this))
+    window.main.on(AppEvent.simulatePlatform, this.simulatePlatform.bind(this))
+    this.forward(AppEvent.disconnect)
     this.forward(AppEvent.closeTab)
     this.forward(AppEvent.newTab)
     this.forward(AppEvent.newCustomTab)
@@ -33,6 +35,7 @@ export default class {
     this.forward(AppEvent.openPluginManager)
     this.forward(AppEvent.openKeyboardShortcuts)
     this.forward(AppEvent.pluginMenuClicked)
+    this.forward(AppEvent.pasteAsNewRows)
   }
 
   forward(event) {
@@ -67,6 +70,15 @@ export default class {
 
   settingsChanged() {
     this.vueApp.$store.dispatch("settings/initializeSettings")
+  }
+
+  simulatePlatform(_event, platform) {
+    if (platform === 'none') {
+      localStorage.removeItem('dev.simulatePlatform')
+    } else {
+      localStorage.setItem('dev.simulatePlatform', platform)
+    }
+    window.location.reload(true)
   }
 
   async switchLicenseState(_event, state) {

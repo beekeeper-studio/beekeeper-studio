@@ -13,11 +13,13 @@ import { ExtendedTableColumn, NgQueryResult, TableOrView } from "@/lib/db/models
 import _ from "lodash";
 import { SidebarTab } from "@/store/modules/SidebarModule";
 import {
+  Keybinding,
   Manifest,
   PluginMenuItem,
   PluginView,
   TabType,
   CreatePluginTabOptions,
+  PluginSnapshot,
 } from "../types";
 import { ExternalMenuItem, JsonValue } from "@/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
@@ -47,6 +49,10 @@ export default class PluginStoreService {
         this.tablesChangedListeners.forEach((listener) => listener());
       }
     })
+  }
+
+  async initialize() {
+    await this.store.dispatch('plugins/initialize');
   }
 
   on(name: 'tablesChanged', listener: () => void) {
@@ -146,6 +152,7 @@ export default class PluginStoreService {
   setTabDropdownItem(options: {
     menuItem: PluginMenuItem;
     manifest: Manifest;
+    keybindingLabel?: string;
   }): void {
     const ref: TabTypeConfig.PluginRef = {
       pluginId: options.manifest.id,
@@ -154,6 +161,7 @@ export default class PluginStoreService {
     const menuItem: TabTypeConfig.PluginConfig['menuItem'] = {
       label: options.menuItem.name,
       command: options.menuItem.command,
+      shortcut: options.keybindingLabel,
     }
     this.store.commit("tabs/setMenuItem", { ...ref, menuItem });
   }
@@ -247,6 +255,7 @@ export default class PluginStoreService {
       databaseName: this.store.state.database,
       defaultSchema: this.store.state.defaultSchema,
       readOnlyMode: this.store.state.usedConfig.readOnlyMode,
+      disabledFeatures: this.store.getters.dialectData.disabledFeatures,
     };
   }
 
@@ -319,13 +328,13 @@ export default class PluginStoreService {
     }
 
     if (options.type === "tableStructure") {
-      const table = this.findTableOrThrow(options.table, options.schema);
+      const table = this.findTableOrThrow(options.name, options.schema);
       this.appEventBus.emit(AppEvent.openTableProperties, { table });
       return;
     }
 
     if (options.type === "tableTable") {
-      const table = this.findTableOrThrow(options.table, options.schema);
+      const table = this.findTableOrThrow(options.name, options.schema);
       this.appEventBus.emit(AppEvent.loadTable, {
         table,
         filters: options.filters,
@@ -350,6 +359,26 @@ export default class PluginStoreService {
 
   removeMenuBarItem(id: string) {
     this.store.commit("menuBar/remove", id);
+  }
+
+  addKeybinding(keybinding: Keybinding) {
+    this.store.commit("plugins/keybindings/add", keybinding);
+  }
+
+  removeKeybinding(placement: Keybinding["placement"], handler: Keybinding["handler"]) {
+    this.store.commit("plugins/keybinding/remove", { placement, handler });
+  }
+  
+  async loadSnapshots() {
+    return await this.store.dispatch("plugins/snapshots/load");
+  }
+
+  getSnapshots(): PluginSnapshot[] {
+    return this.store.state.plugins!.snapshots.all;
+  }
+
+  getSnapshot(id: string): PluginSnapshot | undefined {
+    return this.store.getters["plugins/snapshots/snapshotsById"][id];
   }
 
   buildPluginTabInit(

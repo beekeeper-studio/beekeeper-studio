@@ -304,7 +304,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
 
    async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
     log.info('filters in listTables', filter)
-    const schemaFilter = buildSchemaFilter(filter, 'table_schema')
+    const schemaFilter = buildSchemaFilter(filter, 'table_schema', (s) => this.wrapIdentifier(s))
     const whereClause = schemaFilter ? `WHERE ${schemaFilter}` : ''
     const sql = `select * from ${this.wrapIdentifier(this.db)}.information_schema.tables ${whereClause}`
     const result = await this.driverExecuteSingle(sql)
@@ -436,14 +436,22 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
     try {
       // The trino query parser doesn't particularly like semicolons. Who can blame it?
       const result: AsyncIterableIterator<QueryResult> = await this.client.query(sql.trim().replace(/;$/, ''))
-      
+
       let columns: ResultColumn[] = []
       const rows: any[] = []
-      
+
       for await (const r of result) {
+        // The trino-client iterator doesn't throw on query failure - it
+        // yields the error response as a normal value, so without this
+        // check a failed query looks like a successful 0-row result.
+        if (r.error) {
+          const { errorName, message } = r.error
+          throw new Error(errorName ? `${errorName}: ${message}` : message)
+        }
+
         const { data: resultData, columns: resultColumns } = r
         columns = resultColumns
-  
+
         if (resultData) rows.push(...resultData)
       }
 
@@ -455,7 +463,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
           queryId: ''
         }
       }
-  
+
       return {
         columns,
         rows: this.rowsToObject(columns, rows),
@@ -699,7 +707,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
 
     const paginatedSQL = this.buildPaginatedQuery(wrappedTable, filterString, wrappedSelects, rowNumberOrderClause, usePagination, safeOffset, safeLimit)
     const fullSql = this.buildPaginatedQuery(TrinoData.wrapIdentifier(table), fullFilterString, wrappedSelects, rowNumberOrderClause, usePagination, safeOffset, safeLimit)
-    
+
     return {
       query: paginatedSQL,
       fullQuery: fullSql,
@@ -711,7 +719,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
   buildPaginatedQuery(tableRef: string, filter: string, wrappedSelects: string, rowNumberOrderClause: string, usePagination: boolean, safeOffset: number, safeLimit: number): string {
     return `
       WITH ranked AS (
-        SELECT 
+        SELECT
           ${wrappedSelects},
           ROW_NUMBER() OVER (${rowNumberOrderClause}) AS rownum
         FROM ${this.wrapIdentifier(this.db)}.${tableRef}
@@ -721,7 +729,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
       FROM ranked
       ${usePagination ? `WHERE rownum > ${safeOffset} AND rownum <= ${safeOffset + safeLimit}` : ""}
     `
-  } 
+  }
 
   protected violatesReadOnly(statements: IdentifyResult[], options: any = {}) {
     return (

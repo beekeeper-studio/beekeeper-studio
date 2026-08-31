@@ -12,7 +12,7 @@
             >
               <i class="material-icons">clear</i>
             </a>
-          </div >
+          </div>
           <div class="form-group">
             <label for="collection-name">Collection Name</label>
             <input type="text" id="collection-name" name="collection-name" ref="collectionInput" v-model="collectionName">

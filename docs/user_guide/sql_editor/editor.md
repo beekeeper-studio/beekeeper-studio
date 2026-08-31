@@ -15,8 +15,8 @@ We have tried to make our code completion useful but not intrusive.
 
 Code suggestions will automatically appear in the following situations:
 
-- `tables` will be suggested after typing `from` or `join`
-- `columns` will be suggested after typing a tablename, or table alias, followed by a period, eg `film.`
+-   `tables` will be suggested after typing `from` or `join`
+-   `columns` will be suggested after typing a tablename, or table alias, followed by a period, eg `film.`
 
 In these situations, Beekeeper will automatically resolve the correct table and column names for the entity you are querying.
 
@@ -25,6 +25,42 @@ In these situations, Beekeeper will automatically resolve the correct table and 
 The default key combo to manually trigger autocomplete is `Ctrl+Space`.
 
 ![Image Alt Tag](../../assets/images/using-the-sql-editor-11.gif)
+
+### Identifier quoting
+
+- Beekeeper Studio will automatically add `"quotes"` to identifiers when it thinks they are required, eg `"MixedCaseTableName"` in PostgreSQL.
+- Beekeeper Studio will pick the quote character `"`, `` ` ``, or `[`, depending on engine conventions.
+
+Some specific examples:
+
+- **PostgreSQL** mixed-case identifiers will be quoted, for example `"MyTable"`.
+- **MySQL** mixed-case identifiers will **not** be quoted (they work fine).
+- **SQL Server** defaults to using `[brackets]` for quotes.
+- **MySQL & MariaDB** defaults to `` `backticks` `` for quotes.
+
+!!! note "You can 'always quote', or change your preferred quote character using the [autocomplete configuration](#configuring-autocomplete)."
+
+
+### Keyword case selection
+
+Do you prefer `SELECT`, or `select`? By default Beekeeper Studio will match the case you use when typing, so if you type `SE`, it will autocomplete `SELECT` for example.
+
+!!! note "Configure this behavior using the [autocomplete configuration](#configuring-autocomplete)"
+
+### Configuring autocomplete
+
+You can adjust autocomplete behaviors with the [config file](../configuration.md). These are the defaults:
+
+{% ini-include section="ui.queryEditor.autocomplete" %}
+
+The quote character itself can be changed per database with `autocompleteQuoteCharacter` — useful if, say, your team prefers ANSI double quotes over brackets in SQL Server:
+
+```ini
+[db.sqlserver]
+autocompleteQuoteCharacter = "
+```
+
+A value of `0` (the shipped default) selects the database's convention. Only characters the database accepts as identifier quotes are honored (SQL Server accepts `[` or `"`, SQLite accepts `"` or a backtick) — anything else falls back to the convention, so autocomplete never writes a name your database can't parse.
 
 ## Run Contexts
 
@@ -46,6 +82,10 @@ There is also a [Manual Transaction Mode](./manual-transaction-management.md) th
 
 This functionality is currently only available for Postgres, CockroachDB, Redshift, MySQL, MariaDB, SQLServer, Firebird, and Oracle.
 
+## Editing Query Results
+
+After running your queries, you may want to make some quick changes to the data that you have selected. This can be done directly in the result table as long as the necessary data to generate an update query is present. Just hit `Edit Data` in the bottom right and go nuts! Learn more about this feature [here](./editing-data.md)
+
 ## Query Parameters
 
 You can parameterize your queries and Beekeeper will prompt you for values when you run it.
@@ -57,6 +97,7 @@ select * from table where foo = :one and bar = :two
 
 select * from table where foo = $1 and bar = $2
 ```
+
 ![Image Alt Tag](../../assets/images/using-the-sql-editor-13.gif)
 
 You can configure which syntax is active for your database engine using the [config file](../configuration.md).
@@ -75,7 +116,6 @@ quoted[] = ':'
 quoted[] = '@'
 quoted[] = '$'
 ```
-
 
 ## Downloading Results
 
@@ -101,9 +141,9 @@ Beekeeper Studio has a built-in keyboard shortcuts reference. Open it from the `
 
 You can adjust the font size of the SQL editor from the `View` menu:
 
-- **Increase Editor Font Size** - `Ctrl+Shift+.`
-- **Decrease Editor Font Size** - `Ctrl+Shift+,`
-- **Reset Editor Font Size** - restores the default size
+-   **Increase Editor Font Size** - `Ctrl+Shift+.`
+-   **Decrease Editor Font Size** - `Ctrl+Shift+,`
+-   **Reset Editor Font Size** - restores the default size
 
 ![Adjusting editor font size](../../assets/images/adjust-editor-font-size.png)
 
@@ -114,9 +154,10 @@ Beekeeper Studio keeps a history of queries you have run. You can access your qu
 Query history is **scoped per connection**, so you will only see queries that were run against the current database connection. This makes it easy to find and re-run previous queries without sifting through history from other databases.
 
 ## Vim Mode
+
 Along with the default query editor, Beekeeper supports Vim mode, which allows you to write queries in a Vim-like text editor.
 
-To enable this, you can click the cog in the bottom left corner of the query editor:
+To enable this, you can click the cog in the bottom right corner of the query editor:
 
 ![editor mode selection](../../assets/images/using-the-sql-editor-155.png)
 
@@ -124,13 +165,45 @@ And then you're off to the races with a vim editor in Beekeeper!
 
 Whichever editor you prefer will be preserved across all connections/restarts/etc.
 
+### The status line
+
+In vim mode the editor shows a status line along the bottom with the current
+mode, any keys waiting on the rest of a command, and the count prefix. It is
+also where `:` commands and `/` searches are typed.
+
+### Ex commands
+
+| Command | Effect |
+| --- | --- |
+| `:w`, `:write` | Save the current query |
+| `:q`, `:quit` | Close the current tab |
+| `:qa` | Close every tab |
+| `:x`, `:wq` | Save, then close the tab |
+| `:tabnew [name]` | Open a new tab, optionally with a name |
+
+These act on the tab you are typing in.
+
+### Cancelling a running query
+
+`Esc` cancels a running query. In vim mode it only does that from normal mode
+with nothing pending, so leaving insert or visual mode behaves as it should.
+`Ctrl-Esc` cancels a query from any mode.
+
+### Ctrl+P
+
+Vim binds `Ctrl+P` to "move up" in every mode. In Beekeeper Studio it stays on
+quick search instead, since `k` already moves up. To take it back, add
+`nnoremap <C-p> k` to your `.beekeeper.vimrc`.
+
 ### Customisation
+
 You can also add your own keybindings and motions to the vim editor by placing a `.beekeeper.vimrc` file in the `userDirectory` for Beekeeper Studio and writing out your custom mappings.
 
 `userDirectory` locations:
-- Windows: `%APPDATA%\beekeeper-studio`
-- Linux: `~/.config/beekeeper-studio`
-- MacOS: `~/Library/Application Support/beekeeper-studio`
+
+-   Windows: `%APPDATA%\beekeeper-studio`
+-   Linux: `~/.config/beekeeper-studio`
+-   MacOS: `~/Library/Application Support/beekeeper-studio`
 
 For instance, if you're a Helix user, you can add `gl` and `gh` commands like this:
 
@@ -141,6 +214,30 @@ nmap gh ^
 
 These commands add motions for `gl` to go to the end of a line, and `gh` to go to the beginning of a line
 
-We currently only support the `nmap`, `imap`, and `vmap` commands, but we hope to introduce more in the future!
+Lines beginning with `"` are comments, and blank lines are skipped. Supported
+commands:
 
+| Command | Notes |
+| --- | --- |
+| `map`, `nmap`, `imap`, `vmap` | Recursive mappings |
+| `noremap`, `nnoremap`, `inoremap`, `vnoremap` | Non-recursive mappings |
+| `unmap`, `nunmap`, `iunmap`, `vunmap` | Remove a mapping |
+| `mapclear`, `nmapclear`, `imapclear`, `vmapclear` | Remove every custom mapping |
+| `set` | Vim options, e.g. `set ignorecase`, `set nonumber`, `set tabstop=4` |
+| `let mapleader` | What `<leader>` expands to. Defaults to `\` |
 
+Anything that cannot be parsed is reported in a notification naming the line,
+and the rest of the file still applies.
+
+#### Yanking to the system clipboard
+
+The `*` register is connected to the system clipboard, so `"*y` and `"*p` work
+as they would in vim. To make a plain `y` use it, the mapping has to be
+non-recursive:
+
+```
+nnoremap y "*y
+```
+
+Written as `nmap y "*y` the `y` on the right expands back into the mapping
+itself, without end. That case is reported as an error instead of applied.

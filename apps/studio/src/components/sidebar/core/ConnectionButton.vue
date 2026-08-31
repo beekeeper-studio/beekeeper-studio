@@ -44,15 +44,13 @@
           </x-label>
         </x-menuitem>
         <x-menuitem @click.stop.prevent="showQuickSwitcher">
-            <x-label class="flex items-center justify-between">
-              <span class="flex items-center">
-                <i class="material-icons">swap_horiz</i>
-                Switch Connection
-              </span>
-              <span style="font-size: 22px;">
-                {{ isQuickSwitcherVisible ? '‹' : '›' }}
-              </span>
-            </x-label>
+          <x-label class="flex items-center justify-between">
+            <span class="flex items-center">
+              <i class="material-icons">swap_horiz</i>
+              Switch Connection
+            </span>
+            <span style="font-size: 22px;">›</span>
+          </x-label>
         </x-menuitem>
       </x-menu>
     </x-button>
@@ -153,14 +151,22 @@
             >
               {{ conn.name }}
             </button>
+            <div
+              v-if="!displayedConnections.length"
+              class="quick-switcher-empty"
+            >
+              No {{ showingMore ? 'saved' : 'recent' }} connections
+            </div>
           </div>
         </div>
         <div class="quick-switcher-footer">
-          <button class="quick-switcher-item more" @click.stop="toggleMore">
+          <button
+            class="quick-switcher-item more"
+            :disabled="moreDisabled"
+            @click.stop="toggleMore"
+          >
             <span class="label">{{ showingMore ? 'less' : 'more' }}</span>
-            <span style="font-size: 22px;">
-              {{ showingMore ? '‹' : '›' }}
-            </span>
+            <span style="font-size: 22px;">›</span>
           </button>
         </div>
       </div>
@@ -193,14 +199,14 @@ export default {
       connection: state => state.connection,
       versionString: state => state.versionString
     }),
-    ...mapState('settings', ['privacyMode']),
     ...mapState('data/connections', {'connectionConfigs': 'items'}),
     ...mapGetters({
       hasRunningExports: 'exports/hasRunningExports',
       workspace: 'workspace',
       connectionColor: 'connectionColor',
       savedConnections: 'data/connections/filteredConnections',
-      isUltimate: 'isUltimate'
+      isUltimate: 'isUltimate',
+      privacyMode: 'settings/privacyMode'
     }),
     connectionName() {
       return this.config ? this.$bks.buildConnectionName(this.config) : 'Connection'
@@ -220,6 +226,12 @@ export default {
       return connections.filter(conn =>
         conn.id !== this.config.id || conn.workspaceId !== this.config.workspaceId
       );
+    },
+    moreDisabled() {
+      const otherConnections = this.showingMore ? this.recentConnections : this.savedConnections;
+      return !otherConnections.filter(conn =>
+        conn.id !== this.config.id || conn.workspaceId !== this.config.workspaceId
+      ).length;
     },
     classes() {
       const result = {

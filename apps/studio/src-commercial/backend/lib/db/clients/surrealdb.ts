@@ -1,4 +1,4 @@
-import { AnyAuth, ConnectionStatus, RecordId, StringRecordId, Token } from "surrealdb";
+import { ProvidedAuth, RecordId } from "surrealdb";
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, BksField, CancelableQuery, BksFieldType, TableChanges, TableUpdateResult, TableInsert, TableUpdate, TableDelete } from "@/lib/db/models";
 import { TableKey } from "@/shared/lib/dialects/models";
 import { _baseTest } from "@playwright/test";
@@ -87,21 +87,21 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     this.pool = new SurrealPool(this.connectionString, {
       namespace: this.database.namespace,
       database: this.db,
-      auth: config,
+      authentication: config,
       reconnect: true,
       versionCheck: false
     });
 
     // Test the pool
     const conn = await this.pool.connect();
-    if (conn.status === ConnectionStatus.Disconnected || conn.status === ConnectionStatus.Error) {
+    if (conn.status === "disconnected") {
       throw new Error('Error connecting to database');
     }
 
     await conn.release()
   }
 
-  configDatabase(): AnyAuth | Token {
+  configDatabase(): ProvidedAuth {
     const {
       user,
       password,
@@ -181,7 +181,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     const conn = await this.pool.connect();
     try {
       const result = await conn.version();
-      return result || 'Unknown';
+      return result?.version || 'Unknown';
     } catch (error) {
       log.error('Failed to get version: ', error);
     } finally {
@@ -253,7 +253,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
       const parentFields = [];
 
       // This means it's a schemaless table, so we'll have to guess
-      if (!tableFields || tableFields.length == 0) {
+      if (!tableFields || tableFields.length === 0) {
         const results = await this.driverExecuteSingle(`SELECT * FROM ${table} LIMIT 10`);
         const existingFields = new Set<string>();
         results.rows.forEach((row) => {
@@ -265,10 +265,10 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
             }
 
             if (value instanceof RecordId) {
-              if (value.tb === table) {
+              if (value.table.name === table) {
                 type = 'string'
               } else {
-                type = `record<${value.tb}>`
+                type = `record<${value.table.name}>`
               }
             }
 
@@ -455,7 +455,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
 
     return keys;
   }
-  async query(queryText: string, options?: any): Promise<CancelableQuery> {
+  async query(queryText: string, _tabId?: number, options?: any): Promise<CancelableQuery> {
     return {
       execute: async(): Promise<NgQueryResult[]> => {
         return await this.executeQuery(queryText, options)
@@ -643,42 +643,8 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
   }
 
   async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
-    // For query streaming, we need to estimate total rows and columns
-    // This is a simplified implementation
-    const cursor = new SurrealDBCursor({
-      query,
-      conn: this.pool,
-      chunkSize
-    });
-
-    // Try to get a sample to determine columns
-    let columns: TableColumn[] = [];
-    let totalRows = 0;
-
-    try {
-      // Execute a small sample to get column info
-      const sampleQuery = query.includes('LIMIT') ? query : `${query} LIMIT 1`;
-      const sampleResult = await this.driverExecuteSingle(sampleQuery);
-
-      if (sampleResult.columns) {
-        columns = sampleResult.columns.map(col => ({
-          columnName: col.name,
-          dataType: 'unknown',
-          tableName: ''
-        }));
-      }
-
-      // For total rows, we'd need to run a count query, but that's complex
-      // for arbitrary queries, so we'll set it to -1 to indicate unknown
-      totalRows = -1;
-    } catch (error) {
-      log.warn('Could not determine columns for query stream:', error);
-    }
-
     return {
-      totalRows,
-      columns,
-      cursor
+      cursor: new SurrealDBCursor({ query, conn: this.pool, chunkSize }),
     };
   }
 
@@ -756,7 +722,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
   }
 
   async executeApplyChanges(changes: TableChanges): Promise<TableUpdateResult[]> {
-    let results: TableUpdateResult[] = [];
+    const results: TableUpdateResult[] = [];
     const sql = ['BEGIN'];
     let allBindings = {};
 
@@ -813,31 +779,31 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     return results;
   }
 
-  setTableDescription(table: string, description: string, schema?: string): Promise<string> {
+  setTableDescription(_table: string, _description: string, _schema?: string): Promise<string> {
     throw new Error("Method not implemented.");
   }
 
-  setElementNameSql(elementName: string, newElementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<string> {
+  setElementNameSql(_elementName: string, _newElementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<string> {
     throw new Error("Method not implemented.");
   }
 
-  dropElement(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<void> {
+  dropElement(_elementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
     throw new Error("Method not implemented.");
   }
 
-  truncateElementSql(elementName: string, typeOfElement: DatabaseElement, schema?: string): Promise<string> {
+  truncateElementSql(_elementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<string> {
     throw new Error("Method not implemented.");
   }
 
-  truncateAllTables(schema?: string): Promise<void> {
+  truncateAllTables(_schema?: string): Promise<void> {
     throw new Error("Method not implemented.");
   }
 
-  duplicateTable(tableName: string, duplicateTableName: string, schema?: string): Promise<void> {
+  duplicateTable(_tableName: string, _duplicateTableName: string, _schema?: string): Promise<void> {
     throw new Error("Method not implemented.");
   }
 
-  duplicateTableSql(tableName: string, duplicateTableName: string, schema?: string): Promise<string> {
+  duplicateTableSql(_tableName: string, _duplicateTableName: string, _schema?: string): Promise<string> {
     throw new Error("Method not implemented.");
   }
 

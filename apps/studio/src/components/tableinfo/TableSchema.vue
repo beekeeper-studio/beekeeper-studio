@@ -20,24 +20,18 @@
         </div>
 
         <div class="table-subheader">
-          <div class="table-title">
-            <h2>Columns</h2>
-          </div>
-          <slot />
-          <span class="expand" />
-          <div class="actions">
-            <a
-              @click.prevent="refreshColumns"
-              v-tooltip="`${ctrlOrCmd('r')} or F5`"
-              class="btn btn-link btn-fab"
-            ><i class="material-icons">refresh</i></a>
-            <a
-              v-if="editable"
-              v-tooltip="ctrlOrCmd('n')"
-              @click.prevent="addRow"
-              class="btn btn-primary btn-fab"
-            ><i class="material-icons">add</i></a>
-          </div>
+          <table-info-toolbar
+            :search-suffix="structureFilterSuffix"
+            filter-placeholder="Filter columns"
+            :show-add="editable"
+            add-label="Column"
+            @search="setStructureFilterQuery"
+            @add="addRow"
+            @copy="copyStructure"
+            @refresh="refreshColumns"
+          >
+            <slot />
+          </table-info-toolbar>
         </div>
         <div ref="tableSchema" />
         <!-- Tabulator can be slow to open especially for some really large column counts. Let the user know. -->
@@ -134,9 +128,12 @@ import { AppEvent } from '@/common/AppEvent'
 import StatusBar from '../common/StatusBar.vue'
 import { AlterTableSpec, FormatterDialect } from '@shared/lib/dialects/models'
 import ErrorAlert from '../common/ErrorAlert.vue'
+import TableInfoToolbar from './TableInfoToolbar.vue'
 import rawLog from '@bksLogger'
 import { escapeHtml } from '@shared/lib/tabulator'
 import { ExtendedTableColumn } from '@/lib/db/models'
+import { StructureCopyMixin } from '@/mixins/structureCopy'
+import { StructureFilterMixin } from '@/mixins/structureFilter'
 
 const log = rawLog.scope('table-schema')
 
@@ -152,9 +149,10 @@ const FakeCell = {
 export default Vue.extend({
   components: {
     StatusBar,
-    ErrorAlert
+    ErrorAlert,
+    TableInfoToolbar
   },
-  mixins: [DataMutators],
+  mixins: [DataMutators, StructureCopyMixin, StructureFilterMixin],
   props: ["table", "tabID", "active", "primaryKeys", "tabState"],
   data() {
     return {
@@ -183,6 +181,7 @@ export default Vue.extend({
     ...mapGetters(['dialect', 'dialectData']),
     ...mapState(['database', 'connection', 'usedConfig']),
     hotkeys() {
+      if (!this.active) return {}
       return this.$vHotkeyKeymap({
         'general.refresh': this.refreshColumns,
         'general.addRow': this.addRow,
@@ -268,7 +267,7 @@ export default Vue.extend({
           headerTooltip: "Be sure to 'quote' string values.",
           cellEdited: this.cellEdited,
           formatter: this.cellFormatter,
-          editable: this.isCellEditable.bind(this, 'alterColumn'),
+          editable: this.isCellEditable.bind(this, ['alterColumn', 'alterDefault']),
           cssClass: this.customColumnCssClass('alterColumn'),
           minWidth: 90,
         },
@@ -334,22 +333,23 @@ export default Vue.extend({
     isEditable(feature: string): boolean {
       return this.editable && !this.disabledFeatures?.alter?.[feature]
     },
-    isCellEditable(feature: string, cell: CellComponent): boolean {
+    isCellEditable(feature: string | string[], cell: CellComponent): boolean {
       // views and materialized views are not editable
 
+      const features = _.isArray(feature) ? feature : [feature];
       if (!this.editable) return false
       if (this.removedRows.includes(cell.getRow())) return false
       const row = cell.getRow()
       const columnName = row.getData()['columnName']
       const column: ExtendedTableColumn | undefined = this.table.columns.find((c) => c.columnName === columnName)
 
-      if (feature === 'alterColumn' && column?.generated)  {
+      if (features.includes('alterColumn') && column?.generated)  {
         return false
       }
 
       const isNewRow = this.newRows.includes(cell.getRow())
 
-      return isNewRow || this.isEditable(feature)
+      return isNewRow || features.every((f) => this.isEditable(f))
     },
     async refreshColumns() {
       if(this.hasEdits) {
@@ -450,6 +450,7 @@ export default Vue.extend({
       if (this.usedConfig.readOnlyMode) return;
       if (this.disabledFeatures?.alter?.addColumn) {
         this.$noty.info(`Adding columns is not supported by ${this.dialect}`)
+        return;
       }
       const data = this.tabulator.getData()
       const name = `column_${data.length + 1}`
@@ -557,4 +558,3 @@ export default Vue.extend({
   },
 })
 </script>
-

@@ -24,12 +24,14 @@
         class="results no-results"
         v-if="!results.length && searchTerm"
       >
+        <x-progressbar v-if="searching" />
         <li>No Results</li>
       </ul>
       <ul
         class="results"
         v-if="!results.length && !searchTerm && historyResults.length"
       >
+        <x-progressbar v-if="searching" />
         <li
           class="result-item"
           v-for="(blob, idx) in historyResults"
@@ -56,7 +58,7 @@
           <i
             class="material-icons item-icon plugin"
             v-else-if="blob.tabType.startsWith('plugin-')"
-          >{{ $bksPlugin.pluginOf(blob.generatedPluginId)?.manifest.icon }}</i>
+          >{{ snapshotsById[blob.generatedPluginId]?.manifest.icon || 'code' }}</i>
           <i
             class="material-icons item-icon database"
             v-else
@@ -140,7 +142,7 @@
 <script lang="ts">
 import _ from 'lodash'
 import Vue from 'vue'
-import { mapGetters, mapState } from 'vuex'
+import { mapActions, mapGetters, mapState } from 'vuex'
 import { AppEvent } from '@/common/AppEvent'
 import TableIcon from '@/components/common/TableIcon.vue'
 import { escapeHtml } from '@shared/lib/tabulator'
@@ -177,7 +179,7 @@ export default Vue.extend({
       }
 
     },
-    searchTerm() {
+    searchTermAndDatabase() {
       if (this.searchTerm) {
         this.results = searchItems(this.database, this.searchTerm, 20)
 
@@ -187,13 +189,20 @@ export default Vue.extend({
         this.selectedItem = 0
       }
     },
-
+    searchTerm() {
+      this.search(this.searchTerm)
+    },
   },
   computed: {
     ...mapState(['usedConfig']),
     ...mapGetters({ database: 'search/database', isUltimate: 'isUltimate' }),
     ...mapState(['tables']),
+    ...mapState('search', ['searching']),
     ...mapState('tabs', { 'tabs': 'tabs' }),
+    ...mapGetters("plugins/snapshots", ['snapshotsById']),
+    searchTermAndDatabase() {
+      return [this.searchTerm ,this.database];
+    },
     elements() {
       if (this.$refs.menu) {
         return Array.from(this.$refs.menu.getElementsByTagName("*"))
@@ -215,6 +224,9 @@ export default Vue.extend({
     }
   },
   methods: {
+    ...mapActions({
+      search: _.debounce((dispatch, term) => dispatch('search/search', term), 300),
+    }),
     async getTabHistory() {
       const results = await Vue.prototype.$util.send('appdb/tabhistory/get', { workspaceId: this.usedConfig.workspaceId, connectionId: this.usedConfig.id });
       this.historyResults = results
@@ -346,3 +358,16 @@ export default Vue.extend({
   }
 })
 </script>
+
+<style scoped lang="scss">
+.results {
+  position: relative;
+
+  x-progressbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+  }
+}
+</style>

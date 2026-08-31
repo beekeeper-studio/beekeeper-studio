@@ -1,5 +1,5 @@
-import { BeeCursor } from "@/lib/db/models";
-import oracle from 'oracledb'
+import { BeeCursor, TableColumn } from "@/lib/db/models";
+import oracle, { Metadata } from 'oracledb'
 import rawLog from '@bksLogger'
 import { waitFor } from "@/lib/db/clients/base/wait";
 
@@ -13,6 +13,7 @@ export class OracleCursor extends BeeCursor {
   private bufferReady = false
   private end = false
   private error?: Error
+  private fields: Metadata<any>[];
 
   constructor(
     private pool: oracle.Pool,
@@ -22,6 +23,14 @@ export class OracleCursor extends BeeCursor {
     ) {
       super(chunkSize)
 
+  }
+
+  get columns(): TableColumn[] | null {
+    if (!this.fields) return null;
+    return this.fields.map((f) => ({
+      columnName: f.name,
+      dataType: f.dbTypeName
+    }))
   }
 
   async start(): Promise<void> {
@@ -58,7 +67,7 @@ export class OracleCursor extends BeeCursor {
   }
 
   private handleMetadata(data: any) {
-    console.log('handling metadata', data)
+    this.fields = data;
   }
 
   private async handleEnd() {

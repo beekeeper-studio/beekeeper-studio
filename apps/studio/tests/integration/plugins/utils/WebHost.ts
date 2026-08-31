@@ -1,13 +1,17 @@
 import WebPluginManager from "@/services/plugin/web/WebPluginManager";
 import PluginStoreService from "@/services/plugin/web/PluginStoreService";
-import { Store } from "vuex";
+import Vue from "vue";
+import Vuex, { Store } from "vuex";
 import { State as RootState } from "@/store";
+import { PluginsModule } from "@/store/modules/plugins";
 import { TableOrView } from "@/lib/db/models";
 import { WebPlugin } from "./WebPlugin";
-import type { Manifest } from "@/services/plugin";
+import type { PluginSnapshot } from "@/services/plugin";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { getDialectData } from "@shared/lib/dialects";
 import { dialectFor } from "@shared/lib/dialects/models";
+
+Vue.use(Vuex);
 
 /**
  * Represents the host application in plugin tests.
@@ -18,13 +22,7 @@ export class WebHost {
   private mockStore: Store<RootState>;
   private pluginStoreService: PluginStoreService;
   private initialized = false;
-  private plugins = new Map<
-    string,
-    {
-      manifest: Manifest;
-      loadable: boolean;
-    }
-  >();
+  private plugins = new Map<string, PluginSnapshot>();
 
   private mockUtilityConnection = {
     send: jest.fn().mockImplementation((event: string, data?: any) => {
@@ -33,6 +31,9 @@ export class WebHost {
       }
       if (event === "plugin/plugins") {
         return Promise.resolve(Array.from(this.plugins.values()));
+      }
+      if (event === "plugin/entries") {
+        return Promise.resolve({ official: [], community: [] });
       }
       return Promise.resolve();
     }),
@@ -57,8 +58,11 @@ export class WebHost {
     const defaultSchema = options?.defaultSchema || "public";
     const connectionType = options?.connectionType || "postgresql";
 
-    // Create mock store with tables
-    this.mockStore = {
+    // Set up Vue.prototype.$util so PluginsModule actions can call $util.send
+    Vue.prototype.$util = this.mockUtilityConnection;
+
+    // Create a real Vuex store with the PluginsModule
+    this.mockStore = new Vuex.Store({
       state: {
         tables,
         usedConfig: {
@@ -73,15 +77,20 @@ export class WebHost {
         workspaceId: null,
       } as any,
       getters: {
-        "settings/themeType": "dark",
-        "tabs/sortedTabs": [],
-        dialect: dialectFor(connectionType),
-        dialectData: getDialectData(dialectFor(connectionType)),
+        "settings/themeType": () => "dark",
+        "tabs/sortedTabs": () => [],
+        dialect: () => dialectFor(connectionType),
+        dialectData: () => getDialectData(dialectFor(connectionType)),
       },
-      commit: jest.fn(),
-      dispatch: jest.fn(),
-      subscribe: jest.fn(),
-    } as any as Store<RootState>;
+      modules: {
+        plugins: PluginsModule,
+        tabs: {
+          mutations: {
+            addTabTypeConfig() {},
+          },
+        },
+      },
+    }) as unknown as Store<RootState>;
 
     // Create plugin store service
     this.pluginStoreService = new PluginStoreService(
@@ -106,6 +115,8 @@ export class WebHost {
     this.plugins.set(plugin.manifest.id, {
       manifest: plugin.manifest,
       loadable: true,
+      origin: "unlisted",
+      disableState: { disabled: false },
     });
 
     // Initialize the manager
@@ -131,6 +142,6 @@ export class WebHost {
   }
 
   getLoadedPlugins() {
-    return this.manager.getEnabledPlugins();
+    return this.manager.pluginStore.getSnapshots().map((s) => s.manifest);
   }
 }

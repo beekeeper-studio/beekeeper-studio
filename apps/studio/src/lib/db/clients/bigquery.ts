@@ -10,7 +10,7 @@ import { BigQueryClient as BigQueryKnexClient } from '@shared/lib/knex-bigquery'
 import { BigQueryChangeBuilder } from "@shared/lib/sql/change_builder/BigQueryChangeBuilder";
 import platformInfo from "@/common/platform_info";
 import rawLog from '@bksLogger';
-import { applyChangesSql, buildDeleteQueries, buildInsertQuery, buildSelectQueriesFromUpdates, buildSelectTopQuery, buildUpdateQueries, escapeString } from './utils';
+import { buildDeleteQueries, buildInsertQuery, buildSelectQueriesFromUpdates, buildSelectTopQuery, buildUpdateQueries, escapeString } from './utils';
 import { createCancelablePromise } from '@/common/utils';
 import { errors } from '@/lib/errors';
 import { BigQueryCursor } from './bigquery/BigQueryCursor';
@@ -25,7 +25,7 @@ interface BigQueryResult {
   rows: any[],
   rowCount: number
   arrayMode: boolean
-  columns: bq.SchemaField[]
+  columns: any[]
 }
 
 const bigqueryContext = {
@@ -35,6 +35,28 @@ const bigqueryContext = {
   logQuery(_query: string, _options: QueryLogOptions, _context: ExecutionContext): Promise<number | string> {
     return null;
   }
+}
+
+export function parseRowData(data: Record<string, any>[]): Record<string, any>[] {
+  // BigQuery can return nested objects with custom types in the results
+  // look for the value string property.
+  // https://github.com/googleapis/nodejs-bigquery/blob/71dbed2140893677f7af254f5a7713a7f50bae92/src/bigquery.ts#L2191
+  return data.map((row) => {
+    const parsedRow: Record<string, any> = {}
+    Object.keys(row).forEach((key) => {
+      let strValue = row[key]
+      if (strValue !== null && typeof strValue === 'object') {
+        if ('value' in strValue) {
+          strValue = row[key].value
+          // This is for numerics which are returned as a 'BIG'
+        } else if ('toFixed' in strValue) {
+          strValue = row[key].toFixed()
+        }
+      }
+      parsedRow[key] = strValue
+    })
+    return parsedRow
+  })
 }
 
 export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
@@ -484,12 +506,8 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
 
   async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
     const theCursor = new BigQueryCursor(this.client, query, [], chunkSize);
-    const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
-    log.debug('results', theCursor);
 
     return {
-      totalRows,
-      columns,
       cursor: theCursor
     };
   }
@@ -619,7 +637,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   private parseRowQueryResult(data) {
     // Fallback in case the identifier could not reconize the command
     const isSelect = Array.isArray(data)
-    const rows = this.parseRowData(data) || []
+    const rows = parseRowData(data) || []
     const fields = Object.keys(rows[0] || {}).map((name) => ({ name, id: name }))
     log.debug("parseRowQueryResult data length: ", data.length)
 
@@ -632,22 +650,6 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     }
   }
 
-  private parseRowData(data) {
-    // BigQuery can return nested objects with custom types in the results
-    // look for the value string property.
-    // https://github.com/googleapis/nodejs-bigquery/blob/71dbed2140893677f7af254f5a7713a7f50bae92/src/bigquery.ts#L2191
-    return data.map((row) => {
-      const parsedRow = {}
-      Object.keys(row).forEach((key) => {
-        let strValue = row[key]
-        if (strValue != null && (Object.prototype.hasOwnProperty.call(strValue, 'value'))) {
-          strValue = row[key].value
-        }
-        parsedRow[key] = strValue
-      })
-      return parsedRow
-    })
-  }
 
   private async insertRows(inserts: TableInsert[]) {
     for (const insert of inserts) {

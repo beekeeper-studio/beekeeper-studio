@@ -6,9 +6,10 @@ import {TokenCache} from '@/common/appdb/models/token_cache';
 import globals from '@/common/globals';
 import {AzureAuthOptions, AzureAuthType} from '../types';
 import {spawn} from 'child_process'
-import {getEntraOptions, sanitizeCommandPath} from "@/lib/db/clients/utils";
+import {getEntraOptions} from "@/lib/db/clients/utils";
 import {IDbConnectionServer} from "@/lib/db/backendTypes";
 import BksConfig from '@/common/bksConfig';
+import platformInfo from "@/common/platform_info";
 
 const log = rawLog.scope('auth/azure');
 
@@ -178,23 +179,34 @@ export class AzureAuthService {
     }
 
     return new Promise<AuthConfig>((resolve, reject) => {
-      const proc = spawn(sanitizeCommandPath(options.cliPath), [
+      const commandArgs = [
         'account',
         'get-access-token',
         '--resource',
         BksConfig.azure.azSQLLoginScope,
         '--output',
         'json'
-      ], { shell: true });
+      ];
+
+      if (platformInfo.isWindows && /["\r\n]/.test(options.cliPath)) {
+        throw new Error('Invalid azure CLI Path');
+      }
+
+      // spawn doesn't launch .cmd files, they need a shell, so we manually spawn
+      // cmd to all .cmd files to be run on windows, but not allow for escaping into
+      // the shell :)
+      const proc = platformInfo.isWindows
+        ? spawn('cmd.exe', ['/d', '/s', '/c', `""${options.cliPath}" ${commandArgs.join(' ')}"`], { shell: false, windowsVerbatimArguments: true })
+        : spawn(options.cliPath, commandArgs, { shell: false });
 
       let stdout = '';
       let stderr = '';
 
-      proc.stdout.on('data', (chunk) => {
+      proc.stdout?.on('data', (chunk) => {
         stdout += chunk.toString();
       });
 
-      proc.stderr.on('data', (chunk) => {
+      proc.stderr?.on('data', (chunk) => {
         stderr += chunk.toString();
       });
 
@@ -232,11 +244,11 @@ export class AzureAuthService {
     const res = await axios.post(globals.azureCloudTokenUrl) as Response;
 
     const beekeeperCloudToken = res.data?.cloud_token;
-    const authCodeUrlParams = {
+    const authCodeUrlParams: msal.AuthorizationUrlRequest = {
       scopes: globals.azureCloudScopes,
       redirectUri: beekeeperCloudToken.fulfillment_url,
       state: beekeeperCloudToken.id,
-      prompt: 'consent'
+      prompt: BksConfig.azure.ssoPrompt
     };
     const authUrl = await this.pca.getAuthCodeUrl(authCodeUrlParams);
 

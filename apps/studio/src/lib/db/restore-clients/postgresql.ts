@@ -170,13 +170,13 @@ export class PostgresRestoreClient extends BaseCommandClient {
       });
     }
 
-    if (this._config.customArgs && this._config.customArgs != '') {
-      command.options.push(this._config.customArgs);
+    if (this._config.customArgs && this._config.customArgs.trim() != '') {
+      command.options.push(...BaseCommandClient.parseArgs(this._config.customArgs));
     }
 
     command.options.push(`--dbname=${BaseCommandClient.databaseName}`)
 
-    command.options.push(`${this._config.inputPath}`);
+    command.options.push(this.inputFilePath);
 
     return command;
   }

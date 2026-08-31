@@ -1,5 +1,5 @@
 import { Entity, Column, Index, BeforeInsert, BeforeUpdate } from 'typeorm'
-import { MaxLength } from 'class-validator';
+import { IsInt, MaxLength, Min } from 'class-validator';
 import { ApplicationEntity  } from './application_entity'
 
 @Entity({ name: 'used_query'})
@@ -27,11 +27,13 @@ export class UsedQuery extends ApplicationEntity {
   status = 'pending'
 
   @Column({ type:'bigint', nullable: true})
-  numberOfRecords?: BigInt
+  numberOfRecords?: bigint
 
   @Column({ type: 'integer', nullable: false, default: -1 })
   workspaceId = -1
 
+  @IsInt({ message: 'connectionId must be a saved connection id' })
+  @Min(1, { message: 'connectionId must be a saved connection id' })
   @Column({ type: "integer", nullable: false, default: -1 })
   connectionId = -1
 

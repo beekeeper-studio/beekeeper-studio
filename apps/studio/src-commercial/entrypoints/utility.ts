@@ -16,6 +16,7 @@ import { QueryHandlers } from '@/handlers/queryHandlers';
 import { TabHistoryHandlers } from '@/handlers/tabHistoryHandlers'
 import { ExportHandlers } from '@commercial/backend/handlers/exportHandlers';
 import { BackupHandlers } from '@commercial/backend/handlers/backupHandlers';
+import { CliHandlers } from '@commercial/backend/handlers/cliHandlers';
 import { AwsHandlers } from '@commercial/backend/handlers/awsHandlers';
 import { ImportHandlers } from '@commercial/backend/handlers/importHandlers';
 import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
@@ -24,13 +25,22 @@ import { DevHandlers } from '@/handlers/devHandlers';
 import { FormatterPresetHandlers } from '@/handlers/formatterPresetHandlers';
 import { LicenseHandlers } from '@/handlers/licenseHandlers';
 import { LockHandlers } from '@/handlers/lockHandlers';
-import { PluginHandlers } from '@/handlers/pluginHandlers';
+import { PluginHandlers } from '@commercial/backend/handlers/pluginHandlers';
 import { PluginManager } from '@/services/plugin';
 import PluginFileManager from '@/services/plugin/PluginFileManager';
+import { DriverDepHandlers } from '@/handlers/driverDepHandlers';
+import { DriverDepManager, DriverDepFileManager, createDefaultRegistry } from '@/services/driverDeps';
+import type { DepPlatform, DepArch } from '@/services/driverDeps';
+import BksConfig from '@/common/bksConfig';
 import _ from 'lodash';
-import { BundledPluginModule } from '@commercial/backend/plugin-system/modules/BundledPluginModule';
+import {
+  ConfigurationModule,
+  BundledPluginModule,
+} from '@commercial/backend/plugin-system/modules';
+import { PluginErrorCode, PluginSystemErrorCode } from '@/lib/errors';
 
 import * as sms from 'source-map-support'
+import { WorkspaceHandlers } from '@/handlers/workspaceHandlers';
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -43,13 +53,28 @@ const pluginManager = new PluginManager({
     pluginsDirectory: platformInfo.pluginsDirectory,
   }),
 });
+pluginManager.registerModule(ConfigurationModule.with({ config: BksConfig }));
 pluginManager.registerModule(BundledPluginModule);
+
+const driverDepManager = new DriverDepManager({
+  fileManager: new DriverDepFileManager({
+    driverDepsDirectory: platformInfo.driverDepsDirectory,
+    userAgent: BksConfig.general.downloadUserAgent,
+  }),
+  registry: createDefaultRegistry(),
+  platform: platformInfo.platform as DepPlatform,
+  arch: (process.arch === 'x64' ? 'x64' : 'arm64') as DepArch,
+});
 
 interface Reply {
   id: string,
   type: 'reply' | 'error',
   data?: any,
   error?: string
+  errorName?: "PluginSystemError" | "PluginError" | "Error"
+  errorCode?: PluginSystemErrorCode | PluginErrorCode
+  errorDetail?: string
+  errorHint?: string
   stack?: string
 }
 
@@ -61,15 +86,18 @@ export const handlers: Handlers = {
   ...ImportHandlers,
   ...AppDbHandlers,
   ...BackupHandlers,
+  ...CliHandlers,
   ...AwsHandlers,
   ...FileHandlers,
   ...EnumHandlers,
   ...TempHandlers,
   ...LicenseHandlers,
   ...PluginHandlers(pluginManager),
+  ...DriverDepHandlers(driverDepManager),
   ...TabHistoryHandlers,
   ...LockHandlers,
   ...FormatterPresetHandlers,
+  ...WorkspaceHandlers,
   ...(platformInfo.isDevelopment && DevHandlers),
 };
 
@@ -110,7 +138,7 @@ process.parentPort.on('message', async ({ data, ports }) => {
     case 'close':
       log.info('REMOVING STATE FOR: ', sId);
       state(sId).port.close();
-      removeState(sId);
+      await removeState(sId);
       break;
     default:
       log.error('UNRECOGNIZED MESSAGE TYPE RECEIVED FROM MAIN PROCESS');
@@ -133,13 +161,22 @@ async function runHandler(id: string, name: string, args: any) {
         replyArgs.type = 'error';
         replyArgs.stack = e?.stack;
         replyArgs.error = e?.message ?? e;
+        replyArgs.errorName = e?.name;
+        replyArgs.errorCode = e?.code;
+        replyArgs.errorDetail = e?.detail
+        replyArgs.errorHint = e?.hint
         log.error("HANDLER: ERROR", e)
       })
       .finally(() => {
         try {
           state(args.sId).port.postMessage(replyArgs);
         } catch (e) {
-          log.error('ERROR SENDING MESSAGE: ', replyArgs, '\n\n\n ERROR: ', e)
+          log.error('ERROR SENDING MESSAGE: ', replyArgs, '\n\n\n ERROR: ', e?.message ?? e)
+          replyArgs.type = 'error';
+          replyArgs.stack = e?.stack;
+          replyArgs.error = e?.message ?? 'Error sending message from utility process, this may be a bug. Please file an issue if this persists.'
+          delete replyArgs.data
+          state(args.sId).port.postMessage(replyArgs)
         }
       });
   } else {
@@ -173,6 +210,10 @@ async function init() {
 
   pluginManager.initialize().catch((e) => {
     log.error("Error initializing plugin manager", e);
+  });
+
+  driverDepManager.initialize().catch((e) => {
+    log.error("Error initializing driver dep manager", e);
   });
 
   process.parentPort.postMessage({ type: 'ready' });

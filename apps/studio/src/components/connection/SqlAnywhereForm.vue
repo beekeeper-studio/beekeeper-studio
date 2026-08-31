@@ -2,18 +2,22 @@
   <div class="with-connection-type">
     <div class="form-group col">
       <label for="connectionMethod">Connection Method</label>
-      <select name="connectionMethod" id="" v-model="config.sqlAnywhereOptions.mode">
-        <option value="server">Server</option>
-        <option value="file">File</option>
+      <select name="connectionMethod" id="" v-model="config.sqlAnywhereOptions.mode" :disabled="disabled">
+        <option value="server">
+          Server
+        </option>
+        <option value="file">
+          File
+        </option>
       </select>
     </div>
-    <common-server-inputs :supportComplexSSL="false" :config="config" v-show="isServer">
+    <common-server-inputs :support-complex-s-s-l="false" :config="config" v-show="isServer" :disabled="disabled">
       <div class="form-group expand">
         <label for="serverName">Server Name</label>
         <masked-input
           :value="config.sqlAnywhereOptions.serverName"
-          :privacyMode="privacyMode"
           @input="val => config.sqlAnywhereOptions.serverName = val"
+          :disabled="disabled"
         />
       </div>
     </common-server-inputs>
@@ -23,34 +27,26 @@
           <label for="user">User</label>
           <masked-input
             :value="config.username"
-            :privacyMode="privacyMode"
             @input="val => config.username = val"
+            :disabled="disabled"
           />
         </div>
         <div class="col s6 form-group">
           <label for="password">Password</label>
-          <input
-            :type="togglePasswordInputType"
-            v-model="config.password"
-            class="password form-control"
-          >
-          <i
-            @click.prevent="togglePassword"
-            class="material-icons password-icon"
-          >{{ togglePasswordIcon }}</i>
+          <password-input v-model="config.password" :disabled="disabled" />
         </div>
       </div>
       <div class="form-group expand">
         <label for="serverName">Server Name</label>
         <masked-input
           :value="config.sqlAnywhereOptions.serverName"
-          :privacyMode="privacyMode"
           @input="val => config.sqlAnywhereOptions.serverName = val"
+          :disabled="disabled"
         />
       </div>
       <div class="form-group expand">
         <label for="databaseName">Database Name</label>
-        <input type="text" class="form-control" v-model="config.defaultDatabase">
+        <input type="text" class="form-control" v-model="config.defaultDatabase" :disabled="disabled">
       </div>
       <div class="form-group col">
         <div class="form-group">
@@ -59,6 +55,7 @@
             v-model="config.sqlAnywhereOptions.databaseFile"
             input-id="filepath"
             editable
+            :disabled="disabled"
           />
         </div>
       </div>
@@ -70,32 +67,21 @@
 import CommonServerInputs from './CommonServerInputs.vue'
 import FilePicker from "@/components/common/form/FilePicker.vue"
 import MaskedInput from '@/components/MaskedInput.vue'
-import { mapState } from 'vuex'
+import PasswordInput from '@/components/common/form/PasswordInput.vue'
 
 export default {
-  components: { CommonServerInputs, FilePicker, MaskedInput },
-  props: ['config'],
-  data() {
-    return {
-      showPassword: false
+  components: { CommonServerInputs, FilePicker, MaskedInput, PasswordInput },
+  props: {
+    config: Object,
+    disabled: {
+      type: Boolean,
+      default: false
     }
   },
   computed: {
-    ...mapState('settings', ['privacyMode']),
     isServer() {
       return this.config.sqlAnywhereOptions.mode === 'server';
     },
-    togglePasswordIcon() {
-      return this.showPassword ? "visibility_off" : "visibility"
-    },
-    togglePasswordInputType() {
-      return this.showPassword ? "text" : "password"
-    }
-  },
-  methods: {
-    togglePassword() {
-      this.showPassword = !this.showPassword
-    }
   }
 }
 </script>

@@ -12,7 +12,7 @@ import {
   InternalContextItem,
   divider,
 } from "../context-menu";
-import { format } from "sql-formatter";
+import { format, formatDialect } from "sql-formatter";
 import ProxyEmit from "../mixins/ProxyEmit";
 import Vue from "vue";
 import { TextEditorMenuContext } from "../text-editor";
@@ -39,7 +39,7 @@ export default Vue.extend({
       this.applyCompletionSource();
     },
     entities() {
-      if (!this.textEditor) return;
+      if (!this.textEditor || this.disableSchemaCompletion) return;
       this.applyCompletionSource();
     },
     formatterConfig() {
@@ -52,12 +52,22 @@ export default Vue.extend({
       return new SqlTextEditor({
         identiferDialect: this.identifierDialect,
         paramTypes: this.paramTypes,
+        keywordCasing: this.keywordCasing,
+        quoteIdentifiers: this.quoteIdentifiers,
+        quoteCharacter: this.quoteCharacter,
+        disableKeywordCompletion: this.disableKeywordCompletion,
+        disableSchemaCompletion: this.disableSchemaCompletion,
         onQuerySelectionChange: (params) => {
           this.selectedQuery = params.selectedQuery.text;
           this.$emit("bks-query-selection-change", params)
         },
         columnsGetter: (entity: Entity) => {
-          return this.columnsGetter?.(entity.name) || [];
+          // Pass the schema-qualified name when schema is known, so consumers
+          // can disambiguate between e.g. "public.users" and "other.users".
+          const tableName = "schema" in entity && entity.schema
+            ? `${entity.schema}.${entity.name}`
+            : entity.name;
+          return this.columnsGetter?.(tableName) || [];
         },
       });
     },
@@ -70,11 +80,7 @@ export default Vue.extend({
         entities: this.entities,
       });
     },
-    contextMenuItemsModifier(
-      _event,
-      items: InternalContextItem<unknown>[],
-      context: TextEditorMenuContext
-    ): ReturnType<ContextMenuExtension<SqlTextEditorMenuContext>> {
+    addFormatItemsToContextMenu(items: InternalContextItem<unknown>[]) {
       const formatItem: InternalContextItem<unknown> = {
         label: `Format Query`,
         id: "text-format",
@@ -84,7 +90,6 @@ export default Vue.extend({
 
       if (this.allowPresets && this.presets?.length > 0) {
         const currentFormatterId = this.formatterConfig?.id;
-
         formatItem.items = [
           {
             label: "Format with current config",
@@ -100,13 +105,24 @@ export default Vue.extend({
           }))
         ];
       }
-      
-      const modifiedItems = [
+
+      return [
         ...items,
+        divider,
         formatItem
       ];
+    },
+    contextMenuItemsModifier(
+      _event,
+      items: InternalContextItem<unknown>[],
+      context: TextEditorMenuContext
+    ): ReturnType<ContextMenuExtension<SqlTextEditorMenuContext>> {
+      if (!this.readOnly) {
+        items = this.addFormatItemsToContextMenu(items);
+      }
+
       return {
-        items: modifiedItems,
+        items,
         context: {
           ...context,
           selectedQuery: this.selectedQuery,
@@ -119,10 +135,24 @@ export default Vue.extend({
     formatSql() {
       if(this.value == null || this.value.trim() === '') return
 
-      const formatted = format(this.value, {
-        language: this.formatterDialect,
-        ...this.formatterConfig
-      });
+      let formatted: string;
+      try {
+        if (this.formatterDialectOptions) {
+          formatted = formatDialect(this.value, {
+            dialect: this.formatterDialectOptions,
+            ...this.formatterConfig
+          });
+        } else {
+          formatted = format(this.value, {
+            language: this.formatterDialect,
+            ...this.formatterConfig
+          });
+        }
+      } catch (_e) {
+        // Fall back silently — a parse error in the formatter shouldn't
+        // clobber what the user typed.
+        formatted = this.value;
+      }
       this.$emit("bks-value-change", { value: formatted });
     },
   },

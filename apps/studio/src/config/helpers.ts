@@ -53,10 +53,17 @@ function processRawConfig(config: Record<string, unknown>): Record<string, unkno
     // this sanitizes the defaults before we set them for all other dbs (ie [ '' ] => [])
     populateDefaults(config, `db.default_parsed`, 'db.default')
     config.db = { ...dbObj, default: (config.db as Record<string, unknown>).default_parsed, default_parsed: undefined };
+    delete (config.db as any).default_parsed
     for (const d of DatabaseTypes) {
       const section = d === "postgresql" ? "postgres" : d;
       populateDefaults(config, `db.${section}`, "db.default")
     }
+  }
+
+  const allowedPlugins = config.pluginSystem?.allow;
+  if (allowedPlugins) {
+    // Filter out any empty strings
+    config.pluginSystem.allow = allowedPlugins.filter(Boolean);
   }
 
   return config;

@@ -1,5 +1,6 @@
 <template>
   <div class="interface connection-interface">
+    <privacy-banner class="privacyBanner" :privacy-mode="privacyMode" />
     <div class="interface-wrap row">
       <sidebar class="connection-sidebar" ref="sidebar" v-show="sidebarShown">
         <connection-sidebar
@@ -17,14 +18,20 @@
             <content-placeholder-heading />
           </div>
           <div class="card-flat padding" :class="determineLabelColor" v-else>
-            <div class="flex flex-between">
-              <h3 class="card-title" v-if="!pageTitle">
-                New Connection
-              </h3>
-              <h3 class="card-title" v-if="pageTitle">
+            <div class="connection-heading">
+              <h3 class="card-title">
                 {{ pageTitle }}
               </h3>
-              <ImportButton :config="config">
+              <button
+                v-if="isCloud && !isNewConnection && !isPersonal"
+                type="button"
+                class="btn btn-link btn-icon btn-small share-btn"
+                @click="share"
+              >
+                <i class="material-icons">share</i>
+                Share
+              </button>
+              <ImportButton :config="config" :disabled="editingDisabled">
                 Import from URL
               </ImportButton>
             </div>
@@ -37,6 +44,7 @@
                   class="form-control custom-select"
                   v-model="config.connectionType"
                   id="connection-select"
+                  :disabled="editingDisabled"
                 >
                   <option disabled hidden value="null">
                     Select a connection type...
@@ -49,105 +57,141 @@
                   </option>
                 </select>
               </div>
-              <div v-if="config.connectionType">
+              <div v-if="config.connectionType && !shouldUpsell">
                 <!-- INDIVIDUAL DB CONFIGS -->
-                <upsell-content v-if="shouldUpsell" />
                 <postgres-form
-                  v-else-if="config.connectionType === 'cockroachdb'"
+                  v-if="config.connectionType === 'cockroachdb'"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <mysql-form
-                  v-else-if="['mysql', 'mariadb', 'tidb'].includes(config.connectionType)"
+                  v-else-if="['mysql', 'mariadb', 'tidb', 'starrocks'].includes(config.connectionType)"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
+                />
+                <bedrock-form
+                  v-else-if="config.connectionType === 'bedrock'"
+                  :config="config"
+                  :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <postgres-form
                   v-else-if="['postgresql', 'greengage'].includes(config.connectionType)"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <redshift-form
                   v-else-if="config.connectionType === 'redshift'"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <sqlite-form
                   v-else-if="config.connectionType === 'sqlite'"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <sql-server-form
                   v-else-if="config.connectionType === 'sqlserver'"
                   :config="config"
                   :testing="testing"
-                  @error="connectionError = $event" />
+                  :disabled="editingDisabled"
+                  @error="connectionError = $event"
+                />
                 <big-query-form
                   v-else-if="config.connectionType === 'bigquery'"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <firebird-form
                   v-else-if="config.connectionType === 'firebird' && isUltimate"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <oracle-form
                   v-if="config.connectionType === 'oracle' && isUltimate"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <cassandra-form
-                  v-if="config.connectionType === 'cassandra' && isUltimate"
+                  v-if="['cassandra', 'scylladb'].includes(config.connectionType) && isUltimate"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <click-house-form
                   v-else-if="config.connectionType === 'clickhouse' && isUltimate"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <trino-form
                   v-else-if="config.connectionType === 'trino' && isUltimate"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <lib-sql-form
                   v-else-if="config.connectionType === 'libsql' && isUltimate"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <mongo-db-form
                   v-else-if="config.connectionType === 'mongodb' && isUltimate"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <duck-db-form
-                  v-else-if="config.connectionType === 'duckdb'"
+                  v-else-if="config.connectionType === 'duckdb' && isUltimate"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <sql-anywhere-form
                   v-else-if="config.connectionType === 'sqlanywhere' && isUltimate"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <surreal-db-form
                   v-else-if="config.connectionType === 'surrealdb' && isUltimate"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
                 />
                 <redis-form
                   v-else-if="config.connectionType === 'redis'"
                   :config="config"
                   :testing="testing"
+                  :disabled="editingDisabled"
+                />
+                <dynamo-db-form
+                  v-else-if="config.connectionType === 'dynamodb' && isUltimate"
+                  :config="config"
+                  :testing="testing"
+                  :disabled="editingDisabled"
+                />
+                <snowflake-form
+                  v-else-if="config.connectionType === 'snowflake' && isUltimate"
+                  :config="config"
+                  :testing="testing"
+                  :disabled="editingDisabled"
                 />
 
                 <!-- Set the database up in read only mode (or not, your choice) -->
                 <div class="form-group" v-if="!shouldUpsell">
                   <label class="checkbox-group" for="readOnlyMode">
                     <input
-                      :disabled="!isUltimate"
+                      :disabled="!isUltimate || editingDisabled"
                       class="form-control"
                       id="readOnlyMode"
                       type="checkbox"
@@ -198,11 +242,18 @@
                   :folders="connectionFolders"
                   :is-ultimate="isUltimate"
                   :is-cloud="isCloud"
+                  :disabled="editingDisabled"
                   @save="save"
                 />
               </div>
             </form>
           </div>
+          <upgrade-panel
+            v-if="shouldUpsell"
+            :feature-name="friendlyConnectionType"
+            standalone
+            class="connection-upgrade-panel"
+          />
           <template v-if="!config.connectionType">
             <div class="pitch" v-if="!isUltimate">
               🌟 <strong>Upgrade</strong> to access the JSON sidebar, AI shell, robust import/export and much more!
@@ -232,6 +283,7 @@
 <script lang="ts">
 import ConnectionSidebar from './sidebar/ConnectionSidebar.vue'
 import MysqlForm from './connection/MysqlForm.vue'
+import BedrockForm from './connection/BedrockForm.vue'
 import PostgresForm from './connection/PostgresForm.vue'
 import RedshiftForm from './connection/RedshiftForm.vue'
 import Sidebar from './common/Sidebar.vue'
@@ -250,6 +302,8 @@ import SqlAnywhereForm from './connection/SqlAnywhereForm.vue'
 import TrinoForm from './connection/TrinoForm.vue'
 import SurrealDbForm from './connection/SurrealDBForm.vue'
 import RedisForm from './connection/RedisForm.vue'
+import DynamoDbForm from './connection/DynamoDBForm.vue'
+import SnowflakeForm from './connection/SnowflakeForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
 import LoadingSSOModal from '@/components/common/modals/LoadingSSOModal.vue'
@@ -258,22 +312,23 @@ import ErrorAlert from './common/ErrorAlert.vue'
 import rawLog from '@bksLogger'
 import { mapGetters, mapState } from 'vuex'
 import { dialectFor } from '@shared/lib/dialects/models'
+import { escapeHtml } from '@shared/lib/tabulator'
 import { findClient } from '@/lib/db/clients'
 import { AzureAuthType } from '@/lib/db/types'
-import UpsellContent from '@/components/upsell/UpsellContent.vue'
+import UpgradePanel from '@/components/upsell/UpgradePanel.vue'
 import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
 import { isUltimateType } from '@/common/interfaces/IConnection'
 import { SmartLocalStorage } from '@/common/LocalStorage'
 import ContentPlaceholderHeading from '@/components/common/loading/ContentPlaceholderHeading.vue'
 import { FriendlyErrorHelper } from '@/frontend/utils/FriendlyErrorHelper'
+import PrivacyBanner from './PrivacyBanner.vue'
 
 const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpsellContent, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm,
-    ContentPlaceholderHeading, SurrealDbForm
+  components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpgradePanel, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm, DynamoDbForm, ContentPlaceholderHeading, SurrealDbForm, PrivacyBanner, SnowflakeForm
   },
 
   data() {
@@ -295,15 +350,21 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapState(['workspaceId', 'connection']),
+    ...mapState(['workspaceId', 'connection', 'sshConfigWarnings']),
     ...mapState(['username']),
     ...mapState('data/connections', { 'connections': 'items' }),
     ...mapState('data/connectionFolders', { connectionFolders: 'items' }),
     ...mapGetters(['isUltimate', 'isCloud']),
     ...mapGetters('licenses', ['isTrial', 'trialLicense']),
     ...mapGetters({
-      'usedConfigs': 'data/usedconnections/orderedUsedConfigs',
+      privacyMode: 'settings/privacyMode'
     }),
+    editingDisabled() {
+      if (!this.isCloud) {
+        return false;
+      }
+      return !this.config.canWrite;
+    },
     communityConnectionTypes() {
       return this.$config.defaults.connectionTypes.filter((ct) => !isUltimateType(ct.value))
     },
@@ -320,8 +381,11 @@ export default Vue.extend({
       if (this.isUltimate) return false
       return isUltimateType(this.config.connectionType)
     },
+    isNewConnection() {
+      return _.isNil(this.config) || _.isNil(this.config.id);
+    },
     pageTitle() {
-      if (_.isNull(this.config) || _.isUndefined(this.config.id)) {
+      if (this.isNewConnection) {
         return "New Connection"
       } else {
         return this.config.name
@@ -333,6 +397,12 @@ export default Vue.extend({
     determineLabelColor() {
       return this.config.labelColor == "default" ? '' : `connection-label-color-${this.config.labelColor}`
     },
+    folder() {
+      return this.connectionFolders.find((f) => f.id === this.config.connectionFolderId);
+    },
+    isPersonal() {
+      return this.folder?.personal;
+    },
     rootBindings() {
       return [
         { event: AppEvent.dropzoneDrop, handler: this.maybeLoadSqlite },
@@ -340,6 +410,9 @@ export default Vue.extend({
     },
   },
   watch: {
+    sshConfigWarnings(warnings) {
+      this.notifySshConfigWarnings(warnings)
+    },
     workspaceId() {
       this.$util.send('appdb/saved/new').then((conn) => {
         this.config = conn;
@@ -423,6 +496,16 @@ export default Vue.extend({
     this.unregisterHandlers(this.rootBindings)
   },
   methods: {
+    // Surface non-fatal ~/.ssh/config issues (untrusted/invalid config, missing
+    // IdentityFile) as a single formatted warning toast.
+    notifySshConfigWarnings(warnings) {
+      if (!warnings || warnings.length === 0) return
+      const escaped = warnings.map((w) => escapeHtml(w))
+      const body = escaped.length === 1
+        ? `<strong>SSH config</strong><br>${escaped[0]}`
+        : `<strong>SSH config warnings</strong><ul class="noty-warning-list">${escaped.map((w) => `<li>${w}</li>`).join('')}</ul>`
+      this.$noty.warning(body, { timeout: 8000, allowRawHtml: true })
+    },
     async maybeLoadSqlite({ files }) {
       // cast to an array
       if (!files || !files.length) return
@@ -443,16 +526,35 @@ export default Vue.extend({
         this.config = conn;
       })
     },
-    edit(config) {
-      this.config = _.clone(config)
+    /*
+      The CoreInterface should ONLY ever receive a `SavedConnection`, not a `UsedConnection`.
+      Why? It loads tabs/pins/history based on the `id`, so if we give it the wrong model
+      then it loads content from another connection. That's bad.
+
+      The goal of this method is to take a `UsedConnection` and generate a blank `SavedConnection` (no ID), so CoreInterface gets the right thing.
+    */
+    async configFrom(config) {
+      // Hacky way to determine we have a `SavedConnection` already.
+      // The form edits a copy, never the sidebar's own object.
+      if (_.isUndefined(config.connectionId)) return _.clone(config)
+
+      const init = _.omit(config, ['id', 'connectionId', 'createdAt', 'updatedAt', 'version'])
+      const unsaved = await this.$util.send('appdb/saved/new', { init })
+      unsaved.id = null
+      return unsaved
+    },
+    async edit(config) {
+      this.config = await this.configFrom(config)
       this.errors = null
       this.connectionError = null
     },
     async remove(config) {
-      if (this.config === config) {
-        this.$util.send('appdb/saved/new').then((conn) => {
-          this.config = conn;
-        })
+      if (!await this.$confirm(`Delete "${config.name}"?`, undefined, { variant: "danger" })) {
+        return
+      }
+      // the form holds a copy of the connection, never the row itself
+      if (this.config?.id === config.id && this.config?.workspaceId === config.workspaceId) {
+        this.config = await this.$util.send('appdb/saved/new');
       }
       if (config.azureAuthOptions?.authId) {
         await this.$util.send('appdb/cache/remove', { authId: config.azureAuthOptions.authId });
@@ -484,15 +586,6 @@ export default Vue.extend({
       this.connectionError = null
       try {
         this.connecting = true
-        // If this is an existing used connection that doesn't have an associated saved connection
-        // we need to see if changes have been made to the config
-        if (this.config.connectionId === null && this.config.id) {
-          const oldConfig = this.usedConfigs.find((c) => c.id === this.config.id);
-          if (!_.isEqual(this.config, oldConfig)) {
-            this.config.id = null;
-          }
-        }
-
         const { auth, cancelled } = await this.$bks.unlock();
         if (cancelled) return;
         await this.$store.dispatch('connect', { config: this.config, auth })
@@ -507,7 +600,7 @@ export default Vue.extend({
       }
     },
     async handleConnect(config) {
-      this.config = config
+      this.config = await this.configFrom(config)
       await this.submit()
     },
     async testConnection() {
@@ -520,7 +613,8 @@ export default Vue.extend({
       try {
         this.testing = true
         this.connectionError = null
-        await this.$store.dispatch('test', this.config)
+        const connected = await this.$store.dispatch('test', this.config)
+        if (!connected) return false
         this.$noty.success("Connection looks good!")
         return true
       } catch (ex) {
@@ -545,12 +639,6 @@ export default Vue.extend({
         }
 
         const id = await this.$store.dispatch('data/connections/save', this.config)
-
-        // This feels wrong but it works. It's undefined on savedConnections
-        if (this.config.connectionId === null) {
-          this.config.connectionId = id;
-          await this.$store.dispatch('data/usedconnections/save', this.config);
-        }
 
         this.$noty.success("Connection Saved")
         // we want to fetch the saved one in case it's changed
@@ -587,8 +675,27 @@ export default Vue.extend({
     loadingSSOCanceled() {
       this.connection.azureCancelAuth();
     },
+    share() {
+      this.trigger(AppEvent.openShareModal, {
+        id: this.config.id,
+        module: "data/connections",
+      });
+    },
   },
 })
 </script>
 
-<style></style>
+<style scoped>
+.connection-heading {
+  display: flex;
+
+  h3 {
+    flex-grow: 1;
+  }
+
+  .share-btn,
+  &::v-deep .import-button {
+    flex-shrink: 0;
+  }
+}
+</style>

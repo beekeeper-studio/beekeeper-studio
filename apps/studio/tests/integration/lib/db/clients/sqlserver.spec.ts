@@ -1,7 +1,7 @@
 import { GenericContainer, Wait } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests, runReadOnlyTests } from './all'
-import { IDbConnectionServerConfig } from '@/lib/db/types'
+import { DatabaseElement, IDbConnectionServerConfig } from '@/lib/db/types'
 import fs from 'fs';
 import path from 'path';
 
@@ -143,6 +143,81 @@ function testWith(dockerTag: string, readonly: boolean) {
       })
     })
 
+    describe("Typed BEGIN TRAN (manual-commit query-tab flow)", () => {
+      const tabId = 901
+
+      beforeEach(async () => {
+        await util.knex.schema.dropTableIfExists("typed_begin_tran")
+        await util.knex.schema.createTable("typed_begin_tran", (table) => {
+          table.integer("id").primary().notNullable()
+          table.specificType("name", "varchar(255)")
+        })
+      })
+
+      afterEach(async () => {
+        await util.connection.releaseConnection(tabId)
+        await util.knex.schema.dropTableIfExists("typed_begin_tran")
+      })
+
+      it("should run a typed BEGIN TRAN on a freshly reserved connection, then commit", async () => {
+        if (readonly) return
+
+        await util.connection.reserveConnection(tabId)
+
+        // The user's own BEGIN TRAN, exactly as the query tab submits it
+        const begin = await util.connection.query("BEGIN TRAN", tabId)
+        await begin.execute()
+
+        const insert = await util.connection.query(
+          "INSERT INTO [dbo].[typed_begin_tran] (id, name) VALUES (1, 'typed begin tran')",
+          tabId
+        )
+        await insert.execute()
+
+        // From outside the transaction (another tab / no reservation) the
+        // uncommitted row must not be visible
+        const outsideBefore = await util.connection.query("SELECT * FROM [dbo].[typed_begin_tran]")
+        const beforeCommit = await outsideBefore.execute()
+        expect(beforeCommit[0].rows.length).toBe(0)
+
+        // The Commit button
+        await util.connection.commitTransaction(tabId)
+
+        const outsideAfter = await util.connection.query("SELECT * FROM [dbo].[typed_begin_tran]")
+        const afterCommit = await outsideAfter.execute()
+        expect(afterCommit[0].rows.length).toBe(1)
+      })
+
+      it("should run a typed BEGIN TRAN and discard the work via the Rollback button", async () => {
+        if (readonly) return
+
+        await util.connection.reserveConnection(tabId)
+
+        const begin = await util.connection.query("BEGIN TRAN", tabId)
+        await begin.execute()
+
+        const insert = await util.connection.query(
+          "INSERT INTO [dbo].[typed_begin_tran] (id, name) VALUES (2, 'rolled back')",
+          tabId
+        )
+        await insert.execute()
+
+        // The Rollback button
+        await util.connection.rollbackTransaction(tabId)
+
+        const outside = await util.connection.query("SELECT * FROM [dbo].[typed_begin_tran]")
+        const results = await outside.execute()
+        expect(results[0].rows.length).toBe(0)
+      })
+    })
+
+    describe("queryStream double execution", () => {
+      it("should run the supplied query only once across the full stream lifecycle", async () => {
+        if (util.connection.readOnlyMode) return
+        await util.queryStreamDoubleExecutionTest()
+      })
+    })
+
     it("Can select top from table with square brackets in name", async () => {
       const top = await util.connection.selectTop("my[socks]", 0, 1, [{dir: 'ASC', field: 'id'}], [])
       expect(top.result.length).toBe(1)
@@ -271,6 +346,188 @@ function testWith(dockerTag: string, readonly: boolean) {
       expect(secondResult).toStrictEqual({
         id: 2,
         bitcol: true
+      })
+    })
+
+    // Regression test for #3722 -> dotted table names fail in sp_helptrigger /
+    // sp_spaceused / sp_rename because the schema+table were concatenated as a
+    // single quoted string, so SQL Server split on the first dot.
+    describe("Dotted table names (#3722)", () => {
+      const dottedTable = 'Common.Companies'
+
+      beforeAll(async () => {
+        // util.knex is a direct knex connection; it is not affected by
+        // Beekeeper's readOnlyMode gate, so we can set up fixtures even when
+        // the Beekeeper client is in read-only mode.
+        await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.[${dottedTable}]`)
+        await util.knex.schema.raw(
+          `CREATE TABLE dbo.[${dottedTable}](id int, company_name varchar(255), fingerprint varchar(32))`
+        )
+        await util.knex.schema.raw(
+          `INSERT INTO dbo.[${dottedTable}](id, company_name, fingerprint) VALUES (1, 'acme', 'dotted-3722')`
+        )
+      })
+
+      afterAll(async () => {
+        try {
+          await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.[${dottedTable}]`)
+        } catch (e) {
+          // ignore
+        }
+      })
+
+      it("listTableColumns returns this table's columns (not a mis-split object)", async () => {
+        const columns = await util.connection.listTableColumns(dottedTable, 'dbo')
+        const names = columns.map((c) => c.columnName).sort()
+        expect(names).toEqual(['company_name', 'fingerprint', 'id'])
+      })
+
+      it("selectTop returns this table's row for a dotted name", async () => {
+        const top = await util.connection.selectTop(
+          dottedTable, 0, 10, [{ dir: 'ASC', field: 'id' }], [], 'dbo'
+        )
+        expect(top.result.length).toBe(1)
+        const row = top.result[0]
+        expect(row.company_name || row.COMPANY_NAME).toBe('acme')
+        expect(row.fingerprint || row.FINGERPRINT).toBe('dotted-3722')
+      })
+
+      it("listTableTriggers succeeds for a table name containing a dot", async () => {
+        const triggers = await util.connection.listTableTriggers(dottedTable, 'dbo')
+        expect(Array.isArray(triggers)).toBe(true)
+      })
+
+      it("getTableProperties succeeds for a table name containing a dot", async () => {
+        const props = await util.connection.getTableProperties(dottedTable, 'dbo')
+        expect(props).toBeDefined()
+      })
+
+      it("setElementName renames a table whose name contains a dot", async () => {
+        if (readonly) return;
+
+        const source = 'Common.ToRename'
+        const renamed = 'Common.Renamed'
+        await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.[${source}]`)
+        await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.[${renamed}]`)
+        await util.knex.schema.raw(
+          `CREATE TABLE dbo.[${source}](id int, marker_col varchar(16))`
+        )
+        await util.knex.schema.raw(
+          `INSERT INTO dbo.[${source}](id, marker_col) VALUES (42, 'rename-3722')`
+        )
+
+        try {
+          await util.connection.setElementName(
+            source, renamed, DatabaseElement.TABLE, 'dbo'
+          )
+
+          const names = (await util.connection.listTables()).map((t) => t.name)
+          expect(names).toContain(renamed)
+          expect(names).not.toContain(source)
+
+          // Columns and data must survive the rename -> proves sp_rename
+          // actually targeted the dotted source table.
+          const columns = await util.connection.listTableColumns(renamed, 'dbo')
+          const columnNames = columns.map((c) => c.columnName).sort()
+          expect(columnNames).toEqual(['id', 'marker_col'])
+
+          const top = await util.connection.selectTop(
+            renamed, 0, 10, [{ dir: 'ASC', field: 'id' }], [], 'dbo'
+          )
+          expect(top.result.length).toBe(1)
+          const row = top.result[0]
+          expect(row.marker_col || row.MARKER_COL).toBe('rename-3722')
+        } finally {
+          await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.[${source}]`)
+          await util.knex.schema.raw(`DROP TABLE IF EXISTS dbo.[${renamed}]`)
+        }
+      })
+    })
+
+    // Regression test -> create scripts clashed between objects with the same
+    // name in different schemas.
+    describe("Same-named objects across schemas", () => {
+      beforeAll(async () => {
+        await util.knex.schema.raw(`CREATE SCHEMA sales_clash`)
+        await util.knex.schema.raw(`CREATE SCHEMA hr_clash`)
+
+        await util.knex.schema.raw(
+          `CREATE TABLE sales_clash.records(id int, sale_amount int)`
+        )
+        await util.knex.schema.raw(
+          `CREATE TABLE hr_clash.records(id int, employee_name varchar(255))`
+        )
+
+        await util.knex.schema.raw(
+          `CREATE VIEW sales_clash.summary AS SELECT sale_amount FROM sales_clash.records`
+        )
+        await util.knex.schema.raw(
+          `CREATE VIEW hr_clash.summary AS SELECT employee_name FROM hr_clash.records`
+        )
+
+        await util.knex.schema.raw(
+          `CREATE PROCEDURE sales_clash.refresh_proc AS SELECT 'sales_clash_marker' AS marker`
+        )
+        await util.knex.schema.raw(
+          `CREATE PROCEDURE hr_clash.refresh_proc AS SELECT 'hr_clash_marker' AS marker`
+        )
+      })
+
+      afterAll(async () => {
+        try {
+          await util.knex.schema.raw(`DROP PROCEDURE sales_clash.refresh_proc`)
+          await util.knex.schema.raw(`DROP PROCEDURE hr_clash.refresh_proc`)
+          await util.knex.schema.raw(`DROP VIEW sales_clash.summary`)
+          await util.knex.schema.raw(`DROP VIEW hr_clash.summary`)
+          await util.knex.schema.raw(`DROP TABLE sales_clash.records`)
+          await util.knex.schema.raw(`DROP TABLE hr_clash.records`)
+          await util.knex.schema.raw(`DROP SCHEMA sales_clash`)
+          await util.knex.schema.raw(`DROP SCHEMA hr_clash`)
+        } catch (e) {
+          console.warn('Failed to clean up cross-schema clash objects:', e)
+        }
+      })
+
+      it("getTableCreateScript resolves the table in the requested schema", async () => {
+        const salesScript = await util.connection.getTableCreateScript('records', 'sales_clash')
+        expect(salesScript).toContain('sale_amount')
+        expect(salesScript).toContain('sales_clash')
+        expect(salesScript).not.toContain('employee_name')
+
+        const hrScript = await util.connection.getTableCreateScript('records', 'hr_clash')
+        expect(hrScript).toContain('employee_name')
+        expect(hrScript).toContain('hr_clash')
+        expect(hrScript).not.toContain('sale_amount')
+      })
+
+      it("getViewCreateScript resolves the view in the requested schema", async () => {
+        const salesDef = (await util.connection.getViewCreateScript('summary', 'sales_clash')).join('\n')
+        expect(salesDef).toContain('sale_amount')
+        expect(salesDef).not.toContain('employee_name')
+
+        const hrDef = (await util.connection.getViewCreateScript('summary', 'hr_clash')).join('\n')
+        expect(hrDef).toContain('employee_name')
+        expect(hrDef).not.toContain('sale_amount')
+      })
+
+      it("getRoutineCreateScript resolves the routine in the requested schema", async () => {
+        const salesDef = (await util.connection.getRoutineCreateScript('refresh_proc', 'PROCEDURE', 'sales_clash')).join('\n')
+        expect(salesDef).toContain('sales_clash_marker')
+        expect(salesDef).not.toContain('hr_clash_marker')
+
+        const hrDef = (await util.connection.getRoutineCreateScript('refresh_proc', 'PROCEDURE', 'hr_clash')).join('\n')
+        expect(hrDef).toContain('hr_clash_marker')
+        expect(hrDef).not.toContain('sales_clash_marker')
+      })
+
+      it("getQuerySelectTop qualifies the table with its schema", async () => {
+        const salesQuery = await util.connection.getQuerySelectTop('records', 10, 'sales_clash')
+        expect(salesQuery).toContain('sales_clash')
+        expect(salesQuery).toContain('records')
+
+        const hrQuery = await util.connection.getQuerySelectTop('records', 10, 'hr_clash')
+        expect(hrQuery).toContain('hr_clash')
+        expect(hrQuery).toContain('records')
       })
     })
 

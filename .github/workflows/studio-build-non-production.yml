@@ -25,32 +25,33 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-14, ubuntu-22.04, windows-2022, ubuntu-arm64]
+        os: [macos-14, ubuntu-22.04, windows-2022, ubuntu-22.04-arm]
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v5
 
       - name: Install Snapcraft
-        uses: samuelmeuli/action-snapcraft@v2
-        if: "contains(matrix.os, 'ubuntu') && !contains(matrix.os, 'arm')"
+        uses: samuelmeuli/action-snapcraft@v3
+        if: "contains(matrix.os, 'ubuntu')"
 
       - name: Install python 3.11 (not Mac)
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: 3.11
         if: "!startsWith(matrix.os, 'macos')"
 
 
       - name: Install flatpak tools
-        if: "contains(matrix.os, 'ubuntu') && !contains(matrix.os, 'arm')"
+        if: "contains(matrix.os, 'ubuntu')"
         run: |
-          sudo apt install -y flatpak flatpak-builder rpm
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder rpm
           flatpak --user remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
       - name: Install fpm
         run: sudo gem install fpm -v 1.17.0
-        if: "contains(matrix.os, 'ubuntu') && !contains(matrix.os, 'arm')"
+        if: "contains(matrix.os, 'ubuntu')"
 
       - name: Install python 3.11 (mac)
         if: "startsWith(matrix.os, 'macos')"
@@ -84,20 +85,27 @@ jobs:
           fi
 
       - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
 
+      # ImageOS identifies the runner image (e.g. ubuntu22, win22, macos14), so
+      # caches never cross runner image versions: node_modules holds native
+      # modules compiled for one exact image.
+      - name: Compute runner image cache id
+        shell: bash
+        run: echo "RUNNER_IMAGE_ID=${ImageOS:-unknown}" >> "$GITHUB_ENV"
+
       - name: Cache node_modules
         id: cache-nm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
             apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
 
       - name: Clean cache
         if: steps.cache-nm.outputs.cache-hit != 'true'
@@ -128,7 +136,7 @@ jobs:
           USE_SYSTEM_FPM: true
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.os }}
           path: |
@@ -147,10 +155,10 @@ jobs:
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v5
 
       - name: Download DEB artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: ubuntu-22.04
           path: ./deb-package

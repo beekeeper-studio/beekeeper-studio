@@ -20,7 +20,6 @@ export interface SearchResult extends IndexItem {
 const uf = new uFuzzy({
   intraMode: 0,
   intraIns: Infinity,
-  intraChars: ".",
 });
 
 export function searchItems(
@@ -58,8 +57,36 @@ export function searchItems(
   return results;
 }
 
-export const SearchModule: Module<never, RootState> = {
+interface State {
+  searching: boolean
+}
+
+export const SearchModule: Module<State, RootState> = {
   namespaced: true,
+  state: {
+    searching: false,
+  },
+  mutations: {
+    searching(state, searching: boolean) {
+      state.searching = searching;
+    },
+  },
+  actions: {
+    async search(context, q: string) {
+      if (!q) {
+        return;
+      }
+      context.commit('searching', true);
+      try {
+        await Promise.all([
+          context.dispatch('data/connections/search', q, { root: true }),
+          context.dispatch('data/queries/search', q, { root: true }),
+        ]);
+      } finally {
+        context.commit('searching', false);
+      }
+    },
+  },
   getters: {
     database(_state, _getters, root: RootState): IndexItem[] {
       const tables: IndexItem[] = root.tables.map((t) => {

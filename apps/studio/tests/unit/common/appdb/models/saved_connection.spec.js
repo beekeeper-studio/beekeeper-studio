@@ -27,6 +27,25 @@ describe("Saved Connection", () => {
 
   })
 
+  it("should reject a connection with an empty-string name via class-validator", async () => {
+    const { validate } = require('class-validator')
+    const conn = new SavedConnection()
+    conn.connectionType = 'sqlite'
+    conn.defaultDatabase = ':memory:'
+    conn.name = ""
+    const errors = await validate(conn)
+    expect(errors.some(e => e.property === 'name')).toBe(true)
+  })
+
+  it("should reject a connection with no name via class-validator", async () => {
+    const { validate } = require('class-validator')
+    const conn = new SavedConnection()
+    conn.connectionType = 'sqlite'
+    conn.defaultDatabase = ':memory:'
+    const errors = await validate(conn)
+    expect(errors.some(e => e.property === 'name')).toBe(true)
+  })
+
   const urls = [
     { t: 'sqlite', p: '/a/b/c/database.sqlite3'},
     { t: 'sqlite', p: '/a/b/c/database.sqlite'},
@@ -88,6 +107,32 @@ describe("Saved Connection", () => {
         host: "free.1.cockroachlabs.cloud",
         port: 26257,
         defaultDatabase: "defaultdb"
+      },
+      "postgresql://matthew:jwt-token@free.1.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full&options=--cluster%3Dbks-tester-12345%20--crdb%3Ajwt_auth_enabled%3Dtrue": {
+        connectionType: "cockroachdb",
+        username: "matthew",
+        password: "jwt-token",
+        host: "free.1.cockroachlabs.cloud",
+        port: 26257,
+        defaultDatabase: "defaultdb",
+        options: {
+          connectionMethod: "manual",
+          cluster: "bks-tester-12345",
+          jwtAuthEnabled: true
+        }
+      },
+      "postgresql://hector:jwt-token@crdb.example.test:26257/system?options=--crdb%3Ajwt_auth_enabled%3Dtrue": {
+        connectionType: "cockroachdb",
+        username: "hector",
+        password: "jwt-token",
+        host: "crdb.example.test",
+        port: 26257,
+        defaultDatabase: "system",
+        options: {
+          connectionMethod: "manual",
+          cluster: undefined,
+          jwtAuthEnabled: true
+        }
       },
       "postgresql://user:p+ssword@default.cluster.redshift.amazonaws.com:5439/database": {
         connectionType: "redshift",

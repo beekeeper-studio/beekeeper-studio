@@ -12,6 +12,15 @@ import { TextEditorBlurEvent, TextEditorFocusEvent, TextEditorInitializedEvent, 
 export default {
   props,
 
+  emits: [
+    "bks-value-change",
+    "bks-selection-change",
+    "bks-focus",
+    "bks-blur",
+    "bks-lsp-ready",
+    "bks-initialized",
+  ],
+
   data() {
     return {
       textEditor: null,
@@ -110,6 +119,10 @@ export default {
     },
     applyKeymap() {
       this.textEditor.setKeymap(this.keymap, this.vimOptions);
+      // Rebuilding the vim extension can drop dom focus.
+      if (this.isFocused) {
+        this.textEditor.focus();
+      }
     },
     applyLineWrapping() {
       this.textEditor.setLineWrapping(this.lineWrapping);
@@ -178,6 +191,7 @@ export default {
         markers: this.markers,
         lineGutters: this.lineGutters,
         foldGutters: this.foldGutters,
+        indentationMarkers: this.indentationMarkers,
         actionsKeymap: this.getActionsKeymap()
       });
 
@@ -196,12 +210,16 @@ export default {
             this.textEditor.execCommand("findAndReplace")
           }
         },
-        {
-          key: "Mod-r",
-          run: () => {
-            this.textEditor.execCommand("findAndReplace")
+        // Mod-r is vim's redo, and duplicates Mod-f above. Vim should win on
+        // precedence anyway, but claiming it risks silently breaking redo.
+        ...(this.keymap === "vim" ? [] : [
+          {
+            key: "Mod-r",
+            run: () => {
+              this.textEditor.execCommand("findAndReplace")
+            }
           }
-        },
+        ]),
         ...this.internalActionsKeymap
       ]
 
@@ -229,6 +247,7 @@ export default {
             shortcut: "Control+Shift+Z",
             write: true,
           },
+          divider,
           {
             label: "Cut",
             id: "text-cut",
@@ -270,6 +289,7 @@ export default {
             class: selectionDepClass,
             write: true,
           },
+          divider,
           {
             label: "Select All",
             id: "text-select-all",
@@ -278,9 +298,8 @@ export default {
             },
             shortcut: "Control+A",
           },
-          divider,
           {
-            label: "Find & Replace",
+            label: this.readOnly ? "Find" : "Find & Replace",
             id: "text-find",
             handler: () => {
               this.textEditor.execCommand("findAndReplace");
