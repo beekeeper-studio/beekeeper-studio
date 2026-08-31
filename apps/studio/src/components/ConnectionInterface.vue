@@ -17,6 +17,23 @@
           <div class="card-flat padding" v-if="!isConfigReady">
             <content-placeholder-heading />
           </div>
+          <div
+            v-else-if="!config.connectionType"
+            class="empty-state"
+          >
+            <h3>Welcome to Beekeeper Studio</h3>
+            <p>Start by adding new connection.</p>
+            <p>Or connection from a URL.</p>
+            <div class="actions">
+              <button class="btn btn-primary" @click="create">
+                <i class="material-icons">add</i>
+                New Connection
+              </button>
+              <ImportButton :config="config" variant="flat">
+                Import from URL
+              </ImportButton>
+            </div>
+          </div>
           <div class="card-flat padding" :class="determineLabelColor" v-else>
             <div class="connection-heading">
               <h3 class="card-title">
@@ -37,25 +54,16 @@
             </div>
             <error-alert :error="errors" title="Please fix the following errors" />
             <form @action="submit" v-if="config">
-              <div class="form-group">
-                <label for="connection-select">Connection Type</label>
-                <select
-                  name="connectionType"
-                  class="form-control custom-select"
-                  v-model="config.connectionType"
-                  id="connection-select"
-                  disabled
+              <div class="connection-type-wrapper">
+                <div class="label">Connection Type</div>
+                <button
+                  class="form-control connection-type-btn"
+                  type="button"
+                  @click="create"
                 >
-                  <option disabled hidden value="null">
-                    Select a connection type...
-                  </option>
-                  <option :key="`${t.value}-${t.name}`" v-for="t in communityConnectionTypes" :value="t.value">
-                    {{ t.name }}
-                  </option>
-                  <option :key="`${t.value}-${t.name}`" :value="t.value" v-for="t in ultimateConnectionTypes">
-                    {{ t.name }}
-                  </option>
-                </select>
+                  <database-icon :type="config.connectionType" />
+                  {{ friendlyConnectionType }}
+                </button>
               </div>
               <div v-if="config.connectionType && !shouldUpsell">
                 <!-- INDIVIDUAL DB CONFIGS -->
@@ -277,7 +285,6 @@
       </div>
     </div>
     <loading-sso-modal v-model="loadingSSOModalOpened" @cancel="loadingSSOCanceled" />
-    <new-connection-modal @select="createWithType" />
   </div>
 </template>
 
@@ -308,7 +315,6 @@ import SnowflakeForm from './connection/SnowflakeForm.vue'
 import Split from 'split.js'
 import ImportButton from './connection/ImportButton.vue'
 import LoadingSSOModal from '@/components/common/modals/LoadingSSOModal.vue'
-import NewConnectionModal from '@/components/common/modals/NewConnectionModal.vue'
 import _ from 'lodash'
 import ErrorAlert from './common/ErrorAlert.vue'
 import rawLog from '@bksLogger'
@@ -325,12 +331,14 @@ import { SmartLocalStorage } from '@/common/LocalStorage'
 import ContentPlaceholderHeading from '@/components/common/loading/ContentPlaceholderHeading.vue'
 import { FriendlyErrorHelper } from '@/frontend/utils/FriendlyErrorHelper'
 import PrivacyBanner from './PrivacyBanner.vue'
+import DatabaseIcon from "@/components/common/DatabaseIcon.vue"
 
 const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpgradePanel, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, NewConnectionModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm, DynamoDbForm, ContentPlaceholderHeading, SurrealDbForm, PrivacyBanner, SnowflakeForm
+  components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpgradePanel, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm, DynamoDbForm, ContentPlaceholderHeading, SurrealDbForm, PrivacyBanner, SnowflakeForm,
+    DatabaseIcon,
   },
 
   data() {
@@ -523,13 +531,12 @@ export default Vue.extend({
       }
 
     },
-    create() {
-      this.$modal.show('new-connection-modal')
-    },
-    createWithType(connectionType) {
-      this.$util.send('appdb/saved/new', { init: { connectionType } }).then((conn) => {
-        this.config = conn;
-      })
+    async create() {
+      const connectionType = await this.$promptConnectionType()
+      if (!connectionType) {
+        return
+      }
+      this.config = await this.$util.send('appdb/saved/new', { init: { connectionType } })
     },
     /*
       The CoreInterface should ONLY ever receive a `SavedConnection`, not a `UsedConnection`.
@@ -701,6 +708,53 @@ export default Vue.extend({
   .share-btn,
   &::v-deep .import-button {
     flex-shrink: 0;
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding-bottom: 1rem;
+
+  .actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+  }
+}
+
+.connection-type-wrapper {
+  font-size: var(--form-control-font-size);
+
+  .label {
+    padding-inline: 0.2rem;
+  }
+
+  .connection-type-btn {
+    position: relative;
+    margin-top: 0.2rem;
+    gap: 0.5rem;
+    width: 100%;
+    padding-right: 1.75rem;
+    justify-content: flex-start;
+    align-items: center;
+    background-color: transparent;
+
+    &::v-deep .database-icon {
+      line-height: 0;
+    }
+
+    /* The same triangle `select` draws */
+    &::after {
+      content: "";
+      position: absolute;
+      right: 0.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 4px solid currentColor;
+    }
   }
 }
 </style>

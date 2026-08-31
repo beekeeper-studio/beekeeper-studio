@@ -1,12 +1,12 @@
 <template>
   <base-modal
     :name="modalName"
-    class="new-connection-modal"
+    class="connection-type-picker-modal"
     height="32rem"
-    @before-open="reset"
     @submit="next"
+    @closed="cancel"
   >
-    <template #title>New Connection</template>
+    <template #title>Select Connection Type</template>
 
     <div class="toolbar">
       <div class="filter-wrap">
@@ -64,17 +64,24 @@
 import Vue from "vue";
 import BaseModal from "@/components/common/modals/BaseModal.vue";
 import DatabaseIcon from "@/components/common/DatabaseIcon.vue";
+import { AppEvent } from "@/common/AppEvent";
+import { ConnectionType } from "@/lib/db/types";
 
 export default Vue.extend({
   components: { BaseModal, DatabaseIcon },
   data() {
     return {
-      modalName: "new-connection-modal",
+      modalName: "connection-type-picker-modal",
+      onSelect: null as ((type: ConnectionType) => void) | null,
+      onCancel: null as (() => void) | null,
       filter: "",
       selectedType: null as string | null,
     };
   },
   computed: {
+    rootBindings() {
+      return [{ event: AppEvent.openConnectionTypePicker, handler: this.open }];
+    },
     filteredTypes() {
       const types = this.$config.defaults.connectionTypes;
       const filter = this.filter.trim().toLowerCase();
@@ -85,17 +92,35 @@ export default Vue.extend({
     },
   },
   methods: {
-    reset() {
+    open({ onSelect, onCancel }) {
       this.filter = "";
       this.selectedType = null;
+      this.onSelect = onSelect;
+      this.onCancel = onCancel;
+      this.$modal.show(this.modalName);
     },
     next() {
       if (!this.selectedType) {
         return;
       }
-      this.$emit("select", this.selectedType);
+      const onSelect = this.onSelect;
+      this.onSelect = null;
+      this.onCancel = null;
       this.$modal.hide(this.modalName);
+      onSelect?.(this.selectedType);
     },
+    cancel() {
+      const onCancel = this.onCancel;
+      this.onSelect = null;
+      this.onCancel = null;
+      onCancel?.();
+    },
+  },
+  mounted() {
+    this.registerHandlers(this.rootBindings);
+  },
+  beforeDestroy() {
+    this.unregisterHandlers(this.rootBindings);
   },
 });
 </script>

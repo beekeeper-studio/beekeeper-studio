@@ -36,6 +36,7 @@
     <keyboard-shortcuts-modal />
     <move-item-modal />
     <move-folder-modal />
+    <connection-type-picker-modal />
     <confirmation-modal-manager />
     <lock-manager />
     <input-ephemeral-modal name="input-ephemeral-modal" />
@@ -96,6 +97,7 @@ import InputEphemeralModal from "@/components/common/modals/InputEphemeralModal.
 import ShareModal from "@/components/common/modals/ShareModal.vue";
 import MoveItemModal from "@/components/common/modals/MoveItemModal.vue";
 import MoveFolderModal from "@/components/common/modals/MoveFolderModal.vue";
+import ConnectionTypePickerModal from "@/components/common/modals/ConnectionTypePickerModal.vue";
 
 import rawLog from '@bksLogger'
 import { assignContextMenuToAllInputs } from './mixins/assignContextMenuToAllInputs'
@@ -113,7 +115,7 @@ export default Vue.extend({
     LifetimeLicenseExpiredModal, CloudWorkspacesBlockedModal,
     WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
     PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
-    InputEphemeralModal, ShareModal, MoveItemModal, MoveFolderModal,
+    InputEphemeralModal, ShareModal, MoveItemModal, MoveFolderModal, ConnectionTypePickerModal,
   },
   data() {
     return {

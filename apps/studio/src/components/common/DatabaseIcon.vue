@@ -90,16 +90,13 @@ export default Vue.extend({
 <style lang="scss" scoped>
 svg,
 img,
-i {
+i.default-icon {
   width: 1em;
   height: 1em;
 }
 
-i.material-icons {
+i.default-icon {
   font-size: 1em;
-}
-
-.default-icon {
   color: hsl(from var(--theme-base) h s calc(l + 80));
 }
 </style>
