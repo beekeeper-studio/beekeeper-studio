@@ -65,16 +65,19 @@ export class SqliteBackupClient extends BaseCommandClient {
     return str.split('\n').map((s) => s.trim()).filter((s) => s != "" && !!s);
   }
   buildCommand(): Command {
+    // Each option is one argv entry passed straight to spawn (no shell).
+    // sqlite3 then parses its own dot-commands, so paths are quoted for
+    // sqlite — not for a shell.
     const command = new Command({
       isSql: false,
       mainCommand: this._config.dumpToolPath,
       options: [
         BaseCommandClient.databaseName,
-        `".output ${this.quotedOutputFilePath}"`,
-        `".trace stdout"`
+        `.output ${BaseCommandClient.sqliteQuote(this.outputFilePath)}`,
+        `.trace stdout`
       ]
     });
-    const dumpCommand: string[] = [`".dump`];
+    const dumpCommand: string[] = [`.dump`];
 
     if (this._config.dataOnly) {
       dumpCommand.push(`--data-only`);
@@ -97,8 +100,6 @@ export class SqliteBackupClient extends BaseCommandClient {
         dumpCommand.push(x);
       });
     }
-
-    dumpCommand.push('"');
 
     command.options.push(dumpCommand.join(' '));
 

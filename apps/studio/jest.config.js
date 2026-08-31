@@ -27,11 +27,14 @@ module.exports = {
     '^@libsql/core/(.*)': resolve(__dirname, '../../node_modules/@libsql/core/lib-cjs/$1'),
     '^@marimo-team/codemirror-languageserver$':
       '<rootDir>/tests/__mocks__/marimo-codemirror-languageserver.js',
+    '^@beekeeperstudio/ui-kit$':
+      '<rootDir>/tests/__mocks__/beekeeperstudio-ui-kit.js',
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@shared(.*)$': '<rootDir>/src/shared/$1',
     '^@commercial(.*)$': '<rootDir>/src-commercial/$1',
-    '^@bksLogger$': '<rootDir>/src/lib/log/bksLogger.ts',
+    '^@bksLogger$': '<rootDir>/src/lib/log/mainLogger.ts',
     '^@tests(.*)$': '<rootDir>/tests/$1',
+    '^@beekeeperstudio/ui-kit$': resolve(__dirname, '../ui-kit/lib/index.ts'),
   },
   // serializer for snapshots
   snapshotSerializers: [

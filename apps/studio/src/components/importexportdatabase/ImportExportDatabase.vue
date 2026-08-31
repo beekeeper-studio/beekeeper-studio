@@ -187,7 +187,7 @@
     methods: {
       ...mapMutations({ addExportToStore: 'exports/addExport' }),
       showFiles() {
-        this.$native.files.open(this.tableOptions.filePath)
+        this.$native.files.showItemInFolder(this.tableOptions.filePath)
       },
       async startExport() {
         // Hide any success modal that might be showing already

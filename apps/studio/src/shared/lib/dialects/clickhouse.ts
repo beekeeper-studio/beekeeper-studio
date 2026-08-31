@@ -113,5 +113,8 @@ export const ClickHouseData: DialectData = {
     initialSort: true,
     // TODO (azmi): in progress
     importFromFile: true,
+    export: {
+      stream: true
+    }
   },
 }

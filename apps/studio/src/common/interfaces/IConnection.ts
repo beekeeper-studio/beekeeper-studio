@@ -1,5 +1,7 @@
-import { AzureAuthOptions, BigQueryOptions, CassandraOptions, DynamoDBOptions, LibSQLOptions, RedshiftOptions, ConnectionType, SQLAnywhereOptions, IamAuthOptions, SurrealDBOptions } from "@/lib/db/types"
+import { AzureAuthOptions, BigQueryOptions, CassandraOptions, DynamoDBOptions, LibSQLOptions, RedshiftOptions, ConnectionType, SQLAnywhereOptions, IamAuthOptions, SurrealDBOptions, SnowflakeOptions, SqlServerOptions } from "@/lib/db/types"
 import { Transport } from "../transport"
+import { IShareable } from "./IShareable"
+import { IAccessGrant } from "./IAccessGrant"
 
 export type SshMode = null | 'agent' | 'userpass' | 'keyfile'
 
@@ -15,7 +17,8 @@ export function isUltimateType(s: ConnectionType) {
     'sqlanywhere',
     'trino',
     'surrealdb',
-    'dynamodb'
+    'dynamodb',
+    'snowflake'
   ]
   return types.includes(s)
 }
@@ -52,6 +55,8 @@ export interface ISimpleConnection extends Transport {
   readOnlyMode: boolean
   labelColor?: Nullable<string>
   trustServerCertificate?: boolean
+  windowsAuthEnabled?: boolean
+  sqlServerOptions?: SqlServerOptions
   serviceName: Nullable<string>
   options?: any
   redshiftOptions?: RedshiftOptions
@@ -64,6 +69,7 @@ export interface ISimpleConnection extends Transport {
   sqlAnywhereOptions?: SQLAnywhereOptions
   surrealDbOptions?: SurrealDBOptions
   dynamoDbOptions?: DynamoDBOptions
+  snowflakeOptions?: SnowflakeOptions
   connectionFolderId?: Nullable<number>
   position?: number
 }
@@ -79,7 +85,8 @@ export interface IConnection extends ISimpleConnection {
   sshBastionKeyfilePassword: Nullable<string>
 }
 
-export interface ICloudSavedConnection extends IConnection {
+export interface ICloudSavedConnection extends IConnection, IShareable {
   userSpecificCredentials: boolean
   userSpecificPaths: boolean
+  accessGrants?: IAccessGrant[]
 }

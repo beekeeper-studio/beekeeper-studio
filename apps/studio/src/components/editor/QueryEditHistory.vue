@@ -31,9 +31,15 @@
           <i class="material-icons">close</i>
         </button>
       </header>
+      <div v-if="pendingRemoteChanges" class="alert alert-warning">
+        <i class="material-icons">error_outline</i>
+        <div class="alert-body">
+          This query has been updated by someone else. Restore is unavailable until those changes are merged or discarded.
+        </div>
+      </div>
       <div class="audit-groups">
         <x-progressbar v-show="loadingList" />
-        <section v-if="dirty" class="audit-group">
+        <section v-if="hasUnsavedChanges" class="audit-group">
           <ul>
             <li class="item-wrapper">
               <button
@@ -53,7 +59,9 @@
           :key="group.heading"
           class="audit-group"
         >
-          <h3 class="group-heading">{{ group.heading }}</h3>
+          <h3 class="group-heading">
+            {{ group.heading }}
+          </h3>
           <ul>
             <li
               v-for="audit in group.items"
@@ -75,7 +83,21 @@
                   Current version
                 </span>
                 <time class="title" v-text="audit.time" />
-                <span class="editor-label">{{ audit.user }}</span>
+                <span
+                  v-if="isCloud && 'name' in audit.queryAudit.user"
+                  class="editor-label"
+                >
+                  {{ audit.queryAudit.user.name }}
+                </span>
+                <span
+                  v-if="
+                    audit.queryAudit.action === 'update' &&
+                    audit.queryAudit.title != null
+                  "
+                  class="changed-the-title-to"
+                >
+                  Changed the title to "{{ audit.queryAudit.title }}"
+                </span>
               </button>
             </li>
           </ul>
@@ -85,7 +107,7 @@
       <footer>
         <div>
           <label class="checkbox-group">
-            <input type="checkbox" v-model="showDiff" class="form-control" />
+            <input type="checkbox" v-model="showDiff" class="form-control">
             <span>Highlight changes</span>
           </label>
         </div>
@@ -94,12 +116,11 @@
             Close
           </button>
           <button
+            v-if="query?.canWrite"
             class="btn btn-primary"
             type="button"
             @click="confirmRestore"
-            :disabled="
-              isCurrentVersion() || restoring || selectedAuditId === 'unsaved' || loadingList
-            "
+            :disabled="!canRestore"
           >
             Restore this version
           </button>
@@ -111,7 +132,7 @@
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
-import { mapGetters, mapState } from "vuex";
+import { mapGetters, mapState, mapActions } from "vuex";
 import MergeTextEditor from "@beekeeperstudio/ui-kit/vue/merge-text-editor";
 import {
   IQueryAudit,
@@ -152,6 +173,10 @@ export default Vue.extend({
       type: String as PropType<string | null>,
       default: null,
     },
+    pendingRemoteChanges: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     return {
@@ -189,9 +214,15 @@ export default Vue.extend({
   },
   computed: {
     ...mapState(["connectionType", "tables"]),
-    ...mapGetters(["dialectData", "cloudClient", "workspaceEmail"]),
-    dirty(): boolean {
+    ...mapGetters(["dialectData", "isCloud"]),
+    ...mapState("data/queries", {
+      queries: "items"
+    }),
+    hasUnsavedChanges(): boolean {
       return this.unsavedText !== null;
+    },
+    query(): ISavedQuery {
+      return this.queries.find((q) => q.id === this.queryId);
     },
     currentText(): string {
       if (this.selectedAuditId === "unsaved") {
@@ -215,15 +246,39 @@ export default Vue.extend({
       const mode = this.dialectData?.textEditorMode;
       return mode === "text/x-redis" ? "redis" : mode;
     },
+    canRestore() {
+      if (
+        this.loadingList ||
+        this.restoring ||
+        !this.selectedAuditId ||
+        this.pendingRemoteChanges
+      ) {
+        return false;
+      }
+
+      if (this.hasUnsavedChanges && this.selectedAuditId !== "unsaved") {
+        return true;
+      }
+
+      if (
+        this.selectedAuditId === "unsaved" ||
+        this.selectedAuditId === this.queryAudits[0].id
+      ) {
+        return false;
+      }
+
+      return true;
+    },
     audits(): Audit[] {
-      // The top entry of the saved list is the "current version" only when
-      // the editor isn't dirty — when dirty, the synthetic unsaved row above
-      // the list takes that role.
       return this.queryAudits.map((queryAudit: IQueryAudit, i: number) => ({
         queryAudit,
-        time: this.formatTime(queryAudit.createdAt),
-        user: this.userLabel(queryAudit),
-        isCurrentVersion: !this.dirty && i === 0,
+        // createdAt is float seconds since epoch (from cloud API).
+        time: this.formatTime(
+          typeof queryAudit.createdAt === 'number'
+            ? new Date(queryAudit.createdAt * 1000)
+            : queryAudit.createdAt
+        ),
+        isCurrentVersion: !this.hasUnsavedChanges && i === 0,
       }));
     },
     groupedAudits(): AuditGroup[] {
@@ -234,7 +289,9 @@ export default Vue.extend({
       for (const audit of this.audits) {
         // createdAt is float seconds since epoch (cloud API convention).
         const heading = this.$bks.timeAgo(
-          new Date(audit.queryAudit.createdAt * 1000)
+          typeof audit.queryAudit.createdAt === 'number'
+            ? new Date(audit.queryAudit.createdAt * 1000)
+            : audit.queryAudit.createdAt
         );
         if (!current || current.heading !== heading) {
           current = { heading, items: [] };
@@ -264,6 +321,9 @@ export default Vue.extend({
     this.destroySplit();
   },
   methods: {
+    ...mapActions({
+      restore: "data/queryAudits/restore",
+    }),
     initSplit() {
       if (this.split) {
         return;
@@ -306,21 +366,7 @@ export default Vue.extend({
       this.error = null;
       this.showDiff = true;
     },
-    isCurrentVersion(audit?: IQueryAudit): boolean {
-      // When the editor is dirty, no saved audit reflects what's in the
-      // editor, so restoring any of them is a meaningful action.
-      if (this.dirty || this.queryAudits.length === 0) {
-        return false;
-      }
-      const target = audit ?? this.selectedAudit;
-      if (!target) {
-        return false;
-      }
-      return target.id === this.queryAudits[0].id;
-    },
-    formatTime(createdAt: number): string {
-      // createdAt is float seconds since epoch (cloud API convention).
-      const d = new Date(createdAt * 1000);
+    formatTime(d: Date): string {
       const month = d.toLocaleString("en-US", { month: "long" });
       const day = d.getDate();
       const time = d.toLocaleString("en-US", {
@@ -345,17 +391,16 @@ export default Vue.extend({
       this.loadingList = true;
       this.error = null;
       try {
-        const cli = this.cloudClient;
-        if (!cli) {
-          throw new Error("You are not logged in");
-        }
-        const queryAudits: IQueryAudit[] = await cli.queryAudits.list(queryId);
+        const queryAudits: IQueryAudit[] = await this.$store.dispatch(
+          "data/queryAudits/list",
+          { queryId }
+        );
         this.queryAudits = queryAudits;
         if (queryAudits.length === 0) {
           this.previousAudit = null;
           this.selectedAuditId = null;
           this.selectedAudit = null;
-        } else if (this.dirty) {
+        } else if (this.hasUnsavedChanges) {
           await this.selectAudit("unsaved");
         } else {
           await this.selectAudit(queryAudits[0].id);
@@ -378,10 +423,6 @@ export default Vue.extend({
       this.loadingPreview = true;
       this.error = null;
       try {
-        const cli = this.cloudClient;
-        if (!cli) {
-          throw new Error("You are not logged in");
-        }
         if (auditId === "unsaved") {
           // Show editor text vs the latest saved snapshot. Reuse the
           // already-fetched detail when possible.
@@ -389,7 +430,10 @@ export default Vue.extend({
           const previous = latest
             ? this.previousAudit?.id === latest.id
               ? this.previousAudit
-              : await cli.queryAudits.get(queryId, latest.id)
+              : await this.$store.dispatch("data/queryAudits/get", {
+                  queryId,
+                  auditId: latest.id,
+                })
             : null;
           if (this.selectedAuditId === auditId) {
             this.selectedAudit = null;
@@ -397,10 +441,16 @@ export default Vue.extend({
           }
           return;
         }
-        const detail = await cli.queryAudits.get(queryId, auditId);
+        const detail: IQueryAuditDetail = await this.$store.dispatch(
+          "data/queryAudits/get",
+          { queryId, auditId }
+        );
         const previous =
           detail.previousAuditId != null
-            ? await cli.queryAudits.get(queryId, detail.previousAuditId)
+            ? await this.$store.dispatch("data/queryAudits/get", {
+                queryId,
+                auditId: detail.previousAuditId,
+              })
             : null;
         // Guard against a stale response if the user clicked another row in flight.
         if (this.selectedAuditId === auditId) {
@@ -415,32 +465,31 @@ export default Vue.extend({
     },
     async confirmRestore(): Promise<void> {
       const queryId = this.queryId;
-      const auditId = this.selectedAuditId;
+      const auditId = this.selectedAudit.id;
       if (queryId == null || auditId == null) {
         return;
       }
       const confirmed = await this.$confirm(
         "Restore this version?",
-        "The current query text will be replaced with this revision. This will create a new entry in the edit history.",
+        "The current query text will be replaced with this version. This will create a new entry in the edit history.",
         { confirmLabel: "Restore" }
       );
       if (!confirmed) {
         return;
       }
+
       this.restoring = true;
       this.error = null;
+
+      const latestAudit = this.queryAudits[0];
+
       try {
-        const cli = this.cloudClient;
-        if (!cli) {
-          throw new Error("You are not logged in");
+        if (this.hasUnsavedChanges && this.selectedAuditId === latestAudit.id) {
+          this.$emit("discardUnsavedChanges");
+        } else {
+          await this.restore({ queryId, auditId });
+          this.$emit("restore");
         }
-        const restored: ISavedQuery = await cli.queryAudits.restore(
-          queryId,
-          auditId
-        );
-        this.$store.commit("data/queries/upsert", restored);
-        await this.loadAudits();
-        this.$emit("restore", restored);
       } catch (e) {
         log.error(e);
         this.error = e;
@@ -592,9 +641,14 @@ export default Vue.extend({
     margin: 0;
   }
 
-  .editor-label {
+  .editor-label,
+  .changed-the-title-to {
     color: var(--text-lighter);
     font-size: 0.8rem;
+  }
+
+  .changed-the-title-to {
+    font-style: italic;
   }
 
   .item {

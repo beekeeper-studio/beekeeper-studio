@@ -592,14 +592,6 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     };
   }
 
-  private identifyCommands(queryText) {
-    try {
-      return identify(queryText);
-    } catch (err) {
-      return [];
-    }
-  }
-
   private parseFields(fields, _row) {
     return fields.map((field) => {
       field.dataType = dataTypesToMatchTypeCode[field?.type?.code] || 'user-defined'

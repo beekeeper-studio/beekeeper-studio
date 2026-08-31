@@ -34,18 +34,12 @@ export function tabulatorForTableData(
   options: Options
 ): TabulatorFull {
   const { table, schema, ...tabulatorOptions } = options;
-  // Suppress the build-time save burst that clobbers persisted column
-  // widths on cold start.
-  let persistenceReady = false;
   const defaultOptions: Options = {
     persistence: {
       columns: ["width", "visible"],
     },
     persistenceMode: "local",
     persistenceWriterFunc: (id: string, type: string, data: unknown) => {
-      if (!persistenceReady) {
-        return;
-      }
       try {
         localStorage.setItem(`${id}-${type}`, JSON.stringify(data));
       } catch (e) {
@@ -63,7 +57,9 @@ export function tabulatorForTableData(
     resizableColumnGuide: true,
     movableColumns: true,
     height: "100%",
-    editTriggerEvent: "dblclick",
+    editTriggerEvent: window.bksConfig.ui.tableTable.editTrigger === "click" 
+      ? "click" 
+      : "dblclick",
     debugInvalidComponentFuncs: false,
     history: true,
     keybindings: {
@@ -106,26 +102,12 @@ export function tabulatorForTableData(
     },
   };
   const mergedOptions = _.merge(defaultOptions, tabulatorOptions);
-  if (tabulatorOptions.persistenceWriterFunc) {
-    mergedOptions.persistenceWriterFunc = (...args) => {
-      if (!persistenceReady) {
-        return;
-      }
-      tabulatorOptions.persistenceWriterFunc(...args);
-    }
-  }
   const tabulator = new TabulatorFull(el, mergedOptions);
 
-  const onFirstLayout = () => {
-    tabulator.off("layout-refreshed", onFirstLayout);
-    persistenceReady = true;
-  };
-  tabulator.on("layout-refreshed", onFirstLayout);
-
   if (options.onRangeChange) {
-    function onRangeChange() {
+    const onRangeChange = () => {
       options.onRangeChange(tabulator.getRanges());
-    }
+    };
     tabulator.on("cellMouseUp", onRangeChange);
     tabulator.on("headerMouseUp", onRangeChange);
     tabulator.on(

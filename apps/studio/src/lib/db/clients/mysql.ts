@@ -20,6 +20,7 @@ import {
   ClientError, refreshTokenIfNeeded,
   errorMessages
 } from "./utils";
+import { parseQuotedEnumValues } from "./enumParsers";
 import {
   IDbConnectionDatabase,
   DatabaseElement,
@@ -218,14 +219,6 @@ async function configDatabase(
   }
 
   return config;
-}
-
-function identifyCommands(queryText: string) {
-  try {
-    return identify(queryText);
-  } catch (err) {
-    return [];
-  }
 }
 
 function isMultipleQuery(fields: any[]) {
@@ -499,6 +492,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       generationExpression: row.generation_expression,
       characterSet: row.character_set,
       collation: row.collation,
+      enumValues: parseQuotedEnumValues(row.column_type),
       bksField: this.parseTableColumn(row),
     }));
   }
@@ -920,26 +914,28 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
   }
 
   async executeApplyChanges(changes: TableChanges, tabId?: number): Promise<any[]> {
+    if (tabId) {
+      return await this.runWithConnection(this.applyChangesRunner.bind(this, changes), tabId);
+    }
+    return await this.runWithTransaction(this.applyChangesRunner.bind(this, changes));
+  }
+
+  protected async applyChangesRunner(
+    changes: TableChanges,
+    connection: mysql.PoolConnection
+  ): Promise<any[]> {
     let results = [];
 
-    const run = async (connection: mysql.PoolConnection) => {
-      if (changes.inserts) {
-        await this.insertRows(changes.inserts, connection);
-      }
-
-      if (changes.updates) {
-        results = await this.updateValues(changes.updates, connection);
-      }
-
-      if (changes.deletes) {
-        await this.deleteRows(changes.deletes, connection);
-      }
+    if (changes.inserts) {
+      await this.insertRows(changes.inserts, connection);
     }
 
-    if (tabId) {
-      await this.runWithConnection(run, tabId);
-    } else {
-      await this.runWithTransaction(run);
+    if (changes.updates) {
+      results = await this.updateValues(changes.updates, connection);
+    }
+
+    if (changes.deletes) {
+      await this.deleteRows(changes.deletes, connection);
     }
 
     return results;
@@ -1182,7 +1178,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       return [];
     }
 
-    const commands = identifyCommands(queryText);
+    const commands = this.identifyCommands(queryText);
 
     if (!isMultipleQuery(fields)) {
       return [
@@ -1437,13 +1433,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     chunkSize: number
   ): Promise<StreamResults> {
     const theCursor = new MysqlCursor(this.conn, query, [], chunkSize);
-    log.debug("results", theCursor);
-
-    const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
 
     return {
-      totalRows,
-      columns,
       cursor: theCursor,
     };
   }
@@ -1642,4 +1633,5 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
 
 export const testOnly = {
   parseFields,
+  parseEnumValues: parseQuotedEnumValues,
 };

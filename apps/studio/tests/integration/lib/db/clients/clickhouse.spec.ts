@@ -8,13 +8,16 @@ import fs from 'fs';
 import path from 'path';
 import { identify } from 'sql-query-identifier';
 
+// Pin to explicit ClickHouse versions. Do NOT use the `latest` tag here: it is
+// mutable, so a new ClickHouse release silently changes what CI runs against.
+// ClickHouse 26.6.1 (published 2026-06-26) made these integration tests hang
+// until the 20-minute CI job timeout; 26.5 is the last release the suite passed
+// against. Bump this tag deliberately, not implicitly.
 const TEST_VERSIONS = [
-  { tag: 'latest', readOnly: false, dropInformation: false },
-  { tag: 'latest', readOnly: false, dropInformation: true },
-  { tag: 'latest', readOnly: true, dropInformation: false },
-  { tag: '24.2', readOnly: false, dropInformation: false },
-  { tag: '24.2', readOnly: false, dropInformation: true },
-  { tag: '24.2', readOnly: true, dropInformation: false },
+  { tag: '26.5', readOnly: false, dropInformation: false },
+  { tag: '26.5', readOnly: false, dropInformation: true },
+  { tag: '26.5', readOnly: true, dropInformation: false },
+  { tag: '24.2', readOnly: false },
 ] as const
 
 function testWith(options: typeof TEST_VERSIONS[number]) {
@@ -169,6 +172,30 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
           ProductValueMultiplier: 1,
         }
       ])
+    })
+
+    it("should return enum values for Enum8/Enum16 columns", async () => {
+      await util.knex.schema.raw(`
+        CREATE TABLE ch_enum_test
+        (
+            id UInt32,
+            status Enum8('pending' = 1, 'active' = 2, 'inactive' = 3),
+            big_status Enum16('a' = 1, 'b' = 2),
+            mood Nullable(Enum8('sad' = 1, 'happy' = 2)),
+            name String
+        )
+        ENGINE = MergeTree ORDER BY id;
+      `)
+
+      const columns = await util.connection.listTableColumns('ch_enum_test')
+      const byName = (n: string) => columns.find((c) => c.columnName === n)
+
+      expect(byName('status').enumValues).toEqual(['pending', 'active', 'inactive'])
+      expect(byName('big_status').enumValues).toEqual(['a', 'b'])
+      // values are parsed even when the enum is wrapped in Nullable(...)
+      expect(byName('mood').enumValues).toEqual(['sad', 'happy'])
+      expect(byName('name').enumValues).toBeUndefined()
+      expect(byName('id').enumValues).toBeUndefined()
     })
 
     describe("Formats in select queries", () => {

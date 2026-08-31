@@ -19,7 +19,7 @@
           <div class="actions">
             <a
               @click.prevent="refresh"
-              v-tooltip="`${ctrlOrCmd('r')} or F5`"
+              v-tooltip="$bksConfigUI.getKeybindingLabel('general.refresh')"
               class="btn btn-link btn-fab"
             ><i class="material-icons">refresh</i></a>
           </div>
@@ -64,8 +64,9 @@
           <div class="form-group">
             <label for="schema-editor">JSON Schema</label>
             <text-editor
-              mode="application/json"
-              v-model="schemaJSON"
+              language-id="json"
+              :value="schemaJSON"
+              @bks-value-change="schemaJSON = $event.value"
               class="schema-editor"
             />
             <small class="form-text text-muted">
@@ -111,7 +112,7 @@
 
 <script>
 import { mapState } from 'vuex'
-import TextEditor from '@/components/common/texteditor/TextEditor.vue'
+import TextEditor from '@beekeeperstudio/ui-kit/vue/text-editor'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import StatusBar from '@/components/common/StatusBar.vue'
 import rawLog from '@bksLogger'
@@ -187,10 +188,6 @@ export default {
     }
   },
   methods: {
-    ctrlOrCmd(key) {
-      return platformInfo.isMac ? `⌘${key.toUpperCase()}` : `Ctrl+${key}`
-    },
-    
     async loadValidation() {
       if (this.loading) return
       this.loading = true
@@ -296,8 +293,12 @@ export default {
   }
 
   .schema-editor {
-    height: 300px;
+    display: block;
     margin-top: 8px;
+
+    ::v-deep .BksTextEditor {
+      height: 300px;
+    }
   }
   
   .validation-settings {

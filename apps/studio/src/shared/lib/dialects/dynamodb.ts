@@ -35,7 +35,7 @@ export const DynamoDBData: DialectData = {
     truncateElement: true,
     sqlCreate: true,
     createTable: true,
-    createDatabase: true,
+    addDatabase: true,
     importFromFile: true,
     nullable: true,
     defaultValue: true,

@@ -26,6 +26,7 @@ export type ExternalMenuItem<TabContext = {}> = {
   parentId: string;
   label: string;
   disableWhenDisconnected?: boolean;
+  accelerator?: string;
   action: CustomMenuAction<TabContext>;
 };
 

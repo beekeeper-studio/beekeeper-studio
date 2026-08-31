@@ -1,57 +1,4 @@
-@use "sass:color";
-// Original file souce copyright John Datserakis https://github.com/johndatserakis/vue-simple-context-menu
-
-.vue-simple-context-menu {
-  top: 0;
-  left: 0;
-  margin: 0;
-  padding: 0;
-  display: none;
-  list-style: none;
-  position: absolute;
-  z-index: 1000000;
-  padding: ($gutter-h * 0.75) 0;
-  border-radius: 6px;
-  box-shadow: var(--elevation-5);
-  font-size: 0.85rem;
-  text-transform: none;
-  font-weight: 400;
-  min-width: 150px;
-  border: 0;
-  @include card-shadow-hover;
-}
-.vue-simple-context-menu--active {
-  display: block;
-}
-.vue-simple-context-menu__item {
-  display: flex;
-  padding: 0 $gutter-w;
-  font-size: 0.9rem;
-  min-height: 28px;
-  cursor: pointer;
-  align-items: center;
-  &.disabled {
-    pointer-events: none;
-    color: color.adjust($text-dark, $lightness: -25%);
-    background: color.adjust(rgba($theme-base, 0.05), $lightness: -25%);
-  }
-  i {
-    height: 24px!important;
-    line-height: 24px!important;
-    width: 24px;
-    opacity: 0.6;
-    margin-right: $gutter-h!important;
-  }
-  .shortcut {
-    padding-left: 5px;
-    color: color.adjust($text-dark, $lightness: -30%);
-  }
-  i.material-icons.menu-icon   {
-    margin-right:0!important;
-    margin-left: 0.4rem;
-  }
-}
-.vue-simple-context-menu__divider, hr {
+hr {
   min-height: 0;
   width: 100%;
   height: 1px;
@@ -64,24 +11,19 @@
     display: none;
   }
 }
-.vue-simple-context-menu li:first-of-type {
-  margin-top: 0;
-}
-.vue-simple-context-menu li:last-of-type {
-  margin-bottom: 0;
-}
 
 // ------ Theme Customization ------
 
-.BksContextMenu-list, .vue-simple-context-menu {
-  background: color.adjust($theme-bg, $lightness: 5%);
+.BksContextMenu-list {
+  background: var(--menu-bg);
   color: $text;
 }
 
-.BksContextMenu-item, .vue-simple-context-menu__item {
+.BksContextMenu-item {
   color: $text-dark;
   &.disabled {
     opacity: 0.5;
+    pointer-events: none;
   }
   &:hover {
     background: rgba($theme-base, 0.05);
@@ -93,6 +35,6 @@
   opacity: 0.5;
 }
 
-.BksContextMenu-item-divider, .vue-simple-context-menu__divider, hr {
+.BksContextMenu-item-divider, hr {
   border-top: 1px solid $border-color;
 }

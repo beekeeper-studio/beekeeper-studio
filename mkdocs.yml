@@ -151,10 +151,12 @@ nav:
     - user_guide/connecting/mongodb.md
     - user_guide/connecting/oracle-database.md
     - user_guide/connecting/redis.md
+    - SQL Server: user_guide/connecting/sql-server.md
     - SQLite: user_guide/connecting/sqlite.md
     - Trino: user_guide/connecting/trino.md
     - user_guide/connecting/surrealdb.md
     - user_guide/connecting/azure-entraid.md
+    - user_guide/connecting/snowflake.md
 
   - Features:
     - user_guide/sql_editor/editor.md
@@ -172,6 +174,7 @@ nav:
     - Diagrams: user_guide/entity-relationship-diagrams-erd.md
     - user_guide/backup-restore.md
     - Cloud Workspaces: user_guide/cloud-storage-team-workspaces.md
+    - Sharing & Permissions: user_guide/sharing.md
     - user_guide/security.md
     - Plugins: user_guide/plugins.md
     - Configuration: user_guide/configuration.md
@@ -185,7 +188,7 @@ nav:
   - Support:
     - purchasing/purchasing-a-license.md
     - purchasing/license-types.md
-    - Upgrading: support/upgrading-from-the-community-edition.md
+    - Upgrading: support/how-to-upgrade.md
     - support/subscription-management.md
     - support/contact-support.md
     - support/open-source.md

@@ -2,13 +2,11 @@ import { contextBridge, ipcRenderer, nativeImage } from 'electron';
 import { AppEvent } from '@/common/AppEvent';
 import path from 'path';
 import fs from 'fs';
-import { SettingsPlugin } from '@/plugins/SettingsPlugin';
 import { homedir } from 'os';
 import tls, { SecureVersion } from 'tls';
 import username from 'username';
 import { execSync } from 'child_process';
 import 'electron-log/preload';
-import pluralize from 'pluralize';
 import type { SaveFileOptions } from '@/backend/lib/FileHelpers';
 import type { NativePluginMenuItem } from '@/services/plugin/types';
 
@@ -45,6 +43,9 @@ export const api = {
   },
   disableConnectionMenuItems(){
     ipcRenderer.send("disable-connection-menu-items");
+  },
+  sendUserActive() {
+    ipcRenderer.send("userActive");
   },
   send(event: AppEvent, name: string, arg?: any) {
     if (!Object.values<string>(AppEvent).includes(event)) return;
@@ -150,9 +151,6 @@ export const api = {
   readTextFromClipboard(): string {
     return electron.clipboard.readText();
   },
-  openPath(path: string) {
-    return electron.shell.openPath(path);
-  },
   showItemInFolder(path: string) {
     electron.shell.showItemInFolder(path);
   },
@@ -179,9 +177,6 @@ export const api = {
   },
   requestPorts() {
     ipcRenderer.invoke('requestPorts');
-  },
-  pluralize(word: string, count?: number, inclusive?: boolean) {
-    return pluralize(word, count, inclusive);
   },
   fileHelpers: {
     save(options: SaveFileOptions) {

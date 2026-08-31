@@ -6,6 +6,29 @@ import { DbConnectionBase } from './saved_connection'
 @Entity({ name: 'used_connection' })
 export class UsedConnection extends DbConnectionBase implements ISimpleConnection {
 
+  /**
+    This tracks that someone connected to a database.
+    Either - it's a saved connection, or it's a quick connect (no id)
+    So we return an existing record (with updated internals), or a new record
+
+    Really this whole model should be killed as we're duplicating a lot of stuff
+    from the saved connection table, the only thing extra it provides is for quick connect
+   */
+  static async recordUse(config: IConnection): Promise<UsedConnection> {
+    if (!_.isUndefined((config as Partial<UsedConnection>).connectionId)) {
+      throw new Error("recordUse was handed a used_connection. Connect with a saved connection, or a new unsaved one.")
+    }
+
+    const savedConnectionId = config.id ?? null
+    const existing = savedConnectionId
+      ? await UsedConnection.findOneBy({ connectionId: savedConnectionId, workspaceId: config.workspaceId })
+      : null
+
+    const used = existing ?? new UsedConnection()
+    used.withProps({ ...config, connectionId: savedConnectionId } as IConnection)
+    return await used.save()
+  }
+
   withProps(other: IConnection): UsedConnection {
     if (other) {
       this.connectionType = other.connectionType
@@ -27,12 +50,18 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       this.sslCertFile = other.sslCertFile
       this.sslKeyFile = other.sslKeyFile
       this.readOnlyMode = other.readOnlyMode
-      if (other.id && other.workspaceId) {
-        this.connectionId = other.id
+      // `connectionId` is always passed explicitly by the caller: it's a
+      // saved_connection reference, or null for a connection that was never
+      // saved. It is never inferred from `id`, which belongs to a different
+      // id sequence entirely (see recordUse above).
+      this.connectionId = (other as Partial<UsedConnection>).connectionId ?? null
+      if (!_.isNil(other.workspaceId)) {
         this.workspaceId = other.workspaceId
       }
       this.options = other.options
       this.trustServerCertificate = other.trustServerCertificate
+      this.windowsAuthEnabled = other.windowsAuthEnabled
+      this.sqlServerOptions = other.sqlServerOptions
       this.redshiftOptions = other.redshiftOptions
       this.cassandraOptions = other.cassandraOptions
       this.socketPath = other.socketPath

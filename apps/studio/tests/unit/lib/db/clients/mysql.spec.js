@@ -35,6 +35,50 @@ describe("MySQL UNIT tests (no connection required)", () => {
       expect(parseIndexColumn(input)).toMatchObject(output)
     }
   })
+
+  describe("parseEnumValues", () => {
+    it("parses a simple enum definition", () => {
+      expect(testOnly.parseEnumValues("enum('a','b','c')")).toEqual(['a', 'b', 'c'])
+    })
+
+    it("is case-insensitive on the ENUM keyword", () => {
+      expect(testOnly.parseEnumValues("ENUM('x','y')")).toEqual(['x', 'y'])
+    })
+
+    it("keeps commas that appear inside values", () => {
+      expect(testOnly.parseEnumValues("enum('a,b','c')")).toEqual(['a,b', 'c'])
+    })
+
+    it("unescapes doubled single quotes", () => {
+      expect(testOnly.parseEnumValues("enum('o''clock','noon')")).toEqual(["o'clock", 'noon'])
+    })
+
+    it("handles a single value", () => {
+      expect(testOnly.parseEnumValues("enum('only')")).toEqual(['only'])
+    })
+
+    it("returns undefined for non-enum types", () => {
+      expect(testOnly.parseEnumValues("varchar(20)")).toBeUndefined()
+      expect(testOnly.parseEnumValues("int")).toBeUndefined()
+      expect(testOnly.parseEnumValues("set('x','y')")).toBeUndefined()
+      expect(testOnly.parseEnumValues(undefined)).toBeUndefined()
+      expect(testOnly.parseEnumValues(null)).toBeUndefined()
+    })
+  })
+
+  // BUG: parseIndexColumn checks `str.endsWith('DESC')` to detect descending
+  // order, but with no preceding-whitespace requirement any column name that
+  // happens to end in the literal characters 'DESC' (e.g. 'FOODESC',
+  // 'PRODDESC', or just 'DESC' as a column name) gets the order silently
+  // flipped to DESC even when the user picked the plain ASC option.
+  it("should not flip ASC to DESC for column names that end in 'DESC'", () => {
+    expect(parseIndexColumn('FOODESC')).toMatchObject({
+      name: 'FOODESC', order: 'ASC', prefix: null,
+    })
+    expect(parseIndexColumn('DESC')).toMatchObject({
+      name: 'DESC', order: 'ASC', prefix: null,
+    })
+  })
 })
 
 describe("MysqlChangeBuilder", () => {

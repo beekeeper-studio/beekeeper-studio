@@ -30,6 +30,7 @@ export type ConfigValue = IniValue | Record<string, IniValue>;
 
 export type KeybindingPath = DeepKeyOf<IBksConfig["keybindings"]>;
 
+/** A key must be an uppercased string */
 type ModifierMap = Record<string, string | ((isMac: boolean) => string)>;
 
 interface IBksConfigDebugInfo {
@@ -55,6 +56,10 @@ const codeMirrorModifierMap = {
   COMMANDORCONTROL: "Mod",
   SHIFT: "Shift",
   ALT: "Alt",
+  ALTORCMD: (isMac) => (isMac ? "Cmd" : "Alt"),
+  CMDORALT: (isMac) => (isMac ? "Cmd" : "Alt"),
+  ALTORCOMMAND: (isMac) => (isMac ? "Cmd" : "Alt"),
+  COMMANDORALT: (isMac) => (isMac ? "Cmd" : "Alt"),
   OPTION: "Option",
   ALTGR: "AltGraph",
   SUPER: "Meta",
@@ -75,6 +80,10 @@ const electronModifierMap = {
   COMMANDORCONTROL: "CommandOrControl",
   SHIFT: "Shift",
   ALT: "Alt",
+  ALTORCMD: (isMac) => (isMac ? "Command" : "Alt"),
+  CMDORALT: (isMac) => (isMac ? "Command" : "Alt"),
+  ALTORCOMMAND: (isMac) => (isMac ? "Command" : "Alt"),
+  COMMANDORALT: (isMac) => (isMac ? "Command" : "Alt"),
   OPTION: "Option",
   ALTGR: "AltGr",
   SUPER: "Super",
@@ -85,19 +94,24 @@ const electronModifierMap = {
 const vHotkeyModifierMap: ModifierMap = {
   CTRL: "ctrl",
   CMD: "cmd",
-  CTRLORCMD: "ctrlOrCmd",
-  CMDORCTRL: "ctrlOrCmd",
+  CTRLORCMD: (isMac) => (isMac ? "meta" : "ctrl"),
+  CMDORCTRL: (isMac) => (isMac ? "meta" : "ctrl"),
   CONTROL: "ctrl",
   COMMAND: "cmd",
-  CONTROLORCOMMAND: "ctrlOrCmd",
-  COMMANDORCONTROL: "ctrlOrCmd",
+  CONTROLORCOMMAND: (isMac) => (isMac ? "meta" : "ctrl"),
+  COMMANDORCONTROL: (isMac) => (isMac ? "meta" : "ctrl"),
   SHIFT: "shift",
   ALT: "alt",
+  ALTORCMD: (isMac) => (isMac ? "meta" : "alt"),
+  CMDORALT: (isMac) => (isMac ? "meta" : "alt"),
+  ALTORCOMMAND: (isMac) => (isMac ? "meta" : "alt"),
+  COMMANDORALT: (isMac) => (isMac ? "meta" : "alt"),
   OPTION: "option",
   ALTGR: "altgr",
   SUPER: "super",
   META: "meta",
   WINDOWS: "windows",
+  DELETE: (isMac) => (isMac ? "backspace" : "delete"),
 } as const;
 
 export const tabulatorModifierMap = {
@@ -129,6 +143,10 @@ const uiModifierMap: ModifierMap = {
   COMMANDORCONTROL: (isMac) => (isMac ? "⌘" : "Ctrl"),
   SHIFT: (isMac) => (isMac ? "⇧" : "Shift"),
   ALT: (isMac) => (isMac ? "⌥" : "Alt"),
+  ALTORCMD: (isMac) => (isMac ? "⌘" : "Alt"),
+  CMDORALT: (isMac) => (isMac ? "⌘" : "Alt"),
+  ALTORCOMMAND: (isMac) => (isMac ? "⌘" : "Alt"),
+  COMMANDORALT: (isMac) => (isMac ? "⌘" : "Alt"),
   OPTION: (isMac) => (isMac ? "⌥" : "Alt"),
   ALTGR: "AltGr",
   SUPER: (isMac) => (isMac ? "⌘" : "Super"),
@@ -151,13 +169,13 @@ const contextMenuModifierMap: ModifierMap = {
   ALTGR: "AltGraph",
   SUPER: "Super",
   META: "Meta",
-  PageUp: "PageUp",
-  PageDown: "PageDown",
+  PAGEUP: "PageUp",
+  PAGEDOWN: "PageDown",
   ENTER: "Enter"
 }
 
 export function convertKeybinding(
-  target: KeybindingTarget,
+  target: Omit<KeybindingTarget, "ui">,
   keybinding: string,
   platform: Platform
 ): string;
@@ -167,7 +185,7 @@ export function convertKeybinding(
   platform: Platform
 ): string[];
 export function convertKeybinding(
-  target: "electron" | "v-hotkey" | "codemirror" | "ui" | "tabulator" | "context-menu",
+  target: KeybindingTarget,
   keybinding: string,
   platform: Platform
 ): string[] | string {
@@ -189,6 +207,7 @@ export function convertKeybinding(
     case "tabulator":
       modifierMap = tabulatorModifierMap;
       joinChar = ' + ';
+      break;
     case "ui":
       modifierMap = uiModifierMap;
       break;
@@ -205,21 +224,11 @@ export function convertKeybinding(
   for (const _key of keybinding.split("+")) {
     const key = _key.toUpperCase().trim();
 
-    let mod = modifierMap[key] ?? key;
-
-    if (typeof mod === "function") {
-      mod = mod(platform === "mac");
-    }
+    const mappedMod = modifierMap[key];
+    let mod = typeof mappedMod === "function" ? mappedMod(platform === "mac") : (mappedMod ?? key);
 
     if (target === "v-hotkey") {
       mod = mod.toLowerCase();
-      if (mod === "ctrlorcmd") {
-        mod = platform === "mac" ? "meta" : "ctrl";
-      }
-
-      if (mod === "delete" && platform === "mac") {
-        mod = "backspace";
-      }
     }
 
     if (target === "codemirror" && !modifierMap[key]) {
@@ -245,10 +254,9 @@ export function convertKeybinding(
 }
 
 /**
- * Array that is parsed by ini.parse is not exactly an array because
- * it doesn't have `length` property. Testing it with `Array.isArray` or
- * `_.isArray` will fail. Use this to test it.
- */
+ * `ini.parse` encodes arrays as objects without a `.length` property.
+ * This checks whether a value matches that structure.
+ **/
 export function isIniArray(value: any): value is IniArray {
   return (
     _.isObject(value) &&
@@ -309,12 +317,11 @@ export class BksConfigProvider {
   }
 
   has(path: string): boolean {
-    return this.userConfig.has(path);
+    return !_.isNil(_.get(this.mergedConfig, path));
   }
 
   get(path: string): ConfigValue {
-    const { value } = this.resolvePath(path);
-    return value;
+    return this.resolvePath(path).value;
   }
 
   getAll(): IBksConfig {

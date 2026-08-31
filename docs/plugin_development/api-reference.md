@@ -27,10 +27,11 @@ The Beekeeper Studio Plugin API is accessible through the `@beekeeperstudio/plug
 
 ### setDebugComms
 
-Enable debug logging to see all communication between your plugin and Beekeeper Studio. This is helpful when developing plugins to understand what messages are being sent and received.
+Enable debug logging to see all communication between your plugin and Beekeeper Studio. This is helpful when developing plugins to understand what messages are being sent and received. You can see the logs in the developer tools (Beekeeper Studio / Help / Show Developer Tools / console)
 
 **Usage:**
 ```typescript
+import {setDebugComms} from "@beekeeperstudio/plugin";
 setDebugComms(true);
 ```
 
@@ -634,7 +635,7 @@ await openTab('query', { query: 'SELECT * FROM users' });
 
 // Open a table data tab
 await openTab('tableTable', {
-  table: 'users',
+  name: 'users',
   schema: 'public',
   filters: [
     { field: 'active', type: '=', value: 'true' }
@@ -643,7 +644,7 @@ await openTab('tableTable', {
 
 // Open a table structure tab
 await openTab('tableStructure', {
-  table: 'users',
+  name: 'users',
   schema: 'public'
 });
 ```
@@ -1217,7 +1218,7 @@ Represents the currently selected range in a data table.
 
 | Property   | Type            | Description |
 |------------|-----------------|-------------|
-| `table`    | `string`        | Table name |
+| `name`     | `string`        | Table name |
 | `schema`   | `string`        | Schema name (optional) |
 | `filters`  | `TableFilter[]` | Filters to apply (optional) |
 | `database` | `string`        | Database name (optional) |
@@ -1226,7 +1227,7 @@ Represents the currently selected range in a data table.
 
 | Property   | Type     | Description |
 |------------|----------|-------------|
-| `table`    | `string` | Table name |
+| `name`     | `string` | Table name |
 | `schema`   | `string` | Schema name (optional) |
 | `database` | `string` | Database name (optional) |
 

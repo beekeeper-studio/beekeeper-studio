@@ -9,6 +9,7 @@ import { uuidv4 } from "@/lib/uuid";
 import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
 import { TokenCache } from "@/common/appdb/models/token_cache";
 import { SavedConnection } from "@/common/appdb/models/saved_connection";
+import { UsedConnection } from "@/common/appdb/models/used_connection";
 import { AzureAuthService } from "@/lib/db/authentication/azure";
 import bksConfig from "@/common/bksConfig";
 import { UserPin } from "@/common/appdb/models/UserPin";
@@ -17,7 +18,7 @@ import { waitPromise } from "@/common/utils";
 export interface IConnectionHandlers {
   // Connection management from the store **************************************
   'conn/create': ({ config, auth, osUser, sId }: {config: IConnection, auth?: { input: string; mode: "pin" }, osUser: string, sId: string }) => Promise<void>,
-  'conn/test': ({ config, osUser, sId }: { config: IConnection, osUser: string, sId: string }) => Promise<void>,
+  'conn/test': ({ config, osUser, sId }: { config: IConnection, osUser: string, sId: string }) => Promise<string[]>,
   'conn/changeDatabase': ({ newDatabase, sId }: { newDatabase: string, sId: string }) => Promise<void>,
   'conn/clearConnection': ({ sId }: { sId: string}) => Promise<void>,
   'conn/getServerConfig': ({ sId }: { sId: string }) => Promise<IDbConnectionServerConfig>,
@@ -70,7 +71,7 @@ export interface IConnectionHandlers {
   'conn/getTableCreateScript': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<string>,
   'conn/getViewCreateScript': ({ view, schema, sId }: { view: string, schema?: string, sId: string }) => Promise<string[]>,
   'conn/getMaterializedViewCreateScript': ({ view, schema, sId }: { view: string, schema?: string, sId: string }) => Promise<string[]>,
-  'conn/getRoutineCreateScript': ({ routine, type, schema, sId }: { routine: string, type: string, schema?: string, sId: string }) => Promise<string[]>,
+  'conn/getRoutineCreateScript': ({ routine, type, schema, id, sId }: { routine: string, type: string, schema?: string, id?: string, sId: string }) => Promise<string[]>,
   'conn/createTable': ({ table }: { table: CreateTableSpec }) => Promise<void>,
   'conn/getCollectionValidation': ({ collection, sId }: { collection: string, sId: string }) => Promise<any>,
   'conn/setCollectionValidation': ({ params, sId }: { params: any, sId: string }) => Promise<void>,
@@ -179,6 +180,7 @@ export const ConnHandlers: IConnectionHandlers = {
     await connection.connect(abortController.signal);
     // HACK (@day): this is because of type fuckery, need to actually just recreate the object but I'm lazy rn and it's late
     connection.connectionType = config.connectionType ?? (config as any)._connectionType;
+    await UsedConnection.recordUse(config);
 
     state(sId).server = server;
     state(sId).usedConfig = config;
@@ -222,8 +224,10 @@ export const ConnHandlers: IConnectionHandlers = {
     state(sId).connectionAbortController = abortController;
     await server?.createConnection(config.defaultDatabase || undefined).connect(abortController.signal);
     abortController.abort();
+    const sshConfigWarnings = server.getServerConfig()?.sshConfigWarnings || [];
     server.disconnect();
     state(sId).connectionAbortController = null;
+    return sshConfigWarnings;
   },
 
   'conn/changeDatabase': async function({ newDatabase, sId }: { newDatabase: string, sId: string }) {
@@ -426,9 +430,9 @@ export const ConnHandlers: IConnectionHandlers = {
     return await state(sId).connection.getMaterializedViewCreateScript(view, schema);
   },
 
-  'conn/getRoutineCreateScript': async function({ routine, type, schema, sId }: { routine: string, type: string, schema?: string, sId: string }) {
+  'conn/getRoutineCreateScript': async function({ routine, type, schema, id, sId }: { routine: string, type: string, schema?: string, id?: string, sId: string }) {
     checkConnection(sId);
-    return await state(sId).connection.getRoutineCreateScript(routine, type, schema);
+    return await state(sId).connection.getRoutineCreateScript(routine, type, schema, id);
   },
 
   'conn/createTable': async function({ table, sId }: { table: CreateTableSpec, sId: string }) {
@@ -604,6 +608,7 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/releaseConnection': async function({ tabId, sId }: { tabId: number, sId: string }) {
     checkConnection(sId);
     await state(sId).connection.releaseConnection(tabId);
+    clearTransactionTimeout(sId, tabId);
   },
 
   'conn/startTransaction': async function({ tabId, sId }: { tabId: number, sId: string }) {

@@ -7,6 +7,11 @@ jest.mock("@commercial/backend/lib/db/server", () => ({
   createServer: jest.fn(),
 }));
 
+jest.mock("@/common/bksConfig", () => ({
+  __esModule: true,
+  default: { security: { disableSshConfigMatchExec: false } },
+}));
+
 import connectionProvider from "@commercial/backend/lib/connection-provider";
 
 function makeConfig(overrides: Record<string, unknown> = {}) {
@@ -56,7 +61,10 @@ describe("connection-provider SSH config merging", () => {
   });
 
   function writeSshConfig(content: string) {
-    fs.writeFileSync(path.join(tmpHome.name, ".ssh", "config"), content, "utf-8");
+    const configPath = path.join(tmpHome.name, ".ssh", "config");
+    fs.writeFileSync(configPath, content, "utf-8");
+    // Owner-only so the ownership guard trusts it regardless of the runner umask.
+    fs.chmodSync(configPath, 0o600);
   }
 
   it("resolves alias hostname/port/user for keyfile mode", () => {
@@ -226,6 +234,59 @@ Host alias
     expect(result.ssh.identitiesOnly).toBe(true);
     expect(result.ssh.privateKey).toBe("/keys/strict");
     expect(result.ssh.identityFiles).toEqual(["/keys/strict"]);
+  });
+
+  it("agent (Automatic) mode applies Match user IdentityFile using the connection username", () => {
+    writeSshConfig(`
+Host alias
+  HostName real.example.com
+Match user deploybot123
+  IdentityFile /keys/match_user_key
+`);
+    const result = connectionProvider.convertConfig(
+      makeConfig({
+        sshHost: "alias",
+        sshMode: "agent",
+        sshUsername: "deploybot123",
+      }),
+      "osuser",
+      {} as any
+    );
+    expect(result.ssh.host).toBe("real.example.com");
+    expect(result.ssh.identityFiles).toEqual(["/keys/match_user_key"]);
+    expect(result.ssh.privateKey).toBe("/keys/match_user_key");
+  });
+
+  it("surfaces a warning for a missing IdentityFile in agent mode", () => {
+    writeSshConfig(`
+Host alias
+  HostName real.example.com
+  IdentityFile /keys/definitely_missing_key
+`);
+    const result = connectionProvider.convertConfig(
+      makeConfig({ sshHost: "alias", sshMode: "agent" }),
+      "osuser",
+      {} as any
+    );
+    expect(result.sshConfigWarnings).toBeDefined();
+    expect(
+      result.sshConfigWarnings.some((w: string) => w.includes("definitely_missing_key"))
+    ).toBe(true);
+  });
+
+  it("does not warn about a missing IdentityFile when not in agent mode", () => {
+    writeSshConfig(`
+Host alias
+  HostName real.example.com
+  IdentityFile /keys/definitely_missing_key
+`);
+    const result = connectionProvider.convertConfig(
+      makeConfig({ sshHost: "alias", sshMode: "userpass", sshPassword: "x" }),
+      "osuser",
+      {} as any
+    );
+    const warnings = result.sshConfigWarnings || [];
+    expect(warnings.some((w: string) => w.includes("definitely_missing_key"))).toBe(false);
   });
 
   it("agent (Automatic) mode without IdentityFile leaves identitiesOnly false and privateKey null", () => {

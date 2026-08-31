@@ -108,7 +108,6 @@
       </modal>
       <BackupProgress
         :failed="this.failed"
-        @openLog="openLog"
         @showLog="showLog"
         @retry="retry"
       />
@@ -252,9 +251,6 @@ export default Vue.extend({
     focusTryAgain() {
       if (!this.$refs['ok'] || this.$refs['ok'].length === 0) return;
       this.$refs['ok'].focus();
-    },
-    openLog() {
-      this.$native.files.open(this.logFile);
     },
     showLog() {
       this.$native.files.showItemInFolder(this.logFile);
