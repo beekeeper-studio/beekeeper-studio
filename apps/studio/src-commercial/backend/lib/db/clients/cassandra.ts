@@ -465,7 +465,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
 
     const result = await this.driverExecuteSingle(qs.query, { params: qs.params, options })
     const { rows, columns, hasNext, pageState } = result
-    const fields = columns ? this.parseQueryResultColumns(result) : []
+    const fields = columns ? this.fieldResolver.resolveQueryResult(result) : []
 
     return {
       result: this.parseRows(rows, columns) || [],

@@ -480,7 +480,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     const queriesResult = await this.driverExecuteMultiple(query, { countQuery, params });
     const data = queriesResult[0];
     const rowCount = Number(data.rowCount);
-    const fields = this.parseQueryResultColumns(data);
+    const fields = this.fieldResolver.resolveQueryResult(data);
     const rows = await this.serializeQueryResult(data, fields);
 
     const result = {

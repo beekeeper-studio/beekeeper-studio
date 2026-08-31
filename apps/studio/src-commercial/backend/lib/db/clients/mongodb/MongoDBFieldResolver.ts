@@ -27,7 +27,7 @@ export class MongoDBFieldResolver extends FieldResolver<QueryResult> {
     if (!row) {
       return [];
     }
-    return _.map(row, (name) => {
+    return Object.keys(row).map((name) => {
       const column = { name };
       const bksType = this.resolveRuntimeColumnType(column, queryResult);
       return { name, bksType } as const;
