@@ -64,10 +64,16 @@ export type TreeState<T> = {
 /**
  * Actions for models that support tree structure or nested folders.
  **/
-export function treeActions<T extends HasId>(parentKeys: {
-  plural: "connectionFolderIds" | "queryFolderIds" | "parentIds",
-  singular: "connectionFolderId" | "queryFolderId" | "parentId"
-}, local: boolean = false): ActionTree<TreeState<T>, RootState> {
+export function treeActions<T extends HasId>(
+  parentKeys: {
+    plural: "connectionFolderIds" | "queryFolderIds" | "parentIds",
+    singular: "connectionFolderId" | "queryFolderId" | "parentId"
+  },
+  local: boolean = false,
+  extraIdsInfo: {
+    field: string,
+    update: string
+  } = null): ActionTree<TreeState<T>, RootState> {
   return {
     async refresh(context, parentIds: number[]) {
       await context.dispatch("resetTree");
@@ -84,6 +90,15 @@ export function treeActions<T extends HasId>(parentKeys: {
         return { error: null };
       }
 
+      if (!_.isNil(extraIdsInfo)) {
+        await context.dispatch(extraIdsInfo.update);
+      }
+
+      let extraIds = undefined;
+      if (!_.isNil(extraIdsInfo) && !_.isNil(context.state[extraIdsInfo.field])) {
+        extraIds = context.state[extraIdsInfo.field];
+      }
+
       context.commit("folders/fetchingIds", [
         ...context.state.folders.fetchingIds,
         ...parentIds,
@@ -91,9 +106,13 @@ export function treeActions<T extends HasId>(parentKeys: {
 
       let error: ClientError | null = null;
 
+      let params = local ?
+        [ { [parentKeys.plural]: parentIds }, { ids: extraIds } ] :
+        { [parentKeys.plural]: parentIds, ids: extraIds };
+
       try {
         await context.dispatch("load", {
-          params: { [parentKeys.plural]: parentIds },
+          params,
           replaceIf(item: T) {
             return parentIds.includes(item[parentKeys.singular]);
           },
@@ -116,8 +135,12 @@ export function treeActions<T extends HasId>(parentKeys: {
         return;
       }
 
+      const linkedIds = extraIdsInfo?.field ?
+        context.state[extraIdsInfo.field] :
+        [];
+
       const stale = context.state.items.filter((item) =>
-        parentIds.includes(item[parentKeys.singular])
+        parentIds.includes(item[parentKeys.singular]) && !linkedIds.includes(item.id)
       );
 
       if (stale.length === 0) {
