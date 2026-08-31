@@ -119,14 +119,16 @@
     height: initial;
     line-height: initial;
     padding: $gutter-h ($gutter-w * 0.75);
-    $checkbox-size: 18px;
 
     .delete-checkbox {
       margin-top: 0;
+      height: 16px;
+      min-width: 16px;
+      width: 16px;
 
       &:after {
-        font-size: inherit;
-        line-height: 1;
+        font-size: 15px;
+        line-height: 16px;
       }
 
       &:checked:after {
@@ -134,7 +136,7 @@
         left: 50%;
         width: auto;
         height: auto;
-        font-size: 16px;
+        font-size: 15px;
         line-height: 1;
         transform: translate(-50%, -50%);
         display: flex;
@@ -143,45 +145,21 @@
       }
     }
 
-    &.bulk-selection-active,
-    &:hover {
-      .connection-label {
-        visibility: hidden;
-        width: $checkbox-size;
-        min-width: $checkbox-size;
-      }
-    }
-
     &.bulk-selection-active {
       .connection-label {
-        display: none;
+        visibility: hidden;
+        flex-shrink: 0;
       }
 
-      .delete-checkbox {
-        position: relative;
-        top: auto;
-        left: auto;
-        transform: none;
-        flex: 0 0 $checkbox-size;
-        width: $checkbox-size;
-        min-width: $checkbox-size;
-        height: $checkbox-size;
-        align-self: center;
-        margin-left: 0.5rem;
-        margin-right: $gutter-w * 0.85;
+      .connection-title {
+        padding-left: calc(#{$sidebar-icon-w} - 8px);
       }
-    }
 
-    &:hover {
-      .delete-checkbox {
-        display: block;
+      .delete-checkbox.shown {
+        top: 50%;
+        transform: translateY(-50%);
+        left: calc(var(--depth, 0) * 1.15rem + 0.5rem);
       }
-    }
-
-    &:hover:not(.bulk-selection-active) .delete-checkbox {
-      top: 50%;
-      transform: translateY(-50%);
-      left: calc(var(--depth, 0) * 1.15rem + 0.5rem);
     }
     // &.folder-btn {
     //   padding-left: 0;

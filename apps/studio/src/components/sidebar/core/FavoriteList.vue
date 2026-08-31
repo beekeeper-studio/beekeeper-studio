@@ -1,5 +1,8 @@
 <template>
-  <div class="sidebar-favorites flex-col expand">
+  <div
+    class="sidebar-favorites flex-col expand"
+    v-hotkey="bulkSelectionKeymap"
+  >
     <div class="sidebar-list">
       <div class="list-group">
         <div class="list-heading row">
@@ -101,8 +104,11 @@
               :active="isActive(query)"
               :selected="selectedIds.includes(itemNodeId(query))"
               :bulk-selection-active="bulkSelectionActive"
+              :selected-count="selectedIds.length"
               @remove="remove"
               @select="select"
+              @add-to-selection="addToSelection"
+              @remove-selected="removeCheckedFavorites"
               @open="open"
               @open-history="openHistory"
               @export="exportTo"
@@ -226,6 +232,7 @@
                 :active="isActive(node.ref)"
                 :selected="selectedIds.includes(node.id)"
                 :bulk-selection-active="bulkSelectionActive"
+                :selected-count="selectedIds.length"
                 :class="{
                   'drag-pending': (pendingSaveIds || []).includes(node.ref.id),
                   'commited': commitedType === 'item'
@@ -233,6 +240,8 @@
                 }"
                 @remove="remove"
                 @select="select"
+                @add-to-selection="addToSelection"
+                @remove-selected="removeCheckedFavorites"
                 @open="open"
                 @open-history="openHistory"
                 @export="exportTo"
@@ -262,12 +271,13 @@
 
 <script>
 import { AppEvent } from '@/common/AppEvent'
-import { buildFolderNodes, buildItemNode, collectVisibleItemIds, parseReorderTarget, rangeSelectVisibleIds, toggleSelectedId } from "@/common/utils/folderTree"
+import { buildFolderNodes, buildItemNode, parseReorderTarget } from "@/common/utils/folderTree"
 import EditableText from '@/components/common/EditableText.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
 import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
 import ContentPlaceholderText from '@/components/common/loading/ContentPlaceholderText.vue'
+import { collectVisibleItemIds, rangeSelectVisibleIds, toggleSelectedId } from "@beekeeperstudio/ui-kit/tree/helpers"
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree"
 import rawLog from '@bksLogger'
 import _ from 'lodash'
@@ -303,10 +313,17 @@ export default {
     },
   },
   beforeDestroy() {
-    document.removeEventListener('mousedown', this.maybeUnselect)
     clearTimeout(this.commitedTimeout)
+    document.removeEventListener('mousedown', this.maybeDeactivate)
+  },
+  mounted() {
+    document.addEventListener('mousedown', this.maybeDeactivate)
   },
   computed: {
+    ...mapState('sidebar', {
+      globalSidebarActiveItem: 'globalSidebarActiveItem',
+      primarySidebarOpen: 'primarySidebarOpen',
+    }),
     ...mapGetters(['workspace', 'isCloud', 'isUltimate', 'canCreateFolders']),
     ...mapGetters('data/queries', {'filteredQueries': 'filteredQueries'}),
     ...mapState('tabs', {'activeTab': 'active'}),
@@ -385,6 +402,11 @@ export default {
     },
     bulkSelectionActive() {
       return this.selectedIds.length > 0
+    },
+    bulkSelectionKeymap() {
+      if (!this.bulkSelectionActive) return {}
+      if (this.globalSidebarActiveItem !== 'queries' || !this.primarySidebarOpen) return {}
+      return { esc: this.discardCheckedFavorites }
     },
     visibleItemIds() {
       if (this.searching) {
@@ -469,6 +491,12 @@ export default {
     setSelectedIds(selectedIds) {
       this.selectedIds = selectedIds
     },
+    addToSelection(item) {
+      const id = this.itemNodeId(item)
+      if (!this.selectedIds.includes(id)) {
+        this.setSelectedIds([...this.selectedIds, id])
+      }
+    },
     itemNodeId(item) {
       return `item-${item.id}`
     },
@@ -495,7 +523,18 @@ export default {
       await this.$store.dispatch('refreshQueries')
     },
     isActive(item) {
-      return this.activeTab && this.activeTab.queryId === item.id
+      if (this.activeTab && this.activeTab.queryId === item.id) {
+        return true
+      }
+      return !this.bulkSelectionActive
+        && this.cloudSelectionAnchorId === this.itemNodeId(item)
+    },
+    maybeDeactivate(e) {
+      if (!this.cloudSelectionAnchorId) return
+      if (this.$refs.wrapper.contains(e.target)) {
+        return
+      }
+      this.cloudSelectionAnchorId = null
     },
     toggleChecked(item) {
       this.setSelectedIds(
@@ -522,7 +561,7 @@ export default {
         }
       }
       // Checkbox clicks and cmd/ctrl-clicks toggle bulk selection. A plain
-      // row click only updates the range-select anchor.
+      // row click updates the range-select anchor and marks the row active.
       if (event?.metaKey || event?.ctrlKey || event?.target?.type === 'checkbox') {
         this.toggleChecked(item)
         return
@@ -558,6 +597,7 @@ export default {
     },
     discardCheckedFavorites() {
       this.selectedIds = []
+      this.cloudSelectionAnchorId = null
     },
     createFolder() {
       if (!this.canCreateFolders) {

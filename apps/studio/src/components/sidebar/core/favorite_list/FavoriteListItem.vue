@@ -5,10 +5,6 @@
   >
     <a
       class="list-item-btn"
-      v-tooltip.bottom.delay="{
-        content: title,
-        delay: { show: 500 },
-      }"
       @click.prevent="$emit('select', item, $event)"
       :title="title"
       @dblclick.prevent="$emit('open', item)"
@@ -62,6 +58,7 @@ export default Vue.extend({
     active: Boolean,
     draft: Boolean,
     bulkSelectionActive: Boolean,
+    selectedCount: Number,
   },
   data: () => ({
     timeAgo: new TimeAgo('en-US'),
@@ -121,6 +118,25 @@ export default Vue.extend({
 
       event.stopPropagation();
 
+      let effectiveCount = this.selectedCount ?? 0
+      if (this.bulkSelectionActive && !this.selected) {
+        this.$emit('add-to-selection', this.item)
+        effectiveCount += 1
+      }
+      if (effectiveCount >= 2) {
+        this.$bks.openMenu({
+          item,
+          event,
+          options: [
+            {
+              name: 'Delete',
+              handler: () => this.$emit('remove-selected'),
+            },
+          ],
+        })
+        return
+      }
+
       const canWrite = this.item.canWrite ?? true;
 
       const options = [
@@ -136,7 +152,7 @@ export default Vue.extend({
         {
           name: "Share",
           slug: 'share',
-          handler: this.share,
+          handler: () => this.share(),
           hideIf: !this.isCloud || !this.item.id || this.isPersonal,
         },
         {
@@ -229,10 +245,10 @@ export default Vue.extend({
 
 /** --depth is from Tree.vue */
 .list-group .list-item .list-item-btn {
-  padding-left: calc(var(--depth) * 1.2rem);
+  padding-left: calc(var(--depth) * 1.15rem);
 }
 
 .item-icon {
-  margin-left: 0.25rem;
+  margin-left: 0.5rem;
 }
 </style>

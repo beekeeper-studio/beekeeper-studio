@@ -85,11 +85,11 @@
   </div>
 </template>
 <script>
-import TimeAgo from 'javascript-time-ago'
-import { mapGetters, mapState } from 'vuex'
-import { isUltimateType } from '@/common/interfaces/IConnection'
-import EditableText from '@/components/common/EditableText.vue'
 import { AppEvent } from '@/common/AppEvent';
+import { isUltimateType } from '@/common/interfaces/IConnection';
+import EditableText from '@/components/common/EditableText.vue';
+import TimeAgo from 'javascript-time-ago';
+import { mapGetters, mapState } from 'vuex';
 
 export default {
   components: { EditableText },
@@ -104,6 +104,7 @@ export default {
     'privacyMode',
     'bulkSelectionActive',
     'selected',
+    'selectedCount',
   ],
   data: () => ({
     timeAgo: new TimeAgo('en-US'),
@@ -208,6 +209,25 @@ export default {
 
       event.stopPropagation();
 
+      let effectiveCount = this.selectedCount ?? 0
+      if (this.bulkSelectionActive && !this.selected) {
+        this.$emit('add-to-selection', this.config)
+        effectiveCount += 1
+      }
+      if (effectiveCount >= 2) {
+        this.$bks.openMenu({
+          event,
+          item: this.config,
+          options: [
+            {
+              name: 'Delete',
+              handler: () => this.$emit('remove-selected'),
+            },
+          ],
+        })
+        return
+      }
+
       const canConnect = this.$store.getters.isUltimate
         ? true
         : !isUltimateType(this.displayConfig.connectionType)
@@ -235,17 +255,17 @@ export default {
         {
           name: "Share",
           slug: 'share',
-          handler: this.share,
+          handler: () => this.share(),
           hideIf: !this.isCloud || !this.savedConnection || !this.savedConnection.id || this.isPersonal,
         },
         {
           name: "Duplicate",
           slug: 'duplicate',
-          handler: this.duplicate
+          handler: () => this.duplicate(),
         },
         {
           name: `Copy ${this.connectionType}`,
-          handler: this.copyUrl
+          handler: () => this.copyUrl(),
         },
         { type: "divider" },
         {
@@ -268,7 +288,7 @@ export default {
         },
         {
           name: "Delete",
-          handler: this.remove
+          handler: () => this.remove(),
         },
       ].filter(({ hideIf }) => !hideIf)
 

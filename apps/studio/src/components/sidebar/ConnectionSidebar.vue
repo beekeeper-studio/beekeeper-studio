@@ -1,5 +1,8 @@
 <template>
-  <div class="sidebar-wrap row">
+  <div
+    class="sidebar-wrap row"
+    v-hotkey="bulkSelectionKeymap"
+  >
     <workspace-sidebar />
 
     <!-- QUICK CONNECT -->
@@ -168,9 +171,12 @@
                   :privacy-mode="privacyMode"
                   :selected="selectedIds.includes(itemNodeId(c))"
                   :bulk-selection-active="bulkSelectionActive"
+                  :selected-count="selectedIds.length"
                   @edit="edit"
                   @remove="remove"
                   @select="select"
+                  @add-to-selection="addToSelection"
+                  @remove-selected="removeCheckedConnections"
                   @duplicate="duplicate"
                   @doubleClick="connect"
                 />
@@ -287,9 +293,12 @@
                     :privacy-mode="privacyMode"
                     :selected="selectedIds.includes(node.id)"
                     :bulk-selection-active="bulkSelectionActive"
+                    :selected-count="selectedIds.length"
                     @edit="edit"
                     @remove="remove"
                     @select="select"
+                    @add-to-selection="addToSelection"
+                    @remove-selected="removeCheckedConnections"
                     :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.ref.id) }"
                     @duplicate="duplicate"
                     @doubleClick="connect"
@@ -351,13 +360,14 @@
 
 <script>
 import { AppEvent } from '@/common/AppEvent'
-import { buildFolderNodes, collectVisibleItemIds, parseReorderTarget, rangeSelectVisibleIds, toggleSelectedId } from "@/common/utils/folderTree"
+import { buildFolderNodes, parseReorderTarget } from "@/common/utils/folderTree"
 import EditableText from '@/components/common/EditableText.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
 import SidebarLoading from '@/components/common/SidebarLoading.vue'
 import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
 import ContentPlaceholderText from '@/components/common/loading/ContentPlaceholderText.vue'
+import { collectVisibleItemIds, rangeSelectVisibleIds, toggleSelectedId } from "@beekeeperstudio/ui-kit/tree/helpers"
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree"
 import rawLog from '@bksLogger'
 import _ from 'lodash'
@@ -471,6 +481,10 @@ export default {
     },
     bulkSelectionActive() {
       return this.selectedIds.length > 0
+    },
+    bulkSelectionKeymap() {
+      if (!this.bulkSelectionActive) return {}
+      return { esc: this.discardCheckedConnections }
     },
     visibleItemIds() {
       if (this.searching) {
@@ -602,6 +616,12 @@ export default {
     setSelectedIds(selectedIds) {
       this.selectedIds = selectedIds
     },
+    addToSelection(config) {
+      const id = this.itemNodeId(config)
+      if (!this.selectedIds.includes(id)) {
+        this.setSelectedIds([...this.selectedIds, id])
+      }
+    },
     itemNodeId(config) {
       return `item-${config.id}`
     },
@@ -655,6 +675,7 @@ export default {
     },
     discardCheckedConnections() {
       this.selectedIds = []
+      this.cloudSelectionAnchorId = null
     },
     clearFilter() {
       this.connFilter = null;
