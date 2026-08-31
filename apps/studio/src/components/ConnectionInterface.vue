@@ -685,7 +685,7 @@ export default Vue.extend({
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .connection-heading {
   display: flex;
 

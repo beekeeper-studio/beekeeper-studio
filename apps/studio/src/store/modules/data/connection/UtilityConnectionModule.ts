@@ -6,7 +6,9 @@ import { ItemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 import _ from "lodash";
 import Vue from "vue";
 
-type State = DataState<IConnection>
+type State = DataState<IConnection> & {
+  linkedSavedConnectionIds: number[]
+}
 
 export const UtilConnectionModule: DataStore<IConnection, State> = {
   namespaced: true,
@@ -18,11 +20,15 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
       pollError: null,
       filter: undefined,
       pendingSaveIds: [],
+      linkedSavedConnectionIds: []
     }
   },
   mutations: mutationsFor<IConnection>({
     connectionFilter(state: DataState<IConnection>, str: string) {
       state.filter = str;
+    },
+    linkedSavedConnectionIds(state: State, conns: number[]) {
+      state.linkedSavedConnectionIds = conns;
     },
     ...accessGrantMutations(),
   }),
@@ -33,8 +39,8 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
   actions: {
     ...utilActionsFor<IConnection>('saved', {}),
     ...accessGrantActions('connections'),
-    ...treeActions<IConnection>({ plural: 'connectionFolderIds', singular: 'connectionFolderId' }, true),
-    initialize() {
+    ...treeActions<IConnection>({ plural: 'connectionFolderIds', singular: 'connectionFolderId' }, true, { field: 'linkedSavedConnectionIds', update: 'loadLinkedSavedConnectionIds' }),
+    async initialize() {
       // no-op
     },
     async afterMutate(context, { type, data }) {
@@ -114,6 +120,13 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
       }
 
       return item.id
+    },
+    async loadLinkedSavedConnectionIds(context) {
+      const used = context.rootGetters['data/usedconnections/orderedUsedConfigs'];
+      if (!used) return;
+      const ids = used.map((u) => u.connectionId);
+
+      context.commit('linkedSavedConnectionIds', ids);
     }
   },
   getters: {
