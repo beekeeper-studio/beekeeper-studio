@@ -605,7 +605,7 @@ export default {
         const parent = this.folders.find((f) => f.personal && !f.parentId);
         if (!parent) {
           this.$noty.error(
-            "No personal folder found. Right-click an existing folder and choose New Subfolder to create a folder instead."
+            "No personal folder found. Right-click an existing folder and choose New Folder to create a folder instead."
           );
           return;
         }
@@ -646,13 +646,19 @@ export default {
       const canWrite = folder.canWrite ?? true;
       const isRoot = !folder.parentId;
       const options = [{
-        name: 'New Subfolder',
+        name: 'New Folder',
         handler: ({ item }) => {
           if (!this.canCreateFolders) {
             this.$root.$emit(AppEvent.upgradeModal, 'Folders');
             return;
           }
           this.startDrafting(item.id);
+          this.expandFolder(item.id);
+        },
+      }, {
+        name: 'New Connection',
+        handler: ({ item }) => {
+          this.$emit('create', { connectionFolderId: item.id });
           this.expandFolder(item.id);
         },
       }];

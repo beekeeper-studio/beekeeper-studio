@@ -436,7 +436,8 @@ export default Vue.extend({
     },
     'config.connectionType'(newConnectionType) {
       if (newConnectionType == null) return
-      this.$util.send('appdb/saved/new', { init: { connectionType: newConnectionType }}).then((conn) => {
+      const connectionFolderId = this.config.connectionFolderId
+      this.$util.send('appdb/saved/new', { init: { connectionType: newConnectionType, connectionFolderId }}).then((conn) => {
         // only replace it if it's a blank, unused connection
         if (!this.config.id && !this.config.password && !this.config.username) {
           this.config = conn;
@@ -531,12 +532,17 @@ export default Vue.extend({
       }
 
     },
-    async create() {
+    async create(options: { connectionFolderId?: number } = {}) {
       const connectionType = await this.$promptConnectionType()
       if (!connectionType) {
         return
       }
-      this.config = await this.$util.send('appdb/saved/new', { init: { connectionType } })
+      this.config = await this.$util.send('appdb/saved/new', {
+        init: {
+          connectionType,
+          connectionFolderId: options.connectionFolderId,
+        }
+      })
     },
     /*
       The CoreInterface should ONLY ever receive a `SavedConnection`, not a `UsedConnection`.
