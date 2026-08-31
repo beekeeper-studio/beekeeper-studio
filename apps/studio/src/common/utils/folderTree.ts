@@ -63,18 +63,24 @@ export function buildItemNodes<T extends Item>(
   parentIdKey: string,
   nameKey: string
 ): ExtendedItemNode<T>[] {
-  return items.map((item) => {
-    const parentId = item[parentIdKey];
-    return {
-      id: `item-${item.id}` as ItemNode["id"],
-      parentId: parentId ? `folder-${parentId}` : null,
-      parentIdKey,
-      type: "item",
-      name: item[nameKey] ?? "",
-      ref: item,
-      draggable: true,
-    };
-  });
+  return items.map((item) => buildItemNode(item, parentIdKey, nameKey));
+}
+
+export function buildItemNode<T extends HasId>(
+  item: T,
+  parentIdKey: string,
+  nameKey: string
+): ExtendedItemNode<T> {
+  const parentId = item[parentIdKey];
+  return {
+    id: `item-${item.id}` as ItemNode["id"],
+    parentId: parentId ? `folder-${parentId}` : null,
+    parentIdKey,
+    type: "item",
+    name: item[nameKey] ?? "",
+    ref: item,
+    draggable: true,
+  };
 }
 
 export function buildItemNode<T extends Item>(

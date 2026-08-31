@@ -2,6 +2,7 @@ import { AppEvent } from "@/common/AppEvent"
 import Vue from 'vue'
 import { openMenu, MenuItem, DividerItem } from "@beekeeperstudio/ui-kit"
 import { IConnection } from "@/common/interfaces/IConnection"
+import { ConnectionType } from "@/lib/db/types"
 import { isBksInternalColumn } from "@/common/utils"
 import store from '@/store'
 import TimeAgo from "javascript-time-ago"
@@ -62,13 +63,13 @@ export function toMenuItem(option: ContextOption): MenuItem {
 }
 
 export const BeekeeperPlugin = {
-  timeAgo(date: Date) {
+  timeAgo(date: Date, style?: string) {
     if (date > new Date('2888-01-01')) {
       return 'forever'
     }
     const ta = new TimeAgo('en-US')
 
-    return ta.format(date)
+    return ta.format(date, style)
 
   },
   closeTab(id?: string) {
@@ -232,6 +233,19 @@ export default {
             onConfirm: () => resolve(true),
             onCancel: () => resolve(false),
             ...options,
+          })
+        } catch (e) {
+          reject(e)
+        }
+      })
+    }
+
+    Vue.prototype.$promptConnectionType = function(): Promise<ConnectionType | false> {
+      return new Promise<ConnectionType | false>((resolve, reject) => {
+        try {
+          this.trigger(AppEvent.openConnectionTypePicker, {
+            onSelect: (connectionType: ConnectionType) => resolve(connectionType),
+            onCancel: () => resolve(false),
           })
         } catch (e) {
           reject(e)

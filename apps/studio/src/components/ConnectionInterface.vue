@@ -17,6 +17,23 @@
           <div class="card-flat padding" v-if="!isConfigReady">
             <content-placeholder-heading />
           </div>
+          <div
+            v-else-if="!config.connectionType"
+            class="empty-state"
+          >
+            <h3>Welcome to Beekeeper Studio</h3>
+            <p>Start by adding new connection.</p>
+            <p>Or connection from a URL.</p>
+            <div class="actions">
+              <button class="btn btn-primary" @click="create">
+                <i class="material-icons">add</i>
+                New Connection
+              </button>
+              <ImportButton :config="config" variant="flat">
+                Import from URL
+              </ImportButton>
+            </div>
+          </div>
           <div class="card-flat padding" :class="determineLabelColor" v-else>
             <div class="connection-heading">
               <h3 class="card-title">
@@ -37,25 +54,16 @@
             </div>
             <error-alert :error="errors" title="Please fix the following errors" />
             <form @action="submit" v-if="config">
-              <div class="form-group">
-                <label for="connection-select">Connection Type</label>
-                <select
-                  name="connectionType"
-                  class="form-control custom-select"
-                  v-model="config.connectionType"
-                  id="connection-select"
-                  :disabled="editingDisabled"
+              <div class="connection-type-wrapper">
+                <div class="label">Connection Type</div>
+                <button
+                  class="form-control connection-type-btn"
+                  type="button"
+                  @click="create"
                 >
-                  <option disabled hidden value="null">
-                    Select a connection type...
-                  </option>
-                  <option :key="`${t.value}-${t.name}`" v-for="t in communityConnectionTypes" :value="t.value">
-                    {{ t.name }}
-                  </option>
-                  <option :key="`${t.value}-${t.name}`" :value="t.value" v-for="t in ultimateConnectionTypes">
-                    {{ t.name }}
-                  </option>
-                </select>
+                  <database-icon :type="config.connectionType" />
+                  {{ friendlyConnectionType }}
+                </button>
               </div>
               <div v-if="config.connectionType && !shouldUpsell">
                 <!-- INDIVIDUAL DB CONFIGS -->
@@ -323,12 +331,14 @@ import { SmartLocalStorage } from '@/common/LocalStorage'
 import ContentPlaceholderHeading from '@/components/common/loading/ContentPlaceholderHeading.vue'
 import { FriendlyErrorHelper } from '@/frontend/utils/FriendlyErrorHelper'
 import PrivacyBanner from './PrivacyBanner.vue'
+import DatabaseIcon from "@/components/common/DatabaseIcon.vue"
 
 const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpgradePanel, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm, DynamoDbForm, ContentPlaceholderHeading, SurrealDbForm, PrivacyBanner, SnowflakeForm
+  components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpgradePanel, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm, DynamoDbForm, ContentPlaceholderHeading, SurrealDbForm, PrivacyBanner, SnowflakeForm,
+    DatabaseIcon,
   },
 
   data() {
@@ -357,7 +367,6 @@ export default Vue.extend({
     ...mapGetters(['isUltimate', 'isCloud']),
     ...mapGetters('licenses', ['isTrial', 'trialLicense']),
     ...mapGetters({
-      'usedConfigs': 'data/usedconnections/orderedUsedConfigs',
       privacyMode: 'settings/privacyMode'
     }),
     editingDisabled() {
@@ -427,7 +436,8 @@ export default Vue.extend({
     },
     'config.connectionType'(newConnectionType) {
       if (newConnectionType == null) return
-      this.$util.send('appdb/saved/new', { init: { connectionType: newConnectionType }}).then((conn) => {
+      const connectionFolderId = this.config.connectionFolderId
+      this.$util.send('appdb/saved/new', { init: { connectionType: newConnectionType, connectionFolderId }}).then((conn) => {
         // only replace it if it's a blank, unused connection
         if (!this.config.id && !this.config.password && !this.config.username) {
           this.config = conn;
@@ -522,13 +532,37 @@ export default Vue.extend({
       }
 
     },
-    create() {
-      this.$util.send('appdb/saved/new').then((conn) => {
-        this.config = conn;
+    async create(options: { connectionFolderId?: number } = {}) {
+      const connectionType = await this.$promptConnectionType()
+      if (!connectionType) {
+        return
+      }
+      this.config = await this.$util.send('appdb/saved/new', {
+        init: {
+          connectionType,
+          connectionFolderId: options.connectionFolderId,
+        }
       })
     },
-    edit(config) {
-      this.config = _.clone(config)
+    /*
+      The CoreInterface should ONLY ever receive a `SavedConnection`, not a `UsedConnection`.
+      Why? It loads tabs/pins/history based on the `id`, so if we give it the wrong model
+      then it loads content from another connection. That's bad.
+
+      The goal of this method is to take a `UsedConnection` and generate a blank `SavedConnection` (no ID), so CoreInterface gets the right thing.
+    */
+    async configFrom(config) {
+      // Hacky way to determine we have a `SavedConnection` already.
+      // The form edits a copy, never the sidebar's own object.
+      if (_.isUndefined(config.connectionId)) return _.clone(config)
+
+      const init = _.omit(config, ['id', 'connectionId', 'createdAt', 'updatedAt', 'version'])
+      const unsaved = await this.$util.send('appdb/saved/new', { init })
+      unsaved.id = null
+      return unsaved
+    },
+    async edit(config) {
+      this.config = await this.configFrom(config)
       this.errors = null
       this.connectionError = null
     },
@@ -536,10 +570,9 @@ export default Vue.extend({
       if (!await this.$confirm(`Delete "${config.name}"?`, undefined, { variant: "danger" })) {
         return
       }
-      if (this.config === config) {
-        this.$util.send('appdb/saved/new').then((conn) => {
-          this.config = conn;
-        })
+      // the form holds a copy of the connection, never the row itself
+      if (this.config?.id === config.id && this.config?.workspaceId === config.workspaceId) {
+        this.config = await this.$util.send('appdb/saved/new');
       }
       if (config.azureAuthOptions?.authId) {
         await this.$util.send('appdb/cache/remove', { authId: config.azureAuthOptions.authId });
@@ -571,15 +604,6 @@ export default Vue.extend({
       this.connectionError = null
       try {
         this.connecting = true
-        // If this is an existing used connection that doesn't have an associated saved connection
-        // we need to see if changes have been made to the config
-        if (this.config.connectionId === null && this.config.id) {
-          const oldConfig = this.usedConfigs.find((c) => c.id === this.config.id);
-          if (!_.isEqual(this.config, oldConfig)) {
-            this.config.id = null;
-          }
-        }
-
         const { auth, cancelled } = await this.$bks.unlock();
         if (cancelled) return;
         await this.$store.dispatch('connect', { config: this.config, auth })
@@ -594,7 +618,7 @@ export default Vue.extend({
       }
     },
     async handleConnect(config) {
-      this.config = config
+      this.config = await this.configFrom(config)
       await this.submit()
     },
     async testConnection() {
@@ -633,12 +657,6 @@ export default Vue.extend({
         }
 
         const id = await this.$store.dispatch('data/connections/save', this.config)
-
-        // This feels wrong but it works. It's undefined on savedConnections
-        if (this.config.connectionId === null) {
-          this.config.connectionId = id;
-          await this.$store.dispatch('data/usedconnections/save', this.config);
-        }
 
         this.$noty.success("Connection Saved")
         // we want to fetch the saved one in case it's changed
@@ -696,6 +714,53 @@ export default Vue.extend({
   .share-btn,
   &::v-deep .import-button {
     flex-shrink: 0;
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding-bottom: 1rem;
+
+  .actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+  }
+}
+
+.connection-type-wrapper {
+  font-size: var(--form-control-font-size);
+
+  .label {
+    padding-inline: 0.2rem;
+  }
+
+  .connection-type-btn {
+    position: relative;
+    margin-top: 0.2rem;
+    gap: 0.5rem;
+    width: 100%;
+    padding-right: 1.75rem;
+    justify-content: flex-start;
+    align-items: center;
+    background-color: transparent;
+
+    &::v-deep .database-icon {
+      line-height: 0;
+    }
+
+    /* The same triangle `select` draws */
+    &::after {
+      content: "";
+      position: absolute;
+      right: 0.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 4px solid currentColor;
+    }
   }
 }
 </style>

@@ -36,6 +36,7 @@
     <keyboard-shortcuts-modal />
     <move-item-modal />
     <move-folder-modal />
+    <connection-type-picker-modal />
     <confirmation-modal-manager />
     <lock-manager />
     <input-ephemeral-modal name="input-ephemeral-modal" />
@@ -45,6 +46,7 @@
       <trial-expired-modal />
       <license-expired-modal />
       <lifetime-license-expired-modal />
+      <cloud-workspaces-blocked-modal />
     </template>
     <portal-target
       name="menus"
@@ -84,6 +86,7 @@ import UtilDiedModal from '@/components/UtilDiedModal.vue'
 import TrialExpiredModal from '@/components/license/TrialExpiredModal.vue'
 import LicenseExpiredModal from '@/components/license/LicenseExpiredModal.vue'
 import LifetimeLicenseExpiredModal from '@/components/license/LifetimeLicenseExpiredModal.vue'
+import CloudWorkspacesBlockedModal from '@/components/license/CloudWorkspacesBlockedModal.vue'
 import type { LicenseStatus } from "@/lib/license";
 import { SmartLocalStorage } from '@/common/LocalStorage';
 import PluginManagerModal from '@/components/plugins/PluginManagerModal.vue'
@@ -94,6 +97,7 @@ import InputEphemeralModal from "@/components/common/modals/InputEphemeralModal.
 import ShareModal from "@/components/common/modals/ShareModal.vue";
 import MoveItemModal from "@/components/common/modals/MoveItemModal.vue";
 import MoveFolderModal from "@/components/common/modals/MoveFolderModal.vue";
+import ConnectionTypePickerModal from "@/components/common/modals/ConnectionTypePickerModal.vue";
 
 import rawLog from '@bksLogger'
 import { assignContextMenuToAllInputs } from './mixins/assignContextMenuToAllInputs'
@@ -108,9 +112,10 @@ export default Vue.extend({
     DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
-    LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
+    LifetimeLicenseExpiredModal, CloudWorkspacesBlockedModal,
+    WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
     PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
-    InputEphemeralModal, ShareModal, MoveItemModal, MoveFolderModal,
+    InputEphemeralModal, ShareModal, MoveItemModal, MoveFolderModal, ConnectionTypePickerModal,
   },
   data() {
     return {

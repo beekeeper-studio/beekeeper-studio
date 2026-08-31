@@ -1,266 +1,111 @@
 @use "sass:color";
 
-// Shared content panel used inside the upgrade modal AND inline in tabs
-// (e.g. multi-table export, import-from-file). The modal supplies its own
-// chrome; the standalone variant gives the panel a centered card look.
+// Shared upgrade prompt used inside the upgrade modal AND inline in tabs
+// (multi-table export, import-from-file, backup, plugins, AI shell).
+//
+// The panel renders standard dialog markup — .dialog-content, .dialog-c-title,
+// .dialog-c-subtitle — so it inherits the chrome every other dialog in the app
+// gets from vue-js-modal.scss. Only the bits that don't exist elsewhere live
+// here: the feature list, the link row, and the standalone card surface.
 
 .upgrade-panel {
   width: 100%;
+  // Set explicitly: outside a modal the panel would otherwise inherit whatever
+  // text color the surrounding tab pane happens to use.
+  color: $text;
 
-  .upgrade-panel-scroll {
-    padding: 22px 24px 4px;
+  .dialog-c-title {
+    color: $text-dark;
   }
 
-  // Header
-  .upgrade-panel-header {
-    display: flex;
-    align-items: center;
-    gap: 14px;
+  .dialog-c-subtitle {
+    margin: 0;
+  }
 
-    .bk-badge {
-      width: 38px;
-      height: 38px;
-      display: block;
+  // Two-column checklist of what a paid license includes.
+  .upgrade-feature-list {
+    margin: $gutter-w 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: $gutter-w * 1.5;
+    row-gap: $gutter-h;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: $gutter-h * 1.25;
+      font-size: 0.875rem;
+      color: $text;
+    }
+
+    .material-icons {
+      font-size: 16px;
+      color: $text-lighter;
       flex-shrink: 0;
     }
-    .title-block {
-      flex: 1;
-      min-width: 0;
-      &.triggered {
-        align-self: flex-start;
-      }
-      .eyebrow {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        font-size: 11.5px;
-        color: $theme-primary;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        font-weight: 600;
-        margin-bottom: 2px;
-        .material-icons {
-          font-size: 13px;
-        }
-      }
-      .title {
-        margin: 0;
-        font-size: 18px;
-        font-weight: 500;
-        color: $text-dark;
-        letter-spacing: -0.1px;
-        line-height: 1.25;
-        padding-bottom: 0;
-      }
-    }
-    .indie-pill {
+  }
+
+  .upgrade-panel-links {
+    margin: $gutter-w 0 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+
+    a {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 3px 8px;
-      font-size: 11px;
+      gap: $gutter-h * 0.875;
       color: $text;
-      background: rgba($theme-base, 0.04);
-      border: 1px solid $border-color;
-      border-radius: 999px;
-      white-space: nowrap;
-      flex-shrink: 0;
-      .dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: $brand-success;
-      }
-    }
-  }
-  .subtitle {
-    margin: 6px 0 0;
-    padding-left: 52px;
-    font-size: 13px;
-    color: $text-light;
-    line-height: 1.5;
-  }
+      text-decoration: none;
 
-  // What you unlock
-  .unlock-section {
-    padding-top: 18px;
-    .section-label {
-      font-size: 11px;
-      color: $text-lighter;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 10px;
-      font-weight: 600;
-    }
-    .unlock-list {
-      margin: 0;
-      padding: 0;
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .unlock-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 11px;
-      list-style: none;
-      padding: 0;
-      &:before { content: none; }
-      .unlock-icon {
-        font-size: 18px;
-        margin-top: 1px;
-        flex-shrink: 0;
+      span {
+        text-decoration: underline;
+        text-decoration-color: rgba($theme-base, 0.25);
       }
-      .unlock-text {
-        min-width: 0;
-        font-size: 13px;
-        line-height: 1.45;
+      &:hover span {
+        text-decoration-color: currentColor;
       }
-      .unlock-title {
-        color: $text-dark;
-        font-weight: 600;
-        margin-right: 6px;
-      }
-      .unlock-blurb {
-        color: $text-light;
-      }
-    }
-    .unlock-more {
-      display: flex;
-      align-items: center;
-      gap: 11px;
-      padding-left: 29px;
-      list-style: none;
-      &:before { content: none; }
-      a {
-        font-size: 12.5px;
-        color: $text-light;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        .link-emphasis {
-          color: $brand-secondary;
-          text-decoration: underline;
-          text-decoration-color: rgba($brand-secondary, 0.4);
-          margin-left: 2px;
-        }
-        .material-icons {
-          font-size: 14px;
-          color: $brand-secondary;
-        }
-      }
-    }
-  }
-
-  // Testimonial
-  .testimonial {
-    margin: 18px 0 0;
-    padding: 14px 16px;
-    background: rgba($theme-base, 0.03);
-    border: 1px solid $border-color;
-    border-radius: 8px;
-    display: flex;
-    gap: 14px;
-    align-items: flex-start;
-
-    .avatar {
-      width: 36px;
-      height: 36px;
-      flex-shrink: 0;
-      border-radius: 50%;
-      background: linear-gradient(135deg, rgba($theme-primary, 0.22), rgba($brand-secondary, 0.18));
-      border: 1px solid $border-color;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: $text-dark;
-      font-size: 14px;
-      font-weight: 600;
-      letter-spacing: 0.4px;
-    }
-    .testimonial-body {
-      flex: 1;
-      min-width: 0;
-    }
-    blockquote {
-      margin: 0;
-      font-size: 13px;
-      line-height: 1.55;
-      color: $text-dark;
-      font-weight: 400;
-    }
-    figcaption {
-      margin-top: 6px;
-      font-size: 11.5px;
-      color: $text-light;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      .author {
-        color: $text;
-        font-weight: 600;
-      }
-      .sep {
+      .material-icons {
+        font-size: 16px;
         color: $text-lighter;
       }
     }
   }
 
-  // CTAs — wraps the shared <UpsellButtons /> component
-  .cta-row {
-    margin-top: 18px;
-    padding: 16px 0 4px;
-    border-top: 1px solid $border-color;
+  // The shared upsell buttons are this panel's dialog footer, so give them the
+  // same metrics .vue-dialog-buttons uses everywhere else.
+  > .upsell-buttons {
+    padding: 0 $gutter-w $gutter-w;
+    padding-left: $gutter-w * 1.5;
   }
 
-  // Lifetime license footer band
-  .lifetime-footer {
-    padding: 11px 24px;
-    background: rgba($theme-primary, 0.07);
-    border-top: 1px solid rgba($theme-primary, 0.18);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    font-size: 12.5px;
-    color: $text;
-    flex-shrink: 0;
-
-    .material-icons {
-      font-size: 18px;
-      color: $theme-primary;
-    }
-    strong {
-      color: $text-dark;
-      font-weight: 600;
-    }
-    .asterisk {
-      color: $text-light;
-    }
-  }
-
-  // Standalone (inline in a tab): give the panel its own card chrome
-  // matching the modal's surface color so the two read the same.
+  // Standalone (inline in a tab, or on the connection screen): the panel
+  // supplies the card surface a modal would otherwise provide.
   &.upgrade-panel--standalone {
-    max-width: 620px;
-    margin: 24px auto;
+    max-width: 520px;
+    margin: 1.5rem auto;
     background: color.adjust($theme-bg, $lightness: 1%);
-    border: 1px solid $border-color;
-    border-radius: 12px;
-    overflow: hidden;
-    align-self: center;
+    border-radius: 8px;
+    @include card-shadow;
+
+    // Panels with a preview in the slot need more room.
+    &.upgrade-panel--wide {
+      max-width: 620px;
+    }
   }
 }
 
-// Wrapper used by tabs to center the standalone panel and provide breathing room.
-// Block layout (not flex) so margin: auto on the standalone card centers it
-// horizontally and the wrapper itself becomes the vertical scroll container.
+// Wrapper used by tabs to center the standalone panel and provide breathing
+// room. `safe center` keeps the top of a tall panel reachable — the wrapper
+// falls back to top-aligned scrolling instead of clipping it.
 .upgrade-panel-tab-wrapper {
   width: 100%;
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: 0 24px 24px;
+  display: flex;
+  align-items: safe center;
+  justify-content: center;
+  padding: 0 1.5rem;
 }

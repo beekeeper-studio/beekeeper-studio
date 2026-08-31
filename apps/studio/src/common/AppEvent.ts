@@ -49,6 +49,8 @@ export enum AppEvent {
   backupDatabase = 'backupDatabase',
   restoreDatabase = 'restoreDatabase',
   upgradeModal = 'upgradeModal',
+  /** Triggered when a lifetime (expired subscription) license tries to use cloud workspaces */
+  cloudWorkspacesBlocked = 'cloudWorkspacesBlocked',
   toggleExpandTableList = 'toggleExpandTableList',
   togglePinTableList = 'togglePinTableList',
   dropzoneEnter = 'dropzoneEnter',
@@ -110,6 +112,12 @@ export enum AppEvent {
    * });
    **/
   openMoveFolderModal = 'openMoveFolderModal',
+  /** Open the connection type picker. Do not call this directly. Please use `this.$promptConnectionType()`. */
+  openConnectionTypePicker = 'openConnectionTypePicker',
+  /** Vim's `:w`. Broadcast, so only the active tab should act on it. */
+  vimWrite = 'vimWrite',
+  /** Vim's `:x` and `:wq`. Broadcast, so only the active tab should act. */
+  vimWriteQuit = 'vimWriteQuit',
 }
 
 export type OpenShareModalOptions =  {

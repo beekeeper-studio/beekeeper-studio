@@ -3805,6 +3805,11 @@
   resolved "https://registry.yarnpkg.com/@replit/codemirror-emacs/-/codemirror-emacs-6.1.0.tgz#662dffc3b354c47cbf930219f8cb75cfc9e7f6fe"
   integrity sha512-74DITnht6Cs6sHg02PQ169IKb1XgtyhI9sLD0JeOFco6Ds18PT+dkD8+DgXBDokne9UIFKsBbKPnpFRAz60/Lw==
 
+"@replit/codemirror-indentation-markers@^6.5.3":
+  version "6.5.3"
+  resolved "https://registry.yarnpkg.com/@replit/codemirror-indentation-markers/-/codemirror-indentation-markers-6.5.3.tgz#1cfe5c557c45dd7f2988cbee278f17607010591b"
+  integrity sha512-hL5Sfvw3C1vgg7GolLe/uxX5T3tmgOA3ZzqlMv47zjU1ON51pzNWiVbS22oh6crYhtVhv8b3gdXwoYp++2ilHw==
+
 "@replit/codemirror-vim@^6.3.0":
   version "6.3.0"
   resolved "https://registry.yarnpkg.com/@replit/codemirror-vim/-/codemirror-vim-6.3.0.tgz#1bcde09f25bcb1c4f96d2cd50ea07f9f71fc9ec4"
@@ -5635,9 +5640,9 @@ axios-retry@^3.2.4:
     is-retry-allowed "^2.2.0"
 
 axios@1.13.2, axios@^1.15.0, axios@^1.15.1, axios@^1.18.0:
-  version "1.19.0"
-  resolved "https://registry.yarnpkg.com/axios/-/axios-1.19.0.tgz#ddf864d4c8233c0e6873746ab59361537d05ad39"
-  integrity sha512-ht/iuYZXEjFxLH/Hkezgd7m6JKlHHXEUSneaDz8uZe1Gj5QZtCnpyDsckvAiEnT89OEbCLmnte4R4sn7P0EKFw==
+  version "1.20.0"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-1.20.0.tgz#515513445aa60e71d04b6521ca6210829ccb4786"
+  integrity sha512-r8aOh8j9cGKpgQAqpzrUHnSIc6a59Y3Xf/cv8sy1DrHCkZHzQGEuoq1tARk6qSyDdtQGSDgpb9kFlruzPvrgwg==
   dependencies:
     follow-redirects "^1.16.0"
     form-data "^4.0.6"
@@ -6863,6 +6868,11 @@ detect-node@^2.0.4:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/detect-node/-/detect-node-2.1.0.tgz#c9c70775a49c3d03bc2c06d9a73be550f978f8b1"
   integrity sha512-T0NIuQpnTvFDATNuHN5roPwSBG83rFsuO+MXXH9/3N1eFbn4wcPjttvjMLEPWJ0RGUYgQE7cGgS3tNxbqCGM7g==
+
+devicon@^2.17.0:
+  version "2.17.0"
+  resolved "https://registry.yarnpkg.com/devicon/-/devicon-2.17.0.tgz#0473b8be45767b3483e63489ce07e3869c0d6113"
+  integrity sha512-2nKUdjobJlmRSaCHa50PGsVq0VDURnq9gVzQoJggsM/NKN0tLhC/Uq2zmy2pH36Q/1q3gvYwp/GjTgv/R0Ysbg==
 
 diff-match-patch@^1.0.5:
   version "1.0.5"
@@ -12408,6 +12418,11 @@ simple-get@^4.0.0:
     decompress-response "^6.0.0"
     once "^1.3.1"
     simple-concat "^1.0.0"
+
+simple-icons@^16.29.0:
+  version "16.29.0"
+  resolved "https://registry.yarnpkg.com/simple-icons/-/simple-icons-16.29.0.tgz#37f50472a2725d5c3e8b18ecee1e657d1ed32810"
+  integrity sha512-4H94f5ZgcCcgJroc902TFlFdgPu2IU2eD7+WebN2Z14xKYrKHeJ4UQcZwzgSuH4Rgzw+jp7sbHl40NefuIEYsg==
 
 simple-lru-cache@^0.0.2:
   version "0.0.2"

@@ -11,6 +11,7 @@
       <form
         v-kbd-trap="true"
         class="base-modal"
+        :style="{ height }"
         ref="baseModal"
         @submit.prevent="$emit('submit', $event)"
       >
@@ -61,6 +62,7 @@ export default Vue.extend({
     },
     /** Show loading indicator */
     loading: Boolean,
+    height: String,
   },
   methods: {
     close() {
@@ -149,7 +151,8 @@ export default Vue.extend({
 }
 
 .base-modal-body {
-  flex: 1 0 auto;
+  flex: 1 1 auto;
+  overflow-y: auto;
   width: 100%;
   padding: 0 1.2rem 0.8rem;
 }
