@@ -15,6 +15,7 @@ const config = {
   testPathIgnorePatterns: [
     "/codemirror/",
     "/tests/integration/macos/",
+    "/tests/integration/rds/",
   ]
 }
 
