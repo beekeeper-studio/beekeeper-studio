@@ -10,7 +10,6 @@ import { FileHelpers } from "@/types";
 import type Noty from "noty";
 import { AppEvent } from "@/common/AppEvent";
 import { WebPluginCommandExecutor } from "./WebPluginCommandExecutor";
-import { convertToManifestV1, mapViewsAndMenuFromV0ToV1 } from "../utils";
 
 const log = rawLog.scope("WebPluginManager");
 
