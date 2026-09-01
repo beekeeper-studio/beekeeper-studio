@@ -192,9 +192,6 @@ export function utilActionsFor<T extends Transport>(type: string, other: any = {
           ...loadOptions,
           ...(options.params ? { params: options.params } : {})
         };
-        if (type === 'saved') {
-          log.info('load called with options: ', options)
-        }
         const items = await Vue.prototype.$util.send(`appdb/${type}/find`, { options: findOpts });
         log.info(`Util loaded ${items.length} items`)
         await context.dispatch('mutate', { type: 'upsert', data: items });
