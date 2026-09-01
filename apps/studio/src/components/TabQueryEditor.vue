@@ -1029,6 +1029,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
               settings: {
                 selection: "",
                 selectionMatch: "",
+                lineHighlight: "",
+                gutterActiveForeground: "",
               },
             }),
             this.queryMagic.extensions,

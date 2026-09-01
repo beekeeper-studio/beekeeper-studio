@@ -393,6 +393,8 @@ export default Vue.extend({
           settings: {
             selection: "",
             selectionMatch: "",
+            lineHighlight: "",
+            gutterActiveForeground: "",
           },
         }),
         this.persistJsonFold.extensions,
