@@ -28,9 +28,15 @@
       </button>
       <button
         :disabled="loading"
-        class="btn btn-primary"
+        class="btn btn-primary btn-badge"
         type="submit"
       >
+        <span
+          class="badge"
+          v-if="!loading && selectedConnections.length > 0"
+        >
+          <small>{{ selectedConnections.length }}</small>
+        </span>
         {{ loading ? '...' : 'Import' }}
       </button>
     </template>
@@ -96,6 +102,8 @@ export default Vue.extend({
 })
 </script>
 <style lang="scss" scoped>
+@import '../../assets/styles/app/_variables.scss';
+
 .import-connections-subtitle {
   color: var(--text-light);
   margin-bottom: 0.5rem;
@@ -110,5 +118,16 @@ export default Vue.extend({
   display: flex;
   align-items: center;
   line-height: 1.6;
+}
+
+.btn-badge {
+  .badge {
+    margin: 0;
+    margin-right: $gutter-h * 0.25;
+    background: transparent;
+    line-height: 1;
+    padding-left: 0;
+    color: rgba($theme-bg, 0.87);
+  }
 }
 </style>
