@@ -69,6 +69,7 @@ export const cssVars = [
   "--bks-text-editor-indent-marker-active-bg-color",
   "--bks-text-editor-keyword-fg-color",
   "--bks-text-editor-linenumber-fg-color",
+  "--bks-text-editor-linenumber-active-fg-color",
   "--bks-text-editor-link-fg-color",
   "--bks-text-editor-matchingbracket-fg-color",
   "--bks-text-editor-matchingbracket-bg-color",
