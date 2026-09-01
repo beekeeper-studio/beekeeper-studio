@@ -309,11 +309,9 @@ export default Vue.extend({
     this.$store.registerModule(this.idTrackerPath, TreeExpansionModule);
   },
   async mounted() {
-    log.info("MOUNT")
     await this.initializeItemTree();
   },
   async beforeDestroy() {
-    log.info("DESTROY")
     const paths = [ this.itemPath, this.folderPath, this.idTrackerPath ];
 
     for (const path of paths) {

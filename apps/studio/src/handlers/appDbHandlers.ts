@@ -44,7 +44,6 @@ function paramsToWhere(params: Record<string, any>): FindOptionsWhere<any> {
   for (const key of pluralKeys) {
     if (key in params) {
       const singular = key.replace(/Ids$/, 'Id');
-      log.info('params: ', params)
       if (params[key] && params[key].length > 0) {
         where[singular] = In(params[key]);
       } else {
