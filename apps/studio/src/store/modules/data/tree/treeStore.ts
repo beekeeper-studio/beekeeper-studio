@@ -90,7 +90,7 @@ export function treeActions<T extends HasId>(
         return { error: null };
       }
 
-      if (!_.isNil(extraIdsInfo)) {
+      if (!_.isNil(extraIdsInfo) && context.state[extraIdsInfo.field].length === 0) {
         await context.dispatch(extraIdsInfo.update);
       }
 
@@ -107,7 +107,7 @@ export function treeActions<T extends HasId>(
       let error: ClientError | null = null;
 
       let params = local ?
-        [ { [parentKeys.plural]: parentIds }, { ids: extraIds } ] :
+        [ { [parentKeys.plural]: parentIds }, { [parentKeys.plural]: []}, { ids: extraIds } ] :
         { [parentKeys.plural]: parentIds, ids: extraIds };
 
       try {
