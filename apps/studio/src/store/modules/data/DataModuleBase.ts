@@ -193,7 +193,6 @@ export function utilActionsFor<T extends Transport>(type: string, other: any = {
           ...(options.params ? { params: options.params } : {})
         };
         const items = await Vue.prototype.$util.send(`appdb/${type}/find`, { options: findOpts });
-        log.info(`Util loaded ${items.length} items`)
         await context.dispatch('mutate', { type: 'upsert', data: items });
       }, options.onError)
     },
