@@ -252,20 +252,10 @@
         </nav>
       </div>
     </div>
-    <div
-      class="toolbar btn-group row flex-right"
-      v-show="bulkSelectionActive"
-    >
-      <a
-        class="btn btn-link"
-        @click="discardCheckedFavorites"
-      >Cancel</a>
-      <a
-        class="btn btn-primary"
-        :title="removeTitle"
-        @click="removeCheckedFavorites"
-      >Remove</a>
-    </div>
+    <!-- <div class="toolbar btn-group row flex-right" v-show="bulkSelectionActive">
+      <a class="btn btn-link" @click="discardCheckedFavorites">Cancel</a>
+      <a class="btn btn-primary" :title="removeTitle" @click="removeCheckedFavorites">Remove</a>
+    </div> -->
   </div>
 </template>
 
