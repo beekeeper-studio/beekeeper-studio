@@ -39,13 +39,10 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
     ...actionsFor<ICloudSavedConnection>('connections', {}),
     ...accessGrantActions('connections'),
     ...treeActions<ICloudSavedConnection>({ plural: 'connectionFolderIds', singular: 'connectionFolderId' }, false, { field: 'linkedSavedConnectionIds', update: 'loadLinkedSavedConnectionIds' }),
-    async initialize(context) {
-      await context.dispatch('loadLinkedSavedConnectionIds');
+    initialize() {
     },
     async poll(context) {
       if (!context.rootState.connected) {
-        await context.dispatch('loadLinkedSavedConnectionIds');
-
         const expandedFolderIds = context.rootState.sidebar.connections.expandedIds
         const result = await context.dispatch('loadByParentIds', expandedFolderIds)
         if (result.error) {
