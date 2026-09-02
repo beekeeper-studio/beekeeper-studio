@@ -1,4 +1,4 @@
-import { testOnly } from '../../../../../src/lib/db/clients/mysql'
+import { MysqlClient, testOnly } from '../../../../../src/lib/db/clients/mysql'
 import { parseIndexColumn } from '../../../../../src/common/utils'
 import { MySqlChangeBuilder } from "@shared/lib/sql/change_builder/MysqlChangeBuilder"
 
@@ -189,6 +189,91 @@ describe("MysqlChangeBuilder", () => {
       expect(result).not.toContain('CHARACTER SET')
       expect(result).not.toContain('COLLATE')
     })
+  })
+
+  describe("Multi-statement query error annotation (issue #4698)", () => {
+    let client;
+    beforeEach(() => {
+      client = new MysqlClient(null, null);
+    });
+
+    it("should preserve single-query behavior when commands.length <= 1", async () => {
+      const mockResult = { rows: [{ id: 1 }], columns: [{ name: 'id' }] };
+      client.driverExecuteSingle = jest.fn().mockResolvedValue(mockResult);
+
+      const results = await client.executeQuery('SELECT 1;');
+
+      expect(client.driverExecuteSingle).toHaveBeenCalledWith('SELECT 1;', {
+        params: {},
+        rowsAsArray: undefined,
+        connection: undefined,
+      });
+      expect(results).toHaveLength(1);
+      expect(results[0].rows).toEqual([{ id: 1 }]);
+    });
+
+    it("should annotate first statement failure as (@ query #1) and not execute subsequent queries", async () => {
+      client.identifyCommands = jest.fn().mockReturnValue([
+        { text: 'FAIL 1;', type: 'UNKNOWN', executionType: 'UNKNOWN' },
+        { text: 'SELECT 2;', type: 'SELECT', executionType: 'LISTING' },
+        { text: 'SELECT 3;', type: 'SELECT', executionType: 'LISTING' },
+      ]);
+      client.driverExecuteSingle = jest.fn().mockImplementation((sql) => {
+        if (sql === 'FAIL 1;') {
+          return Promise.reject(new Error('Syntax error near FAIL'));
+        }
+        return Promise.resolve({ rows: [{ val: 2 }], columns: [] });
+      });
+
+      await expect(client.executeQuery('FAIL 1; SELECT 2; SELECT 3;'))
+        .rejects.toThrow('Syntax error near FAIL (@ query #1)');
+
+      expect(client.driverExecuteSingle).toHaveBeenCalledTimes(1);
+      expect(client.driverExecuteSingle).toHaveBeenCalledWith('FAIL 1;', expect.anything());
+    });
+
+    it("should annotate middle statement failure as (@ query #2) and execute preceding queries only once", async () => {
+      client.identifyCommands = jest.fn().mockReturnValue([
+        { text: 'SELECT 1;', type: 'SELECT', executionType: 'LISTING' },
+        { text: 'FAIL 2;', type: 'UNKNOWN', executionType: 'UNKNOWN' },
+        { text: 'SELECT 3;', type: 'SELECT', executionType: 'LISTING' },
+      ]);
+      client.driverExecuteSingle = jest.fn().mockImplementation((sql) => {
+        if (sql === 'FAIL 2;') {
+          return Promise.reject(new Error('Table does not exist'));
+        }
+        return Promise.resolve({ rows: [{ val: 1 }], columns: [] });
+      });
+
+      await expect(client.executeQuery('SELECT 1; FAIL 2; SELECT 3;'))
+        .rejects.toThrow('Table does not exist (@ query #2)');
+
+      expect(client.driverExecuteSingle).toHaveBeenCalledTimes(2);
+      expect(client.driverExecuteSingle).toHaveBeenNthCalledWith(1, 'SELECT 1;', expect.anything());
+      expect(client.driverExecuteSingle).toHaveBeenNthCalledWith(2, 'FAIL 2;', expect.anything());
+    });
+
+    it("should annotate last statement failure as (@ query #3) and execute preceding queries only once", async () => {
+      client.identifyCommands = jest.fn().mockReturnValue([
+        { text: 'SELECT 1;', type: 'SELECT', executionType: 'LISTING' },
+        { text: 'SELECT 2;', type: 'SELECT', executionType: 'LISTING' },
+        { text: 'FAIL 3;', type: 'UNKNOWN', executionType: 'UNKNOWN' },
+      ]);
+      client.driverExecuteSingle = jest.fn().mockImplementation((sql) => {
+        if (sql === 'FAIL 3;') {
+          return Promise.reject(new Error('Division by zero'));
+        }
+        return Promise.resolve({ rows: [{ val: 1 }], columns: [] });
+      });
+
+      await expect(client.executeQuery('SELECT 1; SELECT 2; FAIL 3;'))
+        .rejects.toThrow('Division by zero (@ query #3)');
+
+      expect(client.driverExecuteSingle).toHaveBeenCalledTimes(3);
+      expect(client.driverExecuteSingle).toHaveBeenNthCalledWith(1, 'SELECT 1;', expect.anything());
+      expect(client.driverExecuteSingle).toHaveBeenNthCalledWith(2, 'SELECT 2;', expect.anything());
+      expect(client.driverExecuteSingle).toHaveBeenNthCalledWith(3, 'FAIL 3;', expect.anything());
+    });
   })
 })
 
