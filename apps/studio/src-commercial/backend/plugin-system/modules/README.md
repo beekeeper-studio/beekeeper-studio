@@ -56,5 +56,3 @@ export interface ModuleHookMap {
 ```
 
 Both side-effect and waterfall hooks coexist in the same `ModuleHookMap`. The difference is how the `PluginManager` calls them: `notify` for side-effect hooks (typically `void`), `pipe` for waterfall hooks (typically returns a type).
-
-A side-effect hook that the windows need to know about is forwarded by `NotificationModule`; add it there and to `ForwardedHook` in `src/lib/utility/notifications.ts`.
