@@ -18,7 +18,8 @@ import {
   buildSelectTopQuery,
   escapeString,
   ClientError, refreshTokenIfNeeded,
-  errorMessages
+  errorMessages,
+  annotateQueryError
 } from "./utils";
 import { parseQuotedEnumValues } from "./enumParsers";
 import {
@@ -1168,33 +1169,48 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     queryText: string,
     options: { rowsAsArray?: boolean; connection?: mysql.PoolConnection } = {}
   ): Promise<NgQueryResult[]> {
-    const { columns: fields, rows } = await this.driverExecuteSingle(queryText, {
-      params: {},
-      rowsAsArray: options.rowsAsArray,
-      connection: options.connection,
-    });
-
-    if (!rows) {
-      return [];
-    }
-
     const commands = this.identifyCommands(queryText);
 
-    if (!isMultipleQuery(fields)) {
+    if (commands.length <= 1) {
+      const res = await this.driverExecuteSingle(queryText, {
+        params: {},
+        rowsAsArray: options.rowsAsArray,
+        connection: options.connection,
+      });
+      if (!res.rows) {
+        return [];
+      }
       return [
-        parseRowQueryResult(rows, fields, commands[0], options.rowsAsArray),
+        parseRowQueryResult(res.rows, res.columns, commands[0], options.rowsAsArray),
       ];
     }
 
-    return rows.map((_, idx) =>
-      parseRowQueryResult(
-        rows[idx],
-        fields[idx],
-        commands[idx],
-        options.rowsAsArray
-      )
-    );
+    const results: NgQueryResult[] = [];
+    for (let index = 0; index < commands.length; index++) {
+      try {
+        const res = await this.driverExecuteSingle(commands[index].text, {
+          params: {},
+          rowsAsArray: options.rowsAsArray,
+          connection: options.connection,
+        });
+        if (res.rows) {
+          results.push(
+            parseRowQueryResult(
+              res.rows,
+              res.columns,
+              commands[index],
+              options.rowsAsArray
+            )
+          );
+        }
+      } catch (err: any) {
+        throw annotateQueryError(err, index, commands.length);
+      }
+    }
+
+    return results;
   }
+
 
   async rawExecuteQuery(
     query: string,
