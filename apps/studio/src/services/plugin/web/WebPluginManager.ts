@@ -10,6 +10,7 @@ import { FileHelpers } from "@/types";
 import type Noty from "noty";
 import { AppEvent } from "@/common/AppEvent";
 import { WebPluginCommandExecutor } from "./WebPluginCommandExecutor";
+import ReadyState from "./ReadyState";
 
 const log = rawLog.scope("WebPluginManager");
 
@@ -56,20 +57,24 @@ export default class WebPluginManager {
   loaders: Map<string, WebPluginLoader> = new Map();
 
   private initialized = false;
-  private utilityConnection: UtilityConnection;
+  private util: UtilityConnection;
   public readonly pluginStore: PluginStoreService;
   public readonly appVersion: string;
   public readonly fileHelpers: FileHelpers;
   private readonly noty: WebPluginManagerParams['noty'];
   private readonly confirm: WebPluginManagerParams['confirm'];
 
+  private readyState: ReadyState;
+
   constructor(params: WebPluginManagerParams) {
-    this.utilityConnection = params.utilityConnection;
+    this.util = params.utilityConnection;
     this.pluginStore = params.pluginStore;
     this.appVersion = params.appVersion;
     this.fileHelpers = params.fileHelpers;
     this.noty = params.noty;
     this.confirm = params.confirm;
+
+    this.readyState = new ReadyState(this.util);
   }
 
   async initialize() {
@@ -78,7 +83,12 @@ export default class WebPluginManager {
       return;
     }
 
-    await this.utilityConnection.send("plugin/waitForInit");
+    log.info("Waiting for the backend's plugin manager...");
+
+    await this.readyState.wait();
+
+    log.info("Backend's plugin manager is ready. Initializing web plugin manager...");
+
     await this.pluginStore.initialize();
 
     for (const snapshot of this.pluginStore.getSnapshots()) {
@@ -98,12 +108,14 @@ export default class WebPluginManager {
       }
     }
 
+    log.info("Web plugin manager is ready.");
+
     this.initialized = true;
   }
 
   /** Install a plugin by its id */
   async install(id: string) {
-    await this.utilityConnection.send("plugin/install", { id });
+    await this.util.send("plugin/install", { id });
     await this.pluginStore.loadSnapshots();
     const snapshot = this.pluginStore.getSnapshot(id)!;
     await this.loadPlugin(snapshot);
@@ -112,7 +124,7 @@ export default class WebPluginManager {
 
   /** Update a plugin by its id */
   async update(id: string) {
-    await this.utilityConnection.send("plugin/update", { id });
+    await this.util.send("plugin/update", { id });
     await this.pluginStore.loadSnapshots();
     const snapshot = this.pluginStore.getSnapshot(id)!;
     await this.reloadPlugin(snapshot);
@@ -121,7 +133,7 @@ export default class WebPluginManager {
 
   /** Uninstall a plugin by its id */
   async uninstall(id: string) {
-    await this.utilityConnection.send("plugin/uninstall", { id });
+    await this.util.send("plugin/uninstall", { id });
     await this.unloadPlugin(id);
     await this.pluginStore.loadSnapshots();
   }
@@ -186,7 +198,7 @@ export default class WebPluginManager {
   }
 
   async viewEntrypointExists(pluginId: string, viewId: string): Promise<boolean> {
-    return await this.utilityConnection.send("plugin/viewEntrypointExists", {
+    return await this.util.send("plugin/viewEntrypointExists", {
       pluginId,
       viewId,
     });
@@ -275,7 +287,7 @@ export default class WebPluginManager {
     const loader = new WebPluginLoader({
       manifest: snapshot.manifest,
       store: this.pluginStore,
-      utility: this.utilityConnection,
+      utility: this.util,
       log: rawLog.scope(`Plugin:${snapshot.manifest.id}`),
       appVersion: this.appVersion,
       fileHelpers: this.fileHelpers,

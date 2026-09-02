@@ -7,13 +7,28 @@ export type PluginSourcePathParams = {
   removeSourceDir: boolean;
 };
 
-export interface ModuleHookMap {
-  "before-initialize": () => void | Promise<void>;
-  "before-install-plugin": (pluginId: string) => void | Promise<void>;
-  "plugin-snapshots": (
+/** Hooks that run for side effects. */
+export interface CallHookMap {
+  /** Before initializing the plugin manager */
+  beforeInitialize: () => void | Promise<void>;
+
+  /** After the plugin manager is ready to be used */
+  afterInitialize: () => void | Promise<void>;
+
+  /** Also triggered before updating a plugin */
+  beforeInstallPlugin: (pluginId: string) => void | Promise<void>;
+}
+
+/** Hooks that pipe a value through each handler. */
+export interface ApplyHookMap {
+  /** Use it to adjust the state of a plugin — e.g. marking one as
+   * disabled — or to add and remove entries. */
+  pluginSnapshots: (
     snapshots: PluginSnapshot[]
   ) => PluginSnapshot[] | Promise<PluginSnapshot[]>;
 }
+
+export type ModuleHookMap = CallHookMap & ApplyHookMap;
 
 export type ModuleHook = {
   [K in keyof ModuleHookMap]: {

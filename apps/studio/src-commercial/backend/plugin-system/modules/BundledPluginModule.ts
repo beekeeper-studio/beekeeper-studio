@@ -26,7 +26,7 @@ export class BundledPluginModule extends Module {
   constructor(options: ModuleOptions) {
     super(options);
 
-    this.hook("before-initialize", this.installBundledPlugins);
+    this.hook("beforeInitialize", this.installBundledPlugins);
   }
 
   private async installBundledPlugins() {

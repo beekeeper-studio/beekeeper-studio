@@ -2,10 +2,13 @@ import { uuidv4 } from "../uuid";
 import rawLog from '@bksLogger';
 import _ from 'lodash';
 import { PluginError, PluginSystemError } from "../errors";
+import type { NotificationMap, NotificationType } from "./notifications";
 
 const log = rawLog.scope('renderer/utilityconnection');
 
-type Listener = (input: any) => void;
+type Listener<T extends NotificationType = NotificationType> = (
+  input: NotificationMap[T]
+) => void;
 type Message = {
   handlerName: string,
   args: any,
@@ -131,7 +134,10 @@ export class UtilityConnection {
     })
   }
 
-  public addListener(type: string, listener: Listener): string {
+  public addListener<T extends NotificationType>(
+    type: T,
+    listener: Listener<T>
+  ): string {
     const id = uuidv4();
     this.listeners.push({ type, id, listener });
     log.info('ADDED LISTENER: ', type, id);

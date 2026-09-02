@@ -26,8 +26,8 @@ export class WebHost {
 
   private mockUtilityConnection = {
     send: jest.fn().mockImplementation((event: string, data?: any) => {
-      if (event === "plugin/waitForInit") {
-        return Promise.resolve();
+      if (event === "plugin/initialized") {
+        return Promise.resolve(true);
       }
       if (event === "plugin/plugins") {
         return Promise.resolve(Array.from(this.plugins.values()));
@@ -37,6 +37,8 @@ export class WebHost {
       }
       return Promise.resolve();
     }),
+    addListener: jest.fn().mockReturnValue("mock-listener-id"),
+    removeListener: jest.fn(),
   } as any as UtilityConnection;
 
   private mockAppEventBus = {

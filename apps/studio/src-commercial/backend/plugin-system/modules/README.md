@@ -49,10 +49,12 @@ Add the hook signature to `ModuleHookMap` in `src/services/plugin/Module.ts`:
 
 ```typescript
 export interface ModuleHookMap {
- "before-install-plugin": (pluginId: string) => void | Promise<void>;
- "plugin-snapshots": (snapshots: PluginSnapshot[]) => PluginSnapshot[] | Promise<PluginSnapshot[]>;
+ beforeInstallPlugin: (pluginId: string) => void | Promise<void>;
+ pluginSnapshots: (snapshots: PluginSnapshot[]) => PluginSnapshot[] | Promise<PluginSnapshot[]>;
  "my-new-hook": (data: SomeType) => SomeType | Promise<SomeType>;
 }
 ```
 
-Both side-effect and waterfall hooks coexist in the same `ModuleHookMap`. The difference is how the `PluginManager` calls them: `callHook` for side-effect hooks (typically `void`), `applyHook` for waterfall hooks (typically returns a type).
+Both side-effect and waterfall hooks coexist in the same `ModuleHookMap`. The difference is how the `PluginManager` calls them: `notify` for side-effect hooks (typically `void`), `pipe` for waterfall hooks (typically returns a type).
+
+A side-effect hook that the windows need to know about is forwarded by `NotificationModule`; add it there and to `ForwardedHook` in `src/lib/utility/notifications.ts`.

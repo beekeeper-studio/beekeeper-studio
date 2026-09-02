@@ -53,7 +53,7 @@ export default class PluginManager extends Hookable {
     // FIXME: Migrate to full ini file configuration
     await this.loadPluginSettings();
 
-    await this.callHook("before-initialize");
+    await this.notify("beforeInitialize");
 
     const installedPlugins = this.fileManager.scanPlugins().map(convertToManifestV1);
     this.manifests = installedPlugins;
@@ -61,6 +61,8 @@ export default class PluginManager extends Hookable {
     log.debug("Installed plugins:", installedPlugins);
 
     this.initialized = true;
+
+    await this.notify("afterInitialize");
 
     for (const plugin of installedPlugins) {
       if (!this.pluginSettings[plugin.id]?.autoUpdate) {
@@ -146,7 +148,7 @@ export default class PluginManager extends Hookable {
       });
     }
 
-    return await this.applyHook("plugin-snapshots", snapshots);
+    return await this.pipe("pluginSnapshots", snapshots);
   }
 
   /** Plugin is not loadable if the **current app version** is lower than the
@@ -162,7 +164,7 @@ export default class PluginManager extends Hookable {
   async installPlugin(id: string): Promise<Manifest> {
     this.initializeGuard();
 
-    await this.callHook("before-install-plugin", id);
+    await this.notify("beforeInstallPlugin", id);
 
     let update = false;
 

@@ -37,8 +37,8 @@ export class ConfigurationModule extends Module {
       this.manager.registry.communityDisabled = true;
     }
 
-    this.hook("before-install-plugin", this.validatePluginInstall);
-    this.hook("plugin-snapshots", this.applyConfig);
+    this.hook("beforeInstallPlugin", this.validatePluginInstall);
+    this.hook("pluginSnapshots", this.applyConfig);
   }
 
   static with(options: ConfigurationOptions) {

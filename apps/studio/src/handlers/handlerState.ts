@@ -11,6 +11,8 @@ import { MessagePortMain } from "electron";
 import { FSWatcher } from "fs";
 import fs from "fs";
 import tmp from 'tmp';
+import rawLog from "@bksLogger";
+import type { NotificationMap, NotificationType } from "@/lib/utility/notifications";
 
 export interface TempFile {
   fileObject: tmp.FileResult,
@@ -50,7 +52,7 @@ class State {
   tempFiles: Map<string, TempFile> = new Map();
 }
 
-const states = new Map<string, State>();
+export const states = new Map<string, State>();
 
 // I kinda hate this tbh. modifying could be scary
 export function state(id: string): State {

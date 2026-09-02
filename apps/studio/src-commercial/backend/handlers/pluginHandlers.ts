@@ -1,9 +1,9 @@
 import { EncryptedPluginData } from "@/common/appdb/models/EncryptedPluginData";
 import { PluginData } from "@/common/appdb/models/PluginData";
 import { Manifest, PluginSnapshot, PluginManager, PluginRegistryEntry, PluginRepository } from "@/services/plugin";
-import { PluginSystemError } from "@/lib/errors";
 
 interface IPluginHandlers {
+  "plugin/initialized": () => Promise<boolean>
   "plugin/plugins": () => Promise<PluginSnapshot[]>
   "plugin/entries": ({ clearCache }: { clearCache: boolean }) => Promise<{ official: PluginRegistryEntry[], community: PluginRegistryEntry[] }>
   "plugin/repository": ({ id }: { id: string }) => Promise<PluginRepository>
@@ -23,29 +23,8 @@ interface IPluginHandlers {
 }
 
 export const PluginHandlers: (pluginManager: PluginManager) => IPluginHandlers = (pluginManager) => ({
-  "plugin/waitForInit": async () => {
-    if (pluginManager.isInitialized) {
-      return;
-    }
-
-    return new Promise<void>((resolve, reject) => {
-      let duration = 0;
-      const interval = setInterval(() => {
-        duration += 100;
-        if (pluginManager.isInitialized) {
-          clearInterval(interval);
-          resolve();
-        } else if (duration > 30_000) {
-          clearInterval(interval);
-          reject(
-            new PluginSystemError(
-              "INIT_TIMEOUT",
-              "Plugin initialization timed out"
-            )
-          );
-        }
-      }, 100);
-    });
+  "plugin/initialized": async () => {
+    return pluginManager.isInitialized;
   },
   "plugin/plugins": async () => {
     return await pluginManager.getPlugins();

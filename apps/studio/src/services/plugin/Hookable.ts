@@ -1,5 +1,10 @@
 import type PluginManager from "./PluginManager";
-import { type Module, type ModuleClass, type ModuleHookMap } from "./Module";
+import {
+  type Module,
+  type ModuleClass,
+  type ApplyHookMap,
+  type CallHookMap,
+} from "./Module";
 
 export abstract class Hookable {
   private modules: Module[] = [];
@@ -9,9 +14,9 @@ export abstract class Hookable {
   }
 
   /** Run all handlers for a side-effect hook (no return value). */
-  protected async callHook<K extends keyof ModuleHookMap>(
+  protected async notify<K extends keyof CallHookMap>(
     name: K,
-    ...args: Parameters<ModuleHookMap[K]>
+    ...args: Parameters<CallHookMap[K]>
   ) {
     for (const module of this.modules) {
       for (const hook of module.hooks) {
@@ -23,9 +28,9 @@ export abstract class Hookable {
   }
 
   /** Run all handlers for a waterfall hook, piping data through each handler. */
-  protected async applyHook<K extends keyof ModuleHookMap>(
+  protected async pipe<K extends keyof ApplyHookMap>(
     name: K,
-    ...args: Parameters<ModuleHookMap[K]>
+    ...args: Parameters<ApplyHookMap[K]>
   ) {
     let value = args[0];
     const rest = args.slice(1);
@@ -36,6 +41,6 @@ export abstract class Hookable {
         }
       }
     }
-    return value as ReturnType<ModuleHookMap[K]>;
+    return value as Awaited<ReturnType<ApplyHookMap[K]>>;
   }
 }

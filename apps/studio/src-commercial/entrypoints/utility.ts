@@ -36,6 +36,7 @@ import _ from 'lodash';
 import {
   ConfigurationModule,
   BundledPluginModule,
+  NotificationModule,
 } from '@commercial/backend/plugin-system/modules';
 import { PluginErrorCode, PluginSystemErrorCode } from '@/lib/errors';
 
@@ -55,6 +56,7 @@ const pluginManager = new PluginManager({
 });
 pluginManager.registerModule(ConfigurationModule.with({ config: BksConfig }));
 pluginManager.registerModule(BundledPluginModule);
+pluginManager.registerModule(NotificationModule);
 
 const driverDepManager = new DriverDepManager({
   fileManager: new DriverDepFileManager({

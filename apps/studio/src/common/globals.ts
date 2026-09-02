@@ -36,6 +36,14 @@ export default {
       { id: "bks-ai-shell", pkg: "@beekeeperstudio/bks-ai-shell" },
       { id: "bks-er-diagram", pkg: "@beekeeperstudio/bks-er-diagram" },
     ],
+
+    /**
+     * How long the renderer waits for the backend's plugin manager to
+     * initialize before timing out.
+     *
+     * @see `ReadyState` in src/services/plugin/web/ReadyState.ts
+     **/
+    initTimeout: 30 * 1000, // 30 seconds
   }
 }
 
