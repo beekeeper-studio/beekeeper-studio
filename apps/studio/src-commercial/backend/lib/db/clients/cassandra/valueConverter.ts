@@ -18,6 +18,9 @@ export type CassandraType = {
   customTypeName?: string;
 };
 
+/** Column type descriptors per table, keyed by `keyspace.table` then column. */
+export type ColumnTypes = Record<string, Record<string, CassandraType>>;
+
 const dataTypes = cassandra.types.dataTypes;
 
 /**
@@ -185,4 +188,107 @@ export function dataTypeName(type: CassandraType): string {
   } catch {
     return 'user-defined';
   }
+}
+
+/**
+ * The inverse of `convertValueByType`, for values on their way back to the
+ * server as bound parameters.
+ *
+ * `convertValueByType` flattens driver classes so they survive the trip to the
+ * renderer, but the driver's encoder is stricter than its decoder: it takes a
+ * string for the numeric types "for historical reasons", yet insists on the
+ * real class for a duration, a vector and the DSE geometry types, and on a
+ * Tuple for a tuple. Encoding a plain value for one of those throws, so every
+ * one has to be rebuilt from the string or array the grid hands back.
+ *
+ * Anything the encoder already accepts is passed through untouched.
+ */
+export function toDriverValue(value: any, type: CassandraType) {
+  if (value == null) {
+    return null;
+  }
+
+  const { code, info } = type ?? {};
+
+  if (code === dataTypes.list || code === dataTypes.set) {
+    return Array.from(value).map((v) => toDriverValue(v, info));
+  }
+
+  if (code === dataTypes.map) {
+    // Keys are left alone: Cassandra only allows comparable frozen types as map
+    // keys, which rules out every type this function has to rebuild.
+    const valueType = (info ?? [])[1];
+    const entries = value instanceof Map ? value.entries() : Object.entries(value);
+    const converted = {};
+    for (const [k, v] of entries) {
+      converted[k as string] = toDriverValue(v, valueType);
+    }
+    return converted;
+  }
+
+  if (code === dataTypes.udt) {
+    const converted = {};
+    (info?.fields ?? []).forEach((field) => {
+      converted[field.name] = toDriverValue(value[field.name], field.type);
+    });
+    return converted;
+  }
+
+  if (code === dataTypes.tuple) {
+    // encodeTuple calls value.get(i), so a plain array will not do.
+    if (value instanceof cassandra.types.Tuple) {
+      return value;
+    }
+    const elements = Array.from(value).map((v, i) => toDriverValue(v, info?.[i]));
+    return cassandra.types.Tuple.fromArray(elements);
+  }
+
+  if (code === dataTypes.custom) {
+    return customToDriverValue(value, type);
+  }
+
+  if (code === dataTypes.duration) {
+    return toDuration(value);
+  }
+
+  return value;
+}
+
+function toDuration(value: any) {
+  return value instanceof cassandra.types.Duration
+    ? value
+    : cassandra.types.Duration.fromString(String(value));
+}
+
+/** Rebuilders for the custom types, keyed by their Java class name. */
+const customFromString = {
+  DurationType: (v: string) => cassandra.types.Duration.fromString(v),
+  PointType: (v: string) => cassandra.geometry.Point.fromString(v),
+  LineStringType: (v: string) => cassandra.geometry.LineString.fromString(v),
+  PolygonType: (v: string) => cassandra.geometry.Polygon.fromString(v),
+  DateRangeType: (v: string) => cassandra.datastax.search.DateRange.fromString(v),
+};
+
+function customToDriverValue(value: any, type: CassandraType) {
+  const { info, customTypeName } = type;
+
+  if (isVector(value)) {
+    return value;
+  }
+
+  if (customTypeName === 'vector') {
+    // encodeVector reads the element type off the column rather than off the
+    // Vector, so the subtype here is only a label.
+    const elementType = Array.isArray(info) ? info[0] : undefined;
+    const elements = Array.from(value).map((v) => toDriverValue(v, elementType));
+    return new cassandra.types.Vector(elements, dataTypeName(elementType));
+  }
+
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  const className = typeof info === 'string' ? info.split('.').pop() : '';
+  const rebuild = customFromString[className];
+  return rebuild ? rebuild(value) : value;
 }
