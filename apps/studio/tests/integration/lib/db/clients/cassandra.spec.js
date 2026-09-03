@@ -239,4 +239,121 @@ describe("Cassandra Tests", () => {
     // performs on its way to the renderer
     expect(structuredClone(row)).toEqual(row)
   })
+
+  it("Should convert numeric and duration types to strings", async () => {
+    const keyspace = 'numeric_type_test'
+
+    await connection.executeQuery(
+      `CREATE KEYSPACE IF NOT EXISTS ${keyspace} WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}`
+    )
+    await connection.executeQuery(`
+      CREATE TYPE IF NOT EXISTS ${keyspace}.metrics_type (
+        huge VARINT,
+        amount DECIMAL,
+        window DURATION
+      )
+    `)
+    await connection.executeQuery(`
+      CREATE TABLE IF NOT EXISTS ${keyspace}.numerics (
+        name TEXT PRIMARY KEY,
+        total BIGINT,
+        huge VARINT,
+        amount DECIMAL,
+        window DURATION,
+        zero_window DURATION,
+        varint_list LIST<VARINT>,
+        metrics FROZEN<metrics_type>
+      )
+    `)
+
+    // values chosen to be unrepresentable as a JS number
+    const huge = '123456789012345678901234567890'
+    const amount = '0.10000000000000000001'
+    const total = '9007199254740993'
+
+    await connection.executeQuery(`
+      INSERT INTO ${keyspace}.numerics (name, total, huge, amount, window, zero_window, varint_list, metrics)
+      VALUES (
+        'row1',
+        ${total},
+        ${huge},
+        ${amount},
+        1mo2d3s,
+        0s,
+        [${huge}],
+        {huge: ${huge}, amount: ${amount}, window: 1mo2d3s}
+      )
+    `)
+
+    const results = await connection.executeQuery(
+      `SELECT * FROM ${keyspace}.numerics WHERE name = 'row1'`
+    )
+    expect(results[0].rows).toHaveLength(1)
+    const row = results[0].rows[0]
+
+    expect(row.total).toBe(total)
+    expect(row.huge).toBe(huge)
+    expect(row.amount).toBe(amount)
+    expect(row.window).toBe('1mo2d3s')
+    // a zero duration stringifies to '' in the driver, which would read as unset
+    expect(row.zero_window).toBe('0s')
+    expect(row.varint_list).toEqual([huge])
+    expect(row.metrics).toEqual({ huge, amount, window: '1mo2d3s' })
+
+    expect(structuredClone(row)).toEqual(row)
+
+    // counters live in their own table: Cassandra will not mix them with
+    // non-counter columns
+    await connection.executeQuery(`
+      CREATE TABLE IF NOT EXISTS ${keyspace}.counters (
+        name TEXT PRIMARY KEY,
+        hits COUNTER
+      )
+    `)
+    await connection.executeQuery(
+      `UPDATE ${keyspace}.counters SET hits = hits + ${total} WHERE name = 'row1'`
+    )
+
+    const counterResults = await connection.executeQuery(
+      `SELECT * FROM ${keyspace}.counters WHERE name = 'row1'`
+    )
+    const counterRow = counterResults[0].rows[0]
+    expect(counterRow.hits).toBe(total)
+    expect(structuredClone(counterRow)).toEqual(counterRow)
+  })
+
+  it("Should report CQL type names for columns", async () => {
+    const keyspace = 'type_name_test'
+
+    await connection.executeQuery(
+      `CREATE KEYSPACE IF NOT EXISTS ${keyspace} WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}`
+    )
+    await connection.executeQuery(`
+      CREATE TYPE IF NOT EXISTS ${keyspace}.name_ref (
+        id UUID
+      )
+    `)
+    await connection.executeQuery(`
+      CREATE TABLE IF NOT EXISTS ${keyspace}.typed (
+        name TEXT PRIMARY KEY,
+        window DURATION,
+        tags LIST<TEXT>,
+        lookup MAP<TEXT, UUID>,
+        ref FROZEN<name_ref>
+      )
+    `)
+
+    const results = await connection.executeQuery(`SELECT * FROM ${keyspace}.typed`)
+    const byName = {}
+    results[0].fields.forEach((f) => { byName[f.name] = f.dataType })
+
+    // text and varchar are aliases in CQL and the protocol carries both under
+    // the varchar type code, so that is the name that comes back
+    expect(byName.name).toBe('varchar')
+    // duration used to come back as 'list', collections as 'user-defined'
+    expect(byName.window).toBe('duration')
+    expect(byName.tags).toBe('list<varchar>')
+    expect(byName.lookup).toBe('map<varchar, uuid>')
+    expect(byName.ref).toBe('name_ref')
+  })
 })
