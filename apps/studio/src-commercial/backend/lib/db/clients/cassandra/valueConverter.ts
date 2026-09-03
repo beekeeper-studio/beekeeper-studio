@@ -102,6 +102,31 @@ function convertCustom(value: any, info: any) {
 }
 
 /**
+ * The driver builds plain object maps with `map[key] = value`, which stringifies
+ * any key that is not already a primitive - a Tuple key arrives as `(1,2)`, a
+ * Date key as its toString form. Feeding one of those back through the walker
+ * destroys it: the tuple branch would call Array.from on the string and shred it
+ * into `(,1,,,2,)`. A key that is already a string is left as it is.
+ *
+ * A key can only be a comparable frozen type, so duration and vector are ruled
+ * out by Cassandra itself ("Durations are not allowed as map keys"), but a
+ * frozen tuple is legal, which is the case this guards.
+ */
+function convertMapKey(key: any, keyType: CassandraType) {
+  const isContainer = keyType?.code === dataTypes.tuple
+    || keyType?.code === dataTypes.udt
+    || keyType?.code === dataTypes.list
+    || keyType?.code === dataTypes.set
+    || keyType?.code === dataTypes.map;
+
+  if (isContainer && typeof key === 'string') {
+    return key;
+  }
+
+  return convertValueByType(key, keyType);
+}
+
+/**
  * Convert a driver-decoded value into something that survives the trip to the
  * renderer and reads sensibly in the grid.
  *
@@ -128,7 +153,7 @@ export function convertValueByType(value: any, type: CassandraType) {
     const entries = value instanceof Map ? value.entries() : Object.entries(value);
     const converted = {};
     for (const [k, v] of entries) {
-      const convertedKey = convertValueByType(k, keyType);
+      const convertedKey = convertMapKey(k, keyType);
       converted[convertedKey as string] = convertValueByType(v, valueType);
     }
     return converted;
@@ -215,8 +240,10 @@ export function toDriverValue(value: any, type: CassandraType) {
   }
 
   if (code === dataTypes.map) {
-    // Keys are left alone: Cassandra only allows comparable frozen types as map
-    // keys, which rules out every type this function has to rebuild.
+    // Keys are left alone. Cassandra rejects duration and vector as map keys
+    // outright, but a frozen tuple is legal - and the driver hands those to us
+    // already stringified to `(1,2)`, which Tuple offers no way back from. Such
+    // a map reads fine and is not writable; nothing here can change that.
     const valueType = (info ?? [])[1];
     const entries = value instanceof Map ? value.entries() : Object.entries(value);
     const converted = {};

@@ -147,6 +147,20 @@ describe("cassandra valueConverter", () => {
         .toEqual([[ID_A, 1]])
     })
 
+    it("does not shred a tuple map key the driver already stringified", () => {
+      // a frozen tuple is a legal map key, and the driver hands it over as
+      // "(1,2)". Walking that string with the tuple branch yields "(,1,,,2,)".
+      const value = { "(1,2)": driverUuid(ID_A) }
+
+      expect(convertValueByType(value, map(tuple(int, int), uuid())))
+        .toEqual({ "(1,2)": ID_A })
+    })
+
+    it("still converts scalar map keys", () => {
+      const value = { [ID_A]: "x" }
+      expect(convertValueByType(value, map(uuid(), text))).toEqual({ [ID_A]: "x" })
+    })
+
     it("does not stringify an already stringified timestamp map key", () => {
       // The driver builds plain object maps with `map[key] = value`, so a Date
       // key arrives as a string and must not be handed toISOString()
