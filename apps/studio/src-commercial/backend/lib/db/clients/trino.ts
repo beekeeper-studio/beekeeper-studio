@@ -7,7 +7,7 @@ import {
   QueryResult,
   ConnectionOptions as TrinoConnectionOptions,
   SecureContextOptions
-} from 'trino-client'
+} from '@trinodb/trino-js-client'
 import {
   BaseQueryResult,
   BasicDatabaseClient,
@@ -441,7 +441,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
       const rows: any[] = []
 
       for await (const r of result) {
-        // The trino-client iterator doesn't throw on query failure - it
+        // The client iterator doesn't throw on query failure - it
         // yields the error response as a normal value, so without this
         // check a failed query looks like a successful 0-row result.
         if (r.error) {

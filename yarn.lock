@@ -4365,6 +4365,13 @@
   resolved "https://registry.yarnpkg.com/@tootallnate/quickjs-emscripten/-/quickjs-emscripten-0.23.0.tgz#db4ecfd499a9765ab24002c3b696d02e6d32a12c"
   integrity sha512-C5Mc6rdnsaJDjO3UpGW/CQTHtCKaYlScZTly4JIu97Jxo/odCiH0ITnDXSJPTOrEKk/ycSZ0AOgTmkDtkOsvIA==
 
+"@trinodb/trino-js-client@^0.3.2":
+  version "0.3.2"
+  resolved "https://registry.yarnpkg.com/@trinodb/trino-js-client/-/trino-js-client-0.3.2.tgz#d0484d24281cf01700c49f83c50c496fff36936f"
+  integrity sha512-TNFOXkk2wp/SSgNtRdfArKZSR78ebYR7zxTobu+o01C+KJO7ELWcti90DeCw4WJDh0YbjZGT0XuXV48n7TEyoQ==
+  dependencies:
+    axios "1.19.0"
+
 "@tybys/wasm-util@^0.10.1":
   version "0.10.2"
   resolved "https://registry.yarnpkg.com/@tybys/wasm-util/-/wasm-util-0.10.2.tgz#12b3a1b33db1f9cad4ddff1f604ab7dd00bf464e"
@@ -5639,7 +5646,7 @@ axios-retry@^3.2.4:
     "@babel/runtime" "^7.15.4"
     is-retry-allowed "^2.2.0"
 
-axios@1.13.2, axios@^1.15.0, axios@^1.15.1, axios@^1.18.0:
+axios@1.19.0, axios@^1.15.0, axios@^1.15.1, axios@^1.18.0:
   version "1.19.0"
   resolved "https://registry.yarnpkg.com/axios/-/axios-1.19.0.tgz#ddf864d4c8233c0e6873746ab59361537d05ad39"
   integrity sha512-ht/iuYZXEjFxLH/Hkezgd7m6JKlHHXEUSneaDz8uZe1Gj5QZtCnpyDsckvAiEnT89OEbCLmnte4R4sn7P0EKFw==
@@ -13212,13 +13219,6 @@ tree-kill@^1.2.2:
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/tree-kill/-/tree-kill-1.2.2.tgz#4ca09a9092c88b73a7cdc5e8a01b507b0790a0cc"
   integrity sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==
-
-trino-client@^0.2.9:
-  version "0.2.9"
-  resolved "https://registry.yarnpkg.com/trino-client/-/trino-client-0.2.9.tgz#0f5dbdb920177402cb1a614c4bfda6e3a1bf56af"
-  integrity sha512-bINcQxDH5v9DR1zqXtoNqnRJ5leYMyYzRuFZLsoqg4irWYPDh/4wBndC8c2x+QfNIOr6c35BtHKOwotelqSATg==
-  dependencies:
-    axios "1.13.2"
 
 triple-beam@^1.3.0:
   version "1.4.1"
