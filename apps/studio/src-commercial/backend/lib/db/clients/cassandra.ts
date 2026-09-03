@@ -13,9 +13,9 @@ import rawLog from "@bksLogger";
 import { createCancelablePromise } from "@/common/utils";
 import { identify } from "sql-query-identifier";
 import { errors } from "@/lib/errors";
-import { dataTypesToMatchTypeCode, CassandraData as D } from "@shared/lib/dialects/cassandra";
+import { CassandraData as D } from "@shared/lib/dialects/cassandra";
 import { CassandraCursor } from "./cassandra/CassandraCursor";
-import { convertValueByType } from "./cassandra/valueConverter";
+import { convertValueByType, dataTypeName } from "./cassandra/valueConverter";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import _ from "lodash";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
@@ -595,7 +595,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
 
   private parseFields(fields, _row) {
     return fields.map((field) => {
-      field.dataType = dataTypesToMatchTypeCode[field?.type?.code] || 'user-defined'
+      field.dataType = dataTypeName(field?.type)
       field.id = field.name
       return field
     })
