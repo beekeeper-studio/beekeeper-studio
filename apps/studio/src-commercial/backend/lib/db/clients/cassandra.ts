@@ -661,8 +661,11 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
         }, {});
       } catch (err) {
         // A missing keyspace or a metadata hiccup should not block the write.
-        // Without types the values go out as they came in, which is what
-        // happened before any of this existed.
+        // Values then go out as they came in, which is fine for every type the
+        // encoder takes as a string, and fails the same way it did before any
+        // of this existed for a duration, vector or tuple column - so log the
+        // real cause, since all the user would otherwise see is the encoder's
+        // "Not a valid duration" further down.
         logger().error(`Could not read column types for ${key}`, err);
         types[key] = {};
       }

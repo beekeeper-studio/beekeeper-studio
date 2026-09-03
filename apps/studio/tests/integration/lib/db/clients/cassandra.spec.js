@@ -171,6 +171,32 @@ describe("Cassandra Tests", () => {
     expect(row.text_uuid_map.first).toBe(textVal)
   })
 
+  it("Should keep a tuple map key intact", async () => {
+    // a frozen tuple is a legal map key, and the driver hands the key over
+    // already stringified as '(1,2)'. Walking that through the tuple branch
+    // shreds it character by character into '(,1,,,2,)'.
+    const keyspace = 'tuple_map_key_test'
+
+    await connection.executeQuery(
+      `CREATE KEYSPACE IF NOT EXISTS ${keyspace} WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}`
+    )
+    await connection.executeQuery(`
+      CREATE TABLE IF NOT EXISTS ${keyspace}.tuple_keys (
+        id INT PRIMARY KEY,
+        lookup MAP<FROZEN<TUPLE<INT, INT>>, TEXT>
+      )
+    `)
+    await connection.executeQuery(
+      `INSERT INTO ${keyspace}.tuple_keys (id, lookup) VALUES (1, {(1,2): 'hello'})`
+    )
+
+    const results = await connection.executeQuery(`SELECT * FROM ${keyspace}.tuple_keys WHERE id = 1`)
+    const row = results[0].rows[0]
+
+    expect(row.lookup).toEqual({ '(1,2)': 'hello' })
+    expect(structuredClone(row)).toEqual(row)
+  })
+
   it("Should convert UUIDs nested inside user defined types to strings", async () => {
     const keyspace = 'uuid_udt_test'
 
