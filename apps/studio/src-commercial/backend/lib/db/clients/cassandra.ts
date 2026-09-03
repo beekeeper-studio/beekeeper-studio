@@ -15,7 +15,7 @@ import { identify } from "sql-query-identifier";
 import { errors } from "@/lib/errors";
 import { CassandraData as D } from "@shared/lib/dialects/cassandra";
 import { CassandraCursor } from "./cassandra/CassandraCursor";
-import { convertValueByType, dataTypeName } from "./cassandra/valueConverter";
+import { convertValueByType, dataTypeName, toDriverValue, CassandraType, ColumnTypes } from "./cassandra/valueConverter";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import _ from "lodash";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
@@ -378,22 +378,27 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     let results = [];
     let batchedChanges = [];
 
+    // Values arrive from the grid in the flattened form parseRows produced, so
+    // they have to be rebuilt into what the driver's encoder accepts. That
+    // needs the column types, which are looked up once per table here.
+    const types = await this.columnTypesForChanges(changes);
+
     if (changes.inserts) {
-      batchedChanges = [...batchedChanges, ...this.insertRows(changes.inserts)];
+      batchedChanges = [...batchedChanges, ...this.insertRows(changes.inserts, types)];
     }
 
     if (changes.updates) {
-      batchedChanges = [...batchedChanges, ...await this.updateValues(changes.updates)];
+      batchedChanges = [...batchedChanges, ...await this.updateValues(changes.updates, types)];
     }
 
     if (changes.deletes) {
-      batchedChanges = [...batchedChanges, ...this.deleteRows(changes.deletes)];
+      batchedChanges = [...batchedChanges, ...this.deleteRows(changes.deletes, types)];
     }
 
     await this.driverExecuteBatch(batchedChanges);
 
     if (changes.updates) {
-      results = await this.getSelectUpdatedValues(changes.updates);
+      results = await this.getSelectUpdatedValues(changes.updates, types);
     }
 
     return results;
@@ -630,31 +635,78 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     }
   }
 
-  private insertRows(rows) {
+  /**
+   * Column type descriptors for every table a set of changes touches, keyed by
+   * `keyspace.table`. The driver's table metadata carries the same descriptors
+   * parseRows works from, so the two directions stay in step without having to
+   * parse the CQL type strings in system_schema.
+   */
+  private async columnTypesForChanges(changes: TableChanges): Promise<ColumnTypes> {
+    const changed = [
+      ...(changes.inserts ?? []),
+      ...(changes.updates ?? []),
+      ...(changes.deletes ?? []),
+    ];
+
+    const types: ColumnTypes = {};
+    for (const { table, schema } of changed) {
+      const key = this.tableTypeKey(table, schema);
+      if (key in types) continue;
+
+      try {
+        const meta = await this.client.metadata.getTable(schema || this.db, table);
+        types[key] = (meta?.columns ?? []).reduce((acc, column) => {
+          acc[column.name] = column.type;
+          return acc;
+        }, {});
+      } catch (err) {
+        // A missing keyspace or a metadata hiccup should not block the write.
+        // Without types the values go out as they came in, which is what
+        // happened before any of this existed.
+        logger().error(`Could not read column types for ${key}`, err);
+        types[key] = {};
+      }
+    }
+
+    return types;
+  }
+
+  private tableTypeKey(table: string, schema?: string) {
+    return `${schema || this.db}.${table}`;
+  }
+
+  private typesFor(change: { table: string; schema?: string }, types: ColumnTypes) {
+    return types[this.tableTypeKey(change.table, change.schema)] ?? {};
+  }
+
+  private insertRows(rows, types: ColumnTypes) {
     return rows.map(row => {
       const [data] = row.data
+      const columnTypes = this.typesFor(row, types)
       const columns = Object.keys(data)
       return {
         query: `INSERT INTO ${row.table} (${columns.join(', ')}) VALUES (${Array(columns.length).fill('?', 0, columns.length)})`,
-        params: columns.map(c => data[c] || null)
+        params: columns.map(c => toDriverValue(data[c] ?? null, columnTypes[c]))
       }
     })
   }
 
-  private deleteRows(rows) {
+  private deleteRows(rows, types: ColumnTypes) {
     return rows.map(row => {
       const [data] = row.primaryKeys
+      const columnTypes = this.typesFor(row, types)
       return {
         query: `DELETE FROM ${row.table} where ${this.wrapIdentifier(data.column)} = ?`,
-        params: [data.value]
+        params: [toDriverValue(data.value, columnTypes[data.column])]
       }
     })
   }
 
-  private async updateValues(updates) {
+  private async updateValues(updates, types: ColumnTypes) {
     return updates.map(update => {
-      const value = update.value
-      const [updateParams, updateWhereList] = this.getParamsAndWhereList(update.primaryKeys, value)
+      const columnTypes = this.typesFor(update, types)
+      const value = toDriverValue(update.value, columnTypes[update.column])
+      const [updateParams, updateWhereList] = this.getParamsAndWhereList(update.primaryKeys, columnTypes, value)
       const where = updateWhereList.join(' AND ')
       return {
         query: `UPDATE ${this.wrapIdentifier(update.table)} SET ${this.wrapIdentifier(update.column)} = ? WHERE ${where}`,
@@ -663,20 +715,23 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     })
   }
 
-  private getParamsAndWhereList(primaryKeys, initialValue = undefined) {
+  private getParamsAndWhereList(primaryKeys, columnTypes: Record<string, CassandraType>, initialValue = undefined) {
     const params = initialValue !== undefined ? [initialValue] : [];
     const whereList = [];
     primaryKeys.forEach(({ column, value }) => {
       whereList.push(`${this.wrapIdentifier(column)} = ?`);
-      params.push(value);
+      // a primary key can be a frozen tuple, which the encoder will not take
+      // as the plain array parseRows turned it into
+      params.push(toDriverValue(value, columnTypes[column]));
     });
 
     return [params, whereList];
   }
 
-  private async getSelectUpdatedValues(updates): Promise<Array<any>> {
+  private async getSelectUpdatedValues(updates, types: ColumnTypes): Promise<Array<any>> {
     const updatePromises = updates.map(update => {
-      const [updateParams, updateWhereList] = this.getParamsAndWhereList(update.primaryKeys);
+      const columnTypes = this.typesFor(update, types);
+      const [updateParams, updateWhereList] = this.getParamsAndWhereList(update.primaryKeys, columnTypes);
       const query = `SELECT * FROM ${this.wrapIdentifier(update.table)} WHERE ${updateWhereList.join(' AND ')}`;
 
       return this.driverExecuteSingle(query, { params: updateParams });

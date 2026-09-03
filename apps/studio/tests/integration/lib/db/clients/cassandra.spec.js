@@ -322,6 +322,99 @@ describe("Cassandra Tests", () => {
     expect(structuredClone(counterRow)).toEqual(counterRow)
   })
 
+  it("Should write back the values the grid was shown", async () => {
+    // The read side flattens driver classes so they survive IPC, which leaves
+    // the grid holding strings and arrays the driver's encoder rejects.
+    const keyspace = 'write_back_test'
+
+    await connection.executeQuery(
+      `CREATE KEYSPACE IF NOT EXISTS ${keyspace} WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}`
+    )
+    await connection.executeQuery(`
+      CREATE TABLE IF NOT EXISTS ${keyspace}.editable (
+        id UUID PRIMARY KEY,
+        window DURATION,
+        zero_window DURATION,
+        pair FROZEN<TUPLE<UUID, INT>>,
+        huge VARINT,
+        amount DECIMAL,
+        total BIGINT,
+        windows LIST<DURATION>
+      )
+    `)
+
+    const rowId = '77777777-8888-9999-aaaa-bbbbbbbbbbbb'
+    const pairId = '99999999-8888-7777-6666-555555555555'
+    const huge = '123456789012345678901234567890'
+    const amount = '0.10000000000000000001'
+    const total = '9007199254740993'
+
+    await connection.executeQuery(`
+      INSERT INTO ${keyspace}.editable (id, window, zero_window, pair, huge, amount, total, windows)
+      VALUES (
+        ${rowId}, 1mo2d3s, 0s, (${pairId}, 3), ${huge}, ${amount}, ${total}, [1mo2d3s]
+      )
+    `)
+
+    const writeConnection = server.createConnection(keyspace)
+    await writeConnection.connect()
+
+    try {
+      const before = await writeConnection.executeQuery(
+        `SELECT * FROM ${keyspace}.editable WHERE id = ${rowId}`
+      )
+      const row = before[0].rows[0]
+
+      // exactly what the grid holds, fed straight back as an edit
+      await writeConnection.applyChanges({
+        inserts: [],
+        updates: [
+          { table: 'editable', schema: keyspace, primaryKeys: [{ column: 'id', value: row.id }], column: 'window', value: row.window },
+          { table: 'editable', schema: keyspace, primaryKeys: [{ column: 'id', value: row.id }], column: 'zero_window', value: row.zero_window },
+          { table: 'editable', schema: keyspace, primaryKeys: [{ column: 'id', value: row.id }], column: 'pair', value: row.pair },
+          { table: 'editable', schema: keyspace, primaryKeys: [{ column: 'id', value: row.id }], column: 'huge', value: row.huge },
+          { table: 'editable', schema: keyspace, primaryKeys: [{ column: 'id', value: row.id }], column: 'amount', value: row.amount },
+          { table: 'editable', schema: keyspace, primaryKeys: [{ column: 'id', value: row.id }], column: 'total', value: row.total },
+          { table: 'editable', schema: keyspace, primaryKeys: [{ column: 'id', value: row.id }], column: 'windows', value: row.windows },
+        ],
+        deletes: [],
+      })
+
+      const after = await writeConnection.executeQuery(
+        `SELECT * FROM ${keyspace}.editable WHERE id = ${rowId}`
+      )
+      expect(after[0].rows[0]).toEqual(row)
+
+      // and an insert built from the same flattened shapes
+      const newId = '66666666-5555-4444-3333-222222222222'
+      await writeConnection.applyChanges({
+        inserts: [{
+          table: 'editable',
+          schema: keyspace,
+          data: [{
+            id: newId,
+            window: '1mo2d3s',
+            zero_window: '0s',
+            pair: [pairId, 3],
+            huge,
+            amount,
+            total,
+            windows: ['1mo2d3s'],
+          }],
+        }],
+        updates: [],
+        deletes: [],
+      })
+
+      const inserted = await writeConnection.executeQuery(
+        `SELECT * FROM ${keyspace}.editable WHERE id = ${newId}`
+      )
+      expect(inserted[0].rows[0]).toEqual({ ...row, id: newId })
+    } finally {
+      await writeConnection.disconnect()
+    }
+  })
+
   it("Should report CQL type names for columns", async () => {
     const keyspace = 'type_name_test'
 

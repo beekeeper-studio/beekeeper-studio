@@ -1,5 +1,5 @@
 import * as cassandra from "cassandra-driver"
-import { convertValueByType, dataTypeName } from "@commercial/backend/lib/db/clients/cassandra/valueConverter"
+import { convertValueByType, dataTypeName, toDriverValue } from "@commercial/backend/lib/db/clients/cassandra/valueConverter"
 
 const dataTypes = cassandra.types.dataTypes
 
@@ -347,5 +347,123 @@ describe("cassandra valueConverter", () => {
     const converted = convertValueByType([value], list(metrics))
     expect(converted).toEqual([expected])
     expect(structuredClone(converted)).toEqual([expected])
+  })
+})
+
+describe("cassandra toDriverValue", () => {
+  // The encoder is stricter than the decoder, so assert against the encoder
+  // itself rather than against a shape we assume it wants.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const Encoder = require("cassandra-driver/lib/encoder")
+  const encoder = new Encoder(4, {})
+  const encodes = (value, type) => {
+    expect(() => encoder.encode(toDriverValue(value, type), type)).not.toThrow()
+  }
+
+  const durationType = { code: dataTypes.duration }
+  const customDuration = {
+    code: dataTypes.custom,
+    info: "org.apache.cassandra.db.marshal.DurationType",
+  }
+  const vectorType = {
+    code: dataTypes.custom,
+    customTypeName: "vector",
+    info: [{ code: dataTypes.float }, 3],
+  }
+
+  it("rebuilds a duration from the string the grid holds", () => {
+    const converted = toDriverValue("1mo2d3s", durationType)
+    expect(converted).toBeInstanceOf(cassandra.types.Duration)
+    expect(String(converted)).toBe("1mo2d3s")
+    encodes("1mo2d3s", durationType)
+  })
+
+  it("rebuilds a duration sent as a custom type", () => {
+    expect(toDriverValue("1mo2d3s", customDuration)).toBeInstanceOf(cassandra.types.Duration)
+    encodes("1mo2d3s", customDuration)
+  })
+
+  it("round trips the zero duration the reader spells out as 0s", () => {
+    const zero = new cassandra.types.Duration(0, 0, cassandra.types.Long.ZERO)
+    const displayed = convertValueByType(zero, durationType)
+
+    expect(displayed).toBe("0s")
+    const back = toDriverValue(displayed, durationType)
+    expect(back.months).toBe(0)
+    expect(back.days).toBe(0)
+    expect(String(back.nanoseconds)).toBe("0")
+    encodes(displayed, durationType)
+  })
+
+  it("rebuilds a tuple, which the encoder will not take as a plain array", () => {
+    const type = tuple(uuid(), int)
+    const displayed = convertValueByType(cassandra.types.Tuple.fromArray([driverUuid(ID_A), 3]), type)
+
+    expect(displayed).toEqual([ID_A, 3])
+    expect(toDriverValue(displayed, type)).toBeInstanceOf(cassandra.types.Tuple)
+    encodes(displayed, type)
+  })
+
+  it("rebuilds a vector, which the encoder will not take as a plain array", () => {
+    const converted = toDriverValue([1, 2, 3], vectorType)
+    expect(converted).toBeInstanceOf(cassandra.types.Vector)
+    encodes([1, 2, 3], vectorType)
+  })
+
+  it("rebuilds durations nested in collections and udts", () => {
+    const metrics = udt("metrics_type", { window: durationType, name: text })
+
+    const inList = toDriverValue(["1mo2d3s"], list(durationType))
+    expect(inList[0]).toBeInstanceOf(cassandra.types.Duration)
+    encodes(["1mo2d3s"], list(durationType))
+
+    const inUdt = toDriverValue({ window: "1mo2d3s", name: "x" }, metrics)
+    expect(inUdt.window).toBeInstanceOf(cassandra.types.Duration)
+    expect(inUdt.name).toBe("x")
+    encodes({ window: "1mo2d3s", name: "x" }, metrics)
+
+    const inMap = toDriverValue({ first: "1mo2d3s" }, map(text, durationType))
+    expect(inMap.first).toBeInstanceOf(cassandra.types.Duration)
+    encodes({ first: "1mo2d3s" }, map(text, durationType))
+  })
+
+  it("passes through the types the encoder already accepts as strings", () => {
+    // these were never broken and must not be touched
+    expect(toDriverValue("123456789012345678901234567890", { code: dataTypes.varint }))
+      .toBe("123456789012345678901234567890")
+    expect(toDriverValue("1234.5678", { code: dataTypes.decimal })).toBe("1234.5678")
+    expect(toDriverValue("9007199254740993", { code: dataTypes.bigint })).toBe("9007199254740993")
+    expect(toDriverValue(ID_A, uuid())).toBe(ID_A)
+    expect(toDriverValue("hello", text)).toBe("hello")
+    expect(toDriverValue(7, int)).toBe(7)
+    expect(toDriverValue(false, boolean)).toBe(false)
+
+    encodes("123456789012345678901234567890", { code: dataTypes.varint })
+    encodes("1234.5678", { code: dataTypes.decimal })
+    encodes(ID_A, uuid())
+  })
+
+  it("leaves a blob buffer alone", () => {
+    const value = Buffer.from([1, 2, 3])
+    expect(toDriverValue(value, { code: dataTypes.blob })).toBe(value)
+  })
+
+  it("returns null for null, and for a null element inside a collection", () => {
+    expect(toDriverValue(null, durationType)).toBeNull()
+    expect(toDriverValue(undefined, durationType)).toBeNull()
+    expect(toDriverValue([null], list(durationType))).toEqual([null])
+  })
+
+  it("passes a value through when the column type is unknown", () => {
+    // metadata lookup can fail; the write should still go out as it used to
+    expect(toDriverValue("1mo2d3s", undefined as any)).toBe("1mo2d3s")
+  })
+
+  it("accepts a value that is already a driver instance", () => {
+    const d = cassandra.types.Duration.fromString("1mo2d3s")
+    expect(toDriverValue(d, durationType)).toBe(d)
+
+    const t = cassandra.types.Tuple.fromArray([ID_A, 3])
+    expect(toDriverValue(t, tuple(uuid(), int))).toBe(t)
   })
 })
