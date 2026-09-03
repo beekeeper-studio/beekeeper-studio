@@ -754,7 +754,7 @@ export default Vue.extend({
     &::after {
       content: "";
       position: absolute;
-      right: 0.5rem;
+      right: 0.7rem;
       top: 50%;
       transform: translateY(-50%);
       border-left: 4px solid transparent;

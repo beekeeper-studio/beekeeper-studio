@@ -6,6 +6,7 @@ import { BeekeeperPlugin } from './plugins/BeekeeperPlugin'
 import BksConfig from './common/bksConfig'
 import { createVHotkeyKeymap, createCodemirroKeymap } from './plugins/ConfigPlugin'
 import { UtilityConnection } from './lib/utility/UtilityConnection'
+import WebPluginManager from './services/plugin/web/WebPluginManager'
 import { ConnectionType } from './lib/db/types'
 
 // 2. Specify a file with the types you want to augment
@@ -19,6 +20,7 @@ declare module 'vue/types/vue' {
     $bksConfig: typeof BksConfig
     $native: NativePlugin
     $util: UtilityConnection
+    $plugin: WebPluginManager
     $noty: {
       show(text: string, type: string, opts?: any): void
 

@@ -113,7 +113,7 @@ export enum AppEvent {
    **/
   openMoveFolderModal = 'openMoveFolderModal',
   /** Open the connection type picker. Do not call this directly. Please use `this.$promptConnectionType()`. */
-  openConnectionTypePicker = 'openConnectionTypePicker',
+  openConnectionTypePickerModal = 'openConnectionTypePickerModal',
   /** Vim's `:w`. Broadcast, so only the active tab should act on it. */
   vimWrite = 'vimWrite',
   /** Vim's `:x` and `:wq`. Broadcast, so only the active tab should act. */

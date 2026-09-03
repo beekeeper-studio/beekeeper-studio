@@ -243,14 +243,14 @@ export default {
     Vue.prototype.$promptConnectionType = function(): Promise<ConnectionType | false> {
       return new Promise<ConnectionType | false>((resolve, reject) => {
         try {
-          this.trigger(AppEvent.openConnectionTypePicker, {
-            onSelect: (connectionType: ConnectionType) => resolve(connectionType),
+          this.trigger(AppEvent.openConnectionTypePickerModal, {
+            onConfirm: (connectionType: ConnectionType) => resolve(connectionType),
             onCancel: () => resolve(false),
-          })
+          });
         } catch (e) {
-          reject(e)
+          reject(e);
         }
-      })
+      });
     }
 
     Vue.prototype.$confirmById = function(id: string): Promise<boolean> {

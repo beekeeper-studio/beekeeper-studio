@@ -1,119 +1,168 @@
 <template>
   <base-modal
     :name="modalName"
-    class="connection-type-picker-modal"
     height="32rem"
-    @submit="next"
-    @closed="cancel"
+    @submit="handleSubmit"
+    @closed="handleClosed"
   >
     <template #title>Select Connection Type</template>
 
-    <div class="toolbar">
-      <div class="filter-wrap">
-        <input
-          class="filter-input"
-          type="text"
-          placeholder="Search connection types"
-          v-model="filter"
-        />
-        <x-buttons class="filter-actions">
-          <x-button
-            v-if="filter"
-            @click="filter = ''"
-          >
-            <i class="clear material-icons">cancel</i>
-          </x-button>
-        </x-buttons>
+    <template #default="{ submit }">
+      <div class="toolbar">
+        <div class="filter-wrap">
+          <input
+            class="filter-input"
+            type="text"
+            placeholder="Search connection types"
+            v-model="filter"
+          />
+          <x-buttons class="filter-actions">
+            <x-button v-if="filter" @click="filter = ''">
+              <i class="clear material-icons">cancel</i>
+            </x-button>
+          </x-buttons>
+        </div>
       </div>
-    </div>
 
-    <div class="connection-types" v-if="filteredTypes.length">
-      <label
-        class="connection-type"
-        :class="{ selected: selectedType === type.value }"
-        v-for="type in filteredTypes"
-        :key="type.value"
-        @dblclick="next"
-      >
-        <input
-          type="radio"
-          name="connection-type"
-          :value="type.value"
-          v-model="selectedType"
-        />
-        <database-icon :type="type.value" />
-        <span class="name">{{ type.name }}</span>
-      </label>
-    </div>
-    <div class="empty-state" v-else>
-      No connection types match "{{ filter }}"
-    </div>
+      <div class="connection-types" v-if="filteredTypes.length">
+        <label
+          class="connection-type"
+          :class="{ selected: value === type.value }"
+          v-for="type in filteredTypes"
+          :key="type.value"
+          @dblclick="submit"
+        >
+          <input
+            type="radio"
+            name="connection-type"
+            :value="type.value"
+            v-model="value"
+          />
+          <database-icon :type="type.value" />
+          <span class="name">{{ type.name }}</span>
+          <i v-if="type.lockedByLicense" class="material-icons ultimate-icon">
+            stars
+          </i>
+        </label>
+      </div>
+      <div class="empty-state" v-else>
+        No connection types match "{{ filter }}"
+      </div>
+    </template>
 
     <template #footer="{ close }">
-      <button class="btn btn-flat" type="button" @click.prevent="close">
-        Cancel
-      </button>
-      <button class="btn btn-primary" type="submit" :disabled="!selectedType">
-        Next
-      </button>
+      <div class="footer-wrapper">
+        <upgrade-alert
+          v-if="selectedType?.lockedByLicense"
+          :feature-name="selectedType.name"
+        />
+        <div class="actions">
+          <button class="btn btn-flat" type="button" @click.prevent="close">
+            Cancel
+          </button>
+          <button
+            class="btn btn-primary"
+            type="submit"
+            :disabled="!value || selectedType?.lockedByLicense"
+          >
+            Next
+          </button>
+        </div>
+      </div>
     </template>
   </base-modal>
 </template>
 
 <script lang="ts">
+/**
+ * How to use this component:
+
+ * @example
+
+ * const type = await this.$promptConnectionType();
+ * if (!type) {
+ *   console.log("User clicked cancel");
+ * } else {
+ *   console.log(`User selected ${type}`);
+ * }
+ */
 import Vue from "vue";
 import BaseModal from "@/components/common/modals/BaseModal.vue";
 import DatabaseIcon from "@/components/common/DatabaseIcon.vue";
-import { AppEvent } from "@/common/AppEvent";
-import { ConnectionType } from "@/lib/db/types";
+import { AppEvent, RootBinding } from "@/common/AppEvent";
+import { ConnectionType, ConnectionTypes } from "@/lib/db/types";
+import { isUltimateType } from "@/common/interfaces/IConnection";
+import UpgradeAlert from "@/components/upsell/UpgradeAlert.vue";
+import { mapGetters } from "vuex";
+
+type Type = (typeof ConnectionTypes)[number] & {
+  lockedByLicense: boolean;
+};
+
+type OpenOptions = {
+  onConfirm: (type: ConnectionType) => void;
+  onCancel: () => void;
+};
 
 export default Vue.extend({
-  components: { BaseModal, DatabaseIcon },
+  components: { BaseModal, DatabaseIcon, UpgradeAlert },
   data() {
     return {
       modalName: "connection-type-picker-modal",
-      onSelect: null as ((type: ConnectionType) => void) | null,
-      onCancel: null as (() => void) | null,
       filter: "",
-      selectedType: null as string | null,
+      value: null as ConnectionType | null,
+      openOptions: null as OpenOptions | null,
+      confirmedValue: null as ConnectionType | null,
     };
   },
   computed: {
-    rootBindings() {
-      return [{ event: AppEvent.openConnectionTypePicker, handler: this.open }];
+    ...mapGetters(["isCommunity"]),
+    rootBindings(): RootBinding[] {
+      return [
+        { event: AppEvent.openConnectionTypePickerModal, handler: this.open },
+      ];
     },
-    filteredTypes() {
-      const types = this.$config.defaults.connectionTypes;
+    types(): Type[] {
+      console.log("this is community: ", this.isCommunity);
+      return this.$config.defaults.connectionTypes.map((type) => ({
+        ...type,
+        lockedByLicense: this.isCommunity && isUltimateType(type.value),
+      }));
+    },
+    filteredTypes(): Type[] {
       const filter = this.filter.trim().toLowerCase();
-      if (!filter) {
-        return types;
-      }
-      return types.filter((type) => type.name.toLowerCase().includes(filter));
+      return !filter
+        ? this.types
+        : this.types.filter((type) => type.name.toLowerCase().includes(filter));
+    },
+    selectedType(): Type | undefined {
+      return this.types.find((option) => option.value === this.value);
     },
   },
   methods: {
-    open({ onSelect, onCancel }) {
+    open(options: OpenOptions) {
       this.filter = "";
-      this.selectedType = null;
-      this.onSelect = onSelect;
-      this.onCancel = onCancel;
+      this.value = null;
+      this.openOptions = options;
       this.$modal.show(this.modalName);
+      console.log(this.types);
     },
-    next() {
+    handleSubmit(_event: Event, close: Function) {
       if (!this.selectedType) {
         return;
       }
-      const onSelect = this.onSelect;
-      this.onSelect = null;
-      this.onCancel = null;
-      this.$modal.hide(this.modalName);
-      onSelect?.(this.selectedType);
+      if (this.selectedType.lockedByLicense) {
+        return;
+      }
+      this.confirmedValue = this.value;
+      close();
     },
-    cancel() {
-      const onCancel = this.onCancel;
-      this.onSelect = null;
-      this.onCancel = null;
-      onCancel?.();
+    handleClosed() {
+      if (this.confirmedValue) {
+        this.openOptions?.onConfirm(this.confirmedValue);
+        this.confirmedValue = null;
+      }
+      this.openOptions = null;
     },
   },
   mounted() {
@@ -181,6 +230,10 @@ export default Vue.extend({
   line-height: 1.8rem;
   border-radius: 4px;
 
+  .ultimate-icon {
+    font-size: 1rem;
+  }
+
   &:hover,
   &:focus-within {
     background: rgb(from var(--theme-base) r g b / 3.5%);
@@ -203,5 +256,18 @@ export default Vue.extend({
     position: absolute;
     opacity: 0;
   }
+}
+
+.footer-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--base-modal-footer-gap);
 }
 </style>
