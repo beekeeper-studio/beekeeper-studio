@@ -2,15 +2,8 @@
 // Other properties like --bks-text-editor are already css properties
 
 & {
-  --theme-bg: #{$theme-bg};
-  --theme-base: #{$theme-base};
-  --theme-primary: #{$theme-primary};
   --theme-secondary: #{$theme-secondary};
 
-  --text-dark: #{$text-dark};
-  --text: #{$text};
-  --text-light: #{$text-light};
-  --text-lighter: #{$text-lighter};
   --text-hint: #{$text-hint};
   --text-disabled: #{$text-disabled};
 
@@ -28,7 +21,6 @@
   --selection: #{$selection};
   --input-highlight: #{$input-highlight};
 
-  --query-editor-bg: #{$query-editor-bg};
   --menu-bg: color-mix(in srgb, var(--theme-bg) 95%, #fff);
   --menu-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.08), 0 6px 15px rgba(0, 0, 0, 0.12);
 

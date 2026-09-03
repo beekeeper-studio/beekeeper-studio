@@ -118,10 +118,10 @@
 }
 
 @mixin btn-flat {
-  color: $theme-base;
-  background: rgba($theme-base, 0.06);
+  color: var(--btn-flat-fg);
+  background: var(--btn-flat-bg);
   &:hover, &:focus {
-    background: rgba($theme-base, 0.12);
+    background: var(--btn-flat-bg-hover);
   }
 }
 

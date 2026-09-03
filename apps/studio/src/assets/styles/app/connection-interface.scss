@@ -21,7 +21,7 @@
 // --------------------------------
 .connection-main {
   display: flex;
-  background: $query-editor-bg;
+  background: var(--query-editor-bg);
   height: 100%;
   max-height: 100vh;
   padding: 0 $gutter-w;
@@ -39,7 +39,6 @@
     @include small-wrap;
   }
   .card-flat {
-    background: $theme-bg;
     margin: $gutter-w 0;
     &[class*="connection-label-color"] {
       position: relative;
@@ -112,7 +111,7 @@
   .pitch {
     text-align: center;
     a {
-      color: $theme-primary;
+      color: var(--theme-primary);
       &:hover {
         text-decoration: underline;
       }

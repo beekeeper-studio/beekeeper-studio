@@ -78,8 +78,8 @@
 // Modal
 // ----------------------------
 .v--modal {
-  background-color: color.adjust($theme-bg, $lightness: 1%) !important;
-  color: $theme-base !important;
+  background: var(--modal-bg) !important;
+  color: var(--modal-fg) !important;
   text-align: left !important;
   border-radius: 8px !important;
   padding: 0 !important;

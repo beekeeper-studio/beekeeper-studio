@@ -1,46 +1,144 @@
-/* ===== Palette ===== */
-/* How to make the shades:
- * 1. Pick a base color, for example:
- *   a. $brand-info is #3498DB, which is blue.
- *   b. So this color will be --color-blue, and --color-blue-500 is #3498DB
- * 2. Go to https://tailwindshades.app/ or use `theme-colors` from npm.
- * 3. Copy and paste the color to the website
- * */
+/* Grayscale Design palette: https://grayscale.design/app?lums=93.87,82.28,64.30,49.10,40.20,32.78,13.29,9.31,6.30,2.62,1.13,0.26&palettes=%23DC700C,%23F9CE09,%2315DB95,%23FF00F0,%233498DB&filters=0%7C0,0%7C0,0%7C0,0%7C0,0%7C0&names=orange,yellow,green,pink,blue&labels=,,,, */
+@layer utilities {
+  :root {
+    --grayscale-50: rgb(248, 248, 248);
+    --grayscale-100: rgb(234, 234, 234);
+    --grayscale-200: rgb(210, 210, 210);
+    --grayscale-300: rgb(186, 186, 186);
+    --grayscale-400: rgb(170, 170, 170);
+    --grayscale-500: rgb(155, 155, 155);
+    --grayscale-600: rgb(102, 102, 102);
+    --grayscale-700: rgb(86, 86, 86);
+    --grayscale-800: rgb(71, 71, 71);
+    --grayscale-900: rgb(45, 45, 45);
+    --grayscale-1000: rgb(28, 28, 28);
+    --grayscale-1100: rgb(9, 9, 9);
+
+    --orange-50: rgb(254, 247, 240);
+    --orange-100: rgb(253, 230, 210);
+    --orange-200: rgb(250, 201, 155);
+    --orange-300: rgb(246, 170, 98);
+    --orange-400: rgb(244, 146, 55);
+    --orange-500: rgb(240, 123, 13);
+    --orange-600: rgb(159, 81, 9);
+    --orange-700: rgb(134, 69, 7);
+    --orange-800: rgb(111, 57, 6);
+    --orange-900: rgb(71, 36, 4);
+    --orange-1000: rgb(44, 22, 2);
+    --orange-1100: rgb(15, 7, 1);
+
+    --yellow-50: rgb(254, 249, 223);
+    --yellow-100: rgb(253, 234, 154);
+    --yellow-200: rgb(249, 206, 12);
+    --yellow-300: rgb(222, 182, 5);
+    --yellow-400: rgb(203, 167, 5);
+    --yellow-500: rgb(185, 152, 5);
+    --yellow-600: rgb(122, 100, 3);
+    --yellow-700: rgb(103, 85, 3);
+    --yellow-800: rgb(85, 70, 2);
+    --yellow-900: rgb(54, 44, 1);
+    --yellow-1000: rgb(33, 27, 1);
+    --yellow-1100: rgb(10, 9, 0);
+
+    --green-50: rgb(231, 253, 245);
+    --green-100: rgb(180, 248, 224);
+    --green-200: rgb(62, 236, 175);
+    --green-300: rgb(20, 212, 145);
+    --green-400: rgb(19, 194, 132);
+    --green-500: rgb(17, 177, 121);
+    --green-600: rgb(11, 117, 80);
+    --green-700: rgb(9, 99, 67);
+    --green-800: rgb(8, 82, 56);
+    --green-900: rgb(5, 52, 36);
+    --green-1000: rgb(3, 32, 22);
+    --green-1100: rgb(1, 11, 7);
+
+    --pink-50: rgb(255, 245, 254);
+    --pink-100: rgb(255, 225, 253);
+    --pink-200: rgb(255, 188, 251);
+    --pink-300: rgb(255, 148, 248);
+    --pink-400: rgb(255, 115, 246);
+    --pink-500: rgb(255, 75, 243);
+    --pink-600: rgb(185, 0, 172);
+    --pink-700: rgb(157, 0, 147);
+    --pink-800: rgb(132, 0, 123);
+    --pink-900: rgb(87, 0, 81);
+    --pink-1000: rgb(57, 0, 53);
+    --pink-1100: rgb(24, 0, 23);
+
+    --blue-50: rgb(243, 249, 253);
+    --blue-100: rgb(218, 237, 249);
+    --blue-200: rgb(177, 215, 241);
+    --blue-300: rgb(134, 193, 233);
+    --blue-400: rgb(102, 178, 228);
+    --blue-500: rgb(72, 163, 223);
+    --blue-600: rgb(28, 107, 160);
+    --blue-700: rgb(24, 90, 135);
+    --blue-800: rgb(20, 75, 111);
+    --blue-900: rgb(13, 48, 71);
+    --blue-1000: rgb(8, 29, 44);
+    --blue-1100: rgb(3, 10, 14);
+  }
+}
+
 :root {
-  --color-black: #000000;
-  --color-white: #FFFFFF;
-
-  --color-blue-400: #71B7E6;
-  --color-blue-500: #3498DB; /* is $brand-info in light theme */
-  --color-blue-600: #2F89C5;
-
-  --color-pink-300: #FF99F9;
-  --color-pink-400: #FF4DF5;
-  --color-pink-500: #FF00F0; /* is $brand-pink in light theme */
-  --color-pink-700: #990090;
-  --color-pink-800: #73006C;
-
-  --color-green-400: #5BE6B5;
-  --color-green-500: #15DB95; /* is $brand-success in light theme */
-  --color-green-700: #0D8359;
-
-  --color-yellow-400: #FBDD53;
-  --color-yellow-500: #F9CE09; /* is $theme-primary in light theme */
-  --color-yellow-700: #957C05;
-
-  --color-orange-300: #F1C69E;
-  --color-orange-500: #DC700C; /* is $brand-warning in light theme */
-  --color-orange-800: #633205;
+  --black: #000000;
+  --white: #ffffff;
 }
 
 /* ===== Light ===== */
 :root {
-  --cell-fg-color: var(--color-black);
-  --cell-binary-fg-color: var(--color-pink-800);
+  --text-dark: var(--grayscale-1100);
+  --text: var(--grayscale-900);
+  --text-light: var(--grayscale-700);
+  --text-lighter: var(--grayscale-500);
+
+  --theme-primary: var(--yellow-200);
+  --theme-base: var(--black);
+  --theme-bg: var(--grayscale-50);
+
+  --btn-flat-fg: var(--theme-base);
+  --btn-flat-bg: rgb(from var(--theme-base) r g b / 6%);
+  --btn-flat-bg-hover: rgb(from var(--theme-base) r g b / 12%);
+
+  --btn-primary-fg: rgb(from var(--theme-bg) r g b / 87%);
+  --btn-primary-bg: var(--theme-base);
+  --btn-primary-fg-hover: var(--theme-bg);
+  --btn-primary-bg-hover: rgb(from var(--theme-base) r g b / 87%);
+
+  --btn-brand-fg: var(--grayscale-1000);
+  --btn-brand-bg: var(--theme-primary);
+  --btn-brand-fg-hover: var(--black);
+  --btn-brand-bg-hover: var(--theme-primary);
+
+  --query-editor-bg: var(--white);
+
+  --cell-fg: var(--theme-base);
+  --cell-binary-fg: var(--pink-800);
+
+  --modal-bg: var(--grayscale-1000);
+  --modal-fg: var(--white);
+
+  --noty-bg: color-mix(in oklch, var(--theme-bg) 95%, var(--white));
+  --noty-warning-fg: var(--orange-400);
 }
 
 /* ===== Dark ===== */
 [data-theme-type="dark"] {
-  --cell-fg-color: var(--color-white);
-  --cell-binary-fg-color: var(--color-pink-300);
+  --text-dark: var(--grayscale-50);
+  --text: var(--grayscale-200);
+  --text-light: var(--grayscale-400);
+  --text-lighter: var(--grayscale-600);
+
+  --theme-base: var(--white);
+  --theme-bg: var(--grayscale-1000);
+
+  --query-editor-bg: var(--grayscale-1100);
+
+  --cell-binary-fg: var(--pink-300);
+}
+
+body {
+  color: var(--text);
+  background-color: var(--theme-bg);
 }

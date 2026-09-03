@@ -3,18 +3,18 @@
     text-decoration-line: underline;
     text-underline-offset: 2px;
     text-decoration-style: dotted;
-    text-decoration-color: $text-light;
+    text-decoration-color: var(--text-light);
   }
 }
 
 .tabulator-cell {
   > pre,
   > .cell-link-wrapper {
-    color: var(--cell-fg-color);
+    color: var(--cell-fg);
   }
 
   &.bks-type-binary > pre,
   &.bks-type-binary > .cell-link-wrapper {
-    color: var(--cell-binary-fg-color);
+    color: var(--cell-binary-fg);
   }
 }

@@ -4,7 +4,7 @@
 // '~noty/themes/mint.scss';
 // --------------------------------------
 .noty_theme__mint.noty_bar {
-  background: color.adjust($theme-bg, $lightness: 5%);
+  background: var(--noty-bg);
   border: 0;
   border-radius: 4px;
   @include card-shadow;
@@ -47,7 +47,7 @@
   color: $text-dark;
 }
 .noty_theme__mint.noty_type__warning {
-  color: color.adjust($brand-warning, $lightness: 5%);
+  color: var(--noty-warning-fg);
 }
 .noty_theme__mint.noty_type__error {
   color: color.adjust($brand-danger, $lightness: 5%);
