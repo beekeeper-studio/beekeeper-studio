@@ -282,7 +282,15 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           label: 'Solarized Dark',
           click: actionHandler.switchTheme,
           checked: settings?.theme?.value === 'solarized-dark'
-        }
+        },
+        ...(platformInfo.isDevelopment ? [
+          { type: 'separator' },
+          {
+            id: 'theme-preview',
+            label: '[DEV] Theme Preview',
+            click: actionHandler.themePreview,
+          }
+        ] : [])
       ]
     },
     enterLicense: {

@@ -54,6 +54,7 @@ export interface IMenuActionHandler {
   managePlugins: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   updatePin: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   keyboardShortcuts: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  themePreview: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   /** `handleAction` is used by menus that are defined at runtime (unlike other
    * actions) so the signature is a little bit different than the rest. */
   handleAction: (action: Electron.MenuItem | CustomMenuAction, win: ElectronWindow) => void

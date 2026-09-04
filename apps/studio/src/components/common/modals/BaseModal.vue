@@ -83,14 +83,20 @@ export default Vue.extend({
   min-height: 6rem;
   max-width: 550px;
   width: auto !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .base-modal {
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .base-modal-header {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -149,12 +155,15 @@ export default Vue.extend({
 }
 
 .base-modal-body {
-  flex: 1 0 auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   width: 100%;
   padding: 0 1.2rem 0.8rem;
 }
 
 .base-modal-footer {
+  flex-shrink: 0;
   display: flex;
   gap: 0.5rem;
   width: 100%;
