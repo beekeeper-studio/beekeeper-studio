@@ -70,9 +70,6 @@ x-buttons {
     }
   }
 }
-.btn {
-  box-shadow: inset 0 0 0 1px rgba($theme-base, 0.035);
-}
 .btn-link, .btn-fab {
   box-shadow: none;
 }
@@ -526,11 +523,6 @@ x-buttons {
   span.cm-bracket {
     color: $text;
   }
-}
-
-// Noty
-.noty_theme__mint.noty_type__success {
-  color: color.adjust($brand-success, $lightness: -5%);
 }
 
 // Switch

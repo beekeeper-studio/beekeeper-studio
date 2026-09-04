@@ -2262,9 +2262,6 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 </script>
 
 <style lang="scss" scoped>
-  @use "sass:color";
-  @import '../assets/styles/app/_variables';
-
   .query-editor {
     position: relative;
 
@@ -2278,37 +2275,6 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
   label[for="commit-mode"] {
     color: var(--text);
-  }
-
-  #commit-mode {
-    --togglebutton-color: color-mix(
-      in srgb,
-      var(--theme-base) 60%,
-      var(--query-editor-bg)
-      );
-    --togglebutton-background: color-mix(
-      in srgb,
-      var(--theme-base) 6%,
-      var(--query-editor-bg));
-    --togglebutton-content-checked-color: var(--theme-base);
-    --togglebutton-content-checked-background: color-mix(
-      in srgb,
-      var(--theme-base) 15%,
-      var(--query-editor-bg));
-  }
-
-  .manual-commit-notice {
-    display: flex;
-    gap: 0.5rem;
-    padding-block: 0.5rem;
-    padding-inline: 0.75rem;
-    margin-bottom: -0.75rem;
-    color: $brand-danger;
-    font-size: 0.85rem;
-
-    [class^="material-icons"] {
-      font-size: 1.2em;
-    }
   }
 
   .fade-swap-enter-active,

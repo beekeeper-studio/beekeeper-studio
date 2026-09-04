@@ -297,13 +297,26 @@
   --theme-primary: var(--yellow-200);
   --theme-base: var(--dark);
   --theme-bg: var(--grayscale-50);
+  --theme-info: var(--blue-500);
+  --theme-success: var(--green-500);
+  --theme-warning: var(--orange-500);
+  --theme-danger: var(--red-500);
 
-  --btn-flat-fg: var(--theme-base);
-  --btn-flat-bg: rgb(from var(--theme-base) r g b / 6%);
-  --btn-flat-bg-hover: rgb(from var(--theme-base) r g b / 12%);
+  --brand-info: var(--theme-info);
+  --brand-success: var(--theme-success);
+  --brand-warning: var(--theme-warning);
+  --brand-danger: var(--theme-danger);
 
-  --btn-link-fg: var(--theme-base);
-  --btn-link-bg-hover: rgb(from var(--theme-base) r g b / 6%);
+  --border-color: var(--grayscale-200);
+
+  --btn-box-shadow: inset 0 0 0 1px rgb(from var(--dark) r g b / 3.5%);
+
+  --btn-flat-fg: var(--dark);
+  --btn-flat-bg: rgb(from var(--dark) r g b / 6%);
+  --btn-flat-bg-hover: rgb(from var(--dark) r g b / 12%);
+
+  --btn-link-fg: var(--dark);
+  --btn-link-bg-hover: rgb(from var(--dark) r g b / 6%);
 
   --btn-info-fg: var(--white);
   --btn-info-bg: var(--blue-500);
@@ -325,14 +338,27 @@
   --btn-brand-fg-hover: var(--black);
   --btn-brand-bg-hover: var(--theme-primary);
 
+  --toggle-btn-fg: var(--btn-flat-fg);
+  --toggle-btn-bg: var(--btn-flat-bg);
+  --toggle-btn-fg-hover: var(--btn-flat-bg-hover);
+  --toggle-btn-fg-active: var(--theme-base);
+  --toggle-btn-bg-active: rgb(from var(--theme-base) r g b / 15%);
+
+  --tooltip-fg: var(--grayscale-100);
+  --tooltip-bg: var(--grayscale-700);
+  --tooltip-box-shadow: inset 0 0 0 1px rgb(from var(--dark) r g b / 5%);
+
+  --tooltip-info-fg: rgb(from var(--dark) r g b / 87%);
+  --tooltip-info-bg: var(--blue-500);
+
   --connection-button-fg: var(--theme-base);
   --connection-button-bg: rgb(from var(--theme-base) r g b / 10%);
 
   --paginator-border: 1px solid var(--grayscale-200);
   --paginator-border-hover: 1px solid var(--grayscale-300);
 
-  --statusbar-bg: var(--grayscale-50);
   --statusbar-fg: var(--dark);
+  --statusbar-bg: var(--grayscale-50);
 
   --query-editor-bg: var(--white);
 
@@ -343,15 +369,28 @@
   --modal-fg: var(--dark);
 
   --noty-bg: color-mix(in oklch, var(--theme-bg) 95%, var(--white));
+  --noty-fg: var(--text-dark);
+  --noty-close-fg: var(--text-lighter);
+  --noty-close-fg-hover: var(--text-dark);
+  --noty-info-fg: var(--brand-info);
+  --noty-success-fg: var(--brand-success);
   --noty-warning-fg: var(--orange-400);
+  --noty-error-fg: var(--brand-danger);
 }
 
 /* ===== Dark ===== */
 [data-theme-type="dark"] {
   --theme-primary: var(--yellow-900);
   --theme-bg: var(--grayscale-100);
+
+  --btn-box-shadow: inset 0 0 0 1px rgb(from var(--dark) r g b / 2.5%);
+
   --btn-brand-fg: var(--grayscale-100);
+
+  --statusbar-bg: var(--grayscale-100);
+
   --query-editor-bg: var(--grayscale-50);
+
   --modal-bg: var(--grayscale-100);
 }
 
