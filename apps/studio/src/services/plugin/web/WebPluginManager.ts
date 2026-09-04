@@ -1,11 +1,11 @@
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import rawLog from "@bksLogger";
-import { Manifest, OnViewRequestListener, PluginSnapshot } from "../types";
+import { OnViewRequestListener, PluginSnapshot } from "../types";
 import PluginStoreService from "./PluginStoreService";
-import WebPluginLoader from "./WebPluginLoader";
+import WebPluginLoader, { PluginNotificationData } from "./WebPluginLoader";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { divider } from "@beekeeperstudio/ui-kit";
-import { JsonValue, PluginNotificationData, PluginViewContext } from "@beekeeperstudio/plugin";
+import { JsonValue, PluginViewContext } from "@beekeeperstudio/plugin";
 import { FileHelpers } from "@/types";
 import type Noty from "noty";
 import { AppEvent } from "@/common/AppEvent";
@@ -285,7 +285,7 @@ export default class WebPluginManager {
         this.pluginStore.appEventBus.emit(
           AppEvent.newCustomTab,
           this.pluginStore.buildPluginTabInit({
-            manifest,
+            manifest: snapshot.manifest,
             viewId,
             command,
             params,
