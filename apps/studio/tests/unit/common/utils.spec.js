@@ -1,4 +1,4 @@
-import { checkEmptyFilters, isBlank, removeUnsortableColumnsFromSortBy, isNumericDataType, isDateDataType } from "@/common/utils"
+import { checkEmptyFilters, isBlank, removeUnsortableColumnsFromSortBy, isNumericDataType, isDateDataType, typedArrayToString, encodedStringLength } from "@/common/utils"
 import { PostgresData } from '@/shared/lib/dialects/postgresql'
 import { MysqlData } from '@/shared/lib/dialects/mysql'
 import { SqliteData } from '@/shared/lib/dialects/sqlite'
@@ -224,5 +224,61 @@ describe("isDateDataType", () => {
     expect(isDateDataType('int2(16,0)')).toBe(false)
     expect(isDateDataType('varchar(255)')).toBe(false)
     expect(isDateDataType('text')).toBe(false)
+  })
+})
+
+describe("typedArrayToString", () => {
+  const bytes = Uint8Array.from({ length: 1000 }, (_, i) => i % 256)
+
+  it('converts the whole array when maxChars is not provided', () => {
+    expect(typedArrayToString(bytes, 'hex')).toHaveLength(2000)
+    expect(typedArrayToString(new Uint8Array([104, 105]), 'base64')).toBe('aGk=')
+  })
+
+  it('only converts enough leading bytes for maxChars in hex', () => {
+    const result = typedArrayToString(bytes, 'hex', 256)
+    // hex needs ceil(maxChars / 2) bytes
+    expect(result).toHaveLength(256)
+    expect(result).toBe(typedArrayToString(bytes.subarray(0, 128), 'hex'))
+  })
+
+  it('only converts enough leading bytes for maxChars in base64', () => {
+    const result = typedArrayToString(bytes, 'base64', 256)
+    // base64 needs floor(maxChars / 4) * 3 bytes
+    expect(result).toHaveLength(256)
+    expect(result).toBe(typedArrayToString(bytes.subarray(0, 192), 'base64'))
+  })
+
+  it('leaves arrays shorter than the budget untouched', () => {
+    expect(typedArrayToString(new Uint8Array([1, 2, 3]), 'hex', 256)).toBe('010203')
+  })
+
+  it('handles empty arrays with a maxChars budget', () => {
+    expect(typedArrayToString(new Uint8Array(0), 'hex', 256)).toBe('')
+  })
+
+  it('works on non-Uint8Array views', () => {
+    const buffer = new ArrayBuffer(1000)
+    new Uint8Array(buffer).set([1, 2, 3])
+    const view = new DataView(buffer)
+    const result = typedArrayToString(view, 'hex', 256)
+    expect(result).toHaveLength(256)
+    expect(result.startsWith('010203')).toBe(true)
+  })
+})
+
+describe("encodedStringLength", () => {
+  it('matches what typedArrayToString actually produces', () => {
+    for (const length of [0, 1, 2, 3, 4, 5, 17, 100]) {
+      const bytes = Uint8Array.from({ length }, (_, i) => i % 256)
+      expect(encodedStringLength(length, 'hex')).toBe(typedArrayToString(bytes, 'hex').length)
+      expect(encodedStringLength(length, 'base64')).toBe(typedArrayToString(bytes, 'base64').length)
+    }
+  })
+
+  it('does not need the buffer to compute the length', () => {
+    // The whole point: decide whether to truncate without paying to encode.
+    expect(encodedStringLength(1_000_000, 'hex')).toBe(2_000_000)
+    expect(encodedStringLength(1_000_000, 'base64')).toBe(1_333_336)
   })
 })
