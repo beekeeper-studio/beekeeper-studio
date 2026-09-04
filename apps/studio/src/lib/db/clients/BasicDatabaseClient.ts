@@ -1,5 +1,5 @@
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField, FieldDescriptor, FieldReadOnlyReason, ServerStatistics, FieldEditData } from '../models';
-import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
+import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, SchemaItem, TableKey } from '@shared/lib/dialects/models';
 import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries, applyChangesSql } from './utils';
 import { Knex } from 'knex';
 import _ from 'lodash'
@@ -12,6 +12,7 @@ import platformInfo from '@/common/platform_info';
 import { LicenseKey } from '@/common/appdb/models/LicenseKey';
 import { Dialect as IdentifierDialect, IdentifyResult } from 'sql-query-identifier/lib/defines';
 import { Transcoder } from '../serialization/transcoders';
+import { FieldResolver, RawTableColumn } from '../serialization/FieldResolver';
 import { ColumnReference, TableReference } from 'sql-query-identifier/lib/defines';
 import { safelyIdentify } from '../sql_tools';
 
@@ -81,6 +82,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   connErrHandler: (msg: string) => void = null;
   reservedConnections: Map<number, Conn> = new Map<number, Conn>();
   transcoders: Transcoder<any, any>[] = [];
+  fieldResolver = new FieldResolver();
 
   constructor(knex: Knex | null, contextProvider: AppContextProvider, server: IDbConnectionServer, database: IDbConnectionDatabase) {
     this.knex = knex;
@@ -171,7 +173,18 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   abstract listViews(filter?: FilterOptions): Promise<TableOrView[]>;
   abstract listRoutines(filter?: FilterOptions): Promise<Routine[]>;
   abstract listMaterializedViewColumns(table: string, schema?: string): Promise<TableColumn[]>;
-  abstract listTableColumns(table?: string, schema?: string): Promise<ExtendedTableColumn[]>;
+
+  async listTableColumns(table?: string, schema?: string, connection?: any): Promise<ExtendedTableColumn[]> {
+    const columns = await this.listTableColumnsRunner(table, schema, connection);
+    const fields = this.fieldResolver.resolveListTableColumns(columns);
+    return columns.map((column, index) => ({
+      ...column,
+      bksField: fields[index],
+    }));
+  }
+
+  protected abstract listTableColumnsRunner(_table?: string, _schema?: string, _connection?: any): Promise<RawTableColumn[]>;
+
   abstract listTableTriggers(table: string, schema?: string): Promise<TableTrigger[]>;
   abstract listTableIndexes(table: string, schema?: string): Promise<TableIndex[]>;
   abstract listSchemas(filter?: SchemaFilterOptions): Promise<string[]>;
@@ -440,7 +453,16 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
 
   // For TableTable *************************************************************
   abstract getTableLength(table?: string, schema?: string): Promise<number>;
-  abstract selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult>;
+
+  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult> {
+    const result = await this.selectTopRunner(table, offset, limit, orderBy, filters, schema, selects);
+    const fields = this.fieldResolver.resolveQueryResult(result);
+    const rows = await this.serializeQueryResult(result, fields);
+    return { result: rows, fields };
+  }
+
+  protected abstract selectTopRunner(_table: string, _offset: number, _limit: number, _orderBy: OrderBy[], _filters: string | TableFilter[], _schema?: string, _selects?: string[]): Promise<RawResultType>;
+
   abstract selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<string>;
   abstract selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema?: string): Promise<StreamResults>;
   // ****************************************************************************
@@ -570,15 +592,6 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     } catch (_e) {
       return false;
     }
-  }
-
-  protected abstract parseTableColumn(column: any): BksField
-
-  protected parseQueryResultColumns(qr: RawResultType): BksField[] {
-    return qr.columns.map((c) => ({
-      name: c.name,
-      bksType: "UNKNOWN",
-    }));
   }
 
   /** Serializes and mutates an array of rows based on their fields */

@@ -9,7 +9,6 @@ import {
   CancelableQuery,
   DatabaseEntity,
   DatabaseFilterOptions,
-  ExtendedTableColumn,
   FieldDescriptor,
   FilterOptions,
   ImportFuncOptions,
@@ -22,8 +21,6 @@ import {
   StreamResults,
   TableChanges,
   TableColumn,
-  BksField,
-  BksFieldType,
   TableFilter,
   TableIndex,
   TableOrView,
@@ -50,6 +47,8 @@ import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderB
 import { IDbConnectionServer } from '@/lib/db/backendTypes';
 import { GenericBinaryTranscoder } from '@/lib/db/serialization/transcoders';
 import Client_Oracledb from '@shared/lib/knex-oracledb';
+import { OracleFieldResolver } from './oracle/OracleFieldResolver';
+import { RawTableColumn } from '@/lib/db/serialization/FieldResolver';
 import fs from 'fs';
 
 const log = rawLog.scope('oracle')
@@ -75,6 +74,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
   version: string
   readOnlyMode: boolean
   transcoders = [GenericBinaryTranscoder];
+  fieldResolver = new OracleFieldResolver();
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knexLib({ client: Client_Oracledb }), NoOpContextProvider, server, database);
@@ -350,11 +350,15 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     return query
   }
 
+  protected async selectTopRunner(): Promise<DriverResult> {
+    return null;
+  }
+
   async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = null, selects: string[] = ['*']): Promise<TableResult> {
     schema = schema ? schema : await this.defaultSchema();
     const query = this.genSelect(table, offset, limit, orderBy, filters, schema, false, selects)
     const result = await this.driverExecuteSingle(query)
-    const fields = this.parseQueryResultColumns(result)
+    const fields = this.fieldResolver.resolveQueryResult(result)
     const rows = await this.serializeQueryResult(result, fields)
     return { result: await this.convertRowsToObjects(rows, result.result.metaData), fields }
   }
@@ -951,7 +955,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     })
   }
 
-  async listTableColumns(table?: string, schema?: string): Promise<ExtendedTableColumn[]> {
+  protected async listTableColumnsRunner(table?: string, schema?: string): Promise<RawTableColumn[]> {
     log.debug("listTableColumns", this.db, table, schema)
     let query = this.knex('ALL_TAB_COLS').select()
 
@@ -971,7 +975,6 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
         defaultValue: this.parseDefault(row.DATA_DEFAULT),
         hasDefault: !_.isNil(this.parseDefault(row.DATA_DEFAULT)),
         generated: row.VIRTUAL_COLUMN === 'YES',
-        bksField: this.parseTableColumn(row),
       }
     })
     return _.sortBy(result, 'ordinalPosition')
@@ -1163,32 +1166,17 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     const conn = this.peekConnection(tabId);
     await conn.rollback();
   }
-
-  parseQueryResultColumns(qr: DriverResult): BksField[] {
-    return qr.columns.map((column) => {
-      let bksType: BksFieldType = 'UNKNOWN';
-      if (column.dbType === oracle.DB_TYPE_BLOB) {
-        bksType = 'BINARY'
-      }
-      return { name: column.name, bksType }
-    })
-  }
-
-  parseTableColumn(column: { COLUMN_NAME: string; DATA_TYPE: string }): BksField {
-    return {
-      name: column.COLUMN_NAME,
-      bksType: column.DATA_TYPE === 'BLOB' ? 'BINARY' : 'UNKNOWN',
-    }
-  }
 }
 
 
 // interface MultiResult
 
-interface DriverResult {
+export type ResultColumn = Metadata<unknown>
+
+export interface DriverResult {
   result: oracle.Result<unknown>,
   info: IdentifyResult
   rows: unknown[]
-  columns: Metadata<unknown>[]
+  columns: ResultColumn[]
   arrayMode: true
 }
