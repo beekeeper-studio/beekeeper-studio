@@ -16,9 +16,16 @@
   }
   .noty_buttons {
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
     padding: 0 0.8rem ($gutter-w * 1.25);
     gap: 0.5rem;
+    // Three actions don't fit on one row at this width; wrap whole buttons
+    // rather than breaking their labels mid-word.
+    .btn {
+      white-space: nowrap;
+      margin: 0;
+    }
   }
 }
 #noty_layout__bottomRight {

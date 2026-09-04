@@ -169,6 +169,14 @@ export default Vue.extend({
     clearInterval(this.licenseInterval)
   },
   async mounted() {
+    // The store loads licenses before this component exists, so the
+    // `licensesInitialized` and `status` watchers never see the initial
+    // values. Without this, a trial or license that lapsed while the app was
+    // closed never surfaces its dialog on the next launch.
+    if (this.licensesInitialized) {
+      await this.$nextTick()
+      this.validateLicenseExpiry()
+    }
     this.notifyFreeTrial()
     this.interval = setInterval(this.notifyFreeTrial, globals.trialNotificationInterval)
     this.$store.dispatch('licenses/updateAll');

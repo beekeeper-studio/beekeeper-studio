@@ -270,16 +270,20 @@
             <div class="pitch" v-else-if="!isUltimate">
               <span v-if="trialEndedOn">Trial ended {{ trialEndedOn }}. Paid features are locked.</span>
               <span v-else>Free version. Paid features are locked.</span>
-              <a href="#" @click.prevent="showPaidFeatures">What's included</a> ·
-              <a href="#" @click.prevent="openPricing">Pricing</a> ·
-              <a href="#" @click.prevent="requestLicense">Request a license from your team</a>
+              <span class="pitch-links">
+                <a href="#" @click.prevent="showPaidFeatures">What's included</a> ·
+                <a href="#" @click.prevent="openPricing">Pricing</a> ·
+                <a href="#" @click.prevent="requestLicense">Request a license from your team</a>
+              </span>
             </div>
             <!-- On the trial -->
             <div class="pitch" v-else-if="isTrial">
               <strong>Free trial: {{ trialTimeLeft }}.</strong>
-              <a href="#" @click.prevent="openPricing">Pricing</a> ·
-              <a href="#" @click.prevent="requestLicense">Request a license from your team</a> ·
-              <a href="#" @click.prevent="enterLicense">Enter license</a>
+              <span class="pitch-links">
+                <a href="#" @click.prevent="openPricing">Pricing</a> ·
+                <a href="#" @click.prevent="requestLicense">Request a license from your team</a> ·
+                <a href="#" @click.prevent="enterLicense">Enter license</a>
+              </span>
             </div>
             <div class="pitch" v-else>
               🌟 <strong>AI Shell</strong> - Let an LLM explore your database and write SQL for you. Bring your own API key. Simply open a new tab to get started.

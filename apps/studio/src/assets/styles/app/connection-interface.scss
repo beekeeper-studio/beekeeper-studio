@@ -118,6 +118,11 @@
         text-decoration: underline;
       }
     }
+    // Vue drops whitespace-only text between tags, so the link group carries
+    // its own gap from the sentence before it.
+    .pitch-links {
+      margin-left: 0.35em;
+    }
   }
   // Trial offer: a single sentence and a single button, no marketing chrome.
   .pitch-trial {
