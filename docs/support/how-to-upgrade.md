@@ -55,8 +55,8 @@ We think this is a fair compromise between subscriptions and one-time payments, 
 
 If you work for a company, you can ask your boss to pay for Beekeeper Studio. It's a business expense, and they will be happy to pay for it when they realize how much time it will save you.
 
-!!! tip "Copy a ready-made purchase request from the app"
-    The app can write the request for you. Open `Help -> Manage License Keys` and click **Copy a purchase request for your team** (the same link appears in the upgrade prompts and when a trial ends). It produces a short plain-text note with the plan price, the seat count, the lifetime-access terms, how to buy or get a formal quote, and the security details a manager usually asks about. If you used the free trial, it also lists the paid features you actually used.
+!!! tip "Draft the request from the app"
+    Open `Help -> Manage License Keys` and click **Draft manager approval request** (the same link appears in the upgrade prompts and when the free trial ends). It opens a page on beekeeperstudio.io with a short, plain-text request already written: the ask and its cost, the seat count (one license by default, adjustable), the lifetime-access terms, how to buy or get a formal quote, and the security details a manager usually asks about. If you used the free trial, it also lists the paid features you actually used. Edit anything, then copy it into email or chat.
 
 If your boss asks you for why they should pay for Beekeeper Studio, you can tell them:
 

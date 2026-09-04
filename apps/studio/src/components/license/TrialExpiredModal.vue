@@ -25,7 +25,7 @@
 <script lang="ts">
 import { AppEvent } from "@/common/AppEvent";
 import type { LicenseStatus } from "@/lib/license";
-import { PRICING_URL } from "@/lib/purchaseRequest";
+import { PRICING_URL } from "@/lib/approvalRequest";
 import LicenseLapsedDialog from "./LicenseLapsedDialog.vue";
 import { mapGetters } from "vuex";
 

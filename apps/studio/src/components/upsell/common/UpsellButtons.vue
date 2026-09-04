@@ -25,7 +25,7 @@
             href="#"
             class="request-link"
             @click.prevent="requestLicense"
-          >Need approval? Copy a purchase request</a>
+          >Draft manager approval request</a>
         </template>
       </span>
       <a
@@ -93,7 +93,7 @@
 </style>
 <script lang="js">
 import { AppEvent } from '@/common/AppEvent';
-import { PRICING_URL } from '@/lib/purchaseRequest';
+import { PRICING_URL } from '@/lib/approvalRequest';
 import { mapState } from 'vuex';
 
 export default {

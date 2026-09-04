@@ -273,7 +273,7 @@
               <span class="pitch-links">
                 <a href="#" @click.prevent="showPaidFeatures">What's included</a> ·
                 <a href="#" @click.prevent="openPricing">Pricing</a> ·
-                <a href="#" @click.prevent="requestLicense">Request a license from your team</a>
+                <a href="#" @click.prevent="requestLicense">Draft manager approval request</a>
               </span>
             </div>
             <!-- On the trial -->
@@ -281,7 +281,7 @@
               <strong>Free trial: {{ trialTimeLeft }}.</strong>
               <span class="pitch-links">
                 <a href="#" @click.prevent="openPricing">Pricing</a> ·
-                <a href="#" @click.prevent="requestLicense">Request a license from your team</a> ·
+                <a href="#" @click.prevent="requestLicense">Draft manager approval request</a> ·
                 <a href="#" @click.prevent="enterLicense">Enter license</a>
               </span>
             </div>
@@ -344,7 +344,7 @@ import { SmartLocalStorage } from '@/common/LocalStorage'
 import ContentPlaceholderHeading from '@/components/common/loading/ContentPlaceholderHeading.vue'
 import { FriendlyErrorHelper } from '@/frontend/utils/FriendlyErrorHelper'
 import PrivacyBanner from './PrivacyBanner.vue'
-import { PRICING_URL } from '@/lib/purchaseRequest'
+import { PRICING_URL } from '@/lib/approvalRequest'
 import { pluralize } from '@/vendor/pluralize'
 
 const log = rawLog.scope('ConnectionInterface')

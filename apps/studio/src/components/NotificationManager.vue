@@ -7,7 +7,7 @@ import Noty from 'noty'
 import { mapGetters, mapActions, mapState } from 'vuex'
 import logoUrl from '@/assets/logo.svg'
 import { AppEvent } from '@/common/AppEvent'
-import { PRICING_URL } from '@/lib/purchaseRequest'
+import { PRICING_URL } from '@/lib/approvalRequest'
 import { escapeHtml } from '@shared/lib/tabulator'
 
 export default Vue.extend({
@@ -64,7 +64,7 @@ export default Vue.extend({
         text,
         buttons: [
           Noty.button('Close', 'btn btn-flat', close),
-          Noty.button('Ask your team', 'btn btn-flat', () => {
+          Noty.button('Draft manager approval request', 'btn btn-flat', () => {
             close()
             this.$root.$emit(AppEvent.purchaseRequest)
           }),

@@ -61,7 +61,7 @@ describe('UpsellButtons', () => {
     expect(wrapper.text()).not.toContain('Start free trial')
 
     const link = wrapper.find('.request-link')
-    expect(link.text()).toContain('Copy a purchase request')
+    expect(link.text()).toBe('Draft manager approval request')
     await link.trigger('click')
     expect(rootEmit).toHaveBeenCalledWith(AppEvent.purchaseRequest)
     expect(wrapper.emitted('request-license')).toHaveLength(1)

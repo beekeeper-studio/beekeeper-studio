@@ -25,7 +25,7 @@ describe('LicenseLapsedDialog', () => {
     const buttons = wrapper.findAll('.license-lapsed-buttons .btn')
     expect(buttons.wrappers.map((b) => b.text())).toEqual([
       'Continue with the free version',
-      'Ask your team',
+      'Draft manager approval request',
       'Buy a license',
     ])
     expect(wrapper.find('.license-lapsed-features').exists()).toBe(false)

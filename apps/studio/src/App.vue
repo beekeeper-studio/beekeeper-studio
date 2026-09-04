@@ -25,7 +25,7 @@
     <data-manager />
     <configuration-warning-modal />
     <enter-license-modal />
-    <purchase-request-modal />
+    <approval-request-handler />
     <workspace-sign-in-modal />
     <workspace-create-modal />
     <workspace-rename-modal />
@@ -76,7 +76,7 @@ import ImportQueriesModal from '@/components/data/ImportQueriesModal.vue'
 import ImportConnectionsModal from '@/components/data/ImportConnectionsModal.vue'
 import TimeAgo from 'javascript-time-ago'
 import EnterLicenseModal from './components/ultimate/EnterLicenseModal.vue'
-import PurchaseRequestModal from './components/upsell/PurchaseRequestModal.vue'
+import ApprovalRequestHandler from './components/upsell/ApprovalRequestHandler.vue'
 import { AppEvent } from './common/AppEvent'
 import globals from './common/globals'
 import NotificationManager from './components/NotificationManager.vue'
@@ -101,7 +101,7 @@ import MoveFolderModal from "@/components/common/modals/MoveFolderModal.vue";
 
 import rawLog from '@bksLogger'
 import { assignContextMenuToAllInputs } from './mixins/assignContextMenuToAllInputs'
-import { PRICING_URL } from '@/lib/purchaseRequest'
+import { PRICING_URL } from '@/lib/approvalRequest'
 
 const log = rawLog.scope('app.vue')
 
@@ -112,7 +112,7 @@ export default Vue.extend({
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
     DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
-    EnterLicenseModal, PurchaseRequestModal, TrialExpiredModal, LicenseExpiredModal,
+    EnterLicenseModal, ApprovalRequestHandler, TrialExpiredModal, LicenseExpiredModal,
     LifetimeLicenseExpiredModal, CloudWorkspacesBlockedModal,
     WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
     PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
@@ -228,7 +228,7 @@ export default Vue.extend({
           timeout: false,
           queue: 'trial',
           buttons: [
-            Noty.button('Ask your team', 'btn btn-flat', () => {
+            Noty.button('Draft manager approval request', 'btn btn-flat', () => {
               Noty.closeAll('trial')
               this.$root.$emit(AppEvent.purchaseRequest)
             }),

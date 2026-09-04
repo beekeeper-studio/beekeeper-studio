@@ -35,8 +35,8 @@
             (every paid feature, no email or card).
           </p>
           <p class="text-muted small">
-            Need approval to buy?
-            <a href="#" @click.prevent="requestLicense">Copy a purchase request for your team</a>.
+            Purchase needs sign-off?
+            <a href="#" @click.prevent="requestLicense">Draft manager approval request</a>.
           </p>
           <error-alert :error=" error" />
           <div class="form-group">

@@ -58,7 +58,7 @@
         type="button"
         @click.prevent="$emit('request')"
       >
-        Ask your team
+        Draft manager approval request
       </button>
       <button
         class="btn btn-primary"
@@ -74,7 +74,7 @@
 <script lang="ts">
 import Vue, { PropType } from 'vue'
 import { UsedPaidFeature } from '@/lib/paidFeatures'
-import { LIFETIME_DOCS_URL } from '@/lib/purchaseRequest'
+import { LIFETIME_DOCS_URL } from '@/lib/approvalRequest'
 
 const MAX_VISIBLE_FEATURES = 6
 
