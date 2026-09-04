@@ -393,7 +393,7 @@ export default Vue.extend({
     cursor: text;
 
     ::selection {
-      background: var(--bks-text-editor-selected-bg-color);
+      background: var(--text-editor-selected-bg);
     }
   }
 

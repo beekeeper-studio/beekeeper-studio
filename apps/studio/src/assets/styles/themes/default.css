@@ -297,6 +297,7 @@
   --theme-primary: var(--yellow-200);
   --theme-base: var(--dark);
   --theme-bg: var(--grayscale-50);
+  --theme-secondary: var(--blue-400);
   --theme-info: var(--blue-500);
   --theme-success: var(--green-500);
   --theme-warning: var(--orange-500);
@@ -378,6 +379,62 @@
   --alert-info-bg: var(--alert-bg);
   --alert-success-fg: var(--green-800);
   --alert-success-bg: var(--alert-bg);
+
+  --text-editor-bg: var(--query-editor-bg);
+  --text-editor-fg: var(--text-dark);
+  --text-editor-focused-outline: transparent;
+  --text-editor-selected-bg: rgb(from var(--theme-base) r g b / 25%);
+  --text-editor-cursor-bg: var(--text-dark);
+  --text-editor-error-fg: var(--theme-danger);
+  --text-editor-error-bg: rgb(from var(--theme-danger) r g b / 10%);
+  --text-editor-highlight-bg: rgb(from var(--theme-warning) r g b / 30%);
+
+  --text-editor-gutter-bg: var(--query-editor-bg);
+  --text-editor-gutter-border: transparent;
+  --text-editor-linenumber-fg: rgb(from var(--theme-base) r g b / 15%);
+  --text-editor-foldgutter-fg: rgb(from var(--theme-base) r g b / 37%);
+  --text-editor-foldgutter-fg-hover: var(--text-dark);
+  --text-editor-indent-marker-bg: rgb(from var(--theme-base) r g b / 10%);
+  --text-editor-indent-marker-active-bg: rgb(from var(--theme-base) r g b / 17.5%);
+
+  --mongo-shell-mongo-prompt-fg: var(--yellow-700);
+  --mongo-shell-ansi-output-fg: var(--text-dark);
+
+  --json-sidebar-bg: var(--theme-bg);
+  --json-sidebar-propertyName-fg: var(--yellow-700);
+  --json-sidebar-string-fg: var(--text-dark);
+  --json-sidebar-number-fg: var(--text-dark);
+  --json-sidebar-bool-fg: var(--text-dark);
+  --json-sidebar-null-fg: var(--text-dark);
+
+  --text-editor-searchmatch-bg: rgb(from var(--theme-info) r g b / 25%);
+  --text-editor-searchmatch-selected-bg: rgb(from var(--theme-primary) r g b / 70%);
+  --text-editor-panel-bg: var(--query-editor-bg);
+  --text-editor-panel-fg: var(--text-dark);
+
+  --text-editor-keyword-fg: var(--pink-800);
+  --text-editor-attributeName-fg: var(--theme-info);
+  --text-editor-string-fg: var(--theme-primary);
+  --text-editor-number-fg: var(--theme-primary);
+  --text-editor-variable-fg: var(--blue-800);
+  --text-editor-variable-2-fg: var(--blue-800);
+  --text-editor-variableName-fg: var(--text-dark);
+  --text-editor-propertyName-fg: var(--theme-primary);
+  --text-editor-name-fg: var(--text-dark);
+  --text-editor-typeName-fg: var(--text-dark);
+  --text-editor-type-fg: var(--text-dark);
+  --text-editor-operator-fg: var(--text-dark);
+  --text-editor-punctuation-fg: var(--text-dark);
+  --text-editor-separator-fg: var(--text-dark);
+  --text-editor-bracket-fg: var(--text);
+  --text-editor-sql-alias-fg: var(--text-dark);
+  --text-editor-sql-field-fg: var(--blue-800);
+
+  --text-editor-context-menu-bg: color-mix(in oklch, var(--theme-bg) 95%, var(--dark));
+  --text-editor-context-menu-fg: var(--text-dark);
+  --text-editor-context-menu-item-bg-hover: rgb(from var(--theme-base) r g b / 5%);
+  --text-editor-context-menu-item-bg-active: var(--blue-700);
+  --text-editor-context-menu-item-fg-active: var(--white);
 
   --noty-bg: color-mix(in oklch, var(--theme-bg) 95%, var(--white));
   --noty-fg: var(--text-dark);

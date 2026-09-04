@@ -99,4 +99,11 @@
   --clr-blue-1100: hsl(205, 26.20%, 6.37%);
 
   --border-color: var(--grayscale-200);
+
+  --text-editor-string-fg: var(--theme-success);
+  --text-editor-number-fg: var(--theme-warning);
+  --text-editor-linenumber-fg: rgb(from var(--theme-base) r g b / 25%);
+  --text-editor-foldgutter-fg: rgb(from var(--theme-base) r g b / 60%);
+  --text-editor-indent-marker-active-bg: rgb(from var(--theme-base) r g b / 20%);
+  --text-editor-context-menu-item-bg-active: var(--theme-info);
 }

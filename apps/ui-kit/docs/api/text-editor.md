@@ -57,12 +57,12 @@ by every editor on the page, so the last configuration applied wins.
 With `keymap="vim"` the editor renders CodeMirror's vim status panel along the
 bottom: the current mode, pending keys, and the `:` and `/` input lines.
 
-Adjust it with `--bks-text-editor-vim-panel-bg-color` and
-`--bks-text-editor-vim-panel-fg-color`, which default to `inherit` so the bar
+Adjust it with `--text-editor-vim-panel-bg` and
+`--text-editor-vim-panel-fg`, which default to `inherit` so the bar
 follows whatever theme you hand CodeMirror, plus
-`--bks-text-editor-vim-panel-font-size` and
-`--bks-text-editor-vim-panel-border`. The font size is deliberately its own
-variable rather than `--bks-text-editor-font-size`, so the bar does not grow
+`--text-editor-vim-panel-font-size` and
+`--text-editor-vim-panel-border`. The font size is deliberately its own
+variable rather than `--text-editor-font-size`, so the bar does not grow
 with the editor's font size setting. Overriding the `.cm-vim-panel` class from a
 stylesheet is not reliable: CodeMirror injects both its own panel defaults and
 the ones `@replit/codemirror-vim` ships as themes, and those outrank plain

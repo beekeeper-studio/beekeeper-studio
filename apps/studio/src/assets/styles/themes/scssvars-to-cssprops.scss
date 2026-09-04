@@ -1,9 +1,6 @@
 // Translate Sass variables to CSS custom properties for plugin system
-// Other properties like --bks-text-editor are already css properties
 
 & {
-  --theme-secondary: #{$theme-secondary};
-
   --text-hint: #{$text-hint};
   --text-disabled: #{$text-disabled};
 

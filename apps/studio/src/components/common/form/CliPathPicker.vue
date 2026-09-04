@@ -197,7 +197,7 @@ export default {
   padding: 0.05rem 0.3rem;
   border-radius: 3px;
   font-size: 0.8em;
-  font-family: var(--bks-text-editor-font-family, monospace);
+  font-family: var(--text-editor-font-family, monospace);
   // Slight raised tint over the form bg — text-dark inverts per theme, so on
   // a dark form the badge lightens, and on a light form it darkens. Either
   // way it reads as a distinct chip instead of a sunken hole.
@@ -251,7 +251,7 @@ export default {
 }
 
 .cli-path-found-pathline {
-  font-family: var(--bks-text-editor-font-family, monospace);
+  font-family: var(--text-editor-font-family, monospace);
   font-size: 12px;
   color: var(--bks-text-light);
   font-weight: 400;

@@ -153,10 +153,10 @@ export function extensions(config: ExtensionConfiguration = {}) {
     config.indentationMarkers
       ? indentationMarkers({
         colors: {
-          light: "var(--bks-text-editor-indent-marker-bg-color)",
-          dark: "var(--bks-text-editor-indent-marker-bg-color)",
-          activeLight: "var(--bks-text-editor-indent-marker-active-bg-color)",
-          activeDark: "var(--bks-text-editor-indent-marker-active-bg-color)",
+          light: "var(--text-editor-indent-marker-bg)",
+          dark: "var(--text-editor-indent-marker-bg)",
+          activeLight: "var(--text-editor-indent-marker-active-bg)",
+          activeDark: "var(--text-editor-indent-marker-active-bg)",
         },
       })
       : [],
@@ -173,71 +173,71 @@ export function extensions(config: ExtensionConfiguration = {}) {
       },
       // Selection
       ".cm-selectionBackground": {
-        backgroundColor: "var(--bks-text-editor-selected-bg-color)",
+        backgroundColor: "var(--text-editor-selected-bg)",
       },
       "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground": {
-        backgroundColor: "var(--bks-text-editor-selected-bg-color)",
+        backgroundColor: "var(--text-editor-selected-bg)",
       },
       ".cm-selectionMatch": {
-        backgroundColor: "var(--bks-text-editor-matchingselection-bg-color)",
+        backgroundColor: "var(--text-editor-matchingselection-bg)",
       },
       // Search
       ".cm-searchMatch": {
-        backgroundColor: "var(--bks-text-editor-searchmatch-bg-color)",
+        backgroundColor: "var(--text-editor-searchmatch-bg)",
       },
       ".cm-searchMatch-selected": {
-        backgroundColor: "var(--bks-text-editor-searchmatch-selected-bg-color)",
+        backgroundColor: "var(--text-editor-searchmatch-selected-bg)",
       },
       // Gutters and line numbers
       ".cm-gutters": {
-        backgroundColor: "var(--bks-text-editor-gutter-bg-color)",
-        borderColor: "var(--bks-text-editor-gutter-border-color)",
+        backgroundColor: "var(--text-editor-gutter-bg)",
+        borderColor: "var(--text-editor-gutter-border)",
       },
       ".cm-foldgutter": {
         fontSize: "1.2rem",
-        color: "var(--bks-text-editor-foldgutter-fg-color)",
+        color: "var(--text-editor-foldgutter-fg)",
       },
       ".cm-foldgutter:hover": {
-        color: "var(--bks-text-editor-foldgutter-fg-color-hover)",
+        color: "var(--text-editor-foldgutter-fg-hover)",
       },
       ".cm-lineNumbers .cm-gutterElement": {
-        color: "var(--bks-text-editor-linenumber-fg-color)",
+        color: "var(--text-editor-linenumber-fg)",
       },
       // Focused state
       "&.cm-focused": {
-        outlineColor: "var(--bks-text-editor-focused-outline-color)",
+        outlineColor: "var(--text-editor-focused-outline)",
       },
       // Cursor
       ".cm-cursor": {
-        borderLeftColor: "var(--bks-text-editor-cursor-bg-color)",
+        borderLeftColor: "var(--text-editor-cursor-bg)",
       },
       ".cm-fat-cursor:not(.CodeMirror)": {
-        backgroundColor: "var(--bks-text-editor-fatcursor-bg-color)",
+        backgroundColor: "var(--text-editor-fatcursor-bg)",
       },
       // Active line
       ".cm-activeLine": {
-        backgroundColor: "var(--bks-text-editor-activeline-bg-color)",
+        backgroundColor: "var(--text-editor-activeline-bg)",
       },
       ".cm-activeLineGutter": {
-        backgroundColor: "var(--bks-text-editor-activeline-gutter-bg-color)",
+        backgroundColor: "var(--text-editor-activeline-gutter-bg)",
       },
       ".cm-indent-markers::before": {
         left: "6px",
       },
       // Matching brackets
       "&.cm-focused .cm-matchingBracket": {
-        color: "var(--bks-text-editor-matchingbracket-fg-color)",
-        backgroundColor: "var(--bks-text-editor-matchingbracket-bg-color)",
+        color: "var(--text-editor-matchingbracket-fg)",
+        backgroundColor: "var(--text-editor-matchingbracket-bg)",
         textDecoration: "underline",
       },
       // Marker styles
       ".cm-error": {
-        backgroundColor: "var(--bks-text-editor-error-bg-color)",
-        borderBottom: "1px solid var(--bks-text-editor-error-fg-color)",
+        backgroundColor: "var(--text-editor-error-bg)",
+        borderBottom: "1px solid var(--text-editor-error-fg)",
         borderRadius: "2px",
       },
       ".cm-highlight": {
-        backgroundColor: "var(--bks-text-editor-highlight-bg-color)",
+        backgroundColor: "var(--text-editor-highlight-bg)",
         borderRadius: "2px",
       },
       // Panel
@@ -248,20 +248,20 @@ export function extensions(config: ExtensionConfiguration = {}) {
       // Inherit so panels follow the app's codemirror theme, or codemirror
       // paints them #f5f5f5. The & is what outranks the app's own theme.
       "&.cm-editor .cm-panels": {
-        backgroundColor: "var(--bks-text-editor-vim-panel-bg-color)",
-        color: "var(--bks-text-editor-vim-panel-fg-color)",
+        backgroundColor: "var(--text-editor-vim-panel-bg)",
+        color: "var(--text-editor-vim-panel-fg)",
       },
       "&.cm-editor .cm-panels-bottom": {
-        borderTop: "var(--bks-text-editor-vim-panel-border)",
+        borderTop: "var(--text-editor-vim-panel-border)",
       },
       // Here rather than the stylesheet so it outranks the vim package's own
       // theme and the .cm-panel rule above, which resolves to white.
       "&.cm-editor .cm-panels .cm-panel.cm-vim-panel": {
-        backgroundColor: "var(--bks-text-editor-vim-panel-bg-color)",
-        color: "var(--bks-text-editor-vim-panel-fg-color)",
-        fontFamily: "var(--bks-text-editor-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace)",
-        fontSize: "var(--bks-text-editor-vim-panel-font-size)",
-        borderBottom: "var(--bks-text-editor-vim-panel-border)",
+        backgroundColor: "var(--text-editor-vim-panel-bg)",
+        color: "var(--text-editor-vim-panel-fg)",
+        fontFamily: "var(--text-editor-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace)",
+        fontSize: "var(--text-editor-vim-panel-font-size)",
+        borderBottom: "var(--text-editor-vim-panel-border)",
         // The mode label and the ':' input swap places here, so pin the
         // metrics or the bar resizes as you type a command.
         boxSizing: "border-box",
@@ -292,13 +292,13 @@ export function extensions(config: ExtensionConfiguration = {}) {
       },
       // Autocomplete hints
       ".cm-tooltip": {
-        backgroundColor: "var(--bks-text-editor-context-menu-bg-color)",
-        color: "var(--bks-text-editor-context-menu-fg-color)",
-        borderColor: "var(--bks-text-editor-context-menu-border-color)",
+        backgroundColor: "var(--text-editor-context-menu-bg)",
+        color: "var(--text-editor-context-menu-fg)",
+        borderColor: "var(--text-editor-context-menu-border)",
       },
       ".cm-tooltip-autocomplete ul li[aria-selected]": {
-        backgroundColor: "var(--bks-text-editor-context-menu-item-bg-color-active)",
-        color: "var(--bks-text-editor-context-menu-item-fg-color-active)",
+        backgroundColor: "var(--text-editor-context-menu-item-bg-active)",
+        color: "var(--text-editor-context-menu-item-fg-active)",
         padding: "0.2rem 0.4rem",
       },
     }),

@@ -24,7 +24,7 @@ import {
 import { ExternalMenuItem, JsonValue } from "@/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
-import { cssVars } from "./cssVars";
+import { cssVars, legacyUiKitCssString } from "./cssVars";
 import type { DialectData } from "@/shared/lib/dialects/models";
 
 type Table = {
@@ -76,7 +76,7 @@ export default class PluginStoreService {
 
     const cssString = cssVars
       .map((cssProp) => `${cssProp}: ${palette[_.camelCase(cssProp)]};`)
-      .join("");
+      .join("") + legacyUiKitCssString;
 
     return {
       type: this.store.getters["settings/themeType"],

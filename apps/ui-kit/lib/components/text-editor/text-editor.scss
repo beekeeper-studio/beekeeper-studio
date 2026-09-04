@@ -4,122 +4,122 @@
 @use 'sass:color';
 
 :root {
-  --bks-text-editor-activeline-bg-color: #{rgba($theme-base, 0.03)};
-  --bks-text-editor-activeline-gutter-bg-color: #{rgba($theme-base, 0.03)};
-  --bks-text-editor-atom-fg-color: #ae81ff;
-  --bks-text-editor-bg-color: #{$query-editor-bg};
-  --bks-text-editor-bracket-fg-color: #{$text};
-  --bks-text-editor-builtin-fg-color: #66d9ef;
-  --bks-text-editor-comment-attribute-fg-color: #97b757;
-  --bks-text-editor-comment-def-fg-color: #bc9262;
-  --bks-text-editor-comment-fg-color: #75715e;
-  --bks-text-editor-comment-tag-fg-color: #bc6283;
-  --bks-text-editor-comment-type-fg-color: #bc6283;
-  --bks-text-editor-cursor-bg-color: #{$text-dark};
-  --bks-text-editor-fatcursor-bg-color: #77ee77;
-  --bks-text-editor-def-fg-color: #fd971f;
-  --bks-text-editor-error-bg-color: #{rgba($brand-danger, 0.1)};
-  --bks-text-editor-error-fg-color: #{$brand-danger};
-  --bks-text-editor-fg-color: #{$text-dark};
-  --bks-text-editor-focused-outline-color: #{$query-editor-bg};
-  --bks-text-editor-foldgutter-fg-color: #{rgba($theme-base, 0.37)};
-  --bks-text-editor-foldgutter-fg-color-hover: #{$text-dark};
-  --bks-text-editor-gutter-bg-color: #{$query-editor-bg};
-  --bks-text-editor-gutter-border-color: #{$query-editor-bg};
-  --bks-text-editor-guttermarker-fg-color: #f8f8f2;
-  --bks-text-editor-guttermarker-subtle-fg-color: #{rgba($theme-base, 0.25)};
-  --bks-text-editor-header-fg-color: #ae81ff;
-  --bks-text-editor-highlight-bg-color: #{rgba($brand-warning, 0.3)};
-  --bks-text-editor-indent-marker-bg-color: #{rgba($theme-base, 0.1)};
-  --bks-text-editor-indent-marker-active-bg-color: #{rgba($theme-base, 0.2)};
-  --bks-text-editor-keyword-fg-color: #{$brand-pink};
-  --bks-text-editor-linenumber-fg-color: #{rgba($theme-base, 0.25)};
-  --bks-text-editor-link-fg-color: #ae81ff;
-  --bks-text-editor-matchingbracket-fg-color: #999977;
-  --bks-text-editor-matchingbracket-bg-color: rgba(153, 153, 119, 0.2);
-  --bks-text-editor-number-fg-color: #{$brand-warning};
-  --bks-text-editor-property-fg-color: #a6e22e;
-  --bks-text-editor-selected-bg-color: #{rgba($theme-base, 0.25)};
-  --bks-text-editor-matchingselection-bg-color: #{rgba($theme-base, 0.1)};
-  --bks-text-editor-searchmatch-bg-color: rgb(from var(--bks-brand-secondary) r g b / 25%);
-  --bks-text-editor-searchmatch-selected-bg-color: rgb(from var(--bks-brand-info) r g b / 30%);
-  --bks-text-editor-string-fg-color: #{color.adjust($brand-success, $lightness: -20%)};
-  --bks-text-editor-tag-fg-color: #f92672;
-  --bks-text-editor-variable-2-fg-color: #{$brand-secondary};
-  --bks-text-editor-variable-3-fg-color: #66d9ef;
-  --bks-text-editor-variable-fg-color: #{color.adjust($text-dark, $lightness: -10%)};
-  --bks-text-editor-namespace-fg-color: #7a7a7a;
-  --bks-text-editor-type-fg-color: #{$text-dark};
-  --bks-text-editor-class-fg-color: #4EC9B0;
-  --bks-text-editor-enum-fg-color: #00aa77;
-  --bks-text-editor-interface-fg-color: #00cc88;
-  --bks-text-editor-struct-fg-color: #00bb99;
-  --bks-text-editor-typeParameter-fg-color: #00aaaa;
-  --bks-text-editor-parameter-fg-color: #2288dd;
-  --bks-text-editor-property-fg-color: #9CDCFE;
-  --bks-text-editor-enumMember-fg-color: #4488ff;
-  --bks-text-editor-decorator-fg-color: #cc33cc;
-  --bks-text-editor-event-fg-color: #5555ff;
-  --bks-text-editor-function-fg-color: #{$brand-warning};
-  --bks-text-editor-method-fg-color: #4488ee;
-  --bks-text-editor-macro-fg-color: #8855dd;
-  --bks-text-editor-label-fg-color: #666666;
-  --bks-text-editor-regexp-fg-color: #ee5555;
-  --bks-text-editor-operator-fg-color: #{$text-dark};
-  --bks-text-editor-definition-fg-color: #fd971f;
-  --bks-text-editor-variableName-fg-color: #{$text-dark};
-  --bks-text-editor-bool-fg-color: #ae81ff;
-  --bks-text-editor-null-fg-color: #ae81ff;
-  --bks-text-editor-className-fg-color: #4EC9B0;
-  --bks-text-editor-propertyName-fg-color: #{$brand-info};
-  --bks-text-editor-punctuation-fg-color: #{$text};
-  --bks-text-editor-meta-fg-color: #75715e;
-  --bks-text-editor-typeName-fg-color: #{$text-dark};
-  --bks-text-editor-labelName-fg-color: #C8C8C8;
-  --bks-text-editor-attributeName-fg-color: #{$brand-info};
-  --bks-text-editor-attributeValue-fg-color: #{color.adjust($brand-success, $lightness: -20%)};
-  --bks-text-editor-heading-fg-color: #ae81ff;
-  --bks-text-editor-url-fg-color: #ae81ff;
-  --bks-text-editor-processingInstruction-fg-color: #75715e;
-  --bks-text-editor-special-string-fg-color: #{color.adjust($brand-success, $lightness: -10%)};
-  --bks-text-editor-name-fg-color: #{$text-dark};
-  --bks-text-editor-deleted-fg-color: #f92672;
-  --bks-text-editor-character-fg-color: #{color.adjust($brand-success, $lightness: -20%)};
-  --bks-text-editor-color-fg-color: #ae81ff;
-  --bks-text-editor-standard-fg-color: #66d9ef;
-  --bks-text-editor-separator-fg-color: #{$text};
-  --bks-text-editor-changed-fg-color: #e6db74;
-  --bks-text-editor-annotation-fg-color: #75715e;
-  --bks-text-editor-modifier-fg-color: #66d9ef;
-  --bks-text-editor-self-fg-color: #fd971f;
-  --bks-text-editor-operatorKeyword-fg-color: #{$brand-pink};
-  --bks-text-editor-escape-fg-color: #ae81ff;
-  --bks-text-editor-link-fg-color: #ae81ff;
-  --bks-text-editor-strong-fg-color: #{$text-dark};
-  --bks-text-editor-emphasis-fg-color: #{$text-dark};
-  --bks-text-editor-strikethrough-fg-color: #{$text-light};
-  --bks-text-editor-sql-alias-fg-color: #{$text-dark};
-  --bks-text-editor-sql-field-fg-color: #{$brand-secondary};
+  --text-editor-activeline-bg: #{rgba($theme-base, 0.03)};
+  --text-editor-activeline-gutter-bg: #{rgba($theme-base, 0.03)};
+  --text-editor-atom-fg: #ae81ff;
+  --text-editor-bg: #{$query-editor-bg};
+  --text-editor-bracket-fg: #{$text};
+  --text-editor-builtin-fg: #66d9ef;
+  --text-editor-comment-attribute-fg: #97b757;
+  --text-editor-comment-def-fg: #bc9262;
+  --text-editor-comment-fg: #75715e;
+  --text-editor-comment-tag-fg: #bc6283;
+  --text-editor-comment-type-fg: #bc6283;
+  --text-editor-cursor-bg: #{$text-dark};
+  --text-editor-fatcursor-bg: #77ee77;
+  --text-editor-def-fg: #fd971f;
+  --text-editor-error-bg: #{rgba($brand-danger, 0.1)};
+  --text-editor-error-fg: #{$brand-danger};
+  --text-editor-fg: #{$text-dark};
+  --text-editor-focused-outline: #{$query-editor-bg};
+  --text-editor-foldgutter-fg: #{rgba($theme-base, 0.37)};
+  --text-editor-foldgutter-fg-hover: #{$text-dark};
+  --text-editor-gutter-bg: #{$query-editor-bg};
+  --text-editor-gutter-border: #{$query-editor-bg};
+  --text-editor-guttermarker-fg: #f8f8f2;
+  --text-editor-guttermarker-subtle-fg: #{rgba($theme-base, 0.25)};
+  --text-editor-header-fg: #ae81ff;
+  --text-editor-highlight-bg: #{rgba($brand-warning, 0.3)};
+  --text-editor-indent-marker-bg: #{rgba($theme-base, 0.1)};
+  --text-editor-indent-marker-active-bg: #{rgba($theme-base, 0.2)};
+  --text-editor-keyword-fg: #{$brand-pink};
+  --text-editor-linenumber-fg: #{rgba($theme-base, 0.25)};
+  --text-editor-link-fg: #ae81ff;
+  --text-editor-matchingbracket-fg: #999977;
+  --text-editor-matchingbracket-bg: rgba(153, 153, 119, 0.2);
+  --text-editor-number-fg: #{$brand-warning};
+  --text-editor-property-fg: #a6e22e;
+  --text-editor-selected-bg: #{rgba($theme-base, 0.25)};
+  --text-editor-matchingselection-bg: #{rgba($theme-base, 0.1)};
+  --text-editor-searchmatch-bg: rgb(from var(--bks-brand-secondary) r g b / 25%);
+  --text-editor-searchmatch-selected-bg: rgb(from var(--bks-brand-info) r g b / 30%);
+  --text-editor-string-fg: #{color.adjust($brand-success, $lightness: -20%)};
+  --text-editor-tag-fg: #f92672;
+  --text-editor-variable-2-fg: #{$brand-secondary};
+  --text-editor-variable-3-fg: #66d9ef;
+  --text-editor-variable-fg: #{color.adjust($text-dark, $lightness: -10%)};
+  --text-editor-namespace-fg: #7a7a7a;
+  --text-editor-type-fg: #{$text-dark};
+  --text-editor-class-fg: #4EC9B0;
+  --text-editor-enum-fg: #00aa77;
+  --text-editor-interface-fg: #00cc88;
+  --text-editor-struct-fg: #00bb99;
+  --text-editor-typeParameter-fg: #00aaaa;
+  --text-editor-parameter-fg: #2288dd;
+  --text-editor-property-fg: #9CDCFE;
+  --text-editor-enumMember-fg: #4488ff;
+  --text-editor-decorator-fg: #cc33cc;
+  --text-editor-event-fg: #5555ff;
+  --text-editor-function-fg: #{$brand-warning};
+  --text-editor-method-fg: #4488ee;
+  --text-editor-macro-fg: #8855dd;
+  --text-editor-label-fg: #666666;
+  --text-editor-regexp-fg: #ee5555;
+  --text-editor-operator-fg: #{$text-dark};
+  --text-editor-definition-fg: #fd971f;
+  --text-editor-variableName-fg: #{$text-dark};
+  --text-editor-bool-fg: #ae81ff;
+  --text-editor-null-fg: #ae81ff;
+  --text-editor-className-fg: #4EC9B0;
+  --text-editor-propertyName-fg: #{$brand-info};
+  --text-editor-punctuation-fg: #{$text};
+  --text-editor-meta-fg: #75715e;
+  --text-editor-typeName-fg: #{$text-dark};
+  --text-editor-labelName-fg: #C8C8C8;
+  --text-editor-attributeName-fg: #{$brand-info};
+  --text-editor-attributeValue-fg: #{color.adjust($brand-success, $lightness: -20%)};
+  --text-editor-heading-fg: #ae81ff;
+  --text-editor-url-fg: #ae81ff;
+  --text-editor-processingInstruction-fg: #75715e;
+  --text-editor-special-string-fg: #{color.adjust($brand-success, $lightness: -10%)};
+  --text-editor-name-fg: #{$text-dark};
+  --text-editor-deleted-fg: #f92672;
+  --text-editor-character-fg: #{color.adjust($brand-success, $lightness: -20%)};
+  --text-editor-fg: #ae81ff;
+  --text-editor-standard-fg: #66d9ef;
+  --text-editor-separator-fg: #{$text};
+  --text-editor-changed-fg: #e6db74;
+  --text-editor-annotation-fg: #75715e;
+  --text-editor-modifier-fg: #66d9ef;
+  --text-editor-self-fg: #fd971f;
+  --text-editor-operatorKeyword-fg: #{$brand-pink};
+  --text-editor-escape-fg: #ae81ff;
+  --text-editor-link-fg: #ae81ff;
+  --text-editor-strong-fg: #{$text-dark};
+  --text-editor-emphasis-fg: #{$text-dark};
+  --text-editor-strikethrough-fg: #{$text-light};
+  --text-editor-sql-alias-fg: #{$text-dark};
+  --text-editor-sql-field-fg: #{$brand-secondary};
 
   // Panels (E.g. Find and replace)
-  --bks-text-editor-panel-bg-color: var(--bks-query-editor-bg);
-  --bks-text-editor-panel-fg-color: var(--bks-text-dark);
+  --text-editor-panel-bg: var(--bks-query-editor-bg);
+  --text-editor-panel-fg: var(--bks-text-dark);
 
   // Vim status line. Inherit, so the bar follows whatever theme the host app
   // gave codemirror; naming a colour would resolve to $query-editor-bg (white).
-  --bks-text-editor-vim-panel-bg-color: inherit;
-  --bks-text-editor-vim-panel-fg-color: inherit;
-  // Not --bks-text-editor-font-size, which tracks the user's font size setting.
-  --bks-text-editor-vim-panel-font-size: 0.875rem;
-  --bks-text-editor-vim-panel-border: 1px solid rgba(128, 128, 128, 0.35);
+  --text-editor-vim-panel-bg: inherit;
+  --text-editor-vim-panel-fg: inherit;
+  // Not --text-editor-font-size, which tracks the user's font size setting.
+  --text-editor-vim-panel-font-size: 0.875rem;
+  --text-editor-vim-panel-border: 1px solid rgba(128, 128, 128, 0.35);
 
   // Context Menu
-  --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: -5%)};
-  --bks-text-editor-context-menu-fg-color: #{$text-dark};
-  --bks-text-editor-context-menu-border-color: transparent;
-  --bks-text-editor-context-menu-item-bg-color-active: #{$brand-info};
-  --bks-text-editor-context-menu-item-fg-color-active: #ffffff;
-  --bks-text-editor-context-menu-item-bg-color-hover: #{rgba($theme-base, 0.05)};
+  --text-editor-context-menu-bg: #{color.adjust($theme-bg, $lightness: -5%)};
+  --text-editor-context-menu-fg: #{$text-dark};
+  --text-editor-context-menu-border: transparent;
+  --text-editor-context-menu-item-bg-active: #{$brand-info};
+  --text-editor-context-menu-item-fg-active: #ffffff;
+  --text-editor-context-menu-item-bg-hover: #{rgba($theme-base, 0.05)};
 }
 
 .BksTextEditor {
@@ -128,41 +128,41 @@
   // Common CodeMirror styles
   .cm-editor {
     font-family: $font-family-mono;
-    font-size: var(--bks-text-editor-font-size, 0.875rem);
+    font-size: var(--text-editor-font-size, 0.875rem);
     height: 100%;
-    background-color: var(--bks-text-editor-bg-color);
-    color: var(--bks-text-editor-fg-color);
+    background-color: var(--text-editor-bg);
+    color: var(--text-editor-fg);
   }
 
   .cm-scroller {
     outline: none;
     font-family: $font-family-mono;
-    font-size: var(--bks-text-editor-font-size, 0.875rem);
+    font-size: var(--text-editor-font-size, 0.875rem);
   }
 
   // Semantic token styles for v2 - using distinct colors in 6-digit hex format
-  .cm-semanticToken-namespace { color: var(--bks-text-editor-namespace-fg-color); }
-  .cm-semanticToken-type { color: var(--bks-text-editor-type-fg-color); }
-  .cm-semanticToken-class { color: var(--bks-text-editor-class-fg-color); }
-  .cm-semanticToken-enum { color: var(--bks-text-editor-enum-fg-color); }
-  .cm-semanticToken-interface { color: var(--bks-text-editor-interface-fg-color); }
-  .cm-semanticToken-struct { color: var(--bks-text-editor-struct-fg-color); }
-  .cm-semanticToken-typeParameter { color: var(--bks-text-editor-typeParameter-fg-color); }
-  .cm-semanticToken-parameter { color: var(--bks-text-editor-parameter-fg-color); }
-  .cm-semanticToken-variable { color: var(--bks-text-editor-variable-fg-color); }
-  .cm-semanticToken-property { color: var(--bks-text-editor-property-fg-color); }
-  .cm-semanticToken-enumMember { color: var(--bks-text-editor-enumMember-fg-color); }
-  .cm-semanticToken-event { color: var(--bks-text-editor-event-fg-color); }
-  .cm-semanticToken-function { color: var(--bks-text-editor-function-fg-color); }
-  .cm-semanticToken-method { color: var(--bks-text-editor-method-fg-color); }
-  .cm-semanticToken-macro { color: var(--bks-text-editor-macro-fg-color); }
-  .cm-semanticToken-keyword { color: var(--bks-text-editor-keyword-fg-color); }
-  .cm-semanticToken-comment { color: var(--bks-text-editor-comment-fg-color); }
-  .cm-semanticToken-string { color: var(--bks-text-editor-string-fg-color); }
-  .cm-semanticToken-number { color: var(--bks-text-editor-number-fg-color); }
-  .cm-semanticToken-regexp { color: var(--bks-text-editor-regexp-fg-color); }
-  .cm-semanticToken-operator { color: var(--bks-text-editor-operator-fg-color); }
-  .cm-semanticToken-decorator { color: var(--bks-text-editor-decorator-fg-color); }
+  .cm-semanticToken-namespace { color: var(--text-editor-namespace-fg); }
+  .cm-semanticToken-type { color: var(--text-editor-type-fg); }
+  .cm-semanticToken-class { color: var(--text-editor-class-fg); }
+  .cm-semanticToken-enum { color: var(--text-editor-enum-fg); }
+  .cm-semanticToken-interface { color: var(--text-editor-interface-fg); }
+  .cm-semanticToken-struct { color: var(--text-editor-struct-fg); }
+  .cm-semanticToken-typeParameter { color: var(--text-editor-typeParameter-fg); }
+  .cm-semanticToken-parameter { color: var(--text-editor-parameter-fg); }
+  .cm-semanticToken-variable { color: var(--text-editor-variable-fg); }
+  .cm-semanticToken-property { color: var(--text-editor-property-fg); }
+  .cm-semanticToken-enumMember { color: var(--text-editor-enumMember-fg); }
+  .cm-semanticToken-event { color: var(--text-editor-event-fg); }
+  .cm-semanticToken-function { color: var(--text-editor-function-fg); }
+  .cm-semanticToken-method { color: var(--text-editor-method-fg); }
+  .cm-semanticToken-macro { color: var(--text-editor-macro-fg); }
+  .cm-semanticToken-keyword { color: var(--text-editor-keyword-fg); }
+  .cm-semanticToken-comment { color: var(--text-editor-comment-fg); }
+  .cm-semanticToken-string { color: var(--text-editor-string-fg); }
+  .cm-semanticToken-number { color: var(--text-editor-number-fg); }
+  .cm-semanticToken-regexp { color: var(--text-editor-regexp-fg); }
+  .cm-semanticToken-operator { color: var(--text-editor-operator-fg); }
+  .cm-semanticToken-decorator { color: var(--text-editor-decorator-fg); }
 
   // Token modifiers
   [class*="cm-semanticToken-"][class*="-static"] { font-style: italic; }
@@ -171,51 +171,51 @@
   [class*="cm-semanticToken-"][class*="-readonly"] { font-style: italic; }
 
   // CodeMirror 6 basic syntax highlighting classes
-  .cm-keyword { color: var(--bks-text-editor-keyword-fg-color); }
-  .cm-comment { color: var(--bks-text-editor-comment-fg-color); }
-  .cm-string { color: var(--bks-text-editor-string-fg-color); }
-  .cm-variableName { color: var(--bks-text-editor-variableName-fg-color); }
-  .cm-definition { color: var(--bks-text-editor-definition-fg-color); }
-  .cm-function { color: var(--bks-text-editor-function-fg-color); }
-  .cm-number { color: var(--bks-text-editor-number-fg-color); }
-  .cm-bool { color: var(--bks-text-editor-bool-fg-color); }
-  .cm-null { color: var(--bks-text-editor-null-fg-color); }
-  .cm-className { color: var(--bks-text-editor-className-fg-color); }
-  .cm-propertyName { color: var(--bks-text-editor-propertyName-fg-color); }
-  .cm-operator { color: var(--bks-text-editor-operator-fg-color); }
-  .cm-punctuation { color: var(--bks-text-editor-punctuation-fg-color); }
-  .cm-bracket { color: var(--bks-text-editor-bracket-fg-color); }
-  .cm-meta { color: var(--bks-text-editor-meta-fg-color); }
-  .cm-atom { color: var(--bks-text-editor-atom-fg-color); }
-  .cm-typeName { color: var(--bks-text-editor-typeName-fg-color); }
-  .cm-namespace { color: var(--bks-text-editor-namespace-fg-color); }
-  .cm-labelName { color: var(--bks-text-editor-labelName-fg-color); }
-  .cm-attributeName { color: var(--bks-text-editor-attributeName-fg-color); }
-  .cm-attributeValue { color: var(--bks-text-editor-attributeValue-fg-color); }
-  .cm-heading { color: var(--bks-text-editor-heading-fg-color); }
-  .cm-url { color: var(--bks-text-editor-url-fg-color); }
-  .cm-processingInstruction { color: var(--bks-text-editor-processingInstruction-fg-color); }
-  .cm-special-string { color: var(--bks-text-editor-special-string-fg-color); }
-  .cm-name { color: var(--bks-text-editor-name-fg-color); }
-  .cm-sql-alias .cm-name { color: var(--bks-text-editor-sql-alias-fg-color); }
-  .cm-sql-field .cm-name { color: var(--bks-text-editor-sql-field-fg-color); }
-  .cm-deleted { color: var(--bks-text-editor-deleted-fg-color); }
-  .cm-character { color: var(--bks-text-editor-character-fg-color); }
-  .cm-macro { color: var(--bks-text-editor-macro-fg-color); }
-  .cm-color { color: var(--bks-text-editor-color-fg-color); }
-  .cm-standard { color: var(--bks-text-editor-standard-fg-color); }
-  .cm-separator { color: var(--bks-text-editor-separator-fg-color); }
-  .cm-changed { color: var(--bks-text-editor-changed-fg-color); }
-  .cm-annotation { color: var(--bks-text-editor-annotation-fg-color); }
-  .cm-modifier { color: var(--bks-text-editor-modifier-fg-color); }
-  .cm-self { color: var(--bks-text-editor-self-fg-color); }
-  .cm-operatorKeyword { color: var(--bks-text-editor-operatorKeyword-fg-color); }
-  .cm-escape { color: var(--bks-text-editor-escape-fg-color); }
-  .cm-regexp { color: var(--bks-text-editor-regexp-fg-color); }
-  .cm-link { color: var(--bks-text-editor-link-fg-color); }
-  .cm-strong { color: var(--bks-text-editor-strong-fg-color); }
-  .cm-emphasis { color: var(--bks-text-editor-emphasis-fg-color); }
-  .cm-strikethrough { color: var(--bks-text-editor-strikethrough-fg-color); }
+  .cm-keyword { color: var(--text-editor-keyword-fg); }
+  .cm-comment { color: var(--text-editor-comment-fg); }
+  .cm-string { color: var(--text-editor-string-fg); }
+  .cm-variableName { color: var(--text-editor-variableName-fg); }
+  .cm-definition { color: var(--text-editor-definition-fg); }
+  .cm-function { color: var(--text-editor-function-fg); }
+  .cm-number { color: var(--text-editor-number-fg); }
+  .cm-bool { color: var(--text-editor-bool-fg); }
+  .cm-null { color: var(--text-editor-null-fg); }
+  .cm-className { color: var(--text-editor-className-fg); }
+  .cm-propertyName { color: var(--text-editor-propertyName-fg); }
+  .cm-operator { color: var(--text-editor-operator-fg); }
+  .cm-punctuation { color: var(--text-editor-punctuation-fg); }
+  .cm-bracket { color: var(--text-editor-bracket-fg); }
+  .cm-meta { color: var(--text-editor-meta-fg); }
+  .cm-atom { color: var(--text-editor-atom-fg); }
+  .cm-typeName { color: var(--text-editor-typeName-fg); }
+  .cm-namespace { color: var(--text-editor-namespace-fg); }
+  .cm-labelName { color: var(--text-editor-labelName-fg); }
+  .cm-attributeName { color: var(--text-editor-attributeName-fg); }
+  .cm-attributeValue { color: var(--text-editor-attributeValue-fg); }
+  .cm-heading { color: var(--text-editor-heading-fg); }
+  .cm-url { color: var(--text-editor-url-fg); }
+  .cm-processingInstruction { color: var(--text-editor-processingInstruction-fg); }
+  .cm-special-string { color: var(--text-editor-special-string-fg); }
+  .cm-name { color: var(--text-editor-name-fg); }
+  .cm-sql-alias .cm-name { color: var(--text-editor-sql-alias-fg); }
+  .cm-sql-field .cm-name { color: var(--text-editor-sql-field-fg); }
+  .cm-deleted { color: var(--text-editor-deleted-fg); }
+  .cm-character { color: var(--text-editor-character-fg); }
+  .cm-macro { color: var(--text-editor-macro-fg); }
+  .cm-color { color: var(--text-editor-fg); }
+  .cm-standard { color: var(--text-editor-standard-fg); }
+  .cm-separator { color: var(--text-editor-separator-fg); }
+  .cm-changed { color: var(--text-editor-changed-fg); }
+  .cm-annotation { color: var(--text-editor-annotation-fg); }
+  .cm-modifier { color: var(--text-editor-modifier-fg); }
+  .cm-self { color: var(--text-editor-self-fg); }
+  .cm-operatorKeyword { color: var(--text-editor-operatorKeyword-fg); }
+  .cm-escape { color: var(--text-editor-escape-fg); }
+  .cm-regexp { color: var(--text-editor-regexp-fg); }
+  .cm-link { color: var(--text-editor-link-fg); }
+  .cm-strong { color: var(--text-editor-strong-fg); }
+  .cm-emphasis { color: var(--text-editor-emphasis-fg); }
+  .cm-strikethrough { color: var(--text-editor-strikethrough-fg); }
 
   .cm-textfield {
     @include bk-form-input;
@@ -229,7 +229,7 @@
   .cm-button {
     @include btn;
     background-image: none; // reset cm style
-    background-color: var(--bks-text-editor-button-bg-color);
+    background-color: var(--text-editor-button-bg);
     text-transform: capitalize;
   }
 
@@ -308,32 +308,32 @@
     cursor: pointer;
 
     &:hover:not([aria-selected]) {
-      background-color: var(--bks-text-editor-context-menu-item-bg-color-hover);
+      background-color: var(--text-editor-context-menu-item-bg-hover);
     }
 
     // Option type-based styling
     &.bks-autocomplete-option-keyword {
-      color: var(--bks-text-editor-keyword-fg-color);
+      color: var(--text-editor-keyword-fg);
     }
 
     &.bks-autocomplete-option-function {
-      color: var(--bks-text-editor-function-fg-color);
+      color: var(--text-editor-function-fg);
     }
 
     &.bks-autocomplete-option-variable {
-      color: var(--bks-text-editor-variable-fg-color);
+      color: var(--text-editor-variable-fg);
     }
 
     &.bks-autocomplete-option-type {
-      color: var(--bks-text-editor-type-fg-color);
+      color: var(--text-editor-type-fg);
     }
 
     &.bks-autocomplete-option-class {
-      color: var(--bks-text-editor-class-fg-color);
+      color: var(--text-editor-class-fg);
     }
 
     &.bks-autocomplete-option-property {
-      color: var(--bks-text-editor-property-fg-color);
+      color: var(--text-editor-property-fg);
     }
   }
 
