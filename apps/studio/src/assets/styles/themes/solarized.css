@@ -1,30 +1,99 @@
-/* ===== Palette ===== */
+/* Grayscale Design palette: https://grayscale.design/app?lums=80.00,66.78,53.86,40.16,29.92,19.95,14.74,11.45,7.89,4.94,2.25,0.52&palettes=%23dc322f,%23cb4b16,%23b58900,%23859900,%23d33682,%23268bd2&filters=0%7C0,0%7C0,0%7C-7.2,0%7C-10.3,0%7C0,0%7C-7.2&names=clr-red,clr-orange,clr-yellow,clr-green,clr-pink,clr-blue&labels=,,,,, */
 [data-theme="solarized"],
 [data-theme="solarized-dark"] {
-  --color-black: #002B36;
-  --color-white: #DDD6C1;
+  --black: rgb(0 43 54);
+  --white: rgb(253 246 227);
 
-  --color-blue-300: #A8D1ED;
-  --color-blue-400: #67AEE0;
-  --color-blue-500: #268BD2;
-  --color-blue-600: #227DBD;
-  --color-blue-700: #17537E;
+  --clr-grayscale-50: rgb(238 232 213);
+  --clr-grayscale-100: rgb(238 232 213);
+  --clr-grayscale-200: rgb(147 161 161);
+  --clr-grayscale-300: rgb(147 161 161);
+  --clr-grayscale-400: rgb(131 148 150);
+  --clr-grayscale-500: rgb(101 123 131);
+  --clr-grayscale-600: rgb(101 123 131);
+  --clr-grayscale-700: rgb(88 110 117);
+  --clr-grayscale-800: rgb(88 110 117);
+  --clr-grayscale-900: rgb(7 54 66);
+  --clr-grayscale-1000: rgb(7 54 66);
+  --clr-grayscale-1100: rgb(0 43 54);
 
-  --color-pink-300: #EDAFCD;
-  --color-pink-400: #E072A8;
-  --color-pink-500: #D33682;
-  --color-pink-700: #7F204E;
-  --color-pink-800: #5F183B;
+  --clr-red-50: hsl(1, 71.20%, 93.24%);
+  --clr-red-100: hsl(1, 71.20%, 88.00%);
+  --clr-red-200: hsl(1, 71.20%, 82.00%);
+  --clr-red-300: hsl(1, 71.20%, 74.56%);
+  --clr-red-400: hsl(1, 71.20%, 66.90%);
+  --clr-red-500: hsl(1, 71.20%, 56.21%);
+  --clr-red-600: hsl(1, 71.20%, 47.53%);
+  --clr-red-700: hsl(1, 71.20%, 42.26%);
+  --clr-red-800: hsl(1, 71.20%, 35.61%);
+  --clr-red-900: hsl(1, 71.20%, 28.51%);
+  --clr-red-1000: hsl(1, 71.20%, 19.35%);
+  --clr-red-1100: hsl(1, 71.20%, 8.17%);
 
-  --color-green-400: #AAB84D;
-  --color-green-500: #859900;
-  --color-green-700: #505C00;
+  --clr-orange-50: hsl(18, 80.40%, 91.54%);
+  --clr-orange-100: hsl(18, 80.40%, 85.00%);
+  --clr-orange-200: hsl(18, 80.40%, 77.59%);
+  --clr-orange-300: hsl(18, 80.40%, 67.93%);
+  --clr-orange-400: hsl(18, 80.40%, 58.30%);
+  --clr-orange-500: hsl(18, 80.40%, 46.41%);
+  --clr-orange-600: hsl(18, 80.40%, 40.32%);
+  --clr-orange-700: hsl(18, 80.40%, 35.97%);
+  --clr-orange-800: hsl(18, 80.40%, 30.00%);
+  --clr-orange-900: hsl(18, 80.40%, 23.98%);
+  --clr-orange-1000: hsl(18, 80.40%, 15.97%);
+  --clr-orange-1100: hsl(18, 80.40%, 6.63%);
 
-  --color-yellow-400: #CBAC4D;
-  --color-yellow-500: #B58900;
-  --color-yellow-700: #6D5200;
+  --clr-yellow-50: hsl(45, 71.20%, 85.22%);
+  --clr-yellow-100: hsl(45, 78.40%, 71.94%);
+  --clr-yellow-200: hsl(45, 85.60%, 53.72%);
+  --clr-yellow-300: hsl(45, 92.80%, 43.52%);
+  --clr-yellow-400: hsl(45, 100.00%, 36.99%);
+  --clr-yellow-500: hsl(45, 92.80%, 31.62%);
+  --clr-yellow-600: hsl(45, 85.60%, 28.20%);
+  --clr-yellow-700: hsl(45, 78.40%, 25.82%);
+  --clr-yellow-800: hsl(45, 71.20%, 22.33%);
+  --clr-yellow-900: hsl(45, 64.00%, 18.27%);
+  --clr-yellow-1000: hsl(45, 56.80%, 12.37%);
+  --clr-yellow-1100: hsl(45, 49.60%, 5.00%);
 
-  --color-orange-300: #EAB7A2;
-  --color-orange-500: #CB4B16;
-  --color-orange-800: #5B220A;
+  --clr-green-50: hsl(68, 58.80%, 81.84%);
+  --clr-green-100: hsl(68, 69.10%, 60.22%);
+  --clr-green-200: hsl(68, 79.40%, 44.98%);
+  --clr-green-300: hsl(68, 89.70%, 37.49%);
+  --clr-green-400: hsl(68, 100.00%, 31.00%);
+  --clr-green-500: hsl(68, 89.70%, 27.18%);
+  --clr-green-600: hsl(68, 79.40%, 24.90%);
+  --clr-green-700: hsl(68, 69.10%, 23.47%);
+  --clr-green-800: hsl(68, 58.80%, 20.68%);
+  --clr-green-900: hsl(68, 48.50%, 17.56%);
+  --clr-green-1000: hsl(68, 38.20%, 12.34%);
+  --clr-green-1100: hsl(68, 27.90%, 5.16%);
+
+  --clr-pink-50: hsl(331, 64.10%, 92.95%);
+  --clr-pink-100: hsl(331, 64.10%, 87.45%);
+  --clr-pink-200: hsl(331, 64.10%, 81.24%);
+  --clr-pink-300: hsl(331, 64.10%, 73.35%);
+  --clr-pink-400: hsl(331, 64.10%, 65.63%);
+  --clr-pink-500: hsl(331, 64.10%, 54.88%);
+  --clr-pink-600: hsl(331, 64.10%, 46.95%);
+  --clr-pink-700: hsl(331, 64.10%, 41.87%);
+  --clr-pink-800: hsl(331, 64.10%, 35.06%);
+  --clr-pink-900: hsl(331, 64.10%, 27.85%);
+  --clr-pink-1000: hsl(331, 64.10%, 18.99%);
+  --clr-pink-1100: hsl(331, 64.10%, 7.81%);
+
+  --clr-blue-50: hsl(205, 33.40%, 90.73%);
+  --clr-blue-100: hsl(205, 40.60%, 83.80%);
+  --clr-blue-200: hsl(205, 47.80%, 75.98%);
+  --clr-blue-300: hsl(205, 55.00%, 66.00%);
+  --clr-blue-400: hsl(205, 62.20%, 56.60%);
+  --clr-blue-500: hsl(205, 69.40%, 45.25%);
+  --clr-blue-600: hsl(205, 62.20%, 39.97%);
+  --clr-blue-700: hsl(205, 55.00%, 35.80%);
+  --clr-blue-800: hsl(205, 47.80%, 30.32%);
+  --clr-blue-900: hsl(205, 40.60%, 24.09%);
+  --clr-blue-1000: hsl(205, 33.40%, 16.15%);
+  --clr-blue-1100: hsl(205, 26.20%, 6.37%);
+
+  --border-color: var(--grayscale-100);
 }
