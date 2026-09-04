@@ -329,6 +329,23 @@ export default Vue.extend({
 label.checkbox-group {
   display: flex;
   padding-left: calc(var(--depth) * 1.2rem);
+
+  input[type="checkbox"] {
+    $checkbox-size: 15px;
+
+    height: $checkbox-size;
+    line-height: $checkbox-size;
+    width: $checkbox-size;
+    min-width: $checkbox-size;
+    border-radius: 4px;
+    &:checked:after {
+      font-size: $checkbox-size;
+    }
+    &:focus,
+    &:focus-visible {
+      outline-offset: -2px !important;
+    }
+  }
 }
 .item {
   display: flex;

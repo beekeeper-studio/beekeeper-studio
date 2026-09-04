@@ -157,23 +157,7 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
         throw new Error(`You need to configure the searchable fields for model ${name}`);
       }
 
-      let builder = cls
-        .createQueryBuilder("c");
-
-      for (let i = 0; i < cls.searchableFields.length; i++) {
-        const field = cls.searchableFields[i];
-        const query = `LOWER(c.${field}) LIKE :q`;
-        const params = { q: `%${searchText}%`};
-        if (i === 0) {
-          builder = builder.where(query, params);
-        } else {
-          builder = builder.orWhere(query, params);
-        }
-      }
-
-      const result = await builder
-        .orderBy(`c.${cls.searchableFields[0]}`, 'ASC')
-        .getMany();
+      const result = await cls.search(cls, searchText);
 
       return await Promise.all(result.map(async (value) => {
         return await transform(value, cls);
