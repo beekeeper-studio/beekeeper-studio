@@ -483,9 +483,9 @@ x-buttons {
   --bks-text-editor-cursor-bg-color: #{$text-dark};
   --bks-text-editor-bracket-fg-color: #{$text};
 
-  --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: -5%)};
-  --bks-text-editor-context-menu-item-bg-color-active: #{$brand-info};
-  --bks-text-editor-context-menu-item-fg-color-active: #ffffff;
+  --bks-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: -5%)};
+  --bks-context-menu-item-bg-color-active: #{$brand-info};
+  --bks-context-menu-item-fg-color-active: #ffffff;
 }
 
 .BksTextEditor {
@@ -800,9 +800,9 @@ x-switch {
   --bks-text-editor-panel-bg-color: #{$query-editor-bg};
   --bks-text-editor-panel-fg-color: #{$text-dark};
 
-  --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: 5%)};
-  --bks-text-editor-context-menu-fg-color: #{$text-dark};
-  --bks-text-editor-context-menu-item-bg-color-active: #{color.adjust($theme-secondary, $lightness: -25%)};
-  --bks-text-editor-context-menu-item-bg-color-hover: #{rgba($theme-base, 0.05)};
-  --bks-text-editor-context-menu-item-fg-color-active: #ffffff;
+  --bks-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: 5%)};
+  --bks-context-menu-fg-color: #{$text-dark};
+  --bks-context-menu-item-bg-color-active: #{color.adjust($theme-secondary, $lightness: -25%)};
+  --bks-context-menu-item-bg-color-hover: #{rgba($theme-base, 0.05)};
+  --bks-context-menu-item-fg-color-active: #ffffff;
 }
