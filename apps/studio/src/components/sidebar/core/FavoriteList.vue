@@ -1,5 +1,8 @@
 <template>
-  <div class="sidebar-favorites flex-col expand">
+  <div
+    class="sidebar-favorites flex-col expand"
+    v-hotkey="bulkSelectionKeymap"
+  >
     <div class="sidebar-list">
       <div class="list-group">
         <div class="list-heading row">
@@ -99,9 +102,13 @@
               :key="query.id"
               :item="query"
               :active="isActive(query)"
-              :selected="selected === query"
+              :selected="selectedIds.includes(itemNodeId(query))"
+              :bulk-selection-active="bulkSelectionActive"
+              :selected-count="selectedIds.length"
               @remove="remove"
               @select="select"
+              @add-to-selection="addToSelection"
+              @remove-selected="removeCheckedFavorites"
               @open="open"
               @open-history="openHistory"
               @export="exportTo"
@@ -124,6 +131,7 @@
             :folders="extendedFolderNodes"
             :items="extendedItemNodes"
             :expanded-ids="expandedNodeIds"
+            :filter="filterQuery"
             @update:expandedIds="setExpandedIds"
             @bks-tree-node-move="handleTreeNodeMove"
           >
@@ -222,7 +230,9 @@
                 v-else
                 :item="node.ref"
                 :active="isActive(node.ref)"
-                :selected="selected === node.ref"
+                :selected="selectedIds.includes(node.id)"
+                :bulk-selection-active="bulkSelectionActive"
+                :selected-count="selectedIds.length"
                 :class="{
                   'drag-pending': (pendingSaveIds || []).includes(node.ref.id),
                   'commited': commitedType === 'item'
@@ -230,6 +240,8 @@
                 }"
                 @remove="remove"
                 @select="select"
+                @add-to-selection="addToSelection"
+                @remove-selected="removeCheckedFavorites"
                 @open="open"
                 @open-history="openHistory"
                 @export="exportTo"
@@ -240,23 +252,28 @@
         </nav>
       </div>
     </div>
+    <!-- <div class="toolbar btn-group row flex-right" v-show="bulkSelectionActive">
+      <a class="btn btn-link" @click="discardCheckedFavorites">Cancel</a>
+      <a class="btn btn-primary" :title="removeTitle" @click="removeCheckedFavorites">Remove</a>
+    </div> -->
   </div>
 </template>
 
 <script>
-import _ from 'lodash'
+import { AppEvent } from '@/common/AppEvent'
+import { buildFolderNodes, buildItemNode, parseReorderTarget } from "@/common/utils/folderTree"
+import EditableText from '@/components/common/EditableText.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
+import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
+import ContentPlaceholderText from '@/components/common/loading/ContentPlaceholderText.vue'
+import { collectVisibleItemIds, rangeSelectVisibleIds, toggleSelectedId } from "@beekeeperstudio/ui-kit/tree/helpers"
+import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree"
+import rawLog from '@bksLogger'
+import _ from 'lodash'
 import { mapActions, mapGetters, mapMutations, mapState } from 'vuex'
 import SidebarLoading from '../../common/SidebarLoading.vue'
 import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
-import { AppEvent } from '@/common/AppEvent'
-import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
-import EditableText from '@/components/common/EditableText.vue'
-import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
-import ContentPlaceholderText from '@/components/common/loading/ContentPlaceholderText.vue'
-import { buildItemNode, buildFolderNodes, parseReorderTarget } from '@/common/utils/folderTree'
-import rawLog from '@bksLogger'
 
 const log = rawLog.scope('FavoriteList')
 
@@ -264,8 +281,9 @@ export default {
   components: { SidebarLoading, ErrorAlert, ExpiredFolderAlert, FavoriteListItem, Tree, TreeFolder, EditableText, ContentPlaceholder, ContentPlaceholderText },
   data: function () {
     return {
-      checkedFavorites: [],
-      selected: null,
+      selectedIds: [],
+      cloudSelectionAnchorId: null,
+      draggingQuery: null,
       renamingFolderId: null,
       commitedId: null,
       commitedType: null,
@@ -284,14 +302,18 @@ export default {
       this.setSavedQueryFilter(value);
     },
   },
-  mounted() {
-    document.addEventListener('mousedown', this.maybeUnselect)
-  },
   beforeDestroy() {
-    document.removeEventListener('mousedown', this.maybeUnselect)
     clearTimeout(this.commitedTimeout)
+    document.removeEventListener('mousedown', this.maybeDeactivate)
+  },
+  mounted() {
+    document.addEventListener('mousedown', this.maybeDeactivate)
   },
   computed: {
+    ...mapState('sidebar', {
+      globalSidebarActiveItem: 'globalSidebarActiveItem',
+      primarySidebarOpen: 'primarySidebarOpen',
+    }),
     ...mapGetters(['workspace', 'isCloud', 'isUltimate', 'canCreateFolders']),
     ...mapGetters('data/queries', {'filteredQueries': 'filteredQueries'}),
     ...mapState('tabs', {'activeTab': 'active'}),
@@ -366,7 +388,31 @@ export default {
       return this.queriesPollError || this.foldersPollError || null
     },
     removeTitle() {
-      return `Remove ${this.checkedFavorites.length} saved queries`;
+      return `Remove ${this.selectedIds.length} saved queries`;
+    },
+    bulkSelectionActive() {
+      return this.selectedIds.length > 0
+    },
+    bulkSelectionKeymap() {
+      if (!this.bulkSelectionActive) return {}
+      if (this.globalSidebarActiveItem !== 'queries' || !this.primarySidebarOpen) return {}
+      return { esc: this.discardCheckedFavorites }
+    },
+    visibleItemIds() {
+      if (this.searching) {
+        return this.filteredQueries.map((query) => this.itemNodeId(query))
+      }
+      return collectVisibleItemIds(
+        this.extendedFolderNodes,
+        this.sortedItemNodes,
+        this.expandedNodeIds
+      )
+    },
+    selectedItems() {
+      const byId = new Map(this.itemNodes.map((node) => [node.id, node.ref]))
+      return this.selectedIds
+        .map((id) => byId.get(id))
+        .filter((item) => item != null)
     },
     errorList() {
       return Object.values(this.errors);
@@ -432,6 +478,18 @@ export default {
     setFolderError(id, error) {
       this.$set(this.errors, id, error);
     },
+    setSelectedIds(selectedIds) {
+      this.selectedIds = selectedIds
+    },
+    addToSelection(item) {
+      const id = this.itemNodeId(item)
+      if (!this.selectedIds.includes(id)) {
+        this.setSelectedIds([...this.selectedIds, id])
+      }
+    },
+    itemNodeId(item) {
+      return `item-${item.id}`
+    },
     clearFilter() {
       this.filterQuery = null
     },
@@ -451,22 +509,62 @@ export default {
     importFromComputer() {
       this.$root.$emit(AppEvent.promptSqlFilesImport)
     },
-    maybeUnselect(e) {
-      if (!this.selected) return
-      if (this.$refs.wrapper.contains(e.target)) {
-        return
-      } else {
-        this.selected = null
-      }
-    },
     async refresh() {
       await this.$store.dispatch('refreshQueries')
     },
     isActive(item) {
-      return this.activeTab && this.activeTab.queryId === item.id
+      if (this.activeTab && this.activeTab.queryId === item.id) {
+        return true
+      }
+      return !this.bulkSelectionActive
+        && this.cloudSelectionAnchorId === this.itemNodeId(item)
     },
-    select(item) {
-      this.selected = item
+    maybeDeactivate(e) {
+      if (!this.cloudSelectionAnchorId) return
+      if (this.$refs.wrapper.contains(e.target)) {
+        return
+      }
+      this.cloudSelectionAnchorId = null
+    },
+    select(item, event) {
+      const nodeId = this.itemNodeId(item)
+      if (event?.shiftKey) {
+        const visibleIds = this.visibleItemIds
+        const anchorId = this.cloudSelectionAnchorId ?? visibleIds[0]
+        if (anchorId != null) {
+          this.setSelectedIds(
+            rangeSelectVisibleIds(
+              this.selectedIds,
+              anchorId,
+              nodeId,
+              visibleIds
+            )
+          )
+          this.cloudSelectionAnchorId = nodeId
+          return
+        }
+      }
+      // Checkbox clicks and cmd/ctrl-clicks toggle bulk selection. A plain
+      // row click updates the range-select anchor and marks the row active.
+      if (event?.metaKey || event?.ctrlKey || event?.target?.type === 'checkbox') {
+        let base = this.selectedIds
+        if (
+          base.length === 0 &&
+          this.cloudSelectionAnchorId &&
+          this.cloudSelectionAnchorId !== nodeId
+        ) {
+          // Plain-click set an anchor without entering bulk mode; include it
+          // when the next cmd/ctrl-click starts multi-select.
+          base = [this.cloudSelectionAnchorId]
+        }
+        this.setSelectedIds(toggleSelectedId(base, nodeId))
+        this.cloudSelectionAnchorId = nodeId
+        return
+      }
+      this.cloudSelectionAnchorId = nodeId
+      if (this.selectedIds.length > 0) {
+        this.setSelectedIds([nodeId])
+      }
     },
     open(item) {
       this.$root.$emit('favoriteClick', item)
@@ -481,13 +579,23 @@ export default {
       }
     },
     async removeCheckedFavorites() {
-      for(let i = 0; i < this.checkedFavorites.length; i++) {
-        await this.remove(this.checkedFavorites[i])
+      const items = this.selectedItems
+      const count = items.length
+      if (count === 0) return
+      const message = count === 1
+        ? `Delete "${items[0].title}"?`
+        : `Delete ${count} saved queries?`
+      if (!await this.$confirm(message, undefined, { variant: 'danger' })) {
+        return
       }
-      this.checkedFavorites = [];
+      for (const favorite of items) {
+        await this.$store.dispatch('data/queries/remove', favorite)
+      }
+      this.selectedIds = []
     },
     discardCheckedFavorites() {
-      this.checkedFavorites = [];
+      this.selectedIds = []
+      this.cloudSelectionAnchorId = null
     },
     createFolder() {
       if (!this.canCreateFolders) {

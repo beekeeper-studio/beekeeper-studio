@@ -27,8 +27,17 @@ module.exports = {
     '^@libsql/core/(.*)': resolve(__dirname, '../../node_modules/@libsql/core/lib-cjs/$1'),
     '^@marimo-team/codemirror-languageserver$':
       '<rootDir>/tests/__mocks__/marimo-codemirror-languageserver.js',
-    '^@beekeeperstudio/ui-kit$':
-      '<rootDir>/tests/__mocks__/beekeeperstudio-ui-kit.js',
+    '^@beekeeperstudio/ui-kit/lib/(.*)$': '<rootDir>/../ui-kit/lib/$1',
+    '^@beekeeperstudio/ui-kit/vue/tree$': '<rootDir>/../ui-kit/lib/vue/tree.ts',
+    '^@beekeeperstudio/ui-kit/vue/text-editor$': '<rootDir>/../ui-kit/lib/components/text-editor/TextEditor.vue',
+    '^@beekeeperstudio/ui-kit/vue/mongo-shell$': '<rootDir>/../ui-kit/lib/components/mongo-shell/MongoShell.vue',
+    '^@beekeeperstudio/ui-kit/vue/sql-text-editor$': '<rootDir>/../ui-kit/lib/components/sql-text-editor/SqlTextEditor.vue',
+    '^@beekeeperstudio/ui-kit/vue/super-formatter$': '<rootDir>/../ui-kit/lib/components/super-formatter/SuperFormatter.vue',
+    '^@beekeeperstudio/ui-kit/vue/surreal-text-editor$': '<rootDir>/../ui-kit/lib/components/surreal-text-editor/SurrealTextEditor.vue',
+    '^@beekeeperstudio/ui-kit/vue/merge-text-editor$': '<rootDir>/../ui-kit/lib/components/merge-text-editor/MergeTextEditor.vue',
+    '^@beekeeperstudio/ui-kit/tree/helpers$': '<rootDir>/../ui-kit/lib/components/tree/tree.ts',
+    // Package exports are ESM-only (`import`); map the root to source for CJS Jest.
+    '^@beekeeperstudio/ui-kit$': '<rootDir>/../ui-kit/lib/index.ts',
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@shared(.*)$': '<rootDir>/src/shared/$1',
     '^@commercial(.*)$': '<rootDir>/src-commercial/$1',

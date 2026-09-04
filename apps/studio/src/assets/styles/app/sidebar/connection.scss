@@ -119,6 +119,48 @@
     height: initial;
     line-height: initial;
     padding: $gutter-h ($gutter-w * 0.75);
+
+    .delete-checkbox {
+      margin-top: 0;
+      height: 16px;
+      min-width: 16px;
+      width: 16px;
+
+      &:after {
+        font-size: 15px;
+        line-height: 16px;
+      }
+
+      &:checked:after {
+        top: 50%;
+        left: 50%;
+        width: auto;
+        height: auto;
+        font-size: 15px;
+        line-height: 1;
+        transform: translate(-50%, -50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+
+    &.bulk-selection-active {
+      .connection-label {
+        visibility: hidden;
+        flex-shrink: 0;
+      }
+
+      .connection-title {
+        padding-left: calc(#{$sidebar-icon-w} - 8px);
+      }
+
+      .delete-checkbox.shown {
+        top: 50%;
+        transform: translateY(-50%);
+        left: calc(var(--depth, 0) * 1.15rem + 0.5rem);
+      }
+    }
     // &.folder-btn {
     //   padding-left: 0;
     //   .btn-fab {

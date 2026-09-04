@@ -84,6 +84,7 @@ export default defineConfig({
           "lib/components/merge-text-editor/define.ts"
         ),
         tree: resolve(__dirname, "lib/components/tree/define.ts"),
+        "tree/helpers": resolve(__dirname, "lib/components/tree/tree.ts"),
         "vue/table": resolve(__dirname, "lib/components/table/Table.vue"),
         "vue/entity-list": resolve(
           __dirname,
