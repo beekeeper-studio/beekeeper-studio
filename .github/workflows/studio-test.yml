@@ -73,6 +73,21 @@ jobs:
           HUSKY: "0"
           npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
 
+  new-tests-are-vitest:
+    name: New tests use vitest
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # Jest is being replaced by vitest; new specs must go in
+      # apps/studio/tests/vitest/ (see apps/studio/tests/VITEST_MIGRATION.md)
+      - name: Check new specs land in tests/vitest
+        run: bin/check-for-new-jest-tests.sh
+
   unit:
     name: Unit tests
     runs-on: ubuntu-24.04
@@ -131,12 +146,21 @@ jobs:
       - name: Non-DB Integration Tests
         run: yarn workspace beekeeper-studio run test:ci --ci --silent
 
+      # Specs under apps/studio/tests/vitest/ run under vitest instead of jest
+      # (see apps/studio/tests/VITEST_MIGRATION.md)
+      - name: Unit Tests (Vitest)
+        run: yarn workspace beekeeper-studio run vitest:unit --silent
+
+      - name: Non-DB Integration Tests (Vitest)
+        run: yarn workspace beekeeper-studio run vitest:ci --silent
+
       - name: Unit Tests (UI Kit)
         run: yarn workspace @beekeeperstudio/ui-kit run test --silent
 
 
   integration:
-    name: 🥞 ${{ matrix.chunk[0] }}
+    # ✌️ = vitest spec, 🥞 = still on jest
+    name: ${{ startsWith(matrix.chunk[1], 'apps/studio/tests/vitest/') && '✌️' || '🥞' }} ${{ matrix.chunk[0] }}
     runs-on: ubuntu-24.04
     needs:
       - prep
@@ -186,7 +210,10 @@ jobs:
           timeout_minutes: 20
           max_attempts: 2
           on_retry_command: "docker ps -aq | xargs docker stop | xargs docker rm"
-          command: yarn workspace beekeeper-studio run test:integration --runInBand --ci ${{ matrix.chunk[1] }}
+          # No --runInBand/--ci: both are no-ops for jest here (maxWorkers: 1 in
+          # config, no snapshots) and unknown flags are fatal for chunks that
+          # integration-tests.sh dispatches to vitest.
+          command: yarn workspace beekeeper-studio run test:integration ${{ matrix.chunk[1] }}
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
 

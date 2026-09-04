@@ -1,9 +1,10 @@
-import { DBTestUtil } from "../../../../lib/db";
+import { describe, it, test, expect, beforeAll, afterAll } from "vitest";
+import { DBTestUtil } from "@tests/lib/db";
 import { writeFileSync } from "fs";
 import tmp from "tmp";
-import { runCommonTests, runReadOnlyTests } from "./all";
+import { runCommonTests, runReadOnlyTests } from "@tests/integration/lib/db/clients/all";
 import knex from "knex";
-import Client_BetterSQLite3 from "knex/lib/dialects/better-sqlite3";
+import Client_BetterSQLite3 from "knex/lib/dialects/better-sqlite3/index.js";
 
 const TEST_VERSIONS = [
   { mode: "memory", readOnly: false },

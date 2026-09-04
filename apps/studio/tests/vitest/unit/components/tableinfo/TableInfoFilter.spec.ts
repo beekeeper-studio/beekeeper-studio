@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import { mount, Wrapper } from "@vue/test-utils";
 import TableInfoFilter from "@/components/tableinfo/TableInfoFilter.vue";
 
