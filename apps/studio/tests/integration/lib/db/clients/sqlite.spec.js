@@ -4,6 +4,7 @@ import tmp from "tmp";
 import { runCommonTests, runReadOnlyTests } from "./all";
 import knex from "knex";
 import Client_BetterSQLite3 from "knex/lib/dialects/better-sqlite3";
+import Database from "better-sqlite3";
 
 const TEST_VERSIONS = [
   { mode: "memory", readOnly: false },
@@ -291,6 +292,156 @@ describe('SQLite - invalid db file', () => {
 
   test('should throw error on connecting', () => {
     expect.assertions(1)
-    return expect(util.connection.connect()).rejects.toHaveProperty('message', 'file is not a database')
+    return expect(util.connection.connect()).rejects.toThrow(/not a database, or it is encrypted/)
+  })
+})
+
+describe('SQLite - encrypted database (SQLCipher)', () => {
+  const PASSWORD = "s3cret'password"
+
+  /** @type {tmp.FileResult} */
+  let dbfile
+  let dbName
+
+  const utils = []
+
+  function connectionFor(config) {
+    const util = new DBTestUtil(
+      { client: 'sqlite', ...config },
+      dbName,
+      {
+        dialect: 'sqlite',
+        knex: knex({
+          client: 'better-sqlite3',
+          connection: { filename: dbName },
+        }),
+      }
+    )
+    utils.push(util)
+    return util
+  }
+
+  beforeAll(() => {
+    dbfile = tmp.fileSync()
+    dbName = dbfile.name
+
+    // Create a database encrypted the way the real SQLCipher library does
+    // (legacy=4). This is what tools like DB Browser / SQLCipher CLI produce;
+    // it is NOT the same as the multiple-ciphers sqlcipher default (legacy=0),
+    // so this fixture verifies the client opens genuine SQLCipher files.
+    const db = new Database(dbName)
+    db.pragma("cipher = 'sqlcipher'")
+    db.pragma("legacy = 4")
+    db.pragma(`key = '${PASSWORD.replace(/'/g, "''")}'`)
+    db.exec('CREATE TABLE secrets (id integer primary key, value text)')
+    db.exec("INSERT INTO secrets (value) VALUES ('hunter2'), ('hunter3')")
+    db.close()
+  })
+
+  afterAll(async () => {
+    for (const util of utils) {
+      await util?.disconnect()
+    }
+    dbfile?.removeCallback()
+  })
+
+  test('should connect and read data with the correct password', async () => {
+    const util = connectionFor({ password: PASSWORD, sqliteOptions: { cipher: 'sqlcipher' } })
+    await util.connection.connect()
+
+    const tables = await util.connection.listTables()
+    expect(tables.map((t) => t.name)).toContain('secrets')
+
+    const { result } = await util.connection.selectTop('secrets', 0, 10, [{ field: 'id', dir: 'ASC' }])
+    expect(result.map((r) => r.value)).toEqual(['hunter2', 'hunter3'])
+  })
+
+  test('should stream data with the correct password', async () => {
+    const util = connectionFor({ password: PASSWORD, sqliteOptions: { cipher: 'sqlcipher' } })
+    await util.connection.connect()
+
+    const stream = await util.connection.selectTopStream('secrets', [{ field: 'id', dir: 'ASC' }], [], 10)
+    expect(stream.totalRows).toBe(2)
+    await stream.cursor.start()
+    const rows = await stream.cursor.read()
+    expect(rows.length).toBe(2)
+    await stream.cursor.cancel()
+  })
+
+  test('should default to the sqlcipher scheme when no cipher is configured', async () => {
+    const util = connectionFor({ password: PASSWORD })
+    await util.connection.connect()
+    const tables = await util.connection.listTables()
+    expect(tables.map((t) => t.name)).toContain('secrets')
+  })
+
+  test('should reject connecting without a password', async () => {
+    const util = connectionFor({})
+    await expect(util.connection.connect()).rejects.toThrow(/not a database, or it is encrypted/)
+  })
+
+  test('should reject connecting with a wrong password', async () => {
+    const util = connectionFor({ password: 'wrong-password', sqliteOptions: { cipher: 'sqlcipher' } })
+    await expect(util.connection.connect()).rejects.toThrow(/Unable to decrypt/)
+  })
+})
+
+describe('SQLite - encrypted database (SQLCipher compatibility 3)', () => {
+  const PASSWORD = 'legacy-pw'
+
+  /** @type {tmp.FileResult} */
+  let dbfile
+  let dbName
+
+  const utils = []
+
+  function connectionFor(config) {
+    const util = new DBTestUtil(
+      { client: 'sqlite', ...config },
+      dbName,
+      {
+        dialect: 'sqlite',
+        knex: knex({
+          client: 'better-sqlite3',
+          connection: { filename: dbName },
+        }),
+      }
+    )
+    utils.push(util)
+    return util
+  }
+
+  beforeAll(() => {
+    dbfile = tmp.fileSync()
+    dbName = dbfile.name
+
+    // A database created by an older SQLCipher (v3) — different KDF iterations
+    // and page reserve than v4.
+    const db = new Database(dbName)
+    db.pragma("cipher = 'sqlcipher'")
+    db.pragma("legacy = 3")
+    db.pragma(`key = '${PASSWORD}'`)
+    db.exec('CREATE TABLE notes (id integer primary key, body text)')
+    db.exec("INSERT INTO notes (body) VALUES ('old note')")
+    db.close()
+  })
+
+  afterAll(async () => {
+    for (const util of utils) {
+      await util?.disconnect()
+    }
+    dbfile?.removeCallback()
+  })
+
+  test('should fail against the default (v4) compatibility', async () => {
+    const util = connectionFor({ password: PASSWORD, sqliteOptions: { cipher: 'sqlcipher' } })
+    await expect(util.connection.connect()).rejects.toThrow(/Unable to decrypt/)
+  })
+
+  test('should connect when compatibility 3 is selected', async () => {
+    const util = connectionFor({ password: PASSWORD, sqliteOptions: { cipher: 'sqlcipher', cipherCompatibility: 3 } })
+    await util.connection.connect()
+    const tables = await util.connection.listTables()
+    expect(tables.map((t) => t.name)).toContain('notes')
   })
 })
