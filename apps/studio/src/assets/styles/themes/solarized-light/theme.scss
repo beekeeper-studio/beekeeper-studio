@@ -74,17 +74,8 @@ x-buttons {
     }
   }
 }
-.btn {
-  box-shadow: inset 0 0 0 1px rgba($theme-base, 0.035);
-}
 .btn-link, .btn-fab {
   box-shadow: none;
-}
-.btn-flat {
-  background: rgba($theme-base, 0.08);
-}
-.text-primary {
-  color: $theme-primary!important;
 }
 .list-group {
   .list-item-btn {
@@ -107,9 +98,6 @@ x-buttons {
   &.badge-info {
     color: white;
   }
-}
-.text-danger {
-  color: $brand-danger!important;
 }
 .connection-main {
   .card-flat {

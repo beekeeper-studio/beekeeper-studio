@@ -312,8 +312,8 @@
   --btn-box-shadow: inset 0 0 0 1px rgb(from var(--dark) r g b / 3.5%);
 
   --btn-flat-fg: var(--dark);
-  --btn-flat-bg: rgb(from var(--dark) r g b / 6%);
-  --btn-flat-bg-hover: rgb(from var(--dark) r g b / 12%);
+  --btn-flat-bg: var(--grayscale-100);
+  --btn-flat-bg-hover: var(--grayscale-200);
 
   --btn-link-fg: var(--dark);
   --btn-link-bg-hover: rgb(from var(--dark) r g b / 6%);
@@ -365,8 +365,19 @@
   --cell-fg: var(--theme-base);
   --cell-binary-fg: var(--pink-800);
 
-  --modal-bg: var(--grayscale-50);
   --modal-fg: var(--dark);
+  --modal-bg: var(--grayscale-50);
+
+  --alert-fg: var(--text);
+  --alert-bg: rgb(from var(--theme-base) r g b / 3.5%);
+  --alert-danger-fg: var(--red-600);
+  --alert-danger-bg: var(--alert-bg);
+  --alert-warning-fg: var(--orange-700);
+  --alert-warning-bg: var(--alert-bg);
+  --alert-info-fg: var(--blue-700);
+  --alert-info-bg: var(--alert-bg);
+  --alert-success-fg: var(--green-800);
+  --alert-success-bg: var(--alert-bg);
 
   --noty-bg: color-mix(in oklch, var(--theme-bg) 95%, var(--white));
   --noty-fg: var(--text-dark);

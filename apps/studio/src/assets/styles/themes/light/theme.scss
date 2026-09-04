@@ -73,9 +73,6 @@ x-buttons {
 .btn-link, .btn-fab {
   box-shadow: none;
 }
-.text-primary {
-  color: $theme-primary!important;
-}
 .list-group {
   .list-item-btn {
     .actions {
@@ -96,9 +93,6 @@ x-buttons {
   &.badge-info {
     color: white;
   }
-}
-.text-danger {
-  color: $brand-danger!important;
 }
 .connection-main {
   .card-flat {

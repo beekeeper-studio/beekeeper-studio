@@ -516,20 +516,20 @@ input[type=file] {
 }
 
 .text-primary {
-  color: $brand-primary!important;
+  color: var(--theme-primary)!important;
 }
 
 .text-success {
-  color: $brand-success!important;
+  color: var(--theme-success)!important;
 }
 .text-info {
-  color: $brand-info!important;
+  color: var(--theme-info)!important;
 }
 .text-danger {
-  color: color.adjust($brand-danger, $lightness: 5%)!important;
+  color: var(--red-600)!important;
 }
 .text-warning {
-  color: $brand-warning!important;
+  color: var(--theme-warning)!important;
 }
 .text-light {
   color: $text-light;
@@ -765,7 +765,8 @@ input[type=file] {
   align-items: flex-start;
   border-radius: 6px;
   padding: 0.75rem 1rem;
-  background: rgba($theme-base, 0.035);
+  color: var(--alert-fg);
+  background: var(--alert-bg);
   margin: 0.5rem 0;
   font-size: 0.85rem;
   line-height: 1.2rem;
@@ -812,16 +813,20 @@ input[type=file] {
   align-items: center;
 }
 .alert-danger {
-  color: color.adjust($brand-danger, $lightness: 5%);
+  color: var(--alert-danger-fg);
+  background: var(--alert-danger-bg);
 }
 .alert-warning {
-  color: color.adjust($brand-warning, $lightness: 5%);
+  color: var(--alert-warning-fg);
+  background: var(--alert-warning-bg);
 }
 .alert-info {
-  color: color.adjust($brand-info, $lightness: 5%);
+  color: var(--alert-info-fg);
+  background: var(--alert-info-bg);
 }
 .alert-success {
-  color: color.adjust($brand-success, $lightness: 5%);
+  color: var(--alert-success-fg);
+  background: var(--alert-success-bg);
 }
 .alert-small {
   align-items: center;
