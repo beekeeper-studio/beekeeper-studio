@@ -613,7 +613,12 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
-  const editorDefault = "\n\n\n\n\n\n\n\n\n\n"
+  // ui.queryEditor.newTabPaddingLines (bksConfig) controls this; padding keeps
+  // the floating toolbar from covering line 1 of a brand new tab's document.
+  const newTabPaddingLines = (bksConfig) => {
+    const value = Number(bksConfig?.ui?.queryEditor?.newTabPaddingLines)
+    return Number.isFinite(value) ? Math.max(0, Math.trunc(value)) : 10
+  }
   const hasUsedTransactionsKey = "hasUsedTransactions";
 
   export default {
@@ -631,7 +636,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         runningCount: 1,
         runningType: 'current',
         selectedResult: 0,
-        unsavedText: editorDefault,
+        unsavedText: "\n".repeat(newTabPaddingLines(this.$bksConfig)),
         editor: {
           height: 100,
           selection: null,

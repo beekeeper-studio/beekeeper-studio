@@ -531,6 +531,7 @@ declare interface IBksConfig {
             };
             defaultFormatter: string;
             maxResults: number;
+            newTabPaddingLines: number;
             primaryQueryAction: string;
             secondaryQueryAction: string;
         };
