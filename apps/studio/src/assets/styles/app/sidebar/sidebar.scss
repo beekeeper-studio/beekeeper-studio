@@ -3,6 +3,7 @@
   max-height: 100%;
   min-width: 300px;
   overflow: hidden;
+  color: var(--text);
   &.hide {
     flex-basis: 44px!important;
     min-width: 44px!important;
@@ -92,7 +93,6 @@
   // ---------------------------------
   .empty {
     padding: $gutter-w;
-    color: $text;
     font-size: 0.85rem;
     .empty-actions {
       .btn {

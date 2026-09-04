@@ -401,6 +401,10 @@
   --mongo-shell-ansi-output-fg: var(--text-dark);
 
   --json-sidebar-bg: var(--theme-bg);
+  --json-sidebar-title-fg: var(--text-dark);
+  --json-sidebar-expandable-fg: var(--text);
+  --json-sidebar-expandable-bg: rgb(from var(--theme-base) r g b / 5%);
+  --json-sidebar-fg: var(--text-light);
   --json-sidebar-propertyName-fg: var(--yellow-700);
   --json-sidebar-string-fg: var(--text-dark);
   --json-sidebar-number-fg: var(--text-dark);
@@ -460,6 +464,8 @@
   --query-editor-bg: var(--grayscale-50);
 
   --modal-bg: var(--grayscale-100);
+
+  --noty-warning-fg: var(--orange-700);
 }
 
 body {

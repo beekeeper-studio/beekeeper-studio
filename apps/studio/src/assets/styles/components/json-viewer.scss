@@ -1,5 +1,3 @@
-@use "sass:color";
-
 .json-viewer {
   --header-title-height: 2rem;
   --hoz-gutter: 1rem;
@@ -12,6 +10,7 @@
   flex-grow: 1;
   position: relative;
   margin-top: 0.35rem;
+  color: var(--json-sidebar-fg);
 
   .header {
     width: 100%;
@@ -30,7 +29,7 @@
     }
 
     .title {
-      color: $text-dark;
+      color: var(--json-sidebar-title-fg);
     }
 
     .menu-btn x-menuitem {
@@ -52,11 +51,11 @@
         right: 0;
         border: 0;
         line-height: 0;
-        color: rgba($theme-base, 0.5);
+        color: rgb(from var(--theme-base) r g b / 50%);
         background: transparent;
         transform: translateY(-50%);
         &:hover {
-          color: $text-dark;
+          color: var(--text-dark);
         }
         i {
           font-size: 1.15rem;
@@ -96,14 +95,14 @@
     display: inline-flex;
     // justify-content: center;
     align-items: center;
-    background: rgba($theme-base, 0.05);
+    background: var(--json-sidebar-expandable-bg);
     padding: 0 0.5rem;
     border-radius: 2rem;
     gap: 0.25rem;
 
     .material-icons {
       font-size: 1rem;
-      color: $text;
+      color: var(--json-sidebar-expandable-fg);
     }
   }
 
@@ -112,7 +111,7 @@
     z-index: 10;
     inset: 0;
     backdrop-filter: blur(6px);
-    background-color: rgba($theme-bg, 0.5);
+    background-color: rgb(from var(--theme-bg) r g b / 50%);
     padding: 2rem;
     display: flex;
     flex-direction: column;
@@ -148,7 +147,6 @@
     inset: 0;
     z-index: 10;
     padding-inline: var(--hoz-gutter);
-    color: $text-light;
   }
 
   &:not(.empty) .empty-text {
