@@ -501,6 +501,9 @@ const store = new Vuex.Store<State>({
 
     async openUrl(context, { url, auth }: { url: string, auth?: { input: string; mode: 'pin'; }}) {
       const conn = await Vue.prototype.$util.send('appdb/saved/parseUrl', { url });
+      if (conn.azureAuthOptions?.azureAuthEnabled && !conn.authId) {
+        conn.authId = await Vue.prototype.$util.send('appdb/cache/new');
+      }
       await context.dispatch('connect', { config: conn, auth })
     },
 

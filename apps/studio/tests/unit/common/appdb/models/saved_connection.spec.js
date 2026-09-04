@@ -1,6 +1,7 @@
 // eslint-disable-next-line
 const { TestOrmConnection } = require("@tests/lib/TestOrmConnection")
 const { SavedConnection } = require("../../../../../src/common/appdb/models/saved_connection")
+const { AzureAuthType } = require("../../../../../src/lib/db/types")
 
 
 describe("Saved Connection", () => {
@@ -164,6 +165,69 @@ describe("Saved Connection", () => {
         password: "p@ss:word",
         host: "localhost",
         defaultDatabase: "db"
+      },
+      "mongodb://beekeeper:example@localhost:27017/sakila?authSource=admin": {
+        connectionType: "mongodb",
+        url: "mongodb://beekeeper:example@localhost:27017/sakila?authSource=admin",
+        host: "localhost",
+        port: 27017,
+        username: "beekeeper",
+        password: "example",
+        defaultDatabase: "sakila"
+      },
+      "mssql://sa:Example%401@localhost:1435/master?auth=sql-password&domain=ACME": {
+        connectionType: "sqlserver",
+        host: "localhost",
+        port: 1435,
+        username: "sa",
+        password: "Example@1",
+        domain: "ACME",
+        defaultDatabase: "master",
+        windowsAuthEnabled: false,
+        azureAuthOptions: {}
+      },
+      "sqlserver://localhost:1433/master?auth=windows&encryption=strict&serverCertificate=%2Ftmp%2Fserver.cer&serverSpn=MSSQLSvc%2Fdb.example.com%3A1433": {
+        connectionType: "sqlserver",
+        windowsAuthEnabled: true,
+        sqlServerOptions: {
+          encryptionMode: "strict",
+          serverCertificate: "/tmp/server.cer",
+          serverSpn: "MSSQLSvc/db.example.com:1433"
+        }
+      },
+      "sqlserver://localhost:1433/master?auth=kerberos": {
+        connectionType: "sqlserver",
+        windowsAuthEnabled: true,
+        sqlServerOptions: {
+          encryptionMode: "on",
+          serverCertificate: undefined,
+          serverSpn: undefined
+        }
+      },
+      "sqlserver://localhost:1433/master?auth=azure-sso": {
+        connectionType: "sqlserver",
+        azureAuthOptions: {
+          azureAuthEnabled: true,
+          azureAuthType: AzureAuthType.AccessToken
+        }
+      },
+      "sqlserver://localhost:1433/master?auth=azure-service-principal&tenantId=tenant&clientId=client&clientSecret=secret": {
+        connectionType: "sqlserver",
+        azureAuthOptions: {
+          azureAuthEnabled: true,
+          azureAuthType: AzureAuthType.ServicePrincipalSecret,
+          tenantId: "tenant",
+          clientId: "client",
+          clientSecret: "secret"
+        }
+      },
+      "sqlserver://localhost:1433/master?auth=azure-cli&cliPath=%2Fusr%2Flocal%2Fbin%2Faz": {
+        connectionType: "sqlserver",
+        azureAuthOptions: {
+          azureAuthEnabled: true,
+          azureAuthType: AzureAuthType.CLI,
+          cliPath: "/usr/local/bin/az"
+        }
       },
     }
 
