@@ -18,8 +18,11 @@ describe("ImportQueriesModal.vue", () => {
   let wrapper;
   let store;
   let saveDispatch;
+  let utilMock;
 
-  function mountModal() {
+  // The picker's v-model is a list of query ids. doImport() fetches each query
+  // from the local appdb via $util.send before saving it into the workspace.
+  function mountModal(localQueries: Record<number, any>) {
     saveDispatch = jest.fn().mockResolvedValue(1);
     store = new Vuex.Store({
       actions: {
@@ -28,7 +31,12 @@ describe("ImportQueriesModal.vue", () => {
     });
 
     const modalMock = { show: jest.fn(), hide: jest.fn() };
-    const utilMock = { send: jest.fn().mockResolvedValue([]) };
+    utilMock = {
+      send: jest.fn().mockImplementation(async (_name: string, args: any) => {
+        const id = args?.options?.where?.id;
+        return localQueries[id] ?? null;
+      }),
+    };
 
     return shallowMount(ImportQueriesModal, {
       store,
@@ -47,17 +55,16 @@ describe("ImportQueriesModal.vue", () => {
   // target (cloud/team) workspace. Carrying it over makes the backend reject
   // the import with a 400. Imported queries must land in the personal folder.
   it("clears queryFolderId so foldered queries import into the personal folder", async () => {
-    wrapper = mountModal();
-
     // A query that lives inside a local folder, selected for import.
     const localQuery = {
       id: 42,
       title: "My Query",
       text: "select 1",
       queryFolderId: 5,
-      checked: true,
     };
-    await wrapper.setData({ queries: [localQuery] });
+    wrapper = mountModal({ 42: localQuery });
+
+    await wrapper.setData({ selectedQueries: [42] });
 
     await wrapper.vm.doImport();
 
@@ -70,15 +77,13 @@ describe("ImportQueriesModal.vue", () => {
     expect(payload.text).toBe("select 1");
   });
 
-  it("only imports checked queries", async () => {
-    wrapper = mountModal();
-
-    await wrapper.setData({
-      queries: [
-        { id: 1, title: "Keep", queryFolderId: 3, checked: true },
-        { id: 2, title: "Skip", queryFolderId: 3, checked: false },
-      ],
+  it("only imports selected queries", async () => {
+    wrapper = mountModal({
+      1: { id: 1, title: "Keep", queryFolderId: 3 },
+      2: { id: 2, title: "Skip", queryFolderId: 3 },
     });
+
+    await wrapper.setData({ selectedQueries: [1] });
 
     await wrapper.vm.doImport();
 
