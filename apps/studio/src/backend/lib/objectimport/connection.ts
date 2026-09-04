@@ -4,13 +4,14 @@ import { IFolder } from "@/common/interfaces/IQueryFolder";
 import { AppDbHandlers } from "@/handlers/appDbHandlers";
 import { promises as fs } from "fs";
 import path from "path";
+import { camelCaseObjectKeys } from "@/common/utils";
 
 export class ConnectionImporter extends ObjectImporter<ICloudSavedConnection> {
     async importFolders(folders: IFolder[]): Promise<IFolder[]> {
       if (this.client) {
         return await this.client.connectionFolders.import(folders);
       } else {
-        return await AppDbHandlers['appdb/connectionFolders/save']({ obj: folders, options: {} });
+        return await AppDbHandlers['appdb/connectionFolder/save']({ obj: folders, options: {} });
       }
     }
     async importItems(items: ICloudSavedConnection[]): Promise<ICloudSavedConnection[]> {
@@ -46,6 +47,7 @@ export class ConnectionImporter extends ObjectImporter<ICloudSavedConnection> {
 
       try {
         obj = JSON.parse(fileContents);
+        obj = camelCaseObjectKeys(obj);
       } catch (e) {
         this.stats.warnings.push(`Failed to parse json for ${filePath}. ${e.message ?? ''}`);
         return;

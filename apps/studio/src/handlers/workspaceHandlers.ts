@@ -7,11 +7,15 @@ import { IObjectImportStats } from "@/common/interfaces/IObjectImportStats";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
 import { QueryImporter } from "@/backend/lib/objectimport/query";
 import { ConnectionImporter } from "@/backend/lib/objectimport/connection";
+import rawLog from "@bksLogger";
+
+const log = rawLog.scope('workspaceHandlers')
 
 
 export interface IWorkspaceHandlers {
   "workspace/setActive": ({ sId, wId, credentialId }: { sId: string, wId: number, credentialId: number }) => Promise<void>,
-  "workspace/importDirectory": ({ sId, dir, parentId, preserveRoot }: { sId: string, dir: string, parentId: number, preserveRoot: boolean }) => Promise<IObjectImportStats>,
+  "workspace/importQueryDirectory": ({ sId, dir, parentId, preserveRoot }: { sId: string, dir: string, parentId: number, preserveRoot: boolean }) => Promise<IObjectImportStats>,
+  "workspace/importQueries": ({ sId, paths, parentId }: { sId: string, paths: string[], parentId: number }) => Promise<IObjectImportStats>,
   "workspace/importConnectionsDirectory": ({ sId, dir, parentId, preserveRoot }: { sId: string, dir: string, parentId: number, preserveRoot: boolean }) => Promise<IObjectImportStats>,
   "workspace/importConnections": ({ sId, paths, parentId }: { sId: string, paths: string[], parentId: number }) => Promise<IObjectImportStats>
 }
@@ -41,7 +45,7 @@ export const WorkspaceHandlers: IWorkspaceHandlers = {
     const client = new CloudClient(options);
     state(sId).cloudClient = client;
   },
-  'workspace/importDirectory': async function({ dir, parentId, sId, preserveRoot }: { dir: string, parentId: number, sId: string, preserveRoot: boolean }): Promise<IObjectImportStats> {
+  'workspace/importQueryDirectory': async function({ dir, parentId, sId, preserveRoot }: { dir: string, parentId: number, sId: string, preserveRoot: boolean }): Promise<IObjectImportStats> {
     if (typeof dir !== 'string' || dir.length === 0) {
       throw new Error('workspace/importDirectory called with no directory path')
     }
@@ -55,6 +59,14 @@ export const WorkspaceHandlers: IWorkspaceHandlers = {
     const importer = new QueryImporter(client);
 
     const stats = await importer.importDirectory(dir, parentId, preserveRoot);
+
+    return stats;
+  },
+  'workspace/importQueries': async function({ sId, paths, parentId }: { sId: string, paths: string[], parentId: number }): Promise<IObjectImportStats> {
+    const client = state(sId).cloudClient;
+    const importer = new QueryImporter(client);
+
+    const stats = await importer.importSelections(paths, parentId);
 
     return stats;
   },
@@ -78,6 +90,7 @@ export const WorkspaceHandlers: IWorkspaceHandlers = {
   'workspace/importConnections': async function({ sId, paths, parentId }: { sId: string, paths: string[], parentId: number }): Promise<IObjectImportStats> {
     const client = state(sId).cloudClient;
     const importer = new ConnectionImporter(client);
+    log.info("paths: ", paths);
 
     const stats = await importer.importSelections(paths, parentId);
 

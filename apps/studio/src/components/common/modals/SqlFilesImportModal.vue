@@ -22,49 +22,43 @@
           id="import-type"
         >
           <option value="single">Individual Files</option>
-          <option value="recursive">Recursive Directory*</option>
+          <option value="recursive">Recursive Directory</option>
         </select>
       </div>
-      <template v-if="isIndividual || isUltimate">
-        <div class="form-group">
-          <label for="importFiles">{{importType === 'single' ? 'Files' : 'Directory'}}</label>
-          <file-picker
-            v-model="files"
-            :multiple="isIndividual"
-            :directory="!isIndividual"
-            :button-text="buttonText"
-            :options="dialogOptions"
-          />
-        </div>
-        <div class="form-group">
-          <label>Parent Folder</label>
-          <in-app-folder-picker
-            v-model="parentId"
-            folder-path="data/queryFolders"
-          />
-        </div>
-        <div v-if="!isIndividual" class="form-group">
-          <label class="checkbox form-row">
-            <input
-              v-model="preserveRoot"
-              type="checkbox"
-            >
-            Preserve Root
-            <i
-              class="material-icons"
-              v-tooltip="{
-                content: `Import Root directory, otherwise import children at the root of the parent folder`
-              }"
-            >
-            help_outlined
-            </i>
-          </label>
-        </div>
-      </template>
-      <upgrade-panel v-else
-        standalone
-        :feature-name="'Recursive Import'"
-      />
+      <div class="form-group">
+        <label for="importFiles">{{importType === 'single' ? 'Files' : 'Directory'}}</label>
+        <file-picker
+          v-model="files"
+          :multiple="isIndividual"
+          :directory="!isIndividual"
+          :button-text="buttonText"
+          :options="dialogOptions"
+        />
+      </div>
+      <div class="form-group">
+        <label>Parent Folder</label>
+        <in-app-folder-picker
+          v-model="parentId"
+          folder-path="data/queryFolders"
+        />
+      </div>
+      <div v-if="!isIndividual" class="form-group">
+        <label class="checkbox form-row">
+          <input
+            v-model="preserveRoot"
+            type="checkbox"
+          >
+          Preserve Root
+          <i
+            class="material-icons"
+            v-tooltip="{
+              content: `Import Root directory, otherwise import children at the root of the parent folder`
+            }"
+          >
+          help_outlined
+          </i>
+        </label>
+      </div>
     </div>
     <div v-else>
       <div v-if="!importFinished" class="importing-state">
@@ -107,7 +101,7 @@
         type="button"
         @click="close"
       >
-        Cancel
+        {{ importFinished ? "Close" : "Cancel" }}
       </button>
       <button
         v-if="!importing"
@@ -125,7 +119,6 @@
 <script lang="ts">
 import FilePicker from "@/components/common/form/FilePicker.vue";
 import InAppFolderPicker from "@/components/common/form/InAppFolderPicker.vue";
-import UpgradePanel from "@/components/upsell/UpgradePanel.vue";
 import BaseModal from '@/components/common/modals/BaseModal.vue'
 import { AppEvent } from "@/common/AppEvent";
 import { mapState, mapGetters } from 'vuex'
@@ -139,7 +132,6 @@ export default {
   components: {
     FilePicker,
     InAppFolderPicker,
-    UpgradePanel,
     BaseModal
   },
   props: ["name"],
@@ -157,7 +149,7 @@ export default {
   },
   computed: {
     ...mapState('data/queryFolders', {'folders': 'items'}),
-    ...mapGetters(["isCloud", "isUltimate"]),
+    ...mapGetters(["isCloud"]),
     modalName() {
       return this.name || "sql-files-import";
     },
@@ -202,28 +194,12 @@ export default {
     close() {
       this.$modal.hide(this.modalName);
     },
-    submit() {
-      if (this.importType === 'single') {
-        const files = _.isArray(this.files) ? this.files : [this.files];
-        const config = {
-          parentId: this.parentId,
-          paths: files
-        };
-        this.$emit("submit", config);
-        this.close();
-      } else {
-        this.importDirectory();
-      }
-    },
-    async importDirectory() {
+    async submit() {
       this.importing = true;
-      const dir = _.isArray(this.files) ? this.files[0] : this.files;
       try {
-        const stats: IObjectImportStats = await this.$util.send('workspace/importDirectory', {
-          dir,
-          parentId: this.parentId,
-          preserveRoot: this.preserveRoot
-        });
+        const stats: IObjectImportStats = this.importType === 'single' ?
+          await this.importSelection() :
+          await this.importDirectory();
 
         await this.$store.dispatch('refreshQueries');
 
@@ -234,6 +210,22 @@ export default {
         log.error(e);
         this.close();
       }
+    },
+    async importSelection() {
+      const files = _.isArray(this.files) ? this.files : [this.files];
+
+      return await this.$util.send('workspace/importQueries', {
+        paths: files,
+        parentId: this.parentId
+      });
+    },
+    async importDirectory() {
+      const dir = _.isArray(this.files) ? this.files[0] : this.files;
+      return await this.$util.send('workspace/importQueryDirectory', {
+        dir,
+        parentId: this.parentId,
+        preserveRoot: this.preserveRoot
+      });
     }
   },
   mounted() {

@@ -4,6 +4,7 @@ import { IObjectImportStats } from '@/common/interfaces/IObjectImportStats';
 import { IFolder } from '@/common/interfaces/IQueryFolder';
 import rawLog from '@bksLogger';
 import { CloudClient } from '@/lib/cloud/CloudClient';
+import _ from 'lodash';
 
 const log = rawLog.scope('ObjectImporter');
 
@@ -63,6 +64,10 @@ export abstract class ObjectImporter<T> {
       }
 
       await this.maybeAddToBatch(desc);
+    }
+
+    if (this.currentBatch && this.currentBatch.length > 0) {
+      await this.importCurrentBatch();
     }
 
     return this.stats;
