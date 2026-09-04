@@ -23,4 +23,23 @@ export abstract class ApplicationEntity extends BaseEntity {
   version!: number
 
 
+  static async search(cls: any, searchText: string) {
+    let builder = cls
+      .createQueryBuilder("c");
+
+    for (let i = 0; i < cls.searchableFields.length; i++) {
+      const field = cls.searchableFields[i];
+      const query = `LOWER(c.${field}) LIKE :q`;
+      const params = { q: `%${searchText}%`};
+      if (i === 0) {
+        builder = builder.where(query, params);
+      } else {
+        builder = builder.orWhere(query, params);
+      }
+    }
+
+    return await builder
+      .orderBy(`c.${cls.searchableFields[0]}`, 'ASC')
+      .getMany();
+  }
 }
