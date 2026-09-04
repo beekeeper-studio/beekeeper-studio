@@ -288,6 +288,9 @@
       },
     },
     async mounted() {
+      if (!this.isCommunity) {
+        this.$store.dispatch('paidFeatureUsage/record', 'multiTableExport')
+      }
       await this.$store.dispatch('multiTableExports/reset')
       await this.$store.dispatch('exports/removeInactive')
     }

@@ -205,6 +205,7 @@
             <i
               v-if="isCommunity"
               class="material-icons menu-icon"
+              v-tooltip="'Paid feature. Included with a license or the free trial'"
             >stars</i>
             <input
               v-else
@@ -276,6 +277,7 @@
                   <i
                     v-if="isCommunity"
                     class="material-icons menu-icon "
+                    v-tooltip="'Paid feature. Included with a license or the free trial'"
                   >
                     stars
                   </i>
@@ -289,6 +291,7 @@
                   <i
                     v-if="isCommunity"
                     class="material-icons menu-icon"
+                    v-tooltip="'Paid feature. Included with a license or the free trial'"
                   >
                     stars
                   </i>
@@ -1422,6 +1425,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.$root.$emit(AppEvent.upgradeModal, "Editable Query Results")
           return;
         }
+        this.$store.dispatch('paidFeatureUsage/record', 'editableQueryResults')
         if (!this.resultsEditData[this.selectedResult]) {
           const resultEditData: FieldEditData[] = await this.connection.getResultEditData(this.result?.text, this.result.fields);
 
@@ -1612,6 +1616,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.$root.$emit(AppEvent.upgradeModal, 'Query to File')
           return;
         }
+        this.$store.dispatch('paidFeatureUsage/record', 'queryToFile')
 
         // run the currently highlighted text (if any) to a file, else all sql
         const query_sql = this.hasSelectedText && this.primaryIsTab ? this.editor.selection : this.unsavedText;
@@ -1626,6 +1631,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.$root.$emit(AppEvent.upgradeModal, 'Query to File')
           return;
         }
+        this.$store.dispatch('paidFeatureUsage/record', 'queryToFile')
         if (this.runButtonDisabled) return;
         // run the currently selected query or highlighted (if there are multiple) to a file, else all sql
         let query_sql = ''

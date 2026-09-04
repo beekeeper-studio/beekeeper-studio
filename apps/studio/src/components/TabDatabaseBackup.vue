@@ -259,6 +259,9 @@ export default Vue.extend({
   mounted() {
     // we don't need to run any of this logic if backup isn't supported anyways
     if (this.isSupported) {
+      if (!this.isCommunity) {
+        this.$store.dispatch('paidFeatureUsage/record', 'backupRestore')
+      }
       this.$store.commit('backups/setMode', this.isRestore);
       this.$store.dispatch('backups/reset');
       this.$store.dispatch('backups/findDumpTool');

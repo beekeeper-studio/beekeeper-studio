@@ -494,6 +494,7 @@ export default {
         this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }
+      this.$store.dispatch('paidFeatureUsage/record', 'folders')
       this.startRootDraft("folder");
     },
     startRootDraft(type) {
@@ -595,6 +596,7 @@ export default {
               this.$root.$emit(AppEvent.upgradeModal, 'Folders');
               return;
             }
+            this.$store.dispatch('paidFeatureUsage/record', 'folders')
             this.startDrafting("folder", item.id);
             this.expandFolder(item.id);
           },

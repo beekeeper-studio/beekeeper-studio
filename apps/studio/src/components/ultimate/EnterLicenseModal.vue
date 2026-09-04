@@ -18,16 +18,25 @@
         <div v-else>
           <div class="alert alert-info">
             <i class="material-icons-outlined">info</i>
-            <span>Entering a license will unlock premium features such as Oracle, DuckDB, and ClickHouse connections,
-              JSON view, multi-table features, and more. <a
-                href="https://docs.beekeeperstudio.io/support/upgrading-from-the-community-edition/"
+            <span>A license unlocks every paid feature: the JSON row viewer, editable query results, import and export,
+              the AI shell, 10+ more databases, and more. <a
+                href="https://docs.beekeeperstudio.io/support/how-to-upgrade/"
               >Learn
                 more</a>.</span>
           </div>
-          <p>You don't have any licenses registered with the application at the moment. Register a new license below.</p>
-          <p class="text-muted small" v-if="trialLicense">
-            Free trial expiry: {{ timeAgo(trialLicense.validUntil) }}, on {{
-              trialLicense.validUntil.toLocaleDateString() }}
+          <p v-if="trialLicense">
+            Free trial {{ trialLicense.validUntil > new Date() ? 'ends' : 'ended' }}
+            {{ timeAgo(trialLicense.validUntil) }}, on {{ trialLicense.validUntil.toLocaleDateString() }}.
+            Enter a license key below.
+          </p>
+          <p v-else>
+            No license registered. Enter a license key below, or
+            <a href="#" @click.prevent="startTrial">start the 14-day free trial</a>
+            (every paid feature, no email or card).
+          </p>
+          <p class="text-muted small">
+            Need approval to buy?
+            <a href="#" @click.prevent="requestLicense">Copy a purchase request for your team</a>.
           </p>
           <error-alert :error=" error" />
           <div class="form-group">
@@ -99,6 +108,14 @@ export default Vue.extend({
       this.email = null
       this.key = null
       this.error = null
+    },
+    startTrial() {
+      this.$modal.hide('license')
+      this.$store.dispatch('licenses/add', { trial: true })
+    },
+    requestLicense() {
+      this.$modal.hide('license')
+      this.$root.$emit(AppEvent.purchaseRequest)
     },
     async submitLicense() {
       try {

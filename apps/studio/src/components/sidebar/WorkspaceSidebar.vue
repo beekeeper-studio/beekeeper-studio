@@ -119,6 +119,9 @@ components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, ContentP
         this.$root.$emit(AppEvent.cloudWorkspacesBlocked)
         return
       }
+      if (!isLocal) {
+        this.$store.dispatch('paidFeatureUsage/record', 'cloudWorkspaces')
+      }
       await this.$util.send('workspace/setActive', { wId: blob.workspace.id, credentialId: blob.credentialId });
       this.$store.commit('workspaceId', blob.workspace.id)
       this.$store.dispatch('settings/save', {

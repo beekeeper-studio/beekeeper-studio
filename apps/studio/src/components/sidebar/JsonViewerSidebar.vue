@@ -79,6 +79,9 @@ export default Vue.extend({
     persistentState() {
       if (this.isPersistable) this.savePersistentState()
     },
+    hidden() {
+      this.recordUsage()
+    },
   },
 
   methods: {
@@ -107,6 +110,12 @@ export default Vue.extend({
       this.expandablePaths = options.expandablePaths
       this.editablePaths = options.editablePaths
       this.signs = options.signs
+      this.recordUsage()
+    },
+    /** A row is on screen in the viewer: note the paid feature was used. */
+    recordUsage() {
+      if (this.hidden || this.dataId === -1) return
+      this.$store.dispatch('paidFeatureUsage/record', 'jsonViewer')
     },
     reset() {
       this.dataId = -1

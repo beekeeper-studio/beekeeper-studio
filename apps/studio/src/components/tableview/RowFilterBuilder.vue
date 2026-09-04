@@ -274,6 +274,8 @@ export default Vue.extend({
           this.$root.$emit(AppEvent.upgradeModal, "Advanced Filters")
           return;
         }
+      } else if (this.filters.length >= 2) {
+        this.$store.dispatch('paidFeatureUsage/record', 'advancedFilters')
       }
       const lastFilter = this.filters[this.filters.length - 1];
       const cloned = _.clone(lastFilter)

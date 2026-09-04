@@ -1,0 +1,75 @@
+// "Request a license from your team": a copyable purchase request for the
+// engineer who can't buy without approval. Lives in the same dialog chrome as
+// every other modal; only the option row, the text block, and the footnote
+// need styling of their own.
+
+.beekeeper-modal.purchase-request-modal .v--modal {
+  max-width: 620px;
+}
+
+.purchase-request {
+  .dialog-c-subtitle {
+    margin: 0 0 $gutter-w;
+  }
+
+  .purchase-request-options {
+    display: flex;
+    gap: $gutter-w;
+    align-items: flex-end;
+
+    .form-group {
+      margin-bottom: $gutter-h;
+    }
+    > .form-group:first-child {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .purchase-request-seats {
+      flex: 0 0 6rem;
+    }
+  }
+
+  .purchase-request-note {
+    display: flex;
+    align-items: flex-start;
+    gap: $gutter-h;
+    margin: 0 0 $gutter-h;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: $text-light;
+
+    .material-icons {
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+  }
+
+  .purchase-request-text {
+    width: 100%;
+    height: auto;
+    min-height: 14rem;
+    margin-top: $gutter-h;
+    padding: $gutter-h $gutter-w;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: $text;
+    resize: vertical;
+    white-space: pre-wrap;
+  }
+
+  .purchase-request-footnote {
+    margin: $gutter-h 0 0;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: $text-lighter;
+
+    a {
+      color: $text-light;
+      text-decoration: underline;
+      &:hover {
+        color: $text-dark;
+      }
+    }
+  }
+}

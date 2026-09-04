@@ -50,7 +50,12 @@ function buildStore(connectCalls: any[]) {
       'data/connectionFolders': { namespaced: true, state: { items: [] } },
       licenses: {
         namespaced: true,
-        getters: { isTrial: () => false, trialLicense: () => null },
+        getters: {
+          isTrial: () => false,
+          trialLicense: () => null,
+          noLicensesFound: () => false,
+          licenseDaysLeft: () => 0,
+        },
       },
       settings: { namespaced: true, getters: { privacyMode: () => false } },
       pinnedConnections: {

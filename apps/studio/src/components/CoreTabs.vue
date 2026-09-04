@@ -813,6 +813,7 @@ export default Vue.extend({
         this.$root.$emit(AppEvent.upgradeModal, 'Import From File')
         return;
       }
+      this.$store.dispatch('paidFeatureUsage/record', 'importFromFile')
       const t = { tabType: 'import-table' }
       t.title = table ? `Import Table: ${table.name}` : 'Create Table and Import Data'
       t.unsavedChanges = false

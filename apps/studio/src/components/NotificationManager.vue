@@ -6,6 +6,9 @@ import Vue from 'vue'
 import Noty from 'noty'
 import { mapGetters, mapActions, mapState } from 'vuex'
 import logoUrl from '@/assets/logo.svg'
+import { AppEvent } from '@/common/AppEvent'
+import { PRICING_URL } from '@/lib/purchaseRequest'
+import { escapeHtml } from '@shared/lib/tabulator'
 
 export default Vue.extend({
   data: () => {
@@ -13,18 +16,6 @@ export default Vue.extend({
       notificationInterval: null,
       timeoutID: null,
       isShowingOnboardingNoty: false,
-      upsellNotificationOptions: {
-        text: "Upgrade for features like the JSON row viewer, AI shell, & NoSQL support. All purchases come with a <strong>lifetime usage license</strong>.",
-        timeout: 1000 * 60 * 5,
-        queue: "upsell",
-        killer: 'upsell',
-        layout: 'bottomRight',
-        closeWith: ['button'],
-        buttons: [
-          Noty.button('Close', 'btn btn-flat', () => Noty.closeAll('upsell')),
-          Noty.button('Get Started', 'btn btn-primary', () => window.main.openExternally('https://beekeeperstudio.io/pricing/'))
-        ]
-      },
       onboardingNoty: null as Noty | null,
     }
   },
@@ -33,7 +24,57 @@ export default Vue.extend({
       'isCommunity': 'isCommunity',
     }),
     ...mapGetters(['onboardingNotyShown', 'connected']),
+    ...mapGetters('licenses', ['noLicensesFound', 'trialLicense']),
+    ...mapGetters('paidFeatureUsage', ['usedFeatures']),
     ...mapState(['connected']),
+    // The periodic community nudge. Before a trial it offers the trial (one
+    // click, nothing to enter). After one, it talks about the user's own
+    // trial and points at the two ways to buy.
+    upsellNotificationOptions() {
+      const base = {
+        timeout: 1000 * 60 * 5,
+        queue: 'upsell',
+        killer: 'upsell',
+        layout: 'bottomRight',
+        closeWith: ['button'],
+      }
+      const close = () => Noty.closeAll('upsell')
+
+      if (this.noLicensesFound) {
+        return {
+          ...base,
+          text: 'Try every paid feature free for 14 days. No email or card, and the app reverts to the free version on its own.',
+          buttons: [
+            Noty.button('Not now', 'btn btn-flat', close),
+            Noty.button('Start free trial', 'btn btn-primary', () => {
+              close()
+              this.$store.dispatch('licenses/add', { trial: true })
+            }),
+          ],
+        }
+      }
+
+      const used = this.usedFeatures.slice(0, 3).map((f) => escapeHtml(f.displayLabel))
+      const text = used.length
+        ? `Used during your trial and now locked: <strong>${used.join(', ')}</strong>. Paying for 12 months includes lifetime access to the versions released in that period.`
+        : 'Paid features are locked. Paying for 12 months includes lifetime access to the versions released in that period.'
+
+      return {
+        ...base,
+        text,
+        buttons: [
+          Noty.button('Close', 'btn btn-flat', close),
+          Noty.button('Ask your team', 'btn btn-flat', () => {
+            close()
+            this.$root.$emit(AppEvent.purchaseRequest)
+          }),
+          Noty.button('Pricing', 'btn btn-primary', () => {
+            close()
+            this.$native.openLink(PRICING_URL)
+          }),
+        ],
+      }
+    },
   },
   watch: {
     isCommunity() {

@@ -45,6 +45,16 @@
       color: $text-lighter;
       flex-shrink: 0;
     }
+
+    // The feature the user just tried to open, when listing their own trial
+    // history rather than the generic feature list.
+    li.current {
+      color: $text-dark;
+      font-weight: 500;
+      .material-icons {
+        color: $theme-primary;
+      }
+    }
   }
 
   .upgrade-panel-links {

@@ -111,11 +111,36 @@
   }
   .pitch {
     text-align: center;
+    line-height: 1.6;
     a {
       color: $theme-primary;
       &:hover {
         text-decoration: underline;
       }
+    }
+  }
+  // Trial offer: a single sentence and a single button, no marketing chrome.
+  .pitch-trial {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $gutter-w;
+    text-align: left;
+    margin-top: $gutter-w;
+    padding: $gutter-h $gutter-w;
+    border-radius: 8px;
+    background: rgba($theme-base, 0.035);
+    .pitch-text {
+      flex: 1 1 auto;
+      font-size: 0.85rem;
+      color: $text;
+      strong {
+        color: $text-dark;
+      }
+    }
+    .btn {
+      flex: 0 0 auto;
+      white-space: nowrap;
     }
   }
 }

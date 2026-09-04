@@ -16,7 +16,7 @@ import { PinModule } from './modules/PinModule'
 import { getDialectData } from '@shared/lib/dialects'
 import { SearchModule } from './modules/SearchModule'
 import { IWorkspace, LocalWorkspace } from '@/common/interfaces/IWorkspace'
-import { IConnection } from '@/common/interfaces/IConnection'
+import { IConnection, isUltimateType } from '@/common/interfaces/IConnection'
 import { DataModules } from '@/store/DataModules'
 import { TabModule } from './modules/TabModule'
 import { HideEntityModule } from './modules/HideEntityModule'
@@ -41,6 +41,7 @@ import { WebPluginManagerStatus } from '@/services/plugin'
 import { MenuBarModule } from './modules/MenuBarModule'
 import { PluginsModule, PluginsState } from './modules/plugins'
 import { VimStoreModule } from './modules/VimStoreModule'
+import { PaidFeatureUsageModule } from './modules/PaidFeatureUsageModule'
 import { pluralize } from '@/vendor/pluralize'
 
 
@@ -156,6 +157,7 @@ const store = new Vuex.Store<State>({
     menuBar: MenuBarModule,
     plugins: PluginsModule,
     vim: VimStoreModule,
+    paidFeatureUsage: PaidFeatureUsageModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),
@@ -554,6 +556,7 @@ const store = new Vuex.Store<State>({
         // conn/create recorded the use; pick up the new/updated recent row
         await context.dispatch('data/usedconnections/load')
         context.commit('newConnection', resolvedConfig)
+        context.dispatch('recordPaidConnectionFeatures', resolvedConfig)
 
         if (context.state.usedConfig.connectionType === 'surrealdb' &&
           context.state.usedConfig.surrealDbOptions?.authType === SurrealAuthType.Root) {
@@ -831,6 +834,17 @@ const store = new Vuex.Store<State>({
         key: 'onboardingNotyShown',
         value: new Date(),
       });
+    },
+    /** Note the paid connection features a successful connect just used. */
+    recordPaidConnectionFeatures(context, config: IConnection) {
+      if (!config) return
+      if (isUltimateType(config.connectionType)) {
+        const name = ConnectionTypes.find((t) => t.value === config.connectionType)?.name ?? config.connectionType
+        context.dispatch('paidFeatureUsage/record', { id: 'premiumDatabase', detail: name })
+      }
+      if (config.readOnlyMode) {
+        context.dispatch('paidFeatureUsage/record', 'readOnlyMode')
+      }
     },
     setAiShellHintShown(context) {
       context.dispatch("settings/save", {

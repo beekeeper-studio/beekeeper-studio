@@ -25,6 +25,7 @@
     <data-manager />
     <configuration-warning-modal />
     <enter-license-modal />
+    <purchase-request-modal />
     <workspace-sign-in-modal />
     <workspace-create-modal />
     <workspace-rename-modal />
@@ -75,6 +76,7 @@ import ImportQueriesModal from '@/components/data/ImportQueriesModal.vue'
 import ImportConnectionsModal from '@/components/data/ImportConnectionsModal.vue'
 import TimeAgo from 'javascript-time-ago'
 import EnterLicenseModal from './components/ultimate/EnterLicenseModal.vue'
+import PurchaseRequestModal from './components/upsell/PurchaseRequestModal.vue'
 import { AppEvent } from './common/AppEvent'
 import globals from './common/globals'
 import NotificationManager from './components/NotificationManager.vue'
@@ -99,6 +101,7 @@ import MoveFolderModal from "@/components/common/modals/MoveFolderModal.vue";
 
 import rawLog from '@bksLogger'
 import { assignContextMenuToAllInputs } from './mixins/assignContextMenuToAllInputs'
+import { PRICING_URL } from '@/lib/purchaseRequest'
 
 const log = rawLog.scope('app.vue')
 
@@ -109,7 +112,7 @@ export default Vue.extend({
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
     DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
-    EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
+    EnterLicenseModal, PurchaseRequestModal, TrialExpiredModal, LicenseExpiredModal,
     LifetimeLicenseExpiredModal, CloudWorkspacesBlockedModal,
     WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
     PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
@@ -210,15 +213,19 @@ export default Vue.extend({
         const ta = new TimeAgo('en-US')
         const validUntil = this.status.license.validUntil
         const options = {
-          text: `Your free trial expires ${ta.format(validUntil)} (${validUntil.toLocaleDateString()})`,
+          text: `Your free trial ends ${ta.format(validUntil)} (${validUntil.toLocaleDateString()}). Connections, queries, and settings stay; paid features lock.`,
           type: 'warning',
           closeWith: ['button'],
           layout: 'bottomRight',
           timeout: false,
           queue: 'trial',
           buttons: [
-            Noty.button('Buy a License', 'btn btn-flat', () => {
-              window.location.href = "https://beekeeperstudio.io/pricing"
+            Noty.button('Ask your team', 'btn btn-flat', () => {
+              Noty.closeAll('trial')
+              this.$root.$emit(AppEvent.purchaseRequest)
+            }),
+            Noty.button('Pricing', 'btn btn-flat', () => {
+              this.$native.openLink(PRICING_URL)
             }),
             Noty.button('Enter License', 'btn btn-primary', () => {
               this.$root.$emit(AppEvent.enterLicense)

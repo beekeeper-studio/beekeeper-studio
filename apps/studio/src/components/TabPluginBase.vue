@@ -44,6 +44,12 @@ export default Vue.extend({
     ...mapGetters(["isCommunity"]),
   },
 
+  mounted() {
+    if (!this.isCommunity && this.tab.context.pluginId.startsWith("bks-")) {
+      this.$store.dispatch("paidFeatureUsage/record", "plugins");
+    }
+  },
+
   methods: {
     async handleRequest({
       request,

@@ -199,7 +199,7 @@
                       v-model="config.readOnlyMode"
                     >
                     <span>Read Only Mode</span>
-                    <i v-if="!isUltimate" v-tooltip="'Upgrade to use Read Only Mode'" class="material-icons">stars</i>
+                    <i v-if="!isUltimate" v-tooltip="'Paid feature. Included with a license or the free trial'" class="material-icons">stars</i>
                     <!-- <i class="material-icons" v-tooltip="'Limited to '">help_outlined</i> -->
                   </label>
                 </div>
@@ -255,14 +255,31 @@
             class="connection-upgrade-panel"
           />
           <template v-if="!config.connectionType">
-            <div class="pitch" v-if="!isUltimate">
-              🌟 <strong>Upgrade</strong> to access the JSON sidebar, AI shell, robust import/export and much more!
-              <a href="https://beekeeperstudio.io/pricing" class="">Upgrade</a>.
+            <!-- Community, never trialed: the trial is the first ask, not the sale. -->
+            <div class="pitch pitch-trial" v-if="!isUltimate && trialAvailable">
+              <div class="pitch-text">
+                <strong>Try every paid feature free for 14 days.</strong>
+                No email or card. Reverts to the free version on its own.
+                <a href="#" @click.prevent="showPaidFeatures">What's included</a>
+              </div>
+              <button type="button" class="btn btn-primary btn-small" @click.prevent="startTrial">
+                Start free trial
+              </button>
             </div>
+            <!-- Community after the trial -->
+            <div class="pitch" v-else-if="!isUltimate">
+              <span v-if="trialEndedOn">Trial ended {{ trialEndedOn }}. Paid features are locked.</span>
+              <span v-else>Free version. Paid features are locked.</span>
+              <a href="#" @click.prevent="showPaidFeatures">What's included</a> ·
+              <a href="#" @click.prevent="openPricing">Pricing</a> ·
+              <a href="#" @click.prevent="requestLicense">Request a license from your team</a>
+            </div>
+            <!-- On the trial -->
             <div class="pitch" v-else-if="isTrial">
-              🌟 <strong>Trial expires {{ $bks.timeAgo(trialLicense.validUntil) }}</strong> Upgrade now to make sure you
-              don't lose access.
-              <a href="https://beekeeperstudio.io/pricing" class="">Upgrade</a>.
+              <strong>Free trial: {{ trialTimeLeft }}.</strong>
+              <a href="#" @click.prevent="openPricing">Pricing</a> ·
+              <a href="#" @click.prevent="requestLicense">Request a license from your team</a> ·
+              <a href="#" @click.prevent="enterLicense">Enter license</a>
             </div>
             <div class="pitch" v-else>
               🌟 <strong>AI Shell</strong> - Let an LLM explore your database and write SQL for you. Bring your own API key. Simply open a new tab to get started.
@@ -323,6 +340,8 @@ import { SmartLocalStorage } from '@/common/LocalStorage'
 import ContentPlaceholderHeading from '@/components/common/loading/ContentPlaceholderHeading.vue'
 import { FriendlyErrorHelper } from '@/frontend/utils/FriendlyErrorHelper'
 import PrivacyBanner from './PrivacyBanner.vue'
+import { PRICING_URL } from '@/lib/purchaseRequest'
+import { pluralize } from '@/vendor/pluralize'
 
 const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
@@ -355,10 +374,24 @@ export default Vue.extend({
     ...mapState('data/connections', { 'connections': 'items' }),
     ...mapState('data/connectionFolders', { connectionFolders: 'items' }),
     ...mapGetters(['isUltimate', 'isCloud']),
-    ...mapGetters('licenses', ['isTrial', 'trialLicense']),
+    ...mapGetters('licenses', ['isTrial', 'trialLicense', 'noLicensesFound', 'licenseDaysLeft']),
     ...mapGetters({
       privacyMode: 'settings/privacyMode'
     }),
+    // The trial can only start once, and only when no license of any kind exists.
+    trialAvailable() {
+      return this.noLicensesFound
+    },
+    trialEndedOn() {
+      const validUntil = this.trialLicense?.validUntil
+      if (!validUntil || validUntil > new Date()) return null
+      return validUntil.toLocaleDateString()
+    },
+    trialTimeLeft() {
+      const days = this.licenseDaysLeft
+      if (days <= 0) return 'ends today'
+      return `${pluralize('day', days, true)} left`
+    },
     editingDisabled() {
       if (!this.isCloud) {
         return false;
@@ -680,6 +713,21 @@ export default Vue.extend({
         id: this.config.id,
         module: "data/connections",
       });
+    },
+    startTrial() {
+      this.$store.dispatch('licenses/add', { trial: true })
+    },
+    showPaidFeatures() {
+      this.$root.$emit(AppEvent.upgradeModal)
+    },
+    requestLicense() {
+      this.$root.$emit(AppEvent.purchaseRequest)
+    },
+    enterLicense() {
+      this.$root.$emit(AppEvent.enterLicense)
+    },
+    openPricing() {
+      this.$native.openLink(PRICING_URL)
     },
   },
 })

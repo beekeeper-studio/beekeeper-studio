@@ -16,7 +16,7 @@
     </div>
 
     <div class="form-group" v-if="folders && folders.length > 0">
-      <label>Folder <i v-if="!isUltimate && !isCloud" class="material-icons menu-icon">stars</i></label>
+      <label>Folder <i v-if="!isUltimate && !isCloud" class="material-icons menu-icon" v-tooltip="'Paid feature. Included with a license or the free trial'">stars</i></label>
       <in-app-folder-picker
         v-model="config.connectionFolderId"
         :disabled="disabled || (!isUltimate && !isCloud)"

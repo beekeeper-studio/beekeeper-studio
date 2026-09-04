@@ -49,6 +49,8 @@ export enum AppEvent {
   backupDatabase = 'backupDatabase',
   restoreDatabase = 'restoreDatabase',
   upgradeModal = 'upgradeModal',
+  /** Open the purchase-request modal (copyable license request for a manager or team). */
+  purchaseRequest = 'purchaseRequest',
   /** Triggered when a lifetime (expired subscription) license tries to use cloud workspaces */
   cloudWorkspacesBlocked = 'cloudWorkspacesBlocked',
   toggleExpandTableList = 'toggleExpandTableList',

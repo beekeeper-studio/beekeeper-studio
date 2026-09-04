@@ -171,6 +171,7 @@
             <i
               v-if="$store.getters.isCommunity"
               class="material-icons menu-icon"
+              v-tooltip="'Paid feature. Included with a license or the free trial'"
             >stars</i>
           </x-menuitem>
         </span>

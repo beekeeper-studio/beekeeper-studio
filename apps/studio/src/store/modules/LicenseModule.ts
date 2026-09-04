@@ -51,9 +51,11 @@ export const LicenseModule: Module<State, RootState>  = {
       return state.licenses.filter((l) => l.licenseType !== 'TrialLicense')
     },
     licenseDaysLeft(state) {
-      const validUntil = state.status.license.validUntil.getTime()
+      // Community installs have no license at all; report zero rather than throw.
+      const validUntil = state.status.license?.validUntil
+      if (!validUntil) return 0
       const now = state.now.getTime()
-      return Math.round((validUntil - now) / oneDay);
+      return Math.round((new Date(validUntil).getTime() - now) / oneDay);
     },
     noLicensesFound(state) {
       return state.licenses.length === 0

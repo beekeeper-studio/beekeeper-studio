@@ -1,0 +1,88 @@
+// Shared body of the "trial ended" / "license ended" dialogs.
+
+.beekeeper-modal.license-lapsed-modal .v--modal {
+  max-width: 560px;
+}
+
+.license-lapsed {
+  .dialog-c-subtitle {
+    margin: 0;
+  }
+
+  .license-lapsed-heading {
+    margin: $gutter-w 0 $gutter-h;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: $text-dark;
+  }
+
+  .license-lapsed-features {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: $gutter-w * 1.5;
+    row-gap: $gutter-h;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: $gutter-h * 1.25;
+      font-size: 0.875rem;
+      color: $text;
+      min-width: 0;
+
+      span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
+    .material-icons {
+      font-size: 16px;
+      color: $text-lighter;
+      flex-shrink: 0;
+    }
+
+    .license-lapsed-more {
+      color: $text-light;
+    }
+  }
+
+  .license-lapsed-fact {
+    display: flex;
+    align-items: flex-start;
+    gap: $gutter-h * 1.25;
+    margin: $gutter-w 0 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: $text-light;
+
+    .material-icons {
+      font-size: 16px;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+
+    a {
+      color: $text-light;
+      text-decoration: underline;
+      &:hover {
+        color: $text-dark;
+      }
+    }
+  }
+
+  .license-lapsed-buttons {
+    align-items: center;
+    flex-wrap: wrap;
+
+    .license-lapsed-enter-key {
+      color: $text-light;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+  }
+}

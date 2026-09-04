@@ -45,6 +45,9 @@ Creemos que esto es un compromiso justo entre suscripciones y pagos unicos, espe
 
 Si trabajas para una empresa, puedes pedirle a tu jefe que pague por Beekeeper Studio. Es un gasto empresarial, y estaran felices de pagarlo cuando se den cuenta de cuanto tiempo te ahorrara.
 
+!!! tip "Copia una solicitud de compra lista desde la app"
+    La app puede redactar la solicitud por ti. Abre `Help -> Manage License Keys` y haz clic en **Copy a purchase request for your team** (el mismo enlace aparece en los avisos de actualizacion y cuando termina la prueba gratuita). Genera una nota breve en texto plano con el precio del plan, el numero de asientos, las condiciones de acceso de por vida, como comprar u obtener una cotizacion formal, y los detalles de seguridad que suele preguntar un gerente. Si usaste la prueba gratuita, tambien enumera las funciones de pago que realmente utilizaste.
+
 Si tu jefe te pregunta por que deberian pagar por Beekeeper Studio, puedes decirles:
 
 1. **Mayor Productividad**: Beekeeper Studio te ahorra tiempo. Segun encuestas de usuarios, Beekeeper Studio ahorra a la mayoria de los desarrolladores aproximadamente **30% de su tiempo** dedicado a tareas de bases de datos. Eso es mucho tiempo!

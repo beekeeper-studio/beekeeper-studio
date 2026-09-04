@@ -175,6 +175,12 @@ export default Vue.extend({
   methods: {
     initialize() {
       this.initialized = true;
+      if (this.tab.context.pluginId.startsWith("bks-")) {
+        this.$store.dispatch(
+          "paidFeatureUsage/record",
+          this.isAiShellPlugin ? "aiShell" : "plugins"
+        );
+      }
 
       if (this.split) {
         this.split.destroy();

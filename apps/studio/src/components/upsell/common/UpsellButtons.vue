@@ -15,10 +15,34 @@
       </div>
     </div>
     <div class="actions">
-      <span v-if="helpText" class="help">{{ helpText }}</span>
-      <a v-if="trialAvailable" class="btn btn-flat" @click.prevent="startTrial">Start free trial</a>
-      <a v-else :href="learnUrl" class="btn btn-flat">Learn more</a>
-      <a @click.prevent="buyLicense" class="btn btn-primary" v-tooltip="'Get lifetime app access with any purchase'">Buy License</a>
+      <span
+        v-if="helpText"
+        class="help"
+      >
+        {{ helpText }}
+        <template v-if="!trialAvailable">
+          <a
+            href="#"
+            class="request-link"
+            @click.prevent="requestLicense"
+          >Need approval? Copy a purchase request</a>
+        </template>
+      </span>
+      <a
+        v-if="trialAvailable"
+        class="btn btn-flat"
+        @click.prevent="startTrial"
+      >Start free trial</a>
+      <a
+        v-else
+        :href="learnUrl"
+        class="btn btn-flat"
+      >Learn more</a>
+      <a
+        @click.prevent="buyLicense"
+        class="btn btn-primary"
+        v-tooltip="lifetimeTooltip"
+      >Buy License</a>
     </div>
   </div>
 </template>
@@ -39,7 +63,19 @@
     margin-right: auto;
     text-align: left;
     font-size: 0.8rem;
+    line-height: 1.4;
     color: var(--text-light);
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+  .request-link {
+    color: var(--text-light);
+    text-decoration: underline;
+    cursor: pointer;
+    &:hover {
+      color: var(--text-dark);
+    }
   }
   .btn {
     white-space: nowrap;
@@ -57,12 +93,14 @@
 </style>
 <script lang="js">
 import { AppEvent } from '@/common/AppEvent';
+import { PRICING_URL } from '@/lib/purchaseRequest';
 import { mapState } from 'vuex';
 
 export default {
   data: () => ({
     learnUrl: 'https://www.beekeeperstudio.io/upgrade',
-    buyUrl: 'https://www.beekeeperstudio.io/pricing',
+    buyUrl: PRICING_URL,
+    lifetimeTooltip: 'Pay for 12 months and keep lifetime access to the versions released in that period',
   }),
   computed: {
     ...mapState('licenses', { 'licenseStatus': 'status' }),
@@ -70,7 +108,7 @@ export default {
       return this.$store.getters['licenses/trialLicense']
     },
     trialEndDate() {
-      return this.trialLicense?.validUntil?.toDateString()
+      return this.trialLicense?.validUntil?.toLocaleDateString()
     },
     // Trial is only available if no licenses exist at all
     trialAvailable() {
@@ -81,9 +119,9 @@ export default {
       return this.trialLicense.validUntil < new Date()
     },
     helpText() {
-      if (this.trialAvailable) return '14-day trial. No email or credit card.'
+      if (this.trialAvailable) return '14-day free trial. Every paid feature, no email or card.'
       if (this.trialExpired) return `Trial ended ${this.trialEndDate}.`
-      return null
+      return 'Licenses are per person and unlock every paid feature.'
     },
     isSupportDateExpired() {
       // this means a lifetime license that is no longer active.
@@ -97,6 +135,10 @@ export default {
     },
     showLicenseInfo() {
       this.$root.$emit(AppEvent.enterLicense)
+    },
+    requestLicense() {
+      this.$emit('request-license')
+      this.$root.$emit(AppEvent.purchaseRequest)
     },
     buyLicense() {
       this.$native.openLink(this.buyUrl)

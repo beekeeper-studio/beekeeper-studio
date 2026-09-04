@@ -600,6 +600,7 @@ export default {
         this.$root.$emit(AppEvent.upgradeModal, 'Folders')
         return
       }
+      this.$store.dispatch('paidFeatureUsage/record', 'folders')
       if (this.isCloud) {
         // Find personal folder
         const parent = this.folders.find((f) => f.personal && !f.parentId);
@@ -652,6 +653,7 @@ export default {
             this.$root.$emit(AppEvent.upgradeModal, 'Folders');
             return;
           }
+          this.$store.dispatch('paidFeatureUsage/record', 'folders')
           this.startDrafting(item.id);
           this.expandFolder(item.id);
         },
