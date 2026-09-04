@@ -8,6 +8,8 @@ import { QueryAudit } from './QueryAudit';
 
 @Entity({ name: 'favorite_query' })
 export class FavoriteQuery extends ApplicationEntity implements QueryLike, ISavedQuery {
+  static readonly searchableFields: string[] = [ 'title' ];
+
   withProps(props?: any): FavoriteQuery {
     if (props) FavoriteQuery.merge(this, props);
     return this;

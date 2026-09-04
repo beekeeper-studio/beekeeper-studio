@@ -67,7 +67,7 @@ export type TreeState<T> = {
 export function treeActions<T extends HasId>(parentKeys: {
   plural: "connectionFolderIds" | "queryFolderIds" | "parentIds",
   singular: "connectionFolderId" | "queryFolderId" | "parentId"
-}): ActionTree<TreeState<T>, RootState> {
+}, local: boolean = false): ActionTree<TreeState<T>, RootState> {
   return {
     async refresh(context, parentIds: number[]) {
       await context.dispatch("resetTree");
@@ -80,7 +80,7 @@ export function treeActions<T extends HasId>(parentKeys: {
     async loadByParentIds(context, parentIds: number[]) {
       parentIds = _.difference(parentIds, context.state.folders.fetchingIds);
 
-      if (parentIds.length === 0) {
+      if (parentIds.length === 0 && !local) {
         return { error: null };
       }
 
