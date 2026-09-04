@@ -1,7 +1,8 @@
 import { BackupConfig } from "./models/BackupConfig";
 import { IConnection } from "@/common/interfaces/IConnection";
 import { ConnectionType, IDbConnectionServerConfig } from "./types";
-import { SupportedBackupFeatures, Command, CommandSettingSection, CommandControlAction, CommandSettingControl, SupportedFeatures } from "./models";
+import { SupportedBackupFeatures, Command, CommandSettingSection, CommandSettingControl, SupportedFeatures } from "./models";
+import { resolveFilenameTemplate } from "@/lib/utils/filenameTemplate";
 import { TempFileManager } from "../TempFileManager";
 import Vue from "vue";
 
@@ -134,17 +135,34 @@ export abstract class BaseCommandClient {
       this._config.toolName = this.toolName;
     } else {
       Object.assign(this._config, value);
+      // Resolve the filename template into a concrete filename as soon as the
+      // config is committed, so the review and execution steps only ever see a
+      // resolved name. The extension is appended later by the filename getter.
+      if ("filenameTemplate" in value) {
+        this._config.filename = resolveFilenameTemplate(
+          this._config.filenameTemplate ?? '',
+          BaseCommandClient.databaseName
+        );
+      }
     }
   }
 
   get settingsConfig() {
-    const settings = {};
+    // Reactive so the settings form (and the filename template live preview)
+    // update as the user types, before the config is committed on "next".
+    const settings = Vue.observable({});
     this.settingsSections.forEach((section) => {
       section.controls.forEach((control) => {
-        settings[control.settingName] = this._config[control.settingName];
+        if (control.settingName) {
+          settings[control.settingName] = this._config[control.settingName];
+        }
       })
     });
     return settings;
+  }
+
+  public resolveFileExtension(config: BackupConfig = this._config): string {
+    return this.determineFileType(config);
   }
 
   protected get binaryLocation(): CommandSettingSection {
@@ -259,15 +277,14 @@ export abstract class BaseCommandClient {
         },
         !isRestore ? {
           controlType: 'input',
-          settingName: 'filename',
-          settingDesc: 'Filename',
-          required: true,
+          settingName: 'filenameTemplate',
+          settingDesc: 'Filename Template',
+          required: false,
+          supportsTemplate: true,
+          showPreview: true,
           show: (config: BackupConfig): boolean => {
             return config.format != 'd';
           },
-          actions: isRestore ? [] : [
-            this.fileTypeAction
-          ]
         } : null,
       ].filter((s) => !!s) as any[]
     }
@@ -321,15 +338,6 @@ export abstract class BaseCommandClient {
         required: true
       }
     ];
-  }
-
-  protected get fileTypeAction(): CommandControlAction {
-    return {
-      disabled: true,
-      value: ((config: BackupConfig): string => {
-        return this.determineFileType(config);
-      })
-    }
   }
 
   protected get customSettings(): CommandSettingSection {
