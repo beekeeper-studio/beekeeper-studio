@@ -96,7 +96,7 @@ export default Vue.extend({
       }
     },
     async findLocal(id: number) {
-      return await this.$util.send('appdb/connection/findOneBy', { options: { id }});
+      return await this.$util.send('appdb/saved/findOneBy', { options: { id }});
     }
   }
 })

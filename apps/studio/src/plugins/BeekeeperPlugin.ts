@@ -223,7 +223,7 @@ export default {
     Vue.prototype.$bks = BeekeeperPlugin
     Vue.prototype.$pluralize = pluralize;
 
-    Vue.prototype.$confirm = function(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean> {
+    Vue.prototype.$confirm = function(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string, variant?: string }): Promise<boolean> {
       return new Promise<boolean>((resolve, reject) => {
         try {
           this.trigger(AppEvent.createConfirmModal, {

@@ -20,49 +20,43 @@
           id="import-type"
         >
           <option value="single">Individual Files</option>
-          <option value="recursive">Recursive Directory*</option>
+          <option value="recursive">Recursive Directory</option>
         </select>
       </div>
-      <template v-if="isIndividual || isUltimate">
-        <div class="form-group">
-          <label for="importFiles">{{importType === 'single' ? 'Files' : 'Directory'}}</label>
-          <file-picker
-            v-model="files"
-            :multiple="isIndividual"
-            :directory="!isIndividual"
-            :button-text="buttonText"
-            :options="dialogOptions"
-          />
-        </div>
-        <div class="form-group">
-          <label>Parent Folder</label>
-          <in-app-folder-picker
-            v-model="parentId"
-            folder-path="data/connectionFolders"
-          />
-        </div>
-        <div v-if="!isIndividual" class="form-group">
-          <label class="checkbox form-row">
-            <input
-              v-model="preserveRoot"
-              type="checkbox"
-            >
-            Preserve Root
-            <i
-              class="material-icons"
-              v-tooltip="{
-                content: `Import Root directory, otherwise import children at the root of the parent folder`
-              }"
-            >
-            help_outlined
-            </i>
-          </label>
-        </div>
-      </template>
-      <upgrade-panel v-else
-        standalone
-        :feature-name="'Recursive Import'"
-      />
+      <div class="form-group">
+        <label for="importFiles">{{importType === 'single' ? 'Files' : 'Directory'}}</label>
+        <file-picker
+          v-model="files"
+          :multiple="isIndividual"
+          :directory="!isIndividual"
+          :button-text="buttonText"
+          :options="dialogOptions"
+        />
+      </div>
+      <div class="form-group">
+        <label>Parent Folder</label>
+        <in-app-folder-picker
+          v-model="parentId"
+          folder-path="data/connectionFolders"
+        />
+      </div>
+      <div v-if="!isIndividual" class="form-group">
+        <label class="checkbox form-row">
+          <input
+            v-model="preserveRoot"
+            type="checkbox"
+          >
+          Preserve Root
+          <i
+            class="material-icons"
+            v-tooltip="{
+              content: `Import Root directory, otherwise import children at the root of the parent folder`
+            }"
+          >
+          help_outlined
+          </i>
+        </label>
+      </div>
     </div>
     <div v-else>
       <div v-if="!importFinished" class="importing-state">
@@ -73,7 +67,7 @@
         <p class="stats-summary">
           Successfully imported
           {{ $pluralize('directory', importStats.directories, true) }}
-          and {{ $pluralize('query', importStats.items, true) }}
+          and {{ $pluralize('connection', importStats.items, true) }}
         </p>
         <div class="warnings">
           <button
@@ -105,7 +99,7 @@
         type="button"
         @click="close"
       >
-        Cancel
+        {{ importFinished ? "Close" : "Cancel" }}
       </button>
       <button
         v-if="!importing"
@@ -123,7 +117,6 @@
 <script lang="ts">
 import FilePicker from "@/components/common/form/FilePicker.vue";
 import InAppFolderPicker from "@/components/common/form/InAppFolderPicker.vue";
-import UpgradePanel from "@/components/upsell/UpgradePanel.vue";
 import BaseModal from "@/components/common/modals/BaseModal.vue";
 import { AppEvent } from "@/common/AppEvent";
 import { mapState, mapGetters } from 'vuex'
@@ -137,7 +130,6 @@ export default {
   components: {
     FilePicker,
     InAppFolderPicker,
-    UpgradePanel,
     BaseModal
   },
   props: ["name"],
@@ -155,7 +147,7 @@ export default {
   },
   computed: {
     ...mapState('data/connectionFolders', {'folders': 'items'}),
-    ...mapGetters(["isCloud", "isUltimate"]),
+    ...mapGetters(["isCloud"]),
     modalName() {
       return this.name || "connection-files-import";
     },
@@ -201,29 +193,37 @@ export default {
       this.$modal.hide(this.modalName);
     },
     async submit() {
-    },
-    async importIndividual() {
-
-    },
-    async importDirectory() {
       this.importing = true;
-      const dir = _.isArray(this.files) ? this.files[0] : this.files;
       try {
-        const stats: IObjectImportStats = await this.$util.send('workspace/importConnectionsDirectory', {
-          dir,
-          parentId: this.parentId,
-          preserveRoot: this.preserveRoot
-        });
+        const stats: IObjectImportStats = this.isIndividual ?
+          await this.importSelection() :
+          await this.importDirectory();
 
         await this.$store.dispatch('refreshConnections');
 
         this.importStats = stats;
         this.importFinished = true;
       } catch (e) {
-        this.$noty.error(`Error importing queries: ${e?.message ?? e}`)
+        this.$noty.error(`Error importing connections: ${e?.message ?? e}`)
         log.error(e);
         this.close();
       }
+    },
+    async importSelection() {
+      const files = _.isArray(this.files) ? this.files : [this.files];
+
+      return await this.$util.send('workspace/importConnections', {
+        paths: files,
+        parentId: this.parentId
+      });
+    },
+    async importDirectory() {
+      const dir = _.isArray(this.files) ? this.files[0] : this.files;
+      return await this.$util.send('workspace/importConnectionsDirectory', {
+        dir,
+        parentId: this.parentId,
+        preserveRoot: this.preserveRoot
+      });
     }
   },
   mounted() {
