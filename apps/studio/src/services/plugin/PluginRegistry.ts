@@ -2,6 +2,7 @@ import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
 import { PluginRepository, PluginRegistryEntry, PluginOrigin } from "./types";
 import { NotFoundPluginError } from "./errors";
+import { isPluginAvailable } from "./availability";
 
 const log = rawLog.scope("PluginRegistry");
 
@@ -59,7 +60,7 @@ export default class PluginRegistry {
     }
     log.debug("Fetching official entries...");
     const result = await this.repositoryService.fetchOfficial();
-    this.officialEntries = result;
+    this.officialEntries = result.filter((entry) => isPluginAvailable(entry.id));
     this.officialEntriesCached = true;
   }
 
@@ -69,7 +70,7 @@ export default class PluginRegistry {
     }
     log.debug("Fetching community entries...");
     const result = await this.repositoryService.fetchCommunity();
-    this.communityEntries = result;
+    this.communityEntries = result.filter((entry) => isPluginAvailable(entry.id));
     this.communityEntriesCached = true;
   }
 

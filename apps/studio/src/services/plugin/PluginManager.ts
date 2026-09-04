@@ -16,6 +16,7 @@ import semver from "semver";
 import { NotFoundPluginError, NotFoundPluginViewError, NotSupportedPluginError } from "./errors";
 import { convertToManifestV1, isManifestV0, mapViewsAndMenuFromV0ToV1 } from "./utils";
 import { Hookable } from "./Hookable";
+import { isPluginAvailable } from "./availability";
 
 const log = rawLog.scope("PluginManager");
 
@@ -55,7 +56,9 @@ export default class PluginManager extends Hookable {
 
     await this.callHook("before-initialize");
 
-    const installedPlugins = this.fileManager.scanPlugins().map(convertToManifestV1);
+    const installedPlugins = this.fileManager.scanPlugins()
+      .filter((manifest) => isPluginAvailable(manifest.id))
+      .map(convertToManifestV1);
     this.manifests = installedPlugins;
 
     log.debug("Installed plugins:", installedPlugins);
@@ -148,6 +151,7 @@ export default class PluginManager extends Hookable {
   /** Plugin is not loadable if the **current app version** is lower than the
    * **minimum app version** required by the plugin. */
   isPluginLoadable(manifest: AnyVersionManifest): boolean {
+    if (!isPluginAvailable(manifest.id)) return false;
     if (!manifest.minAppVersion) {
       return true;
     }
@@ -157,6 +161,10 @@ export default class PluginManager extends Hookable {
   /** Install the latest version of a plugin. */
   async installPlugin(id: string): Promise<Manifest> {
     this.initializeGuard();
+
+    if (!isPluginAvailable(id)) {
+      throw new NotSupportedPluginError('This plugin is unavailable in this build.');
+    }
 
     await this.callHook("before-install-plugin", id);
 

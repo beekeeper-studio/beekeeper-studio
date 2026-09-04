@@ -56,14 +56,6 @@
           </x-menu>
         </x-button>
       </span>
-      <a
-        @click.prevent="showUpgradeModal"
-        class="btn btn-brand btn-icon btn-upgrade"
-        v-tooltip="'Upgrade for: backup/restore, import from file, larger query results, and more!'"
-        v-if="$store.getters.isCommunity"
-      >
-        <i class="material-icons">stars</i> Upgrade
-      </a>
     </div>
     <x-progressbar v-if="activeTab?.isLoading" />
     <div class="tab-content">
@@ -329,7 +321,6 @@ import Shell from './TabShell.vue'
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
 import { TabTypeConfig, TransportOpenTab, TransportPluginTab, setFilters, matches, duplicate, TabType } from '@/common/transport/TransportOpenTab'
-import { wait } from '@/shared/lib/wait'
 
 export default Vue.extend({
   props: [],
@@ -382,7 +373,6 @@ export default Vue.extend({
       if (!this.tabItems?.length) {
         await this.createQuery()
       }
-      wait(800).then(() => this.$tour.start("connectedScreen"));
     }
   },
   filters: {
@@ -495,9 +485,6 @@ export default Vue.extend({
     async updateTab(tab: TransportOpenTab) {
       const newTab = Object.assign({}, tab);
       await this.$store.commit('tabs/replaceTab', newTab);
-    },
-    showUpgradeModal() {
-      this.$root.$emit(AppEvent.upgradeModal)
     },
     completeDeleteAction() {
       const { schema, name: dbName, entityType } = this.dbDeleteElementParams

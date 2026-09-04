@@ -440,9 +440,6 @@ declare interface IBksConfig {
         disabled: boolean;
     };
     plugins: {
-        "bks-ai-shell": {
-            disabled: boolean;
-        };
         "bks-er-diagram": {
             disabled: boolean;
         };

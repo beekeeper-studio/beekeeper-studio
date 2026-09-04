@@ -1,9 +1,10 @@
 import _ from 'lodash'
 import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { TableFilter, TableOrView } from "@/lib/db/models";
-import { Column, Entity, LessThan, Not, IsNull, DeleteDateColumn, BeforeInsert, BeforeUpdate } from "typeorm";
+import { Column, Entity, LessThan, Not, IsNull, Raw, DeleteDateColumn, BeforeInsert, BeforeUpdate } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
 import { TabType, TransportOpenTab } from "@/common/transport/TransportOpenTab";
+import { excludedPluginIds } from '@/services/plugin/availability';
 
 
 const pickable = ['title', 'tabType', 'unsavedChanges', 'unsavedQueryText', 'tableName', 'schemaName', 'entityType', 'titleScope', 'connectionId', 'workspaceId', 'position']
@@ -194,7 +195,11 @@ export class OpenTab extends ApplicationEntity {
     return await this.find({
       where: {
         connectionId,
-        workspaceId
+        workspaceId,
+        generatedPluginId: Raw(
+          (column) => `(${column} IS NULL OR ${column} NOT IN (:...excludedPluginIds))`,
+          { excludedPluginIds }
+        ),
       },
       order: {
         lastActive: 'DESC'
@@ -222,7 +227,11 @@ export class OpenTab extends ApplicationEntity {
           where: {
             deletedAt: Not(IsNull()),
             connectionId,
-            workspaceId
+            workspaceId,
+            generatedPluginId: Raw(
+              (column) => `(${column} IS NULL OR ${column} NOT IN (:...excludedPluginIds))`,
+              { excludedPluginIds }
+            ),
           },
           order: {
             deletedAt: 'DESC'

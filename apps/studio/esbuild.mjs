@@ -7,7 +7,6 @@ import fs from 'fs'
 
 // NOTE: keep in sync with src/common/globals.ts -> plugins.ensureInstalled
 const ensureInstalled = [
-  "@beekeeperstudio/bks-ai-shell",
   "@beekeeperstudio/bks-er-diagram",
 ];
 

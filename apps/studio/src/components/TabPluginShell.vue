@@ -1,10 +1,9 @@
 <template>
   <div
     v-if="isCommunity && tab.context.pluginId.startsWith('bks-')"
-    :class="isAiShellPlugin ? 'tab-upsell-wrapper tab-upsell-wrapper--ai-shell' : 'upgrade-panel-tab-wrapper'"
+    class="feature-unavailable-wrapper"
   >
-    <ai-shell-upsell v-if="isAiShellPlugin" />
-    <upgrade-panel v-else :feature-name="tab.title || 'Plugins'" standalone />
+    <feature-unavailable :feature-name="tab.title || 'Plugins'" />
   </div>
   <div v-else class="plugin-shell" ref="container" v-hotkey="keymap">
     <div class="top-panel" ref="topPanel">
@@ -89,8 +88,7 @@ import { TransportPluginTab } from "@/common/transport/TransportOpenTab";
 import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 import Vue from "vue";
 import { mapGetters } from "vuex";
-import UpgradePanel from "@/components/upsell/UpgradePanel.vue";
-import AiShellUpsell from "@/components/upsell/AiShellUpsell.vue";
+import FeatureUnavailable from "@/components/common/FeatureUnavailable.vue";
 import type { OnViewRequestListenerParams } from "@/services/plugin/types";
 import { RunQueryResponse } from "@beekeeperstudio/plugin"
 import rawLog from '@bksLogger'
@@ -105,8 +103,7 @@ export default Vue.extend({
     QueryEditorStatusBar,
     ErrorAlert,
     IsolatedPluginView,
-    UpgradePanel,
-    AiShellUpsell,
+    FeatureUnavailable,
   },
   props: {
     tab: {
@@ -138,9 +135,6 @@ export default Vue.extend({
     ...mapGetters(["isCommunity"]),
     shouldInitialize() {
       return !this.isCommunity && this.active && !this.initialized;
-    },
-    isAiShellPlugin() {
-      return this.tab.context.pluginId === "bks-ai-shell";
     },
     errors() {
       return this.error ? [this.error] : null;

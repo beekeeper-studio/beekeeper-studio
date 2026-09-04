@@ -2,14 +2,13 @@ import { PluginObject } from "vue";
 import { driver as createDriver, DriveStep, PopoverDOM } from "driver.js";
 import { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import type store from "@/store";
-import { DialectData } from "@/shared/lib/dialects/models";
 
 type Context = {
   store: typeof store;
   utility: UtilityConnection;
 };
 
-type FlowId = "connectedScreen" | "ranQuerySuccessfully" | "startedEditingResult";
+type FlowId = "ranQuerySuccessfully" | "startedEditingResult";
 
 type FlowStep = DriveStep & {
   shouldShow?: (context: Context) => boolean | Promise<boolean>;
@@ -23,68 +22,6 @@ const flows: Record<
     steps: FlowStep[];
   }
 > = {
-  connectedScreen: {
-    steps: [
-      {
-        element: "#add-tab-group",
-        popover: {
-          title: `<div class="main-title"><i class="material-icons ai-shell-icon">auto_awesome</i> AI Shell</div><div class="subtitle">Included in your paid plan</div>`,
-          description: `AI can explore your database and run <span class="token">SQL</span> to answer your questions. Integrates with your favorite LLM.`,
-          side: "bottom",
-          showButtons: ["next"],
-          doneBtnText: "Okay",
-        },
-        onRender(popover, context) {
-          const learnMore = document.createElement("a");
-          learnMore.innerText = "Learn more";
-          learnMore.classList.add("btn", "btn-flat");
-          learnMore.href = "https://beekeeperstudio.io/features/sql-ai";
-          popover.footerButtons.prepend(learnMore);
-          const dialect: DialectData = context.store.getters.dialectData;
-          if (dialect) {
-            const token: HTMLSpanElement =
-              popover.wrapper.querySelector(".token");
-            token.innerText = dialect.sqlLabel;
-          }
-        },
-        async shouldShow(context: Context) {
-          if (window.platformInfo.testMode) {
-            return false;
-          }
-
-          if (context.store.getters.isCommunity) {
-            return false;
-          }
-
-          if (context.store.getters.aiShellHintShown) {
-            return false;
-          }
-
-          // Dont show it if the plugin is not in the dropdown menu (disabled or not installed)
-          if (!context.store.getters.aiShellAvailable) {
-            return false;
-          }
-
-          // Dont show it if the plugin is already open
-          const tabCount = await context.utility.send("appdb/tabs/count", {
-            where: { generatedPluginId: "bks-ai-shell" },
-            withDeleted: true,
-          });
-
-          if (tabCount > 0) {
-            context.store.dispatch("setAiShellHintShown");
-            return false;
-          }
-
-          return true;
-        },
-        onFinished(context) {
-          context.store.dispatch("setAiShellHintShown");
-        },
-      },
-    ],
-  },
-
   /**
    * This is triggered after the user runs their first successful query.
    **/

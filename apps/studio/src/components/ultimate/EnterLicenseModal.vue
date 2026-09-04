@@ -44,7 +44,6 @@
         <span class="app-version small text-muted">Current app version: {{ $config.appVersion }}</span>
         <span class="expand" />
         <span>
-          <a href="https://beekeeperstudio.io/pricing" class="btn btn-flat">Buy a new license</a>
           <button v-if="!realLicenses?.length" type="submit" class="btn btn-primary mt-2">Submit</button>
         </span>
       </div>

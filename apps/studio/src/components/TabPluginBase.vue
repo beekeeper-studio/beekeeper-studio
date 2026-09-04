@@ -1,6 +1,6 @@
 <template>
-  <div v-if="isCommunity && tab.context.pluginId.startsWith('bks-')" class="upgrade-panel-tab-wrapper">
-    <upgrade-panel :feature-name="tab.title || 'Plugins'" standalone />
+  <div v-if="isCommunity && tab.context.pluginId.startsWith('bks-')" class="feature-unavailable-wrapper">
+    <feature-unavailable :feature-name="tab.title || 'Plugins'" />
   </div>
   <div v-else class="plugin-base" ref="container">
     <isolated-plugin-view
@@ -20,7 +20,7 @@ import { TransportPluginTab } from "@/common/transport/TransportOpenTab";
 import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 import Vue from "vue";
 import { mapGetters } from "vuex";
-import UpgradePanel from "@/components/upsell/UpgradePanel.vue";
+import FeatureUnavailable from "@/components/common/FeatureUnavailable.vue";
 import { OnViewRequestListenerParams } from "@/services/plugin/types";
 import rawLog from "@bksLogger";
 
@@ -29,7 +29,7 @@ const log = rawLog.scope("TabPluginBase");
 export default Vue.extend({
   components: {
     IsolatedPluginView,
-    UpgradePanel,
+    FeatureUnavailable,
   },
 
   props: {

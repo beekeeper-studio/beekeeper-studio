@@ -4,6 +4,7 @@ import { State as RootState } from '../index'
 import rawLog from '@bksLogger'
 import { TransportOpenTab, duplicate, matches, TabTypeConfig } from '@/common/transport/TransportOpenTab';
 import Vue from 'vue';
+import { isPluginAvailable, isTabAvailable } from '@/services/plugin/availability';
 
 const log = rawLog.scope('TabModule')
 
@@ -42,7 +43,8 @@ export const TabModule: Module<State, RootState> = {
           return false;
         }
         if (tab.type === "plugin-shell" || tab.type === "plugin-base") {
-          return !window.bksConfig.get(`plugins.${tab.pluginId}.disabled`);
+          return isPluginAvailable(tab.pluginId) &&
+            !window.bksConfig.get(`plugins.${tab.pluginId}.disabled`);
         }
         return true;
       })
@@ -163,9 +165,10 @@ export const TabModule: Module<State, RootState> = {
             }
           }
         })
-        context.commit('set', tabs || [])
-        if (tabs?.length) {
-          const active = tabs.find((t) => t.active) || tabs[0]
+        const availableTabs = (tabs || []).filter(isTabAvailable)
+        context.commit('set', availableTabs)
+        if (availableTabs.length) {
+          const active = availableTabs.find((t) => t.active) || availableTabs[0]
           context.commit('setActive', active)
         }
       }
@@ -179,7 +182,7 @@ export const TabModule: Module<State, RootState> = {
 
       try {
         const tab = await Vue.prototype.$util.send('appdb/tabhistory/getLastDeletedTab', { workspaceId: workspaceId, connectionId: usedConfig.id });
-        if (tab) {
+        if (tab && isTabAvailable(tab)) {
           tab.deletedAt = null
           await context.dispatch('add', { item: tab })
           await context.dispatch('setActive', tab)
@@ -192,6 +195,10 @@ export const TabModule: Module<State, RootState> = {
       const { usedConfig } = context.rootState
       const { endOfPosition } = options
       let { item } = options
+
+      if (!isTabAvailable(item)) {
+        throw new Error('This tab is unavailable in this build.');
+      }
 
       if (endOfPosition) {
         item.position = (context.getters.sortedTabs.reverse()[0]?.position || 0) + 1

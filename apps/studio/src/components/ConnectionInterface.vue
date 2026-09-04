@@ -50,7 +50,7 @@
                   </option>
                 </select>
               </div>
-              <div v-if="config.connectionType && !shouldUpsell">
+              <div v-if="config.connectionType && !isConnectionUnavailable">
                 <!-- INDIVIDUAL DB CONFIGS -->
                 <postgres-form
                   v-if="config.connectionType === 'cockroachdb'"
@@ -160,7 +160,7 @@
                 />
 
                 <!-- Set the database up in read only mode (or not, your choice) -->
-                <div class="form-group" v-if="!shouldUpsell">
+                <div class="form-group" v-if="!isConnectionUnavailable">
                   <label class="checkbox-group" for="readOnlyMode">
                     <input
                       :disabled="!isUltimate"
@@ -171,12 +171,11 @@
                       v-model="config.readOnlyMode"
                     >
                     <span>Read Only Mode</span>
-                    <i v-if="!isUltimate" v-tooltip="'Upgrade to use Read Only Mode'" class="material-icons">stars</i>
                     <!-- <i class="material-icons" v-tooltip="'Limited to '">help_outlined</i> -->
                   </label>
                 </div>
                 <!-- TEST AND CONNECT -->
-                <div v-if="!shouldUpsell" class="test-connect row flex-middle">
+                <div v-if="!isConnectionUnavailable" class="test-connect row flex-middle">
                   <span class="expand" />
                   <div class="btn-group">
                     <button
@@ -209,7 +208,7 @@
                   </div>
                 </div>
                 <SaveConnectionForm
-                  v-if="!shouldUpsell"
+                  v-if="!isConnectionUnavailable"
                   :config="config"
                   :folders="connectionFolders"
                   :is-ultimate="isUltimate"
@@ -219,27 +218,11 @@
               </div>
             </form>
           </div>
-          <upgrade-panel
-            v-if="shouldUpsell"
+          <feature-unavailable
+            v-if="isConnectionUnavailable"
             :feature-name="friendlyConnectionType"
-            standalone
-            class="connection-upgrade-panel"
+            class="connection-feature-unavailable"
           />
-          <template v-if="!config.connectionType">
-            <div class="pitch" v-if="!isUltimate">
-              🌟 <strong>Upgrade</strong> to access the JSON sidebar, AI shell, robust import/export and much more!
-              <a href="https://beekeeperstudio.io/pricing" class="">Upgrade</a>.
-            </div>
-            <div class="pitch" v-else-if="isTrial">
-              🌟 <strong>Trial expires {{ $bks.timeAgo(trialLicense.validUntil) }}</strong> Upgrade now to make sure you
-              don't lose access.
-              <a href="https://beekeeperstudio.io/pricing" class="">Upgrade</a>.
-            </div>
-            <div class="pitch" v-else>
-              🌟 <strong>AI Shell</strong> - Let an LLM explore your database and write SQL for you. Bring your own API key. Simply open a new tab to get started.
-              <a href="https://www.beekeeperstudio.io/features/sql-ai">Learn more</a>
-            </div>
-          </template>
         </div>
 
         <small class="app-version">
@@ -285,7 +268,7 @@ import { mapGetters, mapState } from 'vuex'
 import { dialectFor } from '@shared/lib/dialects/models'
 import { findClient } from '@/lib/db/clients'
 import { AzureAuthType } from '@/lib/db/types'
-import UpgradePanel from '@/components/upsell/UpgradePanel.vue'
+import FeatureUnavailable from '@/components/common/FeatureUnavailable.vue'
 import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
 import { isUltimateType } from '@/common/interfaces/IConnection'
@@ -298,7 +281,7 @@ const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
-  components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpgradePanel, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm, DynamoDbForm, ContentPlaceholderHeading, SurrealDbForm, PrivacyBanner, SnowflakeForm
+  components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, FeatureUnavailable, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm, DynamoDbForm, ContentPlaceholderHeading, SurrealDbForm, PrivacyBanner, SnowflakeForm
   },
 
   data() {
@@ -325,7 +308,6 @@ export default Vue.extend({
     ...mapState('data/connections', { 'connections': 'items' }),
     ...mapState('data/connectionFolders', { connectionFolders: 'items' }),
     ...mapGetters(['isUltimate', 'isCloud']),
-    ...mapGetters('licenses', ['isTrial', 'trialLicense']),
     ...mapGetters({
       'usedConfigs': 'data/usedconnections/orderedUsedConfigs',
       privacyMode: 'settings/privacyMode'
@@ -342,7 +324,7 @@ export default Vue.extend({
     friendlyConnectionType() {
       return this.$config.defaults.connectionTypes.find((ct) => ct.value === this.config?.connectionType)?.name ?? "Premium"
     },
-    shouldUpsell() {
+    isConnectionUnavailable() {
       if (this.isUltimate) return false
       return isUltimateType(this.config.connectionType)
     },

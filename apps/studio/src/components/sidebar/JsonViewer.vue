@@ -63,7 +63,11 @@
     <div class="empty-text">
       Open a table to view its data
     </div>
-    <json-viewer-upsell v-if="$store.getters.isCommunity" />
+    <feature-unavailable
+      v-if="$store.getters.isCommunity"
+      class="community-overlay"
+      feature-name="JSON Row Viewer"
+    />
   </div>
 </template>
 
@@ -89,7 +93,7 @@ import { mapGetters } from "vuex";
 import { EditorMarker, LineGutter } from "@beekeeperstudio/ui-kit";
 import { persistJsonFold } from "@/lib/editor/extensions/persistJsonFold";
 import { partialReadonly } from "@/lib/editor/extensions/partialReadOnly";
-import JsonViewerUpsell from '@/components/upsell/JsonViewerSidebarUpsell.vue'
+import FeatureUnavailable from '@/components/common/FeatureUnavailable.vue'
 import rawLog from "@bksLogger";
 import _ from "lodash";
 import globals from '@/common/globals'
@@ -101,7 +105,7 @@ import { monokaiInit } from "@uiw/codemirror-theme-monokai";
 const log = rawLog.scope("json-viewer");
 
 export default Vue.extend({
-  components: { TextEditor, JsonViewerUpsell },
+  components: { TextEditor, FeatureUnavailable },
   props: {
     value: {
       type: [Object, Array],

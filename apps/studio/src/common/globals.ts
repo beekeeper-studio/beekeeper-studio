@@ -37,7 +37,6 @@ export default {
      * @see `BundledPluginModule` in src-commercial/backend/plugin-system/modules/BundledPluginModule.ts
      **/
     ensureInstalled: [
-      { id: "bks-ai-shell", pkg: "@beekeeperstudio/bks-ai-shell" },
       { id: "bks-er-diagram", pkg: "@beekeeperstudio/bks-er-diagram" },
     ],
   }
