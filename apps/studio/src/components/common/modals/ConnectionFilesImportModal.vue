@@ -1,16 +1,14 @@
 <template>
   <base-modal
     :name="modalName"
-    class="sql-files-import-modal"
+    class="connection-files-import-modal"
     @submit="submit"
   >
     <template #title>
-      Import SQL Files into Saved Queries
+      Import Connections from JSON files
     </template>
     <div v-if="!importing" class="message">
-      This will make a copy of your .sql files and add them to your Beekeeper
-      Studio saved queries. Any changes to the original .sql files will not be
-      reflected in Beekeeper Studio.
+      This will import connections exported from Beekeeper Studio Cloud
     </div>
     <div v-if="!importing" class="form-group">
       <div class="form-group">
@@ -40,7 +38,7 @@
           <label>Parent Folder</label>
           <in-app-folder-picker
             v-model="parentId"
-            folder-path="data/queryFolders"
+            folder-path="data/connectionFolders"
           />
         </div>
         <div v-if="!isIndividual" class="form-group">
@@ -126,7 +124,7 @@
 import FilePicker from "@/components/common/form/FilePicker.vue";
 import InAppFolderPicker from "@/components/common/form/InAppFolderPicker.vue";
 import UpgradePanel from "@/components/upsell/UpgradePanel.vue";
-import BaseModal from '@/components/common/modals/BaseModal.vue'
+import BaseModal from "@/components/common/modals/BaseModal.vue";
 import { AppEvent } from "@/common/AppEvent";
 import { mapState, mapGetters } from 'vuex'
 import _ from 'lodash';
@@ -156,13 +154,13 @@ export default {
     };
   },
   computed: {
-    ...mapState('data/queryFolders', {'folders': 'items'}),
+    ...mapState('data/connectionFolders', {'folders': 'items'}),
     ...mapGetters(["isCloud", "isUltimate"]),
     modalName() {
-      return this.name || "sql-files-import";
+      return this.name || "connection-files-import";
     },
     rootBindings() {
-      return [{ event: AppEvent.promptSqlFilesImport, handler: this.open }];
+      return [{ event: AppEvent.promptConnectionFilesImport, handler: this.open }];
     },
     buttonText() {
       return this.importType === 'single' ? 'Choose Files' : 'Choose Directory'
@@ -174,7 +172,7 @@ export default {
       if (this.isIndividual) {
         return {
           filters: [
-            { name: 'SQL files (*.sql, *.txt)', extensions: ['sql', 'txt'] },
+            { name: 'Connection files (*.json)', extensions: ['json'] },
             { name: 'All files', extensions: ['*'] },
           ]
         }
@@ -202,30 +200,22 @@ export default {
     close() {
       this.$modal.hide(this.modalName);
     },
-    submit() {
-      if (this.importType === 'single') {
-        const files = _.isArray(this.files) ? this.files : [this.files];
-        const config = {
-          parentId: this.parentId,
-          paths: files
-        };
-        this.$emit("submit", config);
-        this.close();
-      } else {
-        this.importDirectory();
-      }
+    async submit() {
+    },
+    async importIndividual() {
+
     },
     async importDirectory() {
       this.importing = true;
       const dir = _.isArray(this.files) ? this.files[0] : this.files;
       try {
-        const stats: IObjectImportStats = await this.$util.send('workspace/importDirectory', {
+        const stats: IObjectImportStats = await this.$util.send('workspace/importConnectionsDirectory', {
           dir,
           parentId: this.parentId,
           preserveRoot: this.preserveRoot
         });
 
-        await this.$store.dispatch('refreshQueries');
+        await this.$store.dispatch('refreshConnections');
 
         this.importStats = stats;
         this.importFinished = true;

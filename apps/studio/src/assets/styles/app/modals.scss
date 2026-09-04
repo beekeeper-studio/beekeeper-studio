@@ -19,7 +19,7 @@
     max-width: 520px;
   }
 
-  &.sql-files-import-modal, &.wait-sso-modal {
+  &.sql-files-import-modal, &.wait-sso-modal, &.connection-files-import-modal {
     .v--modal {
       width: auto !important;
       min-height: 0px;
