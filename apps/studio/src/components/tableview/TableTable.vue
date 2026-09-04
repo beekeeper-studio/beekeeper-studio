@@ -995,6 +995,7 @@ export default Vue.extend({
         fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1].find((k) => !k.isComposite) ?? keyDatas[0][1][0], cell)),
         isPK: isPK,
         binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
+        bksType: this.$bksConfig.ui.tableTable.dataTypeColors ? column.bksField?.bksType : undefined,
       }
 
       const result = {

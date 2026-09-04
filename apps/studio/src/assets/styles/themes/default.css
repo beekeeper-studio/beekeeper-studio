@@ -1,0 +1,46 @@
+/* ===== Palette ===== */
+/* How to make the shades:
+ * 1. Pick a base color, for example:
+ *   a. $brand-info is #3498DB, which is blue.
+ *   b. So this color will be --color-blue, and --color-blue-500 is #3498DB
+ * 2. Go to https://tailwindshades.app/ or use `theme-colors` from npm.
+ * 3. Copy and paste the color to the website
+ * */
+:root {
+  --color-black: #000000;
+  --color-white: #FFFFFF;
+
+  --color-blue-400: #71B7E6;
+  --color-blue-500: #3498DB; /* is $brand-info in light theme */
+  --color-blue-600: #2F89C5;
+
+  --color-pink-300: #FF99F9;
+  --color-pink-400: #FF4DF5;
+  --color-pink-500: #FF00F0; /* is $brand-pink in light theme */
+  --color-pink-700: #990090;
+  --color-pink-800: #73006C;
+
+  --color-green-400: #5BE6B5;
+  --color-green-500: #15DB95; /* is $brand-success in light theme */
+  --color-green-700: #0D8359;
+
+  --color-yellow-400: #FBDD53;
+  --color-yellow-500: #F9CE09; /* is $theme-primary in light theme */
+  --color-yellow-700: #957C05;
+
+  --color-orange-300: #F1C69E;
+  --color-orange-500: #DC700C; /* is $brand-warning in light theme */
+  --color-orange-800: #633205;
+}
+
+/* ===== Light ===== */
+:root {
+  --cell-fg-color: var(--color-black);
+  --cell-binary-fg-color: var(--color-pink-800);
+}
+
+/* ===== Dark ===== */
+[data-theme-type="dark"] {
+  --cell-fg-color: var(--color-white);
+  --cell-binary-fg-color: var(--color-pink-300);
+}

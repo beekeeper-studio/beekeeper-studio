@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import { Mutators } from '../lib/data/tools'
 import { TabulatorFormatterParams } from '@/common/tabulator'
-import helpers, { escapeHtml } from '@shared/lib/tabulator'
+import helpers, { escapeHtml, FormatterParams } from '@shared/lib/tabulator'
 export const NULL = '(NULL)'
 import {CellComponent} from 'tabulator-tables'
 
@@ -69,11 +69,15 @@ export default {
     },
     cellFormatter(
       cell: CellComponent,
-      params: { fk?: any[], isPK?: boolean, fkOnClick?: (e: MouseEvent, cell: CellComponent) => void, binaryEncoding?: string } = {},
+      params: FormatterParams = {},
       onRendered: (func: () => void) => void
     ) {
       const classNames = []
       let cellValue = cell.getValue()
+
+      if (params.bksType && !_.isNil(cellValue) && !(_.isString(cellValue) && _.isEmpty(cellValue))) {
+        classNames.push(`bks-type-${params.bksType.toLowerCase()}`)
+      }
 
       if (cellValue instanceof Uint8Array) {
         classNames.push('binary-type')

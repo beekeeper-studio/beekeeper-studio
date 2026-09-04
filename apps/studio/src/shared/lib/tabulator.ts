@@ -1,4 +1,5 @@
 import { typedArrayToString } from '@/common/utils';
+import { BksFieldType } from '@/lib/db/models';
 import _ from 'lodash'
 import {CellComponent} from 'tabulator-tables'
 
@@ -23,10 +24,11 @@ interface KeyData {
 }
 
 export interface FormatterParams {
-  fk: KeyData[] | false;
-  fkOnClick: false | ((_e: Event, cell: { [key: string]: any }) => void);
-  isPK: boolean;
-  binaryEncoding: string; // or boolean, depending on actual type
+  fk?: KeyData[] | false;
+  fkOnClick?: false | ((_e: Event, cell: { [key: string]: any }) => void);
+  isPK?: boolean;
+  binaryEncoding?: string; // or boolean, depending on actual type
+  bksType?: BksFieldType;
 }
 
 export interface YesNoParams {
@@ -87,4 +89,3 @@ export default {
     }
   }
 }
-

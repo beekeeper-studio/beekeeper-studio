@@ -121,6 +121,7 @@ export default Vue.extend({
       interval: null,
       licenseInterval: null,
       runningWayland: false,
+      darkMediaQuery: null,
     }
   },
   computed: {
@@ -148,6 +149,7 @@ export default Vue.extend({
     },
     themeValue() {
       document.body.className = `theme-${this.themeValue}`
+      this.applyTheme()
       this.trigger(AppEvent.changedTheme, this.themeValue)
     },
     status(curr, prev) {
@@ -164,8 +166,13 @@ export default Vue.extend({
   async beforeDestroy() {
     clearInterval(this.interval)
     clearInterval(this.licenseInterval)
+    this.darkMediaQuery?.removeEventListener('change', this.applyTheme)
   },
   async mounted() {
+    const darkMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    darkMediaQuery.addEventListener('change', this.applyTheme)
+    this.darkMediaQuery = darkMediaQuery
+
     this.notifyFreeTrial()
     this.interval = setInterval(this.notifyFreeTrial, globals.trialNotificationInterval)
     this.$store.dispatch('licenses/updateAll');
@@ -188,6 +195,7 @@ export default Vue.extend({
     })
     if (this.themeValue) {
       document.body.className = `theme-${this.themeValue}`
+      this.applyTheme()
     }
 
     if (this.url) {
@@ -204,6 +212,22 @@ export default Vue.extend({
 
   },
   methods: {
+    getTheme() {
+      if (this.themeValue === "system") {
+        return this.darkMediaQuery.matches ? "system-dark" : "system-light";
+      }
+      return this.themeValue || "system-light";
+    },
+    getThemeType() {
+      if (this.themeValue === "system") {
+        return this.darkMediaQuery.matches ? "dark" : "light";
+      }
+      return this.themeValue?.includes("dark") ? "dark" : "light";
+    },
+    applyTheme() {
+      document.documentElement.dataset.theme = this.getTheme();
+      document.documentElement.dataset.themeType = this.getThemeType();
+    },
     notifyFreeTrial() {
       Noty.closeAll('trial')
       if (this.isTrial && this.isUltimate) {
