@@ -1,4 +1,4 @@
-import { splitQueries, removeQueryQuotes, extractParams, isTextSelected, deparameterizeQuery, convertParamsForReplacement } from "../../../../src/lib/db/sql_tools";
+import { splitQueries, removeQueryQuotes, extractParams, paramPlaceholders, isTextSelected, deparameterizeQuery, convertParamsForReplacement } from "../../../../src/lib/db/sql_tools";
 
 const testCases = {
   "select* from foo; select * from bar": 2,
@@ -215,5 +215,76 @@ describe("Postgres dollar-quoted function bodies", () => {
     // And the function statement must end at the $$ ... language sql; line,
     // not swallow the trailing select:
     expect(result[2].text).toMatch(/\$\$ language sql;/);
+  });
+});
+
+describe("extractParams", () => {
+  // SQL Server's paramTypes, straight out of default.config.ini
+  const sqlserver = { positional: false, named: [':'], numbered: [], quoted: [] };
+
+  // The join query from #4702 - no placeholders anywhere in it
+  const joinQuery = [
+    "select u.usrRegistration, u.usrName, ud.usdDeviceId, r.Nombre as devAmicoDevId",
+    "  from hid_ta_users_devices ud",
+    "       join hid_ta_users u on (u.usrRegistration = ud.usdRegistration)",
+    "       join rcp_taNRelojes r on (r.RelojId = ud.usdDeviceId)",
+    "  --where usdStatus = 0",
+    "  order by usrRegistration, usdDeviceId",
+  ].join("\n");
+
+  it("finds the named placeholders in the text it is given", () => {
+    expect(extractParams("select * from users where id = :id", "mssql", sqlserver))
+      .toEqual([":id"]);
+  });
+
+  it("finds nothing in a query that uses no placeholders", () => {
+    expect(extractParams(joinQuery, "mssql", sqlserver)).toEqual([]);
+  });
+
+  it("finds nothing in blank or missing text", () => {
+    expect(extractParams("", "mssql", sqlserver)).toEqual([]);
+    expect(extractParams("  \n  ", "mssql", sqlserver)).toEqual([]);
+    expect(extractParams(null, "mssql", sqlserver)).toEqual([]);
+    expect(extractParams(undefined, "mssql", sqlserver)).toEqual([]);
+  });
+
+  it("finds the placeholders of every statement it is given", () => {
+    const selection = "select * from a where id = :first;\nselect * from b where id = :second;";
+    expect(extractParams(selection, "mssql", sqlserver)).toEqual([":first", ":second"]);
+  });
+
+  // Regression for #4702: running a selection prompted for placeholders that
+  // only appeared in another part of the tab.
+  it("ignores placeholders that belong to the rest of the tab", () => {
+    const tab = `select * from hid_ta_users where usrRegistration = :reg\n\n${joinQuery}`;
+
+    // T-SQL's statement terminator is optional, so a tab written without
+    // semicolons parses as one statement and carries the earlier :reg...
+    expect(extractParams(tab, "mssql", sqlserver)).toEqual([":reg"]);
+
+    // ...but running only the join query must not ask for :reg.
+    expect(extractParams(joinQuery, "mssql", sqlserver)).toEqual([]);
+  });
+
+  it("honors the dialect's placeholder syntax", () => {
+    const query = "select * from users where id = :id";
+    // Postgres only treats $1 as a placeholder, so :id is just text there
+    const postgres = { positional: false, named: [], numbered: ['$'], quoted: [] };
+    expect(extractParams(query, "psql", postgres)).toEqual([]);
+    expect(extractParams("select * from users where id = $1", "psql", postgres)).toEqual(["$1"]);
+  });
+});
+
+describe("paramPlaceholders", () => {
+  it("dedupes named placeholders", () => {
+    expect(paramPlaceholders([":name", ":age", ":name"])).toEqual([":name", ":age"]);
+  });
+
+  it("gives each positional placeholder its own index", () => {
+    expect(paramPlaceholders(["?", "?", "?"])).toEqual([0, 1, 2]);
+  });
+
+  it("returns nothing when there are no placeholders", () => {
+    expect(paramPlaceholders([])).toEqual([]);
   });
 });

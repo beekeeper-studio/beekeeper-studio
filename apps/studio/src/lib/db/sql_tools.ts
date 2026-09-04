@@ -38,6 +38,35 @@ export function safelyIdentify(
   }
 }
 
+// Placeholders contained in a chunk of SQL. Callers pass the exact text that is
+// about to run - a selection, the statement under the cursor, or the whole tab -
+// so we only ever prompt for placeholders that text really uses. Identifying the
+// whole tab instead would ask for placeholders from statements the user isn't
+// running, which is easy to hit in dialects where the statement terminator is
+// optional (T-SQL), because the tab then parses as one big statement.
+export function extractParams(
+  queryText: string,
+  dialect: IdentifierDialect,
+  paramTypes: Options["paramTypes"]
+): string[] {
+  if (_.isEmpty(queryText?.trim())) {
+    return []
+  }
+  const { queries } = safelyIdentify(queryText, { dialect, paramTypes })
+  return queries.flatMap((query) => query.parameters)
+}
+
+// Turns the raw placeholder list into the keys the parameter prompt collects
+// values under. Named placeholders are deduped by name, while `?` is positional
+// and carries no name, so every occurrence gets its own 0-based index.
+export function paramPlaceholders(params: string[]): (string | number)[] {
+  if (!params.includes('?')) {
+    return _.uniq(params)
+  }
+  let positionalIndex = 0
+  return _.uniq(params.map((param) => (param === '?' ? positionalIndex++ : param)))
+}
+
 // can only have positional params OR non-positional
 export function canDeparameterize(params: string[]) {
   return !(params.includes('?') && params.some((val) => val != '?'));

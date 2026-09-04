@@ -579,7 +579,7 @@
   import dateFormat from 'dateformat'
   import { mapActions, mapGetters, mapState } from 'vuex'
 
-  import { canDeparameterize, convertParamsForReplacement, deparameterizeQuery, safelyIdentify } from '../lib/db/sql_tools'
+  import { canDeparameterize, convertParamsForReplacement, deparameterizeQuery, extractParams, paramPlaceholders, safelyIdentify } from '../lib/db/sql_tools'
   import { EditorMarker } from '@/lib/editor/utils'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
@@ -676,7 +676,6 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         focusElement: 'none',
         focusingElement: 'none',
 
-        individualQueries: [],
         currentlySelectedQuery: null,
         querySelectionError: null,
 
@@ -907,23 +906,14 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           'queryEditor.manualRollback': this.manualRollback,
         })
       },
+      // Placeholders of the query that is actually being submitted, not of every
+      // statement in the tab. See #4702 - running a selection asked for
+      // placeholders that only appeared elsewhere in the editor.
+      queryParameters() {
+        return extractParams(this.queryForExecution, this.identifierDialect, this.paramTypes)
+      },
       queryParameterPlaceholders() {
-        let params = this.individualQueries.flatMap((qs) => qs.parameters)
-
-        if (this.currentlySelectedQuery && (this.hasSelectedText || this.runningType === 'current')) {
-          params = this.currentlySelectedQuery.parameters
-        }
-
-        if (params.length && params.includes('?')) {
-          let posIndex = 0; // number doesn't matter, this just distinguishes positional from other types
-          params = params.map((param) => {
-            if (param != '?') return param;
-
-            return posIndex++;
-          })
-        }
-
-        return _.uniq(params)
+        return paramPlaceholders(this.queryParameters)
       },
       deparameterizedQuery() {
         let query = this.queryForExecution
@@ -932,7 +922,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         }
 
         try {
-          const placeholders = this.individualQueries.flatMap((qs) => qs.parameters);
+          const placeholders = this.queryParameters;
           if (_.isEmpty(placeholders)) {
             return query;
           }
@@ -1667,7 +1657,6 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         }
 
         if (queries.length > 0) {
-          this.individualQueries = queries
           this.currentlySelectedQuery = queries[0]
           return await this.submitQuery(this.currentlySelectedQuery.text)
         } else {
@@ -1750,8 +1739,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
         try {
           if (this.hasParams && (!fromModal || this.paramsModalRequired)) {
-            const params = this.individualQueries.flatMap((qs) => qs.parameters);
-            if (canDeparameterize(params)) {
+            if (canDeparameterize(this.queryParameters)) {
               this.$modal.show(`parameters-modal-${this.tab.id}`)
               return;
             } else {
@@ -1855,7 +1843,6 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           // The run methods should catch any errors, so we don't need to do that here
           const { queries } = safelyIdentify(editorText, { dialect: this.identifierDialect, paramTypes: this.paramTypes })
           if (queries.length > 0) {
-            this.individualQueries = queries
             this.currentlySelectedQuery = queries[0]
           }
 
@@ -2001,8 +1988,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
         return table?.columns.map((c) => c.columnName);
       },
-      handleQuerySelectionChange({ queries, selectedQuery, error }) {
-        this.individualQueries = queries;
+      handleQuerySelectionChange({ selectedQuery, error }) {
         this.currentlySelectedQuery = selectedQuery;
         this.querySelectionError = error;
       },
