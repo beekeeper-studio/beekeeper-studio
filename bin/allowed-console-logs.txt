@@ -16,7 +16,6 @@ apps/studio/src/components/data/WorkspaceSignInModal.vue::console.log("open moda
 apps/studio/src/components/editor/MergeManager.vue::console.log("Apply Patch", this.unsavedText, patch)
 apps/studio/src/components/editor/MergeManager.vue::console.log("Make Patch: ", this.originalText, this.query.text)
 apps/studio/src/components/editor/MergeManager.vue::console.log("post patch value:", final)
-apps/studio/src/components/sidebar/ConnectionSidebar.vue::console.log("triggering import")
 apps/studio/src/components/sidebar/core/ConnectionButton.vue::console.log('Missing id or workspaceId:', {
 apps/studio/src/components/tableinfo/TableRelations.vue::console.log("getcolumns", result)
 apps/studio/src/components/TabQueryEditor.vue::console.log("non empty result", nonEmptyResult)
