@@ -39,6 +39,7 @@
     "./super-formatter": "./dist/super-formatter.js",
     "./surreal-text-editor": "./dist/surreal-text-editor.js",
     "./merge-text-editor": "./dist/merge-text-editor.js",
+    "./tree": "./dist/tree.js",
     "./vue/table": "./dist/vue/table.js",
     "./vue/entity-list": "./dist/vue/entity-list.js",
     "./vue/sql-text-editor": "./dist/vue/sql-text-editor.js",
@@ -48,6 +49,7 @@
     "./vue/super-formatter": "./dist/vue/super-formatter.js",
     "./vue/surreal-text-editor": "./dist/vue/surreal-text-editor.js",
     "./vue/merge-text-editor": "./dist/vue/merge-text-editor.js",
+    "./vue/tree": "./dist/vue/tree.js",
     "./config/context-menu": "./dist/config/context-menu.js"
   },
   "scripts": {
@@ -75,7 +77,8 @@
     "@marimo-team/codemirror-languageserver": "^1.16.12",
     "@replit/codemirror-emacs": "^6.1.0",
     "@replit/codemirror-vim": "^6.3.0",
-    "@surrealdb/codemirror": "^1.0.0-beta.21"
+    "@surrealdb/codemirror": "^1.0.0-beta.21",
+    "vue": "^2.7.16"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.18.4",
@@ -93,6 +96,7 @@
     "@lezer/highlight": "^1.2.1",
     "@marimo-team/codemirror-languageserver": "^1.15.25",
     "@replit/codemirror-emacs": "^6.1.0",
+    "@replit/codemirror-indentation-markers": "^6.5.3",
     "@replit/codemirror-vim": "^6.3.0",
     "@surrealdb/codemirror": "^1.0.0-beta.21",
     "ansi-to-html": "^0.7.2",
@@ -108,8 +112,8 @@
     "codemirror": "^5.63.1",
     "concurrently": "^8.2.2",
     "cross-spawn": "^7.0.6",
-    "ist": "^1.1.7",
     "happy-dom": "^20.8.9",
+    "ist": "^1.1.7",
     "lodash": "^4.18.1",
     "material-icons": "^1.13.12",
     "postgres-interval": "^4.0.0",
@@ -118,7 +122,7 @@
     "scrollyfills": "^1.0.0",
     "split.js": "^1.5.11",
     "sql-formatter": "15.7.3",
-    "sql-query-identifier": "^2.10.0",
+    "sql-query-identifier": "^3.2.0",
     "tabulator-tables": "^6.5.0",
     "tinyduration": "^3.2.4",
     "typescript": "~5.8.3",

@@ -12,12 +12,13 @@
           </div>
         </div>
         <div class="table-subheader">
-          <div class="table-title">
-            <h2>Triggers</h2>
-          </div>
-          <div class="table-actions">
-            <!-- <a class="btn btn-flat btn-icon btn-small"><i class="material-icons">add</i> Trigger</a> -->
-          </div>
+          <table-info-toolbar
+            :search-suffix="structureFilterSuffix"
+            filter-placeholder="Filter triggers"
+            @search="setStructureFilterQuery"
+            @copy="copyStructure"
+            @refresh="$emit('refresh')"
+          />
         </div>
         <div
           class="table-triggers"
@@ -40,19 +41,24 @@
 import {Tabulator, TabulatorFull} from 'tabulator-tables'
 import data_mutators from '../../mixins/data_mutators'
 import StatusBar from '../common/StatusBar.vue'
+import TableInfoToolbar from './TableInfoToolbar.vue'
 import { mapGetters, mapState } from 'vuex'
 import { SelectableCellMixin } from '@/mixins/selectableCell';
+import { StructureCopyMixin } from '@/mixins/structureCopy';
+import { StructureFilterMixin } from '@/mixins/structureFilter';
 import { copyCellMenu } from '@/lib/menu/tableMenu';
 
 
 export default {
   components: {
     StatusBar,
+    TableInfoToolbar,
   },
-  mixins: [data_mutators, SelectableCellMixin],
+  mixins: [data_mutators, SelectableCellMixin, StructureCopyMixin, StructureFilterMixin],
   props: ["table", "tabId", "active", "properties"],
   data() {
     return {
+      tabulator: null,
       tableTriggers: null
     }
   },

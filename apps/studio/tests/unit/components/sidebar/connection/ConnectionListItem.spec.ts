@@ -36,13 +36,13 @@ function buildBksMock() {
   }
 }
 
-function mountItem(opts: { config: any; isRecentList: boolean; saved?: any[] }) {
+function mountItem(opts: { config: any; isRecentList: boolean; saved?: any[]; selectedConfig?: any }) {
   return shallowMount(ConnectionListItem as any, {
     store: buildStore(opts.saved ?? []),
     propsData: {
       config: opts.config,
       isRecentList: opts.isRecentList,
-      selectedConfig: null,
+      selectedConfig: opts.selectedConfig ?? null,
       showDuplicate: false,
       pinned: false,
       privacyMode: false,
@@ -87,8 +87,8 @@ describe('ConnectionListItem displayConfig', () => {
     expect(wrapper.vm['title']).toContain('new-host.example.com')
     expect(wrapper.vm['title']).toContain('newuser')
     expect(wrapper.vm['title']).not.toContain('old-host.example.com')
-    expect(wrapper.html()).toContain('new-host.example.com')
-    expect(wrapper.html()).not.toContain('old-host.example.com')
+    expect(wrapper.html()).toContain('new-ssh.example.com')
+    expect(wrapper.html()).not.toContain('old-ssh.example.com')
   })
 
   it('falls back to the snapshot when the linked saved connection is missing', () => {
@@ -130,5 +130,39 @@ describe('ConnectionListItem displayConfig', () => {
 
     expect(wrapper.vm['displayConfig']).toBe(saved)
     expect(wrapper.vm['title']).toContain('saved-host.example.com')
+  })
+})
+
+describe('ConnectionListItem active state', () => {
+  const saved = {
+    id: 7,
+    workspaceId: -1,
+    name: 'My DB',
+    connectionType: 'postgresql',
+    host: 'db.example.com',
+    port: 5432,
+    labelColor: 'default',
+  }
+
+  it('highlights the row the connection screen is editing', () => {
+    // The connection screen edits a *copy* of the row, so this can never be
+    // an identity comparison.
+    const wrapper = mountItem({
+      config: saved,
+      isRecentList: false,
+      selectedConfig: { ...saved },
+    })
+
+    expect(wrapper.vm['classList'].active).toBe(true)
+  })
+
+  it('does not highlight a different connection', () => {
+    const wrapper = mountItem({
+      config: saved,
+      isRecentList: false,
+      selectedConfig: { ...saved, id: 8 },
+    })
+
+    expect(wrapper.vm['classList'].active).toBe(false)
   })
 })

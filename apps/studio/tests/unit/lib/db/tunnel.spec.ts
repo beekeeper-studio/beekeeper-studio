@@ -11,6 +11,22 @@ const mockSshConnectionForward = jest.fn().mockResolvedValue({});
 const mockSshConnectionCtor = jest.fn();
 let lastSshConfig: any;
 
+// A real, unencrypted ed25519 private key. Agent mode now validates identity
+// files with ssh2's parseKey (canParseKey) and skips anything unparseable, so
+// the buffer returned for an accepted key must actually parse. See tunnel.ts.
+const VALID_KEY = Buffer.from(
+  [
+    "-----BEGIN OPENSSH PRIVATE KEY-----",
+    "b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW",
+    "QyNTUxOQAAACBY86eOOX4ODJ4v/x6h/LiJ/3GyKEJt4DwXoA9o5GDhzQAAAJAlAC4fJQAu",
+    "HwAAAAtzc2gtZWQyNTUxOQAAACBY86eOOX4ODJ4v/x6h/LiJ/3GyKEJt4DwXoA9o5GDhzQ",
+    "AAAEBWkR2A+4+w8egvJcxeXHXcrlpXwq2/zowS4xn4wmItt1jzp445fg4Mni//HqH8uIn/",
+    "cbIoQm3gPBegD2jkYOHNAAAAC3R1bm5lbC10ZXN0AQI=",
+    "-----END OPENSSH PRIVATE KEY-----",
+    "",
+  ].join("\n")
+);
+
 jest.mock("fs", () => {
   const actual = jest.requireActual("fs");
   return { ...actual, readFileSync: (...args: any[]) => mockReadFileSync(...args) };
@@ -141,6 +157,10 @@ describe("connectTunnel SSH agent handling (#4193)", () => {
     fs.writeFileSync(goodKey, "PRIVATE KEY DATA");
     const badKey = path.join(dir, "missing_key");
 
+    // Agent mode validates each candidate with parseKey before using it, so the
+    // accepted key must be a real, parseable key.
+    mockReadFileSync.mockReturnValue(VALID_KEY);
+
     // connection-provider copies the first IdentityFile into privateKey and
     // passes the full ordered list as identityFiles.
     const ssh = buildSsh({
@@ -152,11 +172,12 @@ describe("connectTunnel SSH agent handling (#4193)", () => {
 
     await connectTunnel(buildConfig(ssh));
 
-    // The missing entry is skipped; only the existing key is read.
-    expect(mockReadFileSync).toHaveBeenCalledTimes(1);
-    expect(mockReadFileSync.mock.calls[0][0]).toContain(goodKey);
-    expect(mockReadFileSync.mock.calls[0][0]).not.toContain("missing_key");
-    expect(lastSshConfig.privateKey).toEqual(Buffer.from("KEY"));
+    // The missing entry is skipped entirely (never read). The existing key is
+    // read twice: once by canParseKey to validate it, once to load its bytes.
+    expect(mockReadFileSync).toHaveBeenCalledTimes(2);
+    expect(mockReadFileSync.mock.calls.every((c) => String(c[0]).includes(goodKey))).toBe(true);
+    expect(mockReadFileSync.mock.calls.every((c) => !String(c[0]).includes("missing_key"))).toBe(true);
+    expect(lastSshConfig.privateKey).toEqual(VALID_KEY);
     expect(lastSshConfig.authHandler).toEqual(["none", "agent", "publickey"]);
 
     fs.rmSync(dir, { recursive: true, force: true });

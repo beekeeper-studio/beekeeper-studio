@@ -31,7 +31,8 @@ type PluginResponseData = {
   };
 }[keyof RequestMap];
 
-type PluginNotificationData = {
+// This should probably be moved to the plugin packge
+export type PluginNotificationData = {
   [K in keyof NotificationMap]: {
     name: K;
     args: NotificationMap[K]["args"];

@@ -1,43 +1,74 @@
 import { AppEvent } from "@/common/AppEvent"
 import Vue from 'vue'
-import ContextMenu from '@/components/common/ContextMenu.vue'
+import { openMenu, MenuItem, DividerItem } from "@beekeeperstudio/ui-kit"
 import { IConnection } from "@/common/interfaces/IConnection"
 import { isBksInternalColumn } from "@/common/utils"
 import store from '@/store'
 import TimeAgo from "javascript-time-ago"
 import { pluralize } from "@/vendor/pluralize"
 
-export interface ContextOption {
+export type ContextOption = ContextItem | DividerItem;
+
+export type ContextItem = {
   name: string,
   slug: string
-  type?: 'divider'
   handler: (...any) => void
   class?: string | ((...args: any[]) => string)
   shortcut?: string
-  ultimate?: boolean
   title?: string | ((...args: any[]) => string)
-  /** If true, `disabled` class will be added to the item, and the `handler`
-   * will not be called. */
+  /** Material icon name rendered on the trailing edge of the item */
+  icon?: string
+  /** Disable the item. The handler will not fire and the item appears greyed out. */
   disabled?: boolean
+  /** Keep the menu open after this item is clicked */
+  keepOpen?: boolean
+  /** Child items. When present, this item opens a submenu. */
+  items?: ContextOption[]
 }
 
 interface MenuProps {
   /** The id of the menu. Not to be confused with the `elementId`. */
   id?: string
   options: ContextOption[],
+  /** A CSS selector for the element the menu is attached to. @default body */
   elementId?: string
   item: any,
   event: Event
 }
 
+function isDivider(option: ContextOption): option is DividerItem {
+  return "type" in option && option.type === "divider"
+}
+
+/** Convert a studio ContextOption into a UI Kit MenuItem, preserving the legacy
+ * `handler({ item, option, event })` call convention. */
+export function toMenuItem(option: ContextOption): MenuItem {
+  if (isDivider(option)) {
+    return option
+  }
+
+  return {
+    id: option.slug,
+    label: option.name,
+    class: option.class,
+    shortcut: option.shortcut,
+    title: option.title,
+    icon: option.icon,
+    disabled: option.disabled,
+    keepOpen: option.keepOpen,
+    items: option.items?.map(toMenuItem),
+    handler: (event, item) => option.handler({ item, option, event }),
+  }
+}
+
 export const BeekeeperPlugin = {
-  timeAgo(date: Date) {
+  timeAgo(date: Date, style?: string) {
     if (date > new Date('2888-01-01')) {
       return 'forever'
     }
     const ta = new TimeAgo('en-US')
 
-    return ta.format(date)
+    return ta.format(date, style)
 
   },
   closeTab(id?: string) {
@@ -53,16 +84,15 @@ export const BeekeeperPlugin = {
     }
   },
   openMenu(args: MenuProps): void {
-    const ContextComponent = Vue.extend(ContextMenu)
-    const cMenu = new ContextComponent({
-      store,
-      propsData: args
+    const getExtraPopupMenu = store.getters["popupMenu/getExtraPopupMenu"];
+    const extra: ContextOption[] = getExtraPopupMenu(args.id) ?? [];
+    const options = [...args.options, ...extra].map(toMenuItem)
+    openMenu({
+      options,
+      item: args.item,
+      event: args.event,
+      targetElement: args.elementId,
     })
-    cMenu.$on('close', () => {
-      cMenu.$off()
-      cMenu.$destroy()
-    })
-    cMenu.$mount()
   },
   buildConnectionName(config: IConnection) {
     return config.name || this.simpleConnectionString(config)

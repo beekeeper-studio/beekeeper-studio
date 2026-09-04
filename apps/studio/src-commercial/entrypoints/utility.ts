@@ -37,10 +37,10 @@ import {
   ConfigurationModule,
   BundledPluginModule,
 } from '@commercial/backend/plugin-system/modules';
-import bksConfig from '@/common/bksConfig';
 import { PluginErrorCode, PluginSystemErrorCode } from '@/lib/errors';
 
 import * as sms from 'source-map-support'
+import { WorkspaceHandlers } from '@/handlers/workspaceHandlers';
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -53,7 +53,7 @@ const pluginManager = new PluginManager({
     pluginsDirectory: platformInfo.pluginsDirectory,
   }),
 });
-pluginManager.registerModule(ConfigurationModule.with({ config: bksConfig }));
+pluginManager.registerModule(ConfigurationModule.with({ config: BksConfig }));
 pluginManager.registerModule(BundledPluginModule);
 
 const driverDepManager = new DriverDepManager({
@@ -73,6 +73,8 @@ interface Reply {
   error?: string
   errorName?: "PluginSystemError" | "PluginError" | "Error"
   errorCode?: PluginSystemErrorCode | PluginErrorCode
+  errorDetail?: string
+  errorHint?: string
   stack?: string
 }
 
@@ -95,6 +97,7 @@ export const handlers: Handlers = {
   ...TabHistoryHandlers,
   ...LockHandlers,
   ...FormatterPresetHandlers,
+  ...WorkspaceHandlers,
   ...(platformInfo.isDevelopment && DevHandlers),
 };
 
@@ -160,6 +163,8 @@ async function runHandler(id: string, name: string, args: any) {
         replyArgs.error = e?.message ?? e;
         replyArgs.errorName = e?.name;
         replyArgs.errorCode = e?.code;
+        replyArgs.errorDetail = e?.detail
+        replyArgs.errorHint = e?.hint
         log.error("HANDLER: ERROR", e)
       })
       .finally(() => {

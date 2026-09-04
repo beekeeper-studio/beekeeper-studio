@@ -27,10 +27,11 @@ The Beekeeper Studio Plugin API is accessible through the `@beekeeperstudio/plug
 
 ### setDebugComms
 
-Enable debug logging to see all communication between your plugin and Beekeeper Studio. This is helpful when developing plugins to understand what messages are being sent and received.
+Enable debug logging to see all communication between your plugin and Beekeeper Studio. This is helpful when developing plugins to understand what messages are being sent and received. You can see the logs in the developer tools (Beekeeper Studio / Help / Show Developer Tools / console)
 
 **Usage:**
 ```typescript
+import {setDebugComms} from "@beekeeperstudio/plugin";
 setDebugComms(true);
 ```
 

@@ -1,14 +1,40 @@
 import _ from "lodash";
 
 export type IMapping = {
-  mappingMode: string;
   lhs: string;
   rhs: string;
-  mode: string;
+  /** 'normal', 'insert' or 'visual'. Omitted means every mode. */
+  mode?: string;
+  /** `nnoremap` rather than `nmap`. */
+  noremap?: boolean;
 };
 
+export type IUnmapping = {
+  type: "unmap";
+  lhs: string;
+  mode?: string;
+};
+
+export type IMapClear = {
+  type: "mapclear";
+  mode?: string;
+};
+
+export type IVimOption = {
+  type: "set";
+  name: string;
+  value: string | boolean;
+};
+
+/** A bare mapping (no `type`) is a `map`, keeping the older prop shape valid. */
+export type VimDirective =
+  | (IMapping & { type?: "map" })
+  | IUnmapping
+  | IMapClear
+  | IVimOption;
+
 export interface Config {
-  exCommands?: { name: string, prefix: string, handler: () => void }[];
+  exCommands?: { name: string, prefix: string, handler: (...args: any[]) => void }[];
 }
 
 export function applyConfig(codeMirrorVimInstance: any, config: Config) {
@@ -20,13 +46,45 @@ export function applyConfig(codeMirrorVimInstance: any, config: Config) {
   }
 }
 
-export function setKeybindings(codeMirrorVimInstance: any, mappings: IMapping[]): void {
-  for (let j = 0; j < mappings.length; j++) {
-    codeMirrorVimInstance.map(
-      mappings[j].lhs,
-      mappings[j].rhs,
-      mappings[j].mode
-    );
+// codemirror distinguishes "every mode" from an explicit one by argument count.
+function modeArgs(mode?: string): string[] {
+  return mode ? [mode] : [];
+}
+
+function applyDirective(vim: any, directive: VimDirective): void {
+  const type = ("type" in directive && directive.type) || "map";
+
+  switch (type) {
+    case "map": {
+      const mapping = directive as IMapping;
+      const fn = mapping.noremap ? vim.noremap : vim.map;
+      fn.call(vim, mapping.lhs, mapping.rhs, ...modeArgs(mapping.mode));
+      break;
+    }
+    case "unmap": {
+      const unmapping = directive as IUnmapping;
+      vim.unmap(unmapping.lhs, ...modeArgs(unmapping.mode));
+      break;
+    }
+    case "mapclear":
+      vim.mapclear(...modeArgs((directive as IMapClear).mode));
+      break;
+    case "set": {
+      const option = directive as IVimOption;
+      vim.setOption(option.name, option.value);
+      break;
+    }
+  }
+}
+
+export function setKeybindings(codeMirrorVimInstance: any, directives: VimDirective[]): void {
+  for (const directive of directives) {
+    try {
+      applyDirective(codeMirrorVimInstance, directive);
+    } catch (e) {
+      // One bad directive must not take the rest of the vimrc down with it.
+      console.error("Could not apply vim directive", directive, e);
+    }
   }
 }
 
@@ -84,7 +142,6 @@ export class Register {
 
   toString() {
     return this.clipboard.readText();
-    // return this.keyBuffer.join('');
   }
 
   private createInsertModeChanges(c: any) {
@@ -104,28 +161,62 @@ export class Register {
   }
 }
 
-export function extendVimOnCodeMirror(codeMirrorVimInstance: any, vimConfig?: Config, vimKeymaps: IMapping[] = [], clipboard?: Clipboard) {
+// Mappings live on the global Vim singleton and stack up, so only touch it
+// when the config actually changes.
+let appliedKeymapSignature: string | null = null;
+let appliedMappings: { lhs: string; mode?: string }[] = [];
+
+function applyKeymaps(vim: any, directives: VimDirective[]): void {
+  const signature = JSON.stringify(directives);
+  if (signature === appliedKeymapSignature) return;
+
+  // Only remove mappings added here. Codemirror spots user mappings by
+  // keymap length, so removing a built-in breaks mapclear and noremap.
+  appliedMappings.forEach(({ lhs, mode }) => {
+    try {
+      vim.unmap(lhs, ...modeArgs(mode));
+    } catch (e) {
+      console.error("Could not remove vim mapping", lhs, e);
+    }
+  });
+
+  setKeybindings(vim, directives);
+
+  appliedMappings = directives
+    .filter((directive): directive is IMapping => !("type" in directive && directive.type))
+    .map(({ lhs, mode }) => ({ lhs, mode }));
+
+  appliedKeymapSignature = signature;
+}
+
+export function extendVimOnCodeMirror(
+  codeMirrorVimInstance: any,
+  vimConfig?: Config,
+  vimKeymaps: VimDirective[] = [],
+  clipboard?: Clipboard
+) {
   if (!codeMirrorVimInstance) {
     console.error("Could not find code mirror vim instance");
+    return;
+  }
+
+  if (vimConfig) {
+    applyConfig(codeMirrorVimInstance, vimConfig);
+  }
+
+  if (_.isArray(vimKeymaps)) {
+    applyKeymaps(codeMirrorVimInstance, vimKeymaps);
   } else {
-    if (vimConfig) {
-      applyConfig(codeMirrorVimInstance, vimConfig);
-    }
+    console.error("vimKeymaps must be an array");
+  }
 
-    if (_.isArray(vimKeymaps)) {
-      setKeybindings(codeMirrorVimInstance, vimKeymaps);
-    } else {
-      console.error("vimKeymaps must be an array");
-    }
-
-    // cm throws if this is already defined, we don't need to handle that case
+  // The * register is global and sticks to whoever defines it first, so wait
+  // for an editor that actually has a clipboard.
+  if (clipboard) {
     try {
-      codeMirrorVimInstance.defineRegister(
-        "*",
-        new Register(clipboard)
-      );
+      codeMirrorVimInstance.defineRegister("*", new Register(clipboard));
     } catch (e) {
-      // nothing
+      // Already defined.
     }
   }
 }

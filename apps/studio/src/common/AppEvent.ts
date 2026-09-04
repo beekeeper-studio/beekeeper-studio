@@ -49,6 +49,8 @@ export enum AppEvent {
   backupDatabase = 'backupDatabase',
   restoreDatabase = 'restoreDatabase',
   upgradeModal = 'upgradeModal',
+  /** Triggered when a lifetime (expired subscription) license tries to use cloud workspaces */
+  cloudWorkspacesBlocked = 'cloudWorkspacesBlocked',
   toggleExpandTableList = 'toggleExpandTableList',
   togglePinTableList = 'togglePinTableList',
   dropzoneEnter = 'dropzoneEnter',
@@ -94,7 +96,7 @@ export enum AppEvent {
   openShareModal = 'openShareModal',
   /** Paste clipboard contents as new rows in the active table's Data tab. */
   pasteAsNewRows = 'pasteAsNewRows',
-  /** Open a modal to move a file to a folder
+  /** Open a modal to move a connection or a saved query to a folder
    * @example
    * this.trigger(AppEvent.openMoveFileModal, {
    *   type: "connection",
@@ -102,6 +104,18 @@ export enum AppEvent {
    * });
    **/
   openMoveFileModal = 'openMoveFileModal',
+  /** Open a modal to move a folder to another folder
+   * @example
+   * this.trigger(AppEvent.openMoveFolderModal, {
+   *   type: "connectionFolder",
+   *   value: item, // the folder
+   * });
+   **/
+  openMoveFolderModal = 'openMoveFolderModal',
+  /** Vim's `:w`. Broadcast, so only the active tab should act on it. */
+  vimWrite = 'vimWrite',
+  /** Vim's `:x` and `:wq`. Broadcast, so only the active tab should act. */
+  vimWriteQuit = 'vimWriteQuit',
 }
 
 export type OpenShareModalOptions =  {

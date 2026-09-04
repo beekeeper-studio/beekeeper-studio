@@ -1,5 +1,5 @@
 <template>
-  <base-modal name="share-modal" @opened="handleOpened">
+  <base-modal name="share-modal" @opened="handleOpened" :loading="initiallyLoadingGrants">
     <template #title>
       <div>
         <div class="modal-title">
@@ -21,6 +21,8 @@
       </div>
     </template>
     <template v-if="subject">
+      <error-alert :error="error" />
+
       <div class="member-access">
         <h3>Who has access</h3>
 
@@ -40,7 +42,6 @@
               <div class="hint" v-else-if="teamPermission === 'no-access'">
                 Only team members that are listed below have access
               </div>
-              <div class="hint error" v-if="teamPermissionError" v-text="teamPermissionError.userMessage" />
             </div>
             <div class="access">
               <loading-spinner v-if="loadingTeamPermission" />
@@ -106,16 +107,6 @@
               </template>
             </div>
           </li>
-          <li v-if="initiallyLoadingGrants" class="access-grant skeleton">
-            <div class="icon" />
-            <div class="label" />
-            <div class="access" />
-          </li>
-          <li v-if="initiallyLoadingGrants" class="access-grant skeleton">
-            <div class="icon" />
-            <div class="label" />
-            <div class="access" />
-          </li>
         </ul>
       </div>
 
@@ -168,7 +159,7 @@ import ISavedQuery from "@/common/interfaces/ISavedQuery";
 import { ICloudSavedConnection } from "@/common/interfaces/IConnection";
 import { IFolder } from "@/common/interfaces/IQueryFolder";
 import rawLog from "@bksLogger";
-import { CloudError } from "@/lib/cloud/ClientHelpers";
+import ErrorAlert from "@/components/common/ErrorAlert.vue";
 
 type Permission = "view" | "edit" | "no-access";
 type AccessGrantLike = Pick<IAccessGrant, "canRead" | "canWrite">;
@@ -180,7 +171,7 @@ type Subject =
 const log = rawLog.scope("ShareModal.vue");
 
 export default Vue.extend({
-  components: { BaseModal, MultiSelect, LoadingSpinner },
+  components: { BaseModal, MultiSelect, LoadingSpinner, ErrorAlert },
   data() {
     return {
       subjectId: null,
@@ -195,7 +186,7 @@ export default Vue.extend({
       loadingGrants: [] as number[], // the access grant ids
       loadingTeamPermission: false,
       savingGrants: false,
-      teamPermissionError: null as CloudError | null,
+      error: null as Error | null,
     };
   },
   computed: {
@@ -289,7 +280,7 @@ export default Vue.extend({
       this.loadingGrants = [];
       this.loadingTeamPermission = false;
       this.savingGrants = false;
-      this.teamPermissionError = null;
+      this.error = null;
     },
     async open(options: OpenShareModalOptions) {
       if (!this.isCloud) {
@@ -308,10 +299,11 @@ export default Vue.extend({
       this.initiallyLoadingGrants = true;
       await this.$nextTick();
       try {
+        this.error = null;
         await this.loadAccessGrants(this.subjectId);
       } catch (e) {
         log.error(e);
-        this.$noty.error(e.userMessage);
+        this.error = e;
       } finally {
         this.initiallyLoadingGrants = false;
       }
@@ -359,10 +351,11 @@ export default Vue.extend({
       this.loadingGrants.push(grantId);
       await this.$nextTick();
       try {
+        this.error = null;
         await fn();
       } catch (e) {
         log.error(e);
-        this.$noty.error(e);
+        this.error = e;
       } finally {
         this.loadingGrants = this.loadingGrants.filter((id) => id !== grantId);
       }
@@ -371,7 +364,7 @@ export default Vue.extend({
       this.loadingTeamPermission = true;
       await this.$nextTick();
       try {
-        this.teamPermissionError = null;
+        this.error = null;
         const { canRead, canWrite } = this.permissionToGrant(permission);
         await this.$store.dispatch(`${this.module}/save`, {
           id: this.subject.id,
@@ -379,7 +372,7 @@ export default Vue.extend({
           teamWrite: canWrite,
         });
       } catch (e) {
-        this.teamPermissionError = e;
+        this.error = e;
         log.error(e);
       } finally {
         this.loadingTeamPermission = false;
@@ -395,6 +388,7 @@ export default Vue.extend({
       const { canRead, canWrite } = this.permissionToGrant(this.permission);
 
       try {
+        this.error = null;
         this.savingGrants = true;
         await this.saveAccessGrants({
           subjectId: this.subjectId,
@@ -406,7 +400,7 @@ export default Vue.extend({
         this.selectedMembers = [];
       } catch (e) {
         log.error(e);
-        this.$noty.error(e);
+        this.error = e;
       } finally {
         this.savingGrants = false;
       }
@@ -477,6 +471,11 @@ export default Vue.extend({
   margin-bottom: 0.25rem;
 }
 
+.alert.error-alert {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
 h3 {
   font-size: 0.831rem;
   text-transform: uppercase;
@@ -500,22 +499,6 @@ h3 {
 
   &.highlight {
     animation: highlightFadeOut 2s ease-out forwards;
-  }
-
-  &.skeleton {
-    .label {
-      background-color: rgb(from var(--theme-base) r g b / 10%);
-      width: 20ch;
-      height: 1rem;
-      border-radius: 4px;
-    }
-
-    .access {
-      background-color: rgb(from var(--theme-base) r g b / 10%);
-      width: 5ch;
-      height: 1rem;
-      border-radius: 4px;
-    }
   }
 
   .icon {
@@ -546,10 +529,6 @@ h3 {
     font-size: 0.831rem;
     margin-top: 0.1rem;
     color: var(--text-light);
-
-    &.error {
-      color: var(--brand-danger);
-    }
   }
 
   select {

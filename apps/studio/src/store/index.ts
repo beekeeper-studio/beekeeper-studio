@@ -33,12 +33,14 @@ import ImportStoreModule from './modules/imports/ImportStoreModule'
 import { BackupModule } from './modules/backup/BackupModule'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { ConnectionTypes, SnowflakeAuthType, SurrealAuthType } from '@/lib/db/types'
-import { SidebarModule } from './modules/SidebarModule'
+import { SidebarModule, State as SidebarState } from './modules/SidebarModule'
+import { TreeExpansionState } from './modules/sidebar/TreeExpansionModule'
 import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
 import { PopupMenuModule } from './modules/PopupMenuModule'
 import { WebPluginManagerStatus } from '@/services/plugin'
 import { MenuBarModule } from './modules/MenuBarModule'
 import { PluginsModule, PluginsState } from './modules/plugins'
+import { VimStoreModule } from './modules/VimStoreModule'
 import { pluralize } from '@/vendor/pluralize'
 
 
@@ -126,6 +128,9 @@ export interface State {
 
   /** Set by VueX module */
   plugins?: PluginsState,
+
+  /** Set by VueX module. */
+  sidebar?: SidebarState
 }
 
 Vue.use(Vuex)
@@ -150,6 +155,7 @@ const store = new Vuex.Store<State>({
     popupMenu: PopupMenuModule,
     menuBar: MenuBarModule,
     plugins: PluginsModule,
+    vim: VimStoreModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),
@@ -303,6 +309,12 @@ const store = new Vuex.Store<State>({
     },
     isTrial(_state, _getters, _rootState, rootGetters) {
       return rootGetters['licenses/isTrial']
+    },
+    isLifetime(_state, _getters, _rootState, rootGetters) {
+      return rootGetters['licenses/isLifetime']
+    },
+    canAccessCloudWorkspaces(_state, _getters, _rootState, rootGetters) {
+      return rootGetters['licenses/canAccessCloudWorkspaces']
     },
     canCreateFolders(_state, getters) {
       return getters.isUltimate || getters.isCloud;
@@ -542,8 +554,9 @@ const store = new Vuex.Store<State>({
         context.commit('connected', true);
         context.commit('supportedFeatures', supportedFeatures);
         context.commit('versionString', versionString);
-        config = await context.dispatch('data/usedconnections/recordUsed', resolvedConfig)
-        context.commit('newConnection', config)
+        // conn/create recorded the use; pick up the new/updated recent row
+        await context.dispatch('data/usedconnections/load')
+        context.commit('newConnection', resolvedConfig)
 
         if (context.state.usedConfig.connectionType === 'surrealdb' &&
           context.state.usedConfig.surrealDbOptions?.authType === SurrealAuthType.Root) {
@@ -552,7 +565,7 @@ const store = new Vuex.Store<State>({
         await context.dispatch('updateDatabaseList')
         await context.dispatch('updateTables')
         await context.dispatch('updateRoutines')
-        context.dispatch('updateWindowTitle', config)
+        context.dispatch('updateWindowTitle', resolvedConfig)
 
         await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id })
 
@@ -729,11 +742,72 @@ const store = new Vuex.Store<State>({
     async tabActive(context, value: CoreTab) {
       context.commit('tabActive', value)
     },
+    async initializeConnectionTree(context) {
+      if (context.getters.isCloud) {
+        await Promise.all([
+          context.dispatch('data/connectionFolders/refresh', []),
+          context.dispatch('data/connections/refresh', []),
+        ]);
+
+        const folderIds = context.state['data/connectionFolders'].items
+          .filter((folder) => folder.default)
+          .map((folder) => folder.id)
+        // the default folders start out expanded
+        context.commit('sidebar/connections/expandedIds', folderIds)
+
+        await Promise.all([
+          context.dispatch('data/connectionFolders/loadByParentIds', folderIds),
+          context.dispatch('data/connections/loadByParentIds', folderIds),
+        ])
+      } else {
+        context.commit('sidebar/connections/expandedIds', [])
+        await Promise.all([
+          context.dispatch('data/connectionFolders/load'),
+          context.dispatch('data/connections/load'),
+        ])
+      }
+    },
+    async initializeQueryTree(context) {
+      if (context.getters.isCloud) {
+        await Promise.all([
+          context.dispatch('data/queryFolders/refresh', []),
+          context.dispatch('data/queries/refresh', []),
+        ]);
+
+        const expandedFolderIds = context.state['data/queryFolders'].items
+          .filter((folder) => folder.default)
+          .map((folder) => folder.id)
+        // the default folders start out expanded
+        context.commit('sidebar/queries/expandedIds', expandedFolderIds)
+
+        await Promise.all([
+          context.dispatch('data/queryFolders/loadByParentIds', expandedFolderIds),
+          context.dispatch('data/queries/loadByParentIds', expandedFolderIds),
+        ])
+      } else {
+        context.commit('sidebar/queries/expandedIds', [])
+        await Promise.all([
+          context.dispatch('data/queryFolders/load'),
+          context.dispatch('data/queries/load'),
+        ])
+      }
+    },
     async refreshConnections(context) {
-      context.dispatch('data/connectionFolders/load')
-      context.dispatch('data/connections/load')
+      const expandedIds = context.state.sidebar.connections.expandedIds
+      await Promise.all([
+        context.dispatch('data/connectionFolders/refresh', expandedIds),
+        context.dispatch('data/connections/refresh', expandedIds),
+      ])
+
       await context.dispatch('pinnedConnections/loadPins');
       await context.dispatch('pinnedConnections/reorder');
+    },
+    async refreshQueries(context) {
+      const expandedIds = context.state.sidebar.queries.expandedIds
+      await Promise.all([
+        context.dispatch('data/queryFolders/refresh', expandedIds),
+        context.dispatch('data/queries/refresh', expandedIds),
+      ])
     },
     async initRootStates(context) {
       await context.dispatch('fetchUsername')
