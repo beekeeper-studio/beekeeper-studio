@@ -78,7 +78,7 @@
     outline-style: solid;
     outline-offset: 0.14rem;
     outline-width: 2px;
-    outline-color: $theme-base;
+    outline-color: var(--theme-base);
   }
 
   &.btn-icon {

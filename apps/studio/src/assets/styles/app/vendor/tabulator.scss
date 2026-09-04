@@ -764,22 +764,15 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
   a {
     display: inline-flex;
     align-items: center;
-    .material-icons {
-      color: rgba($statusbar-text, 0.68);
-      &:hover {
-        color: $statusbar-text;
-      }
-    }
   }
   input[type="number"] {
     font-weight: bold;
-    color: $statusbar-text!important;
-    border-color: rgba($statusbar-text, 0.2);
+    border: var(--paginator-border);
     padding: 0 ($gutter-h * 1.5);
     width: 60px;
     text-align: center;
     &:hover, &:focus {
-      border-color: rgba($statusbar-text, 0.25);
+      border: var(--paginator-border-hover);
     }
   }
 }

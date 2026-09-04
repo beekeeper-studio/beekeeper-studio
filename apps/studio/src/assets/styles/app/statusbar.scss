@@ -1,10 +1,10 @@
-@use "sass:color";
 $button-height:     $statusbar-height * 0.72;
 
 .global-status-bar {
   display: flex;
   align-items: center;
-  color: rgba($statusbar-text, 0.87);
+  color: var(--statusbar-fg);
+  background-color: var(--statusbar-bg);
   min-height: $statusbar-height;
   height: $statusbar-height;
   line-height: $statusbar-height;
@@ -45,7 +45,7 @@ $button-height:     $statusbar-height * 0.72;
     }
   }
   a {
-    color: $statusbar-text;
+    color: var(--statusbar-fg);
   }
   span.row {
     .material-icons {
@@ -53,15 +53,6 @@ $button-height:     $statusbar-height * 0.72;
       margin-right: $gutter-h * 0.5;
     }
   }
-  &.tabulator-footer {
-    .tabulator-page {
-      color: $statusbar-text;
-      &.active {
-        background: rgba($statusbar-text, 0.15);
-      }
-    }
-  }
-
   // No Data
   // -----------------------
   .empty {
@@ -76,9 +67,6 @@ $button-height:     $statusbar-height * 0.72;
 
   .connection-button {
     height: 100%;
-    &.default {
-      color: $theme-base;
-    }
     > .btn{
       padding: 0;
       margin: 0;
@@ -100,15 +88,10 @@ $button-height:     $statusbar-height * 0.72;
   .btn {
     padding: 0 0.6rem;
     min-width: min-content;
-    background: transparent;
-    color: $statusbar-text;
     height: $button-height;
     line-height: $button-height;
     margin: 0 0.15rem;
     // margin-top: -1px;
-    &:hover[expanded] {
-      background: rgba($statusbar-text, 0.15);
-    }
     .material-icons {
       font-size: 16px;
     }
@@ -116,14 +99,6 @@ $button-height:     $statusbar-height * 0.72;
       padding: 0 0.35rem;
       .material-icons {
         width: 13px;
-      }
-    }
-    &.btn-flat {
-      box-shadow: inset 0 0 0 1px rgba($statusbar-text, 0.025);
-      background: rgba($statusbar-text, 0.15);
-      transition: background 0.2s ease-in-out;
-      &:hover {
-        background: rgba($statusbar-text, 0.2);
       }
     }
     &.btn-icon {
@@ -141,15 +116,10 @@ $button-height:     $statusbar-height * 0.72;
         background: transparent;
         line-height: 1;
         padding-left: 0;
-        color: $statusbar-text-default;
       }
     }
     &.btn-primary {
-      background: rgba($statusbar-text, 0.35);
-      box-shadow: inset 0 0 0 1px rgba($statusbar-text, 0.025);
-      color: $statusbar-text-default;
       &.deactivated {
-        background-color: color.adjust(rgba($statusbar-text, 0.35), $lightness: -10%);
         cursor: not-allowed;
       }
     }
@@ -163,30 +133,13 @@ $button-height:     $statusbar-height * 0.72;
 
   .download-results,
   .pending-changes {
-    background: rgba($statusbar-text, 0.82);
-    box-shadow: inset 0 0 0 1px rgba(white, 0.025);
     border-radius: $btn-border-radius;
     margin: 0 0.15rem;
     overflow: hidden;
     > .btn {
-      background: transparent;
-      color: $statusbar-text-default;
-      // color: $theme-bg;
       border-radius: 0!important;
       margin-top: 0;
       margin: 0;
-      &:hover, &:hover[expanded] {
-        background: rgba($statusbar-text, 0.05);
-      }
-      &[menu] {
-        border-left: 1px solid rgba(white, 0.35);
-        &:hover {
-          border-left: 1px solid rgba(white, 0.35);
-        }
-      }
-      .material-icons {
-        color: $statusbar-text-default;
-      }
     }
   }
   .download-results {
@@ -217,7 +170,6 @@ $button-height:     $statusbar-height * 0.72;
       line-height: 16px;
       margin-left: 0;
       text-align: left;
-      color: $statusbar-text-default;
     }
     .material-icons {
       font-size: 14px;
@@ -235,27 +187,16 @@ $button-height:     $statusbar-height * 0.72;
     margin-left: -$gutter-h * 0.5;
   }
   .select-wrap {
-    box-shadow: inset 0 0 0 1px rgba($statusbar-text, 0.025);
-    background: rgba($statusbar-text, 0.1);
-    color: $statusbar-text;
     height: $button-height;
     border-radius: $btn-border-radius;
     transition: background 0.2s ease-in-out;
-    &:hover {
-      background: rgba($statusbar-text, 0.15);
-    }
     select {
-      color: $statusbar-text;
       height: $button-height;
       line-height: $button-height;
       -webkit-appearance: none!important;
       appearance: none!important;
       font-weight: 600;
       font-size: 12px;
-      background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(0,0,0, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
-      option {
-        color: $text;
-      }
     }
   }
 
@@ -276,12 +217,8 @@ $button-height:     $statusbar-height * 0.72;
       width: 16px;
     }
     &.error {
-      color: $statusbar-text;
       font-size: 0.75rem;
       padding-right: 2rem;
-      i {
-        color: $statusbar-text;
-      }
       > span {
         text-overflow: ellipsis;
         overflow: hidden;
@@ -328,7 +265,8 @@ $button-height:     $statusbar-height * 0.72;
     font-size: 0.85rem;
   }
   .connection-button {
-    background-color: rgba($theme-base, 0.1);
+    color: var(--connection-button-fg);
+    background-color: var(--connection-button-bg);
     .material-icons {
       font-size: 20px;
       text-align: center;
@@ -350,26 +288,6 @@ $button-height:     $statusbar-height * 0.72;
       min-width: fit-content;
       background: transparent;
       color: inherit;
-    }
-  }
-
-  // Scope issue with modals -- needs to portal to top level
-  .save-actions {
-    .btn-flat {
-      color: $theme-base;
-      background: rgba($theme-base, 0.06);
-      &:hover, &:focus {
-        background: rgba($theme-base, 0.12);
-      }
-    }
-    .btn-primary.save {
-      background: $theme-base;
-      color: rgba($theme-bg, 0.87);
-      transition: background 0.15s ease-in-out;
-      &:hover, &:focus {
-        background: rgba($theme-base, 0.87);
-        color: $theme-bg;
-      }
     }
   }
 

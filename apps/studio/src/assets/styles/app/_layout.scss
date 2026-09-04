@@ -141,17 +141,19 @@ x-buttons > x-button[menu].btn {
   }
 }
 .btn-info {
-  background: $brand-info;
-  color: rgba(black, 0.87);
+  background: var(--btn-info-bg);
+  color: var(--btn-info-fg);
   &:hover, &:focus {
-    background: color.adjust($brand-info, $lightness: 8%);
-    color: rgba(black, 0.87);
+    background: var(--btn-info-bg-hover);
+    color: var(--btn-info-fg-hover);
   }
 }
 .btn-danger {
+  color: var(--btn-danger-fg);
+  background: var(--btn-danger-bg);
   &:hover {
-    background: $brand-danger;
-    color: white;
+    background: var(--btn-danger-bg-hover);
+    color: var(--btn-danger-fg-hover);
   }
 }
 .btn-large {
@@ -195,21 +197,21 @@ x-buttons > x-button.btn-rounded {
   @include layout-center;
   transition: background 0.15s ease-in-out;
   &:hover, &:focus {
-    background: rgba($theme-base, 0.1);
+    background: var(--btn-flat-bg-hover);
   }
   .material-icons, .material-icons-outlined {
     font-size: 20px;
-    color: $text-dark;
+    color: var(--text-dark);
   }
   &.btn-primary {
-    background: $theme-primary;
+    background: var(--btn-brand-bg);
     .material-icons {
-      color: rgba(black, 0.87);
+      color: var(--btn-brand-fg);
     }
     &:hover, &:focus {
-      background: color.adjust($theme-primary, $lightness: -8%);
+      background: var(--btn-brand-bg-hover);
       .material-icons {
-        color: rgba(black, 0.87);
+        color: var(--btn-brand-fg-hover);
       }
     }
   }
@@ -233,7 +235,7 @@ x-buttons > x-button.btn-rounded {
   }
   &.btn-primary {
     &:hover, &:focus {
-      background: $theme-base!important;
+      background: var(--btn-primary-bg)!important;
     }
   }
   &.btn-flat {
