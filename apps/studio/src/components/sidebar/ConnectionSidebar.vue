@@ -340,7 +340,7 @@
           </div>
         </div>
       </div>
-      <div
+      <!-- <div
         class="toolbar btn-group row flex-right"
         v-show="bulkSelectionActive"
       >
@@ -353,7 +353,7 @@
           :title="removeTitle"
           @click="removeCheckedConnections"
         >Remove</a>
-      </div>
+      </div> -->
     </div>
   </div>
 </template>
