@@ -526,12 +526,6 @@ export default {
       }
       this.cloudSelectionAnchorId = null
     },
-    toggleChecked(item) {
-      this.setSelectedIds(
-        toggleSelectedId(this.selectedIds, this.itemNodeId(item))
-      )
-      this.cloudSelectionAnchorId = this.itemNodeId(item)
-    },
     select(item, event) {
       const nodeId = this.itemNodeId(item)
       if (event?.shiftKey) {
@@ -553,10 +547,24 @@ export default {
       // Checkbox clicks and cmd/ctrl-clicks toggle bulk selection. A plain
       // row click updates the range-select anchor and marks the row active.
       if (event?.metaKey || event?.ctrlKey || event?.target?.type === 'checkbox') {
-        this.toggleChecked(item)
+        let base = this.selectedIds
+        if (
+          base.length === 0 &&
+          this.cloudSelectionAnchorId &&
+          this.cloudSelectionAnchorId !== nodeId
+        ) {
+          // Plain-click set an anchor without entering bulk mode; include it
+          // when the next cmd/ctrl-click starts multi-select.
+          base = [this.cloudSelectionAnchorId]
+        }
+        this.setSelectedIds(toggleSelectedId(base, nodeId))
+        this.cloudSelectionAnchorId = nodeId
         return
       }
       this.cloudSelectionAnchorId = nodeId
+      if (this.selectedIds.length > 0) {
+        this.setSelectedIds([nodeId])
+      }
     },
     open(item) {
       this.$root.$emit('favoriteClick', item)

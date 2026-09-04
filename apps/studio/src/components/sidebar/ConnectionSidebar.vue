@@ -625,12 +625,6 @@ export default {
     itemNodeId(config) {
       return `item-${config.id}`
     },
-    toggleChecked(config) {
-      this.setSelectedIds(
-        toggleSelectedId(this.selectedIds, this.itemNodeId(config))
-      )
-      this.cloudSelectionAnchorId = this.itemNodeId(config)
-    },
     select(config, event) {
       const nodeId = this.itemNodeId(config)
       if (event?.shiftKey) {
@@ -653,10 +647,24 @@ export default {
       // row click only updates the range-select anchor (and still opens the
       // connection via the list item).
       if (event?.metaKey || event?.ctrlKey || event?.target?.type === 'checkbox') {
-        this.toggleChecked(config)
+        let base = this.selectedIds
+        if (
+          base.length === 0 &&
+          this.cloudSelectionAnchorId &&
+          this.cloudSelectionAnchorId !== nodeId
+        ) {
+          // Plain-click set an anchor without entering bulk mode; include it
+          // when the next cmd/ctrl-click starts multi-select.
+          base = [this.cloudSelectionAnchorId]
+        }
+        this.setSelectedIds(toggleSelectedId(base, nodeId))
+        this.cloudSelectionAnchorId = nodeId
         return
       }
       this.cloudSelectionAnchorId = nodeId
+      if (this.selectedIds.length > 0) {
+        this.setSelectedIds([nodeId])
+      }
     },
     async removeCheckedConnections() {
       const items = this.selectedItems
