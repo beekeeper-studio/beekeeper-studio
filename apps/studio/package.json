@@ -9,6 +9,7 @@
     "url": "https://beekeeperstudio.io"
   },
   "scripts": {
+    "icons:build": "electron ./build/generate-icons.cjs",
     "build:esbuild": "node ./esbuild.mjs",
     "build:vite": "vite build",
     "build": "concurrently -n esbuild,vite \"yarn build:esbuild\" \"yarn build:vite\"",
