@@ -62,8 +62,8 @@ export default Vue.extend({
       return {
         ...base,
         text,
+        // The toast's own close control dismisses it, so two actions fit.
         buttons: [
-          Noty.button('Close', 'btn btn-flat', close),
           Noty.button('Draft manager approval request', 'btn btn-flat', () => {
             close()
             this.$root.$emit(AppEvent.purchaseRequest)
