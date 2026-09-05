@@ -1,16 +1,14 @@
 <template>
   <base-modal
     :name="modalName"
-    class="sql-files-import-modal"
+    class="connection-files-import-modal"
     @submit="submit"
   >
     <template #title>
-      Import SQL Files into Saved Queries
+      Import Connections from JSON files
     </template>
     <div v-if="!importing" class="message">
-      This will make a copy of your .sql files and add them to your Beekeeper
-      Studio saved queries. Any changes to the original .sql files will not be
-      reflected in Beekeeper Studio.
+      This will import connections exported from Beekeeper Studio Cloud
     </div>
     <div v-if="!importing" class="form-group">
       <div class="form-group">
@@ -39,7 +37,7 @@
         <label>Parent Folder</label>
         <in-app-folder-picker
           v-model="parentId"
-          folder-path="data/queryFolders"
+          folder-path="data/connectionFolders"
         />
       </div>
       <div v-if="!isIndividual" class="form-group">
@@ -69,7 +67,7 @@
         <p class="stats-summary">
           Successfully imported
           {{ $pluralize('directory', importStats.directories, true) }}
-          and {{ $pluralize('query', importStats.items, true) }}
+          and {{ $pluralize('connection', importStats.items, true) }}
         </p>
         <div class="warnings">
           <button
@@ -119,7 +117,7 @@
 <script lang="ts">
 import FilePicker from "@/components/common/form/FilePicker.vue";
 import InAppFolderPicker from "@/components/common/form/InAppFolderPicker.vue";
-import BaseModal from '@/components/common/modals/BaseModal.vue'
+import BaseModal from "@/components/common/modals/BaseModal.vue";
 import { AppEvent } from "@/common/AppEvent";
 import { mapState, mapGetters } from 'vuex'
 import _ from 'lodash';
@@ -148,13 +146,13 @@ export default {
     };
   },
   computed: {
-    ...mapState('data/queryFolders', {'folders': 'items'}),
+    ...mapState('data/connectionFolders', {'folders': 'items'}),
     ...mapGetters(["isCloud"]),
     modalName() {
-      return this.name || "sql-files-import";
+      return this.name || "connection-files-import";
     },
     rootBindings() {
-      return [{ event: AppEvent.promptSqlFilesImport, handler: this.open }];
+      return [{ event: AppEvent.promptConnectionFilesImport, handler: this.open }];
     },
     buttonText() {
       return this.importType === 'single' ? 'Choose Files' : 'Choose Directory'
@@ -166,7 +164,7 @@ export default {
       if (this.isIndividual) {
         return {
           filters: [
-            { name: 'SQL files (*.sql, *.txt)', extensions: ['sql', 'txt'] },
+            { name: 'Connection files (*.json)', extensions: ['json'] },
             { name: 'All files', extensions: ['*'] },
           ]
         }
@@ -197,16 +195,16 @@ export default {
     async submit() {
       this.importing = true;
       try {
-        const stats: IObjectImportStats = this.importType === 'single' ?
+        const stats: IObjectImportStats = this.isIndividual ?
           await this.importSelection() :
           await this.importDirectory();
 
-        await this.$store.dispatch('refreshQueries');
+        await this.$store.dispatch('refreshConnections');
 
         this.importStats = stats;
         this.importFinished = true;
       } catch (e) {
-        this.$noty.error(`Error importing queries: ${e?.message ?? e}`)
+        this.$noty.error(`Error importing connections: ${e?.message ?? e}`)
         log.error(e);
         this.close();
       }
@@ -214,14 +212,14 @@ export default {
     async importSelection() {
       const files = _.isArray(this.files) ? this.files : [this.files];
 
-      return await this.$util.send('workspace/importQueries', {
+      return await this.$util.send('workspace/importConnections', {
         paths: files,
         parentId: this.parentId
       });
     },
     async importDirectory() {
       const dir = _.isArray(this.files) ? this.files[0] : this.files;
-      return await this.$util.send('workspace/importQueryDirectory', {
+      return await this.$util.send('workspace/importConnectionsDirectory', {
         dir,
         parentId: this.parentId,
         preserveRoot: this.preserveRoot

@@ -93,47 +93,43 @@
           ref="savedConnectionList"
         >
           <div class="list-group">
-            <div class="list-heading">
-              <div class="flex">
-                <div class="sub row flex-middle noselect">
+            <div class="list-heading row">
+              <div class="sub row flex-middle expand">
+                <div class="expand noselect">
                   Saved <span class="badge">{{ (filteredConnections || []).length }}</span>
                 </div>
-                <span class="expand" />
                 <div class="actions">
-                  <a
-                    v-if="isCloud"
-                    @click.prevent="importFromLocal"
-                    title="Import connections from local workspace"
-                  >
-                    <i class="material-icons">save_alt</i>
-                  </a>
                   <a
                     @click.prevent="createFolder"
                     title="New Folder"
                   >
                     <i class="material-icons-outlined">create_new_folder</i>
                   </a>
-                  <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
+                  <x-button
+                    title="Import Connections"
+                  >
+                    <i class="material-icons">save_alt</i>
+                    <x-menu style="--align: end;">
+                      <x-menuitem @click.prevent="importFromComputer">
+                        <x-label>Import .json files into Saved Connections</x-label>
+                      </x-menuitem>
+                      <x-menuitem
+                        v-if="isCloud"
+                        @click.prevent="importFromLocal"
+                      >
+                        <x-label>Import connections from local workspace</x-label>
+                      </x-menuitem>
+                    </x-menu>
+                  </x-button>
+                  <a @click.prevent="refresh">
+                    <i class="material-icons">refresh</i>
+                  </a>
                   <sidebar-sort-buttons
                     v-if="!isCloud"
                     v-model="sort"
                     :sort-options="sortables"
                   />
                 </div>
-                <!-- <x-button class="actions-btn btn btn-link btn-small" v-tooltip="`Sorted by ${sortables[sortOrder]}`">
-                  <i class="material-icons-outlined">sort</i>
-                  <x-menu style="--target-align: right;">
-                    <x-menuitem
-                      v-for="i in Object.keys(sortables)"
-                      :key="i"
-                      :toggled="i === sortOrder"
-                      togglable
-                      @click="sortConnections(i)"
-                    >
-                      <x-label>{{ sortables[i] }}</x-label>
-                    </x-menuitem>
-                  </x-menu>
-                </x-button> -->
               </div>
             </div>
             <expired-folder-alert
@@ -570,8 +566,10 @@ export default {
         sizes: this.sizes
       })
     },
+    importFromComputer() {
+      this.$root.$emit(AppEvent.promptConnectionFilesImport)
+    },
     importFromLocal() {
-      console.log("triggering import")
       this.$root.$emit(AppEvent.promptConnectionImport)
     },
     async refresh() {
@@ -771,7 +769,7 @@ export default {
       }
     },
     async deleteFolder(folder) {
-      if (await this.$confirm(`Delete folder "${folder.name}"?`)) {
+      if (await this.$confirm(`Delete folder "${folder.name}"?`, undefined, { variant: "danger" })) {
         try {
           await this.$store.dispatch('data/connectionFolders/remove', folder)
         } catch (e) {
