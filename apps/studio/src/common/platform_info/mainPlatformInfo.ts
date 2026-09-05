@@ -71,6 +71,7 @@ export function mainPlatformInfo(): IPlatformInfo {
     userDirectory = join(p.env.PORTABLE_EXECUTABLE_DIR, 'beekeeper_studio_data')
   }
   const pluginsDirectory = join(userDirectory, 'plugins')
+  const themesDirectory = join(userDirectory, 'themes')
   const driverDepsDirectory = join(userDirectory, 'driver-deps')
 
   const sessionType = p.env.XDG_SESSION_TYPE
@@ -116,6 +117,7 @@ export function mainPlatformInfo(): IPlatformInfo {
     downloadsDirectory,
     homeDirectory,
     pluginsDirectory,
+    themesDirectory,
     driverDepsDirectory,
     testMode,
     appDbPath: join(userDirectory, isDevEnv ? 'app-dev.db' : 'app.db'),
