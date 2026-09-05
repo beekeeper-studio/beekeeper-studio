@@ -36,23 +36,28 @@ const log = rawLog.scope('Appdb handlers');
 const pluralKeys = [
   'connectionFolderIds',
   'queryFolderIds',
-  'parentIds'
+  'parentIds',
+  'ids'
 ]
 
-function paramsToWhere(params: Record<string, any>): FindOptionsWhere<any> {
-  const where = {};
-  for (const key of pluralKeys) {
-    if (key in params) {
-      const singular = key.replace(/Ids$/, 'Id');
-      if (params[key] && params[key].length > 0) {
-        where[singular] = In(params[key]);
-      } else {
-        where[singular] = IsNull();
+function paramsToWhere(params: Record<string, any> | Array<Record<string, any>>): FindOptionsWhere<any>[] {
+  params = _.isArray(params) ? params : [params];
+
+  return params.map((p: Record<string, any>) => {
+    const where = {};
+    for (const key of pluralKeys) {
+      if (key in p) {
+        const singular = key.replace(/Ids$/, 'Id').replace(/ids$/, 'id');
+        if (p[key] && p[key].length > 0) {
+          where[singular] = In(p[key]);
+        } else {
+          where[singular] = IsNull();
+        }
       }
     }
-  }
 
-  return where;
+    return where;
+  })
 }
 
 async function defaultTransform<T extends Transport>(obj: T, cls: any) {

@@ -6,7 +6,9 @@ import { FolderFetchModule, treeActions } from "@/store/modules/data/tree/treeSt
 import { ItemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 import _ from "lodash";
 
-type State = DataState<ICloudSavedConnection>;
+type State = DataState<ICloudSavedConnection> & {
+  linkedSavedConnectionIds: number[]
+};
 
 export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
   namespaced: true,
@@ -18,10 +20,14 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
     filter: undefined,
     pendingSaveIds: [],
     searching: false,
+    linkedSavedConnectionIds: []
   },
   mutations: mutationsFor<ICloudSavedConnection>({
     connectionFilter(state: State, str: string) {
       state.filter = str;
+    },
+    linkedSavedConnectionIds(state: State, conns: number[]) {
+      state.linkedSavedConnectionIds = conns;
     },
     ...accessGrantMutations(),
   }, { field: 'name', direction: 'asc'}),
@@ -32,9 +38,8 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
   actions: {
     ...actionsFor<ICloudSavedConnection>('connections', {}),
     ...accessGrantActions('connections'),
-    ...treeActions<ICloudSavedConnection>({ plural: 'connectionFolderIds', singular: 'connectionFolderId' }),
-    async initialize() {
-      // noop
+    ...treeActions<ICloudSavedConnection>({ plural: 'connectionFolderIds', singular: 'connectionFolderId' }, false),
+    initialize() {
     },
     async poll(context) {
       if (!context.rootState.connected) {
@@ -142,6 +147,36 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
         // Clear pending status
         context.commit('removePendingSave', item.id)
       }
+    },
+    async loadLinkedSavedConnectionIds(context) {
+      const used = context.rootGetters['data/usedconnections/orderedUsedConfigs'];
+      if (!used) return;
+
+      const ids = used.map((u) => u.connectionId);
+
+      context.commit('linkedSavedConnectionIds', ids);
+    },
+    async loadByParentIds(context, parentIds: number[]) {
+      if (context.state.linkedSavedConnectionIds?.length === 0) {
+        await context.dispatch('loadLinkedSavedConnectionIds');
+      }
+
+      let persistentIds = [];
+      if (!_.isNil(context.state.linkedSavedConnectionIds)) {
+        persistentIds = context.state.linkedSavedConnectionIds;
+      }
+
+      return await context.dispatch('loadWithOptions', {
+        parentIds,
+        persistentIds
+      });
+    },
+    async unloadByParentIds(context, parentIds: number[]) {
+      const persistentIds = context.state.linkedSavedConnectionIds ?? [];
+      return context.dispatch('unloadWithOptions', {
+        parentIds,
+        persistentIds
+      });
     }
   },
   getters: {
