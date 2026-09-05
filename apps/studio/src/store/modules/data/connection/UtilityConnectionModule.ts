@@ -39,7 +39,7 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
   actions: {
     ...utilActionsFor<IConnection>('saved', {}),
     ...accessGrantActions('connections'),
-    ...treeActions<IConnection>({ plural: 'connectionFolderIds', singular: 'connectionFolderId' }, true, { field: 'linkedSavedConnectionIds', update: 'loadLinkedSavedConnectionIds' }),
+    ...treeActions<IConnection>({ plural: 'connectionFolderIds', singular: 'connectionFolderId' }, true),
     async initialize() {
       // no-op
     },
@@ -127,6 +127,28 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
       const ids = used.map((u) => u.connectionId);
 
       context.commit('linkedSavedConnectionIds', ids);
+    },
+    async loadByParentIds(context, parentIds: number[]) {
+      if (context.state.linkedSavedConnectionIds.length === 0) {
+        await context.dispatch('loadLinkedSavedConnectionIds');
+      }
+
+      let persistentIds = [];
+      if (!_.isNil(context.state.linkedSavedConnectionIds)) {
+        persistentIds = context.state.linkedSavedConnectionIds;
+      }
+
+      return await context.dispatch('loadWithOptions', {
+        parentIds,
+        persistentIds
+      });
+    },
+    async unloadByParentIds(context, parentIds: number[]) {
+      const persistentIds = context.state.linkedSavedConnectionIds ?? [];
+      return context.dispatch('unloadWithOptions', {
+        parentIds,
+        persistentIds
+      });
     }
   },
   getters: {
