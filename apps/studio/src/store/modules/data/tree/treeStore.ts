@@ -107,7 +107,7 @@ export function treeActions<T extends HasId>(
 
       let error: ClientError | null = null;
 
-      let params = local ?
+      const params = local ?
         [ { [parentKeys.plural]: parentIds }, { [parentKeys.plural]: []}, { ids: persistentIds } ] :
         { [parentKeys.plural]: parentIds, ids: persistentIds };
 
