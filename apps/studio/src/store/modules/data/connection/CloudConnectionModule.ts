@@ -157,7 +157,7 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
       context.commit('linkedSavedConnectionIds', ids);
     },
     async loadByParentIds(context, parentIds: number[]) {
-      if (context.state.linkedSavedConnectionIds.length === 0) {
+      if (context.state.linkedSavedConnectionIds?.length === 0) {
         await context.dispatch('loadLinkedSavedConnectionIds');
       }
 
