@@ -38,7 +38,7 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
   actions: {
     ...actionsFor<ICloudSavedConnection>('connections', {}),
     ...accessGrantActions('connections'),
-    ...treeActions<ICloudSavedConnection>({ plural: 'connectionFolderIds', singular: 'connectionFolderId' }, false, { field: 'linkedSavedConnectionIds', update: 'loadLinkedSavedConnectionIds' }),
+    ...treeActions<ICloudSavedConnection>({ plural: 'connectionFolderIds', singular: 'connectionFolderId' }, false),
     initialize() {
     },
     async poll(context) {
@@ -155,6 +155,28 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
       const ids = used.map((u) => u.connectionId);
 
       context.commit('linkedSavedConnectionIds', ids);
+    },
+    async loadByParentIds(context, parentIds: number[]) {
+      if (context.state.linkedSavedConnectionIds.length === 0) {
+        await context.dispatch('loadLinkedSavedConnectionIds');
+      }
+
+      let persistentIds = [];
+      if (!_.isNil(context.state.linkedSavedConnectionIds)) {
+        persistentIds = context.state.linkedSavedConnectionIds;
+      }
+
+      return await context.dispatch('loadWithOptions', {
+        parentIds,
+        persistentIds
+      });
+    },
+    async unloadByParentIds(context, parentIds: number[]) {
+      const persistentIds = context.state.linkedSavedConnectionIds ?? [];
+      return context.dispatch('unloadWithOptions', {
+        parentIds,
+        persistentIds
+      });
     }
   },
   getters: {

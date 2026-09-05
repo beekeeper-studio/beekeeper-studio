@@ -61,6 +61,11 @@ export type TreeState<T> = {
   folders: FolderFetchState;
 };
 
+interface LoadOptions {
+  parentIds: number[],
+  persistentIds: number[]
+}
+
 /**
  * Actions for models that support tree structure or nested folders.
  **/
@@ -70,10 +75,7 @@ export function treeActions<T extends HasId>(
     singular: "connectionFolderId" | "queryFolderId" | "parentId"
   },
   local: boolean = false,
-  extraIdsInfo: {
-    field: string,
-    update: string
-  } = null): ActionTree<TreeState<T>, RootState> {
+): ActionTree<TreeState<T>, RootState> {
   return {
     async refresh(context, parentIds: number[]) {
       await context.dispatch("resetTree");
@@ -84,19 +86,18 @@ export function treeActions<T extends HasId>(
       context.commit("folders/reset");
     },
     async loadByParentIds(context, parentIds: number[]) {
+      return await context.dispatch('loadWithOptions', {
+        parentIds,
+        extraIds: []
+      });
+    },
+    async loadWithOptions(context, options: LoadOptions) {
+      let parentIds = options.parentIds;
+      const persistentIds = options.persistentIds ?? [];
       parentIds = _.difference(parentIds, context.state.folders.fetchingIds);
 
       if (parentIds.length === 0 && !local) {
         return { error: null };
-      }
-
-      if (!_.isNil(extraIdsInfo) && context.state[extraIdsInfo.field].length === 0) {
-        await context.dispatch(extraIdsInfo.update);
-      }
-
-      let extraIds = undefined;
-      if (!_.isNil(extraIdsInfo) && !_.isNil(context.state[extraIdsInfo.field])) {
-        extraIds = context.state[extraIdsInfo.field];
       }
 
       context.commit("folders/fetchingIds", [
@@ -107,14 +108,15 @@ export function treeActions<T extends HasId>(
       let error: ClientError | null = null;
 
       let params = local ?
-        [ { [parentKeys.plural]: parentIds }, { [parentKeys.plural]: []}, { ids: extraIds } ] :
-        { [parentKeys.plural]: parentIds, ids: extraIds };
+        [ { [parentKeys.plural]: parentIds }, { [parentKeys.plural]: []}, { ids: persistentIds } ] :
+        { [parentKeys.plural]: parentIds, ids: persistentIds };
 
       try {
         await context.dispatch("load", {
           params,
           replaceIf(item: T) {
-            return parentIds.includes(item[parentKeys.singular]);
+            const itemParentId = item[parentKeys.singular];
+            return parentIds.includes(itemParentId) || persistentIds.includes(item.id);
           },
           onError(fetchError: ClientError) {
             error = fetchError;
@@ -129,18 +131,22 @@ export function treeActions<T extends HasId>(
 
       return { error };
     },
-    /** Drops a collapsed folder's children so the next expand refetches them. */
     async unloadByParentIds(context, parentIds: number[]) {
+      return await context.dispatch('unloadWithOptions', {
+        parentIds,
+        persistentIds: []
+      })
+    },
+    /** Drops a collapsed folder's children so the next expand refetches them. */
+    async unloadWithOptions(context, options: LoadOptions) {
+      const parentIds = options.parentIds;
+      const persistentIds = options.persistentIds ?? [];
       if (parentIds.length === 0) {
         return;
       }
 
-      const linkedIds = extraIdsInfo?.field ?
-        context.state[extraIdsInfo.field] :
-        [];
-
       const stale = context.state.items.filter((item) =>
-        parentIds.includes(item[parentKeys.singular]) && !linkedIds.includes(item.id)
+        parentIds.includes(item[parentKeys.singular]) && !persistentIds.includes(item.id)
       );
 
       if (stale.length === 0) {
