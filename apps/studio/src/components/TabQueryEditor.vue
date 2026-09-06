@@ -613,12 +613,12 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
-  // ui.queryEditor.newTabPaddingLines (bksConfig) controls this; padding keeps
-  // the floating toolbar from covering line 1 of a brand new tab's document.
-  const newTabPaddingLines = (bksConfig) => {
-    const value = Number(bksConfig?.ui?.queryEditor?.newTabPaddingLines)
-    return Number.isFinite(value) ? Math.max(0, Math.trunc(value)) : 10
-  }
+  // ui.queryEditor.newTabPaddingLines (bksConfig, defaulted in default.config.ini)
+  // controls this; padding keeps the floating toolbar from covering line 1 of
+  // a brand new tab's document. Clamped here since String.repeat() throws on
+  // a negative count, which a hand-edited user.config.ini could supply.
+  const newTabPaddingLines = (bksConfig) =>
+    Math.max(0, Number(bksConfig?.ui?.queryEditor?.newTabPaddingLines) || 0)
   const hasUsedTransactionsKey = "hasUsedTransactions";
 
   export default {
