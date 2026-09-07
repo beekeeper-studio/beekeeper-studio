@@ -42,7 +42,30 @@ $form-control-font-size: 0.831rem; // ~13.3px
 }
 body {
   font-size: 1rem;
+  background: var(--app-bg);
+  color: var(--app-fg);
 }
-.material-icons {
+.material-icons, .material-icons-outlined {
   transform: rotate(0.03deg);
+  color: var(--icon-fg);
+}
+
+button {
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+
+  &:hover,
+  &:focus {
+    background: var(--btn-bg-hover);
+    color: var(--btn-fg-hover);
+  }
+}
+
+input, select {
+  color: inherit;
+  border-color: var(--border);
+  border-style: solid;
+  &:focus {
+    border-color: var(--border-hover);
+  }
 }

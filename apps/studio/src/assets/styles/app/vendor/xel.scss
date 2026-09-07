@@ -796,7 +796,8 @@ x-doctab {
  */
 
 x-menu {
-  background: color.adjust($theme-bg, $lightness: 5%);
+  background: var(--menu-bg);
+  color: var(--menu-fg);
   padding: ($gutter-h * 0.75) 0;
   border-radius: 6px;
   box-shadow: var(--elevation-5);
@@ -816,7 +817,7 @@ x-menu {
     margin: ($gutter-h * 0.75) 0;
     box-sizing: border-box;
     background: transparent;
-    border-top: 1px solid $border-color;
+    border-top: 1px solid var(--border-subtle);
     border: 0;
     + hr, &:last-child {
       display: none;
@@ -834,11 +835,11 @@ x-menuitem {
   padding: 0 $gutter-w;
   font-size: 0.9rem;
   min-height: 28px;
-  color: $text-dark;
+  color: var(--text-contrast);
   cursor: pointer;
   // --trigger-effect: ripple;
   &:focus, &[expanded] {
-    background: rgba($theme-base, 0.05);
+    background: var(--a-bg);
   }
   img {
     width: 24px;
@@ -899,12 +900,12 @@ x-menubar {
   background: transparent;
   -webkit-app-region: no-drag;
   > x-menuitem {
-    color: rgba($theme-base, 0.44);
+    color: var(--text);
     padding: 0 $gutter-w;
     height: 100%;
     min-height: 0;
     &:focus, &[expanded] {
-      color: $text-dark;
+      color: var(--text-contrast);
     }
   }
 }
@@ -1052,13 +1053,14 @@ x-radio {
  */
 
 x-switch {
-  color: $theme-primary;
-  transition: filter 0.2s var(--transition-fn1);
+  transition: color 0.2s var(--transition-fn1);
   cursor: pointer;
-  filter: saturate(0%);
   --ripple-type:none;
+  --thumb-color: var(--gray-9);
+  --track-color: var(--gray-a7);
   &[toggled] {
-    filter: none;
+    --thumb-color: var(--primary-solid-bg);
+    --track-color: var(--primary-solid-bg);
   }
   &[skin="big"] {
     width: 40px;

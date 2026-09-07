@@ -33,10 +33,6 @@ $editor-statusbar:         $theme-base;
 
 // Base Styles
 // -----------------------------------------
-& {
-  background: $theme-bg;
-  color: $text;
-}
 // .material-icons {
 //   font-weight: 600;
 // }
@@ -149,9 +145,6 @@ x-buttons {
 
 // Sidebar
 // ---------------------------------------
-.advanced-connection-settings {
-  background: rgba($theme-base, 0.05);
-}
 #sidebar {
   position: relative;
   .filter {
@@ -497,10 +490,6 @@ x-buttons {
   color: color.adjust($brand-success, $lightness: -5%);
 }
 
-// Switch
-x-switch {
-  color: $theme-primary;
-}
 
 // Table Properties
 // -------------------------------

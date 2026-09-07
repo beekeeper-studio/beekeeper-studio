@@ -9,11 +9,14 @@
 @import "vue-select/dist/vue-select";
 @import "driver.js/dist/driver.css";
 
+@import './themes/theme.css';
+@import './themes/default.css';
+@import './themes/solarized.css';
+
 @import './app/normalize';
 @import './app/variables';
 @import './app/flex-grid';
 @import './app/base';
-@import './themes/themes.css';
 
 body.theme-system {
   @media (prefers-color-scheme: dark) {
@@ -46,8 +49,7 @@ body.theme-dark {
   @import './themes/scssvars-to-cssprops.scss';
 }
 
-body.theme-light {
-  @import './themes/light/variables.scss';
+body {
   @import './app/mixins';
   @import './components/all';
   @import './vendor.scss';
