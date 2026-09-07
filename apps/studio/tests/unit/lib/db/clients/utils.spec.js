@@ -1,4 +1,5 @@
 import { buildDatabaseFilter, buildSchemaFilter, buildSelectTopQuery, escapeString, isAllowedReadOnlyQuery } from "../../../../../src/lib/db/clients/utils";
+import { safelyIdentify } from "../../../../../src/lib/db/sql_tools";
 
 describe('Escape String', () => {
   it("should escape single quotes", () => {
@@ -198,5 +199,17 @@ describe('isAllowedReadOnly', () => {
     ]
 
     expect(isAllowedReadOnlyQuery(queries, true).toBeFalse)
+  })
+  // Regression for #3632: SET only changes session settings (search_path,
+  // statement_timeout, ...). It is allowed on a read-only DuckDB/Postgres
+  // connection by the databases themselves, but the read-only gate rejects it
+  // with "Write action(s) not allowed in Read-Only Mode." because the
+  // identifier classifies it as UNKNOWN.
+  it('allows SET statements in read-only mode', () => {
+    // Same call the clients make before executing (BasicDatabaseClient#driverExecuteSingle);
+    // the DuckDB client uses the "generic" dialect.
+    const { queries } = safelyIdentify("SET search_path = 'cycle_a,cycle_a.data,cycle_a.macros';", { dialect: 'generic' })
+
+    expect(isAllowedReadOnlyQuery(queries, true)).toBe(true)
   })
 })

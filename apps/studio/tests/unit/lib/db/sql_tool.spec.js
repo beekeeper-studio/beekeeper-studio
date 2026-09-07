@@ -1,4 +1,5 @@
 import { splitQueries, removeQueryQuotes, extractParams, isTextSelected, deparameterizeQuery, convertParamsForReplacement } from "../../../../src/lib/db/sql_tools";
+import _ from "lodash";
 
 const testCases = {
   "select* from foo; select * from bar": 2,
@@ -215,5 +216,23 @@ describe("Postgres dollar-quoted function bodies", () => {
     // And the function statement must end at the $$ ... language sql; line,
     // not swallow the trailing select:
     expect(result[2].text).toMatch(/\$\$ language sql;/);
+  });
+});
+
+describe("Numbered parameter ordering", () => {
+  // Regression for #3651: the parameters modal lists placeholders in the order
+  // splitQueries returns them. With ten or more Postgres-style numbered
+  // parameters they come back sorted as strings, so $10 is listed between $1
+  // and $2 instead of after $9, and the user fills the values into the wrong
+  // slots.
+  it("returns $1 through $10 in numeric order for a Postgres query", () => {
+    const query = `
+      SELECT * FROM users
+      WHERE id = $1 AND org_id = $2 AND role = $3 AND status = $4 AND plan = $5
+        AND region = $6 AND team = $7 AND created_by = $8 AND updated_by = $9
+        AND deleted_by = $10`;
+    const placeholders = _.uniq(splitQueries(query, "psql").flatMap((q) => q.parameters));
+
+    expect(placeholders).toEqual(["$1", "$2", "$3", "$4", "$5", "$6", "$7", "$8", "$9", "$10"]);
   });
 });
