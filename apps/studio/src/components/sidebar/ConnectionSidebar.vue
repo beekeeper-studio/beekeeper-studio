@@ -882,9 +882,6 @@ export default {
     background: transparent;
   }
 }
-::v-deep .alert.expired-folder-alert {
-  margin-inline: 0.8rem;
-}
 
 .empty-state {
   padding-top: 0.25rem;

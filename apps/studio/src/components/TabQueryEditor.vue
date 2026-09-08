@@ -702,7 +702,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       }
     },
     computed: {
-      ...mapGetters(['dialect', 'dialectData', 'defaultSchema', 'isUltimate', 'isCloud', 'aiShellAvailable']),
+      ...mapGetters(['dialect', 'dialectData', 'defaultSchema', 'isCloud', 'aiShellAvailable']),
       ...mapGetters({
         'isCommunity': 'licenses/isCommunity',
         'userKeymap': 'settings/userKeymap',
