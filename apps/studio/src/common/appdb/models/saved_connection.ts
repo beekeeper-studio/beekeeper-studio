@@ -8,7 +8,6 @@ import { AzureCredsEncryptTransformer, EncryptTransformer, SnowflakeOptionsTrans
 import { IConnection, SshMode } from '@/common/interfaces/IConnection'
 import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, DynamoDBOptions, LibSQLOptions, RedshiftOptions, IamAuthOptions, SQLAnywhereOptions, SurrealDBOptions, SnowflakeOptions, SqlServerOptions } from "@/lib/db/types"
 import { resolveHomePathToAbsolute } from "@/handlers/utils"
-import { ReadOnlyOrDefault } from "../validators/ReadOnlyOrDefault"
 import { ConnectionFolder } from './ConnectionFolder'
 
 const encrypt = new EncryptTransformer(loadEncryptionKey())
@@ -218,7 +217,6 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: 'boolean', nullable: false })
   sslRejectUnauthorized = true
 
-  @ReadOnlyOrDefault()
   @Column({type: 'boolean', nullable: false, default: false})
   readOnlyMode = true
 
