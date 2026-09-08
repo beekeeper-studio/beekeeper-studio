@@ -151,12 +151,8 @@ async function transformLicense(obj: LicenseKey, _cls: any): Promise<TransportLi
 
 async function transformConn(obj: SavedConnection, cls: any): Promise<IConnection> {
   if (_.isNil(obj)) return null;
-  const status = await LicenseKey.getLicenseStatus();
-  const canBeReadOnly = status.isUltimate || platformInfo.testMode;
 
-  if (!canBeReadOnly) {
-    obj.readOnlyMode = false;
-  }
+  obj.readOnlyMode = false;
 
   const newObj = {
     canRead: true,
