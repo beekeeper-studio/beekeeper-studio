@@ -106,9 +106,8 @@
       <button
         v-if="!importing"
         class="btn btn-primary"
-        type="button"
+        type="submit"
         :disabled="files.length === 0 || (isCloud && parentId === null)"
-        @click="submit"
       >
         Import
       </button>
