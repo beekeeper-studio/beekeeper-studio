@@ -1,5 +1,5 @@
 // This is for the camelCaseObjectKeys helper for cloud (connection import)
-const _ = require('lodash')
+import _ from 'lodash'
 if (!_.deepMapKeys) {
   _.mixin({
     deepMapKeys: function (obj, fn) {
