@@ -60,7 +60,8 @@ export class QueryImporter extends ObjectImporter<ISavedQuery> {
     const query: ISavedQuery = {
       queryFolderId: parentId,
       title: name,
-      text: fileContents
+      text: fileContents,
+      excerpt: fileContents.slice(0, 250)
     } as ISavedQuery;
 
     const desc: ObjectDescriptor<ISavedQuery> = {
