@@ -316,9 +316,6 @@ const store = new Vuex.Store<State>({
     canAccessCloudWorkspaces(_state, _getters, _rootState, rootGetters) {
       return rootGetters['licenses/canAccessCloudWorkspaces']
     },
-    canCreateFolders(_state, getters) {
-      return getters.isUltimate || getters.isCloud;
-    },
     expandFKDetailsByDefault(state) {
       return state.expandFKDetailsByDefault
     },

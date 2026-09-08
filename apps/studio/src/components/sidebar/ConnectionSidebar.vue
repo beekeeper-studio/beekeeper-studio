@@ -136,9 +136,6 @@
                 </x-button> -->
               </div>
             </div>
-            <expired-folder-alert
-              v-if="!canCreateFolders && folders.length > 0"
-            />
             <error-alert
               :error="error"
               v-if="error && !isPollError && !errorList.includes(error)"
@@ -337,7 +334,6 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
 import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
 import ContentPlaceholderText from '@/components/common/loading/ContentPlaceholderText.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
-import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
 import Split from 'split.js'
 import { AppEvent } from '@/common/AppEvent'
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
@@ -359,7 +355,6 @@ export default {
     Tree,
     TreeFolder,
     EditableText,
-    ExpiredFolderAlert,
     SidebarSortButtons,
     WorkspaceSidebar,
   },
@@ -419,7 +414,6 @@ export default {
       settings: 'settings/settings',
       isCloud: 'isCloud',
       isUltimate: 'isUltimate',
-      canCreateFolders: 'canCreateFolders',
       activeWorkspaces: 'credentials/activeWorkspaces',
       pinnedConnections: 'pinnedConnections/pinnedConnections',
       filteredConnections: 'data/connections/filteredConnections',
@@ -596,10 +590,6 @@ export default {
       return `label-${color}`
     },
     createFolder() {
-      if (!this.canCreateFolders) {
-        this.$root.$emit(AppEvent.upgradeModal, 'Folders')
-        return
-      }
       if (this.isCloud) {
         // Find personal folder
         const parent = this.folders.find((f) => f.personal && !f.parentId);
@@ -648,10 +638,6 @@ export default {
       const options = [{
         name: 'New Subfolder',
         handler: ({ item }) => {
-          if (!this.canCreateFolders) {
-            this.$root.$emit(AppEvent.upgradeModal, 'Folders');
-            return;
-          }
           this.startDrafting(item.id);
           this.expandFolder(item.id);
         },
