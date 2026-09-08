@@ -25,7 +25,6 @@ import { UserSetting } from "@/common/appdb/models/user_setting";
 import { TokenCache } from "@/common/appdb/models/token_cache";
 import { CloudCredential } from "@/common/appdb/models/CloudCredential";
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
-import platformInfo from'@/common/platform_info';
 import rawLog from "@bksLogger"
 import { validate } from "class-validator";
 import { QueryAudit } from "@/common/appdb/models/QueryAudit";
