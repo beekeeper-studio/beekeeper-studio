@@ -40,6 +40,7 @@
     "./surreal-text-editor": "./dist/surreal-text-editor.js",
     "./merge-text-editor": "./dist/merge-text-editor.js",
     "./tree": "./dist/tree.js",
+    "./tree/helpers": "./dist/tree/helpers.js",
     "./vue/table": "./dist/vue/table.js",
     "./vue/entity-list": "./dist/vue/entity-list.js",
     "./vue/sql-text-editor": "./dist/vue/sql-text-editor.js",

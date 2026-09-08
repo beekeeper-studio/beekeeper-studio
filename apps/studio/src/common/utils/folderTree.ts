@@ -1,10 +1,10 @@
+import { HasId } from "@/common/interfaces/IGeneric";
+import { IFolder } from "@/common/interfaces/IQueryFolder";
 import type {
   FolderNode,
   ItemNode,
   TreeNodeMoveEvent,
 } from "@beekeeperstudio/ui-kit";
-import { HasId } from "@/common/interfaces/IGeneric";
-import { IFolder } from "@/common/interfaces/IQueryFolder";
 
 export type ExtendedNode = ExtendedFolderNode | ExtendedItemNode;
 
