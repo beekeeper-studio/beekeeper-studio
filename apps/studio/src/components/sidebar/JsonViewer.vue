@@ -83,8 +83,8 @@ import {
   createExpandableTextDecoration,
   createTruncatableTextDecoration,
   deepFilterObjectProps,
-  getPaths,
   eachPaths,
+  binaryBufferOf,
 } from "@/lib/data/jsonViewer";
 import { mapGetters } from "vuex";
 import { EditorMarker, LineGutter } from "@beekeeperstudio/ui-kit";
@@ -96,7 +96,7 @@ import _ from "lodash";
 import globals from '@/common/globals'
 import JsonSourceMap from "json-source-map";
 import JsonPointer from "json-pointer";
-import { typedArrayToString } from '@/common/utils'
+import { typedArrayToString, encodedStringLength } from '@/common/utils'
 import { monokaiInit } from "@uiw/codemirror-theme-monokai";
 
 const log = rawLog.scope("json-viewer");
@@ -150,6 +150,10 @@ export default Vue.extend({
       if (!this.hidden) this.reinitializeTextEditor++;
     },
     dataId() {
+      // A restored path only makes sense for the row it was restored on.
+      // Leaving them set means the next row pays for full binary conversion on
+      // a path the user never expanded.
+      this.restoredTruncatedPaths = []
       if (this.expandFKDetailsByDefault) {
         this.expandablePaths.forEach((expandablePath: ExpandablePath) => {
           // Expand only the first level
@@ -204,33 +208,53 @@ export default Vue.extend({
       return deepFilterObjectProps(this.processedValue, this.filter);
     },
     processedValue() {
-      const clonedValue = _.cloneDeep(this.value)
-      eachPaths(clonedValue, (path, value) => {
-        if (this.truncatedPaths.includes(path)) {
-          _.set(clonedValue, path, (value as string).slice(0, globals.maxDetailViewTextLength))
-        }
-      })
-      
-      // Apply the replacer function to ensure consistency between filtered and unfiltered views
-      // This is necessary because JsonSourceMap.stringify doesn't support replacer functions
+      // Apply the replacer function to ensure consistency between filtered and
+      // unfiltered views. This is necessary because JsonSourceMap.stringify
+      // doesn't support replacer functions.
+      //
+      // The round trip also gives us an independent copy, so there's no need to
+      // cloneDeep first -- `this.value` is never mutated here.
+      let processed: Record<string, any>
       try {
-        return JSON.parse(JSON.stringify(clonedValue, this.replacer));
+        processed = JSON.parse(JSON.stringify(this.value, this.replacer));
       } catch (error) {
         log.warn("Failed to apply replacer to processed value", error);
-        return clonedValue;
+        return _.cloneDeep(this.value);
       }
+
+      const truncated = new Set(this.truncatedPaths)
+
+      if (truncated.size > 0) {
+        eachPaths(processed, (path, value) => {
+          if (truncated.has(path) && typeof value === "string") {
+            _.set(processed, path, value.slice(0, globals.maxDetailViewTextLength))
+          }
+        })
+      }
+
+      // `replacer` only produced a bounded preview for binary values. Paths the
+      // user restored via "Show more" need the full conversion back. There are
+      // only ever a handful of these, so resolving them individually is cheap.
+      this.restoredTruncatedPaths.forEach((path: string) => {
+        const buffer = binaryBufferOf(_.get(this.value, path))
+        if (!buffer) return
+        _.set(processed, path, typedArrayToString(buffer, this.binaryEncoding))
+      })
+
+      return processed
     },
     truncatablePaths() {
-      return getPaths(this.value).filter((path) => {
-        const val = _.get(this.value, path)
-        if (
-          typeof val === "string" &&
-          val.length > globals.maxDetailViewTextLength
-        ) {
-          return true
+      // eachPaths already hands us the value for each path, so use it directly.
+      // Resolving it again with _.get would re-parse every dotted path string
+      // and re-walk the object from the root -- by far the most expensive thing
+      // this component used to do.
+      const paths: string[] = []
+      eachPaths(this.value, (path, value) => {
+        if (this.isTruncatable(value)) {
+          paths.push(path)
         }
-        return false
       })
+      return paths
     },
     truncatedPaths() {
       return _.difference(this.truncatablePaths, this.restoredTruncatedPaths)
@@ -370,13 +394,25 @@ export default Vue.extend({
     ...mapGetters(["expandFKDetailsByDefault"]),
   },
   methods: {
-    replacer(_key: string, value: unknown) {
-      // HACK: this is the case in mongodb objectid
-      if (value && typeof value === "object" && _.isTypedArray((value as any).buffer)) {
-        return typedArrayToString((value as any).buffer, this.binaryEncoding)
+    /** Whether a value is long enough to be worth hiding behind "Show more". */
+    isTruncatable(value: unknown): boolean {
+      if (typeof value === "string") {
+        return value.length > globals.maxDetailViewTextLength
       }
-      if (_.isTypedArray(value)) {
-        return typedArrayToString(value as ArrayBufferView, this.binaryEncoding)
+      const buffer = binaryBufferOf(value)
+      if (buffer) {
+        return encodedStringLength(buffer.byteLength, this.binaryEncoding) >
+          globals.maxDetailViewTextLength
+      }
+      return false
+    },
+    replacer(_key: string, value: unknown) {
+      const buffer = binaryBufferOf(value)
+      if (buffer) {
+        // Convert with a budget. Fully expanding a large buffer to hex/base64
+        // here is what used to blow up the document size (and the heap) for
+        // blob columns. Restored paths get re-expanded in `processedValue`.
+        return typedArrayToString(buffer, this.binaryEncoding, globals.maxDetailViewTextLength)
       }
       return value
     },

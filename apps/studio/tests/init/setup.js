@@ -1,3 +1,9 @@
+// Uint8Array hex/base64 methods, same polyfill set as src-commercial/entrypoints/renderer.ts
+require('core-js/actual/typed-array/from-base64');
+require('core-js/actual/typed-array/from-hex');
+require('core-js/actual/typed-array/to-base64');
+require('core-js/actual/typed-array/to-hex');
+
 if (typeof global.document !== 'undefined') {
   global.document.createRange = () => ({
     setStart: () => undefined,
