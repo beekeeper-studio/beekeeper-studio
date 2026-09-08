@@ -480,10 +480,9 @@
                 >
               </div>
               <div class="form-group" v-if="queryFolders && queryFolders.length > 0">
-                <label>Folder <i v-if="!isUltimate && !isCloud" class="material-icons menu-icon">stars</i></label>
+                <label>Folder</label>
                 <in-app-folder-picker
                   v-model="query.queryFolderId"
-                  :disabled="!isUltimate && !isCloud"
                   folder-path="data/queryFolders"
                 />
               </div>
