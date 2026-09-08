@@ -3,7 +3,7 @@ import { SavedConnection } from "@/common/appdb/models/saved_connection"
 import { UsedConnection } from "@/common/appdb/models/used_connection"
 import { IConnection } from "@/common/interfaces/IConnection"
 import { Transport, TransportCloudCredential, TransportFavoriteQuery, TransportLicenseKey, TransportPinnedConn, TransportUsedQuery, TransportFormatterPreset } from "@/common/transport";
-import { FindManyOptions, FindOneOptions, FindOptionsWhere, In, SaveOptions } from "typeorm";
+import { FindManyOptions, FindOneOptions, FindOptionsWhere, In, IsNull, SaveOptions } from "typeorm";
 import _ from 'lodash';
 import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
 import { UsedQuery } from "@/common/appdb/models/used_query";
@@ -31,6 +31,40 @@ import { QueryAudit } from "@/common/appdb/models/QueryAudit";
 import { TransportQueryAudit, TransportQueryAuditDetail } from "@/common/transport/TransportQueryAudit";
 
 const log = rawLog.scope('Appdb handlers');
+
+const pluralKeys = [
+  'connectionFolderIds',
+  'queryFolderIds',
+  'parentIds',
+  'ids'
+];
+
+const pluralToSingular = {
+  'connectionFolderIds': 'connectionFolderId',
+  'queryFolderIds': 'queryFolderId',
+  'parentIds': 'parentId',
+  'ids': 'id'
+};
+
+function paramsToWhere(params: Record<string, any> | Array<Record<string, any>>): FindOptionsWhere<any>[] {
+  params = _.isArray(params) ? params : [params];
+
+  return params.map((p: Record<string, any>) => {
+    const where = {};
+    for (const key of pluralKeys) {
+      if (key in p) {
+        const singular = pluralToSingular[key] ?? '';
+        if (p[key] && p[key].length > 0) {
+          where[singular] = In(p[key]);
+        } else {
+          where[singular] = IsNull();
+        }
+      }
+    }
+
+    return where;
+  })
+}
 
 async function defaultTransform<T extends Transport>(obj: T, cls: any) {
   if (_.isNil(obj)) {
@@ -111,6 +145,9 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
       }
     },
     [`appdb/${name}/find`]: async function({ options }: { options?: FindManyOptions<any> }) {
+      if (options && !options.where && "params" in options) {
+        options.where = paramsToWhere(options.params);
+      }
       return await Promise.all((await cls.find(options)).map(async (value) => {
         return await transform(value, cls);
       }))
@@ -125,6 +162,17 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
       // Support both direct options or wrapped in { options: ... }
       const options = 'options' in args ? args.options : args;
       return await cls.count(options);
+    },
+    [`appdb/${name}/search`]: async function({ searchText }: { searchText: string }) {
+      if (!cls.searchableFields || cls.searchableFields.length === 0) {
+        throw new Error(`You need to configure the searchable fields for model ${name}`);
+      }
+
+      const result = await cls.search(cls, searchText);
+
+      return await Promise.all(result.map(async (value) => {
+        return await transform(value, cls);
+      }));
     }
   }
 }
@@ -207,12 +255,12 @@ export const AppDbHandlers = {
     cache = await cache.save();
     return cache.id;
   },
-  "appdb/queryAudit/get": async function ({ auditId }: { auditId: number; }): Promise<TransportQueryAuditDetail | null> {
+  'appdb/queryAudit/get': async function ({ auditId }: { auditId: number; }): Promise<TransportQueryAuditDetail | null> {
     const audit = await QueryAudit.findOneByOrFail({ id: auditId });
     return await audit.fetchDetail();
   },
-  "appdb/queryAudit/restore": async function ({ auditId, }: { auditId: number; }): Promise<void> {
+  'appdb/queryAudit/restore': async function ({ auditId, }: { auditId: number; }): Promise<void> {
     const audit = await QueryAudit.findOneByOrFail({ id: auditId });
     await audit.restore();
-  },
+  }
 };

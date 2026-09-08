@@ -34,7 +34,6 @@ import { BackupModule } from './modules/backup/BackupModule'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { ConnectionTypes, SnowflakeAuthType, SurrealAuthType } from '@/lib/db/types'
 import { SidebarModule, State as SidebarState } from './modules/SidebarModule'
-import { TreeExpansionState } from './modules/sidebar/TreeExpansionModule'
 import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
 import { PopupMenuModule } from './modules/PopupMenuModule'
 import { WebPluginManagerStatus } from '@/services/plugin'
@@ -740,54 +739,38 @@ const store = new Vuex.Store<State>({
       context.commit('tabActive', value)
     },
     async initializeConnectionTree(context) {
-      if (context.getters.isCloud) {
-        await Promise.all([
-          context.dispatch('data/connectionFolders/refresh', []),
-          context.dispatch('data/connections/refresh', []),
-        ]);
+      await Promise.all([
+        context.dispatch('data/connectionFolders/refresh', []),
+        context.dispatch('data/connections/refresh', []),
+      ]);
 
-        const folderIds = context.state['data/connectionFolders'].items
-          .filter((folder) => folder.default)
-          .map((folder) => folder.id)
-        // the default folders start out expanded
-        context.commit('sidebar/connections/expandedIds', folderIds)
+      const folderIds = context.state['data/connectionFolders'].items
+        .filter((folder) => folder.default)
+        .map((folder) => folder.id)
+      // the default folders start out expanded
+      context.commit('sidebar/connections/expandedIds', folderIds)
 
-        await Promise.all([
-          context.dispatch('data/connectionFolders/loadByParentIds', folderIds),
-          context.dispatch('data/connections/loadByParentIds', folderIds),
-        ])
-      } else {
-        context.commit('sidebar/connections/expandedIds', [])
-        await Promise.all([
-          context.dispatch('data/connectionFolders/load'),
-          context.dispatch('data/connections/load'),
-        ])
-      }
+      await Promise.all([
+        context.dispatch('data/connectionFolders/loadByParentIds', folderIds),
+        context.dispatch('data/connections/loadByParentIds', folderIds),
+      ])
     },
     async initializeQueryTree(context) {
-      if (context.getters.isCloud) {
-        await Promise.all([
-          context.dispatch('data/queryFolders/refresh', []),
-          context.dispatch('data/queries/refresh', []),
-        ]);
+      await Promise.all([
+        context.dispatch('data/queryFolders/refresh', []),
+        context.dispatch('data/queries/refresh', []),
+      ]);
 
-        const expandedFolderIds = context.state['data/queryFolders'].items
-          .filter((folder) => folder.default)
-          .map((folder) => folder.id)
-        // the default folders start out expanded
-        context.commit('sidebar/queries/expandedIds', expandedFolderIds)
+      const expandedFolderIds = context.state['data/queryFolders'].items
+        .filter((folder) => folder.default)
+        .map((folder) => folder.id)
+      // the default folders start out expanded
+      context.commit('sidebar/queries/expandedIds', expandedFolderIds)
 
-        await Promise.all([
-          context.dispatch('data/queryFolders/loadByParentIds', expandedFolderIds),
-          context.dispatch('data/queries/loadByParentIds', expandedFolderIds),
-        ])
-      } else {
-        context.commit('sidebar/queries/expandedIds', [])
-        await Promise.all([
-          context.dispatch('data/queryFolders/load'),
-          context.dispatch('data/queries/load'),
-        ])
-      }
+      await Promise.all([
+        context.dispatch('data/queryFolders/loadByParentIds', expandedFolderIds),
+        context.dispatch('data/queries/loadByParentIds', expandedFolderIds),
+      ])
     },
     async refreshConnections(context) {
       const expandedIds = context.state.sidebar.connections.expandedIds
