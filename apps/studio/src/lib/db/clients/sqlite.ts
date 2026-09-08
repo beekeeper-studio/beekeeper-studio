@@ -90,7 +90,17 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     await super.connect();
 
     // verify that the connection is valid
-    await this.driverExecuteSingle('PRAGMA schema_version', { overrideReadonly: true });
+    try {
+      await this.driverExecuteSingle('PRAGMA schema_version', { overrideReadonly: true });
+    } catch (err) {
+      if (/file is not a database|file is encrypted/i.test(err.message)) {
+        const message = this.cipherKey
+          ? "Unable to decrypt the database. Check the encryption password and cipher."
+          : "This file is not a database, or it is encrypted. If encrypted, set the encryption password in the connection settings.";
+        throw new ClientError(message, "https://docs.beekeeperstudio.io/docs/sqlite");
+      }
+      throw err;
+    }
 
     // set sqlite version
     const version = await this.driverExecuteSingle('SELECT sqlite_version() as version');
@@ -701,8 +711,44 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return this.createRawConnection(this.databasePath);
   }
 
+  /** Encryption key for SQLCipher/SQLite3MultipleCiphers encrypted databases */
+  protected get cipherKey(): string | null {
+    return this.server?.config?.password || null;
+  }
+
+  protected get cipher(): string {
+    return this.server?.config?.sqliteOptions?.cipher || 'sqlcipher';
+  }
+
+  // SQLCipher compatibility revision (1-4). better-sqlite3-multiple-ciphers
+  // defaults the sqlcipher scheme to legacy=0, which is NOT binary-compatible
+  // with databases produced by the real SQLCipher library. Real SQLCipher
+  // files need PRAGMA legacy set to their major version, so default to 4 (the
+  // current SQLCipher release) unless the connection overrides it.
+  protected get cipherCompatibility(): number | null {
+    const configured = this.server?.config?.sqliteOptions?.cipherCompatibility;
+    if (configured != null) return Number(configured);
+    return this.cipher === 'sqlcipher' ? 4 : null;
+  }
+
+  protected applyEncryption(connection: Database.Database): void {
+    if (!this.cipherKey) return;
+    // PRAGMA cipher must be set before PRAGMA key to select the encryption
+    // scheme (sqlcipher, chacha20, ...) understood by better-sqlite3-multiple-ciphers.
+    // PRAGMA legacy selects the compatibility revision and must also precede key.
+    connection.pragma(`cipher = '${SD.escapeString(this.cipher)}'`);
+    if (this.cipherCompatibility != null) {
+      connection.pragma(`legacy = ${this.cipherCompatibility}`);
+    }
+    connection.pragma(`key = '${SD.escapeString(this.cipherKey)}'`);
+  }
+
   protected createRawConnection(filename: string) {
-    return new Database(filename);
+    const connection = new Database(filename);
+    if (filename !== ':memory:') {
+      this.applyEncryption(connection);
+    }
+    return connection;
   }
 
   protected checkReader(_queryIdentifyResult: IdentifyResult, statement: Database.Statement): boolean {
@@ -710,11 +756,17 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   protected createCursor(...args: ConstructorParameters<typeof SqliteCursor>): SqliteCursor {
+    // pass the encryption settings so cursors opening their own connection
+    // (streaming exports, selectTopStream) can decrypt the database
+    args[4] = { cipher: this.cipher, cipherKey: this.cipherKey, cipherCompatibility: this.cipherCompatibility };
     return new SqliteCursor(...args);
   }
 
   protected _createDatabase(path: string) {
     const db = new Database(path)
+    // if this connection uses encryption, encrypt created databases the same
+    // way, otherwise reconnecting to them with this config would fail
+    this.applyEncryption(db)
     db.close()
   }
 

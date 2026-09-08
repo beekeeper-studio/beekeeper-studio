@@ -15,6 +15,67 @@
           />
 
           <toggle-form-area
+            title="Encryption"
+            :initially-expanded="encryptionConfigured"
+          >
+            <template>
+              <div class="row gutter">
+                <div class="col s6 form-group">
+                  <label for="sqliteCipher">Cipher</label>
+                  <select
+                    name="sqliteCipher"
+                    id="sqliteCipher"
+                    v-model="cipher"
+                    :disabled="disabled"
+                  >
+                    <option
+                      v-for="c in ciphers"
+                      :key="c.value"
+                      :value="c.value"
+                    >
+                      {{ c.name }}
+                    </option>
+                  </select>
+                </div>
+                <div class="col s6 form-group">
+                  <label for="sqlitePassword">Encryption Password</label>
+                  <password-input
+                    v-model="config.password"
+                    :disabled="disabled"
+                  />
+                </div>
+              </div>
+              <div class="row gutter" v-if="cipher === 'sqlcipher'">
+                <div class="col s6 form-group">
+                  <label for="sqliteCompat">SQLCipher Compatibility</label>
+                  <select
+                    name="sqliteCompat"
+                    id="sqliteCompat"
+                    v-model="cipherCompatibility"
+                    :disabled="disabled"
+                  >
+                    <option
+                      v-for="c in compatibilities"
+                      :key="c.value"
+                      :value="c.value"
+                    >
+                      {{ c.name }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+              <div class="alert alert-info">
+                <i class="material-icons-outlined">info</i>
+                <span class="flex">
+                  <span class="expand">
+                    For encrypted databases (SQLCipher and compatible). Leave the password blank for unencrypted databases. If a correct password is rejected, try an older SQLCipher compatibility revision.
+                  </span>
+                </span>
+              </div>
+            </template>
+          </toggle-form-area>
+
+          <toggle-form-area
             v-show="isUltimate"
             title="Runtime Extensions"
             :initially-expanded="extensionChosen"
@@ -91,7 +152,9 @@ import SettingsInput from '../common/SettingsInput.vue'
 import { mapGetters, mapState } from 'vuex'
 import ToggleFormArea from '../common/ToggleFormArea.vue'
 import FilePicker from '../common/form/FilePicker.vue'
+import PasswordInput from '../common/form/PasswordInput.vue'
 import PlatformWarning from './PlatformWarning.vue'
+import { SqliteCiphers, SqliteCipherCompatibilities } from '@/lib/db/types'
 export default Vue.extend({
   props: {
     config: Object,
@@ -104,15 +167,37 @@ export default Vue.extend({
     SettingsInput,
     ToggleFormArea,
     FilePicker,
+    PasswordInput,
     PlatformWarning
   },
   data() {
     return {
-      loadExtensionFileType: this.$config.isMac ? "dylib" : this.$config.isWindows ? "dll" : "so"
+      loadExtensionFileType: this.$config.isMac ? "dylib" : this.$config.isWindows ? "dll" : "so",
+      ciphers: SqliteCiphers,
+      compatibilities: SqliteCipherCompatibilities
     }
   },
   computed: {
     ...mapGetters(['isUltimate']),
+    cipher: {
+      get(): string {
+        return this.config.sqliteOptions?.cipher || 'sqlcipher'
+      },
+      set(value: string) {
+        this.$set(this.config, 'sqliteOptions', { ...this.config.sqliteOptions, cipher: value })
+      }
+    },
+    cipherCompatibility: {
+      get(): number {
+        return this.config.sqliteOptions?.cipherCompatibility ?? 4
+      },
+      set(value: number) {
+        this.$set(this.config, 'sqliteOptions', { ...this.config.sqliteOptions, cipherCompatibility: Number(value) })
+      }
+    },
+    encryptionConfigured(): boolean {
+      return !!this.config.password || !!this.config.sqliteOptions?.cipher
+    },
     ...mapGetters('settings', { 'sqliteRuntimeExtensions': 'sqliteRuntimeExtensions' }),
     extensionChosen() {
       return this.extensions && this.extensions?.length > 0

@@ -191,6 +191,32 @@ export interface LibSQLOptions {
   syncPeriod?: number;
 }
 
+// SQLite3 Multiple Ciphers encryption schemes supported by the bundled
+// better-sqlite3-multiple-ciphers driver.
+export const SqliteCiphers = [
+  { name: 'SQLCipher', value: 'sqlcipher' },
+  { name: 'ChaCha20-Poly1305', value: 'chacha20' },
+  { name: 'AES 256-bit CBC', value: 'aes256cbc' },
+  { name: 'AES 128-bit CBC', value: 'aes128cbc' },
+  { name: 'RC4 (System.Data.SQLite)', value: 'rc4' },
+]
+
+export interface SqliteOptions {
+  // Encryption scheme used when a connection password is set.
+  cipher?: string
+  // SQLCipher compatibility revision (1-4). Real SQLCipher databases require
+  // this; defaults to 4 for the sqlcipher cipher when unset.
+  cipherCompatibility?: number
+}
+
+// SQLCipher compatibility revisions, newest first.
+export const SqliteCipherCompatibilities = [
+  { name: 'SQLCipher 4 (default)', value: 4 },
+  { name: 'SQLCipher 3', value: 3 },
+  { name: 'SQLCipher 2', value: 2 },
+  { name: 'SQLCipher 1', value: 1 },
+]
+
 export interface SQLAnywhereOptions {
   mode: 'server' | 'file';
   serverName?: string;
@@ -308,6 +334,7 @@ export interface IDbConnectionServerConfig {
   azureAuthOptions?: AzureAuthOptions
   authId?: number
   libsqlOptions?: LibSQLOptions
+  sqliteOptions?: SqliteOptions
   sqlAnywhereOptions?: SQLAnywhereOptions
   surrealDbOptions?: SurrealDBOptions
   dynamoDbOptions?: DynamoDBOptions
