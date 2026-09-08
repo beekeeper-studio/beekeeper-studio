@@ -38,7 +38,14 @@ const pluralKeys = [
   'queryFolderIds',
   'parentIds',
   'ids'
-]
+];
+
+const pluralToSingular = {
+  'connectionFolderIds': 'connectionFolderId',
+  'queryFolderIds': 'queryFolderId',
+  'parentIds': 'parentId',
+  'ids': 'id'
+};
 
 function paramsToWhere(params: Record<string, any> | Array<Record<string, any>>): FindOptionsWhere<any>[] {
   params = _.isArray(params) ? params : [params];
@@ -47,7 +54,7 @@ function paramsToWhere(params: Record<string, any> | Array<Record<string, any>>)
     const where = {};
     for (const key of pluralKeys) {
       if (key in p) {
-        const singular = key.replace(/Ids$/, 'Id').replace(/ids$/, 'id');
+        const singular = pluralToSingular[key] ?? '';
         if (p[key] && p[key].length > 0) {
           where[singular] = In(p[key]);
         } else {

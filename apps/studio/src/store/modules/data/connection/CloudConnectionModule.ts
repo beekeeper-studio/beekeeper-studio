@@ -39,7 +39,7 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
     ...actionsFor<ICloudSavedConnection>('connections', {}),
     ...accessGrantActions('connections'),
     ...treeActions<ICloudSavedConnection>({ plural: 'connectionFolderIds', singular: 'connectionFolderId' }, false),
-    initialize() {
+    async initialize() {
     },
     async poll(context) {
       if (!context.rootState.connected) {
