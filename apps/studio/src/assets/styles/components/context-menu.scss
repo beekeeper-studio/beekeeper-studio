@@ -14,27 +14,22 @@ hr {
 
 // ------ Theme Customization ------
 
-.BksContextMenu-list {
-  background: var(--menu-bg);
-  color: $text;
+& {
+  --bks-context-menu-bg-color: var(--menu-bg);
+  --bks-context-menu-fg-color: #{$text};
+  --bks-context-menu-item-fg-color: #{$text-dark};
+  --bks-context-menu-item-bg-color-hover: #{rgba($theme-base, 0.05)};
+  --bks-context-menu-item-fg-color-disabled: #{rgba($text-dark, 0.35)};
+  --bks-context-menu-item-bg-color-disabled: transparent;
+  --bks-context-menu-item-shortcut-fg-color: #{rgba($text-dark, 0.5)};
+  --bks-context-menu-divider-border-color: #{$border-color};
 }
 
-.BksContextMenu-item {
-  color: $text-dark;
-  &.disabled {
-    opacity: 0.5;
-    pointer-events: none;
-  }
-  &:hover {
-    background: rgba($theme-base, 0.05);
-  }
-}
-
-.BksContextMenu-item-shortcut {
-  color: $text-dark;
+.BksContextMenu-item.disabled {
   opacity: 0.5;
+  pointer-events: none;
 }
 
-.BksContextMenu-item-divider, hr {
-  border-top: 1px solid $border-color;
+hr {
+  border-top: 1px solid var(--bks-context-menu-divider-border-color);
 }

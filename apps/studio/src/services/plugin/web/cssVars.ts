@@ -133,10 +133,16 @@ export const cssVars = [
   "--bks-text-editor-sql-alias-fg-color",
   "--bks-text-editor-sql-field-fg-color",
 
-  // BksTextEditor context menu
-  "--bks-text-editor-context-menu-bg-color",
-  "--bks-text-editor-context-menu-fg-color",
-  "--bks-text-editor-context-menu-item-bg-color-active",
-  "--bks-text-editor-context-menu-item-fg-color-active",
-  "--bks-text-editor-context-menu-item-bg-color-hover",
+  // BksContextMenu
+  "--bks-context-menu-bg-color",
+  "--bks-context-menu-fg-color",
+  "--bks-context-menu-border-color",
+  "--bks-context-menu-item-fg-color",
+  "--bks-context-menu-item-bg-color-active",
+  "--bks-context-menu-item-fg-color-active",
+  "--bks-context-menu-item-bg-color-hover",
+  "--bks-context-menu-item-fg-color-disabled",
+  "--bks-context-menu-item-bg-color-disabled",
+  "--bks-context-menu-item-shortcut-fg-color",
+  "--bks-context-menu-divider-border-color",
 ] as const;
