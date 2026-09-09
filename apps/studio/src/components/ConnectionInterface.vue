@@ -199,7 +199,7 @@
                 <div class="form-group" v-if="!shouldUpsell">
                   <label class="checkbox-group" for="readOnlyMode">
                     <input
-                      :disabled="!isUltimate || editingDisabled"
+                      :disabled="editingDisabled"
                       class="form-control"
                       id="readOnlyMode"
                       type="checkbox"
@@ -207,8 +207,6 @@
                       v-model="config.readOnlyMode"
                     >
                     <span>Read Only Mode</span>
-                    <i v-if="!isUltimate" v-tooltip="'Upgrade to use Read Only Mode'" class="material-icons">stars</i>
-                    <!-- <i class="material-icons" v-tooltip="'Limited to '">help_outlined</i> -->
                   </label>
                 </div>
                 <!-- TEST AND CONNECT -->
@@ -248,8 +246,6 @@
                   v-if="!shouldUpsell"
                   :config="config"
                   :folders="connectionFolders"
-                  :is-ultimate="isUltimate"
-                  :is-cloud="isCloud"
                   :disabled="editingDisabled"
                   @save="save"
                 />
@@ -703,7 +699,7 @@ export default Vue.extend({
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .connection-heading {
   display: flex;
 

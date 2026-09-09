@@ -43,6 +43,13 @@ export const MenuBarModule: Module<State, RootState> = {
 
       return result;
     },
+    appMenuItems() {
+      const result = [
+        "import-connection-files"
+      ];
+
+      return result;
+    },
     menus(state, _getters, _rootState, rootGetters) {
       const builder = new MenuBuilder(
         rootGetters["settings/settings"],

@@ -74,7 +74,6 @@
             </div>
           </div>
         </div>
-        <expired-folder-alert v-if="!canCreateFolders && folders.length > 0" />
         <error-alert
           v-if="error && !isPollError && !errorList.includes(error)"
           :error="error"
@@ -246,7 +245,6 @@
 <script>
 import _ from 'lodash'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
-import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
 import { mapActions, mapGetters, mapMutations, mapState } from 'vuex'
 import SidebarLoading from '../../common/SidebarLoading.vue'
 import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
@@ -261,7 +259,7 @@ import rawLog from '@bksLogger'
 const log = rawLog.scope('FavoriteList')
 
 export default {
-  components: { SidebarLoading, ErrorAlert, ExpiredFolderAlert, FavoriteListItem, Tree, TreeFolder, EditableText, ContentPlaceholder, ContentPlaceholderText },
+  components: { SidebarLoading, ErrorAlert, FavoriteListItem, Tree, TreeFolder, EditableText, ContentPlaceholder, ContentPlaceholderText },
   data: function () {
     return {
       checkedFavorites: [],
@@ -281,7 +279,7 @@ export default {
   },
   watch: {
     filterQuery(value) {
-      this.setSavedQueryFilter(value);
+      this.setQueryFilter(value);
     },
   },
   mounted() {
@@ -292,7 +290,7 @@ export default {
     clearTimeout(this.commitedTimeout)
   },
   computed: {
-    ...mapGetters(['workspace', 'isCloud', 'isUltimate', 'canCreateFolders']),
+    ...mapGetters(['workspace', 'isCloud']),
     ...mapGetters('data/queries', {'filteredQueries': 'filteredQueries'}),
     ...mapState('tabs', {'activeTab': 'active'}),
     ...mapState('data/queries/nodes', {'itemNodes': 'items'}),
@@ -301,7 +299,7 @@ export default {
       'queries': 'items',
       'queriesError': 'error',
       'queriesPollError': 'pollError',
-      'savedQueryFilter': 'filter',
+      'queryFilter': 'filter',
       'pendingSaveIds': 'pendingSaveIds',
       fetchingResults: 'searching',
     }),
@@ -351,7 +349,7 @@ export default {
       return this.folders.length === 0 && this.foldersLoading;
     },
     typing() {
-      return this.filterQuery !== this.savedQueryFilter;
+      return this.filterQuery !== this.queryFilter;
     },
     error() {
       return this.queriesError || this.foldersError || null
@@ -381,7 +379,7 @@ export default {
       loadQueryFolders: 'data/queryFolders/loadByParentIds',
       unloadQueries: 'data/queries/unloadByParentIds',
       unloadQueryFolders: 'data/queryFolders/unloadByParentIds',
-      setSavedQueryFilter: 'data/queries/setSavedQueryFilter',
+      setQueryFilter: 'data/queries/setQueryFilter',
     }),
     ...mapMutations({
       setExpandedFolderIds: 'sidebar/queries/expandedIds',
@@ -437,10 +435,10 @@ export default {
     },
     importFromLocal() {
       if (!this.isCloud) {
-          this.$root.$emit(AppEvent.upgradeModal, 'Cloud Workspaces')
-          return
-        }
-        this.$root.$emit(AppEvent.promptQueryImport)
+        this.$root.$emit(AppEvent.upgradeModal, 'Cloud Workspaces')
+        return
+      }
+      this.$root.$emit(AppEvent.promptQueryImport)
     },
     importFromComputer() {
       this.$root.$emit(AppEvent.promptSqlFilesImport)
@@ -484,10 +482,6 @@ export default {
       this.checkedFavorites = [];
     },
     createFolder() {
-      if (!this.canCreateFolders) {
-        this.$root.$emit(AppEvent.upgradeModal, 'Folders')
-        return
-      }
       this.startRootDraft("folder");
     },
     startRootDraft(type) {
@@ -585,10 +579,6 @@ export default {
         {
           name: "New Folder",
           handler: ({ item }) => {
-            if (!this.canCreateFolders) {
-              this.$root.$emit(AppEvent.upgradeModal, 'Folders');
-              return;
-            }
             this.startDrafting("folder", item.id);
             this.expandFolder(item.id);
           },
