@@ -38,13 +38,13 @@ describe('store connect action', () => {
       }
     }
 
-    // @ts-expect-error - test stub for the preload bridge
+    // partial stub of the preload bridge - only what connect/rollback touch
     window.main = {
       enableConnectionMenuItems: vi.fn(),
       disableConnectionMenuItems: vi.fn(),
       setWindowTitle: vi.fn(),
       basename: (p: string) => p.split('/').pop(),
-    }
+    } as any
 
     store.commit('setUsername', 'tester')
     store.commit('clearConnection')
