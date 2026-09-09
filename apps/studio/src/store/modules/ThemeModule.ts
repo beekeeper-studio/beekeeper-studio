@@ -2,7 +2,7 @@ import { Module } from "vuex";
 import { State as RootState } from "../index";
 
 const darkMediaQuery =
-  typeof window === "undefined"
+  typeof window === "undefined" || typeof window.matchMedia !== "function"
     ? null
     : window.matchMedia("(prefers-color-scheme: dark)");
 
