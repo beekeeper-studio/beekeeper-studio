@@ -8,6 +8,7 @@
         <a
           href=""
           class="btn btn-flat btn-icon btn-block"
+          data-testid="new-connection"
           @click.prevent="$emit('create')"
         >
           <i class="material-icons">add</i>

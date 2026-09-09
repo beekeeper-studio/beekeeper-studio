@@ -30,6 +30,7 @@
           :class="{ selected: value === type.value }"
           v-for="type in filteredTypes"
           :key="type.value"
+          :data-testid="`connection-type-${type.value}`"
           @dblclick="submit"
         >
           <input
@@ -63,6 +64,7 @@
           <button
             class="btn btn-primary"
             type="submit"
+            data-testid="connection-type-picker-next"
             :disabled="!value || selectedType?.lockedByLicense"
           >
             Next
