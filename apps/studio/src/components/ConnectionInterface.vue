@@ -238,8 +238,6 @@
                   v-if="!shouldUpsell"
                   :config="config"
                   :folders="connectionFolders"
-                  :is-ultimate="isUltimate"
-                  :is-cloud="isCloud"
                   :disabled="editingDisabled"
                   @save="save"
                 />
