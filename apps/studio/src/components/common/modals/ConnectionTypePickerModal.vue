@@ -125,7 +125,6 @@ export default Vue.extend({
       ];
     },
     types(): Type[] {
-      console.log("this is community: ", this.isCommunity);
       return this.$config.defaults.connectionTypes.map((type) => ({
         ...type,
         lockedByLicense: this.isCommunity && isUltimateType(type.value),
@@ -147,7 +146,6 @@ export default Vue.extend({
       this.value = null;
       this.openOptions = options;
       this.$modal.show(this.modalName);
-      console.log(this.types);
     },
     handleSubmit(_event: Event, close: Function) {
       if (!this.selectedType) {
