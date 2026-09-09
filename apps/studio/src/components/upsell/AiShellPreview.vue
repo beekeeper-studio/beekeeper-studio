@@ -53,13 +53,15 @@
             class="cc-sql cc-sql-reveal"
             :class="{ shown: step >= 7 }"
           >
-            <span class="kw">SELECT</span> f.title, <span class="kw">COUNT</span>(*) <span class="kw">AS</span> rentals
-            <span class="kw">FROM</span> <span class="id">rental</span> r
-            <span class="kw">JOIN</span> <span class="id">inventory</span> i <span class="kw">ON</span> r.inventory_id = i.inventory_id
-            <span class="kw">JOIN</span> <span class="id">film</span> f <span class="kw">ON</span> i.film_id = f.film_id
-            <span class="kw">GROUP BY</span> f.title
-            <span class="kw">ORDER BY</span> rentals <span class="kw">DESC</span>
-            <span class="kw">LIMIT</span> <span class="num">3</span>;
+            <!-- One element per line: the template compiler condenses
+                 whitespace, so newlines in the source don't survive. -->
+            <div><span class="kw">SELECT</span> f.title, <span class="kw">COUNT</span>(*) <span class="kw">AS</span> rentals</div>
+            <div><span class="kw">FROM</span> <span class="id">rental</span> r</div>
+            <div><span class="kw">JOIN</span> <span class="id">inventory</span> i <span class="kw">ON</span> r.inventory_id = i.inventory_id</div>
+            <div><span class="kw">JOIN</span> <span class="id">film</span> f <span class="kw">ON</span> i.film_id = f.film_id</div>
+            <div><span class="kw">GROUP BY</span> f.title</div>
+            <div><span class="kw">ORDER BY</span> rentals <span class="kw">DESC</span></div>
+            <div><span class="kw">LIMIT</span> <span class="num">3</span>;</div>
           </div>
         </div>
 

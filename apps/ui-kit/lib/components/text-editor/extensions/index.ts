@@ -33,6 +33,7 @@ import { keymap as specialKeymap } from "./keymap";
 import { extraKeymap } from "./extraKeymap";
 import { lineNumbers } from "./lineNumbers";
 import { lineWrapping } from "./lineWrapping";
+import { indentationMarkers } from "@replit/codemirror-indentation-markers";
 import { readOnly } from "./readOnly";
 import { markers } from "./markers";
 import { lineGutters } from "./lineGutters";
@@ -149,6 +150,16 @@ export function extensions(config: ExtensionConfiguration = {}) {
       ...(config.actionsKeymap || []),
     ]),
     lineWrapping({  enabled: config.lineWrapping }),
+    config.indentationMarkers
+      ? indentationMarkers({
+        colors: {
+          light: "var(--bks-text-editor-indent-marker-bg-color)",
+          dark: "var(--bks-text-editor-indent-marker-bg-color)",
+          activeLight: "var(--bks-text-editor-indent-marker-active-bg-color)",
+          activeDark: "var(--bks-text-editor-indent-marker-active-bg-color)",
+        },
+      })
+      : [],
     readOnly({ enabled: config.readOnly }),
     markers({ markers: config.markers || [] }),
     lineGutters({ lineGutters: config.lineGutters || [] }),
@@ -192,6 +203,9 @@ export function extensions(config: ExtensionConfiguration = {}) {
       ".cm-lineNumbers .cm-gutterElement": {
         color: "var(--bks-text-editor-linenumber-fg-color)",
       },
+      ".cm-lineNumbers .cm-activeLineGutter": {
+        color: "var(--bks-text-editor-linenumber-active-fg-color)",
+      },
       // Focused state
       "&.cm-focused": {
         outlineColor: "var(--bks-text-editor-focused-outline-color)",
@@ -209,6 +223,9 @@ export function extensions(config: ExtensionConfiguration = {}) {
       },
       ".cm-activeLineGutter": {
         backgroundColor: "var(--bks-text-editor-activeline-gutter-bg-color)",
+      },
+      ".cm-indent-markers::before": {
+        left: "6px",
       },
       // Matching brackets
       "&.cm-focused .cm-matchingBracket": {

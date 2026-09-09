@@ -37,30 +37,49 @@ export default class NativeMenuBuilder {
   }
 
   toggleConnectionMenuItems(action:"enable"|"disable") {
-      if(!this.menu){
-        return;
-      }
+    if(!this.menu){
+      return;
+    }
 
-      const isEnabled = action === "enable" ? true : false;
+    const isEnabled = action === "enable" ? true : false;
 
-      const getMenuItems = (label: string) => this.menu?.items.find(item => item.label === label)?.submenu?.items ?? [];
+    const pluginItemIds = this.pluginMenuItems.map((item) => item.id);
 
-      const pluginItemIds = this.pluginMenuItems.map((item) => item.id);
+    const toggleMenuMap = {
+      File: ["new-query-menu", "go-to", "disconnect", "import-sql-files", "close-tab"],
+      View: ["menu-toggle-sidebar", "menu-secondary-sidebar"],
+      Tools: ["backup-database", "restore-database", "export-tables", ...pluginItemIds],
+    };
 
-      const toggleMenuMap = {
-        File: ["new-query-menu", "go-to", "disconnect", "import-sql-files", "close-tab"],
-        View: ["menu-toggle-sidebar", "menu-secondary-sidebar"],
-        Tools: ["backup-database", "restore-database", "export-tables", ...pluginItemIds],
-      };
+    for(const [menuLabel, toggleMenuIds] of Object.entries(toggleMenuMap)){
+      const menuItems = this.getMenuItems(menuLabel);
+      menuItems.forEach(menuItem=>{
+        if(toggleMenuIds.includes(menuItem.id)){
+          menuItem.enabled = isEnabled;
+        }
+      })
+    }
+  }
 
-      for(const [menuLabel, toggleMenuIds] of Object.entries(toggleMenuMap)){
-        const menuItems = getMenuItems(menuLabel);
-        menuItems.forEach(menuItem=>{
-          if(toggleMenuIds.includes(menuItem.id)){
-            menuItem.enabled = isEnabled;
-          }
-        })
-      }
+  toggleAppMenuItems(action: "enable" | "disable") {
+    if (!this.menu) {
+      return;
+    }
+
+    const isEnabled = action === "enable" ? true : false;
+
+    const toggleMenuMap = {
+      File: ["import-connection-files"]
+    };
+
+    for (const [menuLabel, toggleMenuIds] of Object.entries(toggleMenuMap)) {
+      const menuItems = this.getMenuItems(menuLabel);
+      menuItems.forEach(menuItem => {
+        if (toggleMenuIds.includes(menuItem.id)) {
+          menuItem.enabled = isEnabled;
+        }
+      })
+    }
   }
 
   listenForClicks(): void {
@@ -79,8 +98,14 @@ export default class NativeMenuBuilder {
   }
 
   listenForToggleConnectionMenuItems(): void {
-    ipcMain.on("enable-connection-menu-items", (_event ) => this.toggleConnectionMenuItems("enable"));
-    ipcMain.on("disable-connection-menu-items", (_event ) => this.toggleConnectionMenuItems("disable"));
+    ipcMain.on("enable-connection-menu-items", (_event ) => {
+      this.toggleConnectionMenuItems("enable");
+      this.toggleAppMenuItems("disable");
+    });
+    ipcMain.on("disable-connection-menu-items", (_event ) => {
+      this.toggleConnectionMenuItems("disable");
+      this.toggleAppMenuItems("enable");
+    });
   }
 
   listenForPluginMenuChanges(): void {
@@ -106,6 +131,10 @@ export default class NativeMenuBuilder {
         this.rebuildMenu();
       }
     });
+  }
+
+  private getMenuItems(label: string) {
+    return this.menu?.items.find(item => item.label === label)?.submenu?.items ?? []
   }
 
   private rebuildMenu(): void {

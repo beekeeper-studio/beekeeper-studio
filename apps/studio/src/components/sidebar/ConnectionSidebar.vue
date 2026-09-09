@@ -8,6 +8,7 @@
         <a
           href=""
           class="btn btn-flat btn-icon btn-block"
+          data-testid="new-connection"
           @click.prevent="$emit('create')"
         >
           <i class="material-icons">add</i>
@@ -93,52 +94,45 @@
           ref="savedConnectionList"
         >
           <div class="list-group">
-            <div class="list-heading">
-              <div class="flex">
-                <div class="sub row flex-middle noselect">
+            <div class="list-heading row">
+              <div class="sub row flex-middle expand">
+                <div class="expand noselect">
                   Saved <span class="badge">{{ (filteredConnections || []).length }}</span>
                 </div>
-                <span class="expand" />
                 <div class="actions">
-                  <a
-                    v-if="isCloud"
-                    @click.prevent="importFromLocal"
-                    title="Import connections from local workspace"
-                  >
-                    <i class="material-icons">save_alt</i>
-                  </a>
                   <a
                     @click.prevent="createFolder"
                     title="New Folder"
                   >
                     <i class="material-icons-outlined">create_new_folder</i>
                   </a>
-                  <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
+                  <x-button
+                    title="Import Connections"
+                  >
+                    <i class="material-icons">save_alt</i>
+                    <x-menu style="--align: end;">
+                      <x-menuitem @click.prevent="importFromComputer">
+                        <x-label>Import .json files into Saved Connections</x-label>
+                      </x-menuitem>
+                      <x-menuitem
+                        v-if="isCloud"
+                        @click.prevent="importFromLocal"
+                      >
+                        <x-label>Import connections from local workspace</x-label>
+                      </x-menuitem>
+                    </x-menu>
+                  </x-button>
+                  <a @click.prevent="refresh">
+                    <i class="material-icons">refresh</i>
+                  </a>
                   <sidebar-sort-buttons
                     v-if="!isCloud"
                     v-model="sort"
                     :sort-options="sortables"
                   />
                 </div>
-                <!-- <x-button class="actions-btn btn btn-link btn-small" v-tooltip="`Sorted by ${sortables[sortOrder]}`">
-                  <i class="material-icons-outlined">sort</i>
-                  <x-menu style="--target-align: right;">
-                    <x-menuitem
-                      v-for="i in Object.keys(sortables)"
-                      :key="i"
-                      :toggled="i === sortOrder"
-                      togglable
-                      @click="sortConnections(i)"
-                    >
-                      <x-label>{{ sortables[i] }}</x-label>
-                    </x-menuitem>
-                  </x-menu>
-                </x-button> -->
               </div>
             </div>
-            <expired-folder-alert
-              v-if="!canCreateFolders && folders.length > 0"
-            />
             <error-alert
               :error="error"
               v-if="error && !isPollError && !errorList.includes(error)"
@@ -337,7 +331,6 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
 import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
 import ContentPlaceholderText from '@/components/common/loading/ContentPlaceholderText.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
-import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
 import Split from 'split.js'
 import { AppEvent } from '@/common/AppEvent'
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
@@ -359,7 +352,6 @@ export default {
     Tree,
     TreeFolder,
     EditableText,
-    ExpiredFolderAlert,
     SidebarSortButtons,
     WorkspaceSidebar,
   },
@@ -419,7 +411,6 @@ export default {
       settings: 'settings/settings',
       isCloud: 'isCloud',
       isUltimate: 'isUltimate',
-      canCreateFolders: 'canCreateFolders',
       activeWorkspaces: 'credentials/activeWorkspaces',
       pinnedConnections: 'pinnedConnections/pinnedConnections',
       filteredConnections: 'data/connections/filteredConnections',
@@ -570,8 +561,10 @@ export default {
         sizes: this.sizes
       })
     },
+    importFromComputer() {
+      this.$root.$emit(AppEvent.promptConnectionFilesImport)
+    },
     importFromLocal() {
-      console.log("triggering import")
       this.$root.$emit(AppEvent.promptConnectionImport)
     },
     async refresh() {
@@ -596,16 +589,12 @@ export default {
       return `label-${color}`
     },
     createFolder() {
-      if (!this.canCreateFolders) {
-        this.$root.$emit(AppEvent.upgradeModal, 'Folders')
-        return
-      }
       if (this.isCloud) {
         // Find personal folder
         const parent = this.folders.find((f) => f.personal && !f.parentId);
         if (!parent) {
           this.$noty.error(
-            "No personal folder found. Right-click an existing folder and choose New Subfolder to create a folder instead."
+            "No personal folder found. Right-click an existing folder and choose New Folder to create a folder instead."
           );
           return;
         }
@@ -646,13 +635,15 @@ export default {
       const canWrite = folder.canWrite ?? true;
       const isRoot = !folder.parentId;
       const options = [{
-        name: 'New Subfolder',
+        name: 'New Folder',
         handler: ({ item }) => {
-          if (!this.canCreateFolders) {
-            this.$root.$emit(AppEvent.upgradeModal, 'Folders');
-            return;
-          }
           this.startDrafting(item.id);
+          this.expandFolder(item.id);
+        },
+      }, {
+        name: 'New Connection',
+        handler: ({ item }) => {
+          this.$emit('create', { connectionFolderId: item.id });
           this.expandFolder(item.id);
         },
       }];
@@ -771,7 +762,7 @@ export default {
       }
     },
     async deleteFolder(folder) {
-      if (await this.$confirm(`Delete folder "${folder.name}"?`)) {
+      if (await this.$confirm(`Delete folder "${folder.name}"?`, undefined, { variant: "danger" })) {
         try {
           await this.$store.dispatch('data/connectionFolders/remove', folder)
         } catch (e) {
@@ -895,9 +886,6 @@ export default {
   to {
     background: transparent;
   }
-}
-::v-deep .alert.expired-folder-alert {
-  margin-inline: 0.8rem;
 }
 
 .empty-state {
