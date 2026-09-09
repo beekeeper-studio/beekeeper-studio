@@ -138,6 +138,72 @@ The **ODBC Options** section exposes the settings specific to integrated authent
 - **Service Principal Name (SPN)** — override the Kerberos SPN when the auto-derived
   `MSSQLSvc/<host>:<port>` is wrong (e.g. a CNAME, load balancer, or non-standard port).
 
+## Command-line connections
+
+Pass a SQL Server connection URI to the Beekeeper Studio executable as a positional argument, with `--url`, or with `-u`. Both the `mssql://` and `sqlserver://` schemes are accepted.
+
+```bash
+beekeeper-studio 'mssql://sa:Example%401@db.example.com:1433/master'
+beekeeper-studio --url 'sqlserver://sa:Example%401@db.example.com:1433/master'
+```
+
+Percent-encode reserved URI characters in credentials (`@` becomes `%40`, for example).
+
+!!! warning "Credentials in command history"
+    Connection URIs can expose passwords and client secrets in shell history and the process list. Prefer interactive authentication or a tightly controlled script when possible.
+
+Select the authentication method with the `auth` query parameter:
+
+| `auth` value | Authentication method | Additional parameters |
+| --- | --- | --- |
+| `sql-password` or omitted | SQL Login | Username and password in the URI |
+| `sql-password` with `domain` | Domain (NTLM) | `domain` |
+| `windows` or `kerberos` | Kerberos / Windows via ODBC | `encryption`, `serverCertificate`, `serverSpn` |
+| `azure-sso` | Interactive Azure / Entra ID SSO | None; opens the browser sign-in flow |
+| `azure-service-principal` | Azure service principal secret | `tenantId`, `clientId`, `clientSecret` |
+| `azure-cli` | Azure CLI authentication | `cliPath` |
+
+### SQL Login
+
+```bash
+beekeeper-studio 'mssql://sa:Example%401@db.example.com:1433/master?auth=sql-password&TrustServerCertificate=true'
+```
+
+### Domain (NTLM)
+
+```bash
+beekeeper-studio 'mssql://alice:password@db.example.com:1433/master?auth=sql-password&domain=ACME'
+```
+
+### Kerberos / Windows via ODBC
+
+```bash
+beekeeper-studio 'sqlserver://db.example.com:1433/master?auth=windows&encryption=on'
+```
+
+`encryption` accepts `off`, `on` (the default), or `strict`. Strict mode also accepts a certificate path, and `serverSpn` overrides the derived Kerberos service principal:
+
+```bash
+beekeeper-studio 'sqlserver://db.example.com:1433/master?auth=kerberos&encryption=strict&serverCertificate=%2Fetc%2Fsql-server.cer&serverSpn=MSSQLSvc%2Fdb.example.com%3A1433'
+```
+
+The ODBC and Kerberos prerequisites described above still apply.
+
+### Azure / Entra ID
+
+```bash
+# Interactive browser sign-in
+beekeeper-studio 'sqlserver://azure-server.database.windows.net:1433/database?auth=azure-sso'
+
+# Service principal
+beekeeper-studio 'sqlserver://azure-server.database.windows.net:1433/database?auth=azure-service-principal&tenantId=TENANT_ID&clientId=CLIENT_ID&clientSecret=CLIENT_SECRET'
+
+# Existing Azure CLI login
+beekeeper-studio 'sqlserver://azure-server.database.windows.net:1433/database?auth=azure-cli&cliPath=%2Fusr%2Flocal%2Fbin%2Faz'
+```
+
+Azure authentication still requires the corresponding Enterprise feature and, for `azure-cli`, an authenticated Azure CLI installation.
+
 ## Troubleshooting
 
 - **"Integrated authentication requires ... ODBC Driver 18 for SQL Server"** — the ODBC

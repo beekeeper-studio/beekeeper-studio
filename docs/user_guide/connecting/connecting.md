@@ -230,4 +230,15 @@ Beekeeper Studio provides file associations so you can do the following things w
   - Mac: `open postgresql://user@host/database` or `open ./example.db`
   - Linux: `xdg-open postgresql://user@host/database` or `xdg-open ./example.db`
 
+## Command Line Connections
+
+Pass a connection URL or database file directly to the Beekeeper Studio executable. Positional arguments, `--url`, and its `-u` shorthand are supported:
+
+```bash
+beekeeper-studio 'postgresql://user@host/database'
+beekeeper-studio --url 'mysql://user@host/database'
+beekeeper-studio ./example.db
+```
+
+
 

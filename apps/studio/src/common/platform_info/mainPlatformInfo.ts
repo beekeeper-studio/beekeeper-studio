@@ -39,6 +39,10 @@ export function resolveLevel(env: any, isDev = false) {
   return 'warn';
 }
 
+export function parseCommandLineArgs(argv: string[], isPackaged: boolean) {
+  return yargs(argv.slice(isPackaged ? 1 : 2))
+}
+
 
 export function mainPlatformInfo(): IPlatformInfo {
 
@@ -75,8 +79,7 @@ export function mainPlatformInfo(): IPlatformInfo {
 
   const sessionType = p.env.XDG_SESSION_TYPE
 
-  const slice = isDevEnv ? 2 : 1
-  const parsedArgs = yargs(p.argv.slice(slice))
+  const parsedArgs = parseCommandLineArgs(p.argv, e.app?.isPackaged ?? false)
   const appVersion = testMode ? '0.0.0' : e.app.getVersion()
 
   const parsedAppVersion = resolveAppVersion(appVersion)
