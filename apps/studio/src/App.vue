@@ -172,7 +172,6 @@ export default Vue.extend({
     },
   },
   async beforeDestroy() {
-    this.unregisterHandlers(this.rootBindings)
     clearInterval(this.interval)
     clearInterval(this.licenseInterval)
   },
@@ -207,8 +206,6 @@ export default Vue.extend({
     })
 
     this.applyTheme()
-
-    this.registerHandlers(this.rootBindings)
 
     if (this.url) {
       try {
