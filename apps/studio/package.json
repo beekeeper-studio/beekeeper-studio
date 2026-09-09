@@ -231,7 +231,7 @@
     "vite": "^8.0.8",
     "vite-ng-plugin-vue2": "^1.0.0",
     "vite-plugin-commonjs": "^0.10.1",
-    "vitest": "~4.1.0",
+    "vitest": "~4.1.11",
     "vue-template-compiler": "^2.7.16",
     "xvfb-maybe": "^0.2.1"
   },
