@@ -26,6 +26,25 @@ export class ClientError extends Error {
   }
 }
 
+export function annotateQueryError(error: any, queryIndex: number, totalQueries: number): any {
+  if (totalQueries <= 1 || !error) {
+    return error;
+  }
+
+  const annotation = ` (@ query #${queryIndex + 1})`;
+
+  if (typeof error === 'string') {
+    return error.includes('(@ query #') ? error : `${error}${annotation}`;
+  }
+
+  if (typeof error === 'object' && typeof error.message === 'string' && !error.message.includes('(@ query #')) {
+    error.message = `${error.message}${annotation}`;
+  }
+
+  return error;
+}
+
+
 export function escapeString(value) {
   if (_.isNil(value)) return null
   return value.toString().replaceAll("'", "''")

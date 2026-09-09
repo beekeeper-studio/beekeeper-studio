@@ -10,7 +10,7 @@ import logRaw from '@bksLogger'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
-import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries, errorMessages } from './utils';
+import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries, errorMessages, annotateQueryError } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
 // FIXME (azmi): use BksConfig
@@ -853,9 +853,24 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
 
   async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
     const arrayMode: boolean = options?.arrayMode;
-    const data = await this.driverExecuteMultiple(queryText, { arrayMode, tabId: options?.tabId });
-
     const commands = this.identifyCommands(queryText);
+    let data: any;
+
+    try {
+      data = await this.driverExecuteMultiple(queryText, { arrayMode, tabId: options?.tabId });
+    } catch (err: any) {
+      if (commands.length > 1 && err && err.position) {
+        // PostgreSQL reports error.position as 1-based character offset into queryText.
+        // Map offset against identified command ranges to pinpoint the failed query index.
+        const errorPos = parseInt(err.position, 10) - 1;
+        const failedIndex = commands.findIndex((cmd) => errorPos >= cmd.start && errorPos <= cmd.end);
+        if (failedIndex !== -1) {
+          annotateQueryError(err, failedIndex, commands.length);
+        }
+      }
+      throw err;
+    }
+
     log.info("COMMANDS: ", commands)
 
     return data.map((result, idx) => this.parseRowQueryResult(result, commands[idx], arrayMode));
