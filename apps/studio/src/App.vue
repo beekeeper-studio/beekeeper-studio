@@ -144,6 +144,8 @@ export default Vue.extend({
       'isTrial': 'isTrial',
       'isUltimate': 'isUltimate',
       'themeValue': 'settings/themeValue',
+      'themeDark': 'settings/themeDark',
+      'themeType': 'settings/themeType',
     }),
     editorFontSize() {
       return this.$store.state.settings?.settings?.editorFontSize?.value || 14
@@ -154,7 +156,11 @@ export default Vue.extend({
       log.info('database changed', this.database)
     },
     themeValue() {
-      document.body.className = `theme-${this.themeValue}`
+      this.applyTheme()
+      this.trigger(AppEvent.changedTheme, this.themeValue)
+    },
+    themeType() {
+      this.applyTheme()
       this.trigger(AppEvent.changedTheme, this.themeValue)
     },
     status(curr, prev) {
@@ -169,6 +175,7 @@ export default Vue.extend({
     },
   },
   async beforeDestroy() {
+    this.unregisterHandlers(this.rootBindings)
     clearInterval(this.interval)
     clearInterval(this.licenseInterval)
   },
@@ -201,9 +208,10 @@ export default Vue.extend({
     this.$nextTick(() => {
       window.main.isReady();
     })
-    if (this.themeValue) {
-      document.body.className = `theme-${this.themeValue}`
-    }
+
+    this.applyTheme()
+
+    this.registerHandlers(this.rootBindings)
 
     if (this.url) {
       try {
@@ -219,6 +227,21 @@ export default Vue.extend({
 
   },
   methods: {
+    applyTheme() {
+      document.documentElement.setAttribute(
+        "data-theme-dark",
+        this.themeType === "dark" ? "true" : "false"
+      );
+      document.documentElement.setAttribute("data-theme", this.themeValue);
+
+      if (this.themeValue === "default" && this.themDark === "match-system") {
+        document.body.className = "theme-system";
+      } else if (this.themeValue === "default") {
+        document.body.className = `theme-${this.themeType}`;
+      } else {
+        document.body.className = `theme-${this.themeValue}-${this.themeType}`;
+      }
+    },
     notifyFreeTrial() {
       Noty.closeAll('trial')
       if (this.isTrial && this.isUltimate) {
