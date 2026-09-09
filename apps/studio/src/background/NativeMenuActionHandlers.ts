@@ -168,13 +168,8 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.send(AppEvent.quickSearch)
   }
 
-  switchTheme = async (menuItem: Electron.MenuItem): Promise<void> => {
-    const label = _.isString(menuItem) ? menuItem : menuItem.label
-    this.settings.theme.userValue = label.toLowerCase().replaceAll(" ", "-")
-    await this.settings.theme.save()
-    getActiveWindows().forEach( window => {
-      window.send(AppEvent.settingsChanged, 'theme')
-    })
+  openAppearancesModal = (_menuItem: Electron.MenuItem, win: ElectronWindow): void => {
+    if (win) win.webContents.send(AppEvent.openAppearancesModal);
   }
 
   addBeekeeper = async (_1: Electron.MenuItem, win: ElectronWindow): Promise<void> => {

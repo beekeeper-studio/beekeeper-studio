@@ -5,15 +5,9 @@ import Vue from 'vue'
 import { Module } from 'vuex'
 import config from "@/config";
 
-const darkMediaQuery = typeof window === "undefined"
-  ? null
-  : window.matchMedia("(prefers-color-scheme: dark)");
-
-
 interface State {
   settings: IGroupedUserSettings,
-  initialized: boolean,
-  systemDark: boolean
+  initialized: boolean
 }
 
 const M = {
@@ -25,8 +19,7 @@ const SettingStoreModule: Module<State, any> = {
   namespaced: true,
   state: () => ({
     settings: {},
-    initialized: false,
-    systemDark: darkMediaQuery?.matches ?? false
+    initialized: false
   }),
   mutations: {
     replaceSettings(state, newSettings: TransportUserSetting) {
@@ -38,9 +31,6 @@ const SettingStoreModule: Module<State, any> = {
     },
     setInitialized(state) {
       state.initialized = true;
-    },
-    setSystemDark(state, systemDark: boolean) {
-      state.systemDark = systemDark;
     }
   },
   actions: {
@@ -49,11 +39,6 @@ const SettingStoreModule: Module<State, any> = {
       context.commit(M.REPLACEALL, settings);
 
       context.commit('setInitialized');
-
-      darkMediaQuery?.addEventListener('change', (event) => {
-        context.commit('setSystemDark', event.matches);
-      });
-      context.commit('setSystemDark', darkMediaQuery?.matches ?? false);
     },
     async saveSetting(context, setting: TransportUserSetting) {
       await Vue.prototype.$util.send('appdb/setting/save', { obj: setting })
@@ -82,22 +67,6 @@ const SettingStoreModule: Module<State, any> = {
   getters: {
     settings(state) {
       return state.settings
-    },
-    themeValue(state) {
-      return state.settings.theme?.value || "default";
-    },
-    themeDark(state): boolean | "match-system" {
-      if (state.settings.themeDark.value === "match-system") {
-        return "match-system";
-      }
-      return state.settings.themeDark.value === "true";
-    },
-    /** is the theme light or dark, with match-system resolved */
-    themeType(state, getters) {
-      const dark = getters.themeDark === "match-system"
-        ? state.systemDark
-        : getters.themeDark;
-      return dark ? "dark" : "light";
     },
     /** The keymap type to be used in text editor */
     userKeymap(state) {

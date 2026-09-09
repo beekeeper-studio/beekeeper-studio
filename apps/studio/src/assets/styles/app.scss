@@ -15,7 +15,7 @@
 @import './app/base';
 @import './themes/themes.css';
 
-[data-theme="default"][data-theme-dark="true"] body {
+[data-theme="default"][data-theme-dark="true"] {
   @import './themes/dark/variables.scss';
   @import './app/mixins';
   @import './components/all';
@@ -25,7 +25,7 @@
   @import './themes/scssvars-to-cssprops.scss';
 }
 
-[data-theme="default"] body {
+[data-theme="default"] {
   @import './themes/light/variables.scss';
   @import './app/mixins';
   @import './components/all';
@@ -35,7 +35,7 @@
   @import './themes/scssvars-to-cssprops.scss';
 }
 
-[data-theme="solarized"][data-theme-dark="true"] body {
+[data-theme="solarized"][data-theme-dark="true"] {
   @import './themes/solarized-dark/variables.scss';
   @import './app/mixins';
   @import './components/all';
@@ -47,7 +47,7 @@
 
 
 
-[data-theme="solarized"] body {
+[data-theme="solarized"] {
   @import './themes/solarized-light/variables.scss';
   @import './app/mixins';
   @import './components/all';

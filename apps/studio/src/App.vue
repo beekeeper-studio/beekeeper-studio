@@ -35,6 +35,7 @@
     <plugin-controller :editor-font-size="editorFontSize" />
     <plugin-manager-modal />
     <keyboard-shortcuts-modal />
+    <appearances-modal />
     <move-item-modal />
     <move-folder-modal />
     <connection-type-picker-modal />
@@ -94,6 +95,7 @@ import type { LicenseStatus } from "@/lib/license";
 import { SmartLocalStorage } from '@/common/LocalStorage';
 import PluginManagerModal from '@/components/plugins/PluginManagerModal.vue'
 import KeyboardShortcutsModal from '@/components/common/modals/KeyboardShortcutsModal.vue'
+import AppearancesModal from '@/components/common/modals/AppearancesModal.vue'
 import PluginController from '@/components/plugins/PluginController.vue'
 import LockManager from "@/components/managers/LockManager.vue";
 import InputEphemeralModal from "@/components/common/modals/InputEphemeralModal.vue";
@@ -120,7 +122,7 @@ export default Vue.extend({
     WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
     PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
     InputEphemeralModal, ShareModal, MoveItemModal, MoveFolderModal,
-    ConnectionFilesImportModal, ConnectionTypePickerModal,
+    ConnectionFilesImportModal, ConnectionTypePickerModal, AppearancesModal
   },
   data() {
     return {
@@ -143,9 +145,8 @@ export default Vue.extend({
     ...mapGetters({
       'isTrial': 'isTrial',
       'isUltimate': 'isUltimate',
-      'themeValue': 'settings/themeValue',
-      'themeDark': 'settings/themeDark',
-      'themeType': 'settings/themeType',
+      'themeName': 'theme/name',
+      'themeType': 'theme/type',
     }),
     editorFontSize() {
       return this.$store.state.settings?.settings?.editorFontSize?.value || 14
@@ -155,13 +156,13 @@ export default Vue.extend({
     database() {
       log.info('database changed', this.database)
     },
-    themeValue() {
+    themeName() {
       this.applyTheme()
-      this.trigger(AppEvent.changedTheme, this.themeValue)
+      this.trigger(AppEvent.changedTheme, this.themeName)
     },
     themeType() {
       this.applyTheme()
-      this.trigger(AppEvent.changedTheme, this.themeValue)
+      this.trigger(AppEvent.changedTheme, this.themeName)
     },
     status(curr, prev) {
       this.$store.dispatch('updateWindowTitle')
@@ -232,7 +233,7 @@ export default Vue.extend({
         "data-theme-dark",
         this.themeType === "dark" ? "true" : "false"
       );
-      document.documentElement.setAttribute("data-theme", this.themeValue);
+      document.documentElement.setAttribute("data-theme", this.themeName);
     },
     notifyFreeTrial() {
       Noty.closeAll('trial')
