@@ -77,13 +77,10 @@ export default Vue.extend({
     ...mapGetters({
       themeName: "theme/name",
       themeType: "theme/type",
-      settings: "settings/settings",
+      themeDark: "theme/dark",
     }),
     rootBindings() {
       return [{ event: AppEvent.openAppearancesModal, handler: this.open }];
-    },
-    themeDark() {
-      return this.settings.themeDark?.value || "auto";
     },
   },
   mounted() {
@@ -93,18 +90,12 @@ export default Vue.extend({
     this.unregisterHandlers(this.rootBindings);
   },
   methods: {
-    ...mapActions("settings", { saveSetting: "save" }),
+    ...mapActions("theme", {
+      setThemeDark: "setDark",
+      setThemeName: "setName",
+    }),
     open() {
       this.$modal.show(this.modalName);
-    },
-    close() {
-      this.$modal.hide(this.modalName);
-    },
-    setThemeDark(value: string) {
-      this.saveSetting({ key: "themeDark", value });
-    },
-    setThemeName(value: string) {
-      this.saveSetting({ key: "themeName", value });
     },
   },
 });
@@ -145,7 +136,6 @@ export default Vue.extend({
     }
   }
 }
-
 
 .theme-preview {
   display: flex;
