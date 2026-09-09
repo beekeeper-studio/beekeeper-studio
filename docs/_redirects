@@ -21,7 +21,19 @@ https://docs.beekeeperstudio.io/docs/entity-relationship-diagrams-erd /user_guid
 https://docs.beekeeperstudio.io/docs/importing-data-csv-json-etc /user_guide/importing-data-csv-json-etc/ 301!
 https://docs.beekeeperstudio.io/docs/editing-data /user_guide/modify-tables/ 301!
 https://docs.beekeeperstudio.io/docs/query-magics /user_guide/query-magics/ 301!
-https://docs.beekeeperstudio.io/docs/using-the-sql-editor /user_guide/using-the-sql-editor/ 301!
+https://docs.beekeeperstudio.io/docs/using-the-sql-editor /user_guide/sql_editor/editor/ 301!
 /user_guide/connecting/first-page/ /user_guide/connecting/supported-databases/
 /purchasing-a-license /purchasing/purchasing-a-license 301!
 https://docs.beekeeperstudio.io/support/upgrading-from-the-community-edition/ https://www.beekeeperstudio.io/upgrade 301!
+
+# 404 cleanup batch (Sept 2026)
+https://docs.beekeeperstudio.io/support/purchasing/license-types /purchasing/license-types/ 301!
+https://docs.beekeeperstudio.io/purchasing/installing-license/ /purchasing/purchasing-a-license/ 301!
+https://docs.beekeeperstudio.io/user_guide/connecting/amazon-rdb/ /user_guide/connecting/amazon-rds/ 301!
+https://docs.beekeeperstudio.io/user_guide/connecting/duckdb.md /user_guide/connecting/duckdb/ 301!
+https://docs.beekeeperstudio.io/user_guide/connecting/mongodb.md /user_guide/connecting/mongodb/ 301!
+https://docs.beekeeperstudio.io/user_guide/connecting/clickhouse.md /user_guide/connecting/clickhouse/ 301!
+https://docs.beekeeperstudio.io/user_guide/using-the-sql-editor/ /user_guide/sql_editor/editor/ 301!
+https://docs.beekeeperstudio.io/user_guide/saving-queries/ /user_guide/sql_editor/saving_queries/ 301!
+https://docs.beekeeperstudio.io/es/plugin_development/plugin-views/creating-plugins.md /plugin_development/creating-your-first-plugin/ 301!
+https://docs.beekeeperstudio.io/es/support/upgrading-from-the-community-edition/ https://www.beekeeperstudio.io/upgrade 301!
