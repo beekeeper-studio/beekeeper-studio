@@ -83,9 +83,9 @@
 
  * const type = await this.$promptConnectionType();
  * if (!type) {
- *   console.log("User clicked cancel");
+ *   log.info("User clicked cancel");
  * } else {
- *   console.log(`User selected ${type}`);
+ *   log.info(`User selected ${type}`);
  * }
  */
 import Vue from "vue";
