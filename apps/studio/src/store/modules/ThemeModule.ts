@@ -37,6 +37,20 @@ export const ThemeModule: Module<State, RootState> = {
       });
       context.commit("setSystemDark", darkMediaQuery?.matches ?? false);
     },
+    setName(context, value: string) {
+      context.dispatch(
+        "settings/save",
+        { key: "themeName", value },
+        { root: true }
+      );
+    },
+    setDark(context, value: string) {
+      context.dispatch(
+        "settings/save",
+        { key: "themeDark", value },
+        { root: true }
+      );
+    },
   },
   getters: {
     name(_state, _getters, _rootState, rootGetters) {
@@ -46,6 +60,9 @@ export const ThemeModule: Module<State, RootState> = {
       const value = rootGetters["settings/settings"].themeDark?.value;
       const dark = value === "auto" ? state.systemDark : value === "true";
       return dark ? "dark" : "light";
+    },
+    dark(_state, _getters, _rootState, rootGetters) {
+      return rootGetters["settings/settings"].themeDark?.value || "auto";
     },
   },
 };
