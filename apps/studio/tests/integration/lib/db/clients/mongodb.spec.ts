@@ -1,3 +1,4 @@
+import _ from "lodash";
 import { dbtimeout, rowobj } from "@tests/lib/db"
 import { GenericContainer, StartedTestContainer, Wait } from "testcontainers";
 import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient";
@@ -5,6 +6,7 @@ import { createServer } from "@commercial/backend/lib/db/server";
 import { setupDB } from "./mongodb/setupDb";
 import { TableOrView } from "@/lib/db/models";
 import { DatabaseElement } from "@/lib/db/types";
+import { Binary, MongoClient } from "mongodb";
 
 
 describe(`MongoDB`, () => {
@@ -1353,4 +1355,53 @@ describe(`MongoDB`, () => {
       }
     });
   })
+
+  describe("BksFields", () => {
+    const testCollection = "bks_types";
+
+    beforeAll(async () => {
+      const client = new MongoClient(config.url);
+      await client.db("bee").collection(testCollection).insertOne({
+        num_col: 42,
+        str_col: "hello",
+        bool_col: true,
+        datetime_col: new Date(),
+        bin_col: new Binary(Buffer.from([1, 2, 3])),
+      });
+      await client.close(true);
+    });
+
+    afterAll(async () => {
+      try {
+        await connection.dropElement(testCollection, DatabaseElement.TABLE);
+      } catch (e) {
+        // Ignore errors
+      }
+    });
+
+    it("should report a bksType for every listed column", async () => {
+      const columns = await connection.listTableColumns(testCollection);
+      const fields = columns.map((c) => c.bksField);
+      const result = _.keyBy(fields, "name");
+
+      expect(result._id.bksType).toBe("OBJECTID");
+      expect(result.num_col.bksType).toBe("NUMBER");
+      expect(result.str_col.bksType).toBe("STRING");
+      expect(result.bool_col.bksType).toBe("BOOLEAN");
+      expect(result.datetime_col.bksType).toBe("DATETIME");
+      expect(result.bin_col.bksType).toBe("BINARY");
+    });
+
+    it("should report a bksType for every result column", async () => {
+      const { fields } = await connection.selectTop(testCollection, 0, 10, [], []);
+      const result = _.keyBy(fields, "name");
+
+      expect(result._id.bksType).toBe("OBJECTID");
+      expect(result.num_col.bksType).toBe("NUMBER");
+      expect(result.str_col.bksType).toBe("STRING");
+      expect(result.bool_col.bksType).toBe("BOOLEAN");
+      expect(result.datetime_col.bksType).toBe("DATETIME");
+      expect(result.bin_col.bksType).toBe("BINARY");
+    });
+  });
 })

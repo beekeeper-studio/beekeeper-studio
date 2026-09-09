@@ -21,9 +21,7 @@ import {
   TableUpdate,
   TableUpdateResult,
   FilterOptions,
-  ExtendedTableColumn,
   OrderBy,
-  TableResult,
   DatabaseFilterOptions,
   SupportedFeatures,
   SchemaFilterOptions,
@@ -32,8 +30,6 @@ import {
   Routine,
   DatabaseEntity,
   ImportFuncOptions,
-  BksField,
-  BksFieldType,
 } from "@/lib/db/models";
 import {
   BasicDatabaseClient,
@@ -58,10 +54,19 @@ import { FirebirdCursor } from "./firebird/FirebirdCursor";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { GenericBinaryTranscoder } from "@/lib/db/serialization/transcoders";
 import BksConfig from "@/common/bksConfig";
+import { FirebirdFieldResolver } from "./firebird/FirebirdFieldResolver";
+import { RawTableColumn } from "@/lib/db/serialization/FieldResolver";
 
-type FirebirdResult = {
+export type ResultColumn = {
+  name: string;
+  field: string;
+  alias?: string;
+  type: number;
+};
+
+export type FirebirdResult = {
   rows: any[];
-  columns: any[];
+  columns: ResultColumn[];
   statement: IdentifyResult;
   arrayMode: boolean;
 };
@@ -223,6 +228,7 @@ interface FirebirdReservedConnection {
 }
 
 export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, FirebirdReservedConnection> {
+  fieldResolver = new FirebirdFieldResolver();
   version: any;
   pool: Pool;
   firebirdOptions: Firebird.Options;
@@ -323,10 +329,10 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
     }));
   }
 
-  async listTableColumns(
+  protected async listTableColumnsRunner(
     table?: string,
     _schema?: string
-  ): Promise<ExtendedTableColumn[]> {
+  ): Promise<RawTableColumn[]> {
     const result = await this.driverExecuteSingle(
       `
       SELECT
@@ -404,7 +410,6 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
           nullable,
           primaryKey,
           hasDefault: !_.isNil(defaultValue),
-          bksField: this.parseTableColumn(row),
         };
       })
     );
@@ -564,7 +569,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
     }));
   }
 
-  async selectTop(
+  protected async selectTopRunner(
     table: string,
     offset: number,
     limit: number,
@@ -572,7 +577,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
     filters: string | TableFilter[],
     schema?: string,
     selects = ["*"]
-  ): Promise<TableResult> {
+  ): Promise<FirebirdResult> {
     const { query, params } = FirebirdClient.buildSelectTopQuery(
       table,
       offset,
@@ -583,11 +588,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
       selects
     );
 
-    const result = await this.driverExecuteSingle(query, { params });
-    const fields = this.parseQueryResultColumns(result);
-    const rows = await this.serializeQueryResult(result, fields);
-
-    return { result: rows, fields };
+    return await this.driverExecuteSingle(query, { params });
   }
 
   async selectTopSql(
@@ -1120,7 +1121,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
     return result.map(({ rows, statement, columns: meta }) => {
       const fields = meta.map((field, idx) => ({
         id: `c${idx}`,
-        name: field.alias || field.field,
+        name: field.name,
         // TODO add dataType prop
       }));
 
@@ -1194,7 +1195,10 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
       const runQuery = async () => {
         const data = await conn.query(query.text, params, options.rowAsArray);
         results.push({
-          columns: data.meta,
+          columns: data.meta.map((column) => ({
+            ...column,
+            name: column.alias || column.field,
+          })),
           rows: data.rows,
           statement: query,
           arrayMode: options.rowAsArray,
@@ -1479,22 +1483,4 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
     conn.transaction = null;
   }
 
-  parseQueryResultColumns(qr: FirebirdResult): BksField[] {
-    return qr.columns.map((column) => {
-      let bksType: BksFieldType = 'UNKNOWN';
-      // 520 is SQL_BLOB
-      // Ref: https://github.com/hgourvest/node-firebird/blob/3aba6c3bb605c9e4a260a572d6395d1b431dee8a/lib/wire/const.js#L230
-      if (column.type === 520) {
-        bksType = 'BINARY';
-      }
-      return { name: column.field, bksType };
-    });
-  }
-
-  parseTableColumn(column: { FIELD_TYPE: string, RDB$FIELD_NAME: string }): BksField {
-    return {
-      name: column.RDB$FIELD_NAME,
-      bksType: column.FIELD_TYPE === "BLOB" ? "BINARY" : "UNKNOWN",
-    };
-  }
 }

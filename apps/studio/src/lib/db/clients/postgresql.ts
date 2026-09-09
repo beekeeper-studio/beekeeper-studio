@@ -9,7 +9,7 @@ import knexlib from 'knex'
 import logRaw from '@bksLogger'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions } from "../models";
 import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries, errorMessages } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
@@ -28,6 +28,8 @@ import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import {AzureAuthService} from "@/lib/db/authentication/azure";
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
+import { PostgresFieldResolver } from './postgresql/PostgresFieldResolver';
+import { RawTableColumn } from '../serialization/FieldResolver';
 
 const PD = PostgresData
 
@@ -66,10 +68,12 @@ interface STQResults {
 
 }
 
-interface QueryResult {
+export type ResultColumn = FieldDef
+
+export interface QueryResult {
   pgResult: PgQueryResult
   rows: any[]
-  columns: FieldDef[]
+  columns: ResultColumn[]
   command: PgQueryResult['command']
   rowCount: PgQueryResult['rowCount']
   arrayMode: boolean
@@ -85,10 +89,11 @@ const postgresContext = {
 };
 
 export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient> {
+  fieldResolver = new PostgresFieldResolver();
   version: VersionInfo;
   conn: HasPool;
   _defaultSchema: string;
-  dataTypes: any = {};
+  dataTypes: Record<number, string> = {};
   transcoders = [GenericBinaryTranscoder];
   interval: NodeJS.Timeout;
 
@@ -190,6 +195,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     this._defaultSchema = await this.getSchema();
     this.version = await this.getVersion();
     this.dataTypes = await this.getTypes();
+    this.fieldResolver.setOidTypes(this.dataTypes);
     this.database.connected = true;
   }
 
@@ -370,7 +376,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     }));
   }
 
-  async listTableColumns(table?: string, schema: string = this._defaultSchema): Promise<ExtendedTableColumn[]> {
+  protected async listTableColumnsRunner(table?: string, schema: string = this._defaultSchema): Promise<RawTableColumn[]> {
     // if you provide table, you have to provide schema
     const clause = table ? "WHERE table_schema = $1 AND table_name = $2" : "";
     const params = table ? [schema, table] : [];
@@ -429,7 +435,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       // For enum columns `data_type` is the udt_name (no precision suffix), so it
       // matches the type name keyed schema-qualified below.
       enumValues: enumValuesByType.get(`${row.udt_schema}.${row.data_type}`),
-      bksField: this.parseTableColumn(row),
     }));
   }
 
@@ -1142,12 +1147,9 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     return totalRecords
   }
 
-  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema: string = this._defaultSchema, selects?: string[]): Promise<TableResult> {
+  protected async selectTopRunner(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema: string = this._defaultSchema, selects?: string[]): Promise<QueryResult> {
     const qs = await this._selectTopSql(table, offset, limit, orderBy, filters, schema, selects)
-    const result = await this.driverExecuteSingle(qs.query, { params: qs.params })
-    const fields = this.parseQueryResultColumns(result)
-    const rows = await this.serializeQueryResult(result, fields)
-    return { result: rows, fields }
+    return await this.driverExecuteSingle(qs.query, { params: qs.params })
   }
 
   async selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema: string = this._defaultSchema, selects?: string[]): Promise<string> {
@@ -1860,22 +1862,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     return data.rows[0].schema;
   }
 
-  parseQueryResultColumns(qr: QueryResult): BksField[] {
-    return qr.columns.map((column) => {
-      let bksType: BksFieldType = 'UNKNOWN';
-      if (column.dataTypeID === pg.types.builtins.BYTEA) {
-        bksType = 'BINARY'
-      }
-      return { name: column.name, bksType };
-    })
-  }
-
-  parseTableColumn(column: { column_name: string; data_type: string }): BksField {
-    return {
-      name: column.column_name,
-      bksType: column.data_type === 'bytea' ? 'BINARY' : 'UNKNOWN',
-    };
-  }
 }
 
 

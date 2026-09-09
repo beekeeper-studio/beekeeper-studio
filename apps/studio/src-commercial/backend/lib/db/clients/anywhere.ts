@@ -269,6 +269,10 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     }));
   }
 
+  protected async listTableColumnsRunner() {
+    return null;
+  }
+
   async listTableColumns(table?: string, schema?: string): Promise<ExtendedTableColumn[]> {
     const clauses = [];
     if (table) clauses.push(`t.table_name = ${D.escapeString(table, true)}`);
@@ -1127,6 +1131,10 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
     const rowWithTotal = countResults.rows.find((row) => row.total );
     const totalRecords = rowWithTotal ? rowWithTotal.total : 0;
     return totalRecords
+  }
+
+  protected async selectTopRunner() {
+    return null;
   }
 
   async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult> {

@@ -26,10 +26,7 @@ import { IDbConnectionServer } from '@/lib/db/backendTypes';
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from '@/lib/db/clients/BasicDatabaseClient';
 import { DatabaseElement, IDbConnectionDatabase, IamAuthType } from '@/lib/db/types';
 import {
-  BksField,
-  BksFieldType,
   CancelableQuery,
-  ExtendedTableColumn,
   NgQueryResult,
   OrderBy,
   PrimaryKeyColumn,
@@ -44,7 +41,6 @@ import {
   TableInsert,
   TableOrView,
   TableProperties,
-  TableResult,
   TableTrigger,
   TableUpdate,
   TableUpdateResult,
@@ -57,13 +53,19 @@ import { resolveAWSCredentials } from '@/lib/db/clients/utils';
 import { createCancelablePromise } from '@/common/utils';
 import { errors } from '@/lib/errors';
 import { DynamoDBCursor } from './dynamodb/DynamoDBCursor';
+import { DynamoDBFieldResolver } from './dynamodb/DynamoDBFieldResolver';
+import { RawTableColumn } from '@/lib/db/serialization/FieldResolver';
 import BksConfig from '@/common/bksConfig';
 import { identify } from 'sql-query-identifier';
 
 const log = rawLog.scope('dynamodb');
 
-interface DynamoQueryResult {
-  columns: { name: string }[];
+export interface ResultColumn {
+  name: string;
+}
+
+export interface DynamoQueryResult {
+  columns: ResultColumn[];
   rows: Record<string, any>[];
   arrayMode: boolean;
 }
@@ -98,6 +100,7 @@ function inferTypeFromValue(value: any): string {
 }
 
 export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
+  fieldResolver = new DynamoDBFieldResolver();
   raw: AWSDynamoDBClient;
   doc: DynamoDBDocumentClient;
   region: string;
@@ -272,12 +275,12 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
     return result.Table;
   }
 
-  async listTableColumns(table?: string): Promise<ExtendedTableColumn[]> {
+  protected async listTableColumnsRunner(table?: string): Promise<RawTableColumn[]> {
     if (!table) {
       // Called without table → iterate. Most callers (TableList, etc.) pass a table,
       // so this branch is only hit from bulk schema loads.
       const tables = await this.listTables();
-      const all: ExtendedTableColumn[] = [];
+      const all: RawTableColumn[] = [];
       for (const t of tables) {
         try {
           all.push(...(await this.listTableColumns(t.name)));
@@ -334,8 +337,7 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
       primaryKey: keyNames.has(name),
       hasDefault: false,
       nullable: !keyNames.has(name),
-      bksField: { name, bksType: 'UNKNOWN' as BksFieldType },
-    } as ExtendedTableColumn));
+    } as RawTableColumn));
   }
 
   async listTableIndexes(table: string): Promise<TableIndex[]> {
@@ -511,7 +513,7 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
     };
   }
 
-  async selectTop(
+  protected async selectTopRunner(
     table: string,
     offset: number,
     limit: number,
@@ -519,7 +521,7 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
     filters: string | TableFilter[],
     _schema?: string,
     selects?: string[]
-  ): Promise<TableResult> {
+  ): Promise<DynamoQueryResult> {
     const filterInput = Array.isArray(filters) ? filters : [];
     const { expr, names, values } = this.buildFilter(filterInput);
 
@@ -568,11 +570,9 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
       ? items.slice(offset, offset + (limit || items.length))
       : items.slice(0, limit || items.length);
 
-    const fields: BksField[] = rows.length
-      ? Object.keys(rows[0]).map((k) => ({ name: k, bksType: 'UNKNOWN' as BksFieldType }))
-      : [];
+    const columns = rows.length ? Object.keys(rows[0]).map((name) => ({ name })) : [];
 
-    return { result: rows, fields };
+    return { rows, columns, arrayMode: false };
   }
 
   async selectTopSql(
@@ -925,10 +925,6 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
 
   wrapIdentifier(value: string): string {
     return DynamoDBData.wrapIdentifier!(value);
-  }
-
-  protected parseTableColumn(column: { field: string }): BksField {
-    return { name: column.field, bksType: 'UNKNOWN' as BksFieldType };
   }
 
   protected async rawExecuteQuery(_q: string, _options: any): Promise<DynamoQueryResult | DynamoQueryResult[]> {

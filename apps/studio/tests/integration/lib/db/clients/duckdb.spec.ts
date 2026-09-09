@@ -79,7 +79,7 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
       `);
 
       const expectedBksFields = [
-        { name: 'id', bksType: 'UNKNOWN' },
+        { name: 'id', bksType: 'NUMBER' },
         { name: 'blob', bksType: 'BINARY' },
         { name: 'blob_alias', bksType: 'BINARY' },
         { name: 'blob_alias2', bksType: 'BINARY' },

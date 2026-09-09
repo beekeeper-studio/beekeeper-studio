@@ -153,6 +153,10 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     return Promise.resolve([]); // TODO (@will): make sure cassandra doesn't actually do this
   }
 
+  protected async listTableColumnsRunner() {
+    return null;
+  }
+
   async listTableColumns(table?: string, _schema?: string): Promise<ExtendedTableColumn[]> {
     let sql: string;
     const params = [table];
@@ -439,6 +443,10 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     throw new Error("Method not implemented.");
   }
 
+  protected async selectTopRunner(): Promise<CassandraResult> {
+    return null;
+  }
+
   // keyspace takes the place of schema here
   async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], keyspace?: string, selects?: string[]): Promise<TableResult> {
     // const { allowFilter } = userOptions
@@ -457,7 +465,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
 
     const result = await this.driverExecuteSingle(qs.query, { params: qs.params, options })
     const { rows, columns, hasNext, pageState } = result
-    const fields = columns ? this.parseQueryResultColumns(result) : []
+    const fields = columns ? this.fieldResolver.resolveQueryResult(result) : []
 
     return {
       result: this.parseRows(rows, columns) || [],

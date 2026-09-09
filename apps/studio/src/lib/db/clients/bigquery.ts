@@ -147,6 +147,10 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     return [];
   }
 
+  protected async listTableColumnsRunner() {
+    return null;
+  }
+
   async listTableColumns(table?: string, _schema?: string): Promise<ExtendedTableColumn[]> {
     // Lists all columns in a table
     const [metadata] = await this.client.dataset(this.db).table(table).getMetadata()
@@ -465,6 +469,10 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     return Number(metadata.numRows)
   }
 
+  protected async selectTopRunner(): Promise<BigQueryResult> {
+    return null;
+  }
+
   async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[]): Promise<TableResult> {
     const columns = await this.listTableColumns(table);
     const bqTable = this.db + "." + table;
@@ -472,7 +480,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     const queriesResult = await this.driverExecuteMultiple(query, { countQuery, params });
     const data = queriesResult[0];
     const rowCount = Number(data.rowCount);
-    const fields = this.parseQueryResultColumns(data);
+    const fields = this.fieldResolver.resolveQueryResult(data);
     const rows = await this.serializeQueryResult(data, fields);
 
     const result = {

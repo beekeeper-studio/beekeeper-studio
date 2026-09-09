@@ -170,7 +170,15 @@ export interface BksField {
   bksType: BksFieldType;
 }
 
-export type BksFieldType = 'BINARY' | 'UNKNOWN' | 'OBJECTID' | 'SURREALID';
+export type BksFieldType =
+  | 'BINARY'
+  | 'STRING'
+  | 'NUMBER'
+  | 'DATETIME'
+  | 'BOOLEAN'
+  | 'OBJECTID'
+  | 'SURREALID'
+  | 'UNKNOWN';
 
 export interface TableChanges {
   inserts: TableInsert[];

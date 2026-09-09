@@ -64,9 +64,9 @@ describe("MariaDB Tests", () => {
     `);
 
     const expectedBksFields = [
-      { name: 'id', bksType: 'UNKNOWN' },
-      { name: 'uuid', bksType: 'UNKNOWN' },
-      { name: 'name', bksType: 'UNKNOWN' },
+      { name: 'id', bksType: 'NUMBER' },
+      { name: 'uuid', bksType: 'STRING' },
+      { name: 'name', bksType: 'STRING' },
     ];
 
     const columns = await util.connection.listTableColumns('binary_collation');
