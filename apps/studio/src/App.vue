@@ -229,14 +229,6 @@ export default Vue.extend({
         this.themeType === "dark" ? "true" : "false"
       );
       document.documentElement.setAttribute("data-theme", this.themeValue);
-
-      if (this.themeValue === "default" && this.themDark === "match-system") {
-        document.body.className = "theme-system";
-      } else if (this.themeValue === "default") {
-        document.body.className = `theme-${this.themeType}`;
-      } else {
-        document.body.className = `theme-${this.themeValue}-${this.themeType}`;
-      }
     },
     notifyFreeTrial() {
       Noty.closeAll('trial')

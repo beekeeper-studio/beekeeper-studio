@@ -401,13 +401,7 @@ export default {
   vertical-align: middle;
 }
 
-body.theme-dark .bastion-host {
+[data-theme-dark="true"] .bastion-host {
   background-color: rgb(from var(--theme-base) r g b / 3.5%);
-}
-
-@media (prefers-color-scheme: dark) {
-  body.theme-system .bastion-host {
-    background-color: rgb(from var(--theme-base) r g b / 3.5%);
-  }
 }
 </style>
