@@ -5,10 +5,25 @@ import Vue from 'vue'
 import { Module } from 'vuex'
 import config from "@/config";
 
+const defaultThemeCustomizerColors = {
+  gray: "#000000",
+  primary: "#fad83b",
+  info: "#3498db",
+  success: "#15db95",
+  warning: "#ff8d21",
+  danger: "#ff5d59",
+  background: "#ffffff",
+};
+
+const darkMediaQuery = typeof window === "undefined"
+  ? null
+  : window.matchMedia("(prefers-color-scheme: dark)");
+
 
 interface State {
   settings: IGroupedUserSettings,
-  initialized: boolean
+  initialized: boolean,
+  systemDark: boolean
 }
 
 const M = {
@@ -20,7 +35,8 @@ const SettingStoreModule: Module<State, any> = {
   namespaced: true,
   state: () => ({
     settings: {},
-    initialized: false
+    initialized: false,
+    systemDark: darkMediaQuery?.matches ?? false
   }),
   mutations: {
     replaceSettings(state, newSettings: TransportUserSetting) {
@@ -32,6 +48,9 @@ const SettingStoreModule: Module<State, any> = {
     },
     setInitialized(state) {
       state.initialized = true;
+    },
+    setSystemDark(state, systemDark: boolean) {
+      state.systemDark = systemDark;
     }
   },
   actions: {
@@ -40,6 +59,11 @@ const SettingStoreModule: Module<State, any> = {
       context.commit(M.REPLACEALL, settings);
 
       context.commit('setInitialized');
+
+      darkMediaQuery?.addEventListener('change', (event) => {
+        context.commit('setSystemDark', event.matches);
+      });
+      context.commit('setSystemDark', darkMediaQuery?.matches ?? false);
     },
     async saveSetting(context, setting: TransportUserSetting) {
       await Vue.prototype.$util.send('appdb/setting/save', { obj: setting })
@@ -70,15 +94,27 @@ const SettingStoreModule: Module<State, any> = {
       return state.settings
     },
     themeValue(state) {
-      const theme = state.settings.theme ? state.settings.theme.value : null;
-      if (!theme) return null
-      return theme;
+      return state.settings.theme?.value || "default";
     },
-    /** is the theme light or dark? */
-    themeType(_state, getters) {
-      if (!getters.themeValue) return 'light'
-      if (getters.themeValue.includes('dark')) return 'dark'
-      return 'light'
+    themeDark(state): boolean | "match-system" {
+      if (state.settings.themeDark.value === "match-system") {
+        return "match-system";
+      }
+      return state.settings.themeDark.value === "true";
+    },
+    /** is the theme light or dark, with match-system resolved */
+    themeType(state, getters) {
+      const dark = getters.themeDark === "match-system"
+        ? state.systemDark
+        : getters.themeDark;
+      return dark ? "dark" : "light";
+    },
+    themeCustomizerColors(state) {
+      const value = state.settings.themeCustomizerColors?.value as string;
+      return { ...defaultThemeCustomizerColors, ...(value ? JSON.parse(value) : {}) };
+    },
+    themeCustomizerPosition(state) {
+      return state.settings.themeCustomizerPosition?.value || "bottom-right";
     },
     /** The keymap type to be used in text editor */
     userKeymap(state) {
