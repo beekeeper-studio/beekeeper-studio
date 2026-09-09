@@ -456,6 +456,7 @@ x-buttons {
   min-width: min-content;
   > x-button {
     margin: 0;
+    border-radius: 0;
     &[menu] {
       border-left: 1px solid rgba($theme-bg, 0.35);
       padding: 0!important;
@@ -468,12 +469,12 @@ x-buttons {
       }
     }
     &:first-of-type {
-      border-top-right-radius: 0;
-      border-bottom-right-radius: 0;
+      border-start-start-radius: $btn-border-radius;
+      border-end-start-radius: $btn-border-radius;
     }
-    &:last-of-type{
-      border-top-left-radius: 0;
-      border-bottom-left-radius: 0;
+    &:last-of-type {
+      border-start-end-radius: $btn-border-radius;
+      border-end-end-radius: $btn-border-radius;
     }
   }
 }

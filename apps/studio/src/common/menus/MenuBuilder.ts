@@ -26,7 +26,7 @@ export default class extends DefaultMenu {
         this.menuItems.primarySidebarToggle,
         this.menuItems.secondarySidebarToggle,
         { type: 'separator' },
-        this.menuItems.themeToggle,
+        this.menuItems.appearances,
         this.menuItems.reload,
         // This is added automatically in Mac
         ...(!this.platformInfo.isMac ? [this.menuItems.fullscreen] : []),

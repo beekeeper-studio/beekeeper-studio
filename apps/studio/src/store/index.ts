@@ -21,6 +21,7 @@ import { DataModules } from '@/store/DataModules'
 import { TabModule } from './modules/TabModule'
 import { HideEntityModule } from './modules/HideEntityModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
+import { ThemeModule } from './modules/ThemeModule'
 import { ElectronUtilityConnectionClient } from '@/lib/utility/ElectronUtilityConnectionClient'
 
 import { SmartLocalStorage } from '@/common/LocalStorage'
@@ -139,6 +140,7 @@ const store = new Vuex.Store<State>({
   modules: {
     exports: ExportStoreModule,
     settings: SettingStoreModule,
+    theme: ThemeModule,
     pins: PinModule,
     tabs: TabModule,
     search: SearchModule,
@@ -793,6 +795,7 @@ const store = new Vuex.Store<State>({
       await context.dispatch('fetchUsername')
       await context.dispatch('licenses/init')
       await context.dispatch('userEnums/init')
+      await context.dispatch('theme/initialize')
       await context.dispatch('updateWindowTitle')
     },
     licenseEntered(context) {

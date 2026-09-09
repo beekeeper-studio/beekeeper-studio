@@ -42,10 +42,7 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   newTab = () => send('newTab')
   closeTab = () => send('closeTab')
   quickSearch  = () => send('quickSearch')
-  switchTheme = (menuItem: Electron.MenuItem) => {
-    const label = _.isString(menuItem) ? menuItem : menuItem.label
-    send('switchTheme', label.toLowerCase().replaceAll(" ", "-"))
-  }
+  openAppearancesModal = () => send("openAppearancesModal")
   reload = () => send('reload')
   disconnect = () => send('disconnect')
   addBeekeeper = () => send('addBeekeeper')
