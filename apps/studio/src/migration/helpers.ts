@@ -76,3 +76,4 @@ export async function addUserSetting(
 
   await runner.query(query);
 }
+
