@@ -97,6 +97,7 @@ import addSnowflakeOptions from './20260501_add_snowflake_options'
 import addWindowsAuthToConnections from './20260618_add_windows_auth_to_connections'
 import addSqlServerOptions from './20260626_add_sqlserver_options'
 import splitThemeDarkFlag from './20260908_split_theme_dark_flag'
+import addThemeCustomizerSettings from './20260908_add_theme_customizer_settings'
 
 import ultimate from './ultimate/index'
 
@@ -153,7 +154,8 @@ const realMigrations = [
   addSnowflakeOptions,
   addWindowsAuthToConnections,
   addSqlServerOptions,
-  splitThemeDarkFlag
+  splitThemeDarkFlag,
+  addThemeCustomizerSettings
 ]
 
 // fixtures require the models
