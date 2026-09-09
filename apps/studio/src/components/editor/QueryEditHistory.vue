@@ -500,7 +500,14 @@ export default Vue.extend({
     replaceExtensions(extensions: Extension): Extension[] {
       return [
         extensions,
-        monokaiInit({ settings: { selection: "", selectionMatch: "" } }),
+        monokaiInit({
+          settings: {
+            selection: "",
+            selectionMatch: "",
+            lineHighlight: "",
+            gutterActiveForeground: "",
+          },
+        }),
       ];
     },
   },
