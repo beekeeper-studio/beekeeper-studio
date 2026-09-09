@@ -55,6 +55,7 @@
       multiple
       class="portal-target-menus"
     />
+    <theme-customizer />
   </div>
 </template>
 
@@ -102,6 +103,7 @@ import MoveItemModal from "@/components/common/modals/MoveItemModal.vue";
 import MoveFolderModal from "@/components/common/modals/MoveFolderModal.vue";
 import ConnectionFilesImportModal from '@/components/common/modals/ConnectionFilesImportModal.vue'
 import ConnectionTypePickerModal from "@/components/common/modals/ConnectionTypePickerModal.vue";
+import ThemeCustomizer from '@/components/ThemeCustomizer.vue'
 
 import rawLog from '@bksLogger'
 import { assignContextMenuToAllInputs } from './mixins/assignContextMenuToAllInputs'
@@ -120,7 +122,7 @@ export default Vue.extend({
     WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
     PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
     InputEphemeralModal, ShareModal, MoveItemModal, MoveFolderModal,
-    ConnectionFilesImportModal, ConnectionTypePickerModal, AppearanceModal
+    ConnectionFilesImportModal, ConnectionTypePickerModal, AppearanceModal, ThemeCustomizer,
   },
   data() {
     return {

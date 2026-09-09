@@ -5,6 +5,16 @@ import Vue from 'vue'
 import { Module } from 'vuex'
 import config from "@/config";
 
+const defaultThemeCustomizerColors = {
+  gray: "#000000",
+  primary: "#fad83b",
+  info: "#3498db",
+  success: "#15db95",
+  warning: "#ff8d21",
+  danger: "#ff5d59",
+  background: "#ffffff",
+};
+
 interface State {
   settings: IGroupedUserSettings,
   initialized: boolean
@@ -67,6 +77,13 @@ const SettingStoreModule: Module<State, any> = {
   getters: {
     settings(state) {
       return state.settings
+    },
+    themeCustomizerColors(state) {
+      const value = state.settings.themeCustomizerColors?.value as string;
+      return { ...defaultThemeCustomizerColors, ...(value ? JSON.parse(value) : {}) };
+    },
+    themeCustomizerPosition(state) {
+      return state.settings.themeCustomizerPosition?.value || "bottom-right";
     },
     /** The keymap type to be used in text editor */
     userKeymap(state) {
