@@ -98,6 +98,7 @@ import UpgradeAlert from "@/components/upsell/UpgradeAlert.vue";
 import { mapGetters } from "vuex";
 
 type Type = (typeof ConnectionTypes)[number] & {
+  isCommunity: boolean;
   lockedByLicense: boolean;
 };
 
@@ -125,10 +126,13 @@ export default Vue.extend({
       ];
     },
     types(): Type[] {
-      return this.$config.defaults.connectionTypes.map((type) => ({
-        ...type,
-        lockedByLicense: this.isCommunity && isUltimateType(type.value),
-      }));
+      return this.$config.defaults.connectionTypes
+        .map((type) => ({
+          ...type,
+          isCommunity: !isUltimateType(type.value),
+          lockedByLicense: this.isCommunity && isUltimateType(type.value),
+        }))
+        .sort((a, b) => Number(b.isCommunity) - Number(a.isCommunity));
     },
     filteredTypes(): Type[] {
       const filter = this.filter.trim().toLowerCase();
