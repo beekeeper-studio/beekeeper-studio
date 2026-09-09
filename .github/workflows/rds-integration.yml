@@ -1,0 +1,168 @@
+name: RDS Integration Tests
+
+on:
+  push:
+    branches:
+      - master
+      - main
+      # Temporary: keep this branch in the trigger list while we validate
+      # the end-to-end flow against real AWS. Drop before merge.
+      - claude/rds-iam-integration-tests-DkaBi
+    paths:
+      - apps/studio/src/lib/db/clients/postgresql.ts
+      - apps/studio/src/lib/db/clients/mysql.ts
+      - apps/studio/src/lib/db/clients/utils.ts
+      - apps/studio/src/lib/db/types.ts
+      - apps/studio/tests/integration/rds/**
+      - apps/studio/jest.rds.config.js
+      - infrastructure/ci/aws-rds/**
+      - bin/rds/**
+      - bin/rds-tests.sh
+      - .github/workflows/rds-integration.yml
+  workflow_dispatch:
+
+# Serialize runs rather than cancelling — a cancelled provision would
+# leak resources, and the janitor only sweeps every 2h.
+concurrency:
+  group: rds-integration
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: us-east-2
+
+jobs:
+  provision:
+    name: Provision RDS
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      pg_host: ${{ steps.provision.outputs.pg_host }}
+      pg_port: ${{ steps.provision.outputs.pg_port }}
+      pg_iam_user: ${{ steps.provision.outputs.pg_iam_user }}
+      mysql_host: ${{ steps.provision.outputs.mysql_host }}
+      mysql_port: ${{ steps.provision.outputs.mysql_port }}
+      mysql_iam_user: ${{ steps.provision.outputs.mysql_iam_user }}
+      sg_id: ${{ steps.provision.outputs.sg_id }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.BKS_TEST_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.BKS_TEST_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Provision RDS instances
+        id: provision
+        env:
+          RUN_ID: ${{ github.run_id }}
+        run: infrastructure/ci/aws-rds/provision.sh
+
+  test:
+    name: Test ${{ matrix.engine }}
+    needs: provision
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [postgres, mysql]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Restore node_modules cache
+        id: cache-nm
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/studio/node_modules
+            apps/ui-kit/node_modules
+            apps/sqltools/node_modules
+          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+
+      - name: Install dependencies
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: yarn install --frozen-lockfile --network-timeout 100000
+        env:
+          HUSKY: "0"
+          npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
+
+      - name: Install libaio (oracle deps on install)
+        run: sudo apt install -y libaio-dev
+
+      - name: Symlink libaio v1
+        run: sudo ln -s /usr/lib/x86_64-linux-gnu/libaio.so.1t64 /usr/lib/x86_64-linux-gnu/libaio.so.1 || true
+
+      # Each matrix runner has a different public IP than the provision
+      # runner. prepare-runner.sh authorizes this runner onto the per-run
+      # SG and waits until both engines are TCP-reachable, so jest's
+      # first connection doesn't race the SG propagation.
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.BKS_TEST_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.BKS_TEST_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Prepare runner for RDS access
+        env:
+          SG_ID: ${{ needs.provision.outputs.sg_id }}
+          PG_HOST: ${{ needs.provision.outputs.pg_host }}
+          PG_PORT: ${{ needs.provision.outputs.pg_port }}
+          MYSQL_HOST: ${{ needs.provision.outputs.mysql_host }}
+          MYSQL_PORT: ${{ needs.provision.outputs.mysql_port }}
+        run: infrastructure/ci/aws-rds/prepare-runner.sh
+
+      - name: Run RDS integration tests
+        env:
+          BKS_RDS_AWS_REGION: ${{ env.AWS_REGION }}
+          BKS_RDS_PG_HOST: ${{ needs.provision.outputs.pg_host }}
+          BKS_RDS_PG_PORT: ${{ needs.provision.outputs.pg_port }}
+          BKS_RDS_PG_IAM_USER: ${{ needs.provision.outputs.pg_iam_user }}
+          BKS_RDS_MYSQL_HOST: ${{ needs.provision.outputs.mysql_host }}
+          BKS_RDS_MYSQL_PORT: ${{ needs.provision.outputs.mysql_port }}
+          BKS_RDS_MYSQL_IAM_USER: ${{ needs.provision.outputs.mysql_iam_user }}
+          # Key + File methods consume these directly.
+          BKS_TEST_ACCESS_KEY_ID: ${{ secrets.BKS_TEST_ACCESS_KEY_ID }}
+          BKS_TEST_SECRET_ACCESS_KEY: ${{ secrets.BKS_TEST_SECRET_ACCESS_KEY }}
+          BKS_TEST_AWS_PROFILE: bks-ci
+          # CLI method shells out to /usr/local/bin/aws which reads these.
+          AWS_ACCESS_KEY_ID: ${{ secrets.BKS_TEST_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.BKS_TEST_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
+        run: yarn workspace beekeeper-studio run test:rds --runInBand --ci --testPathPattern=${{ matrix.engine }}-iam
+
+  teardown:
+    name: Teardown RDS
+    if: always()
+    needs: [provision, test]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.BKS_TEST_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.BKS_TEST_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Destroy RDS instances
+        env:
+          RUN_ID: ${{ github.run_id }}
+        run: infrastructure/ci/aws-rds/destroy.sh
