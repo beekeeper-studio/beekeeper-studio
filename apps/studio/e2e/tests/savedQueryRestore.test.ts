@@ -1,4 +1,5 @@
 import { test, expect, _electron as electron, ElectronApplication, Page } from '@playwright/test';
+import { userActions } from '../pageActions/index';
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
@@ -27,7 +28,7 @@ test('restores in-progress edits to a SAVED query after relaunch', async () => {
   // ---------- First launch: connect, save a query, edit it, let it autosave ----------
   let { app, win } = await launch();
 
-  await win.getByLabel('Connection Type').selectOption('sqlite');
+  await userActions(win).selectNewConnection('sqlite');
   await win.locator('#Database').fill(dbFile);
   await win.getByRole('button', { name: 'Connect' }).click();
 

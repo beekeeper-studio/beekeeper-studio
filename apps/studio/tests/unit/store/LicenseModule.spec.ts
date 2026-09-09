@@ -14,6 +14,12 @@ Vue.prototype.$util = { send: mockSend }
 
 function buildStore() {
   return new Vuex.Store({
+    state: { workspaceId: -1 },
+    mutations: {
+      workspaceId(state: any, id: number) {
+        state.workspaceId = Number(id)
+      },
+    },
     modules: { licenses: LicenseModule },
   })
 }
@@ -124,6 +130,54 @@ describe('LicenseModule', () => {
       expect((CloudClient.getLicense as jest.Mock)).not.toHaveBeenCalled()
       const saveCalls = mockSend.mock.calls.filter(([ch]) => ch === 'appdb/license/save')
       expect(saveCalls).toHaveLength(0)
+    })
+  })
+
+  describe('sync action', () => {
+    function mockStatus(status: Record<string, unknown>) {
+      mockSend.mockImplementation(async (channel: string) => {
+        if (channel === 'license/getStatus') return status
+        if (channel === 'license/get') return []
+        return null
+      })
+    }
+
+    it('drops back to the local workspace when the license is on lifetime terms', async () => {
+      store.commit('workspaceId', 42)
+      mockStatus({
+        edition: 'ultimate',
+        condition: ['Expired support date', 'App version allowed'],
+        isUltimate: true,
+        isCommunity: false,
+        isTrial: false,
+        isValidDateExpired: false,
+        isSupportDateExpired: true,
+        isLifetime: true,
+        canAccessCloudWorkspaces: false,
+      })
+
+      await store.dispatch('licenses/sync')
+
+      expect(store.state.workspaceId).toBe(-1)
+    })
+
+    it('stays in the cloud workspace with an active subscription', async () => {
+      store.commit('workspaceId', 42)
+      mockStatus({
+        edition: 'ultimate',
+        condition: ['No app version restriction'],
+        isUltimate: true,
+        isCommunity: false,
+        isTrial: false,
+        isValidDateExpired: false,
+        isSupportDateExpired: false,
+        isLifetime: false,
+        canAccessCloudWorkspaces: true,
+      })
+
+      await store.dispatch('licenses/sync')
+
+      expect(store.state.workspaceId).toBe(42)
     })
   })
 

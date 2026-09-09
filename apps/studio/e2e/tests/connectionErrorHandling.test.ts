@@ -1,11 +1,13 @@
 import { test, expect, ElectronApplication, Page } from '@playwright/test';
 import { launchElectron } from 'e2e/helpers/launchElectron';
+import { userActions } from '../pageActions/index';
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
 
 let electronApp: ElectronApplication;
 let window: Page;
+let userAttemptsTo: ReturnType<typeof userActions>;
 
 const coreInterface = () => window.locator('#interface.interface');
 const errorAlert = () => window.getByText('There was a problem', { exact: false });
@@ -14,6 +16,7 @@ test.describe('Connection error handling', () => {
   test.beforeEach(async () => {
     electronApp = await launchElectron();
     window = await electronApp.firstWindow();
+    userAttemptsTo = userActions(window);
   });
 
   test.afterEach(async () => {
@@ -22,7 +25,7 @@ test.describe('Connection error handling', () => {
 
   test('sqlite: nonexistent file stays on the connection screen with an error', async () => {
     const dbFile = path.join(os.tmpdir(), `bks-missing-${Date.now()}.db`);
-    await window.getByLabel('Connection Type').selectOption('sqlite');
+    await userAttemptsTo.selectNewConnection('sqlite');
     await window.locator('#Database').fill(dbFile);
     await window.getByRole('button', { name: 'Connect', exact: false }).click();
 
@@ -35,7 +38,7 @@ test.describe('Connection error handling', () => {
 
   test('sqlite: nonexistent directory stays on the connection screen with an error', async () => {
     const dbFile = path.join(os.tmpdir(), `bks-no-dir-${Date.now()}`, 'foo.db');
-    await window.getByLabel('Connection Type').selectOption('sqlite');
+    await userAttemptsTo.selectNewConnection('sqlite');
     await window.locator('#Database').fill(dbFile);
     await window.getByRole('button', { name: 'Connect', exact: false }).click();
 
@@ -49,14 +52,14 @@ test.describe('Connection error handling', () => {
     // save a working sqlite connection to double-click later
     const goodDb = path.join(os.tmpdir(), `bks-good-${Date.now()}.db`);
     fs.writeFileSync(goodDb, '');
-    await window.getByLabel('Connection Type').selectOption('sqlite');
+    await userAttemptsTo.selectNewConnection('sqlite');
     await window.locator('#Database').fill(goodDb);
     await window.getByPlaceholder('Connection Name').fill('goodsqlite');
     await window.getByRole('button', { name: 'Save', exact: true }).click();
     await window.waitForTimeout(1000);
 
     // start a slow, failing postgres connect (non-routable host)
-    await window.getByLabel('Connection Type').selectOption('postgresql');
+    await userAttemptsTo.selectNewConnection('postgresql');
     await window.waitForTimeout(500);
     const hostGroup = window.locator('.form-group')
       .filter({ has: window.locator('label', { hasText: /^Host$/ }) }).first();

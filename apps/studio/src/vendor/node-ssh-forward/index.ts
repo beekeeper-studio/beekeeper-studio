@@ -232,6 +232,11 @@ class SSHConnection {
       })
 
       connection.on('error', (error) => {
+        // if pageant is not running on windows, we log the message and move on to the next auth method rather than rejecting the connection.
+        if ((error as any).level === 'agent') {
+          this.log.warn(`Ignoring non-fatal SSH agent error: ${error.message}`)
+          return
+        }
         reject(error)
       })
       try {

@@ -174,7 +174,7 @@ export default Vue.extend({
 
       this.loadingFolders = true;
       try {
-        await this.$store.dispatch(`${this.folderPath}/ensureAllLoaded`);
+        await this.$store.dispatch(`${this.folderPath}/load`);
       } finally {
         this.loadingFolders = false;
       }

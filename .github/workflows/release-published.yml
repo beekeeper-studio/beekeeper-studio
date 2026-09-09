@@ -1,0 +1,257 @@
+name: Release - Publish Channels
+
+# Runs when a draft release is published (studio-publish.yml only builds and
+# uploads assets to a draft). Everything user-facing happens here, gated on
+# the manual publish click:
+#   - mirror release assets to the downloads R2 bucket + refresh latest.json
+#     (the manifest the website resolves downloads from)
+#   - publish deb/rpm to the apt/rpm repos
+#   - upload the snap to the store
+#
+# Slack: posts to #appevents when publishing starts and succeeds, and to
+# #production-alerts when any job fails (secrets slack_appevents_webhook /
+# slack_production_alerts_webhook, one incoming-webhook URL per channel).
+#
+# workflow_dispatch re-runs any of it idempotently for a given tag - use it to
+# backfill the mirror or heal a partial run. The checkboxes select which
+# publish paths run; a release event always runs all of them.
+
+permissions:
+  contents: read
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish (e.g. v5.4.2)"
+        required: true
+      mirror:
+        description: "Mirror downloads to R2 + refresh latest.json"
+        type: boolean
+        default: true
+      repositories:
+        description: "Publish deb/rpm repositories"
+        type: boolean
+        default: true
+      snap:
+        description: "Publish snap to the store"
+        type: boolean
+        default: true
+
+# Serialize near-simultaneous publishes. The mirror script's latest-release
+# guard makes any completion order converge on GitHub's canonical latest.
+concurrency:
+  group: release-published
+  cancel-in-progress: false
+
+env:
+  TAG: ${{ github.event.release.tag_name || inputs.tag }}
+  RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+jobs:
+  notify_start:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v5
+      - name: Notify Slack (publishing started)
+        run: >
+          bash ./.github/scripts/notify_slack.sh
+          ":hourglass_flowing_sand: Publishing release \`$TAG\` — <$RUN_URL|workflow run>"
+        env:
+          SLACK_WEBHOOK: ${{ secrets.slack_appevents_webhook }}
+
+  # Channel comes from the tag itself (v1.2.3 -> latest, v1.2.3-beta.1 -> beta)
+  # rather than the release's prerelease checkbox, so a mis-flagged publish
+  # can't ship a beta to stable channels.
+  identify_channel:
+    runs-on: ubuntu-24.04
+    outputs:
+      channel: ${{ steps.extract_channel.outputs.channel }}
+      deb_codename: ${{ steps.extract_channel.outputs.deb_codename }}
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v5
+      - name: Extract channel from tag
+        id: extract_channel
+        run: bash ./.github/scripts/extract_channel.sh "${TAG#v}"
+
+  mirror_downloads:
+    if: github.event_name == 'release' || inputs.mirror
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v5
+
+      # Resolved before mirroring so a bad API response fails the run early,
+      # and the mirror script itself only mirrors. latest.json is written only
+      # when the published tag matches this.
+      - name: Determine latest release
+        id: latest_release
+        run: |
+          latest=$(gh api repos/beekeeper-studio/beekeeper-studio/releases/latest --jq '.tag_name')
+          echo "Latest release: $latest"
+          echo "tag=$latest" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Mirror release assets to R2
+        run: node ./.github/scripts/mirror_release_downloads.js "$TAG"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LATEST_TAG: ${{ steps.latest_release.outputs.tag }}
+          R2_BUCKET: beekeeper-downloads
+          R2_ENDPOINT: ${{ secrets.cloudflare_endpoint }}
+          PUBLIC_BASE_URL: https://downloads.beekeeperstudio.io
+          AWS_ACCESS_KEY_ID: "${{ secrets.cloudflare_key_id }}"
+          AWS_SECRET_ACCESS_KEY: "${{ secrets.cloudflare_secret_access_key }}"
+          AWS_DEFAULT_REGION: "us-east-1"
+          # 2025-01-15: AWS made changes to their clis that broke compatibility
+          # for third party services.
+          # This works around that.
+          # https://github.com/aws/aws-sdk-ruby/issues/3166
+          AWS_REQUEST_CHECKSUM_CALCULATION: WHEN_REQUIRED
+          AWS_RESPONSE_CHECKSUM_VALIDATION: WHEN_REQUIRED
+
+  publish_repositories:
+    needs: identify_channel
+    if: (github.event_name == 'release' || inputs.repositories) && needs.identify_channel.outputs.channel == 'latest'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v5
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.0.2
+
+      - name: Install dependencies for rpm deployment
+        run: sudo apt-get update && sudo apt-get install -y createrepo-c
+
+      - name: Install deb-s3 from GitHub
+        run: |
+          curl -sL https://github.com/deb-s3/deb-s3/releases/download/0.11.8/deb-s3-0.11.8.gem -o ./deb-s3.gem
+          gem install -N ./deb-s3.gem
+
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v3
+        with:
+          gpg-private-key: ${{ secrets.gpg_key }}
+
+      - name: Download release packages
+        run: |
+          rm -rf ./artifacts; mkdir artifacts
+          gh release download "$TAG" --repo beekeeper-studio/beekeeper-studio \
+            --pattern '*.deb' --pattern '*.rpm' --dir ./artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish DEB to R2
+        run: |
+          deb-s3 upload $(find ./artifacts -type f -name "*.deb") \
+            --bucket=beekeeper-deb-repo \
+            --codename=${{ needs.identify_channel.outputs.deb_codename }} \
+            --endpoint=${{ secrets.cloudflare_endpoint }} \
+            --lock \
+            --sign=${{ steps.import_gpg.outputs.keyid }} \
+            --preserve-versions
+        env:
+          AWS_ACCESS_KEY_ID: "${{ secrets.cloudflare_key_id }}"
+          AWS_SECRET_ACCESS_KEY: "${{ secrets.cloudflare_secret_access_key }}"
+          AWS_DEFAULT_REGION: "us-east-1"
+          # 2025-01-15: AWS made changes to their clis that broke compatibility
+          # for third party services.
+          # This works around that.
+          # https://github.com/aws/aws-sdk-ruby/issues/3166
+          AWS_REQUEST_CHECKSUM_CALCULATION: WHEN_REQUIRED
+          AWS_RESPONSE_CHECKSUM_VALIDATION: WHEN_REQUIRED
+
+      - name: Publish RPM to R2
+        # publish_rpm.sh syncs the repo metadata down, hands off to
+        # prepare_rpm_repo.sh to sign the new packages and rebuild the metadata,
+        # then syncs the new packages + metadata back up. The repo-building step
+        # has an offline test that needs no S3/credentials:
+        #   bash .github/scripts/test_prepare_rpm_repo.sh
+        run: |
+          .github/scripts/publish_rpm.sh $(find ./artifacts -type f -name "*.rpm")
+        env:
+          GPG_KEY_ID: "${{ steps.import_gpg.outputs.keyid }}"
+          R2_BUCKET: "beekeeper-rpm-repo/repo"
+          R2_ENDPOINT: ${{ secrets.cloudflare_endpoint }}
+          AWS_ACCESS_KEY_ID: "${{ secrets.cloudflare_key_id }}"
+          AWS_SECRET_ACCESS_KEY: "${{ secrets.cloudflare_secret_access_key }}"
+          # 2025-01-15: AWS made changes to their clis that broke compatibility
+          # for third party services.
+          # This works around that.
+          # https://github.com/aws/aws-sdk-ruby/issues/3166
+          AWS_REQUEST_CHECKSUM_CALCULATION: WHEN_REQUIRED
+          AWS_RESPONSE_CHECKSUM_VALIDATION: WHEN_REQUIRED
+
+  publish_snapcraft:
+    needs: identify_channel
+    if: github.event_name == 'release' || inputs.snap
+    runs-on: ubuntu-latest
+    env:
+      SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.snapcraft_token }}
+    steps:
+      - name: Install Snapcraft
+        uses: samuelmeuli/action-snapcraft@v3
+
+      - name: Download release snaps
+        run: |
+          rm -rf ./artifacts; mkdir artifacts
+          gh release download "$TAG" --repo beekeeper-studio/beekeeper-studio \
+            --pattern '*.snap' --dir ./artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Every published release goes to edge; the stable channel is promoted
+      # separately below only for the latest channel.
+      - name: Upload snaps to edge
+        run: |
+          snaps=$(find ./artifacts -type f -name "*.snap")
+          if [ -z "$snaps" ]; then
+            echo "No .snap files found in release assets" >&2
+            exit 1
+          fi
+          for snap in $snaps; do
+            echo "Uploading $snap to latest/edge"
+            snapcraft upload "$snap" --release latest/edge
+          done
+
+      - name: Move release snap from edge to stable
+        if: needs.identify_channel.outputs.channel == 'latest'
+        continue-on-error: true
+        run: |
+          snapcraft promote beekeeper-studio --from-channel "latest/edge" --to-channel "latest/stable" --yes
+
+  notify_result:
+    needs: [identify_channel, mirror_downloads, publish_repositories, publish_snapcraft]
+    if: always()
+    runs-on: ubuntu-24.04
+    env:
+      RESULTS: "identify_channel:${{ needs.identify_channel.result }} mirror_downloads:${{ needs.mirror_downloads.result }} publish_repositories:${{ needs.publish_repositories.result }} publish_snapcraft:${{ needs.publish_snapcraft.result }}"
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v5
+
+      - name: Notify Slack (publishing failed)
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: |
+          failed=$(tr ' ' '\n' <<<"$RESULTS" | grep -vE ':(success|skipped)$' | xargs echo)
+          bash ./.github/scripts/notify_slack.sh ":rotating_light: Release publishing FAILED for \`$TAG\` ($failed) — <$RUN_URL|workflow run>"
+        env:
+          SLACK_WEBHOOK: ${{ secrets.slack_production_alerts_webhook }}
+
+      # skipped counts as success: publish_repositories is skipped on purpose
+      # for beta/alpha releases.
+      - name: Notify Slack (publishing succeeded)
+        if: ${{ !(contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) }}
+        run: >
+          bash ./.github/scripts/notify_slack.sh
+          ":white_check_mark: Release \`$TAG\` published — downloads mirror and channels updated. <$RUN_URL|workflow run>"
+        env:
+          SLACK_WEBHOOK: ${{ secrets.slack_appevents_webhook }}

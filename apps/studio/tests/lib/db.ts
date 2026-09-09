@@ -1480,6 +1480,22 @@ export class DBTestUtil {
       await this.knex.schema.raw(`INSERT INTO organizations FORMAT CSVWithNames\n${csvData}`)
       return
     }
+    if (this.dbType === 'sqlite') {
+      // The streaming path below issues ~200 autocommit batches, each of which
+      // fsyncs; on a slow CI disk that outlives the jest hook timeout. One
+      // transaction commits once. skipEmptyLines: unlike the streaming parser,
+      // a whole-file parse emits a trailing all-empty row for the final newline.
+      const rows = Papa.parse(fs.readFileSync(fileLocation, 'utf-8'), {
+        header: true,
+        skipEmptyLines: true,
+      }).data as Record<string, any>[]
+      await this.knex.transaction(async (trx) => {
+        for (const rowChunk of _.chunk(rows, 500)) {
+          await trx('organizations').insert(rowChunk)
+        }
+      })
+      return
+    }
     return new Promise<void>( (resolve, reject) => {
       const fileStream = fs.createReadStream(fileLocation)
       const promises = []
@@ -1488,23 +1504,34 @@ export class DBTestUtil {
       let batch = []
       const maxBatch = this.dbType === 'firebird' ? 255 : 233
 
+      // The first failed batch is remembered and stops the pump. Batch
+      // promises never reject — each records its error instead — because jest
+      // may already have abandoned this hook (timeout) or torn the suite down
+      // (knex.destroy() in afterAll) while Papa is still streaming chunks; a
+      // rejected promise with no handler attached kills the whole jest worker.
+      let pumpError: Error | null = null
       const execBatch = async (batch: Record<string, any>[]) => {
-        if (this.dbType === 'firebird') {
-          const inserts = batch.reduce((str, row) => `${str}INSERT INTO organizations (${Object.keys(row).join(',')}) VALUES (${Object.values(row).map(FirebirdData.wrapLiteral).join(',')});\n`, '')
-          await this.knex.schema.raw(`
-            EXECUTE BLOCK AS BEGIN
-              ${inserts}
-            END
-          `)
-        } else if (this.dbType === 'sqlserver') {
-          const { bindings, sql } = this.knex('organizations').insert(batch).toSQL()
-          await this.knex.raw(`
-            SET IDENTITY_INSERT organizations ON;
-              ${sql}
-            SET IDENTITY_INSERT organizations OFF;
-          `, bindings)
-        } else {
-          await this.knex('organizations').insert(batch)
+        if (pumpError) return
+        try {
+          if (this.dbType === 'firebird') {
+            const inserts = batch.reduce((str, row) => `${str}INSERT INTO organizations (${Object.keys(row).join(',')}) VALUES (${Object.values(row).map(FirebirdData.wrapLiteral).join(',')});\n`, '')
+            await this.knex.schema.raw(`
+              EXECUTE BLOCK AS BEGIN
+                ${inserts}
+              END
+            `)
+          } else if (this.dbType === 'sqlserver') {
+            const { bindings, sql } = this.knex('organizations').insert(batch).toSQL()
+            await this.knex.raw(`
+              SET IDENTITY_INSERT organizations ON;
+                ${sql}
+              SET IDENTITY_INSERT organizations OFF;
+            `, bindings)
+          } else {
+            await this.knex('organizations').insert(batch)
+          }
+        } catch (err) {
+          pumpError = pumpError || err
         }
       }
 
@@ -1512,7 +1539,11 @@ export class DBTestUtil {
         header: true,
         ...(useStep
           ? {
-              step(results: { data: Record<string, any> }) {
+              step(results: { data: Record<string, any> }, parser: { abort: () => void }) {
+                if (pumpError) {
+                  parser.abort();
+                  return;
+                }
                 batch.push(results.data);
                 if (batch.length >= maxBatch) {
                   promises.push(execBatch(batch));
@@ -1521,7 +1552,11 @@ export class DBTestUtil {
               },
             }
           : {
-              chunk(results: { data: Record<string, any>[] }) {
+              chunk(results: { data: Record<string, any>[] }, parser: { abort: () => void }) {
+                if (pumpError) {
+                  parser.abort();
+                  return;
+                }
                 if (results.data.length === 0) {
                   return;
                 }
@@ -1534,7 +1569,9 @@ export class DBTestUtil {
             promises.push(execBatch(batch));
             batch = [];
           }
-          Promise.all(promises).then(() => resolve()).catch(reject);
+          Promise.all(promises)
+            .then(() => (pumpError ? reject(pumpError) : resolve()))
+            .catch(reject);
         },
         error: (err) => reject(err),
       });

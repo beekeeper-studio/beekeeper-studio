@@ -13,8 +13,10 @@ export class QueryAuditsController {
   plural = 'audits'
   path = '/queries'
 
-  async list(queryId: number): Promise<IQueryAudit[]> {
-    const response = await this.axios.get(url(this.path, queryId, this.plural))
+  async list(queryId: number, limit?: number): Promise<IQueryAudit[]> {
+    const response = await this.axios.get(url(this.path, queryId, this.plural), {
+      params: limit ? { limit } : {},
+    })
     return res(response, this.plural)
   }
 

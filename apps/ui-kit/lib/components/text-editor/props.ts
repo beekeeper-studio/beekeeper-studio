@@ -2,7 +2,7 @@ import type { CustomMenuItems } from "../context-menu";
 import { PropType } from "vue";
 import { Keybindings, Keymap, LanguageServerConfiguration, EditorMarker, LineGutter } from "./types";
 import { Extension } from "@codemirror/state";
-import { Config } from "./extensions/vim";
+import { Clipboard, Config, VimDirective } from "./extensions/vim";
 
 export default {
   value: {
@@ -73,21 +73,22 @@ export default {
   },
   /** Enable fold gutter. */
   foldGutters: Boolean,
-  // cursor: String,
-  // initialized: Boolean,
-  // autoFocus: Boolean,
-  // removeJsonRootBrackets: Boolean,
-  // bookmarks: Array,
+  /** Enable indentation markers. */
+  indentationMarkers: Boolean,
   /** Fold all folds in the editor. */
   foldAll: null,
   /** Unfold all folds in the editor. */
   unfoldAll: null,
   /**
-   * Configure custom key mappings in vim. `vimKeymaps` accepts an array of
-   * objects that contain the following properties:
+   * Configure vim from the host application. `vimKeymaps` accepts an array of
+   * directives, applied in order. A directive with no `type` is a mapping:
    * - lhs: The key you want to map
    * - rhs: The key you want to map to
-   * - mode: (optional) The mode in which you want to map the key ('normal', 'visual', 'insert')
+   * - mode: (optional) The mode to map in ('normal', 'visual', 'insert').
+   *   Omitted means every mode.
+   * - noremap: (optional) Map non-recursively, i.e. `nnoremap` rather than
+   *   `nmap`. Required whenever the rhs contains the lhs, which would
+   *   otherwise expand forever.
    *
    * For example, to map `;` to `:`, you can do:
    *
@@ -98,7 +99,11 @@ export default {
    * ```
    *
    * In vim, that would be `:map ; :`.
+   *
+   * The other directives mirror their vim commands:
+   * `{ type: 'unmap', lhs, mode? }`, `{ type: 'mapclear', mode? }`, and
+   * `{ type: 'set', name, value }` where value is a string or a boolean.
    */
-  vimKeymaps: Array,
+  vimKeymaps: Array as PropType<VimDirective[]>,
   clipboard: Object as PropType<Clipboard>
 };

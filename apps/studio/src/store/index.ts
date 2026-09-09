@@ -33,13 +33,13 @@ import ImportStoreModule from './modules/imports/ImportStoreModule'
 import { BackupModule } from './modules/backup/BackupModule'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { ConnectionTypes, SnowflakeAuthType, SurrealAuthType } from '@/lib/db/types'
-import { SidebarModule } from './modules/SidebarModule'
-import { TreeExpansionState } from './modules/sidebar/TreeExpansionModule'
+import { SidebarModule, State as SidebarState } from './modules/SidebarModule'
 import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
 import { PopupMenuModule } from './modules/PopupMenuModule'
 import { WebPluginManagerStatus } from '@/services/plugin'
 import { MenuBarModule } from './modules/MenuBarModule'
 import { PluginsModule, PluginsState } from './modules/plugins'
+import { VimStoreModule } from './modules/VimStoreModule'
 import { pluralize } from '@/vendor/pluralize'
 
 
@@ -130,10 +130,7 @@ export interface State {
   plugins?: PluginsState,
 
   /** Set by VueX module. */
-  sidebar?: {
-    connections: TreeExpansionState
-    queries: TreeExpansionState
-  },
+  sidebar?: SidebarState
 }
 
 Vue.use(Vuex)
@@ -158,6 +155,7 @@ const store = new Vuex.Store<State>({
     popupMenu: PopupMenuModule,
     menuBar: MenuBarModule,
     plugins: PluginsModule,
+    vim: VimStoreModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),
@@ -313,8 +311,11 @@ const store = new Vuex.Store<State>({
     isTrial(_state, _getters, _rootState, rootGetters) {
       return rootGetters['licenses/isTrial']
     },
-    canCreateFolders(_state, getters) {
-      return getters.isUltimate || getters.isCloud;
+    isLifetime(_state, _getters, _rootState, rootGetters) {
+      return rootGetters['licenses/isLifetime']
+    },
+    canAccessCloudWorkspaces(_state, _getters, _rootState, rootGetters) {
+      return rootGetters['licenses/canAccessCloudWorkspaces']
     },
     expandFKDetailsByDefault(state) {
       return state.expandFKDetailsByDefault
@@ -560,7 +561,8 @@ const store = new Vuex.Store<State>({
           const serverConfig = await Vue.prototype.$util.send('conn/getServerConfig');
           context.commit('sshConfigWarnings', serverConfig?.sshConfigWarnings || []);
 
-          const usedConfig = await context.dispatch('data/usedconnections/recordUsed', resolvedConfig)
+          // conn/create recorded the use; pick up the new/updated recent row
+          await context.dispatch('data/usedconnections/load')
 
           context.commit('defaultSchema', defaultSchema);
           context.commit('connectionType', config.connectionType);
@@ -570,7 +572,7 @@ const store = new Vuex.Store<State>({
           // button, the window title, tab history), so it is committed before
           // `connected` - otherwise the core interface renders with no
           // connection. Watchers on it must be `immediate` for the same reason.
-          context.commit('newConnection', usedConfig)
+          context.commit('newConnection', resolvedConfig)
 
           // `connected` is the switch between the connection screen and the
           // core interface. Entity loading below deliberately runs after it so
@@ -579,14 +581,14 @@ const store = new Vuex.Store<State>({
           // whole connection back.
           window.main.enableConnectionMenuItems();
           context.commit('connected', true);
-          context.dispatch('updateWindowTitle', usedConfig)
+          context.dispatch('updateWindowTitle', resolvedConfig)
 
           if (supportedFeatures.backups) {
             context.dispatch('backups/setConnectionConfigs', { config: resolvedConfig, supportedFeatures, serverConfig });
           }
 
-          if (usedConfig.connectionType === 'surrealdb' &&
-            usedConfig.surrealDbOptions?.authType === SurrealAuthType.Root) {
+          if (resolvedConfig.connectionType === 'surrealdb' &&
+            resolvedConfig.surrealDbOptions?.authType === SurrealAuthType.Root) {
             await context.dispatch('updateNamespaceList');
           }
           await context.dispatch('updateDatabaseList')
@@ -803,54 +805,38 @@ const store = new Vuex.Store<State>({
       context.commit('tabActive', value)
     },
     async initializeConnectionTree(context) {
-      if (context.getters.isCloud) {
-        await Promise.all([
-          context.dispatch('data/connectionFolders/refresh', []),
-          context.dispatch('data/connections/refresh', []),
-        ]);
+      await Promise.all([
+        context.dispatch('data/connectionFolders/refresh', []),
+        context.dispatch('data/connections/refresh', []),
+      ]);
 
-        const folderIds = context.state['data/connectionFolders'].items
-          .filter((folder) => folder.default)
-          .map((folder) => folder.id)
-        // the default folders start out expanded
-        context.commit('sidebar/connections/expandedIds', folderIds)
+      const folderIds = context.state['data/connectionFolders'].items
+        .filter((folder) => folder.default)
+        .map((folder) => folder.id)
+      // the default folders start out expanded
+      context.commit('sidebar/connections/expandedIds', folderIds)
 
-        await Promise.all([
-          context.dispatch('data/connectionFolders/ensureLoaded', folderIds),
-          context.dispatch('data/connections/ensureLoaded', folderIds),
-        ])
-      } else {
-        context.commit('sidebar/connections/expandedIds', [])
-        await Promise.all([
-          context.dispatch('data/connectionFolders/load'),
-          context.dispatch('data/connections/load'),
-        ])
-      }
+      await Promise.all([
+        context.dispatch('data/connectionFolders/loadByParentIds', folderIds),
+        context.dispatch('data/connections/loadByParentIds', folderIds),
+      ])
     },
     async initializeQueryTree(context) {
-      if (context.getters.isCloud) {
-        await Promise.all([
-          context.dispatch('data/queryFolders/refresh', []),
-          context.dispatch('data/queries/refresh', []),
-        ]);
+      await Promise.all([
+        context.dispatch('data/queryFolders/refresh', []),
+        context.dispatch('data/queries/refresh', []),
+      ]);
 
-        const folderIds = context.state['data/queryFolders'].items
-          .filter((folder) => folder.default)
-          .map((folder) => folder.id)
-        // the default folders start out expanded
-        context.commit('sidebar/queries/expandedIds', folderIds)
+      const expandedFolderIds = context.state['data/queryFolders'].items
+        .filter((folder) => folder.default)
+        .map((folder) => folder.id)
+      // the default folders start out expanded
+      context.commit('sidebar/queries/expandedIds', expandedFolderIds)
 
-        await Promise.all([
-          context.dispatch('data/queryFolders/ensureLoaded', folderIds),
-          context.dispatch('data/queries/ensureLoaded', folderIds),
-        ])
-      } else {
-        context.commit('sidebar/queries/expandedIds', [])
-        await Promise.all([
-          context.dispatch('data/queryFolders/load'),
-          context.dispatch('data/queries/load'),
-        ])
-      }
+      await Promise.all([
+        context.dispatch('data/queryFolders/loadByParentIds', expandedFolderIds),
+        context.dispatch('data/queries/loadByParentIds', expandedFolderIds),
+      ])
     },
     async refreshConnections(context) {
       const expandedIds = context.state.sidebar.connections.expandedIds

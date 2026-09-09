@@ -115,6 +115,10 @@ components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, ContentP
         this.$root.$emit(AppEvent.upgradeModal, 'Cloud Workspaces')
         return
       }
+      if (!isLocal && this.$store.getters.isLifetime) {
+        this.$root.$emit(AppEvent.cloudWorkspacesBlocked)
+        return
+      }
       await this.$util.send('workspace/setActive', { wId: blob.workspace.id, credentialId: blob.credentialId });
       this.$store.commit('workspaceId', blob.workspace.id)
       this.$store.dispatch('settings/save', {

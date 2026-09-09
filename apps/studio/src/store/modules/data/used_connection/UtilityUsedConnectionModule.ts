@@ -1,65 +1,26 @@
 import { IConnection } from "@/common/interfaces/IConnection";
 import { DataState, DataStore, mutationsFor, utilActionsFor } from "@/store/modules/data/DataModuleBase";
 import _ from "lodash";
-import rawLog from "@bksLogger";
 import { safely } from "../StoreHelpers";
 import Vue from "vue";
 
-const log = rawLog.scope('data/usedconnections');
-
 type State = DataState<IConnection>;
 
+// Rows are written by the backend (UsedConnection.recordUse, from conn/create)
+// once a connection is actually up. This module only reads them.
 // NOTE (@day): may need to add a custom action for removeUsedConfig that also deletes the tokencache?
 export const UtilUsedConnectionModule: DataStore<IConnection, State> = {
   namespaced: true,
-  state: {
-    items: [],
-    loading: false,
-    error: null,
-    pollError: null
+  state() {
+    return {
+      items: [],
+      loading: false,
+      error: null,
+      pollError: null
+    }
   },
   mutations: mutationsFor<IConnection>(),
   actions: utilActionsFor<IConnection>('used', {
-    async recordUsed(context, config: IConnection) {
-      log.debug("Recording used config for: ", config)
-      const lastUsedConnection = context.state.items.find(c => {
-        return config.id &&
-          config.workspaceId &&
-          ((!c.connectionId && c.id === config.id) || 
-            (c.connectionId && c.connectionId === config.id)) &&
-          c.workspaceId === config.workspaceId;
-      });
-      log.debug("Found used config", lastUsedConnection);
-      if (lastUsedConnection) {
-        // Overlay the latest connection details from `config` (which is the
-        // saved connection the user is connecting to) onto the existing
-        // used_connection row, so subsequent reads reflect the current
-        // host/port/credentials/etc., not the snapshot from the first connect.
-        //
-        // NOTE: return `config` (the saved connection) unchanged - do NOT swap
-        // it for the used_connection row. Open tabs, pins, and hidden entities
-        // are all persisted keyed on `usedConfig.id`. The saved_connection and
-        // used_connection tables have independent id sequences, so returning
-        // the used_connection here changes that key and orphans everything on
-        // the next launch.
-        await context.dispatch('save', {
-          ...config,
-          id: lastUsedConnection.id,
-          connectionId: config.id,
-          workspaceId: config.workspaceId,
-          createdAt: lastUsedConnection.createdAt,
-          updatedAt: new Date(),
-        });
-      } else {
-        const id = await context.dispatch('save', config);
-        // `save` upserts the saved row into `items`, but don't trust the lookup to
-        // hit - a concurrent `load` replaces the whole list, and returning nothing
-        // here strands the app with `connected: true` and no `usedConfig` to render
-        // the UI from.
-        config = context.state.items.find((item) => item.id === id) ?? { ...config, id: config.id ?? id };
-      }
-      return config;
-    },
     async load(context) {
       context.commit("error", null);
       await safely(context, async () => {
@@ -70,7 +31,8 @@ export const UtilUsedConnectionModule: DataStore<IConnection, State> = {
   }),
   getters: {
     orderedUsedConfigs(state) {
-      return _.sortBy(state.items, 'updatedAt').reverse()
+      const limit = window.bksConfig.ui.connectionSidebar.recentConnectionsLimit
+      return _.sortBy(state.items, 'updatedAt').reverse().slice(0, limit)
     }
   }
 }

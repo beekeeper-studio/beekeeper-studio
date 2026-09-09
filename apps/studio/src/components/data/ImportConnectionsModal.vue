@@ -1,73 +1,66 @@
 <template>
-  <modal
+  <base-modal
     name="import-connections"
-    class="vue-dialog beekeeper-modal import-connections-modal"
+    class="import-connections-modal"
+    :loading="loading"
+    @submit="doImport"
   >
-    <div class="dialog-content">
-      <div class="dialog-c-title">
-        Import Connections
-      </div>
-      <div class="dialog-c-subtitle">
-        Importing a connection will copy it from your local workspace into your cloud workspace. Imported connections are private to you by default.
-      </div>
-      <error-alert :error="error" />
-      <div>
-        <div class="list-group">
-          <div class="list-body">
-            <div
-              class="list-item"
-              v-for="connection in connections"
-              :key="connection.id"
-            >
-              <label
-                :for="`c-${connection.id}`"
-                class="checkbox-group"
-              >
-                <input
-                  type="checkbox"
-                  v-model="connection.checked"
-                  class="form-control"
-                  :id="`c-${connection.id}`"
-                  :name="`c-${connection.id}`"
-                >
-                <span>{{ connection.name }}</span>
-
-              </label>
-            </div>
-          </div>
-        </div>
-      </div>
+    <template #title>
+      Import Connections
+    </template>
+    <p class="import-connections-subtitle">
+      Importing a connection will copy it from your local workspace into your cloud workspace. Imported connections are private to you by default.
+    </p>
+    <error-alert :error="error" />
+    <div class="connection-list">
+      <local-item-tree-picker
+        :type="'connection'"
+        v-model="selectedConnections"
+      />
     </div>
-    <div class="vue-dialog-buttons">
+    <template #footer="{ close }">
       <button
         class="btn btn-flat"
-        @click.prevent="$modal.hide('import-connections')"
+        type="button"
+        @click.prevent="close"
       >
         Close
       </button>
       <button
         :disabled="loading"
-        class="btn btn-primary"
-        @click.prevent="doImport"
+        class="btn btn-primary btn-badge"
+        type="submit"
       >
+        <span
+          class="badge"
+          v-if="!loading && selectedConnections.length > 0"
+        >
+          <small>{{ selectedConnections.length }}</small>
+        </span>
         {{ loading ? '...' : 'Import' }}
       </button>
-    </div>
-  </modal>
+    </template>
+  </base-modal>
 </template>
 <script lang="ts">
+import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
-import Vue from 'vue'
+import BaseModal from '@/components/common/modals/BaseModal.vue'
+import LocalItemTreePicker from '@/components/common/LocalItemTreePicker.vue'
+
 export default Vue.extend({
-  components: { ErrorAlert },
+  components: { ErrorAlert, BaseModal, LocalItemTreePicker },
   data: () => ({
-    connections: [],
     loading: false,
-    error: null
+    error: null,
+    selectedConnections: []
   }),
   mounted() {
     this.registerHandlers(this.rootBindings)
+  },
+  beforeDestroy() {
+    this.unregisterHandlers(this.rootBindings)
   },
   computed: {
     rootBindings() {
@@ -81,24 +74,18 @@ export default Vue.extend({
   },
   methods: {
     async openModal() {
-      console.log("opening modal!")
-      this.connections = (await this.$util.send('appdb/saved/find')).map((c) => {
-        return {
-          ...c,
-          checked: false
-        }
-      })
+      this.selectedConnections = [];
       this.error = null
       this.$modal.show('import-connections')
     },
     async doImport() {
       this.loading = true
       this.error = null
-      const candidates = this.connections.filter((c) => c.checked)
       try {
-        await Promise.all(candidates.map((c) => {
+        await Promise.all(this.selectedConnections.map(async (id: number) => {
+          const conn = await this.findLocal(id);
           // Clear id and connectionFolderId so the connection goes to the personal folder
-          const payload = {...c, id: null, connectionFolderId: null}
+          const payload = {...conn, id: null, connectionFolderId: null}
           return this.$store.dispatch('data/connections/save', payload)
         }))
         this.$modal.hide('import-connections')
@@ -107,23 +94,40 @@ export default Vue.extend({
       } finally {
         this.loading = false
       }
+    },
+    async findLocal(id: number) {
+      return await this.$util.send('appdb/saved/findOneBy', { options: { id }});
     }
   }
 })
 </script>
-<style lang="scss">
-.import-connections-modal {
-  .v--modal {
-    display: flex;
-    flex-direction: column;
-  }
-  .dialog-content {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-  }
-  .vue-dialog-buttons {
-    flex-shrink: 0;
+<style lang="scss" scoped>
+@import '../../assets/styles/app/_variables.scss';
+
+.import-connections-subtitle {
+  color: var(--text-light);
+  margin-bottom: 0.5rem;
+}
+
+.connection-list {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.connection-item {
+  display: flex;
+  align-items: center;
+  line-height: 1.6;
+}
+
+.btn-badge {
+  .badge {
+    margin: 0;
+    margin-right: $gutter-h * 0.25;
+    background: transparent;
+    line-height: 1;
+    padding-left: 0;
+    color: rgba($theme-bg, 0.87);
   }
 }
 </style>

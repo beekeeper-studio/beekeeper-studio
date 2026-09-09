@@ -8,6 +8,7 @@
         <a
           href=""
           class="btn btn-flat btn-icon btn-block"
+          data-testid="new-connection"
           @click.prevent="$emit('create')"
         >
           <i class="material-icons">add</i>
@@ -58,12 +59,12 @@
             </div>
             <error-alert
               :error="error"
-              v-if="error"
+              v-if="error && !isPollError && !errorList.includes(error)"
               title="Problem loading connections"
               @close="error = null"
               :closable="true"
             />
-            <sidebar-loading v-else-if="initializing" />
+            <sidebar-loading v-if="initializing" />
             <nav
               v-else
               class="list-body"
@@ -93,67 +94,60 @@
           ref="savedConnectionList"
         >
           <div class="list-group">
-            <div class="list-heading">
-              <div class="flex">
-                <div class="sub row flex-middle noselect">
+            <div class="list-heading row">
+              <div class="sub row flex-middle expand">
+                <div class="expand noselect">
                   Saved <span class="badge">{{ (filteredConnections || []).length }}</span>
                 </div>
-                <span class="expand" />
                 <div class="actions">
-                  <a
-                    v-if="isCloud"
-                    @click.prevent="importFromLocal"
-                    title="Import connections from local workspace"
-                  >
-                    <i class="material-icons">save_alt</i>
-                  </a>
                   <a
                     @click.prevent="createFolder"
                     title="New Folder"
                   >
                     <i class="material-icons-outlined">create_new_folder</i>
                   </a>
-                  <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
+                  <x-button
+                    title="Import Connections"
+                  >
+                    <i class="material-icons">save_alt</i>
+                    <x-menu style="--align: end;">
+                      <x-menuitem @click.prevent="importFromComputer">
+                        <x-label>Import .json files into Saved Connections</x-label>
+                      </x-menuitem>
+                      <x-menuitem
+                        v-if="isCloud"
+                        @click.prevent="importFromLocal"
+                      >
+                        <x-label>Import connections from local workspace</x-label>
+                      </x-menuitem>
+                    </x-menu>
+                  </x-button>
+                  <a @click.prevent="refresh">
+                    <i class="material-icons">refresh</i>
+                  </a>
                   <sidebar-sort-buttons
                     v-if="!isCloud"
                     v-model="sort"
                     :sort-options="sortables"
                   />
                 </div>
-                <!-- <x-button class="actions-btn btn btn-link btn-small" v-tooltip="`Sorted by ${sortables[sortOrder]}`">
-                  <i class="material-icons-outlined">sort</i>
-                  <x-menu style="--target-align: right;">
-                    <x-menuitem
-                      v-for="i in Object.keys(sortables)"
-                      :key="i"
-                      :toggled="i === sortOrder"
-                      togglable
-                      @click="sortConnections(i)"
-                    >
-                      <x-label>{{ sortables[i] }}</x-label>
-                    </x-menuitem>
-                  </x-menu>
-                </x-button> -->
               </div>
             </div>
-            <expired-folder-alert
-              v-if="!canCreateFolders && folders.length > 0"
-            />
             <error-alert
               :error="error"
-              v-if="error"
+              v-if="error && !isPollError && !errorList.includes(error)"
               title="Problem loading connections"
               @close="error = null"
               :closable="true"
             />
-            <sidebar-loading v-else-if="initializing" />
+            <sidebar-loading v-if="initializing" />
             <nav
               v-else
               class="list-body"
             >
               <template v-if="searching">
                 <div class="empty-state"
-                  v-if="!fetchingResults && filteredConnections.length === 0"
+                  v-if="!typing && !fetchingResults && filteredConnections.length === 0"
                 >
                   No connections match "{{ connFilter }}"
                 </div>
@@ -172,7 +166,7 @@
                   @doubleClick="connect"
                 />
                 <content-placeholder
-                  v-if="fetchingResults"
+                  v-if="fetchingResults || typing"
                   :animated="true"
                   :rounded="false"
                   class="list-item"
@@ -185,7 +179,7 @@
               </template>
               <tree
                 v-show="!searching"
-                :folders="folderNodes"
+                :folders="extendedFolderNodes"
                 :items="sortedItemNodes"
                 :expanded-ids="expandedNodeIds"
                 @update:expandedIds="setExpandedIds"
@@ -243,6 +237,16 @@
                     </template>
                   </tree-folder>
                 </template>
+                <template #folder-header="{ node, depth }">
+                  <error-alert
+                    v-if="errors[node.ref.id]"
+                    :error="errors[node.ref.id]"
+                    title="Problem loading folder"
+                    class="tree-error"
+                    :style="{ '--depth': depth }"
+                    @close="setFolderError(node.ref.id, null)"
+                  />
+                </template>
                 <template #folder-footer="{ node, depth }">
                   <content-placeholder
                     v-if="loadingFolderIds.includes(node.ref.id)"
@@ -253,6 +257,15 @@
                   >
                     <content-placeholder-text :lines="1" />
                   </content-placeholder>
+                </template>
+                <template #folder-empty="{ node, depth }">
+                  <div
+                    v-if="!loadingFolderIds.includes(node.ref.id) && !errors[node.ref.id]"
+                    class="tree-empty"
+                    :style="{ '--depth': depth }"
+                  >
+                    No items
+                  </div>
                 </template>
                 <template #item="{ node }">
                   <connection-list-item
@@ -318,7 +331,6 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
 import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
 import ContentPlaceholderText from '@/components/common/loading/ContentPlaceholderText.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
-import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
 import Split from 'split.js'
 import { AppEvent } from '@/common/AppEvent'
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
@@ -326,7 +338,7 @@ import rawLog from '@bksLogger'
 import SidebarSortButtons from '../common/SidebarSortButtons.vue'
 import EditableText from '@/components/common/EditableText.vue'
 import Noty from 'noty'
-import { parseReorderTarget } from '@/common/utils/folderTree'
+import { buildFolderNodes, parseReorderTarget } from '@/common/utils/folderTree'
 
 const log = rawLog.scope('connection-sidebar');
 
@@ -340,7 +352,6 @@ export default {
     Tree,
     TreeFolder,
     EditableText,
-    ExpiredFolderAlert,
     SidebarSortButtons,
     WorkspaceSidebar,
   },
@@ -359,6 +370,11 @@ export default {
     renamingFolderId: null,
     justCreatedFolderId: null,
     justCreatedTimeout: null,
+    loadingFolderIds: [],
+    errors: {},
+    drafting: false,
+    draftParentId: null,
+    connFilter: "",
   }),
   watch: {
     async sort(newSort) {
@@ -367,12 +383,16 @@ export default {
       if (!this.sortInitialized) return
       await this.reorderBySort(newSort)
     },
+    connFilter(value) {
+      this.setConnectionFilter(value);
+    },
   },
   computed: {
     ...mapState('data/connections/nodes', { itemNodes: 'items' }),
     ...mapState('data/connectionFolders/nodes', { folderNodes: 'items' }),
     ...mapState('data/connections', {
       connectionsError: 'error',
+      connectionsPollError: 'pollError',
       connectionFilter: 'filter',
       pendingSaveIds: 'pendingSaveIds',
       fetchingResults: 'searching',
@@ -381,37 +401,32 @@ export default {
       folders: 'items',
       foldersLoading: 'loading',
       foldersError: 'error',
-      draft: 'draft',
+      foldersPollError: 'pollError',
     }),
     ...mapState('sidebar/connections', {
       expandedFolderIds: 'expandedIds',
-    }),
-    ...mapState({
-      loadingFolderIds(state) {
-        return [
-          ...state["data/connectionFolders"].folders.fetchingIds,
-          ...state["data/connections"].folders.fetchingIds,
-        ];
-      },
     }),
     ...mapGetters({
       usedConfigs: 'data/usedconnections/orderedUsedConfigs',
       settings: 'settings/settings',
       isCloud: 'isCloud',
       isUltimate: 'isUltimate',
-      canCreateFolders: 'canCreateFolders',
       activeWorkspaces: 'credentials/activeWorkspaces',
       pinnedConnections: 'pinnedConnections/pinnedConnections',
       filteredConnections: 'data/connections/filteredConnections',
       privacyMode: 'settings/privacyMode'
     }),
-    connFilter: {
-      get() {
-        return this.connectionFilter;
-      },
-      set(newFilter) {
-        this.$store.dispatch('data/connections/setConnectionFilter', newFilter);
+    typing() {
+      return this.connFilter !== this.connectionFilter;
+    },
+    draft() {
+      return { id: null, parentId: this.draftParentId, name: 'Untitled folder' };
+    },
+    extendedFolderNodes() {
+      if (this.drafting) {
+        return buildFolderNodes([this.draft, ...this.folders]);
       }
+      return this.folderNodes;
     },
     expandedNodeIds() {
       return this.expandedFolderIds.map((id) => `folder-${id}`);
@@ -441,30 +456,25 @@ export default {
         }
       }
     },
+    pollError() {
+      return this.connectionsPollError || this.foldersPollError || null
+    },
     sortedItemNodes() {
-      // Cloud has no sort buttons — drag and drop is the only way to reorder,
-      // and it lands in `position`.
-      if (this.isCloud) {
-        return _.sortBy(this.itemNodes, 'ref.position')
-      }
-      let result = []
-      if (this.sort.field === 'labelColor') {
-        const mappings = {
-          default: -1,
-          red: 0,
-          orange: 1,
-          yellow: 2,
-          green: 3,
-          blue: 4,
-          purple: 5,
-          pink: 6
-        }
-        result = _.orderBy(this.itemNodes, (n) => mappings[n.ref.labelColor])
-      } else {
-        result = _.orderBy(this.itemNodes, `ref.${this.sort.field}`)
-      }
-      if (this.sort.order === 'desc') result = result.reverse()
-      return result;
+      // Rendered order always comes from `position`. The sort buttons are a
+      // one-shot action: `reorderBySort` rewrites `position` for every
+      // connection and offers an undo. Deriving the rendered order from
+      // `sort.field` here instead would permanently outrank `position`, so a
+      // drag would save but never show.
+      return _.sortBy(this.itemNodes, (n) => n.ref.position ?? 0)
+    },
+    errorList() {
+      return Object.values(this.errors);
+    },
+    isPollError() {
+      return (
+        this.connectionsError === this.connectionsPollError ||
+        this.foldersError === this.foldersPollError
+      );
     },
   },
   async mounted() {
@@ -484,10 +494,11 @@ export default {
     ...mapActions({
       saveFolder: 'data/connectionFolders/save',
       reorderConnection: 'data/connections/reorder',
-      ensureConnectionsLoaded: 'data/connections/ensureLoaded',
-      ensureSubfoldersLoaded: 'data/connectionFolders/ensureLoaded',
-      startDrafting: 'data/connectionFolders/startDrafting',
-      stopDrafting: 'data/connectionFolders/stopDrafting',
+      loadConnections: 'data/connections/loadByParentIds',
+      loadConnectionFolders: 'data/connectionFolders/loadByParentIds',
+      unloadConnections: 'data/connections/unloadByParentIds',
+      unloadConnectionFolders: 'data/connectionFolders/unloadByParentIds',
+      setConnectionFilter: 'data/connections/setConnectionFilter',
     }),
     ...mapMutations({
       setExpandedFolderIds: 'sidebar/connections/expandedIds',
@@ -496,9 +507,41 @@ export default {
       const folderIds = this.folderNodes
         .filter((node) => expandedNodeIds.includes(node.id))
         .map((node) => node.ref.id)
+      const expandingIds = _.difference(folderIds, this.expandedFolderIds)
+      const collapsingIds = _.difference(this.expandedFolderIds, folderIds)
       this.setExpandedFolderIds(folderIds)
-      this.ensureConnectionsLoaded(folderIds)
-      this.ensureSubfoldersLoaded(folderIds)
+      this.loadFolders(expandingIds)
+      this.unloadFolders(collapsingIds)
+    },
+    async loadFolders(ids) {
+      try {
+        this.loadingFolderIds = [...this.loadingFolderIds, ...ids]
+        const results = await Promise.all([
+          this.loadConnections(ids),
+          this.loadConnectionFolders(ids),
+        ]);
+        const error = results.map((result) => result.error).find(Boolean)
+        if (error) {
+          this.setFolderErrors(ids, error);
+        } else {
+          this.setFolderErrors(ids, null);
+        }
+      } finally {
+        this.loadingFolderIds = _.difference(this.loadingFolderIds, ids)
+      }
+    },
+    unloadFolders(ids) {
+      this.unloadConnections(ids);
+      this.unloadConnectionFolders(ids);
+      this.setFolderErrors(ids, null);
+    },
+    setFolderErrors(ids, error) {
+      for (const id of ids) {
+        this.setFolderError(id, error);
+      }
+    },
+    setFolderError(id, error) {
+      this.$set(this.errors, id, error);
     },
     clearFilter() {
       this.connFilter = null;
@@ -518,8 +561,10 @@ export default {
         sizes: this.sizes
       })
     },
+    importFromComputer() {
+      this.$root.$emit(AppEvent.promptConnectionFilesImport)
+    },
     importFromLocal() {
-      console.log("triggering import")
       this.$root.$emit(AppEvent.promptConnectionImport)
     },
     async refresh() {
@@ -544,16 +589,12 @@ export default {
       return `label-${color}`
     },
     createFolder() {
-      if (!this.canCreateFolders) {
-        this.$root.$emit(AppEvent.upgradeModal, 'Folders')
-        return
-      }
       if (this.isCloud) {
         // Find personal folder
         const parent = this.folders.find((f) => f.personal && !f.parentId);
         if (!parent) {
           this.$noty.error(
-            "No personal folder found. Right-click an existing folder and choose New Subfolder to create a folder instead."
+            "No personal folder found. Right-click an existing folder and choose New Folder to create a folder instead."
           );
           return;
         }
@@ -562,6 +603,13 @@ export default {
       } else {
         this.startDrafting(null);
       }
+    },
+    startDrafting(parentId) {
+      this.draftParentId = parentId
+      this.drafting = true
+    },
+    stopDrafting() {
+      this.drafting = false
     },
     markJustCreated(folderId) {
       clearTimeout(this.justCreatedTimeout)
@@ -587,13 +635,15 @@ export default {
       const canWrite = folder.canWrite ?? true;
       const isRoot = !folder.parentId;
       const options = [{
-        name: 'New Subfolder',
+        name: 'New Folder',
         handler: ({ item }) => {
-          if (!this.canCreateFolders) {
-            this.$root.$emit(AppEvent.upgradeModal, 'Folders');
-            return;
-          }
           this.startDrafting(item.id);
+          this.expandFolder(item.id);
+        },
+      }, {
+        name: 'New Connection',
+        handler: ({ item }) => {
+          this.$emit('create', { connectionFolderId: item.id });
           this.expandFolder(item.id);
         },
       }];
@@ -712,7 +762,7 @@ export default {
       }
     },
     async deleteFolder(folder) {
-      if (await this.$confirm(`Delete folder "${folder.name}"?`)) {
+      if (await this.$confirm(`Delete folder "${folder.name}"?`, undefined, { variant: "danger" })) {
         try {
           await this.$store.dispatch('data/connectionFolders/remove', folder)
         } catch (e) {
@@ -799,8 +849,18 @@ export default {
   opacity: 0.5;
 }
 .tree-loading {
-  margin-block: 0.5rem;
-  padding-left: calc(var(--depth) * 1rem + 1.3rem);
+  margin-top: 0.45rem;
+  margin-bottom: -0.7rem;
+  padding-left: calc(var(--depth) * 1rem + 0.55rem);
+}
+.tree-empty {
+  padding-left: calc(var(--depth) * 1rem + 0.55rem);
+  margin-block: 0.25rem;
+  opacity: 0.6;
+}
+::v-deep .alert.error-alert.tree-error {
+  margin-left: calc(var(--depth) * 1rem + 0.55rem);
+  margin-right: 0.55rem;
 }
 ::v-deep .BksTree-folder {
   .name:has(.editable-text) {
@@ -826,9 +886,6 @@ export default {
   to {
     background: transparent;
   }
-}
-::v-deep .alert.expired-folder-alert {
-  margin-inline: 0.8rem;
 }
 
 .empty-state {

@@ -1,85 +1,269 @@
-import { createVimCommands } from "../../../../studio/src/lib/editor/vim"
+import { parseVimrc } from "../../../../studio/src/lib/editor/vim"
 
-describe("Vimrc Parsing", () => {
-  it("Should parse all the commands here, and supply all the IMapping commands to be sent into the setKeybindingsFromVimrc.", () => {
-    const vimrcSampleContent = [
+const mapping = (lhs, rhs, mode, noremap = false) => ({ lhs, rhs, mode, noremap })
+
+describe("Vimrc parsing", () => {
+  it("parses the map commands into directives", () => {
+    const { directives, errors } = parseVimrc([
       "nmap gl $",
       "nmap gh ^",
       "nmap Y y$",
       "nmap J :tabp",
       "nmap K :tabn",
-      "vmap K :m '<-2gv=gv"
-    ];
+      "vmap K :m '<-2gv=gv",
+    ])
 
-    const expected = {
-      nmapgl: { mappingMode: "nmap", lhs: "gl", rhs: "$", mode: "normal" },
-      nmapgh: { mappingMode: "nmap", lhs: "gh", rhs: "^", mode: "normal" },
-      nmapY: { mappingMode: "nmap", lhs: "Y", rhs: "y$", mode: "normal" },
-      nmapJ: { mappingMode: "nmap", lhs: "J", rhs: ":tabp", mode: "normal" },
-      nmapK: { mappingMode: "nmap", lhs: "K", rhs: ":tabn", mode: "normal" },
-      vmapK: { mappingMode: "vmap", lhs: "K", rhs: ":m '<-2gv=gv", mode: "visual" },
-    }
-
-    const commands = createVimCommands(vimrcSampleContent);
-
-    commands.forEach((command) => {
-      expect(command).toEqual(expected[command.mappingMode + command.lhs])
-    });
+    expect(errors).toEqual([])
+    expect(directives).toEqual([
+      mapping("gl", "$", "normal"),
+      mapping("gh", "^", "normal"),
+      mapping("Y", "y$", "normal"),
+      mapping("J", ":tabp", "normal"),
+      mapping("K", ":tabn", "normal"),
+      mapping("K", ":m '<-2gv=gv", "visual"),
+    ])
   })
-})
 
-describe("Vimrc Parsing", () => {
-  it("register two of the same command and same mapping mode, take the last one created and ignore the other", () => {
-    const vimrcSampleContent = [
+  it("keeps the last of two mappings for the same key and mode", () => {
+    const { directives } = parseVimrc([
       "nmap gl ^",
       "nmap gl $",
-    ];
+    ])
 
-    const expected = {
-      nmapgl: { mappingMode: "nmap", lhs: "gl", rhs: "$", mode: "normal" },
-    }
+    expect(directives).toEqual([mapping("gl", "$", "normal")])
+  })
 
-    const commands = createVimCommands(vimrcSampleContent);
+  it("lets a later noremap supersede an earlier map for the same key", () => {
+    const { directives } = parseVimrc([
+      "nmap gl ^",
+      "nnoremap gl $",
+    ])
 
-    expect(commands.length).toEqual(1);
-    commands.forEach((command) => {
-      expect(command).toEqual(expected[command.mappingMode + command.lhs])
-    });
+    expect(directives).toEqual([mapping("gl", "$", "normal", true)])
+  })
+
+  it("treats the same key in different modes as separate mappings", () => {
+    const { directives } = parseVimrc([
+      "nmap gl ^",
+      "vmap gl $",
+    ])
+
+    expect(directives).toHaveLength(2)
   })
 })
 
-describe("Vimrc Parsing", () => {
-  it("Should parse all the commands here, and skip the invalid ones, and supply all the IMapping commands to be sent into the setKeybindingsFromVimrc.", () => {
-    const vimrcSampleContent = [
+describe("Vimrc parsing: whitespace and comments", () => {
+  it("skips blank lines and comments", () => {
+    const { directives, errors } = parseVimrc([
+      "",
+      '" go to the end of the line',
+      "   ",
       "nmap gl $",
-      "nmap gh ^",
-      "nmap Y y$",
-      "i l :test", //Not a valid command because i is not a valid mapping mode
-      "nnoremap <leader>l :test", //Not a valid command because nnoremap is not a current valid mapping mode, but it should be in the future.
-    ];
+      '"nmap gh ^',
+    ])
 
-    const expected = {
-      gl: { mappingMode: "nmap", lhs: "gl", rhs: "$", mode: "normal" },
-      gh: { mappingMode: "nmap", lhs: "gh", rhs: "^", mode: "normal" },
-      Y: { mappingMode: "nmap", lhs: "Y", rhs: "y$", mode: "normal" },
-    }
+    expect(errors).toEqual([])
+    expect(directives).toEqual([mapping("gl", "$", "normal")])
+  })
 
-    const commands = createVimCommands(vimrcSampleContent);
+  it("accepts tabs and runs of spaces as separators", () => {
+    const { directives, errors } = parseVimrc([
+      "nmap\tgl\t$",
+      "nmap    gh    ^",
+      "  nmap Y y$  ",
+    ])
 
-    commands.forEach((command) => {
-      expect(command).toEqual(expected[command.lhs])
-    });
+    expect(errors).toEqual([])
+    expect(directives).toEqual([
+      mapping("gl", "$", "normal"),
+      mapping("gh", "^", "normal"),
+      mapping("Y", "y$", "normal"),
+    ])
+  })
+
+  it("does not mistake a quote inside a mapping for a comment", () => {
+    const { directives, errors } = parseVimrc(['nnoremap y "*y'])
+
+    expect(errors).toEqual([])
+    expect(directives).toEqual([mapping("y", '"*y', "normal", true)])
   })
 })
 
-describe("Vimrc Parsing", () => {
-  it("Should parse all the commands here, and return no valid commands.", () => {
-    const vimrcSampleContent = [
-      "i l :test", //Not a valid command because i is not a valid mapping mode
-      "nnoremap <leader>l :test", //Not a valid command because nnoremap is not a current valid mapping mode, but it should be in the future.
-    ];
+describe("Vimrc parsing: noremap", () => {
+  it("marks the noremap family as non-recursive", () => {
+    const { directives, errors } = parseVimrc([
+      "noremap gl $",
+      "nnoremap gh ^",
+      "inoremap jk <Esc>",
+      "vnoremap p P",
+    ])
 
-    const commands = createVimCommands(vimrcSampleContent);
-    expect(commands.length).toEqual(0);
+    expect(errors).toEqual([])
+    expect(directives).toEqual([
+      mapping("gl", "$", undefined, true),
+      mapping("gh", "^", "normal", true),
+      mapping("jk", "<Esc>", "insert", true),
+      mapping("p", "P", "visual", true),
+    ])
+  })
+
+  // https://github.com/beekeeper-studio/beekeeper-studio/issues/2953
+  it("rejects a recursive mapping that contains its own key", () => {
+    const { directives, errors } = parseVimrc(['nmap y "*y'])
+
+    expect(directives).toEqual([])
+    expect(errors).toHaveLength(1)
+    expect(errors[0].line).toEqual(1)
+    expect(errors[0].reason).toContain("nnoremap")
+  })
+
+  it("allows the same mapping when it is declared non-recursive", () => {
+    const { errors } = parseVimrc(['nnoremap y "*y'])
+    expect(errors).toEqual([])
+  })
+})
+
+describe("Vimrc parsing: unmap and mapclear", () => {
+  it("parses the unmap family", () => {
+    const { directives, errors } = parseVimrc([
+      "unmap <C-p>",
+      "nunmap gl",
+      "iunmap jk",
+      "vunmap p",
+    ])
+
+    expect(errors).toEqual([])
+    expect(directives).toEqual([
+      { type: "unmap", lhs: "<C-p>", mode: undefined },
+      { type: "unmap", lhs: "gl", mode: "normal" },
+      { type: "unmap", lhs: "jk", mode: "insert" },
+      { type: "unmap", lhs: "p", mode: "visual" },
+    ])
+  })
+
+  it("parses the mapclear family", () => {
+    const { directives, errors } = parseVimrc(["mapclear", "nmapclear"])
+
+    expect(errors).toEqual([])
+    expect(directives).toEqual([
+      { type: "mapclear", mode: undefined },
+      { type: "mapclear", mode: "normal" },
+    ])
+  })
+
+  it("keeps unmap in the order it was written", () => {
+    const { directives } = parseVimrc([
+      "nmap gl $",
+      "nunmap gl",
+      "nmap gl ^",
+    ])
+
+    expect(directives).toEqual([
+      { type: "unmap", lhs: "gl", mode: "normal" },
+      mapping("gl", "^", "normal"),
+    ])
+  })
+
+  it("reports unmap without a key", () => {
+    const { errors } = parseVimrc(["unmap"])
+    expect(errors).toHaveLength(1)
+  })
+})
+
+describe("Vimrc parsing: set", () => {
+  it("parses boolean, negated and valued options", () => {
+    const { directives, errors } = parseVimrc([
+      "set ignorecase",
+      "set nonumber",
+      "set tabstop=4",
+    ])
+
+    expect(errors).toEqual([])
+    expect(directives).toEqual([
+      { type: "set", name: "ignorecase", value: true },
+      { type: "set", name: "number", value: false },
+      { type: "set", name: "tabstop", value: "4" },
+    ])
+  })
+
+  it("accepts several options on one line", () => {
+    const { directives } = parseVimrc(["set ignorecase smartcase"])
+
+    expect(directives).toEqual([
+      { type: "set", name: "ignorecase", value: true },
+      { type: "set", name: "smartcase", value: true },
+    ])
+  })
+
+  it("reports a toggle it cannot express", () => {
+    const { errors } = parseVimrc(["set ignorecase!"])
+    expect(errors).toHaveLength(1)
+  })
+
+  it("reports set with no option", () => {
+    const { errors } = parseVimrc(["set"])
+    expect(errors).toHaveLength(1)
+  })
+})
+
+describe("Vimrc parsing: leader", () => {
+  it("expands <leader> to a backslash by default", () => {
+    const { directives } = parseVimrc(["nmap <leader>w :w<CR>"])
+
+    expect(directives).toEqual([mapping("\\w", ":w<CR>", "normal")])
+  })
+
+  it("honours mapleader", () => {
+    const { directives } = parseVimrc([
+      'let mapleader = ","',
+      "nmap <leader>w :w<CR>",
+    ])
+
+    expect(directives).toEqual([mapping(",w", ":w<CR>", "normal")])
+  })
+
+  it("honours g:mapleader and an unspaced assignment", () => {
+    const { directives } = parseVimrc([
+      "let g:mapleader=' '",
+      "nmap <Leader>w :w<CR>",
+    ])
+
+    expect(directives).toEqual([mapping(" w", ":w<CR>", "normal")])
+  })
+
+  it("only applies mapleader to mappings that follow it", () => {
+    const { directives } = parseVimrc([
+      "nmap <leader>a :qa<CR>",
+      'let mapleader = ","',
+      "nmap <leader>b :q<CR>",
+    ])
+
+    expect(directives.map((d) => d.lhs)).toEqual(["\\a", ",b"])
+  })
+})
+
+describe("Vimrc parsing: errors", () => {
+  it("reports an unknown command and keeps the rest", () => {
+    const { directives, errors } = parseVimrc([
+      "nmap gl $",
+      "colorscheme gruvbox",
+      "nmap gh ^",
+    ])
+
+    expect(directives).toHaveLength(2)
+    expect(errors).toHaveLength(1)
+    expect(errors[0].line).toEqual(2)
+    expect(errors[0].text).toEqual("colorscheme gruvbox")
+  })
+
+  it("reports a mapping that is missing its right hand side", () => {
+    const { directives, errors } = parseVimrc(["nmap gl"])
+
+    expect(directives).toEqual([])
+    expect(errors).toHaveLength(1)
+  })
+
+  it("does not throw on malformed input", () => {
+    expect(() => parseVimrc([null, undefined, "", "!!!"])).not.toThrow()
   })
 })

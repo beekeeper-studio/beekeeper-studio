@@ -2,7 +2,7 @@ import _ from "lodash";
 import { Module } from "vuex";
 import { State as RootState } from "../index";
 import { SmartLocalStorage } from "@/common/LocalStorage";
-import { TreeExpansionModule } from "./sidebar/TreeExpansionModule";
+import { TreeExpansionModule, TreeExpansionState } from "./sidebar/TreeExpansionModule";
 
 export interface SidebarTab {
   id: string;
@@ -11,7 +11,7 @@ export interface SidebarTab {
   url?: string;
 }
 
-interface State {
+export type State = {
   tabs: SidebarTab[];
   /** in pixels */
   primarySidebarWidth: number;
@@ -21,6 +21,10 @@ interface State {
   secondarySidebarOpen: boolean;
   secondaryActiveTabId?: string;
   globalSidebarActiveItem: GlobalSidebarActiveItem;
+} & {
+  // Set by VueX module
+  connections: TreeExpansionState
+  queries: TreeExpansionState
 }
 
 const PRIMARY_SIDEBAR_OPEN_KEY = 'primarySidebarOpen-v2'

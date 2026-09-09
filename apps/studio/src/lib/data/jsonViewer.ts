@@ -36,7 +36,11 @@ export function findKeyPosition(jsonStr: string, path: (string | number)[]) {
     let found = false;
 
     for (let i = lineSearchOffset; i < lines.length; i++) {
-      const keyMatch = new RegExp(`^\\s{${(pathIdx + 1) * 2}}"${targetKey}":`);
+      // Escape regex metacharacters in the key: JSON keys commonly
+      // contain '.', '+', '(' etc. (URLs, domains, dotted config
+      // names), and an unescaped key would match the wrong line or
+      // fail to match at all.
+      const keyMatch = new RegExp(`^\\s{${(pathIdx + 1) * 2}}"${_.escapeRegExp(targetKey)}":`);
 
       if (keyMatch.test(lines[i])) {
         lineSearchOffset = i + 1;

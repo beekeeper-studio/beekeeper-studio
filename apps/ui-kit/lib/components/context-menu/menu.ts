@@ -12,6 +12,10 @@ export interface BaseMenuItem<Item = unknown> {
   items?: (MenuItem<Item> | DividerItem)[]
   /** Keep the menu open after this item is clicked */
   keepOpen?: boolean
+  /** Tooltip shown when hovering the item */
+  title?: string | ((options: { item: Item }) => string)
+  /** Material icon name rendered on the trailing edge of the item */
+  icon?: string
 }
 
 export interface CheckedMenuItem<Item = unknown> extends BaseMenuItem<Item> {

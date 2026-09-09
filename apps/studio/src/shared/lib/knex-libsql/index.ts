@@ -8,7 +8,7 @@
 // _query/processResponse/the SQL compilers and the single-connection pool
 // default are all inherited from the better-sqlite3 dialect unchanged — only
 // the driver and connection acquisition differ. (cf. ./knex-duckdb.)
-import Client_BetterSQLite3 from "knex/lib/dialects/better-sqlite3";
+import Client_BetterSQLite3 from "knex/lib/dialects/better-sqlite3/index.js";
 
 class Client_Libsql extends Client_BetterSQLite3 {
   _driver() {

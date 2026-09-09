@@ -36,6 +36,7 @@
     </div>
 
     <template v-if="node.type === 'folder' && expanded">
+      <slot name="folder-header" :node="node" :depth="depth + 1" />
       <tree-node
         v-for="child of childNodes"
         :key="child.id"
@@ -61,10 +62,20 @@
         <template v-slot:item="slotProps">
           <slot name="item" v-bind="slotProps" />
         </template>
+        <template v-slot:folder-header="slotProps">
+          <slot name="folder-header" v-bind="slotProps" />
+        </template>
         <template v-slot:folder-footer="slotProps">
           <slot name="folder-footer" v-bind="slotProps" />
         </template>
+        <template
+          v-if="$scopedSlots['folder-empty']"
+          v-slot:folder-empty="slotProps"
+        >
+          <slot name="folder-empty" v-bind="slotProps" />
+        </template>
       </tree-node>
+      <slot v-if="empty" name="folder-empty" :node="node" :depth="depth + 1" />
       <slot name="folder-footer" :node="node" :depth="depth + 1" />
     </template>
   </div>

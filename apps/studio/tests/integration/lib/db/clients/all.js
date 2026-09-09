@@ -1,5 +1,6 @@
 import { errorMessages } from '../../../../../src/lib/db/clients/utils'
 import { uint8 as u } from '@tests/utils'
+import { dbtimeout } from '../../../../lib/db'
 
 /**
  * @typedef {import('../../../../lib/db').DBTestUtil} DBTestUtil
@@ -142,10 +143,12 @@ export function runCommonTests(getUtil, opts = {}) {
     })
 
     describe("stream tests", () => {
+      // Loading the 100k-row fixture is legitimate slow work on a loaded CI
+      // runner — give it the standard db timeout instead of jest's 5s default.
       beforeAll(async () => {
         if (getUtil().dbType === 'cockroachdb') return
         await getUtil().prepareStreamTests()
-      })
+      }, dbtimeout)
 
       test("should get all columns", async () => {
         if (getUtil().dbType === 'cockroachdb') return

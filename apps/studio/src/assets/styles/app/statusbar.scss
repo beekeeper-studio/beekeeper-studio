@@ -298,6 +298,21 @@ $button-height:     $statusbar-height * 0.72;
     }
   }
 
+  // Table tab: hidden column indicator
+  .statusbar-item.hidden-column-count {
+    margin-right: 0.1rem;
+    line-height: 1;
+    & > a {
+      color: inherit;
+      display: inline-flex;
+    }
+    i {
+      margin-right: 0;
+      font-size: 16px;
+      line-height: 1;
+    }
+  }
+
   .row-counts {
     .truncated-rows, .records {
       margin-left: $gutter-h * 0.5;

@@ -90,7 +90,7 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     const id = await Vue.prototype.$util.send('conn/query', { queryText, options, tabId, hasActiveTransaction });
     return {
       execute: async () => {
-        return await Vue.prototype.$util.send('query/execute', { queryId: id, isManualCommit: options?.isManualCommit })
+        return await Vue.prototype.$util.send('query/execute', { queryId: id })
       },
       cancel: async () => {
         return await Vue.prototype.$util.send('query/cancel', { queryId: id })

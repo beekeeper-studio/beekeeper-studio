@@ -45,7 +45,15 @@ export class UtilityConnection {
 
       if (msgData.type === 'error') {
         // handle errors
-        const { id, error, stack, errorName, errorCode } = msgData;
+        const {
+          id,
+          error,
+          stack,
+          errorName,
+          errorCode,
+          errorDetail,
+          errorHint,
+        } = msgData
 
         const handler = this.replyHandlers.get(id);
         if (handler) {
@@ -59,6 +67,12 @@ export class UtilityConnection {
           } else {
             err = new Error(error);
           }
+
+          Object.assign(err, {
+            detail: errorDetail,
+            hint: errorHint,
+          })
+
           err.stack = stack;
           handler.reject(err);
         }

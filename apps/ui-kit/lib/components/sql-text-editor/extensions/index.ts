@@ -10,6 +10,7 @@ export { applyEntities } from "./customSql";
 export { applyDialect } from "./removeQueryQuotes";
 export { type ColumnsGetter } from "./sqlContextComplete";
 export type { QuerySelectionChangeParams };
+export type { KeywordCasing, IdentifierQuoting } from "./vendor/@codemirror/lang-sql/src/complete";
 
 export type SQLExtensionsConfig = SQLConfig & {
   identiferDialect?: Options["dialect"];

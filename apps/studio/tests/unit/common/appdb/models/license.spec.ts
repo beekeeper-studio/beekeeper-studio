@@ -189,6 +189,78 @@ describe("License", () => {
       });
     })
 
+    describe("Cloud workspace access", () => {
+      it("Active subscription - allowed", async () => {
+        currentTime("16-Sep-2024");
+        currentVersion(ANY_VERSION);
+        await createLicense({
+          validUntil: "17-Sep-2024",
+          maxAllowedAppRelease: null,
+        });
+        const status = await LicenseKey.getLicenseStatus();
+        expect(status.isLifetime).toBe(false);
+        expect(status.canAccessCloudWorkspaces).toBe(true);
+      });
+
+      it("Active trial - allowed", async () => {
+        currentTime("16-Sep-2024");
+        currentVersion(ANY_VERSION);
+        await LicenseKey.clear();
+        await LicenseKey.createTrialLicense(new Date("17-Sep-2024"));
+        const status = await LicenseKey.getLicenseStatus();
+        expect(status.isLifetime).toBe(false);
+        expect(status.canAccessCloudWorkspaces).toBe(true);
+      });
+
+      it("Lifetime license (support expired, still valid) - blocked", async () => {
+        currentTime("18-Sep-2024");
+        currentVersion(ANY_VERSION);
+        await createLicense({
+          validUntil: "19-Sep-2024",
+          supportUntil: "17-Sep-2024",
+          maxAllowedAppRelease: { tagName: ANY_VERSION_TAG },
+        });
+        const status = await LicenseKey.getLicenseStatus();
+        expect(status.edition).toBe("ultimate");
+        expect(status.isLifetime).toBe(true);
+        expect(status.canAccessCloudWorkspaces).toBe(false);
+      });
+
+      it("Lifetime license without version restriction - blocked", async () => {
+        currentTime("18-Sep-2024");
+        currentVersion(ANY_VERSION);
+        await createLicense({
+          validUntil: "19-Sep-2024",
+          supportUntil: "17-Sep-2024",
+          maxAllowedAppRelease: null,
+        });
+        const status = await LicenseKey.getLicenseStatus();
+        expect(status.edition).toBe("ultimate");
+        expect(status.isLifetime).toBe(true);
+        expect(status.canAccessCloudWorkspaces).toBe(false);
+      });
+
+      it("Fully expired license - blocked", async () => {
+        currentTime("18-Sep-2024");
+        currentVersion(ANY_VERSION);
+        await createLicense({
+          validUntil: "17-Sep-2024",
+          supportUntil: "17-Sep-2024",
+          maxAllowedAppRelease: { tagName: ANY_VERSION_TAG },
+        });
+        const status = await LicenseKey.getLicenseStatus();
+        // an expired license is not on lifetime terms, and is community anyway
+        expect(status.isLifetime).toBe(false);
+        expect(status.canAccessCloudWorkspaces).toBe(false);
+      });
+
+      it("No license - blocked", async () => {
+        const status = await LicenseKey.getLicenseStatus();
+        expect(status.isLifetime).toBe(false);
+        expect(status.canAccessCloudWorkspaces).toBe(false);
+      });
+    });
+
     // Regression tests for version comparison
     it("Should properly compare versions", async () => {
       expect(isVersionLessThanOrEqual(parseVersion("v2.4.6"), parseVersion("v5.7.2"))).toBeTruthy();

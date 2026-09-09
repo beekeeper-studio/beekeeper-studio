@@ -31,11 +31,13 @@
     <workspace-delete-modal />
     <import-queries-modal />
     <import-connections-modal />
+    <connection-files-import-modal />
     <plugin-controller :editor-font-size="editorFontSize" />
     <plugin-manager-modal />
     <keyboard-shortcuts-modal />
     <move-item-modal />
     <move-folder-modal />
+    <connection-type-picker-modal />
     <confirmation-modal-manager />
     <lock-manager />
     <input-ephemeral-modal name="input-ephemeral-modal" />
@@ -45,6 +47,7 @@
       <trial-expired-modal />
       <license-expired-modal />
       <lifetime-license-expired-modal />
+      <cloud-workspaces-blocked-modal />
     </template>
     <portal-target
       name="menus"
@@ -84,6 +87,7 @@ import UtilDiedModal from '@/components/UtilDiedModal.vue'
 import TrialExpiredModal from '@/components/license/TrialExpiredModal.vue'
 import LicenseExpiredModal from '@/components/license/LicenseExpiredModal.vue'
 import LifetimeLicenseExpiredModal from '@/components/license/LifetimeLicenseExpiredModal.vue'
+import CloudWorkspacesBlockedModal from '@/components/license/CloudWorkspacesBlockedModal.vue'
 import type { LicenseStatus } from "@/lib/license";
 import { SmartLocalStorage } from '@/common/LocalStorage';
 import PluginManagerModal from '@/components/plugins/PluginManagerModal.vue'
@@ -94,6 +98,8 @@ import InputEphemeralModal from "@/components/common/modals/InputEphemeralModal.
 import ShareModal from "@/components/common/modals/ShareModal.vue";
 import MoveItemModal from "@/components/common/modals/MoveItemModal.vue";
 import MoveFolderModal from "@/components/common/modals/MoveFolderModal.vue";
+import ConnectionFilesImportModal from '@/components/common/modals/ConnectionFilesImportModal.vue'
+import ConnectionTypePickerModal from "@/components/common/modals/ConnectionTypePickerModal.vue";
 
 import rawLog from '@bksLogger'
 import { assignContextMenuToAllInputs } from './mixins/assignContextMenuToAllInputs'
@@ -108,9 +114,11 @@ export default Vue.extend({
     DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
-    LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
+    LifetimeLicenseExpiredModal, CloudWorkspacesBlockedModal,
+    WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
     PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
     InputEphemeralModal, ShareModal, MoveItemModal, MoveFolderModal,
+    ConnectionFilesImportModal, ConnectionTypePickerModal,
   },
   data() {
     return {
@@ -163,6 +171,14 @@ export default Vue.extend({
     clearInterval(this.licenseInterval)
   },
   async mounted() {
+    // The store loads licenses before this component exists, so the
+    // `licensesInitialized` and `status` watchers never see the initial
+    // values. Without this, a trial or license that lapsed while the app was
+    // closed never surfaces its dialog on the next launch.
+    if (this.licensesInitialized) {
+      await this.$nextTick()
+      this.validateLicenseExpiry()
+    }
     this.notifyFreeTrial()
     this.interval = setInterval(this.notifyFreeTrial, globals.trialNotificationInterval)
     this.$store.dispatch('licenses/updateAll');

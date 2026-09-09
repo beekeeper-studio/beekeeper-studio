@@ -1,4 +1,5 @@
 import { EditorSelection } from "@codemirror/state";
+import { CompletionContext, CompletionSource } from "@codemirror/autocomplete";
 import { SqlTextEditor } from "../../../lib/components/sql-text-editor/SqlTextEditor";
 import { TextEditor } from "../../../lib/components/text-editor/TextEditor";
 import { TextEditorConfiguration } from "../../../lib/components/text-editor/types";
@@ -73,5 +74,38 @@ describe("Regressions", () => {
     simulatePaste(editor, "id");
 
     expect(editor.getValue()).toBe(`SELECT id\nSELECT id\nSELECT id\n`);
+  });
+});
+
+describe("Autocomplete conventions configuration", () => {
+  it("applies keywordCasing and quoteIdentifiers from the constructor config", async () => {
+    // Covers the SqlTextEditor pass-through seam; the option behavior matrix
+    // itself lives in conventions.spec.ts.
+    const editor = new SqlTextEditor({
+      keywordCasing: "upper",
+      quoteIdentifiers: "always",
+      schema: { MixedCase: ["Id"] },
+    });
+    const parent = document.createElement("div");
+    editor.initialize({ parent, languageId: "text/x-mysql", initialValue: "select mix" });
+
+    const pos = editor.getValue().length;
+    const state = editor.view.state;
+    const results = await Promise.all(
+      state
+        .languageDataAt<CompletionSource>("autocomplete", pos)
+        .map((source) => source(new CompletionContext(state, pos, true)))
+    );
+    const options = results
+      .filter(Boolean)
+      .flatMap((result) => result.options)
+      .map((o) => String(typeof o.apply === "string" ? o.apply : o.label));
+
+    // quoteIdentifiers: "always" quotes MixedCase even though MySQL would
+    // accept it bare.
+    expect(options).toContain("`MixedCase`");
+    // keywordCasing: "upper" upcases keywords despite the lowercase prefix.
+    expect(options).toContain("SELECT");
+    expect(options).not.toContain("select");
   });
 });

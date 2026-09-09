@@ -290,7 +290,7 @@ export default class PluginFileManager {
     return manifests;
   }
 
-  getManifest(id: string) {
+  getManifest(id: string): Manifest {
     const directory = this.getDirectoryOf(id);
     const manifestContent = fs.readFileSync(
       path.join(directory, PLUGIN_MANIFEST_FILENAME),
@@ -323,7 +323,10 @@ export default class PluginFileManager {
     }
   }
 
-  getDirectoryOf(id: string) {
+  getDirectoryOf(id: string | Manifest) {
+    if (typeof id === "object") {
+      id = id.id;
+    }
     const pluginsRoot = path.resolve(this.options.pluginsDirectory);
     const resolved = path.resolve(pluginsRoot, id);
     // Must be strictly *inside* the plugins directory. This rejects traversal

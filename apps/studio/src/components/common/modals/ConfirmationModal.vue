@@ -1,5 +1,9 @@
 <template>
-  <base-modal :name="id" @submit="confirm">
+  <base-modal
+    :name="id"
+    @submit="confirm"
+    @closed="reportClose(false)"
+  >
     <template #title>
       <slot name="title">Are you sure?</slot>
     </template>
@@ -36,20 +40,25 @@ export default Vue.extend({
     },
   },
   methods: {
-    confirm() {
+    /**
+     * Whoever opened this modal is likely awaiting a promise that only settles
+     * on this event, so every way out has to report an outcome - including the
+     * ones we don't control (the header close button, Escape, clicking the
+     * overlay), which only reach us as `closed`. `closed` also fires after an
+     * explicit confirm/cancel; the manager ignores the second report.
+     */
+    reportClose(confirmed: boolean) {
       this.trigger(MODAL_CLOSE_EVENT, {
         modalId: this.id,
-        confirmed: true,
+        confirmed,
       } as ModalCloseEventData);
-
+    },
+    confirm() {
+      this.reportClose(true);
       this.$modal.hide(this.id);
     },
     cancel() {
-      this.trigger(MODAL_CLOSE_EVENT, {
-        modalId: this.id,
-        confirmed: false,
-      } as ModalCloseEventData);
-
+      this.reportClose(false);
       this.$modal.hide(this.id);
     },
   },
