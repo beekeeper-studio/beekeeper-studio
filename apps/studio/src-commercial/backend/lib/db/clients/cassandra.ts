@@ -15,6 +15,7 @@ import { identify } from "sql-query-identifier";
 import { errors } from "@/lib/errors";
 import { dataTypesToMatchTypeCode, CassandraData as D } from "@shared/lib/dialects/cassandra";
 import { CassandraCursor } from "./cassandra/CassandraCursor";
+import { convertValueByType } from "./cassandra/valueConverter";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import _ from "lodash";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
@@ -808,55 +809,9 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
 
     return rows?.map((row) => {
       Object.keys(row).forEach((key) => {
-        const value = row[key];
-        const typeCode = typeByColumn[key].code;
-
-        if (typeCode == cassandra.types.dataTypes.list || typeCode == cassandra.types.dataTypes.set) {
-          row[key] = value?.map((v) => this.convertValueByType(v, typeByColumn[key].info.code));
-          return;
-        }
-
-        if (typeCode == cassandra.types.dataTypes.map) {
-          const [keyType, valueType] = typeByColumn[key].info;
-          const converted = {};
-          if (value) {
-            Object.entries(value).forEach(([k, v]) => {
-              const convertedKey = this.convertValueByType(k, keyType.code);
-              converted[convertedKey as string] = this.convertValueByType(v, valueType.code);
-            });
-          }
-          row[key] = converted;
-          return;
-        }
-
-        row[key] = this.convertValueByType(value, typeCode);
+        row[key] = convertValueByType(row[key], typeByColumn[key]);
       });
       return row;
     });
-  }
-
-  private convertValueByType(value, type) {
-    if (value == null || value === undefined) {
-      return null;
-    }
-
-    switch (type) {
-      case cassandra.types.dataTypes.bigint:
-        return String(value);
-      case cassandra.types.dataTypes.timestamp:
-        return value ? value.toISOString() : null;
-      case cassandra.types.dataTypes.time:
-      case cassandra.types.dataTypes.date:
-        return value ? String(value) : null;
-      case cassandra.types.dataTypes.uuid:
-      case cassandra.types.dataTypes.timeuuid:
-        return value?.buffer
-          ? new cassandra.types.Uuid(Buffer.from(value.buffer)).toString()
-          : value;
-      case cassandra.types.dataTypes.inet:
-        return value ? value.toString() : null;
-      default:
-        return value;
-    }
   }
 }
