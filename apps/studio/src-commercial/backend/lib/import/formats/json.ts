@@ -1,6 +1,7 @@
 import fs from 'fs';
 import Import from '@/lib/import';
 import _ from 'lodash';
+import { flattenErrorMessage } from '@/common/utils';
 
 export default class extends Import {
 
@@ -42,7 +43,9 @@ export default class extends Import {
       return dataObj
     } catch (e) {
       this.logger().error('json file read error', e)
-      throw new Error(e)
+      // new Error(e) would stringify the error and drop the nested
+      // driver detail explaining why the import actually failed
+      throw new Error(flattenErrorMessage(e))
     }
   }
 
