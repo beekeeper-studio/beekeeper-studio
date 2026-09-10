@@ -14,8 +14,6 @@ const log = RawLog.scope("MenuBarModule");
 
 const actionHandler = new ClientMenuActionHandler();
 
-const erDiagramMenuItemId = "bks-er-diagram-showAllEntities";
-
 export const MenuBarModule: Module<State, RootState> = {
   namespaced: true,
   state: () => ({
@@ -82,7 +80,7 @@ export const MenuBarModule: Module<State, RootState> = {
           accelerator: externalItem.accelerator,
         };
 
-        if (externalItem.id === erDiagramMenuItemId) {
+        if (externalItem.id.startsWith("bks-er-diagram")) {
           submenu.unshift(item);
         } else {
           submenu.push(item);
