@@ -1,6 +1,6 @@
 <template>
   <base-modal :name="modalName">
-    <template #title>Appearances</template>
+    <template #title>Appearance</template>
     <div class="form-group">
       <label for="theme-mode">Mode</label>
       <x-buttons class="selectbutton" id="theme-mode">
@@ -69,7 +69,7 @@ export default Vue.extend({
   components: { BaseModal },
   data() {
     return {
-      modalName: "appearances-modal",
+      modalName: "appearance-modal",
     };
   },
   computed: {
@@ -80,7 +80,7 @@ export default Vue.extend({
       themeDark: "theme/dark",
     }),
     rootBindings() {
-      return [{ event: AppEvent.openAppearancesModal, handler: this.open }];
+      return [{ event: AppEvent.openAppearanceModal, handler: this.open }];
     },
   },
   mounted() {

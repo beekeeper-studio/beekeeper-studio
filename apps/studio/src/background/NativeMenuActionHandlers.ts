@@ -168,8 +168,8 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.send(AppEvent.quickSearch)
   }
 
-  openAppearancesModal = (_menuItem: Electron.MenuItem, win: ElectronWindow): void => {
-    if (win) win.webContents.send(AppEvent.openAppearancesModal);
+  openAppearanceModal = (_menuItem: Electron.MenuItem, win: ElectronWindow): void => {
+    if (win) win.webContents.send(AppEvent.openAppearanceModal);
   }
 
   addBeekeeper = async (_1: Electron.MenuItem, win: ElectronWindow): Promise<void> => {

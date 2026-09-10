@@ -255,10 +255,10 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       click: actionHandler.togglePrivacyMode,
       checked: settings?.privacyMode?.value
     },
-    appearances: {
-      id: "appearances-menu",
-      label: "Appearances",
-      click: actionHandler.openAppearancesModal,
+    appearance: {
+      id: "appearance-menu",
+      label: "Appearance",
+      click: actionHandler.openAppearanceModal,
     },
     enterLicense: {
       id: 'enter-license',
