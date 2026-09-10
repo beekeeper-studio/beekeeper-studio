@@ -14,6 +14,8 @@ const log = RawLog.scope("MenuBarModule");
 
 const actionHandler = new ClientMenuActionHandler();
 
+const erDiagramMenuItemId = "bks-er-diagram-showAllEntities";
+
 export const MenuBarModule: Module<State, RootState> = {
   namespaced: true,
   state: () => ({
@@ -34,6 +36,8 @@ export const MenuBarModule: Module<State, RootState> = {
         "export-tables",
       ];
 
+      // These are menu items from plugins. They can only be used when the app
+      // is connected to a database.
       for (const id of Object.keys(state.externalMenu)) {
         const menuItem = state.externalMenu[id];
         if (menuItem.disableWhenDisconnected) {
@@ -68,14 +72,21 @@ export const MenuBarModule: Module<State, RootState> = {
           continue;
         }
 
-        (parent.submenu as Electron.MenuItemConstructorOptions[]).push({
+        const submenu = parent.submenu as Electron.MenuItemConstructorOptions[];
+        const item = {
           id: externalItem.id,
           label: externalItem.label,
           click: () => {
             actionHandler.handleAction(externalItem.action);
           },
           accelerator: externalItem.accelerator,
-        });
+        };
+
+        if (externalItem.id === erDiagramMenuItemId) {
+          submenu.unshift(item);
+        } else {
+          submenu.push(item);
+        }
       }
 
       return menus;
