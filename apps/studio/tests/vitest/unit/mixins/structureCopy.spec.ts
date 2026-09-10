@@ -1,3 +1,4 @@
+import { describe, it, expect, vi } from "vitest";
 import { mount } from "@vue/test-utils";
 import { StructureCopyMixin } from "@/mixins/structureCopy";
 
@@ -33,7 +34,7 @@ const Host = {
 };
 
 function mountHost(tabulator: any) {
-  const writeText = jest.fn();
+  const writeText = vi.fn();
   const wrapper = mount(Host, {
     propsData: { tabulator },
     mocks: {

@@ -1,3 +1,4 @@
+import { describe, it, expect, vi } from "vitest";
 import { menuItems } from "@/common/menus/MenuItems";
 import { IMenuActionHandler } from "@/common/interfaces/IMenuActionHandler";
 import { IGroupedUserSettings } from "@/common/transport/TransportUserSetting";
@@ -6,7 +7,7 @@ import { IPlatformInfo } from "@/common/IPlatformInfo";
 // menuItems only dereferences handler properties, so a permissive proxy is
 // enough to build the full template.
 const actionHandler = new Proxy({} as IMenuActionHandler, {
-  get: () => jest.fn(),
+  get: () => vi.fn(),
 });
 
 const settings = {} as IGroupedUserSettings;

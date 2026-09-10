@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest"
 import { DuckDBChangeBuilder } from "@shared/lib/sql/change_builder/DuckDBChangeBuilder"
 
 describe("DuckDBChangeBuilder", () => {
