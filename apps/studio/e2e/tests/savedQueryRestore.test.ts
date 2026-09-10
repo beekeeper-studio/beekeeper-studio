@@ -1,6 +1,8 @@
 import { test, expect, _electron as electron, ElectronApplication, Page } from '@playwright/test';
+import { userActions } from '../pageActions/index';
 import * as path from 'path';
 import * as os from 'os';
+import * as fs from 'fs';
 
 async function launch(): Promise<{ app: ElectronApplication; win: Page }> {
   const app = await electron.launch({
@@ -18,16 +20,23 @@ async function launch(): Promise<{ app: ElectronApplication; win: Page }> {
 
 test('restores in-progress edits to a SAVED query after relaunch', async () => {
   const dbFile = path.join(os.tmpdir(), `bks-restore-${Date.now()}.db`);
-  const dbName = path.basename(dbFile);
+  fs.writeFileSync(dbFile, '');
+  const CONN_NAME = 'RestoreTestConn';
   const SAVED = 'select 1 as original_saved_text;';
   const EDITED = 'select 999 as restored_after_relaunch;';
 
   // ---------- First launch: connect, save a query, edit it, let it autosave ----------
   let { app, win } = await launch();
 
-  await win.getByLabel('Connection Type').selectOption('sqlite');
+  await userActions(win).selectNewConnection('sqlite');
   await win.locator('#Database').fill(dbFile);
-  await win.getByRole('button', { name: 'Connect' }).click();
+  // Tabs are keyed on a saved_connection id, so only a saved connection
+  // restores them. An unsaved session always opens an empty core interface -
+  // see isConnectionScope in src/handlers/utils.ts.
+  await win.getByPlaceholder('Connection Name').fill(CONN_NAME);
+  await win.getByRole('button', { name: 'Save', exact: true }).click();
+  await win.waitForTimeout(1000);
+  await win.getByRole('button', { name: 'Connect', exact: false }).first().click();
 
   const editor = win.locator('#tab-0').getByRole('textbox');
   await expect(editor).toBeVisible({ timeout: 30000 });
@@ -53,10 +62,10 @@ test('restores in-progress edits to a SAVED query after relaunch', async () => {
   // ---------- Second launch: reconnect to the same DB, expect the edits restored ----------
   ({ app, win } = await launch());
 
-  // Recent connections connect on double-click; the item shows the db file name
-  const recent = win.locator('.recent-connection-list').getByText(dbName, { exact: false }).first();
-  await expect(recent).toBeVisible({ timeout: 15000 });
-  await recent.dblclick();
+  // Saved connections connect on double-click
+  const saved = win.getByText(CONN_NAME, { exact: false }).first();
+  await expect(saved).toBeVisible({ timeout: 15000 });
+  await saved.dblclick();
 
   const editor2 = win.locator('#tab-0').getByRole('textbox');
   await expect(editor2).toBeVisible({ timeout: 30000 });
