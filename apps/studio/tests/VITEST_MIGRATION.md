@@ -203,3 +203,7 @@ When the legacy trees are empty:
   matrix still passes with docker (mysql.spec.js, 642 tests) and jest
   collection dropped by exactly the migrated files
   (`internal:integration --listTests` = 44).
+- **2026-09-10, formatSeconds.spec.ts (unit)**: only change needed was the
+  explicit vitest import. Pure function, no mocks, no jsdom. Both test
+  cases (10 `expect` calls total) pass unchanged; jest collection dropped
+  by exactly this file.
