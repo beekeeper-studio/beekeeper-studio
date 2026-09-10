@@ -203,3 +203,25 @@ When the legacy trees are empty:
   matrix still passes with docker (mysql.spec.js, 642 tests) and jest
   collection dropped by exactly the migrated files
   (`internal:integration --listTests` = 44).
+- **2026-09-10, formatSeconds.spec.ts (unit)**: only change needed was the
+  explicit vitest import. Pure function, no mocks, no jsdom. Both test
+  cases (10 `expect` calls total) pass unchanged; jest collection dropped
+  by exactly this file.
+- **2026-09-10, nine more unit canaries**: `LanguageData.spec.js`,
+  `lib/dialects/models.spec.js`, `shared/lib/dialects/sqlserver.spec.js`,
+  `shared/lib/dialects/bigquery.spec.js`, `mainPlatformInfo.spec.js`,
+  `mixins/data_converter.spec.js`, `lib/data/mutators.spec.js`,
+  `lib/db/clients/sqlite.spec.js` (unit version), `codemirror/quotes.spec.js`
+  — 16 test cases total, all passing unchanged under vitest. Two shapes
+  worth noting:
+  - `data_converter.spec.js`, `mutators.spec.js`, and the unit
+    `sqlite.spec.js` used deep relative imports into `src`
+    (`../../../src/...`) that were correct from the old `tests/unit/...`
+    depth but would resolve one directory too high after the move; swapped
+    for the `@/` alias instead of recomputing `../` counts.
+  - `codemirror/quotes.spec.js` imports a helper (`helpers.js`) shared with
+    `codemirror/completions.spec.js`, which stays on jest for now. This is
+    the `@tests/` alias case from the "How to migrate a spec" section:
+    the helper stays at `tests/unit/codemirror/helpers.js` and the moved
+    spec now imports it as `@tests/unit/codemirror/helpers`. Verified
+    `completions.spec.js` still passes unmodified under jest (27 tests).
