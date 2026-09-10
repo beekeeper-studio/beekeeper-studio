@@ -1,4 +1,5 @@
-import { stringifyRangeData } from "../../../src/common/utils";
+import { describe, it, expect } from "vitest";
+import { stringifyRangeData } from "@/common/utils";
 
 describe("stringifyRangeData", () => {
   it("Should convert array and objects to string", () => {

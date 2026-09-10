@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest"
 import formatSeconds from "@/lib/time/formatSeconds"
 
 describe("formatSeconds", () => {

@@ -1,6 +1,7 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
+import { describe, it, expect } from "vitest";
 import { pluralize } from "@/vendor/pluralize";
 
 /**
