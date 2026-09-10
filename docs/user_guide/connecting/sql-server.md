@@ -51,7 +51,9 @@ so a pasted value with a stray space still works.
 | Host | Connects to |
 | --- | --- |
 | `db.example.com` | The default instance, on the port in the **Port** field. |
-| `localhost` &middot; `.` &middot; `(local)` | The default instance on this machine. `.` and `(local)` are shorthand for `localhost`. |
+| `localhost` | The default instance on this machine. |
+| `.` | Shorthand for `localhost`. |
+| `(local)` | Shorthand for `localhost`. |
 | `db.example.com\SQLEXPRESS` | The named instance `SQLEXPRESS`. |
 
 ### Named instances and the SQL Server Browser
