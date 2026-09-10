@@ -197,11 +197,27 @@
     }
     .tab-close {
       position: absolute;
-      right: 0;
+      right: 4px;
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-width: 24px;
+      cursor: pointer;
+      transition: background 0.15s ease-in-out;
+
+      &:hover {
+        background: rgba($theme-base, 0.12);
+
+        .material-icons {
+          color: $text-dark;
+        }
+      }
+
+      &:active {
+        background: rgba($theme-base, 0.2);
+      }
 
       .close {
         display: none;
@@ -216,7 +232,7 @@
         font-size: 12px;
         font-weight: bold;
         color: $text;
-        transition: none;
+        transition: color 0.15s ease-in-out;
       }
       &.unsaved {
         .unsaved-icon {
