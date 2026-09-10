@@ -41,14 +41,17 @@ describe('FriendlyErrorHelper', () => {
     })
 
     // Certificate failures are classified in sqlserver.ts and arrive with the remedy already
-    // in the message. A duplicate mapping here would print the advice twice in ErrorAlert.
-    it('adds no help text to a message the driver already annotated', () => {
+    // in the message, so this side contributes the docs link only -- help text here would
+    // print the advice twice in ErrorAlert.
+    it('adds a link but no help text to a message the driver already annotated', () => {
       const error = new Error(
         'Failed to connect to localhost:14330 - self signed certificate. The server presented ' +
         'a self-signed certificate. Enable "Trust Server Certificate" in the SQL Server ' +
         'options, or configure the server with a certificate the OS trusts.'
       )
-      expect(FriendlyErrorHelper.getHelpText('sqlserver', error)).toBeNull()
+      const result = FriendlyErrorHelper.getHelpText('sqlserver', error)
+      expect(result.help).toBeUndefined()
+      expect(result.link).toBe('https://docs.beekeeperstudio.io/user_guide/connecting/sql-server/#certificates')
     })
 
     it('returns help text and link for SQL Server login failed error', () => {

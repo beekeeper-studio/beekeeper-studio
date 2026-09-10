@@ -43,6 +43,52 @@ prerequisites.
     Authentication feature set. SQL Login and Domain (NTLM) are available in all
     editions.
 
+## Host, instance, and port
+
+The **Host** field accepts the same forms SSMS does. Surrounding whitespace is trimmed,
+so a pasted value with a stray space still works.
+
+| Host | Connects to |
+| --- | --- |
+| `db.example.com` | The default instance, on the port in the **Port** field. |
+| `localhost` &middot; `.` &middot; `(local)` | The default instance on this machine. `.` and `(local)` are shorthand for `localhost`. |
+| `db.example.com\SQLEXPRESS` | The named instance `SQLEXPRESS`. |
+
+### Named instances and the SQL Server Browser
+
+A named instance normally listens on a **dynamic port**, so its port has to be looked up
+from the **SQL Server Browser** service over **UDP 1434**. Leave **Port** at the default
+`1433` and that lookup happens automatically.
+
+The browser service is often stopped, or UDP 1434 is blocked by a firewall, and the
+lookup then fails with a timeout. Either:
+
+- Start the SQL Server Browser service and allow **UDP 1434** through the firewall, or
+- Give the instance a **static TCP port** in SQL Server Configuration Manager and enter
+  that port in the **Port** field. Any port other than `1433` connects directly and skips
+  the browser lookup entirely.
+
+To read the port an instance is currently listening on, run this from any tool already
+connected to it:
+
+```sql
+SELECT local_tcp_port FROM sys.dm_exec_connections WHERE session_id = @@SPID;
+```
+
+## Certificates
+
+Every stock SQL Server presents a **self-signed certificate**, and the driver validates
+certificates by default. New connections therefore have **Trust Server Certificate**
+enabled, so a default install connects with no extra setup.
+
+Clear the checkbox to validate the certificate against the operating system's trust
+store. The server then needs a certificate issued by a certificate authority the machine
+already trusts — a self-signed one is rejected.
+
+!!! note "Integrated authentication"
+    **Kerberos / Windows (via ODBC)** ignores this checkbox. Certificate handling for
+    that mode is the **Encryption** setting under [ODBC Options](#odbc-options).
+
 ## Kerberos vs NTLM
 
 "Integrated Authentication" (SSPI) is an umbrella over two wire protocols. The same
@@ -140,6 +186,12 @@ The **ODBC Options** section exposes the settings specific to integrated authent
 
 ## Troubleshooting
 
+- **"The server presented a self-signed certificate"** — the server's certificate is not
+  signed by a CA this machine trusts. Enable **Trust Server Certificate**, or install a
+  trusted certificate on the server. See [Certificates](#certificates).
+- **"No response from the SQL Server Browser service ... (UDP 1434)"** — the instance
+  name could not be resolved to a port. See
+  [Named instances and the SQL Server Browser](#named-instances-and-the-sql-server-browser).
 - **"Integrated authentication requires ... ODBC Driver 18 for SQL Server"** — the ODBC
   driver (and unixODBC on Linux/macOS) is not installed. See the prerequisites above.
 - **The connection times out during login** — TCP reached the server but the

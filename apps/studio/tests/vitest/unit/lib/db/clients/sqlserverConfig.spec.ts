@@ -134,15 +134,20 @@ describe('sqlServerConnectHint', () => {
     expect(hint).toContain('Port field')
   })
 
-  it('does not leave the frontend helper adding the same advice again', () => {
-    // Only one layer may speak. These failures are classified here because the frontend only
-    // ever sees a flat message (UtilityConnection rebuilds errors as `new Error(message)`),
-    // so a matching pattern in FriendlyErrorHelper would print the remedy twice in ErrorAlert.
+  it('leaves the frontend helper adding a docs link and no second copy of the advice', () => {
+    // Only one layer states the remedy. These failures are classified here because the
+    // frontend only ever sees a flat message (UtilityConnection rebuilds errors as
+    // `new Error(message)`), so help text there would render right after this one in
+    // ErrorAlert. The helper still contributes the link, keyed on the wording below.
     const cert = new Error(`Failed to connect to localhost:1433 - self signed certificate. ${sqlServerConnectHints.selfSignedCertificate}`)
-    expect(FriendlyErrorHelper.getHelpText('sqlserver', cert)).toBeNull()
+    const certHelp = FriendlyErrorHelper.getHelpText('sqlserver', cert)
+    expect(certHelp?.help).toBeUndefined()
+    expect(certHelp?.link).toContain('#certificates')
 
     const browser = new Error(`Failed to connect to localhost\\SQL2019 in 15000ms. ${sqlServerConnectHints.browserUnreachable('localhost', 'SQL2019')}`)
-    expect(FriendlyErrorHelper.getHelpText('sqlserver', browser)).toBeNull()
+    const browserHelp = FriendlyErrorHelper.getHelpText('sqlserver', browser)
+    expect(browserHelp?.help).toBeUndefined()
+    expect(browserHelp?.link).toContain('#named-instances-and-the-sql-server-browser')
   })
 
   it('stays quiet when neither failure mode applies', () => {
