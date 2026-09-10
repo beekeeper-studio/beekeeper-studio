@@ -1,4 +1,7 @@
 body {
+  background: var(--theme-bg);
+  color: var(--text);
+
   --togglebutton-color: color-mix(
     in srgb,
     var(--theme-base) 60%,

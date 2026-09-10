@@ -26,6 +26,7 @@ export const ThemeModule: Module<State, RootState> = {
     ],
   }),
   mutations: {
+    /** For internal use only. Please use `setId` or `setDark` instead. */
     setSystemDark(state, systemDark: boolean) {
       state.systemDark = systemDark;
     },
@@ -37,10 +38,10 @@ export const ThemeModule: Module<State, RootState> = {
       });
       context.commit("setSystemDark", darkMediaQuery?.matches ?? false);
     },
-    setName(context, value: string) {
+    setId(context, value: string) {
       context.dispatch(
         "settings/save",
-        { key: "themeName", value },
+        { key: "themeId", value },
         { root: true }
       );
     },
@@ -53,8 +54,8 @@ export const ThemeModule: Module<State, RootState> = {
     },
   },
   getters: {
-    name(_state, _getters, _rootState, rootGetters) {
-      return rootGetters["settings/settings"].themeName?.value || "default";
+    id(_state, _getters, _rootState, rootGetters) {
+      return rootGetters["settings/settings"].themeId?.value || "default";
     },
     type(state, _getters, _rootState, rootGetters) {
       const value = rootGetters["settings/settings"].themeDark?.value;

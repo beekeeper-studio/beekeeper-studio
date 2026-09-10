@@ -35,8 +35,12 @@ export const ProtocolBuilder = {
     protocol.registerBufferProtocol(
       'app',
       (request, respond) => {
-        let pathName = new URL(request.url).pathname
-        pathName = decodeURI(pathName) // Needed in case URL contains spaces
+        const url = new URL(request.url)
+        // app://./index.html parks a bare dot in the host, while
+        // app://themes/core/solarized.css parks the first path segment there.
+        const host = url.hostname === '.' ? '' : url.hostname
+        // decodeURI is needed in case the URL contains spaces
+        const pathName = decodeURI(path.posix.join('/', host, url.pathname))
 
         const emptySourceMap = JSON.stringify({
           version: 3,

@@ -1,4 +1,30 @@
 @use "sass:color";
+
+// Fonts
+// -----------------------------
+$font-family:        system-ui,
+             -apple-system, BlinkMacSystemFont,
+             "Segoe UI",
+             "Roboto",
+             "Oxygen",
+             "Ubuntu",
+             "Cantarell",
+             "Fira Sans",
+             "Droid Sans",
+             "Helvetica Neue",
+             Arial, sans-serif;
+$font-family-mono:   ui-monospace,
+             Menlo, Monaco,
+             "Cascadia Mono", "Segoe UI Mono",
+             "Roboto Mono",
+             "Oxygen Mono",
+             "Ubuntu Mono",
+             "Source Code Pro",
+             "Fira Mono",
+             "Droid Sans Mono",
+             "Consolas", "Courier New", monospace;
+$base-font-size:      0.875rem; // ~14px
+$form-control-font-size: 0.831rem; // ~13.3px
 // Theme
 // -----------------------------
 $theme-bg:               #181818!default;

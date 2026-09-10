@@ -56,6 +56,11 @@
       multiple
       class="portal-target-menus"
     />
+    <link
+      v-if="themeId !== 'default'"
+      rel="stylesheet"
+      :href="`app://themes/core/${themeId}.css`"
+    >
   </div>
 </template>
 
@@ -145,7 +150,7 @@ export default Vue.extend({
     ...mapGetters({
       'isTrial': 'isTrial',
       'isUltimate': 'isUltimate',
-      'themeName': 'theme/name',
+      'themeId': 'theme/id',
       'themeType': 'theme/type',
     }),
     editorFontSize() {
@@ -156,13 +161,13 @@ export default Vue.extend({
     database() {
       log.info('database changed', this.database)
     },
-    themeName() {
+    themeId() {
       this.applyTheme()
-      this.trigger(AppEvent.changedTheme, this.themeName)
+      this.trigger(AppEvent.changedTheme, this.themeId)
     },
     themeType() {
       this.applyTheme()
-      this.trigger(AppEvent.changedTheme, this.themeName)
+      this.trigger(AppEvent.changedTheme, this.themeId)
     },
     status(curr, prev) {
       this.$store.dispatch('updateWindowTitle')
@@ -226,11 +231,9 @@ export default Vue.extend({
   },
   methods: {
     applyTheme() {
-      document.documentElement.setAttribute(
-        "data-theme-dark",
-        this.themeType === "dark" ? "true" : "false"
-      );
-      document.documentElement.setAttribute("data-theme", this.themeName);
+      const dark = this.themeType === "dark";
+      document.body.classList.toggle("dark-theme", dark);
+      document.body.classList.toggle("light-theme", !dark);
     },
     notifyFreeTrial() {
       Noty.closeAll('trial')
