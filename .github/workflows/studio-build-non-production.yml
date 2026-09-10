@@ -42,11 +42,14 @@ jobs:
         if: "!startsWith(matrix.os, 'macos')"
 
 
-      - name: Install flatpak tools
+      - name: Install build dependencies
         if: "contains(matrix.os, 'ubuntu')"
         run: |
           sudo apt-get update
-          sudo apt-get install -y flatpak flatpak-builder rpm
+          # unixodbc-dev supplies sql.h, needed to build msnodesqlv8 from source.
+          # linux-arm64 has no prebuilt binary, so without it the optional
+          # dependency fails silently and the build ships without SQL Server.
+          sudo apt-get install -y flatpak flatpak-builder rpm unixodbc-dev
           flatpak --user remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
       - name: Install fpm
