@@ -138,7 +138,7 @@
     "split.js": "^1.6.5",
     "sql-formatter": "15.7.3",
     "sql-query-identifier": "^3.2.0",
-    "sqlanywhere": "git+https://github.com/beekeeper-studio/node-sqlanywhere.git#38bc3904a5a5fd601b3b5346c3b0278cf1193e21",
+    "sqlanywhere": "git+https://github.com/beekeeper-studio/node-sqlanywhere.git#0e1280155455a308c04b07e9f6888372bd513b08",
     "ssh-config": "5.2.0",
     "ssh2": "^1.14.0",
     "surrealdb": "^2.0.3",
