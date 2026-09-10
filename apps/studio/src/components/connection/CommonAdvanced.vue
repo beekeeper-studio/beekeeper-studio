@@ -401,7 +401,7 @@ export default {
   vertical-align: middle;
 }
 
-[data-theme-dark="true"] .bastion-host {
+.dark-theme .bastion-host {
   background-color: rgb(from var(--theme-base) r g b / 3.5%);
 }
 </style>

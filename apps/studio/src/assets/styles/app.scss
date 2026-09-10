@@ -13,19 +13,11 @@
 @import './app/variables';
 @import './app/flex-grid';
 @import './app/base';
+@import './app/vendor/material-symbols.scss';
 @import './themes/themes.css';
 
-[data-theme="default"][data-theme-dark="true"] {
-  @import './themes/dark/variables.scss';
-  @import './app/mixins';
-  @import './components/all';
-  @import './vendor.scss';
-  @import './app/_all.scss';
-  @import './themes/dark/theme.scss';
-  @import './themes/scssvars-to-cssprops.scss';
-}
-
-[data-theme="default"] {
+:root,
+.light-theme {
   @import './themes/light/variables.scss';
   @import './app/mixins';
   @import './components/all';
@@ -35,24 +27,12 @@
   @import './themes/scssvars-to-cssprops.scss';
 }
 
-[data-theme="solarized"][data-theme-dark="true"] {
-  @import './themes/solarized-dark/variables.scss';
+.dark-theme {
+  @import './themes/dark/variables.scss';
   @import './app/mixins';
   @import './components/all';
   @import './vendor.scss';
   @import './app/_all.scss';
-  @import './themes/solarized-dark/theme.scss';
-  @import './themes/scssvars-to-cssprops.scss';
-}
-
-
-
-[data-theme="solarized"] {
-  @import './themes/solarized-light/variables.scss';
-  @import './app/mixins';
-  @import './components/all';
-  @import './vendor.scss';
-  @import './app/_all.scss';
-  @import './themes/solarized-light/theme.scss';
+  @import './themes/dark/theme.scss';
   @import './themes/scssvars-to-cssprops.scss';
 }

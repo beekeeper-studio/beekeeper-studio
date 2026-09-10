@@ -31,13 +31,9 @@
           v-for="theme in themes"
           :key="theme.value"
           class="theme-item"
-          :class="{ selected: themeName === theme.value }"
+          :class="{ selected: themeId === theme.value }"
         >
-          <span
-            class="theme-preview"
-            :data-theme="theme.value"
-            :data-theme-dark="themeType === 'dark'"
-          >
+          <span class="theme-preview">
             <span style="background-color: var(--theme-base)" />
             <span style="background-color: var(--theme-bg)" />
             <span style="background-color: var(--theme-primary)" />
@@ -48,8 +44,8 @@
               type="radio"
               name="theme-name"
               :value="theme.value"
-              :checked="themeName === theme.value"
-              @change="setThemeName(theme.value)"
+              :checked="themeId === theme.value"
+              @change="setThemeId(theme.value)"
             />
             <span>{{ theme.label }}</span>
           </span>
@@ -75,7 +71,7 @@ export default Vue.extend({
   computed: {
     ...mapState("theme", ["themes"]),
     ...mapGetters({
-      themeName: "theme/name",
+      themeId: "theme/id",
       themeType: "theme/type",
       themeDark: "theme/dark",
     }),
@@ -92,7 +88,7 @@ export default Vue.extend({
   methods: {
     ...mapActions("theme", {
       setThemeDark: "setDark",
-      setThemeName: "setName",
+      setThemeId: "setId",
     }),
     open() {
       this.$modal.show(this.modalName);

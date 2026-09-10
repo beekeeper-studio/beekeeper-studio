@@ -3,7 +3,7 @@ import { addUserSetting } from "./helpers";
 export default {
   name: "20260908_split_theme_dark_flag",
   async run(runner) {
-    await addUserSetting(runner, "themeName", {
+    await addUserSetting(runner, "themeId", {
       defaultValue: "default",
       valueType: "string",
     });
@@ -21,7 +21,7 @@ export default {
           ELSE 'default'
         END
         FROM user_setting theme WHERE theme.key = 'theme'
-      ) WHERE key = 'themeName'`
+      ) WHERE key = 'themeId'`
     );
 
     await runner.query(
