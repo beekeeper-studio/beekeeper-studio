@@ -225,3 +225,16 @@ When the legacy trees are empty:
     the helper stays at `tests/unit/codemirror/helpers.js` and the moved
     spec now imports it as `@tests/unit/codemirror/helpers`. Verified
     `completions.spec.js` still passes unmodified under jest (27 tests).
+- **2026-09-10, ten more unit canaries**: `pluralize.spec.ts`,
+  `structureCopy.spec.ts`, `structureFilter.spec.ts`, `menuItems.spec.ts`,
+  `folderTree.spec.ts`, `enumParsers.spec.ts`, `partiqlFormatter.spec.ts`,
+  `duckdb_change_builder.spec.ts`, `stringify_range_data.spec.js`,
+  `vimrc.spec.js` — 2512 test cases total, identical pass count before
+  (jest) and after (vitest). `jest.fn()` → `vi.fn()` was the only API swap
+  needed (`structureCopy.spec.ts`, `structureFilter.spec.ts`,
+  `menuItems.spec.ts`). `pluralize.spec.ts`'s `@jest-environment node`
+  became `@vitest-environment node`. `stringify_range_data.spec.js` and
+  `vimrc.spec.js` used depth-counted relative imports into `src`
+  (`../../../src/...`, `../../../../studio/src/...`) that were correct from
+  the old tree depth but wrong after the move; swapped for the `@/` alias.
+  `jest --listTests` dropped by exactly these 10 files afterward.

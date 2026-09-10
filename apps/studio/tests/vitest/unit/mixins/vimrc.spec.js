@@ -1,4 +1,5 @@
-import { parseVimrc } from "../../../../studio/src/lib/editor/vim"
+import { describe, it, expect } from "vitest"
+import { parseVimrc } from "@/lib/editor/vim"
 
 const mapping = (lhs, rhs, mode, noremap = false) => ({ lhs, rhs, mode, noremap })
 
