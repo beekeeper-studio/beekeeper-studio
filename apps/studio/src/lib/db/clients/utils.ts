@@ -236,6 +236,12 @@ export function buildInsertQuery(knex, insert: TableInsert, { columns = [], bitC
     const insertColumns = Object.keys(item)
     insertColumns.forEach((ic) => {
       const matching = _.find(columns, (c) => c.columnName === ic)
+      // Omit columns with a DEFAULT value when the user left the cell empty.
+      // Explicitly inserting NULL would override the DEFAULT and violate NOT NULL constraints.
+      if (matching && matching.hasDefault && _.isNil(item[ic])) {
+        delete item[ic]
+        return
+      }
       if (matching && matching.dataType && matching.dataType.startsWith('bit(') && !_.isNil(item[ic])) {
         if (matching.dataType === 'bit(1)') {
           item[ic] = bitConversionFunc(item[ic])
