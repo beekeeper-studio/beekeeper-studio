@@ -2,6 +2,7 @@ import { AppEvent } from "@/common/AppEvent"
 import Vue from 'vue'
 import { openMenu, MenuItem, DividerItem } from "@beekeeperstudio/ui-kit"
 import { IConnection } from "@/common/interfaces/IConnection"
+import { ConnectionType } from "@/lib/db/types"
 import { isBksInternalColumn } from "@/common/utils"
 import store from '@/store'
 import TimeAgo from "javascript-time-ago"
@@ -237,6 +238,19 @@ export default {
           reject(e)
         }
       })
+    }
+
+    Vue.prototype.$promptConnectionType = function(): Promise<ConnectionType | false> {
+      return new Promise<ConnectionType | false>((resolve, reject) => {
+        try {
+          this.trigger(AppEvent.openConnectionTypePickerModal, {
+            onConfirm: (connectionType: ConnectionType) => resolve(connectionType),
+            onCancel: () => resolve(false),
+          });
+        } catch (e) {
+          reject(e);
+        }
+      });
     }
 
     Vue.prototype.$confirmById = function(id: string): Promise<boolean> {

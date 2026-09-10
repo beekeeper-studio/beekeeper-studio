@@ -1,9 +1,10 @@
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 import { GenericContainer } from 'testcontainers'
-import { DBTestUtil, dbtimeout } from '../../../../lib/db'
-import { runCommonTests } from './all'
+import { DBTestUtil, dbtimeout } from '@tests/lib/db'
+import { runCommonTests } from '@tests/integration/lib/db/clients/all'
 
 describe("MariaDB Tests", () => {
-  jest.setTimeout(dbtimeout)
+  vi.setConfig({ testTimeout: dbtimeout, hookTimeout: dbtimeout })
 
   let container;
   let util
@@ -19,7 +20,7 @@ describe("MariaDB Tests", () => {
       .withExposedPorts(3306)
       .withStartupTimeout(dbtimeout)
       .start()
-    jest.setTimeout(timeoutDefault)
+    vi.setConfig({ testTimeout: timeoutDefault })
     const config = {
       client: 'mariadb',
       host: container.getHost(),

@@ -1293,7 +1293,12 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   private async connectWindowsAuth(): Promise<ConnectionPool> {
     let sqlWindows: any
     try {
-      sqlWindows = require('mssql/msnodesqlv8')
+      // Dynamic import (not require) so the load stays lazy under every build
+      // pipeline: vite-plugin-commonjs hoists bare require() calls into eager
+      // top-level imports, which would make this optional Windows-only native
+      // a hard dependency.
+      const mod: any = await import('mssql/msnodesqlv8')
+      sqlWindows = mod.default ?? mod
     } catch {
       throw new Error(
         (process.platform === 'win32'

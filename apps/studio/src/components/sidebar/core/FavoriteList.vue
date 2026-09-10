@@ -74,7 +74,6 @@
             </div>
           </div>
         </div>
-        <expired-folder-alert v-if="!canCreateFolders && folders.length > 0" />
         <error-alert
           v-if="error && !isPollError && !errorList.includes(error)"
           :error="error"
@@ -246,7 +245,6 @@
 <script>
 import _ from 'lodash'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
-import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
 import { mapActions, mapGetters, mapMutations, mapState } from 'vuex'
 import SidebarLoading from '../../common/SidebarLoading.vue'
 import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
@@ -261,7 +259,7 @@ import rawLog from '@bksLogger'
 const log = rawLog.scope('FavoriteList')
 
 export default {
-  components: { SidebarLoading, ErrorAlert, ExpiredFolderAlert, FavoriteListItem, Tree, TreeFolder, EditableText, ContentPlaceholder, ContentPlaceholderText },
+  components: { SidebarLoading, ErrorAlert, FavoriteListItem, Tree, TreeFolder, EditableText, ContentPlaceholder, ContentPlaceholderText },
   data: function () {
     return {
       checkedFavorites: [],
@@ -292,7 +290,7 @@ export default {
     clearTimeout(this.commitedTimeout)
   },
   computed: {
-    ...mapGetters(['workspace', 'isCloud', 'isUltimate', 'canCreateFolders']),
+    ...mapGetters(['workspace', 'isCloud']),
     ...mapGetters('data/queries', {'filteredQueries': 'filteredQueries'}),
     ...mapState('tabs', {'activeTab': 'active'}),
     ...mapState('data/queries/nodes', {'itemNodes': 'items'}),
@@ -341,14 +339,14 @@ export default {
       }
       return this.sortedItemNodes;
     },
-    expandedNodeIds() {
-      return this.expandedFolderIds.map((id) => `folder-${id}`);
-    },
     sortedItemNodes() {
       // Drag and drop is the only way to reorder queries, and it lands in
       // `position`. Sorting by title here would outrank it, so a drag would
       // save but never show.
       return _.sortBy(this.itemNodes, (n) => n.ref.position ?? 0)
+    },
+    expandedNodeIds() {
+      return this.expandedFolderIds.map((id) => `folder-${id}`);
     },
     searching() {
       return !!this.filterQuery;
@@ -443,10 +441,10 @@ export default {
     },
     importFromLocal() {
       if (!this.isCloud) {
-          this.$root.$emit(AppEvent.upgradeModal, 'Cloud Workspaces')
-          return
-        }
-        this.$root.$emit(AppEvent.promptQueryImport)
+        this.$root.$emit(AppEvent.upgradeModal, 'Cloud Workspaces')
+        return
+      }
+      this.$root.$emit(AppEvent.promptQueryImport)
     },
     importFromComputer() {
       this.$root.$emit(AppEvent.promptSqlFilesImport)
@@ -490,10 +488,6 @@ export default {
       this.checkedFavorites = [];
     },
     createFolder() {
-      if (!this.canCreateFolders) {
-        this.$root.$emit(AppEvent.upgradeModal, 'Folders')
-        return
-      }
       this.startRootDraft("folder");
     },
     startRootDraft(type) {
@@ -591,10 +585,6 @@ export default {
         {
           name: "New Folder",
           handler: ({ item }) => {
-            if (!this.canCreateFolders) {
-              this.$root.$emit(AppEvent.upgradeModal, 'Folders');
-              return;
-            }
             this.startDrafting("folder", item.id);
             this.expandFolder(item.id);
           },

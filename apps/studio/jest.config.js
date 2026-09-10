@@ -7,6 +7,11 @@ const { resolve } = require('path')
 module.exports = {
   maxWorkers: 1,
 
+  // Specs migrated to vitest live under tests/vitest/ (see
+  // tests/VITEST_MIGRATION.md); jest's testMatch globs below never reach them,
+  // so no extra ignores are needed.
+  testPathIgnorePatterns: ['/node_modules/'],
+
   moduleFileExtensions: [
     'js',
     'jsx',
