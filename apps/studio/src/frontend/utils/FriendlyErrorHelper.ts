@@ -6,15 +6,17 @@ interface HelpInfo {
   pattern?: string
 }
 const errorMappings = {
+  // Errors are rebuilt as `new Error(message)` when they cross the utility-process boundary
+  // (see UtilityConnection.ts), so only the top-level message reaches this side -- the nested
+  // originalError / precedingErrors and the error code are already gone. Failures that need
+  // those, or need the driver config, are classified in the client itself and arrive with the
+  // remedy already in the message; sqlserver.ts does that for certificate and SQL Server
+  // Browser failures. Add a pattern here when the top-level text alone identifies the fault.
   'sqlserver': [
     {
       pattern: "login failed for user <token-identified principal>",
       help: "Probably your EntraID user is not linked to your database user.",
       link: "https://learn.microsoft.com/en-us/answers/questions/133709/login-failed-for-user"
-    },
-    {
-      pattern: 'self signed certificate',
-      help: "You might need to check 'Trust Server Certificate'"
     },
     {
       // Integrated auth: the ODBC driver (and unixODBC on Linux/macOS) is missing.

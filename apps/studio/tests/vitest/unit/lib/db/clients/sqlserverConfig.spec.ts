@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { SQLServerClient, sqlServerConnectHint, sqlServerConnectHints } from '@/lib/db/clients/sqlserver'
 import { IDbConnectionDatabase, IDbConnectionServerConfig } from '@/lib/db/types'
 import { IDbConnectionServer } from '@/lib/db/backendTypes'
+import { FriendlyErrorHelper } from '@/frontend/utils/FriendlyErrorHelper'
 
 // Pins the driver config configDatabase() hands to mssql, without needing a live server.
 // The port/instanceName decision is the whole fix for named instances: mssql deletes the
@@ -131,6 +132,17 @@ describe('sqlServerConnectHint', () => {
     expect(hint).toBe(sqlServerConnectHints.browserUnreachable('localhost', 'SQL2019'))
     expect(hint).toContain('UDP 1434')
     expect(hint).toContain('Port field')
+  })
+
+  it('does not leave the frontend helper adding the same advice again', () => {
+    // Only one layer may speak. These failures are classified here because the frontend only
+    // ever sees a flat message (UtilityConnection rebuilds errors as `new Error(message)`),
+    // so a matching pattern in FriendlyErrorHelper would print the remedy twice in ErrorAlert.
+    const cert = new Error(`Failed to connect to localhost:1433 - self signed certificate. ${sqlServerConnectHints.selfSignedCertificate}`)
+    expect(FriendlyErrorHelper.getHelpText('sqlserver', cert)).toBeNull()
+
+    const browser = new Error(`Failed to connect to localhost\\SQL2019 in 15000ms. ${sqlServerConnectHints.browserUnreachable('localhost', 'SQL2019')}`)
+    expect(FriendlyErrorHelper.getHelpText('sqlserver', browser)).toBeNull()
   })
 
   it('stays quiet when neither failure mode applies', () => {
