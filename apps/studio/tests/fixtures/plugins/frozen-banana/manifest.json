@@ -1,0 +1,17 @@
+{
+  "id": "frozen-banana",
+  "name": "Frozen Banana",
+  "author": {
+    "name": "Banana Farmer",
+    "url": "https://beekeeperstudio.io"
+  },
+  "description": "Delicious frozen bananas!",
+  "version": "1.0.0",
+  "icon": "kitchen",
+  "manifestVersion": 1,
+  "minAppVersion": "5.5.0",
+  "capabilities": {
+    "views": [],
+    "menu": []
+  }
+}

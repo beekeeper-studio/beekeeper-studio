@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import PluginFileManager from "@/services/plugin/PluginFileManager";
 import PluginManager from "@/services/plugin/PluginManager";
 import { createPluginServer } from "@tests/integration/plugins/utils/server";
@@ -62,6 +64,73 @@ describe("Plugin Configuration Module", () => {
 
   afterEach(() => {
     cleanFileManager(fileManager);
+  });
+
+  describe("Default configuration", () => {
+    const config = createConfig("");
+
+    it("only fetches official entries", async () => {
+      const manager = createPluginManager();
+      manager.registerModule(ConfigurationModule.with({ config }));
+      await manager.initialize();
+
+      const { official, community } = await manager.registry.getEntries();
+      expect(official).toHaveLength(1);
+      expect(official[0].id).toBe("official-plugin");
+      expect(community).toHaveLength(0);
+    });
+
+    it("only installs official plugins", async () => {
+      const manager = createPluginManager();
+      manager.registerModule(ConfigurationModule.with({ config }));
+      await manager.initialize();
+
+      // Community plugins can not be installed
+      await expect(manager.installPlugin("community-plugin")).rejects.toThrow();
+      await expect(manager.getPlugins()).resolves.toHaveLength(0);
+
+      // Official plugins can be installed
+      await manager.installPlugin("official-plugin");
+      await expect(manager.getPlugins()).resolves.toHaveLength(1);
+    });
+
+    it("only keeps official plugins enabled", async () => {
+      // Install a plugin of every origin without the config module, then boot a
+      // fresh manager with the defaults applied.
+      const manager = createPluginManager();
+      await manager.initialize();
+      await manager.installPlugin("official-plugin");
+      await manager.installPlugin("community-plugin");
+      fs.cpSync(
+        path.dirname(path.resolve(__dirname, "../../../fixtures/plugins/frozen-banana/manifest.json")),
+        path.join(fileManager.options.pluginsDirectory, "frozen-banana"),
+        { recursive: true }
+      );
+
+      const manager2 = createPluginManager();
+      manager2.registerModule(ConfigurationModule.with({ config }));
+      await manager2.initialize();
+
+      const plugins = await manager2.getPlugins();
+      const officialPlugin = plugins.find(
+        (p) => p.manifest.id === "official-plugin"
+      );
+      const communityPlugin = plugins.find(
+        (p) => p.manifest.id === "community-plugin"
+      );
+      const unlistedPlugin = plugins.find(
+        (p) => p.manifest.id === "frozen-banana"
+      );
+      expect(officialPlugin.disableState).toStrictEqual({ disabled: false });
+      expect(communityPlugin.disableState).toStrictEqual({
+        disabled: true,
+        reason: "community-plugins-disabled",
+      });
+      expect(unlistedPlugin.disableState).toStrictEqual({
+        disabled: true,
+        reason: "unlisted-plugins-disabled",
+      });
+    });
   });
 
   describe("Disable plugin system", () => {
@@ -168,6 +237,48 @@ describe("Plugin Configuration Module", () => {
       expect(communityPlugin.disableState).toStrictEqual({
         disabled: true,
         reason: "community-plugins-disabled",
+      });
+    });
+  });
+
+  describe("Disable unlisted plugins", () => {
+    const config = createConfig(`
+      [pluginSystem]
+      disabled = false
+      communityDisabled = false
+      unlistedDisabled = true
+    `);
+
+    it("can disable unlisted plugins", async () => {
+      const manager = createPluginManager();
+      await manager.initialize();
+      await manager.installPlugin("official-plugin");
+      await manager.installPlugin("community-plugin");
+      fs.cpSync(
+        path.dirname(path.resolve(__dirname, "../../../fixtures/plugins/frozen-banana/manifest.json")),
+        path.join(fileManager.options.pluginsDirectory, "frozen-banana"),
+        { recursive: true }
+      );
+
+      const manager2 = createPluginManager();
+      manager2.registerModule(ConfigurationModule.with({ config }));
+      await manager2.initialize();
+
+      const plugins = await manager2.getPlugins();
+      const officialPlugin = plugins.find(
+        (p) => p.manifest.id === "official-plugin"
+      );
+      const communityPlugin = plugins.find(
+        (p) => p.manifest.id === "community-plugin"
+      );
+      const unlistedPlugin = plugins.find(
+        (p) => p.manifest.id === "frozen-banana"
+      );
+      expect(officialPlugin.disableState).toStrictEqual({ disabled: false });
+      expect(communityPlugin.disableState).toStrictEqual({ disabled: false });
+      expect(unlistedPlugin.disableState).toStrictEqual({
+        disabled: true,
+        reason: "unlisted-plugins-disabled",
       });
     });
   });
