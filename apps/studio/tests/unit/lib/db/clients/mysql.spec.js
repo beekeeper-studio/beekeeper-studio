@@ -190,5 +190,42 @@ describe("MysqlChangeBuilder", () => {
       expect(result).not.toContain('COLLATE')
     })
   })
+
+  describe("AUTO_INCREMENT (table-level)", () => {
+    it("endSql returns null when no autoIncrement is requested", () => {
+      expect(builder.endSql({ table: 'beans' })).toBeNull()
+    })
+
+    it("endSql emits an ALTER TABLE ... AUTO_INCREMENT statement", () => {
+      expect(builder.endSql({ table: 'beans', autoIncrement: 1042 }))
+        .toBe('ALTER TABLE `beans` AUTO_INCREMENT = 1042')
+    })
+
+    it("endSql truncates and rejects non-positive / invalid values", () => {
+      expect(builder.endSql({ table: 'beans', autoIncrement: 1042.9 }))
+        .toBe('ALTER TABLE `beans` AUTO_INCREMENT = 1042')
+      expect(builder.endSql({ table: 'beans', autoIncrement: 0 })).toBeNull()
+      expect(builder.endSql({ table: 'beans', autoIncrement: -5 })).toBeNull()
+      expect(builder.endSql({ table: 'beans', autoIncrement: NaN })).toBeNull()
+    })
+
+    it("alterTable produces only the AUTO_INCREMENT statement when nothing else changed", () => {
+      expect(builder.alterTable({ table: 'beans', autoIncrement: 1042 }))
+        .toBe('ALTER TABLE `beans` AUTO_INCREMENT = 1042;')
+    })
+
+    it("alterTable appends AUTO_INCREMENT after a column rename", () => {
+      const renameBuilder = new MySqlChangeBuilder('beans', [
+        { columnName: 'a', dataType: 'int', nullable: true },
+      ])
+      const sql = renameBuilder.alterTable({
+        table: 'beans',
+        alterations: [{ changeType: 'columnName', columnName: 'a', newValue: 'b' }],
+        autoIncrement: 50,
+      })
+      expect(sql).toContain('CHANGE `a` `b`')
+      expect(sql).toContain('ALTER TABLE `beans` AUTO_INCREMENT = 50')
+    })
+  })
 })
 
