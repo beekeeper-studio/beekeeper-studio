@@ -330,7 +330,7 @@ ipcMain.handle('clipboard:write', async (_event, { content, image }: { content: 
       'text/plain': content
     });
   }
-  clipboard.write([item]);
+  await clipboard.write([item]);
 })
 
 ipcMain.handle('clipboard:read', async () => {
