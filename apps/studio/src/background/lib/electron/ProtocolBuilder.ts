@@ -1,11 +1,11 @@
 import { protocol } from 'electron'
 import * as path from 'path'
 import { readFile } from 'fs'
-import * as fs from 'fs'
 import { URL } from 'url'
 import rawLog from '@bksLogger'
 import platformInfo from '@/common/platform_info'
 import bksConfig from "@/common/bksConfig";
+import { resolveTheme } from './resolveTheme'
 
 const log = rawLog.scope('ProtocolBuilder')
 
@@ -28,34 +28,6 @@ function mimeTypeOf(pathName: string) {
   }
 }
 
-// In development the themes are read straight from source, so editing one takes
-// effect without a build. User themes are dropped in beside the plugins.
-function themeRoots() {
-  const builtin = platformInfo.isDevelopment
-    ? path.resolve(path.join(__dirname, '..', 'src', 'assets', 'styles', 'themes'))
-    : path.resolve(path.join(__dirname, 'renderer', 'themes'))
-  return [builtin, path.resolve(path.join(platformInfo.userDirectory, 'themes'))]
-}
-
-// Reads pathName from the first root that holds it. Each candidate is checked
-// against the root it came from, so a theme name can't climb out of it.
-async function readFromRoots(roots: string[], pathName: string) {
-  for (const root of roots) {
-    const fullPath = path.resolve(path.join(root, pathName))
-    if (fullPath !== root && !fullPath.startsWith(root + path.sep)) {
-      continue
-    }
-    try {
-      return await fs.promises.readFile(fullPath)
-    } catch (error) {
-      if (error.code?.toLowerCase() !== 'enoent') {
-        log.error("error reading", fullPath, error)
-      }
-    }
-  }
-  return null
-}
-
 export const ProtocolBuilder = {
 
   // app:// loads from dist/renderer
@@ -66,15 +38,20 @@ export const ProtocolBuilder = {
         const url = new URL(request.url)
 
         if (url.hostname === 'themes') {
-          const themePath = decodeURI(url.pathname)
-          readFromRoots(themeRoots(), themePath).then((data) => {
-            if (!data) {
-              respond({ error: -6 })
-              return
+          resolveTheme(platformInfo.builtinThemesDirectory, url).then((data) => {
+            if (data) {
+              respond({ mimeType: "text/css", data });
+            } else {
+              resolveTheme(platformInfo.externalThemesDirectory, url).then((data) => {
+                if (data) {
+                  respond({ mimeType: "text/css", data });
+                } else {
+                  respond({ error: -6 });
+                }
+              });
             }
-            respond({ mimeType: mimeTypeOf(themePath), data })
-          })
-          return
+          });
+          return;
         }
         // app://./index.html parks a bare dot in the host, while
         // app://assets/index.css parks the first path segment there.
