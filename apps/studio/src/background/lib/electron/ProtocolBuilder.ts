@@ -28,6 +28,34 @@ function mimeTypeOf(pathName: string) {
   }
 }
 
+// In development the themes are read straight from source, so editing one takes
+// effect without a build. User themes are dropped in beside the plugins.
+function themeRoots() {
+  const builtin = platformInfo.isDevelopment
+    ? path.resolve(path.join(__dirname, '..', 'src', 'assets', 'styles', 'themes'))
+    : path.resolve(path.join(__dirname, 'renderer', 'themes'))
+  return [builtin, path.resolve(path.join(platformInfo.userDirectory, 'themes'))]
+}
+
+// Reads pathName from the first root that holds it. Each candidate is checked
+// against the root it came from, so a theme name can't climb out of it.
+async function readFromRoots(roots: string[], pathName: string) {
+  for (const root of roots) {
+    const fullPath = path.resolve(path.join(root, pathName))
+    if (fullPath !== root && !fullPath.startsWith(root + path.sep)) {
+      continue
+    }
+    try {
+      return await fs.promises.readFile(fullPath)
+    } catch (error) {
+      if (error.code?.toLowerCase() !== 'enoent') {
+        log.error("error reading", fullPath, error)
+      }
+    }
+  }
+  return null
+}
+
 export const ProtocolBuilder = {
 
   // app:// loads from dist/renderer
@@ -36,8 +64,20 @@ export const ProtocolBuilder = {
       'app',
       (request, respond) => {
         const url = new URL(request.url)
+
+        if (url.hostname === 'themes') {
+          const themePath = decodeURI(url.pathname)
+          readFromRoots(themeRoots(), themePath).then((data) => {
+            if (!data) {
+              respond({ error: -6 })
+              return
+            }
+            respond({ mimeType: mimeTypeOf(themePath), data })
+          })
+          return
+        }
         // app://./index.html parks a bare dot in the host, while
-        // app://themes/core/solarized.css parks the first path segment there.
+        // app://assets/index.css parks the first path segment there.
         const host = url.hostname === '.' ? '' : url.hostname
         // decodeURI is needed in case the URL contains spaces
         const pathName = decodeURI(path.posix.join('/', host, url.pathname))
