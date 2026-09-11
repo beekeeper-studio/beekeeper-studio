@@ -15,7 +15,7 @@ const TEST_VERSIONS = [
 
 
 function testWith(tag, protocol) {
-  describe('SurrealDB Integration Tests', () => {
+  describe(`SurrealDB ${tag} Integration Tests - Protocol: ${protocol}`, () => {
     jest.setTimeout(dbtimeout)
 
     let container: StartedTestContainer
@@ -65,10 +65,15 @@ function testWith(tag, protocol) {
     })
 
     const setupTestData = async () => {
+      await connection.executeQuery(`
+        DEFINE NAMESPACE IF NOT EXISTS test;
+        DEFINE DATABASE IF NOT EXISTS test;
+      `)
+
       // Create test tables with schema
       await connection.executeQuery(`
         DEFINE TABLE person SCHEMAFULL;
-        DEFINE FIELD id ON TABLE person TYPE record<person>;
+        DEFINE FIELD id ON TABLE person TYPE string;
         DEFINE FIELD name ON TABLE person TYPE string;
         DEFINE FIELD age ON TABLE person TYPE number;
         DEFINE FIELD email ON TABLE person TYPE string;
@@ -77,7 +82,7 @@ function testWith(tag, protocol) {
 
       await connection.executeQuery(`
         DEFINE TABLE product SCHEMAFULL;
-        DEFINE FIELD id ON TABLE product TYPE record<product>;
+        DEFINE FIELD id ON TABLE product TYPE string;
         DEFINE FIELD name ON TABLE product TYPE string;
         DEFINE FIELD price ON TABLE product TYPE number;
         DEFINE FIELD category ON TABLE product TYPE string;
@@ -86,7 +91,7 @@ function testWith(tag, protocol) {
 
       await connection.executeQuery(`
         DEFINE TABLE orders SCHEMAFULL;
-        DEFINE FIELD id ON TABLE orders TYPE record<orders>;
+        DEFINE FIELD id ON TABLE orders TYPE string;
         DEFINE FIELD customer ON TABLE orders TYPE record<person>;
         DEFINE FIELD product ON TABLE orders TYPE record<product>;
         DEFINE FIELD quantity ON TABLE orders TYPE number;
@@ -353,7 +358,7 @@ function testWith(tag, protocol) {
           // Create test table
           await connection.executeQuery(`
             DEFINE TABLE ${testTable} SCHEMAFULL;
-            DEFINE FIELD id ON TABLE ${testTable} TYPE record<${testTable}>;
+            DEFINE FIELD id ON TABLE ${testTable} TYPE string;
             DEFINE FIELD name ON TABLE ${testTable} TYPE string;
             DEFINE FIELD value ON TABLE ${testTable} TYPE number;
           `)
@@ -399,7 +404,7 @@ function testWith(tag, protocol) {
           // Create test table and insert data
           await connection.executeQuery(`
             DEFINE TABLE ${testTable} SCHEMAFULL;
-            DEFINE FIELD id ON TABLE ${testTable} TYPE record<${testTable}>;
+            DEFINE FIELD id ON TABLE ${testTable} TYPE string;
             DEFINE FIELD name ON TABLE ${testTable} TYPE string;
             DEFINE FIELD status ON TABLE ${testTable} TYPE string;
           `)
@@ -442,7 +447,7 @@ function testWith(tag, protocol) {
           // Create test table and insert data
           await connection.executeQuery(`
             DEFINE TABLE ${testTable} SCHEMAFULL;
-            DEFINE FIELD id ON TABLE ${testTable} TYPE record<${testTable}>;
+            DEFINE FIELD id ON TABLE ${testTable} TYPE string;
             DEFINE FIELD name ON TABLE ${testTable} TYPE string;
           `)
 
@@ -482,7 +487,7 @@ function testWith(tag, protocol) {
           // Create test table
           await connection.executeQuery(`
             DEFINE TABLE ${testTable} SCHEMAFULL;
-            DEFINE FIELD id ON TABLE ${testTable} TYPE record<${testTable}>;
+            DEFINE FIELD id ON TABLE ${testTable} TYPE string;
             DEFINE FIELD name ON TABLE ${testTable} TYPE string;
             DEFINE FIELD value ON TABLE ${testTable} TYPE number;
           `)
@@ -578,7 +583,7 @@ function testWith(tag, protocol) {
         try {
           await connection.executeQuery(`
             DEFINE TABLE ${testTable} SCHEMAFULL;
-            DEFINE FIELD id ON TABLE ${testTable} TYPE record<${testTable}>;
+            DEFINE FIELD id ON TABLE ${testTable} TYPE string;
             DEFINE FIELD metadata ON TABLE ${testTable} TYPE object;
             DEFINE FIELD tags ON TABLE ${testTable} TYPE array<string>;
             DEFINE FIELD coordinates ON TABLE ${testTable} TYPE geometry<point>;
