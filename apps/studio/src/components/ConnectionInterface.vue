@@ -520,7 +520,8 @@ export default Vue.extend({
       // we only load the first
       const file = files[0]
       try {
-        const conf = await this.$util.send('appdb/saved/parseUrl', { url: file.path });
+        const filePath = window.main.getPathForFile(file);
+        const conf = await this.$util.send('appdb/saved/parseUrl', { url: filePath });
         this.config = conf;
         this.submit();
       } catch {
