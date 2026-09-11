@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, nativeImage } from 'electron';
+import { contextBridge, ipcRenderer, nativeImage, webUtils } from 'electron';
 import { AppEvent } from '@/common/AppEvent';
 import path from 'path';
 import fs from 'fs';
@@ -189,6 +189,9 @@ export const api = {
   removeNativeMenuItem(id: string) {
     ipcRenderer.send('remove-native-menu-item', id);
   },
+  getPathForFile(file: File): string {
+    return webUtils.getPathForFile(file);
+  }
 }
 
 contextBridge.exposeInMainWorld('main', api);
