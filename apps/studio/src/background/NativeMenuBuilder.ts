@@ -16,6 +16,7 @@ export default class NativeMenuBuilder {
   private menu?: Electron.Menu
   /** Array of native menu items from plugins */
   private pluginMenuItems: MenuItemConstructorOptions[] = []
+  private connected = false
 
   constructor(private electron: any, settings: IGroupedUserSettings, bksConfig: IBksConfig){
     this.handler = new NativeMenuActionHandlers(settings)
@@ -99,10 +100,12 @@ export default class NativeMenuBuilder {
 
   listenForToggleConnectionMenuItems(): void {
     ipcMain.on("enable-connection-menu-items", (_event ) => {
+      this.connected = true;
       this.toggleConnectionMenuItems("enable");
       this.toggleAppMenuItems("disable");
     });
     ipcMain.on("disable-connection-menu-items", (_event ) => {
+      this.connected = false;
       this.toggleConnectionMenuItems("disable");
       this.toggleAppMenuItems("enable");
     });
@@ -145,6 +148,8 @@ export default class NativeMenuBuilder {
     this.injectPluginMenuItems(template);
     this.menu = this.electron.Menu.buildFromTemplate(template);
     this.electron.Menu.setApplicationMenu(this.menu);
+    this.toggleConnectionMenuItems(this.connected ? "enable" : "disable");
+    this.toggleAppMenuItems(this.connected ? "disable" : "enable");
   }
 
   private injectPluginMenuItems(template: Electron.MenuItemConstructorOptions[]): void {
@@ -153,6 +158,11 @@ export default class NativeMenuBuilder {
     if (!toolsMenu || !Array.isArray(toolsMenu.submenu)) {
       return;
     }
-    toolsMenu.submenu.push(...this.pluginMenuItems);
+    const [pinned, rest] = _.partition(
+      this.pluginMenuItems,
+      item => item.id.startsWith('bks-er-diagram')
+    );
+    toolsMenu.submenu.unshift(...pinned);
+    toolsMenu.submenu.push(...rest);
   }
 }
