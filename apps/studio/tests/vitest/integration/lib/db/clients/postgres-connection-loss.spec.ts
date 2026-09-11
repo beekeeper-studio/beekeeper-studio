@@ -63,15 +63,19 @@ describe("Postgres connection loss", () => {
     return client
   }
 
-  async function idleInTransactionBackends(observer: any): Promise<number> {
+  async function countBackends(observer: any, where: string): Promise<number> {
     const query = await observer.query(
-      "SELECT count(*)::int AS n FROM pg_stat_activity WHERE datname = 'banana' AND state = 'idle in transaction'",
+      `SELECT count(*)::int AS n FROM pg_stat_activity WHERE datname = 'banana' AND pid <> pg_backend_pid() AND ${where}`,
       TAB,
     )
     const [result] = await query.execute()
     // execute() runs in array mode and parseRowQueryResult keys the columns c0, c1, ...
     return Number(Object.values(result.rows[0])[0])
   }
+
+  const idleInTransactionBackends = (observer: any) => countBackends(observer, "state = 'idle in transaction'")
+  const runningSleepBackends = (observer: any) =>
+    countBackends(observer, "state = 'active' AND query LIKE '%pg_sleep(10)%'")
 
   it("cancels a long query that is not pinned to a reserved connection (control)", async () => {
     const client = await connect()
@@ -173,21 +177,32 @@ describe("Postgres connection loss", () => {
   })
 
   // #2705. disconnect() fires pool.end() without awaiting it and cancels
-  // nothing, so statements that were running keep running on the server and in
-  // the utility process after the user has disconnected.
-  it("stops in-flight queries when disconnecting", async () => {
+  // nothing, so statements that were running keep running on the server after
+  // the user has disconnected. Closing the sockets is not enough either: with
+  // the default client_connection_check_interval = 0, Postgres only notices a
+  // gone client when it next writes to it, so a statement that produces no
+  // output until it completes (UPDATE, DELETE, DDL) still runs to the end and
+  // commits. Stopping it means cancelling it (pg_cancel_backend) first.
+  it("stops in-flight queries on the server when disconnecting", async () => {
+    const observer = await connect()
     const client = await connect()
     catchClientErrors(client)
     const query = await client.query("SELECT pg_sleep(10), 1 AS ok", TAB)
     const running = query.execute()
-    await sleep(300)
     try {
+      expect(await eventually(async () => (await runningSleepBackends(observer)) === 1, 3000)).toBe(true)
+
       await client.disconnect()
 
-      expect(await outcome(running, 2000)).not.toBe("pending")
+      expect(
+        await eventually(async () => (await runningSleepBackends(observer)) === 0, 2000),
+        "the statement is still running on the server after disconnect()",
+      ).toBe(true)
+      expect(await outcome(running, 1000)).not.toBe("pending")
     } finally {
       destroySockets(client)
       await running.catch(() => undefined)
+      await observer.disconnect()
     }
   })
 
