@@ -236,7 +236,7 @@ export default class WebPluginLoader {
           break;
         }
         case "clipboard.readText":
-          response.result = window.main.readTextFromClipboard();
+          response.result = await window.main.readTextFromClipboard();
           break;
         case "checkForUpdate":
           response.result = await this.context.utility.send("plugin/checkForUpdates", {
@@ -259,10 +259,10 @@ export default class WebPluginLoader {
           break;
         }
         case "clipboard.writeText":
-          window.main.writeTextToClipboard(response.args.text);
+          await window.main.writeTextToClipboard(response.args.text);
           break;
         case "clipboard.writeImage":
-          response.result = window.main.writeImageToClipboard(response.args.data);
+          response.result = await window.main.writeImageToClipboard(response.args.data);
           break;
         case "noty.info":
           this.context.noty.info(response.args.message, {

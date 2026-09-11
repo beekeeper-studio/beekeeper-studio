@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, nativeImage, webUtils } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import { AppEvent } from '@/common/AppEvent';
 import path from 'path';
 import fs from 'fs';
@@ -142,14 +142,14 @@ export const api = {
   async closeWindow() {
     await ipcRenderer.invoke('closeWindow');
   },
-  writeTextToClipboard(text: string) {
-    return electron.clipboard.writeText(text);
+  async writeTextToClipboard(text: string) {
+    return await ipcRenderer.invoke('clipboard:write', { content: text, image: false });
   },
-  writeImageToClipboard(dataUrl: string) {
-    return electron.clipboard.writeImage(nativeImage.createFromDataURL(dataUrl));
+  async writeImageToClipboard(dataUrl: string) {
+    return await ipcRenderer.invoke('clipboard:write', { content: dataUrl, image: true });
   },
-  readTextFromClipboard(): string {
-    return electron.clipboard.readText();
+  async readTextFromClipboard(): Promise<string> {
+    return await ipcRenderer.invoke('clipboard:read');
   },
   showItemInFolder(path: string) {
     electron.shell.showItemInFolder(path);
