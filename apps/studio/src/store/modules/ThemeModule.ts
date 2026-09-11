@@ -19,14 +19,13 @@ export type State = {
 export const ThemeModule: Module<State, RootState> = {
   namespaced: true,
   state: () => ({
-    systemDark: darkMediaQuery?.matches ?? false,
+    systemDark: true,
     themes: [
       { value: "default", label: "Beekeeper Studio" },
       { value: "solarized", label: "Solarized" },
     ],
   }),
   mutations: {
-    /** For internal use only. Please use `setId` or `setDark` instead. */
     setSystemDark(state, systemDark: boolean) {
       state.systemDark = systemDark;
     },
