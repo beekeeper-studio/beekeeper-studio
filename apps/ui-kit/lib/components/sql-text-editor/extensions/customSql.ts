@@ -12,8 +12,6 @@ import { ColumnsGetter } from "./sqlContextComplete";
 import { completeConfig, setSchema } from "./vendor/@codemirror/lang-sql/src/complete";
 
 type SQLConfig = VendorSQLConfig & {
-  disableSchemaCompletion?: boolean;
-  disableKeywordCompletion?: boolean;
   columnsGetter?: ColumnsGetter;
 };
 

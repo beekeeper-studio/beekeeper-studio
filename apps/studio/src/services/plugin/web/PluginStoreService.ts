@@ -378,7 +378,10 @@ export default class PluginStoreService {
   }
 
   addMenuBarItem(item: ExternalMenuItem<PluginTabContext>) {
-    this.store.commit("menuBar/add", item);
+    this.store.commit("menuBar/add", {
+      disableWhenDisconnected: true,
+      ...item,
+    });
   }
 
   removeMenuBarItem(id: string) {
