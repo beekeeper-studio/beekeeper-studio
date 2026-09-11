@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import type { Mock } from "vitest"
 import { UtilityConnection } from "@/lib/utility/UtilityConnection"
+import { outcome } from "@tests/vitest/lib/promises"
 
 // Reproductions for https://github.com/beekeeper-studio/beekeeper-studio/issues/4739
 // root cause 1: the renderer <-> utility RPC layer never settles a request once
 // its transport is gone.
 //
-// The `it.fails` specs assert the behaviour the issue asks for. Vitest only
-// reports them green while the assertion fails, so the suite stays green today
-// and each spec flips red once its root cause is fixed. Drop the `.fails` at
-// that point.
+// Every test that is not marked (control) asserts the behaviour the issue asks
+// for and stays red until it is implemented. The controls prove that the fake
+// port drives the real class the way a healthy utility process does.
 
 type Posted = { id?: string; name: string; args?: any }
 
@@ -51,12 +51,6 @@ class FakePort {
     this.onclose?.({})
     this.listeners.close?.forEach((fn) => fn({}))
   }
-}
-
-async function outcome(p: Promise<unknown>, ms = 100): Promise<"resolved" | "rejected" | "pending"> {
-  const settled = p.then(() => "resolved" as const, () => "rejected" as const)
-  const timer = new Promise<"pending">((resolve) => setTimeout(() => resolve("pending"), ms))
-  return Promise.race([settled, timer])
 }
 
 describe("UtilityConnection", () => {
@@ -103,7 +97,7 @@ describe("UtilityConnection", () => {
   // never rejected, never re-sent. Every `finally`-guarded UI flag behind such a
   // request (ConnectionInterface.connecting, TabQueryEditor.running, ...) stays
   // set for the life of the window.
-  it.fails("settles in-flight requests when a replacement port arrives after a utility restart", async () => {
+  it("settles in-flight requests when a replacement port arrives after a utility restart", async () => {
     const conn = new UtilityConnection()
     const dead = new FakePort()
     conn.setPort(dead as any, "sid-1")
@@ -114,10 +108,10 @@ describe("UtilityConnection", () => {
     conn.setPort(fresh as any, "sid-2")
 
     // Either rejecting or re-sending on the new port would do.
-    expect(await outcome(inFlight)).not.toBe("pending")
+    expect(await outcome(inFlight, 100)).not.toBe("pending")
   })
 
-  it.fails("rejects in-flight requests when the port closes", async () => {
+  it("rejects in-flight requests when the port closes", async () => {
     const conn = new UtilityConnection()
     const port = new FakePort()
     conn.setPort(port as any, "sid-1")
@@ -125,13 +119,13 @@ describe("UtilityConnection", () => {
     const inFlight = conn.send("conn/listTables")
     port.close()
 
-    expect(await outcome(inFlight)).toBe("rejected")
+    expect(await outcome(inFlight, 100)).toBe("rejected")
   })
 
   // `this.port` is never cleared and `portsRequested` is latched true after the
   // first request, so once the transport is gone new requests are written into
   // the dead port instead of being queued for the replacement one.
-  it.fails("queues requests and re-requests ports after the port closes", async () => {
+  it("queues requests and re-requests ports after the port closes", async () => {
     const conn = new UtilityConnection()
     conn.send("license/getStatus")
     expect(requestPorts).toHaveBeenCalledTimes(1)
@@ -151,7 +145,7 @@ describe("UtilityConnection", () => {
   // an id, so no reply can ever be matched back to it, and the missing `return`
   // after `reject()` lets it fall through to `this.port.postMessage` on a null
   // port. Nothing calls it.
-  it.fails("hasWorkingPort resolves true against a responsive port", async () => {
+  it("hasWorkingPort resolves true against a responsive port", async () => {
     const conn = new UtilityConnection()
     const port = new FakePort(true)
     conn.setPort(port as any, "sid-1")

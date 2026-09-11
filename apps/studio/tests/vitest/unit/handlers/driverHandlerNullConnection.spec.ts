@@ -15,7 +15,8 @@ import { errorMessages, getDriverHandler, newState, removeState, state } from "@
 // fail with a raw TypeError. conn/disconnect is one of them, which is what the
 // Disconnect button on the "Utility Process Crashed" modal ends up calling.
 //
-// `it.fails` = asserts the desired behaviour; green only while it is broken.
+// Tests not marked (control) assert the desired behaviour and are red until it
+// is implemented.
 
 const SID = "window-after-utility-restart"
 
@@ -46,23 +47,19 @@ describe("driver handlers on a state without a connection", () => {
     await expect(ConnHandlers["conn/listTables"]({ sId: SID })).rejects.toThrow(errorMessages.noDatabase)
   })
 
-  it.fails("conn/disconnect does not fail with a TypeError when there is nothing to disconnect", async () => {
+  it("conn/disconnect does not fail with a TypeError when there is nothing to disconnect", async () => {
     const err = await ConnHandlers["conn/disconnect"]({ sId: SID }).then(() => null, (e) => e)
     // Resolving (nothing to do) or a clean errorMessages.noDatabase rejection
     // would both let the store's disconnect action reach clearConnection.
     expect(err).not.toBeInstanceOf(TypeError)
   })
 
-  it.fails("no getDriverHandler handler null-derefs the missing connection", async () => {
+  it("no getDriverHandler handler null-derefs the missing connection", async () => {
     const errors = await Promise.all(
       DRIVER_HANDLERS.map((name) => getDriverHandler(name)({ sId: SID }).then(() => null, (e) => e))
     )
     for (const err of errors) {
       expect(err).not.toBeInstanceOf(TypeError)
     }
-  })
-
-  it("the TypeError is what the renderer sees today (characterization)", async () => {
-    await expect(ConnHandlers["conn/disconnect"]({ sId: SID })).rejects.toThrow(TypeError)
   })
 })

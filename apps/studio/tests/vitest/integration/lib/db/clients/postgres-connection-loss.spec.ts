@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest"
-import net from "net"
 import type { EventEmitter } from "events"
 import rawLog from "@bksLogger"
 import { createServer } from "@commercial/backend/lib/db/server"
 import { dbtimeout } from "@tests/lib/db"
 import { PostgresTestDriver } from "@tests/integration/lib/db/clients/postgres/container"
+import { SilentProxy } from "@tests/vitest/lib/SilentProxy"
+import { eventually, outcome, sleep } from "@tests/vitest/lib/promises"
 import type { IDbConnectionServerConfig } from "@/lib/db/types"
 
 rawLog.transports.console.level = "error"
@@ -16,74 +17,29 @@ rawLog.transports.console.level = "error"
 // tests/vitest/unit/lib/db/clients/postgresReservedConnection.spec.ts, which
 // covers the transaction logic with a fake pool.
 //
-// `it.fails` = asserts the desired behaviour; green only while it is broken.
-
-// TCP proxy in front of the container. Flipping `silent` on emulates the
-// connection-loss case #3958 describes (network change, NAT/firewall drop):
-// the socket stays open at both ends but nothing gets through, so there is no
-// error for the driver to react to.
-class SilentProxy {
-  silent = false
-  port: number
-  private server: net.Server
-  private sockets = new Set<net.Socket>()
-
-  constructor(private targetHost: string, private targetPort: number) {}
-
-  async start() {
-    this.server = net.createServer((client) => {
-      const upstream = net.connect(this.targetPort, this.targetHost)
-      this.sockets.add(client)
-      this.sockets.add(upstream)
-      client.on("data", (chunk) => { if (!this.silent) upstream.write(chunk) })
-      upstream.on("data", (chunk) => { if (!this.silent) client.write(chunk) })
-      client.on("close", () => upstream.destroy())
-      upstream.on("close", () => { if (!this.silent) client.destroy() })
-      client.on("error", () => undefined)
-      upstream.on("error", () => undefined)
-    })
-    await new Promise<void>((resolve) => this.server.listen(0, "127.0.0.1", () => resolve()))
-    this.port = (this.server.address() as net.AddressInfo).port
-  }
-
-  async stop() {
-    this.sockets.forEach((s) => s.destroy())
-    await new Promise<void>((resolve) => this.server.close(() => resolve()))
-  }
-}
-
-async function outcome(p: Promise<unknown>, ms: number): Promise<"resolved" | "rejected" | "pending"> {
-  const settled = p.then(() => "resolved" as const, () => "rejected" as const)
-  const timer = new Promise<"pending">((resolve) => setTimeout(() => resolve("pending"), ms))
-  return Promise.race([settled, timer])
-}
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+// Tests not marked (control) assert the desired behaviour and are red until it
+// is implemented.
 
 const TAB = 11
 
-// A reserved PoolClient is checked out of pg-pool, which strips its idle error
-// listener, and PostgresClient.reserveConnection attaches none of its own. When
-// the socket behind an open manual transaction dies, node-postgres therefore
-// emits an unhandled 'error' on it. In the utility process that only surfaces
-// as the catch-all process.on('uncaughtException') log line in utility.ts;
-// here it would fail the run, so stand in for that catch-all and record it.
-function catchReservedConnectionErrors(client: any, tabId: number): Error[] {
-  const reserved: EventEmitter = client.reservedConnections.get(tabId)
-  expect(reserved.listenerCount("error")).toBe(0)
-  const errors: Error[] = []
-  reserved.on("error", (err) => errors.push(err))
-  return errors
-}
-
-// Same catch-all for clients the pool has handed to runWithConnection: while
-// checked out they have no 'error' listener either.
-function catchPoolClientErrors(client: any): Error[] {
+// pg emits 'error' on a client whose socket died. A checked-out client (reserved
+// or inside runWithConnection) has no listener for it, so in the utility
+// process that only surfaces as the process.on('uncaughtException') log line
+// in utility.ts; here it would fail the run. Stand in for that catch-all.
+function catchClientErrors(client: any): Error[] {
   const errors: Error[] = []
   for (const pooled of client.conn.pool._clients as EventEmitter[]) {
     pooled.on("error", (err) => errors.push(err))
   }
   return errors
+}
+
+// Cleanup for tests that leave a connection wedged: closing the sockets is the
+// only way to make the driver settle whatever is still pending on them.
+function destroySockets(client: any) {
+  for (const pooled of client.conn.pool._clients) {
+    pooled.connection?.stream?.destroy()
+  }
 }
 
 describe("Postgres connection loss", () => {
@@ -105,6 +61,16 @@ describe("Postgres connection loss", () => {
     const client = server.createConnection("banana")
     await client.connect()
     return client
+  }
+
+  async function idleInTransactionBackends(observer: any): Promise<number> {
+    const query = await observer.query(
+      "SELECT count(*)::int AS n FROM pg_stat_activity WHERE datname = 'banana' AND state = 'idle in transaction'",
+      TAB,
+    )
+    const [result] = await query.execute()
+    // execute() runs in array mode and parseRowQueryResult keys the columns c0, c1, ...
+    return Number(Object.values(result.rows[0])[0])
   }
 
   it("cancels a long query that is not pinned to a reserved connection (control)", async () => {
@@ -130,7 +96,7 @@ describe("Postgres connection loss", () => {
   // over that same connection, where node-postgres queues it behind the
   // statement it is supposed to cancel. It only runs once pg_sleep returns on
   // its own.
-  it.fails("cancels a long query running inside a manual transaction", async () => {
+  it("cancels a long query running inside a manual transaction", async () => {
     const client = await connect()
     const query = await client.query("SELECT pg_sleep(4)", TAB)
     let running: Promise<unknown>
@@ -157,15 +123,14 @@ describe("Postgres connection loss", () => {
   // reserved connection with no query_timeout/statement_timeout and no
   // keepalive, so when the network goes silent it never settles and the tab's
   // Rollback button never comes back.
-  it.fails("fails a rollback over a silently dead connection within a bounded time", async () => {
+  it("fails a rollback over a silently dead connection within a bounded time", async () => {
     const proxy = new SilentProxy(config.host, config.port)
     await proxy.start()
     const client = await connect({ host: "127.0.0.1", port: proxy.port })
     let rollback: Promise<unknown>
-    let socketErrors: Error[] = []
     try {
       await client.reserveConnection(TAB)
-      socketErrors = catchReservedConnectionErrors(client, TAB)
+      catchClientErrors(client)
       await client.startTransaction(TAB)
 
       proxy.silent = true
@@ -177,31 +142,6 @@ describe("Postgres connection loss", () => {
       await rollback?.catch(() => undefined)
       await client.releaseConnection(TAB)
       await client.disconnect()
-      expect(socketErrors.map((e) => e.message)).toEqual(["Connection terminated unexpectedly"])
-    }
-  })
-
-  // The issue lists knex.destroy()/pool teardown as a way for disconnect() to
-  // hang. For Postgres it does not: pool.end() is fire-and-forget in
-  // PostgresClient.disconnect, so disconnect resolves even while a reserved
-  // connection is wedged. (The pool itself never finishes ending.)
-  it("disconnect() resolves while a reserved connection is wedged (characterization)", async () => {
-    const proxy = new SilentProxy(config.host, config.port)
-    await proxy.start()
-    const client = await connect({ host: "127.0.0.1", port: proxy.port })
-    let rollback: Promise<unknown>
-    try {
-      await client.reserveConnection(TAB)
-      catchReservedConnectionErrors(client, TAB)
-      await client.startTransaction(TAB)
-      proxy.silent = true
-      rollback = client.rollbackTransaction(TAB)
-      await sleep(200)
-
-      expect(await outcome(client.disconnect(), 3000)).toBe("resolved")
-    } finally {
-      await proxy.stop()
-      await rollback?.catch(() => undefined)
     }
   })
 
@@ -209,20 +149,22 @@ describe("Postgres connection loss", () => {
   // changed networks, NAT or firewall dropped the flow, SSH tunnel gone). The
   // next query is written into a socket that will never answer and nothing in
   // the client bounds the wait, so it hangs until the OS abandons TCP
-  // retransmission, which takes minutes. TCP keepalive would only help while
-  // the connection is idle; an in-flight statement needs a query timeout.
-  it("hangs a query sent over a silently dead connection (characterization)", async () => {
+  // retransmission, which takes minutes. Failing or reconnecting would both
+  // do. query() already runs a trivial `SELECT pg_backend_pid()` before the
+  // user's statement; a bounded timeout there would notice a dead connection
+  // without limiting long-running queries.
+  it("fails or recovers within a bounded time when the connection is silently dead", async () => {
     const proxy = new SilentProxy(config.host, config.port)
     await proxy.start()
     const client = await connect({ host: "127.0.0.1", port: proxy.port })
-    catchPoolClientErrors(client)
+    catchClientErrors(client)
     let running: Promise<unknown>
     try {
       proxy.silent = true
       const query = await client.query("SELECT 1 AS ok", TAB)
       running = query.execute()
 
-      expect(await outcome(running, 3000)).toBe("pending")
+      expect(await outcome(running, 10000)).not.toBe("pending")
     } finally {
       await proxy.stop()
       await running?.catch(() => undefined)
@@ -230,19 +172,50 @@ describe("Postgres connection loss", () => {
     }
   })
 
-  // #2705. disconnect() fires pool.end() without awaiting it and never cancels
-  // anything, so statements that were running keep running to completion on
-  // the server and in the utility process after the user has disconnected.
-  it("lets in-flight queries run to completion after disconnect() (characterization)", async () => {
+  // #2705. disconnect() fires pool.end() without awaiting it and cancels
+  // nothing, so statements that were running keep running on the server and in
+  // the utility process after the user has disconnected.
+  it("stops in-flight queries when disconnecting", async () => {
     const client = await connect()
-    const query = await client.query("SELECT pg_sleep(2), 1 AS ok", TAB)
+    catchClientErrors(client)
+    const query = await client.query("SELECT pg_sleep(10), 1 AS ok", TAB)
     const running = query.execute()
-    await sleep(200)
+    await sleep(300)
+    try {
+      await client.disconnect()
 
-    await client.disconnect()
+      expect(await outcome(running, 2000)).not.toBe("pending")
+    } finally {
+      destroySockets(client)
+      await running.catch(() => undefined)
+    }
+  })
 
-    const [result] = (await running) as any[]
-    expect(result.rows).toHaveLength(1)
+  // New finding while reproducing root cause 4: disconnect() never releases or
+  // destroys reserved connections, so a manual transaction that was open when
+  // the user disconnected (or switched connections) stays open on the server,
+  // holding its locks, for as long as the utility process lives.
+  it("ends an open manual transaction on the server when disconnecting", async () => {
+    const observer = await connect()
+    const client = await connect()
+    catchClientErrors(client)
+    try {
+      expect(await eventually(async () => (await idleInTransactionBackends(observer)) === 0, 3000)).toBe(true)
+
+      await client.reserveConnection(TAB)
+      await client.startTransaction(TAB)
+      expect(await idleInTransactionBackends(observer)).toBe(1)
+
+      await client.disconnect()
+
+      expect(
+        await eventually(async () => (await idleInTransactionBackends(observer)) === 0, 3000),
+        "the transaction's backend is still idle in transaction after disconnect()",
+      ).toBe(true)
+    } finally {
+      destroySockets(client)
+      await observer.disconnect()
+    }
   })
 
   // #2845. A BEGIN ... COMMIT block whose middle statement fails leaves its
@@ -251,7 +224,7 @@ describe("Postgres connection loss", () => {
   // back for the next statement, which then fails with "current transaction is
   // aborted, commands ignored until end of transaction block" (25P02) no
   // matter how the user has corrected the query.
-  it.fails("runs a fresh query after a failed BEGIN...COMMIT block", async () => {
+  it("runs a fresh query after a failed BEGIN...COMMIT block", async () => {
     const client = await connect()
     try {
       const broken = await client.query("BEGIN; SELECT 1/0 AS boom; COMMIT;", TAB)

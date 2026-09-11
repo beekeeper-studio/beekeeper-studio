@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import { MessageChannel, MessagePort } from "worker_threads"
 import Vue from "vue"
+import { mount } from "@vue/test-utils"
 
 // connHandlers pulls in every db client through the connection provider, and
 // loading those under jsdom fails on AbortSignal.timeout. None of it is needed
@@ -9,83 +9,25 @@ vi.mock("@commercial/backend/lib/connection-provider", () => ({ default: {} }))
 
 import { UtilityConnection } from "@/lib/utility/UtilityConnection"
 import { ConnHandlers } from "@commercial/backend/handlers/connHandlers"
-import { errorMessages, newState, removeState, state } from "@/handlers/handlerState"
+import { removeState, state } from "@/handlers/handlerState"
 import store from "@/store"
+import UtilDiedModal from "@/components/UtilDiedModal.vue"
+import LostConnectionModal from "@/components/LostConnectionModal.vue"
+import { FakeUtilityProcess } from "@tests/vitest/lib/FakeUtilityProcess"
+import { outcome, sleep } from "@tests/vitest/lib/promises"
 
 // End-to-end reproduction of the "Utility Process Crashed -> Disconnect" flow
 // from https://github.com/beekeeper-studio/beekeeper-studio/issues/4739, using
 // the real renderer pieces (Vuex store, ElectronUtilityConnectionClient,
-// UtilityConnection) wired over a real MessageChannel to the real backend
-// handlers (connHandlers + handlerState). Only the Electron process plumbing is
-// stood in for:
+// UtilityConnection, the two modals) wired over a real MessageChannel to the
+// real backend handlers (connHandlers + handlerState). Only the Electron
+// process plumbing is stood in for; see FakeUtilityProcess.
 //
-//   main.ts     -> FakeUtilityProcess.attach(): MessageChannel, one port to each side
-//   utility.ts  -> FakeUtilityProcess.run(): runHandler's reply/error protocol
-//   crash       -> stop answering, close the utility-side ports
-//   restart     -> a new FakeUtilityProcess + a fresh port/sId for the window
-//                  (createAndSendPorts(false, true))
-//
-// `it.fails` = asserts the desired behaviour; green only while it is broken.
-
-type Handler = (args: any) => Promise<any>
-
-class FakeUtilityProcess {
-  private alive = true
-  private ports: MessagePort[] = []
-
-  constructor(private handlers: Record<string, Handler>) {}
-
-  attach(sId: string): MessagePort {
-    const { port1, port2 } = new MessageChannel()
-    newState(sId)
-    state(sId).port = port1 as any
-    port1.on("message", ({ id, name, args }) => this.run(port1, id, name, args))
-    this.ports.push(port1, port2)
-    return port2
-  }
-
-  private async run(port: MessagePort, id: string, name: string, args: any) {
-    if (!this.alive) return
-    const reply: any = { id, type: "reply" }
-    try {
-      const handler = this.handlers[name] ?? this.fallback(name)
-      reply.data = await handler(args)
-    } catch (e) {
-      reply.type = "error"
-      reply.error = e?.message ?? e
-      reply.errorName = e?.name
-      reply.stack = e?.stack
-    }
-    if (this.alive) port.postMessage(reply)
-  }
-
-  // The store's disconnect action refreshes the connection sidebar afterwards;
-  // answer those appdb lookups with nothing rather than pulling in the ORM.
-  private fallback(name: string): Handler {
-    if (name.startsWith("appdb/")) return async () => (name.endsWith("/find") ? [] : null)
-    return async () => { throw new Error(`Invalid handler name: ${name}`) }
-  }
-
-  crash() {
-    this.alive = false
-    this.close()
-  }
-
-  close() {
-    this.ports.forEach((p) => p.close())
-    this.ports = []
-  }
-}
-
-async function outcome(p: Promise<unknown>, ms = 200): Promise<"resolved" | "rejected" | "pending"> {
-  const settled = p.then(() => "resolved" as const, () => "rejected" as const)
-  const timer = new Promise<"pending">((resolve) => setTimeout(() => resolve("pending"), ms))
-  return Promise.race([settled, timer])
-}
+// Tests not marked (control) assert the desired behaviour and are red until it
+// is implemented.
 
 const SID = "window-1"
 const SID_AFTER_RESTART = "window-1-restarted"
-const TAB = 3
 const CONFIG = { id: 1, name: "prod", connectionType: "postgresql", workspaceId: -1 } as any
 
 function stubDriver() {
@@ -93,7 +35,6 @@ function stubDriver() {
     connectionType: "postgresql",
     disconnect: vi.fn(async () => undefined),
     listTables: vi.fn(() => new Promise(() => undefined)), // a query still running when the crash hits
-    rollbackTransaction: vi.fn(async () => undefined),
   }
 }
 
@@ -146,14 +87,14 @@ describe("disconnecting after the utility process crashes", () => {
   // Root cause 1: the request that was in flight when the process died is
   // parked in UtilityConnection.replyHandlers and never settled, so whatever
   // `finally` block was waiting on it never runs.
-  it.fails("settles a request that was in flight when the utility died", async () => {
+  it("settles a request that was in flight when the utility died", async () => {
     const inFlight = store.state.connection.listTables()
-    await new Promise((r) => setTimeout(r, 20))
+    await sleep(20)
     expect(driver.listTables).toHaveBeenCalledTimes(1)
 
     restartUtility()
 
-    expect(await outcome(inFlight)).not.toBe("pending")
+    expect(await outcome(inFlight, 200)).not.toBe("pending")
   })
 
   // Root causes 2 + 3: conn/disconnect goes through getDriverHandler, which
@@ -161,7 +102,7 @@ describe("disconnecting after the utility process crashes", () => {
   // clearConnection, so the window keeps believing it is connected. This is the
   // Disconnect button on UtilDiedModal, ConnectionButton.selectConnection,
   // QuickSearch and CoreSidebar.disconnect.
-  it.fails("can disconnect from a connection the restarted utility no longer has", async () => {
+  it("can disconnect from a connection the restarted utility no longer has", async () => {
     restartUtility()
 
     const err = await store.dispatch("disconnect").then(() => null, (e) => e)
@@ -171,24 +112,61 @@ describe("disconnecting after the utility process crashes", () => {
     expect(store.state.usedConfig).toBeNull()
   })
 
-  it("leaves the store connected to nothing after a failed disconnect (characterization)", async () => {
-    restartUtility()
+  // conn/clearConnection exists for exactly this but nothing in the renderer
+  // calls it, so after a disconnect the utility keeps the disconnected client,
+  // server and config around and checkConnection keeps passing for them.
+  it("clears the utility-side connection state when disconnecting", async () => {
+    await store.dispatch("disconnect")
 
-    await expect(store.dispatch("disconnect")).rejects.toThrow(/Cannot read properties of null \(reading 'disconnect'\)/)
-
-    expect(store.state.connected).toBe(true)
-    expect(store.state.usedConfig).toEqual(CONFIG)
-    expect((window as any).main.disableConnectionMenuItems).not.toHaveBeenCalled()
+    expect(state(SID).connection).toBeNull()
+    expect(state(SID).server).toBeNull()
   })
 
-  // Root cause 4, restart flavour. The tab still shows an active transaction
-  // and its Rollback button is enabled, but the new utility has no reservation
-  // for it. The issue quotes peekConnection's "Could not retrieve reserved
-  // connection" message here; through the handler the user actually gets
-  // checkConnection's error, because the fresh state has no connection at all.
-  it("rejects a rollback for a tab that still believes it has a transaction (characterization)", async () => {
-    restartUtility()
+  // Both modals dispatch 'disconnect' without awaiting or catching it and hide
+  // themselves right away. When the dispatch rejects (root causes 2 + 3) the
+  // modal is gone, the store still says connected, and the rejection is
+  // unhandled. Either recovering the store or telling the user would do.
+  describe.each([
+    ["UtilDiedModal", UtilDiedModal],
+    ["LostConnectionModal", LostConnectionModal],
+  ])("%s Disconnect button", (_name, component) => {
+    it("recovers the store or reports the failure when disconnecting fails", async () => {
+      restartUtility()
+      const $noty = { error: vi.fn(), success: vi.fn(), info: vi.fn(), warning: vi.fn() }
+      const $modal = { show: vi.fn(), hide: vi.fn() }
+      // Same store, but rejections the component drops are marked handled so
+      // they show up here as the assertion below instead of as a stray
+      // unhandled rejection.
+      const $store = {
+        state: store.state,
+        getters: store.getters,
+        commit: store.commit.bind(store),
+        dispatch: (...args: any[]) => {
+          const p = (store.dispatch as any)(...args)
+          p.catch(() => undefined)
+          return p
+        },
+      }
+      const wrapper = mount(component as any, {
+        mocks: { $store, $modal, $noty },
+        // <modal> (vue-js-modal) and <portal> (portal-vue) are globally
+        // registered in the app but not in the test environment.
+        stubs: { modal: true, portal: true },
+      })
 
-    await expect(store.state.connection.rollbackTransaction(TAB)).rejects.toThrow(errorMessages.noDatabase)
+      try {
+        wrapper.vm.disconnect()
+        await sleep(200)
+
+        const recovered = store.state.connected === false
+        const reported = $noty.error.mock.calls.length > 0
+        expect(
+          recovered || reported,
+          "modal hidden, store still connected, nothing reported to the user",
+        ).toBe(true)
+      } finally {
+        wrapper.destroy()
+      }
+    })
   })
 })
