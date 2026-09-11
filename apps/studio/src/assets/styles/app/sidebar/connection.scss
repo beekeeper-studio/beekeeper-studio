@@ -43,7 +43,7 @@
           left: 0;
           right: 0;
           height: 18px;
-          background: linear-gradient(0deg, rgba($theme-bg, 1) 0%, rgba($theme-bg, 0) 100%);
+          background: linear-gradient(0deg, rgb(from var(--sidebar-bg) r g b / 100%) 0%, rgb(from var(--sidebar-bg) r g b / 0%) 100%);
         }
       }
     }
@@ -82,7 +82,6 @@
     }
     .subtitle {
       font-size: 80%;
-      color: $text-lighter;
       display: flex;
       overflow: hidden;
       > span {
@@ -119,6 +118,12 @@
     height: initial;
     line-height: initial;
     padding: $gutter-h ($gutter-w * 0.75);
+    background: var(--btn-bg);
+    color: var(--btn-fg);
+    &:hover {
+      background: var(--btn-bg-hover);
+      color: var(--btn-fg-hover);
+    }
     // &.folder-btn {
     //   padding-left: 0;
     //   .btn-fab {

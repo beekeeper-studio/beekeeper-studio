@@ -5,7 +5,6 @@ $titlebar-actions-height:   30px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: $titlebar-bg;
   padding: 0 $gutter-h;
   margin: 0;
   min-height: 1.6rem;
@@ -40,7 +39,6 @@ $titlebar-actions-height:   30px;
     left: 50%;
     transform: translateX(-50%);
     text-align: center;
-    color: $text-light;
     font-size: 0.85rem;
     line-height: 2;
     overflow: hidden;
@@ -65,7 +63,7 @@ $titlebar-actions-height:   30px;
       align-items: center;
       min-width: 0;
       border-radius: 0;
-      color: $text-light;
+      color: inherit;
       margin: 0;
       z-index: 10;
       box-shadow: none;
@@ -136,8 +134,8 @@ $titlebar-actions-height:   30px;
 
 .titlebar-wrapper {
   padding-bottom: $gutter-h;
-  background-color: var(--bks-titleBar-activeBackground);
-  color: var(--bks-titleBar-activeForeground);
+  background-color: var(--titlebar-bg);
+  color: var(--titlebar-fg);
   & .titlebar.windows.fullscreen {
     display: none;
     -webkit-app-region: no-drag;

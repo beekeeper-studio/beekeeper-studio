@@ -1,15 +1,15 @@
 @use "sass:color";
+
 // Global
 // ------------------------------------
 a {
   display: inline-block;
   align-items: center;
-  color: $link-color;
+  color: var(--link-fg);
   text-decoration: none;
   outline: none;
   cursor: pointer;
   &:hover, &:focus {
-    color: $link-color;
     text-decoration: none;
   }
   &.disabled, &.disabled:hover {
@@ -58,7 +58,7 @@ hr {
 
 // Placeholder
 ::placeholder {
-  color: $text-hint;
+  color: var(--gray-a7);
 }
 
 // Scrollbar
@@ -72,7 +72,7 @@ hr {
   background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=); background-repeat: repeat-y!important;
 }
 ::-webkit-scrollbar-thumb {
-  background: color.mix($theme-base, $theme-bg, 20%);
+  background: var(--scrollbar-thumb);
   border-radius: 2px;
 }
 ::-webkit-scrollbar-button {
@@ -101,12 +101,12 @@ x-buttons > x-button[menu].btn {
   border-left: 1px solid rgba(black, 0.35);
 }
 .btn-primary {
-  background: $theme-base;
-  color: rgba($theme-bg, 0.87);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
   transition: background 0.15s ease-in-out;
   &:hover, &:focus {
-    background: rgba($theme-base, 0.87);
-    color: $theme-bg;
+    background: var(--btn-primary-bg-hover);
+    color: var(--btn-primary-fg-hover);
   }
 }
 
@@ -123,12 +123,7 @@ x-buttons > x-button[menu].btn {
   @include btn-flat;
 }
 .btn-link {
-  color: $theme-base;
-  background: transparent;
   box-shadow: none;
-  &:hover, &:focus {
-    background: rgba($theme-base, 0.06);
-  }
 }
 .btn-icon {
   .material-icons:first-child {
@@ -195,11 +190,10 @@ x-buttons > x-button.btn-rounded {
   @include layout-center;
   transition: background 0.15s ease-in-out;
   &:hover, &:focus {
-    background: rgba($theme-base, 0.1);
+    background: var(--btn-bg-hover);
   }
   .material-icons, .material-icons-outlined {
     font-size: 20px;
-    color: $text-dark;
   }
   &.btn-primary {
     background: $theme-primary;
@@ -309,7 +303,6 @@ label {
   i {
     margin: 0 ($gutter-h * 0.75);
     font-size: 18px;
-    color: rgba($theme-base, 0.37);
   }
 }
 
@@ -317,9 +310,6 @@ input, select, textarea, .bk-form-input {
   font-family: $font-family;
   font-size: $base-font-size;
   @include form-control;
-  &:focus {
-    border-color: $input-highlight;
-  }
 }
 .input-group {
   position: relative;
@@ -411,9 +401,6 @@ select {
   span {
     font-size: 13px;
   }
-  .has-tooltip {
-    color: $text-lighter;
-  }
 }
 input[type="checkbox"] {
   $checkbox-size:     18px;
@@ -422,7 +409,7 @@ input[type="checkbox"] {
   display: inline-flex;
 	-webkit-appearance: none;
 	background-color: transparent;
-  outline: 2px solid rgba($theme-base, 0.2);
+  outline: 2px solid var(--gray-a7);
   outline-offset: -2px;
   height: $checkbox-size;
   line-height: $checkbox-size;
@@ -437,8 +424,8 @@ input[type="checkbox"] {
   &:active,
   &:checked,
   &:checked:active {
-    background: $theme-base;
-    color: $theme-bg;
+    background: var(--primary-solid-bg);
+    color: var(--primary-solid-fg);
     box-shadow: none;
     outline: none;
   }
@@ -452,7 +439,7 @@ input[type="checkbox"] {
     left: 0;
     height: 100%;
     width: 100%;
-    color: $theme-bg;
+    color: var(--primary-solid-fg);
   }
 }
 
@@ -678,15 +665,16 @@ input[type=file] {
   justify-content: flex-end;
 }
 .card {
-  background: color.adjust($theme-bg, $lightness: 6%);
+  background: var(--panel-bg);
+  color: var(--text);
   @include card-shadow;
 }
 .card-flat {
-    background: $theme-bg;
+  background: var(--panel-bg);
     box-shadow: none;
 }
 .card-title {
-  color: $text-dark;
+  color: var(--text-contrast);
   font-size: 1.25rem;
   margin: 0;
   margin-bottom: 1.25rem;
@@ -715,24 +703,25 @@ input[type=file] {
   text-align: center;
   white-space: nowrap;
   vertical-align: baseline;
-  background: rgba($theme-base, 0.2);
-  color: $theme-base;
+  background: var(--gray-a3);
+  color: var(--text-contrast);
+
   margin: 0 ($gutter-h * 0.75);
   transition: color 0.15s ease-in-out,
               background-color 0.15s ease-in-out,
               border-color 0.15s ease-in-out,
               box-shadow 0.15s ease-in-out;
   &.badge-info {
-    background: $brand-info;
-    color: rgba(black, 0.87);
+    background: var(--info-solid-bg);
+    color: var(--info-solid-fg);
   }
   &.badge-error, &.badge-danger {
-    background: $brand-danger;
-    color: rgba(black, 0.87);
+    background: var(--danger-solid-bg);
+    color: var(--danger-solid-fg);
   }
   &.badge-success {
-    background: $brand-success;
-    color: rgba(black, 0.87);
+    background: var(--success-solid-bg);
+    color: var(--success-solid-fg);
   }
 }
 
@@ -763,7 +752,7 @@ input[type=file] {
   align-items: flex-start;
   border-radius: 6px;
   padding: 0.75rem 1rem;
-  background: rgba($theme-base, 0.035);
+  background: var(--a-bg);
   margin: 0.5rem 0;
   font-size: 0.85rem;
   line-height: 1.2rem;
@@ -773,7 +762,7 @@ input[type=file] {
     margin-right: 1rem;
   }
   code {
-    background: rgba($theme-base, 0.08);
+    background: var(--a-bg-hover);
     margin: 0 0.25rem;
     padding: 0.15rem 0.4rem;
     border-radius: 3px;
@@ -810,16 +799,16 @@ input[type=file] {
   align-items: center;
 }
 .alert-danger {
-  color: color.adjust($brand-danger, $lightness: 5%);
+  color: var(--danger-text);
 }
 .alert-warning {
-  color: color.adjust($brand-warning, $lightness: 5%);
+  color: var(--warning-text);
 }
 .alert-info {
-  color: color.adjust($brand-info, $lightness: 5%);
+  color: var(--info-text);
 }
 .alert-success {
-  color: color.adjust($brand-success, $lightness: 5%);
+  color: var(--success-text);
 }
 .alert-small {
   align-items: center;

@@ -100,10 +100,8 @@
   font-size: $form-control-font-size;
   font-weight: normal;
   line-height: $input-height;
-  color: $text;
   background: transparent;
   border-radius: $input-radius;
-  border: 1px solid $border-color;
   outline: none;
   box-shadow: none;
   width: 100%;
@@ -118,10 +116,11 @@
 }
 
 @mixin btn-flat {
-  color: $theme-base;
-  background: rgba($theme-base, 0.06);
+  color: var(--btn-flat-fg);
+  background: var(--btn-flat-bg);
   &:hover, &:focus {
-    background: rgba($theme-base, 0.12);
+    background: var(--btn-flat-bg-hover);
+    color: var(--btn-flat-fg-hover);
   }
 }
 

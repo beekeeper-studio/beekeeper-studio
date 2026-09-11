@@ -3,6 +3,9 @@
   max-height: 100%;
   min-width: 300px;
   overflow: hidden;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-fg);
+
   &.hide {
     flex-basis: 44px!important;
     min-width: 44px!important;
@@ -149,7 +152,7 @@
       position: relative;
       display: flex;
       align-items: center;
-      border: 1px solid $border-color;
+      border: 1px solid var(--border);
       border-radius: 4px;
     }
     .filter-input {
@@ -174,9 +177,6 @@
         }
         &:hover, &:focus {
           box-shadow: none;
-          .material-icons, .material-icons-outlined {
-            color: $text-dark;
-          }
         }
         &.btn-fab {
           margin-right: 2px;
@@ -188,9 +188,6 @@
           border: 0;
           &.active {
             background: rgba($theme-base, 0.1);
-            .material-icons {
-              color: $theme-primary;
-            }
           }
 
         }
@@ -213,7 +210,6 @@
         font-size: 14px;
         line-height: 26px;
         width: 14px;
-        color: rgba($theme-base, 0.5);
       }
     }
   }
@@ -253,18 +249,14 @@
   display: flex;
   align-items: center;
   padding: $gutter-w $gutter-w $gutter-w * 0.5;
-  color: $text-dark;
+  color: var(--text-contrast);
+
   .badge {
     font-size: 0.7rem;
     font-weight: normal;
-    color: $text;
     margin-top: -0.1rem;
     margin-left: ($gutter-h * 0.75);
     border-radius: $list-heading-height;
-    background: $border-color;
-    &.active {
-      color: $theme-primary;
-    }
   }
   .actions {
     display: flex;
@@ -345,7 +337,8 @@
     }
   }
   .subtitle {
-    color: $text-lighter;
+    color: inherit;
+    opacity: 0.7;
     font-size: 85%;
     display: flex;
     align-items: center;
@@ -443,7 +436,7 @@
         &.pinned {
           display: inline-flex;
           i.bk-pin {
-            color: $theme-primary;
+            color: var(--primary-9);
           }
           i.material-icons {
             display:none;
@@ -555,13 +548,11 @@
   .item-icon {
     width: $sidebar-icon-w;
     min-width: $sidebar-icon-w;
+    color: var(--icon-fg);
     transition: transform 0.15s ease-in;
     &.hidden {
       visibility: hidden;
     }
-  }
-  .badge-info {
-    background: $brand-info;
   }
 
   // Collapse
