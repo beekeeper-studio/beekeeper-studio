@@ -289,7 +289,7 @@ class BeekeeperWindow {
 
   getThemeUrl() {
     // FIXME sanitize this
-    return `app://themes/core/${this.getThemeId()}.css`;
+    return `app://themes/${this.getThemeId()}.css`;
   }
 
   /** is the window in dark mode? */

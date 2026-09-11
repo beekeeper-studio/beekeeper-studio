@@ -31,6 +31,7 @@ import NotyPlugin from '@/plugins/NotyPlugin'
 import '@/common/initializers/big_int_initializer.ts'
 import SettingsPlugin from '@/plugins/SettingsPlugin'
 import rawLog from '@bksLogger'
+import { ThemeManager } from "@commercial/backend/theme-system/ThemeManager";
 import { HeaderSortTabulatorModule } from '@/plugins/HeaderSortTabulatorModule'
 import { KeyListenerTabulatorModule } from '@/plugins/KeyListenerTabulatorModule'
 import { UtilityConnection } from '@/lib/utility/UtilityConnection'
@@ -208,25 +209,27 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
 
     const handler = new AppEventHandler(app)
     handler.registerCallbacks()
+    const themeParams = new URLSearchParams(window.location.search);
+    const theme = new ThemeManager({
+      initialThemeId: themeParams.get("themeId") ?? "default",
+      initialThemeDark: themeParams.get("themeDark") === "true",
+    });
+    await theme.initialize();
+
     window.main.onSystemUsesDarkColors((dark) => {
       store.commit("theme/setSystemDark", dark);
     });
     store.watch(
       (_state, getters) => getters["theme/type"],
       (type) => {
-        document.body.classList.toggle("dark-theme", type === "dark");
-        document.body.classList.toggle("light-theme", type === "light");
+        theme.setDark(type === "dark");
         app.$emit(AppEvent.changedTheme, store.getters["theme/id"]);
       }
     );
     store.watch(
       (_state, getters) => getters["theme/id"],
-      (id, oldId) => {
-        document.body.classList.remove(`theme-${oldId}`);
-        document.body.classList.add(`theme-${id}`);
-        document
-          .getElementById("theme-stylesheet")
-          .setAttribute("href", `app://themes/core/${id}.css`);
+      (id) => {
+        theme.setId(id);
         app.$emit(AppEvent.changedTheme, id);
       }
     );
