@@ -45,6 +45,11 @@ jobs:
         with:
           node-version-file: '.nvmrc'
 
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unixodbc-dev
+
       - name: Install dependencies
         run: yarn install --frozen-lockfile --network-timeout 100000
         env:
