@@ -24,6 +24,8 @@ function getIcon() {
   return path.resolve(path.join(__dirname, '..', `public/icons/png/512x512.png`))
 }
 
+const devToolsEnabled = (platformInfo.env.development && !platformInfo.env.test) || platformInfo.debugEnabled
+
 class BeekeeperWindow {
   private win: BrowserWindow | null
   private reloaded = false
@@ -158,7 +160,7 @@ class BeekeeperWindow {
     this.win.show()
 
     await this.win.loadURL(this.appUrl)
-    if ((platformInfo.env.development && !platformInfo.env.test) || platformInfo.debugEnabled) {
+    if (devToolsEnabled) {
       globalShortcut.register('F12', this.win.webContents.toggleDevTools.bind(this.win.webContents))
       globalShortcut.register('CommandOrControl+Shift+I', this.win.webContents.toggleDevTools.bind(this.win.webContents))
 
@@ -216,6 +218,17 @@ class BeekeeperWindow {
     this.win?.on('closed', () => {
       this.win = null
     })
+
+    if (devToolsEnabled) {
+      this.win?.webContents.on('context-menu', (_event, params) => {
+        electron.Menu.buildFromTemplate([
+          {
+            label: 'Inspect Element',
+            click: () => this.win?.webContents.inspectElement(params.x, params.y),
+          },
+        ]).popup({ window: this.win })
+      })
+    }
 
 
     const windowMoveResizeListener = _.debounce(this.windowMoveResizeListener.bind(this), 1000)
@@ -289,7 +302,7 @@ class BeekeeperWindow {
 
   getThemeUrl() {
     // FIXME sanitize this
-    return `app://themes/core/${this.getThemeId()}.css`;
+    return `app://themes/${this.getThemeId()}.css`;
   }
 
   /** is the window in dark mode? */

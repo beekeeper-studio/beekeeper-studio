@@ -1,0 +1,95 @@
+@layer primitive, semantic, component;
+
+@layer primitive {
+  body {
+    --white: #ffffff;
+    --black: #000000;
+  }
+}
+
+@layer semantic {
+  body {
+    /* https://www.radix-ui.com/colors/docs/palette-composition/understanding-the-scale */
+
+    --text: var(--gray-11);
+    --text-contrast: var(--gray-12);
+
+    --bg-base: var(--gray-1);
+    --bg-subtle: var(--gray-2);
+    --bg: var(--gray-3);
+    --bg-hover: var(--gray-4);
+    --border-subtle: var(--gray-6);
+    --border: var(--gray-7);
+    --border-hover: var(--gray-8);
+
+    --a-bg-subtle: var(--gray-a2);
+    --a-bg: var(--gray-a3);
+    --a-bg-hover: var(--gray-a4);
+
+    --primary-solid-bg: var(--primary-9);
+    --primary-solid-fg: var(--white);
+    --primary-solid-bg-hover: var(--primary-10);
+    --primary-solid-fg-hover: var(--white);
+
+    --info-solid-bg: var(--info-9);
+    --info-solid-fg: var(--white);
+    --info-text: var(--info-11);
+
+    --success-solid-bg: var(--success-9);
+    --success-solid-fg: var(--white);
+    --success-text: var(--success-11);
+
+    --warning-text: var(--warning-11);
+
+    --danger-solid-bg: var(--danger-9);
+    --danger-solid-fg: var(--white);
+    --danger-text: var(--danger-11);
+
+    --border-color: var(--border-subtle);
+  }
+}
+
+@layer component {
+  body {
+    --app-bg: var(--bg-base);
+    --app-fg: var(--text);
+
+    --btn-fg: var(--text);
+    --btn-bg: transparent;
+    --btn-fg-hover: var(--text);
+    --btn-bg-hover: var(--a-bg);
+
+    --btn-flat-fg: var(--text-contrast);
+    --btn-flat-bg: var(--a-bg);
+    --btn-flat-fg-hover: var(--text-contrast);
+    --btn-flat-bg-hover: var(--a-bg-hover);
+
+    --btn-primary-fg: var(--primary-solid-fg);
+    --btn-primary-bg: var(--primary-solid-bg);
+    --btn-primary-fg-hover: var(--primary-solid-fg-hover);
+    --btn-primary-bg-hover: var(--primary-solid-bg-hover);
+
+    --link-fg: var(--text-contrast);
+
+    /* --icon-fg: var(--gray-a9); */
+
+    --scrollbar-thumb: var(--gray-a3);
+
+    --titlebar-bg: var(--bg-subtle);
+    --titlebar-fg: var(--text);
+
+    --sidebar-bg: var(--bg-subtle);
+    --sidebar-fg: var(--text);
+
+    --panel-bg: var(--bg-subtle);
+
+    --togglebutton-color: var(--text);
+    --togglebutton-background: var(--a-bg);
+    --togglebutton-hover-color: var(--text-contrast);
+    --togglebutton-content-checked-color: var(--text-contrast);
+    --togglebutton-content-checked-background: var(--a-bg-hover);
+
+    --menu-bg: var(--bg-subtle);
+    --menu-fg: var(--text);
+  }
+}

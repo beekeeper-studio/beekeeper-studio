@@ -6,26 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Beekeeper-Studio</title>
     <script src="./src-commercial/entrypoints/renderer.ts" type="module"></script>
-    <link id="theme-stylesheet" rel="stylesheet">
-    <script>
-      const themeUrl = new URLSearchParams(location.search).get("themeUrl");
-      if (themeUrl) {
-        try {
-          const parsedThemeUrl = new URL(themeUrl, location.origin);
-          const isSameOrigin = parsedThemeUrl.origin === location.origin;
-          const isHttpProtocol = parsedThemeUrl.protocol === "http:" || parsedThemeUrl.protocol === "https:";
-          const isAllowedStylesheetPath =
-            /^\/(assets|themes|css)\//.test(parsedThemeUrl.pathname) &&
-            parsedThemeUrl.pathname.endsWith(".css");
-
-          if (isSameOrigin && isHttpProtocol && isAllowedStylesheetPath) {
-            document.getElementById("theme-stylesheet").href = parsedThemeUrl.href;
-          }
-        } catch (_) {
-          // Ignore invalid themeUrl values.
-        }
-      }
-    </script>
   </head>
   <body id="body">
     <script>

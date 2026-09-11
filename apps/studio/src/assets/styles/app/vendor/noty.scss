@@ -4,7 +4,7 @@
 // '~noty/themes/mint.scss';
 // --------------------------------------
 .noty_theme__mint.noty_bar {
-  background: color.adjust($theme-bg, $lightness: 5%);
+  background: var(--panel-bg);
   border: 0;
   border-radius: 4px;
   @include card-shadow;
@@ -33,24 +33,24 @@
   right: $gutter-h;
   background-color: transparent;
   border-radius: 20px;
-  color: $text-lighter;
+  color: var(--text);
   text-align: center;
   font-weight: normal;
   font-size: 24px;
   &:hover {
-    color: $text-dark;
+    color: var(--text-contrast);
     background: transparent;
   }
 }
 .noty_theme__mint.noty_type__alert,
 .noty_theme__mint.noty_type__notification {
-  color: $text-dark;
+  color: var(--text-contrast);
 }
 .noty_theme__mint.noty_type__warning {
-  color: color.adjust($brand-warning, $lightness: 5%);
+  color: var(--warning-text);
 }
 .noty_theme__mint.noty_type__error {
-  color: color.adjust($brand-danger, $lightness: 5%);
+  color: var(--danger-text);
 
   .noty_body {
     white-space: pre-wrap;
@@ -59,10 +59,10 @@
 }
 .noty_theme__mint.noty_type__info,
 .noty_theme__mint.noty_type__information {
-  color: color.adjust($brand-info, $lightness: 5%);
+  color: var(--info-text);
 }
 .noty_theme__mint.noty_type__success {
-  color: color.adjust($brand-success, $lightness: 5%);
+  color: var(--success-text);
 }
 
 // Onboarding notification
