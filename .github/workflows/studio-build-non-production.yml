@@ -46,8 +46,12 @@ jobs:
         if: "contains(matrix.os, 'ubuntu')"
         run: |
           sudo apt-get update
-          sudo apt-get install -y flatpak flatpak-builder rpm unixodbc-dev
+          sudo apt-get install -y flatpak flatpak-builder rpm
           flatpak --user remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+      - name: Install ODBC build dependencies
+        if: "contains(matrix.os, 'ubuntu')"
+        run: bash ./.github/scripts/install-odbc-deps.sh
 
       - name: Install fpm
         run: sudo gem install fpm -v 1.17.0
@@ -105,17 +109,33 @@ jobs:
             apps/studio/node_modules
             apps/ui-kit/node_modules
             apps/sqltools/node_modules
-          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}-${{ hashFiles('.github/scripts/install-odbc-deps.sh') }}
+
+      # For msnodesqlv8, if it previously failed in the cached version, clear the cache and try again :)
+      - name: Check restored node_modules
+        id: nm-health
+        if: steps.cache-nm.outputs.cache-hit == 'true' && contains(matrix.os, 'ubuntu')
+        continue-on-error: true
+        run: node -e "require('msnodesqlv8')"
+
+      - name: Discard broken node_modules
+        if: steps.nm-health.outcome == 'failure'
+        run: rm -rf node_modules apps/studio/node_modules apps/ui-kit/node_modules apps/sqltools/node_modules
 
       - name: Clean cache
-        if: steps.cache-nm.outputs.cache-hit != 'true'
+        if: steps.cache-nm.outputs.cache-hit != 'true' || steps.nm-health.outcome == 'failure'
         run: yarn cache clean
 
       - name: Check dependencies
-        if: steps.cache-nm.outputs.cache-hit != 'true'
+        if: steps.cache-nm.outputs.cache-hit != 'true' || steps.nm-health.outcome == 'failure'
         run: "yarn install --frozen-lockfile --network-timeout 100000"
         env:
           npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
+
+      - name: Verify msnodesqlv8 native build
+        if: "contains(matrix.os, 'ubuntu')"
+        run: node -e "require('msnodesqlv8')"
+
       - name: Build Electron app
         run: "yarn run electron:build --publish never"
         if: startsWith(matrix.os, 'ubuntu') == false

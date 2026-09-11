@@ -241,6 +241,10 @@ jobs:
         env:
           npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
 
+      - name: Verify msnodesqlv8 native build
+        if: matrix.os.type == 'linux'
+        run: node -e "require('msnodesqlv8')"
+
       - name: Remove dist directory
         if: matrix.os.type != 'windows'
         run: rm -rf ./apps/studio/dist_electron
