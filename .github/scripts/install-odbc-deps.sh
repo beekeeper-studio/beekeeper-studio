@@ -1,8 +1,15 @@
 #! /bin/bash
 
 # ODBC build dependencies for msnodesqlv8 (SQL Server support).
-
-# msnodesqlv8 needs sql.h (unixODBC) and msodbcsql.h (Microsoft's driver)
+#
+# msnodesqlv8 needs sql.h (unixODBC) and msodbcsql.h (Microsoft's driver) to
+# compile, and libodbc at load time. Neither ships on the Linux or macOS
+# runners, and neither is in the Ubuntu archive or homebrew-core. Windows needs
+# nothing: odbc32 and the SQL headers come with the OS and the Windows SDK.
+#
+# msnodesqlv8 is an optional dependency, so yarn downgrades a failed build to a
+# warning and the app ships without SQL Server support. Assert the headers are
+# in place here rather than finding out at runtime.
 
 set -euxo pipefail
 
@@ -39,9 +46,15 @@ case "$(uname -s)" in
     # even when nothing is compiled from source.
     brew list --formula unixodbc >/dev/null 2>&1 || brew install unixodbc
 
+    # msodbcsql.h is not in homebrew-core. Homebrew 6 refuses to load formulae
+    # from third-party taps until they are trusted; brew trust is
+    # non-interactive. The formula installs the header the build needs into
+    # $(brew --prefix)/include/msodbcsql18/, one of the folders binding.gyp
+    # searches.
     brew tap microsoft/mssql-release https://github.com/Microsoft/homebrew-mssql-release
+    brew trust microsoft/mssql-release
     brew list --formula msodbcsql18 >/dev/null 2>&1 \
-      || HOMEBREW_ACCEPT_EULA=Y brew install msodbcsql18
+      || HOMEBREW_ACCEPT_EULA=Y brew install microsoft/mssql-release/msodbcsql18
 
     BREW_PREFIX="$(brew --prefix)"
     test -f "$BREW_PREFIX/include/sql.h"
