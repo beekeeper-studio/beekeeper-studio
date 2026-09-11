@@ -132,6 +132,7 @@
                         type="text"
                         :name="control.settingName"
                         :id="control.settingName"
+                        spellcheck="false"
                         @change="onChange(control)"
                         v-model="config[control.settingName]"
                       >
@@ -165,6 +166,13 @@
                           <span v-if="action.value">{{ callIfFunction(action.value) }}</span>
                         </a>
                       </div>
+                    </div>
+                    <div
+                      v-if="control.supportsTemplate && control.showPreview"
+                      class="filename-preview"
+                    >
+                      <span class="filename-preview-label">Preview</span>
+                      <code class="filename-preview-value">{{ previewFilename }}</code>
                     </div>
                   </div>
                   <div
@@ -220,6 +228,7 @@ import Vue from 'vue';
 import { mapGetters, mapState } from 'vuex';
 import FilePicker from '@/components/common/form/FilePicker.vue'
 import { CommandSettingControl, CommandSettingSection } from '@/lib/db/models';
+import { DEFAULT_FILENAME_TEMPLATE, resolveFilenameTemplate } from '@/lib/utils/filenameTemplate';
 import _ from 'lodash';
 
 export default Vue.extend({
@@ -233,6 +242,11 @@ export default Vue.extend({
     }
   },
   watch: {
+    'config.filenameTemplate'(value) {
+      if (value !== undefined) {
+        this.$store.dispatch('settings/save', { key: 'backupFilenameTemplate', value });
+      }
+    }
   },
   computed: {
     ...mapGetters('backups', {
@@ -245,6 +259,14 @@ export default Vue.extend({
     },
     controls() {
       return _.flatten(this.sections.map((x) => x.controls));
+    },
+    previewFilename() {
+      const control = this.controls.find((c: CommandSettingControl) => c.supportsTemplate);
+      if (!control || !control.showPreview) return '';
+
+      const base = resolveFilenameTemplate(this.config[control.settingName], this.database ?? '');
+      const extension = this.$store.getters['backups/commandClient'].resolveFileExtension(this.config);
+      return `${base}${extension}`;
     }
   },
   methods: {
@@ -258,8 +280,10 @@ export default Vue.extend({
       }
     },
     async onNext() {
-      await this.$store.commit('backups/updateConfig', this.config);
+      // Set the database first so the filename template is resolved against the
+      // currently selected database.
       await this.$store.commit('backups/setDatabase', this.database);
+      await this.$store.commit('backups/updateConfig', this.config);
     },
     canContinue() {
       let cont = true;
@@ -298,6 +322,13 @@ export default Vue.extend({
   },
   mounted() {
     this.sections = this.$store.getters['backups/settingsSections'];
+
+    // Seed the filename template from the persisted setting, falling back to
+    // the default template which resolves to the legacy default filename.
+    const template = this.$store.getters['settings/backupFilenameTemplate'];
+    if (this.config.filenameTemplate == null) {
+      this.config.filenameTemplate = template ?? DEFAULT_FILENAME_TEMPLATE;
+    }
   }
 })
 </script>
@@ -359,6 +390,25 @@ export default Vue.extend({
 .textarea {
   resize: none;
   height: 10rem;
+}
+
+.filename-preview {
+  display: flex;
+  align-items: baseline;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+
+  .filename-preview-label {
+    color: var(--text-color-sub);
+    margin-right: 0.5rem;
+  }
+
+  .filename-preview-value {
+    word-break: break-all;
+    background: var(--background-main);
+    border-radius: 3px;
+    padding: 0.1rem 0.4rem;
+  }
 }
 
 .btn-icon {
