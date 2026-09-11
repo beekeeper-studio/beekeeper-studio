@@ -9,10 +9,12 @@ import type { IDbConnectionServerConfig } from "@/lib/db/types"
 
 rawLog.transports.console.level = "error"
 
-// Reproductions for https://github.com/beekeeper-studio/beekeeper-studio/issues/4739
-// root causes 4 and 5 against a real Postgres. Complements
+// Reproductions against a real Postgres for
+// https://github.com/beekeeper-studio/beekeeper-studio/issues/4739 root causes
+// 4 and 5, plus the client-level symptoms behind the issues it links to (#389,
+// #2370, #2705, #2845). Complements
 // tests/vitest/unit/lib/db/clients/postgresReservedConnection.spec.ts, which
-// covers the same logic with a fake pool.
+// covers the transaction logic with a fake pool.
 //
 // `it.fails` = asserts the desired behaviour; green only while it is broken.
 
@@ -71,6 +73,16 @@ function catchReservedConnectionErrors(client: any, tabId: number): Error[] {
   expect(reserved.listenerCount("error")).toBe(0)
   const errors: Error[] = []
   reserved.on("error", (err) => errors.push(err))
+  return errors
+}
+
+// Same catch-all for clients the pool has handed to runWithConnection: while
+// checked out they have no 'error' listener either.
+function catchPoolClientErrors(client: any): Error[] {
+  const errors: Error[] = []
+  for (const pooled of client.conn.pool._clients as EventEmitter[]) {
+    pooled.on("error", (err) => errors.push(err))
+  }
   return errors
 }
 
@@ -190,6 +202,66 @@ describe("Postgres connection loss", () => {
     } finally {
       await proxy.stop()
       await rollback?.catch(() => undefined)
+    }
+  })
+
+  // #389 / #2370. The connection sat idle while its network path died (laptop
+  // changed networks, NAT or firewall dropped the flow, SSH tunnel gone). The
+  // next query is written into a socket that will never answer and nothing in
+  // the client bounds the wait, so it hangs until the OS abandons TCP
+  // retransmission, which takes minutes. TCP keepalive would only help while
+  // the connection is idle; an in-flight statement needs a query timeout.
+  it("hangs a query sent over a silently dead connection (characterization)", async () => {
+    const proxy = new SilentProxy(config.host, config.port)
+    await proxy.start()
+    const client = await connect({ host: "127.0.0.1", port: proxy.port })
+    catchPoolClientErrors(client)
+    let running: Promise<unknown>
+    try {
+      proxy.silent = true
+      const query = await client.query("SELECT 1 AS ok", TAB)
+      running = query.execute()
+
+      expect(await outcome(running, 3000)).toBe("pending")
+    } finally {
+      await proxy.stop()
+      await running?.catch(() => undefined)
+      await client.disconnect()
+    }
+  })
+
+  // #2705. disconnect() fires pool.end() without awaiting it and never cancels
+  // anything, so statements that were running keep running to completion on
+  // the server and in the utility process after the user has disconnected.
+  it("lets in-flight queries run to completion after disconnect() (characterization)", async () => {
+    const client = await connect()
+    const query = await client.query("SELECT pg_sleep(2), 1 AS ok", TAB)
+    const running = query.execute()
+    await sleep(200)
+
+    await client.disconnect()
+
+    const [result] = (await running) as any[]
+    expect(result.rows).toHaveLength(1)
+  })
+
+  // #2845. A BEGIN ... COMMIT block whose middle statement fails leaves its
+  // pooled connection inside an aborted transaction: COMMIT never ran, and
+  // runWithConnection releases the client as-is. pg-pool hands the same client
+  // back for the next statement, which then fails with "current transaction is
+  // aborted, commands ignored until end of transaction block" (25P02) no
+  // matter how the user has corrected the query.
+  it.fails("runs a fresh query after a failed BEGIN...COMMIT block", async () => {
+    const client = await connect()
+    try {
+      const broken = await client.query("BEGIN; SELECT 1/0 AS boom; COMMIT;", TAB)
+      await expect(broken.execute()).rejects.toThrow(/division by zero/)
+
+      const fixed = await client.query("SELECT 1 AS ok", TAB)
+      const [result] = (await fixed.execute()) as any[]
+      expect(result.rows).toHaveLength(1)
+    } finally {
+      await client.disconnect()
     }
   })
 })
