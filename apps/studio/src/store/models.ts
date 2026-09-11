@@ -6,7 +6,8 @@ export interface EntityFilter {
   showTables: boolean
   showViews: boolean
   showRoutines: boolean,
-  showPartitions: boolean
+  showPartitions: boolean,
+  showFields: boolean
 }
 
 export enum TabType {
