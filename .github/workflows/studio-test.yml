@@ -64,7 +64,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.cache-nm.outputs.cache-hit != 'true'
-        uses: nick-fields/retry@v2
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 20
           max_attempts: 3
@@ -205,7 +205,7 @@ jobs:
         run: sudo bash bin/get-postgres-15.sh
 
       - name: Test
-        uses: nick-fields/retry@v2
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 20
           max_attempts: 2
@@ -235,7 +235,7 @@ jobs:
   #     env:
   #       npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
   #   - name: Test
-  #     uses: nick-fields/retry@v2
+  #     uses: nick-fields/retry@v4
   #     with:
   #       timeout_minutes: 20
   #       max_attempts: 2
