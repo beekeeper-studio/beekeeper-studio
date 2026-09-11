@@ -34,12 +34,21 @@ export const MenuBarModule: Module<State, RootState> = {
         "export-tables",
       ];
 
+      // These are menu items from plugins. They can only be used when the app
+      // is connected to a database.
       for (const id of Object.keys(state.externalMenu)) {
         const menuItem = state.externalMenu[id];
         if (menuItem.disableWhenDisconnected) {
           result.push(id);
         }
       }
+
+      return result;
+    },
+    appMenuItems() {
+      const result = [
+        "import-connection-files"
+      ];
 
       return result;
     },
@@ -61,14 +70,21 @@ export const MenuBarModule: Module<State, RootState> = {
           continue;
         }
 
-        (parent.submenu as Electron.MenuItemConstructorOptions[]).push({
+        const submenu = parent.submenu as Electron.MenuItemConstructorOptions[];
+        const item = {
           id: externalItem.id,
           label: externalItem.label,
           click: () => {
             actionHandler.handleAction(externalItem.action);
           },
           accelerator: externalItem.accelerator,
-        });
+        };
+
+        if (externalItem.id.startsWith("bks-er-diagram")) {
+          submenu.unshift(item);
+        } else {
+          submenu.push(item);
+        }
       }
 
       return menus;

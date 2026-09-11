@@ -6,6 +6,8 @@ import { BeekeeperPlugin } from './plugins/BeekeeperPlugin'
 import BksConfig from './common/bksConfig'
 import { createVHotkeyKeymap, createCodemirroKeymap } from './plugins/ConfigPlugin'
 import { UtilityConnection } from './lib/utility/UtilityConnection'
+import WebPluginManager from './services/plugin/web/WebPluginManager'
+import { ConnectionType } from './lib/db/types'
 
 // 2. Specify a file with the types you want to augment
 //    Vue has the constructor type in types/vue.d.ts
@@ -18,6 +20,7 @@ declare module 'vue/types/vue' {
     $bksConfig: typeof BksConfig
     $native: NativePlugin
     $util: UtilityConnection
+    $plugin: WebPluginManager
     $noty: {
       show(text: string, type: string, opts?: any): void
 
@@ -28,6 +31,11 @@ declare module 'vue/types/vue' {
     }
     $confirm(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean>
     $confirmById(id: string): Promise<boolean>
+    /**
+     * Open the connection type picker.
+     * @returns the chosen type, or `false` if the user closed the modal.
+     */
+    $promptConnectionType(): Promise<ConnectionType | false>
     $vHotkeyKeymap: typeof createVHotkeyKeymap
     $CMKeymap: typeof createCodemirrorKeymap
 

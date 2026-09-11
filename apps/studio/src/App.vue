@@ -35,11 +35,13 @@
     <workspace-delete-modal />
     <import-queries-modal />
     <import-connections-modal />
+    <connection-files-import-modal />
     <plugin-controller :editor-font-size="editorFontSize" />
     <plugin-manager-modal />
     <keyboard-shortcuts-modal />
     <move-item-modal />
     <move-folder-modal />
+    <connection-type-picker-modal />
     <confirmation-modal-manager />
     <lock-manager />
     <input-ephemeral-modal name="input-ephemeral-modal" />
@@ -100,6 +102,8 @@ import InputEphemeralModal from "@/components/common/modals/InputEphemeralModal.
 import ShareModal from "@/components/common/modals/ShareModal.vue";
 import MoveItemModal from "@/components/common/modals/MoveItemModal.vue";
 import MoveFolderModal from "@/components/common/modals/MoveFolderModal.vue";
+import ConnectionFilesImportModal from '@/components/common/modals/ConnectionFilesImportModal.vue'
+import ConnectionTypePickerModal from "@/components/common/modals/ConnectionTypePickerModal.vue";
 
 import rawLog from '@bksLogger'
 import { assignContextMenuToAllInputs } from './mixins/assignContextMenuToAllInputs'
@@ -118,6 +122,7 @@ export default Vue.extend({
     WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
     PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
     InputEphemeralModal, ShareModal, MoveItemModal, MoveFolderModal,
+    ConnectionFilesImportModal, ConnectionTypePickerModal,
   },
   data() {
     return {
@@ -171,6 +176,14 @@ export default Vue.extend({
     clearInterval(this.licenseInterval)
   },
   async mounted() {
+    // The store loads licenses before this component exists, so the
+    // `licensesInitialized` and `status` watchers never see the initial
+    // values. Without this, a trial or license that lapsed while the app was
+    // closed never surfaces its dialog on the next launch.
+    if (this.licensesInitialized) {
+      await this.$nextTick()
+      this.validateLicenseExpiry()
+    }
     this.notifyFreeTrial()
     this.interval = setInterval(this.notifyFreeTrial, globals.trialNotificationInterval)
     this.$store.dispatch('licenses/updateAll');

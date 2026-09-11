@@ -338,7 +338,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     }
   }
 
-  async selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[] = ['*']): Promise<string> {
+  async selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects: string[] = ['*']): Promise<string> {
     let orderByString = ""
     let filterString = ""
     let params: (string | string[])[] = []
