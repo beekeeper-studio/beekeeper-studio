@@ -284,8 +284,8 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
                 what: table
               });
             } else {
-              const fieldIndex = tableFields.findIndex((v) => v.name == field);
-              if (tableFields[fieldIndex].kind != type) {
+              const fieldIndex = tableFields.findIndex((v) => v.name === field);
+              if (tableFields[fieldIndex].kind !== type) {
                 tableFields[fieldIndex].kind = 'any';
               }
             }
