@@ -4406,6 +4406,14 @@
     "@lezer/highlight" "^1.2.1"
     "@lezer/lr" "^1.4.2"
 
+"@surrealdb/sqon@0.1.0":
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/@surrealdb/sqon/-/sqon-0.1.0.tgz#cf5f3e4037133d49fb41a81df135e6f824d0c035"
+  integrity sha512-pooKLZ0W6mN8XHzJQavGOdfZOZksycmIjhwFwvG0kdCAt4I5U6KKPHcXQwFkTDNKFKFKdufczLRnzHapPIslQw==
+  dependencies:
+    "@surrealdb/cbor" "2.0.0-alpha.4"
+    uuidv7 "^1.0.1"
+
 "@szmarczak/http-timer@^4.0.5":
   version "4.0.6"
   resolved "https://registry.yarnpkg.com/@szmarczak/http-timer/-/http-timer-4.0.6.tgz#b4a914bb62e7c272d4e5989fe4440f812ab1d807"
@@ -13053,13 +13061,12 @@ supports-preserve-symlinks-flag@^1.0.0:
   resolved "https://registry.yarnpkg.com/supports-preserve-symlinks-flag/-/supports-preserve-symlinks-flag-1.0.0.tgz#6eda4bd344a3c94aea376d4cc31bc77311039e09"
   integrity sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==
 
-surrealdb@^2.0.3:
-  version "2.0.3"
-  resolved "https://registry.yarnpkg.com/surrealdb/-/surrealdb-2.0.3.tgz#07621e84dd1b702422f056c2ebc86b05a8042645"
-  integrity sha512-60dXe7K+7M5EUr6VyIgd/SEUCKFXqc54JHUhCTG8IDlqp7pmuuQQWs2wpgulp2oSXpy+9jwKhgNR/mP3wrEgfw==
+surrealdb@^2.0.8:
+  version "2.0.8"
+  resolved "https://registry.yarnpkg.com/surrealdb/-/surrealdb-2.0.8.tgz#bb8e426ede7b79787d05a5309123ea382a9b1b01"
+  integrity sha512-nkoTAdnfJYc0EvB2Hut0MET/UiWTOT6+TJODoubHzoC952gJvjEbHMx5TLrecUYo1vIN3/qBgwMIcLKK0WC7zQ==
   dependencies:
-    "@surrealdb/cbor" "2.0.0-alpha.4"
-    uuidv7 "^1.0.1"
+    "@surrealdb/sqon" "0.1.0"
 
 svg-tags@^1.0.0:
   version "1.0.0"

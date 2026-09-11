@@ -141,7 +141,7 @@
     "sqlanywhere": "git+https://github.com/beekeeper-studio/node-sqlanywhere.git#0e1280155455a308c04b07e9f6888372bd513b08",
     "ssh-config": "5.2.0",
     "ssh2": "^1.14.0",
-    "surrealdb": "^2.0.3",
+    "surrealdb": "^2.0.8",
     "tabulator-tables": "^6.5.2",
     "tinyduration": "^3.2.4",
     "trino-client": "^0.2.9",
