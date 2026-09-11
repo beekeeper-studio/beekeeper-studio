@@ -95,6 +95,7 @@ plugins:
             Upgrading: Actualizar
             ClickHouse: ClickHouse
             SQLite: SQLite
+            StarRocks: StarRocks
             Trino: Trino
 #  - social:
 #      cards_layout_options:
@@ -153,6 +154,7 @@ nav:
     - user_guide/connecting/redis.md
     - SQL Server: user_guide/connecting/sql-server.md
     - SQLite: user_guide/connecting/sqlite.md
+    - StarRocks: user_guide/connecting/starrocks.md
     - Trino: user_guide/connecting/trino.md
     - user_guide/connecting/surrealdb.md
     - user_guide/connecting/azure-entraid.md
