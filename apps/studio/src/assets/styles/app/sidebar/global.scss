@@ -17,7 +17,6 @@
         &.active {
           .avatar {
             box-shadow: none;
-            color: $text-dark;
           }
         }
         .workspace-avatar {
@@ -43,7 +42,7 @@
         }
       }
     }
-    
+
     // Items with an Active state
     .nav-item.selectable {
       &:before {
@@ -51,9 +50,6 @@
         transition: opacity 0.15s ease-in-out;
       }
       &:hover {
-        .avatar {
-          color: rgba($theme-base, 0.38);
-        }
         &:before {
           content: '';
           position: absolute;
@@ -67,9 +63,6 @@
         }
       }
       &.active, &.active:hover {
-        .avatar {
-          color: $text-dark;
-        }
         &:before {
           content: '';
           position: absolute;
@@ -85,9 +78,6 @@
         //   background: rgba($theme-base, 0.08);
         // }
       }
-      .avatar {
-        background: rgba($theme-base, 0.08);
-      }
     }
     .nav-item {
       $nav-item-size:     34px;
@@ -98,12 +88,11 @@
       width: 44px;
       height: 44px;
       font-size: 18px;
-      color: rgba($theme-base, 0.38);
       transition: color 0.15s ease-in-out;
-      &.active {
-        color: $text-dark;
-      }
-      > span {  
+      // &.active {
+      //   color: $text-dark;
+      // }
+      > span {
         height: $nav-item-size;
         width: $nav-item-size;
         border-radius: $nav-item-size;
@@ -137,11 +126,7 @@
     }
   }
   .avatar {
-    color: $text-lighter;
     transition: color 0.2s ease-in-out, background 0.2s ease-in-out;
-    &:hover {
-      color: $text-dark;
-    }
   }
   .avatar {
     position: relative;
@@ -165,14 +150,6 @@
       font-size: 10px;
       font-weight: bold;
       margin: 0;
-      background: #666;
-      color: rgba(black, 0.87);
-      &.badge-danger {
-        background: $brand-danger;
-      }
-      &.badge-success {
-        background: $brand-success;
-      }
       .material-icons {
         font-size: 12px;
       }

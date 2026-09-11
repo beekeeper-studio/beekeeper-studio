@@ -13,7 +13,8 @@
     display: none;
     list-style-type: none;
     white-space: nowrap;
-    background: color.adjust($theme-bg, $lightness: 5%);
+    background: var(--menu-bg);
+    color: var(--menu-fg);
     border-radius: 6px;
     min-width: 150px;
     @include card-shadow-hover;
@@ -24,11 +25,11 @@
     &.separator {
       margin-bottom: $gutter-h;
       padding-bottom: $gutter-h;
-      border-bottom: 1px solid $border-color;
+      border-bottom: 1px solid var(--border-subtle);
     }
     a {
       text-decoration: none;
-      color: $text;
+      color: inherit;
       position: relative;
       display: table;
       width: 100%;
@@ -40,7 +41,7 @@
       }
       .shortcut {
         text-align: right;
-        color: $text-lighter;
+        color: var(--gray-a10);
       }
       .label {
         padding-left: $gutter-w * 2.6;
@@ -64,7 +65,7 @@
         }
       }
       &.hovered {
-        background: rgba($theme-base, 0.05);
+        background: var(--a-bg);
       }
     }
     &.has-children > a {
@@ -126,14 +127,13 @@
         > .label {
           display: inline-flex;
           align-items: center;
-          color: $text-lighter;
           padding: 0 ($gutter-w * 0.85);
           height: $titlebar-actions-height;
         }
         &.selected {
           background: transparent;
           .label {
-            color: $text-dark;
+            color: var(--text-contrast);
           }
         }
       }
