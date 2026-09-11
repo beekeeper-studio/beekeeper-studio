@@ -155,7 +155,7 @@ jobs:
 
 
       - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@v3
         with:
           vs-version: '16.11.14'
         if: matrix.os.type == 'windows'
@@ -233,7 +233,7 @@ jobs:
       # But only sometimes. I cannot figure out why.
       # Someone should at some point.
       - name: yarn install (with retry)
-        uses: nick-fields/retry@v2
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 20
           max_attempts: 3

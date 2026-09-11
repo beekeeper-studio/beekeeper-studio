@@ -1,4 +1,5 @@
-import { Mutators } from "../../../../src/lib/data/tools";
+import { describe, it, expect } from "vitest";
+import { Mutators } from "@/lib/data/tools";
 
 describe("Mutators", () => {
   describe("Error handling", () => {

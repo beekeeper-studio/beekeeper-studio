@@ -1,4 +1,5 @@
-import data_converter from "../../../src/mixins/data_converter"
+import { describe, it, expect } from "vitest"
+import data_converter from "@/mixins/data_converter"
 
 
 describe("data converter", () => {

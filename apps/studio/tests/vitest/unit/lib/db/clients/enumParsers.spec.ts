@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest"
 import { parseQuotedEnumValues, parseClickHouseEnumValues } from "@/lib/db/clients/enumParsers"
 
 describe("parseQuotedEnumValues (MySQL / MariaDB / DuckDB)", () => {

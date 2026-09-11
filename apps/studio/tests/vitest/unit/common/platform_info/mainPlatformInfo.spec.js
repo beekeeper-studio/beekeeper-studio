@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest"
 import { resolveAppVersion } from "@/common/platform_info/mainPlatformInfo"
 
 

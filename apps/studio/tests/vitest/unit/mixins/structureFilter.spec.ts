@@ -1,3 +1,4 @@
+import { describe, it, expect, vi } from "vitest";
 import { mount, Wrapper } from "@vue/test-utils";
 import { StructureFilterMixin } from "@/mixins/structureFilter";
 
@@ -18,8 +19,8 @@ function fakeTabulator(initialColumns: any[] = COLUMNS) {
   const activeRows = [{ columnName: "user_name" }];
   return {
     activeRows,
-    setFilter: jest.fn(),
-    clearFilter: jest.fn(),
+    setFilter: vi.fn(),
+    clearFilter: vi.fn(),
     on(event: string, callback: (...args: any[]) => void) {
       listeners[event] = listeners[event] || [];
       listeners[event].push(callback);

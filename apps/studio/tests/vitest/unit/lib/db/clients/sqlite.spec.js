@@ -1,4 +1,5 @@
-import { SqliteClient } from "../../../../../src/lib/db/clients/sqlite"
+import { describe, it, expect } from "vitest"
+import { SqliteClient } from "@/lib/db/clients/sqlite"
 
 describe("SQLite UNIT test (no connection)", () => {
   it("Should build alter table statements", async () => {
