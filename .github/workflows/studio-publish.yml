@@ -91,9 +91,13 @@ jobs:
         if: matrix.os.setup_flatpak
         run: bash ./.github/scripts/install-build-deps.sh
 
-      - name: Install ODBC build dependencies
-        if: matrix.os.type != 'windows'
-        run: bash ./.github/scripts/install-odbc-deps.sh
+      - name: Install ODBC build dependencies (linux)
+        if: matrix.os.type == 'linux'
+        run: bash ./.github/scripts/linux-install-odbc-deps.sh
+
+      - name: Install ODBC build dependencies (macos)
+        if: matrix.os.type == 'macos'
+        run: bash ./.github/scripts/macos-install-odbc-deps.sh
 
       - name: Set up Java (for jsign)
         if: matrix.os.type == 'windows'

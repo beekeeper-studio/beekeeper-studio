@@ -49,9 +49,13 @@ jobs:
           sudo apt-get install -y flatpak flatpak-builder rpm
           flatpak --user remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
-      - name: Install ODBC build dependencies
-        if: "!startsWith(matrix.os, 'windows')"
-        run: bash ./.github/scripts/install-odbc-deps.sh
+      - name: Install ODBC build dependencies (linux)
+        if: "contains(matrix.os, 'ubuntu')"
+        run: bash ./.github/scripts/linux-install-odbc-deps.sh
+
+      - name: Install ODBC build dependencies (macos)
+        if: "startsWith(matrix.os, 'macos')"
+        run: bash ./.github/scripts/macos-install-odbc-deps.sh
 
       - name: Install fpm
         run: sudo gem install fpm -v 1.17.0
