@@ -50,7 +50,7 @@ jobs:
           flatpak --user remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
       - name: Install ODBC build dependencies
-        if: "contains(matrix.os, 'ubuntu')"
+        if: "!startsWith(matrix.os, 'windows')"
         run: bash ./.github/scripts/install-odbc-deps.sh
 
       - name: Install fpm
@@ -114,7 +114,7 @@ jobs:
       # For msnodesqlv8, if it previously failed in the cached version, clear the cache and try again :)
       - name: Check restored node_modules
         id: nm-health
-        if: steps.cache-nm.outputs.cache-hit == 'true' && contains(matrix.os, 'ubuntu')
+        if: steps.cache-nm.outputs.cache-hit == 'true'
         continue-on-error: true
         run: node -e "require('msnodesqlv8')"
 
@@ -133,7 +133,6 @@ jobs:
           npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
 
       - name: Verify msnodesqlv8 native build
-        if: "contains(matrix.os, 'ubuntu')"
         run: node -e "require('msnodesqlv8')"
 
       - name: Build Electron app

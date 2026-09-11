@@ -91,6 +91,10 @@ jobs:
         if: matrix.os.setup_flatpak
         run: bash ./.github/scripts/install-build-deps.sh
 
+      - name: Install ODBC build dependencies
+        if: matrix.os.type != 'windows'
+        run: bash ./.github/scripts/install-odbc-deps.sh
+
       - name: Set up Java (for jsign)
         if: matrix.os.type == 'windows'
         uses: actions/setup-java@v5
@@ -242,7 +246,6 @@ jobs:
           npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
 
       - name: Verify msnodesqlv8 native build
-        if: matrix.os.type == 'linux'
         run: node -e "require('msnodesqlv8')"
 
       - name: Remove dist directory
