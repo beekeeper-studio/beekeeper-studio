@@ -24,7 +24,7 @@ import xlsx from 'xlsx'
 import TimeAgo from 'javascript-time-ago'
 import en from 'javascript-time-ago/locale/en'
 import VueClipboard from 'vue-clipboard2'
-import { AppEventMixin } from '@/common/AppEvent'
+import { AppEvent, AppEventMixin } from '@/common/AppEvent'
 import BeekeeperPlugin from '@/plugins/BeekeeperPlugin'
 import _ from 'lodash'
 import NotyPlugin from '@/plugins/NotyPlugin'
@@ -208,6 +208,28 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
 
     const handler = new AppEventHandler(app)
     handler.registerCallbacks()
+    window.main.onSystemUsesDarkColors((dark) => {
+      store.commit("theme/setSystemDark", dark);
+    });
+    store.watch(
+      (_state, getters) => getters["theme/type"],
+      (type) => {
+        document.body.classList.toggle("dark-theme", type === "dark");
+        document.body.classList.toggle("light-theme", type === "light");
+        app.$emit(AppEvent.changedTheme, store.getters["theme/id"]);
+      }
+    );
+    store.watch(
+      (_state, getters) => getters["theme/id"],
+      (id, oldId) => {
+        document.body.classList.remove(`theme-${oldId}`);
+        document.body.classList.add(`theme-${id}`);
+        document
+          .getElementById("theme-stylesheet")
+          .setAttribute("href", `app://themes/core/${id}.css`);
+        app.$emit(AppEvent.changedTheme, id);
+      }
+    );
     await store.dispatch('initRootStates')
     const webPluginManager = new WebPluginManager({
       utilityConnection: Vue.prototype.$util,

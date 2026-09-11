@@ -1,12 +1,14 @@
 // FIXME: this is the source of public/themes/core/solarized.css, which is
 // committed as a generated file using this command:
 // yarn sass --no-source-map --quiet --style=compressed --load-path=node_modules --load-path=apps/studio/node_modules apps/studio/src/assets/styles/themes/solarized.scss apps/studio/public/themes/core/solarized.css
-// Next PR drops this file: the css becomes hand-written and only overrides
-// the predefined css variables.
+// Next PR drops this file
 
 @import '../app/variables';
 
-.light-theme {
+// FIXME .theme-solarized is only needed to win over the default styles.
+// Drop it in the next PR once everything reads css variables.
+
+.theme-solarized.light-theme {
   @import './solarized-light/variables.scss';
   @import '../app/mixins';
   @import '../components/all';
@@ -16,7 +18,7 @@
   @import './scssvars-to-cssprops.scss';
 }
 
-.dark-theme {
+.theme-solarized.dark-theme {
   @import './solarized-dark/variables.scss';
   @import '../app/mixins';
   @import '../components/all';

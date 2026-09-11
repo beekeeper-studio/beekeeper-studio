@@ -55,11 +55,6 @@
       multiple
       class="portal-target-menus"
     />
-    <link
-      v-if="themeId !== 'default'"
-      rel="stylesheet"
-      :href="`app://themes/core/${themeId}.css`"
-    >
   </div>
 </template>
 
@@ -148,8 +143,6 @@ export default Vue.extend({
     ...mapGetters({
       'isTrial': 'isTrial',
       'isUltimate': 'isUltimate',
-      'themeId': 'theme/id',
-      'themeType': 'theme/type',
     }),
     editorFontSize() {
       return this.$store.state.settings?.settings?.editorFontSize?.value || 14
@@ -158,14 +151,6 @@ export default Vue.extend({
   watch: {
     database() {
       log.info('database changed', this.database)
-    },
-    themeId() {
-      this.applyTheme()
-      this.trigger(AppEvent.changedTheme, this.themeId)
-    },
-    themeType() {
-      this.applyTheme()
-      this.trigger(AppEvent.changedTheme, this.themeId)
     },
     status(curr, prev) {
       this.$store.dispatch('updateWindowTitle')
@@ -212,8 +197,6 @@ export default Vue.extend({
       window.main.isReady();
     })
 
-    this.applyTheme()
-
     if (this.url) {
       try {
         const { auth, cancelled  } = await this.$bks.unlock();
@@ -228,11 +211,6 @@ export default Vue.extend({
 
   },
   methods: {
-    applyTheme() {
-      const dark = this.themeType === "dark";
-      document.body.classList.toggle("dark-theme", dark);
-      document.body.classList.toggle("light-theme", !dark);
-    },
     notifyFreeTrial() {
       Noty.closeAll('trial')
       if (this.isTrial && this.isUltimate) {
