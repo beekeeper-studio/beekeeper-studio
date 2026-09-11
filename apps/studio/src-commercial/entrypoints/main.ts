@@ -1,9 +1,8 @@
 'use strict'
 import * as fs from 'fs'
 import path from 'path'
-import { app, protocol } from 'electron'
+import { app, protocol, ipcMain, clipboard, ClipboardItem } from 'electron'
 import * as electron from 'electron'
-import { ipcMain } from 'electron'
 import _ from 'lodash'
 import log from '@bksLogger'
 
@@ -315,6 +314,27 @@ ipcMain.handle('maximizeWindow', () => {
 
 ipcMain.handle('closeWindow', () => {
   getCurrentWindow().closeWindow();
+})
+
+ipcMain.handle('clipboard:write', async (_event, { content, image }: { content: string, image: boolean }) => {
+  let item: ClipboardItem;
+  if (image) {
+    const im = electron.nativeImage.createFromDataURL(content);
+    const pngBuffer = im.toPNG();
+    const blob = new Blob([pngBuffer], { type: 'image/png' });
+    item = new ClipboardItem({
+      'image/png': blob
+    });
+  } else {
+    item = new ClipboardItem({
+      'text/plain': content
+    });
+  }
+  clipboard.write([item]);
+})
+
+ipcMain.handle('clipboard:read', async () => {
+  return await clipboard.readText();
 })
 
 // Exit cleanly on request from parent process in development mode.
