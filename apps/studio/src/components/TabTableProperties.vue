@@ -160,6 +160,7 @@ import TableIndexesVue from './tableinfo/TableIndexes.vue'
 import TableRelationsVue from './tableinfo/TableRelations.vue'
 import TableTriggersVue from './tableinfo/TableTriggers.vue'
 import TablePartitionsVue from './tableinfo/TablePartitions.vue'
+import TablePoliciesVue from './tableinfo/TablePolicies.vue'
 import TableSchemaValidationVue from './tableinfo/TableSchemaValidation.vue'
 import TableLength from '@/components/common/TableLength.vue'
 import { format as humanBytes } from 'bytes'
@@ -226,6 +227,17 @@ export default {
           needsProperties: true,
           needsPartitions: true,
           component: TablePartitionsVue,
+          dirty: false
+        },
+        {
+          id: 'policies',
+          name: 'Policies',
+          tableOnly: true,
+          needsPolicies: true,
+          // The tab loads its own policies so it can report a permission error
+          needsProperties: false,
+          needsPartitions: false,
+          component: TablePoliciesVue,
           dirty: false
         },
         {
@@ -304,6 +316,10 @@ export default {
           (this.supportedFeatures.editPartitions && this.table.tabletype != partitionTableType)))) {
           return false
         }
+        if (p.needsPolicies && !this.supportedFeatures.policies) {
+          return false
+        }
+
         if (p.mongoOnly && this.dialect !== 'mongodb') {
           return false
         }

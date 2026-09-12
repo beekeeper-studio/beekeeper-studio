@@ -363,6 +363,32 @@ export interface IndexAlterations {
   schema?: string
 }
 
+/** The statement a row level security policy applies to. */
+export type PolicyCommand = 'ALL' | 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE'
+
+/**
+ * Postgres can only change a policy's name, roles and expressions. The command
+ * it applies to and whether it is permissive are fixed at creation time.
+ */
+export interface AlterPolicySpec {
+  name: string
+  newName?: string
+  roles?: string[]
+  using?: string
+  check?: string
+}
+
+export interface DropPolicySpec {
+  name: string
+}
+
+export interface PolicyAlterations {
+  alterations: AlterPolicySpec[]
+  drops: DropPolicySpec[]
+  table: string
+  schema?: string
+}
+
 
 
 export interface CreateRelationSpec {

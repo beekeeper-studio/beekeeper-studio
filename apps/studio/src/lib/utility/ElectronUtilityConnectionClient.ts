@@ -1,7 +1,7 @@
 import { DatabaseElement, IBasicDatabaseClient } from "../db/types";
 import Vue from 'vue';
-import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, SupportedFeatures, TableChanges, TableFilter, TableColumn, TableIndex, TableOrView, TablePartition, TableResult, TableProperties, StreamResults, TableInsert, TableTrigger, ImportFuncOptions, FieldDescriptor, FieldEditData, ServerStatistics } from "../db/models";
-import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
+import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, SupportedFeatures, TableChanges, TableFilter, TableColumn, TableIndex, TableOrView, TablePartition, TablePolicy, TableResult, TableProperties, StreamResults, TableInsert, TableTrigger, ImportFuncOptions, FieldDescriptor, FieldEditData, ServerStatistics } from "../db/models";
+import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, PolicyAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { IConnection } from "@/common/interfaces/IConnection";
 
 
@@ -80,6 +80,10 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
 
   async listTablePartitions(table: string, schema?: string): Promise<TablePartition[]> {
     return await Vue.prototype.$util.send('conn/listTablePartitions', { table, schema });
+  }
+
+  async listTablePolicies(table: string, schema?: string): Promise<TablePolicy[]> {
+    return await Vue.prototype.$util.send('conn/listTablePolicies', { table, schema });
   }
 
   async executeCommand(commandText: string): Promise<NgQueryResult[]> {
@@ -204,6 +208,14 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
 
   async alterPartition(changes: AlterPartitionsSpec): Promise<void> {
     return await Vue.prototype.$util.send('conn/alterPartition', { changes });
+  }
+
+  async alterPolicySql(changes: PolicyAlterations): Promise<string> {
+    return await Vue.prototype.$util.send('conn/alterPolicySql', { changes });
+  }
+
+  async alterPolicy(changes: PolicyAlterations): Promise<void> {
+    return await Vue.prototype.$util.send('conn/alterPolicy', { changes });
   }
 
   async applyChangesSql(changes: TableChanges): Promise<string> {

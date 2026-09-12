@@ -1,4 +1,4 @@
-import { Dialect, DropIndexSpec, PartitionExpressionChange, PartitionItem } from "@shared/lib/dialects/models";
+import { AlterPolicySpec, Dialect, DropIndexSpec, DropPolicySpec, PartitionExpressionChange, PartitionItem } from "@shared/lib/dialects/models";
 import { PostgresData } from "@shared/lib/dialects/postgresql";
 import { ChangeBuilderBase } from "./ChangeBuilderBase";
 
@@ -56,6 +56,63 @@ export class PostgresqlChangeBuilder extends ChangeBuilderBase {
   alterPartitions(alterations: PartitionExpressionChange[]) {
     if (!alterations?.length) return null;
     return alterations.map((alter) => this.alterPartition(alter)).join(';');
+  }
+
+  /**
+   * `TO` takes role names, but these four are keywords standing in for a role
+   * and break if they get quoted.
+   */
+  private policyRole(role: string): string {
+    const keywords = ['public', 'current_role', 'current_user', 'session_user']
+    const trimmed = role.trim()
+    return keywords.includes(trimmed.toLowerCase()) ? trimmed.toUpperCase() : this.wrapIdentifier(trimmed)
+  }
+
+  /**
+   * Only the name, roles and expressions of a policy can change. Postgres has
+   * no syntax for removing a USING or WITH CHECK expression, so an empty one is
+   * left alone here and rejected by the caller instead.
+   */
+  alterPolicy(alter: AlterPolicySpec): string | null {
+    const statements: string[] = []
+
+    if (alter.newName && alter.newName !== alter.name) {
+      statements.push(`ALTER POLICY ${this.wrapIdentifier(alter.name)} ON ${this.tableName} RENAME TO ${this.wrapIdentifier(alter.newName)}`)
+    }
+
+    const clauses: string[] = []
+    if (alter.roles?.length) {
+      clauses.push(`TO ${alter.roles.map((r) => this.policyRole(r)).join(', ')}`)
+    }
+    if (alter.using) {
+      clauses.push(`USING (${this.wrapLiteral(alter.using)})`)
+    }
+    if (alter.check) {
+      clauses.push(`WITH CHECK (${this.wrapLiteral(alter.check)})`)
+    }
+
+    if (clauses.length) {
+      // The rename above runs first, so anything after it has to use the new name.
+      const name = alter.newName || alter.name
+      statements.push(`ALTER POLICY ${this.wrapIdentifier(name)} ON ${this.tableName} ${clauses.join(' ')}`)
+    }
+
+    return statements.length ? statements.join(';') : null
+  }
+
+  alterPolicies(alterations: AlterPolicySpec[]): string | null {
+    if (!alterations?.length) return null
+    const statements = alterations.map((alter) => this.alterPolicy(alter)).filter((s) => !!s)
+    return statements.length ? statements.join(';') : null
+  }
+
+  dropPolicy(drop: DropPolicySpec): string {
+    return `DROP POLICY ${this.wrapIdentifier(drop.name)} ON ${this.tableName}`
+  }
+
+  dropPolicies(drops: DropPolicySpec[]): string | null {
+    if (!drops?.length) return null
+    return drops.map((drop) => this.dropPolicy(drop)).join(';')
   }
 
   dropIndexes(drops: DropIndexSpec[]): string | null {

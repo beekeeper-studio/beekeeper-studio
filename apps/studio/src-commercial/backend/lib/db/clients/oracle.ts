@@ -383,6 +383,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     restore: false,
     indexNullsNotDistinct: false,
     transactions: true,
+    policies: false,
     filterTypes: ['standard']
   });
 

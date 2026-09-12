@@ -1160,6 +1160,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
       restore: false,
       indexNullsNotDistinct: false,
       transactions: true,
+      policies: false,
       filterTypes: ['standard']
     };
   }

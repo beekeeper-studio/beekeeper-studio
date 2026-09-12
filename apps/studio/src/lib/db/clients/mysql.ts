@@ -1311,6 +1311,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       restore: true,
       indexNullsNotDistinct: false,
       transactions: true,
+      policies: false,
       filterTypes: ['standard']
     };
   }

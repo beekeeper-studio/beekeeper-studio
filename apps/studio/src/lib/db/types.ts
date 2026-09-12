@@ -1,5 +1,5 @@
-import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FieldDescriptor, FieldEditData, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, ServerStatistics, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
-import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
+import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FieldDescriptor, FieldEditData, FilterOptions, ImportFuncOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, ServerStatistics, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TablePolicy, TableProperties, TableResult, TableTrigger, TableUpdateResult } from './models';
+import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, PolicyAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import type { SshMode } from '@/common/interfaces/IConnection';
 
 export const DatabaseTypes = [
@@ -342,6 +342,7 @@ export interface IBasicDatabaseClient {
   getTableReferences(table: string, schema?: string): Promise<string[]>,
   getTableKeys(table: string, schema?: string): Promise<TableKey[]>,
   listTablePartitions(table: string, schema?: string): Promise<TablePartition[]>,
+  listTablePolicies(table: string, schema?: string): Promise<TablePolicy[]>,
   executeCommand(commandText: string): Promise<NgQueryResult[]>,
   query(queryText: string, tabId: number, options?: any): Promise<CancelableQuery>,
   getResultEditData(queryText: string, fields: FieldDescriptor[]): Promise<FieldEditData[]>
@@ -371,6 +372,8 @@ export interface IBasicDatabaseClient {
   alterRelation(changes: RelationAlterations): Promise<void>,
   alterPartitionSql(changes: AlterPartitionsSpec): Promise<string | null>,
   alterPartition(changes: AlterPartitionsSpec): Promise<void>,
+  alterPolicySql(changes: PolicyAlterations): Promise<string | null>,
+  alterPolicy(changes: PolicyAlterations): Promise<void>,
 
   applyChangesSql(changes: TableChanges): Promise<string>,
   applyChanges(changes: TableChanges, tabId?: number): Promise<TableUpdateResult[]>,

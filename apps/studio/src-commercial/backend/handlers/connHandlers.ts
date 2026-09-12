@@ -1,8 +1,8 @@
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import { IConnection } from "@/common/interfaces/IConnection";
-import { DatabaseFilterOptions, ExtendedTableColumn, FieldDescriptor, FieldEditData, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TableProperties, TableResult, TableTrigger, TableUpdateResult } from "@/lib/db/models";
+import { DatabaseFilterOptions, ExtendedTableColumn, FieldDescriptor, FieldEditData, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableFilter, TableIndex, TableInsert, TableOrView, TablePartition, TablePolicy, TableProperties, TableResult, TableTrigger, TableUpdateResult } from "@/lib/db/models";
 import { DatabaseElement, IDbConnectionServerConfig } from "@/lib/db/types";
-import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, dialectFor, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
+import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, dialectFor, IndexAlterations, PolicyAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { checkConnection, errorMessages, getDriverHandler, state } from "@/handlers/handlerState";
 import ConnectionProvider from '../lib/connection-provider';
 import { uuidv4 } from "@/lib/uuid";
@@ -51,6 +51,7 @@ export interface IConnectionHandlers {
   'conn/getOutgoingKeys': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableKey[]>,
   'conn/getIncomingKeys': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableKey[]>,
   'conn/listTablePartitions': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TablePartition[]>,
+  'conn/listTablePolicies': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TablePolicy[]>,
   'conn/executeCommand': ({ commandText, sId }: { commandText: string, sId: string }) => Promise<NgQueryResult[]>,
   'conn/query': ({ queryText, options, tabId, hasActiveTransaction, sId }: { queryText: string, options?: any, tabId: number, hasActiveTransaction: boolean, sId: string }) => Promise<string>,
   'conn/getResultEditData': ({ queryText, fields, sId }: { queryText: string, fields: FieldDescriptor[], sId: string }) => Promise<FieldEditData[]>,
@@ -86,6 +87,8 @@ export interface IConnectionHandlers {
   'conn/alterRelation': ({ changes, sId }: { changes: RelationAlterations, sId: string }) => Promise<void>,
   'conn/alterPartitionSql': ({ changes, sId }: { changes: AlterPartitionsSpec, sId: string }) => Promise<string | null>,
   'conn/alterPartition': ({ changes, sId }: { changes: AlterPartitionsSpec, sId: string }) => Promise<void>,
+  'conn/alterPolicySql': ({ changes, sId }: { changes: PolicyAlterations, sId: string }) => Promise<string | null>,
+  'conn/alterPolicy': ({ changes, sId }: { changes: PolicyAlterations, sId: string }) => Promise<void>,
   'conn/applyChangesSql': ({ changes, sId }: { changes: TableChanges, sId: string }) => Promise<string>,
   'conn/applyChanges': ({ changes, tabId, sId }: { changes: TableChanges, tabId?: number, sId: string }) => Promise<TableUpdateResult[]>,
   'conn/setTableDescription': ({ table, description, schema, sId }: { table: string, description: string, schema?: string, sId: string }) => Promise<string>,
@@ -341,6 +344,11 @@ export const ConnHandlers: IConnectionHandlers = {
     return await state(sId).connection.listTablePartitions(table, schema);
   },
 
+  'conn/listTablePolicies': async function({ table, schema, sId }: { table: string, schema?: string, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.listTablePolicies(table, schema);
+  },
+
   'conn/executeCommand': async function({ commandText, sId }: { commandText: string, sId: string }) {
     checkConnection(sId);
     return await state(sId).connection.executeCommand(commandText);
@@ -488,6 +496,16 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/alterPartition': async function({ changes, sId }: { changes: AlterPartitionsSpec, sId: string }) {
     checkConnection(sId);
     return await state(sId).connection.alterPartition(changes);
+  },
+
+  'conn/alterPolicySql': async function({ changes, sId }: { changes: PolicyAlterations, sId: string }) {
+    checkConnection(sId);
+    return state(sId).connection.alterPolicySql(changes);
+  },
+
+  'conn/alterPolicy': async function({ changes, sId }: { changes: PolicyAlterations, sId: string }) {
+    checkConnection(sId);
+    return await state(sId).connection.alterPolicy(changes);
   },
 
   'conn/applyChangesSql': async function({ changes, sId }: { changes: TableChanges, sId: string }) {

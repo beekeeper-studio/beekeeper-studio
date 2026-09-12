@@ -1,7 +1,7 @@
 import { PoolConfig } from "pg";
 import { AWSCredentials, ClusterCredentialConfiguration, RedshiftCredentialResolver } from "../authentication/amazon-redshift";
 import { DatabaseElement } from "../types";
-import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TableProperties, ExtendedTableColumn, TableIndex } from "../models";
+import { FilterOptions, PrimaryKeyColumn, SupportedFeatures, TableOrView, TablePolicy, TableProperties, ExtendedTableColumn, TableIndex } from "../models";
 import { PostgresClient, STQOptions } from "./postgresql";
 import {escapeString, resolveAWSCredentials} from "./utils";
 import pg from 'pg';
@@ -23,11 +23,17 @@ export class RedshiftClient extends PostgresClient {
       restore: false,
       indexNullsNotDistinct: false,
       transactions: true,
+      policies: false,
       filterTypes: ['standard', 'ilike']
     };
   }
 
   async listMaterializedViews(_filter?: FilterOptions): Promise<TableOrView[]> {
+    return [];
+  }
+
+  async listTablePolicies(_table: string, _schema?: string): Promise<TablePolicy[]> {
+    // redshift has its own RLS implementation, not postgres' pg_policies
     return [];
   }
 

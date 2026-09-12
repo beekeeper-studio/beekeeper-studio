@@ -89,6 +89,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
       restore: false,
       indexNullsNotDistinct: false,
       transactions: true,
+      policies: false,
       filterTypes: ['standard']
     };
   }

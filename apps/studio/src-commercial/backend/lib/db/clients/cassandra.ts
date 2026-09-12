@@ -109,6 +109,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       backDirFormat: false,
       restore: false,
       indexNullsNotDistinct: false,
+      policies: false,
       filterTypes: ['standard']
     }
   }

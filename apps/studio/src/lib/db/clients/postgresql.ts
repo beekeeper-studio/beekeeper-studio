@@ -9,7 +9,7 @@ import knexlib from 'knex'
 import logRaw from '@bksLogger'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
-import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
+import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, TablePolicy, ImportFuncOptions, BksField, BksFieldType } from "../models";
 import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries, errorMessages } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
@@ -18,7 +18,7 @@ import globals from '../../../common/globals';
 import { HasPool, VersionInfo } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
 import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/PostgresqlChangeBuilder';
-import { AlterPartitionsSpec, IndexColumn, TableKey } from '@shared/lib/dialects/models';
+import { AlterPartitionsSpec, IndexColumn, PolicyAlterations, PolicyCommand, TableKey } from '@shared/lib/dialects/models';
 import { PostgresData } from '@shared/lib/dialects/postgresql';
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from './BasicDatabaseClient';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
@@ -123,6 +123,8 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       restore: true,
       indexNullsNotDistinct: this.version.number >= 150_000,
       transactions: true,
+      // Row level security landed in postgres 9.5
+      policies: this.version.number >= 90_500,
       filterTypes: ['standard', 'ilike']
     };
   }
@@ -260,6 +262,44 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
 
     const data = await this.driverExecuteSingle(sql);
     return data.rows;
+  }
+
+  async listTablePolicies(table: string, schema: string = this._defaultSchema): Promise<TablePolicy[]> {
+    // Row level security landed in postgres 9.5, pg_policies came with it.
+    if (this.version.number < 90_500) return [];
+
+    const sql = `
+      SELECT policyname, permissive, roles, cmd, qual, with_check
+      FROM pg_catalog.pg_policies
+      WHERE schemaname = $1 AND tablename = $2
+      ORDER BY policyname
+    `;
+
+    const data = await this.driverExecuteSingle(sql, { params: [schema, table] });
+
+    return data.rows.map((row) => ({
+      name: row.policyname,
+      table,
+      schema,
+      permissive: `${row.permissive}`.toUpperCase() !== 'RESTRICTIVE',
+      roles: parsePostgresArray(row.roles),
+      command: (row.cmd || 'ALL') as PolicyCommand,
+      using: row.qual ?? null,
+      check: row.with_check ?? null,
+    }));
+  }
+
+  async alterPolicySql(payload: PolicyAlterations): Promise<string> {
+    const builder = new PostgresqlChangeBuilder(payload.table, payload.schema);
+    const alters = builder.alterPolicies(payload.alterations);
+    const drops = builder.dropPolicies(payload.drops);
+    return [alters, drops].filter((s) => !!s).join(";");
+  }
+
+  async alterPolicy(payload: PolicyAlterations): Promise<void> {
+    const query = await this.alterPolicySql(payload);
+    if (!query) return;
+    await this.driverExecuteSingle(query);
   }
 
   async listViews(filter: FilterOptions = { schema: 'public' }): Promise<TableOrView[]> {
@@ -1893,6 +1933,23 @@ pg.types.setTypeParser(pg.types.builtins.DATE, 'text', (val) => val); // date
 pg.types.setTypeParser(pg.types.builtins.TIMESTAMP, 'text', (val) => val); // timestamp without timezone
 pg.types.setTypeParser(pg.types.builtins.TIMESTAMPTZ, 'text', (val) => val); // timestamp
 pg.types.setTypeParser(pg.types.builtins.INTERVAL, 'text', (val) => val); // interval (Issue #1442 "BUG: INTERVAL columns receive wrong value when cloning row)
+
+// pg has no registered parser for `name[]` (OID 1003), so those columns arrive
+// as the raw `{a,b}` literal. pg's text array parser (OID 1009) decodes it,
+// quoting and all. Its typings only know the OIDs it has constants for.
+const parseTextArray = (pg.types.getTypeParser as (
+  id: number,
+  format: 'text'
+) => (value: string) => string[])(1009, 'text');
+
+export function parsePostgresArray(value: string[] | string | null): string[] {
+  if (_.isNil(value)) return [];
+  if (_.isArray(value)) return value;
+  if (_.isString(value) && value.startsWith('{') && value.endsWith('}')) {
+    return parseTextArray(value);
+  }
+  return [value];
+}
 
 export function wrapIdentifier(value: string): string {
   if (!value || value === '*') return value;

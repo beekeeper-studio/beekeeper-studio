@@ -192,6 +192,7 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
       restore: false,
       indexNullsNotDistinct: false,
       transactions: true,
+      policies: false,
       filterTypes: ['standard'],
     };
   }

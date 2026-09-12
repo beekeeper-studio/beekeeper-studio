@@ -901,6 +901,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       restore: false,
       indexNullsNotDistinct: false,
       transactions: this.supportsTransaction,
+      policies: false,
       filterTypes: ['standard']
     };
   }

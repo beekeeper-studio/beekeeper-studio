@@ -1,5 +1,5 @@
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField, FieldDescriptor, FieldReadOnlyReason, ServerStatistics, FieldEditData } from '../models';
-import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TablePolicy, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField, FieldDescriptor, FieldReadOnlyReason, ServerStatistics, FieldEditData } from '../models';
+import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, PolicyAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries, applyChangesSql } from './utils';
 import { Knex } from 'knex';
 import _ from 'lodash'
@@ -192,6 +192,10 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   abstract getIncomingKeys(_table: string, _schema?: string): Promise<TableKey[]>;
 
   listTablePartitions(_table: string, _schema?: string): Promise<TablePartition[]> {
+    return Promise.resolve([])
+  }
+
+  listTablePolicies(_table: string, _schema?: string): Promise<TablePolicy[]> {
     return Promise.resolve([])
   }
 
@@ -393,6 +397,14 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   }
 
   async alterPartition(_changes: AlterPartitionsSpec): Promise<void> {
+    return;
+  }
+
+  async alterPolicySql(_changes: PolicyAlterations): Promise<string | null> {
+    return ''
+  }
+
+  async alterPolicy(_changes: PolicyAlterations): Promise<void> {
     return;
   }
 

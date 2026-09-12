@@ -1,5 +1,5 @@
 import pg, { PoolConfig } from "pg";
-import { FilterOptions, SupportedFeatures, TableIndex, TableOrView, TablePartition, TableProperties, TableTrigger, ExtendedTableColumn, BksField } from "../models";
+import { FilterOptions, SupportedFeatures, TableIndex, TableOrView, TablePartition, TablePolicy, TableProperties, TableTrigger, ExtendedTableColumn, BksField } from "../models";
 import { PostgresClient, STQOptions } from "./postgresql";
 import _ from 'lodash';
 import { defaultCreateScript } from "./postgresql/scripts";
@@ -20,6 +20,7 @@ export class CockroachClient extends PostgresClient {
       restore: false,
       indexNullsNotDistinct: false,
       transactions: true,
+      policies: false,
       filterTypes: ['standard', 'ilike']
     };
   }
@@ -91,6 +92,11 @@ export class CockroachClient extends PostgresClient {
 
   async listTablePartitions(_table: string, _schema: string): Promise<TablePartition[]> {
     return null;
+  }
+
+  async listTablePolicies(_table: string, _schema?: string): Promise<TablePolicy[]> {
+    // cockroach's row level security support postdates the version range we target
+    return [];
   }
 
   async listTableTriggers(_table: string, _schema?: string): Promise<TableTrigger[]> {

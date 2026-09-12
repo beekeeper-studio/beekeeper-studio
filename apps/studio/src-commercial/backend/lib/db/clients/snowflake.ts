@@ -187,6 +187,7 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
       restore: false,
       indexNullsNotDistinct: false,
       transactions: true,
+      policies: false,
       filterTypes: ['standard', 'ilike']
     }
   }

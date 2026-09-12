@@ -115,6 +115,7 @@ export class SQLAnywhereClient extends BasicDatabaseClient<SQLAnywhereResult> {
       restore: false,
       indexNullsNotDistinct: false,
       transactions: true,
+      policies: false,
       filterTypes: ['standard']
     }
   }

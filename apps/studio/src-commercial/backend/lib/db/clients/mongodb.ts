@@ -183,6 +183,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       restore: false,
       indexNullsNotDistinct: false,
       transactions: false,
+      policies: false,
       filterTypes: ['standard', 'ilike']
     }
   }

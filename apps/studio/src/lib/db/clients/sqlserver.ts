@@ -1246,6 +1246,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       restore: false,
       indexNullsNotDistinct: false,
       transactions: true,
+      policies: false,
       filterTypes: ['standard' as IncludedFilterTypes]
     }
   }

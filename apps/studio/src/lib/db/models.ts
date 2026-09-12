@@ -1,4 +1,4 @@
-import { IndexColumn, SchemaItem, TableKey } from "@shared/lib/dialects/models";
+import { IndexColumn, PolicyCommand, SchemaItem, TableKey } from "@shared/lib/dialects/models";
 import { BackupConfig } from "./models/BackupConfig";
 
 export abstract class BeeCursor {
@@ -73,6 +73,22 @@ export interface TablePartition {
   schema: string;
   expression: string;
   num: number;
+}
+
+/** A row level security policy. Postgres only for now. */
+export interface TablePolicy {
+  name: string
+  table: string
+  schema?: string
+  /** false means the policy is RESTRICTIVE */
+  permissive: boolean
+  /** The roles the policy applies to. `['public']` means every role. */
+  roles: string[]
+  command: PolicyCommand
+  /** The USING expression, null when the policy has none. */
+  using: string | null
+  /** The WITH CHECK expression, null when the policy has none. */
+  check: string | null
 }
 
 export interface TableProperties {
@@ -254,6 +270,8 @@ export interface SupportedFeatures {
   backDirFormat: boolean;
   restore: boolean;
   indexNullsNotDistinct: boolean; // for postgres 15 and above
+  /** Row level security policies. Postgres 9.5 and above. */
+  policies: boolean;
   transactions: boolean;
   filterTypes: IncludedFilterTypes[];
 }
