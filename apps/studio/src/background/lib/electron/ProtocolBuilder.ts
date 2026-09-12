@@ -1,11 +1,11 @@
 import { protocol } from 'electron'
 import * as path from 'path'
 import { readFile } from 'fs'
-import * as fs from 'fs'
 import { URL } from 'url'
 import rawLog from '@bksLogger'
 import platformInfo from '@/common/platform_info'
 import bksConfig from "@/common/bksConfig";
+import { resolveTheme } from './resolveTheme'
 
 const log = rawLog.scope('ProtocolBuilder')
 
@@ -35,8 +35,29 @@ export const ProtocolBuilder = {
     protocol.registerBufferProtocol(
       'app',
       (request, respond) => {
-        let pathName = new URL(request.url).pathname
-        pathName = decodeURI(pathName) // Needed in case URL contains spaces
+        const url = new URL(request.url)
+
+        if (url.hostname === 'themes') {
+          resolveTheme(platformInfo.builtinThemesDirectory, url).then((data) => {
+            if (data) {
+              respond({ mimeType: "text/css", data });
+            } else {
+              resolveTheme(platformInfo.externalThemesDirectory, url).then((data) => {
+                if (data) {
+                  respond({ mimeType: "text/css", data });
+                } else {
+                  respond({ error: -6 });
+                }
+              });
+            }
+          });
+          return;
+        }
+        // app://./index.html parks a bare dot in the host, while
+        // app://assets/index.css parks the first path segment there.
+        const host = url.hostname === '.' ? '' : url.hostname
+        // decodeURI is needed in case the URL contains spaces
+        const pathName = decodeURI(path.posix.join('/', host, url.pathname))
 
         const emptySourceMap = JSON.stringify({
           version: 3,

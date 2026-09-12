@@ -24,13 +24,14 @@ import xlsx from 'xlsx'
 import TimeAgo from 'javascript-time-ago'
 import en from 'javascript-time-ago/locale/en'
 import VueClipboard from 'vue-clipboard2'
-import { AppEventMixin } from '@/common/AppEvent'
+import { AppEvent, AppEventMixin } from '@/common/AppEvent'
 import BeekeeperPlugin from '@/plugins/BeekeeperPlugin'
 import _ from 'lodash'
 import NotyPlugin from '@/plugins/NotyPlugin'
 import '@/common/initializers/big_int_initializer.ts'
 import SettingsPlugin from '@/plugins/SettingsPlugin'
 import rawLog from '@bksLogger'
+import { ThemeManager } from "@commercial/backend/theme-system/ThemeManager";
 import { HeaderSortTabulatorModule } from '@/plugins/HeaderSortTabulatorModule'
 import { KeyListenerTabulatorModule } from '@/plugins/KeyListenerTabulatorModule'
 import { UtilityConnection } from '@/lib/utility/UtilityConnection'
@@ -208,6 +209,31 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
 
     const handler = new AppEventHandler(app)
     handler.registerCallbacks()
+    const themeParams = new URLSearchParams(window.location.search);
+    const theme = new ThemeManager({
+      initialThemeId: themeParams.get("themeId") ?? "default",
+      initialThemeDark: themeParams.get("themeDark") === "true",
+    });
+    await theme.initialize();
+
+    store.commit("theme/setSystemDark", themeParams.get("systemDark") === "true");
+    window.main.onSystemUsesDarkColors((dark) => {
+      store.commit("theme/setSystemDark", dark);
+    });
+    store.watch(
+      (_state, getters) => getters["theme/type"],
+      (type) => {
+        theme.setDark(type === "dark");
+        app.$emit(AppEvent.changedTheme, store.getters["theme/id"]);
+      }
+    );
+    store.watch(
+      (_state, getters) => getters["theme/id"],
+      (id) => {
+        theme.setId(id);
+        app.$emit(AppEvent.changedTheme, id);
+      }
+    );
     await store.dispatch('initRootStates')
     const webPluginManager = new WebPluginManager({
       utilityConnection: Vue.prototype.$util,

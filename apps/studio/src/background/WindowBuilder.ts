@@ -28,11 +28,12 @@ class BeekeeperWindow {
   private win: BrowserWindow | null
   private reloaded = false
   private appUrl: string
+  private systemUsesDarkColors: boolean;
   public sId: string;
 
   constructor(protected settings: IGroupedUserSettings, openOptions: OpenOptions) {
-    const theme = settings.theme
-    const dark = electron.nativeTheme.shouldUseDarkColors || theme.value.toString().includes('dark')
+    this.systemUsesDarkColors = electron.nativeTheme.shouldUseDarkColors;
+    const dark = this.isDark();
     let titleBarStyle: 'default' | 'hidden' = platformInfo.isWindows ? 'default' : 'hidden'
 
     if (platformInfo.isWayland) {
@@ -65,6 +66,10 @@ class BeekeeperWindow {
     const appUrl = platformInfo.isDevelopment ? devUrl : startUrl
     // const appUrl = startUrl
     const queryObj: any = openOptions ? { ...openOptions } : {}
+
+    queryObj.themeId = this.getThemeId();
+    queryObj.themeDark = this.isDark();
+    queryObj.systemDark = this.systemUsesDarkColors;
 
     if (platformInfo.isWayland) {
       queryObj.runningWayland = true
@@ -216,6 +221,13 @@ class BeekeeperWindow {
     const windowMoveResizeListener = _.debounce(this.windowMoveResizeListener.bind(this), 1000)
     this.win.on('resize',windowMoveResizeListener)
     this.win.on('move', windowMoveResizeListener)
+
+    electron.nativeTheme.on("updated", () => {
+      if (this.systemUsesDarkColors !== electron.nativeTheme.shouldUseDarkColors) {
+        this.systemUsesDarkColors = electron.nativeTheme.shouldUseDarkColors;
+        this.send("systemUsesDarkColors", this.systemUsesDarkColors);
+      }
+    });
   }
 
   windowMoveResizeListener(){
@@ -269,6 +281,20 @@ class BeekeeperWindow {
 
   closeWindow() {
     this.win?.close();
+  }
+
+  getThemeId() {
+    return this.settings.themeId?.value?.toString() || 'default';
+  }
+
+  /** is the window in dark mode? */
+  isDark(): boolean {
+    const themeDark = this.settings.themeDark?.value?.toString() || 'auto';
+    if (themeDark === 'auto') {
+      return this.systemUsesDarkColors;
+    } else {
+      return themeDark === 'true'
+    }
   }
 }
 

@@ -6,9 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Beekeeper-Studio</title>
     <script src="./src-commercial/entrypoints/renderer.ts" type="module"></script>
-    <!-- <link rel="stylesheet" href="./main.css"> -->
   </head>
   <body id="body">
+    <script>
+      const params = new URLSearchParams(location.search);
+      const dark = params.get("themeDark") === "true";
+      const themeId = params.get("themeId") || "default";
+      document.body.classList.add(dark ? "dark-theme" : "light-theme");
+      document.body.classList.add(`theme-${themeId}`);
+    </script>
     <noscript>
       <strong>We're sorry but beekeeper-studio doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
     </noscript>

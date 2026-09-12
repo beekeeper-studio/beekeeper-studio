@@ -121,6 +121,11 @@ export const api = {
   onLeaveFullscreen(func: any, sId: string) {
     ipcRenderer.on(`leave-full-screen-${sId}`, func);
   },
+  onSystemUsesDarkColors(func: (dark: boolean) => void) {
+    ipcRenderer.on("systemUsesDarkColors", (_event, dark: boolean) => {
+      func(dark);
+    });
+  },
   async isMaximized() {
     return await ipcRenderer.invoke('isMaximized');
   },
