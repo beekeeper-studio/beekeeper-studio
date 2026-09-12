@@ -1,4 +1,4 @@
-import { AlterPolicySpec, Dialect, DropIndexSpec, DropPolicySpec, PartitionExpressionChange, PartitionItem } from "@shared/lib/dialects/models";
+import { AlterPolicySpec, CreatePolicySpec, Dialect, DropIndexSpec, DropPolicySpec, PartitionExpressionChange, PartitionItem, PolicyCommand, PolicyCommands } from "@shared/lib/dialects/models";
 import { PostgresData } from "@shared/lib/dialects/postgresql";
 import { ChangeBuilderBase } from "./ChangeBuilderBase";
 
@@ -59,6 +59,15 @@ export class PostgresqlChangeBuilder extends ChangeBuilderBase {
   }
 
   /**
+   * The command lands in a keyword position, so it can only ever be one of the
+   * known commands -- anything else falls back to postgres' own default.
+   */
+  private policyCommand(command?: string): PolicyCommand {
+    const upper = `${command || ''}`.toUpperCase()
+    return (PolicyCommands as string[]).includes(upper) ? upper as PolicyCommand : 'ALL'
+  }
+
+  /**
    * `TO` takes role names, but these four are keywords standing in for a role
    * and break if they get quoted.
    */
@@ -66,6 +75,28 @@ export class PostgresqlChangeBuilder extends ChangeBuilderBase {
     const keywords = ['public', 'current_role', 'current_user', 'session_user']
     const trimmed = role.trim()
     return keywords.includes(trimmed.toLowerCase()) ? trimmed.toUpperCase() : this.wrapIdentifier(trimmed)
+  }
+
+  createPolicy(spec: CreatePolicySpec): string {
+    const parts = [`CREATE POLICY ${this.wrapIdentifier(spec.name)} ON ${this.tableName}`]
+
+    // PERMISSIVE and FOR ALL are postgres' defaults, but spelling them out keeps
+    // the generated sql readable next to what the grid shows.
+    if (spec.permissive === false) parts.push('AS RESTRICTIVE')
+    parts.push(`FOR ${this.policyCommand(spec.command)}`)
+
+    const roles = spec.roles?.length ? spec.roles : ['public']
+    parts.push(`TO ${roles.map((r) => this.policyRole(r)).join(', ')}`)
+
+    if (spec.using) parts.push(`USING (${this.wrapLiteral(spec.using)})`)
+    if (spec.check) parts.push(`WITH CHECK (${this.wrapLiteral(spec.check)})`)
+
+    return parts.join(' ')
+  }
+
+  createPolicies(specs: CreatePolicySpec[]): string | null {
+    if (!specs?.length) return null
+    return specs.map((spec) => this.createPolicy(spec)).join(';')
   }
 
   /**

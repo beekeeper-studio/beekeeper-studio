@@ -4,6 +4,69 @@ import { PostgresqlChangeBuilder } from "@shared/lib/sql/change_builder/Postgres
 describe("PostgresqlChangeBuilder policies", () => {
   const builder = () => new PostgresqlChangeBuilder("orders", "public")
 
+  describe("createPolicy", () => {
+    it("spells out the defaults", () => {
+      const sql = builder().createPolicy({ name: "p" })
+      expect(sql).toBe(`CREATE POLICY "p" ON "public"."orders" FOR ALL TO PUBLIC`)
+    })
+
+    it("marks restrictive policies and keeps permissive ones implicit", () => {
+      expect(builder().createPolicy({ name: "p", permissive: false })).toContain("AS RESTRICTIVE")
+      expect(builder().createPolicy({ name: "p", permissive: true })).not.toContain("RESTRICTIVE")
+    })
+
+    it("builds a full policy", () => {
+      const sql = builder().createPolicy({
+        name: "tenant_isolation",
+        command: "UPDATE",
+        permissive: false,
+        roles: ["app_user", "Reporting Team"],
+        using: "owner = current_user",
+        check: "owner IS NOT NULL",
+      })
+      expect(sql).toBe(
+        `CREATE POLICY "tenant_isolation" ON "public"."orders" AS RESTRICTIVE FOR UPDATE ` +
+        `TO "app_user", "Reporting Team" USING (owner = current_user) WITH CHECK (owner IS NOT NULL)`
+      )
+    })
+
+    it("omits expressions that were left blank", () => {
+      const sql = builder().createPolicy({ name: "p", command: "SELECT", using: "true" })
+      expect(sql).toBe(`CREATE POLICY "p" ON "public"."orders" FOR SELECT TO PUBLIC USING (true)`)
+      expect(sql).not.toContain("WITH CHECK")
+    })
+
+    it("falls back to ALL for a command it does not know", () => {
+      // the command reaches sql as a bare keyword, so it can never be free text
+      const sql = builder().createPolicy({ name: "p", command: "DROP TABLE orders" as never })
+      expect(sql).toBe(`CREATE POLICY "p" ON "public"."orders" FOR ALL TO PUBLIC`)
+    })
+
+    it("accepts a lowercase command", () => {
+      expect(builder().createPolicy({ name: "p", command: "select" as never })).toContain("FOR SELECT")
+    })
+
+    it("strips semicolons out of expressions", () => {
+      const sql = builder().createPolicy({ name: "p", using: "true; DROP TABLE orders" })
+      expect(sql).toContain("USING (true DROP TABLE orders)")
+    })
+  })
+
+  describe("createPolicies", () => {
+    it("joins each statement", () => {
+      const sql = builder().createPolicies([{ name: "a" }, { name: "b", command: "DELETE" }])
+      expect(sql).toBe(
+        `CREATE POLICY "a" ON "public"."orders" FOR ALL TO PUBLIC;` +
+        `CREATE POLICY "b" ON "public"."orders" FOR DELETE TO PUBLIC`
+      )
+    })
+
+    it("returns null when given nothing", () => {
+      expect(builder().createPolicies([])).toBeNull()
+      expect(builder().createPolicies(undefined)).toBeNull()
+    })
+  })
+
   describe("alterPolicy", () => {
     it("qualifies the table and quotes the policy name", () => {
       const sql = builder().alterPolicy({ name: "tenant_isolation", using: "tenant_id = 1" })

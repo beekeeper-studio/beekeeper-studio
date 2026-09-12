@@ -30,7 +30,10 @@
             <table-info-toolbar
               :search-suffix="structureFilterSuffix"
               filter-placeholder="Filter policies"
+              :show-add="editable"
+              add-label="Policy"
               @search="setStructureFilterQuery"
+              @add="addRow"
               @copy="copyStructure"
               @refresh="refreshPolicies"
             >
@@ -112,7 +115,7 @@ import ErrorAlert from '../common/ErrorAlert.vue'
 import TableInfoToolbar from './TableInfoToolbar.vue'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import { TabulatorStateWatchers, trashButton, vueEditor } from '@shared/lib/tabulator/helpers'
-import { AlterPolicySpec, FormatterDialect, PolicyAlterations } from '@shared/lib/dialects/models'
+import { AlterPolicySpec, CreatePolicySpec, FormatterDialect, PolicyAlterations, PolicyCommands } from '@shared/lib/dialects/models'
 import { TablePolicy } from '@/lib/db/models'
 import { AppEvent } from '@/common/AppEvent'
 import { SelectableCellMixin } from '@/mixins/selectableCell'
@@ -146,6 +149,7 @@ export default Vue.extend({
       policies: [] as TablePolicy[],
       loaded: false,
       loading: false,
+      newRows: [] as RowComponent[],
       removedRows: [] as RowComponent[],
       editedCells: [] as CellComponent[],
       error: null,
@@ -173,6 +177,7 @@ export default Vue.extend({
       if (!this.active) return {}
       return this.$vHotkeyKeymap({
         'general.refresh': this.refreshPolicies.bind(this),
+        'general.addRow': this.addRow.bind(this),
         'general.save': this.submitApply.bind(this),
         'general.openInSqlEditor': this.submitSql.bind(this),
       })
@@ -188,7 +193,7 @@ export default Vue.extend({
       return this.editCount > 0
     },
     editCount() {
-      return this.removedRows.length + this.editedCells.length
+      return this.newRows.length + this.removedRows.length + this.editedCells.length
     },
     tableData() {
       return this.policies.map((policy: TablePolicy) => ({
@@ -201,10 +206,13 @@ export default Vue.extend({
       }))
     },
     tableColumns(): ColumnDefinition[] {
-      // Only the name, roles and expressions can be altered in place. The rest
-      // is fixed for the life of the policy, so it stays read only.
+      // Only the name, roles and expressions can be altered in place. The command
+      // and permissive flag are fixed for the life of the policy, so they're only
+      // editable while the row is still a pending insert.
       const editable = (cell: CellComponent) =>
         this.editable && !this.loading && !this.removedRows.includes(cell.getRow())
+      const newRowOnly = (cell: CellComponent) => editable(cell) && this.newRows.includes(cell.getRow())
+
       const editableColumn = (extra: Partial<ColumnDefinition> = {}): Partial<ColumnDefinition> =>
         this.editable
           ? {
@@ -215,6 +223,15 @@ export default Vue.extend({
             ...extra,
           }
           : extra
+
+      const newRowColumn = (values: string[]): Partial<ColumnDefinition> =>
+        this.editable
+          ? {
+            editable: newRowOnly,
+            editor: 'list' as const,
+            editorParams: { values },
+          }
+          : {}
 
       const results: ColumnDefinition[] = [
         {
@@ -232,13 +249,15 @@ export default Vue.extend({
           width: 120,
           contextMenu: copyCellMenu,
           cellDblClick: (_e, cell) => this.handleCellDoubleClick(cell),
+          ...newRowColumn(['PERMISSIVE', 'RESTRICTIVE']),
         },
         {
           title: 'Command',
           field: 'command',
-          width: 100,
+          width: 110,
           contextMenu: copyCellMenu,
           cellDblClick: (_e, cell) => this.handleCellDoubleClick(cell),
+          ...newRowColumn(PolicyCommands),
         },
         {
           title: 'Roles',
@@ -297,8 +316,24 @@ export default Vue.extend({
       this.error = error
       this.errorTitle = title
     },
+    async addRow() {
+      if (!this.editable || this.loading) return
+
+      const row = await this.tabulator.addRow({
+        name: `${this.table.name}_policy_${this.tabulator.getData().length + 1}`,
+        type: 'PERMISSIVE',
+        command: 'ALL',
+        roles: 'public',
+        using: null,
+        check: null,
+      })
+      this.newRows = [...this.newRows, row]
+    },
     cellEdited(cell: CellComponent) {
-      if (this.removedRows.includes(cell.getRow())) return
+      const row = cell.getRow()
+      // A pending insert is read straight off the row when the payload is built,
+      // so its cells aren't tracked as edits.
+      if (this.newRows.includes(row) || this.removedRows.includes(row)) return
 
       const changed = cell.getValue() !== cell.getInitialValue()
       const tracked = this.editedCells.includes(cell)
@@ -313,6 +348,12 @@ export default Vue.extend({
       if (!this.editable || this.loading) return
       const row = cell.getRow()
 
+      if (this.newRows.includes(row)) {
+        this.newRows = _.without(this.newRows, row)
+        row.delete()
+        return
+      }
+
       if (this.removedRows.includes(row)) {
         this.removedRows = _.without(this.removedRows, row)
         return
@@ -326,11 +367,35 @@ export default Vue.extend({
     },
     submitUndo() {
       this.editedCells.forEach((c) => c.restoreInitialValue())
+      this.newRows.forEach((r) => r.delete())
       this.clearChanges()
     },
     clearChanges() {
+      this.newRows = []
       this.removedRows = []
       this.editedCells = []
+    },
+    buildAddition(row: RowComponent): CreatePolicySpec {
+      const data = row.getData()
+      const name = _.trim(data.name)
+
+      if (_.isEmpty(name)) {
+        throw new Error('A new policy needs a name')
+      }
+
+      const roles = parseRoles(data.roles)
+      if (!roles.length) {
+        throw new Error(`Policy ${name}: roles cannot be empty. Use 'public' to apply the policy to every role.`)
+      }
+
+      return {
+        name,
+        permissive: data.type !== 'RESTRICTIVE',
+        command: data.command,
+        roles,
+        using: _.trim(data.using) || undefined,
+        check: _.trim(data.check) || undefined,
+      }
     },
     buildAlteration(row: RowComponent): AlterPolicySpec {
       const data = row.getData()
@@ -379,6 +444,7 @@ export default Vue.extend({
       return {
         table: this.table.name,
         schema: this.table.schema,
+        additions: this.newRows.map((row: RowComponent) => this.buildAddition(row)),
         alterations: editedRows.map((row: RowComponent) => this.buildAlteration(row)),
         drops: this.removedRows.map((row: RowComponent) => ({
           name: row.getCell('name').getInitialValue(),

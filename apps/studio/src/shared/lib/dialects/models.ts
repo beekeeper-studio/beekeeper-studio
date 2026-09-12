@@ -366,6 +366,20 @@ export interface IndexAlterations {
 /** The statement a row level security policy applies to. */
 export type PolicyCommand = 'ALL' | 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE'
 
+export const PolicyCommands: PolicyCommand[] = ['ALL', 'SELECT', 'INSERT', 'UPDATE', 'DELETE']
+
+export interface CreatePolicySpec {
+  name: string
+  /** Defaults to ALL */
+  command?: PolicyCommand
+  /** false makes the policy RESTRICTIVE. Defaults to permissive. */
+  permissive?: boolean
+  /** Defaults to `['public']`, meaning every role. */
+  roles?: string[]
+  using?: string
+  check?: string
+}
+
 /**
  * Postgres can only change a policy's name, roles and expressions. The command
  * it applies to and whether it is permissive are fixed at creation time.
@@ -383,6 +397,7 @@ export interface DropPolicySpec {
 }
 
 export interface PolicyAlterations {
+  additions: CreatePolicySpec[]
   alterations: AlterPolicySpec[]
   drops: DropPolicySpec[]
   table: string

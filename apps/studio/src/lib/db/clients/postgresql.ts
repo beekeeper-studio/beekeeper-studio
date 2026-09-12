@@ -291,9 +291,14 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
 
   async alterPolicySql(payload: PolicyAlterations): Promise<string> {
     const builder = new PostgresqlChangeBuilder(payload.table, payload.schema);
-    const alters = builder.alterPolicies(payload.alterations);
     const drops = builder.dropPolicies(payload.drops);
-    return [alters, drops].filter((s) => !!s).join(";");
+    const alters = builder.alterPolicies(payload.alterations);
+    const creates = builder.createPolicies(payload.additions);
+    // Drops run first so a policy can be replaced by a new one under the same
+    // name -- the only way to change the command a policy applies to. Postgres
+    // runs the whole string as one implicit transaction, so a later failure
+    // rolls the drops back.
+    return [drops, alters, creates].filter((s) => !!s).join(";");
   }
 
   async alterPolicy(payload: PolicyAlterations): Promise<void> {

@@ -115,10 +115,96 @@ describe("Postgres row level security policies", () => {
     expect(await connection.listTablePolicies("no_policies", "public")).toEqual([])
   })
 
+  it("creates a policy", async () => {
+    await connection.alterPolicy({
+      table: "orders",
+      schema: "public",
+      additions: [
+        {
+          name: "owner_updates",
+          command: "UPDATE",
+          permissive: false,
+          roles: ["app_user", "Reporting Team"],
+          using: "owner = current_user",
+          check: "owner IS NOT NULL",
+        },
+      ],
+      alterations: [],
+      drops: [],
+    })
+
+    const created = (await connection.listTablePolicies("orders", "public"))
+      .find((p) => p.name === "owner_updates")
+
+    expect(created).toBeTruthy()
+    expect(created.permissive).toBe(false)
+    expect(created.command).toBe("UPDATE")
+    expect([...created.roles].sort()).toEqual(["Reporting Team", "app_user"])
+    expect(created.using).toContain("owner")
+    expect(created.check).toContain("IS NOT NULL")
+  })
+
+  it("creates a policy from nothing but a name", async () => {
+    await connection.alterPolicy({
+      table: "orders",
+      schema: "public",
+      additions: [{ name: "bare" }],
+      alterations: [],
+      drops: [],
+    })
+
+    const created = (await connection.listTablePolicies("orders", "public"))
+      .find((p) => p.name === "bare")
+
+    expect(created).toMatchObject({
+      permissive: true,
+      command: "ALL",
+      roles: ["public"],
+      using: null,
+      check: null,
+    })
+  })
+
+  it("replaces a policy under the same name, changing its command", async () => {
+    // the only way to change a policy's command, so drops have to run first
+    await connection.alterPolicy({
+      table: "orders",
+      schema: "public",
+      additions: [{ name: "tenant_isolation", command: "DELETE", using: "owner = current_user" }],
+      alterations: [],
+      drops: [{ name: "tenant_isolation" }],
+    })
+
+    const policies = await connection.listTablePolicies("orders", "public")
+    expect(policies.filter((p) => p.name === "tenant_isolation")).toHaveLength(1)
+    expect(policies.find((p) => p.name === "tenant_isolation").command).toBe("DELETE")
+  })
+
+  it("rolls the whole batch back when one statement fails", async () => {
+    await expect(
+      connection.alterPolicy({
+        table: "orders",
+        schema: "public",
+        // INSERT policies take no USING expression, so postgres rejects this
+        additions: [{ name: "bad", command: "INSERT", using: "true" }],
+        alterations: [],
+        drops: [{ name: "everyone" }],
+      })
+    ).rejects.toThrow()
+
+    const policies = await connection.listTablePolicies("orders", "public")
+    expect(policies.map((p) => p.name)).toEqual([
+      "everyone",
+      "tenant_isolation",
+      "writes_are_owned",
+    ])
+  })
+
   it("renames a policy and replaces its roles and expressions", async () => {
     const changes: PolicyAlterations = {
       table: "orders",
       schema: "public",
+      additions: [],
       alterations: [
         {
           name: "tenant_isolation",
@@ -144,6 +230,7 @@ describe("Postgres row level security policies", () => {
     await connection.alterPolicy({
       table: "orders",
       schema: "public",
+      additions: [],
       alterations: [{ name: "writes_are_owned", check: "owner IS NOT NULL" }],
       drops: [],
     })
@@ -156,6 +243,7 @@ describe("Postgres row level security policies", () => {
     await connection.alterPolicy({
       table: "orders",
       schema: "public",
+      additions: [],
       alterations: [],
       drops: [{ name: "everyone" }, { name: "writes_are_owned" }],
     })
@@ -168,6 +256,7 @@ describe("Postgres row level security policies", () => {
     await connection.alterPolicy({
       table: "orders",
       schema: "public",
+      additions: [],
       alterations: [{ name: "everyone", using: "false" }],
       drops: [{ name: "writes_are_owned" }],
     })
@@ -181,13 +270,15 @@ describe("Postgres row level security policies", () => {
     const sql = await connection.alterPolicySql({
       table: "orders",
       schema: "public",
+      additions: [{ name: "fresh", command: "SELECT", using: "true" }],
       alterations: [{ name: "everyone", using: "false" }],
       drops: [{ name: "writes_are_owned" }],
     })
 
     expect(sql).toBe(
+      `DROP POLICY "writes_are_owned" ON "public"."orders";` +
       `ALTER POLICY "everyone" ON "public"."orders" USING (false);` +
-      `DROP POLICY "writes_are_owned" ON "public"."orders"`
+      `CREATE POLICY "fresh" ON "public"."orders" FOR SELECT TO PUBLIC USING (true)`
     )
     // nothing ran
     const policies = await connection.listTablePolicies("orders", "public")
@@ -235,6 +326,7 @@ describe("Postgres row level security policies", () => {
         restricted.alterPolicy({
           table: "orders",
           schema: "public",
+          additions: [],
           alterations: [{ name: "everyone", using: "false" }],
           drops: [],
         })
@@ -246,6 +338,7 @@ describe("Postgres row level security policies", () => {
         restricted.alterPolicy({
           table: "orders",
           schema: "public",
+          additions: [],
           alterations: [],
           drops: [{ name: "everyone" }],
         })
