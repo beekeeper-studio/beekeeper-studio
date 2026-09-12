@@ -594,7 +594,17 @@ const store = new Vuex.Store<State>({
     },
     async disconnect(context) {
       if (context.state.connection) {
-        await context.state.connection.disconnect();
+        try {
+          await context.state.connection.disconnect();
+        } catch (e) {
+          log.error('Error disconnecting from the driver', e)
+        }
+      }
+
+      try {
+        await Vue.prototype.$util.send('conn/clearConnection')
+      } catch (e) {
+        log.error('Error clearing the utility-side connection state', e)
       }
 
       window.main.disableConnectionMenuItems();
