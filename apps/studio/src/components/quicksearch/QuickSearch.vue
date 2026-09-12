@@ -272,8 +272,8 @@ export default Vue.extend({
             return
           }
 
-          await this.$store.dispatch('disconnect')
           try {
+            await this.$store.dispatch('disconnect')
             const { auth, cancelled } = await this.$bks.unlock();
             if (cancelled) return;
             await this.$store.dispatch('connect', { config: result.item, auth })

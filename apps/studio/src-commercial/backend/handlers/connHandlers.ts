@@ -251,11 +251,13 @@ export const ConnHandlers: IConnectionHandlers = {
   },
 
   'conn/clearConnection': async function({ sId }: { sId: string}) {
-    state(sId).connection = null;
-    state(sId).server = null;
-    state(sId).usedConfig = null;
-    state(sId).database = null;
-    state(sId).generator = null;
+    const s = state(sId);
+    if (!s) return;
+    s.connection = null;
+    s.server = null;
+    s.usedConfig = null;
+    s.database = null;
+    s.generator = null;
   },
   'conn/getServerConfig': async function({ sId }: { sId: string }) {
     return state(sId).server.getServerConfig();
@@ -274,7 +276,12 @@ export const ConnHandlers: IConnectionHandlers = {
   },
 
   'conn/connect': getDriverHandler('connect'),
-  'conn/disconnect': getDriverHandler('disconnect'),
+  'conn/disconnect': async function({ sId }: { sId: string }) {
+    // A restarted utility has no connection for this window. Nothing to do is
+    // not a failure; the renderer still needs to reach a disconnected state.
+    if (!state(sId)?.connection) return;
+    await state(sId).connection.disconnect();
+  },
 
   'conn/listTables': async function({ filter, sId }: { filter?: FilterOptions, sId: string }) {
     checkConnection(sId);
