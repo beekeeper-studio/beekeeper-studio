@@ -301,7 +301,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     })
   }
 
-  abstract query(queryText: string, tabId: number, options?: any): Promise<CancelableQuery>;
+  abstract query(queryText: string, tabId?: number, options?: any): Promise<CancelableQuery>;
   abstract executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>;
   abstract listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>;
   abstract getTableProperties(table: string, schema?: string): Promise<TableProperties | null>;

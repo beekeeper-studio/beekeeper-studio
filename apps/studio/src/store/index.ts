@@ -328,6 +328,10 @@ const store = new Vuex.Store<State>({
       return getters["tabs/newTabDropdownItems"].some(
         ({ config }) => config.pluginId === "bks-ai-shell"
       );
+    },
+    erDiagramAvailable(_state, getters) {
+      const items = getters["popupMenu/getExtraPopupMenu"]("structure.statusbar");
+      return items.some((item) => item.slug === "bks-er-diagram-showOneTable");
     }
   },
   mutations: {

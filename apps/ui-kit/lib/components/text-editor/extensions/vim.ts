@@ -89,8 +89,8 @@ export function setKeybindings(codeMirrorVimInstance: any, directives: VimDirect
 }
 
 export type Clipboard = {
-  writeText(text: string, notify?: boolean): void
-  readText(): string
+  writeText(text: string, notify?: boolean): Promise<void>
+  readText(): Promise<string>
 }
 
 export class Register {
@@ -107,14 +107,14 @@ export class Register {
     this.keyBuffer = [''];
   }
 
-  setText(text: string, linewise: boolean, blockwise: boolean) {
+  async setText(text: string, linewise: boolean, blockwise: boolean) {
     this.keyBuffer = [text || ''];
     this.linewise = !!linewise;
     this.blockwise = !!blockwise;
-    this.clipboard.writeText(text, false);
+    await this.clipboard.writeText(text, false);
   }
 
-  pushText(text: string, linewise: boolean) {
+  async pushText(text: string, linewise: boolean) {
     if (linewise) {
       if (!this.linewise) {
         this.keyBuffer.push('\n');
@@ -122,7 +122,7 @@ export class Register {
       this.linewise = true;
     }
     this.keyBuffer.push(text);
-    this.clipboard.writeText(this.keyBuffer.join(' '), false)
+    await this.clipboard.writeText(this.keyBuffer.join(' '), false)
   }
 
   pushInsertModeChanges(changes: any) {
@@ -140,8 +140,8 @@ export class Register {
     this.linewise = false;
   }
 
-  toString() {
-    return this.clipboard.readText();
+  async toString() {
+    return await this.clipboard.readText();
   }
 
   private createInsertModeChanges(c: any) {
