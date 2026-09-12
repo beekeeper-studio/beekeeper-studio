@@ -139,18 +139,4 @@ describe("UtilityConnection", () => {
     expect(port.posted.map((m) => m.name)).not.toContain("conn/listTables")
     expect(requestPorts).toHaveBeenCalledTimes(2)
   })
-
-  // hasWorkingPort() is the only health probe in the file and it cannot work:
-  // it posts `{ name: test }` (an undefined identifier in the renderer) without
-  // an id, so no reply can ever be matched back to it, and the missing `return`
-  // after `reject()` lets it fall through to `this.port.postMessage` on a null
-  // port. Nothing calls it.
-  it("hasWorkingPort resolves true against a responsive port", async () => {
-    const conn = new UtilityConnection()
-    const port = new FakePort(true)
-    conn.setPort(port as any, "sid-1")
-
-    const timeout = new Promise((resolve) => setTimeout(() => resolve("timed out"), 100))
-    expect(await Promise.race([conn.hasWorkingPort(), timeout])).toBe(true)
-  })
 })

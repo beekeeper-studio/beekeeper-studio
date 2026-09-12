@@ -44,6 +44,12 @@ function initUserDirectory(d: string) {
 
 let utilityProcess: Electron.UtilityProcess
 let newWindows: number[] = [];
+let quitting = false;
+let utilityRestart: Promise<void> | null = null;
+
+app.on('before-quit', () => {
+  quitting = true;
+})
 
 async function createUtilityProcess() {
   if (utilityProcess) {
@@ -67,13 +73,18 @@ async function createUtilityProcess() {
 
 
   utilityProcess.on('exit', async (code) => {
-    // if non zero exit code
-    log.log("UTILITY DEAD", code)
-    if (code) {
-      log.info('Utility process died, restarting')
-      utilityProcess = null;
+    log.warn("UTILITY DEAD", code)
+    if (quitting) return;
+
+    utilityProcess = null;
+    utilityRestart = (async () => {
       await createUtilityProcess();
       createAndSendPorts(false, true);
+    })();
+    try {
+      await utilityRestart;
+    } finally {
+      utilityRestart = null;
     }
   })
 
@@ -260,6 +271,12 @@ function createAndSendPorts(filter: boolean, utilDied = false) {
 
 ipcMain.handle('requestPorts', async () => {
   log.info('Client requested ports');
+  if (utilityRestart) {
+    // The restart path delivers ports to every window; don't race it.
+    await utilityRestart;
+    return;
+  }
+
   if (!utilityProcess || !utilityProcess.pid) {
     log.info('NO UTIL PROCESS')
     utilityProcess = null;

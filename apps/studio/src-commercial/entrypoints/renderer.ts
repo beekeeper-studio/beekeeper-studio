@@ -42,6 +42,18 @@ import { WebPluginManager } from '@/services/plugin/web'
 import PluginStoreService from '@/services/plugin/web/PluginStoreService'
 import * as UIKit from '@beekeeperstudio/ui-kit'
 import ProductTourPlugin from '@/plugins/ProductTourPlugin'
+import { UtilityConnectionLostError } from '@/lib/errors'
+
+// Requests that used to hang forever on a dead utility process now reject;
+// several dispatches (e.g. saving used queries) are fire-and-forget with no
+// catch. Keep those from surfacing as noisy unhandled rejections without
+// hiding other bugs.
+window.addEventListener('unhandledrejection', (event) => {
+  if (event.reason instanceof UtilityConnectionLostError) {
+    rawLog.scope('renderer').warn('Unhandled UtilityConnectionLostError', event.reason);
+    event.preventDefault();
+  }
+});
 
 (async () => {
 
