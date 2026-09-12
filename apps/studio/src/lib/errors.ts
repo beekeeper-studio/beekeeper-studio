@@ -76,3 +76,18 @@ export class PluginError extends Error {
     }
   }
 }
+
+/**
+ * Thrown to settle a renderer -> utility process request whose transport is
+ * gone (the utility process crashed, exited, or was replaced) instead of
+ * leaving the request pending forever.
+ */
+export class UtilityConnectionLostError extends Error {
+  constructor(message = 'The connection to the utility process was lost') {
+    super(message);
+    this.name = this.constructor.name;
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
+}
