@@ -1,7 +1,7 @@
 import { uuidv4 } from "../uuid";
 import rawLog from '@bksLogger';
 import _ from 'lodash';
-import { PluginError, PluginSystemError } from "../errors";
+import { PluginError, PluginSystemError, UtilityConnectionLostError } from "../errors";
 
 const log = rawLog.scope('renderer/utilityconnection');
 
@@ -27,16 +27,30 @@ export class UtilityConnection {
     return this._sId;
   }
 
-  public async hasWorkingPort(): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      if (!this.port) reject();
-      const id = uuidv4();
-      this.replyHandlers.set(id, {resolve, reject});
-      this.port.postMessage({name: test})
-    })
+  /** Clears replyHandlers and rejects every entry with reason. Cleared
+   * before rejecting so a rejection handler that calls send() right away
+   * cannot see stale entries. */
+  private failInFlight(reason: string) {
+    const handlers = this.replyHandlers;
+    this.replyHandlers = new Map();
+    handlers.forEach(({ reject }) => reject(new UtilityConnectionLostError(reason)));
+  }
+
+  private handlePortClosed(port: MessagePort) {
+    // A replaced port can still emit `close` after its replacement is
+    // already installed; that must not touch the live port.
+    if (port !== this.port) return;
+    log.warn('UTILITY PORT CLOSED');
+    this.failInFlight('The utility process exited while this request was in progress');
+    this.port = null;
+    this.portsRequested = false;
   }
 
   public setPort(port: MessagePort, sId: string) {
+    if (this.port && this.port !== port) {
+      this.failInFlight('The utility process was restarted while this request was in progress');
+    }
+
     this.port = port;
     this._sId = sId;
     log.info('RECEIVED PORT IN UtilityConnection: ', port);
@@ -97,6 +111,7 @@ export class UtilityConnection {
     }
 
     this.port.start();
+    this.port.addEventListener('close', () => this.handlePortClosed(port));
 
     if (this.messageQueue.length > 0) {
       this.messageQueue.forEach(({ handlerName, args, id, resolve, reject }) => {
