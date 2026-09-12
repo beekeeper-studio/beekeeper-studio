@@ -792,7 +792,6 @@ const store = new Vuex.Store<State>({
       await context.dispatch('fetchUsername')
       await context.dispatch('licenses/init')
       await context.dispatch('userEnums/init')
-      await context.dispatch('theme/initialize')
       await context.dispatch('updateWindowTitle')
     },
     licenseEntered(context) {

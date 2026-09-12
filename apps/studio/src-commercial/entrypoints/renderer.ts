@@ -216,6 +216,7 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
     });
     await theme.initialize();
 
+    store.commit("theme/setSystemDark", themeParams.get("systemDark") === "true");
     window.main.onSystemUsesDarkColors((dark) => {
       store.commit("theme/setSystemDark", dark);
     });

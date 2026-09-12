@@ -68,8 +68,8 @@ class BeekeeperWindow {
     const queryObj: any = openOptions ? { ...openOptions } : {}
 
     queryObj.themeId = this.getThemeId();
-    queryObj.themeUrl = this.getThemeUrl();
     queryObj.themeDark = this.isDark();
+    queryObj.systemDark = this.systemUsesDarkColors;
 
     if (platformInfo.isWayland) {
       queryObj.runningWayland = true
@@ -285,11 +285,6 @@ class BeekeeperWindow {
 
   getThemeId() {
     return this.settings.themeId?.value?.toString() || 'default';
-  }
-
-  getThemeUrl() {
-    // FIXME sanitize this
-    return `app://themes/${this.getThemeId()}.css`;
   }
 
   /** is the window in dark mode? */
