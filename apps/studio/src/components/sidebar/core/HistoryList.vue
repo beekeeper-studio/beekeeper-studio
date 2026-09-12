@@ -137,10 +137,13 @@ import { QUERY_ORIGIN_OPTIONS } from '@/common/interfaces/QueryOrigin'
           : this.usedConfig?.id
             ? this.history.filter(item => item.connectionId === this.usedConfig.id)
             : []
+        // Remove this bypass after cloud migration to support query origin
+        if (this.isCloud || this.selectedOrigin === 'all') {
+          return connectionHistory
+        }
 
         return connectionHistory.filter(item => {
-          const matchesOrigin = this.isCloud || this.selectedOrigin === 'all' || item.origin === this.selectedOrigin
-          return matchesOrigin
+          return this.originInfo(item).value === this.selectedOrigin
         })
       },
     },
@@ -188,7 +191,25 @@ import { QUERY_ORIGIN_OPTIONS } from '@/common/interfaces/QueryOrigin'
         }
       },
       originInfo(item) {
-        return this.originOptions.find(origin => origin.value === item.origin) || {
+        if (item.origin === 'plugin' && item.pluginId) {
+          const specificPlugin = this.originOptions.find(option => {
+            return option.pluginId === item.pluginId
+          })
+
+          if (specificPlugin) {
+            return specificPlugin
+          }
+        }
+
+        const genericOrigin = this.originOptions.find(option => {
+          return option.origin === item.origin && !option.pluginId
+        })
+
+        if (genericOrigin) {
+          return genericOrigin
+        }
+
+        return {
           label: 'Unknown',
           icon: 'code'
         }

@@ -1,22 +1,23 @@
 import PluginStoreService from '@/services/plugin/web/PluginStoreService'
+import { describe, expect, it, vi } from 'vitest'
 
 function buildStore(results: any[]) {
   return {
     state: {
       connection: {
-        executeQuery: jest.fn().mockResolvedValue(results)
+        executeQuery: vi.fn().mockResolvedValue(results)
       },
       usedConfig: { id: 42 }
     },
-    dispatch: jest.fn().mockResolvedValue(undefined),
-    subscribe: jest.fn()
+    dispatch: vi.fn().mockResolvedValue(undefined),
+    subscribe: vi.fn()
   } as any
 }
 
 const appEventBus = {
-  emit: jest.fn(),
-  on: jest.fn(),
-  off: jest.fn()
+  emit: vi.fn(),
+  on: vi.fn(),
+  off: vi.fn()
 }
 
 describe('PluginStoreService.runQuery', () => {

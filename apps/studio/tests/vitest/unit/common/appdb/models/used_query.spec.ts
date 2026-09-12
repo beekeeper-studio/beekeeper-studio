@@ -1,5 +1,6 @@
 import { TestOrmConnection } from '@tests/lib/TestOrmConnection'
 import { UsedQuery } from '@/common/appdb/models/used_query'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 function buildUsedQuery(overrides: Partial<UsedQuery> = {}) {
   const query = new UsedQuery()
