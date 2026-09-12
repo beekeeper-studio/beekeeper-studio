@@ -2008,8 +2008,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       openTroubleshooting() {
         window.main.openExternally('https://docs.beekeeperstudio.io/support/troubleshooting/')
       },
-      copyQuerySelectionError() {
-        this.$native.clipboard.writeText(this.querySelectionError?.stack ?? this.querySelectionError?.message)
+      async copyQuerySelectionError() {
+        await this.$native.clipboard.writeText(this.querySelectionError?.stack ?? this.querySelectionError?.message)
       },
       startTimer() {
         this.elapsedTime = 0;

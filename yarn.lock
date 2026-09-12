@@ -2276,6 +2276,11 @@
     "@duckdb/node-bindings-linux-x64" "1.4.1-r.4"
     "@duckdb/node-bindings-win32-x64" "1.4.1-r.4"
 
+"@electron-internal/extract-zip@^1.0.1":
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/@electron-internal/extract-zip/-/extract-zip-1.0.5.tgz#6782c0f6066e60b7fd286fe7a5c7600f7650d420"
+  integrity sha512-+bqFCP98pLI0Tt0XQo1TmlXtwjWchISndDOxCkEcIuUgXWpBnLyRI+2DU+mesvnMMX6L1XDqYNA0lXNDHd/yiA==
+
 "@electron/asar@3.4.1", "@electron/asar@^3.3.1":
   version "3.4.1"
   resolved "https://registry.yarnpkg.com/@electron/asar/-/asar-3.4.1.tgz#4e9196a4b54fba18c56cd8d5cac67c5bdc588065"
@@ -2294,21 +2299,6 @@
     fs-extra "^9.0.1"
     minimist "^1.2.5"
 
-"@electron/get@^2.0.0":
-  version "2.0.3"
-  resolved "https://registry.yarnpkg.com/@electron/get/-/get-2.0.3.tgz#fba552683d387aebd9f3fcadbcafc8e12ee4f960"
-  integrity sha512-Qkzpg2s9GnVV2I2BjRksUi43U5e6+zaQMcjoJy0C+C5oxaKl+fmckGDQFtRpZpZV0NQekuZZ+tGz7EA9TVnQtQ==
-  dependencies:
-    debug "^4.1.1"
-    env-paths "^2.2.0"
-    fs-extra "^8.1.0"
-    got "^11.8.5"
-    progress "^2.0.3"
-    semver "^6.2.0"
-    sumchecker "^3.0.1"
-  optionalDependencies:
-    global-agent "^3.0.0"
-
 "@electron/get@^3.0.0":
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/@electron/get/-/get-3.1.0.tgz#22c5a0bd917ab201badeb77bc4ad18cba54cb4ec"
@@ -2323,6 +2313,20 @@
     sumchecker "^3.0.1"
   optionalDependencies:
     global-agent "^3.0.0"
+
+"@electron/get@^5.0.0":
+  version "5.1.0"
+  resolved "https://registry.yarnpkg.com/@electron/get/-/get-5.1.0.tgz#f96ca2a0e89b27490ff8f7b5a392bd4df6942998"
+  integrity sha512-3kSBtG8ObcTVfXanm5vVJ6UnBLEVmVsRk1M+vGqCuMBV+XLCbJYuWQful+yIy0GQDsSlK0kHEriEHn7SPk4EnA==
+  dependencies:
+    debug "^4.1.1"
+    env-paths "^3.0.0"
+    graceful-fs "^4.2.11"
+    progress "^2.0.3"
+    semver "^7.6.3"
+    sumchecker "^3.0.1"
+  optionalDependencies:
+    undici "^7.24.4"
 
 "@electron/notarize@2.5.0":
   version "2.5.0"
@@ -4402,6 +4406,14 @@
     "@lezer/highlight" "^1.2.1"
     "@lezer/lr" "^1.4.2"
 
+"@surrealdb/sqon@0.1.0":
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/@surrealdb/sqon/-/sqon-0.1.0.tgz#cf5f3e4037133d49fb41a81df135e6f824d0c035"
+  integrity sha512-pooKLZ0W6mN8XHzJQavGOdfZOZksycmIjhwFwvG0kdCAt4I5U6KKPHcXQwFkTDNKFKFKdufczLRnzHapPIslQw==
+  dependencies:
+    "@surrealdb/cbor" "2.0.0-alpha.4"
+    uuidv7 "^1.0.1"
+
 "@szmarczak/http-timer@^4.0.5":
   version "4.0.6"
   resolved "https://registry.yarnpkg.com/@szmarczak/http-timer/-/http-timer-4.0.6.tgz#b4a914bb62e7c272d4e5989fe4440f812ab1d807"
@@ -4682,12 +4694,19 @@
   dependencies:
     undici-types "~5.26.4"
 
-"@types/node@^22.13.4", "@types/node@^22.7.7":
+"@types/node@^22.13.4":
   version "22.19.11"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-22.19.11.tgz#7e1feaad24e4e36c52fa5558d5864bb4b272603e"
   integrity sha512-BH7YwL6rA93ReqeQS1c4bsPpcfOmJasG+Fkr6Y59q83f9M1WcBRHR2vM+P9eOisYRcN3ujQoiZY8uk5W+1WL8w==
   dependencies:
     undici-types "~6.21.0"
+
+"@types/node@^24.9.0":
+  version "24.13.4"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-24.13.4.tgz#e54f74ceae6838bff57a814b7d31f5042a0f9074"
+  integrity sha512-YJ7EqCstVTzIr0fMr7qul/977en+pQHrfmuKIo6Zr9i75Be21dr3MovcfvGtyvi2HAUrRerWps5sMO9I7WaxDw==
+  dependencies:
+    undici-types "~7.18.0"
 
 "@types/oracledb@^6.5.3":
   version "6.10.1"
@@ -5915,13 +5934,12 @@ before-after-hook@^3.0.2:
   resolved "https://registry.yarnpkg.com/before-after-hook/-/before-after-hook-3.0.2.tgz#d5665a5fa8b62294a5aa0a499f933f4a1016195d"
   integrity sha512-Nik3Sc0ncrMK4UUdXQmAnRtzmNQTAAXmXIopizwZ1W1t8QmfJj+zL4OA2I7XPTPW5z5TDqv4hRo/JzouDJnX3A==
 
-better-sqlite3@^12.5.0:
-  version "12.6.2"
-  resolved "https://registry.yarnpkg.com/better-sqlite3/-/better-sqlite3-12.6.2.tgz#770649f28a62e543a360f3dfa1afe4cc944b1937"
-  integrity sha512-8VYKM3MjCa9WcaSAI3hzwhmyHVlH8tiGFwf0RlTsZPWJ1I5MkzjiudCo4KC4DxOaL/53A5B1sI/IbldNFDbsKA==
+better-sqlite3@^13.0.3:
+  version "13.0.3"
+  resolved "https://registry.yarnpkg.com/better-sqlite3/-/better-sqlite3-13.0.3.tgz#b6ea0dc7fff7e28d04d9093e81051d38f7beabe2"
+  integrity sha512-RbOBxmLBG8uvFUc15X9+9SFemKcQ0WBuISBVkpuiaUB2qblC8UWlHEjdWVoZ8AdhSwmoEgsiXKfopX0CQxaACQ==
   dependencies:
-    bindings "^1.5.0"
-    prebuild-install "^7.1.1"
+    node-addon-api "^8.0.0"
 
 bidi-js@^1.0.3:
   version "1.0.3"
@@ -7165,7 +7183,7 @@ ejs@^3.1.8:
   dependencies:
     jake "^10.8.5"
 
-electron-builder@^26.11.1:
+electron-builder@^26.15.3:
   version "26.15.3"
   resolved "https://registry.yarnpkg.com/electron-builder/-/electron-builder-26.15.3.tgz#0e82828f6829c0b2596338365209170ac0acbcd5"
   integrity sha512-a1KM5heqS3gQCZzizXEI8RjJy3QVogULPdeSknt76uLDpBIW/HDGsMg/XgP0riP6PI9COsRvFITKKGDqA8fJxA==
@@ -7243,14 +7261,14 @@ electron-util@^0.14.1:
     electron-is-dev "^1.1.0"
     new-github-issue-url "^0.2.1"
 
-electron@39.8.10:
-  version "39.8.10"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-39.8.10.tgz#998d9c5b9e7601debb70bd7355e8d4dfd6d70f43"
-  integrity sha512-zbYtGPYUI7PzqLAzkk21Rk6j67WN0hxn0Mq/njErZo1d0HSf33is4f8ICI5fMLy5vYe0JtCtM5sYunNOaochSQ==
+electron@44.3.0:
+  version "44.3.0"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-44.3.0.tgz#fdbf0ed786eb0f07a051c25a55f515b6b1a3420e"
+  integrity sha512-St9EV7F2VtYaYWD2qaAjBwUgKxx39eJOUsUJ5+/1113sqbVfNqv4Dbm/W1rN7qmYSPa+mWwR6yr+b7MfgjgVfQ==
   dependencies:
-    "@electron/get" "^2.0.0"
-    "@types/node" "^22.7.7"
-    extract-zip "^2.0.1"
+    "@electron-internal/extract-zip" "^1.0.1"
+    "@electron/get" "^5.0.0"
+    "@types/node" "^24.9.0"
 
 emittery@^0.13.1:
   version "0.13.1"
@@ -7318,6 +7336,11 @@ env-paths@^2.2.0:
   version "2.2.1"
   resolved "https://registry.yarnpkg.com/env-paths/-/env-paths-2.2.1.tgz#420399d416ce1fbe9bc0a07c62fa68d67fd0f8f2"
   integrity sha512-+h1lkLKhZMTYjog1VEpJNG7NZJWcuc2DDk/qsqSTRRCOXiLjeQ1d1/udrUGhqMxUgAlwKNZ0cf2uqan5GLuS2A==
+
+env-paths@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/env-paths/-/env-paths-3.0.0.tgz#2f1e89c2f6dbd3408e1b1711dd82d62e317f58da"
+  integrity sha512-dtJUTepzMW3Lm/NPxRf3wP4642UWhjL2sQxc+ym2YMj1m/H2zDNQOlezafzkHwn6sMstjHTwG6iQQsctDW/b1A==
 
 err-code@^2.0.2:
   version "2.0.3"
@@ -8478,7 +8501,7 @@ got@^11.8.5:
     p-cancelable "^2.0.0"
     responselike "^2.0.0"
 
-graceful-fs@^4.1.6, graceful-fs@^4.2.0, graceful-fs@^4.2.2, graceful-fs@^4.2.4, graceful-fs@^4.2.6, graceful-fs@^4.2.9:
+graceful-fs@^4.1.6, graceful-fs@^4.2.0, graceful-fs@^4.2.11, graceful-fs@^4.2.2, graceful-fs@^4.2.4, graceful-fs@^4.2.6, graceful-fs@^4.2.9:
   version "4.2.11"
   resolved "https://registry.yarnpkg.com/graceful-fs/-/graceful-fs-4.2.11.tgz#4183e4e8bf08bb6e05bbb2f7d2e0c8f712ca40e3"
   integrity sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==
@@ -10631,10 +10654,10 @@ ms@^2.1.1, ms@^2.1.3:
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.3.tgz#574c8138ce1d2b5861f0b44579dbadd60c6615b2"
   integrity sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==
 
-msnodesqlv8@^5.1.5:
-  version "5.2.0"
-  resolved "https://registry.yarnpkg.com/msnodesqlv8/-/msnodesqlv8-5.2.0.tgz#aabfe9ae8fc05f47cdbb3c3f43da37e1d08b4d9d"
-  integrity sha512-kSZnvGNo21EGon3HIZ9xkWTh9ndzkdKmfSLj4kKiam2ZqSN7c+ifcTRUpTq5hX8SZiVOlOzWWZFc6aYrxFEHUQ==
+msnodesqlv8@^5.4.0:
+  version "5.4.0"
+  resolved "https://registry.yarnpkg.com/msnodesqlv8/-/msnodesqlv8-5.4.0.tgz#0bcd504aee5221a1b633b50587a1477cdea59f10"
+  integrity sha512-m6Yr4JL62h8flKwnq7hmGD1LST8ls5IzpHPnBJEbbpEV6PsKYE6tFL8tXqRaLnoJiC5Km7rseNAq15wu6HJwZw==
   dependencies:
     node-abi "^4.28.0"
     node-addon-api "^8.7.0"
@@ -10677,10 +10700,10 @@ named-placeholders@^1.1.6:
   dependencies:
     lru.min "^1.1.0"
 
-nan@^2.23.0, nan@^2.24.0:
-  version "2.25.0"
-  resolved "https://registry.yarnpkg.com/nan/-/nan-2.25.0.tgz#937ed345e63d9481362a7942d49c4860d27eeabd"
-  integrity sha512-0M90Ag7Xn5KMLLZ7zliPWP3rT90P6PN+IzVFS0VqmnPktBk3700xUVv8Ikm9EUaUE5SDWdp/BIxdENzVznpm1g==
+nan@^2.23.0, nan@^2.28.0:
+  version "2.28.0"
+  resolved "https://registry.yarnpkg.com/nan/-/nan-2.28.0.tgz#126717fd359d5a03d3edf7c44e6ce9b707fb57f5"
+  integrity sha512-fTsDz99OTq2sVePhGdp4qQhggZFtKr64ZNVyVajRKtMOkJxYekplBh577PiJB12v/D3s2E5cGtOI45LWp6rnLQ==
 
 nanoid@^3.3.12:
   version "3.3.18"
@@ -10737,24 +10760,10 @@ nice-try@^1.0.4:
   resolved "https://registry.yarnpkg.com/nice-try/-/nice-try-1.0.5.tgz#a3378a7696ce7d223e88fc9b764bd7ef1089e366"
   integrity sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==
 
-node-abi@^3.3.0, node-abi@^3.65.0:
-  version "3.87.0"
-  resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-3.87.0.tgz#423e28fea5c2f195fddd98acded9938c001ae6dd"
-  integrity sha512-+CGM1L1CgmtheLcBuleyYOn7NWPVu0s0EJH2C4puxgEZb9h8QpR9G2dBfZJOAUhi7VQxuBPMd0hiISWcTyiYyQ==
-  dependencies:
-    semver "^7.3.5"
-
-node-abi@^4.2.0:
-  version "4.26.0"
-  resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-4.26.0.tgz#7068474b3a945c08372995d823b71053e3ed85af"
-  integrity sha512-8QwIZqikRvDIkXS2S93LjzhsSPJuIbfaMETWH+Bx8oOT9Sa9UsUtBFQlc3gBNd1+QINjaTloitXr1W3dQLi9Iw==
-  dependencies:
-    semver "^7.6.3"
-
-node-abi@^4.28.0:
-  version "4.31.0"
-  resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-4.31.0.tgz#ac1e244d05d1b8c9e82d6fdcaa37b6407a47bf66"
-  integrity sha512-Erq5w/t3syw3s4sDsUaX4QttIdBPsGKTT1DTRsCkTonGggczhlDKm/wDX3o+HPJpQ41EjXCbcmXf0tgr5YZJXw==
+node-abi@^3.3.0, node-abi@^4.2.0, node-abi@^4.28.0, node-abi@^4.35.0:
+  version "4.35.0"
+  resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-4.35.0.tgz#2eb8e04075745e2dd6594769c499828c29113446"
+  integrity sha512-ymk4aIzxdPopw2giv8Fs1Ec6vybGkjmyxUwVqhkI4MCy2tVfXdkOGGWieWVjL0THgH+7a8lRdevyupoYj3Js/Q==
   dependencies:
     semver "^7.6.3"
 
@@ -10767,6 +10776,11 @@ node-addon-api@^7.0.0:
   version "7.1.1"
   resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-7.1.1.tgz#1aba6693b0f255258a049d621329329322aad558"
   integrity sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ==
+
+node-addon-api@^8.0.0:
+  version "8.9.2"
+  resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-8.9.2.tgz#db7ac94a13ffd9b55e6cb04584bd5ef8e1d74b18"
+  integrity sha512-VijLXbi3UACN69I0JVXJsX4tjACjNoQDgv2gTF6sx2wWEi8tkSg2eX8p5gSIFi8z2+DL3oHmY6OyKce38SDolg==
 
 node-addon-api@^8.5.0:
   version "8.5.0"
@@ -11482,7 +11496,7 @@ postgres-interval@^4.0.0:
   resolved "https://registry.yarnpkg.com/postgres-interval/-/postgres-interval-4.0.2.tgz#f0b86ab1392c27dadee9b3cc288de371ae2ac06b"
   integrity sha512-EMsphSQ1YkQqKZL2cuG0zHkmjCCzQqQ71l2GXITqRwjhRleCdv00bDk/ktaSi0LnlaPzAc3535KTrjXsTdtx7A==
 
-prebuild-install@^7.1.1, prebuild-install@^7.1.2, prebuild-install@^7.1.3:
+prebuild-install@^7.1.2, prebuild-install@^7.1.3:
   version "7.1.3"
   resolved "https://registry.yarnpkg.com/prebuild-install/-/prebuild-install-7.1.3.tgz#d630abad2b147443f20a212917beae68b8092eec"
   integrity sha512-8Mf2cbV7x1cXPUILADGI3wuhfqWvtiLA1iclTDbFRZkgRQS0NqsPZphna9V+HyTEadheuPmjaJMsbzKQFOzLug==
@@ -12750,12 +12764,12 @@ sql-query-identifier@^3.2.0:
   resolved "https://registry.yarnpkg.com/sql-query-identifier/-/sql-query-identifier-3.2.0.tgz#c2e184258da21b821d8404ece45892a8709b4f17"
   integrity sha512-DUIx0pyyPYIJzFCuD5euzHOjj1n9BxTEkq8iXOHgOTd/RwuKsHUMhn0tb6pAwJR2rccy925Fhe4NaDDadIjTUQ==
 
-"sqlanywhere@git+https://github.com/beekeeper-studio/node-sqlanywhere.git#54d1ef2052ccdfe963f0956a3e4d024ee6f1fd8d":
-  version "2.0.4"
-  resolved "git+https://github.com/beekeeper-studio/node-sqlanywhere.git#54d1ef2052ccdfe963f0956a3e4d024ee6f1fd8d"
+"sqlanywhere@git+https://github.com/beekeeper-studio/node-sqlanywhere.git#0e1280155455a308c04b07e9f6888372bd513b08":
+  version "2.0.6"
+  resolved "git+https://github.com/beekeeper-studio/node-sqlanywhere.git#0e1280155455a308c04b07e9f6888372bd513b08"
   dependencies:
     help "^3.0.2"
-    nan "^2.24.0"
+    nan "^2.28.0"
 
 ssh-config@5.2.0:
   version "5.2.0"
@@ -13047,13 +13061,12 @@ supports-preserve-symlinks-flag@^1.0.0:
   resolved "https://registry.yarnpkg.com/supports-preserve-symlinks-flag/-/supports-preserve-symlinks-flag-1.0.0.tgz#6eda4bd344a3c94aea376d4cc31bc77311039e09"
   integrity sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==
 
-surrealdb@^2.0.3:
-  version "2.0.3"
-  resolved "https://registry.yarnpkg.com/surrealdb/-/surrealdb-2.0.3.tgz#07621e84dd1b702422f056c2ebc86b05a8042645"
-  integrity sha512-60dXe7K+7M5EUr6VyIgd/SEUCKFXqc54JHUhCTG8IDlqp7pmuuQQWs2wpgulp2oSXpy+9jwKhgNR/mP3wrEgfw==
+surrealdb@^2.0.8:
+  version "2.0.8"
+  resolved "https://registry.yarnpkg.com/surrealdb/-/surrealdb-2.0.8.tgz#bb8e426ede7b79787d05a5309123ea382a9b1b01"
+  integrity sha512-nkoTAdnfJYc0EvB2Hut0MET/UiWTOT6+TJODoubHzoC952gJvjEbHMx5TLrecUYo1vIN3/qBgwMIcLKK0WC7zQ==
   dependencies:
-    "@surrealdb/cbor" "2.0.0-alpha.4"
-    uuidv7 "^1.0.1"
+    "@surrealdb/sqon" "0.1.0"
 
 svg-tags@^1.0.0:
   version "1.0.0"
@@ -13634,10 +13647,20 @@ undici-types@~7.16.0:
   resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-7.16.0.tgz#ffccdff36aea4884cbfce9a750a0580224f58a46"
   integrity sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==
 
+undici-types@~7.18.0:
+  version "7.18.2"
+  resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-7.18.2.tgz#29357a89e7b7ca4aef3bf0fd3fd0cd73884229e9"
+  integrity sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w==
+
 undici@^6.25.0:
   version "6.28.0"
   resolved "https://registry.yarnpkg.com/undici/-/undici-6.28.0.tgz#9f0e385744fef5021d6596c5bccd783f61193c1c"
   integrity sha512-LIY910g9TI13YS95lrMFrs8Rm/u/irgHeTWoKCoteeJ04CUJ92eEfj0rVn+7VKMPBpUPiUoBKfhNyLI23EE/KA==
+
+undici@^7.24.4:
+  version "7.29.1"
+  resolved "https://registry.yarnpkg.com/undici/-/undici-7.29.1.tgz#7741c6fc8b3e1a48e30323833642bfbe841443ad"
+  integrity sha512-RYONW2MeafgYlkVOKYKkA/Ag7BmXqgIWCa8t1m0JcxrQg9pI9lEqRhAOruOBCbAohOa/gkCF+iPi9hrgvTzu6Q==
 
 undici@^7.24.5:
   version "7.29.0"

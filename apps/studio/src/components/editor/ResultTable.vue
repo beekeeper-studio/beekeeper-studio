@@ -1018,14 +1018,13 @@ import { stringToTypedArray } from '@/common/utils'
 
         this.tabulator.download(formatter, `${title}-${dateString}.${format}`, 'all');
       },
-      clipboard(format = null) {
+      async clipboard(format = null) {
         // this.tabulator.copyToClipboard("all")
 
         const allRows = this.tabulator.getData()
         if (allRows.length == 0) {
           return
         }
-        const columnTitles = {}
 
         const result = this.dataToJson(allRows, false)
 
@@ -1039,11 +1038,11 @@ import { stringToTypedArray } from '@/common/utils'
                   )
                 )
           ];
-          this.$native.clipboard.writeText(markdownTable(mdContent))
+          await this.$native.clipboard.writeText(markdownTable(mdContent))
         } else if (format === 'json') {
-          this.$native.clipboard.writeText(JSON.stringify(result))
+          await this.$native.clipboard.writeText(JSON.stringify(result))
         } else {
-          this.$native.clipboard.writeText(
+          await this.$native.clipboard.writeText(
             Papa.unparse(
               result,
               { header: true, delimiter: "\t", quotes: true, escapeFormulae: true }
