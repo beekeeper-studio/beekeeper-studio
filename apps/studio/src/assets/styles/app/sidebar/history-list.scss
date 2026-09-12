@@ -83,11 +83,19 @@
     }
   }
 
+  .history-origin-container,
+  .show-all-history-container {
+     margin-left: 10px;
+     padding-bottom: 4px;
+  }
+
+  .history-origin-container {
+     margin-right: $gutter-w;
+  }
+
   .show-all-history-container {
      display: flex;
      align-items: center;
-     margin-left: 10px;
-     padding-bottom: 4px;
 
      .show-all-history-text {
       font-size: 12px;

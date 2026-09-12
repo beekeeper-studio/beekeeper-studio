@@ -1,6 +1,7 @@
 import { Entity, Column, Index, BeforeInsert, BeforeUpdate } from 'typeorm'
 import { IsInt, MaxLength, Min } from 'class-validator';
 import { ApplicationEntity  } from './application_entity'
+import type { QueryOrigin } from '../../interfaces/QueryOrigin'
 
 @Entity({ name: 'used_query'})
 export class UsedQuery extends ApplicationEntity {
@@ -36,6 +37,12 @@ export class UsedQuery extends ApplicationEntity {
   @Min(1, { message: 'connectionId must be a saved connection id' })
   @Column({ type: "integer", nullable: false, default: -1 })
   connectionId = -1
+
+  @Column({ type: 'varchar', nullable: false, default: 'app' })
+  origin: QueryOrigin = 'app'
+
+  @Column({ type: 'varchar', nullable: true })
+  pluginId?: string | null
 
   @BeforeInsert()
   @BeforeUpdate()

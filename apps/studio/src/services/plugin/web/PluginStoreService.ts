@@ -26,6 +26,9 @@ import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
 import { cssVars } from "./cssVars";
 import type { DialectData } from "@/shared/lib/dialects/models";
+import rawLog from "@bksLogger";
+
+const log = rawLog.scope("PluginStoreService");
 
 type Table = {
   name: string;
@@ -304,8 +307,29 @@ export default class PluginStoreService {
   }
 
   /* Run query in the background */
-  async runQuery(query: string) {
+  async runQuery(query: string, pluginId: string) {
     const results = await this.store.state.connection.executeQuery(query);
+
+    const queryObj = {
+      text: query,
+      excerpt: query.substring(0, 250),
+      numberOfRecords: results.reduce((total, result) => {
+        return total + (
+          result.totalRowCount ??
+          result.rowCount ??
+          result.affectedRows ??
+          result.rows?.length ??
+          0
+        )
+      }, 0),
+      connectionId: this.store.state.usedConfig.id,
+      origin: 'plugin',
+      pluginId
+    }
+
+    void this.store
+      .dispatch('data/usedQueries/save', queryObj)
+      .catch((error) => log.error('Failed to save query to history', error))
 
     return {
       results: results.map(this.serializeQueryResponse),
