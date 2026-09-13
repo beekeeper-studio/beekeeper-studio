@@ -5,19 +5,19 @@
       <label for="theme-mode">Mode</label>
       <x-buttons class="selectbutton" id="theme-mode">
         <x-button
-          :toggled="themeDark === 'false'"
-          @click.prevent="setThemeDark('false')"
+          :toggled="themeAppearance === 'light'"
+          @click.prevent="setThemeDark('light')"
         >
           <span class="togglebutton-content">Light</span>
         </x-button>
         <x-button
-          :toggled="themeDark === 'true'"
-          @click.prevent="setThemeDark('true')"
+          :toggled="themeAppearance === 'dark'"
+          @click.prevent="setThemeDark('dark')"
         >
           <span class="togglebutton-content">Dark</span>
         </x-button>
         <x-button
-          :toggled="themeDark === 'auto'"
+          :toggled="themeAppearance === 'auto'"
           @click.prevent="setThemeDark('auto')"
         >
           <span class="togglebutton-content">Auto</span>
@@ -72,8 +72,7 @@ export default Vue.extend({
     ...mapState("theme", ["themes"]),
     ...mapGetters({
       themeId: "theme/id",
-      themeType: "theme/type",
-      themeDark: "theme/dark",
+      themeAppearance: "theme/appearance",
     }),
     rootBindings() {
       return [{ event: AppEvent.openAppearanceModal, handler: this.open }];

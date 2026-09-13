@@ -79,7 +79,7 @@ export default class PluginStoreService {
       .join("");
 
     return {
-      type: this.store.getters["theme/type"],
+      type: this.store.getters["theme/dark"] ? "dark" : "light",
       palette,
       cssString,
     };

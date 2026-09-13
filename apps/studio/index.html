@@ -10,8 +10,10 @@
   <body id="body">
     <script>
       const params = new URLSearchParams(location.search);
-      const dark = params.get("themeDark") === "true";
       const themeId = params.get("themeId") || "default";
+      const appearance = params.get("appearance") || "auto";
+      const systemDark = params.get("systemDark") === "true";
+      const dark = appearance === "auto" ? systemDark : appearance === "dark";
       document.body.classList.add(dark ? "dark-theme" : "light-theme");
       document.body.classList.add(`theme-${themeId}`);
     </script>

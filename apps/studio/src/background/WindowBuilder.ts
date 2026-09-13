@@ -68,7 +68,7 @@ class BeekeeperWindow {
     const queryObj: any = openOptions ? { ...openOptions } : {}
 
     queryObj.themeId = this.getThemeId();
-    queryObj.themeDark = this.isDark();
+    queryObj.appearance = this.getAppearance();
     queryObj.systemDark = this.systemUsesDarkColors;
 
     if (platformInfo.isWayland) {
@@ -287,13 +287,17 @@ class BeekeeperWindow {
     return this.settings.themeId?.value?.toString() || 'default';
   }
 
+  getAppearance() {
+    return this.settings.appearance?.value?.toString() || 'auto';
+  }
+
   /** is the window in dark mode? */
   isDark(): boolean {
-    const themeDark = this.settings.themeDark?.value?.toString() || 'auto';
-    if (themeDark === 'auto') {
+    const appearance = this.getAppearance();
+    if (appearance === 'auto') {
       return this.systemUsesDarkColors;
     } else {
-      return themeDark === 'true'
+      return appearance === 'dark'
     }
   }
 }
