@@ -8,7 +8,7 @@ export default {
       valueType: "string",
     });
 
-    await addUserSetting(runner, "themeDark", {
+    await addUserSetting(runner, "appearance", {
       defaultValue: "auto",
       valueType: "string",
     });
@@ -28,14 +28,14 @@ export default {
       `UPDATE user_setting SET userValue = (
         SELECT CASE COALESCE(theme.userValue, 'system')
           WHEN 'system' THEN 'auto'
-          WHEN 'light' THEN 'false'
-          WHEN 'dark' THEN 'true'
-          WHEN 'solarized' THEN 'false'
-          WHEN 'solarized-dark' THEN 'true'
+          WHEN 'light' THEN 'light'
+          WHEN 'dark' THEN 'dark'
+          WHEN 'solarized' THEN 'light'
+          WHEN 'solarized-dark' THEN 'dark'
           ELSE 'auto'
         END
         FROM user_setting theme WHERE theme.key = 'theme'
-      ) WHERE key = 'themeDark'`
+      ) WHERE key = 'appearance'`
     );
   },
 };

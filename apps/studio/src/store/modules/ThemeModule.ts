@@ -36,7 +36,7 @@ export const ThemeModule: Module<State, RootState> = {
     setDark(context, value: string) {
       context.dispatch(
         "settings/save",
-        { key: "themeDark", value },
+        { key: "appearance", value },
         { root: true }
       );
     },
@@ -45,13 +45,14 @@ export const ThemeModule: Module<State, RootState> = {
     id(_state, _getters, _rootState, rootGetters) {
       return rootGetters["settings/settings"].themeId?.value || "default";
     },
-    type(state, _getters, _rootState, rootGetters) {
-      const value = rootGetters["settings/settings"].themeDark?.value;
-      const dark = value === "auto" ? state.systemDark : value === "true";
-      return dark ? "dark" : "light";
+    appearance(_state, _getters, _rootState, rootGetters) {
+      return rootGetters["settings/settings"].appearance?.value || "auto";
     },
-    dark(_state, _getters, _rootState, rootGetters) {
-      return rootGetters["settings/settings"].themeDark?.value || "auto";
+    dark(state, getters) {
+      if (getters.appearance === "auto") {
+        return state.systemDark;
+      }
+      return getters.appearance === "dark";
     },
   },
 };
