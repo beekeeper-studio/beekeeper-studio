@@ -1,4 +1,5 @@
-import { BasicDatabaseClient } from '../../../../../src/lib/db/clients/BasicDatabaseClient';
+import { describe, it, expect, beforeEach } from "vitest";
+import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient";
 
 class TestClient extends (BasicDatabaseClient as any) {
   constructor() {
