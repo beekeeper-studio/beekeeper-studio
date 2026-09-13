@@ -18,8 +18,7 @@ import {
   buildSelectTopQuery,
   escapeString,
   ClientError, refreshTokenIfNeeded,
-  errorMessages,
-  annotateQueryError
+  errorMessages
 } from "./utils";
 import { parseQuotedEnumValues } from "./enumParsers";
 import {
@@ -1204,7 +1203,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
           );
         }
       } catch (err: any) {
-        throw annotateQueryError(err, index, commands.length);
+        throw this.annotateQueryError(err, index, commands.length);
       }
     }
 

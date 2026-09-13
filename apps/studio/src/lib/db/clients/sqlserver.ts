@@ -17,8 +17,7 @@ import {
   joinQueries,
   buildInsertQuery,
   getEntraOptions,
-  errorMessages,
-  annotateQueryError
+  errorMessages
 } from './utils';
 import logRaw from '@bksLogger'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor'
@@ -313,7 +312,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
         data = res.data;
         rowsAffected = res.rowsAffected;
       } catch (err) {
-        throw annotateQueryError(err, index, commands.length);
+        throw this.annotateQueryError(err, index, commands.length);
       }
 
       const raw = !data.recordsets.length && rowsAffected > 0 ? [[] as any] : data.recordsets as IRecordSet<any>
