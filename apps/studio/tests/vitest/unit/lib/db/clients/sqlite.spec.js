@@ -27,7 +27,8 @@ describe("SQLite UNIT test (no connection)", () => {
   })
 
   it("Should annotate error message with query index when multi-query execution fails", async () => {
-    const client = new SqliteClient(null, null);
+    const client = new SqliteClient({ config: {} }, null);
+    client.isTempDB = true;
     client.identifyCommands = () => [
       { text: 'SELECT 1;', type: 'SELECT', executionType: 'LISTING' },
       { text: 'INVALID SQL;', type: 'UNKNOWN', executionType: 'UNKNOWN' },
@@ -35,6 +36,7 @@ describe("SQLite UNIT test (no connection)", () => {
     ];
     client.checkReader = () => true;
     client._rawConnection = {
+      defaultSafeIntegers: () => {},
       prepare: (sql) => {
         if (sql === 'INVALID SQL;') {
           throw new Error('near "INVALID": syntax error');

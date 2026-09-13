@@ -10,7 +10,7 @@ import logRaw from '@bksLogger'
 
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
-import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries, errorMessages, annotateQueryError } from './utils';
+import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries, errorMessages } from './utils';
 import { createCancelablePromise, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
 // FIXME (azmi): use BksConfig
@@ -865,7 +865,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
         const errorPos = parseInt(err.position, 10) - 1;
         const failedIndex = commands.findIndex((cmd) => errorPos >= cmd.start && errorPos <= cmd.end);
         if (failedIndex !== -1) {
-          annotateQueryError(err, failedIndex, commands.length);
+          this.annotateQueryError(err, failedIndex, commands.length);
         }
       }
       throw err;

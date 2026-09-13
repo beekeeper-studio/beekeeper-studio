@@ -6,7 +6,7 @@ import { SqliteChangeBuilder } from "@shared/lib/sql/change_builder/SqliteChange
 import Database from "better-sqlite3";
 import { DatabaseElement, IDbConnectionDatabase } from "../types";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient";
-import { ClientError, annotateQueryError, buildInsertQueries, buildDeleteQueries, buildSelectTopQuery } from './utils';
+import { ClientError, buildInsertQueries, buildDeleteQueries, buildSelectTopQuery } from './utils';
 import { identify } from "sql-query-identifier";
 import { IdentifyResult, Statement } from "sql-query-identifier/lib/defines";
 import * as path from 'path';
@@ -657,9 +657,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     for (let index = 0; index < queries.length; index++) {
       const query = queries[index];
 
-      const statement: Database.Statement = connection.prepare(query.text);
-
       try {
+        const statement: Database.Statement = connection.prepare(query.text);
         let runResult: Database.RunResult | undefined;
         let rows: any[] = [];
         let columns: Database.ColumnDefinition[] = [];
@@ -687,7 +686,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         if (acquiredNewConnection && connection !== this._rawConnection) {
           connection.close();
         }
-        throw annotateQueryError(error, index, queries.length);
+        throw this.annotateQueryError(error, index, queries.length);
       }
     }
 
