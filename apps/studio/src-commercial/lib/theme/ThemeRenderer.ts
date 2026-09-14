@@ -12,7 +12,6 @@ export interface ThemeRendererOptions {
 }
 
 export class ThemeRenderer {
-  private el: HTMLLinkElement | null = null;
   private initialized = false;
 
   constructor(readonly options: ThemeRendererOptions) { }
@@ -61,19 +60,5 @@ export class ThemeRenderer {
     document.body.classList.add(`theme-${themeId}`);
     document.body.classList.toggle("dark-theme", dark);
     document.body.classList.toggle("light-theme", !dark);
-
-    this.el?.remove();
-    this.el = null;
-
-    if (themeId === "default") {
-      // The default theme is the base layer, and it ships in the app bundle.
-      return;
-    }
-
-    const el = document.createElement("link");
-    el.setAttribute("rel", "stylesheet");
-    el.setAttribute("href", `app://themes/${themeId}.css`);
-    document.head.appendChild(el);
-    this.el = el;
   }
 }
