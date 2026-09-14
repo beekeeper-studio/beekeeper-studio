@@ -1,7 +1,8 @@
 @layer primitive, semantic, component;
 
 @layer component {
-  body {
+  .light-theme,
+  .dark-theme {
     --app-bg: var(--bg-base);
     --app-fg: var(--text);
 
@@ -46,7 +47,8 @@
 }
 
 @layer semantic {
-  body {
+  .light-theme,
+  .dark-theme {
     /* https://www.radix-ui.com/colors/docs/palette-composition/understanding-the-scale */
 
     --text: var(--gray-11);
@@ -223,7 +225,8 @@
 }
 
 @layer primitive {
-  body {
+  .light-theme,
+  .dark-theme {
     --white: #ffffff;
     --black: #000000;
 
