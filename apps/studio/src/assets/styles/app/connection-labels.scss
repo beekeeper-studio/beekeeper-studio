@@ -76,7 +76,7 @@ input[type="radio"].connection-label {
     outline-offset: -2px !important; // using !important because the browser style does. why browser...
   }
   &.connection-label-color-default {
-    outline: 1px solid var(--a-border);
+    outline: 1px solid var(--border-a);
     outline-offset: -1px;
     &:checked {
       background-color: transparent;

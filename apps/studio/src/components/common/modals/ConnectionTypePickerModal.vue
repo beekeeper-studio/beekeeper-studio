@@ -240,11 +240,11 @@ export default Vue.extend({
 
   &:hover,
   &:focus-within {
-    background: var(--a-bg-hover);
+    background: var(--bg-a-hover);
   }
 
   &.selected {
-    background: var(--a-bg);
+    background: var(--bg-a);
   }
 
   ::v-deep .database-icon {

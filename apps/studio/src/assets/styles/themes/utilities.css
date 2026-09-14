@@ -9,12 +9,12 @@
     --btn-fg: var(--text);
     --btn-bg: transparent;
     --btn-fg-hover: var(--text);
-    --btn-bg-hover: var(--a-bg);
+    --btn-bg-hover: var(--bg-a);
 
     --btn-flat-fg: var(--text-contrast);
-    --btn-flat-bg: var(--a-bg);
+    --btn-flat-bg: var(--bg-a);
     --btn-flat-fg-hover: var(--text-contrast);
-    --btn-flat-bg-hover: var(--a-bg-hover);
+    --btn-flat-bg-hover: var(--bg-a-hover);
 
     --btn-primary-fg: var(--primary-solid-fg);
     --btn-primary-bg: var(--primary-solid-bg);
@@ -22,8 +22,6 @@
     --btn-primary-bg-hover: var(--primary-solid-bg-hover);
 
     --link-fg: var(--text-contrast);
-
-    /* --icon-fg: var(--gray-a9); */
 
     --scrollbar-thumb: var(--gray-a3);
 
@@ -37,12 +35,6 @@
 
     --panel-bg: var(--bg-subtle);
     --panel-fg: var(--text);
-
-    --togglebutton-color: var(--btn-fg);
-    --togglebutton-background: var(--btn-flat-bg);
-    --togglebutton-hover-color: var(--btn-flat-fg-hover);
-    --togglebutton-content-checked-color: var(--text-contrast);
-    --togglebutton-content-checked-background: var(--a-bg-active);
   }
 }
 
@@ -65,18 +57,18 @@
     --solid: var(--gray-9);
     --solid-hover: var(--gray-10);
 
-    --a-base: var(--gray-a1);
-    --a-bg-subtle: var(--gray-a2);
-    --a-bg: var(--gray-a3);
-    --a-bg-hover: var(--gray-a4);
-    --a-bg-active: var(--gray-a5);
-    --a-border-subtle: var(--gray-a6);
-    --a-border: var(--gray-a7);
-    --a-border-hover: var(--gray-a8);
-    --a-solid: var(--gray-a9);
-    --a-solid-hover: var(--gray-a10);
-    --a-text: var(--gray-a11);
-    --a-text-contrast: var(--gray-a12);
+    --base-a: var(--gray-a1);
+    --bg-a-subtle: var(--gray-a2);
+    --bg-a: var(--gray-a3);
+    --bg-a-hover: var(--gray-a4);
+    --bg-a-active: var(--gray-a5);
+    --border-a-subtle: var(--gray-a6);
+    --border-a: var(--gray-a7);
+    --border-a-hover: var(--gray-a8);
+    --solid-a: var(--gray-a9);
+    --solid-a-hover: var(--gray-a10);
+    --text-a: var(--gray-a11);
+    --text-a-contrast: var(--gray-a12);
 
     --primary-bg-base: var(--primary-1);
     --primary-bg-subtle: var(--primary-2);
@@ -93,20 +85,20 @@
 
     --primary-solid-fg: var(--text-contrast);
 
-    --primary-a-bg-base: var(--primary-a1);
-    --primary-a-bg-subtle: var(--primary-a2);
-    --primary-a-bg: var(--primary-a3);
-    --primary-a-bg-hover: var(--primary-a4);
-    --primary-a-bg-active: var(--primary-a5);
-    --primary-a-border-subtle: var(--primary-a6);
-    --primary-a-border: var(--primary-a7);
-    --primary-a-border-hover: var(--primary-a8);
-    --primary-a-solid-bg: var(--primary-a9);
-    --primary-a-solid-bg-hover: var(--primary-a10);
-    --primary-a-text: var(--primary-a11);
-    --primary-a-text-contrast: var(--primary-a12);
+    --primary-bg-a-base: var(--primary-a1);
+    --primary-bg-a-subtle: var(--primary-a2);
+    --primary-bg-a: var(--primary-a3);
+    --primary-bg-a-hover: var(--primary-a4);
+    --primary-bg-a-active: var(--primary-a5);
+    --primary-border-a-subtle: var(--primary-a6);
+    --primary-border-a: var(--primary-a7);
+    --primary-border-a-hover: var(--primary-a8);
+    --primary-solid-a-bg: var(--primary-a9);
+    --primary-solid-a-bg-hover: var(--primary-a10);
+    --primary-text-a: var(--primary-a11);
+    --primary-text-a-contrast: var(--primary-a12);
 
-    --primary-a-solid-fg: var(--a-text-contrast);
+    --primary-solid-a-fg: var(--text-a-contrast);
 
     --info-bg-base: var(--info-1);
     --info-bg-subtle: var(--info-2);
@@ -123,18 +115,18 @@
     --info-text: var(--info-11);
     --info-text-contrast: var(--info-12);
 
-    --info-a-bg-base: var(--info-a1);
-    --info-a-bg-subtle: var(--info-a2);
-    --info-a-bg: var(--info-a3);
-    --info-a-bg-hover: var(--info-a4);
-    --info-a-bg-active: var(--info-a5);
-    --info-a-border-subtle: var(--info-a6);
-    --info-a-border: var(--info-a7);
-    --info-a-border-hover: var(--info-a8);
-    --info-a-solid-bg: var(--info-a9);
-    --info-a-solid-bg-hover: var(--info-a10);
-    --info-a-text: var(--info-a11);
-    --info-a-text-contrast: var(--info-a12);
+    --info-bg-a-base: var(--info-a1);
+    --info-bg-a-subtle: var(--info-a2);
+    --info-bg-a: var(--info-a3);
+    --info-bg-a-hover: var(--info-a4);
+    --info-bg-a-active: var(--info-a5);
+    --info-border-a-subtle: var(--info-a6);
+    --info-border-a: var(--info-a7);
+    --info-border-a-hover: var(--info-a8);
+    --info-solid-a-bg: var(--info-a9);
+    --info-solid-a-bg-hover: var(--info-a10);
+    --info-text-a: var(--info-a11);
+    --info-text-a-contrast: var(--info-a12);
 
     --success-bg-base: var(--success-1);
     --success-bg-subtle: var(--success-2);
@@ -151,18 +143,18 @@
     --success-text: var(--success-11);
     --success-text-contrast: var(--success-12);
 
-    --success-a-bg-base: var(--success-a1);
-    --success-a-bg-subtle: var(--success-a2);
-    --success-a-bg: var(--success-a3);
-    --success-a-bg-hover: var(--success-a4);
-    --success-a-bg-active: var(--success-a5);
-    --success-a-border-subtle: var(--success-a6);
-    --success-a-border: var(--success-a7);
-    --success-a-border-hover: var(--success-a8);
-    --success-a-solid-bg: var(--success-a9);
-    --success-a-solid-bg-hover: var(--success-a10);
-    --success-a-text: var(--success-a11);
-    --success-a-text-contrast: var(--success-a12);
+    --success-bg-a-base: var(--success-a1);
+    --success-bg-a-subtle: var(--success-a2);
+    --success-bg-a: var(--success-a3);
+    --success-bg-a-hover: var(--success-a4);
+    --success-bg-a-active: var(--success-a5);
+    --success-border-a-subtle: var(--success-a6);
+    --success-border-a: var(--success-a7);
+    --success-border-a-hover: var(--success-a8);
+    --success-solid-a-bg: var(--success-a9);
+    --success-solid-a-bg-hover: var(--success-a10);
+    --success-text-a: var(--success-a11);
+    --success-text-a-contrast: var(--success-a12);
 
     --warning-bg-base: var(--warning-1);
     --warning-bg-subtle: var(--warning-2);
@@ -179,18 +171,18 @@
     --warning-text: var(--warning-11);
     --warning-text-contrast: var(--warning-12);
 
-    --warning-a-bg-base: var(--warning-a1);
-    --warning-a-bg-subtle: var(--warning-a2);
-    --warning-a-bg: var(--warning-a3);
-    --warning-a-bg-hover: var(--warning-a4);
-    --warning-a-bg-active: var(--warning-a5);
-    --warning-a-border-subtle: var(--warning-a6);
-    --warning-a-border: var(--warning-a7);
-    --warning-a-border-hover: var(--warning-a8);
-    --warning-a-solid-bg: var(--warning-a9);
-    --warning-a-solid-bg-hover: var(--warning-a10);
-    --warning-a-text: var(--warning-a11);
-    --warning-a-text-contrast: var(--warning-a12);
+    --warning-bg-a-base: var(--warning-a1);
+    --warning-bg-a-subtle: var(--warning-a2);
+    --warning-bg-a: var(--warning-a3);
+    --warning-bg-a-hover: var(--warning-a4);
+    --warning-bg-a-active: var(--warning-a5);
+    --warning-border-a-subtle: var(--warning-a6);
+    --warning-border-a: var(--warning-a7);
+    --warning-border-a-hover: var(--warning-a8);
+    --warning-solid-a-bg: var(--warning-a9);
+    --warning-solid-a-bg-hover: var(--warning-a10);
+    --warning-text-a: var(--warning-a11);
+    --warning-text-a-contrast: var(--warning-a12);
 
     --danger-bg-base: var(--danger-1);
     --danger-bg-subtle: var(--danger-2);
@@ -207,18 +199,18 @@
     --danger-text: var(--danger-11);
     --danger-text-contrast: var(--danger-12);
 
-    --danger-a-bg-base: var(--danger-a1);
-    --danger-a-bg-subtle: var(--danger-a2);
-    --danger-a-bg: var(--danger-a3);
-    --danger-a-bg-hover: var(--danger-a4);
-    --danger-a-bg-active: var(--danger-a5);
-    --danger-a-border-subtle: var(--danger-a6);
-    --danger-a-border: var(--danger-a7);
-    --danger-a-border-hover: var(--danger-a8);
-    --danger-a-solid-bg: var(--danger-a9);
-    --danger-a-solid-bg-hover: var(--danger-a10);
-    --danger-a-text: var(--danger-a11);
-    --danger-a-text-contrast: var(--danger-a12);
+    --danger-bg-a-base: var(--danger-a1);
+    --danger-bg-a-subtle: var(--danger-a2);
+    --danger-bg-a: var(--danger-a3);
+    --danger-bg-a-hover: var(--danger-a4);
+    --danger-bg-a-active: var(--danger-a5);
+    --danger-border-a-subtle: var(--danger-a6);
+    --danger-border-a: var(--danger-a7);
+    --danger-border-a-hover: var(--danger-a8);
+    --danger-solid-a-bg: var(--danger-a9);
+    --danger-solid-a-bg-hover: var(--danger-a10);
+    --danger-text-a: var(--danger-a11);
+    --danger-text-a-contrast: var(--danger-a12);
 
     --border-color: var(--border-subtle);
   }

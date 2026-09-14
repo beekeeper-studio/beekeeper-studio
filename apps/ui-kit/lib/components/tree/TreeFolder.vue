@@ -56,7 +56,7 @@ export default Vue.extend({
   padding-right: 0.8rem;
 
   &:hover {
-    background-color: var(--a-bg-hover);
+    background-color: var(--bg-a-hover);
   }
 }
 

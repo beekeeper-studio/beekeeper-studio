@@ -424,7 +424,7 @@ input[type="checkbox"] {
   &:active,
   &:checked,
   &:checked:active {
-    background: var(--primary-a-solid-bg);
+    background: var(--primary-solid-a-bg);
     color: var(--primary-solid-fg);
     box-shadow: none;
     outline: none;
@@ -752,7 +752,7 @@ input[type=file] {
   align-items: flex-start;
   border-radius: 6px;
   padding: 0.75rem 1rem;
-  background: var(--a-bg-subtle);
+  background: var(--bg-a-subtle);
   margin: 0.5rem 0;
   font-size: 0.85rem;
   line-height: 1.2rem;
@@ -762,7 +762,7 @@ input[type=file] {
     margin-right: 1rem;
   }
   code {
-    background: var(--a-bg-hover);
+    background: var(--bg-a-hover);
     margin: 0 0.25rem;
     padding: 0.15rem 0.4rem;
     border-radius: 3px;
