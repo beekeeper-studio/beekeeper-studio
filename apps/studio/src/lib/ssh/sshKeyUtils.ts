@@ -34,6 +34,12 @@ export function canParseKey(keyPath: string): boolean {
       log.warn(`Could not parse ${keyPath}: ${parsed.message}`);
       return false;
     }
+    const key = Array.isArray(parsed) ? parsed[0] : parsed;
+    const hasPrivateKeyMaterial = key.getPrivatePEM() !== null;
+    if (!hasPrivateKeyMaterial) {
+      log.warn(`Skipping ${keyPath}: public key only, no private key material`);
+      return false;
+    }
   } catch (err) {
     log.warn(`Error checking key file ${keyPath}: ${err.message}`);
     return false;
