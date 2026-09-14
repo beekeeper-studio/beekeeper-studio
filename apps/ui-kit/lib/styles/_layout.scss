@@ -302,7 +302,7 @@
   input, select, textarea, .bk-form-input {
     @include form-control;
     &:focus {
-      border-color: $input-highlight;
+      border-color: var(--border-subtle);
     }
   }
   .input-group {

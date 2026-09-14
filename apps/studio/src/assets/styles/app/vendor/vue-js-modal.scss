@@ -41,7 +41,7 @@
   top: 0;
   width: 100%;
   height: 100vh;
-  background: rgba(color.adjust($theme-bg, $lightness: -3%), 0.9);
+  background: var(--overlay-bg);
   z-index: 9999;
   opacity: 1;
   &.relative {
@@ -78,8 +78,7 @@
 // Modal
 // ----------------------------
 .v--modal {
-  background-color: color.adjust($theme-bg, $lightness: 1%) !important;
-  color: $theme-base !important;
+  background-color: var(--panel-bg);
   text-align: left !important;
   border-radius: 8px !important;
   padding: 0 !important;

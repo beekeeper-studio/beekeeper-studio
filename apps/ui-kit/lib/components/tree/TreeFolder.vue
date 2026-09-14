@@ -49,18 +49,14 @@ export default Vue.extend({
   width: 100%;
   border-radius: 4px;
   cursor: pointer;
-  color: rgb(from var(--bks-theme-base) r g b / 77%);
+  color: var(--text);
   font-size: 1rem;
   height: 1.75rem;
   padding-left: calc(var(--depth) * 1rem);
   padding-right: 0.8rem;
 
   &:hover {
-    background-color: rgb(from var(--bks-theme-base) r g b / 3.5%);
-
-    .expand-icon {
-      color: var(--bks-text-dark);
-    }
+    background-color: var(--a-bg-hover);
   }
 }
 
@@ -74,13 +70,13 @@ export default Vue.extend({
 }
 
 .material-icons.folder-icon {
-  color: var(--bks-text-lighter);
+  color: var(--solid);
   font-size: 1rem;
   margin-left: 0.25rem;
 }
 
 .material-icons.expand-icon {
-  color: var(--bks-text-lighter);
+  color: var(--solid);
   font-size: 1.25rem;
 }
 </style>

@@ -56,7 +56,8 @@
     }
     a {
       &.active {
-        background-color: rgba($theme-base, 0.06);
+        background: var(--bg-active);
+        color: var(--text-contrast);
       }
     }
     .actions-btn {
@@ -118,11 +119,10 @@
     height: initial;
     line-height: initial;
     padding: $gutter-h ($gutter-w * 0.75);
-    background: var(--btn-bg);
-    color: var(--btn-fg);
+    color: var(--text);
     &:hover {
-      background: var(--btn-bg-hover);
-      color: var(--btn-fg-hover);
+      background: var(--bg-hover);
+      color: var(--text-contrast);
     }
     // &.folder-btn {
     //   padding-left: 0;

@@ -63,8 +63,7 @@ button {
 
 input, select {
   color: inherit;
-  border-color: var(--border);
-  border-style: solid;
+  border: 1px solid var(--border-subtle);
   &:focus {
     border-color: var(--border-hover);
   }

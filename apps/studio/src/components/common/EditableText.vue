@@ -93,7 +93,6 @@ export default Vue.extend({
     left: 0;
     top: 50%;
     transform: translateY(-50%);
-    background-color: var(--theme-bg);
 
     &[data-submitting="true"] {
       border: none;

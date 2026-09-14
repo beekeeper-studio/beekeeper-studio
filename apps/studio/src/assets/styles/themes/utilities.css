@@ -1,54 +1,5 @@
 @layer primitive, semantic, component;
 
-@layer primitive {
-  body {
-    --white: #ffffff;
-    --black: #000000;
-  }
-}
-
-@layer semantic {
-  body {
-    /* https://www.radix-ui.com/colors/docs/palette-composition/understanding-the-scale */
-
-    --text: var(--gray-11);
-    --text-contrast: var(--gray-12);
-
-    --bg-base: var(--gray-1);
-    --bg-subtle: var(--gray-2);
-    --bg: var(--gray-3);
-    --bg-hover: var(--gray-4);
-    --border-subtle: var(--gray-6);
-    --border: var(--gray-7);
-    --border-hover: var(--gray-8);
-
-    --a-bg-subtle: var(--gray-a2);
-    --a-bg: var(--gray-a3);
-    --a-bg-hover: var(--gray-a4);
-
-    --primary-solid-bg: var(--primary-9);
-    --primary-solid-fg: var(--white);
-    --primary-solid-bg-hover: var(--primary-10);
-    --primary-solid-fg-hover: var(--white);
-
-    --info-solid-bg: var(--info-9);
-    --info-solid-fg: var(--white);
-    --info-text: var(--info-11);
-
-    --success-solid-bg: var(--success-9);
-    --success-solid-fg: var(--white);
-    --success-text: var(--success-11);
-
-    --warning-text: var(--warning-11);
-
-    --danger-solid-bg: var(--danger-9);
-    --danger-solid-fg: var(--white);
-    --danger-text: var(--danger-11);
-
-    --border-color: var(--border-subtle);
-  }
-}
-
 @layer component {
   body {
     --app-bg: var(--bg-base);
@@ -81,15 +32,275 @@
     --sidebar-bg: var(--bg-subtle);
     --sidebar-fg: var(--text);
 
+    --overlay-bg: rgb(from var(--bg-base) r g b / 0.9);
+
     --panel-bg: var(--bg-subtle);
+    --panel-fg: var(--text);
 
-    --togglebutton-color: var(--text);
-    --togglebutton-background: var(--a-bg);
-    --togglebutton-hover-color: var(--text-contrast);
+    --togglebutton-color: var(--btn-fg);
+    --togglebutton-background: var(--btn-flat-bg);
+    --togglebutton-hover-color: var(--btn-flat-fg-hover);
     --togglebutton-content-checked-color: var(--text-contrast);
-    --togglebutton-content-checked-background: var(--a-bg-hover);
-
-    --menu-bg: var(--bg-subtle);
-    --menu-fg: var(--text);
+    --togglebutton-content-checked-background: var(--a-bg-active);
   }
 }
+
+@layer semantic {
+  body {
+    /* https://www.radix-ui.com/colors/docs/palette-composition/understanding-the-scale */
+
+    --text: var(--gray-11);
+    --text-contrast: var(--gray-12);
+
+    --bg-base: var(--gray-1);
+    --bg-subtle: var(--gray-2);
+    --bg: var(--gray-3);
+    --bg-hover: var(--gray-4);
+    --bg-active: var(--gray-5);
+    --border-subtle: var(--gray-6);
+    --border: var(--gray-7);
+    --border-hover: var(--gray-8);
+    --solid: var(--gray-9);
+    --solid-hover: var(--gray-10);
+
+    --a-base: var(--gray-a1);
+    --a-bg-subtle: var(--gray-a2);
+    --a-bg: var(--gray-a3);
+    --a-bg-hover: var(--gray-a4);
+    --a-bg-active: var(--gray-a5);
+    --a-border-subtle: var(--gray-a6);
+    --a-border: var(--gray-a7);
+    --a-border-hover: var(--gray-a8);
+    --a-solid: var(--gray-a9);
+    --a-solid-hover: var(--gray-a10);
+    --a-text: var(--gray-a11);
+    --a-text-contrast: var(--gray-a12);
+
+    --primary-bg-base: var(--primary-1);
+    --primary-bg-subtle: var(--primary-2);
+    --primary-bg: var(--primary-3);
+    --primary-bg-hover: var(--primary-4);
+    --primary-bg-active: var(--primary-5);
+    --primary-border-subtle: var(--primary-6);
+    --primary-border: var(--primary-7);
+    --primary-border-hover: var(--primary-8);
+    --primary-solid-bg: var(--primary-9);
+    --primary-solid-bg-hover: var(--primary-10);
+    --primary-text: var(--primary-11);
+    --primary-text-contrast: var(--primary-12);
+
+    --primary-solid-fg: var(--text-contrast);
+
+    --primary-a-bg-base: var(--primary-a1);
+    --primary-a-bg-subtle: var(--primary-a2);
+    --primary-a-bg: var(--primary-a3);
+    --primary-a-bg-hover: var(--primary-a4);
+    --primary-a-bg-active: var(--primary-a5);
+    --primary-a-border-subtle: var(--primary-a6);
+    --primary-a-border: var(--primary-a7);
+    --primary-a-border-hover: var(--primary-a8);
+    --primary-a-solid-bg: var(--primary-a9);
+    --primary-a-solid-bg-hover: var(--primary-a10);
+    --primary-a-text: var(--primary-a11);
+    --primary-a-text-contrast: var(--primary-a12);
+
+    --primary-a-solid-fg: var(--a-text-contrast);
+
+    --info-bg-base: var(--info-1);
+    --info-bg-subtle: var(--info-2);
+    --info-bg: var(--info-3);
+    --info-bg-hover: var(--info-4);
+    --info-bg-active: var(--info-5);
+    --info-border-subtle: var(--info-6);
+    --info-border: var(--info-7);
+    --info-border-hover: var(--info-8);
+    --info-solid-bg: var(--info-9);
+    --info-solid-fg: var(--white);
+    --info-solid-bg-hover: var(--info-10);
+    --info-solid-fg-hover: var(--white);
+    --info-text: var(--info-11);
+    --info-text-contrast: var(--info-12);
+
+    --info-a-bg-base: var(--info-a1);
+    --info-a-bg-subtle: var(--info-a2);
+    --info-a-bg: var(--info-a3);
+    --info-a-bg-hover: var(--info-a4);
+    --info-a-bg-active: var(--info-a5);
+    --info-a-border-subtle: var(--info-a6);
+    --info-a-border: var(--info-a7);
+    --info-a-border-hover: var(--info-a8);
+    --info-a-solid-bg: var(--info-a9);
+    --info-a-solid-bg-hover: var(--info-a10);
+    --info-a-text: var(--info-a11);
+    --info-a-text-contrast: var(--info-a12);
+
+    --success-bg-base: var(--success-1);
+    --success-bg-subtle: var(--success-2);
+    --success-bg: var(--success-3);
+    --success-bg-hover: var(--success-4);
+    --success-bg-active: var(--success-5);
+    --success-border-subtle: var(--success-6);
+    --success-border: var(--success-7);
+    --success-border-hover: var(--success-8);
+    --success-solid-bg: var(--success-9);
+    --success-solid-fg: var(--white);
+    --success-solid-bg-hover: var(--success-10);
+    --success-solid-fg-hover: var(--white);
+    --success-text: var(--success-11);
+    --success-text-contrast: var(--success-12);
+
+    --success-a-bg-base: var(--success-a1);
+    --success-a-bg-subtle: var(--success-a2);
+    --success-a-bg: var(--success-a3);
+    --success-a-bg-hover: var(--success-a4);
+    --success-a-bg-active: var(--success-a5);
+    --success-a-border-subtle: var(--success-a6);
+    --success-a-border: var(--success-a7);
+    --success-a-border-hover: var(--success-a8);
+    --success-a-solid-bg: var(--success-a9);
+    --success-a-solid-bg-hover: var(--success-a10);
+    --success-a-text: var(--success-a11);
+    --success-a-text-contrast: var(--success-a12);
+
+    --warning-bg-base: var(--warning-1);
+    --warning-bg-subtle: var(--warning-2);
+    --warning-bg: var(--warning-3);
+    --warning-bg-hover: var(--warning-4);
+    --warning-bg-active: var(--warning-5);
+    --warning-border-subtle: var(--warning-6);
+    --warning-border: var(--warning-7);
+    --warning-border-hover: var(--warning-8);
+    --warning-solid-bg: var(--warning-9);
+    --warning-solid-fg: var(--white);
+    --warning-solid-bg-hover: var(--warning-10);
+    --warning-solid-fg-hover: var(--white);
+    --warning-text: var(--warning-11);
+    --warning-text-contrast: var(--warning-12);
+
+    --warning-a-bg-base: var(--warning-a1);
+    --warning-a-bg-subtle: var(--warning-a2);
+    --warning-a-bg: var(--warning-a3);
+    --warning-a-bg-hover: var(--warning-a4);
+    --warning-a-bg-active: var(--warning-a5);
+    --warning-a-border-subtle: var(--warning-a6);
+    --warning-a-border: var(--warning-a7);
+    --warning-a-border-hover: var(--warning-a8);
+    --warning-a-solid-bg: var(--warning-a9);
+    --warning-a-solid-bg-hover: var(--warning-a10);
+    --warning-a-text: var(--warning-a11);
+    --warning-a-text-contrast: var(--warning-a12);
+
+    --danger-bg-base: var(--danger-1);
+    --danger-bg-subtle: var(--danger-2);
+    --danger-bg: var(--danger-3);
+    --danger-bg-hover: var(--danger-4);
+    --danger-bg-active: var(--danger-5);
+    --danger-border-subtle: var(--danger-6);
+    --danger-border: var(--danger-7);
+    --danger-border-hover: var(--danger-8);
+    --danger-solid-bg: var(--danger-9);
+    --danger-solid-fg: var(--white);
+    --danger-solid-bg-hover: var(--danger-10);
+    --danger-solid-fg-hover: var(--white);
+    --danger-text: var(--danger-11);
+    --danger-text-contrast: var(--danger-12);
+
+    --danger-a-bg-base: var(--danger-a1);
+    --danger-a-bg-subtle: var(--danger-a2);
+    --danger-a-bg: var(--danger-a3);
+    --danger-a-bg-hover: var(--danger-a4);
+    --danger-a-bg-active: var(--danger-a5);
+    --danger-a-border-subtle: var(--danger-a6);
+    --danger-a-border: var(--danger-a7);
+    --danger-a-border-hover: var(--danger-a8);
+    --danger-a-solid-bg: var(--danger-a9);
+    --danger-a-solid-bg-hover: var(--danger-a10);
+    --danger-a-text: var(--danger-a11);
+    --danger-a-text-contrast: var(--danger-a12);
+
+    --border-color: var(--border-subtle);
+  }
+}
+
+@layer primitive {
+  body {
+    --white: #ffffff;
+    --black: #000000;
+
+    --primary-1: var(--yellow-1);
+    --primary-2: var(--yellow-2);
+    --primary-3: var(--yellow-3);
+    --primary-4: var(--yellow-4);
+    --primary-5: var(--yellow-5);
+    --primary-6: var(--yellow-6);
+    --primary-7: var(--yellow-7);
+    --primary-8: var(--yellow-8);
+    --primary-9: var(--yellow-9);
+    --primary-10: var(--yellow-10);
+    --primary-11: var(--yellow-11);
+    --primary-12: var(--yellow-12);
+    --primary-a1: var(--yellow-a1);
+    --primary-a2: var(--yellow-a2);
+    --primary-a3: var(--yellow-a3);
+    --primary-a4: var(--yellow-a4);
+    --primary-a5: var(--yellow-a5);
+    --primary-a6: var(--yellow-a6);
+    --primary-a7: var(--yellow-a7);
+    --primary-a8: var(--yellow-a8);
+    --primary-a9: var(--yellow-a9);
+    --primary-a10: var(--yellow-a10);
+    --primary-a11: var(--yellow-a11);
+    --primary-a12: var(--yellow-a12);
+
+    --danger-1: var(--red-1);
+    --danger-2: var(--red-2);
+    --danger-3: var(--red-3);
+    --danger-4: var(--red-4);
+    --danger-5: var(--red-5);
+    --danger-6: var(--red-6);
+    --danger-7: var(--red-7);
+    --danger-8: var(--red-8);
+    --danger-9: var(--red-9);
+    --danger-10: var(--red-10);
+    --danger-11: var(--red-11);
+    --danger-12: var(--red-12);
+    --danger-a1: var(--red-a1);
+    --danger-a2: var(--red-a2);
+    --danger-a3: var(--red-a3);
+    --danger-a4: var(--red-a4);
+    --danger-a5: var(--red-a5);
+    --danger-a6: var(--red-a6);
+    --danger-a7: var(--red-a7);
+    --danger-a8: var(--red-a8);
+    --danger-a9: var(--red-a9);
+    --danger-a10: var(--red-a10);
+    --danger-a11: var(--red-a11);
+    --danger-a12: var(--red-a12);
+
+    --info-1: var(--blue-1);
+    --info-2: var(--blue-2);
+    --info-3: var(--blue-3);
+    --info-4: var(--blue-4);
+    --info-5: var(--blue-5);
+    --info-6: var(--blue-6);
+    --info-7: var(--blue-7);
+    --info-8: var(--blue-8);
+    --info-9: var(--blue-9);
+    --info-10: var(--blue-10);
+    --info-11: var(--blue-11);
+    --info-12: var(--blue-12);
+    --info-a1: var(--blue-a1);
+    --info-a2: var(--blue-a2);
+    --info-a3: var(--blue-a3);
+    --info-a4: var(--blue-a4);
+    --info-a5: var(--blue-a5);
+    --info-a6: var(--blue-a6);
+    --info-a7: var(--blue-a7);
+    --info-a8: var(--blue-a8);
+    --info-a9: var(--blue-a9);
+    --info-a10: var(--blue-a10);
+    --info-a11: var(--blue-a11);
+    --info-a12: var(--blue-a12);
+  }
+}
+
