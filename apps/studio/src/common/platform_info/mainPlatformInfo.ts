@@ -76,10 +76,6 @@ export function mainPlatformInfo(): IPlatformInfo {
   }
   const pluginsDirectory = join(userDirectory, 'plugins')
   const driverDepsDirectory = join(userDirectory, 'driver-deps')
-  const builtinThemesDirectory = isDevEnv
-    ? resolve('./src/assets/styles/themes')
-    : resolve(join(__dirname, 'renderer', 'themes'))
-  const externalThemesDirectory = join(userDirectory, 'themes')
 
   const sessionType = p.env.XDG_SESSION_TYPE
 
@@ -130,8 +126,6 @@ export function mainPlatformInfo(): IPlatformInfo {
     homeDirectory,
     pluginsDirectory,
     driverDepsDirectory,
-    builtinThemesDirectory,
-    externalThemesDirectory,
     testMode,
     appDbPath: join(userDirectory, isDevEnv ? 'app-dev.db' : 'app.db'),
     updatesDisabled,
