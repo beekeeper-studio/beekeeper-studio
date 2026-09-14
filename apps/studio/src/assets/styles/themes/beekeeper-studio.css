@@ -1,6 +1,4 @@
-:root,
-.light-theme,
-.light-theme.theme-default {
+.theme-default {
   --app-bg: var(--white);
 
   --btn-primary-fg: var(--gray-3);
@@ -114,7 +112,7 @@
 }
 
 .dark-theme,
-.dark-theme.theme-default {
+.theme-default.dark-theme {
   --app-bg: #090909;
 
   --btn-primary-fg: var(--gray-2);

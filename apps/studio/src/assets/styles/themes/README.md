@@ -12,25 +12,26 @@ app bundle via `app.scss`.
 **A theme must define at least the light color scales.** The dark scales are
 optional; without them a theme looks the same in both modes.
 
-**Light scales go on `:root, .light-theme`. Dark scales go on `.dark-theme`.**
+**Light scales go on `.theme-<id>`. Dark scales go on `.theme-<id>.dark-theme`.**
 
 ```css
-:root,
-.light-theme {
+.theme-solarized {
   --gray-1: #fcfcfc;
   --gray-2: #f9f9f9;
   /* ... */
 }
 
-.dark-theme {
+.theme-solarized.dark-theme {
   --gray-1: #090909;
   /* ... */
 }
 ```
 
-Light needs both selectors: `:root` so the values are there before a theme
-class is applied, and `.light-theme` so they win over another theme's `:root`
-block.
+Both classes land on the same element (`body` for the app, or any element that
+wants its own theme scope, like the previews in the appearance modal). Keep the
+dark block on that same element rather than a descendant: the semantic tokens
+in `utilities.css` are resolved on the element that carries the theme classes,
+so a scale set further down the tree is never seen by them.
 
 **Color scales are `--gray-1` … `--gray-12`, `--primary-1` … `--primary-12`,
 and so on**, plus the `-a` alpha variants (`--gray-a1` … `--gray-a12`). The
