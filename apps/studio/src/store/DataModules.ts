@@ -1,5 +1,5 @@
-import { LocalConnectionFolderModule } from "@/store/modules/data/connection_folder/LocalConnectionFolderModule";
-import { LocalQueryFolderModule } from "@/store/modules/data/query_folder/LocalQueryFolderModule";
+import { UtilConnectionFolderModule } from "@/store/modules/data/connection_folder/UtilityConnectionFolderModule";
+import { UtilQueryFolderModule } from "@/store/modules/data/query_folder/UtilityQueryFolderModule";
 import { CloudConnectionModule } from "./modules/data/connection/CloudConnectionModule";
 import { UtilConnectionModule } from "./modules/data/connection/UtilityConnectionModule";
 import { CloudConnectionFolderModule } from "./modules/data/connection_folder/CloudConnectionFolderModule";
@@ -12,7 +12,7 @@ import { UtilUsedConnectionModule } from "./modules/data/used_connection/Utility
 import { CloudUsedQueryModule } from "./modules/data/used_query/CloudUsedQueryModule";
 import { UtilUsedQueryModule } from "./modules/data/used_query/UtilityUsedQueryModule";
 import { CloudMembershipModule } from "./modules/data/membership/CloudMembershipModule";
-import { UtilMembershipModule } from "./modules/data/membership/UtilMembershipModule";
+import { UtilMembershipModule } from "./modules/data/membership/UtilityMembershipModule";
 
 export type ShareableModule =
   | "data/queries"
@@ -33,23 +33,23 @@ export const DataModules = [
   },
   {
     path: 'data/connections',
+    local: UtilConnectionModule,
     cloud: CloudConnectionModule,
-    local: UtilConnectionModule
   },
   {
     path: 'data/queryFolders',
+    local: UtilQueryFolderModule,
     cloud: CloudQueryFolderModule,
-    local: LocalQueryFolderModule
   },
   {
     path: 'data/connectionFolders',
+    local: UtilConnectionFolderModule,
     cloud: CloudConnectionFolderModule,
-    local: LocalConnectionFolderModule
   },
   {
     path: 'data/usedQueries',
-    cloud: CloudUsedQueryModule,
     local: UtilUsedQueryModule,
+    cloud: CloudUsedQueryModule,
   },
   {
     path: 'data/usedconnections',
@@ -58,7 +58,7 @@ export const DataModules = [
   },
   {
     path: 'data/memberships',
-    cloud: CloudMembershipModule,
     local: UtilMembershipModule,
+    cloud: CloudMembershipModule,
   },
 ]

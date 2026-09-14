@@ -11,11 +11,13 @@ type State = DataState<IConnection>;
 // NOTE (@day): may need to add a custom action for removeUsedConfig that also deletes the tokencache?
 export const UtilUsedConnectionModule: DataStore<IConnection, State> = {
   namespaced: true,
-  state: {
-    items: [],
-    loading: false,
-    error: null,
-    pollError: null
+  state() {
+    return {
+      items: [],
+      loading: false,
+      error: null,
+      pollError: null
+    }
   },
   mutations: mutationsFor<IConnection>(),
   actions: utilActionsFor<IConnection>('used', {

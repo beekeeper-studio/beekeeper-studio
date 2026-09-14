@@ -116,6 +116,8 @@ Beekeeper Studio Ultimate Edition contains extra features and is licensed under 
 
 Beekeeper Studio's trademarks (words marks and logos) are not open source. See our [trademark guidelines](https://beekeeperstudio.io/legal/trademark/) for more information.
 
+Third party assets bundled with the app, such as the database icons, are credited in [ATTRIBUTIONS.md](./ATTRIBUTIONS.md).
+
 ## Trademark Guidelines
 
 Trademarks can be complicated with open source projects, so we have adapted a set of standard guidelines for using our trademarks that are common to many open source projects.

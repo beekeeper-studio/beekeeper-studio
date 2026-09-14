@@ -480,10 +480,9 @@
                 >
               </div>
               <div class="form-group" v-if="queryFolders && queryFolders.length > 0">
-                <label>Folder <i v-if="!isUltimate && !isCloud" class="material-icons menu-icon">stars</i></label>
+                <label>Folder</label>
                 <in-app-folder-picker
                   v-model="query.queryFolderId"
-                  :disabled="!isUltimate && !isCloud"
                   folder-path="data/queryFolders"
                 />
               </div>
@@ -703,7 +702,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       }
     },
     computed: {
-      ...mapGetters(['dialect', 'dialectData', 'defaultSchema', 'isUltimate', 'isCloud', 'aiShellAvailable']),
+      ...mapGetters(['dialect', 'dialectData', 'defaultSchema', 'isCloud', 'aiShellAvailable']),
       ...mapGetters({
         'isCommunity': 'licenses/isCommunity',
         'userKeymap': 'settings/userKeymap',
@@ -2009,8 +2008,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       openTroubleshooting() {
         window.main.openExternally('https://docs.beekeeperstudio.io/support/troubleshooting/')
       },
-      copyQuerySelectionError() {
-        this.$native.clipboard.writeText(this.querySelectionError?.stack ?? this.querySelectionError?.message)
+      async copyQuerySelectionError() {
+        await this.$native.clipboard.writeText(this.querySelectionError?.stack ?? this.querySelectionError?.message)
       },
       startTimer() {
         this.elapsedTime = 0;
