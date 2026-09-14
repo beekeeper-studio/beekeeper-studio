@@ -55,9 +55,6 @@ export class ThemeRenderer {
       }
     });
 
-    document.documentElement.dataset.themeId = themeId;
-    document.documentElement.dataset.themeType = dark ? "dark" : "light";
-
     document.body.classList.add(`theme-${themeId}`);
     document.body.classList.toggle("dark-theme", dark);
     document.body.classList.toggle("light-theme", !dark);
