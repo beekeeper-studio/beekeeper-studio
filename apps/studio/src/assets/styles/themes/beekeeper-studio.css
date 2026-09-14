@@ -1,4 +1,5 @@
-.theme-default {
+.light-theme,
+.theme-default.light-theme {
   --app-bg: var(--white);
 
   --btn-primary-fg: var(--gray-3);
