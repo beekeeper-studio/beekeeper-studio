@@ -2281,21 +2281,14 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     color: var(--text);
   }
 
-  #commit-mode {
-    --togglebutton-color: color-mix(
-      in srgb,
-      var(--theme-base) 60%,
-      var(--query-editor-bg)
-      );
-    --togglebutton-background: color-mix(
-      in srgb,
-      var(--theme-base) 6%,
-      var(--query-editor-bg));
-    --togglebutton-content-checked-color: var(--theme-base);
-    --togglebutton-content-checked-background: color-mix(
-      in srgb,
-      var(--theme-base) 15%,
-      var(--query-editor-bg));
+  #commit-mode > x-button {
+    color: color-mix(in srgb, var(--theme-base) 60%, var(--query-editor-bg));
+    background: color-mix(in srgb, var(--theme-base) 6%, var(--query-editor-bg));
+
+    &[toggled] .togglebutton-content {
+      color: var(--theme-base);
+      background: color-mix(in srgb, var(--theme-base) 15%, var(--query-editor-bg));
+    }
   }
 
   .manual-commit-notice {

@@ -439,7 +439,7 @@
         &.pinned {
           display: inline-flex;
           i.bk-pin {
-            color: var(--primary-a-solid-bg);
+            color: var(--primary-solid-a-bg);
           }
           i.material-icons {
             display:none;
@@ -551,7 +551,6 @@
   .item-icon {
     width: $sidebar-icon-w;
     min-width: $sidebar-icon-w;
-    color: var(--icon-fg);
     transition: transform 0.15s ease-in;
     &.hidden {
       visibility: hidden;

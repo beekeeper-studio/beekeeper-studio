@@ -484,14 +484,14 @@ x-buttons {
 x-buttons.selectbutton {
   > x-button {
     padding: 0.25rem;
-    color: var(--togglebutton-color);
-    background: var(--togglebutton-background);
+    color: var(--btn-fg);
+    background: var(--btn-flat-bg);
     height: auto;
     line-height: 1.15rem;
     box-shadow: none;
 
     &:hover {
-      color: var(--togglebutton-hover-color);
+      color: var(--btn-flat-fg-hover);
     }
 
     .togglebutton-content {
@@ -503,8 +503,8 @@ x-buttons.selectbutton {
     }
 
     &[toggled] .togglebutton-content {
-      color: var(--togglebutton-content-checked-color);
-      background: var(--togglebutton-content-checked-background);
+      color: var(--text-contrast);
+      background: var(--bg-a-active);
     }
 
     &:first-child {
