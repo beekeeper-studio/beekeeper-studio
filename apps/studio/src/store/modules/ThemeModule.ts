@@ -2,7 +2,7 @@ import { Module } from "vuex";
 import { State as RootState } from "../index";
 
 export type Theme = {
-  value: string;
+  id: string;
   label: string;
 };
 
@@ -16,8 +16,8 @@ export const ThemeModule: Module<State, RootState> = {
   state: () => ({
     systemDark: true,
     themes: [
-      { value: "default", label: "Beekeeper Studio" },
-      { value: "solarized", label: "Solarized" },
+      { id: "default", label: "Beekeeper Studio" },
+      { id: "solarized", label: "Solarized" },
     ],
   }),
   mutations: {
