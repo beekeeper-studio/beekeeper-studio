@@ -742,6 +742,7 @@ export default Vue.extend({
     justify-content: flex-start;
     align-items: center;
     background-color: transparent;
+    border: 1px solid var(--border-subtle);
 
     &::v-deep .database-icon {
       line-height: 0;

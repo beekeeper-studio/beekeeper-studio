@@ -402,6 +402,6 @@ export default {
 }
 
 .dark-theme .bastion-host {
-  background-color: rgb(from var(--theme-base) r g b / 3.5%);
+  background-color: var(--a-bg-subtle);
 }
 </style>

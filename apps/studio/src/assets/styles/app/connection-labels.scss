@@ -1,12 +1,12 @@
 @use "sass:list";
 $color-defaults: (
   red:          var(--red-a9),
-  orange:       $brand-warning,
+  orange:       var(--orange-a9),
   yellow:       var(--yellow-a9),
-  green:        $brand-success,
+  green:        var(--green-a9),
   blue:         var(--blue-a9),
-  purple:       $brand-purple,
-  pink:         $brand-pink,
+  purple:       var(--purple-a9),
+  pink:         var(--pink-a9),
 );
 
 @each $key, $val in $color-defaults {
@@ -69,14 +69,14 @@ input[type="radio"].connection-label {
   margin: 0 0 0 ($gutter-h * 0.75);
   border-radius: 50%;
   &:checked {
-    outline: 2px solid $text-dark;
+    outline: 2px solid var(--gray-a11);
     outline-offset: -2px;
   }
   &:focus {
     outline-offset: -2px !important; // using !important because the browser style does. why browser...
   }
   &.connection-label-color-default {
-    outline: 1px solid rgba($theme-base, 0.2);
+    outline: 1px solid var(--a-border);
     outline-offset: -1px;
     &:checked {
       background-color: transparent;
