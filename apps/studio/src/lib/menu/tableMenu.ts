@@ -204,7 +204,7 @@ export async function copyRanges(options: {
       text = Object.keys(extractedData.data[0]).join(" ");
       break;
   }
-  ElectronPlugin.clipboard.writeText(text);
+  await ElectronPlugin.clipboard.writeText(text);
   extractedData.sources.forEach((range) => {
     (range.getElement() as HTMLElement).classList.add("copied");
   });
@@ -299,8 +299,8 @@ function countCellsFromData(data: RangeData) {
  * the clipboard is empty. On a parse error the raw text is returned as a single
  * cell so it can still be pasted into one row.
  */
-export function readClipboardRows(): string[][] | null {
-  const text = ElectronPlugin.clipboard.readText();
+export async function readClipboardRows(): Promise<string[][] | null> {
+  const text = await ElectronPlugin.clipboard.readText();
   if (!text) return null;
 
   const parsed = Papa.parse(text, {
@@ -315,10 +315,10 @@ export function readClipboardRows(): string[][] | null {
   return parsed.data as string[][];
 }
 
-export function pasteRange(range: RangeComponent) {
+export async function pasteRange(range: RangeComponent) {
   // Same parsing as "paste as new rows" — the two only differ in the
   // destination (overwrite existing cells here vs. insert new rows there).
-  const data = readClipboardRows();
+  const data = await readClipboardRows();
   if (!data) return;
 
   if (data.length === 1 && data[0].length === 1) {
@@ -446,7 +446,7 @@ export function copyCellMenu(_e: any, cell: CellComponent) {
   return [
     {
       label: createMenuItem("Copy"),
-      action: () => ElectronPlugin.clipboard.writeText(text),
+      action: async () => await ElectronPlugin.clipboard.writeText(text),
     },
   ];
 }
@@ -458,13 +458,13 @@ export function pasteActionsMenu(
   const actions = [
     {
       label: createMenuItem("Paste", window.bksConfig.getKeybindings("context-menu", "general.pasteSelection")),
-      action: () => pasteRange(range),
+      action: async () => await pasteRange(range),
     },
   ];
   if (onPasteAsNewRows) {
     actions.push({
       label: createMenuItem("Paste as new rows", window.bksConfig.getKeybindings("context-menu", "tableTable.pasteAsNewRows")),
-      action: () => onPasteAsNewRows(),
+      action: async () => onPasteAsNewRows(),
     });
   }
   return actions;

@@ -257,9 +257,13 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: 'simple-json', nullable: false, transformer: [snowflakeTransformer] })
   snowflakeOptions: SnowflakeOptions = {};
 
-  // this is only for SQL Server.
+  // this is only for SQL Server. Defaults on: every stock install presents a self-signed
+  // certificate and tedious validates by default, so a new connection with a correct host and
+  // password fails without it. The integrated-auth path already trusts self-signed certs
+  // (encryptionMode 'on' -> TrustServerCertificate=yes), so this keeps the two consistent.
+  // Class-field default: applies to newly constructed entities only, saved rows keep theirs.
   @Column({ type: 'boolean', nullable: false })
-  trustServerCertificate = false
+  trustServerCertificate = true
 
   // SQL Server only. Integrated authentication (SSPI/Kerberos/NTLM) via msnodesqlv8.
   @Column({ type: 'boolean', nullable: false })

@@ -91,6 +91,14 @@ jobs:
         if: matrix.os.setup_flatpak
         run: bash ./.github/scripts/install-build-deps.sh
 
+      - name: Install ODBC build dependencies (linux)
+        if: matrix.os.type == 'linux'
+        run: bash ./.github/scripts/linux-install-odbc-deps.sh
+
+      - name: Install ODBC build dependencies (macos)
+        if: matrix.os.type == 'macos'
+        run: bash ./.github/scripts/macos-install-odbc-deps.sh
+
       - name: Set up Java (for jsign)
         if: matrix.os.type == 'windows'
         uses: actions/setup-java@v5
@@ -240,6 +248,9 @@ jobs:
           command: "yarn install --frozen-lockfile --network-timeout 100000"
         env:
           npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
+
+      - name: Verify msnodesqlv8 native build
+        run: node -e "require('msnodesqlv8')"
 
       - name: Remove dist directory
         if: matrix.os.type != 'windows'

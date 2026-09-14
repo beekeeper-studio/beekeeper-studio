@@ -1081,19 +1081,19 @@ export default Vue.extend({
         }
       }
     },
-    copySelection() {
+    async copySelection() {
       if (!this.focusingTable()) return
-      copyRanges({ ranges: this.tabulator.getRanges(), type: 'plain' })
+      await copyRanges({ ranges: this.tabulator.getRanges(), type: 'plain' })
     },
-    pasteSelection() {
+    async pasteSelection() {
       if (!this.focusingTable() || !this.editable) return
-      pasteRange(_.last(this.tabulator.getRanges()))
+      await pasteRange(_.last(this.tabulator.getRanges()))
     },
-    pasteAsNewRowsShortcut() {
+    async pasteAsNewRowsShortcut() {
       // Keyboard path is scoped to the focused grid, so it never reaches the
       // wrong-tab noty (that's reserved for the menu item).
       if (!this.focusingTable() || !this.editable) return
-      this.handlePasteAsNewRows()
+      await this.handlePasteAsNewRows()
     },
     deleteTableSelection(_e: Event, range?: RangeComponent) {
       if (!this.focusingTable() || !this.editable) return
@@ -1636,7 +1636,7 @@ export default Vue.extend({
         return
       }
 
-      const parsed = readClipboardRows()
+      const parsed = await readClipboardRows()
       if (!parsed) return
 
       // Map clipboard values positionally onto the visible data columns

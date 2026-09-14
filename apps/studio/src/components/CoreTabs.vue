@@ -539,8 +539,8 @@ export default Vue.extend({
           this.$noty.error(notificationMessage, {
             timeout: 3500,
             callbacks: {
-              onClick: () => {
-                this.$native.clipboard.writeText(notificationMessage)
+              onClick: async () => {
+                await this.$native.clipboard.writeText(notificationMessage)
               },
             },
           })
