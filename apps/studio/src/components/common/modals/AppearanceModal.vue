@@ -29,90 +29,100 @@
       <div class="theme-list">
         <label
           v-for="theme in themes"
-          :key="theme.value"
+          :key="theme.id"
           class="theme-item"
-          :class="{ selected: themeId === theme.value }"
+          :class="{ selected: themeId === theme.id }"
         >
-          <span class="theme-preview">
-            <span class="titlebar-preview">
-              <span class="title">Beekeeper Studio</span>
-            </span>
-            <span class="workspace-preview">
-              <span class="sidebar-preview">
-                <span class="heading">Entities</span>
-                <span
-                  v-for="table in previewTables"
-                  :key="table.name"
-                  class="table-item"
-                >
-                  <i class="material-icons" :class="`${table.entityType}-icon`"
-                    >grid_on</i
+          <span class="theme-preview-frame">
+            <span
+              class="theme-preview"
+              :class="[
+                `theme-${theme.id}`,
+                themeDark ? 'dark-theme' : 'light-theme',
+              ]"
+            >
+              <span class="titlebar-preview">
+                <span class="title">Beekeeper Studio</span>
+              </span>
+              <span class="workspace-preview">
+                <span class="sidebar-preview">
+                  <span class="heading">Entities</span>
+                  <span
+                    v-for="table in previewTables"
+                    :key="table.name"
+                    class="table-item"
                   >
-                  <span class="name">{{ table.name }}</span>
+                    <i
+                      class="material-icons"
+                      :class="`${table.entityType}-icon`"
+                      >grid_on</i
+                    >
+                    <span class="name">{{ table.name }}</span>
+                  </span>
+                </span>
+                <span class="query-editor-preview">
+                  <span class="tabs-preview">
+                    <span
+                      v-for="tab in previewTabs"
+                      :key="tab.name"
+                      class="tab"
+                      :class="{ active: tab.active }"
+                    >
+                      <i class="material-icons" :class="tab.iconClass">{{
+                        tab.icon
+                      }}</i>
+                      {{ tab.name }}
+                    </span>
+                  </span>
+                  <span class="editor-preview">
+                    <span class="line">
+                      <span class="gutter">1</span>
+                      <span class="kw">SELECT</span> *
+                      <span class="kw">FROM</span> users
+                    </span>
+                    <span class="line">
+                      <span class="gutter">2</span>
+                      <span class="kw">WHERE</span> role =
+                      <span class="str">'admin'</span>
+                    </span>
+                    <span class="line">
+                      <span class="gutter">3</span>
+                      <span class="kw">LIMIT</span> <span class="num">3</span>
+                    </span>
+                    <span class="actions">
+                      <span class="btn-primary-preview"> Run </span>
+                    </span>
+                  </span>
+                  <span class="result-preview">
+                    <span class="table-row header">
+                      <span v-for="col in previewColumns" :key="col">{{
+                        col
+                      }}</span>
+                    </span>
+                    <span
+                      v-for="(row, i) in previewRows"
+                      :key="i"
+                      class="table-row"
+                    >
+                      <span v-for="(cell, j) in row" :key="j">{{ cell }}</span>
+                    </span>
+                  </span>
                 </span>
               </span>
-              <span class="query-editor-preview">
-                <span class="tabs-preview">
-                  <span
-                    v-for="tab in previewTabs"
-                    :key="tab.name"
-                    class="tab"
-                    :class="{ active: tab.active }"
-                  >
-                    <i class="material-icons" :class="tab.iconClass">{{
-                      tab.icon
-                    }}</i>
-                    {{ tab.name }}
-                  </span>
-                </span>
-                <span class="editor-preview">
-                  <span class="line">
-                    <span class="gutter">1</span>
-                    <span class="kw">SELECT</span> *
-                    <span class="kw">FROM</span> users
-                  </span>
-                  <span class="line">
-                    <span class="gutter">2</span>
-                    <span class="kw">WHERE</span> role =
-                    <span class="str">'admin'</span>
-                  </span>
-                  <span class="line">
-                    <span class="gutter">3</span>
-                    <span class="kw">LIMIT</span> <span class="num">3</span>
-                  </span>
-                  <span class="actions">
-                    <span class="btn-primary-preview"> Run </span>
-                  </span>
-                </span>
-                <span class="result-preview">
-                  <span class="table-row header">
-                    <span v-for="col in previewColumns" :key="col">{{
-                      col
-                    }}</span>
-                  </span>
-                  <span
-                    v-for="(row, i) in previewRows"
-                    :key="i"
-                    class="table-row"
-                  >
-                    <span v-for="(cell, j) in row" :key="j">{{ cell }}</span>
-                  </span>
-                </span>
+              <span class="statusbar-preview">
+                <i class="material-icons">link</i>
+                <span class="name">my_database</span>
+                <i class="material-icons settings">settings</i>
               </span>
-            </span>
-            <span class="statusbar-preview">
-              <i class="material-icons">link</i>
-              <span class="name">my_database</span>
-              <i class="material-icons settings">settings</i>
             </span>
           </span>
           <span class="theme-name checkbox-group">
             <input
               type="radio"
               name="theme-name"
-              :value="theme.value"
-              :checked="themeId === theme.value"
-              @change="setThemeId(theme.value)"
+              :value="theme.id"
+              :checked="themeId === theme.id"
+              @change="setThemeId(theme.id)"
             />
             <span>{{ theme.label }}</span>
           </span>
@@ -155,6 +165,7 @@ export default Vue.extend({
     ...mapGetters({
       themeId: "theme/id",
       themeAppearance: "theme/appearance",
+      themeDark: "theme/dark",
     }),
     rootBindings() {
       return [{ event: AppEvent.openAppearanceModal, handler: this.open }];
@@ -190,21 +201,30 @@ export default Vue.extend({
   flex-direction: column;
   width: 18rem;
   padding: 0;
-  overflow: hidden;
   cursor: pointer;
+  align-items: flex-start;
 
-  &.selected .theme-preview {
+  .theme-preview-frame {
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  &.selected .theme-preview-frame {
     border-color: var(--theme-primary);
   }
 
   .theme-name {
-    width: 100%;
     padding-block: 0.5rem;
 
     input[type="radio"] {
       display: none;
     }
   }
+}
+
+.theme-preview-frame {
+  width: 100%;
 }
 
 .theme-preview {
@@ -218,9 +238,6 @@ export default Vue.extend({
   min-width: 0;
   color: var(--text);
   background-color: var(--theme-bg);
-  border: 2px solid var(--border-color);
-  border-radius: 4px;
-  overflow: hidden;
 
   .titlebar-preview {
     display: flex;
