@@ -56,7 +56,7 @@ export default Vue.extend({
   padding-right: 0.8rem;
 
   &:hover {
-    background-color: var(--bg-a-hover);
+    background-color: var(--bg-hover-a);
   }
 }
 
@@ -70,13 +70,13 @@ export default Vue.extend({
 }
 
 .material-icons.folder-icon {
-  color: var(--solid);
+  color: var(--solid-bg);
   font-size: 1rem;
   margin-left: 0.25rem;
 }
 
 .material-icons.expand-icon {
-  color: var(--solid);
+  color: var(--solid-bg);
   font-size: 1.25rem;
 }
 </style>

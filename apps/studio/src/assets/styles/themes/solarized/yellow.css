@@ -1,0 +1,55 @@
+.theme-solarized {
+  --yellow-1: #f5f4f2;
+  --yellow-2: #f5f0e5;
+  --yellow-3: #f6e7c5;
+  --yellow-4: #f3ddac;
+  --yellow-5: #efd293;
+  --yellow-6: #e2c483;
+  --yellow-7: #d3b572;
+  --yellow-8: #c39d46;
+  --yellow-9: #b58900;
+  --yellow-10: #a87d00;
+  --yellow-11: #7f5c00;
+  --yellow-12: #403725;
+
+  --yellow-a1: #edf3ff89;
+  --yellow-a2: #79a6fe13;
+  --yellow-a3: #bc860222;
+  --yellow-a4: #ce90013e;
+  --yellow-a5: #d291015a;
+  --yellow-a6: #bb80016c;
+  --yellow-a7: #a774017f;
+  --yellow-a8: #a97601b1;
+  --yellow-a9: #b58900;
+  --yellow-a10: #a87d00;
+  --yellow-a11: #7f5c00;
+  --yellow-a12: #1c1201d6;
+}
+
+.theme-solarized.dark-theme {
+  --yellow-1: #282621;
+  --yellow-2: #2f2c25;
+  --yellow-3: #3a3427;
+  --yellow-4: #433a28;
+  --yellow-5: #4d4128;
+  --yellow-6: #5a4b29;
+  --yellow-7: #6c582a;
+  --yellow-8: #876b2a;
+  --yellow-9: #b58900;
+  --yellow-10: #a87d00;
+  --yellow-11: #e0bc6c;
+  --yellow-12: #f6e2b7;
+
+  --yellow-a1: #ff0c0028;
+  --yellow-a2: #ff31002f;
+  --yellow-a3: #ff53003a;
+  --yellow-a4: #ff640143;
+  --yellow-a5: #ff74084d;
+  --yellow-a6: #ff86125a;
+  --yellow-a7: #ff951a6c;
+  --yellow-a8: #ffa42087;
+  --yellow-a9: #ffb000b5;
+  --yellow-a10: #ffa700a8;
+  --yellow-a11: #ffd073e0;
+  --yellow-a12: #ffe8bcf6;
+}
