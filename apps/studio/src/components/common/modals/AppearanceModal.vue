@@ -363,7 +363,7 @@ export default Vue.extend({
     flex-direction: column;
     padding: 0.5em 0.25em;
     font-family: var(--font-family-mono);
-    color: var(--bks-text-editor-fg-color, var(--text-contrast));
+    color: var(--text-editor-fg, var(--text-contrast));
     background-color: var(--bg-base);
     white-space: nowrap;
 
@@ -375,19 +375,19 @@ export default Vue.extend({
     .gutter {
       width: 1em;
       text-align: right;
-      color: var(--bks-text-editor-linenumber-fg-color, var(--text));
+      color: var(--text-editor-linenumber-fg, var(--text));
     }
 
     .kw {
-      color: var(--bks-text-editor-keyword-fg-color, var(--info-text));
+      color: var(--text-editor-keyword-fg, var(--info-text));
     }
 
     .str {
-      color: var(--bks-text-editor-string-fg-color, var(--primary-text));
+      color: var(--text-editor-string-fg, var(--primary-text));
     }
 
     .num {
-      color: var(--bks-text-editor-number-fg-color, var(--primary-text));
+      color: var(--text-editor-number-fg, var(--primary-text));
     }
 
     .actions {

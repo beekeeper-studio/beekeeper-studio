@@ -1,0 +1,96 @@
+/* FIXME: Solarized has a cyan accent (#2aa198) with no scale here yet. Once a
+   cyan.css exists, move the constants group (string, special-string, character,
+   attributeValue, regexp, escape, and builtin/standard) from blue onto cyan. */
+
+/* Follows the Solarized highlighting conventions: green statements, cyan-ish
+   (blue here) constants and identifiers, magenta numbers, yellow types, orange
+   preprocessor and decorators, violet links, red specials, base1 comments. */
+.theme-solarized {
+  --text-editor-keyword-fg: var(--green-11);
+  --text-editor-operatorKeyword-fg: var(--green-11);
+  --text-editor-modifier-fg: var(--green-11);
+  --text-editor-self-fg: var(--green-11);
+  --text-editor-standard-fg: var(--green-11);
+
+  --text-editor-string-fg: var(--blue-11);
+  --text-editor-special-string-fg: var(--blue-11);
+  --text-editor-character-fg: var(--blue-11);
+  --text-editor-attributeValue-fg: var(--blue-11);
+  --text-editor-regexp-fg: var(--blue-11);
+  --text-editor-escape-fg: var(--blue-11);
+
+  --text-editor-number-fg: var(--magenta-11);
+  --text-editor-bool-fg: var(--magenta-11);
+  --text-editor-null-fg: var(--magenta-11);
+  --text-editor-atom-fg: var(--magenta-11);
+  --text-editor-color-fg: var(--magenta-11);
+  --text-editor-enumMember-fg: var(--magenta-11);
+
+  --text-editor-variable-fg: var(--blue-11);
+  --text-editor-variable-2-fg: var(--blue-11);
+  --text-editor-variable-3-fg: var(--blue-11);
+  --text-editor-variableName-fg: var(--text-contrast);
+  --text-editor-definition-fg: var(--blue-11);
+  --text-editor-def-fg: var(--blue-11);
+  --text-editor-function-fg: var(--blue-11);
+  --text-editor-method-fg: var(--blue-11);
+  --text-editor-parameter-fg: var(--blue-11);
+  --text-editor-property-fg: var(--blue-11);
+  --text-editor-propertyName-fg: var(--blue-11);
+  --text-editor-builtin-fg: var(--blue-11);
+  --text-editor-tag-fg: var(--blue-11);
+  --text-editor-sql-field-fg: var(--blue-11);
+  --text-editor-sql-alias-fg: var(--text-contrast);
+  --text-editor-name-fg: var(--text-contrast);
+
+  --text-editor-type-fg: var(--yellow-11);
+  --text-editor-typeName-fg: var(--yellow-11);
+  --text-editor-typeParameter-fg: var(--yellow-11);
+  --text-editor-class-fg: var(--yellow-11);
+  --text-editor-className-fg: var(--yellow-11);
+  --text-editor-interface-fg: var(--yellow-11);
+  --text-editor-struct-fg: var(--yellow-11);
+  --text-editor-enum-fg: var(--yellow-11);
+  --text-editor-namespace-fg: var(--yellow-11);
+  --text-editor-attributeName-fg: var(--yellow-11);
+  --text-editor-changed-fg: var(--yellow-11);
+
+  --text-editor-decorator-fg: var(--orange-11);
+  --text-editor-macro-fg: var(--orange-11);
+  --text-editor-annotation-fg: var(--orange-11);
+  --text-editor-processingInstruction-fg: var(--orange-11);
+  --text-editor-meta-fg: var(--orange-11);
+  --text-editor-event-fg: var(--orange-11);
+
+  --text-editor-link-fg: var(--violet-11);
+  --text-editor-url-fg: var(--violet-11);
+  --text-editor-heading-fg: var(--violet-11);
+  --text-editor-header-fg: var(--violet-11);
+
+  --text-editor-deleted-fg: var(--red-11);
+
+  --text-editor-comment-fg: var(--text);
+  --text-editor-comment-attribute-fg: var(--text);
+  --text-editor-comment-def-fg: var(--text);
+  --text-editor-comment-tag-fg: var(--text);
+  --text-editor-comment-type-fg: var(--text);
+  --text-editor-label-fg: var(--text);
+  --text-editor-labelName-fg: var(--text);
+
+  --text-editor-operator-fg: var(--text-contrast);
+  --text-editor-punctuation-fg: var(--text-contrast);
+  --text-editor-separator-fg: var(--text-contrast);
+  --text-editor-bracket-fg: var(--text);
+  --text-editor-strong-fg: var(--text-contrast);
+  --text-editor-emphasis-fg: var(--text-contrast);
+  --text-editor-strikethrough-fg: var(--text);
+
+  --text-editor-matchingbracket-fg: var(--text-contrast);
+  --text-editor-matchingbracket-bg: var(--bg-hover-a);
+  --text-editor-matchingselection-bg: var(--bg-hover-a);
+  --text-editor-searchmatch-bg: var(--yellow-a4);
+  --text-editor-searchmatch-selected-bg: var(--yellow-a6);
+  --text-editor-guttermarker-fg: var(--text-contrast);
+  --text-editor-guttermarker-subtle-fg: var(--border-a);
+  --text-editor-fatcursor-bg: var(--green-9);
+}

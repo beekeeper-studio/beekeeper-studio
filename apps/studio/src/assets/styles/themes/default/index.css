@@ -6,6 +6,7 @@
 @import "./purple.css";
 @import "./red.css";
 @import "./yellow.css";
+@import "./text-editor.css";
 
 .theme-default {
   /* primary bg is bright yellow so the fg should be dark */

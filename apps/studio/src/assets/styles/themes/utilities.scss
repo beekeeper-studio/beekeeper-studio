@@ -115,15 +115,59 @@ $families: (
     --btn-primary-bg-hover: var(--primary-solid-bg-hover);
 
     --link-fg: var(--text-contrast);
+
     --scrollbar-thumb: var(--gray-a3);
 
     --titlebar-bg: var(--bg-subtle);
     --titlebar-fg: var(--text);
+
     --sidebar-bg: var(--bg-subtle);
     --sidebar-fg: var(--text);
+
     --panel-bg: var(--bg-subtle);
     --panel-fg: var(--text);
+    --panel-bg-hover: var(--bg);
+    --panel-bg-active: var(--bg-hover);
 
     --overlay-bg: rgb(from var(--bg-base) r g b / 0.9);
+
+    --text-editor-bg: var(--bg-base);
+    --text-editor-fg: var(--text-contrast);
+    --text-editor-cursor-bg: var(--text-contrast);
+    --text-editor-selected-bg: var(--border-a);
+    --text-editor-activeline-bg: var(--bg-a);
+    --text-editor-activeline-gutter-bg: var(--bg-a);
+    --text-editor-focused-outline: transparent;
+    --text-editor-highlight-bg: var(--warning-bg-active-a);
+    --text-editor-error-bg: var(--danger-bg-a);
+    --text-editor-error-fg: var(--danger-text);
+
+    --text-editor-gutter-bg: var(--bg-base);
+    --text-editor-gutter-border: transparent;
+    --text-editor-linenumber-fg: var(--bg-active-a);
+    --text-editor-linenumber-active-fg: var(--text-contrast);
+    --text-editor-foldgutter-fg: var(--border-hover-a);
+    --text-editor-foldgutter-fg-hover: var(--text-contrast);
+    --text-editor-indent-marker-bg: var(--bg-hover-a);
+    --text-editor-indent-marker-active-bg: var(--border-subtle-a);
+
+    // Panels (find and replace, vim status line). The vim bar inherits so it follows the editor.
+    --text-editor-panel-bg: var(--bg-base);
+    --text-editor-panel-fg: var(--text-contrast);
+    --text-editor-vim-panel-bg: inherit;
+    --text-editor-vim-panel-fg: inherit;
+    --text-editor-vim-panel-normal-bg: var(--text-editor-vim-panel-bg);
+    --text-editor-vim-panel-normal-fg: var(--text-editor-vim-panel-fg);
+    --text-editor-vim-panel-insert-bg: var(--green-a3);
+    --text-editor-vim-panel-insert-fg: var(--green-11);
+    --text-editor-vim-panel-visual-bg: var(--blue-a3);
+    --text-editor-vim-panel-visual-fg: var(--blue-11);
+    --text-editor-vim-panel-replace-bg: var(--red-a3);
+    --text-editor-vim-panel-replace-fg: var(--red-11);
+    --text-editor-vim-panel-font-size: 0.875rem;
+    --text-editor-vim-panel-border: 1px solid var(--border-subtle);
+
+    --mongo-shell-mongo-prompt-fg: var(--primary-text);
+    --mongo-shell-ansi-output-fg: var(--text-contrast);
   }
 }

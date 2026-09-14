@@ -2,7 +2,7 @@
   .global-items {
     display: flex;
     flex-direction: column;
-    background: $global-sidebar-bg;
+    background: var(--sidebar-bg);
     &:hover {
       .nav-item {
         &.refresh {

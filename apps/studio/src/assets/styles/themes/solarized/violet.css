@@ -1,0 +1,55 @@
+.theme-solarized {
+  --violet-1: #f3f4f5;
+  --violet-2: #eeeff4;
+  --violet-3: #e6e8f1;
+  --violet-4: #daddf0;
+  --violet-5: #ced2ee;
+  --violet-6: #bfc4e7;
+  --violet-7: #abb0dc;
+  --violet-8: #9096ce;
+  --violet-9: #6c71c4;
+  --violet-10: #6064b6;
+  --violet-11: #4e519a;
+  --violet-12: #2a2c53;
+
+  --violet-a1: #edf3ffa4;
+  --violet-a2: #e4ebff9b;
+  --violet-a3: #cedbff80;
+  --violet-a4: #b0c1ff77;
+  --violet-a5: #849cff65;
+  --violet-a6: #0000ff25;
+  --violet-a7: #0022ce54;
+  --violet-a8: #001ab36f;
+  --violet-a9: #0010ae93;
+  --violet-a10: #000c9b9f;
+  --violet-a11: #00097ab1;
+  --violet-a12: #000437d5;
+}
+
+.theme-solarized.dark-theme {
+  --violet-1: #24252e;
+  --violet-2: #262733;
+  --violet-3: #313350;
+  --violet-4: #383b67;
+  --violet-5: #404473;
+  --violet-6: #494d7e;
+  --violet-7: #54588f;
+  --violet-8: #6166a7;
+  --violet-9: #6c71c4;
+  --violet-10: #6267a8;
+  --violet-11: #abb2f6;
+  --violet-12: #dee1f8;
+
+  --violet-a1: #ff010024;
+  --violet-a2: #ff112226;
+  --violet-a3: #ff55bd31;
+  --violet-a4: #e36cfc3f;
+  --violet-a5: #d27dfe4e;
+  --violet-a6: #cb8afd5c;
+  --violet-a7: #be91ff71;
+  --violet-a8: #ac93fe90;
+  --violet-a9: #988efeb5;
+  --violet-a10: #ad94ff91;
+  --violet-a11: #b3b8fff4;
+  --violet-a12: #e5e7fef7;
+}
