@@ -240,7 +240,7 @@ export default Vue.extend({
 
   &:hover,
   &:focus-within {
-    background: var(--bg-a-hover);
+    background: var(--bg-hover-a);
   }
 
   &.selected {

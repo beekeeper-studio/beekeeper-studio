@@ -1,11 +1,10 @@
 # Themes
 
-A theme is one CSS file in this folder, named after its theme id. It is loaded
-at runtime as `app://themes/<id>.css`, so it is not imported anywhere — adding
-the file and registering the id in `ThemeModule` is enough.
-
-`beekeeper-studio.css` is the exception: it is the base theme and ships in the
-app bundle via `app.scss`.
+A theme is a folder in here named after its theme id, with one file per color
+scale (`gray.css`, `yellow.css`, `blue.css`, ...) holding both its light and
+dark blocks, and a `theme.css` for anything that is not a scale. `index.css`
+imports them all and is what `app.scss` pulls in, so adding a theme is: create
+the folder, add it to `app.scss`, register the id in `ThemeModule`.
 
 ## Rules
 
@@ -30,7 +29,7 @@ optional; without them a theme looks the same in both modes.
 Both classes land on the same element (`body` for the app, or any element that
 wants its own theme scope, like the previews in the appearance modal). Keep the
 dark block on that same element rather than a descendant: the semantic tokens
-in `utilities.css` are resolved on the element that carries the theme classes,
+in `utilities.scss` are resolved on the element that carries the theme classes,
 so a scale set further down the tree is never seen by them.
 
 **Color scales are `--gray-1` … `--gray-12`, `--primary-1` … `--primary-12`,
@@ -46,7 +45,7 @@ hover, 11 low-contrast text, 12 high-contrast text.
 In a perfect case, replacing the scales is all a theme does. `solarized.css` is
 the example to follow — it defines its own ramp and maps `--gray-*` onto it.
 
-If you want more than the scales give you, read `utilities.css`. It maps the
+If you want more than the scales give you, read `utilities.scss`. It maps the
 scales to semantic names (`--text`, `--bg-subtle`, `--border`), then those to
 component names (`--btn-flat-bg`, `--sidebar-bg`, `--menu-bg`). Override
 whichever of those you need — the more specific the variable you override, the

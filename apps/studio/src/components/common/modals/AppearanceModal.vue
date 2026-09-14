@@ -415,7 +415,7 @@ export default Vue.extend({
       }
 
       &:nth-child(even) {
-        background-color: var(--bg-a-subtle);
+        background-color: var(--bg-subtle-a);
       }
     }
   }

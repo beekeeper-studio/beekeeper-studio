@@ -402,6 +402,6 @@ export default {
 }
 
 .dark-theme .bastion-host {
-  background-color: var(--bg-a-subtle);
+  background-color: var(--bg-subtle-a);
 }
 </style>
