@@ -17,6 +17,7 @@
       document.body.classList.add(dark ? "dark-theme" : "light-theme");
       document.body.classList.add(`theme-${themeId}`);
       document.documentElement.dataset.themeId = themeId;
+      document.documentElement.dataset.themeType = dark ? "dark" : "light";
     </script>
     <noscript>
       <strong>We're sorry but beekeeper-studio doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
