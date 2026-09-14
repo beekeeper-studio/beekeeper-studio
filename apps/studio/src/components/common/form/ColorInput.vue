@@ -4,12 +4,14 @@
       <input
         class="swatch"
         :value="value"
+        :disabled="disabled"
         @input="emit($event.target.value)"
         type="color"
       >
       <input
         :id="id"
         :value="value"
+        :disabled="disabled"
         @change="emit($event.target.value)"
         type="text"
         spellcheck="false"
@@ -61,6 +63,7 @@ export default Vue.extend({
   props: {
     value: String,
     id: String,
+    disabled: Boolean,
   },
   methods: {
     isValidHex,

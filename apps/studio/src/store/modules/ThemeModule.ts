@@ -18,6 +18,7 @@ export const ThemeModule: Module<State, RootState> = {
     themes: [
       { id: "default", label: "Beekeeper Studio" },
       { id: "solarized", label: "Solarized" },
+      { id: "custom", label: "Custom" },
     ],
   }),
   mutations: {

@@ -7,11 +7,13 @@ import config from "@/config";
 
 const defaultThemeCustomizerColors = {
   gray: "#000000",
-  primary: "#fad83b",
-  info: "#3498db",
-  success: "#15db95",
-  warning: "#ff8d21",
-  danger: "#ff5d59",
+  yellow: "#fad83b",
+  blue: "#3498db",
+  green: "#15db95",
+  orange: "#ff8d21",
+  red: "#ff5d59",
+  purple: "#9858ff",
+  pink: "#ff78f7",
   background: "#ffffff",
 };
 

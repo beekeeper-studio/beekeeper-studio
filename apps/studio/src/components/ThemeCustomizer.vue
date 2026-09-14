@@ -4,52 +4,80 @@
       <button class="menu-button" @click="openPositionMenu">
         <i class="material-icons">more_horiz</i>
       </button>
+      <div class="form-group toggle">
+        <label>Apply theme</label>
+        <x-switch @click.prevent="toggleEnabled" :toggled="enabled" />
+      </div>
       <div class="form-group">
         <label for="tc-gray">Gray</label>
         <color-input
           id="tc-gray"
           :value="colors.gray"
+          :disabled="!enabled"
           @input="setColor('gray', $event)"
         />
       </div>
       <div class="form-group">
-        <label for="tc-primary">Primary</label>
+        <label for="tc-yellow">Yellow</label>
         <color-input
-          id="tc-primary"
-          :value="colors.primary"
-          @input="setColor('primary', $event)"
+          id="tc-yellow"
+          :value="colors.yellow"
+          :disabled="!enabled"
+          @input="setColor('yellow', $event)"
         />
       </div>
       <div class="form-group">
-        <label for="tc-info">Info</label>
+        <label for="tc-blue">Blue</label>
         <color-input
-          id="tc-info"
-          :value="colors.info"
-          @input="setColor('info', $event)"
+          id="tc-blue"
+          :value="colors.blue"
+          :disabled="!enabled"
+          @input="setColor('blue', $event)"
         />
       </div>
       <div class="form-group">
-        <label for="tc-success">Success</label>
+        <label for="tc-green">Green</label>
         <color-input
-          id="tc-success"
-          :value="colors.success"
-          @input="setColor('success', $event)"
+          id="tc-green"
+          :value="colors.green"
+          :disabled="!enabled"
+          @input="setColor('green', $event)"
         />
       </div>
       <div class="form-group">
-        <label for="tc-warning">Warning</label>
+        <label for="tc-orange">Orange</label>
         <color-input
-          id="tc-warning"
-          :value="colors.warning"
-          @input="setColor('warning', $event)"
+          id="tc-orange"
+          :value="colors.orange"
+          :disabled="!enabled"
+          @input="setColor('orange', $event)"
         />
       </div>
       <div class="form-group">
-        <label for="tc-danger">Danger</label>
+        <label for="tc-red">Red</label>
         <color-input
-          id="tc-danger"
-          :value="colors.danger"
-          @input="setColor('danger', $event)"
+          id="tc-red"
+          :value="colors.red"
+          :disabled="!enabled"
+          @input="setColor('red', $event)"
+        />
+      </div>
+      <div class="form-group">
+        <label for="tc-purple">Purple</label>
+        <color-input
+          id="tc-purple"
+          :value="colors.purple"
+          :disabled="!enabled"
+          @input="setColor('purple', $event)"
+        />
+      </div>
+      <div class="form-group">
+        <label for="tc-pink">Pink</label>
+        <color-input
+          id="tc-pink"
+          :value="colors.pink"
+          :disabled="!enabled"
+          @input="setColor('pink', $event)"
         />
       </div>
       <div class="form-group">
@@ -57,18 +85,27 @@
         <color-input
           id="tc-background"
           :value="colors.background"
+          :disabled="!enabled"
           @input="setColor('background', $event)"
         />
       </div>
       <div class="form-group">
         <x-buttons class="selectbutton" aria-label="Appearance">
-          <x-button :toggled="!dark" @click.prevent="setThemeDark(false)">
+          <x-button
+            :toggled="!dark"
+            :disabled="!enabled"
+            @click.prevent="setThemeDark(false)"
+          >
             <span class="togglebutton-content">
               <i class="material-icons">dark_mode</i>
               Light
             </span>
           </x-button>
-          <x-button :toggled="dark" @click.prevent="setThemeDark(true)">
+          <x-button
+            :toggled="dark"
+            :disabled="!enabled"
+            @click.prevent="setThemeDark(true)"
+          >
             <span class="togglebutton-content">
               <i class="material-icons">light_mode</i>
               Dark
@@ -76,10 +113,10 @@
           </x-button>
         </x-buttons>
       </div>
-      <div class="form-group toggle">
-        <label>Apply theme</label>
-        <x-switch @click.prevent="toggleEnabled" :toggled="enabled" />
-      </div>
+      <button class="btn btn-flat btn-icon copy-button" @click="copy">
+        <i class="material-icons">content_copy</i>
+        Copy
+      </button>
     </div>
   </MountingPortal>
 </template>
@@ -97,16 +134,13 @@ export default Vue.extend({
   components: { MountingPortal, ColorInput },
   computed: {
     ...mapGetters({
-      themeName: "theme/name",
-      themeType: "theme/type",
+      themeId: "theme/id",
+      dark: "theme/dark",
       colors: "settings/themeCustomizerColors",
       position: "settings/themeCustomizerPosition",
     }),
     enabled() {
-      return this.themeName === "custom";
-    },
-    dark() {
-      return this.themeType === "dark";
+      return this.themeId === "custom";
     },
   },
   watch: {
@@ -125,12 +159,12 @@ export default Vue.extend({
   },
   methods: {
     ...mapActions("settings", { saveSetting: "save" }),
+    ...mapActions("theme", { setThemeId: "setId", setAppearance: "setDark" }),
     toggleEnabled() {
-      const enabled = !this.enabled;
-      this.saveSetting({ key: "themeName", value: enabled ? "custom" : "default" });
+      this.setThemeId(this.enabled ? "default" : "custom");
     },
     setThemeDark(value: boolean) {
-      this.saveSetting({ key: "themeDark", value: `${value}` });
+      this.setAppearance(value ? "dark" : "light");
     },
     openPositionMenu(event: MouseEvent) {
       this.$bks.openMenu({
@@ -175,23 +209,40 @@ export default Vue.extend({
       Object.keys(this.colors).forEach((name) => this.apply(name));
     },
     apply(name: string) {
-      if (!this.enabled || !isValidHex(this.colors[name])) {
+      if (!this.enabled) {
         return;
       }
 
+      // body carries the theme classes, so it is where a scale is read from.
+      const root = document.body;
+
+      if (name === "background") {
+        if (isValidHex(this.colors.background)) {
+          root.style.setProperty("--app-bg", this.colors.background);
+        }
+        return;
+      }
+
+      const scales = this.scalesFor(name);
+      if (!scales) {
+        return;
+      }
+
+      scales.scale.forEach((color, i) => {
+        root.style.setProperty(`--${name}-${i + 1}`, color);
+      });
+      scales.scaleAlpha.forEach((color, i) => {
+        root.style.setProperty(`--${name}-a${i + 1}`, color);
+      });
+    },
+    scalesFor(name: string) {
       // Every scale is generated against these two.
       if (
+        !isValidHex(this.colors[name]) ||
         !isValidHex(this.colors.gray) ||
         !isValidHex(this.colors.background)
       ) {
-        return;
-      }
-
-      const root = document.documentElement;
-
-      if (name === "background") {
-        root.style.setProperty("--app-bg", this.colors.background);
-        return;
+        return null;
       }
 
       const palette = generatePalette({
@@ -201,19 +252,36 @@ export default Vue.extend({
         background: this.colors.background,
       });
       // Gray is a ramp, not an accent — its seed shouldn't be forced onto step 9.
-      const scale = name === "gray" ? palette.grayScale : palette.scale;
-      const scaleAlpha =
-        name === "gray" ? palette.grayScaleAlpha : palette.scaleAlpha;
+      return name === "gray"
+        ? { scale: palette.grayScale, scaleAlpha: palette.grayScaleAlpha }
+        : { scale: palette.scale, scaleAlpha: palette.scaleAlpha };
+    },
+    async copy() {
+      const selector = this.dark ? ".theme-custom.dark-theme" : ".theme-custom";
+      const lines = [`${selector} {`, `  --app-bg: ${this.colors.background};`];
 
-      scale.forEach((color, i) => {
-        root.style.setProperty(`--${name}-${i + 1}`, color);
-      });
-      scaleAlpha.forEach((color, i) => {
-        root.style.setProperty(`--${name}-a${i + 1}`, color);
-      });
+      Object.keys(this.colors)
+        .filter((name) => name !== "background")
+        .forEach((name) => {
+          const scales = this.scalesFor(name);
+          if (!scales) {
+            return;
+          }
+          lines.push("");
+          scales.scale.forEach((color, i) => {
+            lines.push(`  --${name}-${i + 1}: ${color};`);
+          });
+          lines.push("");
+          scales.scaleAlpha.forEach((color, i) => {
+            lines.push(`  --${name}-a${i + 1}: ${color};`);
+          });
+        });
+
+      lines.push("}", "");
+      await this.$native.clipboard.writeText(lines.join("\n"));
     },
     clear() {
-      const root = document.documentElement;
+      const root = document.body;
       root.style.removeProperty("--app-bg");
       Object.keys(this.colors).forEach((name) => {
         for (let step = 1; step <= 12; step++) {
@@ -289,5 +357,9 @@ export default Vue.extend({
   flex-direction: row;
   align-items: center;
   gap: 0.5rem;
+}
+
+.copy-button {
+  align-self: flex-start;
 }
 </style>

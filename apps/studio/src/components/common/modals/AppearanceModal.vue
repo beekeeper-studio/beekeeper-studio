@@ -28,7 +28,7 @@
       <label>Theme</label>
       <div class="theme-list">
         <label
-          v-for="theme in themes"
+          v-for="theme in selectableThemes"
           :key="theme.id"
           class="theme-item"
           :class="{ selected: themeId === theme.id }"
@@ -162,6 +162,10 @@ export default Vue.extend({
   },
   computed: {
     ...mapState("theme", ["themes"]),
+    // The custom theme is driven by the customizer panel, not picked here.
+    selectableThemes() {
+      return this.themes.filter((theme) => theme.id !== "custom");
+    },
     ...mapGetters({
       themeId: "theme/id",
       themeAppearance: "theme/appearance",
