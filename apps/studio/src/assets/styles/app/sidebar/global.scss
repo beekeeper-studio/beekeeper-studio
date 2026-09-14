@@ -17,6 +17,7 @@
         &.active {
           .avatar {
             box-shadow: none;
+            background: var(--bg-active);
           }
         }
         .workspace-avatar {
@@ -69,7 +70,7 @@
           left: 0;
           width: 1px;
           height: 20px;
-          background: $theme-base;
+          background: var(--gray-12);
           border-radius: 3px;
           overflow: hidden;
           opacity: 1;

@@ -152,7 +152,7 @@
       position: relative;
       display: flex;
       align-items: center;
-      border: 1px solid var(--border);
+      border: 1px solid var(--border-subtle);
       border-radius: 4px;
     }
     .filter-input {
@@ -363,7 +363,7 @@
     }
   }
   .list-item-btn {
-    color: rgba($theme-base, 0.77);
+    color: var(--text);
     // margin-right: $gutter-h;
     line-height: 1.8rem;
     height: 1.8rem;
@@ -371,7 +371,8 @@
     border-radius: 4px;
 
     &:hover, &:focus {
-      background: rgba($theme-base, 0.035);
+      background: var(--bg-hover);
+      color: var(--text-contrast);
       .actions {
         display: flex;
         .btn-fab {
@@ -383,10 +384,12 @@
     }
 
     &.active {
-      background-color: rgba($theme-base, 0.06);
+      background: var(--bg-active);
+      color: var(--text-contrast);
     }
     &.selected {
-      background: rgba($theme-base, 0.1);
+      background: var(--bg-active);
+      color: var(--text-contrast);
     }
     &.open {
       // background: rgba($theme-base, 0.03);
@@ -436,7 +439,7 @@
         &.pinned {
           display: inline-flex;
           i.bk-pin {
-            color: var(--primary-9);
+            color: var(--primary-a-solid-bg);
           }
           i.material-icons {
             display:none;

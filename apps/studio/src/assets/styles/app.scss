@@ -16,23 +16,27 @@
 @import './app/variables';
 @import './app/flex-grid';
 @import './app/base';
+@import './app/vendor/material-symbols.scss';
 
-body.dark-theme {
-  @import './themes/dark/variables.scss';
-  @import './app/mixins';
-  @import './components/all';
-  @import './vendor.scss';
-  @import './app/_all.scss';
-  @import './themes/dark/theme.scss';
-  @import './scssvars-to-cssprops.scss';
-}
-
-body {
+// FIXME remove this
+:root,
+.light-theme {
   @import './themes/light/variables.scss';
   @import './app/mixins';
   @import './components/all';
   @import './vendor.scss';
   @import './app/_all.scss';
   @import './themes/light/theme.scss';
+  @import './scssvars-to-cssprops.scss';
+}
+
+// FIXME remove this
+.dark-theme {
+  @import './themes/dark/variables.scss';
+  @import './app/mixins';
+  @import './components/all';
+  @import './vendor.scss';
+  @import './app/_all.scss';
+  @import './themes/dark/theme.scss';
   @import './scssvars-to-cssprops.scss';
 }

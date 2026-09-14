@@ -53,7 +53,7 @@ hr {
 
 // Selection
 ::selection {
-  background: $theme-secondary;
+  background: var(--bg);
 }
 
 // Placeholder
@@ -424,7 +424,7 @@ input[type="checkbox"] {
   &:active,
   &:checked,
   &:checked:active {
-    background: var(--primary-solid-bg);
+    background: var(--primary-a-solid-bg);
     color: var(--primary-solid-fg);
     box-shadow: none;
     outline: none;

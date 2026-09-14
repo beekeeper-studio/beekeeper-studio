@@ -13,8 +13,8 @@
     display: none;
     list-style-type: none;
     white-space: nowrap;
-    background: var(--menu-bg);
-    color: var(--menu-fg);
+    background: var(--panel-bg);
+    color: var(--panel-fg);
     border-radius: 6px;
     min-width: 150px;
     @include card-shadow-hover;
