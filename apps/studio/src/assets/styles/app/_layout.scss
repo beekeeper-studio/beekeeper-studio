@@ -408,8 +408,8 @@ input[type="checkbox"] {
   position: relative;
   display: inline-flex;
 	-webkit-appearance: none;
-	background-color: transparent;
-  outline: 2px solid var(--border);
+	background-color: var(--checkbox-bg);
+  outline: 2px solid var(--checkbox-border);
   outline-offset: -2px;
   height: $checkbox-size;
   line-height: $checkbox-size;
@@ -424,8 +424,8 @@ input[type="checkbox"] {
   &:active,
   &:checked,
   &:checked:active {
-    background: var(--btn-primary-bg);
-    color: var(--btn-primary-fg);
+    background: var(--checkbox-checked-bg);
+    color: var(--checkbox-checked-fg);
     box-shadow: none;
     outline: none;
   }
@@ -439,7 +439,7 @@ input[type="checkbox"] {
     left: 0;
     height: 100%;
     width: 100%;
-    color: var(--btn-primary-fg);
+    color: var(--checkbox-checked-fg);
   }
 }
 
