@@ -2,9 +2,7 @@
 
 A theme is a folder in here named after its theme id, with one file per color
 scale (`gray.css`, `yellow.css`, `blue.css`, ...) holding both its light and
-dark blocks, and a `theme.css` for anything that is not a scale. `index.css`
-imports them all and is what `app.scss` pulls in, so adding a theme is: create
-the folder, add it to `app.scss`, register the id in `ThemeModule`.
+dark blocks.
 
 ## Rules
 
@@ -33,17 +31,15 @@ in `utilities.scss` are resolved on the element that carries the theme classes,
 so a scale set further down the tree is never seen by them.
 
 **Color scales are `--gray-1` … `--gray-12`, `--primary-1` … `--primary-12`,
-and so on**, plus the `-a` alpha variants (`--gray-a1` … `--gray-a12`). The
-families in use are `gray`, `primary`, `danger`, `info`, `success` and
-`warning`. They follow the
+and so on**, plus the `-a` alpha variants (`--gray-a1` … `--gray-a12`). They
+follow the
 [Radix scale](https://www.radix-ui.com/colors/docs/palette-composition/understanding-the-scale):
 1–2 backgrounds, 3–5 component states, 6–8 borders, 9 the purest color, 10 its
 hover, 11 low-contrast text, 12 high-contrast text.
 
 ## How far to go
 
-In a perfect case, replacing the scales is all a theme does. `solarized.css` is
-the example to follow — it defines its own ramp and maps `--gray-*` onto it.
+In a perfect case, replacing the scales is all a theme does.
 
 If you want more than the scales give you, read `utilities.scss`. It maps the
 scales to semantic names (`--text`, `--bg-subtle`, `--border`), then those to
@@ -52,4 +48,4 @@ whichever of those you need — the more specific the variable you override, the
 smaller the blast radius.
 
 Overriding by id, class name, or any selector other than a CSS variable is the
-last option. It ties the theme to markup that will move.
+last option.
