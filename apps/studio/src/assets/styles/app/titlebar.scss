@@ -97,10 +97,10 @@ $titlebar-actions-height:   30px;
       .maximized {
         transform: rotate(180deg);
       }
-      --btn-bg-hover: var(--info-solid-bg);
+      --btn-ghost-bg-hover: var(--info-solid-bg);
     }
     #quit {
-      --btn-bg-hover: var(--danger-solid-bg);
+      --btn-ghost-bg-hover: var(--danger-solid-bg);
     }
   }
 
