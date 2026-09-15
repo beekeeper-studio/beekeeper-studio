@@ -26,7 +26,7 @@ export function loadAllowedPublicKeys(
   return result;
 }
 
-export function canParseKey(keyPath: string): boolean {
+export function isUsablePrivateKey(keyPath: string): boolean {
   try {
     const data = fs.readFileSync(keyPath);
     const parsed = ssh2Utils.parseKey(data);

@@ -3,9 +3,9 @@ import { execFileSync } from "child_process";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { canParseKey } from "@/lib/ssh/sshKeyUtils";
+import { isUsablePrivateKey } from "@/lib/ssh/sshKeyUtils";
 
-describe("canParseKey", () => {
+describe("isUsablePrivateKey", () => {
   let dir: string, priv: string, pub: string;
 
   beforeAll(() => {
@@ -18,11 +18,11 @@ describe("canParseKey", () => {
   afterAll(() => fs.rmSync(dir, { recursive: true, force: true }));
 
   it("accepts a private key", () => {
-    expect(canParseKey(priv)).toBe(true);
+    expect(isUsablePrivateKey(priv)).toBe(true);
   });
 
   // Regression test for #4643.
   it("rejects a public key", () => {
-    expect(canParseKey(pub)).toBe(false);
+    expect(isUsablePrivateKey(pub)).toBe(false);
   });
 });
