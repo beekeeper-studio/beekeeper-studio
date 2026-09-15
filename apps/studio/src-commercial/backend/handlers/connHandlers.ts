@@ -267,11 +267,13 @@ export const ConnHandlers: IConnectionHandlers = {
   },
 
   'conn/clearConnection': async function({ sId }: { sId: string}) {
-    state(sId).connection = null;
-    state(sId).server = null;
-    state(sId).usedConfig = null;
-    state(sId).database = null;
-    state(sId).generator = null;
+    const s = state(sId);
+    if (!s) return;
+    s.connection = null;
+    s.server = null;
+    s.usedConfig = null;
+    s.database = null;
+    s.generator = null;
   },
   'conn/getServerConfig': async function({ sId }: { sId: string }) {
     return state(sId).server.getServerConfig();
@@ -290,12 +292,8 @@ export const ConnHandlers: IConnectionHandlers = {
   },
 
   'conn/connect': getDriverHandler('connect'),
-  // Not `getDriverHandler` - the renderer always holds a connection client, so it
-  // sends this even when nothing is open (disconnecting, or rolling back a failed
-  // connect). Blowing up on a missing connection would mask the error that caused
-  // the disconnect.
   'conn/disconnect': async function({ sId }: { sId: string }) {
-    if (!state(sId).connection) return;
+    if (!state(sId)?.connection) return;
     await state(sId).connection.disconnect();
   },
 

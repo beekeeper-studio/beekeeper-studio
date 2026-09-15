@@ -27,3 +27,5 @@ apps/studio/test-results
 *.log
 *.orig
 surreal_data/
+todo.txt
+done.txt

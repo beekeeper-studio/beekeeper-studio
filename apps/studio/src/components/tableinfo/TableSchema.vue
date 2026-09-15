@@ -533,12 +533,12 @@ export default Vue.extend({
 
       this.tabulator.on('rowMoved', (row) => this.movedRows(row))
     },
-    columnNameCellClick(_e: any, cell: CellComponent) {
+    async columnNameCellClick(_e: any, cell: CellComponent) {
       if (!this.editable || this.disabledFeatures?.alter?.renameColumn) {
         const element = cell.getElement()
         element.classList.add('copied');
         setTimeout(() => element.classList.remove('copied'), 500)
-        this.$native.clipboard.writeText(cell.getValue(), true);
+        await this.$native.clipboard.writeText(cell.getValue(), true);
       }
     },
     columnNameCellTooltip(_e: any, cell: CellComponent, _onRendered: any) {
