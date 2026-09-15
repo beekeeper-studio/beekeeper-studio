@@ -12,7 +12,7 @@ const mockSshConnectionCtor = jest.fn();
 let lastSshConfig: any;
 
 // A real, unencrypted ed25519 private key. Agent mode now validates identity
-// files with ssh2's parseKey (canParseKey) and skips anything unparseable, so
+// files with ssh2's parseKey (isUsablePrivateKey) and skips anything unparseable, so
 // the buffer returned for an accepted key must actually parse. See tunnel.ts.
 const VALID_KEY = Buffer.from(
   [
@@ -173,7 +173,7 @@ describe("connectTunnel SSH agent handling (#4193)", () => {
     await connectTunnel(buildConfig(ssh));
 
     // The missing entry is skipped entirely (never read). The existing key is
-    // read twice: once by canParseKey to validate it, once to load its bytes.
+    // read twice: once by isUsablePrivateKey to validate it, once to load its bytes.
     expect(mockReadFileSync).toHaveBeenCalledTimes(2);
     expect(mockReadFileSync.mock.calls.every((c) => String(c[0]).includes(goodKey))).toBe(true);
     expect(mockReadFileSync.mock.calls.every((c) => !String(c[0]).includes("missing_key"))).toBe(true);
