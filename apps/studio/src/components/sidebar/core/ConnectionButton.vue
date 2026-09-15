@@ -292,7 +292,7 @@ export default {
         await this.$store.dispatch('connect', { config, auth });
       } catch (ex) {
         log.error(ex)
-        this.$noty.error("Error establishing a connection")
+        this.$noty.error(`Error establishing a connection: ${ex?.message ?? ex}`)
       }
       this.isQuickSwitcherVisible = false
     },

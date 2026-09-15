@@ -278,7 +278,7 @@ export default Vue.extend({
             if (cancelled) return;
             await this.$store.dispatch('connect', { config: result.item, auth })
           } catch (ex) {
-            this.$noty.error("Error establishing a connection")
+            this.$noty.error(`Error establishing a connection: ${ex?.message ?? ex}`)
             console.error(ex)
           }
           break;
