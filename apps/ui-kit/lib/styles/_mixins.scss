@@ -73,10 +73,10 @@
   padding: 0 0.75rem;
   font-weight: normal;
   line-height: $input-height;
-  color: var(--bks-text);
+  color: inherit;
   background: transparent;
   border-radius: $input-radius;
-  border: 1px solid var(--bks-border-color);
+  border: 1px solid var(--border-subtle);
   outline: none;
   box-shadow: none;
   width: 100%;

@@ -1,0 +1,18 @@
+@import "./gray.css";
+@import "./blue.css";
+@import "./green.css";
+@import "./orange.css";
+@import "./pink.css";
+@import "./purple.css";
+@import "./red.css";
+@import "./yellow.css";
+
+.theme-solarized {
+  --white: #fff6e3;
+  --black: #002b36;
+
+  --app-bg: var(--gray-1);
+
+  --border-subtle: var(--gray-a3);
+  --border: var(--gray-a4);
+}

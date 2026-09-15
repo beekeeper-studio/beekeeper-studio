@@ -1,0 +1,145 @@
+@layer primitive, semantic, component;
+
+// The 12 Radix steps, by role, and their alpha variants.
+$steps: (
+  1: "bg-base",
+  2: "bg-subtle",
+  3: "bg",
+  4: "bg-hover",
+  5: "bg-active",
+  6: "border-subtle",
+  7: "border",
+  8: "border-hover",
+  9: "solid-bg",
+  10: "solid-bg-hover",
+  11: "text",
+  12: "text-contrast",
+  a1: "bg-base-a",
+  a2: "bg-subtle-a",
+  a3: "bg-a",
+  a4: "bg-hover-a",
+  a5: "bg-active-a",
+  a6: "border-subtle-a",
+  a7: "border-a",
+  a8: "border-hover-a",
+  a9: "solid-bg-a",
+  a10: "solid-bg-hover-a",
+  a11: "text-a",
+  a12: "text-contrast-a",
+);
+
+// Semantic families and the hue scale each one reads from.
+$families: (
+  primary: yellow,
+  info: blue,
+  success: green,
+  warning: orange,
+  danger: red,
+);
+
+@layer primitive {
+  .light-theme,
+  .dark-theme {
+    --white: #ffffff;
+    --black: #000000;
+
+    @each $family, $hue in $families {
+      // --primary-1: var(--yellow-1);
+      // --primary-2: var(--yellow-2);
+      // ...
+      @each $n, $role in $steps {
+        --#{$family}-#{$n}: var(--#{$hue}-#{$n});
+      }
+    }
+  }
+}
+
+@layer semantic {
+  .light-theme,
+  .dark-theme {
+    // https://www.radix-ui.com/colors/docs/palette-composition/understanding-the-scale
+
+    // --bg-base: var(--gray-1);
+    // --bg-subtle: var(--gray-2);
+    // ...
+    @each $n, $role in $steps {
+      --#{$role}: var(--gray-#{$n});
+    }
+
+    @each $family, $hue in $families {
+      // --primary-bg-base: var(--primary-1);
+      // --primary-bg-subtle: var(--primary-2);
+      // ...
+      // --info-bg-base: var(--info-1);
+      // --info-bg-subtle: var(--info-2);
+      // ...
+      @each $n, $role in $steps {
+        --#{$family}-#{$role}: var(--#{$family}-#{$n});
+      }
+    }
+
+    @each $family in info, success, warning, danger {
+      --#{$family}-solid-fg: var(--white);
+      --#{$family}-solid-fg-hover: var(--white);
+    }
+
+    // We add primary fg because the primary color can be very bright (like yellow).
+    // So by default, this is dark, to contrast with yellow, but a custom theme
+    // can change this easily if the primary is not a bright color.
+    --primary-solid-fg: var(--text-contrast);
+    --primary-solid-fg-a: var(--text-contrast-a);
+
+    --border-color: var(--border-subtle);
+  }
+}
+
+@layer component {
+  .light-theme,
+  .dark-theme {
+    --app-bg: var(--bg-base);
+    --app-fg: var(--text);
+
+    --icon-btn-fg: var(--gray-a9);
+    --icon-btn-fg-hover: var(--gray-a11);
+
+    --btn-ghost-fg: var(--gray-11);
+    --btn-ghost-bg: transparent;
+    --btn-ghost-bg-hover: var(--gray-a3);
+    --btn-ghost-bg-active: var(--gray-a4);
+
+    --btn-flat-fg: var(--gray-12);
+    --btn-flat-bg: var(--gray-a3);
+    --btn-flat-bg-hover: var(--gray-a4);
+
+    --btn-primary-fg: var(--gray-3);
+    --btn-primary-bg: var(--black);
+    --btn-primary-bg-hover: var(--gray-12);
+
+    --link-fg: var(--gray-12);
+
+    --selection-bg: var(--info-a5);
+    --selection-fg: var(--gray-12);
+
+    --scrollbar-track: transparent;
+    --scrollbar-thumb: var(--gray-a3);
+
+    --titlebar-bg: var(--gray-2);
+    --titlebar-fg: var(--gray-11);
+
+    --sidebar-bg: var(--gray-2);
+    --sidebar-fg: var(--gray-11);
+
+    --panel-bg: var(--gray-2);
+    --panel-fg: var(--gray-11);
+
+    --overlay-bg: rgb(from var(--gray-1) r g b / 0.9);
+
+    --badge-bg: var(--gray-a3);
+    --badge-fg: var(--gray-a11);
+  }
+
+  .dark-theme {
+    --btn-primary-fg: var(--gray-2);
+    --btn-primary-bg: var(--white);
+  }
+}

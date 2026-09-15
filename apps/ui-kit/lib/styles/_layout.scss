@@ -8,7 +8,6 @@
   a {
     display: inline-block;
     align-items: center;
-    color: $link-color;
     text-decoration: none;
     outline: none;
     cursor: pointer;
@@ -57,7 +56,8 @@
 
   // Selection
   ::selection {
-    background: $theme-secondary;
+    background: var(--selection-bg);
+    color: var(--selection-fg);
   }
 
   // Placeholder
@@ -121,7 +121,6 @@
     @include btn-flat;
   }
   .btn-link {
-    color: $theme-base;
     background: transparent;
     box-shadow: none;
     &:hover, &:focus {
@@ -182,9 +181,6 @@
     @include noselect;
     @include layout-center;
     transition: background 0.15s ease-in-out;
-    &:hover, &:focus {
-      background: rgba($theme-base, 0.1);
-    }
     .material-icons, .material-icons-outlined {
       font-size: 20px;
       color: $text-dark;
@@ -304,7 +300,7 @@
   input, select, textarea, .bk-form-input {
     @include form-control;
     &:focus {
-      border-color: $input-highlight;
+      border-color: var(--border-subtle);
     }
   }
   .input-group {
@@ -658,15 +654,17 @@
     justify-content: flex-end;
   }
   .card {
-    background: color.adjust($theme-bg, $lightness: 6%);
+    background: var(--panel-bg);
+    color: var(--panel-fg);
+    --panel-bg: var(--bg-subtle);
     @include card-shadow;
   }
   .card-flat {
-      background: $theme-bg;
+      background: var(--panel-bg);
+      color: var(--panel-fg);
       box-shadow: none;
   }
   .card-title {
-    color: $text-dark;
     font-size: 1.25rem;
     margin: 0;
     margin-bottom: 1.25rem;
@@ -695,16 +693,16 @@
     text-align: center;
     white-space: nowrap;
     vertical-align: baseline;
-    background: rgba($theme-base, 0.2);
-    color: $theme-base;
+    background: var(--badge-bg);
+    color: var(--badge-fg);
     margin: 0 ($gutter-h * 0.75);
     transition: color 0.15s ease-in-out,
                 background-color 0.15s ease-in-out,
                 border-color 0.15s ease-in-out,
                 box-shadow 0.15s ease-in-out;
     &.badge-info {
-      background: $brand-info;
-      color: rgba(black, 0.87);
+      background: var(--badge-info-bg);
+      color: var(--badge-info-fg);
     }
     &.badge-error, &.badge-danger {
       background: $brand-danger;

@@ -183,7 +183,7 @@ export default Vue.extend({
   position: sticky;
   top: 0;
   z-index: 1;
-  background-color: hsl(from var(--theme-bg) h s calc(l + 1));
+  background-color: var(--panel-bg);
   margin-bottom: 0.75rem;
 }
 
@@ -240,11 +240,11 @@ export default Vue.extend({
 
   &:hover,
   &:focus-within {
-    background: rgb(from var(--theme-base) r g b / 3.5%);
+    background: var(--bg-hover-a);
   }
 
   &.selected {
-    background: rgb(from var(--theme-base) r g b / 6%);
+    background: var(--bg-a);
   }
 
   ::v-deep .database-icon {

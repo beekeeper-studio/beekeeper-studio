@@ -211,7 +211,7 @@ export default Vue.extend({
   }
 
   &.selected .theme-preview-frame {
-    border-color: var(--theme-primary);
+    border-color: var(--primary-solid-bg);
   }
 
   .theme-name {
@@ -228,16 +228,14 @@ export default Vue.extend({
 }
 
 .theme-preview {
-  --chrome-bg: color-mix(in srgb, var(--theme-bg) 94%, #000);
-
   display: flex;
   flex-direction: column;
   width: 100%;
   font-size: 0.75rem;
   line-height: 1.6;
   min-width: 0;
-  color: var(--text);
-  background-color: var(--theme-bg);
+  color: var(--app-fg);
+  background-color: var(--app-bg);
 
   .titlebar-preview {
     display: flex;
@@ -245,8 +243,8 @@ export default Vue.extend({
     justify-content: center;
     padding-block: 0.3em;
     font-size: 0.85em;
-    color: var(--text-light);
-    background-color: var(--chrome-bg);
+    color: var(--titlebar-fg);
+    background-color: var(--titlebar-bg);
   }
 
   .statusbar-preview {
@@ -255,7 +253,7 @@ export default Vue.extend({
     gap: 0.4em;
     padding: 0.3em 0.75em;
     font-size: 0.85em;
-    color: var(--text-dark);
+    color: var(--text-contrast);
 
     .material-icons {
       font-size: 1.2em;
@@ -264,7 +262,7 @@ export default Vue.extend({
 
     .settings {
       margin-left: auto;
-      color: var(--text-light);
+      color: var(--text);
     }
   }
 
@@ -283,11 +281,12 @@ export default Vue.extend({
     flex-direction: column;
     padding: 0.5em 0.75em;
     font-size: 0.85em;
-    background-color: var(--chrome-bg);
+    color: var(--sidebar-fg);
+    background-color: var(--sidebar-bg);
 
     .heading {
       font-weight: bold;
-      color: var(--text-dark);
+      color: var(--text-contrast);
       margin-bottom: 0.5em;
     }
 
@@ -306,10 +305,10 @@ export default Vue.extend({
       .material-icons {
         font-size: 1.2em;
         margin: 0;
-        color: hsl(from var(--theme-primary) h s calc(l - 15));
+        color: var(--primary-text);
 
         &.view-icon {
-          color: var(--theme-secondary);
+          color: var(--info-solid-bg);
         }
       }
     }
@@ -332,20 +331,16 @@ export default Vue.extend({
       padding: 0.2em 0.8em;
       font-size: 0.85em;
       border-radius: 4px 4px 0 0;
-      color: var(--text-light);
-      background-color: color-mix(
-        in srgb,
-        var(--theme-base) 5%,
-        var(--theme-bg)
-      );
+      color: var(--text);
+      background-color: var(--bg);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
 
       &.active {
         font-weight: 600;
-        color: var(--text-dark);
-        background-color: var(--query-editor-bg);
+        color: var(--text-contrast);
+        background-color: var(--bg-base);
       }
 
       .material-icons {
@@ -354,11 +349,11 @@ export default Vue.extend({
       }
 
       .table-icon {
-        color: hsl(from var(--theme-primary) h s calc(l - 15));
+        color: var(--primary-text);
       }
 
       .query {
-        color: var(--brand-pink);
+        color: var(--info-text);
       }
     }
   }
@@ -368,8 +363,8 @@ export default Vue.extend({
     flex-direction: column;
     padding: 0.5em 0.25em;
     font-family: var(--font-family-mono);
-    color: var(--bks-text-editor-fg-color, var(--text-dark));
-    background-color: var(--query-editor-bg);
+    color: var(--bks-text-editor-fg-color, var(--text-contrast));
+    background-color: var(--bg-base);
     white-space: nowrap;
 
     .line {
@@ -380,19 +375,19 @@ export default Vue.extend({
     .gutter {
       width: 1em;
       text-align: right;
-      color: var(--bks-text-editor-linenumber-fg-color, var(--text-hint));
+      color: var(--bks-text-editor-linenumber-fg-color, var(--text));
     }
 
     .kw {
-      color: var(--bks-text-editor-keyword-fg-color, var(--brand-pink));
+      color: var(--bks-text-editor-keyword-fg-color, var(--info-text));
     }
 
     .str {
-      color: var(--bks-text-editor-string-fg-color, var(--brand-primary));
+      color: var(--bks-text-editor-string-fg-color, var(--primary-text));
     }
 
     .num {
-      color: var(--bks-text-editor-number-fg-color, var(--brand-primary));
+      color: var(--bks-text-editor-number-fg-color, var(--primary-text));
     }
 
     .actions {
@@ -415,16 +410,12 @@ export default Vue.extend({
 
       &.header {
         font-weight: 600;
-        color: var(--text-dark);
+        color: var(--text-contrast);
         box-shadow: 0 1px var(--border-color);
       }
 
       &:nth-child(even) {
-        background-color: color-mix(
-          in srgb,
-          var(--theme-base) 1.5%,
-          transparent
-        );
+        background-color: var(--bg-subtle-a);
       }
     }
   }
@@ -434,8 +425,8 @@ export default Vue.extend({
     line-height: 1.3;
     border-radius: 2px;
     font-weight: bold;
-    color: rgb(0 0 0 / 0.87);
-    background-color: var(--theme-primary);
+    color: var(--btn-primary-fg);
+    background-color: var(--btn-primary-bg);
   }
 }
 </style>

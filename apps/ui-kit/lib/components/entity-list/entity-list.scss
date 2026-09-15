@@ -242,7 +242,7 @@
     }
 
     .list-item-btn {
-      color: rgba($theme-base, 0.77);
+      color: inherit;
       // margin-right: $gutter-h;
       line-height: 1.8rem;
       height: 1.8rem;
@@ -252,7 +252,7 @@
 
       &:hover,
       &:focus {
-        background: rgba($theme-base, 0.035);
+        background: inherit;
 
         .actions {
           display: flex;
@@ -330,7 +330,7 @@
             display: inline-flex;
 
             i.bk-pin {
-              color: $theme-primary;
+              color: var(--primary-solid-bg);
             }
           }
         }
@@ -338,7 +338,6 @@
         i {
           font-size: 14px;
           line-height: 18px;
-          color: rgba($theme-base, 0.37);
           transition: color 0.15s ease-in-out;
         }
       }
@@ -451,10 +450,6 @@
       }
     }
 
-    .badge-info {
-      background: $brand-info;
-    }
-
     // Collapse
     // ---------------------------------
     .collapse {
@@ -474,7 +469,7 @@
     display: flex;
     align-items: center;
     padding: $gutter-w $gutter-w * 0.5 $gutter-w * 0.5;
-    color: $text-dark;
+    color: var(--text-contrast);
 
     .badge {
       font-size: 0.7rem;

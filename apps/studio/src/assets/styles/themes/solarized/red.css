@@ -1,0 +1,55 @@
+.theme-solarized {
+  --red-1: #f6f3f3;
+  --red-2: #f5eeed;
+  --red-3: #f5e1de;
+  --red-4: #fcd0cb;
+  --red-5: #f9c1ba;
+  --red-6: #f3b0a8;
+  --red-7: #ea9c92;
+  --red-8: #e18076;
+  --red-9: #dc322f;
+  --red-10: #cc1d20;
+  --red-11: #c50f19;
+  --red-12: #641b18;
+
+  --red-a1: #f0f1ff92;
+  --red-a2: #e4e0ff5c;
+  --red-a3: #8c03aa16;
+  --red-a4: #ec044a28;
+  --red-a5: #e4012537;
+  --red-a6: #d6011549;
+  --red-a7: #c702085e;
+  --red-a8: #c102017b;
+  --red-a9: #d30103cc;
+  --red-a10: #c50006e1;
+  --red-a11: #c1010df0;
+  --red-a12: #520201e5;
+}
+
+.theme-solarized.dark-theme {
+  --red-1: #2c2322;
+  --red-2: #322423;
+  --red-3: #4e231f;
+  --red-4: #64201b;
+  --red-5: #732520;
+  --red-6: #82302a;
+  --red-7: #993e37;
+  --red-8: #c14c44;
+  --red-9: #dc322f;
+  --red-10: #cc1d20;
+  --red-11: #ff9487;
+  --red-12: #ffd2cb;
+
+  --red-a1: #ff00002c;
+  --red-a2: #ff080032;
+  --red-a3: #ff11004e;
+  --red-a4: #ff0f0064;
+  --red-a5: #ff1e0673;
+  --red-a6: #ff351f82;
+  --red-a7: #ff4b3799;
+  --red-a8: #ff5749c1;
+  --red-a9: #ff332edc;
+  --red-a10: #ff1a1bcc;
+  --red-a11: #ff9487;
+  --red-a12: #ffd2cb;
+}

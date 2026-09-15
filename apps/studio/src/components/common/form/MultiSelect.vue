@@ -342,7 +342,7 @@ export default Vue.extend({
   list-style: none;
   overflow-y: auto;
   font-size: 0.85rem;
-  background: var(--menu-bg);
+  background: var(--panel-bg);
   border-radius: 6px;
   box-shadow: var(--menu-shadow);
 }

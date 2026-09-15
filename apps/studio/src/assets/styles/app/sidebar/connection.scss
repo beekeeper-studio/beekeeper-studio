@@ -43,7 +43,7 @@
           left: 0;
           right: 0;
           height: 18px;
-          background: linear-gradient(0deg, rgba($theme-bg, 1) 0%, rgba($theme-bg, 0) 100%);
+          background: linear-gradient(0deg, rgb(from var(--sidebar-bg) r g b / 100%) 0%, rgb(from var(--sidebar-bg) r g b / 0%) 100%);
         }
       }
     }
@@ -54,24 +54,12 @@
     .actions {
       padding-right: 0;
     }
-    a {
-      &.active {
-        background-color: rgba($theme-base, 0.06);
-      }
-    }
     .actions-btn {
       min-width: 0;
       font-weight: normal;
       font-size: 0.8rem;
       &:hover {
         background: transparent;
-        i {
-          color: $text-dark;
-        }
-      }
-      i {
-        font-size: 16px;
-        color: $text-light;
       }
     }
   }
@@ -82,7 +70,6 @@
     }
     .subtitle {
       font-size: 80%;
-      color: $text-lighter;
       display: flex;
       overflow: hidden;
       > span {
@@ -119,6 +106,10 @@
     height: initial;
     line-height: initial;
     padding: $gutter-h ($gutter-w * 0.75);
+    color: var(--btn-ghost-fg);
+    &:hover, &:focus {
+      background: var(--btn-ghost-bg-hover);
+    }
     // &.folder-btn {
     //   padding-left: 0;
     //   .btn-fab {
@@ -129,11 +120,6 @@
     //     background: transparent;
     //   }
     // }
-    .btn-fab {
-      .material-icons {
-        color: $text-dark;
-      }
-    }
     .dropdown {
       position: initial;
     }
