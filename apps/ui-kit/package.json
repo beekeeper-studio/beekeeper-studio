@@ -28,101 +28,125 @@
     "./package.json": "./package.json",
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./style.css": "./dist/style.css",
     "./table": {
       "types": "./dist/components/table/index.d.ts",
-      "import": "./dist/table.js"
+      "import": "./dist/table.js",
+      "default": "./dist/table.js"
     },
     "./entity-list": {
       "types": "./dist/components/entity-list/index.d.ts",
-      "import": "./dist/entity-list.js"
+      "import": "./dist/entity-list.js",
+      "default": "./dist/entity-list.js"
     },
     "./sql-text-editor": {
       "types": "./dist/components/sql-text-editor/index.d.ts",
-      "import": "./dist/sql-text-editor.js"
+      "import": "./dist/sql-text-editor.js",
+      "default": "./dist/sql-text-editor.js"
     },
     "./text-editor": {
       "types": "./dist/components/text-editor/index.d.ts",
-      "import": "./dist/text-editor.js"
+      "import": "./dist/text-editor.js",
+      "default": "./dist/text-editor.js"
     },
     "./data-editor": {
       "types": "./dist/components/data-editor/index.d.ts",
-      "import": "./dist/data-editor.js"
+      "import": "./dist/data-editor.js",
+      "default": "./dist/data-editor.js"
     },
     "./lib/components/text-editor/extensions/redisCommands.json": "./lib/components/text-editor/extensions/redisCommands.json",
     "./mongo-shell": {
       "types": "./dist/components/mongo-shell/index.d.ts",
-      "import": "./dist/mongo-shell.js"
+      "import": "./dist/mongo-shell.js",
+      "default": "./dist/mongo-shell.js"
     },
     "./mongo-shell/state": {
       "types": "./dist/components/mongo-shell/state.d.ts",
-      "import": "./dist/mongo-shell/state.js"
+      "import": "./dist/mongo-shell/state.js",
+      "default": "./dist/mongo-shell/state.js"
     },
     "./super-formatter": {
       "types": "./dist/components/super-formatter/index.d.ts",
-      "import": "./dist/super-formatter.js"
+      "import": "./dist/super-formatter.js",
+      "default": "./dist/super-formatter.js"
     },
     "./surreal-text-editor": {
       "types": "./dist/components/surreal-text-editor/index.d.ts",
-      "import": "./dist/surreal-text-editor.js"
+      "import": "./dist/surreal-text-editor.js",
+      "default": "./dist/surreal-text-editor.js"
     },
     "./merge-text-editor": {
       "types": "./dist/components/merge-text-editor/index.d.ts",
-      "import": "./dist/merge-text-editor.js"
+      "import": "./dist/merge-text-editor.js",
+      "default": "./dist/merge-text-editor.js"
     },
     "./tree": {
       "types": "./dist/components/tree/index.d.ts",
-      "import": "./dist/tree.js"
+      "import": "./dist/tree.js",
+      "default": "./dist/tree.js"
     },
     "./context-menu": {
       "types": "./dist/components/context-menu/index.d.ts",
-      "import": "./dist/context-menu.js"
+      "import": "./dist/context-menu.js",
+      "default": "./dist/context-menu.js"
     },
     "./vue/table": {
       "types": "./dist/components/table/index.d.ts",
-      "import": "./dist/vue/table.js"
+      "import": "./dist/vue/table.js",
+      "default": "./dist/vue/table.js"
     },
     "./vue/entity-list": {
       "types": "./dist/components/entity-list/index.d.ts",
-      "import": "./dist/vue/entity-list.js"
+      "import": "./dist/vue/entity-list.js",
+      "default": "./dist/vue/entity-list.js"
     },
     "./vue/sql-text-editor": {
       "types": "./dist/components/sql-text-editor/index.d.ts",
-      "import": "./dist/vue/sql-text-editor.js"
+      "import": "./dist/vue/sql-text-editor.js",
+      "default": "./dist/vue/sql-text-editor.js"
     },
     "./vue/data-editor": {
       "types": "./dist/components/data-editor/index.d.ts",
-      "import": "./dist/vue/data-editor.js"
+      "import": "./dist/vue/data-editor.js",
+      "default": "./dist/vue/data-editor.js"
     },
     "./vue/text-editor": {
       "types": "./dist/components/text-editor/index.d.ts",
-      "import": "./dist/vue/text-editor.js"
+      "import": "./dist/vue/text-editor.js",
+      "default": "./dist/vue/text-editor.js"
     },
     "./vue/mongo-shell": {
       "types": "./dist/components/mongo-shell/index.d.ts",
-      "import": "./dist/vue/mongo-shell.js"
+      "import": "./dist/vue/mongo-shell.js",
+      "default": "./dist/vue/mongo-shell.js"
     },
     "./vue/super-formatter": {
       "types": "./dist/components/super-formatter/index.d.ts",
-      "import": "./dist/vue/super-formatter.js"
+      "import": "./dist/vue/super-formatter.js",
+      "default": "./dist/vue/super-formatter.js"
     },
     "./vue/surreal-text-editor": {
       "types": "./dist/components/surreal-text-editor/index.d.ts",
-      "import": "./dist/vue/surreal-text-editor.js"
+      "import": "./dist/vue/surreal-text-editor.js",
+      "default": "./dist/vue/surreal-text-editor.js"
     },
     "./vue/merge-text-editor": {
       "types": "./dist/components/merge-text-editor/index.d.ts",
-      "import": "./dist/vue/merge-text-editor.js"
+      "import": "./dist/vue/merge-text-editor.js",
+      "default": "./dist/vue/merge-text-editor.js"
     },
     "./vue/tree": {
       "types": "./dist/components/tree/index.d.ts",
-      "import": "./dist/vue/tree.js"
+      "import": "./dist/vue/tree.js",
+      "default": "./dist/vue/tree.js"
     },
     "./config/context-menu": {
       "types": "./dist/config/context-menu.d.ts",
-      "import": "./dist/config/context-menu.js"
+      "import": "./dist/config/context-menu.js",
+      "default": "./dist/config/context-menu.js"
     }
   },
   "scripts": {
