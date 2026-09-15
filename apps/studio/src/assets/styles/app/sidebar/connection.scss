@@ -106,9 +106,9 @@
     height: initial;
     line-height: initial;
     padding: $gutter-h ($gutter-w * 0.75);
-    color: var(--btn-fg);
+    color: var(--btn-ghost-fg);
     &:hover, &:focus {
-      background: var(--btn-bg-hover);
+      background: var(--btn-ghost-bg-hover);
     }
     // &.folder-btn {
     //   padding-left: 0;

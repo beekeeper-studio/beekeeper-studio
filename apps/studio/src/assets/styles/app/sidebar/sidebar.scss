@@ -334,10 +334,10 @@
   }
   .actions-btn {
     i {
-      color: var(--btn-fg);
+      color: var(--btn-ghost-fg);
       transition: color 0.15s ease-in-out;
       &:hover {
-        background: var(--btn-bg-hover);
+        background: var(--btn-ghost-bg-hover);
       }
     }
   }
@@ -368,7 +368,7 @@
     }
   }
   .list-item-btn {
-    color: var(--btn-fg);
+    color: var(--btn-ghost-fg);
     // margin-right: $gutter-h;
     line-height: 1.8rem;
     height: 1.8rem;
@@ -376,7 +376,7 @@
     border-radius: 4px;
 
     &:hover, &:focus {
-      background: var(--btn-bg-hover);
+      background: var(--btn-ghost-bg-hover);
       .actions {
         display: flex;
         .btn-fab {
@@ -388,7 +388,7 @@
     }
 
     &.active, &.selected {
-      background: var(--btn-bg-active);
+      background: var(--btn-ghost-bg-active);
     }
     &.open {
       // background: rgba($theme-base, 0.03);

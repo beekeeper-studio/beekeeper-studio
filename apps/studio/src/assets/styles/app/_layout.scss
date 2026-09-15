@@ -190,7 +190,7 @@ x-buttons > x-button.btn-rounded {
   @include layout-center;
   transition: background 0.15s ease-in-out;
   &:hover, &:focus {
-    background: var(--btn-bg-hover);
+    background: var(--btn-ghost-bg-hover);
   }
   .material-icons, .material-icons-outlined {
     font-size: 20px;

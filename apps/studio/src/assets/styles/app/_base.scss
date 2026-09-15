@@ -50,13 +50,13 @@ body {
 }
 
 button {
-  background: var(--btn-bg);
-  color: var(--btn-fg);
+  background: var(--btn-ghost-bg);
+  color: var(--btn-ghost-fg);
 
   &:hover,
   &:focus {
-    background: var(--btn-bg-hover);
-    color: var(--btn-fg-hover);
+    background: var(--btn-ghost-bg-hover);
+    color: var(--btn-ghost-fg-hover);
   }
 }
 

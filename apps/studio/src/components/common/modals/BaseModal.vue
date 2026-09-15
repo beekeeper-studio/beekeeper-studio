@@ -142,13 +142,13 @@ export default Vue.extend({
 
 .base-modal-close:hover,
 .base-modal-close:focus {
-  background: var(--btn-bg-hover);
+  background: var(--btn-ghost-bg-hover);
 }
 
 .base-modal-close .material-icons,
 .base-modal-close .material-icons-outlined {
   font-size: 1.25rem;
-  color: var(--btn-fg);
+  color: var(--btn-ghost-fg);
 }
 
 .base-modal-body {

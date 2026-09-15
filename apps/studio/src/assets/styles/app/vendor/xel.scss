@@ -484,7 +484,7 @@ x-buttons {
 x-buttons.selectbutton {
   > x-button {
     padding: 0.25rem;
-    color: var(--btn-fg);
+    color: var(--btn-ghost-fg);
     background: var(--btn-flat-bg);
     height: auto;
     line-height: 1.15rem;

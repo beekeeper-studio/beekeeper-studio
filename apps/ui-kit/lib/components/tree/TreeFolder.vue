@@ -49,14 +49,14 @@ export default Vue.extend({
   width: 100%;
   border-radius: 4px;
   cursor: pointer;
-  color: var(--btn-fg);
+  color: var(--btn-ghost-fg);
   font-size: 1rem;
   height: 1.75rem;
   padding-left: calc(var(--depth) * 1rem);
   padding-right: 0.8rem;
 
   &:hover {
-    background-color: var(--btn-bg-hover);
+    background-color: var(--btn-ghost-bg-hover);
   }
 }
 
