@@ -69,13 +69,22 @@ export default class PluginStoreService {
     /** Key = css property, value = css value */
     const palette: Record<string, string> = {};
 
-    for (const name of cssVars) {
-      const camelKey = _.camelCase(name);
-      palette[camelKey] = styles.getPropertyValue(name).trim();
+    for (const entry of cssVars) {
+      if (typeof entry === "string") {
+        palette[_.camelCase(entry)] = styles.getPropertyValue(entry).trim();
+        continue;
+      }
+      palette[_.camelCase(entry.name)] = entry.value.replace(
+        /var\((--[\w-]+)\)/g,
+        (_match, name) => styles.getPropertyValue(name).trim()
+      );
     }
 
     const cssString = cssVars
-      .map((cssProp) => `${cssProp}: ${palette[_.camelCase(cssProp)]};`)
+      .map((entry) => {
+        const name = typeof entry === "string" ? entry : entry.name;
+        return `${name}: ${palette[_.camelCase(name)]};`;
+      })
       .join("");
 
     return {
