@@ -152,7 +152,7 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapGetters('settings', ['themeValue']),
+    ...mapGetters({ themeId: 'theme/id' }),
     tooltip() {
       if (this.continueButtonDisabled) return this.currentStep.nextButtonDisabledTooltip
       return undefined
@@ -164,7 +164,7 @@ export default Vue.extend({
       return classes
     },
     stepperClasses() {
-      return `stepper-box theme-${this.themeValue}`
+      return `stepper-box theme-${this.themeId}`
     },
     continueButtonDisabled() {
       if (this.currentStep?.validateOnNext) return false

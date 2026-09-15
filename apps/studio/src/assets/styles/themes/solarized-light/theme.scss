@@ -1,5 +1,5 @@
 @use "sass:color";
-@import "codemirror/theme/solarized.css";
+@import "codemirror/theme/solarized";
 
 
 // Global
@@ -33,10 +33,6 @@ $editor-statusbar:         $theme-base;
 
 // Base Styles
 // -----------------------------------------
-& {
-  background: $theme-bg;
-  color: $text;
-}
 // .material-icons {
 //   font-weight: 600;
 // }

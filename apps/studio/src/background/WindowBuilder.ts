@@ -24,15 +24,18 @@ function getIcon() {
   return path.resolve(path.join(__dirname, '..', `public/icons/png/512x512.png`))
 }
 
+const devToolsEnabled = (platformInfo.env.development && !platformInfo.env.test) || platformInfo.debugEnabled
+
 class BeekeeperWindow {
   private win: BrowserWindow | null
   private reloaded = false
   private appUrl: string
+  private systemUsesDarkColors: boolean;
   public sId: string;
 
   constructor(protected settings: IGroupedUserSettings, openOptions: OpenOptions) {
-    const theme = settings.theme
-    const dark = electron.nativeTheme.shouldUseDarkColors || theme.value.toString().includes('dark')
+    this.systemUsesDarkColors = electron.nativeTheme.shouldUseDarkColors;
+    const dark = this.isDark();
     let titleBarStyle: 'default' | 'hidden' = platformInfo.isWindows ? 'default' : 'hidden'
 
     if (platformInfo.isWayland) {
@@ -65,6 +68,10 @@ class BeekeeperWindow {
     const appUrl = platformInfo.isDevelopment ? devUrl : startUrl
     // const appUrl = startUrl
     const queryObj: any = openOptions ? { ...openOptions } : {}
+
+    queryObj.themeId = this.getThemeId();
+    queryObj.appearance = this.getAppearance();
+    queryObj.systemDark = this.systemUsesDarkColors;
 
     if (platformInfo.isWayland) {
       queryObj.runningWayland = true
@@ -153,7 +160,7 @@ class BeekeeperWindow {
     this.win.show()
 
     await this.win.loadURL(this.appUrl)
-    if ((platformInfo.env.development && !platformInfo.env.test) || platformInfo.debugEnabled) {
+    if (devToolsEnabled) {
       globalShortcut.register('F12', this.win.webContents.toggleDevTools.bind(this.win.webContents))
       globalShortcut.register('CommandOrControl+Shift+I', this.win.webContents.toggleDevTools.bind(this.win.webContents))
 
@@ -212,10 +219,27 @@ class BeekeeperWindow {
       this.win = null
     })
 
+    if (devToolsEnabled) {
+      this.win?.webContents.on('context-menu', (_event, params) => {
+        electron.Menu.buildFromTemplate([
+          {
+            label: 'Inspect Element',
+            click: () => this.win?.webContents.inspectElement(params.x, params.y),
+          },
+        ]).popup({ window: this.win })
+      })
+    }
 
     const windowMoveResizeListener = _.debounce(this.windowMoveResizeListener.bind(this), 1000)
     this.win.on('resize',windowMoveResizeListener)
     this.win.on('move', windowMoveResizeListener)
+
+    electron.nativeTheme.on("updated", () => {
+      if (this.systemUsesDarkColors !== electron.nativeTheme.shouldUseDarkColors) {
+        this.systemUsesDarkColors = electron.nativeTheme.shouldUseDarkColors;
+        this.send("systemUsesDarkColors", this.systemUsesDarkColors);
+      }
+    });
   }
 
   windowMoveResizeListener(){
@@ -269,6 +293,24 @@ class BeekeeperWindow {
 
   closeWindow() {
     this.win?.close();
+  }
+
+  getThemeId() {
+    return this.settings.themeId?.value?.toString() || 'default';
+  }
+
+  getAppearance() {
+    return this.settings.appearance?.value?.toString() || 'auto';
+  }
+
+  /** is the window in dark mode? */
+  isDark(): boolean {
+    const appearance = this.getAppearance();
+    if (appearance === 'auto') {
+      return this.systemUsesDarkColors;
+    } else {
+      return appearance === 'dark'
+    }
   }
 }
 
