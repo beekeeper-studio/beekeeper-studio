@@ -102,6 +102,8 @@ $families: (
     --icon-btn-fg: var(--gray-a9);
     --icon-btn-fg-hover: var(--gray-a11);
 
+    // ===== Button =====
+
     --btn-ghost-fg: var(--gray-11);
     --btn-ghost-bg: transparent;
     --btn-ghost-bg-hover: var(--gray-a3);
@@ -114,6 +116,13 @@ $families: (
     --btn-primary-fg: var(--gray-3);
     --btn-primary-bg: var(--black);
     --btn-primary-bg-hover: var(--gray-12);
+
+    // ===== Checkbox =====
+
+    --checkbox-border: var(--gray-7);
+    --checkbox-bg: transparent;
+    --checkbox-checked-bg: var(--btn-primary-bg);
+    --checkbox-checked-fg: var(--btn-primary-fg);
 
     --link-fg: var(--gray-12);
 
