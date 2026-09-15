@@ -23,7 +23,7 @@ $color-defaults: (
   width: 3px;
   border-radius: 3px;
   margin-right: $gutter-w * 0.85;
-  background-color: rgba($theme-base, 0.08);
+  background: var(--bg-a);
 
   @each $key, $val in $color-defaults {
     &.connection-label-color-#{'#{$key}'} {

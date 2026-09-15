@@ -54,25 +54,12 @@
     .actions {
       padding-right: 0;
     }
-    a {
-      &.active {
-        background: var(--bg-active);
-        color: var(--text-contrast);
-      }
-    }
     .actions-btn {
       min-width: 0;
       font-weight: normal;
       font-size: 0.8rem;
       &:hover {
         background: transparent;
-        i {
-          color: $text-dark;
-        }
-      }
-      i {
-        font-size: 16px;
-        color: $text-light;
       }
     }
   }
@@ -119,10 +106,9 @@
     height: initial;
     line-height: initial;
     padding: $gutter-h ($gutter-w * 0.75);
-    color: var(--text);
-    &:hover {
-      background: var(--bg-hover);
-      color: var(--text-contrast);
+    color: var(--btn-fg);
+    &:hover, &:focus {
+      background: var(--btn-bg-hover);
     }
     // &.folder-btn {
     //   padding-left: 0;
@@ -134,11 +120,6 @@
     //     background: transparent;
     //   }
     // }
-    .btn-fab {
-      .material-icons {
-        color: $text-dark;
-      }
-    }
     .dropdown {
       position: initial;
     }

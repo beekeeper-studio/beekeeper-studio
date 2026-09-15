@@ -28,6 +28,7 @@ $vue-content-placeholders-spacing: 10px !default;
   overflow: hidden;
   height: $vue-content-placeholders-line-height;
   background: $vue-content-placeholders-secondary-color;
+  background: var(--btn-flat-bg);
 
   .vue-content-placeholders-is-rounded &  {
     border-radius: $vue-content-placeholders-border-radius;

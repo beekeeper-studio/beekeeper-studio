@@ -56,7 +56,8 @@
 
   // Selection
   ::selection {
-    background: $theme-secondary;
+    background: var(--selection-bg);
+    color: var(--selection-fg);
   }
 
   // Placeholder
@@ -180,9 +181,6 @@
     @include noselect;
     @include layout-center;
     transition: background 0.15s ease-in-out;
-    &:hover, &:focus {
-      background: rgba($theme-base, 0.1);
-    }
     .material-icons, .material-icons-outlined {
       font-size: 20px;
       color: $text-dark;

@@ -345,4 +345,15 @@ export default {
 .connection-label {
   margin-left: 0.5rem;
 }
+
+.btn-fab.pin, .btn-fab.pinned {
+  color: var(--icon-btn-fg);
+  &:hover, &:focus {
+    color: var(--icon-btn-fg-hover);
+    background: transparent;
+  }
+}
+.btn-fab.pinned .bk-pin {
+  color: var(--primary-solid-bg-hover-a);
+}
 </style>

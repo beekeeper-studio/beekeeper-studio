@@ -60,7 +60,7 @@ button {
   }
 }
 
-input, select {
+input, select, textarea {
   color: inherit;
   border: 1px solid var(--border-subtle);
   &:focus {

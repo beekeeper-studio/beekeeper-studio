@@ -1,28 +1,28 @@
 .theme-solarized {
   --gray-1: #fff6e3;
-  --gray-2: #f8efdd;
-  --gray-3: #ddd8c9;
-  --gray-4: #96a4a4;
-  --gray-5: #89999a;
-  --gray-6: #7d9093;
-  --gray-7: #677f86;
-  --gray-8: #5d767d;
-  --gray-9: #536c73;
-  --gray-10: #15414c;
-  --gray-11: #00303b;
+  --gray-2: #faf0dc;
+  --gray-3: #efe5cb;
+  --gray-4: #e2d9bb;
+  --gray-5: #d5ceaf;
+  --gray-6: #c5bfa3;
+  --gray-7: #aeb098;
+  --gray-8: #93968a;
+  --gray-9: #637a77;
+  --gray-10: #4b6365;
+  --gray-11: #073e4a;
   --gray-12: #002b36;
 
   --gray-a1: #00000000;
-  --gray-a2: #5e172408;
-  --gray-a3: #060f1b21;
-  --gray-a4: #012d4968;
-  --gray-a5: #012c4475;
-  --gray-a6: #022e4782;
-  --gray-a7: #022f4798;
-  --gray-a8: #022c42a2;
-  --gray-a9: #012a3dac;
-  --gray-a10: #00313eea;
-  --gray-a11: #00303bff;
+  --gray-a2: #60370408;
+  --gray-a3: #6855001b;
+  --gray-a4: #5b52002d;
+  --gray-a5: #4949023b;
+  --gray-a6: #32330048;
+  --gray-a7: #0c240255;
+  --gray-a8: #0013116c;
+  --gray-a9: #002b329c;
+  --gray-a10: #002631b4;
+  --gray-a11: #003946f8;
   --gray-a12: #002b36ff;
 }
 
@@ -41,15 +41,15 @@
   --gray-12: #fff6e3;
 
   --gray-a1: #00000000;
-  --gray-a2: #00e2ec07;
-  --gray-a3: #c0f4ff1c;
-  --gray-a4: #fff3f253;
+  --gray-a2: #00e1ec07;
+  --gray-a3: #bff3fe1c;
+  --gray-a4: #fff3f153;
   --gray-a5: #fff9f95d;
-  --gray-a6: #fffbfd67;
-  --gray-a7: #fff9f37d;
-  --gray-a8: #fff8f189;
+  --gray-a6: #fffbfc67;
+  --gray-a7: #fff9f47d;
+  --gray-a8: #fff8f089;
   --gray-a9: #fff9f196;
-  --gray-a10: #fff2e0dd;
+  --gray-a10: #fff3e0dd;
   --gray-a11: #fff5e2f8;
   --gray-a12: #fff6e3ff;
 }

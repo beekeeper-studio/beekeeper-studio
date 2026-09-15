@@ -20,24 +20,12 @@
 @import './app/vendor/material-symbols.scss';
 
 // FIXME remove this
-:root,
-.light-theme {
+body {
   @import './themes/light/variables.scss';
   @import './app/mixins';
   @import './components/all';
   @import './vendor.scss';
   @import './app/_all.scss';
   @import './themes/light/theme.scss';
-  @import './scssvars-to-cssprops.scss';
-}
-
-// FIXME remove this
-.dark-theme {
-  @import './themes/dark/variables.scss';
-  @import './app/mixins';
-  @import './components/all';
-  @import './vendor.scss';
-  @import './app/_all.scss';
-  @import './themes/dark/theme.scss';
   @import './scssvars-to-cssprops.scss';
 }

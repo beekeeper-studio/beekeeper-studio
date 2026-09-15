@@ -67,9 +67,6 @@ $titlebar-actions-height:   30px;
       margin: 0;
       z-index: 10;
       box-shadow: none;
-      &:hover {
-        color: $text-dark;
-      }
       &:focus {
         background: transparent;
       }
@@ -100,14 +97,10 @@ $titlebar-actions-height:   30px;
       .maximized {
         transform: rotate(180deg);
       }
-      &:hover {
-        background: $brand-info;
-      }
+      --btn-bg-hover: var(--info-solid-bg);
     }
     #quit {
-      &:hover {
-        background: $brand-danger;
-      }
+      --btn-bg-hover: var(--danger-solid-bg);
     }
   }
 

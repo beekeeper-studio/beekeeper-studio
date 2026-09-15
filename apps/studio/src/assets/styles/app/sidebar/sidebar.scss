@@ -291,11 +291,16 @@
     & .create-table {
       visibility: visible;
     }
-    .material-icons, .material-icons-outlined {
-      font-size: 16px;
-      color: $text-light;
-      &:hover {
-        color: $text-dark;
+    a, x-button {
+      .material-icons, .material-icons-outlined {
+        font-weight: 600;
+        font-size: 16px;
+        color: var(--icon-btn-fg);
+      }
+      &:hover, &:focus {
+        .material-icons, .material-icons-outlined {
+          color: var(--icon-btn-fg-hover);
+        }
       }
     }
   }
@@ -329,10 +334,10 @@
   }
   .actions-btn {
     i {
-      color: $text-light;
+      color: var(--btn-fg);
       transition: color 0.15s ease-in-out;
       &:hover {
-        color: $text-dark;
+        background: var(--btn-bg-hover);
       }
     }
   }
@@ -363,7 +368,7 @@
     }
   }
   .list-item-btn {
-    color: var(--text);
+    color: var(--btn-fg);
     // margin-right: $gutter-h;
     line-height: 1.8rem;
     height: 1.8rem;
@@ -371,8 +376,7 @@
     border-radius: 4px;
 
     &:hover, &:focus {
-      background: var(--bg-hover);
-      color: var(--text-contrast);
+      background: var(--btn-bg-hover);
       .actions {
         display: flex;
         .btn-fab {
@@ -383,13 +387,8 @@
       }
     }
 
-    &.active {
-      background: var(--bg-active);
-      color: var(--text-contrast);
-    }
-    &.selected {
-      background: var(--bg-active);
-      color: var(--text-contrast);
+    &.active, &.selected {
+      background: var(--btn-bg-active);
     }
     &.open {
       // background: rgba($theme-base, 0.03);
@@ -425,11 +424,6 @@
         display: inline-flex;
       }
       .btn-fab {
-        &:hover {
-          i {
-            color: $theme-base;
-          }
-        }
         &.launch {
           display: none;
         }
@@ -438,9 +432,6 @@
         }
         &.pinned {
           display: inline-flex;
-          i.bk-pin {
-            color: var(--primary-solid-bg-a);
-          }
           i.material-icons {
             display:none;
           }
@@ -458,7 +449,6 @@
       i {
         font-size: 14px;
         line-height: 18px;
-        color: rgba($theme-base, 0.37);
         transition: color 0.15s ease-in-out;
       }
     }
@@ -534,17 +524,12 @@
     height: 18px;
     margin-right: $gutter-h * 0.5;
     transition: color 0.2 ease-in-out;
-    &:hover {
-      color: $text-dark;
-      background: transparent;
-    }
     .dropdown-icon {
       &:hover, &:focus {
         color: $text-dark;
       }
     }
     .material-icons {
-      color: rgba($theme-base, 0.37);
       font-size: 18px;
     }
   }

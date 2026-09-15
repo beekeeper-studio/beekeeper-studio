@@ -253,7 +253,7 @@ export default Vue.extend({
   left: calc((var(--depth) * 1rem) + 0.6rem);
   bottom: 0;
   width: 1px;
-  background: rgb(from var(--bks-border-color) r g b / 0.1);
+  background: var(--gray-a4);
 }
 
 .BksTree:hover
