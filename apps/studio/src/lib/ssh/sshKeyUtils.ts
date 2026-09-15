@@ -35,8 +35,7 @@ export function canParseKey(keyPath: string): boolean {
       return false;
     }
     const key = Array.isArray(parsed) ? parsed[0] : parsed;
-    const hasPrivateKeyMaterial = key.getPrivatePEM() !== null;
-    if (!hasPrivateKeyMaterial) {
+    if (!key.isPrivateKey()) {
       log.warn(`Skipping ${keyPath}: public key only, no private key material`);
       return false;
     }
