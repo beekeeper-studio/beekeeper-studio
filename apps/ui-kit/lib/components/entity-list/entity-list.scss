@@ -330,7 +330,7 @@
             display: inline-flex;
 
             i.bk-pin {
-              color: var(--primary-solid-bg-a);
+              color: var(--primary-solid-bg);
             }
           }
         }
@@ -338,7 +338,6 @@
         i {
           font-size: 14px;
           line-height: 18px;
-          color: rgba($theme-base, 0.37);
           transition: color 0.15s ease-in-out;
         }
       }

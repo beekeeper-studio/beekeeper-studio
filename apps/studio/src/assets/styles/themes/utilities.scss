@@ -99,31 +99,46 @@ $families: (
     --app-bg: var(--bg-base);
     --app-fg: var(--text);
 
-    --btn-fg: var(--text);
+    --icon-btn-fg: var(--gray-a9);
+    --icon-btn-fg-hover: var(--gray-a11);
+
+    --btn-fg: var(--gray-11);
     --btn-bg: transparent;
-    --btn-fg-hover: var(--text);
-    --btn-bg-hover: var(--bg-a);
+    --btn-bg-hover: var(--gray-a3);
+    --btn-bg-active: var(--gray-a4);
 
-    --btn-flat-fg: var(--text-contrast);
-    --btn-flat-bg: var(--bg-a);
-    --btn-flat-fg-hover: var(--text-contrast);
-    --btn-flat-bg-hover: var(--bg-hover-a);
+    --btn-flat-fg: var(--gray-12);
+    --btn-flat-bg: var(--gray-a3);
+    --btn-flat-bg-hover: var(--gray-a4);
 
-    --btn-primary-fg: var(--primary-solid-fg);
-    --btn-primary-bg: var(--primary-solid-bg);
-    --btn-primary-fg-hover: var(--primary-solid-fg);
-    --btn-primary-bg-hover: var(--primary-solid-bg-hover);
+    --btn-primary-fg: var(--gray-3);
+    --btn-primary-bg: var(--black);
+    --btn-primary-bg-hover: var(--gray-12);
 
-    --link-fg: var(--text-contrast);
+    --link-fg: var(--gray-12);
+
+    --selection-bg: var(--info-a5);
+    --selection-fg: var(--gray-12);
+
     --scrollbar-thumb: var(--gray-a3);
 
-    --titlebar-bg: var(--bg-subtle);
-    --titlebar-fg: var(--text);
-    --sidebar-bg: var(--bg-subtle);
-    --sidebar-fg: var(--text);
-    --panel-bg: var(--bg-subtle);
-    --panel-fg: var(--text);
+    --titlebar-bg: var(--gray-2);
+    --titlebar-fg: var(--gray-11);
 
-    --overlay-bg: rgb(from var(--bg-base) r g b / 0.9);
+    --sidebar-bg: var(--gray-2);
+    --sidebar-fg: var(--gray-11);
+
+    --panel-bg: var(--gray-2);
+    --panel-fg: var(--gray-11);
+
+    --overlay-bg: rgb(from var(--gray-1) r g b / 0.9);
+
+    --badge-bg: var(--gray-a3);
+    --badge-fg: var(--gray-a11);
+  }
+
+  .dark-theme {
+    --btn-primary-fg: var(--gray-2);
+    --btn-primary-bg: var(--white);
   }
 }
