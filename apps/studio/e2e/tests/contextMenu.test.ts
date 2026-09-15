@@ -35,7 +35,7 @@ test.describe("Using the context menu", () => {
 
     test("paste a query using context menu", async () => {
       // adding a default text to be asserted later
-      await win.evaluate((clipboardText) => window.main.writeTextToClipboard(clipboardText), POSTGRES_QUERY);
+      await win.evaluate(async (clipboardText) => await window.main.writeTextToClipboard(clipboardText), POSTGRES_QUERY);
 
       await queryTab.queryTabTextArea.click({
         button: 'right'

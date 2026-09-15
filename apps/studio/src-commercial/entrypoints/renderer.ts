@@ -86,10 +86,10 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
     UIKit.setClipboard(
       new (class extends EventTarget implements Clipboard {
         async writeText(text: string) {
-          window.main.writeTextToClipboard(text)
+          await window.main.writeTextToClipboard(text)
         }
         async readText() {
-          return window.main.readTextFromClipboard()
+          return await window.main.readTextFromClipboard()
         }
         async read(): Promise<ClipboardItem[]> {
           throw new Error("Not implemented")

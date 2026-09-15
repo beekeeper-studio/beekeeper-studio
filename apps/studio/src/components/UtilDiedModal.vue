@@ -38,9 +38,14 @@
 
 export default {
   methods: {
-    disconnect() {
-      this.$store.dispatch('disconnect');
-      this.$modal.hide('util-died-modal');
+    async disconnect() {
+      try {
+        await this.$store.dispatch('disconnect');
+      } catch (e) {
+        this.$noty.error(`Disconnect failed: ${e.message ?? e}`);
+      } finally {
+        this.$modal.hide('util-died-modal');
+      }
     },
     close() {
       this.$modal.hide('util-died-modal');

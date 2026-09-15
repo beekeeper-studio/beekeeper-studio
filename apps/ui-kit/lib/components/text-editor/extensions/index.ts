@@ -203,6 +203,9 @@ export function extensions(config: ExtensionConfiguration = {}) {
       ".cm-lineNumbers .cm-gutterElement": {
         color: "var(--bks-text-editor-linenumber-fg-color)",
       },
+      ".cm-lineNumbers .cm-activeLineGutter": {
+        color: "var(--bks-text-editor-linenumber-active-fg-color)",
+      },
       // Focused state
       "&.cm-focused": {
         outlineColor: "var(--bks-text-editor-focused-outline-color)",

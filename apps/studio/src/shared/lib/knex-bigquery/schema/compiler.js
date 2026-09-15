@@ -1,4 +1,4 @@
-import SchemaCompiler from 'knex/lib/schema/compiler';
+import SchemaCompiler from 'knex/lib/schema/compiler.js';
 
 class BQ_SchemaCompiler extends SchemaCompiler {
   /* 
