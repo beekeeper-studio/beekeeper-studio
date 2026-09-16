@@ -4,7 +4,7 @@
       <span
         v-if="!hideToggle"
         @click.prevent="toggleContent = !toggleContent"
-        class="btn btn-link btn-fab btn-toggle"
+        class="btn btn-link btn-icon btn-toggle"
       >
         <i class="material-icons">{{ toggleIcon }}</i>
       </span>

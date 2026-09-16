@@ -7,7 +7,7 @@
       <div class="dialog-content">
         <div class="dialog-c-title flex flex-middle">Hidden Entities</div>
         <a
-          class="close-btn btn btn-fab"
+          class="close-btn btn btn-icon"
           href="#"
           @click.prevent="$emit('close')"
         >

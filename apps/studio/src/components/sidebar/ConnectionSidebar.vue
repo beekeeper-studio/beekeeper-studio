@@ -7,7 +7,7 @@
       <div class="btn-wrap quick-connect">
         <a
           href=""
-          class="btn btn-flat btn-icon btn-block"
+          class="btn btn-flat btn-block"
           data-testid="new-connection"
           @click.prevent="$emit('create')"
         >
@@ -195,7 +195,7 @@
                       v-if="isCloud"
                     >
                       <a
-                        class="btn btn-flat btn-block btn-icon"
+                        class="btn btn-flat btn-block"
                         @click.prevent="importFromLocal"
                         title="Import connections from local workspace"
                       ><i class="material-icons">save_alt</i> Import</a>

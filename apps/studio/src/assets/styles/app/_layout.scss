@@ -98,6 +98,30 @@ hr {
 .btn {
   @include btn;
 }
+a.btn-icon {
+  color: inherit;
+}
+// Icon-only button.
+.btn-icon {
+  width: $input-height;
+  min-width: $input-height;
+  padding: 0;
+  margin: 0;
+  border-radius: 50%;
+  box-shadow: none;
+  color: var(--btn-icon-fg);
+  @include noselect;
+  &:hover, &:focus {
+    background: var(--btn-ghost-bg-hover);
+    color: var(--btn-icon-fg-hover);
+  }
+  .material-icons, .material-icons-outlined {
+    font-size: 20px;
+  }
+}
+x-buttons > x-button[menu].btn {
+  border-left: 1px solid rgba(black, 0.35);
+}
 .btn-primary {
   --btn-fg: var(--btn-primary-fg);
   --btn-fg-hover: var(--btn-primary-fg-hover);
@@ -120,21 +144,6 @@ hr {
 }
 .btn-link {
   box-shadow: none;
-}
-.btn-icon {
-  color: var(--btn-icon-fg);
-  &:hover, &:focus {
-    color: var(--btn-icon-fg-hover);
-  }
-
-  .material-icons:first-child {
-    margin-right: $gutter-h * 0.65;
-    margin-left: 0;
-  }
-
-  .material-icons:last-child:not(:first-child) {
-    margin-left: $gutter-h * 0.65;
-  }
 }
 .btn-info {
   background: $brand-info;
@@ -173,44 +182,6 @@ x-buttons > x-button.btn-rounded {
   display: flex;
   justify-content: center;
   width: 100%;
-}
-a.btn-fab {
-  color: inherit;
-}
-.btn-fab {
-  $fab-size:   26px;
-
-  height: $fab-size;
-  min-width: $fab-size;
-  width: $fab-size;
-  height: $fab-size;
-  line-height: $fab-size;
-  border-radius: $fab-size;
-  padding: 0;
-  margin: 0;
-  text-align: center;
-  box-shadow: none;
-  @include noselect;
-  @include layout-center;
-  transition: background 0.15s ease-in-out;
-  &:hover, &:focus {
-    background: var(--btn-bg-hover);
-  }
-  .material-icons, .material-icons-outlined {
-    font-size: 20px;
-  }
-  &.btn-primary {
-    background: $theme-primary;
-    .material-icons {
-      color: rgba(black, 0.87);
-    }
-    &:hover, &:focus {
-      background: color.adjust($theme-primary, $lightness: -8%);
-      .material-icons {
-        color: rgba(black, 0.87);
-      }
-    }
-  }
 }
 .btn-group {
   margin-left: -0.25rem;

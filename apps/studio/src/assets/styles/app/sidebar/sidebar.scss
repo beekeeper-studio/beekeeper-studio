@@ -177,7 +177,7 @@
         &:hover, &:focus {
           box-shadow: none;
         }
-        &.btn-fab {
+        &.btn-icon {
           margin-right: 2px;
           line-height: 22px;
           height: 22px;
@@ -385,7 +385,7 @@
       background: var(--btn-bg-hover);
       .actions {
         display: flex;
-        .btn-fab {
+        .btn-icon {
           &.launch {
             display: inline-flex;
           }
@@ -429,7 +429,7 @@
       &.pinned {
         display: inline-flex;
       }
-      .btn-fab {
+      .btn-icon {
         &.launch {
           display: none;
         }
@@ -524,7 +524,7 @@
       background: var(--bg-subtle-a);
     }
   }
-  .btn-fab {
+  .btn-icon {
     min-width: 18px;
     width: 18px;
     height: 18px;
@@ -570,7 +570,7 @@
       padding-left: 0;
       border-radius: 4px;
       color: var(--btn-fg);
-      .btn-fab {
+      .btn-icon {
         display: inline-flex!important;
         margin-right: $gutter-h * 0.5;
       }

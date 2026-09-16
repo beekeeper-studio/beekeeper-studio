@@ -9,7 +9,7 @@
       </h3>
       <span class="expand" />
       <a
-        class="btn btn-primary btn-fab"
+        class="btn btn-primary btn-icon"
         @click.prevent="addRow"
         title="Add Field"
       ><i class="material-icons">add</i></a>
@@ -264,7 +264,7 @@ export default Vue.extend({
   $min-cell-width:         24px;
   $cell-font-size:         14px;
   $cell-padding:           0.6rem;
-  $btn-fab-size:           32px;
+  $btn-icon-size:           32px;
 
   .schema-builder {
 
@@ -272,10 +272,10 @@ export default Vue.extend({
     .schema-header {
       margin-bottom: $gutter-h;
       padding: 0 ($gutter-h * 0.5);
-      .btn-fab {
-        width: $btn-fab-size;
-        height: $btn-fab-size;
-        min-width: $btn-fab-size;
+      .btn-icon {
+        width: $btn-icon-size;
+        height: $btn-icon-size;
+        min-width: $btn-icon-size;
       }
       .table-title {
         margin: 0;

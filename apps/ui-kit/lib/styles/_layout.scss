@@ -98,6 +98,24 @@
   .btn {
     @include btn;
   }
+  // Icon-only button.
+  .btn-icon {
+    width: $input-height;
+    min-width: $input-height;
+    padding: 0;
+    margin: 0;
+    border-radius: 50%;
+    box-shadow: none;
+    color: var(--btn-icon-fg);
+    @include noselect;
+    &:hover, &:focus {
+      background: var(--btn-ghost-bg-hover);
+      color: var(--btn-icon-fg-hover);
+    }
+    .material-icons, .material-icons-outlined {
+      font-size: 20px;
+    }
+  }
   .btn-primary {
     --btn-fg: var(--btn-primary-fg);
     --btn-fg-hover: var(--btn-primary-fg-hover);
@@ -123,16 +141,6 @@
     box-shadow: none;
     &:hover, &:focus {
       background: rgba($theme-base, 0.06);
-    }
-  }
-  .btn-icon {
-    .material-icons:first-child {
-      margin-right: $gutter-h * 0.65;
-      margin-left: 0;
-    }
-
-    .material-icons:last-child {
-      margin-left: $gutter-h * 0.65;
     }
   }
   .btn-info {
@@ -162,39 +170,6 @@
     display: flex;
     justify-content: center;
     width: 100%;
-  }
-  .btn-fab {
-    $fab-size:   26px;
-
-    height: $fab-size;
-    min-width: $fab-size;
-    width: $fab-size;
-    height: $fab-size;
-    line-height: $fab-size;
-    border-radius: $fab-size;
-    padding: 0;
-    margin: 0;
-    text-align: center;
-    box-shadow: none;
-    @include noselect;
-    @include layout-center;
-    transition: background 0.15s ease-in-out;
-    .material-icons, .material-icons-outlined {
-      font-size: 20px;
-      color: $text-dark;
-    }
-    &.btn-primary {
-      background: $theme-primary;
-      .material-icons {
-        color: rgba(black, 0.87);
-      }
-      &:hover, &:focus {
-        background: color.adjust($theme-primary, $lightness: -8%);
-        .material-icons {
-          color: rgba(black, 0.87);
-        }
-      }
-    }
   }
   .btn-group {
     margin-left: -0.25rem;

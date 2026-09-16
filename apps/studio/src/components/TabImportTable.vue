@@ -64,7 +64,7 @@
             <span class="buttons">
               <a
                 @click.prevent="goBack"
-                class="btn btn-primary btn-icon"
+                class="btn btn-primary"
               >
                 <i class="material-icons">chevron_left</i>
                 <span>Try Again</span>

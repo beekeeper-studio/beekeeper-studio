@@ -112,7 +112,7 @@
                             @click="handleAction(action.onClick, control)"
                           >
                             <i
-                              class="material-icons btn-icon"
+                              class="material-icons"
                               v-if="action.icon"
                             >{{ callIfFunction(action.icon) }}</i>
                             <span v-if="action.value">{{ callIfFunction(action.value) }}</span>

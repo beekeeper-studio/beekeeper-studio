@@ -8,7 +8,7 @@
         <div class="dialog-c-title">
           Plugins
         </div>
-        <a class="close-btn btn btn-fab" href="#" @click.prevent="close">
+        <a class="close-btn btn btn-icon" href="#" @click.prevent="close">
           <i class="material-icons">clear</i>
         </a>
         <x-progressbar v-if="loadingPlugins" style="margin-top: -5px" />

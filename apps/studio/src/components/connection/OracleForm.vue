@@ -3,7 +3,7 @@
     <template v-if="$config.oracleSupported">
       <div class="advanced-connection-settings">
         <div class="flex flex-middle">
-          <span class="btn-link btn-fab" @click.prevent="oracleExpanded = !oracleExpanded">
+          <span class="btn-link btn-icon" @click.prevent="oracleExpanded = !oracleExpanded">
             <i v-if="!oracleExpanded" class="material-icons">keyboard_arrow_right</i>
             <i v-if="oracleExpanded" class="material-icons">keyboard_arrow_down</i>
           </span>

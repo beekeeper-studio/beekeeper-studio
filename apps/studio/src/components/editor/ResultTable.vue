@@ -33,13 +33,13 @@
       </div>
       <button
         type="submit"
-        class="btn btn-primary btn-fab"
+        class="btn btn-primary btn-icon"
         title="filter results table"
       >
         <i class="material-icons">search</i>
       </button>
       <button
-        class="close-btn btn btn-flat btn-fab"
+        class="close-btn btn btn-flat btn-icon"
         title="Close filter"
         @click="closeTableFilter"
       >
@@ -1179,7 +1179,7 @@ import { stringToTypedArray } from '@/common/utils'
     border-radius: 0.5rem;
     @include card-shadow;
 
-    .btn-fab {
+    .btn-icon {
       min-width: auto;
       width: 1.6rem;
       height: 1.5rem;

@@ -15,7 +15,7 @@
         >
         <div class="filter-actions">
           <button
-            class="btn btn-fab btn-link action-item"
+            class="btn btn-icon btn-link action-item"
             @click="clearFilter"
             v-if="filterQuery"
           >
@@ -24,7 +24,7 @@
 
           <button
             :title="entitiesHidden ? 'Filter active' : 'No filters'"
-            class="btn btn-fab btn-link action-item"
+            class="btn btn-icon btn-link action-item"
             :class="{active: entitiesHidden}"
             @click="openFilterMenu"
             menu

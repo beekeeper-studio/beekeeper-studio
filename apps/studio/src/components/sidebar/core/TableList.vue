@@ -23,7 +23,7 @@
             <x-button
               v-if="this.dialect != 'mongodb'"
               :title="entitiesHidden ? 'Filter active' : 'No filters'"
-              class="btn btn-fab btn-link action-item"
+              class="btn btn-icon btn-link action-item"
               :class="{active: entitiesHidden}"
               menu
             >

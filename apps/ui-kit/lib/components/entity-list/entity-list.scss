@@ -257,7 +257,7 @@
         .actions {
           display: flex;
 
-          .btn-fab {
+          .btn-icon {
             &.launch {
               display: inline-flex;
             }
@@ -315,7 +315,7 @@
           display: inline-flex;
         }
 
-        .btn-fab {
+        .btn-icon {
           &:hover {
             i {
               color: $theme-base;
@@ -414,7 +414,7 @@
       padding-left: $gutter-w * 2;
     }
 
-    .btn-fab {
+    .btn-icon {
       min-width: 18px;
       width: 18px;
       height: 18px;

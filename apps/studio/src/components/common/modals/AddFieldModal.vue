@@ -6,7 +6,7 @@
           <div class="dialog-c-title">
             Add Field
             <a
-              class="close-btn btn btn-fab"
+              class="close-btn btn btn-icon"
               href="#"
               @click.prevent="close"
             >

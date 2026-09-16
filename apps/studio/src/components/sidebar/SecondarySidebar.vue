@@ -13,7 +13,7 @@
         </x-tab>
       </x-tabs>
       <div class="actions">
-        <button class="close-btn btn btn-flat btn-fab" @click="$emit('close')">
+        <button class="close-btn btn btn-flat btn-icon" @click="$emit('close')">
           <i class="material-icons">close</i>
         </button>
       </div>

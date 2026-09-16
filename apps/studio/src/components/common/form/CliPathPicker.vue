@@ -75,7 +75,7 @@
           <div class="input-group-append">
             <a
               type="button"
-              class="btn btn-flat btn-icon"
+              class="btn btn-flat"
               :class="{ disabled }"
               v-tooltip="`Automatically find ${toolName}`"
               @click.prevent="!disabled && findCli(true)"

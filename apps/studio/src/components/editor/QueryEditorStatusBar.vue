@@ -90,7 +90,7 @@
     </x-button>
     <x-buttons v-if="canEdit && editing && changesCount > 0" class="pending-changes">
       <x-button
-        class="btn btn-primary btn-badge btn-icon"
+        class="btn btn-primary btn-badge"
         @click.prevent="saveChanges"
         v-tooltip="`Apply ${changesString}`"
       >
@@ -123,7 +123,7 @@
       <x-button
         v-if="canEdit && !editing"
         :disabled="results?.length === 0 || !resultEditable || usedConfig.readOnlyMode"
-        class="btn btn-flat btn-icon"
+        class="btn btn-flat"
         id="edit-data-btn"
         @click.prevent="editResults"
       >
@@ -139,7 +139,7 @@
       Stop Editing
     </x-button>
     <x-button
-      class="btn btn-flat btn-icon end"
+      class="btn btn-flat end"
       :disabled="results?.length === 0"
       menu
     >

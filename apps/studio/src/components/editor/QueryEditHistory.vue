@@ -23,7 +23,7 @@
       <header class="sub">
         <span>Query Edit History</span>
         <button
-          class="close-btn btn btn-flat btn-fab"
+          class="close-btn btn btn-flat btn-icon"
           type="button"
           aria-label="Close"
           @click="$emit('close')"

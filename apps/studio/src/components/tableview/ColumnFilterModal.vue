@@ -14,7 +14,7 @@
             Choose Columns To Display
           </div>
           <a
-            class="close-btn btn btn-fab"
+            class="close-btn btn btn-icon"
             href="#"
             @click.prevent="closeModal"
           >
@@ -96,7 +96,7 @@
             Cancel
           </button>
           <x-button
-            class="btn btn-primary btn-icon"
+            class="btn btn-primary"
             @click.prevent="onSubmit"
             v-tooltip="hasPendingChanges && anyChanges ? 'Heads up: This will discard pending data changes' : null"
             :disabled="noneSelected"
