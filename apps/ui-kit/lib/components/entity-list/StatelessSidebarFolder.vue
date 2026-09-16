@@ -12,7 +12,7 @@
         role="button"
         @click.prevent="$emit('expand', $event)"
       >
-        <span class="btn-fab open-close">
+        <span class="btn-icon open-close">
           <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
         </span>
         <i

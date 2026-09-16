@@ -71,10 +71,10 @@ $cell-success:           $row-add;
       display: flex;
       align-items: center;
       padding: 0;
-      .btn-fab {
+      .btn-icon {
         margin-left: $gutter-h;
       }
-      .btn-fab.btn-link {
+      .btn-icon.btn-link {
         margin-left: $gutter-w;
       }
     }
@@ -446,16 +446,16 @@ $cell-success:           $row-add;
   $cell-font-size:         13px;
   $cell-padding:           0.8rem;
   $row-gutter:             3px;
-  $btn-fab-size:           28px;
+  $btn-icon-size:           28px;
 
   .table-properties-wrap {
 
     // Schema Header
     .schema-header {
-      .btn-fab {
-        width: $btn-fab-size;
-        height: $btn-fab-size;
-        min-width: $btn-fab-size;
+      .btn-icon {
+        width: $btn-icon-size;
+        height: $btn-icon-size;
+        min-width: $btn-icon-size;
       }
       .title {
         margin: 0;

@@ -134,7 +134,7 @@
                   v-if="isCloud"
                 >
                   <a
-                    class="btn btn-flat btn-block btn-icon"
+                    class="btn btn-flat btn-block"
                     @click.prevent="importFromLocal"
                     title="Import queries from local workspace"
                   ><i class="material-icons">save_alt</i> Import</a>

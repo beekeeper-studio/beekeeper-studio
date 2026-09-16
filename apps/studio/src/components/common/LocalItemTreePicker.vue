@@ -389,7 +389,7 @@ label.checkbox-group {
           color: $text-dark;
         }
       }
-      &.btn-fab {
+      &.btn-icon {
         margin-right: 2px;
         line-height: 22px;
         height: 22px;

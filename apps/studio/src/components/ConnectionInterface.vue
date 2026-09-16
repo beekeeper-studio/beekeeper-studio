@@ -42,7 +42,7 @@
               <button
                 v-if="isCloud && !isNewConnection && !isPersonal"
                 type="button"
-                class="btn btn-link btn-icon btn-small share-btn"
+                class="btn btn-link btn-small share-btn"
                 @click="share"
               >
                 <i class="material-icons">share</i>

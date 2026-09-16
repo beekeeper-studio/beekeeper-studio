@@ -22,7 +22,7 @@
       <span>Default Key</span>
     </span>
     <button
-      class="btn btn-fab"
+      class="btn btn-icon"
       v-tooltip="'About Automatic mode'"
       type="button"
       @click.prevent="$modal.show('auto-mode-help')"
@@ -177,7 +177,7 @@ export default {
     }
   }
 
-  .btn-fab {
+  .btn-icon {
     margin: 0;
     min-width: 0;
     height: 1.2em;

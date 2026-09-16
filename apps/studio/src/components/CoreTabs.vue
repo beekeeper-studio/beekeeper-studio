@@ -32,10 +32,10 @@
       <span class="actions add-tab-group" id="add-tab-group">
         <a
           @click.prevent="createQuery(null)"
-          class="btn-fab add-query"
+          class="btn-icon add-query"
         ><i class=" material-icons">add</i></a>
         <x-button
-          class="btn-fab add-tab-dropdown"
+          class="btn-icon add-tab-dropdown"
           menu
           v-if="newTabDropdownItems.length > 1"
         >
@@ -58,7 +58,7 @@
       </span>
       <a
         @click.prevent="showUpgradeModal"
-        class="btn btn-brand btn-icon btn-upgrade"
+        class="btn btn-brand btn-upgrade"
         v-tooltip="'Upgrade for: backup/restore, import from file, larger query results, and more!'"
         v-if="$store.getters.isCommunity"
       >

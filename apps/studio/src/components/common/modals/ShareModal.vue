@@ -132,7 +132,7 @@
               </select>
             </div>
           </div>
-          <button class="btn btn-primary btn-icon add-btn" type="button"
+          <button class="btn btn-primary add-btn" type="button"
             :disabled="selectedMembers.length === 0 || savingGrants" @click="addSelectedMembers">
             <i class="material-icons">add</i>
             Add

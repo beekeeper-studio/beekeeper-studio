@@ -66,7 +66,7 @@
     >
       <template #left-actions>
         <x-button
-          class="btn btn-flat btn-icon"
+          class="btn btn-flat"
           @click="toggleTablePanel"
         >
           <i class="material-icons">{{ isTablePanelVisible ? 'remove' : 'table_view' }}</i>

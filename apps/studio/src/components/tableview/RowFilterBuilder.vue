@@ -19,7 +19,7 @@
       >
         <div class="btn-wrap" v-if="canBuilderFilter">
           <button
-            class="btn btn-flat btn-fab"
+            class="btn btn-flat btn-icon"
             type="button"
             @click.stop="toggleFilterMode"
             title="Toggle Filter Type"
@@ -48,7 +48,7 @@
         </div>
         <div class="btn-wrap">
           <button
-            class="btn btn-primary btn-fab"
+            class="btn btn-primary btn-icon"
             type="submit"
             title="Filter"
             v-if="!minimalMode"
@@ -64,7 +64,7 @@
         <div class="left-section">
           <div class="btn-wrap" v-if="canRawFilter">
             <button
-              class="btn btn-flat btn-fab"
+              class="btn btn-flat btn-icon"
               type="button"
               @click.stop="toggleFilterMode"
               title="Toggle Filter Type"
@@ -74,7 +74,7 @@
           </div>
           <span
             v-else
-            class="btn-fab filter-mode-spacer"
+            class="btn-icon filter-mode-spacer"
             aria-hidden="true"
           />
           <div
@@ -83,7 +83,7 @@
             :key="index"
           >
             <button
-              class="btn btn-flat btn-fab op-filter"
+              class="btn btn-flat btn-icon op-filter"
               type="button"
               :disabled="dialectData.disabledFeatures && dialectData.disabledFeatures.filterWithOR"
               @click.stop="filter.op = filter.op === 'AND' ? 'OR' : 'AND'"
@@ -117,12 +117,12 @@
         <div class="right-section">
           <div class="ghost-add-apply">
             <div class="btn-wrap">
-              <button class="btn btn-flat btn-fab">
+              <button class="btn btn-flat btn-icon">
                 <i class="material-icons">add</i>
               </button>
             </div>
             <div class="btn-wrap">
-              <button class="btn btn-primary btn-fab">
+              <button class="btn btn-primary btn-icon">
                 <i class="material-icons">search</i>
               </button>
             </div>
@@ -134,7 +134,7 @@
             >
               <button
                 v-if="filters.length > 1"
-                class="btn btn-flat btn-fab remove-filter"
+                class="btn btn-flat btn-icon remove-filter"
                 type="button"
                 title="Remove filter"
                 @click="removeFilter(-1)"
@@ -143,7 +143,7 @@
               </button>
               <div class="btn-wrap add-filter">
                 <button
-                  class="btn btn-flat btn-fab"
+                  class="btn btn-flat btn-icon"
                   type="button"
                   title="Add filter"
                   @click="addFilter"
@@ -156,7 +156,7 @@
                 ref="filterButtonWrapper"
               >
                 <button
-                  class="btn btn-primary btn-fab"
+                  class="btn btn-primary btn-icon"
                   type="submit"
                   title="Apply filter"
                 >
@@ -171,7 +171,7 @@
             :key="index"
           >
             <button
-              class="btn btn-flat btn-fab remove-filter"
+              class="btn btn-flat btn-icon remove-filter"
               type="button"
               title="Remove filter"
               @click="removeFilter(index)"

@@ -57,7 +57,7 @@
         </x-button>
         <x-button
           @click.stop
-          class="menu-btn btn btn-fab"
+          class="menu-btn btn btn-icon"
           v-if="plugin.installed"
         >
           <i class="material-icons">more_vert</i>

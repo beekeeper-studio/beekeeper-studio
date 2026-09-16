@@ -178,7 +178,6 @@ export default Vue.extend({
       return {
         'btn': true,
         'btn-primary': true,
-        'btn-icon': !!this.currentStep.nextButtonIcon,
         'end': !!this.currentStep.nextButtonIcon,
         'deactivated': !this.canContinue
       }

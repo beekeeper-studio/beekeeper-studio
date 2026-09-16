@@ -50,7 +50,7 @@ select {
   background: rgba($brand-info, 0.25);
 }
 
-.btn-link, .btn-fab {
+.btn-link, .btn-icon {
   box-shadow: none;
 }
 .connection-interface {
@@ -66,7 +66,7 @@ select {
   .filter {
     .filter-actions {
       x-button {
-        &.btn-fab {
+        &.btn-icon {
         margin-right: 2px;
         line-height: 22px;
         height: 22px;

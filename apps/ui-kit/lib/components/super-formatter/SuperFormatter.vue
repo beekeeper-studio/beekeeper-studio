@@ -20,7 +20,7 @@
         <button
           type="button"
           @click.prevent="addPreset"
-          class="menu-btn btn btn-fab"
+          class="menu-btn btn btn-icon"
         >
           <i class="material-icons">add_circle</i>
         </button>

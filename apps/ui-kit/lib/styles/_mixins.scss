@@ -23,6 +23,7 @@
 @mixin btn {
   display: inline-flex;
   align-items: center;
+  gap: 0.35rem;
   font-size: 12px;
   font-family: inherit;
   line-height: $input-height;
@@ -42,6 +43,10 @@
   text-align: center;
   cursor: pointer;
 
+  .material-icons, .material-icons-outlined {
+    font-size: 1rem;
+  }
+
   &:hover,
   &:focus {
     font-weight: 700;
@@ -58,15 +63,6 @@
     outline-color: $theme-base;
   }
 
-  &.btn-icon {
-    display: flex;
-    align-items: center;
-
-    i {
-      font-size: 1rem;
-      margin-left: -3px;
-    }
-  }
 }
 
 @mixin form-control {

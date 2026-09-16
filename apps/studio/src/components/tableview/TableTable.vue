@@ -54,7 +54,7 @@
       <div class="truncate statusbar-info">
         <x-button
           @click.prevent="openProperties"
-          class="btn btn-flat btn-icon end"
+          class="btn btn-flat end"
           title="View Structure"
         >
           Structure <i class="material-icons">north_east</i>
@@ -145,7 +145,7 @@
           </x-button>
           <x-buttons class="pending-changes">
             <x-button
-              class="btn btn-primary btn-badge btn-icon"
+              class="btn btn-primary btn-badge"
               @click.prevent="saveChanges"
               :disabled="running"
               :title="saveButtonText"

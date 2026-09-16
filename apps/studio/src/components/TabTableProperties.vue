@@ -62,7 +62,7 @@
             <div class="statusbar-info col flex expand">
               <x-button
                 @click.prevent="openData"
-                class="btn btn-flat btn-icon end"
+                class="btn btn-flat end"
                 title="View Data"
               >
                 Data <i class="material-icons">north_east</i>
