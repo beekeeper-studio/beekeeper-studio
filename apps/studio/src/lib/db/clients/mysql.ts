@@ -1170,20 +1170,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
   ): Promise<NgQueryResult[]> {
     const commands = this.identifyCommands(queryText);
 
-    if (commands.length <= 1) {
-      const res = await this.driverExecuteSingle(queryText, {
-        params: {},
-        rowsAsArray: options.rowsAsArray,
-        connection: options.connection,
-      });
-      if (!res.rows) {
-        return [];
-      }
-      return [
-        parseRowQueryResult(res.rows, res.columns, commands[0], options.rowsAsArray),
-      ];
-    }
-
     const results: NgQueryResult[] = [];
     for (let index = 0; index < commands.length; index++) {
       try {
