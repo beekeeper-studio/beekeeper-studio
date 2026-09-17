@@ -1,6 +1,6 @@
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { MysqlData } from "@shared/lib/dialects/mysql";
-import { CreateIndexSpec, Dialect, DropIndexSpec, SchemaItem, SchemaItemChange } from "@shared/lib/dialects/models";
+import { AlterTableSpec, CreateIndexSpec, Dialect, DropIndexSpec, SchemaItem, SchemaItemChange } from "@shared/lib/dialects/models";
 import _ from 'lodash'
 import { ExtendedTableColumn } from "@/lib/db/models";
 import rawLog from '@bksLogger';
@@ -268,6 +268,15 @@ export class MySqlChangeBuilder extends ChangeBuilderBase {
   alterComments() {
     // return nothing, do it all in alterColumns
     return []
+  }
+
+  // Table-level AUTO_INCREMENT, emitted as the trailing statement after column alterations.
+  // MySQL/MariaDB clamp it up to (max existing + 1); the UI re-reads the real value.
+  endSql(spec: AlterTableSpec): string | null {
+    if (spec.autoIncrement === undefined || spec.autoIncrement === null) return null
+    const value = Math.trunc(Number(spec.autoIncrement))
+    if (!Number.isFinite(value) || value <= 0) return null
+    return `ALTER TABLE ${this.tableName} AUTO_INCREMENT = ${value}`
   }
 
 }
