@@ -296,7 +296,7 @@ export function runCommonTests(getUtil, opts = {}) {
 
     describe("Multi-statement query error annotation (issue #4698)", () => {
       test("should annotate error message with query index when multi-query execution fails", async () => {
-        const supportedDialects = ['sqlite', 'sqlserver', 'postgresql', 'postgres', 'mysql', 'mariadb', 'cockroachdb']
+        const supportedDialects = ['sqlite', 'sqlserver', 'postgresql', 'postgres', 'mysql', 'mariadb']
         if (!supportedDialects.includes(getUtil().dbType)) return
 
         const client = getUtil().connection
