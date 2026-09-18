@@ -31,7 +31,7 @@ export default Vue.extend({
       return null
     },
     classes() {
-      if (this.error) return 'badge-danger'
+      if (this.error) return 'badge-solid badge-danger'
       return null
     }
   }

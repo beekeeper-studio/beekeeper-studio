@@ -8,6 +8,7 @@
       @opened="handleOpened"
       @closed="$emit('closed')"
       class="base-modal-root"
+      :style="{ '--base-modal-max-width': maxWidth }"
     >
       <x-progressbar v-if="loading" />
       <form
@@ -32,7 +33,9 @@
           </a>
         </div>
         <div class="base-modal-body">
-          <slot :close="close" :submit="() => $refs.form.requestSubmit()" />
+          <div class="base-modal-content">
+            <slot :close="close" :submit="() => $refs.form.requestSubmit()" />
+          </div>
         </div>
         <div class="base-modal-footer" v-if="$scopedSlots.footer">
           <slot name="footer" :close="close" />
@@ -66,23 +69,10 @@ export default Vue.extend({
     /** Show loading indicator */
     loading: Boolean,
     height: String,
-    /**
-     * When false there is no close button, and Escape, overlay clicks and
-     * stray `$modal.hide` calls are ignored: only `close()` (also exposed as
-     * the scoped slot prop) dismisses the modal. For dialogs that need an
-     * explicit decision, like the trial-ended prompt.
-     */
-    closable: {
-      type: Boolean,
-      default: true,
+    maxWidth: {
+      type: String,
+      default: "550px",
     },
-  },
-  data() {
-    return {
-      // Raised by close() for the duration of the hide call, so
-      // handleBeforeClose can tell an intentional close from an escape.
-      allowClose: false,
-    };
   },
   methods: {
     close() {
@@ -115,8 +105,10 @@ export default Vue.extend({
 .base-modal-root ::v-deep .v--modal {
   min-width: 36rem;
   min-height: 6rem;
-  max-width: 550px;
+  max-width: var(--base-modal-max-width);
   width: auto !important;
+  /* The form sizes itself; the box must not clip it or the bottom scrollbar is lost. */
+  max-height: none;
 }
 
 .base-modal {
@@ -184,11 +176,17 @@ export default Vue.extend({
   color: var(--btn-fg);
 }
 
+/* The body scrolls and the content carries the padding, so scrollbars sit on the edge. */
 .base-modal-body {
   flex: 1 1 auto;
   min-height: 0;
-  overflow-y: auto;
+  overflow: auto;
   width: 100%;
+}
+
+.base-modal-content {
+  width: max-content;
+  min-width: 100%;
   padding: 0 1.2rem 0.8rem;
 }
 

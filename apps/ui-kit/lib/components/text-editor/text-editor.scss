@@ -10,7 +10,7 @@
     font-family: $font-family-mono;
     font-size: var(--editor-font-size, 0.875rem);
     height: 100%;
-    background-color: var(--editor-bg);
+    background: var(--editor-bg);
     color: var(--editor-fg);
   }
 
@@ -120,8 +120,7 @@
 
   .cm-button {
     @include btn;
-    background-image: none; // reset cm style
-    background-color: var(--editor-button-bg);
+    background: var(--editor-button-bg);
     text-transform: capitalize;
   }
 
@@ -155,6 +154,7 @@
     }
 
     .cm-button {
+      @include btn;
       @include btn-flat;
     }
 
@@ -201,6 +201,7 @@
 
     &:hover:not([aria-selected]) {
       background-color: var(--panel-bg-hover);
+      background: var(--panel-bg-hover);
     }
 
     // Option type-based styling

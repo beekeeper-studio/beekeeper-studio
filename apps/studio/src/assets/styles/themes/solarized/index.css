@@ -16,4 +16,13 @@
 
   --border-subtle: var(--gray-a3);
   --border: var(--gray-a4);
+
+  --text-muted: var(--gray-a9);
+
+  /* Black reads better on these step-9 solids; orange and red keep white. */
+  --yellow-solid-fg: var(--black);
+  --blue-solid-fg: var(--black);
+  --green-solid-fg: var(--black);
+  --purple-solid-fg: var(--black);
+  --pink-solid-fg: var(--black);
 }

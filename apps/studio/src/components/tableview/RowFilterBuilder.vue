@@ -39,7 +39,7 @@
             >
             <button
               type="button"
-              class="clear btn-link"
+              class="clear"
               @click.prevent="filterRaw = ''"
             >
               <i class="material-icons">cancel</i>
@@ -48,7 +48,7 @@
         </div>
         <div class="btn-wrap">
           <button
-            class="btn btn-primary btn-icon"
+            class="btn btn-primary btn-icon btn-brand"
             type="submit"
             title="Filter"
             v-if="!minimalMode"
@@ -156,7 +156,7 @@
                 ref="filterButtonWrapper"
               >
                 <button
-                  class="btn btn-primary btn-icon"
+                  class="btn btn-primary btn-icon btn-brand"
                   type="submit"
                   title="Apply filter"
                 >

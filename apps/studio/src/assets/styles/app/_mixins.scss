@@ -50,6 +50,7 @@
 @mixin btn {
   display: inline-flex;
   align-items: center;
+  gap: 0.15rem;
   font-size: 12px;
   font-family: inherit;
   line-height: $input-height;
@@ -81,14 +82,6 @@
     background: var(--btn-bg-hover);
     color: var(--btn-fg-hover);
   }
-
-  &:focus-visible {
-    outline-style: solid;
-    outline-offset: 0.14rem;
-    outline-width: 2px;
-    outline-color: $theme-base;
-  }
-
 }
 
 @mixin form-control {
@@ -101,7 +94,6 @@
   line-height: $input-height;
   background: var(--input-bg);
   border-radius: $input-radius;
-  outline: none;
   box-shadow: none;
   width: 100%;
   transition: border-color 0.15s ease-in-out;

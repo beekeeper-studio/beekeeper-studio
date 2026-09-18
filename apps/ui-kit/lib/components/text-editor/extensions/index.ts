@@ -316,7 +316,7 @@ export function extensions(config: ExtensionConfiguration = {}) {
         borderColor: "transparent",
       },
       ".cm-tooltip-autocomplete ul li[aria-selected]": {
-        backgroundColor: "var(--panel-bg-active)",
+        backgroundColor: "var(--panel-bg-hover)",
         color: "var(--panel-fg)",
         padding: "0.2rem 0.4rem",
       },

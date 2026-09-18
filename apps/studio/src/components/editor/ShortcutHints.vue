@@ -56,7 +56,7 @@
       </template>
     </div>
     <button
-      class="btn btn-small btn-link btn-view-all"
+      class="btn btn-small btn-view-all"
       @click="openKeyboardShortcuts"
     >View all shortcuts ...</button>
   </div>

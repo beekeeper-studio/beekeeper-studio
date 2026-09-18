@@ -516,7 +516,7 @@ export default Vue.extend({
 
 <style scoped>
 .query-edit-history {
-  background-color: var(--query-editor-bg);
+  background: var(--query-editor-bg);
   display: flex;
   overflow: hidden;
 }

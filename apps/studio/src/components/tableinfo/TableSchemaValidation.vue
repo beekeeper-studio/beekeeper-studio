@@ -20,7 +20,7 @@
             <a
               @click.prevent="refresh"
               v-tooltip="$bksConfigUI.getKeybindingLabel('general.refresh')"
-              class="btn btn-link btn-icon"
+              class="btn btn-icon"
             ><i class="material-icons">refresh</i></a>
           </div>
         </div>

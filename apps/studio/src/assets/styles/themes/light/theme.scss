@@ -29,7 +29,6 @@ $editor-statusbar:         rgba($theme-base, 0.035);
 // Base Styles
 // -----------------------------------------
 select {
-  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(0,0,0, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
   option {
     &:hover {
       color: white;
@@ -50,7 +49,7 @@ select {
   background: rgba($brand-info, 0.25);
 }
 
-.btn-link, .btn-icon {
+.btn-icon {
   box-shadow: none;
 }
 .connection-interface {

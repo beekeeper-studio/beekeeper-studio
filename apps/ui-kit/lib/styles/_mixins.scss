@@ -56,11 +56,8 @@
     color: var(--btn-fg-hover);
   }
 
-  &:focus-visible {
-    outline-style: solid;
-    outline-offset: 0.14rem;
-    outline-width: 2px;
-    outline-color: $theme-base;
+  &:active {
+    background: var(--bg-active);
   }
 
 }
@@ -76,7 +73,6 @@
   background: var(--input-bg);
   border-radius: $input-radius;
   border: var(--input-border);
-  outline: none;
   box-shadow: none;
   width: 100%;
   transition: border-color 0.15s ease-in-out;

@@ -224,7 +224,7 @@ $button-height:     $statusbar-height * 0.72;
       appearance: none!important;
       font-weight: 600;
       font-size: 12px;
-      background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(0,0,0, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
+      background: var(--select-arrow) no-repeat scroll 98% 60% transparent !important;
       option {
         color: var(--text);
       }
@@ -259,14 +259,6 @@ $button-height:     $statusbar-height * 0.72;
         overflow: hidden;
         max-width: 30rem;
       }
-    }
-  }
-
-  .statusbar-item.hoverable {
-    color: inherit;
-    transition: opacity 0.2s ease-in-out;
-    &:hover {
-      opacity: 0.5;
     }
   }
 

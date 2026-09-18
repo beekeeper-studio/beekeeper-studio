@@ -127,7 +127,7 @@ $titlebar-actions-height:   30px;
 
 .titlebar-wrapper {
   padding-bottom: $gutter-h;
-  background-color: var(--titlebar-bg);
+  background: var(--titlebar-bg);
   color: var(--titlebar-fg);
   transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
   @at-root body.window-inactive .titlebar-wrapper {

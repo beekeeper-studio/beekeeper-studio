@@ -46,7 +46,7 @@
 
                 <div>
                   <x-button
-                    class="actions-btn btn btn-link btn-icon"
+                    class="actions-btn btn btn-icon"
                     title="actions"
                   >
                     <!-- <span>Actions</span> -->

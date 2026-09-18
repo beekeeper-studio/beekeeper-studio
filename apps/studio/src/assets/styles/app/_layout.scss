@@ -98,9 +98,6 @@ hr {
 .btn {
   @include btn;
 }
-a.btn-icon {
-  color: inherit;
-}
 // Icon-only button.
 .btn-icon {
   width: $input-height;
@@ -108,19 +105,61 @@ a.btn-icon {
   padding: 0;
   margin: 0;
   border-radius: 50%;
-  box-shadow: none;
-  color: var(--btn-icon-fg);
+  --btn-fg: var(--btn-icon-fg);
+  --btn-fg-hover: var(--btn-icon-fg-hover);
   @include noselect;
-  &:hover, &:focus {
-    background: var(--btn-ghost-bg-hover);
-    color: var(--btn-icon-fg-hover);
-  }
   .material-icons, .material-icons-outlined {
     font-size: 20px;
   }
 }
-x-buttons > x-button[menu].btn {
-  border-left: 1px solid rgba(black, 0.35);
+// Colour modifiers: retarget the variant tokens so they compose with ghost / flat / primary.
+.btn-brand {
+  --btn-fg: var(--primary-text);
+  --btn-fg-hover: var(--primary-text-contrast);
+  --btn-bg-hover: var(--primary-bg-hover-a);
+
+  --btn-flat-fg: var(--primary-text);
+  --btn-flat-fg-hover: var(--primary-text-contrast);
+  --btn-flat-bg: var(--primary-bg-a);
+  --btn-flat-bg-hover: var(--primary-bg-hover-a);
+
+  --btn-primary-fg: var(--primary-solid-fg);
+
+  --btn-primary-fg-hover: var(--primary-solid-fg-hover);
+  --btn-primary-bg: var(--primary-solid-bg);
+  --btn-primary-bg-hover: var(--primary-solid-bg-hover);
+}
+.btn-info {
+  --btn-fg: var(--info-text);
+  --btn-fg-hover: var(--info-text-contrast);
+  --btn-bg-hover: var(--info-bg-hover-a);
+
+  --btn-flat-fg: var(--info-text);
+  --btn-flat-fg-hover: var(--info-text-contrast);
+  --btn-flat-bg: var(--info-bg-a);
+  --btn-flat-bg-hover: var(--info-bg-hover-a);
+
+  --btn-primary-fg: var(--info-solid-fg);
+
+  --btn-primary-fg-hover: var(--info-solid-fg-hover);
+  --btn-primary-bg: var(--info-solid-bg);
+  --btn-primary-bg-hover: var(--info-solid-bg-hover);
+}
+.btn-danger {
+  --btn-fg: var(--danger-text);
+  --btn-fg-hover: var(--danger-text-contrast);
+  --btn-bg-hover: var(--danger-bg-hover-a);
+
+  --btn-flat-fg: var(--danger-text);
+  --btn-flat-fg-hover: var(--danger-text-contrast);
+  --btn-flat-bg: var(--danger-bg-a);
+  --btn-flat-bg-hover: var(--danger-bg-hover-a);
+
+  --btn-primary-fg: var(--danger-solid-fg);
+
+  --btn-primary-fg-hover: var(--danger-solid-fg-hover);
+  --btn-primary-bg: var(--danger-solid-bg);
+  --btn-primary-bg-hover: var(--danger-solid-bg-hover);
 }
 .btn-primary {
   --btn-fg: var(--btn-primary-fg);
@@ -129,36 +168,14 @@ x-buttons > x-button[menu].btn {
   --btn-bg-hover: var(--btn-primary-bg-hover);
   --btn-shadow: var(--btn-primary-shadow);
 }
-
-.btn-brand {
-  color: #181818;
-  background: $theme-primary;
-  &:hover, &:focus {
-    background: $theme-primary;
-    color: #000;
-  }
-}
-
 .btn-flat {
   @include btn-flat;
 }
-.btn-link {
-  box-shadow: none;
+x-buttons > x-button[menu].btn {
+  border-left: 1px solid rgba(black, 0.35);
 }
-.btn-info {
-  background: $brand-info;
-  color: rgba(black, 0.87);
-  &:hover, &:focus {
-    background: color.adjust($brand-info, $lightness: 8%);
-    color: rgba(black, 0.87);
-  }
-}
-.btn-danger {
-  &:hover {
-    background: $brand-danger;
-    color: white;
-  }
-}
+
+
 .btn-large {
   padding: 1.25em;
   font-size: 13px;
@@ -200,16 +217,8 @@ x-buttons > x-button.btn-rounded {
   &:hover, &:focus {
     opacity: $btn-disabled-opacity!important;
   }
-  &.btn-primary {
-    &:hover, &:focus {
-      background: $theme-base!important;
-    }
-  }
-  &.btn-flat {
-    &:hover, &:focus {
-     background: transparent!important;
-    }
-  }
+  --btn-fg-hover: var(--btn-fg);
+  --btn-bg-hover: var(--btn-bg);
 }
 
 // Inputs
@@ -326,7 +335,7 @@ input, select, textarea, .bk-form-input {
 select {
   -webkit-appearance: none;
   appearance: none;
-  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(255,255,255, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 65% transparent !important;
+  background: var(--select-arrow) no-repeat scroll 98% 65% var(--input-bg) !important;
   padding: 0 0.75rem;
   &.auto-width {
     // It should adjust when using `width: auto`, depending on the padding
@@ -354,10 +363,10 @@ select {
   border-radius: $input-radius;
   overflow: hidden;
   width: 100%;
-  box-shadow: inset 0 0 0 1px $border-color;
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
   transition: background 0.15s ease-in-out;
   &:hover {
-    background: rgba($theme-base, 0.05);
+    background: var(--gray-a3);
   }
   > select {
     border: 0;
@@ -426,8 +435,8 @@ input[type="radio"] {
   position: relative;
   display: inline-flex;
   -webkit-appearance: none;
-  background-color: transparent;
-  box-shadow: inset 0 0 0 2px rgba($theme-base, 0.2);
+  background-color: var(--checkbox-bg);
+  box-shadow: inset 0 0 0 2px var(--checkbox-border);
   height: $radio-size;
   line-height: 1;
   width: $radio-size;
@@ -439,8 +448,8 @@ input[type="radio"] {
   transition: background 0.2s ease-in-out;
   cursor: pointer;
   &:checked{
-    background: color.adjust($theme-primary, $lightness: -10%);
-    color: rgba(black, 0.87);
+    background: var(--checkbox-checked-bg);
+    color: var(--checkbox-checked-fg);
     box-shadow: none;
   }
 }
@@ -677,6 +686,8 @@ input[type=file] {
   text-align: center;
   white-space: nowrap;
   vertical-align: baseline;
+  --badge-bg: var(--badge-flat-bg);
+  --badge-fg: var(--badge-flat-fg);
   background: var(--badge-bg);
   color: var(--badge-fg);
 
@@ -685,18 +696,35 @@ input[type=file] {
               background-color 0.15s ease-in-out,
               border-color 0.15s ease-in-out,
               box-shadow 0.15s ease-in-out;
-  &.badge-info {
-    background: var(--info-solid-bg);
-    color: var(--info-solid-fg);
-  }
-  &.badge-error, &.badge-danger {
-    background: var(--danger-solid-bg);
-    color: var(--danger-solid-fg);
-  }
-  &.badge-success {
-    background: var(--success-solid-bg);
-    color: var(--success-solid-fg);
-  }
+}
+// Colour modifiers retarget the badge tokens so they compose with flat / solid.
+.badge-info {
+  --badge-flat-bg: var(--info-bg-a);
+  --badge-flat-fg: var(--info-text);
+  --badge-solid-bg: var(--info-solid-bg);
+  --badge-solid-fg: var(--info-solid-fg);
+}
+.badge-success {
+  --badge-flat-bg: var(--success-bg-a);
+  --badge-flat-fg: var(--success-text);
+  --badge-solid-bg: var(--success-solid-bg);
+  --badge-solid-fg: var(--success-solid-fg);
+}
+.badge-warning {
+  --badge-flat-bg: var(--warning-bg-a);
+  --badge-flat-fg: var(--warning-text);
+  --badge-solid-bg: var(--warning-solid-bg);
+  --badge-solid-fg: var(--warning-solid-fg);
+}
+.badge-error, .badge-danger {
+  --badge-flat-bg: var(--danger-bg-a);
+  --badge-flat-fg: var(--danger-text);
+  --badge-solid-bg: var(--danger-solid-bg);
+  --badge-solid-fg: var(--danger-solid-fg);
+}
+.badge-solid {
+  --badge-bg: var(--badge-solid-bg);
+  --badge-fg: var(--badge-solid-fg);
 }
 
 // Alerts
@@ -726,7 +754,8 @@ input[type=file] {
   align-items: flex-start;
   border-radius: 6px;
   padding: 0.75rem 1rem;
-  background: var(--bg-a);
+  background: var(--alert-bg);
+  color: var(--alert-fg);
   margin: 0.5rem 0;
   font-size: 0.85rem;
   line-height: 1.2rem;
@@ -772,17 +801,22 @@ input[type=file] {
   // icon against the text.
   align-items: center;
 }
-.alert-danger {
-  color: var(--danger-text);
-}
-.alert-warning {
-  color: var(--warning-text);
-}
+// Colour modifiers retarget the alert tokens.
 .alert-info {
-  color: var(--info-text);
+  --alert-bg: var(--info-bg-a);
+  --alert-fg: var(--info-text);
 }
 .alert-success {
-  color: var(--success-text);
+  --alert-bg: var(--success-bg-a);
+  --alert-fg: var(--success-text);
+}
+.alert-warning {
+  --alert-bg: var(--warning-bg-a);
+  --alert-fg: var(--warning-text);
+}
+.alert-danger {
+  --alert-bg: var(--danger-bg-a);
+  --alert-fg: var(--danger-text);
 }
 .alert-small {
   align-items: center;

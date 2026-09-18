@@ -30,6 +30,37 @@
   --dracula-background-dark: #CECCC0;
   --dracula-background-darker: #BCBAB3;
 
+  /* Primary is purple. */
+  --primary-1: var(--purple-1);
+  --primary-2: var(--purple-2);
+  --primary-3: var(--purple-3);
+  --primary-4: var(--purple-4);
+  --primary-5: var(--purple-5);
+  --primary-6: var(--purple-6);
+  --primary-7: var(--purple-7);
+  --primary-8: var(--purple-8);
+  --primary-9: var(--purple-9);
+  --primary-10: var(--purple-10);
+  --primary-11: var(--purple-11);
+  --primary-12: var(--purple-12);
+  --primary-a1: var(--purple-a1);
+  --primary-a2: var(--purple-a2);
+  --primary-a3: var(--purple-a3);
+  --primary-a4: var(--purple-a4);
+  --primary-a5: var(--purple-a5);
+  --primary-a6: var(--purple-a6);
+  --primary-a7: var(--purple-a7);
+  --primary-a8: var(--purple-a8);
+  --primary-a9: var(--purple-a9);
+  --primary-a10: var(--purple-a10);
+  --primary-a11: var(--purple-a11);
+  --primary-a12: var(--purple-a12);
+  --primary-solid-fg: var(--purple-solid-fg);
+  --primary-solid-fg-hover: var(--purple-solid-fg);
+
+  /* Light step-9s are dark, so white sits on all of them, yellow included. */
+  --yellow-solid-fg: var(--white);
+
   --app-bg: var(--dracula-background);
   --app-fg: var(--dracula-foreground);
 
@@ -47,19 +78,25 @@
 
   --sidebar-bg: var(--dracula-background-dark);
   --sidebar-fg: var(--dracula-foreground);
+  --input-bg: var(--dracula-background);
+  --input-border: 1px solid var(--gray-a1);
+  --input-border-focus: 1px solid var(--dracula-comment);
 
-  --panel-bg: var(--dracula-background);
+  --panel-bg: var(--dracula-background-dark);
   --panel-fg: var(--dracula-foreground);
+  --panel-bg-hover: var(--dracula-background-lighter);
 
-  --badge-bg: var(--dracula-background-light);
-  --badge-fg: var(--dracula-foreground);
+  --btn-flat-bg: rgb(from var(--dracula-foreground) r g b / 0.2);
+  --btn-flat-bg-hover: rgb(from var(--dracula-foreground) r g b / 0.1);
+  --btn-flat-fg: var(--dracula-foreground);
+  --btn-flat-fg-hover: var(--dracula-foreground);
+
+  --badge-flat-bg: var(--dracula-background-light);
+  --badge-flat-fg: var(--dracula-foreground);
 
   --statusbar-bg: var(--dracula-background-dark);
   --statusbar-fg: var(--dracula-foreground);
   --statusbar-fg-inverse: var(--dracula-background);
-
-  /* Light step-9s are dark, so white sits on all of them, yellow included. */
-  --yellow-solid-fg: var(--white);
 
   --tabs-header-bg: var(--dracula-background-dark);
   --tab-bg: var(--dracula-background-darker);
@@ -95,4 +132,6 @@
 
   --btn-flat-bg: var(--gray-a4);
   --btn-flat-bg-hover: var(--gray-a5);
+
+  --alert-bg: var(--bg-hover-a);
 }
