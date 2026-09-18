@@ -69,7 +69,7 @@
           @click="refreshTable"
           tabindex="0"
           role="button"
-          class="statusbar-item hoverable"
+          class="btn statusbar-item"
           v-if="lastUpdatedText && !error && !minimalMode"
           :title="'Updated' + ' ' + lastUpdatedText"
         >
@@ -182,7 +182,7 @@
         </template>
         <span
           v-else-if="hiddenColumnCount"
-          class="hidden-column-count statusbar-item hoverable"
+          class="btn hidden-column-count statusbar-item"
           v-tooltip="hiddenColumnMessage"
         >
           <a
@@ -1112,7 +1112,7 @@ export default Vue.extend({
       return `
         <span class="title">
           ${escapeHtml(columnName)}
-          <span class="badge column-data-type">${escapeHtml(dataType)}</span>
+          <span class="column-data-type">${escapeHtml(dataType)}</span>
         </span>`
     },
     maybeScrollAndSetWidths() {

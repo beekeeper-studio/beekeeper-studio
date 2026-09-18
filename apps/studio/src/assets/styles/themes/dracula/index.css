@@ -78,6 +78,12 @@
 
   --sidebar-bg: var(--dracula-background-dark);
   --sidebar-fg: var(--dracula-foreground);
+  --sidebar-rail-bg: var(--dracula-background-light);
+  --sidebar-rail-fg: var(--dracula-comment);
+  --sidebar-rail-fg-hover: var(--dracula-foreground);
+  --sidebar-rail-active-fg: var(--dracula-foreground);
+  --sidebar-rail-active-bg: rgb(from var(--dracula-purple) r g b / 0.2);
+
   --input-bg: var(--dracula-background);
   --input-border: 1px solid var(--gray-a1);
   --input-border-focus: 1px solid var(--dracula-comment);
@@ -98,8 +104,11 @@
   --statusbar-fg: var(--dracula-foreground);
   --statusbar-fg-inverse: var(--dracula-background);
 
-  --tabs-header-bg: var(--dracula-background-dark);
+  --tabs-header-bg: var(--titlebar-bg);
   --tab-bg: var(--dracula-background-darker);
+  --tab-fg: var(--dracula-comment);
+  --tab-active-bg: var(--dracula-background);
+  --tab-active-fg: var(--dracula-foreground);
 }
 
 /* Dark step-9s are bright pastels, so black sits on all of them. */
@@ -132,6 +141,10 @@
 
   --btn-flat-bg: var(--gray-a4);
   --btn-flat-bg-hover: var(--gray-a5);
+
+  --table-header-highlight-bg: var(--dracula-background-light);
+  --table-cell-bg-hover: var(--bg-hover-a);
+  --table-cell-selected-bg: var(--bg-active-a);
 
   --alert-bg: var(--bg-hover-a);
 }
