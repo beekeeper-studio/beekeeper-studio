@@ -2,7 +2,9 @@
   .global-items {
     display: flex;
     flex-direction: column;
-    background: var(--sidebar-bg);
+    background: var(--sidebar-rail-bg);
+    color: var(--sidebar-rail-fg);
+    border-radius: 0 6px 6px 0;
     &:hover {
       .nav-item {
         &.refresh {
@@ -11,13 +13,11 @@
       }
     }
     &.workspace-items {
-      margin-top: $gutter-h * 0.5;
-
       .nav-item {
         &.active {
           .avatar {
             box-shadow: none;
-            background: var(--btn-bg-active);
+            background: var(--bg-active);
           }
         }
         .workspace-avatar {
@@ -90,12 +90,15 @@
       height: 44px;
       font-size: 18px;
       transition: color 0.15s ease-in-out;
-      color: var(--solid-bg);
+      color: var(--sidebar-rail-fg);
       &:hover {
-        color: var(--solid-bg-hover);
+        color: var(--sidebar-rail-fg-hover);
       }
       &.active {
-        color: var(--text);
+        color: var(--sidebar-rail-active-fg);
+        > span {
+          background: var(--sidebar-rail-active-bg);
+        }
       }
       > span {
         height: $nav-item-size;

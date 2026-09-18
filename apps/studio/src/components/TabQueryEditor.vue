@@ -97,7 +97,10 @@
         class="toolbar text-right"
         ref="toolbar"
       >
-        <div class="actions secondary-actions">
+        <div
+          class="actions secondary-actions"
+          @wheel="scrollSecondaryActions"
+        >
           <div v-if="canManageTransactions">
             <transition name="fade-swap">
               <x-buttons
@@ -1148,6 +1151,14 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       }
     },
     methods: {
+      scrollSecondaryActions(e: WheelEvent) {
+        const el = e.currentTarget as HTMLElement
+        if (!e.shiftKey || e.deltaX !== 0 || el.scrollWidth <= el.clientWidth) {
+          return
+        }
+        e.preventDefault()
+        el.scrollBy({ left: e.deltaY, behavior: "smooth" })
+      },
       ...mapActions({
         reloadQuery: "data/queries/reload",
         listQueryAudits: "data/queryAudits/list",
@@ -2279,16 +2290,6 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 
   label[for="commit-mode"] {
     color: var(--text);
-  }
-
-  #commit-mode > x-button {
-    color: color-mix(in srgb, var(--theme-base) 60%, var(--query-editor-bg));
-    background: color-mix(in srgb, var(--theme-base) 6%, var(--query-editor-bg));
-
-    &[toggled] .togglebutton-content {
-      color: var(--theme-base);
-      background: color-mix(in srgb, var(--theme-base) 15%, var(--query-editor-bg));
-    }
   }
 
   .manual-commit-notice {

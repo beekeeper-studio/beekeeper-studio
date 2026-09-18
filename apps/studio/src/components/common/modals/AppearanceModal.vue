@@ -235,7 +235,7 @@ export default Vue.extend({
   line-height: 1.6;
   min-width: 0;
   color: var(--app-fg);
-  background-color: var(--app-bg);
+  background: var(--app-bg);
 
   .titlebar-preview {
     display: flex;
@@ -244,7 +244,7 @@ export default Vue.extend({
     padding-block: 0.3em;
     font-size: 0.85em;
     color: var(--titlebar-fg);
-    background-color: var(--titlebar-bg);
+    background: var(--titlebar-bg);
   }
 
   .statusbar-preview {
@@ -282,7 +282,7 @@ export default Vue.extend({
     padding: 0.5em 0.75em;
     font-size: 0.85em;
     color: var(--sidebar-fg);
-    background-color: var(--sidebar-bg);
+    background: var(--sidebar-bg);
 
     .heading {
       font-weight: bold;
@@ -323,7 +323,7 @@ export default Vue.extend({
     display: flex;
     gap: 1px;
     padding: 0.5em 0.5em 0;
-    background-color: var(--tabs-header-bg);
+    background: var(--tabs-header-bg);
 
     .tab {
       display: flex;
@@ -333,7 +333,7 @@ export default Vue.extend({
       font-size: 0.85em;
       border-radius: 4px 4px 0 0;
       color: var(--tab-fg);
-      background-color: var(--tab-bg);
+      background: var(--tab-bg);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -341,7 +341,7 @@ export default Vue.extend({
       &.active {
         font-weight: 600;
         color: var(--tab-active-fg);
-        background-color: var(--tab-active-bg);
+        background: var(--tab-active-bg);
       }
 
       .material-icons {
@@ -427,7 +427,7 @@ export default Vue.extend({
     border-radius: 0.5em;
     font-weight: bold;
     color: var(--btn-primary-fg);
-    background-color: var(--btn-primary-bg);
+    background: var(--btn-primary-bg);
   }
 }
 </style>

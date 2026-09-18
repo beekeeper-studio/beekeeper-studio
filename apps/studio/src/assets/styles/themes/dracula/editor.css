@@ -11,7 +11,6 @@
   --dracula-indent-guide-active: rgb(from #2c2b31 r g b / 0.38);
   --dracula-linenumber-active: #a3144d;
 
-  --editor-bg: var(--dracula-background);
   --editor-fg: var(--dracula-foreground);
   --editor-cursor-bg: var(--dracula-foreground);
   --editor-selected-bg: var(--dracula-selection);
@@ -68,8 +67,8 @@
   --editor-type-fg: var(--dracula-cyan);
   --editor-typeName-fg: var(--dracula-cyan);
   --editor-typeParameter-fg: var(--dracula-orange);
-  --editor-class-fg: var(--dracula-cyan);
-  --editor-className-fg: var(--dracula-cyan);
+  --editor-class-fg: var(--dracula-green);
+  --editor-className-fg: var(--dracula-green);
   --editor-interface-fg: var(--dracula-cyan);
   --editor-struct-fg: var(--dracula-cyan);
   --editor-enum-fg: var(--dracula-cyan);
@@ -100,8 +99,8 @@
   --editor-labelName-fg: var(--dracula-comment);
 
   --editor-operator-fg: var(--dracula-pink);
-  --editor-punctuation-fg: var(--dracula-pink);
-  --editor-separator-fg: var(--dracula-pink);
+  --editor-punctuation-fg: var(--dracula-foreground);
+  --editor-separator-fg: var(--dracula-foreground);
   --editor-bracket-fg: var(--dracula-foreground);
   --editor-strong-fg: var(--dracula-orange);
   --editor-emphasis-fg: var(--dracula-yellow);
@@ -128,6 +127,10 @@
   --mongo-shell-ansi-output-fg: var(--dracula-foreground);
 }
 
+.theme-dracula.light-theme {
+  --editor-bg: #fffdf5;
+}
+
 .theme-dracula.dark-theme {
   --dracula-word-highlight: rgb(from #8be9fd r g b / 0.31);
   --dracula-search-match: rgb(from #ffffff r g b / 0.25);
@@ -135,8 +138,11 @@
   --dracula-matching-bracket: #44475a;
   --dracula-indent-guide: rgb(from #ffffff r g b / 0.1);
   --dracula-indent-guide-active: rgb(from #ffffff r g b / 0.27);
-  --dracula-linenumber-active: #f8f8f2;
+  --dracula-linenumber-active: var(--dracula-pink);
 
-  --editor-activeline-bg: var(--dracula-current-line);
-  --editor-activeline-gutter-bg: var(--dracula-current-line);
+  --editor-bg: var(--dracula-background);
+  --editor-gutter-bg: var(--dracula-background);
+  --editor-activeline-bg: var(--dracula-selection);
+  --editor-activeline-gutter-bg: var(--dracula-selection);
+  --editor-linenumber-fg: rgb(144, 145, 148);
 }
