@@ -13,7 +13,7 @@
   list-style: none;
   position: absolute;
   z-index: 1000000;
-  background-color: var(--panel-bg);
+  background: var(--panel-bg);
   color: var(--panel-fg);
   padding: ($gutter-h * 0.75) 0;
   border-radius: 6px;
@@ -72,6 +72,10 @@
   line-height: 24px;
   width: 24px;
   opacity: 0.6;
+}
+
+.BksContextMenu-item-trailing-icon i {
+  text-align: center;
 }
 
 .BksContextMenu-item-submenu-icon i {

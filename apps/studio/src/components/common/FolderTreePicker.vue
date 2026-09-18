@@ -185,16 +185,16 @@ export default Vue.extend({
   border: none;
   border-radius: 4px;
   background: transparent;
-  color: rgb(from var(--theme-base) r g b / 77%);
+  color: var(--text-muted);
   font: inherit;
   cursor: pointer;
 
   &:hover {
-    background: rgb(from var(--theme-base) r g b / 3.5%);
+    background: var(--btn-bg-hover);
   }
 
   &.selected {
-    background: rgb(from var(--theme-base) r g b / 8%);
+    background: var(--bg-active-a);
 
     &::before {
       position: absolute;
@@ -204,7 +204,7 @@ export default Vue.extend({
       width: 3px;
       border-radius: 9999px;
       content: "";
-      background: var(--theme-secondary);
+      background: var(--primary-solid-bg);
     }
   }
 
@@ -213,8 +213,7 @@ export default Vue.extend({
   &:focus-visible,
   &:has(:focus-visible),
   &:has(.folder-radio:focus-visible) {
-    outline: 2px solid var(--theme-base);
-    outline-offset: -2px;
+    outline: var(--focus-ring);
   }
 
   &::v-deep .BksTree-folder {
@@ -250,7 +249,6 @@ input[type="radio"].folder-radio {
 
 .folder-icon {
   flex-shrink: 0;
-  color: rgb(from var(--theme-base) r g b / 37%);
 }
 
 .folder-name {

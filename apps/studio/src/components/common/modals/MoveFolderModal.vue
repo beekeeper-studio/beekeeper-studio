@@ -266,7 +266,7 @@ export default Vue.extend({
       width: 3px;
       border-radius: 9999px;
       content: "";
-      background: var(--theme-secondary);
+      background: var(--primary-solid-bg);
     }
   }
 

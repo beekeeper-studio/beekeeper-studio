@@ -8,7 +8,7 @@
     :class="classes"
   >
     <x-button
-      class="btn btn-link"
+      class="btn"
       menu
     >
       <i class="material-icons">link</i>

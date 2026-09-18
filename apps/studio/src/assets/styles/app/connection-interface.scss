@@ -84,7 +84,7 @@
   .save-connection {
     margin-top: ($gutter-w * 1.25);
     padding-top: ($gutter-w * 1.25);
-    border-top: 1px solid $border-color;
+    border-top: 1px solid var(--border-subtle);
     h3 {
       margin: 0 0 $gutter-h;
     }

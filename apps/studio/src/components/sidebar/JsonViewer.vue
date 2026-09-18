@@ -19,7 +19,7 @@
           >
           <button
             type="button"
-            class="clear btn-link"
+            class="clear"
             @click="setFilter('')"
             v-if="filter"
           >

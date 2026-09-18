@@ -22,7 +22,7 @@
                 class="text-light"
                 v-tooltip="filterTooltip"
               >(Filtered)</span>
-              <span class="badge badge-info">Beta</span>
+              <span class="badge badge-solid badge-info">Beta</span>
             </div>
           </div>
 

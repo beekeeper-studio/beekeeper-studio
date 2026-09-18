@@ -90,22 +90,17 @@ $families: (
       }
     }
 
-    // Text on a step-9 solid. Yellow is the one hue too bright for white.
+    // Text on a step-9 solid. Themes override per hue; families follow their hue.
     @each $hue in $hues {
       --#{$hue}-solid-fg: var(--white);
     }
     --yellow-solid-fg: var(--black);
 
-    @each $family in info, success, warning, danger {
-      --#{$family}-solid-fg: var(--white);
-      --#{$family}-solid-fg-hover: var(--white);
+    @each $family, $hue in $families {
+      --#{$family}-solid-fg: var(--#{$hue}-solid-fg);
+      --#{$family}-solid-fg-hover: var(--#{$hue}-solid-fg);
     }
-
-    // We add primary fg because the primary color can be very bright (like yellow).
-    // So by default, this is dark, to contrast with yellow, but a custom theme
-    // can change this if the primary is not a bright color.
-    --primary-solid-fg: var(--text-contrast);
-    --primary-solid-fg-a: var(--text-contrast-a);
+    --primary-solid-fg-a: var(--primary-solid-fg);
 
     --border-color: var(--border-subtle);
     --text-muted: var(--gray-10);
@@ -119,6 +114,7 @@ $families: (
 
     --app-bg: var(--bg-base);
     --app-fg: var(--text);
+    --focus-ring: 2px solid var(--border-a);
 
     // ===== Button =====
 
@@ -146,7 +142,7 @@ $families: (
 
     // ===== Icon Button =====
 
-    --btn-icon-fg: var(--gray-a9);
+    --btn-icon-fg: var(--gray-a10);
     --btn-icon-fg-hover: var(--gray-a11);
 
     // ===== Input =====
@@ -155,6 +151,10 @@ $families: (
     --input-fg: var(--text);
     --input-border: 1px solid var(--border-subtle);
     --input-border-focus: 1px solid var(--border-hover);
+
+    // ===== Select =====
+
+    --select-arrow: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(0,0,0, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>");
 
     // ===== Checkbox =====
 
@@ -201,10 +201,22 @@ $families: (
 
     --overlay-bg: rgb(from var(--gray-1) r g b / 0.9);
 
+    // ===== Tree =====
+
+    --tree-guide-border: transparent;
+    --tree-guide-border-hover: var(--gray-a3);
+
+    // ===== Alert =====
+
+    --alert-bg: var(--bg-a);
+    --alert-fg: var(--text);
+
     // ===== Badge =====
 
-    --badge-bg: var(--gray-a3);
-    --badge-fg: var(--gray-a11);
+    --badge-flat-bg: var(--gray-a3);
+    --badge-flat-fg: var(--gray-a11);
+    --badge-solid-bg: var(--gray-12);
+    --badge-solid-fg: var(--gray-1);
 
     // ===== Statusbar =====
 
@@ -264,7 +276,9 @@ $families: (
   }
 
   .dark-theme {
+    --select-arrow: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(255,255,255, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>");
     --btn-primary-fg: var(--gray-2);
+    --btn-primary-fg-hover: var(--gray-2);
     --btn-primary-bg: var(--white);
   }
 }

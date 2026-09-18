@@ -183,7 +183,7 @@ export default Vue.extend({
   position: sticky;
   top: 0;
   z-index: 1;
-  background-color: var(--panel-bg);
+  background: var(--panel-bg);
   margin-bottom: 0.75rem;
 }
 

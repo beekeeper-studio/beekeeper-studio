@@ -387,7 +387,7 @@ export default Vue.extend({
     margin: 0;
     overflow-x: scroll;
     overflow-y: auto;
-    background-color: var(--query-editor-bg);
+    background: var(--query-editor-bg);
     border-radius: 8px;
     user-select: text;
     cursor: text;

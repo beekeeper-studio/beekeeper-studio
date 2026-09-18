@@ -119,6 +119,7 @@
     </x-buttons>
     <span
       v-tooltip="editButtonTooltip"
+      class="inline-flex"
     >
       <x-button
         v-if="canEdit && !editing"

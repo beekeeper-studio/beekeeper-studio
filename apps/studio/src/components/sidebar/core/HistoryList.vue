@@ -68,7 +68,7 @@
       </nav>
     </div>
     <!-- <div class="toolbar btn-group row flex-right" v-show="checkedHistoryQueries.length > 0">
-      <a class="btn btn-link" @click="discardCheckedHistoryQueries">Cancel</a>
+      <a class="btn" @click="discardCheckedHistoryQueries">Cancel</a>
       <a class="btn btn-primary" :title="removeTitle" @click="removeCheckedHistoryQueries">Remove</a>
     </div> -->
   </div>

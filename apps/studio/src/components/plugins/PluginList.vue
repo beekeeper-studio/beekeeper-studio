@@ -115,7 +115,7 @@ export default Vue.extend({
 <style scoped>
 .material-icons.verified-icon {
   font-size: 1em;
-  color: var(--theme-secondary);
+  color: var(--primary-text);
   margin-left: 0.5ch;
 }
 </style>

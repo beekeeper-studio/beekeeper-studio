@@ -45,6 +45,10 @@ body {
   background: var(--app-bg);
   color: var(--app-fg);
 }
+:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 0.14rem;
+}
 .material-icons, .material-icons-outlined {
   transform: rotate(0.03deg);
 }
@@ -66,5 +70,6 @@ input, select, textarea {
   border: var(--input-border);
   &:focus {
     border: var(--input-border-focus);
+    outline: none;
   }
 }
