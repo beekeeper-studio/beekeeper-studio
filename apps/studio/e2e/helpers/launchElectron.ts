@@ -19,5 +19,13 @@ export async function launchElectron() {
 
   }
 
+  // A fresh install auto-starts the free trial and opens a welcome dialog;
+  // dismiss it so the connection screen is clickable.
+  try {
+    await win.getByRole('button', { name: 'Start exploring' }).click({ timeout: 1500 })
+  } catch(e) {
+
+  }
+
   return app;
 }

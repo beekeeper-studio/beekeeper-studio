@@ -87,6 +87,7 @@
 
 <script>
   import { mapGetters, mapState, mapMutations } from 'vuex'
+  import { recordPaidFeatureUse } from '@/lib/paidFeatures'
   import Stepper from '../stepper/Stepper.vue'
   import ExportObjects from './ExportObjects.vue'
   import ExportOptions from './ExportOptions.vue'
@@ -190,6 +191,7 @@
         this.$native.files.showItemInFolder(this.tableOptions.filePath)
       },
       async startExport() {
+        recordPaidFeatureUse('multi-table-export')
         // Hide any success modal that might be showing already
         this.$modal.hide(`success-modal-${this.tab.id}`);
         

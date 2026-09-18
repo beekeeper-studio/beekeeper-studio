@@ -1,4 +1,5 @@
 import { AppEvent } from "@/common/AppEvent"
+import { ConfirmOptions } from '@/components/common/modals/utils'
 import Vue from 'vue'
 import { openMenu, MenuItem, DividerItem } from "@beekeeperstudio/ui-kit"
 import { IConnection } from "@/common/interfaces/IConnection"
@@ -224,7 +225,7 @@ export default {
     Vue.prototype.$bks = BeekeeperPlugin
     Vue.prototype.$pluralize = pluralize;
 
-    Vue.prototype.$confirm = function(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string, variant?: string }): Promise<boolean> {
+    Vue.prototype.$confirm = function(title?: string, message?: string, options?: ConfirmOptions): Promise<boolean> {
       return new Promise<boolean>((resolve, reject) => {
         try {
           this.trigger(AppEvent.createConfirmModal, {

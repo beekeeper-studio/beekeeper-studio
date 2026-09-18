@@ -142,6 +142,7 @@ import UpgradePanel from '@/components/upsell/UpgradePanel.vue'
 import { Step } from './stepper/models';
 import { mapGetters, mapState } from 'vuex';
 import StatusBar from '@/components/common/StatusBar.vue';
+import { recordPaidFeatureUse } from '@/lib/paidFeatures';
 
 export default Vue.extend({
   components: {
@@ -233,6 +234,7 @@ export default Vue.extend({
   },
   methods: {
     runBackup() {
+      recordPaidFeatureUse('backup-restore', this.isRestore ? 'Restore' : 'Backup');
       this.backupRunning = true;
       this.tab.isRunning = true;
       this.$store.dispatch('backups/execute');

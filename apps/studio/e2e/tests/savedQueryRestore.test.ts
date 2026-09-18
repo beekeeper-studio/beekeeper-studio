@@ -15,6 +15,10 @@ async function launch(): Promise<{ app: ElectronApplication; win: Page }> {
   try {
     await win.getByText("Don't show again", { exact: false }).click({ timeout: 800 });
   } catch (e) { /* no dialog */ }
+  // A fresh install auto-starts the free trial and opens a welcome dialog.
+  try {
+    await win.getByRole('button', { name: 'Start exploring' }).click({ timeout: 1500 });
+  } catch (e) { /* no trial dialog */ }
   return { app, win };
 }
 

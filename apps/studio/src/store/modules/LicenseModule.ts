@@ -8,6 +8,7 @@ import Vue from "vue"
 import { LicenseStatus } from '@/lib/license';
 import { SmartLocalStorage } from '@/common/LocalStorage';
 import { CloudClient } from '@/lib/cloud/CloudClient';
+import { markTrialWelcomePending } from '@/lib/trial';
 
 interface State {
   initialized: boolean
@@ -70,6 +71,14 @@ export const LicenseModule: Module<State, RootState>  = {
       if (!state) return true
       return state.status.isTrial
     },
+    /** The current license is a trial that is still running. */
+    isTrialActive(state) {
+      return !!state.status.isTrial && !!state.status.isUltimate
+    },
+    /** The current license is a trial that has run out. */
+    isTrialExpired(state) {
+      return !!state.status.isTrial && !!state.status.isValidDateExpired
+    },
     isValidStateExpired(state) {
       // this means a license with lifetime perms, but is no longer valid for software updates
       // so the user has to use an older version of the app.
@@ -109,9 +118,30 @@ export const LicenseModule: Module<State, RootState>  = {
         return
       }
       await context.dispatch('sync')
+      // Nothing registered at all means a first launch: every paid feature is
+      // unlocked for the trial period, and the welcome dialog explains it.
+      if (context.getters.noLicensesFound) {
+        await context.dispatch('startTrial')
+      }
       const installationId = await Vue.prototype.$util.send('license/getInstallationId');
       context.commit('installationId', installationId)
       context.commit('setInitialized', true)
+    },
+    /**
+     * Create the free trial license. Only possible while no license of any
+     * kind exists; the backend rejects it otherwise.
+     */
+    async startTrial(context) {
+      try {
+        await Vue.prototype.$util.send('license/createTrialLicense')
+      } catch (error) {
+        log.error('Unable to start the free trial', error)
+        return
+      }
+      markTrialWelcomePending()
+      // allow emitting expired license events next time
+      SmartLocalStorage.setBool('expiredLicenseEventsEmitted', false)
+      await context.dispatch('sync')
     },
     async add(context, { email, key, trial }) {
       if (trial) {

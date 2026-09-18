@@ -1,6 +1,8 @@
 import { AppEvent } from "../../common/AppEvent"
 import rawLog from '@bksLogger'
 import { SmartLocalStorage } from '@/common/LocalStorage'
+import { DevLicenseState } from '@/lib/license'
+import { markTrialWelcomePending, resetTrialFlow } from '@/lib/trial'
 
 const log = rawLog.scope("AppEventHandler")
 
@@ -84,7 +86,11 @@ export default class {
 
   async switchLicenseState(_event, state) {
     await this.vueApp.$util.send('dev/switchLicenseState', { state })
-    this.vueApp.$store.dispatch("toggleShowBeginTrialModal", true)
+    // Forget the trial-flow answers so the welcome / trial-ended dialogs run
+    // again for the chosen state. Feature usage is kept unless starting over
+    // from a first install, so "trial expired" previews the real dialog.
+    resetTrialFlow({ keepUsage: state !== DevLicenseState.firstInstall })
+    if (state === DevLicenseState.onTrial) markTrialWelcomePending()
     SmartLocalStorage.setBool('expiredLicenseEventsEmitted', false)
     window.location.reload(true)
   }

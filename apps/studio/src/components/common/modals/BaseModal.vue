@@ -2,7 +2,9 @@
   <portal to="modals">
     <modal
       :name="name"
+      :click-to-close="closable"
       @before-open="$emit('before-open', $event)"
+      @before-close="handleBeforeClose"
       @opened="handleOpened"
       @closed="$emit('closed')"
       class="base-modal-root"
@@ -20,6 +22,7 @@
             <slot name="title" :close="close" />
           </div>
           <a
+            v-if="closable"
             href="#"
             class="base-modal-close"
             @click.prevent="close"
@@ -63,16 +66,45 @@ export default Vue.extend({
     /** Show loading indicator */
     loading: Boolean,
     height: String,
+    /**
+     * When false there is no close button, and Escape, overlay clicks and
+     * stray `$modal.hide` calls are ignored: only `close()` (also exposed as
+     * the scoped slot prop) dismisses the modal. For dialogs that need an
+     * explicit decision, like the trial-ended prompt.
+     */
+    closable: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  data() {
+    return {
+      // Raised by close() for the duration of the hide call, so
+      // handleBeforeClose can tell an intentional close from an escape.
+      allowClose: false,
+    };
   },
   methods: {
     close() {
-      this.$modal.hide(this.name);
+      this.allowClose = true;
+      try {
+        this.$modal.hide(this.name);
+      } finally {
+        this.allowClose = false;
+      }
+    },
+    handleBeforeClose(event: { stop: () => void }) {
+      if (!this.closable && !this.allowClose) {
+        event.stop();
+        return;
+      }
+      this.$emit("before-close", event);
     },
     handleOpened() {
       const target =
         this.$refs.form.querySelector(this.firstFocusable) ??
         this.$refs.closeBtn;
-      target.focus();
+      target?.focus();
       this.$emit("opened");
     },
   },

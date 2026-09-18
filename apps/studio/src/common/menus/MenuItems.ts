@@ -353,15 +353,15 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       submenu: [
         { label: ">>> BEWARE: ALL LICENSES WILL BE LOST! <<<" },
         {
-          label: "First time install, no license, no trial.",
+          label: "First time install (trial auto-starts on reload)",
           click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.firstInstall),
         },
         {
-          label: "On a trial license",
+          label: "On a trial license (shows the welcome dialog)",
           click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.onTrial),
         },
         {
-          label: "Trial expired",
+          label: "Trial expired (shows the trial-ended dialog)",
           click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.trialExpired),
         },
         {

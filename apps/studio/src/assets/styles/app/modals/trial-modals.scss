@@ -1,0 +1,110 @@
+// Trial lifecycle dialogs: components/license/TrialStartedModal.vue (welcome,
+// shown once when the trial auto-starts) and TrialEndedModal.vue (the
+// decision at the end of the trial). Both render inside BaseModal, which owns
+// the chrome, so only the lead copy and the feature lists live here.
+
+.trial-modal {
+  color: $text;
+  font-size: 0.9rem;
+  line-height: 1.5;
+
+  .trial-modal-lead {
+    margin: 0 0 $gutter-w;
+    color: $text-dark;
+  }
+
+  .trial-modal-hint {
+    margin: $gutter-w 0 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: $text-light;
+  }
+
+  .trial-feature-heading {
+    margin: $gutter-w 0 $gutter-h;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: $text-light;
+  }
+
+  .trial-feature-group--used + .trial-feature-group .trial-feature-heading {
+    margin-top: $gutter-w * 1.25;
+  }
+
+  // Two-column checklist, same rhythm as .upgrade-feature-list.
+  .trial-feature-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: $gutter-w * 1.5;
+    row-gap: $gutter-h;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: $gutter-h * 1.25;
+      min-width: 0;
+      font-size: 0.875rem;
+    }
+
+    .material-icons {
+      font-size: 16px;
+      color: $text-lighter;
+      flex-shrink: 0;
+    }
+
+    .trial-feature-label {
+      color: $text-dark;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .trial-feature-badge {
+      flex-shrink: 0;
+      padding: 0 0.3rem;
+      line-height: 1.4;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: $brand-warning;
+      border: 1px solid rgba($brand-warning, 0.5);
+      border-radius: 3px;
+    }
+
+    .trial-feature-note {
+      margin-left: auto;
+      font-size: 0.78rem;
+      color: $text-light;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    // Features used during the trial: one per line, called out.
+    &.trial-feature-list--stacked {
+      grid-template-columns: 1fr;
+      row-gap: $gutter-h * 0.75;
+
+      li {
+        padding: $gutter-h ($gutter-h * 1.5);
+        border-radius: 6px;
+        background: rgba($brand-warning, 0.12);
+      }
+
+      .material-icons {
+        color: $brand-warning;
+      }
+    }
+  }
+}
+
+// The escape hatch is deliberately the quietest button in the row.
+.trial-ended-downgrade {
+  color: $text-light;
+}
