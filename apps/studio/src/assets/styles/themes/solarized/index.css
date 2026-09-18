@@ -2,10 +2,11 @@
 @import "./blue.css";
 @import "./green.css";
 @import "./orange.css";
-@import "./pink.css";
-@import "./purple.css";
 @import "./red.css";
 @import "./yellow.css";
+@import "./pink.css";
+@import "./purple.css";
+@import "./editor.css";
 
 .theme-solarized {
   --white: #fff6e3;

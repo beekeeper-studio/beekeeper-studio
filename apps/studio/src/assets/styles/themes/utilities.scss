@@ -198,6 +198,47 @@ $families: (
 
     --badge-bg: var(--gray-a3);
     --badge-fg: var(--gray-a11);
+
+    // ===== Editor =====
+
+    --editor-bg: var(--bg-base);
+    --editor-fg: var(--text-contrast);
+    --editor-cursor-bg: var(--text-contrast);
+    --editor-selected-bg: var(--border-a);
+    --editor-activeline-bg: var(--bg-a);
+    --editor-activeline-gutter-bg: var(--bg-a);
+    --editor-focused-outline: transparent;
+    --editor-highlight-bg: var(--warning-bg-active-a);
+    --editor-error-bg: var(--danger-bg-a);
+    --editor-error-fg: var(--danger-text);
+
+    --editor-gutter-bg: var(--bg-base);
+    --editor-gutter-border: transparent;
+    --editor-linenumber-fg: var(--bg-active-a);
+    --editor-linenumber-active-fg: var(--text-contrast);
+    --editor-foldgutter-fg: var(--border-hover-a);
+    --editor-foldgutter-fg-hover: var(--text-contrast);
+    --editor-indent-marker-bg: var(--bg-hover-a);
+    --editor-indent-marker-active-bg: var(--border-subtle-a);
+
+    // The vim bar inherits so it follows the editor.
+    --editor-vim-panel-bg: inherit;
+    --editor-vim-panel-fg: inherit;
+    --editor-vim-panel-normal-bg: var(--editor-vim-panel-bg);
+    --editor-vim-panel-normal-fg: var(--editor-vim-panel-fg);
+    --editor-vim-panel-insert-bg: var(--green-a3);
+    --editor-vim-panel-insert-fg: var(--green-11);
+    --editor-vim-panel-visual-bg: var(--blue-a3);
+    --editor-vim-panel-visual-fg: var(--blue-11);
+    --editor-vim-panel-replace-bg: var(--red-a3);
+    --editor-vim-panel-replace-fg: var(--red-11);
+    --editor-vim-panel-font-size: 0.875rem;
+    --editor-vim-panel-border: 1px solid var(--border-subtle);
+
+    // ===== Mongo Shell =====
+
+    --mongo-shell-mongo-prompt-fg: var(--primary-text);
+    --mongo-shell-ansi-output-fg: var(--text-contrast);
   }
 
   .dark-theme {

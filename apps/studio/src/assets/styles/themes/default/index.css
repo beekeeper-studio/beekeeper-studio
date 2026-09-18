@@ -6,6 +6,7 @@
 @import "./purple.css";
 @import "./red.css";
 @import "./yellow.css";
+@import "./editor.css";
 
 .theme-default.light-theme {
   --app-bg: var(--white);
