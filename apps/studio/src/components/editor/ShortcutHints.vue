@@ -98,6 +98,6 @@ type ShortcutHintsType = 'core-tabs' | 'query-editor'
 .btn.btn-view-all {
   margin-top: 0.5rem;
   margin-left: -0.25rem;
-  color: var(--text-lighter);
+  color: var(--text-muted);
 }
 </style>

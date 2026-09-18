@@ -215,7 +215,7 @@
           <x-button
             v-if="queryId"
             @click.prevent="viewEditHistory"
-            class="btn btn-flat btn-small history-btn"
+            class="btn btn-icon history-btn"
             v-tooltip="updatedTooltip"
           >
             <i class="material-icons">history</i>
@@ -2417,11 +2417,6 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
   .btn.history-btn {
     background-color: transparent;
     box-shadow: none;
-    padding-inline: 0.15rem;
-
-    &:not(:hover) .material-icons {
-      color: var(--text-lighter);
-    }
   }
 </style>
 

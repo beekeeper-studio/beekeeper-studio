@@ -90,6 +90,12 @@ $families: (
       }
     }
 
+    // Text on a step-9 solid. Yellow is the one hue too bright for white.
+    @each $hue in $hues {
+      --#{$hue}-solid-fg: var(--white);
+    }
+    --yellow-solid-fg: var(--black);
+
     @each $family in info, success, warning, danger {
       --#{$family}-solid-fg: var(--white);
       --#{$family}-solid-fg-hover: var(--white);
@@ -117,11 +123,11 @@ $families: (
     // ===== Button =====
 
     // Ghost Button
-    --btn-fg: var(--gray-11);
+    --btn-fg: var(--gray-a11);
     --btn-fg-hover: var(--gray-12);
     --btn-bg: transparent;
-    --btn-bg-hover: var(--gray-a3);
-    --btn-bg-active: var(--gray-a4);
+    --btn-bg-hover: var(--gray-a2);
+    --btn-bg-active: var(--gray-a3);
     --btn-shadow: none;
 
     // Flat Button
@@ -188,6 +194,7 @@ $families: (
 
     --panel-bg: var(--gray-2);
     --panel-fg: var(--gray-11);
+    --panel-bg-hover: var(--gray-a3);
     --panel-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.08), 0 6px 15px rgba(0, 0, 0, 0.12);
 
     // ===== Overlay =====
@@ -198,6 +205,21 @@ $families: (
 
     --badge-bg: var(--gray-a3);
     --badge-fg: var(--gray-a11);
+
+    // ===== Statusbar =====
+
+    --statusbar-bg: var(--gray-2);
+    --statusbar-fg: var(--gray-11);
+    --statusbar-fg-inverse: var(--gray-1);
+
+    // ===== Tabs =====
+
+    // Background of the container that holds the tabs.
+    --tabs-header-bg: var(--gray-2);
+    --tab-fg: var(--gray-11);
+    --tab-bg: var(--gray-3);
+    --tab-active-fg: var(--gray-12);
+    --tab-active-bg: var(--editor-bg);
 
     // ===== Editor =====
 

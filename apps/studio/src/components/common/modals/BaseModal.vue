@@ -91,6 +91,7 @@ export default Vue.extend({
   --base-modal-footer-gap: 0.5rem;
   display: flex;
   flex-direction: column;
+  max-height: calc(100vh - 1.6rem);
 }
 
 .base-modal-header {
@@ -153,6 +154,7 @@ export default Vue.extend({
 
 .base-modal-body {
   flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   width: 100%;
   padding: 0 1.2rem 0.8rem;

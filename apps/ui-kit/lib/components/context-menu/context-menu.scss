@@ -46,12 +46,12 @@
   align-items: center;
 
   &:hover {
-    background-color: var(--bg);
+    background-color: var(--panel-bg-hover);
   }
 
   &.BksContextMenu-item-disabled {
     pointer-events: none;
-    color: var(--gray-a9);
+    color: var(--text-muted);
     background-color: transparent;
   }
 }

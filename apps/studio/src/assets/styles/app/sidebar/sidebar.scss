@@ -57,7 +57,6 @@
     }
     .btn .material-icons {
       font-size: 18px;
-      color: $text-light;
     }
     .close-btn {
       // color: $text;
@@ -114,12 +113,12 @@
     padding: 0 $gutter-h 0 0;
     margin-top: ($gutter-w * 0.25);
     margin-bottom: $gutter-h;
-    background: rgba($theme-base, 0.08);
+    background: var(--bg-subtle-a);
     transition: background 0.15s ease-in-out;
     border-radius: 4px;
     cursor: pointer;
     &:hover {
-      background: rgba($theme-base, 0.1);
+      background: var(--bg-a);
     }
     .select-wrap {
       border: 0;
@@ -135,9 +134,9 @@
       margin-left: $gutter-h;
       .material-icons {
         font-size: 16px;
-        color: $text-light;
+        color: var(--text);
         &:hover {
-          color: $text-dark;
+          color: var(--text-contrast);
         }
       }
     }
@@ -272,6 +271,13 @@
       background-color: transparent;
       display: flex;
       cursor: pointer;
+      color: var(--btn-icon-fg);
+      &:hover, &:focus {
+        color: var(--btn-icon-fg-hover);
+      }
+      i {
+        color: inherit;
+      }
     }
     x-button {
       display: flex;
@@ -486,7 +492,7 @@
       top: 0;
       bottom: 0;
       left: 9px;
-      border-left: 1px solid rgba($theme-base,0.08);
+      border-left: 1px solid var(--gray-a2);
     }
     .title {
       flex-grow: 1;
@@ -497,7 +503,7 @@
       margin-right: 0;
       max-width: 50%;
       background: transparent;
-      color: $text-lighter;
+      color: var(--gray-10);
       padding: 0 0.1rem;
       min-width: fit-content;
       overflow: hidden;
@@ -509,13 +515,13 @@
     }
   }
   .sub-item {
-    color: $text;
+    color: var(--text);
     padding: ($gutter-h * 0.5);
     padding-right: $gutter-h * 0.5;
     padding-left: $gutter-w * 2;
     border-radius: 4px;
     &:hover {
-      background: rgba($theme-base, 0.035);
+      background: var(--bg-subtle-a);
     }
   }
   .btn-fab {
@@ -525,8 +531,9 @@
     margin-right: $gutter-h * 0.5;
     transition: color 0.2 ease-in-out;
     .dropdown-icon {
+      color: var(--btn-icon-fg);
       &:hover, &:focus {
-        color: $text-dark;
+        color: var(--btn-icon-fg-hover);
       }
     }
     .material-icons {
@@ -562,15 +569,15 @@
       align-items: center;
       padding-left: 0;
       border-radius: 4px;
-      color: rgba($theme-base, 0.77);
+      color: var(--btn-fg);
       .btn-fab {
         display: inline-flex!important;
         margin-right: $gutter-h * 0.5;
       }
-      &:hover {
-        background: rgba($theme-base, 0.035);
+      &:hover, &:focus {
+        background: var(--btn-bg-hover);
         .material-icons:first-child {
-          color: $text-dark;
+          color: var(--btn-icon-fg-hover);
         }
       }
       .schema-icon {

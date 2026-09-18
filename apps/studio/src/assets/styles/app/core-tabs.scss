@@ -16,7 +16,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: $query-editor-bg;
+    background: var(--app-bg);
   }
   .tab-pane {
     display: none;
@@ -25,7 +25,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: $query-editor-bg;
+    background: var(--app-bg);
     &.active {
       display: flex;
       z-index: 1;
@@ -34,7 +34,7 @@
   .tabs-header {
     display: flex;
     align-items: center;
-    background: $tabs-bg;
+    background: var(--tabs-header-bg);
 
     .add-tab-group {
       transition: all 0.2s ease-in-out;
@@ -54,11 +54,6 @@
     .add-query {
       i {
         transition: all 0.2s ease-in-out;
-      }
-      &:hover {
-        i {
-          color: $text-dark;
-        }
       }
     }
   }
@@ -86,27 +81,31 @@
       position: relative;
       display: flex;
       align-items: center;
-      background: color.adjust($theme-bg, $lightness: 3%);
+      background: var(--tab-bg);
       padding: 0;
       height: $tab-height;
       line-height: $tab-height * 0.9;
       font-size: 0.85rem;
       font-weight: normal;
-      color: $text;
+      color: var(--tab-fg);
       border: 0;
       border-radius: 6px 6px 0 0;
-      border-right: 1px solid $theme-bg;
+      border-right: 1px solid var(--tabs-header-bg);
       overflow: hidden;
       &.active {
-        background: $query-editor-bg;
+        background: var(--tab-active-bg);
         font-weight: 600;
-        color: $text-dark;
+        color: var(--tab-active-fg);
         box-shadow: none;
         &:hover {
-          background: $query-editor-bg;
+          background: var(--tab-active-bg);
         }
         .tab-action {
-          background: linear-gradient(-90deg, rgba($query-editor-bg, 100%) 80%, rgba($query-editor-bg, 0) 100%);
+          background: linear-gradient(
+            -90deg,
+            rgb(from var(--tab-active-bg) r g b / 1) 80%,
+            rgb(from var(--tab-active-bg) r g b / 0) 100%
+          );
         }
         .tab-close {
           .close {
@@ -169,7 +168,7 @@
       }
       .tab-title-scope {
         position: relative;
-        color: $text-lighter;
+        color: var(--text-muted);
         font-size: 95%;
         font-style: italic;
         font-weight: normal!important;
@@ -193,7 +192,11 @@
       justify-content: center;
       height: 100%;
       min-width: 28px;
-      background: linear-gradient(-90deg, rgba(color.adjust($theme-bg, $lightness: 3%), 100%) 80%, rgba(color.adjust($theme-bg, $lightness: 3%), 0) 100%);
+      background: linear-gradient(
+        -90deg,
+        rgb(from var(--tab-bg) r g b / 1) 80%,
+        rgb(from var(--tab-bg) r g b / 0) 100%
+      );
     }
     .tab-close {
       position: absolute;
@@ -215,7 +218,7 @@
 
         font-size: 12px;
         font-weight: bold;
-        color: $text;
+        color: var(--tab-fg);
         transition: none;
       }
       &.unsaved {

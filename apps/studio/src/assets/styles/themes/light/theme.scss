@@ -5,8 +5,6 @@
 $sidebar-list-icons:       $theme-primary;
 
 // Editor
-$tabs-heading:             rgba($theme-base, 0.08);
-$tab-link:                 color.adjust($theme-bg, $lightness: -4%);
 $codemirror-hint-bg:       color.adjust($theme-bg, $lightness: -2%);
 
 // Table Editing
@@ -30,9 +28,6 @@ $editor-statusbar:         rgba($theme-base, 0.035);
 
 // Base Styles
 // -----------------------------------------
-.material-icons {
-  font-weight: 600;
-}
 select {
   background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(0,0,0, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 60% transparent !important;
   option {
@@ -55,18 +50,6 @@ select {
   background: rgba($brand-info, 0.25);
 }
 
-x-buttons {
-  > x-button {
-    &.btn-primary {
-      &[menu] {
-        border-left: 1px solid rgba(white, 0.35);
-        &:hover {
-          border-left: 1px solid rgba(white, 0.35);
-        }
-      }
-    }
-  }
-}
 .btn-link, .btn-fab {
   box-shadow: none;
 }
@@ -117,51 +100,6 @@ x-buttons {
     .badge {
       &.active {
         color: $brand-info;
-      }
-    }
-  }
-}
-.item-icon {
-  color: color.adjust($theme-primary, $lightness: -6%);
-}
-
-// Editor
-// ---------------------------------------
-.core-tabs {
-  .tabs-header {
-    background: $tabs-bg;
-  }
-  .nav-tabs {
-    .nav-link {
-      background: $tab-link;
-      &.active {
-        background: $query-editor-bg;
-        .tab-action {
-          background: linear-gradient(
-            90deg,
-            rgba($query-editor-bg,0) 0%,
-            rgba($query-editor-bg,1) 20%
-          );
-        }
-      }
-    }
-    .tab-action {
-      top: 1px;
-      right: 0;
-      bottom: 1px;
-      border-radius: 0 6px 0 0;
-      background: linear-gradient(
-        90deg,
-        rgba($tab-link,0) 0%,
-        rgba($tab-link,1) 20%
-      );
-    }
-    .tab-close {
-      .material-icons {
-        color: $text-lighter;
-        &.close {
-          color: $text-dark;
-        }
       }
     }
   }
@@ -402,7 +340,6 @@ x-buttons {
   }
 }
 
-
 // CodeMirror
 // ----------------------------------
 .CodeMirror-hints {
@@ -427,7 +364,6 @@ x-buttons {
     }
   }
 }
-
 
 .cm-s-monokai {
   font-weight: 500;
@@ -462,7 +398,6 @@ x-buttons {
   color: color.adjust($brand-success, $lightness: -5%);
 }
 
-
 // Table Properties
 // -------------------------------
 .table-properties {
@@ -481,13 +416,6 @@ x-buttons {
   .quicksearch-bg {
     background: rgba(color.adjust($theme-bg, $lightness: -8%), 0.5);
   }
-}
-
-& {
-  --bks-text-editor-activeline-bg-color: #{rgba($theme-base, 0.08)};
-  --bks-text-editor-activeline-gutter-bg-color: #{rgba($theme-base, 0.08)};
-  --bks-text-editor-linenumber-fg-color: #{rgba($theme-base, 0.25)};
-  --bks-text-editor-linenumber-active-fg-color: #{$text-dark};
 }
 
 .BksTextEditor {
