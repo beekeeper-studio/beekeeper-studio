@@ -365,6 +365,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
         }
       ]
     },
+    themePlayground: {
+      id: 'theme-playground',
+      label: 'DEV Theme Playground',
+      click: actionHandler.themePlayground,
+    },
     managePlugins: {
       id: 'manage-plugins',
       label: 'Manage Plugins',
