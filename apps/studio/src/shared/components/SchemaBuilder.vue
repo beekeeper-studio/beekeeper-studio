@@ -300,7 +300,7 @@ export default Vue.extend({
         box-shadow: none!important;
         padding: 0!important;
         .tabulator-header-contents {
-          background-color: var(--query-editor-bg);
+          background: var(--query-editor-bg);
         }
         .tabulator-col {
           min-width: $min-cell-width!important;
@@ -398,7 +398,7 @@ export default Vue.extend({
         // Read Only
         &.read-only,
         &.read-only:hover {
-          --row-hover-bg-color: transparent;
+          --table-cell-bg-hover: transparent;
           background: transparent!important;
           cursor: default;
           input {

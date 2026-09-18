@@ -189,6 +189,14 @@ $families: (
     --sidebar-bg: var(--gray-2);
     --sidebar-fg: var(--gray-11);
 
+    // ===== Sidebar Rail =====
+
+    --sidebar-rail-bg: var(--sidebar-bg);
+    --sidebar-rail-fg: var(--solid-bg);
+    --sidebar-rail-fg-hover: var(--solid-bg-hover);
+    --sidebar-rail-active-fg: var(--text);
+    --sidebar-rail-active-bg: transparent;
+
     // ===== Panel =====
     // A surface that floats above the app: cards, modals, menus, tooltips, etc.
 
@@ -201,10 +209,47 @@ $families: (
 
     --overlay-bg: rgb(from var(--gray-1) r g b / 0.9);
 
+    // ===== Nav Pills =====
+
+    --nav-pills-shadow: inset 0 -1px var(--border-subtle);
+    --nav-pill-fg: var(--text-muted);
+    --nav-pill-fg-hover: var(--text-contrast);
+    --nav-pill-shadow-hover: inset 0 -2px var(--gray-a5);
+    --nav-pill-active-fg: var(--primary-text);
+    --nav-pill-active-shadow: inset 0 -2px var(--primary-solid-bg);
+
     // ===== Tree =====
 
     --tree-guide-border: transparent;
     --tree-guide-border-hover: var(--gray-a3);
+
+    // ===== Table =====
+
+    --table-bg: var(--editor-bg);
+    --table-fg: var(--black);
+
+    --table-header-shadow: inset 0 -1px var(--border-subtle);
+    --table-header-highlight-bg: var(--bg-a);
+    --table-header-highlight-fg: var(--text-contrast);
+    --table-header-selected-bg: var(--primary-solid-bg);
+    --table-header-selected-fg: var(--primary-solid-fg);
+
+    --table-row-header-shadow: 1px 0 var(--border-subtle);
+    --table-row-odd-bg: var(--bg-subtle-a);
+    --table-row-added-bg: var(--success-bg-a);
+    --table-row-deleted-bg: var(--danger-bg-active-a);
+    --table-row-error-bg: var(--danger-bg-a);
+
+    --table-cell-fg: var(--table-fg);
+    --table-cell-readonly-fg: var(--text-muted);
+    --table-cell-bg-hover: var(--bg-a);
+    --table-cell-selected-bg: var(--bg-a);
+    --table-cell-editing-bg: var(--bg-active-a);
+    --table-cell-edited-bg: var(--primary-bg-hover-a);
+
+    --table-range-border: var(--primary-solid-bg);
+    --table-range-handle-bg: var(--primary-solid-bg);
+    --table-resize-guide-bg: var(--solid-bg);
 
     // ===== Alert =====
 
@@ -280,5 +325,7 @@ $families: (
     --btn-primary-fg: var(--gray-2);
     --btn-primary-fg-hover: var(--gray-2);
     --btn-primary-bg: var(--white);
+
+    --table-fg: var(--white);
   }
 }

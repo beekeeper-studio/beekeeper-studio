@@ -74,9 +74,6 @@ $cell-success:           $row-add;
       .btn-icon {
         margin-left: $gutter-h;
       }
-      .btn-icon.btn-link {
-        margin-left: $gutter-w;
-      }
     }
 
     // Toolbar row: title + search | refresh / copy / add
@@ -278,30 +275,6 @@ $cell-success:           $row-add;
     }
   }
 
-  // Nav Pills
-  // -------------------------------
-  .nav-pills {
-    display: flex;
-    justify-content: center;
-    box-shadow: inset 0 -1px $border-color;
-    .nav-pill {
-      font-weight: 500;
-      padding: $gutter-w ($gutter-w * 1.25);
-      color: $text-light;
-      transition: color 0.2s ease-in-out,
-                  box-shadow 0.2s ease-in-out;
-      &:hover {
-        color: $text-dark;
-        box-shadow: inset 0 -2px rgba($theme-base, 0.2);
-      }
-      &.active {
-        color: $theme-primary;
-        box-shadow: inset 0 -2px $theme-primary;
-      }
-    }
-  }
-
-
   // Table Info
   // --------------------------------
   // Table Info Header
@@ -429,14 +402,6 @@ $cell-success:           $row-add;
   }
 }
 
-.tabulator-table {
-  .tabulator-cell {
-    .null-value {
-      color: rgba($theme-base, 0.28);
-    }
-  }
-}
-
 
 // Tabulator Styling
 // ------------------------------
@@ -464,7 +429,6 @@ $cell-success:           $row-add;
 
     // Tabulator Header Row
     .tabulator {
-      --tabulator-row-even-deleted-bg-color: var(--tabulator-row-odd-deleted-bg-color);
       .tabulator-header {
         .tabulator-col {
           padding: 0 $cell-padding;

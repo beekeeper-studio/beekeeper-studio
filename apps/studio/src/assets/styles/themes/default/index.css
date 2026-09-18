@@ -14,6 +14,9 @@
 
 .theme-default.dark-theme {
   --app-bg: #090909;
+
+  --table-bg: var(--bg-base);
+  --table-row-odd-bg: var(--bg-subtle-a);
 }
 
 .theme-default {

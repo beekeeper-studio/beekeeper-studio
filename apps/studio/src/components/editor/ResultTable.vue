@@ -24,7 +24,7 @@
         >
         <button
           type="button"
-          class="clear btn-link"
+          class="clear"
           title="clear search filter"
           @click.prevent="clearSearchFilters"
         >
@@ -610,7 +610,7 @@
       },
       headerFormatter(_cell, formatterParams) {
         const { columnName, dataType } = formatterParams
-        const dataTypeStr = dataType ? `<span class="badge column-data-type">${escapeHtml(dataType)}</span>` : '';
+        const dataTypeStr = dataType ? `<span class="column-data-type">${escapeHtml(dataType)}</span>` : '';
         return `
           <span class="title">
             ${escapeHtml(columnName)}
@@ -1236,7 +1236,7 @@
     right: 1.5rem;
     z-index: 10;
     align-items: center;
-    background-color: var(--query-editor-bg);
+    background: var(--query-editor-bg);
     border: 1px solid var(--border-color);
     border-radius: 0.5rem;
     @include card-shadow;

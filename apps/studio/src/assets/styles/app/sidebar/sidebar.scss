@@ -110,22 +110,21 @@
     align-items: center;
     height: $input-height;
     min-height: $input-height;
-    padding: 0 $gutter-h 0 0;
     margin-top: ($gutter-w * 0.25);
     margin-bottom: $gutter-h;
-    background: var(--bg-subtle-a);
     transition: background 0.15s ease-in-out;
     border-radius: 4px;
     cursor: pointer;
-    &:hover {
-      background: var(--bg-a);
+    &.btn {
+      font-weight: 400;
+      padding: 0 $gutter-h 0 0;
+      justify-content: flex-start;
     }
     .select-wrap {
       border: 0;
       box-shadow: none;
     }
     select {
-      color: $text-dark;
       padding-right: 1.5rem;
       cursor: pointer;
     }
@@ -134,10 +133,6 @@
       margin-left: $gutter-h;
       .material-icons {
         font-size: 16px;
-        color: var(--text);
-        &:hover {
-          color: var(--text-contrast);
-        }
       }
     }
   }
@@ -151,11 +146,17 @@
       position: relative;
       display: flex;
       align-items: center;
-      border: 1px solid var(--border-subtle);
+      border: var(--input-border);
       border-radius: 4px;
+      background: var(--input-bg);
+
+      &:has(input:focus) {
+        border: var(--input-border-focus);
+      }
     }
     .filter-input {
       border: 0;
+      outline: none;
       padding-right: 0;
     }
     .filter-actions {
@@ -394,7 +395,7 @@
     }
 
     &.active, &.selected {
-      background: var(--btn-bg-active);
+      background: var(--bg-active);
     }
     &.open {
       // background: rgba($theme-base, 0.03);
@@ -628,8 +629,8 @@
   width: $sidebar-min-w;
   padding: $gutter-w * 0.5;
   margin-bottom: $gutter-w * 0.3;
-  background: $theme-bg;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  background: var(--panel-bg);
+  box-shadow: var(--panel-shadow);
   border-radius: 4px;
   z-index: 1000;
   max-height: 50vh;
@@ -637,13 +638,12 @@
   flex-direction: column;
   border-radius: 8px;
   backdrop-filter: blur(8px);
-  border: 1px solid rgba($theme-base, 0.1);
 }
 
 .quick-switcher-content {
   padding: $gutter-w;
   overflow-y: auto;
-  color: $theme-base;
+  color: var(--panel-fg);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -663,7 +663,7 @@
   padding: 4px 4px;
   cursor: pointer;
   border-radius: 4px;
-  color: $theme-base;
+  color: var(--panel-fg);
   white-space: nowrap;
   display: flex;
   justify-content: space-between;
@@ -673,7 +673,7 @@
   transition: background 0.15s ease-in-out;
 
   &:hover {
-    background: rgba($theme-base, 0.05);
+    background: var(--btn-bg-hover);
   }
 
   &:disabled {
@@ -684,19 +684,19 @@
 }
 
 .quick-switcher-empty {
-  color: $text-lighter;
+  color: var(--text-muted);
   text-align: left;
 }
 
 .quick-switcher-header {
-  color: $text-dark;
-  background-color: $theme-bg;
+  color: var(--text-contrast);
+  background-color: var(--panel-bg);
   padding: 4px 6px;
   flex-shrink: 0;
 }
 
 .quick-switcher-footer {
-  background-color: $theme-bg;
+  background-color: var(--panel-bg);
   padding: 0px 6px;
   flex-shrink: 0;
 }

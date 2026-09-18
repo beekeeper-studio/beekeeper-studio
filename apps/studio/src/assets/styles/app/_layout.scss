@@ -543,6 +543,27 @@ input[type=file] {
   display: block;
   padding: 0.5rem 1rem;
 }
+.nav-pills {
+  display: flex;
+  justify-content: center;
+  box-shadow: var(--nav-pills-shadow);
+  .nav-pill {
+    font-weight: 500;
+    padding: $gutter-w ($gutter-w * 1.25);
+    color: var(--nav-pill-fg);
+    cursor: pointer;
+    transition: color 0.2s ease-in-out,
+                box-shadow 0.2s ease-in-out;
+    &:hover {
+      color: var(--nav-pill-fg-hover);
+      box-shadow: var(--nav-pill-shadow-hover);
+    }
+    &.active {
+      color: var(--nav-pill-active-fg);
+      box-shadow: var(--nav-pill-active-shadow);
+    }
+  }
+}
 .item-icon {
   font-size: 12px;
   color: var(--yellow-text);
