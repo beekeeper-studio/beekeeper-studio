@@ -126,6 +126,11 @@ export const api = {
       func(dark);
     });
   },
+  onWindowFocused(func: (focused: boolean) => void) {
+    ipcRenderer.on("windowFocused", (_event, focused: boolean) => {
+      func(focused);
+    });
+  },
   async isMaximized() {
     return await ipcRenderer.invoke('isMaximized');
   },
