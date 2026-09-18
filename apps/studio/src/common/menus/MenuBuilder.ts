@@ -46,6 +46,7 @@ export default class extends DefaultMenu {
         this.menuItems.reload,
         this.menuItems.simulatePlatform,
         this.menuItems.licenseState,
+        this.menuItems.themePlayground,
       ],
     }
   }
