@@ -138,6 +138,19 @@
       </section>
 
       <section>
+        <h3>Nav pills</h3>
+        <div class="nav-pills">
+          <a
+            v-for="pill in ['Columns', 'Indexes', 'Relations', 'Triggers']"
+            :key="pill"
+            class="nav-pill"
+            :class="{ active: pill === activePill }"
+            @click.prevent="activePill = pill"
+          >{{ pill }}</a>
+        </div>
+      </section>
+
+      <section>
         <h3>Switch</h3>
         <div class="row-wrap">
           <label class="switch-label">
@@ -203,6 +216,11 @@
             </template>
           </tree>
         </div>
+      </section>
+
+      <section>
+        <h3>Tabulator</h3>
+        <div ref="tabulator" class="sample-table" />
       </section>
 
       <section class="editor-section">
@@ -309,8 +327,30 @@ import { AppEvent } from "@/common/AppEvent";
 import BaseModal from "./BaseModal.vue";
 import { divider, openMenu } from "@beekeeperstudio/ui-kit";
 import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
+import { TabulatorFull } from "tabulator-tables";
+import { tabulatorForTableData } from "@/common/tabulator";
+import { vueEditor } from "@shared/lib/tabulator/helpers";
+import NullableInputEditorVue from "@shared/components/tabulator/NullableInputEditor.vue";
+import Mutators from "@/mixins/data_mutators";
+import { escapeHtml } from "@shared/lib/tabulator";
 import SqlTextEditor from "@beekeeperstudio/ui-kit/vue/sql-text-editor";
 import MultiSelect from "@/components/common/form/MultiSelect.vue";
+
+const TABLE_COLUMNS = [
+  { field: "id", title: "id", dataType: "int4", width: 70, cssClass: "primary-key", editable: false },
+  { field: "name", title: "name", dataType: "text", editor: vueEditor(NullableInputEditorVue) },
+  { field: "email", title: "email", dataType: "varchar(255)", editor: vueEditor(NullableInputEditorVue) },
+  { field: "plan", title: "plan", dataType: "text", editor: vueEditor(NullableInputEditorVue) },
+  { field: "created_at", title: "created_at", dataType: "timestamptz", cssClass: "read-only-field", editable: false },
+];
+
+const TABLE_DATA = [
+  { id: 1, name: "Ada Lovelace", email: "ada@example.com", plan: "team", created_at: "2026-01-04" },
+  { id: 2, name: "Grace Hopper", email: null, plan: "solo", created_at: "2026-02-11" },
+  { id: 3, name: "Linus Torvalds", email: "linus@example.com", plan: "team", created_at: "2026-03-19" },
+  { id: 4, name: "Margaret Hamilton", email: "margaret@example.com", plan: null, created_at: "2026-05-02" },
+  { id: 5, name: "Ken Thompson", email: "ken@example.com", plan: "", created_at: null },
+];
 
 // Two levels of folders and no items, so every folder shows its empty state.
 function treeFolders() {
@@ -330,14 +370,17 @@ function treeFolders() {
 }
 
 export default Vue.extend({
+  mixins: [Mutators],
   components: { BaseModal, Tree, TreeFolder, SqlTextEditor, MultiSelect },
   data() {
     return {
       modalName: "theme-playground-modal",
+      tabulator: null as TabulatorFull | null,
       switchOn: true,
       multiSelectQuery: "",
       multiSelectSuggestions: ["Ada Lovelace", "Grace Hopper", "Linus Torvalds", "Margaret Hamilton", "Ken Thompson"],
       multiSelectSelected: ["Grace Hopper"],
+      activePill: "Columns",
       treeExpanded: ["folder-1", "folder-2", "folder-3"],
       treeFolders: treeFolders(),
       buttonVariants: ["", "btn-flat", "btn-primary"],
@@ -352,9 +395,28 @@ export default Vue.extend({
   },
   mounted() {
     this.registerHandlers(this.rootBindings);
+    this.tabulator = tabulatorForTableData(this.$refs.tabulator as HTMLElement, {
+      persistenceID: "theme-playground",
+      data: TABLE_DATA,
+      columns: TABLE_COLUMNS.map(({ dataType, ...c }) => ({
+        ...c,
+        formatter: this.cellFormatter,
+        tooltip: true,
+        titleFormatter: () => `
+          <span class="title">
+            ${escapeHtml(c.title)}
+            <span class="column-data-type">${escapeHtml(dataType)}</span>
+          </span>`,
+      })),
+      height: "220px",
+    });
+    this.tabulator.on("cellEdited", (cell) => {
+      cell.getElement().classList.add("edited");
+    });
   },
   beforeDestroy() {
     this.unregisterHandlers(this.rootBindings);
+    this.tabulator?.destroy();
   },
   methods: {
     open() {
@@ -528,6 +590,10 @@ h4 {
   padding: 0.5rem 0;
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
+}
+
+.sample-table {
+  height: 220px;
 }
 
 .sample-editor {
