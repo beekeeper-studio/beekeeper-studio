@@ -1,5 +1,4 @@
-.light-theme,
-.theme-default.light-theme {
+.light-theme {
   --pink-1: #fffcff;
   --pink-2: #fff6fe;
   --pink-3: #ffe6fd;
@@ -27,8 +26,7 @@
   --pink-a12: #690063;
 }
 
-.dark-theme,
-.theme-default.dark-theme {
+.dark-theme {
   --pink-1: #10050e;
   --pink-2: #220c20;
   --pink-3: #3c0a38;

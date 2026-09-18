@@ -295,11 +295,11 @@
       .material-icons, .material-icons-outlined {
         font-weight: 600;
         font-size: 16px;
-        color: var(--icon-btn-fg);
+        color: var(--btn-icon-fg);
       }
       &:hover, &:focus {
         .material-icons, .material-icons-outlined {
-          color: var(--icon-btn-fg-hover);
+          color: var(--btn-icon-fg-hover);
         }
       }
     }
@@ -334,10 +334,10 @@
   }
   .actions-btn {
     i {
-      color: var(--btn-ghost-fg);
+      color: var(--btn-fg);
       transition: color 0.15s ease-in-out;
       &:hover {
-        background: var(--btn-ghost-bg-hover);
+        background: var(--btn-bg-hover);
       }
     }
   }
@@ -368,7 +368,7 @@
     }
   }
   .list-item-btn {
-    color: var(--btn-ghost-fg);
+    color: var(--btn-fg);
     // margin-right: $gutter-h;
     line-height: 1.8rem;
     height: 1.8rem;
@@ -376,7 +376,7 @@
     border-radius: 4px;
 
     &:hover, &:focus {
-      background: var(--btn-ghost-bg-hover);
+      background: var(--btn-bg-hover);
       .actions {
         display: flex;
         .btn-fab {
@@ -388,7 +388,7 @@
     }
 
     &.active, &.selected {
-      background: var(--btn-ghost-bg-active);
+      background: var(--btn-bg-active);
     }
     &.open {
       // background: rgba($theme-base, 0.03);

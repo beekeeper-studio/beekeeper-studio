@@ -1,5 +1,4 @@
-.light-theme,
-.theme-default.light-theme {
+.light-theme {
   --red-1: #fffcfc;
   --red-2: #fff6f5;
   --red-3: #ffeae8;
@@ -27,8 +26,7 @@
   --red-a12: #490200df;
 }
 
-.dark-theme,
-.theme-default.dark-theme {
+.dark-theme {
   --red-1: #0f0706;
   --red-2: #1f1110;
   --red-3: #3c100f;

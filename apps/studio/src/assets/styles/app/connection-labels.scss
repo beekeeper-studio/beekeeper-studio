@@ -1,12 +1,12 @@
 @use "sass:list";
 $color-defaults: (
-  red:          var(--red-a9),
-  orange:       var(--orange-a9),
-  yellow:       var(--yellow-a9),
-  green:        var(--green-a9),
-  blue:         var(--blue-a9),
-  purple:       var(--purple-a9),
-  pink:         var(--pink-a9),
+  red:          var(--red-solid-bg-a),
+  orange:       var(--orange-solid-bg-a),
+  yellow:       var(--yellow-solid-bg-a),
+  green:        var(--green-solid-bg-a),
+  blue:         var(--blue-solid-bg-a),
+  purple:       var(--purple-solid-bg-a),
+  pink:         var(--pink-solid-bg-a),
 );
 
 @each $key, $val in $color-defaults {
@@ -69,7 +69,7 @@ input[type="radio"].connection-label {
   margin: 0 0 0 ($gutter-h * 0.75);
   border-radius: 50%;
   &:checked {
-    outline: 2px solid var(--gray-a11);
+    outline: 2px solid var(--text);
     outline-offset: -2px;
   }
   &:focus {

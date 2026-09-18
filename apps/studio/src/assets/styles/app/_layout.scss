@@ -102,12 +102,11 @@ x-buttons > x-button[menu].btn {
   border-left: 1px solid rgba(black, 0.35);
 }
 .btn-primary {
-  background: var(--btn-primary-bg);
-  color: var(--btn-primary-fg);
-  transition: background 0.15s ease-in-out;
-  &:hover, &:focus {
-    background: var(--btn-primary-bg-hover);
-  }
+  --btn-fg: var(--btn-primary-fg);
+  --btn-fg-hover: var(--btn-primary-fg-hover);
+  --btn-bg: var(--btn-primary-bg);
+  --btn-bg-hover: var(--btn-primary-bg-hover);
+  --btn-shadow: var(--btn-primary-shadow);
 }
 
 .btn-brand {
@@ -190,7 +189,7 @@ x-buttons > x-button.btn-rounded {
   @include layout-center;
   transition: background 0.15s ease-in-out;
   &:hover, &:focus {
-    background: var(--btn-ghost-bg-hover);
+    background: var(--btn-bg-hover);
   }
   .material-icons, .material-icons-outlined {
     font-size: 20px;
@@ -516,10 +515,10 @@ input[type=file] {
   color: var(--warning-text)!important;
 }
 .text-light {
-  color: var(--gray-a10);
+  color: var(--text-muted);
 }
 .text-lighter {
-  color: var(--gray-a9);
+  color: var(--text-muted);
 }
 
 .text-2x {
@@ -666,7 +665,7 @@ input[type=file] {
 .card {
   background: var(--panel-bg);
   color: var(--text);
-  @include card-shadow;
+  box-shadow: var(--panel-shadow);
 }
 .card-flat {
   background: var(--panel-bg);

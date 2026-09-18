@@ -50,20 +50,21 @@ body {
 }
 
 button {
-  background: var(--btn-ghost-bg);
-  color: var(--btn-ghost-fg);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
 
   &:hover,
   &:focus {
-    background: var(--btn-ghost-bg-hover);
-    color: var(--btn-ghost-fg-hover);
+    background: var(--btn-bg-hover);
+    color: var(--btn-fg-hover);
   }
 }
 
 input, select, textarea {
-  color: inherit;
-  border: 1px solid var(--border-subtle);
+  color: var(--input-fg);
+  background: var(--input-bg);
+  border: var(--input-border);
   &:focus {
-    border-color: var(--border-hover);
+    border: var(--input-border-focus);
   }
 }
