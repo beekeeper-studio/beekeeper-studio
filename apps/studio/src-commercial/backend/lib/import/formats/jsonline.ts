@@ -2,6 +2,7 @@ import fs from 'fs'
 import readline from 'readline'
 import _ from 'lodash'
 import JSONImporter from "./json"
+import { flattenErrorMessage } from '@/common/utils'
 
 export default class extends JSONImporter {
 
@@ -30,22 +31,18 @@ export default class extends JSONImporter {
       })
 
       for await (const line of rl) {
-        try {
-          const lineData = this.handleObjectParse(line)
-          if (lineData && finalPreviewLines.length <= 10) {
-            finalPreviewLines.push(lineData)
-          }
-          if (isPreview && finalPreviewLines.length === 10) {
-            break;
-          }
-          
-          if (!isPreview) {
-            const importData = this.buildDataObj([lineData])
-            const importSql = await this.connection.getImportSQL([importData], this.table.name, this.table.schema || null, updatedImportScriptOptions.storeValues.runAsUpsert)
-            await this.connection.importLineReadCommand(this.table, importSql, updatedImportScriptOptions)
-          }
-        } catch (err) {
-          throw new Error(err)
+        const lineData = this.handleObjectParse(line)
+        if (lineData && finalPreviewLines.length <= 10) {
+          finalPreviewLines.push(lineData)
+        }
+        if (isPreview && finalPreviewLines.length === 10) {
+          break;
+        }
+
+        if (!isPreview) {
+          const importData = this.buildDataObj([lineData])
+          const importSql = await this.connection.getImportSQL([importData], this.table.name, this.table.schema || null, updatedImportScriptOptions.storeValues.runAsUpsert)
+          await this.connection.importLineReadCommand(this.table, importSql, updatedImportScriptOptions)
         }
       }
 
@@ -73,8 +70,10 @@ export default class extends JSONImporter {
         data: finalPreviewLines
       }
     } catch (err) {
-      this.logger().error('error reading jsonline file')
-      throw new Error(err)
+      this.logger().error('error reading jsonline file', err)
+      // new Error(err) would stringify the error and drop the nested
+      // driver detail explaining why the import actually failed
+      throw new Error(flattenErrorMessage(err))
     } finally {
       finalPreviewLines = []
     }
