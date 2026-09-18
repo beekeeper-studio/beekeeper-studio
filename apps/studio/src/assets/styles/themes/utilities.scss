@@ -28,6 +28,9 @@ $steps: (
   a12: "text-contrast-a",
 );
 
+// Hue scales every theme defines.
+$hues: red, orange, yellow, green, blue, purple, pink;
+
 // Semantic families and the hue scale each one reads from.
 $families: (
   primary: yellow,
@@ -66,6 +69,15 @@ $families: (
       --#{$role}: var(--gray-#{$n});
     }
 
+    // --red-bg-base: var(--red-1);
+    // --red-bg-subtle: var(--red-2);
+    // ...
+    @each $hue in $hues {
+      @each $n, $role in $steps {
+        --#{$hue}-#{$role}: var(--#{$hue}-#{$n});
+      }
+    }
+
     @each $family, $hue in $families {
       // --primary-bg-base: var(--primary-1);
       // --primary-bg-subtle: var(--primary-2);
@@ -85,37 +97,58 @@ $families: (
 
     // We add primary fg because the primary color can be very bright (like yellow).
     // So by default, this is dark, to contrast with yellow, but a custom theme
-    // can change this easily if the primary is not a bright color.
+    // can change this if the primary is not a bright color.
     --primary-solid-fg: var(--text-contrast);
     --primary-solid-fg-a: var(--text-contrast-a);
 
     --border-color: var(--border-subtle);
+    --text-muted: var(--gray-10);
   }
 }
 
 @layer component {
   .light-theme,
   .dark-theme {
+    // ===== App =====
+
     --app-bg: var(--bg-base);
     --app-fg: var(--text);
 
-    --icon-btn-fg: var(--gray-a9);
-    --icon-btn-fg-hover: var(--gray-a11);
-
     // ===== Button =====
 
-    --btn-ghost-fg: var(--gray-11);
-    --btn-ghost-bg: transparent;
-    --btn-ghost-bg-hover: var(--gray-a3);
-    --btn-ghost-bg-active: var(--gray-a4);
+    // Ghost Button
+    --btn-fg: var(--gray-11);
+    --btn-fg-hover: var(--gray-12);
+    --btn-bg: transparent;
+    --btn-bg-hover: var(--gray-a3);
+    --btn-bg-active: var(--gray-a4);
+    --btn-shadow: none;
 
+    // Flat Button
     --btn-flat-fg: var(--gray-12);
+    --btn-flat-fg-hover: var(--gray-12);
     --btn-flat-bg: var(--gray-a3);
     --btn-flat-bg-hover: var(--gray-a4);
+    --btn-flat-shadow: none;
 
+    // Primary Button
     --btn-primary-fg: var(--gray-3);
+    --btn-primary-fg-hover: var(--gray-3);
     --btn-primary-bg: var(--black);
     --btn-primary-bg-hover: var(--gray-12);
+    --btn-primary-shadow: none;
+
+    // ===== Icon Button =====
+
+    --btn-icon-fg: var(--gray-a9);
+    --btn-icon-fg-hover: var(--gray-a11);
+
+    // ===== Input =====
+
+    --input-bg: transparent;
+    --input-fg: var(--text);
+    --input-border: 1px solid var(--border-subtle);
+    --input-border-focus: 1px solid var(--border-hover);
 
     // ===== Checkbox =====
 
@@ -124,24 +157,42 @@ $families: (
     --checkbox-checked-bg: var(--btn-primary-bg);
     --checkbox-checked-fg: var(--btn-primary-fg);
 
+    // ===== Link =====
+
     --link-fg: var(--gray-12);
+
+    // ===== Selection =====
 
     --selection-bg: var(--info-a5);
     --selection-fg: var(--gray-12);
 
+    // ===== Scrollbar =====
+
     --scrollbar-track: transparent;
     --scrollbar-thumb: var(--gray-a3);
+
+    // ===== Titlebar =====
 
     --titlebar-bg: var(--gray-2);
     --titlebar-fg: var(--gray-11);
 
+    // ===== Sidebar =====
+
     --sidebar-bg: var(--gray-2);
     --sidebar-fg: var(--gray-11);
 
+    // ===== Panel =====
+    // A surface that floats above the app: cards, modals, menus, tooltips, etc.
+
     --panel-bg: var(--gray-2);
     --panel-fg: var(--gray-11);
+    --panel-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.08), 0 6px 15px rgba(0, 0, 0, 0.12);
+
+    // ===== Overlay =====
 
     --overlay-bg: rgb(from var(--gray-1) r g b / 0.9);
+
+    // ===== Badge =====
 
     --badge-bg: var(--gray-a3);
     --badge-fg: var(--gray-a11);

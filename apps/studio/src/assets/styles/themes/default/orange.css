@@ -1,5 +1,4 @@
-.light-theme,
-.theme-default.light-theme {
+.light-theme {
   --orange-1: #fefcfb;
   --orange-2: #fff6f0;
   --orange-3: #ffecde;
@@ -27,8 +26,7 @@
   --orange-a12: #3d1900e3;
 }
 
-.dark-theme,
-.theme-default.dark-theme {
+.dark-theme {
   --orange-1: #0c0806;
   --orange-2: #1c1410;
   --orange-3: #311d10;

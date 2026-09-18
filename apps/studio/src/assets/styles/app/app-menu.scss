@@ -17,7 +17,7 @@
     color: var(--panel-fg);
     border-radius: 6px;
     min-width: 150px;
-    @include card-shadow-hover;
+    box-shadow: var(--panel-shadow);
   }
   li {
     position: relative;
@@ -41,7 +41,7 @@
       }
       .shortcut {
         text-align: right;
-        color: var(--gray-a10);
+        color: var(--text-muted);
       }
       .label {
         padding-left: $gutter-w * 2.6;

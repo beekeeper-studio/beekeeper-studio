@@ -90,7 +90,7 @@
   height: auto!important;
   min-height: 120px;
   max-height: 80vh;
-  @include card-shadow;
+  box-shadow: var(--panel-shadow);
 }
 .v--modal.v--modal-fullscreen {
   width: 100vw;

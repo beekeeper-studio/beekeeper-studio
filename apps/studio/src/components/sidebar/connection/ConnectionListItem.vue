@@ -347,9 +347,9 @@ export default {
 }
 
 .btn-fab.pin, .btn-fab.pinned {
-  color: var(--icon-btn-fg);
+  color: var(--btn-icon-fg);
   &:hover, &:focus {
-    color: var(--icon-btn-fg-hover);
+    color: var(--btn-icon-fg-hover);
     background: transparent;
   }
 }

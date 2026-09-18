@@ -7,7 +7,7 @@
   background: var(--panel-bg);
   border: 0;
   border-radius: 4px;
-  @include card-shadow;
+  box-shadow: var(--panel-shadow);
   .noty_body {
     font-size: 1rem;
     line-height: 1.6;

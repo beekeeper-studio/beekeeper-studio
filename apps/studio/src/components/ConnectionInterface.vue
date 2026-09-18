@@ -741,8 +741,13 @@ export default Vue.extend({
     padding-right: 1.75rem;
     justify-content: flex-start;
     align-items: center;
-    background-color: transparent;
-    border: 1px solid var(--border-subtle);
+    background: var(--input-bg);
+    color: var(--input-fg);
+    border: var(--input-border);
+
+    &:focus {
+      border: var(--input-border-focus);
+    }
 
     &::v-deep .database-icon {
       line-height: 0;

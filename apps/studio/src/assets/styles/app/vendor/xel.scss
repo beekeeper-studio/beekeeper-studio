@@ -484,7 +484,7 @@ x-buttons {
 x-buttons.selectbutton {
   > x-button {
     padding: 0.25rem;
-    color: var(--btn-ghost-fg);
+    color: var(--btn-fg);
     background: var(--btn-flat-bg);
     height: auto;
     line-height: 1.15rem;
@@ -803,12 +803,11 @@ x-menu {
   color: var(--panel-fg);
   padding: ($gutter-h * 0.75) 0;
   border-radius: 6px;
-  box-shadow: var(--elevation-5);
+  box-shadow: var(--panel-shadow);
   font-size: 0.85rem;
   text-transform: none;
   font-weight: 400;
   min-width: 150px;
-  @include card-shadow-hover;
   --open-transition: none;
   --close-transition: none;
   x-menuitem {

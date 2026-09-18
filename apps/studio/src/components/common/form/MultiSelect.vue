@@ -344,7 +344,7 @@ export default Vue.extend({
   font-size: 0.85rem;
   background: var(--panel-bg);
   border-radius: 6px;
-  box-shadow: var(--menu-shadow);
+  box-shadow: var(--panel-shadow);
 }
 
 .option {

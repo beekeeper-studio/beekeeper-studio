@@ -99,13 +99,11 @@
     @include btn;
   }
   .btn-primary {
-    background: $theme-base;
-    color: rgba($theme-bg, 0.87);
-    transition: background 0.15s ease-in-out;
-    &:hover, &:focus {
-      background: rgba($theme-base, 0.87);
-      color: $theme-bg;
-    }
+    --btn-fg: var(--btn-primary-fg);
+    --btn-fg-hover: var(--btn-primary-fg-hover);
+    --btn-bg: var(--btn-primary-bg);
+    --btn-bg-hover: var(--btn-primary-bg-hover);
+    --btn-shadow: var(--btn-primary-shadow);
   }
 
   .btn-brand {
@@ -656,8 +654,7 @@
   .card {
     background: var(--panel-bg);
     color: var(--panel-fg);
-    --panel-bg: var(--bg-subtle);
-    @include card-shadow;
+    box-shadow: var(--panel-shadow);
   }
   .card-flat {
       background: var(--panel-bg);
