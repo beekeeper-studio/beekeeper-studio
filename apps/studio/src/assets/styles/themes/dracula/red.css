@@ -1,0 +1,55 @@
+.theme-dracula {
+  --red-1: #faf7f7;
+  --red-2: #f9f3f2;
+  --red-3: #f8e6e3;
+  --red-4: #fdd7d0;
+  --red-5: #fac8bf;
+  --red-6: #f3b8ae;
+  --red-7: #eba498;
+  --red-8: #e18a7c;
+  --red-9: #cb3a2a;
+  --red-10: #bb291a;
+  --red-11: #c43323;
+  --red-12: #5c261e;
+
+  --red-a1: #f7f5ff99;
+  --red-a2: #efe5ff5a;
+  --red-a3: #ae088f16;
+  --red-a4: #f2033125;
+  --red-a5: #e7011434;
+  --red-a6: #d3040a45;
+  --red-a7: #c708035b;
+  --red-a8: #c00d0279;
+  --red-a9: #c01101d2;
+  --red-a10: #b30f00e3;
+  --red-a11: #ba1201da;
+  --red-a12: #450801df;
+}
+
+.theme-dracula.dark-theme {
+  --red-1: #322827;
+  --red-2: #382827;
+  --red-3: #562522;
+  --red-4: #6c1e1e;
+  --red-5: #7b2223;
+  --red-6: #8b2d2c;
+  --red-7: #a23a38;
+  --red-8: #cb4645;
+  --red-9: #ff5555;
+  --red-10: #f1474a;
+  --red-11: #ff948d;
+  --red-12: #ffd0cb;
+
+  --red-a1: #fd00000c;
+  --red-a2: #ff100013;
+  --red-a3: #fe130037;
+  --red-a4: #ff050051;
+  --red-a5: #fe160663;
+  --red-a6: #fe302176;
+  --red-a7: #ff473a91;
+  --red-a8: #fe4f4ac2;
+  --red-a9: #ff5555;
+  --red-a10: #fe494cef;
+  --red-a11: #ff948d;
+  --red-a12: #ffd0cb;
+}
