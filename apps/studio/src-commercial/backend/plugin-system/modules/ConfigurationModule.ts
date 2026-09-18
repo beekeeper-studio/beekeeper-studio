@@ -2,7 +2,7 @@ import _ from "lodash";
 import { PluginSnapshot } from "@/services/plugin";
 import { Module, ModuleOptions } from "@/services/plugin/Module";
 import { PluginSystemError } from "@/lib/errors";
-import { BksConfig } from "@/common/bksConfig/BksConfigProvider";
+import type { BksConfig } from "@/common/bksConfig/BksConfigProvider";
 
 type ConfigurationOptions = {
   config: BksConfig;
@@ -82,6 +82,19 @@ export class ConfigurationModule extends Module {
           disableState: {
             disabled: true,
             reason: "community-plugins-disabled",
+          },
+        };
+      }
+
+      if (
+        snapshot.origin === "unlisted" &&
+        this.options.config.pluginSystem.unlistedDisabled
+      ) {
+        return {
+          ...snapshot,
+          disableState: {
+            disabled: true,
+            reason: "unlisted-plugins-disabled",
           },
         };
       }
