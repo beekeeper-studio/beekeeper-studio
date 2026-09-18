@@ -427,10 +427,11 @@
       }
 
       .dropdown-icon {
+        color: var(--btn-icon-fg);
 
         &:hover,
         &:focus {
-          color: $text-dark;
+          color: var(--btn-icon-fg-hover);
         }
       }
 

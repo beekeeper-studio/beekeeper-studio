@@ -15,10 +15,10 @@ export const cssVars: readonly CssVar[] = [
 
   { name: "--text-dark", value: "var(--text-contrast)" },
   "--text",
-  { name: "--text-light", value: "var(--text-a)" },
-  { name: "--text-lighter", value: "var(--gray-a9)" },
-  { name: "--text-hint", value: "var(--gray-a9)" },
-  { name: "--text-disabled", value: "var(--gray-a9)" },
+  { name: "--text-light", value: "var(--text-muted)" },
+  { name: "--text-lighter", value: "var(--text-muted)" },
+  { name: "--text-hint", value: "var(--text-muted)" },
+  { name: "--text-disabled", value: "var(--text-muted)" },
 
   { name: "--brand-info", value: "var(--info-solid-bg)" },
   { name: "--brand-success", value: "var(--success-solid-bg)" },
@@ -31,7 +31,7 @@ export const cssVars: readonly CssVar[] = [
   "--border-color",
   "--text-muted",
   { name: "--link-color", value: "var(--link-fg)" },
-  { name: "--placeholder", value: "var(--gray-a9)" },
+  { name: "--placeholder", value: "var(--text-muted)" },
   { name: "--selection", value: "var(--selection-bg)" },
   { name: "--input-highlight", value: "var(--primary-solid-bg)" },
 
@@ -240,6 +240,7 @@ export const cssVars: readonly CssVar[] = [
   "--sidebar-fg",
   "--panel-bg",
   "--panel-fg",
+  "--panel-bg-hover",
   "--panel-shadow",
   "--overlay-bg",
   "--badge-bg",
@@ -341,9 +342,6 @@ export const cssVars: readonly CssVar[] = [
   "--editor-sql-alias-fg",
   "--editor-sql-field-fg",
 
-  "--panel-bg-hover",
-  "--panel-bg-active",
-
   // Plugins built against the old names keep receiving them.
   { name: "--bks-text-editor-activeline-bg-color", value: "var(--editor-activeline-bg)" },
   { name: "--bks-text-editor-activeline-gutter-bg-color", value: "var(--editor-activeline-gutter-bg)" },
@@ -441,7 +439,7 @@ export const cssVars: readonly CssVar[] = [
   { name: "--bks-text-editor-sql-field-fg-color", value: "var(--editor-sql-field-fg)" },
   { name: "--bks-text-editor-context-menu-bg-color", value: "var(--panel-bg)" },
   { name: "--bks-text-editor-context-menu-fg-color", value: "var(--panel-fg)" },
-  { name: "--bks-text-editor-context-menu-item-bg-color-active", value: "var(--panel-bg-active)" },
+  { name: "--bks-text-editor-context-menu-item-bg-color-active", value: "var(--panel-bg-hover)" },
   { name: "--bks-text-editor-context-menu-item-fg-color-active", value: "var(--panel-fg)" },
   { name: "--bks-text-editor-context-menu-item-bg-color-hover", value: "var(--panel-bg-hover)" },
 ];

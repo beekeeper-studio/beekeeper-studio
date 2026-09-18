@@ -2,7 +2,7 @@
   .global-items {
     display: flex;
     flex-direction: column;
-    background: $global-sidebar-bg;
+    background: var(--sidebar-bg);
     &:hover {
       .nav-item {
         &.refresh {
@@ -90,9 +90,13 @@
       height: 44px;
       font-size: 18px;
       transition: color 0.15s ease-in-out;
-      // &.active {
-      //   color: $text-dark;
-      // }
+      color: var(--solid-bg);
+      &:hover {
+        color: var(--solid-bg-hover);
+      }
+      &.active {
+        color: var(--text);
+      }
       > span {
         height: $nav-item-size;
         width: $nav-item-size;

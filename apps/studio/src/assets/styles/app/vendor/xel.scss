@@ -457,12 +457,9 @@ x-buttons {
   > x-button {
     margin: 0;
     &[menu] {
-      border-left: 1px solid rgba($theme-bg, 0.35);
+      border-left: 1px solid rgb(from currentColor r g b / 0.35);
       padding: 0!important;
       min-width: 0;
-      &:hover {
-        border-left: 1px solid rgba($theme-bg, 0.35);
-      }
       .material-icons {
         width: 20px;
       }
@@ -820,7 +817,6 @@ x-menu {
     box-sizing: border-box;
     background: transparent;
     border-top: 1px solid var(--border-subtle);
-    border: 0;
     + hr, &:last-child {
       display: none;
     }

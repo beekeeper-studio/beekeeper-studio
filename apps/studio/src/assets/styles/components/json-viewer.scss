@@ -1,5 +1,3 @@
-@use "sass:color";
-
 .json-viewer {
   --header-title-height: 2rem;
   --hoz-gutter: 1rem;
@@ -30,7 +28,7 @@
     }
 
     .title {
-      color: $text-dark;
+      color: var(--text-contrast);
     }
 
     .menu-btn x-menuitem {
@@ -52,11 +50,11 @@
         right: 0;
         border: 0;
         line-height: 0;
-        color: rgba($theme-base, 0.5);
+        color: var(--text);
         background: transparent;
         transform: translateY(-50%);
         &:hover {
-          color: $text-dark;
+          color: var(--text-contrast);
         }
         i {
           font-size: 1.15rem;
@@ -69,20 +67,20 @@
   }
 
   .BksTextEditor {
-    --bks-text-editor-bg-color: #{$theme-bg};
-    --bks-text-editor-gutter-bg-color: #{$theme-bg};
-    --bks-text-editor-propertyName-fg-color: #{color.adjust($theme-primary, $lightness: -20%)};
-    --bks-text-editor-string-fg-color: #{$text-dark};
-    --bks-text-editor-number-fg-color: #{$text-dark};
-    --bks-text-editor-bool-fg-color: #{$text-dark};
-    --bks-text-editor-null-fg-color: #{$text-dark};
+    --editor-bg: transparent;
+    --editor-gutter-bg: transparent;
+    --editor-propertyName-fg: var(--primary-text);
+    --editor-string-fg: var(--text-contrast);
+    --editor-number-fg: var(--text-contrast);
+    --editor-bool-fg: var(--text-contrast);
+    --editor-null-fg: var(--text-contrast);
 
     width: 100%;
     height: auto;
     padding-left: 1rem;
 
     &.CodeMirror, .CodeMirror-gutters {
-      background-color: $theme-bg !important;
+      background-color: var(--app-bg) !important;
     }
 
     .CodeMirror-dialog.CodeMirror-dialog-top {
@@ -96,14 +94,14 @@
     display: inline-flex;
     // justify-content: center;
     align-items: center;
-    background: rgba($theme-base, 0.05);
+    background: var(--bg-a);
     padding: 0 0.5rem;
     border-radius: 2rem;
     gap: 0.25rem;
 
     .material-icons {
       font-size: 1rem;
-      color: $text;
+      color: var(--text);
     }
   }
 
@@ -112,7 +110,7 @@
     z-index: 10;
     inset: 0;
     backdrop-filter: blur(6px);
-    background-color: rgba($theme-bg, 0.5);
+    background-color: rgb(from var(--app-bg) r g b / 0.5);
     padding: 2rem;
     display: flex;
     flex-direction: column;
@@ -148,7 +146,7 @@
     inset: 0;
     z-index: 10;
     padding-inline: var(--hoz-gutter);
-    color: $text-light;
+    color: var(--text);
   }
 
   &:not(.empty) .empty-text {
@@ -156,8 +154,8 @@
   }
 
   &.empty {
-    --bks-text-editor-activeline-bg-color: transparent;
-    --bks-text-editor-activeline-gutter-bg-color: transparent;
+    --editor-activeline-bg: transparent;
+    --editor-activeline-gutter-bg: transparent;
   }
 }
 

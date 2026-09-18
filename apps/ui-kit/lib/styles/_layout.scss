@@ -76,7 +76,7 @@
     background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=); background-repeat: repeat-y;
   }
   ::-webkit-scrollbar-thumb {
-    background: mix($theme-base, $theme-bg, 20%);
+    background: var(--scrollbar-thumb);
     border-radius: 2px;
   }
   ::-webkit-scrollbar-button {
@@ -549,48 +549,48 @@
   }
   .item-icon {
     font-size: 12px;
-    color: color.adjust($theme-primary, $lightness: -15%);
+    color: var(--yellow-text);
     &.schema-icon {
-      color: $text-lighter;
+      color: var(--text-muted);
     }
     &.view-icon {
-      color: $brand-secondary;
+      color: var(--blue-solid-bg);
     }
     &.routine-icon {
-      color: $brand-success;
+      color: var(--green-solid-bg);
       &.routine-window-icon {
-        color: $brand-pink;
+        color: var(--pink-solid-bg);
       }
       &.routine-function-icon {
-        color: $brand-success;
+        color: var(--green-solid-bg);
       }
       &.routine-aggregate-icon {
-        color: $brand-warning;
+        color: var(--orange-solid-bg);
       }
       &.routine-procedure-icon {
-        color: $brand-secondary;
+        color: var(--blue-solid-bg);
       }
     }
     &.materialized-view-icon {
-      color: $brand-success;
+      color: var(--green-solid-bg);
     }
     &.query {
-      color: $brand-pink;
+      color: var(--pink-solid-bg);
     }
     &.database {
-      color: $brand-purple;
+      color: var(--purple-solid-bg);
     }
     &.connection {
-      color: $brand-secondary;
+      color: var(--blue-solid-bg);
     }
     &.settings {
-      color: $text-lighter;
+      color: var(--text-muted);
     }
     &.table-builder {
-      color: $brand-info;
+      color: var(--blue-solid-bg);
     }
     &.table-builder-icon {
-      color: $brand-info;
+      color: var(--blue-solid-bg);
     }
   }
 
@@ -791,20 +791,20 @@
     margin: 0;
     width: 100%;
     border: 0;
-    --vs-controls-color: #{$input-highlight};
-    --vs-border-color: #{$border-color};
+    --vs-controls-color: var(--gray-a9);
+    --vs-border-color: var(--border-color);
 
-    --vs-dropdown-bg: #{$theme-bg};
-    --vs-dropdown-color: #{$text};
-    --vs-dropdown-option-color: #{$text};
+    --vs-dropdown-bg: var(--panel-bg);
+    --vs-dropdown-color: var(--text);
+    --vs-dropdown-option-color: var(--text);
 
-    --vs-selected-bg: #{$input-highlight};
-    --vs-selected-color: #{$text};
+    --vs-selected-bg: var(--bg-active-a);
+    --vs-selected-color: var(--text);
 
-    --vs-search-input-color: #{$text};
+    --vs-search-input-color: var(--text);
 
-    --vs-dropdown-option--active-bg: #{$input-highlight};
-    --vs-dropdown-option--active-color: #{$theme-base};
+    --vs-dropdown-option--active-bg: var(--bg-hover-a);
+    --vs-dropdown-option--active-color: var(--text-contrast);
 
     .vs__clear{
       display: none;

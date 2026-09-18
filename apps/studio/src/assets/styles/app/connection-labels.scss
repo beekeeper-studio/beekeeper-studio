@@ -1,17 +1,6 @@
-@use "sass:list";
-$color-defaults: (
-  red:          var(--red-solid-bg-a),
-  orange:       var(--orange-solid-bg-a),
-  yellow:       var(--yellow-solid-bg-a),
-  green:        var(--green-solid-bg-a),
-  blue:         var(--blue-solid-bg-a),
-  purple:       var(--purple-solid-bg-a),
-  pink:         var(--pink-solid-bg-a),
-);
-
-@each $key, $val in $color-defaults {
-  .connection-label-color-#{'#{$key}'} {
-    --connection-label-color: #{list.nth($val, 1)};
+@each $hue in $hues {
+  .connection-label-color-#{'#{$hue}'} {
+    --connection-label-color: var(--#{$hue}-solid-bg-a);
   }
 }
 
@@ -25,40 +14,36 @@ $color-defaults: (
   margin-right: $gutter-w * 0.85;
   background: var(--bg-a);
 
-  @each $key, $val in $color-defaults {
-    &.connection-label-color-#{'#{$key}'} {
-      background-color: list.nth($val, 1);
+  @each $hue in $hues {
+    &.connection-label-color-#{'#{$hue}'} {
+      background-color: var(--#{$hue}-solid-bg-a);
       &:checked {
-        background-color: list.nth($val, 1);
+        background-color: var(--#{$hue}-solid-bg-a);
       }
     }
   }
 }
 .connection-button {
-  @each $key, $val in $color-defaults {
-    &.#{'#{$key}'} {
-      background-color: rgba(list.nth($val, 1), 1);
+  @each $hue in $hues {
+    &.#{'#{$hue}'} {
+      background-color: var(--#{$hue}-solid-bg-a);
+      color: var(--#{$hue}-solid-fg);
     }
   }
 }
 
 .statusbar {
-  @each $key, $val in $color-defaults {
-    &.#{'#{$key}'} {
-      background-color: rgba(list.nth($val, 1), 0.85);
-    }
-  }
-  &.query-meta {
-    @each $key, $val in $color-defaults {
-      &.#{'#{$key}'} {
-        background-color: rgba(list.nth($val, 1), 0.85);
-      }
+  @each $hue in $hues {
+    &.#{'#{$hue}'} {
+      --statusbar-bg: rgb(from var(--#{$hue}-solid-bg-a) r g b / 0.85);
+      --statusbar-fg: var(--#{$hue}-solid-fg);
+      --statusbar-fg-inverse: hsl(from var(--#{$hue}-solid-fg) 0 0% calc(100 - l));
     }
   }
   &.editing, &.failure {
-    @each $key, $val in $color-defaults {
-      &.#{'#{$key}'} {
-        background-color: rgba(list.nth($val, 1), 0.8);
+    @each $hue in $hues {
+      &.#{'#{$hue}'} {
+        --statusbar-bg: rgb(from var(--#{$hue}-solid-bg-a) r g b / 0.8);
       }
     }
   }
