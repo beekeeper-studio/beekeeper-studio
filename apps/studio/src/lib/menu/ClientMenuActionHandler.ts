@@ -64,6 +64,7 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   }
   updatePin = () => send('updatePin')
   managePlugins = () => send("managePlugins")
+  themePlayground = () => send("themePlayground")
   keyboardShortcuts = () => send("keyboardShortcuts")
   handleAction = (action: CustomMenuAction) => send('handleAction', action)
   editorFontSizeReset = () => send('editorFontSizeReset')

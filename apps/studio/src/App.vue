@@ -35,6 +35,7 @@
     <plugin-controller :editor-font-size="editorFontSize" />
     <plugin-manager-modal />
     <keyboard-shortcuts-modal />
+    <theme-playground-modal />
     <appearance-modal />
     <move-item-modal />
     <move-folder-modal />
@@ -93,6 +94,7 @@ import type { LicenseStatus } from "@/lib/license";
 import { SmartLocalStorage } from '@/common/LocalStorage';
 import PluginManagerModal from '@/components/plugins/PluginManagerModal.vue'
 import KeyboardShortcutsModal from '@/components/common/modals/KeyboardShortcutsModal.vue'
+import ThemePlaygroundModal from '@/components/common/modals/ThemePlaygroundModal.vue'
 import AppearanceModal from '@/components/common/modals/AppearanceModal.vue'
 import PluginController from '@/components/plugins/PluginController.vue'
 import LockManager from "@/components/managers/LockManager.vue";
@@ -118,7 +120,7 @@ export default Vue.extend({
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
     LifetimeLicenseExpiredModal, CloudWorkspacesBlockedModal,
     WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
-    PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
+    PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal, ThemePlaygroundModal,
     InputEphemeralModal, ShareModal, MoveItemModal, MoveFolderModal,
     ConnectionFilesImportModal, ConnectionTypePickerModal, AppearanceModal
   },
