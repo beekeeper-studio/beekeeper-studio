@@ -2,7 +2,10 @@
 
 A theme is a folder in here named after its theme id, with one file per color
 scale (`gray.css`, `yellow.css`, `blue.css`, ...) holding both its light and
-dark blocks.
+dark blocks, and an `editor.css` for the syntax highlighting colors.
+`index.css` imports them all, holds anything that is not a scale, and is what
+`app.scss` pulls in, so adding a theme is: create the folder, add it to
+`app.scss`, register the id in `ThemeModule`.
 
 ## Rules
 
