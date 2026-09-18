@@ -135,6 +135,14 @@ class BeekeeperWindow {
       this.win.webContents.send(`leave-full-screen-${this.sId}`)
     })
 
+    this.win.on('focus', () => {
+      this.send('windowFocused', true)
+    })
+
+    this.win.on('blur', () => {
+      this.send('windowFocused', false)
+    })
+
     this.initialize()
       .then(() => log.debug("initialize finished"))
       .catch((ex) => log.error("INITIALIZE ERROR", ex)  )

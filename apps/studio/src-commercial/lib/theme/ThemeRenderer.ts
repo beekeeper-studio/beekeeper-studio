@@ -29,6 +29,11 @@ export class ThemeRenderer {
 
     this.apply(themeId, dark);
 
+    document.body.classList.toggle("window-inactive", !document.hasFocus());
+    window.main.onWindowFocused((focused) => {
+      document.body.classList.toggle("window-inactive", !focused);
+    });
+
     this.options.store.commit("theme/setSystemDark", systemDark);
     window.main.onSystemUsesDarkColors((dark) => {
       this.options.store.commit("theme/setSystemDark", dark);

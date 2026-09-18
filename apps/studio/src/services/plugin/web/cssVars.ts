@@ -232,6 +232,8 @@ export const cssVars = [
   "--selection-fg",
   "--titlebar-bg",
   "--titlebar-fg",
+  "--titlebar-inactive-bg",
+  "--titlebar-inactive-fg",
   "--sidebar-bg",
   "--sidebar-fg",
   "--panel-bg",
