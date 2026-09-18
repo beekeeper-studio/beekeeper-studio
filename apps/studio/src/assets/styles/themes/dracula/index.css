@@ -1,0 +1,98 @@
+/* https://draculatheme.com/spec */
+
+@import "./gray.css";
+@import "./blue.css";
+@import "./green.css";
+@import "./orange.css";
+@import "./red.css";
+@import "./yellow.css";
+@import "./pink.css";
+@import "./purple.css";
+@import "./editor.css";
+
+/* https://github.com/dracula/cursor/blob/main/dev/src/classic.yml */
+.theme-dracula {
+  --dracula-background: #FFFBEB;
+  --dracula-current-line: #6C664B28;
+  --dracula-selection: #CFCFDE;
+  --dracula-foreground: #1F1F1F;
+  --dracula-comment: #6C664B;
+  --dracula-red: #CB3A2A;
+  --dracula-orange: #A34D14;
+  --dracula-yellow: #846E15;
+  --dracula-green: #14710A;
+  --dracula-cyan: #036A96;
+  --dracula-purple: #644AC9;
+  --dracula-pink: #A3144D;
+  --dracula-floating: #EFEDDC;
+  --dracula-background-lighter: #ECE9DF;
+  --dracula-background-light: #DEDCCF;
+  --dracula-background-dark: #CECCC0;
+  --dracula-background-darker: #BCBAB3;
+
+  --app-bg: var(--dracula-background);
+  --app-fg: var(--dracula-foreground);
+
+  --link-fg: var(--dracula-purple);
+
+  --selection-bg: var(--dracula-selection);
+  --selection-fg: var(--dracula-foreground);
+
+  --scrollbar-thumb: rgb(from var(--dracula-foreground) r g b / 0.2);
+
+  --titlebar-bg: var(--dracula-background-dark);
+  --titlebar-fg: var(--dracula-foreground);
+  --titlebar-inactive-bg: var(--dracula-background-darker);
+  --titlebar-inactive-fg: var(--dracula-comment);
+
+  --sidebar-bg: var(--dracula-background-dark);
+  --sidebar-fg: var(--dracula-foreground);
+
+  --panel-bg: var(--dracula-background);
+  --panel-fg: var(--dracula-foreground);
+
+  --badge-bg: var(--dracula-background-light);
+  --badge-fg: var(--dracula-foreground);
+
+  --statusbar-bg: var(--dracula-background-dark);
+  --statusbar-fg: var(--dracula-foreground);
+  --statusbar-fg-inverse: var(--dracula-background);
+
+  /* Light step-9s are dark, so white sits on all of them, yellow included. */
+  --yellow-solid-fg: var(--white);
+
+  --tabs-header-bg: var(--dracula-background-dark);
+  --tab-bg: var(--dracula-background-darker);
+}
+
+/* Dark step-9s are bright pastels, so black sits on all of them. */
+.theme-dracula.dark-theme {
+  --dracula-background: #282A36;
+  --dracula-current-line: #6272A428;
+  --dracula-selection: #44475A;
+  --dracula-foreground: #F8F8F2;
+  --dracula-comment: #6272A4;
+  --dracula-red: #FF5555;
+  --dracula-orange: #FFB86C;
+  --dracula-yellow: #F1FA8C;
+  --dracula-green: #50FA7B;
+  --dracula-cyan: #8BE9FD;
+  --dracula-purple: #BD93F9;
+  --dracula-pink: #FF79C6;
+  --dracula-floating: #343746;
+  --dracula-background-lighter: #424450;
+  --dracula-background-light: #343746;
+  --dracula-background-dark: #21222C;
+  --dracula-background-darker: #191A21;
+
+  --red-solid-fg: var(--black);
+  --orange-solid-fg: var(--black);
+  --yellow-solid-fg: var(--black);
+  --green-solid-fg: var(--black);
+  --blue-solid-fg: var(--black);
+  --purple-solid-fg: var(--black);
+  --pink-solid-fg: var(--black);
+
+  --btn-flat-bg: var(--gray-a4);
+  --btn-flat-bg-hover: var(--gray-a5);
+}

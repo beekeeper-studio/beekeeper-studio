@@ -1,0 +1,55 @@
+.theme-dracula {
+  --blue-1: #f5f9fb;
+  --blue-2: #edf4f9;
+  --blue-3: #deeffa;
+  --blue-4: #cfe8f9;
+  --blue-5: #bddef4;
+  --blue-6: #a8d2ec;
+  --blue-7: #8dc1e1;
+  --blue-8: #63aad4;
+  --blue-9: #036a96;
+  --blue-10: #005b86;
+  --blue-11: #0a6d99;
+  --blue-12: #1a3f54;
+
+  --blue-a1: #f3f9ffcc;
+  --blue-a2: #e6f2ffb3;
+  --blue-a3: #d4ecffc0;
+  --blue-a4: #bbe0ffb3;
+  --blue-a5: #6dbbff73;
+  --blue-a6: #0000ff0d;
+  --blue-a7: #0079d572;
+  --blue-a8: #0077c69c;
+  --blue-a9: #006895fc;
+  --blue-a10: #005b86;
+  --blue-a11: #006796f5;
+  --blue-a12: #002943e5;
+}
+
+.theme-dracula.dark-theme {
+  --blue-1: #1d2e32;
+  --blue-2: #1e3337;
+  --blue-3: #0d424c;
+  --blue-4: #004f5d;
+  --blue-5: #005c6c;
+  --blue-6: #006a7b;
+  --blue-7: #007a8f;
+  --blue-8: #0090a9;
+  --blue-9: #8be9fd;
+  --blue-10: #81dff3;
+  --blue-11: #55d1e9;
+  --blue-12: #baf2ff;
+
+  --blue-a1: #00f70005;
+  --blue-a2: #00fb4e0b;
+  --blue-a3: #00fef81d;
+  --blue-a4: #00e7fd32;
+  --blue-a5: #00e3fe45;
+  --blue-a6: #00e3fe58;
+  --blue-a7: #00dfff71;
+  --blue-a8: #00dcff92;
+  --blue-a9: #8cebfffd;
+  --blue-a10: #87ebfff0;
+  --blue-a11: #5be5fee4;
+  --blue-a12: #baf2ff;
+}

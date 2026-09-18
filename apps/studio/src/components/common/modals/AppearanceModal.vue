@@ -191,7 +191,8 @@ export default Vue.extend({
 
 <style scoped lang="scss">
 .theme-list {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
   padding-bottom: 0.5rem;
 }
@@ -199,7 +200,6 @@ export default Vue.extend({
 .form-group label.theme-item {
   display: flex;
   flex-direction: column;
-  width: 18rem;
   padding: 0;
   cursor: pointer;
   align-items: flex-start;
@@ -323,6 +323,7 @@ export default Vue.extend({
     display: flex;
     gap: 1px;
     padding: 0.5em 0.5em 0;
+    background-color: var(--tabs-header-bg);
 
     .tab {
       display: flex;
@@ -331,16 +332,16 @@ export default Vue.extend({
       padding: 0.2em 0.8em;
       font-size: 0.85em;
       border-radius: 4px 4px 0 0;
-      color: var(--text);
-      background-color: var(--bg);
+      color: var(--tab-fg);
+      background-color: var(--tab-bg);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
 
       &.active {
         font-weight: 600;
-        color: var(--text-contrast);
-        background-color: var(--bg-base);
+        color: var(--tab-active-fg);
+        background-color: var(--tab-active-bg);
       }
 
       .material-icons {
@@ -363,7 +364,7 @@ export default Vue.extend({
     flex-direction: column;
     padding: 0.5em 0.25em;
     font-family: var(--font-family-mono);
-    color: var(--bks-text-editor-fg-color, var(--text-contrast));
+    color: var(--editor-fg, var(--text-contrast));
     background-color: var(--bg-base);
     white-space: nowrap;
 
@@ -375,19 +376,19 @@ export default Vue.extend({
     .gutter {
       width: 1em;
       text-align: right;
-      color: var(--bks-text-editor-linenumber-fg-color, var(--text));
+      color: var(--editor-linenumber-fg, var(--text));
     }
 
     .kw {
-      color: var(--bks-text-editor-keyword-fg-color, var(--info-text));
+      color: var(--editor-keyword-fg, var(--info-text));
     }
 
     .str {
-      color: var(--bks-text-editor-string-fg-color, var(--primary-text));
+      color: var(--editor-string-fg, var(--primary-text));
     }
 
     .num {
-      color: var(--bks-text-editor-number-fg-color, var(--primary-text));
+      color: var(--editor-number-fg, var(--primary-text));
     }
 
     .actions {
@@ -421,9 +422,9 @@ export default Vue.extend({
   }
 
   .btn-primary-preview {
-    padding: 0 1em;
-    line-height: 1.3;
-    border-radius: 2px;
+    padding: 0 0.65em;
+    line-height: 1.4;
+    border-radius: 0.5em;
     font-weight: bold;
     color: var(--btn-primary-fg);
     background-color: var(--btn-primary-bg);
