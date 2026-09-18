@@ -6,9 +6,6 @@
         :id="modal.id"
         :key="modal.id"
         :variant="modal.variant"
-        :closable="modal.closable !== false"
-        :acknowledgement="modal.acknowledgement"
-        :items="modal.items"
       >
         <template #title v-if="modal.title">
           {{ modal.title }}
@@ -31,12 +28,15 @@
 import Vue from "vue";
 import { AppEvent } from '@/common/AppEvent'
 import ConfirmationModal from '@/components/common/modals/ConfirmationModal.vue'
-import { ConfirmOptions, MODAL_CLOSE_EVENT, ModalCloseEventData } from '@/components/common/modals/utils';
+import { MODAL_CLOSE_EVENT, ModalCloseEventData } from '@/components/common/modals/utils';
 
-interface ModalOptions extends ConfirmOptions {
+interface ModalOptions {
   id?: string;
   title?: string;
   message?: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  variant?: "normal" | "danger";
   onConfirm: () => void;
   onCancel: () => void;
 }

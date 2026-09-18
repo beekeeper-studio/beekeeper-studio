@@ -64,7 +64,6 @@ function mountModal(store = buildStore()) {
   localVue.directive('tooltip', {})
   const mocks = {
     $modal: { show: vi.fn(), hide: vi.fn() },
-    $confirm: vi.fn(),
     $native: { openLink: vi.fn() },
     $noty: { info: vi.fn(), success: vi.fn(), error: vi.fn(), warning: vi.fn() },
     $bks: { timeAgo: vi.fn(() => '2 days ago') },
@@ -151,39 +150,65 @@ describe('TrialEndedModal', () => {
     wrapper.destroy()
   })
 
-  it('downgrading asks for an acknowledgement in a locked confirm with the used features on top', async () => {
+  it('downgrading switches the same modal to an acknowledgement step, used features on top', async () => {
     recordPaidFeatureUse('backup-restore', 'Backup')
     const { wrapper, mocks } = mountModal()
-    mocks.$confirm.mockResolvedValue(false)
     await flush()
 
     await wrapper.find('.trial-ended-downgrade').trigger('click')
-    await flush()
 
-    expect(mocks.$confirm).toHaveBeenCalledTimes(1)
-    const [title, , options] = mocks.$confirm.mock.calls[0]
-    expect(title).toContain('Downgrade')
-    expect(options.closable).toBe(false)
-    expect(options.variant).toBe('danger')
-    expect(options.acknowledgement).toMatch(/^I understand that by downgrading I will lose access to the features below/)
-    expect(options.items[0]).toMatchObject({ label: 'Backup & restore', badge: 'Used', highlight: true })
-    expect(options.items[0].note).toContain('Backup')
-    expect(options.items.slice(1).every((item: any) => !item.highlight)).toBe(true)
-    expect(options.items).toHaveLength(12)
+    expect(mocks.$modal.show).toHaveBeenCalledTimes(1)
+    expect(wrapper.text()).toContain('Downgrade to the Community Edition?')
+    expect(wrapper.text()).not.toContain('Your free trial has ended')
+    expect(wrapper.find('.trial-downgrade-acknowledgement').text()).toMatch(
+      /^I understand that by downgrading I will lose access to the features below/
+    )
 
-    // "Go back" leaves everything as it was
+    const rows = wrapper.findAll('.trial-feature-list--danger li')
+    expect(rows).toHaveLength(12)
+    expect(rows.at(0).classes()).toContain('trial-feature--used')
+    expect(rows.at(0).find('.trial-feature-label').text()).toBe('Backup & restore')
+    expect(rows.at(0).find('.trial-feature-badge').text()).toBe('Used')
+    expect(rows.at(0).find('.trial-feature-note').text()).toContain('Backup')
+    expect(rows.wrappers.slice(1).every((row) => !row.classes().includes('trial-feature--used'))).toBe(true)
+
+    // still locked down, nothing decided yet
+    expect(wrapper.find('.base-modal-close').exists()).toBe(false)
+    expect(wrapper.find('button[type=submit]').attributes('disabled')).toBe('disabled')
     expect(getTrialEndDecision()).toBeNull()
     expect(mocks.$modal.hide).not.toHaveBeenCalled()
     wrapper.destroy()
   })
 
-  it('a confirmed downgrade records the decision and releases the modal', async () => {
+  it('the downgrade step cannot be submitted unacknowledged, and "Go back" returns to the offer', async () => {
     const { wrapper, mocks } = mountModal()
-    mocks.$confirm.mockResolvedValue(true)
     await flush()
+    await wrapper.find('.trial-ended-downgrade').trigger('click')
+
+    await wrapper.find('form').trigger('submit')
+    expect(getTrialEndDecision()).toBeNull()
+    expect(mocks.$modal.hide).not.toHaveBeenCalled()
+
+    // ticking the box, then backing out, forgets the tick
+    await wrapper.find('.trial-downgrade-acknowledge').setChecked(true)
+    await wrapper.find('.trial-ended-back').trigger('click')
+    expect(wrapper.text()).toContain('Your free trial has ended')
+    expect(wrapper.find('.trial-downgrade-acknowledge').exists()).toBe(false)
 
     await wrapper.find('.trial-ended-downgrade').trigger('click')
+    expect((wrapper.find('.trial-downgrade-acknowledge').element as HTMLInputElement).checked).toBe(false)
+    expect(wrapper.find('button[type=submit]').attributes('disabled')).toBe('disabled')
+    wrapper.destroy()
+  })
+
+  it('an acknowledged downgrade records the decision and releases the modal', async () => {
+    const { wrapper, mocks } = mountModal()
     await flush()
+    await wrapper.find('.trial-ended-downgrade').trigger('click')
+
+    await wrapper.find('.trial-downgrade-acknowledge').setChecked(true)
+    expect(wrapper.find('button[type=submit]').attributes('disabled')).toBeUndefined()
+    await wrapper.find('form').trigger('submit')
 
     expect(getTrialEndDecision()).toBe('downgraded')
     expect(mocks.$modal.hide).toHaveBeenCalledWith(MODAL_NAME)

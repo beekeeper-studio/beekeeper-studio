@@ -1,7 +1,7 @@
 // Trial lifecycle dialogs: components/license/TrialStartedModal.vue (welcome,
 // shown once when the trial auto-starts) and TrialEndedModal.vue (the
-// decision at the end of the trial). Both render inside BaseModal, which owns
-// the chrome, so only the lead copy and the feature lists live here.
+// two-step decision at the end of the trial). Both render inside BaseModal,
+// which owns the chrome, so only the lead copy and the feature lists live here.
 
 .trial-modal {
   color: $text;
@@ -31,6 +31,23 @@
 
   .trial-feature-group--used + .trial-feature-group .trial-feature-heading {
     margin-top: $gutter-w * 1.25;
+  }
+
+  // Step two of the trial-ended dialog: the "I understand" checkbox.
+  .trial-downgrade-acknowledgement {
+    display: flex;
+    align-items: flex-start;
+    gap: $gutter-h * 1.5;
+    margin: $gutter-w 0 $gutter-h;
+    font-weight: 500;
+    line-height: 1.4;
+    color: $text-dark;
+    cursor: pointer;
+
+    input {
+      flex-shrink: 0;
+      margin-top: 0.15rem;
+    }
   }
 
   // Two-column checklist, same rhythm as .upgrade-feature-list.
@@ -86,19 +103,41 @@
       text-overflow: ellipsis;
     }
 
-    // Features used during the trial: one per line, called out.
+    // One feature per line; rows used during the trial are called out.
     &.trial-feature-list--stacked {
       grid-template-columns: 1fr;
-      row-gap: $gutter-h * 0.75;
+      row-gap: $gutter-h * 0.5;
 
       li {
         padding: $gutter-h ($gutter-h * 1.5);
         border-radius: 6px;
-        background: rgba($brand-warning, 0.12);
       }
 
-      .material-icons {
-        color: $brand-warning;
+      li.trial-feature--used {
+        background: rgba($brand-warning, 0.12);
+
+        .material-icons {
+          color: $brand-warning;
+        }
+      }
+    }
+
+    // Step two lists everything the downgrade locks, in warning colours.
+    &.trial-feature-list--danger {
+      max-height: 40vh;
+      overflow-y: auto;
+
+      li.trial-feature--used {
+        background: rgba($brand-danger, 0.12);
+
+        .material-icons {
+          color: $brand-danger;
+        }
+      }
+
+      .trial-feature-badge {
+        color: $brand-danger;
+        border-color: rgba($brand-danger, 0.5);
       }
     }
   }

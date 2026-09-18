@@ -8,7 +8,6 @@ import { createVHotkeyKeymap, createCodemirroKeymap } from './plugins/ConfigPlug
 import { UtilityConnection } from './lib/utility/UtilityConnection'
 import WebPluginManager from './services/plugin/web/WebPluginManager'
 import { ConnectionType } from './lib/db/types'
-import { ConfirmOptions } from './components/common/modals/utils'
 
 // 2. Specify a file with the types you want to augment
 //    Vue has the constructor type in types/vue.d.ts
@@ -30,7 +29,7 @@ declare module 'vue/types/vue' {
       warning(text: string, opts?: any): Noty
       info(text: string, opts?: any): Noty
     }
-    $confirm(title?: string, message?: string, options?: ConfirmOptions): Promise<boolean>
+    $confirm(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean>
     $confirmById(id: string): Promise<boolean>
     /**
      * Open the connection type picker.
