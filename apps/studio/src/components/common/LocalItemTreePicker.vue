@@ -360,7 +360,7 @@ label.checkbox-group {
     position: relative;
     display: flex;
     align-items: center;
-    border: 1px solid $border-color;
+    border: 1px solid var(--border-subtle);
     border-radius: 4px;
   }
   .filter-input {
@@ -386,7 +386,7 @@ label.checkbox-group {
       &:hover, &:focus {
         box-shadow: none;
         .material-icons, .material-icons-outlined {
-          color: $text-dark;
+          color: var(--text-contrast);
         }
       }
       &.btn-icon {
@@ -398,9 +398,9 @@ label.checkbox-group {
         border-radius: 22px;
         border: 0;
         &.active {
-          background: rgba($theme-base, 0.1);
+          background: var(--gray-a4);
           .material-icons {
-            color: $theme-primary;
+            color: var(--primary-text);
           }
         }
 
@@ -410,7 +410,7 @@ label.checkbox-group {
         font-size: 14px;
         line-height: 26px;
         width: 14px;
-        color: rgba($theme-base, 0.5);
+        color: var(--text-muted);
       }
     }
   }

@@ -426,11 +426,11 @@ export default {
 
 .permission-warning {
   cursor: pointer;
-  color: #f39c12;
+  color: var(--warning-text);
 }
 
 .permission-warning:hover {
-  color: #e67e22;
+  color: var(--warning-text-contrast);
 }
 
 .permission-warning i {

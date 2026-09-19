@@ -150,14 +150,14 @@ export default Vue.extend({
   align-items: center;
   gap: 0.5rem;
   padding: 0.35rem 0.5rem;
-  border: 1px solid var(--bks-border-color, rgba(255, 255, 255, 0.1));
+  border: var(--input-border);
   border-radius: 4px;
-  background: var(--bks-query-editor-bg, rgba(0, 0, 0, 0.1));
+  background: var(--input-bg);
 }
 
 .settings-input-filled-icon {
   font-size: 18px;
-  color: var(--bks-brand-success, #4caf50);
+  color: var(--success-text);
   flex-shrink: 0;
 }
 
@@ -190,7 +190,7 @@ export default Vue.extend({
 
   &:hover {
     opacity: 1;
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--gray-a4);
   }
 
   .material-icons {

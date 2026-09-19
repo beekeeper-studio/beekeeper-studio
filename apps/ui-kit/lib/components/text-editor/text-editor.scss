@@ -9,6 +9,7 @@
   .cm-editor {
     font-family: $font-family-mono;
     font-size: var(--editor-font-size, 0.875rem);
+    font-weight: var(--editor-font-weight, 400);
     height: 100%;
     background: var(--editor-bg);
     color: var(--editor-fg);
@@ -149,7 +150,7 @@
       color: inherit;
 
       &:hover, &:focus {
-        background: rgb(from var(--bks-theme-base) r g b / 12%);
+        background: var(--gray-a5);
       }
     }
 
@@ -183,15 +184,15 @@
   }
 
   .cm-completionIcon-table::before {
-    color: var(--bks-icon-table-color);
+    color: var(--yellow-text);
   }
 
   .cm-completionIcon-view::before {
-    color: var(--bks-icon-view-color);
+    color: var(--blue-text);
   }
 
   .cm-completionIcon-materialized-view::before {
-    color: var(--bks-icon-materialized-view-color);
+    color: var(--green-text);
   }
 
   ul li {

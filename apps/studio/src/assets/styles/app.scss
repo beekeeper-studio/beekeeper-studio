@@ -1,11 +1,6 @@
 @import "@beekeeperstudio/ui-kit/style.css";
-@import "codemirror/lib/codemirror";
-@import "codemirror/addon/hint/show-hint";
 @import "noty/lib/noty";
 @import "tabulator-tables/dist/css/tabulator_midnight.css";
-@import "codemirror/theme/monokai";
-@import "codemirror/addon/merge/merge";
-@import "codemirror/addon/search/matchesonscrollbar";
 @import "vue-select/dist/vue-select";
 @import "driver.js/dist/driver.css";
 
@@ -20,13 +15,7 @@
 @import './app/base';
 @import './app/vendor/material-symbols.scss';
 
-// FIXME remove this
-body {
-  @import './themes/light/variables.scss';
-  @import './app/mixins';
-  @import './components/all';
-  @import './vendor.scss';
-  @import './app/_all.scss';
-  @import './themes/light/theme.scss';
-  @import './scssvars-to-cssprops.scss';
-}
+@import './app/mixins';
+@import './components/all';
+@import './vendor.scss';
+@import './app/_all.scss';

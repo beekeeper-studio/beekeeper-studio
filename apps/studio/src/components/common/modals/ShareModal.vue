@@ -453,11 +453,11 @@ export default Vue.extend({
     font-size: 1rem;
 
     &[data-subject-module="data/queries"] {
-      color: var(--brand-pink);
+      color: var(--pink-text);
     }
 
     &[data-subject-module*="Folders"] {
-      color: var(--text-lighter);
+      color: var(--text-muted);
     }
   }
 }
@@ -465,7 +465,7 @@ export default Vue.extend({
 .modal-subtitle {
   font-size: 1rem;
   font-weight: normal;
-  color: var(--text-light);
+  color: var(--text-muted);
   font-size: 0.831rem;
   line-height: normal;
   margin-bottom: 0.25rem;
@@ -504,7 +504,7 @@ h3 {
   .icon {
     width: 2rem;
     height: 2rem;
-    background-color: rgb(from var(--theme-base) r g b / 10%);
+    background-color: var(--gray-a4);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -522,13 +522,13 @@ h3 {
   .label {
     flex: 1;
     margin-inline: 1rem;
-    color: rgb(from var(--theme-base) r g b / 77%);
+    color: var(--text);
   }
 
   .hint {
     font-size: 0.831rem;
     margin-top: 0.1rem;
-    color: var(--text-light);
+    color: var(--text-muted);
   }
 
   select {
@@ -565,7 +565,7 @@ h3 {
     .input-wrapper {
       position: relative;
       display: flex;
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--border-subtle);
       border-radius: 4px;
 
       &::v-deep .multi-select {
@@ -601,17 +601,17 @@ h3 {
 
 @keyframes highlightFadeOut {
   0% {
-    background-color: rgb(from var(--theme-primary) r g b / 10%);
+    background-color: var(--primary-a4);
   }
 
   /* Holds the solid 10% highlight for the first 30% of the animation time */
   30% {
-    background-color: rgb(from var(--theme-primary) r g b / 10%);
+    background-color: var(--primary-a4);
   }
 
   /* Smoothly fades out to 0% (transparent) over the remaining 70% of the time */
   100% {
-    background-color: rgb(from var(--theme-primary) r g b / 0%);
+    background-color: var(--primary-a1);
   }
 }
 </style>

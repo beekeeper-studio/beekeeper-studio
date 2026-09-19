@@ -306,8 +306,8 @@ export default Vue.extend({
   padding: 1px 2px 1px 0.5rem;
   font-size: 0.85rem;
   line-height: 1.4;
-  color: var(--text-dark);
-  background: color-mix(in srgb, var(--theme-base) 12%, transparent);
+  color: var(--badge-flat-fg);
+  background: var(--badge-flat-bg);
   border-radius: 4px;
   user-select: none;
 }
@@ -319,11 +319,11 @@ export default Vue.extend({
   padding: 0;
   border: 0;
   background: transparent;
-  color: var(--text-light);
+  color: var(--text-muted);
   cursor: pointer;
 
   &:hover {
-    color: var(--text-dark);
+    color: var(--text-contrast);
   }
 
   .material-icons {
@@ -343,6 +343,7 @@ export default Vue.extend({
   overflow-y: auto;
   font-size: 0.85rem;
   background: var(--panel-bg);
+  color: var(--panel-fg);
   border-radius: 6px;
   box-shadow: var(--panel-shadow);
 }
@@ -353,19 +354,19 @@ export default Vue.extend({
   min-height: 28px;
   padding: 0 0.8rem;
   font-size: 0.9rem;
-  color: var(--text-dark);
+  color: inherit;
   cursor: pointer;
   user-select: none;
 
   &:hover,
   &.active {
-    background: color-mix(in srgb, var(--theme-base) 5%, transparent);
+    background: var(--panel-bg-hover);
   }
 }
 
 .option .label ::v-deep(strong) {
   font-weight: 700;
-  color: var(--theme-base);
+  color: var(--text-contrast);
 }
 
 .hint {
@@ -374,7 +375,7 @@ export default Vue.extend({
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  color: var(--text-light);
+  color: var(--text-muted);
 }
 
 .empty {
@@ -382,7 +383,7 @@ export default Vue.extend({
   min-height: 28px;
   display: flex;
   align-items: center;
-  color: var(--text-light);
+  color: var(--text-muted);
   user-select: none;
 }
 </style>

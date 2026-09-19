@@ -261,6 +261,6 @@ input[type="radio"].folder-radio {
 .current-location {
   font-style: italic;
   font-size: 0.831rem;
-  color: var(--text-lighter);
+  color: var(--text-muted);
 }
 </style>

@@ -39,7 +39,7 @@
     margin-right: auto;
     text-align: left;
     font-size: 0.8rem;
-    color: var(--text-light);
+    color: var(--text-muted);
   }
   .btn {
     white-space: nowrap;

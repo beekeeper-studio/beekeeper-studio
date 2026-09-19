@@ -118,19 +118,19 @@ export default Vue.extend({
   padding: 0 $gutter-h 0 0;
   margin-top: ($gutter-w * 0.25);
   margin-bottom: $gutter-h;
-  background: rgba($theme-base, 0.08);
+  background: var(--gray-a4);
   transition: background 0.15s ease-in-out;
   border-radius: 4px;
   cursor: pointer;
   &:hover {
-    background: rgba($theme-base, 0.1);
+    background: var(--gray-a4);
   }
   .select-wrap {
     border: 0;
     box-shadow: none;
   }
   select {
-    color: $text-dark;
+    color: var(--text-contrast);
     padding-right: 1.5rem;
     cursor: pointer;
   }

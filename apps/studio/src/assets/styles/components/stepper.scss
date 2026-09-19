@@ -1,4 +1,3 @@
-@use "sass:color";
 // Original Copyright https://github.com/PygmySlowLoris/vue-stepper
 
 .stepper-box {
@@ -14,13 +13,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: $query-editor-bg;
+    background: var(--editor-bg);
     .nav-pills {
       margin-top: 1rem;
       display: flex;
       justify-content: center;
       div:hover:not(.deactivated) .progress:not(.passed) {
-        background-color: rgba($theme-base, 0.2);
+        background-color: var(--gray-a7);
       }
       .progress {
         transition: background-color 0.2s ease-in-out;
@@ -29,23 +28,23 @@
         margin-left: 0.5rem;
         border-radius: 20px;
         &.passed {
-          background-color: $theme-primary;
+          background-color: var(--primary-solid-bg);
         }
         &:not(.passed) {
-          background-color: $border-color;
+          background-color: var(--border-subtle);
         }
       }
       .nav-pill {
         font-weight: 500;
         padding: $gutter-w ($gutter-w * 1.25);
-        color: $text-light;
+        color: var(--text-muted);
         transition: color 0.2s ease-in-out,
                     box-shadow 0.2s ease-in-out;
         &:hover:not(.deactivated):not(.active) {
-          color: $text-dark;
+          color: var(--text-contrast);
         }
         &.active {
-          color: $text-dark;
+          color: var(--text-contrast);
         }
         &.deactivated {
           cursor: not-allowed;
@@ -81,12 +80,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: $theme-primary;
-  color: $theme-bg;
+  background-color: var(--primary-solid-bg);
+  color: var(--app-bg);
   border: none;
   &.next {
     &.deactivated {
-      background-color: color.adjust($theme-primary, $lightness: -20%) !important;
+      background-color: var(--primary-solid-bg-hover) !important;
       cursor: not-allowed !important;
     }
   }

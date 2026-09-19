@@ -63,7 +63,7 @@
 /* Comments */
 .hljs-comment,
 .hljs-quote {
-  color: var(--bks-text-light, rgba(255, 255, 255, 0.57));
+  color: var(--text-muted);
   font-style: italic;
 }
 
@@ -96,12 +96,12 @@
 /* Additions/Deletions (for diff highlighting) */
 .hljs-addition {
   background: transparent;
-  color: var(--bks-brand-success, #15db95);
+  color: var(--success-text);
 }
 
 .hljs-deletion {
   background: transparent;
-  color: var(--bks-brand-danger, #ff5d59);
+  color: var(--danger-text);
 }
 
 /* Light theme overrides - use Beekeeper's theme classes */
@@ -146,7 +146,7 @@ body.theme-light .hljs-comment,
 body.theme-solarized .hljs-comment,
 body.theme-light .hljs-quote,
 body.theme-solarized .hljs-quote {
-  color: var(--bks-text-light, rgba(0, 0, 0, 0.57));
+  color: var(--text-muted);
 }
 
 body.theme-light .hljs-variable,
@@ -191,7 +191,7 @@ body.theme-solarized .hljs-params {
 
   body.theme-system .hljs-comment,
   body.theme-system .hljs-quote {
-    color: var(--bks-text-light, rgba(0, 0, 0, 0.57));
+    color: var(--text-muted);
   }
 
   body.theme-system .hljs-variable,

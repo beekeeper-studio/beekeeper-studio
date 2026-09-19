@@ -1,13 +1,5 @@
 $namespace: 'bkdates'; // change the 'mx' to 'xmx'. then <date-picker prefix-class="xmx" />
 
-$default-color: $theme-bg;
-$primary-color: $theme-base;
-$calendar-active-color: $text-dark;
-$calendar-active-background-color: $theme-primary;
-$time-active-color: #181818;
-$time-active-background-color: $theme-primary;
-$today-color: $theme-secondary;
-
 @import './var.scss';
 @import './icon.scss';
 @import './btn.scss';
@@ -47,21 +39,21 @@ $today-color: $theme-secondary;
   padding: 6px 30px;
   padding-left: 10px;
   line-height: 1.4;
-  color: $input-color;
-  background-color: #fff;
-  border: 1px solid $input-border-color;
+  color: var(--input-fg);
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-subtle);
   border-radius: $input-border-radius;
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  box-shadow: none;
 
   &:hover,
   &:focus {
-    border-color: $input-hover-border-color;
+    border-color: var(--border-hover);
   }
   &:disabled,
   &.disabled {
-    color: $disabled-color;
-    background-color: $disabled-background-color;
-    border-color: $input-border-color;
+    color: var(--text-muted);
+    background-color: var(--gray-a2);
+    border-color: var(--border-subtle);
     cursor: not-allowed;
   }
   &:focus {
@@ -80,7 +72,7 @@ $today-color: $theme-secondary;
   transform: translateY(-50%);
   font-size: 16px;
   line-height: 1;
-  color: rgba($theme-secondary, 0.5);
+  color: var(--primary-a10);
   vertical-align: middle;
   display: none;
 }
@@ -88,21 +80,21 @@ $today-color: $theme-secondary;
 .#{$namespace}-icon-clear {
   cursor: pointer;
   &:hover {
-    color: rgba($theme-secondary, 0.8);
+    color: var(--primary-a12);
   }
 }
 
 .#{$namespace}-datepicker-main {
-  color: $primary-color;
-  background-color: $default-color;
-  border: 1px solid $border-color;
+  color: var(--text-contrast);
+  background-color: var(--text);
+  border: 1px solid var(--border-subtle);
 }
 
 .#{$namespace}-datepicker-popup {
   position: absolute;
   margin-top: 1px;
   margin-bottom: 1px;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+  box-shadow: var(--panel-shadow);
   z-index: $popup-z-index;
 }
 
@@ -116,7 +108,7 @@ $today-color: $theme-secondary;
 
 .#{$namespace}-datepicker-sidebar + .#{$namespace}-datepicker-content {
   margin-left: $sidebar-margin-left;
-  border-left: 1px solid $border-color;
+  border-left: 1px solid var(--border-subtle);
 }
 
 .#{$namespace}-datepicker-body {
@@ -139,13 +131,13 @@ $today-color: $theme-secondary;
 
 .#{$namespace}-datepicker-header {
   padding: 6px 8px;
-  border-bottom: 1px solid $border-color;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .#{$namespace}-datepicker-footer {
   padding: 6px 8px;
   text-align: right;
-  border-top: 1px solid $border-color;
+  border-top: 1px solid var(--border-subtle);
 }
 
 .#{$namespace}-calendar {
@@ -153,7 +145,7 @@ $today-color: $theme-secondary;
   width: 248px;
   padding: 6px 12px;
   & + & {
-    border-left: 1px solid $border-color;
+    border-left: 1px solid var(--border-subtle);
   }
 }
 
@@ -192,22 +184,22 @@ $today-color: $theme-secondary;
   .cell {
     cursor: pointer;
     &:hover {
-      color: $calendar-hover-color;
-      background-color: $calendar-hover-background-color;
+      color: var(--text);
+      background-color: var(--gray-a3);
     }
     &.active {
-      color: $calendar-active-color;
-      background-color: $calendar-active-background-color;
+      color: var(--primary-solid-fg);
+      background-color: var(--primary-solid-bg);
     }
     &.in-range,
     &.hover-in-range {
-      color: $calendar-in-range-color;
-      background-color: $calendar-in-range-background-color;
+      color: var(--text);
+      background-color: var(--primary-a4);
     }
     &.disabled {
       cursor: not-allowed;
-      color: $disabled-color;
-      background-color: $disabled-background-color;
+      color: var(--text-muted);
+      background-color: var(--gray-a2);
     }
   }
 }
@@ -216,10 +208,10 @@ $today-color: $theme-secondary;
   .#{$namespace}-date-row {
     cursor: pointer;
     &:hover {
-      background-color: $calendar-hover-background-color;
+      background-color: var(--gray-a3);
     }
     &.#{$namespace}-active-week {
-      background-color: $calendar-in-range-background-color;
+      background-color: var(--primary-a4);
     }
     .cell {
       &:hover {
@@ -266,10 +258,10 @@ $today-color: $theme-secondary;
   }
 
   .today {
-    color: $today-color;
+    color: var(--primary-text);
   }
   .cell.not-current-month {
-    color: #ccc;
+    color: var(--text-muted);
     background: none; // cover the in-range style
     cursor: not-allowed;
   }
@@ -278,9 +270,9 @@ $today-color: $theme-secondary;
 .#{$namespace}-time {
   flex: 1;
   width: 224px;
-  background: $default-color;
+  background: var(--text);
   & + & {
-    border-left: 1px solid $border-color;
+    border-left: 1px solid var(--border-subtle);
   }
 }
 .#{$namespace}-calendar-time {
@@ -296,7 +288,7 @@ $today-color: $theme-secondary;
   line-height: 34px;
   text-align: center;
   overflow: hidden;
-  border-bottom: 1px solid $border-color;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .#{$namespace}-time-content {
@@ -315,7 +307,7 @@ $today-color: $theme-secondary;
 .#{$namespace}-time-column {
   flex: 1;
   position: relative;
-  border-left: 1px solid $border-color;
+  border-left: 1px solid var(--border-subtle);
   text-align: center;
 
   &:first-child {
@@ -337,18 +329,18 @@ $today-color: $theme-secondary;
     height: 32px;
     line-height: 32px;
     &:hover {
-      color: $time-hover-color;
-      background-color: $time-hover-background-color;
+      color: var(--text);
+      background-color: var(--gray-a3);
     }
     &.active {
-      color: $time-active-color;
-      background-color: $time-active-background-color;
+      color: var(--primary-solid-fg);
+      background-color: var(--primary-solid-bg);
       font-weight: 700;
     }
     &.disabled {
       cursor: not-allowed;
-      color: $disabled-color;
-      background-color: $disabled-background-color;
+      color: var(--text-muted);
+      background-color: var(--gray-a2);
     }
   }
 }
@@ -358,17 +350,17 @@ $today-color: $theme-secondary;
   padding: 8px 10px;
   line-height: 20px;
   &:hover {
-    color: $time-hover-color;
-    background-color: $time-hover-background-color;
+    color: var(--text);
+    background-color: var(--gray-a3);
   }
   &.active {
-    color: $time-active-color;
-    background-color: $time-active-background-color;
+    color: var(--primary-solid-fg);
+    background-color: var(--primary-solid-bg);
     font-weight: 700;
   }
   &.disabled {
     cursor: not-allowed;
-    color: $disabled-color;
-    background-color: $disabled-background-color;
+    color: var(--text-muted);
+    background-color: var(--gray-a2);
   }
 }

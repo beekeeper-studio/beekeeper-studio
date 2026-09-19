@@ -1,6 +1,5 @@
 @use "variables" as *;
 @use "mixins" as *;
-@use "sass:color";
 
 .BksUiKit {
   // Global
@@ -16,7 +15,7 @@
     outline: none;
     cursor: pointer;
     &:hover, &:focus {
-      color: $link-color;
+      color: var(--link-fg);
       text-decoration: none;
     }
     &.disabled, &.disabled:hover {
@@ -50,7 +49,7 @@
   }
   hr {
     border: 0;
-    border-bottom: 1px solid $border-color;
+    border-bottom: 1px solid var(--border-subtle);
   }
 
   // Material-icons
@@ -66,7 +65,7 @@
 
   // Placeholder
   ::placeholder {
-    color: $text-hint;
+    color: var(--text-muted);
   }
 
   // Scrollbar
@@ -177,12 +176,6 @@
   }
 
 
-  .btn-large {
-    padding: 1.25em;
-    font-size: 13px;
-    width: 100%;
-    max-width: 250px;
-  }
   .btn-small {
     @include btn-small;
   }
@@ -247,7 +240,7 @@
     }
     input {
       &[disabled="disabled"], &[disabled="disabled"]:hover, &[disabled="disabled"]:focus {
-        color: $text-lighter;
+        color: var(--text-muted);
         cursor: not-allowed;
         border-style: dotted;
       }
@@ -267,7 +260,7 @@
       margin: $gutter-h * 0.5;
       margin-bottom: 0;
       font-size: 80%;
-      color: $text-hint;
+      color: var(--text-muted);
     }
   }
   .form-control {
@@ -278,7 +271,7 @@
     i {
       margin: 0 ($gutter-h * 0.75);
       font-size: 18px;
-      color: rgba($theme-base, 0.37);
+      color: var(--text-muted);
     }
   }
 
@@ -331,16 +324,16 @@
     background: var(--select-arrow) no-repeat scroll 98% 60% var(--input-bg);
     padding: 0 0.75rem;
     option {
-      background: color.adjust($theme-bg, $lightness: 3%);
-      color: $text;
+      background: var(--bg-subtle);
+      color: var(--text);
       &:checked,
       &:hover {
-        color: white;
-        box-shadow: 0 0 10px 100px $brand-info inset;
+        color: var(--info-solid-fg);
+        box-shadow: 0 0 10px 100px var(--info-solid-bg) inset;
       }
       &:disabled, &:disabled:hover, &:disabled:focus {
         background: transparent;
-        color: $text-lighter;
+        color: var(--text-muted);
       }
     }
   }
@@ -350,10 +343,10 @@
     border-radius: $input-radius;
     overflow: hidden;
     width: 100%;
-    box-shadow: inset 0 0 0 1px $border-color;
+    box-shadow: inset 0 0 0 1px var(--border-subtle);
     transition: background 0.15s ease-in-out;
     &:hover {
-      background: rgba($theme-base, 0.05);
+      background: var(--gray-a3);
     }
     > select {
       border: 0;
@@ -373,7 +366,7 @@
       font-size: 13px;
     }
     .has-tooltip {
-      color: $text-lighter;
+      color: var(--text-muted);
     }
   }
   input[type="checkbox"] {
@@ -383,7 +376,7 @@
     display: inline-flex;
     -webkit-appearance: none;
     background-color: transparent;
-    outline: 2px solid rgba($theme-base, 0.2);
+    outline: 2px solid var(--gray-a7);
     outline-offset: -2px;
     height: $checkbox-size;
     line-height: $checkbox-size;
@@ -398,8 +391,8 @@
     &:active,
     &:checked,
     &:checked:active {
-      background: $theme-base;
-      color: $theme-bg;
+      background: var(--checkbox-checked-bg);
+      color: var(--checkbox-checked-fg);
       box-shadow: none;
       outline: none;
     }
@@ -413,7 +406,7 @@
       left: 0;
       height: 100%;
       width: 100%;
-      color: $theme-bg;
+      color: var(--app-bg);
     }
   }
 
@@ -426,7 +419,7 @@
     display: inline-flex;
     -webkit-appearance: none;
     background-color: transparent;
-    box-shadow: inset 0 0 0 2px rgba($theme-base, 0.2);
+    box-shadow: inset 0 0 0 2px var(--gray-a7);
     height: $radio-size;
     line-height: 1;
     width: $radio-size;
@@ -438,8 +431,8 @@
     transition: background 0.2s ease-in-out;
     cursor: pointer;
     &:checked{
-      background: color.adjust($theme-primary, $lightness: -10%);
-      color: rgba(black, 0.87);
+      background: var(--checkbox-checked-bg);
+      color: var(--checkbox-checked-fg);
       box-shadow: none;
     }
   }
@@ -451,11 +444,11 @@
     font-size: 12px;
     outline: none;
     border: 0;
-    box-shadow: inset 0 0 0 1px $border-color;
+    box-shadow: inset 0 0 0 1px var(--border-subtle);
     &::-webkit-file-upload-button {
       font-family: $font-family;
-      color: $theme-base;
-      background: rgba($theme-base, 0.035);
+      color: var(--text-contrast);
+      background: var(--gray-a2);
       font-size: 11px;
       line-height: $input-height;
       height: $input-height + 1px;
@@ -465,36 +458,36 @@
       margin-left: -$gutter-h;
       border: 0;
       outline: none;
-      box-shadow: inset -1px 0 rgba($theme-base, 0.08);
+      box-shadow: inset -1px 0 var(--gray-a4);
       transition: background 0.15s ease-in-out;
       cursor: pointer;
       &:hover, &:focus {
-        background: rgba($theme-base, 0.08);
+        background: var(--gray-a4);
       }
     }
   }
 
   .text-primary {
-    color: $brand-primary;
+    color: var(--primary-text);
   }
 
   .text-success {
-    color: $brand-success;
+    color: var(--success-text);
   }
   .text-info {
-    color: $brand-info;
+    color: var(--info-text);
   }
   .text-danger {
-    color: color.adjust($brand-danger, $lightness: 5%);
+    color: var(--danger-text);
   }
   .text-warning {
-    color: $brand-warning;
+    color: var(--warning-text);
   }
   .text-light {
-    color: $text-light;
+    color: var(--text-muted);
   }
   .text-lighter {
-    color: $text-lighter;
+    color: var(--text-muted);
   }
 
   .text-2x {
@@ -526,7 +519,7 @@
       border: 0;
       &.active {
         border: 0;
-        background: $query-editor-bg;
+        background: var(--editor-bg);
       }
     }
   }
@@ -541,43 +534,43 @@
       color: var(--text-muted);
     }
     &.view-icon {
-      color: var(--blue-solid-bg);
+      color: var(--blue-text);
     }
     &.routine-icon {
-      color: var(--green-solid-bg);
+      color: var(--green-text);
       &.routine-window-icon {
-        color: var(--pink-solid-bg);
+        color: var(--pink-text);
       }
       &.routine-function-icon {
-        color: var(--green-solid-bg);
+        color: var(--green-text);
       }
       &.routine-aggregate-icon {
-        color: var(--orange-solid-bg);
+        color: var(--orange-text);
       }
       &.routine-procedure-icon {
-        color: var(--blue-solid-bg);
+        color: var(--blue-text);
       }
     }
     &.materialized-view-icon {
-      color: var(--green-solid-bg);
+      color: var(--green-text);
     }
     &.query {
-      color: var(--pink-solid-bg);
+      color: var(--pink-text);
     }
     &.database {
-      color: var(--purple-solid-bg);
+      color: var(--purple-text);
     }
     &.connection {
-      color: var(--blue-solid-bg);
+      color: var(--blue-text);
     }
     &.settings {
       color: var(--text-muted);
     }
     &.table-builder {
-      color: var(--blue-solid-bg);
+      color: var(--blue-text);
     }
     &.table-builder-icon {
-      color: var(--blue-solid-bg);
+      color: var(--blue-text);
     }
   }
 
@@ -654,15 +647,11 @@
     margin-bottom: 1.25rem;
   }
   .card-shadow {
-    box-shadow: 0 0 0 1px rgba(black ,0.06),
-                0 1px 3px 0 rgba(black ,0.12),
-                0 2px 1px -1px rgba(black ,0.08);
+    box-shadow: var(--panel-shadow);
     transition: box-shadow 0.28s ease-in-out;
   }
   .card-shadow-hover {
-    box-shadow: 0 0 0 1px rgba(black ,0.06),
-                0 1px 2px rgba(black ,0.08),
-                0 6px 15px rgba(black ,0.12);
+    box-shadow: var(--panel-shadow);
   }
 
   // Badge
@@ -725,15 +714,15 @@
       color: inherit;
       text-decoration: underline;
       &:hover {
-        color: $link-color;
+        color: var(--link-fg);
       }
 
       i.close {
         font-size: inherit;
         vertical-align: middle;
-        color: $text;
+        color: var(--text);
         &:hover {
-          color: $text-dark;
+          color: var(--text-contrast);
         }
       }
     }
@@ -779,19 +768,15 @@
   }
   // Colour modifiers retarget the alert tokens.
   .alert-info {
-    --alert-bg: var(--info-bg-a);
     --alert-fg: var(--info-text);
   }
   .alert-success {
-    --alert-bg: var(--success-bg-a);
     --alert-fg: var(--success-text);
   }
   .alert-warning {
-    --alert-bg: var(--warning-bg-a);
     --alert-fg: var(--warning-text);
   }
   .alert-danger {
-    --alert-bg: var(--danger-bg-a);
     --alert-fg: var(--danger-text);
   }
 
@@ -804,7 +789,7 @@
     width: 100%;
     border: 0;
     --vs-controls-color: var(--gray-a9);
-    --vs-border-color: var(--border-color);
+    --vs-border-color: var(--border-subtle);
 
     --vs-dropdown-bg: var(--panel-bg);
     --vs-dropdown-color: var(--text);

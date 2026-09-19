@@ -15,8 +15,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: $theme-bg;
-    color: $theme-base;
+    background-color: var(--app-bg);
+    color: var(--text-contrast);
     opacity: 0.5;
     font-size: 2rem;
   }

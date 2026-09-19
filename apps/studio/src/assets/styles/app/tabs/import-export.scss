@@ -1,4 +1,3 @@
-@use "sass:color";
 
 .import-export {
   &__container {
@@ -37,7 +36,7 @@
     li {
       padding: 1rem;
       margin: 0.75rem 0 0.75rem 0;
-      background: color.adjust($theme-bg, $lightness: 2%);
+      background: var(--bg-subtle);
       border-radius: 0.5rem;
       display: flex;
       flex-direction: column;
@@ -58,20 +57,20 @@
           }
 
           &.complete {
-            color: $brand-success;
+            color: var(--success-text);
           }
 
           &.failed {
-            color: $brand-danger;
+            color: var(--danger-text);
           }
 
           &.warning {
-            color: $brand-warning;
+            color: var(--warning-text);
             margin-left: 0.5rem;
           }
 
           &.pending {
-            color: $brand-default;
+            color: var(--text-muted);
           }
         }
 
@@ -83,7 +82,7 @@
           padding: 0.5rem;
 
           &:hover {
-            background: color.adjust($theme-bg, $lightness: 6%);
+            background: var(--bg);
           }
         }
       }
@@ -91,7 +90,7 @@
       .progress .progress-bg {
         margin-top: 0.5rem;
         height: 0.65rem;
-        background: color.adjust($theme-bg, $lightness: 6%);
+        background: var(--bg);
         border-radius: 0.35rem;
         position: relative;
         .progress-fill {
@@ -100,7 +99,7 @@
           top: 0;
           left: 0;
           height: 100%;
-          background: $text-dark;
+          background: var(--text-contrast);
           transition: width 0.2s ease-in;
         }
       }

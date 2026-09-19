@@ -10,6 +10,7 @@
 
 .theme-default.light-theme {
   --app-bg: var(--white);
+  --editor-font-weight: 500;
 }
 
 .theme-default.dark-theme {

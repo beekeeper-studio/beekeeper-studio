@@ -2274,7 +2274,6 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 </script>
 
 <style lang="scss" scoped>
-  @use "sass:color";
   @import '../assets/styles/app/_variables';
 
   .query-editor {
@@ -2298,7 +2297,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     padding-block: 0.5rem;
     padding-inline: 0.75rem;
     margin-bottom: -0.75rem;
-    color: $brand-danger;
+    color: var(--danger-text);
     font-size: 0.85rem;
 
     [class^="material-icons"] {
@@ -2327,29 +2326,26 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     justify-content: center;
     align-items: center;
     gap: 0.25rem;
-    color: var(--brand-warning);
+    color: var(--warning-text);
     font-weight: bold;
-    background: color-mix(
-      in srgb,
-      var(--brand-warning) 4%,
-      var(--query-editor-bg));
+    background: var(--warning-bg-subtle-a);
     border-radius: 9999px;
     padding: 0.215rem 0.75rem;
-    box-shadow: 0 0 6px 0 rgb(from var(--brand-warning) r g b / 0.7);
+    box-shadow: 0 0 6px 0 var(--warning-a11);
     animation: glowAndDrop 0.9s cubic-bezier(0.33, 0, 0.2, 1) forwards;
   }
 
   @keyframes glowAndDrop {
     0% {
-      box-shadow: 0 0 0px 0 rgb(from var(--brand-warning) r g b / 0);
+      box-shadow: 0 0 0px 0 transparent;
     }
 
     60% {
-      box-shadow: 0 0 10px 0px rgb(from var(--brand-warning) r g b / 1);
+      box-shadow: 0 0 10px 0px var(--warning-solid-bg);
     }
 
     100% {
-      box-shadow: 0 0 3px 0 rgb(from var(--brand-warning) r g b / 1);
+      box-shadow: 0 0 3px 0 var(--warning-solid-bg);
     }
   }
 
@@ -2361,7 +2357,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     position: absolute;
     inset: 0;
     z-index: 10;
-    background-color: rgba(from var(--theme-bg) r g b / 70%);
+    background-color: var(--overlay-bg);
     display: flex;
     align-items: center;
     justify-content: center;
