@@ -200,15 +200,6 @@
                 <content-placeholder-text :lines="1" />
               </content-placeholder>
             </template>
-            <template #folder-empty="{ node, depth }">
-              <div
-                v-if="!loadingFolderIds.includes(node.ref.id) && !errors[node.ref.id]"
-                class="tree-empty"
-                :style="{ '--depth': depth }"
-              >
-                No items
-              </div>
-            </template>
             <template #item="{ node }">
               <favorite-list-item
                 v-if="node.ref === draftItem"
@@ -742,11 +733,6 @@ export default {
   margin-top: 0.45rem;
   margin-bottom: -0.7rem;
   padding-left: calc(var(--depth) * 1rem + 0.55rem);
-}
-.tree-empty {
-  padding-left: calc(var(--depth) * 1rem + 0.55rem);
-  margin-block: 0.25rem;
-  opacity: 0.6;
 }
 ::v-deep .alert.error-alert.tree-error {
   margin-left: calc(var(--depth) * 1rem + 0.55rem);

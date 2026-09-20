@@ -6,7 +6,6 @@
       @opened="handleOpened"
       @closed="$emit('closed')"
       class="base-modal-root"
-      :style="{ '--base-modal-max-width': maxWidth }"
     >
       <x-progressbar v-if="loading" />
       <form
@@ -30,9 +29,7 @@
           </a>
         </div>
         <div class="base-modal-body">
-          <div class="base-modal-content">
-            <slot :close="close" :submit="() => $refs.form.requestSubmit()" />
-          </div>
+          <slot :close="close" :submit="() => $refs.form.requestSubmit()" />
         </div>
         <div class="base-modal-footer" v-if="$scopedSlots.footer">
           <slot name="footer" :close="close" />
@@ -66,10 +63,6 @@ export default Vue.extend({
     /** Show loading indicator */
     loading: Boolean,
     height: String,
-    maxWidth: {
-      type: String,
-      default: "550px",
-    },
   },
   methods: {
     close() {
@@ -90,17 +83,14 @@ export default Vue.extend({
 .base-modal-root ::v-deep .v--modal {
   min-width: 36rem;
   min-height: 6rem;
-  max-width: var(--base-modal-max-width);
+  max-width: 550px;
   width: auto !important;
-  /* The form sizes itself; the box must not clip it or the bottom scrollbar is lost. */
-  max-height: none;
 }
 
 .base-modal {
   --base-modal-footer-gap: 0.5rem;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 1.6rem);
 }
 
 .base-modal-header {
@@ -161,17 +151,10 @@ export default Vue.extend({
   color: var(--btn-fg);
 }
 
-/* The body scrolls and the content carries the padding, so scrollbars sit on the edge. */
 .base-modal-body {
   flex: 1 1 auto;
-  min-height: 0;
-  overflow: auto;
+  overflow-y: auto;
   width: 100%;
-}
-
-.base-modal-content {
-  width: max-content;
-  min-width: 100%;
   padding: 0 1.2rem 0.8rem;
 }
 
