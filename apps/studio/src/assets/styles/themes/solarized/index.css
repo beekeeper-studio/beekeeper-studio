@@ -14,9 +14,6 @@
 
   --app-bg: var(--gray-1);
 
-  --border-subtle: var(--gray-a3);
-  --border: var(--gray-a4);
-
   --text-muted: var(--gray-a9);
 
   /* Black reads better on these step-9 solids; orange and red keep white. */
