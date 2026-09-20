@@ -121,7 +121,6 @@
   .cm-button {
     @include btn;
     background-image: none; // reset cm style
-    background-color: var(--editor-button-bg);
     text-transform: capitalize;
   }
 
