@@ -219,17 +219,6 @@ class BeekeeperWindow {
       this.win = null
     })
 
-    if (devToolsEnabled) {
-      this.win?.webContents.on('context-menu', (_event, params) => {
-        electron.Menu.buildFromTemplate([
-          {
-            label: 'Inspect Element',
-            click: () => this.win?.webContents.inspectElement(params.x, params.y),
-          },
-        ]).popup({ window: this.win })
-      })
-    }
-
     const windowMoveResizeListener = _.debounce(this.windowMoveResizeListener.bind(this), 1000)
     this.win.on('resize',windowMoveResizeListener)
     this.win.on('move', windowMoveResizeListener)
