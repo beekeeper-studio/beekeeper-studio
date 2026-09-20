@@ -1,3 +1,5 @@
+@use '../themes/vars' as *;
+
 @each $hue in $hues {
   .connection-label-color-#{'#{$hue}'} {
     --connection-label-color: var(--#{$hue}-solid-bg-a);

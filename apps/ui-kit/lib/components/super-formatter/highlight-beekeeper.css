@@ -7,7 +7,7 @@
 /* Dark theme (default) */
 .hljs {
   background: transparent;
-  color: var(--editor-fg, rgba(255, 255, 255, 0.87));
+  color: var(--editor-fg);
   padding: 0;
 }
 
@@ -17,32 +17,32 @@
 .hljs-literal,
 .hljs-section,
 .hljs-link {
-  color: var(--editor-keyword-fg, #ff78f7);
+  color: var(--editor-keyword-fg);
   font-weight: normal;
 }
 
 /* Strings - Text in quotes */
 .hljs-string {
-  color: var(--editor-string-fg, #fad83b);
+  color: var(--editor-string-fg);
 }
 
 /* Numbers - Numeric values */
 .hljs-number {
-  color: var(--editor-number-fg, #fad83b);
+  color: var(--editor-number-fg);
 }
 
 /* Built-in functions and types */
 .hljs-built_in,
 .hljs-builtin-name,
 .hljs-type {
-  color: var(--editor-variable-2-fg, #4ad0ff);
+  color: var(--editor-variable-2-fg);
 }
 
 /* Variables, attributes, fields */
 .hljs-variable,
 .hljs-attr,
 .hljs-attribute {
-  color: var(--editor-variableName-fg, rgba(255, 255, 255, 0.87));
+  color: var(--editor-variableName-fg);
 }
 
 /* SQL-specific: table names, identifiers */
@@ -51,13 +51,13 @@
 .hljs-selector-class,
 .hljs-title.class_,
 .hljs-title.function_ {
-  color: var(--editor-variable-2-fg, #4ad0ff);
+  color: var(--editor-variable-2-fg);
 }
 
 /* Operators */
 .hljs-operator,
 .hljs-punctuation {
-  color: var(--editor-operator-fg, rgba(255, 255, 255, 0.87));
+  color: var(--editor-operator-fg);
 }
 
 /* Comments */
@@ -70,18 +70,18 @@
 /* Meta, preprocessor */
 .hljs-meta,
 .hljs-meta .hljs-keyword {
-  color: var(--editor-variable-2-fg, #4ad0ff);
+  color: var(--editor-variable-2-fg);
 }
 
 /* Params */
 .hljs-params {
-  color: var(--editor-variableName-fg, rgba(255, 255, 255, 0.87));
+  color: var(--editor-variableName-fg);
 }
 
 /* Symbols, bullets */
 .hljs-symbol,
 .hljs-bullet {
-  color: var(--editor-string-fg, #fad83b);
+  color: var(--editor-string-fg);
 }
 
 /* Emphasis */
@@ -107,7 +107,7 @@
 /* Light theme overrides - use Beekeeper's theme classes */
 body.theme-light .hljs,
 body.theme-solarized .hljs {
-  color: var(--editor-fg, rgba(0, 0, 0, 0.87));
+  color: var(--editor-fg);
 }
 
 body.theme-light .hljs-keyword,
@@ -120,7 +120,7 @@ body.theme-light .hljs-section,
 body.theme-solarized .hljs-section,
 body.theme-light .hljs-link,
 body.theme-solarized .hljs-link {
-  color: var(--editor-keyword-fg, #ff00f0);
+  color: var(--editor-keyword-fg);
 }
 
 body.theme-light .hljs-built_in,
@@ -139,7 +139,7 @@ body.theme-light .hljs-title.class_,
 body.theme-solarized .hljs-title.class_,
 body.theme-light .hljs-title.function_,
 body.theme-solarized .hljs-title.function_ {
-  color: var(--editor-variable-2-fg, #0099ff);
+  color: var(--editor-variable-2-fg);
 }
 
 body.theme-light .hljs-comment,
@@ -161,13 +161,13 @@ body.theme-light .hljs-punctuation,
 body.theme-solarized .hljs-punctuation,
 body.theme-light .hljs-params,
 body.theme-solarized .hljs-params {
-  color: var(--editor-variableName-fg, rgba(0, 0, 0, 0.87));
+  color: var(--editor-variableName-fg);
 }
 
 /* System theme - follows OS preference */
 @media (prefers-color-scheme: light) {
   body.theme-system .hljs {
-    color: var(--editor-fg, rgba(0, 0, 0, 0.87));
+    color: var(--editor-fg);
   }
 
   body.theme-system .hljs-keyword,
@@ -175,7 +175,7 @@ body.theme-solarized .hljs-params {
   body.theme-system .hljs-literal,
   body.theme-system .hljs-section,
   body.theme-system .hljs-link {
-    color: var(--editor-keyword-fg, #ff00f0);
+    color: var(--editor-keyword-fg);
   }
 
   body.theme-system .hljs-built_in,
@@ -186,7 +186,7 @@ body.theme-solarized .hljs-params {
   body.theme-system .hljs-selector-class,
   body.theme-system .hljs-title.class_,
   body.theme-system .hljs-title.function_ {
-    color: var(--editor-variable-2-fg, #0099ff);
+    color: var(--editor-variable-2-fg);
   }
 
   body.theme-system .hljs-comment,
@@ -200,6 +200,6 @@ body.theme-solarized .hljs-params {
   body.theme-system .hljs-operator,
   body.theme-system .hljs-punctuation,
   body.theme-system .hljs-params {
-    color: var(--editor-variableName-fg, rgba(0, 0, 0, 0.87));
+    color: var(--editor-variableName-fg);
   }
 }

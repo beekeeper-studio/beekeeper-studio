@@ -281,18 +281,6 @@
       </div>
     </div>
     <loading-sso-modal v-model="loadingSSOModalOpened" @cancel="loadingSSOCanceled" />
-    <div v-if="false" style="position: absolute; inset: 0; z-index: 1000; font-size: 4rem; display:flex; justify-content: center; align-items: center;flex-direction: column;background: var(--app-bg);">
-      <div class="dracula-theme">
-        <div style="display:flex;">
-          <div v-for="i in 12" :key="i" :style="`width: 1em; height: 1em; background: var(--gray-${i})`" />
-        </div>
-      </div>
-      <div class="dracula-theme">
-        <div style="display:flex;">
-          <div v-for="i in 12" :key="i" :style="`width: 1em; height: 1em; background: var(--gray-a${i})`" />
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 

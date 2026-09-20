@@ -1,5 +1,11 @@
 <template>
-  <base-modal :name="modalName" max-width="960px" height="85vh">
+  <base-modal
+    :name="modalName"
+    max-width="960px"
+    height="85vh"
+    @opened="handleOpened"
+    @closed="handleClosed"
+  >
     <template #title>
       Theme Playground
     </template>
@@ -35,7 +41,7 @@
                 </td>
               </tr>
               <tr :key="`${hue}-a`">
-                <th></th>
+                <th />
                 <td v-for="n in 12" :key="n">
                   <div
                     class="swatch checker"
@@ -471,24 +477,6 @@ export default Vue.extend({
   },
   mounted() {
     this.registerHandlers(this.rootBindings);
-    this.tabulator = tabulatorForTableData(this.$refs.tabulator as HTMLElement, {
-      persistenceID: "theme-playground",
-      data: TABLE_DATA,
-      columns: TABLE_COLUMNS.map(({ dataType, ...c }) => ({
-        ...c,
-        formatter: this.cellFormatter,
-        tooltip: true,
-        titleFormatter: () => `
-          <span class="title">
-            ${escapeHtml(c.title)}
-            <span class="column-data-type">${escapeHtml(dataType)}</span>
-          </span>`,
-      })),
-      height: "220px",
-    });
-    this.tabulator.on("cellEdited", (cell) => {
-      cell.getElement().classList.add("edited");
-    });
   },
   beforeDestroy() {
     this.unregisterHandlers(this.rootBindings);
@@ -497,6 +485,33 @@ export default Vue.extend({
   methods: {
     open() {
       this.$modal.show(this.modalName);
+    },
+    handleOpened() {
+      this.tabulator = tabulatorForTableData(
+        this.$refs.tabulator as HTMLElement,
+        {
+          persistenceID: "theme-playground",
+          data: TABLE_DATA,
+          columns: TABLE_COLUMNS.map(({ dataType, ...c }) => ({
+            ...c,
+            formatter: this.cellFormatter,
+            tooltip: true,
+            titleFormatter: () => `
+            <span class="title">
+              ${escapeHtml(c.title)}
+              <span class="column-data-type">${escapeHtml(dataType)}</span>
+            </span>`,
+          })),
+          height: "220px",
+        }
+      );
+      this.tabulator.on("cellEdited", (cell) => {
+        cell.getElement().classList.add("edited");
+      });
+    },
+    handleClosed() {
+      this.tabulator?.destroy();
+      this.tabulator = null;
     },
     openSampleMenu(event: MouseEvent) {
       openMenu({

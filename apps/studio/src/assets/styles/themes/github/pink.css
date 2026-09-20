@@ -1,0 +1,55 @@
+.theme-github {
+  --pink-1: #fffcfd;
+  --pink-2: #fef7fa;
+  --pink-3: #feeaf3;
+  --pink-4: #fbddeb;
+  --pink-5: #f6cfe1;
+  --pink-6: #efc0d6;
+  --pink-7: #e6adc9;
+  --pink-8: #dc95b9;
+  --pink-9: #bf3989;
+  --pink-10: #af297c;
+  --pink-11: #bc3686;
+  --pink-12: #631945;
+
+  --pink-a1: #ff005503;
+  --pink-a2: #e0006008;
+  --pink-a3: #f3006e15;
+  --pink-a4: #e1006922;
+  --pink-a5: #d0006030;
+  --pink-a6: #bf005a3f;
+  --pink-a7: #b2005852;
+  --pink-a8: #ab01576a;
+  --pink-a9: #ad0067c6;
+  --pink-a10: #a00063d6;
+  --pink-a11: #aa0066c9;
+  --pink-a12: #520031e6;
+}
+
+.theme-github.dark-theme {
+  --pink-1: #170d12;
+  --pink-2: #221119;
+  --pink-3: #3b1429;
+  --pink-4: #510c35;
+  --pink-5: #5f1440;
+  --pink-6: #70224e;
+  --pink-7: #8a3062;
+  --pink-8: #b13e7e;
+  --pink-9: #bf4b8a;
+  --pink-10: #b03d7d;
+  --pink-11: #ff8bc9;
+  --pink-12: #ffcfe6;
+
+  --pink-a1: #f500000b;
+  --pink-a2: #f6112e17;
+  --pink-a3: #fc217531;
+  --pink-a4: #fe008148;
+  --pink-a5: #fd1a9057;
+  --pink-a6: #fd3b9c69;
+  --pink-a7: #ff4da884;
+  --pink-a8: #ff54afad;
+  --pink-a9: #ff60b3bc;
+  --pink-a10: #ff52afac;
+  --pink-a11: #ff8bc9;
+  --pink-a12: #ffcfe6;
+}

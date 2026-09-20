@@ -298,9 +298,6 @@ export default Vue.extend({
         z-index: 15;
         box-shadow: none!important;
         padding: 0!important;
-        .tabulator-header-contents {
-          background: var(--editor-bg);
-        }
         .tabulator-col {
           min-width: $min-cell-width!important;
           padding: 0 $cell-padding;
@@ -518,7 +515,7 @@ export default Vue.extend({
         }
       }
     }
-  
+
   // Colours that used to live in the light theme sheet.
 
   // Schema Header
