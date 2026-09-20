@@ -37,7 +37,7 @@ export const cssVars: readonly CssVar[] = [
 
   { name: "--query-editor-bg", value: "var(--bg-base)" },
   { name: "--menu-bg", value: "var(--panel-bg)" },
-  "--menu-shadow",
+  { name: "--menu-shadow", value: "var(--panel-shadow)" },
 
   "--scrollbar-track",
   "--scrollbar-thumb",
