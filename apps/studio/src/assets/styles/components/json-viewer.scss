@@ -78,15 +78,6 @@
     width: 100%;
     height: auto;
     padding-left: 1rem;
-
-    &.CodeMirror, .CodeMirror-gutters {
-      background-color: var(--app-bg) !important;
-    }
-
-    .CodeMirror-dialog.CodeMirror-dialog-top {
-      margin-left: 1rem;
-      padding: 0.5rem 1rem;
-    }
   }
 
 
@@ -110,7 +101,7 @@
     z-index: 10;
     inset: 0;
     backdrop-filter: blur(6px);
-    background-color: rgb(from var(--app-bg) r g b / 0.5);
+    background-color: var(--overlay-subtle-bg);
     padding: 2rem;
     display: flex;
     flex-direction: column;

@@ -198,10 +198,7 @@ export default {
   border-radius: 3px;
   font-size: 0.8em;
   font-family: var(--editor-font-family, monospace);
-  // Slight raised tint over the form bg — text-dark inverts per theme, so on
-  // a dark form the badge lightens, and on a light form it darkens. Either
-  // way it reads as a distinct chip instead of a sunken hole.
-  background: color-mix(in srgb, var(--bks-theme-bg, #1e1e1e), var(--bks-text-dark) 7%);
+  background: var(--gray-a3);
   opacity: 0.85;
 }
 
@@ -213,10 +210,8 @@ export default {
   gap: 12px;
   padding: 11px 12px;
   border-radius: 8px;
-  // Same approach as the badge: tint over the form bg so the card reads as
-  // raised, not sunken. ~4% to match the design's #242424 over #1e1e1e.
-  background: color-mix(in srgb, var(--bks-theme-bg, #1e1e1e), var(--bks-text-dark) 4%);
-  box-shadow: inset 0 0 0 1px var(--bks-border-color, rgba(255, 255, 255, 0.1));
+  background: var(--gray-a2);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
 }
 
 .cli-path-found-tile {
@@ -227,8 +222,8 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--bks-brand-success, #15db95) 13%, transparent);
-  color: var(--bks-brand-success, #15db95);
+  background: var(--success-bg-a);
+  color: var(--success-text);
 
   .material-icons {
     font-size: 18px;
@@ -245,7 +240,7 @@ export default {
 
 .cli-path-found-title {
   font-size: 13px;
-  color: var(--bks-text-dark);
+  color: var(--text-contrast);
   font-weight: 500;
   line-height: 1.3;
 }
@@ -253,7 +248,7 @@ export default {
 .cli-path-found-pathline {
   font-family: var(--editor-font-family, monospace);
   font-size: 12px;
-  color: var(--bks-text-light);
+  color: var(--text-muted);
   font-weight: 400;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -276,7 +271,7 @@ export default {
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: var(--bks-text-lighter);
+  color: var(--text-muted);
   cursor: pointer;
   padding: 0;
   flex-shrink: 0;
@@ -285,7 +280,7 @@ export default {
   &:hover {
     // currentColor inherits the text colour so the overlay inverts per theme.
     background: color-mix(in srgb, currentColor 10%, transparent);
-    color: var(--bks-text-dark);
+    color: var(--text-contrast);
   }
 
   .material-icons {

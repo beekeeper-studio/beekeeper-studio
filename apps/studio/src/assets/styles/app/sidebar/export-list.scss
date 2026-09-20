@@ -13,7 +13,7 @@
     min-height: 105px;
   }
   .list-item {
-    border-bottom: 1px solid $theme-bg;
+    border-bottom: 1px solid var(--app-bg);
     
     .badge {
       min-width: fit-content;
@@ -37,7 +37,7 @@
     padding-right: ($gutter-h * 0.75);
     .subtitle {
       font-size: 80%;
-      color: $text-lighter;
+      color: var(--text-muted);
       @include truncate;
     }
   }
@@ -64,7 +64,7 @@
       height: 24px;
       transition: all 0.15s ease-in-out;
       .material-icons {
-        color: $text-dark;
+        color: var(--text-contrast);
       }
     }
     .dropdown {

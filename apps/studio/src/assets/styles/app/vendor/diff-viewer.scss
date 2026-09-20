@@ -1,14 +1,14 @@
 .diff-viewer {
   font-family: $font-family-mono;
-  background: $query-editor-bg;
+  background: var(--editor-bg);
   margin-left: -($gutter-w * 1.5);
   margin-right: -($gutter-w * 1.5);
   padding: $gutter-w * 1.25;
   del {
-    background: rgba($brand-danger, 0.3)!important;
+    background: var(--danger-a8)!important;
   }
   ins {
-    background: rgba($brand-success, 0.3)!important;
+    background: var(--success-a8)!important;
   }
 }
 

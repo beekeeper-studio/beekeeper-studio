@@ -6,39 +6,61 @@
     <div class="theme-playground">
       <section>
         <h3>Scales</h3>
-        <div
-          v-for="hue in ['gray', 'red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink']"
-          :key="hue"
-          class="scale-row"
-        >
-          <div class="scale-label">
-            {{ hue }}
-          </div>
-          <div class="scale-group">
-            <div class="scale">
-              <div
-                v-for="n in 12"
-                :key="n"
-                class="swatch"
-                :style="{ background: `var(--${hue}-${n})` }"
-                :title="`--${hue}-${n}`"
-              />
-            </div>
-            <div class="scale checker">
-              <div
-                v-for="n in 12"
-                :key="n"
-                class="swatch"
-                :style="{ '--color': `var(--${hue}-a${n})` }"
-                :title="`--${hue}-a${n}`"
-              />
-            </div>
-          </div>
-        </div>
+        <label class="switch-label aliases-switch">
+          <x-switch
+            :toggled="showStepAliases"
+            @click.prevent="showStepAliases = !showStepAliases"
+          />
+          <span>Aliases</span>
+        </label>
+        <table class="scale-table">
+          <thead>
+            <tr>
+              <th />
+              <th v-for="n in 12" :key="n" :class="{ alias: showStepAliases }">
+                <span>{{ stepLabel(n) }}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <template v-for="hue in hues">
+              <tr :key="hue">
+                <th>{{ hue }}</th>
+                <td v-for="n in 12" :key="n">
+                  <div
+                    class="swatch"
+                    :style="{ background: `var(--${hue}-${n})` }"
+                    :title="`--${hue}-${stepName(n)}`"
+                  />
+                </td>
+              </tr>
+              <tr :key="`${hue}-a`">
+                <th></th>
+                <td v-for="n in 12" :key="n">
+                  <div
+                    class="swatch checker"
+                    :style="{ '--color': `var(--${hue}-a${n})` }"
+                    :title="`--${hue}-${stepAlphaLabel(n)}`"
+                  />
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
       </section>
 
       <section class="buttons">
         <h3>Buttons</h3>
+        <x-buttons class="selectbutton size-picker">
+          <x-button
+            v-for="size in buttonSizes"
+            :key="size.label"
+            :toggled="buttonSize === size.cls"
+            @click.prevent="buttonSize = size.cls"
+          >
+            <span class="togglebutton-content">{{ size.label }}</span>
+          </x-button>
+        </x-buttons>
         <div v-for="state in ['Normal', 'Disabled']" :key="state">
           <h4>{{ state }}</h4>
           <table class="variant-table">
@@ -56,7 +78,7 @@
                 <td v-for="color in buttonColors" :key="color">
                   <button
                     class="btn"
-                    :class="[v, color]"
+                    :class="[v, color, buttonSize]"
                     :disabled="state === 'Disabled'"
                   >
                     <i class="material-icons">edit</i>
@@ -123,6 +145,17 @@
       </section>
 
       <section>
+        <h3>Kbd</h3>
+        <div class="row-wrap">
+          <span class="kbd">Ctrl</span>
+          <span class="kbd">Shift</span>
+          <span class="kbd">P</span>
+          <span class="kbd">⌘</span>
+          <span class="kbd">Enter</span>
+        </div>
+      </section>
+
+      <section>
         <h3>Alerts</h3>
         <div
           v-for="color in ['', 'alert-info', 'alert-success', 'alert-warning', 'alert-danger']"
@@ -148,6 +181,29 @@
             @click.prevent="activePill = pill"
           >{{ pill }}</a>
         </div>
+      </section>
+
+      <section>
+        <h3>Loading spinner</h3>
+        <div class="row-wrap">
+          <loading-spinner />
+          <loading-spinner :size="24" />
+          <x-progressbar class="sample-progressbar" />
+        </div>
+      </section>
+
+      <section>
+        <h3>Select button</h3>
+        <x-buttons class="selectbutton">
+          <x-button
+            v-for="mode in ['Light', 'Dark', 'Auto']"
+            :key="mode"
+            :toggled="selectButtonValue === mode"
+            @click.prevent="selectButtonValue = mode"
+          >
+            <span class="togglebutton-content">{{ mode }}</span>
+          </x-button>
+        </x-buttons>
       </section>
 
       <section>
@@ -335,6 +391,7 @@ import Mutators from "@/mixins/data_mutators";
 import { escapeHtml } from "@shared/lib/tabulator";
 import SqlTextEditor from "@beekeeperstudio/ui-kit/vue/sql-text-editor";
 import MultiSelect from "@/components/common/form/MultiSelect.vue";
+import LoadingSpinner from "@/components/common/loading/LoadingSpinner.vue";
 
 const TABLE_COLUMNS = [
   { field: "id", title: "id", dataType: "int4", width: 70, cssClass: "primary-key", editable: false },
@@ -371,12 +428,29 @@ function treeFolders() {
 
 export default Vue.extend({
   mixins: [Mutators],
-  components: { BaseModal, Tree, TreeFolder, SqlTextEditor, MultiSelect },
+  components: { BaseModal, Tree, TreeFolder, SqlTextEditor, MultiSelect, LoadingSpinner },
   data() {
     return {
       modalName: "theme-playground-modal",
       tabulator: null as TabulatorFull | null,
+      hues: ["gray", "red", "orange", "yellow", "green", "blue", "purple", "pink"],
+      showStepAliases: false,
+      stepAliases: [
+        "bg-base",
+        "bg-subtle",
+        "bg",
+        "bg-hover",
+        "bg-active",
+        "border-subtle",
+        "border",
+        "border-hover",
+        "solid-bg",
+        "solid-bg-hover",
+        "text",
+        "text-contrast",
+      ],
       switchOn: true,
+      selectButtonValue: "Light",
       multiSelectQuery: "",
       multiSelectSuggestions: ["Ada Lovelace", "Grace Hopper", "Linus Torvalds", "Margaret Hamilton", "Ken Thompson"],
       multiSelectSelected: ["Grace Hopper"],
@@ -384,6 +458,8 @@ export default Vue.extend({
       treeExpanded: ["folder-1", "folder-2", "folder-3"],
       treeFolders: treeFolders(),
       buttonVariants: ["", "btn-flat", "btn-primary"],
+      buttonSizes: [{ label: "Default", cls: "" }, { label: "Small", cls: "btn-small" }],
+      buttonSize: "",
       buttonColors: ["", "btn-brand", "btn-info", "btn-danger"],
       badgeColors: ["", "badge-info", "badge-success", "badge-warning", "badge-danger"],
     };
@@ -444,6 +520,24 @@ export default Vue.extend({
         ],
       });
     },
+    stepName(n: number) {
+      if (this.showStepAliases) {
+        return this.stepAliases[n - 1];
+      }
+      return String(n);
+    },
+    stepLabel(n: number) {
+      if (this.showStepAliases) {
+        return `${n}: ${this.stepAliases[n - 1]}`;
+      }
+      return String(n);
+    },
+    stepAlphaLabel(n: number) {
+      if (this.showStepAliases) {
+        return `${this.stepAliases[n - 1]}-a`;
+      }
+      return `a${n}`;
+    },
     variantLabel(cls: string) {
       if (!cls) {
         return "Ghost";
@@ -471,6 +565,10 @@ h3 {
   margin: 0 0 0.75rem;
 }
 
+.aliases-switch {
+  margin-bottom: 0.75rem;
+}
+
 h4 {
   margin: 2rem 0 0.5rem;
   font-size: 0.8rem;
@@ -478,49 +576,46 @@ h4 {
   color: var(--text-muted);
 }
 
-.scale-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
+.scale-table {
+  border-collapse: separate;
+  border-spacing: 0.25rem;
+  margin-left: -0.25rem;
 
-.scale-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  margin-bottom: 0.25rem;
-}
+  th {
+    font-size: 0.8rem;
+    font-weight: normal;
+    color: var(--text-muted);
+    text-align: center;
+  }
 
-.scale-label {
-  min-width: 4rem;
-  width: 4rem;
-  font-size: 0.8rem;
-  text-transform: capitalize;
-  padding-top: 0.5rem;
-}
+  thead th {
+    width: 3rem;
+    vertical-align: bottom;
+    white-space: nowrap;
+  }
 
-.scale {
-  display: flex;
-  gap: 0.25rem;
+  thead th.alias {
+    height: 3rem;
+    font-size: 0.7rem;
+    text-align: left;
 
-  &.checker {
-    > *::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: repeating-conic-gradient(
-          var(--gray-a4) 0 25%,
-          transparent 0 50%
-        )
-        0 0 / 21px 21px;
+    span {
+      display: block;
+      width: 0;
+      transform: rotate(-30deg);
+      transform-origin: left bottom;
     }
+  }
 
-    > *::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: var(--color);
-    }
+  tbody th {
+    text-align: left;
+    text-transform: capitalize;
+    white-space: nowrap;
+    padding-right: 0.25rem;
+  }
+
+  td {
+    padding: 0;
   }
 }
 
@@ -530,6 +625,24 @@ h4 {
   border-radius: 4px;
   position: relative;
   overflow: hidden;
+
+  &.checker::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-conic-gradient(
+        var(--gray-a4) 0 25%,
+        transparent 0 50%
+      )
+      0 0 / 21px 21px;
+  }
+
+  &.checker::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--color);
+  }
 }
 
 .variant-table {
@@ -601,6 +714,14 @@ h4 {
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
   overflow: hidden;
+}
+
+.size-picker {
+  margin-bottom: 0.75rem;
+}
+
+.sample-progressbar {
+  width: 12rem;
 }
 
 .row-wrap {

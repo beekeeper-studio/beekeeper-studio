@@ -105,7 +105,7 @@ export default Vue.extend({
 @import '../../assets/styles/app/_variables.scss';
 
 .import-connections-subtitle {
-  color: var(--text-light);
+  color: var(--text-muted);
   margin-bottom: 0.5rem;
 }
 
@@ -127,7 +127,7 @@ export default Vue.extend({
     background: transparent;
     line-height: 1;
     padding-left: 0;
-    color: rgba($theme-bg, 0.87);
+    color: rgb(from var(--app-bg) r g b / 0.87);
   }
 }
 </style>

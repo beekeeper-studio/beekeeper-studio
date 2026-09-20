@@ -47,7 +47,7 @@
                   :key="kbIdx"
                   class="kbd-keybinding"
                 >
-                  <span v-for="(key, keyIdx) in keybinding" :key="keyIdx">{{
+                  <span v-for="(key, keyIdx) in keybinding" :key="keyIdx" class="kbd">{{
                     key
                   }}</span>
                 </div>
@@ -163,7 +163,6 @@ export default Vue.extend({
 
 <style scoped>
 .kbd-body {
-  --kbd-border-color: color-mix(in srgb, var(--border-color) 40%, transparent);
   height: 70vh;
   display: flex;
   flex-direction: column;
@@ -203,11 +202,7 @@ export default Vue.extend({
 }
 
 .kbd-content {
-  overflow-y: auto;
   padding-bottom: 1rem;
-  padding-right: 0.5rem;
-  margin-right: -0.8rem;
-  height: 100%;
 }
 
 .kbd-section:not(:first-child) {
@@ -220,30 +215,25 @@ export default Vue.extend({
   margin: 0;
   padding-block: 0.75rem;
   font-size: 0.85rem;
-  /* NOTE: This was probably ok when we still use Roboto as a font. */
-  /* Now we use system font. So at least in mac, this isn't good. */
-  /* letter-spacing: 0.05rem; */
   text-transform: uppercase;
   font-weight: bold;
   text-transform: uppercase;
-  color: var(--text-dark);
-  background-color: hsl(from var(--theme-bg) h s calc(l + 1));
-  border-bottom: 1px solid var(--kbd-border-color);
+  color: var(--text-contrast);
 }
 
 .kbd-item {
   display: flex;
   justify-content: space-between;
-  border-bottom: 1px solid var(--kbd-border-color);
+  border-bottom: 1px solid var(--border-subtle);
   padding-block: 0.65rem;
 }
 
 .kbd-label {
-  color: rgb(from var(--theme-base) r g b / 77%);
+  color: var(--text);
 }
 
 .kbd-label ::v-deep strong {
-  color: var(--text-dark);
+  color: var(--text-contrast);
   font-weight: bold;
 }
 
@@ -257,20 +247,5 @@ export default Vue.extend({
 .kbd-keybinding {
   display: flex;
   gap: 0.28rem;
-
-  > span {
-    display: inline-block;
-    padding: 0 0.35rem;
-    border-radius: 4px;
-    line-height: 1.6;
-    font-size: 0.85rem;
-    font-weight: normal;
-    text-align: center;
-    white-space: nowrap;
-    vertical-align: baseline;
-    background: rgb(from var(--theme-base) r g b / 5%);
-    box-shadow: inset 0 0 0 1px rgb(from var(--theme-base) r g b / 5%);
-    color: var(--text);
-  }
 }
 </style>

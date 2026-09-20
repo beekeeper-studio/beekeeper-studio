@@ -84,7 +84,14 @@ $cell-padding:           $gutter-w;
   width: min-content;
   min-width: 100%;
   &.tabulator-row-even {
-    background: transparent;
+    background: var(--table-row-even-bg);
+  }
+  // Tabulator's stylesheet greys selectable rows on hover; keep the stripes instead.
+  &.tabulator-row-even.tabulator-selectable:hover {
+    background-color: var(--table-row-even-bg);
+  }
+  &.tabulator-row-odd.tabulator-selectable:hover {
+    background-color: var(--table-row-odd-bg);
   }
   &.tabulator-row-odd {
     background: var(--table-row-odd-bg);
@@ -731,6 +738,7 @@ $cell-padding:           $gutter-w;
 
 .tabulator-menu {
   background: var(--panel-bg);
+  color: var(--panel-fg);
   box-shadow: var(--panel-shadow);
   border: none;
   border-radius: 6px;
@@ -740,9 +748,9 @@ $cell-padding:           $gutter-w;
   .tabulator-menu-item {
     // TODO this might not be used
     &:hover, &.tabulator-spreadsheet-menu-item-focused {
-      background: var(--table-cell-bg-hover);
+      background: var(--panel-bg-hover);
     }
-    color: var(--text-contrast);
+    color: inherit;
     cursor: pointer;
     padding: 0;
 

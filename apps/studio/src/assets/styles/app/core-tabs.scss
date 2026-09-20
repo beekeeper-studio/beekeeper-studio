@@ -1,4 +1,3 @@
-@use "sass:color";
 
 .core-tabs {
   position: relative;
@@ -43,7 +42,7 @@
       display: flex;
 
       &:has(.add-tab-dropdown:hover) {
-        border-color: var(--border-color);
+        border-color: var(--border-subtle);
       }
 
       .btn-icon > i {
@@ -117,20 +116,17 @@
       &.active-transaction {
         .tab-title,
         .item-icon {
-          color: var(--brand-warning);
+          color: var(--warning-text);
         }
 
         &:not(.active) {
-          background-color: color-mix(
-            in srgb,
-            var(--brand-warning) 20%,
-            hsl(from var(--theme-bg) h s calc(l + 3)));
+          background-color: var(--warning-bg-hover-a);
 
           .tab-action {
             background: transparent;
 
             .tab-close .material-icons {
-              color: var(--brand-warning);
+              color: var(--warning-text);
             }
           }
         }
@@ -255,7 +251,7 @@
     align-items: center;
     gap: 0.25rem;
     line-height: 2rem ;
-    background-color: rgba($theme-base, 0.1);
+    background-color: var(--gray-a4);
     padding-left: 7px;
     padding-right: 7px;
     margin-right: 5px;
@@ -397,7 +393,7 @@
     bottom: 0;
     right: 0;
     pointer-events: none;
-    color: rgba($theme-base, 0.5);
+    color: var(--text-muted);
     transform: scaleX(1.2) translateX(0.07rem);
     & > i { font-size: 1rem; }
   }
@@ -420,7 +416,7 @@
         & .fixed {
           position: fixed;
           padding-top: 0.4rem;
-          background-color: $query-editor-bg;
+          background-color: var(--editor-bg);
         }
       }
       .ghost-add-apply {
@@ -530,7 +526,7 @@
     .checkbox-group {
       padding: 0.5rem;
       &:hover {
-        background: rgba($theme-base, 0.035);
+        background: var(--bg-subtle-a);
       }
 
       span.input-wrapper {

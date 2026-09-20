@@ -97,6 +97,6 @@ i.default-icon {
 
 i.default-icon {
   font-size: 1em;
-  color: hsl(from var(--theme-base) h s calc(l + 80));
+  color: var(--text-contrast);
 }
 </style>

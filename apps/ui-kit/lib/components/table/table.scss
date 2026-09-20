@@ -1,72 +1,30 @@
 @use "../../../../../node_modules/tabulator-tables/dist/css/tabulator.css";
-@use 'sass:color';
 @use '../../styles/variables' as *;
 @use "../../styles/base";
 @use './tabulator/magics.scss';
 @use './tabulator/cell-decorations.scss';
 
-
 $foreign-key-width:      20px;
 
 $row-height:             30px;
-$row-add:                #18855F !default;
-$row-delete:             #8A3937 !default;
-$row-error:              #38201F !default;
-
-$cell-edited:            #50492A !default;
-$cell-error:             $row-error !default;
-$cell-success:           $row-add !default;
 
 $cell-radius:            2px;
 
 $cell-padding:           $gutter-w;
 
-$header-highlight:       mix($query-editor-bg, $theme-base, 95%) !default;
-$header-selected:        mix($query-editor-bg, $theme-primary, 10%) !default;
-
-$columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
-
 // Mixin
 @mixin cell-shadow {
-  box-shadow: inset -1px 0 rgba(black, 0.2),
-              inset 0 1px rgba(black, 0.2),
-              inset 0 -1px rgba(white, 0.1);
+  box-shadow: inset -1px 0 var(--gray-a7),
+              inset 0 1px var(--gray-a7),
+              inset 0 -1px var(--gray-a4);
 }
 @mixin cell-editing($bg) {
   box-shadow: inset -1px 0 $bg,
               inset 0 1px $bg,
-              inset 0 -1px $theme;
+              inset 0 -1px var(--text);
 }
 
 .BksTable {
-  --bks-table-bg-color: #ffffff;
-  --bks-table-fg-color: #{$text-dark};
-
-  --bks-table-header-bg-color: #ffffff;
-  --bks-table-header-bg-color-selected: #{$header-selected};
-  --bks-table-header-bg-color-highlight: #d9d9d9;
-  --bks-table-header-fg-color: unset;
-  --bks-table-header-fg-color-selected: #000000;
-  --bks-table-header-fg-color-highlight: unset;
-  --bks-table-header-border-color: #d9d9d9;
-
-  --bks-table-header-col-bg-color: #ffffff;
-  --bks-table-header-col-border-color: transparent;
-
-  --bks-table-row-odd-bg-color: #00000006;
-
-  --bks-table-cell-fg-color: unset;
-  --bks-table-cell-bg-color-hover: #0000000d;
-  --bks-table-cell-bg-color-selected: #0000000d;
-
-  --bks-table-sorter-fg-color-active: #{$theme-base};
-  --bks-table-sorter-fg-color-inactive: #{rgba($theme-base, 0.35)};
-
-  --bks-table-range-border-color: #{color.adjust($theme-primary, $lightness: -20%)};
-
-  --bks-table-tooltip-bg-color: #292A2D;
-  --bks-table-tooltip-fg-color: lightgray;
-
   height: 100%;
 
   // Tabulator
@@ -77,18 +35,18 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
         &.tabulator-row-even {
           &.inserted,
           &.inserted:hover {
-            background: $row-add;
+            background: var(--table-row-added-bg);
           }
           &.deleted,
           &.deleted:hover {
-            background: $row-delete;
+            background: var(--table-row-deleted-bg);
           }
           &.edit-error {
-            background: $row-error;
+            background: var(--table-row-error-bg);
           }
         }
         &.edit-error {
-          background: $row-error ;
+          background: var(--table-row-error-bg) ;
         }
         .tabulator-cell {
           &.edited,
@@ -97,27 +55,27 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
             @include cell-shadow;
           }
           &.edited {
-            background: $cell-edited;
+            background: var(--table-cell-edited-bg);
             &:hover {
-              background: color.adjust($cell-edited, $lightness: -5%);
+              background: var(--table-cell-edited-bg);
             }
           }
           &.edit-error {
-            background: $cell-error;
+            background: var(--table-row-error-bg);
             &:hover {
-              background: color.adjust($cell-error, $lightness: -5%);
+              background: var(--table-row-error-bg);
             }
           }
           &.edit-success {
-            background: $cell-success;
+            background: var(--table-row-added-bg);
             &:hover {
-              background: color.adjust($cell-success, $lightness: -5%);
+              background: var(--table-row-added-bg);
             }
           }
           &.foreign-key-button {
             .material-icons {
               &:hover {
-                color: $text-dark;
+                color: var(--text-contrast);
               }
             }
           }
@@ -134,7 +92,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
     .tabulator-loader {
       .tabulator-loader-msg {
         &.tabulator-loading {
-          background-color: white;
+          background-color: var(--panel-bg);
         }
 
       }
@@ -144,7 +102,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
       .tabulator-col {
         &.foreign-key {
           &:before {
-            color: color.adjust($brand-primary, $lightness: -6%);
+            color: var(--primary-text);
           }
         }
       }
@@ -157,12 +115,12 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
       &.inserted,
       &.inserted:hover {
         position: relative;
-        background: $row-add;
+        background: var(--table-row-added-bg);
         border: 0;
         .tabulator-cell {
           &.primary-key, &.read-only-field {
             &:hover {
-              background: rgba($theme-base,0.05);
+              background: var(--gray-a3);
               cursor: pointer;
             }
           }
@@ -170,21 +128,21 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
       }
       &.inserted {
         .tabulator-editing {
-          box-shadow: inset 0 -1px $theme-base;
+          box-shadow: inset 0 -1px var(--text-contrast);
         }
       }
       &.deleted,
       &.deleted:hover {
-        background: $row-delete;
+        background: var(--table-row-deleted-bg);
       }
       &.edit-error {
-        background: $cell-error;
+        background: var(--table-row-error-bg);
       }
       &.inserted,
       &.deleted,
       &.edit-error {
-        box-shadow: inset 0 -1px rgba($theme-base, .1);
-        --row-box-shadow: inset 0 -1px #{rgba($theme-base, .1)};
+        box-shadow: inset 0 -1px var(--gray-a4);
+        --row-box-shadow: inset 0 -1px #{var(--gray-a4)};
         .tabulator-cell {
           &.foreign-key-button {
             &:hover {
@@ -233,7 +191,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
               &:checked,
               &:checked:active {
                 &:after {
-                  color: $theme-bg;
+                  color: var(--app-bg);
                 }
               }
             }
@@ -268,7 +226,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
 
       &.import-table-column {
         .attributes {
-          color: $text-lighter;
+          color: var(--text-muted);
           font-size: 0.85rem;
           margin-left: 0.2em;
         }
@@ -290,7 +248,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
         padding: 4px 6px;
         line-height: $row-height - 8px; // row-height - vertical padding
         z-index: 10;
-        box-shadow: inset 1px solid $theme-base;
+        box-shadow: inset 1px solid var(--text-contrast);
         height: auto;
         &:before {
           content: '';
@@ -299,17 +257,17 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
           right: 0;
           left: 0;
           bottom: 0;
-          background: $query-editor-bg;
+          background: var(--editor-bg);
         }
       }
       &.active-cell {
-        background: $selection;
-        border-color: $input-highlight;
-        color: $db-select-text;
+        background: var(--selection-bg);
+        border-color: var(--border-hover);
+        color: var(--selection-fg);
       }
 
       &.copied {
-        background: rgba($theme-base, 0.4);
+        background: var(--gray-a9);
       }
 
       // Cell States
@@ -317,11 +275,11 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
       &.edit-error,
       &.edit-success {
         border-radius: $cell-radius;
-        color: $theme-base;
+        color: var(--text-contrast);
       }
       &.tabulator-editing {
-        box-shadow: inset 0 -1px $theme-base;
-        background: rgba($theme-base, 0.08);
+        box-shadow: inset 0 -1px var(--text-contrast);
+        background: var(--gray-a4);
         padding-left: 0;
         padding-right: 0;
         min-height: $row-height;
@@ -330,7 +288,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
         overflow-y: visible;
         height: auto;
         &:focus {
-          box-shadow: inset 0 -1px $theme-base;
+          box-shadow: inset 0 -1px var(--text-contrast);
         }
         pre, input:not([type="checkbox"]), textarea {
           padding: 0 $cell-padding;
@@ -351,12 +309,12 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
           padding: 0;
         }
         input[type="checkbox"] {
-          box-shadow: inset 0 0 0 2px $theme-base;
+          box-shadow: inset 0 0 0 2px var(--text-contrast);
           &:active,
           &:checked,
           &:checked:active {
             &:after {
-              color: $theme-bg;
+              color: var(--app-bg);
             }
           }
         }
@@ -376,11 +334,11 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
     }
 
     &.copied {
-      background: rgba($theme-base, 0.4) ;
+      background: var(--gray-a9) ;
       .tabulator-cell {
 
         &:hover {
-          background: rgba($theme-base, 0.4) ;
+          background: var(--gray-a9) ;
         }
       }
     }
@@ -388,21 +346,21 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
     // Cell Edit States
     .tabulator-cell {
       &.edited {
-        background: $cell-edited;
+        background: var(--table-cell-edited-bg);
         &:hover {
-          background: color.adjust($cell-edited, $lightness: 3%);
+          background: var(--table-cell-edited-bg);
         }
       }
       &.edit-error {
-        background: $cell-error;
+        background: var(--table-row-error-bg);
         &:hover {
-          background: color.adjust($cell-error, $lightness: 5%);
+          background: var(--table-row-error-bg);
         }
       }
       &.edit-success {
-        background: $cell-success;
+        background: var(--table-row-added-bg);
         &:hover {
-          background: color.adjust($cell-success, $lightness: 5%);
+          background: var(--table-row-added-bg);
         }
       }
       &.edited,
@@ -419,14 +377,14 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
     i.fk-link {
       display:none;
       cursor: pointer;
-      color: $text-light;
+      color: var(--text-muted);
       font-size: 14px;
     }
     &:hover {
       i.fk-link {
         display: inline-block;
         &:hover {
-          color: $theme-base;
+          color: var(--text-contrast);
         }
       }
     }
@@ -447,7 +405,6 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
       }
     }
   }
-
 
   & {
     position: relative;
@@ -483,7 +440,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
         .tabulator-header-popup-button {
           position: relative;
           z-index: 1;
-          color: $text-lighter;
+          color: var(--text-muted);
           &::before {
             transition: opacity 0.15s;
             content: "";
@@ -494,7 +451,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
             top: 50%;
             left: 50%;
             border-radius: 9999px;
-            background-color: rgba($theme-base, 0.1);
+            background-color: var(--gray-a4);
             opacity: 0;
             z-index: -1;
           }
@@ -531,7 +488,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
             $font-size: 13px;
             font-family: 'Material Icons';
             font-size: $font-size;
-            color: $theme-primary;
+            color: var(--primary-text);
             padding-left: $foreign-key-width - $font-size;
             display: inline-flex;
             align-items: center;
@@ -543,11 +500,11 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
           }
         }
         &.read-only-field:before {
-          color: $text-disabled;
+          color: var(--text-muted);
           content: 'edit_off';
         }
         &.primary-key:before {
-          color: $theme-secondary;
+          color: var(--primary-text);
         }
         &.foreign-key-button {
           display: none;
@@ -557,7 +514,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
           content: 'bolt';
           font-family: 'Material Icons';
           font-size: $font-size;
-          color: rgba($theme-base, 0.35);
+          color: var(--text-muted);
           padding-left: $foreign-key-width - $font-size;
           display: inline-flex;
           align-items: center;
@@ -580,7 +537,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
           content: '';
           position: absolute;
           inset: 0;
-          background-color: $query-editor-bg;
+          background-color: var(--editor-bg);
           z-index: -1;
         }
       }
@@ -589,16 +546,16 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
       .tabulator-table {
         background: transparent;
         width: 100%;
-        color: $text-dark;
+        color: var(--text-contrast);
         user-select: text;
       }
       .tabulator-placeholder {
-        background: rgba($theme-base, 0.035);
+        background: var(--gray-a2);
         border-radius: 8px;
         span {
           font-size: 12px;
           font-weight: normal;
-          color: $text-light;
+          color: var(--text-muted);
         }
       }
     }
@@ -614,14 +571,14 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
         //loading message
         &.tabulator-loading{
           border: 0;
-          color: $text-dark;
-          background-color: black;
+          color: var(--text-contrast);
+          background-color: var(--panel-bg);
         }
 
         //error message
         &.tabulator-error{
           border: 0;
-          color: $brand-danger;
+          color: var(--danger-text);
         }
       }
     }
@@ -629,15 +586,15 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
   }
 
   .tabulator-edit-select-list {
-    background: $theme-bg;
-    color: white;
+    background: var(--panel-bg);
+    color: var(--panel-fg);
     border-width: 1;
-    border-color: rgba($theme-base, 0.06);
+    border-color: var(--gray-a3);
     border-radius: 2px;
     margin-top: $gutter-h;
 
     .tabulator-edit-select-list-item{
-      color: $text-dark;
+      color: var(--text-contrast);
     }
   }
 
@@ -648,7 +605,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
     border: 0;
     height: $statusbar-height;
     padding: 0 $gutter-h;
-    background: rgba($theme-base, 0.06);
+    background: var(--gray-a3);
 
     .tabulator-paginator,
     .tabulator-pages {
@@ -659,9 +616,9 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
       margin: 0 ($gutter-h * 0.5);
     }
     .tabulator-page {
-      color: $theme-base;
+      color: var(--text-contrast);
       background: transparent;
-      color: $text;
+      color: var(--text);
       border: 0;
       box-shadow: none;
       font-size: 0.8rem;
@@ -671,11 +628,11 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
       cursor: pointer;
       &:hover, &:focus {
         background: transparent;
-        color: $text-dark;
+        color: var(--text-contrast);
       }
       &.active {
-        color: $text-dark;
-        background: rgba($theme-base, 0.2);
+        color: var(--text-contrast);
+        background: var(--gray-a7);
       }
       &:disabled {
         opacity: 0.35;
@@ -727,21 +684,21 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
       display: inline-flex;
       align-items: center;
       .material-icons {
-        color: rgba($statusbar-text, 0.68);
+        color: rgb(from var(--statusbar-fg) r g b / 0.68);
         &:hover {
-          color: $statusbar-text;
+          color: var(--statusbar-fg);
         }
       }
     }
     input[type="number"] {
       font-weight: bold;
-      color: $statusbar-text;
-      border-color: rgba($statusbar-text, 0.2);
+      color: var(--statusbar-fg);
+      border-color: rgb(from var(--statusbar-fg) r g b / 0.2);
       padding: 0 ($gutter-h * 1.5);
       width: 60px;
       text-align: center;
       &:hover, &:focus {
-        border-color: rgba($statusbar-text, 0.25);
+        border-color: rgb(from var(--statusbar-fg) r g b / 0.25);
       }
     }
   }
@@ -753,11 +710,11 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
     }
     .tabulator-edit-select-list-item {
       &:hover {
-        background: rgba($theme-base, 0.05);
+        background: var(--gray-a3);
       }
       &.active, &.active:hover {
-        background: $brand-info;
-        color: white;
+        background: var(--info-solid-bg);
+        color: var(--info-solid-fg);
       }
     }
   }
@@ -779,10 +736,10 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
 
       &.tabulator-range-selected {
         &.primary-key:before, &.read-only-field:before {
-          color: black;
+          color: var(--table-header-selected-fg);
         }
         &.foreign-key:before {
-          color: mix($theme-primary, black, 60%);
+          color: var(--primary-text-contrast);
         }
         .tabulator-col-content .tabulator-col-title-holder .tabulator-col-title {
           color: inherit;
@@ -790,10 +747,10 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
             color: inherit;
           }
           .tabulator-header-popup-button {
-            color: black;
+            color: var(--table-header-selected-fg);
           }
           .tabulator-header-popup-button::before, .tabulator-col-sorter.tabulator-col-sorter-element:hover {
-            background-color: color.adjust($header-selected, $lightness: -10%);
+            background-color: var(--table-header-selected-bg);
           }
         }
       }
@@ -827,7 +784,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
           border-radius: 9999px;
           &:hover {
             cursor: pointer;
-            background-color: rgba($theme-base, 0.1);
+            background-color: var(--gray-a4);
           }
         }
       }
@@ -835,7 +792,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
   }
 
   .tabulator-col-resize-guide {
-    background-color: $columnResizeGuideColor;
+    background-color: var(--table-resize-guide-bg);
     opacity: 1;
     margin-left: 1px;
   }
@@ -850,7 +807,7 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
       width: 3px;
       height: 60%;
       transform: translate(0, -50%);
-      background-color: transparentize($columnResizeGuideColor, 0.4);
+      background-color: rgb(from var(--table-resize-guide-bg) r g b / 0.6);
       backdrop-filter: invert(100%);
       border-radius: 999px;
     }
@@ -872,95 +829,105 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
   }
 
   & {
-    color: var(--bks-table-fg-color);
-    background: var(--bks-table-bg-color);
+    color: var(--table-fg);
+    background: var(--table-bg);
     .tabulator-tableholder {
       .tabulator-table {
         color: unset;
       }
       .tabulator-range-overlay {
         .tabulator-range, .tabulator-range-cell-active {
-          border-color: var(--bks-table-range-border-color);
+          border-color: var(--table-range-border);
         }
         .tabulator-range.tabulator-range-active::after {
-          background-color: var(--bks-table-range-border-color);
+          background-color: var(--table-range-border);
         }
         .tabulator-range.copied {
-          outline-color: var(--bks-table-range-border-color);
+          outline-color: var(--table-range-border);
         }
       }
     }
 
     .tabulator-header {
-      color: var(--bks-table-header-fg-color);
-      background: var(--bks-table-header-bg-color);
-      box-shadow: 0 1px var(--bks-table-header-border-color);
+      color: inherit;
+      background: var(--table-bg);
+      box-shadow: 0 1px var(--border-subtle);
       .tabulator-col {
-        background: var(--bks-table-header-col-bg-color);
-        border-color: var(--bks-table-header-col-border-color);
+        background: var(--table-bg);
+        border-color: transparent;
         &.tabulator-frozen {
-          border-color: var(--bks-table-header-col-border-color);
+          border-color: transparent;
         }
       }
     }
 
     .tabulator-row {
       .tabulator-row-odd {
-        background: var(--bks-table-row-odd-bg-color);
+        background: var(--table-row-odd-bg);
+      }
+      .tabulator-row-even {
+        background: var(--table-row-even-bg);
+      }
+      // Tabulator's stylesheet greys selectable rows on hover; keep the stripes instead.
+      &.tabulator-row-even.tabulator-selectable:hover {
+        background-color: var(--table-row-even-bg);
+      }
+      &.tabulator-row-odd.tabulator-selectable:hover {
+        background-color: var(--table-row-odd-bg);
       }
       .tabulator-cell {
-        color: var(--bks-table-cell-fg-color);
+        color: var(--table-cell-fg);
         &:hover {
-          background: var(--bks-table-cell-bg-color-hover);
+          background: var(--table-cell-bg-hover);
         }
         &.tabulator-range-selected:not(.tabulator-range-only-cell-selected):not(.tabulator-range-row-header) {
-          background: var(--bks-table-cell-bg-color-selected);
+          background: var(--table-cell-selected-bg);
         }
         &.tabulator-range-row-header {
-          color: var(--bks-table-header-fg-color);
-          background: var(--bks-table-header-bg-color);
+          color: inherit;
+          background: var(--table-bg);
         }
       }
       &.tabulator-range-selected .tabulator-cell.tabulator-frozen.tabulator-range-row-header {
-        color: var(--bks-table-header-fg-color-selected);
-        background: var(--bks-table-header-bg-color-selected);
+        color: var(--table-header-selected-fg);
+        background: var(--table-header-selected-bg);
       }
     }
 
     .tabulator-range-row-header {
-      background: var(--bks-table-header-bg-color);
-      box-shadow: 1px 0 var(--bks-table-header-border-color);
+      background: var(--table-bg);
+      box-shadow: 1px 0 var(--border-subtle);
     }
 
     .tabulator-range-highlight .tabulator-cell.tabulator-range-row-header {
-      color: var(--bks-table-header-fg-color-highlight);
-      background: var(--bks-table-header-bg-color-highlight);
+      color: var(--table-header-highlight-fg);
+      background: var(--table-header-highlight-bg);
     }
 
     .tabulator-header .tabulator-col {
       &.tabulator-range-highlight {
-        color: var(--bks-table-header-fg-color-highlight);
-        background: var(--bks-table-header-bg-color-highlight);
+        color: var(--table-header-highlight-fg);
+        background: var(--table-header-highlight-bg);
       }
       &.tabulator-range-selected {
-        background: var(--bks-table-header-bg-color-selected);
-        color: var(--bks-table-header-fg-color-selected);
+        background: var(--table-header-selected-bg);
+        color: var(--table-header-selected-fg);
       }
 
       &.tabulator-sortable[aria-sort="descending"] .tabulator-col-content .tabulator-col-sorter .tabulator-arrow {
-        border-top-color: var(--bks-table-sorter-fg-color-active);
+        border-top-color: var(--text-contrast);
       }
       &.tabulator-sortable[aria-sort="ascending"] .tabulator-col-content .tabulator-col-sorter .tabulator-arrow {
-        border-bottom-color: var(--bks-table-sorter-fg-color-active);
+        border-bottom-color: var(--text-contrast);
       }
       &.tabulator-sortable[aria-sort="none"] .tabulator-col-content .tabulator-col-sorter .tabulator-arrow {
-        border-bottom-color: var(--bks-table-sorter-fg-color-inactive);
+        border-bottom-color: var(--gray-a8);
       }
     }
   }
 
   .tabulator-tooltip {
-    background: var(--bks-table-tooltip-bg-color);
-    color: var(--bks-table-tooltip-fg-color);
+    background: var(--panel-bg);
+    color: var(--panel-fg);
   }
 }

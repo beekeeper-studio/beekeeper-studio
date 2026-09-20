@@ -13,7 +13,6 @@
     min-height: 105px;
   }
   .list-item {
-    border-bottom: 1px solid $theme-bg;
     .badge {
       min-width: fit-content;
     }
@@ -23,7 +22,7 @@
     margin-bottom: $gutter-h * 0.5;
     a {
       &.active {
-        background-color: rgba($theme-base, 0.06);
+        background-color: var(--gray-a3);
       }
     }
   }
@@ -38,7 +37,7 @@
     font-size: 1rem;
     .subtitle {
       font-size: 80%;
-      color: $text-lighter;
+      color: var(--text-muted);
       @include truncate;
     }
   }
@@ -71,7 +70,7 @@
       height: 24px;
       transition: all 0.15s ease-in-out;
       .material-icons {
-        color: $text-dark;
+        color: var(--text-contrast);
       }
     }
     .dropdown {
@@ -91,7 +90,7 @@
 
      .show-all-history-text {
       font-size: 12px;
-      color: gray; 
+      color: var(--text-muted);
      }
     
      #show-all-history-checkbox {

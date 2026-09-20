@@ -130,7 +130,7 @@ $titlebar-actions-height:   30px;
   background: var(--titlebar-bg);
   color: var(--titlebar-fg);
   transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
-  @at-root body.window-inactive .titlebar-wrapper {
+  body.window-inactive & {
     background-color: var(--titlebar-inactive-bg);
     color: var(--titlebar-inactive-fg);
   }

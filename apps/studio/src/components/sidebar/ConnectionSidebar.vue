@@ -867,7 +867,7 @@ export default {
 
 @keyframes just-created-fade {
   from {
-    background: rgb(from var(--theme-primary) r g b / 25%);
+    background: var(--primary-a8);
   }
   to {
     background: transparent;

@@ -1174,8 +1174,8 @@ import { stringToTypedArray } from '@/common/utils'
     right: 1.5rem;
     z-index: 10;
     align-items: center;
-    background: var(--query-editor-bg);
-    border: 1px solid var(--border-color);
+    background: var(--editor-bg);
+    border: 1px solid var(--border-subtle);
     border-radius: 0.5rem;
     @include card-shadow;
 

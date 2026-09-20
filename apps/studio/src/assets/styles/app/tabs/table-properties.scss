@@ -1,14 +1,3 @@
-@use "sass:color";
-
-$row-highlight:          color.adjust($query-editor-bg, $lightness: 1%);
-$row-add:                #104633;
-$row-delete:             #8A3937;
-$row-error:              #38201F;
-
-$cell-edited:            #50492A;
-$cell-error:             $row-error;
-$cell-success:           $row-add;
-
 // Table Info
 .table-properties {
   display: flex;
@@ -55,10 +44,10 @@ $cell-success:           $row-add;
       flex-grow: 1;
       align-items: baseline;
       gap: 10px;
-      color: $text-dark;
+      color: var(--text-contrast);
       .filter-match-label {
         font-size: 12.5px;
-        color: $text-light;
+        color: var(--text-muted);
         white-space: nowrap;
       }
     }
@@ -99,7 +88,7 @@ $cell-success:           $row-add;
         flex: 1;
         min-width: 0;
         height: 30px;
-        color: $text-dark;
+        color: var(--text-contrast);
         h2 {
           margin: 0;
           white-space: nowrap;
@@ -115,11 +104,11 @@ $cell-success:           $row-add;
         height: 26px;
         border-radius: 6px;
         &:hover, &:focus {
-          background: rgba($theme-base, 0.07);
+          background: var(--gray-a3);
         }
         .material-icons {
           font-size: 16px;
-          color: $text-light;
+          color: var(--text-muted);
         }
       }
 
@@ -134,17 +123,17 @@ $cell-success:           $row-add;
         min-width: 0;
         max-width: 380px;
         padding: 0 8px 0 10px;
-        background: rgba($theme-base, 0.04);
-        border: 1px solid rgba($theme-base, 0.09);
+        background: var(--input-bg);
+        border: var(--input-border);
         border-radius: 6px;
         transition: border-color 0.15s ease-in-out;
         &:focus-within {
-          border-color: rgba($theme-primary, 0.5);
+          border: var(--input-border-focus);
         }
         .search-icon {
           flex: none;
           font-size: 16px;
-          color: $text-lighter;
+          color: var(--text-muted);
         }
         .filter-input {
           flex: 1;
@@ -155,7 +144,7 @@ $cell-success:           $row-add;
           background: transparent;
           box-shadow: none;
           font-size: 13px;
-          color: $text-dark;
+          color: var(--text-contrast);
           &:focus {
             border: 0;
             box-shadow: none;
@@ -166,7 +155,7 @@ $cell-success:           $row-add;
           min-width: 3em;
           text-align: right;
           font-size: 12px;
-          color: $text-lighter;
+          color: var(--text-muted);
           white-space: nowrap;
           &.is-hidden {
             visibility: hidden;
@@ -183,14 +172,14 @@ $cell-success:           $row-add;
           border: 0;
           border-radius: 999px;
           background: transparent;
-          color: $text-light;
+          color: var(--text-muted);
           cursor: pointer;
           &.is-hidden {
             visibility: hidden;
           }
           &:hover {
-            background: rgba($theme-base, 0.12);
-            color: $text-dark;
+            background: var(--gray-a5);
+            color: var(--text-contrast);
           }
           i {
             font-size: 12px;
@@ -217,15 +206,15 @@ $cell-success:           $row-add;
         border: 0;
         border-radius: 6px;
         box-shadow: none;
-        color: $text;
+        color: var(--text);
         &:hover, &:focus {
-          background: rgba($theme-base, 0.07);
-          color: $text-dark;
+          background: var(--gray-a3);
+          color: var(--text-contrast);
         }
         .material-icons {
           font-size: 15px;
           font-weight: normal;
-          color: $text-light;
+          color: var(--text-muted);
         }
         .material-icons.dropdown-icon {
           font-size: 14px;
@@ -241,11 +230,11 @@ $cell-success:           $row-add;
         height: 30px;
         border-radius: 6px;
         &:hover, &:focus {
-          background: rgba($theme-base, 0.07);
+          background: var(--gray-a3);
         }
         .material-icons {
           font-size: 16px;
-          color: $text-light;
+          color: var(--text-muted);
         }
       }
 
@@ -259,17 +248,17 @@ $cell-success:           $row-add;
         margin-left: 8px;
         padding: 0 13px 0 10px;
         border-radius: 6px;
-        background: $theme-primary;
+        background: var(--primary-solid-bg);
         font-size: 13px;
         font-weight: 500;
-        color: rgba(black, 0.87);
+        color: var(--primary-solid-fg);
         &:hover, &:focus {
-          background: color.adjust($theme-primary, $lightness: 6%);
-          color: rgba(black, 0.87);
+          background: var(--primary-solid-bg-hover);
+          color: var(--primary-solid-fg-hover);
         }
         .material-icons {
           font-size: 15px;
-          color: rgba(black, 0.87);
+          color: var(--primary-solid-fg);
         }
       }
     }
@@ -294,7 +283,7 @@ $cell-success:           $row-add;
     .table-meta {
       padding: $gutter-w;
       margin: 0 - $gutter-h;
-      color: $text-lighter;
+      color: var(--text-muted);
     }
     .table-description {
       position: relative;
@@ -304,16 +293,16 @@ $cell-success:           $row-add;
       cursor: pointer;
       min-height: 60px;
       &:hover {
-        background: rgba($theme-base, 0.025);
+        background: var(--gray-a2);
         .material-icons {
           display: inline-block;
         }
       }
       &.edit-success {
-        background-color: $row-add;
+        background-color: var(--table-row-added-bg);
       }
       &.edit-error {
-        background-color: $row-error;
+        background-color: var(--table-row-error-bg);
       }
       .material-icons {
         display: none;
@@ -340,7 +329,7 @@ $cell-success:           $row-add;
       span.markdown {
         content: 'markdown';
         font-size: 10px;
-        color: $text-lighter;
+        color: var(--text-muted);
         display: inline-block;
         position: absolute;
         top: $gutter-h;
@@ -348,7 +337,7 @@ $cell-success:           $row-add;
         padding: 0 $gutter-h;
         line-height: 1.8;
         // background: rgba($theme-base, 0.1);
-        box-shadow: 0 0 0 1px $border-color;
+        box-shadow: 0 0 0 1px var(--border-subtle);
         border-radius: 4px;
       }
     }
@@ -370,7 +359,7 @@ $cell-success:           $row-add;
         padding-bottom: 0;
       }
       label {
-        color: $text-light;
+        color: var(--text-muted);
         min-width: 110px;
       }
       select, textarea {
@@ -393,7 +382,7 @@ $cell-success:           $row-add;
       }
 
       .tabulator-cell:not(.tabulator-editable) {
-        color: $text-lighter;
+        color: var(--text-muted);
         &:hover {
           background-color: transparent;
         }
@@ -443,10 +432,6 @@ $cell-success:           $row-add;
     // Field Rows
     .tabulator-row {
       margin: $row-gutter 0;
-      background-color: transparent;
-      &.tabulator-row-even {
-        background-color: rgb(from var(--theme-base) r g b / 5%);
-      }
       .tabulator-cell {
         min-height: $row-height;
         height: $row-height;
@@ -487,7 +472,7 @@ $cell-success:           $row-add;
               &:active,
               &:checked,
               &:checked:active {
-                background: $theme-base;
+                background: var(--checkbox-checked-bg);
                 box-shadow: none;
               }
             }
@@ -499,7 +484,7 @@ $cell-success:           $row-add;
               background: transparent!important;
               box-shadow: none!important;
               &:after {
-                color: $theme-base;
+                color: var(--text-contrast);
                 font-size: 20px;
               }
               &[disabled="disabled"] {
@@ -518,7 +503,7 @@ $cell-success:           $row-add;
         &.remove-btn {
           &:hover {
             div.dynamic-action:after {
-              color: $theme-base;
+              color: var(--text-contrast);
             }
           }
           .material-icons {
@@ -564,7 +549,7 @@ $cell-success:           $row-add;
       right: 0;
       left: 0;
       font-family: 'Material Icons';
-      color: $text-lighter;
+      color: var(--text-muted);
       content: "close";
       transition: color 0.2s ease-in-out;
       font-size: 18px;
@@ -578,16 +563,16 @@ $cell-success:           $row-add;
 
     &.tabulator-row-even {
       &.inserted {
-        background-color: $row-add!important;
+        background-color: var(--table-row-added-bg)!important;
       }
       &.inserted, &.deleted {
         .tabulator-cell {
           cursor: pointer;
           &.edited {
-            background: rgba($theme-base, 0.05);
+            background: var(--gray-a3);
           }
           &.edited:hover {
-            background: rgba($theme-base, 0.12);
+            background: var(--gray-a5);
           }
         }
       }
@@ -603,6 +588,6 @@ $cell-success:           $row-add;
 }
 
 .tabulator .tabulator-header .tabulator-col.tabulator-sortable.tabulator-col-sorter-element:hover {
-  background-color: rgba($theme-base, 0.035);
+  background-color: var(--gray-a2);
 }
 

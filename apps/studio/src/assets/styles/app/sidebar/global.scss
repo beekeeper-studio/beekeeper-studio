@@ -55,9 +55,9 @@
           content: '';
           position: absolute;
           left: 0;
-          width: 1px;
+          width: 2px;
           height: 20px;
-          background: rgba($theme-base, 0.2);
+          background: var(--gray-a7);
           border-radius: 3px;
           overflow: hidden;
           opacity: 1;
@@ -68,7 +68,7 @@
           content: '';
           position: absolute;
           left: 0;
-          width: 1px;
+          width: 2px;
           height: 20px;
           background: var(--gray-12);
           border-radius: 3px;
