@@ -120,7 +120,6 @@
 
   .cm-button {
     @include btn;
-    background: var(--editor-button-bg);
     text-transform: capitalize;
   }
 
