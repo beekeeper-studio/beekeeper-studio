@@ -212,7 +212,7 @@ export default Vue.extend({
   z-index: 10;
   display: flex;
   flex-direction: column;
-  background: var(--theme-bg);
+  background: var(--app-bg);
 }
 
 .folder-slideover-header {
@@ -230,12 +230,12 @@ export default Vue.extend({
   width: 1.8rem;
   height: 1.8rem;
   border-radius: 1.8rem;
-  color: var(--text-dark);
+  color: var(--text-contrast);
   transition: background 0.15s ease-in-out;
 
   &:hover,
   &:focus {
-    background: rgb(from var(--theme-base) r g b / 10%);
+    background: var(--gray-a4);
   }
 
   .material-icons {

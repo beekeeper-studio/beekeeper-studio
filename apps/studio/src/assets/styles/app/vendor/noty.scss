@@ -1,4 +1,3 @@
-@use "sass:color";
 
 // Note: Mint is the default Noty theme
 // '~noty/themes/mint.scss';
@@ -86,6 +85,6 @@
   font-weight: 500;
 
   &:focus-visible {
-    outline: 1px auto var(--text-dark);
+    outline: 1px auto var(--text-contrast);
   }
 }

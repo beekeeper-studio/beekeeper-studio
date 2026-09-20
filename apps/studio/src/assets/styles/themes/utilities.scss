@@ -208,6 +208,7 @@ $families: (
     // ===== Overlay =====
 
     --overlay-bg: rgb(from var(--gray-1) r g b / 0.9);
+    --overlay-subtle-bg: rgb(from var(--gray-1) r g b / 0.5);
 
     // ===== Nav Pills =====
 
@@ -236,6 +237,7 @@ $families: (
 
     --table-row-header-shadow: 1px 0 var(--border-subtle);
     --table-row-odd-bg: var(--bg-subtle-a);
+    --table-row-even-bg: transparent;
     --table-row-added-bg: var(--success-bg-a);
     --table-row-deleted-bg: var(--danger-bg-active-a);
     --table-row-error-bg: var(--danger-bg-a);
@@ -255,6 +257,12 @@ $families: (
 
     --alert-bg: var(--bg-a);
     --alert-fg: var(--text);
+
+    // ===== Kbd =====
+
+    --kbd-bg: var(--badge-flat-bg);
+    --kbd-fg: var(--badge-flat-fg);
+    --kbd-shadow: inset 0 0 0 1px var(--gray-a3);
 
     // ===== Badge =====
 
@@ -280,6 +288,7 @@ $families: (
 
     // ===== Editor =====
 
+    --editor-font-weight: normal;
     --editor-bg: var(--bg-base);
     --editor-fg: var(--text-contrast);
     --editor-cursor-bg: var(--text-contrast);

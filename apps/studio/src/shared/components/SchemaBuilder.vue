@@ -257,7 +257,6 @@ export default Vue.extend({
 
 
 <style lang="scss">
-  @use 'sass:color';
   @import '../../shared/assets/styles/_variables';
   @import '../../shared/assets/styles/_extends';
   $row-height:             42px;
@@ -281,7 +280,7 @@ export default Vue.extend({
         margin: 0;
         text-transform: uppercase;
         font-size: 0.95rem;
-        color: $text-light;
+        color: var(--text-muted);
       }
     }
 
@@ -300,7 +299,7 @@ export default Vue.extend({
         box-shadow: none!important;
         padding: 0!important;
         .tabulator-header-contents {
-          background: var(--query-editor-bg);
+          background: var(--editor-bg);
         }
         .tabulator-col {
           min-width: $min-cell-width!important;
@@ -309,7 +308,7 @@ export default Vue.extend({
           .tabulator-col-content {
             padding: 0!important;
             .tabulator-col-title {
-              color: $text-lighter;
+              color: var(--text-muted);
             }
           }
         }
@@ -323,12 +322,9 @@ export default Vue.extend({
     // Field Rows
     .tabulator-row {
       margin: 4px 0;
-      background: rgba($theme-base, 0.05);
       border-radius: 5px;
-      &.tabulator-row-even,
-      &:nth-child(odd) {
-        background: rgba($theme-base, 0.05);
-      }
+      --table-row-odd-bg: transparent;
+      --table-row-even-bg: var(--bg-subtle-a);
       .tabulator-cell {
         min-height: $row-height;
         height: $row-height;
@@ -336,7 +332,7 @@ export default Vue.extend({
         padding: 0 $cell-padding;
         min-width: $min-cell-width;
         font-size: $cell-font-size;
-        color: $text-dark;
+        color: var(--text-contrast);
         flex-grow: 1;
         &.tabulator-editing {
           border: 0;
@@ -344,7 +340,7 @@ export default Vue.extend({
           min-height: $row-height;
           height: $row-height;
           line-height: $row-height;
-          box-shadow: inset 0 1px $theme-base;
+          box-shadow: inset 0 1px var(--text-contrast);
 
           pre,
           input:not([type="checkbox"]) {
@@ -380,12 +376,12 @@ export default Vue.extend({
           &.tabulator-editing {
             box-shadow: none!important;
             input[type="checkbox"] {
-              box-shadow: inset 0 0 0 2px $theme-base;
+              box-shadow: inset 0 0 0 2px var(--text-contrast);
               &:active,
               &:checked,
               &:checked:active {
-                background: rgba($theme-base, 0.5)!important;
-                color: $theme-bg!important;
+                background: var(--gray-a10)!important;
+                color: var(--app-bg)!important;
                 box-shadow: none!important;
               }
             }
@@ -413,18 +409,18 @@ export default Vue.extend({
           .material-icons {
             line-height: $row-height;
             cursor: pointer;
-            color: $text-lighter;
+            color: var(--text-muted);
             transition: color 0.2s ease-in-out;
             &:hover {
-              color: $text-dark;
+              color: var(--text-contrast);
             }
           }
         }
 
         .material-icons.clear {
-          color: $text-lighter;
+          color: var(--text-muted);
           &:hover {
-            color: $text-dark;
+            color: var(--text-contrast);
           }
         }
 
@@ -444,7 +440,7 @@ export default Vue.extend({
           height: $row-height;
         }
         .null-value {
-          color: $text-lighter;
+          color: var(--text-muted);
         }
       }
     }
@@ -463,7 +459,7 @@ export default Vue.extend({
             transform: rotate(90deg);
             margin-left: -8px;
             .tabulator-row-handle-bar {
-              background: $border-color;
+              background: var(--border-subtle);
               height: 1px;
               &:last-child {
                 display: none;
@@ -478,7 +474,7 @@ export default Vue.extend({
       &.tabulator-moving {
         @extend .card-shadow-hover;
         border: 0;
-        background: color.adjust($theme-bg, $lightness: 15%)!important;
+        background: var(--bg)!important;
         opacity: 1!important;
       }
     }
@@ -488,7 +484,7 @@ export default Vue.extend({
       .tabulator-cell {
         &.read-only {
           &:hover {
-            background: rgba($theme-base, 0.08)!important;
+            background: var(--gray-a4)!important;
             cursor: pointer;
             input {
               cursor: pointer;
@@ -508,19 +504,144 @@ export default Vue.extend({
         &.tabulator-editing {
           box-shadow: none!important;
           input[type="checkbox"] {
-            box-shadow: inset 0 0 0 2px $theme-base;
+            box-shadow: inset 0 0 0 2px var(--text-contrast);
             &:active,
             &:checked,
             &:checked:active {
-              background: rgba($theme-base, 0.5)!important;
+              background: var(--gray-a10)!important;
               box-shadow: none!important;
               &:after {
-                color: $theme-bg!important;
+                color: var(--app-bg)!important;
               }
             }
           }
         }
       }
     }
+  
+  // Colours that used to live in the light theme sheet.
+
+  // Schema Header
+  .schema-header {
+    .table-title {
+      color: var(--text-muted);
+    }
   }
+
+  // Tabulator Header Row
+  .tabulator {
+    .tabulator-header {
+      .tabulator-col {
+        .tabulator-col-content {
+          .tabulator-col-title {
+            color: var(--text-muted);
+          }
+        }
+      }
+    }
+  }
+
+  // Field Rows
+  .tabulator-row {
+    .tabulator-cell {
+      color: var(--text-contrast);
+      &.tabulator-editing {
+        box-shadow: inset 0 1px var(--text-contrast);
+      }
+      &.no-edit-highlight {
+        &.tabulator-editing {
+          input {
+            &[type="checkbox"]:active,
+            &[type="checkbox"]:checked,
+            &[type="checkbox"]:checked:active {
+              background: var(--checkbox-checked-bg)!important;
+              color: var(--checkbox-checked-fg)!important;
+            }
+          }
+        }
+        &.edited {
+          input {
+            &[type="checkbox"]:active,
+            &[type="checkbox"]:checked,
+            &[type="checkbox"]:checked:active {
+              &:after {
+                color: var(--checkbox-checked-fg)!important;
+              }
+            }
+          }
+        }
+      }
+      &.read-only {
+        input[type="checkbox"] {
+          &:active,
+          &:checked,
+          &:checked:active {
+            &:after {
+              color: var(--text-contrast)!important;
+            }
+          }
+        }
+        .tabulator-bks-checkbox {
+          input {
+            &:after {
+              color: var(--primary-text);
+            }
+          }
+          &.editable {
+            input[type="checkbox"] {
+              box-shadow: inset 0 0 0 2px var(--gray-a7)!important;
+              cursor: pointer!important;
+              &:active,
+              &:checked,
+              &:checked:active {
+                background: var(--checkbox-checked-bg)!important;
+                &:after {
+                  color: var(--checkbox-checked-fg)!important;
+                }
+              }
+              &:focus {
+                box-shadow: inset 0 0 0 2px var(--text-contrast)!important;
+              }
+            }
+          }
+        }
+      }
+
+      .material-icons.clear {
+        color: var(--text-muted);
+        &:hover {
+          color: var(--text-contrast);
+        }
+      }
+
+      // Remove Cell
+      &.remove-btn {
+        .material-icons {
+          color: var(--text-muted);
+          &:hover {
+            color: var(--text-contrast);
+          }
+        }
+      }
+    }
+  }
+
+  // Resize Handle
+  .tabulator-row {
+    .tabulator-frozen {
+      &.tabulator-row-handle {
+        .tabulator-row-handle-box {
+          .tabulator-row-handle-bar {
+            background: var(--border-subtle);
+          }
+        }
+      }
+    }
+  }
+  .tabulator-row {
+    &.tabulator-moving {
+      background: var(--bg)!important;
+    }
+  }
+}
 </style>

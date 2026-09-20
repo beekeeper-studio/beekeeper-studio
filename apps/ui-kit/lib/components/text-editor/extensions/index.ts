@@ -245,8 +245,8 @@ export function extensions(config: ExtensionConfiguration = {}) {
       },
       // Panel
       ".cm-panel": {
-        backgroundColor: "var(--bks-query-editor-bg)",
-        color: "var(--bks-text-dark)",
+        backgroundColor: "var(--editor-bg)",
+        color: "var(--editor-fg)",
       },
       // Inherit so panels follow the app's codemirror theme, or codemirror
       // paints them #f5f5f5. The & is what outranks the app's own theme.

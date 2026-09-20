@@ -54,7 +54,7 @@ table.simple-table td {
 }
 
 table.simple-table tr:nth-child(odd) {
-  background-color: rgba(0, 0, 0, 0.025);
+  background-color: var(--gray-a2);
   /* Light darkening for odd rows */
 }
 

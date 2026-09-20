@@ -1,4 +1,3 @@
-@use "sass:color";
 .interface.connection-interface {
   padding-top: 0;
 }
@@ -186,7 +185,7 @@
   margin: 0;
   i {
     font-size: 3rem;
-    color: $text-lighter;
+    color: var(--text-muted);
     transition: color 0.15s ease-in-out;
     cursor: pointer;
   }
@@ -196,7 +195,7 @@
   }
   &.enabled {
     i {
-      color: $theme-primary;
+      color: var(--primary-text);
     }
   }
   x-switch {

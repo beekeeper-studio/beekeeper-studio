@@ -205,7 +205,7 @@ export default Vue.extend({
   align-items: flex-start;
 
   .theme-preview-frame {
-    border: 2px solid var(--border-color);
+    border: 2px solid var(--border-subtle);
     border-radius: 4px;
     overflow: hidden;
   }
@@ -401,7 +401,7 @@ export default Vue.extend({
   .result-preview {
     display: flex;
     flex-direction: column;
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-subtle);
 
     .table-row {
       display: grid;
@@ -412,7 +412,7 @@ export default Vue.extend({
       &.header {
         font-weight: 600;
         color: var(--text-contrast);
-        box-shadow: 0 1px var(--border-color);
+        box-shadow: 0 1px var(--border-subtle);
       }
 
       &:nth-child(even) {

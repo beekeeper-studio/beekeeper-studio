@@ -23,7 +23,7 @@
       border: 0;
       margin: 0 $gutter-w;
       // border-top: 1px solid darken($theme-bg, 6%);
-      border-top: 1px solid $border-color;
+      border-top: 1px solid var(--border-subtle);
     }
     x-menu {
       hr {
@@ -40,14 +40,14 @@
     line-height: 28px;
     .sidebar-title {
       flex: 0 1 100%;
-      color: $text-dark;
+      color: var(--text-contrast);
       font-weight: 500;
       // NOTE: This was probably ok when we still use Roboto as a font.
       // Now we use system font. So at least in mac, this isn't good.
       // letter-spacing: 0.05rem;
       padding: 0 $gutter-h;
       // box-shadow: 0 1px darken($theme-bg, 6%);
-      box-shadow: 0 1px $border-color;
+      box-shadow: 0 1px var(--border-subtle);
     }
     .actions {
       display: flex;
@@ -94,7 +94,7 @@
   // ---------------------------------
   .empty {
     padding: $gutter-w;
-    color: $text;
+    color: var(--text);
     font-size: 0.85rem;
     .empty-actions {
       .btn {
@@ -187,7 +187,10 @@
           border-radius: 22px;
           border: 0;
           &.active {
-            background: rgba($theme-base, 0.1);
+            background: var(--gray-a4);
+            .material-icons {
+              color: var(--info-text);
+            }
           }
 
         }
@@ -214,10 +217,10 @@
     }
   }
   .create-table {
-    color: $text;
+    color: var(--text);
     transition: color 0.2s ease-in-out;
     &:hover {
-      color: $theme-base;
+      color: var(--text-contrast);
     }
   }
   .toolbar {
@@ -251,6 +254,9 @@
   padding: $gutter-w $gutter-w $gutter-w * 0.5;
   color: var(--text-contrast);
 
+  .sub .badge.active {
+    color: var(--info-text);
+  }
   .badge {
     font-size: 0.7rem;
     font-weight: normal;
@@ -481,7 +487,7 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    color: $text;
+    color: var(--text);
     padding: ($gutter-h * 0.5) 0;
     &:empty {
       padding: 0;
@@ -597,7 +603,7 @@
         top: 0;
         bottom: 0;
         left: 9px;
-        border-left: 1px solid rgba($theme-base,0.08);
+        border-left: 1px solid var(--gray-a4);
       }
     }
     > div > .schema-wrapper {
@@ -615,7 +621,7 @@
       &.empty {
         padding: $gutter-h;
         padding-left: $gutter-w * 1.8;
-        color: $text-lighter;
+        color: var(--text-muted);
       }
     }
   }

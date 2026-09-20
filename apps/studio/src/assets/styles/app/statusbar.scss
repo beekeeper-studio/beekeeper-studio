@@ -97,15 +97,10 @@ $button-height:     $statusbar-height * 0.72;
   .btn {
     padding: 0 0.6rem;
     min-width: min-content;
-    background: transparent;
-    color: var(--statusbar-fg);
     height: $button-height;
     line-height: $button-height;
     margin: 0 0.15rem;
     // margin-top: -1px;
-    &:hover[expanded] {
-      background: rgb(from var(--statusbar-fg) r g b / 0.15);
-    }
     .material-icons {
       font-size: 16px;
     }

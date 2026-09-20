@@ -7,16 +7,12 @@
 }
 
 @mixin card-shadow-hover {
-  box-shadow: 0 0 0 1px rgba(black, 0.06),
-    0 1px 2px rgba(black, 0.08),
-    0 6px 15px rgba(black, 0.12);
+  box-shadow: var(--panel-shadow);
 }
 
 
 @mixin card-shadow {
-  box-shadow: 0 0 0 1px rgba(black, 0.06),
-    0 1px 3px 0 rgba(black, 0.12),
-    0 2px 1px -1px rgba(black, 0.08);
+  box-shadow: var(--panel-shadow);
   transition: box-shadow 0.28s ease-in-out;
 }
 
@@ -81,7 +77,7 @@
 @mixin bk-form-input {
   @include form-control;
   &:focus {
-    border-color: var(--bks-input-highlight);
+    border: var(--input-border-focus);
   }
 }
 

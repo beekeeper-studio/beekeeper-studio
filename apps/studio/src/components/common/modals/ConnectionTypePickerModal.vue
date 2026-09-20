@@ -215,7 +215,7 @@ export default Vue.extend({
 
     .material-icons {
       font-size: 1rem;
-      color: var(--text-light);
+      color: var(--text-muted);
     }
   }
 }

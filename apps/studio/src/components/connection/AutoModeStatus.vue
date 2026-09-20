@@ -187,7 +187,7 @@ export default {
     .material-icons {
       width: 1em;
       font-size: 1.1em;
-      color: var(--text-lighter);
+      color: var(--text-muted);
     }
   }
 }

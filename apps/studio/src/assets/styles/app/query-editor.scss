@@ -1,4 +1,3 @@
-@use "sass:color";
 .query-editor {
   position: relative;
   display: flex;
@@ -11,17 +10,6 @@
     box-shadow: none;
     border: 0;
     outline: none;
-  }
-  .CodeMirror-code {
-    .highlight {
-      font-weight: bold;
-      background-color: inherit;
-      // background-color: rgba($theme-base, 0.2);
-    }
-
-    .error {
-      border-bottom: solid 1px $brand-danger;
-    }
   }
   .top-panel, .bottom-panel {
     overflow: hidden;
@@ -42,7 +30,7 @@
     inset: 0;
     top: var(--header-title-height);
     backdrop-filter: blur(6px);
-    background-color: rgba($theme-bg, 0.5);
+    background-color: var(--overlay-subtle-bg);
     padding: 2rem;
     display: flex;
     flex-direction: column;
@@ -100,7 +88,7 @@
       padding-top: $gutter-h * 0.5;
       padding-bottom: $gutter-h * 0.5;
       padding-left: ($gutter-h * 1.5);
-      background: color.adjust($query-editor-bg, $lightness: 1%);
+      background: var(--table-cell-bg-hover);
     }
     .result-table {
       display: flex;
@@ -132,14 +120,6 @@
 
   .BksSqlTextEditor {
     min-height: 0;
-    .CodeMirror {
-      padding-bottom: 0.25rem;
-    }
-  }
-
-  .CodeMirror-linenumbers {
-    width: 1.57rem;
-    margin-right: 0.67rem;
   }
 
   .statusbar {
@@ -182,23 +162,8 @@
 .shortcut {
   text-align: left;
   & > span {
-    display: inline-block;
-    padding: 0 0.35rem;
-    border-radius: 4px;
-    font-size: 90%;
-    font-weight: normal;
-    line-height: 1.6;
-    text-align: center;
-    white-space: nowrap;
-    vertical-align: baseline;
-    background: var(--badge-flat-bg);
-    box-shadow: inset 0 0 0 1px var(--gray-a3);
-    color: var(--badge-flat-fg);
+    @extend .kbd;
     margin: 0 ($gutter-h * 0.35);
-    transition: color 0.15s ease-in-out,
-                background-color 0.15s ease-in-out,
-                border-color 0.15s ease-in-out,
-                box-shadow 0.15s ease-in-out;
   }
 }
 

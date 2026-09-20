@@ -387,7 +387,7 @@ export default Vue.extend({
     margin: 0;
     overflow-x: scroll;
     overflow-y: auto;
-    background: var(--query-editor-bg);
+    background: var(--editor-bg);
     border-radius: 8px;
     user-select: text;
     cursor: text;
@@ -398,7 +398,7 @@ export default Vue.extend({
   }
 
   .BksSuperFormatter {
-    --background-color: hsl(from var(--theme-bg) h s calc(l + 1));
+    --background-color: var(--bg-subtle);
     flex: 1;
     min-height: 0;
     display: grid;
@@ -453,9 +453,7 @@ export default Vue.extend({
     }
 
     &:hover {
-      background-color: color-mix(in srgb,
-        var(--theme-base) 3.5%,
-        var(--theme-bg));
+      background-color: var(--gray-a2);
     }
 
     select {
@@ -479,9 +477,7 @@ export default Vue.extend({
     background-color: var(--background-color);
 
     &:hover {
-      background-color: color-mix(in srgb,
-        var(--theme-base) 3.5%,
-        var(--theme-bg));
+      background-color: var(--gray-a2);
     }
 
     label {
@@ -499,7 +495,7 @@ export default Vue.extend({
     .menu-btn {
       i.material-icons {
         transition: all 0.2s ease-in-out;
-        color: var(--text-lighter);
+        color: var(--text-muted);
       }
 
       &:hover,
@@ -507,7 +503,7 @@ export default Vue.extend({
         background: none;
 
         i {
-          color: var(--bks-link-color);
+          color: var(--link-fg);
         }
       }
     }

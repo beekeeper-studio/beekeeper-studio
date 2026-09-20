@@ -3,7 +3,6 @@ $material-icons-font-path: 'material-icons/iconfont/';
 $base-font-size:      14px;
 
 @use 'variables' as *;
-@use "variables-v2";
 @use "./custom-icons.scss";
 @import 'material-icons/iconfont/material-icons';
 

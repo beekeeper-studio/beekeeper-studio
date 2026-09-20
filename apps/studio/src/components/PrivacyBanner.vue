@@ -29,9 +29,8 @@ export default Vue.extend({
 
 <style lang="scss" scoped>
   .banner {
-    background-color: var(--brand-warning);
-    // TODO: Should get a set of font colors for each theme that contrast properly with the background colors (warning-text, danger-text, etc)
-    color: #181818; 
+    background-color: var(--warning-solid-bg);
+    color: var(--warning-solid-fg);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -41,7 +40,7 @@ export default Vue.extend({
     font-weight: 700;
     font-size: .875rem;
     a {
-      color: #181818;
+      color: var(--warning-solid-fg);
       text-decoration: underline;
     }
   }

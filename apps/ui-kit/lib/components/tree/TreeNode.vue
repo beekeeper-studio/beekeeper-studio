@@ -275,7 +275,7 @@ export default Vue.extend({
   user-select: none;
 
   &[data-drop-target="inside"] {
-    background-color: rgb(from var(--bks-brand-primary) r g b / 15%);
+    background-color: var(--primary-a6);
     border-radius: 4px;
   }
 
@@ -286,7 +286,7 @@ export default Vue.extend({
     left: 0;
     right: 0;
     height: 2px;
-    background-color: var(--bks-brand-primary);
+    background-color: var(--primary-solid-bg);
     pointer-events: none;
   }
 
