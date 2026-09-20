@@ -1,0 +1,55 @@
+.theme-github {
+  --purple-1: #fdfcff;
+  --purple-2: #faf8ff;
+  --purple-3: #f3efff;
+  --purple-4: #ebe4ff;
+  --purple-5: #e1d7ff;
+  --purple-6: #d5c8ff;
+  --purple-7: #c4b2fc;
+  --purple-8: #af95f5;
+  --purple-9: #8250df;
+  --purple-10: #7447c7;
+  --purple-11: #7245c5;
+  --purple-12: #381f66;
+
+  --purple-a1: #5500ff03;
+  --purple-a2: #4900ff07;
+  --purple-a3: #4000ff10;
+  --purple-a4: #4300ff1b;
+  --purple-a5: #4000ff28;
+  --purple-a6: #3d00ff37;
+  --purple-a7: #3c00f64d;
+  --purple-a8: #3f01e76a;
+  --purple-a9: #4900d1af;
+  --purple-a10: #3f00b2b8;
+  --purple-a11: #3e00b0ba;
+  --purple-a12: #1d0051e0;
+}
+
+.theme-github.dark-theme {
+  --purple-1: #120e1c;
+  --purple-2: #1a1427;
+  --purple-3: #2a1c47;
+  --purple-4: #36205f;
+  --purple-5: #40286e;
+  --purple-6: #4b337d;
+  --purple-7: #5c4194;
+  --purple-8: #7352b9;
+  --purple-9: #8957e5;
+  --purple-10: #7857be;
+  --purple-11: #c0a2ff;
+  --purple-12: #e4dbff;
+
+  --purple-a1: #e200ec06;
+  --purple-a2: #c63cfa12;
+  --purple-a3: #9946fe35;
+  --purple-a4: #9041fd50;
+  --purple-a5: #954eff60;
+  --purple-a6: #995efd71;
+  --purple-a7: #9f6afe8a;
+  --purple-a8: #9e6efeb3;
+  --purple-a9: #9960fee3;
+  --purple-a10: #a172ffb8;
+  --purple-a11: #c0a2ff;
+  --purple-a12: #e4dbff;
+}

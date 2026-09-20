@@ -15,10 +15,12 @@
     }
     .tabulator-tableholder > .tabulator-table {
       .tabulator-row {
+        .tabulator-cell:hover {
+          background: transparent;
+        }
         &.tabulator-selectable {
           padding-top: .25rem;
           padding-bottom: .25rem;
-          background: var(--app-bg);
           border-left: none;
           border-right: none;
           border-top: 1px solid rgb(from var(--bg) r g b / 0.85);

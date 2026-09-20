@@ -1,0 +1,69 @@
+/* https://github.com/primer/github-vscode-theme — GitHub Light Default and
+   GitHub Dark Default, built on @primer/primitives 7.10.0 colour scales. */
+
+@import "./gray.css";
+@import "./blue.css";
+@import "./green.css";
+@import "./orange.css";
+@import "./red.css";
+@import "./yellow.css";
+@import "./pink.css";
+@import "./purple.css";
+@import "./editor.css";
+
+.theme-github {
+  --app-bg: #ffffff;
+
+  /* Primary is GitHub's accent blue. */
+  --primary-1: var(--blue-1);
+  --primary-2: var(--blue-2);
+  --primary-3: var(--blue-3);
+  --primary-4: var(--blue-4);
+  --primary-5: var(--blue-5);
+  --primary-6: var(--blue-6);
+  --primary-7: var(--blue-7);
+  --primary-8: var(--blue-8);
+  --primary-9: var(--blue-9);
+  --primary-10: var(--blue-10);
+  --primary-11: var(--blue-11);
+  --primary-12: var(--blue-12);
+  --primary-a1: var(--blue-a1);
+  --primary-a2: var(--blue-a2);
+  --primary-a3: var(--blue-a3);
+  --primary-a4: var(--blue-a4);
+  --primary-a5: var(--blue-a5);
+  --primary-a6: var(--blue-a6);
+  --primary-a7: var(--blue-a7);
+  --primary-a8: var(--blue-a8);
+  --primary-a9: var(--blue-a9);
+  --primary-a10: var(--blue-a10);
+  --primary-a11: var(--blue-a11);
+  --primary-a12: var(--blue-a12);
+  --primary-solid-fg: var(--blue-solid-fg);
+  --primary-solid-fg-hover: var(--blue-solid-fg);
+
+  /* GitHub puts white on every emphasis colour, yellow included. */
+  --yellow-solid-fg: var(--white);
+
+  --link-fg: var(--blue-11);
+
+  /* Overlays sit on canvas.default, not canvas.subtle. */
+  --panel-bg: var(--gray-1);
+
+  --btn-primary-fg: var(--success-solid-fg);
+  --btn-primary-fg-hover: var(--success-solid-fg);
+  --btn-primary-bg: var(--success-solid-bg);
+  --btn-primary-bg-hover: var(--success-solid-bg-hover);
+
+  --checkbox-checked-bg: var(--blue-9);
+  --checkbox-checked-fg: var(--blue-solid-fg);
+
+  --nav-pill-active-fg: var(--text-contrast);
+}
+
+.theme-github.dark-theme {
+  --app-bg: #0d1117;
+
+  --panel-bg: var(--gray-2);
+}
+

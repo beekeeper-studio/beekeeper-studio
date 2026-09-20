@@ -14,7 +14,6 @@ export const cssVars: readonly CssVar[] = [
   { name: "--theme-secondary", value: "var(--info-solid-bg)" },
 
   { name: "--text-dark", value: "var(--text-contrast)" },
-  "--text",
   { name: "--text-light", value: "var(--text-muted)" },
   { name: "--text-lighter", value: "var(--text-muted)" },
   { name: "--text-hint", value: "var(--text-muted)" },
@@ -215,7 +214,6 @@ export const cssVars: readonly CssVar[] = [
   "--btn-fg-hover",
   "--btn-bg",
   "--btn-bg-hover",
-  "--btn-bg-active",
   "--btn-shadow",
   "--btn-flat-fg",
   "--btn-flat-fg-hover",
