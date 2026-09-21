@@ -278,6 +278,8 @@ import { stringToTypedArray } from '@/common/utils'
             // @ts-ignore
             contextMenu: (_e, cell) => {
               return [
+                this.viewAsJsonMenuItem(),
+                { separator: true },
                 ...copyActionsMenu({
                   ranges: cell.getTable().getRanges(),
                   table: this.result.tableName || "mytable",
@@ -363,6 +365,21 @@ import { stringToTypedArray } from '@/common/utils'
         // or this.$trigger(AppEvent.something) if possible
         this.openCellEditorModal(cell, !this.cellEditCheck(cell))
       },
+      /** Opens the JSON sidebar on the selected row. Leads the cell and row menus. */
+      viewAsJsonMenuItem() {
+        return {
+          label: createMenuItem(
+            'View as JSON',
+            this.$bksConfig.getKeybindings('context-menu', 'general.jsonViewerSidebar'),
+            { icon: 'data_object' }
+          ),
+          action: () => {
+            this.trigger(AppEvent.selectSecondarySidebarTab, 'json-viewer')
+            this.trigger(AppEvent.toggleSecondarySidebar, true)
+            this.updateJsonViewerSidebar()
+          },
+        }
+      },
       openEditorMenu(cell: CellComponent) {
         const isReadOnly = !this.cellEditCheck(cell);
         let keybind = this.$bksConfig.getKeybindings("context-menu", 'resultTable.openEditorModal');
@@ -404,21 +421,7 @@ import { stringToTypedArray } from '@/common/utils'
           const range = _.last(ranges);
 
           return [
-            {
-              label: createMenuItem(
-                'View as JSON',
-                this.$bksConfig.getKeybindings(
-                  'context-menu',
-                  'general.jsonViewerSidebar'
-                ),
-                { icon: 'data_object' }
-              ),
-              action: () => {
-                this.trigger(AppEvent.selectSecondarySidebarTab, 'json-viewer')
-                this.trigger(AppEvent.toggleSecondarySidebar, true)
-                this.updateJsonViewerSidebar()
-              },
-            },
+            this.viewAsJsonMenuItem(),
             { separator: true },
             this.openEditorMenu(cell),
             this.setAsNullMenuItem(ranges),

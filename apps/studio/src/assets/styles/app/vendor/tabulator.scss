@@ -951,6 +951,15 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
 .tabulator-tooltip {
   background-color: #292A2D;
   color: lightgray;
+
+  // Tabulator gives every popup the same .tabulator-popup-container z-index,
+  // so a cell tooltip and the context menu tie and DOM order decides. Holding
+  // the pointer still long enough to right click raises the tooltip last, over
+  // the menu. A tooltip is a non-interactive hint, so it belongs under every
+  // other tabulator popup rather than on top of one.
+  &.tabulator-popup-container {
+    z-index: 9999;
+  }
 }
 
 .beekeeper-studio-minimal-mode .tabulator-header {
