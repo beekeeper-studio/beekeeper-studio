@@ -1,4 +1,5 @@
-// TODO this will be the entrypoint for the theme
-:root {
-  --if-u-see-this-it-works: #fff;
-}
+@import './utilities.scss';
+@import './default/index.css';
+@import './solarized/index.css';
+@import './dracula/index.css';
+
