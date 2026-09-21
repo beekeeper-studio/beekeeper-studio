@@ -84,9 +84,9 @@
           >
           <span>I understand that by downgrading I will lose access to the features below</span>
         </label>
-        <ul class="trial-feature-list trial-feature-list--stacked trial-feature-list--danger">
+        <ul class="trial-feature-list trial-feature-list--stacked trial-feature-list--confirm">
           <li
-            v-for="feature in rankedFeatures"
+            v-for="feature in confirmFeatures"
             :key="feature.id"
             :class="{ 'trial-feature--used': !!feature.usage }"
           >
@@ -98,6 +98,14 @@
             >Used</span>
           </li>
         </ul>
+        <p class="trial-feature-more">
+          and all
+          <a
+            href="#"
+            class="trial-feature-more-link"
+            @click.prevent="openPricing"
+          >other paid features</a>
+        </p>
       </template>
     </div>
 
@@ -158,6 +166,7 @@ import {
   rankPaidFeaturesByUsage,
   PaidFeatureUsageMap,
   RankedPaidFeature,
+  TRIAL_HIGHLIGHTS,
 } from "@/lib/paidFeatures";
 import {
   formatTrialDate,
@@ -215,6 +224,16 @@ export default Vue.extend({
     unusedFeatures(): RankedPaidFeature[] {
       return this.rankedFeatures.filter((feature) => !feature.usage);
     },
+    /**
+     * What step two names. Whatever the trial actually used, or the three we
+     * lead with when it used nothing. Either way the "and all other paid
+     * features" line covers the rest, which keeps this step no taller than
+     * the offer it follows.
+     */
+    confirmFeatures(): RankedPaidFeature[] {
+      if (this.usedFeatures.length) return this.usedFeatures;
+      return TRIAL_HIGHLIGHTS.slice(0, 3).map((feature) => ({ ...feature, usage: null }));
+    },
     trialDays(): number {
       return globals.freeTrialDays;
     },
@@ -265,6 +284,10 @@ export default Vue.extend({
     buyLicense() {
       this.$native.openLink(PRICING_URL);
       this.enterLicense();
+    },
+    /** The step two link: the pricing page on its own, no license dialog. */
+    openPricing() {
+      this.$native.openLink(PRICING_URL);
     },
     async goToDowngrade() {
       this.acknowledged = false;

@@ -4,7 +4,7 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import TrialEndedModal from '@/components/license/TrialEndedModal.vue'
 import { AppEvent, AppEventMixin } from '@/common/AppEvent'
-import { recordPaidFeatureUse } from '@/lib/paidFeatures'
+import { recordPaidFeatureUse, TRIAL_HIGHLIGHTS } from '@/lib/paidFeatures'
 import { getTrialEndDecision, recordTrialEndDecision } from '@/lib/trial'
 
 // vuex asserts the global install before a store can be built
@@ -157,6 +157,28 @@ describe('TrialEndedModal', () => {
     wrapper.destroy()
   })
 
+  it('names the top three plus the rest when the confirmation has no usage to show', async () => {
+    const { wrapper, mocks } = mountModal()
+    await flush()
+    await wrapper.find('.trial-ended-downgrade').trigger('click')
+
+    const rows = wrapper.findAll('.trial-feature-list--confirm li')
+    expect(rows.wrappers.map((w) => w.find('.trial-feature-label').text())).toEqual(
+      TRIAL_HIGHLIGHTS.slice(0, 3).map((f) => f.label)
+    )
+    expect(wrapper.findAll('.trial-feature-badge')).toHaveLength(0)
+    expect(wrapper.find('.trial-feature-more').text().replace(/\s+/g, ' ')).toBe(
+      'and all other paid features'
+    )
+
+    // the link goes to pricing without opening the license dialog
+    await wrapper.find('.trial-feature-more-link').trigger('click')
+    expect(mocks.$native.openLink).toHaveBeenCalledWith('https://www.beekeeperstudio.io/pricing')
+    expect(getTrialEndDecision()).toBeNull()
+    expect(mocks.$modal.hide).not.toHaveBeenCalled()
+    wrapper.destroy()
+  })
+
   it('shows the whole catalogue as locked when nothing was used', async () => {
     const { wrapper } = mountModal()
     await flush()
@@ -181,12 +203,16 @@ describe('TrialEndedModal', () => {
       /^I understand that by downgrading I will lose access to the features below/
     )
 
-    const rows = wrapper.findAll('.trial-feature-list--danger li')
-    expect(rows).toHaveLength(12)
+    // only what was used, then a link covering the rest: this step must not
+    // be taller than the offer it follows
+    const rows = wrapper.findAll('.trial-feature-list--confirm li')
+    expect(rows).toHaveLength(1)
     expect(rows.at(0).classes()).toContain('trial-feature--used')
     expect(rows.at(0).find('.trial-feature-label').text()).toBe('Backup & restore')
     expect(rows.at(0).find('.trial-feature-badge').text()).toBe('Used')
-    expect(rows.wrappers.slice(1).every((row) => !row.classes().includes('trial-feature--used'))).toBe(true)
+    expect(wrapper.find('.trial-feature-more').text().replace(/\s+/g, ' ')).toBe(
+      'and all other paid features'
+    )
 
     // still locked down, nothing decided yet
     expect(wrapper.find('.base-modal-close').exists()).toBe(false)

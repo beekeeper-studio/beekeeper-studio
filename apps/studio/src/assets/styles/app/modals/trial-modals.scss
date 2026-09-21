@@ -94,8 +94,8 @@
       font-weight: 700;
       letter-spacing: 0.05em;
       text-transform: uppercase;
-      color: $brand-warning;
-      border: 1px solid rgba($brand-warning, 0.5);
+      color: $brand-success;
+      border: 1px solid rgba($brand-success, 0.5);
       border-radius: 3px;
     }
 
@@ -110,30 +110,37 @@
       }
 
       li.trial-feature--used {
-        background: rgba($brand-warning, 0.12);
+        background: rgba($brand-success, 0.12);
 
         .material-icons {
-          color: $brand-warning;
+          color: $brand-success;
         }
       }
     }
 
-    // Step two lists everything the downgrade locks, in warning colours.
-    &.trial-feature-list--danger {
-      max-height: 40vh;
+    // Step two names only what was used (or the top three), so it stays at or
+    // under the height of step one. The cap covers a trial that used everything.
+    &.trial-feature-list--confirm {
+      max-height: 30vh;
       overflow-y: auto;
+    }
+  }
 
-      li.trial-feature--used {
-        background: rgba($brand-danger, 0.12);
+  // "and all other paid features" - the tail of the step two list.
+  .trial-feature-more {
+    margin: $gutter-h 0 0;
+    padding-left: $gutter-h * 1.5;
+    font-size: 0.875rem;
+    color: $text;
 
-        .material-icons {
-          color: $brand-danger;
-        }
-      }
+    a {
+      color: $text;
+      text-decoration: underline;
+      text-decoration-color: rgba($theme-base, 0.35);
+      cursor: pointer;
 
-      .trial-feature-badge {
-        color: $brand-danger;
-        border-color: rgba($brand-danger, 0.5);
+      &:hover {
+        text-decoration-color: currentColor;
       }
     }
   }
