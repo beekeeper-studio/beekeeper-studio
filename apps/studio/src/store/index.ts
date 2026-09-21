@@ -40,6 +40,7 @@ import { WebPluginManagerStatus } from '@/services/plugin'
 import { MenuBarModule } from './modules/MenuBarModule'
 import { PluginsModule, PluginsState } from './modules/plugins'
 import { VimStoreModule } from './modules/VimStoreModule'
+import { UpdateModule, State as UpdateState } from './modules/UpdateModule'
 import { pluralize } from '@/vendor/pluralize'
 
 
@@ -131,6 +132,9 @@ export interface State {
 
   /** Set by VueX module. */
   sidebar?: SidebarState
+
+  /** Set by VueX module. */
+  updates?: UpdateState
 }
 
 Vue.use(Vuex)
@@ -156,6 +160,7 @@ const store = new Vuex.Store<State>({
     menuBar: MenuBarModule,
     plugins: PluginsModule,
     vim: VimStoreModule,
+    updates: UpdateModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),

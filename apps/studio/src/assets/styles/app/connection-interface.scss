@@ -9,10 +9,13 @@
 .app-version {
   display: flex;
   justify-content: center;
+  flex-shrink: 0;
   a {
-    color: rgba($theme-base, 0.2);
-    // font-style: italic;
+    color: $text-lighter;
     line-height: 2;
+    &:hover {
+      color: $text;
+    }
   }
 }
 
@@ -106,15 +109,6 @@
       margin-top: $gutter-h;
       .save {
         @include btn-flat;
-      }
-    }
-  }
-  .pitch {
-    text-align: center;
-    a {
-      color: $theme-primary;
-      &:hover {
-        text-decoration: underline;
       }
     }
   }

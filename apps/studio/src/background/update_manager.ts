@@ -77,17 +77,17 @@ export function manageUpdates(allowBeta: boolean, debug?: boolean): void {
     }
   })
 
-  autoUpdater.on('update-available', () => {
+  autoUpdater.on('update-available', (info) => {
     const message = platformInfo.isPortable ? 'manual-update' : 'update-available'
-    getActiveWindows().forEach(beeWin => beeWin.send(message))
+    getActiveWindows().forEach(beeWin => beeWin.send(message, info?.version))
   })
 
   ipcMain.on('download-update', () => {
     autoUpdater.downloadUpdate()
   })
 
-  autoUpdater.on('update-downloaded', () => {
-    getActiveWindows().forEach(beeWin => beeWin.send('update-downloaded'))
+  autoUpdater.on('update-downloaded', (info) => {
+    getActiveWindows().forEach(beeWin => beeWin.send('update-downloaded', info?.version))
   })
 
   ipcMain.on('install-update', () => {

@@ -17,23 +17,11 @@
           <div class="card-flat padding" v-if="!isConfigReady">
             <content-placeholder-heading />
           </div>
-          <div
+          <connection-empty-state
             v-else-if="!config.connectionType"
-            class="empty-state"
-          >
-            <h3>Welcome to Beekeeper Studio</h3>
-            <p>Start by adding new connection.</p>
-            <p>Or connection from a URL.</p>
-            <div class="actions">
-              <button class="btn btn-primary" @click="create">
-                <i class="material-icons">add</i>
-                New Connection
-              </button>
-              <ImportButton :config="config" variant="flat">
-                Import from URL
-              </ImportButton>
-            </div>
-          </div>
+            :config="config"
+            @create="create"
+          />
           <div class="card-flat padding" :class="determineLabelColor" v-else>
             <div class="connection-heading">
               <h3 class="card-title">
@@ -258,21 +246,6 @@
             standalone
             class="connection-upgrade-panel"
           />
-          <template v-if="!config.connectionType">
-            <div class="pitch" v-if="!isUltimate">
-              🌟 <strong>Upgrade</strong> to access the JSON sidebar, AI shell, robust import/export and much more!
-              <a href="https://beekeeperstudio.io/pricing" class="">Upgrade</a>.
-            </div>
-            <div class="pitch" v-else-if="isTrial">
-              🌟 <strong>Trial expires {{ $bks.timeAgo(trialLicense.validUntil) }}</strong> Upgrade now to make sure you
-              don't lose access.
-              <a href="https://beekeeperstudio.io/pricing" class="">Upgrade</a>.
-            </div>
-            <div class="pitch" v-else>
-              🌟 <strong>AI Shell</strong> - Let an LLM explore your database and write SQL for you. Bring your own API key. Simply open a new tab to get started.
-              <a href="https://www.beekeeperstudio.io/features/sql-ai">Learn more</a>
-            </div>
-          </template>
         </div>
 
         <small class="app-version">
@@ -328,13 +301,14 @@ import ContentPlaceholderHeading from '@/components/common/loading/ContentPlaceh
 import { FriendlyErrorHelper } from '@/frontend/utils/FriendlyErrorHelper'
 import PrivacyBanner from './PrivacyBanner.vue'
 import DatabaseIcon from "@/components/common/DatabaseIcon.vue"
+import ConnectionEmptyState from './connection/ConnectionEmptyState.vue'
 
 const log = rawLog.scope('ConnectionInterface')
 // import ImportUrlForm from './connection/ImportUrlForm';
 
 export default Vue.extend({
   components: { ConnectionSidebar, MysqlForm, BedrockForm, PostgresForm, RedshiftForm, CassandraForm, Sidebar, SqliteForm, SqlServerForm, SaveConnectionForm, ImportButton, ErrorAlert, OracleForm, BigQueryForm, FirebirdForm, UpgradePanel, LibSqlForm: LibSQLForm, LoadingSsoModal: LoadingSSOModal, ClickHouseForm, TrinoForm, MongoDbForm, DuckDbForm, SqlAnywhereForm, RedisForm, DynamoDbForm, ContentPlaceholderHeading, SurrealDbForm, PrivacyBanner, SnowflakeForm,
-    DatabaseIcon,
+    DatabaseIcon, ConnectionEmptyState,
   },
 
   data() {
@@ -361,7 +335,6 @@ export default Vue.extend({
     ...mapState('data/connections', { 'connections': 'items' }),
     ...mapState('data/connectionFolders', { connectionFolders: 'items' }),
     ...mapGetters(['isUltimate', 'isCloud']),
-    ...mapGetters('licenses', ['isTrial', 'trialLicense']),
     ...mapGetters({
       privacyMode: 'settings/privacyMode'
     }),
@@ -717,18 +690,6 @@ export default Vue.extend({
   .share-btn,
   &::v-deep .import-button {
     flex-shrink: 0;
-  }
-}
-
-.empty-state {
-  text-align: center;
-  padding-bottom: 1rem;
-
-  .actions {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.5rem;
   }
 }
 
