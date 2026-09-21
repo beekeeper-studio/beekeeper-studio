@@ -126,8 +126,6 @@ describe('TrialEndedModal', () => {
       'Query to file',
     ])
     expect(used.at(0).find('.trial-feature-badge').text()).toBe('Used')
-    expect(used.at(0).find('.trial-feature-note').text()).toBe('Last used 2 days ago')
-    expect(used.at(1).find('.trial-feature-note').text()).toBe('MongoDB · Last used 2 days ago')
     expect(wrapper.text()).toContain('Used during the trial')
     expect(wrapper.text()).toContain('Also locked')
 
@@ -137,6 +135,25 @@ describe('TrialEndedModal', () => {
     expect(restLabels).not.toContain('JSON sidebar')
     expect(restLabels).not.toContain('Query to file')
     expect(restLabels).toHaveLength(9)
+    wrapper.destroy()
+  })
+
+  it('says only that a feature was used: no timestamp, no specifics', async () => {
+    recordPaidFeatureUse('premium-databases', 'MongoDB')
+    const { wrapper, mocks } = mountModal()
+    await flush()
+
+    const used = wrapper.findAll('.trial-feature--used')
+    expect(used).toHaveLength(1)
+    // the row is the icon, the label and the badge, nothing more
+    const row = used.at(0)
+    expect(row.find('.trial-feature-label').text()).toBe('12 more databases')
+    expect(row.find('.trial-feature-badge').text()).toBe('Used')
+    expect(row.findAll('span')).toHaveLength(2)
+    expect(wrapper.find('.trial-feature-note').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('MongoDB')
+    expect(wrapper.text()).not.toMatch(/ago|Last used/)
+    expect(mocks.$bks.timeAgo).not.toHaveBeenCalled()
     wrapper.destroy()
   })
 
@@ -169,7 +186,6 @@ describe('TrialEndedModal', () => {
     expect(rows.at(0).classes()).toContain('trial-feature--used')
     expect(rows.at(0).find('.trial-feature-label').text()).toBe('Backup & restore')
     expect(rows.at(0).find('.trial-feature-badge').text()).toBe('Used')
-    expect(rows.at(0).find('.trial-feature-note').text()).toContain('Backup')
     expect(rows.wrappers.slice(1).every((row) => !row.classes().includes('trial-feature--used'))).toBe(true)
 
     // still locked down, nothing decided yet

@@ -99,15 +99,6 @@
       border-radius: 3px;
     }
 
-    .trial-feature-note {
-      margin-left: auto;
-      font-size: 0.78rem;
-      color: $text-light;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
     // One feature per line; rows used during the trial are called out.
     &.trial-feature-list--stacked {
       grid-template-columns: 1fr;

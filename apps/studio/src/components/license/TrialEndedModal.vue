@@ -42,7 +42,6 @@
               <i class="material-icons">lock</i>
               <span class="trial-feature-label">{{ feature.label }}</span>
               <span class="trial-feature-badge">Used</span>
-              <span class="trial-feature-note">{{ usageNote(feature) }}</span>
             </li>
           </ul>
         </section>
@@ -97,10 +96,6 @@
               v-if="feature.usage"
               class="trial-feature-badge"
             >Used</span>
-            <span
-              v-if="feature.usage"
-              class="trial-feature-note"
-            >{{ usageNote(feature) }}</span>
           </li>
         </ul>
       </template>
@@ -249,14 +244,6 @@ export default Vue.extend({
     reset() {
       this.step = "offer";
       this.acknowledged = false;
-    },
-    usageNote(feature: RankedPaidFeature): string {
-      const usage = feature.usage;
-      if (!usage) return "";
-      const parts: string[] = [];
-      if (usage.details?.length) parts.push(usage.details.join(", "));
-      parts.push(`Last used ${this.$bks.timeAgo(new Date(usage.lastUsedAt))}`);
-      return parts.join(" · ");
     },
     /** Record the answer and release the modal. */
     settle(decision: TrialEndDecision) {
