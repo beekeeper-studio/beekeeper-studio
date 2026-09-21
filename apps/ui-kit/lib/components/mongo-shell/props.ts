@@ -1,6 +1,6 @@
 import { PropType } from "vue";
 import { Keybindings, Keymap } from "../text-editor";
-import { CustomMenuItems } from "../context-menu";
+import { CustomMenuItems } from "../context-menu/menu";
 import { Clipboard, Config } from "../text-editor/extensions/vim";
 import { Extension } from "@codemirror/state";
 
