@@ -32,19 +32,6 @@ $trial-row-inset: $gutter-h * 1.5;
     color: $text-light;
   }
 
-  .trial-feature-heading {
-    margin: $gutter-w 0 $gutter-h;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: $text-light;
-  }
-
-  .trial-feature-group--used + .trial-feature-group .trial-feature-heading {
-    margin-top: $gutter-w * 1.25;
-  }
-
   // Step two of the trial-ended dialog: the "I understand" checkbox. Shares the
   // list rows' padding, control width and gap, so the checkbox sits in the same
   // column as the row icons and its text starts on the same edge as the labels.
@@ -53,7 +40,7 @@ $trial-row-inset: $gutter-h * 1.5;
     align-items: center;
     gap: $trial-row-gap;
     margin: $gutter-w 0;
-    padding: ($gutter-h * 0.9) $trial-row-inset;
+    padding: ($gutter-h * 0.6) $trial-row-inset;
     border-radius: 6px;
     background: rgba($theme-base, 0.05);
     font-size: 0.875rem;
@@ -85,6 +72,7 @@ $trial-row-inset: $gutter-h * 1.5;
       align-items: center;
       gap: $trial-row-gap;
       min-width: 0;
+      padding-inline: $trial-row-inset;
       font-size: 0.875rem;
     }
 
@@ -116,23 +104,16 @@ $trial-row-inset: $gutter-h * 1.5;
       border-radius: 3px;
     }
 
-    // One feature per line; rows used during the trial are called out.
-    &.trial-feature-list--stacked {
-      grid-template-columns: 1fr;
-      row-gap: $gutter-h * 0.5;
+    // Both steps use the same two-column list: no row fill, the green badge is
+    // the only marker that a feature was used.
+    &.trial-feature-list--offer,
+    &.trial-feature-list--confirm {
+      row-gap: $gutter-h * 1.25;
+    }
 
-      li {
-        padding: $gutter-h $trial-row-inset;
-        border-radius: 6px;
-      }
-
-      li.trial-feature--used {
-        background: rgba($brand-success, 0.12);
-
-        .material-icons {
-          color: $brand-success;
-        }
-      }
+    // The tail spans the full width of the list.
+    li.trial-feature-more {
+      grid-column: 1 / -1;
     }
 
     // "and all other paid features": the last row of the step two list, so it

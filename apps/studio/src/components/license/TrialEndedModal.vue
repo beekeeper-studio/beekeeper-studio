@@ -26,41 +26,33 @@
           is locked until a license key is entered.
         </p>
 
-        <section
-          v-if="usedFeatures.length"
-          class="trial-feature-group trial-feature-group--used"
-        >
-          <h4 class="trial-feature-heading">
-            Used during the trial
-          </h4>
-          <ul class="trial-feature-list trial-feature-list--stacked">
-            <li
-              v-for="feature in usedFeatures"
-              :key="feature.id"
-              class="trial-feature--used"
-            >
-              <i class="material-icons">lock</i>
-              <span class="trial-feature-label">{{ feature.label }}</span>
-              <span class="trial-feature-badge">Used</span>
-            </li>
-          </ul>
-        </section>
-
-        <section class="trial-feature-group">
-          <h4 class="trial-feature-heading">
-            {{ usedFeatures.length ? 'Also locked' : 'Now locked' }}
-          </h4>
-          <ul class="trial-feature-list">
-            <li
-              v-for="feature in unusedFeatures"
-              :key="feature.id"
-              v-tooltip="feature.description"
-            >
-              <i class="material-icons">lock_outline</i>
-              <span class="trial-feature-label">{{ feature.label }}</span>
-            </li>
-          </ul>
-        </section>
+        <ul class="trial-feature-list trial-feature-list--offer">
+          <li
+            v-for="feature in offerFeatures"
+            :key="feature.id"
+            v-tooltip="feature.description"
+            :class="{ 'trial-feature--used': !!feature.usage }"
+          >
+            <i class="material-icons">{{ feature.usage ? 'lock' : 'lock_outline' }}</i>
+            <span class="trial-feature-label">{{ feature.label }}</span>
+            <span
+              v-if="feature.usage"
+              v-tooltip="usedTooltip"
+              class="trial-feature-badge"
+            >Used</span>
+          </li>
+          <li class="trial-feature-more">
+            <i class="material-icons">more_horiz</i>
+            <span class="trial-feature-label">
+              and all
+              <a
+                href="#"
+                class="trial-feature-more-link"
+                @click.prevent="openPricing"
+              >other paid features</a>
+            </span>
+          </li>
+        </ul>
 
         <p class="trial-modal-hint">
           Subscriptions of 12+ months include lifetime access to every version
@@ -84,7 +76,7 @@
           >
           <span>I understand that by downgrading I will lose access to the features below</span>
         </label>
-        <ul class="trial-feature-list trial-feature-list--stacked trial-feature-list--confirm">
+        <ul class="trial-feature-list trial-feature-list--confirm">
           <li
             v-for="feature in confirmFeatures"
             :key="feature.id"
@@ -179,6 +171,9 @@ import {
 } from "@/lib/trial";
 
 const PRICING_URL = "https://www.beekeeperstudio.io/pricing";
+/** How many features either list names before deferring to the pricing page. */
+const FEATURE_LIMIT = 6;
+const USED_TOOLTIP = "You used this feature recently";
 
 type Step = "offer" | "downgrade";
 
@@ -224,8 +219,12 @@ export default Vue.extend({
     usedFeatures(): RankedPaidFeature[] {
       return this.rankedFeatures.filter((feature) => feature.usage);
     },
-    unusedFeatures(): RankedPaidFeature[] {
-      return this.rankedFeatures.filter((feature) => !feature.usage);
+    /** The offer's single list: whatever was used first, then the catalogue. */
+    offerFeatures(): RankedPaidFeature[] {
+      return this.rankedFeatures.slice(0, FEATURE_LIMIT);
+    },
+    usedTooltip(): string {
+      return USED_TOOLTIP;
     },
     /**
      * What step two names. Whatever the trial actually used, or the three we
@@ -234,7 +233,7 @@ export default Vue.extend({
      * the offer it follows.
      */
     confirmFeatures(): RankedPaidFeature[] {
-      if (this.usedFeatures.length) return this.usedFeatures;
+      if (this.usedFeatures.length) return this.usedFeatures.slice(0, FEATURE_LIMIT);
       return TRIAL_HIGHLIGHTS.slice(0, 3).map((feature) => ({ ...feature, usage: null }));
     },
     trialDays(): number {

@@ -61,7 +61,10 @@ function mountModal(store = buildStore()) {
   localVue.use(Vuex)
   localVue.mixin(AppEventMixin)
   localVue.directive('kbd-trap', {})
-  localVue.directive('tooltip', {})
+  // record the bound value so the specs can assert tooltip copy
+  const recordTooltip = (el: Element, binding: { value: unknown }) =>
+    el.setAttribute('data-tooltip', String(binding.value))
+  localVue.directive('tooltip', { bind: recordTooltip, update: recordTooltip })
   const mocks = {
     $modal: { show: vi.fn(), hide: vi.fn() },
     $native: { openLink: vi.fn() },
@@ -111,7 +114,7 @@ describe('TrialEndedModal', () => {
     wrapper.destroy()
   })
 
-  it('lists the features used during the trial first, flagged, then everything else', async () => {
+  it('offers one list of six, used features first, then the tail link', async () => {
     recordPaidFeatureUse('query-to-file')
     recordPaidFeatureUse('json-row-view')
     recordPaidFeatureUse('json-row-view')
@@ -119,22 +122,27 @@ describe('TrialEndedModal', () => {
     const { wrapper } = mountModal()
     await flush()
 
-    const used = wrapper.findAll('.trial-feature--used')
-    expect(used.wrappers.map((w) => w.find('.trial-feature-label').text())).toEqual([
-      'JSON sidebar',
-      '12 more databases',
-      'Query to file',
-    ])
-    expect(used.at(0).find('.trial-feature-badge').text()).toBe('Used')
-    expect(wrapper.text()).toContain('Used during the trial')
-    expect(wrapper.text()).toContain('Also locked')
+    const rows = wrapper.findAll('.trial-feature-list--offer li:not(.trial-feature-more)')
+    expect(rows).toHaveLength(6)
+    const labels = rows.wrappers.map((w) => w.find('.trial-feature-label').text())
+    // used first, in usage order, then the catalogue fills the rest
+    expect(labels.slice(0, 3)).toEqual(['JSON sidebar', '12 more databases', 'Query to file'])
+    expect(labels[3]).toBe('SQL AI shell')
 
-    const rest = wrapper.findAll('.trial-feature-list:not(.trial-feature-list--stacked) li')
-    const restLabels = rest.wrappers.map((w) => w.find('.trial-feature-label').text())
-    expect(restLabels[0]).toBe('SQL AI shell')
-    expect(restLabels).not.toContain('JSON sidebar')
-    expect(restLabels).not.toContain('Query to file')
-    expect(restLabels).toHaveLength(9)
+    // exactly one list, no section headings
+    expect(wrapper.findAll('.trial-feature-list')).toHaveLength(1)
+    expect(wrapper.text()).not.toContain('Used during the trial')
+    expect(wrapper.text()).not.toContain('Also locked')
+
+    // the badge marks the used ones and explains itself on hover
+    const badges = wrapper.findAll('.trial-feature-badge')
+    expect(badges).toHaveLength(3)
+    expect(badges.at(0).text()).toBe('Used')
+    expect(badges.at(0).attributes('data-tooltip')).toBe('You used this feature recently')
+
+    expect(wrapper.find('.trial-feature-more .trial-feature-label').text().replace(/\s+/g, ' ')).toBe(
+      'and all other paid features'
+    )
     wrapper.destroy()
   })
 
@@ -179,13 +187,14 @@ describe('TrialEndedModal', () => {
     wrapper.destroy()
   })
 
-  it('shows the whole catalogue as locked when nothing was used', async () => {
+  it('offers the first six with no badges when nothing was used', async () => {
     const { wrapper } = mountModal()
     await flush()
 
     expect(wrapper.findAll('.trial-feature--used')).toHaveLength(0)
-    expect(wrapper.text()).toContain('Now locked')
-    expect(wrapper.findAll('.trial-feature-list li')).toHaveLength(12)
+    expect(wrapper.findAll('.trial-feature-badge')).toHaveLength(0)
+    expect(wrapper.findAll('.trial-feature-list--offer li:not(.trial-feature-more)')).toHaveLength(6)
+    expect(wrapper.find('.trial-feature-more').exists()).toBe(true)
     wrapper.destroy()
   })
 
