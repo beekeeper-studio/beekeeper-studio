@@ -1,44 +1,6 @@
+@use './vars' as *;
+
 @layer primitive, semantic, component;
-
-// The 12 Radix steps, by role, and their alpha variants.
-$steps: (
-  1: "bg-base",
-  2: "bg-subtle",
-  3: "bg",
-  4: "bg-hover",
-  5: "bg-active",
-  6: "border-subtle",
-  7: "border",
-  8: "border-hover",
-  9: "solid-bg",
-  10: "solid-bg-hover",
-  11: "text",
-  12: "text-contrast",
-  a1: "bg-base-a",
-  a2: "bg-subtle-a",
-  a3: "bg-a",
-  a4: "bg-hover-a",
-  a5: "bg-active-a",
-  a6: "border-subtle-a",
-  a7: "border-a",
-  a8: "border-hover-a",
-  a9: "solid-bg-a",
-  a10: "solid-bg-hover-a",
-  a11: "text-a",
-  a12: "text-contrast-a",
-);
-
-// Hue scales every theme defines.
-$hues: red, orange, yellow, green, blue, purple, pink;
-
-// Semantic families and the hue scale each one reads from.
-$families: (
-  primary: yellow,
-  info: blue,
-  success: green,
-  warning: orange,
-  danger: red,
-);
 
 @layer primitive {
   .light-theme,
