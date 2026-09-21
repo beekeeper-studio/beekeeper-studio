@@ -162,12 +162,12 @@ describe('TrialEndedModal', () => {
     await flush()
     await wrapper.find('.trial-ended-downgrade').trigger('click')
 
-    const rows = wrapper.findAll('.trial-feature-list--confirm li')
+    const rows = wrapper.findAll('.trial-feature-list--confirm li:not(.trial-feature-more)')
     expect(rows.wrappers.map((w) => w.find('.trial-feature-label').text())).toEqual(
       TRIAL_HIGHLIGHTS.slice(0, 3).map((f) => f.label)
     )
     expect(wrapper.findAll('.trial-feature-badge')).toHaveLength(0)
-    expect(wrapper.find('.trial-feature-more').text().replace(/\s+/g, ' ')).toBe(
+    expect(wrapper.find('.trial-feature-more .trial-feature-label').text().replace(/\s+/g, ' ')).toBe(
       'and all other paid features'
     )
 
@@ -205,12 +205,12 @@ describe('TrialEndedModal', () => {
 
     // only what was used, then a link covering the rest: this step must not
     // be taller than the offer it follows
-    const rows = wrapper.findAll('.trial-feature-list--confirm li')
+    const rows = wrapper.findAll('.trial-feature-list--confirm li:not(.trial-feature-more)')
     expect(rows).toHaveLength(1)
     expect(rows.at(0).classes()).toContain('trial-feature--used')
     expect(rows.at(0).find('.trial-feature-label').text()).toBe('Backup & restore')
     expect(rows.at(0).find('.trial-feature-badge').text()).toBe('Used')
-    expect(wrapper.find('.trial-feature-more').text().replace(/\s+/g, ' ')).toBe(
+    expect(wrapper.find('.trial-feature-more .trial-feature-label').text().replace(/\s+/g, ' ')).toBe(
       'and all other paid features'
     )
 

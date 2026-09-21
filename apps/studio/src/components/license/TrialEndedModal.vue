@@ -97,15 +97,18 @@
               class="trial-feature-badge"
             >Used</span>
           </li>
+          <li class="trial-feature-more">
+            <i class="material-icons">more_horiz</i>
+            <span class="trial-feature-label">
+              and all
+              <a
+                href="#"
+                class="trial-feature-more-link"
+                @click.prevent="openPricing"
+              >other paid features</a>
+            </span>
+          </li>
         </ul>
-        <p class="trial-feature-more">
-          and all
-          <a
-            href="#"
-            class="trial-feature-more-link"
-            @click.prevent="openPricing"
-          >other paid features</a>
-        </p>
       </template>
     </div>
 

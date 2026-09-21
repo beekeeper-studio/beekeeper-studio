@@ -3,6 +3,13 @@
 // two-step decision at the end of the trial). Both render inside BaseModal,
 // which owns the chrome, so only the lead copy and the feature lists live here.
 
+// One control column for every row in these dialogs: the list icons and the
+// acknowledgement checkbox. $trial-control-size matches the app's global
+// checkbox (see input[type="checkbox"] in _layout.scss).
+$trial-control-size: 18px;
+$trial-row-gap: $gutter-h * 1.25;
+$trial-row-inset: $gutter-h * 1.5;
+
 .trial-modal {
   color: $text;
   font-size: 0.9rem;
@@ -38,20 +45,28 @@
     margin-top: $gutter-w * 1.25;
   }
 
-  // Step two of the trial-ended dialog: the "I understand" checkbox.
+  // Step two of the trial-ended dialog: the "I understand" checkbox. Shares the
+  // list rows' padding, control width and gap, so the checkbox sits in the same
+  // column as the row icons and its text starts on the same edge as the labels.
   .trial-downgrade-acknowledgement {
     display: flex;
-    align-items: flex-start;
-    gap: $gutter-h * 1.5;
-    margin: $gutter-w 0 $gutter-h;
+    align-items: center;
+    gap: $trial-row-gap;
+    margin: $gutter-w 0;
+    padding: ($gutter-h * 0.9) $trial-row-inset;
+    border-radius: 6px;
+    background: rgba($theme-base, 0.05);
+    font-size: 0.875rem;
     font-weight: 500;
     line-height: 1.4;
     color: $text-dark;
     cursor: pointer;
 
     input {
-      flex-shrink: 0;
-      margin-top: 0.15rem;
+      // The global checkbox carries margins meant for inline label markup;
+      // this row spaces itself with flex gap instead.
+      flex: 0 0 auto;
+      margin: 0;
     }
   }
 
@@ -68,7 +83,7 @@
     li {
       display: flex;
       align-items: center;
-      gap: $gutter-h * 1.25;
+      gap: $trial-row-gap;
       min-width: 0;
       font-size: 0.875rem;
     }
@@ -76,7 +91,9 @@
     .material-icons {
       font-size: 16px;
       color: $text-lighter;
-      flex-shrink: 0;
+      flex: 0 0 auto;
+      width: $trial-control-size;
+      text-align: center;
     }
 
     .trial-feature-label {
@@ -105,7 +122,7 @@
       row-gap: $gutter-h * 0.5;
 
       li {
-        padding: $gutter-h ($gutter-h * 1.5);
+        padding: $gutter-h $trial-row-inset;
         border-radius: 6px;
       }
 
@@ -118,29 +135,20 @@
       }
     }
 
-    // Step two names only what was used (or the top three), so it stays at or
-    // under the height of step one. The cap covers a trial that used everything.
-    &.trial-feature-list--confirm {
-      max-height: 30vh;
-      overflow-y: auto;
-    }
-  }
-
-  // "and all other paid features" - the tail of the step two list.
-  .trial-feature-more {
-    margin: $gutter-h 0 0;
-    padding-left: $gutter-h * 1.5;
-    font-size: 0.875rem;
-    color: $text;
-
-    a {
+    // "and all other paid features": the last row of the step two list, so it
+    // lines up with the features above it without hand-matched padding.
+    li.trial-feature-more .trial-feature-label {
       color: $text;
-      text-decoration: underline;
-      text-decoration-color: rgba($theme-base, 0.35);
-      cursor: pointer;
 
-      &:hover {
-        text-decoration-color: currentColor;
+      a {
+        color: $text;
+        text-decoration: underline;
+        text-decoration-color: rgba($theme-base, 0.35);
+        cursor: pointer;
+
+        &:hover {
+          text-decoration-color: currentColor;
+        }
       }
     }
   }
