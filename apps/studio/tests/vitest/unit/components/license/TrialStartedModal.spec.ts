@@ -4,7 +4,7 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import TrialStartedModal from '@/components/license/TrialStartedModal.vue'
 import { AppEvent, AppEventMixin } from '@/common/AppEvent'
-import { PAID_FEATURES } from '@/lib/paidFeatures'
+import { TRIAL_HIGHLIGHTS } from '@/lib/paidFeatures'
 import { isTrialWelcomePending, markTrialWelcomePending } from '@/lib/trial'
 
 // vuex asserts the global install before a store can be built
@@ -13,7 +13,11 @@ Vue.use(Vuex)
 const ModalStub = {
   props: ['name', 'clickToClose'],
   render(h) {
-    return h('div', { class: 'modal-stub' }, this.$slots.default)
+    return h(
+      'div',
+      { class: 'modal-stub', attrs: { 'data-click-to-close': String(this.clickToClose) } },
+      this.$slots.default
+    )
   },
 }
 const PortalStub = {
@@ -49,7 +53,10 @@ function mountModal(store = buildStore()) {
   localVue.mixin(AppEventMixin)
   localVue.directive('kbd-trap', {})
   localVue.directive('tooltip', {})
-  const mocks = { $modal: { show: vi.fn(), hide: vi.fn() } }
+  const mocks = {
+    $modal: { show: vi.fn(), hide: vi.fn() },
+    $native: { openLink: vi.fn() },
+  }
   const wrapper = mount(TrialStartedModal, {
     localVue,
     store,
@@ -70,11 +77,51 @@ describe('TrialStartedModal', () => {
     await flush()
 
     expect(mocks.$modal.show).toHaveBeenCalledWith(MODAL_NAME)
-    expect(wrapper.text()).toContain('Every paid feature is unlocked')
-    expect(wrapper.text()).toContain('14-day free trial')
+    expect(wrapper.text()).toContain('14 day free trial activated')
+    expect(wrapper.find('.trial-modal-lead').text().replace(/\s+/g, ' ')).toBe(
+      'All paid app features are unlocked as part of the trial. Here are our 6 favorite:'
+    )
     expect(wrapper.text()).toContain('2026')
-    expect(wrapper.findAll('.trial-feature-list li')).toHaveLength(PAID_FEATURES.length)
-    expect(wrapper.find('.base-modal-close').exists()).toBe(true)
+    wrapper.destroy()
+  })
+
+  it('lists exactly the six highlights, not the whole catalogue', async () => {
+    markTrialWelcomePending()
+    const { wrapper } = mountModal()
+    await flush()
+
+    const labels = wrapper.findAll('.trial-feature-label').wrappers.map((w) => w.text())
+    expect(labels).toHaveLength(6)
+    expect(labels).toEqual(TRIAL_HIGHLIGHTS.map((f) => f.label))
+    expect(labels[0]).toBe('JSON sidebar')
+    wrapper.destroy()
+  })
+
+  it('cannot be dismissed except by a button', async () => {
+    markTrialWelcomePending()
+    const { wrapper } = mountModal()
+    await flush()
+
+    // no close button, and Escape / overlay clicks are refused
+    expect(wrapper.find('.base-modal-close').exists()).toBe(false)
+    expect(wrapper.find('.modal-stub').attributes('data-click-to-close')).toBe('false')
+    const stop = vi.fn()
+    wrapper.findComponent(ModalStub).vm.$emit('before-close', { stop })
+    expect(stop).toHaveBeenCalledTimes(1)
+    expect(isTrialWelcomePending()).toBe(true)
+    wrapper.destroy()
+  })
+
+  it('"Learn more" opens the upgrade page and leaves the dialog up', async () => {
+    markTrialWelcomePending()
+    const { wrapper, mocks } = mountModal()
+    await flush()
+
+    await wrapper.find('.trial-started-learn-more').trigger('click')
+
+    expect(mocks.$native.openLink).toHaveBeenCalledWith('https://www.beekeeperstudio.io/upgrade')
+    expect(mocks.$modal.hide).not.toHaveBeenCalled()
+    expect(isTrialWelcomePending()).toBe(true)
     wrapper.destroy()
   })
 
@@ -115,7 +162,8 @@ describe('TrialStartedModal', () => {
     wrapper.vm.$root.$on(AppEvent.enterLicense, enterLicense)
     await flush()
 
-    await wrapper.find('button[type=button]').trigger('click')
+    const enterButton = wrapper.findAll('button').wrappers.find((w) => w.text() === 'Enter a license key')
+    await enterButton.trigger('click')
 
     expect(mocks.$modal.hide).toHaveBeenCalledWith(MODAL_NAME)
     expect(enterLicense).toHaveBeenCalledTimes(1)

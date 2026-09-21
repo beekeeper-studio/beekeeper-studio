@@ -92,6 +92,7 @@ import LifetimeLicenseExpiredModal from '@/components/license/LifetimeLicenseExp
 import CloudWorkspacesBlockedModal from '@/components/license/CloudWorkspacesBlockedModal.vue'
 import type { LicenseStatus } from "@/lib/license";
 import { SmartLocalStorage } from '@/common/LocalStorage';
+import { isTrialWelcomePending } from '@/lib/trial';
 import PluginManagerModal from '@/components/plugins/PluginManagerModal.vue'
 import KeyboardShortcutsModal from '@/components/common/modals/KeyboardShortcutsModal.vue'
 import PluginController from '@/components/plugins/PluginController.vue'
@@ -126,6 +127,7 @@ export default Vue.extend({
     return {
       url: null,
       interval: null,
+      trialNotificationTimeout: null,
       licenseInterval: null,
       runningWayland: false,
     }
@@ -169,6 +171,7 @@ export default Vue.extend({
     },
   },
   async beforeDestroy() {
+    clearTimeout(this.trialNotificationTimeout)
     clearInterval(this.interval)
     clearInterval(this.licenseInterval)
   },
@@ -181,8 +184,7 @@ export default Vue.extend({
       await this.$nextTick()
       this.validateLicenseExpiry()
     }
-    this.notifyFreeTrial()
-    this.interval = setInterval(this.notifyFreeTrial, globals.trialNotificationInterval)
+    this.scheduleTrialNotifications()
     this.$store.dispatch('licenses/updateAll');
     this.licenseInterval = setInterval(
       () => {
@@ -219,8 +221,20 @@ export default Vue.extend({
 
   },
   methods: {
+    scheduleTrialNotifications() {
+      // The first reminder waits: on a fresh install the welcome dialog is
+      // already on screen and covers the same ground, so a toast about the
+      // trial on top of it is just noise. After that it settles into the
+      // regular cadence.
+      this.trialNotificationTimeout = setTimeout(() => {
+        this.notifyFreeTrial()
+        this.interval = setInterval(this.notifyFreeTrial, globals.trialNotificationInterval)
+      }, globals.trialNotificationDelay)
+    },
     notifyFreeTrial() {
       Noty.closeAll('trial')
+      // Still waiting on the welcome dialog: it already says all of this.
+      if (isTrialWelcomePending()) return
       if (this.isTrial && this.isUltimate) {
         const ta = new TimeAgo('en-US')
         const validUntil = this.status.license.validUntil

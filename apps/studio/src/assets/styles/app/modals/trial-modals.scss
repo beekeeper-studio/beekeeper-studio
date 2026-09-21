@@ -11,6 +11,11 @@
   .trial-modal-lead {
     margin: 0 0 $gutter-w;
     color: $text-dark;
+
+    em {
+      font-style: normal;
+      font-weight: 700;
+    }
   }
 
   .trial-modal-hint {

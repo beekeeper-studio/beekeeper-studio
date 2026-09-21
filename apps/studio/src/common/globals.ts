@@ -12,6 +12,9 @@ export default {
   workspaceCheckInterval: 5000, // 5 seconds
   dataCheckInterval: 1000 * 30, // 30 secs
   trialNotificationInterval: 1000 * 60 * 60 * 12, // 12 hours
+  // On a fresh install the trial welcome dialog is already on screen, so the
+  // first trial reminder holds off instead of stacking on top of it.
+  trialNotificationDelay: 1000 * 60 * 10, // 10 minutes
   licenseCheckInterval: 1000 * 60 * 10, // once per 10 minutes
   errorNoticeTimeout: 60 * 1000, // 1 minute
   tableListItemHeight: 22.8, // in pixels

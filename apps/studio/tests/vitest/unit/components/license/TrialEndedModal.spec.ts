@@ -121,7 +121,7 @@ describe('TrialEndedModal', () => {
 
     const used = wrapper.findAll('.trial-feature--used')
     expect(used.wrappers.map((w) => w.find('.trial-feature-label').text())).toEqual([
-      'JSON row view',
+      'JSON sidebar',
       '12 more databases',
       'Query to file',
     ])
@@ -134,7 +134,7 @@ describe('TrialEndedModal', () => {
     const rest = wrapper.findAll('.trial-feature-list:not(.trial-feature-list--stacked) li')
     const restLabels = rest.wrappers.map((w) => w.find('.trial-feature-label').text())
     expect(restLabels[0]).toBe('SQL AI shell')
-    expect(restLabels).not.toContain('JSON row view')
+    expect(restLabels).not.toContain('JSON sidebar')
     expect(restLabels).not.toContain('Query to file')
     expect(restLabels).toHaveLength(9)
     wrapper.destroy()

@@ -1255,6 +1255,22 @@ export default Vue.extend({
       return [
         {
           label: createMenuItem(
+            'View as JSON',
+            this.$bksConfig.getKeybindings(
+              'context-menu',
+              'general.jsonViewerSidebar'
+            ),
+            { icon: 'data_object' }
+          ),
+          action: () => {
+            this.trigger(AppEvent.selectSecondarySidebarTab, 'json-viewer')
+            this.trigger(AppEvent.toggleSecondarySidebar, true)
+            this.updateJsonViewer({ range: _.last(ranges) })
+          },
+        },
+        { separator: true },
+        {
+          label: createMenuItem(
             "Add row",
             this.$bksConfig.getKeybindings("context-menu", "general.addRow"),
           ),
@@ -1276,21 +1292,6 @@ export default Vue.extend({
             this.deleteTableSelection(undefined)
           },
           disabled: !this.editable,
-        },
-        { separator: true },
-        {
-          label: createMenuItem(
-            'See details',
-            this.$bksConfig.getKeybindings(
-              'context-menu',
-              'general.jsonViewerSidebar'
-            )
-          ),
-          action: () => {
-            this.trigger(AppEvent.selectSecondarySidebarTab, 'json-viewer')
-            this.trigger(AppEvent.toggleSecondarySidebar, true)
-            this.updateJsonViewer({ range: _.last(ranges) })
-          },
         },
       ]
     },
@@ -1340,7 +1341,7 @@ export default Vue.extend({
         '=', '!=', '<', '<=', '>', '>=', 'in', 'like'
       ]
       return {
-        label: createMenuItem("Quick Filter", "", this.$store.getters.isCommunity),
+        label: createMenuItem("Quick Filter", "", { ultimate: this.$store.getters.isCommunity }),
         disabled: _.isNil(cell.getValue()),
         menu: symbols.map((s) => {
           return {

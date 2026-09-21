@@ -2,18 +2,19 @@
   <base-modal
     ref="modal"
     :name="modalName"
+    :closable="false"
     first-focusable=".btn-primary"
     @submit="close"
     @closed="dismissed"
   >
     <template #title>
       <i class="material-icons">auto_awesome</i>
-      Every paid feature is unlocked
+      {{ trialDays }} day free trial activated
     </template>
     <div class="trial-modal trial-started">
       <p class="trial-modal-lead">
-        This install includes a {{ trialDays }}-day free trial of the full edition.
-        No account, no card, nothing to cancel.
+        All paid app features are unlocked as part of the trial.
+        Here are our 6 <em>favorite</em>:
       </p>
       <ul class="trial-feature-list">
         <li
@@ -31,6 +32,14 @@
       </p>
     </div>
     <template #footer>
+      <button
+        type="button"
+        class="btn btn-flat trial-started-learn-more"
+        @click.prevent="learnMore"
+      >
+        Learn more
+      </button>
+      <span class="expand" />
       <button
         type="button"
         class="btn btn-flat"
@@ -54,17 +63,22 @@ import { mapGetters, mapState } from "vuex";
 import BaseModal from "@/components/common/modals/BaseModal.vue";
 import { AppEvent } from "@/common/AppEvent";
 import globals from "@/common/globals";
-import { PAID_FEATURES, PaidFeature } from "@/lib/paidFeatures";
+import { TRIAL_HIGHLIGHTS, PaidFeature } from "@/lib/paidFeatures";
 import {
   clearTrialWelcomePending,
   formatTrialDate,
   isTrialWelcomePending,
 } from "@/lib/trial";
 
+const UPGRADE_URL = "https://www.beekeeperstudio.io/upgrade";
+
 /**
  * Shown once, right after the free trial auto-starts on the first launch.
- * The store sets the pending flag when it creates the trial license; closing
+ * The store sets the pending flag when it creates the trial license; leaving
  * this dialog clears it.
+ *
+ * There is no close button and Escape does nothing: the user picks one of
+ * the buttons. Learn more opens the website and leaves the dialog up.
  */
 export default Vue.extend({
   components: { BaseModal },
@@ -83,7 +97,7 @@ export default Vue.extend({
       return this.licensesInitialized && this.isTrialActive && this.pending;
     },
     features(): PaidFeature[] {
-      return PAID_FEATURES;
+      return TRIAL_HIGHLIGHTS;
     },
     trialDays(): number {
       return globals.freeTrialDays;
@@ -111,6 +125,9 @@ export default Vue.extend({
     dismissed() {
       clearTrialWelcomePending();
       this.pending = false;
+    },
+    learnMore() {
+      this.$native.openLink(UPGRADE_URL);
     },
     enterLicense() {
       this.close();

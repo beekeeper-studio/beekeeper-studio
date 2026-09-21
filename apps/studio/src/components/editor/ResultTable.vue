@@ -404,6 +404,22 @@ import { stringToTypedArray } from '@/common/utils'
           const range = _.last(ranges);
 
           return [
+            {
+              label: createMenuItem(
+                'View as JSON',
+                this.$bksConfig.getKeybindings(
+                  'context-menu',
+                  'general.jsonViewerSidebar'
+                ),
+                { icon: 'data_object' }
+              ),
+              action: () => {
+                this.trigger(AppEvent.selectSecondarySidebarTab, 'json-viewer')
+                this.trigger(AppEvent.toggleSecondarySidebar, true)
+                this.updateJsonViewerSidebar()
+              },
+            },
+            { separator: true },
             this.openEditorMenu(cell),
             this.setAsNullMenuItem(ranges),
             { separator: true },

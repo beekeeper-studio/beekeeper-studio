@@ -43,7 +43,7 @@ export const PAID_FEATURES: PaidFeature[] = [
   },
   {
     id: 'json-row-view',
-    label: 'JSON row view',
+    label: 'JSON sidebar',
     description: 'Any row as JSON in the sidebar, wide tables included',
   },
   {
@@ -90,6 +90,45 @@ export const PAID_FEATURES: PaidFeature[] = [
     id: 'er-diagram',
     label: 'ER diagrams',
     description: 'Table relationships drawn from the schema',
+  },
+]
+
+/**
+ * The six features the trial welcome dialog leads with. Deliberately short:
+ * the full catalogue lives on the website, behind the dialog's Learn more
+ * button. Import and export are one line here even though they are tracked
+ * separately, because on day one they read as one capability.
+ */
+export const TRIAL_HIGHLIGHTS: PaidFeature[] = [
+  {
+    id: 'json-row-view',
+    label: 'JSON sidebar',
+    description: 'Any row as JSON in the sidebar, wide tables included',
+  },
+  {
+    id: 'er-diagram',
+    label: 'ER diagrams',
+    description: 'Table relationships drawn from the schema',
+  },
+  {
+    id: 'import-from-file',
+    label: 'Import & export',
+    description: 'CSV, JSON and Excel into a table, and whole schemas back out',
+  },
+  {
+    id: 'editable-query-results',
+    label: 'Editable query results',
+    description: 'Edit rows straight from a SELECT',
+  },
+  {
+    id: 'ai-shell',
+    label: 'SQL AI shell',
+    description: 'Plain-English questions become SQL, run with your own model key',
+  },
+  {
+    id: 'premium-databases',
+    label: '12 more databases',
+    description: 'Oracle, MongoDB, DuckDB, ClickHouse, Cassandra, Snowflake, DynamoDB and more',
   },
 ]
 
