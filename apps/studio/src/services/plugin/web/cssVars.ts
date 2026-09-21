@@ -12,7 +12,6 @@ export const cssVars = [
   { name: "--theme-secondary", value: "var(--info-solid-bg)" },
 
   { name: "--text-dark", value: "var(--text-contrast)" },
-  "--text",
   { name: "--text-light", value: "var(--text-a)" },
   { name: "--text-lighter", value: "var(--gray-a9)" },
   { name: "--text-hint", value: "var(--gray-a9)" },
