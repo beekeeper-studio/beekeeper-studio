@@ -31,7 +31,7 @@
           bottom: 0;
           margin: 0;
           padding: 0;
-          background: transparent;
+          background: var(--app-bg, transparent);
           overflow: hidden;
         }
         .app-loading {
@@ -60,7 +60,7 @@
           display: table-cell;
           text-align: center;
           vertical-align: middle;
-          color:#999;
+          color: var(--app-fg, #999);
           font-size: 14px;
         }
         .preloader {
@@ -77,21 +77,21 @@
           height: 50px;
           width: 50px;
           border-radius: 50%;
-          box-shadow: 1px 1px #fad83b,
+          box-shadow: 1px 1px var(--yellow-9, #fad83b),
                       1px 2px rgba(0, 0, 0 , 0.25);
           transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg);
         }
         .preloader .layer:nth-of-type(1) {
-          background: rgba(250, 216, 59, 0.65);
+          background: rgb(from var(--yellow-9, #fad83b) r g b / 0.65);
           margin-top: 36px;
           animation: movedown  0.8s cubic-bezier(0.39, 0.575, 0.565, 1)  0.4s infinite normal;
         }
         .preloader .layer:nth-of-type(2) {
-          background: rgba(250, 216, 59, 0.65);
+          background: rgb(from var(--yellow-9, #fad83b) r g b / 0.65);
           margin-top: 18px;
         }
         .preloader .layer:nth-of-type(3) {
-          background: rgba(250, 216, 59, 0.75);
+          background: rgb(from var(--yellow-9, #fad83b) r g b / 0.75);
           animation: moveup  0.8s cubic-bezier(0.39, 0.575, 0.565, 1) infinite normal;
         }
         @keyframes moveup {
