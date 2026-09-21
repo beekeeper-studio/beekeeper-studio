@@ -139,3 +139,29 @@ $trial-row-inset: $gutter-h * 1.5;
 .trial-ended-downgrade {
   color: $text-light;
 }
+
+// .btn-danger only colours its hover state in this app, so at rest a
+// destructive action is indistinguishable from the primary button beside it.
+// Give it a real fill, the same treatment ConfirmationModal.vue uses for its
+// danger variant.
+.trial-ended-confirm.btn {
+  background: $brand-danger;
+  color: white;
+
+  &:hover, &:focus {
+    background: $brand-danger;
+    color: white;
+    filter: brightness(1.12);
+  }
+
+  // The global disabled rule drops buttons to 0.25 opacity, which leaves this
+  // one barely visible and reading as broken rather than as "not yet".
+  &[disabled="disabled"] {
+    opacity: 0.5 !important;
+
+    &:hover, &:focus {
+      opacity: 0.5 !important;
+      filter: none;
+    }
+  }
+}

@@ -140,7 +140,7 @@
         <span class="expand" />
         <button
           type="submit"
-          class="btn btn-danger"
+          class="btn btn-danger trial-ended-confirm"
           :disabled="!acknowledged"
         >
           Downgrade to Community Edition
