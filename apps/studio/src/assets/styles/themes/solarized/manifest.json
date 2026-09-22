@@ -1,17 +1,18 @@
 {
-  "id": "default",
-  "name": "Default (WIP)",
+  "id": "solarized",
+  "name": "Solarized",
   "base": {
     "gray": "#000000",
-    "background": "#ffffff",
-    "blue": "#3498db",
-    "green": "#15db95",
-    "orange": "#ff8d21",
-    "red": "#ff5d59",
-    "purple": "#9858ff",
-    "pink": "#ff00f0"
+    "background": "#fff6e3",
+    "blue": "#268bd2",
+    "green": "#859900",
+    "yellow": "#b58900",
+    "orange": "#cb4b16",
+    "red": "#dc322f",
+    "purple": "#6c71c4",
+    "pink": "#d33682"
   },
   "baseDark": {
-    "background": "#090909"
+    "background": "#002b36"
   }
 }

@@ -7,15 +7,6 @@
 }
 
 .theme-default {
-  /* Every step-9 solid here is mid-tone; black clears 4.5:1 on all of them, white on none. */
-  --red-solid-fg: var(--black);
-  --orange-solid-fg: var(--black);
-  --yellow-solid-fg: var(--black);
-  --green-solid-fg: var(--black);
-  --blue-solid-fg: var(--black);
-  --purple-solid-fg: var(--black);
-  --pink-solid-fg: var(--black);
-
   --editor-bg: var(--app-bg);
 
   /* Syntax colors with no counterpart in the scales, kept from the Monokai-ish defaults. */
