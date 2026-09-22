@@ -22,5 +22,8 @@
     "red": "#da3633",
     "purple": "#8957e5",
     "pink": "#bf4b8a"
+  },
+  "functional": {
+    "accent": "blue"
   }
 }

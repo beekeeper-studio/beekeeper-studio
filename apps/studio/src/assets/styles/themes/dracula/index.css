@@ -1,6 +1,151 @@
-/* https://draculatheme.com/spec */
+/* Follows the Dracula token conventions (reference: dracula/cursor): pink
+   keywords and operators, yellow strings, purple constants, green functions
+   and decorators, cyan types and built-ins, orange parameters, comment-colored
+   comments, foreground identifiers. Light is Alucard, dark is Dracula. */
+.theme-dracula {
+  --dracula-word-highlight: rgb(from #036a96 r g b / 0.25);
+  --dracula-search-match: rgb(from #846e15 r g b / 0.25);
+  --dracula-search-match-selected: rgb(from #846e15 r g b / 0.25);
+  --dracula-matching-bracket: #e2deca;
+  --dracula-indent-guide: #dcdeef;
+  --dracula-indent-guide-active: rgb(from #2c2b31 r g b / 0.38);
+  --dracula-linenumber-active: #a3144d;
 
-@import "./editor.css";
+  --editor-fg: var(--dracula-foreground);
+  --editor-cursor-bg: var(--dracula-foreground);
+  --editor-selected-bg: var(--dracula-selection);
+  --editor-activeline-bg: var(--dracula-current-line);
+  --editor-activeline-gutter-bg: var(--dracula-current-line);
+  --editor-highlight-bg: var(--dracula-word-highlight);
+  --editor-error-bg: rgb(from var(--dracula-red) r g b / 0.1);
+  --editor-error-fg: var(--dracula-red);
+  --editor-gutter-bg: var(--dracula-background);
+  --editor-linenumber-fg: var(--dracula-comment);
+  --editor-linenumber-active-fg: var(--dracula-linenumber-active);
+  --editor-foldgutter-fg: var(--dracula-comment);
+  --editor-foldgutter-fg-hover: var(--dracula-foreground);
+  --editor-indent-marker-bg: var(--dracula-indent-guide);
+  --editor-indent-marker-active-bg: var(--dracula-indent-guide-active);
+
+  --editor-keyword-fg: var(--dracula-pink);
+  --editor-operatorKeyword-fg: var(--dracula-pink);
+  --editor-modifier-fg: var(--dracula-pink);
+  --editor-self-fg: var(--dracula-purple);
+  --editor-standard-fg: var(--dracula-cyan);
+
+  --editor-string-fg: var(--dracula-yellow);
+  --editor-special-string-fg: var(--dracula-yellow);
+  --editor-character-fg: var(--dracula-yellow);
+  --editor-attributeValue-fg: var(--dracula-yellow);
+  --editor-regexp-fg: var(--dracula-yellow);
+  --editor-escape-fg: var(--dracula-pink);
+
+  --editor-number-fg: var(--dracula-purple);
+  --editor-bool-fg: var(--dracula-purple);
+  --editor-null-fg: var(--dracula-purple);
+  --editor-atom-fg: var(--dracula-purple);
+  --editor-color-fg: var(--dracula-purple);
+  --editor-enumMember-fg: var(--dracula-purple);
+
+  --editor-variable-fg: var(--dracula-foreground);
+  --editor-variable-2-fg: var(--dracula-foreground);
+  --editor-variable-3-fg: var(--dracula-foreground);
+  --editor-variableName-fg: var(--dracula-foreground);
+  --editor-definition-fg: var(--dracula-foreground);
+  --editor-def-fg: var(--dracula-foreground);
+  --editor-function-fg: var(--dracula-green);
+  --editor-method-fg: var(--dracula-green);
+  --editor-parameter-fg: var(--dracula-orange);
+  --editor-property-fg: var(--dracula-foreground);
+  --editor-propertyName-fg: var(--dracula-foreground);
+  --editor-builtin-fg: var(--dracula-cyan);
+  --editor-tag-fg: var(--dracula-pink);
+  --editor-sql-field-fg: var(--dracula-foreground);
+  --editor-sql-alias-fg: var(--dracula-foreground);
+  --editor-name-fg: var(--dracula-foreground);
+
+  --editor-type-fg: var(--dracula-cyan);
+  --editor-typeName-fg: var(--dracula-cyan);
+  --editor-typeParameter-fg: var(--dracula-orange);
+  --editor-class-fg: var(--dracula-green);
+  --editor-className-fg: var(--dracula-green);
+  --editor-interface-fg: var(--dracula-cyan);
+  --editor-struct-fg: var(--dracula-cyan);
+  --editor-enum-fg: var(--dracula-cyan);
+  --editor-namespace-fg: var(--dracula-cyan);
+  --editor-attributeName-fg: var(--dracula-green);
+  --editor-changed-fg: var(--dracula-cyan);
+
+  --editor-decorator-fg: var(--dracula-green);
+  --editor-macro-fg: var(--dracula-green);
+  --editor-annotation-fg: var(--dracula-green);
+  --editor-processingInstruction-fg: var(--dracula-pink);
+  --editor-meta-fg: var(--dracula-foreground);
+  --editor-event-fg: var(--dracula-foreground);
+
+  --editor-link-fg: var(--dracula-cyan);
+  --editor-url-fg: var(--dracula-cyan);
+  --editor-heading-fg: var(--dracula-purple);
+  --editor-header-fg: var(--dracula-purple);
+
+  --editor-deleted-fg: var(--dracula-red);
+
+  --editor-comment-fg: var(--dracula-comment);
+  --editor-comment-attribute-fg: var(--dracula-comment);
+  --editor-comment-def-fg: var(--dracula-comment);
+  --editor-comment-tag-fg: var(--dracula-comment);
+  --editor-comment-type-fg: var(--dracula-comment);
+  --editor-label-fg: var(--dracula-comment);
+  --editor-labelName-fg: var(--dracula-comment);
+
+  --editor-operator-fg: var(--dracula-pink);
+  --editor-punctuation-fg: var(--dracula-foreground);
+  --editor-separator-fg: var(--dracula-foreground);
+  --editor-bracket-fg: var(--dracula-foreground);
+  --editor-strong-fg: var(--dracula-orange);
+  --editor-emphasis-fg: var(--dracula-yellow);
+  --editor-strikethrough-fg: var(--dracula-comment);
+
+  --editor-matchingbracket-fg: var(--dracula-foreground);
+  --editor-matchingbracket-bg: var(--dracula-matching-bracket);
+  --editor-matchingselection-bg: var(--dracula-background-lighter);
+  --editor-searchmatch-bg: var(--dracula-search-match);
+  --editor-searchmatch-selected-bg: var(--dracula-search-match-selected);
+  --editor-guttermarker-fg: var(--dracula-foreground);
+  --editor-guttermarker-subtle-fg: var(--dracula-comment);
+  --editor-fatcursor-bg: var(--dracula-foreground);
+
+  --editor-vim-panel-insert-bg: rgb(from var(--dracula-green) r g b / 0.15);
+  --editor-vim-panel-insert-fg: var(--dracula-green);
+  --editor-vim-panel-visual-bg: rgb(from var(--dracula-purple) r g b / 0.15);
+  --editor-vim-panel-visual-fg: var(--dracula-purple);
+  --editor-vim-panel-replace-bg: rgb(from var(--dracula-red) r g b / 0.15);
+  --editor-vim-panel-replace-fg: var(--dracula-red);
+  --editor-vim-panel-border: 1px solid var(--dracula-background-darker);
+
+  --mongo-shell-mongo-prompt-fg: var(--dracula-green);
+  --mongo-shell-ansi-output-fg: var(--dracula-foreground);
+}
+
+.theme-dracula.light-theme {
+  --editor-bg: #fffdf5;
+}
+
+.theme-dracula.dark-theme {
+  --dracula-word-highlight: rgb(from #8be9fd r g b / 0.31);
+  --dracula-search-match: rgb(from #ffffff r g b / 0.25);
+  --dracula-search-match-selected: rgb(from #ffb86c r g b / 0.5);
+  --dracula-matching-bracket: #44475a;
+  --dracula-indent-guide: rgb(from #ffffff r g b / 0.1);
+  --dracula-indent-guide-active: rgb(from #ffffff r g b / 0.27);
+  --dracula-linenumber-active: var(--dracula-pink);
+
+  --editor-bg: var(--dracula-background);
+  --editor-gutter-bg: var(--dracula-background);
+  --editor-activeline-bg: var(--dracula-selection);
+  --editor-activeline-gutter-bg: var(--dracula-selection);
+  --editor-linenumber-fg: rgb(144, 145, 148);
+}
 
 /* https://github.com/dracula/cursor/blob/main/dev/src/classic.yml */
 .theme-dracula {
@@ -22,35 +167,6 @@
   --dracula-background-dark: #CECCC0;
   --dracula-background-darker: #BCBAB3;
 
-  /* Primary is purple. */
-  --primary-1: var(--purple-1);
-  --primary-2: var(--purple-2);
-  --primary-3: var(--purple-3);
-  --primary-4: var(--purple-4);
-  --primary-5: var(--purple-5);
-  --primary-6: var(--purple-6);
-  --primary-7: var(--purple-7);
-  --primary-8: var(--purple-8);
-  --primary-9: var(--purple-9);
-  --primary-10: var(--purple-10);
-  --primary-11: var(--purple-11);
-  --primary-12: var(--purple-12);
-  --primary-a1: var(--purple-a1);
-  --primary-a2: var(--purple-a2);
-  --primary-a3: var(--purple-a3);
-  --primary-a4: var(--purple-a4);
-  --primary-a5: var(--purple-a5);
-  --primary-a6: var(--purple-a6);
-  --primary-a7: var(--purple-a7);
-  --primary-a8: var(--purple-a8);
-  --primary-a9: var(--purple-a9);
-  --primary-a10: var(--purple-a10);
-  --primary-a11: var(--purple-a11);
-  --primary-a12: var(--purple-a12);
-  --primary-solid-fg: var(--purple-solid-fg);
-  --primary-solid-fg-hover: var(--purple-solid-fg);
-
-  --app-bg: var(--dracula-background);
   --app-fg: var(--dracula-foreground);
 
   --link-fg: var(--dracula-purple);
