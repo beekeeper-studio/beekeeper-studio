@@ -1,12 +1,12 @@
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
 import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
-import { AggregationCursor, Collection, Db, Document, MongoClient, ObjectId } from 'mongodb';
+import { AggregationCursor, Collection, Db, Decimal128, Document, MongoClient, ObjectId } from 'mongodb';
 import rawLog from '@bksLogger';
 import { BksField, BksFieldType, CancelableQuery, ExtendedTableColumn, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableDelete, TableFilter, TableIndex, TableInsert, TableOrView, TableProperties, TableResult, TableTrigger, TableUpdate, TableUpdateResult } from "@/lib/db/models";
 import { CreateTableSpec, IndexAlterations, TableKey } from "@/shared/lib/dialects/models";
 import _ from 'lodash';
-import { MongoDBObjectIdTranscoder } from "@/lib/db/serialization/transcoders";
+import { MongoDBDecimal128Transcoder, MongoDBObjectIdTranscoder } from "@/lib/db/serialization/transcoders";
 import { ElectronRuntime as MongoRuntime } from '@mongosh/browser-runtime-electron';
 import { NodeDriverServiceProvider } from '@mongosh/service-provider-node-driver';
 import { createCancelablePromise } from "@/common/utils";
@@ -92,7 +92,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   conn: MongoClient;
   runtime: MongoRuntime;
   queryLeaf: QueryLeaf;
-  transcoders = [MongoDBObjectIdTranscoder];
+  transcoders = [MongoDBObjectIdTranscoder, MongoDBDecimal128Transcoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, mongoContext, server, database);
@@ -469,6 +469,8 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       let bksType: BksFieldType = 'UNKNOWN';
       if (row[column] instanceof ObjectId) {
         bksType = 'OBJECTID';
+      } else if (row[column] instanceof Decimal128) {
+        bksType = 'DECIMAL';
       }
       return { name: column, bksType };
     })
