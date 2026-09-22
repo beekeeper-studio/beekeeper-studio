@@ -261,6 +261,37 @@
     --editor-error-bg: var(--danger-bg-a);
     --editor-error-fg: var(--danger-text);
 
+    --editor-keyword-fg: var(--pink-11);
+    --editor-string-fg: var(--primary-text);
+    --editor-number-fg: var(--primary-text);
+    --editor-variable-fg: var(--info-text);
+    --editor-variable-2-fg: var(--info-text);
+    --editor-sql-field-fg: var(--info-text);
+    --editor-bracket-fg: var(--text);
+    --editor-name-fg: var(--text-contrast);
+    --editor-variableName-fg: var(--text-contrast);
+    --editor-typeName-fg: var(--text-contrast);
+    --editor-type-fg: var(--text-contrast);
+    --editor-sql-alias-fg: var(--text-contrast);
+    --editor-operator-fg: var(--text-contrast);
+    --editor-punctuation-fg: var(--text-contrast);
+    --editor-separator-fg: var(--text-contrast);
+
+    --editor-guttermarker-subtle-fg: var(--border-a);
+    --editor-matchingselection-bg: var(--bg-hover-a);
+    --editor-searchmatch-bg: var(--info-bg-active-a);
+    --editor-searchmatch-selected-bg: var(--info-border-subtle-a);
+    --editor-function-fg: var(--warning-text);
+    --editor-propertyName-fg: var(--info-text);
+    --editor-attributeName-fg: var(--info-text);
+    --editor-attributeValue-fg: var(--success-text);
+    --editor-special-string-fg: var(--success-text);
+    --editor-character-fg: var(--success-text);
+    --editor-operatorKeyword-fg: var(--pink-11);
+    --editor-strong-fg: var(--text-contrast);
+    --editor-emphasis-fg: var(--text-contrast);
+    --editor-strikethrough-fg: var(--text);
+
     --editor-gutter-bg: var(--bg-base);
     --editor-gutter-border: transparent;
     --editor-linenumber-fg: var(--bg-active-a);

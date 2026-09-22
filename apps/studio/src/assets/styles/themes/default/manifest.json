@@ -1,0 +1,17 @@
+{
+  "id": "default",
+  "name": "Default",
+  "base": {
+    "gray": "#000000",
+    "background": "#ffffff",
+    "blue": "#3498db",
+    "green": "#15db95",
+    "orange": "#ff8d21",
+    "red": "#ff5d59",
+    "purple": "#9858ff",
+    "pink": "#ff00f0"
+  },
+  "baseDark": {
+    "background": "#090909"
+  }
+}
