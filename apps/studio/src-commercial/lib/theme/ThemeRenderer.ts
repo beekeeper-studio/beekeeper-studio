@@ -1,6 +1,51 @@
 import { Store } from "vuex";
 import { State } from "@/store/index";
 import { AppEvent } from "@/common/AppEvent";
+import { generatePaletteAsCssProps } from "@/lib/theme/palette";
+import defaultTheme from "@/assets/styles/themes/default/manifest.json";
+import solarizedTheme from "@/assets/styles/themes/solarized/manifest.json";
+import draculaTheme from "@/assets/styles/themes/dracula/manifest.json";
+import githubTheme from "@/assets/styles/themes/github/manifest.json";
+
+interface ThemeManifest {
+  id: string;
+  name: string;
+  base: {
+    background: string;
+    gray: string;
+    blue: string;
+    green: string;
+    orange: string;
+    red: string;
+    purple: string;
+    pink: string;
+  };
+  baseDark?: {
+    /** @default uses base color. */
+    background?: string;
+    /** @default uses base color. */
+    gray?: string;
+    /** @default uses base color. */
+    blue?: string;
+    /** @default uses base color. */
+    green?: string;
+    /** @default uses base color. */
+    orange?: string;
+    /** @default uses base color. */
+    purple?: string;
+    /** @default uses base color. */
+    pink?: string;
+  };
+}
+
+type ThemeId = "default" | "solarized" | "dracula" | "github";
+
+const manifests: Record<ThemeId, ThemeManifest> = {
+  default: defaultTheme as ThemeManifest,
+  solarized: solarizedTheme as ThemeManifest,
+  dracula: draculaTheme as ThemeManifest,
+  github: githubTheme as ThemeManifest,
+};
 
 export interface ThemeRendererOptions {
   store: Store<State>;
@@ -13,6 +58,7 @@ export interface ThemeRendererOptions {
 
 export class ThemeRenderer {
   private initialized = false;
+  private el: HTMLStyleElement | null = null;
 
   constructor(readonly options: ThemeRendererOptions) { }
 
@@ -21,20 +67,27 @@ export class ThemeRenderer {
       return;
     }
 
-    const themeParams = new URLSearchParams(window.location.search);
-    const themeId = themeParams.get("themeId") ?? "default";
-    const appearance = themeParams.get("appearance") ?? "auto";
-    const systemDark = themeParams.get("systemDark") === "true";
-    const dark = appearance === "auto" ? systemDark : appearance === "dark";
+    const { themeId, dark, systemDark } = this.parseThemeParams();
+
+    this.el = document.createElement("style");
+    document.head.appendChild(this.el);
 
     this.apply(themeId, dark);
 
     document.body.classList.toggle("window-inactive", !document.hasFocus());
+
+    this.options.store.commit("theme/setSystemDark", systemDark);
+
+    this.subscribe();
+
+    this.initialized = true;
+  }
+
+  private subscribe() {
     window.main.onWindowFocused((focused) => {
       document.body.classList.toggle("window-inactive", !focused);
     });
 
-    this.options.store.commit("theme/setSystemDark", systemDark);
     window.main.onSystemUsesDarkColors((dark) => {
       this.options.store.commit("theme/setSystemDark", dark);
     });
@@ -49,11 +102,18 @@ export class ThemeRenderer {
         this.options.bus.emit(AppEvent.changedTheme, { themeId, themeDark });
       }
     );
-
-    this.initialized = true;
   }
 
-  private apply(themeId: string, dark: boolean): void {
+  private parseThemeParams() {
+    const themeParams = new URLSearchParams(window.location.search);
+    const themeId = themeParams.get("themeId") ?? "default";
+    const appearance = themeParams.get("appearance") ?? "auto";
+    const systemDark = themeParams.get("systemDark") === "true";
+    const dark = appearance === "auto" ? systemDark : appearance === "dark";
+    return { themeId, dark, systemDark };
+  }
+
+  private apply(themeId: ThemeId, dark: boolean): void {
     document.body.classList.forEach((className) => {
       if (className.startsWith("theme-")) {
         document.body.classList.remove(className);
@@ -63,5 +123,45 @@ export class ThemeRenderer {
     document.body.classList.add(`theme-${themeId}`);
     document.body.classList.toggle("dark-theme", dark);
     document.body.classList.toggle("light-theme", !dark);
+
+    this.applyScales(themeId, dark);
+  }
+
+  private applyScales(themeId: ThemeId, dark: boolean): void {
+    const manifest = manifests[themeId];
+
+    if (!manifest) {
+      this.el.textContent = "";
+      return;
+    }
+
+    const base = {
+      ...manifest.base,
+      ...(dark ? manifest.baseDark : {}),
+    };
+
+    let content = `body { --app-bg: ${base.background}; `;
+
+    for (const color of [
+      "gray",
+      "blue",
+      "green",
+      "orange",
+      "red",
+      "purple",
+      "pink",
+    ] as const) {
+      const str = generatePaletteAsCssProps(color, {
+        dark,
+        accent: base[color],
+        gray: base.gray,
+        background: base.background,
+      });
+      content += str;
+    }
+
+    content += ` }`;
+
+    this.el.textContent = content;
   }
 }

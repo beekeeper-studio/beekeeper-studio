@@ -1,11 +1,42 @@
 # Themes
 
-A theme is a folder in here named after its theme id, with one file per color
-scale (`gray.css`, `yellow.css`, `blue.css`, ...) holding both its light and
-dark blocks, and an `editor.css` for the syntax highlighting colors.
-`index.css` imports them all, holds anything that is not a scale, and is what
-`app.scss` pulls in, so adding a theme is: create the folder, add it to
-`app.scss`, register the id in `ThemeModule`.
+A theme is a folder in here named after its theme id. Start with a
+`manifest.json`:
+
+```json
+{
+  "id": "mytheme",
+  "name": "My Theme",
+  "base": {
+    "background": "#ffffff",
+    "gray": "#000000",
+    "blue": "#3498db",
+    "green": "#15db95",
+    "orange": "#ff8d21",
+    "red": "#ff5d59",
+    "purple": "#9858ff",
+    "pink": "#ff00f0"
+  },
+  "baseDark": {
+    "background": "#090909"
+  }
+}
+```
+
+One seed color per scale; the full 12-step light and dark scales are generated
+from these at runtime by `ThemeRenderer`. `baseDark` is optional and only needs
+the colors that differ in dark mode. Then register the manifest in
+`ThemeRenderer` and the id in `ThemeModule`.
+
+For most themes that is all there is to it. Everything below is for when the
+generated scales are not enough.
+
+## Hand-written scales
+
+A theme can skip the generator and ship one file per color scale (`gray.css`,
+`yellow.css`, `blue.css`, ...) holding both its light and dark blocks, plus an
+`editor.css` for the syntax highlighting colors. `index.css` imports them all,
+holds anything that is not a scale, and is what `_all.scss` pulls in.
 
 ## Rules
 

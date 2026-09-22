@@ -26,6 +26,19 @@ function getIcon() {
 
 const devToolsEnabled = (platformInfo.env.development && !platformInfo.env.test) || platformInfo.debugEnabled
 
+// The renderer may reload itself with different theme params; those don't make it a different page.
+function normalizeUrl(url: string): string {
+  try {
+    const u = new URL(url)
+    for (const param of ['themeId', 'appearance', 'systemDark']) {
+      u.searchParams.delete(param);
+    }
+    return u.toString()
+  } catch {
+    return url
+  }
+}
+
 class BeekeeperWindow {
   private win: BrowserWindow | null
   private reloaded = false
@@ -84,7 +97,7 @@ class BeekeeperWindow {
 
     this.initializeCallbacks()
     this.win.webContents.on('will-navigate', (e, url) => {
-      if (url === this.appUrl) return // this is good
+      if (normalizeUrl(url) === normalizeUrl(this.appUrl)) return // this is good
       log.info("navigate to", url)
       e.preventDefault()
       let u: URL
@@ -99,7 +112,7 @@ class BeekeeperWindow {
     })
 
     this.win.webContents.setWindowOpenHandler(({ url }) => {
-      if (url === this.appUrl){
+      if (normalizeUrl(url) === normalizeUrl(this.appUrl)) {
         return {
           action: 'allow'
         }
