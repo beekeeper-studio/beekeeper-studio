@@ -22,6 +22,8 @@ export type Palette = {
   scale: Scale;
   /** The same 12 steps as translucent hex, blended against the background. */
   scaleAlpha: Scale;
+  /** Text color that reads on step 9. */
+  foreground: string;
   /** The gray ramp the accent was tinted against. Depends only on gray and background. */
   grayScale: Scale;
   /** The same 12 gray steps as translucent hex, blended against the background. */
@@ -36,12 +38,13 @@ export function generatePalette(options: GeneratePaletteOptions): Palette {
   return {
     scale: colors.accentScale,
     scaleAlpha: colors.accentScaleAlpha,
+    foreground: colors.accentContrast,
     grayScale: colors.grayScale,
     grayScaleAlpha: colors.grayScaleAlpha,
   };
 }
 
-/** The palette as `--<name>-1..12` and `--<name>-a1..12` custom properties. */
+/** The palette as `--<name>-1..12`, `--<name>-a1..12` and `--<name>-solid-fg` custom properties. */
 export function generatePaletteAsCssProps(
   name: string,
   options: GeneratePaletteOptions
@@ -59,5 +62,6 @@ export function generatePaletteAsCssProps(
   scaleAlpha.forEach((color, i) => {
     lines.push(`--${name}-a${i + 1}: ${color};`);
   });
+  lines.push(`--${name}-solid-fg: ${palette.foreground};`);
   return lines.join("\n");
 }

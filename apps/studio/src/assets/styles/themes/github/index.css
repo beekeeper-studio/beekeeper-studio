@@ -6,9 +6,6 @@
 .theme-github {
   --app-bg: #ffffff;
 
-  /* GitHub puts white on every emphasis colour, yellow included. */
-  --yellow-solid-fg: var(--white);
-
   --link-fg: var(--blue-11);
 
   /* Overlays sit on canvas.default, not canvas.subtle. */
