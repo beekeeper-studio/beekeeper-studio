@@ -1,13 +1,5 @@
 /* https://draculatheme.com/spec */
 
-@import "./gray.css";
-@import "./blue.css";
-@import "./green.css";
-@import "./orange.css";
-@import "./red.css";
-@import "./yellow.css";
-@import "./pink.css";
-@import "./purple.css";
 @import "./editor.css";
 
 /* https://github.com/dracula/cursor/blob/main/dev/src/classic.yml */

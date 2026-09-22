@@ -1,17 +1,26 @@
 {
-  "id": "default",
-  "name": "Default (WIP)",
+  "id": "dracula",
+  "name": "Dracula (WIP)",
   "base": {
-    "gray": "#000000",
-    "background": "#ffffff",
-    "blue": "#3498db",
-    "green": "#15db95",
-    "orange": "#ff8d21",
-    "red": "#ff5d59",
-    "purple": "#9858ff",
-    "pink": "#ff00f0"
+    "gray": "#1f1f1f",
+    "background": "#fffbeb",
+    "blue": "#036a96",
+    "green": "#14710a",
+    "yellow": "#846e15",
+    "orange": "#a34d14",
+    "red": "#cb3a2a",
+    "purple": "#644ac9",
+    "pink": "#a3144d"
   },
   "baseDark": {
-    "background": "#090909"
+    "gray": "#f8f8f2",
+    "background": "#282a36",
+    "blue": "#8be9fd",
+    "green": "#50fa7b",
+    "yellow": "#f1fa8c",
+    "orange": "#ffb86c",
+    "red": "#ff5555",
+    "purple": "#bd93f9",
+    "pink": "#ff79c6"
   }
 }
