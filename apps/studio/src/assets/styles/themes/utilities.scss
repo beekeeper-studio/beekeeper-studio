@@ -56,7 +56,6 @@
     @each $hue in $hues {
       --#{$hue}-solid-fg: var(--white);
     }
-    --yellow-solid-fg: var(--black);
 
     @each $family, $hue in $families {
       --#{$family}-solid-fg: var(--#{$hue}-solid-fg);
@@ -95,10 +94,10 @@
     --btn-flat-shadow: none;
 
     // Primary Button
-    --btn-primary-fg: var(--gray-3);
-    --btn-primary-fg-hover: var(--gray-3);
-    --btn-primary-bg: var(--black);
-    --btn-primary-bg-hover: var(--gray-12);
+    --btn-primary-fg: var(--primary-solid-fg);
+    --btn-primary-fg-hover: var(--primary-solid-fg-hover);
+    --btn-primary-bg: var(--primary-solid-bg);
+    --btn-primary-bg-hover: var(--primary-solid-bg-hover);
     --btn-primary-shadow: none;
 
     // ===== Icon Button =====
@@ -323,10 +322,6 @@
 
   .dark-theme {
     --select-arrow: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(255,255,255, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>");
-    --btn-primary-fg: var(--gray-2);
-    --btn-primary-fg-hover: var(--gray-2);
-    --btn-primary-bg: var(--white);
-
     --table-fg: var(--white);
   }
 }

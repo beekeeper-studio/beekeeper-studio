@@ -22,5 +22,9 @@
     "red": "#ff5555",
     "purple": "#bd93f9",
     "pink": "#ff79c6"
-  }
+  },
+  "functional": {
+    "accent": "purple"
+  },
+  "primaryButtonsUseGray": true
 }

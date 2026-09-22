@@ -14,5 +14,6 @@
   },
   "baseDark": {
     "background": "#002b36"
-  }
+  },
+  "primaryButtonsUseGray": true
 }

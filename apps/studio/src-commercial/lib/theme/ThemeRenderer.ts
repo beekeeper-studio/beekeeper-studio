@@ -19,6 +19,7 @@ interface ThemeManifest {
     red: string;
     purple: string;
     pink: string;
+    yellow: string;
   };
   baseDark?: {
     /** @default uses base color. */
@@ -35,7 +36,15 @@ interface ThemeManifest {
     purple?: string;
     /** @default uses base color. */
     pink?: string;
+    /** @default uses base color. */
+    yellow?: string;
   };
+  functional?: {
+    /** @default yellow */
+    accent?: "gray" | "blue" | "green" | "orange" | "red" | "purple" | "pink";
+  };
+  /** Primary buttons use the gray scale instead of the primary hue. */
+  primaryButtonsUseGray?: boolean;
 }
 
 type ThemeId = "default" | "solarized" | "dracula" | "github";
@@ -150,6 +159,7 @@ export class ThemeRenderer {
       "red",
       "purple",
       "pink",
+      "yellow",
     ] as const) {
       const str = generatePaletteAsCssProps(color, {
         dark,
@@ -158,6 +168,22 @@ export class ThemeRenderer {
         background: base.background,
       });
       content += str;
+    }
+
+    const accent = manifest.functional?.accent;
+    if (accent) {
+      for (let step = 1; step <= 12; step++) {
+        content += `--primary-${step}: var(--${accent}-${step}); `;
+        content += `--primary-a${step}: var(--${accent}-a${step}); `;
+      }
+      content += `--primary-solid-fg: var(--${accent}-solid-fg); `;
+      content += `--primary-solid-fg-hover: var(--${accent}-solid-fg); `;
+    }
+
+    if (manifest.primaryButtonsUseGray) {
+      content += dark
+        ? `--btn-primary-fg: var(--gray-2); --btn-primary-fg-hover: var(--gray-2); --btn-primary-bg: var(--white); --btn-primary-bg-hover: var(--gray-12); `
+        : `--btn-primary-fg: var(--gray-3); --btn-primary-fg-hover: var(--gray-3); --btn-primary-bg: var(--black); --btn-primary-bg-hover: var(--gray-12); `;
     }
 
     content += ` }`;
