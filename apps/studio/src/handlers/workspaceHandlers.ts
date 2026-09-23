@@ -7,6 +7,9 @@ import { IObjectImportStats } from "@/common/interfaces/IObjectImportStats";
 import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
 import { QueryImporter } from "@/backend/lib/objectimport/query";
 import { ConnectionImporter } from "@/backend/lib/objectimport/connection";
+import { DBeaverConnectionImporter } from "@/backend/lib/objectimport/dbeaver/importer";
+import { findDBeaverWorkspaces } from "@/backend/lib/objectimport/dbeaver/source";
+import { DBeaverImportOptions, DBeaverImportPreview, DBeaverImportStats, DBeaverWorkspaceSummary } from "@/backend/lib/objectimport/dbeaver/types";
 import rawLog from "@bksLogger";
 
 const log = rawLog.scope('workspaceHandlers')
@@ -17,7 +20,12 @@ export interface IWorkspaceHandlers {
   "workspace/importQueryDirectory": ({ sId, dir, parentId, preserveRoot }: { sId: string, dir: string, parentId: number, preserveRoot: boolean }) => Promise<IObjectImportStats>,
   "workspace/importQueries": ({ sId, paths, parentId }: { sId: string, paths: string[], parentId: number }) => Promise<IObjectImportStats>,
   "workspace/importConnectionsDirectory": ({ sId, dir, parentId, preserveRoot }: { sId: string, dir: string, parentId: number, preserveRoot: boolean }) => Promise<IObjectImportStats>,
-  "workspace/importConnections": ({ sId, paths, parentId }: { sId: string, paths: string[], parentId: number }) => Promise<IObjectImportStats>
+  "workspace/importConnections": ({ sId, paths, parentId }: { sId: string, paths: string[], parentId: number }) => Promise<IObjectImportStats>,
+  /** DBeaver workspaces at the default locations for this OS */
+  "workspace/findDBeaverWorkspaces": () => Promise<DBeaverWorkspaceSummary[]>,
+  /** What importing from a DBeaver workspace, project, data-sources.json or .dbp export would do */
+  "workspace/previewDBeaverConnections": ({ path }: { path: string }) => Promise<DBeaverImportPreview>,
+  "workspace/importDBeaverConnections": ({ sId, path, ...options }: { sId: string, path: string } & DBeaverImportOptions) => Promise<DBeaverImportStats>
 }
 
 export const WorkspaceHandlers: IWorkspaceHandlers = {
@@ -95,5 +103,21 @@ export const WorkspaceHandlers: IWorkspaceHandlers = {
     const stats = await importer.importSelections(paths, parentId);
 
     return stats;
+  },
+  'workspace/findDBeaverWorkspaces': async function(): Promise<DBeaverWorkspaceSummary[]> {
+    return await findDBeaverWorkspaces();
+  },
+  'workspace/previewDBeaverConnections': async function({ path }: { path: string }): Promise<DBeaverImportPreview> {
+    if (typeof path !== 'string' || path.length === 0) {
+      throw new Error('workspace/previewDBeaverConnections called with no path')
+    }
+    return await new DBeaverConnectionImporter().preview(path);
+  },
+  'workspace/importDBeaverConnections': async function({ sId, path, ...options }: { sId: string, path: string } & DBeaverImportOptions): Promise<DBeaverImportStats> {
+    if (typeof path !== 'string' || path.length === 0) {
+      throw new Error('workspace/importDBeaverConnections called with no path')
+    }
+    const importer = new DBeaverConnectionImporter(state(sId).cloudClient);
+    return await importer.import(path, options);
   }
 }

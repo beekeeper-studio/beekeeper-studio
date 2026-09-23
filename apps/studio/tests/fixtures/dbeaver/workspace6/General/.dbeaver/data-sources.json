@@ -1,0 +1,797 @@
+{
+	"folders": {
+		"Team": {},
+		"Development": {},
+		"Production": {
+			"description": "Live systems"
+		},
+		"Analytics": {},
+		"Production/EU": {}
+	},
+	"connections": {
+		"postgres-jdbc-1a0cc4aa8c1-4a433466ab963944": {
+			"provider": "postgresql",
+			"driver": "postgres-jdbc",
+			"name": "Local Postgres",
+			"save-password": true,
+			"folder": "Development",
+			"configuration": {
+				"host": "localhost",
+				"port": "5432",
+				"database": "app_dev",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false
+			}
+		},
+		"postgres-jdbc-1a0cc4c7f51-4cb03b4244f34627": {
+			"provider": "postgresql",
+			"driver": "postgres-jdbc",
+			"name": "Prod Postgres (SSH password)",
+			"description": "Primary production database",
+			"save-password": true,
+			"read-only": true,
+			"folder": "Production",
+			"configuration": {
+				"host": "db.internal",
+				"port": "5432",
+				"database": "app",
+				"configurationType": "MANUAL",
+				"type": "prod",
+				"closeIdleConnection": false,
+				"handlers": {
+					"ssh_tunnel": {
+						"type": "TUNNEL",
+						"enabled": true,
+						"save-password": true,
+						"properties": {
+							"host": "bastion.example.com",
+							"port": "22",
+							"authType": "PASSWORD"
+						}
+					}
+				},
+				"bootstrap": {
+					"defaultSchema": "public",
+					"query": ["SET statement_timeout \u003d 30000"]
+				}
+			}
+		},
+		"postgres-jdbc-1a0cc4c80a2-5360d5dc6886e0d": {
+			"provider": "postgresql",
+			"driver": "postgres-jdbc",
+			"name": "EU Postgres (SSH key + SSL)",
+			"save-password": true,
+			"folder": "Production/EU",
+			"configuration": {
+				"host": "eu-db.internal",
+				"port": "6543",
+				"database": "eu_app",
+				"configurationType": "MANUAL",
+				"type": "prod",
+				"closeIdleConnection": false,
+				"handlers": {
+					"ssh_tunnel": {
+						"type": "TUNNEL",
+						"enabled": true,
+						"save-password": true,
+						"properties": {
+							"host": "eu-bastion.example.com",
+							"port": "2222",
+							"authType": "PUBLIC_KEY",
+							"keyPath": "/home/me/.ssh/id_ed25519",
+							"aliveInterval": "30000"
+						}
+					},
+					"postgre_ssl": {
+						"type": "CONFIG",
+						"enabled": true,
+						"save-password": true,
+						"properties": {
+							"ssl.method": "CERTIFICATES",
+							"ssl.ca.cert": "/certs/eu/ca.pem",
+							"ssl.client.cert": "/certs/eu/client.crt",
+							"ssl.client.key": "/certs/eu/client.key",
+							"sslMode": "verify-full"
+						}
+					}
+				}
+			}
+		},
+		"postgres-jdbc-1a0cc4c81d5-49d151de8b9337fb": {
+			"provider": "postgresql",
+			"driver": "postgres-jdbc",
+			"name": "Postgres SSL require",
+			"save-password": true,
+			"folder": "Development",
+			"configuration": {
+				"host": "ssl-db.example.com",
+				"port": "5432",
+				"database": "secure",
+				"configurationType": "MANUAL",
+				"type": "test",
+				"closeIdleConnection": false,
+				"handlers": {
+					"postgre_ssl": {
+						"type": "CONFIG",
+						"enabled": true,
+						"save-password": true,
+						"properties": {
+							"ssl.method": "CERTIFICATES",
+							"sslMode": "require"
+						}
+					}
+				}
+			}
+		},
+		"postgres-jdbc-1a0cc4c8306-5629d74e93135656": {
+			"provider": "postgresql",
+			"driver": "postgres-jdbc",
+			"name": "Postgres pgpass",
+			"configuration": {
+				"host": "pgpass.local",
+				"port": "5432",
+				"database": "pgpass_db",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false,
+				"auth-model": "postgres_pgpass"
+			}
+		},
+		"postgres-redshift-jdbc-1a0cc4c8439-6a88afdd99c47dcd": {
+			"provider": "postgresql",
+			"driver": "postgres-redshift-jdbc",
+			"name": "Redshift Warehouse",
+			"save-password": true,
+			"folder": "Analytics",
+			"configuration": {
+				"host": "my-cluster.abc123.us-east-1.redshift.amazonaws.com",
+				"port": "5439",
+				"database": "dev",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"color": "128,0,255",
+				"closeIdleConnection": false
+			}
+		},
+		"postgres-cockroach-jdbc-1a0cc4c856c-6fd0eae342d26dc2": {
+			"provider": "postgresql",
+			"driver": "postgres-cockroach-jdbc",
+			"name": "CockroachDB",
+			"save-password": true,
+			"configuration": {
+				"host": "crdb.local",
+				"port": "26257",
+				"database": "defaultdb",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false
+			}
+		},
+		"greengage-jdbc-1a0cc4c869e-7dfa48f4b70e2689": {
+			"provider": "greengage",
+			"driver": "greengage-jdbc",
+			"name": "Greengage",
+			"save-password": true,
+			"configuration": {
+				"host": "gg.local",
+				"port": "5432",
+				"database": "gg",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false
+			}
+		},
+		"postgres-timescale-jdbc-1a0cc4c87d4-35405f3af44e005e": {
+			"provider": "postgresql",
+			"driver": "postgres-timescale-jdbc",
+			"name": "TimescaleDB",
+			"save-password": true,
+			"configuration": {
+				"host": "tsdb.local",
+				"port": "5432",
+				"database": "metrics",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false
+			}
+		},
+		"mysql8-1a0cc4c890b-1630c1e20604b984": {
+			"provider": "mysql",
+			"driver": "mysql8",
+			"name": "MySQL Shop",
+			"save-password": true,
+			"folder": "Development",
+			"configuration": {
+				"host": "mysql.local",
+				"port": "3306",
+				"database": "shop",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false,
+				"handlers": {
+					"mysql_ssl": {
+						"type": "CONFIG",
+						"enabled": true,
+						"save-password": true,
+						"properties": {
+							"ssl.method": "CERTIFICATES",
+							"ssl.ca.cert": "/certs/mysql/ca.pem",
+							"ssl.require": "true",
+							"ssl.verify.server": "false"
+						}
+					}
+				}
+			}
+		},
+		"mariaDB-1a0cc4c8a45-493924f00c9b891b": {
+			"provider": "mysql",
+			"driver": "mariaDB",
+			"name": "MariaDB Blog (SSH agent)",
+			"save-password": true,
+			"configuration": {
+				"host": "maria.local",
+				"port": "3307",
+				"database": "blog",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false,
+				"handlers": {
+					"ssh_tunnel": {
+						"type": "TUNNEL",
+						"enabled": true,
+						"save-password": true,
+						"properties": {
+							"host": "jump.example.com",
+							"port": "22",
+							"authType": "AGENT"
+						}
+					}
+				}
+			}
+		},
+		"mysql8-1a0cc4c8b77-533a6bdb44bbd34d": {
+			"provider": "mysql",
+			"driver": "mysql8",
+			"name": "Staging MySQL (password not saved)",
+			"folder": "Development",
+			"configuration": {
+				"host": "staging-mysql.local",
+				"port": "3306",
+				"database": "staging",
+				"configurationType": "MANUAL",
+				"type": "qa",
+				"closeIdleConnection": false
+			}
+		},
+		"tidb-1a0cc4c8ca8-7346736c5fd1beec": {
+			"provider": "tidb",
+			"driver": "tidb",
+			"name": "TiDB",
+			"save-password": true,
+			"configuration": {
+				"host": "tidb.local",
+				"port": "4000",
+				"database": "test",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false
+			}
+		},
+		"starrocks-1a0cc4c8dd9-6e1cc3f63884b8be": {
+			"provider": "starrocks",
+			"driver": "starrocks",
+			"name": "StarRocks",
+			"save-password": true,
+			"folder": "Analytics",
+			"configuration": {
+				"host": "sr.local",
+				"port": "9030",
+				"database": "sr_db",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false
+			}
+		},
+		"microsoft-1a0cc4c8f0b-25ba3c9c725d54b1": {
+			"provider": "sqlserver",
+			"driver": "microsoft",
+			"name": "SQL Server",
+			"save-password": true,
+			"configuration": {
+				"host": "mssql.local",
+				"port": "1433",
+				"database": "master",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false,
+				"provider-properties": {
+					"sslTrustServerCertificate": "true"
+				}
+			}
+		},
+		"microsoft-1a0cc4c903d-37d3a2752f094e49": {
+			"provider": "sqlserver",
+			"driver": "microsoft",
+			"name": "SQL Server (Windows auth)",
+			"save-password": true,
+			"configuration": {
+				"host": "winsql.corp.local",
+				"port": "1433",
+				"database": "Sales",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false,
+				"auth-model": "sqlserver_windows"
+			}
+		},
+		"microsoft-1a0cc4c916e-54472d93961dda2a": {
+			"provider": "sqlserver",
+			"driver": "microsoft",
+			"name": "SQL Server (NTLM)",
+			"save-password": true,
+			"configuration": {
+				"host": "ntlm-sql.corp.local",
+				"port": "1433",
+				"database": "HR",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false,
+				"auth-model": "sqlserver_ntlm"
+			}
+		},
+		"microsoft-1a0cc4c92a0-4323d8c6940ee42e": {
+			"provider": "sqlserver",
+			"driver": "microsoft",
+			"name": "Azure SQL (AD password)",
+			"save-password": true,
+			"configuration": {
+				"host": "myserver.database.windows.net",
+				"port": "1433",
+				"database": "appdb",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false,
+				"auth-model": "sqlserver_ad_password"
+			}
+		},
+		"oracle_thin-1a0cc4c93d3-1c875076380f97f4": {
+			"provider": "oracle",
+			"driver": "oracle_thin",
+			"name": "Oracle Service Name",
+			"save-password": true,
+			"configuration": {
+				"host": "ora.local",
+				"port": "1521",
+				"database": "ORCLPDB1",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false,
+				"provider-properties": {
+					"@dbeaver-sid-service@": "SERVICE"
+				}
+			}
+		},
+		"oracle_thin-1a0cc4c9505-54ccd58baa3ffea6": {
+			"provider": "oracle",
+			"driver": "oracle_thin",
+			"name": "Oracle SID",
+			"save-password": true,
+			"configuration": {
+				"host": "ora-sid.local",
+				"port": "1521",
+				"database": "XE",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false,
+				"provider-properties": {
+					"@dbeaver-sid-service@": "SID"
+				}
+			}
+		},
+		"oracle_thin-1a0cc4c9637-589572dce6a5f42f": {
+			"provider": "oracle",
+			"driver": "oracle_thin",
+			"name": "Oracle TNS",
+			"save-password": true,
+			"configuration": {
+				"database": "PRODDB",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false,
+				"provider-properties": {
+					"@dbeaver-tns-path@": "/opt/oracle/network/admin",
+					"@dbeaver-connection-type@": "TNS"
+				}
+			}
+		},
+		"sqlite_jdbc-1a0cc4c9768-3210be50ea97456e": {
+			"provider": "sqlite",
+			"driver": "sqlite_jdbc",
+			"name": "SQLite App DB",
+			"save-password": true,
+			"configuration": {
+				"database": "/data/app.sqlite3",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false
+			}
+		},
+		"duckdb_jdbc-1a0cc4c9899-2cad663c24568a8b": {
+			"provider": "duckdb",
+			"driver": "duckdb_jdbc",
+			"name": "DuckDB Analytics",
+			"save-password": true,
+			"folder": "Analytics",
+			"configuration": {
+				"database": "/data/analytics.duckdb",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false
+			}
+		},
+		"libsql_jdbc-1a0cc4c99d0-7e3f4b0a0ec98986": {
+			"provider": "sqlite",
+			"driver": "libsql_jdbc",
+			"name": "Turso LibSQL",
+			"save-password": true,
+			"configuration": {
+				"server": "libsql://my-db-acme.turso.io",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false,
+				"auth-model": "libsql_token_jdbc"
+			}
+		},
+		"jaybird-1a0cc4c9b1f-162c4a285b769777": {
+			"provider": "jaybird",
+			"driver": "jaybird",
+			"name": "Firebird Employee",
+			"save-password": true,
+			"configuration": {
+				"host": "fb.local",
+				"port": "3050",
+				"database": "/var/lib/firebird/data/employee.fdb",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false
+			}
+		},
+		"com_clickhouse-1a0cc4c9c52-f07b48d5ea33aeb": {
+			"provider": "clickhouse",
+			"driver": "com_clickhouse",
+			"name": "ClickHouse Events",
+			"save-password": true,
+			"folder": "Analytics",
+			"configuration": {
+				"host": "ch.local",
+				"port": "8123",
+				"database": "events",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false
+			}
+		},
+		"snowflake_jdbc-1a0cc4c9d85-79928f2446766239": {
+			"provider": "snowflake",
+			"driver": "snowflake_jdbc",
+			"name": "Snowflake",
+			"save-password": true,
+			"read-only": true,
+			"folder": "Analytics",
+			"configuration": {
+				"host": "acme-xy12345.snowflakecomputing.com",
+				"port": "443",
+				"server": "COMPUTE_WH",
+				"database": "ANALYTICS",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false,
+				"provider-properties": {
+					"@dbeaver-schema@": "PUBLIC"
+				}
+			}
+		},
+		"google_bigquery_jdbc-1a0cc4c9eb7-44f4d1e212203d43": {
+			"provider": "bigquery",
+			"driver": "google_bigquery_jdbc",
+			"name": "BigQuery",
+			"save-password": true,
+			"folder": "Analytics",
+			"configuration": {
+				"host": "https://www.googleapis.com/bigquery/v2",
+				"port": "443",
+				"database": "my-gcp-project",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false,
+				"properties": {
+					"OAuthType": "0",
+					"OAuthPvtKeyPath": "/keys/bigquery.json"
+				}
+			}
+		},
+		"trino_jdbc-1a0cc4c9fea-2d774e1d5b9d8b9f": {
+			"provider": "generic",
+			"driver": "trino_jdbc",
+			"name": "Trino",
+			"save-password": true,
+			"configuration": {
+				"host": "trino.local",
+				"port": "8080",
+				"database": "hive",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false
+			}
+		},
+		"db2-1a0cc4ca11c-57e7af52d6b83572": {
+			"provider": "db2",
+			"driver": "db2",
+			"name": "DB2 Legacy",
+			"save-password": true,
+			"configuration": {
+				"host": "db2.local",
+				"port": "50000",
+				"database": "SAMPLE",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false
+			}
+		},
+		"h2_embedded_v3-1a0cc4ca24d-75f148ecb321353f": {
+			"provider": "h2",
+			"driver": "h2_embedded_v3",
+			"name": "H2 Embedded",
+			"save-password": true,
+			"configuration": {
+				"database": "/data/h2/test",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false
+			}
+		},
+		"postgres-jdbc-1a0cc4e470a-31496dde0324f210": {
+			"provider": "postgresql",
+			"driver": "postgres-jdbc",
+			"name": "Postgres via URL",
+			"save-password": true,
+			"configuration": {
+				"url": "jdbc:postgresql://url-host.example.com:5433/urldb?sslmode\u003drequire\u0026ApplicationName\u003dbks",
+				"configurationType": "URL",
+				"type": "dev",
+				"closeIdleConnection": false
+			}
+		},
+		"mysql8-1a0cc4e4850-6d2adbe97be9826b": {
+			"provider": "mysql",
+			"driver": "mysql8",
+			"name": "MySQL via URL",
+			"save-password": true,
+			"configuration": {
+				"url": "jdbc:mysql://mysql-url.example.com:3310/urldb?useSSL\u003dtrue",
+				"configurationType": "URL",
+				"type": "dev",
+				"closeIdleConnection": false
+			}
+		},
+		"microsoft-1a0cc4e4988-2949a87edca816ee": {
+			"provider": "sqlserver",
+			"driver": "microsoft",
+			"name": "SQL Server via URL",
+			"save-password": true,
+			"configuration": {
+				"url": "jdbc:sqlserver://sqlurl.example.com:1444;databaseName\u003dUrlDb;encrypt\u003dtrue;trustServerCertificate\u003dtrue",
+				"configurationType": "URL",
+				"type": "dev",
+				"closeIdleConnection": false
+			}
+		},
+		"oracle_thin-1a0cc4e4ac0-523f7a94165b22a1": {
+			"provider": "oracle",
+			"driver": "oracle_thin",
+			"name": "Oracle custom URL",
+			"save-password": true,
+			"configuration": {
+				"url": "jdbc:oracle:thin:@//ora-url.example.com:1522/URLPDB",
+				"configurationType": "URL",
+				"type": "dev",
+				"closeIdleConnection": false,
+				"provider-properties": {
+					"@dbeaver-connection-type@": "CUSTOM"
+				}
+			}
+		},
+		"sqlite_jdbc-1a0cc4e4bf4-458fd708e4e103cd": {
+			"provider": "sqlite",
+			"driver": "sqlite_jdbc",
+			"name": "SQLite via URL",
+			"save-password": true,
+			"configuration": {
+				"url": "jdbc:sqlite:/data/from-url.db",
+				"configurationType": "URL",
+				"type": "dev",
+				"closeIdleConnection": false
+			}
+		},
+		"postgres-jdbc-1a0cc4e4d27-72d4cb38b943da38": {
+			"provider": "postgresql",
+			"driver": "postgres-jdbc",
+			"name": "Postgres via jump host",
+			"save-password": true,
+			"folder": "Production",
+			"configuration": {
+				"host": "inner-db.internal",
+				"port": "5432",
+				"database": "inner",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false,
+				"handlers": {
+					"ssh_tunnel": {
+						"type": "TUNNEL",
+						"enabled": true,
+						"save-password": true,
+						"properties": {
+							"host": "inner-ssh.internal",
+							"port": "22",
+							"authType": "PASSWORD",
+							"jumpServer.count": "1",
+							"jumpServer0.enabled": "true",
+							"jumpServer0.host": "jump.example.com",
+							"jumpServer0.port": "2200",
+							"jumpServer0.name": "jumper",
+							"jumpServer0.authType": "PUBLIC_KEY",
+							"jumpServer0.keyPath": "/home/me/.ssh/jump_key"
+						}
+					}
+				}
+			}
+		},
+		"postgres-jdbc-1a0cc4e4e69-6f62bdaf125cbd2d": {
+			"provider": "postgresql",
+			"driver": "postgres-jdbc",
+			"name": "Postgres via network profile",
+			"save-password": true,
+			"configuration": {
+				"host": "profiled-db.internal",
+				"port": "5432",
+				"database": "profiled",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false,
+				"config-profile": "corp-bastion"
+			}
+		},
+		"mysql8-1a0cc4e4f9c-19b12e0d8691f9fe": {
+			"provider": "mysql",
+			"driver": "mysql8",
+			"name": "MySQL via SOCKS proxy",
+			"save-password": true,
+			"configuration": {
+				"host": "proxied-mysql.internal",
+				"port": "3306",
+				"database": "proxied",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false,
+				"handlers": {
+					"socks_proxy": {
+						"type": "PROXY",
+						"enabled": true,
+						"save-password": true,
+						"properties": {
+							"socks-host": "proxy.corp.local",
+							"socks-port": "1080"
+						}
+					}
+				}
+			}
+		},
+		"mariaDB-1a0cc4f9f48-36d5a6564d394dd6": {
+			"provider": "mysql",
+			"driver": "mariaDB",
+			"name": "Local MariaDB",
+			"save-password": true,
+			"folder": "Development",
+			"configuration": {
+				"host": "localhost",
+				"port": "3306",
+				"database": "local_maria",
+				"configurationType": "MANUAL",
+				"type": "dev"
+			}
+		}
+	},
+	"network-profiles": {
+		"corp-bastion": {
+			"name": "corp-bastion",
+			"handlers": {
+				"ssh_tunnel": {
+					"type": "TUNNEL",
+					"enabled": true,
+					"save-password": true,
+					"properties": {
+						"host": "corp-bastion.example.com",
+						"port": "22",
+						"authType": "PASSWORD"
+					}
+				}
+			}
+		}
+	},
+	"connection-types": {
+		"dev": {
+			"name": "Development",
+			"color": "255,255,255",
+			"colorDark": "255,255,255",
+			"description": "Regular development database",
+			"auto-commit": true,
+			"confirm-execute": false,
+			"confirm-data-change": false,
+			"smart-commit": false,
+			"smart-commit-recover": true,
+			"auto-close-transactions": true,
+			"close-transactions-period": 1800,
+			"auto-close-connections": true,
+			"close-connections-period": 14400,
+			"security": {
+				"permission-restrictions": []
+			}
+		},
+		"prod": {
+			"name": "Production",
+			"color": "250,207,207",
+			"colorDark": "97,61,63",
+			"description": "Production database",
+			"auto-commit": false,
+			"confirm-execute": true,
+			"confirm-data-change": true,
+			"smart-commit": false,
+			"smart-commit-recover": false,
+			"auto-close-transactions": true,
+			"close-transactions-period": 600,
+			"auto-close-connections": true,
+			"close-connections-period": 3600,
+			"security": {
+				"permission-restrictions": []
+			}
+		},
+		"test": {
+			"name": "Test",
+			"color": "214,250,207",
+			"colorDark": "64,89,66",
+			"description": "Test (QA) database",
+			"auto-commit": true,
+			"confirm-execute": false,
+			"confirm-data-change": true,
+			"smart-commit": false,
+			"smart-commit-recover": true,
+			"auto-close-transactions": true,
+			"close-transactions-period": 900,
+			"auto-close-connections": true,
+			"close-connections-period": 7200,
+			"security": {
+				"permission-restrictions": []
+			}
+		},
+		"qa": {
+			"name": "QA",
+			"color": "255,200,0",
+			"colorDark": "255,200,0",
+			"description": "QA environment",
+			"auto-commit": true,
+			"confirm-execute": false,
+			"confirm-data-change": false,
+			"smart-commit": false,
+			"smart-commit-recover": false,
+			"auto-close-transactions": false,
+			"close-transactions-period": 0,
+			"auto-close-connections": false,
+			"close-connections-period": 0,
+			"security": {
+				"permission-restrictions": []
+			}
+		}
+	}
+}

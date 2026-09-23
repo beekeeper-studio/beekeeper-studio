@@ -1,0 +1,19 @@
+{
+	"connections": {
+		"postgres-jdbc-1a0cc4f0000-1111111111111111": {
+			"provider": "postgresql",
+			"driver": "postgres-jdbc",
+			"name": "Team Shared Postgres",
+			"save-password": true,
+			"folder": "Team",
+			"configuration": {
+				"host": "team-db.example.com",
+				"port": "5432",
+				"database": "team",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": false
+			}
+		}
+	}
+}
