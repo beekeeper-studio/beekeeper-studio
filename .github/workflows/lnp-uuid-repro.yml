@@ -22,7 +22,6 @@ jobs:
       matrix:
         include:
           - { subject: release, decision: deny }
-          - { subject: release, decision: allow }
           - { subject: patched, decision: deny }
     steps:
       - uses: actions/checkout@v5

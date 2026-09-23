@@ -95,17 +95,16 @@ probe electron "$OTHER" Electron "$DECISION"
 probe "beekeeper-$SUBJECT" "$BKS" "Beekeeper Studio" "$OPPOSITE"
 
 section "System Settings > Privacy & Security > Local Network"
-open "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_LocalNetwork"
-sleep 8
+open "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension"
+sleep 6
+osascript "$HERE/settings.applescript" 2>&1 | awk '!seen[$0]++' | head -80
 shot settings-local-network
-osascript "$HERE/settings.applescript" 2>&1 | head -60
 
 sudo kill "$LOGPID" 2>/dev/null
 
 section "Signing identifier -> executable UUID cache"
-sudo plutil -p /Library/Preferences/com.apple.networkextension.uuidcache.plist 2>&1 | head -60
+sudo plutil -p /Library/Preferences/com.apple.networkextension.uuidcache.plist 2>&1 | grep -A3 -E '"(com\.github\.Electron|io\.beekeeperstudio\.desktop)"' 
 
 section "Local Network privacy decisions (log)"
-grep -E 'Created path rule for|Populating the cache|User responded|Draining local network|UUIDs for .* are already' "$OUT/lnp-log.txt" \
-  | grep -vE 'com\.apple\.' | sed -E 's/^[0-9-]+ [0-9:.]+ +//' | awk '!seen[$0]++' | head -60
+grep -E 'Created path rule for (com\.github|io\.beekeeper)|Populating the cache with [0-9]+ UUID\(s\) for (com\.github|io\.beekeeper)|User responded|Draining local network replies' "$OUT/lnp-log.txt" | cut -c1-220
 exit 0
