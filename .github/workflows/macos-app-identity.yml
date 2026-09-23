@@ -1,0 +1,141 @@
+name: macOS app identity
+
+# macOS Local Network privacy identifies apps by the Mach-O UUIDs of their
+# executables. Electron ships the same prebuilt executables to every app, so unless
+# the build gives Beekeeper its own UUIDs, it shares its Local Network permission
+# with every other app on the same Electron version (#4774, #4088).
+#
+# This builds the mac app, then fails if any of its executables has the same UUID
+# as vanilla Electron or Slack, or if macOS won't give it its own Local Network
+# permission after vanilla Electron has been denied one.
+
+on:
+  pull_request:
+    paths:
+      - apps/studio/build/**
+      - apps/studio/electron-builder-config.js
+      - apps/studio/package.json
+      - .github/scripts/check-mac-*.sh
+      - .github/scripts/mac-local-network-*
+      - .github/workflows/macos-app-identity.yml
+  push:
+    branches:
+      - master
+      # TEMP: runs the check on this branch before a PR exists. Remove before merging.
+      - rathboma/peaceful-knuth-2c4ef8
+    paths:
+      - apps/studio/build/**
+      - apps/studio/electron-builder-config.js
+      - apps/studio/package.json
+      - .github/scripts/check-mac-*.sh
+      - .github/scripts/mac-local-network-*
+      - .github/workflows/macos-app-identity.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  identity:
+    name: Beekeeper vs vanilla Electron and Slack
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      APP: ${{ github.workspace }}/apps/studio/dist_electron/mac-arm64/Beekeeper Studio.app
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install ODBC build dependencies
+        run: bash ./.github/scripts/macos-install-odbc-deps.sh
+
+      - name: Install python 3.11
+        run: |
+          brew install python@3.11
+          echo "/opt/homebrew/opt/python@3.11/libexec/bin" >> "$GITHUB_PATH"
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+
+      # ImageOS keeps native modules from being reused across runner images
+      - name: Compute runner image cache id
+        run: echo "RUNNER_IMAGE_ID=${ImageOS:-unknown}" >> "$GITHUB_ENV"
+
+      - name: Cache node_modules
+        id: cache-nm
+        uses: actions/cache@v5
+        with:
+          path: |
+            node_modules
+            apps/studio/node_modules
+            apps/ui-kit/node_modules
+            apps/sqltools/node_modules
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+
+      - name: Install dependencies
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        run: yarn install --frozen-lockfile --network-timeout 100000
+        env:
+          npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
+
+      - name: Build the mac app
+        id: build
+        run: yarn run electron:build --publish never --mac dir --arm64
+        env:
+          PYTHON_PATH: /opt/homebrew/opt/python@3.11/libexec/bin/python3
+          PYTHONPATH: /opt/homebrew/opt/python@3.11/libexec/bin/python3
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Find vanilla Electron and install Slack
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        working-directory: apps/studio
+        run: |
+          echo "ELECTRON_APP=$(node -p "require('path').resolve(require('electron'), '../../..')")" >> "$GITHUB_ENV"
+          echo "Beekeeper and vanilla Electron use Electron $(node -p "require('electron/package.json').version")"
+          HOMEBREW_NO_AUTO_UPDATE=1 brew install --cask slack
+          echo "Slack $(plutil -extract CFBundleShortVersionString raw -o - /Applications/Slack.app/Contents/Info.plist)"
+
+      - name: Compare executable UUIDs
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          bash .github/scripts/check-mac-uuids.sh "Beekeeper=$APP" \
+            "vanilla Electron=$ELECTRON_APP" \
+            "Slack=/Applications/Slack.app"
+
+      - name: Check Local Network permission
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: bash .github/scripts/check-mac-local-network.sh "$APP" "$ELECTRON_APP" "$RUNNER_TEMP/local-network"
+
+      # The build edits the executables, so make sure the app and its helpers still run
+      - name: Launch the built app
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          ELECTRON_RUN_AS_NODE=1 "$APP/Contents/MacOS/Beekeeper Studio" -e "console.log('Main executable runs Electron ' + process.versions.electron)"
+          open -n -g "$APP"
+          sleep 20
+          running=$(ps -axo command | grep -F "$APP/Contents/" | grep -v grep || true)
+          echo "$running" | sed "s|$APP/Contents/||" | cut -c1-120
+          for exe in "MacOS/Beekeeper Studio" "Beekeeper Studio Helper.app/" "Beekeeper Studio Helper (Renderer).app/" "Beekeeper Studio Helper (GPU).app/"; do
+            grep -qF "$exe" <<< "$running" || { echo "::error::$exe is not running"; exit 1; }
+          done
+          pkill -f "$APP/Contents/MacOS/Beekeeper Studio" || true
+
+      # Not a check: shows whether Slack ships Electron's stock UUIDs for its own version
+      - name: Slack vs vanilla Electron of the same version
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        continue-on-error: true
+        run: |
+          SLACK_ELECTRON=$(plutil -extract CFBundleVersion raw -o - "/Applications/Slack.app/Contents/Frameworks/Electron Framework.framework/Resources/Info.plist")
+          curl -sSfL -o "$RUNNER_TEMP/electron.zip" "https://github.com/electron/electron/releases/download/v$SLACK_ELECTRON/electron-v$SLACK_ELECTRON-darwin-arm64.zip"
+          ditto -x -k "$RUNNER_TEMP/electron.zip" "$RUNNER_TEMP/electron-$SLACK_ELECTRON"
+          echo "Slack uses Electron $SLACK_ELECTRON"
+          bash .github/scripts/check-mac-uuids.sh "Slack=/Applications/Slack.app" \
+            "vanilla Electron $SLACK_ELECTRON=$RUNNER_TEMP/electron-$SLACK_ELECTRON/Electron.app" \
+            | sed 's/^::error::/Shared: /'
+
+      - uses: actions/upload-artifact@v6
+        if: ${{ !cancelled() }}
+        with:
+          name: local-network-check
+          path: ${{ runner.temp }}/local-network
+          if-no-files-found: ignore
