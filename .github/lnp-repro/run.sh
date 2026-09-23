@@ -31,12 +31,15 @@ section "Network"
 IF=$(route -n get default | awk '/interface:/{print $2}')
 GW=$(route -n get default | awk '/gateway:/{print $2}')
 IP=$(ipconfig getifaddr "$IF")
-echo "interface=$IF ip=$IP gateway=$GW"
+BCAST=$(ifconfig "$IF" | awk '/inet .* broadcast/{print $6; exit}')
+echo "interface=$IF ip=$IP gateway=$GW broadcast=$BCAST"
 scutil --dns | awk '/nameserver\[[0-9]\]/{print "dns: " $3}' | sort -u
 # Root is exempt from Local Network privacy, so this listener never prompts
 sudo python3 -m http.server 18080 --bind "$IP" >/dev/null 2>&1 &
 sleep 1
-TARGETS="tcp:$IP:18080 udp:$GW:53 tcp:1.1.1.1:443"
+# Own IP and the gateway/DNS server turned out not to count as local network, so
+# also use a subnet broadcast and a Bonjour (mDNS) multicast query.
+TARGETS="bcast:$BCAST:9 mdns:224.0.0.251:5353 tcp:$GW:80 dns:$GW:53 tcp:$IP:18080 tcp:1.1.1.1:443"
 echo "targets: $TARGETS"
 
 section "Download and install apps"
@@ -79,7 +82,7 @@ probe() { # label app alert-name answer(allow|deny)
   shot "$label-alert"
   echo "windows with buttons on screen:"
   osascript "$HERE/alerts.applescript" list 2>&1
-  echo "answering an alert naming “$name” with '$answer':"
+  echo "answering an alert naming ${name} with '${answer}':"
   osascript "$HERE/alerts.applescript" "$answer" "$name" 2>&1
   sleep 3
   touch "$res.go"
