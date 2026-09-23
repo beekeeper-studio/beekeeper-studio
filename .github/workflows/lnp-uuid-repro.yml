@@ -14,21 +14,23 @@ permissions:
 
 jobs:
   repro:
-    name: ${{ matrix.os }} / other app ${{ matrix.decision }}
-    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.subject }} Beekeeper, vanilla Electron ${{ matrix.decision }}
+    runs-on: macos-15
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-15]
-        decision: [deny, allow]
+        include:
+          - { subject: release, decision: deny }
+          - { subject: release, decision: allow }
+          - { subject: patched, decision: deny }
     steps:
       - uses: actions/checkout@v5
         with:
           sparse-checkout: .github/lnp-repro
-      - run: bash .github/lnp-repro/run.sh ${{ matrix.decision }}
+      - run: bash .github/lnp-repro/run.sh ${{ matrix.subject }} ${{ matrix.decision }}
       - uses: actions/upload-artifact@v6
         if: always()
         with:
-          name: lnp-${{ matrix.os }}-${{ matrix.decision }}
+          name: lnp-${{ matrix.subject }}-${{ matrix.decision }}
           path: /tmp/lnp/out
