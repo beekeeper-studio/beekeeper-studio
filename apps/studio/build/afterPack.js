@@ -3,11 +3,17 @@
 const path = require('path')
 const fs = require('fs')
 const util = require('util')
+const { giveMacExecutablesOwnUuids } = require('./macExecutableUuids')
 
 const renameAsync = util.promisify(fs.rename)
 const unlinkAsync = util.promisify(fs.unlink)
 
 module.exports = async function (context) {
+  if (['darwin', 'mas'].includes(context.electronPlatformName)) {
+    await giveMacExecutablesOwnUuids(context)
+    return
+  }
+
   // Replace the app launcher on linux only.
   if (process.platform !== 'linux') {
     return
