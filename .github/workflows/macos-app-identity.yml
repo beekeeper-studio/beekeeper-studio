@@ -115,8 +115,9 @@ jobs:
           sleep 20
           running=$(ps -axo command | grep -F "$APP/Contents/" | grep -v grep || true)
           echo "$running" | sed "s|$APP/Contents/||" | cut -c1-120
-          for exe in "MacOS/Beekeeper Studio" "Beekeeper Studio Helper.app/" "Beekeeper Studio Helper (Renderer).app/" "Beekeeper Studio Helper (GPU).app/"; do
-            grep -qF "$exe" <<< "$running" || { echo "::error::$exe is not running"; exit 1; }
+          # Main process, renderer, GPU process, and the utility process that runs the database clients
+          for process in "MacOS/Beekeeper Studio" "--type=renderer" "--type=gpu-process" "--utility-sub-type=node.mojom.NodeService"; do
+            grep -qF -- "$process" <<< "$running" || { echo "::error::No $process process is running"; exit 1; }
           done
           pkill -f "$APP/Contents/MacOS/Beekeeper Studio" || true
 
