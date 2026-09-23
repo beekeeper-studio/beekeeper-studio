@@ -21,8 +21,6 @@ on:
   push:
     branches:
       - master
-      # TEMP: runs the check on this branch before a PR exists. Remove before merging.
-      - rathboma/peaceful-knuth-2c4ef8
     paths:
       - apps/studio/build/**
       - apps/studio/electron-builder-config.js
