@@ -14,6 +14,7 @@ const path = require('path')
 const { execFileSync } = require('child_process')
 
 const LC_UUID = 0x1b
+const LC_CODE_SIGNATURE = 0x1d
 const MH_MAGIC_64 = 0xfeedfacf
 const FAT_MAGIC = 0xcafebabe
 const FAT_MAGIC_64 = 0xcafebabf
@@ -44,32 +45,40 @@ function sliceOffsets(buf) {
   })
 }
 
-// Replaces the LC_UUID of every image in a Mach-O file. Returns what changed.
+// Replaces the LC_UUID of every image in a Mach-O file. Returns what changed, and
+// whether the file was code signed (the change invalidates that signature).
 function setMachOUuids(file, seed) {
   const buf = fs.readFileSync(file)
+  let signed = false
   const changes = sliceOffsets(buf).map((offset) => {
     if (buf.readUInt32LE(offset) !== MH_MAGIC_64) {
       throw new Error(`${file}: expected a 64-bit Mach-O image at offset ${offset}`)
     }
     const cpuType = buf.readUInt32LE(offset + 4)
     const commandCount = buf.readUInt32LE(offset + 16)
+    let change = null
     let command = offset + 32
     for (let i = 0; i < commandCount; i++) {
-      if (buf.readUInt32LE(command) === LC_UUID) {
+      const type = buf.readUInt32LE(command)
+      if (type === LC_CODE_SIGNATURE) signed = true
+      if (type === LC_UUID) {
         const from = formatUuid(buf.subarray(command + 8, command + 24))
         const uuid = uuidV5(`${seed}/${cpuType.toString(16)}`)
         uuid.copy(buf, command + 8)
-        return { cpuType, from, to: formatUuid(uuid) }
+        change = { cpuType, from, to: formatUuid(uuid) }
       }
       command += buf.readUInt32LE(command + 4)
     }
-    throw new Error(`${file}: no LC_UUID load command`)
+    if (!change) throw new Error(`${file}: no LC_UUID load command`)
+    return change
   })
   fs.writeFileSync(file, buf)
-  return changes
+  return { changes, signed }
 }
 
-// The app's main executable and the executable of each helper app
+// The executable of each helper app, then the app's main executable. Helpers go
+// first because signing the main executable signs the whole bundle, which needs
+// its helpers to be signed already.
 function macExecutables(appPath) {
   const executablesIn = (bundle) => {
     const dir = path.join(bundle, 'Contents', 'MacOS')
@@ -79,7 +88,7 @@ function macExecutables(appPath) {
   const helpers = fs.readdirSync(frameworks)
     .filter((name) => name.endsWith('.app'))
     .flatMap((name) => executablesIn(path.join(frameworks, name)))
-  return [...executablesIn(appPath), ...helpers]
+  return [...helpers, ...executablesIn(appPath)]
 }
 
 async function giveMacExecutablesOwnUuids(context) {
@@ -87,13 +96,15 @@ async function giveMacExecutablesOwnUuids(context) {
   const appPath = path.join(context.appOutDir, `${appInfo.productFilename}.app`)
   for (const file of macExecutables(appPath)) {
     const relativePath = path.relative(appPath, file)
-    for (const { cpuType, from, to } of setMachOUuids(file, `${appInfo.id}/${relativePath}`)) {
+    const { changes, signed } = setMachOUuids(file, `${appInfo.id}/${relativePath}`)
+    for (const { cpuType, from, to } of changes) {
       // eslint-disable-next-line no-console
       console.log(`afterPack: ${relativePath} (cpu ${cpuType.toString(16)}) UUID ${from} -> ${to}`)
     }
-    // Editing the file invalidates Electron's signature. Ad-hoc sign it so unsigned
-    // builds still launch; signed builds are re-signed after afterPack.
-    if (process.platform === 'darwin') {
+    // Electron's arm64 executables come ad-hoc signed and its x64 ones unsigned.
+    // Re-sign the ones the edit invalidated so unsigned builds still launch; signed
+    // builds are signed again after afterPack anyway.
+    if (signed && process.platform === 'darwin') {
       execFileSync('codesign', ['--force', '--sign', '-', file])
     }
   }
