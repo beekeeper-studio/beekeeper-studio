@@ -1,0 +1,34 @@
+# Temporary: reproduce the macOS Local Network privacy UUID clash (#4774, #4088).
+name: LNP UUID clash repro
+
+on:
+  push:
+    branches:
+      - rathboma/peaceful-knuth-2c4ef8
+    paths:
+      - .github/workflows/lnp-uuid-repro.yml
+      - .github/lnp-repro/**
+
+permissions:
+  contents: read
+
+jobs:
+  repro:
+    name: ${{ matrix.os }} / other app ${{ matrix.decision }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15]
+        decision: [deny, allow]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: .github/lnp-repro
+      - run: bash .github/lnp-repro/run.sh ${{ matrix.decision }}
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: lnp-${{ matrix.os }}-${{ matrix.decision }}
+          path: /tmp/lnp/out
