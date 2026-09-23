@@ -1,0 +1,207 @@
+# TEMP: remove before merging. Runs the release's signed + notarized mac build
+# (without publishing) on this branch, then checks the result, to make sure the
+# Mach-O UUID change in afterPack survives Developer ID signing and notarization.
+name: TEMP notarized mac build
+
+on:
+  push:
+    branches:
+      - rathboma/peaceful-knuth-2c4ef8
+    paths:
+      - .github/workflows/tmp-mac-notarized-build.yml
+      - apps/studio/build/**
+      - apps/studio/electron-builder-config.js
+      - apps/studio/package.json
+
+concurrency:
+  group: tmp-mac-notarized-build
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Signed and notarized ${{ matrix.os.arch }} build
+    runs-on: ${{ matrix.os.name }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        # Same runners as the release
+        os:
+          - name: macos-14-large
+            arch: x64
+            dist: mac
+          - name: macos-14
+            arch: arm64
+            dist: mac-arm64
+    env:
+      APP: ${{ github.workspace }}/apps/studio/dist_electron/${{ matrix.os.dist }}/Beekeeper Studio.app
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v5
+
+      - name: Install ODBC build dependencies (macos)
+        run: bash ./.github/scripts/macos-install-odbc-deps.sh
+
+      - name: Update repository
+        env:
+          OWNER: 'beekeeper-studio'
+          REPO: 'beekeeper-studio'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs')
+            const path = `apps/studio/package.json`
+            const githubUrl = `git@github.com/${process.env.OWNER}/${process.env.REPO}.git`
+            const packageJson = JSON.parse(fs.readFileSync(path, 'utf8'));
+            packageJson.repository = githubUrl;
+            fs.writeFileSync(path, JSON.stringify(packageJson, null, 2) + '\n');
+
+      - name: Install python 3.11
+        id: mac_python
+        env:
+          ARCH: ${{ matrix.os.arch }}
+        run: |
+          rm -f /usr/local/bin/2to3-3.11
+          rm -f /usr/local/bin/idle3.11
+          rm -f /usr/local/bin/pydoc3.11
+          rm -f /usr/local/bin/python3.11
+          rm -f /usr/local/bin/python3.11-config
+          brew install python@3.11
+          if [ "$ARCH" = "arm64" ]; then
+              echo "/opt/homebrew/opt/python@3.11/libexec/bin" >> $GITHUB_PATH
+              echo "python_path=/opt/homebrew/opt/python@3.11/libexec/bin/python3" >> $GITHUB_OUTPUT
+          else
+              echo "/usr/local/opt/python@3.11/libexec/bin" >> $GITHUB_PATH
+              echo "python_path=/usr/local/opt/python@3.11/libexec/bin/python3" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Verify Python Version
+        run: |
+          PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
+          echo "Installed Python version: $PYTHON_VERSION"
+          if [[ ! $PYTHON_VERSION == 3.11* ]]; then
+            echo "Error: Python version does not start with 3.11"
+            exit 1
+          fi
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: yarn install (with retry)
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: "yarn install --frozen-lockfile --network-timeout 100000"
+        env:
+          npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
+
+      - name: Verify msnodesqlv8 native build
+        run: node -e "require('msnodesqlv8')"
+
+      - name: Prepare for app notarization
+        run: |
+          mkdir -p ~/private_keys/
+          echo '${{ secrets.apple_key }}' > ~/private_keys/AuthKey_${{ secrets.apple_key_id }}.p8
+
+      - name: Decode macOS signing certificate
+        env:
+          DATA: ${{ secrets.mac_dev }}
+        run: |
+          echo "$DATA" | base64 --decode > ~/mac-certificate.p12
+
+      - name: Build, sign and notarize (no publishing)
+        id: build
+        env:
+          APPLE_ID: ${{ secrets.apple_id }}
+          APPLE_ID_PASSWORD: ${{ secrets.apple_id_password }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.apple_id_password }}
+          APPLE_TEAM_ID: "7KK583U8H2"
+          CSC_LINK: "~/mac-certificate.p12"
+          CSC_KEY_PASSWORD: ${{ secrets.mac_dev_pw }}
+          PYTHON_PATH: ${{ steps.mac_python.outputs.python_path }}
+          PYTHONPATH: ${{ steps.mac_python.outputs.python_path }}
+        run: yarn run electron:build --publish never
+
+      - name: Check signature and notarization
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          codesign -dv --verbose=4 "$APP" 2>&1 | grep -E '^(Identifier|Authority|TeamIdentifier|Runtime Version|Timestamp)'
+          spctl --assess --type execute --verbose=4 "$APP"
+          xcrun stapler validate "$APP"
+
+      - name: Compare executable UUIDs
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        working-directory: apps/studio
+        run: |
+          ELECTRON_APP="$(node -p "require('path').resolve(require('electron'), '../../..')")"
+          bash ../../.github/scripts/check-mac-uuids.sh "Beekeeper=$APP" "vanilla Electron=$ELECTRON_APP"
+
+      - name: Launch the signed app
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          ELECTRON_RUN_AS_NODE=1 "$APP/Contents/MacOS/Beekeeper Studio" -e "console.log('Main executable runs Electron ' + process.versions.electron)"
+          open -n -g "$APP"
+          sleep 20
+          running=$(ps -axo command | grep -F "$APP/Contents/" | grep -v grep || true)
+          echo "$running" | sed "s|$APP/Contents/||" | cut -c1-120
+          for process in "MacOS/Beekeeper Studio" "--type=renderer" "--type=gpu-process" "--utility-sub-type=node.mojom.NodeService"; do
+            grep -qF -- "$process" <<< "$running" || { echo "::error::No $process process is running"; exit 1; }
+          done
+          pkill -f "$APP/Contents/MacOS/Beekeeper Studio" || true
+
+      - name: Upload the notarized build
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: notarized-mac-${{ matrix.os.arch }}
+          path: |
+            apps/studio/dist_electron/*.zip
+            apps/studio/dist_electron/*.dmg
+          retention-days: 5
+
+  # Local Network privacy needs macOS 15+, and the release runners are macOS 14
+  local-network:
+    name: Local Network check on the notarized arm64 build
+    needs: build
+    if: ${{ !cancelled() }}
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: notarized-mac-arm64
+          path: ${{ runner.temp }}/build
+
+      - name: Unpack the notarized app and vanilla Electron
+        run: |
+          ditto -x -k "$RUNNER_TEMP"/build/*-arm64-mac.zip "$RUNNER_TEMP/app"
+          EV=$(node -p "require('./apps/studio/package.json').devDependencies.electron.replace(/^[^0-9]*/, '')")
+          curl -sSfL -o "$RUNNER_TEMP/electron.zip" "https://github.com/electron/electron/releases/download/v$EV/electron-v$EV-darwin-arm64.zip"
+          ditto -x -k "$RUNNER_TEMP/electron.zip" "$RUNNER_TEMP/electron"
+          echo "APP=$RUNNER_TEMP/app/Beekeeper Studio.app" >> "$GITHUB_ENV"
+          echo "ELECTRON_APP=$RUNNER_TEMP/electron/Electron.app" >> "$GITHUB_ENV"
+
+      - name: Gatekeeper on a fresh machine
+        run: |
+          spctl --assess --type execute --verbose=4 "$APP"
+          xcrun stapler validate "$APP"
+
+      - name: Check Local Network permission
+        run: bash .github/scripts/check-mac-local-network.sh "$APP" "$ELECTRON_APP" "$RUNNER_TEMP/local-network"
+
+      - uses: actions/upload-artifact@v6
+        if: ${{ !cancelled() }}
+        with:
+          name: notarized-local-network-check
+          path: ${{ runner.temp }}/local-network
+          if-no-files-found: ignore
+          retention-days: 5
