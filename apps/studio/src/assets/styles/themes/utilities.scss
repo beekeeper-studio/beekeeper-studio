@@ -249,10 +249,10 @@
     // ===== Editor =====
 
     --editor-font-weight: normal;
-    --editor-bg: var(--bg-base);
+    --editor-bg: var(--app-bg);
     --editor-fg: var(--text-contrast);
     --editor-cursor-bg: var(--text-contrast);
-    --editor-selected-bg: var(--border-a);
+    --editor-selected-bg: var(--selection-bg);
     --editor-activeline-bg: var(--bg-a);
     --editor-activeline-gutter-bg: var(--bg-a);
     --editor-focused-outline: transparent;

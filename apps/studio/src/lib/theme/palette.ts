@@ -24,10 +24,6 @@ export type Palette = {
   scaleAlpha: Scale;
   /** Text color that reads on step 9. */
   foreground: string;
-  /** The gray ramp the accent was tinted against. Depends only on gray and background. */
-  grayScale: Scale;
-  /** The same 12 gray steps as translucent hex, blended against the background. */
-  grayScaleAlpha: Scale;
 };
 
 export function generatePalette(options: GeneratePaletteOptions): Palette {
@@ -39,8 +35,6 @@ export function generatePalette(options: GeneratePaletteOptions): Palette {
     scale: colors.accentScale,
     scaleAlpha: colors.accentScaleAlpha,
     foreground: colors.accentContrast,
-    grayScale: colors.grayScale,
-    grayScaleAlpha: colors.grayScaleAlpha,
   };
 }
 
@@ -50,18 +44,14 @@ export function generatePaletteAsCssProps(
   options: GeneratePaletteOptions
 ): string {
   const palette = generatePalette(options);
-  // Gray is a ramp, not an accent — its seed shouldn't be forced onto step 9.
-  const isGray = name === "gray";
-  const scale = isGray ? palette.grayScale : palette.scale;
-  const scaleAlpha = isGray ? palette.grayScaleAlpha : palette.scaleAlpha;
 
   const lines: string[] = [];
-  scale.forEach((color, i) => {
+  palette.scale.forEach((color, i) => {
     lines.push(`--${name}-${i + 1}: ${color};`);
   });
-  scaleAlpha.forEach((color, i) => {
+  palette.scaleAlpha.forEach((color, i) => {
     lines.push(`--${name}-a${i + 1}: ${color};`);
   });
-  lines.push(`--${name}-solid-fg: ${palette.foreground};`);
+  lines.push(`--${name}-fg: ${palette.foreground};`);
   return lines.join("\n");
 }

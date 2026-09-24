@@ -2,13 +2,7 @@
   --editor-font-weight: 500;
 }
 
-.theme-default.dark-theme {
-  --table-bg: var(--bg-base);
-}
-
 .theme-default {
-  --editor-bg: var(--app-bg);
-
   /* Syntax colors with no counterpart in the scales, kept from the Monokai-ish defaults. */
   --editor-atom-fg: #ae81ff;
   --editor-variable-3-fg: #66d9ef;

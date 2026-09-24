@@ -151,6 +151,10 @@ export class ThemeRenderer {
 
     let content = `body { --app-bg: ${base.background}; `;
 
+    for (const [name, color] of Object.entries(base)) {
+      content += `--${name}: ${color}; `;
+    }
+
     for (const color of [
       "gray",
       "blue",
@@ -176,8 +180,8 @@ export class ThemeRenderer {
         content += `--primary-${step}: var(--${accent}-${step}); `;
         content += `--primary-a${step}: var(--${accent}-a${step}); `;
       }
-      content += `--primary-solid-fg: var(--${accent}-solid-fg); `;
-      content += `--primary-solid-fg-hover: var(--${accent}-solid-fg); `;
+      content += `--primary-solid-fg: var(--${accent}-fg); `;
+      content += `--primary-solid-fg-hover: var(--${accent}-fg); `;
     }
 
     if (manifest.primaryButtonsUseGray) {
