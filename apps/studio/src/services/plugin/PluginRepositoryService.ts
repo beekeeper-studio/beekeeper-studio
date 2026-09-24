@@ -1,6 +1,8 @@
+import { OctokitOptions } from "@octokit/core";
 import { Octokit } from "@octokit/rest";
 import { RequestError } from "@octokit/request-error";
 import { Manifest, PluginRepository, Release, PluginRegistryEntry } from "./types";
+import { PluginSystemError } from "@/lib/errors";
 import rawLog from "@bksLogger";
 
 const log = rawLog.scope("PluginRepositoryService");
@@ -8,12 +10,13 @@ const log = rawLog.scope("PluginRepositoryService");
 export default class PluginRepositoryService {
   private octokit: Octokit;
 
-  constructor() {
+  constructor(options?: { octokitOptions?: OctokitOptions }) {
     this.octokit = new Octokit({
       baseUrl: process.env.BKS_PLUGIN_GITHUB_API_BASE_URL,
       userAgent: "Beekeeper Studio",
       auth: process.env.BKS_PLUGIN_GITHUB_TOKEN,
       log,
+      ...options?.octokitOptions,
     });
   }
 
@@ -27,12 +30,24 @@ export default class PluginRepositoryService {
         owner,
         repo,
       }
-    );
+    ).catch((e) => {
+        if (e instanceof RequestError && e.status === 404) {
+          throw new PluginSystemError(
+            "PLUGIN_LATEST_RELEASE_NOT_FOUND",
+            `No latest release found for ${owner}/${repo}`,
+            { cause: e }
+          );
+        }
+        throw e;
+      });
 
     const manifestAsset = response.data.assets.find((asset) => asset.name === "manifest.json")
 
     if (!manifestAsset) {
-      throw new Error(`No manifest.json found in the latest release`)
+      throw new PluginSystemError(
+        "PLUGIN_RELEASE_ASSET_NOT_FOUND",
+        `No manifest.json found in the latest release`
+      )
     }
 
     const manifestResponse = await this.request(
@@ -51,14 +66,20 @@ export default class PluginRepositoryService {
     const rawManifest = manifestResponse.data as unknown as ArrayBuffer
     const manifest: Manifest = JSON.parse(Buffer.from(rawManifest).toString("utf-8"))
 
-    const asset = response.data.assets.find((asset) => asset.name === `${manifest.id}-${manifest.version}.zip`)
+    const asset = response.data.assets.find((asset) =>
+      asset.name === `${manifest.id}.zip` ||
+      asset.name === `${manifest.id}-${manifest.version}.zip`
+    )
     if (!asset) {
-      throw new Error(`No asset found matching ${manifest.id}-${manifest.version}.zip in the latest release`)
+      throw new PluginSystemError(
+        "PLUGIN_RELEASE_ASSET_NOT_FOUND",
+        `No asset found matching ${manifest.id}.zip or ${manifest.id}-${manifest.version}.zip in the latest release`
+      )
     }
 
     return {
       manifest,
-      // FIXME rename this, it's not source
+      // FIXME rename this, it's not really "source".. idk..
       sourceArchiveUrl: asset.browser_download_url,
     };
   }

@@ -25,9 +25,9 @@
   </div>
   <div
     v-else-if="isCommunity"
-    class="tab-upsell-wrapper"
+    class="upgrade-panel-tab-wrapper"
   >
-    <upsell-content></upsell-content>
+    <upgrade-panel :feature-name="isRestore ? 'Database Restore' : 'Database Backup'" standalone />
   </div>
   <div
     v-else-if="dataLoaded"
@@ -108,7 +108,6 @@
       </modal>
       <BackupProgress
         :failed="this.failed"
-        @openLog="openLog"
         @showLog="showLog"
         @retry="retry"
       />
@@ -139,7 +138,7 @@ import BackupSettings from './backup/BackupSettings.vue';
 import BackupReview from './backup/BackupReview.vue';
 import BackupProgress from './backup/BackupProgress.vue';
 import Stepper from './stepper/Stepper.vue';
-import UpsellContent from '@/components/upsell/UpsellContent.vue'
+import UpgradePanel from '@/components/upsell/UpgradePanel.vue'
 import { Step } from './stepper/models';
 import { mapGetters, mapState } from 'vuex';
 import StatusBar from '@/components/common/StatusBar.vue';
@@ -149,7 +148,7 @@ export default Vue.extend({
     Stepper,
     BackupProgress,
     StatusBar,
-    UpsellContent
+    UpgradePanel
   },
   props: ['connection', 'tab', 'isRestore', 'active'],
   data() {
@@ -252,9 +251,6 @@ export default Vue.extend({
     focusTryAgain() {
       if (!this.$refs['ok'] || this.$refs['ok'].length === 0) return;
       this.$refs['ok'].focus();
-    },
-    openLog() {
-      this.$native.files.open(this.logFile);
     },
     showLog() {
       this.$native.files.showItemInFolder(this.logFile);

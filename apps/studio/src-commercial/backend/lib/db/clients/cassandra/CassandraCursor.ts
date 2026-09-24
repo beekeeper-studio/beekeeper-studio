@@ -1,4 +1,4 @@
-import { BeeCursor } from "@/lib/db/models";
+import { BeeCursor, TableColumn } from "@/lib/db/models";
 import rawLog from '@bksLogger'
 import { waitFor } from "@/lib/db/clients/base/wait"
 
@@ -20,6 +20,11 @@ export class CassandraCursor extends BeeCursor {
   ) {
     super(chunkSize)
 
+  }
+
+  // We don't support query streaming so we don't need the columns getter
+  get columns(): TableColumn[] | null {
+    return null;
   }
 
   start(): Promise<void> {

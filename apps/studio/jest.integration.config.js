@@ -12,7 +12,11 @@ const config = {
     // just to keep config.ts happy in debug mode
     localStorage: {}
   },
-  testPathIgnorePatterns: ["/codemirror/"]
+  testPathIgnorePatterns: [
+    "/codemirror/",
+    "/tests/integration/macos/",
+    ...unitConfig.testPathIgnorePatterns,
+  ]
 }
 
 module.exports = config

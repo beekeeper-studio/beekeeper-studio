@@ -17,6 +17,10 @@ on:
     paths-ignore:
       - apps/sqltools/**
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   prep:
     runs-on: ubuntu-24.04
@@ -29,31 +33,38 @@ jobs:
           version: "1.7"
           force: true
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - id: set-test-chunks
         name: Set Chunks
         run: echo "test-chunks=$(./bin/get-db-files-as-json.sh)" >> $GITHUB_OUTPUT
 
       - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
 
+      # ImageOS identifies the runner image (e.g. ubuntu22, ubuntu24), so caches
+      # never cross runner image versions: node_modules holds native modules
+      # compiled for one exact image.
+      - name: Compute runner image cache id
+        shell: bash
+        run: echo "RUNNER_IMAGE_ID=${ImageOS:-unknown}" >> "$GITHUB_ENV"
+
       - name: Cache node_modules
         id: cache-nm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
             apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
 
       - name: Install dependencies
         if: steps.cache-nm.outputs.cache-hit != 'true'
-        uses: nick-fields/retry@v2
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 20
           max_attempts: 3
@@ -62,28 +73,47 @@ jobs:
           HUSKY: "0"
           npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
 
+  new-tests-are-vitest:
+    name: New tests use vitest
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # Jest is being replaced by vitest; new specs must go in
+      # apps/studio/tests/vitest/ (see apps/studio/tests/VITEST_MIGRATION.md)
+      - name: Check new specs land in tests/vitest
+        run: bin/check-for-new-jest-tests.sh
+
   unit:
     name: Unit tests
     runs-on: ubuntu-24.04
     needs: [prep]
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
 
+      - name: Compute runner image cache id
+        shell: bash
+        run: echo "RUNNER_IMAGE_ID=${ImageOS:-unknown}" >> "$GITHUB_ENV"
+
       - name: Restore node_modules cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: |
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
             apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
           fail-on-cache-miss: true
 
       - name: Lint
@@ -98,8 +128,17 @@ jobs:
       - name: Check for bad log imports
         run: bin/check-for-electron-log-imports.sh
 
+      - name: Check for direct console.log calls
+        run: bin/check-for-console-logs.sh
+
       - name: Check for missing lodash imports
         run: bin/check-lodash.sh
+
+      - name: Check shell scripts (shellcheck)
+        run: bin/check-shell-scripts.sh
+
+      - name: Build UI Kit
+        run: yarn lib:build
 
       - name: Unit Tests
         run: yarn workspace beekeeper-studio run test:unit --ci --silent
@@ -107,12 +146,21 @@ jobs:
       - name: Non-DB Integration Tests
         run: yarn workspace beekeeper-studio run test:ci --ci --silent
 
+      # Specs under apps/studio/tests/vitest/ run under vitest instead of jest
+      # (see apps/studio/tests/VITEST_MIGRATION.md)
+      - name: Unit Tests (Vitest)
+        run: yarn workspace beekeeper-studio run vitest:unit --silent
+
+      - name: Non-DB Integration Tests (Vitest)
+        run: yarn workspace beekeeper-studio run vitest:ci --silent
+
       - name: Unit Tests (UI Kit)
         run: yarn workspace @beekeeperstudio/ui-kit run test --silent
 
 
   integration:
-    name: 🥞 ${{ matrix.chunk[0] }}
+    # ✌️ = vitest spec, 🥞 = still on jest
+    name: ${{ startsWith(matrix.chunk[1], 'apps/studio/tests/vitest/') && '✌️' || '🥞' }} ${{ matrix.chunk[0] }}
     runs-on: ubuntu-24.04
     needs:
       - prep
@@ -122,37 +170,50 @@ jobs:
         chunk: ${{ fromJson(needs.prep.outputs['test-chunks']) }}
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
 
+      - name: Compute runner image cache id
+        shell: bash
+        run: echo "RUNNER_IMAGE_ID=${ImageOS:-unknown}" >> "$GITHUB_ENV"
+
       - name: Restore node_modules cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: |
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
             apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
           fail-on-cache-miss: true
 
       - name: Install libaio (for oracle)
+        if: matrix.chunk[0] == 'oracle.spec.js'
         run: sudo apt install libaio-dev
 
       - name: Symlink libaio v1 (for oracle)
+        if: matrix.chunk[0] == 'oracle.spec.js'
         run: sudo ln -s /usr/lib/x86_64-linux-gnu/libaio.so.1t64 /usr/lib/x86_64-linux-gnu/libaio.so.1
 
+      - name: Install PostgreSQL 15 (for postgres-backup)
+        if: matrix.chunk[0] == 'postgres-backup.spec.ts'
+        run: sudo bash bin/get-postgres-15.sh
+
       - name: Test
-        uses: nick-fields/retry@v2
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 20
           max_attempts: 2
           on_retry_command: "docker ps -aq | xargs docker stop | xargs docker rm"
-          command: yarn workspace beekeeper-studio run test:integration --runInBand --ci ${{ matrix.chunk[1] }}
+          # No --runInBand/--ci: both are no-ops for jest here (maxWorkers: 1 in
+          # config, no snapshots) and unknown flags are fatal for chunks that
+          # integration-tests.sh dispatches to vitest.
+          command: yarn workspace beekeeper-studio run test:integration ${{ matrix.chunk[1] }}
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
 
@@ -164,7 +225,7 @@ jobs:
   #     uses: actions/checkout@v2
 
   #   - name: Install Node.js, NPM and Yarn
-  #     uses: actions/setup-node@v3
+  #     uses: actions/setup-node@v6
   #     with:
   #       node-version-file: '.nvmrc'
   #       cache: yarn
@@ -174,62 +235,9 @@ jobs:
   #     env:
   #       npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
   #   - name: Test
-  #     uses: nick-fields/retry@v2
+  #     uses: nick-fields/retry@v4
   #     with:
   #       timeout_minutes: 20
   #       max_attempts: 2
   #       on_retry_command: "docker ps -aq | xargs docker stop | xargs docker rm"
   #       command: yarn workspace beekeeper-studio run test:codemirror --runInBand --ci
-
-  e2e:
-    name: E2E tests
-    runs-on: ubuntu-24.04
-    needs: [prep]
-    steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v4
-
-      - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v3
-        with:
-          node-version-file: '.nvmrc'
-
-      - name: Restore node_modules cache
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            node_modules
-            apps/studio/node_modules
-            apps/ui-kit/node_modules
-            apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
-          fail-on-cache-miss: true
-
-      - name: Start postgres container
-        run: docker compose up psql15 -d
-
-      - name: Serve + Run Tests
-        run: |
-          xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" bash -c '
-          yarn run electron:serve > server.log 2>&1 &
-            sleep 15
-            cat server.log  # (Optional: see if it launched correctly)
-            yarn workspace beekeeper-studio test:e2e:ci
-          '
-        env:
-          ELECTRON_ENABLE_LOGGING: 1
-          ELECTRON_DISABLE_SANDBOX: 1
-          ELECTRON_EXTRA_LAUNCH_ARGS: "--disable-gpu"
-
-
-      # - name: Run E2E Tests
-      #   run: yarn test:e2e:ci
-      #   continue-on-error: true
-
-      - name: Upload test results
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: apps/studio/test-results
-          retention-days: 30

@@ -1,7 +1,8 @@
 import {
   AfterViewRequestCallback,
-  Manifest,
+  ManifestV1 as Manifest,
   OnViewRequestListener,
+  PluginSnapshot,
   ViewResultModifier,
   WebPluginContext,
   WebPluginViewInstance,
@@ -17,7 +18,6 @@ import rawLog from "@bksLogger";
 import _ from "lodash";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { PluginMenuManager } from "./PluginMenuManager";
-import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
 import { PrimaryKeyColumn } from "@/lib/db/models";
 
 // Discriminated union for request+result that TypeScript can narrow by name
@@ -31,7 +31,8 @@ type PluginResponseData = {
   };
 }[keyof RequestMap];
 
-type PluginNotificationData = {
+// This should probably be moved to the plugin packge
+export type PluginNotificationData = {
   [K in keyof NotificationMap]: {
     name: K;
     args: NotificationMap[K]["args"];
@@ -79,11 +80,14 @@ export default class WebPluginLoader {
   }
 
   /** Starts the plugin */
-  async load(manifest?: Manifest) {
-    // FIXME dont load manifest this way. probably make a new method `setManifest`
-    if (manifest) {
-      // @ts-ignore
-      this.manifest = manifest;
+  async load(snapshot: PluginSnapshot) {
+    const { views, menu } = this.context.manifest.capabilities;
+
+    this.pluginStore.addTabTypeConfigs(snapshot.manifest, views);
+
+    // We don't want to process further if the plugin is disabled
+    if (snapshot.disableState.disabled) {
+      return;
     }
 
     this.log.info("Loading plugin", this.manifest);
@@ -91,12 +95,6 @@ export default class WebPluginLoader {
     // Add event listener for messages from iframe
     window.addEventListener("message", this.handleMessage);
 
-    // Backward compatibility: Early version of AI Shell.
-    const { views, menu } = isManifestV0(this.context.manifest)
-      ? mapViewsAndMenuFromV0ToV1(this.context.manifest)
-      : this.context.manifest.capabilities;
-
-    this.pluginStore.addTabTypeConfigs(this.context.manifest, views);
     this.menu.register(views, menu);
 
     if (!this.listening) {
@@ -215,13 +213,14 @@ export default class WebPluginLoader {
             version: this.context.appVersion,
           };
           break;
-        case "getViewContext":
+        case "getViewContext": {
           const view = this.viewInstances.find((ins) => ins.iframe === source);
           if (!view) {
             throw new Error("View context not found.");
           }
           response.result = view.context;
           break;
+        }
         case "getConnectionInfo":
           response.result = this.pluginStore.getConnectionInfo();
           break;
@@ -237,7 +236,7 @@ export default class WebPluginLoader {
           break;
         }
         case "clipboard.readText":
-          response.result = window.main.readTextFromClipboard();
+          response.result = await window.main.readTextFromClipboard();
           break;
         case "checkForUpdate":
           response.result = await this.context.utility.send("plugin/checkForUpdates", {
@@ -260,10 +259,10 @@ export default class WebPluginLoader {
           break;
         }
         case "clipboard.writeText":
-          window.main.writeTextToClipboard(response.args.text);
+          await window.main.writeTextToClipboard(response.args.text);
           break;
         case "clipboard.writeImage":
-          response.result = window.main.writeImageToClipboard(response.args.data);
+          response.result = await window.main.writeImageToClipboard(response.args.data);
           break;
         case "noty.info":
           this.context.noty.info(response.args.message, {
@@ -408,7 +407,7 @@ export default class WebPluginLoader {
   }
 
   postMessage(iframe: HTMLIFrameElement, data: PluginNotificationData | ResponsePayload) {
-    iframe.contentWindow.postMessage(data, "*");
+    iframe.contentWindow.postMessage(data, `plugin://${this.manifest.id}`);
   }
 
   broadcast(data: PluginNotificationData) {
@@ -431,9 +430,7 @@ export default class WebPluginLoader {
   async unload() {
     window.removeEventListener("message", this.handleMessage);
 
-    const { views, menu } = isManifestV0(this.context.manifest)
-      ? mapViewsAndMenuFromV0ToV1(this.context.manifest)
-      : this.context.manifest.capabilities;
+    const { views, menu } = this.context.manifest.capabilities;
 
     this.menu.unregister(views, menu);
     this.pluginStore.removeTabTypeConfigs(this.context.manifest, views);

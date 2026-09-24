@@ -38,7 +38,7 @@ const defaultSchemaGetter = StateField.define<(() => string) | null>({
     return null;
   },
   update(value, tr) {
-    for (let e of tr.effects) {
+    for (const e of tr.effects) {
       if (e.is(setDefaultSchema)) return e.value;
     }
     return value;
@@ -50,7 +50,7 @@ const tablesGetter = StateField.define<(() => TableOrView[]) | null>({
     return null;
   },
   update(value, tr) {
-    for (let e of tr.effects) {
+    for (const e of tr.effects) {
       if (e.is(setTables)) return e.value;
     }
     return value;

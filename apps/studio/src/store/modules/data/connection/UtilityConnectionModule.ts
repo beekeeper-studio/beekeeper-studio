@@ -1,28 +1,54 @@
 import { IConnection } from "@/common/interfaces/IConnection";
 import { DataState, DataStore, mutationsFor, utilActionsFor } from "@/store/modules/data/DataModuleBase";
+import { accessGrantActions, accessGrantMutations } from "@/store/modules/data/access_grant/accessGrantStore";
+import { FolderFetchModule, treeActions } from "@/store/modules/data/tree/treeStore";
+import { ItemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 import _ from "lodash";
 import Vue from "vue";
 
-type State = DataState<IConnection>
+type State = DataState<IConnection> & {
+  linkedSavedConnectionIds: number[]
+}
 
 export const UtilConnectionModule: DataStore<IConnection, State> = {
   namespaced: true,
-  state: {
-    items: [],
-    loading: false,
-    error: null,
-    pollError: null,
-    filter: undefined,
-    pendingSaveIds: []
+  state() {
+    return {
+      items: [],
+      loading: false,
+      error: null,
+      pollError: null,
+      filter: undefined,
+      pendingSaveIds: [],
+      linkedSavedConnectionIds: []
+    }
   },
   mutations: mutationsFor<IConnection>({
     connectionFilter(state: DataState<IConnection>, str: string) {
       state.filter = str;
-    }
+    },
+    linkedSavedConnectionIds(state: State, conns: number[]) {
+      state.linkedSavedConnectionIds = conns;
+    },
+    ...accessGrantMutations(),
   }),
-  actions: utilActionsFor<IConnection>('saved', {
+  modules: {
+    nodes: ItemNodeModule('connectionFolderId', 'name'),
+    folders: FolderFetchModule,
+  },
+  actions: {
+    ...utilActionsFor<IConnection>('saved', {}),
+    ...accessGrantActions('connections'),
+    ...treeActions<IConnection>({ plural: 'connectionFolderIds', singular: 'connectionFolderId' }, true),
+    async initialize() {
+      // no-op
+    },
+    async afterMutate(context, { type, data }) {
+      context.commit(`nodes/${type}`, data)
+    },
     setConnectionFilter: _.debounce(function (context, filter) {
       context.commit('connectionFilter', filter);
+      context.dispatch('search', filter);
     }, 500),
 
     // Reorder action for drag/drop - matches cloud module interface
@@ -79,23 +105,52 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
         .map(c => ({ ...c }))
 
       // Optimistic update
-      context.commit('upsert', updates)
+      await context.dispatch('mutate', { type: 'upsert', data: updates })
 
       try {
         // Save all items
         const saved = await Promise.all(
           updates.map(c => Vue.prototype.$util.send('appdb/saved/save', { obj: c }))
         )
-        context.commit('upsert', saved)
+        await context.dispatch('mutate', { type: 'upsert', data: saved })
       } catch (e) {
         // Revert optimistic update using pre-mutation snapshots
-        context.commit('upsert', snapshot)
+        await context.dispatch('mutate', { type: 'upsert', data: snapshot })
         throw e
       }
 
       return item.id
+    },
+    async loadLinkedSavedConnectionIds(context) {
+      const used = context.rootGetters['data/usedconnections/orderedUsedConfigs'];
+      if (!used) return;
+      const ids = used.map((u) => u.connectionId);
+
+      context.commit('linkedSavedConnectionIds', ids);
+    },
+    async loadByParentIds(context, parentIds: number[]) {
+      if (context.state.linkedSavedConnectionIds?.length === 0) {
+        await context.dispatch('loadLinkedSavedConnectionIds');
+      }
+
+      let persistentIds = [];
+      if (!_.isNil(context.state.linkedSavedConnectionIds)) {
+        persistentIds = context.state.linkedSavedConnectionIds;
+      }
+
+      return await context.dispatch('loadWithOptions', {
+        parentIds,
+        persistentIds
+      });
+    },
+    async unloadByParentIds(context, parentIds: number[]) {
+      const persistentIds = context.state.linkedSavedConnectionIds ?? [];
+      return context.dispatch('unloadWithOptions', {
+        parentIds,
+        persistentIds
+      });
     }
-  }),
+  },
   getters: {
     filteredConnections(state) {
       if (!state.filter) {

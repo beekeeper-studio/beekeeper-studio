@@ -2,10 +2,12 @@
   <portal to="modals">
     <modal class="vue-dialog beekeeper-modal" :name="modalName">
       <div class="dialog-content">
-        <div class="dialog-c-title">Your license has ended</div>
+        <div class="dialog-c-title">
+          Your license has ended
+        </div>
         <div>
-          Your license has ended. But you can continue using all features using
-          Beekeeper Studio version {{ maxAllowedVersion }} or later.
+          Your license has ended. All paid features keep working in
+          Beekeeper Studio version {{ maxAllowedVersion }} or earlier.
         </div>
       </div>
       <div class="vue-dialog-buttons">
@@ -33,7 +35,9 @@ import type { LicenseStatus } from "@/lib/license";
 
 export default {
   computed: {
-    modalName: () => "license-expired-modal",
+    // Distinct from LicenseExpiredModal's name: vue-js-modal opens every
+    // <modal> that shares a name, so a collision showed both dialogs at once.
+    modalName: () => "lifetime-license-expired-modal",
     maxAllowedVersion() {
       const version = this.$store.state.licenses.status.maxAllowedVersion;
       return `${version.major}.${version.minor}.${version.patch}`;

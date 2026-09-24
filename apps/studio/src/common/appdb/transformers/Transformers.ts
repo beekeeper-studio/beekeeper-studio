@@ -1,7 +1,7 @@
 import { ValueTransformer } from 'typeorm';
 import Encryptor, { SimpleEncryptor } from 'simple-encryptor'
 import { AzureAuthOptions } from '../models/saved_connection';
-import { SurrealDBOptions } from '@/lib/db/types';
+import { SnowflakeOptions, SurrealDBOptions } from '@/lib/db/types';
 import _ from 'lodash'
 import rawLog from '@bksLogger'
 
@@ -49,6 +49,20 @@ export class SurrealDbEncryptTransformer implements ValueTransformer {
     return value;
   }
 
+}
+
+export class SnowflakeOptionsTransformer implements ValueTransformer {
+  // add encryption for certain options if needed
+  to(value: SnowflakeOptions): SnowflakeOptions {
+    // doesn't make sense to save this as it changes every 30 seconds in authenticator
+    const newVal = _.cloneDeep(value);
+    delete newVal.passcode;
+    return newVal;
+  }
+
+  from(value: SnowflakeOptions): SnowflakeOptions {
+    return value;
+  }
 }
 
 export class AzureCredsEncryptTransformer implements ValueTransformer {

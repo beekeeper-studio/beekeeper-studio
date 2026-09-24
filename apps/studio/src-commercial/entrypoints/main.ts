@@ -1,16 +1,14 @@
 'use strict'
 import * as fs from 'fs'
 import path from 'path'
-import { app, protocol } from 'electron'
+import { app, protocol, ipcMain, clipboard, ClipboardItem } from 'electron'
 import * as electron from 'electron'
-import { ipcMain } from 'electron'
 import _ from 'lodash'
 import log from '@bksLogger'
 
 // eslint-disable-next-line
 require('@electron/remote/main').initialize()
 log.info("initializing background")
-
 
 import MenuHandler from '@/background/NativeMenuBuilder'
 import { IGroupedUserSettings, UserSetting } from '@/common/appdb/models/user_setting'
@@ -29,10 +27,14 @@ import { manageUpdates } from '@/background/update_manager'
 import * as sms from 'source-map-support'
 import { initializeSecurity } from '@/backend/lib/security'
 import { initializeFileHelpers } from '@/backend/lib/FileHelpers'
+import { safeOpenExternal } from '@/background/lib/electron/safeOpenExternal'
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
 }
+
+log.transports.console.level = platformInfo.logLevel;
+log.transports.file.level = platformInfo.logLevel;
 
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
@@ -77,7 +79,7 @@ async function createUtilityProcess() {
 
   utilityProcess.on("message", (msg: UtilProcMessage) => {
     if (msg.type === 'openExternal') {
-      electron.shell.openExternal(msg.url)
+      safeOpenExternal(msg.url)
     }
   })
 
@@ -155,9 +157,7 @@ async function initBasics() {
   log.debug("managing updates")
   manageUpdates(settings.useBeta.valueAsBool)
   ipcMain.on(AppEvent.openExternally, (_e: electron.IpcMainEvent, args: any[]) => {
-    const url = args[0]
-    if (!url) return
-    electron.shell.openExternal(url)
+    safeOpenExternal(args?.[0])
   })
   return settings
 }
@@ -314,6 +314,27 @@ ipcMain.handle('maximizeWindow', () => {
 
 ipcMain.handle('closeWindow', () => {
   getCurrentWindow().closeWindow();
+})
+
+ipcMain.handle('clipboard:write', async (_event, { content, image }: { content: string, image: boolean }) => {
+  let item: ClipboardItem;
+  if (image) {
+    const im = electron.nativeImage.createFromDataURL(content);
+    const pngBuffer = im.toPNG();
+    const blob = new Blob([pngBuffer], { type: 'image/png' });
+    item = new ClipboardItem({
+      'image/png': blob
+    });
+  } else {
+    item = new ClipboardItem({
+      'text/plain': content
+    });
+  }
+  await clipboard.write([item]);
+})
+
+ipcMain.handle('clipboard:read', async () => {
+  return await clipboard.readText();
 })
 
 // Exit cleanly on request from parent process in development mode.

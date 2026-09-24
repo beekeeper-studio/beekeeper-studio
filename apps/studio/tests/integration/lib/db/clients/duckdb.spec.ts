@@ -93,6 +93,28 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
       expect(fields).toStrictEqual(expectedBksFields)
     })
 
+    it("should return enum values for enum columns", async () => {
+      // Named enum types and inline enums both expand to ENUM(...) in
+      // duckdb_columns.data_type, so the client parses values from there.
+      await util.knex.schema.raw(`CREATE TYPE duck_mood AS ENUM ('sad', 'ok', 'happy')`)
+      await util.knex.schema.raw(`
+        CREATE TABLE duck_enum_test (
+          id INTEGER PRIMARY KEY,
+          named_status duck_mood,
+          inline_status ENUM('pending', 'active', 'inactive'),
+          name VARCHAR
+        )
+      `)
+
+      const columns = await util.connection.listTableColumns('duck_enum_test')
+      const byName = (n: string) => columns.find((c) => c.columnName === n)
+
+      expect(byName('named_status').enumValues).toEqual(['sad', 'ok', 'happy'])
+      expect(byName('inline_status').enumValues).toEqual(['pending', 'active', 'inactive'])
+      expect(byName('name').enumValues).toBeUndefined()
+      expect(byName('id').enumValues).toBeUndefined()
+    })
+
     describe("Index Tests", () => {
       beforeAll(async () => {
         await util.knex.schema.raw(
@@ -202,6 +224,52 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
     describe("Param tests", () => {
       it("Should be able to handle positional (?) params", async () => {
         await util.paramTest(['?']);
+      })
+    })
+
+    // Regression test: wrapIdentifier was used for the data type in addColumn,
+    // producing "DOUBLE" (quoted identifier) instead of DOUBLE (type name).
+    // DuckDB rejects a quoted identifier as a type name, so the column was never added.
+    describe("addColumn type regression", () => {
+      beforeAll(async () => {
+        await util.knex.schema.raw(`CREATE TABLE IF NOT EXISTS add_col_type_test (id INTEGER PRIMARY KEY)`)
+      })
+
+      afterAll(async () => {
+        await util.knex.schema.dropTableIfExists('add_col_type_test')
+      })
+
+      it("should add a DOUBLE column without quoting the type name", async () => {
+        await util.connection.alterTable({
+          table: 'add_col_type_test',
+          schema: util.defaultSchema,
+          adds: [{ columnName: 'score', dataType: 'DOUBLE', nullable: true }]
+        })
+
+        const columns = await util.connection.listTableColumns('add_col_type_test', util.defaultSchema)
+        const col = columns.find((c) => c.columnName.toLowerCase() === 'score')
+        expect(col).toBeTruthy()
+        expect(col.dataType.toLowerCase()).toContain('double')
+      })
+
+      it("should add a VARCHAR column without quoting the type name", async () => {
+        await util.connection.alterTable({
+          table: 'add_col_type_test',
+          schema: util.defaultSchema,
+          adds: [{ columnName: 'label', dataType: 'VARCHAR', nullable: true }]
+        })
+
+        const columns = await util.connection.listTableColumns('add_col_type_test', util.defaultSchema)
+        const col = columns.find((c) => c.columnName.toLowerCase() === 'label')
+        expect(col).toBeTruthy()
+        expect(col.dataType.toLowerCase()).toContain('varchar')
+      })
+    })
+
+    describe("queryStream double execution", () => {
+      it("should run the supplied query only once across the full stream lifecycle", async () => {
+        if (options.readOnly) return
+        await util.queryStreamDoubleExecutionTest()
       })
     })
   });

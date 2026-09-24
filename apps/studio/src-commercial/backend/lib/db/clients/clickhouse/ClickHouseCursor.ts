@@ -1,4 +1,4 @@
-import { BeeCursor } from "@/lib/db/models";
+import { BeeCursor, TableColumn } from "@/lib/db/models";
 import rawlog from "@bksLogger";
 import type { ClickHouseClient, Row, StreamReadable } from "@clickhouse/client";
 import { uuidv4 } from "@/lib/uuid";
@@ -27,6 +27,11 @@ export class ClickHouseCursor extends BeeCursor {
     super(options.chunkSize);
     this.options = options;
     this.client = options.client;
+  }
+
+  // We don't support query streaming so we don't need the columns getter
+  get columns(): TableColumn[] | null {
+    return null;
   }
 
   async start(): Promise<void> {

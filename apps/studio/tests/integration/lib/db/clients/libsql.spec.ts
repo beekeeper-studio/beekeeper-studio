@@ -8,8 +8,7 @@ import fs from "fs";
 import { LibSQLClient } from "@commercial/backend/lib/db/clients/libsql";
 import { createServer } from "@commercial/backend/lib/db/server";
 import knex from "knex";
-import Client_Libsql from "@libsql/knex-libsql";
-import Client_BetterSQLite3 from "knex/lib/dialects/better-sqlite3/index";
+import Client_Libsql from "@shared/lib/knex-libsql";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 
 const timeoutDefault = 5000
@@ -76,16 +75,14 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
       }
 
       utilOptions.knex = knex({
-        client:
-          options.mode !== "memory"
-            ? (Client_Libsql as any)
-            : class extends Client_BetterSQLite3 {
-                async acquireRawConnection() {
-                  // @ts-expect-error not fully typed
-                  return util.connection._rawConnection;
-                }
-              },
-        connection: { filename: knexFilename },
+        client: Client_Libsql,
+        connection:
+          options.mode === "memory"
+            ? // share the client's in-memory db (a fresh :memory: connection
+              // would be empty). Resolved lazily — the client isn't connected yet.
+              // @ts-expect-error not fully typed
+              { connectionInstance: () => util.connection._rawConnection }
+            : { filename: knexFilename },
       });
 
       util = new DBTestUtil(config, dbPath, utilOptions);

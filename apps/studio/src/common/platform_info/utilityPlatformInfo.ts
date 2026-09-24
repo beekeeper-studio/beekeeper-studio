@@ -1,11 +1,7 @@
 import { IPlatformInfo } from "../IPlatformInfo";
-import rawLog from '@bksLogger'
 
-const log = rawLog.scope('utilityPlatformInfo')
-
-// why build it again from stratch? We just get it from the environment, thanks main process!
+// The utility process gets the resolved platformInfo (including logLevel)
+// from main as a JSON env var when it's forked. No rebuilding needed.
 export function utilityPlatformInfo(): IPlatformInfo {
-  const result = JSON.parse(process.env.bksPlatformInfo)
-  log.info(result)
-  return result
+  return JSON.parse(process.env.bksPlatformInfo)
 }

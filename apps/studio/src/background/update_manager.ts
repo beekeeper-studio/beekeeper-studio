@@ -13,7 +13,7 @@ autoUpdater.logger = log
 
 // HACK(mc, 2019-09-10): work around https://github.com/electron-userland/electron-builder/issues/4046
 function dealWithAppImage() {
-  if (platformInfo.isAppImage) {
+  if (platformInfo.isAppImageLauncher) {
     // remap temporary running AppImage to actual source
     // THIS IS PROBABLY SUPER BRITTLE AND MAKES ME WANT TO STOP USING APPIMAGE
     // eslint-disable-next-line

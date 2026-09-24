@@ -1,4 +1,5 @@
 import { TransportPinnedConn } from "@/common/transport";
+import { IsInt, Min } from "class-validator";
 import { Column, Entity } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
 import { SavedConnection } from "./saved_connection";
@@ -19,6 +20,8 @@ export class PinnedConnection extends ApplicationEntity {
   @Column({type: 'float', nullable: false, default: 1})
   position = 99.0;
 
+  @IsInt({ message: 'connectionId must be a saved connection id' })
+  @Min(1, { message: 'connectionId must be a saved connection id' })
   @Column({type: 'integer', nullable: false})
   connectionId: number;
 

@@ -22,8 +22,12 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     undo: {
       id: 'undo',
       label: "Undo",
+      // Displayed only — the focused editor (CodeMirror, text inputs)
+      // handles the shortcut itself. Registering it would fire an extra
+      // webContents.undo() per keypress, undoing 2-3 steps at once.
       accelerator: "CommandOrControl+Z",
       click: actionHandler.undo,
+      registerAccelerator: false,
       role: 'undo',
     },
     redo: {
@@ -31,6 +35,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       label: "Redo",
       accelerator: platformInfo.isWindows ? 'Ctrl+Y' : 'Shift+CommandOrControl+Z',
       click: actionHandler.redo,
+      registerAccelerator: false,
       role: 'redo',
     },
     cut: {
@@ -56,6 +61,16 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       click: actionHandler.paste,
       registerAccelerator: false,
       role: 'paste',
+    },
+    pasteAsNewRows: {
+      id: 'paste-as-new-rows',
+      label: 'Paste as new rows',
+      // Displayed only — the shortcut is handled by the table grid's own
+      // keymap so it stays scoped to the table and doesn't fire elsewhere
+      // (e.g. plain-text paste in the query editor).
+      accelerator: 'CommandOrControl+Shift+V',
+      registerAccelerator: false,
+      click: actionHandler.pasteAsNewRows,
     },
 
     selectAll: {
@@ -154,6 +169,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       label: 'Contact Support',
       click: actionHandler.contactSupport
     },
+    gettingStartedGuide: {
+      id: 'gettingStartedGuide',
+      label: 'Getting Started Guide',
+      click: actionHandler.openGettingStarted
+    },
     reload: {
       id: 'reload-window',
       label: "Reload Window",
@@ -193,6 +213,12 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       click: actionHandler.importSqlFiles,
       showWhenConnected: true,
       enabled: false,
+    },
+    importConnectionFiles: {
+      id: 'import-connection-files',
+      label: "Import Saved Connections",
+      click: actionHandler.importConnectionFiles,
+      enabled: true
     },
     quickSearch: {
       id: 'go-to',

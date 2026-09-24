@@ -20,6 +20,7 @@ import {
   RowMenuParams,
   RowMenuTarget,
 } from "@beekeeperstudio/plugin";
+import { getParsedKeybinding } from "../utils";
 import { NativePluginMenuItem } from "../types";
 
 type BigIntSerialized = number;
@@ -67,6 +68,7 @@ function buildParamsForTableMenu(
             .getColumns()
             .find((column) => column === component._column);
         }
+        return undefined;
       }) || ranges[0];
   }
 
@@ -148,12 +150,15 @@ function serializeArray(arr: unknown[]): unknown[] {
 
 const pluginMenuFactories: MenuFactories = {
   newTabDropdown: {
-    create(context, menuItem) {
+    create(context, menuItem, { keyPath }) {
       return {
         add() {
           context.store.setTabDropdownItem({
             manifest: context.manifest,
             menuItem,
+            keybindingLabel: keyPath ?
+              getParsedKeybinding(window.bksConfig, keyPath, "context-menu")
+              : undefined,
           });
         },
         remove() {
@@ -162,17 +167,24 @@ const pluginMenuFactories: MenuFactories = {
             menuItem,
           });
         },
+        keybindingHandler() {
+          context.createNewTab(menuItem.view, menuItem.command);
+        },
       };
     },
   },
   "menubar.tools": {
-    create(context, menuItem) {
+    create(context, menuItem, { keyPath }) {
       const id = `${context.manifest.id}-${menuItem.command}`;
+      const accelerator = keyPath ?
+        getParsedKeybinding(window.bksConfig, keyPath, "electron")
+        : undefined;
       const item: NativePluginMenuItem = {
         id,
         pluginId: context.manifest.id,
         label: menuItem.name,
         command: menuItem.command,
+        accelerator,
       };
       return {
         add() {
@@ -181,6 +193,7 @@ const pluginMenuFactories: MenuFactories = {
             label: menuItem.name,
             parentId: "tools",
             disableWhenDisconnected: true,
+            accelerator,
             action: { event: AppEvent.pluginMenuClicked, args: item },
           });
           window.main.addNativeMenuItem(item);

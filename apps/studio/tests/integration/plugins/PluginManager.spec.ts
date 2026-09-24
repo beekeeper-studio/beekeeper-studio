@@ -1,3 +1,5 @@
+import fs from "fs";
+import { tmpdir } from "os";
 import PluginFileManager from "@/services/plugin/PluginFileManager";
 import PluginManager, {
   PluginManagerOptions,
@@ -5,10 +7,7 @@ import PluginManager, {
 import { createPluginServer } from "./utils/server";
 import { createFileManager, cleanFileManager } from "./utils/fileManager";
 import { MockPluginRepositoryService } from "./utils/registry";
-import {
-  NotFoundPluginError,
-  NotSupportedPluginError,
-} from "@/services/plugin/errors";
+import { PluginSystemError } from "@/lib/errors";
 import PluginRegistry from "@/services/plugin/PluginRegistry";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import migration from "@/migration/20250529_add_plugin_settings";
@@ -120,7 +119,9 @@ describe("Basic Plugin Management", () => {
         description: "Test Plugin description",
         capabilities: {
           views: [],
+          menu: [],
         },
+        manifestVersion: 1,
       };
       await expect(manager.getRepository("test-plugin")).resolves.toStrictEqual(
         {
@@ -138,23 +139,43 @@ describe("Basic Plugin Management", () => {
     it("can install the latest plugins if compatible", async () => {
       const manager = await initPluginManager(AppVer.COMPAT);
       await manager.installPlugin("test-plugin");
-      const plugins = manager.getPlugins();
+      const plugins = await manager.getPlugins();
       expect(plugins).toHaveLength(1);
       expect(plugins[0].manifest.version).toBe("1.0.0");
     });
 
     it("can not install the latest plugins if not compatible", async () => {
       const manager = await initPluginManager(AppVer.INCOMPAT);
-      await expect(manager.installPlugin("test-plugin")).rejects.toThrow(
-        NotSupportedPluginError
-      );
+      const promise = manager.installPlugin("test-plugin");
+      await expect(promise).rejects.toBeInstanceOf(PluginSystemError);
+      await expect(promise).rejects.toHaveProperty("code", "PLUGIN_NOT_SUPPORTED");
     });
 
     it("can not install nonexistent plugins", async () => {
       const manager = await initPluginManager(AppVer.COMPAT);
-      await expect(manager.installPlugin("microwave-pizza")).rejects.toThrow(
-        NotFoundPluginError
+      const promise = manager.installPlugin("microwave-pizza");
+      await expect(promise).rejects.toBeInstanceOf(PluginSystemError);
+      await expect(promise).rejects.toHaveProperty("code", "PLUGIN_NOT_FOUND");
+    });
+
+    it("cleans up temp files after installing and updating a plugin", async () => {
+      const manager = await initPluginManager(AppVer.COMPAT);
+      await manager.installPlugin("test-plugin");
+
+      let tempDirs = fs.readdirSync(tmpdir()).filter(
+        (dir) => dir.startsWith("beekeeper-plugin-test-plugin-")
       );
+      expect(tempDirs).toHaveLength(0);
+
+      // Simulate plugin update on the server
+      repositoryService.plugins[0].latestRelease.version = "1.2.0";
+
+      await manager.updatePlugin("test-plugin");
+
+      tempDirs = fs.readdirSync(tmpdir()).filter(
+        (dir) => dir.startsWith("beekeeper-plugin-test-plugin-")
+      );
+      expect(tempDirs).toHaveLength(0);
     });
   });
 
@@ -162,10 +183,10 @@ describe("Basic Plugin Management", () => {
     it("can load compatible plugins", async () => {
       const manager = await initPluginManager(AppVer.COMPAT);
       await manager.installPlugin("test-plugin");
-      expect(manager.getPlugins()[0]).toHaveProperty("loadable", true);
+      expect((await manager.getPlugins())[0]).toHaveProperty("loadable", true);
 
       await manager.installPlugin("watermelon-sticker");
-      expect(manager.getPlugins()[1]).toHaveProperty("loadable", true);
+      expect((await manager.getPlugins())[1]).toHaveProperty("loadable", true);
     });
 
     // Simulates a user who installed a plugin, then downgraded the app.
@@ -181,7 +202,7 @@ describe("Basic Plugin Management", () => {
       const oldManager = await initPluginManager(AppVer.INCOMPAT);
 
       // 4. The downgraded app should not load incompatible plugins
-      expect(oldManager.getPlugins()[0]).toHaveProperty("loadable", false);
+      expect((await oldManager.getPlugins())[0]).toHaveProperty("loadable", false);
     });
   });
 
@@ -216,15 +237,15 @@ describe("Basic Plugin Management", () => {
 
       // Simulate app restart
       const manager2 = await initPluginManager(AppVer.COMPAT);
-      expect(
+      expect((await
         manager2
-          .getPlugins()
+          .getPlugins())
           .find(({ manifest }) => manifest.id === "test-plugin").manifest
           .version
       ).toBe("1.2.0");
-      expect(
+      expect((await
         manager2
-          .getPlugins()
+          .getPlugins())
           .find(({ manifest }) => manifest.id === "frozen-banana").manifest
           .version
       ).toBe("1.3.0");
@@ -238,7 +259,7 @@ describe("Basic Plugin Management", () => {
       repositoryService.plugins[0].latestRelease.version = "1.2.0";
 
       await manager.updatePlugin("test-plugin");
-      expect(manager.getPlugins()[0].manifest.version).toBe("1.2.0");
+      expect((await manager.getPlugins())[0].manifest.version).toBe("1.2.0");
     });
 
     it("can not update plugins if not compatible", async () => {
@@ -251,16 +272,16 @@ describe("Basic Plugin Management", () => {
         minAppVersion: "9.9.0",
       };
 
-      await expect(manager.updatePlugin("test-plugin")).rejects.toThrow(
-        NotSupportedPluginError
-      );
+      const promise = manager.updatePlugin("test-plugin");
+      await expect(promise).rejects.toBeInstanceOf(PluginSystemError);
+      await expect(promise).rejects.toHaveProperty("code", "PLUGIN_NOT_SUPPORTED");
     });
 
     it("can not update nonexistent plugins", async () => {
       const manager = await initPluginManager(AppVer.COMPAT);
-      await expect(manager.updatePlugin("microwave-pizza")).rejects.toThrow(
-        NotFoundPluginError
-      );
+      const promise = manager.updatePlugin("microwave-pizza");
+      await expect(promise).rejects.toBeInstanceOf(PluginSystemError);
+      await expect(promise).rejects.toHaveProperty("code", "PLUGIN_NOT_FOUND");
     });
   });
 
@@ -269,7 +290,7 @@ describe("Basic Plugin Management", () => {
       const manager = await initPluginManager(AppVer.COMPAT);
       await manager.installPlugin("test-plugin");
       await manager.uninstallPlugin("test-plugin");
-      expect(manager.getPlugins()).toHaveLength(0);
+      await expect(manager.getPlugins()).resolves.toHaveLength(0);
     });
   });
 });

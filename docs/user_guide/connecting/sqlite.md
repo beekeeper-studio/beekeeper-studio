@@ -31,7 +31,20 @@ You can also use your terminal to open a database in Beekeeper Studio so long as
 
 ## Enabling SQLite Runtime Extensions
 
-SQLite supports [runtime extensions](https://www.sqlite.org/loadext.html). This provides extended capabilities for interacting with SQLite.
+SQLite Runtime extensions are disabled by default for security reasons (you're basically just running arbitrary code). You can enable them by editing your [configuration file](../configuration.md).
+
+You need to add the following to the `[security]` section of your configuration file:
+
+```ini
+[security]
+
+; Loading SQLite runtime extensions executes arbitrary native code from the
+; extension path. Off by default - users must explicitly opt in via their
+; user.config.ini before any sqliteExtensionFile setting will be honoured.
+allowRuntimeExtensions = false
+
+```
+
 
 There are many such extensions, a lot of them are open source. For example [sqlean](https://github.com/nalgeon/sqlean) is an extension that provides a range of new functions and features from crypto functions, to array handling.
 

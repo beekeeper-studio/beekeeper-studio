@@ -56,6 +56,9 @@ export interface PluginMenuItem {
   /** User-facing label shown in the UI for this menu item. */
   name: string;
 
+  /** Short explanation of what this command does. */
+  description?: string;
+
   /** The ID of a view defined in `capabilities.views`; the host opens a
    * new tab of that view. */
   view: string;
@@ -81,6 +84,7 @@ export type NativePluginMenuItem = {
   pluginId: string;
   label: string;
   command: string;
+  accelerator?: string;
 };
 
 /** Used by earlier versions of AI Shell. */
@@ -187,7 +191,7 @@ export type PluginSettings = {
 
 
 export type WebPluginContext = {
-  manifest: Manifest;
+  manifest: ManifestV1;
   store: PluginStoreService;
   utility: UtilityConnection;
   log: ReturnType<typeof rawLog.scope>;
@@ -200,12 +204,16 @@ export type WebPluginContext = {
     info(text: string, options?: any): Noty;
   };
   confirm(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean>;
+  createNewTab(viewId: string, command: string, params?: JsonValue): void;
 }
 
-export type PluginContext = {
-  manifest: Manifest;
+export type PluginSnapshot = {
+  manifest: ManifestV1;
+  /** Is this compatible with the current app version? */
   loadable: boolean;
-}
+  origin: PluginOrigin;
+  disableState: DisableState;
+};
 
 export type WebPluginManagerStatus = "initializing" | "ready" | "failed-to-initialize";
 
@@ -214,12 +222,32 @@ export type WebPluginViewInstance = {
   context: any;
 }
 
+export type Keybinding = {
+  placement: PluginMenuItemPlacement;
+  path: string;
+  handler: Function;
+};
+
 export type CreatePluginTabOptions = {
   manifest: Manifest;
   viewId: string;
   params?: JsonValue;
   command: string;
 };
+
+/**
+ * By default, `disabled` is `false`.
+ * This value may be modified by other modules (e.g. {@link ConfigurationModule}).
+ */
+type DisableState =
+  | { disabled: false }
+  | {
+      disabled: true;
+      reason:
+        | "plugin-system-disabled"
+        | "community-plugins-disabled"
+        | "disabled-by-config";
+    };
 
 /**
  * Indicates where a plugin originates from:

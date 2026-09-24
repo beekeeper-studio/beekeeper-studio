@@ -7,7 +7,7 @@ icon: material/puzzle
 # Introduction
 
 !!! warning "Beta Feature"
-    The plugin system is in beta (available in Beekeeper Studio 5.3+). Things might change, but we'd love your feedback!
+    The plugin system is in beta (available in Beekeeper Studio 5.3+). We'd love your feedback!
 
 The Beekeeper Studio Plugin System allows developers to extend the application's functionality through user interface (UI). Plugins run in an `<iframe>` which means they are sandboxed and communicate with the main application through a structured API.
 
@@ -15,7 +15,7 @@ The Beekeeper Studio Plugin System allows developers to extend the application's
 
 ## What Are Plugins?
 
-Plugins are web apps (HTML, CSS, JavaScript) that run inside Beekeeper Studio to provide additional functionality.
+Plugins are web apps (HTML, CSS, JavaScript) that run inside Beekeeper Studio to provide additional functionality beyond what the core application offers. Plugins can read from and write to your connected database, enabling you to build custom data analysis tools, specialized workflows, database utilities, and advanced features tailored to your specific needs.
 
 ## How Plugins Work
 
@@ -31,19 +31,21 @@ Beekeeper Studio fetches a plugin index (a JSON file) from the central plugin re
 https://raw.githubusercontent.com/beekeeper-studio/beekeeper-studio-plugins/main/plugins.json
 ```
 
-Each entry in this file points to a plugin manifest, which contains metadata, UI configuration, and the plugin entry point URL.
-
-You can explore or contribute to the plugin registry on GitHub: [beekeeper-studio/beekeeper-studio-plugins](https://github.com/beekeeper-studio/beekeeper-studio-plugins)
+Each entry in this file points to a plugin manifest, which is the metadata of the plugin.
 
 ### 2. Installation
 
-When a plugin is installed via the Plugin Manager:
+When a plugin is installed:
 
 - The plugin's manifest is downloaded.
 
-- The manifest points to a `.zip` archive containing the plugin bundle (HTML/CSS/JS assets).
+- The plugin's `.zip` file is downloaded, containing the plugin bundle (HTML/CSS/JS assets).
 
-- The archive is unpacked and stored locally inside Beekeeper Studio's plugin directory.
+- The archive is unpacked and stored locally inside Beekeeper Studio's plugin directory:
+    - **Linux**: `~/.config/beekeeper-studio/plugins/`
+    - **macOS**: `~/Library/Application Support/beekeeper-studio/plugins/`
+    - **Windows**: `%APPDATA%\beekeeper-studio\plugins\`
+    - **Windows (Portable)**: `{beekeeper-studio-directory}\beekeeper-studio-data\plugins\`
 
 ### 3. Sandboxed Execution
 
@@ -61,7 +63,7 @@ The [@beekeeperstudio/plugin](https://www.npmjs.com/package/@beekeeperstudio/plu
 
 ### 5. UI Integration
 
-Plugins declare their views (tabs or sidebars) in the manifest file. Beekeeper Studio renders these views dynamically and injects the corresponding `<iframe>` into the designated location in the UI.
+Plugins declare their views in the manifest file. Beekeeper Studio renders these views and injects the corresponding `<iframe>` into the designated location in the UI.
 
 ## Next Step
 

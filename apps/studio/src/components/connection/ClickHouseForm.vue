@@ -1,8 +1,7 @@
 <template>
   <div class="with-connection-type">
-    <!-- FIXME Clickhouse client supports custom SSL certificates -->
-    <common-server-inputs :config="config" :supportComplexSSL="false" />
-    <common-advanced :config="config" />
+    <common-server-inputs :config="config" :support-complex-s-s-l="true" :disabled="disabled" />
+    <common-advanced :config="config" :disabled="disabled" />
   </div>
 </template>
 
@@ -13,7 +12,13 @@
 
   export default {
     components: { CommonServerInputs, CommonAdvanced },
-    props: ['config']
+    props: {
+      config: Object,
+      disabled: {
+        type: Boolean,
+        default: false
+      }
+    }
 
   }
 </script>

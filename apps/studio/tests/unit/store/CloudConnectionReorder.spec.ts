@@ -68,7 +68,8 @@ function createMockCloudClient(latencyMs: number = 0, siblingPositions?: { id: n
 
 function createStore(
   mockClient: MockCloudClient,
-  initialConnections: TestConnection[] = []
+  initialConnections: TestConnection[] = [],
+  expandedFolderIds: number[] = []
 ): Store<any> {
   // Deep clone the module to avoid shared state between tests
   const moduleClone = _.cloneDeep(CloudConnectionModule);
@@ -81,6 +82,16 @@ function createStore(
       cloudClient: () => mockClient,
     },
     modules: {
+      // poll() reads the expanded folders to decide what to refresh.
+      sidebar: {
+        namespaced: true,
+        modules: {
+          connections: {
+            namespaced: true,
+            state: { expandedIds: expandedFolderIds },
+          },
+        },
+      },
       data: {
         namespaced: true,
         modules: {
@@ -398,7 +409,8 @@ describe("CloudConnectionModule reorder", () => {
       expect(mockClient.connections.reorder).toHaveBeenCalledWith(
         3,
         { after: 1 },
-        null
+        null,
+        undefined
       );
 
       // Store should have the updated position

@@ -27,23 +27,16 @@
         </div>
         <div class="content-wrap">
           <div class="table-subheader">
-            <div class="table-title">
-              <h2>Indexes</h2>
-            </div>
-            <span class="expand" />
-            <div class="actions">
-              <a
-                @click.prevent="$emit('refresh')"
-                v-tooltip="`${ctrlOrCmd('r')} or F5`"
-                class="btn btn-link btn-fab"
-              ><i class="material-icons">refresh</i></a>
-              <a
-                v-if="enabled"
-                @click.prevent="addRow"
-                v-tooltip="ctrlOrCmd('n')"
-                class="btn btn-primary btn-fab"
-              ><i class="material-icons">add</i></a>
-            </div>
+            <table-info-toolbar
+              :search-suffix="structureFilterSuffix"
+              filter-placeholder="Filter indexes"
+              :show-add="enabled"
+              add-label="Index"
+              @search="setStructureFilterQuery"
+              @add="addRow"
+              @copy="copyStructure"
+              @refresh="$emit('refresh')"
+            />
           </div>
           <div
             class="table-indexes"
@@ -122,12 +115,16 @@ import rawLog from '@bksLogger'
 import { format } from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
 import ErrorAlert from '../common/ErrorAlert.vue'
+import TableInfoToolbar from './TableInfoToolbar.vue'
 import { TableIndex } from '@/lib/db/models'
 import { mapGetters, mapState } from 'vuex'
 const log = rawLog.scope('TableIndexVue')
 import { escapeHtml } from '@shared/lib/tabulator'
 import { parseIndexColumn as mysqlParseIndexColumn } from '@/common/utils'
 import { SelectableCellMixin } from '@/mixins/selectableCell';
+import { StructureCopyMixin } from '@/mixins/structureCopy';
+import { StructureFilterMixin } from '@/mixins/structureFilter';
+import { copyCellMenu } from '@/lib/menu/tableMenu';
 
 interface State {
   mysqlTypes: string[]
@@ -142,8 +139,9 @@ export default Vue.extend({
   components: {
     StatusBar,
     ErrorAlert,
+    TableInfoToolbar,
   },
-  mixins: [data_mutators, SelectableCellMixin],
+  mixins: [data_mutators, SelectableCellMixin, StructureCopyMixin, StructureFilterMixin],
   props: ["table", "tabId", "active", "properties", 'tabState'],
   data(): State {
     return {
@@ -169,7 +167,7 @@ export default Vue.extend({
       return this.connectionType !== 'mongodb';
     },
     enabled() {
-      return !this.usedConfig.readOnlyMode && !this.dialectData.disabledFeatures?.alter?.everything && !this.dialectData.disabledFeatures.indexes;
+      return !this.usedConfig.readOnlyMode && !this.dialectData.disabledFeatures?.alter?.everything && !this.dialectData.disabledFeatures?.alter?.indexes;
     },
     hotkeys() {
       if (!this.active) return {}
@@ -231,13 +229,14 @@ export default Vue.extend({
       // FIXME (@day): no per-db testing
       const editableName = (cell) => this.newRows.includes(cell.getRow()) && !this.loading && this.dialect != 'mongodb'
       const result = [
-        (this.dialectData?.disabledFeatures?.index?.id ? null : {title: 'Id', field: 'id', widthGrow: 0.5, cellDblClick: (_e, cell) => this.handleCellDoubleClick(cell)}),
+        (this.dialectData?.disabledFeatures?.index?.id ? null : {title: 'Id', field: 'id', widthGrow: 0.5, contextMenu: copyCellMenu, cellDblClick: (_e, cell) => this.handleCellDoubleClick(cell)}),
         {
           title:'Name',
           field: 'name',
           editable: editableName,
           editor: vueEditor(NullableInputEditorVue),
           formatter: this.cellFormatter,
+          contextMenu: copyCellMenu,
           cellDblClick: (_e, cell) => this.handleCellDoubleClick(cell),
         },
         {
@@ -264,6 +263,7 @@ export default Vue.extend({
           editable,
           editor: 'list',
           formatter: this.cellFormatter,
+          contextMenu: copyCellMenu,
           editorParams: {
             multiselect: true,
             values: this.indexColumnOptions,

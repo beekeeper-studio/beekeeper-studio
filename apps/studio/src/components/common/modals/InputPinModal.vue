@@ -31,7 +31,7 @@
               v-model="pin"
               ref="pinInput"
               placeholder="Enter your PIN"
-            />
+            >
             <i
               class="material-icons password-icon"
               @click="togglePinVisibility"

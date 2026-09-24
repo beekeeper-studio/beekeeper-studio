@@ -124,6 +124,7 @@ module.exports = {
     target: [
       'appImage'
     ],
+    syncDesktopName: true,
     desktop: {
       'StartupWMClass': 'beekeeper-studio'
     },

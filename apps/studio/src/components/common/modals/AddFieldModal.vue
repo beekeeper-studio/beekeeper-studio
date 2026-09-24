@@ -12,7 +12,7 @@
             >
               <i class="material-icons">clear</i>
             </a>
-          </div >
+          </div>
           <div class="form-group">
             <label for="field-name">Field Name</label>
             <input type="text" id="field-name" name="field-name" ref="fieldInput" v-model="fieldName">

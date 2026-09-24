@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import vue from "@vitejs/plugin-vue2";
+import vue from "vite-ng-plugin-vue2";
 import { resolve } from "path";
 
 // https://vite.dev/config/

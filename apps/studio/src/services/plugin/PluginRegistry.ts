@@ -1,12 +1,17 @@
 import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
 import { PluginRepository, PluginRegistryEntry, PluginOrigin } from "./types";
-import { NotFoundPluginError } from "./errors";
+import { PluginSystemError } from "@/lib/errors";
 
 const log = rawLog.scope("PluginRegistry");
 
 /** Use this to cache and get plugin info. */
 export default class PluginRegistry {
+  /** Disable fetching community entries. */
+  public communityDisabled = false;
+  /** Disable fetching official entries. */
+  public officialDisabled = false;
+
   private officialEntries: PluginRegistryEntry[] = [];
   private communityEntries: PluginRegistryEntry[] = [];
   private officialEntriesCached = false;
@@ -45,11 +50,14 @@ export default class PluginRegistry {
     if (community) {
       return { origin: "community", entry: community };
     }
-    throw new NotFoundPluginError(`Plugin "${id}" not found in registry.`);
+    throw new PluginSystemError(
+      "PLUGIN_NOT_FOUND",
+      `Plugin "${id}" not found in registry.`
+    );
   }
 
   private async loadOfficialEntries() {
-    if (this.officialEntriesCached) {
+    if (this.officialDisabled || this.officialEntriesCached) {
       return;
     }
     log.debug("Fetching official entries...");
@@ -59,7 +67,7 @@ export default class PluginRegistry {
   }
 
   private async loadCommunityEntries() {
-    if (this.communityEntriesCached) {
+    if (this.communityDisabled || this.communityEntriesCached) {
       return;
     }
     log.debug("Fetching community entries...");

@@ -1,2 +1,7 @@
 dev/**/*.sql linguist-language=SQL
 *.surql linguist-generated
+
+# SSH test fixtures must not be CRLF-converted on Windows checkout -
+# Pageant's OpenSSH key parser is strict and rejects CRLF-munged files.
+apps/studio/tests/resources/ssh/pageant_test      -text
+apps/studio/tests/resources/ssh/pageant_test.pub  -text

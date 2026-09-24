@@ -6,5 +6,5 @@
 }
 
 & {
-  --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: -3%)};
+  --bks-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: -3%)};
 }

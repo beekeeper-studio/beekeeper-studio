@@ -1,6 +1,7 @@
 .turbo/
 .idea/
 .cache/
+.claude/
 .vscode/
 ./data/
 .local
@@ -26,3 +27,5 @@ apps/studio/test-results
 *.log
 *.orig
 surreal_data/
+todo.txt
+done.txt

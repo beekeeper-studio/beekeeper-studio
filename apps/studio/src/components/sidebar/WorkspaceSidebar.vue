@@ -42,7 +42,7 @@
 </template>
 
 <script lang="ts">
-import { IWorkspace } from '@/common/interfaces/IWorkspace'
+import { IWorkspace, LocalWorkspace } from '@/common/interfaces/IWorkspace'
 import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
 import ContentPlaceholderImg from '@/components/common/loading/ContentPlaceholderImg.vue'
 import WorkspaceAvatar from '@/components/common/WorkspaceAvatar.vue'
@@ -104,24 +104,27 @@ components: { NewWorkspaceButton, WorkspaceAvatar, AccountStatusButton, ContentP
     },
     refresh() {
       if (this.$store.getters.isCommunity) {
-        this.$root.$emit(AppEvent.upgradeModal)
+        this.$root.$emit(AppEvent.upgradeModal, 'Cloud Workspaces')
         return
       }
       this.$store.dispatch('credentials/load')
     },
-    click(blob: { workspace: IWorkspace, client: CloudClient}) {
-      if (this.$store.getters.isCommunity) {
-        this.$root.$emit(AppEvent.upgradeModal)
+    async click(blob: { workspace: IWorkspace, client: CloudClient, credentialId: number }) {
+      const isLocal = blob.workspace.id === LocalWorkspace.id
+      if (!isLocal && this.$store.getters.isCommunity) {
+        this.$root.$emit(AppEvent.upgradeModal, 'Cloud Workspaces')
         return
       }
-      this.$store.commit('workspaceId', blob.workspace.id)
-      const defaultWorkspace = {
-        ...this.settings['lastUsedWorkspace'],
-        ...{
-          _userValue: blob.workspace.id.toString()
-        }
+      if (!isLocal && this.$store.getters.isLifetime) {
+        this.$root.$emit(AppEvent.cloudWorkspacesBlocked)
+        return
       }
-      this.$store.dispatch('settings/saveSetting', defaultWorkspace)
+      await this.$util.send('workspace/setActive', { wId: blob.workspace.id, credentialId: blob.credentialId });
+      this.$store.commit('workspaceId', blob.workspace.id)
+      this.$store.dispatch('settings/save', {
+        key: "lastUsedWorkspace",
+        value: blob.workspace.id.toString(),
+      })
     }
   },
   mounted() {

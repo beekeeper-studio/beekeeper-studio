@@ -8,6 +8,11 @@ export default Vue.extend({
   props: {
     editorFontSize: Number,
   },
+  data() {
+    return {
+      darkMedia: null,
+    };
+  },
   computed: {
     rootBindings() {
       return [
@@ -31,7 +36,7 @@ export default Vue.extend({
     },
   },
   methods: {
-    handleChangedTheme(themeValue: string) {
+    handleChangedTheme() {
       const data: PluginNotificationData = {
         name: "themeChanged",
         args: this.$plugin.pluginStore.getTheme(),
@@ -44,9 +49,12 @@ export default Vue.extend({
   },
   mounted() {
     this.registerHandlers(this.rootBindings);
+    this.darkMedia = window.matchMedia("(prefers-color-scheme: dark)");
+    this.darkMedia.addEventListener("change", this.handleChangedTheme);
   },
   beforeDestroy() {
     this.unregisterHandlers(this.rootBindings);
+    this.darkMedia?.removeEventListener("change", this.handleChangedTheme);
   },
   render() {
     return null;

@@ -113,7 +113,7 @@ describe('Trino integration tests', () => {
         expect(typeof firstRow).toBe('object')
       }
 
-      r = await httpUtil.connection.selectTop("jobs", 0, 10, [], [], 'public', ['title'])
+      r = await httpUtil.connection.selectTop("jobs", 0, 10, [], [], 'public', ['job_name'])
       expect(r.result).toBeDefined()
       expect(r.fields).toBeDefined()
     })

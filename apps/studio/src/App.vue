@@ -1,9 +1,8 @@
 <template>
-  <div class="style-wrapper">
+  <div class="style-wrapper" :style="{ '--bks-text-editor-font-size': `${editorFontSize}px` }">
     <div
       class="beekeeper-studio-wrapper"
       :class="{ 'beekeeper-studio-minimal-mode': $store.getters.minimalMode }"
-      :style="{ '--bks-text-editor-font-size': `${editorFontSize}px` }"
     >
       <titlebar />
       <template v-if="storeInitialized">
@@ -19,10 +18,6 @@
       </template>
     </div>
     <portal-target
-      name="menus"
-      multiple
-    />
-    <portal-target
       name="modals"
       multiple
     />
@@ -36,17 +31,29 @@
     <workspace-delete-modal />
     <import-queries-modal />
     <import-connections-modal />
+    <connection-files-import-modal />
     <plugin-controller :editor-font-size="editorFontSize" />
     <plugin-manager-modal />
     <keyboard-shortcuts-modal />
+    <move-item-modal />
+    <move-folder-modal />
+    <connection-type-picker-modal />
     <confirmation-modal-manager />
     <lock-manager />
+    <input-ephemeral-modal name="input-ephemeral-modal" />
     <util-died-modal />
+    <share-modal />
     <template v-if="licensesInitialized">
       <trial-expired-modal />
       <license-expired-modal />
       <lifetime-license-expired-modal />
+      <cloud-workspaces-blocked-modal />
     </template>
+    <portal-target
+      name="menus"
+      multiple
+      class="portal-target-menus"
+    />
   </div>
 </template>
 
@@ -80,12 +87,19 @@ import UtilDiedModal from '@/components/UtilDiedModal.vue'
 import TrialExpiredModal from '@/components/license/TrialExpiredModal.vue'
 import LicenseExpiredModal from '@/components/license/LicenseExpiredModal.vue'
 import LifetimeLicenseExpiredModal from '@/components/license/LifetimeLicenseExpiredModal.vue'
+import CloudWorkspacesBlockedModal from '@/components/license/CloudWorkspacesBlockedModal.vue'
 import type { LicenseStatus } from "@/lib/license";
 import { SmartLocalStorage } from '@/common/LocalStorage';
 import PluginManagerModal from '@/components/plugins/PluginManagerModal.vue'
 import KeyboardShortcutsModal from '@/components/common/modals/KeyboardShortcutsModal.vue'
 import PluginController from '@/components/plugins/PluginController.vue'
 import LockManager from "@/components/managers/LockManager.vue";
+import InputEphemeralModal from "@/components/common/modals/InputEphemeralModal.vue";
+import ShareModal from "@/components/common/modals/ShareModal.vue";
+import MoveItemModal from "@/components/common/modals/MoveItemModal.vue";
+import MoveFolderModal from "@/components/common/modals/MoveFolderModal.vue";
+import ConnectionFilesImportModal from '@/components/common/modals/ConnectionFilesImportModal.vue'
+import ConnectionTypePickerModal from "@/components/common/modals/ConnectionTypePickerModal.vue";
 
 import rawLog from '@bksLogger'
 import { assignContextMenuToAllInputs } from './mixins/assignContextMenuToAllInputs'
@@ -100,8 +114,11 @@ export default Vue.extend({
     DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
     EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
-    LifetimeLicenseExpiredModal, WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
+    LifetimeLicenseExpiredModal, CloudWorkspacesBlockedModal,
+    WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
     PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
+    InputEphemeralModal, ShareModal, MoveItemModal, MoveFolderModal,
+    ConnectionFilesImportModal, ConnectionTypePickerModal,
   },
   data() {
     return {
@@ -154,11 +171,22 @@ export default Vue.extend({
     clearInterval(this.licenseInterval)
   },
   async mounted() {
+    // The store loads licenses before this component exists, so the
+    // `licensesInitialized` and `status` watchers never see the initial
+    // values. Without this, a trial or license that lapsed while the app was
+    // closed never surfaces its dialog on the next launch.
+    if (this.licensesInitialized) {
+      await this.$nextTick()
+      this.validateLicenseExpiry()
+    }
     this.notifyFreeTrial()
     this.interval = setInterval(this.notifyFreeTrial, globals.trialNotificationInterval)
     this.$store.dispatch('licenses/updateAll');
     this.licenseInterval = setInterval(
-      () => this.$store.dispatch('licenses/updateAll'),
+      () => {
+        log.debug('license check - interval')
+        this.$store.dispatch('licenses/updateAll')
+      },
       globals.licenseCheckInterval
     )
     const query = querystring.parse(window.location.search, { parseBooleans: true })
@@ -246,7 +274,9 @@ export default Vue.extend({
 })
 </script>
 
-<style>
-
+<style scoped>
+.portal-target-menus::v-deep > * {
+  z-index: 99999;
+}
 
 </style>

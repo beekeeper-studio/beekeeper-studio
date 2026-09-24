@@ -1,5 +1,5 @@
 import { PropType } from "vue"
-import { FormatOptions, FormatOptionsWithLanguage } from "sql-formatter"
+import { DialectOptions, FormatOptions, FormatOptionsWithLanguage } from "sql-formatter"
 
 export default {
   value: String,
@@ -28,5 +28,12 @@ export default {
   formatterDialect: {
     type: String as PropType<FormatOptionsWithLanguage["language"]>,
     default: "sql",
+  },
+  // Optional: a full sql-formatter DialectOptions object. When provided, takes
+  // precedence over `formatterDialect` and the preview uses formatDialect().
+  // Used for languages sql-formatter doesn't ship natively (e.g. PartiQL).
+  formatterDialectOptions: {
+    type: Object as PropType<DialectOptions | null>,
+    default: null,
   }
 }

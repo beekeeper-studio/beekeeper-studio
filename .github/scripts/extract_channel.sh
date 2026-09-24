@@ -9,8 +9,9 @@ then
     exit 1
 fi
 
-# Extract version from package.json
-VERSION=$(jq -r '.version' apps/studio/package.json)
+# Version comes from $1 when given (release-published.yml passes the release
+# tag minus the "v" prefix), otherwise from package.json (build-time usage).
+VERSION="${1:-$(jq -r '.version' apps/studio/package.json)}"
 
 # Determine the release channel based on the version
 if [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then

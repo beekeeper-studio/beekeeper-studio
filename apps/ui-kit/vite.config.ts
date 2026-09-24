@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import vue from "@vitejs/plugin-vue2";
+import vue from "vite-ng-plugin-vue2";
 import { resolve } from "path";
 
 // https://vite.dev/config/
@@ -7,7 +7,6 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      vue: "vue/dist/vue.min.js",
       "@": resolve('./lib'),
     },
     dedupe: ["@codemirror/state", "@codemirror/view"],
@@ -18,28 +17,7 @@ export default defineConfig({
   define: process.env.VITEST ? {} : { global: 'navigator' },
   build: {
     lib: {
-      entry: resolve(__dirname, "lib/index.ts"),
-      name: "BksUiKit",
-      formats: ["es"],
-      fileName: () => `[name].js`,
-    },
-    rollupOptions: {
-      external: [
-        "@codemirror/state",
-        "@codemirror/view",
-        "@codemirror/language",
-        "@codemirror/commands",
-        "@codemirror/search",
-        "@codemirror/lint",
-        "@codemirror/lang-sql",
-        "@codemirror/autocomplete",
-        "@replit/codemirror-emacs",
-        "@replit/codemirror-vim",
-        "@marimo-team/codemirror-languageserver",
-      ],
-      input: {
-        style: resolve(__dirname, "lib/style.scss"),
-        index: resolve(__dirname, "lib/index.ts"),
+      entry: {
         table: resolve(__dirname, "lib/components/table/define.ts"),
         "entity-list": resolve(
           __dirname,
@@ -73,37 +51,42 @@ export default defineConfig({
           __dirname,
           "lib/components/text-editor/define.ts"
         ),
-        "vue/table": resolve(__dirname, "lib/components/table/Table.vue"),
-        "vue/entity-list": resolve(
+        "merge-text-editor": resolve(
           __dirname,
-          "lib/components/entity-list/EntityList.vue"
+          "lib/components/merge-text-editor/define.ts"
         ),
-        "vue/sql-text-editor": resolve(
+        tree: resolve(__dirname, "lib/components/tree/define.ts"),
+        "context-menu": resolve(
           __dirname,
-          "lib/components/sql-text-editor/SqlTextEditor.vue"
-        ),
-        "vue/mongo-shell": resolve(
-          __dirname,
-          "lib/components/mongo-shell/MongoShell.vue"
-        ),
-        "vue/data-editor": resolve(
-          __dirname,
-          "lib/components/data-editor/DataEditor.vue"
-        ),
-        "vue/text-editor": resolve(
-          __dirname,
-          "lib/components/text-editor/TextEditor.vue"
-        ),
-        "vue/surreal-text-editor": resolve(
-          __dirname,
-          "lib/components/surreal-text-editor/SurrealTextEditor.vue"
-        ),
-        "vue/super-formatter": resolve(
-          __dirname,
-          "lib/components/super-formatter/SuperFormatter.vue"
+          "lib/components/context-menu/define.ts"
         ),
         "config/context-menu": resolve(__dirname, "lib/config/context-menu.ts"),
       },
+      formats: ["es"],
+      fileName: () => `[name].js`,
+      cssFileName: "web-components-style",
+    },
+    rollupOptions: {
+      external: [
+        // Externalize this because @codemirror/state uses instanceof checks.
+        "@codemirror/state",
+        "@codemirror/view",
+        "@codemirror/language",
+        "@codemirror/commands",
+        "@codemirror/search",
+        "@codemirror/lint",
+        "@codemirror/lang-sql",
+        "@codemirror/lang-html",
+        "@codemirror/lang-javascript",
+        "@codemirror/lang-json",
+        "@lezer/highlight",
+        "@surrealdb/codemirror",
+        "@codemirror/autocomplete",
+        "@codemirror/merge",
+        "@replit/codemirror-emacs",
+        "@replit/codemirror-vim",
+        "@marimo-team/codemirror-languageserver",
+      ],
     },
     outDir: "dist",
     sourcemap: true,

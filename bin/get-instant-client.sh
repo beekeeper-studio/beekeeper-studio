@@ -14,7 +14,7 @@ else
   # Newer versions require
   # wget -q -O cli.zip \
   #   https://download.oracle.com/otn_software/linux/instantclient/23c/instantclient-basic-linux.x64-23.3.0.0.0.zip
-  rm -rf $LOCATION/*
-  unzip cli.zip -d $LOCATION
+  rm -rf "${LOCATION:?}"/*
+  unzip cli.zip -d "$LOCATION"
 fi
 

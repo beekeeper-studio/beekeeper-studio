@@ -60,6 +60,12 @@ function processRawConfig(config: Record<string, unknown>): Record<string, unkno
     }
   }
 
+  const allowedPlugins = config.pluginSystem?.allow;
+  if (allowedPlugins) {
+    // Filter out any empty strings
+    config.pluginSystem.allow = allowedPlugins.filter(Boolean);
+  }
+
   return config;
 }
 

@@ -20,6 +20,7 @@ import {
   ClientError, refreshTokenIfNeeded,
   errorMessages
 } from "./utils";
+import { parseQuotedEnumValues } from "./enumParsers";
 import {
   IDbConnectionDatabase,
   DatabaseElement,
@@ -68,6 +69,7 @@ import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import { Version, isVersionLessThanOrEqual, parseVersion } from "@/common/version";
 import globals from '../../../common/globals';
 import {AzureAuthService} from "@/lib/db/authentication/azure";
+import { IdentifyResult } from "sql-query-identifier/lib/defines";
 
 type ResultType = {
   tableName?: string
@@ -219,14 +221,6 @@ async function configDatabase(
   return config;
 }
 
-function identifyCommands(queryText: string) {
-  try {
-    return identify(queryText);
-  } catch (err) {
-    return [];
-  }
-}
-
 function isMultipleQuery(fields: any[]) {
   if (!fields) {
     return false;
@@ -247,7 +241,7 @@ function parseFields(fields: any[], rowsAsArray?: boolean) {
 function parseRowQueryResult(
   data: any,
   rawFields: any[],
-  command: string,
+  command: IdentifyResult,
   rowsAsArray = false
 ) {
   // Fallback in case the identifier could not reconize the command
@@ -255,13 +249,14 @@ function parseRowQueryResult(
   const fieldIds = fields.map((f) => f.id);
   const isSelect = Array.isArray(data);
   return {
-    command: command || (isSelect && "SELECT"),
+    command: command?.type || (isSelect && "SELECT"),
     rows: isSelect
       ? data.map((r: any) => (rowsAsArray ? _.zipObject(fieldIds, r) : r))
       : [],
     fields: fields,
     rowCount: isSelect ? (data || []).length : undefined,
     affectedRows: !isSelect ? data.affectedRows : undefined,
+    text: command?.text
   };
 }
 
@@ -497,6 +492,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       generationExpression: row.generation_expression,
       characterSet: row.character_set,
       collation: row.collation,
+      enumValues: parseQuotedEnumValues(row.column_type),
       bksField: this.parseTableColumn(row),
     }));
   }
@@ -917,32 +913,30 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     return databaseName;
   }
 
-  async executeApplyChanges(changes: TableChanges): Promise<any[]> {
+  async executeApplyChanges(changes: TableChanges, tabId?: number): Promise<any[]> {
+    if (tabId) {
+      return await this.runWithConnection(this.applyChangesRunner.bind(this, changes), tabId);
+    }
+    return await this.runWithTransaction(this.applyChangesRunner.bind(this, changes));
+  }
+
+  protected async applyChangesRunner(
+    changes: TableChanges,
+    connection: mysql.PoolConnection
+  ): Promise<any[]> {
     let results = [];
 
-    await this.runWithConnection(async (connection) => {
-      await this.driverExecuteSingle("START TRANSACTION", { connection });
+    if (changes.inserts) {
+      await this.insertRows(changes.inserts, connection);
+    }
 
-      try {
-        if (changes.inserts) {
-          await this.insertRows(changes.inserts, connection);
-        }
+    if (changes.updates) {
+      results = await this.updateValues(changes.updates, connection);
+    }
 
-        if (changes.updates) {
-          results = await this.updateValues(changes.updates, connection);
-        }
-
-        if (changes.deletes) {
-          await this.deleteRows(changes.deletes, connection);
-        }
-
-        await this.driverExecuteSingle("COMMIT", { connection });
-      } catch (ex) {
-        logger().error("query exception: ", ex);
-        await this.driverExecuteSingle("ROLLBACK", { connection });
-        throw ex;
-      }
-    });
+    if (changes.deletes) {
+      await this.deleteRows(changes.deletes, connection);
+    }
 
     return results;
   }
@@ -1184,7 +1178,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       return [];
     }
 
-    const commands = identifyCommands(queryText).map((item) => item.type);
+    const commands = this.identifyCommands(queryText);
 
     if (!isMultipleQuery(fields)) {
       return [
@@ -1276,12 +1270,12 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
   async runWithTransaction<T>(func: (c: mysql.PoolConnection) => Promise<T>): Promise<T> {
     return await this.runWithConnection(async (connection) => {
       try {
-        await this.driverExecuteSingle("START TRANSACTION");
+        await this.driverExecuteSingle("START TRANSACTION", { connection });
         const result = await func(connection);
-        await this.driverExecuteSingle("COMMIT");
+        await this.driverExecuteSingle("COMMIT", { connection });
         return result;
       } catch (ex) {
-        await this.driverExecuteSingle("ROLLBACK");
+        await this.driverExecuteSingle("ROLLBACK", { connection });
         log.error(ex)
         throw ex;
       }
@@ -1439,13 +1433,8 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     chunkSize: number
   ): Promise<StreamResults> {
     const theCursor = new MysqlCursor(this.conn, query, [], chunkSize);
-    log.debug("results", theCursor);
-
-    const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
 
     return {
-      totalRows,
-      columns,
       cursor: theCursor,
     };
   }
@@ -1644,4 +1633,5 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
 
 export const testOnly = {
   parseFields,
+  parseEnumValues: parseQuotedEnumValues,
 };

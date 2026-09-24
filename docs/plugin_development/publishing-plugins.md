@@ -7,7 +7,7 @@ icon: material/publish
 # Publishing Plugins
 
 !!! warning "Beta Feature"
-    The plugin system is in beta (available in Beekeeper Studio 5.3+). Things might change, but we'd love your feedback!
+    The plugin system is in beta (available in Beekeeper Studio 5.3+). We'd love your feedback!
 
 ## Publishing Process
 

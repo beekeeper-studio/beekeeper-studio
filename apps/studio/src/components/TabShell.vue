@@ -12,12 +12,13 @@
         v-bind.sync="editor"
         :vim-config="vimConfig"
         :vim-keymaps="vimKeymaps"
+        :clipboard="$native.clipboard"
         :keymap="userKeymap"
         :output="mongoOutputResult"
         :is-focused="focusingElement === 'text-editor'"
         :auto-focus="true"
         :extensions="extensions"
-        :promptSymbol="promptSymbol"
+        :prompt-symbol="promptSymbol"
         :line-wrapping="wrapText"
         @clear="clear"
         @submitCommand="submitMongoCommand"
@@ -26,8 +27,8 @@
         @bks-shell-run-command="submitMongoCommand"
       />
       <!-- This is we so we have the separating line -->
-      <span class="expand"></span>
-      <div class="toolbar text-right"></div>
+      <span class="expand" />
+      <div class="toolbar text-right" />
     </div>
     <div class="not-supported" v-if="!enabled">
       <span class="title">
@@ -42,7 +43,7 @@
       ref="bottomPanel"
     >
       <progress-bar
-        :canCancel="false"
+        :can-cancel="false"
         :message="runningText"
         v-if="running"
       />
@@ -83,13 +84,13 @@
         class="layout-center expand"
         v-else
       >
-        <shortcut-hints :isMongo="true" />
+        <shortcut-hints type="query-editor" />
       </div>
       <!-- <span class="expand" v-if="!result"></span> -->
       <!-- STATUS BAR -->
       <query-editor-status-bar
         v-model="selectedResult"
-        :hideWrapText="true"
+        :hide-wrap-text="true"
         :results="results"
         :running="running"
         @download="download"
@@ -123,7 +124,7 @@ import MergeManager from '@/components/editor/MergeManager.vue'
 import { AppEvent } from '@/common/AppEvent'
 import { PropType } from 'vue'
 import { TransportOpenTab } from '@/common/transport/TransportOpenTab'
-import { getVimKeymapsFromVimrc } from '@/lib/editor/vim';
+import { vimExCommands } from '@/lib/editor/vimExCommands';
 
 const log = rawlog.scope('query-editor')
 
@@ -205,7 +206,7 @@ export default Vue.extend({
       return result.length ? result : null
     },
     runningText() {
-      return `Running (${window.main.pluralize('command', this.runningCount, true)})`
+      return `Running (${this.$pluralize('command', this.runningCount, true)})`
     },
     result() {
       return this.results[this.selectedResult]
@@ -229,29 +230,18 @@ export default Vue.extend({
    keybindings() {
       const keybindings: any = {}
 
-      if(this.userKeymap === "vim") {
+      // Vim is registered ahead of these bindings, so only a plain normal
+      // mode Esc reaches cancelQuery. Ctrl-Esc stays bound too.
+      keybindings["Esc"] = this.cancelQuery
+      if (this.userKeymap === "vim") {
         keybindings["Ctrl-Esc"] = this.cancelQuery
-      } else {
-        keybindings["Esc"] = this.cancelQuery
       }
 
       return keybindings
     },
     vimConfig() {
-      const exCommands = [
-        { name: "quit", prefix: "q", handler: this.close },
-        { name: "qa", prefix: "qa", handler: () => this.$root.$emit(AppEvent.closeAllTabs) },
-        { name: "tabnew", prefix: "tabnew", handler: (_cn, params) => {
-          if(params.args && params.args.length > 0){
-            let queryName = params.args[0]
-            this.$root.$emit(AppEvent.newTab,"", queryName)
-            return
-          }
-          this.$root.$emit(AppEvent.newTab)
-        }},
-      ]
-
-      return { exCommands }
+      // A shell tab has nothing to save, so it never listens for vimWrite.
+      return vimExCommands(this.trigger)
     },
     showResultTable() {
       return this.rowCount > 0
@@ -422,8 +412,18 @@ export default Vue.extend({
       }
     },
     updateTextEditorFocus(focused: boolean) {
-      if (!focused) {
-        this.onTextEditorBlur?.()
+      if (focused) {
+        // Only reconcile intent; focusingElement drives is-focused, which the
+        // editor treats as a command rather than a report.
+        this.focusElement = 'text-editor'
+        return
+      }
+      // An app-initiated blur updates the state itself; any other blur means
+      // the editor really lost focus and stale state would strand it (#3446).
+      if (this.onTextEditorBlur) {
+        this.onTextEditorBlur()
+      } else if (this.focusingElement === 'text-editor') {
+        this.focusingElement = 'none'
       }
     },
     async switchPaneFocus(_event?: KeyboardEvent, target?: 'text-editor' | 'table') {
@@ -470,12 +470,15 @@ export default Vue.extend({
     })
     this.containerResizeObserver.observe(this.$refs.container)
 
+    // Reconfiguring the keymap rebuilds the vim extension underneath whatever
+    // has focus, so let it land before focusing (#2990).
+    await this.$store.dispatch('vim/load');
+    this.vimKeymaps = this.$store.getters['vim/directives'];
+
     if (this.active) {
       await this.$nextTick()
       this.focusElement = 'text-editor'
     }
-
-    this.vimKeymaps = await getVimKeymapsFromVimrc();
   },
   beforeDestroy() {
     if(this.split) {

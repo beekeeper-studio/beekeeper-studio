@@ -197,11 +197,27 @@
     }
     .tab-close {
       position: absolute;
-      right: 0;
+      right: 4px;
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-width: 24px;
+      cursor: pointer;
+      transition: background 0.15s ease-in-out;
+
+      &:hover {
+        background: rgba($theme-base, 0.12);
+
+        .material-icons {
+          color: $text-dark;
+        }
+      }
+
+      &:active {
+        background: rgba($theme-base, 0.2);
+      }
 
       .close {
         display: none;
@@ -216,7 +232,7 @@
         font-size: 12px;
         font-weight: bold;
         color: $text;
-        transition: none;
+        transition: color 0.15s ease-in-out;
       }
       &.unsaved {
         .unsaved-icon {
@@ -449,6 +465,9 @@
       padding-left: 0.45rem;
       padding-right: 0.25rem;
     }
+    .filter-mode-spacer {
+      visibility: hidden;
+    }
     .multiple-filter  {
       flex-grow: 1;
       & > * {
@@ -561,8 +580,4 @@
   .core-tabs .nav-tabs .nav-link.active {
     font-weight: inherit;
   }
-}
-
-.tab-upsell-wrapper {
-  padding: 0rem 2rem 2rem;
 }

@@ -20,6 +20,8 @@ import { EncryptedPluginData } from "./models/EncryptedPluginData"
 import { FormatterPreset } from "./models/FormatterPreset"
 import { QueryFolder } from "./models/QueryFolder"
 import { ConnectionFolder } from "./models/ConnectionFolder"
+import { TabulatorPersistence } from "./models/TabulatorPersistence"
+import { QueryAudit } from "./models/QueryAudit"
 
 const models = [
   SavedConnection,
@@ -42,6 +44,8 @@ const models = [
   FormatterPreset,
   QueryFolder,
   ConnectionFolder,
+  TabulatorPersistence,
+  QueryAudit,
 ]
 
 interface IConnectionState {

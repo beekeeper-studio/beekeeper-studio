@@ -9,7 +9,7 @@ const log = rawLog.scope('BaseV1DatabaseClient');
 
 
 // TODO(@day): not sure if we should be throwing errors, or just logging warns
-export abstract class BaseV1DatabaseClient<RawResultType extends BaseQueryResult> extends BasicDatabaseClient<RawResultType> {
+export abstract class BaseV1DatabaseClient<RawResultType extends BaseQueryResult> extends BasicDatabaseClient<RawResultType, null> {
 
   getBuilder(_table: string, _schema?: string): ChangeBuilderBase {
     log.error("V1 Drivers do not support change builders");

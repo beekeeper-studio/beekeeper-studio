@@ -13,6 +13,7 @@
         @mouseenter="onItemHover(option, index)"
         class="BksContextMenu-item"
         :class="[typeof option.class === 'function' ? option.class({ item }) : option.class, (option.type === 'divider' ? 'BksContextMenu-item-divider' : ''), option.disabled ? 'BksContextMenu-item-disabled' : '']"
+        :title="title(option)"
         ref="item"
         role="menuitem"
       >
@@ -40,6 +41,12 @@
           class="BksContextMenu-item-shortcut"
           v-text="shortcut(option.shortcut)"
         />
+        <div
+          v-if="option.icon"
+          class="BksContextMenu-item-icon-container BksContextMenu-item-trailing-icon"
+        >
+          <i class="material-icons">{{ option.icon }}</i>
+        </div>
         <div
           v-if="option.items?.length > 0"
           class="BksContextMenu-item-icon-container BksContextMenu-item-submenu-icon"
@@ -194,6 +201,11 @@ export default Vue.extend({
     },
     shortcut(shortcut: string | string[]) {
       return formatDisplayKeybinding(shortcut)
+    },
+    title(option: BaseMenuItem) {
+      return typeof option.title === 'function'
+        ? option.title({ item: this.item })
+        : option.title
     },
   },
   mounted() {

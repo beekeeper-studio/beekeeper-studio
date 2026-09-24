@@ -20,23 +20,16 @@
         </div>
 
         <div class="table-subheader">
-          <div class="table-title">
-            <h2>Relations</h2>
-          </div>
-          <div class="expand" />
-          <div class="actions">
-            <a
-              @click.prevent="$emit('refresh')"
-              v-tooltip="`${ctrlOrCmd('r')} or F5`"
-              class="btn btn-link btn-fab"
-            ><i class="material-icons">refresh</i></a>
-            <a
-              v-if="enabled && canAdd"
-              @click.prevent="addRow"
-              v-tooltip="ctrlOrCmd('n')"
-              class="btn btn-primary btn-fab"
-            ><i class="material-icons">add</i></a>
-          </div>
+          <table-info-toolbar
+            :search-suffix="structureFilterSuffix"
+            filter-placeholder="Filter relations"
+            :show-add="enabled && canAdd"
+            add-label="Relation"
+            @search="setStructureFilterQuery"
+            @add="addRow"
+            @copy="copyStructure"
+            @refresh="$emit('refresh')"
+          />
         </div>
         <div
           class="table-relations"
@@ -113,16 +106,21 @@ import { format } from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
 import rawLog from '@bksLogger'
 import ErrorAlert from '../common/ErrorAlert.vue'
+import TableInfoToolbar from './TableInfoToolbar.vue'
 const log = rawLog.scope('TableRelations');
 import { escapeHtml } from '@shared/lib/tabulator'
 import { SelectableCellMixin } from '@/mixins/selectableCell';
+import { StructureCopyMixin } from '@/mixins/structureCopy';
+import { StructureFilterMixin } from '@/mixins/structureFilter';
+import { copyCellMenu } from '@/lib/menu/tableMenu';
 
 export default Vue.extend({
-  mixins: [SelectableCellMixin],
+  mixins: [SelectableCellMixin, StructureCopyMixin, StructureFilterMixin],
   props: ["table", "tabId", "active", "properties", 'tabState'],
   components: {
     StatusBar,
-    ErrorAlert
+    ErrorAlert,
+    TableInfoToolbar
   },
   data() {
     return {
@@ -189,6 +187,7 @@ export default Vue.extend({
           widthGrow: 2,
           editable,
           editor: vueEditor(NullableInputEditorVue),
+          contextMenu: copyCellMenu,
           cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
         {
@@ -200,6 +199,7 @@ export default Vue.extend({
             // @ts-expect-error Incorrectly typed
             valuesLookup: () => this.table.columns.map((c) => escapeHtml(c.columnName))
           },
+          contextMenu: copyCellMenu,
           cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
         // @ts-expect-error Incorrectly typed
@@ -211,6 +211,7 @@ export default Vue.extend({
           editorParams: {
             valuesLookup: () => this.schemas.map((s) => escapeHtml(s))
           },
+          contextMenu: copyCellMenu,
           cellEdited: (cell) => cell.getRow().getCell('toTable')?.setValue(null)
         }] : []),
         {
@@ -223,6 +224,7 @@ export default Vue.extend({
             valuesLookup: this.getTables
           },
           cellEdited: (cell) => cell.getRow().getCell('toColumn')?.setValue(null),
+          contextMenu: copyCellMenu,
           cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
         {
@@ -234,6 +236,7 @@ export default Vue.extend({
           editorParams: {
             valuesLookup: this.getColumns
           },
+          contextMenu: copyCellMenu,
           cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
         {
@@ -246,6 +249,7 @@ export default Vue.extend({
             values: this.dialectData.constraintActions,
             defaultValue: 'NO ACTION'
           },
+          contextMenu: copyCellMenu,
           cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
         {
@@ -258,6 +262,7 @@ export default Vue.extend({
             values: this.dialectData.constraintActions,
             defaultValue: 'NO ACTION',
           },
+          contextMenu: copyCellMenu,
           cellDblClick: (e, cell) => this.handleCellDoubleClick(cell)
         },
       ]

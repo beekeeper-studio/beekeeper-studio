@@ -44,15 +44,13 @@
           </x-label>
         </x-menuitem>
         <x-menuitem @click.stop.prevent="showQuickSwitcher">
-            <x-label class="flex items-center justify-between">
-              <span class="flex items-center">
-                <i class="material-icons">swap_horiz</i>
-                Switch Connection
-              </span>
-              <span style="font-size: 22px;">
-                {{ isQuickSwitcherVisible ? '‹' : '›' }}
-              </span>
-            </x-label>
+          <x-label class="flex items-center justify-between">
+            <span class="flex items-center">
+              <i class="material-icons">swap_horiz</i>
+              Switch Connection
+            </span>
+            <span style="font-size: 22px;">›</span>
+          </x-label>
         </x-menuitem>
       </x-menu>
     </x-button>
@@ -153,14 +151,22 @@
             >
               {{ conn.name }}
             </button>
+            <div
+              v-if="!displayedConnections.length"
+              class="quick-switcher-empty"
+            >
+              No {{ showingMore ? 'saved' : 'recent' }} connections
+            </div>
           </div>
         </div>
         <div class="quick-switcher-footer">
-          <button class="quick-switcher-item more" @click.stop="toggleMore">
+          <button
+            class="quick-switcher-item more"
+            :disabled="moreDisabled"
+            @click.stop="toggleMore"
+          >
             <span class="label">{{ showingMore ? 'less' : 'more' }}</span>
-            <span style="font-size: 22px;">
-              {{ showingMore ? '‹' : '›' }}
-            </span>
+            <span style="font-size: 22px;">›</span>
           </button>
         </div>
       </div>
@@ -221,6 +227,12 @@ export default {
         conn.id !== this.config.id || conn.workspaceId !== this.config.workspaceId
       );
     },
+    moreDisabled() {
+      const otherConnections = this.showingMore ? this.recentConnections : this.savedConnections;
+      return !otherConnections.filter(conn =>
+        conn.id !== this.config.id || conn.workspaceId !== this.config.workspaceId
+      ).length;
+    },
     classes() {
       const result = {
         'connection-button': true
@@ -273,14 +285,14 @@ export default {
         return;
       }
 
-      await this.$store.dispatch('disconnect')
       try {
+        await this.$store.dispatch('disconnect')
         const { auth, cancelled } = await this.$bks.unlock();
         if (cancelled) return;
         await this.$store.dispatch('connect', { config, auth });
       } catch (ex) {
         log.error(ex)
-        this.$noty.error("Error establishing a connection")
+        this.$noty.error(`Error establishing a connection: ${ex?.message ?? ex}`)
       }
       this.isQuickSwitcherVisible = false
     },

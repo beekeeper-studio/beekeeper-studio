@@ -72,6 +72,11 @@
               <i class="material-icons">code</i>
             </button>
           </div>
+          <span
+            v-else
+            class="btn-fab filter-mode-spacer"
+            aria-hidden="true"
+          />
           <div
             class="btn-wrap"
             v-for="(filter, index) in additionalFilters"
@@ -266,7 +271,7 @@ export default Vue.extend({
     addFilter() {
       if (this.isCommunity) {
         if (this.filters.length >= 2) {
-          this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use more than 2 filters")
+          this.$root.$emit(AppEvent.upgradeModal, "Advanced Filters")
           return;
         }
       }

@@ -24,7 +24,7 @@
           </div>
         </div>
         <div class="show-all-history-container" title="By default, only the history executed on the current connection are shown.">
-          <input type="checkbox" id="show-all-history-checkbox" v-model="showAllHistory"/>
+          <input type="checkbox" id="show-all-history-checkbox" v-model="showAllHistory">
           <label for="show-all-history-checkbox" class="show-all-history-text">Show all</label>
         </div>
         <error-alert
@@ -101,7 +101,10 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
         if(this.showAllHistory){
           return this.history;
         } else {
-          return this.history.filter(item => item.connectionId === this.usedConfig?.id);
+          // an unsaved connection has no id, and so no history of its own
+          return this.usedConfig?.id
+            ? this.history.filter(item => item.connectionId === this.usedConfig.id)
+            : [];
         }
       },
     },

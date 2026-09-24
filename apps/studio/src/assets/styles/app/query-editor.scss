@@ -68,7 +68,6 @@
   .toolbar {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
     background: $query-editor-bg;
     padding: $gutter-h $gutter-w;
     z-index: 1;
@@ -169,11 +168,12 @@
 .shortcut-item {
   display: table-row;
   color: $text-lighter;
-  text-align: right;
   font-size: 95%;
   > div {
     display: table-cell;
     padding: $gutter-h;
+    padding-right: ($gutter-h - .2);
+    padding-block: 0.6rem;
   }
   .new {
     margin-right: $gutter-h;

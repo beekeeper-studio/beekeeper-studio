@@ -2,26 +2,48 @@ import { TransportFavoriteQuery } from '@/common/transport';
 import _ from 'lodash'
 import Vue from 'vue'
 import { mutationsFor, DataState, DataStore, utilActionsFor } from '../DataModuleBase'
+import { accessGrantActions, accessGrantMutations } from '@/store/modules/data/access_grant/accessGrantStore'
+import { FolderFetchModule, treeActions } from "@/store/modules/data/tree/treeStore";
+import { ItemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 
-export const UtilQueryModule: DataStore<TransportFavoriteQuery, DataState<TransportFavoriteQuery>> = {
+type State = DataState<TransportFavoriteQuery>
+
+export const UtilQueryModule: DataStore<TransportFavoriteQuery, State> = {
   namespaced: true,
-  state: {
-    items: [],
-    loading: false,
-    error: null,
-    pollError: null,
-    filter: undefined, // maybe this can be more advanced? date filter?
-    pendingSaveIds: []
+  state() {
+    return {
+      items: [],
+      loading: false,
+      error: null,
+      pollError: null,
+      filter: undefined, // maybe this can be more advanced? date filter?
+      pendingSaveIds: [],
+    }
   },
   mutations: mutationsFor<TransportFavoriteQuery>({
     // more mutations go here
-    savedQueryFilter(state: DataState<TransportFavoriteQuery>, str: string) {
+    queryFilter(state: DataState<TransportFavoriteQuery>, str: string) {
       state.filter = str;
-    }
+    },
+    ...accessGrantMutations(),
   }, { field: 'title', direction : 'asc'}),
-  actions: utilActionsFor<TransportFavoriteQuery>('query', {
-    setSavedQueryFilter: _.debounce(function (context, filter) {
-      context.commit('savedQueryFilter', filter);
+  modules: {
+    nodes: ItemNodeModule('queryFolderId', 'title'),
+    folders: FolderFetchModule,
+  },
+  actions: {
+    ...utilActionsFor<TransportFavoriteQuery>('query', {}, {}, { text: true, title: true, database: true, excerpt: true, id: true }),
+    ...accessGrantActions('queries'),
+    ...treeActions<TransportFavoriteQuery>({ plural: 'queryFolderIds', singular: 'queryFolderId' }, true),
+    async initialize() {
+      // noop
+    },
+    async afterMutate(context, { type, data }) {
+      context.commit(`nodes/${type}`, data)
+    },
+    setQueryFilter: _.debounce(function (context, filter) {
+      context.commit('queryFilter', filter);
+      context.dispatch('search', filter);
     }, 500),
 
     // Reorder action for drag/drop - matches cloud module interface
@@ -78,23 +100,23 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, DataState<Transp
         .map(q => ({ ...q }))
 
       // Optimistic update
-      context.commit('upsert', updates)
+      await context.dispatch('mutate', { type: 'upsert', data: updates })
 
       try {
         // Save all items
         const saved = await Promise.all(
           updates.map(q => Vue.prototype.$util.send('appdb/query/save', { obj: q }))
         )
-        context.commit('upsert', saved)
+        await context.dispatch('mutate', { type: 'upsert', data: saved })
       } catch (e) {
         // Revert optimistic update using pre-mutation snapshots
-        context.commit('upsert', snapshot)
+        await context.dispatch('mutate', { type: 'upsert', data: snapshot })
         throw e
       }
 
       return item.id
     }
-  }, {}, { text: true, title: true, database: true, excerpt: true, id: true }),
+  },
   getters: {
     filteredQueries(state) {
       if (!state.filter) {

@@ -45,6 +45,9 @@ export const TempHandlers: ITempHandlers = {
     const file = state(sId).tempFiles.get(id);
 
     if (!file) throw new Error("Could not find file");
+    if (file.fileHandle) {
+      await file.fileHandle.close().catch();
+    }
     file.fileObject.removeCallback();
     state(sId).tempFiles.delete(id);
   }

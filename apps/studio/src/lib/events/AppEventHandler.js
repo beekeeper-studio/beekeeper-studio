@@ -17,6 +17,7 @@ export default class {
     window.main.on(AppEvent.beekeeperAdded, this.addBeekeeper.bind(this))
     window.main.on(AppEvent.switchLicenseState, this.switchLicenseState.bind(this))
     window.main.on(AppEvent.simulatePlatform, this.simulatePlatform.bind(this))
+    this.forward(AppEvent.disconnect)
     this.forward(AppEvent.closeTab)
     this.forward(AppEvent.newTab)
     this.forward(AppEvent.newCustomTab)
@@ -29,11 +30,13 @@ export default class {
     this.forward(AppEvent.exportTables);
     this.forward(AppEvent.upgradeModal)
     this.forward(AppEvent.promptSqlFilesImport)
+    this.forward(AppEvent.promptConnectionFilesImport)
     this.forward(AppEvent.updatePin)
     this.forward(AppEvent.settingsChanged)
     this.forward(AppEvent.openPluginManager)
     this.forward(AppEvent.openKeyboardShortcuts)
     this.forward(AppEvent.pluginMenuClicked)
+    this.forward(AppEvent.pasteAsNewRows)
   }
 
   forward(event) {

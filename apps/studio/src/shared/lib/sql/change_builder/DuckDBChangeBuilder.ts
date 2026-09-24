@@ -16,7 +16,7 @@ export class DuckDBChangeBuilder extends ChangeBuilderBase {
     return [
       'ADD COLUMN',
       this.wrapIdentifier(item.columnName),
-      this.wrapIdentifier(item.dataType),
+      item.dataType,
       item.defaultValue ? `DEFAULT ${this.wrapLiteral(item.defaultValue)}` : null,
       item.nullable ? 'NULL' : 'NOT NULL',
       item.extra,
