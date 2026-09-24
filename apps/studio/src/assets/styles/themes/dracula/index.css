@@ -1,94 +1,269 @@
-/* Follows the Dracula token conventions (reference: dracula/cursor): pink
-   keywords and operators, yellow strings, purple constants, green functions
-   and decorators, cyan types and built-ins, orange parameters, comment-colored
-   comments, foreground identifiers. Light is Alucard, dark is Dracula. */
 .theme-dracula {
-  --dracula-word-highlight: rgb(from #036a96 r g b / 0.25);
-  --dracula-search-match: rgb(from #846e15 r g b / 0.25);
-  --dracula-search-match-selected: rgb(from #846e15 r g b / 0.25);
-  --dracula-matching-bracket: #e2deca;
-  --dracula-indent-guide: #dcdeef;
-  --dracula-indent-guide-active: rgb(from #2c2b31 r g b / 0.38);
-  --dracula-linenumber-active: #a3144d;
+}
 
-  --editor-fg: var(--dracula-foreground);
-  --editor-cursor-bg: var(--dracula-foreground);
-  --editor-selected-bg: var(--dracula-selection);
+.theme-dracula.light-theme {
+  --editor-bg: #fffdf5;
+}
+
+.theme-dracula.dark-theme {
+  --editor-bg: var(--dracula-bg);
+  --editor-gutter-bg: var(--dracula-bg);
+  --editor-activeline-bg: var(--dracula-selection);
+  --editor-activeline-gutter-bg: var(--dracula-selection);
+  --editor-linenumber-fg: rgb(144, 145, 148);
+  --editor-highlight-bg: rgb(from #8be9fd r g b / 0.31);
+  --editor-linenumber-active-fg: var(--pink);
+  --editor-indent-marker-bg: rgb(from #ffffff r g b / 0.1);
+  --editor-indent-marker-active-bg: rgb(from #ffffff r g b / 0.27);
+  --editor-matchingbracket-bg: #44475a;
+  --editor-searchmatch-bg: rgb(from #ffffff r g b / 0.25);
+  --editor-searchmatch-selected-bg: rgb(from #ffb86c r g b / 0.5);
+}
+
+/* https://github.com/dracula/cursor/blob/main/dev/src/classic.yml */
+.theme-dracula {
+  --link-fg: var(--purple);
+
+  --selection-bg: var(--dracula-selection);
+
+  --scrollbar-thumb: rgb(from var(--dracula-fg) r g b / 0.2);
+
+  --tabs-header-bg: var(--titlebar-bg);
+  --tab-bg: var(--dracula-bg-darker);
+  --tab-fg: var(--dracula-comment);
+  --tab-active-bg: var(--dracula-bg);
+}
+
+.theme-dracula.dark-theme {
+}
+
+/* https://draculatheme.com/spec#ui-color-palette */
+.theme-dracula {
+  --gray-1: var(--dracula-bg);
+  --gray-2: var(--dracula-bg-lighter);
+  --gray-3: var(--dracula-bg-light);
+  --gray-4: var(--dracula-bg-dark);
+  --gray-5: var(--dracula-bg-darker);
+  --gray-6: #c4bfab;
+  --gray-7: #a7a28b;
+  --gray-8: #89846b;
+  --gray-9: #797358;
+  --gray-10: var(--dracula-comment);
+  --gray-11: var(--dracula-fg);
+  --gray-12: #000000;
+
+  --gray-a1: #00000000;
+  --gray-a2: #000a4a13;
+  --gray-a3: #000b1321;
+  --gray-a4: #00070c31;
+  --gray-a5: #00041643;
+  --gray-a6: #29210246;
+  --gray-a7: #2a230269;
+  --gray-a8: #2721008b;
+  --gray-a9: #2a2200a0;
+  --gray-a10: #282000ae;
+  --gray-a11: #000002e0;
+  --gray-a12: #000000ff;
+}
+
+.theme-dracula.dark-theme {
+  --gray-1: var(--dracula-bg-darker);
+  --gray-2: var(--dracula-bg-dark);
+  --gray-3: var(--dracula-bg);
+  --gray-4: var(--dracula-bg-light);
+  --gray-5: var(--dracula-bg-lighter);
+  --gray-6: #3f4762;
+  --gray-7: #4b5578;
+  --gray-8: #56648e;
+  --gray-9: var(--dracula-comment);
+  --gray-10: #6f80b2;
+  --gray-11: var(--dracula-fg);
+  --gray-12: #ffffff;
+
+  --gray-a1: #00000000;
+  --gray-a2: #b6b7f90d;
+  --gray-a3: #b2bef819;
+  --gray-a4: #bac6fd2b;
+  --gray-a5: #dbe1ff36;
+  --gray-a6: #9ab3fe4b;
+  --gray-a7: #99b1ff64;
+  --gray-a8: #94b0fd7e;
+  --gray-a9: #95aeff97;
+  --gray-a10: #9cb6ffa7;
+  --gray-a11: #fefef8f8;
+  --gray-a12: #ffffffff;
+}
+
+:root {
+  /* Based on https://draculatheme.com/spec */
+
+  /* =====================
+   * Dracula (dark scheme)
+   * =====================
+   **/
+
+  /* ===== Editor palette ===== */
+
+  --dracula-editor-bg: #282a36;
+  --dracula-editor-current-line: #6272a428;
+  --dracula-editor-selection: #44475a;
+  --dracula-editor-fg: #f8f8f2;
+  --dracula-editor-comment: #6272a4;
+  --dracula-editor-red: #ff5555;
+  --dracula-editor-orange: #ffb86c;
+  --dracula-editor-yellow: #f1fa8c;
+  --dracula-editor-green: #50fa7b;
+  --dracula-editor-cyan: #8be9fd;
+  --dracula-editor-purple: #bd93f9;
+  --dracula-editor-pink: #ff79c6;
+
+  /* ===== UI palette ===== */
+
+  --dracula-bg-lighter: #424450;
+  --dracula-bg-light: #343746;
+  --dracula-bg-dark: #21222c;
+  --dracula-bg-darker: #191a21;
+
+  --dracula-red: #DE5735;
+  --dracula-orange: #A39514;
+  --dracula-green: #089108;
+  --dracula-cyan: #0081D6;
+  --dracula-purple: #815CD6;
+
+  /* =====================
+   * Alucard (light scheme)
+   * =====================
+   **/
+
+  /* ===== Editor palette ===== */
+
+  --alucard-editor-bg: #fffbeb;
+  --alucard-editor-current-line: #6c664b;
+  --alucard-editor-selection: #cfcfde;
+  --alucard-editor-fg: #1f1f1f;
+  --alucard-editor-comment: #6c664b;
+  --alucard-editor-red: #cb3a2a;
+  --alucard-editor-orange: #a34d14;
+  --alucard-editor-yellow: #846e15;
+  --alucard-editor-green: #14710a;
+  --alucard-editor-cyan: #036a96;
+  --alucard-editor-purple: #644ac9;
+  --alucard-editor-pink: #a3144d;
+
+  /* ===== UI palette ===== */
+
+  --alucard-bg-lighter: #ece9df;
+  --alucard-bg-light: #dedccf;
+  --alucard-bg-dark: #ceccc0;
+  --alucard-bg-darker: #bcbab3;
+}
+
+.theme-dracula {
+  --gray-1: var(--dracula-bg-darker);
+  --gray-2: var(--dracula-bg-dark);
+  --gray-3: var(--dracula-bg);
+  --gray-4: var(--dracula-bg-light);
+  --gray-5: var(--dracula-bg-lighter);
+  --gray-6: #3f4762;
+  --gray-7: #4b5578;
+  --gray-8: #56648e;
+  --gray-9: var(--dracula-comment);
+  --gray-10: #6f80b2;
+  --gray-11: var(--dracula-fg);
+  --gray-12: #ffffff;
+
+  --gray-a1: #00000000;
+  --gray-a2: #b6b7f90d;
+  --gray-a3: #b2bef819;
+  --gray-a4: #bac6fd2b;
+  --gray-a5: #dbe1ff36;
+  --gray-a6: #9ab3fe4b;
+  --gray-a7: #99b1ff64;
+  --gray-a8: #94b0fd7e;
+  --gray-a9: #95aeff97;
+  --gray-a10: #9cb6ffa7;
+  --gray-a11: #fefef8f8;
+  --gray-a12: #ffffffff;
+
+  --app-bg: var(--dracula-bg);
+
+  --editor-fg: var(--dracula-fg);
+  --editor-cursor-bg: var(--dracula-fg);
   --editor-activeline-bg: var(--dracula-current-line);
   --editor-activeline-gutter-bg: var(--dracula-current-line);
-  --editor-highlight-bg: var(--dracula-word-highlight);
-  --editor-error-bg: rgb(from var(--dracula-red) r g b / 0.1);
-  --editor-error-fg: var(--dracula-red);
-  --editor-gutter-bg: var(--dracula-background);
+  --editor-highlight-bg: rgb(from #036a96 r g b / 0.25);
+  --editor-error-bg: rgb(from var(--red) r g b / 0.1);
+  --editor-error-fg: var(--red);
+  --editor-gutter-bg: var(--dracula-bg);
   --editor-linenumber-fg: var(--dracula-comment);
-  --editor-linenumber-active-fg: var(--dracula-linenumber-active);
+  --editor-linenumber-active-fg: #a3144d;
   --editor-foldgutter-fg: var(--dracula-comment);
-  --editor-foldgutter-fg-hover: var(--dracula-foreground);
-  --editor-indent-marker-bg: var(--dracula-indent-guide);
-  --editor-indent-marker-active-bg: var(--dracula-indent-guide-active);
+  --editor-foldgutter-fg-hover: var(--dracula-fg);
+  --editor-indent-marker-bg: #dcdeef;
+  --editor-indent-marker-active-bg: rgb(from #2c2b31 r g b / 0.38);
 
-  --editor-keyword-fg: var(--dracula-pink);
-  --editor-operatorKeyword-fg: var(--dracula-pink);
-  --editor-modifier-fg: var(--dracula-pink);
-  --editor-self-fg: var(--dracula-purple);
-  --editor-standard-fg: var(--dracula-cyan);
+  --editor-keyword-fg: var(--pink);
+  --editor-operatorKeyword-fg: var(--pink);
+  --editor-modifier-fg: var(--pink);
+  --editor-self-fg: var(--purple);
+  --editor-standard-fg: var(--blue);
 
-  --editor-string-fg: var(--dracula-yellow);
-  --editor-special-string-fg: var(--dracula-yellow);
-  --editor-character-fg: var(--dracula-yellow);
-  --editor-attributeValue-fg: var(--dracula-yellow);
-  --editor-regexp-fg: var(--dracula-yellow);
-  --editor-escape-fg: var(--dracula-pink);
+  --editor-string-fg: var(--yellow);
+  --editor-special-string-fg: var(--yellow);
+  --editor-character-fg: var(--yellow);
+  --editor-attributeValue-fg: var(--yellow);
+  --editor-regexp-fg: var(--yellow);
+  --editor-escape-fg: var(--pink);
 
-  --editor-number-fg: var(--dracula-purple);
-  --editor-bool-fg: var(--dracula-purple);
-  --editor-null-fg: var(--dracula-purple);
-  --editor-atom-fg: var(--dracula-purple);
-  --editor-color-fg: var(--dracula-purple);
-  --editor-enumMember-fg: var(--dracula-purple);
+  --editor-number-fg: var(--purple);
+  --editor-bool-fg: var(--purple);
+  --editor-null-fg: var(--purple);
+  --editor-atom-fg: var(--purple);
+  --editor-color-fg: var(--purple);
+  --editor-enumMember-fg: var(--purple);
 
-  --editor-variable-fg: var(--dracula-foreground);
-  --editor-variable-2-fg: var(--dracula-foreground);
-  --editor-variable-3-fg: var(--dracula-foreground);
-  --editor-variableName-fg: var(--dracula-foreground);
-  --editor-definition-fg: var(--dracula-foreground);
-  --editor-def-fg: var(--dracula-foreground);
-  --editor-function-fg: var(--dracula-green);
-  --editor-method-fg: var(--dracula-green);
-  --editor-parameter-fg: var(--dracula-orange);
-  --editor-property-fg: var(--dracula-foreground);
-  --editor-propertyName-fg: var(--dracula-foreground);
-  --editor-builtin-fg: var(--dracula-cyan);
-  --editor-tag-fg: var(--dracula-pink);
-  --editor-sql-field-fg: var(--dracula-foreground);
-  --editor-sql-alias-fg: var(--dracula-foreground);
-  --editor-name-fg: var(--dracula-foreground);
+  --editor-variable-fg: var(--dracula-fg);
+  --editor-variable-2-fg: var(--dracula-fg);
+  --editor-variable-3-fg: var(--dracula-fg);
+  --editor-variableName-fg: var(--dracula-fg);
+  --editor-definition-fg: var(--dracula-fg);
+  --editor-def-fg: var(--dracula-fg);
+  --editor-function-fg: var(--green);
+  --editor-method-fg: var(--green);
+  --editor-parameter-fg: var(--orange);
+  --editor-property-fg: var(--dracula-fg);
+  --editor-propertyName-fg: var(--dracula-fg);
+  --editor-builtin-fg: var(--blue);
+  --editor-tag-fg: var(--pink);
+  --editor-sql-field-fg: var(--dracula-fg);
+  --editor-sql-alias-fg: var(--dracula-fg);
+  --editor-name-fg: var(--dracula-fg);
 
-  --editor-type-fg: var(--dracula-cyan);
-  --editor-typeName-fg: var(--dracula-cyan);
-  --editor-typeParameter-fg: var(--dracula-orange);
-  --editor-class-fg: var(--dracula-green);
-  --editor-className-fg: var(--dracula-green);
-  --editor-interface-fg: var(--dracula-cyan);
-  --editor-struct-fg: var(--dracula-cyan);
-  --editor-enum-fg: var(--dracula-cyan);
-  --editor-namespace-fg: var(--dracula-cyan);
-  --editor-attributeName-fg: var(--dracula-green);
-  --editor-changed-fg: var(--dracula-cyan);
+  --editor-type-fg: var(--blue);
+  --editor-typeName-fg: var(--blue);
+  --editor-typeParameter-fg: var(--orange);
+  --editor-class-fg: var(--green);
+  --editor-className-fg: var(--green);
+  --editor-interface-fg: var(--blue);
+  --editor-struct-fg: var(--blue);
+  --editor-enum-fg: var(--blue);
+  --editor-namespace-fg: var(--blue);
+  --editor-attributeName-fg: var(--green);
+  --editor-changed-fg: var(--blue);
 
-  --editor-decorator-fg: var(--dracula-green);
-  --editor-macro-fg: var(--dracula-green);
-  --editor-annotation-fg: var(--dracula-green);
-  --editor-processingInstruction-fg: var(--dracula-pink);
-  --editor-meta-fg: var(--dracula-foreground);
-  --editor-event-fg: var(--dracula-foreground);
+  --editor-decorator-fg: var(--green);
+  --editor-macro-fg: var(--green);
+  --editor-annotation-fg: var(--green);
+  --editor-processingInstruction-fg: var(--pink);
+  --editor-meta-fg: var(--dracula-fg);
+  --editor-event-fg: var(--dracula-fg);
 
-  --editor-link-fg: var(--dracula-cyan);
-  --editor-url-fg: var(--dracula-cyan);
-  --editor-heading-fg: var(--dracula-purple);
-  --editor-header-fg: var(--dracula-purple);
+  --editor-link-fg: var(--blue);
+  --editor-url-fg: var(--blue);
+  --editor-heading-fg: var(--purple);
+  --editor-header-fg: var(--purple);
 
-  --editor-deleted-fg: var(--dracula-red);
+  --editor-deleted-fg: var(--red);
 
   --editor-comment-fg: var(--dracula-comment);
   --editor-comment-attribute-fg: var(--dracula-comment);
@@ -98,150 +273,31 @@
   --editor-label-fg: var(--dracula-comment);
   --editor-labelName-fg: var(--dracula-comment);
 
-  --editor-operator-fg: var(--dracula-pink);
-  --editor-punctuation-fg: var(--dracula-foreground);
-  --editor-separator-fg: var(--dracula-foreground);
-  --editor-bracket-fg: var(--dracula-foreground);
-  --editor-strong-fg: var(--dracula-orange);
-  --editor-emphasis-fg: var(--dracula-yellow);
+  --editor-operator-fg: var(--pink);
+  --editor-punctuation-fg: var(--dracula-fg);
+  --editor-separator-fg: var(--dracula-fg);
+  --editor-bracket-fg: var(--dracula-fg);
+  --editor-strong-fg: var(--orange);
+  --editor-emphasis-fg: var(--yellow);
   --editor-strikethrough-fg: var(--dracula-comment);
 
-  --editor-matchingbracket-fg: var(--dracula-foreground);
-  --editor-matchingbracket-bg: var(--dracula-matching-bracket);
-  --editor-matchingselection-bg: var(--dracula-background-lighter);
-  --editor-searchmatch-bg: var(--dracula-search-match);
-  --editor-searchmatch-selected-bg: var(--dracula-search-match-selected);
-  --editor-guttermarker-fg: var(--dracula-foreground);
+  --editor-matchingbracket-fg: var(--dracula-fg);
+  --editor-matchingbracket-bg: #e2deca;
+  --editor-matchingselection-bg: var(--dracula-bg-lighter);
+  --editor-searchmatch-bg: rgb(from #846e15 r g b / 0.25);
+  --editor-searchmatch-selected-bg: rgb(from #846e15 r g b / 0.25);
+  --editor-guttermarker-fg: var(--dracula-fg);
   --editor-guttermarker-subtle-fg: var(--dracula-comment);
-  --editor-fatcursor-bg: var(--dracula-foreground);
+  --editor-fatcursor-bg: var(--dracula-fg);
 
-  --editor-vim-panel-insert-bg: rgb(from var(--dracula-green) r g b / 0.15);
-  --editor-vim-panel-insert-fg: var(--dracula-green);
-  --editor-vim-panel-visual-bg: rgb(from var(--dracula-purple) r g b / 0.15);
-  --editor-vim-panel-visual-fg: var(--dracula-purple);
-  --editor-vim-panel-replace-bg: rgb(from var(--dracula-red) r g b / 0.15);
-  --editor-vim-panel-replace-fg: var(--dracula-red);
-  --editor-vim-panel-border: 1px solid var(--dracula-background-darker);
+  --editor-vim-panel-insert-bg: rgb(from var(--green) r g b / 0.15);
+  --editor-vim-panel-insert-fg: var(--green);
+  --editor-vim-panel-visual-bg: rgb(from var(--purple) r g b / 0.15);
+  --editor-vim-panel-visual-fg: var(--purple);
+  --editor-vim-panel-replace-bg: rgb(from var(--red) r g b / 0.15);
+  --editor-vim-panel-replace-fg: var(--red);
+  --editor-vim-panel-border: 1px solid var(--dracula-bg-darker);
 
-  --mongo-shell-mongo-prompt-fg: var(--dracula-green);
-  --mongo-shell-ansi-output-fg: var(--dracula-foreground);
-}
-
-.theme-dracula.light-theme {
-  --editor-bg: #fffdf5;
-}
-
-.theme-dracula.dark-theme {
-  --dracula-word-highlight: rgb(from #8be9fd r g b / 0.31);
-  --dracula-search-match: rgb(from #ffffff r g b / 0.25);
-  --dracula-search-match-selected: rgb(from #ffb86c r g b / 0.5);
-  --dracula-matching-bracket: #44475a;
-  --dracula-indent-guide: rgb(from #ffffff r g b / 0.1);
-  --dracula-indent-guide-active: rgb(from #ffffff r g b / 0.27);
-  --dracula-linenumber-active: var(--dracula-pink);
-
-  --editor-bg: var(--dracula-background);
-  --editor-gutter-bg: var(--dracula-background);
-  --editor-activeline-bg: var(--dracula-selection);
-  --editor-activeline-gutter-bg: var(--dracula-selection);
-  --editor-linenumber-fg: rgb(144, 145, 148);
-}
-
-/* https://github.com/dracula/cursor/blob/main/dev/src/classic.yml */
-.theme-dracula {
-  --dracula-background: #FFFBEB;
-  --dracula-current-line: #6C664B28;
-  --dracula-selection: #CFCFDE;
-  --dracula-foreground: #1F1F1F;
-  --dracula-comment: #6C664B;
-  --dracula-red: #CB3A2A;
-  --dracula-orange: #A34D14;
-  --dracula-yellow: #846E15;
-  --dracula-green: #14710A;
-  --dracula-cyan: #036A96;
-  --dracula-purple: #644AC9;
-  --dracula-pink: #A3144D;
-  --dracula-floating: #EFEDDC;
-  --dracula-background-lighter: #ECE9DF;
-  --dracula-background-light: #DEDCCF;
-  --dracula-background-dark: #CECCC0;
-  --dracula-background-darker: #BCBAB3;
-
-  --app-fg: var(--dracula-foreground);
-
-  --link-fg: var(--dracula-purple);
-
-  --selection-bg: var(--dracula-selection);
-  --selection-fg: var(--dracula-foreground);
-
-  --scrollbar-thumb: rgb(from var(--dracula-foreground) r g b / 0.2);
-
-  --titlebar-bg: var(--dracula-background-dark);
-  --titlebar-fg: var(--dracula-foreground);
-  --titlebar-inactive-bg: var(--dracula-background-darker);
-  --titlebar-inactive-fg: var(--dracula-comment);
-
-  --sidebar-bg: var(--dracula-background-dark);
-  --sidebar-fg: var(--dracula-foreground);
-  --sidebar-rail-bg: var(--dracula-background-light);
-  --sidebar-rail-fg: var(--dracula-comment);
-  --sidebar-rail-fg-hover: var(--dracula-foreground);
-  --sidebar-rail-active-fg: var(--dracula-foreground);
-  --sidebar-rail-active-bg: rgb(from var(--dracula-purple) r g b / 0.2);
-
-  --input-bg: var(--dracula-background);
-  --input-border: 1px solid var(--gray-a1);
-  --input-border-focus: 1px solid var(--dracula-comment);
-
-  --panel-bg: var(--dracula-background-dark);
-  --panel-fg: var(--dracula-foreground);
-  --panel-bg-hover: var(--dracula-background-lighter);
-
-  --btn-flat-bg: rgb(from var(--dracula-foreground) r g b / 0.2);
-  --btn-flat-bg-hover: rgb(from var(--dracula-foreground) r g b / 0.1);
-  --btn-flat-fg: var(--dracula-foreground);
-  --btn-flat-fg-hover: var(--dracula-foreground);
-
-  --badge-flat-bg: var(--dracula-background-light);
-  --badge-flat-fg: var(--dracula-foreground);
-
-  --statusbar-bg: var(--dracula-background-dark);
-  --statusbar-fg: var(--dracula-foreground);
-  --statusbar-fg-inverse: var(--dracula-background);
-
-  --tabs-header-bg: var(--titlebar-bg);
-  --tab-bg: var(--dracula-background-darker);
-  --tab-fg: var(--dracula-comment);
-  --tab-active-bg: var(--dracula-background);
-  --tab-active-fg: var(--dracula-foreground);
-}
-
-/* Dark step-9s are bright pastels, so black sits on all of them. */
-.theme-dracula.dark-theme {
-  --dracula-background: #282A36;
-  --dracula-current-line: #6272A428;
-  --dracula-selection: #44475A;
-  --dracula-foreground: #F8F8F2;
-  --dracula-comment: #6272A4;
-  --dracula-red: #FF5555;
-  --dracula-orange: #FFB86C;
-  --dracula-yellow: #F1FA8C;
-  --dracula-green: #50FA7B;
-  --dracula-cyan: #8BE9FD;
-  --dracula-purple: #BD93F9;
-  --dracula-pink: #FF79C6;
-  --dracula-floating: #343746;
-  --dracula-background-lighter: #424450;
-  --dracula-background-light: #343746;
-  --dracula-background-dark: #21222C;
-  --dracula-background-darker: #191A21;
-
-  --btn-flat-bg: var(--gray-a4);
-  --btn-flat-bg-hover: var(--gray-a5);
-
-  --table-header-highlight-bg: var(--dracula-background-light);
-  --table-cell-bg-hover: var(--bg-hover-a);
-  --table-cell-selected-bg: var(--bg-active-a);
-
-  --alert-bg: var(--bg-hover-a);
+  --mongo-shell-mongo-prompt-fg: var(--green);
+  --mongo-shell-ansi-output-fg: var(--dracula-fg);
 }

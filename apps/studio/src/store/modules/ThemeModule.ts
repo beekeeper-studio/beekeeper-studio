@@ -18,8 +18,9 @@ export const ThemeModule: Module<State, RootState> = {
     themes: [
       { id: "default", label: "Beekeeper Studio" },
       { id: "solarized", label: "Solarized" },
-      { id: "dracula", label: "Dracula / Alucard" },
+      { id: "dracula", label: "Dracula" },
       { id: "github", label: "GitHub" },
+      { id: "custom", label: "Custom" },
     ],
   }),
   mutations: {
