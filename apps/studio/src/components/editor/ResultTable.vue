@@ -80,7 +80,7 @@
   import { CellComponent, RangeComponent, RowComponent } from 'tabulator-tables'
   import { PropType } from 'vue'
   import { safeSqlFormat } from '@/common/utils'
-import { stringToTypedArray } from '@/common/utils'
+  import { stringToTypedArray } from '@/common/utils'
 
   const log = rawLog.scope('ResultTable');
 
@@ -172,7 +172,9 @@ import { stringToTypedArray } from '@/common/utils'
           'queryEditor.openTableFilter': this.focusOnFilterInput.bind(this),
           'general.save': this.saveChanges.bind(this),
           'general.openInSqlEditor': this.copyToSql.bind(this),
-          'resultTable.openEditorModal': this.openEditorMenuByShortcut.bind(this)
+          'general.pasteSelection': this.pasteSelection.bind(this),
+          'tableTable.openEditorModal': this.openEditorMenuByShortcut.bind(this),
+          'tableTable.nullSelection': this.nullTableSelection.bind(this)
         });
       },
       tableFilterKeymap() {
@@ -305,6 +307,18 @@ import { stringToTypedArray } from '@/common/utils'
         });
 
         this.tabulator.on('cellEdited', this.cellEdited);
+
+        this.tabulator.on('historyUndo', (action, component) => {
+          if (action === 'cellEdit') {
+            this.cellEdited(component);
+          }
+        });
+
+        this.tabulator.on('historyRedo', (action, component) => {
+          if (action === 'cellEdit') {
+            this.cellEdited(component)
+          }
+        })
       },
       rowFormatter(row: RowComponent) {
         const data = row.getData();
@@ -333,24 +347,25 @@ import { stringToTypedArray } from '@/common/utils'
           element.classList.add(classToAdd);
         }
       },
+      setRangesNull(ranges: RangeComponent[]) {
+        const targets = ranges.flatMap((range) => range.getCells().flat()).map((cell) => ({
+          row: cell.getRow(),
+          field: cell.getField()
+        }));
+
+        for (const { row, field } of targets) {
+          const cell = row.getCell(field);
+          if (!cell) continue;
+          if (this.cellEditCheck(cell)) cell.setValue(null);
+        }
+      },
       setAsNullMenuItem(ranges: RangeComponent[]) {
         const areAllCellsReadOnly = ranges
           .flatMap((range) => range.getColumns())
           .every((col) => !this.cellEditCheck(col));
         return {
           label: createMenuItem("Set as NULL"),
-          action: () => {
-            const targets = ranges.flatMap((range) => range.getCells().flat()).map((cell) => ({
-              row: cell.getRow(),
-              field: cell.getField()
-            }));
-
-            for (const { row, field } of targets) {
-              const cell = row.getCell(field);
-              if (!cell) continue;
-              if (this.cellEditCheck(cell)) cell.setValue(null);
-            }
-          },
+          action: () => this.setRangesNull(ranges),
           disabled: areAllCellsReadOnly || !this.editingData,
         }
       },
@@ -809,6 +824,14 @@ import { stringToTypedArray } from '@/common/utils'
         const isFocusingTable = this.checkTableFocus();
         if (!this.active || !isFocusingTable) return
         copyRanges({ ranges: this.tabulator.getRanges(), type: 'plain' })
+      },
+      pasteSelection() {
+        if (!this.checkTableFocus() || !this.editingResult) return;
+        pasteRange(_.last(this.tabulator.getRanges()));
+      },
+      nullTableSelection() {
+        if (!this.checkTableFocus() || !this.editingResult) return;
+        this.setRangesNull(this.tabulator.getRanges());
       },
       dataToJson(rawData, firstObjectOnly) {
         const rows = _.isArray(rawData) ? rawData : [rawData]

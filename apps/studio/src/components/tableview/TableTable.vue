@@ -1163,6 +1163,7 @@ export default Vue.extend({
         persistenceReaderFunc: this.persistenceReader,
         persistenceWriterFunc: this.persistenceWriter,
         rowHeader: {
+          // @ts-ignore
           contextMenu: (_e, cell: CellComponent) => {
             const ranges = cell.getTable().getRanges();
             return [
