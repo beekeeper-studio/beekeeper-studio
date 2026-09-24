@@ -1,0 +1,79 @@
+.light-theme {
+  --editor-font-weight: 500;
+}
+
+.light-theme,
+.dark-theme {
+  --base-accent: #fad83b;
+
+  --btn-primary-fg: var(--gray-2);
+  --btn-primary-bg: var(--gray-12);
+  --btn-primary-bg-hover: var(--gray-11);
+
+  /* ===== Editor ===== */
+
+  /* Matches and markers */
+  --editor-matchingbracket-fg: #999977;
+  --editor-matchingbracket-bg: rgba(153, 153, 119, 0.2);
+  --editor-fatcursor-bg: #77ee77;
+
+  /* ===== Color Syntax ===== */
+
+  --syntax-decorator: #75715e;
+  --syntax-link: #ae81ff;
+
+  /* Keywords */
+  --editor-modifier-fg: #66d9ef;
+  --editor-self-fg: #fd971f;
+  --editor-standard-fg: #66d9ef;
+
+  /* Strings */
+  --editor-special-string-fg: var(--success-text);
+  --editor-character-fg: var(--success-text);
+  --editor-attributeValue-fg: var(--success-text);
+  --editor-regexp-fg: #ee5555;
+  --editor-escape-fg: #ae81ff;
+
+  /* Constants */
+  --editor-bool-fg: #ae81ff;
+  --editor-null-fg: #ae81ff;
+  --editor-atom-fg: #ae81ff;
+  --editor-color-fg: #ae81ff;
+  --editor-enumMember-fg: #4488ff;
+
+  /* Variables and functions */
+  --editor-variableName-fg: var(--text-contrast);
+  --editor-sql-alias-fg: var(--text-contrast);
+  --editor-name-fg: var(--text-contrast);
+  --editor-definition-fg: #fd971f;
+  --editor-property-fg: #9cdcfe;
+  --editor-method-fg: #4488ee;
+  --editor-parameter-fg: #2288dd;
+
+  /* Types */
+  --editor-attributeName-fg: var(--info-text);
+  --editor-typeParameter-fg: #00aaaa;
+  --editor-class-fg: #4ec9b0;
+  --editor-className-fg: #4ec9b0;
+  --editor-interface-fg: #00cc88;
+  --editor-struct-fg: #00bb99;
+  --editor-enum-fg: #00aa77;
+  --editor-namespace-fg: #7a7a7a;
+  --editor-changed-fg: #e6db74;
+
+  /* Decorators and metadata */
+  --editor-decorator-fg: #cc33cc;
+  --editor-macro-fg: #8855dd;
+  --editor-event-fg: #5555ff;
+
+  /* Diffs and errors */
+  --editor-deleted-fg: #f92672;
+
+  /* Comments */
+  --editor-comment-fg: #75715e;
+  --editor-labelName-fg: #c8c8c8;
+
+  /* Punctuation */
+  --editor-bracket-fg: var(--text);
+  --editor-strikethrough-fg: var(--text);
+}

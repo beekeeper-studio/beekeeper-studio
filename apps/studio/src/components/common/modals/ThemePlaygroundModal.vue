@@ -140,7 +140,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="v in ['', 'badge-solid']" :key="v">
+            <tr v-for="v in ['', 'badge-primary']" :key="v">
               <th>{{ v ? variantLabel(v) : "Flat" }}</th>
               <td v-for="color in badgeColors" :key="color">
                 <span class="badge" :class="[v, color]">Badge</span>

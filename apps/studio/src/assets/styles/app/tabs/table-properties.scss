@@ -251,14 +251,14 @@
         background: var(--primary-solid-bg);
         font-size: 13px;
         font-weight: 500;
-        color: var(--primary-solid-fg);
+        color: var(--primary-contrast);
         &:hover, &:focus {
           background: var(--primary-solid-bg-hover);
-          color: var(--primary-solid-fg-hover);
+          color: var(--primary-contrast);
         }
         .material-icons {
           font-size: 15px;
-          color: var(--primary-solid-fg);
+          color: var(--primary-contrast);
         }
       }
     }

@@ -27,11 +27,11 @@ $steps: (
 );
 
 // Hue scales every theme defines.
-$hues: red, orange, yellow, green, blue, purple, pink;
+$hues: gray, red, orange, yellow, green, blue, purple, pink;
 
 // Semantic families and the hue scale each one reads from.
 $families: (
-  primary: yellow,
+  primary: gray,
   info: blue,
   success: green,
   warning: orange,

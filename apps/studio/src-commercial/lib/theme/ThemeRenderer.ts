@@ -1,60 +1,10 @@
 import { Store } from "vuex";
 import { State } from "@/store/index";
 import { AppEvent } from "@/common/AppEvent";
-import { generatePaletteAsCssProps } from "@/lib/theme/palette";
-import defaultTheme from "@/assets/styles/themes/default/manifest.json";
-import solarizedTheme from "@/assets/styles/themes/solarized/manifest.json";
-import draculaTheme from "@/assets/styles/themes/dracula/manifest.json";
-import githubTheme from "@/assets/styles/themes/github/manifest.json";
-
-interface ThemeManifest {
-  id: string;
-  name: string;
-  base: {
-    background: string;
-    gray: string;
-    blue: string;
-    green: string;
-    orange: string;
-    red: string;
-    purple: string;
-    pink: string;
-    yellow: string;
-  };
-  baseDark?: {
-    /** @default uses base color. */
-    background?: string;
-    /** @default uses base color. */
-    gray?: string;
-    /** @default uses base color. */
-    blue?: string;
-    /** @default uses base color. */
-    green?: string;
-    /** @default uses base color. */
-    orange?: string;
-    /** @default uses base color. */
-    purple?: string;
-    /** @default uses base color. */
-    pink?: string;
-    /** @default uses base color. */
-    yellow?: string;
-  };
-  functional?: {
-    /** @default yellow */
-    accent?: "gray" | "blue" | "green" | "orange" | "red" | "purple" | "pink";
-  };
-  /** Primary buttons use the gray scale instead of the primary hue. */
-  primaryButtonsUseGray?: boolean;
-}
+import { StylesheetLoader } from "./StylesheetLoader";
+import { ColorGenerator } from "./ColorGenerator";
 
 type ThemeId = "default" | "solarized" | "dracula" | "github";
-
-const manifests: Record<ThemeId, ThemeManifest> = {
-  default: defaultTheme as ThemeManifest,
-  solarized: solarizedTheme as ThemeManifest,
-  dracula: draculaTheme as ThemeManifest,
-  github: githubTheme as ThemeManifest,
-};
 
 export interface ThemeRendererOptions {
   store: Store<State>;
@@ -67,7 +17,12 @@ export interface ThemeRendererOptions {
 
 export class ThemeRenderer {
   private initialized = false;
-  private el: HTMLStyleElement | null = null;
+  private themeId: ThemeId | null = null;
+  private dark: boolean | null = null;
+  private stylesheet: StylesheetLoader | null = null;
+  private style: HTMLStyleElement | null = null;
+
+  private media = window.matchMedia("(prefers-color-scheme: dark)");
 
   constructor(readonly options: ThemeRendererOptions) { }
 
@@ -76,16 +31,15 @@ export class ThemeRenderer {
       return;
     }
 
-    const { themeId, dark, systemDark } = this.parseThemeParams();
+    const { themeId, dark } = this.parseThemeParams();
 
-    this.el = document.createElement("style");
-    document.head.appendChild(this.el);
+    this.stylesheet = new StylesheetLoader("link#theme");
 
-    this.apply(themeId, dark);
+    await this.apply(themeId, dark);
 
     document.body.classList.toggle("window-inactive", !document.hasFocus());
 
-    this.options.store.commit("theme/setSystemDark", systemDark);
+    this.options.store.commit("theme/setSystemDark", this.media.matches);
 
     this.subscribe();
 
@@ -101,28 +55,47 @@ export class ThemeRenderer {
       this.options.store.commit("theme/setSystemDark", dark);
     });
 
+    if (import.meta.hot) {
+      import.meta.hot.on("theme-css-update", async () => {
+        await this.stylesheet.reload();
+        this.renderPalette(this.dark);
+      });
+    }
+
     this.options.store.watch(
       (_state, getters) => ({
         themeId: getters["theme/id"],
         themeDark: getters["theme/dark"],
       }),
-      ({ themeId, themeDark }) => {
-        this.apply(themeId, themeDark);
-        this.options.bus.emit(AppEvent.changedTheme, { themeId, themeDark });
-      }
+      ({ themeId, themeDark }) => this.handleThemeChanged(themeId, themeDark)
     );
+  }
+
+  private async handleThemeChanged(
+    themeId: ThemeId,
+    themeDark: boolean
+  ): Promise<void> {
+    if (themeId === this.themeId && themeDark === this.dark) {
+      return;
+    }
+
+    await this.apply(themeId, themeDark);
+    this.options.bus.emit(AppEvent.changedTheme, { themeId, themeDark });
   }
 
   private parseThemeParams() {
     const themeParams = new URLSearchParams(window.location.search);
     const themeId = themeParams.get("themeId") ?? "default";
     const appearance = themeParams.get("appearance") ?? "auto";
-    const systemDark = themeParams.get("systemDark") === "true";
-    const dark = appearance === "auto" ? systemDark : appearance === "dark";
-    return { themeId, dark, systemDark };
+    const dark =
+      appearance === "auto" ? this.media.matches : appearance === "dark";
+    return { themeId, dark };
   }
 
-  private apply(themeId: ThemeId, dark: boolean): void {
+  private async apply(themeId: ThemeId, dark: boolean): Promise<void> {
+    this.themeId = themeId;
+    this.dark = dark;
+
     document.body.classList.forEach((className) => {
       if (className.startsWith("theme-")) {
         document.body.classList.remove(className);
@@ -133,65 +106,55 @@ export class ThemeRenderer {
     document.body.classList.toggle("dark-theme", dark);
     document.body.classList.toggle("light-theme", !dark);
 
-    this.applyScales(themeId, dark);
+    await this.stylesheet.load(`/themes/${themeId}.css`);
+
+    this.renderPalette(dark);
   }
 
-  private applyScales(themeId: ThemeId, dark: boolean): void {
-    const manifest = manifests[themeId];
+  private renderPalette(dark: boolean): void {
+    const background = this.stylesheet.get("--background");
+    const gray = this.stylesheet.get("--base-gray");
+    const red = this.stylesheet.get("--base-red");
+    const orange = this.stylesheet.get("--base-orange");
+    const yellow = this.stylesheet.get("--base-yellow");
+    const green = this.stylesheet.get("--base-green");
+    const blue = this.stylesheet.get("--base-blue");
+    const purple = this.stylesheet.get("--base-purple");
+    const pink = this.stylesheet.get("--base-pink");
+    const accent = this.stylesheet.get("--base-accent");
 
-    if (!manifest) {
-      this.el.textContent = "";
-      return;
+    const palette = new ColorGenerator({ gray, background });
+
+    let css = palette.generateGrayCss(gray, dark);
+
+    if (red) {
+      css += palette.generateCss("red", red, dark);
     }
-
-    const base = {
-      ...manifest.base,
-      ...(dark ? manifest.baseDark : {}),
-    };
-
-    let content = `body { --app-bg: ${base.background}; `;
-
-    for (const [name, color] of Object.entries(base)) {
-      content += `--${name}: ${color}; `;
+    if (orange) {
+      css += palette.generateCss("orange", orange, dark);
     }
-
-    for (const color of [
-      "gray",
-      "blue",
-      "green",
-      "orange",
-      "red",
-      "purple",
-      "pink",
-      "yellow",
-    ] as const) {
-      const str = generatePaletteAsCssProps(color, {
-        dark,
-        accent: base[color],
-        gray: base.gray,
-        background: base.background,
-      });
-      content += str;
+    if (yellow) {
+      css += palette.generateCss("yellow", yellow, dark);
     }
-
-    const accent = manifest.functional?.accent;
+    if (green) {
+      css += palette.generateCss("green", green, dark);
+    }
+    if (blue) {
+      css += palette.generateCss("blue", blue, dark);
+    }
+    if (purple) {
+      css += palette.generateCss("purple", purple, dark);
+    }
+    if (pink) {
+      css += palette.generateCss("pink", pink, dark);
+    }
     if (accent) {
-      for (let step = 1; step <= 12; step++) {
-        content += `--primary-${step}: var(--${accent}-${step}); `;
-        content += `--primary-a${step}: var(--${accent}-a${step}); `;
-      }
-      content += `--primary-solid-fg: var(--${accent}-fg); `;
-      content += `--primary-solid-fg-hover: var(--${accent}-fg); `;
+      css += palette.generateCss("primary", accent, dark);
     }
 
-    if (manifest.primaryButtonsUseGray) {
-      content += dark
-        ? `--btn-primary-fg: var(--gray-2); --btn-primary-fg-hover: var(--gray-2); --btn-primary-bg: var(--white); --btn-primary-bg-hover: var(--gray-12); `
-        : `--btn-primary-fg: var(--gray-3); --btn-primary-fg-hover: var(--gray-3); --btn-primary-bg: var(--black); --btn-primary-bg-hover: var(--gray-12); `;
-    }
-
-    content += ` }`;
-
-    this.el.textContent = content;
+    this.style?.remove();
+    this.style = document.createElement("style");
+    this.style.textContent = `body { ${css}} }`;
+    document.head.insertBefore(this.style, document.querySelector("link#theme"));
   }
 }

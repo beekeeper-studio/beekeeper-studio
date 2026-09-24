@@ -5,24 +5,25 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Beekeeper-Studio</title>
-    <link rel="stylesheet" href="./src/assets/styles/themes/utilities.scss">
 
-    <!-- FIXME - only one theme is loaded, not all like this -->
-    <link rel="stylesheet" href="./src/assets/styles/themes/default/index.css">
-    <link rel="stylesheet" href="./src/assets/styles/themes/solarized/index.css">
-    <link rel="stylesheet" href="./src/assets/styles/themes/dracula/index.css">
-    <link rel="stylesheet" href="./src/assets/styles/themes/github/index.css">
+    <link rel="stylesheet" type="text/css" href="./src/assets/styles/themes/fallback.css">
+    <link rel="stylesheet" type="text/css" href="./src/assets/styles/themes/utilities.scss">
+
+    <link id="theme" rel="stylesheet" type="text/css">
+    <script>
+      const params = new URLSearchParams(location.search);
+      const themeId = params.get("themeId") || "default";
+      const appearance = params.get("appearance") || "auto";
+      document.getElementById("theme").href = `/themes/${themeId}.css`;
+    </script>
 
     <script src="./src-commercial/entrypoints/renderer.ts" type="module"></script>
   </head>
   <body id="body">
     <script>
-      const params = new URLSearchParams(location.search);
-      const themeId = params.get("themeId") || "default";
-      const appearance = params.get("appearance") || "auto";
-      const systemDark = params.get("systemDark") === "true";
-      const dark = appearance === "auto" ? systemDark : appearance === "dark";
-      document.body.classList.add(dark ? "dark-theme" : "light-theme");
+      const systemDark = matchMedia("(prefers-color-scheme: dark)").matches;
+      const isDark = appearance === "auto" ? systemDark : appearance === "dark";
+      document.body.classList.add(isDark ? "dark-theme" : "light-theme");
       document.body.classList.add(`theme-${themeId}`);
     </script>
     <noscript>

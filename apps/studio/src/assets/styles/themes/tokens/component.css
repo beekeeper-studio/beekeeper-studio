@@ -1,0 +1,323 @@
+.light-theme,
+.dark-theme {
+  /* ===== App ===== */
+
+  --app-bg: var(--background);
+  --app-fg: var(--text);
+  --focus-ring: 2px solid var(--border-a);
+
+  /* ===== Button ===== */
+
+  /* Ghost Button */
+  --btn-fg: var(--gray-a11);
+  --btn-fg-hover: var(--gray-12);
+  --btn-bg: transparent;
+  --btn-bg-hover: var(--gray-a2);
+  --btn-shadow: none;
+
+  /* Flat Button */
+  --btn-flat-fg: var(--gray-12);
+  --btn-flat-fg-hover: var(--gray-12);
+  --btn-flat-bg: var(--gray-a3);
+  --btn-flat-bg-hover: var(--gray-a4);
+  --btn-flat-shadow: none;
+
+  /* Primary Button */
+  --btn-primary-fg: var(--primary-contrast);
+  --btn-primary-bg: var(--primary-solid-bg);
+  --btn-primary-bg-hover: var(--primary-solid-bg-hover);
+  --btn-primary-shadow: none;
+
+  /* ===== Icon Button ===== */
+
+  --btn-icon-fg: var(--gray-a10);
+  --btn-icon-fg-hover: var(--gray-a11);
+
+  /* ===== Input ===== */
+
+  --input-bg: transparent;
+  --input-fg: var(--text);
+  --input-border: 1px solid var(--border-subtle);
+  --input-border-focus: 1px solid var(--border-hover);
+
+  /* ===== Select ===== */
+
+  --select-arrow: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(0,0,0, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>");
+
+  /* ===== Checkbox ===== */
+
+  --checkbox-border: var(--gray-7);
+  --checkbox-bg: transparent;
+  --checkbox-checked-bg: var(--btn-primary-bg);
+  --checkbox-checked-fg: var(--btn-primary-fg);
+
+  /* ===== Link ===== */
+
+  --link-fg: var(--gray-12);
+
+  /* ===== Selection ===== */
+
+  --selection-bg: var(--info-a5);
+  --selection-fg: var(--gray-12);
+
+  /* ===== Scrollbar ===== */
+
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: var(--gray-a3);
+
+  /* ===== Titlebar ===== */
+
+  --titlebar-bg: var(--gray-2);
+  --titlebar-fg: var(--gray-11);
+  --titlebar-inactive-bg: var(--gray-1);
+  --titlebar-inactive-fg: var(--gray-9);
+
+  /* ===== Sidebar ===== */
+
+  --sidebar-bg: var(--gray-2);
+  --sidebar-fg: var(--gray-11);
+
+  /* ===== Sidebar Rail ===== */
+
+  --sidebar-rail-bg: var(--sidebar-bg);
+  --sidebar-rail-fg: var(--solid-bg);
+  --sidebar-rail-fg-hover: var(--solid-bg-hover);
+  --sidebar-rail-active-fg: var(--text);
+  --sidebar-rail-active-bg: transparent;
+
+  /* ===== Panel ===== */
+  /* A surface that floats above the app: cards, modals, menus, tooltips, etc. */
+
+  --panel-bg: var(--gray-2);
+  --panel-fg: var(--gray-11);
+  --panel-bg-hover: var(--gray-a3);
+  --panel-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.08),
+    0 6px 15px rgba(0, 0, 0, 0.12);
+
+  /* ===== Overlay ===== */
+
+  --overlay-bg: rgb(from var(--gray-1) r g b / 0.9);
+  --overlay-subtle-bg: rgb(from var(--gray-1) r g b / 0.5);
+
+  /* ===== Nav Pills ===== */
+
+  --nav-pills-shadow: inset 0 -1px var(--border-subtle);
+  --nav-pill-fg: var(--text-muted);
+  --nav-pill-fg-hover: var(--text-contrast);
+  --nav-pill-shadow-hover: inset 0 -2px var(--gray-a5);
+  --nav-pill-active-fg: var(--primary-text);
+  --nav-pill-active-shadow: inset 0 -2px var(--primary-solid-bg);
+
+  /* ===== Tree ===== */
+
+  --tree-guide-border: transparent;
+  --tree-guide-border-hover: var(--gray-a3);
+
+  /* ===== Table ===== */
+
+  --table-bg: var(--editor-bg);
+  --table-fg: var(--editor-fg);
+
+  --table-header-shadow: inset 0 -1px var(--border-subtle);
+  --table-header-highlight-bg: var(--bg-a);
+  --table-header-highlight-fg: var(--text-contrast);
+  --table-header-selected-bg: var(--primary-solid-bg);
+  --table-header-selected-fg: var(--primary-contrast);
+
+  --table-row-header-shadow: 1px 0 var(--border-subtle);
+  --table-row-odd-bg: var(--bg-subtle-a);
+  --table-row-even-bg: transparent;
+  --table-row-added-bg: var(--success-bg-a);
+  --table-row-deleted-bg: var(--danger-bg-active-a);
+  --table-row-error-bg: var(--danger-bg-a);
+
+  --table-cell-fg: var(--table-fg);
+  --table-cell-readonly-fg: var(--text-muted);
+  --table-cell-bg-hover: var(--bg-a);
+  --table-cell-selected-bg: var(--bg-a);
+  --table-cell-editing-bg: var(--bg-active-a);
+  --table-cell-edited-bg: var(--primary-bg-hover-a);
+
+  --table-range-border: var(--primary-solid-bg);
+  --table-range-handle-bg: var(--primary-solid-bg);
+  --table-resize-guide-bg: var(--solid-bg);
+
+  /* ===== Alert ===== */
+
+  --alert-bg: var(--bg-a);
+  --alert-fg: var(--text);
+
+  /* ===== Kbd ===== */
+
+  --kbd-bg: var(--badge-flat-bg);
+  --kbd-fg: var(--badge-flat-fg);
+  --kbd-shadow: inset 0 0 0 1px var(--gray-a3);
+
+  /* ===== Badge ===== */
+
+  --badge-flat-bg: var(--gray-a3);
+  --badge-flat-fg: var(--gray-a11);
+  --badge-primary-bg: var(--gray-12);
+  --badge-primary-fg: var(--gray-1);
+
+  /* ===== Statusbar ===== */
+
+  --statusbar-bg: var(--gray-2);
+  --statusbar-fg: var(--gray-11);
+  --statusbar-fg-inverse: var(--gray-1);
+
+  /* ===== Tabs ===== */
+
+  /* Background of the container that holds the tabs. */
+  --tabs-header-bg: var(--gray-2);
+  --tab-fg: var(--gray-11);
+  --tab-bg: var(--gray-3);
+  --tab-active-fg: var(--gray-12);
+  --tab-active-bg: var(--editor-bg);
+
+  /* ===== Editor ===== */
+
+  /* Editor chrome */
+  --editor-font-weight: normal;
+  --editor-bg: var(--app-bg);
+  --editor-fg: var(--text-contrast);
+  --editor-cursor-bg: var(--text-contrast);
+  --editor-selected-bg: var(--selection-bg);
+  --editor-activeline-bg: var(--bg-a);
+  --editor-activeline-gutter-bg: var(--bg-a);
+  --editor-focused-outline: transparent;
+  --editor-highlight-bg: var(--warning-bg-active-a);
+  --editor-error-bg: var(--danger-bg-a);
+  --editor-error-fg: var(--danger-text);
+  --editor-gutter-bg: var(--bg-base);
+  --editor-gutter-border: transparent;
+  --editor-linenumber-fg: var(--bg-active-a);
+  --editor-linenumber-active-fg: var(--text-contrast);
+  --editor-foldgutter-fg: var(--border-hover-a);
+  --editor-foldgutter-fg-hover: var(--text-contrast);
+  --editor-indent-marker-bg: var(--bg-hover-a);
+  --editor-indent-marker-active-bg: var(--border-subtle-a);
+
+  /* Matches and markers */
+  --editor-guttermarker-subtle-fg: var(--border-a);
+  --editor-matchingselection-bg: var(--bg-hover-a);
+  --editor-searchmatch-bg: var(--info-bg-active-a);
+  --editor-searchmatch-selected-bg: var(--info-border-subtle-a);
+
+  /* Vim panel */
+  /* The vim bar inherits so it follows the editor. */
+  --editor-vim-panel-bg: inherit;
+  --editor-vim-panel-fg: inherit;
+  --editor-vim-panel-normal-bg: var(--editor-vim-panel-bg);
+  --editor-vim-panel-normal-fg: var(--editor-vim-panel-fg);
+  --editor-vim-panel-insert-bg: var(--green-a3);
+  --editor-vim-panel-insert-fg: var(--green-11);
+  --editor-vim-panel-visual-bg: var(--blue-a3);
+  --editor-vim-panel-visual-fg: var(--blue-11);
+  --editor-vim-panel-replace-bg: var(--red-a3);
+  --editor-vim-panel-replace-fg: var(--red-11);
+  --editor-vim-panel-font-size: 0.875rem;
+  --editor-vim-panel-border: 1px solid var(--border-subtle);
+
+  /* ===== Color Syntax ===== */
+
+  --syntax-keyword: var(--pink-11);
+  --syntax-string: var(--primary-text);
+  --syntax-constant: var(--primary-text);
+  --syntax-variable: var(--info-text);
+  --syntax-function: var(--warning-text);
+  --syntax-type: var(--text-contrast);
+  --syntax-decorator: var(--info-text);
+  --syntax-link: var(--info-text);
+  --syntax-diff: var(--danger-text);
+  --syntax-comment: var(--text-muted);
+  --syntax-punctuation: var(--text-contrast);
+
+  /* Keywords */
+  --editor-keyword-fg: var(--syntax-keyword);
+  --editor-operatorKeyword-fg: var(--syntax-keyword);
+  --editor-modifier-fg: var(--syntax-keyword);
+  --editor-self-fg: var(--syntax-keyword);
+  --editor-standard-fg: var(--syntax-keyword);
+
+  /* Strings */
+  --editor-string-fg: var(--syntax-string);
+  --editor-special-string-fg: var(--syntax-string);
+  --editor-character-fg: var(--syntax-string);
+  --editor-attributeValue-fg: var(--syntax-string);
+  --editor-regexp-fg: var(--syntax-string);
+  --editor-escape-fg: var(--syntax-string);
+
+  /* Constants */
+  --editor-number-fg: var(--syntax-constant);
+  --editor-bool-fg: var(--syntax-constant);
+  --editor-null-fg: var(--syntax-constant);
+  --editor-atom-fg: var(--syntax-constant);
+  --editor-color-fg: var(--syntax-constant);
+  --editor-enumMember-fg: var(--syntax-constant);
+
+  /* Variables and functions */
+  --editor-variable-fg: var(--syntax-variable);
+  --editor-variable-2-fg: var(--syntax-variable);
+  --editor-variableName-fg: var(--syntax-variable);
+  --editor-definition-fg: var(--syntax-variable);
+  --editor-property-fg: var(--syntax-variable);
+  --editor-propertyName-fg: var(--syntax-variable);
+  --editor-sql-field-fg: var(--syntax-variable);
+  --editor-sql-alias-fg: var(--syntax-variable);
+  --editor-name-fg: var(--syntax-variable);
+  --editor-parameter-fg: var(--syntax-variable);
+  --editor-function-fg: var(--syntax-function);
+  --editor-method-fg: var(--syntax-function);
+
+  /* Types */
+  --editor-type-fg: var(--syntax-type);
+  --editor-typeName-fg: var(--syntax-type);
+  --editor-typeParameter-fg: var(--syntax-type);
+  --editor-class-fg: var(--syntax-type);
+  --editor-className-fg: var(--syntax-type);
+  --editor-interface-fg: var(--syntax-type);
+  --editor-struct-fg: var(--syntax-type);
+  --editor-enum-fg: var(--syntax-type);
+  --editor-namespace-fg: var(--syntax-type);
+  --editor-attributeName-fg: var(--syntax-type);
+  --editor-changed-fg: var(--syntax-type);
+
+  /* Decorators and metadata */
+  --editor-decorator-fg: var(--syntax-decorator);
+  --editor-macro-fg: var(--syntax-decorator);
+  --editor-annotation-fg: var(--syntax-decorator);
+  --editor-processingInstruction-fg: var(--syntax-decorator);
+  --editor-meta-fg: var(--syntax-decorator);
+  --editor-event-fg: var(--syntax-decorator);
+
+  /* Links */
+  --editor-link-fg: var(--syntax-link);
+  --editor-url-fg: var(--syntax-link);
+  --editor-heading-fg: var(--syntax-link);
+
+  /* Diffs and errors */
+  --editor-deleted-fg: var(--syntax-diff);
+
+  /* Comments */
+  --editor-comment-fg: var(--syntax-comment);
+  --editor-labelName-fg: var(--syntax-comment);
+
+  /* Punctuation */
+  --editor-bracket-fg: var(--syntax-punctuation);
+  --editor-operator-fg: var(--syntax-punctuation);
+  --editor-punctuation-fg: var(--syntax-punctuation);
+  --editor-separator-fg: var(--syntax-punctuation);
+  --editor-strong-fg: var(--syntax-punctuation);
+  --editor-emphasis-fg: var(--syntax-punctuation);
+  --editor-strikethrough-fg: var(--syntax-punctuation);
+
+  /* ===== Mongo Shell ===== */
+
+  --mongo-shell-mongo-prompt-fg: var(--primary-text);
+  --mongo-shell-ansi-output-fg: var(--text-contrast);
+}
+
+.dark-theme {
+  --select-arrow: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(0,0,0, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>");
+}

@@ -11,9 +11,26 @@ import commonjs from 'vite-plugin-commonjs'
 // Imported libs to stop using
 // There are mote too (eg pg), these are just the native ones
 
+// Theme CSS lives in public/, so it is outside the module graph and Vite
+// won't touch it on change. Tell the client to reload just that stylesheet.
+function themeHmr() {
+  return {
+    name: 'theme-hmr',
+    configureServer(server) {
+      const themesDir = path.resolve(__dirname, 'public/themes')
+      server.watcher.add(themesDir)
+      server.watcher.on('change', (file) => {
+        if (path.resolve(file).startsWith(themesDir)) {
+          server.ws.send({ type: 'custom', event: 'theme-css-update' })
+        }
+      })
+    },
+  }
+}
+
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [vue(), commonjs()],
+  plugins: [vue(), commonjs(), themeHmr()],
   base: '/', // Set the base URL for the app
   optimizeDeps: {
     exclude: [

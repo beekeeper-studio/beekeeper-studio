@@ -73,6 +73,6 @@ export default Vue.extend({
 <style scoped>
 .btn[data-variant=danger] {
   background-color: var(--danger-solid-bg);
-  color: var(--danger-solid-fg);
+  color: var(--danger-contrast);
 }
 </style>

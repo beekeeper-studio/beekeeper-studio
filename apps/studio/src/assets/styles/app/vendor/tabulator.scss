@@ -776,7 +776,7 @@ $cell-padding:           $gutter-w;
     }
     &.active, &.active:hover {
       background: var(--info-solid-bg);
-      color: var(--info-solid-fg);
+      color: var(--info-contrast);
     }
   }
 }

@@ -36,6 +36,11 @@ if (platformInfo.env.development || platformInfo.env.test) {
 log.transports.console.level = platformInfo.logLevel;
 log.transports.file.level = platformInfo.logLevel;
 
+electron.nativeTheme.on('updated', () => {
+  const dark = electron.nativeTheme.shouldUseDarkColors
+  getActiveWindows().forEach((w) => w.send('systemUsesDarkColors', dark))
+})
+
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
     fs.mkdirSync(d, { recursive: true })
