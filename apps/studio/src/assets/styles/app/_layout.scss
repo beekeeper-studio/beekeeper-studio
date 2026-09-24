@@ -122,9 +122,7 @@ hr {
   --btn-flat-bg: var(--primary-bg-a);
   --btn-flat-bg-hover: var(--primary-bg-hover-a);
 
-  --btn-primary-fg: var(--primary-solid-fg);
-
-  --btn-primary-fg-hover: var(--primary-solid-fg-hover);
+  --btn-primary-fg: var(--primary-contrast);
   --btn-primary-bg: var(--primary-solid-bg);
   --btn-primary-bg-hover: var(--primary-solid-bg-hover);
 }
@@ -138,9 +136,7 @@ hr {
   --btn-flat-bg: var(--info-bg-a);
   --btn-flat-bg-hover: var(--info-bg-hover-a);
 
-  --btn-primary-fg: var(--info-solid-fg);
-
-  --btn-primary-fg-hover: var(--info-solid-fg-hover);
+  --btn-primary-fg: var(--info-contrast);
   --btn-primary-bg: var(--info-solid-bg);
   --btn-primary-bg-hover: var(--info-solid-bg-hover);
 }
@@ -154,15 +150,13 @@ hr {
   --btn-flat-bg: var(--danger-bg-a);
   --btn-flat-bg-hover: var(--danger-bg-hover-a);
 
-  --btn-primary-fg: var(--danger-solid-fg);
-
-  --btn-primary-fg-hover: var(--danger-solid-fg-hover);
+  --btn-primary-fg: var(--danger-contrast);
   --btn-primary-bg: var(--danger-solid-bg);
   --btn-primary-bg-hover: var(--danger-solid-bg-hover);
 }
 .btn-primary {
   --btn-fg: var(--btn-primary-fg);
-  --btn-fg-hover: var(--btn-primary-fg-hover);
+  --btn-fg-hover: var(--btn-primary-fg);
   --btn-bg: var(--btn-primary-bg);
   --btn-bg-hover: var(--btn-primary-bg-hover);
   --btn-shadow: var(--btn-primary-shadow);
@@ -341,7 +335,7 @@ select {
     color: var(--text);
     &:checked,
     &:hover {
-      color: var(--info-solid-fg);
+      color: var(--info-contrast);
       box-shadow: 0 0 10px 100px var(--info-solid-bg) inset;
     }
     &:disabled, &:disabled:hover, &:disabled:focus {
@@ -728,30 +722,30 @@ input[type=file] {
 .badge-info {
   --badge-flat-bg: var(--info-bg-a);
   --badge-flat-fg: var(--info-text);
-  --badge-solid-bg: var(--info-solid-bg);
-  --badge-solid-fg: var(--info-solid-fg);
+  --badge-primary-bg: var(--info-solid-bg);
+  --badge-primary-fg: var(--info-contrast);
 }
 .badge-success {
   --badge-flat-bg: var(--success-bg-a);
   --badge-flat-fg: var(--success-text);
-  --badge-solid-bg: var(--success-solid-bg);
-  --badge-solid-fg: var(--success-solid-fg);
+  --badge-primary-bg: var(--success-solid-bg);
+  --badge-primary-fg: var(--success-contrast);
 }
 .badge-warning {
   --badge-flat-bg: var(--warning-bg-a);
   --badge-flat-fg: var(--warning-text);
-  --badge-solid-bg: var(--warning-solid-bg);
-  --badge-solid-fg: var(--warning-solid-fg);
+  --badge-primary-bg: var(--warning-solid-bg);
+  --badge-primary-fg: var(--warning-contrast);
 }
 .badge-error, .badge-danger {
   --badge-flat-bg: var(--danger-bg-a);
   --badge-flat-fg: var(--danger-text);
-  --badge-solid-bg: var(--danger-solid-bg);
-  --badge-solid-fg: var(--danger-solid-fg);
+  --badge-primary-bg: var(--danger-solid-bg);
+  --badge-primary-fg: var(--danger-contrast);
 }
-.badge-solid {
-  --badge-bg: var(--badge-solid-bg);
-  --badge-fg: var(--badge-solid-fg);
+.badge-primary {
+  --badge-bg: var(--badge-primary-bg);
+  --badge-fg: var(--badge-primary-fg);
 }
 
 // Alerts

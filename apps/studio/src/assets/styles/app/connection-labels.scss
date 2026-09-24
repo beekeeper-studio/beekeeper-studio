@@ -1,4 +1,4 @@
-@use '../themes/vars' as *;
+@use '../themes/common' as *;
 
 @each $hue in $hues {
   .connection-label-color-#{'#{$hue}'} {
@@ -29,7 +29,7 @@
   @each $hue in $hues {
     &.#{'#{$hue}'} {
       background-color: var(--#{$hue}-solid-bg-a);
-      color: var(--#{$hue}-solid-fg);
+      color: var(--#{$hue}-contrast);
     }
   }
 }
@@ -38,8 +38,8 @@
   @each $hue in $hues {
     &.#{'#{$hue}'} {
       --statusbar-bg: rgb(from var(--#{$hue}-solid-bg-a) r g b / 0.85);
-      --statusbar-fg: var(--#{$hue}-solid-fg);
-      --statusbar-fg-inverse: hsl(from var(--#{$hue}-solid-fg) 0 0% calc(100 - l));
+      --statusbar-fg: var(--#{$hue}-contrast);
+      --statusbar-fg-inverse: hsl(from var(--#{$hue}-contrast) 0 0% calc(100 - l));
     }
   }
   &.editing, &.failure {

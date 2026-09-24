@@ -30,7 +30,7 @@ export default Vue.extend({
 <style lang="scss" scoped>
   .banner {
     background-color: var(--warning-solid-bg);
-    color: var(--warning-solid-fg);
+    color: var(--warning-contrast);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -40,7 +40,7 @@ export default Vue.extend({
     font-weight: 700;
     font-size: .875rem;
     a {
-      color: var(--warning-solid-fg);
+      color: var(--warning-contrast);
       text-decoration: underline;
     }
   }

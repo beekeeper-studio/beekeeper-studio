@@ -1,0 +1,120 @@
+.light-theme {
+  --background: #ffffff;
+  --base-gray: #1f2328;
+  --base-blue: #0969da;
+  --base-green: #1a7f37;
+  --base-yellow: #9a6700;
+  --base-orange: #bc4c00;
+  --base-red: #cf222e;
+  --base-purple: #8250df;
+  --base-pink: #bf3989;
+  --base-accent: #0969da;
+
+  --github-comment: #6e7781;
+  --github-keyword: #cf222e;
+  --github-constant: #0550ae;
+  --github-string: #0a3069;
+  --github-variable: #953800;
+  --github-entity: #8250df;
+  --github-tag: #116329;
+  --github-escape: #116329;
+  --github-invalid: #82071e;
+}
+
+.dark-theme {
+  --background: #0d1117;
+  --base-gray: #f0f6fc;
+  --base-blue: #1f6feb;
+  --base-green: #238636;
+  --base-yellow: #9e6a03;
+  --base-orange: #bd561d;
+  --base-red: #da3633;
+  --base-purple: #8957e5;
+  --base-pink: #bf4b8a;
+  --base-accent: #1f6feb;
+
+  --github-comment: #8b949e;
+  --github-keyword: #ff7b72;
+  --github-constant: #79c0ff;
+  --github-string: #a5d6ff;
+  --github-variable: #ffa657;
+  --github-entity: #d2a8ff;
+  --github-tag: #7ee787;
+  --github-escape: #7ee787;
+  --github-invalid: #ffa198;
+}
+
+.light-theme,
+.dark-theme {
+  --checkbox-checked-bg: var(--blue-9);
+  --checkbox-checked-fg: var(--blue-contrast);
+  --link-fg: var(--blue-11);
+  --panel-bg: var(--gray-1);
+  --nav-pill-active-fg: var(--text-contrast);
+
+  /* ===== Editor ===== */
+
+  /* Editor chrome */
+  --editor-fg: var(--gray-11);
+  --editor-cursor-bg: var(--blue-11);
+  --editor-selected-bg: rgb(from var(--blue-11) r g b / 0.2);
+  --editor-activeline-bg: var(--gray-a2);
+  --editor-activeline-gutter-bg: var(--gray-a2);
+  --editor-highlight-bg: var(--gray-a3);
+  --editor-error-bg: var(--red-a3);
+  --editor-error-fg: var(--red-11);
+  --editor-gutter-bg: var(--editor-bg);
+  --editor-linenumber-fg: var(--gray-8);
+  --editor-linenumber-active-fg: var(--gray-11);
+  --editor-foldgutter-fg: var(--gray-8);
+  --editor-foldgutter-fg-hover: var(--gray-11);
+  --editor-indent-marker-bg: var(--gray-a5);
+  --editor-indent-marker-active-bg: var(--gray-a7);
+
+  /* Matches and markers */
+  --editor-guttermarker-subtle-fg: var(--gray-9);
+  --editor-matchingselection-bg: var(--gray-a3);
+  --editor-searchmatch-bg: var(--yellow-a5);
+  --editor-searchmatch-selected-bg: var(--yellow-a8);
+  --editor-matchingbracket-fg: var(--editor-fg);
+  --editor-matchingbracket-bg: var(--green-a4);
+  --editor-fatcursor-bg: var(--gray-11);
+
+  /* Vim panel */
+  --editor-vim-panel-visual-bg: var(--purple-a3);
+  --editor-vim-panel-visual-fg: var(--purple-11);
+
+  /* ===== Color Syntax ===== */
+
+  --syntax-comment: var(--github-comment);
+  --syntax-constant: var(--github-constant);
+  --syntax-decorator: var(--github-entity);
+  --syntax-function: var(--github-entity);
+  --syntax-keyword: var(--github-keyword);
+  --syntax-link: var(--blue-11);
+  --syntax-punctuation: var(--editor-fg);
+  --syntax-string: var(--github-string);
+  --syntax-type: var(--github-variable);
+  --syntax-variable: var(--editor-fg);
+
+  --editor-self-fg: var(--github-constant);
+  --editor-standard-fg: var(--github-constant);
+  --editor-character-fg: var(--github-keyword);
+  --editor-escape-fg: var(--github-escape);
+  --editor-definition-fg: var(--github-variable);
+  --editor-property-fg: var(--github-constant);
+  --editor-propertyName-fg: var(--github-constant);
+  --editor-attributeName-fg: var(--github-constant);
+  --editor-processingInstruction-fg: var(--github-comment);
+  --editor-meta-fg: var(--editor-fg);
+  --editor-event-fg: var(--editor-fg);
+  --editor-heading-fg: var(--github-constant);
+  --editor-deleted-fg: var(--github-invalid);
+  --editor-strikethrough-fg: var(--github-comment);
+
+  /* ===== Mongo Shell ===== */
+
+  --mongo-shell-mongo-prompt-fg: var(--blue-11);
+  --mongo-shell-ansi-output-fg: var(--editor-fg);
+}
+

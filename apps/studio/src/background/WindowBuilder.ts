@@ -243,13 +243,6 @@ class BeekeeperWindow {
     const windowMoveResizeListener = _.debounce(this.windowMoveResizeListener.bind(this), 1000)
     this.win.on('resize',windowMoveResizeListener)
     this.win.on('move', windowMoveResizeListener)
-
-    electron.nativeTheme.on("updated", () => {
-      if (this.systemUsesDarkColors !== electron.nativeTheme.shouldUseDarkColors) {
-        this.systemUsesDarkColors = electron.nativeTheme.shouldUseDarkColors;
-        this.send("systemUsesDarkColors", this.systemUsesDarkColors);
-      }
-    });
   }
 
   windowMoveResizeListener(){

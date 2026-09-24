@@ -70,13 +70,13 @@ export default Vue.extend({
 }
 
 .material-icons.folder-icon {
-  color: var(--solid-bg);
+  color: inherit;
   font-size: 1rem;
   margin-left: 0.25rem;
 }
 
 .material-icons.expand-icon {
-  color: var(--solid-bg);
+  color: inherit;
   font-size: 1.25rem;
 }
 </style>

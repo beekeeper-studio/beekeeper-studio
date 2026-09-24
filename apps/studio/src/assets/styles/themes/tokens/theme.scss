@@ -1,0 +1,50 @@
+// https://www.radix-ui.com/colors/docs/palette-composition/understanding-the-scale
+
+@use "../common" as *;
+
+.light-theme {
+  --background: #ffffff;
+}
+
+.dark-theme {
+  --background: #090909;
+}
+
+.light-theme,
+.dark-theme {
+  --white: #ffffff;
+  --black: #000000;
+
+  --base-gray: #000000;
+
+  @each $hue in $hues {
+    @if $hue ==gray {
+      @each $n, $role in $steps {
+        --#{$role}: var(--gray-#{$n});
+      }
+    } @else {
+      @each $n, $role in $steps {
+        --#{$hue}-#{$role}: var(--#{$hue}-#{$n});
+      }
+    }
+
+    --#{$hue}-solid-fg: var(--#{$hue}-contrast);
+  }
+
+  @each $family, $hue in $families {
+    @each $n, $role in $steps {
+      --#{$family}-#{$n}: var(--#{$hue}-#{$n});
+    }
+
+    @each $n, $role in $steps {
+      --#{$family}-#{$role}: var(--#{$family}-#{$n});
+    }
+
+    --#{$family}-contrast: var(--#{$hue}-contrast);
+    --#{$family}-solid-fg: var(--#{$family}-contrast);
+    --#{$family}-solid-fg-hover: var(--#{$family}-contrast);
+  }
+
+  --border-color: var(--border-subtle);
+  --text-muted: var(--gray-10);
+}

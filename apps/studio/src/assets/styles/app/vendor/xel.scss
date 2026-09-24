@@ -398,7 +398,7 @@ x-button {
     content: "";
   }
   &[toggled] {
-    color: var(--primary-solid-fg);
+    color: var(--primary-contrast);
     background: var(--secondary-color);
     box-shadow: var(--elevation-1a);
   }
@@ -413,12 +413,12 @@ x-button {
   &[primary] {
     // background: rgba($theme-base, 0.37);
     background: var(--primary-solid-bg);
-    color: var(--primary-solid-fg);
+    color: var(--primary-contrast);
     transition: background 0.15s ease-in-out;
     &:hover, &:focus {
       // background: rgba($theme-base, 0.44);
       background: var(--primary-solid-bg-hover);
-      color: var(--primary-solid-fg-hover);
+      color: var(--primary-contrast);
     }
   }
   // x-box {
@@ -571,7 +571,7 @@ x-button {
     border-radius: 0;
     overflow: hidden;
     &[toggled] {
-      color: var(--primary-solid-fg);
+      color: var(--primary-contrast);
       background: var(--primary-color);
     }
     x-icon {
@@ -610,7 +610,7 @@ x-tab {
   padding: 8px 24px;
   max-width: 264px;
   min-height: 52px;
-  color: rgb(from var(--primary-solid-fg) r g b / 0.7);
+  color: rgb(from var(--primary-contrast) r g b / 0.7);
   --trigger-effect:ripple;
   --menu-position:over;
   --arrow-width: 10px;
@@ -619,7 +619,7 @@ x-tab {
   --arrow-d:path("M 0.736 20.365 L 49.999 87.922 L 99.264 20.365 Z");
 
   &[selected], &:focus {
-    color: var(--primary-solid-fg);
+    color: var(--primary-contrast);
   }
 
   > {
@@ -704,12 +704,12 @@ x-tabs {
       width: fit-content;
       flex: 0;
       flex-flow: column;
-      color: rgb(from var(--primary-solid-fg) r g b / 0.75);
+      color: rgb(from var(--primary-contrast) r g b / 0.75);
       --ripple-type:bounded;
       --selection-indicator-height:0;
 
       &:focus, &[selected] {
-        color: var(--primary-solid-fg);
+        color: var(--primary-contrast);
       }
     }
 
@@ -724,7 +724,7 @@ x-tabs {
     }
 
     x-tab[selected] x-label {
-      color: var(--primary-solid-fg);
+      color: var(--primary-contrast);
       transform: scale(1, 1);
     }
   }
@@ -740,7 +740,7 @@ x-tabs {
 
 x-doctabs {
   background: var(--primary-color);
-  color: var(--primary-solid-fg);
+  color: var(--primary-contrast);
   height: 46px;
   --open-button-path-d:path("M 80 11 L 20 12 C 15 12 12 15 12 20 L 12 80 C 12 85 15 88 20 88 L 80 88 C 85 88 88 85 88 80 L 88 20 C 88 15 85 12 80 12 Z M 71 54 L 54 54 L 54 71 L 46 71 L 46 54 L 29 54 L 29 46 L 46 46 L 46 29 L 54 29 L 54 46 L 71 46 L 71 54 Z");
 }
@@ -936,15 +936,15 @@ x-notification {
   text-transform: none;
   font-size: 14px;
   font-weight: 400;
-  color: var(--badge-solid-fg);
-  background: var(--badge-solid-bg);
+  color: var(--badge-primary-fg);
+  background: var(--badge-primary-bg);
   min-width: 288px;
   max-width: 568px;
   border-top-left-radius: 2px;
   border-top-right-radius: 2px;
 
   strong {
-    color: var(--badge-solid-fg);
+    color: var(--badge-primary-fg);
   }
 }
 

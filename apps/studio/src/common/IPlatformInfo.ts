@@ -34,7 +34,6 @@ export interface IPlatformInfo {
   debugEnabled: boolean,
   DEBUG: string,
   platform: Platform,
-  darkMode: boolean,
   userDirectory: string,
   downloadsDirectory: string,
   homeDirectory: string,

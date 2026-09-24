@@ -188,7 +188,7 @@ $namespace: 'bkdates'; // change the 'mx' to 'xmx'. then <date-picker prefix-cla
       background-color: var(--gray-a3);
     }
     &.active {
-      color: var(--primary-solid-fg);
+      color: var(--primary-contrast);
       background-color: var(--primary-solid-bg);
     }
     &.in-range,
@@ -333,7 +333,7 @@ $namespace: 'bkdates'; // change the 'mx' to 'xmx'. then <date-picker prefix-cla
       background-color: var(--gray-a3);
     }
     &.active {
-      color: var(--primary-solid-fg);
+      color: var(--primary-contrast);
       background-color: var(--primary-solid-bg);
       font-weight: 700;
     }
@@ -354,7 +354,7 @@ $namespace: 'bkdates'; // change the 'mx' to 'xmx'. then <date-picker prefix-cla
     background-color: var(--gray-a3);
   }
   &.active {
-    color: var(--primary-solid-fg);
+    color: var(--primary-contrast);
     background-color: var(--primary-solid-bg);
     font-weight: 700;
   }
