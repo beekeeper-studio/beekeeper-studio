@@ -450,9 +450,6 @@ declare interface IBksConfig {
             selectDown: string[];
             selectUp: string[];
         };
-        resultTable: {
-            openEditorModal: string;
-        };
         tab: {
             closeTab: string;
             forceCloseTab: string;
@@ -474,7 +471,7 @@ declare interface IBksConfig {
             focusOnFilterInput: string;
             lastPage: string;
             nextPage: string;
-            nullSelection: string;
+            nullSelection: string[];
             openEditorModal: string;
             pasteAsNewRows: string;
             previousPage: string;
