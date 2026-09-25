@@ -206,8 +206,20 @@ async function transformConn(obj: SavedConnection, cls: any): Promise<IConnectio
   return cls.merge(newObj, obj);
 }
 
+const savedConnectionHandlers = handlersFor<IConnection>('saved', SavedConnection, transformConn)
+
 export const AppDbHandlers = {
-  ...handlersFor<IConnection>('saved', SavedConnection, transformConn),
+  ...savedConnectionHandlers,
+  // anonymous connections (SavedConnection.anon) back a single session, so
+  // they're never listed or searched - only fetched by id
+  'appdb/saved/find': async function(args: any): Promise<IConnection[]> {
+    const conns = await savedConnectionHandlers['appdb/saved/find'](args) as IConnection[]
+    return conns.filter((c) => !c.anon)
+  },
+  'appdb/saved/search': async function(args: any): Promise<IConnection[]> {
+    const conns = await savedConnectionHandlers['appdb/saved/search'](args) as IConnection[]
+    return conns.filter((c) => !c.anon)
+  },
   ...handlersFor<IConnection>('used', UsedConnection, transformConn),
   ...handlersFor<TransportPinnedConn>('pinconn', PinnedConnection),
   ...handlersFor<TransportPinnedEntity>('pins', PinnedEntity),

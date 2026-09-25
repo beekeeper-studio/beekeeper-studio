@@ -27,7 +27,7 @@ const Handlers = { ...AppDbHandlers, ...TabHistoryHandlers }
 // tables have independent id sequences, so whenever a used_connection id
 // happened to equal some saved_connection id, the unsaved session read and
 // wrote that saved connection's tabs. Sessions on a never-saved connection
-// must have `usedConfig.id` null, which disables per-connection persistence
+// run on an anonymous saved connection of their own (SavedConnection.anon)
 // instead of borrowing another connection's key.
 
 function buildSavedConnection(overrides: Partial<SavedConnection> = {}): SavedConnection {
@@ -130,11 +130,17 @@ describe('connecting without saving (phantom tabs)', () => {
   })
 
   // Simulates the flow of a connect: the backend records the use as part of
-  // conn/create, then the root `connect` action commits the config and prunes
-  // old deleted tabs (as in store/index.ts).
+  // conn/create, then the root `connect` action runs a never-saved connection
+  // on an anonymous saved connection, commits the config and prunes old
+  // deleted tabs (as in store/index.ts).
   async function connectWith(config: any) {
     await UsedConnection.recordUse(config)
-    const usedConfig = config
+    let usedConfig = config
+    if (!config.id) {
+      const anon = { ...config, anon: true }
+      const saved = await Handlers['appdb/saved/save']({ obj: { ...anon, name: 'Unsaved Connection' }, options: {} })
+      usedConfig = { ...anon, id: saved.id }
+    }
     store.commit('newConnection', usedConfig)
     await Handlers['appdb/tabhistory/clearDeletedTabs']({
       workspaceId: WORKSPACE_ID,
@@ -160,8 +166,9 @@ describe('connecting without saving (phantom tabs)', () => {
     // id - the collision that used to leak the tabs.
     const usedConfig = await connectUnsaved()
 
-    // An unsaved session has no saved_connection id, so no persistence key.
-    expect(usedConfig.id).toBeNull()
+    // An unsaved session is keyed on an anonymous connection of its own.
+    expect(usedConfig.anon).toBe(true)
+    expect(usedConfig.id).not.toBe(saved.id)
     expect((store.state as any).tabs.tabs).toHaveLength(0)
 
     // It is still recorded for the recent-connections list, unlinked from
@@ -235,8 +242,9 @@ describe('connecting without saving (phantom tabs)', () => {
     const usedConfig = await connectWith(await asUnsavedConfig(recent))
 
     // Nothing from the used_connection row becomes the session's
-    // persistence key...
-    expect(usedConfig.id).toBeNull()
+    // persistence key - it gets a new anonymous connection...
+    expect(usedConfig.anon).toBe(true)
+    expect(usedConfig.id).not.toBe(saved.id)
     expect((store.state as any).tabs.tabs).toHaveLength(0)
 
     // A connection with nothing saved behind it has no identity to match on,
@@ -261,8 +269,10 @@ describe('connecting without saving (phantom tabs)', () => {
   })
 
   it('first connect of a saved connection does not hijack an unrelated used_connection row', async () => {
-    // An unsaved session creates used_connection row 1.
-    await connectUnsaved()
+    // An unsaved connection records used_connection row 1 (as conn/create
+    // does - before its session gets an anonymous saved connection, which
+    // would take saved_connection id 1 itself).
+    await UsedConnection.recordUse(await unsavedSnowflakeConfig())
 
     const saved = buildSavedConnection()
     await saved.save()

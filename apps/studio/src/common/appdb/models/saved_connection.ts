@@ -326,6 +326,13 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   @Column({ type: 'float', nullable: false, default: 0 })
   position = 0.0
 
+  // In the local workspace, a connection that was never saved gets an anonymous
+  // row for the length of the session, so its tabs, pins and history have a
+  // real connection id to be keyed on. Anonymous rows are never listed, and
+  // disconnecting removes them.
+  @Column({ type: 'boolean', nullable: false, default: false })
+  anon = false
+
   // Do NOT initialize this to null. A null initializer becomes an own property
   // that gets copied into transport objects by cls.merge(), and TypeORM treats an
   // explicitly-null relation as "unset this FK", overriding the connectionFolderId column.
@@ -481,12 +488,23 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   @BeforeInsert()
   @BeforeUpdate()
   maybeClearPasswords(): void {
-    if (!this.rememberPassword) {
+    // nothing the user didn't save is kept for an anonymous connection
+    if (!this.rememberPassword || this.anon) {
       this.password = null
       this.sshPassword = null
       this.sshKeyfilePassword = null
       this.sshBastionPassword = null
       this.sshBastionKeyfilePassword = null
+    }
+  }
+
+  // An anonymous connection is never listed, so a folder holding one would
+  // look empty but refuse to be deleted.
+  @BeforeInsert()
+  @BeforeUpdate()
+  maybeClearFolderId(): void {
+    if (this.anon) {
+      this.connectionFolderId = null
     }
   }
 
