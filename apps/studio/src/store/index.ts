@@ -538,27 +538,24 @@ const store = new Vuex.Store<State>({
 
     async connect(context, { config, auth }: { config: IConnection, auth?: { input: string; mode: 'pin'; }}) {
       context.commit('sshConfigWarnings', []);
-      const resolvedConfig = await resolveEphemeralValues(config);
+      let resolvedConfig = await resolveEphemeralValues(config);
       if (!resolvedConfig) return false;
 
       if (context.state.username) {
         await Vue.prototype.$util.send('conn/create', { config: resolvedConfig, auth, osUser: context.state.username })
-        // Tabs, pins and history are keyed on the connection's id, so a
-        // connection that was never saved needs one for its session. The
-        // session runs on a copy - the connection form's own config stays unsaved.
-        let sessionConfig = resolvedConfig
         if (!resolvedConfig.id) {
-          const name = resolvedConfig.name || 'Untitled Connection'
-          if (context.getters.isCloud) {
-            // saved for real - passwords only get uploaded when the user saves it
-            const id = await context.dispatch('data/connections/save', { ...resolvedConfig, name, rememberPassword: false })
-            sessionConfig = { ...resolvedConfig, id, name, workspaceId: context.state.workspaceId }
-          } else {
-            // an anonymous connection, which disconnect removes
-            const anon = { ...resolvedConfig, anon: true }
-            const saved = await Vue.prototype.$util.send('appdb/saved/save', { obj: { ...anon, name } })
-            sessionConfig = { ...anon, id: saved.id }
+          // Tabs, pins and history are keyed on the connection's id, so one that
+          // was never saved is saved now: anonymously in the local workspace
+          // (disconnect removes it), for real in a cloud workspace. Its password
+          // is only kept once the user saves it, and the connection form's own
+          // config stays unsaved.
+          resolvedConfig = {
+            ...resolvedConfig,
+            name: resolvedConfig.name || 'Untitled Connection',
+            anon: !context.getters.isCloud,
+            workspaceId: context.state.workspaceId,
           }
+          resolvedConfig.id = await context.dispatch('data/connections/save', { ...resolvedConfig, rememberPassword: false })
         }
         const defaultSchema = await context.state.connection.defaultSchema();
         const supportedFeatures = await context.state.connection.supportedFeatures();
@@ -568,7 +565,7 @@ const store = new Vuex.Store<State>({
         context.commit('sshConfigWarnings', serverConfig?.sshConfigWarnings || []);
 
         if (supportedFeatures.backups) {
-          context.dispatch('backups/setConnectionConfigs', { config: sessionConfig, supportedFeatures, serverConfig });
+          context.dispatch('backups/setConnectionConfigs', { config: resolvedConfig, supportedFeatures, serverConfig });
         }
 
         window.main.enableConnectionMenuItems();
@@ -580,7 +577,7 @@ const store = new Vuex.Store<State>({
         context.commit('versionString', versionString);
         // conn/create recorded the use; pick up the new/updated recent row
         await context.dispatch('data/usedconnections/load')
-        context.commit('newConnection', sessionConfig)
+        context.commit('newConnection', resolvedConfig)
 
         if (context.state.usedConfig.connectionType === 'surrealdb' &&
           context.state.usedConfig.surrealDbOptions?.authType === SurrealAuthType.Root) {
@@ -589,7 +586,7 @@ const store = new Vuex.Store<State>({
         await context.dispatch('updateDatabaseList')
         await context.dispatch('updateTables')
         await context.dispatch('updateRoutines')
-        context.dispatch('updateWindowTitle', sessionConfig)
+        context.dispatch('updateWindowTitle', resolvedConfig)
 
         await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id })
 
@@ -636,7 +633,7 @@ const store = new Vuex.Store<State>({
       if (config?.anon) {
         // best effort - a leftover anonymous connection is never listed or reused
         try {
-          await Vue.prototype.$util.send('appdb/saved/remove', { obj: config })
+          await context.dispatch('data/connections/remove', config)
         } catch (ex) {
           log.warn('Unable to remove anonymous connection', ex)
         }

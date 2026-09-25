@@ -43,6 +43,12 @@ export const UtilConnectionModule: DataStore<IConnection, State> = {
     async initialize() {
       // no-op
     },
+    // anonymous connections are never listed, so saving one leaves `items` alone
+    async save(context, item: IConnection) {
+      const saved = await Vue.prototype.$util.send('appdb/saved/save', { obj: item })
+      if (!saved.anon) await context.dispatch('mutate', { type: 'upsert', data: saved })
+      return saved.id
+    },
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
     },

@@ -34,6 +34,11 @@ async function unsavedRedshiftConfig() {
   }
 }
 
+// the connection list the connection screen and quick search show
+function listedIds() {
+  return (store.state as any)['data/connections'].items.map((c) => c.id)
+}
+
 async function openTab(title: string) {
   const item = { tabType: 'query', title, unsavedChanges: false }
   return await store.dispatch('tabs/add', { item, endOfPosition: true })
@@ -108,6 +113,7 @@ describe('a session on a connection that was never saved', () => {
     expect(anon.password).toBeNull()
     const listed = await AppDbHandlers['appdb/saved/find']({})
     expect(listed.map((c) => c.id)).not.toContain(usedConfig.id)
+    expect(listedIds()).not.toContain(usedConfig.id)
   })
 
   it('gives every tab its own id, so tabs can be switched', async () => {
@@ -143,6 +149,7 @@ describe('a session on a connection that was never saved', () => {
     usedConfig.name = 'Redshift'
 
     await store.dispatch('saveConnection', usedConfig)
+    expect(listedIds()).toContain(usedConfig.id)
     await store.dispatch('disconnect')
 
     const saved = await SavedConnection.findOneBy({ id: usedConfig.id })
@@ -154,15 +161,18 @@ describe('a session on a connection that was never saved', () => {
 
   describe('in a cloud workspace', () => {
     let savedToCloud: jest.Mock
+    let removedFromCloud: jest.Mock
 
     beforeEach(() => {
       savedToCloud = jest.fn(async () => 99)
+      removedFromCloud = jest.fn()
       store.unregisterModule('data/connections')
       store.registerModule('data/connections', {
         namespaced: true,
         state: { items: [] },
         actions: {
           save: (_context, item) => savedToCloud(item),
+          remove: (_context, item) => removedFromCloud(item),
           refresh: async () => undefined,
         },
       } as any)
@@ -196,11 +206,10 @@ describe('a session on a connection that was never saved', () => {
 
     it('keeps the cloud connection on disconnect', async () => {
       await store.dispatch('connect', { config: await unsavedRedshiftConfig() })
-      const send = jest.spyOn(Vue.prototype.$util, 'send')
 
       await store.dispatch('disconnect')
 
-      expect(send).not.toHaveBeenCalledWith('appdb/saved/remove', expect.anything())
+      expect(removedFromCloud).not.toHaveBeenCalled()
     })
   })
 })
