@@ -376,9 +376,10 @@ const store = new Vuex.Store<State>({
       state.database = config?.defaultDatabase
       state.namespace = config?.surrealDbOptions?.namespace;
     },
-    // the session's anonymous connection was saved, so disconnecting keeps it
-    anonConnectionSaved(state) {
-      if (state.usedConfig) state.usedConfig.anon = false
+    // changes the session's connection in place - a new object would look like a new connection
+    updateConnection(state, changes: Partial<IConnection>) {
+      if (!state.usedConfig) return
+      Object.entries(changes).forEach(([key, value]) => Vue.set(state.usedConfig, key, value))
     },
     // this shouldn't be used at all
     clearConnection(state) {
@@ -528,7 +529,7 @@ const store = new Vuex.Store<State>({
       if (config.anon) {
         // it becomes the saved connection, so the session's tabs and pins stay with it
         await context.dispatch('data/connections/save', { ...config, anon: false })
-        context.commit('anonConnectionSaved')
+        context.commit('updateConnection', { anon: false })
       } else {
         await context.dispatch('data/connections/save', config)
       }
@@ -549,10 +550,11 @@ const store = new Vuex.Store<State>({
           // (disconnect removes it), for real in a cloud workspace. Its password
           // is only kept once the user saves it, and the connection form's own
           // config stays unsaved.
+          const isCloud = context.getters.isCloud
           resolvedConfig = {
             ...resolvedConfig,
-            name: resolvedConfig.name || 'Untitled Connection',
-            anon: !context.getters.isCloud,
+            name: resolvedConfig.name || (isCloud ? 'Untitled Connection' : 'Unsaved Connection'),
+            anon: !isCloud,
             workspaceId: context.state.workspaceId,
           }
           resolvedConfig.id = await context.dispatch('data/connections/save', { ...resolvedConfig, rememberPassword: false })

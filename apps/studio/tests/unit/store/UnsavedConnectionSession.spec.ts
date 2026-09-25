@@ -103,6 +103,7 @@ describe('a session on a connection that was never saved', () => {
     const usedConfig = store.state.usedConfig
     expect(usedConfig.anon).toBe(true)
     expect(usedConfig.id).toEqual(expect.any(Number))
+    expect(usedConfig.name).toBe('Unsaved Connection')
     // the session connects with everything the user typed in...
     expect(usedConfig.password).toBe('hunter2')
     // ...but the connection form's own config stays unsaved
@@ -150,6 +151,8 @@ describe('a session on a connection that was never saved', () => {
 
     await store.dispatch('saveConnection', usedConfig)
     expect(listedIds()).toContain(usedConfig.id)
+    // changed in place, so nothing reloads as if it were a new connection
+    expect(store.state.usedConfig).toBe(usedConfig)
     await store.dispatch('disconnect')
 
     const saved = await SavedConnection.findOneBy({ id: usedConfig.id })

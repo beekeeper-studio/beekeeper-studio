@@ -138,7 +138,7 @@ describe('connecting without saving (phantom tabs)', () => {
     let usedConfig = config
     if (!config.id) {
       const anon = { ...config, anon: true }
-      const saved = await Handlers['appdb/saved/save']({ obj: { ...anon, name: 'Untitled Connection' }, options: {} })
+      const saved = await Handlers['appdb/saved/save']({ obj: { ...anon, name: 'Unsaved Connection' }, options: {} })
       usedConfig = { ...anon, id: saved.id }
     }
     store.commit('newConnection', usedConfig)
