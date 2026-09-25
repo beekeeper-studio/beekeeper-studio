@@ -487,12 +487,23 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   @BeforeInsert()
   @BeforeUpdate()
   maybeClearPasswords(): void {
-    if (!this.rememberPassword) {
+    // nothing the user didn't save is kept for an anonymous connection
+    if (!this.rememberPassword || this.anon) {
       this.password = null
       this.sshPassword = null
       this.sshKeyfilePassword = null
       this.sshBastionPassword = null
       this.sshBastionKeyfilePassword = null
+    }
+  }
+
+  // An anonymous connection is never listed, so a folder holding one would
+  // look empty but refuse to be deleted.
+  @BeforeInsert()
+  @BeforeUpdate()
+  maybeClearFolderId(): void {
+    if (this.anon) {
+      this.connectionFolderId = null
     }
   }
 

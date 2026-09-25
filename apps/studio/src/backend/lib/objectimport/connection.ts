@@ -53,9 +53,6 @@ export class ConnectionImporter extends ObjectImporter<ICloudSavedConnection> {
         return;
       }
 
-      // anonymous connections only exist for the length of a session
-      delete obj.anon;
-
       if (parentId) {
         obj.connectionFolderId = parentId;
       }

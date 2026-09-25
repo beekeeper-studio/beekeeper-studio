@@ -9,7 +9,6 @@ import { AppDbHandlers } from '@/handlers/appDbHandlers'
 import { TabHistoryHandlers } from '@/handlers/tabHistoryHandlers'
 import { UtilUsedConnectionModule } from '@/store/modules/data/used_connection/UtilityUsedConnectionModule'
 import { TabModule } from '@/store/modules/TabModule'
-import { sessionConfigFor } from '@/store/anonConnection'
 
 Vue.use(Vuex)
 
@@ -131,12 +130,17 @@ describe('connecting without saving (phantom tabs)', () => {
   })
 
   // Simulates the flow of a connect: the backend records the use as part of
-  // conn/create, then the root `connect` action gives a never-saved connection
-  // its anonymous connection, commits the config and prunes old deleted tabs
-  // (as in store/index.ts).
+  // conn/create, then the root `connect` action runs a never-saved connection
+  // on an anonymous saved connection, commits the config and prunes old
+  // deleted tabs (as in store/index.ts).
   async function connectWith(config: any) {
     await UsedConnection.recordUse(config)
-    const usedConfig = await sessionConfigFor(config)
+    let usedConfig = config
+    if (!config.id) {
+      const anon = { ...config, anon: true, workspaceId: WORKSPACE_ID }
+      const saved = await Handlers['appdb/saved/save']({ obj: { ...anon, name: 'unsaved' }, options: {} })
+      usedConfig = { ...anon, id: saved.id }
+    }
     store.commit('newConnection', usedConfig)
     await Handlers['appdb/tabhistory/clearDeletedTabs']({
       workspaceId: WORKSPACE_ID,
