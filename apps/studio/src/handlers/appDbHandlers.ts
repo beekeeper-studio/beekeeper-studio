@@ -206,32 +206,19 @@ async function transformConn(obj: SavedConnection, cls: any): Promise<IConnectio
   return cls.merge(newObj, obj);
 }
 
-// Anonymous connections (SavedConnection.anon) are only ever fetched by id -
-// never listed or searched - unless a where asks for `anon` itself.
-function withoutAnon(options: FindManyOptions<SavedConnection> & { params?: any } = {}): FindManyOptions<SavedConnection> {
-  const { params, ...rest } = options
-  const where = rest.where ?? (params ? paramsToWhere(params) : undefined)
-  const notAnon = { anon: false }
-  return {
-    ...rest,
-    where: _.isArray(where)
-      ? where.map((w) => ({ ...notAnon, ...w }))
-      : { ...notAnon, ...where },
-  }
-}
-
-async function transformConns(conns: SavedConnection[]): Promise<IConnection[]> {
-  return await Promise.all(conns.map((c) => transformConn(c, SavedConnection)))
-}
+const savedConnectionHandlers = handlersFor<IConnection>('saved', SavedConnection, transformConn)
 
 export const AppDbHandlers = {
-  ...handlersFor<IConnection>('saved', SavedConnection, transformConn),
-  'appdb/saved/find': async function({ options }: { options?: FindManyOptions<SavedConnection> } = {}) {
-    return await transformConns(await SavedConnection.find(withoutAnon(options)))
+  ...savedConnectionHandlers,
+  // anonymous connections (SavedConnection.anon) back a single session, so
+  // they're never listed or searched - only fetched by id
+  'appdb/saved/find': async function(args: any): Promise<IConnection[]> {
+    const conns = await savedConnectionHandlers['appdb/saved/find'](args) as IConnection[]
+    return conns.filter((c) => !c.anon)
   },
-  'appdb/saved/search': async function({ searchText }: { searchText: string }) {
-    const conns: SavedConnection[] = await SavedConnection.search(SavedConnection, searchText)
-    return await transformConns(conns.filter((c) => !c.anon))
+  'appdb/saved/search': async function(args: any): Promise<IConnection[]> {
+    const conns = await savedConnectionHandlers['appdb/saved/search'](args) as IConnection[]
+    return conns.filter((c) => !c.anon)
   },
   ...handlersFor<IConnection>('used', UsedConnection, transformConn),
   ...handlersFor<TransportPinnedConn>('pinconn', PinnedConnection),

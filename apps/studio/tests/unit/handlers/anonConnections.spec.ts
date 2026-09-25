@@ -61,9 +61,8 @@ describe('anonymous connections', () => {
       expect(ids(await AppDbHandlers['appdb/saved/search']({ searchText: 'prod' }))).toEqual([saved.id])
     })
 
-    it('still finds an anonymous connection by id, or when asked for one', async () => {
+    it('still finds an anonymous connection by id', async () => {
       expect((await AppDbHandlers['appdb/saved/findOneBy']({ options: { id: anon.id } })).id).toBe(anon.id)
-      expect(ids(await AppDbHandlers['appdb/saved/find']({ options: { where: { anon: true } } }))).toEqual([anon.id])
     })
   })
 
