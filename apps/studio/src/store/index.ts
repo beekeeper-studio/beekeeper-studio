@@ -213,13 +213,6 @@ const store = new Vuex.Store<State>({
     isCloud(state: State) {
       return state.workspaceId !== LocalWorkspace.id
     },
-    // the connection id query history is kept under. A cloud workspace keeps
-    // history on the server, which can't refer to a local anonymous connection
-    historyConnectionId(state: State, getters): Nullable<number> {
-      const config = state.usedConfig
-      if (!config || (config.anon && getters.isCloud)) return null
-      return config.id
-    },
     workspaceEmail(_state: State, getters): string | null {
       return getters.cloudClient?.options?.email || null
     },
@@ -532,11 +525,7 @@ const store = new Vuex.Store<State>({
     },
 
     async saveConnection(context, config: IConnection) {
-      if (config.anon && context.getters.isCloud) {
-        // the anonymous connection is a local row, so in a cloud workspace its
-        // id belongs to some other connection - this saves a new one
-        await context.dispatch('data/connections/save', { ...config, id: null })
-      } else if (config.anon) {
+      if (config.anon) {
         // it becomes the saved connection, so the session's tabs and pins stay with it
         await context.dispatch('data/connections/save', { ...config, anon: false })
         context.commit('anonConnectionSaved')
@@ -554,17 +543,22 @@ const store = new Vuex.Store<State>({
 
       if (context.state.username) {
         await Vue.prototype.$util.send('conn/create', { config: resolvedConfig, auth, osUser: context.state.username })
+        // Tabs, pins and history are keyed on the connection's id, so a
+        // connection that was never saved needs one for its session. The
+        // session runs on a copy - the connection form's own config stays unsaved.
         let sessionConfig = resolvedConfig
         if (!resolvedConfig.id) {
-          // A connection that was never saved runs on an anonymous saved
-          // connection, so its tabs, pins and history have a real id to be keyed
-          // on. It's local even in a cloud workspace, and a copy - the connection
-          // form's own config stays unsaved.
-          const anon = { ...resolvedConfig, anon: true, workspaceId: LocalWorkspace.id }
-          const saved = await Vue.prototype.$util.send('appdb/saved/save', {
-            obj: { ...anon, name: anon.name || BeekeeperPlugin.buildConnectionName(anon) }
-          })
-          sessionConfig = { ...anon, id: saved.id }
+          const name = resolvedConfig.name || 'Untitled Connection'
+          if (context.getters.isCloud) {
+            // saved for real - passwords only get uploaded when the user saves it
+            const id = await context.dispatch('data/connections/save', { ...resolvedConfig, name, rememberPassword: false })
+            sessionConfig = { ...resolvedConfig, id, name, workspaceId: context.state.workspaceId }
+          } else {
+            // an anonymous connection, which disconnect removes
+            const anon = { ...resolvedConfig, anon: true }
+            const saved = await Vue.prototype.$util.send('appdb/saved/save', { obj: { ...anon, name } })
+            sessionConfig = { ...anon, id: saved.id }
+          }
         }
         const defaultSchema = await context.state.connection.defaultSchema();
         const supportedFeatures = await context.state.connection.supportedFeatures();

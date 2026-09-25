@@ -169,22 +169,38 @@ describe('a session on a connection that was never saved', () => {
       store.commit('workspaceId', CLOUD_WORKSPACE)
     })
 
-    it('keys the session on the local workspace', async () => {
+    it('saves it as an untitled cloud connection instead', async () => {
       await store.dispatch('connect', { config: await unsavedRedshiftConfig() })
 
-      // so its tabs can't collide with a cloud connection that shares its id
-      expect((await openTab('Query #1')).workspaceId).toBe(LOCAL_WORKSPACE)
-      // and the server's query history can't refer to it
-      expect(store.getters.historyConnectionId).toBeNull()
+      // without the password - the user didn't choose to save it
+      expect(savedToCloud).toHaveBeenCalledWith(expect.objectContaining({
+        id: null,
+        name: 'Untitled Connection',
+        rememberPassword: false,
+      }))
+      const usedConfig = store.state.usedConfig
+      expect(usedConfig).toMatchObject({ id: 99, name: 'Untitled Connection', workspaceId: CLOUD_WORKSPACE })
+      expect(usedConfig.anon).toBeFalsy()
+      expect(usedConfig.password).toBe('hunter2')
+      // nothing local
+      expect(await SavedConnection.count()).toBe(0)
     })
 
-    it('saves a new cloud connection, not one with the local id', async () => {
+    it('keeps the name the connection was given', async () => {
+      const config = { ...(await unsavedRedshiftConfig()), name: 'Warehouse' }
+
+      await store.dispatch('connect', { config })
+
+      expect(savedToCloud).toHaveBeenCalledWith(expect.objectContaining({ name: 'Warehouse' }))
+    })
+
+    it('keeps the cloud connection on disconnect', async () => {
       await store.dispatch('connect', { config: await unsavedRedshiftConfig() })
+      const send = jest.spyOn(Vue.prototype.$util, 'send')
 
-      await store.dispatch('saveConnection', store.state.usedConfig)
+      await store.dispatch('disconnect')
 
-      expect(savedToCloud).toHaveBeenCalledWith(expect.objectContaining({ id: null }))
-      expect(store.state.usedConfig.anon).toBe(true)
+      expect(send).not.toHaveBeenCalledWith('appdb/saved/remove', expect.anything())
     })
   })
 })

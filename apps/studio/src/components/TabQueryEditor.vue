@@ -702,7 +702,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       }
     },
     computed: {
-      ...mapGetters(['dialect', 'dialectData', 'defaultSchema', 'isCloud', 'aiShellAvailable', 'historyConnectionId']),
+      ...mapGetters(['dialect', 'dialectData', 'defaultSchema', 'isCloud', 'aiShellAvailable']),
       ...mapGetters({
         'isCommunity': 'licenses/isCommunity',
         'userKeymap': 'settings/userKeymap',
@@ -1820,7 +1820,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             excerpt: query.substr(0, 250),
             numberOfRecords: totalRows,
             queryId: this.query?.id,
-            connectionId: this.historyConnectionId
+            connectionId: this.usedConfig.id
           } as any;
 
           if(lastQuery && isDuplicate){
@@ -1828,7 +1828,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             queryObj.id = lastQuery.id;
           }
 
-          if (this.historyConnectionId) this.$store.dispatch('data/usedQueries/save', queryObj)
+          if (this.usedConfig.id) this.$store.dispatch('data/usedQueries/save', queryObj)
 
           log.debug('identification', identification)
           const found = identification.find(i => {

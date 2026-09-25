@@ -326,9 +326,10 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   @Column({ type: 'float', nullable: false, default: 0 })
   position = 0.0
 
-  // A connection that was never saved gets an anonymous row for the length of
-  // the session, so its tabs, pins and history have a real connection id to be
-  // keyed on. Anonymous rows are never listed, and disconnecting removes them.
+  // In the local workspace, a connection that was never saved gets an anonymous
+  // row for the length of the session, so its tabs, pins and history have a
+  // real connection id to be keyed on. Anonymous rows are never listed, and
+  // disconnecting removes them.
   @Column({ type: 'boolean', nullable: false, default: false })
   anon = false
 

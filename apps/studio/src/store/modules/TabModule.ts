@@ -154,14 +154,12 @@ export const TabModule: Module<State, RootState> = {
     async load(context) {
       const { usedConfig } = context.rootState
       if (usedConfig?.id) {
-        log.info("Loading tabs for ", usedConfig.workspaceId, usedConfig.id)
+        log.info("Loading tabs for ", context.rootState.workspaceId, usedConfig.id)
         const tabs = await Vue.prototype.$util.send('appdb/tabs/find', {
           options: {
             where: {
               connectionId: usedConfig.id,
-              // the connection's own workspace, like pins and hidden entities -
-              // an anonymous connection is local even in a cloud workspace
-              workspaceId: usedConfig.workspaceId
+              workspaceId: context.rootState.workspaceId
             }
           }
         })
@@ -177,10 +175,10 @@ export const TabModule: Module<State, RootState> = {
       context.commit('setActive', null)
     },
     async reopenLastClosedTab(context) {
-      const { usedConfig } = context.rootState
+      const { usedConfig, workspaceId } = context.rootState
 
       try {
-        const tab = await Vue.prototype.$util.send('appdb/tabhistory/getLastDeletedTab', { workspaceId: usedConfig.workspaceId, connectionId: usedConfig.id });
+        const tab = await Vue.prototype.$util.send('appdb/tabhistory/getLastDeletedTab', { workspaceId: workspaceId, connectionId: usedConfig.id });
         if (tab) {
           tab.deletedAt = null
           await context.dispatch('add', { item: tab })
@@ -200,7 +198,7 @@ export const TabModule: Module<State, RootState> = {
       }
       if (usedConfig?.id) {
         log.info("saving tab", item)
-        item.workspaceId = usedConfig.workspaceId
+        item.workspaceId = context.rootState.workspaceId
         item.connectionId = usedConfig.id
         item.deletedAt = null
         item.active = true
