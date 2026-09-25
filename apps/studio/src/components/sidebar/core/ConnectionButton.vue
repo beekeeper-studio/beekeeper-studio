@@ -27,7 +27,7 @@
           <x-label><i class="material-icons">power_settings_new</i>Disconnect</x-label>
         </x-menuitem>
         <x-menuitem @click.prevent="$modal.show('config-save-modal')">
-          <x-label v-if="config.id && !config.anon">
+          <x-label v-if="!config.anon">
             <i class="material-icons">edit</i>Edit Connection
           </x-label>
           <x-label v-else>
@@ -300,14 +300,6 @@ export default {
       this.showingMore = !this.showingMore;
     },
     populateRecentConnections() {
-      if (!this.config.id || !this.config.workspaceId) {
-        console.log('Missing id or workspaceId:', {
-          id: this.config.id,
-          workspaceId: this.config.workspaceId
-        });
-        return
-      }
-
       const filteredRecent = this.recentConnectionsConfigs
         .map(rc => this.connectionConfigs.find(c =>
           c.id === rc.connectionId &&
