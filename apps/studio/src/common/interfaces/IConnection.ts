@@ -76,6 +76,8 @@ export interface ISimpleConnection extends Transport {
 
 export interface IConnection extends ISimpleConnection {
   name: Nullable<string>
+  /** Backs a session on a connection that was never saved (see SavedConnection.anon) */
+  anon?: boolean
 
   sshMode: SshMode
   password: Nullable<string>

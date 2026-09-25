@@ -27,6 +27,7 @@ import { CloudCredential } from "@/common/appdb/models/CloudCredential";
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import rawLog from "@bksLogger"
 import { validate } from "class-validator";
+import { isValidConnectionId } from "@/handlers/utils";
 import { QueryAudit } from "@/common/appdb/models/QueryAudit";
 import { TransportQueryAudit, TransportQueryAuditDetail } from "@/common/transport/TransportQueryAudit";
 
@@ -206,8 +207,66 @@ async function transformConn(obj: SavedConnection, cls: any): Promise<IConnectio
   return cls.merge(newObj, obj);
 }
 
+// Anonymous connections (SavedConnection.anon) are only ever fetched by id -
+// never listed, counted or searched - unless a where asks for `anon` itself.
+function withoutAnon(options: FindManyOptions<SavedConnection> & { params?: any } = {}): FindManyOptions<SavedConnection> {
+  const { params, ...rest } = options
+  const where = rest.where ?? (params ? paramsToWhere(params) : undefined)
+  const notAnon = { anon: false }
+  return {
+    ...rest,
+    where: _.isArray(where)
+      ? where.map((w) => ({ ...notAnon, ...w }))
+      : { ...notAnon, ...where },
+  }
+}
+
+async function transformConns(conns: SavedConnection[]): Promise<IConnection[]> {
+  return await Promise.all(conns.map((c) => transformConn(c, SavedConnection)))
+}
+
 export const AppDbHandlers = {
   ...handlersFor<IConnection>('saved', SavedConnection, transformConn),
+  'appdb/saved/find': async function({ options }: { options?: FindManyOptions<SavedConnection> } = {}) {
+    return await transformConns(await SavedConnection.find(withoutAnon(options)))
+  },
+  'appdb/saved/count': async function(args: FindManyOptions<SavedConnection> | { options?: FindManyOptions<SavedConnection> } = {}) {
+    // like the other count handlers, takes the options directly or wrapped
+    const options = ('options' in args ? args.options : args) as FindManyOptions<SavedConnection>
+    return await SavedConnection.count(withoutAnon(options))
+  },
+  'appdb/saved/search': async function({ searchText }: { searchText: string }) {
+    const conns: SavedConnection[] = await SavedConnection.search(SavedConnection, searchText)
+    return await transformConns(conns.filter((c) => !c.anon))
+  },
+  // Keys a session on a connection that was never saved. Only enough to
+  // identify it is stored - the session connects with its own config, and
+  // nothing the user chose not to save, passwords included, is written.
+  'appdb/saved/createAnon': async function({ config }: { config: IConnection }): Promise<number> {
+    const anon = new SavedConnection().withProps(
+      _.pick(config, ['connectionType', 'host', 'port', 'username', 'defaultDatabase'])
+    )
+    anon.name = config.name || 'Unsaved connection'
+    anon.anon = true
+    anon.rememberPassword = false
+    await anon.save()
+    return anon.id
+  },
+  'appdb/saved/removeAnon': async function({ id }: { id: number }): Promise<void> {
+    // TypeORM drops a null or undefined from a where, so a missing id would
+    // match some other session's anonymous connection
+    if (!isValidConnectionId(id)) return
+    // not anonymous any more if it was saved during the session
+    const anon = await SavedConnection.findOneBy({ id, anon: true })
+    if (!anon) return
+
+    const scope = { connectionId: anon.id, workspaceId: anon.workspaceId }
+    await OpenTab.delete(scope)
+    await PinnedEntity.delete(scope)
+    await HiddenEntity.delete(scope)
+    await HiddenSchema.delete(scope)
+    await anon.remove()
+  },
   ...handlersFor<IConnection>('used', UsedConnection, transformConn),
   ...handlersFor<TransportPinnedConn>('pinconn', PinnedConnection),
   ...handlersFor<TransportPinnedEntity>('pins', PinnedEntity),

@@ -19,7 +19,8 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       throw new Error("recordUse was handed a used_connection. Connect with a saved connection, or a new unsaved one.")
     }
 
-    const savedConnectionId = config.id ?? null
+    // an anonymous connection only lives as long as its session
+    const savedConnectionId = config.anon ? null : (config.id ?? null)
     const existing = savedConnectionId
       ? await UsedConnection.findOneBy({ connectionId: savedConnectionId, workspaceId: config.workspaceId })
       : null

@@ -27,7 +27,7 @@
           <x-label><i class="material-icons">power_settings_new</i>Disconnect</x-label>
         </x-menuitem>
         <x-menuitem @click.prevent="$modal.show('config-save-modal')">
-          <x-label v-if="config.id">
+          <x-label v-if="config.id && !config.anon">
             <i class="material-icons">edit</i>Edit Connection
           </x-label>
           <x-label v-else>

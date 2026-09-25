@@ -77,7 +77,7 @@
 <script>
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago';
-  import { mapState } from 'vuex'
+  import { mapGetters, mapState } from 'vuex'
 import ErrorAlert from '@/components/common/ErrorAlert.vue';
 import SidebarLoading from '@/components/common/SidebarLoading.vue'
 
@@ -92,7 +92,7 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
       }
     },
     computed: {
-      ...mapState(['usedConfig']),
+      ...mapGetters(['historyConnectionId']),
       ...mapState('data/usedQueries', { 'history': 'items', 'loading': 'loading', 'error': 'error'},),
       removeTitle() {
         return `Remove ${this.checkedHistoryQueries.length} saved history queries`;
@@ -101,9 +101,8 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
         if(this.showAllHistory){
           return this.history;
         } else {
-          // an unsaved connection has no id, and so no history of its own
-          return this.usedConfig?.id
-            ? this.history.filter(item => item.connectionId === this.usedConfig.id)
+          return this.historyConnectionId
+            ? this.history.filter(item => item.connectionId === this.historyConnectionId)
             : [];
         }
       },

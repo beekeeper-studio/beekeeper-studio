@@ -7,16 +7,6 @@ import Vue from 'vue';
 
 const log = rawLog.scope('TabModule')
 
-// Tabs on a connection that was never saved aren't persisted, so the app db
-// never gives them an id. Everything keys tabs on `id` (the active tab, v-for
-// keys, per-tab modals, reserved connections), so they get a unique negative
-// id instead - it can never collide with a persisted tab.
-let lastUnsavedTabId = 0
-function nextUnsavedTabId(): number {
-  lastUnsavedTabId -= 1
-  return lastUnsavedTabId
-}
-
 interface State {
   tabs: TransportOpenTab[],
   active?: TransportOpenTab,
@@ -164,12 +154,14 @@ export const TabModule: Module<State, RootState> = {
     async load(context) {
       const { usedConfig } = context.rootState
       if (usedConfig?.id) {
-        log.info("Loading tabs for ", context.rootState.workspaceId, usedConfig.id)
+        log.info("Loading tabs for ", usedConfig.workspaceId, usedConfig.id)
         const tabs = await Vue.prototype.$util.send('appdb/tabs/find', {
           options: {
             where: {
               connectionId: usedConfig.id,
-              workspaceId: context.rootState.workspaceId
+              // the connection's own workspace, like pins and hidden entities -
+              // an anonymous connection is local even in a cloud workspace
+              workspaceId: usedConfig.workspaceId
             }
           }
         })
@@ -185,10 +177,10 @@ export const TabModule: Module<State, RootState> = {
       context.commit('setActive', null)
     },
     async reopenLastClosedTab(context) {
-      const { usedConfig, workspaceId } = context.rootState
+      const { usedConfig } = context.rootState
 
       try {
-        const tab = await Vue.prototype.$util.send('appdb/tabhistory/getLastDeletedTab', { workspaceId: workspaceId, connectionId: usedConfig.id });
+        const tab = await Vue.prototype.$util.send('appdb/tabhistory/getLastDeletedTab', { workspaceId: usedConfig.workspaceId, connectionId: usedConfig.id });
         if (tab) {
           tab.deletedAt = null
           await context.dispatch('add', { item: tab })
@@ -208,13 +200,11 @@ export const TabModule: Module<State, RootState> = {
       }
       if (usedConfig?.id) {
         log.info("saving tab", item)
-        item.workspaceId = context.rootState.workspaceId
+        item.workspaceId = usedConfig.workspaceId
         item.connectionId = usedConfig.id
         item.deletedAt = null
         item.active = true
         item = await Vue.prototype.$util.send('appdb/tabs/save', { obj: item })
-      } else if (_.isNil(item.id)) {
-        item.id = nextUnsavedTabId()
       }
       context.commit('add', item)
       return item;

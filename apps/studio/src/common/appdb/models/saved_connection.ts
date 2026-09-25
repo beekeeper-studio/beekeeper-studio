@@ -326,6 +326,12 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
   @Column({ type: 'float', nullable: false, default: 0 })
   position = 0.0
 
+  // A connection that was never saved gets an anonymous row for the length of
+  // the session, so its tabs, pins and history have a real connection id to be
+  // keyed on. Anonymous rows are never listed, and disconnecting removes them.
+  @Column({ type: 'boolean', nullable: false, default: false })
+  anon = false
+
   // Do NOT initialize this to null. A null initializer becomes an own property
   // that gets copied into transport objects by cls.merge(), and TypeORM treats an
   // explicitly-null relation as "unset this FK", overriding the connectionFolderId column.

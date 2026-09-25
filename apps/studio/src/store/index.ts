@@ -18,6 +18,7 @@ import { SearchModule } from './modules/SearchModule'
 import { IWorkspace, LocalWorkspace } from '@/common/interfaces/IWorkspace'
 import { IConnection } from '@/common/interfaces/IConnection'
 import { DataModules } from '@/store/DataModules'
+import { connectionToSave, historyConnectionIdFor, sessionConfigFor } from '@/store/anonConnection'
 import { TabModule } from './modules/TabModule'
 import { HideEntityModule } from './modules/HideEntityModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
@@ -213,6 +214,9 @@ const store = new Vuex.Store<State>({
     isCloud(state: State) {
       return state.workspaceId !== LocalWorkspace.id
     },
+    historyConnectionId(state: State, getters): Nullable<number> {
+      return historyConnectionIdFor(state.usedConfig, getters.isCloud)
+    },
     workspaceEmail(_state: State, getters): string | null {
       return getters.cloudClient?.options?.email || null
     },
@@ -376,6 +380,10 @@ const store = new Vuex.Store<State>({
       state.database = config?.defaultDatabase
       state.namespace = config?.surrealDbOptions?.namespace;
     },
+    // the session's anonymous connection was saved, so disconnecting keeps it
+    anonConnectionSaved(state) {
+      if (state.usedConfig) state.usedConfig.anon = false
+    },
     // this shouldn't be used at all
     clearConnection(state) {
       state.usedConfig = null
@@ -521,7 +529,9 @@ const store = new Vuex.Store<State>({
     },
 
     async saveConnection(context, config: IConnection) {
-      await context.dispatch('data/connections/save', config)
+      const { isCloud } = context.getters
+      await context.dispatch('data/connections/save', connectionToSave(config, isCloud))
+      if (config.anon && !isCloud) context.commit('anonConnectionSaved')
       const isConnected = !!context.state.server
       if(isConnected) context.dispatch('updateWindowTitle', config)
     },
@@ -533,6 +543,7 @@ const store = new Vuex.Store<State>({
 
       if (context.state.username) {
         await Vue.prototype.$util.send('conn/create', { config: resolvedConfig, auth, osUser: context.state.username })
+        const sessionConfig = await sessionConfigFor(resolvedConfig)
         const defaultSchema = await context.state.connection.defaultSchema();
         const supportedFeatures = await context.state.connection.supportedFeatures();
         const versionString = await context.state.connection.versionString();
@@ -541,7 +552,7 @@ const store = new Vuex.Store<State>({
         context.commit('sshConfigWarnings', serverConfig?.sshConfigWarnings || []);
 
         if (supportedFeatures.backups) {
-          context.dispatch('backups/setConnectionConfigs', { config: resolvedConfig, supportedFeatures, serverConfig });
+          context.dispatch('backups/setConnectionConfigs', { config: sessionConfig, supportedFeatures, serverConfig });
         }
 
         window.main.enableConnectionMenuItems();
@@ -553,7 +564,7 @@ const store = new Vuex.Store<State>({
         context.commit('versionString', versionString);
         // conn/create recorded the use; pick up the new/updated recent row
         await context.dispatch('data/usedconnections/load')
-        context.commit('newConnection', resolvedConfig)
+        context.commit('newConnection', sessionConfig)
 
         if (context.state.usedConfig.connectionType === 'surrealdb' &&
           context.state.usedConfig.surrealDbOptions?.authType === SurrealAuthType.Root) {
@@ -562,7 +573,7 @@ const store = new Vuex.Store<State>({
         await context.dispatch('updateDatabaseList')
         await context.dispatch('updateTables')
         await context.dispatch('updateRoutines')
-        context.dispatch('updateWindowTitle', resolvedConfig)
+        context.dispatch('updateWindowTitle', sessionConfig)
 
         await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id })
 
@@ -597,6 +608,7 @@ const store = new Vuex.Store<State>({
       return false;
     },
     async disconnect(context) {
+      const config = context.state.usedConfig
       if (context.state.connection) {
         await context.state.connection.disconnect();
       }
@@ -605,6 +617,14 @@ const store = new Vuex.Store<State>({
 
       context.commit('clearConnection')
       context.commit('newConnection', null)
+      if (config?.anon) {
+        // best effort - a leftover anonymous connection is never listed or reused
+        try {
+          await Vue.prototype.$util.send('appdb/saved/removeAnon', { id: config.id })
+        } catch (ex) {
+          log.warn('Unable to remove anonymous connection', ex)
+        }
+      }
       await context.dispatch('updateWindowTitle')
       await context.dispatch('refreshConnections')
     },
