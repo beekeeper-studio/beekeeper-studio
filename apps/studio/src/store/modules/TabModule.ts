@@ -7,6 +7,16 @@ import Vue from 'vue';
 
 const log = rawLog.scope('TabModule')
 
+// Tabs on a connection that was never saved aren't persisted, so the app db
+// never gives them an id. Everything keys tabs on `id` (the active tab, v-for
+// keys, per-tab modals, reserved connections), so they get a unique negative
+// id instead - it can never collide with a persisted tab.
+let lastUnsavedTabId = 0
+function nextUnsavedTabId(): number {
+  lastUnsavedTabId -= 1
+  return lastUnsavedTabId
+}
+
 interface State {
   tabs: TransportOpenTab[],
   active?: TransportOpenTab,
@@ -203,6 +213,8 @@ export const TabModule: Module<State, RootState> = {
         item.deletedAt = null
         item.active = true
         item = await Vue.prototype.$util.send('appdb/tabs/save', { obj: item })
+      } else if (_.isNil(item.id)) {
+        item.id = nextUnsavedTabId()
       }
       context.commit('add', item)
       return item;
