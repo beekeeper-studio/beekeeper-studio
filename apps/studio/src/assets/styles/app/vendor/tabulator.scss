@@ -961,3 +961,11 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
     display: none;
   }
 }
+
+.tabulator .tabulator-range-overlay .tabulator-range.tabulator-range-copy-highlight {
+  border-style: dashed;
+
+  &::after {
+    content: none;
+  }
+}

@@ -67,7 +67,7 @@
   import { markdownTable } from 'markdown-table'
   import intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
-  import { copyRanges, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth, createMenuItem, pasteRange } from '@/lib/menu/tableMenu';
+  import { copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth, createMenuItem, pasteRange } from '@/lib/menu/tableMenu';
   import { tabulatorForTableData } from '@/common/tabulator';
   import EditorModal from '../tableview/EditorModal.vue'
   import { AppEvent } from "@/common/AppEvent";
@@ -281,7 +281,7 @@
             contextMenu: (_e, cell) => {
               return [
                 ...copyActionsMenu({
-                  ranges: cell.getTable().getRanges(),
+                  tabulator: cell.getTable(),
                   table: this.result.tableName || "mytable",
                   schema: this.result.schema,
                   escapeString: this.dialectData?.escapeString,
@@ -292,7 +292,7 @@
             headerContextMenu: (_e, column) => {
               return [
                 ...copyActionsMenu({
-                  ranges: column.getTable().getRanges(),
+                  tabulator: column.getTable(),
                   table: this.result.tableName || "mytable",
                   schema: this.result.schema,
                   escapeString: this.dialectData?.escapeString,
@@ -423,7 +423,7 @@
             this.setAsNullMenuItem(ranges),
             { separator: true },
             ...copyActionsMenu({
-              ranges: cell.getTable().getRanges(),
+              tabulator: cell.getTable(),
               table: this.result.tableName,
               schema: this.defaultSchema,
               escapeString: this.dialectData?.escapeString,
@@ -444,7 +444,7 @@
         const columnMenu = (_e, column) => {
           return [
             ...copyActionsMenu({
-              ranges: column.getTable().getRanges(),
+              tabulator: column.getTable(),
               table: this.result.tableName,
               schema: this.defaultSchema,
               escapeString: this.dialectData?.escapeString,
@@ -823,7 +823,7 @@
       copySelection() {
         const isFocusingTable = this.checkTableFocus();
         if (!this.active || !isFocusingTable) return
-        copyRanges({ ranges: this.tabulator.getRanges(), type: 'plain' })
+        this.tabulator.copyRanges({ type: 'plain' })
       },
       pasteSelection() {
         if (!this.checkTableFocus() || !this.editingResult) return;

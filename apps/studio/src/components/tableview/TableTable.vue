@@ -337,7 +337,7 @@ import { normalizeFilters, safeSqlFormat, createTableFilter, isNumericDataType, 
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml, FormatterParams } from '@shared/lib/tabulator';
-import { copyRanges, pasteRange, readClipboardRows, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
+import { pasteRange, readClipboardRows, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
 import { tabulatorForTableData } from "@/common/tabulator";
 import { TransportTabulatorPersistence } from "@/common/transport/TransportTabulatorPersistence";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
@@ -865,7 +865,7 @@ export default Vue.extend({
             { separator: true },
             this.quickFilterMenuItem(cell),
               ...copyActionsMenu({
-                ranges,
+                tabulator: cell.getTable(),
                 table: this.table.name,
                 schema: this.table.schema,
                 escapeString: this.dialectData?.escapeString,
@@ -907,7 +907,7 @@ export default Vue.extend({
           this.setAsNullMenuItem(ranges),
           { separator: true },
           ...copyActionsMenu({
-            ranges,
+            tabulator: column.getTable(),
             table: this.table.name,
             schema: this.table.schema,
             escapeString: this.dialectData?.escapeString,
@@ -1083,7 +1083,7 @@ export default Vue.extend({
     },
     copySelection() {
       if (!this.focusingTable()) return
-      copyRanges({ ranges: this.tabulator.getRanges(), type: 'plain' })
+      this.tabulator.copyRanges({ type: 'plain' })
     },
     pasteSelection() {
       if (!this.focusingTable() || !this.editable) return
@@ -1170,7 +1170,7 @@ export default Vue.extend({
               this.setAsNullMenuItem(ranges),
               { separator: true },
               ...copyActionsMenu({
-                ranges,
+                tabulator: cell.getTable(),
                 table: this.table.name,
                 schema: this.table.schema,
               }),
@@ -1185,7 +1185,7 @@ export default Vue.extend({
               this.setAsNullMenuItem(ranges),
               { separator: true },
               ...copyActionsMenu({
-                ranges,
+                tabulator: this.tabulator,
                 table: this.table.name,
                 schema: this.table.schema,
                 escapeString: this.dialectData?.escapeString,

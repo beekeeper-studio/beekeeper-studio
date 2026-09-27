@@ -42,6 +42,7 @@ import { WebPluginManager } from '@/services/plugin/web'
 import PluginStoreService from '@/services/plugin/web/PluginStoreService'
 import * as UIKit from '@beekeeperstudio/ui-kit'
 import ProductTourPlugin from '@/plugins/ProductTourPlugin'
+import ClipboardRangeModule from '@/plugins/ClipboardRangeModule'
 
 (async () => {
 
@@ -105,7 +106,13 @@ import ProductTourPlugin from '@/plugins/ProductTourPlugin'
     Tabulator.defaultOptions.layout = "fitDataFill";
     Tabulator.defaultOptions.popupContainer = ".beekeeper-studio-wrapper";
     Tabulator.defaultOptions.headerSortClickElement = 'icon';
-    Tabulator.registerModule([HeaderSortTabulatorModule, KeyListenerTabulatorModule, ForeignCacheTabulatorModule, PersistenceGuardTabulatorModule]);
+    Tabulator.registerModule([
+      HeaderSortTabulatorModule,
+      KeyListenerTabulatorModule,
+      ForeignCacheTabulatorModule,
+      PersistenceGuardTabulatorModule,
+      ClipboardRangeModule,
+    ]);
     // Tabulator.prototype.bindModules([EditModule]);
 
     (window as any).$ = $;
