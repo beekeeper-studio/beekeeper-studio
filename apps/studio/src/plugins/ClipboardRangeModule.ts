@@ -1,4 +1,3 @@
-
 import { Module, RangeComponent, Tabulator } from "tabulator-tables";
 import { buildCopyText, extractRanges } from "@/lib/menu/tableMenu";
 import { ElectronPlugin } from "@/lib/NativeWrapper";
@@ -35,7 +34,7 @@ export default class ClipboardRangeModule extends Module {
     this.subscribe("column-height", this.removeHighlights.bind(this));
     this.subscribe("column-resized", this.removeHighlights.bind(this));
     this.subscribe("cell-height", this.removeHighlights.bind(this));
-    this.subscribe("edit-blur", this.removeHighlights.bind(this));
+    this.subscribe("edit-editor-clear", this.removeHighlights.bind(this));
   }
 
   private async copyRanges(options: CopyRangesOptions) {
