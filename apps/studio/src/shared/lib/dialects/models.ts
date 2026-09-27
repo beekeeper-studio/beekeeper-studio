@@ -224,7 +224,6 @@ export interface DialectData {
     transactions?: boolean
     chunkSizeStream?: boolean
     binaryColumn?: boolean
-    initialSort?: boolean
     sqlCreate?: boolean
     foreignKeys?: boolean
     compositeKeys?: boolean    // Whether composite keys are supported

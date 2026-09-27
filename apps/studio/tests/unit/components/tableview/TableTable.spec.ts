@@ -217,3 +217,34 @@ describe("TableTable.vue — loadPersistence filters by tableId", () => {
     expect(vm.persistenceReader(vm.tableId, "columns")).toBe(false);
   });
 });
+
+// Regression coverage for #1417.
+// Opening a table used to default-sort by the first column, which puts a
+// huge load on the database for large tables. The table view must not apply
+// any initial sort order.
+describe("TableTable.vue — initialSort", () => {
+  const initialSort = (TableTable as any).options.computed.initialSort;
+
+  function makeContext(columnNames: string[]) {
+    return {
+      table: {
+        name: "sometable",
+        schema: "public",
+        columns: columnNames.map((columnName) => ({ columnName })),
+      },
+      dialectData: { disabledFeatures: {} },
+    };
+  }
+
+  it("does not sort by the first column when a table is opened (issue-1417)", () => {
+    const sort = initialSort.call(makeContext(["id", "name"]));
+
+    expect(sort).toEqual([]);
+  });
+
+  it("returns no initial sort when the table has no columns", () => {
+    const sort = initialSort.call(makeContext([]));
+
+    expect(sort).toEqual([]);
+  });
+});

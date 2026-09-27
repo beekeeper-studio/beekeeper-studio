@@ -591,19 +591,12 @@ export default Vue.extend({
       return `workspace-${this.workspaceId}.connection-${this.usedConfig.id}.db-${this.database || 'none'}.schema-${this.table.schema || 'none'}.table-${this.table.name}`
     },
     initialSort() {
-      // FIXME: Don't specify an initial sort order
-      // because it can slow down some databases.
-      // However - some databases require an 'order by' for limit, so needs some
-      // integration tests first.
-      if (!this.table?.columns?.length) {
-        return [];
-      }
-
-      if (this.dialectData.disabledFeatures?.initialSort) {
-        return [];
-      }
-
-      return [{ column: this.table.columns[0].columnName, dir: "asc" }];
+      // No default sort order: sorting by the first column when a table is
+      // opened can be extremely slow on large tables (see #1417). Databases
+      // that require an ORDER BY for pagination (e.g. SQL Server's
+      // OFFSET/FETCH) already substitute `ORDER BY (SELECT NULL)` in their
+      // query builders when no sort is given, so omitting it here is safe.
+      return [];
     },
     shouldInitialize() {
       return this.tablesInitialLoaded && this.active && !this.initialized

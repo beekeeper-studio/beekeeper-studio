@@ -109,8 +109,6 @@ export const ClickHouseData: DialectData = {
     chunkSizeStream: true,
     // Clickhouse doesn't have binary types
     binaryColumn: true,
-    // Sorting can slow down queries
-    initialSort: true,
     // TODO (azmi): in progress
     importFromFile: true,
     export: {

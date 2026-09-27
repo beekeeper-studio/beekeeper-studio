@@ -72,7 +72,6 @@ export const DynamoDBData: DialectData = {
     // DynamoDB has no server-side ORDER BY for Scan, so column sorting in the
     // table view isn't available.
     headerSort: true,
-    initialSort: true,
   },
   notices: {
     infoSchema: 'DynamoDB is schemaless. Columns shown are discovered from sampled data.',
