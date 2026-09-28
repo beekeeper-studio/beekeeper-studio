@@ -587,12 +587,9 @@ const store = new Vuex.Store<State>({
     },
     async reconnect(context) {
       if (context.state.connection) {
-        if (shouldPromptForCockroachJwt(context.state.usedConfig)) {
-          return await context.dispatch('connect', { config: context.state.usedConfig });
-        }
+        const resolvedConfig = resolveEphemeralValues(context.state.usedConfig);
 
-        await context.state.connection.connect();
-        return true;
+        return await context.dispatch('connect', { config: resolvedConfig });
       }
       return false;
     },
