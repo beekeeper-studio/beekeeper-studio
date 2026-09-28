@@ -116,6 +116,17 @@ import ClipboardRangeModule from '@/plugins/ClipboardRangeModule'
       CustomEditTriggerModule,
     ]);
     // Tabulator.prototype.bindModules([EditModule]);
+    Tabulator.extendModule('history', 'undoers', {
+      queuePendingDelete() {
+
+      }
+    });
+
+    Tabulator.extendModule('history', 'redoers', {
+      queuePendingDelete() {
+
+      }
+    });
 
     (window as any).$ = $;
     (window as any).jQuery = $;

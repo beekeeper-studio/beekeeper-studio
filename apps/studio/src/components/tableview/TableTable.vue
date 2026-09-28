@@ -349,6 +349,10 @@ const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
 
+const nullComponent = {
+  getComponent: () => {}
+};
+
 export default Vue.extend({
   components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, LoadingSpinner },
   mixins: [data_converter, DataMutators, FkLinkMixin],
@@ -1235,6 +1239,8 @@ export default Vue.extend({
           this.cellEdited(component);
         } else if (action === "rangeEdit") {
           component.getCells().flat().forEach((cell: CellComponent) => this.cellEdited(cell));
+        } else if (action === "queuePendingDelete") {
+          this.removeRowsFromPendingDeletes(data);
         }
       })
       this.tabulator.on('historyRedo', (action, component) => {
@@ -1242,6 +1248,8 @@ export default Vue.extend({
           this.cellEdited(component);
         } else if (action === "rangeEdit") {
           component.getCells().flat().forEach((cell: CellComponent) => this.cellEdited(cell));
+        } else if (action === "queuePendingDelete") {
+          this.addRowsToPendingDeletes(data)
         }
       })
 
@@ -1699,7 +1707,8 @@ export default Vue.extend({
         if (matchingInserts.length > 0) {
           this.$set(this.pendingChanges, 'inserts', this.pendingChanges.inserts.filter((insert) => !rows.includes(insert.row)))
           matchingInserts.forEach((insert) => insert.row.delete())
-          return
+          rows = _.without(rows, ...matchingInserts.map((insert) => insert.row));
+          // TODO (@day): will have to add this to the history module as well
         }
       }
 
@@ -1711,6 +1720,7 @@ export default Vue.extend({
 
         this.primaryKeys.forEach((pk: string) => {
           const cell = row.getCell(pk)
+          // @ts-ignore
           const isBinary = cell.getColumn().getDefinition().dataType.toUpperCase().includes('BINARY')
           let value = cell.getValue();
           if (isBinary) {
@@ -1752,8 +1762,21 @@ export default Vue.extend({
 
       // remove pending updates for the row marked for deletion
       discardedUpdates.forEach(update => this.discardColumnUpdate(update))
+      // TODO (@day): we will also probably need to add this to the history somehow?? maybe it already is?
 
       this.$set(this.pendingChanges, 'updates', _.without(this.pendingChanges.updates, discardedUpdates))
+
+      // the component doesn't really matter, tabulator just throws if you don't pass one
+      this.tabulator.modules.history.action('queuePendingDelete', nullComponent, rows)
+    },
+    removeRowsFromPendingDeletes(rows: RowComponent[]) {
+      rows.forEach((row) => {
+        row.getElement().classList.remove('deleted')
+      });
+
+      const newDeletes = this.pendingChanges.deletes.filter((del) => !rows.includes(del.row));
+
+      this.$set(this.pendingChanges, 'deletes', newDeletes);
     },
     resetPendingChanges() {
       this.pendingChanges = {
