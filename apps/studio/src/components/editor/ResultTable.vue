@@ -346,7 +346,7 @@
         for (const field of fieldsWithClass) {
           const element = row.getCell(field)?.getElement();
           if (!element) continue;
-          if (!hasReset.includes(field)) {
+          if (!hasReset.includes(field) && this.fieldOriginalClassMap.has(field)) {
             element.classList.value = this.fieldOriginalClassMap.get(field);
             hasReset.push(field);
           }
@@ -641,9 +641,9 @@
           return;
         }
 
-        if (!this.fieldOriginalClassMap.has(cell.getField())) {
+        if (!this.fieldOriginalClassMap.has(cell.getField()) && cell.getElement()?.classList?.value) {
           // If we don't have the unmodified original class value, store it so we can reset classes later on :)
-          this.fieldOriginalClassMap.set(cell.getField(), cell.getElement()?.classList.value);
+          this.fieldOriginalClassMap.set(cell.getField(), cell.getElement()?.classList?.value);
         }
 
         // TODO (@day): if we're going to do inserts we'll have to check if edit is in a pending insert here
