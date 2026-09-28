@@ -587,9 +587,7 @@ const store = new Vuex.Store<State>({
     },
     async reconnect(context) {
       if (context.state.connection) {
-        const resolvedConfig = resolveEphemeralValues(context.state.usedConfig);
-
-        return await context.dispatch('connect', { config: resolvedConfig });
+        return await context.dispatch('connect', { config: context.state.usedConfig });
       }
       return false;
     },
