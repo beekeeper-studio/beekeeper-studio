@@ -34,6 +34,8 @@ jobs:
       - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v3
         if: "contains(matrix.os, 'ubuntu')"
+        with:
+          channel: '8.x/stable'
 
       - name: Install python 3.11 (not Mac)
         uses: actions/setup-python@v6

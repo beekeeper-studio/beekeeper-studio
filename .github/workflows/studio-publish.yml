@@ -231,6 +231,8 @@ jobs:
       - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v3
         if: matrix.os.type == 'linux'
+        with:
+          channel: '8.x/stable'
 
       # No node_modules cache here, deliberately. Release builds always install
       # and compile native modules from scratch so their glibc/libstdc++
