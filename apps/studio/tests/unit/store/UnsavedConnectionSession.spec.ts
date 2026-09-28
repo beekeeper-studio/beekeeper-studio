@@ -183,20 +183,50 @@ describe('a session on a connection that was never saved', () => {
     })
 
     it('saves it as an untitled cloud connection instead', async () => {
-      await store.dispatch('connect', { config: await unsavedRedshiftConfig() })
+      const config = { ...(await unsavedRedshiftConfig()), sshPassword: 'ssh-secret' }
 
-      // without the password - the user didn't choose to save it
+      await store.dispatch('connect', { config })
+
+      // without the passwords - the user didn't choose to save them
       expect(savedToCloud).toHaveBeenCalledWith(expect.objectContaining({
         id: null,
         name: 'Untitled Connection',
         rememberPassword: false,
+        password: null,
+        sshPassword: null,
       }))
       const usedConfig = store.state.usedConfig
       expect(usedConfig).toMatchObject({ id: 99, name: 'Untitled Connection', workspaceId: CLOUD_WORKSPACE })
       expect(usedConfig.anon).toBeFalsy()
+      // the session still connects with them, but shows them as not saved
       expect(usedConfig.password).toBe('hunter2')
+      expect(usedConfig.rememberPassword).toBe(false)
       // nothing local
       expect(await SavedConnection.count()).toBe(0)
+    })
+
+    it('only keeps its passwords once the user ticks Save Passwords', async () => {
+      await store.dispatch('connect', { config: await unsavedRedshiftConfig() })
+      // what the save form edits
+      const usedConfig = store.state.usedConfig
+      usedConfig.name = 'Warehouse'
+
+      await store.dispatch('saveConnection', usedConfig)
+      expect(savedToCloud).toHaveBeenLastCalledWith(expect.objectContaining({ id: 99, name: 'Warehouse', password: null }))
+
+      usedConfig.rememberPassword = true
+      await store.dispatch('saveConnection', usedConfig)
+      expect(savedToCloud).toHaveBeenLastCalledWith(expect.objectContaining({ id: 99, rememberPassword: true, password: 'hunter2' }))
+    })
+
+    it('leaves the passwords alone on a connection that does not say whether to keep them', async () => {
+      const config = { ...(await unsavedRedshiftConfig()), id: 42, name: 'Shared', rememberPassword: undefined }
+      await store.dispatch('connect', { config })
+
+      await store.dispatch('saveConnection', store.state.usedConfig)
+
+      // nothing to go on, so whatever it had saved isn't wiped
+      expect(savedToCloud).toHaveBeenLastCalledWith(expect.objectContaining({ id: 42, password: 'hunter2' }))
     })
 
     it('keeps the name the connection was given', async () => {

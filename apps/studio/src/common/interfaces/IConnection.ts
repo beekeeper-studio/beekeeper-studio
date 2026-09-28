@@ -5,6 +5,9 @@ import { IAccessGrant } from "./IAccessGrant"
 
 export type SshMode = null | 'agent' | 'userpass' | 'keyfile'
 
+/** The name a new connection is saved under in a cloud workspace, when it connects without one */
+export const UNTITLED_CONNECTION_NAME = 'Untitled Connection'
+
 export function isUltimateType(s: ConnectionType) {
   const types: ConnectionType[] = [
     'oracle',
@@ -78,6 +81,8 @@ export interface IConnection extends ISimpleConnection {
   name: Nullable<string>
   /** Backs a session on a connection that was never saved (see SavedConnection.anon) */
   anon?: boolean
+  /** Save Passwords - whether saving the connection keeps its passwords */
+  rememberPassword?: boolean
 
   sshMode: SshMode
   password: Nullable<string>

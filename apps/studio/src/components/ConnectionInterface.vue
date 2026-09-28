@@ -247,6 +247,7 @@
                   :config="config"
                   :folders="connectionFolders"
                   :disabled="editingDisabled"
+                  :default-name="defaultName"
                   @save="save"
                 />
               </div>
@@ -322,7 +323,7 @@ import { AzureAuthType } from '@/lib/db/types'
 import UpgradePanel from '@/components/upsell/UpgradePanel.vue'
 import Vue from 'vue'
 import { AppEvent } from '@/common/AppEvent'
-import { isUltimateType } from '@/common/interfaces/IConnection'
+import { isUltimateType, UNTITLED_CONNECTION_NAME } from '@/common/interfaces/IConnection'
 import { SmartLocalStorage } from '@/common/LocalStorage'
 import ContentPlaceholderHeading from '@/components/common/loading/ContentPlaceholderHeading.vue'
 import { FriendlyErrorHelper } from '@/frontend/utils/FriendlyErrorHelper'
@@ -389,6 +390,11 @@ export default Vue.extend({
     },
     isNewConnection() {
       return _.isNil(this.config) || _.isNil(this.config.id);
+    },
+    // a new connection is saved on connect in a cloud workspace, under this
+    // name if it doesn't have one
+    defaultName() {
+      return this.isCloud && this.isNewConnection ? UNTITLED_CONNECTION_NAME : null
     },
     pageTitle() {
       if (this.isNewConnection) {
@@ -644,7 +650,9 @@ export default Vue.extend({
       try {
         this.errors = null
         this.connectionError = null
-        if (!this.config.name) {
+        // saved under the same name connecting would give it
+        const name = this.config.name || this.defaultName
+        if (!name) {
           throw new Error("Name is required")
         }
         // create token cache for azure auth
@@ -653,7 +661,7 @@ export default Vue.extend({
           this.config.authId = cacheId;
         }
 
-        const id = await this.$store.dispatch('data/connections/save', this.config)
+        const id = await this.$store.dispatch('data/connections/save', { ...this.config, name })
 
         this.$noty.success("Connection Saved")
         // we want to fetch the saved one in case it's changed

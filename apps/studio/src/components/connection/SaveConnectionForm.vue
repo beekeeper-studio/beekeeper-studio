@@ -10,7 +10,7 @@
         @keydown.enter.prevent.stop="save"
         type="text"
         v-model="config.name"
-        placeholder="Connection Name"
+        :placeholder="defaultName || 'Connection Name'"
         :disabled="disabled"
       >
     </div>
@@ -76,7 +76,8 @@ import InAppFolderPicker from '../common/form/InAppFolderPicker.vue'
 
 export default {
   components: { ColorPicker, InAppFolderPicker },
-  props: ['config', 'canCancel', 'selectInput', 'folders', 'disabled'],
+  // defaultName: what the connection is saved as if it's left unnamed
+  props: ['config', 'canCancel', 'selectInput', 'folders', 'disabled', 'defaultName'],
   mounted(){
     if(this.selectInput) {
       const $input = this.$refs.nameInput

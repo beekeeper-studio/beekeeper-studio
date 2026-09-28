@@ -5,6 +5,7 @@ import { TestOrmConnection } from '@tests/lib/TestOrmConnection'
 import { UsedConnection } from '@/common/appdb/models/used_connection'
 import { AppDbHandlers } from '@/handlers/appDbHandlers'
 import ConnectionInterface from '@/components/ConnectionInterface.vue'
+import SaveConnectionForm from '@/components/connection/SaveConnectionForm.vue'
 
 Vue.use(Vuex)
 
@@ -23,7 +24,7 @@ const WORKSPACE_ID = -1
 // per-connection (tabs, pins, hidden entities, tab history) is keyed on a
 // saved_connection id - so a used_connection must never leave this screen.
 
-function buildStore(connectCalls: any[]) {
+function buildStore(connectCalls: any[], { isCloud = false, saveCalls = [] as any[] } = {}) {
   return new Vuex.Store({
     state: {
       workspaceId: WORKSPACE_ID,
@@ -33,7 +34,7 @@ function buildStore(connectCalls: any[]) {
     } as any,
     getters: {
       isUltimate: () => true,
-      isCloud: () => false,
+      isCloud: () => isCloud,
       workspace: () => ({ id: WORKSPACE_ID }),
     },
     actions: {
@@ -45,7 +46,19 @@ function buildStore(connectCalls: any[]) {
       'data/connections': {
         namespaced: true,
         state: { items: [] },
-        actions: { remove: jest.fn() },
+        mutations: {
+          upsert(state: any, item: any) {
+            state.items.push(item)
+          },
+        },
+        actions: {
+          remove: jest.fn(),
+          save({ commit }, item) {
+            saveCalls.push(item)
+            commit('upsert', { ...item, id: saveCalls.length })
+            return saveCalls.length
+          },
+        },
       },
       'data/connectionFolders': { namespaced: true, state: { items: [] } },
       licenses: {
@@ -84,6 +97,32 @@ async function buildRecentRow(overrides: any = {}) {
   return rows[rows.length - 1]
 }
 
+function mountInterface(store: any) {
+  return shallowMount(ConnectionInterface as any, {
+    store,
+    mocks: {
+      $config: { appVersion: '0.0.0', defaults: { connectionTypes: [] } },
+      $util: {
+        send: async (channel: string, args: any) => {
+          const handler = (AppDbHandlers as any)[channel]
+          if (!handler) throw new Error(`No handler for ${channel}`)
+          return await handler(args ?? {})
+        },
+      },
+      $bks: { unlock: async () => ({ auth: null, cancelled: false }) },
+      $confirm: async () => true,
+      $noty: { error: jest.fn(), success: jest.fn(), warning: jest.fn() },
+      registerHandlers: jest.fn(),
+      unregisterHandlers: jest.fn(),
+    },
+  })
+}
+
+// mounted() loads a blank connection into the form in the background
+async function formReady(wrapper: any) {
+  while (!wrapper.vm.isConfigReady) await new Promise((resolve) => setTimeout(resolve))
+}
+
 describe('ConnectionInterface', () => {
   let wrapper: any
   let connectCalls: any[]
@@ -92,24 +131,7 @@ describe('ConnectionInterface', () => {
     await TestOrmConnection.connect()
     connectCalls = []
 
-    wrapper = shallowMount(ConnectionInterface as any, {
-      store: buildStore(connectCalls),
-      mocks: {
-        $config: { appVersion: '0.0.0', defaults: { connectionTypes: [] } },
-        $util: {
-          send: async (channel: string, args: any) => {
-            const handler = (AppDbHandlers as any)[channel]
-            if (!handler) throw new Error(`No handler for ${channel}`)
-            return await handler(args ?? {})
-          },
-        },
-        $bks: { unlock: async () => ({ auth: null, cancelled: false }) },
-        $confirm: async () => true,
-        $noty: { error: jest.fn(), success: jest.fn(), warning: jest.fn() },
-        registerHandlers: jest.fn(),
-        unregisterHandlers: jest.fn(),
-      },
-    })
+    wrapper = mountInterface(buildStore(connectCalls))
   })
 
   afterEach(async () => {
@@ -186,5 +208,59 @@ describe('ConnectionInterface', () => {
     await wrapper.vm.remove({ ...saved, workspaceId: WORKSPACE_ID })
 
     expect(wrapper.vm.config.id).toBeNull()
+  })
+
+  it('asks for a name before saving a new connection', async () => {
+    await formReady(wrapper)
+    expect(wrapper.vm.defaultName).toBeNull()
+
+    await wrapper.vm.save()
+
+    expect(wrapper.vm.errors).toEqual(['Name is required'])
+  })
+})
+
+// Connecting saves a new connection to a cloud workspace, and names it if the
+// user didn't.
+describe('ConnectionInterface in a cloud workspace', () => {
+  let wrapper: any
+  let saveCalls: any[]
+
+  beforeEach(async () => {
+    await TestOrmConnection.connect()
+    saveCalls = []
+
+    wrapper = mountInterface(buildStore([], { isCloud: true, saveCalls }))
+    await formReady(wrapper)
+  })
+
+  afterEach(async () => {
+    wrapper.destroy()
+    await TestOrmConnection.disconnect()
+  })
+
+  it('names a new connection the way connecting would', async () => {
+    expect(wrapper.vm.defaultName).toBe('Untitled Connection')
+
+    await wrapper.vm.edit({ id: 7, name: 'Warehouse', connectionType: 'postgresql', workspaceId: 5 })
+
+    expect(wrapper.vm.defaultName).toBeNull()
+  })
+
+  it('saves a new connection left unnamed under that name', async () => {
+    await wrapper.vm.save()
+
+    expect(wrapper.vm.errors).toBeNull()
+    expect(saveCalls.map((c) => c.name)).toEqual(['Untitled Connection'])
+  })
+})
+
+describe('SaveConnectionForm', () => {
+  const placeholder = (propsData: any) =>
+    shallowMount(SaveConnectionForm as any, { propsData }).find('input[type="text"]').attributes('placeholder')
+
+  it('shows what an unnamed connection is saved as', () => {
+    expect(placeholder({ config: { name: null }, defaultName: 'Untitled Connection' })).toBe('Untitled Connection')
+    expect(placeholder({ config: { name: null } })).toBe('Connection Name')
   })
 })

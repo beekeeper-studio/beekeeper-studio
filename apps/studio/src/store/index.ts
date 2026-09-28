@@ -16,7 +16,7 @@ import { PinModule } from './modules/PinModule'
 import { getDialectData } from '@shared/lib/dialects'
 import { SearchModule } from './modules/SearchModule'
 import { IWorkspace, LocalWorkspace } from '@/common/interfaces/IWorkspace'
-import { IConnection } from '@/common/interfaces/IConnection'
+import { IConnection, UNTITLED_CONNECTION_NAME } from '@/common/interfaces/IConnection'
 import { DataModules } from '@/store/DataModules'
 import { TabModule } from './modules/TabModule'
 import { HideEntityModule } from './modules/HideEntityModule'
@@ -86,6 +86,20 @@ async function resolveEphemeralValues(config: IConnection): Promise<IConnection 
   }
 
   return config;
+}
+
+// What to save when the user didn't choose to keep a connection's passwords.
+// A local saved connection clears them itself, but a cloud workspace would
+// still be sent them.
+function withoutPasswords(config: IConnection): IConnection {
+  return {
+    ...config,
+    password: null,
+    sshPassword: null,
+    sshKeyfilePassword: null,
+    sshBastionPassword: null,
+    sshBastionKeyfilePassword: null,
+  }
 }
 
 export interface State {
@@ -526,12 +540,15 @@ const store = new Vuex.Store<State>({
     },
 
     async saveConnection(context, config: IConnection) {
+      // Save Passwords unticked leaves them out (the session keeps them either
+      // way). A connection that doesn't say is saved as it is.
+      const saved = config.rememberPassword === false ? withoutPasswords(config) : config
       if (config.anon) {
         // it becomes the saved connection, so the session's tabs and pins stay with it
-        await context.dispatch('data/connections/save', { ...config, anon: false })
+        await context.dispatch('data/connections/save', { ...saved, anon: false })
         context.commit('updateConnection', { anon: false })
       } else {
-        await context.dispatch('data/connections/save', config)
+        await context.dispatch('data/connections/save', saved)
       }
       const isConnected = !!context.state.server
       if(isConnected) context.dispatch('updateWindowTitle', config)
@@ -553,11 +570,15 @@ const store = new Vuex.Store<State>({
           const isCloud = context.getters.isCloud
           resolvedConfig = {
             ...resolvedConfig,
-            name: resolvedConfig.name || (isCloud ? 'Untitled Connection' : 'Unsaved Connection'),
+            name: resolvedConfig.name || (isCloud ? UNTITLED_CONNECTION_NAME : 'Unsaved Connection'),
             anon: !isCloud,
             workspaceId: context.state.workspaceId,
           }
-          resolvedConfig.id = await context.dispatch('data/connections/save', { ...resolvedConfig, rememberPassword: false })
+          // A cloud session runs on the connection as it's saved, so Save
+          // Passwords starts unticked. An anonymous one keeps the form's choice
+          // for when the user saves it.
+          if (isCloud) resolvedConfig.rememberPassword = false
+          resolvedConfig.id = await context.dispatch('data/connections/save', { ...withoutPasswords(resolvedConfig), rememberPassword: false })
         }
         const defaultSchema = await context.state.connection.defaultSchema();
         const supportedFeatures = await context.state.connection.supportedFeatures();
