@@ -38,6 +38,7 @@ import { VueKeyboardTrapDirectivePlugin } from '@pdanpdan/vue-keyboard-trap';
 import App from '@/App.vue'
 import { ForeignCacheTabulatorModule } from '@/plugins/ForeignCacheTabulatorModule'
 import { PersistenceGuardTabulatorModule } from '@/plugins/PersistenceGuardTabulatorModule'
+import { CustomEditTriggerModule } from '@/plugins/CustomEditTriggerModule'
 import { WebPluginManager } from '@/services/plugin/web'
 import PluginStoreService from '@/services/plugin/web/PluginStoreService'
 import * as UIKit from '@beekeeperstudio/ui-kit'
@@ -112,6 +113,7 @@ import ClipboardRangeModule from '@/plugins/ClipboardRangeModule'
       ForeignCacheTabulatorModule,
       PersistenceGuardTabulatorModule,
       ClipboardRangeModule,
+      CustomEditTriggerModule,
     ]);
     // Tabulator.prototype.bindModules([EditModule]);
 
