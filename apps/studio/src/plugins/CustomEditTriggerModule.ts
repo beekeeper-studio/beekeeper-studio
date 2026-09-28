@@ -44,6 +44,6 @@ export class CustomEditTriggerModule extends Module {
     }
 
     event.preventDefault();
-    cell.edit(false, event.key);
+    cell.edit(false, { initialValue: event.key });
   }
 }
