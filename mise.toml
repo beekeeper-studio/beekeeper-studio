@@ -1,3 +1,4 @@
 [tools]
 node = "22.22.0"
 python = "3.12"
+yarn = "1"
