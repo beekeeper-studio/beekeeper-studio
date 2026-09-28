@@ -835,7 +835,7 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
     border-color: color.adjust($theme-primary, $lightness: -20%);
     border-width: 1px;
   }
-  .tabulator-range.tabulator-range-active::after {
+  .tabulator-range-fill-handle {
     background-color: color.adjust($theme-primary, $lightness: -20%);
   }
   .tabulator-range.copied {

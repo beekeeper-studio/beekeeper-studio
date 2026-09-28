@@ -1223,18 +1223,25 @@ export default Vue.extend({
         onRangeChange: this.handleRangeChange,
       });
       this.tabulator.on('cellEdited', this.cellEdited)
+      this.tabulator.on("rangeFilled", (cells: CellComponent[]) => {
+        cells.forEach((cell) => this.cellEdited(cell));
+      });
       this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
       this.tabulator.on('tableBuilt', () => {
         this.tabulator.modules.selectRange.restoreFocus()
       })
-      this.tabulator.on('historyUndo', (action, component) => {
+      this.tabulator.on('historyUndo', (action, component, data) => {
         if (action === "cellEdit") {
           this.cellEdited(component);
+        } else if (action === "rangeFill") {
+          data.cells.forEach((cell: CellComponent) => this.cellEdited(cell));
         }
       })
-      this.tabulator.on('historyRedo', (action, component) => {
+      this.tabulator.on('historyRedo', (action, component, data) => {
         if (action === "cellEdit") {
           this.cellEdited(component);
+        } else if (action === "rangeFill") {
+          data.cells.forEach((cell: CellComponent) => this.cellEdited(cell));
         }
       })
 

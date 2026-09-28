@@ -1,7 +1,7 @@
 <template>
   <div
     class="result-table"
-    :class="{ 'hidden-filter': hiddenFilter }"
+    :class="{ 'hidden-filter': hiddenFilter, 'editing-data': editingData }"
     v-hotkey="keymap"
   >
     <editor-modal
@@ -307,16 +307,22 @@
         });
 
         this.tabulator.on('cellEdited', this.cellEdited);
-
-        this.tabulator.on('historyUndo', (action, component) => {
+        this.tabulator.on("rangeFilled", (cells: CellComponent[]) => {
+          cells.forEach((cell) => this.cellEdited(cell));
+        });
+        this.tabulator.on('historyUndo', (action, component, data) => {
           if (action === 'cellEdit') {
             this.cellEdited(component);
+          } else if (action === "rangeFill") {
+            data.cells.forEach((cell: CellComponent) => this.cellEdited(cell));
           }
         });
 
-        this.tabulator.on('historyRedo', (action, component) => {
+        this.tabulator.on('historyRedo', (action, component, data) => {
           if (action === 'cellEdit') {
             this.cellEdited(component)
+          } else if (action === "rangeFill") {
+            data.cells.forEach((cell: CellComponent) => this.cellEdited(cell));
           }
         })
       },
@@ -1185,6 +1191,10 @@
       .tabulator-tableholder {
         padding-bottom: 5rem;
       }
+    }
+
+    &:not(.editing-data) ::v-deep .tabulator-range-fill-handle {
+      display: none;
     }
   }
 
