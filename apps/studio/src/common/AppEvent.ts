@@ -78,6 +78,22 @@ export enum AppEvent {
   switchedTab = 'switchedTab',
   /** A tab is about to be closed. First argument is the tab. */
   closingTab = 'closingTab',
+  /** Sent from main to the renderer of the window being closed, asking it to
+   * confirm the close (e.g. because of unsaved tabs). The renderer must
+   * answer with {@link confirmWindowCloseAck} right away (before it may show
+   * a confirmation dialog to the user), then eventually with
+   * {@link confirmWindowCloseResponse}. */
+  confirmWindowClose = 'confirmWindowClose',
+  /** Sent from the renderer back to main immediately upon receiving
+   * {@link confirmWindowClose}, before any confirmation dialog is shown.
+   * Tells main a real answer is coming, so it can stop waiting on the
+   * fallback "renderer is unresponsive" timeout - a user who takes their
+   * time on the dialog must not get the window closed under them. */
+  confirmWindowCloseAck = 'confirmWindowCloseAck',
+  /** Sent from the renderer back to main in (eventual) response to
+   * {@link confirmWindowClose}. First argument is a boolean: whether the
+   * window may actually close. */
+  confirmWindowCloseResponse = 'confirmWindowCloseResponse',
   simulatePlatform = 'simulatePlatform',
   updatePin = 'updatePin',
   /** The theme has been changed. */

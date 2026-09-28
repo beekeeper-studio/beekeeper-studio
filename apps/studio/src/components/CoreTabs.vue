@@ -437,6 +437,7 @@ export default Vue.extend({
       return [
         { event: AppEvent.closeTab, handler: this.closeCurrentTab },
         { event: AppEvent.closeAllTabs, handler: this.closeAll },
+        { event: AppEvent.confirmWindowClose, handler: this.confirmWindowClose },
         { event: AppEvent.newTab, handler: this.createQuery },
         { event: AppEvent.newCustomTab, handler: this.addTab },
         { event: AppEvent.createTable, handler: this.openTableBuilder },
@@ -1095,6 +1096,27 @@ export default Vue.extend({
         if (!confirmed) return
       }
       this.$store.dispatch('tabs/unload')
+    },
+    // Answers the main process's request (before it actually closes this
+    // window) to confirm the close. Only asks if there's something to lose -
+    // same source and same confirmation UX as closeAll().
+    async confirmWindowClose() {
+      // Acknowledge immediately, before anything async: this tells main a
+      // real answer is on its way, so it stops waiting on its "renderer is
+      // unresponsive" fallback timeout. Without this, a user who takes more
+      // than a few seconds on the dialog below would get their window
+      // closed out from under them, unsaved changes and all.
+      window.main.ackConfirmWindowClose()
+
+      const unsavedTabs = this.tabs.filter((tab) => tab.unsavedChanges)
+      let confirmed = true
+      if (unsavedTabs.length > 0) {
+        confirmed = await this.$confirm(
+          'Close this window?',
+          `You have ${unsavedTabs.length} unsaved ${this.$pluralize('tab', unsavedTabs.length)}. Are you sure?`
+        )
+      }
+      window.main.respondConfirmWindowClose(confirmed)
     },
     async closeOther(tab: TransportOpenTab) {
       const others = _.without(this.tabItems, tab)

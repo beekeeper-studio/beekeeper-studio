@@ -1,12 +1,13 @@
 import _ from 'lodash'
 import path from 'path'
-import { BrowserWindow, globalShortcut, Rectangle } from "electron"
+import { BrowserWindow, globalShortcut, ipcMain, Rectangle } from "electron"
 import electron from 'electron'
 import platformInfo from '../common/platform_info'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import rawLog from '@bksLogger'
 import querystring from 'query-string'
 import { safeOpenExternal } from './lib/electron/safeOpenExternal'
+import { AppEvent } from '../common/AppEvent'
 
 
 // eslint-disable-next-line
@@ -15,6 +16,19 @@ const remoteMain = require('@electron/remote/main')
 const log = rawLog.scope('WindowBuilder')
 
 const windows: BeekeeperWindow[] = []
+
+// How long to wait for the renderer to answer a close-confirmation request
+// (e.g. it never mounted a listener, or the page hung) before closing the
+// window anyway. A window must never become unclosable.
+const CLOSE_CONFIRMATION_TIMEOUT_MS = 5000
+
+// Set right before a flow that must not be interrupted by the unsaved-changes
+// prompt, e.g. installing an auto-update. Affects every window.
+let closeConfirmationBypassed = false
+
+export function bypassCloseConfirmation(): void {
+  closeConfirmationBypassed = true
+}
 
 export interface OpenOptions {
   url?: string
@@ -29,6 +43,13 @@ class BeekeeperWindow {
   private reloaded = false
   private appUrl: string
   public sId: string;
+  // Set once the renderer has confirmed it's fine to close, so the 'close'
+  // handler lets the next close attempt through instead of asking again.
+  private closeConfirmed = false
+  // Set while a close confirmation is in flight, so a second close attempt
+  // (e.g. a double-click on the close button) waits on the same request
+  // instead of starting a competing one.
+  private pendingCloseConfirmation: Promise<boolean> | null = null
 
   constructor(protected settings: IGroupedUserSettings, openOptions: OpenOptions) {
     const theme = settings.theme
@@ -211,6 +232,7 @@ class BeekeeperWindow {
     this.win?.on('closed', () => {
       this.win = null
     })
+    this.win?.on('close', this.closeListener.bind(this))
 
 
     const windowMoveResizeListener = _.debounce(this.windowMoveResizeListener.bind(this), 1000)
@@ -269,6 +291,123 @@ class BeekeeperWindow {
 
   closeWindow() {
     this.win?.close();
+  }
+
+  // Handles both the custom-titlebar close button (via closeWindow(), which
+  // calls win.close() and ends up here too) and OS-level close (Alt+F4,
+  // Cmd+Q / File > Quit, taskbar close). For Cmd+Q and window-all-closed,
+  // Electron calls this once per open window; each window is asked about its
+  // own unsaved changes independently, and declining just cancels that one
+  // window's close (and therefore the overall quit).
+  private closeListener(event: electron.Event) {
+    if (this.closeConfirmed || closeConfirmationBypassed) return
+
+    event.preventDefault()
+    // A double-click on the close button, or two close triggers firing close
+    // together (e.g. the custom titlebar button and an OS shortcut), must
+    // share one confirmation instead of racing two dialogs / two sets of
+    // IPC listeners against each other.
+    if (!this.pendingCloseConfirmation) {
+      this.pendingCloseConfirmation = this.requestCloseConfirmation()
+        .finally(() => { this.pendingCloseConfirmation = null })
+    }
+    this.pendingCloseConfirmation
+      .then((confirmed) => {
+        if (!confirmed) return
+        this.closeConfirmed = true
+        this.win?.close()
+      })
+      .catch((ex) => log.error('close confirmation failed, closing anyway', ex))
+  }
+
+  private requestCloseConfirmation(): Promise<boolean> {
+    const webContents = this.webContents
+    if (!webContents || webContents.isDestroyed()) return Promise.resolve(true)
+
+    return new Promise((resolve) => {
+      let settled = false
+      const finish = (confirmed: boolean) => {
+        if (settled) return
+        settled = true
+        clearTimeout(timer)
+        ipcMain.removeListener(AppEvent.confirmWindowCloseAck, onAck)
+        ipcMain.removeListener(AppEvent.confirmWindowCloseResponse, onResponse)
+        webContents.removeListener('destroyed', onRendererGone)
+        webContents.removeListener('render-process-gone', onRendererGone)
+        webContents.removeListener('did-navigate', onNavigated)
+        webContents.removeListener('unresponsive', onUnresponsive)
+        resolve(confirmed)
+      }
+      const onAck = (event: electron.IpcMainEvent) => {
+        if (event.sender !== webContents) return
+        // The renderer is alive and about to show its own dialog (or
+        // answer right away). From here on, only that dialog decides - a
+        // user who takes a while on it must not have the window closed out
+        // from under them, so the fallback timeout is dropped entirely
+        // rather than merely extended.
+        clearTimeout(timer)
+      }
+      const onResponse = (event: electron.IpcMainEvent, confirmed: boolean) => {
+        if (event.sender !== webContents) return
+        finish(!!confirmed)
+      }
+      // If the renderer dies after acknowledging (crash, or the process is
+      // torn down some other way) there is no dialog left to wait for - the
+      // only way out is to let the close proceed, otherwise this window
+      // would stay stuck forever with its close prevented and nothing left
+      // that could ever answer.
+      const onRendererGone = () => {
+        log.warn('renderer gone while waiting for close confirmation, closing anyway')
+        finish(true)
+      }
+      // A reload (or a full navigation to a different URL) while a
+      // confirmation is in flight tears down the page that was going to
+      // answer - e.g. the dev "reload" AppEvents, or a user-triggered
+      // refresh mid-dialog. Nothing will ever call
+      // respondConfirmWindowClose for this request once that happens, so
+      // treat it the same as the renderer being gone. 'did-navigate' (unlike
+      // 'did-start-navigation') only fires once a main-frame, cross-document
+      // navigation has actually committed - it already excludes sub-frame
+      // navigations (e.g. a plugin's iframe), same-document ones (hash
+      // changes, pushState) and navigations that got cancelled before
+      // committing, so none of those wrongly orphan a live dialog.
+      const onNavigated = () => {
+        log.warn('renderer navigated away while waiting for close confirmation, closing anyway')
+        finish(true)
+      }
+      // Covers a renderer whose main thread hangs (e.g. stuck in a
+      // synchronous loop) without crashing outright - 'destroyed' /
+      // 'render-process-gone' don't fire for that. This only fires for a
+      // genuinely blocked main thread, not for a page merely awaiting the
+      // user's click on the confirmation dialog, so it never cuts off a
+      // dialog someone is still looking at.
+      const onUnresponsive = () => {
+        log.warn('renderer unresponsive while waiting for close confirmation, closing anyway')
+        finish(true)
+      }
+
+      ipcMain.on(AppEvent.confirmWindowCloseAck, onAck)
+      ipcMain.on(AppEvent.confirmWindowCloseResponse, onResponse)
+      webContents.once('destroyed', onRendererGone)
+      webContents.once('did-navigate', onNavigated)
+      webContents.once('render-process-gone', onRendererGone)
+      webContents.once('unresponsive', onUnresponsive)
+      // Only guards against a renderer that never even acknowledges the
+      // request - no listener yet (e.g. still on the connection screen,
+      // before CoreTabs mounts), or a crashed/hung page. Once acknowledged,
+      // there is no timeout: see onAck.
+      const timer = setTimeout(() => {
+        log.warn('no close confirmation ack in time, closing anyway')
+        finish(true)
+      }, CLOSE_CONFIRMATION_TIMEOUT_MS)
+
+      try {
+        webContents.send(AppEvent.confirmWindowClose)
+      } catch (ex) {
+        log.error('failed to request close confirmation, closing anyway', ex)
+        finish(true)
+      }
+    })
   }
 }
 
