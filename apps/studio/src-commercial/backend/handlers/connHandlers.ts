@@ -582,10 +582,16 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/azureSignOut': async function({ config, sId }: { config: IConnection, sId: string }) {
     await AzureAuthService.ssoSignOut(config.authId)
 
-    // Clean up authId cause it's invalid after signing out
-    const savedConnection = await SavedConnection.findOneBy({id: config.id})
-    savedConnection.authId = null
-    await savedConnection.save()
+    // Clean up authId cause it's invalid after signing out. A connection that
+    // was never saved has no row to clean up - and looking one up by a nil id
+    // would find an unrelated saved connection instead.
+    if (config.id) {
+      const savedConnection = await SavedConnection.findOneBy({ id: config.id })
+      if (savedConnection) {
+        savedConnection.authId = null
+        await savedConnection.save()
+      }
+    }
     if (state(sId).usedConfig) {
       state(sId).usedConfig.authId = null
     }

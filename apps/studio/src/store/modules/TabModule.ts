@@ -16,6 +16,13 @@ interface State {
 }
 
 
+// Only a tab the database handed an id to can be saved back to it. A tab
+// opened while the connection was still unsaved stays in memory for the rest
+// of the session, even once the connection is saved (see saveConnection).
+function isPersisted(tab: TransportOpenTab): boolean {
+  return typeof tab.id === 'number' && tab.id > 0
+}
+
 export const TabModule: Module<State, RootState> = {
   namespaced: true,
   state: () => ({
@@ -211,7 +218,8 @@ export const TabModule: Module<State, RootState> = {
       items.forEach((p, idx) => p.position = idx)
       const { usedConfig } = context.rootState
       context.commit('set', items)
-      if (usedConfig?.id) await Vue.prototype.$util.send('appdb/tabs/save', { obj: items })
+      const persisted = items.filter(isPersisted)
+      if (usedConfig?.id && persisted.length) await Vue.prototype.$util.send('appdb/tabs/save', { obj: persisted })
     },
     async remove(context, rawItems: TransportOpenTab | TransportOpenTab[]) {
       const items = _.isArray(rawItems) ? rawItems : [rawItems]
@@ -221,16 +229,17 @@ export const TabModule: Module<State, RootState> = {
         context.commit('remove', tab)
       })
       const { usedConfig } = context.rootState
-      if (usedConfig?.id) {
-        await Vue.prototype.$util.send('appdb/tabs/save', { obj: items })
+      const persisted = items.filter(isPersisted)
+      if (usedConfig?.id && persisted.length) {
+        await Vue.prototype.$util.send('appdb/tabs/save', { obj: persisted })
       }
     },
     async save(context, rawTabs: TransportOpenTab[] | TransportOpenTab) {
       try {
         if (rawTabs == null) return
-        const tabs = _.isArray(rawTabs) ? rawTabs : [rawTabs]
+        const tabs = (_.isArray(rawTabs) ? rawTabs : [rawTabs]).filter(isPersisted)
         const { usedConfig } = context.rootState
-        if (usedConfig?.id) {
+        if (usedConfig?.id && tabs.length) {
           await Vue.prototype.$util.send('appdb/tabs/save', { obj: tabs })
         }
       } catch (ex) {

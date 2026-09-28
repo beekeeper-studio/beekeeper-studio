@@ -371,6 +371,11 @@ const store = new Vuex.Store<State>({
     setUsername(state, name) {
       state.username = name
     },
+    // changes the session's connection in place - a new object would look like a new connection
+    updateConnection(state, changes: Partial<IConnection>) {
+      if (!state.usedConfig) return
+      Object.entries(changes).forEach(([key, value]) => Vue.set(state.usedConfig, key, value))
+    },
     newConnection(state, config: Nullable<IConnection>) {
       state.usedConfig = config
       state.database = config?.defaultDatabase
@@ -521,7 +526,15 @@ const store = new Vuex.Store<State>({
     },
 
     async saveConnection(context, config: IConnection) {
-      await context.dispatch('data/connections/save', config)
+      const wasUnsaved = !config.id
+      const id = await context.dispatch('data/connections/save', config)
+      // Saving the session's own connection for the first time: everything
+      // keyed on the connection id (tabs, pins, hidden entities, history) is
+      // persisted from here on, and saving again updates this connection
+      // instead of inserting another one.
+      if (wasUnsaved && id && config === context.state.usedConfig) {
+        context.commit('updateConnection', { id })
+      }
       const isConnected = !!context.state.server
       if(isConnected) context.dispatch('updateWindowTitle', config)
     },

@@ -1,4 +1,5 @@
-import { TransportPinnedEntity } from "@/common/transport";
+import { TransportPinnedEntity } from "@/common/transport/TransportPinnedEntity";
+import { IConnection } from "@/common/interfaces/IConnection";
 import { DatabaseEntity } from "@/lib/db/models";
 import _ from "lodash";
 import { Module } from "vuex";
@@ -15,6 +16,13 @@ function matches(pin: TransportPinnedEntity, entity: DatabaseEntity, database?: 
 
 interface State {
   pins: TransportPinnedEntity[],
+}
+
+// A pin belongs to the session if it carries its connection and workspace, or
+// was made while the connection was still unsaved and so has no connection id
+function belongsToSession(pin: TransportPinnedEntity, usedConfig: IConnection): boolean {
+  return (_.isNil(pin.connectionId) || pin.connectionId === usedConfig.id) &&
+    pin.workspaceId === usedConfig.workspaceId
 }
 
 export const PinModule: Module<State, RootState> = {
@@ -70,13 +78,30 @@ export const PinModule: Module<State, RootState> = {
     async unloadPins(context) {
       context.commit('set', [])
     },
+    // Pins are persisted lazily, when the connection they belong to is saved
+    // (ConnectionButton.save). A pin made while the connection was still
+    // unsaved has no connection id yet: it is stamped with the id the
+    // connection has now (see saveConnection). Until the connection has an
+    // id there is nothing to save.
     async maybeSavePins(context) {
       const { usedConfig } = context.rootState
-      // this used to be !p.hasId(), hopefully this still works? the alternative is ugly
-      const unsavedPins = context.state.pins.filter((p)=> !p.id)
-      await Promise.all(unsavedPins.map((p) => {
-        return p.connectionId === usedConfig.id && p.workspaceId === usedConfig.workspaceId &&
-          Vue.prototype.$util.send('appdb/pins/save', { obj: p });
+      if (!usedConfig?.id) return
+      const unsavedPins = context.state.pins.filter((p) => !p.id && belongsToSession(p, usedConfig))
+      if (!unsavedPins.length) return
+
+      const saved: TransportPinnedEntity[] = await Vue.prototype.$util.send('appdb/pins/save', {
+        // `entity` is attached by the orderedPins getter, it isn't part of the pin
+        obj: unsavedPins.map((p) => ({
+          ..._.omit(p, 'entity'),
+          id: null,
+          connectionId: usedConfig.id,
+          workspaceId: usedConfig.workspaceId,
+        }))
+      })
+      // the saved pins take the place of the unsaved ones, so removing one later removes its row
+      context.commit('set', context.state.pins.map((p) => {
+        const index = unsavedPins.indexOf(p)
+        return index === -1 ? p : saved[index]
       }))
     },
     async add(context, item: DatabaseEntity) {

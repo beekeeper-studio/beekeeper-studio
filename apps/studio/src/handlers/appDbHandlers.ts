@@ -131,14 +131,19 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
         return await transform(dbObj, cls);
       }
     },
+    // An object without an id was never saved, so there is nothing to remove.
+    // TypeORM drops a nil value from a where clause, so looking one up by
+    // `{ id: null }` would match the first row of the table instead.
     [`appdb/${name}/remove`]: async function({ obj }: { obj: T | T[] }) {
       if (_.isArray(obj)) {
-        const ids = obj.map((e) => e.id);
+        const ids = obj.map((e) => e.id).filter((id) => !_.isNil(id));
+        if (!ids.length) return;
         const dbEntities = await cls.findBy({
           id: In(ids)
         });
         await cls.remove(dbEntities)
       } else {
+        if (_.isNil(obj.id)) return;
         const dbObj = await cls.findOneBy({ id: obj.id });
         log.info(`Removing ${name}: `, dbObj);
         await dbObj?.remove();
@@ -153,6 +158,10 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
       }))
     },
     [`appdb/${name}/findOneBy`]: async function({ options }: { options: FindOptionsWhere<any> | string | number }) {
+      // same as remove: a nil id means "no such row", not "any row"
+      if (_.isNil(options) || (_.isPlainObject(options) && 'id' in (options as object) && _.isNil((options as any).id))) {
+        return null
+      }
       return await transform(await cls.findOneBy(options), cls)
     },
     [`appdb/${name}/findOne`]: async function({ options }: { options: FindOneOptions<any> | string | number }) {

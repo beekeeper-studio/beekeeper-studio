@@ -1,5 +1,6 @@
 import { TransportHiddenEntity, TransportHiddenSchema, matches, matchesSchema } from "@/common/transport/TransportHidden";
 import { DatabaseEntity } from "@/lib/db/models";
+import { IConnection } from "@/common/interfaces/IConnection";
 import _ from "lodash";
 import { Module } from "vuex";
 import { State as RootState } from '../index'
@@ -8,6 +9,14 @@ import Vue from 'vue';
 interface State {
   entities: TransportHiddenEntity[];
   schemas: TransportHiddenSchema[];
+}
+
+// A hidden entity or schema belongs to the session if it carries its
+// connection and workspace, or was hidden while the connection was still
+// unsaved and so has no connection id
+function belongsToSession(item: TransportHiddenEntity | TransportHiddenSchema, usedConfig: IConnection): boolean {
+  return (_.isNil(item.connectionId) || item.connectionId === usedConfig.id) &&
+    item.workspaceId === usedConfig.workspaceId
 }
 
 export const HideEntityModule: Module<State, RootState> = {
@@ -79,19 +88,38 @@ export const HideEntityModule: Module<State, RootState> = {
     async unload(context) {
       context.commit('set', { entities: [], schemas: [] })
     },
+    // Hidden entities and schemas are persisted lazily, when the connection
+    // they belong to is saved (ConnectionButton.save). One hidden while the
+    // connection was still unsaved has no connection id yet: it is stamped
+    // with the id the connection has now (see saveConnection). Until the
+    // connection has an id there is nothing to save.
     async maybeSave(context) {
       const { usedConfig } = context.rootState
-      const unsavedEntities = context.state.entities.filter((e)=> !e.id)
-      const unsavedSchemas = context.state.schemas.filter((s)=> !s.id)
+      if (!usedConfig?.id) return
+      const unsavedEntities = context.state.entities.filter((e) => !e.id && belongsToSession(e, usedConfig))
+      const unsavedSchemas = context.state.schemas.filter((s) => !s.id && belongsToSession(s, usedConfig))
+      if (!unsavedEntities.length && !unsavedSchemas.length) return
 
-      await Promise.all([...unsavedEntities, ...unsavedSchemas].map((u) => {
-        if(u.connectionId === usedConfig.id && u.workspaceId === usedConfig.workspaceId) {
-          let scope = 'hiddenSchema';
-          if ("entityType" in u) scope = 'hiddenEntity';
-          return Vue.prototype.$util.send(`appdb/${scope}/save`, { obj: u });
-        }
-        return undefined;
-      }))
+      const stamp = <T>(u: T): T => ({ ...u, id: null, connectionId: usedConfig.id, workspaceId: usedConfig.workspaceId })
+      const [savedEntities, savedSchemas]: [TransportHiddenEntity[], TransportHiddenSchema[]] = await Promise.all([
+        unsavedEntities.length
+          ? Vue.prototype.$util.send('appdb/hiddenEntity/save', { obj: unsavedEntities.map(stamp) })
+          : [],
+        unsavedSchemas.length
+          ? Vue.prototype.$util.send('appdb/hiddenSchema/save', { obj: unsavedSchemas.map(stamp) })
+          : [],
+      ])
+      // the saved rows take the place of the unsaved ones, so unhiding later removes the row
+      context.commit('set', {
+        entities: context.state.entities.map((e) => {
+          const index = unsavedEntities.indexOf(e)
+          return index === -1 ? e : savedEntities[index]
+        }),
+        schemas: context.state.schemas.map((s) => {
+          const index = unsavedSchemas.indexOf(s)
+          return index === -1 ? s : savedSchemas[index]
+        }),
+      })
     },
     async addEntity(context, item: DatabaseEntity) {
       const { database, usedConfig } = context.rootState
