@@ -18,7 +18,13 @@ import rawLog from "@bksLogger";
 import _ from "lodash";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { PluginMenuManager } from "./PluginMenuManager";
-import { PrimaryKeyColumn } from "@/lib/db/models";
+import {
+  DatabaseFilterOptions,
+  PrimaryKeyColumn,
+  SchemaFilterOptions,
+  TableProperties,
+} from "@/lib/db/models";
+
 
 // Discriminated union for request+result that TypeScript can narrow by name
 type PluginResponseData = {
@@ -164,7 +170,10 @@ export default class WebPluginLoader {
       switch (response.name) {
         // ========= READ ACTIONS ===========
         case "getSchemas":
-          response.result = await this.context.utility.send("conn/listSchemas");
+          response.result = await this.context.utility.send(
+            "conn/listSchemas",
+            { filter: response.args?.filter }
+          );
           break;
         case "getTables":
           response.result = this.context.store.getTables(
@@ -207,6 +216,18 @@ export default class WebPluginLoader {
               keys.map((key) => ({ ...key, name: key.columnName }))
             );
           break;
+        case "getDatabases":
+          response.result = await this.context.utility.send(
+            "conn/listDatabases",
+            { filter: response.args.filter }
+          );
+          break;
+        case "getTableProperties":
+          response.result = await this.context.utility.send(
+            "conn/getTableProperties",
+            { table: response.args.table, schema: response.args.schema }
+          );
+          break;
         case "getAppInfo":
           response.result = {
             theme: this.pluginStore.getTheme(),
@@ -221,6 +242,12 @@ export default class WebPluginLoader {
           response.result = view.context;
           break;
         }
+        case "getConfig":
+          response.result = window.bksConfig.getAll();
+          break;
+        case "getPluginConfig":
+          response.result = this.getConfig();
+          break;
         case "getConnectionInfo":
           response.result = this.pluginStore.getConnectionInfo();
           break;
@@ -245,9 +272,13 @@ export default class WebPluginLoader {
           break;
 
         // ======== WRITE ACTIONS ===========
-        case "runQuery":
+        case "runQuery": {
+          if (this.getConfig().runQueryDisabled) {
+            throw new Error("runQuery is disabled by the config.");
+          }
           response.result = await this.pluginStore.runQuery(response.args.query);
           break;
+        }
         case "setData":
         case "setEncryptedData": {
           await this.utilityConnection.send(
@@ -441,6 +472,11 @@ export default class WebPluginLoader {
     return () => {
       this.listeners = _.without(this.listeners, listener);
     };
+  }
+
+  private getConfig() {
+    return window.bksConfig.plugins[this.manifest.id]
+      ?? window.bksConfig.plugins.default;
   }
 
   checkPermission(data: PluginRequestData) {

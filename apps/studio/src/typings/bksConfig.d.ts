@@ -488,9 +488,14 @@ declare interface IBksConfig {
     plugins: {
         "bks-ai-shell": {
             disabled: boolean;
+            runQueryDisabled: boolean;
         };
         "bks-er-diagram": {
             disabled: boolean;
+            runQueryDisabled: boolean;
+        };
+        default: {
+            runQueryDisabled: boolean;
         };
     };
     security: {

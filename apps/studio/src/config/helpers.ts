@@ -60,6 +60,15 @@ function processRawConfig(config: Record<string, unknown>): Record<string, unkno
     }
   }
 
+  const pluginsObj = config.plugins as Record<string, unknown> | undefined;
+  if (pluginsObj && _.has(pluginsObj, "default")) {
+    for (const id of Object.keys(pluginsObj)) {
+      if (id !== "default") {
+        populateDefaults(config, `plugins.${id}`, "plugins.default")
+      }
+    }
+  }
+
   const allowedPlugins = config.pluginSystem?.allow;
   if (allowedPlugins) {
     // Filter out any empty strings
