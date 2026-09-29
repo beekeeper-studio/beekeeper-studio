@@ -3,13 +3,10 @@
 // declare namespace JSX {
 //   interface IntrinsicElements {
 //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-//     'bks-table': any;
 //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
 //     'bks-sql-text-editor': any;
 //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-//     'bks-entity-list': any;
 //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-//     'bks-data-editor': any;
 //   }
 // }
 

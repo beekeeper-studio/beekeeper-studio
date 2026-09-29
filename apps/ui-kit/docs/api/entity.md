@@ -2,8 +2,6 @@
 
 For examples and usage details, visit:
 
-- [Data Editor][data-editor]
-- [Entity List][entity-list]
 - [SQL Text Editor][sql-text-editor]
 
 ## Overview
@@ -58,6 +56,4 @@ tables, views, materialized views, routines, and schemas.
 | `name`<sup>required</sup>       | `string`   | Schema name        |                                        |
 | `entityType`<sup>required</sup> | `"schema"` | Must be `"schema"` |                                        |
 
-[data-editor]: ../data-editor.md
-[entity-list]: ../entity-list.md
 [sql-text-editor]: ../sql-text-editor.md

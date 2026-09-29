@@ -23,11 +23,6 @@ export default defineConfig({
     lib: {
       entry: {
         index: resolve(__dirname, "lib/index.ts"),
-        "vue/table": resolve(__dirname, "lib/components/table/Table.vue"),
-        "vue/entity-list": resolve(
-          __dirname,
-          "lib/components/entity-list/EntityList.vue"
-        ),
         "vue/sql-text-editor": resolve(
           __dirname,
           "lib/components/sql-text-editor/SqlTextEditor.vue"
@@ -35,10 +30,6 @@ export default defineConfig({
         "vue/mongo-shell": resolve(
           __dirname,
           "lib/components/mongo-shell/MongoShell.vue"
-        ),
-        "vue/data-editor": resolve(
-          __dirname,
-          "lib/components/data-editor/DataEditor.vue"
         ),
         "vue/text-editor": resolve(
           __dirname,
