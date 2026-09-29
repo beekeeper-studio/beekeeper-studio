@@ -163,7 +163,10 @@ export const BeekeeperPlugin = {
       // internal table fields used just for us
       if (!isBksInternalColumn(key)) {
         const column = columns.find((c) => c.field === key)
-        const nuKey = column ? column.title : key
+        const title = column ? column.title : key
+        // columns can share a title, don't let one overwrite another
+        let nuKey = title
+        for (let i = 2; nuKey in fixed; i++) nuKey = `${title}_${i}`
         fixed[nuKey] = v
       }
     })
