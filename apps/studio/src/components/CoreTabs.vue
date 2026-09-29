@@ -443,7 +443,6 @@ export default Vue.extend({
   computed: {
     ...mapState(['selectedSidebarItem']),
     ...mapState('tabs', { 'activeTab': 'active', 'tabs': 'tabs' }),
-    ...mapState('settings', { 'settingsState': 'settings' }),
     ...mapState(['connection', 'connectionType', 'usedConfig']),
     ...mapGetters({
        'dialect': 'dialect',
@@ -452,12 +451,6 @@ export default Vue.extend({
        'newTabDropdownItems': 'tabs/newTabDropdownItems',
        'getKeybindings': 'plugins/keybindings/getKeybindings',
     }),
-    // Persisted via the same settings/save mechanism as every other user
-    // preference (TypeORM-backed UserSetting, see SettingStoreModule) -
-    // there's no dedicated localStorage flag to keep in sync.
-    skipConfirmWindowClose() {
-      return this.settingsState?.dontConfirmWindowClose?.value === true
-    },
     tabIcon() {
       return {
         type: this.dbEntityType,
@@ -1160,13 +1153,10 @@ export default Vue.extend({
       // closed out from under them, unsaved changes and all.
       window.main.ackConfirmWindowClose()
 
-      if (this.skipConfirmWindowClose) {
-        window.main.respondConfirmWindowClose(true)
-        return
-      }
-
+      // (Main doesn't ask at all when "Don't show this again" is set.)
       const unsavedTabs = this.tabs.filter((tab) => tab.unsavedChanges)
       let confirmed = true
+      let dontAskAgain = false
       if (unsavedTabs.length > 0) {
         this.confirmWindowCloseMessage = `You have ${unsavedTabs.length} unsaved ${this.$pluralize('tab', unsavedTabs.length)}. Are you sure?`
         this.dontConfirmWindowCloseAgain = false
@@ -1174,23 +1164,13 @@ export default Vue.extend({
           this.confirmWindowCloseResolve = resolve
           this.$modal.show(this.confirmWindowCloseModalId)
         })
-
-        // Only persist the "don't ask again" choice once it's actually
-        // acted on by closing - ticking the box and then cancelling reads
-        // more like "not sure yet" than "never warn me again".
-        if (confirmed && this.dontConfirmWindowCloseAgain) {
-          try {
-            await this.$store.dispatch('settings/save', { key: 'dontConfirmWindowClose', value: true })
-          } catch (ex) {
-            // Failing to remember the preference is a minor annoyance (the
-            // dialog just reappears next time); failing to answer main and
-            // leaving the window stuck open is not, so this must not stop
-            // the response below.
-            console.error('failed to persist dontConfirmWindowClose', ex)
-          }
-        }
+        // Only counts once it's actually acted on by closing - ticking the
+        // box and then cancelling reads more like "not sure yet" than
+        // "never warn me again". Main owns the setting and saves it (so the
+        // menu and other windows see it too) before the window closes.
+        dontAskAgain = confirmed && this.dontConfirmWindowCloseAgain
       }
-      window.main.respondConfirmWindowClose(confirmed)
+      window.main.respondConfirmWindowClose(confirmed, dontAskAgain)
     },
     // Settles confirmWindowClose()'s promise exactly once, whichever way the
     // modal closes (Confirm, Cancel, the header X, Escape, or the overlay) -

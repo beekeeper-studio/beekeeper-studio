@@ -91,8 +91,8 @@ export enum AppEvent {
    * time on the dialog must not get the window closed under them. */
   confirmWindowCloseAck = 'confirmWindowCloseAck',
   /** Sent from the renderer back to main in (eventual) response to
-   * {@link confirmWindowClose}. First argument is a boolean: whether the
-   * window may actually close. */
+   * {@link confirmWindowClose}. Arguments: whether the window may actually
+   * close, and whether "Don't show this again" was ticked. */
   confirmWindowCloseResponse = 'confirmWindowCloseResponse',
   simulatePlatform = 'simulatePlatform',
   updatePin = 'updatePin',

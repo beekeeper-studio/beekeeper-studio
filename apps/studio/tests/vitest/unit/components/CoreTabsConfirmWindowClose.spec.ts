@@ -4,21 +4,19 @@ import CoreTabs from "@/components/CoreTabs.vue";
 
 // Bound to a plain context object rather than mounting CoreTabs - mounting
 // would drag in the whole tab surface for logic that only touches
-// `this.tabs`, `this.$modal` and `this.$store`.
+// `this.tabs` and `this.$modal`.
 const confirmWindowClose = (CoreTabs as any).options.methods.confirmWindowClose;
 const resolveConfirmWindowClose = (CoreTabs as any).options.methods.resolveConfirmWindowClose;
 
 function context(overrides: Record<string, any> = {}) {
   return {
     tabs: [],
-    skipConfirmWindowClose: false,
     dontConfirmWindowCloseAgain: false,
     confirmWindowCloseMessage: "",
     confirmWindowCloseModalId: "core-tabs-confirm-window-close",
     confirmWindowCloseResolve: null,
     $pluralize: pluralize,
     $modal: { show: vi.fn(), hide: vi.fn() },
-    $store: { dispatch: vi.fn().mockResolvedValue(undefined) },
     ...overrides,
   };
 }
@@ -34,23 +32,14 @@ describe("CoreTabs confirmWindowClose", () => {
     };
   });
 
-  it("acks before doing anything else, then answers true without showing the modal when there are no unsaved tabs", async () => {
+  it("acks, then answers without showing the modal when there are no unsaved tabs", async () => {
     const vm = context({ tabs: [cleanTab(), cleanTab()] });
 
     await confirmWindowClose.call(vm);
 
     expect(window.main.ackConfirmWindowClose).toHaveBeenCalled();
     expect(vm.$modal.show).not.toHaveBeenCalled();
-    expect(window.main.respondConfirmWindowClose).toHaveBeenCalledWith(true);
-  });
-
-  it("skips the modal entirely when 'don't show this again' was set previously, even with unsaved tabs", async () => {
-    const vm = context({ tabs: [dirtyTab()], skipConfirmWindowClose: true });
-
-    await confirmWindowClose.call(vm);
-
-    expect(vm.$modal.show).not.toHaveBeenCalled();
-    expect(window.main.respondConfirmWindowClose).toHaveBeenCalledWith(true);
+    expect(window.main.respondConfirmWindowClose).toHaveBeenCalledWith(true, false);
   });
 
   it("shows its own modal (not $confirm) when there are unsaved tabs, with the right message", async () => {
@@ -65,10 +54,20 @@ describe("CoreTabs confirmWindowClose", () => {
     resolveConfirmWindowClose.call(vm, true);
     await promise;
 
-    expect(window.main.respondConfirmWindowClose).toHaveBeenCalledWith(true);
+    expect(window.main.respondConfirmWindowClose).toHaveBeenCalledWith(true, false);
   });
 
-  it("answers false when the user declines, without persisting the checkbox", async () => {
+  it("starts every prompt with the checkbox unticked", async () => {
+    const vm = context({ tabs: [dirtyTab()], dontConfirmWindowCloseAgain: true });
+
+    const promise = confirmWindowClose.call(vm);
+    expect(vm.dontConfirmWindowCloseAgain).toBe(false);
+
+    resolveConfirmWindowClose.call(vm, false);
+    await promise;
+  });
+
+  it("answers false when the user cancels, and drops a ticked checkbox", async () => {
     const vm = context({ tabs: [dirtyTab()] });
 
     const promise = confirmWindowClose.call(vm);
@@ -76,11 +75,10 @@ describe("CoreTabs confirmWindowClose", () => {
     resolveConfirmWindowClose.call(vm, false);
     await promise;
 
-    expect(window.main.respondConfirmWindowClose).toHaveBeenCalledWith(false);
-    expect(vm.$store.dispatch).not.toHaveBeenCalled();
+    expect(window.main.respondConfirmWindowClose).toHaveBeenCalledWith(false, false);
   });
 
-  it("persists 'don't show this again' only when the checkbox was ticked and the user confirmed", async () => {
+  it("passes 'Don't show this again' on to main when the user closes with it ticked", async () => {
     const vm = context({ tabs: [dirtyTab()] });
 
     const promise = confirmWindowClose.call(vm);
@@ -88,39 +86,9 @@ describe("CoreTabs confirmWindowClose", () => {
     resolveConfirmWindowClose.call(vm, true);
     await promise;
 
-    expect(vm.$store.dispatch).toHaveBeenCalledWith("settings/save", {
-      key: "dontConfirmWindowClose",
-      value: true,
-    });
-    expect(window.main.respondConfirmWindowClose).toHaveBeenCalledWith(true);
-  });
-
-  it("still answers main even when persisting the checkbox fails", async () => {
-    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
-    const vm = context({
-      tabs: [dirtyTab()],
-      $store: { dispatch: vi.fn().mockRejectedValue(new Error("db is locked")) },
-    });
-
-    const promise = confirmWindowClose.call(vm);
-    vm.dontConfirmWindowCloseAgain = true;
-    resolveConfirmWindowClose.call(vm, true);
-    await promise;
-
-    // The whole point of this window-close flow is that main is never left
-    // hanging - a failed settings write must not be the exception to that.
-    expect(window.main.respondConfirmWindowClose).toHaveBeenCalledWith(true);
-    consoleError.mockRestore();
-  });
-
-  it("does not persist anything when the user confirms without ticking the checkbox", async () => {
-    const vm = context({ tabs: [dirtyTab()] });
-
-    const promise = confirmWindowClose.call(vm);
-    resolveConfirmWindowClose.call(vm, true);
-    await promise;
-
-    expect(vm.$store.dispatch).not.toHaveBeenCalled();
+    // Main owns the setting and saves it before closing - the renderer only
+    // reports the choice.
+    expect(window.main.respondConfirmWindowClose).toHaveBeenCalledWith(true, true);
   });
 });
 

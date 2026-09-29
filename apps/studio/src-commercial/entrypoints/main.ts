@@ -248,7 +248,7 @@ function createAndSendPorts(filter: boolean, utilDied = false) {
       w.sId = sId;
       utilityProcess.postMessage({ type: 'init', sId }, [port1]);
       w.webContents.postMessage('port', { sId, utilDied }, [port2]);
-      w.onClose((_event: electron.Event) => {
+      w.onClose(() => {
         utilityProcess.postMessage({ type: 'close', sId })
       })
       if (filter) {

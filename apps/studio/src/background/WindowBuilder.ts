@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import path from 'path'
-import { BrowserWindow, globalShortcut, ipcMain, Rectangle } from "electron"
+import { BrowserWindow, globalShortcut, ipcMain, Menu, Rectangle } from "electron"
 import electron from 'electron'
 import platformInfo from '../common/platform_info'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
@@ -36,6 +36,33 @@ export function bypassCloseConfirmation(): void {
 // this prompt opts back in with BKS_TEST_CONFIRM_WINDOW_CLOSE.
 const closeConfirmationEnabled = !platformInfo.testMode || !!process.env.BKS_TEST_CONFIRM_WINDOW_CLOSE
 
+/**
+ * Turns the unsaved-changes prompt on window close on or off, for every
+ * window. The main process owns this setting (the same object the windows
+ * and the menu were built with), so both the "Don't show this again" checkbox
+ * and View > Confirm Before Closing Unsaved Tabs go through here - a renderer
+ * writing it directly would leave main, the native menu and other windows
+ * with a stale value.
+ */
+export async function setConfirmWindowClose(settings: IGroupedUserSettings, enabled: boolean): Promise<void> {
+  const setting = settings.dontConfirmWindowClose
+  if (!setting) return
+  setting.value = !enabled
+  await setting.save()
+  const menuItem = Menu.getApplicationMenu()?.getMenuItemById('confirm-window-close-toggle')
+  if (menuItem) menuItem.checked = enabled
+  getActiveWindows().forEach((window) => window.send(AppEvent.settingsChanged))
+}
+
+interface CloseConfirmation {
+  confirmed: boolean
+  /** The user ticked "Don't show this again". */
+  dontAskAgain: boolean
+}
+
+/** What every fallback path (no renderer, crash, timeout, ...) resolves to. */
+const CLOSE_ANYWAY: CloseConfirmation = { confirmed: true, dontAskAgain: false }
+
 export interface OpenOptions {
   url?: string
 }
@@ -55,7 +82,7 @@ class BeekeeperWindow {
   // Set while a close confirmation is in flight, so a second close attempt
   // (e.g. a double-click on the close button) waits on the same request
   // instead of starting a competing one.
-  private pendingCloseConfirmation: Promise<boolean> | null = null
+  private pendingCloseConfirmation: Promise<CloseConfirmation> | null = null
 
   constructor(protected settings: IGroupedUserSettings, openOptions: OpenOptions) {
     const theme = settings.theme
@@ -264,7 +291,7 @@ class BeekeeperWindow {
   // tear down state on this - e.g. main.ts ends the window's utility-process
   // session, which would leave a window that stayed open unable to reach its
   // database (or even save a setting) ever again.
-  onClose(listener: (event: electron.Event) => void) {
+  onClose(listener: () => void) {
     this.win?.on('closed', listener);
   }
 
@@ -312,6 +339,9 @@ class BeekeeperWindow {
   // window's close (and therefore the overall quit).
   private closeListener(event: electron.Event) {
     if (this.closeConfirmed || closeConfirmationBypassed || !closeConfirmationEnabled) return
+    // "Don't show this again" (or View > Confirm Before Closing Unsaved
+    // Tabs unticked): close without even asking the renderer.
+    if (this.settings.dontConfirmWindowClose?.value) return
 
     event.preventDefault()
     // A double-click on the close button, or two close triggers firing close
@@ -323,8 +353,18 @@ class BeekeeperWindow {
         .finally(() => { this.pendingCloseConfirmation = null })
     }
     this.pendingCloseConfirmation
-      .then((confirmed) => {
+      .then(async ({ confirmed, dontAskAgain }) => {
         if (!confirmed) return
+        if (dontAskAgain) {
+          // Saved before closing: if this is the last window the app quits
+          // right after, and the write must not be cut off. A failed save
+          // only means the prompt comes back next time - still close.
+          try {
+            await setConfirmWindowClose(this.settings, false)
+          } catch (ex) {
+            log.error('failed to save dontConfirmWindowClose', ex)
+          }
+        }
         // Only lets *this* retried close() through: 'close' fires
         // synchronously within the call below, so by the time it returns
         // the listener has already seen the flag and let it proceed. Reset
@@ -336,16 +376,16 @@ class BeekeeperWindow {
         this.win?.close()
         this.closeConfirmed = false
       })
-      .catch((ex) => log.error('close confirmation failed, closing anyway', ex))
+      .catch((ex) => log.error('close confirmation failed', ex))
   }
 
-  private requestCloseConfirmation(): Promise<boolean> {
+  private requestCloseConfirmation(): Promise<CloseConfirmation> {
     const webContents = this.webContents
-    if (!webContents || webContents.isDestroyed()) return Promise.resolve(true)
+    if (!webContents || webContents.isDestroyed()) return Promise.resolve(CLOSE_ANYWAY)
 
     return new Promise((resolve) => {
       let settled = false
-      const finish = (confirmed: boolean) => {
+      const finish = (confirmation: CloseConfirmation) => {
         if (settled) return
         settled = true
         clearTimeout(timer)
@@ -355,7 +395,7 @@ class BeekeeperWindow {
         webContents.removeListener('render-process-gone', onRendererGone)
         webContents.removeListener('did-navigate', onNavigated)
         webContents.removeListener('unresponsive', onUnresponsive)
-        resolve(confirmed)
+        resolve(confirmation)
       }
       const onAck = (event: electron.IpcMainEvent) => {
         if (event.sender !== webContents) return
@@ -366,9 +406,9 @@ class BeekeeperWindow {
         // rather than merely extended.
         clearTimeout(timer)
       }
-      const onResponse = (event: electron.IpcMainEvent, confirmed: boolean) => {
+      const onResponse = (event: electron.IpcMainEvent, confirmed: boolean, dontAskAgain?: boolean) => {
         if (event.sender !== webContents) return
-        finish(!!confirmed)
+        finish({ confirmed: !!confirmed, dontAskAgain: !!dontAskAgain })
       }
       // If the renderer dies after acknowledging (crash, or the process is
       // torn down some other way) there is no dialog left to wait for - the
@@ -377,7 +417,7 @@ class BeekeeperWindow {
       // that could ever answer.
       const onRendererGone = () => {
         log.warn('renderer gone while waiting for close confirmation, closing anyway')
-        finish(true)
+        finish(CLOSE_ANYWAY)
       }
       // A reload (or a full navigation to a different URL) while a
       // confirmation is in flight tears down the page that was going to
@@ -392,7 +432,7 @@ class BeekeeperWindow {
       // committing, so none of those wrongly orphan a live dialog.
       const onNavigated = () => {
         log.warn('renderer navigated away while waiting for close confirmation, closing anyway')
-        finish(true)
+        finish(CLOSE_ANYWAY)
       }
       // Covers a renderer whose main thread hangs (e.g. stuck in a
       // synchronous loop) without crashing outright - 'destroyed' /
@@ -402,7 +442,7 @@ class BeekeeperWindow {
       // dialog someone is still looking at.
       const onUnresponsive = () => {
         log.warn('renderer unresponsive while waiting for close confirmation, closing anyway')
-        finish(true)
+        finish(CLOSE_ANYWAY)
       }
 
       ipcMain.on(AppEvent.confirmWindowCloseAck, onAck)
@@ -417,14 +457,14 @@ class BeekeeperWindow {
       // there is no timeout: see onAck.
       const timer = setTimeout(() => {
         log.warn('no close confirmation ack in time, closing anyway')
-        finish(true)
+        finish(CLOSE_ANYWAY)
       }, CLOSE_CONFIRMATION_TIMEOUT_MS)
 
       try {
         webContents.send(AppEvent.confirmWindowClose)
       } catch (ex) {
         log.error('failed to request close confirmation, closing anyway', ex)
-        finish(true)
+        finish(CLOSE_ANYWAY)
       }
     })
   }

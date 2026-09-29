@@ -255,6 +255,13 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       click: actionHandler.togglePrivacyMode,
       checked: settings?.privacyMode?.value
     },
+    confirmWindowCloseToggle: {
+      id: 'confirm-window-close-toggle',
+      label: 'Confirm Before Closing Unsaved Tabs',
+      type: 'checkbox',
+      click: actionHandler.toggleConfirmWindowClose,
+      checked: !settings?.dontConfirmWindowClose?.value
+    },
     themeToggle: {
       id: "theme-toggle-menu",
       label: "Theme",
