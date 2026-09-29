@@ -6,6 +6,7 @@ import {
   ViewResultModifier,
   WebPluginContext,
   WebPluginViewInstance,
+  pluginApis,
 } from "../types";
 import type {
   RequestMap,
@@ -18,13 +19,7 @@ import rawLog from "@bksLogger";
 import _ from "lodash";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { PluginMenuManager } from "./PluginMenuManager";
-import {
-  DatabaseFilterOptions,
-  PrimaryKeyColumn,
-  SchemaFilterOptions,
-  TableProperties,
-} from "@/lib/db/models";
-
+import { PrimaryKeyColumn } from "@/lib/db/models";
 
 // Discriminated union for request+result that TypeScript can narrow by name
 type PluginResponseData = {
@@ -272,13 +267,9 @@ export default class WebPluginLoader {
           break;
 
         // ======== WRITE ACTIONS ===========
-        case "runQuery": {
-          if (this.getConfig().runQueryDisabled) {
-            throw new Error("runQuery is disabled by the config.");
-          }
+        case "runQuery":
           response.result = await this.pluginStore.runQuery(response.args.query);
           break;
-        }
         case "setData":
         case "setEncryptedData": {
           await this.utilityConnection.send(
@@ -474,14 +465,18 @@ export default class WebPluginLoader {
     };
   }
 
-  private getConfig() {
+  private getConfig(): IBksConfig["plugins"]["default"] {
     return window.bksConfig.plugins[this.manifest.id]
       ?? window.bksConfig.plugins.default;
   }
 
-  checkPermission(data: PluginRequestData) {
-    // do nothing on purpose
-    // if not permitted, throw error
+  checkPermission(data: RequestPayload) {
+    const api = pluginApis[data.name];
+    for (const disabled of this.getConfig().disabledApis) {
+      if (disabled === data.name || api?.tags.includes(disabled)) {
+        throw new Error(`${data.name} is disabled by the config.`);
+      }
+    }
   }
 
   /** Warn: please dispose only when the plugin is not used anymore, like

@@ -488,14 +488,14 @@ declare interface IBksConfig {
     plugins: {
         "bks-ai-shell": {
             disabled: boolean;
-            runQueryDisabled: boolean;
+            disabledApis: any[];
         };
         "bks-er-diagram": {
             disabled: boolean;
-            runQueryDisabled: boolean;
+            disabledApis: any[];
         };
         default: {
-            runQueryDisabled: boolean;
+            disabledApis: string[];
         };
     };
     security: {
