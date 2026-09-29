@@ -310,7 +310,7 @@
         this.tabulator.on("rangeEdited", (range: RangeComponent) => {
           range.getCells().flat().forEach((cell) => this.cellEdited(cell));
         });
-        this.tabulator.on('historyUndo', (action, component, data) => {
+        this.tabulator.on('historyUndo', (action, component) => {
           if (action === 'cellEdit') {
             this.cellEdited(component);
           } else if (action === "rangeEdit") {
@@ -318,7 +318,7 @@
           }
         });
 
-        this.tabulator.on('historyRedo', (action, component, data) => {
+        this.tabulator.on('historyRedo', (action, component) => {
           if (action === 'cellEdit') {
             this.cellEdited(component)
           } else if (action === "rangeEdit") {

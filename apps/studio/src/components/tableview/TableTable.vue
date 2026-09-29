@@ -1230,14 +1230,14 @@ export default Vue.extend({
       this.tabulator.on('tableBuilt', () => {
         this.tabulator.modules.selectRange.restoreFocus()
       })
-      this.tabulator.on('historyUndo', (action, component, data) => {
+      this.tabulator.on('historyUndo', (action, component) => {
         if (action === "cellEdit") {
           this.cellEdited(component);
         } else if (action === "rangeEdit") {
           component.getCells().flat().forEach((cell: CellComponent) => this.cellEdited(cell));
         }
       })
-      this.tabulator.on('historyRedo', (action, component, data) => {
+      this.tabulator.on('historyRedo', (action, component) => {
         if (action === "cellEdit") {
           this.cellEdited(component);
         } else if (action === "rangeEdit") {
