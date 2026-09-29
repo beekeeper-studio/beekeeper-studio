@@ -288,6 +288,41 @@
       </template>
     </confirmation-modal>
 
+    <base-modal
+      :name="confirmWindowCloseModalId"
+      @submit="resolveConfirmWindowClose(true)"
+      @closed="resolveConfirmWindowClose(false)"
+    >
+      <template #title>
+        Close this window?
+      </template>
+      <p>{{ confirmWindowCloseMessage }}</p>
+      <div class="form-group">
+        <label class="checkbox form-row">
+          <input
+            v-model="dontConfirmWindowCloseAgain"
+            type="checkbox"
+          >
+          Don't show this again
+        </label>
+      </div>
+      <template #footer>
+        <button
+          class="btn btn-flat"
+          type="button"
+          @click.prevent="resolveConfirmWindowClose(false)"
+        >
+          Cancel
+        </button>
+        <button
+          class="btn btn-primary"
+          type="submit"
+        >
+          Close Window
+        </button>
+      </template>
+    </base-modal>
+
     <sql-files-import-modal />
     <create-collection-modal />
   </div>
@@ -323,6 +358,7 @@ import { DropzoneDropEvent } from '@/common/dropzone'
 import { readWebFile } from '@/common/utils'
 import Noty from 'noty'
 import ConfirmationModal from './common/modals/ConfirmationModal.vue'
+import BaseModal from './common/modals/BaseModal.vue'
 import CreateCollectionModal from './common/modals/CreateCollectionModal.vue'
 import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.vue'
 import Shell from './TabShell.vue'
@@ -349,6 +385,7 @@ export default Vue.extend({
     DatabaseBackup,
     PendingChangesButton,
     ConfirmationModal,
+    BaseModal,
     SqlFilesImportModal,
     CreateCollectionModal,
     Shell,
@@ -374,6 +411,11 @@ export default Vue.extend({
       duplicateTableName: null,
       closingTab: null,
       confirmModalId: 'core-tabs-close-confirmation',
+      // below are for the "close this window?" modal (confirmWindowClose)
+      confirmWindowCloseModalId: 'core-tabs-confirm-window-close',
+      confirmWindowCloseMessage: '',
+      dontConfirmWindowCloseAgain: false,
+      confirmWindowCloseResolve: null as ((confirmed: boolean) => void) | null,
     }
   },
   watch: {
@@ -401,6 +443,7 @@ export default Vue.extend({
   computed: {
     ...mapState(['selectedSidebarItem']),
     ...mapState('tabs', { 'activeTab': 'active', 'tabs': 'tabs' }),
+    ...mapState('settings', { 'settingsState': 'settings' }),
     ...mapState(['connection', 'connectionType', 'usedConfig']),
     ...mapGetters({
        'dialect': 'dialect',
@@ -409,6 +452,12 @@ export default Vue.extend({
        'newTabDropdownItems': 'tabs/newTabDropdownItems',
        'getKeybindings': 'plugins/keybindings/getKeybindings',
     }),
+    // Persisted via the same settings/save mechanism as every other user
+    // preference (TypeORM-backed UserSetting, see SettingStoreModule) -
+    // there's no dedicated localStorage flag to keep in sync.
+    skipConfirmWindowClose() {
+      return this.settingsState?.dontConfirmWindowClose?.value === true
+    },
     tabIcon() {
       return {
         type: this.dbEntityType,
@@ -1099,7 +1148,10 @@ export default Vue.extend({
     },
     // Answers the main process's request (before it actually closes this
     // window) to confirm the close. Only asks if there's something to lose -
-    // same source and same confirmation UX as closeAll().
+    // same source of truth (tab.unsavedChanges) as closeAll() - but through
+    // its own dialog (see confirmWindowCloseModalId below), not closeAll()'s,
+    // since this one additionally offers a "don't show this again" checkbox
+    // that must not affect closeAll().
     async confirmWindowClose() {
       // Acknowledge immediately, before anything async: this tells main a
       // real answer is on its way, so it stops waiting on its "renderer is
@@ -1108,15 +1160,48 @@ export default Vue.extend({
       // closed out from under them, unsaved changes and all.
       window.main.ackConfirmWindowClose()
 
+      if (this.skipConfirmWindowClose) {
+        window.main.respondConfirmWindowClose(true)
+        return
+      }
+
       const unsavedTabs = this.tabs.filter((tab) => tab.unsavedChanges)
       let confirmed = true
       if (unsavedTabs.length > 0) {
-        confirmed = await this.$confirm(
-          'Close this window?',
-          `You have ${unsavedTabs.length} unsaved ${this.$pluralize('tab', unsavedTabs.length)}. Are you sure?`
-        )
+        this.confirmWindowCloseMessage = `You have ${unsavedTabs.length} unsaved ${this.$pluralize('tab', unsavedTabs.length)}. Are you sure?`
+        this.dontConfirmWindowCloseAgain = false
+        confirmed = await new Promise<boolean>((resolve) => {
+          this.confirmWindowCloseResolve = resolve
+          this.$modal.show(this.confirmWindowCloseModalId)
+        })
+
+        // Only persist the "don't ask again" choice once it's actually
+        // acted on by closing - ticking the box and then cancelling reads
+        // more like "not sure yet" than "never warn me again".
+        if (confirmed && this.dontConfirmWindowCloseAgain) {
+          try {
+            await this.$store.dispatch('settings/save', { key: 'dontConfirmWindowClose', value: true })
+          } catch (ex) {
+            // Failing to remember the preference is a minor annoyance (the
+            // dialog just reappears next time); failing to answer main and
+            // leaving the window stuck open is not, so this must not stop
+            // the response below.
+            console.error('failed to persist dontConfirmWindowClose', ex)
+          }
+        }
       }
       window.main.respondConfirmWindowClose(confirmed)
+    },
+    // Settles confirmWindowClose()'s promise exactly once, whichever way the
+    // modal closes (Confirm, Cancel, the header X, Escape, or the overlay) -
+    // BaseModal's `closed` fires after an explicit confirm/cancel too, so
+    // this must be idempotent instead of assuming a single call.
+    resolveConfirmWindowClose(confirmed: boolean) {
+      const resolve = this.confirmWindowCloseResolve
+      if (!resolve) return
+      this.confirmWindowCloseResolve = null
+      this.$modal.hide(this.confirmWindowCloseModalId)
+      resolve(confirmed)
     },
     async closeOther(tab: TransportOpenTab) {
       const others = _.without(this.tabItems, tab)

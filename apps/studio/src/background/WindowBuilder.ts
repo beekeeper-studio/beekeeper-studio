@@ -30,6 +30,12 @@ export function bypassCloseConfirmation(): void {
   closeConfirmationBypassed = true
 }
 
+// e2e runs shut the app down through Playwright's app.quit(), usually with
+// typed query text still in a tab - prompting there would hang every such
+// test. Skipped in test mode like the product tours are; the spec that covers
+// this prompt opts back in with BKS_TEST_CONFIRM_WINDOW_CLOSE.
+const closeConfirmationEnabled = !platformInfo.testMode || !!process.env.BKS_TEST_CONFIRM_WINDOW_CLOSE
+
 export interface OpenOptions {
   url?: string
 }
@@ -253,8 +259,13 @@ class BeekeeperWindow {
     this.reloaded = true
   }
 
+  // Fires once the window is really gone. 'close' can't be used here any
+  // more: closeListener() may cancel it (unsaved-changes prompt), and callers
+  // tear down state on this - e.g. main.ts ends the window's utility-process
+  // session, which would leave a window that stayed open unable to reach its
+  // database (or even save a setting) ever again.
   onClose(listener: (event: electron.Event) => void) {
-    this.win?.on('close', listener);
+    this.win?.on('closed', listener);
   }
 
   get active() {
@@ -300,7 +311,7 @@ class BeekeeperWindow {
   // own unsaved changes independently, and declining just cancels that one
   // window's close (and therefore the overall quit).
   private closeListener(event: electron.Event) {
-    if (this.closeConfirmed || closeConfirmationBypassed) return
+    if (this.closeConfirmed || closeConfirmationBypassed || !closeConfirmationEnabled) return
 
     event.preventDefault()
     // A double-click on the close button, or two close triggers firing close
@@ -314,8 +325,16 @@ class BeekeeperWindow {
     this.pendingCloseConfirmation
       .then((confirmed) => {
         if (!confirmed) return
+        // Only lets *this* retried close() through: 'close' fires
+        // synchronously within the call below, so by the time it returns
+        // the listener has already seen the flag and let it proceed. Reset
+        // right after instead of leaving it set, so if this close is somehow
+        // still blocked (e.g. another listener vetoes it), the window isn't
+        // left permanently skipping the prompt on every later close attempt,
+        // possibly with different unsaved changes by then.
         this.closeConfirmed = true
         this.win?.close()
+        this.closeConfirmed = false
       })
       .catch((ex) => log.error('close confirmation failed, closing anyway', ex))
   }
