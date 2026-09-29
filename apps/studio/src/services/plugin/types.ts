@@ -205,6 +205,7 @@ export type WebPluginContext = {
   };
   confirm(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean>;
   createNewTab(viewId: string, command: string, params?: JsonValue): void;
+  disabledApis: string[];
 }
 
 export type PluginSnapshot = {
@@ -270,9 +271,8 @@ export const pluginApis = {
   "getTableProperties": { tags: ["@database"] },
   "getAppInfo": { tags: [] },
   "getViewContext": { tags: [] },
-  "getConfig": { tags: [] },
-  "getPluginConfig": { tags: [] },
   "getConnectionInfo": { tags: ["@database"] },
+  "getDisabledApis": { tags: [] },
   "getData": { tags: [] },
   "getEncryptedData": { tags: [] },
   "clipboard.readText": { tags: [] },

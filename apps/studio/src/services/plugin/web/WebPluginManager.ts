@@ -1,6 +1,6 @@
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import rawLog from "@bksLogger";
-import { OnViewRequestListener, PluginSnapshot } from "../types";
+import { OnViewRequestListener, pluginApis, PluginSnapshot } from "../types";
 import PluginStoreService from "./PluginStoreService";
 import WebPluginLoader, { PluginNotificationData } from "./WebPluginLoader";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
@@ -272,6 +272,19 @@ export default class WebPluginManager {
       return this.loaders.get(snapshot.manifest.id);
     }
 
+    const config = window.bksConfig.plugins[snapshot.manifest.id]
+      ?? window.bksConfig.plugins.default;
+
+    const disabledApis: string[] = [];
+    for (const [name, api] of Object.entries(pluginApis)) {
+      if (
+        config.disabledApis.includes(name) ||
+        api.tags.some((tag) => config.disabledApis.includes(tag))
+      ) {
+        disabledApis.push(name);
+      }
+    }
+
     const loader = new WebPluginLoader({
       manifest: snapshot.manifest,
       store: this.pluginStore,
@@ -292,6 +305,7 @@ export default class WebPluginManager {
           })
         );
       },
+      disabledApis,
     });
     await loader.load(snapshot);
     this.loaders.set(snapshot.manifest.id, loader);

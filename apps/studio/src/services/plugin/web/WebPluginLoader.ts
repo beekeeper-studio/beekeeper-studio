@@ -6,7 +6,6 @@ import {
   ViewResultModifier,
   WebPluginContext,
   WebPluginViewInstance,
-  pluginApis,
 } from "../types";
 import type {
   RequestMap,
@@ -237,14 +236,11 @@ export default class WebPluginLoader {
           response.result = view.context;
           break;
         }
-        case "getConfig":
-          response.result = window.bksConfig.getAll();
-          break;
-        case "getPluginConfig":
-          response.result = this.getConfig();
-          break;
         case "getConnectionInfo":
           response.result = this.pluginStore.getConnectionInfo();
+          break;
+        case "getDisabledApis":
+          response.result = this.context.disabledApis;
           break;
         case "getData":
         case "getEncryptedData": {
@@ -465,17 +461,9 @@ export default class WebPluginLoader {
     };
   }
 
-  private getConfig(): IBksConfig["plugins"]["default"] {
-    return window.bksConfig.plugins[this.manifest.id]
-      ?? window.bksConfig.plugins.default;
-  }
-
   checkPermission(data: RequestPayload) {
-    const api = pluginApis[data.name];
-    for (const disabled of this.getConfig().disabledApis) {
-      if (disabled === data.name || api?.tags.includes(disabled)) {
-        throw new Error(`${data.name} is disabled by the config.`);
-      }
+    if (this.context.disabledApis.includes(data.name)) {
+      throw new Error(`${data.name} is disabled by the config.`);
     }
   }
 

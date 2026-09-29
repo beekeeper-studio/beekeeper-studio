@@ -15,6 +15,6 @@ if (typeof PointerEvent === "undefined") {
 // Mock window.bksConfig - required by WebPluginManager
 if (typeof window !== "undefined") {
   (window as any).bksConfig = {
-    plugins: {},
+    plugins: { default: { disabledApis: [] } },
   };
 }
