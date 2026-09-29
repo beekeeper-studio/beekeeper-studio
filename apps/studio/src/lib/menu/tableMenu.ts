@@ -306,49 +306,21 @@ export function pasteRange(range: RangeComponent) {
   if (!data) return;
 
   if (data.length === 1 && data[0].length === 1) {
-    const singleValue = data[0][0];
-    const selectedRows = range.getRows();
-    const selectedColumns = range.getColumns()
-    const selectedCells: CellComponent[][] = selectedRows.map(row =>
-      row.getCells().filter(cell => selectedColumns.includes(cell.getColumn()))
-    );
-    selectedCells.forEach((row) => {
-      row.forEach((selectedCells) => {
-        setCellValue(selectedCells, singleValue);
-      });
-    });
+    range.fill(data[0][0]);
   } else {
     const table = range.getRows()[0].getTable();
-    const rows = table.getRows("active").slice(range.getTopEdge());
+    const colCount = Math.max(...data.map((row) => row.length));
+    const rows = table
+      .getRows("active")
+      .slice(range.getTopEdge(), range.getTopEdge() + data.length);
     const columns = table
       .getColumns(false)
       .filter((col) => col.isVisible())
-      .slice(range.getLeftEdge());
-    const cells: CellComponent[][] = rows.map((row) => {
-      const arr = [];
-      row.getCells().forEach((cell) => {
-        if (columns.includes(cell.getColumn())) {
-          arr.push(cell);
-        }
-      });
-      return arr;
-    });
-
-    data.forEach((row: string[], rowIdx) => {
-      row.forEach((text, colIdx) => {
-        const cell = cells[rowIdx]?.[colIdx];
-        if (!cell) return;
-        setCellValue(cell, text);
-      });
-    });
+      .slice(range.getLeftEdge(), range.getLeftEdge() + colCount);
+    const lastRow = rows[rows.length - 1];
+    range.setEndBound(lastRow.getCell(columns[columns.length - 1]));
+    range.setData(data);
   }
-}
-
-export function setCellValue(cell: CellComponent, value: string) {
-  const editableFunc = cell.getColumn().getDefinition().editable;
-  const editable =
-    typeof editableFunc === "function" ? editableFunc(cell) : editableFunc;
-  if (editable) cell.setValue(value);
 }
 
 // Helper function to map column IDs to column titles
