@@ -28,13 +28,16 @@ export default class ClipboardRangeModule extends Module {
   }
 
   initialize() {
-    this.registerTableFunction("copyRanges", this.copyRanges.bind(this));
+    this.registerTableFunction("copyRanges", this.copyRanges);
 
-    this.subscribe("column-width", this.removeHighlights.bind(this));
-    this.subscribe("column-height", this.removeHighlights.bind(this));
-    this.subscribe("column-resized", this.removeHighlights.bind(this));
-    this.subscribe("cell-height", this.removeHighlights.bind(this));
-    this.subscribe("edit-editor-clear", this.removeHighlights.bind(this));
+    this.subscribe("column-width", this.removeHighlights);
+    this.subscribe("column-height", this.removeHighlights);
+    this.subscribe("column-resized", this.removeHighlights);
+    this.subscribe("cell-height", this.removeHighlights);
+    this.subscribe("cell-edited", this.removeHighlights);
+    this.subscribe("cell-resize", this.removeHighlights);
+		this.subscribe("data-processed", this.removeHighlights);
+    this.subscribe("edit-editor-clear", this.removeHighlights);
   }
 
   private async copyRanges(options: CopyRangesOptions) {
