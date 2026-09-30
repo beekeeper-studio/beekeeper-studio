@@ -43,7 +43,7 @@ export default class ClipboardRangeModule extends Module {
   private async copyRanges(options: CopyRangesOptions) {
     const extracted = extractRanges(this.table.getRanges());
     const text = await buildCopyText(extracted.data, options);
-    ElectronPlugin.clipboard.writeText(text);
+    await ElectronPlugin.clipboard.writeText(text);
     this.removeHighlights();
     this.addHighlights(extracted.sources);
   }
