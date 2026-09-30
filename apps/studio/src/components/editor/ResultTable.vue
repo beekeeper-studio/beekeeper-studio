@@ -841,8 +841,9 @@
       },
       dataToJson(rawData, firstObjectOnly) {
         const rows = _.isArray(rawData) ? rawData : [rawData]
+        const keys = this.$bks.jsonKeys(Object.keys(rows[0] ?? {}), this.tableColumns)
         const result = rows.map((data) => {
-          return this.$bks.cleanData(data, this.tableColumns)
+          return this.$bks.cleanData(data, this.tableColumns, keys)
         })
         return firstObjectOnly ? result[0] : result
       },

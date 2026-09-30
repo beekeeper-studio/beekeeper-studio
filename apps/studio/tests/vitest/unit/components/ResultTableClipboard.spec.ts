@@ -56,4 +56,13 @@ describe('ResultTable clipboard with duplicate column titles', () => {
     const out = BeekeeperPlugin.cleanData({ c0: 1, c1: 2, c2: 3 }, cols)
     expect(out).toEqual({ num: 1, num_3: 2, num_2: 3 })
   })
+
+  it('builds the key map once for all rows', () => {
+    const spy = vi.spyOn(BeekeeperPlugin, 'jsonKeys')
+    const ctx: any = { tableColumns, $bks: BeekeeperPlugin }
+    const out = methods.dataToJson.call(ctx, [{ c0: 1, c1: 2, c2: 3 }, { c0: 4, c1: 5, c2: 6 }])
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(out.map((r) => Object.values(r))).toEqual([[1, 2, 3], [4, 5, 6]])
+    spy.mockRestore()
+  })
 })
