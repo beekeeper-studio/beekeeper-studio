@@ -835,7 +835,7 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
     border-color: color.adjust($theme-primary, $lightness: -20%);
     border-width: 1px;
   }
-  .tabulator-range.tabulator-range-active::after {
+  .tabulator-range-fill-handle {
     background-color: color.adjust($theme-primary, $lightness: -20%);
   }
   .tabulator-range.copied {
@@ -959,5 +959,13 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
   .tabulator-col .tabulator-col-content .tabulator-col-title .title >
   .column-data-type {
     display: none;
+  }
+}
+
+.tabulator .tabulator-range-overlay .tabulator-range.tabulator-range-copy-highlight {
+  border-style: dashed;
+
+  &::after {
+    content: none;
   }
 }

@@ -114,30 +114,16 @@ export function createMenuItem(label: string, shortcut: string | string[] = "", 
   return `<x-menuitem>${label}${shortcut}${ultimateIcon}</x-menuitem>`;
 }
 
-export async function copyRanges(options: {
-  ranges: RangeComponent[];
-  type: "plain" | "tsv" | "json" | "markdown" | "columnName" | "asIn";
-  table?: string;
-  schema?: string;
-  escapeString?: (s: string, quote?: boolean) => string;
-}): Promise<void>;
-export async function copyRanges(options: {
-  ranges: RangeComponent[];
-  type: "sql";
-  table: string;
-  schema?: string;
-}): Promise<void>;
-export async function copyRanges(options: {
-  ranges: RangeComponent[];
-  type: "plain" | "tsv" | "json" | "markdown" | "sql" | "columnName" | "asIn";
-  table?: string;
-  schema?: string;
-  escapeString?: (s: string, quote?: boolean) => string;
-}) {
+export async function buildCopyText(
+  rangeData: RangeData,
+  options: {
+    type: "plain" | "tsv" | "json" | "markdown" | "sql" | "columnName" | "asIn";
+    table?: string;
+    schema?: string;
+    escapeString?: (s: string, quote?: boolean) => string;
+  }
+): Promise<string> {
   let text = "";
-
-  const extractedData = extractRanges(options.ranges);
-  const rangeData = extractedData.data;
   const stringifiedRangeData = stringifyRangeData(rangeData);
 
   switch (options.type) {
@@ -201,16 +187,14 @@ export async function copyRanges(options: {
       });
       break;
     case "columnName":
-      text = Object.keys(extractedData.data[0]).join(" ");
+      text = Object.keys(rangeData[0]).join(" ");
       break;
   }
-  ElectronPlugin.clipboard.writeText(text);
-  extractedData.sources.forEach((range) => {
-    (range.getElement() as HTMLElement).classList.add("copied");
-  });
+
+  return text;
 }
 
-function extractRanges(ranges: RangeComponent[]): ExtractedData {
+export function extractRanges(ranges: RangeComponent[]): ExtractedData {
   if (ranges.length === 0) return;
 
   if (ranges.length === 1) {
@@ -322,49 +306,21 @@ export function pasteRange(range: RangeComponent) {
   if (!data) return;
 
   if (data.length === 1 && data[0].length === 1) {
-    const singleValue = data[0][0];
-    const selectedRows = range.getRows();
-    const selectedColumns = range.getColumns()
-    const selectedCells: CellComponent[][] = selectedRows.map(row =>
-      row.getCells().filter(cell => selectedColumns.includes(cell.getColumn()))
-    );
-    selectedCells.forEach((row) => {
-      row.forEach((selectedCells) => {
-        setCellValue(selectedCells, singleValue);
-      });
-    });
+    range.fill(data[0][0]);
   } else {
     const table = range.getRows()[0].getTable();
-    const rows = table.getRows("active").slice(range.getTopEdge());
+    const colCount = Math.max(...data.map((row) => row.length));
+    const rows = table
+      .getRows("active")
+      .slice(range.getTopEdge(), range.getTopEdge() + data.length);
     const columns = table
       .getColumns(false)
       .filter((col) => col.isVisible())
-      .slice(range.getLeftEdge());
-    const cells: CellComponent[][] = rows.map((row) => {
-      const arr = [];
-      row.getCells().forEach((cell) => {
-        if (columns.includes(cell.getColumn())) {
-          arr.push(cell);
-        }
-      });
-      return arr;
-    });
-
-    data.forEach((row: string[], rowIdx) => {
-      row.forEach((text, colIdx) => {
-        const cell = cells[rowIdx]?.[colIdx];
-        if (!cell) return;
-        setCellValue(cell, text);
-      });
-    });
+      .slice(range.getLeftEdge(), range.getLeftEdge() + colCount);
+    const lastRow = rows[rows.length - 1];
+    range.setEndBound(lastRow.getCell(columns[columns.length - 1]));
+    range.setData(data);
   }
-}
-
-export function setCellValue(cell: CellComponent, value: string) {
-  const editableFunc = cell.getColumn().getDefinition().editable;
-  const editable =
-    typeof editableFunc === "function" ? editableFunc(cell) : editableFunc;
-  if (editable) cell.setValue(value);
 }
 
 // Helper function to map column IDs to column titles
@@ -390,39 +346,38 @@ function mapColumnIdsToTitles(data: RangeData, columns: ColumnComponent[]): Rang
 }
 
 export function copyActionsMenu(options: {
-  ranges: RangeComponent[];
+  tabulator: Tabulator;
   table?: string;
   schema?: string;
   escapeString?: (s: string, quote?: boolean) => string;
 }) {
-  const { ranges, table, schema, escapeString } = options;
-  const columnCount = ranges[0].getColumns().length
+  const { tabulator, table, schema, escapeString } = options;
+  const columnCount = tabulator.getRanges()[0].getColumns().length
   const copyActions = [
     {
       label: createMenuItem("Copy", "Control+C"),
-      action: () => copyRanges({ ranges, type: "plain" }),
+      action: () => tabulator.copyRanges({ type: "plain" }),
     },
     {
       label: createMenuItem("Copy Column Name"),
-      action: () => copyRanges({ ranges, type: "columnName" }),
+      action: () => tabulator.copyRanges({ type: "columnName" }),
     },
     {
       label: createMenuItem("Copy as TSV for Excel"),
-      action: () => copyRanges({ ranges, type: "tsv" }),
+      action: () => tabulator.copyRanges({ type: "tsv" }),
     },
     {
       label: createMenuItem("Copy as JSON"),
-      action: () => copyRanges({ ranges, type: "json" }),
+      action: () => tabulator.copyRanges({ type: "json" }),
     },
     {
       label: createMenuItem("Copy as Markdown"),
-      action: () => copyRanges({ ranges, type: "markdown" }),
+      action: () => tabulator.copyRanges({ type: "markdown" }),
     },
     {
       label: createMenuItem("Copy as SQL"),
       action: () =>
-        copyRanges({
-          ranges,
+        tabulator.copyRanges({
           type: "sql",
           table,
           schema,
@@ -433,7 +388,7 @@ export function copyActionsMenu(options: {
   if (columnCount === 1) {
     copyActions.push({
       label: createMenuItem("Copy for IN statement"),
-      action: () => copyRanges({ ranges, type: "asIn", table, schema, escapeString }),
+      action: () => tabulator.copyRanges({ type: "asIn", table, schema, escapeString }),
     })
   }
 

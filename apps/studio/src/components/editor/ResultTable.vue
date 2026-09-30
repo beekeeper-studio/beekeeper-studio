@@ -1,7 +1,7 @@
 <template>
   <div
     class="result-table"
-    :class="{ 'hidden-filter': hiddenFilter }"
+    :class="{ 'hidden-filter': hiddenFilter, 'editing-data': editingData }"
     v-hotkey="keymap"
   >
     <editor-modal
@@ -67,7 +67,7 @@
   import { markdownTable } from 'markdown-table'
   import intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
-  import { copyRanges, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth, createMenuItem, pasteRange } from '@/lib/menu/tableMenu';
+  import { copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth, createMenuItem, pasteRange } from '@/lib/menu/tableMenu';
   import { tabulatorForTableData } from '@/common/tabulator';
   import EditorModal from '../tableview/EditorModal.vue'
   import { AppEvent } from "@/common/AppEvent";
@@ -281,7 +281,7 @@
             contextMenu: (_e, cell) => {
               return [
                 ...copyActionsMenu({
-                  ranges: cell.getTable().getRanges(),
+                  tabulator: cell.getTable(),
                   table: this.result.tableName || "mytable",
                   schema: this.result.schema,
                   escapeString: this.dialectData?.escapeString,
@@ -292,7 +292,7 @@
             headerContextMenu: (_e, column) => {
               return [
                 ...copyActionsMenu({
-                  ranges: column.getTable().getRanges(),
+                  tabulator: column.getTable(),
                   table: this.result.tableName || "mytable",
                   schema: this.result.schema,
                   escapeString: this.dialectData?.escapeString,
@@ -307,16 +307,22 @@
         });
 
         this.tabulator.on('cellEdited', this.cellEdited);
-
+        this.tabulator.on("rangeEdited", (range: RangeComponent) => {
+          range.getCells().flat().forEach((cell) => this.cellEdited(cell));
+        });
         this.tabulator.on('historyUndo', (action, component) => {
           if (action === 'cellEdit') {
             this.cellEdited(component);
+          } else if (action === "rangeEdit") {
+            component.getCells().flat().forEach((cell: CellComponent) => this.cellEdited(cell));
           }
         });
 
         this.tabulator.on('historyRedo', (action, component) => {
           if (action === 'cellEdit') {
             this.cellEdited(component)
+          } else if (action === "rangeEdit") {
+            component.getCells().flat().forEach((cell: CellComponent) => this.cellEdited(cell));
           }
         })
       },
@@ -340,7 +346,7 @@
         for (const field of fieldsWithClass) {
           const element = row.getCell(field)?.getElement();
           if (!element) continue;
-          if (!hasReset.includes(field)) {
+          if (!hasReset.includes(field) && this.fieldOriginalClassMap.has(field)) {
             element.classList.value = this.fieldOriginalClassMap.get(field);
             hasReset.push(field);
           }
@@ -423,7 +429,7 @@
             this.setAsNullMenuItem(ranges),
             { separator: true },
             ...copyActionsMenu({
-              ranges: cell.getTable().getRanges(),
+              tabulator: cell.getTable(),
               table: this.result.tableName,
               schema: this.defaultSchema,
               escapeString: this.dialectData?.escapeString,
@@ -444,7 +450,7 @@
         const columnMenu = (_e, column) => {
           return [
             ...copyActionsMenu({
-              ranges: column.getTable().getRanges(),
+              tabulator: column.getTable(),
               table: this.result.tableName,
               schema: this.defaultSchema,
               escapeString: this.dialectData?.escapeString,
@@ -635,9 +641,9 @@
           return;
         }
 
-        if (!this.fieldOriginalClassMap.has(cell.getField())) {
+        if (!this.fieldOriginalClassMap.has(cell.getField()) && cell.getElement()?.classList?.value) {
           // If we don't have the unmodified original class value, store it so we can reset classes later on :)
-          this.fieldOriginalClassMap.set(cell.getField(), cell.getElement()?.classList.value);
+          this.fieldOriginalClassMap.set(cell.getField(), cell.getElement()?.classList?.value);
         }
 
         // TODO (@day): if we're going to do inserts we'll have to check if edit is in a pending insert here
@@ -823,7 +829,7 @@
       copySelection() {
         const isFocusingTable = this.checkTableFocus();
         if (!this.active || !isFocusingTable) return
-        copyRanges({ ranges: this.tabulator.getRanges(), type: 'plain' })
+        this.tabulator.copyRanges({ type: 'plain' })
       },
       pasteSelection() {
         if (!this.checkTableFocus() || !this.editingResult) return;
@@ -1185,6 +1191,10 @@
       .tabulator-tableholder {
         padding-bottom: 5rem;
       }
+    }
+
+    &:not(.editing-data) ::v-deep .tabulator-range-fill-handle {
+      display: none;
     }
   }
 

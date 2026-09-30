@@ -337,7 +337,7 @@ import { normalizeFilters, safeSqlFormat, createTableFilter, isNumericDataType, 
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml, FormatterParams } from '@shared/lib/tabulator';
-import { copyRanges, pasteRange, readClipboardRows, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
+import { pasteRange, readClipboardRows, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
 import { tabulatorForTableData } from "@/common/tabulator";
 import { TransportTabulatorPersistence } from "@/common/transport/TransportTabulatorPersistence";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
@@ -348,6 +348,10 @@ import { UpdateOptions } from "@/lib/data/jsonViewer";
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
+
+const nullComponent = {
+  getComponent: () => {}
+};
 
 export default Vue.extend({
   components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, LoadingSpinner },
@@ -865,7 +869,7 @@ export default Vue.extend({
             { separator: true },
             this.quickFilterMenuItem(cell),
               ...copyActionsMenu({
-                ranges,
+                tabulator: cell.getTable(),
                 table: this.table.name,
                 schema: this.table.schema,
                 escapeString: this.dialectData?.escapeString,
@@ -907,7 +911,7 @@ export default Vue.extend({
           this.setAsNullMenuItem(ranges),
           { separator: true },
           ...copyActionsMenu({
-            ranges,
+            tabulator: column.getTable(),
             table: this.table.name,
             schema: this.table.schema,
             escapeString: this.dialectData?.escapeString,
@@ -1083,7 +1087,7 @@ export default Vue.extend({
     },
     copySelection() {
       if (!this.focusingTable()) return
-      copyRanges({ ranges: this.tabulator.getRanges(), type: 'plain' })
+      this.tabulator.copyRanges({ type: 'plain' })
     },
     pasteSelection() {
       if (!this.focusingTable() || !this.editable) return
@@ -1170,7 +1174,7 @@ export default Vue.extend({
               this.setAsNullMenuItem(ranges),
               { separator: true },
               ...copyActionsMenu({
-                ranges,
+                tabulator: cell.getTable(),
                 table: this.table.name,
                 schema: this.table.schema,
               }),
@@ -1185,7 +1189,7 @@ export default Vue.extend({
               this.setAsNullMenuItem(ranges),
               { separator: true },
               ...copyActionsMenu({
-                ranges,
+                tabulator: this.tabulator,
                 table: this.table.name,
                 schema: this.table.schema,
                 escapeString: this.dialectData?.escapeString,
@@ -1223,6 +1227,9 @@ export default Vue.extend({
         onRangeChange: this.handleRangeChange,
       });
       this.tabulator.on('cellEdited', this.cellEdited)
+      this.tabulator.on("rangeEdited", (range: RangeComponent) => {
+        range.getCells().flat().forEach((cell) => this.cellEdited(cell));
+      });
       this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
       this.tabulator.on('tableBuilt', () => {
         this.tabulator.modules.selectRange.restoreFocus()
@@ -1230,11 +1237,19 @@ export default Vue.extend({
       this.tabulator.on('historyUndo', (action, component) => {
         if (action === "cellEdit") {
           this.cellEdited(component);
+        } else if (action === "rangeEdit") {
+          component.getCells().flat().forEach((cell: CellComponent) => this.cellEdited(cell));
+        } else if (action === "queuePendingDelete") {
+          this.removeRowsFromPendingDeletes(data);
         }
       })
       this.tabulator.on('historyRedo', (action, component) => {
         if (action === "cellEdit") {
           this.cellEdited(component);
+        } else if (action === "rangeEdit") {
+          component.getCells().flat().forEach((cell: CellComponent) => this.cellEdited(cell));
+        } else if (action === "queuePendingDelete") {
+          this.addRowsToPendingDeletes(data)
         }
       })
 
@@ -1692,7 +1707,8 @@ export default Vue.extend({
         if (matchingInserts.length > 0) {
           this.$set(this.pendingChanges, 'inserts', this.pendingChanges.inserts.filter((insert) => !rows.includes(insert.row)))
           matchingInserts.forEach((insert) => insert.row.delete())
-          return
+          rows = _.without(rows, ...matchingInserts.map((insert) => insert.row));
+          // TODO (@day): will have to add this to the history module as well
         }
       }
 
@@ -1704,6 +1720,7 @@ export default Vue.extend({
 
         this.primaryKeys.forEach((pk: string) => {
           const cell = row.getCell(pk)
+          // @ts-ignore
           const isBinary = cell.getColumn().getDefinition().dataType.toUpperCase().includes('BINARY')
           let value = cell.getValue();
           if (isBinary) {
@@ -1745,8 +1762,21 @@ export default Vue.extend({
 
       // remove pending updates for the row marked for deletion
       discardedUpdates.forEach(update => this.discardColumnUpdate(update))
+      // TODO (@day): we will also probably need to add this to the history somehow?? maybe it already is?
 
       this.$set(this.pendingChanges, 'updates', _.without(this.pendingChanges.updates, discardedUpdates))
+
+      // the component doesn't really matter, tabulator just throws if you don't pass one
+      this.tabulator.modules.history.action('queuePendingDelete', nullComponent, rows)
+    },
+    removeRowsFromPendingDeletes(rows: RowComponent[]) {
+      rows.forEach((row) => {
+        row.getElement().classList.remove('deleted')
+      });
+
+      const newDeletes = this.pendingChanges.deletes.filter((del) => !rows.includes(del.row));
+
+      this.$set(this.pendingChanges, 'deletes', newDeletes);
     },
     resetPendingChanges() {
       this.pendingChanges = {
