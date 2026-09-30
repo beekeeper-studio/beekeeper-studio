@@ -160,15 +160,21 @@ export const BeekeeperPlugin = {
     const fixed = {}
     // internal table fields used just for us
     const keys = Object.keys(data).filter((key) => !isBksInternalColumn(key))
-    const titleOf = (key: string) => columns.find((c) => c.field === key)?.title ?? key
-    const titles = new Set(keys.map(titleOf))
-    keys.forEach((key) => {
-      const title = titleOf(key)
+    const titleByField = new Map(columns.map((c) => [c.field, c.title]))
+    const titleOf = keys.map((key) => titleByField.get(key) ?? key)
+    const titles = new Set(titleOf)
+    // next suffix to try per title, so n duplicates don't each rescan from _2
+    const nextSuffix = new Map<string, number>()
+    keys.forEach((key, idx) => {
+      const title = titleOf[idx]
       // columns can share a title, don't let one overwrite another, and don't
       // give a duplicate the name of another real column (num, num, num_2)
       let nuKey = title
-      for (let i = 2; nuKey in fixed || (nuKey !== title && titles.has(nuKey)); i++) {
+      if (nuKey in fixed) {
+        let i = nextSuffix.get(title) ?? 2
+        while (`${title}_${i}` in fixed || titles.has(`${title}_${i}`)) i++
         nuKey = `${title}_${i}`
+        nextSuffix.set(title, i + 1)
       }
       fixed[nuKey] = data[key]
     })
