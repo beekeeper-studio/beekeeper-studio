@@ -832,11 +832,12 @@
         this.tabulator.copyRanges({ type: 'plain' })
       },
       pasteSelection() {
-        if (!this.checkTableFocus() || !this.editingResult) return;
+        console.log("hello", this.checkTableFocus())
+        if (!this.checkTableFocus() || !this.editingData) return;
         pasteRange(_.last(this.tabulator.getRanges()));
       },
       nullTableSelection() {
-        if (!this.checkTableFocus() || !this.editingResult) return;
+        if (!this.checkTableFocus() || !this.editingData) return;
         this.setRangesNull(this.tabulator.getRanges());
       },
       dataToJson(rawData, firstObjectOnly) {
