@@ -158,17 +158,19 @@ export const BeekeeperPlugin = {
 
   cleanData(data: any, columns: {title: string, field: string}[] = []) {
     const fixed = {}
-    Object.keys(data).forEach((key) => {
-      const v = data[key]
-      // internal table fields used just for us
-      if (!isBksInternalColumn(key)) {
-        const column = columns.find((c) => c.field === key)
-        const title = column ? column.title : key
-        // columns can share a title, don't let one overwrite another
-        let nuKey = title
-        for (let i = 2; nuKey in fixed; i++) nuKey = `${title}_${i}`
-        fixed[nuKey] = v
+    // internal table fields used just for us
+    const keys = Object.keys(data).filter((key) => !isBksInternalColumn(key))
+    const titleOf = (key: string) => columns.find((c) => c.field === key)?.title ?? key
+    const titles = new Set(keys.map(titleOf))
+    keys.forEach((key) => {
+      const title = titleOf(key)
+      // columns can share a title, don't let one overwrite another, and don't
+      // give a duplicate the name of another real column (num, num, num_2)
+      let nuKey = title
+      for (let i = 2; nuKey in fixed || (nuKey !== title && titles.has(nuKey)); i++) {
+        nuKey = `${title}_${i}`
       }
+      fixed[nuKey] = data[key]
     })
     return fixed
   },

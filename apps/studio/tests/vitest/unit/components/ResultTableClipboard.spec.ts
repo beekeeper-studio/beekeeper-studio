@@ -46,4 +46,14 @@ describe('ResultTable clipboard with duplicate column titles', () => {
     expect(out).toHaveLength(1)
     expect(Object.values(out[0])).toEqual([1, 2, 3])
   })
+
+  it('does not name a duplicate after another real column', () => {
+    const cols = [
+      { title: 'num', field: 'c0' },
+      { title: 'num', field: 'c1' },
+      { title: 'num_2', field: 'c2' },
+    ]
+    const out = BeekeeperPlugin.cleanData({ c0: 1, c1: 2, c2: 3 }, cols)
+    expect(out).toEqual({ num: 1, num_3: 2, num_2: 3 })
+  })
 })
