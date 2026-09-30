@@ -45,13 +45,7 @@ export const divider: DividerItem = { type: 'divider', id: 'divider' }
 export function openMenu<Item>(args: MenuProps<Item>) {
   if (isEmpty(args.options)) return
   const ContextComponent = Vue.extend(ContextMenu)
-  const cMenu = new ContextComponent({
-    propsData: args
-  })
-  cMenu.$on('close', () => {
-    cMenu.$off()
-    cMenu.$destroy()
-  })
+  const cMenu = new ContextComponent({ propsData: args })
   cMenu.$mount()
 }
 

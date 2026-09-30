@@ -23,6 +23,7 @@ volumes:
   greengage:
   greengage7:
   starrocks:
+  surreal:
 
 services:
   anywhere:
@@ -334,18 +335,18 @@ services:
 
   surrealdb:
     image: surrealdb/surrealdb:latest
-    user: "${SURREAL_UID}"
+    user: "0:0"
     command: start --log trace --user root --pass root --allow-all rocksdb:/mydata/surreal.db
     ports:
       - 8000:8000
     volumes:
-      - ./surreal_data:/mydata
+      - surreal:/mydata
 
   surrealdb-seed:
     image: surrealdb/surrealdb:latest
     depends_on:
       - surrealdb
-    command: import --conn http://surrealdb:8000 --user root --pass root --ns test --db test /seed.surql
+    command: import --endpoint http://surrealdb:8000 --user root --pass root --ns test --db test /seed.surql
     volumes:
       - ./dev/docker_surrealdb_init/seed.surql:/seed.surql:ro
 

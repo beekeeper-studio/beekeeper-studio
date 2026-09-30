@@ -21,7 +21,9 @@
     "lib/components/sql-text-editor/types.ts",
     "lib/components/data-editor/types.ts",
     "lib/components/surreal-text-editor/types.ts",
-    "lib/components/tree/types.ts"
+    "lib/components/tree/types.ts",
+    "lib/config/context-menu.ts",
+    "lib/components/mongo-shell/state.ts"
   ],
   "exclude": ["node_modules", "**/*.test.ts", "**/*.spec.ts", "lib/components/sql-text-editor/define.ts"]
 }

@@ -234,10 +234,16 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
 
     return {
       execute: async () => {
-        const queries = this.identifyCommands(queryText).map((query: any) => this.executeQuery(query.text))
-        const retPromises = await Promise.all(queries)
+        const commands = this.identifyCommands(queryText);
 
-        return retPromises.map(rp => rp[0])
+        const results = [];
+        for (const cmd of commands) {
+          const ret  = await this.executeQuery(cmd.text);
+
+          results.push(ret[0]);
+        }
+
+        return results;
       },
 
       // idk if this works. Should probably try it one day...

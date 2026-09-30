@@ -3,7 +3,7 @@ const capturedQueries: string[] = []
 // default single-row result. Reset it in beforeEach.
 const mockQueryResults: Record<string, any>[] = []
 
-jest.mock('trino-client', () => {
+jest.mock('@trinodb/trino-js-client', () => {
   const mockQuery = jest.fn().mockImplementation((sql: string) => {
     capturedQueries.push(sql)
     const results = mockQueryResults.length
@@ -30,7 +30,7 @@ jest.mock('trino-client', () => {
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-import { Trino as TrinoNodeClient } from 'trino-client'
+import { Trino as TrinoNodeClient } from '@trinodb/trino-js-client'
 import { TrinoClient } from '@commercial/backend/lib/db/clients/trino'
 import { IDbConnectionServer } from '@/lib/db/backendTypes'
 import { IDbConnectionDatabase } from '@/lib/db/types'

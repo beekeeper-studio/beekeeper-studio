@@ -520,7 +520,8 @@ export default Vue.extend({
       // we only load the first
       const file = files[0]
       try {
-        const conf = await this.$util.send('appdb/saved/parseUrl', { url: file.path });
+        const filePath = window.main.getPathForFile(file);
+        const conf = await this.$util.send('appdb/saved/parseUrl', { url: filePath });
         this.config = conf;
         this.submit();
       } catch {
@@ -592,6 +593,12 @@ export default Vue.extend({
 
     },
     async submit() {
+      // Ignore re-entrant submits (e.g. a sidebar double-click while a
+      // connection attempt is pending) - the Connect button is disabled, but
+      // sidebar and quicksearch entry points are not.
+      if (this.connecting) {
+        return
+      }
       if (!this.isUltimate && isUltimateType(this.config.connectionType)) {
         return
       }

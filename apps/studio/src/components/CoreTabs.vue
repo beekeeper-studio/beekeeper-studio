@@ -377,12 +377,18 @@ export default Vue.extend({
     }
   },
   watch: {
-    async usedConfig() {
-      await this.$store.dispatch('tabs/load')
-      if (!this.tabItems?.length) {
-        await this.createQuery()
+    // immediate: usedConfig is committed before the interface flips to
+    // connected, so it is already set when this component mounts
+    usedConfig: {
+      immediate: true,
+      async handler() {
+        if (!this.usedConfig) return
+        await this.$store.dispatch('tabs/load')
+        if (!this.tabItems?.length) {
+          await this.createQuery()
+        }
+        wait(800).then(() => this.$tour.start("connectedScreen"));
       }
-      wait(800).then(() => this.$tour.start("connectedScreen"));
     }
   },
   filters: {

@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
+import { QueryRunner } from "typeorm";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import { AppDbHandlers } from "@/handlers/appDbHandlers";
 import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
 import { QueryAudit } from "@/common/appdb/models/QueryAudit";
 import migration from "@/migration/20260526_create_query_audits";
+import fixAppendOnlyTrigger from "@/migration/20260914_fix_query_audit_append_only_trigger";
 
 async function createQuery(
   title: string,
@@ -212,3 +214,88 @@ describe("Query Audit migration", () => {
   });
 })
 
+
+// test the schema that is actually created by the migrations
+describe("Query audit append-only trigger", () => {
+  let runner: QueryRunner;
+
+  beforeAll(async () => {
+    await TestOrmConnection.connect();
+    runner = TestOrmConnection.connection.connection.createQueryRunner();
+    await runner.query("DROP TABLE IF EXISTS query_audit");
+    await migration.run(runner);
+    await fixAppendOnlyTrigger.run(runner);
+  });
+
+  afterAll(async () => {
+    await runner.release();
+    await TestOrmConnection.disconnect();
+  });
+
+  beforeEach(async () => {
+    await runner.query("DELETE FROM query_audit;");
+    await runner.query("DELETE FROM favorite_query;");
+  });
+
+  it("has the self-referencing FK the trigger has to tolerate", async () => {
+    // Without these two the delete test below passes for the wrong reason.
+    const [pragma] = await runner.query("PRAGMA foreign_keys");
+    expect(pragma.foreign_keys).toBe(1);
+
+    const fks = await runner.query("PRAGMA foreign_key_list(query_audit)");
+    expect(fks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          table: "query_audit",
+          from: "previousAuditId",
+          on_delete: "SET NULL",
+        }),
+      ])
+    );
+  });
+
+  it("deletes a query that has been edited several times", async () => {
+    const query = await createQuery("Test", "SELECT 1;");
+
+    query.text = "SELECT 2;";
+    query.updatedAt = fastForward(query.updatedAt);
+    await query.save();
+
+    query.title = "Renamed";
+    query.updatedAt = fastForward(query.updatedAt);
+    await query.save();
+
+    const audits = await QueryAudit.find();
+    expect(audits).toHaveLength(3);
+    expect(audits.filter((a) => a.previousAuditId !== null)).toHaveLength(2);
+
+    await query.remove();
+
+    await expect(FavoriteQuery.count()).resolves.toBe(0);
+    await expect(QueryAudit.count()).resolves.toBe(0);
+  });
+
+  it("still rejects updates to recorded audit values", async () => {
+    const query = await createQuery("Test", "SELECT 1;");
+    const [audit] = await QueryAudit.find();
+
+    await expect(
+      runner.query("UPDATE query_audit SET title = 'edited' WHERE id = ?", [
+        audit.id,
+      ])
+    ).rejects.toThrow("query_audit is append-only");
+
+    await expect(
+      runner.query("UPDATE query_audit SET text = 'edited' WHERE id = ?", [
+        audit.id,
+      ])
+    ).rejects.toThrow("query_audit is append-only");
+
+    await expect(
+      runner.query("UPDATE query_audit SET favoriteQueryId = ? WHERE id = ?", [
+        query.id + 1,
+        audit.id,
+      ])
+    ).rejects.toThrow("query_audit is append-only");
+  });
+});

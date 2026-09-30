@@ -51,7 +51,8 @@ Beekeeper Studio는 무료로 다운로드할 수 있으며, 가입, 등록, 신
 | [Trino](https://trino.io/) / [Presto](https://prestodb.io/) | ⭐ Full Support                |           |    ✅    |    [Features](https://www.beekeeperstudio.io/db/trino-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/trino/) |
 | [SurrealDB](https://surrealdb.com/)                      | ⭐ Full Support               |           |    ✅    |      [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/surrealdb) |
 | [DynamoDB](https://aws.amazon.com/dynamodb/)             | 🧪 Beta Support               |           |    ✅    |      [Features](https://www.beekeeperstudio.io/db/dynamodb-client/), [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/dynamodb) |
-| [Snowflake](https://www.snowflake.com/)                  | ⏳ Coming Soon                |           |    ✅    |   -- |
+| [Snowflake](https://www.snowflake.com/)                 | ⭐ Full Support               |           |    ✅    |   [Docs](https://docs.beekeeperstudio.io/user_guide/connecting/snowflake) |
+| [SAP HANA](https://www.sap.com/products/technology-platform/hana.html) | ⏳ Coming Soon  |           |    ✅    |   -- |
 
 
 

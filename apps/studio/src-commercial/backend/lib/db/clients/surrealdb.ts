@@ -284,8 +284,8 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
                 what: table
               });
             } else {
-              const fieldIndex = tableFields.findIndex((v) => v.name == field);
-              if (tableFields[fieldIndex].kind != type) {
+              const fieldIndex = tableFields.findIndex((v) => v.name === field);
+              if (tableFields[fieldIndex].kind !== type) {
                 tableFields[fieldIndex].kind = 'any';
               }
             }
@@ -334,7 +334,12 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     const tableIndexes = result?.rows[0]?.indexes as any[];
 
     return tableIndexes.map((indexInfo) => {
-      const columns = indexInfo.cols.split(',').map((name) => ({ name }));
+      let columns = [];
+      if (_.isArray(indexInfo.cols)) {
+        columns = indexInfo.cols.map((name: string) => ({ name }));
+      } else if (typeof indexInfo.cols === 'string') {
+        columns = indexInfo.cols.split(',').map((c: string) => ({ name: c.trim() }))
+      }
       const unique = indexInfo.index === 'UNIQUE';
       return {
         id: indexInfo.name,

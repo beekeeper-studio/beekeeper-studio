@@ -2379,7 +2379,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
   }
 
   // Hide the dot on the range highlight when not editing result
-  .query-editor:not(.editing-result) ::v-deep .tabulator-range-active::after {
+  .query-editor:not(.editing-result) ::v-deep .tabulator-fill-handle {
     visibility: hidden;
   }
 

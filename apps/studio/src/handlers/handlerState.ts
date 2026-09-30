@@ -91,6 +91,7 @@ export const errorMessages = {
 
 export function getDriverHandler(name: string) {
   return async function({sId }: { sId: string }): Promise<any> {
+    checkConnection(sId);
     return await state(sId).connection[name]();
   }
 }
