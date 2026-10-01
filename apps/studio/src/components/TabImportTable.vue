@@ -111,6 +111,7 @@
 <script>
   import { mapGetters, mapState, mapMutations } from 'vuex'
   import { AppEvent } from '@/common/AppEvent'
+  import { recordPaidFeatureUse } from '@/lib/paidFeatures'
   import Stepper from './stepper/Stepper.vue'
   import ImportFile from './importtable/ImportFile.vue'
   import ImportTable from './importtable/ImportTable.vue'
@@ -292,6 +293,7 @@
         return await this.$util.send('generator/build', { schema: newTableSchema });
       },
       async handleImport() {
+        recordPaidFeatureUse('import-from-file')
         const importOptions = await this.tablesToImport.get(this.importKey)
         const isNewTable = importOptions.createNewTable
         let importerClass
