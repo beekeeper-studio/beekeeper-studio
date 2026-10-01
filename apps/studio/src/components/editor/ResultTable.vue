@@ -307,8 +307,8 @@
         });
 
         this.tabulator.on('cellEdited', this.cellEdited);
-        this.tabulator.on("rangeEdited", (range: RangeComponent) => {
-          range.getCells().flat().forEach((cell) => this.cellEdited(cell));
+        this.tabulator.on("rangeEdited", (range) => {
+          range.getModifiedCells().forEach((cell) => this.cellEdited(cell));
         });
         this.tabulator.on('historyUndo', (action, component) => {
           if (action === 'cellEdit') {
@@ -832,7 +832,6 @@
         this.tabulator.copyRanges({ type: 'plain' })
       },
       pasteSelection() {
-        console.log("hello", this.checkTableFocus())
         if (!this.checkTableFocus() || !this.editingData) return;
         pasteRange(_.last(this.tabulator.getRanges()));
       },
