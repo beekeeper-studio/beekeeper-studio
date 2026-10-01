@@ -296,7 +296,6 @@
         </div>
       </modal>
     </portal>
-    <!-- <add-field-modal @done="cellAddCol(undefined, $event)"/> -->
   </div>
 </template>
 
@@ -1092,6 +1091,7 @@ export default Vue.extend({
     pasteSelection() {
       if (!this.focusingTable() || !this.editable) return
       pasteRange(_.last(this.tabulator.getRanges()))
+      this.tabulator.modules.selectRange.restoreFocus()
     },
     pasteAsNewRowsShortcut() {
       // Keyboard path is scoped to the focused grid, so it never reaches the
@@ -1229,6 +1229,7 @@ export default Vue.extend({
       this.tabulator.on('cellEdited', this.cellEdited)
       this.tabulator.on("rangeEdited", (range) => {
         range.getModifiedCells().forEach((cell) => this.cellEdited(cell));
+        this.tabulator.modules.selectRange.restoreFocus()
       });
       this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
       this.tabulator.on('tableBuilt', () => {
@@ -1779,6 +1780,9 @@ export default Vue.extend({
       this.$set(this.pendingChanges, 'deletes', newDeletes);
     },
     resetPendingChanges() {
+      if (this.tabulator) {
+        this.tabulator.modules.history.clear();
+      }
       this.pendingChanges = {
         inserts: [],
         updates: [],

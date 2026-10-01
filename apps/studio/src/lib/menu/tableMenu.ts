@@ -306,20 +306,41 @@ export function pasteRange(range: RangeComponent) {
   if (!data) return;
 
   if (data.length === 1 && data[0].length === 1) {
+    // @ts-ignore
     range.fill(data[0][0]);
   } else {
     const table = range.getRows()[0].getTable();
+    const rowCount = data.length;
     const colCount = Math.max(...data.map((row) => row.length));
+
+    const rangeRowCount = range.getBottomEdge() - range.getTopEdge() + 1;
+    const rangeColCount = range.getRightEdge() - range.getLeftEdge() + 1;
+
+    const targetRowCount = rowCount * Math.max(1, Math.floor(rangeRowCount / rowCount));
+    const targetColCount = colCount * Math.max(1, Math.floor(rangeColCount / colCount));
+
+    // rebuild data for tiling
+    const pasteData = [];
+    for (let r = 0; r < targetRowCount; r++) {
+      const srcRow = data[r % rowCount];
+      const row = [];
+      for (let c = 0; c < targetColCount; c++) {
+        row.push(srcRow[c % colCount]);
+      }
+      pasteData.push(row);
+    }
+
     const rows = table
       .getRows("active")
-      .slice(range.getTopEdge(), range.getTopEdge() + data.length);
+      .slice(range.getTopEdge(), range.getTopEdge() + targetRowCount);
     const columns = table
       .getColumns(false)
       .filter((col) => col.isVisible())
-      .slice(range.getLeftEdge(), range.getLeftEdge() + colCount);
+      .slice(range.getLeftEdge(), range.getLeftEdge() + targetColCount);
     const lastRow = rows[rows.length - 1];
     range.setEndBound(lastRow.getCell(columns[columns.length - 1]));
-    range.setData(data);
+    // @ts-ignore
+    range.setData(pasteData);
   }
 }
 
