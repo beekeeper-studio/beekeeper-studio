@@ -524,7 +524,8 @@
           dataType: editData?.dataType,
           width: columnWidth,
           mutator: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connectionType)),
-          maxInitialWidth: this.$bksConfig.ui.tableTable.maxColumnWidth,
+          maxWidth: this.$bksConfig.ui.tableTable.maxColumnWidth,
+          maxInitialWidth: this.$bksConfig.ui.tableTable.maxInitialWidth,
           tooltip: this.cellTooltip,
           contextMenu: cellMenu,
           headerContextMenu: columnMenu,
@@ -760,9 +761,6 @@
           row.reformat();
         })
         this.tabulator.restoreRedraw();
-        this.$nextTick(() => {
-          this.tabulator.redraw()
-        })
       },
       buildPendingUpdates() {
         return this.pendingChanges.updates.map((update) => {
