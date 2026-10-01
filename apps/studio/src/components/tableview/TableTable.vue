@@ -1227,14 +1227,14 @@ export default Vue.extend({
         onRangeChange: this.handleRangeChange,
       });
       this.tabulator.on('cellEdited', this.cellEdited)
-      this.tabulator.on("rangeEdited", (range: RangeComponent) => {
-        range.getCells().flat().forEach((cell) => this.cellEdited(cell));
+      this.tabulator.on("rangeEdited", (range) => {
+        range.getModifiedCells().forEach((cell) => this.cellEdited(cell));
       });
       this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
       this.tabulator.on('tableBuilt', () => {
         this.tabulator.modules.selectRange.restoreFocus()
       })
-      this.tabulator.on('historyUndo', (action, component) => {
+      this.tabulator.on('historyUndo', (action, component, data) => {
         if (action === "cellEdit") {
           this.cellEdited(component);
         } else if (action === "rangeEdit") {
@@ -1243,7 +1243,7 @@ export default Vue.extend({
           this.removeRowsFromPendingDeletes(data);
         }
       })
-      this.tabulator.on('historyRedo', (action, component) => {
+      this.tabulator.on('historyRedo', (action, component, data) => {
         if (action === "cellEdit") {
           this.cellEdited(component);
         } else if (action === "rangeEdit") {

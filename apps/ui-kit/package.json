@@ -202,7 +202,7 @@
     "highlight.js": "^11.11.1",
     "sql-formatter": "15.7.3",
     "sql-query-identifier": "^3.2.0",
-    "tabulator-tables": "^6.5.0",
+    "tabulator-tables": "^6.6.1",
     "vscode-languageserver-protocol": "^3.17.5"
   },
   "devDependencies": {
