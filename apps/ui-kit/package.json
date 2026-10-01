@@ -123,7 +123,7 @@
     "split.js": "^1.5.11",
     "sql-formatter": "15.7.3",
     "sql-query-identifier": "^3.2.0",
-    "tabulator-tables": "^6.6.0",
+    "tabulator-tables": "^6.6.1",
     "tinyduration": "^3.2.4",
     "typescript": "~5.8.3",
     "vite": "^8.0.8",
