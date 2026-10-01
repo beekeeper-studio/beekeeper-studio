@@ -146,6 +146,38 @@
   document.addEventListener('mousemove', (e) => move(e.clientX, e.clientY), true)
   document.addEventListener('mousedown', (e) => ripple(e.clientX, e.clientY), true)
 
+  // Chromium draws native `title` tooltips at the real X pointer, and Playwright's
+  // mouse never moves it (it sits mid-screen on Xvfb), so tooltips would pop up
+  // in the middle of the video. Hold back titles on the hovered element and its
+  // ancestors, and put them back once the cursor leaves.
+  const heldTitles = new Map()
+  const holdTitles = (start) => {
+    for (let el = start; el && el.nodeType === 1; el = el.parentElement) {
+      if (el.hasAttribute('title')) {
+        heldTitles.set(el, el.getAttribute('title'))
+        el.removeAttribute('title')
+      }
+    }
+  }
+  const releaseTitles = (hovered) => {
+    for (const [el, title] of heldTitles) {
+      if (hovered && el.contains(hovered)) continue
+      if (!el.hasAttribute('title')) el.setAttribute('title', title)
+      heldTitles.delete(el)
+    }
+  }
+  document.addEventListener('mouseover', (e) => { releaseTitles(e.target); holdTitles(e.target) }, true)
+  document.addEventListener('mousemove', (e) => holdTitles(e.target), true)
+  // Vue may re-render a title while it's hovered; hold the new value too.
+  new MutationObserver((records) => {
+    for (const { target: el } of records) {
+      if (heldTitles.has(el) && el.hasAttribute('title')) {
+        heldTitles.set(el, el.getAttribute('title'))
+        el.removeAttribute('title')
+      }
+    }
+  }).observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ['title'] })
+
   const caption = document.createElement('div')
   caption.id = 'demo-caption'
   document.body.appendChild(caption)

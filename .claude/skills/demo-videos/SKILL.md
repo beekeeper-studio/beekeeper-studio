@@ -112,6 +112,14 @@ poster, SRT and chapters.
   `$store.dispatch('data/connections/save')`.
 - Playwright input never moves the X cursor. The overlay draws a cursor
   that follows `mousemove`, and ffmpeg records with `-draw_mouse 0`.
+- **Native `title` tooltips.** Chromium draws these as separate windows
+  at the *real* X pointer, which sits at screen centre. Left alone, a
+  hovered tab or button (e.g. "customers [all]", "1 pending changes")
+  pops its tooltip up mid-video, usually right after a click changes the
+  page. The overlay holds back `title` on the hovered element and its
+  ancestors and restores it when the cursor leaves. Page screenshots
+  (`SHOTS=1`) never show native windows, so check for tooltips in the
+  recorded video, e.g. with a contact sheet of centre crops.
 - These page errors are harmless: Tabulator's `verticalFillMode`, and
   "No database connection found" while reconnecting.
 

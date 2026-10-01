@@ -103,3 +103,8 @@ await runDemo({
 
 Targets are Playwright locators or CSS selector strings. Coordinates are
 CSS pixels of the app window.
+
+Native `title` tooltips are suppressed during recordings. Chromium would
+otherwise draw them at the real X pointer in the middle of the screen,
+because Playwright's mouse is synthetic. The overlay holds back the
+hovered element's `title` and restores it when the cursor leaves.
