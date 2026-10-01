@@ -299,6 +299,31 @@ export function readClipboardRows(): string[][] | null {
   return parsed.data as string[][];
 }
 
+// build tiled paste data to emulate sheets pasting behaviour
+export function buildTiledPasteData(
+  data: string[][],
+  rangeRowCount: number,
+  rangeColCount: number
+): { pasteData: string[][]; rowCount: number; colCount: number } {
+  const dataRowCount = data.length;
+  const dataColCount = Math.max(...data.map((row) => row.length));
+
+  const rowCount = dataRowCount * Math.max(1, Math.floor(rangeRowCount / dataRowCount));
+  const colCount = dataColCount * Math.max(1, Math.floor(rangeColCount / dataColCount));
+
+  const pasteData: string[][] = [];
+  for (let r = 0; r < rowCount; r++) {
+    const srcRow = data[r % dataRowCount];
+    const row: string[] = [];
+    for (let c = 0; c < colCount; c++) {
+      row.push(srcRow[c % dataColCount]);
+    }
+    pasteData.push(row);
+  }
+
+  return { pasteData, rowCount, colCount };
+}
+
 export function pasteRange(range: RangeComponent) {
   // Same parsing as "paste as new rows" — the two only differ in the
   // destination (overwrite existing cells here vs. insert new rows there).
@@ -310,25 +335,12 @@ export function pasteRange(range: RangeComponent) {
     range.fill(data[0][0]);
   } else {
     const table = range.getRows()[0].getTable();
-    const rowCount = data.length;
-    const colCount = Math.max(...data.map((row) => row.length));
 
     const rangeRowCount = range.getBottomEdge() - range.getTopEdge() + 1;
     const rangeColCount = range.getRightEdge() - range.getLeftEdge() + 1;
 
-    const targetRowCount = rowCount * Math.max(1, Math.floor(rangeRowCount / rowCount));
-    const targetColCount = colCount * Math.max(1, Math.floor(rangeColCount / colCount));
-
-    // rebuild data for tiling
-    const pasteData = [];
-    for (let r = 0; r < targetRowCount; r++) {
-      const srcRow = data[r % rowCount];
-      const row = [];
-      for (let c = 0; c < targetColCount; c++) {
-        row.push(srcRow[c % colCount]);
-      }
-      pasteData.push(row);
-    }
+    const { pasteData, rowCount: targetRowCount, colCount: targetColCount } =
+      buildTiledPasteData(data, rangeRowCount, rangeColCount);
 
     const rows = table
       .getRows("active")

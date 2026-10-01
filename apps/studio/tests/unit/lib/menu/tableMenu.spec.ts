@@ -1,4 +1,4 @@
-import { buildCopyText } from "@/lib/menu/tableMenu";
+import { buildCopyText, buildTiledPasteData } from "@/lib/menu/tableMenu";
 import { PostgresData } from "@/shared/lib/dialects/postgresql";
 import { MysqlData } from "@/shared/lib/dialects/mysql";
 import { SqlServerData } from "@/shared/lib/dialects/sqlserver";
@@ -156,5 +156,93 @@ describe("buildCopyText - asIn type", () => {
       // null should be converted to string "null" and escaped
       expect(text).toContain("null");
     });
+  });
+});
+
+describe("buildTiledPasteData", () => {
+  it("tiles an exact multiple to fill the whole selection", () => {
+    // Copy 2 rows into a 4-row selection -> both rows pasted twice.
+    const { pasteData, rowCount, colCount } = buildTiledPasteData(
+      [["a"], ["b"]],
+      4,
+      1
+    );
+    expect(rowCount).toBe(4);
+    expect(colCount).toBe(1);
+    expect(pasteData).toEqual([["a"], ["b"], ["a"], ["b"]]);
+  });
+
+  it("tiles columns across an exact multiple selection", () => {
+    // Copy 1x2 into a 1x4 selection -> the two columns repeat.
+    const { pasteData, rowCount, colCount } = buildTiledPasteData(
+      [["a", "b"]],
+      1,
+      4
+    );
+    expect(rowCount).toBe(1);
+    expect(colCount).toBe(4);
+    expect(pasteData).toEqual([["a", "b", "a", "b"]]);
+  });
+
+  it("tiles both axes together", () => {
+    const { pasteData, rowCount, colCount } = buildTiledPasteData(
+      [["a", "b"], ["c", "d"]],
+      4,
+      4
+    );
+    expect(rowCount).toBe(4);
+    expect(colCount).toBe(4);
+    expect(pasteData).toEqual([
+      ["a", "b", "a", "b"],
+      ["c", "d", "c", "d"],
+      ["a", "b", "a", "b"],
+      ["c", "d", "c", "d"],
+    ]);
+  });
+
+  it("floors to whole tiles when the selection is not an exact multiple", () => {
+    // Copy 3 rows into a 7-row selection -> two whole tiles (6 rows); the
+    // leftover 7th row is dropped and left untouched.
+    const { pasteData, rowCount } = buildTiledPasteData(
+      [["a"], ["b"], ["c"]],
+      7,
+      1
+    );
+    expect(rowCount).toBe(6);
+    expect(pasteData).toEqual([
+      ["a"], ["b"], ["c"], ["a"], ["b"], ["c"],
+    ]);
+  });
+
+  it("expands to the block's own size when the selection is smaller", () => {
+    // Copy 2 rows but only 1 cell selected -> still pastes the full block.
+    const { pasteData, rowCount, colCount } = buildTiledPasteData(
+      [["a"], ["b"]],
+      1,
+      1
+    );
+    expect(rowCount).toBe(2);
+    expect(colCount).toBe(1);
+    expect(pasteData).toEqual([["a"], ["b"]]);
+  });
+
+  it("pastes the block once when the selection matches its size", () => {
+    const { pasteData } = buildTiledPasteData([["a", "b"], ["c", "d"]], 2, 2);
+    expect(pasteData).toEqual([["a", "b"], ["c", "d"]]);
+  });
+
+  it("sizes columns from the widest row when rows are ragged", () => {
+    // colCount is driven by the widest row (2). Missing cells in shorter rows
+    // tile as `undefined` at the corresponding position.
+    const { pasteData, colCount } = buildTiledPasteData(
+      [["a", "b"], ["c"]],
+      2,
+      4
+    );
+    expect(colCount).toBe(4);
+    expect(pasteData).toEqual([
+      ["a", "b", "a", "b"],
+      ["c", undefined, "c", undefined],
+    ]);
   });
 });
