@@ -11,7 +11,7 @@ function buildUsedQuery(overrides: Partial<UsedQuery> = {}) {
   return query
 }
 
-describe('UsedQuery origin fields', () => {
+describe('UsedQuery', () => {
   beforeEach(async () => {
     await TestOrmConnection.connect()
   })
@@ -38,5 +38,25 @@ describe('UsedQuery origin fields', () => {
     const saved = await UsedQuery.findOneBy({ id: query.id })
     expect(saved.origin).toBe('plugin')
     expect(saved.pluginId).toBe('example-plugin')
+  })
+
+  it('searches full SQL beyond the excerpt without loading query text', async () => {
+    const excerpt = `select ${' '.repeat(243)}`
+    const matching = buildUsedQuery({
+      excerpt,
+      text: `${excerpt}from customer_orders`
+    })
+    const nonmatching = buildUsedQuery({
+      text: 'select * from products',
+      excerpt: 'select * from products'
+    })
+    await matching.save()
+    await nonmatching.save()
+
+    const results = await UsedQuery.search(UsedQuery, 'CuStOmEr')
+
+    expect(results.map((query) => query.id)).toEqual([matching.id])
+    expect(results[0].excerpt).toBe(excerpt)
+    expect(results[0].text).toBeUndefined()
   })
 })

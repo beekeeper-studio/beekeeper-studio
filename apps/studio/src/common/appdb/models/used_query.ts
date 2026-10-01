@@ -5,6 +5,8 @@ import type { QueryOrigin } from '../../interfaces/QueryOrigin'
 
 @Entity({ name: 'used_query'})
 export class UsedQuery extends ApplicationEntity {
+  static readonly searchableFields: string[] = [ 'text' ];
+
   withProps(props?: any): UsedQuery {
     if (props) UsedQuery.merge(this, props);
     return this;

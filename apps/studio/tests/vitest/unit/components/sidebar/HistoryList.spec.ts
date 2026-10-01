@@ -4,7 +4,7 @@ import Vuex from 'vuex'
 import TimeAgo from 'javascript-time-ago'
 import en from 'javascript-time-ago/locale/en'
 import HistoryList from '@/components/sidebar/core/HistoryList.vue'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 Vue.use(Vuex)
 TimeAgo.addLocale(en)
@@ -12,7 +12,8 @@ TimeAgo.addLocale(en)
 function buildStore(items: any[], isCloud = false) {
   return new Vuex.Store({
     state: {
-      usedConfig: { id: 1 }
+      usedConfig: { id: 1 },
+      workspaceId: -1
     },
     getters: {
       isCloud: () => isCloud
@@ -23,6 +24,10 @@ function buildStore(items: any[], isCloud = false) {
         modules: {
           usedQueries: {
             namespaced: true,
+            actions: {
+              load: vi.fn(),
+              remove: vi.fn()
+            },
             state: {
               items,
               loading: false,
@@ -48,7 +53,7 @@ function buildHistoryQuery(id: number, connectionId: number, origin?: string, pl
 }
 
 describe('HistoryList.vue', () => {
-  it('filters history by origin while keeping All as the default', async () => {
+  it('filters history by multiple origins and connection scope', async () => {
     const wrapper = shallowMount(HistoryList, {
       store: buildStore([
         buildHistoryQuery(1, 1, 'app'),
@@ -64,26 +69,41 @@ describe('HistoryList.vue', () => {
     })
 
     expect(wrapper.vm.currentHistory.map((item: any) => item.id)).toEqual([1, 2, 3, 4])
-    expect(wrapper.findAll('option').wrappers.map(option => option.text())).toEqual([
-      'All',
+    expect(wrapper.findAll('.history-filter-menu label').wrappers.map(label => label.text())).toEqual([
+      'All connections',
       'App',
       'AI Shell',
       'ER Diagram',
       'Plugin'
     ])
 
-    await wrapper.setData({ selectedOrigin: 'bks-ai-shell' })
+    expect(wrapper.find('.history-filter').classes()).not.toContain('active')
+    await wrapper.find('.history-filter-menu input').setChecked(true)
+    expect(wrapper.vm.currentHistory.map((item: any) => item.id)).toEqual([1, 2, 3, 4, 5])
+    expect(wrapper.find('.history-filter').classes()).not.toContain('active')
+    await wrapper.find('.history-filter-menu input').setChecked(false)
+
+    await wrapper.find('input[value="app"]').setChecked(false)
+    expect(wrapper.vm.currentHistory.map((item: any) => item.id)).toEqual([2, 3, 4])
+    expect(wrapper.find('.history-filter').classes()).toContain('active')
+
+    await wrapper.setData({ selectedOrigins: ['bks-ai-shell'] })
     expect(wrapper.vm.currentHistory.map((item: any) => item.id)).toEqual([2])
 
-    await wrapper.setData({ selectedOrigin: 'bks-er-diagram' })
+    await wrapper.setData({ selectedOrigins: ['bks-er-diagram'] })
     expect(wrapper.vm.currentHistory.map((item: any) => item.id)).toEqual([3])
 
-    await wrapper.setData({ selectedOrigin: 'plugin' })
+    await wrapper.setData({ selectedOrigins: ['plugin'] })
     expect(wrapper.vm.currentHistory.map((item: any) => item.id)).toEqual([4])
 
-    await wrapper.setData({ selectedOrigin: 'bks-ai-shell' })
-    await wrapper.setData({ showAllHistory: true })
-    expect(wrapper.vm.currentHistory.map((item: any) => item.id)).toEqual([2, 5])
+    await wrapper.setData({ selectedOrigins: ['bks-ai-shell', 'bks-er-diagram'] })
+    expect(wrapper.vm.currentHistory.map((item: any) => item.id)).toEqual([2, 3])
+
+    await wrapper.find('.history-filter-menu input').setChecked(true)
+    expect(wrapper.vm.currentHistory.map((item: any) => item.id)).toEqual([2, 3, 5])
+
+    await wrapper.setData({ selectedOrigins: [] })
+    expect(wrapper.vm.currentHistory).toEqual([])
   })
 
   it('shows specific plugin icons and falls back for other plugins', () => {
@@ -137,7 +157,9 @@ describe('HistoryList.vue', () => {
       }
     })
 
-    expect(wrapper.find('#history-origin-filter').exists()).toBe(false)
+    expect(wrapper.findAll('.history-filter-menu label').wrappers.map(label => label.text()))
+      .toEqual(['All connections'])
+    expect(wrapper.find('.filter-input').exists()).toBe(false)
   })
 
   it('does not apply a local origin selection to cloud history', async () => {
@@ -151,8 +173,112 @@ describe('HistoryList.vue', () => {
       }
     })
 
-    await wrapper.setData({ selectedOrigin: 'plugin' })
+    await wrapper.setData({ selectedOrigins: ['plugin'] })
 
     expect(wrapper.vm.currentHistory.map((item: any) => item.id)).toEqual([1])
+    expect(wrapper.find('.history-filter').classes()).not.toContain('active')
+  })
+})
+
+
+describe('HistoryList search', () => {
+  let wrapper: any
+
+  beforeEach(() => vi.useFakeTimers())
+
+  afterEach(() => {
+    wrapper?.destroy()
+    vi.useRealTimers()
+  })
+
+  function mountSearch(send: any, items = [buildHistoryQuery(1, 1, 'app')]) {
+    wrapper = shallowMount(HistoryList, {
+      store: buildStore(items),
+      mocks: { $util: { send } },
+      stubs: { ErrorAlert: true, SidebarLoading: true }
+    })
+    return wrapper
+  }
+
+  it('debounces database search, sorts newest first, and combines the filters', async () => {
+    const older = { ...buildHistoryQuery(2, 1, 'plugin', 'bks-ai-shell'), updatedAt: new Date(2020, 0, 1) }
+    const newer = { ...buildHistoryQuery(3, 1, 'app'), updatedAt: new Date(2021, 0, 1) }
+    const otherConnection = { ...buildHistoryQuery(4, 2, 'plugin', 'bks-ai-shell'), updatedAt: new Date(2022, 0, 1) }
+    const send = vi.fn().mockResolvedValue([older, newer, otherConnection])
+    mountSearch(send)
+
+    await wrapper.find('.filter-input').setValue('cust')
+    await wrapper.find('.filter-input').setValue(' customer ')
+    expect(send).not.toHaveBeenCalled()
+    expect(wrapper.vm.searchLoading).toBe(true)
+    await vi.advanceTimersByTimeAsync(300)
+
+    expect(send).toHaveBeenCalledTimes(1)
+    expect(send).toHaveBeenCalledWith('appdb/usedQuery/search', { searchText: 'customer' })
+    expect(wrapper.vm.currentHistory.map((item: any) => item.id)).toEqual([3, 2])
+    expect(wrapper.vm.history.map((item: any) => item.id)).toEqual([1])
+
+    await wrapper.setData({ selectedOrigins: ['bks-ai-shell'], showAllHistory: true })
+    expect(wrapper.vm.currentHistory.map((item: any) => item.id)).toEqual([4, 2])
+
+    await wrapper.find('[title="Clear search"]').trigger('click')
+    expect(wrapper.vm.searchActive).toBe(false)
+    expect(wrapper.vm.searchResults).toEqual([])
+    await wrapper.setData({ selectedOrigins: ['app'], showAllHistory: false })
+    expect(wrapper.vm.currentHistory.map((item: any) => item.id)).toEqual([1])
+  })
+
+  it('ignores outdated responses and responses arriving after clearing search', async () => {
+    let resolveFirst: any
+    let resolveSecond: any
+    const send = vi.fn()
+      .mockImplementationOnce(() => new Promise(resolve => { resolveFirst = resolve }))
+      .mockImplementationOnce(() => new Promise(resolve => { resolveSecond = resolve }))
+    mountSearch(send)
+
+    await wrapper.find('.filter-input').setValue('first')
+    await vi.advanceTimersByTimeAsync(300)
+    await wrapper.find('.filter-input').setValue('second')
+    await vi.advanceTimersByTimeAsync(300)
+    resolveFirst([buildHistoryQuery(2, 1, 'app')])
+    await vi.advanceTimersByTimeAsync(0)
+    expect(wrapper.vm.searchResults).toEqual([])
+    expect(wrapper.vm.searchLoading).toBe(true)
+
+    await wrapper.find('[title="Clear search"]').trigger('click')
+    resolveSecond([buildHistoryQuery(3, 1, 'app')])
+    await vi.advanceTimersByTimeAsync(0)
+    expect(wrapper.vm.currentHistory.map((item: any) => item.id)).toEqual([1])
+    expect(wrapper.vm.searchLoading).toBe(false)
+  })
+
+  it('shows search errors and recovers on refresh', async () => {
+    const error = new Error('Search failed')
+    const send = vi.fn().mockRejectedValueOnce(error).mockResolvedValueOnce([])
+    mountSearch(send)
+    await wrapper.find('.filter-input').setValue('customer')
+    await vi.advanceTimersByTimeAsync(300)
+    expect(wrapper.findComponent({ name: 'ErrorAlert' }).props('error')).toBe(error)
+
+    await wrapper.vm.refresh()
+    await Vue.nextTick()
+    expect(send).toHaveBeenCalledTimes(2)
+    expect(wrapper.vm.searchError).toBeNull()
+    expect(wrapper.find('.empty').text()).toBe('No matching queries')
+  })
+
+  it('removes a search result and clears search when the workspace changes', async () => {
+    const result = buildHistoryQuery(2, 1, 'app')
+    mountSearch(vi.fn().mockResolvedValue([result]))
+    await wrapper.find('.filter-input').setValue('customer')
+    await vi.advanceTimersByTimeAsync(300)
+    await wrapper.vm.remove(result)
+    expect(wrapper.vm.currentHistory).toEqual([])
+
+    wrapper.vm.$store.state.workspaceId = 2
+    await Vue.nextTick()
+    expect(wrapper.vm.filterQuery).toBe('')
+    expect(wrapper.vm.searchActive).toBe(false)
+    expect(wrapper.vm.searchResults).toEqual([])
   })
 })
