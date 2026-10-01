@@ -454,7 +454,7 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
       execute: async(): Promise<NgQueryResult[]> => {
         log.info('RUNNING: ', queryText);
         const commands = this.identifyCommands(queryText);
-        if (await this.checkAllowReadOnly() && this.violatesReadOnly(commands)) {
+        if (this.violatesReadOnly(commands)) {
           throw new Error(errorMessages.readOnly);
         }
 
