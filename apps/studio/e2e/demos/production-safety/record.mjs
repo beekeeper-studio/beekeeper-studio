@@ -1,81 +1,18 @@
 // Records the "safe changes in production" demo video of Beekeeper Studio.
-// See README.md in this folder for prerequisites.
+// See README.md in this folder and ../README.md for the toolkit.
 //
-//   node record.mjs                        -> out/beekeeper-production-safety-demo.mp4
-//   NO_RECORD=1 SHOTS=1 node record.mjs    -> dry run, one screenshot per step in out/
-import fs from 'node:fs'
-import path from 'node:path'
-import { execFileSync } from 'node:child_process'
-import { startDisplay, startRecording } from './recorder.mjs'
-import { launchApp, STUDIO } from './app.mjs'
-import { Director } from './director.mjs'
+//   node e2e/demos/production-safety/record.mjs            (from apps/studio)
+//   NO_RECORD=1 SHOTS=1 node e2e/demos/production-safety/record.mjs   (dry run)
+import { runDemo, here, card, prepareProfile, postgresConnection, pgFromEnv, reseed } from '../lib/index.mjs'
 
-const HERE = path.dirname(new URL(import.meta.url).pathname)
-const OUT = process.env.OUT_DIR || path.join(HERE, 'out')
-const RECORD = !process.env.NO_RECORD
-const SHOTS = !!process.env.SHOTS
-fs.mkdirSync(OUT, { recursive: true })
-
-const PG = {
-  host: process.env.PGHOST || '127.0.0.1',
-  port: process.env.PGPORT || '5432',
-  user: 'app_admin',
-  password: 'demo_password',
-}
-
-function reseed() {
-  for (const db of ['acme_production', 'acme_staging']) {
-    execFileSync('psql', ['-h', PG.host, '-p', PG.port, '-U', PG.user, '-d', db, '-q', '-v', 'ON_ERROR_STOP=1', '-f', path.join(HERE, 'seed.sql')], {
-      env: { ...process.env, PGPASSWORD: PG.password, PGOPTIONS: '--client-min-messages=warning' },
-      stdio: ['ignore', 'ignore', 'inherit'],
-    })
-  }
-}
+const pg = pgFromEnv({ user: 'app_admin', password: 'demo_password' })
 
 // ---- copy ------------------------------------------------------------------
-const chapter = (n, title, ticket) => `
-  <div class="eyebrow">Mistake #${n}</div>
-  <h1>${title}</h1>
-  <div class="ticket">${ticket}</div>`
-
-const LOGO = `<img class="logo" src="data:image/png;base64,${fs.readFileSync(path.join(STUDIO, 'public/icons/png/256x256.png')).toString('base64')}">`
-const TITLE_HTML = `
-    ${LOGO}
-    <div class="eyebrow">Beekeeper Studio</div>
-    <h1>Fix production data<br>without the panic</h1>
-    <p>You’re a software engineer, not a DBA. Here’s how Beekeeper Studio stops three classic mistakes before they happen.</p>`
+const chapter = (n, title, ticket) => card({ eyebrow: `Mistake #${n}`, title, ticket })
 
 const K1 = 'Mistake #1 · The wrong record'
 const K2 = 'Mistake #2 · The whole table'
 const K3 = 'Mistake #3 · The change you didn’t mean to make'
-
-// ---- setup (not recorded) -----------------------------------------------------
-async function prepareProfile(page) {
-  await page.waitForSelector('text=New Connection', { timeout: 60000 })
-  await page.getByText("Don't show again").click({ timeout: 4000 }).catch(() => {})
-  await page.evaluate(async (pg) => {
-    localStorage.setItem('hasUsedTransactions', 'true') // skip the first-run tooltip
-    const vm = document.querySelector('.style-wrapper').__vue__.$root
-    const store = vm.$store
-    if (store.getters.isCommunity) await store.dispatch('licenses/add', { trial: true })
-    const base = {
-      connectionType: 'postgresql', host: pg.host === '127.0.0.1' ? 'localhost' : pg.host, port: Number(pg.port),
-      username: pg.user, password: pg.password, savePassword: true,
-    }
-    const defs = [
-      { ...base, name: 'Acme Coffee — PRODUCTION', defaultDatabase: 'acme_production', labelColor: 'red' },
-      { ...base, name: 'Acme Coffee — Staging', defaultDatabase: 'acme_staging', labelColor: 'green' },
-    ]
-    for (const init of defs) {
-      const conn = await vm.$util.send('appdb/saved/new', { init })
-      Object.assign(conn, init)
-      await store.dispatch('data/connections/save', conn)
-    }
-  }, PG)
-  // Let the "trial started" toast go away on its own.
-  await page.waitForFunction(() => document.querySelectorAll('.noty_bar').length === 0, null, { timeout: 20000 }).catch(() => {})
-  await page.waitForTimeout(500)
-}
 
 // ---- scenes -----------------------------------------------------------------
 async function sceneTitle(d) {
@@ -329,90 +266,63 @@ async function sceneReadOnly(d, page) {
   await d.hideCaption()
 }
 
+
 async function sceneRecap(d) {
   d.mark('recap')
-  await d.card(`
-    ${LOGO}
-    <div class="eyebrow">Beekeeper Studio</div>
-    <h1>Guardrails for production</h1>
-    <ul>
-      <li>Color-coded connections, so you always know where you are</li>
-      <li>Staged table edits and Copy to SQL: review before you Apply</li>
-      <li>Manual commit: Rollback undoes the oops</li>
-      <li>Confirmation before Drop and Truncate</li>
-      <li>Read Only Mode for when you’re just looking</li>
-    </ul>
-    <div class="footer">beekeeperstudio.io</div>`, 6500)
+  await d.card(card({
+    logo: true,
+    eyebrow: 'Beekeeper Studio',
+    title: 'Guardrails for production',
+    bullets: [
+      'Color-coded connections, so you always know where you are',
+      'Staged table edits and Copy to SQL: review before you Apply',
+      'Manual commit: Rollback undoes the oops',
+      'Confirmation before Drop and Truncate',
+      'Read Only Mode for when you’re just looking',
+    ],
+    footer: 'beekeeperstudio.io',
+  }), 6500)
 }
 
-// Fade in/out and encode for the web; write YouTube-style chapters from the marks.
-function finalize(marks) {
-  const raw = path.join(OUT, 'raw.mp4')
-  const final = path.join(OUT, 'beekeeper-production-safety-demo.mp4')
-  const duration = Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', raw]).toString())
-  execFileSync('ffmpeg', [
-    '-v', 'error', '-y', '-i', raw,
-    '-vf', `fade=t=in:st=0:d=0.6,fade=t=out:st=${(duration - 1).toFixed(2)}:d=1.0`,
-    '-c:v', 'libx264', '-preset', 'slow', '-crf', '20', '-profile:v', 'high', '-level', '4.1',
-    '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', final,
-  ], { stdio: 'inherit' })
-  const names = {
+// ---- run --------------------------------------------------------------------
+const connection = (name, database, color) => postgresConnection({
+  name, database, color,
+  host: pg.host === '127.0.0.1' ? 'localhost' : pg.host, port: pg.port, user: pg.user, password: pg.password,
+})
+
+await runDemo({
+  name: 'beekeeper-production-safety-demo',
+  outDir: here(import.meta.url, 'out'),
+  setup: () => reseed(pg, { databases: ['acme_production', 'acme_staging'], seedFile: here(import.meta.url, 'seed.sql') }),
+  prepare: ({ page }) => prepareProfile(page, {
+    connections: [
+      connection('Acme Coffee — PRODUCTION', 'acme_production', 'red'),
+      connection('Acme Coffee — Staging', 'acme_staging', 'green'),
+    ],
+  }),
+  // This video predates circled clicks; keep its look.
+  director: { marks: false },
+  title: card({
+    logo: true,
+    eyebrow: 'Beekeeper Studio',
+    title: 'Fix production data<br>without the panic',
+    text: 'You’re a software engineer, not a DBA. Here’s how Beekeeper Studio stops three classic mistakes before they happen.',
+  }),
+  titleText: 'Fix production data without the panic. You’re a software engineer, not a DBA. Here’s how Beekeeper Studio stops three classic mistakes before they happen.',
+  scenes: [
+    ({ d }) => sceneTitle(d),
+    ({ d, page }) => sceneColors(d, page),
+    ({ d, page }) => sceneWrongRecord(d, page),
+    ({ d, page }) => sceneWholeTable(d, page),
+    ({ d, page }) => sceneReadOnly(d, page),
+    ({ d }) => sceneRecap(d),
+  ],
+  chapters: {
     'title': 'Intro',
     'scene: color-coded connections': 'Know which database you are in',
     'chapter 1: wrong record': 'Mistake #1: Updating the wrong record',
     'chapter 2: whole table': 'Mistake #2: Deleting a whole table',
     'chapter 3: read-only': 'Mistake #3: A change you didn’t mean to make',
     'recap': 'Recap',
-  }
-  const chapters = marks.filter((m) => names[m.label])
-    .map((m) => `${Math.floor(m.t / 60)}:${String(Math.floor(m.t % 60)).padStart(2, '0')} ${names[m.label]}`)
-  fs.writeFileSync(path.join(OUT, 'chapters.txt'), chapters.join('\n') + '\n')
-  console.log(`wrote ${final}`)
-}
-
-// ---- main -------------------------------------------------------------------
-const x = await startDisplay(process.env.DEMO_DISPLAY || ':99')
-let app, rec, d
-try {
-  reseed()
-  const launched = await launchApp({ display: x.display, freshProfile: true })
-  app = launched.app
-  const page = launched.page
-  page.on('pageerror', (e) => console.log('[pageerror]', e.message))
-  await prepareProfile(page)
-
-  d = new Director(page, { overlayFile: path.join(HERE, 'overlay.js'), log: console.log })
-  await d.inject()
-  if (SHOTS) {
-    let i = 0
-    const mark = d.mark.bind(d)
-    const caption = d.caption.bind(d)
-    d.mark = (l) => { mark(l); page.screenshot({ path: path.join(OUT, `shot-${String(++i).padStart(2, '0')}.png`) }).catch(() => {}) }
-    d.caption = async (h, k, ms) => { await page.screenshot({ path: path.join(OUT, `shot-${String(++i).padStart(2, '0')}.png`) }).catch(() => {}); return caption(h, k, ms) }
-  }
-
-  await d.card(TITLE_HTML, 0)
-
-  if (RECORD) rec = startRecording(x.display, path.join(OUT, 'raw.mp4'))
-  d.t0 = Date.now()
-  d.openSub('Fix production data without the panic. You’re a software engineer, not a DBA. Here’s how Beekeeper Studio stops three classic mistakes before they happen.')
-
-  await sceneTitle(d)
-  await sceneColors(d, page)
-  await sceneWrongRecord(d, page)
-  await sceneWholeTable(d, page)
-  await sceneReadOnly(d, page)
-  await sceneRecap(d)
-  d.mark('end')
-} catch (e) {
-  console.error('RECORDING FAILED:', e)
-  if (app) await (await app.firstWindow()).screenshot({ path: path.join(OUT, 'failure.png') }).catch(() => {})
-  process.exitCode = 1
-} finally {
-  if (rec) await rec.stop()
-  if (d) d.writeMarks(path.join(OUT, 'marks.json'))
-  if (d) d.writeSrt(path.join(OUT, 'captions.srt'))
-  if (app) await app.close().catch(() => {})
-  x.stop()
-}
-if (rec && !process.exitCode) finalize(d.marks)
+  },
+})

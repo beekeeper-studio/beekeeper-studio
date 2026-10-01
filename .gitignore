@@ -1,7 +1,8 @@
 .turbo/
 .idea/
 .cache/
-.claude/
+.claude/*
+!.claude/skills/
 .vscode/
 ./data/
 .local
