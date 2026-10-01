@@ -299,6 +299,31 @@ export function readClipboardRows(): string[][] | null {
   return parsed.data as string[][];
 }
 
+// build tiled paste data to emulate sheets pasting behaviour
+export function buildTiledPasteData(
+  data: string[][],
+  rangeRowCount: number,
+  rangeColCount: number
+): { pasteData: string[][]; rowCount: number; colCount: number } {
+  const dataRowCount = data.length;
+  const dataColCount = Math.max(...data.map((row) => row.length));
+
+  const rowCount = dataRowCount * Math.max(1, Math.floor(rangeRowCount / dataRowCount));
+  const colCount = dataColCount * Math.max(1, Math.floor(rangeColCount / dataColCount));
+
+  const pasteData: string[][] = [];
+  for (let r = 0; r < rowCount; r++) {
+    const srcRow = data[r % dataRowCount];
+    const row: string[] = [];
+    for (let c = 0; c < colCount; c++) {
+      row.push(srcRow[c % dataColCount]);
+    }
+    pasteData.push(row);
+  }
+
+  return { pasteData, rowCount, colCount };
+}
+
 export function pasteRange(range: RangeComponent) {
   // Same parsing as "paste as new rows" — the two only differ in the
   // destination (overwrite existing cells here vs. insert new rows there).
@@ -306,20 +331,28 @@ export function pasteRange(range: RangeComponent) {
   if (!data) return;
 
   if (data.length === 1 && data[0].length === 1) {
+    // @ts-ignore
     range.fill(data[0][0]);
   } else {
     const table = range.getRows()[0].getTable();
-    const colCount = Math.max(...data.map((row) => row.length));
+
+    const rangeRowCount = range.getBottomEdge() - range.getTopEdge() + 1;
+    const rangeColCount = range.getRightEdge() - range.getLeftEdge() + 1;
+
+    const { pasteData, rowCount: targetRowCount, colCount: targetColCount } =
+      buildTiledPasteData(data, rangeRowCount, rangeColCount);
+
     const rows = table
       .getRows("active")
-      .slice(range.getTopEdge(), range.getTopEdge() + data.length);
+      .slice(range.getTopEdge(), range.getTopEdge() + targetRowCount);
     const columns = table
       .getColumns(false)
       .filter((col) => col.isVisible())
-      .slice(range.getLeftEdge(), range.getLeftEdge() + colCount);
+      .slice(range.getLeftEdge(), range.getLeftEdge() + targetColCount);
     const lastRow = rows[rows.length - 1];
     range.setEndBound(lastRow.getCell(columns[columns.length - 1]));
-    range.setData(data);
+    // @ts-ignore
+    range.setData(pasteData);
   }
 }
 

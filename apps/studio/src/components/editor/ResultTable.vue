@@ -309,6 +309,7 @@
         this.tabulator.on('cellEdited', this.cellEdited);
         this.tabulator.on("rangeEdited", (range) => {
           range.getModifiedCells().forEach((cell) => this.cellEdited(cell));
+          this.tabulator.modules.selectRange.restoreFocus()
         });
         this.tabulator.on('historyUndo', (action, component) => {
           if (action === 'cellEdit') {
@@ -832,6 +833,7 @@
       pasteSelection() {
         if (!this.checkTableFocus() || !this.editingData) return;
         pasteRange(_.last(this.tabulator.getRanges()));
+        this.tabulator.modules.selectRange.restoreFocus()
       },
       nullTableSelection() {
         if (!this.checkTableFocus() || !this.editingData) return;
@@ -860,6 +862,9 @@
         })
       },
       resetPendingChanges() {
+        if (this.tabulator) {
+          this.tabulator.modules.history.clear();
+        }
         this.pendingChanges = {
           updates: [],
           deletes: []
