@@ -14,6 +14,7 @@ import { Dialect as IdentifierDialect, IdentifyResult } from 'sql-query-identifi
 import { Transcoder } from '../serialization/transcoders';
 import { ColumnReference, TableReference } from 'sql-query-identifier/lib/defines';
 import { safelyIdentify } from '../sql_tools';
+import { capturePluginQuery } from '../pluginMetadata';
 
 const log = rawLog.scope('BasicDatabaseClient');
 const logger = () => log;
@@ -30,6 +31,7 @@ export interface ExecutionContext {
 export interface QueryLogOptions {
     options: any // just whatever options the database driver provides.
     status: 'completed' | 'failed'
+    numberOfRecords?: number
     error?: string
 }
 
@@ -673,7 +675,9 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     options['statements'] = statements
     try {
         const result = await this.rawExecuteQuery(q, options) as RawResultType
-        return _.isArray(result) ? result[0] : result
+        const singleResult = _.isArray(result) ? result[0] : result
+        logOptions.numberOfRecords = singleResult?.rows?.length ?? 0
+        return singleResult
     } catch (ex) {
         // if (!await this.checkIsConnected()) {
         //   try {
@@ -691,6 +695,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
         logOptions.error = ex.message
         throw ex;
     } finally {
+        capturePluginQuery(this, q, logOptions)
         this.contextProvider.logQuery(q, logOptions, this.contextProvider.getExecutionContext())
     }
   }
@@ -712,6 +717,8 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     options['statements'] = statements
     try {
       const result = await this.rawExecuteQuery(q, options) as RawResultType[]
+      const results = Array.isArray(result) ? result : [result]
+      logOptions.numberOfRecords = results.reduce((total, item) => total + (item?.rows?.length ?? 0), 0)
       return result
     } catch (ex) {
       // if (!await this.checkIsConnected()) {
@@ -729,6 +736,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
       logOptions.error = ex.message
       throw ex;
     } finally {
+      capturePluginQuery(this, q, logOptions)
       this.contextProvider.logQuery(q, logOptions, this.contextProvider.getExecutionContext())
     }
   }

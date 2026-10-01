@@ -27,6 +27,8 @@ import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
 import { cssVars } from "./cssVars";
 import type { DialectData } from "@/shared/lib/dialects/models";
 import rawLog from "@bksLogger";
+import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
+import type { PluginMetadataMethod, PluginMetadataResult } from "@/common/interfaces/PluginMetadata";
 
 const log = rawLog.scope("PluginStoreService");
 
@@ -228,12 +230,21 @@ export default class PluginStoreService {
 
   async getColumns(
     tableName: string,
-    schema?: string
+    schema?: string,
+    loadColumns?: (method: PluginMetadataMethod) => Promise<ExtendedTableColumn[]>
   ) {
     const table = this.findTableOrThrow(tableName, schema);
 
     if (!table.columns || table.columns.length === 0) {
-      await this.store.dispatch("updateTableColumns", table);
+      if (loadColumns) {
+        const method = table.entityType === 'materialized-view'
+          ? 'listMaterializedViewColumns'
+          : 'listTableColumns';
+        const columns = await loadColumns(method);
+        this.store.commit('table', { ...table, columns });
+      } else {
+        await this.store.dispatch("updateTableColumns", table);
+      }
     }
 
     return this.findTable(tableName, schema).columns.map((c: ExtendedTableColumn) => ({
@@ -304,6 +315,40 @@ export default class PluginStoreService {
       rowCount: result.rowCount,
       affectedRows: result.affectedRows,
     };
+  }
+
+  async runMetadata(
+    utility: UtilityConnection,
+    method: PluginMetadataMethod,
+    args: { table?: string; schema?: string },
+    pluginId: string
+  ) {
+    const { id: connectionId } = this.store.state.usedConfig;
+    const { database, workspaceId } = this.store.state;
+    const { result, queries }: PluginMetadataResult = await utility.send(
+      'conn/pluginMetadata', { method, ...args }
+    );
+
+    // Don't add results from a previous connection to the current history list.
+    if (this.store.state.usedConfig?.id === connectionId &&
+        this.store.state.database === database &&
+        this.store.state.workspaceId === workspaceId) {
+      for (const { text, numberOfRecords } of queries) {
+        void this.store.dispatch('data/usedQueries/save', {
+          text,
+          excerpt: text.substring(0, 250),
+          numberOfRecords,
+          connectionId,
+          database,
+          workspaceId,
+          origin: 'plugin',
+          pluginId
+        })
+        .catch((error) => log.error('Failed to save query to history', error));
+      }
+    }
+
+    return result;
   }
 
   /* Run query in the background */

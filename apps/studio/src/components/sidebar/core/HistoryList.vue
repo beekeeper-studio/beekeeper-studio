@@ -159,7 +159,8 @@ import { QUERY_ORIGIN_OPTIONS } from '@/common/interfaces/QueryOrigin'
         return !this.isCloud && this.selectedOrigins.length !== this.originOptions.length
       },
       currentHistory(){
-        const history = this.searchActive ? this.searchResults : this.history
+        const history = (this.searchActive ? this.searchResults : this.history)
+          .filter(item => (item.text ?? item.excerpt ?? '').trim())
         const connectionHistory = this.showAllHistory
           ? history
           // an unsaved connection has no id, and so no history of its own
