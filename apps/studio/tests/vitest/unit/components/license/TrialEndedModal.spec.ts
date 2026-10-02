@@ -184,14 +184,30 @@ describe('TrialEndedModal', () => {
     wrapper.destroy()
   })
 
-  it('names the top three plus the rest when the confirmation has no usage to show', async () => {
+  it('pads the confirmation out when the trial used only one feature', async () => {
+    recordPaidFeatureUse('json-row-view')
+    const { wrapper } = mountModal()
+    await flush()
+    await wrapper.find('.trial-ended-downgrade').trigger('click')
+
+    const labels = wrapper
+      .findAll('.trial-feature-list--confirm li:not(.trial-feature-more)')
+      .wrappers.map((w) => w.find('.trial-feature-label').text())
+    // one used feature is not a list of one: it leads, the catalogue fills in
+    expect(labels).toHaveLength(4)
+    expect(labels[0]).toBe('JSON sidebar')
+    expect(wrapper.findAll('.trial-feature-badge')).toHaveLength(1)
+    wrapper.destroy()
+  })
+
+  it('names the top of the catalogue when the confirmation has no usage to show', async () => {
     const { wrapper, mocks } = mountModal()
     await flush()
     await wrapper.find('.trial-ended-downgrade').trigger('click')
 
     const rows = wrapper.findAll('.trial-feature-list--confirm li:not(.trial-feature-more)')
     expect(rows.wrappers.map((w) => w.find('.trial-feature-label').text())).toEqual(
-      PAID_FEATURES.slice(0, 3).map((f) => f.label)
+      PAID_FEATURES.slice(0, 4).map((f) => f.label)
     )
     expect(wrapper.findAll('.trial-feature-badge')).toHaveLength(0)
     expect(wrapper.find('.trial-feature-more .trial-feature-label').text().replace(/\s+/g, ' ')).toBe(
@@ -231,13 +247,15 @@ describe('TrialEndedModal', () => {
       /^I understand that by downgrading I will lose access to the features below/
     )
 
-    // only what was used, then a link covering the rest: this step must not
-    // be taller than the offer it follows
+    // what was used leads, the catalogue pads it out, then a link covers the
+    // rest: this step must not be taller than the offer it follows
     const rows = wrapper.findAll('.trial-feature-list--confirm li:not(.trial-feature-more)')
-    expect(rows).toHaveLength(1)
+    expect(rows).toHaveLength(4)
     expect(rows.at(0).classes()).toContain('trial-feature--used')
     expect(rows.at(0).find('.trial-feature-label').text()).toBe('Backup & restore')
     expect(rows.at(0).find('.trial-feature-badge').text()).toBe('Used')
+    // only the used one is badged
+    expect(wrapper.findAll('.trial-feature-badge')).toHaveLength(1)
     expect(wrapper.find('.trial-feature-more .trial-feature-label').text().replace(/\s+/g, ' ')).toBe(
       'and all other paid features'
     )

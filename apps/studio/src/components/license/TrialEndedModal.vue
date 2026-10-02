@@ -180,8 +180,8 @@ import {
 const PRICING_URL = "https://www.beekeeperstudio.io/pricing";
 /** How many features either list names before deferring to the pricing page. */
 const FEATURE_LIMIT = 6;
-/** Step two is shorter when the trial used nothing: just the top of the catalogue. */
-const FALLBACK_FEATURE_COUNT = 3;
+/** Step two always names at least this many, so one used feature is not a list of one. */
+const MIN_CONFIRM_FEATURES = 4;
 const USED_TOOLTIP = "You used this feature recently";
 
 type Step = "offer" | "downgrade";
@@ -236,14 +236,18 @@ export default Vue.extend({
       return USED_TOOLTIP;
     },
     /**
-     * What step two names. Whatever the trial actually used, or the top of the
-     * catalogue when it used nothing. Either way the "and all other paid
+     * What step two names: everything the trial used, padded out of the
+     * catalogue to a sensible minimum. rankedFeatures is already used-first,
+     * so slicing it keeps the used ones at the top. The "and all other paid
      * features" line covers the rest, which keeps this step no taller than
      * the offer it follows.
      */
     confirmFeatures(): RankedPaidFeature[] {
-      if (this.usedFeatures.length) return this.usedFeatures.slice(0, FEATURE_LIMIT);
-      return this.rankedFeatures.slice(0, FALLBACK_FEATURE_COUNT);
+      const count = Math.min(
+        Math.max(this.usedFeatures.length, MIN_CONFIRM_FEATURES),
+        FEATURE_LIMIT
+      );
+      return this.rankedFeatures.slice(0, count);
     },
     trialDays(): number {
       return globals.freeTrialDays;
