@@ -49,7 +49,7 @@
     "@cleverbrush/deep": "^1.1.10",
     "@clickhouse/client": "^1.8.1",
     "@coresql/mysql2-auth-ed25519": "^1.0.0",
-    "@duckdb/node-api": "1.4.1-r.4",
+    "@duckdb/node-api": "1.5.6-r.1",
     "@electron/remote": "^2.0.10",
     "@google-cloud/bigquery": "^6.2.0",
     "@leeoniya/ufuzzy": "^1.0.19",
