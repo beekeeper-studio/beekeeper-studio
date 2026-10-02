@@ -167,6 +167,9 @@
         return this.dialectData?.queryDialectOverride ?? this.dialect;
       },
       keymap() {
+        // v-hotkey listens on the whole document, so a result table in a
+        // background tab would otherwise react to keys pressed anywhere.
+        if (!this.active) return {}
         return this.$vHotkeyKeymap({
           'queryEditor.copyResultSelection': this.copySelection.bind(this),
           'queryEditor.openTableFilter': this.focusOnFilterInput.bind(this),
@@ -376,7 +379,11 @@
           disabled: areAllCellsReadOnly || !this.editingData,
         }
       },
-      openEditorMenuByShortcut() {
+      openEditorMenuByShortcut(e: KeyboardEvent) {
+        // Only when the key was pressed inside the grid. Shift+Enter is a
+        // newline elsewhere (SQL editor, plugin prompts, whose iframes
+        // forward their key events to the document).
+        if (!this.tabulator?.element.contains(e.target as Node)) return
         const range: RangeComponent = _.last(this.tabulator.getRanges())
         const cell = range.getCells().flat()[0];
         // (copied from TableTable.vue)
