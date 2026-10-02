@@ -19,6 +19,7 @@ import _ from "lodash";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { PluginMenuManager } from "./PluginMenuManager";
 import { PrimaryKeyColumn } from "@/lib/db/models";
+import type { PluginMetadataMethod } from "@/common/interfaces/PluginMetadata";
 
 // Discriminated union for request+result that TypeScript can narrow by name
 type PluginResponseData = {
@@ -164,45 +165,46 @@ export default class WebPluginLoader {
       switch (response.name) {
         // ========= READ ACTIONS ===========
         case "getSchemas":
-          response.result = await this.context.utility.send("conn/listSchemas");
+          response.result = await this.getMetadata('listSchemas');
           break;
         case "getTables":
           response.result = this.context.store.getTables(
             response.args.schema
           );
           break;
-        case "getColumns":
+        case "getColumns": {
+          const args = { table: response.args.table, schema: response.args.schema };
           response.result = await this.context.store.getColumns(
             response.args.table,
-            response.args.schema
+            response.args.schema,
+            (method) => this.getMetadata(method, args)
           );
           break;
+        }
         case "getTableKeys":
         case "getOutgoingKeys":
-          response.result = await this.context.utility.send(
-            'conn/getOutgoingKeys',
+          response.result = await this.getMetadata(
+            'getOutgoingKeys',
             { table: response.args.table, schema: response.args.schema }
           );
           break;
         case "getIncomingKeys":
-          response.result = await this.context.utility.send(
-            'conn/getIncomingKeys',
+          response.result = await this.getMetadata(
+            'getIncomingKeys',
             { table: response.args.table, schema: response.args.schema }
           );
           break;
         case "getTableIndexes":
-          response.result = await this.context.utility
-            .send("conn/listTableIndexes", {
-              table: response.args.table,
-              schema: response.args.schema,
-            });
+          response.result = await this.getMetadata("listTableIndexes", {
+            table: response.args.table,
+            schema: response.args.schema,
+          });
           break;
         case "getPrimaryKeys":
-          response.result = await this.context.utility
-            .send("conn/getPrimaryKeys", {
-              table: response.args.table,
-              schema: response.args.schema,
-            })
+          response.result = await this.getMetadata("getPrimaryKeys", {
+            table: response.args.table,
+            schema: response.args.schema,
+          })
             .then((keys: PrimaryKeyColumn[]) =>
               keys.map((key) => ({ ...key, name: key.columnName }))
             );
@@ -246,7 +248,10 @@ export default class WebPluginLoader {
 
         // ======== WRITE ACTIONS ===========
         case "runQuery":
-          response.result = await this.pluginStore.runQuery(response.args.query);
+          response.result = await this.pluginStore.runQuery(
+            response.args.query,
+            this.context.manifest.id
+          );
           break;
         case "setData":
         case "setEncryptedData": {
@@ -346,6 +351,12 @@ export default class WebPluginLoader {
     afterCallbacks.forEach((callback) => {
       callback(response);
     });
+  }
+
+  private getMetadata(method: PluginMetadataMethod, args: { table?: string; schema?: string } = {}) {
+    return this.context.store.runMetadata(
+      this.context.utility, method, args, this.context.manifest.id
+    );
   }
 
   private async handleViewNotification(

@@ -1,5 +1,8 @@
 .sidebar-history {
   position: relative;
+  > .fixed {
+    margin-top: $gutter-w;
+  }
   .sidebar-list {
     position: relative;
     flex: 1 1 auto;
@@ -83,19 +86,8 @@
     }
   }
 
-  .show-all-history-container {
-     display: flex;
-     align-items: center;
-     margin-left: 10px;
-     padding-bottom: 4px;
-
-     .show-all-history-text {
-      font-size: 12px;
-      color: gray; 
-     }
-    
-     #show-all-history-checkbox {
-      transform: scale(0.7);
-    }
+  .history-cloud-filter .filter-wrap {
+    border: 0;
+    justify-content: flex-end;
   }
 }

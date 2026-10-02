@@ -15,6 +15,8 @@ import bksConfig from "@/common/bksConfig";
 import { UserPin } from "@/common/appdb/models/UserPin";
 import { waitPromise } from "@/common/utils";
 import rawLog from "@bksLogger";
+import { PluginMetadataMethod, PluginMetadataResult } from '@/common/interfaces/PluginMetadata';
+import { capturePluginMetadata } from '@/lib/db/pluginMetadata';
 
 const log = rawLog.scope('ConnHandlers');
 
@@ -27,6 +29,7 @@ export interface IConnectionHandlers {
   'conn/getServerConfig': ({ sId }: { sId: string }) => Promise<IDbConnectionServerConfig>,
 
   // DB Metadata ****************************************************************
+  'conn/pluginMetadata': ({ method, table, schema, sId }: { method: PluginMetadataMethod, table?: string, schema?: string, sId: string }) => Promise<PluginMetadataResult>,
   'conn/supportedFeatures': ({ sId }: { sId: string}) => Promise<SupportedFeatures>,
   'conn/versionString': ({ sId }: { sId: string}) => Promise<string>,
   'conn/defaultSchema': ({ sId }: { sId: string}) => Promise<string | null>,
@@ -136,6 +139,18 @@ export interface IConnectionHandlers {
 }
 
 export const ConnHandlers: IConnectionHandlers = {
+  'conn/pluginMetadata': async function({ method, table, schema, sId }) {
+    checkConnection(sId);
+    const connection = state(sId).connection;
+    const methods: PluginMetadataMethod[] = [
+      'listSchemas', 'listTableColumns', 'listMaterializedViewColumns',
+      'getOutgoingKeys', 'getIncomingKeys', 'listTableIndexes', 'getPrimaryKeys',
+    ];
+    if (!methods.includes(method)) throw new Error('Unsupported plugin metadata method');
+    return capturePluginMetadata(() => method === 'listSchemas'
+      ? connection.listSchemas()
+      : connection[method](table, schema));
+  },
   'conn/create': async function({ config, auth, osUser, sId }: { config: IConnection, auth?: { input: string; mode: "pin" }, osUser: string, sId: string}) {
     if (!osUser) {
       throw new Error(errorMessages.noUsername);

@@ -1,5 +1,52 @@
 <template>
   <div class="sidebar-history flex-col expand">
+    <div class="fixed">
+      <div class="filter" :class="{ 'history-cloud-filter': isCloud }">
+        <div class="filter-wrap">
+          <input
+            v-if="!isCloud"
+            class="filter-input"
+            type="text"
+            placeholder="Filter"
+            aria-label="Search query history"
+            v-model="filterQuery"
+          >
+          <x-buttons class="filter-actions">
+            <x-button v-if="filterQuery" @click="clearFilter" title="Clear search">
+              <i class="clear material-icons">cancel</i>
+            </x-button>
+            <x-button
+              class="history-filter btn btn-fab btn-link action-item"
+              :class="{ active: originsFiltered }"
+              :title="originsFiltered ? 'Filter active' : 'Filter history'"
+              aria-label="Filter history"
+              menu
+            >
+              <i class="material-icons-outlined">filter_alt</i>
+              <x-menu class="history-filter-menu" style="--target-align: right;">
+                <label>
+                  <input type="checkbox" v-model="showAllHistory">
+                  <span>All connections</span>
+                </label>
+                <!-- Cloud history does not include query origin metadata. -->
+                <template v-if="!isCloud">
+                  <hr>
+                  <label v-for="origin in originOptions" :key="origin.value">
+                    <input
+                      type="checkbox"
+                      :value="origin.value"
+                      v-model="selectedOrigins"
+                    >
+                    <span>{{ origin.label }}</span>
+                  </label>
+                </template>
+                <x-menuitem />
+              </x-menu>
+            </x-button>
+          </x-buttons>
+        </div>
+      </div>
+    </div>
     <div class="sidebar-list">
       <nav
         class="list-group"
@@ -23,21 +70,17 @@
             </div>
           </div>
         </div>
-        <div class="show-all-history-container" title="By default, only the history executed on the current connection are shown.">
-          <input type="checkbox" id="show-all-history-checkbox" v-model="showAllHistory">
-          <label for="show-all-history-checkbox" class="show-all-history-text">Show all</label>
-        </div>
         <error-alert
-          v-if="error"
-          :error="error"
+          v-if="searchError || error"
+          :error="searchError || error"
           title="Problem loading history"
         />
-        <sidebar-loading v-else-if="loading" />
+        <sidebar-loading v-else-if="loading || searchLoading" />
         <div
           v-else-if="!currentHistory.length"
           class="empty"
         >
-          No recent queries
+          {{ searchActive ? 'No matching queries' : 'No recent queries' }}
         </div>
         <div
           v-else
@@ -56,7 +99,10 @@
               :title="item.excerpt"
               :class="{selected: item === selected}"
             >
-              <i class="item-icon query material-icons">code</i>
+              <i
+                class="item-icon query material-icons"
+                :title="`${originInfo(item).label} query`"
+              >{{ originInfo(item).icon }}</i>
               <!-- <input @click.stop="" type="checkbox" :value="item" class="form-control delete-checkbox" v-model="checkedHistoryQueries" v-bind:class="{ shown: checkedHistoryQueries.length > 0 }"> -->
               <div class="list-title flex-col">
                 <span class="item-text expand truncate">{{ nicelySized(item.excerpt) }}</span>
@@ -77,44 +123,118 @@
 <script>
 import _ from 'lodash'
 import TimeAgo from 'javascript-time-ago';
-  import { mapState } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import ErrorAlert from '@/components/common/ErrorAlert.vue';
 import SidebarLoading from '@/components/common/SidebarLoading.vue'
+import { QUERY_ORIGIN_OPTIONS } from '@/common/interfaces/QueryOrigin'
 
   export default {
   components: { ErrorAlert, SidebarLoading },
     data: function () {
       return {
+        filterQuery: '',
+        searchResults: [],
+        searchLoading: false,
+        searchError: null,
+        searchRequestId: 0,
         checkedHistoryQueries: [],
         timeAgo: new TimeAgo('en-US'),
         selected: null,
-        showAllHistory: false
+        showAllHistory: false,
+        selectedOrigins: QUERY_ORIGIN_OPTIONS.map(origin => origin.value),
+        originOptions: QUERY_ORIGIN_OPTIONS
       }
     },
     computed: {
-      ...mapState(['usedConfig']),
+      ...mapGetters(['isCloud']),
+      ...mapState(['usedConfig', 'workspaceId']),
       ...mapState('data/usedQueries', { 'history': 'items', 'loading': 'loading', 'error': 'error'},),
       removeTitle() {
         return `Remove ${this.checkedHistoryQueries.length} saved history queries`;
       },
-      currentHistory(){
-        if(this.showAllHistory){
-          return this.history;
-        } else {
-          // an unsaved connection has no id, and so no history of its own
-          return this.usedConfig?.id
-            ? this.history.filter(item => item.connectionId === this.usedConfig.id)
-            : [];
-        }
+      searchActive() {
+        return !this.isCloud && !!this.filterQuery.trim()
       },
+      originsFiltered() {
+        return !this.isCloud && this.selectedOrigins.length !== this.originOptions.length
+      },
+      currentHistory(){
+        const history = (this.searchActive ? this.searchResults : this.history)
+          .filter(item => (item.text ?? item.excerpt ?? '').trim())
+        const connectionHistory = this.showAllHistory
+          ? history
+          // an unsaved connection has no id, and so no history of its own
+          : this.usedConfig?.id
+            ? history.filter(item => item.connectionId === this.usedConfig.id)
+            : []
+        // Remove this bypass after cloud migration to support query origin
+        if (!this.originsFiltered) {
+          return connectionHistory
+        }
+
+        return connectionHistory.filter(item => {
+          return this.selectedOrigins.includes(this.originInfo(item).value)
+        })
+      },
+    },
+    watch: {
+      filterQuery: 'queueSearch',
+      history() {
+        if (this.searchActive) this.queueSearch()
+      },
+      workspaceId() {
+        this.clearFilter()
+        this.resetSearch()
+      },
+      isCloud() {
+        this.clearFilter()
+        this.resetSearch()
+      }
+    },
+    created() {
+      this.debouncedSearch = _.debounce(this.search, 300)
     },
     mounted() {
       document.addEventListener('mousedown', this.maybeUnselect)
     },
     beforeDestroy() {
+      this.resetSearch()
       document.removeEventListener('mousedown', this.maybeUnselect)
     },
     methods: {
+      queueSearch() {
+        this.resetSearch()
+        if (this.searchActive) {
+          this.searchLoading = true
+          this.debouncedSearch(this.searchRequestId)
+        }
+      },
+      clearFilter() {
+        this.filterQuery = ''
+      },
+      resetSearch() {
+        this.debouncedSearch.cancel()
+        this.searchRequestId++
+        this.searchResults = []
+        this.searchLoading = false
+        this.searchError = null
+      },
+      async search(requestId) {
+        if (!this.searchActive) return
+        this.searchLoading = true
+        try {
+          const results = await this.$util.send('appdb/usedQuery/search', {
+            searchText: this.filterQuery.trim()
+          })
+          if (requestId === this.searchRequestId) {
+            this.searchResults = _.orderBy(results, ['updatedAt'], ['desc'])
+          }
+        } catch (error) {
+          if (requestId === this.searchRequestId) this.searchError = error
+        } finally {
+          if (requestId === this.searchRequestId) this.searchLoading = false
+        }
+      },
       formatTimeAgo(item) {
         const dt = _.isDate(item.updatedAt) ? item.updatedAt : new Date(item.updatedAt * 1000)
         return this.timeAgo.format(dt)
@@ -138,8 +258,12 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
           ]
         })
       },
-      refresh() {
-        this.$store.dispatch('data/usedQueries/load')
+      async refresh() {
+        await this.$store.dispatch('data/usedQueries/load')
+        if (this.searchActive) {
+          this.resetSearch()
+          await this.search(this.searchRequestId)
+        }
       },
       click(item) {
         this.$root.$emit("historyClick", item)
@@ -151,11 +275,36 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
           return text
         }
       },
+      originInfo(item) {
+        if (item.origin === 'plugin' && item.pluginId) {
+          const specificPlugin = this.originOptions.find(option => {
+            return option.pluginId === item.pluginId
+          })
+
+          if (specificPlugin) {
+            return specificPlugin
+          }
+        }
+
+        const genericOrigin = this.originOptions.find(option => {
+          return option.origin === item.origin && !option.pluginId
+        })
+
+        if (genericOrigin) {
+          return genericOrigin
+        }
+
+        return {
+          label: 'Unknown',
+          icon: 'code'
+        }
+      },
       select(item) {
         this.selected = item
       },
       async remove(historyQuery) {
         await this.$store.dispatch('data/usedQueries/remove', historyQuery)
+        this.searchResults = this.searchResults.filter(item => item.id !== historyQuery.id)
       },
       async removeCheckedHistoryQueries() {
         for(let i = 0; i < this.checkedHistoryQueries.length; i++) {
