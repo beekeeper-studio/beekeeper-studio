@@ -266,6 +266,31 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
       })
     })
 
+    // Regression test: executeQuery used `column.type.alias || column.name` for
+    // the field name, so a column whose type has an alias (e.g. a custom type)
+    // displayed the type alias instead of the column name. The field name must
+    // be the column name; the type alias belongs on the `type`.
+    describe("executeQuery type alias regression", () => {
+      beforeAll(async () => {
+        await util.knex.schema.raw(`CREATE TYPE alias_regression_type AS INTEGER`)
+      })
+
+      afterAll(async () => {
+        await util.knex.schema.raw(`DROP TYPE IF EXISTS alias_regression_type`)
+      })
+
+      it("should use the column name, not the type alias, as the field name", async () => {
+        const results = await util.connection.executeQuery(
+          `SELECT CAST(42 AS alias_regression_type) AS my_column`
+        )
+
+        const field = results[0].fields[0]
+        expect(field.name).toBe("my_column")
+        expect(field.type).toBe("alias_regression_type")
+        expect(results[0].rows[0][field.id]).toBe(42)
+      })
+    })
+
     describe("queryStream double execution", () => {
       it("should run the supplied query only once across the full stream lifecycle", async () => {
         if (options.readOnly) return
