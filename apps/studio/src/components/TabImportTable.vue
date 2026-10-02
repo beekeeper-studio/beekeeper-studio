@@ -251,6 +251,11 @@
         return this.importError !== null ? 'error' : 'check_circle'
       },
     },
+    mounted() {
+      // The tab content is gated behind UpgradePanel, so opening it at all is
+      // use of the feature; running the import below counts again.
+      if (!this.isCommunity) recordPaidFeatureUse('import-from-file')
+    },
     methods: {
       onCopySuccess() {
         this.copyMessage = "Copied"

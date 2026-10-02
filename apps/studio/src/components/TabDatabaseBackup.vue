@@ -259,6 +259,11 @@ export default Vue.extend({
     }
   },
   mounted() {
+    // The tab content is gated behind UpgradePanel, so opening it at all is
+    // use of the feature; running it below counts again.
+    if (!this.isCommunity && this.isSupported) {
+      recordPaidFeatureUse('backup-restore', this.isRestore ? 'Restore' : 'Backup');
+    }
     // we don't need to run any of this logic if backup isn't supported anyways
     if (this.isSupported) {
       this.$store.commit('backups/setMode', this.isRestore);

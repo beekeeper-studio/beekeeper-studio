@@ -290,6 +290,9 @@
       },
     },
     async mounted() {
+      // The tab content is gated behind UpgradePanel, so opening it at all is
+      // use of the feature; running the export below counts again.
+      if (!this.isCommunity) recordPaidFeatureUse('multi-table-export')
       await this.$store.dispatch('multiTableExports/reset')
       await this.$store.dispatch('exports/removeInactive')
     }
