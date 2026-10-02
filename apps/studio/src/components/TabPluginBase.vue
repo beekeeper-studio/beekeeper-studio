@@ -23,6 +23,7 @@ import { mapGetters } from "vuex";
 import UpgradePanel from "@/components/upsell/UpgradePanel.vue";
 import { OnViewRequestListenerParams } from "@/services/plugin/types";
 import rawLog from "@bksLogger";
+import { paidFeatureForPlugin, recordPaidFeatureUse } from "@/lib/paidFeatures";
 
 const log = rawLog.scope("TabPluginBase");
 
@@ -40,8 +41,29 @@ export default Vue.extend({
     active: Boolean,
   },
 
+  data() {
+    return {
+      usageRecorded: false,
+    };
+  },
+
   computed: {
     ...mapGetters(["isCommunity"]),
+  },
+
+  watch: {
+    active: {
+      immediate: true,
+      handler(active: boolean) {
+        // A paid plugin (ER diagrams) counts as used the first time its tab is
+        // actually shown, not when it is merely restored in the background.
+        if (!active || this.isCommunity || this.usageRecorded) return;
+        const paidFeature = paidFeatureForPlugin(this.tab.context.pluginId);
+        if (!paidFeature) return;
+        recordPaidFeatureUse(paidFeature);
+        this.usageRecorded = true;
+      },
+    },
   },
 
   methods: {

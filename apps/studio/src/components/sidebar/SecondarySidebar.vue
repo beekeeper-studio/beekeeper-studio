@@ -45,6 +45,7 @@ import { mapState, mapActions } from "vuex";
 import JsonViewerSidebar from "./JsonViewerSidebar.vue";
 import { AppEvent } from "@/common/AppEvent";
 import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
+import { recordPaidFeatureUse } from "@/lib/paidFeatures";
 
 interface SidebarTab {
   id: string;
@@ -62,6 +63,9 @@ export default Vue.extend({
   },
   computed: {
     ...mapState("sidebar", ["secondaryActiveTabId", "tabs", "secondarySidebarOpen"]),
+    jsonViewerVisible(): boolean {
+      return this.secondarySidebarOpen && this.secondaryActiveTabId === "json-viewer";
+    },
     rootBindings() {
       return [
         {
@@ -69,6 +73,17 @@ export default Vue.extend({
           handler: this.setSecondaryActiveTabId,
         },
       ];
+    },
+  },
+  watch: {
+    jsonViewerVisible: {
+      immediate: true,
+      handler(visible: boolean) {
+        // The JSON row view is a paid feature; every time it is opened counts.
+        if (visible && !this.$store.getters.isCommunity) {
+          recordPaidFeatureUse("json-row-view");
+        }
+      },
     },
   },
   methods: {
