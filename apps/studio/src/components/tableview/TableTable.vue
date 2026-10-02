@@ -1380,7 +1380,11 @@ export default Vue.extend({
       this.$refs.editorModal.openModal(cell.getValue(), undefined, eventParams)
     },
 
-    openEditorMenuByShortcut() {
+    openEditorMenuByShortcut(e: KeyboardEvent) {
+      // Only when the key was pressed inside the grid. Shift+Enter is a
+      // newline elsewhere (filter inputs, plugin prompts, whose iframes
+      // forward their key events to the document).
+      if (!this.tabulator?.element.contains(e.target as Node)) return
       const range: RangeComponent = _.last(this.tabulator.getRanges())
       const cell = range.getCells().flat()[0];
       // FIXME maybe we can avoid calling child methods directly like this?
