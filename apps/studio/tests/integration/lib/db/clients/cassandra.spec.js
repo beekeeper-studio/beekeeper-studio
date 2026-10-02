@@ -170,4 +170,73 @@ describe("Cassandra Tests", () => {
     expect(typeof row.text_uuid_map).toBe('object')
     expect(row.text_uuid_map.first).toBe(textVal)
   })
+
+  it("Should convert UUIDs nested inside user defined types to strings", async () => {
+    const keyspace = 'uuid_udt_test'
+
+    await connection.executeQuery(
+      `CREATE KEYSPACE IF NOT EXISTS ${keyspace} WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}`
+    )
+    // a udt with a uuid field, used both as a bare column and as the element
+    // type of a collection, plus a udt nested inside another udt
+    await connection.executeQuery(`
+      CREATE TYPE IF NOT EXISTS ${keyspace}.item_ref (
+        id UUID,
+        position INT
+      )
+    `)
+    await connection.executeQuery(`
+      CREATE TYPE IF NOT EXISTS ${keyspace}.wrapper_type (
+        label TEXT,
+        inner FROZEN<item_ref>
+      )
+    `)
+    await connection.executeQuery(`
+      CREATE TABLE IF NOT EXISTS ${keyspace}.nested_udt (
+        username TEXT PRIMARY KEY,
+        single FROZEN<item_ref>,
+        item_list SET<FROZEN<item_ref>>,
+        nested FROZEN<wrapper_type>
+      )
+    `)
+
+    const singleId = '660e8400-e29b-41d4-a716-446655440000'
+    const setIdA = '660e8400-e29b-41d4-a716-446655440001'
+    const setIdB = '660e8400-e29b-41d4-a716-446655440002'
+    const nestedId = '660e8400-e29b-41d4-a716-446655440003'
+
+    await connection.executeQuery(`
+      INSERT INTO ${keyspace}.nested_udt (username, single, item_list, nested)
+      VALUES (
+        'test_user',
+        {id: ${singleId}, position: 1},
+        {{id: ${setIdA}, position: 2}, {id: ${setIdB}, position: 3}},
+        {label: 'wrapped', inner: {id: ${nestedId}, position: 4}}
+      )
+    `)
+
+    const results = await connection.executeQuery(
+      `SELECT * FROM ${keyspace}.nested_udt WHERE username = 'test_user'`
+    )
+    expect(results[0].rows).toHaveLength(1)
+    const row = results[0].rows[0]
+
+    // bare FROZEN<udt> column
+    expect(row.single).toEqual({ id: singleId, position: 1 })
+    expect(typeof row.single.id).toBe('string')
+
+    // SET<FROZEN<udt>> (order is not guaranteed)
+    expect(Array.isArray(row.item_list)).toBe(true)
+    expect([...row.item_list].sort((a, b) => a.position - b.position)).toEqual([
+      { id: setIdA, position: 2 },
+      { id: setIdB, position: 3 },
+    ])
+
+    // udt nested inside a udt
+    expect(row.nested).toEqual({ label: 'wrapped', inner: { id: nestedId, position: 4 } })
+
+    // nothing driver-internal survives the structured clone the IPC boundary
+    // performs on its way to the renderer
+    expect(structuredClone(row)).toEqual(row)
+  })
 })
