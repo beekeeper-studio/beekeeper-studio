@@ -77,9 +77,11 @@ async function createUtilityProcess() {
     }
   })
 
-  utilityProcess.on("message", (msg: UtilProcMessage) => {
+  utilityProcess.on("message", (msg: UtilProcMessage | { type: 'reopen-window' }) => {
     if (msg.type === 'openExternal') {
-      safeOpenExternal(msg.url)
+      safeOpenExternal((msg as UtilProcMessage).url)
+    } else if (msg.type === 'reopen-window' && process.platform === 'darwin') {
+      shouldReopenOnClose = true;
     }
   })
 
@@ -162,6 +164,12 @@ async function initBasics() {
   return settings
 }
 
+let isQuitting = false;
+let shouldReopenOnClose = false;
+app.on('before-quit', () => {
+  isQuitting = true;
+});
+
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
   // On macOS it is common for applications and their menu bar
@@ -170,6 +178,11 @@ app.on('window-all-closed', () => {
 
   if (process.platform !== 'darwin') {
     app.quit()
+  } else if (!isQuitting && shouldReopenOnClose) {
+    shouldReopenOnClose = false;
+    if (settings) {
+      buildWindow(settings)
+    }
   }
 })
 
