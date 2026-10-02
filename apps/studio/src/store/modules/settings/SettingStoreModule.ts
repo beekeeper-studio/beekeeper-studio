@@ -105,6 +105,10 @@ const SettingStoreModule: Module<State, any> = {
       if (!state.settings.sqliteExtensionFile) return null
       return state.settings.sqliteExtensionFile
     },
+    backupFilenameTemplate(state) {
+      if (!state.settings.backupFilenameTemplate) return null;
+      return state.settings.backupFilenameTemplate.value;
+    },
     privacyMode(state) {
       if (!state.settings.privacyMode) return false;
       return state.settings.privacyMode.value;
