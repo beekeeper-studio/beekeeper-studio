@@ -27,14 +27,22 @@
         </p>
 
         <ul class="trial-feature-list trial-feature-list--offer">
+          <!-- The description sits on the icon and label rather than the row:
+               the badge carries its own tooltip, and nesting one inside the
+               other pops both open when the pointer lands on the badge. -->
           <li
             v-for="feature in offerFeatures"
             :key="feature.id"
-            v-tooltip="feature.description"
             :class="{ 'trial-feature--used': !!feature.usage }"
           >
-            <i class="material-icons">{{ feature.usage ? 'lock' : 'lock_outline' }}</i>
-            <span class="trial-feature-label">{{ feature.label }}</span>
+            <i
+              v-tooltip="feature.description"
+              class="material-icons"
+            >{{ feature.usage ? 'lock' : 'lock_outline' }}</i>
+            <span
+              v-tooltip="feature.description"
+              class="trial-feature-label"
+            >{{ feature.label }}</span>
             <span
               v-if="feature.usage"
               v-tooltip="usedTooltip"

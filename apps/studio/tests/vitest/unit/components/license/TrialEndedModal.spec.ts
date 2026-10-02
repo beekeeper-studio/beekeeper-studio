@@ -146,6 +146,25 @@ describe('TrialEndedModal', () => {
     wrapper.destroy()
   })
 
+  it('never nests one tooltip inside another', async () => {
+    recordPaidFeatureUse('json-row-view')
+    const { wrapper } = mountModal()
+    await flush()
+
+    // Entering a nested target crosses both boundaries, so both tooltips open
+    // and overlap each other. The row description and the Used badge have to
+    // stay siblings.
+    expect(wrapper.findAll('[data-tooltip] [data-tooltip]')).toHaveLength(0)
+
+    const badge = wrapper.find('.trial-feature-badge')
+    expect(badge.attributes('data-tooltip')).toBe('You used this feature recently')
+    const describedRow = wrapper.find('.trial-feature-list--offer li .trial-feature-label')
+    expect(describedRow.attributes('data-tooltip')).toBe(
+      'Any row as JSON in the sidebar, wide tables included'
+    )
+    wrapper.destroy()
+  })
+
   it('says only that a feature was used: no timestamp, no specifics', async () => {
     recordPaidFeatureUse('premium-databases', 'MongoDB')
     const { wrapper, mocks } = mountModal()
