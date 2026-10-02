@@ -1,5 +1,9 @@
-import { ipcMain } from 'electron'
+import { app, ipcMain } from 'electron'
 import { autoUpdater } from 'electron-updater'
+import { getAppCacheDir } from 'electron-updater/out/AppAdapter'
+import { readFileSync } from 'fs'
+import path from 'path'
+import { cleanUpUpdateFiles } from './update_housekeeping'
 import { getActiveWindows } from './WindowBuilder'
 import rawlog from '@bksLogger'
 
@@ -42,6 +46,33 @@ function checkForUpdates() {
   }
 }
 
+function readResource(file: string, pattern: RegExp): string | null {
+  try {
+    const value = readFileSync(path.join(process.resourcesPath, file), 'utf8').match(pattern)?.[1]
+    return value?.trim().replace(/^(['"])(.*)\1$/, '$2') || null
+  } catch {
+    return null
+  }
+}
+
+function housekeepUpdateFiles(updatesEnabled: boolean): Promise<void> {
+  // Portable and installed Windows builds share one updater cache, and a
+  // portable build never downloads, so it leaves the cache to the installed one.
+  const cacheDirName = readResource('app-update.yml', /^updaterCacheDirName:\s*(.+)$/m)
+  const bundleId = platformInfo.isMac
+    ? readResource(path.join('..', 'Info.plist'), /<key>CFBundleIdentifier<\/key>\s*<string>([^<]+)<\/string>/)
+    : null
+  return cleanUpUpdateFiles({
+    updaterCacheDir: platformInfo.isPortable
+      ? undefined
+      : path.join(getAppCacheDir(), cacheDirName || 'beekeeper-studio-updater'),
+    shipItCacheDir: bundleId ? path.join(getAppCacheDir(), `${bundleId}.ShipIt`) : undefined,
+    currentVersion: app.getVersion(),
+    updatesEnabled,
+    log,
+  })
+}
+
 export function setAllowBeta(allowBeta: boolean) {
   autoUpdater.allowPrerelease = allowBeta;
   autoUpdater.channel = allowBeta ? 'beta' : 'latest';
@@ -56,8 +87,11 @@ export function manageUpdates(allowBeta: boolean, debug?: boolean): void {
 
   if (BksConfig.general.checkForUpdatesDisabled) {
     log.info("automatic update checks are disabled")
+    housekeepUpdateFiles(false)
     return
   }
+
+  const housekeeping = housekeepUpdateFiles(true)
 
   setAllowBeta(allowBeta);
 
@@ -70,7 +104,8 @@ export function manageUpdates(allowBeta: boolean, debug?: boolean): void {
 
   autoUpdater.logger?.debug?.(JSON.stringify(process.env))
 
-  ipcMain.on('updater-ready', () => {
+  ipcMain.on('updater-ready', async () => {
+    await housekeeping
     checkForUpdates()
     if (debug) {
       getActiveWindows().forEach(beeWin => beeWin.send('update-available'))
@@ -82,7 +117,8 @@ export function manageUpdates(allowBeta: boolean, debug?: boolean): void {
     getActiveWindows().forEach(beeWin => beeWin.send(message))
   })
 
-  ipcMain.on('download-update', () => {
+  ipcMain.on('download-update', async () => {
+    await housekeeping
     autoUpdater.downloadUpdate()
   })
 
