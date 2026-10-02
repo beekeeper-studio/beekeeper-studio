@@ -22,8 +22,7 @@
       <!-- Step 1: the offer -->
       <template v-if="step === 'offer'">
         <p class="trial-modal-lead">
-          The {{ trialDays }}-day trial ended {{ endedWhen }}. Every paid feature
-          is locked until a license key is entered.
+          Your trial ended {{ endedWhen }}. You need to buy a license to keep access to the following features:
         </p>
 
         <ul class="trial-feature-list trial-feature-list--offer">
@@ -63,17 +62,14 @@
         </ul>
 
         <p class="trial-modal-hint">
-          Subscriptions of 12+ months include lifetime access to every version
-          released while subscribed. 30-day money-back guarantee.
+          Every purchase include lifetime access and a 30-day money-back guarantee.
         </p>
       </template>
 
       <!-- Step 2: acknowledge what a downgrade loses -->
       <template v-else>
         <p class="trial-modal-lead">
-          Downgrading locks every paid feature. Saved connections and queries
-          stay put; the features below stop working until a license key is
-          entered.
+          Please confirm that you understand the consequences of downgrading to the community edition.
         </p>
         <label class="trial-downgrade-acknowledgement">
           <input
