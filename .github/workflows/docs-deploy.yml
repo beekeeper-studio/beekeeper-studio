@@ -28,7 +28,7 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Build site with mkdocs
-      run: mkdocs build
+      run: mkdocs build --strict
 
     - name: Upload to Netlify
       uses: nwtgck/actions-netlify@v2.0
