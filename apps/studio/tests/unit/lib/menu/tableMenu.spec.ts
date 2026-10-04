@@ -1,9 +1,8 @@
-import { copyRanges } from "@/lib/menu/tableMenu";
+import { buildCopyText, buildTiledPasteData } from "@/lib/menu/tableMenu";
 import { PostgresData } from "@/shared/lib/dialects/postgresql";
 import { MysqlData } from "@/shared/lib/dialects/mysql";
 import { SqlServerData } from "@/shared/lib/dialects/sqlserver";
 import { SqliteData } from "@/shared/lib/dialects/sqlite";
-import { ElectronPlugin } from "@/lib/NativeWrapper";
 import Vue from "vue";
 
 // Mock the ElectronPlugin clipboard
@@ -25,16 +24,7 @@ Object.defineProperty(Vue.prototype, "$util", {
   configurable: true,
 });
 
-// Mock RangeComponent factory
-function createMockRange(data: Record<string, any>[], columns: any[] = []) {
-  return {
-    getData: jest.fn(() => data),
-    getColumns: jest.fn(() => columns),
-    getElement: jest.fn(() => document.createElement("div")),
-  } as any;
-}
-
-describe("copyRanges - asIn type", () => {
+describe("buildCopyText - asIn type", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Default mock for conn/listTableColumns - varchar column
@@ -55,10 +45,8 @@ describe("copyRanges - asIn type", () => {
       ['defaultEscapeString (fallback)', undefined],
     ])('should escape strings using %s', async (_name, escapeString) => {
       const rangeData = [{ name: "test's value" }];
-      const range = createMockRange(rangeData);
 
-      await copyRanges({
-        ranges: [range],
+      const text = await buildCopyText(rangeData, {
         type: "asIn",
         table: "users",
         schema: "public",
@@ -67,9 +55,7 @@ describe("copyRanges - asIn type", () => {
 
       // All dialects use the same quote-doubling approach
       const escapedValue = "test''s value";
-      expect(ElectronPlugin.clipboard.writeText).toHaveBeenCalledWith(
-        `(\n'${escapedValue}'\n)`
-      );
+      expect(text).toEqual(`(\n'${escapedValue}'\n)`);
     });
   });
 
@@ -78,19 +64,15 @@ describe("copyRanges - asIn type", () => {
       mockSend.mockResolvedValue([{ columnName: "id", dataType: "integer" }]);
 
       const rangeData = [{ id: 123 }];
-      const range = createMockRange(rangeData);
 
-      await copyRanges({
-        ranges: [range],
+      const text = await buildCopyText(rangeData, {
         type: "asIn",
         table: "users",
         schema: "public",
         escapeString: PostgresData.escapeString,
       });
 
-      expect(ElectronPlugin.clipboard.writeText).toHaveBeenCalledWith(
-        `(\n123\n)`
-      );
+      expect(text).toEqual(`(\n123\n)`);
     });
 
     it("should quote strings and handle undefined/missing dataType gracefully", async () => {
@@ -107,17 +89,13 @@ describe("copyRanges - asIn type", () => {
       await testCopy([{ name: "test3" }], "'test3'");
 
       async function testCopy(data: any[], expectedValue: string) {
-        jest.clearAllMocks();
-        await copyRanges({
-          ranges: [createMockRange(data)],
+        const text = await buildCopyText(data, {
           type: "asIn",
           table: "users",
           schema: "public",
           escapeString: PostgresData.escapeString,
         });
-        expect(ElectronPlugin.clipboard.writeText).toHaveBeenCalledWith(
-          `(\n${expectedValue}\n)`
-        );
+        expect(text).toEqual(`(\n${expectedValue}\n)`);
       }
     });
   });
@@ -125,10 +103,8 @@ describe("copyRanges - asIn type", () => {
   describe("multiple values and edge cases", () => {
     it("should handle multiple values", async () => {
       const rangeData = [{ name: "Alice" }, { name: "Bob's" }, { name: "Charlie" }];
-      const range = createMockRange(rangeData);
 
-      await copyRanges({
-        ranges: [range],
+      const text = await buildCopyText(rangeData, {
         type: "asIn",
         table: "users",
         schema: "public",
@@ -140,7 +116,7 @@ describe("copyRanges - asIn type", () => {
 'Bob''s',
 'Charlie'
 )`;
-      expect(ElectronPlugin.clipboard.writeText).toHaveBeenCalledWith(expected);
+      expect(text).toEqual(expected);
     });
 
     it("should handle various special characters in strings", async () => {
@@ -152,32 +128,25 @@ describe("copyRanges - asIn type", () => {
       ];
 
       for (const { input, expected } of testCases) {
-        jest.clearAllMocks();
         const rangeData = [{ name: input }];
-        const range = createMockRange(rangeData);
 
-        await copyRanges({
-          ranges: [range],
+        const text = await buildCopyText(rangeData, {
           type: "asIn",
           table: "users",
           schema: "public",
           escapeString: PostgresData.escapeString,
         });
 
-        expect(ElectronPlugin.clipboard.writeText).toHaveBeenCalledWith(
-          `(
+        expect(text).toEqual(`(
 '${expected}'
-)`
-        );
+)`);
       }
     });
 
     it("should handle null values", async () => {
       const rangeData = [{ name: null }];
-      const range = createMockRange(rangeData);
 
-      await copyRanges({
-        ranges: [range],
+      const text = await buildCopyText(rangeData, {
         type: "asIn",
         table: "users",
         schema: "public",
@@ -185,9 +154,95 @@ describe("copyRanges - asIn type", () => {
       });
 
       // null should be converted to string "null" and escaped
-      expect(ElectronPlugin.clipboard.writeText).toHaveBeenCalled();
-      const callArg = (ElectronPlugin.clipboard.writeText as jest.Mock).mock.calls[0][0];
-      expect(callArg).toContain("null");
+      expect(text).toContain("null");
     });
+  });
+});
+
+describe("buildTiledPasteData", () => {
+  it("tiles an exact multiple to fill the whole selection", () => {
+    // Copy 2 rows into a 4-row selection -> both rows pasted twice.
+    const { pasteData, rowCount, colCount } = buildTiledPasteData(
+      [["a"], ["b"]],
+      4,
+      1
+    );
+    expect(rowCount).toBe(4);
+    expect(colCount).toBe(1);
+    expect(pasteData).toEqual([["a"], ["b"], ["a"], ["b"]]);
+  });
+
+  it("tiles columns across an exact multiple selection", () => {
+    // Copy 1x2 into a 1x4 selection -> the two columns repeat.
+    const { pasteData, rowCount, colCount } = buildTiledPasteData(
+      [["a", "b"]],
+      1,
+      4
+    );
+    expect(rowCount).toBe(1);
+    expect(colCount).toBe(4);
+    expect(pasteData).toEqual([["a", "b", "a", "b"]]);
+  });
+
+  it("tiles both axes together", () => {
+    const { pasteData, rowCount, colCount } = buildTiledPasteData(
+      [["a", "b"], ["c", "d"]],
+      4,
+      4
+    );
+    expect(rowCount).toBe(4);
+    expect(colCount).toBe(4);
+    expect(pasteData).toEqual([
+      ["a", "b", "a", "b"],
+      ["c", "d", "c", "d"],
+      ["a", "b", "a", "b"],
+      ["c", "d", "c", "d"],
+    ]);
+  });
+
+  it("floors to whole tiles when the selection is not an exact multiple", () => {
+    // Copy 3 rows into a 7-row selection -> two whole tiles (6 rows); the
+    // leftover 7th row is dropped and left untouched.
+    const { pasteData, rowCount } = buildTiledPasteData(
+      [["a"], ["b"], ["c"]],
+      7,
+      1
+    );
+    expect(rowCount).toBe(6);
+    expect(pasteData).toEqual([
+      ["a"], ["b"], ["c"], ["a"], ["b"], ["c"],
+    ]);
+  });
+
+  it("expands to the block's own size when the selection is smaller", () => {
+    // Copy 2 rows but only 1 cell selected -> still pastes the full block.
+    const { pasteData, rowCount, colCount } = buildTiledPasteData(
+      [["a"], ["b"]],
+      1,
+      1
+    );
+    expect(rowCount).toBe(2);
+    expect(colCount).toBe(1);
+    expect(pasteData).toEqual([["a"], ["b"]]);
+  });
+
+  it("pastes the block once when the selection matches its size", () => {
+    const { pasteData } = buildTiledPasteData([["a", "b"], ["c", "d"]], 2, 2);
+    expect(pasteData).toEqual([["a", "b"], ["c", "d"]]);
+  });
+
+  it("sizes columns from the widest row when rows are ragged", () => {
+    // colCount is driven by the widest row (2). Missing cells in shorter rows
+    // tile as `undefined` at the corresponding position.
+    const { pasteData, colCount } = buildTiledPasteData(
+      [["a", "b"], ["c"]],
+      2,
+      4
+    );
+    expect(colCount).toBe(4);
+    expect(pasteData).toEqual([
+      ["a", "b", "a", "b"],
+      ["c", undefined, "c", undefined],
+    ]);
   });
 });

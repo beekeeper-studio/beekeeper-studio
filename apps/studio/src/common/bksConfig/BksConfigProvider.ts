@@ -114,15 +114,15 @@ const vHotkeyModifierMap: ModifierMap = {
   DELETE: (isMac) => (isMac ? "backspace" : "delete"),
 } as const;
 
-export const tabulatorModifierMap = {
+export const tabulatorModifierMap: ModifierMap = {
   CTRL: "ctrl",
-  CMD: "ctrl",
-  CTRLORCMD: "ctrl",
-  CMDORCTRL: "ctrl",
+  CMD: (isMac) => (isMac ? "meta" : "ctrl"),
+  CTRLORCMD: (isMac) => (isMac ? "meta" : "ctrl"),
+  CMDORCTRL: (isMac) => (isMac ? "meta" : "ctrl"),
   CONTROL: "ctrl",
-  COMMAND: "ctrl",
-  CONTROLORCOMMAND: "ctrl",
-  COMMANDORCONTROL: "ctrl",
+  COMMAND: (isMac) => (isMac ? "meta" : "ctrl"),
+  CONTROLORCOMMAND: (isMac) => (isMac ? "meta" : "ctrl"),
+  COMMANDORCONTROL: (isMac) => (isMac ? "meta" : "ctrl"),
   SHIFT: "shift",
   ALT: "alt",
   OPTION: "18",
@@ -130,7 +130,7 @@ export const tabulatorModifierMap = {
   SUPER: "91",
   META: "224",
   WINDOWS: "91",
-} as const;
+};
 
 const uiModifierMap: ModifierMap = {
   CTRL: (isMac) => (isMac ? "⌘" : "Ctrl"),

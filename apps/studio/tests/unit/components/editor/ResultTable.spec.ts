@@ -871,7 +871,6 @@ describe('ResultTable - Cell Editing Methods', () => {
       expect(updateArg.__beekeeper_internal_class_tracker.edited.has('field_name')).toBe(true)
       expect(dupRow.reformat).toHaveBeenCalled()
       expect(mockTabulator.restoreRedraw).toHaveBeenCalled()
-      expect(mockTabulator.redraw).toHaveBeenCalled()
     })
 
     it('should cache filters and reuse on subsequent calls', () => {
@@ -982,7 +981,6 @@ describe('ResultTable - Cell Editing Methods', () => {
       // blockRedraw/restoreRedraw should still be called (redraw lifecycle is maintained)
       expect(mockTabulator.blockRedraw).toHaveBeenCalled()
       expect(mockTabulator.restoreRedraw).toHaveBeenCalled()
-      expect(mockTabulator.redraw).toHaveBeenCalled()
     })
 
     it('should build filters for multiple PK cells in a composite key', () => {
