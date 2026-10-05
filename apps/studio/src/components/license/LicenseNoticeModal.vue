@@ -17,7 +17,7 @@
       >
         <i class="material-icons">check_circle</i>
         <div class="alert-body">
-          Key registered for <strong>{{ email }}</strong>.
+          <span>Key registered for <strong>{{ email }}</strong>.</span>
         </div>
       </div>
 
@@ -164,14 +164,13 @@ export default Vue.extend({
   watch: {
     shouldShow: {
       immediate: true,
-      handler(show: boolean) {
-        if (!show) {
-          this.release();
-          return;
-        }
-        if (SmartLocalStorage.getJSON(LICENSE_NOTICE_SEEN_KEY, null) === this.seenKey) return;
-        this.show();
+      handler() {
+        this.reconsider();
       },
+    },
+    // One key swapped for another without passing through "no key".
+    seenKey() {
+      this.reconsider();
     },
   },
   mounted() {
@@ -181,6 +180,15 @@ export default Vue.extend({
     this.unregisterHandlers(this.rootBindings);
   },
   methods: {
+    reconsider() {
+      if (!this.shouldShow) {
+        this.release();
+        return;
+      }
+      if (this.open) return;
+      if (SmartLocalStorage.getJSON(LICENSE_NOTICE_SEEN_KEY, null) === this.seenKey) return;
+      this.show();
+    },
     async show() {
       await this.$nextTick();
       this.open = true;

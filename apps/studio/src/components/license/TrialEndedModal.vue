@@ -264,6 +264,10 @@ export default Vue.extend({
   },
   methods: {
     async show() {
+      // The answer may have been recorded elsewhere since this component was
+      // created, e.g. by the confirm step that removes a license key.
+      this.decided = hasDecidedTrialEnd();
+      if (this.decided) return;
       this.usage = getPaidFeatureUsage();
       // The countdown toast has nothing left to count down.
       Noty.closeAll("trial");

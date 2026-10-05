@@ -131,10 +131,11 @@ export default {
         { confirmLabel: 'Remove license', variant: 'danger' }
       )
       if (!confirmed) return
-      await this.$store.dispatch('licenses/remove', this.license)
       // Removing a key is an explicit choice, so the trial-ended dialog does
-      // not need to ask the same question again.
-      if (this.$store.getters['licenses/isTrialExpired']) recordTrialEndDecision('downgraded')
+      // not need to ask the same question again. Recorded before the rows
+      // change, because the dialog reacts to the change at once.
+      if (trialExpired) recordTrialEndDecision('downgraded')
+      await this.$store.dispatch('licenses/remove', this.license)
       this.$noty.info('License removed. Now on the Community Edition; a key can be entered again at any time.')
     }
   }

@@ -352,6 +352,21 @@ describe('TrialEndedModal', () => {
     wrapper.destroy()
   })
 
+  it('stays closed when the key is removed through the confirm step that records the downgrade', async () => {
+    const { wrapper, mocks, store } = mountModal()
+    await flush()
+    store.commit('licenses/setStatus', { isTrial: false, isUltimate: true, isValidDateExpired: false })
+    await flush()
+
+    // LicenseInformation records the answer, then the rows change
+    recordTrialEndDecision('downgraded')
+    store.commit('licenses/setStatus', { isTrial: true, isUltimate: false, isValidDateExpired: true })
+    await flush()
+
+    expect(mocks.$modal.show).toHaveBeenCalledTimes(1)
+    wrapper.destroy()
+  })
+
   it('comes back when the key is removed and the expired trial is current again', async () => {
     const { wrapper, mocks, store } = mountModal()
     await flush()
