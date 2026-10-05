@@ -18,7 +18,10 @@
           class="dropdown-icon material-icons"
         >keyboard_arrow_right</i>
       </span>
-      <span class="item-wrapper flex flex-middle expand">
+      <span
+        class="item-wrapper flex flex-middle expand"
+        @dblclick.prevent="openRoutine"
+      >
         <div
           :title="draggable ? 'drag me!' : ''"
           class="table-item-wrapper"
@@ -122,7 +125,12 @@ import { AppEvent } from "@/common/AppEvent";
     data() {
       return {
         showArgs: false,
-        selected: false
+        selected: false,
+        clickState: {
+          timer: null,
+          openClicks: 0,
+          delay: 500
+        }
       }
     },
     watch: {
@@ -165,6 +173,16 @@ import { AppEvent } from "@/common/AppEvent";
     methods: {
       toggleArgs() {
         this.showArgs = !this.showArgs
+      },
+      openRoutine() {
+        if (this.clickState.openClicks > 0) {
+          return
+        }
+        this.$root.$emit('loadRoutineCreate', this.routine)
+        this.clickState.openClicks++
+        this.clickState.timer = setTimeout(() => {
+          this.clickState.openClicks = 0
+        }, this.clickState.delay)
       },
       pin() {
         this.trigger(AppEvent.togglePinTableList, this.routine, true);
