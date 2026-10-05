@@ -999,7 +999,7 @@ addNotificationListener('themeChanged', (appTheme) => {
 
 **Params schema:**
 
-See [appTheme](#AppTheme)
+See [appTheme](#apptheme)
 
 ### windowEvent
 

@@ -10,7 +10,7 @@ icon: material/cog
 Beekeeper Studio usa un sistema de configuracion `ini` que te permite personalizar la aplicacion para que coincida con tu flujo de trabajo y preferencias. Usando archivos de configuracion INI simples, puedes ajustar todo, desde atajos de teclado y tiempos de espera de conexion de base de datos hasta configuraciones de seguridad como proteccion con PIN.
 
 !!! tip "Inicio rapido"
-    Nuevo en la configuracion? Salta a la [seccion de Primeros pasos](#getting-started-with-configuration) para un recorrido simple, o revisa nuestras [configuraciones de ejemplo](#example-configurations) para ver personalizaciones comunes.
+    Nuevo en la configuracion? Salta a la [seccion de Primeros pasos](#como-usar-archivos-de-configuracion) para un recorrido simple, o revisa nuestras [configuraciones de ejemplo](#paso-1-crear-tu-archivo-de-configuracion) para ver personalizaciones comunes.
 
 ## Archivos de configuracion
 
