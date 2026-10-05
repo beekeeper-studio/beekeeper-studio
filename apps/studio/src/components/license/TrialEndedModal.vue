@@ -117,13 +117,12 @@
         >
           Downgrade to Community Edition
         </button>
-        <span class="expand" />
         <button
           type="button"
           class="btn btn-flat"
           @click.prevent="enterLicense"
         >
-          Enter license key
+          Enter key
         </button>
         <button
           ref="buyButton"
@@ -156,6 +155,7 @@
 
 <script lang="ts">
 import Vue from "vue";
+import Noty from "noty";
 import { mapGetters, mapState } from "vuex";
 import BaseModal from "@/components/common/modals/BaseModal.vue";
 import { AppEvent } from "@/common/AppEvent";
@@ -170,7 +170,6 @@ import {
   formatTrialDate,
   hasDecidedTrialEnd,
   recordTrialEndDecision,
-  TrialEndDecision,
 } from "@/lib/trial";
 
 const PRICING_URL = "https://www.beekeeperstudio.io/pricing";
@@ -191,6 +190,11 @@ type Step = "offer" | "downgrade";
  * or downgrades to the Community Edition after ticking "I understand" on step
  * two. Until one of those happens it comes back on every launch.
  *
+ * Only the downgrade is remembered. Everything else is read from the license
+ * rows: the dialog opens while the current license is an expired trial and
+ * releases itself as soon as that stops being true, whether the key that was
+ * registered unlocks the app or not (LicenseNoticeModal explains the latter).
+ *
  * Features used during the trial lead both lists, so the user sees exactly
  * what stops working.
  */
@@ -210,13 +214,9 @@ export default Vue.extend({
     ...mapState("licenses", {
       licensesInitialized: (state: any) => state.initialized,
     }),
-    ...mapGetters("licenses", ["isTrialExpired", "isUltimate", "isTrial", "trialLicense"]),
+    ...mapGetters("licenses", ["isTrialExpired", "trialLicense"]),
     shouldShow(): boolean {
       return this.licensesInitialized && this.isTrialExpired && !this.decided;
-    },
-    /** A paid, non-trial license is active: the user bought or entered a key. */
-    licensed(): boolean {
-      return this.isUltimate && !this.isTrial;
     },
     rankedFeatures(): RankedPaidFeature[] {
       return rankPaidFeaturesByUsage(this.usage);
@@ -258,29 +258,34 @@ export default Vue.extend({
       immediate: true,
       handler(show: boolean) {
         if (show) this.show();
+        else this.release();
       },
-    },
-    licensed(value: boolean) {
-      if (value && this.open) this.settle("licensed");
     },
   },
   methods: {
     async show() {
       this.usage = getPaidFeatureUsage();
+      // The countdown toast has nothing left to count down.
+      Noty.closeAll("trial");
       await this.$nextTick();
       this.open = true;
       this.$modal.show(this.modalName);
+    },
+    /** Close without recording anything: the license rows changed. */
+    release() {
+      if (!this.open) return;
+      this.open = false;
+      (this.$refs.modal as any)?.close();
     },
     reset() {
       this.step = "offer";
       this.acknowledged = false;
     },
-    /** Record the answer and release the modal. */
-    settle(decision: TrialEndDecision) {
-      recordTrialEndDecision(decision);
+    /** Record the downgrade and release the modal. */
+    settle() {
+      recordTrialEndDecision("downgraded");
       this.decided = true;
-      this.open = false;
-      (this.$refs.modal as any)?.close();
+      this.release();
     },
     submit() {
       if (this.step === "offer") {
@@ -313,7 +318,7 @@ export default Vue.extend({
     },
     confirmDowngrade() {
       if (!this.acknowledged) return;
-      this.settle("downgraded");
+      this.settle();
       this.$noty.info("Downgraded to the Community Edition. A license key can be entered at any time.");
     },
   },

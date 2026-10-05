@@ -45,6 +45,7 @@ function buildStore(statusOverrides: Record<string, any> = {}) {
           isTrial: (state: any) => state.status.isTrial,
           isUltimate: (state: any) => state.status.isUltimate,
           isTrialExpired: (state: any) => state.status.isTrial && state.status.isValidDateExpired,
+          paidButCommunity: (state: any) => !!state.status.license && !state.status.isTrial && !state.status.isUltimate,
         },
         mutations: {
           setStatus(state: any, next: any) {
@@ -317,14 +318,14 @@ describe('TrialEndedModal', () => {
     expect(mocks.$modal.hide).not.toHaveBeenCalled()
     expect(getTrialEndDecision()).toBeNull()
 
-    const enterButton = wrapper.findAll('button').wrappers.find((w) => w.text() === 'Enter license key')
+    const enterButton = wrapper.findAll('button').wrappers.find((w) => w.text() === 'Enter key')
     await enterButton.trigger('click')
     expect(enterLicense).toHaveBeenCalledTimes(2)
     expect(mocks.$modal.hide).not.toHaveBeenCalled()
     wrapper.destroy()
   })
 
-  it('a registered license releases the modal on its own', async () => {
+  it('a registered license releases the modal on its own without storing anything', async () => {
     const { wrapper, mocks, store } = mountModal()
     await flush()
     expect(mocks.$modal.show).toHaveBeenCalledWith(MODAL_NAME)
@@ -332,8 +333,36 @@ describe('TrialEndedModal', () => {
     store.commit('licenses/setStatus', { isTrial: false, isUltimate: true, isValidDateExpired: false })
     await flush()
 
-    expect(getTrialEndDecision()).toBe('licensed')
+    expect(getTrialEndDecision()).toBeNull()
     expect(mocks.$modal.hide).toHaveBeenCalledWith(MODAL_NAME)
+    wrapper.destroy()
+  })
+
+  it('a registered key that does not unlock the app releases the modal too', async () => {
+    const { wrapper, mocks, store } = mountModal()
+    await flush()
+    expect(mocks.$modal.show).toHaveBeenCalledWith(MODAL_NAME)
+
+    // a lifetime key sold for an earlier version: not a trial, still Community
+    store.commit('licenses/setStatus', { isTrial: false, isUltimate: false, isValidDateExpired: false, license: { key: 'k' } })
+    await flush()
+
+    expect(mocks.$modal.hide).toHaveBeenCalledWith(MODAL_NAME)
+    expect(getTrialEndDecision()).toBeNull()
+    wrapper.destroy()
+  })
+
+  it('comes back when the key is removed and the expired trial is current again', async () => {
+    const { wrapper, mocks, store } = mountModal()
+    await flush()
+    store.commit('licenses/setStatus', { isTrial: false, isUltimate: true, isValidDateExpired: false })
+    await flush()
+    expect(mocks.$modal.hide).toHaveBeenCalledTimes(1)
+
+    store.commit('licenses/setStatus', { isTrial: true, isUltimate: false, isValidDateExpired: true })
+    await flush()
+
+    expect(mocks.$modal.show).toHaveBeenCalledTimes(2)
     wrapper.destroy()
   })
 })

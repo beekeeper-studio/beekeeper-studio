@@ -106,6 +106,7 @@ export default Vue.extend({
         this.$noty.success("License registered, thanks for supporting Beekeeper Studio.")
         this.$modal.hide('license')
         this.$store.dispatch('licenseEntered')
+        this.$root.$emit(AppEvent.licenseRegistered)
       } catch (error) {
         this.error = error
       }

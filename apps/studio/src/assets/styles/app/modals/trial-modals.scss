@@ -129,9 +129,19 @@ $trial-row-inset: $gutter-h * 1.5;
   }
 }
 
-// The escape hatch is deliberately the quietest button in the row.
+// The escape hatch is deliberately the quietest button in the row. It is
+// pinned to the left with an auto margin instead of a spacer element, so when
+// the footer has to wrap (wide system fonts) it takes the first row on its
+// own and the two "get a license" actions stay together on the right.
 .trial-ended-downgrade {
   color: $text-light;
+  margin-right: auto;
+}
+
+.trial-ended .base-modal-footer,
+.base-modal-root:has(.trial-ended) .base-modal-footer {
+  flex-wrap: wrap;
+  row-gap: 0.5rem;
 }
 
 // .btn-danger only colours its hover state in this app, so at rest a
@@ -157,5 +167,81 @@ $trial-row-inset: $gutter-h * 1.5;
       opacity: 0.5 !important;
       filter: none;
     }
+  }
+}
+
+// components/license/LicenseNoticeModal.vue: a registered key that does not
+// unlock this app. One row per way forward, the action pinned to the right.
+.license-notice {
+  .license-notice-registered {
+    margin: 0 0 $gutter-w;
+  }
+
+  .license-notice-options {
+    list-style: none;
+    margin: 0 0 $gutter-w;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: $gutter-h;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: $trial-row-gap;
+      padding: ($gutter-h * 0.8) $trial-row-inset;
+      border: 1px solid rgba($theme-base, 0.12);
+      border-radius: 6px;
+
+      > .material-icons {
+        flex: 0 0 $trial-control-size;
+        width: $trial-control-size;
+        font-size: $trial-control-size;
+        color: $text-light;
+      }
+
+      .btn {
+        flex: 0 0 auto;
+        white-space: nowrap;
+      }
+    }
+  }
+
+  .license-notice-option-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    strong {
+      color: $text-dark;
+    }
+
+    span {
+      font-size: 0.8rem;
+      line-height: 1.4;
+      color: $text-light;
+    }
+  }
+}
+
+.license-notice-manage {
+  align-self: center;
+  color: $text-light;
+  text-decoration: underline;
+  text-decoration-color: rgba($theme-base, 0.35);
+}
+
+// ultimate/LicenseInformation.vue: the same explanation inside License Key
+// Management, one line plus the download link for the covered version.
+.license-notice-banner {
+  margin: 0 0 $gutter-w;
+
+  a {
+    display: inline;
+    margin-left: 0.25em;
+    font-weight: 700;
+    cursor: pointer;
   }
 }

@@ -8,6 +8,7 @@ import Vue from "vue"
 import { LicenseStatus } from '@/lib/license';
 import { SmartLocalStorage } from '@/common/LocalStorage';
 import { CloudClient } from '@/lib/cloud/CloudClient';
+import { settleLegacyTrialEnd } from '@/lib/trial';
 
 interface State {
   initialized: boolean
@@ -74,6 +75,14 @@ export const LicenseModule: Module<State, RootState>  = {
     isTrialExpired(state) {
       return !!state.status.isTrial && !!state.status.isValidDateExpired
     },
+    /**
+     * A paid key is registered but does not unlock this app: its valid date
+     * has passed, or it is a lifetime key sold for an earlier version.
+     */
+    paidButCommunity(state) {
+      const status = state.status
+      return !!status.license && !status.isTrial && status.isCommunity
+    },
     isValidStateExpired(state) {
       // this means a license with lifetime perms, but is no longer valid for software updates
       // so the user has to use an older version of the app.
@@ -113,6 +122,8 @@ export const LicenseModule: Module<State, RootState>  = {
         return
       }
       await context.dispatch('sync')
+      // Must run before any dialog looks at the trial state.
+      settleLegacyTrialEnd(context.getters.isTrialExpired)
       const installationId = await Vue.prototype.$util.send('license/getInstallationId');
       context.commit('installationId', installationId)
       context.commit('setInitialized', true)

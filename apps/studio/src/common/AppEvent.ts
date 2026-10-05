@@ -38,6 +38,8 @@ export enum AppEvent {
   openCreateCollectionModal = 'create_collection_modal',
   openAddFieldModal = 'add_field_modal',
   enterLicense = 'enter_license',
+  /** A license key was saved through License Key Management. */
+  licenseRegistered = 'licenseRegistered',
   hideEntity = 'hideEntity',
   hideSchema = 'hideSchema',
   toggleHideEntity = 'toggleHideEntity',

@@ -45,7 +45,7 @@
     <share-modal />
     <template v-if="licensesInitialized">
       <trial-ended-modal />
-      <license-expired-modal />
+      <license-notice-modal />
       <lifetime-license-expired-modal />
       <cloud-workspaces-blocked-modal />
     </template>
@@ -85,7 +85,7 @@ import ConfirmationModalManager from '@/components/common/modals/ConfirmationMod
 import Dropzone from '@/components/Dropzone.vue'
 import UtilDiedModal from '@/components/UtilDiedModal.vue'
 import TrialEndedModal from '@/components/license/TrialEndedModal.vue'
-import LicenseExpiredModal from '@/components/license/LicenseExpiredModal.vue'
+import LicenseNoticeModal from '@/components/license/LicenseNoticeModal.vue'
 import LifetimeLicenseExpiredModal from '@/components/license/LifetimeLicenseExpiredModal.vue'
 import CloudWorkspacesBlockedModal from '@/components/license/CloudWorkspacesBlockedModal.vue'
 import type { LicenseStatus } from "@/lib/license";
@@ -113,7 +113,7 @@ export default Vue.extend({
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
     DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
-    EnterLicenseModal, TrialEndedModal, LicenseExpiredModal,
+    EnterLicenseModal, TrialEndedModal, LicenseNoticeModal,
     LifetimeLicenseExpiredModal, CloudWorkspacesBlockedModal,
     WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
     PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
