@@ -107,4 +107,4 @@ Formal quotes, NET-term invoicing, and security questionnaires can all be handle
 
 ### Airgapped systems
 
-If you work in a network that **must not** ever connect to the internet, simply buy a Business-tier license to use [offline airgapped license activation](../purchasing/license-types) for zero-internet installation of your license.
+If you work in a network that **must not** ever connect to the internet, simply buy a Business-tier license to use [offline airgapped license activation](../purchasing/license-types.md) for zero-internet installation of your license.

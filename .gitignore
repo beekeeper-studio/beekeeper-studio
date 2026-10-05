@@ -29,3 +29,7 @@ apps/studio/test-results
 surreal_data/
 todo.txt
 done.txt
+
+# Python bytecode (mkdocs hooks in bin/mkdocs_hooks)
+__pycache__/
+*.pyc

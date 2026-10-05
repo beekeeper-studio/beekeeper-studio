@@ -192,6 +192,24 @@ Examples:
 
 The app supports 15+ databases including PostgreSQL, MySQL, SQLite, SQL Server, Oracle, BigQuery, MongoDB, and more. Database-specific connection logic is in `src/components/connection/` with corresponding client implementations in `src/lib/db/`.
 
+## Documentation Build Rules
+
+The docs site (`docs/`, built by MkDocs from `mkdocs.yml`) builds in **strict mode**: any
+MkDocs warning fails `mkdocs build`, the pull request check (`.github/workflows/docs-check.yml`)
+and the deploy. Run `pip install -r requirements.txt && mkdocs build --strict` before pushing
+docs changes.
+
+- Link to other docs pages with relative `.md` paths (`../purchasing/license-types.md`,
+  `manifest.md#pluginviewtype`), never a bare path (`../purchasing/license-types`) or an old
+  `/docs/...` URL. MkDocs validates the file and anchor and rewrites the link to a URL.
+- Site-root paths such as `/assets/images/foo.png` are resolved against `docs/` and validated.
+- Full `https://docs.beekeeperstudio.io/...` URLs are only for content reused outside the site:
+  the supported-databases table in `docs/includes/`, which is copied into the README files.
+  `bin/mkdocs_hooks/check_site_links.py` checks that those pages and anchors exist.
+- In-page anchors are the lowercased, hyphenated heading text (`## Multi-Table Export` is
+  `#multi-table-export`). Translated pages have translated anchors; give a heading an explicit
+  id with `## Heading { #stable-id }` when a link must work across languages.
+
 ## Documentation Translation Guidelines
 
 The documentation site (`docs/`) uses MkDocs Material with the `mkdocs-static-i18n` plugin for multi-language support. See `mkdocs.yml` for the list of 10 target languages.
