@@ -62,7 +62,7 @@
         </ul>
 
         <p class="trial-modal-hint">
-          Every purchase include lifetime access and a 30-day money-back guarantee.
+          Every purchase includes lifetime access and a 30-day money-back guarantee.
         </p>
       </template>
 
