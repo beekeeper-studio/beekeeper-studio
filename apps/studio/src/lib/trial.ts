@@ -21,6 +21,9 @@ export const TRIAL_END_DECISION_KEY = 'trialEndDecision'
  */
 export const TRIAL_END_FLOW_SEEN_KEY = 'trialEndFlowSeen'
 
+/** `${key}:${appVersion}` of the last license notice the user dismissed. */
+export const LICENSE_NOTICE_SEEN_KEY = 'licenseNoticeSeen'
+
 export type TrialEndDecision = 'downgraded'
 
 export function getTrialEndDecision(): TrialEndDecision | null {
@@ -55,6 +58,7 @@ export function settleLegacyTrialEnd(isTrialExpired: boolean): void {
  */
 export function resetTrialFlow({ keepUsage = true }: { keepUsage?: boolean } = {}): void {
   SmartLocalStorage.removeItem(TRIAL_END_DECISION_KEY)
+  SmartLocalStorage.removeItem(LICENSE_NOTICE_SEEN_KEY)
   SmartLocalStorage.setBool(TRIAL_END_FLOW_SEEN_KEY, true)
   if (!keepUsage) clearPaidFeatureUsage()
 }

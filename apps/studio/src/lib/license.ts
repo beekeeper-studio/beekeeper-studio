@@ -12,6 +12,10 @@ export enum DevLicenseState {
   activePaidLicense,
   expiredLifetimeCoversThisVersion,
   expiredLifetimeCoversEarlierVersion,
+  /** A paid key whose valid date has passed and that has no lifetime terms. */
+  expiredPaidLicense,
+  /** An expired trial plus a lifetime key for an earlier version: the key does not unlock this app. */
+  trialExpiredWithOldLifetime,
 }
 
 

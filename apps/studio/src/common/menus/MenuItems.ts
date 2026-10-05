@@ -373,8 +373,16 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.expiredLifetimeCoversThisVersion),
         },
         {
-          label: "On an expired, lifetime license, that covers an earlier version",
+          label: "On an expired, lifetime license, that covers an earlier version (shows the license notice)",
           click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.expiredLifetimeCoversEarlierVersion),
+        },
+        {
+          label: "On an expired paid license, no lifetime terms (shows the license notice)",
+          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.expiredPaidLicense),
+        },
+        {
+          label: "Trial expired + lifetime license for an earlier version (notice, then remove the key)",
+          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.trialExpiredWithOldLifetime),
         },
       ],
     },

@@ -98,12 +98,10 @@ import { mapGetters, mapState } from "vuex";
 import BaseModal from "@/components/common/modals/BaseModal.vue";
 import { AppEvent } from "@/common/AppEvent";
 import { SmartLocalStorage } from "@/common/LocalStorage";
-import { formatTrialDate } from "@/lib/trial";
+import { formatTrialDate, LICENSE_NOTICE_SEEN_KEY } from "@/lib/trial";
 
 const PRICING_URL = "https://www.beekeeperstudio.io/pricing";
 const RELEASES_URL = "https://github.com/beekeeper-studio/beekeeper-studio/releases/tag/";
-/** `${key}:${appVersion}` of the last notice the user dismissed. */
-export const LICENSE_NOTICE_SEEN_KEY = "licenseNoticeSeen";
 
 type Variant = "version" | "expired";
 

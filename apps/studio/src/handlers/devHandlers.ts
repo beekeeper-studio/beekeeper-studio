@@ -66,6 +66,30 @@ export const DevHandlers: IDevHandlers = {
         await license.save();
         break;
       }
+      case DevLicenseState.expiredPaidLicense: {
+        await LicenseKey.clear();
+        const license = new LicenseKey();
+        license.email = "fake_email";
+        license.key = "fake_key";
+        license.validUntil = yesterday;
+        license.supportUntil = yesterday;
+        license.licenseType = "PersonalLicense";
+        await license.save();
+        break;
+      }
+      case DevLicenseState.trialExpiredWithOldLifetime: {
+        await LicenseKey.clear();
+        await LicenseKey.createTrialLicense(yesterday, yesterday);
+        const license = new LicenseKey();
+        license.email = "fake_email";
+        license.key = "fake_key";
+        license.validUntil = nextMonth;
+        license.supportUntil = yesterday;
+        license.licenseType = "PersonalLicense";
+        license.maxAllowedAppRelease = { tagName: 'v0.0.1' };
+        await license.save();
+        break;
+      }
       default:
         console.warn("Unknown license state");
     }

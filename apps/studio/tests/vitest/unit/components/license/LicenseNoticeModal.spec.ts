@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createLocalVue, mount } from '@vue/test-utils'
 import Vue from 'vue'
 import Vuex from 'vuex'
-import LicenseNoticeModal, { LICENSE_NOTICE_SEEN_KEY } from '@/components/license/LicenseNoticeModal.vue'
+import LicenseNoticeModal from '@/components/license/LicenseNoticeModal.vue'
+import { LICENSE_NOTICE_SEEN_KEY } from '@/lib/trial'
 import { AppEvent, AppEventMixin } from '@/common/AppEvent'
 
 Vue.use(Vuex)
