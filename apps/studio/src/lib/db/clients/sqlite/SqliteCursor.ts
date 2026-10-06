@@ -1,4 +1,4 @@
-import { BeeCursor } from "../../models";
+import { BeeCursor, TableColumn } from "../../models";
 import Sqlite, { Database, Statement } from 'better-sqlite3'
 
 export class SqliteCursor extends BeeCursor {
@@ -23,6 +23,14 @@ export class SqliteCursor extends BeeCursor {
       this.database = database;
     }
     this._prepareStatement(query);
+  }
+
+  get columns(): TableColumn[] | null {
+    if (!this.statement) return null;
+    return this.statement.columns()?.map((c) => ({
+      columnName: c.name,
+      dataType: c.type
+    }))
   }
 
   protected _createConnection(path: string) {

@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import vue from '@vitejs/plugin-vue2';
+import vue from 'vite-ng-plugin-vue2';
 import path from 'path'
 import commonjs from 'vite-plugin-commonjs'
 
@@ -48,6 +48,7 @@ export default defineConfig({
   },
   server: {
     port: 3003, // Development server port
+    strictPort: true, // Fail loudly if 3003 is taken (e.g. a stale dev server) instead of silently using another port
     // open: './src/index.html'
   }
 });

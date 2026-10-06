@@ -1,9 +1,10 @@
 import type { IPlatformInfo } from "../IPlatformInfo";
 import type { ConfigMetadata, KeybindingSection } from "@/types";
-import type { BksConfig } from "./BksConfigProvider";
+import type { BksConfig, KeybindingPath } from "./BksConfigProvider";
 import { convertKeybinding, ConfigValue } from "./BksConfigProvider";
 import { InvalidConfigMetadata } from "./errors";
 import defaultMetadata from "../../../config-metadata.json";
+import { formatDisplayKeybinding } from "@beekeeperstudio/ui-kit";
 
 /**
  * Provides UI-specific config functionality that requires metadata.
@@ -43,6 +44,19 @@ export class ConfigMetadataProvider {
       throw new InvalidConfigMetadata(missingLabels);
     }
     return sections;
+  }
+
+  getKeybindingLabel(path: KeybindingPath): string {
+    const keybindings = this.options.bksConfig.getKeybindings(
+      "context-menu",
+      path
+    );
+
+    const bindings = Array.isArray(keybindings)
+      ? keybindings
+      : [keybindings]
+
+    return bindings.map(formatDisplayKeybinding).join(", ");
   }
 
   private parseKeybindingSections(

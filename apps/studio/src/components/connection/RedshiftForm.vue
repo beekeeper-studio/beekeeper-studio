@@ -3,15 +3,15 @@
     <div class="form-group col">
       <label for="authenticationType">Authentication Method</label>
       <!-- need to take the value -->
-      <select name="" v-model="authType" id="">
+      <select name="" v-model="authType" id="" :disabled="disabled">
         <option :key="`${t.value}`" v-for="t in authTypes" :value="t.value" :selected="authType === t.value">
           {{ t.name }}
         </option>
       </select>
     </div>
-    <common-server-inputs :config="config" />
-    <common-iam v-show="iamAuthenticationEnabled" :config="config" :auth-type="authType" />
-    <common-advanced :config="config" />
+    <common-server-inputs :config="config" :disabled="disabled" />
+    <common-iam v-show="iamAuthenticationEnabled" :config="config" :auth-type="authType" :disabled="disabled" />
+    <common-advanced :config="config" :disabled="disabled" />
   </div>
 </template>
 <script>
@@ -43,6 +43,12 @@ export default {
       this.config.iamAuthOptions.iamAuthenticationEnabled = this.iamAuthenticationEnabled
     }
   },
-  props: ['config'],
+  props: {
+    config: Object,
+    disabled: {
+      type: Boolean,
+      default: false
+    }
+  },
 }
 </script>

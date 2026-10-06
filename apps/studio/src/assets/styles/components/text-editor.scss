@@ -1,7 +1,13 @@
 @import "./text-editor-plugins/partial-read-only.scss";
 
 .BksTextEditor {
-  padding: 0.75rem 0;
+  // On the scroller, not the root: codemirror's panels sit beside the
+  // scroller, so root padding pushes the vim status line off the edge.
+  padding: 0;
+
+  .cm-scroller {
+    padding: 0.75rem 0;
+  }
   &.remove-json-root-brackets .CodeMirror-code {
     & > div:first-child, & > div:last-child {
       display: none;

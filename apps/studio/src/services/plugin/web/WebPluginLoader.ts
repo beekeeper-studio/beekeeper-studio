@@ -31,7 +31,8 @@ type PluginResponseData = {
   };
 }[keyof RequestMap];
 
-type PluginNotificationData = {
+// This should probably be moved to the plugin packge
+export type PluginNotificationData = {
   [K in keyof NotificationMap]: {
     name: K;
     args: NotificationMap[K]["args"];
@@ -212,13 +213,14 @@ export default class WebPluginLoader {
             version: this.context.appVersion,
           };
           break;
-        case "getViewContext":
+        case "getViewContext": {
           const view = this.viewInstances.find((ins) => ins.iframe === source);
           if (!view) {
             throw new Error("View context not found.");
           }
           response.result = view.context;
           break;
+        }
         case "getConnectionInfo":
           response.result = this.pluginStore.getConnectionInfo();
           break;
@@ -234,7 +236,7 @@ export default class WebPluginLoader {
           break;
         }
         case "clipboard.readText":
-          response.result = window.main.readTextFromClipboard();
+          response.result = await window.main.readTextFromClipboard();
           break;
         case "checkForUpdate":
           response.result = await this.context.utility.send("plugin/checkForUpdates", {
@@ -257,10 +259,10 @@ export default class WebPluginLoader {
           break;
         }
         case "clipboard.writeText":
-          window.main.writeTextToClipboard(response.args.text);
+          await window.main.writeTextToClipboard(response.args.text);
           break;
         case "clipboard.writeImage":
-          response.result = window.main.writeImageToClipboard(response.args.data);
+          response.result = await window.main.writeImageToClipboard(response.args.data);
           break;
         case "noty.info":
           this.context.noty.info(response.args.message, {
@@ -405,7 +407,7 @@ export default class WebPluginLoader {
   }
 
   postMessage(iframe: HTMLIFrameElement, data: PluginNotificationData | ResponsePayload) {
-    iframe.contentWindow.postMessage(data, "*");
+    iframe.contentWindow.postMessage(data, `plugin://${this.manifest.id}`);
   }
 
   broadcast(data: PluginNotificationData) {

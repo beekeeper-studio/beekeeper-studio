@@ -334,6 +334,13 @@ BEEKEEPER =
     describe("Common DB Tests", () => {
       runCommonTests(getUtil, false)
     })
+
+    describe("queryStream double execution", () => {
+      it("should run the supplied query only once across the full stream lifecycle", async () => {
+        if (getUtil().connection.readOnlyMode) return
+        await getUtil().queryStreamDoubleExecutionTest()
+      })
+    })
   })
 
 }

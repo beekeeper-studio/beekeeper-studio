@@ -178,8 +178,14 @@
   height: 100%;
   flex-direction: column;
   display: flex;
-  justify-content: space-around;
+  justify-content: center;
   align-items: center;
+  padding: 2rem;
+  text-align: center;
+
+  .card-flat {
+    max-width: 500px;
+  }
 }
 
 // Backup tab layout things:

@@ -16,6 +16,7 @@ Let's build a simple "Hello World" plugin! You'll create a new tab that shows "H
 -   Basic HTML, CSS, and JavaScript knowledge
 -   Node.js and npm/yarn installed
 -   Beekeeper Studio installed
+-   **[The plugin system enabled](../user_guide/configuration.md)**
 
 ## Quick Start (2 Options)
 
@@ -308,15 +309,15 @@ To build from scratch:
 2. Go to **Tools → Manage Plugins**
 3. Look for **Hello World Plugin** - if it's there, you're golden! ✨
 
-    ![Plugin Manager showing installed plugin](../../assets/images/plugin-manager.png)
+    ![Plugin Manager showing installed plugin](../assets/images/plugin-manager.png)
 
 4. Connect to any database
 5. Click the dropdown arrow next to the + button
 6. Select **Hello World** from the menu
 7. **Boom!** Your plugin opens in a new tab 🎯
 
-![New tab dropdown menu](../../assets/images/new-tab-dropdown.png)
-![Plugin tab running](../../assets/images/plugin-tab.png)
+![New tab dropdown menu](../assets/images/new-tab-dropdown.png)
+![Plugin tab running](../assets/images/plugin-tab.png)
 
 ## Reading Database
 
@@ -374,7 +375,7 @@ Add a button and the code reference to your html:
 ...
 ```
 
-![Plugin with interactive button](../../assets/images/interactive-plugin.png)
+![Plugin with interactive button](../assets/images/interactive-plugin.png)
 
 ## Theme Sync
 
@@ -530,7 +531,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 ```
 
-![Complete plugin example running](../../assets/images/complete-plugin-example.png)
+![Complete plugin example running](../assets/images/complete-plugin-example.png)
 
 ## What's Next? 🚀
 

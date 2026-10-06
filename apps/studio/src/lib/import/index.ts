@@ -200,7 +200,7 @@ export default class Import {
       Object.keys(d).forEach(key => {
         const arrInd = columns.indexOf(key)
 
-        if (arrInd == null) return
+        if (arrInd < 0) return
 
         dataAnalysis[arrInd].add(this.checkDataType(d[key]))
       })

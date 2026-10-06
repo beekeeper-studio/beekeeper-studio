@@ -31,6 +31,8 @@ export const cssVars = [
   "--input-highlight",
 
   "--query-editor-bg",
+  "--menu-bg",
+  "--menu-shadow",
 
   "--scrollbar-track",
   "--scrollbar-thumb",
@@ -63,8 +65,11 @@ export const cssVars = [
   "--bks-text-editor-guttermarker-subtle-fg-color",
   "--bks-text-editor-header-fg-color",
   "--bks-text-editor-highlight-bg-color",
+  "--bks-text-editor-indent-marker-bg-color",
+  "--bks-text-editor-indent-marker-active-bg-color",
   "--bks-text-editor-keyword-fg-color",
   "--bks-text-editor-linenumber-fg-color",
+  "--bks-text-editor-linenumber-active-fg-color",
   "--bks-text-editor-link-fg-color",
   "--bks-text-editor-matchingbracket-fg-color",
   "--bks-text-editor-matchingbracket-bg-color",
@@ -128,10 +133,16 @@ export const cssVars = [
   "--bks-text-editor-sql-alias-fg-color",
   "--bks-text-editor-sql-field-fg-color",
 
-  // BksTextEditor context menu
-  "--bks-text-editor-context-menu-bg-color",
-  "--bks-text-editor-context-menu-fg-color",
-  "--bks-text-editor-context-menu-item-bg-color-active",
-  "--bks-text-editor-context-menu-item-fg-color-active",
-  "--bks-text-editor-context-menu-item-bg-color-hover",
+  // BksContextMenu
+  "--bks-context-menu-bg-color",
+  "--bks-context-menu-fg-color",
+  "--bks-context-menu-border-color",
+  "--bks-context-menu-item-fg-color",
+  "--bks-context-menu-item-bg-color-active",
+  "--bks-context-menu-item-fg-color-active",
+  "--bks-context-menu-item-bg-color-hover",
+  "--bks-context-menu-item-fg-color-disabled",
+  "--bks-context-menu-item-bg-color-disabled",
+  "--bks-context-menu-item-shortcut-fg-color",
+  "--bks-context-menu-divider-border-color",
 ] as const;

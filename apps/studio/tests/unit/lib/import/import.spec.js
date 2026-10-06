@@ -65,5 +65,26 @@ describe('Import Class', () => {
         { columnName: 'active', primary: false, dataTypes: new Set(['stringType']) }
       ])
     })
+
+    test('should not throw when data rows have extra keys absent from meta.fields', async () => {
+      // Reproduces the bug where columns.indexOf(key) returns -1 for an extra key,
+      // arrInd == null was false (-1 != null), so dataAnalysis[-1].add() threw TypeError.
+      jest.spyOn(importInstance, 'getPreview').mockResolvedValue({
+        data: [
+          { id: '1', name: 'Alice' },
+          { id: '2', name: 'Bob', extra: 'value' },  // 'extra' is not in meta.fields
+        ],
+        meta: {
+          fields: ['id', 'name']
+        }
+      })
+
+      const columnTypes = await importInstance.generateColumnTypesFromFile()
+
+      expect(columnTypes).toEqual([
+        { columnName: 'id', primary: true, dataTypes: new Set(['integerType']) },
+        { columnName: 'name', primary: false, dataTypes: new Set(['stringType']) },
+      ])
+    })
   })
 })

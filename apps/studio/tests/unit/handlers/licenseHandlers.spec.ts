@@ -100,4 +100,48 @@ describe("LicenseHandlers", () => {
       expect(result[0].licenseType).toBe("TrialLicense");
     });
   });
+
+  describe("license/getStatus", () => {
+    async function saveLicense(options: { validUntil: Date; supportUntil: Date }) {
+      const license = new LicenseKey();
+      license.email = "fake-email";
+      license.key = "fake-key";
+      license.validUntil = options.validUntil;
+      license.supportUntil = options.supportUntil;
+      license.licenseType = "PersonalLicense";
+      license.maxAllowedAppRelease = null;
+      await license.save();
+    }
+
+    it("includes cloud workspace access flags as own properties for a lifetime license", async () => {
+      // Support period over, license still valid = lifetime terms.
+      await saveLicense({
+        validUntil: new Date(Date.now() + 86_400_000),
+        supportUntil: new Date(Date.now() - 86_400_000),
+      });
+
+      const status = await LicenseHandlers["license/getStatus"]();
+
+      // The status crosses to the renderer via postMessage (structured
+      // clone), which drops prototype getters - the flags must be own
+      // properties of the returned object.
+      expect(Object.getOwnPropertyNames(status)).toEqual(
+        expect.arrayContaining(["isLifetime", "canAccessCloudWorkspaces"])
+      );
+      expect(status.isLifetime).toBe(true);
+      expect(status.canAccessCloudWorkspaces).toBe(false);
+    });
+
+    it("reports cloud workspace access for an active subscription", async () => {
+      await saveLicense({
+        validUntil: new Date(Date.now() + 86_400_000),
+        supportUntil: new Date(Date.now() + 86_400_000),
+      });
+
+      const status = await LicenseHandlers["license/getStatus"]();
+
+      expect(status.isLifetime).toBe(false);
+      expect(status.canAccessCloudWorkspaces).toBe(true);
+    });
+  });
 });

@@ -2,7 +2,7 @@
   <div class="with-connection-type">
     <div class="form-group col">
       <label for="authenticationType">Authentication Method</label>
-      <select name="" v-model="authType" id="">
+      <select name="" v-model="authType" id="" :disabled="disabled">
         <option :key="`${t.value}-${t.name}`" v-for="t in authTypes" :value="t.value" :selected="authType === t.value">
           {{ t.name }}
         </option>
@@ -21,20 +21,22 @@
       :config="config"
       :show-password-form="showPasswordForm"
       :password-label="passwordLabel"
+      :disabled="disabled"
     />
 
     <div class="form-group" v-if="isCockroach">
       <label for="Cluster ID">
         CockroachDB Cloud Cluster ID
-        <i class="material-icons"
-           v-tooltip="`Go to CockroachDB online -> Connect -> parameters only -> copy from 'options'`"
+        <i
+          class="material-icons"
+          v-tooltip="`Go to CockroachDB online -> Connect -> parameters only -> copy from 'options'`"
         >help_outlined</i>
       </label>
-      <input type="text" class="form-control" v-model="config.options.cluster">
+      <input type="text" class="form-control" v-model="config.options.cluster" :disabled="disabled">
     </div>
-    <common-iam v-show="iamAuthenticationEnabled" :auth-type="authType" :config="config" />
-    <common-entra-id v-show="azureAuthEnabled" :auth-type="authType" :config="config" />
-    <common-advanced :config="config" />
+    <common-iam v-show="iamAuthenticationEnabled" :auth-type="authType" :config="config" :disabled="disabled" />
+    <common-entra-id v-show="azureAuthEnabled" :auth-type="authType" :config="config" :disabled="disabled" />
+    <common-advanced :config="config" :disabled="disabled" />
   </div>
 </template>
 
@@ -60,7 +62,13 @@ function initialAuthType(config) {
 
 export default {
   components: {CommonEntraId, CommonServerInputs, CommonAdvanced, CommonIam },
-  props: ['config'],
+  props: {
+    config: Object,
+    disabled: {
+      type: Boolean,
+      default: false
+    }
+  },
   mounted() {
     this.azureAuthEnabled = this.config?.azureAuthOptions?.azureAuthEnabled || false
     if (!this.isCockroach && this.authType !== 'default') {
@@ -105,7 +113,7 @@ export default {
         this.showPasswordForm = true
       } else {
         if (this.isCommunity) {
-          this.$root.$emit(AppEvent.upgradeModal, "Upgrade required to use this authentication type");
+          this.$root.$emit(AppEvent.upgradeModal, "Enterprise Authentication");
           this.authType = 'default'
         } else {
           this.showPasswordForm = false

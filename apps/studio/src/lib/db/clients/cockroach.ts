@@ -56,6 +56,7 @@ export class CockroachClient extends PostgresClient {
             udt_name || '(' || datetime_precision::varchar(255) || ')'
           ELSE udt_name
         END as data_type,
+        udt_schema,
         CASE
           WHEN data_type = 'ARRAY' THEN 'YES'
           ELSE 'NO'
@@ -66,7 +67,10 @@ export class CockroachClient extends PostgresClient {
       ORDER BY table_schema, table_name, ordinal_position
     `;
 
-    const data = await this.driverExecuteSingle(sql, { params });
+    const [data, enumValuesByType] = await Promise.all([
+      this.driverExecuteSingle(sql, { params }),
+      this.listEnumValues(table, schema),
+    ]);
 
     return data.rows.map((row: any) => ({
       schemaName: row.table_schema,
@@ -80,6 +84,7 @@ export class CockroachClient extends PostgresClient {
       generated: row.is_generated === "ALWAYS" || row.is_generated === "YES",
       array: row.is_array === "YES",
       comment: row.column_comment || null,
+      enumValues: enumValuesByType.get(`${row.udt_schema}.${row.data_type}`),
       bksField: this.parseTableColumn(row),
     }));
   }

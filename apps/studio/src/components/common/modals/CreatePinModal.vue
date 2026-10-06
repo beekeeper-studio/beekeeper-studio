@@ -32,7 +32,7 @@
               v-model="pin"
               ref="pinInput"
               :placeholder="`Enter at least ${$bksConfig.security.minPinLength} characters`"
-            />
+            >
             <i
               class="material-icons password-icon"
               @click="togglePinVisibility"
@@ -50,7 +50,7 @@
               :type="showConfirmPin ? 'text' : 'password'"
               v-model="confirmPin"
               placeholder="Enter PIN again to confirm"
-            />
+            >
             <i
               class="material-icons password-icon"
               @click="toggleConfirmPinVisibility"
@@ -62,7 +62,9 @@
 
           <div class="alert alert-info">
             <i class="material-icons">info</i>
-            <div class="alert-body">Your PIN is encrypted and stored securely on your device.</div>
+            <div class="alert-body">
+              Your PIN is encrypted and stored securely on your device.
+            </div>
           </div>
 
           <div class="alert alert-warning">

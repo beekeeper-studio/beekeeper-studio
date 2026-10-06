@@ -30,11 +30,13 @@ export default class {
     this.forward(AppEvent.exportTables);
     this.forward(AppEvent.upgradeModal)
     this.forward(AppEvent.promptSqlFilesImport)
+    this.forward(AppEvent.promptConnectionFilesImport)
     this.forward(AppEvent.updatePin)
     this.forward(AppEvent.settingsChanged)
     this.forward(AppEvent.openPluginManager)
     this.forward(AppEvent.openKeyboardShortcuts)
     this.forward(AppEvent.pluginMenuClicked)
+    this.forward(AppEvent.pasteAsNewRows)
   }
 
   forward(event) {

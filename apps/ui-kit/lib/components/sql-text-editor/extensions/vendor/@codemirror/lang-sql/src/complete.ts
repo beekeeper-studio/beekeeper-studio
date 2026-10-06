@@ -1,8 +1,9 @@
-import {Completion, CompletionContext, CompletionSource} from "@codemirror/autocomplete"
+import {Completion, CompletionContext, CompletionSource, completeFromList, ifNotIn} from "@codemirror/autocomplete"
 import {EditorState, Facet, StateEffect, StateField, Text} from "@codemirror/state"
 import {syntaxTree} from "@codemirror/language"
 import {SyntaxNode} from "@lezer/common"
 import {type SQLDialect, SQLNamespace} from "@codemirror/lang-sql"
+import {Keyword, Type} from "./sql.grammar.terms"
 
 // ==== BEGIN CUSTOM PATCH ====
 export const schemaCompletionFilter = Facet.define<typeof optionsFilter>()
@@ -24,7 +25,7 @@ function tokenBefore(tree: SyntaxNode) {
 
 function idName(doc: Text, node: SyntaxNode): string {
   let text = doc.sliceString(node.from, node.to)
-  let quoted = /^([`'"])(.*)\1$/.exec(text)
+  let quoted = /^([`'"\[])(.*)([`'"\]])$/.exec(text)
   return quoted ? quoted[2] : text
 }
 
@@ -97,12 +98,11 @@ function getAliases(doc: Text, at: SyntaxNode) {
   return aliases
 }
 
-function maybeQuoteCompletions(quote: string | null, completions: readonly Completion[]) {
-  if (!quote) return completions
-  return completions.map(c => ({...c, label: c.label[0] == quote ? c.label : quote + c.label + quote, apply: undefined}))
+function maybeQuoteCompletions(openingQuote: string, closingQuote: string, completions: readonly Completion[]) {
+  return completions.map(c => ({...c, label: c.label[0] == openingQuote ? c.label : openingQuote + escapeIdentifier(c.label, closingQuote) + closingQuote, apply: undefined}))
 }
 
-const Span = /^\w*$/, QuotedSpan = /^[`'"]?\w*[`'"]?$/
+const Span = /^\w*$/, QuotedSpan = /^[`'"\[]?\w*[`'"\]]?$/
 
 function isSelfTag(namespace: SQLNamespace): namespace is {self: Completion, children: SQLNamespace} {
   return (namespace as any).self && typeof (namespace as any).self.label == "string"
@@ -113,7 +113,7 @@ class CompletionLevel {
   children: {[name: string]: CompletionLevel} | undefined = undefined
   private _labelMap?: Map<string, number>
 
-  constructor(readonly idQuote: string, readonly idCaseInsensitive: boolean) {}
+  constructor(readonly idQuote: string, readonly idCaseInsensitive: boolean, readonly alwaysQuote = false) {}
 
   child(name: string) {
     let children = this.children || (this.children = Object.create(null))
@@ -127,13 +127,13 @@ class CompletionLevel {
       }
 
       if (!this._labelMap.has(name)) {
-        const completion = nameCompletion(name, "type", this.idQuote, this.idCaseInsensitive)
+        const completion = nameCompletion(name, "type", this.idQuote, this.idCaseInsensitive, this.alwaysQuote)
         this._labelMap.set(name, this.list.length)
         this.list.push(completion)
       }
     }
 
-    return (children[name] = new CompletionLevel(this.idQuote, this.idCaseInsensitive))
+    return (children[name] = new CompletionLevel(this.idQuote, this.idCaseInsensitive, this.alwaysQuote))
   }
 
   maybeChild(name: string) {
@@ -157,7 +157,7 @@ class CompletionLevel {
 
   addCompletions(completions: readonly (Completion | string)[]) {
     for (let option of completions)
-      this.addCompletion(typeof option == "string" ? nameCompletion(option, "property", this.idQuote, this.idCaseInsensitive) : option)
+      this.addCompletion(typeof option == "string" ? nameCompletion(option, "property", this.idQuote, this.idCaseInsensitive, this.alwaysQuote) : option)
   }
 
   addNamespace(namespace: SQLNamespace) {
@@ -263,17 +263,54 @@ class CompletionLevel {
 
 }
 
-export function nameCompletion(label: string, type: string, idQuote: string, idCaseInsensitive: boolean): Completion {
-  if ((new RegExp("^[a-z_][a-z_\\d]*$", idCaseInsensitive ? "i" : "")).test(label)) return {label, type}
-  return {label, type, apply: idQuote + label + idQuote}
+/**
+ * When identifier completions get quoted:
+ * - "auto" (default): only names the dialect can't reference bare — special
+ *   characters always, and MixedCase only when the dialect case-folds
+ *   unquoted identifiers (`caseInsensitiveIdentifiers` unset, e.g. Postgres).
+ * - "always": every completed identifier, regardless of dialect.
+ */
+export type IdentifierQuoting = "auto" | "always"
+
+/**
+ * Resolve the quoting parameters identifier completions use for a dialect.
+ * `quoteIdentifiers: "always"` quotes every completed name unconditionally.
+ * `quoteCharacter` overrides which quote gets inserted, but only when the
+ * dialect recognizes that character as an identifier quote (e.g. `"` instead
+ * of `[` for SQL Server) — anything else would produce SQL the database
+ * rejects, so it falls back to the dialect's first quote.
+ */
+export function identifierCompletionParams(dialect?: SQLDialect, quoteIdentifiers?: IdentifierQuoting,
+                                           quoteCharacter?: string) {
+  let recognized = dialect?.spec.identifierQuotes || '"'
+  let validOverride = quoteCharacter?.length == 1 && recognized.includes(quoteCharacter)
+  return {
+    idQuote: validOverride ? quoteCharacter : recognized[0],
+    idCaseInsensitive: !!dialect?.spec.caseInsensitiveIdentifiers,
+    alwaysQuote: quoteIdentifiers == "always",
+  }
+}
+
+// Doubling the closing quote is the escape every supported backend uses for
+// a quote character inside a quoted name: `a"b` → "a""b", a]b → [a]]b].
+function escapeIdentifier(name: string, closingQuote: string) {
+  return name.split(closingQuote).join(closingQuote + closingQuote)
+}
+
+export function nameCompletion(label: string, type: string, idQuote: string, idCaseInsensitive: boolean,
+                               alwaysQuote = false): Completion {
+  if (!alwaysQuote && (new RegExp("^[a-z_][a-z_\\d]*$", idCaseInsensitive ? "i" : "")).test(label)) return {label, type}
+  let closingQuote = getClosingQuote(idQuote)
+  return {label, type, apply: idQuote + escapeIdentifier(label, closingQuote) + closingQuote}
 }
 
 export function buildCompletionLevels(schema: SQLNamespace,
                                    tables?: readonly Completion[], schemas?: readonly Completion[],
                                    defaultTableName?: string, defaultSchemaName?: string,
-                                   dialect?: SQLDialect) {
-  let idQuote = dialect?.spec.identifierQuotes?.[0] || '"'
-  let top = new CompletionLevel(idQuote, !!dialect?.spec.caseInsensitiveIdentifiers)
+                                   dialect?: SQLDialect, quoteIdentifiers?: IdentifierQuoting,
+                                   quoteCharacter?: string) {
+  let {idQuote, idCaseInsensitive, alwaysQuote} = identifierCompletionParams(dialect, quoteIdentifiers, quoteCharacter)
+  let top = new CompletionLevel(idQuote, idCaseInsensitive, alwaysQuote)
   let defaultSchema = defaultSchemaName ? top.child(defaultSchemaName) : null
 
   top.addNamespace(schema)
@@ -314,7 +351,9 @@ export const completionLevels = StateField.define<{use: boolean; top: Completion
             undefined,
             config.defaultTableName,
             config.defaultSchemaName,
-            config.dialect
+            config.dialect,
+            config.quoteIdentifiers,
+            config.quoteCharacter
           ),
           // HACK: Use when setSchema is triggered
           use: true,
@@ -329,6 +368,8 @@ type SupportedCompleteConfig = {
   defaultTableName?: string;
   defaultSchemaName?: string;
   dialect?: SQLDialect;
+  quoteIdentifiers?: IdentifierQuoting;
+  quoteCharacter?: string;
 }
 
 export const completeConfig = Facet.define<
@@ -338,6 +379,10 @@ export const completeConfig = Facet.define<
   combine: (values) => values.reduce((a, b) => ({ ...a, ...b }), {}),
 });
 
+function getClosingQuote(openingQuote: string) {
+  return openingQuote === "[" ? "]" : openingQuote
+}
+
 // Some of this is more gnarly than it has to be because we're also
 // supporting the deprecated, not-so-well-considered style of
 // supplying the schema (dotted property names for schemas, separate
@@ -345,8 +390,9 @@ export const completeConfig = Facet.define<
 export function completeFromSchema(schema: SQLNamespace,
                                    tables?: readonly Completion[], schemas?: readonly Completion[],
                                    defaultTableName?: string, defaultSchemaName?: string,
-                                   dialect?: SQLDialect): CompletionSource {
-  let {top, defaultSchema} = buildCompletionLevels(schema, tables, schemas, defaultTableName, defaultSchemaName, dialect)
+                                   dialect?: SQLDialect, quoteIdentifiers?: IdentifierQuoting,
+                                   quoteCharacter?: string): CompletionSource {
+  let {top, defaultSchema} = buildCompletionLevels(schema, tables, schemas, defaultTableName, defaultSchemaName, dialect, quoteIdentifiers, quoteCharacter)
   return async (context: CompletionContext) => {
     let {parents, from, quoted, empty, aliases} = sourceContext(context.state, context.pos)
     if (empty && !context.explicit) return null
@@ -369,18 +415,72 @@ export function completeFromSchema(schema: SQLNamespace,
       if (!next) return null
       level = next
     }
-    let quoteAfter = quoted && context.state.sliceDoc(context.pos, context.pos + 1) == quoted
+
     let options = level.list
     if (level == top && aliases)
       options = options.concat(Object.keys(aliases).map(name => ({label: name, type: "constant"})))
 
     options = await optionsFilter(context, { parents, from, quoted, empty, aliases }, options);
 
-    return {
-      from,
-      to: quoteAfter ? context.pos + 1 : undefined,
-      options: maybeQuoteCompletions(quoted, options),
-      validFor: quoted ? QuotedSpan : Span
+    if (quoted) {
+      let openingQuote = quoted[0]
+      let closingQuote = getClosingQuote(openingQuote)
+
+      let quoteAfter = context.state.sliceDoc(context.pos, context.pos + 1) == closingQuote
+
+      return {
+        from,
+        to: quoteAfter ? context.pos + 1 : undefined,
+        options: maybeQuoteCompletions(openingQuote, closingQuote, options),
+        validFor: QuotedSpan
+      }
+    } else {
+      return {
+        from,
+        options: options,
+        validFor: Span
+      }
     }
   }
+}
+
+/**
+ * How completed keywords and built-in functions are cased:
+ * - "preserve" (default): follow the typed prefix — a prefix containing a
+ *   lowercase letter (`sel`, `Sel`) completes lowercase, an uppercase prefix
+ *   (`SEL`, `GROUP_C`) or no prefix at all (explicit completion, e.g.
+ *   Ctrl+Space) completes uppercase.
+ * - "upper" / "lower": force one case regardless of what was typed.
+ */
+export type KeywordCasing = "preserve" | "upper" | "lower"
+
+function completionType(tokenType: number) {
+  return tokenType == Type ? "type" : tokenType == Keyword ? "keyword" : "variable"
+}
+
+function defaultKeyword(label: string, type: string): Completion { return {label, type, boost: -1} }
+
+/**
+ * Replaces @codemirror/lang-sql's keywordCompletionSource: casing is decided
+ * per completion run (see KeywordCasing) instead of fixed at build time.
+ */
+export function keywordCompletionSource(dialect: SQLDialect, casing: KeywordCasing = "preserve",
+                                        build?: (label: string, type: string) => Completion): CompletionSource {
+  // `dialect.dialect.words` is the internal token map the upstream keyword
+  // source reads. Unlike `dialect.spec`, it includes the SQL92 fallback words
+  // for dialects defined without keyword lists (e.g. StandardSQL).
+  const words = (dialect as unknown as {dialect: {words: {[word: string]: number}}}).dialect.words
+  const make = build || defaultKeyword
+  const stored = completeFromList(Object.keys(words).map(w => make(w, completionType(words[w]))))
+  const upper = completeFromList(Object.keys(words).map(w => make(w.toUpperCase(), completionType(words[w]))))
+  return ifNotIn(["QuotedIdentifier", "String", "LineComment", "BlockComment", "."], (context) => {
+    let useUpper = casing == "upper"
+    if (casing == "preserve") {
+      // Uppercase unless the prefix contains a lowercase letter: only an
+      // explicitly lowercase prefix asks for lowercase keywords.
+      const typed = context.matchBefore(/\w+$/)
+      useUpper = !typed || !/[a-z]/.test(typed.text)
+    }
+    return (useUpper ? upper : stored)(context)
+  })
 }

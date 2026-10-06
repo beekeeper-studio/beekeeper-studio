@@ -294,8 +294,14 @@ export default Vue.extend({
     // Tabulator Header Row
     .tabulator {
       .tabulator-header {
+        position: sticky;
+        top: 0;
+        z-index: 15;
         box-shadow: none!important;
         padding: 0!important;
+        .tabulator-header-contents {
+          background-color: var(--query-editor-bg);
+        }
         .tabulator-col {
           min-width: $min-cell-width!important;
           padding: 0 $cell-padding;

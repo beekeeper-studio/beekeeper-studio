@@ -7,9 +7,12 @@ import { havingCli, safely, safelyDo, upsert } from "./StoreHelpers";
 import { ClientError } from '@/store/modules/data/StoreHelpers'
 import { ActionContext, ActionTree, Module, MutationTree } from "vuex";
 import { State as RootState } from '../../index'
-import { LocalWorkspace } from "@/common/interfaces/IWorkspace";
 import Vue from "vue";
 import { Transport } from "@/common/transport";
+import { ListOptions } from "@/lib/cloud/controllers/GenericController";
+import rawLog from "@bksLogger";
+
+const log = rawLog.scope('DataModuleBase');
 
 export interface QueryModuleState {
   queryFolders: IQueryFolder[]
@@ -26,9 +29,31 @@ export interface DataState<T> {
   pollError: ClientError
   filter?: string
   pendingSaveIds?: number[]
+  searching?: boolean
 }
 
 
+
+/**
+ * Payload for full or partial replacement operations.
+ * - An array replaces all existing items.
+ * - `replaceIf` decides what a missing item means: an existing item absent from
+ *   `items` is only removed when the predicate accepts it.
+ */
+export type ReplacePayload<T> =
+  | T[]
+  | { items: T[]; replaceIf?: (item: T) => boolean }
+
+export type LoadOptions<T> = Partial<ListOptions> & {
+  replaceIf?: (item: T) => boolean
+  onError?: (error: ClientError) => void
+}
+
+export type MutatePayload<T> =
+  | { type: 'set'; data: T | T[] }
+  | { type: 'upsert'; data: T | T[] }
+  | { type: 'replace'; data: ReplacePayload<T> }
+  | { type: 'remove'; data: T | T[] | number }
 
 export interface DataStoreMutations<T, X extends DataState<T>> extends MutationTree<X> {
   loading(state: X, loading: boolean): void
@@ -53,7 +78,7 @@ export interface DataStoreMutations<T, X extends DataState<T>> extends MutationT
 
 
 export interface DataStore<T, X extends DataState<T>> extends Module<X, RootState> {
-  state: X
+  state: X | (() => X)
   mutations: DataStoreMutations<T, X>
   actions: DataStoreActions<T, X>
 }
@@ -72,6 +97,9 @@ const buildBasicMutations = <T extends HasId>(sortBy?: SortSpec) => ({
   },
   pollError(state, error: Error | null) {
     state.pollError = error
+  },
+  searching(state, searching: boolean) {
+    state.searching = searching
   },
   addPendingSave(state, id: number) {
     if (!state.pendingSaveIds) state.pendingSaveIds = []
@@ -98,7 +126,10 @@ const buildBasicMutations = <T extends HasId>(sortBy?: SortSpec) => ({
     const sorted = sortBy ? _.sortBy(stateItems, sortBy.field) : stateItems
     state.items = sortBy?.direction === 'desc' ? sorted.reverse() : sorted
   },
-  replace(state, items: T[]) {
+  replace(state, payload: ReplacePayload<T>) {
+    const items = _.isArray(payload) ? payload : payload.items
+    const replaceIf = _.isArray(payload) ? undefined : payload.replaceIf
+
     const pendingIds = state.pendingSaveIds || []
     const itemIds = items.map((i) => i.id)
     const stateIds = state.items.map((i) => i.id)
@@ -106,10 +137,14 @@ const buildBasicMutations = <T extends HasId>(sortBy?: SortSpec) => ({
     // Don't update items that have pending saves - keep local optimistic version
     const toUpdate = items.filter((i) => stateIds.includes(i.id) && !pendingIds.includes(i.id))
     const toInsert = items.filter((i) => !stateIds.includes(i.id))
+    const toRemove = state.items
+      .filter((i) => !itemIds.includes(i.id))
+      .filter((i) => !replaceIf || replaceIf(i))
+      .map((i) => i.id)
 
     // Don't remove items that have pending saves
     const stateItems = _.reject(state.items, (item) =>
-      !itemIds.includes(item.id) && !pendingIds.includes(item.id)
+      toRemove.includes(item.id) && !pendingIds.includes(item.id)
     )
     const upsertable = [...toUpdate, ...toInsert]
     upsertable.forEach((i) => upsert(stateItems, i))
@@ -133,16 +168,45 @@ export function mutationsFor<T extends HasId>(obj: any = {}, sortBy?: SortSpec) 
   }
 }
 
+export function mutateActions<T>() {
+  return {
+    async mutate(context, options: MutatePayload<T>) {
+      context.commit(options.type, options.data);
+      await context.dispatch("afterMutate", options);
+    },
+    async afterMutate() {
+      // modules that derive state from items override this
+    },
+  }
+}
+
 export function utilActionsFor<T extends Transport>(type: string, other: any = {}, loadOptions: any = {}, findOneSelects: any = {}) {
   return {
-    async load(context) {
+    async initialize(context) {
+      await context.dispatch('load');
+    },
+    async load(context, options: LoadOptions<T> = {}) {
       context.commit("error", null);
       await safely(context, async () => {
-        const items = await Vue.prototype.$util.send(`appdb/${type}/find`, { options: loadOptions });
-        if (context.rootState.workspaceId === LocalWorkspace.id) {
-          context.commit('upsert', items);
-        }
-      })
+        const findOpts = {
+          ...loadOptions,
+          ...(options.params ? { params: options.params } : {})
+        };
+        const items = await Vue.prototype.$util.send(`appdb/${type}/find`, { options: findOpts });
+        await context.dispatch('mutate', { type: 'upsert', data: items });
+      }, options.onError)
+    },
+    async search(context, q: string) {
+      if (!q) {
+        return
+      }
+      context.commit('searching', true)
+      try {
+        const items = await Vue.prototype.$util.send(`appdb/${type}/search`, { searchText: q });
+        await context.dispatch('mutate', { type: 'upsert', data: items })
+      } finally {
+        context.commit('searching', false)
+      }
     },
     async poll() {
       // do nothing, locally we don't need to poll.
@@ -162,31 +226,31 @@ export function utilActionsFor<T extends Transport>(type: string, other: any = {
 
     async save(context, item: T) {
       const updated = await Vue.prototype.$util.send(`appdb/${type}/save`, { obj: item });
-      context.commit('upsert', updated);
+      await context.dispatch('mutate', { type: 'upsert', data: updated });
       return updated.id;
     },
 
     async saveMany(context, items: T[]) {
       // Optimistic commit so any re-renders during the async saves see correct state
-      context.commit('upsert', items);
+      await context.dispatch('mutate', { type: 'upsert', data: items });
       const saved = await Promise.all(
         items.map(item => Vue.prototype.$util.send(`appdb/${type}/save`, { obj: item }))
       );
-      context.commit('upsert', saved);
+      await context.dispatch('mutate', { type: 'upsert', data: saved });
     },
 
     async remove(context, item: T) {
       await Vue.prototype.$util.send(`appdb/${type}/remove`, { obj: item });
-      context.commit('remove', item)
+      await context.dispatch('mutate', { type: 'remove', data: item })
     },
 
     async reload(context, id: number) {
       const item = await Vue.prototype.$util.send(`appdb/${type}/findOneBy`, { options: { id } })
       if (item) {
-        context.commit('upsert', item)
+        await context.dispatch('mutate', { type: 'upsert', data: item })
         return item.id
       } else {
-        context.commit('remove', id)
+        await context.dispatch('mutate', { type: 'remove', data: id })
         return null
       }
     },
@@ -201,22 +265,43 @@ export function utilActionsFor<T extends Transport>(type: string, other: any = {
       });
       return item;
     },
+    ...mutateActions<T>(),
     ...other
   }
 }
 
 export function actionsFor<T extends HasId>(scope: string, obj: any) {
   return {
-    async load(context) {
+    async initialize(context) {
+      await context.dispatch("load");
+    },
+    async load(context, options: LoadOptions<T> = {}) {
       context.commit("error", null)
       await safelyDo(context, async (cli) => {
-        const items: any[] = await cli[scope].list()
+        const items: any[] = await cli[scope].list(undefined, options)
         // this is to account for when the store module changes
         const rightItems = items.filter((i) => i.workspaceId === context.rootState.workspaceId)
         if (rightItems.length === items.length) {
-          context.commit('replace', rightItems)
+          await context.dispatch('mutate', {
+            type: 'replace',
+            data: { items: rightItems, replaceIf: options.replaceIf },
+          })
         }
-      })
+      }, options.onError)
+    },
+    async search(context, q: string) {
+      if (!q) {
+        return
+      }
+      context.commit('searching', true)
+      try {
+        await safelyDo(context, async (cli) => {
+          const items = await cli[scope].search(q)
+          await context.dispatch('mutate', { type: 'upsert', data: items })
+        })
+      } finally {
+        context.commit('searching', false)
+      }
     },
     // TODO THIS ISNT WORKING
     async poll(context) {
@@ -230,7 +315,7 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
           // this is to account for when the store module changes
           const rightItems = items.filter((item) => item.workspaceId === context.rootState.workspaceId)
           if (rightItems.length === items.length) {
-            context.commit('replace', rightItems)
+            await context.dispatch('mutate', { type: 'replace', data: rightItems })
           }
           context.commit('pollError', null)
         } catch (ex) {
@@ -241,14 +326,14 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
     async save(context, item: T): Promise<T> {
       return await havingCli(context, async (cli) => {
         const updated = await cli[scope].upsert(item)
-        context.commit('upsert', updated)
+        await context.dispatch('mutate', { type: 'upsert', data: updated })
         return updated.id
       })
     },
     async remove(context, item: T) {
       await havingCli(context, async (cli) => {
         await cli[scope].delete(item)
-        context.commit('remove', item)
+        await context.dispatch('mutate', { type: 'remove', data: item })
       })
     },
 
@@ -259,11 +344,11 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
       return await havingCli(context, async (cli) => {
         try {
           const updated = await cli[scope].get(id)
-          context.commit('upsert', updated)
+          await context.dispatch('mutate', { type: 'upsert', data: updated })
           return updated.id
         } catch (ex) {
           if (ex.status && ex.status === 404) {
-            context.commit('remove', id)
+            await context.dispatch('mutate', { type: 'remove', data: id })
           }
           return null
         }
@@ -282,6 +367,7 @@ export function actionsFor<T extends HasId>(scope: string, obj: any) {
       });
       return item;
     },
+    ...mutateActions<T>(),
     ...obj
   }
 }

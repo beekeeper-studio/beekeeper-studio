@@ -1,77 +1,91 @@
-Using provided tag: v5.1.5
-Using tag: v5.1.5
-552aa7277 Merge pull request #2978 from therealrinku/fix/jsonb-boolean
-58a83c918 Merge pull request #2971 from beekeeper-studio/fix/core-interface-split
-d64de0113 Merge pull request #3013 from beekeeper-studio/fix/anywhere-form
-6d11a7c59 Merge pull request #2992 from beekeeper-studio/feat/anywhere
-b59774bda Merge pull request #3011 from beekeeper-studio/fix/vite-version
-e608f0863 Merge pull request #3007 from beekeeper-studio/bugfix/2936_Copy-As-SQL
-0e60794da Merge pull request #3008 from beekeeper-studio/bugfix/remove-uncalled-function
-608534750 Merge pull request #2934 from thePeras/feat/streamer-mode
-fe7c9dc22 Merge pull request #2946 from beekeeper-studio/feat/mongo-sql-editor
-592cf2f49 Merge pull request #2996 from beekeeper-studio/fix/sqltexteditor-contextmenu
-53130a8e9 Merge pull request #2998 from therealrinku/fix/quick-search-overflow
-b65f2a4aa Merge pull request #2969 from beekeeper-studio/fix/status-bar
-4358465af Merge pull request #2999 from beekeeper-studio/fix/config-keys
-7de56e1e8 Merge pull request #2997 from beekeeper-studio/fix/mongo-ansi
-1266f3de2 Merge pull request #2995 from beekeeper-studio/docs/ui-kit-sqltexteditor
-bf9d7932c Merge pull request #2994 from beekeeper-studio/fix/vim-clipboard
-30caebf0b Merge pull request #2988 from beekeeper-studio/fix/sqltexteditor-syntax-colors
-157ceede9 Merge pull request #2989 from beekeeper-studio/fix/text-editor-vim
-d27d7b0c7 Merge pull request #2979 from TomasSilv/development
-645dbc8b1 Merge pull request #2975 from beekeeper-studio/dependabot/npm_and_yarn/apps/ui-kit/examples/react/vite-6.0.14
-521dd6e3f Merge pull request #2960 from beekeeper-studio/fix/sass
-c87d34520 Merge pull request #2986 from beekeeper-studio/fix/null-license
-ef50e9697 Merge pull request #2860 from beekeeper-studio/oracle-client-fixes
-708273dbb Merge pull request #2944 from therealrinku/fix/clear-table-search
-0b1aee048 Merge pull request #2902 from beekeeper-studio/dependabot/npm_and_yarn/yargs-parser-20.2.9
-2e308ad80 Merge pull request #2967 from beekeeper-studio/fix/mongo-shell
-349226d42 Merge pull request #2955 from beekeeper-studio/fix/free-solarized
-23cac27ce Merge pull request #2671 from beekeeper-studio/file-based-license
-ba16498de Merge pull request #2977 from beekeeper-studio/unique-id
-fcac97301 Merge pull request #2965 from beekeeper-studio/fix/json-viewer
-ba70574c2 Merge pull request #2966 from beekeeper-studio/fix/sqltexteditor-race
-c5aac62ce Merge pull request #2895 from Jvillani-fend/feature/ctrl+pg_tabChange
-ecc34f785 Merge pull request #2928 from thePeras/fix/fk-icon-update
-cd28f3585 Merge pull request #2849 from beekeeper-studio/feat/editable-json-viewer
-222429b95 Merge pull request #2866 from beekeeper-studio/feat/result-table-json-viewer
-1c383b216 Merge pull request #2799 from beekeeper-studio/feat/wrap-text
-f043a9fc1 Merge pull request #2931 from beekeeper-studio/use-ui-kit-sqltexteditor
-1d535392d Merge pull request #2802 from beekeeper-studio/feat/config-binary-encoding
-595100adb Merge pull request #2800 from beekeeper-studio/fix/tabulator-errors
-5e4722b92 Merge pull request #2957 from joaovicente3/fix-foreign-key-button
-12807f0e2 Merge pull request #2949 from therealrinku/fix/raw-filter
-b271b88cc Merge pull request #2875 from beekeeper-studio/dependabot/npm_and_yarn/babel/runtime-7.26.10
-c24f82b62 Merge pull request #2874 from beekeeper-studio/dependabot/npm_and_yarn/babel/helpers-7.26.10
-bb5ae4cc7 Merge pull request #2873 from beekeeper-studio/dependabot/npm_and_yarn/axios-1.8.2
-1fee44c81 Merge pull request #2932 from beekeeper-studio/dependabot/npm_and_yarn/apps/ui-kit/examples/react/vite-6.0.12
-92ddfda3c Merge pull request #2933 from beekeeper-studio/dependabot/npm_and_yarn/vite-5.4.15
-69f8e1b04 Merge pull request #2914 from beekeeper-studio/feat/mongo-editor
-1dbbb4629 Merge pull request #2915 from beekeeper-studio/fix/config-plugin
-5d4ef2658 Merge pull request #2926 from T-MSD/BugFix
-b30c0572f Merge pull request #2938 from therealrinku/fix/excel-export-null-values
-d263ac2f6 Merge pull request #2906 from joao-sntos/fix-bug-import-from-url
-1b67e5bbe Merge pull request #2922 from rajitha-dassanayake/feat/2677
-d8c6c48e7 Merge pull request #2942 from therealrinku/fix/copy-all-shortcut
-e2d22183d Merge pull request #2940 from thePeras/fix/refresh-panel
-855dcf4ee Merge pull request #2917 from Daniel15/patch-1
-a0edb7928 Merge pull request #2930 from beekeeper-studio/update-ui-kits-doc
-e71273810 Merge pull request #2929 from beekeeper-studio/fix/oracle-initial-sort
-39c8474e7 Merge pull request #2924 from therealrinku/fix/highlight-selected-table
-1eb5d68f9 Merge pull request #2896 from beekeeper-studio/fix/json-sidebar-fold-gutter
-fe33fe001 Merge pull request #2881 from beekeeper-studio/feat/mongo-v2
-ec95b4895 Merge pull request #2904 from beekeeper-studio/fix/default-conn-colour
-321e2ca59 Merge pull request #2843 from beekeeper-studio/feat/changed-sign-json-viewer
-89079e5dd Merge pull request #2879 from RodrigoPerestrelo/fix-select-copy-relation-names
-cc96326e3 Merge pull request #2905 from beekeeper-studio/update-ui-kit
-7b48c48ed Merge pull request #2903 from beekeeper-studio/rathboma-patch-6
-820a0294d Merge pull request #2792 from beekeeper-studio/ui-kit-updates
-aa9476d60 Merge pull request #2807 from beekeeper-studio/fix/index-form-validation
-878853195 Merge pull request #2899 from therealrinku/fix/add-row
-89df82507 Merge pull request #2876 from juratjan123/Hint_improve
-7781ce1c0 Merge pull request #1929 from beekeeper-studio/config.ini
-ecafaba7a Merge pull request #2483 from beekeeper-studio/feature/free-reminder
-7f4f865ab Merge pull request #2641 from beekeeper-studio/feature/2379-Tab-History
-90fa41fff Merge pull request #2878 from beekeeper-studio/fix/unsaved-conn-dupes
-0ebb6526c Merge pull request #2880 from drochag/patch-1
-f63c884ae Merge pull request #2853 from beekeeper-studio/rc-51
+# Beekeeper Studio 5.9.0
+
+This is a big one. Snowflake support — which we've been teasing for a couple of releases — has finally landed, bringing our fully-featured driver count up another notch. SQL Server gets proper integrated (Windows/Kerberos) authentication, and there's a pile of everyday-workflow upgrades: paste copied data straight in as new rows, pick enum values from a dropdown, rename things inline in the sidebar, and move queries, folders, and connections around from a single dialog. On top of that there's a long tail of bug fixes, SSH and packaging improvements, and a security fix worth calling out.
+
+## Highlights
+
+- **Snowflake support.** Our long-awaited Snowflake driver is here. Connect with username/password, SSO via browser, or multi-factor auth (authenticator code or Duo push), with token caching where your account allows it. You get full schema browsing, views and materialized views, primary/foreign keys, index create/drop, create-script (DDL) retrieval, table cloning, and transactional inserts/updates/deletes — plus streaming and cancellation for big queries. The connection form takes your account ID, default database, and warehouse, and there's a read-only mode for locked-down environments.
+
+- **SQL Server integrated (Windows/Kerberos) authentication.** Connect to your SQL Server using either integrated Windows auth, or Kerberos. Kerberos authentication works across all three operating systems (although it sometimes requires system-wide libraries installed).
+
+
+## Notable Improvements
+
+- **Paste data as new rows.** Copy a block of data from anywhere and paste it into a table as new rows instead of overwriting the cells you've selected — the quick way to port a chunk of data between tables without setting up a full import. There's a dedicated keybinding, and backspace now clears a selected range as you'd expect.
+
+- **Pick enum values from a dropdown.** Enum columns now offer their valid values in a dropdown right in the table and result grids, so you don't have to remember or retype them. Works on PostgreSQL, CockroachDB, MySQL/MariaDB, DuckDB, and ClickHouse.
+
+- **One move-to dialog for everything.** The move-to modal now handles saved queries and (sub)folders as well as connections, so you can reorganize the whole sidebar from one consistent dialog instead of a scatter of context-menu entries.
+
+- **Inline renaming in the sidebar.** Rename queries, connections, and folders inline, right where they live.
+
+- **Plugin keyboard shortcuts.** Plugin menu items can now be bound to custom keyboard shortcuts via the config file.
+
+- **New "unix timestamp" query magic.** Convert a Unix timestamp (seconds, milliseconds, microseconds, or nanoseconds) to a readable date string, with timezone and ISO formatting options — e.g. `columnname__format__unixtime__ms__utc`.
+
+- **Smarter SSH config handling.** Previously-silent `~/.ssh/config` problems now surface as non-blocking warning toasts on connect/test (unparseable config, bad ownership/permissions, or a missing `IdentityFile` in agent mode). SSH tunnels now skip entries with a missing `IdentityFile`, and Beekeeper uses ssh-config's native `Match exec` handling instead of stripping Match blocks by hand. A new `[security] allowSshConfigMatchExec` option (default true, matching `ssh(1)`) lets you disable execution of `Match exec` directives.
+
+- **SSH tunneling for more engines.** Fixed SSH tunneling for ClickHouse and Firebird, and added bastion/jump-host support for MongoDB (forcing `directConnection` so it actually works).
+
+- **ClickHouse custom SSL certificates.** ClickHouse connections now support custom SSL certificates for encrypted connections. Thanks @mastercactapus!
+
+- **DynamoDB is now in beta.** DynamoDB moves from planned to beta support, with a new connection guide covering IAM auth and local-endpoint configuration.
+
+- **Sidebar remembers where you were.** The last-open sidebar tab persists across restarts, and the default sidebar tab is configurable.
+
+## Full Change List
+
+### New Features
+- Snowflake driver: connections, schema browsing, views/materialized views, keys, indexes, DDL retrieval, table cloning, transactional writes, streaming and cancellation (#4323)
+- SQL Server integrated (Windows/Kerberos) authentication, with Encrypt toggle and optional SPN override (#4416, #4430)
+- Paste copied data as new rows, with a dedicated keybinding; backspace clears a selected range (#4450)
+- Select enum values from a dropdown — PostgreSQL, CockroachDB, MySQL/MariaDB, DuckDB, ClickHouse (#4444)
+- Unified move-to dialog for connections, saved queries, and (sub)folders (#4448)
+- Inline renaming of queries, connections, and folders in the sidebar (#4250)
+- Plugin menu items support configurable keyboard shortcuts (#3837)
+- New unix-timestamp query magic (#4401). Thanks @Squidysquid1!
+- ClickHouse custom SSL certificate support (#4343). Thanks @mastercactapus!
+- DynamoDB beta support and connection docs (#4298)
+- Persist last-open sidebar tab across restarts; configurable default sidebar selection (#4440, #4447)
+
+### Bug Fixes
+- Restoring the edited text of a saved query was broken (#4443)
+- Auto-refresh now works when making table alterations from the query editor (#4442)
+- BigQuery NUMERIC/BIGNUMERIC (and other custom-type) values now display correctly (#4391)
+- SQL Server autocomplete handles bracket-quoted `[identifiers]` correctly (#4437)
+- Editing a PostgreSQL array of enums no longer throws a JSON error (#4238)
+- Newly added columns no longer become invisible when dragged to reorder (#4418). Thanks @aanthoonyy!
+- Team subfolders show their own name instead of the parent's (#4403)
+- Query import clears the folder ID for correct personal-folder placement (#4406)
+- Fixed two import bugs: a `generateColumnTypesFromFile` TypeError and a CSV error message (#4244)
+- Paste a single value across all selected cells (#3972). Thanks @anabdsantos!
+- Proper string escaping in the TableMenu copy actions (#4421). Thanks @Squidysquid1!
+- Simplified delete context-menu wording (#4386)
+- Reverted AppImage to the default runtime for AppImageLauncher compatibility
+
+### SSH
+- Surface invalid/untrusted ssh config and missing identity files as non-blocking warning toasts (#4378 and related)
+- Use ssh-config's native `Match exec` support instead of stripping Match blocks
+- New `[security] allowSshConfigMatchExec` option to control execution of `Match exec` directives
+- Skip SSH tunnel entries with a missing `IdentityFile` (#4368)
+- Fixed SSH tunneling for MongoDB, ClickHouse, and Firebird (#4435)
+
+### Security
+- Fixed a plugin-manifest path-traversal vulnerability (GHSA-3wfm-5rhc-mg5c) that could trigger arbitrary recursive directory deletion on uninstall; plugin IDs are now validated and must match their install directory (#4393)
+- Misc dependency vulnerability fixes (#4392)
+
+### Packaging & Platform
+- Migrated Snap builds to electron-builder's native core24 snapcraft config to fix broken snap builds (#4427)
+- Switched Windows code signing from Azure to Google Cloud KMS (#4424)
+- Upgraded electron-builder to 26.11.1 and configured the AppImage toolset (#4315), with follow-up toolset config cleanup (#4432)
+- Fixed desktop-environment window association on Linux (#4429)
+
+### Internal / Tooling
+- Migrated the TableSchemaValidation editor to the shared UI Kit text editor (#4327)
+- Upgraded Vite to v8 (#4394)
+- Upgraded the ERD library (#4364)
+- Updated the Tabulator data-grid library (#4400)
+- Structured plugin error classes/codes for better diagnostics (#3316)
+- Extracted folder-tree logic into reusable utilities (#4408)
+- Test/CI: pinned the ClickHouse Docker image to stop timeouts, static ed25519 SSH fixture, lightweight none-auth tunnel harness, dockerized Samba AD + SQL Server Kerberos stack, and regression tests for several utility bugs
+- Dependency bumps: @babel/core, dompurify, fast-xml/builder, form-data, @grpc/grpc-js, protobufjs, qs, shell-quote, tmp, @tootallnate/once, typeorm, undici, vitest, ws

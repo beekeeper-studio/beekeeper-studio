@@ -42,7 +42,6 @@ import {
 import rawLog from '@bksLogger'
 import { createCancelablePromise, joinFilters } from '@/common/utils';
 import { errors } from '@/lib/errors';
-import { identify as rawIdentify } from 'sql-query-identifier'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 import platformInfo from '@/common/platform_info';
 import { OracleCursor } from './oracle/OracleCursor';
@@ -84,6 +83,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     this.readOnlyMode = server?.config?.readOnlyMode || false
     // Typescript wasn't having it that createUpsertFunc could be either a function or null, so this ended up working
     this.createUpsertFunc = this.createUpsertSQL
+    this.dialect = 'oracle';
   }
 
   getBuilder(table: string, schema?: string): ChangeBuilderBase {
@@ -1036,10 +1036,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
   }
 
   async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
-    const { columns, totalRows } = await this.getColumnsAndTotalRows(query)
     return {
-      totalRows,
-      columns,
       cursor: new OracleCursor(this.pool, query, [], chunkSize)
     }
   }
@@ -1105,7 +1102,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
 
   protected async rawExecuteQuery(query: string, options: any): Promise<DriverResult | DriverResult[]> {
       const realQueries: string[] = _.isArray(query) ? query : [query]
-      const infos = _.flatMap(realQueries.map((q) => this.identify(q)))
+      const infos = _.flatMap(realQueries.map((q) => this.identifyCommands(q)))
       // TODO - use `executeMany` if no SELECT queries are present
       // const hasListing = !!infos.find((i) => ['LISTING', 'UNKNOWN'].includes(i.executionType))
       const hasReserved = this.reservedConnections.has(options?.tabId);
@@ -1165,10 +1162,6 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
   async rollbackTransaction(tabId: number): Promise<void> {
     const conn = this.peekConnection(tabId);
     await conn.rollback();
-  }
-
-  private identify(query: string): IdentifyResult[] {
-    return rawIdentify(query, {strict: false, dialect: 'oracle'})
   }
 
   parseQueryResultColumns(qr: DriverResult): BksField[] {

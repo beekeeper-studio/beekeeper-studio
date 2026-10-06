@@ -1,0 +1,111 @@
+@use "sass:color";
+
+// Shared upgrade prompt used inside the upgrade modal AND inline in tabs
+// (multi-table export, import-from-file, backup, plugins, AI shell).
+//
+// The panel renders standard dialog markup — .dialog-content, .dialog-c-title,
+// .dialog-c-subtitle — so it inherits the chrome every other dialog in the app
+// gets from vue-js-modal.scss. Only the bits that don't exist elsewhere live
+// here: the feature list, the link row, and the standalone card surface.
+
+.upgrade-panel {
+  width: 100%;
+  // Set explicitly: outside a modal the panel would otherwise inherit whatever
+  // text color the surrounding tab pane happens to use.
+  color: $text;
+
+  .dialog-c-title {
+    color: $text-dark;
+  }
+
+  .dialog-c-subtitle {
+    margin: 0;
+  }
+
+  // Two-column checklist of what a paid license includes.
+  .upgrade-feature-list {
+    margin: $gutter-w 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: $gutter-w * 1.5;
+    row-gap: $gutter-h;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: $gutter-h * 1.25;
+      font-size: 0.875rem;
+      color: $text;
+    }
+
+    .material-icons {
+      font-size: 16px;
+      color: $text-lighter;
+      flex-shrink: 0;
+    }
+  }
+
+  .upgrade-panel-links {
+    margin: $gutter-w 0 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+
+    a {
+      display: inline-flex;
+      align-items: center;
+      gap: $gutter-h * 0.875;
+      color: $text;
+      text-decoration: none;
+
+      span {
+        text-decoration: underline;
+        text-decoration-color: rgba($theme-base, 0.25);
+      }
+      &:hover span {
+        text-decoration-color: currentColor;
+      }
+      .material-icons {
+        font-size: 16px;
+        color: $text-lighter;
+      }
+    }
+  }
+
+  // The shared upsell buttons are this panel's dialog footer, so give them the
+  // same metrics .vue-dialog-buttons uses everywhere else.
+  > .upsell-buttons {
+    padding: 0 $gutter-w $gutter-w;
+    padding-left: $gutter-w * 1.5;
+  }
+
+  // Standalone (inline in a tab, or on the connection screen): the panel
+  // supplies the card surface a modal would otherwise provide.
+  &.upgrade-panel--standalone {
+    max-width: 520px;
+    margin: 1.5rem auto;
+    background: color.adjust($theme-bg, $lightness: 1%);
+    border-radius: 8px;
+    @include card-shadow;
+
+    // Panels with a preview in the slot need more room.
+    &.upgrade-panel--wide {
+      max-width: 620px;
+    }
+  }
+}
+
+// Wrapper used by tabs to center the standalone panel and provide breathing
+// room. `safe center` keeps the top of a tall panel reachable — the wrapper
+// falls back to top-aligned scrolling instead of clipping it.
+.upgrade-panel-tab-wrapper {
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  align-items: safe center;
+  justify-content: center;
+  padding: 0 1.5rem;
+}

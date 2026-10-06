@@ -1,24 +1,30 @@
+import { IsNotEmpty, IsString } from "class-validator"
 import { Entity, Column, BeforeInsert, BeforeUpdate, ManyToOne, JoinColumn } from "typeorm"
 import { ApplicationEntity } from './application_entity'
 import { loadEncryptionKey } from '../../encryption_key'
 import { ConnectionString } from 'connection-string'
 import log from '@bksLogger'
-import { AzureCredsEncryptTransformer, EncryptTransformer, SurrealDbEncryptTransformer } from '../transformers/Transformers'
+import { AzureCredsEncryptTransformer, EncryptTransformer, SnowflakeOptionsTransformer, SurrealDbEncryptTransformer } from '../transformers/Transformers'
 import { IConnection, SshMode } from '@/common/interfaces/IConnection'
-import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, LibSQLOptions, RedshiftOptions, IamAuthOptions, SQLAnywhereOptions, SurrealDBOptions } from "@/lib/db/types"
+import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, DynamoDBOptions, LibSQLOptions, RedshiftOptions, IamAuthOptions, SQLAnywhereOptions, SurrealDBOptions, SnowflakeOptions, SqlServerOptions } from "@/lib/db/types"
 import { resolveHomePathToAbsolute } from "@/handlers/utils"
-import { ReadOnlyOrDefault } from "../validators/ReadOnlyOrDefault"
 import { ConnectionFolder } from './ConnectionFolder'
 
 const encrypt = new EncryptTransformer(loadEncryptionKey())
 const azureEncrypt = new AzureCredsEncryptTransformer(loadEncryptionKey())
 const surrealEncrypt = new SurrealDbEncryptTransformer(loadEncryptionKey())
+const snowflakeTransformer = new SnowflakeOptionsTransformer()
 
+// TODO (@day): Currently this is apparently "just for oracle".
+// we should move away from stuff like `sqlAnywhereOptions` and `redshiftOptions`
+// instead this should be the object for connectionType specific options.
+// We can probably do some type wizardry as well based on connectionType
 export interface ConnectionOptions {
   cluster?: string
   jwtAuthEnabled?: boolean
   connectionMethod?: 'manual' | 'connectionString'
-  connectionString?: string
+  connectionString?: string,
+  enableClearText?: boolean
 }
 
 function parseConnectionType(t: Nullable<ConnectionType>) {
@@ -78,6 +84,9 @@ export class DbConnectionBase extends ApplicationEntity {
         break
       case 'tidb':
         port = 4000
+        break
+      case 'starrocks':
+        port = 9030
         break
       case 'postgresql':
       case 'greengage':
@@ -213,7 +222,6 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: 'boolean', nullable: false })
   sslRejectUnauthorized = true
 
-  @ReadOnlyOrDefault()
   @Column({type: 'boolean', nullable: false, default: false})
   readOnlyMode = true
 
@@ -248,9 +256,28 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: 'simple-json', nullable: false, transformer: [surrealEncrypt] })
   surrealDbOptions: SurrealDBOptions = {};
 
-  // this is only for SQL Server.
+  @Column({ type: 'simple-json', nullable: false })
+  dynamoDbOptions: DynamoDBOptions = {};
+
+  @Column({ type: 'simple-json', nullable: false, transformer: [snowflakeTransformer] })
+  snowflakeOptions: SnowflakeOptions = {};
+
+  // this is only for SQL Server. Defaults on: every stock install presents a self-signed
+  // certificate and tedious validates by default, so a new connection with a correct host and
+  // password fails without it. The integrated-auth path already trusts self-signed certs
+  // (encryptionMode 'on' -> TrustServerCertificate=yes), so this keeps the two consistent.
+  // Class-field default: applies to newly constructed entities only, saved rows keep theirs.
   @Column({ type: 'boolean', nullable: false })
-  trustServerCertificate = false
+  trustServerCertificate = true
+
+  // SQL Server only. Integrated authentication (SSPI/Kerberos/NTLM) via msnodesqlv8.
+  @Column({ type: 'boolean', nullable: false })
+  windowsAuthEnabled = false
+
+  // SQL Server integrated auth only. Encryption mode, optional pinned server certificate,
+  // and optional SPN override for the Kerberos/Windows (ODBC) connection method.
+  @Column({ type: 'simple-json', nullable: false })
+  sqlServerOptions: SqlServerOptions = {}
 
   // oracle only.
   @Column({type: 'varchar', nullable: true})
@@ -259,6 +286,7 @@ export class DbConnectionBase extends ApplicationEntity {
 
 @Entity({ name: 'saved_connection' })
 export class SavedConnection extends DbConnectionBase implements IConnection {
+  static readonly searchableFields: string[] = [ 'name' ];
 
   withProps(props?: any): SavedConnection {
 
@@ -280,6 +308,8 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
     return this;
   }
 
+  @IsString({ message: 'Name is required' })
+  @IsNotEmpty({ message: 'Name is required' })
   @Column("varchar")
   name!: string
 

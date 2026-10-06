@@ -6,7 +6,7 @@
       :options="options"
       :event="event"
       :item="item"
-      @close="$emit('close')"
+      @close="hideContextMenu"
     />
   </teleport>
 </template>
@@ -16,6 +16,7 @@ import ContextMenu from "./ContextMenu.vue";
 import Teleport from "vue2-teleport"
 import Vue from 'vue'
 import { getContextMenuContainer } from "../../config/context-menu";
+import props from "./props";
 
 export default Vue.extend({
   name: 'ContextMenuRoot',
@@ -23,7 +24,7 @@ export default Vue.extend({
     Teleport,
     ContextMenu,
   },
-  props: ['options', 'event', 'item', 'targetElement'],
+  props,
   data() {
     return {
       menuWidth: null,
@@ -33,7 +34,7 @@ export default Vue.extend({
   },
   methods: {
     hideContextMenu() {
-      this.$emit('close')
+      this.$destroy()
     },
     onEscKeyRelease(event) {
       if (event.keyCode === 27) {
@@ -57,6 +58,9 @@ export default Vue.extend({
   beforeDestroy() {
     document.removeEventListener('mousedown', this.maybeHideMenu)
     document.removeEventListener('keyup', this.onEscKeyRelease);
-  }
+  },
+  destroyed() {
+    this.$emit("bks-destroyed");
+  },
 })
 </script>

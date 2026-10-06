@@ -1,8 +1,12 @@
 <template>
   <div class="import-button">
     <a
-      class="btn btn-link btn-small"
-      @click.prevent="$modal.show('import-modal')"
+      class="btn"
+      :class="[
+        variant === 'flat' ? 'btn-flat' : 'btn-link btn-small',
+        { disabled }
+      ]"
+      @click.prevent="!disabled && $modal.show('import-modal')"
       href="#"
     ><slot /></a>
     <portal to="modals">
@@ -60,7 +64,17 @@
 </template>
 <script>
 export default {
-    props: ['config'],
+    props: {
+      config: Object,
+      disabled: {
+        type: Boolean,
+        default: false
+      },
+      variant: {
+        type: String,
+        default: "small-link"
+      }
+    },
     data() {
       return {
         importError: null,

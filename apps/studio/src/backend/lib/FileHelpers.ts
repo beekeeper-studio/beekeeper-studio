@@ -13,7 +13,7 @@ export type SaveFileOptions = {
 
 /** Save a file after showing a dialog */
 async function save(options: SaveFileOptions) {
-  const encoding = options.encoding ?? "utf8";
+  const encoding: BufferEncoding = options.encoding as BufferEncoding ?? "utf8";
 
   const result = await dialog.showSaveDialog({
     defaultPath: options.fileName,
@@ -22,7 +22,7 @@ async function save(options: SaveFileOptions) {
 
   if (result.canceled) return false;
 
-  writeFileSync(result.filePath, options.content, encoding);
+  writeFileSync(result.filePath, options.content, { encoding });
 
   return true;
 }
@@ -30,9 +30,7 @@ async function save(options: SaveFileOptions) {
 export function initializeFileHelpers() {
   if (initialized) return;
 
-  ipcMain.handle("fileHelpers:save", (_event, params) => {
-    save(params);
-  });
+  ipcMain.handle("fileHelpers:save", (_event, params) => save(params));
 
   initialized = true;
 }

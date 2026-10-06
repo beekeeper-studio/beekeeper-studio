@@ -53,11 +53,12 @@
         :value="text"
         :force-initialize="reinitializeTextEditor + (reinitialize ?? 0)"
         :markers="markers"
-        :replaceExtensions="replaceExtensions"
+        :replace-extensions="replaceExtensions"
         :line-wrapping="wrapText"
         :line-gutters="lineGutters"
         :line-numbers="false"
         :fold-gutters="true"
+        indentation-markers
       />
     </div>
     <div class="empty-text">
@@ -209,7 +210,7 @@ export default Vue.extend({
           _.set(clonedValue, path, (value as string).slice(0, globals.maxDetailViewTextLength))
         }
       })
-      
+
       // Apply the replacer function to ensure consistency between filtered and unfiltered views
       // This is necessary because JsonSourceMap.stringify doesn't support replacer functions
       try {
@@ -333,8 +334,8 @@ export default Vue.extend({
       return [
         {
           name: "Copy Visible",
-          handler: () => {
-            this.$native.clipboard.writeText(this.text);
+          handler: async () => {
+            await this.$native.clipboard.writeText(this.text);
           },
         },
         {
@@ -392,6 +393,8 @@ export default Vue.extend({
           settings: {
             selection: "",
             selectionMatch: "",
+            lineHighlight: "",
+            gutterActiveForeground: "",
           },
         }),
         this.persistJsonFold.extensions,

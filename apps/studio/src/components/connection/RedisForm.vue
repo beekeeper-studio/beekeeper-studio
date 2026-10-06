@@ -7,7 +7,7 @@
       </span>
     </div>
     
-    <common-server-inputs :config="config" />
+    <common-server-inputs :config="config" :disabled="disabled" />
   </div>
 </template>
 
@@ -25,6 +25,10 @@ export default {
       required: true,
     },
     testing: {
+      type: Boolean,
+      default: false,
+    },
+    disabled: {
       type: Boolean,
       default: false,
     },

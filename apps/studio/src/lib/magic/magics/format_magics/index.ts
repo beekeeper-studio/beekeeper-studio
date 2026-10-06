@@ -6,6 +6,7 @@ import LinkMagic from "./LinkMagic";
 import MoneyMagic from "./MoneyMagic";
 import ProgressMagic from "./ProgressMagic";
 import StarsMagic from "./StarsMagic";
+import UnixTimeMagic from "./UnixTimeMagic";
 
 export default [
   LinkMagic,
@@ -15,5 +16,6 @@ export default [
   MoneyMagic,
   ProgressMagic,
   EmailMagic,
-  EnumMagic
+  EnumMagic,
+  UnixTimeMagic
 ]

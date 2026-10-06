@@ -100,7 +100,7 @@ import DiffViewer from '@/components/editor/DiffViewer.vue'
 
 export default Vue.extend({
   components: { DiffViewer },
-  props: ['query', 'unsavedText', 'originalText'],
+  props: ['query', 'unsavedText', 'originalText', 'pendingRemoteChanges'],
   data: () => ({
     preMergeText: null,
     diff: null
@@ -114,10 +114,6 @@ export default Vue.extend({
     },
     pendingLocalChanges() {
       return _.trim(this.unsavedText) !== _.trim(this.originalText)
-    },
-    pendingRemoteChanges() {
-      // the query object changed in the background
-      return this.query.text !== this.originalText
     },
     pendingMerge() {
       return !!this.preMergeText

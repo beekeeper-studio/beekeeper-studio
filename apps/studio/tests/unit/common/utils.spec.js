@@ -194,6 +194,17 @@ describe("isNumericDataType", () => {
     expect(isNumericDataType('date')).toBe(false)
     expect(isNumericDataType('text')).toBe(false)
   })
+
+  // BUG: 'interval' (a Postgres date/time type) starts with 'int' and is
+  // incorrectly classified as numeric. It's also picked up by
+  // isDateDataType, so the same value is simultaneously "numeric" and
+  // "date" — which affects how IN-clause copy quotes the values
+  // (tableMenu.ts skips quoting for numeric types).
+  it("should not classify interval as numeric", () => {
+    expect(isNumericDataType('interval')).toBe(false)
+    expect(isNumericDataType('INTERVAL')).toBe(false)
+    expect(isNumericDataType('interval year to month')).toBe(false)
+  })
 })
 
 describe("isDateDataType", () => {

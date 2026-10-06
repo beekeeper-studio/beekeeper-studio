@@ -1,4 +1,5 @@
 import Vue, { ComponentOptions } from "vue";
+import { divider } from "@beekeeperstudio/ui-kit";
 
 export const assignContextMenuToAllInputs: ComponentOptions<Vue> = {
   data() {
@@ -21,10 +22,11 @@ export const assignContextMenuToAllInputs: ComponentOptions<Vue> = {
 
   methods: {
     ctxMenu_showContextMenu(event: MouseEvent) {
-      if (
-        !(event.target instanceof HTMLInputElement) &&
-        !(event.target instanceof HTMLTextAreaElement)
-      ) {
+      if (event.defaultPrevented) {
+        return;
+      }
+
+      if (!this.ctxMenu_isTextInput(event.target)) {
         return;
       }
 
@@ -57,7 +59,7 @@ export const assignContextMenuToAllInputs: ComponentOptions<Vue> = {
               // Uses Chromium's native undo stack for inputs/textareas
               document.execCommand("undo");
             },
-            shortcut: this.ctrlOrCmd("z"),
+            shortcut: "Control+Z",
             write: true,
           },
           {
@@ -67,46 +69,65 @@ export const assignContextMenuToAllInputs: ComponentOptions<Vue> = {
               if (!el) return;
               document.execCommand("redo");
             },
-            shortcut: this.ctrlOrCmd("shift+z"),
+            shortcut: "Control+Shift+Z",
             write: true,
           },
-          { type: "divider" },
+          divider,
           {
             name: "Cut",
             handler: () => document.execCommand("cut"),
             class: selectionDepClass,
-            shortcut: this.ctrlOrCmd("x"),
+            shortcut: "Control+X",
             write: true,
           },
           {
             name: "Copy",
             handler: () => document.execCommand("copy"),
             class: selectionDepClass,
-            shortcut: this.ctrlOrCmd("c"),
+            shortcut: "Control+C",
           },
           {
             name: "Paste",
             handler: () => document.execCommand("paste"),
-            shortcut: this.ctrlOrCmd("v"),
+            shortcut: "Control+V",
             write: true,
           },
-          { type: "divider" },
+          divider,
           {
             name: "Select All",
             handler: () => document.execCommand("selectAll"),
-            shortcut: this.ctrlOrCmd("a"),
+            shortcut: "Control+A",
           },
         ],
       });
     },
 
+    ctxMenu_isTextInput(
+      target: EventTarget | null
+    ): target is HTMLInputElement | HTMLTextAreaElement {
+      if (target instanceof HTMLTextAreaElement) return true;
+      if (target instanceof HTMLInputElement) {
+        // Only text-like inputs support text selection / clipboard ops
+        const textTypes = [
+          "text",
+          "password",
+          "email",
+          "url",
+          "tel",
+          "search",
+          "number",
+        ];
+        return textTypes.includes(target.type);
+      }
+      return false;
+    },
+
     ctxMenu_isEditable(el: HTMLElement) {
       if (!el) return false;
-      if (el instanceof HTMLInputElement) return !el.readOnly && !el.disabled;
-      if (el instanceof HTMLTextAreaElement)
-        return !el.readOnly && !el.disabled;
-      if (el.isContentEditable) return true;
-      return false;
+      if (!this.ctxMenu_isTextInput(el)) {
+        return el.isContentEditable;
+      }
+      return !el.readOnly && !el.disabled;
     },
 
     ctxMenu_hasSelectedText(target: HTMLInputElement | HTMLTextAreaElement) {

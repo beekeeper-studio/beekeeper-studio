@@ -16,10 +16,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v5
 
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: '3.13.7'  # or any specific version
         cache: 'pip' # caching pip dependencies
@@ -28,7 +28,7 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Build site with mkdocs
-      run: mkdocs build
+      run: mkdocs build --strict
 
     - name: Upload to Netlify
       uses: nwtgck/actions-netlify@v2.0

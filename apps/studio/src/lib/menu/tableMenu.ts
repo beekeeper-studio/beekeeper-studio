@@ -9,6 +9,7 @@ import { markdownTable } from "markdown-table";
 import { ElectronPlugin } from "@/lib/NativeWrapper";
 import Papa from "papaparse";
 import { stringifyRangeData, rowHeaderField, isNumericDataType } from "@/common/utils";
+import { defaultEscapeString } from "@shared/lib/dialects/models";
 import { escapeHtml } from "@shared/lib/tabulator";
 import _ from "lodash";
 // ?? not sure about this but :shrug:
@@ -103,33 +104,26 @@ export const commonColumnMenu = [
   resizeAllColumnsToFixedWidth,
 ];
 
-export function createMenuItem(label: string, shortcut = "", ultimate = false) {
+export function createMenuItem(label: string, shortcut: string | string[] = "", ultimate = false) {
   label = `<x-label>${escapeHtml(label)}</x-label>`;
+  if (typeof shortcut !== "string") {
+    shortcut = shortcut[0];
+  }
   if (shortcut) shortcut = `<x-shortcut value="${escapeHtml(shortcut)}" />`;
   const ultimateIcon = ultimate ? `<i class="material-icons menu-icon">stars</i>` : '';
   return `<x-menuitem>${label}${shortcut}${ultimateIcon}</x-menuitem>`;
 }
 
-export async function copyRanges(options: {
-  ranges: RangeComponent[];
-  type: "plain" | "tsv" | "json" | "markdown" | "columnName" | "asIn";
-}): Promise<void>;
-export async function copyRanges(options: {
-  ranges: RangeComponent[];
-  type: "sql";
-  table: string;
-  schema?: string;
-}): Promise<void>;
-export async function copyRanges(options: {
-  ranges: RangeComponent[];
-  type: "plain" | "tsv" | "json" | "markdown" | "sql" | "columnName" | "asIn";
-  table?: string;
-  schema?: string;
-}) {
+export async function buildCopyText(
+  rangeData: RangeData,
+  options: {
+    type: "plain" | "tsv" | "json" | "markdown" | "sql" | "columnName" | "asIn";
+    table?: string;
+    schema?: string;
+    escapeString?: (s: string, quote?: boolean) => string;
+  }
+): Promise<string> {
   let text = "";
-
-  const extractedData = extractRanges(options.ranges);
-  const rangeData = extractedData.data;
   const stringifiedRangeData = stringifyRangeData(rangeData);
 
   switch (options.type) {
@@ -173,10 +167,12 @@ export async function copyRanges(options: {
         schema: options.schema
       });
       const dataType = columns.find(c => c.columnName === colDataType)?.dataType
-      const isNumericType = isNumericDataType(dataType)
+      const isNumericType = dataType ? isNumericDataType(dataType) : false
+
+      const escapeFn = options.escapeString || defaultEscapeString
       const textArr = rangeData.map(rd => {
         const [data] = Object.values(rd)
-        return isNumericType ? data : `'${data}'`
+        return isNumericType ? data : `'${escapeFn(String(data))}'`
       })
       text = `(\n${textArr.join(',\n')}\n)`
       break
@@ -191,16 +187,14 @@ export async function copyRanges(options: {
       });
       break;
     case "columnName":
-      text = Object.keys(extractedData.data[0]).join(" ");
+      text = Object.keys(rangeData[0]).join(" ");
       break;
   }
-  ElectronPlugin.clipboard.writeText(text);
-  extractedData.sources.forEach((range) => {
-    (range.getElement() as HTMLElement).classList.add("copied");
-  });
+
+  return text;
 }
 
-function extractRanges(ranges: RangeComponent[]): ExtractedData {
+export function extractRanges(ranges: RangeComponent[]): ExtractedData {
   if (ranges.length === 0) return;
 
   if (ranges.length === 1) {
@@ -284,50 +278,82 @@ function countCellsFromData(data: RangeData) {
   return data.reduce((acc, row) => acc + Object.keys(row).length, 0);
 }
 
-export function pasteRange(range: RangeComponent) {
-  const text = ElectronPlugin.clipboard.readText();
-  if (!text) return;
+/**
+ * Read the clipboard and parse it as tab-separated rows. Returns `null` when
+ * the clipboard is empty. On a parse error the raw text is returned as a single
+ * cell so it can still be pasted into one row.
+ */
+export async function readClipboardRows(): Promise<string[][] | null> {
+  const text = await ElectronPlugin.clipboard.readText();
+  if (!text) return null;
 
-  const parsedText = Papa.parse(text, {
+  const parsed = Papa.parse(text, {
     header: false,
     delimiter: "\t",
   });
 
-  if (parsedText.errors.length > 0) {
-    const cell = range.getCells()[0][0];
-    setCellValue(cell, text);
+  if (parsed.errors.length > 0) {
+    return [[text]];
+  }
+
+  return parsed.data as string[][];
+}
+
+// build tiled paste data to emulate sheets pasting behaviour
+export function buildTiledPasteData(
+  data: string[][],
+  rangeRowCount: number,
+  rangeColCount: number
+): { pasteData: string[][]; rowCount: number; colCount: number } {
+  const dataRowCount = data.length;
+  const dataColCount = Math.max(...data.map((row) => row.length));
+
+  const rowCount = dataRowCount * Math.max(1, Math.floor(rangeRowCount / dataRowCount));
+  const colCount = dataColCount * Math.max(1, Math.floor(rangeColCount / dataColCount));
+
+  const pasteData: string[][] = [];
+  for (let r = 0; r < rowCount; r++) {
+    const srcRow = data[r % dataRowCount];
+    const row: string[] = [];
+    for (let c = 0; c < colCount; c++) {
+      row.push(srcRow[c % dataColCount]);
+    }
+    pasteData.push(row);
+  }
+
+  return { pasteData, rowCount, colCount };
+}
+
+export async function pasteRange(range: RangeComponent) {
+  // Same parsing as "paste as new rows" — the two only differ in the
+  // destination (overwrite existing cells here vs. insert new rows there).
+  const data = await readClipboardRows();
+  if (!data) return;
+
+  if (data.length === 1 && data[0].length === 1) {
+    // @ts-ignore
+    range.fill(data[0][0]);
   } else {
     const table = range.getRows()[0].getTable();
-    const rows = table.getRows("active").slice(range.getTopEdge());
+
+    const rangeRowCount = range.getBottomEdge() - range.getTopEdge() + 1;
+    const rangeColCount = range.getRightEdge() - range.getLeftEdge() + 1;
+
+    const { pasteData, rowCount: targetRowCount, colCount: targetColCount } =
+      buildTiledPasteData(data, rangeRowCount, rangeColCount);
+
+    const rows = table
+      .getRows("active")
+      .slice(range.getTopEdge(), range.getTopEdge() + targetRowCount);
     const columns = table
       .getColumns(false)
       .filter((col) => col.isVisible())
-      .slice(range.getLeftEdge());
-    const cells: CellComponent[][] = rows.map((row) => {
-      const arr = [];
-      row.getCells().forEach((cell) => {
-        if (columns.includes(cell.getColumn())) {
-          arr.push(cell);
-        }
-      });
-      return arr;
-    });
-
-    parsedText.data.forEach((row: string[], rowIdx) => {
-      row.forEach((text, colIdx) => {
-        const cell = cells[rowIdx]?.[colIdx];
-        if (!cell) return;
-        setCellValue(cell, text);
-      });
-    });
+      .slice(range.getLeftEdge(), range.getLeftEdge() + targetColCount);
+    const lastRow = rows[rows.length - 1];
+    range.setEndBound(lastRow.getCell(columns[columns.length - 1]));
+    // @ts-ignore
+    range.setData(pasteData);
   }
-}
-
-export function setCellValue(cell: CellComponent, value: string) {
-  const editableFunc = cell.getColumn().getDefinition().editable;
-  const editable =
-    typeof editableFunc === "function" ? editableFunc(cell) : editableFunc;
-  if (editable) cell.setValue(value);
 }
 
 // Helper function to map column IDs to column titles
@@ -353,38 +379,38 @@ function mapColumnIdsToTitles(data: RangeData, columns: ColumnComponent[]): Rang
 }
 
 export function copyActionsMenu(options: {
-  ranges: RangeComponent[];
+  tabulator: Tabulator;
   table?: string;
   schema?: string;
+  escapeString?: (s: string, quote?: boolean) => string;
 }) {
-  const { ranges, table, schema } = options;
-  const columnCount = ranges[0].getColumns().length
+  const { tabulator, table, schema, escapeString } = options;
+  const columnCount = tabulator.getRanges()[0].getColumns().length
   const copyActions = [
     {
       label: createMenuItem("Copy", "Control+C"),
-      action: () => copyRanges({ ranges, type: "plain" }),
+      action: () => tabulator.copyRanges({ type: "plain" }),
     },
     {
       label: createMenuItem("Copy Column Name"),
-      action: () => copyRanges({ ranges, type: "columnName" }),
+      action: () => tabulator.copyRanges({ type: "columnName" }),
     },
     {
       label: createMenuItem("Copy as TSV for Excel"),
-      action: () => copyRanges({ ranges, type: "tsv" }),
+      action: () => tabulator.copyRanges({ type: "tsv" }),
     },
     {
       label: createMenuItem("Copy as JSON"),
-      action: () => copyRanges({ ranges, type: "json" }),
+      action: () => tabulator.copyRanges({ type: "json" }),
     },
     {
       label: createMenuItem("Copy as Markdown"),
-      action: () => copyRanges({ ranges, type: "markdown" }),
+      action: () => tabulator.copyRanges({ type: "markdown" }),
     },
     {
       label: createMenuItem("Copy as SQL"),
       action: () =>
-        copyRanges({
-          ranges,
+        tabulator.copyRanges({
           type: "sql",
           table,
           schema,
@@ -395,7 +421,7 @@ export function copyActionsMenu(options: {
   if (columnCount === 1) {
     copyActions.push({
       label: createMenuItem("Copy for IN statement"),
-      action: () => copyRanges({ ranges, type: "asIn", table, schema }),
+      action: () => tabulator.copyRanges({ type: "asIn", table, schema, escapeString }),
     })
   }
 
@@ -408,16 +434,26 @@ export function copyCellMenu(_e: any, cell: CellComponent) {
   return [
     {
       label: createMenuItem("Copy"),
-      action: () => ElectronPlugin.clipboard.writeText(text),
+      action: async () => await ElectronPlugin.clipboard.writeText(text),
     },
   ];
 }
 
-export function pasteActionsMenu(range: RangeComponent) {
-  return [
+export function pasteActionsMenu(
+  range: RangeComponent,
+  onPasteAsNewRows?: () => void
+) {
+  const actions = [
     {
-      label: createMenuItem("Paste", "Control+V"),
-      action: () => pasteRange(range),
+      label: createMenuItem("Paste", window.bksConfig.getKeybindings("context-menu", "general.pasteSelection")),
+      action: async () => await pasteRange(range),
     },
   ];
+  if (onPasteAsNewRows) {
+    actions.push({
+      label: createMenuItem("Paste as new rows", window.bksConfig.getKeybindings("context-menu", "tableTable.pasteAsNewRows")),
+      action: async () => onPasteAsNewRows(),
+    });
+  }
+  return actions;
 }

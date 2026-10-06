@@ -16,6 +16,7 @@ export interface IMenuActionHandler {
   cut: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   copy: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   paste: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  pasteAsNewRows: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   selectAll?: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   zoomreset: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   zoomin: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
@@ -46,6 +47,7 @@ export interface IMenuActionHandler {
   upgradeModal: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   checkForUpdates: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   importSqlFiles: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  importConnectionFiles: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   toggleMinimalMode: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   switchLicenseState: (menuItem: Electron.MenuItem, win: ElectronWindow, state: DevLicenseState) => void
   simulatePlatform: (menuItem: Electron.MenuItem, win: ElectronWindow, platform: string) => void

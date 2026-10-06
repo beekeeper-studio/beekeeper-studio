@@ -1,9 +1,14 @@
 <template>
   <div
     class="result-table"
-    :class="{ 'hidden-filter': hiddenFilter }"
+    :class="{ 'hidden-filter': hiddenFilter, 'editing-data': editingData }"
     v-hotkey="keymap"
   >
+    <editor-modal
+      ref="editorModal"
+      :binary-encoding="$bksConfig.ui.general.binaryEncoding"
+      @save="onSaveEditorModal"
+    />
     <form
       class="table-search-wrapper table-filter"
       @submit.prevent="searchHandler"
@@ -53,8 +58,8 @@
   import dateFormat from 'dateformat'
   import Converter from '../../mixins/data_converter'
   import Mutators from '../../mixins/data_mutators'
-  import { escapeHtml } from '@shared/lib/tabulator'
-  import { dialectFor, FormatterDialect } from '@shared/lib/dialects/models'
+  import { escapeHtml, FormatterParams } from '@shared/lib/tabulator'
+  import { dialectFor, formatOptionsFor } from '@shared/lib/dialects/models'
   import { FkLinkMixin } from '@/mixins/fk_click'
   import MagicColumnBuilder from '@/lib/magic/MagicColumnBuilder'
   import Papa from 'papaparse'
@@ -62,19 +67,20 @@
   import { markdownTable } from 'markdown-table'
   import intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
-  import { copyRanges, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth, createMenuItem } from '@/lib/menu/tableMenu';
+  import { copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth, createMenuItem, pasteRange } from '@/lib/menu/tableMenu';
   import { tabulatorForTableData } from '@/common/tabulator';
+  import EditorModal from '../tableview/EditorModal.vue'
   import { AppEvent } from "@/common/AppEvent";
   import XLSX from 'xlsx';
   import { parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
   import { vueEditor } from '@shared/lib/tabulator/helpers';
   import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
   import rawLog from '@bksLogger';
-  import { FieldDescriptor, FieldEditData, NgQueryResult, TableUpdate } from '@/lib/db/models'
-  import { CellComponent, RowComponent } from 'tabulator-tables'
+  import { FieldDescriptor, FieldEditData, FieldReadOnlyReasonStr, NgQueryResult, TableUpdate } from '@/lib/db/models'
+  import { CellComponent, RangeComponent, RowComponent } from 'tabulator-tables'
   import { PropType } from 'vue'
-  import { format } from 'sql-formatter'
-  import pluralize from 'pluralize'
+  import { safeSqlFormat } from '@/common/utils'
+  import { stringToTypedArray } from '@/common/utils'
 
   const log = rawLog.scope('ResultTable');
 
@@ -95,6 +101,7 @@
   }
 
   export default {
+    components: { EditorModal },
     mixins: [Converter, Mutators, FkLinkMixin],
     data() {
       return {
@@ -111,7 +118,7 @@
         internalClassTrackerColumn: "__beekeeper_internal_class_tracker",
         propogatedChangesFilters: new Map<string, Filter[]>(),
         fieldOriginalClassMap: new Map<string, string>(),
-        saveError: null
+        saveError: null,
       }
     },
     props: {
@@ -160,9 +167,17 @@
         return this.dialectData?.queryDialectOverride ?? this.dialect;
       },
       keymap() {
+        // v-hotkey listens on the whole document, so a result table in a
+        // background tab would otherwise react to keys pressed anywhere.
+        if (!this.active) return {}
         return this.$vHotkeyKeymap({
           'queryEditor.copyResultSelection': this.copySelection.bind(this),
           'queryEditor.openTableFilter': this.focusOnFilterInput.bind(this),
+          'general.save': this.saveChanges.bind(this),
+          'general.openInSqlEditor': this.copyToSql.bind(this),
+          'general.pasteSelection': this.pasteSelection.bind(this),
+          'tableTable.openEditorModal': this.openEditorMenuByShortcut.bind(this),
+          'tableTable.nullSelection': this.nullTableSelection.bind(this)
         });
       },
       tableFilterKeymap() {
@@ -184,7 +199,7 @@
           const schema = v.schema ? `${v.schema}.` : "";
           return `${schema}${v.table}`
         })).map(([table, updates]) => {
-          return `${pluralize('update', updates.length, true)} to ${table}`;
+          return `${this.$pluralize('update', updates.length, true)} to ${table}`;
         });
 
         const lastUpdate = updateStrings.pop();
@@ -269,9 +284,10 @@
             contextMenu: (_e, cell) => {
               return [
                 ...copyActionsMenu({
-                  ranges: cell.getRanges(),
+                  tabulator: cell.getTable(),
                   table: this.result.tableName || "mytable",
                   schema: this.result.schema,
+                  escapeString: this.dialectData?.escapeString,
                 }),
                 ...this.getExtraPopupMenu('results.rowHeader', { transform: "tabulator" }),
               ];
@@ -279,9 +295,10 @@
             headerContextMenu: (_e, column) => {
               return [
                 ...copyActionsMenu({
-                  ranges: column.getTable().getRanges(),
+                  tabulator: column.getTable(),
                   table: this.result.tableName || "mytable",
                   schema: this.result.schema,
+                  escapeString: this.dialectData?.escapeString,
                 }),
                 { separator: true },
                 resizeAllColumnsToFitContent,
@@ -293,6 +310,25 @@
         });
 
         this.tabulator.on('cellEdited', this.cellEdited);
+        this.tabulator.on("rangeEdited", (range) => {
+          range.getModifiedCells().forEach((cell) => this.cellEdited(cell));
+          this.tabulator.modules.selectRange.restoreFocus()
+        });
+        this.tabulator.on('historyUndo', (action, component) => {
+          if (action === 'cellEdit') {
+            this.cellEdited(component);
+          } else if (action === "rangeEdit") {
+            component.getCells().flat().forEach((cell: CellComponent) => this.cellEdited(cell));
+          }
+        });
+
+        this.tabulator.on('historyRedo', (action, component) => {
+          if (action === 'cellEdit') {
+            this.cellEdited(component)
+          } else if (action === "rangeEdit") {
+            component.getCells().flat().forEach((cell: CellComponent) => this.cellEdited(cell));
+          }
+        })
       },
       rowFormatter(row: RowComponent) {
         const data = row.getData();
@@ -314,12 +350,73 @@
         for (const field of fieldsWithClass) {
           const element = row.getCell(field)?.getElement();
           if (!element) continue;
-          if (!hasReset.includes(field)) {
+          if (!hasReset.includes(field) && this.fieldOriginalClassMap.has(field)) {
             element.classList.value = this.fieldOriginalClassMap.get(field);
             hasReset.push(field);
           }
           element.classList.add(classToAdd);
         }
+      },
+      setRangesNull(ranges: RangeComponent[]) {
+        const targets = ranges.flatMap((range) => range.getCells().flat()).map((cell) => ({
+          row: cell.getRow(),
+          field: cell.getField()
+        }));
+
+        for (const { row, field } of targets) {
+          const cell = row.getCell(field);
+          if (!cell) continue;
+          if (this.cellEditCheck(cell)) cell.setValue(null);
+        }
+      },
+      setAsNullMenuItem(ranges: RangeComponent[]) {
+        const areAllCellsReadOnly = ranges
+          .flatMap((range) => range.getColumns())
+          .every((col) => !this.cellEditCheck(col));
+        return {
+          label: createMenuItem("Set as NULL"),
+          action: () => this.setRangesNull(ranges),
+          disabled: areAllCellsReadOnly || !this.editingData,
+        }
+      },
+      openEditorMenuByShortcut(e: KeyboardEvent) {
+        // Only when the key was pressed inside the grid. Shift+Enter is a
+        // newline elsewhere (SQL editor, plugin prompts, whose iframes
+        // forward their key events to the document).
+        if (!this.tabulator?.element.contains(e.target as Node)) return
+        const range: RangeComponent = _.last(this.tabulator.getRanges())
+        const cell = range.getCells().flat()[0];
+        // (copied from TableTable.vue)
+        // FIXME maybe we can avoid calling child methods directly like this?
+        // it should be done by calling an event using this.$modal.show(modalName)
+        // or this.$trigger(AppEvent.something) if possible
+        this.openCellEditorModal(cell, !this.cellEditCheck(cell))
+      },
+      openEditorMenu(cell: CellComponent) {
+        const isReadOnly = !this.cellEditCheck(cell);
+        let keybind = this.$bksConfig.getKeybindings("context-menu", 'resultTable.openEditorModal');
+        keybind = Array.isArray(keybind) ? keybind[0] : keybind;
+        return {
+          label: createMenuItem(isReadOnly ? "View in modal" : "Edit in modal", keybind),
+          action: () => {
+            this.openCellEditorModal(cell, isReadOnly)
+          }
+        }
+      },
+      openCellEditorModal(cell: CellComponent, isReadOnly: boolean) {
+        const eventParams = { cell, isReadOnly };
+        this.$refs.editorModal.openModal(cell.getValue(), undefined, eventParams)
+      },
+      onSaveEditorModal(content: string, _l: any, cell: CellComponent){
+        const editData = this.editData?.get(cell.getField());
+        const isBinary = editData?.bksField?.bksType === 'BINARY' || _.isTypedArray(cell.getValue());
+
+        let value = content;
+        if (isBinary) {
+          value = stringToTypedArray(content);
+        }
+
+        cell.setValue(value);
       },
       createColumnFromProps(column: FieldDescriptor, index: number) {
         const columnWidth = this.result.fields.length > 30 ? this.$bksConfig.ui.tableTable.defaultColumnWidth : undefined
@@ -331,13 +428,27 @@
           }
         }
 
-        const cellMenu = (_e, cell) => {
+        const cellMenu = (_e, cell: CellComponent) => {
+          const ranges = cell.getTable().getRanges();
+          const range = _.last(ranges);
+
           return [
+            this.openEditorMenu(cell),
+            this.setAsNullMenuItem(ranges),
+            { separator: true },
             ...copyActionsMenu({
-              ranges: cell.getRanges(),
+              tabulator: cell.getTable(),
               table: this.result.tableName,
               schema: this.defaultSchema,
+              escapeString: this.dialectData?.escapeString,
             }),
+            { separator: true },
+            {
+              label: createMenuItem("Paste", "Control+V"),
+              action: () => {
+                pasteRange(range);
+              },
+            },
             { separator: true },
             filterMenuItem,
             ...this.getExtraPopupMenu('results.cell', { transform: "tabulator" }),
@@ -347,9 +458,10 @@
         const columnMenu = (_e, column) => {
           return [
             ...copyActionsMenu({
-              ranges: column.getRanges(),
+              tabulator: column.getTable(),
               table: this.result.tableName,
               schema: this.defaultSchema,
+              escapeString: this.dialectData?.escapeString,
             }),
             { separator: true },
             ...commonColumnMenu,
@@ -377,50 +489,95 @@
           cssClass += ' generated-column';
         }
 
+        if (this.editData && !editData?.editable && !editData?.isPK) {
+          cssClass += ` read-only-field`;
+        }
+
         if (magic.formatterParams?.fk) {
           magic.formatterParams.fkOnClick = (_e, cell) => this.fkClick(magic.formatterParams.fk[0], cell)
         }
 
         const magicStuff = _.pick(magic, ['formatter', 'formatterParams'])
-        const defaults = {
-          formatter: this.cellFormatter,
-          formatterParams: {
-            binaryEncoding: this.binaryEncoding,
-          },
-        }
 
         const editorType = this.editorType(editData?.dataType);
+        const useVerticalNavigation = editorType === 'textarea'
+
+        const formatterParams: FormatterParams = {
+          fk: false,
+          fkOnClick: undefined,
+          isPK: editData?.isPK,
+          binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
+        }
+
+        let headerTooltip = escapeHtml(column.name);
+
+        if (editData) {
+          headerTooltip = escapeHtml(`${editData?.generated ? '[Generated]' : ''}${editData?.columnName ?? column.name} ${editData?.dataType ?? ''}`);
+
+          if (!editData.editable && !_.isNil(editData.readOnlyReason)) {
+            headerTooltip += ` -> Read-Only: ${FieldReadOnlyReasonStr[editData.readOnlyReason]}`
+          }
+        }
 
         const result = {
-          ...defaults,
           title,
+          field: column.id,
           titleFormatter: this.headerFormatter,
           titleFormatterParams: {
             columnName: title,
             dataType: editData?.dataType,
             generated: editData?.generated
           },
-          field: column.id,
           titleDownload: escapeHtml(column.name),
           dataType: editData?.dataType,
           width: columnWidth,
           mutator: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connectionType)),
-          formatter: this.cellFormatter,
-          maxInitialWidth: this.$bksConfig.ui.tableTable.maxColumnWidth,
+          maxWidth: this.$bksConfig.ui.tableTable.maxColumnWidth,
+          maxInitialWidth: this.$bksConfig.ui.tableTable.maxInitialWidth,
           tooltip: this.cellTooltip,
           contextMenu: cellMenu,
           headerContextMenu: columnMenu,
           headerMenu: columnMenu,
+          headerTooltip,
           resizable: 'header',
           cssClass,
           editable: this.cellEditCheck,
           editor: editorType,
+          cellEditCancelled: (cell: CellComponent) => cell.getRow().normalizeHeight(),
+          formatter: this.cellFormatter,
+          formatterParams,
+          editorParams: {
+            verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
+            dataType: editData?.dataType,
+            search: true,
+            allowEmpty: true,
+            preserveObject: editData?.array,
+            onPreserveObjectFail: (value: unknown) => {
+              log.error('Failed to preserve object for', value)
+              return true
+            },
+            typeHint: editData?.dataType?.toLowerCase(),
+            bksField: editData?.bksField,
+            binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
+          },
           ...magicStuff
         }
 
         if (column.dataType === 'INTERVAL') {
           // add interval sorter
           result['sorter'] = this.intervalSorter;
+        } else if (editData?.dataType && /^(bool|boolean)$/i.test(editData?.dataType)) {
+          const values = [
+            { label: 'false', value: this.dialectData.boolean?.false ?? false },
+            { label: 'true', value: this.dialectData.boolean?.true ?? true },
+          ];
+          if (editData?.nullable) values.push({ label: '(NULL)', value: null });
+          result.editorParams['values'] = values;
+        } else if (editData?.enumValues?.length) {
+          result.editor = 'list';
+          const values = editData.enumValues.map((v) => ({ label: v, value: v }));
+          if (editData?.nullable) values.push({ label: '(NULL)', value: null });
+          result.editorParams['values'] = values;
         }
 
         const results = [];
@@ -493,9 +650,9 @@
           return;
         }
 
-        if (!this.fieldOriginalClassMap.has(cell.getField())) {
+        if (!this.fieldOriginalClassMap.has(cell.getField()) && cell.getElement()?.classList?.value) {
           // If we don't have the unmodified original class value, store it so we can reset classes later on :)
-          this.fieldOriginalClassMap.set(cell.getField(), cell.getElement()?.classList.value);
+          this.fieldOriginalClassMap.set(cell.getField(), cell.getElement()?.classList?.value);
         }
 
         // TODO (@day): if we're going to do inserts we'll have to check if edit is in a pending insert here
@@ -612,9 +769,6 @@
           row.reformat();
         })
         this.tabulator.restoreRedraw();
-        this.$nextTick(() => {
-          this.tabulator.redraw()
-        })
       },
       buildPendingUpdates() {
         return this.pendingChanges.updates.map((update) => {
@@ -681,7 +835,16 @@
       copySelection() {
         const isFocusingTable = this.checkTableFocus();
         if (!this.active || !isFocusingTable) return
-        copyRanges({ ranges: this.tabulator.getRanges(), type: 'plain' })
+        this.tabulator.copyRanges({ type: 'plain' })
+      },
+      pasteSelection() {
+        if (!this.checkTableFocus() || !this.editingData) return;
+        pasteRange(_.last(this.tabulator.getRanges()));
+        this.tabulator.modules.selectRange.restoreFocus()
+      },
+      nullTableSelection() {
+        if (!this.checkTableFocus() || !this.editingData) return;
+        this.setRangesNull(this.tabulator.getRanges());
       },
       dataToJson(rawData, firstObjectOnly) {
         const rows = _.isArray(rawData) ? rawData : [rawData]
@@ -706,6 +869,9 @@
         })
       },
       resetPendingChanges() {
+        if (this.tabulator) {
+          this.tabulator.modules.history.clear();
+        }
         this.pendingChanges = {
           updates: [],
           deletes: []
@@ -713,6 +879,8 @@
       },
       async copyToSql() {
         this.saveError = null;
+
+        if (!this.editingData) return;
 
         try {
           const changes = {
@@ -722,7 +890,7 @@
           };
 
           const sql = await this.connection.applyChangesSql(changes);
-          const formatted = format(sql, { language: FormatterDialect(this.queryDialect) })
+          const formatted = safeSqlFormat(sql, formatOptionsFor(this.queryDialect))
           this.$root.$emit(AppEvent.newTab, formatted);
         } catch (ex) {
           log.error(ex)
@@ -757,6 +925,8 @@
       },
       async saveChanges() {
         this.saveError = null;
+
+        if (!this.editingData) return;
 
         try {
           const payload = {
@@ -887,14 +1057,13 @@
 
         this.tabulator.download(formatter, `${title}-${dateString}.${format}`, 'all');
       },
-      clipboard(format = null) {
+      async clipboard(format = null) {
         // this.tabulator.copyToClipboard("all")
 
         const allRows = this.tabulator.getData()
         if (allRows.length == 0) {
           return
         }
-        const columnTitles = {}
 
         const result = this.dataToJson(allRows, false)
 
@@ -908,11 +1077,11 @@
                   )
                 )
           ];
-          this.$native.clipboard.writeText(markdownTable(mdContent))
+          await this.$native.clipboard.writeText(markdownTable(mdContent))
         } else if (format === 'json') {
-          this.$native.clipboard.writeText(JSON.stringify(result))
+          await this.$native.clipboard.writeText(JSON.stringify(result))
         } else {
-          this.$native.clipboard.writeText(
+          await this.$native.clipboard.writeText(
             Papa.unparse(
               result,
               { header: true, delimiter: "\t", quotes: true, escapeFormulae: true }
@@ -1031,6 +1200,10 @@
       .tabulator-tableholder {
         padding-bottom: 5rem;
       }
+    }
+
+    &:not(.editing-data) ::v-deep .tabulator-range-fill-handle {
+      display: none;
     }
   }
 

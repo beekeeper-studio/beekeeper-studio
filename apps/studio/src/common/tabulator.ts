@@ -5,13 +5,11 @@ import {
   RangeComponent,
   TabulatorFull,
 } from "tabulator-tables";
-import {
-  copyActionsMenu,
-  resizeAllColumnsToFitContent,
-  resizeAllColumnsToFixedWidth,
-} from "@/lib/menu/tableMenu";
 import { rowHeaderField } from "@/common/utils";
 import _ from "lodash";
+import rawLog from "@bksLogger";
+
+const log = rawLog.scope("common/tabulator");
 
 interface Options extends TabulatorOptions {
   table?: string;
@@ -36,6 +34,13 @@ export function tabulatorForTableData(
       columns: ["width", "visible"],
     },
     persistenceMode: "local",
+    persistenceWriterFunc: (id: string, type: string, data: unknown) => {
+      try {
+        localStorage.setItem(`${id}-${type}`, JSON.stringify(data));
+      } catch (e) {
+        log.warn(e);
+      }
+    },
     renderHorizontal: "virtual",
     autoResize: false,
     nestedFieldSeparator: false,
@@ -44,10 +49,13 @@ export function tabulatorForTableData(
     selectableRangeMode: "ctrl",
     selectableRangeAutoFocus: false,
     selectableRangeRows: true,
+    selectableRangeFill: true,
     resizableColumnGuide: true,
     movableColumns: true,
     height: "100%",
-    editTriggerEvent: "dblclick",
+    editTriggerEvent: window.bksConfig.ui.tableTable.editTrigger === "click"
+      ? "click"
+      : "dblclick",
     debugInvalidComponentFuncs: false,
     history: true,
     keybindings: {
@@ -72,29 +80,15 @@ export function tabulatorForTableData(
         relativeToPage: true,
         binaryEncoding: window.bksConfig.ui.general.binaryEncoding,
       },
-      contextMenu: (_e, cell) => {
-        return copyActionsMenu({ ranges: cell.getRanges(), table: table || "mytable", schema });
-      },
-      headerContextMenu: (_e, column) => {
-        return [
-          ...copyActionsMenu({
-            ranges: column.getTable().getRanges(),
-            table: table || "mytable",
-            schema,
-          }),
-          { separator: true },
-          resizeAllColumnsToFitContent,
-          resizeAllColumnsToFixedWidth,
-        ];
-      },
     },
   };
   const mergedOptions = _.merge(defaultOptions, tabulatorOptions);
   const tabulator = new TabulatorFull(el, mergedOptions);
+
   if (options.onRangeChange) {
-    function onRangeChange() {
+    const onRangeChange = () => {
       options.onRangeChange(tabulator.getRanges());
-    }
+    };
     tabulator.on("cellMouseUp", onRangeChange);
     tabulator.on("headerMouseUp", onRangeChange);
     tabulator.on(

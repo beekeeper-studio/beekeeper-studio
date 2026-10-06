@@ -52,7 +52,7 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
       background: $row-add;
       border: 0;
       .tabulator-cell {
-        &.primary-key {
+        &.primary-key, &.read-only-field {
           > * {
             opacity: initial;
           }
@@ -66,6 +66,10 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
     &.inserted {
       .tabulator-editing {
         box-shadow: inset 0 -1px $theme-base!important;
+      }
+      &.tabulator-moving {
+        position: absolute;
+        background: $row-add !important;
       }
     }
     &.deleted,
@@ -344,6 +348,27 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
     &.tabulator-range-selected:not(.tabulator-range-only-cell-selected) {
       background-color: rgba($theme-base, 0.05);
     }
+
+    &.tabulator-range-selected:not(.tabulator-range-only-cell-selected) {
+      &.edited {
+        background: $cell-edited;
+        &:hover {
+          background: color.adjust($cell-edited, $lightness: 3%);
+        }
+      }
+      &.edit-error {
+        background: $cell-error;
+        &:hover {
+          background: color.adjust($cell-error, $lightness: 5%);
+        }
+      }
+      &.edit-success {
+        background: $cell-success;
+        &:hover {
+          background: color.adjust($cell-success, $lightness: 5%);
+        }
+      }
+    }
   }
 
   i.fk-link {
@@ -372,7 +397,7 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
     &:hover, &.editable:hover {
       background: rgba($theme-base,0.05);
     }
-    &.primary-key {
+    &.primary-keye, &.read-only-field {
       cursor: default;
       & > * {
         opacity: 0.5;
@@ -423,7 +448,7 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
   background: transparent;
   .tabulator-headers {
     .tabulator-col:first-of-type {
-      &.foreign-key, &.primary-key {
+      &.foreign-key, &.primary-key, &.read-only-field {
         &:before{
           left: $gutter-w * 0.8;
         }
@@ -490,6 +515,16 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
         color: $text-dark;
       }
 
+      // Column headers are the reorder drag handle (movableColumns is enabled),
+      // so show a grab cursor on hover and a grabbing cursor while a column is
+      // being dragged. See issue #3165.
+      &:hover {
+        cursor: grab;
+      }
+      &.tabulator-moving {
+        cursor: grabbing;
+      }
+
       &:first-of-type .tabulator-col-content {
         padding-left: $gutter-w * 1.5;
       }
@@ -528,13 +563,12 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
           }
         }
       }
-      &.foreign-key, &.primary-key {
+      &.foreign-key, &.primary-key, &.read-only-field {
         .tabulator-col-content {
           width: calc(100% - #{$foreign-key-width});
         }
         &:before{
           $font-size: 13px;
-          content: 'vpn_key';
           font-family: 'Material Icons';
           font-size: $font-size;
           color: $theme-primary;
@@ -542,6 +576,15 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
           display: inline-flex;
           align-items: center;
         }
+      }
+      &.foreign-key, &.primary-key {
+        &:before {
+          content: 'vpn_key'
+        }
+      }
+      &.read-only-field:before {
+        color: $text-disabled;
+        content: 'edit_off';
       }
       &.primary-key:before {
         color: $theme-secondary;
@@ -813,7 +856,7 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
     border-color: color.adjust($theme-primary, $lightness: -20%);
     border-width: 1px;
   }
-  .tabulator-range.tabulator-range-active::after {
+  .tabulator-range-fill-handle {
     background-color: color.adjust($theme-primary, $lightness: -20%);
   }
   .tabulator-range.copied {
@@ -831,7 +874,7 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
       }
 
       &.tabulator-range-selected {
-        &.primary-key:before {
+        &.primary-key:before, &.read-only-field:before {
           color: black;
         }
         &.foreign-key:before {
@@ -937,5 +980,13 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
   .tabulator-col .tabulator-col-content .tabulator-col-title .title >
   .column-data-type {
     display: none;
+  }
+}
+
+.tabulator .tabulator-range-overlay .tabulator-range.tabulator-range-copy-highlight {
+  border-style: dashed;
+
+  &::after {
+    content: none;
   }
 }

@@ -55,7 +55,15 @@ const SettingStoreModule: Module<State, any> = {
       const newSetting = await Vue.prototype.$util.send('appdb/setting/save', { obj: setting });
       _.merge(setting, newSetting);
       context.commit(M.ADD, newSetting);
-    }
+    },
+    async setEditResultsHintShown(context) {
+      const options = { key: "editResultsHintShown", value: new Date() };
+      await context.dispatch("save", options);
+    },
+    async setStartedEditingResult(context) {
+      const options = { key: "startedEditingResult", value: new Date() };
+      await context.dispatch("save", options);
+    },
   },
   getters: {
     settings(state) {
@@ -100,8 +108,12 @@ const SettingStoreModule: Module<State, any> = {
     privacyMode(state) {
       if (!state.settings.privacyMode) return false;
       return state.settings.privacyMode.value;
-    }
-  }
+    },
+    editResultsHintShown: (state) =>
+      !_.isEmpty(state.settings["editResultsHintShown"]?.value),
+    startedEditingResult: (state) =>
+      !_.isEmpty(state.settings["startedEditingResult"]?.value),
+  },
 }
 
 

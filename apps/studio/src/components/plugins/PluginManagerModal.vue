@@ -5,7 +5,9 @@
       :class="['vue-dialog', 'beekeeper-modal', 'plugin-manager-modal', { 'plugin-page-open': selectedPlugin }]"
     >
       <div class="dialog-content">
-        <div class="dialog-c-title">Plugins</div>
+        <div class="dialog-c-title">
+          Plugins
+        </div>
         <a class="close-btn btn btn-fab" href="#" @click.prevent="close">
           <i class="material-icons">clear</i>
         </a>
@@ -62,6 +64,7 @@ import PluginList from "./PluginList.vue";
 import PluginPage from "./PluginPage.vue";
 import _ from "lodash";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
+import { PluginSystemError } from "@/lib/errors";
 import type { PluginSnapshot, PluginRegistryEntry } from "@/services/plugin";
 import { mapGetters, mapState } from "vuex";
 
@@ -218,6 +221,20 @@ export default Vue.extend({
       }
     },
     async openPluginPage({ id }) {
+      try {
+        const info = await this.$util.send("plugin/repository", { id });
+        this.selectedPluginReadme = info.readme;
+      } catch (e) {
+        log.error(e);
+
+        if (e instanceof PluginSystemError && e.code === "PLUGIN_NOT_FOUND") {
+          // FIXME use error alert box
+          this.selectedPluginReadme = "We can't find the repository for this plugin.";
+        } else {
+          this.selectedPluginReadme = "Something went wrong.";
+          this.$noty.error(`Error opening plugin page: ${e.message}`);
+        }
+      }
       this.selectedPluginIdx = this.plugins.findIndex((p) => p.id === id);
       this.selectedPluginReadme = "";
       this.loadingPluginReadme = true;

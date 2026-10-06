@@ -1,0 +1,37 @@
+name: Check Docs Build
+
+# Builds the documentation site in strict mode on every pull request that touches it,
+# so broken links and other MkDocs warnings fail the PR instead of the deploy.
+# docs-deploy.yml runs the same build on master before uploading to Netlify.
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'requirements.txt'
+      - 'bin/mkdocs_hooks/**'
+      - 'apps/studio/default.config.ini'
+      - '.github/workflows/docs-check.yml'
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.13.7'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Build site with mkdocs (strict)
+      run: mkdocs build --strict

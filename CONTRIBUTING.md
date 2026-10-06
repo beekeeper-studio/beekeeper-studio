@@ -21,6 +21,52 @@ It's usually best to open an issue before spending a lot of time working on the 
 
 Sometimes we don't merge pull requests if they don't meet our design goals, but we really never want this to happen, so please talk to us!
 
+### Style Guide
+
+#### Form Inputs
+
+Use the `.form-group` class when an input has a label, hint, or both. It provides standard flex column layout, label styling, and hint text styling. A standalone input without a label or hint does not need `.form-group`.
+
+```html
+<!-- Input only (no .form-group needed) -->
+<input type="text" v-model="value">
+
+<!-- With label -->
+<div class="form-group">
+  <label for="myInput">Label</label>
+  <input id="myInput" type="text" v-model="value">
+</div>
+
+<!-- With label and hint -->
+<div class="form-group">
+  <label for="myInput">Label</label>
+  <input id="myInput" type="text" v-model="value">
+  <div class="hint">Helper text goes here</div>
+</div>
+
+<!-- Component input with label and hint -->
+<div class="form-group">
+  <label>Host</label>
+  <masked-input v-model="hostname" />
+  <div class="hint">The hostname or IP address of your database</div>
+</div>
+```
+
+Input components like `MaskedInput`, `FilePicker`, and `ColorPicker` work on their own. Wrap them in `.form-group` only if you need a label or helper text.
+
+#### Privacy mode masking
+
+For inputs that should be masked in privacy mode, use the `MaskedInput` component (`apps/studio/src/components/MaskedInput.vue`).
+
+```html
+<div class="form-group">
+  <label>Host</label>
+  <masked-input v-model="hostname" />
+  <!-- OR -->
+  <masked-input :value="hostname" @input="hostname = $event" />
+</div>
+```
+
 ### Legal
 
 All contributions to this repository are made under the [MIT License](https://opensource.org/licenses/MIT).

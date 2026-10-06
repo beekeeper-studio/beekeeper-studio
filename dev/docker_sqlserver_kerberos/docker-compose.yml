@@ -1,0 +1,123 @@
+# Stands up a fully self-contained Kerberos environment for the SQL Server integrated-auth
+# test -- no host setup beyond Docker is required:
+#   samba  -- Active Directory DC (KDC + LDAP), realm BKS.TEST
+#   mssql  -- SQL Server 2022 on Linux, joined to the realm via a keytab
+#   tests  -- the Jest client (ODBC Driver 18 + Kerberos client), runs the spec in-network
+#
+# The `tests` service joins the same network, so dc.bks.test / mssql.bks.test resolve via
+# Docker DNS (no /etc/hosts), reads the repo krb5.conf via KRB5_CONFIG (no /etc edits), does
+# kinit against the in-network KDC, and runs the spec. Drive it with run.sh
+# (= docker compose run --rm tests). See
+# apps/studio/tests/integration/lib/db/clients/sqlserver-kerberos.spec.ts for the test.
+name: bks-sqlserver-kerberos
+
+networks:
+  bksnet:
+    driver: bridge
+    ipam:
+      config:
+        # Static subnet so the SQL Server container can point DNS at a fixed Samba IP.
+        - subnet: 172.28.0.0/24
+
+volumes:
+  # Shared channel for the Samba-exported keytab + readiness markers.
+  secrets:
+  # Container-private node_modules so the bind-mounted source doesn't shadow them and the
+  # host's native module ABI never leaks in.
+  tests_root_nm:
+  tests_studio_nm:
+  tests_uikit_nm:
+
+services:
+  samba:
+    build:
+      context: .
+      dockerfile: samba/Dockerfile
+    hostname: dc.bks.test
+    domainname: bks.test
+    # Samba AD DC provisioning needs broad privileges; this is a throwaway test container.
+    privileged: true
+    networks:
+      bksnet:
+        # Fixed IP so SQL Server can use this DC as its DNS resolver (AD SRV records).
+        ipv4_address: 172.28.0.10
+        aliases:
+          - dc.bks.test
+    volumes:
+      - secrets:/shared
+    healthcheck:
+      # Healthy once the keytab has been exported for the SQL Server container.
+      test: ["CMD-SHELL", "test -f /shared/keytab.ready"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+
+  mssql:
+    build:
+      context: .
+      dockerfile: mssql/Dockerfile
+    hostname: mssql.bks.test
+    domainname: bks.test
+    depends_on:
+      samba:
+        condition: service_healthy
+    networks:
+      bksnet:
+        aliases:
+          - mssql.bks.test
+    # Resolve the AD domain (DC discovery / SRV records) via the Samba DC's DNS so
+    # `CREATE LOGIN [BKS\user] FROM WINDOWS` and runtime principal lookups work.
+    dns:
+      - 172.28.0.10
+    dns_search:
+      - bks.test
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Example*1"
+      MSSQL_PID: "Developer"
+    volumes:
+      - secrets:/shared
+    # Published only for optional manual debugging (e.g. sqlcmd from the host); the test
+    # runner reaches SQL Server over the Docker network and does not need this.
+    ports:
+      - "1433:1433"
+    healthcheck:
+      # Healthy once the engine accepts connections AND the Kerberos login is created.
+      test: ["CMD-SHELL", "test -f /var/opt/mssql/mssql.ready"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 20s
+
+  tests:
+    build:
+      context: .
+      dockerfile: tests/Dockerfile
+    # Gated behind a profile so `docker compose up` for the DB stack doesn't start it;
+    # run.sh invokes it via `docker compose run`.
+    profiles: ["test"]
+    depends_on:
+      samba:
+        condition: service_healthy
+      mssql:
+        condition: service_healthy
+    networks:
+      - bksnet
+    working_dir: /app
+    environment:
+      KRB_REALM: BKS.TEST
+      KRB_TEST_USER: testuser
+      KRB_TEST_PASS: "Beekeeper*1User"
+      SQLSERVER_KERBEROS_TEST: "1"
+      SQLSERVER_KERBEROS_HOST: mssql.bks.test
+      SQLSERVER_KERBEROS_PORT: "1433"
+      # Point the Kerberos client at the repo config without touching /etc.
+      KRB5_CONFIG: /app/dev/docker_sqlserver_kerberos/krb5.conf
+      KRB5CCNAME: /tmp/krb5cc
+      HUSKY: "0"
+    volumes:
+      # Repo root is two levels up from this compose file.
+      - ../../:/app
+      - tests_root_nm:/app/node_modules
+      - tests_studio_nm:/app/apps/studio/node_modules
+      - tests_uikit_nm:/app/apps/ui-kit/node_modules

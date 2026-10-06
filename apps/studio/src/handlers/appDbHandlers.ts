@@ -3,7 +3,7 @@ import { SavedConnection } from "@/common/appdb/models/saved_connection"
 import { UsedConnection } from "@/common/appdb/models/used_connection"
 import { IConnection } from "@/common/interfaces/IConnection"
 import { Transport, TransportCloudCredential, TransportFavoriteQuery, TransportLicenseKey, TransportPinnedConn, TransportUsedQuery, TransportFormatterPreset } from "@/common/transport";
-import { FindManyOptions, FindOneOptions, FindOptionsWhere, In, SaveOptions } from "typeorm";
+import { FindManyOptions, FindOneOptions, FindOptionsWhere, In, IsNull, SaveOptions } from "typeorm";
 import _ from 'lodash';
 import { FavoriteQuery } from "@/common/appdb/models/favorite_query";
 import { UsedQuery } from "@/common/appdb/models/used_query";
@@ -18,16 +18,53 @@ import { HiddenSchema } from "@/common/appdb/models/HiddenSchema";
 import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
 import { TransportHiddenEntity, TransportHiddenSchema } from "@/common/transport/TransportHidden";
 import { TransportPinnedEntity } from "@/common/transport/TransportPinnedEntity";
+import { TransportTabulatorPersistence } from "@/common/transport/TransportTabulatorPersistence";
+import { TabulatorPersistence } from "@/common/appdb/models/TabulatorPersistence";
 import { TransportUserSetting } from "@/common/transport/TransportUserSetting";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import { TokenCache } from "@/common/appdb/models/token_cache";
 import { CloudCredential } from "@/common/appdb/models/CloudCredential";
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
-import platformInfo from'@/common/platform_info';
 import rawLog from "@bksLogger"
 import { validate } from "class-validator";
+import { QueryAudit } from "@/common/appdb/models/QueryAudit";
+import { TransportQueryAudit, TransportQueryAuditDetail } from "@/common/transport/TransportQueryAudit";
 
 const log = rawLog.scope('Appdb handlers');
+
+const pluralKeys = [
+  'connectionFolderIds',
+  'queryFolderIds',
+  'parentIds',
+  'ids'
+];
+
+const pluralToSingular = {
+  'connectionFolderIds': 'connectionFolderId',
+  'queryFolderIds': 'queryFolderId',
+  'parentIds': 'parentId',
+  'ids': 'id'
+};
+
+function paramsToWhere(params: Record<string, any> | Array<Record<string, any>>): FindOptionsWhere<any>[] {
+  params = _.isArray(params) ? params : [params];
+
+  return params.map((p: Record<string, any>) => {
+    const where = {};
+    for (const key of pluralKeys) {
+      if (key in p) {
+        const singular = pluralToSingular[key] ?? '';
+        if (p[key] && p[key].length > 0) {
+          where[singular] = In(p[key]);
+        } else {
+          where[singular] = IsNull();
+        }
+      }
+    }
+
+    return where;
+  })
+}
 
 async function defaultTransform<T extends Transport>(obj: T, cls: any) {
   if (_.isNil(obj)) {
@@ -53,7 +90,7 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
       return await transform(new cls().withProps(init), cls);
     },
     [`appdb/${name}/save`]: async function({ obj, options }: { obj: T | T[], options: SaveOptions }) {
-      // Use query builder to select all columns (including those marked select: false by default) 
+      // Use query builder to select all columns (including those marked select: false by default)
       // since all columns are required for validation checks.
       const repo = cls.getRepository();
       const alias = "e";
@@ -108,6 +145,9 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
       }
     },
     [`appdb/${name}/find`]: async function({ options }: { options?: FindManyOptions<any> }) {
+      if (options && !options.where && "params" in options) {
+        options.where = paramsToWhere(options.params);
+      }
       return await Promise.all((await cls.find(options)).map(async (value) => {
         return await transform(value, cls);
       }))
@@ -122,6 +162,17 @@ function handlersFor<T extends Transport>(name: string, cls: any, transform: (ob
       // Support both direct options or wrapped in { options: ... }
       const options = 'options' in args ? args.options : args;
       return await cls.count(options);
+    },
+    [`appdb/${name}/search`]: async function({ searchText }: { searchText: string }) {
+      if (!cls.searchableFields || cls.searchableFields.length === 0) {
+        throw new Error(`You need to configure the searchable fields for model ${name}`);
+      }
+
+      const result = await cls.search(cls, searchText);
+
+      return await Promise.all(result.map(async (value) => {
+        return await transform(value, cls);
+      }));
     }
   }
 }
@@ -147,14 +198,11 @@ async function transformLicense(obj: LicenseKey, _cls: any): Promise<TransportLi
 
 async function transformConn(obj: SavedConnection, cls: any): Promise<IConnection> {
   if (_.isNil(obj)) return null;
-  const status = await LicenseKey.getLicenseStatus();
-  const canBeReadOnly = status.isUltimate || platformInfo.testMode;
 
-  if (!canBeReadOnly) {
-    obj.readOnlyMode = false;
-  }
-
-  const newObj = {} as unknown as SavedConnection;
+  const newObj = {
+    canRead: true,
+    canWrite: true,
+  } as unknown as SavedConnection;
   return cls.merge(newObj, obj);
 }
 
@@ -164,6 +212,7 @@ export const AppDbHandlers = {
   ...handlersFor<TransportPinnedConn>('pinconn', PinnedConnection),
   ...handlersFor<TransportPinnedEntity>('pins', PinnedEntity),
   ...handlersFor<TransportFavoriteQuery>('query', FavoriteQuery),
+  ...handlersFor<TransportQueryAudit>('queryAudit', QueryAudit),
   ...handlersFor<TransportUsedQuery>('usedQuery', UsedQuery),
   ...handlersFor<TransportOpenTab>('tabs', OpenTab),
   ...handlersFor<TransportHiddenEntity>('hiddenEntity', HiddenEntity),
@@ -174,6 +223,7 @@ export const AppDbHandlers = {
   ...handlersFor<TransportLicenseKey>('license', LicenseKey, transformLicense),
   ...handlersFor<IQueryFolder>('queryFolder', QueryFolder),
   ...handlersFor<IConnectionFolder>('connectionFolder', ConnectionFolder),
+  ...handlersFor<TransportTabulatorPersistence>('tabulatorPersistence', TabulatorPersistence),
   'appdb/saved/parseUrl': async function({ url }: { url: string }) {
     const conn = new SavedConnection();
     if (!conn.parse(url)) {
@@ -203,4 +253,12 @@ export const AppDbHandlers = {
     cache = await cache.save();
     return cache.id;
   },
+  'appdb/queryAudit/get': async function ({ auditId }: { auditId: number; }): Promise<TransportQueryAuditDetail | null> {
+    const audit = await QueryAudit.findOneByOrFail({ id: auditId });
+    return await audit.fetchDetail();
+  },
+  'appdb/queryAudit/restore': async function ({ auditId, }: { auditId: number; }): Promise<void> {
+    const audit = await QueryAudit.findOneByOrFail({ id: auditId });
+    await audit.restore();
+  }
 };
