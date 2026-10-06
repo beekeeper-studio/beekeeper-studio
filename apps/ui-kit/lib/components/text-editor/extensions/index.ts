@@ -100,7 +100,7 @@ export function extensions(config: ExtensionConfiguration = {}) {
   return [
     specialKeymap({ keymap: config.keymap, vimOptions: config.vimOptions }),
     extraKeymap({ keybindings: config.keybindings }),
-    lineNumbers({ enabled: config.lineNumbers }),
+    lineNumbers({ enabled: config.lineNumbers, vim: config.keymap === "vim" }),
     highlightActiveLineGutter(),
     highlightSpecialChars(),
     history(),
