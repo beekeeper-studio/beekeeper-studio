@@ -215,12 +215,12 @@ export default Vue.extend({
   .theme-preview-frame {
     overflow: hidden;
     border-radius: 4px;
-    border: 1px solid var(--bg-subtle-a);
+    border: 1px solid var(--border-subtle);
     border-radius: 4px;
   }
 
   &.selected .theme-preview-frame {
-    border-color: var(--primary-solid-bg);
+    border-color: var(--border-active);
   }
 
   &:has(input:focus-visible) .theme-preview-frame {

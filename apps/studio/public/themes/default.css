@@ -9,7 +9,7 @@
 
 .light-theme,
 .dark-theme {
-  --base-gray: #000000;
+  --base-gray: #6f6f6f;
   --base-accent: #fad83b;
 
   --btn-primary-fg: var(--gray-2);

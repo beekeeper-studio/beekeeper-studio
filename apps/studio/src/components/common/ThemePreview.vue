@@ -160,6 +160,7 @@ export default Vue.extend({
   min-width: 0;
   color: var(--app-fg);
   background: var(--app-bg);
+  padding: 0.25rem;
 
   .titlebar-preview {
     position: relative;

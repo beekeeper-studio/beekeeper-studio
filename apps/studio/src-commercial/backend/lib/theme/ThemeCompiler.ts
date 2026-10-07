@@ -74,14 +74,24 @@ export class ThemeCompiler {
   ): string {
     const colors = this.readBaseColors(root, selector);
 
+    if (!colors.background) {
+      return "";
+    }
+
     const palette = new ColorGenerator({
-      gray: colors.gray,
-      background: colors.background,
       appearance,
+      background: colors.background,
+      accent: colors.accent,
+      gray: colors.gray,
     });
 
-    let css = palette.generateGrayCss(colors.gray);
-
+    let css = "";
+    if (colors.accent) {
+      css += palette.generateCss("primary", colors.accent);
+    }
+    if (palette.gray) {
+      css += palette.generateGrayCss();
+    }
     if (colors.red) {
       css += palette.generateCss("red", colors.red);
     }
@@ -103,9 +113,6 @@ export class ThemeCompiler {
     if (colors.pink) {
       css += palette.generateCss("pink", colors.pink);
     }
-    if (colors.accent) {
-      css += palette.generateCss("primary", colors.accent);
-    }
 
     return css;
   }
@@ -126,6 +133,7 @@ export class ThemeCompiler {
     }
 
     return {
+      accent: this.readColor(declarations, "--base-accent"),
       background: this.readColor(declarations, "--background"),
       gray: this.readColor(declarations, "--base-gray"),
       red: this.readColor(declarations, "--base-red"),
@@ -135,7 +143,6 @@ export class ThemeCompiler {
       blue: this.readColor(declarations, "--base-blue"),
       purple: this.readColor(declarations, "--base-purple"),
       pink: this.readColor(declarations, "--base-pink"),
-      accent: this.readColor(declarations, "--base-accent"),
     };
   }
 
