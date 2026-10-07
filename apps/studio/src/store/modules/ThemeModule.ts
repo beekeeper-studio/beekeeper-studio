@@ -16,11 +16,10 @@ export const ThemeModule: Module<State, RootState> = {
   state: () => ({
     systemDark: true,
     themes: [
-      { id: "default", label: "Beekeeper Studio" },
+      { id: "default", label: "Default" },
       { id: "solarized", label: "Solarized" },
       { id: "dracula", label: "Dracula" },
       { id: "github", label: "GitHub" },
-      { id: "custom", label: "Custom" },
     ],
   }),
   mutations: {

@@ -14,7 +14,7 @@
       const params = new URLSearchParams(location.search);
       const themeId = params.get("themeId") || "default";
       const appearance = params.get("appearance") || "auto";
-      document.getElementById("theme").href = `/themes/${themeId}.css`;
+      document.getElementById("theme").href = `theme://${themeId}.css`;
     </script>
 
     <script src="./src-commercial/entrypoints/renderer.ts" type="module"></script>

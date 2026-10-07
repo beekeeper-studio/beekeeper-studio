@@ -1,9 +1,15 @@
 .light-theme {
+  --background: #ffffff;
   --editor-font-weight: 500;
+}
+
+.dark-theme {
+  --background: #090909;
 }
 
 .light-theme,
 .dark-theme {
+  --base-gray: #000000;
   --base-accent: #fad83b;
 
   --btn-primary-fg: var(--gray-2);

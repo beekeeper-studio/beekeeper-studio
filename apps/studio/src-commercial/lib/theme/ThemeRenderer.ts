@@ -1,10 +1,6 @@
 import { Store } from "vuex";
 import { State } from "@/store/index";
 import { AppEvent } from "@/common/AppEvent";
-import { StylesheetLoader } from "./StylesheetLoader";
-import { ColorGenerator } from "./ColorGenerator";
-
-type ThemeId = "default" | "solarized" | "dracula" | "github";
 
 export interface ThemeRendererOptions {
   store: Store<State>;
@@ -17,10 +13,9 @@ export interface ThemeRendererOptions {
 
 export class ThemeRenderer {
   private initialized = false;
-  private themeId: ThemeId | null = null;
+  private themeId: string | null = null;
   private dark: boolean | null = null;
-  private stylesheet: StylesheetLoader | null = null;
-  private style: HTMLStyleElement | null = null;
+  private link: HTMLLinkElement | null = null;
 
   private media = window.matchMedia("(prefers-color-scheme: dark)");
 
@@ -33,7 +28,11 @@ export class ThemeRenderer {
 
     const { themeId, dark } = this.parseThemeParams();
 
-    this.stylesheet = new StylesheetLoader("link#theme");
+    this.link = document.querySelector("link#theme");
+
+    if (!this.link) {
+      throw new Error("No stylesheet link matching link#theme");
+    }
 
     await this.apply(themeId, dark);
 
@@ -57,8 +56,7 @@ export class ThemeRenderer {
 
     if (import.meta.hot) {
       import.meta.hot.on("theme-css-update", async () => {
-        await this.stylesheet.reload();
-        this.renderPalette(this.dark);
+        await this.reloadStylesheet();
       });
     }
 
@@ -72,7 +70,7 @@ export class ThemeRenderer {
   }
 
   private async handleThemeChanged(
-    themeId: ThemeId,
+    themeId: string,
     themeDark: boolean
   ): Promise<void> {
     if (themeId === this.themeId && themeDark === this.dark) {
@@ -92,7 +90,7 @@ export class ThemeRenderer {
     return { themeId, dark };
   }
 
-  private async apply(themeId: ThemeId, dark: boolean): Promise<void> {
+  private async apply(themeId: string, dark: boolean): Promise<void> {
     this.themeId = themeId;
     this.dark = dark;
 
@@ -106,55 +104,29 @@ export class ThemeRenderer {
     document.body.classList.toggle("dark-theme", dark);
     document.body.classList.toggle("light-theme", !dark);
 
-    await this.stylesheet.load(`/themes/${themeId}.css`);
-
-    this.renderPalette(dark);
+    await this.loadStylesheet(`theme://${themeId}.css`);
   }
 
-  private renderPalette(dark: boolean): void {
-    const background = this.stylesheet.get("--background");
-    const gray = this.stylesheet.get("--base-gray");
-    const red = this.stylesheet.get("--base-red");
-    const orange = this.stylesheet.get("--base-orange");
-    const yellow = this.stylesheet.get("--base-yellow");
-    const green = this.stylesheet.get("--base-green");
-    const blue = this.stylesheet.get("--base-blue");
-    const purple = this.stylesheet.get("--base-purple");
-    const pink = this.stylesheet.get("--base-pink");
-    const accent = this.stylesheet.get("--base-accent");
-
-    const palette = new ColorGenerator({ gray, background });
-
-    let css = palette.generateGrayCss(gray, dark);
-
-    if (red) {
-      css += palette.generateCss("red", red, dark);
-    }
-    if (orange) {
-      css += palette.generateCss("orange", orange, dark);
-    }
-    if (yellow) {
-      css += palette.generateCss("yellow", yellow, dark);
-    }
-    if (green) {
-      css += palette.generateCss("green", green, dark);
-    }
-    if (blue) {
-      css += palette.generateCss("blue", blue, dark);
-    }
-    if (purple) {
-      css += palette.generateCss("purple", purple, dark);
-    }
-    if (pink) {
-      css += palette.generateCss("pink", pink, dark);
-    }
-    if (accent) {
-      css += palette.generateCss("primary", accent, dark);
+  private async loadStylesheet(href: string): Promise<void> {
+    if (this.link.getAttribute("href") === href && this.link.sheet) {
+      return;
     }
 
-    this.style?.remove();
-    this.style = document.createElement("style");
-    this.style.textContent = `body { ${css}} }`;
-    document.head.insertBefore(this.style, document.querySelector("link#theme"));
+    await new Promise<void>((resolve, reject) => {
+      this.link.onload = () => resolve();
+      this.link.onerror = () =>
+        reject(new Error(`Failed to load stylesheet ${href}`));
+      this.link.href = href;
+    });
+  }
+
+  private async reloadStylesheet(): Promise<void> {
+    const href = this.link.getAttribute("href");
+
+    if (!href) {
+      return;
+    }
+
+    await this.loadStylesheet(`${href.split("?")[0]}?t=${Date.now()}`);
   }
 }

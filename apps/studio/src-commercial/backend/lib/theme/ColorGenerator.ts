@@ -4,14 +4,15 @@ export type GeneratePaletteOptions = {
   accent: string;
   gray: string;
   background: string;
+  appearance: "dark" | "light";
 };
 
 export class ColorGenerator {
   constructor(readonly options: Omit<GeneratePaletteOptions, "accent">) { }
 
-  generateCss(name: string, accent: string, dark: boolean): string {
+  generateCss(name: string, accent: string): string {
     const colors = generateRadixColors({
-      appearance: dark ? "dark" : "light",
+      appearance: this.options.appearance,
       gray: this.options.gray,
       background: this.options.background,
       accent,
@@ -24,19 +25,19 @@ export class ColorGenerator {
     css += `@supports (color: color(display-p3 1 1 1)) {
       @media (color-gamut: p3) {
         ${this.stringify(
-          name,
-          colors.accentScaleWideGamut,
-          colors.accentScaleAlphaWideGamut
-        )}
+      name,
+      colors.accentScaleWideGamut,
+      colors.accentScaleAlphaWideGamut
+    )}
         --${name}-surface: ${colors.accentSurfaceWideGamut};
       }
     }`;
     return css;
   }
 
-  generateGrayCss(gray: string, dark: boolean): string {
+  generateGrayCss(gray: string): string {
     const colors = generateRadixColors({
-      appearance: dark ? "dark" : "light",
+      appearance: this.options.appearance,
       gray,
       background: this.options.background,
       accent: gray,
@@ -48,10 +49,10 @@ export class ColorGenerator {
     css += `@supports (color: color(display-p3 1 1 1)) {
       @media (color-gamut: p3) {
         ${this.stringify(
-          "gray",
-          colors.grayScaleWideGamut,
-          colors.grayScaleAlphaWideGamut
-        )}
+      "gray",
+      colors.grayScaleWideGamut,
+      colors.grayScaleAlphaWideGamut
+    )}
       }
     }`;
     return css;

@@ -113,6 +113,19 @@
   --tree-guide-border: transparent;
   --tree-guide-border-hover: var(--gray-a3);
 
+  /* ===== Icons ===== */
+
+  --icon-table-fg: var(--yellow-text);
+  --icon-view-fg: var(--blue-text);
+  --icon-materialized-view-fg: var(--green-text);
+  --icon-schema-fg: var(--text-muted);
+  --icon-routine-fg: var(--green-text);
+  --icon-function-fg: var(--green-text);
+  --icon-procedure-fg: var(--blue-text);
+  --icon-aggregate-fg: var(--orange-text);
+  --icon-window-fg: var(--pink-text);
+  --icon-query-fg: var(--pink-text);
+
   /* ===== Table ===== */
 
   --table-bg: var(--editor-bg);
