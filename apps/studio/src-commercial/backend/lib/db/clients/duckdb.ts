@@ -16,7 +16,6 @@ import _ from "lodash";
 import rawLog from "@bksLogger";
 import { Client_DuckDB as DuckDBKnexClient } from "@shared/lib/knex-duckdb";
 import { DuckDBInstance as Database, DuckDBConnection as Connection, DuckDBMaterializedResult, DuckDBType, DuckDBValue, DuckDBListValue, DuckDBTypeId, DuckDBBlobValue, DuckDBBlobType } from "@duckdb/node-api";
-import { identify } from "sql-query-identifier";
 import {
   CancelableQuery,
   DatabaseFilterOptions,
@@ -290,8 +289,8 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     return results.map((result) => {
       const fields = result.columns.map((column, idx) => ({
         id: `c${idx}`,
-        name: column.type.alias || column.name,
-        type: column.type.toString(),
+        name: column.name,
+        type: column.type.alias || column.type.toString(),
       }));
 
       const rows = result.rows.map((row: typeof result.rows[number]) => {
