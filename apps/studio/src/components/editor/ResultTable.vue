@@ -49,6 +49,7 @@
     <div
       ref="tabulator"
       class="spreadsheet-table"
+      @keydown="onTableKeydown"
     />
   </div>
 </template>
@@ -547,6 +548,13 @@
           formatter: this.cellFormatter,
           formatterParams,
           editorParams: {
+            // textarea params
+            enterSubmit: true,
+            shiftEnterSubmit: true,
+            altEnterNewLine: true,
+            ctrlEnterNewLine: true,
+            metaEnterNewLine: true,
+
             verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
             dataType: editData?.dataType,
             search: true,
@@ -612,6 +620,14 @@
           case 'boolean':
             return 'list'
           default: return ne
+        }
+      },
+      onTableKeydown(e: KeyboardEvent) {
+        // Avoid conflicts with v-hotkey. For example, pressing shift+enter
+        // triggers cell editor submit and editor modal.
+        if (e.target instanceof HTMLInputElement
+          || e.target instanceof HTMLTextAreaElement) {
+          e.stopPropagation();
         }
       },
       cellEditCheck(cell: CellComponent): boolean {
