@@ -4686,13 +4686,6 @@
   resolved "https://registry.yarnpkg.com/@types/sizzle/-/sizzle-2.3.10.tgz#277a542aff6776d8a9b15f2ac682a663e3e94bbd"
   integrity sha512-TC0dmN0K8YcWEAEfiPi5gJP14eJe30TTGjkvek3iM/1NdHHsdCA/Td6GvNndMOo/iSnIsZ4HuuhrYPDAmbxzww==
 
-"@types/sql-formatter@^4.0.0":
-  version "4.0.1"
-  resolved "https://registry.yarnpkg.com/@types/sql-formatter/-/sql-formatter-4.0.1.tgz#3c15dc3e50335e7909d6c01f1a4fd66da05e82a3"
-  integrity sha512-WLSHjarjiUz4GtQivyaDbagqJNHcFA1XOAvrgXmWLl1OeTCP0RuiFB1PtUIH4ArOqZX1Hk6ANzABWe6nw9nKpg==
-  dependencies:
-    sql-formatter "*"
-
 "@types/ssh2-streams@*":
   version "0.1.13"
   resolved "https://registry.yarnpkg.com/@types/ssh2-streams/-/ssh2-streams-0.1.13.tgz#f8d34a22be50fb8dbafbb2bbc289add0d22daa51"
@@ -12594,10 +12587,10 @@ sql-escaper@^1.5.1:
   resolved "https://registry.yarnpkg.com/sql-escaper/-/sql-escaper-1.5.1.tgz#fbaee511294d1f7da92fb68ca1faee2255839c7b"
   integrity sha512-4toX5E1fQbBrpfXidaHnF0669nkAdETeIPTs2SUjxxD7RRIs9ICG4gtpmfc68JCEKehsdwLFqBu9VlQqZ1P1gg==
 
-sql-formatter@*, sql-formatter@15.7.3:
-  version "15.7.3"
-  resolved "https://registry.yarnpkg.com/sql-formatter/-/sql-formatter-15.7.3.tgz#b62d7de5ca5b24ab6bdfb7568c11b5dcde74c114"
-  integrity sha512-5+zl9Nqg5aNjss0tb1G+StpC4dJKbjv3+g8CL/+V+00PfZop+2RKGyi53ScFl0dr+Dkx1LjmUO54Q3N7K3EtMw==
+sql-formatter@15.9.0:
+  version "15.9.0"
+  resolved "https://registry.yarnpkg.com/sql-formatter/-/sql-formatter-15.9.0.tgz#1a1f359aa479d58a84e1fb9b4ba10b11a160111d"
+  integrity sha512-3A/N+v+mA5/PDU+FlO4uTFE0L/Mmg63c/Ny161Qv2b1Mxp9IX8War+LLmq17LA/Kgu4KXAR7iutK2JaHWJMMtw==
   dependencies:
     argparse "^2.0.1"
     nearley "^2.20.1"
