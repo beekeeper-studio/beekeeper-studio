@@ -65,24 +65,27 @@ The only color you must set is the page background:
 
 That alone is a working theme.
 
-The second color worth setting is `--base-gray`. Most of the interface — backgrounds, borders, text, sidebars, tables, panels — is built from the gray scale, so this one value changes the overall character of the app more than anything else.
+!!! tip
+    Base colors accept any CSS color value: hex (`#fad83b`), named colors (`WhiteSmoke`), `rgb()`, `hsl()`, `oklch()`, `lab()` or `color()`. `color-mix()` and relative colors (`rgb(from …)`) are not supported.
+
+The next color to set is `--base-accent`. It's the color the app treats as primary: solid buttons, active pills, selected table headers. If you leave it out, the accent is gray.
 
 ```css
 .light-theme {
   --background: WhiteSmoke;
-  --base-gray: DarkSlateGray;
+  --base-accent: #0969da;
 }
 
 .dark-theme {
   --background: #010109;
-  --base-gray: #615A7C;
+  --base-accent: #1f6feb;
 }
 ```
 
-Everything else is **optional**. Set an accent hue only if you want to move it away from the default:
+You can set other base colors too as needed:
 
 ```css
---base-accent: #fad83b;
+--base-gray: DarkSlateGray;
 --base-yellow: #fad83b;
 --base-blue: #3498db;
 --base-green: #15db95;
@@ -92,9 +95,7 @@ Everything else is **optional**. Set an accent hue only if you want to move it a
 --base-pink: #ff00f0;
 ```
 
-Each one is expanded into a full scale automatically, so a single hex gives you backgrounds, hovers, borders, solid fills and text for that color.
-
-`--base-accent` is the color the app treats as primary: solid buttons, active pills, selected table headers. It uses a gray color by default.
+Each one is expanded into a full scale automatically, so a single hex gives you backgrounds, hovers, borders, solid fills and text for that color. Setting `--base-gray` replaces the default grays.
 
 ## 3. Component colors
 
