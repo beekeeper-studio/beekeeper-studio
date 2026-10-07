@@ -1,19 +1,29 @@
+import Color from "colorjs.io";
 import { generateRadixColors } from "@/vendor/radix-ui/generate-radix-color";
 
 export type GeneratePaletteOptions = {
-  accent: string;
-  gray: string;
-  background: string;
   appearance: "dark" | "light";
+  background: string;
+  accent?: string;
+  gray?: string;
 };
 
 export class ColorGenerator {
-  constructor(readonly options: Omit<GeneratePaletteOptions, "accent">) { }
+  readonly gray: string | undefined;
+
+  constructor(readonly options: GeneratePaletteOptions) {
+    if (options.gray) {
+      this.gray = options.gray;
+    } else if (options.accent) {
+      this.gray = this.grayFromAccent(options.accent);
+    }
+  }
 
   generateCss(name: string, accent: string): string {
     const colors = generateRadixColors({
       appearance: this.options.appearance,
-      gray: this.options.gray,
+      // Hue scales only read the gray when the hue is pure black or white.
+      gray: this.gray ?? this.options.background,
       background: this.options.background,
       accent,
     });
@@ -35,12 +45,12 @@ export class ColorGenerator {
     return css;
   }
 
-  generateGrayCss(gray: string): string {
+  generateGrayCss(): string {
     const colors = generateRadixColors({
       appearance: this.options.appearance,
-      gray,
+      gray: this.gray,
       background: this.options.background,
-      accent: gray,
+      accent: this.gray,
     });
 
     let css = "";
@@ -56,6 +66,14 @@ export class ColorGenerator {
       }
     }`;
     return css;
+  }
+
+  private grayFromAccent(accent: string): string {
+    const hue = new Color(accent).to("oklch").coords[2];
+    const lightness = this.options.appearance === "light" ? 0.2542 : 0.9703;
+    const chroma = 0.0111;
+    const gray = new Color("oklch", [lightness, chroma, hue]);
+    return gray.to("srgb").toString({ format: "hex" });
   }
 
   private stringify(

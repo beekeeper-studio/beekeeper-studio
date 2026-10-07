@@ -1,6 +1,7 @@
 .light-theme {
   --background: #ffffff;
-  --base-gray: #1f2328;
+  --base-accent: #0969da;
+
   --base-blue: #0969da;
   --base-green: #1a7f37;
   --base-yellow: #9a6700;
@@ -8,7 +9,6 @@
   --base-red: #cf222e;
   --base-purple: #8250df;
   --base-pink: #bf3989;
-  --base-accent: #0969da;
 
   --github-comment: #6e7781;
   --github-keyword: #cf222e;
@@ -23,7 +23,8 @@
 
 .dark-theme {
   --background: #0d1117;
-  --base-gray: #f0f6fc;
+  --base-accent: #1f6feb;
+
   --base-blue: #1f6feb;
   --base-green: #238636;
   --base-yellow: #9e6a03;
@@ -31,7 +32,6 @@
   --base-red: #da3633;
   --base-purple: #8957e5;
   --base-pink: #bf4b8a;
-  --base-accent: #1f6feb;
 
   --github-comment: #8b949e;
   --github-keyword: #ff7b72;
