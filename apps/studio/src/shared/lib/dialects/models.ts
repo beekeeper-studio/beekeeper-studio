@@ -86,7 +86,7 @@ export function KnexDialect(d: Dialect): KnexDialect {
   return d as KnexDialect
 }
 // REF: https://github.com/sql-formatter-org/sql-formatter/blob/master/docs/language.md#options
-export type FormatterDialect = 'postgresql' | 'mysql' | 'mariadb' | 'sql' | 'tsql' | 'redshift' | 'plsql' | 'db2' | 'sqlite' | 'trino' | 'snowflake'
+export type FormatterDialect = 'postgresql' | 'mysql' | 'mariadb' | 'sql' | 'tsql' | 'redshift' | 'plsql' | 'db2' | 'sqlite' | 'trino' | 'snowflake' | 'clickhouse'
 export function FormatterDialect(d: Dialect): FormatterDialect {
   if (!d) return 'mysql'
   if (d === 'sqlserver') return 'tsql'
@@ -100,6 +100,7 @@ export function FormatterDialect(d: Dialect): FormatterDialect {
   if (d === 'trino') return 'trino'
   if (d === 'surrealdb') return 'sql'
   if (d === 'snowflake') return 'snowflake'
+  if (d === 'clickhouse') return 'clickhouse'
   return 'mysql' // we want this as the default
 }
 
