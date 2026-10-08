@@ -38,3 +38,9 @@
     }
   }
 </script>
+
+<style lang="scss" scoped>
+.connection-label {
+  padding: 0;
+}
+</style>

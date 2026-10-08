@@ -307,7 +307,7 @@
     // Show arrows and clear button on hover
     .filter-container:not(:hover) {
       .select-wrap select {
-        --select-arrow: none;
+        background: var(--input-bg) !important;
       }
       .filter-wrap .clear {
         visibility: hidden;
