@@ -322,7 +322,13 @@ input, select, textarea, .bk-form-input {
 select {
   -webkit-appearance: none;
   appearance: none;
-  background: var(--select-arrow) no-repeat scroll 98% 65% var(--input-bg) !important;
+  background:
+    conic-gradient(
+      from -45deg at 50% 100%,
+      currentColor 90deg,
+      transparent 0
+    ) no-repeat right 0.75em center / 8px 4px,
+    var(--input-bg) !important;
   padding: 0 0.75rem;
   &.auto-width {
     // It should adjust when using `width: auto`, depending on the padding

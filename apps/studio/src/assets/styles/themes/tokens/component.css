@@ -40,10 +40,6 @@
   --input-border: 1px solid var(--border-subtle);
   --input-border-focus: 1px solid var(--border-hover);
 
-  /* ===== Select ===== */
-
-  --select-arrow: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(0,0,0, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>");
-
   /* ===== Checkbox ===== */
 
   --checkbox-border: var(--gray-7);
@@ -329,8 +325,4 @@
 
   --mongo-shell-mongo-prompt-fg: var(--primary-text);
   --mongo-shell-ansi-output-fg: var(--text-contrast);
-}
-
-.dark-theme {
-  --select-arrow: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(0,0,0, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>");
 }
