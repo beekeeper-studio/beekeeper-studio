@@ -64,13 +64,18 @@
   }
   .nav-tabs {
     position: relative;
-    overflow: hidden;
+    overflow-y: hidden;
+    overflow-x: auto;
+    white-space: nowrap;
     flex-wrap: nowrap;
     margin: 0;
     height: $tab-height;
     -webkit-app-region: no-drag;
+    &::-webkit-scrollbar {
+      display: none;
+    }
     .nav-item-wrap {
-      min-width: 28px;
+      min-width: 50px;
       overflow: hidden;
     }
     .nav-item-wrap-chosen {
