@@ -133,7 +133,7 @@
     "semver": "^7.7.2",
     "simple-encryptor": "^3.0.0",
     "simple-icons": "^16.29.0",
-    "snowflake-sdk": "^2.4.0",
+    "snowflake-sdk": "^3.3.0",
     "source-map-support": "^0.5.21",
     "split.js": "^1.6.5",
     "sql-formatter": "15.7.3",
