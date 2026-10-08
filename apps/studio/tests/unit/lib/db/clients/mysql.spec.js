@@ -1,4 +1,4 @@
-import { testOnly } from '../../../../../src/lib/db/clients/mysql'
+import { MysqlClient, testOnly } from '../../../../../src/lib/db/clients/mysql'
 import { parseIndexColumn } from '../../../../../src/common/utils'
 import { MySqlChangeBuilder } from "@shared/lib/sql/change_builder/MysqlChangeBuilder"
 
