@@ -6,7 +6,7 @@ permissions:
 on:
   push:
     tags:
-      - "ui-kit:v*"
+      - "ui-kit/v*"
 
 jobs:
   publish:

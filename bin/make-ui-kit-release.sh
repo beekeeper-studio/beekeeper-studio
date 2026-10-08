@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-TAG_PREFIX="ui-kit:v"
+TAG_PREFIX="ui-kit/v"
 
 # Function to list the 5 most recent remote ui-kit tags by date
 list_recent_remote_tags() {
@@ -22,7 +22,7 @@ guess_next_version() {
   local latest_tag
   latest_tag=$(git ls-remote --tags origin | \
     grep -Eo "${TAG_PREFIX}[0-9]+\.[0-9]+\.[0-9]+(-[a-z]+\.[0-9]+)?$" | \
-    sed "s/^${TAG_PREFIX}//" | \
+    sed "s|^${TAG_PREFIX}||" | \
     sort -V | tail -n 1)
 
   if [[ -z "$latest_tag" ]]; then
