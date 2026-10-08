@@ -2333,6 +2333,141 @@ function testWith(tag, socket = false, readonly = false, image = 'mysql', option
       })
     })
 
+    describe("AUTO_INCREMENT", () => {
+      beforeEach(async () => {
+        if (readonly) return;
+
+        await util.knex.schema.dropTableIfExists("auto_increment_test")
+      })
+
+      it("Should read the next AUTO_INCREMENT value onto the auto-increment column", async () => {
+        if (readonly) return;
+
+        await util.knex.schema.raw(`
+          CREATE TABLE auto_increment_test (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(100)
+          ) AUTO_INCREMENT = 42
+        `)
+
+        const columns = await util.connection.listTableColumns("auto_increment_test")
+
+        const id = columns.find((c) => c.columnName === "id")
+        expect(id.extra).toBe("auto_increment")
+        expect(id.autoIncrement).toBe(42)
+
+        // The value is table-level, but only reported on the auto-increment column.
+        expect(columns.find((c) => c.columnName === "name").autoIncrement).toBeNull()
+      })
+
+      it("Should report no AUTO_INCREMENT for a table without one", async () => {
+        if (readonly) return;
+
+        await util.knex.schema.raw(`
+          CREATE TABLE auto_increment_test (
+            id INT PRIMARY KEY,
+            name VARCHAR(100)
+          )
+        `)
+
+        const columns = await util.connection.listTableColumns("auto_increment_test")
+        expect(columns.map((c) => c.autoIncrement)).toEqual([null, null])
+      })
+
+      it("Should set the next AUTO_INCREMENT value", async () => {
+        if (readonly) return;
+
+        await util.knex.schema.raw(`
+          CREATE TABLE auto_increment_test (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(100)
+          )
+        `)
+        await util.knex("auto_increment_test").insert([{ name: "one" }, { name: "two" }])
+
+        await util.connection.alterTable({
+          table: "auto_increment_test",
+          autoIncrement: 500,
+        })
+
+        const columns = await util.connection.listTableColumns("auto_increment_test")
+        expect(columns.find((c) => c.columnName === "id").autoIncrement).toBe(500)
+
+        // The new value is what the next row actually gets.
+        await util.knex("auto_increment_test").insert({ name: "three" })
+        const rows = await util.knex("auto_increment_test").select().orderBy("id", "desc").limit(1)
+        expect(rows[0].id).toBe(500)
+      })
+
+      // The UI reports this back to the user, so the clamped value has to be readable.
+      it("Should clamp a value below the current maximum up to max + 1", async () => {
+        if (readonly) return;
+
+        await util.knex.schema.raw(`
+          CREATE TABLE auto_increment_test (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(100)
+          )
+        `)
+        await util.knex("auto_increment_test").insert([
+          { name: "one" }, { name: "two" }, { name: "three" },
+          { name: "four" }, { name: "five" },
+        ])
+
+        await util.connection.alterTable({
+          table: "auto_increment_test",
+          autoIncrement: 2,
+        })
+
+        const columns = await util.connection.listTableColumns("auto_increment_test")
+        expect(columns.find((c) => c.columnName === "id").autoIncrement).toBe(6)
+      })
+
+      it("Should apply AUTO_INCREMENT alongside column alterations", async () => {
+        if (readonly) return;
+
+        await util.knex.schema.raw(`
+          CREATE TABLE auto_increment_test (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            old_name VARCHAR(100)
+          )
+        `)
+
+        await util.connection.alterTable({
+          table: "auto_increment_test",
+          alterations: [{
+            changeType: "columnName",
+            columnName: "old_name",
+            newValue: "new_name",
+          }],
+          autoIncrement: 300,
+        })
+
+        const columns = await util.connection.listTableColumns("auto_increment_test")
+        expect(columns.find((c) => c.columnName === "new_name")).toBeTruthy()
+        expect(columns.find((c) => c.columnName === "id").autoIncrement).toBe(300)
+      })
+
+      it("Should ignore a non-positive AUTO_INCREMENT instead of erroring", async () => {
+        if (readonly) return;
+
+        await util.knex.schema.raw(`
+          CREATE TABLE auto_increment_test (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(100)
+          ) AUTO_INCREMENT = 77
+        `)
+
+        await expect(util.connection.alterTable({
+          table: "auto_increment_test",
+          autoIncrement: 0,
+        })).resolves.not.toThrow()
+
+        const columns = await util.connection.listTableColumns("auto_increment_test")
+        expect(columns.find((c) => c.columnName === "id").autoIncrement).toBe(77)
+      })
+    })
+
     describe("Param tests", () => {
       it("Should be able to handle positional (?) params", async () => {
         await util.paramTest(['?']);
