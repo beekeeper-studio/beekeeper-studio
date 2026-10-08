@@ -138,13 +138,61 @@ export function joinFilters(filters: string[], ops: TableFilter[] = []): string 
   return filters.reduce((a, b, idx) => `${a} ${ops[idx]?.op || 'AND'} ${b}`)
 }
 
+/**
+ * Split the value of an IN filter into its values. Accepts plain comma
+ * separated values (`foo, bar`) as well as SQL IN list syntax, as produced by
+ * "Copy for IN statement": wrapped in parentheses, with single-quoted strings
+ * that escape quotes by doubling them (`('foo', 'it''s', 'a,b')`).
+ */
+export function parseInFilterValue(text: string): string[] {
+  let input = text.trim();
+  if (input.startsWith('(') && input.endsWith(')')) {
+    input = input.slice(1, -1).trim();
+  }
+
+  // A quote only starts a quoted value at the beginning of an item, so
+  // unquoted values like O'Brien still split on commas.
+  const items: string[] = [];
+  let start = 0;
+  let atItemStart = true;
+  let inQuote = false;
+  for (let i = 0; i < input.length; i++) {
+    const char = input[i];
+    if (inQuote) {
+      if (char === "'") {
+        if (input[i + 1] === "'") i++;
+        else inQuote = false;
+      }
+    } else if (char === ',') {
+      items.push(input.slice(start, i));
+      start = i + 1;
+      atItemStart = true;
+    } else if (atItemStart && char === "'") {
+      inQuote = true;
+      atItemStart = false;
+    } else if (!/\s/.test(char)) {
+      atItemStart = false;
+    }
+  }
+
+  // Unterminated quote, treat everything as plain values
+  if (inQuote) return input.split(/\s*,\s*/);
+
+  items.push(input.slice(start));
+  return items.map((item) => {
+    const trimmed = item.trim();
+    const quoted = trimmed.match(/^'((?:[^']|'')*)'$/);
+    return quoted ? quoted[1].replace(/''/g, "'") : trimmed;
+  });
+}
+
 /** Get rid of invalid filters and parse if needed */
 export function normalizeFilters(filters: TableFilter[]) {
   const normalized: TableFilter[] = [];
   for (const filter of filters as TableFilter[]) {
     if (!(filter.type && filter.field && (filter.value || filter.type.includes('is')))) continue;
     if (filter.type === "in") {
-      const value = (filter.value as string).split(/\s*,\s*/);
+      const value = parseInFilterValue(filter.value as string);
       normalized.push({ ...filter, value });
     } else {
       normalized.push(filter);

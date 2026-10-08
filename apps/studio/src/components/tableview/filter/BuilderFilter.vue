@@ -46,7 +46,7 @@
             ''"
           :placeholder="
             filter.type === 'in'
-              ? `Enter values separated by comma, eg: foo,bar`
+              ? `Enter values separated by comma, eg: foo,bar or ('foo','bar')`
               : 'Enter Value'
           "
         >
