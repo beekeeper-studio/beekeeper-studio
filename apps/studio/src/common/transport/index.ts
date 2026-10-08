@@ -1,4 +1,5 @@
 import { IConnection } from "../interfaces/IConnection";
+import type { QueryOrigin } from "../interfaces/QueryOrigin";
 
 // anything that is transferred to the utility process should implement this interface
 // may need to add more in the future, this is just to make type stuff
@@ -70,6 +71,8 @@ export interface TransportUsedQuery extends Transport {
   status: string;
   numberOfRecords?: bigint;
   workspaceId: number;
+  origin: QueryOrigin
+  pluginId: string | null
 }
 
 export interface TransportHiddenEntity extends Transport {
