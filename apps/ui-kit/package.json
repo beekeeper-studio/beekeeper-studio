@@ -32,16 +32,6 @@
       "default": "./dist/index.js"
     },
     "./style.css": "./dist/style.css",
-    "./table": {
-      "types": "./dist/components/table/index.d.ts",
-      "import": "./dist/table.js",
-      "default": "./dist/table.js"
-    },
-    "./entity-list": {
-      "types": "./dist/components/entity-list/index.d.ts",
-      "import": "./dist/entity-list.js",
-      "default": "./dist/entity-list.js"
-    },
     "./sql-text-editor": {
       "types": "./dist/components/sql-text-editor/index.d.ts",
       "import": "./dist/sql-text-editor.js",
@@ -51,11 +41,6 @@
       "types": "./dist/components/text-editor/index.d.ts",
       "import": "./dist/text-editor.js",
       "default": "./dist/text-editor.js"
-    },
-    "./data-editor": {
-      "types": "./dist/components/data-editor/index.d.ts",
-      "import": "./dist/data-editor.js",
-      "default": "./dist/data-editor.js"
     },
     "./lib/components/text-editor/extensions/redisCommands.json": "./lib/components/text-editor/extensions/redisCommands.json",
     "./mongo-shell": {
@@ -93,25 +78,10 @@
       "import": "./dist/context-menu.js",
       "default": "./dist/context-menu.js"
     },
-    "./vue/table": {
-      "types": "./dist/components/table/index.d.ts",
-      "import": "./dist/vue/table.js",
-      "default": "./dist/vue/table.js"
-    },
-    "./vue/entity-list": {
-      "types": "./dist/components/entity-list/index.d.ts",
-      "import": "./dist/vue/entity-list.js",
-      "default": "./dist/vue/entity-list.js"
-    },
     "./vue/sql-text-editor": {
       "types": "./dist/components/sql-text-editor/index.d.ts",
       "import": "./dist/vue/sql-text-editor.js",
       "default": "./dist/vue/sql-text-editor.js"
-    },
-    "./vue/data-editor": {
-      "types": "./dist/components/data-editor/index.d.ts",
-      "import": "./dist/vue/data-editor.js",
-      "default": "./dist/vue/data-editor.js"
     },
     "./vue/text-editor": {
       "types": "./dist/components/text-editor/index.d.ts",
@@ -178,6 +148,16 @@
     "vue": "^2.7.16"
   },
   "dependencies": {
+    "@open-rpc/client-js": "^1.8.1",
+    "@replit/codemirror-indentation-markers": "^6.5.3",
+    "ansi-to-html": "^0.7.2",
+    "highlight.js": "^11.11.1",
+    "sql-formatter": "15.7.3",
+    "sql-query-identifier": "^3.2.0",
+    "vscode-languageserver-protocol": "^3.17.5",
+    "vscode-uri": "^3.0.8"
+  },
+  "devDependencies": {
     "@codemirror/autocomplete": "^6.18.4",
     "@codemirror/commands": "^6.8.1",
     "@codemirror/lang-html": "^6.4.9",
@@ -191,49 +171,24 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.36.2",
     "@lezer/highlight": "^1.2.1",
-    "@marimo-team/codemirror-languageserver": "^1.15.25",
-    "@open-rpc/client-js": "^1.8.1",
+    "@marimo-team/codemirror-languageserver": "^1.16.12",
     "@replit/codemirror-emacs": "^6.1.0",
-    "@replit/codemirror-indentation-markers": "^6.5.3",
     "@replit/codemirror-vim": "^6.3.0",
     "@surrealdb/codemirror": "^1.0.0-beta.21",
-    "@types/tabulator-tables": "^6.3.4",
-    "ansi-to-html": "^0.7.2",
-    "highlight.js": "^11.11.1",
-    "sql-formatter": "15.7.3",
-    "sql-query-identifier": "^3.2.0",
-    "tabulator-tables": "^6.6.1",
-    "vscode-languageserver-protocol": "^3.17.5"
-  },
-  "devDependencies": {
-    "@pdanpdan/vue-keyboard-trap": "^1.0.19",
-    "@types/codemirror": "^0.0.97",
     "@types/lodash": "^4.14.159",
-    "@types/tabulator-tables": "^6.3.4",
-    "@vue/web-component-wrapper": "beekeeper-studio/vue-web-component-wrapper#635e4b427b90e199c273b194cf9db6b744d63e95",
-    "codemirror": "^5.63.1",
+    "@vue/web-component-wrapper": "git+https://github.com/beekeeper-studio/vue-web-component-wrapper.git#635e4b427b90e199c273b194cf9db6b744d63e95",
     "concurrently": "^8.2.2",
-    "cross-spawn": "^7.0.6",
     "happy-dom": "^20.8.9",
     "ist": "^1.1.7",
     "lodash": "^4.18.1",
     "material-icons": "^1.13.12",
-    "postgres-interval": "^4.0.0",
-    "rimraf": "^6.0.1",
     "sass": "~1.77.1",
-    "scrollyfills": "^1.0.0",
-    "split.js": "^1.5.11",
-    "tinyduration": "^3.2.4",
     "typescript": "~5.8.3",
     "vite": "^8.0.8",
     "vite-ng-plugin-vue2": "^1.0.0",
     "vitest": "~4.1.11",
     "vue": "^2.7.16",
-    "vue-js-modal": "^2.0.1",
-    "vue-tsc": "^2.1.10",
-    "vue-virtual-scroll-list": "^2.3.5",
-    "vue2-teleport": "^1.1.4",
-    "vuedraggable": "^2.24.2"
+    "vue2-teleport": "^1.1.4"
   },
   "peerDependenciesMeta": {
     "vue": {

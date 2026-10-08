@@ -4,13 +4,10 @@
 be used to create interactive user interfaces for database applications.
 Currently, it includes the following components:
 
-- [**Table**](./table.md): Displaying tabular data.
-- [**Entity List**](./entity-list.md): Displaying a list of entities in a tree structure.
 - [**Text Editor**](./text-editor.md): LSP powered text editor with syntax highlighting, auto-completion and more.
 - [**SQL Text Editor**](./sql-text-editor.md): Extended version of the Text Editor for editing SQL queries.
-- [**Data Editor**](./data-editor.md): Providing all of the above in one place.
 
-For information on customizing the appearance of these components, see the [Customizing UI Kit Components](./customizing.md) documentation. Specific CSS properties for styling the SQL Text Editor and Table components can be found in their respective documentation pages.
+For information on customizing the appearance of these components, see the [Customizing UI Kit Components](./customizing.md) documentation. Specific CSS properties for styling the SQL Text Editor can be found in its documentation page.
 
 ## Installation
 
@@ -28,7 +25,7 @@ To load the `@beekeeperstudio/ui-kit` library in your project, follow these step
    import "@beekeeperstudio/ui-kit/style.css";
 
    // Import components individually
-   import "@beekeeperstudio/ui-kit/bks-table.js";
+   import "@beekeeperstudio/ui-kit/sql-text-editor";
 
    // Or import all components
    import "@beekeeperstudio/ui-kit";
@@ -37,14 +34,10 @@ To load the `@beekeeperstudio/ui-kit` library in your project, follow these step
 3. Use the component in your HTML:
 
    ```html
-   <bks-table></bks-table>
+   <bks-sql-text-editor></bks-sql-text-editor>
    <script>
-     const table = document.querySelector("bks-table");
-     table.columns = [{ field: "id" }, { field: "name" }];
-     table.data = [
-       { id: 1, name: "John" },
-       { id: 2, name: "Jane" },
-     ];
+     const editor = document.querySelector("bks-sql-text-editor");
+     editor.value = "select * from users";
    </script>
    ```
 
@@ -71,18 +64,17 @@ you need to use properties instead of attributes. Assigning complex types to
 attributes in HTML will not work:
 
 ```html
-<bks-table
-  columns="[{ field: 'id' }, { field: 'name' }]"
-  data="[{ id: 1, name: 'John' }, { id: 2, name: 'Jane' }]"
+<bks-sql-text-editor
+  entities="[{ name: 'users', entityType: 'table' }]"
 >
-</bks-table>
+</bks-sql-text-editor>
 ```
 
 Instead, you need to set the properties in JavaScript:
 
 ```js
-const table = document.querySelector("bks-table");
-table.columns = [{ field: "id" }, { field: "name" }];
+const editor = document.querySelector("bks-sql-text-editor");
+editor.entities = [{ name: "users", entityType: "table" }];
 table.data = [
   { id: 1, name: "John" },
   { id: 2, name: "Jane" },
