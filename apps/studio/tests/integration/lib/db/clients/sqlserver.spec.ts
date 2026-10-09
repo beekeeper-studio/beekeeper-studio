@@ -2,6 +2,9 @@ import { GenericContainer, Wait } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '../../../../lib/db'
 import { runCommonTests, runReadOnlyTests } from './all'
 import { DatabaseElement, IDbConnectionServerConfig } from '@/lib/db/types'
+import { IDbConnectionServer } from '@/lib/db/backendTypes'
+import { SQLServerClient } from '@/lib/db/clients/sqlserver'
+import { SavedConnection } from '@/common/appdb/models/saved_connection'
 import fs from 'fs';
 import path from 'path';
 
@@ -140,6 +143,43 @@ function testWith(dockerTag: string, readonly: boolean) {
     describe("Param tests", () => {
       it("Should be able to handle named (:name) params", async () => {
         await util.paramTest([':param1', ':param2', ':param3']);
+      })
+    })
+
+    // Regression guard: tedious has defaulted encrypt to true since v16 and every stock
+    // SQL Server presents a self-signed certificate, so a form the user only typed host,
+    // port, username and password into used to fail certificate validation.
+    describe("Stock install defaults", () => {
+      it("connects without the certificate checkbox being touched", async () => {
+        // Whatever an untouched connection form carries -- notably trustServerCertificate.
+        const defaults = new SavedConnection()
+        expect(defaults.trustServerCertificate).toBe(true)
+
+        const config = {
+          client: 'sqlserver',
+          host: container.getHost(),
+          port: container.getMappedPort(1433),
+          user: 'sa',
+          password: 'Example*1',
+          trustServerCertificate: defaults.trustServerCertificate,
+          readOnlyMode: readonly,
+        } as IDbConnectionServerConfig
+
+        // Built directly rather than through DBTestUtil so this cannot disturb the shared
+        // ORM connection the rest of the suite runs on.
+        const client = new SQLServerClient(
+          { db: {}, sshTunnel: null, config } as IDbConnectionServer,
+          { database: 'master', connected: false, connecting: false, namespace: null }
+        )
+
+        let connected = false
+        try {
+          await client.connect()
+          connected = true
+          expect(await client.versionString()).toBeTruthy()
+        } finally {
+          if (connected) await client.disconnect()
+        }
       })
     })
 

@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import QueryCompiler from 'knex/lib/dialects/oracledb/query/oracledb-querycompiler'
+import QueryCompiler from 'knex/lib/dialects/oracledb/query/oracledb-querycompiler.js'
 
 export default class QueryCompiler_Oracledb extends QueryCompiler {
   _prepOutbindings(paramValues, paramReturning) {

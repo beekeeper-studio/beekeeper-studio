@@ -3,10 +3,12 @@
 </template>
 <script lang="ts">
 import _ from 'lodash'
-import {DataModules} from '@/store/DataModules'
+import { DataModules } from '@/store/DataModules'
 import Vue from 'vue'
 import { mapActions, mapGetters, mapState } from 'vuex'
+import rawLog from '@bksLogger'
 
+const log = rawLog.scope('DataManager')
 
 export default Vue.extend({
   data: () => ({
@@ -69,18 +71,18 @@ export default Vue.extend({
       })
     },
     mountAndRefresh() {
-      console.log('mount and refresh: ', this.workspace)
+      log.info('mount and refresh: ', this.workspace)
       if (!this.workspace) return
       const scope = this.$store.getters.isUltimate ? this.workspace.type : 'local'
       DataModules.forEach((module) => {
         const choice = module[scope]
         if (!choice) throw new Error(`No module defined for ${scope} - ${module.path}`)
-        console.log("DataManager checking", module.path)
+        log.info("DataManager checking", module.path)
         if (this.$store.hasModule(module.path)) {
-          console.log("DataManager --> unregistering", module.path)
+          log.info("DataManager --> unregistering", module.path)
           this.$store.unregisterModule(module.path)
         }
-        console.log("DataManager --> registering", module.path)
+        log.info("DataManager --> registering", module.path)
         this.$store.registerModule(module.path, choice)
         this.$store.dispatch(`${module.path}/initialize`)
       })

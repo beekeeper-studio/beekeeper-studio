@@ -1,8 +1,28 @@
 // Uint8Array hex/base64 methods, same polyfill set as src-commercial/entrypoints/renderer.ts
-require('core-js/actual/typed-array/from-base64');
-require('core-js/actual/typed-array/from-hex');
-require('core-js/actual/typed-array/to-base64');
-require('core-js/actual/typed-array/to-hex');
+import 'core-js/actual/typed-array/from-base64'
+import 'core-js/actual/typed-array/from-hex'
+import 'core-js/actual/typed-array/to-base64'
+import 'core-js/actual/typed-array/to-hex'
+
+// This is for the camelCaseObjectKeys helper for cloud (connection import)
+import _ from 'lodash'
+if (!_.deepMapKeys) {
+  _.mixin({
+    deepMapKeys: function (obj, fn) {
+      const x = {}
+      _.forOwn(obj, function (rawV, k) {
+        let v = rawV
+        if (_.isPlainObject(v)) {
+          v = _.deepMapKeys(v, fn)
+        } else if (_.isArray(v)) {
+          v = v.map((item) => _.deepMapKeys(item, fn))
+        }
+        x[fn(v, k)] = v
+      })
+      return x
+    },
+  })
+}
 
 if (typeof global.document !== 'undefined') {
   global.document.createRange = () => ({

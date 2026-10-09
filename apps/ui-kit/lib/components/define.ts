@@ -3,3 +3,4 @@ import "./text-editor/define";
 import "./sql-text-editor/define";
 import "./table/define";
 import "./entity-list/define";
+import "./context-menu/define";

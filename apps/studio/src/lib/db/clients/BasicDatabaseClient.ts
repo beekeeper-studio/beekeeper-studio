@@ -91,12 +91,6 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     this.connectionType = this.server?.config.client;
   }
 
-  async checkAllowReadOnly() {
-    if (platformInfo.testMode) return true;
-    const status = await LicenseKey.getLicenseStatus()
-    return status.isUltimate;
-  }
-
   set connectionHandler(fn: (msg: string) => void) {
     this.connErrHandler = fn;
   }
@@ -301,7 +295,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     })
   }
 
-  abstract query(queryText: string, tabId: number, options?: any): Promise<CancelableQuery>;
+  abstract query(queryText: string, tabId?: number, options?: any): Promise<CancelableQuery>;
   abstract executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>;
   abstract listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>;
   abstract getTableProperties(table: string, schema?: string): Promise<TableProperties | null>;
@@ -663,7 +657,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
       log.warn('Was not able to correctly identify query: ', error.message);
     }
 
-    if (await this.checkAllowReadOnly() && this.violatesReadOnly(statements, options)) {
+    if (this.violatesReadOnly(statements, options)) {
       throw new Error(errorMessages.readOnly);
     }
 
@@ -702,7 +696,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
       log.warn('Was not able to correctly identify query: ', error.message);
     }
 
-    if (await this.checkAllowReadOnly() && this.violatesReadOnly(statements, options)) {
+    if (this.violatesReadOnly(statements, options)) {
       throw new Error(errorMessages.readOnly);
     }
 

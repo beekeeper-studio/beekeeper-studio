@@ -15,12 +15,10 @@
       </div>
     </div>
     <div class="actions">
-      <p v-if="trialExpired" class="help text-muted small">
-        Free trial ended on {{ trialEndDate }}
-      </p>
-      <a v-if="trialAvailable" class="btn btn-flat" v-tooltip="'14 day free trial, no email or credit card required'" @click.prevent="startTrial">Start Free Trial</a>
+      <span v-if="helpText" class="help">{{ helpText }}</span>
+      <a v-if="trialAvailable" class="btn btn-flat" @click.prevent="startTrial">Start free trial</a>
       <a v-else :href="learnUrl" class="btn btn-flat">Learn more</a>
-      <a @click.prevent="buyLicense" class="btn btn-primary" v-tooltip="'Get lifetime app access with any purchase'">Upgrade</a>
+      <a @click.prevent="buyLicense" class="btn btn-primary" v-tooltip="'Get lifetime app access with any purchase'">Buy License</a>
     </div>
   </div>
 </template>
@@ -35,11 +33,13 @@
     flex-direction: row;
     align-items: center;
     justify-content: flex-end;
-    gap: 10px;
+    gap: 0.5rem;
   }
   .help {
-    margin: 0 auto 0 0;
+    margin-right: auto;
     text-align: left;
+    font-size: 0.8rem;
+    color: var(--text-light);
   }
   .btn {
     white-space: nowrap;
@@ -79,6 +79,11 @@ export default {
     trialExpired() {
       if (!this.trialLicense) return false
       return this.trialLicense.validUntil < new Date()
+    },
+    helpText() {
+      if (this.trialAvailable) return '14-day trial. No email or credit card.'
+      if (this.trialExpired) return `Trial ended ${this.trialEndDate}.`
+      return null
     },
     isSupportDateExpired() {
       // this means a lifetime license that is no longer active.

@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="isCommunity && tab.context.pluginId.startsWith('bks-')"
-    :class="isAiShellPlugin ? 'tab-upsell-wrapper tab-upsell-wrapper--ai-shell' : 'upgrade-panel-tab-wrapper'"
+    class="upgrade-panel-tab-wrapper"
   >
     <ai-shell-upsell v-if="isAiShellPlugin" />
     <upgrade-panel v-else :feature-name="tab.title || 'Plugins'" standalone />

@@ -33,6 +33,7 @@ import { keymap as specialKeymap } from "./keymap";
 import { extraKeymap } from "./extraKeymap";
 import { lineNumbers } from "./lineNumbers";
 import { lineWrapping } from "./lineWrapping";
+import { indentationMarkers } from "@replit/codemirror-indentation-markers";
 import { readOnly } from "./readOnly";
 import { markers } from "./markers";
 import { lineGutters } from "./lineGutters";
@@ -99,7 +100,7 @@ export function extensions(config: ExtensionConfiguration = {}) {
   return [
     specialKeymap({ keymap: config.keymap, vimOptions: config.vimOptions }),
     extraKeymap({ keybindings: config.keybindings }),
-    lineNumbers({ enabled: config.lineNumbers }),
+    lineNumbers({ enabled: config.lineNumbers, vim: config.keymap === "vim" }),
     highlightActiveLineGutter(),
     highlightSpecialChars(),
     history(),
@@ -149,6 +150,16 @@ export function extensions(config: ExtensionConfiguration = {}) {
       ...(config.actionsKeymap || []),
     ]),
     lineWrapping({  enabled: config.lineWrapping }),
+    config.indentationMarkers
+      ? indentationMarkers({
+        colors: {
+          light: "var(--bks-text-editor-indent-marker-bg-color)",
+          dark: "var(--bks-text-editor-indent-marker-bg-color)",
+          activeLight: "var(--bks-text-editor-indent-marker-active-bg-color)",
+          activeDark: "var(--bks-text-editor-indent-marker-active-bg-color)",
+        },
+      })
+      : [],
     readOnly({ enabled: config.readOnly }),
     markers({ markers: config.markers || [] }),
     lineGutters({ lineGutters: config.lineGutters || [] }),
@@ -192,6 +203,9 @@ export function extensions(config: ExtensionConfiguration = {}) {
       ".cm-lineNumbers .cm-gutterElement": {
         color: "var(--bks-text-editor-linenumber-fg-color)",
       },
+      ".cm-lineNumbers .cm-activeLineGutter": {
+        color: "var(--bks-text-editor-linenumber-active-fg-color)",
+      },
       // Focused state
       "&.cm-focused": {
         outlineColor: "var(--bks-text-editor-focused-outline-color)",
@@ -209,6 +223,9 @@ export function extensions(config: ExtensionConfiguration = {}) {
       },
       ".cm-activeLineGutter": {
         backgroundColor: "var(--bks-text-editor-activeline-gutter-bg-color)",
+      },
+      ".cm-indent-markers::before": {
+        left: "6px",
       },
       // Matching brackets
       "&.cm-focused .cm-matchingBracket": {
@@ -278,13 +295,13 @@ export function extensions(config: ExtensionConfiguration = {}) {
       },
       // Autocomplete hints
       ".cm-tooltip": {
-        backgroundColor: "var(--bks-text-editor-context-menu-bg-color)",
-        color: "var(--bks-text-editor-context-menu-fg-color)",
-        borderColor: "var(--bks-text-editor-context-menu-border-color)",
+        backgroundColor: "var(--bks-context-menu-bg-color)",
+        color: "var(--bks-context-menu-fg-color)",
+        borderColor: "var(--bks-context-menu-border-color)",
       },
       ".cm-tooltip-autocomplete ul li[aria-selected]": {
-        backgroundColor: "var(--bks-text-editor-context-menu-item-bg-color-active)",
-        color: "var(--bks-text-editor-context-menu-item-fg-color-active)",
+        backgroundColor: "var(--bks-context-menu-item-bg-color-active)",
+        color: "var(--bks-context-menu-item-fg-color-active)",
         padding: "0.2rem 0.4rem",
       },
     }),

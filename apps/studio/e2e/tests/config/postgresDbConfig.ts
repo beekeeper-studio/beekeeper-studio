@@ -2,6 +2,6 @@ export const POSTGRES_CONFIG = {
     user: 'postgres',
     password: 'example',
     defaultDatabase: 'saklia',
-    connectionType: 'Postgres',
+    connectionType: 'postgresql',
     port: '5434'
 };

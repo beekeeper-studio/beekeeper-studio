@@ -1,4 +1,4 @@
-import type { CustomMenuItems } from "../context-menu";
+import type { CustomMenuItems } from "../context-menu/menu";
 import { PropType } from "vue";
 import { Keybindings, Keymap, LanguageServerConfiguration, EditorMarker, LineGutter } from "./types";
 import { Extension } from "@codemirror/state";
@@ -73,11 +73,8 @@ export default {
   },
   /** Enable fold gutter. */
   foldGutters: Boolean,
-  // cursor: String,
-  // initialized: Boolean,
-  // autoFocus: Boolean,
-  // removeJsonRootBrackets: Boolean,
-  // bookmarks: Array,
+  /** Enable indentation markers. */
+  indentationMarkers: Boolean,
   /** Fold all folds in the editor. */
   foldAll: null,
   /** Unfold all folds in the editor. */

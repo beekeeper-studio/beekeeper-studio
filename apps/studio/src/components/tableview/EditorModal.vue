@@ -281,6 +281,8 @@ export default Vue.extend({
           settings: {
             selection: "",
             selectionMatch: "",
+            lineHighlight: "",
+            gutterActiveForeground: "",
           },
         }),
       ]

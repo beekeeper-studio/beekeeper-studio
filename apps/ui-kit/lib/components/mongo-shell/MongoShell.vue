@@ -176,6 +176,8 @@ export default {
             settings: {
               selection: "",
               selectionMatch: "",
+              lineHighlight: "",
+              gutterActiveForeground: "",
             },
           }),
           protectPrompt,

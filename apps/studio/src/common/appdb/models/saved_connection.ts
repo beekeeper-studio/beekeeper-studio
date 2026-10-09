@@ -8,7 +8,6 @@ import { AzureCredsEncryptTransformer, EncryptTransformer, SnowflakeOptionsTrans
 import { IConnection, SshMode } from '@/common/interfaces/IConnection'
 import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, DynamoDBOptions, LibSQLOptions, RedshiftOptions, IamAuthOptions, SQLAnywhereOptions, SurrealDBOptions, SnowflakeOptions, SqlServerOptions } from "@/lib/db/types"
 import { resolveHomePathToAbsolute } from "@/handlers/utils"
-import { ReadOnlyOrDefault } from "../validators/ReadOnlyOrDefault"
 import { ConnectionFolder } from './ConnectionFolder'
 
 const encrypt = new EncryptTransformer(loadEncryptionKey())
@@ -16,11 +15,16 @@ const azureEncrypt = new AzureCredsEncryptTransformer(loadEncryptionKey())
 const surrealEncrypt = new SurrealDbEncryptTransformer(loadEncryptionKey())
 const snowflakeTransformer = new SnowflakeOptionsTransformer()
 
+// TODO (@day): Currently this is apparently "just for oracle".
+// we should move away from stuff like `sqlAnywhereOptions` and `redshiftOptions`
+// instead this should be the object for connectionType specific options.
+// We can probably do some type wizardry as well based on connectionType
 export interface ConnectionOptions {
   cluster?: string
   jwtAuthEnabled?: boolean
   connectionMethod?: 'manual' | 'connectionString'
-  connectionString?: string
+  connectionString?: string,
+  enableClearText?: boolean
 }
 
 function parseConnectionType(t: Nullable<ConnectionType>) {
@@ -218,7 +222,6 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: 'boolean', nullable: false })
   sslRejectUnauthorized = true
 
-  @ReadOnlyOrDefault()
   @Column({type: 'boolean', nullable: false, default: false})
   readOnlyMode = true
 
@@ -259,9 +262,13 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({ type: 'simple-json', nullable: false, transformer: [snowflakeTransformer] })
   snowflakeOptions: SnowflakeOptions = {};
 
-  // this is only for SQL Server.
+  // this is only for SQL Server. Defaults on: every stock install presents a self-signed
+  // certificate and tedious validates by default, so a new connection with a correct host and
+  // password fails without it. The integrated-auth path already trusts self-signed certs
+  // (encryptionMode 'on' -> TrustServerCertificate=yes), so this keeps the two consistent.
+  // Class-field default: applies to newly constructed entities only, saved rows keep theirs.
   @Column({ type: 'boolean', nullable: false })
-  trustServerCertificate = false
+  trustServerCertificate = true
 
   // SQL Server only. Integrated authentication (SSPI/Kerberos/NTLM) via msnodesqlv8.
   @Column({ type: 'boolean', nullable: false })
@@ -279,6 +286,7 @@ export class DbConnectionBase extends ApplicationEntity {
 
 @Entity({ name: 'saved_connection' })
 export class SavedConnection extends DbConnectionBase implements IConnection {
+  static readonly searchableFields: string[] = [ 'name' ];
 
   withProps(props?: any): SavedConnection {
 

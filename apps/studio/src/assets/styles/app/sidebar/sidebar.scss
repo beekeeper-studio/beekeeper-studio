@@ -282,7 +282,16 @@
       cursor: pointer;
     }
     x-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
       height: auto;
+      min-width: 0;
+      flex-shrink: 0;
+      padding: 0;
+      background: transparent;
+      box-shadow: none;
+      overflow: visible;
     }
     & > * {
       visibility: hidden;

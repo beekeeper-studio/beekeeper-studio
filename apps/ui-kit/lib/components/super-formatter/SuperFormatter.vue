@@ -267,7 +267,7 @@ export default Vue.extend({
     shouldBeSaved() {
       if (this.addNewPreset) {
         return (this.addNewPresetName != null && this.addNewPresetName !== '')
-      } 
+      }
 
       return !isEqual(this.unsavedPreset, this.selectedPreset)
     },
@@ -306,8 +306,8 @@ export default Vue.extend({
     applyFormat() {
       this.$emit('bks-apply-preset', { ...this.unsavedPreset, id: this.selectedPresetId })
     },
-    copyToClipboard() {
-      this.clipboard.writeText(this.formattedCode)
+    async copyToClipboard() {
+      await this.clipboard.writeText(this.formattedCode)
     },
     updatePreview() {
       try {

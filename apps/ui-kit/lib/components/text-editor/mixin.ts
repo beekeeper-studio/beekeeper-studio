@@ -6,7 +6,7 @@ import {
   divider,
   InternalContextItem,
   openMenu,
-} from "../context-menu";
+} from "../context-menu/menu";
 import { readClipboard, writeClipboard } from "../../utils";
 import { TextEditorBlurEvent, TextEditorFocusEvent, TextEditorInitializedEvent, TextEditorLSPReadyEvent, TextEditorMenuContext, TextEditorSelectionChangeEvent, TextEditorValueChangeEvent } from "./types";
 
@@ -192,6 +192,7 @@ export default {
         markers: this.markers,
         lineGutters: this.lineGutters,
         foldGutters: this.foldGutters,
+        indentationMarkers: this.indentationMarkers,
         actionsKeymap: this.getActionsKeymap()
       });
 
