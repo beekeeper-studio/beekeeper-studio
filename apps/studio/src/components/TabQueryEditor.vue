@@ -606,6 +606,7 @@
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
   import { SmartLocalStorage } from '@/common/LocalStorage';
   import { IdentifyResult } from 'sql-query-identifier/lib/defines'
+  import { describeDangerousQueries } from '@/lib/db/dangerousQueries'
 import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
   import { wait } from '@/shared/lib/wait'
   import ISavedQuery from '@/common/interfaces/ISavedQuery'
@@ -651,6 +652,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         lastWord: null,
         queryParameterValues: {},
         queryForExecution: null,
+        dangerousQueryApproved: false,
         executeTime: 0,
         originalText: "",
         initialized: false,
@@ -1702,8 +1704,32 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           return;
         }
       },
+      async confirmDangerousQueries(rawQuery: string): Promise<boolean> {
+        let dangerous = []
+        try {
+          dangerous = await this.connection.findDangerousQueries(rawQuery)
+        } catch (ex) {
+          // conn/query still refuses to run dangerous queries, so carry on
+          log.error("Unable to check for dangerous queries", ex)
+        }
+        if (!dangerous.length) return true
+
+        const { title, detail } = describeDangerousQueries(dangerous)
+        this.dangerousQueryApproved = await this.$confirm(
+          title,
+          `${detail} Are you sure you want to continue?`,
+          { confirmLabel: 'Continue', variant: 'danger' }
+        )
+        return this.dangerousQueryApproved
+      },
       async submitQuery(rawQuery, fromModal = false) {
         if (this.remoteDeleted) return;
+
+        // Resubmitting from the parameters modal reuses the earlier answer
+        if (!fromModal) {
+          this.dangerousQueryApproved = false
+          if (!await this.confirmDangerousQueries(rawQuery)) return
+        }
 
         //Cancel existing query before starting a new one
         if(this.running && this.runningQuery){
@@ -1767,7 +1793,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.$modal.hide(`parameters-modal-${this.tab.id}`)
           this.runningCount = identification.length || 1
           // Dry run is for bigquery, allows query cost estimations
-          this.runningQuery = await this.connection.query(query, this.tab.id, { dryRun: this.dryRun }, this.hasActiveTransaction);
+          this.runningQuery = await this.connection.query(query, this.tab.id, { dryRun: this.dryRun, dangerousQueryApproved: this.dangerousQueryApproved }, this.hasActiveTransaction);
           const queryStartTime = new Date()
           const results = await this.runningQuery.execute();
           const queryEndTime = new Date()

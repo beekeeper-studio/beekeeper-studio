@@ -3,6 +3,7 @@ import Vue from 'vue';
 import { CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, SupportedFeatures, TableChanges, TableFilter, TableColumn, TableIndex, TableOrView, TablePartition, TableResult, TableProperties, StreamResults, TableInsert, TableTrigger, ImportFuncOptions, FieldDescriptor, FieldEditData, ServerStatistics } from "../db/models";
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from "@shared/lib/dialects/models";
 import { IConnection } from "@/common/interfaces/IConnection";
+import { DangerousQuery } from "../db/dangerousQueries";
 
 
 export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
@@ -96,6 +97,11 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
         return await Vue.prototype.$util.send('query/cancel', { queryId: id })
       }
     }
+  }
+
+  /** UPDATE/DELETE statements that conn/query refuses to run without `dangerousQueryApproved` */
+  async findDangerousQueries(queryText: string): Promise<DangerousQuery[]> {
+    return await Vue.prototype.$util.send('conn/findDangerousQueries', { queryText });
   }
 
   async getResultEditData(queryText: string, fields: FieldDescriptor[]): Promise<FieldEditData[]> {

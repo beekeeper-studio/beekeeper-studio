@@ -14,6 +14,8 @@ import { AzureAuthService } from "@/lib/db/authentication/azure";
 import bksConfig from "@/common/bksConfig";
 import { UserPin } from "@/common/appdb/models/UserPin";
 import { waitPromise } from "@/common/utils";
+import { DangerousQuery, describeDangerousQueries, findDangerousQueries } from "@/lib/db/dangerousQueries";
+import { DangerousQueryError } from "@/lib/errors";
 import rawLog from "@bksLogger";
 
 const log = rawLog.scope('ConnHandlers');
@@ -55,7 +57,9 @@ export interface IConnectionHandlers {
   'conn/getIncomingKeys': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TableKey[]>,
   'conn/listTablePartitions': ({ table, schema, sId }: { table: string, schema?: string, sId: string }) => Promise<TablePartition[]>,
   'conn/executeCommand': ({ commandText, sId }: { commandText: string, sId: string }) => Promise<NgQueryResult[]>,
+  /** Rejects with DangerousQueryError for unscoped UPDATE/DELETE queries unless options.dangerousQueryApproved is set */
   'conn/query': ({ queryText, options, tabId, hasActiveTransaction, sId }: { queryText: string, options?: any, tabId: number, hasActiveTransaction: boolean, sId: string }) => Promise<string>,
+  'conn/findDangerousQueries': ({ queryText, sId }: { queryText: string, sId: string }) => Promise<DangerousQuery[]>,
   'conn/getResultEditData': ({ queryText, fields, sId }: { queryText: string, fields: FieldDescriptor[], sId: string }) => Promise<FieldEditData[]>,
   'conn/getCompletions': ({ cmd, sId }: { cmd: string, sId: string }) => Promise<string[]>,
   'conn/getShellPrompt': ({ sId }: { sId: string }) => Promise<string>,
@@ -369,11 +373,23 @@ export const ConnHandlers: IConnectionHandlers = {
 
   'conn/query': async function({ queryText, options, tabId, hasActiveTransaction, sId }: { queryText: string, options?: any, tabId: number, hasActiveTransaction: boolean, sId: string }) {
     checkConnection(sId);
+    if (!options?.dangerousQueryApproved) {
+      const dangerous = findDangerousQueries(queryText, state(sId).connection.dialect);
+      if (dangerous.length > 0) {
+        const { title, detail } = describeDangerousQueries(dangerous);
+        throw new DangerousQueryError(`${title}. ${detail}`);
+      }
+    }
     const query = await state(sId).connection.query(queryText, tabId, options);
     const id = uuidv4();
     state(sId).queries.set(id, query);
     createOrResetTransactionTimeout(sId, tabId, !hasActiveTransaction);
     return id;
+  },
+
+  'conn/findDangerousQueries': async function({ queryText, sId }: { queryText: string, sId: string }) {
+    checkConnection(sId);
+    return findDangerousQueries(queryText, state(sId).connection.dialect);
   },
 
   'conn/getResultEditData': async function({ queryText, fields, sId }: { queryText: string, fields: FieldDescriptor[], sId: string }) {

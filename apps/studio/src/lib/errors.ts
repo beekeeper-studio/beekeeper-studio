@@ -76,3 +76,15 @@ export class PluginError extends Error {
     }
   }
 }
+
+/**
+ * Thrown by conn/query when a query would change every record in a table
+ * (an UPDATE or DELETE without a WHERE clause) and the caller hasn't passed
+ * `dangerousQueryApproved` to confirm the user wants to run it.
+ */
+export class DangerousQueryError extends Error {
+  constructor(message?: string) {
+    super(message);
+    this.name = 'DangerousQueryError';
+  }
+}
