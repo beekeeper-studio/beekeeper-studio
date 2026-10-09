@@ -1,3 +1,9 @@
+// Uint8Array hex/base64 methods, same polyfill set as src-commercial/entrypoints/renderer.ts
+import 'core-js/actual/typed-array/from-base64'
+import 'core-js/actual/typed-array/from-hex'
+import 'core-js/actual/typed-array/to-base64'
+import 'core-js/actual/typed-array/to-hex'
+
 // This is for the camelCaseObjectKeys helper for cloud (connection import)
 import _ from 'lodash'
 if (!_.deepMapKeys) {

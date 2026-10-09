@@ -290,16 +290,39 @@ export function stringifyWithBigInt(value: any): string {
   );
 }
 
-/** Convert Typed Array (Array Buffer View) to string based on `binaryEncoding` */
-export function typedArrayToString(typedArray: ArrayBufferView, forceEncoding?: 'hex' | 'base64') {
+/**
+ * Convert Typed Array (Array Buffer View) to string based on `binaryEncoding`.
+ * When maxChars is provided, only enough leading bytes to produce ~maxChars
+ * characters get converted, avoiding large string allocations for big buffers.
+ */
+export function typedArrayToString(typedArray: ArrayBufferView, forceEncoding?: 'hex' | 'base64', maxChars?: number) {
   const encoding = forceEncoding || window.bksConfig.ui.general.binaryEncoding
-  if (encoding === 'base64') {
-    // @ts-expect-error polyfill
-    return typedArray.toBase64();
-  } else {
-    // @ts-expect-error polyfill
-    return typedArray.toHex();
+
+  if (maxChars !== undefined && typedArray.byteLength > 0) {
+    const maxBytes = encoding === 'base64'
+      ? Math.floor(maxChars / 4) * 3
+      : Math.ceil(maxChars / 2)
+    if (typedArray.byteLength > maxBytes) {
+      const bytes = typedArray instanceof Uint8Array
+        ? typedArray.subarray(0, maxBytes)
+        : new Uint8Array(typedArray.buffer, typedArray.byteOffset, maxBytes)
+      // @ts-expect-error polyfill
+      return encoding === 'base64' ? bytes.toBase64() : bytes.toHex()
+    }
   }
+
+  // @ts-expect-error polyfill
+  return encoding === 'base64' ? typedArray.toBase64() : typedArray.toHex();
+}
+
+/**
+ * Number of characters `typedArrayToString` would produce for a buffer of
+ * `byteLength` bytes, without doing the conversion. Lets callers decide
+ * whether a buffer needs truncating before paying to encode it.
+ */
+export function encodedStringLength(byteLength: number, forceEncoding?: 'hex' | 'base64') {
+  const encoding = forceEncoding || window.bksConfig.ui.general.binaryEncoding
+  return encoding === 'base64' ? Math.ceil(byteLength / 3) * 4 : byteLength * 2
 }
 
 export function stringToTypedArray(str: string, forceEncoding?: 'hex' | 'base64') {

@@ -136,8 +136,27 @@ export function getPaths(obj: Record<string, any>) {
 type Value = string | boolean | number | null;
 
 /**
+ * The buffer behind a binary value, or null if the value isn't binary.
+ * Handles the mongodb objectid shape, where the buffer is nested one level.
+ **/
+export function binaryBufferOf(value: unknown): ArrayBufferView | null {
+  if (_.isTypedArray(value)) {
+    return value as ArrayBufferView;
+  }
+  // HACK: this is the case in mongodb objectid
+  if (value && typeof value === "object" && _.isTypedArray((value as any).buffer)) {
+    return (value as any).buffer;
+  }
+  return null;
+}
+
+/**
  * Recursively iterate through the object paths that has primitive values or
  * array
+ *
+ * Binary values are leaves, not objects to descend into. A typed array is
+ * `isObject` and not `isArray`, so without this it would recurse once per byte
+ * -- a megabyte blob produced a million path strings.
  **/
 export function eachPaths(
   obj: Record<string, any>,
@@ -149,7 +168,7 @@ export function eachPaths(
     const newPath = currentPath ? `${currentPath}.${key}` : key;
     const value = obj[key];
 
-    if (_.isObject(obj[key]) && !_.isArray(obj[key]) && value !== null) {
+    if (_.isObject(value) && !_.isArray(value) && !binaryBufferOf(value)) {
       // Recurse if the value is an object
       eachPaths(value, fn, newPath);
     } else {

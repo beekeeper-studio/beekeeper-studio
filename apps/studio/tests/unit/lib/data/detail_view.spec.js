@@ -5,6 +5,8 @@ import {
   findKeyPosition,
   findValueInfo,
   eachPaths,
+  getPaths,
+  binaryBufferOf,
   parseRowDataForJsonViewer
 } from "../../../../src/lib/data/jsonViewer";
 
@@ -250,4 +252,64 @@ describe("Detail View", () => {
       expect(result.numberField).toBe(123)
     })
   })
+
+  describe("binary values", () => {
+    it("should treat a typed array as a leaf, not an object to descend into", () => {
+      // Without this, Object.keys() on a typed array yields one key per byte,
+      // so a megabyte blob produced a million paths.
+      const obj = { id: 1, blob: new Uint8Array([1, 2, 3, 4]) };
+
+      expect(getPaths(obj)).toStrictEqual(["id", "blob"]);
+    });
+
+    it("should hand the typed array itself to the callback", () => {
+      const blob = new Uint8Array([1, 2, 3, 4]);
+      const seen = {};
+      eachPaths({ id: 1, blob }, (path, value) => {
+        seen[path] = value;
+      });
+
+      expect(seen.blob).toBe(blob);
+      expect(seen.id).toBe(1);
+    });
+
+    it("should treat the mongodb objectid shape as a leaf", () => {
+      const objectId = { buffer: new Uint8Array([1, 2, 3]) };
+
+      expect(getPaths({ _id: objectId, name: "x" })).toStrictEqual(["_id", "name"]);
+    });
+
+    it("should still descend into ordinary nested objects", () => {
+      const obj = { a: { b: { c: 1 } }, d: [1, 2] };
+
+      expect(getPaths(obj)).toStrictEqual(["a.b.c", "d"]);
+    });
+
+    it("should not expand a large buffer when filtering", () => {
+      const obj = { data: new Uint8Array(1024), other: "x" };
+
+      expect(deepFilterObjectProps(obj, "data")).toStrictEqual({ data: obj.data });
+    });
+  });
+
+  describe("binaryBufferOf", () => {
+    it("should return the buffer for a typed array", () => {
+      const bytes = new Uint8Array([1, 2, 3]);
+      expect(binaryBufferOf(bytes)).toBe(bytes);
+    });
+
+    it("should unwrap the mongodb objectid shape", () => {
+      const bytes = new Uint8Array([1, 2, 3]);
+      expect(binaryBufferOf({ buffer: bytes })).toBe(bytes);
+    });
+
+    it("should return null for non-binary values", () => {
+      expect(binaryBufferOf("hello")).toBeNull();
+      expect(binaryBufferOf(null)).toBeNull();
+      expect(binaryBufferOf(undefined)).toBeNull();
+      expect(binaryBufferOf(42)).toBeNull();
+      expect(binaryBufferOf({ a: 1 })).toBeNull();
+      expect(binaryBufferOf([1, 2, 3])).toBeNull();
+    });
+  });
 });

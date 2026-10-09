@@ -51,7 +51,7 @@ export default {
 
       if (cellValue instanceof Uint8Array) {
         const binaryEncoding = params.binaryEncoding || 'hex'
-        cellValue = `${_.truncate(this.niceString(cellValue, false, binaryEncoding), { length: 15 })} (as ${binaryEncoding} string)`
+        cellValue = `${_.truncate(this.niceString(cellValue, true, binaryEncoding), { length: 15 })} (as ${binaryEncoding} string)`
       } else if (
         !params?.fk &&
         !params?.isPK &&
