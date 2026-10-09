@@ -863,6 +863,8 @@ export default Vue.extend({
           const ranges = cell.getTable().getRanges()
           const range = _.last(ranges)
           const menu = [
+            this.viewAsJsonMenuItem(ranges),
+            { separator: true },
             this.openEditorMenu(cell),
             this.setAsNullMenuItem(ranges),
             { separator: true },
@@ -1171,6 +1173,8 @@ export default Vue.extend({
           contextMenu: (_e, cell: CellComponent) => {
             const ranges = cell.getTable().getRanges();
             return [
+              this.viewAsJsonMenuItem(ranges),
+              { separator: true },
               this.setAsNullMenuItem(ranges),
               { separator: true },
               ...copyActionsMenu({
@@ -1257,6 +1261,21 @@ export default Vue.extend({
       this.tableFilters = getFilters(this.tab) || [createTableFilter(this.table.columns?.[0]?.columnName)]
       this.filters = normalizeFilters(this.tableFilters || [])
     },
+    /** Opens the JSON sidebar on the selected row. Leads the cell and row menus. */
+    viewAsJsonMenuItem(ranges: RangeComponent[]) {
+      return {
+        label: createMenuItem(
+          'View as JSON',
+          this.$bksConfig.getKeybindings('context-menu', 'general.jsonViewerSidebar'),
+          { icon: 'data_object' }
+        ),
+        action: () => {
+          this.trigger(AppEvent.selectSecondarySidebarTab, 'json-viewer')
+          this.trigger(AppEvent.toggleSecondarySidebar, true)
+          this.updateJsonViewer({ range: _.last(ranges) })
+        },
+      }
+    },
     rowActionsMenu(ranges: RangeComponent[]) {
       const selectedRowsCount = this.getSelectedRows().length
       let rowRangeLabel = "";
@@ -1293,21 +1312,6 @@ export default Vue.extend({
             this.deleteTableSelection(undefined)
           },
           disabled: !this.editable,
-        },
-        { separator: true },
-        {
-          label: createMenuItem(
-            'See details',
-            this.$bksConfig.getKeybindings(
-              'context-menu',
-              'general.jsonViewerSidebar'
-            )
-          ),
-          action: () => {
-            this.trigger(AppEvent.selectSecondarySidebarTab, 'json-viewer')
-            this.trigger(AppEvent.toggleSecondarySidebar, true)
-            this.updateJsonViewer({ range: _.last(ranges) })
-          },
         },
       ]
     },
@@ -1357,7 +1361,7 @@ export default Vue.extend({
         '=', '!=', '<', '<=', '>', '>=', 'in', 'like'
       ]
       return {
-        label: createMenuItem("Quick Filter", "", this.$store.getters.isCommunity),
+        label: createMenuItem("Quick Filter", "", { ultimate: this.$store.getters.isCommunity }),
         disabled: _.isNil(cell.getValue()),
         menu: symbols.map((s) => {
           return {
