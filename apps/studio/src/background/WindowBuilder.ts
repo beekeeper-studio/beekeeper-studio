@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import path from 'path'
-import { BrowserWindow, globalShortcut, ipcMain, Menu, Rectangle } from "electron"
+import { app, BrowserWindow, globalShortcut, ipcMain, Menu, Rectangle } from "electron"
 import electron from 'electron'
 import platformInfo from '../common/platform_info'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
@@ -35,6 +35,10 @@ export async function setConfirmWindowClose(settings: IGroupedUserSettings, enab
   if (menuItem) menuItem.checked = enabled
   getActiveWindows().forEach((window) => window.send(AppEvent.settingsChanged))
 }
+
+// a prevented close cancels app.quit(), so it has to be resumed once the listeners allow the close
+let quitRequested = false
+app.on('before-quit', () => { quitRequested = true })
 
 ipcMain.on(AppEvent.windowListenerCount, (event, type: string, count: number) => {
   const window = windows.find((w) => w.webContents === event.sender)
@@ -313,10 +317,14 @@ class BeekeeperWindow {
       this.pendingClose = this.askCloseListeners().finally(() => { this.pendingClose = null })
     }
     this.pendingClose.then((prevented) => {
-      if (prevented) return
+      if (prevented) {
+        quitRequested = false
+        return
+      }
       this.closeAllowed = true
       this.win?.close()
       this.closeAllowed = false
+      if (quitRequested) app.quit()
     })
   }
 
