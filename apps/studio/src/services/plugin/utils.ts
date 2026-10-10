@@ -76,3 +76,12 @@ export function convertToManifestV1(manifest: Manifest): ManifestV1 {
     },
   };
 }
+
+// this gets around githubs rate limiting
+export function getPluginAvatarUrl(
+  plugin: { repo?: string },
+  size = 80
+): string | null {
+  const owner = plugin.repo?.split("/")[0];
+  return owner ? `https://github.com/${owner}.png?size=${size}` : null;
+}

@@ -3,6 +3,7 @@
     :name="id"
     @submit="confirm"
     @closed="reportClose(false)"
+    :click-to-close="false"
   >
     <template #title>
       <slot name="title">Are you sure?</slot>

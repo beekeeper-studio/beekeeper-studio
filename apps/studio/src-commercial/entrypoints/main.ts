@@ -80,6 +80,11 @@ async function createUtilityProcess() {
   utilityProcess.on("message", (msg: UtilProcMessage) => {
     if (msg.type === 'openExternal') {
       safeOpenExternal(msg.url)
+    } else if (msg.type === 'configChanged') {
+      bksConfig.reload(msg.source);
+      for (const w of getActiveWindows()) {
+        w.send('bksConfigChanged', msg.source);
+      }
     }
   })
 

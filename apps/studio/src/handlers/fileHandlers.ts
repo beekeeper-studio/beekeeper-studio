@@ -9,6 +9,8 @@ const SQL_FILE_EXTENSIONS = new Set(['.sql', '.txt']);
 
 
 export interface IFileHandlers {
+  // TODO (@day): readSqlFile isn't used anymore
+  // maybe move readVimrc to the config handlers
   /**
    * Read the user's vim config file from a fixed location inside the
    * beekeeper user directory. The renderer cannot pass a path. Returns the

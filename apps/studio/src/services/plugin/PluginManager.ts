@@ -4,6 +4,7 @@ import PluginFileManager from "./PluginFileManager";
 import {
   Manifest as AnyVersionManifest,
   ManifestV1 as Manifest,
+  ManifestV1,
   PluginOrigin,
   PluginRepository,
   PluginSettings,
@@ -16,6 +17,8 @@ import semver from "semver";
 import { PluginError, PluginSystemError } from "@/lib/errors";
 import { convertToManifestV1, isManifestV0, mapViewsAndMenuFromV0ToV1 } from "./utils";
 import { Hookable } from "./Hookable";
+import BksConfig from '@/common/bksConfig';
+import globals from "@/common/globals";
 
 const log = rawLog.scope("PluginManager");
 
@@ -44,6 +47,10 @@ export default class PluginManager extends Hookable {
       new PluginRegistry(new PluginRepositoryService());
   }
 
+  async triggerConfigReload() {
+    await this.callHook("config-reload", BksConfig);
+  }
+
   async initialize() {
     if (this.initialized) {
       log.warn("Calling initialize when already initialized");
@@ -62,6 +69,11 @@ export default class PluginManager extends Hookable {
 
     this.initialized = true;
 
+    // Auto update should maybe be a module?
+    // Don't run auto updates if the plugin system is disabled, or if `autoUpdate` is disabled
+    // (bundled plugins are updated above from resources)
+    if (BksConfig.pluginSystem.disabled || !BksConfig.pluginSystem.autoUpdate) return;
+
     for (const plugin of installedPlugins) {
       if (!this.pluginSettings[plugin.id]?.autoUpdate) {
         continue;
@@ -75,11 +87,6 @@ export default class PluginManager extends Hookable {
         log.error(`Failed to check for updates for plugin "${plugin.id}"`, e);
       }
     }
-  }
-
-  async getEntries() {
-    this.initializeGuard();
-    return await this.registry.getEntries();
   }
 
   /**
@@ -138,6 +145,10 @@ export default class PluginManager extends Hookable {
         }
       }
 
+      if (globals.plugins.ensureInstalled.some((e) => manifest.id === e.id)) {
+        origin = 'bundled';
+      }
+
       snapshots.push({
         manifest,
         loadable,
@@ -149,8 +160,11 @@ export default class PluginManager extends Hookable {
     return await this.applyHook("plugin-snapshots", snapshots);
   }
 
-  /** Plugin is not loadable if the **current app version** is lower than the
-   * **minimum app version** required by the plugin. */
+  /** Plugin is not loadable if:
+   * - the **current app version** is lower than the **minimum app version** required by the plugin.
+   * - the plugin system is disabled (and plugin isn't bundled)
+   * - the registry the plugin is from is disabled
+   */
   isPluginLoadable(manifest: AnyVersionManifest): boolean {
     if (!manifest.minAppVersion) {
       return true;
@@ -211,9 +225,9 @@ export default class PluginManager extends Hookable {
         (manifest) => manifest.id === id
       );
       if (installedPluginIdx === -1) {
-        this.manifests.push(manifest);
+        this.manifests.push(manifest as ManifestV1);
       } else {
-        this.manifests[installedPluginIdx] = manifest;
+        this.manifests[installedPluginIdx] = manifest as ManifestV1;
       }
 
       if (!this.pluginSettings[id]) {
@@ -225,7 +239,7 @@ export default class PluginManager extends Hookable {
 
       log.info(`Installed plugin "${id}" v${info.latestRelease.manifest.version}`);
 
-      return manifest;
+      return manifest as ManifestV1;
     });
   }
 

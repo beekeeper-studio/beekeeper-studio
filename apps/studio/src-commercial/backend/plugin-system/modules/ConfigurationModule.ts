@@ -28,17 +28,10 @@ export class ConfigurationModule extends Module {
   constructor(private options: ConfigurationOptions & ModuleOptions) {
     super(options);
 
-    if (this.options.config.pluginSystem.disabled) {
-      this.manager.registry.communityDisabled = true;
-      this.manager.registry.officialDisabled = true;
-    }
-
-    if (this.options.config.pluginSystem.communityDisabled) {
-      this.manager.registry.communityDisabled = true;
-    }
-
+    this.setManagerRegistryFlags();
     this.hook("before-install-plugin", this.validatePluginInstall);
     this.hook("plugin-snapshots", this.applyConfig);
+    this.hook("config-reload", this.onConfigReload);
   }
 
   static with(options: ConfigurationOptions) {
@@ -47,6 +40,30 @@ export class ConfigurationModule extends Module {
         super({ ...baseOptions, ...options });
       }
     };
+  }
+
+  private onConfigReload(config: BksConfig) {
+    this.options.config = config;
+
+    this.setManagerRegistryFlags();
+  }
+
+  private setManagerRegistryFlags() {
+    this.manager.registry.communityDisabled = false;
+    this.manager.registry.officialDisabled = false;
+
+    if (this.options.config.pluginSystem.disabled) {
+      this.manager.registry.communityDisabled = true;
+      this.manager.registry.officialDisabled = true;
+    }
+
+    if (this.options.config.pluginSystem.officialDisabled) {
+      this.manager.registry.officialDisabled = true;
+    }
+
+    if (this.options.config.pluginSystem.communityDisabled) {
+      this.manager.registry.communityDisabled = true;
+    }
   }
 
   private validatePluginInstall(): void {
@@ -74,6 +91,19 @@ export class ConfigurationModule extends Module {
       }
 
       if (
+        snapshot.origin === "official" &&
+        this.options.config.pluginSystem.officialDisabled
+      ) {
+        return {
+          ...snapshot,
+          disableState: {
+            disabled: true,
+            reason: "official-plugins-disabled"
+          }
+        }
+      }
+
+      if (
         snapshot.origin === "community" &&
         this.options.config.pluginSystem.communityDisabled
       ) {
@@ -84,6 +114,32 @@ export class ConfigurationModule extends Module {
             reason: "community-plugins-disabled",
           },
         };
+      }
+
+      if (
+        snapshot.origin === "custom" &&
+        this.options.config.pluginSystem.thirdPartyRegistriesDisabled
+      ) {
+        return {
+          ...snapshot,
+          disableState: {
+            disabled: true,
+            reason: "custom-registries-disabled",
+          }
+        }
+      }
+
+      if (
+        snapshot.origin === "unlisted" &&
+        this.options.config.pluginSystem.unlistedDisabled
+      ) {
+        return {
+          ...snapshot,
+          disableState: {
+            disabled: true,
+            reason: "unlisted-disabled"
+          }
+        }
       }
 
       if (this.options.config.plugins?.[snapshot.manifest.id]?.disabled) {

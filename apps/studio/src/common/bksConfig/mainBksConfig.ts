@@ -159,9 +159,9 @@ function copyBundledConfig(file: ConfigFileName, dest: string) {
   }
 }
 
-function readConfig(filePath: string) {
+function readConfig(filePath: string, preserveComments: boolean = false) {
   try {
-    const config = parseIni(readFileSync(filePath, "utf-8"));
+    const config = parseIni(readFileSync(filePath, "utf-8"), preserveComments);
     log.debug(`Successfully read config ${filePath}.`);
     return processRawConfig(config);
   } catch (error) {
@@ -170,9 +170,9 @@ function readConfig(filePath: string) {
   }
 }
 
-export function loadConfig(file: "default.config.ini"): IBksConfig;
-export function loadConfig(file: Omit<ConfigFileName, "default.config.ini">): Partial<IBksConfig>;
-export function loadConfig(file: ConfigFileName): IBksConfig | Partial<IBksConfig> {
+export function loadConfig(file: "default.config.ini", preserveComments?: boolean): IBksConfig;
+export function loadConfig(file: Omit<ConfigFileName, "default.config.ini">, preserveComments?: boolean): Partial<IBksConfig>;
+export function loadConfig(file: ConfigFileName, preserveComments: boolean = false): IBksConfig | Partial<IBksConfig> {
   log.debug(`Loading config ${file}.`);
 
   const isDev = platformInfo.isDevelopment || platformInfo.testMode;
@@ -202,7 +202,7 @@ export function loadConfig(file: ConfigFileName): IBksConfig | Partial<IBksConfi
       log.warn(`Failed loading system config. System config path not found: ${systemConfigFilePath}`);
       return {};
     }
-    return readConfig(systemConfigFilePath);
+    return readConfig(systemConfigFilePath, preserveComments);
   }
 
   if (!isDev && file === "default.config.ini") {
@@ -210,11 +210,11 @@ export function loadConfig(file: ConfigFileName): IBksConfig | Partial<IBksConfi
     // system.config.ini so it's not possible for users to modify it. However,
     // we want to make sure they can read them for reference.
     copyBundledConfig(file, filePath);
-    return readConfig(path.join(bundledConfigPath, file));
+    return readConfig(path.join(bundledConfigPath, file), preserveComments);
   }
 
   if (!isDev && file === "deprecated.config.ini") {
-    return readConfig(path.join(bundledConfigPath, file));
+    return readConfig(path.join(bundledConfigPath, file), preserveComments);
   }
 
   if (!existsSync(filePath)) {
@@ -224,10 +224,10 @@ export function loadConfig(file: ConfigFileName): IBksConfig | Partial<IBksConfi
     copyBundledConfig(file, filePath);
   }
 
-  return readConfig(filePath);
+  return readConfig(filePath, preserveComments);
 }
 
-function resolveConfigDir() {
+export function resolveConfigDir() {
   const dirpath = path.resolve(__dirname);
 
   if (platformInfo.testMode) {
@@ -280,7 +280,7 @@ function collectConfigWarnings(
   return warnings;
 }
 
-export function mainBksConfig(): BksConfig {
+export function loadBksConfigSource(): BksConfigSource {
   log.info(`Loading configs.`);
 
   const defaultConfig: IBksConfig = loadConfig("default.config.ini");
@@ -316,5 +316,9 @@ export function mainBksConfig(): BksConfig {
   log.info(`System config: ${JSON.stringify(systemConfig, null, 2)}`);
   log.info(`User config: ${JSON.stringify(userConfig, null, 2)}`);
 
-  return BksConfigProvider.create(source, platformInfo);
+  return source;
+}
+
+export function mainBksConfig(): BksConfig {
+  return BksConfigProvider.create(loadBksConfigSource(), platformInfo);
 }

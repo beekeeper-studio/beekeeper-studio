@@ -19,7 +19,7 @@ export const PluginSnapshotsModule: Module<PluginSnapshotsState, RootState> = {
         obj[snapshot.manifest.id] = snapshot;
       }
       return obj;
-    },
+    }
   },
   mutations: {
     set(state, snapshots: PluginSnapshot[]) {

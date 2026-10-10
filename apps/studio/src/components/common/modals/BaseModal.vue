@@ -6,6 +6,8 @@
       @opened="handleOpened"
       @closed="$emit('closed')"
       class="base-modal-root"
+      :click-to-close="clickToClose"
+      :style="{ '--base-modal-min-width': minWidth, '--base-modal-max-width': maxWidth }"
     >
       <x-progressbar v-if="loading" />
       <form
@@ -63,6 +65,18 @@ export default Vue.extend({
     /** Show loading indicator */
     loading: Boolean,
     height: String,
+    clickToClose: {
+      type: Boolean,
+      default: true
+    },
+    minWidth: {
+      type: String,
+      default: "36rem"
+    },
+    maxWidth: {
+      type: String,
+      default: "550px"
+    }
   },
   methods: {
     close() {
@@ -70,7 +84,7 @@ export default Vue.extend({
     },
     handleOpened() {
       const target =
-        this.$refs.form.querySelector(this.firstFocusable) ??
+        this.$refs.form?.querySelector(this.firstFocusable) ??
         this.$refs.closeBtn;
       target.focus();
       this.$emit("opened");
@@ -81,9 +95,9 @@ export default Vue.extend({
 
 <style lang="scss" scoped>
 .base-modal-root ::v-deep .v--modal {
-  min-width: 36rem;
+  min-width: var(--base-modal-min-width);
+  max-width: var(--base-modal-max-width);
   min-height: 6rem;
-  max-width: 550px;
   width: auto !important;
 }
 

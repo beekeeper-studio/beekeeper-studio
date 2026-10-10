@@ -290,16 +290,22 @@ class Config {
 }
 
 export class BksConfigProvider {
+  public source: BksConfigSource;
   private defaultConfig: Config;
   private systemConfig: Config;
   private userConfig: Config;
   private mergedConfig: IBksConfig;
 
-  constructor(public readonly source: BksConfigSource, private platformInfo: IPlatformInfo) {
+  constructor(source: BksConfigSource, private platformInfo: IPlatformInfo) {
+    this.apply(source);
+  }
+
+  private apply(source: BksConfigSource) {
+    this.source = source;
     this.defaultConfig = new Config("default", source.defaultConfig);
     this.systemConfig = new Config("system", source.systemConfig);
     this.userConfig = new Config(
-      platformInfo.isDevelopment ? "dev" : "user",
+      this.platformInfo.isDevelopment ? "dev" : "user",
       source.userConfig
     );
     this.mergedConfig = _.merge(
@@ -314,6 +320,23 @@ export class BksConfigProvider {
     const provider = new BksConfigProvider(source, platformInfo);
     Object.assign(provider, provider.mergedConfig);
     return provider as BksConfig;
+  }
+
+  reload(source: BksConfigSource) {
+    // This should make Vue observability play nice
+    const previousKeys = Object.keys(this.mergedConfig);
+    this.apply(source);
+
+    for (const key of previousKeys) {
+      if (!(key in this.mergedConfig)) this[key] = undefined;
+    }
+    for (const [key, value] of Object.entries(this.mergedConfig)) {
+      this[key] = value;
+    }
+  }
+
+  userCanOverride(path: string): boolean {
+    return _.isNil(_.get(this.systemConfig, path));
   }
 
   has(path: string): boolean {

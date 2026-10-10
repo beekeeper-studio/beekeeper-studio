@@ -1994,10 +1994,10 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@beekeeperstudio/bks-ai-shell@^3.3.4":
-  version "3.3.4"
-  resolved "https://registry.yarnpkg.com/@beekeeperstudio/bks-ai-shell/-/bks-ai-shell-3.3.4.tgz#de9d7667d444fcdae1f8c10184697e99656ea46a"
-  integrity sha512-Bs3F9n1WOSNdYRo4bTbL0Fxe2cV5rbNBzsIZt9NZnsI6n4MpkT3ToaGUOtIJlMtiecg2lvc1yKUYHelHA/sXQQ==
+"@beekeeperstudio/bks-ai-shell@^3.3.5":
+  version "3.3.5"
+  resolved "https://registry.yarnpkg.com/@beekeeperstudio/bks-ai-shell/-/bks-ai-shell-3.3.5.tgz#ce25173d7e94578278c04bbef3f0505560bc8b1a"
+  integrity sha512-yY+Hg7+e8xyUcJ/vdU52PE4+UojX0/OjHrQGBsP16SiHSX113rFXiVFGkvlq2ltfXsb0Fh3T6QeoJ40M6Jj2pw==
 
 "@beekeeperstudio/bks-er-diagram@^1.1.2":
   version "1.1.2"
@@ -2012,10 +2012,10 @@
     lodash "^4.18.1"
     snowflake-sdk "^2.4.0"
 
-"@beekeeperstudio/plugin@^1.6.0":
-  version "1.6.0"
-  resolved "https://registry.yarnpkg.com/@beekeeperstudio/plugin/-/plugin-1.6.0.tgz#7ba0cd3ca01cd1bc463434c7e75b905081fb8df6"
-  integrity sha512-it+Wbg5zUFfK8yDUY81Rq5c1jRzMat/eBXnu5vjpqSscniGPZXfY5YB3PWdZstWBM40sFo+aKEWOd7DvHNesvw==
+"@beekeeperstudio/plugin@^1.7.2":
+  version "1.7.2"
+  resolved "https://registry.yarnpkg.com/@beekeeperstudio/plugin/-/plugin-1.7.2.tgz#94334425c31c71c7e6d4ec98ec00854202a5f3ba"
+  integrity sha512-dc/n7LCEKJpqj0NeMPUajL7tIuwoVUFAXZxpJGpctQaQ60weglCmpNkSkTYbYajWEVBVVFTvQNtWGFN/mt6F0A==
 
 "@bufbuild/protobuf@^2.5.0":
   version "2.11.0"
@@ -8819,10 +8819,9 @@ ini@^1.3.4, ini@~1.3.0:
   resolved "https://registry.yarnpkg.com/ini/-/ini-1.3.8.tgz#a29da425b48806f34767a4efce397269af28432c"
   integrity sha512-JV/yugV2uzW5iMRSiZAyDtQd+nxtUnjeLt0acNdw98kKLrvuRVyB80tsREOE7yvGVgalhZ6RNXCmEHkUKBKxew==
 
-ini@^5.0.0:
-  version "5.0.0"
-  resolved "https://registry.yarnpkg.com/ini/-/ini-5.0.0.tgz#a7a4615339843d9a8ccc2d85c9d81cf93ffbc638"
-  integrity sha512-+N0ngpO3e7cRUWOJAS7qw0IZIVc6XPrW4MlFBdD066F2L4k1L6ker3hLqSq7iXxU5tgS4WGkIUElWn5vogAEnw==
+"ini@git+https://github.com/beekeeper-studio/ini.git#10e308636a75fb4f1bfdba78b9b5ae30a15be2de":
+  version "7.0.0"
+  resolved "git+https://github.com/beekeeper-studio/ini.git#10e308636a75fb4f1bfdba78b9b5ae30a15be2de"
 
 internal-slot@^1.1.0:
   version "1.1.0"

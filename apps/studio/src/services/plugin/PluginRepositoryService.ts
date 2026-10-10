@@ -1,7 +1,7 @@
 import { OctokitOptions } from "@octokit/core";
 import { Octokit } from "@octokit/rest";
 import { RequestError } from "@octokit/request-error";
-import { Manifest, PluginRepository, Release, PluginRegistryEntry } from "./types";
+import { Manifest, PluginRepository, Release, RawPluginRegistryEntry, RegistryConfig, PluginRegistryEntry } from "./types";
 import { PluginSystemError } from "@/lib/errors";
 import rawLog from "@bksLogger";
 
@@ -84,20 +84,17 @@ export default class PluginRepositoryService {
     };
   }
 
-  async fetchOfficial(): Promise<PluginRegistryEntry[]> {
-    return await this.fetchJson(
-      "beekeeper-studio",
-      "beekeeper-studio-plugins",
-      "plugins.json"
-    );
-  }
+  async fetchRegistry(config: RegistryConfig): Promise<PluginRegistryEntry[]> {
+    const raw = await this.fetchJson(
+      config.owner,
+      config.repo,
+      config.file
+    )
 
-  async fetchCommunity(): Promise<PluginRegistryEntry[]> {
-    return await this.fetchJson(
-      "beekeeper-studio",
-      "beekeeper-studio-plugins",
-      "community-plugins.json"
-    );
+    return raw.map((entry) => ({
+      ...entry,
+      origin: config.origin
+    }));
   }
 
   async fetchPluginRepository(owner: string, repo: string): Promise<PluginRepository> {
@@ -120,7 +117,7 @@ export default class PluginRepositoryService {
     return Buffer.from(response.data.content, "base64").toString("utf-8");
   }
 
-  protected async fetchJson(owner: string, repo: string, path: string) {
+  protected async fetchJson(owner: string, repo: string, path: string): Promise<RawPluginRegistryEntry[]> {
     const response = await this.request(
       "GET /repos/{owner}/{repo}/contents/{path}",
       {
@@ -136,7 +133,7 @@ export default class PluginRepositoryService {
     const content = Buffer.from(response.data.content, "base64").toString(
       "utf-8"
     );
-    return JSON.parse(content);
+    return JSON.parse(content) as RawPluginRegistryEntry[];
   }
 
   /** Wraps octokit.request with rate limit error handling. */
