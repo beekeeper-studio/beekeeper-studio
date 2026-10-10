@@ -14,7 +14,7 @@ import MenuHandler from '@/background/NativeMenuBuilder'
 import { IGroupedUserSettings, UserSetting } from '@/common/appdb/models/user_setting'
 import Connection from '@/common/appdb/Connection'
 import Migration from '@/migration/index'
-import { buildWindow, getActiveWindows, getCurrentWindow } from '@/background/WindowBuilder'
+import { buildWindow, getActiveWindows, getCurrentWindow, setConfirmWindowClose } from '@/background/WindowBuilder'
 import platformInfo from '@/common/platform_info'
 import bksConfig from '@/common/bksConfig'
 
@@ -314,6 +314,10 @@ ipcMain.handle('maximizeWindow', () => {
 
 ipcMain.handle('closeWindow', () => {
   getCurrentWindow().closeWindow();
+})
+
+ipcMain.handle('setConfirmWindowClose', async (_event, enabled: boolean) => {
+  await setConfirmWindowClose(settings, enabled);
 })
 
 ipcMain.handle('clipboard:write', async (_event, { content, image }: { content: string, image: boolean }) => {

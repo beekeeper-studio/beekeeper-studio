@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron'
 import { autoUpdater } from 'electron-updater'
-import { getActiveWindows, bypassCloseConfirmation } from './WindowBuilder'
+import { getActiveWindows, bypassCloseListeners } from './WindowBuilder'
 import rawlog from '@bksLogger'
 
 const log = rawlog.scope('update-manager')
@@ -91,9 +91,7 @@ export function manageUpdates(allowBeta: boolean, debug?: boolean): void {
   })
 
   ipcMain.on('install-update', () => {
-    // The user already opted into installing now; don't let the
-    // unsaved-changes prompt block (or silently swallow) the restart.
-    bypassCloseConfirmation()
+    bypassCloseListeners()
     autoUpdater.quitAndInstall()
   })
 

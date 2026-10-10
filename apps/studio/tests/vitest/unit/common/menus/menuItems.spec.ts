@@ -46,7 +46,6 @@ describe("menuItems", () => {
     expect(items.redo.role).toBe("redo");
   });
 
-  // The way back after "Don't show this again" on the window-close prompt.
   describe("confirmWindowCloseToggle", () => {
     const withSetting = (value?: boolean) =>
       menuItems(

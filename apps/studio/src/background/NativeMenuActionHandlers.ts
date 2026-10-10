@@ -233,8 +233,6 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     })
   }
 
-  // Flips from main's own copy of the setting rather than the clicked item's
-  // `checked`: the titlebar menu (Windows/Linux) doesn't send one.
   toggleConfirmWindowClose = async (): Promise<void> => {
     await setConfirmWindowClose(this.settings, !!this.settings.dontConfirmWindowClose?.value)
   }

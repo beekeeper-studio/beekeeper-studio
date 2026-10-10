@@ -4,26 +4,17 @@ import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
 
-// Real-app coverage for the window-close confirmation (#2201): closing a
-// window while a tab has unsaved changes asks first, offers "Don't show this
-// again", cancelling keeps the window and the text, and
-// View > Confirm Before Closing Unsaved Tabs turns the prompt back on.
-
-// Where to drop the screenshot of the dialog; defaults next to the other
-// Playwright output.
 const SCREENSHOT_DIR = process.env.BKS_E2E_SCREENSHOT_DIR || path.join('test-results', 'confirm-window-close');
 const MENU_ITEM = 'Confirm Before Closing Unsaved Tabs';
 
 test.describe.configure({ mode: 'serial' });
-// Drives the in-window titlebar menu, which macOS doesn't have.
 test.skip(process.platform === 'darwin', 'uses the in-window menu (Windows/Linux only)');
 
 async function launch(): Promise<{ app: ElectronApplication; win: Page }> {
   const app = await electron.launch({
     args: ['dist/main.js'],
-    // The prompt is off in test mode (Playwright's app.quit() would hang on
-    // it in every other spec) - this spec is the one that turns it back on.
-    env: { ...process.env, TEST_MODE: '1', BKS_TEST_CONFIRM_WINDOW_CLOSE: '1' },
+    // close listeners are off in test mode unless a spec opts in
+    env: { ...process.env, TEST_MODE: '1', BKS_TEST_WINDOW_CLOSE_LISTENERS: '1' },
   });
   const win = await app.firstWindow();
   await win.setViewportSize({ width: 1600, height: 1000 });
@@ -34,11 +25,8 @@ async function launch(): Promise<{ app: ElectronApplication; win: Page }> {
   return { app, win };
 }
 
-// In TEST_MODE the app parses argv from index 1, so the `dist/main.js`
-// Playwright launches with is taken as a connection URL and App.vue starts
-// its own connect attempt at boot. Until that attempt settles, the store
-// rejects ours with "A connection attempt is already in progress" - so keep
-// clicking Connect until the core interface actually shows up.
+// In TEST_MODE `dist/main.js` from argv is taken as a connection URL, so the
+// app starts its own connect at boot and rejects ours until that settles.
 async function connectSqlite(win: Page, dbFile: string) {
   await userActions(win).selectNewConnection('sqlite');
   await win.locator('#Database').fill(dbFile);
@@ -46,44 +34,42 @@ async function connectSqlite(win: Page, dbFile: string) {
   for (let attempt = 0; attempt < 8; attempt++) {
     try {
       await win.getByRole('button', { name: 'Connect', exact: true }).click({ timeout: 5000 });
-    } catch (e) { /* button disabled while an attempt is pending */ }
+    } catch (e) { /* disabled while an attempt is pending */ }
     try {
       await expect(coreTabs).toBeVisible({ timeout: 5000 });
       return;
-    } catch (e) { /* still blocked by the boot-time attempt, retry */ }
+    } catch (e) { /* retry */ }
   }
   await expect(coreTabs).toBeVisible({ timeout: 5000 });
 }
 
 const viewMenu = (win: Page) => win.locator('.flyout-nav .top-menu-item > a', { hasText: 'View' });
 const promptMenuItem = (win: Page) => win.locator('.flyout-nav li.menu-item > a', { hasText: MENU_ITEM });
+const dialogTitle = (win: Page) => win.getByText('Close this window?', { exact: false });
 
 async function promptEnabledInMenu(win: Page): Promise<boolean> {
   await viewMenu(win).click();
   await expect(promptMenuItem(win)).toBeVisible();
   const ticked = (await promptMenuItem(win).locator('.material-icons', { hasText: 'done' }).count()) > 0;
-  await viewMenu(win).click(); // close it again
+  await viewMenu(win).click();
   return ticked;
 }
 
-// The preference is stored in the app db under ./tmp, which survives between
-// runs and retries, so every test sets the state it needs - through the real
-// menu item.
+// the setting lives in ./tmp and survives runs and retries
 async function setPromptViaMenu(win: Page, enabled: boolean) {
   if (await promptEnabledInMenu(win) === enabled) return;
   await viewMenu(win).click();
   await promptMenuItem(win).click();
-  // The tick follows once main has saved and broadcast settingsChanged.
   await expect.poll(() => promptEnabledInMenu(win), { timeout: 10000 }).toBe(enabled);
 }
 
-async function typeIntoFirstTab(win: Page, marker: string) {
+async function typeIntoFirstTab(win: Page, text: string) {
   const editor = win.locator('#tab-0').getByRole('textbox');
   await expect(editor).toBeVisible({ timeout: 30000 });
   await editor.click();
-  await editor.fill(marker);
-  await expect(editor).toContainText(marker);
-  await win.waitForTimeout(500); // let the dirty-tab flag actually flip
+  await editor.fill(text);
+  await expect(editor).toContainText(text);
+  await win.waitForTimeout(500);
 }
 
 function newDbFile(name: string) {
@@ -92,9 +78,35 @@ function newDbFile(name: string) {
   return dbFile;
 }
 
-const dialogTitle = (win: Page) => win.getByText('Close this window?', { exact: false });
+// times the window, not the process: without a connection the app lingers on Playwright's debugger
+async function timeToClose(app: ElectronApplication, win: Page): Promise<number> {
+  const closed = win.waitForEvent('close', { timeout: 15000 });
+  const start = Date.now();
+  await win.locator('#quit').click();
+  await closed;
+  const elapsed = Date.now() - start;
+  await app.close().catch(() => {});
+  return elapsed;
+}
 
-test('closing the window with unsaved changes prompts; cancel keeps it open, confirm closes it', async () => {
+test('closes right away when nothing is unsaved', async () => {
+  test.setTimeout(240000);
+
+  let { app, win } = await launch();
+  const fromConnectionScreen = await timeToClose(app, win);
+
+  ({ app, win } = await launch());
+  await setPromptViaMenu(win, true);
+  await connectSqlite(win, newDbFile('close-clean'));
+  await expect(win.locator('#tab-0').getByRole('textbox')).toBeVisible({ timeout: 30000 });
+  const withCleanTab = await timeToClose(app, win);
+
+  console.log(`[close time] connection screen: ${fromConnectionScreen}ms, clean tab: ${withCleanTab}ms`);
+  expect(fromConnectionScreen).toBeLessThan(2000);
+  expect(withCleanTab).toBeLessThan(2000);
+});
+
+test('asks before closing with unsaved tabs; cancel keeps the window, confirm closes it', async () => {
   test.setTimeout(240000);
   fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
 
@@ -103,32 +115,23 @@ test('closing the window with unsaved changes prompts; cancel keeps it open, con
   await connectSqlite(win, newDbFile('close-confirm'));
   await typeIntoFirstTab(win, 'select 1 as close_confirm_marker;');
 
-  // The real titlebar close button: window.main.closeWindow() -> IPC ->
-  // WindowBuilder's 'close' handler, not a synthetic event.
   await win.locator('#quit').click();
-
   await expect(dialogTitle(win)).toBeVisible({ timeout: 10000 });
   await expect(win.getByText("Don't show this again", { exact: false })).toBeVisible();
-
-  // Tab area only (the dialog overlays it): the sidebar would show the
-  // temp-dir path of the test database.
+  // tab area only, the sidebar shows the temp path of the test database
   await win.locator('.core-tabs').screenshot({ path: path.join(SCREENSHOT_DIR, 'confirm-window-close-dialog.png') });
 
   await win.getByRole('button', { name: 'Cancel', exact: true }).click();
   await expect(dialogTitle(win)).not.toBeVisible({ timeout: 5000 });
-
-  // Still here, text still there: main really kept the window open.
   await expect(win.locator('#tab-0').getByRole('textbox')).toContainText('close_confirm_marker');
 
-  // Second attempt, confirmed this time: the window (and with it the app)
-  // actually closes.
   await win.locator('#quit').click();
   await expect(dialogTitle(win)).toBeVisible({ timeout: 10000 });
   await win.getByRole('button', { name: 'Close Window', exact: true }).click();
   await app.waitForEvent('close', { timeout: 15000 });
 });
 
-test('"Don\'t show this again" suppresses the prompt from then on and unticks the menu item', async () => {
+test('"Don\'t show this again" turns the prompt off and unticks the menu item', async () => {
   test.setTimeout(240000);
   const dbFile = newDbFile('close-confirm-skip');
 
@@ -143,18 +146,15 @@ test('"Don\'t show this again" suppresses the prompt from then on and unticks th
   await win.getByRole('button', { name: 'Close Window', exact: true }).click();
   await app.waitForEvent('close', { timeout: 15000 });
 
-  // Fresh process: the choice was saved before the app quit, the menu shows
-  // it, and an unsaved tab closes straight away.
   const { app: app2, win: win2 } = await launch();
   expect(await promptEnabledInMenu(win2)).toBe(false);
   await connectSqlite(win2, dbFile);
   await typeIntoFirstTab(win2, 'select 1 as close_confirm_skip_marker_2;');
-
   await win2.locator('#quit').click();
   await app2.waitForEvent('close', { timeout: 15000 });
 });
 
-test('View > Confirm Before Closing Unsaved Tabs turns the prompt back on', async () => {
+test('the View menu item turns the prompt back on', async () => {
   test.setTimeout(240000);
 
   const { app, win } = await launch();

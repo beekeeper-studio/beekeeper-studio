@@ -58,18 +58,14 @@ export const api = {
   onUtilDied(bind: any) {
     ipcRenderer.on('utilDied', bind);
   },
-  /** Acknowledges a main-process request to confirm closing this window (see
-   * {@link AppEvent.confirmWindowClose}), before any confirmation dialog is
-   * shown to the user. */
-  ackConfirmWindowClose() {
-    ipcRenderer.send(AppEvent.confirmWindowCloseAck);
+  setWindowListenerCount(type: string, count: number) {
+    ipcRenderer.send(AppEvent.windowListenerCount, type, count);
   },
-  /** Answers a main-process request to confirm closing this window (see
-   * {@link AppEvent.confirmWindowClose}). `confirmed` is whether the window
-   * may actually close; `dontAskAgain` whether "Don't show this again" was
-   * ticked (main saves that before closing). */
-  respondConfirmWindowClose(confirmed: boolean, dontAskAgain = false) {
-    ipcRenderer.send(AppEvent.confirmWindowCloseResponse, confirmed, dontAskAgain);
+  respondWindowClose(prevented: boolean) {
+    ipcRenderer.send(AppEvent.windowCloseResponse, prevented);
+  },
+  async setConfirmWindowClose(enabled: boolean) {
+    await ipcRenderer.invoke('setConfirmWindowClose', enabled);
   },
   onUpdateEvent(event: 'update-available' | 'manual-update' | 'update-downloaded', bind: any) {
     const eType = ['update-available', 'manual-update', 'update-downloaded'];
