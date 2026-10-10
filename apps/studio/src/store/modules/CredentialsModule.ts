@@ -125,7 +125,7 @@ export const CredentialsModule: Module<State, RootState> = {
         context.commit('replace', results)
       } finally {
         context.commit('loading', false)
-        context.dispatch('setUserWorkspace')
+        await context.dispatch('setUserWorkspace')
       }
     },
     async login(context, { email, password }) {
