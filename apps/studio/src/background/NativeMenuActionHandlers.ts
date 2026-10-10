@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import {AppEvent} from '../common/AppEvent'
-import { buildWindow, getActiveWindows, OpenOptions } from './WindowBuilder'
+import { buildWindow, getActiveWindows, OpenOptions, setConfirmWindowClose } from './WindowBuilder'
 import { app } from 'electron'
 import { safeOpenExternal } from './lib/electron/safeOpenExternal'
 import platformInfo from '../common/platform_info'
@@ -231,6 +231,10 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     getActiveWindows().forEach(window => {
       window.send(AppEvent.settingsChanged)
     })
+  }
+
+  toggleConfirmWindowClose = async (): Promise<void> => {
+    await setConfirmWindowClose(this.settings, !!this.settings.dontConfirmWindowClose?.value)
   }
 
   switchLicenseState = async (state: Electron.MenuItem | DevLicenseState, win: ElectronWindow) => {

@@ -78,6 +78,12 @@ export enum AppEvent {
   switchedTab = 'switchedTab',
   /** A tab is about to be closed. First argument is the tab. */
   closingTab = 'closingTab',
+  /** Main asks the renderer's window close listeners. Answered with `windowCloseResponse`. */
+  windowClose = 'windowClose',
+  /** First argument is whether a listener prevented the close. */
+  windowCloseResponse = 'windowCloseResponse',
+  /** Arguments are the event type and how many listeners the renderer has for it. */
+  windowListenerCount = 'windowListenerCount',
   simulatePlatform = 'simulatePlatform',
   updatePin = 'updatePin',
   /** The theme has been changed. */
