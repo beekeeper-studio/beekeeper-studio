@@ -72,8 +72,8 @@ export default Vue.extend({
         // the selected cell, currently only tab does this.
 
         this.$emit('value', this.value)
-      } else if (e.key.startsWith("Arrow")) {
-        // this.$emit('value', this.value)
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        this.submit()
       } else if (e.key === 'Escape') {
         this.$emit('cancel')
       } else {
@@ -139,7 +139,7 @@ export default Vue.extend({
   watch: {
     rendered() {
       if (this.rendered) {
-        const cellValue = this.cell.getValue()
+        const cellValue = this.params.initialValue ?? this.cell.getValue()
         this.value = _.isNil(cellValue) ? null : helpers.niceString(cellValue)
         this.$nextTick(() => {
           this.$refs.input.focus();

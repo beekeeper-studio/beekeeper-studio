@@ -885,9 +885,6 @@ $columnResizeGuideColor:      mix($query-editor-bg, $theme-base, 80%) !default;
         .tabulator-range, .tabulator-range-cell-active {
           border-color: var(--bks-table-range-border-color);
         }
-        .tabulator-range.tabulator-range-active::after {
-          background-color: var(--bks-table-range-border-color);
-        }
         .tabulator-range.copied {
           outline-color: var(--bks-table-range-border-color);
         }

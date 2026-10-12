@@ -1,10 +1,36 @@
 site_name: Beekeeper Studio Documentation
 site_url: https://docs.beekeeperstudio.io
+
 site_description: Beekeeper Studio user documentation - how to install, configure, and use Beekeeper Studio
 copyright: Copyright &copy; Beekeeper Studio, Inc
 repo_url: https://github.com/beekeeper-studio/beekeeper-studio
 repo_name: beekeeper-studio
 edit_uri: edit/master/docs
+
+# Fail the build on any warning (broken links, missing nav files, bad anchors...).
+# The deploy only uploads to Netlify when `mkdocs build` succeeds, so a broken link
+# can never go live. `mkdocs serve` reports the same errors while you write.
+strict: true
+
+# Make every kind of broken internal link a warning so strict mode fails on it.
+validation:
+  nav:
+    omitted_files: info
+    not_found: warn
+    absolute_links: warn
+  links:
+    not_found: warn
+    anchors: warn
+    # Resolve `/path/to/file.md` and `/assets/...` links against docs/ and validate them
+    absolute_links: relative_to_docs
+    # Relative links without a file extension, e.g. `../purchasing/license-types`
+    # instead of `../purchasing/license-types.md`, are not rewritten by MkDocs and 404
+    unrecognized_links: warn
+
+# Validates full https://docs.beekeeperstudio.io/... links, which MkDocs itself treats
+# as external. See the docstring in the hook for details.
+hooks:
+  - bin/mkdocs_hooks/check_site_links.py
 extra:
   social:
     - icon: fontawesome/brands/x-twitter

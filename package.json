@@ -23,7 +23,10 @@
     "test:e2e": "yarn workspace beekeeper-studio test:e2e",
     "test:e2e:ci": "yarn workspace beekeeper-studio test:e2e:ci",
     "test:integration": "yarn workspace beekeeper-studio test:integration",
-    "test:unit": "yarn workspace beekeeper-studio test:unit && yarn workspace @beekeeperstudio/ui-kit test:unit",
+    "test:unit": "yarn workspace beekeeper-studio test:unit && yarn workspace @beekeeperstudio/ui-kit test",
+    "vitest:unit": "yarn workspace beekeeper-studio vitest:unit",
+    "vitest:integration": "yarn workspace beekeeper-studio vitest:integration",
+    "vitest:ci": "yarn workspace beekeeper-studio vitest:ci",
     "test:ci": "yarn workspace beekeeper-studio test:ci",
     "test:codemirror": "yarn workspace beekeeper-studio test:codemirror",
     "all:lint": "yarn workspace beekeeper-studio lint",
@@ -38,6 +41,8 @@
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
   "resolutions": {
     "cpu-features": "file:./.yarn/packages/empty-package",
-    "**/axios": "^1.15.0"
+    "**/axios": "^1.15.0",
+    "node-abi": "^4.35.0",
+    "nan": "^2.28.0"
   }
 }

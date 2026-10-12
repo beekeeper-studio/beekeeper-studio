@@ -16,10 +16,10 @@
     </div>
 
     <div class="form-group" v-if="folders && folders.length > 0">
-      <label>Folder <i v-if="!isUltimate && !isCloud" class="material-icons menu-icon">stars</i></label>
+      <label>Folder</label>
       <in-app-folder-picker
         v-model="config.connectionFolderId"
-        :disabled="disabled || (!isUltimate && !isCloud)"
+        :disabled="disabled"
         folder-path="data/connectionFolders"
       />
     </div>
@@ -76,7 +76,7 @@ import InAppFolderPicker from '../common/form/InAppFolderPicker.vue'
 
 export default {
   components: { ColorPicker, InAppFolderPicker },
-  props: ['config', 'canCancel', 'selectInput', 'folders', 'isUltimate', 'isCloud', 'disabled'],
+  props: ['config', 'canCancel', 'selectInput', 'folders', 'disabled'],
   mounted(){
     if(this.selectInput) {
       const $input = this.$refs.nameInput

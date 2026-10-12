@@ -11,8 +11,9 @@
       <form
         v-kbd-trap="true"
         class="base-modal"
-        ref="baseModal"
-        @submit.prevent="$emit('submit', $event)"
+        :style="{ height }"
+        ref="form"
+        @submit.prevent="$emit('submit', $event, close)"
       >
         <div class="base-modal-header">
           <div class="base-modal-title">
@@ -28,7 +29,7 @@
           </a>
         </div>
         <div class="base-modal-body">
-          <slot :close="close" />
+          <slot :close="close" :submit="() => $refs.form.requestSubmit()" />
         </div>
         <div class="base-modal-footer" v-if="$scopedSlots.footer">
           <slot name="footer" :close="close" />
@@ -61,6 +62,7 @@ export default Vue.extend({
     },
     /** Show loading indicator */
     loading: Boolean,
+    height: String,
   },
   methods: {
     close() {
@@ -68,7 +70,7 @@ export default Vue.extend({
     },
     handleOpened() {
       const target =
-        this.$refs.baseModal.querySelector(this.firstFocusable) ??
+        this.$refs.form.querySelector(this.firstFocusable) ??
         this.$refs.closeBtn;
       target.focus();
       this.$emit("opened");
@@ -86,6 +88,7 @@ export default Vue.extend({
 }
 
 .base-modal {
+  --base-modal-footer-gap: 0.5rem;
   display: flex;
   flex-direction: column;
 }
@@ -149,14 +152,15 @@ export default Vue.extend({
 }
 
 .base-modal-body {
-  flex: 1 0 auto;
+  flex: 1 1 auto;
+  overflow-y: auto;
   width: 100%;
   padding: 0 1.2rem 0.8rem;
 }
 
 .base-modal-footer {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--base-modal-footer-gap);
   width: 100%;
   justify-content: flex-end;
   padding-inline: 1.2rem;

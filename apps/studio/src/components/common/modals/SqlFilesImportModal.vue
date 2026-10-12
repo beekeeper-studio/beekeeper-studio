@@ -1,153 +1,128 @@
 <template>
-  <modal
-    class="vue-dialog beekeeper-modal sql-files-import-modal"
+  <base-modal
     :name="modalName"
+    class="sql-files-import-modal"
+    @submit="submit"
   >
-    <div v-kbd-trap="true">
-      <div class="dialog-content">
-        <div class="dialog-c-title">
-          Import SQL Files into Saved Queries
-        </div>
-        <a
-          class="close-btn btn btn-fab"
-          href="#"
-          @click.prevent="close"
+    <template #title>
+      Import SQL Files into Saved Queries
+    </template>
+    <div v-if="!importing" class="message">
+      This will make a copy of your .sql files and add them to your Beekeeper
+      Studio saved queries. Any changes to the original .sql files will not be
+      reflected in Beekeeper Studio.
+    </div>
+    <div v-if="!importing" class="form-group">
+      <div class="form-group">
+        <label for="import-type">Import Type</label>
+        <select
+          name="importType"
+          class="form-control custom-select"
+          v-model="importType"
+          id="import-type"
         >
-          <i class="material-icons">clear</i>
-        </a>
-        <div v-if="!importing" class="message">
-          This will make a copy of your .sql files and add them to your Beekeeper
-          Studio saved queries. Any changes to the original .sql files will not be
-          reflected in Beekeeper Studio.
-        </div>
-        <div v-if="!importing" class="form-group">
-          <div class="form-group">
-            <label for="import-type">Import Type</label>
-            <select
-              name="importType"
-              class="form-control custom-select"
-              v-model="importType"
-              id="import-type"
-            >
-              <option value="single">Individual Files</option>
-              <option value="recursive">Recursive Directory*</option>
-            </select>
-          </div>
-          <template v-if="isIndividual || isUltimate">
-            <div class="form-group">
-              <label for="importFiles">{{importType === 'single' ? 'Files' : 'Directory'}}</label>
-              <file-picker
-                v-model="files"
-                :multiple="isIndividual"
-                :directory="!isIndividual"
-                :button-text="buttonText"
-                :options="dialogOptions"
-              />
-            </div>
-            <div class="form-group">
-              <label>Parent Folder</label>
-              <in-app-folder-picker
-                v-model="parentId"
-                folder-path="data/queryFolders"
-              />
-            </div>
-            <div v-if="!isIndividual" class="form-group">
-              <label class="checkbox form-row">
-                <input
-                  v-model="preserveRoot"
-                  type="checkbox"
-                >
-                Preserve Root
-                <i
-                  class="material-icons"
-                  v-tooltip="{
-                    content: `Import Root directory, otherwise import children at the root of the parent folder`
-                  }"
-                >
-                help_outlined
-                </i>
-              </label>
-            </div>
-          </template>
-          <upgrade-panel v-else
-            standalone
-            :feature-name="'Recursive Import'"
-          />
-        </div>
-        <div v-else>
-          <div v-if="!importFinished" class="importing-state">
-            <label class="importing-ellipsis">Importing</label>
-            <x-progressbar></x-progressbar>
-          </div>
-          <div v-else class="import-stats">
-            <p class="stats-summary">
-              Successfully imported
-              {{ $pluralize('directory', importStats.directories, true) }}
-              and {{ $pluralize('query', importStats.queries, true) }}
-            </p>
-            <div class="warnings">
-              <button
-                v-if="hasWarnings"
-                type="button"
-                class="warnings-toggle"
-                :aria-expanded="warningsExpanded"
-                @click="warningsExpanded = !warningsExpanded"
-              >
-                <i class="material-icons chevron">
-                  {{ warningsExpanded ? 'expand_more' : 'chevron_right' }}
-                </i>
-                <span>Generated {{ $pluralize('warning', importStats.warnings.length, true) }}</span>
-              </button>
-              <span v-else class="warnings-none">
-                Generated {{ $pluralize('warning', importStats.warnings.length, true) }}
-              </span>
-              <ul v-if="warningsExpanded" class="warnings-list">
-                <li v-for="(warning, index) in importStats.warnings" :key="index">
-                  {{ warning }}
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
+          <option value="single">Individual Files</option>
+          <option value="recursive">Recursive Directory</option>
+        </select>
       </div>
-      <div v-if="!importing" class="vue-dialog-buttons">
-        <button
-          class="btn btn-flat"
-          type="button"
-          @click="close"
-        >
-          Cancel
-        </button>
-        <button
-          class="btn btn-primary"
-          type="button"
-          :disabled="files.length === 0 || (isCloud && parentId === null)"
-          @click="submit"
-        >
-          Import
-        </button>
+      <div class="form-group">
+        <label for="importFiles">{{importType === 'single' ? 'Files' : 'Directory'}}</label>
+        <file-picker
+          v-model="files"
+          :multiple="isIndividual"
+          :directory="!isIndividual"
+          :button-text="buttonText"
+          :options="dialogOptions"
+        />
       </div>
-      <div v-else class="vue-dialog-buttons">
-        <button
-          class="btn btn-flat"
-          type="button"
-          @click="close"
-        >
-          Close
-        </button>
+      <div class="form-group">
+        <label>Parent Folder</label>
+        <in-app-folder-picker
+          v-model="parentId"
+          folder-path="data/queryFolders"
+        />
+      </div>
+      <div v-if="!isIndividual" class="form-group">
+        <label class="checkbox form-row">
+          <input
+            v-model="preserveRoot"
+            type="checkbox"
+          >
+          Preserve Root
+          <i
+            class="material-icons"
+            v-tooltip="{
+              content: `Import Root directory, otherwise import children at the root of the parent folder`
+            }"
+          >
+          help_outlined
+          </i>
+        </label>
       </div>
     </div>
-  </modal>
+    <div v-else>
+      <div v-if="!importFinished" class="importing-state">
+        <label class="importing-ellipsis">Importing</label>
+        <x-progressbar></x-progressbar>
+      </div>
+      <div v-else class="import-stats">
+        <p class="stats-summary">
+          Successfully imported
+          {{ $pluralize('directory', importStats.directories, true) }}
+          and {{ $pluralize('query', importStats.items, true) }}
+        </p>
+        <div class="warnings">
+          <button
+            v-if="hasWarnings"
+            type="button"
+            class="warnings-toggle"
+            :aria-expanded="warningsExpanded"
+            @click="warningsExpanded = !warningsExpanded"
+          >
+            <i class="material-icons chevron">
+              {{ warningsExpanded ? 'expand_more' : 'chevron_right' }}
+            </i>
+            <span>Generated {{ $pluralize('warning', importStats.warnings.length, true) }}</span>
+          </button>
+          <span v-else class="warnings-none">
+            Generated {{ $pluralize('warning', importStats.warnings.length, true) }}
+          </span>
+          <ul v-if="warningsExpanded" class="warnings-list">
+            <li v-for="(warning, index) in importStats.warnings" :key="index">
+              {{ warning }}
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <template #footer="{ close }">
+      <button
+        class="btn btn-flat"
+        type="button"
+        @click="close"
+      >
+        {{ importFinished ? "Close" : "Cancel" }}
+      </button>
+      <button
+        v-if="!importing"
+        class="btn btn-primary"
+        type="submit"
+        :disabled="files.length === 0 || (isCloud && parentId === null)"
+      >
+        Import
+      </button>
+    </template>
+  </base-modal>
 </template>
 
 <script lang="ts">
 import FilePicker from "@/components/common/form/FilePicker.vue";
 import InAppFolderPicker from "@/components/common/form/InAppFolderPicker.vue";
-import UpgradePanel from "@/components/upsell/UpgradePanel.vue";
+import BaseModal from '@/components/common/modals/BaseModal.vue'
 import { AppEvent } from "@/common/AppEvent";
 import { mapState, mapGetters } from 'vuex'
 import _ from 'lodash';
-import { IDirectoryImportStats } from '@/common/interfaces/IDirectoryImportStats';
+import { IObjectImportStats } from '@/common/interfaces/IObjectImportStats';
 import rawLog from '@bksLogger';
 
 const log = rawLog.scope('SqlFilesImport')
@@ -156,7 +131,7 @@ export default {
   components: {
     FilePicker,
     InAppFolderPicker,
-    UpgradePanel
+    BaseModal
   },
   props: ["name"],
   data() {
@@ -173,7 +148,7 @@ export default {
   },
   computed: {
     ...mapState('data/queryFolders', {'folders': 'items'}),
-    ...mapGetters(["isCloud", "isUltimate"]),
+    ...mapGetters(["isCloud"]),
     modalName() {
       return this.name || "sql-files-import";
     },
@@ -218,28 +193,12 @@ export default {
     close() {
       this.$modal.hide(this.modalName);
     },
-    submit() {
-      if (this.importType === 'single') {
-        const files = _.isArray(this.files) ? this.files : [this.files];
-        const config = {
-          parentId: this.parentId,
-          paths: files
-        };
-        this.$emit("submit", config);
-        this.close();
-      } else {
-        this.importDirectory();
-      }
-    },
-    async importDirectory() {
+    async submit() {
       this.importing = true;
-      const dir = _.isArray(this.files) ? this.files[0] : this.files;
       try {
-        const stats: IDirectoryImportStats = await this.$util.send('workspace/importDirectory', {
-          dir,
-          parentId: this.parentId,
-          preserveRoot: this.preserveRoot
-        });
+        const stats: IObjectImportStats = this.importType === 'single' ?
+          await this.importSelection() :
+          await this.importDirectory();
 
         await this.$store.dispatch('refreshQueries');
 
@@ -250,6 +209,22 @@ export default {
         log.error(e);
         this.close();
       }
+    },
+    async importSelection() {
+      const files = _.isArray(this.files) ? this.files : [this.files];
+
+      return await this.$util.send('workspace/importQueries', {
+        paths: files,
+        parentId: this.parentId
+      });
+    },
+    async importDirectory() {
+      const dir = _.isArray(this.files) ? this.files[0] : this.files;
+      return await this.$util.send('workspace/importQueryDirectory', {
+        dir,
+        parentId: this.parentId,
+        preserveRoot: this.preserveRoot
+      });
     }
   },
   mounted() {

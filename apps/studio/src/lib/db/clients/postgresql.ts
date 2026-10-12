@@ -3,7 +3,6 @@
 import { readFileSync } from 'fs';
 
 import pg, { QueryResult as PgQueryResult, QueryArrayResult as PgQueryArrayResult, FieldDef, PoolConfig, PoolClient } from 'pg';
-import { identify } from 'sql-query-identifier';
 import _ from 'lodash'
 import knexlib from 'knex'
 import logRaw from '@bksLogger'

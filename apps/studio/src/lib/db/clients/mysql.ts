@@ -28,7 +28,6 @@ import {
 import { MysqlCursor } from "./mysql/MySqlCursor";
 import {createCancelablePromise} from "@/common/utils";
 import { errors } from "@/lib/errors";
-import { identify } from "sql-query-identifier";
 import { MySqlChangeBuilder } from "@shared/lib/sql/change_builder/MysqlChangeBuilder";
 import { AlterTableSpec, IndexColumn, TableKey } from "@shared/lib/dialects/models";
 import { MysqlData } from "@shared/lib/dialects/mysql";
@@ -133,93 +132,6 @@ const FieldFlags = {
   BINARY: 128,
 };
 
-async function configDatabase(
-  server: IDbConnectionServer,
-  database: IDbConnectionDatabase
-): Promise<mysql.PoolOptions> {
-
-  let iamToken = undefined;
-  if(server.config.iamAuthOptions?.iamAuthenticationEnabled){
-      iamToken = await refreshTokenIfNeeded(server.config?.iamAuthOptions, server, server.config.port || 5432)
-  }
-
-  const config: mysql.PoolOptions = {
-    authPlugins: {
-      'client_ed25519': ed25519AuthPlugin(),
-    },
-    host: server.config.host,
-    port: server.config.port,
-    user: server.config.user,
-    password: iamToken || server.config.password || undefined,
-    database: database.database,
-    multipleStatements: true,
-    dateStrings: true,
-    supportBigNumbers: true,
-    bigNumberStrings: true,
-    connectionLimit: BksConfig.db.mysql.maxConnections,
-    connectTimeout: BksConfig.db.mysql.connectTimeout,
-  };
-
-  if (server.config.azureAuthOptions?.azureAuthEnabled) {
-    const authService = new AzureAuthService();
-    return authService.configDB(server, config)
-  }
-
-  if (server.config.socketPathEnabled) {
-    config.socketPath = server.config.socketPath;
-    config.host = null;
-    config.port = null;
-    return config;
-  }
-
-  if (server.sshTunnel) {
-    config.host = server.config.localHost;
-    config.port = server.config.localPort;
-  }
-
-  if (
-    server.config.iamAuthOptions?.iamAuthenticationEnabled
-  ){
-    server.config.ssl = true
-  }
-
-  if (server.config.ssl) {
-    config.ssl = {};
-
-    if (server.config.sslCaFile) {
-      /* eslint-disable-next-line */
-      // @ts-ignore
-      config.ssl.ca = readFileSync(server.config.sslCaFile);
-    }
-
-    if (server.config.sslCertFile) {
-      /* eslint-disable-next-line */
-      // @ts-ignore
-      config.ssl.cert = readFileSync(server.config.sslCertFile);
-    }
-
-    if (server.config.sslKeyFile) {
-      /* eslint-disable-next-line */
-      // @ts-ignore
-      config.ssl.key = readFileSync(server.config.sslKeyFile);
-    }
-
-    if (!config.ssl.key && !config.ssl.ca && !config.ssl.cert) {
-      // TODO: provide this as an option in settings
-      // or per-connection as 'reject self-signed certs'
-      // How it works:
-      // if false, cert can be self-signed
-      // if true, has to be from a public CA
-      // Heroku certs are self-signed.
-      // if you provide ca/cert/key files, it overrides this
-      config.ssl.rejectUnauthorized = false;
-    } else {
-      config.ssl.rejectUnauthorized = server.config.sslRejectUnauthorized;
-    }
-  }
-
-  return config;
-}
 
 function isMultipleQuery(fields: any[]) {
   if (!fields) {
@@ -315,7 +227,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
 
   async connect() {
     await super.connect();
-    const dbConfig = await configDatabase(this.server, this.database);
+    const dbConfig = await this.configDatabase(this.server, this.database);
     logger().debug("create driver client for mysql with config %j", dbConfig);
 
     this.conn = {
@@ -347,6 +259,95 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
 
 
     this.versionInfo = await this.getVersion();
+  }
+
+  async configDatabase(
+    server: IDbConnectionServer,
+    database: IDbConnectionDatabase
+  ): Promise<mysql.PoolOptions> {
+
+    let iamToken = undefined;
+    if(server.config.iamAuthOptions?.iamAuthenticationEnabled){
+        iamToken = await refreshTokenIfNeeded(server.config?.iamAuthOptions, server, server.config.port || 5432)
+    }
+
+    const config: mysql.PoolOptions = {
+      authPlugins: {
+        'client_ed25519': ed25519AuthPlugin(),
+      },
+      host: server.config.host,
+      port: server.config.port,
+      user: server.config.user,
+      password: iamToken || server.config.password || undefined,
+      database: database.database,
+      multipleStatements: true,
+      dateStrings: true,
+      supportBigNumbers: true,
+      bigNumberStrings: true,
+      enableCleartextPlugin: server.config.options?.enableClearText,
+      connectionLimit: BksConfig.db[this.connectionType].maxConnections ?? BksConfig.db.mysql.maxConnections,
+      connectTimeout: BksConfig.db[this.connectionType].connectTimeout ?? BksConfig.db.mysql.connectTimeout,
+    };
+
+    if (server.config.azureAuthOptions?.azureAuthEnabled) {
+      const authService = new AzureAuthService();
+      return authService.configDB(server, config)
+    }
+
+    if (server.config.socketPathEnabled) {
+      config.socketPath = server.config.socketPath;
+      config.host = null;
+      config.port = null;
+      return config;
+    }
+
+    if (server.sshTunnel) {
+      config.host = server.config.localHost;
+      config.port = server.config.localPort;
+    }
+
+    if (
+      server.config.iamAuthOptions?.iamAuthenticationEnabled
+    ){
+      server.config.ssl = true
+    }
+
+    if (server.config.ssl) {
+      config.ssl = {};
+
+      if (server.config.sslCaFile) {
+        /* eslint-disable-next-line */
+        // @ts-ignore
+        config.ssl.ca = readFileSync(server.config.sslCaFile);
+      }
+
+      if (server.config.sslCertFile) {
+        /* eslint-disable-next-line */
+        // @ts-ignore
+        config.ssl.cert = readFileSync(server.config.sslCertFile);
+      }
+
+      if (server.config.sslKeyFile) {
+        /* eslint-disable-next-line */
+        // @ts-ignore
+        config.ssl.key = readFileSync(server.config.sslKeyFile);
+      }
+
+      if (!config.ssl.key && !config.ssl.ca && !config.ssl.cert) {
+        // TODO: provide this as an option in settings
+        // or per-connection as 'reject self-signed certs'
+        // How it works:
+        // if false, cert can be self-signed
+        // if true, has to be from a public CA
+        // Heroku certs are self-signed.
+        // if you provide ca/cert/key files, it overrides this
+        config.ssl.rejectUnauthorized = false;
+      } else {
+        config.ssl.rejectUnauthorized = server.config.sslRejectUnauthorized;
+      }
+    }
+
+    return config;
   }
 
   async disconnect() {

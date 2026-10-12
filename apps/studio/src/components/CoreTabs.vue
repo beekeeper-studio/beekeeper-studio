@@ -288,7 +288,7 @@
       </template>
     </confirmation-modal>
 
-    <sql-files-import-modal @submit="importSqlFiles" />
+    <sql-files-import-modal />
     <create-collection-modal />
   </div>
 </template>
@@ -377,12 +377,18 @@ export default Vue.extend({
     }
   },
   watch: {
-    async usedConfig() {
-      await this.$store.dispatch('tabs/load')
-      if (!this.tabItems?.length) {
-        await this.createQuery()
+    // immediate: usedConfig is committed before the interface flips to
+    // connected, so it is already set when this component mounts
+    usedConfig: {
+      immediate: true,
+      async handler() {
+        if (!this.usedConfig) return
+        await this.$store.dispatch('tabs/load')
+        if (!this.tabItems?.length) {
+          await this.createQuery()
+        }
+        wait(800).then(() => this.$tour.start("connectedScreen"));
       }
-      wait(800).then(() => this.$tour.start("connectedScreen"));
     }
   },
   filters: {
@@ -539,8 +545,8 @@ export default Vue.extend({
           this.$noty.error(notificationMessage, {
             timeout: 3500,
             callbacks: {
-              onClick: () => {
-                this.$native.clipboard.writeText(notificationMessage)
+              onClick: async () => {
+                await this.$native.clipboard.writeText(notificationMessage)
               },
             },
           })
@@ -918,72 +924,6 @@ export default Vue.extend({
       }
 
       noty.close()
-    },
-    async importSqlFiles(importConfig: { paths: string[], parentId: number }) {
-      const { paths, parentId } = importConfig;
-      const files = paths.map((path) => ({
-        path,
-        name: path.replace(/^.*[\\/]/, '').replace(/\.sql$/, ''),
-        error: false,
-      }))
-
-      let readerAbort: () => void;
-      let aborted  = false;
-
-      function abort() {
-        if (typeof readerAbort === 'function') {
-          readerAbort()
-        }
-        aborted = true
-      }
-
-      const notyQueue = 'load-queries'
-      const notyText = `Loading <span class="counter">1</span> of ${files.length} files`
-
-      const noty = this.$noty.info(notyText,  {
-        queue: notyQueue,
-        allowRawHtml: true,
-        buttons: [
-          Noty.button('Abort', 'btn btn-danger', abort)
-        ],
-      })
-
-      const counter = noty.barDom.querySelector('.counter')
-
-      for (let i = 0; i < files.length; i++) {
-        if (aborted) {
-          break
-        }
-
-        const file = files[i]
-
-        counter.textContent = `${i + 1}`
-
-        try {
-          // TODO (azmi): this process can take longer by accident. Consider
-          // an ability to cancel reading file.
-          const text = await this.$util.send('file/readSqlFile', { path: file.path })
-          if (text) {
-            const query = await this.$util.send('appdb/query/new');
-            query.title = file.name
-            query.text = text
-            query.queryFolderId = parentId
-            await this.$store.dispatch('data/queries/save', query)
-          } else {
-            files[i].error = true
-          }
-        } catch (e) {
-            files[i].error = true
-        }
-      }
-
-      if (aborted) {
-        this.$noty.info('Loading aborted', { killer: notyQueue })
-      } else if (files.some(({ error }) => error)) {
-        this.$noty.error('Some files could not be loaded', { killer: notyQueue })
-      } else {
-        this.$noty.success('All files loaded', { killer: notyQueue })
-      }
     },
     async handlePromptQueryExport(query) {
       const safeFilename = query.title.replace(/[/\\?%*:|"<>]/g, '_');

@@ -12,7 +12,7 @@ test.describe("App Launch", () => {
         window = await electronApp.firstWindow();
         const newDatabaseConnection = new NewDatabaseConnection(window);
 
-        await expect(newDatabaseConnection.newConnectionDropdown).toBeVisible();
+        await expect(newDatabaseConnection.newConnectionButton).toBeVisible();
 
         await electronApp.close();
     });

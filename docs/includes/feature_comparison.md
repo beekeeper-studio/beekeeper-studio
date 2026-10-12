@@ -4,7 +4,7 @@
 | :------ | :-------: | :---: | :----------: | :------: |
 | Secure TLS/SSL Connections | ✅ | ✅ | ✅ | ✅ |
 | SSH Tunnels | ✅ | ✅ | ✅ | ✅ |
-| Read Only Mode | ❌ | ✅ | ✅ | ✅ |
+| Read Only Mode | ✅ | ✅ | ✅ | ✅ |
 | Amazon IAM | ❌ | ❌ | ✅ | ✅ |
 | Azure Web SSO | ❌ | ❌ | ✅ | ✅ |
 | Azure cli generated credentials | ❌ | ❌ | ❌ | ✅ |
@@ -18,10 +18,10 @@
 | View & Edit Data | ✅ | ✅ | ✅ | ✅ |
 | Quick filters | ✅ | ✅ | ✅ | ✅ |
 | Single Table Export | ✅ | ✅ | ✅ | ✅ |
+| <span title="Organize saved connections and queries into nested folders">Folders for connections & queries</span> | ✅ | ✅ | ✅ | ✅ |
 | 3+ Table filters | ❌ | ✅ | ✅ | ✅ |
 | View Rows As JSON | ❌ | ✅ | ✅ | ✅ |
 | AI Integration | ❌ | ✅ | ✅ | ✅ |
-| <span title="Organize saved connections and queries into nested folders">Folders for connections & queries</span> | ❌ | ❌ | ✅ | ✅ |
 | CSV To Table Import | ❌ | ❌ | ✅ | ✅ |
 | Multi Table Export | ❌ | ❌ | ✅ | ✅ |
 | Native Backup & Restore | ❌ | ❌ | ✅ | ✅ |

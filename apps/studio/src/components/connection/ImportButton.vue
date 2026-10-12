@@ -1,8 +1,11 @@
 <template>
   <div class="import-button">
     <a
-      class="btn btn-link btn-small"
-      :class="{ disabled }"
+      class="btn"
+      :class="[
+        variant === 'flat' ? 'btn-flat' : 'btn-link btn-small',
+        { disabled }
+      ]"
       @click.prevent="!disabled && $modal.show('import-modal')"
       href="#"
     ><slot /></a>
@@ -66,6 +69,10 @@ export default {
       disabled: {
         type: Boolean,
         default: false
+      },
+      variant: {
+        type: String,
+        default: "small-link"
       }
     },
     data() {

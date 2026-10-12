@@ -5,7 +5,7 @@ import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, Ex
 import { DatabaseElement, IDbConnectionDatabase } from "../types";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient";
 import knexlib from 'knex';
-import Client from 'knex/lib/client';
+import Client from 'knex/lib/client.js';
 import { BigQueryClient as BigQueryKnexClient } from '@shared/lib/knex-bigquery';
 import { BigQueryChangeBuilder } from "@shared/lib/sql/change_builder/BigQueryChangeBuilder";
 import platformInfo from "@/common/platform_info";

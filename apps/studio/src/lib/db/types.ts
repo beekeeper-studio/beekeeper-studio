@@ -60,7 +60,7 @@ export const ConnectionTypes = [
   { name: 'Bedrock', value: 'bedrock' },
   { name: 'DynamoDB', value: 'dynamodb' },
   { name: 'Snowflake', value: 'snowflake' }
-]
+] as const satisfies { name: string; value: ConnectionType }[]
 
 /** `value` should be recognized by codemirror */
 export const keymapTypes = [

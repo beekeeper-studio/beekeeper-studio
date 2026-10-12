@@ -64,3 +64,38 @@ describe("cellFormatter", () => {
   })
 
 })
+
+describe("binary cell rendering", () => {
+
+  const bigBinary = new Uint8Array(5 * 1024 * 1024)
+  bigBinary[0] = 0xde
+  bigBinary[1] = 0xad
+
+  const makeCell = (value, params = {}) => ({
+    getValue: () => value,
+    getElement: () => document.createElement('a'),
+    getColumn: () => ({ getDefinition: () => ({ binaryEncoding: 'hex', ...params }) }),
+  })
+
+  const hexOf = (bytes) => Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('')
+
+  it('cellFormatter truncates large binaries to 256 chars', () => {
+    const formatted = mutators.methods.cellFormatter(makeCell(bigBinary), { binaryEncoding: 'hex' })
+    const content = formatted.replace(/^<pre>/, '').replace(/<\/pre>$/, '')
+
+    expect(content.length).toBeLessThanOrEqual(256)
+    expect(content.endsWith('...')).toBe(true)
+    expect(content.startsWith(hexOf(bigBinary.subarray(0, 126)))).toBe(true)
+  })
+
+  it('cellFormatter renders small binaries in full', () => {
+    expect(mutators.methods.cellFormatter(makeCell(new Uint8Array([1, 2])), { binaryEncoding: 'hex' })).toBe('<pre>0102</pre>')
+  })
+
+  it('cellTooltip previews large binaries without full conversion', () => {
+    const tooltip = mutators.methods.cellTooltip(null, makeCell(bigBinary))
+
+    // lodash truncate with length 15 keeps 12 chars + '...' omission
+    expect(tooltip).toBe(`${hexOf(bigBinary.subarray(0, 6))}... (as hex string)`)
+  })
+})

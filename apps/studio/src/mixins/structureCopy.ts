@@ -11,10 +11,10 @@ import {
 export const StructureCopyMixin = {
   methods: {
     /** Copies the grid as filtered and sorted on screen. */
-    copyStructure(format: StructureCopyFormat) {
+    async copyStructure(format: StructureCopyFormat) {
       if (!this.tabulator) return;
       const columns = tabulatorStructureColumns(this.tabulator);
-      this.$native.clipboard.writeText(
+      await this.$native.clipboard.writeText(
         formatStructure(this.tabulator.getData("active"), columns, format)
       );
     },

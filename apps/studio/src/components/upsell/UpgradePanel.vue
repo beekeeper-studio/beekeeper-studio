@@ -64,7 +64,6 @@ const PAID_FEATURES: Feature[] = [
   { label: 'Unlimited table filters' },
   { label: 'JSON row view' },
   { label: 'Cloud sync' },
-  { label: 'Connection folders' },
   { label: '10 more databases' },
   { label: '…and much more' },
 ]

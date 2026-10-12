@@ -11,6 +11,7 @@ import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicD
 import { identify } from "sql-query-identifier";
 import { IdentifyResult, Statement } from "sql-query-identifier/lib/defines";
 import * as path from 'path';
+import * as fs from 'fs';
 import _ from 'lodash';
 import { SqliteCursor } from "./sqlite/SqliteCursor";
 import { createSQLiteKnex } from "./sqlite/utils";
@@ -88,6 +89,13 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
   async connect(): Promise<void> {
     await super.connect();
+
+    // better-sqlite3 silently creates missing files, which turns a typo'd or
+    // deleted path into a "successful" connection to an empty database.
+    // Creating new databases is handled explicitly via createDatabase.
+    if (!this.isTempDB && !fs.existsSync(this.databasePath)) {
+      throw new Error(`Database file not found: ${this.databasePath}`);
+    }
 
     // verify that the connection is valid
     await this.driverExecuteSingle('PRAGMA schema_version', { overrideReadonly: true });

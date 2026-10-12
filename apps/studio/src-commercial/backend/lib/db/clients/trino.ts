@@ -7,7 +7,7 @@ import {
   QueryResult,
   ConnectionOptions as TrinoConnectionOptions,
   SecureContextOptions
-} from 'trino-client'
+} from '@trinodb/trino-js-client'
 import {
   BaseQueryResult,
   BasicDatabaseClient,
@@ -111,7 +111,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
       server: url,
       catalog: this.database.database
     }
-    
+
     if (this.server.config.ssl) {
       const sslOptions: SecureContextOptions = {}
 

@@ -32,12 +32,26 @@ describe('FriendlyErrorHelper', () => {
       expect(result).toBeNull()
     })
 
-    it('returns help text for SQL Server self-signed certificate error', () => {
-      const error = new Error('Connection error: self signed certificate')
+    it('returns help text and link for an integrated-auth ODBC driver error', () => {
+      const error = new Error('Connection error: ODBC Driver not found')
       const result = FriendlyErrorHelper.getHelpText('sqlserver', error)
       expect(result).not.toBeNull()
-      expect(result.help).toBe("You might need to check 'Trust Server Certificate'")
-      expect(result.link).toBeUndefined()
+      expect(result.help).toContain('ODBC Driver 18 for SQL Server')
+      expect(result.link).toBe('https://docs.beekeeperstudio.io/user_guide/connecting/sql-server/')
+    })
+
+    // Certificate failures are classified in sqlserver.ts and arrive with the remedy already
+    // in the message, so this side contributes the docs link only -- help text here would
+    // print the advice twice in ErrorAlert.
+    it('adds a link but no help text to a message the driver already annotated', () => {
+      const error = new Error(
+        'Failed to connect to localhost:14330 - self signed certificate. The server presented ' +
+        'a self-signed certificate. Enable "Trust Server Certificate" in the SQL Server ' +
+        'options, or configure the server with a certificate the OS trusts.'
+      )
+      const result = FriendlyErrorHelper.getHelpText('sqlserver', error)
+      expect(result.help).toBeUndefined()
+      expect(result.link).toBe('https://docs.beekeeperstudio.io/user_guide/connecting/sql-server/#certificates')
     })
 
     it('returns help text and link for SQL Server login failed error', () => {
@@ -57,23 +71,22 @@ describe('FriendlyErrorHelper', () => {
     })
 
     it('matches partial error messages', () => {
-      const error = new Error('Failed to connect: self signed certificate detected in the connection')
+      const error = new Error('Failed to connect: kerberos ticket could not be acquired')
       const result = FriendlyErrorHelper.getHelpText('sqlserver', error)
       expect(result).not.toBeNull()
-      expect(result.help).toBe("You might need to check 'Trust Server Certificate'")
-      expect(result.link).toBeUndefined()
+      expect(result.help).toContain('Kerberos authentication failed')
     })
     
     it('handles errors with message property other than string', () => {
       // In rare cases, an error object might have a non-string message property
-      const customError = { message: { toString: () => 'self signed certificate' } } as unknown as Error
+      const customError = { message: { toString: () => 'kerberos' } } as unknown as Error
       const result = FriendlyErrorHelper.getHelpText('sqlserver', customError)
       expect(result).toBeNull() // Since we're expecting a string message, this should return null
     })
     
     it('returns the first matching pattern when multiple patterns match', () => {
       // Let's create a complex error message that could match multiple patterns
-      const error = new Error('Login failed for user <token-identified principal> due to self signed certificate')
+      const error = new Error('Login failed for user <token-identified principal> during kerberos negotiation')
       const result = FriendlyErrorHelper.getHelpText('sqlserver', error)
       expect(result).not.toBeNull()
       // It should match the first pattern in the errorMappings array for sqlserver
