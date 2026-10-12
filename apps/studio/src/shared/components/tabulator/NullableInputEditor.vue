@@ -66,35 +66,35 @@ export default Vue.extend({
       } else if (e.key === 'Enter') {
         // WHY: Without this we re-enter the editor right away
         e.stopImmediatePropagation()
-        this.submit()
+        this.submit(e)
       } else if (e.key === 'Tab') {
         // FIXME: Tab and enter should both submit AND then move
         // the selected cell, currently only tab does this.
 
-        this.$emit('value', this.value)
+        this.$emit('value', this.value, e)
       } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-        this.submit()
+        this.submit(e)
       } else if (e.key === 'Escape') {
-        this.$emit('cancel')
+        this.$emit('cancel', e)
       } else {
         this.everEdited = true
       }
     },
-    onBlur() {
-      log.debug('blur, not submitting')
-      this.$emit('cancel')
+    onBlur(e) {
+      log.debug('blur, not submitting', e)
+      this.$emit('cancel', e)
     },
-    submit() {
+    submit(event) {
       log.debug('nullable submitted')
       // some cases we always want null, never empty string
       if (this.params.allowEmpty === false && _.isEmpty(this.value)) {
-        this.$emit('value', null)
+        this.$emit('value', null, event)
       } else if (this.params.preserveObject) {
         try {
-          this.$emit('value', JSON.parse(this.value))
+          this.$emit('value', JSON.parse(this.value), event)
         } catch (e) {
           const updateAnyway = this.params.onPreserveObjectFail?.(this.value)
-          updateAnyway && this.$emit('value', this.value)
+          updateAnyway && this.$emit('value', this.value, event)
         }
       } else {
         let emitValue = this.value
@@ -104,16 +104,16 @@ export default Vue.extend({
           log.error('Failed to parse value', this.value, e)
           this.$noty.error('Failed to parse value')
         } finally {
-          this.$emit('value', emitValue)
+          this.$emit('value', emitValue, event)
         }
       }
 
     },
-    clear() {
+    clear(e) {
       this.typeEditorActive = false
       // nullifyInput is listened to by any slots which will then nullify the value and go through the whole submission process. Not having the below line caused sadness
       this.$emit('nullifyInput')
-      this.$emit('value', null)
+      this.$emit('value', null, e)
     },
     parseValue() {
       const typeHint = this.params.typeHint;
