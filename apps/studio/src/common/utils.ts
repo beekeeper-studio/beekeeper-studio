@@ -139,25 +139,20 @@ export function joinFilters(filters: string[], ops: TableFilter[] = []): string 
 }
 
 /**
- * Split the value of an IN filter into its values. Accepts plain comma
- * separated values (`foo, bar`) as well as SQL IN list syntax, as produced by
- * "Copy for IN statement": wrapped in parentheses, with single-quoted strings
- * that escape quotes by doubling them (`('foo', 'it''s', 'a,b')`). Also
- * accepts a JSON array (`["foo", "bar"]`), eg copied from the JSON sidebar.
+ * Split the value of an IN filter into its values. Accepts:
+ * - plain comma separated values: `foo, bar`
+ * - SQL IN list syntax, as produced by "Copy for IN statement", with
+ *   single-quoted strings that escape quotes by doubling them:
+ *   `('foo', 'it''s', 'a,b')`
+ * - a JSON array, or lines selected from one, eg in the JSON sidebar:
+ *   `["foo", "a,b"]` or `"foo",\n"bar",`
  */
 export function parseInFilterValue(text: string): string[] {
   let input = text.trim();
-  if (input.startsWith('[')) {
-    try {
-      const parsed = JSON.parse(input);
-      if (Array.isArray(parsed)) {
-        return parsed.map((v) => typeof v === 'string' ? v : JSON.stringify(v));
-      }
-    } catch {
-      // Not JSON, parse it as an IN list
-    }
-  }
-  if (input.startsWith('(') && input.endsWith(')')) {
+  if (
+    (input.startsWith('(') && input.endsWith(')')) ||
+    (input.startsWith('[') && input.endsWith(']'))
+  ) {
     input = input.slice(1, -1).trim();
   }
 
@@ -166,20 +161,22 @@ export function parseInFilterValue(text: string): string[] {
   const items: string[] = [];
   let start = 0;
   let atItemStart = true;
-  let inQuote = false;
+  let quote: string = null;
   for (let i = 0; i < input.length; i++) {
     const char = input[i];
-    if (inQuote) {
-      if (char === "'") {
-        if (input[i + 1] === "'") i++;
-        else inQuote = false;
+    if (quote) {
+      if (quote === '"' && char === '\\') {
+        i++;
+      } else if (char === quote) {
+        if (quote === "'" && input[i + 1] === "'") i++;
+        else quote = null;
       }
     } else if (char === ',') {
       items.push(input.slice(start, i));
       start = i + 1;
       atItemStart = true;
-    } else if (atItemStart && char === "'") {
-      inQuote = true;
+    } else if (atItemStart && (char === "'" || char === '"')) {
+      quote = char;
       atItemStart = false;
     } else if (!/\s/.test(char)) {
       atItemStart = false;
@@ -187,13 +184,25 @@ export function parseInFilterValue(text: string): string[] {
   }
 
   // Unterminated quote, treat everything as plain values
-  if (inQuote) return input.split(/\s*,\s*/);
+  if (quote) return input.split(/\s*,\s*/);
 
   items.push(input.slice(start));
+  // Ignore a trailing comma, eg after lines selected from a JSON array
+  if (items.length > 1 && !items[items.length - 1].trim()) items.pop();
+
   return items.map((item) => {
-    const trimmed = item.trim();
-    const quoted = trimmed.match(/^'((?:[^']|'')*)'$/);
-    return quoted ? quoted[1].replace(/''/g, "'") : trimmed;
+    const value = item.trim();
+    if (/^'(?:[^']|'')*'$/.test(value)) {
+      return value.slice(1, -1).replace(/''/g, "'");
+    }
+    if (/^"(?:[^"\\]|\\.)*"$/.test(value)) {
+      try {
+        return JSON.parse(value);
+      } catch {
+        // Invalid JSON escape, use the value as typed
+      }
+    }
+    return value;
   });
 }
 

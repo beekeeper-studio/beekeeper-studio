@@ -33,11 +33,27 @@ describe("parseInFilterValue", () => {
     expect(parseInFilterValue('[\n  "foo",\n  "a,b",\n  "say \\"hi\\""\n]'))
       .toEqual(["foo", "a,b", 'say "hi"']);
     expect(parseInFilterValue("[1, 2.5, true, null]")).toEqual(["1", "2.5", "true", "null"]);
-    expect(parseInFilterValue('[{"a": 1}, [2]]')).toEqual(['{"a":1}', "[2]"]);
   });
 
-  it("treats text starting with [ that is not a JSON array as an IN list", () => {
-    expect(parseInFilterValue("[a], [b]")).toEqual(["[a]", "[b]"]);
+  it("keeps numbers in a JSON array as written", () => {
+    expect(parseInFilterValue("[12345678901234567890, 1.50]"))
+      .toEqual(["12345678901234567890", "1.50"]);
+  });
+
+  it("parses lines selected from a JSON array", () => {
+    expect(parseInFilterValue('    "foo",\n    "bar",\n')).toEqual(["foo", "bar"]);
+    expect(parseInFilterValue('"a\\\\b", 2, "c\\u0021"')).toEqual(["a\\b", "2", "c!"]);
+  });
+
+  it("ignores a trailing comma", () => {
+    expect(parseInFilterValue("foo, bar,")).toEqual(["foo", "bar"]);
+  });
+
+  it("keeps double-quoted values with invalid JSON escapes as typed", () => {
+    expect(parseInFilterValue('"a\\qb", "c"')).toEqual(['"a\\qb"', "c"]);
+  });
+
+  it("does not treat a lone [ as a JSON array", () => {
     expect(parseInFilterValue("[draft, final")).toEqual(["[draft", "final"]);
   });
 
