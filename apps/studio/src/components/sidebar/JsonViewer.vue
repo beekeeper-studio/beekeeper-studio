@@ -83,7 +83,7 @@ import {
   createExpandableTextDecoration,
   createTruncatableTextDecoration,
   deepFilterObjectProps,
-  eachPaths,
+  eachPath,
   binaryBufferOf,
 } from "@/lib/data/jsonViewer";
 import { mapGetters } from "vuex";
@@ -225,7 +225,7 @@ export default Vue.extend({
       const truncated = new Set(this.truncatedPaths)
 
       if (truncated.size > 0) {
-        eachPaths(processed, (path, value) => {
+        eachPath(processed, (path, value) => {
           if (truncated.has(path) && typeof value === "string") {
             _.set(processed, path, value.slice(0, globals.maxDetailViewTextLength))
           }
@@ -244,12 +244,12 @@ export default Vue.extend({
       return processed
     },
     truncatablePaths() {
-      // eachPaths already hands us the value for each path, so use it directly.
+      // eachPath already hands us the value for each path, so use it directly.
       // Resolving it again with _.get would re-parse every dotted path string
       // and re-walk the object from the root -- by far the most expensive thing
       // this component used to do.
       const paths: string[] = []
-      eachPaths(this.value, (path, value) => {
+      eachPath(this.value, (path, value) => {
         if (this.isTruncatable(value)) {
           paths.push(path)
         }

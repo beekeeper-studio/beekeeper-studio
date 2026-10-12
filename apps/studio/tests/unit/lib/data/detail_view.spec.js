@@ -4,7 +4,7 @@ import {
   deepFilterObjectProps,
   findKeyPosition,
   findValueInfo,
-  eachPaths,
+  eachPath,
   getPaths,
   binaryBufferOf,
   parseRowDataForJsonViewer
@@ -122,7 +122,7 @@ describe("Detail View", () => {
       "b.d.e",
     ]
     const result = []
-    eachPaths(obj, (path,val) => {
+    eachPath(obj, (path,val) => {
       result.push(path)
     })
     expect(result).toStrictEqual(expected)
@@ -265,7 +265,7 @@ describe("Detail View", () => {
     it("should hand the typed array itself to the callback", () => {
       const blob = new Uint8Array([1, 2, 3, 4]);
       const seen = {};
-      eachPaths({ id: 1, blob }, (path, value) => {
+      eachPath({ id: 1, blob }, (path, value) => {
         seen[path] = value;
       });
 

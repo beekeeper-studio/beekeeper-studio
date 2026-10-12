@@ -129,7 +129,7 @@ export function deepFilterObjectProps(
  **/
 export function getPaths(obj: Record<string, any>) {
   const keys = [];
-  eachPaths(obj, (path) => keys.push(path));
+  eachPath(obj, (path) => keys.push(path));
   return keys;
 }
 
@@ -158,7 +158,7 @@ export function binaryBufferOf(value: unknown): ArrayBufferView | null {
  * `isObject` and not `isArray`, so without this it would recurse once per byte
  * -- a megabyte blob produced a million path strings.
  **/
-export function eachPaths(
+export function eachPath(
   obj: Record<string, any>,
   fn: (path: string, value: Value | Value[]) => void,
   currentPath = ''
@@ -170,7 +170,7 @@ export function eachPaths(
 
     if (_.isObject(value) && !_.isArray(value) && !binaryBufferOf(value)) {
       // Recurse if the value is an object
-      eachPaths(value, fn, newPath);
+      eachPath(value, fn, newPath);
     } else {
       // Apply the callback function on the current path and value
       fn(newPath, value);
