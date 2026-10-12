@@ -29,6 +29,18 @@ describe("parseInFilterValue", () => {
     expect(parseInFilterValue("O'Brien, Smith")).toEqual(["O'Brien", "Smith"]);
   });
 
+  it("parses a JSON array", () => {
+    expect(parseInFilterValue('[\n  "foo",\n  "a,b",\n  "say \\"hi\\""\n]'))
+      .toEqual(["foo", "a,b", 'say "hi"']);
+    expect(parseInFilterValue("[1, 2.5, true, null]")).toEqual(["1", "2.5", "true", "null"]);
+    expect(parseInFilterValue('[{"a": 1}, [2]]')).toEqual(['{"a":1}', "[2]"]);
+  });
+
+  it("treats text starting with [ that is not a JSON array as an IN list", () => {
+    expect(parseInFilterValue("[a], [b]")).toEqual(["[a]", "[b]"]);
+    expect(parseInFilterValue("[draft, final")).toEqual(["[draft", "final"]);
+  });
+
   it("falls back to plain splitting on an unterminated quote", () => {
     expect(parseInFilterValue("'foo, bar")).toEqual(["'foo", "bar"]);
   });

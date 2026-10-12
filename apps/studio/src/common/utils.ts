@@ -142,10 +142,21 @@ export function joinFilters(filters: string[], ops: TableFilter[] = []): string 
  * Split the value of an IN filter into its values. Accepts plain comma
  * separated values (`foo, bar`) as well as SQL IN list syntax, as produced by
  * "Copy for IN statement": wrapped in parentheses, with single-quoted strings
- * that escape quotes by doubling them (`('foo', 'it''s', 'a,b')`).
+ * that escape quotes by doubling them (`('foo', 'it''s', 'a,b')`). Also
+ * accepts a JSON array (`["foo", "bar"]`), eg copied from the JSON sidebar.
  */
 export function parseInFilterValue(text: string): string[] {
   let input = text.trim();
+  if (input.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(input);
+      if (Array.isArray(parsed)) {
+        return parsed.map((v) => typeof v === 'string' ? v : JSON.stringify(v));
+      }
+    } catch {
+      // Not JSON, parse it as an IN list
+    }
+  }
   if (input.startsWith('(') && input.endsWith(')')) {
     input = input.slice(1, -1).trim();
   }
