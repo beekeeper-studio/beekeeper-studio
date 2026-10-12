@@ -168,3 +168,18 @@ test('the View menu item turns the prompt back on', async () => {
   await win.getByRole('button', { name: 'Close Window', exact: true }).click();
   await app.waitForEvent('close', { timeout: 15000 });
 });
+
+test('File > Exit quits the app after the prompt is confirmed', async () => {
+  test.setTimeout(240000);
+
+  const { app, win } = await launch();
+  await setPromptViaMenu(win, true);
+  await connectSqlite(win, newDbFile('close-confirm-exit'));
+  await typeIntoFirstTab(win, 'select 1 as close_confirm_exit_marker;');
+
+  await win.locator('.flyout-nav .top-menu-item > a', { hasText: 'File' }).click();
+  await win.locator('.flyout-nav li.menu-item > a', { hasText: 'Exit' }).click();
+  await expect(dialogTitle(win)).toBeVisible({ timeout: 10000 });
+  await win.getByRole('button', { name: 'Close Window', exact: true }).click();
+  await app.waitForEvent('close', { timeout: 15000 });
+});

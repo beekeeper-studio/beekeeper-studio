@@ -92,7 +92,6 @@ describe("CoreTabs handleWindowClose", () => {
   });
 
   it("still closes when saving the checkbox fails", async () => {
-    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
     window.main.setConfirmWindowClose = vi.fn().mockRejectedValue(new Error("db is locked"));
     const vm = context({ tabs: [dirtyTab()] });
 
@@ -102,7 +101,6 @@ describe("CoreTabs handleWindowClose", () => {
     await closing;
 
     expect(preventClose).not.toHaveBeenCalled();
-    consoleError.mockRestore();
   });
 
   it("settles the modal only once", () => {

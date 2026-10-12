@@ -366,6 +366,9 @@ import Shell from './TabShell.vue'
 import { safeSqlFormat as safeFormat } from '@/common/utils';
 import { TabTypeConfig, TransportOpenTab, TransportPluginTab, setFilters, matches, duplicate } from '@/common/transport/TransportOpenTab'
 import { wait } from '@/shared/lib/wait'
+import rawLog from '@bksLogger'
+
+const log = rawLog.scope('CoreTabs.vue')
 
 export default Vue.extend({
   props: [],
@@ -1164,7 +1167,7 @@ export default Vue.extend({
         try {
           await window.main.setConfirmWindowClose(false)
         } catch (ex) {
-          console.error(ex)
+          log.error(ex)
         }
       }
     },

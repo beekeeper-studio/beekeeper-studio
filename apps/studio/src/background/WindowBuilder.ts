@@ -8,6 +8,7 @@ import rawLog from '@bksLogger'
 import querystring from 'query-string'
 import { safeOpenExternal } from './lib/electron/safeOpenExternal'
 import { AppEvent } from '../common/AppEvent'
+import { WindowCloseGuard, WindowCloseState } from './lib/electron/WindowCloseGuard'
 
 
 // eslint-disable-next-line
@@ -17,11 +18,14 @@ const log = rawLog.scope('WindowBuilder')
 
 const windows: BeekeeperWindow[] = []
 
-let closeListenersBypassed = false
+const closeState: WindowCloseState = { bypassed: false, quitRequested: false }
 
 export function bypassCloseListeners(): void {
-  closeListenersBypassed = true
+  closeState.bypassed = true
 }
+
+// a prevented close cancels app.quit(), the guard resumes it once the listeners allow the close
+app.on('before-quit', () => { closeState.quitRequested = true })
 
 // Playwright's app.quit() would hang on a prevented close in every e2e spec
 const closeListenersEnabled = !platformInfo.testMode || !!process.env.BKS_TEST_WINDOW_CLOSE_LISTENERS
@@ -36,13 +40,9 @@ export async function setConfirmWindowClose(settings: IGroupedUserSettings, enab
   getActiveWindows().forEach((window) => window.send(AppEvent.settingsChanged))
 }
 
-// a prevented close cancels app.quit(), so it has to be resumed once the listeners allow the close
-let quitRequested = false
-app.on('before-quit', () => { quitRequested = true })
-
 ipcMain.on(AppEvent.windowListenerCount, (event, type: string, count: number) => {
   const window = windows.find((w) => w.webContents === event.sender)
-  if (window && type === 'close') window.closeListenerCount = count
+  if (window?.closeGuard && type === 'close') window.closeGuard.listenerCount = count
 })
 
 export interface OpenOptions {
@@ -58,9 +58,7 @@ class BeekeeperWindow {
   private reloaded = false
   private appUrl: string
   public sId: string;
-  public closeListenerCount = 0
-  private closeAllowed = false
-  private pendingClose: Promise<boolean> | null = null
+  public closeGuard?: WindowCloseGuard
 
   constructor(protected settings: IGroupedUserSettings, openOptions: OpenOptions) {
     const theme = settings.theme
@@ -243,11 +241,7 @@ class BeekeeperWindow {
     this.win?.on('closed', () => {
       this.win = null
     })
-    this.win?.on('close', this.closeListener.bind(this))
-    const resetCloseListeners = () => { this.closeListenerCount = 0 }
-    this.win?.webContents.on('did-navigate', resetCloseListeners)
-    this.win?.webContents.on('render-process-gone', resetCloseListeners)
-
+    if (closeListenersEnabled) this.closeGuard = new WindowCloseGuard(this.win, ipcMain, app, closeState)
 
     const windowMoveResizeListener = _.debounce(this.windowMoveResizeListener.bind(this), 1000)
     this.win.on('resize',windowMoveResizeListener)
@@ -306,55 +300,6 @@ class BeekeeperWindow {
 
   closeWindow() {
     this.win?.close();
-  }
-
-  private closeListener(event: electron.Event) {
-    if (this.closeAllowed || closeListenersBypassed || !closeListenersEnabled) return
-    if (this.closeListenerCount === 0) return
-
-    event.preventDefault()
-    if (!this.pendingClose) {
-      this.pendingClose = this.askCloseListeners().finally(() => { this.pendingClose = null })
-    }
-    this.pendingClose.then((prevented) => {
-      if (prevented) {
-        quitRequested = false
-        return
-      }
-      this.closeAllowed = true
-      this.win?.close()
-      this.closeAllowed = false
-      if (quitRequested) app.quit()
-    })
-  }
-
-  /** Resolves to whether a renderer listener prevented the close. */
-  private askCloseListeners(): Promise<boolean> {
-    const webContents = this.webContents
-    if (!webContents || webContents.isDestroyed()) return Promise.resolve(false)
-
-    return new Promise((resolve) => {
-      const finish = (prevented: boolean) => {
-        ipcMain.removeListener(AppEvent.windowCloseResponse, onResponse)
-        webContents.removeListener('destroyed', onRendererGone)
-        webContents.removeListener('render-process-gone', onRendererGone)
-        webContents.removeListener('unresponsive', onRendererGone)
-        webContents.removeListener('did-navigate', onRendererGone)
-        resolve(prevented)
-      }
-      const onResponse = (event: electron.IpcMainEvent, prevented: boolean) => {
-        if (event.sender === webContents) finish(!!prevented)
-      }
-      // no timer: a dead renderer is the only thing that may close a window whose listeners haven't answered
-      const onRendererGone = () => finish(false)
-
-      ipcMain.on(AppEvent.windowCloseResponse, onResponse)
-      webContents.once('destroyed', onRendererGone)
-      webContents.once('render-process-gone', onRendererGone)
-      webContents.once('unresponsive', onRendererGone)
-      webContents.once('did-navigate', onRendererGone)
-      webContents.send(AppEvent.windowClose)
-    })
   }
 }
 
