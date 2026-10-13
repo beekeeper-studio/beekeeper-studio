@@ -184,6 +184,10 @@ export interface Plugin extends PluginRegistryEntry, ManifestV1 {
   checkingForUpdates: boolean;
 }
 
+export interface PluginDisplayItem extends Plugin {
+  disabled: boolean;
+}
+
 export interface Release {
   manifest: Manifest;
   sourceArchiveUrl: string;

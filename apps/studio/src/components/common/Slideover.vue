@@ -22,7 +22,10 @@
             </a>
             <slot name="title" :close="close" />
           </div>
-          <div class="slideover-body">
+          <div
+            class="slideover-body"
+            :class="{ 'slideover-body-flex': flexBody }"
+          >
             <slot/>
           </div>
           <div class="slideover-footer" v-if="$scopedSlots.footer">
@@ -60,7 +63,8 @@ export default Vue.extend({
       type: String,
       default: ".v--modal-box"
     },
-    loading: Boolean
+    loading: Boolean,
+    flexBody: Boolean
   },
   computed: {
   },
@@ -142,6 +146,12 @@ export default Vue.extend({
   min-height: 0;
   overflow-y: auto;
   padding: 0 1.2rem 0.8rem;
+
+  &.slideover-body-flex {
+    display: flex;
+    flex-direction: column;
+    overflow-y: hidden;
+  }
 }
 
 .slideover-footer {

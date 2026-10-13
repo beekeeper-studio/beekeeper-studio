@@ -95,6 +95,7 @@
         <slideover
           ref="install_slideover"
           :loading="loadingPlugins"
+          flex-body
         >
           <template>
             <div class="card padding control-card">
@@ -496,6 +497,12 @@ $gutter-h: 1.5rem;
   margin-inline: 1.25rem;
 }
 
+.plugin-manager-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 .remote-plugin-list {
   margin-top: 1rem;
 }
@@ -505,6 +512,7 @@ $gutter-h: 1.5rem;
   margin-top: 0.5rem;
   flex-grow: 1;
   flex-basis: 35%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 
@@ -527,6 +535,7 @@ $gutter-h: 1.5rem;
 .control-card {
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
 }
 
 .header-row {
