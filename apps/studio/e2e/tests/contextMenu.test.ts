@@ -4,7 +4,7 @@ import { userActions } from "../pageActions/index";
 import { POSTGRES_CONFIG } from './config/postgresDbConfig';
 import { launchElectron } from 'e2e/helpers/launchElectron';
 
-const POSTGRES_QUERY = 'SELECT * FROM actor WHERE actor_id IN (1, 2);';
+const POSTGRES_QUERY = 'SELECT * FROM accounts WHERE id IN (1, 2);';
 
 let electronApp: ElectronApplication;
 let win: Page;

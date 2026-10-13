@@ -8,6 +8,7 @@ volumes:
   psql96:
   psql14:
   psql13:
+  psql15:
   psql15_load_test_data:
   psql17:
   mariadb:
@@ -81,10 +82,18 @@ services:
       POSTGRES_PASSWORD: example
       POSTGRES_DB: saklia
     volumes:
-      - psql13:/var/lib/postgresql/data
+      - psql15:/var/lib/postgresql/data
       - ./dev/docker_psql_init:/docker-entrypoint-initdb.d
     ports:
       - 5434:5432
+    # pg_isready over TCP only passes once the init scripts have finished (the
+    # entrypoint's temporary server listens on a socket only), so --wait waits for the seed.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d saklia"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 300s
 
   psql17:
     image: postgres:17
@@ -98,6 +107,12 @@ services:
       - ./dev/docker_psql_init:/docker-entrypoint-initdb.d
     ports:
       - 5437:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d saklia"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 300s
 
   psql14:
     image: postgres:14
@@ -111,6 +126,12 @@ services:
       - ./dev/docker_psql_init:/docker-entrypoint-initdb.d
     ports:
       - 5436:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d saklia"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 300s
   psql13:
     image: postgres:13
     platform: linux/amd64
@@ -123,6 +144,12 @@ services:
       - ./dev/docker_psql_init:/docker-entrypoint-initdb.d
     ports:
       - 5433:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d saklia"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 300s
   trino:
     image: trinodb/trino:latest
     platform: linux/amd64
@@ -145,6 +172,12 @@ services:
       - ./dev/docker_psql_init:/docker-entrypoint-initdb.d
     ports:
       - 5432:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d saklia"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 300s
 
   # Greengage DB 6. https://hub.docker.com/r/greengagedb/ggdb6_ubuntu/tags . Demo listens on 6000.
   greengage:

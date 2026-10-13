@@ -10,7 +10,7 @@ let window: Page;
 let queryTab: QueryTab;
 let resultPane: QueryResultPane;
 let userAttemptsTo: any;
-const testQueryPrefix = `SELECT * FROM actor`;
+const testQueryPrefix = `SELECT * FROM accounts`;
 
 test.describe("Postgres query execution", () => {
 
@@ -44,7 +44,7 @@ test.describe("Postgres query execution", () => {
     });
 
     test("postgres query with WHERE and 2 results", async () => {
-        const queryWithConditionals = `${testQueryPrefix} WHERE actor_id IN (1, 2);`
+        const queryWithConditionals = `${testQueryPrefix} WHERE id IN (1, 2);`
 
         await userAttemptsTo.selectNewConnection(POSTGRES_CONFIG.connectionType);
         await userAttemptsTo.insertDatabaseDetails(POSTGRES_CONFIG);
@@ -61,7 +61,7 @@ test.describe("Postgres query execution", () => {
     });
 
     test("runs valid query with no results", async () => {
-        const zeroResultsQuery = `${testQueryPrefix} actor WHERE actor_id = null;`
+        const zeroResultsQuery = `${testQueryPrefix} WHERE id = null;`
 
         await userAttemptsTo.selectNewConnection(POSTGRES_CONFIG.connectionType);
         await userAttemptsTo.insertDatabaseDetails(POSTGRES_CONFIG);

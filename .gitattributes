@@ -1,4 +1,6 @@
 dev/**/*.sql linguist-language=SQL
+# Run with bash inside Linux containers, so CRLF line endings break them
+dev/docker_psql_init/*.sh text eol=lf
 *.surql linguist-generated
 
 # SSH test fixtures must not be CRLF-converted on Windows checkout -
