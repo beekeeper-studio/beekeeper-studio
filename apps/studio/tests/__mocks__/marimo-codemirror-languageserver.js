@@ -3,7 +3,7 @@
 // The upstream package is ESM-only and its package.json `exports` field
 // defines only the `import` condition, which Jest's default resolver
 // cannot satisfy (it requests the `default`/`node` conditions), producing
-// ERR_PACKAGE_PATH_NOT_EXPORTED. The unit tests under tests/unit/ don't
+// ERR_PACKAGE_PATH_NOT_EXPORTED. The jest integration tests don't
 // exercise any LSP behavior; they only need the symbols referenced by
 // the statically-imported ui-kit text editor bundle to resolve without
 // runtime side effects.
