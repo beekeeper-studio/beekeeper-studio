@@ -19,7 +19,10 @@
           class="dropdown-icon material-icons"
         >keyboard_arrow_right</i>
       </span>
-      <span class="item-wrapper flex flex-middle expand">
+      <span
+        class="item-wrapper flex flex-middle expand"
+        @dblclick.prevent="openRoutine"
+      >
         <div
           :title="draggable ? 'drag me!' : ''"
           class="table-item-wrapper"
@@ -115,6 +118,11 @@ export default Vue.extend({
   data() {
     return {
       selected: false,
+      clickState: {
+        timer: null,
+        openClicks: 0,
+        delay: 500,
+      },
     };
   },
   watch: {
@@ -143,6 +151,18 @@ export default Vue.extend({
     },
     title() {
       return RoutineTypeNames[this.routine.type];
+    },
+  },
+  methods: {
+    openRoutine() {
+      if (this.clickState.openClicks > 0) {
+        return;
+      }
+      this.$root.$emit("loadRoutineCreate", this.routine);
+      this.clickState.openClicks++;
+      this.clickState.timer = setTimeout(() => {
+        this.clickState.openClicks = 0;
+      }, this.clickState.delay);
     },
   },
 });
