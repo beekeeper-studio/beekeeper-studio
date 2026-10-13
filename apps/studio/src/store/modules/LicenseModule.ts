@@ -70,6 +70,10 @@ export const LicenseModule: Module<State, RootState>  = {
       if (!state) return true
       return state.status.isTrial
     },
+    /** The current license is a trial that has run out. */
+    isTrialExpired(state) {
+      return !!state.status.isTrial && !!state.status.isValidDateExpired
+    },
     isValidStateExpired(state) {
       // this means a license with lifetime perms, but is no longer valid for software updates
       // so the user has to use an older version of the app.

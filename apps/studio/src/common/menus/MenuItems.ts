@@ -361,7 +361,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.onTrial),
         },
         {
-          label: "Trial expired",
+          label: "Trial expired (shows the trial-ended dialog)",
           click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.trialExpired),
         },
         {
