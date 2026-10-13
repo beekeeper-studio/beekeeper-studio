@@ -63,6 +63,7 @@
         <table-length
           v-if="!minimalMode"
           :table="table"
+          :table-id="tableId"
           :filters="filters"
         />
         <a
