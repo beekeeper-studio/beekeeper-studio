@@ -41,7 +41,24 @@
           </span>
         </div>
       </div>
-      <span class="badge"><span>{{ displayConfig.connectionType }}</span></span>
+      <div class="connection-meta">
+        <span class="badge"><span>{{ displayConfig.connectionType }}</span></span>
+        <span
+          v-if="isStartupHighlighted"
+          class="startup-highlight-indicator"
+          role="img"
+          aria-label="Last used connection"
+          @mousedown.stop.prevent
+          @mouseup.stop
+          @click.stop.prevent
+          @dblclick.stop.prevent
+        >
+          <i
+            class="material-icons"
+            aria-hidden="true"
+          >history</i>
+        </span>
+      </div>
       <span
         v-if="!isRecentList"
         class="actions"
@@ -89,6 +106,7 @@ export default {
     'config',
     'isRecentList',
     'selectedConfig',
+    'startupHighlightConfig',
     'showDuplicate',
     'pinned',
     'privacyMode'
@@ -107,7 +125,8 @@ export default {
         // the connection screen edits a copy, so compare by key, not identity
         'active': !!this.savedConnection && !!this.selectedConfig &&
           this.savedConnection.id === this.selectedConfig.id &&
-          this.savedConnection.workspaceId === this.selectedConfig.workspaceId
+          this.savedConnection.workspaceId === this.selectedConfig.workspaceId,
+        'startup-highlight': this.isStartupHighlighted,
       }
     },
     labelColor() {
@@ -169,6 +188,16 @@ export default {
     // recent entry).
     displayConfig() {
       return this.savedConnection || this.config
+    },
+    isStartupHighlighted() {
+      if (this.isRecentList) return false
+
+      const saved = this.savedConnection
+      const startupHighlight = this.startupHighlightConfig
+
+      return saved?.id != null &&
+        saved.id === startupHighlight?.id &&
+        saved.workspaceId === startupHighlight?.workspaceId
     },
     author() {
       if (!this.isCloud) {
