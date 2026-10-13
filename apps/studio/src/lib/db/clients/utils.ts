@@ -26,6 +26,7 @@ export class ClientError extends Error {
   }
 }
 
+
 export function escapeString(value) {
   if (_.isNil(value)) return null
   return value.toString().replaceAll("'", "''")

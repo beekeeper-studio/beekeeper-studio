@@ -294,6 +294,17 @@ export function runCommonTests(getUtil, opts = {}) {
       })
     })
 
+    describe("Multi-statement query error annotation (issue #4698)", () => {
+      test("should annotate error message with query index when multi-query execution fails", async () => {
+        const supportedDialects = ['sqlite', 'sqlserver', 'postgresql', 'postgres', 'mysql', 'mariadb']
+        if (!supportedDialects.includes(getUtil().dbType)) return
+
+        const client = getUtil().connection
+        const query = "SELECT 1; SELECT * FROM nonexistent_table_bks_4698;"
+        await expect(client.executeQuery(query)).rejects.toThrow(/@ query #2/)
+      })
+    })
+
   })
 
   describe("Drop Table Tests", () => {

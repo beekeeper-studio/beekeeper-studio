@@ -288,7 +288,8 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
 
     const results: NgQueryResult[] = [];
 
-    for (const query of commands) {
+    for (let index = 0; index < commands.length; index++) {
+      const query = commands[index];
       if (query.executionType === 'TRANSACTION' && !_.isNil(options.tabId)) {
         switch (query.type) {
           case "BEGIN_TRANSACTION":
@@ -304,7 +305,15 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
         continue;
       }
 
-      const { data, rowsAffected } = await this.driverExecuteSingle(query.text, options);
+      let data: any;
+      let rowsAffected: any;
+      try {
+        const res = await this.driverExecuteSingle(query.text, options);
+        data = res.data;
+        rowsAffected = res.rowsAffected;
+      } catch (err) {
+        throw this.annotateQueryError(err, index, commands.length);
+      }
 
       const raw = !data.recordsets.length && rowsAffected > 0 ? [[] as any] : data.recordsets as IRecordSet<any>
 
