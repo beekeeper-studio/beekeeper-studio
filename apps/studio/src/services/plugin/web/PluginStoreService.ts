@@ -7,7 +7,7 @@ import type {
   TransportOpenTabInit,
 } from "@/common/transport/TransportOpenTab";
 import { DatabaseType } from "@beekeeperstudio/plugin";
-import { findTable, PluginTabType } from "@/common/transport/TransportOpenTab";
+import { findTable, getFilters, PluginTabType } from "@/common/transport/TransportOpenTab";
 import { AppEvent } from "@/common/AppEvent";
 import { ExtendedTableColumn, NgQueryResult, TableOrView } from "@/lib/db/models";
 import _ from "lodash";
@@ -277,7 +277,7 @@ export default class PluginStoreService {
         title: tab.title,
         data: {
           table: findTable(tab, this.store.state.tables),
-          filters: [], // FIXME
+          filters: getFilters(tab) ?? [],
           result: null, // FIXME
         },
       };
