@@ -241,6 +241,20 @@
             <x-menuitem @click="exportFiltered" :disabled="dialectData?.disabledFeatures?.exportTable">
               <x-label>Export filtered view</x-label>
             </x-menuitem>
+            <x-menuitem
+              title="Only the rows shown on this page"
+              @click="openPageInSpreadsheet"
+              :disabled="isEmpty"
+            >
+              <x-label>Open current page in Excel</x-label>
+            </x-menuitem>
+            <x-menuitem
+              :title="hasFilters ? 'Every row matching the current filters' : 'Every row in the table'"
+              @click="openAllInSpreadsheet"
+              :disabled="dialectData?.disabledFeatures?.exportTable"
+            >
+              <x-label>{{ hasFilters ? 'Open all filtered rows in Excel' : 'Open all rows in Excel' }}</x-label>
+            </x-menuitem>
             <x-menuitem @click="showColumnFilterModal">
               <x-label>Hide columns ({{ hiddenColumnCount }})</x-label>
             </x-menuitem>
@@ -343,6 +357,7 @@ import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import { ExpandablePath, parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
 import { stringToTypedArray, removeUnsortableColumnsFromSortBy } from "@/common/utils";
 import { UpdateOptions } from "@/lib/data/jsonViewer";
+import { OpenInSpreadsheetOptions, tabulatorSpreadsheetData } from "@/lib/export/spreadsheet";
 
 const log = rawLog.scope('TableTable')
 
@@ -496,6 +511,9 @@ export default Vue.extend({
     },
     hiddenColumnCount() {
       return this.columnsWithFilterAndOrder.filter((c) => !c.filter).length
+    },
+    hasFilters() {
+      return Array.isArray(this.filters) ? this.filters.length > 0 : !!this.filters
     },
     hiddenColumnMessage() {
       return `${this.$pluralize('column', this.hiddenColumnCount, true)} hidden`
@@ -2212,6 +2230,22 @@ export default Vue.extend({
     },
     exportFiltered() {
       this.trigger(AppEvent.beginExport, {table: this.table, filters: this.filters} )
+    },
+    openPageInSpreadsheet() {
+      if (!this.tabulator) return
+      const options: OpenInSpreadsheetOptions = {
+        name: this.table.name,
+        rows: tabulatorSpreadsheetData(this.tabulator),
+      }
+      this.trigger(AppEvent.openInSpreadsheet, options)
+    },
+    openAllInSpreadsheet() {
+      const options: OpenInSpreadsheetOptions = {
+        name: this.table.name,
+        table: this.table,
+        filters: this.filters,
+      }
+      this.trigger(AppEvent.openInSpreadsheet, options)
     },
     modifyRowData(data) {
       if (_.isArray(data)) {

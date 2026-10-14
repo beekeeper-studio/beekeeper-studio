@@ -77,6 +77,20 @@ Each table is stored as a separate file with a determined format of `tablename.{
 - JSON
 - Newline delimited JSON (JSONL)
 
+## Open in Excel
+
+Open data straight in your spreadsheet app, without saving a file first.
+
+- **Query results**: click `Download`, then `Open in Excel`.
+- **Table view**: click the ⚙ icon in the bottom right, then choose:
+    - `Open current page in Excel` for just the rows on screen.
+    - `Open all rows in Excel` for the whole table. If a filter is applied this becomes `Open all filtered rows in Excel`, and only matching rows are included. Large tables show the same progress notification as a regular export.
+
+Beekeeper Studio writes an `.xlsx` file to a temporary folder and opens it with the default app for `.xlsx` files on your computer (Excel, LibreOffice Calc, Numbers, etc). Use `Save As` in your spreadsheet app to keep a copy.
+
+!!! note
+    An Excel sheet holds at most 1,048,576 rows. Rows past that limit are left out, and a warning is shown.
+
 ## Copying individual rows
 
 For any table in Beekeeper Studio, whether in the table explorer or the query results, you can right-click a cell and choose to export the whole row in a number of formats.

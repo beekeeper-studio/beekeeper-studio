@@ -28,6 +28,7 @@ import * as sms from 'source-map-support'
 import { initializeSecurity } from '@/backend/lib/security'
 import { initializeFileHelpers } from '@/backend/lib/FileHelpers'
 import { safeOpenExternal } from '@/background/lib/electron/safeOpenExternal'
+import { initializeSpreadsheetFiles } from '@/background/lib/electron/spreadsheetFiles'
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -159,6 +160,7 @@ async function initBasics() {
   ipcMain.on(AppEvent.openExternally, (_e: electron.IpcMainEvent, args: any[]) => {
     safeOpenExternal(args?.[0])
   })
+  initializeSpreadsheetFiles()
   return settings
 }
 

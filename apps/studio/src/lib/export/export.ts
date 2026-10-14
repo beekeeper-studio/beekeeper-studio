@@ -23,6 +23,8 @@ export abstract class Export {
   lastChunkTime = 0
 
   preserveComplex = true
+  // set when the output format can't hold every row (eg: spreadsheet row limits)
+  truncated = false
   // see set status()
   private _status: ExportStatus = ExportStatus.Idle
   timeElapsed = 0
@@ -123,12 +125,25 @@ export abstract class Export {
     return md5sum.digest('hex')
   }
 
+  // Output hooks, override these for formats that aren't plain text
+  protected async openOutput(): Promise<void> {
+    this.fileHandle = await fs.promises.open(this.filePath, 'w+')
+  }
+
+  protected async writeOutput(chunk: string): Promise<void> {
+    await this.fileHandle?.write(chunk)
+  }
+
+  protected async closeOutput(): Promise<void> {
+    await this.fileHandle?.close()
+  }
+
   async initExport(): Promise<void> {
     this.status = ExportStatus.Exporting
     this.countExported = 0
 
 
-    this.fileHandle = await fs.promises.open(this.filePath, 'w+')
+    await this.openOutput()
 
     let results;
     if (this.table) {
@@ -163,7 +178,7 @@ export abstract class Export {
     const header = await this.getHeader(this.columns)
 
     if (header) {
-      await this.fileHandle.write(header)
+      await this.writeOutput(header)
     }
     this.headerWritten = true;
   }
@@ -194,14 +209,14 @@ export abstract class Export {
           // needsSeparator allows us to skip adding the rowSeparator
           // on the FINAL row of the file
           if (needsSeparator === true) {
-            await this.fileHandle?.write(this.rowSeparator)
+            await this.writeOutput(this.rowSeparator)
           }
-          await this.fileHandle?.write(formatted)
+          await this.writeOutput(formatted)
           if (rI === rows.length - 1 && !this.needsFinalSeparator) {
             // do nothing
             needsSeparator = true
           } else {
-            await this.fileHandle?.write(this.rowSeparator)
+            await this.writeOutput(this.rowSeparator)
             needsSeparator = false
           }
         }
@@ -213,7 +228,8 @@ export abstract class Export {
 
       } while (
         rows.length > 0 &&
-        this.status === ExportStatus.Exporting
+        this.status === ExportStatus.Exporting &&
+        !this.truncated
       )
       await this.cursor?.close()
   }
@@ -224,7 +240,7 @@ export abstract class Export {
       return;
     }
     const footer = await this.getFooter()
-    await this.fileHandle?.write(footer)
+    await this.writeOutput(footer)
     this.status = ExportStatus.Completed
   }
 
@@ -235,7 +251,7 @@ export abstract class Export {
       await this.exportData()
       await this.finalizeExport()
 
-      await this.fileHandle?.close()
+      await this.closeOutput()
       if (this.status === ExportStatus.Aborted) {
         if (this.options.deleteOnAbort) {
           await promises.unlink(this.filePath)
@@ -245,7 +261,7 @@ export abstract class Export {
       this.status = ExportStatus.Error
       this.error = error
       log.error(error)
-      await this.fileHandle?.close()
+      await this.closeOutput()
       if (this.options.deleteOnAbort) {
         await promises.unlink(this.filePath)
       }

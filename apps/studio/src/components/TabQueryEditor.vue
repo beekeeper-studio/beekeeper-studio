@@ -378,6 +378,7 @@
         @copyToSql="copyToSql"
         @discardChanges="discardChanges"
         @download="download"
+        @openInSpreadsheet="openInSpreadsheet"
         @clipboard="clipboard"
         @clipboardJson="clipboardJson"
         @clipboardMarkdown="clipboardMarkdown"
@@ -1462,6 +1463,9 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       },
       download(format) {
         this.$refs.table.download(format)
+      },
+      openInSpreadsheet() {
+        this.$refs.table.openInSpreadsheet()
       },
       clipboard() {
         this.$refs.table.clipboard()

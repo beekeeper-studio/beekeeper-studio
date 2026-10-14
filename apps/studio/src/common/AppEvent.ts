@@ -19,6 +19,8 @@ export enum AppEvent {
   toggleSecondarySidebar = 'toggleSecondarySidebar',
   selectSecondarySidebarTab = 'selectSecondarySidebarTab',
   beginExport = 'be',
+  /** Write rows / a table to a temporary .xlsx and open it. First argument is `OpenInSpreadsheetOptions`. */
+  openInSpreadsheet = 'openInSpreadsheet',
   beginImport = 'beginImport',
   createTable = 'new_table',
   createTableFromFile = 'new_table_from_file',

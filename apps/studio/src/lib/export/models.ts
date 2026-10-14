@@ -19,7 +19,7 @@ export interface StartExportOptions {
   query?: string,
   queryName?: string,
   filters: TableFilter[],
-  exporter: 'csv' | 'json' | 'sql' | 'jsonl'
+  exporter: 'csv' | 'json' | 'sql' | 'jsonl' | 'xlsx'
   filePath: string
   options: {
     chunkSize: number

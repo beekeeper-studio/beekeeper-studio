@@ -80,6 +80,7 @@
   import { CellComponent, RangeComponent, RowComponent } from 'tabulator-tables'
   import { PropType } from 'vue'
   import { safeSqlFormat } from '@/common/utils'
+  import { OpenInSpreadsheetOptions, tabulatorSpreadsheetData } from '@/lib/export/spreadsheet'
   import { stringToTypedArray } from '@/common/utils'
 
   const log = rawLog.scope('ResultTable');
@@ -1056,6 +1057,13 @@
         }
 
         this.tabulator.download(formatter, `${title}-${dateString}.${format}`, 'all');
+      },
+      openInSpreadsheet() {
+        const options: OpenInSpreadsheetOptions = {
+          name: this.query.title || 'query_results',
+          rows: tabulatorSpreadsheetData(this.tabulator),
+        }
+        this.trigger(AppEvent.openInSpreadsheet, options)
       },
       async clipboard(format = null) {
         // this.tabulator.copyToClipboard("all")

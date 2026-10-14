@@ -145,6 +145,13 @@
     >
       Download <i class="material-icons">arrow_drop_down</i>
       <x-menu>
+        <x-menuitem
+          title="Opens the results in the default app for .xlsx files"
+          @click.prevent="openInSpreadsheet"
+        >
+          <x-label>Open in Excel</x-label>
+        </x-menuitem>
+        <hr>
         <x-menuitem @click.prevent="download('csv')">
           <x-label>Download as CSV</x-label>
         </x-menuitem>
@@ -400,6 +407,9 @@ export default {
     },
     download(format) {
       this.$emit('download', format)
+    },
+    openInSpreadsheet() {
+      this.$emit('openInSpreadsheet')
     },
     copyToClipboard() {
       this.$emit('clipboard')

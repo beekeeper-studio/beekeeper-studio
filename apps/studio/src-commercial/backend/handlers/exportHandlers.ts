@@ -1,5 +1,6 @@
 import { TableFilter, TableOrView } from "@/lib/db/models";
-import { CsvExporter, Export, JsonExporter, JsonLineExporter, SqlExporter } from "@/lib/export";
+import { CsvExporter, Export, JsonExporter, JsonLineExporter, SqlExporter, XlsxExporter } from "@/lib/export";
+import { writeXlsxFile } from "@/lib/export/xlsxWriter";
 import { ExportStatus } from "@/lib/export/models";
 import { checkConnection, errorMessages, state } from "@/handlers/handlerState";
 import { TransportExport } from "@/common/transport/TransportExport";
@@ -9,7 +10,7 @@ interface StartExportOptions {
   query?: string,
   queryName?: string,
   filters: TableFilter[],
-  exporter: 'csv' | 'json' | 'sql' | 'jsonl'
+  exporter: 'csv' | 'json' | 'sql' | 'jsonl' | 'xlsx'
   filePath: string
   options: {
     chunkSize: number
@@ -24,7 +25,15 @@ const ExportClassPicker = {
   'csv': CsvExporter,
   'json': JsonExporter,
   'sql': SqlExporter,
-  'jsonl': JsonLineExporter
+  'jsonl': JsonLineExporter,
+  'xlsx': XlsxExporter
+}
+
+interface WriteXlsxOptions {
+  filePath: string
+  sheetName?: string
+  header: string[] | null
+  rows: unknown[][]
 }
 
 function getExporter(id: string, sId: string): Export {
@@ -43,10 +52,13 @@ export interface IExportHandlers {
   'export/removeInactive': ({ sId }: { sId: string }) => Promise<TransportExport[]>,
   'export/status': ({ id, sId }: { id: string, sId: string }) => Promise<ExportStatus>,
   'export/error': ({ id, sId }: { id: string, sId: string }) => Promise<Error>,
+  'export/truncated': ({ id, sId }: { id: string, sId: string }) => Promise<boolean>,
   'export/name': ({ id, sId }: { id: string, sId: string }) => Promise<string>,
   'export/start': ({ id, sId }: { id: string, sId: string }) => Promise<void>,
   'export/cancel': ({ id, sId }: { id: string, sId: string }) => Promise<void>,
-  'export/batch': ({ ids, sId }: { ids: string[], sId: string }) => Promise<void>
+  'export/batch': ({ ids, sId }: { ids: string[], sId: string }) => Promise<void>,
+  /** Write already-fetched rows (eg: the current page of a table) to an .xlsx file */
+  'export/writeXlsx': ({ options, sId }: { options: WriteXlsxOptions, sId: string }) => Promise<{ truncated: boolean, rowCount: number }>
 }
 
 export const ExportHandlers: IExportHandlers = {
@@ -99,6 +111,11 @@ export const ExportHandlers: IExportHandlers = {
     return exporter.error;
   },
 
+  'export/truncated': async function({ id, sId }: { id: string, sId: string }) {
+    const exporter = getExporter(id, sId);
+    return exporter.truncated;
+  },
+
   'export/name': async function({ id, sId }: { id: string, sId: string }) {
     const exporter = getExporter(id, sId);
 
@@ -136,5 +153,9 @@ export const ExportHandlers: IExportHandlers = {
 
       return exporter.exportToFile();
     }));
+  },
+
+  'export/writeXlsx': async function({ options }: { options: WriteXlsxOptions, sId: string }) {
+    return await writeXlsxFile(options.filePath, options.header, options.rows, options.sheetName);
   }
 }

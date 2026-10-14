@@ -27,6 +27,10 @@ export interface NativePlugin {
   files: {
     open(path: string): Promise<string>
     showItemInFolder(path: string): void
+    /** A fresh path in the temp directory for a spreadsheet that will be opened */
+    newSpreadsheetPath(name: string): Promise<string>
+    /** Open a spreadsheet from newSpreadsheetPath in the default app, returns an error message or '' */
+    openSpreadsheet(path: string): Promise<string>
   },
 
   openLink(link: string): void
@@ -66,6 +70,12 @@ export const ElectronPlugin: NativePlugin = {
   files: {
     showItemInFolder(path: string) {
       window.main.showItemInFolder(path)
+    },
+    newSpreadsheetPath(name: string) {
+      return window.main.newSpreadsheetPath(name)
+    },
+    openSpreadsheet(path: string) {
+      return window.main.openSpreadsheet(path)
     }
   }
 }

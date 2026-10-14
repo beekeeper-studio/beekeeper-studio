@@ -154,6 +154,12 @@ export const api = {
   showItemInFolder(path: string) {
     electron.shell.showItemInFolder(path);
   },
+  newSpreadsheetPath(name: string): Promise<string> {
+    return ipcRenderer.invoke('spreadsheet:newPath', name);
+  },
+  openSpreadsheet(path: string): Promise<string> {
+    return ipcRenderer.invoke('spreadsheet:open', path);
+  },
   setTlsMinVersion(version: SecureVersion) {
     tls.DEFAULT_MIN_VERSION = version;
   },
