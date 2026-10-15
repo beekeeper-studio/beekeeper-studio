@@ -51,6 +51,13 @@ export function having<T, U>(item: T | undefined | null, f: (T) => U, errorOnNon
   return null
 }
 
+// Saved and run queries are capped at this many characters (see UsedQuery and
+// FavoriteQuery). Anything longer freezes the editor, so it never belongs in a tab.
+export const MAX_QUERY_LENGTH = 2_000_000
+// A utf-8 character is at most 4 bytes, so a file bigger than this is
+// guaranteed to be over MAX_QUERY_LENGTH and isn't worth reading.
+export const MAX_QUERY_FILE_BYTES = 4 * MAX_QUERY_LENGTH
+
 export function readWebFile(file: File) {
   const reader = new FileReader()
   const result = new Promise<string>((resolve, reject) => {
@@ -67,7 +74,8 @@ export function readWebFile(file: File) {
   reader.readAsText(file)
   return {
     result,
-    abort: reader.abort,
+    // FileReader.abort throws "Illegal invocation" when called unbound
+    abort: () => reader.abort(),
   }
 }
 

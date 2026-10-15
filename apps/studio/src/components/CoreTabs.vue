@@ -320,7 +320,7 @@ import TabIcon from './tab/TabIcon.vue'
 import { DatabaseEntity } from "@/lib/db/models"
 import PendingChangesButton from './common/PendingChangesButton.vue'
 import { DropzoneDropEvent } from '@/common/dropzone'
-import { readWebFile } from '@/common/utils'
+import { readWebFile, MAX_QUERY_LENGTH, MAX_QUERY_FILE_BYTES } from '@/common/utils'
 import Noty from 'noty'
 import ConfirmationModal from './common/modals/ConfirmationModal.vue'
 import CreateCollectionModal from './common/modals/CreateCollectionModal.vue'
@@ -857,6 +857,7 @@ export default Vue.extend({
       const files = event.files.map((file) => ({
         file,
         error: false,
+        tooLarge: false,
       }))
 
       if (!files.every(({ file }) => /\.(sql|txt)$/i.test(file.name))) {
@@ -896,18 +897,27 @@ export default Vue.extend({
 
         const file = files[i].file
 
+        // A huge file freezes the editor, and the tab is saved, so the freeze
+        // comes back every time the connection is opened (#4862).
+        if (file.size > MAX_QUERY_FILE_BYTES) {
+          files[i].tooLarge = true
+          continue
+        }
+
         const reader = readWebFile(file)
         readerAbort = reader.abort
 
         try {
           const text = await reader.result
-          if (text) {
+          if (text?.length > MAX_QUERY_LENGTH) {
+            files[i].tooLarge = true
+          } else if (text) {
             this.$root.$emit(AppEvent.newTab, text);
           } else {
             files[i].error = true
           }
         } catch (e) {
-          if (e.message.includes(/abort/)) {
+          if (/abort/i.test(e?.message)) {
             break
           } else {
             files[i].error = true
@@ -915,12 +925,22 @@ export default Vue.extend({
         }
       }
 
+      const tooLarge = files.filter((f) => f.tooLarge).map((f) => f.file.name)
+
       if (aborted) {
         this.$noty.info('Loading aborted', { killer: notyQueue })
-      } else if (files.some(({ error }) => error)) {
-        this.$noty.error('Some files could not be loaded', { killer: notyQueue })
       } else {
-        this.$noty.success('All files loaded', { killer: notyQueue })
+        if (tooLarge.length) {
+          this.$noty.error(
+            `Too large to open in a query tab (limit is ${MAX_QUERY_LENGTH.toLocaleString()} characters): ${tooLarge.join(', ')}`,
+            { killer: notyQueue }
+          )
+        }
+        if (files.some(({ error }) => error)) {
+          this.$noty.error('Some files could not be loaded', { killer: notyQueue })
+        } else if (!tooLarge.length) {
+          this.$noty.success('All files loaded', { killer: notyQueue })
+        }
       }
 
       noty.close()

@@ -609,6 +609,7 @@
 import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
   import { wait } from '@/shared/lib/wait'
   import ISavedQuery from '@/common/interfaces/ISavedQuery'
+  import { MAX_QUERY_LENGTH } from '@/common/utils'
 
   const log = rawlog.scope('query-editor')
   const isEmpty = (s) => _.isEmpty(_.trim(s))
@@ -1849,6 +1850,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         }
       },
       initializeQueries() {
+        this.discardOversizedText()
         const { originalText, editorText } = resolveEditorText(this.tab, this.query?.text)
         if (editorText) {
           // The run methods should catch any errors, so we don't need to do that here
@@ -1861,6 +1863,19 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.originalText = originalText
           this.unsavedText = editorText
         }
+      },
+      // Tabs saved before the drop limit existed can hold a whole data dump.
+      // Parsing and rendering that freezes the app every time the connection
+      // opens, so drop the text instead of loading it (#4862).
+      discardOversizedText() {
+        const length = this.tab.unsavedQueryText?.length ?? 0
+        if (length <= MAX_QUERY_LENGTH) return
+
+        log.warn(`Tab ${this.tab.id} text is ${length} characters, over the ${MAX_QUERY_LENGTH} limit. Discarding it.`)
+        this.tab.unsavedQueryText = null
+        this.tab.unsavedChanges = false
+        this.saveTab()
+        this.$noty.error(`Query text over the ${MAX_QUERY_LENGTH.toLocaleString()} character limit was removed from "${this.tab.title}"`)
       },
       fakeRemoteChange() {
         this.query.text = "select * from foo"
