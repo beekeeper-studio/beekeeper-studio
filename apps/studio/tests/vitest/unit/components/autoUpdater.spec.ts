@@ -34,61 +34,133 @@ vi.mock("noty", () => {
 
 import AutoUpdater from "@/components/AutoUpdater.vue";
 
-const managedNotys = () => notys.filter((n) => n.options.text.includes("system administrator"));
-const managedNoty = () => managedNotys().at(-1);
+const noticesWith = (text: string) => notys.filter((n) => n.options.text.includes(text));
+const noticeWith = (text: string) => noticesWith(text).at(-1);
+const click = (notice: any, label: string) =>
+  notice.options.buttons.find((b) => b.text === label).cb();
 
 describe("AutoUpdater", () => {
   let handlers: Record<string, (...args: any[]) => void>;
+  let main: Record<string, any>;
+  let $noty: { info: ReturnType<typeof vi.fn> };
   let wrapper: Wrapper<any>;
 
   beforeEach(() => {
     notys.length = 0;
     handlers = {};
-    (window as any).main = {
+    main = {
       onUpdateEvent: (event: string, fn: (...args: any[]) => void) => { handlers[event] = fn },
       updaterReady: vi.fn(),
+      triggerDownload: vi.fn(),
+      triggerInstall: vi.fn(),
+      openExternally: vi.fn(),
     };
-    wrapper = mount(AutoUpdater);
+    (window as any).main = main;
+    $noty = { info: vi.fn() };
+    wrapper = mount(AutoUpdater, { mocks: { $noty } });
   });
 
   afterEach(() => {
     wrapper.destroy();
   });
 
-  it("tells MSI users which version to ask their administrator for", () => {
-    handlers["managed-update"]({}, "6.2.0");
+  describe("regular installs", () => {
+    it("downloads the update from the notice", () => {
+      handlers["update-available"]();
+      const notice = noticeWith("Download now?");
+      expect(notice.visible).toBe(true);
 
-    const noty = managedNoty();
-    expect(noty.visible).toBe(true);
-    expect(noty.options.text).toBe(
-      "Beekeeper Studio 6.2.0 is available. Contact your system administrator to install it."
-    );
+      click(notice, "Download");
+
+      expect(main.triggerDownload).toHaveBeenCalledTimes(1);
+      expect(notice.visible).toBe(false);
+      expect($noty.info).toHaveBeenCalled();
+    });
+
+    it("shows the notice again after Not now", () => {
+      handlers["update-available"]();
+      click(noticeWith("Download now?"), "Not now");
+      expect(noticeWith("Download now?").visible).toBe(false);
+
+      // e.g. Help > Check for Software Updates
+      handlers["update-available"]();
+
+      expect(noticeWith("Download now?").visible).toBe(true);
+    });
+
+    it("installs a downloaded update", () => {
+      handlers["update-downloaded"]();
+      const notice = noticeWith("Restart Beekeeper Studio to install");
+
+      click(notice, "Restart Now");
+
+      expect(main.triggerInstall).toHaveBeenCalledTimes(1);
+    });
+
+    it("asks again to restart after Later", () => {
+      handlers["update-downloaded"]();
+      click(noticeWith("Restart Beekeeper Studio to install"), "Later");
+
+      handlers["update-downloaded"]();
+
+      expect(noticeWith("Restart Beekeeper Studio to install").visible).toBe(true);
+    });
   });
 
-  it("offers nothing to download", () => {
-    handlers["managed-update"]({}, "6.2.0");
+  describe("portable", () => {
+    it("links to the website", () => {
+      handlers["manual-update"]();
 
-    expect(managedNoty().options.buttons.map((b) => b.text)).toEqual(["OK"]);
-    expect(notys.filter((n) => n.visible)).toHaveLength(1);
+      click(noticeWith("Download from our website"), "Download");
+
+      expect(main.openExternally).toHaveBeenCalledWith("https://beekeeperstudio.io/get");
+    });
   });
 
-  it("shows the notice again after it was dismissed", () => {
-    handlers["managed-update"]({}, "6.2.0");
-    managedNoty().options.buttons[0].cb();
-    expect(managedNoty().visible).toBe(false);
+  describe("MSI installs", () => {
+    it("tells users which version to ask their administrator for", () => {
+      handlers["managed-update"]({}, "6.2.0");
 
-    // e.g. Help > Check for Software Updates
-    handlers["managed-update"]({}, "6.2.0");
+      const notice = noticeWith("system administrator");
+      expect(notice.visible).toBe(true);
+      expect(notice.options.text).toBe(
+        "Beekeeper Studio 6.2.0 is available. Contact your system administrator to install it."
+      );
+    });
 
-    expect(managedNoty().visible).toBe(true);
-    expect(managedNotys()).toHaveLength(2);
+    it("offers nothing to download", () => {
+      handlers["managed-update"]({}, "6.2.0");
+
+      expect(noticeWith("system administrator").options.buttons.map((b) => b.text)).toEqual(["OK"]);
+      expect(notys.filter((n) => n.visible)).toHaveLength(1);
+    });
+
+    it("shows the notice again after it was dismissed", () => {
+      handlers["managed-update"]({}, "6.2.0");
+      click(noticeWith("system administrator"), "OK");
+      expect(noticeWith("system administrator").visible).toBe(false);
+
+      handlers["managed-update"]({}, "6.2.0");
+
+      expect(noticeWith("system administrator").visible).toBe(true);
+      expect(noticesWith("system administrator")).toHaveLength(2);
+    });
+
+    it("leaves the version out when it isn't a plain version string", () => {
+      handlers["managed-update"]({}, '<img src=x onerror="alert(1)">');
+
+      expect(noticeWith("system administrator").options.text).toBe(
+        "A new version of Beekeeper Studio is available. Contact your system administrator to install it."
+      );
+    });
   });
 
-  it("leaves the version out when it isn't a plain version string", () => {
-    handlers["managed-update"]({}, '<img src=x onerror="alert(1)">');
+  it("only shows one update notice at a time", () => {
+    handlers["update-available"]();
+    handlers["update-downloaded"]();
 
-    expect(managedNoty().options.text).toBe(
-      "A new version of Beekeeper Studio is available. Contact your system administrator to install it."
-    );
+    expect(notys.filter((n) => n.visible).map((n) => n.options.text)).toEqual([
+      "Update downloaded. Restart Beekeeper Studio to install",
+    ]);
   });
 });
