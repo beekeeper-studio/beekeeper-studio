@@ -225,6 +225,11 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({type: 'boolean', nullable: false, default: false})
   readOnlyMode = true
 
+  // Marks a production database. The query editor can be set to warn before
+  // an unfiltered UPDATE or DELETE only on these (ui.queryEditor.warnOnUnfilteredWrites).
+  @Column({ type: 'boolean', nullable: false, default: false })
+  isProduction = false
+
   // Used for Oracle only
   @Column({ type: 'simple-json', nullable: false })
   options: ConnectionOptions = { connectionMethod: 'manual' }
