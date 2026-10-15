@@ -34,12 +34,12 @@ export type PluginMenuItemPlacement =
   | "menubar.tools" // Shown in the tools menu
   | "editor.query.context" // Context menu inside the query editor
   | "results.cell.context" // Context menu on a cell
-  | "results.columnHeader.context" // Context menu on a row header
-  | "results.rowHeader.context" // Context menu on a column header
+  | "results.columnHeader.context" // Context menu on a column header
+  | "results.rowHeader.context" // Context menu on a row header
   | "results.corner.context" // Context menu on the top left corner
   | "tableTable.cell.context" // Context menu on a cell
-  | "tableTable.columnHeader.context" // Context menu on a row header
-  | "tableTable.rowHeader.context" // Context menu on a column header
+  | "tableTable.columnHeader.context" // Context menu on a column header
+  | "tableTable.rowHeader.context" // Context menu on a row header
   | "tableTable.corner.context" // Context menu on the top left corner
   | "tab.query.header.context" // Context menu on the query tab header
   | "tab.table.header.context" // Context menu on the table tab header
