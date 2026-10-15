@@ -12,6 +12,7 @@
             input-id="Database"
             editable
             show-create-button
+            create-file
           />
 
           <toggle-form-area

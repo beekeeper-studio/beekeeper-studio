@@ -1,6 +1,7 @@
 import { describe, it, test, expect, beforeAll, afterAll } from "vitest";
 import { DBTestUtil } from "@tests/lib/db";
-import { writeFileSync, existsSync } from "fs";
+import { writeFileSync, existsSync, mkdtempSync, rmSync, statSync } from "fs";
+import { createEmptyFile } from "@/common/createEmptyFile";
 import path from "path";
 import os from "os";
 import tmp from "tmp";
@@ -328,5 +329,47 @@ describe('SQLite - missing db file', () => {
   test('should throw error on connecting instead of creating the file', async () => {
     await expect(util.connection.connect()).rejects.toThrow(/Database file not found/)
     expect(existsSync(dbName)).toBe(false)
+  })
+})
+
+// The Create button in the connection form makes an empty file (#4854).
+describe('SQLite - new db file from the Create button', () => {
+  let dir
+  let dbName
+  /** @type {DBTestUtil} */
+  let util
+
+  beforeAll(() => {
+    dir = mkdtempSync(path.join(os.tmpdir(), 'bks-created-'))
+    dbName = path.join(dir, 'new.db')
+    createEmptyFile(dbName)
+
+    util = new DBTestUtil({
+      client: 'sqlite',
+    },
+    dbName,
+    {
+      dialect: "sqlite",
+      knex: knex({
+        client: "better-sqlite3",
+        connection: {
+          filename: dbName,
+        },
+      }),
+    })
+  })
+
+  afterAll(async () => {
+    await util?.disconnect()
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  test('connects to it and keeps what is written to it', async () => {
+    await util.connection.connect()
+    await util.connection.executeQuery('CREATE TABLE created (id INTEGER PRIMARY KEY)')
+
+    const tables = await util.connection.listTables()
+    expect(tables.map((t) => t.name)).toContain('created')
+    expect(statSync(dbName).size).toBeGreaterThan(0)
   })
 })

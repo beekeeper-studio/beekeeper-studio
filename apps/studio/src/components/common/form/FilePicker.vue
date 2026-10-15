@@ -34,7 +34,7 @@
         type="button"
         class="btn btn-flat"
         :class="{disabled}"
-        @click="openFilePickerDialog({ save: true })"
+        @click="openFilePickerDialog({ save: true, create: createFile })"
       >
         Create
       </a>
@@ -99,6 +99,12 @@ export default {
       type: Boolean,
       default: false,
     },
+    // Create also creates the file it picks, for a client that will not
+    // connect to a file that does not exist yet (SQLite).
+    createFile: {
+      type: Boolean,
+      default: false,
+    },
     directory: {
       type: Boolean,
       default: false
@@ -155,7 +161,12 @@ export default {
       // but Electron is now overriding that. If we want that behaviour back,
       // we will have to manually track the last used directory ourselves
       let files
-      if (options.save ?? this.save) {
+      if (options.create) {
+        files = [ this.$native.dialog.showCreateFileDialogSync({
+          ...dialogConfig,
+          ...this.options
+        })]
+      } else if (options.save ?? this.save) {
         files = [ this.$native.dialog.showSaveDialogSync({
           ...dialogConfig,
           ...this.options
