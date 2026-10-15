@@ -16,7 +16,7 @@ Let's build a simple "Hello World" plugin! You'll create a new tab that shows "H
 -   Basic HTML, CSS, and JavaScript knowledge
 -   Node.js and npm/yarn installed
 -   Beekeeper Studio installed
--   **[The plugin system enabled](../user_guide/configuration.md)**
+-   **Community plugins enabled.** They are off by default. Set `disabled = false` and `communityDisabled = false` under `[pluginSystem]` in your [configuration file](../user_guide/configuration.md), then restart Beekeeper Studio.
 
 ## Quick Start (2 Options)
 
@@ -340,7 +340,7 @@ Add this to your project (If you didn't use Vite, add this to a new file called 
 ```javascript
 // Enables proper keyboard and mouse event handling
 import "@beekeeperstudio/plugin/dist/eventForwarder.js";
-import { getTables } from "@beekeeperstudio/plugin/";
+import { getTables } from "@beekeeperstudio/plugin";
 
 // Show database tables
 async function showTables() {
@@ -400,12 +400,12 @@ Update your javascript to use the app theme:
 ```diff
 // Enables proper keyboard and mouse event handling
 import "@beekeeperstudio/plugin/dist/eventForwarder.js";
-import { getTables } from "@beekeeperstudio/plugin/dist/index.js";
-+ import { addNotificationListener, getAppInfo } from "@beekeeperstudio/plugin";
+- import { getTables } from "@beekeeperstudio/plugin";
++ import { getTables, addNotificationListener, getAppInfo } from "@beekeeperstudio/plugin";
 
 + function applyTheme(theme) {
-+      document.querySelector("#app-theme")!.textContent =
-+        `:root { ${app.theme.cssString} }`;
++      document.querySelector("#app-theme").textContent =
++        `:root { ${theme.cssString} }`;
 + }
 
 + // Initialize theme
@@ -504,7 +504,7 @@ import { getTables, addNotificationListener, getAppInfo } from "@beekeeperstudio
 
 function applyTheme(theme) {
     document.querySelector("#app-theme").textContent =
-        `:root { ${app.theme.cssString} }`;
+        `:root { ${theme.cssString} }`;
 }
 
 // Initialize theme
