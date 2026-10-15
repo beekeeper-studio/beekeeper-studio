@@ -73,7 +73,8 @@ export default class extends DefaultMenu {
       ]
     };
 
-    if (!this.platformInfo.isLinux || this.platformInfo.isAppImage) {
+    // MSI installs only get the versions IT deploys
+    if ((!this.platformInfo.isLinux || this.platformInfo.isAppImage) && !this.platformInfo.isMsi) {
       helpMenu.submenu.push(this.menuItems.toggleBeta)
     }
 
