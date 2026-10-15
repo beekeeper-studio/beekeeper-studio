@@ -2,7 +2,7 @@ import { SqlServerEncryptionMode } from '@/lib/db/types'
 
 // Pure helpers for building the msnodesqlv8 (ODBC) connection string used by SQL Server
 // integrated (Kerberos/Windows) authentication. Extracted so the exact clauses passed to the
-// driver can be unit-tested without a live server -- see tests/unit.
+// driver can be unit-tested without a live server -- see tests/vitest/unit.
 
 export interface WindowsAuthConnStrOptions {
   driver: string
