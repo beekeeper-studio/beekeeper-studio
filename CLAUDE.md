@@ -51,7 +51,7 @@ yarn lib:dev              # Start UI kit in development/watch mode
 yarn test:unit            # Unit tests (Vitest, tests/vitest/unit) + ui-kit tests
 yarn test:integration     # Integration tests
 yarn test:e2e             # End-to-end tests with Playwright
-yarn test:ci              # CI-specific test configuration
+yarn test:ci              # Non-DB integration tests (alias for vitest:ci)
 yarn test:codemirror      # CodeMirror-specific tests
 yarn vitest:integration   # Vitest integration tests (tests/vitest/integration)
 yarn vitest:ci            # Vitest integration tests minus docker-DB specs

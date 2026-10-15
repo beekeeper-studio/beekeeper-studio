@@ -1,29 +1,36 @@
+import { describe, it, expect, vi, afterEach, afterAll } from 'vitest'
 import fs from 'fs'
-import os from 'os'
 import path from 'path'
+import migration from '@/migration/20260527_clear_log_files'
 
-// jest.mock factories run before the surrounding module evaluates, so the
-// values they reference must be prefixed with `mock` or accessed via globals.
-const mockTmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bks-clear-logs-mig-'))
-const mockFileClear = jest.fn()
+// vi.mock factories are hoisted above the imports, so the values they
+// reference have to be created in vi.hoisted (which runs first too).
+const { mockTmpDir, mockFileClear } = await vi.hoisted(async () => {
+  const fs = await import('fs')
+  const os = await import('os')
+  const path = await import('path')
+  return {
+    mockTmpDir: fs.mkdtempSync(path.join(os.tmpdir(), 'bks-clear-logs-mig-')),
+    mockFileClear: vi.fn(),
+  }
+})
 
-jest.mock('electron', () => ({
+vi.mock('electron', () => ({
   app: { getPath: () => mockTmpDir },
 }))
 
-jest.mock('@bksLogger', () => ({
-  transports: { file: { getFile: () => ({ clear: mockFileClear }) } },
-  scope: () => ({
-    warn: () => undefined,
-    debug: () => undefined,
-    info: () => undefined,
-    error: () => undefined,
-  }),
+vi.mock('@bksLogger', () => ({
+  // the migration default-imports the logger
+  default: {
+    transports: { file: { getFile: () => ({ clear: mockFileClear }) } },
+    scope: () => ({
+      warn: () => undefined,
+      debug: () => undefined,
+      info: () => undefined,
+      error: () => undefined,
+    }),
+  },
 }))
-
-// Import after mocks are declared.
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const migration = require('@/migration/20260527_clear_log_files').default
 
 function write(file: string, contents = 'sensitive') {
   fs.writeFileSync(path.join(mockTmpDir, file), contents)
@@ -96,7 +103,7 @@ describe('20260527_clear_log_files migration', () => {
     write('utility.log', 'utility contents')
 
     const original = fs.writeFileSync
-    const spy = jest.spyOn(fs, 'writeFileSync').mockImplementation((file, data, opts) => {
+    const spy = vi.spyOn(fs, 'writeFileSync').mockImplementation((file, data, opts) => {
       if (String(file).endsWith('main.log')) {
         throw new Error('locked')
       }
@@ -114,7 +121,7 @@ describe('20260527_clear_log_files migration', () => {
     write('two.old.log', 'b')
 
     const original = fs.unlinkSync
-    const spy = jest.spyOn(fs, 'unlinkSync').mockImplementation((file) => {
+    const spy = vi.spyOn(fs, 'unlinkSync').mockImplementation((file) => {
       if (String(file).endsWith('one.old.log')) {
         throw new Error('locked')
       }
@@ -128,7 +135,7 @@ describe('20260527_clear_log_files migration', () => {
   })
 
   it('does not throw if logs directory is unreadable', async () => {
-    const spy = jest.spyOn(fs, 'readdirSync').mockImplementation(() => {
+    const spy = vi.spyOn(fs, 'readdirSync').mockImplementation(() => {
       throw new Error('boom')
     })
     await expect(migration.run()).resolves.not.toThrow()
