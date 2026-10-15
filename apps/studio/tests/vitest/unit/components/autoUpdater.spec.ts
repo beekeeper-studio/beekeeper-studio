@@ -6,24 +6,27 @@ const notys = vi.hoisted(() => [] as any[]);
 vi.mock("noty", () => {
   class FakeNoty {
     static button = (text: string, _classes: string, cb: () => void) => ({ text, cb });
-    static closeAll = () => notys.forEach((n) => (n.shown = false));
+    static closeAll = () => notys.forEach((n) => n.close());
     options: Record<string, any>;
     shown = false;
+    closed = false;
     constructor(options: Record<string, any>) {
       this.options = { ...options };
       notys.push(this);
     }
-    setText(text: string, optionsOverride = false) {
-      if (optionsOverride) this.options.text = text;
-      return this;
-    }
+    // Like the real Noty: close() leaves `shown` set, so a closed instance
+    // can't be shown again
     show() {
+      if (this.shown) return this;
       this.shown = true;
       return this;
     }
     close() {
-      this.shown = false;
+      this.closed = true;
       return this;
+    }
+    get visible() {
+      return this.shown && !this.closed;
     }
   }
   return { default: FakeNoty };
@@ -31,7 +34,8 @@ vi.mock("noty", () => {
 
 import AutoUpdater from "@/components/AutoUpdater.vue";
 
-const managedNoty = () => notys.find((n) => n.options.text.includes("system administrator"));
+const managedNotys = () => notys.filter((n) => n.options.text.includes("system administrator"));
+const managedNoty = () => managedNotys().at(-1);
 
 describe("AutoUpdater", () => {
   let handlers: Record<string, (...args: any[]) => void>;
@@ -55,7 +59,7 @@ describe("AutoUpdater", () => {
     handlers["managed-update"]({}, "6.2.0");
 
     const noty = managedNoty();
-    expect(noty.shown).toBe(true);
+    expect(noty.visible).toBe(true);
     expect(noty.options.text).toBe(
       "Beekeeper Studio 6.2.0 is available. Contact your system administrator to install it."
     );
@@ -65,7 +69,19 @@ describe("AutoUpdater", () => {
     handlers["managed-update"]({}, "6.2.0");
 
     expect(managedNoty().options.buttons.map((b) => b.text)).toEqual(["OK"]);
-    expect(notys.filter((n) => n.shown)).toHaveLength(1);
+    expect(notys.filter((n) => n.visible)).toHaveLength(1);
+  });
+
+  it("shows the notice again after it was dismissed", () => {
+    handlers["managed-update"]({}, "6.2.0");
+    managedNoty().options.buttons[0].cb();
+    expect(managedNoty().visible).toBe(false);
+
+    // e.g. Help > Check for Software Updates
+    handlers["managed-update"]({}, "6.2.0");
+
+    expect(managedNoty().visible).toBe(true);
+    expect(managedNotys()).toHaveLength(2);
   });
 
   it("leaves the version out when it isn't a plain version string", () => {

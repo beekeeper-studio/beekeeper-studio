@@ -27,19 +27,6 @@ export default Vue.extend({
         ],
         queue: 'download'
       }),
-      managedNotification: new Noty({
-        text: MANAGED_UPDATE_TEXT,
-        layout: 'bottomRight',
-        timeout: false,
-        closeWith: ['button'],
-        buttons: [
-          Noty.button('OK', 'btn btn-primary', () => {
-            // @ts-ignore
-            this.managedNotification.close();
-          })
-        ],
-        queue: 'download'
-      }),
       downloadNotification: new Noty({
         text: 'A new version is available. Download now?',
         layout: 'bottomRight',
@@ -95,15 +82,26 @@ export default Vue.extend({
       this.closeAll()
       this.manualNotification.show()
     },
-    // MSI installs: IT deploys updates, so there is nothing to download
+    // MSI installs: IT deploys updates, so there is nothing to download.
+    // Built on each call because a closed Noty can't be shown again, and users
+    // can dismiss this and check again from the Help menu.
     notifyManaged(_event, version?: string) {
       this.closeAll()
       // Noty renders text as HTML, so only a plain version string goes in
       const text = /^[0-9A-Za-z.+-]+$/.test(version || '')
         ? `Beekeeper Studio ${version} is available. Contact your system administrator to install it.`
         : MANAGED_UPDATE_TEXT
-      this.managedNotification.setText(text, true)
-      this.managedNotification.show()
+      const notification = new Noty({
+        text,
+        layout: 'bottomRight',
+        timeout: false,
+        closeWith: ['button'],
+        buttons: [
+          Noty.button('OK', 'btn btn-primary', () => notification.close())
+        ],
+        queue: 'download'
+      })
+      notification.show()
     },
     linkToDownload() {
       window.main.openExternally("https://beekeeperstudio.io/get");
