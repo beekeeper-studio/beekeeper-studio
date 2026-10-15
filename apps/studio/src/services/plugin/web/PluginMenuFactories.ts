@@ -25,6 +25,13 @@ import { NativePluginMenuItem } from "../types";
 
 type BigIntSerialized = number;
 
+/** Context the SQL editor passes to its context menu items. */
+type QueryEditorMenuContext = {
+  text: string;
+  selectedText: string;
+  selectedQuery: string;
+};
+
 function buildParamsForTableMenu(
   component: CellComponent,
   componentType: "cell" | "corner"
@@ -214,7 +221,8 @@ const pluginMenuFactories: MenuFactories = {
           context.store.addPopupMenuItem(menuId, {
             name: menuItem.name,
             slug,
-            handler: (_event, payload) => {
+            // `item` is the editor's menu context (see toMenuItem).
+            handler: ({ item }: { item: QueryEditorMenuContext }) => {
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
                 context.store.buildPluginTabInit({
@@ -222,9 +230,9 @@ const pluginMenuFactories: MenuFactories = {
                   viewId: menuItem.view,
                   command: menuItem.command,
                   params: {
-                    text: payload.text,
-                    selectedText: payload.selectedText,
-                    selectedQuery: payload.selectedQuery,
+                    text: item.text,
+                    selectedText: item.selectedText,
+                    selectedQuery: item.selectedQuery,
                   },
                 })
               );
