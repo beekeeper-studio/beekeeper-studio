@@ -289,10 +289,35 @@ class Config {
   }
 }
 
+/**
+ * Settings that `general.offlineMode = true` forces to `true`, whatever value
+ * they have in any config file. Each one switches off a feature that talks to
+ * a server other than the user's own databases.
+ */
+export const offlineModeSettings = [
+  "general.checkForUpdatesDisabled",
+  "general.driverDownloadsDisabled",
+  "cloud.workspacesDisabled",
+  "cloud.licenseValidationDisabled",
+  "pluginSystem.registryDisabled",
+  "plugins.bks-ai-shell.disabled",
+  "azure.ssoDisabled",
+] as const;
+
+/** Builds the config layer `general.offlineMode` applies on top of all files. */
+export function offlineModeConfig(): Partial<IBksConfig> {
+  const config = {};
+  for (const path of offlineModeSettings) {
+    _.set(config, path, true);
+  }
+  return config;
+}
+
 export class BksConfigProvider {
   private defaultConfig: Config;
   private systemConfig: Config;
   private userConfig: Config;
+  private offlineConfig: Config;
   private mergedConfig: IBksConfig;
 
   constructor(public readonly source: BksConfigSource, private platformInfo: IPlatformInfo) {
@@ -302,12 +327,17 @@ export class BksConfigProvider {
       platformInfo.isDevelopment ? "dev" : "user",
       source.userConfig
     );
-    this.mergedConfig = _.merge(
+    const fileConfig: IBksConfig = _.merge(
       {},
       source.defaultConfig,
       source.userConfig,
       source.systemConfig
     );
+    this.offlineConfig = new Config(
+      "offline",
+      fileConfig.general?.offlineMode ? offlineModeConfig() : {}
+    );
+    this.mergedConfig = _.merge(fileConfig, this.offlineConfig.config);
   }
 
   static create(source: BksConfigSource, platformInfo: IPlatformInfo) {
@@ -384,7 +414,9 @@ export class BksConfigProvider {
 
   private resolvePath(path: string) {
     let config: Config = this.defaultConfig;
-    if (this.systemConfig.has(path)) {
+    if (this.offlineConfig.has(path)) {
+      config = this.offlineConfig;
+    } else if (this.systemConfig.has(path)) {
       config = this.systemConfig;
     } else if (this.userConfig.has(path)) {
       config = this.userConfig;

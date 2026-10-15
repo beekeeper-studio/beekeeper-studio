@@ -173,7 +173,9 @@
         azureAuthEnabled: false,
         windowsAuthEnabled: false,
         authType: 'default',
-        authTypes: AzureAuthTypes,
+        authTypes: AzureAuthTypes.filter((t) =>
+          t.value !== AzureAuthType.AccessToken || !this.$bksConfig.azure.ssoDisabled
+        ),
       }
     },
     watch: {

@@ -2,7 +2,12 @@
 declare interface IBksConfig {
     azure: {
         azSQLLoginScope: string;
+        ssoDisabled: boolean;
         ssoPrompt: string;
+    };
+    cloud: {
+        licenseValidationDisabled: boolean;
+        workspacesDisabled: boolean;
     };
     db: {
         bedrock: {
@@ -403,6 +408,8 @@ declare interface IBksConfig {
         checkForUpdatesDisabled: boolean;
         checkForUpdatesInterval: number;
         downloadUserAgent: string;
+        driverDownloadsDisabled: boolean;
+        offlineMode: boolean;
         workspaceSyncInterval: number;
     };
     keybindings: {
@@ -481,6 +488,7 @@ declare interface IBksConfig {
         allow: string[];
         communityDisabled: boolean;
         disabled: boolean;
+        registryDisabled: boolean;
     };
     plugins: {
         "bks-ai-shell": {

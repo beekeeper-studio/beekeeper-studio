@@ -29,15 +29,25 @@
             Free trial expiry: {{ timeAgo(trialLicense.validUntil) }}, on {{
               trialLicense.validUntil.toLocaleDateString() }}
           </p>
-          <error-alert :error=" error" />
-          <div class="form-group">
-            <label for="email">License Name</label>
-            <input type="text" v-model="email">
+          <div class="alert alert-warning" v-if="onlineValidationDisabled">
+            <i class="material-icons-outlined">cloud_off</i>
+            <span>Online license validation is turned off by configuration. Save an offline
+              license file as <code>license.json</code> in <code>{{ userDirectory }}</code>, then
+              restart the app. <a
+                href="https://docs.beekeeperstudio.io/purchasing/license-types/"
+              >Learn more</a>.</span>
           </div>
-          <div class="form-group">
-            <label for="key">License Key</label>
-            <input type="text" v-model="key">
-          </div>
+          <template v-else>
+            <error-alert :error=" error" />
+            <div class="form-group">
+              <label for="email">License Name</label>
+              <input type="text" v-model="email">
+            </div>
+            <div class="form-group">
+              <label for="key">License Key</label>
+              <input type="text" v-model="key">
+            </div>
+          </template>
         </div>
       </div>
       <div class="vue-dialog-buttons flex flex-middle">
@@ -45,7 +55,7 @@
         <span class="expand" />
         <span>
           <a href="https://beekeeperstudio.io/pricing" class="btn btn-flat">Buy a new license</a>
-          <button v-if="!realLicenses?.length" type="submit" class="btn btn-primary mt-2">Submit</button>
+          <button v-if="!realLicenses?.length && !onlineValidationDisabled" type="submit" class="btn btn-primary mt-2">Submit</button>
         </span>
       </div>
     </form>
@@ -73,6 +83,12 @@ export default Vue.extend({
     license() {
       // there should only ever be 1 license
       return this.realLicenses?.[0]
+    },
+    onlineValidationDisabled() {
+      return this.$bksConfig.cloud.licenseValidationDisabled
+    },
+    userDirectory() {
+      return window.platformInfo.userDirectory
     },
     rootBindings() {
       return [

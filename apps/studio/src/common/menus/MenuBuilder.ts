@@ -8,6 +8,12 @@ export default class extends DefaultMenu {
     super(settings, handler, platformInfo)
   }
 
+  // Checking for updates and switching release channel both contact the
+  // update server, so they're hidden when update checks are turned off.
+  private get updatesEnabled() {
+    return !this.bksConfig.general.checkForUpdatesDisabled
+  }
+
   viewMenu(): Electron.MenuItemConstructorOptions {
     const result: Electron.MenuItemConstructorOptions = {
       label: 'View',
@@ -64,7 +70,7 @@ export default class extends DefaultMenu {
         this.menuItems.addBeekeeper,
         this.menuItems.devtools,
         // Moved to Beekeeper Studio menu for mac
-        ...(!this.platformInfo.isMac ? [this.menuItems.checkForUpdate] : []),
+        ...(!this.platformInfo.isMac && this.updatesEnabled ? [this.menuItems.checkForUpdate] : []),
         this.menuItems.restart,
         { type: 'separator' },
         // Moved to Beekeeper Studio menu for mac
@@ -73,7 +79,7 @@ export default class extends DefaultMenu {
       ]
     };
 
-    if (!this.platformInfo.isLinux || this.platformInfo.isAppImage) {
+    if (this.updatesEnabled && (!this.platformInfo.isLinux || this.platformInfo.isAppImage)) {
       helpMenu.submenu.push(this.menuItems.toggleBeta)
     }
 
@@ -88,7 +94,7 @@ export default class extends DefaultMenu {
         role: "appMenu",
         submenu: [
           this.menuItems.about,
-          this.menuItems.checkForUpdate,
+          ...(this.updatesEnabled ? [this.menuItems.checkForUpdate] : []),
           { type: 'separator' },
           { role: 'services' },
           { type: 'separator' },

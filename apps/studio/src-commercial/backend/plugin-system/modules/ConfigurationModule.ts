@@ -37,6 +37,14 @@ export class ConfigurationModule extends Module {
       this.manager.registry.communityDisabled = true;
     }
 
+    // Every plugin download (registry lists, update checks, READMEs and
+    // installs) goes through the registry, so turning off both sources keeps
+    // the plugin system offline while installed plugins still load.
+    if (this.options.config.pluginSystem.registryDisabled) {
+      this.manager.registry.communityDisabled = true;
+      this.manager.registry.officialDisabled = true;
+    }
+
     this.hook("before-install-plugin", this.validatePluginInstall);
     this.hook("plugin-snapshots", this.applyConfig);
   }
@@ -52,6 +60,12 @@ export class ConfigurationModule extends Module {
   private validatePluginInstall(): void {
     if (this.options.config.pluginSystem.disabled) {
       throw new PluginSystemError("PLUGIN_SYSTEM_DISABLED");
+    }
+    if (this.options.config.pluginSystem.registryDisabled) {
+      throw new PluginSystemError(
+        "PLUGIN_REGISTRY_DISABLED",
+        "Plugin installs are turned off by configuration (pluginSystem.registryDisabled)."
+      );
     }
   }
 

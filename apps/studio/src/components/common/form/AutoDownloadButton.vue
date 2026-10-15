@@ -66,6 +66,7 @@ export default Vue.extend({
       return `driver-dep-license-${this.requirementId}`;
     },
     visible(): boolean {
+      if (this.$bksConfig.general.driverDownloadsDisabled) return false;
       if (this.installing) return true;
       return this.providerAvailable;
     },

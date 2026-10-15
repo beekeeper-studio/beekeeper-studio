@@ -65,7 +65,7 @@
             <x-menuitem @click.prevent="handleItemClick($event, plugin)">
               <x-label>View</x-label>
             </x-menuitem>
-            <x-menuitem v-if="!$bksConfig.pluginSystem.disabled" @click.prevent="$emit('checkForUpdates', plugin)" :disabled="plugin.checkingForUpdates">
+            <x-menuitem v-if="!$bksConfig.pluginSystem.disabled && !$bksConfig.pluginSystem.registryDisabled" @click.prevent="$emit('checkForUpdates', plugin)" :disabled="plugin.checkingForUpdates">
               <x-label>Check for updates</x-label>
             </x-menuitem>
             <x-menuitem v-if="!$bksConfig.pluginSystem.disabled" @click.prevent="$emit('uninstall', plugin)">

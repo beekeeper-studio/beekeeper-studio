@@ -1,4 +1,5 @@
 import { state } from "@/handlers/handlerState";
+import BksConfig from "@/common/bksConfig";
 import {
   DriverDepManager,
   DriverDepStatus,
@@ -40,6 +41,9 @@ export const DriverDepHandlers: (
     return manager.getProviderInfo(requirementId);
   },
   "driverDep/install": async ({ requirementId, sId }) => {
+    if (BksConfig.general.driverDownloadsDisabled) {
+      throw new Error("Driver downloads are turned off by configuration (general.driverDownloadsDisabled).");
+    }
     return manager.install(requirementId, {
       onProgress(progress: DownloadProgress) {
         try {

@@ -32,6 +32,8 @@ To solve this problem, if you purchased a yearly business license or team licens
 
 The offline license file contains a digitally signed license key that Beekeeper Studio can verify locally without contacting any servers. When present, the offline license takes priority over any online licenses. The app verifies the license signature using a public key that's bundled with the application.
 
+To make sure the app never validates license keys online, set `licenseValidationDisabled = true` in the `[cloud]` section of the administrator config, or turn on [Offline Mode](../user_guide/security.md#offline-mode).
+
 ## Subscription renewals and offline licenses
 
 The license you download is only valid for your paid subscription period. That means every time your subscription renews you'll need to download a new license file.

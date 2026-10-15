@@ -1,6 +1,7 @@
 import { CloudCredential } from "@/common/appdb/models/CloudCredential"
 import { CloudClient, CloudClientOptions } from "@/lib/cloud/CloudClient";
 import platformInfo from '@/common/platform_info';
+import BksConfig from '@/common/bksConfig';
 import { state } from "./handlerState";
 import { promises as fs } from 'fs';
 import { IObjectImportStats } from "@/common/interfaces/IObjectImportStats";
@@ -25,6 +26,11 @@ export const WorkspaceHandlers: IWorkspaceHandlers = {
     if (wId === LocalWorkspace.id) {
       state(sId).cloudClient = null;
       return;
+    }
+
+    if (BksConfig.cloud.workspacesDisabled) {
+      state(sId).cloudClient = null;
+      throw new Error('Cloud workspaces are turned off by configuration (cloud.workspacesDisabled).');
     }
 
     const cred = await CloudCredential.findOneBy({ id: credentialId });

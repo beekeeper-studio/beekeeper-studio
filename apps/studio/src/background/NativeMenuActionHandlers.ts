@@ -7,9 +7,8 @@ import platformInfo from '../common/platform_info'
 import path from 'path'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import { IMenuActionHandler } from '@/common/interfaces/IMenuActionHandler'
-import { autoUpdater } from "electron-updater"
 import { DevLicenseState } from '@/lib/license';
-import { setAllowBeta } from './update_manager'
+import { checkForUpdates, setAllowBeta } from './update_manager'
 import { CustomMenuAction } from '@/types'
 
 type ElectronWindow = Electron.BrowserWindow | undefined
@@ -128,7 +127,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
   }
 
   checkForUpdates(_menuItem: Electron.MenuItem, _win: Electron.BrowserWindow): void {
-    autoUpdater.checkForUpdates()
+    checkForUpdates()
   }
 
   devtools(_1: Electron.MenuItem, win: ElectronWindow): void {
@@ -250,7 +249,7 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
       window.send(AppEvent.settingsChanged)
     })
     setAllowBeta(this.settings.useBeta.value as boolean);
-    autoUpdater.checkForUpdates();
+    checkForUpdates();
   }
 
   managePlugins = (_menuItem: Electron.MenuItem, win: ElectronWindow): void => {

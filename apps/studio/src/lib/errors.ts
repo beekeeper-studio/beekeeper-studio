@@ -28,6 +28,7 @@ export type PluginSystemErrorCode =
   | 'PLUGIN_VIEW_NOT_FOUND'
   | 'PLUGIN_NOT_SUPPORTED'
   | 'PLUGIN_SYSTEM_DISABLED'
+  | 'PLUGIN_REGISTRY_DISABLED'
   | 'INIT_TIMEOUT';
 
 export type PluginErrorCode =

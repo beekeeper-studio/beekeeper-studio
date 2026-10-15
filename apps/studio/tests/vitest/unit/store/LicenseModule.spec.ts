@@ -44,6 +44,7 @@ function personalLicense(overrides: Partial<TransportLicenseKey> = {}): Transpor
 describe('LicenseModule', () => {
   let store: ReturnType<typeof buildStore>
   const originalPlatformInfo = (window as any).platformInfo
+  const originalBksConfig = (window as any).bksConfig
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -54,11 +55,47 @@ describe('LicenseModule', () => {
       platform: 'linux',
       isArm: false,
     }
+    ;(window as any).bksConfig = { cloud: { licenseValidationDisabled: false } }
     store = buildStore()
   })
 
   afterEach(() => {
     (window as any).platformInfo = originalPlatformInfo
+    ;(window as any).bksConfig = originalBksConfig
+  })
+
+  describe('with online license validation turned off', () => {
+    beforeEach(() => {
+      (window as any).bksConfig.cloud.licenseValidationDisabled = true
+    })
+
+    it('does not contact the server when refreshing a license', async () => {
+      const license = personalLicense()
+
+      await store.dispatch('licenses/update', license)
+
+      expect(CloudClient.getLicense).not.toHaveBeenCalled()
+      expect(mockSend).not.toHaveBeenCalledWith('appdb/license/save', expect.anything())
+    })
+
+    it('refuses to register a license key', async () => {
+      await expect(
+        store.dispatch('licenses/add', { email: 'user@example.com', key: 'AAAA-BBBB-CCCC' })
+      ).rejects.toThrow(/offline license file/)
+
+      expect(CloudClient.getLicense).not.toHaveBeenCalled()
+      expect(mockSend).not.toHaveBeenCalledWith('appdb/license/save', expect.anything())
+    })
+
+    it('still starts a local free trial', async () => {
+      Vue.prototype.$noty = { info: vi.fn(), error: vi.fn() }
+      mockSend.mockResolvedValue([])
+
+      await store.dispatch('licenses/add', { trial: true })
+
+      expect(mockSend).toHaveBeenCalledWith('license/createTrialLicense')
+      expect(CloudClient.getLicense).not.toHaveBeenCalled()
+    })
   })
 
   describe('update action', () => {

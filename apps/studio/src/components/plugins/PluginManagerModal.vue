@@ -29,6 +29,12 @@
                   The plugin system is disabled. Installing and updating plugins is not available, and no plugins are allowed to run.
                 </template>
               </div>
+              <div
+                class="alert alert-warning"
+                v-else-if="$bksConfig.pluginSystem.registryDisabled"
+              >
+                The plugin registry is turned off by configuration. Installing and updating plugins is not available.
+              </div>
               <error-alert :error="errors" />
             </div>
             <plugin-list

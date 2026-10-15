@@ -17,7 +17,7 @@ Beekeeper Studio is a **desktop application** - the vast majority of your sensit
 
 Beekeeper Studio's cloud services (account management, billing, and workspace sync) are entirely optional. If you don't use cloud workspaces, no query or connection data ever reaches our infrastructure. When you do use cloud workspaces, sensitive fields like saved passwords are application-encrypted before being stored.
 
-All cloud features can be disabled for environments with strict security postures - Beekeeper Studio works fully offline, including offline license validation. See the [Configuration docs](./configuration.md) for details on disabling cloud features via administrator configuration.
+All cloud features can be disabled for environments with strict security postures - Beekeeper Studio works fully offline, including offline license validation. See [Offline Mode](#offline-mode) for details on disabling them via administrator configuration.
 
 ### Trust Center
 
@@ -71,6 +71,37 @@ To enforce security settings on all Beekeeper Studio users you can deploy an adm
 4. Deploy this config file to the 'administrator configuration' location for your OS (see above)
 
 This forces all users to set a PIN on first load of the app, requires pin entry when connecting to a database, and disconnects users when their system is locked, suspended, or idle.
+
+### Offline Mode
+
+Offline mode stops Beekeeper Studio from contacting any server other than your own databases. To enforce it for every user on a machine, add this to the administrator configuration file (`system.config.ini`, see [Configuration docs](./configuration.md)):
+
+```ini
+[general]
+offlineMode = true
+```
+
+Offline mode turns off every feature below. Each feature also has its own setting, so you can turn features off one at a time instead.
+
+| Feature | Contacts | Setting |
+| ------- | -------- | ------- |
+| Update checks, automatic and manual | GitHub releases | `[general] checkForUpdatesDisabled` |
+| Cloud (team) workspaces | app.beekeeperstudio.io | `[cloud] workspacesDisabled` |
+| Online license key validation | app.beekeeperstudio.io | `[cloud] licenseValidationDisabled` |
+| Plugin list, plugin updates and installs | GitHub | `[pluginSystem] registryDisabled` |
+| AI Shell plugin | The AI provider you set up | `[plugins.bks-ai-shell] disabled` |
+| Driver auto-download (Oracle Instant Client) | download.oracle.com | `[general] driverDownloadsDisabled` |
+| Azure AD SSO sign-in | app.beekeeperstudio.io, Microsoft | `[azure] ssoDisabled` |
+
+While `offlineMode = true`, setting any of these back to `false` in a config file has no effect.
+
+Things to know when running offline:
+
+- **Licensing**: use an [offline license file](../purchasing/license-types.md). License keys can't be entered in the app. A license key registered earlier keeps its last known status and is no longer refreshed.
+- **Cloud workspaces**: the workspace switcher and account sign-in are hidden. Saved connections and queries come from the local workspace only.
+- **Plugins**: installed plugins keep working (except AI Shell), but new plugins can't be installed or updated.
+- **Database connections** are not affected, including the sign-in methods of cloud databases (AWS IAM, Azure CLI and service principal, BigQuery, Snowflake).
+- **Links** you click, such as documentation in the Help menu, still open in your web browser.
 
 
 ## Privacy Mode

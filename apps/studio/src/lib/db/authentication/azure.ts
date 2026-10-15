@@ -236,6 +236,10 @@ export class AzureAuthService {
   }
 
   private async accessToken(): Promise<AuthConfig> {
+    // Browser sign-in hands the auth code back through app.beekeeperstudio.io
+    if (BksConfig.azure.ssoDisabled) {
+      throw new Error('Azure AD SSO sign-in is turned off by configuration (azure.ssoDisabled). Use another Azure authentication method.');
+    }
     const refreshToken = await this.tryRefresh();
     if (refreshToken) {
       return refreshToken;

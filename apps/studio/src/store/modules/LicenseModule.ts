@@ -124,6 +124,9 @@ export const LicenseModule: Module<State, RootState>  = {
           return
         }
       } else {
+        if (window.bksConfig.cloud.licenseValidationDisabled) {
+          throw new Error('Online license validation is turned off by configuration (cloud.licenseValidationDisabled). Use an offline license file (license.json) instead.')
+        }
         // Get the installation ID from the backend
         const installationId = context.state.installationId
 
@@ -156,6 +159,13 @@ export const LicenseModule: Module<State, RootState>  = {
         // persisted rows. Offline/file-based licenses also land here with
         // null ids, and they shouldn't be synced to the server.
         log.warn('Skipping license update: no id on license', license.key)
+        return
+      }
+
+      // Keep the stored license as-is: it stays valid until its saved
+      // validUntil date, the same as when the server can't be reached.
+      if (window.bksConfig.cloud.licenseValidationDisabled) {
+        log.info('Skipping license update: online license validation is turned off')
         return
       }
 

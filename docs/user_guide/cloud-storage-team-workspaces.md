@@ -27,6 +27,8 @@ Queries and Connections stored in a workspace are only available for use through
 
 Workspaces are free so long as you maintain an active Beekeeper Studio subscription.
 
+Administrators can turn off cloud workspaces for every user on a machine with `workspacesDisabled = true` in the `[cloud]` section of the administrator config. See [Offline Mode](security.md#offline-mode).
+
 ## Getting Started
 
 It only takes a few minutes to get started with workspaces.

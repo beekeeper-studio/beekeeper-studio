@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import Vuex from 'vuex'
 import Vue from 'vue'
 import { CredentialsModule } from '@/store/modules/CredentialsModule'
 import { LocalWorkspace } from '@/common/interfaces/IWorkspace'
+import { CloudClient } from '@/lib/cloud/CloudClient'
 
 Vue.use(Vuex)
 
@@ -47,9 +48,68 @@ function seedCloudWorkspace(store: ReturnType<typeof buildStore>) {
 }
 
 describe('CredentialsModule', () => {
+  const originalBksConfig = (window as any).bksConfig
+
   beforeEach(() => {
+    vi.clearAllMocks()
     mockSend.mockReset()
     mockSend.mockResolvedValue(null)
+    ;(window as any).bksConfig = { cloud: { workspacesDisabled: false } }
+  })
+
+  afterEach(() => {
+    (window as any).bksConfig = originalBksConfig
+  })
+
+  describe('with cloud workspaces turned off', () => {
+    beforeEach(() => {
+      (window as any).bksConfig.cloud.workspacesDisabled = true
+    })
+
+    it('does not load saved workspace accounts', async () => {
+      const store = buildStore({ isLifetime: false, lastUsedWorkspace: LocalWorkspace.id })
+      seedCloudWorkspace(store)
+
+      await store.dispatch('credentials/load')
+
+      expect(mockSend).not.toHaveBeenCalledWith('appdb/credential/find')
+      expect(CloudClient).not.toHaveBeenCalled()
+      expect((store.state as any).credentials.credentials).toEqual([])
+      expect(store.getters['credentials/workspaces']).toEqual([
+        { workspace: LocalWorkspace, client: null, credentialId: null },
+      ])
+    })
+
+    it('does not restore the last used cloud workspace', async () => {
+      const store = buildStore({ isLifetime: false, lastUsedWorkspace: 42 })
+      seedCloudWorkspace(store)
+
+      await store.dispatch('credentials/setUserWorkspace')
+
+      expect(mockSend).not.toHaveBeenCalled()
+      expect(store.state.workspaceId).toBe(LocalWorkspace.id)
+    })
+
+    it('still activates the local workspace', async () => {
+      const store = buildStore({ isLifetime: false, lastUsedWorkspace: LocalWorkspace.id })
+
+      await store.dispatch('credentials/load')
+
+      expect(mockSend).toHaveBeenCalledWith('workspace/setActive', {
+        wId: LocalWorkspace.id,
+      })
+    })
+
+    it('refuses to sign in', async () => {
+      const store = buildStore({ isLifetime: false, lastUsedWorkspace: LocalWorkspace.id })
+
+      await expect(
+        store.dispatch('credentials/login', { email: 'user@example.com', password: 'secret' })
+      ).rejects.toThrow(/turned off by configuration/)
+
+      expect(CloudClient.login).not.toHaveBeenCalled()
+      expect(mockSend).not.toHaveBeenCalled()
+    })
   })
 
   describe('setUserWorkspace', () => {

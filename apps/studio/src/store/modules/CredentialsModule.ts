@@ -113,6 +113,13 @@ export const CredentialsModule: Module<State, RootState> = {
 
   actions: {
     async load(context) {
+      // Saved workspace accounts would be contacted to list their workspaces,
+      // so leave them untouched when cloud workspaces are turned off.
+      if (window.bksConfig.cloud.workspacesDisabled) {
+        context.commit('replace', [])
+        await context.dispatch('setUserWorkspace')
+        return
+      }
       context.commit('loading', true)
       try {
         const creds = await Vue.prototype.$util.send('appdb/credential/find');
@@ -129,6 +136,9 @@ export const CredentialsModule: Module<State, RootState> = {
       }
     },
     async login(context, { email, password }) {
+      if (window.bksConfig.cloud.workspacesDisabled) {
+        throw new Error('Cloud workspaces are turned off by configuration (cloud.workspacesDisabled).')
+      }
       const existing = await Vue.prototype.$util.send('appdb/credential/findOneBy', { email })
       const appId = (await Vue.prototype.$util.send('appdb/credential/findOneBy', {}))?.appId || genAppId()
       let cred: TransportCloudCredential = existing || {
@@ -167,6 +177,7 @@ export const CredentialsModule: Module<State, RootState> = {
       // Licenses on lifetime terms (subscription ended) don't include cloud
       // workspaces, so don't restore the last-used cloud workspace.
       if (context.rootGetters['licenses/isLifetime']) return
+      if (window.bksConfig.cloud.workspacesDisabled) return
 
       const match = workspaces.find((v: WSWithClient) => v?.workspace?.id === lastUsedWorkspace)
 
