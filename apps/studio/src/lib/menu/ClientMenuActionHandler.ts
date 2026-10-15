@@ -60,6 +60,7 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   importConnectionFiles = () => send('importConnectionFiles')
   toggleMinimalMode = () => send('toggleMinimalMode')
   togglePrivacyMode = () => send('togglePrivacyMode')
+  toggleConfirmWindowClose = () => send('toggleConfirmWindowClose')
   switchLicenseState = (_menuItem, _win, type) => send('switchLicenseState', type)
   simulatePlatform = (_menuItem, _win, platform) => send('simulatePlatform', platform)
   toggleBeta = (menuItem) => {

@@ -98,6 +98,7 @@ import addSnowflakeOptions from './20260501_add_snowflake_options'
 import addWindowsAuthToConnections from './20260618_add_windows_auth_to_connections'
 import addSqlServerOptions from './20260626_add_sqlserver_options'
 import fixQueryAuditAppendOnlyTrigger from './20260914_fix_query_audit_append_only_trigger'
+import addConfirmWindowCloseSetting from './20260929_add_confirm_window_close_setting'
 
 import ultimate from './ultimate/index'
 
@@ -154,7 +155,8 @@ const realMigrations = [
   addSnowflakeOptions,
   addWindowsAuthToConnections,
   addSqlServerOptions,
-  fixQueryAuditAppendOnlyTrigger
+  fixQueryAuditAppendOnlyTrigger,
+  addConfirmWindowCloseSetting
 ]
 
 // fixtures require the models

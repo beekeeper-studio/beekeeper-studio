@@ -1,12 +1,14 @@
 import _ from 'lodash'
 import path from 'path'
-import { BrowserWindow, globalShortcut, Rectangle } from "electron"
+import { app, BrowserWindow, globalShortcut, ipcMain, Menu, Rectangle } from "electron"
 import electron from 'electron'
 import platformInfo from '../common/platform_info'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import rawLog from '@bksLogger'
 import querystring from 'query-string'
 import { safeOpenExternal } from './lib/electron/safeOpenExternal'
+import { AppEvent } from '../common/AppEvent'
+import { WindowCloseGuard, WindowCloseState } from './lib/electron/WindowCloseGuard'
 
 
 // eslint-disable-next-line
@@ -15,6 +17,33 @@ const remoteMain = require('@electron/remote/main')
 const log = rawLog.scope('WindowBuilder')
 
 const windows: BeekeeperWindow[] = []
+
+const closeState: WindowCloseState = { bypassed: false, quitRequested: false }
+
+export function bypassCloseListeners(): void {
+  closeState.bypassed = true
+}
+
+// a prevented close cancels app.quit(), the guard resumes it once the listeners allow the close
+app.on('before-quit', () => { closeState.quitRequested = true })
+
+// Playwright's app.quit() would hang on a prevented close in every e2e spec
+const closeListenersEnabled = !platformInfo.testMode || !!process.env.BKS_TEST_WINDOW_CLOSE_LISTENERS
+
+export async function setConfirmWindowClose(settings: IGroupedUserSettings, enabled: boolean): Promise<void> {
+  const setting = settings.dontConfirmWindowClose
+  if (!setting) return
+  setting.value = !enabled
+  await setting.save()
+  const menuItem = Menu.getApplicationMenu()?.getMenuItemById('confirm-window-close-toggle')
+  if (menuItem) menuItem.checked = enabled
+  getActiveWindows().forEach((window) => window.send(AppEvent.settingsChanged))
+}
+
+ipcMain.on(AppEvent.windowListenerCount, (event, type: string, count: number) => {
+  const window = windows.find((w) => w.webContents === event.sender)
+  if (window?.closeGuard && type === 'close') window.closeGuard.listenerCount = count
+})
 
 export interface OpenOptions {
   url?: string
@@ -29,6 +58,7 @@ class BeekeeperWindow {
   private reloaded = false
   private appUrl: string
   public sId: string;
+  public closeGuard?: WindowCloseGuard
 
   constructor(protected settings: IGroupedUserSettings, openOptions: OpenOptions) {
     const theme = settings.theme
@@ -211,7 +241,7 @@ class BeekeeperWindow {
     this.win?.on('closed', () => {
       this.win = null
     })
-
+    if (closeListenersEnabled) this.closeGuard = new WindowCloseGuard(this.win, ipcMain, app, closeState)
 
     const windowMoveResizeListener = _.debounce(this.windowMoveResizeListener.bind(this), 1000)
     this.win.on('resize',windowMoveResizeListener)
@@ -231,8 +261,9 @@ class BeekeeperWindow {
     this.reloaded = true
   }
 
-  onClose(listener: (event: electron.Event) => void) {
-    this.win?.on('close', listener);
+  // 'closed', not 'close': a close can be prevented, and callers tear down state here
+  onClose(listener: () => void) {
+    this.win?.on('closed', listener);
   }
 
   get active() {

@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron'
 import { autoUpdater } from 'electron-updater'
-import { getActiveWindows } from './WindowBuilder'
+import { getActiveWindows, bypassCloseListeners } from './WindowBuilder'
 import rawlog from '@bksLogger'
 
 const log = rawlog.scope('update-manager')
@@ -91,6 +91,7 @@ export function manageUpdates(allowBeta: boolean, debug?: boolean): void {
   })
 
   ipcMain.on('install-update', () => {
+    bypassCloseListeners()
     autoUpdater.quitAndInstall()
   })
 
