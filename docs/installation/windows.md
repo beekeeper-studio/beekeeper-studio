@@ -26,7 +26,7 @@ We also have a portable version of Beekeeper Studio that does not require instal
 
 The ARM64 version runs natively on Windows on ARM, so it's faster and uses less battery than the x64 version running under emulation. It updates itself the same way the x64 version does.
 
-If you already run the x64 version on an ARM PC, download the ARM64 installer and run it. It installs over the x64 version and keeps your connections, saved queries, and settings. The x64 version doesn't switch itself to ARM64 when it updates.
+If you already run the x64 version on an ARM PC, download the ARM64 installer and run it. It installs over the x64 version and keeps your connections, saved queries, and settings. The x64 version doesn't switch itself to ARM64 when it updates, but when it runs on an ARM PC it shows a notice with a link to the ARM64 version.
 
 The ARM64 installer only runs on ARM PCs. On an x64 PC it stops with a message pointing you to the x64 installer.
 

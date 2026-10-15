@@ -6,7 +6,7 @@
  **/
 
 /* eslint-disable */
-const { DuckDBBlobValue, DuckDBBlobType, DuckDBAnyType } = require("@duckdb/node-api");
+const { loadDuckDB } = require("./loadDuckDB");
 const Client = require("knex/lib/client");
 const QueryCompiler = require("./query/duckdb-querycompiler");
 const ColumnCompiler = require("./schema/duckdb-columncompiler");
@@ -28,7 +28,7 @@ class Client_DuckDB extends Client {
   }
 
   _driver() {
-    return require("@duckdb/node-api");
+    return loadDuckDB();
   }
 
   wrapIdentifierImpl(value) {
@@ -109,6 +109,7 @@ class Client_DuckDB extends Client {
   }
 
   buildStatementBindArgs(bindings) {
+    const { DuckDBBlobValue, DuckDBBlobType } = loadDuckDB();
     const values = [];
     const types = {};
     bindings.forEach((binding, idx) => {

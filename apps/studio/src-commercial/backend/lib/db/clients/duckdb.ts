@@ -15,7 +15,8 @@ import knexlib, { Knex } from "knex";
 import _ from "lodash";
 import rawLog from "@bksLogger";
 import { Client_DuckDB as DuckDBKnexClient } from "@shared/lib/knex-duckdb";
-import { DuckDBInstance as Database, DuckDBConnection as Connection, DuckDBMaterializedResult, DuckDBType, DuckDBValue, DuckDBListValue, DuckDBTypeId, DuckDBBlobValue, DuckDBBlobType } from "@duckdb/node-api";
+import { loadDuckDB } from "@shared/lib/knex-duckdb/loadDuckDB";
+import type { DuckDBInstance as Database, DuckDBConnection as Connection, DuckDBMaterializedResult, DuckDBType, DuckDBValue, DuckDBListValue } from "@duckdb/node-api";
 import { identify } from "sql-query-identifier";
 import {
   CancelableQuery,
@@ -243,7 +244,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   async connect(): Promise<void> {
     await super.connect();
 
-    this.databaseInstance = await Database.create(
+    this.databaseInstance = await loadDuckDB().DuckDBInstance.create(
       this.databasePath || ":memory:",
       {
         access_mode: this.readOnlyMode ? "READ_ONLY" : "READ_WRITE",
@@ -728,6 +729,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   }
 
   private buildStatementBindArgs(params) {
+    const { DuckDBBlobValue, DuckDBBlobType } = loadDuckDB();
     const values = [];
     const types = {};
     params.forEach((param, idx) => {
@@ -807,7 +809,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     if (!databaseName.endsWith(".duckdb")) {
       databaseName += ".duckdb";
     }
-    await Database.create(databaseName);
+    await loadDuckDB().DuckDBInstance.create(databaseName);
     return databaseName;
   }
 
@@ -1051,7 +1053,7 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
   protected parseQueryResultColumns(qr: DuckDBResult): BksField[] {
     return qr.columns.map((c) => ({
       name: c.name,
-      bksType: c.type.typeId === DuckDBTypeId.BLOB ? "BINARY" : "UNKNOWN",
+      bksType: c.type.typeId === loadDuckDB().DuckDBTypeId.BLOB ? "BINARY" : "UNKNOWN",
     }));
   }
 

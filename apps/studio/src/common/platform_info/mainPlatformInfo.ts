@@ -50,6 +50,8 @@ export function mainPlatformInfo(): IPlatformInfo {
   const isWindows = platform === 'win32'
   const isMac = platform === 'darwin'
   const isArm = p.arch.startsWith('arm')
+  // process.arch reports x64 in this case, so isArm is false.
+  const runningUnderArm64Translation = testMode ? false : !!e.app.runningUnderARM64Translation
   const easyPlatform = isWindows ? 'windows' : (isMac ? 'mac' : 'linux')
   const locale = testMode ? 'test' : e.app.getLocale();
 
@@ -86,7 +88,8 @@ export function mainPlatformInfo(): IPlatformInfo {
       sessionType === 'wayland' && !isWindows && !isMac
   }
    return {
-    isWindows, isMac, isArm, oracleSupported, oracleInstantClientSupported,
+    isWindows, isMac, isArm, runningUnderArm64Translation,
+    oracleSupported, oracleInstantClientSupported,
     parsedArgs,
     isLinux: !isWindows && !isMac,
     sessionType,
