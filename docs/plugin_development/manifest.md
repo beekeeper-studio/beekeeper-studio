@@ -12,7 +12,7 @@ The `manifest.json` file defines your plugin's metadata, capabilities, settings,
 
 | Property          | Type                   | Required | Description                                                                                                                |
 | ----------------  | ---------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `id`              | `string`               | Yes      | Unique identifier for your plugin. Use lowercase letters, numbers, and hyphens only.                                       |
+| `id`              | `string`               | Yes      | Unique identifier for your plugin. Use lowercase letters, numbers, and hyphens only. The `bks-` prefix is reserved for official plugins, and the Community Edition shows an upgrade prompt in place of a plugin whose id starts with it. |
 | `name`            | `string`               | Yes      | Display name shown to users in the Plugin Manager and UI.                                                                  |
 | `author`          | `string \| AuthorInfo` | Yes      | Plugin author or organization name.                                                                                        |
 | `description`     | `string`               | Yes      | Brief description of what your plugin does.                                                                                |
@@ -34,9 +34,10 @@ The `manifest.json` file defines your plugin's metadata, capabilities, settings,
 
 ## Capabilities
 
-| Property | Type     | Required | Description                                |
-| -------- | -------- | -------- | ------------------------------------------ |
-| `views`  | `View[]` | Yes      | Array of view definitions for your plugin. |
+| Property | Type               | Required | Description                                |
+| -------- | ------------------ | -------- | ------------------------------------------ |
+| `views`  | `View[]`           | Yes      | Array of view definitions for your plugin. |
+| `menu`   | `PluginMenuItem[]` | No       | Array of menu definitions for your plugin. |
 
 ## View
 
@@ -119,7 +120,7 @@ The `manifest.json` file defines your plugin's metadata, capabilities, settings,
 
 | Value                 | Description                                                                            |
 | --------------------- | -------------------------------------------------------------------------------------- |
-| `"plain-tab"`         | Tab with your plugin's iframe taking up the entire tab.                                |
+| `"base-tab"`          | Tab with your plugin's iframe taking up the entire tab.                                |
 | `"shell-tab"`         | Tab with your plugin's iframe at the top and a collapsible result table at the bottom. |
 | `"primary-sidebar"`   | _(Planned for future releases)_ Primary sidebar panel.                                 |
 | `"secondary-sidebar"` | _(Planned for future releases)_ Secondary sidebar panel.                               |
