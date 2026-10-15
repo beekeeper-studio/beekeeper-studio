@@ -146,7 +146,7 @@ export const api = {
     return electron.clipboard.writeText(text);
   },
   writeImageToClipboard(dataUrl: string) {
-    return electron.clipboard.writeImage(nativeImage.createFromDataURL(dataUrl));
+    return ipcRenderer.invoke('clipboard:write', { content: dataUrl, image: true });
   },
   readTextFromClipboard(): string {
     return electron.clipboard.readText();
