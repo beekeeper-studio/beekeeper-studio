@@ -17,7 +17,7 @@ The MSI is attached to each release on the [GitHub releases page](https://github
 | Unattended install             | `msiexec /i <file>.msi /qn`                         | `<file>.exe /S`                          |
 | Shortcuts                      | Start menu, all users                               | Start menu and desktop                   |
 | Updates                        | Deployed by IT, users are told when one is out      | The app updates itself                   |
-| Visual C++ Redistributable     | Not included, deploy it separately                  | Downloaded during install when missing   |
+| Visual C++ Redistributable     | Required, install fails without it                  | Downloaded during install when missing   |
 
 ## Update Notifications
 
@@ -32,7 +32,13 @@ The **Release Channel** option is hidden from the **Help** menu, so users can't 
 
 ## Prerequisite: Visual C++ Redistributable
 
-Beekeeper Studio requires the Microsoft Visual C++ Redistributable (x64). The MSI doesn't install it, so deploy it first if your machines don't have it already:
+Beekeeper Studio requires the Microsoft Visual C++ Redistributable (x64). The MSI doesn't install it, and refuses to install without it: a silent install exits with code `1603` and this message in its log:
+
+```text
+Beekeeper Studio requires the Microsoft Visual C++ Redistributable (x64). Install it from https://aka.ms/vc14/vc_redist.x64.exe, then run this installer again.
+```
+
+Deploy the runtime first. In Intune or Configuration Manager, add it as a dependency of the Beekeeper Studio app so it's installed automatically beforehand. To install it by hand:
 
 ```bat
 vc_redist.x64.exe /install /quiet /norestart

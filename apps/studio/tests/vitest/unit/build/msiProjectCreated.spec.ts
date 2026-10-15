@@ -7,7 +7,7 @@ import { MSI_MARKER_FILE } from "@/common/msiInstall";
 
 // Loaded the way electron-builder loads it: a plain CommonJS module.
 const hook = createRequire(import.meta.url)("../../../../build/win/msiProjectCreated.js");
-const { MARKER_FILE, addMarkerComponent } = hook;
+const { MARKER_FILE, VC_RUNTIME_MESSAGE, addMarkerComponent, addVcRuntimeCheck } = hook;
 const msiProjectCreated = hook.default;
 
 // Render electron-builder's own MSI template the same way MsiTarget does, so
@@ -59,6 +59,41 @@ function parse(xml: string): Document {
 }
 
 describe("msiProjectCreated hook", () => {
+  describe("Visual C++ runtime check", () => {
+    it("refuses to install unless the x64 runtime is registered", () => {
+      const doc = parse(addVcRuntimeCheck(renderMsiTemplate()));
+      const product = doc.querySelector("Product");
+
+      const property = product.querySelector(':scope > Property[Id="BKS_VCRUNTIME_X64"]');
+      const searches = [...property.querySelectorAll("RegistrySearch")];
+      // both registry views, since the runtime's own docs don't settle which one
+      expect(searches.map((s) => s.getAttribute("Win64")).sort()).toEqual(["no", "yes"]);
+      for (const search of searches) {
+        expect(search.getAttribute("Root")).toBe("HKLM");
+        expect(search.getAttribute("Key")).toBe("SOFTWARE\\Microsoft\\VisualStudio\\14.0\\VC\\Runtimes\\x64");
+        expect(search.getAttribute("Name")).toBe("Installed");
+      }
+
+      const condition = [...product.querySelectorAll(":scope > Condition")]
+        .find((c) => c.getAttribute("Message") === VC_RUNTIME_MESSAGE);
+      // Installed: repair and uninstall still work if the runtime goes away later
+      expect(condition.textContent).toBe('Installed OR BKS_VCRUNTIME_X64 = "#1"');
+    });
+
+    it("tells the admin where to get the runtime", () => {
+      expect(VC_RUNTIME_MESSAGE).toContain("https://aka.ms/vc14/vc_redist.x64.exe");
+    });
+
+    it("is idempotent", () => {
+      const once = addVcRuntimeCheck(renderMsiTemplate());
+      expect(addVcRuntimeCheck(once)).toBe(once);
+    });
+
+    it("fails the build if the template no longer has MajorUpgrade", () => {
+      expect(() => addVcRuntimeCheck("<Wix><Product/></Wix>")).toThrow(/MajorUpgrade/);
+    });
+  });
+
   it("uses the marker file name the app looks for", () => {
     expect(MARKER_FILE).toBe(MSI_MARKER_FILE);
   });
@@ -108,6 +143,7 @@ describe("msiProjectCreated hook", () => {
       expect(fs.readFileSync(path.join(dir, MARKER_FILE), "utf8")).toMatch(/MSI/);
       const doc = parse(fs.readFileSync(projectFile, "utf8"));
       expect(doc.querySelector('File[Id="bksMsiInstallMarker"]')).not.toBeNull();
+      expect(doc.querySelector('Property[Id="BKS_VCRUNTIME_X64"]')).not.toBeNull();
     });
   });
 });
