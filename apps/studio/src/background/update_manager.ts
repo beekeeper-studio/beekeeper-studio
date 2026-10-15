@@ -54,6 +54,11 @@ export function manageUpdates(allowBeta: boolean, debug?: boolean): void {
     return
   }
 
+  if (platformInfo.isMsi) {
+    log.info("installed from the MSI package, updates are managed by the administrator")
+    return
+  }
+
   if (BksConfig.general.checkForUpdatesDisabled) {
     log.info("automatic update checks are disabled")
     return

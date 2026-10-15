@@ -161,6 +161,7 @@ nav:
   - Installation:
     - installation/index.md
     - installation/windows.md
+    - installation/windows-enterprise.md
     - installation/macos-m1-intel.md
     - installation/linux.md
   - Connecting To A Database:

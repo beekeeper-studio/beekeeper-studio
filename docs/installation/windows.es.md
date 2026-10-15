@@ -15,3 +15,8 @@ Actualmente Beekeeper Studio solo es compatible con la arquitectura `x86_64`. El
 ## Version portatil de Beekeeper Studio
 
 Tambien tenemos una version portatil de Beekeeper Studio que no requiere instalacion. Esta tambien esta disponible en nuestro sitio web.
+
+
+## Despliegue empresarial (MSI)
+
+Los administradores de TI pueden desplegar Beekeeper Studio con el paquete MSI, usando Intune, Configuration Manager, Directiva de grupo o una instalacion silenciosa con `msiexec`. Consulta [Despliegue empresarial en Windows (MSI)](./windows-enterprise.md).
