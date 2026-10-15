@@ -25,7 +25,11 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-14, ubuntu-22.04, windows-2022, ubuntu-22.04-arm]
+        os: [macos-14, ubuntu-22.04, windows-2022, ubuntu-22.04-arm, windows-11-arm]
+
+    env:
+      # setup-python has no Windows arm64 build of 3.11
+      PYTHON_VERSION: ${{ matrix.os == 'windows-11-arm' && '3.12' || '3.11' }}
 
     steps:
       - name: Check out Git repository
@@ -37,10 +41,10 @@ jobs:
         with:
           channel: '8.x/stable'
 
-      - name: Install python 3.11 (not Mac)
+      - name: Install python ${{ env.PYTHON_VERSION }} (not Mac)
         uses: actions/setup-python@v6
         with:
-          python-version: 3.11
+          python-version: ${{ env.PYTHON_VERSION }}
         if: "!startsWith(matrix.os, 'macos')"
 
 
@@ -78,8 +82,8 @@ jobs:
         run: |
           $PYTHON_VERSION = python --version | Out-String
           Write-Output "Installed Python version: $PYTHON_VERSION"
-          if (-not $PYTHON_VERSION.StartsWith("Python 3.11")) {
-            Write-Output "Error: Python version does not start with 3.11"
+          if (-not $PYTHON_VERSION.StartsWith("Python $env:PYTHON_VERSION")) {
+            Write-Output "Error: Python version does not start with $env:PYTHON_VERSION"
             exit 1
           }
         shell: powershell
@@ -140,6 +144,13 @@ jobs:
 
       - name: Verify msnodesqlv8 native build
         run: node -e "require('msnodesqlv8')"
+
+      # Every database client loads at startup, so one native module that
+      # can't load on this arch breaks every connection.
+      - name: Verify native modules load in Electron
+        run: yarn workspace beekeeper-studio electron ../../bin/check-native-modules.js
+        env:
+          ELECTRON_RUN_AS_NODE: 1
 
       - name: Build Electron app
         run: "yarn run electron:build --publish never"

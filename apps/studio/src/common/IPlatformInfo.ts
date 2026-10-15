@@ -6,6 +6,8 @@ export interface IPlatformInfo {
   isMac: boolean,
   isArm: boolean,
   oracleSupported: boolean,
+  /** Thick mode needs Oracle Instant Client, which Oracle doesn't build for Windows ARM64 */
+  oracleInstantClientSupported: boolean,
   parsedArgs: any,
   isLinux: boolean,
   sessionType: string,

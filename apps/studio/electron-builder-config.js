@@ -17,6 +17,16 @@ const certSubject = 'SERIALNUMBER=803010247, C=US, ST=Texas, L=Dallas, O="Rathbo
 const bksAiShellPath = path.dirname(require.resolve('@beekeeperstudio/bks-ai-shell/package.json'));
 const bksErDiagramPath = path.dirname(require.resolve('@beekeeperstudio/bks-er-diagram/package.json'));
 
+// Each Windows architecture builds natively on its own runner (windows-2022 for
+// x64, windows-11-arm for arm64), and electron-builder targets the host arch
+// unless --x64/--arm64 is passed. NSIS already suffixes non-x64 installers
+// (Beekeeper-Studio-Setup-X.Y.Z-arm64.exe), but our portable artifactName is
+// fixed, so it needs the suffix added here or both arches upload the same name.
+// x64 keeps its unsuffixed names: winget/scoop/chocolatey manifests point at them.
+const windowsArch = process.argv.includes('--arm64') ? 'arm64'
+  : process.argv.includes('--x64') ? 'x64'
+  : process.arch
+const windowsArchSuffix = windowsArch === 'arm64' ? '-arm64' : ''
 
 
 module.exports = {
@@ -270,7 +280,7 @@ module.exports = {
     },
   },
   portable: {
-    "artifactName": "${productName}-${version}-portable.exe",
+    "artifactName": "${productName}-${version}" + windowsArchSuffix + "-portable.exe",
   },
   nsis: {
     oneClick: false,

@@ -59,9 +59,10 @@ export function mainPlatformInfo(): IPlatformInfo {
 
   // previous builds of Beekeeper Studio required native libs for Oracle,
   // but now it should work on all platforms
-  // FIXME: Windows ARM - this needs to be disabled
-  // as instant client not available there
   const oracleSupported = true
+  // Oracle publishes no Instant Client for Windows ARM64, and node-oracledb
+  // ships no thick-mode binary for it, so Oracle connects in thin mode there.
+  const oracleInstantClientSupported = !(isWindows && p.arch === 'arm64')
 
   const resourcesPath = isDevEnv ? resolve('./extra_resources') : resolve(p.resourcesPath)
   let userDirectory = testMode ? './tmp' : e.app.getPath("userData")
@@ -85,7 +86,7 @@ export function mainPlatformInfo(): IPlatformInfo {
       sessionType === 'wayland' && !isWindows && !isMac
   }
    return {
-    isWindows, isMac, isArm, oracleSupported,
+    isWindows, isMac, isArm, oracleSupported, oracleInstantClientSupported,
     parsedArgs,
     isLinux: !isWindows && !isMac,
     sessionType,

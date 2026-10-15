@@ -8,6 +8,6 @@ Beekeeper Studio is available for Windows, Linux, and MacOS
 
 See the guides below for OS specific installation instructions:
 
-- [Windows](./windows.md)
+- [Windows (x64 and ARM64)](./windows.md)
 - [Mac OS (Intel and Apple Silicon)](./macos-m1-intel.md)
 - [Linux](./linux.md)
