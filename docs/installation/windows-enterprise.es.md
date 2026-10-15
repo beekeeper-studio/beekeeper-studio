@@ -16,10 +16,19 @@ El MSI se adjunta a cada version en la [pagina de versiones de GitHub](https://g
 | Ubicacion de instalacion       | Todos los usuarios, `C:\Program Files\Beekeeper Studio` | Usuario actual por defecto, todos los usuarios opcional |
 | Instalacion desatendida        | `msiexec /i <archivo>.msi /qn`                         | `<archivo>.exe /S`                          |
 | Accesos directos               | Menu Inicio, todos los usuarios                        | Menu Inicio y escritorio                    |
-| Actualizaciones                | Las despliega TI, la aplicacion nunca se actualiza sola | La aplicacion se actualiza sola            |
+| Actualizaciones                | Las despliega TI, se avisa a los usuarios cuando hay una | La aplicacion se actualiza sola            |
 | Visual C++ Redistributable     | No incluido, despliegalo por separado                  | Se descarga durante la instalacion si falta |
 
-En una instalacion MSI, **Check for Software Updates** y **Release Channel** no aparecen en el menu **Help**.
+## Avisos de actualizacion
+
+Una instalacion MSI nunca descarga ni instala actualizaciones. Consulta GitHub al iniciar y una vez al dia en busca de nuevas versiones estables y, cuando hay una, muestra a los usuarios un aviso para que contacten a su administrador de sistemas. Para desactivar el aviso, agrega esto a [`system.config.ini`](#administrar-ajustes):
+
+```ini
+[general]
+checkForUpdatesDisabled = true
+```
+
+La opcion **Release Channel** no aparece en el menu **Help**, asi que los usuarios no pueden optar por versiones beta.
 
 ## Requisito previo: Visual C++ Redistributable
 

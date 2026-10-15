@@ -6,6 +6,8 @@
 import Noty from 'noty'
 import Vue from 'vue'
 
+const MANAGED_UPDATE_TEXT = "A new version of Beekeeper Studio is available. Contact your system administrator to install it."
+
 export default Vue.extend({
   data() {
     /* eslint-disable */
@@ -22,6 +24,19 @@ export default Vue.extend({
           }),
           // @ts-ignore
           Noty.button('Download', 'btn btn-primary', this.linkToDownload)
+        ],
+        queue: 'download'
+      }),
+      managedNotification: new Noty({
+        text: MANAGED_UPDATE_TEXT,
+        layout: 'bottomRight',
+        timeout: false,
+        closeWith: ['button'],
+        buttons: [
+          Noty.button('OK', 'btn btn-primary', () => {
+            // @ts-ignore
+            this.managedNotification.close();
+          })
         ],
         queue: 'download'
       }),
@@ -63,6 +78,7 @@ export default Vue.extend({
   mounted() {
     window.main.onUpdateEvent('update-available', this.notifyUpdate)
     window.main.onUpdateEvent('manual-update', this.notifyManual)
+    window.main.onUpdateEvent('managed-update', this.notifyManaged)
     window.main.onUpdateEvent('update-downloaded', this.notifyDownloaded)
     window.main.updaterReady();
   },
@@ -78,6 +94,16 @@ export default Vue.extend({
     notifyManual() {
       this.closeAll()
       this.manualNotification.show()
+    },
+    // MSI installs: IT deploys updates, so there is nothing to download
+    notifyManaged(_event, version?: string) {
+      this.closeAll()
+      // Noty renders text as HTML, so only a plain version string goes in
+      const text = /^[0-9A-Za-z.+-]+$/.test(version || '')
+        ? `Beekeeper Studio ${version} is available. Contact your system administrator to install it.`
+        : MANAGED_UPDATE_TEXT
+      this.managedNotification.setText(text, true)
+      this.managedNotification.show()
     },
     linkToDownload() {
       window.main.openExternally("https://beekeeperstudio.io/get");

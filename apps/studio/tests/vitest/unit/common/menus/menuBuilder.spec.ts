@@ -28,9 +28,9 @@ describe("MenuBuilder help menu", () => {
     expect(ids).toContain("toggle-beta");
   });
 
-  it("hides update controls for MSI installs", () => {
+  it("keeps update checks but hides the release channel for MSI installs", () => {
     const ids = helpMenuIds({ ...windows, isMsi: true });
-    expect(ids).not.toContain("updatecheck");
+    expect(ids).toContain("updatecheck");
     expect(ids).not.toContain("toggle-beta");
   });
 });

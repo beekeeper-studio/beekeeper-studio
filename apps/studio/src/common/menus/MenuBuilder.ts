@@ -63,8 +63,8 @@ export default class extends DefaultMenu {
         { type: 'separator' },
         this.menuItems.addBeekeeper,
         this.menuItems.devtools,
-        // Moved to Beekeeper Studio menu for mac. MSI installs are updated by IT.
-        ...(!this.platformInfo.isMac && !this.platformInfo.isMsi ? [this.menuItems.checkForUpdate] : []),
+        // Moved to Beekeeper Studio menu for mac
+        ...(!this.platformInfo.isMac ? [this.menuItems.checkForUpdate] : []),
         this.menuItems.restart,
         { type: 'separator' },
         // Moved to Beekeeper Studio menu for mac
@@ -73,6 +73,7 @@ export default class extends DefaultMenu {
       ]
     };
 
+    // MSI installs only get the versions IT deploys
     if ((!this.platformInfo.isLinux || this.platformInfo.isAppImage) && !this.platformInfo.isMsi) {
       helpMenu.submenu.push(this.menuItems.toggleBeta)
     }

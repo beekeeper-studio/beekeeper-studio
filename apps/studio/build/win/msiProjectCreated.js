@@ -4,8 +4,9 @@
 // Adds a marker file to the root of the install directory. The app checks for
 // it at startup (see src/common/msiInstall.ts) to tell an MSI install apart
 // from the NSIS and portable builds. MSI installs are managed by IT, so the
-// built-in updater is turned off for them: it would otherwise run the NSIS
-// installer and leave a second, per-user copy next to the managed one.
+// app never downloads or installs updates for them (the NSIS installer it
+// would run leaves a second, per-user copy next to the managed one). Users are
+// told to contact their administrator instead.
 const fs = require('fs')
 const path = require('path')
 
@@ -21,6 +22,10 @@ const MARKER_CONTENTS = [
 
 const COMPONENT_GROUP = '<ComponentGroup Id="ProductComponents" Directory="APPLICATIONFOLDER">'
 
+// project.wxs is the MSI's file list: electron-builder writes one
+// <Component><File .../></Component> entry per file of the packaged app into
+// the ProductComponents group. This adds one more entry, for the marker, so
+// the MSI installs it next to Beekeeper Studio.exe.
 function addMarkerComponent(wxs) {
   if (wxs.includes(`Name="${MARKER_FILE}"`)) return wxs
 

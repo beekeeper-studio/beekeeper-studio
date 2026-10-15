@@ -16,10 +16,19 @@ The MSI is attached to each release on the [GitHub releases page](https://github
 | Install location               | All users, `C:\Program Files\Beekeeper Studio`      | Current user by default, all users optional |
 | Unattended install             | `msiexec /i <file>.msi /qn`                         | `<file>.exe /S`                          |
 | Shortcuts                      | Start menu, all users                               | Start menu and desktop                   |
-| Updates                        | Deployed by IT, the app never updates itself        | The app updates itself                   |
+| Updates                        | Deployed by IT, users are told when one is out      | The app updates itself                   |
 | Visual C++ Redistributable     | Not included, deploy it separately                  | Downloaded during install when missing   |
 
-In an MSI install, **Check for Software Updates** and **Release Channel** are hidden from the **Help** menu.
+## Update Notifications
+
+An MSI install never downloads or installs updates. It checks GitHub for new stable releases at startup and once a day, and when one is out it shows users a notice to contact their system administrator. To turn the notice off, set this in [`system.config.ini`](#managing-settings):
+
+```ini
+[general]
+checkForUpdatesDisabled = true
+```
+
+The **Release Channel** option is hidden from the **Help** menu, so users can't opt in to beta releases.
 
 ## Prerequisite: Visual C++ Redistributable
 
