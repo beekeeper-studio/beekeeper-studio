@@ -57,13 +57,17 @@ function addMarkerComponent(wxs) {
 }
 
 const VC_RUNTIME_PROPERTY = 'BKS_VCRUNTIME_X64'
+// Escape hatch for machines where the runtime is present but not registered:
+// msiexec /i <file>.msi SKIP_VCREDIST_CHECK=1
+const SKIP_VC_RUNTIME_PROPERTY = 'SKIP_VCREDIST_CHECK'
 const VC_RUNTIME_KEY = 'SOFTWARE\\Microsoft\\VisualStudio\\14.0\\VC\\Runtimes\\x64'
 const VC_RUNTIME_MESSAGE = 'Beekeeper Studio requires the Microsoft Visual C++ Redistributable (x64). ' +
   'Install it from https://aka.ms/vc14/vc_redist.x64.exe, then run this installer again.'
 
 // The redistributable sets Installed=1 under VC_RUNTIME_KEY. Both registry
 // views are searched: the NSIS check reads the 32-bit one, but which view the
-// x64 runtime writes to isn't documented clearly. `Installed OR` keeps repair
+// x64 runtime writes to isn't documented clearly. The skip property is Secure
+// so it reaches the elevated part of the install. `Installed OR` keeps repair
 // and uninstall working if the runtime is removed later.
 function addVcRuntimeCheck(wxs) {
   if (wxs.includes(`Id="${VC_RUNTIME_PROPERTY}"`)) return wxs
@@ -78,7 +82,8 @@ function addVcRuntimeCheck(wxs) {
     `      <RegistrySearch Id="bksVcRuntime64" Root="HKLM" Key="${VC_RUNTIME_KEY}" Name="Installed" Type="raw" Win64="yes"/>`,
     `      <RegistrySearch Id="bksVcRuntime32" Root="HKLM" Key="${VC_RUNTIME_KEY}" Name="Installed" Type="raw" Win64="no"/>`,
     '    </Property>',
-    `    <Condition Message="${VC_RUNTIME_MESSAGE}"><![CDATA[Installed OR ${VC_RUNTIME_PROPERTY} = "#1"]]></Condition>`,
+    `    <Property Id="${SKIP_VC_RUNTIME_PROPERTY}" Secure="yes"/>`,
+    `    <Condition Message="${VC_RUNTIME_MESSAGE}"><![CDATA[Installed OR ${SKIP_VC_RUNTIME_PROPERTY} = "1" OR ${VC_RUNTIME_PROPERTY} = "#1"]]></Condition>`,
     '',
     '    '
   ].join('\n')
@@ -88,6 +93,7 @@ function addVcRuntimeCheck(wxs) {
 
 exports.MARKER_FILE = MARKER_FILE
 exports.VC_RUNTIME_MESSAGE = VC_RUNTIME_MESSAGE
+exports.SKIP_VC_RUNTIME_PROPERTY = SKIP_VC_RUNTIME_PROPERTY
 exports.addMarkerComponent = addMarkerComponent
 exports.addVcRuntimeCheck = addVcRuntimeCheck
 

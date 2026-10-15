@@ -46,6 +46,14 @@ vc_redist.x64.exe /install /quiet /norestart
 
 Descarga el instalador desde [https://aka.ms/vc14/vc_redist.x64.exe](https://aka.ms/vc14/vc_redist.x64.exe).
 
+La comprobacion busca la entrada del registro que crea el instalador del runtime. Si el runtime esta en el equipo pero se instalo de otra forma, omite la comprobacion:
+
+```bat
+msiexec /i "Beekeeper-Studio-6.1.5.msi" /qn SKIP_VCREDIST_CHECK=1
+```
+
+Hazlo solo si el runtime realmente esta instalado: los controladores de bases de datos de Beekeeper Studio lo necesitan.
+
 ## Instalar
 
 Ejecuta desde una consola con privilegios elevados, o como SYSTEM desde tu herramienta de despliegue:

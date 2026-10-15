@@ -46,6 +46,14 @@ vc_redist.x64.exe /install /quiet /norestart
 
 Download the installer from [https://aka.ms/vc14/vc_redist.x64.exe](https://aka.ms/vc14/vc_redist.x64.exe).
 
+The check looks for the registry entry the runtime's installer creates. If the runtime is on the machine but was put there some other way, skip the check:
+
+```bat
+msiexec /i "Beekeeper-Studio-6.1.5.msi" /qn SKIP_VCREDIST_CHECK=1
+```
+
+Only do this if the runtime really is installed: Beekeeper Studio's database drivers need it.
+
 ## Install
 
 Run from an elevated prompt, or as SYSTEM from your deployment tool:

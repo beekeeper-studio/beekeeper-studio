@@ -7,7 +7,7 @@ import { MSI_MARKER_FILE } from "@/common/msiInstall";
 
 // Loaded the way electron-builder loads it: a plain CommonJS module.
 const hook = createRequire(import.meta.url)("../../../../build/win/msiProjectCreated.js");
-const { MARKER_FILE, VC_RUNTIME_MESSAGE, addMarkerComponent, addVcRuntimeCheck } = hook;
+const { MARKER_FILE, VC_RUNTIME_MESSAGE, SKIP_VC_RUNTIME_PROPERTY, addMarkerComponent, addVcRuntimeCheck } = hook;
 const msiProjectCreated = hook.default;
 
 // Render electron-builder's own MSI template the same way MsiTarget does, so
@@ -77,7 +77,19 @@ describe("msiProjectCreated hook", () => {
       const condition = [...product.querySelectorAll(":scope > Condition")]
         .find((c) => c.getAttribute("Message") === VC_RUNTIME_MESSAGE);
       // Installed: repair and uninstall still work if the runtime goes away later
-      expect(condition.textContent).toBe('Installed OR BKS_VCRUNTIME_X64 = "#1"');
+      expect(condition.textContent).toBe(
+        'Installed OR SKIP_VCREDIST_CHECK = "1" OR BKS_VCRUNTIME_X64 = "#1"'
+      );
+    });
+
+    it("lets admins skip the check with SKIP_VCREDIST_CHECK=1", () => {
+      const doc = parse(addVcRuntimeCheck(renderMsiTemplate()));
+
+      expect(SKIP_VC_RUNTIME_PROPERTY).toBe("SKIP_VCREDIST_CHECK");
+      const property = doc.querySelector('Product > Property[Id="SKIP_VCREDIST_CHECK"]');
+      // Secure, so a value set on the command line reaches the elevated install
+      expect(property.getAttribute("Secure")).toBe("yes");
+      expect(property.hasAttribute("Value")).toBe(false);
     });
 
     it("tells the admin where to get the runtime", () => {
