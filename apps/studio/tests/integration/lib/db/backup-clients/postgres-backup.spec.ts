@@ -1,4 +1,4 @@
-import { GenericContainer, StartedTestContainer } from "testcontainers";
+import { GenericContainer, StartedTestContainer, Wait } from "testcontainers";
 import { DBTestUtil, dbtimeout } from "../../../../lib/db";
 import fs from 'fs'
 import os from 'os'
@@ -121,6 +121,7 @@ function testWith(description: string, backupConfig: Partial<BackupConfig>, rest
           mode: "rw"
         }])
         .withStartupTimeout(dbtimeout)
+        .withWaitStrategy(Wait.forLogMessage("database system is ready to accept connections", 2))
         .start();
 
       config = {
