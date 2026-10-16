@@ -530,6 +530,7 @@ declare interface IBksConfig {
             maxResults: number;
             primaryQueryAction: string;
             secondaryQueryAction: string;
+            warnOnUnfilteredWrites: string;
         };
         tableList: {
             itemHeight: number;

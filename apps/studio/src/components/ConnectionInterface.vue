@@ -209,6 +209,23 @@
                     <span>Read Only Mode</span>
                   </label>
                 </div>
+                <div class="form-group" v-if="!shouldUpsell">
+                  <label class="checkbox-group" for="isProduction">
+                    <input
+                      :disabled="editingDisabled"
+                      class="form-control"
+                      id="isProduction"
+                      type="checkbox"
+                      name="isProduction"
+                      v-model="config.isProduction"
+                    >
+                    <span>Production Connection</span>
+                    <i
+                      class="material-icons"
+                      v-tooltip="'UPDATE and DELETE without a WHERE clause ask for confirmation here when warnOnUnfilteredWrites is set to production'"
+                    >help_outlined</i>
+                  </label>
+                </div>
                 <!-- TEST AND CONNECT -->
                 <div v-if="!shouldUpsell" class="test-connect row flex-middle">
                   <span class="expand" />
