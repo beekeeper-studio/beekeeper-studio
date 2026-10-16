@@ -58,8 +58,8 @@ export const api = {
   onUtilDied(bind: any) {
     ipcRenderer.on('utilDied', bind);
   },
-  onUpdateEvent(event: 'update-available' | 'manual-update' | 'update-downloaded', bind: any) {
-    const eType = ['update-available', 'manual-update', 'update-downloaded'];
+  onUpdateEvent(event: 'update-available' | 'manual-update' | 'managed-update' | 'update-downloaded', bind: any) {
+    const eType = ['update-available', 'manual-update', 'managed-update', 'update-downloaded'];
     if (!eType.includes(event)) return;
     ipcRenderer.on(event, bind);
   },
@@ -146,7 +146,7 @@ export const api = {
     return electron.clipboard.writeText(text);
   },
   writeImageToClipboard(dataUrl: string) {
-    return electron.clipboard.writeImage(nativeImage.createFromDataURL(dataUrl));
+    return ipcRenderer.invoke('clipboard:write', { content: dataUrl, image: true });
   },
   readTextFromClipboard(): string {
     return electron.clipboard.readText();

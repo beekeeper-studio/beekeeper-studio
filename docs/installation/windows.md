@@ -16,3 +16,8 @@ Currently Beekeeper Studio only supports the `x86_64` architecture. Support for 
 
 We also have a portable version of Beekeeper Studio that does not require installation. This is also available from our website.
 
+
+## Enterprise Deployment (MSI)
+
+IT administrators can deploy Beekeeper Studio with the MSI package, using Intune, Configuration Manager, Group Policy, or a silent `msiexec` install. See [Windows Enterprise Deployment (MSI)](./windows-enterprise.md).
+
