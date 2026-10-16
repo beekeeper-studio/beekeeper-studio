@@ -23,6 +23,28 @@ jobs:
       run:
         shell: pwsh
     steps:
+      # SQL Server only runs on volumes with 512-byte or 4 KB sectors. Some
+      # windows-2022 runners have NVMe disks that report 8 KB, where every
+      # install attempt fails with error 5178 after several minutes. The fix
+      # (ForcedPhysicalSectorSizeInBytes) needs a reboot, so stop straight away;
+      # a re-run usually lands on a 4 KB runner.
+      # https://learn.microsoft.com/en-us/troubleshoot/sql/database-engine/database-file-operations/troubleshoot-os-4kb-disk-sector-size
+      - name: Check the runner's disk can host SQL Server
+        run: |
+          $sizes = fsutil fsinfo sectorinfo C: |
+            Select-String 'PhysicalBytesPerSectorFor(Atomicity|Performance)\s*:\s*(\d+)' |
+            ForEach-Object { [int]$_.Matches[0].Groups[2].Value }
+          if (-not $sizes) {
+            Write-Host '::warning::Could not read the sector size of C:, continuing.'
+            exit 0
+          }
+          $sector = ($sizes | Measure-Object -Maximum).Maximum
+          Write-Host "C: physical sector size: $sector bytes"
+          if ($sector -gt 4096) {
+            Write-Host "::error title=Runner disk unsupported by SQL Server::C: has $sector-byte sectors and SQL Server supports at most 4096. Re-run the job to get a different runner."
+            exit 1
+          }
+
       - name: Check out Git repository
         uses: actions/checkout@v5
 
