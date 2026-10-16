@@ -80,7 +80,7 @@
   import { CellComponent, RangeComponent, RowComponent } from 'tabulator-tables'
   import { PropType } from 'vue'
   import { safeSqlFormat } from '@/common/utils'
-  import { stringToTypedArray } from '@/common/utils'
+  import { isBksInternalColumn, stringToTypedArray } from '@/common/utils'
 
   const log = rawLog.scope('ResultTable');
 
@@ -848,8 +848,9 @@
       },
       dataToJson(rawData, firstObjectOnly) {
         const rows = _.isArray(rawData) ? rawData : [rawData]
+        const keys = this.$bks.jsonKeys(Object.keys(rows[0] ?? {}), this.tableColumns)
         const result = rows.map((data) => {
-          return this.$bks.cleanData(data, this.tableColumns)
+          return this.$bks.cleanData(data, this.tableColumns, keys)
         })
         return firstObjectOnly ? result[0] : result
       },
@@ -1065,26 +1066,27 @@
           return
         }
 
-        const result = this.dataToJson(allRows, false)
+        // Read cells by field so columns that share a title are all kept.
+        const columns = this.tableColumns.filter((c) => !isBksInternalColumn(c.field))
+        const header = columns.map((c) => c.title)
+        const rows = allRows.map((row) => columns.map((c) => row[c.field]))
 
         if (format === 'md') {
           const mdContent = [
-            Object.keys(result[0]),
-            ...result
-                .map((row) =>
-                  Object.values(row).map(v =>
-                    (typeof v === 'object') ? JSON.stringify(v) : v
-                  )
-                )
+            header,
+            ...rows.map((row) =>
+              row.map(v => (typeof v === 'object') ? JSON.stringify(v) : v)
+            )
           ];
           await this.$native.clipboard.writeText(markdownTable(mdContent))
         } else if (format === 'json') {
+          const result = this.dataToJson(allRows, false)
           await this.$native.clipboard.writeText(JSON.stringify(result))
         } else {
           await this.$native.clipboard.writeText(
             Papa.unparse(
-              result,
-              { header: true, delimiter: "\t", quotes: true, escapeFormulae: true }
+              { fields: header, data: rows },
+              { delimiter: "\t", quotes: true, escapeFormulae: true }
             )
           )
         }

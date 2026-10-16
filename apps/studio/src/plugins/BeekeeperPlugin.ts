@@ -156,16 +156,39 @@ export const BeekeeperPlugin = {
     return connectionString
   },
 
-  cleanData(data: any, columns: {title: string, field: string}[] = []) {
-    const fixed = {}
-    Object.keys(data).forEach((key) => {
-      const v = data[key]
-      // internal table fields used just for us
-      if (!isBksInternalColumn(key)) {
-        const column = columns.find((c) => c.field === key)
-        const nuKey = column ? column.title : key
-        fixed[nuKey] = v
+  /** Output key for each data field. Rows of one result share their fields,
+   * so build this once and pass it to cleanData for every row. */
+  jsonKeys(fields: string[], columns: {title: string, field: string}[] = []): Map<string, string> {
+    // internal table fields used just for us
+    const keys = fields.filter((key) => !isBksInternalColumn(key))
+    const titleByField = new Map(columns.map((c) => [c.field, c.title]))
+    const titleOf = keys.map((key) => titleByField.get(key) ?? key)
+    const titles = new Set(titleOf)
+    const used = new Set<string>()
+    // next suffix to try per title, so n duplicates don't each rescan from _2
+    const nextSuffix = new Map<string, number>()
+    const out = new Map<string, string>()
+    keys.forEach((key, idx) => {
+      const title = titleOf[idx]
+      // columns can share a title, don't let one overwrite another, and don't
+      // give a duplicate the name of another real column (num, num, num_2)
+      let nuKey = title
+      if (used.has(nuKey)) {
+        let i = nextSuffix.get(title) ?? 2
+        while (used.has(`${title}_${i}`) || titles.has(`${title}_${i}`)) i++
+        nuKey = `${title}_${i}`
+        nextSuffix.set(title, i + 1)
       }
+      used.add(nuKey)
+      out.set(key, nuKey)
+    })
+    return out
+  },
+
+  cleanData(data: any, columns: {title: string, field: string}[] = [], keys?: Map<string, string>) {
+    const fixed = {}
+    ;(keys ?? this.jsonKeys(Object.keys(data), columns)).forEach((nuKey, key) => {
+      if (key in data) fixed[nuKey] = data[key]
     })
     return fixed
   },
