@@ -6,6 +6,13 @@ import Vue from 'vue'
 import Noty from 'noty'
 import { mapGetters, mapActions, mapState } from 'vuex'
 import logoUrl from '@/assets/logo.svg'
+import { SmartLocalStorage } from '@/common/LocalStorage'
+import {
+  ARM64_BUILD_DOCS_URL,
+  ARM64_BUILD_NOTICE_DISMISSED_KEY,
+  arm64BuildDownloadUrl,
+  shouldOfferArm64Build,
+} from '@/common/arm64BuildNotice'
 
 export default Vue.extend({
   data: () => {
@@ -126,10 +133,39 @@ export default Vue.extend({
       n.show();
       this.noty = n;
     },
+    notifyArm64Build() {
+      const dismissed = SmartLocalStorage.getBool(ARM64_BUILD_NOTICE_DISMISSED_KEY, false)
+      if (!shouldOfferArm64Build(this.$config, dismissed)) return
+
+      const n = new Noty({
+        text: `<div class="noty-onboarding-title">ARM64 version available</div>
+              <div class="noty-onboarding-body">
+                This is the x64 version of Beekeeper Studio, running under emulation on an ARM PC.
+                The ARM64 version runs natively, so it's faster and uses less battery.
+                <a class="link" href="${ARM64_BUILD_DOCS_URL}">What's different on ARM64</a>
+              </div>`,
+        closeWith: ['button'],
+        layout: 'bottomRight',
+        timeout: false,
+        queue: 'arm64-build',
+        buttons: [
+          Noty.button("Don't show again", 'btn btn-flat', () => {
+            SmartLocalStorage.setBool(ARM64_BUILD_NOTICE_DISMISSED_KEY, true)
+            n.close()
+          }),
+          Noty.button('Download', 'btn btn-primary', () => {
+            window.main.openExternally(arm64BuildDownloadUrl(this.$config))
+            n.close()
+          }),
+        ],
+      })
+      n.show()
+    },
   },
   mounted() {
     this.initNotifyInterval()
     this.notifyOnboarding()
+    this.notifyArm64Build()
   }
 })
 </script>

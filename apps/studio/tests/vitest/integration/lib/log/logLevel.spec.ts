@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest'
 import { resolveLevel } from '@/lib/log/logLevel'
 
 describe('resolveLevel', () => {

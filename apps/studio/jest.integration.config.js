@@ -21,7 +21,7 @@ module.exports = {
     'jsx',
     'json',
     'mjs',
-    // src (and ui-kit) imports reach .vue files, e.g. WebPluginManager.spec.ts
+    // src (and ui-kit) imports can reach .vue files
     'vue',
     'ts',
   ],

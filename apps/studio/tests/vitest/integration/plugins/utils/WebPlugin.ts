@@ -1,3 +1,5 @@
+import { vi } from "vitest";
+import type { Mock } from "vitest";
 import { ManifestV1 as Manifest } from "@/services/plugin/types";
 
 /**
@@ -43,7 +45,7 @@ export class WebPlugin {
 
     // Create a mock contentWindow that can receive postMessage
     const mockContentWindow = {
-      postMessage: jest.fn(),
+      postMessage: vi.fn(),
     };
 
     // Override contentWindow
@@ -112,7 +114,7 @@ export class WebPlugin {
    * Get the last response from the host
    */
   getLastResponse(): any {
-    const mock = this.iframe.contentWindow.postMessage as jest.Mock;
+    const mock = this.iframe.contentWindow.postMessage as Mock;
     if (!mock.mock.calls.length) {
       throw new Error("No responses received from host");
     }
@@ -123,7 +125,7 @@ export class WebPlugin {
    * Get all responses from the host
    */
   getAllResponses(): any[] {
-    const mock = this.iframe.contentWindow.postMessage as jest.Mock;
+    const mock = this.iframe.contentWindow.postMessage as Mock;
     return mock.mock.calls.map((call) => call[0]);
   }
 
@@ -131,7 +133,7 @@ export class WebPlugin {
    * Clear all recorded responses
    */
   clearResponses(): void {
-    const mock = this.iframe.contentWindow.postMessage as jest.Mock;
+    const mock = this.iframe.contentWindow.postMessage as Mock;
     mock.mockClear();
   }
 
@@ -139,7 +141,7 @@ export class WebPlugin {
    * Check if the host has sent any responses
    */
   hasResponses(): boolean {
-    const mock = this.iframe.contentWindow.postMessage as jest.Mock;
+    const mock = this.iframe.contentWindow.postMessage as Mock;
     return mock.mock.calls.length > 0;
   }
 
@@ -147,7 +149,7 @@ export class WebPlugin {
    * Get the number of responses received
    */
   getResponseCount(): number {
-    const mock = this.iframe.contentWindow.postMessage as jest.Mock;
+    const mock = this.iframe.contentWindow.postMessage as Mock;
     return mock.mock.calls.length;
   }
 
