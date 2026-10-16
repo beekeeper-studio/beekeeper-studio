@@ -7,7 +7,10 @@ import { MSI_MARKER_FILE } from "@/common/msiInstall";
 
 // Loaded the way electron-builder loads it: a plain CommonJS module.
 const hook = createRequire(import.meta.url)("../../../../build/win/msiProjectCreated.js");
-const { MARKER_FILE, VC_RUNTIME_MESSAGE, SKIP_VC_RUNTIME_PROPERTY, addMarkerComponent, addVcRuntimeCheck } = hook;
+const {
+  MARKER_FILE, VC_RUNTIMES, VC_RUNTIME_MESSAGE, SKIP_VC_RUNTIME_PROPERTY, ARM64_ONLY_MESSAGE,
+  addMarkerComponent, addVcRuntimeCheck, addArm64OnlyCheck, archFromProjectFile,
+} = hook;
 const msiProjectCreated = hook.default;
 
 // Render electron-builder's own MSI template the same way MsiTarget does, so
@@ -104,6 +107,59 @@ describe("msiProjectCreated hook", () => {
     it("fails the build if the template no longer has MajorUpgrade", () => {
       expect(() => addVcRuntimeCheck("<Wix><Product/></Wix>")).toThrow(/MajorUpgrade/);
     });
+
+    it("checks for the ARM64 runtime in the ARM64 MSI", () => {
+      const doc = parse(addVcRuntimeCheck(renderMsiTemplate(), "arm64"));
+      const product = doc.querySelector("Product");
+
+      expect(product.querySelector(':scope > Property[Id="BKS_VCRUNTIME_X64"]')).toBeNull();
+      const property = product.querySelector(':scope > Property[Id="BKS_VCRUNTIME_ARM64"]');
+      const searches = [...property.querySelectorAll("RegistrySearch")];
+      expect(searches.map((s) => s.getAttribute("Win64")).sort()).toEqual(["no", "yes"]);
+      for (const search of searches) {
+        expect(search.getAttribute("Key")).toBe("SOFTWARE\\Microsoft\\VisualStudio\\14.0\\VC\\Runtimes\\ARM64");
+      }
+
+      const condition = [...product.querySelectorAll(":scope > Condition")]
+        .find((c) => c.getAttribute("Message") === VC_RUNTIMES.arm64.message);
+      expect(condition.textContent).toBe(
+        'Installed OR SKIP_VCREDIST_CHECK = "1" OR BKS_VCRUNTIME_ARM64 = "#1"'
+      );
+      expect(VC_RUNTIMES.arm64.message).toContain("https://aka.ms/vc14/vc_redist.arm64.exe");
+    });
+
+    it("has no check for other architectures", () => {
+      expect(() => addVcRuntimeCheck(renderMsiTemplate(), "ia32")).toThrow(/ia32/);
+    });
+  });
+
+  describe("ARM64-only check", () => {
+    // electron-builder builds the ARM64 MSI as an x64 package, so without this
+    // Windows Installer would install the ARM64 app on x64 PCs
+    it("refuses to install unless the CPU is ARM64", () => {
+      const doc = parse(addArm64OnlyCheck(renderMsiTemplate()));
+      const product = doc.querySelector("Product");
+
+      const search = product.querySelector(':scope > Property[Id="BKS_PROCESSOR_ARCHITECTURE"] > RegistrySearch');
+      expect(search.getAttribute("Root")).toBe("HKLM");
+      expect(search.getAttribute("Key")).toBe("SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment");
+      expect(search.getAttribute("Name")).toBe("PROCESSOR_ARCHITECTURE");
+      expect(search.getAttribute("Win64")).toBe("yes");
+
+      const condition = [...product.querySelectorAll(":scope > Condition")]
+        .find((c) => c.getAttribute("Message") === ARM64_ONLY_MESSAGE);
+      expect(condition.textContent).toBe('Installed OR BKS_PROCESSOR_ARCHITECTURE = "ARM64"');
+    });
+
+    it("is idempotent", () => {
+      const once = addArm64OnlyCheck(renderMsiTemplate());
+      expect(addArm64OnlyCheck(once)).toBe(once);
+    });
+  });
+
+  it("reads the arch from electron-builder's stage directory name", () => {
+    expect(archFromProjectFile(path.join("dist_electron", "__msi-x64", "project.wxs"))).toBe("x64");
+    expect(archFromProjectFile(path.join("dist_electron", "__msi-arm64", "project.wxs"))).toBe("arm64");
   });
 
   it("uses the marker file name the app looks for", () => {
@@ -136,26 +192,41 @@ describe("msiProjectCreated hook", () => {
   });
 
   describe("on disk", () => {
-    let dir: string;
+    let root: string;
 
     beforeEach(() => {
-      dir = fs.mkdtempSync(path.join(os.tmpdir(), "bks-msi-"));
+      root = fs.mkdtempSync(path.join(os.tmpdir(), "bks-msi-"));
     });
 
     afterEach(() => {
-      fs.rmSync(dir, { recursive: true, force: true });
+      fs.rmSync(root, { recursive: true, force: true });
     });
 
-    it("writes the marker next to project.wxs and updates the project", async () => {
+    async function runHook(stageDirName: string) {
+      const dir = path.join(root, stageDirName);
+      fs.mkdirSync(dir);
       const projectFile = path.join(dir, "project.wxs");
       fs.writeFileSync(projectFile, renderMsiTemplate());
-
       await msiProjectCreated(projectFile);
+      return { dir, doc: parse(fs.readFileSync(projectFile, "utf8")) };
+    }
+
+    it("writes the marker next to project.wxs and updates the project", async () => {
+      const { dir, doc } = await runHook("__msi-x64");
 
       expect(fs.readFileSync(path.join(dir, MARKER_FILE), "utf8")).toMatch(/MSI/);
-      const doc = parse(fs.readFileSync(projectFile, "utf8"));
       expect(doc.querySelector('File[Id="bksMsiInstallMarker"]')).not.toBeNull();
       expect(doc.querySelector('Property[Id="BKS_VCRUNTIME_X64"]')).not.toBeNull();
+      expect(doc.querySelector('Property[Id="BKS_PROCESSOR_ARCHITECTURE"]')).toBeNull();
+    });
+
+    it("adds the ARM64 checks to the ARM64 MSI", async () => {
+      const { doc } = await runHook("__msi-arm64");
+
+      expect(doc.querySelector('File[Id="bksMsiInstallMarker"]')).not.toBeNull();
+      expect(doc.querySelector('Property[Id="BKS_VCRUNTIME_ARM64"]')).not.toBeNull();
+      expect(doc.querySelector('Property[Id="BKS_VCRUNTIME_X64"]')).toBeNull();
+      expect(doc.querySelector('Property[Id="BKS_PROCESSOR_ARCHITECTURE"]')).not.toBeNull();
     });
   });
 });

@@ -7,7 +7,7 @@ summary: "Deploy Beekeeper Studio to managed Windows machines with the MSI packa
 
 Every Windows release includes an MSI package for IT administrators. Use it to deploy Beekeeper Studio with Microsoft Intune, Configuration Manager (SCCM), Group Policy, or any other tool that installs Windows Installer packages.
 
-The MSI is attached to each release on the [GitHub releases page](https://github.com/beekeeper-studio/beekeeper-studio/releases) as `Beekeeper-Studio-<version>.msi`.
+The MSI is attached to each release on the [GitHub releases page](https://github.com/beekeeper-studio/beekeeper-studio/releases) as `Beekeeper-Studio-<version>.msi` for x64 PCs, and `Beekeeper-Studio-<version>-arm64.msi` for [Windows on ARM](#windows-on-arm) PCs.
 
 ## MSI Package vs `.exe` Installer
 
@@ -54,6 +54,14 @@ msiexec /i "Beekeeper-Studio-6.1.5.msi" /qn SKIP_VCREDIST_CHECK=1
 
 Only do this if the runtime really is installed: Beekeeper Studio's database drivers need it.
 
+The ARM64 MSI needs the ARM64 runtime instead, from [https://aka.ms/vc14/vc_redist.arm64.exe](https://aka.ms/vc14/vc_redist.arm64.exe), and refuses to install without it with this message:
+
+```text
+Beekeeper Studio requires the Microsoft Visual C++ Redistributable (ARM64). Install it from https://aka.ms/vc14/vc_redist.arm64.exe, then run this installer again.
+```
+
+`SKIP_VCREDIST_CHECK=1` works the same way for it.
+
 ## Install
 
 Run from an elevated prompt, or as SYSTEM from your deployment tool:
@@ -71,6 +79,15 @@ Deploy the newer MSI with the same command. Windows Installer replaces the insta
 Connections, saved queries, and settings are stored per user in `%APPDATA%\beekeeper-studio` and are kept across upgrades.
 
 Installing an older MSI over a newer one fails with *A newer version of "Beekeeper Studio" is already installed*. To downgrade, uninstall first.
+
+## Windows on ARM (ARM64) { #windows-on-arm }
+
+Deploy `Beekeeper-Studio-<version>-arm64.msi` to Windows on ARM PCs. It installs the native ARM64 version of Beekeeper Studio, with the same commands as the x64 MSI.
+
+- It only installs on ARM64 PCs. On an x64 PC it fails with exit code `1603` and *This installer is for Windows on ARM (ARM64) PCs. Use the x64 Beekeeper Studio MSI on this PC.*
+- Deployment tools may report it as an x64 package. The WiX version used to build it can't create ARM64 packages, so it is an x64 package that installs the ARM64 app. Assign it to ARM64 devices with a device group or filter rather than relying on the package architecture.
+- The x64 MSI also installs on ARM64 PCs, where Beekeeper Studio runs under emulation. To move those PCs to the native version, deploy the ARM64 MSI. Both MSIs share the upgrade code, so it replaces the x64 install in place, and users' data in `%APPDATA%\beekeeper-studio` is kept.
+- A few database features work differently on ARM64. See [Windows on ARM](./windows.md#windows-on-arm).
 
 ## Uninstall
 
