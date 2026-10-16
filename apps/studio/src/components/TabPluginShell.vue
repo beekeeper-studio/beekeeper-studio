@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="isCommunity && tab.context.pluginId.startsWith('bks-')"
+    v-if="showUpsell"
     class="upgrade-panel-tab-wrapper"
   >
     <ai-shell-upsell v-if="isAiShellPlugin" />
@@ -136,8 +136,12 @@ export default Vue.extend({
   },
   computed: {
     ...mapGetters(["isCommunity"]),
+    showUpsell() {
+      // Official bks-* plugins need a license; community plugins work in every edition
+      return this.isCommunity && this.tab.context.pluginId.startsWith("bks-");
+    },
     shouldInitialize() {
-      return !this.isCommunity && this.active && !this.initialized;
+      return !this.showUpsell && this.active && !this.initialized;
     },
     isAiShellPlugin() {
       return this.tab.context.pluginId === "bks-ai-shell";

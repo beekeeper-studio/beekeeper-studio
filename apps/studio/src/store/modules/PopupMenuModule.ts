@@ -20,15 +20,29 @@ export const PopupMenuModule: Module<State, RootState> = {
   }),
   getters: {
     getExtraPopupMenu(state) {
-      return (menuId: string, options?: { transform?: "ui-kit" | "tabulator" }) => {
+      return (
+        menuId: string,
+        options?: {
+          transform?: "ui-kit" | "tabulator";
+          /** Extra fields merged into the argument each item's handler receives. */
+          payload?: Record<string, unknown>;
+        }
+      ) => {
         if (
           state.extraPopupMenu[menuId] &&
           state.extraPopupMenu[menuId].length > 0
         ) {
           if (options?.transform === "ui-kit") {
+            const payload = options.payload;
+            const items = payload
+              ? state.extraPopupMenu[menuId].map((item) => ({
+                  ...item,
+                  handler: (args: Record<string, unknown>) => item.handler({ ...args, ...payload }),
+                }))
+              : state.extraPopupMenu[menuId];
             return [
               divider,
-              ...state.extraPopupMenu[menuId].map(toMenuItem),
+              ...items.map(toMenuItem),
             ] satisfies MenuItem[];
           } else if (options?.transform === "tabulator") {
             return [

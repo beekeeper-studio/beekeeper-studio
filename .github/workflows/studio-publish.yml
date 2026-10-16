@@ -46,36 +46,53 @@ jobs:
   release:
     runs-on: ${{ matrix.os.name }}
     needs: [create_draft_release, identify_channel]
+    env:
+      # node-gyp uses Python to build native modules from source.
+      PYTHON_VERSION: '3.12'
     outputs:
       mac_x64_yml: ${{ steps.set_yaml.outputs.mac_x64_yml }}
       mac_arm64_yml: ${{ steps.set_yaml.outputs.mac_arm64_yml }}
+      win_x64_yml: ${{ steps.set_yaml.outputs.win_x64_yml }}
+      win_arm64_yml: ${{ steps.set_yaml.outputs.win_arm64_yml }}
 
     strategy:
       fail-fast: false
       matrix:
+        # update_yml is the update file electron-builder writes on this leg. Both
+        # arches of a platform write the same file name, so each leg passes its
+        # copy out as update_yml_output and finalize_update_yml merges them.
         os:
           - name: ubuntu-22.04
             arch: x64
             type: linux
-            setup_python: true
             setup_ruby: true
             setup_flatpak: true
           - name: windows-2022
             arch: x64
             type: windows
-            setup_python: true
+            update_yml: latest.yml
+            update_yml_output: win_x64_yml
+          # Builds natively, so native modules compile for arm64.
+          - name: windows-11-arm
+            arch: arm64
+            type: windows
+            update_yml: latest.yml
+            update_yml_output: win_arm64_yml
           - name: ubuntu-22.04-arm
             arch: arm64
             type: linux
-            setup_python: true
             setup_ruby: true
             setup_flatpak: true
-          - name: macos-14-large
+          - name: macos-15-large
             arch: x64
             type: macos
-          - name: macos-14
+            update_yml: latest-mac.yml
+            update_yml_output: mac_x64_yml
+          - name: macos-15
             arch: arm64
             type: macos
+            update_yml: latest-mac.yml
+            update_yml_output: mac_arm64_yml
     steps:
 
       # core24 snaps always run a full `snapcraft pack --use-lxd` build, so every
@@ -169,59 +186,26 @@ jobs:
         if: matrix.os.type == 'windows'
 
 
-      - name: "Install python 3.11 (NOT Mac)"
+      - name: Install python ${{ env.PYTHON_VERSION }}
+        id: python
         uses: actions/setup-python@v6
         with:
-          python-version: 3.11
-        if: matrix.os.setup_python
+          python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install python 3.11 (mac arm64)
-        if: matrix.os.type == 'macos'
-        id: mac_python
+      # node-gyp checks the PYTHON env var first. Without it, on Windows it asks
+      # the py launcher, which picks the newest Python on the runner, not this one.
+      - name: Verify Python Version
+        shell: bash
         env:
-          ARCH: ${{ matrix.os.arch }}
+          PYTHON: ${{ steps.python.outputs.python-path }}
         run: |
-          rm -f /usr/local/bin/2to3-3.11
-          rm -f /usr/local/bin/idle3.11
-          rm -f /usr/local/bin/pydoc3.11
-          rm -f /usr/local/bin/python3.11
-          rm -f /usr/local/bin/python3.11-config
-          brew install python@3.11
-          if [ "$ARCH" = "arm64" ]; then
-              # Add Python 3.11 to PATH for arm64
-              echo "/opt/homebrew/opt/python@3.11/libexec/bin" >> $GITHUB_PATH
-              export PATH="/opt/homebrew/opt/python@3.11/libexec/bin:$PATH"
-              export PYTHON_PATH="/opt/homebrew/opt/python@3.11/libexec/bin/python3"
-              echo "python_path=$PYTHON_PATH" >> $GITHUB_OUTPUT
-          else
-              # Add Python 3.11 to PATH for other architectures
-              echo "/usr/local/opt/python@3.11/libexec/bin" >> $GITHUB_PATH
-              export PATH="/usr/local/opt/python@3.11/libexec/bin:$PATH"
-              export PYTHON_PATH="/usr/local/opt/python@3.11/libexec/bin/python3"
-              echo "python_path=$PYTHON_PATH" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Verify Python Version
-        if: matrix.os.type == 'windows'
-        run: |
-          $PYTHON_VERSION = python --version | Out-String
-          Write-Output "Installed Python version: $PYTHON_VERSION"
-          if (-not $PYTHON_VERSION.StartsWith("Python 3.11")) {
-            Write-Output "Error: Python version does not start with 3.11"
-            exit 1
-          }
-        shell: powershell
-
-        # Verify on everything except windows
-      - name: Verify Python Version
-        if: matrix.os.type != 'windows'
-        run: |
-          PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
-          echo "Installed Python version: $PYTHON_VERSION"
-          if [[ ! $PYTHON_VERSION == 3.11* ]]; then
-            echo "Error: Python version does not start with 3.11"
+          INSTALLED=$("$PYTHON" --version | cut -d " " -f 2)
+          echo "node-gyp will use Python $INSTALLED at $PYTHON"
+          if [[ $INSTALLED != "$PYTHON_VERSION".* ]]; then
+            echo "Error: Python version does not start with $PYTHON_VERSION"
             exit 1
           fi
+          echo "PYTHON=$PYTHON" >> "$GITHUB_ENV"
 
       - name: Install Node.js, NPM and Yarn
         uses: actions/setup-node@v6
@@ -253,6 +237,13 @@ jobs:
 
       - name: Verify msnodesqlv8 native build
         run: node -e "require('msnodesqlv8')"
+
+      # Every database client loads at startup, so one native module that
+      # can't load on this arch breaks every connection. Fail before shipping it.
+      - name: Verify native modules load in Electron
+        run: yarn workspace beekeeper-studio electron ../../bin/check-native-modules.js
+        env:
+          ELECTRON_RUN_AS_NODE: 1
 
       - name: Remove dist directory
         if: matrix.os.type != 'windows'
@@ -299,8 +290,6 @@ jobs:
           GCP_KMS_KEY: "${{ secrets.gcp_kms_key }}"
           GCP_ACCESS_TOKEN: "${{ steps.auth.outputs.access_token }}"
           # WIN_CERT_FILE and JSIGN_JAR are exported to $GITHUB_ENV by earlier steps
-          PYTHON_PATH: "${{'$PYTHON_PATH' }}"
-          PYTHONPATH: "${{ '$PYTHONPATH' }}"
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           USE_SYSTEM_FPM: true
           SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
@@ -315,24 +304,26 @@ jobs:
           APPLE_TEAM_ID: "7KK583U8H2"
           CSC_LINK: "~/mac-certificate.p12"
           CSC_KEY_PASSWORD: ${{ secrets.mac_dev_pw }}
-          PYTHON_PATH: "${{ matrix.os.type == 'macos' && steps.mac_python.outputs.python_path || '$PYTHON_PATH' }}"
-          PYTHONPATH: "${{ matrix.os.type == 'macos' && steps.mac_python.outputs.python_path || '$PYTHONPATH' }}"
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           USE_SYSTEM_FPM: true
           SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
         run: yarn run electron:build --publish always
 
-      - name: Delete latest-mac.yml
-        if: matrix.os.type == 'macos'
+      # Both arches of a platform upload the same update file name, each listing
+      # only its own build. Remove it here; the finalize jobs below upload one
+      # file listing both.
+      - name: Delete ${{ matrix.os.update_yml }}
+        if: matrix.os.update_yml
         uses: actions/github-script@v8
         env:
           RELEASE_ID: ${{needs.create_draft_release.outputs.id}}
+          ASSET_NAME: ${{ matrix.os.update_yml }}
         with:
           script: |
             const script = require('./.github/scripts/delete_latest_yml.js')
             const assetsUrl = 'https://api.github.com/repos/beekeeper-studio/beekeeper-studio/releases/${{ needs.create_draft_release.outputs.id }}/assets'
             const channel = '${{needs.identify_channel.outputs.channel}}'
-            await script({ github, core, context }, assetsUrl, channel)
+            await script({ github, core, context }, assetsUrl, channel, process.env.ASSET_NAME)
 
       - name: Invalidate cloudfront cache
         if: matrix.os.type == 'linux' && needs.identify_channel.outputs.channel == 'latest'
@@ -348,16 +339,16 @@ jobs:
 
       - name: Set yaml files
         id: set_yaml
-        if: matrix.os.type == 'macos'
+        if: matrix.os.update_yml
         uses: actions/github-script@v8
         env:
-          ARCH: ${{ matrix.os.arch }}
-          CHANNEL: ${{needs.identify_channel.outputs.channel}}
+          YML: ${{ matrix.os.update_yml }}
+          OUTPUT: ${{ matrix.os.update_yml_output }}
         with:
           script: |
             const fs = require('fs')
-            const content = fs.readFileSync(`apps/studio/dist_electron/latest-mac.yml`, 'utf8')
-            core.setOutput(`mac_${process.env.ARCH}_yml`, content)
+            const content = fs.readFileSync(`apps/studio/dist_electron/${process.env.YML}`, 'utf8')
+            core.setOutput(process.env.OUTPUT, content)
       - name: Cleanup artifacts
         if: ${{!startsWith(matrix.os.name, 'windows')}}
         run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap|*.yml|*.flatpak|*.aur)"
@@ -365,20 +356,33 @@ jobs:
       - name: Cleanup artifacts Win
         if: startsWith(matrix.os.name, 'windows')
         shell: powershell
-        run: Get-ChildItem apps/studio/dist_electron -File | Where-Object { $_.Extension -notin '.exe','.yml' } | Remove-Item -Force
+        run: Get-ChildItem apps/studio/dist_electron -File | Where-Object { $_.Extension -notin '.exe','.msi','.yml' } | Remove-Item -Force
 
 
-  finalize_mac_yml:
+  # Merges each platform's x64 and arm64 update files into the one file
+  # electron-updater reads. x64 entries stay first: older Windows clients pick
+  # the first .exe listed, newer ones the file whose name contains their arch.
+  finalize_update_yml:
     needs: [release, create_draft_release, identify_channel]
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - file: latest-mac.yml
+            x64_output: mac_x64_yml
+            arm64_output: mac_arm64_yml
+          - file: latest.yml
+            x64_output: win_x64_yml
+            arm64_output: win_arm64_yml
     steps:
       - uses: actions/setup-node@v6
       - run: npm install js-yaml
       - name: Merge yml files
         uses: actions/github-script@v8
         env:
-          INTEL_YML: ${{ needs.release.outputs.mac_x64_yml }}
-          ARM_YML: ${{ needs.release.outputs.mac_arm64_yml }}
+          INTEL_YML: ${{ needs.release.outputs[matrix.x64_output] }}
+          ARM_YML: ${{ needs.release.outputs[matrix.arm64_output] }}
         with:
           script: |
             const fs = require('fs');
@@ -409,25 +413,26 @@ jobs:
             };
 
             const merge = mergeFiles();
-            fs.writeFileSync('mac.yml', merge, 'utf8');
-      - name: Upload fixed mac yml
+            fs.writeFileSync('merged.yml', merge, 'utf8');
+      - name: Upload merged ${{ matrix.file }}
         uses: actions/github-script@v8
         env:
           RELEASE_ID: ${{ needs.create_draft_release.outputs.id }}
+          FILE: ${{ matrix.file }}
         with:
           script: |
             const fs = require('fs');
             const releaseId = process.env.RELEASE_ID;
 
             // Read the merged yml file
-            const ymlContent = fs.readFileSync('mac.yml', 'utf8');
+            const ymlContent = fs.readFileSync('merged.yml', 'utf8');
 
             // Upload the asset using the release ID
             await github.rest.repos.uploadReleaseAsset({
               owner: 'beekeeper-studio',
               repo: 'beekeeper-studio',
               release_id: releaseId,
-              name: 'latest-mac.yml',
+              name: process.env.FILE,
               data: ymlContent,
               headers: {
                 'content-type': 'application/octet-stream'
