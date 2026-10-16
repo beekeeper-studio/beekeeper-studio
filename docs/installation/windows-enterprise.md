@@ -9,6 +9,18 @@ Every Windows release includes an MSI package for IT administrators. Use it to d
 
 The MSI is attached to each release on the [GitHub releases page](https://github.com/beekeeper-studio/beekeeper-studio/releases) as `Beekeeper-Studio-<version>.msi` for x64 PCs, and `Beekeeper-Studio-<version>-arm64.msi` for [Windows on ARM](#windows-on-arm) PCs.
 
+## Known Quirks { #known-quirks }
+
+Read these before you deploy. Each one is covered in more detail below.
+
+- **Two MSIs, one per architecture.** Deploy the x64 MSI to x64 PCs and the ARM64 MSI to Windows on ARM PCs. Assign only one of them to any device: each one replaces the other, even at the same version. See [Windows on ARM](#windows-on-arm).
+- **The ARM64 MSI is labelled x64.** Intune, Configuration Manager and inventory tools list it as an x64 package, but it installs the native ARM64 app. Target ARM64 PCs with device groups or filters, not the package architecture. See [Why the ARM64 MSI Is Labelled x64](#arm64-msi-labelled-x64).
+- **The x64 MSI also installs on ARM64 PCs**, where Beekeeper Studio runs under emulation. The ARM64 MSI refuses to install on x64 PCs.
+- **The Visual C++ Redistributable isn't included.** Deploy the runtime that matches the MSI (x64 or ARM64) first, or the install fails with exit code `1603`. See [Prerequisite: Visual C++ Redistributable](#vc-redist).
+- **No automatic updates.** An MSI install never updates itself. Deploy each new MSI; users see a notice when a release is out. See [Update Notifications](#update-notifications).
+- **A new product code for every MSI.** Each MSI has its own product code, including the x64 and ARM64 MSIs of the same version. The upgrade code never changes. Detection rules based on the product code need the new code with each release.
+- **Don't mix it with the `.exe` installer** on the same PC. See [Don't Mix With the `.exe` Installer](#dont-mix-exe).
+
 ## MSI Package vs `.exe` Installer
 
 |                                | MSI package                                         | `.exe` installer                         |
@@ -19,7 +31,7 @@ The MSI is attached to each release on the [GitHub releases page](https://github
 | Updates                        | Deployed by IT, users are told when one is out      | The app updates itself                   |
 | Visual C++ Redistributable     | Required, install fails without it                  | Downloaded during install when missing   |
 
-## Update Notifications
+## Update Notifications { #update-notifications }
 
 An MSI install never downloads or installs updates. It checks GitHub for new stable releases at startup and once a day, and when one is out it shows users a notice to contact their system administrator. To turn the notice off, set this in [`system.config.ini`](#managing-settings):
 
@@ -30,7 +42,7 @@ checkForUpdatesDisabled = true
 
 The **Release Channel** option is hidden from the **Help** menu, so users can't opt in to beta releases.
 
-## Prerequisite: Visual C++ Redistributable
+## Prerequisite: Visual C++ Redistributable { #vc-redist }
 
 Beekeeper Studio requires the Microsoft Visual C++ Redistributable (x64). The MSI doesn't install it, and refuses to install without it: a silent install exits with code `1603` and this message in its log:
 
@@ -82,12 +94,32 @@ Installing an older MSI over a newer one fails with *A newer version of "Beekeep
 
 ## Windows on ARM (ARM64) { #windows-on-arm }
 
-Deploy `Beekeeper-Studio-<version>-arm64.msi` to Windows on ARM PCs. It installs the native ARM64 version of Beekeeper Studio, with the same commands as the x64 MSI.
+Deploy `Beekeeper-Studio-<version>-arm64.msi` to Windows on ARM PCs. It installs the native ARM64 version of Beekeeper Studio with the same commands and properties as the x64 MSI, and needs the [ARM64 Visual C++ runtime](#vc-redist).
 
-- It only installs on ARM64 PCs. On an x64 PC it fails with exit code `1603` and *This installer is for Windows on ARM (ARM64) PCs. Use the x64 Beekeeper Studio MSI on this PC.*
-- Deployment tools may report it as an x64 package. The WiX version used to build it can't create ARM64 packages, so it is an x64 package that installs the ARM64 app. Assign it to ARM64 devices with a device group or filter rather than relying on the package architecture.
-- The x64 MSI also installs on ARM64 PCs, where Beekeeper Studio runs under emulation. To move those PCs to the native version, deploy the ARM64 MSI. Both MSIs share the upgrade code, so it replaces the x64 install in place, and users' data in `%APPDATA%\beekeeper-studio` is kept.
-- A few database features work differently on ARM64. See [Windows on ARM](./windows.md#windows-on-arm).
+It only installs on ARM64 PCs. On an x64 PC it fails with exit code `1603` and this message:
+
+```text
+This installer is for Windows on ARM (ARM64) PCs. Use the x64 Beekeeper Studio MSI on this PC.
+```
+
+A few database features work differently on ARM64. See [Windows on ARM](./windows.md#windows-on-arm).
+
+### Why the ARM64 MSI Is Labelled x64 { #arm64-msi-labelled-x64 }
+
+Beekeeper Studio's installers are built with electron-builder, and the WiX Toolset version it bundles can't create ARM64 packages ([electron-builder#6077](https://github.com/electron-userland/electron-builder/issues/6077)). So the ARM64 MSI is an x64 package that contains the ARM64 app:
+
+- The package's platform (its `Template` summary property) is `x64;1033`. Intune, Configuration Manager and inventory tools that read it list the package as x64.
+- The app it installs is native ARM64, in the same `C:\Program Files\Beekeeper Studio` folder as the x64 MSI. The **Architecture** column in Task Manager's **Details** tab shows `ARM64` for it.
+- The installer's own checks look at the PC, not the package: it refuses x64 PCs, and checks for the ARM64 runtime.
+
+Target the ARM64 MSI with device groups, assignment filters or requirement rules that select ARM64 PCs. Don't rely on the package architecture.
+
+### Moving PCs From the x64 MSI to ARM64 { #move-to-arm64 }
+
+The x64 MSI has no architecture check, so it also installs on ARM64 PCs, where Beekeeper Studio runs under emulation. Both MSIs share the upgrade code, and each one replaces the other, even at the same version. So:
+
+- Assign only one MSI to each device. If a device gets both, each install removes the other, and a tool that enforces both assignments keeps reinstalling them.
+- To move an ARM64 PC to the native version, take it out of the x64 MSI's assignment (an exclusion group works), then assign it the ARM64 MSI. The ARM64 MSI replaces the x64 install in place, and users' data in `%APPDATA%\beekeeper-studio` is kept.
 
 ## Uninstall
 
@@ -99,11 +131,13 @@ Users' data in `%APPDATA%\beekeeper-studio` is left in place.
 
 ## Deployment Tools
 
+Add the x64 and ARM64 MSIs as separate apps, or deployment types, and target each one at its own PCs. See [Windows on ARM](#windows-on-arm).
+
 - **Microsoft Intune**: add the MSI as a *Line-of-business app* and assign it to device groups. Intune reads the product code and version from the package.
 - **Configuration Manager**: create an application with a *Windows Installer (\*.msi file)* deployment type. The MSI's product code works as the detection method.
 - **Group Policy**: copy the MSI to a network share that computer accounts can read, then assign it under *Computer Configuration > Policies > Software Settings > Software installation*.
 
-## Don't Mix With the `.exe` Installer
+## Don't Mix With the `.exe` Installer { #dont-mix-exe }
 
 Uninstall copies installed with the `.exe` installer before deploying the MSI:
 
