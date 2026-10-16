@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { checkEmptyFilters, isBlank, removeUnsortableColumnsFromSortBy, isNumericDataType, isDateDataType, typedArrayToString, encodedStringLength } from "@/common/utils"
+import { checkEmptyFilters, isBlank, removeUnsortableColumnsFromSortBy, isNumericDataType, isDateDataType, typedArrayToString, encodedStringLength, normalizeFilters } from "@/common/utils"
 import { PostgresData } from '@/shared/lib/dialects/postgresql'
 import { MysqlData } from '@/shared/lib/dialects/mysql'
 import { SqliteData } from '@/shared/lib/dialects/sqlite'
@@ -49,6 +49,26 @@ describe("checkEmptyFilters", () => {
 
 
 
+})
+
+describe("normalizeFilters", () => {
+  it("splits an in filter typed into the filter bar", () => {
+    expect(normalizeFilters([{ field: "id", type: "in", value: "1, 2,3" }])).toEqual([
+      { field: "id", type: "in", value: ["1", "2", "3"] },
+    ])
+  })
+
+  it("keeps an in filter that is already split", () => {
+    expect(normalizeFilters([{ field: "id", type: "in", value: ["1", "2"] }])).toEqual([
+      { field: "id", type: "in", value: ["1", "2"] },
+    ])
+  })
+
+  it("drops incomplete filters", () => {
+    expect(normalizeFilters([{ field: "id", type: "=", value: "" }, { field: "id", type: "is", value: "null" }])).toEqual([
+      { field: "id", type: "is", value: "null" },
+    ])
+  })
 })
 
 describe("removeUnsortableColumnsFromSortBy", () => {

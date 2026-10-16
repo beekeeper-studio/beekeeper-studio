@@ -144,7 +144,8 @@ export function normalizeFilters(filters: TableFilter[]) {
   for (const filter of filters as TableFilter[]) {
     if (!(filter.type && filter.field && (filter.value || filter.type.includes('is')))) continue;
     if (filter.type === "in") {
-      const value = (filter.value as string).split(/\s*,\s*/);
+      // Plugins can open a table with the values already split
+      const value = Array.isArray(filter.value) ? filter.value : (filter.value as string).split(/\s*,\s*/);
       normalized.push({ ...filter, value });
     } else {
       normalized.push(filter);
