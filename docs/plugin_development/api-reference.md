@@ -288,16 +288,23 @@ const result = await runQuery('SELECT * FROM users WHERE active = true LIMIT 10'
   results: [
     {
       fields: [
-        { id: "1", name: "id", dataType: "integer" },
-        { id: "2", name: "email", dataType: "varchar" }
+        { id: "c0", name: "id", dataType: "integer" },
+        { id: "c1", name: "email", dataType: "varchar" }
       ],
       rows: [
-        { id: 1, email: "user1@example.com" },
-        { id: 2, email: "user2@example.com" }
+        { c0: 1, c1: "user1@example.com" },
+        { c0: 2, c1: "user2@example.com" }
       ]
     }
   ]
 }
+```
+
+Rows are keyed by each field's `id`, not its `name`. Depending on the database, the `id` is either the column name or a positional key like `c0`, so read values with `row[field.id]`:
+
+```typescript
+const { fields, rows } = result.results[0];
+const emails = rows.map((row) => row[fields[1].id]);
 ```
 
 **Signature:**
@@ -771,8 +778,8 @@ Write an image to the system clipboard.
 ```typescript
 import { clipboard } from '@beekeeperstudio/plugin';
 
-// data should be a base64 encoded image string
-await clipboard.writeImage(base64ImageData);
+// data must be a data URL, not bare base64
+await clipboard.writeImage("data:image/png;base64,iVBORw0KGgo...");
 ```
 
 **Signature:**

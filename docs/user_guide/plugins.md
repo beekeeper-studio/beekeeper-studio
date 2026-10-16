@@ -22,6 +22,8 @@ Plugins are available to **all Beekeeper Studio users**, including those using t
 
 However, some individual plugins may have their own access requirements. For example, premium plugins developed by the Beekeeper Studio team may require a paid subscription.
 
+By default only the official plugins are enabled. To install community plugins, set `disabled = false` and `communityDisabled = false` under `[pluginSystem]` in your [configuration file](configuration.md), then restart Beekeeper Studio.
+
 ## Available Plugins
 
 ### AI Shell
