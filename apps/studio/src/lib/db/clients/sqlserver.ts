@@ -37,6 +37,7 @@ import { AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from '../serialization/transcoders';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
+import { textWithLeadingComments } from '../sql_tools';
 const log = logRaw.scope('sql-server')
 
 const D = SqlServerData
@@ -288,7 +289,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
 
     const results: NgQueryResult[] = [];
 
-    for (const query of commands) {
+    for (const [index, query] of commands.entries()) {
       if (query.executionType === 'TRANSACTION' && !_.isNil(options.tabId)) {
         switch (query.type) {
           case "BEGIN_TRANSACTION":
@@ -304,7 +305,10 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
         continue;
       }
 
-      const { data, rowsAffected } = await this.driverExecuteSingle(query.text, options);
+      const { data, rowsAffected } = await this.driverExecuteSingle(
+        /^(CREATE|ALTER)_(PROCEDURE|FUNCTION|VIEW|TRIGGER)$/.test(query.type) ? textWithLeadingComments(queryText, commands, index) : query.text,
+        options
+      );
 
       const raw = !data.recordsets.length && rowsAffected > 0 ? [[] as any] : data.recordsets as IRecordSet<any>
 
