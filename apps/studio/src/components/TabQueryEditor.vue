@@ -1820,7 +1820,9 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             excerpt: query.substr(0, 250),
             numberOfRecords: totalRows,
             queryId: this.query?.id,
-            connectionId: this.usedConfig.id
+            connectionId: this.usedConfig.id,
+            origin: 'app',
+            pluginId: null,
           } as any;
 
           if(lastQuery && isDuplicate){
@@ -2439,4 +2441,3 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     }
   }
 </style>
-
