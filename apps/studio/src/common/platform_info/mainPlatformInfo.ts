@@ -79,7 +79,10 @@ export function mainPlatformInfo(): IPlatformInfo {
 
   const sessionType = p.env.XDG_SESSION_TYPE
 
-  const slice = isDevEnv ? 2 : 1
+  // `electron <app path>` (dev, and the e2e tests) puts the app path at
+  // argv[1]; a packaged build doesn't. Keying this off isDevEnv missed test
+  // mode, where the app read its own entry script as a URL to open on launch.
+  const slice = p.defaultApp ? 2 : 1
   const parsedArgs = yargs(p.argv.slice(slice))
   const appVersion = testMode ? '0.0.0' : e.app.getVersion()
 
