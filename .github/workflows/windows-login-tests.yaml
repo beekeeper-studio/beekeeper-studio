@@ -17,8 +17,9 @@ jobs:
   sqlserver-winauth:
     runs-on: windows-2022
     # Tight enough that a stall surfaces in minutes, not in an hour of
-    # wall-clock. Bump it if install+test growth ever gets close.
-    timeout-minutes: 25
+    # wall-clock, with room for the SQL Server install and up to three
+    # yarn install attempts. Bump it if install+test growth ever gets close.
+    timeout-minutes: 45
     defaults:
       run:
         shell: pwsh
@@ -139,8 +140,14 @@ jobs:
           sqlcmd -S "$hn,1433" -E -Q "SELECT SUSER_SNAME() AS loginName, @@SERVERNAME AS server;"
           if ($LASTEXITCODE -ne 0) { throw "Integrated auth pre-flight (hostname=$hn) failed (exit $LASTEXITCODE)." }
 
+      # Same as the other workflows: a longer network timeout and retries, since
+      # this job has no node_modules cache and downloads every package each run.
       - name: Install workspace dependencies
-        run: yarn install --frozen-lockfile
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: yarn install --frozen-lockfile --network-timeout 100000
 
       - name: Run SQL Server integrated auth Jest spec
         working-directory: apps/studio
