@@ -227,6 +227,15 @@
           >
             <i class="material-icons">auto_awesome</i> Ask AI
           </x-button>
+          <x-button
+            v-for="item in toolbarPluginItems"
+            :key="item.slug"
+            @click.prevent="item.handler(editorMenuPayload())"
+            class="btn btn-flat btn-small plugin-toolbar-btn"
+            :title="item.plugin?.name"
+          >
+            <i class="material-icons">{{ item.leadingIcon }}</i> {{ item.name }}
+          </x-button>
 
           <x-button
             @click.prevent="triggerSave"
@@ -330,6 +339,7 @@
         :tab="tab"
         :is-manual-commit="isManualCommit"
         :binary-encoding="$bksConfig.ui.general.binaryEncoding"
+        @selectionChange="resultSelectedCells = $event"
       />
       <div
         class="message"
@@ -372,6 +382,9 @@
         :changes-count="$refs.table?.pendingChangesCount"
         :changes-string="$refs.table?.pendingChangesString"
         :result-editable="resultEditable"
+        :selected-cells="resultSelectedCells"
+        :explain-result="resultIsExplain"
+        @visualize="openResultInPlugin"
         @editResults="editResults"
         @stopEditing="stopEditing"
         @saveChanges="saveChanges"
@@ -606,6 +619,7 @@
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
   import { SmartLocalStorage } from '@/common/LocalStorage';
   import { IdentifyResult } from 'sql-query-identifier/lib/defines'
+  import { isExplainResult } from '@/common/explain'
 import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
   import { wait } from '@/shared/lib/wait'
   import ISavedQuery from '@/common/interfaces/ISavedQuery'
@@ -626,6 +640,10 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       return {
         latestAudit: null,
         results: [],
+        /** The statement that produced each result, for plugins */
+        resultStatements: [],
+        /** Cells selected in the result grid */
+        resultSelectedCells: 0,
         running: false,
         runningCount: 1,
         runningType: 'current',
@@ -880,6 +898,13 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       result() {
         return this.results[this.selectedResult]
       },
+      /** Buttons plugins add next to Run (`editor.query.toolbar`) */
+      toolbarPluginItems() {
+        return this.$store.getters['popupMenu/getPluginMenuItems']('editor.query.toolbar')
+      },
+      resultIsExplain() {
+        return isExplainResult(this.result, this.resultStatements[this.selectedResult])
+      },
       rowCount() {
         return this.result && this.result.rows ? this.result.rows.length : 0
       },
@@ -1075,6 +1100,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       },
       selectedResult() {
         this.editingResult = false
+        this.resultSelectedCells = 0
       },
       error() {
         this.errorMarker = null
@@ -1719,6 +1745,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         this.error = null
         this.queryForExecution = rawQuery
         this.results = []
+        this.resultStatements = []
+        this.resultSelectedCells = 0
         this.resultsEditData = []
         this.resultEditableMap = []
         this.editingResult = false
@@ -1803,6 +1831,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             }
           })
           this.results = Object.freeze(results);
+          this.resultStatements = results.map((_r, idx) => identification[idx]?.text ?? (results.length === 1 ? query : null))
           this.resultsEditData = this.results.map(() => null)
           this.resultEditableMap = this.results.map(() => true)
 
@@ -2071,6 +2100,19 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             : []),
           ...this.getExtraPopupMenu("editor.query", { transform: "ui-kit", payload: this.editorMenuPayload() }),
         ];
+      },
+      /** Visualize button: hand the selection, or the whole result, to a plugin */
+      openResultInPlugin(item, event) {
+        const tabulator = this.$refs.table?.tabulator
+        if (!tabulator) return
+        item.handler({
+          event,
+          item: {
+            tabulator,
+            query: this.resultStatements[this.selectedResult] ?? '',
+            truncated: !!this.result?.truncated,
+          },
+        })
       },
       /** Editor text handed to plugin menu items (`editor.query.context`). */
       editorMenuPayload() {
@@ -2399,7 +2441,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     }
   }
 
-  .ask-ai .material-icons {
+  .ask-ai .material-icons, .plugin-toolbar-btn .material-icons {
     font-size: 1rem;
     margin-right: 0.25rem;
   }

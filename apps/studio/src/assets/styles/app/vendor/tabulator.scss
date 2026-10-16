@@ -824,6 +824,14 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
     .item-icon {
       vertical-align: top;
     }
+
+    // Section labels are disabled items so they can't be picked; keep them
+    // at full strength instead of the faded disabled look
+    &.tabulator-menu-item-disabled:has(.menu-section-label) {
+      opacity: 1;
+      cursor: default;
+      background: transparent;
+    }
   }
 
   .tabulator-menu-separator {

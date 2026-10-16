@@ -332,7 +332,7 @@ const store = new Vuex.Store<State>({
       );
     },
     erDiagramAvailable(_state, getters) {
-      const items = getters["popupMenu/getExtraPopupMenu"]("structure.statusbar");
+      const items = getters["popupMenu/getPluginMenuItems"]("structure.statusbar");
       return items.some((item) => item.slug === "bks-er-diagram-showOneTable");
     }
   },

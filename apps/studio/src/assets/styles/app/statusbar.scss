@@ -128,7 +128,10 @@ $button-height:     $statusbar-height * 0.72;
     }
     &.btn-icon {
       &.end {
-        .material-icons {
+        // Only the button's trailing icon (e.g. the dropdown arrow). A leading
+        // icon and the icons inside its menu keep their size. The menu sits
+        // after the icon, so last-of-type rather than last-child.
+        > .material-icons:last-of-type {
           margin: 0 -0.2rem 0 0.1rem;
           font-size: 12px;
         }

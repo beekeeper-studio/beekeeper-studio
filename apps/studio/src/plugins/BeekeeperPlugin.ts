@@ -1,14 +1,15 @@
 import { AppEvent } from "@/common/AppEvent"
 import Vue from 'vue'
-import { openMenu, MenuItem, DividerItem } from "@beekeeperstudio/ui-kit"
+import { openMenu, MenuItem, DividerItem, LabelItem } from "@beekeeperstudio/ui-kit"
 import { IConnection } from "@/common/interfaces/IConnection"
 import { ConnectionType } from "@/lib/db/types"
 import { isBksInternalColumn } from "@/common/utils"
 import store from '@/store'
 import TimeAgo from "javascript-time-ago"
 import { pluralize } from "@/vendor/pluralize"
+import type { PluginMenuItemCondition } from "@/services/plugin/types"
 
-export type ContextOption = ContextItem | DividerItem;
+export type ContextOption = ContextItem | DividerItem | LabelItem;
 
 export type ContextItem = {
   name: string,
@@ -19,6 +20,14 @@ export type ContextItem = {
   title?: string | ((...args: any[]) => string)
   /** Material icon name rendered on the trailing edge of the item */
   icon?: string
+  /** Material icon name rendered before the label */
+  leadingIcon?: string
+  /** Set on items contributed by a plugin. Plugin items are grouped and
+   * sorted by plugin name. */
+  plugin?: { id: string, name: string }
+  /** Keep the item disabled unless the menu reports this condition. Ignored
+   * by menus that don't report any conditions. */
+  enabledWhen?: PluginMenuItemCondition
   /** Disable the item. The handler will not fire and the item appears greyed out. */
   disabled?: boolean
   /** Keep the menu open after this item is clicked */
@@ -37,14 +46,14 @@ interface MenuProps {
   event: Event
 }
 
-function isDivider(option: ContextOption): option is DividerItem {
-  return "type" in option && option.type === "divider"
+function isDividerOrLabel(option: ContextOption): option is DividerItem | LabelItem {
+  return "type" in option && (option.type === "divider" || option.type === "label")
 }
 
 /** Convert a studio ContextOption into a UI Kit MenuItem, preserving the legacy
  * `handler({ item, option, event })` call convention. */
 export function toMenuItem(option: ContextOption): MenuItem {
-  if (isDivider(option)) {
+  if (isDividerOrLabel(option)) {
     return option
   }
 
@@ -55,6 +64,7 @@ export function toMenuItem(option: ContextOption): MenuItem {
     shortcut: option.shortcut,
     title: option.title,
     icon: option.icon,
+    leadingIcon: option.leadingIcon,
     disabled: option.disabled,
     keepOpen: option.keepOpen,
     items: option.items?.map(toMenuItem),

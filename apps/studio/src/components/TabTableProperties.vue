@@ -120,13 +120,24 @@
                 <x-menuitem @click.prevent="openTable">
                   <x-label>View Data</x-label>
                 </x-menuitem>
-                <template v-for="item in extraPopupMenu">
-                  <hr v-if="item.type === 'divider'" :key="item.slug">
+                <template v-for="(item, index) in extraPopupMenu">
+                  <hr v-if="item.type === 'divider'" :key="`divider-${index}`">
+                  <div
+                    v-else-if="item.type === 'label'"
+                    class="menu-section-label"
+                    :key="item.id"
+                  >
+                    {{ item.label }}
+                  </div>
                   <x-menuitem
                     v-else
                     :key="item.slug"
                     @click.prevent="handleExtraStatusbarMenuClick($event, item)"
                   >
+                    <i
+                      v-if="item.leadingIcon"
+                      class="material-icons menu-leading-icon"
+                    >{{ item.leadingIcon }}</i>
                     <x-label>{{ item.name }}</x-label>
                   </x-menuitem>
                 </template>

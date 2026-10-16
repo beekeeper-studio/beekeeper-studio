@@ -37,7 +37,6 @@
         <x-button
           class="btn-fab add-tab-dropdown"
           menu
-          v-if="newTabDropdownItems.length > 1"
         >
           <i class="material-icons">arrow_drop_down</i>
           <x-menu>
@@ -53,6 +52,13 @@
                 <x-shortcut v-if="menuItem.shortcut" :value="menuItem.shortcut" />
               </x-menuitem>
             </template>
+            <hr>
+            <x-menuitem @click.prevent="openPluginManager">
+              <x-label>
+                <i class="material-icons">extension</i>
+                Manage Plugins…
+              </x-label>
+            </x-menuitem>
           </x-menu>
         </x-button>
       </span>
@@ -688,6 +694,9 @@ export default Vue.extend({
     },
     closeCurrentTab(_id?:number, options?: CloseTabOptions) {
       if (this.activeTab) this.close(this.activeTab, options)
+    },
+    openPluginManager() {
+      this.trigger(AppEvent.openPluginManager)
     },
     async createTab(config: TabTypeConfig.Config) {
       if (config.type === "query") {

@@ -7,7 +7,8 @@ import {
   RangeComponent,
   RowComponent,
 } from "tabulator-tables";
-import { MenuFactories } from "./PluginMenuManager";
+import { MenuFactories, MenuFactory } from "./PluginMenuManager";
+import { buildParamsForStatusbar } from "./statusbarParams";
 import { AppEvent } from "@/common/AppEvent";
 import {
   ActiveRange,
@@ -21,7 +22,8 @@ import {
   RowMenuTarget,
 } from "@beekeeperstudio/plugin";
 import { getParsedKeybinding } from "../utils";
-import { NativePluginMenuItem } from "../types";
+import { NativePluginMenuItem, WebPluginContext } from "../types";
+import type { JsonValue } from "@/types";
 
 type BigIntSerialized = number;
 
@@ -148,6 +150,56 @@ function serializeArray(arr: unknown[]): unknown[] {
   return arr.map((item) => serializeBigInt(item));
 }
 
+/**
+ * A placement that adds an item to one of the app's popup menus. When the
+ * item is picked, the plugin view opens in a new tab with the params built
+ * from the menu's handler argument.
+ */
+function popupMenuFactory<T>(
+  menuId: string,
+  buildParams: (options: T, context: WebPluginContext) => unknown
+): MenuFactory {
+  return {
+    create(context, menuItem) {
+      const slug = `${context.manifest.id}-${menuItem.command}`;
+      return {
+        add() {
+          context.store.addPopupMenuItem(menuId, {
+            name: menuItem.name,
+            slug,
+            leadingIcon: menuItem.icon ?? context.manifest.icon ?? "extension",
+            plugin: { id: context.manifest.id, name: context.manifest.name },
+            enabledWhen: menuItem.enabledWhen,
+            handler: (options: T) => {
+              context.store.appEventBus.emit(
+                AppEvent.newCustomTab,
+                context.store.buildPluginTabInit({
+                  manifest: context.manifest,
+                  viewId: menuItem.view,
+                  command: menuItem.command,
+                  params: buildParams(options, context) as JsonValue,
+                })
+              );
+            },
+          });
+        },
+        remove: () => context.store.removePopupMenuItem(menuId, slug),
+      };
+    },
+  };
+}
+
+/** The query editor passes its text in the handler payload. */
+function editorParams(
+  payload: { text?: string; selectedText?: string; selectedQuery?: string } = {}
+) {
+  return {
+    text: payload.text ?? "",
+    selectedText: payload.selectedText ?? "",
+    selectedQuery: payload.selectedQuery ?? "",
+  };
+}
+
 const pluginMenuFactories: MenuFactories = {
   newTabDropdown: {
     create(context, menuItem, { keyPath }) {
@@ -205,428 +257,78 @@ const pluginMenuFactories: MenuFactories = {
       };
     },
   },
-  "editor.query.context": {
-    create(context, menuItem) {
-      const menuId = "editor.query";
-      const slug = `${context.manifest.id}-${menuItem.command}`;
-      return {
-        add() {
-          context.store.addPopupMenuItem(menuId, {
-            name: menuItem.name,
-            slug,
-            // The query editor passes its text in the handler payload
-            handler: (payload: { text?: string; selectedText?: string; selectedQuery?: string } = {}) => {
-              context.store.appEventBus.emit(
-                AppEvent.newCustomTab,
-                context.store.buildPluginTabInit({
-                  manifest: context.manifest,
-                  viewId: menuItem.view,
-                  command: menuItem.command,
-                  params: {
-                    text: payload.text ?? "",
-                    selectedText: payload.selectedText ?? "",
-                    selectedQuery: payload.selectedQuery ?? "",
-                  },
-                })
-              );
-            },
-          });
-        },
-        remove: () => context.store.removePopupMenuItem(menuId, slug),
-      };
-    },
-  },
-  "results.cell.context": {
-    create(context, menuItem) {
-      const menuId = "results.cell";
-      const slug = `${context.manifest.id}-${menuItem.command}`;
-      return {
-        add() {
-          context.store.addPopupMenuItem(menuId, {
-            name: menuItem.name,
-            slug,
-            handler: (options: { item: CellComponent }) => {
-              context.store.appEventBus.emit(
-                AppEvent.newCustomTab,
-                context.store.buildPluginTabInit({
-                  manifest: context.manifest,
-                  viewId: menuItem.view,
-                  command: menuItem.command,
-                  params: buildParamsForTableMenu(options.item, "cell"),
-                })
-              );
-            },
-          });
-        },
-        remove: () => context.store.removePopupMenuItem(menuId, slug),
-      };
-    },
-  },
-  "results.columnHeader.context": {
-    create(context, menuItem) {
-      const menuId = "results.columnHeader";
-      const slug = `${context.manifest.id}-${menuItem.command}`;
-      return {
-        add() {
-          context.store.addPopupMenuItem(menuId, {
-            name: menuItem.name,
-            slug,
-            handler: (options: { item: ColumnComponent }) => {
-              context.store.appEventBus.emit(
-                AppEvent.newCustomTab,
-                context.store.buildPluginTabInit({
-                  manifest: context.manifest,
-                  viewId: menuItem.view,
-                  command: menuItem.command,
-                  params: buildParamsForTableMenu(options.item, "column"),
-                })
-              );
-            },
-          });
-        },
-        remove: () => context.store.removePopupMenuItem(menuId, slug),
-      };
-    },
-  },
-  "results.rowHeader.context": {
-    create(context, menuItem) {
-      const menuId = "results.rowHeader";
-      const slug = `${context.manifest.id}-${menuItem.command}`;
-      return {
-        add() {
-          context.store.addPopupMenuItem(menuId, {
-            name: menuItem.name,
-            slug,
-            handler: (options: { item: CellComponent }) => {
-              context.store.appEventBus.emit(
-                AppEvent.newCustomTab,
-                context.store.buildPluginTabInit({
-                  manifest: context.manifest,
-                  viewId: menuItem.view,
-                  command: menuItem.command,
-                  params: buildParamsForTableMenu(options.item.getRow(), "row"),
-                })
-              );
-            },
-          });
-        },
-        remove: () => context.store.removePopupMenuItem(menuId, slug),
-      };
-    },
-  },
-  "results.corner.context": {
-    create(context, menuItem) {
-      const menuId = "results.corner";
-      const slug = `${context.manifest.id}-${menuItem.command}`;
-      return {
-        add() {
-          context.store.addPopupMenuItem(menuId, {
-            name: menuItem.name,
-            slug,
-            handler: (options: { item: CellComponent }) => {
-              context.store.appEventBus.emit(
-                AppEvent.newCustomTab,
-                context.store.buildPluginTabInit({
-                  manifest: context.manifest,
-                  viewId: menuItem.view,
-                  command: menuItem.command,
-                  params: buildParamsForTableMenu(options.item, "corner"),
-                })
-              );
-            },
-          });
-        },
-        remove: () => context.store.removePopupMenuItem(menuId, slug),
-      };
-    },
-  },
-  "tableTable.cell.context": {
-    create(context, menuItem) {
-      const menuId = "tableTable.cell";
-      const slug = `${context.manifest.id}-${menuItem.command}`;
-      return {
-        add() {
-          context.store.addPopupMenuItem(menuId, {
-            name: menuItem.name,
-            slug,
-            handler: (options: { item: CellComponent }) => {
-              context.store.appEventBus.emit(
-                AppEvent.newCustomTab,
-                context.store.buildPluginTabInit({
-                  manifest: context.manifest,
-                  viewId: menuItem.view,
-                  command: menuItem.command,
-                  params: buildParamsForTableMenu(options.item, "cell"),
-                })
-              );
-            },
-          });
-        },
-        remove: () => context.store.removePopupMenuItem(menuId, slug),
-      };
-    },
-  },
-  "tableTable.columnHeader.context": {
-    create(context, menuItem) {
-      const menuId = "tableTable.columnHeader";
-      const slug = `${context.manifest.id}-${menuItem.command}`;
-      return {
-        add() {
-          context.store.addPopupMenuItem(menuId, {
-            name: menuItem.name,
-            slug,
-            handler: (options: { item: ColumnComponent }) => {
-              context.store.appEventBus.emit(
-                AppEvent.newCustomTab,
-                context.store.buildPluginTabInit({
-                  manifest: context.manifest,
-                  viewId: menuItem.view,
-                  command: menuItem.command,
-                  params: buildParamsForTableMenu(options.item, "column"),
-                })
-              );
-            },
-          });
-        },
-        remove: () => context.store.removePopupMenuItem(menuId, slug),
-      };
-    },
-  },
-  "tableTable.rowHeader.context": {
-    create(context, menuItem) {
-      const menuId = "tableTable.rowHeader";
-      const slug = `${context.manifest.id}-${menuItem.command}`;
-      return {
-        add() {
-          context.store.addPopupMenuItem(menuId, {
-            name: menuItem.name,
-            slug,
-            handler: (options: { item: CellComponent }) => {
-              context.store.appEventBus.emit(
-                AppEvent.newCustomTab,
-                context.store.buildPluginTabInit({
-                  manifest: context.manifest,
-                  viewId: menuItem.view,
-                  command: menuItem.command,
-                  params: buildParamsForTableMenu(options.item.getRow(), "row"),
-                })
-              );
-            },
-          });
-        },
-        remove: () => context.store.removePopupMenuItem(menuId, slug),
-      };
-    },
-  },
-  "tableTable.corner.context": {
-    create(context, menuItem) {
-      const menuId = "tableTable.corner";
-      const slug = `${context.manifest.id}-${menuItem.command}`;
-      return {
-        add() {
-          context.store.addPopupMenuItem(menuId, {
-            name: menuItem.name,
-            slug,
-            handler: (options: { item: CellComponent }) => {
-              context.store.appEventBus.emit(
-                AppEvent.newCustomTab,
-                context.store.buildPluginTabInit({
-                  manifest: context.manifest,
-                  viewId: menuItem.view,
-                  command: menuItem.command,
-                  params: buildParamsForTableMenu(options.item, "corner"),
-                })
-              );
-            },
-          });
-        },
-        remove: () => context.store.removePopupMenuItem(menuId, slug),
-      };
-    },
-  },
-  "tab.query.header.context": {
-    create(context, menuItem) {
-      const menuId = "tab.query.header";
-      const slug = `${context.manifest.id}-${menuItem.command}`;
-      return {
-        add() {
-          context.store.addPopupMenuItem(menuId, {
-            name: menuItem.name,
-            slug,
-            handler: (options: { item: TransportOpenTab }) => {
-              context.store.appEventBus.emit(
-                AppEvent.newCustomTab,
-                context.store.buildPluginTabInit({
-                  manifest: context.manifest,
-                  viewId: menuItem.view,
-                  command: menuItem.command,
-                  params: {
-                    tab: context.store.serializeTab(options.item),
-                  },
-                })
-              );
-            },
-          });
-        },
-        remove: () => context.store.removePopupMenuItem(menuId, slug),
-      };
-    },
-  },
-  "tab.table.header.context": {
-    create(context, menuItem) {
-      const menuId = "tab.table.header";
-      const slug = `${context.manifest.id}-${menuItem.command}`;
-      return {
-        add() {
-          context.store.addPopupMenuItem(menuId, {
-            name: menuItem.name,
-            slug,
-            handler: (options: { item: TransportOpenTab }) => {
-              context.store.appEventBus.emit(
-                AppEvent.newCustomTab,
-                context.store.buildPluginTabInit({
-                  manifest: context.manifest,
-                  viewId: menuItem.view,
-                  command: menuItem.command,
-                  params: {
-                    tab: context.store.serializeTab(options.item),
-                  },
-                })
-              );
-            },
-          });
-        },
-        remove: () => context.store.removePopupMenuItem(menuId, slug),
-      };
-    },
-  },
-  "entity.table.context": {
-    create(context, menuItem) {
-      const menuId = "entity.table";
-      const slug = `${context.manifest.id}-${menuItem.command}`;
-      return {
-        add() {
-          context.store.addPopupMenuItem(menuId, {
-            name: menuItem.name,
-            slug,
-            handler: (options: { item: DatabaseEntity }) => {
-              context.store.appEventBus.emit(
-                AppEvent.newCustomTab,
-                context.store.buildPluginTabInit({
-                  manifest: context.manifest,
-                  viewId: menuItem.view,
-                  command: menuItem.command,
-                  params: {
-                    entity: {
-                      type: "table",
-                      schema: options.item.schema,
-                      name: options.item.name,
-                    },
-                  },
-                })
-              );
-            },
-          });
-        },
-        remove: () => context.store.removePopupMenuItem(menuId, slug),
-      };
-    },
-  },
-  "entity.schema.context": {
-    create(context, menuItem) {
-      const menuId = "entity.schema";
-      const slug = `${context.manifest.id}-${menuItem.command}`;
-      return {
-        add() {
-          context.store.addPopupMenuItem(menuId, {
-            name: menuItem.name,
-            slug,
-            handler: (options: { item: string }) => {
-              context.store.appEventBus.emit(
-                AppEvent.newCustomTab,
-                context.store.buildPluginTabInit({
-                  manifest: context.manifest,
-                  viewId: menuItem.view,
-                  command: menuItem.command,
-                  params: {
-                    entity: {
-                      type: "schema",
-                      name: options.item,
-                    },
-                  },
-                })
-              );
-            },
-          });
-        },
-        remove: () => context.store.removePopupMenuItem(menuId, slug),
-      };
-    },
-  },
-  "entity.routine.context": {
-    create(context, menuItem) {
-      const menuId = "entity.routine";
-      const slug = `${context.manifest.id}-${menuItem.command}`;
-      return {
-        add() {
-          context.store.addPopupMenuItem(menuId, {
-            name: menuItem.name,
-            slug,
-            handler: (options: { item: DatabaseEntity }) => {
-              context.store.appEventBus.emit(
-                AppEvent.newCustomTab,
-                context.store.buildPluginTabInit({
-                  manifest: context.manifest,
-                  viewId: menuItem.view,
-                  command: menuItem.command,
-                  params: {
-                    entity: {
-                      type: "routine",
-                      schema: options.item.schema,
-                      name: options.item.name,
-                    },
-                  },
-                })
-              );
-            },
-          });
-        },
-        remove: () => context.store.removePopupMenuItem(menuId, slug),
-      };
-    },
-  },
-  "structure.statusbar.menu": {
-    create(context, menuItem) {
-      const menuId = "structure.statusbar";
-      const slug = `${context.manifest.id}-${menuItem.command}`;
-      return {
-        add() {
-          context.store.addPopupMenuItem(menuId, {
-            name: menuItem.name,
-            slug,
-            handler: (options: { item: TableOrView }) => {
-              context.store.appEventBus.emit(
-                AppEvent.newCustomTab,
-                context.store.buildPluginTabInit({
-                  manifest: context.manifest,
-                  viewId: menuItem.view,
-                  command: menuItem.command,
-                  params: {
-                    entity: {
-                      type: options.item.entityType,
-                      name: options.item.name,
-                      schema: options.item.schema,
-                    },
-                  },
-                })
-              );
-            },
-          });
-        },
-        remove: () => context.store.removePopupMenuItem(menuId, slug),
-      };
-    },
-  },
+  "editor.query.context": popupMenuFactory("editor.query", editorParams),
+  "editor.query.toolbar": popupMenuFactory("editor.query.toolbar", editorParams),
+  "results.cell.context": popupMenuFactory(
+    "results.cell",
+    ({ item }: { item: CellComponent }) => buildParamsForTableMenu(item, "cell")
+  ),
+  "results.columnHeader.context": popupMenuFactory(
+    "results.columnHeader",
+    ({ item }: { item: ColumnComponent }) => buildParamsForTableMenu(item, "column")
+  ),
+  "results.rowHeader.context": popupMenuFactory(
+    "results.rowHeader",
+    ({ item }: { item: CellComponent }) => buildParamsForTableMenu(item.getRow(), "row")
+  ),
+  "results.corner.context": popupMenuFactory(
+    "results.corner",
+    ({ item }: { item: CellComponent }) => buildParamsForTableMenu(item, "corner")
+  ),
+  "results.statusbar": popupMenuFactory("results.statusbar", buildParamsForStatusbar),
+  "tableTable.cell.context": popupMenuFactory(
+    "tableTable.cell",
+    ({ item }: { item: CellComponent }) => buildParamsForTableMenu(item, "cell")
+  ),
+  "tableTable.columnHeader.context": popupMenuFactory(
+    "tableTable.columnHeader",
+    ({ item }: { item: ColumnComponent }) => buildParamsForTableMenu(item, "column")
+  ),
+  "tableTable.rowHeader.context": popupMenuFactory(
+    "tableTable.rowHeader",
+    ({ item }: { item: CellComponent }) => buildParamsForTableMenu(item.getRow(), "row")
+  ),
+  "tableTable.corner.context": popupMenuFactory(
+    "tableTable.corner",
+    ({ item }: { item: CellComponent }) => buildParamsForTableMenu(item, "corner")
+  ),
+  "tableTable.statusbar": popupMenuFactory("tableTable.statusbar", buildParamsForStatusbar),
+  "tab.query.header.context": popupMenuFactory(
+    "tab.query.header",
+    ({ item }: { item: TransportOpenTab }, context) => ({
+      tab: context.store.serializeTab(item),
+    })
+  ),
+  "tab.table.header.context": popupMenuFactory(
+    "tab.table.header",
+    ({ item }: { item: TransportOpenTab }, context) => ({
+      tab: context.store.serializeTab(item),
+    })
+  ),
+  "entity.table.context": popupMenuFactory(
+    "entity.table",
+    ({ item }: { item: DatabaseEntity }) => ({
+      entity: { type: "table", schema: item.schema, name: item.name },
+    })
+  ),
+  "entity.schema.context": popupMenuFactory(
+    "entity.schema",
+    ({ item }: { item: string }) => ({
+      entity: { type: "schema", name: item },
+    })
+  ),
+  "entity.routine.context": popupMenuFactory(
+    "entity.routine",
+    ({ item }: { item: DatabaseEntity }) => ({
+      entity: { type: "routine", schema: item.schema, name: item.name },
+    })
+  ),
+  "structure.statusbar.menu": popupMenuFactory(
+    "structure.statusbar",
+    ({ item }: { item: TableOrView }) => ({
+      entity: { type: item.entityType, name: item.name, schema: item.schema },
+    })
+  ),
 };
 
 export default pluginMenuFactories;

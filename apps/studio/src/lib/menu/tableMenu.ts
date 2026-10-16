@@ -104,14 +104,20 @@ export const commonColumnMenu = [
   resizeAllColumnsToFixedWidth,
 ];
 
-export function createMenuItem(label: string, shortcut: string | string[] = "", ultimate = false) {
+export function createMenuItem(label: string, shortcut: string | string[] = "", ultimate = false, leadingIcon = "") {
   label = `<x-label>${escapeHtml(label)}</x-label>`;
   if (typeof shortcut !== "string") {
     shortcut = shortcut[0];
   }
   if (shortcut) shortcut = `<x-shortcut value="${escapeHtml(shortcut)}" />`;
   const ultimateIcon = ultimate ? `<i class="material-icons menu-icon">stars</i>` : '';
-  return `<x-menuitem>${label}${shortcut}${ultimateIcon}</x-menuitem>`;
+  const icon = leadingIcon ? `<i class="material-icons menu-leading-icon">${escapeHtml(leadingIcon)}</i>` : '';
+  return `<x-menuitem>${icon}${label}${shortcut}${ultimateIcon}</x-menuitem>`;
+}
+
+/** A non-interactive heading for a group of items. Pair it with `disabled: true`. */
+export function createMenuSectionLabel(label: string) {
+  return `<div class="menu-section-label">${escapeHtml(label)}</div>`;
 }
 
 export async function buildCopyText(
