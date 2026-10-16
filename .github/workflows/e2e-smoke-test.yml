@@ -26,18 +26,10 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v5
 
-      - name: Install Python (non-Mac)
+      - name: Install Python
         uses: actions/setup-python@v6
         with:
-          # setup-python has no Windows arm64 build of 3.11
-          python-version: ${{ matrix.os == 'windows-11-arm' && '3.12' || '3.11' }}
-        if: runner.os != 'macOS'
-
-      - name: Install Python 3.11 (Mac)
-        if: runner.os == 'macOS'
-        run: |
-          brew install python@3.11
-          echo "/opt/homebrew/opt/python@3.11/libexec/bin" >> $GITHUB_PATH
+          python-version: '3.12'
 
       - name: Install Node.js, NPM and Yarn
         uses: actions/setup-node@v6

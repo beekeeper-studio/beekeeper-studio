@@ -76,10 +76,10 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v5
 
-      - name: Install Python 3.11
+      - name: Install Python 3.12
         uses: actions/setup-python@v6
         with:
-          python-version: 3.11
+          python-version: '3.12'
 
       - name: Install Node.js, NPM and Yarn
         uses: actions/setup-node@v6
@@ -150,7 +150,6 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v5
 
-      # setup-python has no Windows arm64 build of 3.11
       - name: Install Python 3.12
         uses: actions/setup-python@v6
         with:

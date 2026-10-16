@@ -28,8 +28,8 @@ jobs:
         os: [macos-14, ubuntu-22.04, windows-2022, ubuntu-22.04-arm, windows-11-arm]
 
     env:
-      # setup-python has no Windows arm64 build of 3.11
-      PYTHON_VERSION: ${{ matrix.os == 'windows-11-arm' && '3.12' || '3.11' }}
+      # node-gyp uses Python to build native modules from source.
+      PYTHON_VERSION: '3.12'
 
     steps:
       - name: Check out Git repository
@@ -41,11 +41,10 @@ jobs:
         with:
           channel: '8.x/stable'
 
-      - name: Install python ${{ env.PYTHON_VERSION }} (not Mac)
+      - name: Install python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-        if: "!startsWith(matrix.os, 'macos')"
 
 
       - name: Install flatpak tools
@@ -67,34 +66,13 @@ jobs:
         run: sudo gem install fpm -v 1.17.0
         if: "contains(matrix.os, 'ubuntu')"
 
-      - name: Install python 3.11 (mac)
-        if: "startsWith(matrix.os, 'macos')"
-        run: |
-          # Install Python 3.11
-          brew install python@3.11
-          # Add Python 3.11 to PATH
-          echo "/opt/homebrew/opt/python@3.11/libexec/bin" >> $GITHUB_PATH
-          export PATH="/opt/homebrew/opt/python@3.11/libexec/bin:$PATH"
-          export PYTHON_PATH="/opt/homebrew/opt/python@3.11/libexec/bin/python3"
-
       - name: Verify Python Version
-        if: "startsWith(matrix.os, 'windows')"
+        shell: bash
         run: |
-          $PYTHON_VERSION = python --version | Out-String
-          Write-Output "Installed Python version: $PYTHON_VERSION"
-          if (-not $PYTHON_VERSION.StartsWith("Python $env:PYTHON_VERSION")) {
-            Write-Output "Error: Python version does not start with $env:PYTHON_VERSION"
-            exit 1
-          }
-        shell: powershell
-
-      - name: Verify Python Version
-        if: "!startsWith(matrix.os, 'windows')"
-        run: |
-          PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
-          echo "Installed Python version: $PYTHON_VERSION"
-          if [[ ! $PYTHON_VERSION == 3.11* ]]; then
-            echo "Error: Python version does not start with 3.11"
+          INSTALLED=$(python --version | cut -d " " -f 2)
+          echo "Installed Python version: $INSTALLED"
+          if [[ $INSTALLED != "$PYTHON_VERSION".* ]]; then
+            echo "Error: Python version does not start with $PYTHON_VERSION"
             exit 1
           fi
 
@@ -119,7 +97,8 @@ jobs:
             apps/studio/node_modules
             apps/ui-kit/node_modules
             apps/sqltools/node_modules
-          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          # Python is in the key so a Python bump rebuilds the native modules.
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-py${{ env.PYTHON_VERSION }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
 
       # For msnodesqlv8, if it previously failed in the cached version, clear the cache and try again :)
       - name: Check restored node_modules
@@ -156,8 +135,6 @@ jobs:
         run: "yarn run electron:build --publish never"
         if: startsWith(matrix.os, 'ubuntu') == false
         env:
-          PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHON_PATH' }}"
-          PYTHONPATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHONPATH' }}"
           SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
           USE_SYSTEM_FPM: true
 
@@ -166,8 +143,6 @@ jobs:
         run: yarn run electron:build --publish never --linux deb
         if: startsWith(matrix.os, 'ubuntu')
         env:
-          PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHON_PATH' }}"
-          PYTHONPATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHONPATH' }}"
           SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
           USE_SYSTEM_FPM: true
 
