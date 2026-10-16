@@ -41,6 +41,7 @@ Algunos drivers de bases de datos dependen de bibliotecas nativas que sus fabric
 
 - Las conexiones **LibSQL** no son compatibles. El driver `libsql` no tiene una version para Windows ARM64. Usa la version x64 de Beekeeper Studio si necesitas LibSQL.
 - **Oracle** se conecta solo en [modo thin](../user_guide/connecting/oracle-database.md). Oracle no ofrece un Instant Client para Windows on ARM, por lo que las funciones del modo thick, como Native Network Encryption, no estan disponibles.
+- El cifrado de campos del lado del cliente (CSFLE) y Queryable Encryption de **MongoDB** no estan disponibles. Necesitan la biblioteca `mongodb-client-encryption`, que MongoDB no publica para Windows ARM64. Consulta [MongoDB](../user_guide/connecting/mongodb.md#windows-on-arm).
 - **SQL Anywhere** necesita las bibliotecas cliente de SQL Anywhere de SAP (`dbcapi.dll`), que SAP no publica para Windows on ARM.
 - La autenticacion integrada de **SQL Server** (**Kerberos / Windows (via ODBC)**) necesita la version ARM64 de [Microsoft ODBC Driver 18 for SQL Server](https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server). ODBC Driver 17 no tiene version ARM64. Las autenticaciones SQL Login, Domain (NTLM) y Azure / Entra ID no necesitan nada adicional.
 
