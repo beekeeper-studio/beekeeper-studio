@@ -390,7 +390,7 @@ jobs:
       - name: Cleanup artifacts Win
         if: startsWith(matrix.os.name, 'windows')
         shell: powershell
-        run: Get-ChildItem apps/studio/dist_electron -File | Where-Object { $_.Extension -notin '.exe','.yml' } | Remove-Item -Force
+        run: Get-ChildItem apps/studio/dist_electron -File | Where-Object { $_.Extension -notin '.exe','.msi','.yml' } | Remove-Item -Force
 
 
   # Merges each platform's x64 and arm64 update files into the one file

@@ -22,6 +22,11 @@ The download page picks the right version for your PC. If you're not sure which 
 We also have a portable version of Beekeeper Studio that does not require installation. This is also available from our website, for both x64 and ARM64.
 
 
+## Enterprise Deployment (MSI)
+
+IT administrators can deploy Beekeeper Studio with the MSI package, using Intune, Configuration Manager, Group Policy, or a silent `msiexec` install. See [Windows Enterprise Deployment (MSI)](./windows-enterprise.md).
+
+
 ## Windows on ARM (ARM64) { #windows-on-arm }
 
 The ARM64 version runs natively on Windows on ARM, so it's faster and uses less battery than the x64 version running under emulation. It updates itself the same way the x64 version does.

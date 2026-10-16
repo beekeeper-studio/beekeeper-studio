@@ -2030,7 +2030,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         if (this.readOnly) {
           return [
             ...items,
-            ...this.getExtraPopupMenu("editor.query", { transform: "ui-kit" }),
+            ...this.getExtraPopupMenu("editor.query", { transform: "ui-kit", payload: this.editorMenuPayload() }),
           ]
         }
         return [
@@ -2069,8 +2069,16 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
                 },
               ]
             : []),
-          ...this.getExtraPopupMenu("editor.query", { transform: "ui-kit" }),
+          ...this.getExtraPopupMenu("editor.query", { transform: "ui-kit", payload: this.editorMenuPayload() }),
         ];
+      },
+      /** Editor text handed to plugin menu items (`editor.query.context`). */
+      editorMenuPayload() {
+        return {
+          text: this.unsavedText ?? "",
+          selectedText: this.hasSelectedText ? this.editor.selection : "",
+          selectedQuery: this.currentlySelectedQuery?.text ?? "",
+        };
       },
       viewEditHistory() {
         if (!this.query?.id) {

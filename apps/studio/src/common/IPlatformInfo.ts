@@ -17,6 +17,7 @@ export interface IPlatformInfo {
   isSnap: string,
   isFlatpak: boolean,
   isPortable: string,
+  isMsi: boolean,
   isDevelopment: boolean,
   isAppImage: boolean,
   isAppImageLauncher: boolean,

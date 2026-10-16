@@ -46,6 +46,7 @@ module.exports = {
     '!**/node_gyp_bins/*'
   ],
   afterPack: "./build/afterPack.js",
+  msiProjectCreated: "./build/win/msiProjectCreated.js",
   asarUnpack: [
     'package.json',
     // msnodesqlv8 ships a native ODBC addon used for SQL Server integrated
@@ -273,7 +274,7 @@ module.exports = {
   win: {
     icon: './public/icons/png/512x512.png',
     // FIXME: Add AppX/MSIX build back in once certificate issues resolved
-    target: ['nsis', 'portable'],
+    target: ['nsis', 'portable', 'msi'],
     publish: ['github'],
     signtoolOptions: {
       sign: "./build/win/sign.js",
@@ -285,6 +286,18 @@ module.exports = {
   nsis: {
     oneClick: false,
     include: './build/win/msvc-redist.nsh'
+  },
+  // Enterprise package for IT administrators (Intune, SCCM, Group Policy).
+  // Installs for all users into Program Files and runs unattended with
+  // `msiexec /i <file>.msi /qn`. Newer MSIs upgrade older ones in place.
+  // MSI installs don't self-update (see build/win/msiProjectCreated.js).
+  msi: {
+    perMachine: true,
+    // Never change this. It ties every release together so Windows Installer
+    // treats a new MSI as an upgrade instead of a separate product.
+    upgradeCode: "D5B3EEEB-1754-55D1-A12B-C0245BF59784",
+    runAfterFinish: false,
+    createDesktopShortcut: false,
   },
   appx: {
     applicationId: "beekeeperstudio",
