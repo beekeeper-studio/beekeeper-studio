@@ -21,6 +21,9 @@ For a comparison of how thin and thick mode differ, see the Oracle Database docu
 2. On Linux you must have `libaio-dev` (apt) / `libaio-devel` (yum/dnf) installed.
 3. For Ubuntu 24.04+ You also need to make a symlink: `sudo ln -s /usr/lib/x86_64-linux-gnu/libaio.so.1t64 /usr/lib/x86_64-linux-gnu/libaio.so.1`
 
+!!! note "Windows on ARM"
+    Oracle doesn't make an Instant Client for Windows on ARM (ARM64), so the ARM64 version of Beekeeper Studio connects in thin mode only and hides the Instant Client setting. See [Windows on ARM](../../installation/windows.md#windows-on-arm).
+
 Below are specific instructions for each of the above requirements
 
 ### Download Oracle Instant Client

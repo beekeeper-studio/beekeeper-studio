@@ -17,6 +17,17 @@ const certSubject = 'SERIALNUMBER=803010247, C=US, ST=Texas, L=Dallas, O="Rathbo
 const bksAiShellPath = path.dirname(require.resolve('@beekeeperstudio/bks-ai-shell/package.json'));
 const bksErDiagramPath = path.dirname(require.resolve('@beekeeperstudio/bks-er-diagram/package.json'));
 
+// Each Windows architecture builds natively on its own runner (windows-2022 for
+// x64, windows-11-arm for arm64), and electron-builder targets the host arch
+// unless --x64/--arm64 is passed. Its default NSIS and portable names have no
+// arch in them (one universal installer covers every arch it's given), so
+// without this suffix both runners upload the same file names to the release.
+// x64 keeps its unsuffixed names: winget/scoop/chocolatey manifests point at them.
+// The MSI target adds " arm64" by itself.
+const windowsArch = process.argv.includes('--arm64') ? 'arm64'
+  : process.argv.includes('--x64') ? 'x64'
+  : process.arch
+const windowsArchSuffix = windowsArch === 'arm64' ? '-arm64' : ''
 
 
 module.exports = {
@@ -271,11 +282,13 @@ module.exports = {
     },
   },
   portable: {
-    "artifactName": "${productName}-${version}-portable.exe",
+    "artifactName": "${productName}-${version}" + windowsArchSuffix + "-portable.exe",
   },
   nsis: {
     oneClick: false,
-    include: './build/win/msvc-redist.nsh'
+    include: './build/win/msvc-redist.nsh',
+    // Uploaded to GitHub as Beekeeper-Studio-Setup-X.Y.Z(-arm64).exe
+    "artifactName": "${productName} Setup ${version}" + windowsArchSuffix + ".${ext}",
   },
   // Enterprise package for IT administrators (Intune, SCCM, Group Policy).
   // Installs for all users into Program Files and runs unattended with
