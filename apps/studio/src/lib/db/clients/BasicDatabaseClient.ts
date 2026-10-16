@@ -637,7 +637,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   }
 
   protected violatesReadOnly(statements: IdentifyResult[], options: any = {}) {
-    return !isAllowedReadOnlyQuery(statements, this.readOnlyMode) && !options.overrideReadonly
+    return !isAllowedReadOnlyQuery(statements, this.readOnlyMode, this.dialect) && !options.overrideReadonly
   }
 
   protected identifyCommands(queryText: string): IdentifyResult[] {
