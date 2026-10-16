@@ -214,7 +214,8 @@ const pluginMenuFactories: MenuFactories = {
           context.store.addPopupMenuItem(menuId, {
             name: menuItem.name,
             slug,
-            handler: (_event, payload) => {
+            // The query editor passes its text in the handler payload
+            handler: (payload: { text?: string; selectedText?: string; selectedQuery?: string } = {}) => {
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
                 context.store.buildPluginTabInit({
@@ -222,9 +223,9 @@ const pluginMenuFactories: MenuFactories = {
                   viewId: menuItem.view,
                   command: menuItem.command,
                   params: {
-                    text: payload.text,
-                    selectedText: payload.selectedText,
-                    selectedQuery: payload.selectedQuery,
+                    text: payload.text ?? "",
+                    selectedText: payload.selectedText ?? "",
+                    selectedQuery: payload.selectedQuery ?? "",
                   },
                 })
               );
