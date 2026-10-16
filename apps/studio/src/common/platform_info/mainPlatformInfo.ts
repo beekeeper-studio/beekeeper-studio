@@ -40,6 +40,10 @@ export function resolveLevel(env: any, isDev = false) {
   return 'warn';
 }
 
+export function parseCommandLineArgs(argv: string[], defaultApp: boolean) {
+  return yargs(argv.slice(defaultApp ? 2 : 1))
+}
+
 
 export function mainPlatformInfo(): IPlatformInfo {
 
@@ -82,8 +86,7 @@ export function mainPlatformInfo(): IPlatformInfo {
   // `electron <app path>` (dev, and the e2e tests) puts the app path at
   // argv[1]; a packaged build doesn't. Keying this off isDevEnv missed test
   // mode, where the app read its own entry script as a URL to open on launch.
-  const slice = p.defaultApp ? 2 : 1
-  const parsedArgs = yargs(p.argv.slice(slice))
+  const parsedArgs = parseCommandLineArgs(p.argv, !!p.defaultApp)
   const appVersion = testMode ? '0.0.0' : e.app.getVersion()
 
   const parsedAppVersion = resolveAppVersion(appVersion)
