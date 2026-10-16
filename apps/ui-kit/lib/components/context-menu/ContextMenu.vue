@@ -12,47 +12,58 @@
         @click="optionClicked(option, index, $event)"
         @mouseenter="onItemHover(option, index)"
         class="BksContextMenu-item"
-        :class="[typeof option.class === 'function' ? option.class({ item }) : option.class, (option.type === 'divider' ? 'BksContextMenu-item-divider' : ''), option.disabled ? 'BksContextMenu-item-disabled' : '']"
+        :class="[typeof option.class === 'function' ? option.class({ item }) : option.class, (option.type === 'divider' ? 'BksContextMenu-item-divider' : ''), (option.type === 'label' ? 'BksContextMenu-item-section-label' : ''), option.disabled ? 'BksContextMenu-item-disabled' : '']"
         :title="title(option)"
         ref="item"
-        role="menuitem"
+        :role="option.type === 'label' ? 'presentation' : 'menuitem'"
       >
-        <div
-          v-if="typeof checkedOptions[option.id] === 'boolean'"
-          class="BksContextMenu-item-icon-container BksContextMenu-item-checkbox-icon"
-          :class="{ 'BksContextMenu-item-checked': checkedOptions[option.id] }"
-        >
-          <i class="material-icons">
-            {{ checkedOptions[option.id] ? 'check_box' : 'check_box_outline_blank' }}
-          </i>
-        </div>
-        <div
-          v-if="typeof option.label === 'object'"
-          v-html="option.label.html"
-          class="BksContextMenu-item-label"
-        />
-        <div
-          v-else
-          v-text="option.label"
-          class="BksContextMenu-item-label"
-        />
-        <div
-          v-if="option.shortcut"
-          class="BksContextMenu-item-shortcut"
-          v-text="shortcut(option.shortcut)"
-        />
-        <div
-          v-if="option.icon"
-          class="BksContextMenu-item-icon-container BksContextMenu-item-trailing-icon"
-        >
-          <i class="material-icons">{{ option.icon }}</i>
-        </div>
-        <div
-          v-if="option.items?.length > 0"
-          class="BksContextMenu-item-icon-container BksContextMenu-item-submenu-icon"
-        >
-          <i class="material-icons">keyboard_arrow_right</i>
-        </div>
+        <template v-if="option.type === 'label'">
+          {{ option.label }}
+        </template>
+        <template v-else>
+          <div
+            v-if="typeof checkedOptions[option.id] === 'boolean'"
+            class="BksContextMenu-item-icon-container BksContextMenu-item-checkbox-icon"
+            :class="{ 'BksContextMenu-item-checked': checkedOptions[option.id] }"
+          >
+            <i class="material-icons">
+              {{ checkedOptions[option.id] ? 'check_box' : 'check_box_outline_blank' }}
+            </i>
+          </div>
+          <div
+            v-if="option.leadingIcon"
+            class="BksContextMenu-item-icon-container BksContextMenu-item-leading-icon"
+          >
+            <i class="material-icons">{{ option.leadingIcon }}</i>
+          </div>
+          <div
+            v-if="typeof option.label === 'object'"
+            v-html="option.label.html"
+            class="BksContextMenu-item-label"
+          />
+          <div
+            v-else
+            v-text="option.label"
+            class="BksContextMenu-item-label"
+          />
+          <div
+            v-if="option.shortcut"
+            class="BksContextMenu-item-shortcut"
+            v-text="shortcut(option.shortcut)"
+          />
+          <div
+            v-if="option.icon"
+            class="BksContextMenu-item-icon-container BksContextMenu-item-trailing-icon"
+          >
+            <i class="material-icons">{{ option.icon }}</i>
+          </div>
+          <div
+            v-if="option.items?.length > 0"
+            class="BksContextMenu-item-icon-container BksContextMenu-item-submenu-icon"
+          >
+            <i class="material-icons">keyboard_arrow_right</i>
+          </div>
+        </template>
       </li>
     </ul>
     <context-menu v-if="showSubItemsIndex !== -1" :options="options[showSubItemsIndex].items" :item="item" :event="event" :parentMenu="$refs.item[showSubItemsIndex]" @close="$emit('close')" />
@@ -60,7 +71,7 @@
 </template>
 
 <script lang="ts">
-import { BaseMenuItem } from './menu'
+import { BaseMenuItem, MenuItem } from './menu'
 import { formatDisplayKeybinding } from "../..//utils/formatDisplayKeybinding";
 import Vue from 'vue'
 
@@ -178,7 +189,8 @@ export default Vue.extend({
     onClickOutside() {
       this.hideContextMenu()
     },
-    optionClicked(option: BaseMenuItem, idx: number, event: any) {
+    optionClicked(option: MenuItem, idx: number, event: any) {
+      if ("type" in option) return
       if (option.items?.length > 0 && this.showSubItemsIndex === idx) {
         return
       }

@@ -16,6 +16,7 @@
   --bks-context-menu-item-bg-color-disabled: transparent;
   --bks-context-menu-item-shortcut-fg-color: #{rgba($text-dark, 0.5)};
   --bks-context-menu-divider-border-color: #{$border-color};
+  --bks-context-menu-section-label-fg-color: #{rgba($text-dark, 0.5)};
 }
 
 .BksContextMenu-list {
@@ -88,6 +89,21 @@
   line-height: 24px;
   width: 24px;
   opacity: 0.6;
+}
+
+.BksContextMenu-item-leading-icon {
+  margin-right: 0.4rem;
+}
+
+.BksContextMenu-item.BksContextMenu-item-section-label {
+  min-height: 24px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bks-context-menu-section-label-fg-color);
+  cursor: default;
+  pointer-events: none;
 }
 
 .BksContextMenu-item-submenu-icon i {
