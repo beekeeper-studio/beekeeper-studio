@@ -166,6 +166,7 @@ jobs:
           name: ${{ matrix.os }}
           path: |
             apps/studio/dist_electron/*.exe
+            apps/studio/dist_electron/*.msi
             apps/studio/dist_electron/*.deb
             apps/studio/dist_electron/*.rpm
             apps/studio/dist_electron/*.AppImage

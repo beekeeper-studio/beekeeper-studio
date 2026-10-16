@@ -4,6 +4,7 @@ import { existsSync } from 'fs'
 import { resolve, join } from 'path'
 import { IPlatformInfo } from '../IPlatformInfo'
 import { BksVersion } from '@/lib/license'
+import { isMsiInstall } from '@/common/msiInstall'
 
 
 // TODO: Automatically enable wayland without flags once
@@ -93,6 +94,7 @@ export function mainPlatformInfo(): IPlatformInfo {
     isSnap: p.env.ELECTRON_SNAP,
     isFlatpak: !!p.env.FLATPAK_ID || existsSync('/.flatpak-info'),
     isPortable: isWindows && p.env.PORTABLE_EXECUTABLE_DIR,
+    isMsi: isWindows && !isDevEnv && !testMode && isMsiInstall(p.execPath),
     isDevelopment: isDevEnv,
     isAppImage: !!process.env.APPIMAGE,
     isAppImageLauncher: process.env.DESKTOPINTEGRATION === 'AppImageLauncher',
