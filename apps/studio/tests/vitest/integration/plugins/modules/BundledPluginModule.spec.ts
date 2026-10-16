@@ -1,11 +1,12 @@
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
 import PluginFileManager from "@/services/plugin/PluginFileManager";
 import PluginManager from "@/services/plugin/PluginManager";
-import { createPluginServer } from "@tests/integration/plugins/utils/server";
+import { createPluginServer } from "@tests/vitest/integration/plugins/utils/server";
 import {
   createFileManager,
   cleanFileManager,
-} from "@tests/integration/plugins/utils/fileManager";
-import { MockPluginRepositoryService } from "@tests/integration/plugins/utils/registry";
+} from "@tests/vitest/integration/plugins/utils/fileManager";
+import { MockPluginRepositoryService } from "@tests/vitest/integration/plugins/utils/registry";
 import PluginRegistry from "@/services/plugin/PluginRegistry";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import migration from "@/migration/20250529_add_plugin_settings";
