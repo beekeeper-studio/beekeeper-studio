@@ -5,6 +5,9 @@ import helpers from '@shared/lib/tabulator'
 import { CellComponent } from 'tabulator-tables';
 import { AppEvent } from '@/common/AppEvent';
 import { TabulatorFormatterParams } from '@/common/tabulator';
+import { TableKey } from '@shared/lib/dialects/models';
+import { divider } from '@beekeeperstudio/ui-kit';
+import { buildReferencedByFilters, referencedByLabel } from '@/lib/data/referencedBy';
 
 const log = rawLog.scope('fk_click');
 
@@ -162,6 +165,59 @@ export const FkLinkMixin = {
         this.trigger(AppEvent.selectSecondarySidebarTab, "json-viewer")
         this.trigger(AppEvent.toggleSecondarySidebar, true)
       }
+    },
+
+    // The reverse of fkClick: lists the foreign keys in other tables that
+    // point at this cell, without querying those tables.
+    openReferencedByMenu(event: MouseEvent, cell: CellComponent, keys: TableKey[]) {
+      if (!keys?.length) return
+
+      this.$bks.openMenu({
+        event,
+        item: cell,
+        options: [
+          { name: 'Referenced by', slug: 'referenced-by-title', disabled: true, handler: () => {} },
+          divider,
+          ...keys.map((key, index) => ({
+            name: referencedByLabel(key),
+            slug: `referenced-by-${index}`,
+            icon: 'launch',
+            handler: () => this.referencedByClick(key, cell),
+          })),
+        ],
+      })
+    },
+
+    referencedByClick(key: TableKey, cell: CellComponent) {
+      log.debug('referenced by click', key)
+      const table = this.$store.state.tables.find((t) => {
+        return t.name === key.fromTable && (!key.fromSchema || t.schema === key.fromSchema)
+      })
+
+      if (!table) {
+        this.$noty.error(`Unable to find table '${key.fromTable}'`)
+        log.error("referenced-by: unable to find table", key)
+        return
+      }
+
+      const filters = buildReferencedByFilters(key, cell.getRow().getData())
+      if (!filters) {
+        log.error("referenced-by: missing value for key", key)
+        return
+      }
+
+      const params = (cell.getColumn().getDefinition().formatterParams || {}) as TabulatorFormatterParams
+      filters.forEach((filter) => {
+        if (filter.value instanceof Uint8Array) {
+          filter.value = helpers.niceString(filter.value, false, (params.binaryEncoding || 'hex') as 'hex' | 'base64')
+        }
+      })
+
+      this.$root.$emit('loadTable', {
+        table,
+        filters,
+        titleScope: filters.map((f) => f.value).join(','),
+      })
     },
 
   }

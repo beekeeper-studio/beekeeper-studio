@@ -78,6 +78,10 @@ export class ElectronUtilityConnectionClient implements IBasicDatabaseClient {
     return await Vue.prototype.$util.send('conn/getTableKeys', { table, schema });
   }
 
+  async getIncomingKeys(table: string, schema?: string): Promise<TableKey[]> {
+    return await Vue.prototype.$util.send('conn/getIncomingKeys', { table, schema });
+  }
+
   async listTablePartitions(table: string, schema?: string): Promise<TablePartition[]> {
     return await Vue.prototype.$util.send('conn/listTablePartitions', { table, schema });
   }

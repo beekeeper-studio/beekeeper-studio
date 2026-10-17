@@ -2,6 +2,7 @@ import _ from 'lodash'
 import { Mutators } from '../lib/data/tools'
 import { TabulatorFormatterParams } from '@/common/tabulator'
 import helpers, { escapeHtml } from '@shared/lib/tabulator'
+import { REFERENCED_BY_ICON, referencedByTooltip } from '@/lib/data/referencedBy'
 export const NULL = '(NULL)'
 import {CellComponent} from 'tabulator-tables'
 
@@ -21,12 +22,28 @@ export function emptyResult(value: any) {
   return null
 }
 
+export interface CellLink {
+  icon: string
+  tooltip: string
+  className?: string
+}
+
+export function buildFormatterWithLinks(cellValue: string, links: CellLink[]) {
+  const icons = links.map(({ icon, tooltip, className }) => {
+    const classes = ['material-icons', 'fk-link', className].filter(Boolean).join(' ')
+    return `<i class="${classes}" title="${escapeHtml(tooltip)}">${escapeHtml(icon)}</i>`
+  }).join('')
+  const wrapperClass = links.length > 1 ? 'cell-link-wrapper has-many-links' : 'cell-link-wrapper'
+
+  return `<div class="${wrapperClass}">${escapeHtml(cellValue)}${icons}</div>`
+}
+
 export function buildFormatterWithTooltip(cellValue: string, tooltip: string, icon?: string) {
   if (!icon) {
     return `<div class="cell-link-wrapper" title="${escapeHtml(tooltip)}">${escapeHtml(cellValue)}</div>`
   }
 
-  return `<div class="cell-link-wrapper">${escapeHtml(cellValue)}<i class="material-icons fk-link" title="${escapeHtml(tooltip)}">${escapeHtml(icon)}</i></div>`
+  return buildFormatterWithLinks(cellValue, [{ icon, tooltip }])
 }
 
 export default {
@@ -69,7 +86,7 @@ export default {
     },
     cellFormatter(
       cell: CellComponent,
-      params: { fk?: any[], isPK?: boolean, fkOnClick?: (e: MouseEvent, cell: CellComponent) => void, binaryEncoding?: string } = {},
+      params: TabulatorFormatterParams = {},
       onRendered: (func: () => void) => void
     ) {
       const classNames = []
@@ -88,17 +105,34 @@ export default {
 
       // removing the <pre> will break selection / copy paste, see ResultTable
       let result = `<pre>${escapeHtml(cellValue)}</pre>`
-      let tooltip = ''
+      const links: CellLink[] = []
 
       if (params?.fk) {
+        let tooltip = ''
         if (params.fk.length === 1) tooltip = `View record in ${params.fk[0].toTable}`
         else tooltip = `View records in ${(params.fk.map(item => item.toTable).join(', ') as string).replace(/, (?![\s\S]*, )/, ', or ')}`
+        links.push({ icon: 'launch', tooltip })
+      }
 
-        result = buildFormatterWithTooltip(cellValue, tooltip, 'launch')
+      // loaded after the table renders, so read them at format time
+      const referencedBy = params?.referencedBy?.() ?? []
+      if (referencedBy.length) {
+        links.push({
+          icon: REFERENCED_BY_ICON,
+          tooltip: referencedByTooltip(referencedBy),
+          className: 'referenced-by-link',
+        })
+      }
+
+      if (links.length) {
+        result = buildFormatterWithLinks(cellValue, links)
 
         onRendered(() => {
-          const fkLink = cell.getElement().querySelector('.fk-link') as HTMLElement
-          fkLink.onclick = (e) => params.fkOnClick(e, cell);
+          const element = cell.getElement()
+          const fkLink = element.querySelector('.fk-link:not(.referenced-by-link)') as HTMLElement
+          if (fkLink) fkLink.onclick = (e) => params.fkOnClick(e, cell);
+          const referencedByLink = element.querySelector('.referenced-by-link') as HTMLElement
+          if (referencedByLink) referencedByLink.onclick = (e) => params.referencedByOnClick(e, cell);
         })
       }
 

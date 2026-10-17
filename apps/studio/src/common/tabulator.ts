@@ -6,6 +6,7 @@ import {
   TabulatorFull,
 } from "tabulator-tables";
 import { rowHeaderField } from "@/common/utils";
+import { TableKey } from "@shared/lib/dialects/models";
 import _ from "lodash";
 import rawLog from "@bksLogger";
 
@@ -21,6 +22,9 @@ export interface TabulatorFormatterParams {
   fk?: any[];
   isPK?: boolean;
   fkOnClick?: (e: MouseEvent, cell: CellComponent) => void
+  /** Foreign keys in other tables that point at this column */
+  referencedBy?: () => TableKey[] | undefined
+  referencedByOnClick?: (e: MouseEvent, cell: CellComponent) => void
   binaryEncoding?: string
 }
 

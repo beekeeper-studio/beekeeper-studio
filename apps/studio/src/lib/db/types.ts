@@ -341,6 +341,8 @@ export interface IBasicDatabaseClient {
   listSchemas(filter?: SchemaFilterOptions): Promise<string[]>,
   getTableReferences(table: string, schema?: string): Promise<string[]>,
   getTableKeys(table: string, schema?: string): Promise<TableKey[]>,
+  /** Foreign keys in other tables that point at this table */
+  getIncomingKeys(table: string, schema?: string): Promise<TableKey[]>,
   listTablePartitions(table: string, schema?: string): Promise<TablePartition[]>,
   executeCommand(commandText: string): Promise<NgQueryResult[]>,
   query(queryText: string, tabId: number, options?: any): Promise<CancelableQuery>,

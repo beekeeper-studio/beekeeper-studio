@@ -380,6 +380,10 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
     color: $text-light;
     font-size: 14px;
   }
+  // a cell can be both a foreign key and referenced by one
+  .has-many-links i.referenced-by-link {
+    right: 23px;
+  }
   &:hover {
     i.fk-link {
       display: inline-block;

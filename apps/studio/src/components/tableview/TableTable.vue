@@ -341,6 +341,7 @@ import { tabulatorForTableData } from "@/common/tabulator";
 import { TransportTabulatorPersistence } from "@/common/transport/TransportTabulatorPersistence";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import { ExpandablePath, parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
+import { groupIncomingKeysByColumn, normalizeIncomingKeys, referencedByLabel } from '@/lib/data/referencedBy'
 import { stringToTypedArray, removeUnsortableColumnsFromSortBy } from "@/common/utils";
 import { UpdateOptions } from "@/lib/data/jsonViewer";
 
@@ -375,7 +376,10 @@ export default Vue.extend({
       //
       response: null,
       rawTableKeys: [],
+      rawIncomingKeys: [],
       primaryKeys: null,
+      // in key order rather than column order, for matching up composite keys
+      primaryKeysByPosition: [],
       pendingChanges: {
         inserts: [],
         updates: [],
@@ -558,6 +562,10 @@ export default Vue.extend({
         }
       })
       return result
+    },
+    // foreign keys in other tables that point at this table, by referenced column
+    incomingKeysByColumn() {
+      return groupIncomingKeysByColumn(normalizeIncomingKeys(this.rawIncomingKeys, this.primaryKeysByPosition))
     },
     // we can use this to track if column names have been updated and we need
     // to refresh
@@ -894,6 +902,18 @@ export default Vue.extend({
             })
           }
 
+          const referencedBy: TableKey[] = this.incomingKeysByColumn[cell.getField()]
+          if (referencedBy?.length > 0) {
+            menu.push({
+              label: createMenuItem('Referenced by'),
+              disabled: _.isNil(cell.getValue()),
+              menu: referencedBy.map((key) => ({
+                label: createMenuItem(referencedByLabel(key)),
+                action: (_e, cell) => this.referencedByClick(key, cell),
+              })),
+            })
+          }
+
           return menu
         }
       }
@@ -996,6 +1016,9 @@ export default Vue.extend({
       const formatterParams: FormatterParams = {
         fk: hasKeyDatas && keyDatas[0][1],
         fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1].find((k) => !k.isComposite) ?? keyDatas[0][1][0], cell)),
+        // incoming keys load after the columns are built, so look them up lazily
+        referencedBy: () => this.incomingKeysByColumn[column.columnName],
+        referencedByOnClick: (e, cell) => this.openReferencedByMenu(e, cell, this.incomingKeysByColumn[column.columnName]),
         isPK: isPK,
         binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
       }
@@ -1158,6 +1181,8 @@ export default Vue.extend({
       this.resetPendingChanges()
       await this.$store.dispatch('updateTableColumns', this.table)
       await this.getTableKeys();
+      // not awaited: this can be slow on some databases and shouldn't hold up the data
+      this.loadIncomingKeys();
       await this.loadPersistence();
 
       this.tabulator = tabulatorForTableData(this.$refs.table, {
@@ -2144,6 +2169,26 @@ export default Vue.extend({
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema);
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
+      this.primaryKeysByPosition = _.sortBy(rawPrimaryKeys, (key) => key.position ?? 0).map((key) => key.columnName);
+    },
+    async loadIncomingKeys() {
+      // only tables can be the target of a foreign key
+      if (this.table.entityType !== 'table') return
+      const { name, schema } = this.table
+      let keys: TableKey[] = []
+      try {
+        keys = await this.connection.getIncomingKeys(name, schema) ?? []
+      } catch (e) {
+        log.warn('unable to load incoming keys', e)
+      }
+      if (name !== this.table.name || schema !== this.table.schema) return
+
+      const hadKeys = this.rawIncomingKeys.length > 0
+      this.rawIncomingKeys = keys
+      // re-run the cell formatters so the referenced-by links show up
+      if (this.tabulator && (hadKeys || keys.length > 0)) {
+        this.tabulator.getRows().forEach((row: RowComponent) => row.reformat())
+      }
     },
     async refreshTable() {
       if (!this.tabulator) return;
@@ -2153,6 +2198,7 @@ export default Vue.extend({
 
       // Re-fetch table keys on explicit refresh to pick up schema changes (issue #3775)
       await this.getTableKeys()
+      this.loadIncomingKeys()
       // Re-fetch column metadata on explicit refresh so renames show up without
       // reopening the connection (issue #4567). No-ops when columns are unchanged.
       await this.$store.dispatch('updateTableColumns', this.table)

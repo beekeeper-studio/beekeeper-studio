@@ -66,6 +66,56 @@ describe("cellFormatter", () => {
 
 })
 
+describe("cellFormatter links", () => {
+  const incomingKey = { isComposite: false, fromTable: 'order_items', fromColumn: 'order_id', toTable: 'orders', toColumn: 'id' }
+
+  function render(params) {
+    const element = document.createElement('div')
+    const cell = { getValue: () => 1006, getElement: () => element }
+    let rendered = () => null
+    element.innerHTML = mutators.methods.cellFormatter(cell, params, (fn) => { rendered = fn })
+    rendered()
+    return { cell, element }
+  }
+
+  it('renders a referenced-by link that opens the menu', () => {
+    const clicks = []
+    const { cell, element } = render({
+      referencedBy: () => [incomingKey],
+      referencedByOnClick: (_e, c) => clicks.push(c),
+    })
+
+    const link = element.querySelector('.referenced-by-link')
+    expect(link.textContent).toBe('call_received')
+    expect(link.getAttribute('title')).toBe('Referenced by order_items')
+    link.click()
+    expect(clicks).toEqual([cell])
+  })
+
+  it('renders both links on a primary key that is also a foreign key', () => {
+    const fkClicks = []
+    const referencedByClicks = []
+    const { element } = render({
+      fk: [{ toTable: 'customers' }],
+      fkOnClick: () => fkClicks.push(true),
+      referencedBy: () => [incomingKey],
+      referencedByOnClick: () => referencedByClicks.push(true),
+    })
+
+    expect(element.querySelector('.cell-link-wrapper').classList).toContain('has-many-links')
+    element.querySelector('.fk-link:not(.referenced-by-link)').click()
+    expect(fkClicks).toHaveLength(1)
+    expect(referencedByClicks).toHaveLength(0)
+    element.querySelector('.referenced-by-link').click()
+    expect(referencedByClicks).toHaveLength(1)
+  })
+
+  it('renders no link before incoming keys load', () => {
+    const { element } = render({ referencedBy: () => undefined })
+    expect(element.innerHTML).toBe('<pre>1006</pre>')
+  })
+})
+
 describe("binary cell rendering", () => {
 
   const bigBinary = new Uint8Array(5 * 1024 * 1024)

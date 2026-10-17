@@ -167,8 +167,9 @@ describe("TableTable.vue — refreshTable re-fetches columns (#4567)", () => {
       tableColumns: [],
       active: true,
       forceRedraw: false,
-      // sibling method refreshTable calls:
+      // sibling methods refreshTable calls:
       getTableKeys: vi.fn().mockResolvedValue(undefined),
+      loadIncomingKeys: vi.fn().mockResolvedValue(undefined),
       // the store dispatch we are asserting on:
       $store: { dispatch: vi.fn().mockResolvedValue(undefined) },
     };
@@ -181,6 +182,77 @@ describe("TableTable.vue — refreshTable re-fetches columns (#4567)", () => {
     await refreshTable.call(ctx);
 
     expect(ctx.$store.dispatch).toHaveBeenCalledWith("updateTableColumns", table);
+  });
+
+  it("reloads the keys that reference this table", async () => {
+    const ctx = makeRefreshCtx({ table: { name: "t", schema: "public", columns: [] } });
+
+    await refreshTable.call(ctx);
+
+    expect(ctx.loadIncomingKeys).toHaveBeenCalled();
+  });
+});
+
+describe("TableTable.vue — loadIncomingKeys", () => {
+  const loadIncomingKeys = (TableTable as any).options.methods.loadIncomingKeys;
+  const incomingKey = {
+    isComposite: false,
+    fromTable: "order_items",
+    fromSchema: "public",
+    fromColumn: "order_id",
+    toTable: "orders",
+    toSchema: "public",
+    toColumn: "id",
+  };
+
+  function makeCtx({ entityType = "table", getIncomingKeys = vi.fn().mockResolvedValue([incomingKey]) } = {}) {
+    const row = { reformat: vi.fn() };
+    return {
+      row,
+      table: { name: "orders", schema: "public", entityType },
+      rawIncomingKeys: [],
+      connection: { getIncomingKeys },
+      tabulator: { getRows: () => [row] },
+    };
+  }
+
+  it("stores the keys and re-formats rows so the links appear", async () => {
+    const ctx = makeCtx();
+
+    await loadIncomingKeys.call(ctx);
+
+    expect(ctx.connection.getIncomingKeys).toHaveBeenCalledWith("orders", "public");
+    expect(ctx.rawIncomingKeys).toEqual([incomingKey]);
+    expect(ctx.row.reformat).toHaveBeenCalled();
+  });
+
+  it("doesn't query for views", async () => {
+    const ctx = makeCtx({ entityType: "view" });
+
+    await loadIncomingKeys.call(ctx);
+
+    expect(ctx.connection.getIncomingKeys).not.toHaveBeenCalled();
+  });
+
+  it("leaves the table usable when the driver errors", async () => {
+    const ctx = makeCtx({ getIncomingKeys: vi.fn().mockRejectedValue(new Error("nope")) });
+
+    await loadIncomingKeys.call(ctx);
+
+    expect(ctx.rawIncomingKeys).toEqual([]);
+    expect(ctx.row.reformat).not.toHaveBeenCalled();
+  });
+
+  it("ignores results for a table that is no longer shown", async () => {
+    let resolve: (keys: unknown[]) => void;
+    const ctx = makeCtx({ getIncomingKeys: vi.fn(() => new Promise((r) => { resolve = r })) });
+
+    const loading = loadIncomingKeys.call(ctx);
+    ctx.table = { name: "customers", schema: "public", entityType: "table" };
+    resolve([incomingKey]);
+    await loading;
+
+    expect(ctx.rawIncomingKeys).toEqual([]);
   });
 });
 
