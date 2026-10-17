@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import WebPluginManager from "@/services/plugin/web/WebPluginManager";
 import PluginStoreService from "@/services/plugin/web/PluginStoreService";
 import Vue from "vue";
@@ -25,7 +26,7 @@ export class WebHost {
   private plugins = new Map<string, PluginSnapshot>();
 
   private mockUtilityConnection = {
-    send: jest.fn().mockImplementation((event: string, data?: any) => {
+    send: vi.fn().mockImplementation((event: string, data?: any) => {
       if (event === "plugin/waitForInit") {
         return Promise.resolve();
       }
@@ -40,13 +41,13 @@ export class WebHost {
   } as any as UtilityConnection;
 
   private mockAppEventBus = {
-    emit: jest.fn(),
-    on: jest.fn(),
-    off: jest.fn(),
+    emit: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
   };
 
   private mockFileHelpers = {
-    save: jest.fn().mockResolvedValue(undefined),
+    save: vi.fn().mockResolvedValue(undefined),
   };
 
   constructor(options?: {

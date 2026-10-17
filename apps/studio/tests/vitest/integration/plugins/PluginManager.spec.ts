@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
 import fs from "fs";
 import { tmpdir } from "os";
 import PluginFileManager from "@/services/plugin/PluginFileManager";

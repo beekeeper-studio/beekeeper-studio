@@ -1,5 +1,6 @@
-import { DBTestUtil } from "../../../../lib/db";
-import { JsonExporter } from '../../../../../src/lib/export/formats/json'
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { DBTestUtil } from "@tests/lib/db";
+import { JsonExporter } from '@/lib/export/formats/json'
 import tmp from 'tmp'
 import fs from 'fs'
 

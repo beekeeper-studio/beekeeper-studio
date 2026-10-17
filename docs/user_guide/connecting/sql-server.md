@@ -122,6 +122,9 @@ out of the box on a domain-joined machine.
 If connections fail, install the latest
 [Microsoft ODBC Driver 18 for SQL Server](https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server).
 
+On a Windows on ARM PC running the ARM64 version of Beekeeper Studio, install the
+**ARM64** build of ODBC Driver 18. ODBC Driver 17 has no ARM64 build.
+
 ### Linux
 
 Integrated authentication on Linux requires the following host packages — they are

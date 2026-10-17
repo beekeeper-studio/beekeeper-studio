@@ -2233,48 +2233,54 @@
     enabled "2.0.x"
     kuler "^2.0.0"
 
-"@duckdb/node-api@1.4.1-r.4":
-  version "1.4.1-r.4"
-  resolved "https://registry.yarnpkg.com/@duckdb/node-api/-/node-api-1.4.1-r.4.tgz#0dc804bb55ce2824ba1ecc4771421de7a297cea8"
-  integrity sha512-dvlkGZBlQBKzt5CDP2lv8stppufCCxK3RWbRGBjg8KHuGxreLNIKN1uzB4p6qpJuMZsD5N8UJd0dqidoKOZ/cw==
+"@duckdb/node-api@1.4.5-r.1":
+  version "1.4.5-r.1"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-api/-/node-api-1.4.5-r.1.tgz#e1bfafb7fe8d964cbad106ce538f31dd7b210ab8"
+  integrity sha512-lXPfeJclmhTGhBBnfVXy4siuGNpa8QaUIQGAWlDirC92Dq5fELdITI/LihiFDh5Gz7aM8AN9stCGIH891uv1oQ==
   dependencies:
-    "@duckdb/node-bindings" "1.4.1-r.4"
+    "@duckdb/node-bindings" "1.4.5-r.1"
 
-"@duckdb/node-bindings-darwin-arm64@1.4.1-r.4":
-  version "1.4.1-r.4"
-  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-darwin-arm64/-/node-bindings-darwin-arm64-1.4.1-r.4.tgz#8d9dbf3fa1fc595a42f8e4e4ecb3a3fef8affb1f"
-  integrity sha512-4ZklLdqX5ZqqR0guwVj5DTTwIEL/o0aqJSWBU4loMbOSAZOLANVMG8+x9YJXI3aJjbQ+90VAzJN3ptJs3X1Ong==
+"@duckdb/node-bindings-darwin-arm64@1.4.5-r.1":
+  version "1.4.5-r.1"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-darwin-arm64/-/node-bindings-darwin-arm64-1.4.5-r.1.tgz#c9b0fb232f307f266e2eefb0794ed50d87b632d4"
+  integrity sha512-daWqehxIQX5Fnlbkp+yTX2A7rrlXWzfMYNLqil+kZXI7zKG7D/EmT+gWcgSL8N9Jo0fR9RBo8CtzUlR/AaRL5Q==
 
-"@duckdb/node-bindings-darwin-x64@1.4.1-r.4":
-  version "1.4.1-r.4"
-  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-darwin-x64/-/node-bindings-darwin-x64-1.4.1-r.4.tgz#c05883d91c91ed020bba44213f7430be211faf80"
-  integrity sha512-tSWkNzXRjndWNMWJLJzOymGc8gscG2rwYf7wDm6r+e80f0VwrjP1bcNKB/qdKdmubkz1yRU/TWoVEpaK42266A==
+"@duckdb/node-bindings-darwin-x64@1.4.5-r.1":
+  version "1.4.5-r.1"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-darwin-x64/-/node-bindings-darwin-x64-1.4.5-r.1.tgz#41e14cc6456cb9f2e4c9b3b3cc037c6fc1d69ba7"
+  integrity sha512-iTtnNyVXF8zbdlxOe+Rgjcbbv+4WCkWYGfK3ejCwhaqBc8DH07fWPP5ZGtSbUDs/LDOvV/4k3IGD9hXaNTBmPw==
 
-"@duckdb/node-bindings-linux-arm64@1.4.1-r.4":
-  version "1.4.1-r.4"
-  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-linux-arm64/-/node-bindings-linux-arm64-1.4.1-r.4.tgz#99baeb5d2b244f38ce2b5d49375b52b34482f05c"
-  integrity sha512-RO7M85r+bK0Cvn9lD+304gFl3V2eHK47qnmlGCu7kFPHCAowGCYosKim9ML5FslD3ZBdghGl4AdNnrtY3i3mgQ==
+"@duckdb/node-bindings-linux-arm64@1.4.5-r.1":
+  version "1.4.5-r.1"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-linux-arm64/-/node-bindings-linux-arm64-1.4.5-r.1.tgz#7bebec14fb2f00cb982eeb50d4f44e9db501295d"
+  integrity sha512-hDGBZDU5fum/4VDa/PFXUReZKb6ijOx63n10CZUKyY7tnZUV3K3/VpGdCpFyv+jwGuB2M27HpTwMtFYulRmGPQ==
 
-"@duckdb/node-bindings-linux-x64@1.4.1-r.4":
-  version "1.4.1-r.4"
-  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-linux-x64/-/node-bindings-linux-x64-1.4.1-r.4.tgz#14a63d78f2e9f5ac6bec8ca28d918a183ec26fed"
-  integrity sha512-jQKjaje/z35oUdYv7gvCyqZTpsgskgTyt1vyLCnGV/Kwi6UevzorvwEmpvglqxaMONvRQvoGZykfSzHc2ZlS5w==
+"@duckdb/node-bindings-linux-x64@1.4.5-r.1":
+  version "1.4.5-r.1"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-linux-x64/-/node-bindings-linux-x64-1.4.5-r.1.tgz#71c85d97d608d086474b8a05e676946f24d7188b"
+  integrity sha512-/0lEDmIx3crdopnz9snXnJGm1tvf6pqowX/LvycMnKYMAfpeXiQDLjAqgCJ4+95O4Y6An+Fgy6e4m7WW7ZYxVg==
 
-"@duckdb/node-bindings-win32-x64@1.4.1-r.4":
-  version "1.4.1-r.4"
-  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-win32-x64/-/node-bindings-win32-x64-1.4.1-r.4.tgz#3e768de210013e156784202a357bf1f274c994bf"
-  integrity sha512-IgwffRzZxYmsys6VD3zE3Zd6M9Ld24pNuP/h2eNQL6aY+kRa47R5ULEQ2E8BDFuB+ZIu680XQK5lNG+sW4DTNg==
+"@duckdb/node-bindings-win32-arm64@1.4.5-r.1":
+  version "1.4.5-r.1"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-win32-arm64/-/node-bindings-win32-arm64-1.4.5-r.1.tgz#7673c1ca8dd8a3f8f0aa00ccb0b9e02fa5dcefbd"
+  integrity sha512-j+2s9yYlQW1lkGydObiZCPfmW6GzvqgYF42IPY0b9laENFvGz6tD5dwfZ8E41L5vwFSaK1AhjOZ6NFcCMQEPtg==
 
-"@duckdb/node-bindings@1.4.1-r.4":
-  version "1.4.1-r.4"
-  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings/-/node-bindings-1.4.1-r.4.tgz#b7ef90adfde0406d9a36657216a12936194b82d6"
-  integrity sha512-dlVzEH1Hizi1LxxiLOs9hpBhvH7mEWQA6ayJ/6NZQbru//UdmjKg27//4+Rbbg2+dF0E9CebOefxlAkKFWi3uA==
+"@duckdb/node-bindings-win32-x64@1.4.5-r.1":
+  version "1.4.5-r.1"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings-win32-x64/-/node-bindings-win32-x64-1.4.5-r.1.tgz#244fe16b76ef619efb77256f580ccc9402b2ce0e"
+  integrity sha512-4a1FmopqCbJgtUwDswEAzozCbSOR+waiJyAl4K9LHfACV897e72w/XZQT9kHEw36GJE03uWJIyqHlcV+WA+tXA==
+
+"@duckdb/node-bindings@1.4.5-r.1":
+  version "1.4.5-r.1"
+  resolved "https://registry.yarnpkg.com/@duckdb/node-bindings/-/node-bindings-1.4.5-r.1.tgz#4f1017b24f7c93e4a28e590d1b532ac6a43016eb"
+  integrity sha512-yIXjn8PcB/twK5qzlGyAYflWS7SOc+Pw2GSDzXOszL2uDWthozMj44c3kCWFVLx8P1lfjXw7N9Fjca+uBQpn6Q==
   optionalDependencies:
-    "@duckdb/node-bindings-darwin-arm64" "1.4.1-r.4"
-    "@duckdb/node-bindings-darwin-x64" "1.4.1-r.4"
-    "@duckdb/node-bindings-linux-arm64" "1.4.1-r.4"
-    "@duckdb/node-bindings-linux-x64" "1.4.1-r.4"
-    "@duckdb/node-bindings-win32-x64" "1.4.1-r.4"
+    "@duckdb/node-bindings-darwin-arm64" "1.4.5-r.1"
+    "@duckdb/node-bindings-darwin-x64" "1.4.5-r.1"
+    "@duckdb/node-bindings-linux-arm64" "1.4.5-r.1"
+    "@duckdb/node-bindings-linux-x64" "1.4.5-r.1"
+    "@duckdb/node-bindings-win32-arm64" "1.4.5-r.1"
+    "@duckdb/node-bindings-win32-x64" "1.4.5-r.1"
 
 "@electron-internal/extract-zip@^1.0.1":
   version "1.0.5"

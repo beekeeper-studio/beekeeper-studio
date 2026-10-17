@@ -1,7 +1,8 @@
 /**
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
 
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import "./setup";
 import { WebHost, WebPlugin } from "./utils";
 import { tables } from "./utils/fixtures";

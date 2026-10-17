@@ -61,6 +61,8 @@ export function tabulatorForTableData(
     keybindings: {
       undo: window.bksConfig.getKeybindings("tabulator", "general.undo"),
       redo: window.bksConfig.getKeybindings("tabulator", "general.redo"),
+      scrollToStart: false,
+      scrollToEnd: false,
     },
     rowHeader: {
       field: rowHeaderField,
