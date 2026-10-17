@@ -7,6 +7,7 @@ import {
   normalizeIncomingKeys,
   referencedByColumns,
   referencedByLabel,
+  referencedByMenuLabels,
   referencedByTable,
   referencedByTooltip,
 } from "@/lib/data/referencedBy";
@@ -170,6 +171,31 @@ describe("referencedBy", () => {
 
     it("doesn't qualify when there are no schemas", () => {
       expect(referencedByLabel(key({ fromSchema: "", toSchema: "" }))).toBe("order_items (order_id)");
+    });
+  });
+
+  describe("two columns in one table referencing this table", () => {
+    // like films.language_id and films.original_language_id -> languages.id
+    const language = key({ fromTable: "films", fromColumn: "language_id", toTable: "languages", constraintName: 1 });
+    const original = key({ fromTable: "films", fromColumn: "original_language_id", toTable: "languages", constraintName: 0 });
+
+    it("keeps them as separate keys on the referenced column", () => {
+      const keys = normalizeIncomingKeys([language, original], ["id"]);
+      expect(keys).toHaveLength(2);
+      expect(groupIncomingKeysByColumn(keys).id).toEqual([language, original]);
+    });
+
+    it("filters each on its own column", () => {
+      expect(buildReferencedByFilters(language, { id: 2 })).toEqual([{ field: "language_id", type: "=", value: 2, op: "AND" }]);
+      expect(buildReferencedByFilters(original, { id: 2 })).toEqual([{ field: "original_language_id", type: "=", value: 2, op: "AND" }]);
+    });
+
+    it("adds the column to the menu label only where the table repeats", () => {
+      expect(referencedByMenuLabels([language, original, key({ fromTable: "rentals" })])).toEqual([
+        { table: "films", columns: "language_id" },
+        { table: "films", columns: "original_language_id" },
+        { table: "rentals" },
+      ]);
     });
   });
 

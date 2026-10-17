@@ -341,7 +341,7 @@ import { tabulatorForTableData } from "@/common/tabulator";
 import { TransportTabulatorPersistence } from "@/common/transport/TransportTabulatorPersistence";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import { ExpandablePath, parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
-import { groupIncomingKeysByColumn, normalizeIncomingKeys, referencedByColumns, referencedByTable } from '@/lib/data/referencedBy'
+import { groupIncomingKeysByColumn, normalizeIncomingKeys, referencedByMenuLabels } from '@/lib/data/referencedBy'
 import { stringToTypedArray, removeUnsortableColumnsFromSortBy } from "@/common/utils";
 import { UpdateOptions } from "@/lib/data/jsonViewer";
 
@@ -904,11 +904,12 @@ export default Vue.extend({
 
           const referencedBy: TableKey[] = this.incomingKeysByColumn[cell.getField()]
           if (referencedBy?.length > 0) {
+            const labels = referencedByMenuLabels(referencedBy)
             menu.push({
               label: createMenuItem('Referenced by'),
               disabled: _.isNil(cell.getValue()),
-              menu: referencedBy.map((key) => ({
-                label: createTruncatedMenuItem(referencedByTable(key), referencedByColumns(key)),
+              menu: referencedBy.map((key, i) => ({
+                label: createTruncatedMenuItem(labels[i].table, labels[i].columns),
                 action: (_e, cell) => this.referencedByClick(key, cell),
               })),
             })

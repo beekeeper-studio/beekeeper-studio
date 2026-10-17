@@ -121,6 +121,19 @@ export function referencedByLabel(key: TableKey): string {
   return `${referencedByTable(key)} (${referencedByColumns(key)})`
 }
 
+/**
+ * Short labels for a menu: just the table, plus the columns only where one
+ * table references this one more than once (eg films.language_id and
+ * films.original_language_id), so every entry can be told apart.
+ */
+export function referencedByMenuLabels(keys: TableKey[]): { table: string, columns?: string }[] {
+  const counts = _.countBy(keys, referencedByTable)
+  return keys.map((key) => {
+    const table = referencedByTable(key)
+    return counts[table] > 1 ? { table, columns: referencedByColumns(key) } : { table }
+  })
+}
+
 export function referencedByTooltip(keys: TableKey[]): string {
   const tables = _.uniq(keys.map((key) => key.fromTable))
   const shown = tables.slice(0, 3)
