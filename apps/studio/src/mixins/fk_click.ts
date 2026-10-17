@@ -6,8 +6,7 @@ import { CellComponent } from 'tabulator-tables';
 import { AppEvent } from '@/common/AppEvent';
 import { TabulatorFormatterParams } from '@/common/tabulator';
 import { TableKey } from '@shared/lib/dialects/models';
-import { divider } from '@beekeeperstudio/ui-kit';
-import { buildReferencedByFilters, referencedByLabel } from '@/lib/data/referencedBy';
+import { buildReferencedByFilters, referencedByColumns, referencedByLabel, referencedByTable } from '@/lib/data/referencedBy';
 
 const log = rawLog.scope('fk_click');
 
@@ -175,16 +174,17 @@ export const FkLinkMixin = {
       this.$bks.openMenu({
         event,
         item: cell,
-        options: [
-          { name: 'Referenced by', slug: 'referenced-by-title', disabled: true, handler: () => {} },
-          divider,
-          ...keys.map((key, index) => ({
-            name: referencedByLabel(key),
-            slug: `referenced-by-${index}`,
-            icon: 'launch',
-            handler: () => this.referencedByClick(key, cell),
-          })),
-        ],
+        heading: 'Referenced by',
+        menuClass: 'referenced-by-menu',
+        options: keys.map((key, index) => ({
+          name: referencedByTable(key),
+          description: referencedByColumns(key),
+          // long names are truncated, so the full name is on hover
+          title: referencedByLabel(key),
+          slug: `referenced-by-${index}`,
+          icon: 'launch',
+          handler: () => this.referencedByClick(key, cell),
+        })),
       })
     },
 

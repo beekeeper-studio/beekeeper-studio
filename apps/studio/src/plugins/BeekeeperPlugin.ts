@@ -19,6 +19,8 @@ export type ContextItem = {
   title?: string | ((...args: any[]) => string)
   /** Material icon name rendered on the trailing edge of the item */
   icon?: string
+  /** Smaller, muted second line under the name */
+  description?: string
   /** Disable the item. The handler will not fire and the item appears greyed out. */
   disabled?: boolean
   /** Keep the menu open after this item is clicked */
@@ -35,6 +37,10 @@ interface MenuProps {
   elementId?: string
   item: any,
   event: Event
+  /** Title shown at the top of the menu */
+  heading?: string
+  /** Extra class on the menu, for styling one menu without affecting the rest */
+  menuClass?: string
 }
 
 function isDivider(option: ContextOption): option is DividerItem {
@@ -55,6 +61,7 @@ export function toMenuItem(option: ContextOption): MenuItem {
     shortcut: option.shortcut,
     title: option.title,
     icon: option.icon,
+    description: option.description,
     disabled: option.disabled,
     keepOpen: option.keepOpen,
     items: option.items?.map(toMenuItem),
@@ -93,6 +100,8 @@ export const BeekeeperPlugin = {
       item: args.item,
       event: args.event,
       targetElement: args.elementId,
+      heading: args.heading,
+      menuClass: args.menuClass,
     })
   },
   buildConnectionName(config: IConnection) {

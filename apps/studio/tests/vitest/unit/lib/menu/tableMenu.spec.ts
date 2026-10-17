@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Mock } from "vitest";
-import { buildCopyText, buildTiledPasteData } from "@/lib/menu/tableMenu";
+import { buildCopyText, buildTiledPasteData, createTruncatedMenuItem } from "@/lib/menu/tableMenu";
 import { PostgresData } from "@/shared/lib/dialects/postgresql";
 import { MysqlData } from "@/shared/lib/dialects/mysql";
 import { SqlServerData } from "@/shared/lib/dialects/sqlserver";
@@ -246,5 +246,35 @@ describe("buildTiledPasteData", () => {
       ["a", "b", "a", "b"],
       ["c", undefined, "c", undefined],
     ]);
+  });
+});
+
+describe("createTruncatedMenuItem", () => {
+  it("puts the full label in the hover title so it can be truncated", () => {
+    const label = "warehouse_fulfillment_exception_escalation_audit_trail_entries (order_id)";
+    const item = document.createElement("div");
+    item.innerHTML = createTruncatedMenuItem(label);
+
+    const menuItem = item.querySelector("x-menuitem");
+    expect(menuItem.classList.contains("truncated-menuitem")).toBe(true);
+    expect(menuItem.getAttribute("title")).toBe(label);
+    expect(menuItem.querySelector("x-label").textContent).toBe(label);
+  });
+
+  it("keeps the detail separate so the label truncates first", () => {
+    const item = document.createElement("div");
+    item.innerHTML = createTruncatedMenuItem("warehouse_fulfillment_entries", "order_id");
+
+    expect(item.querySelector(".truncated-menuitem-label").textContent).toBe("warehouse_fulfillment_entries");
+    expect(item.querySelector(".truncated-menuitem-detail").textContent).toBe("(order_id)");
+    expect(item.querySelector("x-menuitem").getAttribute("title")).toBe("warehouse_fulfillment_entries (order_id)");
+  });
+
+  it("escapes names", () => {
+    const item = document.createElement("div");
+    item.innerHTML = createTruncatedMenuItem('<b>"odd" table</b> (id)');
+
+    expect(item.querySelector("b")).toBeNull();
+    expect(item.querySelector("x-menuitem").getAttribute("title")).toBe('<b>"odd" table</b> (id)');
   });
 });

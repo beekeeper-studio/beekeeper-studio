@@ -114,6 +114,17 @@ export function createMenuItem(label: string, shortcut: string | string[] = "", 
   return `<x-menuitem>${label}${shortcut}${ultimateIcon}</x-menuitem>`;
 }
 
+/**
+ * For labels built from user data (eg table names) that can be very long. The
+ * label truncates first so the detail, eg "(order_id)", stays readable.
+ */
+export function createTruncatedMenuItem(label: string, detail?: string) {
+  const full = detail ? `${label} (${detail})` : label;
+  const detailHtml = detail ? `<span class="truncated-menuitem-detail">(${escapeHtml(detail)})</span>` : '';
+  // x-label slots its children through shadow DOM, so lay them out in our own span
+  return `<x-menuitem class="truncated-menuitem" title="${escapeHtml(full)}"><x-label><span class="truncated-menuitem-text"><span class="truncated-menuitem-label">${escapeHtml(label)}</span>${detailHtml}</span></x-label></x-menuitem>`;
+}
+
 export async function buildCopyText(
   rangeData: RangeData,
   options: {

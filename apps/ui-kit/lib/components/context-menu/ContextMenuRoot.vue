@@ -6,6 +6,8 @@
       :options="options"
       :event="event"
       :item="item"
+      :heading="heading"
+      :menu-class="menuClass"
       @close="hideContextMenu"
     />
   </teleport>

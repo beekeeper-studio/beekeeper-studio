@@ -830,6 +830,30 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
     }
   }
 
+  .truncated-menuitem-text {
+    display: flex;
+    gap: 0.3em;
+    max-width: 22rem;
+    white-space: nowrap;
+  }
+
+  .truncated-menuitem-label,
+  .truncated-menuitem-detail {
+    // spans in x-label are otherwise flex, which disables the ellipsis
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .truncated-menuitem-label {
+    min-width: 0;
+  }
+
+  .truncated-menuitem-detail {
+    flex-shrink: 0;
+    max-width: 11rem;
+  }
+
   .tabulator-menu-separator {
     border-top-color: rgba($theme-base, 0.07);
   }

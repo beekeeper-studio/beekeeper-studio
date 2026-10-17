@@ -336,12 +336,12 @@ import { normalizeFilters, safeSqlFormat, createTableFilter, isNumericDataType, 
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml, FormatterParams } from '@shared/lib/tabulator';
-import { pasteRange, readClipboardRows, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
+import { pasteRange, readClipboardRows, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, createTruncatedMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
 import { tabulatorForTableData } from "@/common/tabulator";
 import { TransportTabulatorPersistence } from "@/common/transport/TransportTabulatorPersistence";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import { ExpandablePath, parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
-import { groupIncomingKeysByColumn, normalizeIncomingKeys, referencedByLabel } from '@/lib/data/referencedBy'
+import { groupIncomingKeysByColumn, normalizeIncomingKeys, referencedByColumns, referencedByTable } from '@/lib/data/referencedBy'
 import { stringToTypedArray, removeUnsortableColumnsFromSortBy } from "@/common/utils";
 import { UpdateOptions } from "@/lib/data/jsonViewer";
 
@@ -908,7 +908,7 @@ export default Vue.extend({
               label: createMenuItem('Referenced by'),
               disabled: _.isNil(cell.getValue()),
               menu: referencedBy.map((key) => ({
-                label: createMenuItem(referencedByLabel(key)),
+                label: createTruncatedMenuItem(referencedByTable(key), referencedByColumns(key)),
                 action: (_e, cell) => this.referencedByClick(key, cell),
               })),
             })

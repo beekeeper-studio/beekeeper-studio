@@ -16,6 +16,8 @@ export interface BaseMenuItem<Item = unknown> {
   title?: string | ((options: { item: Item }) => string)
   /** Material icon name rendered on the trailing edge of the item */
   icon?: string
+  /** Smaller, muted second line under the label */
+  description?: string
 }
 
 export interface CheckedMenuItem<Item = unknown> extends BaseMenuItem<Item> {
@@ -38,6 +40,10 @@ export interface MenuProps<Item = unknown> {
   targetElement?: string
   item?: Item
   event: Event
+  /** Title shown at the top of the menu */
+  heading?: string
+  /** Extra class on the menu, for styling one menu without affecting the rest */
+  menuClass?: string
 }
 
 export const divider: DividerItem = { type: 'divider', id: 'divider' }

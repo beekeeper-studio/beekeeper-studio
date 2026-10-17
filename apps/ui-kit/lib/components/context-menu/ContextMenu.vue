@@ -3,16 +3,24 @@
   <div class="BksUiKit BksContextMenu-container">
     <ul
       class="BksContextMenu-list"
+      :class="menuClass"
       ref="menu"
       role="menu"
+      :aria-label="heading"
     >
+      <li
+        v-if="heading"
+        class="BksContextMenu-heading"
+        role="presentation"
+        v-text="heading"
+      />
       <li
         v-for="(option, index) in options"
         :key="index"
         @click="optionClicked(option, index, $event)"
         @mouseenter="onItemHover(option, index)"
         class="BksContextMenu-item"
-        :class="[typeof option.class === 'function' ? option.class({ item }) : option.class, (option.type === 'divider' ? 'BksContextMenu-item-divider' : ''), option.disabled ? 'BksContextMenu-item-disabled' : '']"
+        :class="[typeof option.class === 'function' ? option.class({ item }) : option.class, (option.type === 'divider' ? 'BksContextMenu-item-divider' : ''), option.disabled ? 'BksContextMenu-item-disabled' : '', option.description ? 'BksContextMenu-item-has-description' : '']"
         :title="title(option)"
         ref="item"
         role="menuitem"
@@ -26,16 +34,23 @@
             {{ checkedOptions[option.id] ? 'check_box' : 'check_box_outline_blank' }}
           </i>
         </div>
-        <div
-          v-if="typeof option.label === 'object'"
-          v-html="option.label.html"
-          class="BksContextMenu-item-label"
-        />
-        <div
-          v-else
-          v-text="option.label"
-          class="BksContextMenu-item-label"
-        />
+        <div class="BksContextMenu-item-text">
+          <div
+            v-if="typeof option.label === 'object'"
+            v-html="option.label.html"
+            class="BksContextMenu-item-label"
+          />
+          <div
+            v-else
+            v-text="option.label"
+            class="BksContextMenu-item-label"
+          />
+          <div
+            v-if="option.description"
+            v-text="option.description"
+            class="BksContextMenu-item-description"
+          />
+        </div>
         <div
           v-if="option.shortcut"
           class="BksContextMenu-item-shortcut"
@@ -66,7 +81,7 @@ import Vue from 'vue'
 
 export default Vue.extend({
   name: 'ContextMenu',
-  props: ['options', 'event', 'item', 'parentMenu'],
+  props: ['options', 'event', 'item', 'parentMenu', 'heading', 'menuClass'],
   data() {
     return {
       menuWidth: null,

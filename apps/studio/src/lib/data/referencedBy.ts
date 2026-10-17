@@ -104,12 +104,21 @@ export function buildReferencedByFilters(key: TableKey, rowData: Record<string, 
   return filters.some((f) => _.isNil(f.value)) ? null : filters
 }
 
-/** eg "order_items (order_id)", schema-qualified when it lives elsewhere */
-export function referencedByLabel(key: TableKey): string {
-  const table = key.fromSchema && key.toSchema && key.fromSchema !== key.toSchema
+/** The referencing table, schema-qualified when it lives in another schema */
+export function referencedByTable(key: TableKey): string {
+  return key.fromSchema && key.toSchema && key.fromSchema !== key.toSchema
     ? `${key.fromSchema}.${key.fromTable}`
     : key.fromTable
-  return `${table} (${columnList(key.fromColumn).join(', ')})`
+}
+
+/** The referencing table's foreign key columns, eg "order_id, line_no" */
+export function referencedByColumns(key: TableKey): string {
+  return columnList(key.fromColumn).join(', ')
+}
+
+/** eg "order_items (order_id)" */
+export function referencedByLabel(key: TableKey): string {
+  return `${referencedByTable(key)} (${referencedByColumns(key)})`
 }
 
 export function referencedByTooltip(keys: TableKey[]): string {

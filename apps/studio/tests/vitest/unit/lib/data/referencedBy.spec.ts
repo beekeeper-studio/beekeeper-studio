@@ -5,7 +5,9 @@ import {
   keyColumnPairs,
   mergeCompositeKeyParts,
   normalizeIncomingKeys,
+  referencedByColumns,
   referencedByLabel,
+  referencedByTable,
   referencedByTooltip,
 } from "@/lib/data/referencedBy";
 
@@ -145,6 +147,14 @@ describe("referencedBy", () => {
 
     it("keeps falsy values that aren't null", () => {
       expect(buildReferencedByFilters(key(), { id: 0 })[0].value).toBe(0);
+    });
+  });
+
+  describe("referencedByTable and referencedByColumns", () => {
+    it("split the label into the table and its key columns", () => {
+      expect(referencedByTable(key())).toBe("order_items");
+      expect(referencedByTable(key({ fromSchema: "billing" }))).toBe("billing.order_items");
+      expect(referencedByColumns(compositeKey)).toBe("order_id, line_no");
     });
   });
 

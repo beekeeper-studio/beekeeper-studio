@@ -12,6 +12,10 @@ const props = {
   },
   item: null as unknown as PropType<unknown>,
   targetElement: String,
+  /** Title shown at the top of the menu */
+  heading: String,
+  /** Extra class on the menu, for styling one menu without affecting the rest */
+  menuClass: String,
 };
 
 export default props;
