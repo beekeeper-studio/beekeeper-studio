@@ -4,6 +4,7 @@ import { readFileSync } from 'fs';
 
 import pg, { QueryResult as PgQueryResult, QueryArrayResult as PgQueryArrayResult, FieldDef, PoolConfig, PoolClient } from 'pg';
 import _ from 'lodash'
+import { ForeignKeyRow, groupForeignKeyRows } from "./foreignKeys";
 import knexlib from 'knex'
 import logRaw from '@bksLogger'
 
@@ -82,6 +83,58 @@ const postgresContext = {
     return null;
   }
 };
+
+// One row per foreign-key column. Callers append the WHERE / ORDER BY.
+const FOREIGN_KEY_COLUMNS_SQL = `
+  SELECT
+    c.conname AS constraint_name,
+    n.nspname AS from_schema,
+    t.relname AS from_table,
+    a.attname AS from_column,
+    nf.nspname AS to_schema,
+    tf.relname AS to_table,
+    af.attname AS to_column,
+    pos AS ordinal_position,
+    CASE c.confupdtype::text
+      WHEN 'a' THEN 'NO ACTION'
+      WHEN 'r' THEN 'RESTRICT'
+      WHEN 'c' THEN 'CASCADE'
+      WHEN 'n' THEN 'SET NULL'
+      WHEN 'd' THEN 'SET DEFAULT'
+      ELSE c.confupdtype::text
+    END AS update_rule,
+    CASE c.confdeltype::text
+      WHEN 'a' THEN 'NO ACTION'
+      WHEN 'r' THEN 'RESTRICT'
+      WHEN 'c' THEN 'CASCADE'
+      WHEN 'n' THEN 'SET NULL'
+      WHEN 'd' THEN 'SET DEFAULT'
+      ELSE c.confdeltype::text
+    END AS delete_rule
+  FROM pg_constraint c
+    JOIN pg_class t ON c.conrelid = t.oid
+    JOIN pg_namespace n ON t.relnamespace = n.oid
+    JOIN generate_subscripts(c.conkey, 1) pos ON true
+    JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = c.conkey[pos]
+    JOIN pg_class tf ON c.confrelid = tf.oid
+    JOIN pg_namespace nf ON tf.relnamespace = nf.oid
+    JOIN pg_attribute af ON af.attrelid = tf.oid AND af.attnum = c.confkey[pos]
+`;
+
+function toForeignKeyRow(row: any): ForeignKeyRow {
+  return {
+    constraintName: row.constraint_name,
+    fromSchema: row.from_schema,
+    fromTable: row.from_table,
+    fromColumn: row.from_column,
+    toSchema: row.to_schema,
+    toTable: row.to_table,
+    toColumn: row.to_column,
+    ordinalPosition: Number(row.ordinal_position),
+    onUpdate: row.update_rule,
+    onDelete: row.delete_rule,
+  };
+}
 
 export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient> {
   version: VersionInfo;
@@ -607,185 +660,25 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   }
 
   async getOutgoingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
-    // Query for foreign keys FROM this table (referencing other tables)
+    // Foreign keys defined on this table (referencing other tables)
     const sql = `
-      SELECT
-        c.conname AS constraint_name,
-        a.attname AS column_name,
-        n.nspname AS from_schema,
-        t.relname AS from_table,
-        af.attname AS to_column,
-        tf.relname AS to_table,
-        nf.nspname AS to_schema,
-        CASE c.confupdtype::text
-          WHEN 'a' THEN 'NO ACTION'
-          WHEN 'r' THEN 'RESTRICT'
-          WHEN 'c' THEN 'CASCADE'
-          WHEN 'n' THEN 'SET NULL'
-          WHEN 'd' THEN 'SET DEFAULT'
-          ELSE c.confupdtype::text
-        END AS update_rule,
-        CASE c.confdeltype::text
-          WHEN 'a' THEN 'NO ACTION'
-          WHEN 'r' THEN 'RESTRICT'
-          WHEN 'c' THEN 'CASCADE'
-          WHEN 'n' THEN 'SET NULL'
-          WHEN 'd' THEN 'SET DEFAULT'
-          ELSE c.confdeltype::text
-        END AS delete_rule,
-        pos AS ordinal_position
-      FROM
-        pg_constraint c
-        JOIN pg_class t ON c.conrelid = t.oid
-        JOIN pg_namespace n ON t.relnamespace = n.oid
-        JOIN generate_subscripts(c.conkey, 1) pos ON true
-        JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = c.conkey[pos]
-        JOIN pg_class tf ON c.confrelid = tf.oid
-        JOIN pg_namespace nf ON tf.relnamespace = nf.oid
-        JOIN pg_attribute af ON af.attrelid = tf.oid AND af.attnum = c.confkey[pos]
-      WHERE
-        c.contype = 'f'
-        AND n.nspname = $1
-        AND t.relname = $2
-      ORDER BY
-        c.conname,
-        pos;
+      ${FOREIGN_KEY_COLUMNS_SQL}
+      WHERE c.contype = 'f' AND n.nspname = $1 AND t.relname = $2
+      ORDER BY c.conname, pos
     `;
-
-    const params = [
-      schema,
-      table,
-    ];
-
-    const { rows } = await this.driverExecuteSingle(sql, { params });
-
-    // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(rows, 'constraint_name');
-
-    return Object.keys(groupedKeys).map(constraintName => {
-      const keyParts = groupedKeys[constraintName];
-
-      // If there's only one part, return a simple key (backward compatibility)
-      if (keyParts.length === 1) {
-        const row = keyParts[0];
-        return {
-          constraintName: row.constraint_name,
-          toTable: row.to_table,
-          toSchema: row.to_schema,
-          toColumn: row.to_column,
-          fromTable: row.from_table,
-          fromSchema: row.from_schema,
-          fromColumn: row.column_name,
-          onUpdate: row.update_rule,
-          onDelete: row.delete_rule,
-          isComposite: false
-        };
-      }
-
-      // If there are multiple parts, it's a composite key
-      const firstPart = keyParts[0];
-      return {
-        constraintName: firstPart.constraint_name,
-        toTable: firstPart.to_table,
-        toSchema: firstPart.to_schema,
-        toColumn: keyParts.map(p => p.to_column),
-        fromTable: firstPart.from_table,
-        fromSchema: firstPart.from_schema,
-        fromColumn: keyParts.map(p => p.column_name),
-        onUpdate: firstPart.update_rule,
-        onDelete: firstPart.delete_rule,
-        isComposite: true
-      };
-    });
+    const { rows } = await this.driverExecuteSingle(sql, { params: [schema, table] });
+    return groupForeignKeyRows(rows.map(toForeignKeyRow));
   }
 
   async getIncomingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
-    // Query for foreign keys TO this table (other tables referencing this table)
-    const incomingSQL = `
-      SELECT
-        c.conname AS constraint_name,
-        a.attname AS from_column,
-        n.nspname AS from_schema,
-        t.relname AS from_table,
-        af.attname AS to_column,
-        tf.relname AS to_table,
-        nf.nspname AS to_schema,
-        CASE c.confupdtype::text
-          WHEN 'a' THEN 'NO ACTION'
-          WHEN 'r' THEN 'RESTRICT'
-          WHEN 'c' THEN 'CASCADE'
-          WHEN 'n' THEN 'SET NULL'
-          WHEN 'd' THEN 'SET DEFAULT'
-          ELSE c.confupdtype::text
-        END AS update_rule,
-        CASE c.confdeltype::text
-          WHEN 'a' THEN 'NO ACTION'
-          WHEN 'r' THEN 'RESTRICT'
-          WHEN 'c' THEN 'CASCADE'
-          WHEN 'n' THEN 'SET NULL'
-          WHEN 'd' THEN 'SET DEFAULT'
-          ELSE c.confdeltype::text
-        END AS delete_rule,
-        pos AS ordinal_position
-      FROM
-        pg_constraint c
-        JOIN pg_class t ON c.conrelid = t.oid
-        JOIN pg_namespace n ON t.relnamespace = n.oid
-        JOIN generate_subscripts(c.conkey, 1) pos ON true
-        JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = c.conkey[pos]
-        JOIN pg_class tf ON c.confrelid = tf.oid
-        JOIN pg_namespace nf ON tf.relnamespace = nf.oid
-        JOIN pg_attribute af ON af.attrelid = tf.oid AND af.attnum = c.confkey[pos]
-      WHERE
-        c.contype = 'f'
-        AND nf.nspname = $1
-        AND tf.relname = $2
-      ORDER BY
-        c.conname,
-        pos;
+    // Foreign keys on other tables that reference this table
+    const sql = `
+      ${FOREIGN_KEY_COLUMNS_SQL}
+      WHERE c.contype = 'f' AND nf.nspname = $1 AND tf.relname = $2
+      ORDER BY c.conname, pos
     `;
-
-    const params = [schema, table];
-    const { rows } = await this.driverExecuteSingle(incomingSQL, { params });
-
-    // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(rows, 'constraint_name');
-
-    return Object.keys(groupedKeys).map(constraintName => {
-      const keyParts = groupedKeys[constraintName];
-
-      // If there's only one part, return a simple key
-      if (keyParts.length === 1) {
-        const row = keyParts[0];
-        return {
-          constraintName: row.constraint_name,
-          toTable: row.to_table,
-          toSchema: row.to_schema,
-          toColumn: row.to_column,
-          fromTable: row.from_table,
-          fromSchema: row.from_schema,
-          fromColumn: row.from_column,
-          onUpdate: row.update_rule,
-          onDelete: row.delete_rule,
-          isComposite: false,
-        };
-      }
-
-      // If there are multiple parts, it's a composite key
-      const firstPart = keyParts[0];
-      return {
-        constraintName: firstPart.constraint_name,
-        toTable: firstPart.to_table,
-        toSchema: firstPart.to_schema,
-        toColumn: keyParts.map(p => p.to_column),
-        fromTable: firstPart.from_table,
-        fromSchema: firstPart.from_schema,
-        fromColumn: keyParts.map(p => p.from_column),
-        onUpdate: firstPart.update_rule,
-        onDelete: firstPart.delete_rule,
-        isComposite: true,
-      };
-    });
+    const { rows } = await this.driverExecuteSingle(sql, { params: [schema, table] });
+    return groupForeignKeyRows(rows.map(toForeignKeyRow));
   }
 
   async query(queryText: string, tabId: number, _options?: any): Promise<CancelableQuery> {

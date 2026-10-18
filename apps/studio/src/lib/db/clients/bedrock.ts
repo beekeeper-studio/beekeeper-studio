@@ -25,6 +25,7 @@ import {
   TableKey as SharedTableKey,
 } from "@shared/lib/dialects/models";
 import _ from "lodash";
+import { ForeignKeyRow, groupForeignKeyRows } from "./foreignKeys";
 import { parseVersion } from "@/common/version";
 import { buildSelectTopQuery } from "./utils";
 import { createSQLiteKnex } from "./sqlite/utils";
@@ -321,27 +322,37 @@ export class BedrockClient extends MysqlClient {
     return Promise.resolve([]); // TODO: not implemented yet
   }
 
-  // Override getTableKeys to use SQLite PRAGMA instead of information_schema
-  async getTableKeys(
-    table: string,
-    _schema?: string
-  ): Promise<SharedTableKey[]> {
+  // Bedrock is SQLite underneath, so the inherited MySQL information_schema
+  // queries don't apply; foreign keys come from the pragma instead.
+  async getOutgoingKeys(table: string, _schema?: string): Promise<SharedTableKey[]> {
+    return groupForeignKeyRows(await this.foreignKeyRowsFor(table));
+  }
+
+  async getIncomingKeys(table: string, _schema?: string): Promise<SharedTableKey[]> {
+    const rows: ForeignKeyRow[] = [];
+    for (const { name } of await this.listTables()) {
+      const keys = await this.foreignKeyRowsFor(name);
+      rows.push(...keys.filter((row) => row.toTable === table));
+    }
+    return groupForeignKeyRows(rows);
+  }
+
+  private async foreignKeyRowsFor(table: string): Promise<ForeignKeyRow[]> {
     const sql = `pragma foreign_key_list('${SD.escapeString(table)}')`;
     const { rows } = await this.driverExecuteSingle(sql, {
       overrideReadonly: true,
     });
     return asRows<any>(rows).map((row) => ({
       constraintName: row.id,
-      constraintType: "FOREIGN",
-      toTable: row.table,
-      toSchema: "",
       fromSchema: "",
       fromTable: table,
       fromColumn: row.from,
+      toSchema: "",
+      toTable: row.table,
       toColumn: row.to,
+      ordinalPosition: row.seq,
       onUpdate: row.on_update,
       onDelete: row.on_delete,
-      isComposite: false, // SQLite foreign keys are typically single column
     }));
   }
 

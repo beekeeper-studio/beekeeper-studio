@@ -8,6 +8,7 @@ import rawLog from '@bksLogger'
 import { BksField, CancelableQuery, DatabaseFilterOptions, ExtendedTableColumn, FieldDescriptor, FilterOptions, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableDelete, TableFilter, TableIndex, TableInsert, TableOrView, TableProperties, TableResult, TableTrigger, TableUpdate, TableUpdateResult } from "@/lib/db/models";
 import { buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildSelectTopQuery, buildUpdateQueries, errorMessages, escapeString } from "@/lib/db/clients/utils";
 import _ from "lodash";
+import { ForeignKeyRow, groupForeignKeyRows } from "@/lib/db/clients/foreignKeys";
 import { TableKey } from "@/shared/lib/dialects/models";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
 import { createCancelablePromise } from "@/common/utils";
@@ -47,6 +48,22 @@ type SnowflakeStatement = {
 
 export interface VersionInfo {
   version?: string
+}
+
+// Row shape shared by SHOW IMPORTED KEYS and SHOW EXPORTED KEYS.
+function toForeignKeyRow(row: any): ForeignKeyRow {
+  return {
+    constraintName: row.fk_name,
+    fromSchema: row.fk_schema_name,
+    fromTable: row.fk_table_name,
+    fromColumn: row.fk_column_name,
+    toSchema: row.pk_schema_name,
+    toTable: row.pk_table_name,
+    toColumn: row.pk_column_name,
+    ordinalPosition: Number(row.key_sequence),
+    onUpdate: row.update_rule,
+    onDelete: row.delete_rule,
+  };
 }
 
 export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connection> {
@@ -347,41 +364,12 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
   }
 
   async getOutgoingKeys(table: string, schema?: string): Promise<TableKey[]> {
+    // Foreign keys defined on this table (referencing other tables)
     const sql = `
       SHOW IMPORTED KEYS IN TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)};
     `;
-
     const data = await this.driverExecuteSingle(sql);
-
-    const groupedKeys = _.groupBy(data.rows, 'fk_name');
-
-    return Object.keys(groupedKeys).map(constraintName => {
-      const keyParts = groupedKeys[constraintName];
-
-      const firstPart = keyParts[0];
-
-      const key: TableKey = {
-        constraintName: firstPart.fk_name,
-        toTable: firstPart.pk_table_name,
-        toSchema: firstPart.pk_schema_name,
-        fromTable: firstPart.fk_table_name,
-        fromSchema: firstPart.fk_schema_name,
-        onUpdate: firstPart.update_rule,
-        onDelete: firstPart.delete_rule,
-
-        toColumn: firstPart.pk_column_name,
-        fromColumn: firstPart.fk_column_name,
-        isComposite: false
-      };
-
-      if (keyParts.length > 1) {
-        key.toColumn = keyParts.map(p => p.pk_column_name);
-        key.fromColumn = keyParts.map(p => p.fk_column_name);
-        key.isComposite = true;
-      }
-
-      return key;
-    });
+    return groupForeignKeyRows((data?.rows || []).map(toForeignKeyRow));
   }
 
   async getPrimaryKey(table: string, schema?: string): Promise<string | null> {
@@ -407,41 +395,12 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
   }
 
   async getIncomingKeys(table: string, schema?: string): Promise<TableKey[]> {
+    // Foreign keys on other tables that reference this table
     const sql = `
       SHOW EXPORTED KEYS IN TABLE ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)};
     `;
-
     const data = await this.driverExecuteSingle(sql);
-
-    const groupedKeys = _.groupBy(data.rows, 'fk_name');
-
-    return Object.keys(groupedKeys).map(constraintName => {
-      const keyParts = groupedKeys[constraintName];
-
-      const firstPart = keyParts[0];
-
-      const key: TableKey = {
-        constraintName: firstPart.fk_name,
-        toTable: firstPart.pk_table_name,
-        toSchema: firstPart.pk_schema_name,
-        fromTable: firstPart.fk_table_name,
-        fromSchema: firstPart.fk_schema_name,
-        onUpdate: firstPart.update_rule,
-        onDelete: firstPart.delete_rule,
-
-        toColumn: firstPart.pk_column_name,
-        fromColumn: firstPart.fk_column_name,
-        isComposite: false
-      };
-
-      if (keyParts.length > 1) {
-        key.toColumn = keyParts.map(p => p.pk_column_name);
-        key.fromColumn = keyParts.map(p => p.fk_column_name);
-        key.isComposite = true;
-      }
-
-      return key;
-    });
+    return groupForeignKeyRows((data?.rows || []).map(toForeignKeyRow));
   }
 
   async query(queryText: string, tabId: number, _options?: any): Promise<CancelableQuery> {

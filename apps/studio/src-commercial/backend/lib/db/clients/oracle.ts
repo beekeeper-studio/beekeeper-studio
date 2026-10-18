@@ -2,6 +2,7 @@ import { OracleData as D } from '@shared/lib/dialects/oracle';
 import knexLib from 'knex';
 import oracle, { Metadata } from 'oracledb'
 import _ from 'lodash'
+import { ForeignKeyRow, groupForeignKeyRows } from "@/lib/db/clients/foreignKeys";
 import { IDbConnectionDatabase, DatabaseElement } from "@/lib/db/types";
 import { BasicDatabaseClient, NoOpContextProvider } from "@/lib/db/clients/BasicDatabaseClient";
 import BksConfig from '@/common/bksConfig';
@@ -64,6 +65,47 @@ let oracleInitConfigDir: string | null = null
 export function _resetOracleStateForTesting() {
   oracleInitialized = false
   oracleInitConfigDir = null
+}
+
+// One row per foreign-key column. Callers append the WHERE / ORDER BY.
+// https://stackoverflow.com/questions/1729996/list-of-foreign-keys-and-the-tables-they-reference-in-oracle-db
+const FOREIGN_KEY_COLUMNS_SQL = `
+  SELECT
+    a.constraint_name,
+    a.owner,
+    a.table_name,
+    a.column_name,
+    a.position,
+    c.delete_rule,
+    c_pk.owner AS r_owner,
+    c_pk.table_name AS r_table_name,
+    r_a.column_name AS r_column
+  FROM all_cons_columns a
+    JOIN all_constraints c
+      ON a.owner = c.owner AND a.constraint_name = c.constraint_name
+    JOIN all_constraints c_pk
+      ON c.r_owner = c_pk.owner AND c.r_constraint_name = c_pk.constraint_name
+    JOIN all_cons_columns r_a
+      ON c_pk.owner = r_a.owner
+      AND c_pk.constraint_name = r_a.constraint_name
+      AND r_a.position = a.position
+  WHERE c.constraint_type = 'R'
+    AND c_pk.constraint_type IN ('P', 'U')
+`;
+
+// Oracle has no ON UPDATE action for foreign keys.
+function toForeignKeyRow(row: any): ForeignKeyRow {
+  return {
+    constraintName: row.CONSTRAINT_NAME,
+    fromSchema: row.OWNER,
+    fromTable: row.TABLE_NAME,
+    fromColumn: row.COLUMN_NAME,
+    toSchema: row.R_OWNER,
+    toTable: row.R_TABLE_NAME,
+    toColumn: row.R_COLUMN,
+    ordinalPosition: Number(row.POSITION),
+    onDelete: row.DELETE_RULE,
+  };
 }
 
 export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Connection> {
@@ -540,163 +582,27 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     }))
   }
   async getOutgoingKeys(table: string, schema?: string) {
-    // Query for foreign keys FROM this table (outgoing - referencing other tables)
-    // https://stackoverflow.com/questions/1729996/list-of-foreign-keys-and-the-tables-they-reference-in-oracle-db
+    // Foreign keys defined on this table (referencing other tables)
     const sql = `
-    SELECT
-      a.table_name,
-      a.column_name,
-      a.constraint_name,
-      a.position,
-      c.owner,
-      c.delete_rule,
-       -- referenced
-      c.r_owner,
-      c_pk.table_name as R_TABLE_NAME,
-      c_pk.constraint_name as R_PK,
-      c_pk.owner as R_OWNER,
-      r_a.COLUMN_NAME as R_COLUMN,
-      r_a.position as R_POSITION
-  -- constraint columns
-  FROM all_cons_columns a
-  -- constraint info for those columns
-  JOIN all_constraints c ON a.owner = c.owner
-                        AND a.constraint_name = c.constraint_name
-
-  -- information on the columns we're referencing
-  JOIN all_constraints c_pk ON c.r_owner = c_pk.owner
-                           AND c.r_constraint_name = c_pk.constraint_name
-
-    JOIN all_cons_columns r_a on c_pk.owner = r_a.owner and c_pk.CONSTRAINT_NAME = r_a.CONSTRAINT_NAME
- WHERE c.constraint_type = 'R'
-  AND c_pk.constraint_type = 'P'
-   AND a.table_name = ${D.escapeString(table.toUpperCase(), true)}
-   ${schema ? `AND a.owner = ${D.escapeString(schema.toUpperCase(), true)}` : ''}
-  ORDER BY
-    a.constraint_name,
-    a.position
-    `
-    const response = await this.driverExecuteSimple(sql);
-
-    // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(response, 'CONSTRAINT_NAME');
-
-    return Object.keys(groupedKeys).map(constraintName => {
-      const keyParts = groupedKeys[constraintName];
-
-      // Sort key parts by position to ensure correct column order
-      const sortedKeyParts = _.sortBy(keyParts, 'POSITION');
-
-      // If there's only one part, return a simple key (backward compatibility)
-      if (sortedKeyParts.length === 1) {
-        const row = sortedKeyParts[0];
-        return {
-          constraintName: row.CONSTRAINT_NAME,
-          toTable: row.R_TABLE_NAME,
-          toSchema: row.R_OWNER,
-          toColumn: row.R_COLUMN,
-          fromTable: row.TABLE_NAME,
-          fromSchema: row.OWNER,
-          fromColumn: row.COLUMN_NAME,
-          onDelete: row.DELETE_RULE,
-          isComposite: false
-        };
-      }
-
-      // If there are multiple parts, it's a composite key
-      const firstPart = sortedKeyParts[0];
-      return {
-        constraintName: firstPart.CONSTRAINT_NAME,
-        toTable: firstPart.R_TABLE_NAME,
-        toSchema: firstPart.R_OWNER,
-        toColumn: _.uniq(sortedKeyParts.map(p => p.R_COLUMN)),
-        fromTable: firstPart.TABLE_NAME,
-        fromSchema: firstPart.OWNER,
-        fromColumn: _.uniq(sortedKeyParts.map(p => p.COLUMN_NAME)),
-        onDelete: firstPart.DELETE_RULE,
-        isComposite: true
-      };
-    })
+      ${FOREIGN_KEY_COLUMNS_SQL}
+      AND a.table_name = ${D.escapeString(table.toUpperCase(), true)}
+      ${schema ? `AND a.owner = ${D.escapeString(schema.toUpperCase(), true)}` : ''}
+      ORDER BY a.constraint_name, a.position
+    `;
+    const rows = await this.driverExecuteSimple(sql);
+    return groupForeignKeyRows(rows.map(toForeignKeyRow));
   }
 
   async getIncomingKeys(table: string, schema?: string) {
-    // Query for foreign keys TO this table (incoming - other tables referencing this table)
-    const incomingSQL = `
-    SELECT
-      a.table_name,
-      a.column_name,
-      a.constraint_name,
-      a.position,
-      c.owner,
-      c.delete_rule,
-       -- referenced
-      c.r_owner,
-      c_pk.table_name as R_TABLE_NAME,
-      c_pk.constraint_name as R_PK,
-      c_pk.owner as R_OWNER,
-      r_a.COLUMN_NAME as R_COLUMN,
-      r_a.position as R_POSITION
-  -- constraint columns
-  FROM all_cons_columns a
-  -- constraint info for those columns
-  JOIN all_constraints c ON a.owner = c.owner
-                        AND a.constraint_name = c.constraint_name
-
-  -- information on the columns we're referencing
-  JOIN all_constraints c_pk ON c.r_owner = c_pk.owner
-                           AND c.r_constraint_name = c_pk.constraint_name
-
-    JOIN all_cons_columns r_a on c_pk.owner = r_a.owner and c_pk.CONSTRAINT_NAME = r_a.CONSTRAINT_NAME
- WHERE c.constraint_type = 'R'
-  AND c_pk.constraint_type = 'P'
-   AND c_pk.table_name = ${D.escapeString(table.toUpperCase(), true)}
-   ${schema ? `AND c_pk.owner = ${D.escapeString(schema.toUpperCase(), true)}` : ''}
-  ORDER BY
-    a.constraint_name,
-    a.position
+    // Foreign keys on other tables that reference this table
+    const sql = `
+      ${FOREIGN_KEY_COLUMNS_SQL}
+      AND c_pk.table_name = ${D.escapeString(table.toUpperCase(), true)}
+      ${schema ? `AND c_pk.owner = ${D.escapeString(schema.toUpperCase(), true)}` : ''}
+      ORDER BY a.owner, a.table_name, a.constraint_name, a.position
     `;
-
-    const incoming = await this.driverExecuteSimple(incomingSQL);
-
-    // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(incoming, 'CONSTRAINT_NAME');
-
-    return Object.keys(groupedKeys).map(constraintName => {
-      const keyParts = groupedKeys[constraintName];
-
-      // Sort key parts by position to ensure correct column order
-      const sortedKeyParts = _.sortBy(keyParts, 'POSITION');
-
-      // If there's only one part, return a simple key (backward compatibility)
-      if (sortedKeyParts.length === 1) {
-        const row = sortedKeyParts[0];
-        return {
-          constraintName: row.CONSTRAINT_NAME,
-          toTable: row.R_TABLE_NAME,
-          toSchema: row.R_OWNER,
-          toColumn: row.R_COLUMN,
-          fromTable: row.TABLE_NAME,
-          fromSchema: row.OWNER,
-          fromColumn: row.COLUMN_NAME,
-          onDelete: row.DELETE_RULE,
-          isComposite: false,
-        };
-      }
-
-      // If there are multiple parts, it's a composite key
-      const firstPart = sortedKeyParts[0];
-      return {
-        constraintName: firstPart.CONSTRAINT_NAME,
-        toTable: firstPart.R_TABLE_NAME,
-        toSchema: firstPart.R_OWNER,
-        toColumn: _.uniq(sortedKeyParts.map(p => p.R_COLUMN)),
-        fromTable: firstPart.TABLE_NAME,
-        fromSchema: firstPart.OWNER,
-        fromColumn: _.uniq(sortedKeyParts.map(p => p.COLUMN_NAME)),
-        onDelete: firstPart.DELETE_RULE,
-        isComposite: true,
-      };
-    })
+    const rows = await this.driverExecuteSimple(sql);
+    return groupForeignKeyRows(rows.map(toForeignKeyRow));
   }
 
 

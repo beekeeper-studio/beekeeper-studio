@@ -41,6 +41,7 @@ import {
   QueryLogOptions,
 } from "@/lib/db/clients/BasicDatabaseClient";
 import _ from "lodash";
+import { ForeignKeyRow, groupForeignKeyRows } from "@/lib/db/clients/foreignKeys";
 import { joinFilters } from "@/common/utils";
 import { FirebirdChangeBuilder } from "@shared/lib/sql/change_builder/FirebirdChangeBuilder";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
@@ -220,6 +221,42 @@ function buildInsertQueries(knex: Knex, inserts: TableInsert[], { runAsUpsert = 
 interface FirebirdReservedConnection {
   connection: Connection,
   transaction: Transaction
+}
+
+// One row per foreign-key column. Callers append the WHERE / ORDER BY.
+const FOREIGN_KEY_COLUMNS_SQL = `
+  SELECT
+    TRIM(FK.RDB$CONSTRAINT_NAME) AS CONSTRAINT_NAME,
+    TRIM(FK.RDB$RELATION_NAME) AS FROM_TABLE,
+    TRIM(ISF.RDB$FIELD_NAME) AS FROM_COLUMN,
+    TRIM(PK.RDB$RELATION_NAME) AS TO_TABLE,
+    TRIM(ISP.RDB$FIELD_NAME) AS TO_COLUMN,
+    ISF.RDB$FIELD_POSITION AS FIELD_POSITION,
+    TRIM(RC.RDB$UPDATE_RULE) AS ON_UPDATE,
+    TRIM(RC.RDB$DELETE_RULE) AS ON_DELETE
+  FROM RDB$RELATION_CONSTRAINTS PK
+    JOIN RDB$REF_CONSTRAINTS RC ON PK.RDB$CONSTRAINT_NAME = RC.RDB$CONST_NAME_UQ
+    JOIN RDB$RELATION_CONSTRAINTS FK ON FK.RDB$CONSTRAINT_NAME = RC.RDB$CONSTRAINT_NAME
+    JOIN RDB$INDEX_SEGMENTS ISF ON ISF.RDB$INDEX_NAME = FK.RDB$INDEX_NAME
+    JOIN RDB$INDEX_SEGMENTS ISP ON ISP.RDB$INDEX_NAME = PK.RDB$INDEX_NAME AND ISP.RDB$FIELD_POSITION = ISF.RDB$FIELD_POSITION
+  WHERE FK.RDB$CONSTRAINT_TYPE = 'FOREIGN KEY'
+    AND PK.RDB$CONSTRAINT_TYPE IN ('PRIMARY KEY', 'UNIQUE')
+`;
+
+// Firebird has no schemas.
+function toForeignKeyRow(row: any): ForeignKeyRow {
+  return {
+    constraintName: row["CONSTRAINT_NAME"],
+    fromSchema: "",
+    fromTable: row["FROM_TABLE"],
+    fromColumn: row["FROM_COLUMN"],
+    toSchema: "",
+    toTable: row["TO_TABLE"],
+    toColumn: row["TO_COLUMN"],
+    ordinalPosition: Number(row["FIELD_POSITION"]),
+    onUpdate: row["ON_UPDATE"],
+    onDelete: row["ON_DELETE"],
+  };
 }
 
 export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, FirebirdReservedConnection> {
@@ -971,145 +1008,32 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
     table: string,
     _schema?: string
   ): Promise<TableKey[]> {
-    // Query for foreign keys FROM this table (outgoing - referencing other tables)
+    // Foreign keys defined on this table (referencing other tables)
     const result = await this.driverExecuteSingle(
       `
-        SELECT
-          TRIM(PK.RDB$RELATION_NAME) AS TO_TABLE,
-          TRIM(ISP.RDB$FIELD_NAME) AS TO_COLUMN,
-          TRIM(FK.RDB$RELATION_NAME) AS FROM_TABLE,
-          TRIM(ISF.RDB$FIELD_NAME) AS FROM_COLUMN,
-          TRIM(FK.RDB$CONSTRAINT_NAME) AS CONSTRAINT_NAME,
-          TRIM(RC.RDB$UPDATE_RULE) AS ON_UPDATE,
-          TRIM(RC.RDB$DELETE_RULE) AS ON_DELETE,
-          ISF.RDB$FIELD_POSITION AS FIELD_POSITION
-        FROM
-          RDB$RELATION_CONSTRAINTS PK
-          JOIN RDB$REF_CONSTRAINTS RC ON PK.RDB$CONSTRAINT_NAME = RC.RDB$CONST_NAME_UQ
-          JOIN RDB$RELATION_CONSTRAINTS FK ON FK.RDB$CONSTRAINT_NAME = RC.RDB$CONSTRAINT_NAME
-          JOIN RDB$INDEX_SEGMENTS ISF ON ISF.RDB$INDEX_NAME = FK.RDB$INDEX_NAME
-          JOIN RDB$INDEX_SEGMENTS ISP ON ISP.RDB$INDEX_NAME = PK.RDB$INDEX_NAME AND ISP.RDB$FIELD_POSITION = ISF.RDB$FIELD_POSITION
-        WHERE
-          FK.RDB$RELATION_NAME = ?
-          AND FK.RDB$CONSTRAINT_TYPE = 'FOREIGN KEY'
-          AND PK.RDB$CONSTRAINT_TYPE IN ('PRIMARY KEY', 'UNIQUE')
-        ORDER BY
-          CONSTRAINT_NAME,
-          ISF.RDB$FIELD_POSITION
-    `,
+        ${FOREIGN_KEY_COLUMNS_SQL}
+        AND FK.RDB$RELATION_NAME = ?
+        ORDER BY CONSTRAINT_NAME, ISF.RDB$FIELD_POSITION
+      `,
       { params: [table.toUpperCase()] }
     );
-
-    // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(result.rows, "CONSTRAINT_NAME");
-
-    return Object.keys(groupedKeys).map(constraintName => {
-      const keyParts = groupedKeys[constraintName];
-
-      // If there's only one part, return a simple key (backward compatibility)
-      if (keyParts.length === 1) {
-        const row = keyParts[0];
-        return {
-          fromTable: row["FROM_TABLE"],
-          fromColumn: row["FROM_COLUMN"],
-          fromSchema: "",
-          toTable: row["TO_TABLE"],
-          toColumn: row["TO_COLUMN"],
-          toSchema: "",
-          constraintName: row["CONSTRAINT_NAME"],
-          onUpdate: row["ON_UPDATE"],
-          onDelete: row["ON_DELETE"],
-          isComposite: false,
-        };
-      }
-
-      // If there are multiple parts, it's a composite key
-      const firstPart = keyParts[0];
-      return {
-        fromTable: firstPart["FROM_TABLE"],
-        fromColumn: keyParts.map(p => p["FROM_COLUMN"]),
-        fromSchema: "",
-        toTable: firstPart["TO_TABLE"],
-        toColumn: keyParts.map(p => p["TO_COLUMN"]),
-        toSchema: "",
-        constraintName: firstPart["CONSTRAINT_NAME"],
-        onUpdate: firstPart["ON_UPDATE"],
-        onDelete: firstPart["ON_DELETE"],
-        isComposite: true
-      };
-    });
+    return groupForeignKeyRows(result.rows.map(toForeignKeyRow));
   }
 
   async getIncomingKeys(
     table: string,
     _schema?: string
   ): Promise<TableKey[]> {
-    // Query for foreign keys TO this table (incoming - other tables referencing this table)
-    const incomingSQL = `
-        SELECT
-          TRIM(PK.RDB$RELATION_NAME) AS TO_TABLE,
-          TRIM(ISP.RDB$FIELD_NAME) AS TO_COLUMN,
-          TRIM(FK.RDB$RELATION_NAME) AS FROM_TABLE,
-          TRIM(ISF.RDB$FIELD_NAME) AS FROM_COLUMN,
-          TRIM(FK.RDB$CONSTRAINT_NAME) AS CONSTRAINT_NAME,
-          TRIM(RC.RDB$UPDATE_RULE) AS ON_UPDATE,
-          TRIM(RC.RDB$DELETE_RULE) AS ON_DELETE,
-          ISF.RDB$FIELD_POSITION AS FIELD_POSITION
-        FROM
-          RDB$RELATION_CONSTRAINTS PK
-          JOIN RDB$REF_CONSTRAINTS RC ON PK.RDB$CONSTRAINT_NAME = RC.RDB$CONST_NAME_UQ
-          JOIN RDB$RELATION_CONSTRAINTS FK ON FK.RDB$CONSTRAINT_NAME = RC.RDB$CONSTRAINT_NAME
-          JOIN RDB$INDEX_SEGMENTS ISF ON ISF.RDB$INDEX_NAME = FK.RDB$INDEX_NAME
-          JOIN RDB$INDEX_SEGMENTS ISP ON ISP.RDB$INDEX_NAME = PK.RDB$INDEX_NAME AND ISP.RDB$FIELD_POSITION = ISF.RDB$FIELD_POSITION
-        WHERE
-          PK.RDB$RELATION_NAME = ?
-          AND FK.RDB$CONSTRAINT_TYPE = 'FOREIGN KEY'
-          AND PK.RDB$CONSTRAINT_TYPE IN ('PRIMARY KEY', 'UNIQUE')
-        ORDER BY
-          CONSTRAINT_NAME,
-          ISF.RDB$FIELD_POSITION
-    `;
-
-    const result = await this.driverExecuteSingle(incomingSQL, { params: [table.toUpperCase()] });
-
-    // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(result.rows, "CONSTRAINT_NAME");
-
-    return Object.keys(groupedKeys).map(constraintName => {
-      const keyParts = groupedKeys[constraintName];
-
-      // If there's only one part, return a simple key (backward compatibility)
-      if (keyParts.length === 1) {
-        const row = keyParts[0];
-        return {
-          fromTable: row["FROM_TABLE"],
-          fromColumn: row["FROM_COLUMN"],
-          fromSchema: "",
-          toTable: row["TO_TABLE"],
-          toColumn: row["TO_COLUMN"],
-          toSchema: "",
-          constraintName: row["CONSTRAINT_NAME"],
-          onUpdate: row["ON_UPDATE"],
-          onDelete: row["ON_DELETE"],
-          isComposite: false,
-        };
-      }
-
-      // If there are multiple parts, it's a composite key
-      const firstPart = keyParts[0];
-      return {
-        fromTable: firstPart["FROM_TABLE"],
-        fromColumn: keyParts.map(p => p["FROM_COLUMN"]),
-        fromSchema: "",
-        toTable: firstPart["TO_TABLE"],
-        toColumn: keyParts.map(p => p["TO_COLUMN"]),
-        toSchema: "",
-        constraintName: firstPart["CONSTRAINT_NAME"],
-        onUpdate: firstPart["ON_UPDATE"],
-        onDelete: firstPart["ON_DELETE"],
-        isComposite: true,
-      };
-    });
+    // Foreign keys on other tables that reference this table
+    const result = await this.driverExecuteSingle(
+      `
+        ${FOREIGN_KEY_COLUMNS_SQL}
+        AND PK.RDB$RELATION_NAME = ?
+        ORDER BY FROM_TABLE, CONSTRAINT_NAME, ISF.RDB$FIELD_POSITION
+      `,
+      { params: [table.toUpperCase()] }
+    );
+    return groupForeignKeyRows(result.rows.map(toForeignKeyRow));
   }
 
   async executeQuery(
