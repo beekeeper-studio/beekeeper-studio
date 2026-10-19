@@ -12,7 +12,7 @@
         @click="optionClicked(option, index, $event)"
         @mouseenter="onItemHover(option, index)"
         class="BksContextMenu-item"
-        :class="[typeof option.class === 'function' ? option.class({ item }) : option.class, (option.type === 'divider' ? 'BksContextMenu-item-divider' : ''), (option.type === 'label' ? 'BksContextMenu-item-section-label' : ''), option.disabled ? 'BksContextMenu-item-disabled' : '']"
+        :class="[typeof option.class === 'function' ? option.class({ item }) : option.class, (option.type === 'divider' ? 'BksContextMenu-item-divider' : ''), (option.type === 'label' ? 'BksContextMenu-section-label' : ''), option.disabled ? 'BksContextMenu-item-disabled' : '']"
         :title="title(option)"
         ref="item"
         :role="option.type === 'label' ? 'presentation' : 'menuitem'"

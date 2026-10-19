@@ -68,7 +68,6 @@
   import intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
   import { copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth, createMenuItem, pasteRange } from '@/lib/menu/tableMenu';
-  import { onSelectedCellsChange } from '@/services/plugin/web/statusbarParams';
   import { tabulatorForTableData } from '@/common/tabulator';
   import EditorModal from '../tableview/EditorModal.vue'
   import { AppEvent } from "@/common/AppEvent";
@@ -279,6 +278,7 @@
             columnHeaders: true
           },
           onRangeChange: this.handleRangeChange,
+          onSelectedCellsChange: (cells) => this.$emit('selectionChange', cells),
           rowFormatter: this.rowFormatter,
           rowHeader: {
             // @ts-ignore
@@ -313,7 +313,6 @@
         });
 
         this.tabulator.on('cellEdited', this.cellEdited);
-        onSelectedCellsChange(this.tabulator, (cells) => this.$emit('selectionChange', cells));
         this.tabulator.on("rangeEdited", (range) => {
           range.getModifiedCells().forEach((cell) => this.cellEdited(cell));
           this.tabulator.modules.selectRange.restoreFocus()

@@ -130,7 +130,7 @@ export function createMenuItem(
 
 /** A non-interactive heading for a group of items. Pair it with `disabled: true`. */
 export function createMenuSectionLabel(label: string) {
-  return `<div class="menu-section-label">${escapeHtml(label)}</div>`;
+  return `<div class="BksContextMenu-section-label">${escapeHtml(label)}</div>`;
 }
 
 export async function buildCopyText(

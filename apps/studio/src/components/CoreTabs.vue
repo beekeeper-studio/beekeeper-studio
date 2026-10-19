@@ -325,7 +325,7 @@ import DatabaseBackup from './TabDatabaseBackup.vue'
 import PluginShell from './TabPluginShell.vue'
 import PluginBase from './TabPluginBase.vue'
 import { AppEvent } from '../common/AppEvent'
-import { noPluginsItem } from '@/lib/menu/pluginMenuItems'
+import { noPluginsItem, openPluginManager } from '@/lib/menu/pluginMenuItems'
 import { mapGetters, mapState } from 'vuex'
 import Draggable from 'vuedraggable'
 import ShortcutHints from './editor/ShortcutHints.vue'
@@ -714,9 +714,7 @@ export default Vue.extend({
     closeCurrentTab(_id?:number, options?: CloseTabOptions) {
       if (this.activeTab) this.close(this.activeTab, options)
     },
-    openPluginManager() {
-      this.trigger(AppEvent.openPluginManager)
-    },
+    openPluginManager,
     async createTab(config: TabTypeConfig.Config) {
       if (config.type === "query") {
         this.createQuery()

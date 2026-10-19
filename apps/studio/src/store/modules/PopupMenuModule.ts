@@ -6,6 +6,7 @@ import { divider, sectionLabel, MenuItem } from "@beekeeperstudio/ui-kit";
 import { CellComponent, ColumnComponent, MenuObject, MenuSeparator, RowComponent } from "tabulator-tables";
 import { createMenuItem, createMenuSectionLabel } from "@/lib/menu/tableMenu";
 import {
+  PLUGIN_MENU_IDS,
   PLUGINS_SECTION_LABEL,
   managePluginsItem,
   noPluginsItem,
@@ -22,28 +23,6 @@ interface State {
 
 export type PluginMenuConditions = Partial<Record<PluginMenuItemCondition, boolean>>;
 
-/**
- * Popup menus that plugin placements can add items to. These always end with
- * the Plugins section, even when no plugin adds anything, so plugin actions
- * stay discoverable. Other menus get no section.
- */
-export const PLUGIN_MENU_IDS: ReadonlySet<string> = new Set([
-  "editor.query",
-  "results.cell",
-  "results.columnHeader",
-  "results.rowHeader",
-  "results.corner",
-  "tableTable.cell",
-  "tableTable.columnHeader",
-  "tableTable.rowHeader",
-  "tableTable.corner",
-  "tab.query.header",
-  "tab.table.header",
-  "entity.table",
-  "entity.schema",
-  "entity.routine",
-  "structure.statusbar",
-]);
 
 /** Plugin items sorted A–Z by plugin name. Each plugin's items keep the order
  * they were added in (manifest order). */

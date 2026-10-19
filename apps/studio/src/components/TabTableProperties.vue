@@ -124,7 +124,7 @@
                   <hr v-if="item.type === 'divider'" :key="`divider-${index}`">
                   <div
                     v-else-if="item.type === 'label'"
-                    class="menu-section-label"
+                    class="BksContextMenu-section-label"
                     :key="item.id"
                   >
                     {{ item.label }}

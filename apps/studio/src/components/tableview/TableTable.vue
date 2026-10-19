@@ -351,7 +351,7 @@ import { ExpandablePath, parseRowDataForJsonViewer } from '@/lib/data/jsonViewer
 import { stringToTypedArray, removeUnsortableColumnsFromSortBy } from "@/common/utils";
 import { UpdateOptions } from "@/lib/data/jsonViewer";
 import VisualizeButton from "@/components/plugins/VisualizeButton.vue";
-import { onSelectedCellsChange, StatusbarMenuPayload } from "@/services/plugin/web/statusbarParams";
+import type { StatusbarMenuPayload } from "@/services/plugin/web/MenuParams";
 import type { ContextItem } from "@/plugins/BeekeeperPlugin";
 
 const log = rawLog.scope('TableTable')
@@ -1245,9 +1245,9 @@ export default Vue.extend({
           scrollPageDown: false
         },
         onRangeChange: this.handleRangeChange,
+        onSelectedCellsChange: (cells) => { this.selectedCellCount = cells },
       });
       this.tabulator.on('cellEdited', this.cellEdited)
-      onSelectedCellsChange(this.tabulator, (cells) => { this.selectedCellCount = cells })
       this.tabulator.on("rangeEdited", (range) => {
         range.getModifiedCells().forEach((cell) => this.cellEdited(cell));
         this.tabulator.modules.selectRange.restoreFocus()
@@ -2342,15 +2342,8 @@ export default Vue.extend({
       } catch (ex) {
         log.error("Unable to build the filter condition for a plugin", ex)
       }
-      item.handler({
-        event,
-        item: {
-          tabulator: this.tabulator,
-          table: this.table,
-          filters,
-          where,
-        } satisfies StatusbarMenuPayload,
-      })
+      const payload: StatusbarMenuPayload = { tabulator: this.tabulator, table: this.table, filters, where }
+      item.handler({ ...payload, event })
     },
     handleSwitchedTab(tab) {
       if (tab === this.tab) {

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 // Import the app store (not the module directly): PopupMenuModule -> BeekeeperPlugin -> store is circular
 import store from '@/store'
-import { PLUGIN_MENU_IDS } from '@/store/modules/PopupMenuModule'
+import { PLUGIN_MENU_IDS } from '@/lib/menu/pluginMenuItems'
 import pluginMenuFactories from '@/services/plugin/web/PluginMenuFactories'
 
 const SLUG = 'map-plot-query'
@@ -53,19 +53,17 @@ describe('PopupMenuModule getExtraPopupMenu', () => {
     expect(store.getters['popupMenu/getPluginMenuItems']('editor.query')).toEqual([])
   })
 
-  it('knows every popup menu a placement adds to', () => {
+  it('has a factory adding to every plugin popup menu', () => {
     const menuIds = new Set<string>()
     const context = {
       manifest: { id: 'p', name: 'P', capabilities: { views: [] } },
       store: { addPopupMenuItem: (menuId: string) => menuIds.add(menuId) },
     }
-    // The status bars and the editor toolbar are drawn by their components
-    const drawnByComponents = ['results.statusbar', 'tableTable.statusbar', 'editor.query.toolbar']
     for (const [placement, factory] of Object.entries(pluginMenuFactories)) {
       if (placement === 'newTabDropdown' || placement === 'menubar.tools') continue
       factory.create(context as any, { command: 'c', name: 'C', view: 'v', placement } as any, {}).add()
     }
-    expect([...menuIds].filter((id) => !drawnByComponents.includes(id)).sort()).toEqual([...PLUGIN_MENU_IDS].sort())
+    expect([...menuIds].sort()).toEqual([...PLUGIN_MENU_IDS].sort())
   })
 
   it('wraps plugin items in a labelled section ending with Manage Plugins', () => {
@@ -131,7 +129,7 @@ describe('PopupMenuModule getExtraPopupMenu', () => {
     expect(items).toHaveLength(5)
     expect(items[0]).toEqual({ separator: true })
     expect(items[1]).toMatchObject({ disabled: true })
-    expect(items[1].label).toContain('menu-section-label')
+    expect(items[1].label).toContain('BksContextMenu-section-label')
     expect(items[2].label).toContain('<i class="material-icons leading-icon">map</i>')
     expect(items[2].label).toContain('Plot Query on Map')
     expect(items[3]).toEqual({ separator: true })
@@ -149,7 +147,7 @@ describe('PopupMenuModule getExtraPopupMenu', () => {
       storeWith(vi.fn())
       const items = store.getters['popupMenu/getExtraPopupMenu']('editor.query')
       items[4].handler({})
-      expect(send).toHaveBeenCalledWith('menu-click', 'managePlugins')
+      expect(send).toHaveBeenCalledWith('menu-click', 'managePlugins', undefined)
     } finally {
       vi.unstubAllGlobals()
     }

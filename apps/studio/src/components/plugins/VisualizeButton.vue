@@ -8,7 +8,7 @@
     Visualize
     <i class="material-icons">arrow_drop_down</i>
     <x-menu>
-      <div class="menu-section-label">
+      <div class="BksContextMenu-section-label">
         {{ header }}
       </div>
       <x-menuitem
@@ -39,10 +39,9 @@
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
-import { AppEvent } from "@/common/AppEvent";
 import type { ContextItem } from "@/plugins/BeekeeperPlugin";
 import type { PluginMenuConditions } from "@/store/modules/PopupMenuModule";
-import { noPluginsItem } from "@/lib/menu/pluginMenuItems";
+import { noPluginsItem, openPluginManager } from "@/lib/menu/pluginMenuItems";
 
 /**
  * Status bar button that opens the current data in a plugin. Lists the items
@@ -85,9 +84,7 @@ export default Vue.extend({
       if (item.disabled) return;
       this.$emit("select", item, event);
     },
-    openPluginManager() {
-      this.$root.$emit(AppEvent.openPluginManager);
-    },
+    openPluginManager,
   },
 });
 </script>

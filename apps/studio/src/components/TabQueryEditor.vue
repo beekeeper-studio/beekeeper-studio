@@ -621,6 +621,7 @@
   import { SmartLocalStorage } from '@/common/LocalStorage';
   import { IdentifyResult } from 'sql-query-identifier/lib/defines'
   import { isExplainResult } from '@/common/explain'
+  import type { StatusbarMenuPayload } from '@/services/plugin/web/MenuParams'
 import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
   import { wait } from '@/shared/lib/wait'
   import ISavedQuery from '@/common/interfaces/ISavedQuery'
@@ -2109,14 +2110,12 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       openResultInPlugin(item, event) {
         const tabulator = this.$refs.table?.tabulator
         if (!tabulator) return
-        item.handler({
-          event,
-          item: {
-            tabulator,
-            query: this.resultStatements[this.selectedResult] ?? '',
-            truncated: !!this.result?.truncated,
-          },
-        })
+        const payload: StatusbarMenuPayload = {
+          tabulator,
+          query: this.resultStatements[this.selectedResult] ?? '',
+          truncated: !!this.result?.truncated,
+        }
+        item.handler({ ...payload, event })
       },
       /** Editor text handed to plugin menu items (`editor.query.context`). */
       editorMenuPayload() {
