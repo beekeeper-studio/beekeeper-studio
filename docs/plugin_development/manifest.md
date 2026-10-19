@@ -201,17 +201,19 @@ The `*.context` placements add items to the **Plugins** section of a context men
 
 #### When no plugin uses a placement
 
-Nothing is added: no toolbar buttons, no **Visualize** button and no **Plugins** section, so the app looks as it does without plugins. The new tab dropdown still ends with **Manage Plugins…**.
+Menus keep their **Plugins** section, with a disabled **No plugins…** row above **Manage Plugins…**. This shows that plugin actions exist, and that no installed plugin adds one there. The same goes for both **Visualize** menus (the button always shows), the new tab dropdown and the actions menu of the table structure view. `editor.query.toolbar` is the exception: without a plugin, the toolbar has no plugin buttons.
 
 | Placement | With a plugin | Without plugins |
 | --------- | ------------- | --------------- |
 | `editor.query.toolbar` | ![Toolbar with an Explain button](../assets/images/plugin-query-editor-toolbar.png) | ![Toolbar without plugin buttons](../assets/images/plugin-none-query-editor-toolbar.png) |
-| `results.statusbar` | ![Results status bar with Visualize](../assets/images/plugin-visualize-button.png) | ![Results status bar without Visualize](../assets/images/plugin-none-results-statusbar.png) |
-| `tableTable.statusbar` | ![Table view status bar with Visualize](../assets/images/plugin-visualize-button-table-view.png) | ![Table view status bar without Visualize](../assets/images/plugin-none-table-view-statusbar.png) |
-| `editor.query.context` | ![Query editor menu with a Plugins section](../assets/images/plugin-menu-query-editor.png) | ![Query editor menu without plugins](../assets/images/plugin-none-menu-query-editor.png) |
-| `results.cell.context` | ![Results grid menu with a Plugins section](../assets/images/plugin-menu-results-grid.png) | ![Results grid menu without plugins](../assets/images/plugin-none-menu-results-grid.png) |
-| `entity.table.context` | ![Sidebar menu with a Plugins section](../assets/images/plugin-menu-sidebar.png) | ![Sidebar menu without plugins](../assets/images/plugin-none-menu-sidebar.png) |
-| `newTabDropdown` | ![New tab dropdown with plugin entries](../assets/images/plugin-new-tab-dropdown.png) | ![New tab dropdown without plugins](../assets/images/plugin-none-new-tab-dropdown.png) |
+| `results.statusbar` | ![Results Visualize menu with plugin items](../assets/images/plugin-visualize-menu.png) | ![Results Visualize menu with No plugins](../assets/images/plugin-none-visualize-menu.png) |
+| `tableTable.statusbar` | ![Table view Visualize menu with plugin items](../assets/images/plugin-visualize-table-view.png) | ![Table view Visualize menu with No plugins](../assets/images/plugin-none-visualize-table-view.png) |
+| `editor.query.context` | ![Query editor menu with a Plugins section](../assets/images/plugin-menu-query-editor.png) | ![Query editor menu with No plugins](../assets/images/plugin-none-menu-query-editor.png) |
+| `results.cell.context` | ![Results grid menu with a Plugins section](../assets/images/plugin-menu-results-grid.png) | ![Results grid menu with No plugins](../assets/images/plugin-none-menu-results-grid.png) |
+| `entity.table.context` | ![Sidebar menu with a Plugins section](../assets/images/plugin-menu-sidebar.png) | ![Sidebar menu with No plugins](../assets/images/plugin-none-menu-sidebar.png) |
+| `newTabDropdown` | ![New tab dropdown with plugin entries](../assets/images/plugin-new-tab-dropdown.png) | ![New tab dropdown with No plugins](../assets/images/plugin-none-new-tab-dropdown.png) |
+
+![The structure view actions menu with No plugins](../assets/images/plugin-none-menu-structure.png)
 
 ### PluginMenuItemCondition
 
