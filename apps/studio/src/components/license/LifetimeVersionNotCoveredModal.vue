@@ -38,7 +38,7 @@
         <li>
           <i class="material-icons">lock_open</i>
           <span>
-            <strong>Continue with the Community Edition</strong> on this version. A license key can be entered at any time.
+            <strong>Use the Community Edition</strong> on this version. A license key can be entered at any time.
           </span>
         </li>
       </ul>
@@ -50,7 +50,7 @@
         class="btn btn-flat lifetime-version-continue"
         @click.prevent="continueWithCommunity"
       >
-        Continue with Community Edition
+        Use Community Edition
       </button>
       <span class="expand" />
       <button
@@ -94,8 +94,8 @@ const PRICING_URL = "https://www.beekeeperstudio.io/pricing";
  * ways out: renew, install the last covered release, or carry on as Community.
  * It never offers a downgrade; there is nothing to give up.
  *
- * Like TrialEndedModal it has no close button: "Continue with Community
- * Edition" is the acknowledgement. It is shared between the app's windows
+ * Like TrialEndedModal it has no close button: "Use Community Edition" is
+ * the acknowledgement. It is shared between the app's windows
  * through localStorage, so answering in one closes the rest.
  */
 export default Vue.extend({

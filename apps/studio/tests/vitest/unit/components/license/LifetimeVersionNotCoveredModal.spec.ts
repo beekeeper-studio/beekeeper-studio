@@ -146,7 +146,7 @@ describe('LifetimeVersionNotCoveredModal', () => {
     wrapper.destroy()
   })
 
-  it('"Continue with Community Edition" acknowledges the notice and releases the modal', async () => {
+  it('"Use Community Edition" acknowledges the notice and releases the modal', async () => {
     const { wrapper, mocks, store } = mountModal()
     await flush()
 
