@@ -108,7 +108,7 @@ describe('LifetimeVersionNotCoveredModal', () => {
     expect(wrapper.find('.modal-stub').attributes('data-click-to-close')).toBe('false')
     const text = wrapper.text().replace(/\s+/g, ' ')
     expect(text).toContain("This version isn't covered by your license")
-    expect(text).toContain('lifetime access to Beekeeper Studio 5.2.3 and every earlier release')
+    expect(text).toContain('lifetime access to paid features in version 5.2.3 and earlier')
     expect(text).toContain('This is version 6.2.0')
     // it is not the trial dialog: nothing to downgrade from
     expect(text).not.toMatch(/Downgrade/)

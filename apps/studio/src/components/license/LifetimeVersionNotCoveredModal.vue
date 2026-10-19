@@ -13,8 +13,8 @@
 
     <div class="trial-modal lifetime-version">
       <p class="trial-modal-lead">
-        Your license includes lifetime access to Beekeeper Studio {{ coveredVersion }} and every earlier release.
-        This is version {{ appVersion }}, so paid features are locked and the app runs as the Community Edition.
+        Your license includes lifetime access to paid features in version {{ coveredVersion }} and earlier.
+        This is version {{ appVersion }}, so those features are locked and the app runs as the Community Edition.
       </p>
 
       <ul class="lifetime-version-options">
