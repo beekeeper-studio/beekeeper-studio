@@ -171,7 +171,15 @@ In context menus, plugin items share one section labelled **Plugins** at the bot
 
 #### Where placements appear
 
-`results.statusbar` items are listed in the **Visualize** menu of the query results status bar. The **Explain** button above the results comes from `editor.query.toolbar`.
+`editor.query.toolbar` items are buttons in the query editor toolbar, next to **Run**. Each button shows the item's `icon` and `name`, so keep the name short.
+
+![An Explain button in the query editor toolbar](../assets/images/plugin-query-editor-toolbar.png)
+
+`results.statusbar` items are listed in the **Visualize** menu of the query results status bar. The button sits next to **Edit Data**, and is disabled while the result has no rows.
+
+![The Visualize button in the query results status bar](../assets/images/plugin-visualize-button.png)
+
+![The Visualize button disabled for a query with no results](../assets/images/plugin-visualize-button-disabled.png)
 
 ![The Visualize menu in the query results status bar, with an Explain button in the query editor toolbar](../assets/images/plugin-visualize-menu.png)
 
@@ -190,6 +198,20 @@ The `*.context` placements add items to the **Plugins** section of a context men
 `newTabDropdown` items are listed in the dropdown next to the new tab button.
 
 ![The new tab dropdown with plugin entries and Manage Plugins](../assets/images/plugin-new-tab-dropdown.png)
+
+#### When no plugin uses a placement
+
+Nothing is added: no toolbar buttons, no **Visualize** button and no **Plugins** section, so the app looks as it does without plugins. The new tab dropdown still ends with **Manage Plugins…**.
+
+| Placement | With a plugin | Without plugins |
+| --------- | ------------- | --------------- |
+| `editor.query.toolbar` | ![Toolbar with an Explain button](../assets/images/plugin-query-editor-toolbar.png) | ![Toolbar without plugin buttons](../assets/images/plugin-none-query-editor-toolbar.png) |
+| `results.statusbar` | ![Results status bar with Visualize](../assets/images/plugin-visualize-button.png) | ![Results status bar without Visualize](../assets/images/plugin-none-results-statusbar.png) |
+| `tableTable.statusbar` | ![Table view status bar with Visualize](../assets/images/plugin-visualize-button-table-view.png) | ![Table view status bar without Visualize](../assets/images/plugin-none-table-view-statusbar.png) |
+| `editor.query.context` | ![Query editor menu with a Plugins section](../assets/images/plugin-menu-query-editor.png) | ![Query editor menu without plugins](../assets/images/plugin-none-menu-query-editor.png) |
+| `results.cell.context` | ![Results grid menu with a Plugins section](../assets/images/plugin-menu-results-grid.png) | ![Results grid menu without plugins](../assets/images/plugin-none-menu-results-grid.png) |
+| `entity.table.context` | ![Sidebar menu with a Plugins section](../assets/images/plugin-menu-sidebar.png) | ![Sidebar menu without plugins](../assets/images/plugin-none-menu-sidebar.png) |
+| `newTabDropdown` | ![New tab dropdown with plugin entries](../assets/images/plugin-new-tab-dropdown.png) | ![New tab dropdown without plugins](../assets/images/plugin-none-new-tab-dropdown.png) |
 
 ### PluginMenuItemCondition
 
