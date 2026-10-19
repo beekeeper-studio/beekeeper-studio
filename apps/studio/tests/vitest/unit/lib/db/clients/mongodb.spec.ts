@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { urlUsesGssapi } from "@commercial/backend/lib/db/clients/mongodb"
+import { MongoDBClient, urlUsesGssapi } from "@commercial/backend/lib/db/clients/mongodb"
 
 describe("urlUsesGssapi", () => {
   it("detects GSSAPI on a standard URL", () => {
@@ -29,5 +29,19 @@ describe("urlUsesGssapi", () => {
   it("returns false for empty/undefined input", () => {
     expect(urlUsesGssapi("")).toBe(false)
     expect(urlUsesGssapi(undefined as unknown as string)).toBe(false)
+  })
+})
+
+describe("MongoDBClient.listTables", () => {
+  it("returns collections sorted by name", async () => {
+    const client = new MongoDBClient(null, { database: "test" } as any)
+    const collections = [{ name: "users" }, { name: "Accounts" }, { name: "orders" }, { name: "audit_log" }]
+    client.conn = {
+      db: () => ({ listCollections: () => ({ toArray: async () => collections }) }),
+    } as any
+
+    const tables = await client.listTables()
+
+    expect(tables.map((t) => t.name)).toEqual(["Accounts", "audit_log", "orders", "users"])
   })
 })
