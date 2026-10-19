@@ -6,7 +6,6 @@ import Vue from 'vue'
 import Noty from 'noty'
 import { mapGetters, mapActions, mapState } from 'vuex'
 import logoUrl from '@/assets/logo.svg'
-import { hasDecidedTrialEnd } from '@/lib/trial'
 
 export default Vue.extend({
   data: () => {
@@ -34,15 +33,12 @@ export default Vue.extend({
       'isCommunity': 'isCommunity',
     }),
     ...mapGetters(['onboardingNotyShown', 'connected']),
-    ...mapGetters('licenses', ['isTrialExpired']),
     /**
-     * The trial-ended dialog is a decision point that cannot be dismissed, so
-     * nothing should be stacked on top of it: an upsell toast over a full
-     * upsell dialog is both redundant and in the way.
+     * The trial-ended and lifetime-version dialogs are decision points that
+     * cannot be dismissed, so nothing should be stacked on top of them: an
+     * upsell toast over a full upsell dialog is both redundant and in the way.
      */
-    trialEndPending(): boolean {
-      return this.isTrialExpired && !hasDecidedTrialEnd()
-    },
+    ...mapState('licenses', { blockingDialog: (state: any) => state.blockingDialog }),
     ...mapState(['connected']),
   },
   watch: {
@@ -81,7 +77,7 @@ export default Vue.extend({
       }, 1000 * 60 * 5)
     },
     notifyUpsell() {
-      if (this.isShowingOnboardingNoty || this.trialEndPending) {
+      if (this.isShowingOnboardingNoty || this.blockingDialog) {
         return
       }
       new Noty(this.upsellNotificationOptions).show()

@@ -159,3 +159,55 @@ $trial-row-inset: $gutter-h * 1.5;
     }
   }
 }
+
+// components/license/LifetimeVersionNotCoveredModal.vue: the ways out when a
+// lifetime license stops short of this version. Shares the lead copy styles
+// above; the options are one column of icon + text rows.
+.trial-modal .lifetime-version-options {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: $gutter-h * 1.25;
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: $trial-row-gap;
+    padding-inline: $trial-row-inset;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  .material-icons {
+    font-size: 16px;
+    // sits on the first line of the text beside it
+    line-height: 0.875rem * 1.5;
+    color: $text-lighter;
+    flex: 0 0 auto;
+    width: $trial-control-size;
+    text-align: center;
+  }
+
+  strong {
+    color: $text-dark;
+    font-weight: 600;
+  }
+
+  a {
+    color: $text;
+    text-decoration: underline;
+    text-decoration-color: rgba($theme-base, 0.35);
+    cursor: pointer;
+
+    &:hover {
+      text-decoration-color: currentColor;
+    }
+  }
+}
+
+// The quiet escape hatch, same treatment as the trial dialog's downgrade.
+.lifetime-version-continue {
+  color: $text-light;
+}

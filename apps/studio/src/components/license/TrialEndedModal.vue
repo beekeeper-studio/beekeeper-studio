@@ -159,6 +159,7 @@ import Vue from "vue";
 import { mapGetters, mapState } from "vuex";
 import BaseModal from "@/components/common/modals/BaseModal.vue";
 import { AppEvent } from "@/common/AppEvent";
+import { SmartLocalStorage } from "@/common/LocalStorage";
 import globals from "@/common/globals";
 import {
   getPaidFeatureUsage,
@@ -168,9 +169,9 @@ import {
 } from "@/lib/paidFeatures";
 import {
   formatTrialDate,
-  hasDecidedTrialEnd,
-  recordTrialEndDecision,
-  TrialEndDecision,
+  hasDowngradedAfterTrial,
+  recordTrialDowngrade,
+  TRIAL_END_DECISION_KEY,
 } from "@/lib/trial";
 
 const PRICING_URL = "https://www.beekeeperstudio.io/pricing";
@@ -191,6 +192,11 @@ type Step = "offer" | "downgrade";
  * or downgrades to the Community Edition after ticking "I understand" on step
  * two. Until one of those happens it comes back on every launch.
  *
+ * Only the downgrade is written down (lib/trial.ts). A license needs no
+ * record: while one is registered the status is no longer an expired trial,
+ * and removing it brings the dialog back. The record is shared between the
+ * app's windows through localStorage, so answering in one closes the rest.
+ *
  * Features used during the trial lead both lists, so the user sees exactly
  * what stops working.
  */
@@ -199,24 +205,33 @@ export default Vue.extend({
   data() {
     return {
       modalName: "trial-ended-modal",
-      decided: hasDecidedTrialEnd(),
+      // Mirrors the stored answer; refreshed when another window writes it.
+      downgraded: hasDowngradedAfterTrial(),
       usage: getPaidFeatureUsage() as PaidFeatureUsageMap,
       open: false,
       step: "offer" as Step,
       acknowledged: false,
+      stopWatchingStorage: null as (() => void) | null,
     };
   },
   computed: {
     ...mapState("licenses", {
       licensesInitialized: (state: any) => state.initialized,
     }),
-    ...mapGetters("licenses", ["isTrialExpired", "isUltimate", "isTrial", "trialLicense"]),
+    ...mapGetters("licenses", ["isTrialExpired", "realLicenses", "trialLicense"]),
+    /**
+     * The expired trial has to be the only license there is. Someone holding
+     * a paid key, whatever its state, is the license dialogs' concern: a
+     * lifetime key that stops short of this version, say, must never be met
+     * with an offer to downgrade.
+     */
     shouldShow(): boolean {
-      return this.licensesInitialized && this.isTrialExpired && !this.decided;
-    },
-    /** A paid, non-trial license is active: the user bought or entered a key. */
-    licensed(): boolean {
-      return this.isUltimate && !this.isTrial;
+      return (
+        this.licensesInitialized &&
+        this.isTrialExpired &&
+        this.realLicenses.length === 0 &&
+        !this.downgraded
+      );
     },
     rankedFeatures(): RankedPaidFeature[] {
       return rankPaidFeaturesByUsage(this.usage);
@@ -257,29 +272,44 @@ export default Vue.extend({
     shouldShow: {
       immediate: true,
       handler(show: boolean) {
-        if (show) this.show();
+        if (show) {
+          this.show();
+        } else if (this.open) {
+          // A license was registered, here or in another window, or the
+          // downgrade was recorded in another window.
+          this.release();
+        }
       },
     },
-    licensed(value: boolean) {
-      if (value && this.open) this.settle("licensed");
-    },
+  },
+  created() {
+    this.stopWatchingStorage = SmartLocalStorage.onChange(TRIAL_END_DECISION_KEY, () => {
+      this.downgraded = hasDowngradedAfterTrial();
+    });
+  },
+  beforeDestroy() {
+    this.stopWatchingStorage?.();
+    if (this.open) this.$store.commit("licenses/setBlockingDialog", null);
   },
   methods: {
     async show() {
       this.usage = getPaidFeatureUsage();
-      await this.$nextTick();
       this.open = true;
+      this.$store.commit("licenses/setBlockingDialog", this.modalName);
+      // The immediate watcher runs before the <modal> inside the portal is
+      // mounted, and vue-js-modal drops a show() nobody is listening for.
+      await this.$nextTick();
+      if (!this.open) return;
       this.$modal.show(this.modalName);
     },
     reset() {
       this.step = "offer";
       this.acknowledged = false;
     },
-    /** Record the answer and release the modal. */
-    settle(decision: TrialEndDecision) {
-      recordTrialEndDecision(decision);
-      this.decided = true;
+    /** Close without recording anything: the license status, or another window, has answered. */
+    release() {
       this.open = false;
+      this.$store.commit("licenses/setBlockingDialog", null);
       (this.$refs.modal as any)?.close();
     },
     submit() {
@@ -313,7 +343,9 @@ export default Vue.extend({
     },
     confirmDowngrade() {
       if (!this.acknowledged) return;
-      this.settle("downgraded");
+      recordTrialDowngrade();
+      this.downgraded = true;
+      this.release();
       this.$noty.info("Downgraded to the Community Edition. A license key can be entered at any time.");
     },
   },

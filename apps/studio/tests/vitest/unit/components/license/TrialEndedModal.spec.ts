@@ -5,7 +5,7 @@ import Vuex from 'vuex'
 import TrialEndedModal from '@/components/license/TrialEndedModal.vue'
 import { AppEvent, AppEventMixin } from '@/common/AppEvent'
 import { PAID_FEATURES, recordPaidFeatureUse } from '@/lib/paidFeatures'
-import { getTrialEndDecision, recordTrialEndDecision } from '@/lib/trial'
+import { TRIAL_END_DECISION_KEY, hasDowngradedAfterTrial, recordTrialDowngrade } from '@/lib/trial'
 
 // vuex asserts the global install before a store can be built
 Vue.use(Vuex)
@@ -29,8 +29,13 @@ const PortalStub = {
 const MODAL_NAME = 'trial-ended-modal'
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
 
-function buildStore(statusOverrides: Record<string, any> = {}) {
-  const status = { isTrial: true, isUltimate: false, isValidDateExpired: true, ...statusOverrides }
+const TRIAL = { licenseType: 'TrialLicense', key: 'fake', validUntil: new Date(2026, 8, 4) }
+const PAID = { licenseType: 'PersonalLicense', key: 'abc-123', validUntil: new Date(2999, 0, 1) }
+const EXPIRED_TRIAL = { isTrial: true, isUltimate: false, isValidDateExpired: true }
+const LICENSED = { isTrial: false, isUltimate: true, isValidDateExpired: false }
+
+function buildStore(statusOverrides: Record<string, any> = {}, licenses: any[] = [TRIAL]) {
+  const status = { ...EXPIRED_TRIAL, ...statusOverrides }
   return new Vuex.Store({
     modules: {
       licenses: {
@@ -38,17 +43,23 @@ function buildStore(statusOverrides: Record<string, any> = {}) {
         state: {
           initialized: true,
           status,
-          licenses: [{ licenseType: 'TrialLicense', validUntil: new Date(2026, 8, 4) }],
+          licenses,
+          blockingDialog: null,
         },
         getters: {
           trialLicense: (state: any) => state.licenses.find((l: any) => l.licenseType === 'TrialLicense'),
-          isTrial: (state: any) => state.status.isTrial,
-          isUltimate: (state: any) => state.status.isUltimate,
-          isTrialExpired: (state: any) => state.status.isTrial && state.status.isValidDateExpired,
+          realLicenses: (state: any) => state.licenses.filter((l: any) => l.licenseType !== 'TrialLicense'),
+          isTrialExpired: (state: any) => !!state.status.isTrial && !!state.status.isValidDateExpired,
         },
         mutations: {
           setStatus(state: any, next: any) {
             state.status = next
+          },
+          set(state: any, next: any[]) {
+            state.licenses = next
+          },
+          setBlockingDialog(state: any, name: string | null) {
+            state.blockingDialog = name
           },
         },
       },
@@ -80,13 +91,20 @@ function mountModal(store = buildStore()) {
   return { wrapper, mocks, store }
 }
 
+/** What another window of the app does: write the record, which fires `storage` here. */
+function downgradeInAnotherWindow() {
+  const value = JSON.stringify('downgraded')
+  localStorage.setItem(TRIAL_END_DECISION_KEY, value)
+  window.dispatchEvent(new StorageEvent('storage', { key: TRIAL_END_DECISION_KEY, newValue: value }))
+}
+
 describe('TrialEndedModal', () => {
   beforeEach(() => {
     localStorage.clear()
   })
 
   it('opens on launch when the trial has expired and nothing was decided, with no way to close it', async () => {
-    const { wrapper, mocks } = mountModal()
+    const { wrapper, mocks, store } = mountModal()
     await flush()
 
     expect(mocks.$modal.show).toHaveBeenCalledWith(MODAL_NAME)
@@ -94,11 +112,13 @@ describe('TrialEndedModal', () => {
     expect(wrapper.find('.modal-stub').attributes('data-click-to-close')).toBe('false')
     expect(wrapper.text()).toContain('Your free trial has ended')
     expect(wrapper.text()).toContain('2026')
+    // nothing gets stacked on top of it while it waits for an answer
+    expect(store.state.licenses.blockingDialog).toBe(MODAL_NAME)
     wrapper.destroy()
   })
 
-  it('stays closed once a decision was recorded', async () => {
-    recordTrialEndDecision('downgraded')
+  it('stays closed once a downgrade was recorded', async () => {
+    recordTrialDowngrade()
     const { wrapper, mocks } = mountModal()
     await flush()
 
@@ -111,6 +131,17 @@ describe('TrialEndedModal', () => {
     await flush()
 
     expect(mocks.$modal.show).not.toHaveBeenCalled()
+    wrapper.destroy()
+  })
+
+  it('never opens over a paid license, whatever the status says', async () => {
+    // A lifetime key that stops short of this version, say, is the license
+    // dialogs' concern: an offer to downgrade would be wrong for it.
+    const { wrapper, mocks, store } = mountModal(buildStore({}, [TRIAL, PAID]))
+    await flush()
+
+    expect(mocks.$modal.show).not.toHaveBeenCalled()
+    expect(store.state.licenses.blockingDialog).toBeNull()
     wrapper.destroy()
   })
 
@@ -217,7 +248,7 @@ describe('TrialEndedModal', () => {
     // the link goes to pricing without opening the license dialog
     await wrapper.find('.trial-feature-more-link').trigger('click')
     expect(mocks.$native.openLink).toHaveBeenCalledWith('https://www.beekeeperstudio.io/pricing')
-    expect(getTrialEndDecision()).toBeNull()
+    expect(hasDowngradedAfterTrial()).toBe(false)
     expect(mocks.$modal.hide).not.toHaveBeenCalled()
     wrapper.destroy()
   })
@@ -263,7 +294,7 @@ describe('TrialEndedModal', () => {
     // still locked down, nothing decided yet
     expect(wrapper.find('.base-modal-close').exists()).toBe(false)
     expect(wrapper.find('button[type=submit]').attributes('disabled')).toBe('disabled')
-    expect(getTrialEndDecision()).toBeNull()
+    expect(hasDowngradedAfterTrial()).toBe(false)
     expect(mocks.$modal.hide).not.toHaveBeenCalled()
     wrapper.destroy()
   })
@@ -274,7 +305,7 @@ describe('TrialEndedModal', () => {
     await wrapper.find('.trial-ended-downgrade').trigger('click')
 
     await wrapper.find('form').trigger('submit')
-    expect(getTrialEndDecision()).toBeNull()
+    expect(hasDowngradedAfterTrial()).toBe(false)
     expect(mocks.$modal.hide).not.toHaveBeenCalled()
 
     // ticking the box, then backing out, forgets the tick
@@ -290,7 +321,7 @@ describe('TrialEndedModal', () => {
   })
 
   it('an acknowledged downgrade records the decision and releases the modal', async () => {
-    const { wrapper, mocks } = mountModal()
+    const { wrapper, mocks, store } = mountModal()
     await flush()
     await wrapper.find('.trial-ended-downgrade').trigger('click')
 
@@ -298,9 +329,10 @@ describe('TrialEndedModal', () => {
     expect(wrapper.find('button[type=submit]').attributes('disabled')).toBeUndefined()
     await wrapper.find('form').trigger('submit')
 
-    expect(getTrialEndDecision()).toBe('downgraded')
+    expect(hasDowngradedAfterTrial()).toBe(true)
     expect(mocks.$modal.hide).toHaveBeenCalledWith(MODAL_NAME)
     expect(mocks.$noty.info).toHaveBeenCalled()
+    expect(store.state.licenses.blockingDialog).toBeNull()
     wrapper.destroy()
   })
 
@@ -315,7 +347,7 @@ describe('TrialEndedModal', () => {
     expect(mocks.$native.openLink).toHaveBeenCalledWith('https://www.beekeeperstudio.io/pricing')
     expect(enterLicense).toHaveBeenCalledTimes(1)
     expect(mocks.$modal.hide).not.toHaveBeenCalled()
-    expect(getTrialEndDecision()).toBeNull()
+    expect(hasDowngradedAfterTrial()).toBe(false)
 
     const enterButton = wrapper.findAll('button').wrappers.find((w) => w.text() === 'Enter license key')
     await enterButton.trigger('click')
@@ -324,16 +356,61 @@ describe('TrialEndedModal', () => {
     wrapper.destroy()
   })
 
-  it('a registered license releases the modal on its own', async () => {
+  it('a registered license releases the modal on its own, and removing it brings the modal back', async () => {
     const { wrapper, mocks, store } = mountModal()
     await flush()
-    expect(mocks.$modal.show).toHaveBeenCalledWith(MODAL_NAME)
+    expect(mocks.$modal.show).toHaveBeenCalledTimes(1)
 
-    store.commit('licenses/setStatus', { isTrial: false, isUltimate: true, isValidDateExpired: false })
+    store.commit('licenses/set', [TRIAL, PAID])
+    store.commit('licenses/setStatus', LICENSED)
     await flush()
 
-    expect(getTrialEndDecision()).toBe('licensed')
     expect(mocks.$modal.hide).toHaveBeenCalledWith(MODAL_NAME)
+    expect(store.state.licenses.blockingDialog).toBeNull()
+    // nothing to remember: the license speaks for itself...
+    expect(hasDowngradedAfterTrial()).toBe(false)
+
+    // ...and stops speaking once it is removed
+    store.commit('licenses/set', [TRIAL])
+    store.commit('licenses/setStatus', EXPIRED_TRIAL)
+    await flush()
+
+    expect(mocks.$modal.show).toHaveBeenCalledTimes(2)
+    expect(store.state.licenses.blockingDialog).toBe(MODAL_NAME)
+    wrapper.destroy()
+  })
+
+  it('a downgrade recorded in another window of the app closes this one too', async () => {
+    const { wrapper, mocks, store } = mountModal()
+    await flush()
+    expect(mocks.$modal.show).toHaveBeenCalledTimes(1)
+
+    downgradeInAnotherWindow()
+    await flush()
+
+    expect(mocks.$modal.hide).toHaveBeenCalledWith(MODAL_NAME)
+    expect(store.state.licenses.blockingDialog).toBeNull()
+    expect(mocks.$noty.info).not.toHaveBeenCalled()
+
+    // and once destroyed it stops listening
+    wrapper.destroy()
+    mocks.$modal.hide.mockClear()
+    downgradeInAnotherWindow()
+    await flush()
+    expect(mocks.$modal.hide).not.toHaveBeenCalled()
+  })
+
+  it('a reset in another window (the dev license menu) brings the modal back', async () => {
+    recordTrialDowngrade()
+    const { wrapper, mocks } = mountModal()
+    await flush()
+    expect(mocks.$modal.show).not.toHaveBeenCalled()
+
+    localStorage.removeItem(TRIAL_END_DECISION_KEY)
+    window.dispatchEvent(new StorageEvent('storage', { key: TRIAL_END_DECISION_KEY, newValue: null }))
+    await flush()
+
+    expect(mocks.$modal.show).toHaveBeenCalledWith(MODAL_NAME)
     wrapper.destroy()
   })
 })
