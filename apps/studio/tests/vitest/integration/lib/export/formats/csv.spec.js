@@ -1,5 +1,6 @@
-import { DBTestUtil } from "../../../../lib/db";
-import { CsvExporter } from '../../../../../src/lib/export/formats/csv'
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { DBTestUtil } from "@tests/lib/db";
+import { CsvExporter } from '@/lib/export/formats/csv'
 import tmp from 'tmp'
 import fs from 'fs'
 

@@ -140,16 +140,13 @@ jobs:
       - name: Build UI Kit
         run: yarn lib:build
 
-      # Unit tests run under vitest; integration specs under
-      # apps/studio/tests/vitest/ do too, the rest are still on jest
+      # Unit and non-DB integration tests run under vitest; only the docker-DB
+      # specs in the integration matrix below are still partly on jest
       # (see apps/studio/tests/VITEST_MIGRATION.md)
       - name: Unit Tests
         run: yarn workspace beekeeper-studio run test:unit --silent
 
       - name: Non-DB Integration Tests
-        run: yarn workspace beekeeper-studio run test:ci --ci --silent
-
-      - name: Non-DB Integration Tests (Vitest)
         run: yarn workspace beekeeper-studio run vitest:ci --silent
 
       - name: Unit Tests (UI Kit)

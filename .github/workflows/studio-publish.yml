@@ -83,12 +83,12 @@ jobs:
             type: linux
             setup_ruby: true
             setup_flatpak: true
-          - name: macos-14-large
+          - name: macos-15-large
             arch: x64
             type: macos
             update_yml: latest-mac.yml
             update_yml_output: mac_x64_yml
-          - name: macos-14
+          - name: macos-15
             arch: arm64
             type: macos
             update_yml: latest-mac.yml

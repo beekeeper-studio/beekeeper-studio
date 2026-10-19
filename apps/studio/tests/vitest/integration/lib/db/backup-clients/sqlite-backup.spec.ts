@@ -3,9 +3,10 @@ import { CommandClients, commandClientsFor } from "@/lib/db/CommandClient";
 import { BackupConfig } from "@/lib/db/models/BackupConfig";
 import { IDbConnectionServerConfig } from "@/lib/db/types";
 import tmp from 'tmp';
-import { DBTestUtil } from "../../../../lib/db";
-import { BackupTestConfig, runBackupTests } from "./all";
-import { installUtilStub, UtilStub } from "./setup";
+import { describe, expect, beforeAll, afterAll } from "vitest";
+import { DBTestUtil } from "@tests/lib/db";
+import { BackupTestConfig, runBackupTests } from "@tests/integration/lib/db/backup-clients/all";
+import { installUtilStub, UtilStub } from "@tests/integration/lib/db/backup-clients/setup";
 
 const TEST_CONFIGS: Array<BackupTestConfig> = [
   {

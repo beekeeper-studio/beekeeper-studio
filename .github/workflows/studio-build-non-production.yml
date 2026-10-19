@@ -25,7 +25,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-14, ubuntu-22.04, windows-2022, ubuntu-22.04-arm, windows-11-arm]
+        os: [macos-15, ubuntu-22.04, windows-2022, ubuntu-22.04-arm, windows-11-arm]
 
     env:
       # node-gyp uses Python to build native modules from source.
@@ -87,7 +87,7 @@ jobs:
         with:
           node-version-file: '.nvmrc'
 
-      # ImageOS identifies the runner image (e.g. ubuntu22, win22, macos14), so
+      # ImageOS identifies the runner image (e.g. ubuntu22, win22, macos15), so
       # caches never cross runner image versions: node_modules holds native
       # modules compiled for one exact image.
       - name: Compute runner image cache id

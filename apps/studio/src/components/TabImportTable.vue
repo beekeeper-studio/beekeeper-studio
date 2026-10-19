@@ -111,6 +111,7 @@
 <script>
   import { mapGetters, mapState, mapMutations } from 'vuex'
   import { AppEvent } from '@/common/AppEvent'
+  import { recordPaidFeatureUse } from '@/lib/paidFeatures'
   import Stepper from './stepper/Stepper.vue'
   import ImportFile from './importtable/ImportFile.vue'
   import ImportTable from './importtable/ImportTable.vue'
@@ -250,6 +251,11 @@
         return this.importError !== null ? 'error' : 'check_circle'
       },
     },
+    mounted() {
+      // The tab content is gated behind UpgradePanel, so opening it at all is
+      // use of the feature; running the import below counts again.
+      if (!this.isCommunity) recordPaidFeatureUse('import-from-file')
+    },
     methods: {
       onCopySuccess() {
         this.copyMessage = "Copied"
@@ -292,6 +298,7 @@
         return await this.$util.send('generator/build', { schema: newTableSchema });
       },
       async handleImport() {
+        recordPaidFeatureUse('import-from-file')
         const importOptions = await this.tablesToImport.get(this.importKey)
         const isNewTable = importOptions.createNewTable
         let importerClass

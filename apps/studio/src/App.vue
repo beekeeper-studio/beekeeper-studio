@@ -44,9 +44,10 @@
     <util-died-modal />
     <share-modal />
     <template v-if="licensesInitialized">
-      <trial-expired-modal />
+      <trial-ended-modal />
       <license-expired-modal />
       <lifetime-license-expired-modal />
+      <lifetime-version-not-covered-modal />
       <cloud-workspaces-blocked-modal />
     </template>
     <portal-target
@@ -84,9 +85,10 @@ import Noty from 'noty';
 import ConfirmationModalManager from '@/components/common/modals/ConfirmationModalManager.vue'
 import Dropzone from '@/components/Dropzone.vue'
 import UtilDiedModal from '@/components/UtilDiedModal.vue'
-import TrialExpiredModal from '@/components/license/TrialExpiredModal.vue'
+import TrialEndedModal from '@/components/license/TrialEndedModal.vue'
 import LicenseExpiredModal from '@/components/license/LicenseExpiredModal.vue'
 import LifetimeLicenseExpiredModal from '@/components/license/LifetimeLicenseExpiredModal.vue'
+import LifetimeVersionNotCoveredModal from '@/components/license/LifetimeVersionNotCoveredModal.vue'
 import CloudWorkspacesBlockedModal from '@/components/license/CloudWorkspacesBlockedModal.vue'
 import type { LicenseStatus } from "@/lib/license";
 import { SmartLocalStorage } from '@/common/LocalStorage';
@@ -113,8 +115,8 @@ export default Vue.extend({
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
     DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
-    EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
-    LifetimeLicenseExpiredModal, CloudWorkspacesBlockedModal,
+    EnterLicenseModal, TrialEndedModal, LicenseExpiredModal,
+    LifetimeLicenseExpiredModal, LifetimeVersionNotCoveredModal, CloudWorkspacesBlockedModal,
     WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
     PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
     InputEphemeralModal, ShareModal, MoveItemModal, MoveFolderModal,
@@ -247,12 +249,18 @@ export default Vue.extend({
       // TODO: do something here if needed
     },
     validateLicenseExpiry(curr?: LicenseStatus, prev?: LicenseStatus) {
+      const compare = prev && curr
+      const status = compare ? curr : this.status
+      // The end of a trial belongs to TrialEndedModal, which keeps its own
+      // record (lib/trial.ts) instead of the one-shot flag below; that flag
+      // only covers the paid-license dialogs. Leaving it unset for trials is
+      // also what lets a trial end announced by an older version be told
+      // apart from one that lapsed unseen (adoptLegacyTrialEndDecision).
+      if (status?.isTrial) return
       if (SmartLocalStorage.getBool('expiredLicenseEventsEmitted', false)) return
 
-      const compare = prev && curr
       const isValidDateExpired = compare ? !prev.isValidDateExpired && curr.isValidDateExpired : this.status.isValidDateExpired
       const isSupportDateExpired = compare ? !prev.isSupportDateExpired && curr.isSupportDateExpired : this.status.isSupportDateExpired
-      const status = compare ? curr : this.status
       if (curr?.fromFile && curr?.noLicenseKey) {
         this.$noty.error(`Something is wrong with your license file: ${curr?.condition.join(", ") }`)
       }

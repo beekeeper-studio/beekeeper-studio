@@ -132,7 +132,7 @@ describe('PopupMenuModule getExtraPopupMenu', () => {
     expect(items[0]).toEqual({ separator: true })
     expect(items[1]).toMatchObject({ disabled: true })
     expect(items[1].label).toContain('menu-section-label')
-    expect(items[2].label).toContain('<i class="material-icons menu-leading-icon">map</i>')
+    expect(items[2].label).toContain('<i class="material-icons leading-icon">map</i>')
     expect(items[2].label).toContain('Plot Query on Map')
     expect(items[3]).toEqual({ separator: true })
     expect(items[4].label).toContain('Manage Plugins')

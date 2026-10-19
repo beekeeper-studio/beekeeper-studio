@@ -40,6 +40,12 @@ export default Vue.extend({
       'isCommunity': 'isCommunity',
     }),
     ...mapGetters(['onboardingNotyShown', 'connected']),
+    /**
+     * The trial-ended and lifetime-version dialogs are decision points that
+     * cannot be dismissed, so nothing should be stacked on top of them: an
+     * upsell toast over a full upsell dialog is both redundant and in the way.
+     */
+    ...mapState('licenses', { blockingDialog: (state: any) => state.blockingDialog }),
     ...mapState(['connected']),
   },
   watch: {
@@ -78,9 +84,10 @@ export default Vue.extend({
       }, 1000 * 60 * 5)
     },
     notifyUpsell() {
-      if (!this.isShowingOnboardingNoty) {
-        new Noty(this.upsellNotificationOptions).show()
+      if (this.isShowingOnboardingNoty || this.blockingDialog) {
+        return
       }
+      new Noty(this.upsellNotificationOptions).show()
     },
     async notifyOnboarding() {
       Noty.closeAll('onboarding');

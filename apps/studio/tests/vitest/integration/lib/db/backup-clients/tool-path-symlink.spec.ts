@@ -15,18 +15,19 @@
  * The fix:
  *   A. The executable picker passes `noResolveAliases` so macOS returns the
  *      symlink, not the Cellar target (verified manually on macOS — the native
- *      dialog can't run under jest).
+ *      dialog can't run under vitest).
  *   B. The shared `cli/which` handler prepends the Homebrew bin dirs to the
  *      lookup PATH on macOS (extraToolSearchDirs), so brew tools are discovered
  *      via their stable symlink. Covered here against the REAL filesystem, with
  *      NO mocks.
  */
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import fs from "fs";
 import os from "os";
 import path from "path";
 import Vue from "vue";
 import { Command } from "@/lib/db/models";
-import { installUtilStub, UtilStub } from "./setup";
+import { installUtilStub, UtilStub } from "@tests/integration/lib/db/backup-clients/setup";
 
 // `which`/`where` and POSIX symlink semantics; the rig is unix-oriented.
 const describeOrSkip = process.platform === "win32" ? describe.skip : describe;

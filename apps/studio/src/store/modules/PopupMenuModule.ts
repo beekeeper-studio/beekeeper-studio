@@ -117,7 +117,7 @@ export const PopupMenuModule: Module<State, RootState> = {
             { separator: true },
             { label: createMenuSectionLabel(PLUGINS_SECTION_LABEL), disabled: true },
             ...pluginItems.map((item) => ({
-              label: createMenuItem(item.name, "", false, item.leadingIcon),
+              label: createMenuItem(item.name, "", { icon: item.leadingIcon }),
               disabled: item.disabled,
               action(event, component: TabulatorComponent) {
                 item.handler({ event, item: component });
@@ -125,7 +125,7 @@ export const PopupMenuModule: Module<State, RootState> = {
             })),
             { separator: true },
             {
-              label: createMenuItem(managePluginsItem.name, "", false, managePluginsItem.leadingIcon),
+              label: createMenuItem(managePluginsItem.name, "", { icon: managePluginsItem.leadingIcon }),
               action: () => openPluginManager(),
             },
           ] satisfies (MenuObject<TabulatorComponent> | MenuSeparator)[];

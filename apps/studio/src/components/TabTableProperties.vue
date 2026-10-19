@@ -138,7 +138,7 @@
                   >
                     <i
                       v-if="item.leadingIcon"
-                      class="material-icons menu-leading-icon"
+                      class="material-icons leading-icon"
                     >{{ item.leadingIcon }}</i>
                     <x-label>{{ item.name }}</x-label>
                   </x-menuitem>
