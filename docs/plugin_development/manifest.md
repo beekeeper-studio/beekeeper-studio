@@ -169,11 +169,37 @@ Each `command` must be unique within a placement. To show the same command with 
 
 In context menus, plugin items share one section labelled **Plugins** at the bottom of the menu. Plugins are sorted by name, each plugin's items keep their manifest order, and the section ends with **Manage Plugins…**. The **Visualize** menus and the new tab dropdown end with **Manage Plugins…** too.
 
+#### Where placements appear
+
+`results.statusbar` items are listed in the **Visualize** menu of the query results status bar. The **Explain** button above the results comes from `editor.query.toolbar`.
+
+![The Visualize menu in the query results status bar, with an Explain button in the query editor toolbar](../assets/images/plugin-visualize-menu.png)
+
+`tableTable.statusbar` items are listed in the **Visualize** menu of the table view.
+
+![The Visualize menu in the table view status bar](../assets/images/plugin-visualize-table-view.png)
+
+The `*.context` placements add items to the **Plugins** section of a context menu: here `editor.query.context`, `results.cell.context` and `entity.table.context`.
+
+![The Plugins section of the query editor context menu](../assets/images/plugin-menu-query-editor.png)
+
+![The Plugins section of a results grid cell's context menu](../assets/images/plugin-menu-results-grid.png)
+
+![The Plugins section of a table's context menu in the sidebar](../assets/images/plugin-menu-sidebar.png)
+
+`newTabDropdown` items are listed in the dropdown next to the new tab button.
+
+![The new tab dropdown with plugin entries and Manage Plugins](../assets/images/plugin-new-tab-dropdown.png)
+
 ### PluginMenuItemCondition
 
 | Value             | Description                                                                                                                    |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | `"explainResult"` | The result came from an `EXPLAIN` statement, or has the columns of a query plan (such as `QUERY PLAN`). Reported by `results.statusbar`; always false in `tableTable.statusbar`. |
+
+An item waiting on `explainResult` is disabled in the **Visualize** menu until the result is a query plan:
+
+![The Visualize menu for an EXPLAIN result, with Explain Visualizer enabled](../assets/images/plugin-visualize-explain.png)
 
 ### Menu item params
 
@@ -192,9 +218,11 @@ When a menu item is picked, the new tab can read how it was opened with [`getVie
 
 The **Visualize** menu sends what the user is looking at, and `source` says which:
 
-- `"selection"`: the user selected more than one cell. `activeRange` holds the selection.
+- `"selection"`: the user selected more than one cell. `activeRange` holds the selection, and the menu heading counts cells instead of rows.
 - `"result"`: nothing is selected in a query result. `activeRange` holds every row of the result. `truncated` is true when the result stopped at the row limit, and `query` is the statement that produced it, so you can run it again for more rows.
 - `"table"`: nothing is selected in a table view. The grid only holds one page of the table, so no rows are sent. Read the table yourself from `entity`, applying `where` (the SQL condition for the filters in the table view), with a row limit that suits your plugin.
+
+![The Visualize menu with eight cells selected](../assets/images/plugin-visualize-selection.png)
 
 ```json
 {
