@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { buildParamsForStatusbar, selectedRange } from '@/services/plugin/web/statusbarParams'
+import { describe, it, expect, vi } from 'vitest'
+import { buildParamsForStatusbar, onSelectedCellsChange, selectedRange } from '@/services/plugin/web/statusbarParams'
 
 type Row = Record<string, unknown>
 
@@ -111,5 +111,36 @@ describe('buildParamsForStatusbar', () => {
     expect(params.source).toBe('selection')
     expect(params.activeRange?.value).toEqual([['Seattle'], ['Brooklyn']])
     expect(params.entity).toEqual({ type: 'table', schema: undefined, name: 'cities' })
+  })
+})
+
+describe('onSelectedCellsChange', () => {
+  it('reports the size of the latest range on any range event, keyboard included', () => {
+    vi.useFakeTimers()
+    try {
+      const listeners: Record<string, () => void> = {}
+      let ranges: any[] = []
+      const tabulator = {
+        on: (event: string, fn: () => void) => { listeners[event] = fn },
+        getRanges: () => ranges,
+      } as any
+      const callback = vi.fn()
+      onSelectedCellsChange(tabulator, callback)
+
+      // Shift+Arrow resizes a range without a mouse event
+      ranges = fakeTabulator([0, 1, ['c0', 'c1']]).getRanges()
+      listeners.rangeChanged()
+      vi.advanceTimersByTime(100)
+      expect(callback).toHaveBeenLastCalledWith(4)
+
+      ranges = []
+      listeners.rangeRemoved()
+      vi.advanceTimersByTime(100)
+      expect(callback).toHaveBeenLastCalledWith(0)
+
+      expect(Object.keys(listeners).sort()).toEqual(['dataProcessed', 'rangeAdded', 'rangeChanged', 'rangeRemoved'])
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

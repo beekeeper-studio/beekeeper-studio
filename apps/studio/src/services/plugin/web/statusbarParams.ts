@@ -51,6 +51,27 @@ export function rangeCellCount(range: RangeComponent): number {
   return range.getRows().length * dataColumns(range.getColumns()).length;
 }
 
+/**
+ * Report the size of the latest range whenever a range is added, resized or
+ * removed, by mouse or keyboard. Debounced: dragging fires on every cell.
+ */
+export function onSelectedCellsChange(tabulator: Tabulator, callback: (cells: number) => void) {
+  const report = _.debounce(() => {
+    let cells = 0;
+    try {
+      const range = _.last(tabulator.getRanges?.() ?? []);
+      cells = range ? rangeCellCount(range) : 0;
+    } catch {
+      // The table was destroyed (e.g. replaced by a new result) before this ran
+      return;
+    }
+    callback(cells);
+  }, 50);
+  for (const event of ["rangeAdded", "rangeChanged", "rangeRemoved", "dataProcessed"] as const) {
+    tabulator.on(event, report);
+  }
+}
+
 /** The latest range, when it covers more than the one cell under the cursor. */
 export function selectedRange(tabulator: Tabulator): RangeComponent | null {
   const range = _.last(tabulator.getRanges?.() ?? []);

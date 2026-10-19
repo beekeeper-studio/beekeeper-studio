@@ -68,7 +68,7 @@
   import intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
   import { copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth, createMenuItem, pasteRange } from '@/lib/menu/tableMenu';
-  import { rangeCellCount } from '@/services/plugin/web/statusbarParams';
+  import { onSelectedCellsChange } from '@/services/plugin/web/statusbarParams';
   import { tabulatorForTableData } from '@/common/tabulator';
   import EditorModal from '../tableview/EditorModal.vue'
   import { AppEvent } from "@/common/AppEvent";
@@ -311,6 +311,7 @@
         });
 
         this.tabulator.on('cellEdited', this.cellEdited);
+        onSelectedCellsChange(this.tabulator, (cells) => this.$emit('selectionChange', cells));
         this.tabulator.on("rangeEdited", (range) => {
           range.getModifiedCells().forEach((cell) => this.cellEdited(cell));
           this.tabulator.modules.selectRange.restoreFocus()
@@ -1149,8 +1150,6 @@
         this.trigger(AppEvent.updateJsonViewerSidebar, data)
       },
       handleRangeChange(ranges) {
-        const range = _.last(ranges)
-        this.$emit('selectionChange', range ? rangeCellCount(range) : 0)
         const row = ranges[0].getRows()[0];
         const parsedData = parseRowDataForJsonViewer(row.getData(), this.tableColumns)
         this.selectedRowData = this.dataToJson(parsedData, true)

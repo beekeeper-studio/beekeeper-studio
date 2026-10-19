@@ -351,7 +351,7 @@ import { ExpandablePath, parseRowDataForJsonViewer } from '@/lib/data/jsonViewer
 import { stringToTypedArray, removeUnsortableColumnsFromSortBy } from "@/common/utils";
 import { UpdateOptions } from "@/lib/data/jsonViewer";
 import VisualizeButton from "@/components/plugins/VisualizeButton.vue";
-import { rangeCellCount, StatusbarMenuPayload } from "@/services/plugin/web/statusbarParams";
+import { onSelectedCellsChange, StatusbarMenuPayload } from "@/services/plugin/web/statusbarParams";
 import type { ContextItem } from "@/plugins/BeekeeperPlugin";
 
 const log = rawLog.scope('TableTable')
@@ -1243,6 +1243,7 @@ export default Vue.extend({
         onRangeChange: this.handleRangeChange,
       });
       this.tabulator.on('cellEdited', this.cellEdited)
+      onSelectedCellsChange(this.tabulator, (cells) => { this.selectedCellCount = cells })
       this.tabulator.on("rangeEdited", (range) => {
         range.getModifiedCells().forEach((cell) => this.cellEdited(cell));
         this.tabulator.modules.selectRange.restoreFocus()
@@ -2324,8 +2325,6 @@ export default Vue.extend({
     },
     handleRangeChange(ranges: RangeComponent[]) {
       this.updateJsonViewer({ range: ranges[0] })
-      const range = _.last(ranges)
-      this.selectedCellCount = range ? rangeCellCount(range) : 0
     },
     /** Visualize button: hand the selection, or the table and its filters, to a plugin */
     async openInPlugin(item: ContextItem, event: Event) {
