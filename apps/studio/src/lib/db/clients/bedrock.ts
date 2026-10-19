@@ -21,11 +21,11 @@ import {
   TableChanges,
 } from "../models";
 import {
+  ForeignKeyRow,
   IndexColumn,
   TableKey as SharedTableKey,
 } from "@shared/lib/dialects/models";
 import _ from "lodash";
-import { ForeignKeyRow, groupForeignKeyRows } from "./foreignKeys";
 import { parseVersion } from "@/common/version";
 import { buildSelectTopQuery } from "./utils";
 import { createSQLiteKnex } from "./sqlite/utils";
@@ -325,27 +325,26 @@ export class BedrockClient extends MysqlClient {
   // Bedrock is SQLite underneath, so the inherited MySQL information_schema
   // queries don't apply; foreign keys come from the pragma instead.
   async getOutgoingKeys(table: string, _schema?: string): Promise<SharedTableKey[]> {
-    return groupForeignKeyRows(await this.foreignKeyRowsFor(table));
+    return this.parseForeignKeys(await this.foreignKeyRowsFor(table));
   }
 
   async getIncomingKeys(table: string, _schema?: string): Promise<SharedTableKey[]> {
-    const rows: ForeignKeyRow[] = [];
+    const rows: any[] = [];
     for (const { name } of await this.listTables()) {
       const keys = await this.foreignKeyRowsFor(name);
-      rows.push(...keys.filter((row) => row.toTable === table));
+      rows.push(...keys.filter((row) => row.table === table));
     }
-    return groupForeignKeyRows(rows);
+    return this.parseForeignKeys(rows);
   }
 
-  private async foreignKeyRowsFor(table: string): Promise<ForeignKeyRow[]> {
-    const sql = `pragma foreign_key_list('${SD.escapeString(table)}')`;
-    const { rows } = await this.driverExecuteSingle(sql, {
-      overrideReadonly: true,
-    });
-    return asRows<any>(rows).map((row) => ({
-      constraintName: row.id,
+  // pragma foreign_key_list has no constraint names: `id` numbers each foreign
+  // key of a table and `seq` orders the columns within it. The table itself is
+  // not part of the row, so foreignKeyRowsFor adds it as `from_table`.
+  protected parseForeignKeyRow(row: any): ForeignKeyRow {
+    return {
+      constraintName: String(row.id),
       fromSchema: "",
-      fromTable: table,
+      fromTable: row.from_table,
       fromColumn: row.from,
       toSchema: "",
       toTable: row.table,
@@ -353,7 +352,15 @@ export class BedrockClient extends MysqlClient {
       ordinalPosition: row.seq,
       onUpdate: row.on_update,
       onDelete: row.on_delete,
-    }));
+    };
+  }
+
+  private async foreignKeyRowsFor(table: string): Promise<any[]> {
+    const sql = `pragma foreign_key_list('${SD.escapeString(table)}')`;
+    const { rows } = await this.driverExecuteSingle(sql, {
+      overrideReadonly: true,
+    });
+    return asRows<any>(rows).map((row) => ({ ...row, from_table: table }));
   }
 
   parseTableColumn(row: { name: string; type: string }): BksField {

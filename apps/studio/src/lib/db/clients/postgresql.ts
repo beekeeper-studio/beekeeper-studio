@@ -4,7 +4,6 @@ import { readFileSync } from 'fs';
 
 import pg, { QueryResult as PgQueryResult, QueryArrayResult as PgQueryArrayResult, FieldDef, PoolConfig, PoolClient } from 'pg';
 import _ from 'lodash'
-import { ForeignKeyRow, groupForeignKeyRows } from "./foreignKeys";
 import knexlib from 'knex'
 import logRaw from '@bksLogger'
 
@@ -22,7 +21,7 @@ import { AlterPartitionsSpec, IndexColumn, TableKey } from '@shared/lib/dialects
 import { PostgresData } from '@shared/lib/dialects/postgresql';
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from './BasicDatabaseClient';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
-import { defaultCreateScript, postgres10CreateScript } from './postgresql/scripts';
+import { defaultCreateScript, foreignKeyColumnsSql, postgres10CreateScript } from './postgresql/scripts';
 import BksConfig from '@/common/bksConfig';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
@@ -83,58 +82,6 @@ const postgresContext = {
     return null;
   }
 };
-
-// One row per foreign-key column. Callers append the WHERE / ORDER BY.
-const FOREIGN_KEY_COLUMNS_SQL = `
-  SELECT
-    c.conname AS constraint_name,
-    n.nspname AS from_schema,
-    t.relname AS from_table,
-    a.attname AS from_column,
-    nf.nspname AS to_schema,
-    tf.relname AS to_table,
-    af.attname AS to_column,
-    pos AS ordinal_position,
-    CASE c.confupdtype::text
-      WHEN 'a' THEN 'NO ACTION'
-      WHEN 'r' THEN 'RESTRICT'
-      WHEN 'c' THEN 'CASCADE'
-      WHEN 'n' THEN 'SET NULL'
-      WHEN 'd' THEN 'SET DEFAULT'
-      ELSE c.confupdtype::text
-    END AS update_rule,
-    CASE c.confdeltype::text
-      WHEN 'a' THEN 'NO ACTION'
-      WHEN 'r' THEN 'RESTRICT'
-      WHEN 'c' THEN 'CASCADE'
-      WHEN 'n' THEN 'SET NULL'
-      WHEN 'd' THEN 'SET DEFAULT'
-      ELSE c.confdeltype::text
-    END AS delete_rule
-  FROM pg_constraint c
-    JOIN pg_class t ON c.conrelid = t.oid
-    JOIN pg_namespace n ON t.relnamespace = n.oid
-    JOIN generate_subscripts(c.conkey, 1) pos ON true
-    JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = c.conkey[pos]
-    JOIN pg_class tf ON c.confrelid = tf.oid
-    JOIN pg_namespace nf ON tf.relnamespace = nf.oid
-    JOIN pg_attribute af ON af.attrelid = tf.oid AND af.attnum = c.confkey[pos]
-`;
-
-function toForeignKeyRow(row: any): ForeignKeyRow {
-  return {
-    constraintName: row.constraint_name,
-    fromSchema: row.from_schema,
-    fromTable: row.from_table,
-    fromColumn: row.from_column,
-    toSchema: row.to_schema,
-    toTable: row.to_table,
-    toColumn: row.to_column,
-    ordinalPosition: Number(row.ordinal_position),
-    onUpdate: row.update_rule,
-    onDelete: row.delete_rule,
-  };
-}
 
 export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient> {
   version: VersionInfo;
@@ -662,23 +609,23 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   async getOutgoingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     // Foreign keys defined on this table (referencing other tables)
     const sql = `
-      ${FOREIGN_KEY_COLUMNS_SQL}
+      ${foreignKeyColumnsSql}
       WHERE c.contype = 'f' AND n.nspname = $1 AND t.relname = $2
       ORDER BY c.conname, pos
     `;
     const { rows } = await this.driverExecuteSingle(sql, { params: [schema, table] });
-    return groupForeignKeyRows(rows.map(toForeignKeyRow));
+    return this.parseForeignKeys(rows);
   }
 
   async getIncomingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     // Foreign keys on other tables that reference this table
     const sql = `
-      ${FOREIGN_KEY_COLUMNS_SQL}
+      ${foreignKeyColumnsSql}
       WHERE c.contype = 'f' AND nf.nspname = $1 AND tf.relname = $2
       ORDER BY c.conname, pos
     `;
     const { rows } = await this.driverExecuteSingle(sql, { params: [schema, table] });
-    return groupForeignKeyRows(rows.map(toForeignKeyRow));
+    return this.parseForeignKeys(rows);
   }
 
   async query(queryText: string, tabId: number, _options?: any): Promise<CancelableQuery> {

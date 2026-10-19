@@ -13,7 +13,6 @@ import { IdentifyResult, Statement } from "sql-query-identifier/lib/defines";
 import * as path from 'path';
 import * as fs from 'fs';
 import _ from 'lodash';
-import { ForeignKeyRow, groupForeignKeyRows } from "./foreignKeys";
 import { SqliteCursor } from "./sqlite/SqliteCursor";
 import { createSQLiteKnex } from "./sqlite/utils";
 import { IDbConnectionServer } from "../backendTypes";
@@ -47,23 +46,6 @@ export type SqliteResult = {
   arrayMode: boolean
 };
 const SD = SqliteData;
-
-// pragma_foreign_key_list has no constraint names: `id` numbers each foreign
-// key of a table and `seq` orders the columns within it.
-function toForeignKeyRow(row: any): ForeignKeyRow {
-  return {
-    constraintName: row.id,
-    fromSchema: "",
-    fromTable: row.from_table,
-    fromColumn: row.from_column,
-    toSchema: "",
-    toTable: row.to_table,
-    toColumn: row.to_column,
-    ordinalPosition: row.seq,
-    onUpdate: row.on_update,
-    onDelete: row.on_delete,
-  };
-}
 
 export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   version: SqliteResult;
@@ -249,13 +231,15 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return Promise.resolve([]); // TODO: not implemented yet
   }
 
+  // pragma_foreign_key_list has no constraint names: `id` numbers each foreign
+  // key of a table and `seq` orders the columns within it.
   async getOutgoingKeys(table: string, _schema?: string): Promise<TableKey[]> {
     // Foreign keys defined on this table (referencing other tables)
     const sql = `
       SELECT
         '${SD.escapeString(table)}' AS from_table,
-        p.id AS id,
-        p.seq AS seq,
+        p.id AS constraint_name,
+        p.seq AS ordinal_position,
         p."from" AS from_column,
         p."table" AS to_table,
         p."to" AS to_column,
@@ -265,7 +249,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       ORDER BY p.id, p.seq
     `
     const { rows } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
-    return groupForeignKeyRows(rows.map(toForeignKeyRow));
+    return this.parseForeignKeys(rows);
   }
 
   async getIncomingKeys(table: string, _schema?: string): Promise<TableKey[]> {
@@ -273,8 +257,8 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     const sql = `
       SELECT
         m.name AS from_table,
-        p.id AS id,
-        p.seq AS seq,
+        p.id AS constraint_name,
+        p.seq AS ordinal_position,
         p."from" AS from_column,
         p."table" AS to_table,
         p."to" AS to_column,
@@ -286,7 +270,7 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
       ORDER BY m.name, p.id, p.seq
     `
     const { rows } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
-    return groupForeignKeyRows(rows.map(toForeignKeyRow));
+    return this.parseForeignKeys(rows);
   }
 
   async query(queryText: string): Promise<CancelableQuery> {

@@ -9,50 +9,9 @@ import BksConfig from "@/common/bksConfig";
 import { IndexColumn, TableKey } from "@shared/lib/dialects/models";
 import { IDbConnectionServer } from "../backendTypes";
 import _ from "lodash";
-import { ForeignKeyRow, groupForeignKeyRows } from "./foreignKeys";
+import { foreignKeyColumnsSql } from "./redshift/scripts";
 
 // One row per foreign-key column. Callers append the WHERE / ORDER BY.
-// TODO: the referenced table and column come from scalar subqueries, which
-// fail for composite keys. Ordinal matching has not been verified against a
-// live Redshift cluster yet.
-const FOREIGN_KEY_COLUMNS_SQL = `
-  SELECT
-    tc.constraint_name,
-    kcu.constraint_schema AS from_schema,
-    kcu.table_name AS from_table,
-    kcu.column_name AS from_column,
-    rc.unique_constraint_schema AS to_schema,
-    (SELECT kcu2.table_name
-      FROM information_schema.key_column_usage AS kcu2
-      WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_table,
-    (SELECT kcu2.column_name
-      FROM information_schema.key_column_usage AS kcu2
-      WHERE kcu2.constraint_name = rc.unique_constraint_name) AS to_column,
-    rc.update_rule,
-    rc.delete_rule
-  FROM information_schema.key_column_usage AS kcu
-    JOIN information_schema.table_constraints AS tc
-      ON tc.constraint_name = kcu.constraint_name
-    JOIN information_schema.referential_constraints AS rc
-      ON rc.constraint_name = kcu.constraint_name
-  WHERE tc.constraint_type = 'FOREIGN KEY'
-    AND kcu.table_schema NOT LIKE 'pg_%'
-`;
-
-function toForeignKeyRow(row: any): ForeignKeyRow {
-  return {
-    constraintName: row.constraint_name,
-    fromSchema: row.from_schema,
-    fromTable: row.from_table,
-    fromColumn: row.from_column,
-    toSchema: row.to_schema,
-    toTable: row.to_table,
-    toColumn: row.to_column,
-    onUpdate: row.update_rule,
-    onDelete: row.delete_rule,
-  };
-}
-
 export class RedshiftClient extends PostgresClient {
   async supportedFeatures(): Promise<SupportedFeatures> {
     return {
@@ -230,12 +189,12 @@ export class RedshiftClient extends PostgresClient {
   async getOutgoingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     // Foreign keys defined on this table (referencing other tables)
     const sql = `
-      ${FOREIGN_KEY_COLUMNS_SQL}
+      ${foreignKeyColumnsSql}
       AND kcu.table_schema = $2
       AND kcu.table_name = $1
     `;
     const data = await this.driverExecuteSingle(sql, { params: [table, schema] });
-    return groupForeignKeyRows(data.rows.map(toForeignKeyRow));
+    return this.parseForeignKeys(data.rows);
   }
 
   async getIncomingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
@@ -244,13 +203,13 @@ export class RedshiftClient extends PostgresClient {
     // query.
     const sql = `
       SELECT * FROM (
-        ${FOREIGN_KEY_COLUMNS_SQL}
+        ${foreignKeyColumnsSql}
         AND rc.unique_constraint_schema = $2
       ) AS fk
       WHERE fk.to_table = $1
     `;
     const data = await this.driverExecuteSingle(sql, { params: [table, schema] });
-    return groupForeignKeyRows(data.rows.map(toForeignKeyRow));
+    return this.parseForeignKeys(data.rows);
   }
   async getTableCreateScript(table: string, schema: string = this._defaultSchema): Promise<string> {
     const data = await this.driverExecuteSingle(`show table ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(table)}`);

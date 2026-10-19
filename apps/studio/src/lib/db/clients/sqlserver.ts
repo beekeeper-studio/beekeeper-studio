@@ -5,7 +5,6 @@ import sql, { ConnectionError, ConnectionPool, IColumnMetadata, IRecordSet, Requ
 import knexlib from 'knex'
 import BksConfig from "@/common/bksConfig";
 import _ from 'lodash'
-import { ForeignKeyRow, groupForeignKeyRows } from "./foreignKeys";
 
 import { DatabaseElement, IDbConnectionDatabase } from "../types"
 import {
@@ -22,6 +21,7 @@ import {
 } from './utils';
 import logRaw from '@bksLogger'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor'
+import { foreignKeyColumnsSql } from './sqlserver/scripts'
 import { buildWindowsAuthConnStr } from './sqlserverWinAuth'
 import { parseSqlServerHost } from './sqlserverHost'
 import { SqlServerData } from '@shared/lib/dialects/sqlserver'
@@ -172,45 +172,6 @@ knex.client._escapeBinding = function (value: any, context: any) {
 // NOTE:
 // DO NOT USE CONCAT() in sql, not compatible with Sql Server <= 2008
 // SQL Server < 2012 might eventually need its own class.
-// One row per foreign-key column, from the sys catalog views. Callers append
-// the WHERE / ORDER BY. The sys views spell referential actions with
-// underscores (NO_ACTION, SET_NULL); they are reported with spaces to match
-// INFORMATION_SCHEMA and the other drivers.
-const FOREIGN_KEY_COLUMNS_SQL = `
-  SELECT
-    fk.name AS constraint_name,
-    SCHEMA_NAME(pt.schema_id) AS from_schema,
-    pt.name AS from_table,
-    pc.name AS from_column,
-    SCHEMA_NAME(rt.schema_id) AS to_schema,
-    rt.name AS to_table,
-    rc.name AS to_column,
-    fkc.constraint_column_id AS ordinal_position,
-    REPLACE(fk.update_referential_action_desc, '_', ' ') AS on_update,
-    REPLACE(fk.delete_referential_action_desc, '_', ' ') AS on_delete
-  FROM sys.foreign_keys fk
-    JOIN sys.foreign_key_columns fkc ON fkc.constraint_object_id = fk.object_id
-    JOIN sys.tables pt ON pt.object_id = fk.parent_object_id
-    JOIN sys.columns pc ON pc.object_id = fkc.parent_object_id AND pc.column_id = fkc.parent_column_id
-    JOIN sys.tables rt ON rt.object_id = fk.referenced_object_id
-    JOIN sys.columns rc ON rc.object_id = fkc.referenced_object_id AND rc.column_id = fkc.referenced_column_id
-`;
-
-function toForeignKeyRow(row: any): ForeignKeyRow {
-  return {
-    constraintName: row.constraint_name,
-    fromSchema: row.from_schema,
-    fromTable: row.from_table,
-    fromColumn: row.from_column,
-    toSchema: row.to_schema,
-    toTable: row.to_table,
-    toColumn: row.to_column,
-    ordinalPosition: Number(row.ordinal_position),
-    onUpdate: row.on_update,
-    onDelete: row.on_delete,
-  };
-}
-
 export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transaction> {
   server: IDbConnectionServer
   database: IDbConnectionDatabase
@@ -539,23 +500,23 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   async getOutgoingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     // Foreign keys defined on this table (referencing other tables)
     const sql = `
-      ${FOREIGN_KEY_COLUMNS_SQL}
+      ${foreignKeyColumnsSql}
       WHERE pt.name = ${this.wrapValue(table)} AND SCHEMA_NAME(pt.schema_id) = ${this.wrapValue(schema)}
       ORDER BY fk.name, fkc.constraint_column_id
     `;
     const { data } = await this.driverExecuteSingle(sql);
-    return groupForeignKeyRows((data.recordset || []).map(toForeignKeyRow));
+    return this.parseForeignKeys(data.recordset || []);
   }
 
   async getIncomingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     // Foreign keys on other tables that reference this table
     const sql = `
-      ${FOREIGN_KEY_COLUMNS_SQL}
+      ${foreignKeyColumnsSql}
       WHERE rt.name = ${this.wrapValue(table)} AND SCHEMA_NAME(rt.schema_id) = ${this.wrapValue(schema)}
       ORDER BY fk.name, fkc.constraint_column_id
     `;
     const { data } = await this.driverExecuteSingle(sql);
-    return groupForeignKeyRows((data.recordset || []).map(toForeignKeyRow));
+    return this.parseForeignKeys(data.recordset || []);
   }
 
   async selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema: string = this._defaultSchema, selects = ['*']) {

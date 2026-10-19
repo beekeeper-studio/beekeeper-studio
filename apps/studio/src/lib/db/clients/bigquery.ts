@@ -14,10 +14,10 @@ import { buildDeleteQueries, buildInsertQuery, buildSelectQueriesFromUpdates, bu
 import { createCancelablePromise } from '@/common/utils';
 import { errors } from '@/lib/errors';
 import { BigQueryCursor } from './bigquery/BigQueryCursor';
+import { foreignKeyColumnsSql } from './bigquery/scripts';
 import { BigQueryData } from '@shared/lib/dialects/bigquery';
 import { IDbConnectionServer } from '../backendTypes';
 import _ from 'lodash';
-import { ForeignKeyRow, groupForeignKeyRows } from "./foreignKeys";
 const { wrapIdentifier } = BigQueryData;
 const log = rawLog.scope('bigquery')
 
@@ -58,24 +58,6 @@ export function parseRowData(data: Record<string, any>[]): Record<string, any>[]
     })
     return parsedRow
   })
-}
-
-// BigQuery datasets stand in for schemas and tables are listed without one,
-// so both schema fields stay blank. Foreign keys there carry no referential
-// actions.
-function toForeignKeyRow(row: any): ForeignKeyRow {
-  return {
-    constraintName: row.constraint_name,
-    fromSchema: "",
-    fromTable: row.from_table,
-    fromColumn: row.from_column,
-    toSchema: "",
-    toTable: row.to_table,
-    toColumn: row.to_column,
-    ordinalPosition: Number(row.ordinal_position),
-    onUpdate: null,
-    onDelete: null,
-  };
 }
 
 export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
@@ -196,51 +178,27 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   async getOutgoingKeys(table: string, _schema?: string): Promise<TableKey[]> {
     // Foreign keys defined on this table (referencing other tables)
     const sql = `
-      ${this.foreignKeyColumnsSql()}
+      ${foreignKeyColumnsSql(this.wrapIdentifier(this.db))}
       WHERE f.table_schema = '${escapeString(this.db)}'
         AND f.table_name = '${escapeString(table)}'
         AND con.constraint_type = 'FOREIGN KEY'
       ORDER BY f.constraint_name, f.ordinal_position
     `;
     const data = await this.driverExecuteSingle(sql);
-    return groupForeignKeyRows(data.rows.map(toForeignKeyRow));
+    return this.parseForeignKeys(data.rows);
   }
 
   async getIncomingKeys(table: string, _schema?: string): Promise<TableKey[]> {
     // Foreign keys on other tables that reference this table
     const sql = `
-      ${this.foreignKeyColumnsSql()}
+      ${foreignKeyColumnsSql(this.wrapIdentifier(this.db))}
       WHERE f.table_schema = '${escapeString(this.db)}'
         AND t.table_name = '${escapeString(table)}'
         AND con.constraint_type = 'FOREIGN KEY'
       ORDER BY f.constraint_name, f.ordinal_position
     `;
     const data = await this.driverExecuteSingle(sql);
-    return groupForeignKeyRows(data.rows.map(toForeignKeyRow));
-  }
-
-  // One row per foreign-key column. Callers append the WHERE / ORDER BY.
-  // TODO: CONSTRAINT_COLUMN_USAGE carries no ordinal position, so the
-  // referenced columns of a composite key cannot be paired with the
-  // referencing ones here. Composite keys are disabled for this dialect.
-  private foreignKeyColumnsSql(): string {
-    const db = this.wrapIdentifier(this.db);
-    return `
-      SELECT
-        f.constraint_name,
-        f.table_name AS from_table,
-        f.column_name AS from_column,
-        f.ordinal_position,
-        t.table_name AS to_table,
-        t.column_name AS to_column
-      FROM ${db}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS f
-      JOIN ${db}.INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE AS t
-        ON f.constraint_name = t.constraint_name
-      JOIN ${db}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS con
-        ON f.constraint_catalog = con.constraint_catalog
-        AND f.constraint_schema = con.constraint_schema
-        AND f.constraint_name = con.constraint_name
-    `;
+    return this.parseForeignKeys(data.rows);
   }
 
   async query(queryText: string, options: any = {}): Promise<CancelableQuery> {

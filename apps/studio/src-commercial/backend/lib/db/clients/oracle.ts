@@ -2,7 +2,7 @@ import { OracleData as D } from '@shared/lib/dialects/oracle';
 import knexLib from 'knex';
 import oracle, { Metadata } from 'oracledb'
 import _ from 'lodash'
-import { ForeignKeyRow, groupForeignKeyRows } from "@/lib/db/clients/foreignKeys";
+import { ForeignKeyRow } from '@shared/lib/dialects/models';
 import { IDbConnectionDatabase, DatabaseElement } from "@/lib/db/types";
 import { BasicDatabaseClient, NoOpContextProvider } from "@/lib/db/clients/BasicDatabaseClient";
 import BksConfig from '@/common/bksConfig';
@@ -46,6 +46,7 @@ import { errors } from '@/lib/errors';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 import platformInfo from '@/common/platform_info';
 import { OracleCursor } from './oracle/OracleCursor';
+import { foreignKeyColumnsSql } from './oracle/scripts';
 import { OracleChangeBuilder } from '@shared/lib/sql/change_builder/OracleChangeBuilder';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { IDbConnectionServer } from '@/lib/db/backendTypes';
@@ -65,47 +66,6 @@ let oracleInitConfigDir: string | null = null
 export function _resetOracleStateForTesting() {
   oracleInitialized = false
   oracleInitConfigDir = null
-}
-
-// One row per foreign-key column. Callers append the WHERE / ORDER BY.
-// https://stackoverflow.com/questions/1729996/list-of-foreign-keys-and-the-tables-they-reference-in-oracle-db
-const FOREIGN_KEY_COLUMNS_SQL = `
-  SELECT
-    a.constraint_name,
-    a.owner,
-    a.table_name,
-    a.column_name,
-    a.position,
-    c.delete_rule,
-    c_pk.owner AS r_owner,
-    c_pk.table_name AS r_table_name,
-    r_a.column_name AS r_column
-  FROM all_cons_columns a
-    JOIN all_constraints c
-      ON a.owner = c.owner AND a.constraint_name = c.constraint_name
-    JOIN all_constraints c_pk
-      ON c.r_owner = c_pk.owner AND c.r_constraint_name = c_pk.constraint_name
-    JOIN all_cons_columns r_a
-      ON c_pk.owner = r_a.owner
-      AND c_pk.constraint_name = r_a.constraint_name
-      AND r_a.position = a.position
-  WHERE c.constraint_type = 'R'
-    AND c_pk.constraint_type IN ('P', 'U')
-`;
-
-// Oracle has no ON UPDATE action for foreign keys.
-function toForeignKeyRow(row: any): ForeignKeyRow {
-  return {
-    constraintName: row.CONSTRAINT_NAME,
-    fromSchema: row.OWNER,
-    fromTable: row.TABLE_NAME,
-    fromColumn: row.COLUMN_NAME,
-    toSchema: row.R_OWNER,
-    toTable: row.R_TABLE_NAME,
-    toColumn: row.R_COLUMN,
-    ordinalPosition: Number(row.POSITION),
-    onDelete: row.DELETE_RULE,
-  };
 }
 
 export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Connection> {
@@ -584,25 +544,30 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
   async getOutgoingKeys(table: string, schema?: string) {
     // Foreign keys defined on this table (referencing other tables)
     const sql = `
-      ${FOREIGN_KEY_COLUMNS_SQL}
+      ${foreignKeyColumnsSql}
       AND a.table_name = ${D.escapeString(table.toUpperCase(), true)}
       ${schema ? `AND a.owner = ${D.escapeString(schema.toUpperCase(), true)}` : ''}
       ORDER BY a.constraint_name, a.position
     `;
     const rows = await this.driverExecuteSimple(sql);
-    return groupForeignKeyRows(rows.map(toForeignKeyRow));
+    return this.parseForeignKeys(rows);
   }
 
   async getIncomingKeys(table: string, schema?: string) {
     // Foreign keys on other tables that reference this table
     const sql = `
-      ${FOREIGN_KEY_COLUMNS_SQL}
+      ${foreignKeyColumnsSql}
       AND c_pk.table_name = ${D.escapeString(table.toUpperCase(), true)}
       ${schema ? `AND c_pk.owner = ${D.escapeString(schema.toUpperCase(), true)}` : ''}
       ORDER BY a.owner, a.table_name, a.constraint_name, a.position
     `;
     const rows = await this.driverExecuteSimple(sql);
-    return groupForeignKeyRows(rows.map(toForeignKeyRow));
+    return this.parseForeignKeys(rows);
+  }
+
+  // Column names come back in upper case.
+  protected parseForeignKeyRow(row: any): ForeignKeyRow {
+    return super.parseForeignKeyRow(_.mapKeys(row, (_value, key) => key.toLowerCase()));
   }
 
 

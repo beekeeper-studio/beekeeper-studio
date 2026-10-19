@@ -12,7 +12,6 @@ import ed25519AuthPlugin from "@coresql/mysql2-auth-ed25519";
 import knexlib from "knex";
 import { readFileSync } from "fs";
 import _ from "lodash";
-import { ForeignKeyRow, groupForeignKeyRows } from "./foreignKeys";
 import {
   buildDeleteQueries,
   buildInsertQuery,
@@ -27,6 +26,7 @@ import {
   DatabaseElement,
 } from "../types";
 import { MysqlCursor } from "./mysql/MySqlCursor";
+import { foreignKeyColumnsSql } from "./mysql/scripts";
 import {createCancelablePromise} from "@/common/utils";
 import { errors } from "@/lib/errors";
 import { MySqlChangeBuilder } from "@shared/lib/sql/change_builder/MysqlChangeBuilder";
@@ -202,40 +202,6 @@ function filterDatabase(
   }
 
   return true;
-}
-
-// One row per foreign-key column. Callers append the WHERE / ORDER BY.
-const FOREIGN_KEY_COLUMNS_SQL = `
-  SELECT
-    cu.constraint_name AS constraint_name,
-    cu.table_name AS from_table,
-    cu.column_name AS from_column,
-    cu.referenced_table_name AS to_table,
-    cu.referenced_column_name AS to_column,
-    cu.ordinal_position AS ordinal_position,
-    rc.update_rule AS on_update,
-    rc.delete_rule AS on_delete
-  FROM information_schema.key_column_usage cu
-  JOIN information_schema.referential_constraints rc
-    ON cu.constraint_name = rc.constraint_name
-    AND cu.constraint_schema = rc.constraint_schema
-`;
-
-// MySQL has no schema level below the database, and tables are listed
-// without one, so both schema fields stay blank.
-function toForeignKeyRow(row: any): ForeignKeyRow {
-  return {
-    constraintName: row.constraint_name,
-    fromSchema: "",
-    fromTable: row.from_table,
-    fromColumn: row.from_column,
-    toSchema: "",
-    toTable: row.to_table,
-    toColumn: row.to_column,
-    ordinalPosition: Number(row.ordinal_position),
-    onUpdate: row.on_update,
-    onDelete: row.on_delete,
-  };
 }
 
 export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConnection> {
@@ -758,14 +724,14 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
   ): Promise<TableKey[]> {
     // Foreign keys defined on this table (referencing other tables)
     const sql = `
-      ${FOREIGN_KEY_COLUMNS_SQL}
+      ${foreignKeyColumnsSql}
       WHERE cu.table_schema = database()
         AND cu.table_name = ?
         AND cu.referenced_table_name IS NOT NULL
       ORDER BY cu.constraint_name, cu.ordinal_position
     `;
     const { rows } = await this.driverExecuteSingle(sql, { params: [table] });
-    return groupForeignKeyRows(rows.map(toForeignKeyRow));
+    return this.parseForeignKeys(rows);
   }
 
   async getIncomingKeys(
@@ -774,13 +740,13 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
   ): Promise<TableKey[]> {
     // Foreign keys on other tables that reference this table
     const sql = `
-      ${FOREIGN_KEY_COLUMNS_SQL}
+      ${foreignKeyColumnsSql}
       WHERE cu.table_schema = database()
         AND cu.referenced_table_name = ?
       ORDER BY cu.constraint_name, cu.ordinal_position
     `;
     const { rows } = await this.driverExecuteSingle(sql, { params: [table] });
-    return groupForeignKeyRows(rows.map(toForeignKeyRow));
+    return this.parseForeignKeys(rows);
   }
 
   async getTableProperties(

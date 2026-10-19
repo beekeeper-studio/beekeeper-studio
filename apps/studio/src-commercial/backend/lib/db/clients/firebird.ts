@@ -41,7 +41,6 @@ import {
   QueryLogOptions,
 } from "@/lib/db/clients/BasicDatabaseClient";
 import _ from "lodash";
-import { ForeignKeyRow, groupForeignKeyRows } from "@/lib/db/clients/foreignKeys";
 import { joinFilters } from "@/common/utils";
 import { FirebirdChangeBuilder } from "@shared/lib/sql/change_builder/FirebirdChangeBuilder";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
@@ -54,8 +53,9 @@ import {
   createDatabase,
 } from "./firebird/NodeFirebirdWrapper";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
-import { TableKey } from "@shared/lib/dialects/models";
+import { ForeignKeyRow, TableKey } from "@shared/lib/dialects/models";
 import { FirebirdCursor } from "./firebird/FirebirdCursor";
+import { foreignKeyColumnsSql } from "./firebird/scripts";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { GenericBinaryTranscoder } from "@/lib/db/serialization/transcoders";
 import BksConfig from "@/common/bksConfig";
@@ -221,42 +221,6 @@ function buildInsertQueries(knex: Knex, inserts: TableInsert[], { runAsUpsert = 
 interface FirebirdReservedConnection {
   connection: Connection,
   transaction: Transaction
-}
-
-// One row per foreign-key column. Callers append the WHERE / ORDER BY.
-const FOREIGN_KEY_COLUMNS_SQL = `
-  SELECT
-    TRIM(FK.RDB$CONSTRAINT_NAME) AS CONSTRAINT_NAME,
-    TRIM(FK.RDB$RELATION_NAME) AS FROM_TABLE,
-    TRIM(ISF.RDB$FIELD_NAME) AS FROM_COLUMN,
-    TRIM(PK.RDB$RELATION_NAME) AS TO_TABLE,
-    TRIM(ISP.RDB$FIELD_NAME) AS TO_COLUMN,
-    ISF.RDB$FIELD_POSITION AS FIELD_POSITION,
-    TRIM(RC.RDB$UPDATE_RULE) AS ON_UPDATE,
-    TRIM(RC.RDB$DELETE_RULE) AS ON_DELETE
-  FROM RDB$RELATION_CONSTRAINTS PK
-    JOIN RDB$REF_CONSTRAINTS RC ON PK.RDB$CONSTRAINT_NAME = RC.RDB$CONST_NAME_UQ
-    JOIN RDB$RELATION_CONSTRAINTS FK ON FK.RDB$CONSTRAINT_NAME = RC.RDB$CONSTRAINT_NAME
-    JOIN RDB$INDEX_SEGMENTS ISF ON ISF.RDB$INDEX_NAME = FK.RDB$INDEX_NAME
-    JOIN RDB$INDEX_SEGMENTS ISP ON ISP.RDB$INDEX_NAME = PK.RDB$INDEX_NAME AND ISP.RDB$FIELD_POSITION = ISF.RDB$FIELD_POSITION
-  WHERE FK.RDB$CONSTRAINT_TYPE = 'FOREIGN KEY'
-    AND PK.RDB$CONSTRAINT_TYPE IN ('PRIMARY KEY', 'UNIQUE')
-`;
-
-// Firebird has no schemas.
-function toForeignKeyRow(row: any): ForeignKeyRow {
-  return {
-    constraintName: row["CONSTRAINT_NAME"],
-    fromSchema: "",
-    fromTable: row["FROM_TABLE"],
-    fromColumn: row["FROM_COLUMN"],
-    toSchema: "",
-    toTable: row["TO_TABLE"],
-    toColumn: row["TO_COLUMN"],
-    ordinalPosition: Number(row["FIELD_POSITION"]),
-    onUpdate: row["ON_UPDATE"],
-    onDelete: row["ON_DELETE"],
-  };
 }
 
 export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, FirebirdReservedConnection> {
@@ -1011,13 +975,13 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
     // Foreign keys defined on this table (referencing other tables)
     const result = await this.driverExecuteSingle(
       `
-        ${FOREIGN_KEY_COLUMNS_SQL}
+        ${foreignKeyColumnsSql}
         AND FK.RDB$RELATION_NAME = ?
         ORDER BY CONSTRAINT_NAME, ISF.RDB$FIELD_POSITION
       `,
       { params: [table.toUpperCase()] }
     );
-    return groupForeignKeyRows(result.rows.map(toForeignKeyRow));
+    return this.parseForeignKeys(result.rows);
   }
 
   async getIncomingKeys(
@@ -1027,13 +991,18 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
     // Foreign keys on other tables that reference this table
     const result = await this.driverExecuteSingle(
       `
-        ${FOREIGN_KEY_COLUMNS_SQL}
+        ${foreignKeyColumnsSql}
         AND PK.RDB$RELATION_NAME = ?
         ORDER BY FROM_TABLE, CONSTRAINT_NAME, ISF.RDB$FIELD_POSITION
       `,
       { params: [table.toUpperCase()] }
     );
-    return groupForeignKeyRows(result.rows.map(toForeignKeyRow));
+    return this.parseForeignKeys(result.rows);
+  }
+
+  // Column names come back in upper case.
+  protected parseForeignKeyRow(row: any): ForeignKeyRow {
+    return super.parseForeignKeyRow(_.mapKeys(row, (_value, key) => key.toLowerCase()));
   }
 
   async executeQuery(

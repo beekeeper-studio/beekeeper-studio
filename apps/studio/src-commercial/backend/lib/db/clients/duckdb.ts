@@ -13,7 +13,6 @@ import {
 import { parseQuotedEnumValues } from "@/lib/db/clients/enumParsers";
 import knexlib, { Knex } from "knex";
 import _ from "lodash";
-import { ForeignKeyRow, groupForeignKeyRows } from "@/lib/db/clients/foreignKeys";
 import rawLog from "@bksLogger";
 import { Client_DuckDB as DuckDBKnexClient } from "@shared/lib/knex-duckdb";
 import { loadDuckDB } from "@shared/lib/knex-duckdb/loadDuckDB";
@@ -47,6 +46,7 @@ import {
 } from "@/lib/db/models";
 import { joinFilters } from "@/common/utils";
 import { DuckDBCursor } from "./duckdb/DuckDBCursor";
+import { foreignKeyColumnsSql } from "./duckdb/scripts";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
 import { DuckDBChangeBuilder } from "@shared/lib/sql/change_builder/DuckDBChangeBuilder";
 import { DuckDBData } from "@shared/lib/dialects/duckdb";
@@ -197,44 +197,6 @@ function buildSelectTopQuery(
       ${_.isNumber(offset) ? `OFFSET ${offset}` : ""}
     `;
   return { query: sql, countQuery: countSQL, params: filterParams };
-}
-
-// One row per foreign-key column. Callers append the WHERE / ORDER BY.
-const FOREIGN_KEY_COLUMNS_SQL = `
-  SELECT
-    kcu1.constraint_name,
-    kcu1.constraint_schema AS from_schema,
-    kcu1.table_name AS from_table,
-    kcu1.column_name AS from_column,
-    kcu1.ordinal_position,
-    kcu2.constraint_schema AS to_schema,
-    kcu2.table_name AS to_table,
-    kcu2.column_name AS to_column,
-    rc.update_rule,
-    rc.delete_rule
-  FROM information_schema.key_column_usage AS kcu1
-    JOIN information_schema.referential_constraints AS rc
-      ON kcu1.constraint_name = rc.constraint_name
-      AND kcu1.constraint_schema = rc.constraint_schema
-    JOIN information_schema.key_column_usage AS kcu2
-      ON kcu2.constraint_name = rc.unique_constraint_name
-      AND kcu2.constraint_schema = rc.unique_constraint_schema
-      AND kcu2.ordinal_position = kcu1.ordinal_position
-`;
-
-function toForeignKeyRow(row: any): ForeignKeyRow {
-  return {
-    constraintName: row.constraint_name,
-    fromSchema: row.from_schema,
-    fromTable: row.from_table,
-    fromColumn: row.from_column,
-    toSchema: row.to_schema,
-    toTable: row.to_table,
-    toColumn: row.to_column,
-    ordinalPosition: Number(row.ordinal_position),
-    onUpdate: row.update_rule,
-    onDelete: row.delete_rule,
-  };
 }
 
 export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
@@ -603,26 +565,26 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     // Foreign keys defined on this table (referencing other tables)
     const { rows } = await this.driverExecuteSingle(
       `
-      ${FOREIGN_KEY_COLUMNS_SQL}
+      ${foreignKeyColumnsSql}
       WHERE kcu1.table_schema = ? AND kcu1.table_name = ?
       ORDER BY kcu1.constraint_name, kcu1.ordinal_position
       `,
       { params: [schema, table] }
     );
-    return groupForeignKeyRows(rows.map(toForeignKeyRow));
+    return this.parseForeignKeys(rows);
   }
 
   async getIncomingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
     // Foreign keys on other tables that reference this table
     const { rows } = await this.driverExecuteSingle(
       `
-      ${FOREIGN_KEY_COLUMNS_SQL}
+      ${foreignKeyColumnsSql}
       WHERE kcu2.table_schema = ? AND kcu2.table_name = ?
       ORDER BY kcu1.constraint_schema, kcu1.table_name, kcu1.constraint_name, kcu1.ordinal_position
       `,
       { params: [schema, table] }
     );
-    return groupForeignKeyRows(rows.map(toForeignKeyRow));
+    return this.parseForeignKeys(rows);
   }
 
   async defaultSchema(): Promise<string> {

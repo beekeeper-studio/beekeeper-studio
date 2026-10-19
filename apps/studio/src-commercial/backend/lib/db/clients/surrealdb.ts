@@ -1,6 +1,6 @@
 import { ProvidedAuth, RecordId } from "surrealdb";
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, BksField, CancelableQuery, BksFieldType, TableChanges, TableUpdateResult, TableInsert, TableUpdate, TableDelete } from "@/lib/db/models";
-import { TableKey } from "@/shared/lib/dialects/models";
+import { ForeignKeyRow, TableKey } from "@/shared/lib/dialects/models";
 import { _baseTest } from "@playwright/test";
 import { DatabaseElement, IDbConnectionDatabase, SurrealAuthType } from "@/lib/db/types";
 import rawLog from '@bksLogger';
@@ -12,7 +12,7 @@ import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilder
 import { SurrealDBChangeBuilder } from "@/shared/lib/sql/change_builder/SurrealDBChangeBuilder";
 import { SurrealConn, SurrealPool } from "./surrealdb/SurrealDBPool";
 import _ from "lodash";
-import { ForeignKeyRow, groupForeignKeyRows } from "@/lib/db/clients/foreignKeys";
+import { groupForeignKeyRows } from "@/lib/db/clients/utils";
 import { surrealEscapeValue } from "@/shared/lib/dialects/surrealdb";
 import { uuidv4 } from "@/lib/uuid";
 
@@ -63,29 +63,6 @@ const surrealContext = {
   logQuery(_query: string, _options: QueryLogOptions, _context: ExecutionContext): Promise<number | string> {
     return null
   }
-}
-
-// `record<a, b>` fields link to one or more tables; each target table is
-// reported as its own key. SurrealDB has no constraint names, schemas or
-// referential actions for record links.
-function recordLinkTargets(dataType: string): string[] {
-  const match = dataType.match(/^\brecord\s*<\s*([a-z0-9_,\s]+)\s*>/i);
-  if (!match) return [];
-  return match[1].split(',').map((t) => t.trim()).filter(Boolean);
-}
-
-function recordLinkRow(fromTable: string, column: string, toTable: string): ForeignKeyRow {
-  return {
-    constraintName: `${fromTable}_${column}_fkey`,
-    fromSchema: '',
-    fromTable,
-    fromColumn: column,
-    toSchema: '',
-    toTable,
-    toColumn: 'id',
-    onDelete: null, // TODO (@day): pull this from table info definitions
-    onUpdate: null,
-  };
 }
 
 export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
@@ -392,8 +369,8 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     // Record links defined on this table (referencing other tables)
     const rows: ForeignKeyRow[] = [];
     for (const col of await this.listTableColumns(table)) {
-      for (const toTable of recordLinkTargets(col.dataType)) {
-        rows.push(recordLinkRow(table, col.columnName, toTable));
+      for (const toTable of this.recordLinkTargets(col.dataType)) {
+        rows.push(this.recordLinkRow(table, col.columnName, toTable));
       }
     }
     return groupForeignKeyRows(rows);
@@ -404,12 +381,35 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     const rows: ForeignKeyRow[] = [];
     for (const { name } of await this.listTables()) {
       for (const col of await this.listTableColumns(name)) {
-        if (recordLinkTargets(col.dataType).includes(table)) {
-          rows.push(recordLinkRow(name, col.columnName, table));
+        if (this.recordLinkTargets(col.dataType).includes(table)) {
+          rows.push(this.recordLinkRow(name, col.columnName, table));
         }
       }
     }
     return groupForeignKeyRows(rows);
+  }
+
+  // `record<a, b>` fields link to one or more tables; each target table is
+  // reported as its own key.
+  private recordLinkTargets(dataType: string): string[] {
+    const match = dataType.match(/^\brecord\s*<\s*([a-z0-9_,\s]+)\s*>/i);
+    if (!match) return [];
+    return match[1].split(',').map((t) => t.trim()).filter(Boolean);
+  }
+
+  // SurrealDB has no constraint names, schemas or referential actions for
+  // record links.
+  // TODO (@day): pull onDelete from the table info definitions
+  private recordLinkRow(fromTable: string, column: string, toTable: string): ForeignKeyRow {
+    return {
+      constraintName: `${fromTable}_${column}_fkey`,
+      fromSchema: '',
+      fromTable,
+      fromColumn: column,
+      toSchema: '',
+      toTable,
+      toColumn: 'id',
+    };
   }
   async query(queryText: string, _tabId?: number, options?: any): Promise<CancelableQuery> {
     return {
