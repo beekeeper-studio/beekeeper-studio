@@ -25,7 +25,6 @@ import { ExternalMenuItem, JsonValue } from "@/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
 import { cssVars } from "./cssVars";
-import legacyCss from "./legacyCssVars.css?raw";
 import type { DialectData } from "@/shared/lib/dialects/models";
 
 type Table = {
@@ -70,23 +69,14 @@ export default class PluginStoreService {
     /** Key = css property, value = css value */
     const palette: Record<string, string> = {};
 
-    for (const entry of cssVars) {
-      if (typeof entry === "string") {
-        palette[_.camelCase(entry)] = styles.getPropertyValue(entry).trim();
-        continue;
-      }
-      palette[_.camelCase(entry.name)] = entry.value.replace(
-        /var\((--[\w-]+)\)/g,
-        (_match, name) => styles.getPropertyValue(name).trim()
-      );
+    for (const name of cssVars) {
+      const camelKey = _.camelCase(name);
+      palette[camelKey] = styles.getPropertyValue(name).trim();
     }
 
     const cssString = cssVars
-      .map((entry) => {
-        const name = typeof entry === "string" ? entry : entry.name;
-        return `${name}: ${palette[_.camelCase(name)]};`;
-      })
-      .join("") + legacyCss;
+      .map((cssProp) => `${cssProp}: ${palette[_.camelCase(cssProp)]};`)
+      .join("");
 
     return {
       type: this.store.getters["theme/dark"] ? "dark" : "light",

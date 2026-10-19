@@ -39,7 +39,6 @@ module.exports = {
     '^@commercial(.*)$': '<rootDir>/src-commercial/$1',
     '^@bksLogger$': '<rootDir>/src/lib/log/mainLogger.ts',
     '^@tests(.*)$': '<rootDir>/tests/$1',
-    '\\?raw$': '<rootDir>/tests/__mocks__/raw.js',
     '^@beekeeperstudio/ui-kit$': resolve(__dirname, '../ui-kit/lib/index.ts'),
   },
   // serializer for snapshots
