@@ -18,9 +18,9 @@ interface LicenseLike {
 }
 
 /**
- * One notice per license and coverage boundary. Renewing moves the boundary
- * (a newer maxAllowedAppRelease), so a subscription that lapses a second time
- * is announced again, while app updates inside the same boundary are not.
+ * One notice per license key and coverage boundary. A new key is a new
+ * notice, and so is a moved boundary (a newer maxAllowedAppRelease) on the
+ * same key, while app updates inside the same boundary are not.
  */
 export function lifetimeVersionNoticeId(license: LicenseLike | null | undefined): string | null {
   if (!license) return null

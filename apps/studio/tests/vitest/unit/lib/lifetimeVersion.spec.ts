@@ -16,7 +16,7 @@ describe('lifetime-version notice', () => {
 
   it('identifies a notice by license key and coverage boundary', () => {
     expect(lifetimeVersionNoticeId({ key: 'abc', maxAllowedAppRelease: { tagName: 'v5.2.3' } })).toBe('abc@v5.2.3')
-    // renewing moves the boundary, so the next lapse is a new notice
+    // a moved boundary on the same key is a new notice
     expect(lifetimeVersionNoticeId({ key: 'abc', maxAllowedAppRelease: { tagName: 'v6.0.0' } })).toBe('abc@v6.0.0')
     expect(lifetimeVersionNoticeId({ key: 'abc', maxAllowedAppRelease: null })).toBe('abc@')
     expect(lifetimeVersionNoticeId(null)).toBeNull()

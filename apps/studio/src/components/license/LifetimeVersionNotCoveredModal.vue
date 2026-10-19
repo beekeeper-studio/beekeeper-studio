@@ -4,7 +4,7 @@
     :name="modalName"
     :closable="false"
     first-focusable=".btn-primary"
-    @submit="renew"
+    @submit="buyLicense"
   >
     <template #title>
       <i class="material-icons">update</i>
@@ -19,9 +19,9 @@
 
       <ul class="lifetime-version-options">
         <li>
-          <i class="material-icons">autorenew</i>
+          <i class="material-icons">shopping_cart</i>
           <span>
-            <strong>Renew your subscription</strong> to unlock this version and every update after it.
+            <strong>Buy a new license</strong> to unlock this version and every update after it.
           </span>
         </li>
         <li>
@@ -62,9 +62,9 @@
       </button>
       <button
         type="submit"
-        class="btn btn-primary lifetime-version-renew"
+        class="btn btn-primary lifetime-version-buy"
       >
-        Renew subscription
+        Buy a new license
       </button>
     </template>
   </base-modal>
@@ -91,8 +91,9 @@ const PRICING_URL = "https://www.beekeeperstudio.io/pricing";
  * subscription keeps every release up to its last one, so the license is
  * still good, just not for this build, which runs as the Community Edition.
  * This dialog says so, once per license and coverage boundary, and names the
- * ways out: renew, install the last covered release, or carry on as Community.
- * It never offers a downgrade; there is nothing to give up.
+ * ways out: buy a new license (a lapsed subscription cannot be reactivated),
+ * install the last covered release, or carry on as Community. It never
+ * offers a downgrade; there is nothing to give up.
  *
  * Like TrialEndedModal it has no close button: "Use Community Edition" is
  * the acknowledgement. It is shared between the app's windows
@@ -146,8 +147,8 @@ export default Vue.extend({
         if (show) {
           this.show();
         } else if (this.open) {
-          // The license now covers this version (renewed, or a different key
-          // was entered), or another window acknowledged the notice.
+          // The license now covers this version (a new key was entered), or
+          // another window acknowledged the notice.
           this.release();
         }
       },
@@ -188,7 +189,7 @@ export default Vue.extend({
     enterLicense() {
       this.$root.$emit(AppEvent.enterLicense);
     },
-    renew() {
+    buyLicense() {
       this.$native.openLink(PRICING_URL);
     },
     openDownload() {

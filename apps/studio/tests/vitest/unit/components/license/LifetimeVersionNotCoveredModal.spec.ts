@@ -112,6 +112,9 @@ describe('LifetimeVersionNotCoveredModal', () => {
     expect(text).toContain('This is version 6.2.0')
     // it is not the trial dialog: nothing to downgrade from
     expect(text).not.toMatch(/Downgrade/)
+    // a lapsed subscription cannot be reactivated, so the way back is a new license
+    expect(text).toContain('Buy a new license')
+    expect(text).not.toMatch(/renew/i)
     expect(store.state.licenses.blockingDialog).toBe(MODAL_NAME)
     wrapper.destroy()
   })
@@ -133,7 +136,7 @@ describe('LifetimeVersionNotCoveredModal', () => {
     await flush()
     expect(mocks.$modal.show).not.toHaveBeenCalled()
 
-    // renewed and lapsed again: the license now stops at a later release
+    // the boundary moved: the same key now stops at a later release
     store.commit('licenses/setStatus', {
       ...NOT_COVERED,
       license: { ...LICENSE, maxAllowedAppRelease: { tagName: 'v6.0.0' } },
