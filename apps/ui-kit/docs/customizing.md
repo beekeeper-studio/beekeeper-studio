@@ -6,17 +6,8 @@ The UI Kit components can be styled using regular CSS. Since CSS variables are n
 
 ```css
 /* General component styling */
-.BksTable {
-  background-color: white;
-  --bks-table-header-bg-color: #ffffff;
-}
-
 .BksSqlTextEditor {
   background-color: #fafafa;
-}
-
-.BksEntityList .entity-item:hover {
-  background-color: rgba(0, 0, 0, 0.05);
 }
 ```
 
@@ -33,10 +24,7 @@ The UI Kit components can be styled using regular CSS. Since CSS variables are n
 
 ## Key Component Classes
 
-- `.BksTable` - Table component
 - `.BksSqlTextEditor` - SQL text editor component
-- `.BksEntityList` - Entity list component
-- `.BksDataEditor` - Data editor component
 
 ## Icon Limitations
 

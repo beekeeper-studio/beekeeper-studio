@@ -18,11 +18,6 @@ export default defineConfig({
   build: {
     lib: {
       entry: {
-        table: resolve(__dirname, "lib/components/table/define.ts"),
-        "entity-list": resolve(
-          __dirname,
-          "lib/components/entity-list/define.ts"
-        ),
         "sql-text-editor": resolve(
           __dirname,
           "lib/components/sql-text-editor/define.ts"
@@ -38,10 +33,6 @@ export default defineConfig({
         "surreal-text-editor": resolve(
           __dirname,
           "lib/components/surreal-text-editor/define.ts"
-        ),
-        "data-editor": resolve(
-          __dirname,
-          "lib/components/data-editor/define.ts"
         ),
         "super-formatter": resolve(
           __dirname,
