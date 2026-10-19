@@ -25,6 +25,14 @@
               class="material-icons verified-icon"
               v-if="plugin.origin === 'official'"
             >verified</i>
+            <span
+              v-if="pluginRepo?.downloadCount != null"
+              class="downloads"
+              :title="$pluralize('download', pluginRepo.downloadCount, true)"
+            >
+              <i class="material-icons">download</i>
+              <span>{{ pluginRepo.downloadCount }}</span>
+            </span>
           </div>
         </div>
       </div>
@@ -121,11 +129,13 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import Vue, { PropType } from "vue";
 import DOMPurify from "dompurify";
-import { marked } from "marked";
-import { getPluginAvatarUrl } from "@/services/plugin/utils";
+import { Marked } from "marked";
+import markedAlert from "marked-alert";
+import { getPluginAvatarUrl, markedRepoUrlRewriter, markedVideoEmbed } from "@/services/plugin/utils";
 import DisableStateAlert from "./DisableStateAlert.vue";
+import { PluginRepository } from "@/services/plugin/types";
 
 export default Vue.extend({
   name: "PluginPage",
@@ -137,7 +147,7 @@ export default Vue.extend({
       type: Object, // FIXME (azmi): forgot what type this is!!!
       required: true,
     },
-    markdown: String,
+    pluginRepo: Object as PropType<PluginRepository>,
     loadingMarkdown: Boolean,
   },
   data() {
@@ -176,8 +186,16 @@ export default Vue.extend({
       return getPluginAvatarUrl(this.plugin, 160);
     },
     rawHtmlContent() {
-      if (!this.markdown) return "";
-      return DOMPurify.sanitize(marked.parse(this.markdown, { async: false }));
+      if (!this.pluginRepo?.readme) return "";
+      const marked = new Marked()
+        .use(markedAlert())
+        .use(markedVideoEmbed);
+
+      if (this.plugin.repo) {
+        marked.use({ walkTokens: markedRepoUrlRewriter(this.plugin.repo) });
+      }
+
+      return DOMPurify.sanitize(marked.parse(this.pluginRepo?.readme, { async: false, gfm: true, breaks: true }));
     },
   },
 });
@@ -197,6 +215,23 @@ $gutter-h: 1.5rem;
 .material-icons.verified-icon {
   font-size: 1em;
   color: var(--theme-secondary);
+}
+
+.downloads {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  margin-left: 0.5rem;
+  opacity: 0.7;
+  white-space: nowrap;
+
+  > * {
+    line-height: 1;
+  }
+
+  .material-icons {
+    font-size: 1.15em;
+  }
 }
 
 .identity {
@@ -239,7 +274,6 @@ $gutter-h: 1.5rem;
 .plugin-page-container {
   padding-inline: $gutter-h;
   overflow-y: auto;
-  border-left: 1px solid rgba($theme-base, 0.1);
   flex-grow: 1;
   flex-basis: 65%;
 
@@ -294,17 +328,88 @@ $gutter-h: 1.5rem;
     line-height: 1.625;
     padding-bottom: 1rem;
 
-    pre {
-      padding: 1rem;
-      border-radius: 0.375rem;
-      background-color: rgba($theme-base, 0.03);
-      overflow: auto;
-    }
+    ::v-deep {
+      pre {
+        padding: 1rem;
+        border-radius: 0.375rem;
+        background-color: rgba($theme-base, 0.03);
+        overflow: auto;
+      }
 
-    img {
-      max-width: 100%;
-      height: auto;
-      -webkit-user-drag: none;
+      img {
+        max-width: 100%;
+        height: auto;
+        -webkit-user-drag: none;
+      }
+
+      table {
+        display: block;
+        width: max-content;
+        max-width: 100%;
+        overflow: auto;
+        margin: 1rem 0;
+        border-collapse: collapse;
+        border-spacing: 0;
+      }
+
+      th,
+      td {
+        padding: 0.375rem 0.8rem;
+        border: 1px solid rgba($theme-base, 0.12);
+      }
+
+      th {
+        font-weight: 600;
+        background-color: rgba($theme-base, 0.04);
+      }
+
+      tbody tr:nth-child(even) {
+        background-color: rgba($theme-base, 0.025);
+      }
+
+      video {
+        display: block;
+        max-width: 100%;
+        max-height: 640px;
+        margin: 1rem 0;
+        border-radius: 0.375rem;
+      }
+
+      .markdown-alert {
+        --alert-color: var(--text);
+        margin: 1rem 0;
+        padding: 0.5rem 1rem;
+        border-left: 3px solid var(--alert-color);
+        border-radius: 0 6px 6px 0;
+        background: rgba($theme-base, 0.035);
+
+        > :first-child { margin-top: 0; }
+        > :last-child { margin-bottom: 0; }
+
+        p {
+          margin: 0.25rem 0;
+        }
+      }
+
+      .markdown-alert-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.25rem;
+        font-weight: 600;
+        color: var(--alert-color);
+
+        svg {
+          fill: currentColor;
+          flex-shrink: 0;
+        }
+      }
+
+      .markdown-alert-note { --alert-color: #{$brand-info}; }
+      .markdown-alert-tip { --alert-color: #{$brand-success}; }
+      .markdown-alert-important { --alert-color: #{$brand-purple}; }
+      .markdown-alert-warning { --alert-color: #{$brand-warning}; }
+      .markdown-alert-caution { --alert-color: #{$brand-danger}; }
     }
   }
 }

@@ -191,11 +191,13 @@ export interface PluginDisplayItem extends Plugin {
 export interface Release {
   manifest: Manifest;
   sourceArchiveUrl: string;
+  checksum: string;
 }
 
 export interface PluginRepository {
   latestRelease: Release;
   readme: string;
+  downloadCount?: number;
 }
 
 export interface RegistryConfig {

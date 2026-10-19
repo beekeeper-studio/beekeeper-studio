@@ -113,7 +113,7 @@ export default class PluginRegistry {
   }
 
   async reloadRepository(pluginId: string): Promise<PluginRepository> {
-    const entry = await this.findEntry(pluginId);
+    const entry: PluginRegistryEntry = await this.findEntry(pluginId);
 
     log.debug(
       `Fetching info for plugin "${pluginId}" (repo: ${entry.repo})...`
@@ -123,7 +123,8 @@ export default class PluginRegistry {
       const [owner, repo] = entry.repo.split("/");
       const info = await this.repositoryService.fetchPluginRepository(
         owner,
-        repo
+        repo,
+        entry.origin
       );
       this.repositories[pluginId] = info;
       return info;

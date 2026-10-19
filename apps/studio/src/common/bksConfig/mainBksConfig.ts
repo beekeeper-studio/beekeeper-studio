@@ -42,7 +42,14 @@ export function checkUnrecognized(
         continue;
       }
 
-      const unrecognized = !_.has(defaultConfig, path) && !_.has(deprecated, path);
+      let unrecognized = !_.has(defaultConfig, path) && !_.has(deprecated, path);
+
+      // Force recognized for custom registries (under the section `[pluginSystem.registries.customRegistryName]`)
+      // But only for the keys we want (`pluginSystem.registries.custom.hello` will throw a warning)
+      if (/^pluginSystem\.registries\.[^.]+(?:\.(?:owner|repo|file))?$/.test(path)) {
+        unrecognized = false;
+      }
+
       const value = obj[key];
 
       if (unrecognized) {
@@ -60,23 +67,6 @@ export function checkUnrecognized(
   }
 
   traverse(newConfig);
-
-  // Validate that pluginSystem.allow only contains known bundled plugin IDs
-  const allow = _.get(newConfig, "pluginSystem.allow") as string[] | undefined;
-  if (Array.isArray(allow)) {
-    const bundledPluginIds = globals.plugins.ensureInstalled.map((p) => p.id);
-    for (const id of allow) {
-      if (!bundledPluginIds.includes(id)) {
-        results.push({
-          type: "unknown-allow-plugin",
-          sourceName,
-          section: "pluginSystem",
-          path: "pluginSystem.allow",
-          value: id,
-        });
-      }
-    }
-  }
 
   return results;
 }

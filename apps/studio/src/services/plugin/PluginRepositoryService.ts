@@ -4,11 +4,15 @@ import { RequestError } from "@octokit/request-error";
 import { Manifest, PluginRepository, Release, RawPluginRegistryEntry, RegistryConfig, PluginRegistryEntry } from "./types";
 import { PluginSystemError } from "@/lib/errors";
 import rawLog from "@bksLogger";
+import { PluginsController } from "@/lib/cloud/controllers/PluginsController";
+import { CloudClient } from "@/lib/cloud/CloudClient";
+import platform_info from "@/common/platform_info";
 
 const log = rawLog.scope("PluginRepositoryService");
 
 export default class PluginRepositoryService {
   private octokit: Octokit;
+  private controller: PluginsController;
 
   constructor(options?: { octokitOptions?: OctokitOptions }) {
     this.octokit = new Octokit({
@@ -18,9 +22,41 @@ export default class PluginRepositoryService {
       log,
       ...options?.octokitOptions,
     });
+    this.controller = CloudClient.getPluginsController(platform_info.cloudUrl);
   }
 
-  async fetchLatestRelease(owner: string, repo: string): Promise<Release> {
+  async fetchRegistry(config: RegistryConfig): Promise<PluginRegistryEntry[]> {
+    let raw = [];
+    if (config.origin === 'official' || config.origin === 'community') {
+       raw = await this.controller.getRegistry(config.name);
+    } else {
+      // Custom is going to have to go through local GitHub API, we aren't going to cache for them
+      raw = await this.fetchJson(
+        config.owner,
+        config.repo,
+        config.file
+      )
+    }
+
+    return raw.map((entry) => ({
+      ...entry,
+      origin: config.origin
+    }));
+  }
+
+  async fetchPluginRepository(owner: string, repo: string, origin: string): Promise<PluginRepository> {
+    if (origin === 'official' || origin === 'community') {
+      const pluginRepo = await this.controller.getRepository(owner, repo);
+      return pluginRepo;
+    } else {
+      const latestRelease = await this.fetchLatestRelease(owner, repo);
+      const readme = await this.fetchReadme(owner, repo);
+      return { latestRelease, readme };
+    }
+  }
+
+
+  private async fetchLatestRelease(owner: string, repo: string): Promise<Release> {
     const response = await this.request(
       "GET /repos/{owner}/{repo}/releases/latest",
       {
@@ -81,26 +117,8 @@ export default class PluginRepositoryService {
       manifest,
       // FIXME rename this, it's not really "source".. idk..
       sourceArchiveUrl: asset.browser_download_url,
+      checksum: asset.digest
     };
-  }
-
-  async fetchRegistry(config: RegistryConfig): Promise<PluginRegistryEntry[]> {
-    const raw = await this.fetchJson(
-      config.owner,
-      config.repo,
-      config.file
-    )
-
-    return raw.map((entry) => ({
-      ...entry,
-      origin: config.origin
-    }));
-  }
-
-  async fetchPluginRepository(owner: string, repo: string): Promise<PluginRepository> {
-    const latestRelease = await this.fetchLatestRelease(owner, repo);
-    const readme = await this.fetchReadme(owner, repo);
-    return { latestRelease, readme };
   }
 
   protected async fetchReadme(owner: string, repo: string) {

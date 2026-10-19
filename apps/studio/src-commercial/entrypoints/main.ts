@@ -342,6 +342,11 @@ ipcMain.handle('clipboard:read', async () => {
   return await clipboard.readText();
 })
 
+ipcMain.on('app:restart', async () => {
+  app.relaunch();
+  app.exit();
+})
+
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {
   const rendererTrigger = path.join(process.cwd(), 'tmp/restart-renderer')

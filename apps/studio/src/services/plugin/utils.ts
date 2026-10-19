@@ -1,6 +1,7 @@
 import type { KeybindingTarget } from "@/types";
 import type { BksConfig } from "@/common/bksConfig/BksConfigProvider";
 import { Manifest, ManifestV0, ManifestV1, PluginMenuItem, PluginView } from "./types";
+import { Tokens } from "marked";
 import _ from "lodash";
 import rawLog from "@bksLogger";
 
@@ -85,3 +86,47 @@ export function getPluginAvatarUrl(
   const owner = plugin.repo?.split("/")[0];
   return owner ? `https://github.com/${owner}.png?size=${size}` : null;
 }
+
+
+function resolveRepoUrl(url: string, base: string): string {
+  if (!url || url.startsWith("#") || url.startsWith("//") || /^[a-z][a-z0-9+.-]*:/i.test(url)) {
+    return url;
+  }
+  // A leading slash means the repo root on GitHub, not the host root
+  return new URL(url.replace(/^\/+/, ""), base).toString();
+}
+
+export function markedRepoUrlRewriter(repo: string) {
+  const rawBase = `https://raw.githubusercontent.com/${repo}/HEAD/`;
+  const blobBase = `https://github.com/${repo}/blob/HEAD/`;
+  const htmlAttr = /(<(img|video|source|a)\b[^>]*?\b(src|href)\s*=\s*)(["'])(.*?)\4/gi;
+
+  return (token: Tokens.Generic) => {
+    if (token.type === "image") {
+      token.href = resolveRepoUrl(token.href, rawBase);
+    } else if (token.type === "link") {
+      token.href = resolveRepoUrl(token.href, blobBase);
+    } else if (token.type === "html") {
+      token.text = token.text.replace(htmlAttr, (_match, prefix, tag, _attr, quote, url) => {
+        const base = tag.toLowerCase() === "a" ? blobBase : rawBase;
+        return `${prefix}${quote}${resolveRepoUrl(url, base)}${quote}`;
+      });
+    }
+  };
+}
+
+const videoAttachmentUrl = /^https:\/\/github\.com\/(user-attachments\/assets|[^/]+\/[^/]+\/assets\/\d+)\/[0-9a-f-]+$/i;
+
+export const markedVideoEmbed = {
+  renderer: {
+    paragraph({ tokens }: Tokens.Paragraph) {
+      const only = tokens.length === 1 ? tokens[0] : null;
+      if (only?.type !== "link" || only.text !== only.href || !videoAttachmentUrl.test(only.href)) {
+        return false;
+      }
+      const src = only.href.replace(/"/g, "&quot;");
+      return `<video src="${src}" controls muted playsinline preload="metadata"></video>\n`;
+    },
+  },
+};
+

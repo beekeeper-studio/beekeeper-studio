@@ -481,7 +481,6 @@ declare interface IBksConfig {
         };
     };
     pluginSystem: {
-        allow: string[];
         autoUpdate: boolean;
         communityDisabled: boolean;
         disabled: boolean;

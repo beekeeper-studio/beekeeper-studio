@@ -3,6 +3,7 @@ import { PluginSnapshot } from "@/services/plugin";
 import { Module, ModuleOptions } from "@/services/plugin/Module";
 import { PluginSystemError } from "@/lib/errors";
 import { BksConfig } from "@/common/bksConfig/BksConfigProvider";
+import globals from "@/common/globals";
 
 type ConfigurationOptions = {
   config: BksConfig;
@@ -73,6 +74,7 @@ export class ConfigurationModule extends Module {
   }
 
   private applyConfig(snapshots: PluginSnapshot[]): PluginSnapshot[] {
+    const allowedPluginIds = globals.plugins.ensureInstalled.map((p) => p.id);
     return snapshots.map((snapshot) => {
       // Do not override disable state
       if (snapshot.disableState.disabled) {
@@ -80,7 +82,7 @@ export class ConfigurationModule extends Module {
       }
 
       if (this.options.config.pluginSystem.disabled) {
-        if (this.options.config.pluginSystem.allow.includes(snapshot.manifest.id)) {
+        if (allowedPluginIds.includes(snapshot.manifest.id)) {
           return snapshot;
         }
 

@@ -78,6 +78,9 @@ export const api = {
   triggerInstall() {
     ipcRenderer.send('install-update');
   },
+  triggerRestart() {
+    ipcRenderer.send('app:restart');
+  },
   openExternally(link: string) {
     // URL protocol is validated in the main process by safeOpenExternal.
     ipcRenderer.send(AppEvent.openExternally, [link]);

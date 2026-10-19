@@ -13,37 +13,28 @@
     </template>
     <template>
       <div class="plugin-manager-content">
+        <plugin-disabled-overlay v-if="$bksConfig.pluginSystem.disabled"/>
         <div class="card padding control-card">
-          <div class="control-row">
-            <div class="control-info">
-              <span class="control-title">Install plugins</span>
-              <span class="control-description">
-                Browse and install plugins from the plugin registry.
-              </span>
-            </div>
-            <div class="control">
-              <button
-                class="btn btn-flat"
-                @click="browseRemote"
-              >
-                Install
-              </button>
-            </div>
-          </div>
-          <div class="control-row">
-            <div class="control-info">
-              <span class="control-title">Auto update</span>
-              <span class="control-description">
-                Allow plugins to be automatically updated on application launch.
-              </span>
-            </div>
-            <div class="control">
-              <x-switch
-                @click.prevent="autoUpdate = !autoUpdate"
-                :toggled="autoUpdate"
-              />
-            </div>
-          </div>
+          <control-row
+            title="Install plugins"
+            description="Browse and install plugins from the plugin registry."
+          >
+            <button
+              class="btn btn-flat"
+              @click="browseRemote"
+            >
+              Install
+            </button>
+          </control-row>
+          <control-row
+            title="Auto update"
+            description="Allow plugins to be automatically updated on application launch."
+          >
+            <x-switch
+              @click.prevent="autoUpdate = !autoUpdate"
+              :toggled="autoUpdate"
+            />
+          </control-row>
         </div>
         <div class="plugin-list-container">
           <div class="header-row">
@@ -61,19 +52,7 @@
               </a>
             </div>
           </div>
-          <!-- TODO (@day): I feel like maybe we want this to be more agressive. Like an overlay over the entire modal or something -->
           <div class="alerts">
-            <div
-              class="alert alert-warning"
-              v-if="$bksConfig.pluginSystem.disabled"
-            >
-              <template v-if="allowedPluginsText">
-                The plugin system is disabled. Installing and updating plugins is not available. Only the following bundled plugins are allowed to run: {{ allowedPluginsText }}.
-              </template>
-              <template v-else>
-                The plugin system is disabled. Installing and updating plugins is not available, and no plugins are allowed to run.
-              </template>
-            </div>
             <error-alert :error="errors" />
           </div>
           <plugin-list
@@ -99,34 +78,47 @@
         >
           <template>
             <div class="card padding control-card">
-              <div class="control-row">
-                <div class="control-info">
-                  <span class="control-title">Official Plugins</span>
-                  <span class="control-description">
-                    Official Plugins are built and maintained by the Beekeeper Studio Team
-                  </span>
-                </div>
-                <div class="control">
+              <control-row
+                title="Official Plugins"
+                description="Official Plugins are built and maintained by the Beekeeper Studio Team"
+              >
+                <x-switch
+                  @click.prevent="officialEnabled = !officialEnabled"
+                  :toggled="officialEnabled"
+                />
+              </control-row>
+              <control-row
+                title="Community Plugins"
+                description="Community plugins are developed and maintined by independent third parties, not by Beekeeper Studio. Use at your own risk."
+              >
+                <x-switch
+                  @click.prevent="communityEnabled = !communityEnabled"
+                  :toggled="communityEnabled"
+                />
+              </control-row>
+              <collapsible-section
+                more-text="More Options"
+              >
+                <control-row
+                  title="Custom Registries"
+                  description="Enable custom registries to find plugins from. These can be configured in your ini file. (Coming Soon™)"
+                >
                   <x-switch
-                    @click.prevent="officialEnabled = !officialEnabled"
-                    :toggled="officialEnabled"
+                    :disabled="true"
+                    @click.prevent="customEnabled = !customEnabled"
+                    :toggled="false"
                   />
-                </div>
-              </div>
-              <div class="control-row">
-                <div class="control-info">
-                  <span class="control-title">Community Plugins</span>
-                  <span class="control-description">
-                    Community plugins are developed and maintained by independent third parties, not by Beekeeper Studio. Use at your own risk.
-                  </span>
-                </div>
-                <div class="control">
+                </control-row>
+                <control-row
+                  title="Unlisted Plugins"
+                  description="Enable unlisted plugins. These are anonymouse plugins not found in a registry, just placed in your plugin directory manually."
+                >
                   <x-switch
-                    @click.prevent="communityEnabled = !communityEnabled"
-                    :toggled="communityEnabled"
+                    @click.prevent="unlistedEnabled = !unlistedEnabled"
+                    :toggled="unlistedEnabled"
                   />
-                </div>
-              </div>
+                </control-row>
+              </collapsible-section>
             </div>
             <plugin-list
               class="remote-plugin-list"
@@ -147,7 +139,7 @@
             <plugin-page
               v-if="selectedPlugin"
               :plugin="selectedPlugin"
-              :markdown="selectedPluginReadme"
+              :plugin-repo="selectedPluginRepo"
               :loading-markdown="loadingPluginReadme"
               @install="install(selectedPlugin)"
               @uninstall="uninstall(selectedPlugin)"
@@ -171,6 +163,9 @@ import _ from "lodash";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
 import Slideover from "@/components/common/Slideover.vue";
 import BaseModal from "@/components/common/modals/BaseModal.vue";
+import PluginDisabledOverlay from "./PluginDisabledOverlay.vue";
+import ControlRow from "@/components/common/ControlRow.vue";
+import CollapsibleSection from "@/components/common/CollapsibleSection.vue";
 import { PluginSystemError } from "@/lib/errors";
 import type { PluginSnapshot, Plugin, PluginRegistryEntry, PluginOrigin } from "@/services/plugin";
 import { mapGetters, mapState } from "vuex";
@@ -192,17 +187,28 @@ const INSTALL_ORDER: Record<"true" | "false", number> = {
 }
 
 export default Vue.extend({
-  components: { PluginList, PluginPage, ErrorAlert, Slideover, BaseModal },
+  components: {
+    PluginList,
+    PluginPage,
+    PluginDisabledOverlay,
+    ErrorAlert,
+    Slideover,
+    BaseModal,
+    ControlRow,
+    CollapsibleSection
+  },
   data() {
     return {
       modalName: "plugin-manager-modal",
       plugins: [],
       selectedPluginIdx: -1,
       selectedPluginReadme: "",
+      selectedPluginRepo: null,
       loadingPluginReadme: false,
       loadedPlugins: false,
       errors: null,
       loadingPlugins: false,
+      optionsAreExpanded: false
     };
   },
   async mounted() {
@@ -228,12 +234,6 @@ export default Vue.extend({
     },
     selectedPlugin() {
       return this.plugins[this.selectedPluginIdx];
-    },
-    allowedPluginsText() {
-      return window.bksConfig.pluginSystem.allow
-        .map((id) => this.snapshotsById[id]?.manifest.name)
-        .filter(Boolean)
-        .join(", ");
     },
     sortedInstalledPlugins() {
       return _.sortBy(this.plugins.filter((p: Plugin) => p.installed), this.pluginSorter);
@@ -274,6 +274,22 @@ export default Vue.extend({
       },
       async set(value) {
         await this.$util.send('config/writeUserValue', { path: 'pluginSystem.ultimateDisabled', value: !value });
+      }
+    },
+    customEnabled: {
+      get() {
+        return !this.$bksConfig.pluginSystem.thirdPartyRegistriesDisabled;
+      },
+      async set(value) {
+        await this.$util.send('config/writeUserValue', { path: 'pluginSystem.thirdPartyRegistriesDisabled', value: !value });
+      }
+    },
+    unlistedEnabled: {
+      get() {
+        return !this.$bksConfig.pluginSystem.unlistedDisabled;
+      },
+      async set(value) {
+        await this.$util.send('config/writeUserValue', { path: 'pluginSystem.unlistedDisabled', value: !value });
       }
     }
   },
@@ -400,12 +416,11 @@ export default Vue.extend({
     },
     async openPluginPage({ id }) {
       this.selectedPluginIdx = this.plugins.findIndex((p) => p.id === id);
-      this.selectedPluginReadme = "";
+      this.selectedPluginRepo = null;
       this.loadingPluginReadme = true;
       this.$refs.plugin_slideover.show();
       try {
-        const info = await this.$util.send("plugin/repository", { id });
-        this.selectedPluginReadme = info.readme;
+        this.selectedPluginRepo = await this.$util.send("plugin/repository", { id });
       } catch (e) {
         log.error(e);
 
@@ -501,6 +516,7 @@ $gutter-h: 1.5rem;
   display: flex;
   flex-direction: column;
   height: 100%;
+  position: relative;
 }
 
 .remote-plugin-list {
@@ -554,48 +570,23 @@ $gutter-h: 1.5rem;
   }
 }
 
-.control-row {
+.more-button {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  padding-block: 1rem;
+  gap: $gutter-h / 2;
+  letter-spacing: normal;
 
-  & + & {
-    border-top: 1px solid rgba($theme-base, 0.08);
+  padding: 0;
+  border: 0;
+  background-color: transparent;
+  font-size: 16px;
+  color: $text-light;
+  cursor: pointer;
+  font-size: inherit;
+  line-height: inherit;
+
+  &:hover {
+    color: $text-dark;
   }
-
-  &:first-child {
-    padding-top: 0;
-  }
-
-  &:last-child {
-    padding-bottom: 0;
-  }
-}
-
-.control-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.control-title {
-  color: $text-dark;
-}
-
-.control-description {
-  font-size: 0.85rem;
-  color: $text-lighter;
-  line-height: 1.4;
-  max-width: 60ch;
-}
-
-.control {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 }
 </style>
