@@ -29,7 +29,8 @@ export type PluginSystemErrorCode =
   | 'PLUGIN_NOT_SUPPORTED'
   | 'PLUGIN_SYSTEM_DISABLED'
   | 'INIT_TIMEOUT'
-  | 'PLUGIN_LIMIT_REACHED';
+  | 'PLUGIN_LIMIT_REACHED'
+  | 'CHECKSUM_MISMATCH';
 
 export type PluginErrorCode =
   | 'UNKNOWN'

@@ -1,5 +1,6 @@
 import rawLog from "@bksLogger";
 import fs from "fs";
+import crypto from "crypto";
 import path from "path";
 import {
   Downloader,
@@ -7,7 +8,7 @@ import {
   DownloaderReport,
 } from "nodejs-file-downloader";
 import { Manifest, PluginView, Release } from "./types";
-import { PluginError } from "@/lib/errors";
+import { PluginError, PluginSystemError } from "@/lib/errors";
 import extract from "extract-zip";
 import { tmpdir } from "os";
 
@@ -145,6 +146,13 @@ export default class PluginFileManager {
           "User-Agent": "Beekeeper Studio",
         },
       });
+
+      const checksum = await this.hashFile(archivePath);
+
+      log.debug(`Checking ${archivePath} against checksum ${release.checksum}`);
+      if (release.checksum && checksum !== release.checksum) {
+        throw new PluginSystemError('CHECKSUM_MISMATCH', "Checksum mismatch, blocking install.");
+      }
 
       // Extract the archive to the temp directory
       log.debug(`Extracting plugin archive...`);
@@ -355,6 +363,23 @@ export default class PluginFileManager {
       );
     }
     return resolved;
+  }
+
+  async hashFile(filePath: string): Promise<string> {
+    try {
+      const hash = crypto.createHash('sha256');
+      const rs = fs.createReadStream(filePath);
+
+      for await (const chunk of rs) {
+        hash.update(chunk);
+      }
+
+      return hash.digest('hex');
+    } catch (e) {
+      log.error(`Error calculating hash for ${filePath}`);
+      throw e;
+    }
+
   }
 
   readAsset(manifest: Manifest, filename: string): string {

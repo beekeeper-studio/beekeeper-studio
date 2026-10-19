@@ -94,7 +94,6 @@
     "electron-updater": "^6.3.0",
     "electron-util": "^0.14.1",
     "extract-zip": "^2.0.1",
-    "hasha": "^7.0.0",
     "humanize-duration": "^3.23.1",
     "indent-string": "^4.0.0",
     "ini": "git+https://github.com/beekeeper-studio/ini.git#10e308636a75fb4f1bfdba78b9b5ae30a15be2de",
