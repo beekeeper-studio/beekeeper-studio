@@ -812,7 +812,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     // identifier classifies that as a plain SELECT, so the read-only guard in
     // driverExecuteSingle never trips even though it creates a table. Enforce
     // read-only mode explicitly here.
-    if (await this.checkAllowReadOnly() && this.readOnlyMode) {
+    if (this.readOnlyMode) {
       throw new Error(errorMessages.readOnly)
     }
 

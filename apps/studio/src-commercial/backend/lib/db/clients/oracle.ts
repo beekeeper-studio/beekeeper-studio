@@ -780,7 +780,14 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
   async connect() {
     await super.connect();
 
-    const cliLocation = this.platformPath(this.server.config.instantClientLocation)
+    // A location saved by an x64 install still points at an x64 Instant Client,
+    // which an ARM64 process can't load. Ignore it and connect in thin mode.
+    if (this.server.config.instantClientLocation && !platformInfo.oracleInstantClientSupported) {
+      log.warn("Oracle Instant Client is not supported on this platform, ignoring the configured location and connecting in thin mode")
+    }
+    const cliLocation = platformInfo.oracleInstantClientSupported
+      ? this.platformPath(this.server.config.instantClientLocation)
+      : null
     // https://oracle.github.io/node-oracledb/doc/api.html#-152-optional-oracle-net-configuration
     const configLocation = this.platformPath(this.server.config.oracleConfigLocation)
 

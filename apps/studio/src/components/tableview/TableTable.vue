@@ -296,7 +296,6 @@
         </div>
       </modal>
     </portal>
-    <!-- <add-field-modal @done="cellAddCol(undefined, $event)"/> -->
   </div>
 </template>
 
@@ -1094,6 +1093,7 @@ export default Vue.extend({
     async pasteSelection() {
       if (!this.focusingTable() || !this.editable) return
       await pasteRange(_.last(this.tabulator.getRanges()))
+      this.tabulator.modules.selectRange.restoreFocus()
     },
     async pasteAsNewRowsShortcut() {
       // Keyboard path is scoped to the focused grid, so it never reaches the
@@ -1233,6 +1233,7 @@ export default Vue.extend({
       this.tabulator.on('cellEdited', this.cellEdited)
       this.tabulator.on("rangeEdited", (range) => {
         range.getModifiedCells().forEach((cell) => this.cellEdited(cell));
+        this.tabulator.modules.selectRange.restoreFocus()
       });
       this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
       this.tabulator.on('tableBuilt', () => {
@@ -1384,7 +1385,11 @@ export default Vue.extend({
       this.$refs.editorModal.openModal(cell.getValue(), undefined, eventParams)
     },
 
-    openEditorMenuByShortcut() {
+    openEditorMenuByShortcut(e: KeyboardEvent) {
+      // Only when the key was pressed inside the grid. Shift+Enter is a
+      // newline elsewhere (filter inputs, plugin prompts, whose iframes
+      // forward their key events to the document).
+      if (!this.tabulator?.element.contains(e.target as Node)) return
       const range: RangeComponent = _.last(this.tabulator.getRanges())
       const cell = range.getCells().flat()[0];
       // FIXME maybe we can avoid calling child methods directly like this?
@@ -1766,6 +1771,7 @@ export default Vue.extend({
 
       // remove pending updates for the row marked for deletion
       discardedUpdates.forEach(update => this.discardColumnUpdate(update))
+      // TODO (@day): we will also probably need to add this to the history somehow?? maybe it already is?
 
       this.$set(this.pendingChanges, 'updates', _.without(this.pendingChanges.updates, discardedUpdates))
 
@@ -1782,6 +1788,9 @@ export default Vue.extend({
       this.$set(this.pendingChanges, 'deletes', newDeletes);
     },
     resetPendingChanges() {
+      if (this.tabulator) {
+        this.tabulator.modules.history.clear();
+      }
       this.pendingChanges = {
         inserts: [],
         updates: [],

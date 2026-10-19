@@ -47,7 +47,7 @@ Cuando exportas una tabla, tablas o vista de tabla filtrada, Beekeeper Studio ej
 Hay algunas opciones para comenzar:
 - Ve a la vista del explorador de tablas, haz clic en el icono de engranaje en la parte inferior derecha y elige `Exportar`.
 - Haz clic derecho en la tabla y selecciona `Exportar a archivo`.
-- [Selecciona `Exportar datos` desde la barra de herramientas de la aplicacion.](#multitable)
+- [Selecciona `Exportar datos` desde la barra de herramientas de la aplicacion.](#exportacion-de-multiples-tablas)
 
 ![Modal de exportacion](../assets/images/data-export-157.png)
 
@@ -85,7 +85,7 @@ Para cualquier tabla en Beekeeper Studio, ya sea en el explorador de tablas o en
 
 ### Formatos de copia de filas
 
-- [TSV compatible con Excel](#tsv)
+- [TSV compatible con Excel](#exportar-facilmente-a-excel-o-google-sheets)
 - JSON
 - Markdown
 - SQL Insert
