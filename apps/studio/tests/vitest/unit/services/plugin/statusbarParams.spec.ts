@@ -26,8 +26,11 @@ const data: Row[] = [
   { c0: BigInt(2), c1: 'Brooklyn', c2: 'y' },
 ]
 
-/** A tabulator stand-in. `selection` is [first row, last row, column fields] */
-function fakeTabulator(selection?: [number, number, string[]]) {
+/**
+ * A tabulator stand-in. `selection` is [first row, last row, column fields].
+ * `selecting` is the range module's mode: "row" or "column" after a header click.
+ */
+function fakeTabulator(selection?: [number, number, string[]], selecting = 'cell') {
   const rows = data.map((d, i) => row(d, i + 1))
   const ranges = selection
     ? [{
@@ -39,6 +42,7 @@ function fakeTabulator(selection?: [number, number, string[]]) {
     getColumns: () => columns,
     getRows: () => rows,
     getRanges: () => ranges,
+    modules: { selectRange: { selecting } },
   } as any
 }
 
@@ -54,6 +58,13 @@ describe('selectedRange', () => {
 
   it('does not count the row header column', () => {
     expect(selectedRange(fakeTabulator([0, 0, ['--row-header--bks', 'c0']]))).toBeNull()
+  })
+
+  it('returns a row or column picked from its header, even when it is one cell', () => {
+    // A row of a one-column result, a column of a one-row result
+    expect(selectedRange(fakeTabulator([0, 0, ['c0']], 'row'))).not.toBeNull()
+    expect(selectedRange(fakeTabulator([0, 0, ['c0']], 'column'))).not.toBeNull()
+    expect(selectedRange(fakeTabulator([0, 0, ['c0']], 'all'))).not.toBeNull()
   })
 })
 
@@ -82,6 +93,15 @@ describe('buildParamsForStatusbar', () => {
 
     expect(params.source).toBe('selection')
     expect(params.activeRange).toEqual({ rows: [2], columns: ['id', 'city'], value: [[2, 'Brooklyn']] })
+  })
+
+  it('sends one row picked from its header, not the whole result', () => {
+    const params = buildParamsForStatusbar({
+      item: { tabulator: fakeTabulator([1, 1, ['c0']], 'row'), query: 'select id from cities' },
+    })
+
+    expect(params.source).toBe('selection')
+    expect(params.activeRange).toEqual({ rows: [2], columns: ['id'], value: [[2]] })
   })
 
   it('sends the table and its filters, not the loaded page, from a table view', () => {
@@ -132,6 +152,12 @@ describe('onSelectedCellsChange', () => {
       listeners.rangeChanged()
       vi.advanceTimersByTime(100)
       expect(callback).toHaveBeenLastCalledWith(4)
+
+      // The cell under the cursor is not a selection
+      ranges = fakeTabulator([0, 0, ['c0']]).getRanges()
+      listeners.rangeChanged()
+      vi.advanceTimersByTime(100)
+      expect(callback).toHaveBeenLastCalledWith(0)
 
       ranges = []
       listeners.rangeRemoved()

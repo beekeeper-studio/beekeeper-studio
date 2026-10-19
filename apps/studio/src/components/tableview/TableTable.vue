@@ -437,8 +437,8 @@ export default Vue.extend({
       return _.isEmpty(this.data);
     },
     visualizeHeader() {
-      return this.selectedCellCount > 1
-        ? `Open ${this.selectedCellCount} cells in`
+      return this.selectedCellCount > 0
+        ? `Open ${this.$pluralize('cell', this.selectedCellCount, true)} in`
         : `Open ${this.table.name} in`
     },
     isCassandra() {

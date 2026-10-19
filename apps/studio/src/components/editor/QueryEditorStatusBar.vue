@@ -319,8 +319,8 @@ export default {
       return this.result && this.result.rows ? this.result.rows.length : 0
     },
     visualizeHeader() {
-      if (this.selectedCells > 1) {
-        return `Open ${this.selectedCells} cells in`
+      if (this.selectedCells > 0) {
+        return `Open ${this.$pluralize('cell', this.selectedCells, true)} in`
       }
       return `Open ${this.rowCount} ${this.$pluralize('row', this.rowCount, false)} in`
     },

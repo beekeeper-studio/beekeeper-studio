@@ -64,6 +64,13 @@ describe("normalizeFilters", () => {
     ])
   })
 
+  it("leaves the caller's in filter as it was", () => {
+    const filters = [{ field: "city", type: "in", value: ["New York, NY", "LA"] }]
+    normalizeFilters(filters)
+    expect(filters[0].value).toEqual(["New York, NY", "LA"])
+    expect(normalizeFilters(filters)[0].value).toEqual(["New York, NY", "LA"])
+  })
+
   it("drops incomplete filters", () => {
     expect(normalizeFilters([{ field: "id", type: "=", value: "" }, { field: "id", type: "is", value: "null" }])).toEqual([
       { field: "id", type: "is", value: "null" },

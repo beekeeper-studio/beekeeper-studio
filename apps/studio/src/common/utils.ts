@@ -147,6 +147,9 @@ export function normalizeFilters(filters: TableFilter[]) {
       // Plugins can open a table with the values already split
       const value = Array.isArray(filter.value) ? filter.value : (filter.value as string).split(/\s*,\s*/);
       normalized.push({ ...filter, value });
+      // Leave the caller's value alone: joining an array would split values
+      // that contain commas the next time it is normalized
+      continue;
     } else {
       normalized.push(filter);
 

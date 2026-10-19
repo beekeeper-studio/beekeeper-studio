@@ -242,7 +242,7 @@ When a menu item is picked, the new tab can read how it was opened with [`getVie
 
 The **Visualize** menu sends what the user is looking at, and `source` says which:
 
-- `"selection"`: the user selected more than one cell. `activeRange` holds the selection, and the menu heading counts cells instead of rows.
+- `"selection"`: the user selected more than one cell, or a row or column from its header. `activeRange` holds the selection, and the menu heading counts cells instead of rows.
 - `"result"`: nothing is selected in a query result. `activeRange` holds every row of the result. `truncated` is true when the result stopped at the row limit, and `query` is the statement that produced it, so you can run it again for more rows.
 - `"table"`: nothing is selected in a table view. The grid only holds one page of the table, so no rows are sent. Read the table yourself from `entity`, applying `where` (the SQL condition for the filters in the table view), with a row limit that suits your plugin.
 

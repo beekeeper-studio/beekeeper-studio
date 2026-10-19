@@ -22,7 +22,8 @@ export type StatusbarMenuPayload = {
 /**
  * Params for `results.statusbar` and `tableTable.statusbar`.
  *
- * - `selection`: the user selected more than one cell. `activeRange` holds it.
+ * - `selection`: the user selected more than one cell, or a row or column
+ *   from its header. `activeRange` holds it.
  * - `result`: every row of a query result. `activeRange` holds it.
  * - `table`: a table view with nothing selected. The grid only holds one
  *   page, so no rows are sent: the plugin reads the table itself, with its
@@ -52,14 +53,15 @@ export function rangeCellCount(range: RangeComponent): number {
 }
 
 /**
- * Report the size of the latest range whenever a range is added, resized or
- * removed, by mouse or keyboard. Debounced: dragging fires on every cell.
+ * Report the size of the selection, or 0 without one, whenever a range is
+ * added, resized or removed, by mouse or keyboard. Debounced: dragging fires
+ * on every cell.
  */
 export function onSelectedCellsChange(tabulator: Tabulator, callback: (cells: number) => void) {
   const report = _.debounce(() => {
     let cells = 0;
     try {
-      const range = _.last(tabulator.getRanges?.() ?? []);
+      const range = selectedRange(tabulator);
       cells = range ? rangeCellCount(range) : 0;
     } catch {
       // The table was destroyed (e.g. replaced by a new result) before this ran
@@ -72,10 +74,20 @@ export function onSelectedCellsChange(tabulator: Tabulator, callback: (cells: nu
   }
 }
 
-/** The latest range, when it covers more than the one cell under the cursor. */
+/** Tabulator's range modes after a click on a row header, column header or the corner. */
+const HEADER_SELECTING = ["row", "column", "all"];
+
+/**
+ * The latest range, when the user selected it: more than the one cell under
+ * the cursor, or a row or column picked from its header, which is a single
+ * cell in a one-column or one-row result.
+ */
 export function selectedRange(tabulator: Tabulator): RangeComponent | null {
   const range = _.last(tabulator.getRanges?.() ?? []);
-  return range && rangeCellCount(range) > 1 ? range : null;
+  if (!range) return null;
+  // Not public API: the range module keeps the mode of the latest selection
+  const selecting = (tabulator as any).modules?.selectRange?.selecting;
+  return rangeCellCount(range) > 1 || HEADER_SELECTING.includes(selecting) ? range : null;
 }
 
 function rangeToActiveRange(range: RangeComponent): ActiveRange {

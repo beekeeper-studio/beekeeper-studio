@@ -29,8 +29,20 @@ function stripLeadingComments(sql: string): string {
   }
 }
 
+/** A table or column name, optionally quoted or qualified (`db.tbl`). */
+const NAME = /(?:`[^`]+`|"[^"]+"|[a-z_$][\w$]*)(?:\.(?:`[^`]+`|"[^"]+"|[a-z_$][\w$]*))*/.source;
+
+/** MySQL and MariaDB read `EXPLAIN tbl_name [col_name | 'wild']` as DESCRIBE. */
+const EXPLAIN_TABLE = new RegExp(`^explain\\s+(${NAME})(?:\\s+(?:${NAME}|'[^']*'))?\\s*;?\\s*$`, "i");
+
+/** Statements that fit that shape but do ask for a plan, e.g. `EXPLAIN TABLE t`. */
+const STATEMENT_KEYWORDS = new Set(["select", "table", "execute", "values"]);
+
 export function isExplainStatement(sql?: string | null): boolean {
-  return /^explain\b/i.test(stripLeadingComments(sql ?? ""));
+  const statement = stripLeadingComments(sql ?? "");
+  if (!/^explain\b/i.test(statement)) return false;
+  const describe = EXPLAIN_TABLE.exec(statement);
+  return !describe || STATEMENT_KEYWORDS.has(describe[1].toLowerCase());
 }
 
 export function hasPlanColumns(fields?: { name?: string }[] | null): boolean {
