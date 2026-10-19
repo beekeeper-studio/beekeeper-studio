@@ -76,5 +76,20 @@ export const SmartLocalStorage = {
   remove(key: string) {
     localStorage.removeItem(key);
   },
+  /**
+   * Calls `handler` when another window of the app writes or removes `key`,
+   * or clears storage altogether. Browsers fire `storage` in every window but
+   * the one that wrote, so this is how an answer given in one window reaches
+   * the rest. Returns a function that stops listening.
+   */
+  onChange(key: string, handler: (value: string | null) => void): () => void {
+    const listener = (event: StorageEvent) => {
+      // key is null when storage was cleared
+      if (event.key !== null && event.key !== key) return
+      handler(event.key === null ? null : event.newValue)
+    }
+    window.addEventListener('storage', listener)
+    return () => window.removeEventListener('storage', listener)
+  },
 
 }
