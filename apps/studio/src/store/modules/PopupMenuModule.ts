@@ -5,7 +5,12 @@ import { ContextItem, ContextOption, toMenuItem } from "@/plugins/BeekeeperPlugi
 import { divider, sectionLabel, MenuItem } from "@beekeeperstudio/ui-kit";
 import { CellComponent, ColumnComponent, MenuObject, MenuSeparator, RowComponent } from "tabulator-tables";
 import { createMenuItem, createMenuSectionLabel } from "@/lib/menu/tableMenu";
-import { AppEvent } from "@/common/AppEvent";
+import {
+  PLUGINS_SECTION_LABEL,
+  managePluginsItem,
+  noPluginsItem,
+  openPluginManager,
+} from "@/lib/menu/pluginMenuItems";
 import type { PluginMenuItemCondition } from "@/services/plugin/types";
 import Vue from "vue";
 
@@ -17,19 +22,28 @@ interface State {
 
 export type PluginMenuConditions = Partial<Record<PluginMenuItemCondition, boolean>>;
 
-export const PLUGINS_SECTION_LABEL = "Plugins";
-
-export function openPluginManager() {
-  // Routed through the main process, like the Tools > Manage Plugins menu item
-  window.main.send(AppEvent.menuClick, "managePlugins");
-}
-
-export const managePluginsItem: ContextItem = {
-  name: "Manage Plugins…",
-  slug: "manage-plugins",
-  leadingIcon: "extension",
-  handler: openPluginManager,
-};
+/**
+ * Popup menus that plugin placements can add items to. These always end with
+ * the Plugins section, even when no plugin adds anything, so plugin actions
+ * stay discoverable. Other menus get no section.
+ */
+export const PLUGIN_MENU_IDS: ReadonlySet<string> = new Set([
+  "editor.query",
+  "results.cell",
+  "results.columnHeader",
+  "results.rowHeader",
+  "results.corner",
+  "tableTable.cell",
+  "tableTable.columnHeader",
+  "tableTable.rowHeader",
+  "tableTable.corner",
+  "tab.query.header",
+  "tab.table.header",
+  "entity.table",
+  "entity.schema",
+  "entity.routine",
+  "structure.statusbar",
+]);
 
 /** Plugin items sorted A–Z by plugin name. Each plugin's items keep the order
  * they were added in (manifest order). */
@@ -61,8 +75,9 @@ export const PopupMenuModule: Module<State, RootState> = {
     },
     /**
      * The plugin section appended to a context menu: a divider, a "Plugins"
-     * label, the plugin items, then a divider and "Manage Plugins…". Empty
-     * when no plugin adds items to the menu.
+     * label, the plugin items, then a divider and "Manage Plugins…". When no
+     * plugin adds items, a disabled "No plugins…" row stands in for them.
+     * Empty for menus plugins can't add to.
      */
     getExtraPopupMenu(_state, getters) {
       return (
@@ -74,9 +89,12 @@ export const PopupMenuModule: Module<State, RootState> = {
           conditions?: PluginMenuConditions;
         }
       ) => {
-        const pluginItems: ContextItem[] = getters.getPluginMenuItems(menuId, options);
+        let pluginItems: ContextItem[] = getters.getPluginMenuItems(menuId, options);
         if (pluginItems.length === 0) {
-          return [];
+          if (!PLUGIN_MENU_IDS.has(menuId)) {
+            return [];
+          }
+          pluginItems = [noPluginsItem];
         }
 
         if (options?.transform === "ui-kit") {

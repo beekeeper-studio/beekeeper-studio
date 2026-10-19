@@ -837,6 +837,8 @@ x-menu {
   cursor: default;
   user-select: none;
   white-space: nowrap;
+  // Menus inside buttons inherit the button's centred text
+  text-align: left;
 }
 
 /*****************************************************************************************************************/

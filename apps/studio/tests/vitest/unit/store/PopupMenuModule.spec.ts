@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 // Import the app store (not the module directly): PopupMenuModule -> BeekeeperPlugin -> store is circular
 import store from '@/store'
+import { PLUGIN_MENU_IDS } from '@/store/modules/PopupMenuModule'
+import pluginMenuFactories from '@/services/plugin/web/PluginMenuFactories'
 
 const SLUG = 'map-plot-query'
 
@@ -31,10 +33,39 @@ describe('PopupMenuModule getExtraPopupMenu', () => {
     added.splice(0).forEach((options) => store.commit('popupMenu/remove', options))
   })
 
-  it('returns nothing when no plugin adds to the menu', () => {
-    expect(store.getters['popupMenu/getExtraPopupMenu']('editor.query', { transform: 'ui-kit' })).toEqual([])
-    expect(store.getters['popupMenu/getExtraPopupMenu']('results.cell', { transform: 'tabulator' })).toEqual([])
-    expect(store.getters['popupMenu/getExtraPopupMenu']('entity.table')).toEqual([])
+  it('shows a disabled "No plugins…" row in plugin menus no plugin adds to', () => {
+    const uiKit = store.getters['popupMenu/getExtraPopupMenu']('editor.query', { transform: 'ui-kit' })
+    expect(uiKit.map((item) => item.type ?? item.id)).toEqual(['divider', 'label', 'no-plugins', 'divider', 'manage-plugins'])
+    expect(uiKit[2]).toMatchObject({ label: 'No plugins…', disabled: true, leadingIcon: 'extension_off' })
+
+    const tabulator = store.getters['popupMenu/getExtraPopupMenu']('results.cell', { transform: 'tabulator' })
+    expect(tabulator).toHaveLength(5)
+    expect(tabulator[2]).toMatchObject({ disabled: true })
+    expect(tabulator[2].label).toContain('No plugins…')
+
+    const raw = store.getters['popupMenu/getExtraPopupMenu']('entity.table')
+    expect(raw[2]).toMatchObject({ slug: 'no-plugins', disabled: true })
+  })
+
+  it('adds nothing to menus plugins cannot add to', () => {
+    expect(store.getters['popupMenu/getExtraPopupMenu'](undefined, { transform: 'ui-kit' })).toEqual([])
+    expect(store.getters['popupMenu/getExtraPopupMenu']('tab.shell.header')).toEqual([])
+    expect(store.getters['popupMenu/getPluginMenuItems']('editor.query')).toEqual([])
+  })
+
+  it('knows every popup menu a placement adds to', () => {
+    const menuIds = new Set<string>()
+    const context = {
+      manifest: { id: 'p', name: 'P', capabilities: { views: [] } },
+      store: { addPopupMenuItem: (menuId: string) => menuIds.add(menuId) },
+    }
+    // The status bars and the editor toolbar are drawn by their components
+    const drawnByComponents = ['results.statusbar', 'tableTable.statusbar', 'editor.query.toolbar']
+    for (const [placement, factory] of Object.entries(pluginMenuFactories)) {
+      if (placement === 'newTabDropdown' || placement === 'menubar.tools') continue
+      factory.create(context as any, { command: 'c', name: 'C', view: 'v', placement } as any, {}).add()
+    }
+    expect([...menuIds].filter((id) => !drawnByComponents.includes(id)).sort()).toEqual([...PLUGIN_MENU_IDS].sort())
   })
 
   it('wraps plugin items in a labelled section ending with Manage Plugins', () => {

@@ -53,6 +53,16 @@
               </x-menuitem>
             </template>
             <hr>
+            <x-menuitem
+              v-if="!hasPluginTabItems"
+              disabled
+              :title="noPluginsItem.title"
+            >
+              <x-label>
+                <i class="material-icons">{{ noPluginsItem.leadingIcon }}</i>
+                {{ noPluginsItem.name }}
+              </x-label>
+            </x-menuitem>
             <x-menuitem @click.prevent="openPluginManager">
               <x-label>
                 <i class="material-icons">extension</i>
@@ -315,6 +325,7 @@ import DatabaseBackup from './TabDatabaseBackup.vue'
 import PluginShell from './TabPluginShell.vue'
 import PluginBase from './TabPluginBase.vue'
 import { AppEvent } from '../common/AppEvent'
+import { noPluginsItem } from '@/lib/menu/pluginMenuItems'
 import { mapGetters, mapState } from 'vuex'
 import Draggable from 'vuedraggable'
 import ShortcutHints from './editor/ShortcutHints.vue'
@@ -415,6 +426,14 @@ export default Vue.extend({
        'newTabDropdownItems': 'tabs/newTabDropdownItems',
        'getKeybindings': 'plugins/keybindings/getKeybindings',
     }),
+    hasPluginTabItems() {
+      return this.newTabDropdownItems.some(({ config }) =>
+        config.type === 'plugin-shell' || config.type === 'plugin-base'
+      )
+    },
+    noPluginsItem() {
+      return noPluginsItem
+    },
     tabIcon() {
       return {
         type: this.dbEntityType,

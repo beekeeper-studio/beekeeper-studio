@@ -132,6 +132,8 @@
                   <x-menuitem
                     v-else
                     :key="item.slug"
+                    :disabled="item.disabled"
+                    :title="item.title"
                     @click.prevent="handleExtraStatusbarMenuClick($event, item)"
                   >
                     <i

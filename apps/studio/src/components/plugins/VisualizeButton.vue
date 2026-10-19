@@ -1,6 +1,5 @@
 <template>
   <x-button
-    v-if="items.length > 0"
     class="btn btn-flat btn-icon end visualize-btn"
     :disabled="disabled"
     menu
@@ -21,6 +20,14 @@
         <i class="material-icons">{{ item.leadingIcon }}</i>
         <x-label>{{ item.name }}</x-label>
       </x-menuitem>
+      <x-menuitem
+        v-if="items.length === 0"
+        disabled
+        :title="noPluginsItem.title"
+      >
+        <i class="material-icons">{{ noPluginsItem.leadingIcon }}</i>
+        <x-label>{{ noPluginsItem.name }}</x-label>
+      </x-menuitem>
       <hr>
       <x-menuitem @click.prevent="openPluginManager">
         <i class="material-icons">extension</i>
@@ -35,10 +42,12 @@ import Vue, { PropType } from "vue";
 import { AppEvent } from "@/common/AppEvent";
 import type { ContextItem } from "@/plugins/BeekeeperPlugin";
 import type { PluginMenuConditions } from "@/store/modules/PopupMenuModule";
+import { noPluginsItem } from "@/lib/menu/pluginMenuItems";
 
 /**
  * Status bar button that opens the current data in a plugin. Lists the items
- * plugins add to `menuId`, and renders nothing when there are none.
+ * plugins add to `menuId`, or a disabled "No plugins…" row when there are
+ * none, so the feature stays discoverable.
  */
 export default Vue.extend({
   props: {
@@ -60,6 +69,9 @@ export default Vue.extend({
       type: Object as PropType<PluginMenuConditions>,
       default: undefined,
     },
+  },
+  data() {
+    return { noPluginsItem };
   },
   computed: {
     items(): ContextItem[] {
