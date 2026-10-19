@@ -13,6 +13,18 @@ import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 
 const timeoutDefault = 5000
 
+// LibSQLClient opens a new remote connection for most queries, and sqld keeps
+// each one checked out for ~10s even after close(). The RW suite opens ~140 in
+// a 10s window, just over sqld's default cap of 128, so connections time out
+// at random with a 429. Raise the cap well above what the suite needs.
+function libsqlServerContainer(name: string) {
+  return new GenericContainer("ghcr.io/tursodatabase/libsql-server:v0.24.32")
+    .withName(name)
+    .withEnvironment({ SQLD_MAX_CONCURRENT_CONNECTIONS: "2048" })
+    .withExposedPorts(8080)
+    .withStartupTimeout(dbtimeout)
+}
+
 // FIXME (azmi): remove arrayMode from utilOpions once it's fixed
 const TEST_VERSIONS = [
   { mode: "memory", readOnly: false, arrayMode: true },
@@ -58,13 +70,9 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         dbPath = ":memory:";
         knexFilename = ":memory:";
       } else {
-        container = await new GenericContainer(
-          "ghcr.io/tursodatabase/libsql-server:v0.24.32"
-        )
-          .withName(`libsql${options.readOnly ? "-readOnly" : ""}`)
-          .withExposedPorts(8080)
-          .withStartupTimeout(dbtimeout)
-          .start();
+        container = await libsqlServerContainer(
+          `libsql${options.readOnly ? "-readOnly" : ""}`
+        ).start();
         jest.setTimeout(timeoutDefault)
         const host = container.getHost();
         const port = container.getMappedPort(8080);
@@ -307,13 +315,7 @@ function testReplica(readOnly = false) {
   beforeAll(async () => {
     replicaDir = tmp.dirSync();
 
-    container = await new GenericContainer(
-      "ghcr.io/tursodatabase/libsql-server:v0.24.32"
-    )
-      .withName(`libsql-replica-target`)
-      .withExposedPorts(8080)
-      .withStartupTimeout(dbtimeout)
-      .start();
+    container = await libsqlServerContainer("libsql-replica-target").start();
     jest.setTimeout(timeoutDefault)
 
     const host = container.getHost();
