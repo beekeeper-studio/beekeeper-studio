@@ -51,18 +51,18 @@
           v-if="!pinned"
           @mousedown.prevent.stop="pin"
           :title="'Pin'"
-          class="btn-fab pin"
+          class="btn-icon pin"
         ><i class="bk-pin" /></span>
         <span
           v-if="pinned"
           @mousedown.prevent.stop="unpin"
           :title="'Unpin'"
-          class="btn-fab unpin"
+          class="btn-icon unpin"
         ><i class="material-icons">clear</i></span>
         <span
           v-if="pinned"
           @mousedown.prevent.stop="unpin"
-          class="btn-fab pinned"
+          class="btn-icon pinned"
         >
           <i
             class="bk-pin"
@@ -344,5 +344,14 @@ export default {
 
 .connection-label {
   margin-left: 0.5rem;
+}
+
+.btn-icon.pin, .btn-icon.pinned {
+  &:hover, &:focus {
+    background: transparent;
+  }
+}
+.btn-icon.pinned .bk-pin {
+  color: var(--primary-solid-bg-hover-a);
 }
 </style>

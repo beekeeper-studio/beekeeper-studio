@@ -57,7 +57,7 @@
         <div class="advanced-body">
           <span class="info">Signed in{{ accountName ? ` as ${privacyMode ? '*****' : accountName}` : "" }}</span>
           <button
-            class="btn btn-flat btn-icon"
+            class="btn btn-flat"
             type="button"
             @click.prevent="signOut"
             :disabled="signingOut"

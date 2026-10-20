@@ -52,14 +52,14 @@
   }
   .loading-icon {
     font-size: 4rem;
-    color: $brand-success;
+    color: var(--success-text);
     margin-bottom: 2rem;
     padding: 2rem;
-    background-color: rgba($brand-success, .1);
+    background-color: var(--success-a4);
     border-radius: 9999px;
     &.error {
-      color: $brand-danger;
-      background-color: rgba($brand-danger, .1);
+      color: var(--danger-text);
+      background-color: var(--danger-a4);
     }
   }
 }

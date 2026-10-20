@@ -10,20 +10,20 @@ $trial-row-gap: $gutter-h * 1.25;
 $trial-row-inset: $gutter-h * 1.5;
 
 .trial-modal {
-  color: $text;
+  color: var(--text);
   font-size: 0.9rem;
   line-height: 1.5;
 
   .trial-modal-lead {
     margin: 0 0 $gutter-w;
-    color: $text-dark;
+    color: var(--text-contrast);
   }
 
   .trial-modal-hint {
     margin: $gutter-w 0 0;
     font-size: 0.8rem;
     line-height: 1.5;
-    color: $text-light;
+    color: var(--text-muted);
   }
 
   // Step two of the trial-ended dialog: the "I understand" checkbox. Shares the
@@ -36,11 +36,11 @@ $trial-row-inset: $gutter-h * 1.5;
     margin: $gutter-w 0;
     padding: ($gutter-h * 0.6) $trial-row-inset;
     border-radius: 6px;
-    background: rgba($theme-base, 0.05);
+    background: var(--gray-a3);
     font-size: 0.875rem;
     font-weight: 500;
     line-height: 1.4;
-    color: $text-dark;
+    color: var(--text-contrast);
     cursor: pointer;
 
     input {
@@ -72,14 +72,14 @@ $trial-row-inset: $gutter-h * 1.5;
 
     .material-icons {
       font-size: 16px;
-      color: $text-lighter;
+      color: var(--text-muted);
       flex: 0 0 auto;
       width: $trial-control-size;
       text-align: center;
     }
 
     .trial-feature-label {
-      color: $text-dark;
+      color: var(--text-contrast);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -93,8 +93,8 @@ $trial-row-inset: $gutter-h * 1.5;
       font-weight: 700;
       letter-spacing: 0.05em;
       text-transform: uppercase;
-      color: $brand-success;
-      border: 1px solid rgba($brand-success, 0.5);
+      color: var(--success-text);
+      border: 1px solid var(--success-a8);
       border-radius: 3px;
     }
 
@@ -113,12 +113,12 @@ $trial-row-inset: $gutter-h * 1.5;
     // "and all other paid features": the last row of the step two list, so it
     // lines up with the features above it without hand-matched padding.
     li.trial-feature-more .trial-feature-label {
-      color: $text;
+      color: var(--text);
 
       a {
-        color: $text;
+        color: var(--text);
         text-decoration: underline;
-        text-decoration-color: rgba($theme-base, 0.35);
+        text-decoration-color: var(--text-muted);
         cursor: pointer;
 
         &:hover {
@@ -131,7 +131,7 @@ $trial-row-inset: $gutter-h * 1.5;
 
 // The escape hatch is deliberately the quietest button in the row.
 .trial-ended-downgrade {
-  color: $text-light;
+  color: var(--text-muted);
 }
 
 // .btn-danger only colours its hover state in this app, so at rest a
@@ -139,11 +139,11 @@ $trial-row-inset: $gutter-h * 1.5;
 // Give it a real fill, the same treatment ConfirmationModal.vue uses for its
 // danger variant.
 .trial-ended-confirm.btn {
-  background: $brand-danger;
+  background: var(--danger-solid-bg);
   color: white;
 
   &:hover, &:focus {
-    background: $brand-danger;
+    background: var(--danger-solid-bg);
     color: white;
     filter: brightness(1.12);
   }
@@ -184,21 +184,21 @@ $trial-row-inset: $gutter-h * 1.5;
     font-size: 16px;
     // sits on the first line of the text beside it
     line-height: 0.875rem * 1.5;
-    color: $text-lighter;
+    color: var(--text-muted);
     flex: 0 0 auto;
     width: $trial-control-size;
     text-align: center;
   }
 
   strong {
-    color: $text-dark;
+    color: var(--text-contrast);
     font-weight: 600;
   }
 
   a {
-    color: $text;
+    color: var(--text);
     text-decoration: underline;
-    text-decoration-color: rgba($theme-base, 0.35);
+    text-decoration-color: var(--text-muted);
     cursor: pointer;
 
     &:hover {
@@ -209,5 +209,5 @@ $trial-row-inset: $gutter-h * 1.5;
 
 // The quiet escape hatch, same treatment as the trial dialog's downgrade.
 .lifetime-version-continue {
-  color: $text-light;
+  color: var(--text-muted);
 }

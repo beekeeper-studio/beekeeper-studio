@@ -422,9 +422,9 @@ Update your CSS to use theme variables:
 
 ```diff
 -    background-color: #f8f9fa;
-+    background-color: var(--query-editor-bg);
++    background-color: var(--bg-base);
 -    color: #333;
-+    color: var(--text-dark);
++    color: var(--text-contrast);
 ```
 
 ## Final Result
@@ -444,8 +444,8 @@ Your complete `index.html`:
             font-family: system-ui, -apple-system, sans-serif;
             margin: 0;
             padding: 2rem;
-            background-color: var(--query-editor-bg);
-            color: var(--text-dark);
+            background-color: var(--bg-base);
+            color: var(--text-contrast);
         }
         .container {
             max-width: 600px;
@@ -461,8 +461,8 @@ Your complete `index.html`:
             margin-bottom: 1.5rem;
         }
         button {
-            background: var(--theme-base);
-            color: white;
+            background: var(--primary-solid-bg);
+            color: var(--primary-contrast);
             border: none;
             padding: 0.75rem 1.5rem;
             border-radius: 0.5rem;
@@ -474,7 +474,7 @@ Your complete `index.html`:
         .tables {
             margin-top: 1rem;
             padding: 1rem;
-            background: var(--brand-success-light);
+            background: var(--success-bg);
             border-radius: 0.5rem;
             display: none;
         }

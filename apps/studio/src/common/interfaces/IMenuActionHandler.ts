@@ -36,7 +36,7 @@ export interface IMenuActionHandler {
   newTab: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   closeTab: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   quickSearch: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
-  switchTheme: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  openAppearanceModal: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   reload: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   disconnect: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   addBeekeeper: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
@@ -53,6 +53,7 @@ export interface IMenuActionHandler {
   simulatePlatform: (menuItem: Electron.MenuItem, win: ElectronWindow, platform: string) => void
   toggleBeta: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   managePlugins: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  themePlayground: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   updatePin: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   keyboardShortcuts: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   /** `handleAction` is used by menus that are defined at runtime (unlike other

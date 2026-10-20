@@ -217,7 +217,7 @@ $gutter-h: 1.5rem;
 
 .material-icons.verified-icon {
   font-size: 1em;
-  color: var(--theme-secondary);
+  color: var(--primary-text);
 }
 
 .downloads {
