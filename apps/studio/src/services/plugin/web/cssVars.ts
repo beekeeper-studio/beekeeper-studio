@@ -10,7 +10,7 @@ export const cssVars = [
   "--scrollbar-track",
   "--scrollbar-thumb",
 
-  // Semantic color tokens (see assets/styles/themes/utilities.scss)
+  // Semantic color tokens (see assets/styles/tokens/aliases.scss)
   "--white",
   "--black",
 

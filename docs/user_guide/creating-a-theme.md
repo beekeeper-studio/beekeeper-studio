@@ -144,7 +144,7 @@ You can be more specific by setting the colors for individual components:
 | Editor syntax | `--syntax-keyword`, `--syntax-string`, `--syntax-constant`, `--syntax-variable`, `--syntax-function`, `--syntax-type`, `--syntax-decorator`, `--syntax-link`, `--syntax-diff`, `--syntax-comment`, `--syntax-punctuation` | Syntax highlighting, by category |
 | Mongo Shell | `--mongo-shell-mongo-prompt-fg`, `--mongo-shell-ansi-output-fg` | Mongo shell output |
 
-The full list, with every default value, is in `apps/studio/src/assets/styles/themes/tokens/component.css`.
+The full list, with every default value, is in `apps/studio/src/assets/styles/tokens/component.css`.
 
 ## 4. Going deeper
 

@@ -1,4 +1,4 @@
-@use '../themes/common' as *;
+@use '../tokens/common' as *;
 
 @each $hue in $hues {
   .connection-label-color-#{'#{$hue}'} {

@@ -18,7 +18,7 @@ Colors move through four layers, each one built on the one above it.
 | ----- | ------- | -------------- |
 | Seeds | `--base-blue: #0969da` | Your theme file |
 | Scales | `--blue-9`, `--blue-a3` | Generated at runtime |
-| Roles | `--blue-solid-bg`, `--text-muted` | `tokens/theme.scss` |
+| Roles | `--blue-solid-bg`, `--text-muted` | `tokens/aliases.scss` |
 | Components | `--btn-primary-bg`, `--editor-keyword-fg` | `tokens/component.css` |
 
 A theme normally only touches the first layer, and overrides individual entries in the last one when a specific component needs to look different.
@@ -133,9 +133,9 @@ Setting `--syntax-string` colors strings, escapes, regular expressions, characte
 | File | Contains |
 | ---- | -------- |
 | `apps/studio/public/themes/<id>.css` | Theme seeds and overrides |
-| `src/assets/styles/themes/common.scss` | Step and role names, hue list, family map |
-| `src/assets/styles/themes/tokens/theme.scss` | Role aliases, family mapping |
-| `src/assets/styles/themes/tokens/component.css` | Every component token and its default |
-| `src/assets/styles/themes/fallback.css` | Values used before a theme loads |
+| `src/assets/styles/tokens/common.scss` | Step and role names, hue list, family map |
+| `src/assets/styles/tokens/aliases.scss` | Role aliases, family mapping |
+| `src/assets/styles/tokens/component.css` | Every component token and its default |
+| `src/assets/styles/tokens/fallback.css` | Values used before a theme loads |
 
 `component.css` is the reference worth keeping open while working on a theme — it lists every token that exists, grouped by the part of the interface it affects.

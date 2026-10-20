@@ -1,6 +1,6 @@
 // https://www.radix-ui.com/colors/docs/palette-composition/understanding-the-scale
 
-@use "../common" as *;
+@use "./common" as *;
 
 .light-theme {
   --background: #ffffff;
@@ -18,7 +18,7 @@
   --base-gray: #000000;
 
   @each $hue in $hues {
-    @if $hue ==gray {
+    @if $hue == "gray" {
       @each $n, $role in $steps {
         --#{$role}: var(--gray-#{$n});
       }
