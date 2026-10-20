@@ -165,7 +165,7 @@ hr {
   @include btn-flat;
 }
 x-buttons > x-button[menu].btn {
-  border-left: 1px solid var(--gray-a8);
+  border-left: 1px solid rgb(from currentColor r g b / 0.35);
 }
 
 
