@@ -23,7 +23,7 @@
               class="btn btn-flat"
               @click="browseRemote"
             >
-              Install
+              Browse
             </button>
           </control-row>
           <control-row
@@ -334,39 +334,40 @@ export default Vue.extend({
 
       this.loadingPlugins = false;
     },
+    // grrr observability
+    updatePlugin(id: string, updated: Partial<Plugin>) {
+      const idx = this.plugins.findIndex((p) => p.id === id);
+      if (idx === -1) return;
+      this.$set(this.plugins, idx, { ...this.plugins[idx], ...updated });
+    },
     async install({ id }) {
-      const state = this.plugins.find((p) => p.id === id);
-
       try {
-        state.installing = true;
+        this.updatePlugin(id, { installing: true });
         await this.$plugin.install(id);
-        state.installed = true;
-        // HACK(azmi): refresh the plugin list or just this item instead
-        state.loadable = true;
+        this.updatePlugin(id, { installed: true, loadable: true });
       } catch (e) {
         log.error(e);
-        state.error = e;
+        this.updatePlugin(id, { error: e });
         this.$noty.error(`Failed to install plugin: ${e.message}`);
       } finally {
-        state.installing = false;
+        this.updatePlugin(id, { installing: false });
       }
     },
     async update({ id }) {
-      const state = this.plugins.find((p) => p.id === id);
-
       try {
-        state.installing = true;
+        this.updatePlugin(id, { installing: true });
         const manifest = await this.$plugin.update(id);
-        state.version = manifest.version;
-        state.updateAvailable = false;
-        // HACK(azmi): refresh the plugin list or just this item instead
-        state.loadable = true;
+        this.updatePlugin(id, {
+          version: manifest.version,
+          updateAvailable: false,
+          loadable: true,
+        });
       } catch (e) {
         log.error(e);
-        state.error = e;
+        this.updatePlugin(id, { error: e });
         this.$noty.error(`Failed to update plugin: ${e.message}`);
       } finally {
-        state.installing = false;
+        this.updatePlugin(id, { installing: false });
       }
     },
     async checkAllForUpdates() {
@@ -375,15 +376,9 @@ export default Vue.extend({
       }));
     },
     async checkForUpdates({ id }) {
-      const idx = this.plugins.findIndex((p) => p.id === id);
-
       try {
-        this.$set(this.plugins, idx, {
-          ...this.plugins[idx],
-          checkingForUpdates: true,
-        });
-        this.$set(this.plugins, idx, {
-          ...this.plugins[idx],
+        this.updatePlugin(id, { checkingForUpdates: true });
+        this.updatePlugin(id, {
           updateAvailable: await this.$util.send("plugin/checkForUpdates", {
             id,
           }),
@@ -392,10 +387,7 @@ export default Vue.extend({
         log.error(e);
         this.$noty.error(`Failed to check for update: ${e.message}`);
       } finally {
-        this.$set(this.plugins, idx, {
-          ...this.plugins[idx],
-          checkingForUpdates: false,
-        });
+        this.updatePlugin(id, { checkingForUpdates: false });
       }
     },
     async uninstall({ id }) {
@@ -403,14 +395,12 @@ export default Vue.extend({
         return;
       }
 
-      const state = this.plugins.find((p) => p.id === id);
-
       try {
         await this.$plugin.uninstall(id);
-        state.installed = false;
+        this.updatePlugin(id, { installed: false });
       } catch (e) {
         log.error(e);
-        state.error = e;
+        this.updatePlugin(id, { error: e });
         this.$noty.error(`Failed to uninstall plugin: ${e.message}`);
       }
     },
@@ -556,6 +546,17 @@ $gutter-h: 1.5rem;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+
+  ::v-deep .content-container .control-row {
+    &:first-child {
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    &:last-child {
+      padding-bottom: 1rem;
+    }
+  }
 }
 
 .header-row {

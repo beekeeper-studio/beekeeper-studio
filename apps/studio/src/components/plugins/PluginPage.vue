@@ -2,19 +2,19 @@
   <div class="plugin-page-container">
     <div class="header">
       <div class="identity">
-        <img
-          v-if="avatarUrl && !avatarBroken"
-          class="owner-avatar"
-          :src="avatarUrl"
-          alt=""
-          @error="avatarBroken = true"
-        >
         <div class="identity-text">
           <div class="title">
             {{ plugin.name }} <span class="version" v-if="plugin?.version != null">v{{ plugin.version }}</span>
           </div>
           <div class="author">
             By
+            <img
+              v-if="avatarUrl && !avatarBroken"
+              class="owner-avatar"
+              :src="avatarUrl"
+              alt=""
+              @error="avatarBroken = true"
+            >
             <template v-if="plugin.author.name && plugin.author.url">
               <a :href="plugin.author.url">{{ plugin.author.name }}</a>
             </template>
@@ -247,8 +247,8 @@ $gutter-h: 1.5rem;
 }
 
 .owner-avatar {
-  width: 3rem;
-  height: 3rem;
+  width: 1.25rem;
+  height: 1.25rem;
   border-radius: 50%;
   flex-shrink: 0;
   object-fit: cover;

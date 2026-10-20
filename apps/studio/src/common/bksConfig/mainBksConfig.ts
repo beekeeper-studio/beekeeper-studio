@@ -10,7 +10,6 @@ import {
   BksConfigSource,
   BksConfig,
 } from "./BksConfigProvider";
-import globals from "@/common/globals";
 
 type ConfigFileName =
   | "default.config.ini"

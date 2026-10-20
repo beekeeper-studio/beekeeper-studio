@@ -1,11 +1,5 @@
 <template>
   <div class="flex flex-col flex-center flex-middle">
-    <button
-      @click.prevent="toggleContent = !toggleContent"
-      class="more-button"
-    >
-      <i class="material-icons">{{ !toggleContent ? 'unfold_less' : 'unfold_more' }}</i> {{ moreText }}
-    </button>
     <transition
       @before-enter="beforeEnter"
       @enter="enter"
@@ -16,6 +10,12 @@
         <slot />
       </div>
     </transition>
+    <button
+      @click.prevent="toggleContent = !toggleContent"
+      class="more-button"
+    >
+      <i class="material-icons">{{ toggleContent ? 'unfold_less' : 'unfold_more' }}</i> {{ moreText }}
+    </button>
   </div>
 </template>
 
