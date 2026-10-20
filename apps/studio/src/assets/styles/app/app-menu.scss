@@ -12,8 +12,8 @@
     display: none;
     list-style-type: none;
     white-space: nowrap;
-    background: var(--panel-bg);
-    color: var(--panel-fg);
+    background: var(--menu-bg);
+    color: var(--menu-fg);
     border-radius: 6px;
     min-width: 150px;
     box-shadow: var(--panel-shadow);
@@ -64,7 +64,7 @@
         }
       }
       &.hovered {
-        background: var(--panel-bg-hover);
+        background: var(--menu-bg-hover);
       }
     }
     &.has-children > a {

@@ -758,8 +758,8 @@ $cell-padding:           $gutter-w;
 }
 
 .tabulator-menu {
-  background: var(--panel-bg);
-  color: var(--panel-fg);
+  background: var(--menu-bg);
+  color: var(--menu-fg);
   box-shadow: var(--panel-shadow);
   border: none;
   border-radius: 6px;
@@ -769,7 +769,7 @@ $cell-padding:           $gutter-w;
   .tabulator-menu-item {
     // TODO this might not be used
     &:hover, &.tabulator-spreadsheet-menu-item-focused {
-      background: var(--panel-bg-hover);
+      background: var(--menu-bg-hover);
     }
     color: inherit;
     cursor: pointer;

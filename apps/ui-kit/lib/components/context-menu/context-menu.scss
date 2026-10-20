@@ -12,8 +12,8 @@
   list-style: none;
   position: absolute;
   z-index: 1000000;
-  background: var(--panel-bg);
-  color: var(--panel-fg);
+  background: var(--menu-bg);
+  color: var(--menu-fg);
   padding: ($gutter-h * 0.75) 0;
   border-radius: 6px;
   box-shadow: var(--panel-shadow);
@@ -45,7 +45,7 @@
   align-items: center;
 
   &:hover {
-    background-color: var(--panel-bg-hover);
+    background-color: var(--menu-bg-hover);
   }
 
   &.BksContextMenu-item-disabled {

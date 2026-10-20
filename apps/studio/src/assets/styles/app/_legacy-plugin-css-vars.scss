@@ -22,8 +22,6 @@ body {
   --placeholder: var(--text-muted);
   --selection: var(--selection-bg);
   --input-highlight: var(--primary-solid-bg);
-  --menu-bg: var(--panel-bg);
-  --menu-shadow: var(--panel-shadow);
   --bks-text-editor-activeline-bg-color: var(--editor-activeline-bg);
   --bks-text-editor-activeline-gutter-bg-color: var(--editor-activeline-gutter-bg);
   --bks-text-editor-atom-fg-color: var(--editor-atom-fg);
@@ -107,9 +105,9 @@ body {
   --bks-text-editor-strikethrough-fg-color: var(--editor-strikethrough-fg);
   --bks-text-editor-sql-alias-fg-color: var(--editor-sql-alias-fg);
   --bks-text-editor-sql-field-fg-color: var(--editor-sql-field-fg);
-  --bks-text-editor-context-menu-bg-color: var(--panel-bg);
-  --bks-text-editor-context-menu-fg-color: var(--panel-fg);
-  --bks-text-editor-context-menu-item-bg-color-active: var(--panel-bg-hover);
+  --bks-text-editor-context-menu-bg-color: var(--menu-bg);
+  --bks-text-editor-context-menu-fg-color: var(--menu-fg);
+  --bks-text-editor-context-menu-item-bg-color-active: var(--menu-bg-hover);
   --bks-text-editor-context-menu-item-fg-color-active: var(--panel-fg);
-  --bks-text-editor-context-menu-item-bg-color-hover: var(--panel-bg-hover);
+  --bks-text-editor-context-menu-item-bg-color-hover: var(--menu-bg-hover);
 }
