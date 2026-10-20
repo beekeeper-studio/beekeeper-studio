@@ -820,6 +820,10 @@ $cell-padding:           $gutter-w;
   }
 }
 
+.tabulator-range-fill-handle {
+  background-color: var(--table-range-handle-bg);
+}
+
 .spreadsheet-table {
   .tabulator-header {
     outline: none;
