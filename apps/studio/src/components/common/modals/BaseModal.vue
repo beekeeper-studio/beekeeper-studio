@@ -8,6 +8,7 @@
       @opened="handleOpened"
       @closed="$emit('closed')"
       class="base-modal-root"
+      :style="{ '--base-modal-max-width': maxWidth }"
     >
       <x-progressbar v-if="loading" />
       <form
@@ -66,6 +67,10 @@ export default Vue.extend({
     /** Show loading indicator */
     loading: Boolean,
     height: String,
+    maxWidth: {
+      type: String,
+      default: "550px",
+    },
     /**
      * When false there is no close button, and Escape, overlay clicks and
      * stray `$modal.hide` calls are ignored: only `close()` (also exposed as
@@ -115,7 +120,7 @@ export default Vue.extend({
 .base-modal-root ::v-deep .v--modal {
   min-width: 36rem;
   min-height: 6rem;
-  max-width: 550px;
+  max-width: var(--base-modal-max-width);
   width: auto !important;
 }
 
@@ -174,13 +179,13 @@ export default Vue.extend({
 
 .base-modal-close:hover,
 .base-modal-close:focus {
-  background: rgb(from var(--theme-base) r g b / 10%);
+  background: var(--btn-bg-hover);
 }
 
 .base-modal-close .material-icons,
 .base-modal-close .material-icons-outlined {
   font-size: 1.25rem;
-  color: var(--text-dark);
+  color: var(--btn-fg);
 }
 
 .base-modal-body {

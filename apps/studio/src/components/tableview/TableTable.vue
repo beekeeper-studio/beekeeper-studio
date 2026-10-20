@@ -54,7 +54,7 @@
       <div class="truncate statusbar-info">
         <x-button
           @click.prevent="openProperties"
-          class="btn btn-flat btn-icon end"
+          class="btn btn-flat end"
           title="View Structure"
         >
           Structure <i class="material-icons">north_east</i>
@@ -69,7 +69,7 @@
           @click="refreshTable"
           tabindex="0"
           role="button"
-          class="statusbar-item hoverable"
+          class="btn statusbar-item"
           v-if="lastUpdatedText && !error && !minimalMode"
           :title="'Updated' + ' ' + lastUpdatedText"
         >
@@ -145,7 +145,7 @@
           </x-button>
           <x-buttons class="pending-changes">
             <x-button
-              class="btn btn-primary btn-badge btn-icon"
+              class="btn btn-primary btn-badge"
               @click.prevent="saveChanges"
               :disabled="running"
               :title="saveButtonText"
@@ -182,7 +182,7 @@
         </template>
         <span
           v-else-if="hiddenColumnCount"
-          class="hidden-column-count statusbar-item hoverable"
+          class="btn hidden-column-count statusbar-item"
           v-tooltip="hiddenColumnMessage"
         >
           <a
@@ -1118,7 +1118,7 @@ export default Vue.extend({
       return `
         <span class="title">
           ${escapeHtml(columnName)}
-          <span class="badge column-data-type">${escapeHtml(dataType)}</span>
+          <span class="column-data-type">${escapeHtml(dataType)}</span>
         </span>`
     },
     maybeScrollAndSetWidths() {

@@ -5,7 +5,9 @@
     @submit="handleSubmit"
     @closed="handleClosed"
   >
-    <template #title>Select Connection Type</template>
+    <template #title>
+      Select Connection Type
+    </template>
 
     <template #default="{ submit }">
       <div class="toolbar">
@@ -15,7 +17,7 @@
             type="text"
             placeholder="Search connection types"
             v-model="filter"
-          />
+          >
           <x-buttons class="filter-actions">
             <x-button v-if="filter" @click="filter = ''">
               <i class="clear material-icons">cancel</i>
@@ -38,7 +40,7 @@
             name="connection-type"
             :value="type.value"
             v-model="value"
-          />
+          >
           <database-icon :type="type.value" />
           <span class="name">{{ type.name }}</span>
           <i v-if="type.lockedByLicense" class="material-icons ultimate-icon">
@@ -183,7 +185,7 @@ export default Vue.extend({
   position: sticky;
   top: 0;
   z-index: 1;
-  background-color: hsl(from var(--theme-bg) h s calc(l + 1));
+  background: var(--panel-bg);
   margin-bottom: 0.75rem;
 }
 
@@ -215,7 +217,7 @@ export default Vue.extend({
 
     .material-icons {
       font-size: 1rem;
-      color: var(--text-light);
+      color: var(--text-muted);
     }
   }
 }
@@ -240,11 +242,11 @@ export default Vue.extend({
 
   &:hover,
   &:focus-within {
-    background: rgb(from var(--theme-base) r g b / 3.5%);
+    background: var(--bg-hover-a);
   }
 
   &.selected {
-    background: rgb(from var(--theme-base) r g b / 6%);
+    background: var(--bg-a);
   }
 
   ::v-deep .database-icon {

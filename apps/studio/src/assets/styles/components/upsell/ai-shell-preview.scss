@@ -1,12 +1,11 @@
-@use "sass:color";
 
 // ============================================================================
 // Animated mini preview of the SQL AI shell, shown inside the AI shell upgrade
 // panel. Structure and step classes are driven by AiShellPreview.vue.
 // ============================================================================
 .cc-preview {
-  background: color.adjust($query-editor-bg, $lightness: -3%);
-  border: 1px solid $border-color;
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
   margin: 0.9rem 0 0;
   overflow: hidden;
@@ -40,8 +39,8 @@
   .cc-user {
     align-self: flex-end;
     max-width: 78%;
-    background: rgba($theme-primary, 0.10);
-    color: $text-dark;
+    background: var(--primary-bg-active);
+    color: var(--text-contrast);
     border-radius: 8px;
     padding: 0.4rem 0.7rem;
     font-size: 0.75rem;
@@ -56,7 +55,7 @@
 
     p {
       margin: 0;
-      color: $text-dark;
+      color: var(--text-contrast);
       font-size: 0.75rem;
       line-height: 1.45;
       text-transform: none;
@@ -64,7 +63,7 @@
     }
 
     code {
-      background: rgba($theme-base, 0.06);
+      background: var(--gray-a3);
       padding: 0.05rem 0.3rem;
       border-radius: 3px;
       font-family: monospace;
@@ -82,7 +81,7 @@
     display: inline-block;
     width: 0.5rem;
     height: 0.85rem;
-    background: $text-light;
+    background: var(--text-muted);
     border-radius: 1px;
     animation: cc-caret-blink 0.9s steps(2, end) infinite;
   }
@@ -100,7 +99,7 @@
     padding: 0.1rem 0 0.1rem 0.625rem;
     position: relative;
     font-size: 0.72rem;
-    color: $text-light;
+    color: var(--text-muted);
     align-self: flex-start;
   }
 
@@ -110,13 +109,13 @@
     top: 0.2rem;
     bottom: 0.2rem;
     width: 2px;
-    background: rgba($theme-base, 0.10);
+    background: var(--gray-a4);
     border-radius: 1px;
   }
 
-  .cc-tool-name  { color: $text-dark; }
-  .cc-tool-sep   { color: $text-lighter; }
-  .cc-tool-meta  { color: $text-light; }
+  .cc-tool-name  { color: var(--text-contrast); }
+  .cc-tool-sep   { color: var(--text-muted); }
+  .cc-tool-meta  { color: var(--text-muted); }
 
   // Run Query block
   .cc-runquery {
@@ -129,7 +128,7 @@
 
   .cc-rq-head {
     font-size: 0.75rem;
-    color: $text-dark;
+    color: var(--text-contrast);
     font-weight: 500;
     text-transform: none;
   }
@@ -138,9 +137,9 @@
     font-family: monospace;
     font-size: 0.7rem;
     line-height: 1.5;
-    color: $text-dark;
-    background: color.adjust($query-editor-bg, $lightness: -6%);
-    border: 1px solid $border-color;
+    color: var(--editor-fg);
+    background: var(--editor-bg);
+    border: 1px solid var(--border-subtle);
     border-radius: 5px;
     padding: 0.45rem 0.7rem;
     white-space: pre-wrap;
@@ -148,18 +147,18 @@
     overflow-wrap: anywhere;
     min-width: 0;
 
-    .kw  { color: $brand-pink; }
-    .id  { color: $brand-secondary; }
-    .num { color: $brand-primary; }
-    .str { color: $brand-primary; }
+    .kw  { color: var(--pink-text); }
+    .id  { color: var(--primary-text); }
+    .num { color: var(--primary-text); }
+    .str { color: var(--primary-text); }
   }
 
   // Result block (after SQL "runs")
   .cc-result {
     margin-top: 0.4rem;
-    border: 1px solid $border-color;
+    border: 1px solid var(--border-subtle);
     border-radius: 5px;
-    background: color.adjust($query-editor-bg, $lightness: -6%);
+    background: var(--table-bg);
     overflow: hidden;
     min-width: 0;
   }
@@ -173,21 +172,21 @@
     th, td {
       padding: 0.35rem 0.7rem;
       text-align: left;
-      border-bottom: 1px solid $border-color;
+      border-bottom: 1px solid var(--border-subtle);
     }
 
     th {
-      color: $text-light;
+      color: var(--text-muted);
       font-weight: 500;
-      background: rgba($theme-base, 0.02);
+      background: var(--table-bg);
       text-transform: none;
       letter-spacing: 0;
     }
 
     td {
-      color: $text-dark;
+      color: var(--table-cell-fg);
 
-      &.num { color: $brand-primary; }
+      &.num { color: var(--primary-text); }
     }
 
     tr:last-child td { border-bottom: 0; }
@@ -199,7 +198,7 @@
     margin-top: 0.35rem;
 
     strong {
-      color: $text-dark;
+      color: var(--text-contrast);
       font-weight: 600;
     }
   }

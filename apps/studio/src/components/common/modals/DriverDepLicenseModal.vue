@@ -122,7 +122,7 @@ export default Vue.extend({
     margin-top: 0.5rem;
 
     a {
-      color: var(--bks-link-color, #2196f3);
+      color: var(--link-fg);
       text-decoration: underline;
       cursor: pointer;
 
@@ -134,9 +134,9 @@ export default Vue.extend({
     .driver-dep-details-panel {
       margin: 0.75rem 0;
       padding: 0.6rem 0.75rem;
-      border: 1px solid var(--bks-border-color, rgba(255, 255, 255, 0.08));
+      border: 1px solid var(--border-subtle);
       border-radius: 6px;
-      background: var(--bks-query-editor-bg, rgba(0, 0, 0, 0.15));
+      background: var(--editor-bg);
 
       .detail-row {
         display: flex;
@@ -144,7 +144,7 @@ export default Vue.extend({
         padding: 0.25rem 0;
 
         &:not(:last-child) {
-          border-bottom: 1px solid var(--bks-border-color, rgba(255, 255, 255, 0.05));
+          border-bottom: 1px solid var(--border-subtle);
           padding-bottom: 0.4rem;
           margin-bottom: 0.15rem;
         }
@@ -171,8 +171,8 @@ export default Vue.extend({
       margin: 0.75rem 0;
       padding: 0.5rem 0.65rem;
       border-radius: 6px;
-      background: rgba(var(--bks-brand-warning-rgb, 255, 193, 7), 0.08);
-      border: 1px solid rgba(var(--bks-brand-warning-rgb, 255, 193, 7), 0.2);
+      background: var(--warning-bg-a);
+      border: 1px solid var(--warning-border-subtle-a);
       font-size: 0.82rem;
       line-height: 1.4;
       opacity: 0.9;
@@ -181,7 +181,7 @@ export default Vue.extend({
         font-size: 16px;
         flex-shrink: 0;
         margin-top: 1px;
-        color: var(--bks-brand-warning, #ffc107);
+        color: var(--warning-text);
       }
     }
 
