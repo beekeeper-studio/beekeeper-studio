@@ -6,6 +6,7 @@ import { PluginSystemError } from "@/lib/errors";
 import rawLog from "@bksLogger";
 import { PluginsController } from "@/lib/cloud/controllers/PluginsController";
 import { CloudClient } from "@/lib/cloud/CloudClient";
+import BksConfig from "@/common/bksConfig";
 import platform_info from "@/common/platform_info";
 
 const log = rawLog.scope("PluginRepositoryService");
@@ -27,7 +28,7 @@ export default class PluginRepositoryService {
 
   async fetchRegistry(config: RegistryConfig): Promise<PluginRegistryEntry[]> {
     let raw = [];
-    if (config.origin === 'official' || config.origin === 'community') {
+    if (BksConfig.pluginSystem.proxyGithubPluginRequests && (config.origin === 'official' || config.origin === 'community')) {
        raw = await this.controller.getRegistry(config.name);
     } else {
       // Custom is going to have to go through local GitHub API, we aren't going to cache for them
@@ -45,7 +46,7 @@ export default class PluginRepositoryService {
   }
 
   async fetchPluginRepository(owner: string, repo: string, origin: string): Promise<PluginRepository> {
-    if (origin === 'official' || origin === 'community') {
+    if (BksConfig.pluginSystem.proxyGithubPluginRequests && (origin === 'official' || origin === 'community')) {
       const pluginRepo = await this.controller.getRepository(owner, repo);
       return pluginRepo;
     } else {

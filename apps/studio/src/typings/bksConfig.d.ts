@@ -482,6 +482,7 @@ declare interface IBksConfig {
         communityDisabled: boolean;
         disabled: boolean;
         officialDisabled: boolean;
+        proxyGithubPluginRequests: boolean;
         registries: {
             community: {
                 file: string;
