@@ -83,7 +83,11 @@ export class ThemeRenderer {
 
   private parseThemeParams() {
     const themeParams = new URLSearchParams(window.location.search);
-    const themeId = themeParams.get("themeId") ?? "default";
+    const rawThemeId = themeParams.get("themeId");
+    const themeId =
+      rawThemeId && /^[a-zA-Z0-9_-]+$/.test(rawThemeId)
+        ? rawThemeId
+        : "default";
     const appearance = themeParams.get("appearance") ?? "auto";
     const dark =
       appearance === "auto" ? this.media.matches : appearance === "dark";
