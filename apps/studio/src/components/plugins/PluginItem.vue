@@ -133,7 +133,7 @@ export default Vue.extend({
 
 .material-icons.verified-icon {
   font-size: 1em;
-  color: var(--theme-secondary);
+  color: var(--primary-text);
   margin-left: 0.5ch;
 }
 
@@ -144,7 +144,7 @@ export default Vue.extend({
 }
 
 .badge.origin-badge.origin-official {
-  background: var(--theme-secondary);
+  background: var(--primary-text);
   color: rgba(0, 0, 0, 0.87);
 }
 
@@ -167,14 +167,14 @@ export default Vue.extend({
   cursor: pointer;
 
   &:hover {
-    background-color: rgba($theme-base, 0.02);
+    background-color: var(--bg-hover);
   }
 
   &:focus-visible {
     outline-style: solid;
     outline-offset: 0.14rem;
     outline-width: 1px;
-    outline-color: $theme-base;
+    outline-color: var(--text-contrast);
   }
 
   .info {
@@ -204,12 +204,12 @@ export default Vue.extend({
       display: flex;
       align-items: center;
       font-size: 0.875rem;
-      color: rgba($theme-base, 0.7);
+      color: var(--text);
     }
 
     .status-error {
       font-size: 0.875rem;
-      color: $brand-danger;
+      color: var(--danger-text);
       display: flex;
       align-items: center;
       gap: 0.25rem;

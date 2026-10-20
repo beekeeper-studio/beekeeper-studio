@@ -71,7 +71,7 @@ export default Vue.extend({
   /* This is so it actually covers the side/bottom padding */
   inset: 0 -1.2rem -0.8rem;
   backdrop-filter: blur(6px);
-  background-color: rgba($theme-bg, 0.5);
+  background-color: var(--bg-subtle);
   padding: 2rem;
   display: flex;
   flex-direction: column;

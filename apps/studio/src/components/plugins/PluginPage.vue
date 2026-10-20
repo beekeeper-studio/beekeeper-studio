@@ -11,7 +11,7 @@
         >
         <div class="identity-text">
           <div class="title">
-            {{ plugin.name }} <span class="version">{{ plugin.version }}</span>
+            {{ plugin.name }} <span class="version" v-if="plugin?.version != null">v{{ plugin.version }}</span>
           </div>
           <div class="author">
             By
@@ -25,9 +25,6 @@
               class="material-icons verified-icon"
               v-if="plugin.origin === 'official'"
             >verified</i>
-            <div v-if="plugin?.version != null" class="badge">
-              v{{ plugin?.version }}
-            </div>
             <span
               v-if="pluginRepo?.downloadCount != null"
               class="downloads"
@@ -298,12 +295,12 @@ $gutter-h: 1.5rem;
       .version {
         padding-left: 0.5rem;
         font-size: 0.6em;
-        color: rgba($theme-base, 0.7);
+        color: var(--text);
       }
     }
 
     .description {
-      color: rgba($theme-base, 0.7);
+      color: var(--text);
       line-height: 1.5;
     }
 
@@ -316,14 +313,14 @@ $gutter-h: 1.5rem;
 
     .update-indicator {
       padding-top: 0.6rem;
-      color: $brand-info;
+      color: var(--info-text);
       opacity: 0.8;
     }
   }
 
   .divider {
     width: 100%;
-    border-bottom: 1px solid rgba($theme-base, 0.1);
+    border-bottom: 1px solid var(--gray-a4);
   }
 
   .markdown-content {
@@ -334,7 +331,7 @@ $gutter-h: 1.5rem;
       pre {
         padding: 1rem;
         border-radius: 0.375rem;
-        background-color: rgba($theme-base, 0.03);
+        background-color: var(--gray-a2);
         overflow: auto;
       }
 
@@ -357,16 +354,16 @@ $gutter-h: 1.5rem;
       th,
       td {
         padding: 0.375rem 0.8rem;
-        border: 1px solid rgba($theme-base, 0.12);
+        border: 1px solid var(--border-subtle);
       }
 
       th {
         font-weight: 600;
-        background-color: rgba($theme-base, 0.04);
+        background-color: var(--table-header-highlight-bg);
       }
 
       tbody tr:nth-child(even) {
-        background-color: rgba($theme-base, 0.025);
+        background-color: var(--bg-subtle-a);
       }
 
       video {
@@ -383,7 +380,7 @@ $gutter-h: 1.5rem;
         padding: 0.5rem 1rem;
         border-left: 3px solid var(--alert-color);
         border-radius: 0 6px 6px 0;
-        background: rgba($theme-base, 0.035);
+        background: var(--alert-bg);
 
         > :first-child { margin-top: 0; }
         > :last-child { margin-bottom: 0; }
@@ -407,11 +404,11 @@ $gutter-h: 1.5rem;
         }
       }
 
-      .markdown-alert-note { --alert-color: #{$brand-info}; }
-      .markdown-alert-tip { --alert-color: #{$brand-success}; }
-      .markdown-alert-important { --alert-color: #{$brand-purple}; }
-      .markdown-alert-warning { --alert-color: #{$brand-warning}; }
-      .markdown-alert-caution { --alert-color: #{$brand-danger}; }
+      .markdown-alert-note { --alert-color: var(--info-text); }
+      .markdown-alert-tip { --alert-color: var(--success-text); }
+      .markdown-alert-important { --alert-color: var(--purple-text); }
+      .markdown-alert-warning { --alert-color: var(--warning-text); }
+      .markdown-alert-caution { --alert-color: var(--danger-text); }
     }
   }
 }

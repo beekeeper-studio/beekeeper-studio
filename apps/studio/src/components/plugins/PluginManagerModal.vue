@@ -508,6 +508,10 @@ export default Vue.extend({
 
 $gutter-h: 1.5rem;
 
+.card {
+   background-color: var(--bg)
+}
+
 .alerts {
   margin-inline: 1.25rem;
 }
@@ -567,26 +571,6 @@ $gutter-h: 1.5rem;
 
   a {
     padding: 0.5rem;
-  }
-}
-
-.more-button {
-  display: flex;
-  align-items: center;
-  gap: $gutter-h / 2;
-  letter-spacing: normal;
-
-  padding: 0;
-  border: 0;
-  background-color: transparent;
-  font-size: 16px;
-  color: $text-light;
-  cursor: pointer;
-  font-size: inherit;
-  line-height: inherit;
-
-  &:hover {
-    color: $text-dark;
   }
 }
 </style>

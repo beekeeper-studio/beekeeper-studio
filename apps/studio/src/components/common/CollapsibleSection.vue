@@ -102,13 +102,13 @@ export default Vue.extend({
   border: 0;
   background-color: transparent;
   font-size: 16px;
-  color: $text-light;
+  color: var(--text-muted);
   cursor: pointer;
   font-size: inherit;
   line-height: inherit;
 
   &:hover {
-    color: $text-dark;
+    color: var(--text-contrast);
   }
 }
 </style>

@@ -248,7 +248,7 @@ export default Vue.extend({
     position: relative;
     display: flex;
     align-items: center;
-    border: 1px solid $border-color;
+    border: var(--input-border);
     border-radius: 4px;
   }
   .filter-input {
@@ -274,7 +274,7 @@ export default Vue.extend({
       &:hover, &:focus {
         box-shadow: none;
         .material-icons, .material-icons-outlined {
-          color: $text-dark;
+          color: var(--text-contrast);
         }
       }
       &.btn-fab {
@@ -286,9 +286,9 @@ export default Vue.extend({
         border-radius: 22px;
         border: 0;
         &.active {
-          background: rgba($theme-base, 0.1);
+          background: var(--gray-a4);
           .material-icons {
-            color: $theme-primary;
+            color: var(--info-text);
           }
         }
 
@@ -312,7 +312,7 @@ export default Vue.extend({
       font-size: 14px;
       line-height: 26px;
       width: 14px;
-      color: rgba($theme-base, 0.5);
+      color: var(--text-muted);
     }
   }
 }

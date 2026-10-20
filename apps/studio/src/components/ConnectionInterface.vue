@@ -271,7 +271,7 @@
               <a href="https://beekeeperstudio.io/pricing" class="">Upgrade</a>.
             </div>
             <div class="pitch" v-else>
-              🌟 <strong>Make Your Own Plugins!</strong> - Let an LLM explore your database and write SQL for you. Bring your own API key. Simply open a new tab to get started.
+              🌟 <strong>Make Your Own Plugins!</strong> - Add your own functionality to the app and share it with the community!
               <a href="https://www.beekeeperstudio.io/features/sql-ai">Learn more</a>
             </div>
           </template>

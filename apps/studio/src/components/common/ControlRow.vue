@@ -32,7 +32,7 @@ export default Vue.extend({
   padding-block: 1rem;
 
   & + & {
-    border-top: 1px solid rgba($theme-base, 0.08);
+    border-top: 1px solid var(--border-subtle);
   }
 
   &:first-child {
@@ -53,12 +53,12 @@ export default Vue.extend({
 }
 
 .control-title {
-  color: $text-dark;
+  color: var(--text-contrast);
 }
 
 .control-description {
   font-size: 0.85rem;
-  color: $text-lighter;
+  color: var(--text-muted);
   line-height: 1.4;
   max-width: 60ch;
 }

@@ -105,7 +105,7 @@ export default Vue.extend({
   z-index: 10;
   display: flex;
   flex-direction: column;
-  background: var(--theme-bg);
+  background: var(--panel-bg);
 }
 
 .slideover-header {
@@ -128,7 +128,7 @@ export default Vue.extend({
 
   &:hover,
   &:focus {
-    background: rgb(from var(--theme-base) r g b / 10%);
+    background: var(--gray-a4);
   }
 
   .material-icons {
