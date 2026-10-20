@@ -219,6 +219,8 @@ export default Vue.extend({
   font-weight: bold;
   text-transform: uppercase;
   color: var(--text-contrast);
+  background-color: var(--panel-bg);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .kbd-item {

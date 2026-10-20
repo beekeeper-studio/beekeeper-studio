@@ -22,6 +22,14 @@ $button-height:     $statusbar-height * 0.72;
     align-items: center;
     justify-content: space-between;
     padding: 0 $gutter-h;
+    background: var(--statusbar-bg);
+    color: var(--statusbar-fg);
+    --btn-fg: var(--statusbar-fg);
+    --btn-fg-hover: var(--statusbar-fg);
+    --btn-flat-fg: var(--statusbar-fg);
+    --btn-flat-fg-hover: var(--statusbar-fg);
+    --input-fg: var(--statusbar-fg);
+    --input-border: 1px solid rgb(from var(--statusbar-fg) r g b / 0.2);
   }
 
   input::-webkit-outer-spin-button,

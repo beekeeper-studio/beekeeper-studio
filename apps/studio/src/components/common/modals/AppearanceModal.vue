@@ -97,9 +97,6 @@ export default Vue.extend({
   },
   mounted() {
     this.registerHandlers(this.rootBindings);
-    setTimeout(() => {
-      this.open()
-    }, 1000)
   },
   beforeDestroy() {
     this.unregisterHandlers(this.rootBindings);
@@ -203,6 +200,8 @@ export default Vue.extend({
   grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
   padding-bottom: 0.5rem;
+  max-height: 60vh;
+  overflow-y: auto;
 }
 
 .form-group label.theme-item {

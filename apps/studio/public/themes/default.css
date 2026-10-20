@@ -5,6 +5,8 @@
 
 .dark-theme {
   --background: #090909;
+  --base-pink: #ff78f7;
+  --base-blue: #4ad0ff;
 }
 
 .light-theme,
@@ -15,6 +17,8 @@
   --btn-primary-fg: var(--gray-2);
   --btn-primary-bg: var(--gray-12);
   --btn-primary-bg-hover: var(--gray-11);
+
+  --orange-contrast: #000;
 
   /* ===== Editor ===== */
 

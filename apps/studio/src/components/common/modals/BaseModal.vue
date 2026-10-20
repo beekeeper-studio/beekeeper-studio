@@ -8,6 +8,7 @@
       @opened="handleOpened"
       @closed="$emit('closed')"
       class="base-modal-root"
+      :style="{ '--base-modal-max-width': maxWidth }"
     >
       <x-progressbar v-if="loading" />
       <form
@@ -66,6 +67,10 @@ export default Vue.extend({
     /** Show loading indicator */
     loading: Boolean,
     height: String,
+    maxWidth: {
+      type: String,
+      default: "550px",
+    },
   },
   methods: {
     close() {
@@ -98,7 +103,7 @@ export default Vue.extend({
 .base-modal-root ::v-deep .v--modal {
   min-width: 36rem;
   min-height: 6rem;
-  max-width: 550px;
+  max-width: var(--base-modal-max-width);
   width: auto !important;
 }
 

@@ -792,15 +792,16 @@
     --vs-border-color: var(--border-subtle);
 
     --vs-dropdown-bg: var(--panel-bg);
-    --vs-dropdown-color: var(--text);
-    --vs-dropdown-option-color: var(--text);
+    --vs-dropdown-box-shadow: var(--panel-shadow);
+    --vs-dropdown-color: var(--panel-fg);
+    --vs-dropdown-option-color: var(--panel-fg);
 
     --vs-selected-bg: var(--bg-active-a);
     --vs-selected-color: var(--text);
 
     --vs-search-input-color: var(--text);
 
-    --vs-dropdown-option--active-bg: var(--bg-hover-a);
+    --vs-dropdown-option--active-bg: var(--panel-bg-hover);
     --vs-dropdown-option--active-color: var(--text-contrast);
 
     .vs__clear{

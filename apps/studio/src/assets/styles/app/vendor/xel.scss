@@ -181,7 +181,7 @@ dialog {
   border: 1px solid var(--border);
   color: inherit;
   background: var(--panel-bg);
-  box-shadow: var(--elevation-24);
+  box-shadow: var(--panel-shadow);
   text-transform: none;
 
   &::backdrop {
@@ -226,7 +226,7 @@ dialog {
 
 x-card {
   background: var(--panel-bg);
-  box-shadow: var(--elevation-1);
+  box-shadow: var(--panel-shadow);
   border-radius: 2px;
 
   > {
@@ -830,7 +830,7 @@ x-menuitem {
   cursor: pointer;
   // --trigger-effect: ripple;
   &:focus, &[expanded] {
-    background: var(--bg);
+    background: var(--panel-bg-hover);
   }
   img {
     width: 24px;
@@ -911,7 +911,7 @@ x-popover {
   color: var(--text-color);
   border: 1px solid var(--gray-a6);
   border-radius: 2px;
-  box-shadow: var(--elevation-5);
+  box-shadow: var(--panel-shadow);
   font-size: 15px;
   font-weight: 400;
   text-transform: none;

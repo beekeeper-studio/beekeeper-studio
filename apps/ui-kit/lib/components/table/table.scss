@@ -591,6 +591,7 @@ $cell-padding:           $gutter-w;
     border-width: 1;
     border-color: var(--gray-a3);
     border-radius: 2px;
+    box-shadow: var(--panel-shadow);
     margin-top: $gutter-h;
 
     .tabulator-edit-select-list-item{
