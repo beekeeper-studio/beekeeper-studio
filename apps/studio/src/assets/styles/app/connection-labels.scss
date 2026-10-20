@@ -40,6 +40,9 @@
       --statusbar-bg: rgb(from var(--#{$hue}-solid-bg-a) r g b / 0.85);
       --statusbar-fg: var(--#{$hue}-contrast);
       --statusbar-fg-inverse: hsl(from var(--#{$hue}-contrast) 0 0% calc(100 - l));
+      --btn-primary-bg: rgb(from var(--statusbar-fg) r g b / 0.8);
+      --btn-primary-bg-hover: rgb(from var(--statusbar-fg) r g b / 0.45);
+      --btn-primary-fg: var(--statusbar-fg-inverse);
     }
   }
   &.editing, &.failure {
