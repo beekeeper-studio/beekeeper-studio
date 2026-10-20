@@ -9,7 +9,7 @@
       </h3>
       <span class="expand" />
       <a
-        class="btn btn-primary btn-icon"
+        class="btn btn-primary btn-brand btn-icon"
         @click.prevent="addRow"
         title="Add Field"
       ><i class="material-icons">add</i></a>
@@ -298,6 +298,9 @@ export default Vue.extend({
         z-index: 15;
         box-shadow: none!important;
         padding: 0!important;
+        .tabulator-header-contents {
+          background-color: var(--table-bg);
+        }
         .tabulator-col {
           min-width: $min-cell-width!important;
           padding: 0 $cell-padding;

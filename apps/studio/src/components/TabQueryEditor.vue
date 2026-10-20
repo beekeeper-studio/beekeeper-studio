@@ -2340,7 +2340,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     gap: 0.25rem;
     color: var(--warning-text);
     font-weight: bold;
-    background: var(--warning-bg-subtle-a);
+    background: var(--warning-bg-subtle);
     border-radius: 9999px;
     padding: 0.215rem 0.75rem;
     box-shadow: 0 0 6px 0 var(--warning-a11);
