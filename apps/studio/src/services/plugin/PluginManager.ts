@@ -226,9 +226,9 @@ export default class PluginManager extends Hookable {
         (manifest) => manifest.id === id
       );
       if (installedPluginIdx === -1) {
-        this.manifests.push(manifest as ManifestV1);
+        this.manifests.push(convertToManifestV1(manifest));
       } else {
-        this.manifests[installedPluginIdx] = manifest as ManifestV1;
+        this.manifests[installedPluginIdx] = convertToManifestV1(manifest);
       }
 
       if (!this.pluginSettings[id]) {
@@ -240,7 +240,7 @@ export default class PluginManager extends Hookable {
 
       log.info(`Installed plugin "${id}" v${info.latestRelease.manifest.version}`);
 
-      return manifest as ManifestV1;
+      return convertToManifestV1(manifest);
     });
   }
 
