@@ -1,6 +1,7 @@
 import { Manifest, PluginOrigin, RawPluginRegistryEntry } from "@/services/plugin";
 import PluginRepositoryService from "@/services/plugin/PluginRepositoryService";
 import { MockPluginServer } from "./server";
+import BksConfig from "@/common/bksConfig";
 
 export type Plugin = {
   id: string;
@@ -46,6 +47,9 @@ export class MockPluginRepositoryService extends PluginRepositoryService {
       },
     });
     this.server = server;
+    // This mock serves GitHub API responses, so official/community requests
+    // must not be routed through the cloud proxy.
+    BksConfig.pluginSystem.proxyGithubPluginRequests = false;
   }
 
   mockFetch(

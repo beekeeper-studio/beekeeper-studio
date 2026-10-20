@@ -28,7 +28,7 @@ export default class PluginRegistry {
       origin: "community",
       owner: "beekeeper-studio",
       repo: "beekeeper-studio-plugins",
-      file: "community.json"
+      file: "community-plugins.json"
     },
   ]
 
@@ -47,7 +47,9 @@ export default class PluginRegistry {
   async getEntries(): Promise<RegistryMap> {
     await this.loadAllEntries();
 
-    return Object.fromEntries(this.entriesMap.entries()) as RegistryMap;
+    return Object.fromEntries(
+      this.registries.map((reg) => [reg.name, this.entriesMap.get(reg.name) ?? []])
+    ) as RegistryMap;
   }
 
   async findEntry(id: string): Promise<PluginRegistryEntry> {
