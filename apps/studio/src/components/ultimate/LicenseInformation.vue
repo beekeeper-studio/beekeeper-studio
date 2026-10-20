@@ -54,7 +54,7 @@ table.simple-table td {
 }
 
 table.simple-table tr:nth-child(odd) {
-  background-color: var(--gray-a2);
+  background-color: var(--bg-subtle-a);
   /* Light darkening for odd rows */
 }
 
@@ -64,6 +64,9 @@ table.simple-table td:nth-child(2) {
 
 table.simple-table th {
   text-align: left;
+}
+.card {
+  background: var(--bg-subtle-a);
 }
 </style>
 <script lang="js">

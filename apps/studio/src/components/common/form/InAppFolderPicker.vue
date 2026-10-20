@@ -212,7 +212,7 @@ export default Vue.extend({
   z-index: 10;
   display: flex;
   flex-direction: column;
-  background: var(--app-bg);
+  background: var(--panel-bg);
 }
 
 .folder-slideover-header {

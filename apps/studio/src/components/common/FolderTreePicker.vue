@@ -185,7 +185,7 @@ export default Vue.extend({
   border: none;
   border-radius: 4px;
   background: transparent;
-  color: var(--text-muted);
+  color: var(--text);
   font: inherit;
   cursor: pointer;
 
