@@ -3,20 +3,6 @@
 @use "../../styles/variables" as *;
 @use "../../styles/mixins" as *;
 
-:root {
-  --bks-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: 5%)};
-  --bks-context-menu-fg-color: #{$text};
-  --bks-context-menu-border-color: transparent;
-  --bks-context-menu-item-fg-color: #{$text-dark};
-  --bks-context-menu-item-bg-color-active: #{$brand-info};
-  --bks-context-menu-item-fg-color-active: #ffffff;
-  --bks-context-menu-item-bg-color-hover: #{rgba($theme-base, 0.05)};
-  --bks-context-menu-item-fg-color-disabled: #{rgba($text-dark, 0.35)};
-  --bks-context-menu-item-bg-color-disabled: transparent;
-  --bks-context-menu-item-shortcut-fg-color: #{rgba($text-dark, 0.5)};
-  --bks-context-menu-divider-border-color: #{$border-color};
-}
-
 .BksContextMenu-list {
   top: 0;
   left: 0;

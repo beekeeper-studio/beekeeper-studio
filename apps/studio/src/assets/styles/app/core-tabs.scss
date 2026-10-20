@@ -207,15 +207,15 @@
       transition: background 0.15s ease-in-out;
 
       &:hover {
-        background: rgba($theme-base, 0.12);
+        background: var(--gray-a5);
 
         .material-icons {
-          color: $text-dark;
+          color: var(--text-contrast);
         }
       }
 
       &:active {
-        background: rgba($theme-base, 0.2);
+        background: var(--gray-a7);
       }
 
       .close {

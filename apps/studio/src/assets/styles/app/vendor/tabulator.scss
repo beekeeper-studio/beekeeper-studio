@@ -318,21 +318,21 @@ $cell-padding:           $gutter-w;
 
     &.tabulator-range-selected:not(.tabulator-range-only-cell-selected) {
       &.edited {
-        background: $cell-edited;
+        background: var(--table-cell-edited-bg);
         &:hover {
-          background: color.adjust($cell-edited, $lightness: 3%);
+          background: var(--table-cell-edited-bg);
         }
       }
       &.edit-error {
-        background: $cell-error;
+        background: var(--table-row-error-bg);
         &:hover {
-          background: color.adjust($cell-error, $lightness: 5%);
+          background: var(--table-row-error-bg);
         }
       }
       &.edit-success {
-        background: $cell-success;
+        background: var(--table-row-added-bg);
         &:hover {
-          background: color.adjust($cell-success, $lightness: 5%);
+          background: var(--table-row-added-bg);
         }
       }
     }
