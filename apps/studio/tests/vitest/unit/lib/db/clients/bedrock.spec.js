@@ -94,4 +94,46 @@ describe("Bedrock UNIT tests (no connection required)", () => {
       }
     });
   });
+
+  describe("parseForeignKeys", () => {
+    it("groups pragma foreign_key_list rows by id and orders columns by seq", () => {
+      const pragmaRow = (over) => ({
+        id: 0, seq: 0, table: "parent", from: "ref_id1", to: "parent_id1",
+        on_update: "NO ACTION", on_delete: "CASCADE", match: "NONE", from_table: "child",
+        ...over,
+      });
+      const keys = client.parseForeignKeys([
+        pragmaRow({ seq: 1, from: "ref_id2", to: "parent_id2" }),
+        pragmaRow({ seq: 0 }),
+        pragmaRow({ id: 1, table: "owner", from: "owner_id", to: "id" }),
+      ]);
+
+      expect(keys).toEqual([
+        {
+          constraintName: "0",
+          fromSchema: "",
+          fromTable: "child",
+          fromColumn: ["ref_id1", "ref_id2"],
+          toSchema: "",
+          toTable: "parent",
+          toColumn: ["parent_id1", "parent_id2"],
+          onUpdate: "NO ACTION",
+          onDelete: "CASCADE",
+          isComposite: true,
+        },
+        {
+          constraintName: "1",
+          fromSchema: "",
+          fromTable: "child",
+          fromColumn: "owner_id",
+          toSchema: "",
+          toTable: "owner",
+          toColumn: "id",
+          onUpdate: "NO ACTION",
+          onDelete: "CASCADE",
+          isComposite: false,
+        },
+      ]);
+    });
+  });
 });

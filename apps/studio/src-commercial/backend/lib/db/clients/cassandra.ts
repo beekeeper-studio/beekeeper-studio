@@ -202,27 +202,13 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     return Promise.resolve([]) // TODO (@will): Make sure this isn't a thing since you shouldn't be doing joins anyway?
   }
 
-  async getOutgoingKeys(table: string, _schema?: string): Promise<TableKey[]> {
-    const sql = `
-      SELECT column_name
-      FROM system_schema.columns
-      WHERE table_name = ?
-        AND kind = 'partition_key'
-      ALLOW FILTERING
-    `;
-    const params = [
-      table,
-    ];
-    const data = await this.driverExecuteSingle(sql, { params });
-    return data.rows.map((row) => ({
-      constraintName: null,
-      columnName: row.column_name,
-      referencedTable: null,
-      keyType: 'PRIMARY KEY'
-    } as any));
+  async getOutgoingKeys(_table: string, _schema?: string): Promise<TableKey[]> {
+    // Cassandra has no foreign keys.
+    return [];
   }
 
   async getIncomingKeys(_table: string, _schema?: string): Promise<TableKey[]> {
+    // Cassandra has no foreign keys.
     return [];
   }
 
