@@ -7,6 +7,7 @@
   padding-left: 5%;
 
   .tabulator {
+    --table-row-even-bg: var(--table-row-odd-bg);
     border-radius: 10px;
     .tabulator-header {
       background: var(--bg-subtle);
