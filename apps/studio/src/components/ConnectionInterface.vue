@@ -42,7 +42,7 @@
               <button
                 v-if="isCloud && !isNewConnection && !isPersonal"
                 type="button"
-                class="btn btn-link btn-icon btn-small share-btn"
+                class="btn btn-small share-btn"
                 @click="share"
               >
                 <i class="material-icons">share</i>
@@ -55,7 +55,9 @@
             <error-alert :error="errors" title="Please fix the following errors" />
             <form @action="submit" v-if="config">
               <div class="connection-type-wrapper">
-                <div class="label">Connection Type</div>
+                <div class="label">
+                  Connection Type
+                </div>
                 <button
                   class="form-control connection-type-btn"
                   type="button"
@@ -593,6 +595,12 @@ export default Vue.extend({
 
     },
     async submit() {
+      // Ignore re-entrant submits (e.g. a sidebar double-click while a
+      // connection attempt is pending) - the Connect button is disabled, but
+      // sidebar and quicksearch entry points are not.
+      if (this.connecting) {
+        return
+      }
       if (!this.isUltimate && isUltimateType(this.config.connectionType)) {
         return
       }
@@ -741,7 +749,8 @@ export default Vue.extend({
     padding-right: 1.75rem;
     justify-content: flex-start;
     align-items: center;
-    background-color: transparent;
+    background: var(--input-bg);
+    border: var(--input-border);
 
     &::v-deep .database-icon {
       line-height: 0;

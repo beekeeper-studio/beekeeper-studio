@@ -8,8 +8,9 @@ const renameAsync = util.promisify(fs.rename)
 const unlinkAsync = util.promisify(fs.unlink)
 
 module.exports = async function (context) {
-  // Replace the app launcher on linux only.
-  if (process.platform !== 'linux') {
+  // Replace the app launcher on linux only. Checks the target platform, not
+  // the host, so Windows packages (e.g. the MSI under Wine) build on Linux too.
+  if (context.electronPlatformName !== 'linux') {
     return
   }
   // eslint-disable-next-line no-console

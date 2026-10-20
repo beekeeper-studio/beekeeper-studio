@@ -1,4 +1,4 @@
-import Client_MySQL2 from 'knex/lib/dialects/mysql2'
+import Client_MySQL2 from 'knex/lib/dialects/mysql2/index.js'
 import TableBuilder_MySQL5_4 from './schema/mysql5_4-tablebuilder'
 
 export default class MySQL5_4KnexClient extends Client_MySQL2 {

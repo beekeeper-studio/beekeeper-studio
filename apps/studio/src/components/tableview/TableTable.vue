@@ -55,7 +55,7 @@
       <div class="truncate statusbar-info">
         <x-button
           @click.prevent="openProperties"
-          class="btn btn-flat btn-icon end"
+          class="btn btn-flat end"
           title="View Structure"
         >
           Structure <i class="material-icons">north_east</i>
@@ -70,7 +70,7 @@
           @click="refreshTable"
           tabindex="0"
           role="button"
-          class="statusbar-item hoverable"
+          class="btn statusbar-item"
           v-if="lastUpdatedText && !error && !minimalMode"
           :title="'Updated' + ' ' + lastUpdatedText"
         >
@@ -146,7 +146,7 @@
           </x-button>
           <x-buttons class="pending-changes">
             <x-button
-              class="btn btn-primary btn-badge btn-icon"
+              class="btn btn-primary btn-badge"
               @click.prevent="saveChanges"
               :disabled="running"
               :title="saveButtonText"
@@ -183,7 +183,7 @@
         </template>
         <span
           v-else-if="hiddenColumnCount"
-          class="hidden-column-count statusbar-item hoverable"
+          class="btn hidden-column-count statusbar-item"
           v-tooltip="hiddenColumnMessage"
         >
           <a
@@ -864,6 +864,8 @@ export default Vue.extend({
           const ranges = cell.getTable().getRanges()
           const range = _.last(ranges)
           const menu = [
+            this.viewAsJsonMenuItem(ranges),
+            { separator: true },
             this.openEditorMenu(cell),
             this.setAsNullMenuItem(ranges),
             { separator: true },
@@ -1104,16 +1106,16 @@ export default Vue.extend({
       if (!this.focusingTable()) return
       this.tabulator.copyRanges({ type: 'plain' })
     },
-    pasteSelection() {
+    async pasteSelection() {
       if (!this.focusingTable() || !this.editable) return
-      pasteRange(_.last(this.tabulator.getRanges()))
+      await pasteRange(_.last(this.tabulator.getRanges()))
       this.tabulator.modules.selectRange.restoreFocus()
     },
-    pasteAsNewRowsShortcut() {
+    async pasteAsNewRowsShortcut() {
       // Keyboard path is scoped to the focused grid, so it never reaches the
       // wrong-tab noty (that's reserved for the menu item).
       if (!this.focusingTable() || !this.editable) return
-      this.handlePasteAsNewRows()
+      await this.handlePasteAsNewRows()
     },
     deleteTableSelection(_e: Event, range?: RangeComponent) {
       if (!this.focusingTable() || !this.editable) return
@@ -1132,7 +1134,7 @@ export default Vue.extend({
       return `
         <span class="title">
           ${escapeHtml(columnName)}
-          <span class="badge column-data-type">${escapeHtml(dataType)}</span>
+          <span class="column-data-type">${escapeHtml(dataType)}</span>
         </span>`
     },
     maybeScrollAndSetWidths() {
@@ -1187,6 +1189,8 @@ export default Vue.extend({
           contextMenu: (_e, cell: CellComponent) => {
             const ranges = cell.getTable().getRanges();
             return [
+              this.viewAsJsonMenuItem(ranges),
+              { separator: true },
               this.setAsNullMenuItem(ranges),
               { separator: true },
               ...copyActionsMenu({
@@ -1273,6 +1277,21 @@ export default Vue.extend({
       this.tableFilters = getFilters(this.tab) || [createTableFilter(this.table.columns?.[0]?.columnName)]
       this.filters = normalizeFilters(this.tableFilters || [])
     },
+    /** Opens the JSON sidebar on the selected row. Leads the cell and row menus. */
+    viewAsJsonMenuItem(ranges: RangeComponent[]) {
+      return {
+        label: createMenuItem(
+          'View as JSON',
+          this.$bksConfig.getKeybindings('context-menu', 'general.jsonViewerSidebar'),
+          { icon: 'data_object' }
+        ),
+        action: () => {
+          this.trigger(AppEvent.selectSecondarySidebarTab, 'json-viewer')
+          this.trigger(AppEvent.toggleSecondarySidebar, true)
+          this.updateJsonViewer({ range: _.last(ranges) })
+        },
+      }
+    },
     rowActionsMenu(ranges: RangeComponent[]) {
       const selectedRowsCount = this.getSelectedRows().length
       let rowRangeLabel = "";
@@ -1309,21 +1328,6 @@ export default Vue.extend({
             this.deleteTableSelection(undefined)
           },
           disabled: !this.editable,
-        },
-        { separator: true },
-        {
-          label: createMenuItem(
-            'See details',
-            this.$bksConfig.getKeybindings(
-              'context-menu',
-              'general.jsonViewerSidebar'
-            )
-          ),
-          action: () => {
-            this.trigger(AppEvent.selectSecondarySidebarTab, 'json-viewer')
-            this.trigger(AppEvent.toggleSecondarySidebar, true)
-            this.updateJsonViewer({ range: _.last(ranges) })
-          },
         },
       ]
     },
@@ -1373,7 +1377,7 @@ export default Vue.extend({
         '=', '!=', '<', '<=', '>', '>=', 'in', 'like'
       ]
       return {
-        label: createMenuItem("Quick Filter", "", this.$store.getters.isCommunity),
+        label: createMenuItem("Quick Filter", "", { ultimate: this.$store.getters.isCommunity }),
         disabled: _.isNil(cell.getValue()),
         menu: symbols.map((s) => {
           return {
@@ -1397,7 +1401,11 @@ export default Vue.extend({
       this.$refs.editorModal.openModal(cell.getValue(), undefined, eventParams)
     },
 
-    openEditorMenuByShortcut() {
+    openEditorMenuByShortcut(e: KeyboardEvent) {
+      // Only when the key was pressed inside the grid. Shift+Enter is a
+      // newline elsewhere (filter inputs, plugin prompts, whose iframes
+      // forward their key events to the document).
+      if (!this.tabulator?.element.contains(e.target as Node)) return
       const range: RangeComponent = _.last(this.tabulator.getRanges())
       const cell = range.getCells().flat()[0];
       // FIXME maybe we can avoid calling child methods directly like this?
@@ -1669,7 +1677,7 @@ export default Vue.extend({
         return
       }
 
-      const parsed = readClipboardRows()
+      const parsed = await readClipboardRows()
       if (!parsed) return
 
       // Map clipboard values positionally onto the visible data columns

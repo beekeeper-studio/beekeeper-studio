@@ -17,6 +17,17 @@ const certSubject = 'SERIALNUMBER=803010247, C=US, ST=Texas, L=Dallas, O="Rathbo
 const bksAiShellPath = path.dirname(require.resolve('@beekeeperstudio/bks-ai-shell/package.json'));
 const bksErDiagramPath = path.dirname(require.resolve('@beekeeperstudio/bks-er-diagram/package.json'));
 
+// Each Windows architecture builds natively on its own runner (windows-2022 for
+// x64, windows-11-arm for arm64), and electron-builder targets the host arch
+// unless --x64/--arm64 is passed. Its default NSIS and portable names have no
+// arch in them (one universal installer covers every arch it's given), so
+// without this suffix both runners upload the same file names to the release.
+// x64 keeps its unsuffixed names: winget/scoop/chocolatey manifests point at them.
+// The MSI target adds " arm64" by itself.
+const windowsArch = process.argv.includes('--arm64') ? 'arm64'
+  : process.argv.includes('--x64') ? 'x64'
+  : process.arch
+const windowsArchSuffix = windowsArch === 'arm64' ? '-arm64' : ''
 
 
 module.exports = {
@@ -36,6 +47,7 @@ module.exports = {
     '!**/node_gyp_bins/*'
   ],
   afterPack: "./build/afterPack.js",
+  msiProjectCreated: "./build/win/msiProjectCreated.js",
   asarUnpack: [
     'package.json',
     // msnodesqlv8 ships a native ODBC addon used for SQL Server integrated
@@ -263,18 +275,32 @@ module.exports = {
   win: {
     icon: './public/icons/png/512x512.png',
     // FIXME: Add AppX/MSIX build back in once certificate issues resolved
-    target: ['nsis', 'portable'],
+    target: ['nsis', 'portable', 'msi'],
     publish: ['github'],
     signtoolOptions: {
       sign: "./build/win/sign.js",
     },
   },
   portable: {
-    "artifactName": "${productName}-${version}-portable.exe",
+    "artifactName": "${productName}-${version}" + windowsArchSuffix + "-portable.exe",
   },
   nsis: {
     oneClick: false,
-    include: './build/win/msvc-redist.nsh'
+    include: './build/win/msvc-redist.nsh',
+    // Uploaded to GitHub as Beekeeper-Studio-Setup-X.Y.Z(-arm64).exe
+    "artifactName": "${productName} Setup ${version}" + windowsArchSuffix + ".${ext}",
+  },
+  // Enterprise package for IT administrators (Intune, SCCM, Group Policy).
+  // Installs for all users into Program Files and runs unattended with
+  // `msiexec /i <file>.msi /qn`. Newer MSIs upgrade older ones in place.
+  // MSI installs don't self-update (see build/win/msiProjectCreated.js).
+  msi: {
+    perMachine: true,
+    // Never change this. It ties every release together so Windows Installer
+    // treats a new MSI as an upgrade instead of a separate product.
+    upgradeCode: "D5B3EEEB-1754-55D1-A12B-C0245BF59784",
+    runAfterFinish: false,
+    createDesktopShortcut: false,
   },
   appx: {
     applicationId: "beekeeperstudio",

@@ -32,10 +32,10 @@
       <span class="actions add-tab-group" id="add-tab-group">
         <a
           @click.prevent="createQuery(null)"
-          class="btn-fab add-query"
+          class="btn btn-icon add-query"
         ><i class=" material-icons">add</i></a>
         <x-button
-          class="btn-fab add-tab-dropdown"
+          class="btn btn-icon add-tab-dropdown"
           menu
           v-if="newTabDropdownItems.length > 1"
         >
@@ -58,7 +58,7 @@
       </span>
       <a
         @click.prevent="showUpgradeModal"
-        class="btn btn-brand btn-icon btn-upgrade"
+        class="btn btn-primary btn-brand btn-upgrade"
         v-tooltip="'Upgrade for: backup/restore, import from file, larger query results, and more!'"
         v-if="$store.getters.isCommunity"
       >
@@ -377,12 +377,18 @@ export default Vue.extend({
     }
   },
   watch: {
-    async usedConfig() {
-      await this.$store.dispatch('tabs/load')
-      if (!this.tabItems?.length) {
-        await this.createQuery()
+    // immediate: usedConfig is committed before the interface flips to
+    // connected, so it is already set when this component mounts
+    usedConfig: {
+      immediate: true,
+      async handler() {
+        if (!this.usedConfig) return
+        await this.$store.dispatch('tabs/load')
+        if (!this.tabItems?.length) {
+          await this.createQuery()
+        }
+        wait(800).then(() => this.$tour.start("connectedScreen"));
       }
-      wait(800).then(() => this.$tour.start("connectedScreen"));
     }
   },
   filters: {
@@ -539,8 +545,8 @@ export default Vue.extend({
           this.$noty.error(notificationMessage, {
             timeout: 3500,
             callbacks: {
-              onClick: () => {
-                this.$native.clipboard.writeText(notificationMessage)
+              onClick: async () => {
+                await this.$native.clipboard.writeText(notificationMessage)
               },
             },
           })

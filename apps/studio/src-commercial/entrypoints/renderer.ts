@@ -31,6 +31,7 @@ import NotyPlugin from '@/plugins/NotyPlugin'
 import '@/common/initializers/big_int_initializer.ts'
 import SettingsPlugin from '@/plugins/SettingsPlugin'
 import rawLog from '@bksLogger'
+import { ThemeRenderer } from "@commercial/lib/theme/ThemeRenderer";
 import { HeaderSortTabulatorModule } from '@/plugins/HeaderSortTabulatorModule'
 import { KeyListenerTabulatorModule } from '@/plugins/KeyListenerTabulatorModule'
 import { UtilityConnection } from '@/lib/utility/UtilityConnection'
@@ -88,10 +89,10 @@ import ClipboardRangeModule from '@/plugins/ClipboardRangeModule'
     UIKit.setClipboard(
       new (class extends EventTarget implements Clipboard {
         async writeText(text: string) {
-          window.main.writeTextToClipboard(text)
+          await window.main.writeTextToClipboard(text)
         }
         async readText() {
-          return window.main.readTextFromClipboard()
+          return await window.main.readTextFromClipboard()
         }
         async read(): Promise<ClipboardItem[]> {
           throw new Error("Not implemented")
@@ -228,6 +229,15 @@ import ClipboardRangeModule from '@/plugins/ClipboardRangeModule'
 
     const handler = new AppEventHandler(app)
     handler.registerCallbacks()
+    const theme = new ThemeRenderer({
+      store,
+      bus: {
+        emit: (...args) => app.$root.$emit(...args),
+        on: (...args) => app.$root.$on(...args),
+        off: (...args) => app.$root.$off(...args),
+      },
+    });
+    await theme.initialize();
     await store.dispatch('initRootStates')
     const webPluginManager = new WebPluginManager({
       utilityConnection: Vue.prototype.$util,

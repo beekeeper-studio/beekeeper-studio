@@ -99,7 +99,7 @@ DEFINE FIELD person
     TYPE record<person>;
 DEFINE FIELD stored_cards 
     ON TABLE payment_details 
-    FLEXIBLE TYPE array<object>;
+    TYPE array<object> FLEXIBLE;
 DEFINE FIELD time 
     ON TABLE payment_details 
     TYPE object;
@@ -135,13 +135,13 @@ DEFINE FIELD company_name
 DEFINE FIELD email 
     ON TABLE person 
     TYPE string 
-    ASSERT string::is::email($value);
+    ASSERT string::is_email($value);
 DEFINE FIELD phone 
     ON TABLE person 
     TYPE string;
 DEFINE FIELD address 
     ON TABLE person 
-    FLEXIBLE TYPE object;
+    TYPE object FLEXIBLE;
 DEFINE FIELD address_history 
     ON TABLE person 
     TYPE record<address_history>;
@@ -198,7 +198,7 @@ DEFINE FIELD images
 DEFINE FIELD images.*.url 
     ON TABLE product 
     TYPE string
-    ASSERT string::is::url($value);
+    ASSERT string::is_url($value);
 DEFINE FIELD images.*.position 
     ON TABLE product 
     TYPE number;
@@ -335,7 +335,7 @@ DEFINE FIELD size
     TYPE string;
 DEFINE FIELD shipping_address 
     ON TABLE order 
-    FLEXIBLE TYPE object;
+    TYPE object FLEXIBLE;
 DEFINE FIELD payment_method 
     ON TABLE order 
     TYPE string;
@@ -446,7 +446,7 @@ DEFINE FIELD name
     TYPE string;
 DEFINE FIELD addresses 
     ON TABLE seller 
-    FLEXIBLE TYPE object;
+    TYPE object FLEXIBLE;
 DEFINE FIELD website 
     ON TABLE seller 
     TYPE object;
@@ -497,7 +497,7 @@ DEFINE ANALYZER blank_snowball
 DEFINE INDEX review_content 
     ON TABLE review 
     FIELDS review_text 
-    SEARCH ANALYZER blank_snowball BM25 HIGHLIGHTS;
+    FULLTEXT ANALYZER blank_snowball BM25 HIGHLIGHTS;
 
 -- ------------------------------
 -- TABLE DATA: address_history

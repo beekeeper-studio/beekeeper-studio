@@ -141,7 +141,7 @@ type RedisTableRow = {
   key: string;
   type: RedisKeyType;
   ttl: number;
-  memory: number;
+  memory: number | null;
   encoding: string;
   value: unknown;
 };
@@ -601,7 +601,13 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
 
   async getKeyInfo(key: string): Promise<RedisTableRow> {
     const type = (await this.redis.type(key)) as RedisKeyType;
-    const memory = (await this.redis.memoryUsage(key)) as number;
+    let memory: number | null = null;
+    try {
+      memory = (await this.redis.memoryUsage(key)) as number;
+    } catch (error) {
+      // MEMORY USAGE is only available in Redis 4.0+
+      log.debug(`Could not get memory usage for key ${key}:`, error);
+    }
 
     let encoding = "unknown";
     try {
