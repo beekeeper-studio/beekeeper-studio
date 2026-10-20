@@ -11,7 +11,8 @@
     <link id="theme" rel="stylesheet" type="text/css">
     <script>
       const params = new URLSearchParams(location.search);
-      const themeId = params.get("themeId") || "default";
+      const rawThemeId = params.get("themeId");
+      const themeId = /^[a-zA-Z0-9_-]+$/.test(rawThemeId || "") ? rawThemeId : "default";
       const appearance = params.get("appearance") || "auto";
       document.getElementById("theme").href = `theme://${themeId}.css`;
     </script>
