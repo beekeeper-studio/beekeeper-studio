@@ -10,7 +10,7 @@ const FLAG = 'expiredLicenseEventsEmitted'
 
 // Enough store for App.vue to mount: the license module's status and
 // initialized flag drive the expiry check, everything else is inert.
-function buildStore(options: { initialized: boolean; expired: boolean }) {
+function buildStore(options: { initialized: boolean; expired: boolean; trial?: boolean }) {
   return new Vuex.Store({
     state: { storeInitialized: false, connected: false, database: null } as any,
     getters: {
@@ -26,7 +26,9 @@ function buildStore(options: { initialized: boolean; expired: boolean }) {
           status: {
             edition: 'community',
             condition: options.expired ? ['Expired valid date'] : ['No license found'],
-            isTrial: options.expired,
+            // An expired paid key unless asked for a trial: the end of a trial
+            // belongs to TrialEndedModal and never touches the one-shot flag.
+            isTrial: !!options.trial,
             isValidDateExpired: options.expired,
             isSupportDateExpired: false,
             fromFile: false,
@@ -104,6 +106,21 @@ describe('App license expiry check', () => {
     await wrapper.vm.$nextTick()
 
     expect(localStorage.getItem(FLAG)).toBe('true')
+    wrapper.destroy()
+  })
+
+  it('leaves an expired trial to the trial-ended dialog: no event, no flag', async () => {
+    const store = buildStore({ initialized: true, expired: true, trial: true })
+    const emitted: string[] = []
+    const wrapper = mountApp(store)
+    wrapper.vm.$root.$on('licenseValidDateExpired', () => emitted.push('licenseValidDateExpired'))
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+
+    expect(emitted).toEqual([])
+    // The flag stays unset so a trial end announced by an older version can
+    // be told apart from one that lapsed unseen (lib/trial.ts).
+    expect(localStorage.getItem(FLAG)).toBeNull()
     wrapper.destroy()
   })
 

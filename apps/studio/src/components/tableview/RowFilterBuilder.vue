@@ -194,6 +194,7 @@ import { TableFilter } from "@/lib/db/models";
 import { joinFilters, normalizeFilters, createTableFilter, checkEmptyFilters } from "@/common/utils";
 import { mapGetters, mapState } from "vuex";
 import { AppEvent } from "@/common/AppEvent";
+import { recordPaidFeatureUse } from "@/lib/paidFeatures";
 import _ from 'lodash';
 import BuilderFilter from "./filter/BuilderFilter.vue";
 
@@ -269,11 +270,13 @@ export default Vue.extend({
       this.$nextTick(this.focusOnInput);
     },
     addFilter() {
-      if (this.isCommunity) {
-        if (this.filters.length >= 2) {
+      // Two filters are free; the third onwards is the paid part.
+      if (this.filters.length >= 2) {
+        if (this.isCommunity) {
           this.$root.$emit(AppEvent.upgradeModal, "Advanced Filters")
           return;
         }
+        recordPaidFeatureUse('advanced-filters')
       }
       const lastFilter = this.filters[this.filters.length - 1];
       const cloned = _.clone(lastFilter)
