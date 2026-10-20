@@ -114,8 +114,6 @@ export default Vue.extend({
       type: Function
     }
   },
-  computed: {
-  },
   methods: {
     originLabel(origin: PluginOrigin) {
       return _.upperFirst(origin);

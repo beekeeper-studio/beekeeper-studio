@@ -342,7 +342,7 @@ export default Vue.extend({
     },
     async install({ id }) {
       try {
-        this.updatePlugin(id, { installing: true });
+        this.updatePlugin(id, { installing: true, error: null });
         await this.$plugin.install(id);
         this.updatePlugin(id, { installed: true, loadable: true });
       } catch (e) {
@@ -355,7 +355,7 @@ export default Vue.extend({
     },
     async update({ id }) {
       try {
-        this.updatePlugin(id, { installing: true });
+        this.updatePlugin(id, { installing: true, error: null });
         const manifest = await this.$plugin.update(id);
         this.updatePlugin(id, {
           version: manifest.version,
