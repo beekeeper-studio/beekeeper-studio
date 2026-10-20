@@ -19,15 +19,15 @@ export default class PluginRegistry {
     {
       name: "official",
       origin: "official",
-      owner: "not-night-but",
-      repo: "bks-plugins",
-      file: "official.json"
+      owner: "beekeeper-studio",
+      repo: "beekeeper-studio-plugins",
+      file: "plugins.json"
     },
     {
       name: "community",
       origin: "community",
-      owner: "not-night-but",
-      repo: "bks-plugins",
+      owner: "beekeeper-studio",
+      repo: "beekeeper-studio-plugins",
       file: "community.json"
     },
   ]
