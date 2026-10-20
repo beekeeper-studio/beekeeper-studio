@@ -75,7 +75,8 @@ export default class PluginManager extends Hookable {
     if (BksConfig.pluginSystem.disabled || !BksConfig.pluginSystem.autoUpdate) return;
 
     for (const plugin of installedPlugins) {
-      if (!this.pluginSettings[plugin.id]?.autoUpdate) {
+      // Skipping bundled plugins like this feels like a wee bit of a hack
+      if (!this.pluginSettings[plugin.id]?.autoUpdate || globals.plugins.ensureInstalled.some(({id}) => id === plugin.id)) {
         continue;
       }
 

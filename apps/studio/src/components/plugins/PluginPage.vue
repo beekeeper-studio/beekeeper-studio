@@ -25,6 +25,9 @@
               class="material-icons verified-icon"
               v-if="plugin.origin === 'official'"
             >verified</i>
+            <div v-if="plugin?.version != null" class="badge">
+              v{{ plugin?.version }}
+            </div>
             <span
               v-if="pluginRepo?.downloadCount != null"
               class="downloads"
@@ -135,7 +138,7 @@ import { Marked } from "marked";
 import markedAlert from "marked-alert";
 import { getPluginAvatarUrl, markedRepoUrlRewriter, markedVideoEmbed } from "@/services/plugin/utils";
 import DisableStateAlert from "./DisableStateAlert.vue";
-import { PluginRepository } from "@/services/plugin/types";
+import { PluginRepository, Plugin } from "@/services/plugin/types";
 
 export default Vue.extend({
   name: "PluginPage",
@@ -144,7 +147,7 @@ export default Vue.extend({
   },
   props: {
     plugin: {
-      type: Object, // FIXME (azmi): forgot what type this is!!!
+      type: Object as PropType<Plugin>,
       required: true,
     },
     pluginRepo: Object as PropType<PluginRepository>,
@@ -221,7 +224,6 @@ $gutter-h: 1.5rem;
   display: inline-flex;
   align-items: center;
   gap: 0.15rem;
-  margin-left: 0.5rem;
   opacity: 0.7;
   white-space: nowrap;
 
