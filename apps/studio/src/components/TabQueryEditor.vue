@@ -580,6 +580,7 @@
 
   import { canDeparameterize, convertParamsForReplacement, deparameterizeQuery, safelyIdentify } from '../lib/db/sql_tools'
   import { EditorMarker } from '@/lib/editor/utils'
+  import { recordPaidFeatureUse } from '@/lib/paidFeatures'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
@@ -1421,6 +1422,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.$root.$emit(AppEvent.upgradeModal, "Editable Query Results")
           return;
         }
+        recordPaidFeatureUse('editable-query-results')
         if (!this.resultsEditData[this.selectedResult]) {
           const resultEditData: FieldEditData[] = await this.connection.getResultEditData(this.result?.text, this.result.fields);
 
@@ -1611,6 +1613,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.$root.$emit(AppEvent.upgradeModal, 'Query to File')
           return;
         }
+        recordPaidFeatureUse('query-to-file')
 
         // run the currently highlighted text (if any) to a file, else all sql
         const query_sql = this.hasSelectedText && this.primaryIsTab ? this.editor.selection : this.unsavedText;
@@ -1625,6 +1628,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.$root.$emit(AppEvent.upgradeModal, 'Query to File')
           return;
         }
+        recordPaidFeatureUse('query-to-file')
         if (this.runButtonDisabled) return;
         // run the currently selected query or highlighted (if there are multiple) to a file, else all sql
         let query_sql = ''
@@ -2030,7 +2034,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         if (this.readOnly) {
           return [
             ...items,
-            ...this.getExtraPopupMenu("editor.query", { transform: "ui-kit" }),
+            ...this.getExtraPopupMenu("editor.query", { transform: "ui-kit", payload: this.editorMenuPayload() }),
           ]
         }
         return [
@@ -2069,8 +2073,16 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
                 },
               ]
             : []),
-          ...this.getExtraPopupMenu("editor.query", { transform: "ui-kit" }),
+          ...this.getExtraPopupMenu("editor.query", { transform: "ui-kit", payload: this.editorMenuPayload() }),
         ];
+      },
+      /** Editor text handed to plugin menu items (`editor.query.context`). */
+      editorMenuPayload() {
+        return {
+          text: this.unsavedText ?? "",
+          selectedText: this.hasSelectedText ? this.editor.selection : "",
+          selectedQuery: this.currentlySelectedQuery?.text ?? "",
+        };
       },
       viewEditHistory() {
         if (!this.query?.id) {
@@ -2377,7 +2389,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
   }
 
   // Hide the dot on the range highlight when not editing result
-  .query-editor:not(.editing-result) ::v-deep .tabulator-range-active::after {
+  .query-editor:not(.editing-result) ::v-deep .tabulator-fill-handle {
     visibility: hidden;
   }
 

@@ -13,9 +13,17 @@
         </div>
         <div v-if="oracleExpanded" class="advanced-body">
           <settings-input
+            v-if="$config.oracleInstantClientSupported"
             setting-key="oracleInstantClient" input-type="directory" @changed="restart"
             title="Instant Client Location" :help="help"
           />
+          <div v-else class="form-group">
+            <label>Instant Client Location</label>
+            <small class="help text-muted">
+              Oracle Instant Client is not available for Windows on ARM, so connections use thin mode.
+              Features that need thick mode, like Native Network Encryption, are unavailable.
+            </small>
+          </div>
           <settings-input
             setting-key="oracleConfigLocation" input-type="directory" @changed="configDirChanged" title="TNS_ADMIN override"
             help="The directory containing tnsnames.ora, sqlnet.ora, and wallets. Changing this after connecting requires a restart."

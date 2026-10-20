@@ -361,7 +361,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.onTrial),
         },
         {
-          label: "Trial expired",
+          label: "Trial expired (shows the trial-ended dialog)",
           click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.trialExpired),
         },
         {
@@ -373,7 +373,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.expiredLifetimeCoversThisVersion),
         },
         {
-          label: "On an expired, lifetime license, that covers an earlier version",
+          label: "On an expired, lifetime license, that covers an earlier version (shows the version dialog)",
           click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.expiredLifetimeCoversEarlierVersion),
         },
       ],

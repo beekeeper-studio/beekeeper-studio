@@ -4,6 +4,7 @@ import { emacs } from "@replit/codemirror-emacs";
 import { vim } from "@replit/codemirror-vim";
 import * as VimLib from "@replit/codemirror-vim";
 import { Keymap } from "../types";
+import { applyVimLineNumbers } from "./lineNumbers";
 import { Clipboard, Config, extendVimOnCodeMirror, VimDirective } from "./vim";
 
 const Vim = VimLib.Vim;
@@ -28,6 +29,7 @@ export function applyKeymap(view: EditorView, keymap: Keymap, options: VimOption
   view.dispatch({
     effects: keymapCompartment.reconfigure(buildKeymap(keymap, options)),
   });
+  applyVimLineNumbers(view, keymap === "vim");
 }
 
 export interface VimOptions {

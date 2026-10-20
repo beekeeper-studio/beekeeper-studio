@@ -348,6 +348,27 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
     &.tabulator-range-selected:not(.tabulator-range-only-cell-selected) {
       background-color: rgba($theme-base, 0.05);
     }
+
+    &.tabulator-range-selected:not(.tabulator-range-only-cell-selected) {
+      &.edited {
+        background: $cell-edited;
+        &:hover {
+          background: color.adjust($cell-edited, $lightness: 3%);
+        }
+      }
+      &.edit-error {
+        background: $cell-error;
+        &:hover {
+          background: color.adjust($cell-error, $lightness: 5%);
+        }
+      }
+      &.edit-success {
+        background: $cell-success;
+        &:hover {
+          background: color.adjust($cell-success, $lightness: 5%);
+        }
+      }
+    }
   }
 
   i.fk-link {
@@ -835,7 +856,7 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
     border-color: color.adjust($theme-primary, $lightness: -20%);
     border-width: 1px;
   }
-  .tabulator-range.tabulator-range-active::after {
+  .tabulator-range-fill-handle {
     background-color: color.adjust($theme-primary, $lightness: -20%);
   }
   .tabulator-range.copied {
@@ -951,6 +972,15 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
 .tabulator-tooltip {
   background-color: #292A2D;
   color: lightgray;
+
+  // Tabulator gives every popup the same .tabulator-popup-container z-index,
+  // so a cell tooltip and the context menu tie and DOM order decides. Holding
+  // the pointer still long enough to right click raises the tooltip last, over
+  // the menu. A tooltip is a non-interactive hint, so it belongs under every
+  // other tabulator popup rather than on top of one.
+  &.tabulator-popup-container {
+    z-index: 9999;
+  }
 }
 
 .beekeeper-studio-minimal-mode .tabulator-header {
@@ -959,5 +989,13 @@ $columnResizeGuideColor:      color.mix($query-editor-bg, $theme-base, 80%);
   .tabulator-col .tabulator-col-content .tabulator-col-title .title >
   .column-data-type {
     display: none;
+  }
+}
+
+.tabulator .tabulator-range-overlay .tabulator-range.tabulator-range-copy-highlight {
+  border-style: dashed;
+
+  &::after {
+    content: none;
   }
 }

@@ -196,11 +196,13 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   async listTables(): Promise<TableOrView[]> {
     const db = this.conn.db(this.db);
     const collections = await db.listCollections().toArray();
-    return collections.map((col) => {
-      return {
-        name: col.name
-      } as TableOrView
-    })
+    return collections
+      .map((col) => {
+        return {
+          name: col.name
+        } as TableOrView
+      })
+      .sort((a, b) => a.name.localeCompare(b.name))
   }
 
   async listViews(): Promise<TableOrView[]> {

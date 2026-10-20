@@ -4,6 +4,7 @@ import { existsSync } from 'fs'
 import { resolve, join } from 'path'
 import { IPlatformInfo } from '../IPlatformInfo'
 import { BksVersion } from '@/lib/license'
+import { isMsiInstall } from '@/common/msiInstall'
 
 
 // TODO: Automatically enable wayland without flags once
@@ -50,6 +51,8 @@ export function mainPlatformInfo(): IPlatformInfo {
   const isWindows = platform === 'win32'
   const isMac = platform === 'darwin'
   const isArm = p.arch.startsWith('arm')
+  // process.arch reports x64 in this case, so isArm is false.
+  const runningUnderArm64Translation = testMode ? false : !!e.app.runningUnderARM64Translation
   const easyPlatform = isWindows ? 'windows' : (isMac ? 'mac' : 'linux')
   const locale = testMode ? 'test' : e.app.getLocale();
 
@@ -59,9 +62,10 @@ export function mainPlatformInfo(): IPlatformInfo {
 
   // previous builds of Beekeeper Studio required native libs for Oracle,
   // but now it should work on all platforms
-  // FIXME: Windows ARM - this needs to be disabled
-  // as instant client not available there
   const oracleSupported = true
+  // Oracle publishes no Instant Client for Windows ARM64, and node-oracledb
+  // ships no thick-mode binary for it, so Oracle connects in thin mode there.
+  const oracleInstantClientSupported = !(isWindows && p.arch === 'arm64')
 
   const resourcesPath = isDevEnv ? resolve('./extra_resources') : resolve(p.resourcesPath)
   let userDirectory = testMode ? './tmp' : e.app.getPath("userData")
@@ -75,7 +79,10 @@ export function mainPlatformInfo(): IPlatformInfo {
 
   const sessionType = p.env.XDG_SESSION_TYPE
 
-  const slice = isDevEnv ? 2 : 1
+  // `electron <app path>` (dev, and the e2e tests) puts the app path at
+  // argv[1]; a packaged build doesn't. Keying this off isDevEnv missed test
+  // mode, where the app read its own entry script as a URL to open on launch.
+  const slice = p.defaultApp ? 2 : 1
   const parsedArgs = yargs(p.argv.slice(slice))
   const appVersion = testMode ? '0.0.0' : e.app.getVersion()
 
@@ -85,7 +92,8 @@ export function mainPlatformInfo(): IPlatformInfo {
       sessionType === 'wayland' && !isWindows && !isMac
   }
    return {
-    isWindows, isMac, isArm, oracleSupported,
+    isWindows, isMac, isArm, runningUnderArm64Translation,
+    oracleSupported, oracleInstantClientSupported,
     parsedArgs,
     isLinux: !isWindows && !isMac,
     sessionType,
@@ -93,6 +101,7 @@ export function mainPlatformInfo(): IPlatformInfo {
     isSnap: p.env.ELECTRON_SNAP,
     isFlatpak: !!p.env.FLATPAK_ID || existsSync('/.flatpak-info'),
     isPortable: isWindows && p.env.PORTABLE_EXECUTABLE_DIR,
+    isMsi: isWindows && !isDevEnv && !testMode && isMsiInstall(p.execPath),
     isDevelopment: isDevEnv,
     isAppImage: !!process.env.APPIMAGE,
     isAppImageLauncher: process.env.DESKTOPINTEGRATION === 'AppImageLauncher',

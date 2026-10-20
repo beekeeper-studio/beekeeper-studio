@@ -113,14 +113,6 @@
   // Not --bks-text-editor-font-size, which tracks the user's font size setting.
   --bks-text-editor-vim-panel-font-size: 0.875rem;
   --bks-text-editor-vim-panel-border: 1px solid rgba(128, 128, 128, 0.35);
-
-  // Context Menu
-  --bks-text-editor-context-menu-bg-color: #{color.adjust($theme-bg, $lightness: -5%)};
-  --bks-text-editor-context-menu-fg-color: #{$text-dark};
-  --bks-text-editor-context-menu-border-color: transparent;
-  --bks-text-editor-context-menu-item-bg-color-active: #{$brand-info};
-  --bks-text-editor-context-menu-item-fg-color-active: #ffffff;
-  --bks-text-editor-context-menu-item-bg-color-hover: #{rgba($theme-base, 0.05)};
 }
 
 .BksTextEditor {
@@ -321,7 +313,7 @@
     cursor: pointer;
 
     &:hover:not([aria-selected]) {
-      background-color: var(--bks-text-editor-context-menu-item-bg-color-hover);
+      background-color: var(--bks-context-menu-item-bg-color-hover);
     }
 
     // Option type-based styling

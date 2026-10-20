@@ -15,11 +15,16 @@ const azureEncrypt = new AzureCredsEncryptTransformer(loadEncryptionKey())
 const surrealEncrypt = new SurrealDbEncryptTransformer(loadEncryptionKey())
 const snowflakeTransformer = new SnowflakeOptionsTransformer()
 
+// TODO (@day): Currently this is apparently "just for oracle".
+// we should move away from stuff like `sqlAnywhereOptions` and `redshiftOptions`
+// instead this should be the object for connectionType specific options.
+// We can probably do some type wizardry as well based on connectionType
 export interface ConnectionOptions {
   cluster?: string
   jwtAuthEnabled?: boolean
   connectionMethod?: 'manual' | 'connectionString'
-  connectionString?: string
+  connectionString?: string,
+  enableClearText?: boolean
 }
 
 function parseConnectionType(t: Nullable<ConnectionType>) {

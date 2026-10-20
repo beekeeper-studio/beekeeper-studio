@@ -211,7 +211,11 @@ export default class WebPluginLoader {
             response.name === "getEncryptedData"
               ? "plugin/getEncryptedData"
               : "plugin/getData",
-            { manifest: this.manifest, key: response.args.key }
+            {
+              manifest: this.manifest,
+              key: response.args.key,
+              scope: response.args.scope,
+            }
           );
           response.result = value;
           break;
@@ -235,7 +239,12 @@ export default class WebPluginLoader {
             response.name === "setEncryptedData"
               ? "plugin/setEncryptedData"
               : "plugin/setData",
-            { manifest: this.manifest, key: response.args.key, value: response.args.value }
+            {
+              manifest: this.manifest,
+              key: response.args.key,
+              value: response.args.value,
+              scope: response.args.scope,
+            }
           )
           break;
         }

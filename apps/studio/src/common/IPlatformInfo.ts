@@ -5,7 +5,11 @@ export interface IPlatformInfo {
   isWindows: boolean,
   isMac: boolean,
   isArm: boolean,
+  /** An x64 build running under emulation on an ARM64 CPU (Windows on ARM, or Rosetta) */
+  runningUnderArm64Translation: boolean,
   oracleSupported: boolean,
+  /** Thick mode needs Oracle Instant Client, which Oracle doesn't build for Windows ARM64 */
+  oracleInstantClientSupported: boolean,
   parsedArgs: any,
   isLinux: boolean,
   sessionType: string,
@@ -13,6 +17,7 @@ export interface IPlatformInfo {
   isSnap: string,
   isFlatpak: boolean,
   isPortable: string,
+  isMsi: boolean,
   isDevelopment: boolean,
   isAppImage: boolean,
   isAppImageLauncher: boolean,

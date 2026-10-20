@@ -296,7 +296,6 @@
         </div>
       </modal>
     </portal>
-    <!-- <add-field-modal @done="cellAddCol(undefined, $event)"/> -->
   </div>
 </template>
 
@@ -337,7 +336,7 @@ import { normalizeFilters, safeSqlFormat, createTableFilter, isNumericDataType, 
 import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml, FormatterParams } from '@shared/lib/tabulator';
-import { copyRanges, pasteRange, readClipboardRows, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
+import { pasteRange, readClipboardRows, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
 import { tabulatorForTableData } from "@/common/tabulator";
 import { TransportTabulatorPersistence } from "@/common/transport/TransportTabulatorPersistence";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
@@ -348,6 +347,10 @@ import { UpdateOptions } from "@/lib/data/jsonViewer";
 const log = rawLog.scope('TableTable')
 
 let draftFilters: TableFilter[] | string | null;
+
+const nullComponent = {
+  getComponent: () => {}
+};
 
 export default Vue.extend({
   components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, LoadingSpinner },
@@ -860,12 +863,14 @@ export default Vue.extend({
           const ranges = cell.getTable().getRanges()
           const range = _.last(ranges)
           const menu = [
+            this.viewAsJsonMenuItem(ranges),
+            { separator: true },
             this.openEditorMenu(cell),
             this.setAsNullMenuItem(ranges),
             { separator: true },
             this.quickFilterMenuItem(cell),
               ...copyActionsMenu({
-                ranges,
+                tabulator: cell.getTable(),
                 table: this.table.name,
                 schema: this.table.schema,
                 escapeString: this.dialectData?.escapeString,
@@ -907,7 +912,7 @@ export default Vue.extend({
           this.setAsNullMenuItem(ranges),
           { separator: true },
           ...copyActionsMenu({
-            ranges,
+            tabulator: column.getTable(),
             table: this.table.name,
             schema: this.table.schema,
             escapeString: this.dialectData?.escapeString,
@@ -1081,13 +1086,14 @@ export default Vue.extend({
         }
       }
     },
-    async copySelection() {
+    copySelection() {
       if (!this.focusingTable()) return
-      await copyRanges({ ranges: this.tabulator.getRanges(), type: 'plain' })
+      this.tabulator.copyRanges({ type: 'plain' })
     },
     async pasteSelection() {
       if (!this.focusingTable() || !this.editable) return
       await pasteRange(_.last(this.tabulator.getRanges()))
+      this.tabulator.modules.selectRange.restoreFocus()
     },
     async pasteAsNewRowsShortcut() {
       // Keyboard path is scoped to the focused grid, so it never reaches the
@@ -1163,13 +1169,16 @@ export default Vue.extend({
         persistenceReaderFunc: this.persistenceReader,
         persistenceWriterFunc: this.persistenceWriter,
         rowHeader: {
+          // @ts-ignore
           contextMenu: (_e, cell: CellComponent) => {
             const ranges = cell.getTable().getRanges();
             return [
+              this.viewAsJsonMenuItem(ranges),
+              { separator: true },
               this.setAsNullMenuItem(ranges),
               { separator: true },
               ...copyActionsMenu({
-                ranges,
+                tabulator: cell.getTable(),
                 table: this.table.name,
                 schema: this.table.schema,
               }),
@@ -1184,7 +1193,7 @@ export default Vue.extend({
               this.setAsNullMenuItem(ranges),
               { separator: true },
               ...copyActionsMenu({
-                ranges,
+                tabulator: this.tabulator,
                 table: this.table.name,
                 schema: this.table.schema,
                 escapeString: this.dialectData?.escapeString,
@@ -1222,23 +1231,50 @@ export default Vue.extend({
         onRangeChange: this.handleRangeChange,
       });
       this.tabulator.on('cellEdited', this.cellEdited)
+      this.tabulator.on("rangeEdited", (range) => {
+        range.getModifiedCells().forEach((cell) => this.cellEdited(cell));
+        this.tabulator.modules.selectRange.restoreFocus()
+      });
       this.tabulator.on('dataProcessed', this.maybeScrollAndSetWidths)
       this.tabulator.on('tableBuilt', () => {
         this.tabulator.modules.selectRange.restoreFocus()
       })
-      this.tabulator.on('historyUndo', (action, component) => {
+      this.tabulator.on('historyUndo', (action, component, data) => {
         if (action === "cellEdit") {
           this.cellEdited(component);
+        } else if (action === "rangeEdit") {
+          component.getCells().flat().forEach((cell: CellComponent) => this.cellEdited(cell));
+        } else if (action === "queuePendingDelete") {
+          this.removeRowsFromPendingDeletes(data);
         }
       })
-      this.tabulator.on('historyRedo', (action, component) => {
+      this.tabulator.on('historyRedo', (action, component, data) => {
         if (action === "cellEdit") {
           this.cellEdited(component);
+        } else if (action === "rangeEdit") {
+          component.getCells().flat().forEach((cell: CellComponent) => this.cellEdited(cell));
+        } else if (action === "queuePendingDelete") {
+          this.addRowsToPendingDeletes(data)
         }
       })
 
       this.tableFilters = getFilters(this.tab) || [createTableFilter(this.table.columns?.[0]?.columnName)]
       this.filters = normalizeFilters(this.tableFilters || [])
+    },
+    /** Opens the JSON sidebar on the selected row. Leads the cell and row menus. */
+    viewAsJsonMenuItem(ranges: RangeComponent[]) {
+      return {
+        label: createMenuItem(
+          'View as JSON',
+          this.$bksConfig.getKeybindings('context-menu', 'general.jsonViewerSidebar'),
+          { icon: 'data_object' }
+        ),
+        action: () => {
+          this.trigger(AppEvent.selectSecondarySidebarTab, 'json-viewer')
+          this.trigger(AppEvent.toggleSecondarySidebar, true)
+          this.updateJsonViewer({ range: _.last(ranges) })
+        },
+      }
     },
     rowActionsMenu(ranges: RangeComponent[]) {
       const selectedRowsCount = this.getSelectedRows().length
@@ -1276,21 +1312,6 @@ export default Vue.extend({
             this.deleteTableSelection(undefined)
           },
           disabled: !this.editable,
-        },
-        { separator: true },
-        {
-          label: createMenuItem(
-            'See details',
-            this.$bksConfig.getKeybindings(
-              'context-menu',
-              'general.jsonViewerSidebar'
-            )
-          ),
-          action: () => {
-            this.trigger(AppEvent.selectSecondarySidebarTab, 'json-viewer')
-            this.trigger(AppEvent.toggleSecondarySidebar, true)
-            this.updateJsonViewer({ range: _.last(ranges) })
-          },
         },
       ]
     },
@@ -1340,7 +1361,7 @@ export default Vue.extend({
         '=', '!=', '<', '<=', '>', '>=', 'in', 'like'
       ]
       return {
-        label: createMenuItem("Quick Filter", "", this.$store.getters.isCommunity),
+        label: createMenuItem("Quick Filter", "", { ultimate: this.$store.getters.isCommunity }),
         disabled: _.isNil(cell.getValue()),
         menu: symbols.map((s) => {
           return {
@@ -1364,7 +1385,11 @@ export default Vue.extend({
       this.$refs.editorModal.openModal(cell.getValue(), undefined, eventParams)
     },
 
-    openEditorMenuByShortcut() {
+    openEditorMenuByShortcut(e: KeyboardEvent) {
+      // Only when the key was pressed inside the grid. Shift+Enter is a
+      // newline elsewhere (filter inputs, plugin prompts, whose iframes
+      // forward their key events to the document).
+      if (!this.tabulator?.element.contains(e.target as Node)) return
       const range: RangeComponent = _.last(this.tabulator.getRanges())
       const cell = range.getCells().flat()[0];
       // FIXME maybe we can avoid calling child methods directly like this?
@@ -1691,7 +1716,8 @@ export default Vue.extend({
         if (matchingInserts.length > 0) {
           this.$set(this.pendingChanges, 'inserts', this.pendingChanges.inserts.filter((insert) => !rows.includes(insert.row)))
           matchingInserts.forEach((insert) => insert.row.delete())
-          return
+          rows = _.without(rows, ...matchingInserts.map((insert) => insert.row));
+          // TODO (@day): will have to add this to the history module as well
         }
       }
 
@@ -1703,6 +1729,7 @@ export default Vue.extend({
 
         this.primaryKeys.forEach((pk: string) => {
           const cell = row.getCell(pk)
+          // @ts-ignore
           const isBinary = cell.getColumn().getDefinition().dataType.toUpperCase().includes('BINARY')
           let value = cell.getValue();
           if (isBinary) {
@@ -1744,10 +1771,26 @@ export default Vue.extend({
 
       // remove pending updates for the row marked for deletion
       discardedUpdates.forEach(update => this.discardColumnUpdate(update))
+      // TODO (@day): we will also probably need to add this to the history somehow?? maybe it already is?
 
       this.$set(this.pendingChanges, 'updates', _.without(this.pendingChanges.updates, discardedUpdates))
+
+      // the component doesn't really matter, tabulator just throws if you don't pass one
+      this.tabulator.modules.history.action('queuePendingDelete', nullComponent, rows)
+    },
+    removeRowsFromPendingDeletes(rows: RowComponent[]) {
+      rows.forEach((row) => {
+        row.getElement().classList.remove('deleted')
+      });
+
+      const newDeletes = this.pendingChanges.deletes.filter((del) => !rows.includes(del.row));
+
+      this.$set(this.pendingChanges, 'deletes', newDeletes);
     },
     resetPendingChanges() {
+      if (this.tabulator) {
+        this.tabulator.modules.history.clear();
+      }
       this.pendingChanges = {
         inserts: [],
         updates: [],
