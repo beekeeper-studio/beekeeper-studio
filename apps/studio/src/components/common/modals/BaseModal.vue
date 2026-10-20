@@ -67,10 +67,6 @@ export default Vue.extend({
     /** Show loading indicator */
     loading: Boolean,
     height: String,
-    clickToClose: {
-      type: Boolean,
-      default: true
-    },
     minWidth: {
       type: String,
       default: "36rem"
