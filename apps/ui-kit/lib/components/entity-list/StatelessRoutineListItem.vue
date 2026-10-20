@@ -10,7 +10,7 @@
       :class="{ active: selected, open: expanded }"
     >
       <span
-        class="btn-fab open-close"
+        class="btn-icon open-close"
         @click.prevent="$emit('expand', $event)"
         @contextmenu.stop.prevent=""
       >
@@ -49,7 +49,7 @@
         :class="{ pinned: pinned }"
       >
         <span
-          class="btn-fab pin"
+          class="btn-icon pin"
           :class="{ pinned: pinned }"
           :title="pinned ? 'Unpin' : 'Pin'"
           @mousedown.prevent.stop="$emit('pin', $event)"

@@ -1,5 +1,5 @@
 <template>
-  <div class="style-wrapper" :style="{ '--bks-text-editor-font-size': `${editorFontSize}px` }">
+  <div class="style-wrapper" :style="{ '--editor-font-size': `${editorFontSize}px` }">
     <div
       class="beekeeper-studio-wrapper"
       :class="{ 'beekeeper-studio-minimal-mode': $store.getters.minimalMode }"
@@ -35,6 +35,8 @@
     <plugin-controller :editor-font-size="editorFontSize" />
     <plugin-manager-modal />
     <keyboard-shortcuts-modal />
+    <theme-playground-modal />
+    <appearance-modal />
     <move-item-modal />
     <move-folder-modal />
     <connection-type-picker-modal />
@@ -94,6 +96,8 @@ import type { LicenseStatus } from "@/lib/license";
 import { SmartLocalStorage } from '@/common/LocalStorage';
 import PluginManagerModal from '@/components/plugins/PluginManagerModal.vue'
 import KeyboardShortcutsModal from '@/components/common/modals/KeyboardShortcutsModal.vue'
+import ThemePlaygroundModal from '@/components/common/modals/ThemePlaygroundModal.vue'
+import AppearanceModal from '@/components/common/modals/AppearanceModal.vue'
 import PluginController from '@/components/plugins/PluginController.vue'
 import LockManager from "@/components/managers/LockManager.vue";
 import InputEphemeralModal from "@/components/common/modals/InputEphemeralModal.vue";
@@ -118,9 +122,9 @@ export default Vue.extend({
     EnterLicenseModal, TrialEndedModal, LicenseExpiredModal,
     LifetimeLicenseExpiredModal, LifetimeVersionNotCoveredModal, CloudWorkspacesBlockedModal,
     WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
-    PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
+    PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal, ThemePlaygroundModal,
     InputEphemeralModal, ShareModal, MoveItemModal, MoveFolderModal,
-    ConnectionFilesImportModal, ConnectionTypePickerModal,
+    ConnectionFilesImportModal, ConnectionTypePickerModal, AppearanceModal
   },
   data() {
     return {
@@ -143,7 +147,6 @@ export default Vue.extend({
     ...mapGetters({
       'isTrial': 'isTrial',
       'isUltimate': 'isUltimate',
-      'themeValue': 'settings/themeValue',
     }),
     editorFontSize() {
       return this.$store.state.settings?.settings?.editorFontSize?.value || 14
@@ -152,10 +155,6 @@ export default Vue.extend({
   watch: {
     database() {
       log.info('database changed', this.database)
-    },
-    themeValue() {
-      document.body.className = `theme-${this.themeValue}`
-      this.trigger(AppEvent.changedTheme, this.themeValue)
     },
     status(curr, prev) {
       this.$store.dispatch('updateWindowTitle')
@@ -201,9 +200,6 @@ export default Vue.extend({
     this.$nextTick(() => {
       window.main.isReady();
     })
-    if (this.themeValue) {
-      document.body.className = `theme-${this.themeValue}`
-    }
 
     if (this.url) {
       try {

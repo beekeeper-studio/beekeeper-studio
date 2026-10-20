@@ -5,10 +5,27 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Beekeeper-Studio</title>
+
+    <link rel="stylesheet" type="text/css" href="./src/assets/styles/tokens/index.scss">
+
+    <link id="theme" rel="stylesheet" type="text/css">
+    <script>
+      const params = new URLSearchParams(location.search);
+      const rawThemeId = params.get("themeId");
+      const themeId = /^[a-zA-Z0-9_-]+$/.test(rawThemeId || "") ? rawThemeId : "default";
+      const appearance = params.get("appearance") || "auto";
+      document.getElementById("theme").href = `theme://${themeId}.css`;
+    </script>
+
     <script src="./src-commercial/entrypoints/renderer.ts" type="module"></script>
-    <!-- <link rel="stylesheet" href="./main.css"> -->
   </head>
   <body id="body">
+    <script>
+      const systemDark = matchMedia("(prefers-color-scheme: dark)").matches;
+      const isDark = appearance === "auto" ? systemDark : appearance === "dark";
+      document.body.classList.add(isDark ? "dark-theme" : "light-theme");
+      document.body.classList.add(`theme-${themeId}`);
+    </script>
     <noscript>
       <strong>We're sorry but beekeeper-studio doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
     </noscript>
@@ -22,7 +39,7 @@
           bottom: 0;
           margin: 0;
           padding: 0;
-          background: transparent;
+          background: var(--app-bg);
           overflow: hidden;
         }
         .app-loading {
@@ -51,7 +68,7 @@
           display: table-cell;
           text-align: center;
           vertical-align: middle;
-          color:#999;
+          color: var(--app-fg);
           font-size: 14px;
         }
         .preloader {
@@ -68,21 +85,21 @@
           height: 50px;
           width: 50px;
           border-radius: 50%;
-          box-shadow: 1px 1px #fad83b,
+          box-shadow: 1px 1px var(--yellow-9),
                       1px 2px rgba(0, 0, 0 , 0.25);
           transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg);
         }
         .preloader .layer:nth-of-type(1) {
-          background: rgba(250, 216, 59, 0.65);
+          background: rgb(from var(--yellow-9) r g b / 0.65);
           margin-top: 36px;
           animation: movedown  0.8s cubic-bezier(0.39, 0.575, 0.565, 1)  0.4s infinite normal;
         }
         .preloader .layer:nth-of-type(2) {
-          background: rgba(250, 216, 59, 0.65);
+          background: rgb(from var(--yellow-9) r g b / 0.65);
           margin-top: 18px;
         }
         .preloader .layer:nth-of-type(3) {
-          background: rgba(250, 216, 59, 0.75);
+          background: rgb(from var(--yellow-9) r g b / 0.75);
           animation: moveup  0.8s cubic-bezier(0.39, 0.575, 0.565, 1) infinite normal;
         }
         @keyframes moveup {
