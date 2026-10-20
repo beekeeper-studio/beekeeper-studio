@@ -17,6 +17,7 @@
       margin-top: 1rem;
       display: flex;
       justify-content: center;
+      box-shadow: none;
       div:hover:not(.deactivated) .progress:not(.passed) {
         background-color: var(--gray-a7);
       }
@@ -37,6 +38,7 @@
         font-weight: 500;
         padding: $gutter-w ($gutter-w * 1.25);
         color: var(--text-muted);
+        box-shadow: none;
         transition: color 0.2s ease-in-out,
                     box-shadow 0.2s ease-in-out;
         &:hover:not(.deactivated):not(.active) {

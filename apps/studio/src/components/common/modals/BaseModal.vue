@@ -71,6 +71,23 @@ export default Vue.extend({
       type: String,
       default: "550px",
     },
+    /**
+     * When false there is no close button, and Escape, overlay clicks and
+     * stray `$modal.hide` calls are ignored: only `close()` (also exposed as
+     * the scoped slot prop) dismisses the modal. For dialogs that need an
+     * explicit decision, like the trial-ended prompt.
+     */
+    closable: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  data() {
+    return {
+      // Raised by close() for the duration of the hide call, so
+      // handleBeforeClose can tell an intentional close from an escape.
+      allowClose: false,
+    };
   },
   methods: {
     close() {

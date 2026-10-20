@@ -265,6 +265,23 @@
       </section>
 
       <section>
+        <h3>Stepper</h3>
+        <div class="stepper-box-sample">
+          <stepper
+            :steps="stepperSteps"
+            button-portal-target="theme-playground-stepper-buttons"
+          />
+          <status-bar :active="true">
+            <div class="statusbar-info col flex expand" />
+            <portal-target
+              class="portal-stepper-buttons"
+              name="theme-playground-stepper-buttons"
+            />
+          </status-bar>
+        </div>
+      </section>
+
+      <section>
         <h3>Tree list</h3>
         <div class="tree-box">
           <tree
@@ -398,6 +415,9 @@ import { escapeHtml } from "@shared/lib/tabulator";
 import SqlTextEditor from "@beekeeperstudio/ui-kit/vue/sql-text-editor";
 import MultiSelect from "@/components/common/form/MultiSelect.vue";
 import LoadingSpinner from "@/components/common/loading/LoadingSpinner.vue";
+import Stepper from "@/components/stepper/Stepper.vue";
+import StatusBar from "@/components/common/StatusBar.vue";
+import ThemePlaygroundStep from "./ThemePlaygroundStep.vue";
 
 const TABLE_COLUMNS = [
   { field: "id", title: "id", dataType: "int4", width: 70, cssClass: "primary-key", editable: false },
@@ -434,7 +454,16 @@ function treeFolders() {
 
 export default Vue.extend({
   mixins: [Mutators],
-  components: { BaseModal, Tree, TreeFolder, SqlTextEditor, MultiSelect, LoadingSpinner },
+  components: {
+    BaseModal,
+    Tree,
+    TreeFolder,
+    SqlTextEditor,
+    MultiSelect,
+    LoadingSpinner,
+    Stepper,
+    StatusBar,
+  },
   data() {
     return {
       modalName: "theme-playground-modal",
@@ -463,6 +492,46 @@ export default Vue.extend({
       activePill: "Columns",
       treeExpanded: ["folder-1", "folder-2", "folder-3"],
       treeFolders: treeFolders(),
+      stepperSteps: [
+        {
+          component: ThemePlaygroundStep,
+          title: "Choose Tables",
+          icon: "grid_on",
+          completed: false,
+          nextButtonText: "Options",
+          nextButtonIcon: "keyboard_arrow_right",
+          stepperProps: {
+            title: "Choose Tables",
+            description: "Pick the tables to include.",
+          },
+        },
+        {
+          component: ThemePlaygroundStep,
+          title: "Options",
+          icon: "settings",
+          completed: false,
+          completePrevious: true,
+          nextButtonText: "Review",
+          nextButtonIcon: "keyboard_arrow_right",
+          stepperProps: {
+            title: "Options",
+            description: "Set the output format and location.",
+          },
+        },
+        {
+          component: ThemePlaygroundStep,
+          title: "Review",
+          icon: "check",
+          completed: false,
+          completePrevious: true,
+          nextButtonText: "Run",
+          nextButtonIcon: "keyboard_arrow_right",
+          stepperProps: {
+            title: "Review",
+            description: "Check the summary before running.",
+          },
+        },
+      ],
       buttonVariants: ["", "btn-flat", "btn-primary"],
       buttonSizes: [{ label: "Default", cls: "" }, { label: "Small", cls: "btn-small" }],
       buttonSize: "",
@@ -722,6 +791,12 @@ h4 {
 
 .sample-table {
   height: 220px;
+}
+
+.stepper-box-sample {
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  overflow: hidden;
 }
 
 .sample-editor {
