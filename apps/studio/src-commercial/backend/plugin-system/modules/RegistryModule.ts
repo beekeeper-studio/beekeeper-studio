@@ -2,6 +2,7 @@ import { BksConfig } from "@/common/bksConfig/BksConfigProvider";
 import { Module, ModuleOptions } from "@/services/plugin/Module";
 import platformInfo from '@/common/platform_info';
 import { RegistryConfig } from "@/services/plugin";
+import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 
 
 type RegistryOptions = {
@@ -33,9 +34,11 @@ export class RegistryModule extends Module {
     this.addAdditionalRegistries();
   }
 
-  private addAdditionalRegistries() {
-    // this should check licenses eventually
-    if (platformInfo.isDevelopment &&
+  private async addAdditionalRegistries() {
+    const license = await LicenseKey.getLicenseStatus();
+    // This is meant to be a Business only feature, we just can't check that here yet
+    // TODO (@day): business only
+    if (license.isUltimate &&
       !this.options.config.pluginSystem.thirdPartyRegistriesDisabled &&
       this.options.config.pluginSystem?.registries) {
       const registries = Object.keys(this.options.config.pluginSystem.registries);

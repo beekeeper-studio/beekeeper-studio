@@ -18,10 +18,10 @@ export class LicenseModule extends Module {
       return;
     }
 
-    if (plugins.filter((p) => p.origin !== 'bundled').length > globals.plugins.maxCommunityPlugins) {
+    if (plugins.filter((p) => p.origin !== 'bundled').length >= globals.plugins.maxCommunityPlugins) {
       throw new PluginSystemError(
         "PLUGIN_LIMIT_REACHED",
-        `You have reached the maximum of ${globals.plugins.maxCommunityPlugins} community plugins`
+        `You have reached the maximum of ${globals.plugins.maxCommunityPlugins} plugins`
       )
     }
   }
