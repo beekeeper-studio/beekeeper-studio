@@ -16,6 +16,20 @@
       @input="$emit('input', $event.target.value)"
     >
     <div
+      v-if="showClearButton"
+      class="input-group-append not-last"
+    >
+      <a
+        type="button"
+        class="btn btn-flat btn-icon"
+        :class="{disabled}"
+        title="Clear"
+        @click.prevent="clear"
+      >
+        <i class="material-icons">close</i>
+      </a>
+    </div>
+    <div
       class="input-group-append"
       :class="{ 'not-last': hasOtherActions || showCreateButton }"
       @click.prevent.stop="openFilePickerDialog"
@@ -34,7 +48,7 @@
         type="button"
         class="btn btn-flat"
         :class="{disabled}"
-        @click="openFilePickerDialog({ save: true, create: createFile })"
+        @click="openFilePickerDialog({ save: true, create: true })"
       >
         Create
       </a>
@@ -99,9 +113,9 @@ export default {
       type: Boolean,
       default: false,
     },
-    // Create also creates the file it picks, for a client that will not
-    // connect to a file that does not exist yet (SQLite).
-    createFile: {
+    // Shows a button that empties the input, for a picker that is locked
+    // (not editable) until it is cleared.
+    clearable: {
       type: Boolean,
       default: false,
     },
@@ -113,6 +127,9 @@ export default {
   computed: {
     hasOtherActions() {
       return !!this.$slots.actions;
+    },
+    showClearButton() {
+      return this.clearable && !!this.inputValue;
     },
     inputValue() {
       const files = this.value
@@ -128,6 +145,11 @@ export default {
     }
   },
   methods: {
+    clear() {
+      if (this.disabled) return
+      this.$emit('input', this.multiple ? [] : '')
+      this.$emit('clear')
+    },
     async openFilePickerDialog(options = {}) {
       if(this.disabled) {
         return
@@ -161,16 +183,13 @@ export default {
       // but Electron is now overriding that. If we want that behaviour back,
       // we will have to manually track the last used directory ourselves
       let files
-      if (options.create) {
-        files = [ this.$native.dialog.showCreateFileDialogSync({
+      if (options.save ?? this.save) {
+        const file = this.$native.dialog.showSaveDialogSync({
           ...dialogConfig,
           ...this.options
-        })]
-      } else if (options.save ?? this.save) {
-        files = [ this.$native.dialog.showSaveDialogSync({
-          ...dialogConfig,
-          ...this.options
-        })]
+        })
+        // undefined when the dialog is cancelled, which must not clear the input
+        files = file ? [file] : undefined
       } else {
         files = this.$native.dialog.showOpenDialogSync({
           ...dialogConfig,
@@ -190,6 +209,9 @@ export default {
         } else {
           this.$emit('input', files[0])
         }
+        // `create` comes from the Create button, `choose` from any other pick,
+        // so a parent can tell a new file from an existing one.
+        this.$emit(options.create ? 'create' : 'choose', this.multiple ? files : files[0])
       }
     }
   }

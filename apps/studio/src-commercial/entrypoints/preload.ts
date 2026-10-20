@@ -1,6 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import { AppEvent } from '@/common/AppEvent';
-import { createEmptyFile } from '@/common/createEmptyFile';
 import path from 'path';
 import fs from 'fs';
 import { homedir } from 'os';
@@ -104,16 +103,6 @@ export const api = {
   },
   showSaveDialogSync(args: any) {
     return electron.dialog.showSaveDialogSync(args);
-  },
-  /**
-   * Shows a save dialog and creates an empty file at the path the user picks.
-   * The path comes from the dialog, never from the renderer, so this can only
-   * create a file the user chose to create.
-   */
-  showCreateFileDialogSync(args: any): string | undefined {
-    const filePath = electron.dialog.showSaveDialogSync(args);
-    if (filePath) createEmptyFile(filePath);
-    return filePath;
   },
   openLink(link: string) {
     // Route through the main process so safeOpenExternal validates the

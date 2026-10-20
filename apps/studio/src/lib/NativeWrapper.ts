@@ -17,8 +17,6 @@ import _ from 'lodash'
 interface IWindowDialog {
   showSaveDialogSync(any): void
   showOpenDialogSync(any): void
-  /** A save dialog that also creates the (empty) file the user picks. */
-  showCreateFileDialogSync(any): string | undefined
 }
 
 export interface NativePlugin {
@@ -41,8 +39,7 @@ export interface NativePlugin {
 export const ElectronPlugin: NativePlugin = {
   dialog: {
     showOpenDialogSync: (any) => window.main.showOpenDialogSync(any),
-    showSaveDialogSync: (any) => window.main.showSaveDialogSync(any),
-    showCreateFileDialogSync: (any) => window.main.showCreateFileDialogSync(any)
+    showSaveDialogSync: (any) => window.main.showSaveDialogSync(any)
   },
   openLink(link: string) {
     window.main.openLink(link);

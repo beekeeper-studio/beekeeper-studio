@@ -92,8 +92,10 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
 
     // better-sqlite3 silently creates missing files, which turns a typo'd or
     // deleted path into a "successful" connection to an empty database.
-    // Creating new databases is handled explicitly via createDatabase.
-    if (!this.isTempDB && !fs.existsSync(this.databasePath)) {
+    // Creating new databases is handled explicitly via createDatabase, or by
+    // the connection form's Create button, which sets createDatabaseFile.
+    const createFile = !!this.server?.config?.options?.createDatabaseFile;
+    if (!this.isTempDB && !createFile && !fs.existsSync(this.databasePath)) {
       throw new Error(`Database file not found: ${this.databasePath}`);
     }
 

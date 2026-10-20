@@ -10,9 +10,12 @@
           <file-picker
             v-model="config.defaultDatabase"
             input-id="Database"
-            editable
+            :editable="!createDatabaseFile"
             show-create-button
-            create-file
+            :clearable="createDatabaseFile"
+            @create="setCreateDatabaseFile(true)"
+            @choose="setCreateDatabaseFile(false)"
+            @clear="setCreateDatabaseFile(false)"
           />
 
           <toggle-form-area
@@ -123,9 +126,17 @@ export default Vue.extend({
     },
     runtimeExtensionsEnabled() {
       return this.$bksConfig.security.allowRuntimeExtensions
+    },
+    // Set by the Create button: the file is made on the next connect. The path
+    // can't be typed into until it is cleared, so a typo can't create a file.
+    createDatabaseFile() {
+      return !!this.config.options?.createDatabaseFile
     }
   },
   methods: {
+    setCreateDatabaseFile(value: boolean) {
+      this.$set(this.config, 'options', { ...this.config.options, createDatabaseFile: value })
+    },
     async unloadExtension(toRemove: string) {
       let value = this.sqliteRuntimeExtensions?.value
       value = value.filter((v) => v !== toRemove);

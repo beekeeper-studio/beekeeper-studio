@@ -25,6 +25,9 @@ export interface ConnectionOptions {
   connectionMethod?: 'manual' | 'connectionString'
   connectionString?: string,
   enableClearText?: boolean
+  // SQLite: create the database file on the next connect instead of refusing a
+  // missing one. Set by the Create button, cleared once a connect succeeds.
+  createDatabaseFile?: boolean
 }
 
 function parseConnectionType(t: Nullable<ConnectionType>) {
