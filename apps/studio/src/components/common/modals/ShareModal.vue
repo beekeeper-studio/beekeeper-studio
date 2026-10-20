@@ -15,9 +15,13 @@
               }}
             </h2>
           </template>
-          <h2 v-else>Share</h2>
+          <h2 v-else>
+            Share
+          </h2>
         </div>
-        <div class="modal-subtitle">Share & Permissions</div>
+        <div class="modal-subtitle">
+          Share & Permissions
+        </div>
       </div>
     </template>
     <template v-if="subject">
@@ -45,57 +49,89 @@
             </div>
             <div class="access">
               <loading-spinner v-if="loadingTeamPermission" />
-              <select class="auto-width" v-if="subject.canManage" :value="teamPermission"
-                :disabled="loadingTeamPermission" @change="changeTeamPermission($event.target.value)">
-                <option value="view">can view</option>
-                <option value="edit">can edit</option>
-                <option value="no-access">No access</option>
+              <select
+                class="auto-width" v-if="subject.canManage" :value="teamPermission"
+                :disabled="loadingTeamPermission" @change="changeTeamPermission($event.target.value)"
+              >
+                <option value="view">
+                  can view
+                </option>
+                <option value="edit">
+                  can edit
+                </option>
+                <option value="no-access">
+                  No access
+                </option>
               </select>
               <template v-else>
-                <template v-if="teamPermission === 'view'">can view</template>
+                <template v-if="teamPermission === 'view'">
+                  can view
+                </template>
                 <template v-else-if="teamPermission === 'edit'">
                   can edit
                 </template>
-                <template v-else>No access</template>
+                <template v-else>
+                  No access
+                </template>
               </template>
             </div>
           </li>
           <li class="access-grant">
-            <div class="icon">{{ getInitials(subject.membership.name) }}</div>
+            <div class="icon">
+              {{ getInitials(subject.membership.name) }}
+            </div>
             <div class="label">
               <span>{{ subject.membership.name }}</span>
               <span v-if="isItYou(subject.membership.userId)"> (You)</span>
             </div>
-            <div class="access">Owner</div>
+            <div class="access">
+              Owner
+            </div>
           </li>
           <!-- We don't want to show admin if it's the same user as the owner -->
           <li class="access-grant" v-if="subject.membership.userId !== workspace.owner.id">
-            <div class="icon">{{ getInitials(workspace.owner.name) }}</div>
+            <div class="icon">
+              {{ getInitials(workspace.owner.name) }}
+            </div>
             <div class="label">
               <span>{{ workspace.owner.name }}</span>
               <span v-if="isItYou(workspace.owner.id)"> (You)</span>
             </div>
-            <div class="access">Admin</div>
+            <div class="access">
+              Admin
+            </div>
           </li>
-          <li class="access-grant" v-for="grant of accessGrants" :key="grant.id" :class="{
-            highlight: highlightedMembers.includes(grant.membershipId),
-          }">
-            <div class="icon">{{ getInitials(grant.membership.name) }}</div>
+          <li
+            class="access-grant" v-for="grant of accessGrants" :key="grant.id" :class="{
+              highlight: highlightedMembers.includes(grant.membershipId),
+            }"
+          >
+            <div class="icon">
+              {{ getInitials(grant.membership.name) }}
+            </div>
             <div class="label">
               {{ grant.membership.name }}
               <span v-if="isItYou(grant.membership.userId)"> (You)</span>
             </div>
             <div class="access">
               <loading-spinner v-if="loadingGrants.includes(grant.id)" />
-              <select class="auto-width" :value="grantToPermission(grant)" @change="
-                $event.target.value === 'remove'
-                  ? removeAccess(grant)
-                  : changeAccess(grant, $event.target.value)
-                " v-if="subject.canManage" :disabled="loadingGrants.includes(grant.id)">
-                <option value="view">can view</option>
-                <option value="edit">can edit</option>
-                <hr />
-                <option value="remove">Remove</option>
+              <select
+                class="auto-width" :value="grantToPermission(grant)" @change="
+                  $event.target.value === 'remove'
+                    ? removeAccess(grant)
+                    : changeAccess(grant, $event.target.value)
+                " v-if="subject.canManage" :disabled="loadingGrants.includes(grant.id)"
+              >
+                <option value="view">
+                  can view
+                </option>
+                <option value="edit">
+                  can edit
+                </option>
+                <hr>
+                <option value="remove">
+                  Remove
+                </option>
               </select>
               <template v-else>
                 <template v-if="grantToPermission(grant) === 'view'">
@@ -115,10 +151,12 @@
           <div class="form-group">
             <label for="share-modal-search-member">Add member access</label>
             <div class="input-wrapper">
-              <multi-select input-id="share-modal-search-member" placeholder="Search a member" v-model="search"
+              <multi-select
+                input-id="share-modal-search-member" placeholder="Search a member" v-model="search"
                 option-label="name" :focus-trigger="focusTrigger" :suggestions="memberships"
                 :selected-options="selectedMembers" @item-add="handleMemberAdd" @item-remove="handleMemberRemove"
-                @keyup.esc.stop @keydown.esc.stop>
+                @keyup.esc.stop @keydown.esc.stop
+              >
                 <template #empty-state v-if="loadingMemberships">
                   Loading ...
                 </template>
@@ -127,13 +165,19 @@
                 </template>
               </multi-select>
               <select v-show="search.length > 0 || selectedMembers.length > 0" v-model="permission" class="auto-width">
-                <option value="view">can view</option>
-                <option value="edit">can edit</option>
+                <option value="view">
+                  can view
+                </option>
+                <option value="edit">
+                  can edit
+                </option>
               </select>
             </div>
           </div>
-          <button class="btn btn-primary add-btn" type="button"
-            :disabled="selectedMembers.length === 0 || savingGrants" @click="addSelectedMembers">
+          <button
+            class="btn btn-primary add-btn" type="button"
+            :disabled="selectedMembers.length === 0 || savingGrants" @click="addSelectedMembers"
+          >
             <i class="material-icons">add</i>
             Add
           </button>

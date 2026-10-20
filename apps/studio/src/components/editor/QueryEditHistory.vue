@@ -92,7 +92,7 @@
                 <span
                   v-if="
                     audit.queryAudit.action === 'update' &&
-                    audit.queryAudit.title != null
+                      audit.queryAudit.title != null
                   "
                   class="changed-the-title-to"
                 >

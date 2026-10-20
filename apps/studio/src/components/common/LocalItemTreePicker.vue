@@ -57,7 +57,6 @@
           class="list-item-btn"
         />
       </content-placeholder>
-
     </template>
     <tree
       v-else
@@ -69,8 +68,7 @@
       <template #folder="{ props }">
         <tree-folder
           v-bind="props"
-        >
-        </tree-folder>
+        />
       </template>
       <template #folder-header="{ node, depth }">
         <error-alert

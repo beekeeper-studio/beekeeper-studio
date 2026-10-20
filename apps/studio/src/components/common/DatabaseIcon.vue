@@ -9,7 +9,7 @@
     >
       <path :d="icon.path" :fill="`#${icon.hex}`" />
     </svg>
-    <img v-else-if="icon" :src="icon" :alt="type" />
+    <img v-else-if="icon" :src="icon" :alt="type">
     <i v-else class="material-icons-outlined default-icon">table_rows</i>
   </span>
 </template>

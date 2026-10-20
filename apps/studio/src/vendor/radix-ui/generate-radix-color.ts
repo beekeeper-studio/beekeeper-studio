@@ -196,7 +196,7 @@ function getScaleFromColor(
 	scales: Record<string, ArrayOf12<Color>>,
 	backgroundColor: Color,
 ) {
-	let allColors: { scale: string; color: Color; distance: number }[] = [];
+	const allColors: { scale: string; color: Color; distance: number }[] = [];
 
 	Object.entries(scales).forEach(([name, scale]) => {
 		for (const color of scale) {
@@ -208,7 +208,7 @@ function getScaleFromColor(
 	allColors.sort((a, b) => a.distance - b.distance);
 
 	// Remove non-unique scales
-	let closestColors = allColors.filter(
+	const closestColors = allColors.filter(
 		(color, i, arr) => i === arr.findIndex((value) => value.scale === color.scale),
 	);
 
@@ -224,8 +224,8 @@ function getScaleFromColor(
 		}
 	}
 
-	let colorA = closestColors[0];
-	let colorB = closestColors[1];
+	const colorA = closestColors[0];
+	const colorB = closestColors[1];
 
 	// Light trigonometry ahead.
 	//
@@ -333,7 +333,7 @@ function getScaleFromColor(
 	}
 
 	// Dark mode
-	let ease: typeof darkModeEasing = [...darkModeEasing];
+	const ease: typeof darkModeEasing = [...darkModeEasing];
 	const referenceBackgroundColorL = scale[0].coords[0];
 	const backgroundColorL = Math.max(0, Math.min(1, backgroundColor.coords[0]));
 

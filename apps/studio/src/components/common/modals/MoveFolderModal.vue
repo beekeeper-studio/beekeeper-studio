@@ -9,7 +9,9 @@
         </span>
         to
       </template>
-      <template v-else>Move</template>
+      <template v-else>
+        Move
+      </template>
     </template>
     <template v-if="target">
       <label
@@ -23,7 +25,7 @@
           name="move-to-folder"
           :value="null"
           v-model="selectedFolderId"
-        />
+        >
         <i class="move-folder-icon material-icons">subdirectory_arrow_left</i>
         <span class="move-folder-name">(Top level)</span>
         <span v-if="target.value.parentId === null" class="current-location">

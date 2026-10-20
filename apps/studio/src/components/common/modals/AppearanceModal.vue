@@ -3,7 +3,9 @@
     :name="modalName"
     first-focusable="input[name='theme-mode']:checked"
   >
-    <template #title>Appearance</template>
+    <template #title>
+      Appearance
+    </template>
     <fieldset class="theme-mode">
       <legend>Mode</legend>
       <span class="mode-options">
@@ -58,7 +60,7 @@
               :value="theme.id"
               :checked="themeId === theme.id"
               @change="setThemeId(theme.id)"
-            />
+            >
             <span>{{ theme.label }}</span>
           </span>
           <span class="theme-preview-frame">

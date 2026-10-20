@@ -58,7 +58,9 @@
     <button
       class="btn btn-small btn-view-all"
       @click="openKeyboardShortcuts"
-    >View all shortcuts ...</button>
+    >
+      View all shortcuts ...
+    </button>
   </div>
 </template>
 <script lang="ts">

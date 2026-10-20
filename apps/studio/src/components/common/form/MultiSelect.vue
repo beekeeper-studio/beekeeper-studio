@@ -28,7 +28,7 @@
       @keydown.enter.prevent="isOpen && activeOption && addOption(activeOption)"
       @keydown.esc.prevent="close"
       @keydown.tab="close"
-    />
+    >
 
     <portal to="menus">
       <ul
@@ -54,7 +54,7 @@
               v-if="optionHighlight(index)"
               class="label"
               v-html="optionHighlight(index)"
-            ></span>
+            />
             <span v-else class="label">{{ optionText(option) }}</span>
           </slot>
         </li>
@@ -63,7 +63,9 @@
           class="empty"
           role="presentation"
         >
-          <slot name="empty-state">No results</slot>
+          <slot name="empty-state">
+            No results
+          </slot>
         </li>
       </ul>
     </portal>

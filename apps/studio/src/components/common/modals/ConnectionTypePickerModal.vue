@@ -5,7 +5,9 @@
     @submit="handleSubmit"
     @closed="handleClosed"
   >
-    <template #title>Select Connection Type</template>
+    <template #title>
+      Select Connection Type
+    </template>
 
     <template #default="{ submit }">
       <div class="toolbar">
@@ -15,7 +17,7 @@
             type="text"
             placeholder="Search connection types"
             v-model="filter"
-          />
+          >
           <x-buttons class="filter-actions">
             <x-button v-if="filter" @click="filter = ''">
               <i class="clear material-icons">cancel</i>
@@ -38,7 +40,7 @@
             name="connection-type"
             :value="type.value"
             v-model="value"
-          />
+          >
           <database-icon :type="type.value" />
           <span class="name">{{ type.name }}</span>
           <i v-if="type.lockedByLicense" class="material-icons ultimate-icon">

@@ -11,7 +11,9 @@
         </span>
         to
       </template>
-      <template v-else>Move</template>
+      <template v-else>
+        Move
+      </template>
     </template>
     <template v-if="target">
       <folder-tree-picker

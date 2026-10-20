@@ -12,7 +12,7 @@
         :checked="value === null"
         :disabled="disabled"
         @change="selectTopLevel"
-      />
+      >
       <i class="folder-icon material-icons">subdirectory_arrow_left</i>
       <span class="folder-name">{{ topLevelLabel }}</span>
       <span v-if="isCurrentLocation(null)" class="current-location">

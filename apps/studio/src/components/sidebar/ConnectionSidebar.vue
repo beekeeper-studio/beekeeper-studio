@@ -146,7 +146,8 @@
               class="list-body"
             >
               <template v-if="searching">
-                <div class="empty-state"
+                <div
+                  class="empty-state"
                   v-if="!typing && !fetchingResults && filteredConnections.length === 0"
                 >
                   No connections match "{{ connFilter }}"

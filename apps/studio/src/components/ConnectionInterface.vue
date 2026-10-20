@@ -55,7 +55,9 @@
             <error-alert :error="errors" title="Please fix the following errors" />
             <form @action="submit" v-if="config">
               <div class="connection-type-wrapper">
-                <div class="label">Connection Type</div>
+                <div class="label">
+                  Connection Type
+                </div>
                 <button
                   class="form-control connection-type-btn"
                   type="button"
