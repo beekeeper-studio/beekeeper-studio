@@ -100,6 +100,7 @@ import addSqlServerOptions from './20260626_add_sqlserver_options'
 import fixQueryAuditAppendOnlyTrigger from './20260914_fix_query_audit_append_only_trigger'
 import addScopeToPluginData from './20261011_add_scope_to_plugin_data'
 import splitThemeDarkFlag from './20260908_split_theme_dark_flag'
+import addProductionFlag from './20261015_add_production_flag'
 
 import ultimate from './ultimate/index'
 
@@ -158,7 +159,8 @@ const realMigrations = [
   addSqlServerOptions,
   fixQueryAuditAppendOnlyTrigger,
   addScopeToPluginData,
-  splitThemeDarkFlag
+  splitThemeDarkFlag,
+  addProductionFlag
 ]
 
 // fixtures require the models

@@ -582,6 +582,7 @@
   import { mapActions, mapGetters, mapState } from 'vuex'
 
   import { canDeparameterize, convertParamsForReplacement, deparameterizeQuery, safelyIdentify } from '../lib/db/sql_tools'
+  import { findUnfilteredWrites, shouldWarnOnUnfilteredWrites, unfilteredWritesMessage } from '@/lib/db/unfilteredWrites'
   import { EditorMarker } from '@/lib/editor/utils'
   import { recordPaidFeatureUse } from '@/lib/paidFeatures'
   import ProgressBar from './editor/ProgressBar.vue'
@@ -1717,8 +1718,28 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           return;
         }
       },
+      // Asks before running an UPDATE or DELETE that has no WHERE clause.
+      // Resolves true when the query may run.
+      async confirmUnfilteredWrites(rawQuery: string): Promise<boolean> {
+        const setting = this.$bksConfig.ui.queryEditor?.warnOnUnfilteredWrites
+        if (!shouldWarnOnUnfilteredWrites(setting, !!this.usedConfig?.isProduction)) return true
+
+        const { queries } = safelyIdentify(rawQuery, { dialect: this.identifierDialect, paramTypes: this.paramTypes })
+        const unfiltered = findUnfilteredWrites(queries, this.identifierDialect)
+        if (unfiltered.length === 0) return true
+
+        return await this.$confirm(
+          'Run without a WHERE clause?',
+          unfilteredWritesMessage(unfiltered),
+          { confirmLabel: 'Run Anyway', variant: 'danger' }
+        )
+      },
       async submitQuery(rawQuery, fromModal = false) {
         if (this.remoteDeleted) return;
+
+        // Asked once, before anything starts: a run from the parameters
+        // modal was already confirmed when it was first submitted.
+        if (!fromModal && !(await this.confirmUnfilteredWrites(rawQuery))) return;
 
         //Cancel existing query before starting a new one
         if(this.running && this.runningQuery){
