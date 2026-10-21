@@ -5,15 +5,23 @@
     @closed="reportClose(false)"
   >
     <template #title>
-      <slot name="title">Are you sure?</slot>
+      <slot name="title">
+        Are you sure?
+      </slot>
     </template>
-    <slot name="message">This action cannot be undone.</slot>
+    <slot name="message">
+      This action cannot be undone.
+    </slot>
     <template #footer>
       <button class="btn btn-flat" type="button" @click.prevent="cancel">
-        <slot name="cancel-label">Cancel</slot>
+        <slot name="cancel-label">
+          Cancel
+        </slot>
       </button>
       <button class="btn btn-primary" type="submit" :data-variant="variant">
-        <slot name="confirm-label">Confirm</slot>
+        <slot name="confirm-label">
+          Confirm
+        </slot>
       </button>
     </template>
   </base-modal>
@@ -72,7 +80,7 @@ export default Vue.extend({
 
 <style scoped>
 .btn[data-variant=danger] {
-  background-color: var(--brand-danger);
-  color: white;
+  background-color: var(--danger-solid-bg);
+  color: var(--danger-contrast);
 }
 </style>

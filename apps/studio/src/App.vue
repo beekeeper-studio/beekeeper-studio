@@ -1,5 +1,5 @@
 <template>
-  <div class="style-wrapper" :style="{ '--bks-text-editor-font-size': `${editorFontSize}px` }">
+  <div class="style-wrapper" :style="{ '--editor-font-size': `${editorFontSize}px` }">
     <div
       class="beekeeper-studio-wrapper"
       :class="{ 'beekeeper-studio-minimal-mode': $store.getters.minimalMode }"
@@ -35,6 +35,8 @@
     <plugin-controller :editor-font-size="editorFontSize" />
     <plugin-manager-modal />
     <keyboard-shortcuts-modal />
+    <theme-playground-modal />
+    <appearance-modal />
     <move-item-modal />
     <move-folder-modal />
     <connection-type-picker-modal />
@@ -44,9 +46,10 @@
     <util-died-modal />
     <share-modal />
     <template v-if="licensesInitialized">
-      <trial-expired-modal />
+      <trial-ended-modal />
       <license-expired-modal />
       <lifetime-license-expired-modal />
+      <lifetime-version-not-covered-modal />
       <cloud-workspaces-blocked-modal />
     </template>
     <portal-target
@@ -84,14 +87,17 @@ import Noty from 'noty';
 import ConfirmationModalManager from '@/components/common/modals/ConfirmationModalManager.vue'
 import Dropzone from '@/components/Dropzone.vue'
 import UtilDiedModal from '@/components/UtilDiedModal.vue'
-import TrialExpiredModal from '@/components/license/TrialExpiredModal.vue'
+import TrialEndedModal from '@/components/license/TrialEndedModal.vue'
 import LicenseExpiredModal from '@/components/license/LicenseExpiredModal.vue'
 import LifetimeLicenseExpiredModal from '@/components/license/LifetimeLicenseExpiredModal.vue'
+import LifetimeVersionNotCoveredModal from '@/components/license/LifetimeVersionNotCoveredModal.vue'
 import CloudWorkspacesBlockedModal from '@/components/license/CloudWorkspacesBlockedModal.vue'
 import type { LicenseStatus } from "@/lib/license";
 import { SmartLocalStorage } from '@/common/LocalStorage';
 import PluginManagerModal from '@/components/plugins/PluginManagerModal.vue'
 import KeyboardShortcutsModal from '@/components/common/modals/KeyboardShortcutsModal.vue'
+import ThemePlaygroundModal from '@/components/common/modals/ThemePlaygroundModal.vue'
+import AppearanceModal from '@/components/common/modals/AppearanceModal.vue'
 import PluginController from '@/components/plugins/PluginController.vue'
 import LockManager from "@/components/managers/LockManager.vue";
 import InputEphemeralModal from "@/components/common/modals/InputEphemeralModal.vue";
@@ -113,12 +119,12 @@ export default Vue.extend({
     CoreInterface, ConnectionInterface, Titlebar, AutoUpdater, NotificationManager,
     DataManager, UpgradeRequiredModal, ConfirmationModalManager, Dropzone,
     UtilDiedModal, WorkspaceSignInModal, ImportQueriesModal, ImportConnectionsModal,
-    EnterLicenseModal, TrialExpiredModal, LicenseExpiredModal,
-    LifetimeLicenseExpiredModal, CloudWorkspacesBlockedModal,
+    EnterLicenseModal, TrialEndedModal, LicenseExpiredModal,
+    LifetimeLicenseExpiredModal, LifetimeVersionNotCoveredModal, CloudWorkspacesBlockedModal,
     WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
-    PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal,
+    PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal, ThemePlaygroundModal,
     InputEphemeralModal, ShareModal, MoveItemModal, MoveFolderModal,
-    ConnectionFilesImportModal, ConnectionTypePickerModal,
+    ConnectionFilesImportModal, ConnectionTypePickerModal, AppearanceModal
   },
   data() {
     return {
@@ -141,7 +147,6 @@ export default Vue.extend({
     ...mapGetters({
       'isTrial': 'isTrial',
       'isUltimate': 'isUltimate',
-      'themeValue': 'settings/themeValue',
     }),
     editorFontSize() {
       return this.$store.state.settings?.settings?.editorFontSize?.value || 14
@@ -150,10 +155,6 @@ export default Vue.extend({
   watch: {
     database() {
       log.info('database changed', this.database)
-    },
-    themeValue() {
-      document.body.className = `theme-${this.themeValue}`
-      this.trigger(AppEvent.changedTheme, this.themeValue)
     },
     status(curr, prev) {
       this.$store.dispatch('updateWindowTitle')
@@ -199,9 +200,6 @@ export default Vue.extend({
     this.$nextTick(() => {
       window.main.isReady();
     })
-    if (this.themeValue) {
-      document.body.className = `theme-${this.themeValue}`
-    }
 
     if (this.url) {
       try {
@@ -247,12 +245,18 @@ export default Vue.extend({
       // TODO: do something here if needed
     },
     validateLicenseExpiry(curr?: LicenseStatus, prev?: LicenseStatus) {
+      const compare = prev && curr
+      const status = compare ? curr : this.status
+      // The end of a trial belongs to TrialEndedModal, which keeps its own
+      // record (lib/trial.ts) instead of the one-shot flag below; that flag
+      // only covers the paid-license dialogs. Leaving it unset for trials is
+      // also what lets a trial end announced by an older version be told
+      // apart from one that lapsed unseen (adoptLegacyTrialEndDecision).
+      if (status?.isTrial) return
       if (SmartLocalStorage.getBool('expiredLicenseEventsEmitted', false)) return
 
-      const compare = prev && curr
       const isValidDateExpired = compare ? !prev.isValidDateExpired && curr.isValidDateExpired : this.status.isValidDateExpired
       const isSupportDateExpired = compare ? !prev.isSupportDateExpired && curr.isSupportDateExpired : this.status.isSupportDateExpired
-      const status = compare ? curr : this.status
       if (curr?.fromFile && curr?.noLicenseKey) {
         this.$noty.error(`Something is wrong with your license file: ${curr?.condition.join(", ") }`)
       }

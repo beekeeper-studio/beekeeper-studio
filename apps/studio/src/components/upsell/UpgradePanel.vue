@@ -62,7 +62,7 @@ const PAID_FEATURES: Feature[] = [
   { label: 'Import from file' },
   { label: 'Export multiple tables' },
   { label: 'Unlimited table filters' },
-  { label: 'JSON row view' },
+  { label: 'JSON sidebar' },
   { label: 'Cloud sync' },
   { label: '10 more databases' },
   { label: '…and much more' },

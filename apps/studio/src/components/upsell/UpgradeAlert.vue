@@ -1,7 +1,9 @@
 <template>
   <div class="alert upgrade-alert">
     <i class="material-icons">info_outline</i>
-    <div class="alert-body">{{ featureName }} needs a paid license</div>
+    <div class="alert-body">
+      {{ featureName }} needs a paid license
+    </div>
     <div class="actions">
       <button
         v-if="trialAvailable"

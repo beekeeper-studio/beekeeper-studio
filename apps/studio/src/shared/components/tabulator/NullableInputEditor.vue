@@ -179,5 +179,10 @@ export default Vue.extend({
     text-align: center;
     margin-top: -1px;
     cursor: pointer;
+    color: var(--btn-icon-fg);
+
+    &:hover {
+      color: var(--btn-icon-fg-hover);
+    }
   }
 </style>

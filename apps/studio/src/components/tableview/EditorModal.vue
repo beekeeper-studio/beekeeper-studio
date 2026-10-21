@@ -351,7 +351,7 @@ div.vue-dialog div.dialog-content {
     align-items: center;
     padding: 1rem 1.2rem;
     .error-message {
-      color: $brand-danger;
+      color: var(--danger-text);
     }
     .vue-dialog-buttons {
       padding: 0;

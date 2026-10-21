@@ -14,6 +14,7 @@ import { buildDeleteQueries, buildInsertQuery, buildSelectQueriesFromUpdates, bu
 import { createCancelablePromise } from '@/common/utils';
 import { errors } from '@/lib/errors';
 import { BigQueryCursor } from './bigquery/BigQueryCursor';
+import { foreignKeyColumnsSql } from './bigquery/scripts';
 import { BigQueryData } from '@shared/lib/dialects/bigquery';
 import { IDbConnectionServer } from '../backendTypes';
 import _ from 'lodash';
@@ -175,87 +176,29 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   }
 
   async getOutgoingKeys(table: string, _schema?: string): Promise<TableKey[]> {
-    // Query for foreign keys FROM this table (referencing other tables)
+    // Foreign keys defined on this table (referencing other tables)
     const sql = `
-      SELECT
-        NULL as from_schema,
-        f.table_name as from_table,
-        f.column_name as from_column,
-        NULL as to_schema,
-        t.table_name as to_table,
-        t.column_name as to_column,
-        f.constraint_name,
-        NULL as update_rule,
-        NULL as delete_rule
-      FROM
-        ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE as f
-      JOIN ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE as t
-      ON f.constraint_name = t.constraint_name
-      JOIN ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS as con
-      ON f.constraint_catalog = con.constraint_catalog
-      AND f.constraint_schema = con.constraint_schema
-      AND f.constraint_name = con.constraint_name
+      ${foreignKeyColumnsSql(this.wrapIdentifier(this.db))}
       WHERE f.table_schema = '${escapeString(this.db)}'
-      AND f.table_name = '${escapeString(table)}'
-      AND con.constraint_type = 'FOREIGN KEY'
+        AND f.table_name = '${escapeString(table)}'
+        AND con.constraint_type = 'FOREIGN KEY'
+      ORDER BY f.constraint_name, f.ordinal_position
     `;
-
     const data = await this.driverExecuteSingle(sql);
-
-    return data.rows.map((row) => ({
-      toTable: row.to_table,
-      toSchema: row.to_schema,
-      toColumn: row.to_column,
-      fromTable: row.from_table,
-      fromSchema: row.from_schema,
-      fromColumn: row.from_column,
-      constraintName: row.constraint_name,
-      onUpdate: row.update_rule,
-      onDelete: row.delete_rule,
-      isComposite: false
-    }));
+    return this.parseForeignKeys(data.rows);
   }
 
   async getIncomingKeys(table: string, _schema?: string): Promise<TableKey[]> {
-    // Query for foreign keys TO this table (other tables referencing this table)
+    // Foreign keys on other tables that reference this table
     const sql = `
-      SELECT
-        NULL as from_schema,
-        f.table_name as from_table,
-        f.column_name as from_column,
-        NULL as to_schema,
-        t.table_name as to_table,
-        t.column_name as to_column,
-        f.constraint_name,
-        NULL as update_rule,
-        NULL as delete_rule
-      FROM
-        ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE as f
-      JOIN ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE as t
-      ON f.constraint_name = t.constraint_name
-      JOIN ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS as con
-      ON f.constraint_catalog = con.constraint_catalog
-      AND f.constraint_schema = con.constraint_schema
-      AND f.constraint_name = con.constraint_name
+      ${foreignKeyColumnsSql(this.wrapIdentifier(this.db))}
       WHERE f.table_schema = '${escapeString(this.db)}'
-      AND t.table_name = '${escapeString(table)}'
-      AND con.constraint_type = 'FOREIGN KEY'
+        AND t.table_name = '${escapeString(table)}'
+        AND con.constraint_type = 'FOREIGN KEY'
+      ORDER BY f.constraint_name, f.ordinal_position
     `;
-
-    const result = await this.driverExecuteSingle(sql);
-
-    return result.rows.map((row) => ({
-      toTable: row.to_table,
-      toSchema: row.to_schema,
-      toColumn: row.to_column,
-      fromTable: row.from_table,
-      fromSchema: row.from_schema,
-      fromColumn: row.from_column,
-      constraintName: row.constraint_name,
-      onUpdate: row.update_rule,
-      onDelete: row.delete_rule,
-      isComposite: false
-    }));
+    const data = await this.driverExecuteSingle(sql);
+    return this.parseForeignKeys(data.rows);
   }
 
   async query(queryText: string, options: any = {}): Promise<CancelableQuery> {

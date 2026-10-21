@@ -57,7 +57,7 @@
         </x-button>
         <x-button
           @click.stop
-          class="menu-btn btn btn-fab"
+          class="menu-btn btn btn-icon"
           v-if="plugin.installed"
         >
           <i class="material-icons">more_vert</i>
@@ -115,7 +115,7 @@ export default Vue.extend({
 <style scoped>
 .material-icons.verified-icon {
   font-size: 1em;
-  color: var(--theme-secondary);
+  color: var(--primary-text);
   margin-left: 0.5ch;
 }
 </style>

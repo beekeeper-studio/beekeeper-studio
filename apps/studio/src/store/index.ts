@@ -21,6 +21,7 @@ import { DataModules } from '@/store/DataModules'
 import { TabModule } from './modules/TabModule'
 import { HideEntityModule } from './modules/HideEntityModule'
 import { PinConnectionModule } from './modules/PinConnectionModule'
+import { ThemeModule } from './modules/ThemeModule'
 import { ElectronUtilityConnectionClient } from '@/lib/utility/ElectronUtilityConnectionClient'
 
 import { SmartLocalStorage } from '@/common/LocalStorage'
@@ -33,6 +34,7 @@ import ImportStoreModule from './modules/imports/ImportStoreModule'
 import { BackupModule } from './modules/backup/BackupModule'
 import { CloudClient } from '@/lib/cloud/CloudClient'
 import { ConnectionTypes, SnowflakeAuthType, SurrealAuthType } from '@/lib/db/types'
+import { recordConnectionFeatureUse } from '@/lib/paidFeatures'
 import { SidebarModule, State as SidebarState } from './modules/SidebarModule'
 import { isVersionLessThanOrEqual, parseVersion } from '@/common/version'
 import { PopupMenuModule } from './modules/PopupMenuModule'
@@ -140,6 +142,7 @@ const store = new Vuex.Store<State>({
   modules: {
     exports: ExportStoreModule,
     settings: SettingStoreModule,
+    theme: ThemeModule,
     pins: PinModule,
     tabs: TabModule,
     search: SearchModule,
@@ -586,6 +589,9 @@ const store = new Vuex.Store<State>({
           window.main.enableConnectionMenuItems();
           context.commit('connected', true);
           context.dispatch('updateWindowTitle', resolvedConfig)
+          // Premium engines and enterprise auth are paid features; the
+          // trial-ended dialog leads with what was actually used.
+          recordConnectionFeatureUse(resolvedConfig)
 
           if (supportedFeatures.backups) {
             context.dispatch('backups/setConnectionConfigs', { config: resolvedConfig, supportedFeatures, serverConfig });
