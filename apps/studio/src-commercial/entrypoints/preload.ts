@@ -9,6 +9,7 @@ import { execSync } from 'child_process';
 import 'electron-log/preload';
 import type { SaveFileOptions } from '@/backend/lib/FileHelpers';
 import type { NativePluginMenuItem } from '@/services/plugin/types';
+import { BksConfigSource } from '@/common/bksConfig/BksConfigProvider';
 
 const electron = require('@electron/remote');
 
@@ -63,6 +64,11 @@ export const api = {
     if (!eType.includes(event)) return;
     ipcRenderer.on(event, bind);
   },
+  onBksConfigChanged(callback: (source: BksConfigSource) => void) {
+    ipcRenderer.on('bksConfigChanged', (_event: Electron.IpcRendererEvent, source: BksConfigSource) => {
+      callback(source);
+    });
+  },
   updaterReady() {
     ipcRenderer.send('updater-ready');
   },
@@ -71,6 +77,9 @@ export const api = {
   },
   triggerInstall() {
     ipcRenderer.send('install-update');
+  },
+  triggerRestart() {
+    ipcRenderer.send('app:restart');
   },
   openExternally(link: string) {
     // URL protocol is validated in the main process by safeOpenExternal.

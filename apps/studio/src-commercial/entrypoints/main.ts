@@ -86,6 +86,11 @@ async function createUtilityProcess() {
   utilityProcess.on("message", (msg: UtilProcMessage) => {
     if (msg.type === 'openExternal') {
       safeOpenExternal(msg.url)
+    } else if (msg.type === 'configChanged') {
+      bksConfig.reload(msg.source);
+      for (const w of getActiveWindows()) {
+        w.send('bksConfigChanged', msg.source);
+      }
     }
   })
 
@@ -343,6 +348,11 @@ ipcMain.handle('clipboard:write', async (_event, { content, image }: { content: 
 
 ipcMain.handle('clipboard:read', async () => {
   return await clipboard.readText();
+})
+
+ipcMain.on('app:restart', async () => {
+  app.relaunch();
+  app.exit();
 })
 
 // Exit cleanly on request from parent process in development mode.

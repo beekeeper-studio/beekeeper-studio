@@ -1,14 +1,15 @@
 import { EncryptedPluginData } from "@/common/appdb/models/EncryptedPluginData";
 import { PluginData, PluginDataOptions } from "@/common/appdb/models/PluginData";
-import { Manifest, PluginSnapshot, PluginManager, PluginRegistryEntry, PluginRepository } from "@/services/plugin";
+import { Manifest, PluginSnapshot, PluginRepository, ManifestV1, RegistryMap } from "@/services/plugin";
 import { PluginSystemError } from "@/lib/errors";
-import { state } from "@/handlers/handlerState";
+import { getPluginManager, state } from "@/handlers/handlerState";
 
 type PluginDataScopeName = "currentConnection" | "currentWorkspace";
 
 interface IPluginHandlers {
+  "plugin/waitForInit": () => Promise<void>,
   "plugin/plugins": () => Promise<PluginSnapshot[]>
-  "plugin/entries": ({ clearCache }: { clearCache: boolean }) => Promise<{ official: PluginRegistryEntry[], community: PluginRegistryEntry[] }>
+  "plugin/entries": ({ clearCache }: { clearCache: boolean }) => Promise<RegistryMap>
   "plugin/repository": ({ id }: { id: string }) => Promise<PluginRepository>
   "plugin/install": ({ id }: { id: string }) => Promise<Manifest>
   "plugin/update": ({ id }: { id: string }) => Promise<Manifest>
@@ -45,8 +46,9 @@ function resolveScope(sId: string, scope: PluginDataScopeName) {
   throw new Error(`Unknown plugin data scope: ${scope}`);
 }
 
-export const PluginHandlers: (pluginManager: PluginManager) => IPluginHandlers = (pluginManager) => ({
+export const PluginHandlers: IPluginHandlers = {
   "plugin/waitForInit": async () => {
+    const pluginManager = getPluginManager();
     if (pluginManager.isInitialized) {
       return;
     }
@@ -71,37 +73,38 @@ export const PluginHandlers: (pluginManager: PluginManager) => IPluginHandlers =
     });
   },
   "plugin/plugins": async () => {
-    return await pluginManager.getPlugins();
+    return await getPluginManager().getPlugins();
   },
   "plugin/entries": async ({ clearCache }) => {
+    const pluginManager = getPluginManager();
     if (clearCache) {
       pluginManager.registry.clearCache();
     }
     return await pluginManager.registry.getEntries();
   },
   "plugin/repository": async ({ id }) => {
-    return await pluginManager.getRepository(id);
+    return await getPluginManager().getRepository(id);
   },
   "plugin/install": async ({ id }) => {
-    return await pluginManager.installPlugin(id);
+    return await getPluginManager().installPlugin(id);
   },
   "plugin/update": async ({ id }) => {
-    return await pluginManager.updatePlugin(id);
+    return await getPluginManager().updatePlugin(id);
   },
   "plugin/uninstall": async ({ id }) => {
-    return await pluginManager.uninstallPlugin(id);
+    return await getPluginManager().uninstallPlugin(id);
   },
   "plugin/checkForUpdates": async ({ id }) => {
-    return await pluginManager.checkForUpdates(id);
+    return await getPluginManager().checkForUpdates(id);
   },
   "plugin/setAutoUpdateEnabled": async ({ id, enabled }) => {
-    await pluginManager.setPluginAutoUpdateEnabled(id, enabled);
+    await getPluginManager().setPluginAutoUpdateEnabled(id, enabled);
   },
   "plugin/getAutoUpdateEnabled": async ({ id }) => {
-    return pluginManager.getPluginAutoUpdateEnabled(id);
+    return getPluginManager().getPluginAutoUpdateEnabled(id);
   },
   "plugin/viewEntrypointExists": async ({ pluginId, viewId }) => {
-    return pluginManager.viewEntrypointExists(pluginId, viewId);
+    return getPluginManager().viewEntrypointExists(pluginId, viewId);
   },
 
   "plugin/setData": async ({ sId, manifest, key, value, scope }) => {
@@ -129,6 +132,6 @@ export const PluginHandlers: (pluginManager: PluginManager) => IPluginHandlers =
     return await EncryptedPluginData.get(manifest.id, key, options);
   },
   "plugin/getAsset": async ({ manifest, path }) => {
-    return await pluginManager.getPluginAsset(manifest, path);
+    return await getPluginManager().getPluginAsset(manifest as ManifestV1, path);
   }
-});
+};

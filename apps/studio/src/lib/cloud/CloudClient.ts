@@ -17,6 +17,7 @@ import { LicenseKeyController } from './controllers/LicenseKeyController';
 import { camelCaseObjectKeys, snakeCaseObjectKeys } from '@/common/utils';
 
 import { IPlatformInfo } from '@/common/IPlatformInfo';
+import { PluginsController } from './controllers/PluginsController';
 
 const log = rawLog.scope('cloudClient')
 
@@ -69,6 +70,10 @@ export class CloudClient {
     const controller = new LicenseKeyController(staticAxios(baseUrl))
     log.debug("Fetching license info! Installation id", installationId)
     return await controller.get(email, key, installationId, platformInfo)
+  }
+
+  public static getPluginsController(baseUrl: string): PluginsController {
+    return new PluginsController(staticAxios(baseUrl));
   }
 
   axios: AxiosInstance

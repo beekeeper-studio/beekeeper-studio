@@ -3,6 +3,7 @@
     :name="id"
     @submit="confirm"
     @closed="reportClose(false)"
+    :closable="false"
   >
     <template #title>
       <slot name="title">
