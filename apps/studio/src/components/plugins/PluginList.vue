@@ -72,7 +72,7 @@
 
     <div class="plugin-list">
       <virtual-plugin-list
-        :raw-items="filteredPlugins"
+        :items="filteredPlugins"
         :isSearching="!!searchQuery"
         @install="$emit('install', $event)"
         @uninstall="$emit('uninstall', $event)"
@@ -87,7 +87,7 @@
 <script lang="ts">
 import Vue, { PropType } from "vue";
 import VirtualPluginList from "./VirtualPluginList.vue";
-import type { Plugin, PluginOrigin } from "@/services/plugin/types";
+import type { Plugin, PluginDisplayItem, PluginOrigin } from "@/services/plugin/types";
 import { mapGetters } from "vuex";
 import _ from "lodash";
 import { openMenu } from "@beekeeperstudio/ui-kit";
@@ -104,7 +104,7 @@ export default Vue.extend({
   components: { VirtualPluginList },
   props: {
     plugins: {
-      type: Array as PropType<Plugin[]>,
+      type: Array as PropType<PluginDisplayItem[]>,
       required: true,
     },
   },

@@ -288,7 +288,8 @@ type DisableState =
         | "community-plugins-disabled"
         | "custom-registries-disabled"
         | "unlisted-disabled"
-        | "disabled-by-config";
+        | "disabled-by-config"
+        | "max-plugins-reached";
     };
 
 /**

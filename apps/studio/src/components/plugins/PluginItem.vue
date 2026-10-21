@@ -1,6 +1,7 @@
 <template>
   <div
     class="item"
+    :class="{'disabled': source.disabled }"
     tabindex="0"
     @click.prevent="emit('item-click', source)"
   >
@@ -135,10 +136,14 @@ export default Vue.extend({
   margin-left: 0.5ch;
 }
 
-.badge.origin-badge {
+.badge {
   font-size: 0.75rem;
   vertical-align: middle;
   text-transform: none;
+
+  &:not(.origin-badge) {
+    margin-left: 0;
+  }
 }
 
 .badge.origin-badge.origin-official {
@@ -173,6 +178,10 @@ export default Vue.extend({
     outline-offset: 0.14rem;
     outline-width: 1px;
     outline-color: var(--text-contrast);
+  }
+
+  &.disabled .info {
+    opacity: 0.75;
   }
 
   .info {

@@ -167,7 +167,7 @@ import PluginDisabledOverlay from "./PluginDisabledOverlay.vue";
 import ControlRow from "@/components/common/ControlRow.vue";
 import CollapsibleSection from "@/components/common/CollapsibleSection.vue";
 import { PluginSystemError } from "@/lib/errors";
-import type { PluginSnapshot, Plugin, PluginRegistryEntry, PluginOrigin } from "@/services/plugin";
+import type { PluginSnapshot, Plugin, PluginRegistryEntry, PluginOrigin, PluginDisplayItem } from "@/services/plugin";
 import { mapGetters, mapState } from "vuex";
 
 const log = rawLog.scope("PluginManagerModal");
@@ -184,6 +184,11 @@ const ORIGIN_ORDER: Record<PluginOrigin, number> = {
 const INSTALL_ORDER: Record<"true" | "false", number> = {
   "true": 0,
   "false": 10
+}
+
+const DISABLED_ORDER: Record<"true" | "false", number> = {
+  "true": 20,
+  "false": 0
 }
 
 export default Vue.extend({
@@ -236,10 +241,19 @@ export default Vue.extend({
       return this.plugins[this.selectedPluginIdx];
     },
     sortedInstalledPlugins() {
-      return _.sortBy(this.plugins.filter((p: Plugin) => p.installed), this.pluginSorter);
+      return _.sortBy(this.displayPlugins.filter((p: PluginDisplayItem) => p.installed), this.pluginSorter);
     },
     sortedPlugins() {
-      return _.sortBy(this.plugins, this.pluginSorter);
+      return _.sortBy(this.displayPlugins, this.pluginSorter);
+    },
+    updateablePlugins() {
+      return this.displayPlugins.filter((p: PluginDisplayItem) => p.installed && !p.disabled);
+    },
+    displayPlugins(): PluginDisplayItem[] {
+      return this.plugins.map((plugin) => ({
+        ...plugin,
+        disabled: this.snapshotsById[plugin.id]?.disableState.disabled
+      }));
     },
     autoUpdate: {
       get() {
@@ -371,7 +385,7 @@ export default Vue.extend({
       }
     },
     async checkAllForUpdates() {
-      await Promise.all(this.sortedInstalledPlugins.map(async (plugin: Plugin) => {
+      await Promise.all(this.updateablePlugins.map(async (plugin: Plugin) => {
         await this.checkForUpdates({ id: plugin.id });
       }));
     },
@@ -486,8 +500,8 @@ export default Vue.extend({
     browseRemote() {
       this.$refs.install_slideover.show();
     },
-    pluginSorter(p: Plugin) {
-      return ORIGIN_ORDER[p.origin] + INSTALL_ORDER[`${p.installed}`];
+    pluginSorter(p: PluginDisplayItem) {
+      return ORIGIN_ORDER[p.origin] + INSTALL_ORDER[`${p.installed}`] + DISABLED_ORDER[`${p.disabled}`];
     }
   },
 });
