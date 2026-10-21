@@ -129,6 +129,7 @@ describe("Basic Plugin Management", () => {
           latestRelease: {
             manifest,
             sourceArchiveUrl: server.formatUrl(manifest),
+            checksum: undefined,
           },
           readme: "# Test Plugin\n\nThis is a test plugin.",
         }

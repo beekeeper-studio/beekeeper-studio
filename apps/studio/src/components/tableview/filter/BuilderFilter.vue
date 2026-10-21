@@ -53,7 +53,7 @@
         <button
           v-if="!isNullFilter"
           type="button"
-          class="clear btn-link"
+          class="clear"
           @click.prevent="$set(filter, 'value', '')"
         >
           <i class="material-icons">cancel</i>

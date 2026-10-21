@@ -1,11 +1,15 @@
 import { EncryptedPluginData } from "@/common/appdb/models/EncryptedPluginData";
-import { PluginData } from "@/common/appdb/models/PluginData";
-import { Manifest, PluginSnapshot, PluginManager, PluginRegistryEntry, PluginRepository } from "@/services/plugin";
+import { PluginData, PluginDataOptions } from "@/common/appdb/models/PluginData";
+import { Manifest, PluginSnapshot, PluginRepository, ManifestV1, RegistryMap } from "@/services/plugin";
 import { PluginSystemError } from "@/lib/errors";
+import { getPluginManager, state } from "@/handlers/handlerState";
+
+type PluginDataScopeName = "currentConnection" | "currentWorkspace";
 
 interface IPluginHandlers {
+  "plugin/waitForInit": () => Promise<void>,
   "plugin/plugins": () => Promise<PluginSnapshot[]>
-  "plugin/entries": ({ clearCache }: { clearCache: boolean }) => Promise<{ official: PluginRegistryEntry[], community: PluginRegistryEntry[] }>
+  "plugin/entries": ({ clearCache }: { clearCache: boolean }) => Promise<RegistryMap>
   "plugin/repository": ({ id }: { id: string }) => Promise<PluginRepository>
   "plugin/install": ({ id }: { id: string }) => Promise<Manifest>
   "plugin/update": ({ id }: { id: string }) => Promise<Manifest>
@@ -15,15 +19,36 @@ interface IPluginHandlers {
   "plugin/getAutoUpdateEnabled": ({ id }: { id: string }) => Promise<boolean>
   "plugin/viewEntrypointExists": ({ pluginId, viewId }: { pluginId: string, viewId: string }) => Promise<boolean>
 
-  "plugin/getData": ({ manifest, key }: { manifest: Manifest, key?: string }) => Promise<unknown>
-  "plugin/setData": ({ manifest, key }: { manifest: Manifest, key?: string, value?: unknown }) => Promise<void>
-  "plugin/getEncryptedData": ({ manifest, key }: { manifest: Manifest, key?: string }) => Promise<unknown>
-  "plugin/setEncryptedData": ({ manifest, key }: { manifest: Manifest, key?: string, value?: unknown }) => Promise<void>
+  "plugin/getData": ({ manifest, key, scope, sId }: { manifest: Manifest, key?: string, scope?: PluginDataScopeName, sId: string }) => Promise<unknown>
+  "plugin/setData": ({ manifest, key, value, scope, sId }: { manifest: Manifest, key?: string, value?: unknown, scope?: PluginDataScopeName, sId: string }) => Promise<void>
+  "plugin/getEncryptedData": ({ manifest, key, scope, sId }: { manifest: Manifest, key?: string, scope?: PluginDataScopeName, sId: string }) => Promise<unknown>
+  "plugin/setEncryptedData": ({ manifest, key, value, scope, sId }: { manifest: Manifest, key?: string, value?: unknown, scope?: PluginDataScopeName, sId: string }) => Promise<void>
   "plugin/getAsset": ({ manifest, path }: { manifest: Manifest, path: string }) => Promise<string>
 }
 
-export const PluginHandlers: (pluginManager: PluginManager) => IPluginHandlers = (pluginManager) => ({
+function resolveScope(sId: string, scope: PluginDataScopeName) {
+  if (scope === "currentConnection") {
+    const config = state(sId).usedConfig;
+    if (!config) {
+      throw new Error(`Plugin data scope "${scope}" requires an active connection.`);
+    }
+    return { connectionId: config.id, workspaceId: config.workspaceId };
+  }
+
+  if (scope === "currentWorkspace") {
+    const config = state(sId).usedConfig;
+    if (!config) {
+      throw new Error(`Plugin data scope "${scope}" requires an active connection.`);
+    }
+    return { connectionId: null, workspaceId: config.workspaceId };
+  }
+
+  throw new Error(`Unknown plugin data scope: ${scope}`);
+}
+
+export const PluginHandlers: IPluginHandlers = {
   "plugin/waitForInit": async () => {
+    const pluginManager = getPluginManager();
     if (pluginManager.isInitialized) {
       return;
     }
@@ -48,52 +73,65 @@ export const PluginHandlers: (pluginManager: PluginManager) => IPluginHandlers =
     });
   },
   "plugin/plugins": async () => {
-    return await pluginManager.getPlugins();
+    return await getPluginManager().getPlugins();
   },
   "plugin/entries": async ({ clearCache }) => {
+    const pluginManager = getPluginManager();
     if (clearCache) {
       pluginManager.registry.clearCache();
     }
     return await pluginManager.registry.getEntries();
   },
   "plugin/repository": async ({ id }) => {
-    return await pluginManager.getRepository(id);
+    return await getPluginManager().getRepository(id);
   },
   "plugin/install": async ({ id }) => {
-    return await pluginManager.installPlugin(id);
+    return await getPluginManager().installPlugin(id);
   },
   "plugin/update": async ({ id }) => {
-    return await pluginManager.updatePlugin(id);
+    return await getPluginManager().updatePlugin(id);
   },
   "plugin/uninstall": async ({ id }) => {
-    return await pluginManager.uninstallPlugin(id);
+    return await getPluginManager().uninstallPlugin(id);
   },
   "plugin/checkForUpdates": async ({ id }) => {
-    return await pluginManager.checkForUpdates(id);
+    return await getPluginManager().checkForUpdates(id);
   },
   "plugin/setAutoUpdateEnabled": async ({ id, enabled }) => {
-    await pluginManager.setPluginAutoUpdateEnabled(id, enabled);
+    await getPluginManager().setPluginAutoUpdateEnabled(id, enabled);
   },
   "plugin/getAutoUpdateEnabled": async ({ id }) => {
-    return pluginManager.getPluginAutoUpdateEnabled(id);
+    return getPluginManager().getPluginAutoUpdateEnabled(id);
   },
   "plugin/viewEntrypointExists": async ({ pluginId, viewId }) => {
-    return pluginManager.viewEntrypointExists(pluginId, viewId);
+    return getPluginManager().viewEntrypointExists(pluginId, viewId);
   },
 
-  "plugin/setData": async ({ manifest, key, value }) => {
-    await PluginData.set(manifest.id, key, value);
+  "plugin/setData": async ({ sId, manifest, key, value, scope }) => {
+    const options: PluginDataOptions = {
+      ...(scope ? resolveScope(sId, scope) : {}),
+    };
+    await PluginData.set(manifest.id, key, value, options);
   },
-  "plugin/getData": async ({ manifest, key }) => {
-    return await PluginData.get(manifest.id, key);
+  "plugin/getData": async ({ sId, manifest, key, scope }) => {
+    const options: PluginDataOptions = {
+      ...(scope ? resolveScope(sId, scope) : {}),
+    };
+    return await PluginData.get(manifest.id, key, options);
   },
-  "plugin/setEncryptedData": async ({ manifest, key, value }) => {
-    await EncryptedPluginData.set(manifest.id, key, value);
+  "plugin/setEncryptedData": async ({ sId, manifest, key, value, scope }) => {
+    const options: PluginDataOptions = {
+      ...(scope ? resolveScope(sId, scope) : {}),
+    };
+    await EncryptedPluginData.set(manifest.id, key, value, options);
   },
-  "plugin/getEncryptedData": async ({ manifest, key }) => {
-    return await EncryptedPluginData.get(manifest.id, key);
+  "plugin/getEncryptedData": async ({ sId, manifest, key, scope }) => {
+    const options: PluginDataOptions = {
+      ...(scope ? resolveScope(sId, scope) : {}),
+    };
+    return await EncryptedPluginData.get(manifest.id, key, options);
   },
   "plugin/getAsset": async ({ manifest, path }) => {
-    return await pluginManager.getPluginAsset(manifest, path);
+    return await getPluginManager().getPluginAsset(manifest as ManifestV1, path);
   }
-});
+};

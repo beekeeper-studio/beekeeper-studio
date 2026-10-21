@@ -2434,26 +2434,23 @@ export class DBTestUtil {
       return expect.anything();
     }
 
-    // Test composite foreign keys functionality
+    // composite_child defines exactly one foreign key, and it is composite
     const tableKeys = await this.connection.getTableKeys('composite_child', this.defaultSchema);
+    expect(tableKeys).toHaveLength(1);
 
-    // Check that we have composite keys
-    const compositeKey = tableKeys.find(key => key.isComposite === true);
-    // If we have a composite key, assert its structure
-    expect(compositeKey).toBeDefined();
+    const compositeKey = tableKeys[0];
+    expect(compositeKey.isComposite).toBe(true);
+    expect(Array.isArray(compositeKey.fromColumn)).toBe(true);
+    expect(Array.isArray(compositeKey.toColumn)).toBe(true);
 
     const fromColumns = (compositeKey.fromColumn as string[]).map((c) => c.toLowerCase());
     const toColumns = (compositeKey.toColumn as string[]).map((c) => c.toLowerCase());
 
-    expect(compositeKey.isComposite).toBe(true);
-    expect(Array.isArray(compositeKey.fromColumn)).toBe(true);
-    expect(Array.isArray(compositeKey.toColumn)).toBe(true);
-    expect(compositeKey.fromColumn.length).toBeGreaterThan(1);
-    expect(compositeKey.toColumn.length).toBeGreaterThan(1);
-    expect(fromColumns).toContain('ref_id1');
-    expect(fromColumns).toContain('ref_id2');
-    expect(toColumns).toContain('parent_id1');
-    expect(toColumns).toContain('parent_id2');
+    // Column pairs must come back in constraint order with no duplicates, so
+    // that fromColumn[i] always references toColumn[i].
+    expect(fromColumns).toEqual(['ref_id1', 'ref_id2']);
+    expect(toColumns).toEqual(['parent_id1', 'parent_id2']);
+    expect(compositeKey.fromTable.toLowerCase()).toBe('composite_child');
     expect(compositeKey.toTable.toLowerCase()).toBe('composite_parent');
   }
 
@@ -2547,15 +2544,14 @@ export class DBTestUtil {
       .getIncomingKeys('composite_parent', this.defaultSchema)
       .then(normalizeTableKeys);
 
-    expect(tableKeys).toHaveLength(1);
-    expect(tableKeys).toStrictEqual(expect.arrayContaining([
+    expect(tableKeys).toStrictEqual([
       {
         toTable: 'composite_parent',
         fromTable: 'composite_child',
-        toColumn: expect.arrayContaining(['parent_id1', 'parent_id2']),
-        fromColumn: expect.arrayContaining(['ref_id1', 'ref_id2']),
+        toColumn: ['parent_id1', 'parent_id2'],
+        fromColumn: ['ref_id1', 'ref_id2'],
       }
-    ]));
+    ]);
   }
 
   async paramTest(params: string[]) {

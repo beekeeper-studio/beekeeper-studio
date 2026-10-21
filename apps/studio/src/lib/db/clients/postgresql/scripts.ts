@@ -133,3 +133,41 @@ export const defaultCreateScript = `
   GROUP BY tabdef.schema_name, tabdef.table_name, tc.constraint_name, constr.column_name;
 
 `;
+
+// One row per foreign-key column, in the shape BasicDatabaseClient.parseForeignKeyRow
+// expects. Callers append the WHERE / ORDER BY.
+export const foreignKeyColumnsSql = `
+  SELECT
+    c.conname AS constraint_name,
+    n.nspname AS from_schema,
+    t.relname AS from_table,
+    a.attname AS from_column,
+    nf.nspname AS to_schema,
+    tf.relname AS to_table,
+    af.attname AS to_column,
+    pos AS ordinal_position,
+    CASE c.confupdtype::text
+      WHEN 'a' THEN 'NO ACTION'
+      WHEN 'r' THEN 'RESTRICT'
+      WHEN 'c' THEN 'CASCADE'
+      WHEN 'n' THEN 'SET NULL'
+      WHEN 'd' THEN 'SET DEFAULT'
+      ELSE c.confupdtype::text
+    END AS on_update,
+    CASE c.confdeltype::text
+      WHEN 'a' THEN 'NO ACTION'
+      WHEN 'r' THEN 'RESTRICT'
+      WHEN 'c' THEN 'CASCADE'
+      WHEN 'n' THEN 'SET NULL'
+      WHEN 'd' THEN 'SET DEFAULT'
+      ELSE c.confdeltype::text
+    END AS on_delete
+  FROM pg_constraint c
+    JOIN pg_class t ON c.conrelid = t.oid
+    JOIN pg_namespace n ON t.relnamespace = n.oid
+    JOIN generate_subscripts(c.conkey, 1) pos ON true
+    JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = c.conkey[pos]
+    JOIN pg_class tf ON c.confrelid = tf.oid
+    JOIN pg_namespace nf ON tf.relnamespace = nf.oid
+    JOIN pg_attribute af ON af.attrelid = tf.oid AND af.attnum = c.confkey[pos]
+`;

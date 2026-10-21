@@ -1,59 +1,155 @@
 <template>
-  <portal to="modals">
-    <modal
-      :name="modalName"
-      :class="['vue-dialog', 'beekeeper-modal', 'plugin-manager-modal', { 'plugin-page-open': selectedPlugin }]"
-    >
-      <div class="dialog-content">
-        <div class="dialog-c-title">
-          Plugins
+  <base-modal
+    :name="modalName"
+    :loading="loadingPlugins"
+    class="plugin-manager-modal"
+    :first-focusable="null"
+    min-width="800px"
+    max-width="800px"
+    height="800px"
+  >
+    <template #title>
+      Plugins
+    </template>
+    <template>
+      <div class="plugin-manager-content">
+        <plugin-disabled-overlay v-if="$bksConfig.pluginSystem.disabled"/>
+        <div class="card padding control-card">
+          <control-row
+            title="Install plugins"
+            description="Browse and install plugins from the plugin registry."
+          >
+            <button
+              class="btn btn-flat"
+              @click="browseRemote"
+            >
+              Browse
+            </button>
+          </control-row>
+          <control-row
+            title="Auto update"
+            description="Allow plugins to be automatically updated on application launch."
+          >
+            <x-switch
+              @click.prevent="autoUpdate = !autoUpdate"
+              :toggled="autoUpdate"
+            />
+          </control-row>
         </div>
-        <a class="close-btn btn btn-fab" href="#" @click.prevent="close">
-          <i class="material-icons">clear</i>
-        </a>
-        <x-progressbar v-if="loadingPlugins" style="margin-top: -5px" />
-        <div class="plugin-manager-content">
-          <div class="plugin-list-container">
-            <div class="description">
-              Manage and install plugins in Beekeeper Studio.
-            </div>
-            <div class="alerts">
-              <div
-                class="alert alert-warning"
-                v-if="$bksConfig.pluginSystem.disabled"
+        <div class="plugin-list-container">
+          <div class="header-row">
+            <h3>
+              Installed Plugins
+            </h3>
+
+            <div class="control">
+              <a
+                v-if="sortedInstalledPlugins?.length > 0"
+                title="Check For Updates"
+                @click="checkAllForUpdates"
               >
-                <template v-if="allowedPluginsText">
-                  The plugin system is disabled. Installing and updating plugins is not available. Only the following bundled plugins are allowed to run: {{ allowedPluginsText }}.
-                </template>
-                <template v-else>
-                  The plugin system is disabled. Installing and updating plugins is not available, and no plugins are allowed to run.
-                </template>
-              </div>
-              <error-alert :error="errors" />
+                <i class="material-icons">refresh</i>
+              </a>
+            </div>
+          </div>
+          <div class="alerts">
+            <error-alert :error="errors" />
+          </div>
+          <plugin-list
+            v-if="sortedInstalledPlugins?.length > 0"
+            :plugins="sortedInstalledPlugins"
+            @install="install"
+            @uninstall="uninstall"
+            @update="update"
+            @item-click="openPluginPage"
+            @checkForUpdates="checkForUpdates"
+          />
+          <div
+            v-else
+            class="alert alert-info"
+          >
+            No plugins are currently installed
+          </div>
+        </div>
+        <slideover
+          ref="install_slideover"
+          :loading="loadingPlugins"
+          flex-body
+        >
+          <template>
+            <div class="card padding control-card">
+              <control-row
+                title="Official Plugins"
+                description="Official Plugins are built and maintained by the Beekeeper Studio Team"
+              >
+                <x-switch
+                  @click.prevent="officialEnabled = !officialEnabled"
+                  :toggled="officialEnabled"
+                />
+              </control-row>
+              <control-row
+                title="Community Plugins"
+                description="Community plugins are developed and maintined by independent third parties, not by Beekeeper Studio. Use at your own risk."
+              >
+                <x-switch
+                  @click.prevent="communityEnabled = !communityEnabled"
+                  :toggled="communityEnabled"
+                />
+              </control-row>
+              <collapsible-section
+                more-text="More Options"
+              >
+                <control-row
+                  title="Custom Registries"
+                  description="Enable custom registries to find plugins from. These can be configured in your ini file."
+                >
+                  <x-switch
+                    @click.prevent="customEnabled = !customEnabled"
+                    :toggled="customEnabled"
+                  />
+                </control-row>
+                <control-row
+                  title="Unlisted Plugins"
+                  description="Enable unlisted plugins. These are anonymous plugins not found in a registry, just placed in your plugin directory manually."
+                >
+                  <x-switch
+                    @click.prevent="unlistedEnabled = !unlistedEnabled"
+                    :toggled="unlistedEnabled"
+                  />
+                </control-row>
+              </collapsible-section>
             </div>
             <plugin-list
-              :plugins="plugins"
+              class="remote-plugin-list"
+              :plugins="sortedPlugins"
               @install="install"
               @uninstall="uninstall"
               @update="update"
               @item-click="openPluginPage"
               @checkForUpdates="checkForUpdates"
             />
-          </div>
-          <plugin-page
-            v-if="selectedPlugin"
-            :plugin="selectedPlugin"
-            :markdown="selectedPluginReadme"
-            :loading-markdown="loadingPluginReadme"
-            @install="install(selectedPlugin)"
-            @uninstall="uninstall(selectedPlugin)"
-            @update="update(selectedPlugin)"
-            @checkForUpdates="checkForUpdates(selectedPlugin)"
-          />
-        </div>
+          </template>
+        </slideover>
+        <slideover
+          ref="plugin_slideover"
+          :loading="loadingPluginReadme"
+        >
+          <template>
+            <plugin-page
+              v-if="selectedPlugin"
+              :plugin="selectedPlugin"
+              :plugin-repo="selectedPluginRepo"
+              :loading-markdown="loadingPluginReadme"
+              @install="install(selectedPlugin)"
+              @uninstall="uninstall(selectedPlugin)"
+              @update="update(selectedPlugin)"
+              @checkForUpdates="checkForUpdates(selectedPlugin)"
+            />
+          </template>
+        </slideover>
       </div>
-    </modal>
-  </portal>
+    </template>
+  </base-modal>
 </template>
 
 <script lang="ts">
@@ -64,24 +160,59 @@ import PluginList from "./PluginList.vue";
 import PluginPage from "./PluginPage.vue";
 import _ from "lodash";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
+import Slideover from "@/components/common/Slideover.vue";
+import BaseModal from "@/components/common/modals/BaseModal.vue";
+import PluginDisabledOverlay from "./PluginDisabledOverlay.vue";
+import ControlRow from "@/components/common/ControlRow.vue";
+import CollapsibleSection from "@/components/common/CollapsibleSection.vue";
 import { PluginSystemError } from "@/lib/errors";
-import type { PluginSnapshot, PluginRegistryEntry } from "@/services/plugin";
+import type { PluginSnapshot, Plugin, PluginRegistryEntry, PluginOrigin, PluginDisplayItem } from "@/services/plugin";
 import { mapGetters, mapState } from "vuex";
 
 const log = rawLog.scope("PluginManagerModal");
 
+const ORIGIN_ORDER: Record<PluginOrigin, number> = {
+  "official": 0,
+  "community": 1,
+  "custom": 2,
+  "unlisted": 3,
+  // This shouldn't happen, we exclude bundled from the list
+  "bundled": Number.MAX_SAFE_INTEGER
+};
+
+const INSTALL_ORDER: Record<"true" | "false", number> = {
+  "true": 0,
+  "false": 10
+}
+
+const DISABLED_ORDER: Record<"true" | "false", number> = {
+  "true": 20,
+  "false": 0
+}
+
 export default Vue.extend({
-  components: { PluginList, PluginPage, ErrorAlert },
+  components: {
+    PluginList,
+    PluginPage,
+    PluginDisabledOverlay,
+    ErrorAlert,
+    Slideover,
+    BaseModal,
+    ControlRow,
+    CollapsibleSection
+  },
   data() {
     return {
       modalName: "plugin-manager-modal",
       plugins: [],
       selectedPluginIdx: -1,
       selectedPluginReadme: "",
+      selectedPluginRepo: null,
       loadingPluginReadme: false,
       loadedPlugins: false,
       errors: null,
       loadingPlugins: false,
+      optionsAreExpanded: false
     };
   },
   async mounted() {
@@ -101,7 +232,6 @@ export default Vue.extend({
     ...mapGetters("plugins/entries", {
       entries: "all",
     }),
-    ...mapGetters("plugins", ["findPluginOrigin"]),
     ...mapGetters("plugins/snapshots", ['snapshotsById']),
     rootBindings() {
       return [{ event: AppEvent.openPluginManager, handler: this.open }];
@@ -109,12 +239,72 @@ export default Vue.extend({
     selectedPlugin() {
       return this.plugins[this.selectedPluginIdx];
     },
-    allowedPluginsText() {
-      return window.bksConfig.pluginSystem.allow
-        .map((id) => this.snapshotsById[id]?.manifest.name)
-        .filter(Boolean)
-        .join(", ");
+    sortedInstalledPlugins() {
+      return _.sortBy(this.displayPlugins.filter((p: PluginDisplayItem) => p.installed), this.pluginSorter);
     },
+    sortedPlugins() {
+      return _.sortBy(this.displayPlugins, this.pluginSorter);
+    },
+    updateablePlugins() {
+      return this.displayPlugins.filter((p: PluginDisplayItem) => p.installed && !p.disabled);
+    },
+    displayPlugins(): PluginDisplayItem[] {
+      return this.plugins.map((plugin) => ({
+        ...plugin,
+        disabled: this.snapshotsById[plugin.id]?.disableState.disabled
+      }));
+    },
+    autoUpdate: {
+      get() {
+        return this.$bksConfig.pluginSystem.autoUpdate;
+      },
+      async set(value) {
+        await this.$util.send('config/writeUserValue', { path: 'pluginSystem.autoUpdate', value });
+      }
+    },
+    communityEnabled: {
+      get() {
+        return !this.$bksConfig.pluginSystem.communityDisabled;
+      },
+      async set(value) {
+        if (value) {
+          // do we only want to do this the first time they enable?
+          const title = `Enable Community Plugins?`;
+          const confirmation = `By enabling community plugins, you acknowledge that you understand ` +
+          `that Beekeeper Studio does not review, test, endorse, or warrant community plugins, ` +
+          `and any use of them is at your own risk.`;
+          if (!(await this.$confirm(title, confirmation, { confirmLabel: 'Enable', variant: "danger" }))) {
+            return;
+          }
+        }
+
+        await this.$util.send('config/writeUserValue', { path: 'pluginSystem.communityDisabled', value: !value });
+      }
+    },
+    officialEnabled: {
+      get() {
+        return !this.$bksConfig.pluginSystem.officialEnabled;
+      },
+      async set(value) {
+        await this.$util.send('config/writeUserValue', { path: 'pluginSystem.ultimateDisabled', value: !value });
+      }
+    },
+    customEnabled: {
+      get() {
+        return !this.$bksConfig.pluginSystem.thirdPartyRegistriesDisabled;
+      },
+      async set(value) {
+        await this.$util.send('config/writeUserValue', { path: 'pluginSystem.thirdPartyRegistriesDisabled', value: !value });
+      }
+    },
+    unlistedEnabled: {
+      get() {
+        return !this.$bksConfig.pluginSystem.unlistedDisabled;
+      },
+      async set(value) {
+        await this.$util.send('config/writeUserValue', { path: 'pluginSystem.unlistedDisabled', value: !value });
+      }
+    }
   },
   watch: {
     pluginManagerStatus: {
@@ -126,15 +316,7 @@ export default Vue.extend({
         }
 
         if (this.pluginManagerStatus === "ready") {
-          this.loadingPlugins = true;
-
-          try {
-            this.plugins = await this.buildPluginListData();
-          } catch (e) {
-            log.error(e);
-          }
-
-          this.loadingPlugins = false;
+          await this.loadPlugins();
         } else if (this.pluginManagerStatus === "initializing") {
           this.loadingPlugins = true;
         } else {
@@ -142,54 +324,74 @@ export default Vue.extend({
         }
       },
       immediate: true,
+    },
+    communityEnabled: {
+      async handler() {
+        if (this.pluginManagerStatus === "ready") {
+          this.plugins = [];
+          await this.$store.dispatch("plugins/initialize");
+          await this.loadPlugins();
+        }
+      }
     }
   },
   methods: {
-    async install({ id }) {
-      const state = this.plugins.find((p) => p.id === id);
+    async loadPlugins() {
+      this.loadingPlugins = true;
 
       try {
-        state.installing = true;
-        await this.$plugin.install(id);
-        state.installed = true;
-        // HACK(azmi): refresh the plugin list or just this item instead
-        state.loadable = true;
+        this.plugins = await this.buildPluginListData();
       } catch (e) {
         log.error(e);
-        state.error = e;
+      }
+
+      this.loadingPlugins = false;
+    },
+    // grrr observability
+    updatePlugin(id: string, updated: Partial<Plugin>) {
+      const idx = this.plugins.findIndex((p) => p.id === id);
+      if (idx === -1) return;
+      this.$set(this.plugins, idx, { ...this.plugins[idx], ...updated });
+    },
+    async install({ id }) {
+      try {
+        this.updatePlugin(id, { installing: true, error: null });
+        await this.$plugin.install(id);
+        this.updatePlugin(id, { installed: true, loadable: true });
+      } catch (e) {
+        log.error(e);
+        this.updatePlugin(id, { error: e });
         this.$noty.error(`Failed to install plugin: ${e.message}`);
       } finally {
-        state.installing = false;
+        this.updatePlugin(id, { installing: false });
       }
     },
     async update({ id }) {
-      const state = this.plugins.find((p) => p.id === id);
-
       try {
-        state.installing = true;
+        this.updatePlugin(id, { installing: true, error: null });
         const manifest = await this.$plugin.update(id);
-        state.version = manifest.version;
-        state.updateAvailable = false;
-        // HACK(azmi): refresh the plugin list or just this item instead
-        state.loadable = true;
+        this.updatePlugin(id, {
+          version: manifest.version,
+          updateAvailable: false,
+          loadable: true,
+        });
       } catch (e) {
         log.error(e);
-        state.error = e;
+        this.updatePlugin(id, { error: e });
         this.$noty.error(`Failed to update plugin: ${e.message}`);
       } finally {
-        state.installing = false;
+        this.updatePlugin(id, { installing: false });
       }
     },
+    async checkAllForUpdates() {
+      await Promise.all(this.updateablePlugins.map(async (plugin: Plugin) => {
+        await this.checkForUpdates({ id: plugin.id });
+      }));
+    },
     async checkForUpdates({ id }) {
-      const idx = this.plugins.findIndex((p) => p.id === id);
-
       try {
-        this.$set(this.plugins, idx, {
-          ...this.plugins[idx],
-          checkingForUpdates: true,
-        });
-        this.$set(this.plugins, idx, {
-          ...this.plugins[idx],
+        this.updatePlugin(id, { checkingForUpdates: true });
+        this.updatePlugin(id, {
           updateAvailable: await this.$util.send("plugin/checkForUpdates", {
             id,
           }),
@@ -198,10 +400,7 @@ export default Vue.extend({
         log.error(e);
         this.$noty.error(`Failed to check for update: ${e.message}`);
       } finally {
-        this.$set(this.plugins, idx, {
-          ...this.plugins[idx],
-          checkingForUpdates: false,
-        });
+        this.updatePlugin(id, { checkingForUpdates: false });
       }
     },
     async uninstall({ id }) {
@@ -209,21 +408,22 @@ export default Vue.extend({
         return;
       }
 
-      const state = this.plugins.find((p) => p.id === id);
-
       try {
         await this.$plugin.uninstall(id);
-        state.installed = false;
+        this.updatePlugin(id, { installed: false });
       } catch (e) {
         log.error(e);
-        state.error = e;
+        this.updatePlugin(id, { error: e });
         this.$noty.error(`Failed to uninstall plugin: ${e.message}`);
       }
     },
     async openPluginPage({ id }) {
+      this.selectedPluginIdx = this.plugins.findIndex((p) => p.id === id);
+      this.selectedPluginRepo = null;
+      this.loadingPluginReadme = true;
+      this.$refs.plugin_slideover.show();
       try {
-        const info = await this.$util.send("plugin/repository", { id });
-        this.selectedPluginReadme = info.readme;
+        this.selectedPluginRepo = await this.$util.send("plugin/repository", { id });
       } catch (e) {
         log.error(e);
 
@@ -235,34 +435,30 @@ export default Vue.extend({
           this.$noty.error(`Error opening plugin page: ${e.message}`);
         }
       }
-      this.selectedPluginIdx = this.plugins.findIndex((p) => p.id === id);
-      this.selectedPluginReadme = "";
-      this.loadingPluginReadme = true;
-      try {
-        const info = await this.$util.send("plugin/repository", { id });
-        this.selectedPluginReadme = info.readme;
-      } catch (e) {
-        log.warn(e);
-      }
       this.loadingPluginReadme = false;
     },
     async buildPluginListData() {
       const entries: PluginRegistryEntry[] = this.entries;
       const installedPlugins: PluginSnapshot[] = this.snapshots;
-      const list: PluginRegistryEntry[] = [];
+      const list: Plugin[] = [];
 
-      for (const { manifest, loadable } of installedPlugins) {
-        const data = {
+      for (const { manifest, loadable, origin } of installedPlugins) {
+        const data: Plugin = {
           ...manifest,
           installed: true,
           installing: false,
           checkingForUpdates: null,
           loadable,
-        };
+          origin
+        } as Plugin;
+
+        if (data.origin === 'bundled') {
+          continue;
+        }
 
         const entry = entries.find((entry) => entry.id === manifest.id);
 
-        // if the plugin is found in the beekeeper-studio-plugins
+        // if the plugin is found in a registry
         if (entry) {
           data.repo = entry.repo;
           data.updateAvailable = await this.$util
@@ -281,21 +477,18 @@ export default Vue.extend({
 
       for (const entry of entries) {
         if (!_.find(list, { id: entry.id })) {
-          const data = {
+          const data: Plugin = {
             ...entry,
             installed: false,
             installing: false,
             checkingForUpdates: null,
-          };
+          } as Plugin;
 
           list.push(data);
         }
       }
 
-      return list.map((item) => ({
-        ...item,
-        origin: this.findPluginOrigin(item.id),
-      }));
+      return list;
     },
     open() {
       this.$modal.show(this.modalName);
@@ -303,12 +496,95 @@ export default Vue.extend({
     close() {
       this.$modal.hide(this.modalName);
     },
+    browseRemote() {
+      this.$refs.install_slideover.show();
+    },
+    pluginSorter(p: PluginDisplayItem) {
+      return ORIGIN_ORDER[p.origin] + INSTALL_ORDER[`${p.installed}`] + DISABLED_ORDER[`${p.disabled}`];
+    }
   },
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@import '../../assets/styles/app/_variables';
+
+$gutter-h: 1.5rem;
+
+.card {
+   background-color: var(--bg)
+}
+
 .alerts {
   margin-inline: 1.25rem;
+}
+
+.plugin-manager-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+}
+
+.remote-plugin-list {
+  margin-top: 1rem;
+}
+
+.plugin-list-container {
+  padding: 0.5rem 0 0;
+  margin-top: 0.5rem;
+  flex-grow: 1;
+  flex-basis: 35%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+
+  >.description {
+    padding-inline: $gutter-h;
+    line-height: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  > .alerts,
+  > .plugin-list-wrap > .fixed {
+    padding-inline: $gutter-h;
+  }
+}
+
+.plugin-manager-filter-container {
+  margin-top: 1rem;
+}
+
+.control-card {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+
+  ::v-deep .content-container .control-row {
+    &:first-child {
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    &:last-child {
+      padding-bottom: 1rem;
+    }
+  }
+}
+
+.header-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+
+  h3 {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+  }
+
+  a {
+    padding: 0.5rem;
+  }
 }
 </style>

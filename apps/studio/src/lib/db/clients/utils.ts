@@ -2,6 +2,7 @@
 import _ from 'lodash'
 import logRaw from '@bksLogger'
 import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate, BuildInsertOptions, OrderBy } from '../models'
+import { ForeignKeyRow, TableKey } from '@shared/lib/dialects/models'
 import { joinFilters } from '@/common/utils'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 import { fromIni } from "@aws-sdk/credential-providers";
@@ -530,3 +531,60 @@ export async function getAWSCLIToken(server: IDbConnectionServerConfig, options:
   });
 }
 
+/**
+ * Rows belonging to the same constraint are identified by the constraint
+ * name *and* both tables. Constraint names alone are not unique across a
+ * schema in PostgreSQL (they are per-table) or SQLite (pragma ids restart at
+ * 0 for every table), so incoming keys from several tables that happen to
+ * share a name must not be merged into one bogus composite key.
+ */
+function foreignKeyGroupId(row: ForeignKeyRow): string {
+  return [row.fromSchema, row.fromTable, row.constraintName ?? '', row.toSchema, row.toTable].join('\u0000')
+}
+
+function hasOrdinalPosition(row: ForeignKeyRow): boolean {
+  return typeof row.ordinalPosition === 'number' && Number.isFinite(row.ordinalPosition)
+}
+
+/**
+ * Group per-column foreign key rows into `TableKey`s.
+ *
+ * - One `TableKey` per constraint, in order of first appearance.
+ * - Single-column keys expose `fromColumn` / `toColumn` as strings; composite
+ *   keys expose them as arrays, paired by index, and set `isComposite`.
+ * - Column order follows `ordinalPosition` when every row has one, else input order.
+ */
+export function groupForeignKeyRows(rows: ForeignKeyRow[]): TableKey[] {
+  const groups = new Map<string, ForeignKeyRow[]>()
+
+  for (const row of rows) {
+    const id = foreignKeyGroupId(row)
+    const group = groups.get(id)
+    if (group) {
+      group.push(row)
+    } else {
+      groups.set(id, [row])
+    }
+  }
+
+  return Array.from(groups.values()).map((parts) => {
+    const ordered = parts.every(hasOrdinalPosition)
+      ? _.sortBy(parts, (p) => p.ordinalPosition)
+      : parts
+    const first = ordered[0]
+    const isComposite = ordered.length > 1
+
+    return {
+      constraintName: first.constraintName,
+      fromSchema: first.fromSchema,
+      fromTable: first.fromTable,
+      fromColumn: isComposite ? ordered.map((p) => p.fromColumn) : first.fromColumn,
+      toSchema: first.toSchema,
+      toTable: first.toTable,
+      toColumn: isComposite ? ordered.map((p) => p.toColumn) : first.toColumn,
+      onUpdate: first.onUpdate,
+      onDelete: first.onDelete,
+      isComposite,
+    }
+  })
+}

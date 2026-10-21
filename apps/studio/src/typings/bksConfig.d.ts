@@ -478,9 +478,25 @@ declare interface IBksConfig {
         };
     };
     pluginSystem: {
-        allow: string[];
+        autoUpdate: boolean;
         communityDisabled: boolean;
         disabled: boolean;
+        officialDisabled: boolean;
+        proxyGithubPluginRequests: boolean;
+        registries: {
+            community: {
+                file: string;
+                owner: string;
+                repo: string;
+            };
+            official: {
+                file: string;
+                owner: string;
+                repo: string;
+            };
+        };
+        thirdPartyRegistriesDisabled: boolean;
+        unlistedDisabled: boolean;
     };
     plugins: {
         "bks-ai-shell": {

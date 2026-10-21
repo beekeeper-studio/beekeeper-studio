@@ -42,7 +42,7 @@
               <button
                 v-if="isCloud && !isNewConnection && !isPersonal"
                 type="button"
-                class="btn btn-link btn-icon btn-small share-btn"
+                class="btn btn-small share-btn"
                 @click="share"
               >
                 <i class="material-icons">share</i>
@@ -55,7 +55,9 @@
             <error-alert :error="errors" title="Please fix the following errors" />
             <form @action="submit" v-if="config">
               <div class="connection-type-wrapper">
-                <div class="label">Connection Type</div>
+                <div class="label">
+                  Connection Type
+                </div>
                 <button
                   class="form-control connection-type-btn"
                   type="button"
@@ -286,7 +288,7 @@
               <a href="https://beekeeperstudio.io/pricing" class="">Upgrade</a>.
             </div>
             <div class="pitch" v-else>
-              🌟 <strong>AI Shell</strong> - Let an LLM explore your database and write SQL for you. Bring your own API key. Simply open a new tab to get started.
+              🌟 <strong>Make Your Own Plugins!</strong> - Add your own functionality to the app and share it with the community!
               <a href="https://www.beekeeperstudio.io/features/sql-ai">Learn more</a>
             </div>
           </template>
@@ -764,7 +766,8 @@ export default Vue.extend({
     padding-right: 1.75rem;
     justify-content: flex-start;
     align-items: center;
-    background-color: transparent;
+    background: var(--input-bg);
+    border: var(--input-border);
 
     &::v-deep .database-icon {
       line-height: 0;

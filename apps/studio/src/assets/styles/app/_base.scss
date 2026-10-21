@@ -34,7 +34,6 @@ $form-control-font-size: 0.831rem; // ~13.3px
   --font-size: #{$base-font-size};
   --font-family: #{$font-family};
   --font-family-mono: #{$font-family-mono};
-  --form-control-font-size: #{$form-control-font-size};
   font-size: var(--font-size);
   font-family: var(--font-family);
   -webkit-font-smoothing: antialiased;
@@ -43,7 +42,34 @@ $form-control-font-size: 0.831rem; // ~13.3px
 }
 body {
   font-size: 1rem;
+  background: var(--app-bg);
+  color: var(--app-fg);
 }
-.material-icons {
+:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 0.14rem;
+}
+.material-icons, .material-icons-outlined {
   transform: rotate(0.03deg);
+}
+
+button {
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+
+  &:hover,
+  &:focus {
+    background: var(--btn-bg-hover);
+    color: var(--btn-fg-hover);
+  }
+}
+
+input, select, textarea {
+  color: var(--input-fg);
+  background: var(--input-bg);
+  border: var(--input-border);
+  &:focus {
+    border: var(--input-border-focus);
+    outline: none;
+  }
 }

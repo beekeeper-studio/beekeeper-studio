@@ -231,64 +231,46 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
     return Promise.resolve([]); // TODO: not implemented yet
   }
 
+  // pragma_foreign_key_list has no constraint names: `id` numbers each foreign
+  // key of a table and `seq` orders the columns within it.
   async getOutgoingKeys(table: string, _schema?: string): Promise<TableKey[]> {
+    // Foreign keys defined on this table (referencing other tables)
     const sql = `
       SELECT
         '${SD.escapeString(table)}' AS from_table,
+        p.id AS constraint_name,
+        p.seq AS ordinal_position,
         p."from" AS from_column,
         p."table" AS to_table,
         p."to" AS to_column,
-        p.on_update as on_update,
-        p.on_delete as on_delete,
-        p.id as id
+        p.on_update AS on_update,
+        p.on_delete AS on_delete
       FROM pragma_foreign_key_list('${SD.escapeString(table)}') p
-      ORDER BY id;
+      ORDER BY p.id, p.seq
     `
     const { rows } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
-    return rows.map(row => ({
-      constraintName: row.id,
-      constraintType: 'FOREIGN',
-      toTable: row.to_table,
-      toSchema: '',
-      fromSchema: '',
-      fromTable: row.from_table,
-      fromColumn: row.from_column,
-      toColumn: row.to_column,
-      onUpdate: row.on_update,
-      onDelete: row.on_delete,
-      isComposite: false,
-    }))
+    return this.parseForeignKeys(rows);
   }
 
   async getIncomingKeys(table: string, _schema?: string): Promise<TableKey[]> {
+    // Foreign keys on other tables that reference this table
     const sql = `
       SELECT
         m.name AS from_table,
+        p.id AS constraint_name,
+        p.seq AS ordinal_position,
         p."from" AS from_column,
         p."table" AS to_table,
         p."to" AS to_column,
-        p.on_update as on_update,
-        p.on_delete as on_delete,
-        p.id as id
-      FROM sqlite_master AS m
-      JOIN pragma_foreign_key_list(m.name) AS p
-      WHERE p."table" = '${SD.escapeString(table)}'
-      ORDER BY id, from_table;
+        p.on_update AS on_update,
+        p.on_delete AS on_delete
+      FROM sqlite_master m
+      JOIN pragma_foreign_key_list(m.name) p
+      WHERE m.type = 'table' AND p."table" = '${SD.escapeString(table)}'
+      ORDER BY m.name, p.id, p.seq
     `
     const { rows } = await this.driverExecuteSingle(sql, { overrideReadonly: true });
-    return rows.map(row => ({
-      constraintName: row.id,
-      constraintType: 'FOREIGN',
-      toTable: row.to_table,
-      toSchema: '',
-      fromSchema: '',
-      fromTable: row.from_table,
-      fromColumn: row.from_column,
-      toColumn: row.to_column,
-      onUpdate: row.on_update,
-      onDelete: row.on_delete,
-      isComposite: false,
-    }))
+    return this.parseForeignKeys(rows);
   }
 
   async query(queryText: string): Promise<CancelableQuery> {
