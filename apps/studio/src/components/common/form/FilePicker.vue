@@ -56,6 +56,9 @@ export default {
       required: false,
       default: ''
     },
+    // NOTE: this is now deprecated on Linux as of Electron 41, as GTK apparently intends
+    // to remove support for it as well:
+    // https://github.com/electron/electron/blob/main/docs/breaking-changes.md#deprecated-showhiddenfiles-in-dialogs-on-linux
     showHiddenFiles: {
       type: Boolean,
       required: false,
@@ -147,6 +150,10 @@ export default {
         dialogConfig.properties.push('multiSelections')
       }
 
+      // NOTE: Electron now defaults to the Downloads directory for these methods
+      // Previously the OS would track the last opened directory and auto open there
+      // but Electron is now overriding that. If we want that behaviour back,
+      // we will have to manually track the last used directory ourselves
       let files
       if (options.save ?? this.save) {
         files = [ this.$native.dialog.showSaveDialogSync({

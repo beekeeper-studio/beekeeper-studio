@@ -230,13 +230,17 @@ export default class WebPluginLoader {
             response.name === "getEncryptedData"
               ? "plugin/getEncryptedData"
               : "plugin/getData",
-            { manifest: this.manifest, key: response.args.key }
+            {
+              manifest: this.manifest,
+              key: response.args.key,
+              scope: response.args.scope,
+            }
           );
           response.result = value;
           break;
         }
         case "clipboard.readText":
-          response.result = window.main.readTextFromClipboard();
+          response.result = await window.main.readTextFromClipboard();
           break;
         case "checkForUpdate":
           response.result = await this.context.utility.send("plugin/checkForUpdates", {
@@ -254,15 +258,20 @@ export default class WebPluginLoader {
             response.name === "setEncryptedData"
               ? "plugin/setEncryptedData"
               : "plugin/setData",
-            { manifest: this.manifest, key: response.args.key, value: response.args.value }
+            {
+              manifest: this.manifest,
+              key: response.args.key,
+              value: response.args.value,
+              scope: response.args.scope,
+            }
           )
           break;
         }
         case "clipboard.writeText":
-          window.main.writeTextToClipboard(response.args.text);
+          await window.main.writeTextToClipboard(response.args.text);
           break;
         case "clipboard.writeImage":
-          response.result = window.main.writeImageToClipboard(response.args.data);
+          response.result = await window.main.writeImageToClipboard(response.args.data);
           break;
         case "noty.info":
           this.context.noty.info(response.args.message, {

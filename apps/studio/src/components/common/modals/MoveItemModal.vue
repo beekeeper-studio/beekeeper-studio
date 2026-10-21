@@ -11,7 +11,9 @@
         </span>
         to
       </template>
-      <template v-else>Move</template>
+      <template v-else>
+        Move
+      </template>
     </template>
     <template v-if="target">
       <folder-tree-picker
@@ -142,7 +144,7 @@ export default Vue.extend({
   gap: 0.25rem;
 
   [data-target-type="query"] {
-    color: var(--brand-pink);
+    color: var(--pink-text);
   }
 }
 </style>

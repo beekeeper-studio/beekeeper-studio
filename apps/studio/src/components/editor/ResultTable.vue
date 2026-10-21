@@ -24,7 +24,7 @@
         >
         <button
           type="button"
-          class="clear btn-link"
+          class="clear"
           title="clear search filter"
           @click.prevent="clearSearchFilters"
         >
@@ -33,13 +33,13 @@
       </div>
       <button
         type="submit"
-        class="btn btn-primary btn-fab"
+        class="btn btn-primary btn-icon"
         title="filter results table"
       >
         <i class="material-icons">search</i>
       </button>
       <button
-        class="close-btn btn btn-flat btn-fab"
+        class="close-btn btn btn-flat btn-icon"
         title="Close filter"
         @click="closeTableFilter"
       >
@@ -168,6 +168,9 @@
         return this.dialectData?.queryDialectOverride ?? this.dialect;
       },
       keymap() {
+        // v-hotkey listens on the whole document, so a result table in a
+        // background tab would otherwise react to keys pressed anywhere.
+        if (!this.active) return {}
         return this.$vHotkeyKeymap({
           'queryEditor.copyResultSelection': this.copySelection.bind(this),
           'queryEditor.openTableFilter': this.focusOnFilterInput.bind(this),
@@ -281,6 +284,8 @@
             // @ts-ignore
             contextMenu: (_e, cell) => {
               return [
+                this.viewAsJsonMenuItem(),
+                { separator: true },
                 ...copyActionsMenu({
                   tabulator: cell.getTable(),
                   table: this.result.tableName || "mytable",
@@ -377,7 +382,11 @@
           disabled: areAllCellsReadOnly || !this.editingData,
         }
       },
-      openEditorMenuByShortcut() {
+      openEditorMenuByShortcut(e: KeyboardEvent) {
+        // Only when the key was pressed inside the grid. Shift+Enter is a
+        // newline elsewhere (SQL editor, plugin prompts, whose iframes
+        // forward their key events to the document).
+        if (!this.tabulator?.element.contains(e.target as Node)) return
         const range: RangeComponent = _.last(this.tabulator.getRanges())
         const cell = range.getCells().flat()[0];
         // (copied from TableTable.vue)
@@ -385,6 +394,21 @@
         // it should be done by calling an event using this.$modal.show(modalName)
         // or this.$trigger(AppEvent.something) if possible
         this.openCellEditorModal(cell, !this.cellEditCheck(cell))
+      },
+      /** Opens the JSON sidebar on the selected row. Leads the cell and row menus. */
+      viewAsJsonMenuItem() {
+        return {
+          label: createMenuItem(
+            'View as JSON',
+            this.$bksConfig.getKeybindings('context-menu', 'general.jsonViewerSidebar'),
+            { icon: 'data_object' }
+          ),
+          action: () => {
+            this.trigger(AppEvent.selectSecondarySidebarTab, 'json-viewer')
+            this.trigger(AppEvent.toggleSecondarySidebar, true)
+            this.updateJsonViewerSidebar()
+          },
+        }
       },
       openEditorMenu(cell: CellComponent) {
         const isReadOnly = !this.cellEditCheck(cell);
@@ -427,6 +451,8 @@
           const range = _.last(ranges);
 
           return [
+            this.viewAsJsonMenuItem(),
+            { separator: true },
             this.openEditorMenu(cell),
             this.setAsNullMenuItem(ranges),
             { separator: true },
@@ -592,7 +618,7 @@
       },
       headerFormatter(_cell, formatterParams) {
         const { columnName, dataType } = formatterParams
-        const dataTypeStr = dataType ? `<span class="badge column-data-type">${escapeHtml(dataType)}</span>` : '';
+        const dataTypeStr = dataType ? `<span class="column-data-type">${escapeHtml(dataType)}</span>` : '';
         return `
           <span class="title">
             ${escapeHtml(columnName)}
@@ -1066,14 +1092,13 @@
 
         this.tabulator.download(formatter, `${title}-${dateString}.${format}`, 'all');
       },
-      clipboard(format = null) {
+      async clipboard(format = null) {
         // this.tabulator.copyToClipboard("all")
 
         const allRows = this.tabulator.getData()
         if (allRows.length == 0) {
           return
         }
-        const columnTitles = {}
 
         const result = this.dataToJson(allRows, false)
 
@@ -1087,11 +1112,11 @@
                   )
                 )
           ];
-          this.$native.clipboard.writeText(markdownTable(mdContent))
+          await this.$native.clipboard.writeText(markdownTable(mdContent))
         } else if (format === 'json') {
-          this.$native.clipboard.writeText(JSON.stringify(result))
+          await this.$native.clipboard.writeText(JSON.stringify(result))
         } else {
-          this.$native.clipboard.writeText(
+          await this.$native.clipboard.writeText(
             Papa.unparse(
               result,
               { header: true, delimiter: "\t", quotes: true, escapeFormulae: true }
@@ -1227,12 +1252,12 @@
     right: 1.5rem;
     z-index: 10;
     align-items: center;
-    background-color: var(--query-editor-bg);
-    border: 1px solid var(--border-color);
+    background: var(--editor-bg);
+    border: 1px solid var(--border-subtle);
     border-radius: 0.5rem;
     @include card-shadow;
 
-    .btn-fab {
+    .btn-icon {
       min-width: auto;
       width: 1.6rem;
       height: 1.5rem;

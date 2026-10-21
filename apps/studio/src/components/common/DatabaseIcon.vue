@@ -9,7 +9,7 @@
     >
       <path :d="icon.path" :fill="`#${icon.hex}`" />
     </svg>
-    <img v-else-if="icon" :src="icon" :alt="type" />
+    <img v-else-if="icon" :src="icon" :alt="type">
     <i v-else class="material-icons-outlined default-icon">table_rows</i>
   </span>
 </template>
@@ -97,6 +97,6 @@ i.default-icon {
 
 i.default-icon {
   font-size: 1em;
-  color: hsl(from var(--theme-base) h s calc(l + 80));
+  color: var(--text-contrast);
 }
 </style>

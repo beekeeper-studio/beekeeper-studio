@@ -104,14 +104,28 @@ export const commonColumnMenu = [
   resizeAllColumnsToFixedWidth,
 ];
 
-export function createMenuItem(label: string, shortcut: string | string[] = "", ultimate = false) {
+export interface MenuItemOptions {
+  /** Show the paid-feature star on the trailing edge. */
+  ultimate?: boolean;
+  /** Material icon name rendered on the leading edge, before the label. */
+  icon?: string;
+}
+
+export function createMenuItem(
+  label: string,
+  shortcut: string | string[] = "",
+  options: MenuItemOptions = {}
+) {
   label = `<x-label>${escapeHtml(label)}</x-label>`;
   if (typeof shortcut !== "string") {
     shortcut = shortcut[0];
   }
   if (shortcut) shortcut = `<x-shortcut value="${escapeHtml(shortcut)}" />`;
-  const ultimateIcon = ultimate ? `<i class="material-icons menu-icon">stars</i>` : '';
-  return `<x-menuitem>${label}${shortcut}${ultimateIcon}</x-menuitem>`;
+  const leadingIcon = options.icon
+    ? `<i class="material-icons leading-icon">${escapeHtml(options.icon)}</i>`
+    : '';
+  const ultimateIcon = options.ultimate ? `<i class="material-icons menu-icon">stars</i>` : '';
+  return `<x-menuitem>${leadingIcon}${label}${shortcut}${ultimateIcon}</x-menuitem>`;
 }
 
 export async function buildCopyText(
@@ -283,8 +297,8 @@ function countCellsFromData(data: RangeData) {
  * the clipboard is empty. On a parse error the raw text is returned as a single
  * cell so it can still be pasted into one row.
  */
-export function readClipboardRows(): string[][] | null {
-  const text = ElectronPlugin.clipboard.readText();
+export async function readClipboardRows(): Promise<string[][] | null> {
+  const text = await ElectronPlugin.clipboard.readText();
   if (!text) return null;
 
   const parsed = Papa.parse(text, {
@@ -324,10 +338,10 @@ export function buildTiledPasteData(
   return { pasteData, rowCount, colCount };
 }
 
-export function pasteRange(range: RangeComponent) {
+export async function pasteRange(range: RangeComponent) {
   // Same parsing as "paste as new rows" — the two only differ in the
   // destination (overwrite existing cells here vs. insert new rows there).
-  const data = readClipboardRows();
+  const data = await readClipboardRows();
   if (!data) return;
 
   if (data.length === 1 && data[0].length === 1) {
@@ -434,7 +448,7 @@ export function copyCellMenu(_e: any, cell: CellComponent) {
   return [
     {
       label: createMenuItem("Copy"),
-      action: () => ElectronPlugin.clipboard.writeText(text),
+      action: async () => await ElectronPlugin.clipboard.writeText(text),
     },
   ];
 }
@@ -446,13 +460,13 @@ export function pasteActionsMenu(
   const actions = [
     {
       label: createMenuItem("Paste", window.bksConfig.getKeybindings("context-menu", "general.pasteSelection")),
-      action: () => pasteRange(range),
+      action: async () => await pasteRange(range),
     },
   ];
   if (onPasteAsNewRows) {
     actions.push({
       label: createMenuItem("Paste as new rows", window.bksConfig.getKeybindings("context-menu", "tableTable.pasteAsNewRows")),
-      action: () => onPasteAsNewRows(),
+      action: async () => onPasteAsNewRows(),
     });
   }
   return actions;
