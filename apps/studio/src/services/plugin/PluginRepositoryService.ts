@@ -116,9 +116,8 @@ export default class PluginRepositoryService {
 
     return {
       manifest,
-      // FIXME rename this, it's not really "source".. idk..
       sourceArchiveUrl: asset.browser_download_url,
-      checksum: asset.digest
+      checksum: (asset.digest as string).replace(/^sha256:/, '')
     };
   }
 
