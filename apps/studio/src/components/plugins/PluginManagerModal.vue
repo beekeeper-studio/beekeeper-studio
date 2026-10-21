@@ -101,17 +101,16 @@
               >
                 <control-row
                   title="Custom Registries"
-                  description="Enable custom registries to find plugins from. These can be configured in your ini file. (Coming Soon™)"
+                  description="Enable custom registries to find plugins from. These can be configured in your ini file."
                 >
                   <x-switch
-                    :disabled="true"
                     @click.prevent="customEnabled = !customEnabled"
-                    :toggled="false"
+                    :toggled="customEnabled"
                   />
                 </control-row>
                 <control-row
                   title="Unlisted Plugins"
-                  description="Enable unlisted plugins. These are anonymouse plugins not found in a registry, just placed in your plugin directory manually."
+                  description="Enable unlisted plugins. These are anonymous plugins not found in a registry, just placed in your plugin directory manually."
                 >
                   <x-switch
                     @click.prevent="unlistedEnabled = !unlistedEnabled"
