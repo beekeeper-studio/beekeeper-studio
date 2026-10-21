@@ -8,6 +8,7 @@ import { PluginsController } from "@/lib/cloud/controllers/PluginsController";
 import { CloudClient } from "@/lib/cloud/CloudClient";
 import BksConfig from "@/common/bksConfig";
 import platform_info from "@/common/platform_info";
+import { UserSetting } from "@/common/appdb/models/user_setting";
 
 const log = rawLog.scope("PluginRepositoryService");
 
@@ -15,13 +16,18 @@ export default class PluginRepositoryService {
   private octokit: Octokit;
   private controller: PluginsController;
 
-  constructor(options?: { octokitOptions?: OctokitOptions }) {
+  constructor(private options?: { octokitOptions?: OctokitOptions }) {
+  }
+
+  async initialize() {
+    const token = (await UserSetting.get("pluginGithubToken"))?.userValue;
+
     this.octokit = new Octokit({
       baseUrl: process.env.BKS_PLUGIN_GITHUB_API_BASE_URL,
       userAgent: "Beekeeper Studio",
-      auth: process.env.BKS_PLUGIN_GITHUB_TOKEN,
+      auth: token ?? process.env.BKS_PLUGIN_GITHUB_TOKEN,
       log,
-      ...options?.octokitOptions,
+      ...this.options?.octokitOptions,
     });
     this.controller = CloudClient.getPluginsController(platform_info.cloudUrl);
   }
