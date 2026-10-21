@@ -9,9 +9,6 @@ icon: material/cog
 
 Beekeeper Studio uses an `ini` configuration system that lets you customize the app to match your workflow and preferences. Using simple INI configuration files, you can adjust everything from keyboard shortcuts and database connection timeouts to security settings like PIN protection.
 
-!!! tip "Quick Start"
-    New to configuration? Jump to the [Getting Started section](#how-to-use-config-files) for a simple walkthrough, or check out our [example configurations](#step-1-create-your-configuration-file) to see common customizations.
-
 ## Configuration Files
 
 Beekeeper Studio uses a three-tier configuration system that gives you flexible control over settings. Settings are loaded in the order below.
@@ -59,7 +56,7 @@ pageSize = 200                          ; Show more rows per page
     - **File permissions**: Ensure the configuration file is readable by Beekeeper Studio
     - **Check logs**: Enable debug logging to see configuration loading details
 
-## Configuration Reference
+## Configuration Reference { #config-ref }
 
 Below are the default configuration values for Beekeeper Studio, copy and modify as needed.
 {% ini-include %}

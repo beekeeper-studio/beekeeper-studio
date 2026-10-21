@@ -59,7 +59,7 @@ pageSize = 200                          ; Mostrar mas filas por pagina
     - **Permisos de archivo**: Asegurate de que el archivo de configuracion sea legible por Beekeeper Studio
     - **Revisar logs**: Habilita el registro de depuracion para ver los detalles de carga de configuracion
 
-## Referencia de configuracion
+## Referencia de configuracion { #config-ref }
 
 A continuacion estan los valores de configuracion predeterminados para Beekeeper Studio, copia y modifica segun sea necesario.
 {% ini-include %}

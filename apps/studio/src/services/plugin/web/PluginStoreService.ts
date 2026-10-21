@@ -9,7 +9,7 @@ import type {
 import { DatabaseType } from "@beekeeperstudio/plugin";
 import { findTable, PluginTabType } from "@/common/transport/TransportOpenTab";
 import { AppEvent } from "@/common/AppEvent";
-import { ExtendedTableColumn, NgQueryResult, TableOrView } from "@/lib/db/models";
+import { ExtendedTableColumn, NgQueryResult } from "@/lib/db/models";
 import _ from "lodash";
 import { SidebarTab } from "@/store/modules/SidebarModule";
 import {
@@ -21,7 +21,7 @@ import {
   CreatePluginTabOptions,
   PluginSnapshot,
 } from "../types";
-import { ExternalMenuItem, JsonValue } from "@/types";
+import { ExternalMenuItem } from "@/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
 import { cssVars } from "./cssVars";
@@ -328,13 +328,14 @@ export default class PluginStoreService {
     }
 
     if (options.type === "tableStructure") {
-      const table = this.findTableOrThrow(options.name, options.schema);
+      // NOTE: technically the type says that this should just be table, but I'm not sure we want
+      const table = this.findTableOrThrow(options.table, options.schema);
       this.appEventBus.emit(AppEvent.openTableProperties, { table });
       return;
     }
 
     if (options.type === "tableTable") {
-      const table = this.findTableOrThrow(options.name, options.schema);
+      const table = this.findTableOrThrow(options.table, options.schema);
       this.appEventBus.emit(AppEvent.loadTable, {
         table,
         filters: options.filters,
@@ -371,7 +372,7 @@ export default class PluginStoreService {
   removeKeybinding(placement: Keybinding["placement"], handler: Keybinding["handler"]) {
     this.store.commit("plugins/keybinding/remove", { placement, handler });
   }
-  
+
   async loadSnapshots() {
     return await this.store.dispatch("plugins/snapshots/load");
   }
