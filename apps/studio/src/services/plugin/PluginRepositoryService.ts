@@ -117,7 +117,7 @@ export default class PluginRepositoryService {
     return {
       manifest,
       sourceArchiveUrl: asset.browser_download_url,
-      checksum: (asset.digest as string).replace(/^sha256:/, '')
+      checksum: (asset.digest as string)?.replace(/^sha256:/, '')
     };
   }
 
