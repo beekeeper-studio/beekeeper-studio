@@ -89,7 +89,7 @@
               </control-row>
               <control-row
                 title="Community Plugins"
-                description="Community plugins are developed and maintined by independent third parties, not by Beekeeper Studio. Use at your own risk."
+                description="Community plugins are developed and maintained by independent third parties, not by Beekeeper Studio. Use at your own risk."
               >
                 <x-switch
                   @click.prevent="communityEnabled = !communityEnabled"
