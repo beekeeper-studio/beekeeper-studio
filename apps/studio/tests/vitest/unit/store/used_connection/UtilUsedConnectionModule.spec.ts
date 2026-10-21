@@ -6,7 +6,7 @@ import { SavedConnection } from '@/common/appdb/models/saved_connection'
 import { UsedConnection } from '@/common/appdb/models/used_connection'
 import { AppDbHandlers } from '@/handlers/appDbHandlers'
 import { UtilUsedConnectionModule } from '@/store/modules/data/used_connection/UtilityUsedConnectionModule'
-import { createConfig } from '@tests/integration/utils/config'
+import { createConfig } from '@tests/vitest/integration/utils/config'
 
 Vue.use(Vuex)
 

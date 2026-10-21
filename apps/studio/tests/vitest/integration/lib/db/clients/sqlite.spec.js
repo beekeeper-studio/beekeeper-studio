@@ -4,7 +4,7 @@ import { writeFileSync, existsSync } from "fs";
 import path from "path";
 import os from "os";
 import tmp from "tmp";
-import { runCommonTests, runReadOnlyTests } from "@tests/integration/lib/db/clients/all";
+import { runCommonTests, runReadOnlyTests } from "@tests/vitest/integration/lib/db/clients/all";
 import knex from "knex";
 import Client_BetterSQLite3 from "knex/lib/dialects/better-sqlite3/index.js";
 

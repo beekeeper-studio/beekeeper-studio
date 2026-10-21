@@ -9,7 +9,7 @@ on:
       - 'apps/studio/src/lib/db/clients/sqlserver.ts'
       - 'apps/studio/src/lib/db/types.ts'
       - 'apps/studio/package.json'
-      - 'apps/studio/tests/integration/lib/db/clients/sqlserver-winauth.spec.ts'
+      - 'apps/studio/tests/vitest/integration/lib/db/clients/sqlserver-winauth.spec.ts'
       - '.github/workflows/windows-login-tests.yaml'
   workflow_dispatch:
 
@@ -121,7 +121,7 @@ jobs:
           # Connections by hostname (vs localhost) traverse the NIC and are
           # subject to firewall rules. Loopback bypasses the firewall, so the
           # localhost case works without this rule, but the hostname case in
-          # the Jest spec needs it.
+          # the vitest spec needs it.
           New-NetFirewallRule -DisplayName 'SQL Server TCP 1433 (CI)' `
             -Direction Inbound -Action Allow -Protocol TCP -LocalPort 1433 | Out-Null
 
@@ -129,8 +129,8 @@ jobs:
         run: |
           # The chocolatey package adds the installing user (runneradmin) as a
           # sysadmin, so integrated auth over TCP should succeed without any
-          # further GRANT. If this step fails the Jest step will too, so fail
-          # early with a cleaner diagnostic. Exercise both hostnames the Jest
+          # further GRANT. If this step fails the vitest step will too, so fail
+          # early with a cleaner diagnostic. Exercise both hostnames the vitest
           # spec will try.
           sqlcmd -S "localhost,1433" -E -Q "SELECT SUSER_SNAME() AS loginName, @@VERSION AS v;"
           if ($LASTEXITCODE -ne 0) { throw "Integrated auth pre-flight (localhost) failed (exit $LASTEXITCODE)." }
@@ -149,18 +149,16 @@ jobs:
           max_attempts: 3
           command: yarn install --frozen-lockfile --network-timeout 100000
 
-      - name: Run SQL Server integrated auth Jest spec
+      - name: Run SQL Server integrated auth spec
         working-directory: apps/studio
         env:
           TEST_MODE: '1'
           ELECTRON_RUN_AS_NODE: '1'
-        # --forceExit: msnodesqlv8 pool teardown can leave a native ODBC handle
-        # owned by the driver, which can keep Node from exiting cleanly even after
-        # all tests pass. --forceExit tells Jest to call process.exit() once the
-        # run completes.
+        # vitest force-terminates its forked workers after teardown, so a native
+        # ODBC handle left behind by msnodesqlv8 pool teardown can't hang the run.
         # --testTimeout: global per-test ceiling so any legitimate hang fails in
         # 90s instead of consuming the whole job budget.
-        run: yarn internal:integration --testPathPattern sqlserver-winauth --runInBand --ci --forceExit --testTimeout=90000
+        run: yarn vitest:integration sqlserver-winauth --testTimeout=90000
 
       - name: Collect SQL Server ERRORLOGs on failure
         if: failure()

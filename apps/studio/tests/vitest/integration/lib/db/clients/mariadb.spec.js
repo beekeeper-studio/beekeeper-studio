@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 import { GenericContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '@tests/lib/db'
-import { runCommonTests } from '@tests/integration/lib/db/clients/all'
+import { runCommonTests } from '@tests/vitest/integration/lib/db/clients/all'
 
 describe("MariaDB Tests", () => {
   vi.setConfig({ testTimeout: dbtimeout, hookTimeout: dbtimeout })
