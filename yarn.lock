@@ -13082,10 +13082,10 @@ system-ca@^3.0.0:
     macos-export-certificate-and-key "^2.0.1"
     win-export-certificate-and-key "^3.0.2"
 
-tabulator-tables@^6.6.1:
-  version "6.6.1"
-  resolved "https://registry.yarnpkg.com/tabulator-tables/-/tabulator-tables-6.6.1.tgz#190c45d3d5be2d30cd66bd426921f8cbcab0d531"
-  integrity sha512-8A77aN30vJS34w1P5h4HtgEajB7vX2v0AD1fXFIKxp6SxplpGGfKn0Y4ouY91+6gdGK8/quqXoCA2LkrhBVE3A==
+tabulator-tables@^6.7.0:
+  version "6.7.0"
+  resolved "https://registry.yarnpkg.com/tabulator-tables/-/tabulator-tables-6.7.0.tgz#db9515e540f2301f1c91bc72291f5006b006f7ff"
+  integrity sha512-JO4sU6BapqZiwlFHoXJY+PXQdqjgGaWafoDYJUAvdF/qpDp4ihp23psIYKwA+xEIqk5iHtY6pFWL8IOaARR3/w==
 
 tar-fs@^2.0.0, tar-fs@^2.1.4:
   version "2.1.4"
