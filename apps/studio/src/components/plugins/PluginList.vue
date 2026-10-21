@@ -1,121 +1,319 @@
 <template>
-  <ul class="plugin-list">
-    <li
-      v-for="plugin in plugins"
-      :key="plugin.id"
-      class="item"
-      tabindex="0"
-      @click.prevent="handleItemClick($event, plugin)"
-    >
-      <div class="info">
-        <div class="title">
-          {{ plugin.name }}
-          <span class="badge" v-if="snapshotsById[plugin.id]?.disableState.disabled">disabled</span>
-        </div>
-        <div class="status-error" v-if="!plugin.loadable && plugin.installed">
-          This plugin requires version {{ plugin.minAppVersion }} or newer.
-        </div>
-        <div class="status-error" v-if="plugin.error" style="white-space: pre-wrap;">
-          <template v-if="plugin.error.toString?.().includes('not compatible')">
-            {{ plugin.error.toString().split("Please upgrade")[0] }}
-          </template>
-          <template v-else>
-            {{ plugin.error }}
-          </template>
-        </div>
-        <div class="description">
-          {{ plugin.description }}
-        </div>
-        <div class="author">
-          {{ plugin.author.name || plugin.author }}
-          <i
-            class="material-icons verified-icon"
-            v-if="plugin.origin === 'official'"
-          >verified</i>
+  <div class="plugin-list-wrap">
+    <div class="fixed">
+      <div class="filter">
+        <div class="filter-wrap">
+          <input
+            class="filter-input"
+            type="text"
+            placeholder="Search Plugins"
+            v-model="searchQuery"
+          >
+          <x-buttons class="filter-actions">
+            <x-button
+              v-if="searchQuery"
+              @click="clearFilter"
+              class="btn btn-fab btn-link action-item"
+            >
+              <i class="clear material-icons">cancel</i>
+            </x-button>
+
+            <x-button
+              class="btn btn-fab btn-link action-item"
+              :class="{ active: pluginsHidden }"
+              @click="openFilterMenu"
+              menu
+            >
+              <i class="material-icons-outlined">filter_alt</i>
+              <x-menu>
+                <label v-if="canFilterOfficial">
+                  <input
+                    type="checkbox"
+                    v-model="pluginFilter.showOfficial"
+                  >
+                  <span>Official</span>
+                </label>
+                <label v-if="canFilterCommunity">
+                  <input
+                    type="checkbox"
+                    v-model="pluginFilter.showCommunity"
+                  >
+                  <span>Community</span>
+                </label>
+                <label v-if="canFilterCustom">
+                  <input
+                    type="checkbox"
+                    v-model="pluginFilter.showCustom"
+                  >
+                  <span>Custom</span>
+                </label>
+                <x-menuitem />
+                <label v-if="canFilterUnlisted">
+                  <input
+                    type="checkbox"
+                    v-model="pluginFilter.showUnlisted"
+                  >
+                  <span>Unlisted</span>
+                </label>
+                <label v-if="canFilterUnlisted">
+                  <input
+                    type="checkbox"
+                    v-model="pluginFilter.showUnlisted"
+                  >
+                  <span>Unlisted</span>
+                </label>
+                <x-menuitem />
+              </x-menu>
+            </x-button>
+          </x-buttons>
         </div>
       </div>
-      <div class="actions">
-        <x-button
-          v-if="plugin.installed && plugin.updateAvailable"
-          class="btn btn-flat"
-          :disabled="plugin.installing"
-          @click.prevent.stop="$emit('update', plugin)"
-        >
-          <x-label>
-            {{ plugin.installing ? "Updating..." : "Update" }}
-          </x-label>
-        </x-button>
-        <x-button
-          v-if="!plugin.installed"
-          class="btn btn-flat"
-          :disabled="plugin.installing"
-          @click.prevent.stop="$emit('install', plugin)"
-        >
-          <x-label>
-            {{ plugin.installing ? "Installing..." : "Install" }}
-          </x-label>
-        </x-button>
-        <x-button
-          @click.stop
-          class="menu-btn btn btn-icon"
-          v-if="plugin.installed"
-        >
-          <i class="material-icons">more_vert</i>
-          <x-menu>
-            <x-menuitem @click.prevent="handleItemClick($event, plugin)">
-              <x-label>View</x-label>
-            </x-menuitem>
-            <x-menuitem v-if="!$bksConfig.pluginSystem.disabled" @click.prevent="$emit('checkForUpdates', plugin)" :disabled="plugin.checkingForUpdates">
-              <x-label>Check for updates</x-label>
-            </x-menuitem>
-            <x-menuitem v-if="!$bksConfig.pluginSystem.disabled" @click.prevent="$emit('uninstall', plugin)">
-              <x-label> Uninstall </x-label>
-            </x-menuitem>
-          </x-menu>
-        </x-button>
-      </div>
-    </li>
-  </ul>
+    </div>
+
+    <div class="plugin-list">
+      <virtual-plugin-list
+        :items="filteredPlugins"
+        :isSearching="!!searchQuery"
+        @install="$emit('install', $event)"
+        @uninstall="$emit('uninstall', $event)"
+        @update="$emit('update', $event)"
+        @checkForUpdates="$emit('checkForUpdates', $event)"
+        @item-click="$emit('item-click', $event)"
+      />
+    </div>
+  </div>
 </template>
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
-import type { PluginRegistryEntry, ManifestV1 as Manifest, PluginOrigin } from "@/services/plugin/types";
+import VirtualPluginList from "./VirtualPluginList.vue";
+import type { Plugin, PluginDisplayItem, PluginOrigin } from "@/services/plugin/types";
 import { mapGetters } from "vuex";
+import _ from "lodash";
+import { openMenu } from "@beekeeperstudio/ui-kit";
+import uFuzzy from "@leeoniya/ufuzzy";
+import { escapeHtml } from "@/shared/lib/tabulator";
 
-interface Plugin extends PluginRegistryEntry, Manifest {
-  installing: boolean;
-  installed: boolean;
-  enabled: boolean;
-  loadable: boolean;
-  error: unknown;
-  updateAvailable: boolean;
-  origin: PluginOrigin;
-}
+const uf = new uFuzzy({
+  intraMode: 0,
+  intraIns: Infinity
+});
 
 export default Vue.extend({
   name: "PluginList",
+  components: { VirtualPluginList },
   props: {
     plugins: {
-      type: Array as PropType<Plugin[]>,
+      type: Array as PropType<PluginDisplayItem[]>,
       required: true,
     },
   },
+  data() {
+    return {
+      // we do this so we don't continuously try bad urls
+      brokenAvatars: [] as string[],
+      searchQuery: null,
+      pluginFilter: {
+        showOfficial: true,
+        showCommunity: true,
+        showCustom: true,
+        showUnlisted: true,
+      }
+    };
+  },
   computed: {
     ...mapGetters("plugins/snapshots", ["snapshotsById"]),
+    canFilterOfficial() {
+      return !this.$bksConfig.pluginSystem.officialDisabled;
+    },
+    canFilterCommunity() {
+      return !this.$bksConfig.pluginSystem.communityDisabled && this.hasCommunity;
+    },
+    canFilterCustom() {
+      return !this.$bksConfig.pluginSystem.thirdPartyRegistriesDisabled && this.hasCustom;
+    },
+    canFilterUnlisted() {
+      return !this.$bksConfig.pluginSystem.unlistedDisabled && this.hasUnlisted;
+    },
+    pluginsHidden() {
+      return !this.pluginFilter.showOfficial ||
+        !this.pluginFilter.showCommunity ||
+        !this.pluginFilter.showCustom ||
+        !this.pluginFilter.showUnlisted;
+    },
+    hasCommunity() {
+      return this.plugins.some((p: Plugin) => p.origin === 'community');
+    },
+    hasCustom() {
+      return this.plugins.some((p: Plugin) => p.origin === 'custom');
+    },
+    hasUnlisted() {
+      return this.plugins.some((p: Plugin) => p.origin === 'unlisted');
+    },
+    originFilter() {
+      const filter: PluginOrigin[] = [];
+
+      if (this.pluginFilter.showOfficial) {
+        filter.push("official");
+      }
+
+      if (this.pluginFilter.showCommunity) {
+        filter.push("community");
+      }
+
+      if (this.pluginFilter.showCustom) {
+        filter.push("custom");
+      }
+
+      if (this.pluginFilter.showUnlisted) {
+        filter.push("unlisted");
+      }
+
+      return filter;
+    },
+    filteredPlugins() {
+      const plugins = this.plugins.filter((p: Plugin) => this.originFilter.includes(p.origin));
+      if (!this.searchQuery) {
+        return plugins;
+      }
+
+      const names = plugins.map((p: Plugin) => p.name);
+      const [idxs, info, order] = uf.search(names, this.searchQuery, 0, Infinity)
+
+      if (!idxs || !info || !order) {
+        return [];
+      }
+
+      const results: Plugin[] = [];
+      for (let i = 0; i < order.length; i++) {
+        const infoIdx = order[i];
+        const itemIdx = idxs[infoIdx];
+        const plugin = plugins[itemIdx];
+
+        const highlight = uFuzzy.highlight(
+          names[info.idx[infoIdx]],
+          info.ranges[infoIdx],
+          (part, matched) =>
+            matched
+              ? `<strong>${escapeHtml(part) ?? ""}</strong>`
+              : escapeHtml(part) ?? ""
+        );
+
+        results.push({
+          ...plugin,
+          name: highlight
+        })
+      }
+
+
+      return results;
+    }
   },
   methods: {
-    handleItemClick(_event: MouseEvent, plugin: Plugin) {
-      this.$emit("item-click", plugin);
+    clearFilter() {
+      this.searchQuery = null;
     },
+    openFilterMenu(event: MouseEvent) {
+      openMenu({ event, options: this.filterMenuOptions})
+    }
   },
 });
 </script>
 
-<style scoped>
-.material-icons.verified-icon {
-  font-size: 1em;
-  color: var(--primary-text);
-  margin-left: 0.5ch;
+<style lang="scss" scoped>
+@import '../../shared/assets/styles/_variables';
+
+.plugin-list-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.plugin-list {
+  list-style-type: none;
+  padding: 0 0 0.5rem;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 400px;
+}
+
+.filter {
+  position: relative;
+  margin-bottom: $gutter-h;
+  .filter-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    border: var(--input-border);
+    border-radius: 4px;
+  }
+  .filter-input {
+    border: 0;
+    padding-right: 0;
+  }
+  .filter-actions {
+    display: inline-flex;
+    padding: 0 0 0 ($gutter-h * 0.5);
+    x-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      background: transparent;
+      box-shadow: none;
+      width: 26px;
+      cursor: pointer;
+      --trigger-effect: none;
+      &:before {
+        display: none!important;
+      }
+      &:hover, &:focus {
+        box-shadow: none;
+        .material-icons, .material-icons-outlined {
+          color: var(--text-contrast);
+        }
+      }
+      &.btn-fab {
+        margin-right: 2px;
+        line-height: 22px;
+        height: 22px;
+        width: 22px;
+        min-width: 22px;
+        border-radius: 22px;
+        border: 0;
+        &.active {
+          background: var(--gray-a4);
+          .material-icons {
+            color: var(--info-text);
+          }
+        }
+
+      }
+    }
+    x-menu {
+      padding: $gutter-h 0;
+      label {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        padding: 0 $gutter-w;
+        min-height: $input-height;
+        cursor: pointer;
+      }
+      x-menuitem {
+        display: none;
+      }
+    }
+    .material-icons, .material-icons-outlined {
+      font-size: 14px;
+      line-height: 26px;
+      width: 14px;
+      color: var(--text-muted);
+    }
+  }
 }
 </style>
