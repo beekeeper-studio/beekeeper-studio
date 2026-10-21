@@ -50,6 +50,8 @@ export function tabulatorForTableData(
     selectableRangeAutoFocus: false,
     selectableRangeRows: true,
     selectableRangeFill: true,
+    selectableRangeBlurEditOnNavigate: true,
+    selectableRangeCommitEditOnNavigate: true,
     resizableColumnGuide: true,
     movableColumns: true,
     height: "100%",
