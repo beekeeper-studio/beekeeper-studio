@@ -145,3 +145,37 @@ describe('OracleClient connection error handling', () => {
     await expect(client.connect()).rejects.toThrow('NJS-510');
   });
 });
+
+describe('OracleClient.parseForeignKeys', () => {
+  it('reads the upper-case column names Oracle returns', () => {
+    const client = new OracleClient(buildServer(), buildDatabase());
+    const keys = client['parseForeignKeys']([
+      {
+        CONSTRAINT_NAME: 'ORDERS_CUSTOMER_FK',
+        FROM_SCHEMA: 'SHOP',
+        FROM_TABLE: 'ORDERS',
+        FROM_COLUMN: 'CUSTOMER_ID',
+        TO_SCHEMA: 'SHOP',
+        TO_TABLE: 'CUSTOMERS',
+        TO_COLUMN: 'ID',
+        ORDINAL_POSITION: 1,
+        ON_DELETE: 'CASCADE',
+      },
+    ]);
+
+    expect(keys).toEqual([
+      {
+        constraintName: 'ORDERS_CUSTOMER_FK',
+        fromSchema: 'SHOP',
+        fromTable: 'ORDERS',
+        fromColumn: 'CUSTOMER_ID',
+        toSchema: 'SHOP',
+        toTable: 'CUSTOMERS',
+        toColumn: 'ID',
+        onUpdate: undefined,
+        onDelete: 'CASCADE',
+        isComposite: false,
+      },
+    ]);
+  });
+});

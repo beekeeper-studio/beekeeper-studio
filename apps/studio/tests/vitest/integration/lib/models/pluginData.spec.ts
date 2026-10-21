@@ -105,7 +105,7 @@ describe.each([
 
 describe("plugin data handler scopes", () => {
   const currentConnection = { id: 3, workspaceId: 7 } as IConnection;
-  const handlers = PluginHandlers(null);
+  const handlers = PluginHandlers;
   const manifest = { id: "test-plugin" } as any;
 
   beforeAll(async () => {

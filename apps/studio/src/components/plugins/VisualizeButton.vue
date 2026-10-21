@@ -1,6 +1,6 @@
 <template>
   <x-button
-    class="btn btn-flat btn-icon end visualize-btn"
+    class="btn btn-flat end visualize-btn"
     :disabled="disabled"
     menu
   >

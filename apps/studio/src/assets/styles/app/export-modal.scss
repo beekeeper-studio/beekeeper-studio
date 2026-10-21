@@ -14,7 +14,7 @@
     .dialog-c-link {
         margin-left: $gutter-w;
         font-size: 0.8rem;
-        color:$theme-primary;
+        color:var(--primary-text);
         text-decoration: underline;
         &:hover {
 

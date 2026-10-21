@@ -5,14 +5,8 @@
       class="alert-body"
       v-if="snapshot.disableState.reason === 'plugin-system-disabled'"
     >
-      <template v-if="$bksConfig.pluginSystem.allow.length === 0">
-        {{ snapshot.manifest.name }} is not available because the plugin system
-        has been disabled.
-      </template>
-      <template v-else>
-        The plugin system is disabled. {{ snapshot.manifest.name }} is not
-        included in the list of allowed plugins.
-      </template>
+      {{ snapshot.manifest.name }} is not available because the plugin system
+      has been disabled.
     </div>
     <div
       class="alert-body"

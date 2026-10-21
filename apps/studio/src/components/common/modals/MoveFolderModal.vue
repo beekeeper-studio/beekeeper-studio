@@ -9,7 +9,9 @@
         </span>
         to
       </template>
-      <template v-else>Move</template>
+      <template v-else>
+        Move
+      </template>
     </template>
     <template v-if="target">
       <label
@@ -23,7 +25,7 @@
           name="move-to-folder"
           :value="null"
           v-model="selectedFolderId"
-        />
+        >
         <i class="move-folder-icon material-icons">subdirectory_arrow_left</i>
         <span class="move-folder-name">(Top level)</span>
         <span v-if="target.value.parentId === null" class="current-location">
@@ -229,7 +231,7 @@ export default Vue.extend({
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  color: var(--text-lighter);
+  color: var(--text-muted);
 }
 
 .move-folder-row {
@@ -243,7 +245,7 @@ export default Vue.extend({
   border: none;
   border-radius: 4px;
   background: transparent;
-  color: rgb(from var(--theme-base) r g b / 77%);
+  color: var(--text);
   font: inherit;
   cursor: pointer;
 
@@ -252,11 +254,11 @@ export default Vue.extend({
   }
 
   &:hover {
-    background: rgb(from var(--theme-base) r g b / 3.5%);
+    background: var(--gray-a2);
   }
 
   &.selected {
-    background: rgb(from var(--theme-base) r g b / 8%);
+    background: var(--gray-a4);
 
     &::before {
       position: absolute;
@@ -266,7 +268,7 @@ export default Vue.extend({
       width: 3px;
       border-radius: 9999px;
       content: "";
-      background: var(--theme-secondary);
+      background: var(--primary-solid-bg);
     }
   }
 
@@ -275,7 +277,7 @@ export default Vue.extend({
   &:focus-visible,
   &:has(:focus-visible),
   &:has(.move-folder-radio:focus-visible) {
-    outline: 2px solid var(--theme-base);
+    outline: 2px solid var(--text-contrast);
     outline-offset: -2px;
   }
 
@@ -308,7 +310,7 @@ input[type="radio"].move-folder-radio {
 
 .move-folder-icon {
   flex-shrink: 0;
-  color: rgb(from var(--theme-base) r g b / 37%);
+  color: var(--text-muted);
 }
 
 .move-folder-name {
@@ -321,6 +323,6 @@ input[type="radio"].move-folder-radio {
 .current-location {
   font-style: italic;
   font-size: 0.831rem;
-  color: var(--text-lighter);
+  color: var(--text-muted);
 }
 </style>
