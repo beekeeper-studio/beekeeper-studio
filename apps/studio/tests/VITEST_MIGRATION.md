@@ -239,3 +239,29 @@ under `tests/vitest/integration/lib/db` (`bin/get-db-files-as-json.sh`) and
     import.
   - `sqlite-backup.spec.ts` needs the `sqlite3` CLI on PATH, same as under
     jest (CI runners have it).
+- **2026-10-21, remaining docker-DB specs, ssh specs, codemirror spec, and
+  jest removed**: everything left in `tests/integration/` moved to
+  `tests/vitest/integration/` (helpers and SQL scripts with it). Jest configs,
+  the jest mocks/transformer, `tests/init/env-setup.js`,
+  `bin/check-for-new-jest-tests.sh` and its workflow job are gone, and
+  `bin/integration-tests.sh` always runs vitest. Collection and import
+  resolution were checked for all specs; the DB specs need docker and the
+  Electron-as-Node runner, so run them via the CI matrix. Shapes beyond the
+  conversion table:
+  - **ssh specs** (`ssh`, `ssh-agent*`, `ssh-skip-bad-identity`): the mutable
+    `mockSshAuthSock`/`mockHomedir` vars moved into one `vi.hoisted` `mocks`
+    object, `jest.requireActual` became `await importOriginal()`, the `os`
+    mock gained a `default` key, and `require(connection-provider)` became a
+    static import.
+  - **`oracle.spec.js`**: the lazy `require(createServer)` calls became a
+    static import. The oracle instant-client setup in
+    `bin/integration-tests.sh` now covers every chunk (as it did under jest).
+  - **codemirror**: needs jsdom and its own setup file, so it has
+    `vitest.codemirror.config.mjs` and is excluded from the node integration
+    config. Its CI job is still commented out, as before.
+  - **Kerberos/winauth flows**: now `vitest:integration <name>
+    --reporter=json`; the guard script reads the same JSON fields.
+  - **Not done**: the `jest`, `@types/jest`, `@vue/vue2-jest`, `babel-jest`,
+    `jest-environment-jsdom`, `jest-transform-stub` and `ts-jest` packages are
+    still in `apps/studio/package.json`; removing them needs a `yarn.lock`
+    regeneration.
