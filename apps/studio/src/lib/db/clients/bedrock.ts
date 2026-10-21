@@ -21,6 +21,7 @@ import {
   TableChanges,
 } from "../models";
 import {
+  ForeignKeyRow,
   IndexColumn,
   TableKey as SharedTableKey,
 } from "@shared/lib/dialects/models";
@@ -321,28 +322,45 @@ export class BedrockClient extends MysqlClient {
     return Promise.resolve([]); // TODO: not implemented yet
   }
 
-  // Override getTableKeys to use SQLite PRAGMA instead of information_schema
-  async getTableKeys(
-    table: string,
-    _schema?: string
-  ): Promise<SharedTableKey[]> {
+  // Bedrock is SQLite underneath, so the inherited MySQL information_schema
+  // queries don't apply; foreign keys come from the pragma instead.
+  async getOutgoingKeys(table: string, _schema?: string): Promise<SharedTableKey[]> {
+    return this.parseForeignKeys(await this.foreignKeyRowsFor(table));
+  }
+
+  async getIncomingKeys(table: string, _schema?: string): Promise<SharedTableKey[]> {
+    const rows: any[] = [];
+    for (const { name } of await this.listTables()) {
+      const keys = await this.foreignKeyRowsFor(name);
+      rows.push(...keys.filter((row) => row.table === table));
+    }
+    return this.parseForeignKeys(rows);
+  }
+
+  // pragma foreign_key_list has no constraint names: `id` numbers each foreign
+  // key of a table and `seq` orders the columns within it. The table itself is
+  // not part of the row, so foreignKeyRowsFor adds it as `from_table`.
+  protected parseForeignKeyRow(row: any): ForeignKeyRow {
+    return {
+      constraintName: String(row.id),
+      fromSchema: "",
+      fromTable: row.from_table,
+      fromColumn: row.from,
+      toSchema: "",
+      toTable: row.table,
+      toColumn: row.to,
+      ordinalPosition: row.seq,
+      onUpdate: row.on_update,
+      onDelete: row.on_delete,
+    };
+  }
+
+  private async foreignKeyRowsFor(table: string): Promise<any[]> {
     const sql = `pragma foreign_key_list('${SD.escapeString(table)}')`;
     const { rows } = await this.driverExecuteSingle(sql, {
       overrideReadonly: true,
     });
-    return asRows<any>(rows).map((row) => ({
-      constraintName: row.id,
-      constraintType: "FOREIGN",
-      toTable: row.table,
-      toSchema: "",
-      fromSchema: "",
-      fromTable: table,
-      fromColumn: row.from,
-      toColumn: row.to,
-      onUpdate: row.on_update,
-      onDelete: row.on_delete,
-      isComposite: false, // SQLite foreign keys are typically single column
-    }));
+    return asRows<any>(rows).map((row) => ({ ...row, from_table: table }));
   }
 
   parseTableColumn(row: { name: string; type: string }): BksField {

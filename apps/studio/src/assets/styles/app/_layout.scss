@@ -1,15 +1,14 @@
-@use "sass:color";
+
 // Global
 // ------------------------------------
 a {
   display: inline-block;
   align-items: center;
-  color: $link-color;
+  color: var(--link-fg);
   text-decoration: none;
   outline: none;
   cursor: pointer;
   &:hover, &:focus {
-    color: $link-color;
     text-decoration: none;
   }
   &.disabled, &.disabled:hover {
@@ -43,7 +42,7 @@ i {
 }
 hr {
   border: 0;
-  border-bottom: 1px solid $border-color;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 // Material-icons
@@ -53,12 +52,13 @@ hr {
 
 // Selection
 ::selection {
-  background: $theme-secondary;
+  background: var(--selection-bg);
+  color: var(--selection-fg);
 }
 
 // Placeholder
 ::placeholder {
-  color: $text-hint;
+  color: var(--gray-a7);
 }
 
 // Scrollbar
@@ -72,7 +72,7 @@ hr {
   background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=); background-repeat: repeat-y!important;
 }
 ::-webkit-scrollbar-thumb {
-  background: color.mix($theme-base, $theme-bg, 20%);
+  background: var(--scrollbar-thumb);
   border-radius: 2px;
 }
 ::-webkit-scrollbar-button {
@@ -97,69 +97,78 @@ hr {
 .btn {
   @include btn;
 }
-x-buttons > x-button[menu].btn {
-  border-left: 1px solid rgba(black, 0.35);
+// Icon-only button.
+.btn-icon {
+  width: $input-height;
+  min-width: $input-height;
+  padding: 0;
+  margin: 0;
+  border-radius: 50%;
+  --btn-fg: var(--btn-icon-fg);
+  --btn-fg-hover: var(--btn-icon-fg-hover);
+  @include noselect;
+  .material-icons, .material-icons-outlined {
+    font-size: 20px;
+  }
+}
+// Colour modifiers: retarget the variant tokens so they compose with ghost / flat / primary.
+.btn-brand {
+  --btn-fg: var(--primary-text);
+  --btn-fg-hover: var(--primary-text-contrast);
+  --btn-bg-hover: var(--primary-bg-hover-a);
+
+  --btn-flat-fg: var(--primary-text);
+  --btn-flat-fg-hover: var(--primary-text-contrast);
+  --btn-flat-bg: var(--primary-bg-a);
+  --btn-flat-bg-hover: var(--primary-bg-hover-a);
+
+  --btn-primary-fg: var(--primary-contrast);
+  --btn-primary-bg: var(--primary-solid-bg);
+  --btn-primary-bg-hover: var(--primary-solid-bg-hover);
+}
+.btn-info {
+  --btn-fg: var(--info-text);
+  --btn-fg-hover: var(--info-text-contrast);
+  --btn-bg-hover: var(--info-bg-hover-a);
+
+  --btn-flat-fg: var(--info-text);
+  --btn-flat-fg-hover: var(--info-text-contrast);
+  --btn-flat-bg: var(--info-bg-a);
+  --btn-flat-bg-hover: var(--info-bg-hover-a);
+
+  --btn-primary-fg: var(--info-contrast);
+  --btn-primary-bg: var(--info-solid-bg);
+  --btn-primary-bg-hover: var(--info-solid-bg-hover);
+}
+.btn-danger {
+  --btn-fg: var(--danger-text);
+  --btn-fg-hover: var(--danger-text-contrast);
+  --btn-bg-hover: var(--danger-bg-hover-a);
+
+  --btn-flat-fg: var(--danger-text);
+  --btn-flat-fg-hover: var(--danger-text-contrast);
+  --btn-flat-bg: var(--danger-bg-a);
+  --btn-flat-bg-hover: var(--danger-bg-hover-a);
+
+  --btn-primary-fg: var(--danger-contrast);
+  --btn-primary-bg: var(--danger-solid-bg);
+  --btn-primary-bg-hover: var(--danger-solid-bg-hover);
 }
 .btn-primary {
-  background: $theme-base;
-  color: rgba($theme-bg, 0.87);
-  transition: background 0.15s ease-in-out;
-  &:hover, &:focus {
-    background: rgba($theme-base, 0.87);
-    color: $theme-bg;
-  }
+  --btn-fg: var(--btn-primary-fg);
+  --btn-fg-hover: var(--btn-primary-fg);
+  --btn-bg: var(--btn-primary-bg);
+  --btn-bg-hover: var(--btn-primary-bg-hover);
+  --btn-shadow: var(--btn-primary-shadow);
 }
-
-.btn-brand {
-  color: #181818;
-  background: $theme-primary;
-  &:hover, &:focus {
-    background: $theme-primary;
-    color: #000;
-  }
-}
-
 .btn-flat {
   @include btn-flat;
 }
-.btn-link {
-  color: $theme-base;
-  background: transparent;
-  box-shadow: none;
-  &:hover, &:focus {
-    background: rgba($theme-base, 0.06);
-  }
+x-buttons > x-button[menu].btn {
+  border-left: 1px solid rgb(from currentColor r g b / 0.35);
 }
-.btn-icon {
-  .material-icons:first-child {
-    margin-right: $gutter-h * 0.65;
-    margin-left: 0;
-  }
 
-  .material-icons:last-child:not(:first-child) {
-    margin-left: $gutter-h * 0.65;
-  }
-}
-.btn-info {
-  background: $brand-info;
-  color: rgba(black, 0.87);
-  &:hover, &:focus {
-    background: color.adjust($brand-info, $lightness: 8%);
-    color: rgba(black, 0.87);
-  }
-}
-.btn-danger {
-  &:hover {
-    background: $brand-danger;
-    color: white;
-  }
-}
-.btn-large {
-  padding: 1.25em;
-  font-size: 13px;
-  width: 100%;
-  max-width: 250px;
-}
+
 .btn-small {
   @include btn-small;
 }
@@ -178,42 +187,6 @@ x-buttons > x-button.btn-rounded {
   justify-content: center;
   width: 100%;
 }
-.btn-fab {
-  $fab-size:   26px;
-
-  height: $fab-size;
-  min-width: $fab-size;
-  width: $fab-size;
-  height: $fab-size;
-  line-height: $fab-size;
-  border-radius: $fab-size;
-  padding: 0;
-  margin: 0;
-  text-align: center;
-  box-shadow: none;
-  @include noselect;
-  @include layout-center;
-  transition: background 0.15s ease-in-out;
-  &:hover, &:focus {
-    background: rgba($theme-base, 0.1);
-  }
-  .material-icons, .material-icons-outlined {
-    font-size: 20px;
-    color: $text-dark;
-  }
-  &.btn-primary {
-    background: $theme-primary;
-    .material-icons {
-      color: rgba(black, 0.87);
-    }
-    &:hover, &:focus {
-      background: color.adjust($theme-primary, $lightness: -8%);
-      .material-icons {
-        color: rgba(black, 0.87);
-      }
-    }
-  }
-}
 .btn-group {
   margin-left: -0.25rem;
   margin-right: -0.25rem;
@@ -231,16 +204,8 @@ x-buttons > x-button.btn-rounded {
   &:hover, &:focus {
     opacity: $btn-disabled-opacity!important;
   }
-  &.btn-primary {
-    &:hover, &:focus {
-      background: $theme-base!important;
-    }
-  }
-  &.btn-flat {
-    &:hover, &:focus {
-     background: transparent!important;
-    }
-  }
+  --btn-fg-hover: var(--btn-fg);
+  --btn-bg-hover: var(--btn-bg);
 }
 
 // Inputs
@@ -278,7 +243,7 @@ x-buttons > x-button.btn-rounded {
   }
   input {
     &[disabled="disabled"], &[disabled="disabled"]:hover, &[disabled="disabled"]:focus {
-      color: $text-lighter!important;
+      color: var(--text-muted)!important;
       cursor: not-allowed!important;
       border-style: dotted!important;
     }
@@ -298,7 +263,7 @@ x-buttons > x-button.btn-rounded {
     margin: $gutter-h * 0.5;
     margin-bottom: 0;
     font-size: 80%;
-    color: $text-hint;
+    color: var(--text-muted);
   }
 }
 .form-control {
@@ -309,7 +274,6 @@ label {
   i {
     margin: 0 ($gutter-h * 0.75);
     font-size: 18px;
-    color: rgba($theme-base, 0.37);
   }
 }
 
@@ -317,9 +281,6 @@ input, select, textarea, .bk-form-input {
   font-family: $font-family;
   font-size: $base-font-size;
   @include form-control;
-  &:focus {
-    border-color: $input-highlight;
-  }
 }
 .input-group {
   position: relative;
@@ -361,7 +322,13 @@ input, select, textarea, .bk-form-input {
 select {
   -webkit-appearance: none;
   appearance: none;
-  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='rgba(255,255,255, 0.87)'><polygon points='0,0 8,0 4,4'/></svg>") no-repeat scroll 98% 65% transparent !important;
+  background:
+    conic-gradient(
+      from -45deg at 50% 100%,
+      currentColor 90deg,
+      transparent 0
+    ) no-repeat right 0.75em center / 8px 4px,
+    var(--input-bg) !important;
   padding: 0 0.75rem;
   &.auto-width {
     // It should adjust when using `width: auto`, depending on the padding
@@ -370,16 +337,16 @@ select {
     padding-right: 1.75rem;
   }
   option {
-    background: color.adjust($theme-bg, $lightness: 3%);
-    color: $text;
+    background: var(--bg-subtle);
+    color: var(--text);
     &:checked,
     &:hover {
-      color: white;
-      box-shadow: 0 0 10px 100px $brand-info inset;
+      color: var(--info-contrast);
+      box-shadow: 0 0 10px 100px var(--info-solid-bg) inset;
     }
     &:disabled, &:disabled:hover, &:disabled:focus {
       background: transparent!important;
-      color: $text-lighter!important;
+      color: var(--text-muted)!important;
     }
   }
 }
@@ -389,10 +356,10 @@ select {
   border-radius: $input-radius;
   overflow: hidden;
   width: 100%;
-  box-shadow: inset 0 0 0 1px $border-color;
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
   transition: background 0.15s ease-in-out;
   &:hover {
-    background: rgba($theme-base, 0.05);
+    background: var(--gray-a3);
   }
   > select {
     border: 0;
@@ -411,9 +378,6 @@ select {
   span {
     font-size: 13px;
   }
-  .has-tooltip {
-    color: $text-lighter;
-  }
 }
 input[type="checkbox"] {
   $checkbox-size:     18px;
@@ -421,8 +385,8 @@ input[type="checkbox"] {
   position: relative;
   display: inline-flex;
 	-webkit-appearance: none;
-	background-color: transparent;
-  outline: 2px solid rgba($theme-base, 0.2);
+	background-color: var(--checkbox-bg);
+  outline: 2px solid var(--checkbox-border);
   outline-offset: -2px;
   height: $checkbox-size;
   line-height: $checkbox-size;
@@ -437,8 +401,8 @@ input[type="checkbox"] {
   &:active,
   &:checked,
   &:checked:active {
-    background: $theme-base;
-    color: $theme-bg;
+    background: var(--checkbox-checked-bg);
+    color: var(--checkbox-checked-fg);
     box-shadow: none;
     outline: none;
   }
@@ -452,7 +416,7 @@ input[type="checkbox"] {
     left: 0;
     height: 100%;
     width: 100%;
-    color: $theme-bg;
+    color: var(--checkbox-checked-fg);
   }
 }
 
@@ -464,22 +428,23 @@ input[type="radio"] {
   position: relative;
   display: inline-flex;
   -webkit-appearance: none;
-  background-color: transparent;
-  box-shadow: inset 0 0 0 2px rgba($theme-base, 0.2);
+  box-sizing: border-box;
+  background-color: var(--checkbox-bg);
+  background-clip: content-box;
   height: $radio-size;
   line-height: 1;
   width: $radio-size;
-  padding: 0;
-  border: 0;
+  padding: 4px;
+  border: 1px solid var(--checkbox-border);
   margin-top: -1px;
   margin-right: $gutter-h;
-  border-radius: 5px;
+  border-radius: 50%;
   transition: background 0.2s ease-in-out;
   cursor: pointer;
   &:checked{
-    background: color.adjust($theme-primary, $lightness: -10%);
-    color: rgba(black, 0.87);
-    box-shadow: none;
+    color: var(--checkbox-checked-fg);
+    background-color: var(--checkbox-checked-bg);
+    border-color: var(--checkbox-checked-bg);
   }
 }
 
@@ -490,11 +455,11 @@ input[type=file] {
   font-size: 12px;
   outline: none;
   border: 0;
-  box-shadow: inset 0 0 0 1px $border-color;
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
   &::-webkit-file-upload-button {
     font-family: $font-family;
-    color: $theme-base;
-    background: rgba($theme-base, 0.035);
+    color: var(--text-contrast);
+    background: var(--gray-a2);
     font-size: 11px!important;
     line-height: $input-height;
     height: $input-height + 1px;
@@ -504,36 +469,35 @@ input[type=file] {
     margin-left: -$gutter-h;
     border: 0;
     outline: none;
-    box-shadow: inset -1px 0 rgba($theme-base, 0.08);
+    box-shadow: inset -1px 0 var(--gray-a4);
     transition: background 0.15s ease-in-out;
     cursor: pointer;
     &:hover, &:focus {
-      background: rgba($theme-base, 0.08);
+      background: var(--gray-a4);
     }
   }
 }
 
 .text-primary {
-  color: $brand-primary!important;
+  color: var(--primary-text)!important;
 }
-
 .text-success {
-  color: $brand-success!important;
+  color: var(--success-text)!important;
 }
 .text-info {
-  color: $brand-info!important;
+  color: var(--info-text)!important;
 }
 .text-danger {
-  color: color.adjust($brand-danger, $lightness: 5%)!important;
+  color: var(--danger-text)!important;
 }
 .text-warning {
-  color: $brand-warning!important;
+  color: var(--warning-text)!important;
 }
 .text-light {
-  color: $text-light;
+  color: var(--text-muted);
 }
 .text-lighter {
-  color: $text-lighter;
+  color: var(--text-muted);
 }
 
 .text-2x {
@@ -565,7 +529,7 @@ input[type=file] {
     border: 0;
     &.active {
       border: 0;
-      background: $query-editor-bg;
+      background: var(--editor-bg);
     }
   }
 }
@@ -573,50 +537,71 @@ input[type=file] {
   display: block;
   padding: 0.5rem 1rem;
 }
+.nav-pills {
+  display: flex;
+  justify-content: center;
+  box-shadow: var(--nav-pills-shadow);
+  .nav-pill {
+    font-weight: 500;
+    padding: $gutter-w ($gutter-w * 1.25);
+    color: var(--nav-pill-fg);
+    cursor: pointer;
+    transition: color 0.2s ease-in-out,
+                box-shadow 0.2s ease-in-out;
+    &:hover {
+      color: var(--nav-pill-fg-hover);
+      box-shadow: var(--nav-pill-shadow-hover);
+    }
+    &.active {
+      color: var(--nav-pill-active-fg);
+      box-shadow: var(--nav-pill-active-shadow);
+    }
+  }
+}
 .item-icon {
   font-size: 12px;
-  color: color.adjust($theme-primary, $lightness: -15%);
+  color: var(--icon-table-fg);
   &.schema-icon {
-    color: $text-lighter;
+    color: var(--icon-schema-fg);
   }
   &.view-icon {
-    color: $brand-secondary;
+    color: var(--icon-view-fg);
   }
   &.routine-icon {
-    color: $brand-success;
+    color: var(--icon-routine-fg);
     &.routine-window-icon {
-      color: $brand-pink;
+      color: var(--icon-window-fg);
     }
     &.routine-function-icon {
-      color: $brand-success;
+      color: var(--icon-function-fg);
     }
     &.routine-aggregate-icon {
-      color: $brand-warning;
+      color: var(--icon-aggregate-fg);
     }
     &.routine-procedure-icon {
-      color: $brand-secondary;
+      color: var(--icon-procedure-fg);
     }
   }
   &.materialized-view-icon {
-    color: $brand-success;
+    color: var(--icon-materialized-view-fg);
   }
   &.query {
-    color: $brand-pink;
+    color: var(--icon-query-fg);
   }
   &.database {
-    color: $brand-purple;
+    color: var(--purple-text);
   }
   &.connection {
-    color: $brand-secondary;
+    color: var(--blue-text);
   }
   &.settings {
-    color: $text-lighter;
+    color: var(--text-muted);
   }
   &.table-builder {
-    color: $brand-info;
+    color: var(--blue-text);
   }
   &.table-builder-icon {
-    color: $brand-info;
+    color: var(--blue-text);
   }
 }
 
@@ -678,29 +663,43 @@ input[type=file] {
   justify-content: flex-end;
 }
 .card {
-  background: color.adjust($theme-bg, $lightness: 6%);
-  @include card-shadow;
+  background: var(--panel-bg);
+  color: var(--text);
+  box-shadow: var(--panel-shadow);
 }
 .card-flat {
-    background: $theme-bg;
+  background: var(--panel-bg);
     box-shadow: none;
 }
 .card-title {
-  color: $text-dark;
+  color: var(--text-contrast);
   font-size: 1.25rem;
   margin: 0;
   margin-bottom: 1.25rem;
 }
 .card-shadow {
-  box-shadow: 0 0 0 1px rgba(black ,0.06),
-              0 1px 3px 0 rgba(black ,0.12),
-              0 2px 1px -1px rgba(black ,0.08);
+  box-shadow: var(--panel-shadow);
   transition: box-shadow 0.28s ease-in-out;
 }
 .card-shadow-hover {
-  box-shadow: 0 0 0 1px rgba(black ,0.06),
-              0 1px 2px rgba(black ,0.08),
-              0 6px 15px rgba(black ,0.12);
+  box-shadow: var(--panel-shadow);
+}
+
+// Kbd
+// -------------------
+.kbd {
+  display: inline-block;
+  padding: 0 0.35rem;
+  border-radius: 4px;
+  line-height: 1.6;
+  font-size: 0.85rem;
+  font-weight: normal;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  background: var(--kbd-bg);
+  box-shadow: var(--kbd-shadow);
+  color: var(--kbd-fg);
 }
 
 // Badge
@@ -715,25 +714,45 @@ input[type=file] {
   text-align: center;
   white-space: nowrap;
   vertical-align: baseline;
-  background: rgba($theme-base, 0.2);
-  color: $theme-base;
+  --badge-bg: var(--badge-flat-bg);
+  --badge-fg: var(--badge-flat-fg);
+  background: var(--badge-bg);
+  color: var(--badge-fg);
+
   margin: 0 ($gutter-h * 0.75);
   transition: color 0.15s ease-in-out,
               background-color 0.15s ease-in-out,
               border-color 0.15s ease-in-out,
               box-shadow 0.15s ease-in-out;
-  &.badge-info {
-    background: $brand-info;
-    color: rgba(black, 0.87);
-  }
-  &.badge-error, &.badge-danger {
-    background: $brand-danger;
-    color: rgba(black, 0.87);
-  }
-  &.badge-success {
-    background: $brand-success;
-    color: rgba(black, 0.87);
-  }
+}
+// Colour modifiers retarget the badge tokens so they compose with flat / solid.
+.badge-info {
+  --badge-flat-bg: var(--info-bg-a);
+  --badge-flat-fg: var(--info-text);
+  --badge-primary-bg: var(--info-solid-bg);
+  --badge-primary-fg: var(--info-contrast);
+}
+.badge-success {
+  --badge-flat-bg: var(--success-bg-a);
+  --badge-flat-fg: var(--success-text);
+  --badge-primary-bg: var(--success-solid-bg);
+  --badge-primary-fg: var(--success-contrast);
+}
+.badge-warning {
+  --badge-flat-bg: var(--warning-bg-a);
+  --badge-flat-fg: var(--warning-text);
+  --badge-primary-bg: var(--warning-solid-bg);
+  --badge-primary-fg: var(--warning-contrast);
+}
+.badge-error, .badge-danger {
+  --badge-flat-bg: var(--danger-bg-a);
+  --badge-flat-fg: var(--danger-text);
+  --badge-primary-bg: var(--danger-solid-bg);
+  --badge-primary-fg: var(--danger-contrast);
+}
+.badge-primary {
+  --badge-bg: var(--badge-primary-bg);
+  --badge-fg: var(--badge-primary-fg);
 }
 
 // Alerts
@@ -744,15 +763,15 @@ input[type=file] {
     color: inherit;
     text-decoration: underline;
     &:hover {
-      color: $link-color;
+      color: var(--link-fg);
     }
 
     i.close {
       font-size: inherit;
       vertical-align: middle;
-      color: $text;
+      color: var(--text);
       &:hover {
-        color: $text-dark;
+        color: var(--text-contrast);
       }
     }
   }
@@ -763,7 +782,8 @@ input[type=file] {
   align-items: flex-start;
   border-radius: 6px;
   padding: 0.75rem 1rem;
-  background: rgba($theme-base, 0.035);
+  background: var(--alert-bg);
+  color: var(--alert-fg);
   margin: 0.5rem 0;
   font-size: 0.85rem;
   line-height: 1.2rem;
@@ -773,7 +793,7 @@ input[type=file] {
     margin-right: 1rem;
   }
   code {
-    background: rgba($theme-base, 0.08);
+    background: var(--bg-hover-a);
     margin: 0 0.25rem;
     padding: 0.15rem 0.4rem;
     border-radius: 3px;
@@ -809,17 +829,18 @@ input[type=file] {
   // icon against the text.
   align-items: center;
 }
-.alert-danger {
-  color: color.adjust($brand-danger, $lightness: 5%);
-}
-.alert-warning {
-  color: color.adjust($brand-warning, $lightness: 5%);
-}
+// Colour modifiers retarget the alert tokens.
 .alert-info {
-  color: color.adjust($brand-info, $lightness: 5%);
+  --alert-fg: var(--info-text);
 }
 .alert-success {
-  color: color.adjust($brand-success, $lightness: 5%);
+  --alert-fg: var(--success-text);
+}
+.alert-warning {
+  --alert-fg: var(--warning-text);
+}
+.alert-danger {
+  --alert-fg: var(--danger-text);
 }
 .alert-small {
   align-items: center;
@@ -842,20 +863,21 @@ input[type=file] {
   margin: 0;
   width: 100%;
   border: 0;
-  --vs-controls-color: #{$input-highlight};
-  --vs-border-color: #{$border-color};
+  --vs-controls-color: var(--gray-a9);
+  --vs-border-color: var(--border-subtle);
 
-  --vs-dropdown-bg: #{$theme-bg};
-  --vs-dropdown-color: #{$text};
-  --vs-dropdown-option-color: #{$text};
+  --vs-dropdown-bg: var(--panel-bg);
+  --vs-dropdown-box-shadow: var(--panel-shadow);
+  --vs-dropdown-color: var(--panel-fg);
+  --vs-dropdown-option-color: var(--panel-fg);
 
-  --vs-selected-bg: #{$input-highlight};
-  --vs-selected-color: #{$text};
+  --vs-selected-bg: var(--bg-active-a);
+  --vs-selected-color: var(--text);
 
-  --vs-search-input-color: #{$text};
+  --vs-search-input-color: var(--text);
 
-  --vs-dropdown-option--active-bg: #{$input-highlight};
-  --vs-dropdown-option--active-color: #{$theme-base};
+  --vs-dropdown-option--active-bg: var(--panel-bg-hover);
+  --vs-dropdown-option--active-color: var(--text-contrast);
 
   .vs__clear{
     display: none;

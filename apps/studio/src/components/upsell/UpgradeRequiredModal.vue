@@ -8,7 +8,7 @@
     >
       <div v-kbd-trap="true">
         <button
-          class="close-btn btn btn-fab"
+          class="close-btn btn btn-icon"
           @click.prevent="close"
           aria-label="Close"
           ref="closeButton"

@@ -288,6 +288,6 @@ export default {
   margin-block: 0.35em;
   width: 100%;
   width: 100%;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-subtle);
 }
 </style>

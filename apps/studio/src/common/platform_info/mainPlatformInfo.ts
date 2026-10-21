@@ -60,8 +60,6 @@ export function mainPlatformInfo(): IPlatformInfo {
   const easyPlatform = isWindows ? 'windows' : (isMac ? 'mac' : 'linux')
   const locale = testMode ? 'test' : e.app.getLocale();
 
-  const windowPrefersDarkMode = false
-
   const updatesDisabled = !!p.env.BEEKEEPER_DISABLE_UPDATES
 
   // previous builds of Beekeeper Studio required native libs for Oracle,
@@ -80,6 +78,9 @@ export function mainPlatformInfo(): IPlatformInfo {
   }
   const pluginsDirectory = join(userDirectory, 'plugins')
   const driverDepsDirectory = join(userDirectory, 'driver-deps')
+  const themesDirectory = isDevEnv
+    ? resolve("./public/themes")
+    : join(__dirname, "renderer", "themes");
 
   const sessionType = p.env.XDG_SESSION_TYPE
 
@@ -123,11 +124,11 @@ export function mainPlatformInfo(): IPlatformInfo {
     debugEnabled: !!p.env.DEBUG,
     DEBUG: p.env.DEBUG,
     platform: easyPlatform,
-    darkMode: testMode ? true : !!(e.nativeTheme.shouldUseDarkColors) || windowPrefersDarkMode,
     userDirectory,
     downloadsDirectory,
     homeDirectory,
     pluginsDirectory,
+    themesDirectory,
     driverDepsDirectory,
     testMode,
     appDbPath: join(userDirectory, isDevEnv ? 'app-dev.db' : 'app.db'),

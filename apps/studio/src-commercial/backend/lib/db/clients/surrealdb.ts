@@ -1,6 +1,6 @@
 import { ProvidedAuth, RecordId } from "surrealdb";
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, BksField, CancelableQuery, BksFieldType, TableChanges, TableUpdateResult, TableInsert, TableUpdate, TableDelete } from "@/lib/db/models";
-import { TableKey } from "@/shared/lib/dialects/models";
+import { ForeignKeyRow, TableKey } from "@/shared/lib/dialects/models";
 import { _baseTest } from "@playwright/test";
 import { DatabaseElement, IDbConnectionDatabase, SurrealAuthType } from "@/lib/db/types";
 import rawLog from '@bksLogger';
@@ -12,6 +12,7 @@ import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilder
 import { SurrealDBChangeBuilder } from "@/shared/lib/sql/change_builder/SurrealDBChangeBuilder";
 import { SurrealConn, SurrealPool } from "./surrealdb/SurrealDBPool";
 import _ from "lodash";
+import { groupForeignKeyRows } from "@/lib/db/clients/utils";
 import { surrealEscapeValue } from "@/shared/lib/dialects/surrealdb";
 import { uuidv4 } from "@/lib/uuid";
 
@@ -365,100 +366,50 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
   }
 
   async getOutgoingKeys(table: string, _schema?: string): Promise<TableKey[]> {
-    const columns = await this.listTableColumns(table);
-    const keys: TableKey[] = [];
-
-    for (const col of columns) {
-      const match = col.dataType.match(/^\brecord\s*<\s*([a-z0-9_,\s]+)\s*>/i);
-      if (match) {
-        const targetTables = match[1]
-          .split(',')
-          .map(t => t.trim());
-
-        for (const toTable of targetTables) {
-          keys.push({
-            constraintName: `${table}_${col.columnName}_fkey`,
-            fromTable: table,
-            fromColumn: col.columnName,
-            fromSchema: '',
-            toTable,
-            toColumn: 'id',
-            toSchema: '',
-            onDelete: null, // TODO (@day): pull this from table info definitions
-            onUpdate: null,
-            isComposite: targetTables.length > 1
-          })
-        }
+    // Record links defined on this table (referencing other tables)
+    const rows: ForeignKeyRow[] = [];
+    for (const col of await this.listTableColumns(table)) {
+      for (const toTable of this.recordLinkTargets(col.dataType)) {
+        rows.push(this.recordLinkRow(table, col.columnName, toTable));
       }
     }
-
-    return keys;
+    return groupForeignKeyRows(rows);
   }
 
   async getIncomingKeys(table: string, _schema?: string): Promise<TableKey[]> {
-    const keys: TableKey[] = [];
-
-    // Get list of all tables
-    const tables = await this.listTables();
-
-    // Create a map of table name to columns for quick lookup
-    const tableColumnsMap = new Map<string, { columnName: string; dataType: string }[]>();
-
-    for (const { name } of tables) {
-      const columns = await this.listTableColumns(name);
-      const columnData = columns.map(col => ({
-        columnName: col.columnName,
-        dataType: col.dataType
-      }));
-      tableColumnsMap.set(name, columnData);
-    }
-
-    const buildKey = (params: {
-      toTable: string;
-      fromTable: string;
-      column: { columnName: string; dataType: string };
-      isComposite: boolean;
-    }) => {
-      return {
-        constraintName: `${params.fromTable}_${params.column.columnName}_fkey`,
-        fromTable: params.fromTable,
-        fromColumn: params.column.columnName,
-        fromSchema: '',
-        toTable: params.toTable,
-        toColumn: 'id',
-        toSchema: '',
-        onDelete: null, // TODO (@day): pull this from table info definitions
-        onUpdate: null,
-        isComposite: params.isComposite,
-      }
-    }
-
-    // Incoming keys: columns in OTHER tables that reference THIS table
-    for (const [otherTableName, otherColumns] of tableColumnsMap.entries()) {
-      // Skip the current table
-      if (otherTableName === table) continue;
-
-      for (const column of otherColumns) {
-        const match = column.dataType.match(/^\brecord\s*<\s*([a-z0-9_,\s]+)\s*>/i);
-        if (match) {
-          const targetTables = match[1]
-            .split(',')
-            .map(t => t.trim());
-
-          // Check if any of the target tables is the current table
-          if (targetTables.includes(table)) {
-            keys.push(buildKey({
-              fromTable: otherTableName,
-              toTable: table,
-              column,
-              isComposite: targetTables.length > 1,
-            }));
-          }
+    // Record links on any table that reference this table
+    const rows: ForeignKeyRow[] = [];
+    for (const { name } of await this.listTables()) {
+      for (const col of await this.listTableColumns(name)) {
+        if (this.recordLinkTargets(col.dataType).includes(table)) {
+          rows.push(this.recordLinkRow(name, col.columnName, table));
         }
       }
     }
+    return groupForeignKeyRows(rows);
+  }
 
-    return keys;
+  // `record<a, b>` fields link to one or more tables; each target table is
+  // reported as its own key.
+  private recordLinkTargets(dataType: string): string[] {
+    const match = dataType.match(/^\brecord\s*<\s*([a-z0-9_,\s]+)\s*>/i);
+    if (!match) return [];
+    return match[1].split(',').map((t) => t.trim()).filter(Boolean);
+  }
+
+  // SurrealDB has no constraint names, schemas or referential actions for
+  // record links.
+  // TODO (@day): pull onDelete from the table info definitions
+  private recordLinkRow(fromTable: string, column: string, toTable: string): ForeignKeyRow {
+    return {
+      constraintName: `${fromTable}_${column}_fkey`,
+      fromSchema: '',
+      fromTable,
+      fromColumn: column,
+      toSchema: '',
+      toTable,
+      toColumn: 'id',
+    };
   }
   async query(queryText: string, _tabId?: number, options?: any): Promise<CancelableQuery> {
     return {

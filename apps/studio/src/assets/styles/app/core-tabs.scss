@@ -1,4 +1,3 @@
-@use "sass:color";
 
 .core-tabs {
   position: relative;
@@ -16,7 +15,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: $query-editor-bg;
+    background: var(--app-bg);
   }
   .tab-pane {
     display: none;
@@ -25,7 +24,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: $query-editor-bg;
+    background: var(--app-bg);
     &.active {
       display: flex;
       z-index: 1;
@@ -34,7 +33,7 @@
   .tabs-header {
     display: flex;
     align-items: center;
-    background: $tabs-bg;
+    background: var(--tabs-header-bg);
 
     .add-tab-group {
       transition: all 0.2s ease-in-out;
@@ -43,10 +42,10 @@
       display: flex;
 
       &:has(.add-tab-dropdown:hover) {
-        border-color: var(--border-color);
+        border-color: var(--border-subtle);
       }
 
-      .btn-fab > i {
+      .btn-icon > i {
         font-size: 1.145rem;
       }
     }
@@ -54,11 +53,6 @@
     .add-query {
       i {
         transition: all 0.2s ease-in-out;
-      }
-      &:hover {
-        i {
-          color: $text-dark;
-        }
       }
     }
   }
@@ -86,27 +80,31 @@
       position: relative;
       display: flex;
       align-items: center;
-      background: color.adjust($theme-bg, $lightness: 3%);
+      background: var(--tab-bg);
       padding: 0;
       height: $tab-height;
       line-height: $tab-height * 0.9;
       font-size: 0.85rem;
       font-weight: normal;
-      color: $text;
+      color: var(--tab-fg);
       border: 0;
       border-radius: 6px 6px 0 0;
-      border-right: 1px solid $theme-bg;
+      border-right: 1px solid var(--tabs-header-bg);
       overflow: hidden;
       &.active {
-        background: $query-editor-bg;
+        background: var(--tab-active-bg);
         font-weight: 600;
-        color: $text-dark;
+        color: var(--tab-active-fg);
         box-shadow: none;
         &:hover {
-          background: $query-editor-bg;
+          background: var(--tab-active-bg);
         }
         .tab-action {
-          background: linear-gradient(-90deg, rgba($query-editor-bg, 100%) 80%, rgba($query-editor-bg, 0) 100%);
+          background: linear-gradient(
+            -90deg,
+            rgb(from var(--tab-active-bg) r g b / 1) 80%,
+            rgb(from var(--tab-active-bg) r g b / 0) 100%
+          );
         }
         .tab-close {
           .close {
@@ -118,20 +116,17 @@
       &.active-transaction {
         .tab-title,
         .item-icon {
-          color: var(--brand-warning);
+          color: var(--warning-text);
         }
 
         &:not(.active) {
-          background-color: color-mix(
-            in srgb,
-            var(--brand-warning) 20%,
-            hsl(from var(--theme-bg) h s calc(l + 3)));
+          background-color: var(--warning-bg-hover-a);
 
           .tab-action {
             background: transparent;
 
             .tab-close .material-icons {
-              color: var(--brand-warning);
+              color: var(--warning-text);
             }
           }
         }
@@ -169,7 +164,7 @@
       }
       .tab-title-scope {
         position: relative;
-        color: $text-lighter;
+        color: var(--text-muted);
         font-size: 95%;
         font-style: italic;
         font-weight: normal!important;
@@ -193,7 +188,11 @@
       justify-content: center;
       height: 100%;
       min-width: 28px;
-      background: linear-gradient(-90deg, rgba(color.adjust($theme-bg, $lightness: 3%), 100%) 80%, rgba(color.adjust($theme-bg, $lightness: 3%), 0) 100%);
+      background: linear-gradient(
+        -90deg,
+        rgb(from var(--tab-bg) r g b / 1) 80%,
+        rgb(from var(--tab-bg) r g b / 0) 100%
+      );
     }
     .tab-close {
       position: absolute;
@@ -208,15 +207,15 @@
       transition: background 0.15s ease-in-out;
 
       &:hover {
-        background: rgba($theme-base, 0.12);
+        background: var(--gray-a5);
 
         .material-icons {
-          color: $text-dark;
+          color: var(--text-contrast);
         }
       }
 
       &:active {
-        background: rgba($theme-base, 0.2);
+        background: var(--gray-a7);
       }
 
       .close {
@@ -231,8 +230,8 @@
 
         font-size: 12px;
         font-weight: bold;
-        color: $text;
-        transition: color 0.15s ease-in-out;
+        color: var(--tab-fg);
+        transition: none;
       }
       &.unsaved {
         .unsaved-icon {
@@ -268,7 +267,7 @@
     align-items: center;
     gap: 0.25rem;
     line-height: 2rem ;
-    background-color: rgba($theme-base, 0.1);
+    background-color: var(--gray-a4);
     padding-left: 7px;
     padding-right: 7px;
     margin-right: 5px;
@@ -298,7 +297,7 @@
     left: 0;
     right: 0;
   }
-  .btn-fab {
+  .btn-icon {
     .material-icons, .material-icons-outlined {
       font-size: 16px;
     }
@@ -318,12 +317,15 @@
       padding-right: ($gutter-h * 0.5);
       margin: 0;
     }
+    .select-wrap select {
+      --input-bg: transparent;
+    }
     // Show arrows and clear button on hover
     .filter-container:not(:hover) {
       .select-wrap select {
-        background: none !important;
+        background: var(--input-bg) !important;
       }
-      .filter-wrap .clear.btn-link {
+      .filter-wrap .clear {
         visibility: hidden;
       }
     }
@@ -334,11 +336,11 @@
       width: 100%;
       box-shadow: none;
       border: 0;
-      background: rgba($theme-base, 0.05);
+      background: var(--btn-flat-bg);
       transition: background 0.15s ease-in-out;
       cursor: pointer;
       &:hover {
-        background: rgba($theme-base, 0.05);
+        background: var(--btn-flat-bg-hover);
       }
       > select {
         border: 0;
@@ -347,14 +349,7 @@
       }
     }
     .btn-primary {
-      // background: $text-dark;
-      &:hover,
-      &:focus {
-        // background: lighten($text-dark, 10%);
-        background: color.adjust($theme-primary, $lightness: 10%);
-      }
       .material-icons, .material-icons-outlined {
-        color: rgba(black, 0.87);
         font-weight: bold;
       }
     }
@@ -376,14 +371,12 @@
       width: 100%;
     }
     input {
-      background: rgba($theme-base, 0.05);
+      background: var(--btn-flat-bg);
       padding-right: 26px;
       box-shadow: none;
       border: 0;
-      // border-radius: 0;
-      // border-bottom: 1px solid $border-color;
       &:focus {
-        box-shadow: inset 0 0 0 1px rgba($theme-base, 0.25);
+        box-shadow: inset 0 0 0 1px var(--border-hover);
       }
     }
     .disabled-input {
@@ -395,13 +388,13 @@
       display: flex;
       align-items: center;
       background: transparent;
-      color: rgba($theme-base, 0.5);
+      color: var(--btn-icon-fg);
       outline: none;
       border: 0;
       padding: 0;
       cursor: pointer;
       &:hover {
-        color: $text-dark;
+        color: var(--btn-icon-fg-hover);
       }
       i {
         font-size: 16px;
@@ -416,7 +409,7 @@
     bottom: 0;
     right: 0;
     pointer-events: none;
-    color: rgba($theme-base, 0.5);
+    color: var(--text-muted);
     transform: scaleX(1.2) translateX(0.07rem);
     & > i { font-size: 1rem; }
   }
@@ -439,7 +432,7 @@
         & .fixed {
           position: fixed;
           padding-top: 0.4rem;
-          background-color: $query-editor-bg;
+          background-color: var(--editor-bg);
         }
       }
       .ghost-add-apply {
@@ -549,7 +542,7 @@
     .checkbox-group {
       padding: 0.5rem;
       &:hover {
-        background: rgba($theme-base, 0.035);
+        background: var(--bg-subtle-a);
       }
 
       span.input-wrapper {

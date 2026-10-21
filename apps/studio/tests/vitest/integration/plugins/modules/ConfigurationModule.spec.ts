@@ -14,11 +14,22 @@ import { UserSetting } from "@/common/appdb/models/user_setting";
 import { ConfigurationModule } from "@commercial/backend/plugin-system/modules";
 import { PluginSystemError } from "@/lib/errors";
 import { createConfig } from "@tests/integration/utils/config";
+import globals from "@/common/globals";
+
+// Bundled plugins are the only ones allowed when the plugin system is disabled
+const bundledPluginId = globals.plugins.ensureInstalled[0].id;
 
 describe("Plugin Configuration Module", () => {
   const server = createPluginServer();
   const repositoryService = new MockPluginRepositoryService(server);
   repositoryService.plugins = [
+    {
+      id: bundledPluginId,
+      name: "Bundled Plugin",
+      latestRelease: { version: "1.0.0", minAppVersion: "9.9.9" },
+      readme: "# Bundled Plugin\n\nThis is a bundled plugin.",
+      origin: "official",
+    },
     {
       id: "official-plugin",
       name: "Official Plugin",
@@ -69,7 +80,6 @@ describe("Plugin Configuration Module", () => {
     const config = createConfig(`
       [pluginSystem]
       disabled = true
-      allow[] = official-plugin
     `);
 
     it("can prevent network activity", async () => {
@@ -91,9 +101,10 @@ describe("Plugin Configuration Module", () => {
       fetchSpy.mockRestore();
     });
 
-    it("can disable disallowed plugins", async () => {
+    it("can disable non-bundled plugins", async () => {
       const manager = createPluginManager();
       await manager.initialize();
+      await manager.installPlugin(bundledPluginId);
       await manager.installPlugin("official-plugin");
       await manager.installPlugin("community-plugin");
 
@@ -102,13 +113,20 @@ describe("Plugin Configuration Module", () => {
       await manager2.initialize();
 
       const plugins = await manager2.getPlugins();
+      const bundledPlugin = plugins.find(
+        (p) => p.manifest.id === bundledPluginId
+      );
       const officialPlugin = plugins.find(
         (p) => p.manifest.id === "official-plugin"
       );
       const communityPlugin = plugins.find(
         (p) => p.manifest.id === "community-plugin"
       );
-      expect(officialPlugin.disableState).toStrictEqual({ disabled: false });
+      expect(bundledPlugin.disableState).toStrictEqual({ disabled: false });
+      expect(officialPlugin.disableState).toStrictEqual({
+        disabled: true,
+        reason: "plugin-system-disabled",
+      });
       expect(communityPlugin.disableState).toStrictEqual({
         disabled: true,
         reason: "plugin-system-disabled",
@@ -120,6 +138,7 @@ describe("Plugin Configuration Module", () => {
     const config = createConfig(`
       [pluginSystem]
       disabled = false
+      officialDisabled = false
       communityDisabled = true
     `);
 
@@ -129,8 +148,10 @@ describe("Plugin Configuration Module", () => {
       await manager.initialize();
 
       const { official, community } = await manager.registry.getEntries();
-      expect(official).toHaveLength(1);
-      expect(official[0].id).toBe("official-plugin");
+      expect(official.map((e) => e.id)).toStrictEqual([
+        bundledPluginId,
+        "official-plugin",
+      ]);
       expect(community).toHaveLength(0);
     });
 

@@ -2,7 +2,7 @@ import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import rawLog from "@bksLogger";
 import { OnViewRequestListener, PluginSnapshot } from "../types";
 import PluginStoreService from "./PluginStoreService";
-import WebPluginLoader, { PluginNotificationData } from "./WebPluginLoader";
+import WebPluginLoader from "./WebPluginLoader";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { divider } from "@beekeeperstudio/ui-kit";
 import { JsonValue, PluginViewContext } from "@beekeeperstudio/plugin";
@@ -10,6 +10,7 @@ import { FileHelpers } from "@/types";
 import type Noty from "noty";
 import { AppEvent } from "@/common/AppEvent";
 import { WebPluginCommandExecutor } from "./WebPluginCommandExecutor";
+import { NotificationData } from "@beekeeperstudio/plugin/dist/internal";
 
 const log = rawLog.scope("WebPluginManager");
 
@@ -156,7 +157,7 @@ export default class WebPluginManager {
   }
 
   /** Send a notification to a specific plugin */
-  async notify(pluginId: string, data: PluginNotificationData) {
+  async notify(pluginId: string, data: NotificationData) {
     const loader = this.loaders.get(pluginId);
     if (!loader) {
       throw new Error("Plugin not found: " + pluginId);
@@ -165,7 +166,7 @@ export default class WebPluginManager {
   }
 
   /** Send a notification to all plugins */
-  async notifyAll(data: PluginNotificationData) {
+  async notifyAll(data: NotificationData) {
     this.loaders.forEach((loader) => {
       loader.broadcast(data);
     })

@@ -27,7 +27,7 @@
       >
         <div class="titlebar-actions-extra">
           <button
-            class="btn btn-link"
+            class="btn"
             @dblclick.prevent.stop
             @click.prevent="togglePrimarySidebar"
             title="Toggle Primary Sidebar"
@@ -41,7 +41,7 @@
             >dock_to_right</i>
           </button>
           <button
-            class="btn btn-link"
+            class="btn"
             @dblclick.prevent.stop
             @click.prevent="toggleSecondarySidebar"
             title="Toggle Secondary Sidebar"
@@ -60,14 +60,14 @@
           class="window-controls-container"
         >
           <button
-            class="btn btn-link"
+            class="btn"
             id="minimize"
             @click.prevent="minimizeWindow"
           >
             <i class="material-icons">remove</i>
           </button>
           <button
-            class="btn btn-link"
+            class="btn"
             id="maximize"
             @click.prevent="maximizeWindow"
           >
@@ -85,7 +85,7 @@
             >crop_square</i>
           </button>
           <button
-            class="btn btn-link"
+            class="btn"
             id="quit"
             @click.prevent="closeWindow"
           >

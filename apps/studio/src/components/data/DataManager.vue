@@ -7,6 +7,7 @@ import { DataModules } from '@/store/DataModules'
 import Vue from 'vue'
 import { mapActions, mapGetters, mapState } from 'vuex'
 import rawLog from '@bksLogger'
+import { recordPaidFeatureUse } from '@/lib/paidFeatures'
 
 const log = rawLog.scope('DataManager')
 
@@ -74,6 +75,9 @@ export default Vue.extend({
       log.info('mount and refresh: ', this.workspace)
       if (!this.workspace) return
       const scope = this.$store.getters.isUltimate ? this.workspace.type : 'local'
+      // Working in a cloud workspace is a paid feature; remember it for the
+      // trial-ended dialog.
+      if (scope !== 'local') recordPaidFeatureUse('cloud-workspaces')
       DataModules.forEach((module) => {
         const choice = module[scope]
         if (!choice) throw new Error(`No module defined for ${scope} - ${module.path}`)

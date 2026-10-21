@@ -20,6 +20,7 @@ import bksConfig from '@/common/bksConfig'
 
 import { AppEvent } from '@/common/AppEvent'
 import { ProtocolBuilder } from '@/background/lib/electron/ProtocolBuilder';
+import { createThemeProtocol } from "@commercial/backend/lib/theme/ThemeProtocol";
 import { uuidv4 } from '@/lib/uuid';
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import { UtilProcMessage } from '@/types'
@@ -36,6 +37,11 @@ if (platformInfo.env.development || platformInfo.env.test) {
 
 log.transports.console.level = platformInfo.logLevel;
 log.transports.file.level = platformInfo.logLevel;
+
+electron.nativeTheme.on('updated', () => {
+  const dark = electron.nativeTheme.shouldUseDarkColors
+  getActiveWindows().forEach((w) => w.send('systemUsesDarkColors', dark))
+})
 
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
@@ -81,6 +87,11 @@ async function createUtilityProcess() {
   utilityProcess.on("message", (msg: UtilProcMessage) => {
     if (msg.type === 'openExternal') {
       safeOpenExternal(msg.url)
+    } else if (msg.type === 'configChanged') {
+      bksConfig.reload(msg.source);
+      for (const w of getActiveWindows()) {
+        w.send('bksConfigChanged', msg.source);
+      }
     }
   })
 
@@ -117,6 +128,7 @@ log.debug("registering schema")
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
 protocol.registerSchemesAsPrivileged([{scheme: 'plugin', privileges: { secure: true, standard: true } }])
+protocol.registerSchemesAsPrivileged([{scheme: 'theme', privileges: { secure: true, standard: true } }])
 
 let basicsPromise: Promise<IGroupedUserSettings> | null = null
 let runtimePromise: Promise<void> | null = null
@@ -126,9 +138,10 @@ const pendingOpens: string[] = []
 function initBasics(): Promise<IGroupedUserSettings> {
   if (basicsPromise) return basicsPromise
 
-  // these create the protocols we use for loading assets and plugins
+  // these create the protocols we use for loading assets, plugins and themes
   ProtocolBuilder.createAppProtocol()
   ProtocolBuilder.createPluginProtocol()
+  createThemeProtocol()
 
   basicsPromise = (async () => {
     await ormConnection.connect()
@@ -361,6 +374,11 @@ ipcMain.handle('clipboard:write', async (_event, { content, image }: { content: 
 
 ipcMain.handle('clipboard:read', async () => {
   return await clipboard.readText();
+})
+
+ipcMain.on('app:restart', async () => {
+  app.relaunch();
+  app.exit();
 })
 
 // Exit cleanly on request from parent process in development mode.

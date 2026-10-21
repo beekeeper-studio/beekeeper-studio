@@ -205,4 +205,52 @@ describe("Postgres UNIT tests (no connection required)", () => {
     expect(result).toEqual(['CREATE OR REPLACE FUNCTION public.foo(a integer) ...']);
   })
 
+  describe("parseForeignKeys (default BasicDatabaseClient mapping)", () => {
+    it("reads the shared column names and normalizes catalog values", () => {
+      const keys = client.parseForeignKeys([
+        {
+          constraint_name: 0,
+          from_schema: null,
+          from_table: "orders",
+          from_column: "customer_id",
+          to_table: "customers",
+          to_column: "id",
+          ordinal_position: "1",
+          on_update: null,
+          on_delete: "CASCADE",
+        },
+      ])
+
+      expect(keys).toEqual([
+        {
+          constraintName: "0",
+          fromSchema: "",
+          fromTable: "orders",
+          fromColumn: "customer_id",
+          toSchema: "",
+          toTable: "customers",
+          toColumn: "id",
+          onUpdate: undefined,
+          onDelete: "CASCADE",
+          isComposite: false,
+        },
+      ])
+    })
+
+    it("pairs the columns of a composite key by ordinal_position", () => {
+      const base = { constraint_name: "child_fk", from_schema: "public", from_table: "child", to_schema: "public", to_table: "parent" }
+      const keys = client.parseForeignKeys([
+        { ...base, from_column: "ref_id2", to_column: "parent_id2", ordinal_position: 2 },
+        { ...base, from_column: "ref_id1", to_column: "parent_id1", ordinal_position: 1 },
+      ])
+
+      expect(keys).toHaveLength(1)
+      expect(keys[0]).toMatchObject({
+        isComposite: true,
+        fromColumn: ["ref_id1", "ref_id2"],
+        toColumn: ["parent_id1", "parent_id2"],
+      })
+    })
+  })
+
 })
