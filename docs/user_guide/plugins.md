@@ -120,4 +120,4 @@ Have ideas for new plugins or features? We'd love to hear from you:
 -   Submit feature requests on our GitHub repository
 
 !!! tip
-    Interested to develop your own plugins? Check out our [Plugin Development documentation](../plugin_development/index.md) to get started!
+    Interested in developing your own plugins? Check out our [Plugin Development documentation](../plugin_development/index.md) to get started!
