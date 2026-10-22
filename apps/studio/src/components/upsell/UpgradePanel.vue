@@ -33,14 +33,25 @@
           <span>Full list of paid features</span>
         </a>
       </p>
+      <upgrade-testimonials v-if="showTestimonials" />
     </div>
     <upsell-buttons @started-trial="$emit('started-trial')" />
+    <div
+      class="upgrade-lifetime"
+      v-tooltip="LIFETIME_TOOLTIP"
+    >
+      <i class="material-icons">all_inclusive</i>
+      <span>
+        <strong>Lifetime license</strong> included with every subscription<span class="asterisk">*</span>
+      </span>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
 import Vue from 'vue'
 import UpsellButtons from './common/UpsellButtons.vue'
+import UpgradeTestimonials from './UpgradeTestimonials.vue'
 
 const UPGRADE_URL = 'https://www.beekeeperstudio.io/upgrade'
 
@@ -54,10 +65,9 @@ interface Feature {
 
 // Ordered by demand: the middle of the list follows visitor counts for the
 // matching /features page on the website (90 days to 2026-08-25), highest
-// first. Features with no feature page follow, and the two ends are fixed —
-// lifetime access leads, the catch-all closes.
+// first. Features with no feature page follow, and the catch-all closes.
+// Lifetime access has its own callout under the buttons.
 const PAID_FEATURES: Feature[] = [
-  { label: 'Lifetime access', tooltip: LIFETIME_TOOLTIP },
   { label: 'SQL AI shell' },
   { label: 'Import from file' },
   { label: 'Export multiple tables' },
@@ -69,7 +79,7 @@ const PAID_FEATURES: Feature[] = [
 ]
 
 export default Vue.extend({
-  components: { UpsellButtons },
+  components: { UpsellButtons, UpgradeTestimonials },
   props: {
     // Name of the feature the user just tried to use, e.g. "Backup & Restore".
     // Drives the heading; leave null for a generic prompt.
@@ -91,6 +101,12 @@ export default Vue.extend({
       type: Boolean,
       default: true
     },
+    // Rotating customer quotes above the buttons. Panels with their own
+    // social proof (the AI shell preview) turn this off.
+    showTestimonials: {
+      type: Boolean,
+      default: true
+    },
     // When true, the panel adds its own card chrome (surface, radius, shadow)
     // for inline placement. When false it's bare, so a modal supplies chrome.
     standalone: {
@@ -102,6 +118,9 @@ export default Vue.extend({
       type: Boolean,
       default: false
     }
+  },
+  data() {
+    return { LIFETIME_TOOLTIP }
   },
   computed: {
     features(): Feature[] {
