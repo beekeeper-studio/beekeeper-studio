@@ -64,16 +64,16 @@ describe("FilePicker", () => {
     const notClearable = mountPicker({ value: "/created.db" }).wrapper;
     const clearable = mountPicker({ clearable: true, value: "/created.db" }).wrapper;
 
-    expect(button(empty, "close").length).toBe(0);
-    expect(button(notClearable, "close").length).toBe(0);
-    expect(button(clearable, "close").length).toBe(1);
+    expect(empty.find("button.clear").exists()).toBe(false);
+    expect(notClearable.find("button.clear").exists()).toBe(false);
+    expect(clearable.find("button.clear").exists()).toBe(true);
     [empty, notClearable, clearable].forEach((w) => w.destroy());
   });
 
   it("empties the path and emits clear from the clear button", async () => {
     const { wrapper, dialog } = mountPicker({ clearable: true, value: "/created.db" });
 
-    await button(wrapper, "close").at(0).trigger("click");
+    await wrapper.find("button.clear").trigger("click");
 
     expect(wrapper.emitted("input")).toEqual([[""]]);
     expect(wrapper.emitted("clear")).toHaveLength(1);

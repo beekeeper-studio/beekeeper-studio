@@ -2,32 +2,30 @@
   <div
     class="input-group"
   >
-    <input
-      :id="inputId"
-      type="text"
-      class="form-control"
-      placeholder="No file selected"
-      :class="{ clickable: !editable }"
-      :title="value"
-      :value="inputValue"
-      :disabled="disabled"
-      :readonly="!editable"
-      @click.prevent.stop="!editable && openFilePickerDialog()"
-      @input="$emit('input', $event.target.value)"
-    >
-    <div
-      v-if="showClearButton"
-      class="input-group-append not-last"
-    >
-      <a
+    <div class="file-picker-input">
+      <input
+        :id="inputId"
+        type="text"
+        class="form-control"
+        placeholder="No file selected"
+        :class="{ clickable: !editable, 'has-clear': showClearButton }"
+        :title="value"
+        :value="inputValue"
+        :disabled="disabled"
+        :readonly="!editable"
+        @click.prevent.stop="!editable && openFilePickerDialog()"
+        @input="$emit('input', $event.target.value)"
+      >
+      <button
+        v-if="showClearButton"
         type="button"
-        class="btn btn-flat btn-icon"
-        :class="{disabled}"
+        class="clear"
         title="Clear"
+        :disabled="disabled"
         @click.prevent="clear"
       >
-        <i class="material-icons">close</i>
-      </a>
+        <i class="material-icons">cancel</i>
+      </button>
     </div>
     <div
       class="input-group-append"
@@ -217,3 +215,52 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+// Wraps the input so the clear button can sit inside it, like the clear
+// button on filter inputs.
+.file-picker-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 0%;
+  min-width: 0;
+
+  .form-control {
+    margin-bottom: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+
+    &.has-clear {
+      padding-right: 26px;
+    }
+  }
+
+  .clear {
+    position: absolute;
+    right: 0;
+    display: flex;
+    align-items: center;
+    background: transparent;
+    color: var(--btn-icon-fg);
+    outline: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--btn-icon-fg-hover);
+    }
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.5;
+    }
+
+    i {
+      font-size: 16px;
+      width: 26px;
+    }
+  }
+}
+</style>

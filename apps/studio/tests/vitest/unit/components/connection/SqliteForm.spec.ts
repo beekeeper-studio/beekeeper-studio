@@ -66,7 +66,7 @@ describe("SqliteForm database file", () => {
     config.defaultDatabase = "/new.db";
     await Vue.nextTick();
 
-    await button(wrapper, "close").trigger("click");
+    await wrapper.find("button.clear").trigger("click");
 
     expect(config.defaultDatabase).toBe("");
     expect(config.options.createDatabaseFile).toBe(false);
