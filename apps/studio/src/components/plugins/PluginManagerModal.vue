@@ -96,9 +96,7 @@
                   :toggled="communityEnabled"
                 />
               </control-row>
-              <collapsible-section
-                more-text="More Options"
-              >
+              <collapsible-section>
                 <control-row
                   title="Custom Registries"
                   description="Enable custom registries to find plugins from. These can be configured in your ini file."

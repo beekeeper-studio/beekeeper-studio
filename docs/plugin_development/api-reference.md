@@ -605,7 +605,7 @@ await openTab('query', { query: 'SELECT * FROM users' });
 
 // Open a table data tab
 await openTab('tableTable', {
-  table: 'users',
+  name: 'users',
   schema: 'public',
   filters: [
     { field: 'active', type: '=', value: 'true' }
@@ -614,7 +614,7 @@ await openTab('tableTable', {
 
 // Open a table structure tab
 await openTab('tableStructure', {
-  table: 'users',
+  name: 'users',
   schema: 'public'
 });
 ```

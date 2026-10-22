@@ -26,6 +26,7 @@ import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
 import { cssVars } from "./cssVars";
 import type { DialectData } from "@/shared/lib/dialects/models";
+import { RequestMap } from "@beekeeperstudio/plugin/dist/internal";
 
 type Table = {
   name: string;
@@ -317,7 +318,7 @@ export default class PluginStoreService {
     this.appEventBus.emit(AppEvent.newCustomTab, transport);
   }
 
-  openTab(options: OpenTabRequest['args']): void {
+  openTab(options: RequestMap['openTab']['args']): void {
     if (options.type === "query") {
       if (!options.query) {
         this.appEventBus.emit(AppEvent.newTab)
@@ -328,14 +329,13 @@ export default class PluginStoreService {
     }
 
     if (options.type === "tableStructure") {
-      // NOTE: technically the type says that this should just be table, but I'm not sure we want
-      const table = this.findTableOrThrow(options.table, options.schema);
+      const table = this.findTableOrThrow(options.name, options.schema);
       this.appEventBus.emit(AppEvent.openTableProperties, { table });
       return;
     }
 
     if (options.type === "tableTable") {
-      const table = this.findTableOrThrow(options.table, options.schema);
+      const table = this.findTableOrThrow(options.name, options.schema);
       this.appEventBus.emit(AppEvent.loadTable, {
         table,
         filters: options.filters,
@@ -343,7 +343,7 @@ export default class PluginStoreService {
       return;
     }
 
-    throw new Error(`Unsupported tab type: ${options.type}`);
+    throw new Error(`Unsupported tab type: ${(options as any).type}`);
   }
 
   addPopupMenuItem(menuId: string, item: ContextOption) {
