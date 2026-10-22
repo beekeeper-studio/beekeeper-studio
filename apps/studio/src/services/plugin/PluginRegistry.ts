@@ -44,6 +44,10 @@ export default class PluginRegistry {
   constructor(private readonly repositoryService: PluginRepositoryService) {
   }
 
+  async initialize() {
+    await this.repositoryService.initialize();
+  }
+
   async getEntries(): Promise<RegistryMap> {
     await this.loadAllEntries();
 

@@ -89,7 +89,7 @@
               </control-row>
               <control-row
                 title="Community Plugins"
-                description="Community plugins are developed and maintined by independent third parties, not by Beekeeper Studio. Use at your own risk."
+                description="Community plugins are developed and maintained by independent third parties, not by Beekeeper Studio. Use at your own risk."
               >
                 <x-switch
                   @click.prevent="communityEnabled = !communityEnabled"
@@ -114,6 +114,16 @@
                     @click.prevent="unlistedEnabled = !unlistedEnabled"
                     :toggled="unlistedEnabled"
                   />
+                </control-row>
+                <control-row
+                  title="Github Token"
+                  description="Github requests are rate limited. If you find yourself running into issues, setting this will increase that limit."
+                >
+                  <input
+                    type="password"
+                    :value="githubToken"
+                    @change="saveGithubToken($event.target.value)"
+                  >
                 </control-row>
               </collapsible-section>
             </div>
@@ -227,6 +237,7 @@ export default Vue.extend({
     ...mapState("plugins/snapshots", {
       snapshots: "all",
     }),
+    ...mapState("settings", ["settings"]),
     ...mapGetters("plugins/entries", {
       entries: "all",
     }),
@@ -302,6 +313,9 @@ export default Vue.extend({
       async set(value) {
         await this.$util.send('config/writeUserValue', { path: 'pluginSystem.unlistedDisabled', value: !value });
       }
+    },
+    githubToken() {
+      return this.settings.pluginGithubToken?.value ?? "";
     }
   },
   watch: {
@@ -499,6 +513,9 @@ export default Vue.extend({
     },
     pluginSorter(p: PluginDisplayItem) {
       return ORIGIN_ORDER[p.origin] + INSTALL_ORDER[`${p.installed}`] + DISABLED_ORDER[`${p.disabled}`];
+    },
+    async saveGithubToken(value: string) {
+      await this.$settings.set('pluginGithubToken', value);
     }
   },
 });
