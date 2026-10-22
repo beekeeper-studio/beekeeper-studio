@@ -3,7 +3,7 @@ import _ from 'lodash'
 import logRaw from '@bksLogger'
 import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate, BuildInsertOptions, OrderBy } from '../models'
 import { ForeignKeyRow, TableKey } from '@shared/lib/dialects/models'
-import { joinFilters } from '@/common/utils'
+import { isListFilter, joinFilters } from '@/common/utils'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 import { fromIni } from "@aws-sdk/credential-providers";
 import { Signer } from "@aws-sdk/rds-signer";
@@ -130,7 +130,7 @@ export function buildFilterString(filters: TableFilter[], columns = [], wrapIden
         `HEX(${wrapIdentifier(item.field)})` :
         wrapIdentifier(item.field);
 
-      if (item.type === 'in') {
+      if (isListFilter(item.type)) {
         const questionMarks = _.isArray(item.value) ?
           item.value.map(() => '?').join(',')
           : '?'

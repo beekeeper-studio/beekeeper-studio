@@ -466,7 +466,8 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
           values[vk] = f.value;
           clause = `${nk} ${f.type} ${vk}`;
           break;
-        case 'in': {
+        case 'in':
+        case 'not in': {
           const vals = Array.isArray(f.value) ? f.value : [f.value];
           const keys = vals.map((v, i) => {
             const k = `${vk}_${i}`;
@@ -474,6 +475,7 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
             return k;
           });
           clause = `${nk} IN (${keys.join(', ')})`;
+          if (f.type === 'not in') clause = `NOT (${clause})`;
           break;
         }
         case 'is':

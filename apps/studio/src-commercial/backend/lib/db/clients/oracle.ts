@@ -41,7 +41,7 @@ import {
   errorMessages,
 } from '@/lib/db/clients/utils';
 import rawLog from '@bksLogger'
-import { createCancelablePromise, joinFilters } from '@/common/utils';
+import { createCancelablePromise, isListFilter, joinFilters } from '@/common/utils';
 import { errors } from '@/lib/errors';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 import platformInfo from '@/common/platform_info';
@@ -304,9 +304,9 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     let filterString = ""
     if (filters && filters.length > 0) {
       const allFilters = filters.map((item) => {
-        if (item.type === 'in') {
+        if (isListFilter(item.type)) {
           const valuesIn = item.value.map(v => D.escapeString(v, true))
-          return `${D.wrapIdentifier(item.field)} IN (${valuesIn.join(',')})`
+          return `${D.wrapIdentifier(item.field)} ${item.type.toUpperCase()} (${valuesIn.join(',')})`
         } else if (item.type.includes('is')) {
           return `${D.wrapIdentifier(item.field)} ${item.type.toUpperCase()} NULL`
         }
