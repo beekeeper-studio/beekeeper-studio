@@ -1,40 +1,39 @@
 export interface Testimonial {
   quote: string
   name: string
-  title: string
+  // Only what the customer gave us; left out when the submission has no title.
+  title?: string
 }
 
-// Verbatim from the website's testimonials export. Trimmed only at a sentence
-// boundary, never spliced. Add more by copying real entries; don't paraphrase.
+// Verbatim from the website's testimonials export, chosen for what they say
+// about paying for a license. Trimmed only at sentence boundaries, never
+// spliced. Add more by copying real entries; don't paraphrase or invent titles.
 export const TESTIMONIALS: Testimonial[] = [
   {
-    quote: 'Beekeeper is the best database client I have ever used, in my 20+ years of professional coding.',
-    name: 'Daniel Morris',
-    title: 'CTO, Cubitts',
+    quote: "It's still very usable in the free version, but worth every cent to buy the premium license.",
+    name: 'Renan L Vendramini',
+    title: 'Senior Software Engineer at Alboom',
   },
   {
-    quote: 'Beekeeper Studio is by far the best db ui tool we have come across. Dependable, intuitive to use, not fussy, and very pleasant to look at.',
-    name: 'Brandon Veiseh',
-    title: 'CEO @ MindFort AI (YC X25)',
+    quote: 'I used to use dbeaver for free, so paying for a db manager was a new step for me. The feature that enticed me to upgrade was the "cloud" storage of my queries.',
+    name: 'David Wylie',
+    title: 'Director, Telemix Limited',
   },
   {
-    quote: 'I love it. Knocks spots off PGAdmin. Fast, easy to use, and powerful.',
-    name: 'Mark Anslow',
-    title: 'CTO, Scriba Technologies Ltd',
+    quote: 'The new json view for a row of data is a simple but very, very useful feature. Well worth picking up a license for it.',
+    name: 'Ryan Vaznis',
   },
   {
-    quote: "Beekeeper Studio is simple, blazing fast and just 'gets out of the way'.",
-    name: 'Suki Parwana',
-    title: 'CTO, Croftz Technologies',
+    quote: 'It was also worth the upgrade! All of the features you could need are available.',
+    name: 'Andrea Armstrong',
   },
   {
-    quote: 'Such an awesome product. Beautiful UI, everything works the way it should, great database/sql command exports.',
-    name: 'Hadi Fariborzi',
-    title: 'CEO and Cofounder, HubMeta',
+    quote: "I like the perpetual licence offer, as I'm trying to recommend to my clients software without ongoing fees where possible.",
+    name: 'Luke Bracegirdle',
+    title: 'Company Owner, Code Anchor Limited',
   },
   {
-    quote: 'It just works, no fuss at all. Imports and exports, especially, work flawlessly.',
-    name: 'Nahabi Wandera',
-    title: 'Technologist, The TG Foundry',
+    quote: "Test driving Beekeeper Studio's community edition felt great and made it an easy decision to unlock the additional features and support Matthew with an upgraded plan, particularly at the very reasonable price point.",
+    name: 'Derek Garnett',
   },
 ]

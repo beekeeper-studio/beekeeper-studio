@@ -16,8 +16,10 @@
       <blockquote>“{{ t.quote }}”</blockquote>
       <figcaption>
         <span class="author">{{ t.name }}</span>
-        <span class="sep">·</span>
-        <span class="role">{{ t.title }}</span>
+        <template v-if="t.title">
+          <span class="sep">·</span>
+          <span class="role">{{ t.title }}</span>
+        </template>
       </figcaption>
     </div>
   </figure>
