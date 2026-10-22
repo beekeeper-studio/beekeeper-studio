@@ -128,14 +128,14 @@ export default Vue.extend({
     },
     headingText(): string {
       if (this.title) return this.title
-      if (this.featureName) return `${this.featureName} needs a paid license`
+      if (this.featureName) return `Upgrade required to use ${this.featureName}`
       return 'Upgrade Beekeeper Studio'
     },
     descriptionText(): string {
       if (this.description) return this.description
       if (!this.showFeatures) return 'Not included in the Community Edition.'
       return this.featureName
-        ? 'Not included in the Community Edition. A paid license also includes:'
+        ? 'If you upgrade you will also get access to:'
         : 'A paid license includes:'
     }
   },
