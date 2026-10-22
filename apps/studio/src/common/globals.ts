@@ -36,6 +36,7 @@ export default {
       { id: "bks-ai-shell", pkg: "@beekeeperstudio/bks-ai-shell" },
       { id: "bks-er-diagram", pkg: "@beekeeperstudio/bks-er-diagram" },
     ],
+    maxCommunityPlugins: 2
   }
 }
 

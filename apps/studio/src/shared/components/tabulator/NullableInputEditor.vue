@@ -64,13 +64,8 @@ export default Vue.extend({
           this.value = ''
         }
       } else if (e.key === 'Enter') {
-        // WHY: Without this we re-enter the editor right away
-        e.stopImmediatePropagation()
         this.submit()
       } else if (e.key === 'Tab') {
-        // FIXME: Tab and enter should both submit AND then move
-        // the selected cell, currently only tab does this.
-
         this.$emit('value', this.value)
       } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         this.submit()
@@ -179,5 +174,10 @@ export default Vue.extend({
     text-align: center;
     margin-top: -1px;
     cursor: pointer;
+    color: var(--btn-icon-fg);
+
+    &:hover {
+      color: var(--btn-icon-fg-hover);
+    }
   }
 </style>

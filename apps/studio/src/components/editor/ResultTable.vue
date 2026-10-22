@@ -24,7 +24,7 @@
         >
         <button
           type="button"
-          class="clear btn-link"
+          class="clear"
           title="clear search filter"
           @click.prevent="clearSearchFilters"
         >
@@ -33,13 +33,13 @@
       </div>
       <button
         type="submit"
-        class="btn btn-primary btn-fab"
+        class="btn btn-primary btn-icon"
         title="filter results table"
       >
         <i class="material-icons">search</i>
       </button>
       <button
-        class="close-btn btn btn-flat btn-fab"
+        class="close-btn btn btn-flat btn-icon"
         title="Close filter"
         @click="closeTableFilter"
       >
@@ -49,6 +49,7 @@
     <div
       ref="tabulator"
       class="spreadsheet-table"
+      @keydown="onTableKeydown"
     />
   </div>
 </template>
@@ -566,6 +567,13 @@
           formatter: this.cellFormatter,
           formatterParams,
           editorParams: {
+            // textarea params
+            enterSubmit: true,
+            shiftEnterSubmit: true,
+            altEnterNewLine: true,
+            ctrlEnterNewLine: true,
+            metaEnterNewLine: true,
+
             verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
             dataType: editData?.dataType,
             search: true,
@@ -610,7 +618,7 @@
       },
       headerFormatter(_cell, formatterParams) {
         const { columnName, dataType } = formatterParams
-        const dataTypeStr = dataType ? `<span class="badge column-data-type">${escapeHtml(dataType)}</span>` : '';
+        const dataTypeStr = dataType ? `<span class="column-data-type">${escapeHtml(dataType)}</span>` : '';
         return `
           <span class="title">
             ${escapeHtml(columnName)}
@@ -631,6 +639,14 @@
           case 'boolean':
             return 'list'
           default: return ne
+        }
+      },
+      onTableKeydown(e: KeyboardEvent) {
+        // Avoid conflicts with v-hotkey. For example, pressing shift+enter
+        // triggers cell editor submit and editor modal.
+        if (e.target instanceof HTMLInputElement
+          || e.target instanceof HTMLTextAreaElement) {
+          e.stopPropagation();
         }
       },
       cellEditCheck(cell: CellComponent): boolean {
@@ -1236,12 +1252,12 @@
     right: 1.5rem;
     z-index: 10;
     align-items: center;
-    background-color: var(--query-editor-bg);
-    border: 1px solid var(--border-color);
+    background: var(--editor-bg);
+    border: 1px solid var(--border-subtle);
     border-radius: 0.5rem;
     @include card-shadow;
 
-    .btn-fab {
+    .btn-icon {
       min-width: auto;
       width: 1.6rem;
       height: 1.5rem;

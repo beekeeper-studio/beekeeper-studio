@@ -19,12 +19,16 @@
           v-model="importType"
           id="import-type"
         >
-          <option value="single">Individual Files</option>
-          <option value="recursive">Recursive Directory</option>
+          <option value="single">
+            Individual Files
+          </option>
+          <option value="recursive">
+            Recursive Directory
+          </option>
         </select>
       </div>
       <div class="form-group">
-        <label for="importFiles">{{importType === 'single' ? 'Files' : 'Directory'}}</label>
+        <label for="importFiles">{{ importType === 'single' ? 'Files' : 'Directory' }}</label>
         <file-picker
           v-model="files"
           :multiple="isIndividual"
@@ -53,7 +57,7 @@
               content: `Import Root directory, otherwise import children at the root of the parent folder`
             }"
           >
-          help_outlined
+            help_outlined
           </i>
         </label>
       </div>
@@ -61,7 +65,7 @@
     <div v-else>
       <div v-if="!importFinished" class="importing-state">
         <label class="importing-ellipsis">Importing</label>
-        <x-progressbar></x-progressbar>
+        <x-progressbar />
       </div>
       <div v-else class="import-stats">
         <p class="stats-summary">

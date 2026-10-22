@@ -3,6 +3,6 @@
     text-decoration-line: underline;
     text-underline-offset: 2px;
     text-decoration-style: dotted;
-    text-decoration-color: $text-light;
+    text-decoration-color: var(--text-muted);
   }
 }
