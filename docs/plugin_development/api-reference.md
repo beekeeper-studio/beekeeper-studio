@@ -6,9 +6,6 @@ icon: material/api
 
 # Plugin API Reference
 
-!!! warning "Beta Feature"
-    The plugin system is in beta (available in Beekeeper Studio 5.3+). We'd love your feedback!
-
 The Beekeeper Studio Plugin API is accessible through the `@beekeeperstudio/plugin` package. The API provides communication between your plugin and the main application.
 
 ## Installation

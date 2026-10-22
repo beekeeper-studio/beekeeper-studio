@@ -6,9 +6,6 @@ icon: material/puzzle
 
 # Introduction
 
-!!! warning "Beta Feature"
-    The plugin system is in beta (available in Beekeeper Studio 5.3+). We'd love your feedback!
-
 The Beekeeper Studio Plugin System allows developers to extend the application's functionality through user interface (UI). Plugins run in an `<iframe>` which means they are sandboxed and communicate with the main application through a structured API.
 
 ![Plugin Manager showing two installed plugins, and the detail information of the AI Shell plugin](/assets/images/plugin-manager-modal.png)
