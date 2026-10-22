@@ -12,6 +12,7 @@ export const TESTIMONIALS: Testimonial[] = [
   {
     quote: 'I started using it a year ago and now our whole team bought a license.',
     name: 'Matt K',
+    title: 'Engineering Lead, MinnHealth',
   },
   {
     quote: "It's still very usable in the free version, but worth every cent to buy the premium license.",
