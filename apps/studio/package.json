@@ -231,7 +231,7 @@
     "ts-jest": "^29.1.5",
     "tsx": "^4.20.3",
     "typescript": "~5.8.3",
-    "vite": "^8.0.8",
+    "vite": "^8.1.6",
     "vite-ng-plugin-vue2": "^1.0.0",
     "vite-plugin-commonjs": "^0.10.1",
     "vitest": "~4.1.11",
