@@ -66,9 +66,6 @@ export default Vue.extend({
       } else if (e.key === 'Enter') {
         this.submit(e)
       } else if (e.key === 'Tab') {
-        // FIXME: Tab and enter should both submit AND then move
-        // the selected cell, currently only tab does this.
-
         this.$emit('value', this.value, e)
       } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         this.submit(e)
