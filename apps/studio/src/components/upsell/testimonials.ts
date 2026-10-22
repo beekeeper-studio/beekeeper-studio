@@ -10,6 +10,10 @@ export interface Testimonial {
 // spliced. Add more by copying real entries; don't paraphrase or invent titles.
 export const TESTIMONIALS: Testimonial[] = [
   {
+    quote: 'I started using it a year ago and now our whole team bought a license.',
+    name: 'Matt K',
+  },
+  {
     quote: "It's still very usable in the free version, but worth every cent to buy the premium license.",
     name: 'Renan L Vendramini',
     title: 'Senior Software Engineer at Alboom',
