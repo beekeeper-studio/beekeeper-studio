@@ -88,6 +88,19 @@ describe('conn/create records the used connection', () => {
     expect(used.map((u) => u.connectionId)).toEqual([null, null])
   })
 
+  // The SQLite Create button sets createDatabaseFile. Once a connect has made
+  // the file, the recent row must not keep it, or reconnecting from the recent
+  // list would recreate the file if it went missing.
+  it('does not carry the Create flag into the used row', async () => {
+    const config = await unsavedConfig('create.example.com')
+    config.options = { ...config.options, createDatabaseFile: true }
+
+    await create(config)
+
+    const [used] = await UsedConnection.find()
+    expect(used.options.createDatabaseFile).toBe(false)
+  })
+
   it('records nothing when the connection fails', async () => {
     mockConnection.connect.mockRejectedValue(new Error('connection refused'))
 
