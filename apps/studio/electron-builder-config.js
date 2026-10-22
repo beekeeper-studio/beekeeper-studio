@@ -301,6 +301,16 @@ module.exports = {
     upgradeCode: "D5B3EEEB-1754-55D1-A12B-C0245BF59784",
     runAfterFinish: false,
     createDesktopShortcut: false,
+    // Skips WiX ICE validation (-sval). ICE runs through the Windows Installer
+    // service, which refuses the session once the process environment passes
+    // ~32 KB. The nested yarn chain plus the release job's signing and GCP
+    // variables cross that line on GitHub runners, so every ICE fails with
+    // "The Windows Installer Service could not be accessed" (LGHT0217) and
+    // release builds die. ICE only lints the MSI tables; it doesn't change the
+    // output. Run WiX's smoke.exe on the built MSI by hand after changing
+    // build/win/msiProjectCreated.js.
+    // https://github.com/actions/runner-images/issues/6928
+    additionalLightArgs: ['-sval'],
   },
   appx: {
     applicationId: "beekeeperstudio",
