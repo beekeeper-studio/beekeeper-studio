@@ -84,6 +84,8 @@
 
     .upgrade-testimonial {
       grid-area: 1 / 1;
+      // Short quotes sit in the middle of the reserved space, not at the top.
+      align-self: center;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.4s ease;
