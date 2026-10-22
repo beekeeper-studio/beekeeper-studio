@@ -376,6 +376,12 @@ jobs:
             x64_output: win_x64_yml
             arm64_output: win_arm64_yml
     steps:
+      # Checked out into a subdirectory so `npm install js-yaml` below doesn't
+      # pick up the repo's workspaces.
+      - uses: actions/checkout@v5
+        with:
+          path: repo
+          sparse-checkout: .github/scripts
       - uses: actions/setup-node@v6
       - run: npm install js-yaml
       - name: Merge yml files
@@ -414,6 +420,18 @@ jobs:
 
             const merge = mergeFiles();
             fs.writeFileSync('merged.yml', merge, 'utf8');
+      # The release jobs already delete this, but clear it again so the upload
+      # can't collide with a leftover copy (and so this job can be re-run).
+      - name: Delete existing ${{ matrix.file }}
+        uses: actions/github-script@v8
+        env:
+          ASSET_NAME: ${{ matrix.file }}
+        with:
+          script: |
+            const script = require('./repo/.github/scripts/delete_latest_yml.js')
+            const assetsUrl = 'https://api.github.com/repos/beekeeper-studio/beekeeper-studio/releases/${{ needs.create_draft_release.outputs.id }}/assets'
+            const channel = '${{needs.identify_channel.outputs.channel}}'
+            await script({ github, core, context }, assetsUrl, channel, process.env.ASSET_NAME)
       - name: Upload merged ${{ matrix.file }}
         uses: actions/github-script@v8
         env:

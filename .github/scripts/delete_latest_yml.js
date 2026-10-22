@@ -14,10 +14,13 @@ module.exports = async ({ github, core }, assetsUrl, channel, assetName = 'lates
   }
 
   try {
-    // Get the existing assets for the release using the assetsUrl
-    const { data: assets } = await github.request({
+    // Get the existing assets for the release using the assetsUrl.
+    // The endpoint returns 30 assets per page by default and a release has
+    // more than that, so fetch every page or the update file can be missed.
+    const assets = await github.paginate({
       method: 'GET',
       url: assetsUrl,
+      per_page: 100,
       headers: {
         accept: 'application/vnd.github.v3+json',
       },
