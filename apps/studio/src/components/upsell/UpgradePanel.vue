@@ -38,7 +38,7 @@
     <upsell-buttons @started-trial="$emit('started-trial')" />
     <div
       class="upgrade-lifetime"
-      v-tooltip="LIFETIME_TOOLTIP"
+      v-tooltip="'Subscribe for 12+ months and get lifetime access to any version released within your subscription period.'"
     >
       <i class="material-icons">all_inclusive</i>
       <span>
@@ -54,9 +54,6 @@ import UpsellButtons from './common/UpsellButtons.vue'
 import UpgradeTestimonials from './UpgradeTestimonials.vue'
 
 const UPGRADE_URL = 'https://www.beekeeperstudio.io/upgrade'
-
-const LIFETIME_TOOLTIP =
-  'Subscribe for 12+ months and get lifetime access to any version released within your subscription period.'
 
 interface Feature {
   label: string
@@ -118,9 +115,6 @@ export default Vue.extend({
       type: Boolean,
       default: false
     }
-  },
-  data() {
-    return { LIFETIME_TOOLTIP }
   },
   computed: {
     features(): Feature[] {
