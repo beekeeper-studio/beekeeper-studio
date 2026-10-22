@@ -64,8 +64,6 @@ export default Vue.extend({
           this.value = ''
         }
       } else if (e.key === 'Enter') {
-        // WHY: Without this we re-enter the editor right away
-        e.stopImmediatePropagation()
         this.submit(e)
       } else if (e.key === 'Tab') {
         // FIXME: Tab and enter should both submit AND then move
