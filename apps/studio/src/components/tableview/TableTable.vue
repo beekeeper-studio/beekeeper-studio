@@ -1355,7 +1355,8 @@ export default Vue.extend({
     getActionValue(cell: CellComponent, s: string) {
       const clickedValue = cell.getValue();
       switch(s) {
-        case 'in': {
+        case 'in':
+        case 'not in': {
           const ranges = cell.getRanges();
           const selectedCells = ranges.flatMap(range => range.getCells().flat());
           const selectedValues = selectedCells
@@ -1374,7 +1375,7 @@ export default Vue.extend({
     },
     quickFilterMenuItem(cell: CellComponent) {
       const symbols = [
-        '=', '!=', '<', '<=', '>', '>=', 'in', 'like'
+        '=', '!=', '<', '<=', '>', '>=', 'in', 'not in', 'like'
       ]
       return {
         label: createMenuItem("Quick Filter", "", { ultimate: this.$store.getters.isCommunity }),

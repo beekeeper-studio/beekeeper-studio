@@ -15,6 +15,7 @@ import _ from "lodash";
 import { groupForeignKeyRows } from "@/lib/db/clients/utils";
 import { surrealEscapeValue } from "@/shared/lib/dialects/surrealdb";
 import { uuidv4 } from "@/lib/uuid";
+import { isListFilter } from "@/common/utils";
 
 const log = rawLog.scope('SurrealDB');
 
@@ -546,7 +547,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
       } else {
         const filterClauses = filters.map(filter => {
           const escapedField = this.wrapIdentifier(filter.field);
-          if (filter.type === 'in' && _.isArray(filter.value)) {
+          if (isListFilter(filter.type) && _.isArray(filter.value)) {
             const values = filter.value.map((v) => {
               return surrealEscapeValue(v);
             })

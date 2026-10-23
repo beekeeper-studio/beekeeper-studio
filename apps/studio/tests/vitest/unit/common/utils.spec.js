@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { checkEmptyFilters, isBlank, removeUnsortableColumnsFromSortBy, isNumericDataType, isDateDataType, typedArrayToString, encodedStringLength } from "@/common/utils"
+import { checkEmptyFilters, isBlank, isListFilter, normalizeFilters, removeUnsortableColumnsFromSortBy, isNumericDataType, isDateDataType, typedArrayToString, encodedStringLength } from "@/common/utils"
 import { PostgresData } from '@/shared/lib/dialects/postgresql'
 import { MysqlData } from '@/shared/lib/dialects/mysql'
 import { SqliteData } from '@/shared/lib/dialects/sqlite'
@@ -49,6 +49,40 @@ describe("checkEmptyFilters", () => {
 
 
 
+})
+
+describe("isListFilter", () => {
+  it("is true for in and not in", () => {
+    expect(isListFilter("in")).toBe(true)
+    expect(isListFilter("not in")).toBe(true)
+  })
+
+  it("is false for other filter types", () => {
+    for (const type of ["=", "!=", "like", "not like", "is", "is not"]) {
+      expect(isListFilter(type)).toBe(false)
+    }
+  })
+})
+
+describe("normalizeFilters", () => {
+  it("splits comma separated values for in and not in", () => {
+    const result = normalizeFilters([
+      { op: "AND", field: "a", type: "in", value: "foo, bar" },
+      { op: "AND", field: "b", type: "not in", value: "baz,qux" },
+    ])
+    expect(result.map((f) => f.value)).toStrictEqual([["foo", "bar"], ["baz", "qux"]])
+  })
+
+  it("keeps array values from Quick Filter for in and not in", () => {
+    const filters = [
+      { field: "a", type: "in", value: ["foo", 1] },
+      { field: "b", type: "not in", value: ["bar", 2] },
+    ]
+    const result = normalizeFilters(filters)
+    expect(result.map((f) => f.value)).toStrictEqual([["foo", 1], ["bar", 2]])
+    // the builder input shows the values as comma separated text
+    expect(filters.map((f) => f.value)).toStrictEqual(["foo,1", "bar,2"])
+  })
 })
 
 describe("removeUnsortableColumnsFromSortBy", () => {
