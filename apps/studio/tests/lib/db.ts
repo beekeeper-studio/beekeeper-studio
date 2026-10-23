@@ -1208,7 +1208,7 @@ export class DBTestUtil {
     const expectedQueries: ExpectedQueries = {
       postgresql: `create table "test_table" ("id" serial not null, constraint "test_table_pkey" primary key ("id"))`,
       greengage: `create table "test_table" ("id" serial not null, constraint "test_table_pkey" primary key ("id"))`,
-      mysql: "create table `test_table` (`id` int unsigned not null, primary key (`id`)); alter table `test_table` modify column `id` int unsigned not null auto_increment",
+      mysql: "create table `test_table` (`id` int unsigned not null auto_increment, primary key (`id`))",
       sqlite: "create table `test_table` (`id` integer not null primary key autoincrement, unique (`id`))",
       sqlserver: "CREATE TABLE [test_table] ([id] int identity(1,1) not null, CONSTRAINT [test_table_pkey] PRIMARY KEY ([id]))",
       cockroachdb: `create table "test_table" ("id" serial not null, constraint "test_table_pkey" primary key ("id"))`,

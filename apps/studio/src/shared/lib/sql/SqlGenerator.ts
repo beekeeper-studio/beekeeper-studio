@@ -59,13 +59,24 @@ export class SqlGenerator {
 
     let sql = k.createTable(schema.name, (table) => {
 
-      const primaries = schema.columns.filter(c => this.getPrimaries(c))
+      const primaries = this.getPrimaryKeyColumns(schema)
       if (primaries.length > 0) {
-        table.primary(primaries.map((c) => c.columnName))
+        table.primary(primaries)
       }
       schema.columns.forEach((column: SchemaItem) => {
         // TODO: autoincrement makes cassandra just roll over and die Need to remove it from the default values.
         // Other than that, was creating tables pretty ok I think
+        if (column.dataType.match(/autoincrement/i) && this.dialect === 'mysql') {
+          // knex's increments() adds AUTO_INCREMENT in a second statement
+          // (`alter table ... modify column`) when the table has a primary key,
+          // and TiDB can't add AUTO_INCREMENT to an existing column. So it goes
+          // in the create table instead. As with increments(), only the comment
+          // applies to this column.
+          const col = table.specificType(column.columnName, 'int unsigned not null auto_increment')
+          if (column.comment) col.comment(column.comment)
+          return
+        }
+
         let col: Knex.ColumnBuilder;
         if (column.dataType.match(/autoincrement/i) && ['postgresql', 'greengage'].includes(this.dialect)) {
           col = table.specificType(column.columnName, 'serial')
@@ -104,6 +115,19 @@ export class SqlGenerator {
     }
 
     return c.primaryKey
+  }
+
+  private getPrimaryKeyColumns(schema: Schema): string[] {
+    const primaries = schema.columns.filter((c) => this.getPrimaries(c)).map((c) => c.columnName)
+    if (this.dialect !== 'mysql') return primaries
+
+    // An AUTO_INCREMENT column must be a key in MySQL, so one that isn't
+    // marked as primary still goes first in the primary key, as knex's
+    // increments() puts it.
+    const autoIncrements = schema.columns
+      .filter((c) => c.dataType.match(/autoincrement/i) && !primaries.includes(c.columnName))
+      .map((c) => c.columnName)
+    return [...autoIncrements, ...primaries]
   }
 
   private async createKnexLib () {
