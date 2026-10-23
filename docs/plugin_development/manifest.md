@@ -12,7 +12,7 @@ The `manifest.json` file defines your plugin's metadata, capabilities, settings,
 
 | Property          | Type                   | Required | Description                                                                                                                |
 | ----------------  | ---------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `id`              | `string`               | Yes      | Unique identifier for your plugin. Use lowercase letters, numbers, and hyphens only.                                       |
+| `id`              | `string`               | Yes      | Unique identifier for your plugin. Use lowercase letters, numbers, and hyphens only. The `bks-` prefix is reserved for official plugins, and the Community Edition shows an upgrade prompt in place of a plugin whose id starts with it. |
 | `name`            | `string`               | Yes      | Display name shown to users in the Plugin Manager and UI.                                                                  |
 | `author`          | `string \| AuthorInfo` | Yes      | Plugin author or organization name.                                                                                        |
 | `description`     | `string`               | Yes      | Brief description of what your plugin does.                                                                                |
@@ -34,9 +34,10 @@ The `manifest.json` file defines your plugin's metadata, capabilities, settings,
 
 ## Capabilities
 
-| Property | Type     | Required | Description                                |
-| -------- | -------- | -------- | ------------------------------------------ |
-| `views`  | `View[]` | Yes      | Array of view definitions for your plugin. |
+| Property | Type               | Required | Description                                |
+| -------- | ------------------ | -------- | ------------------------------------------ |
+| `views`  | `View[]`           | Yes      | Array of view definitions for your plugin. |
+| `menu`   | `PluginMenuItem[]` | No       | Array of menu definitions for your plugin. |
 
 ## View
 
@@ -78,7 +79,7 @@ The `manifest.json` file defines your plugin's metadata, capabilities, settings,
                 "entry": "index.html"
             }
         ],
-        "menus": [
+        "menu": [
             {
                 "command": "openAnalyzer",
                 "name": "Open Analyzer",
@@ -104,7 +105,7 @@ The `manifest.json` file defines your plugin's metadata, capabilities, settings,
 | Property | Type               | Required | Description                                |
 | -------- | ------------------ | -------- | ------------------------------------------ |
 | `views`  | `PluginView[]`     | No       | Array of view definitions for your plugin. |
-| `menus`  | `PluginMenuItem[]` | No       | Array of menu definitions for your plugin. |
+| `menu`   | `PluginMenuItem[]` | No       | Array of menu definitions for your plugin. |
 
 ### PluginView
 
@@ -119,7 +120,7 @@ The `manifest.json` file defines your plugin's metadata, capabilities, settings,
 
 | Value                 | Description                                                                            |
 | --------------------- | -------------------------------------------------------------------------------------- |
-| `"plain-tab"`         | Tab with your plugin's iframe taking up the entire tab.                                |
+| `"base-tab"`          | Tab with your plugin's iframe taking up the entire tab.                                |
 | `"shell-tab"`         | Tab with your plugin's iframe at the top and a collapsible result table at the bottom. |
 | `"primary-sidebar"`   | _(Planned for future releases)_ Primary sidebar panel.                                 |
 | `"secondary-sidebar"` | _(Planned for future releases)_ Secondary sidebar panel.                               |
@@ -143,18 +144,19 @@ The `manifest.json` file defines your plugin's metadata, capabilities, settings,
 | `"menubar.tools"`                   | Shown in the tools menu                           |
 | `"editor.query.context"`            | Context menu inside the query editor              |
 | `"results.cell.context"`            | Context menu on a cell                            |
-| `"results.columnHeader.context"`    | Context menu on a row header                      |
-| `"results.rowHeader.context"`       | Context menu on a column header                   |
+| `"results.columnHeader.context"`    | Context menu on a column header                   |
+| `"results.rowHeader.context"`       | Context menu on a row header                      |
 | `"results.corner.context"`          | Context menu on the top left corner               |
 | `"tableTable.cell.context"`         | Context menu on a cell                            |
-| `"tableTable.columnHeader.context"` | Context menu on a row header                      |
-| `"tableTable.rowHeader.context"`    | Context menu on a column header                   |
+| `"tableTable.columnHeader.context"` | Context menu on a column header                   |
+| `"tableTable.rowHeader.context"`    | Context menu on a row header                      |
 | `"tableTable.corner.context"`       | Context menu on the top left corner               |
 | `"tab.query.header.context"`        | Context menu on the query tab header              |
 | `"tab.table.header.context"`        | Context menu on the table tab header              |
 | `"entity.table.context"`            | Context menu on a table                           |
 | `"entity.schema.context"`           | Context menu on a schema                          |
 | `"entity.routine.context"`          | Context menu on a routine                         |
+| `"structure.statusbar.menu"`        | Button in the structure view status bar           |
 
 ## Legacy Format (Manifest V0)
 

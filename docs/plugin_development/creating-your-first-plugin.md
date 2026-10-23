@@ -407,7 +407,7 @@ import { getTables } from "@beekeeperstudio/plugin";
 + import { addNotificationListener, getAppInfo } from "@beekeeperstudio/plugin";
 
 + function applyTheme(theme) {
-+      document.querySelector("#app-theme")!.textContent =
++      document.querySelector("#app-theme").textContent =
 +        `:root { ${theme.cssString} }`;
 + }
 
