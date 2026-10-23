@@ -1,14 +1,14 @@
 #!/bin/bash
 # Runs inside the dockerized test runner: installs workspace deps (first run only), obtains
 # a Kerberos ticket for the test principal against the in-network KDC, confirms MongoDB
-# accepts a GSSAPI login, then runs the Jest spec. Everything here is inside the Docker
+# accepts a GSSAPI login, then runs the vitest spec. Everything here is inside the Docker
 # network, so no host /etc/hosts or /etc/krb5.conf edits are involved.
 set -euo pipefail
 
 cd /app
 
 # node_modules live in container-private volumes; populate them on first run.
-if [ ! -d /app/node_modules/jest ]; then
+if [ ! -d /app/node_modules/vitest ]; then
   echo "::group::yarn install (first run)"
   yarn install --frozen-lockfile --network-timeout 100000
   echo "::endgroup::"
@@ -42,27 +42,27 @@ echo "::endgroup::"
 cd /app/apps/studio
 
 # Run the suite, capturing a machine-readable summary alongside the normal output.
-RESULT_FILE=/tmp/jest-kerberos.json
+RESULT_FILE=/tmp/vitest-kerberos.json
 set +e
-yarn internal:integration \
-  --testPathPattern mongodb-kerberos \
-  --runInBand --ci --forceExit --testTimeout=90000 \
-  --json --outputFile="${RESULT_FILE}"
-JEST_RC=$?
+yarn vitest:integration \
+  mongodb-kerberos \
+  --testTimeout=90000 \
+  --reporter=json --outputFile="${RESULT_FILE}"
+TEST_RC=$?
 set -e
 
 # Hard guard against the silent-skip trap: the suite is gated on MONGODB_KERBEROS_TEST via
-# describe.skip, so if that env var failed to reach Jest the suite would skip and CI would
+# describe.skip, so if that env var failed to reach vitest the suite would skip and CI would
 # go green having tested nothing. A skipped suite is indistinguishable from a passing one,
 # so require that Kerberos tests actually executed and that none were skipped.
 node -e '
   const fs = require("fs");
   const r = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
-  console.log(`jest: suites=${r.numTotalTestSuites} passed=${r.numPassedTests} ` +
+  console.log(`vitest: suites=${r.numTotalTestSuites} passed=${r.numPassedTests} ` +
               `failed=${r.numFailedTests} skipped=${r.numPendingTests}`);
   if (r.numTotalTestSuites < 1) { console.error("GUARD: no Kerberos suite ran"); process.exit(1); }
   if (r.numPassedTests < 1) { console.error("GUARD: no Kerberos tests executed (suite skipped?)"); process.exit(1); }
   if (r.numPendingTests > 0) { console.error("GUARD: Kerberos tests were skipped"); process.exit(1); }
 ' "${RESULT_FILE}"
 
-exit "${JEST_RC}"
+exit "${TEST_RC}"
