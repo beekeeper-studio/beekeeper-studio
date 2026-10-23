@@ -291,3 +291,8 @@ When `tests/integration/` is empty:
     import.
   - `sqlite-backup.spec.ts` needs the `sqlite3` CLI on PATH, same as under
     jest (CI runners have it).
+- **2026-10-23, tidb.spec.js (82 tests)**: moved to add a regression test
+  (the table builder's default table, created through `SqlGenerator` and
+  `connection.query()`, as the app does). Same conversions as
+  `mariadb.spec.js` and nothing else; all 82 pass, and
+  `internal:integration --listTests` dropped from 32 to 31.
