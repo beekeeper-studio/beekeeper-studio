@@ -4,6 +4,7 @@ import logRaw from '@bksLogger'
 import { TableChanges, TableDelete, TableFilter, TableInsert, TableUpdate, BuildInsertOptions, OrderBy } from '../models'
 import { ForeignKeyRow, TableKey } from '@shared/lib/dialects/models'
 import { joinFilters } from '@/common/utils'
+import { identify, Dialect as IdentifierDialect } from 'sql-query-identifier'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 import { fromIni } from "@aws-sdk/credential-providers";
 import { Signer } from "@aws-sdk/rds-signer";
@@ -374,8 +375,35 @@ export function buildDeleteQueries(knex, deletes: TableDelete[]) {
   })
 }
 
-export function isAllowedReadOnlyQuery (identifiedQueries: IdentifyResult[], readOnlyMode: boolean): boolean {
-  return (!readOnlyMode || readOnlyMode && identifiedQueries.every(f => ['LISTING', 'INFORMATION'].includes(f.executionType?.toUpperCase())))
+const READ_ONLY_EXECUTION_TYPES = ['LISTING', 'INFORMATION']
+const MAX_PAREN_DEPTH = 20
+
+// sql-query-identifier types a statement by its first token, so a query that
+// opens with a parenthesis, e.g. `(SELECT 1) UNION ALL (SELECT 2)`, comes back
+// UNKNOWN. Strip the leading paren and identify the rest again; every statement
+// that comes out of it must still be a read.
+function isReadOnlyStatement(statement: IdentifyResult, dialect: IdentifierDialect, depth = 0): boolean {
+  if (READ_ONLY_EXECUTION_TYPES.includes(statement.executionType?.toUpperCase())) {
+    return true
+  }
+
+  const text = statement.text?.trimStart()
+  if (statement.type !== 'UNKNOWN' || !text?.startsWith('(') || depth >= MAX_PAREN_DEPTH) {
+    return false
+  }
+
+  let inner: IdentifyResult[]
+  try {
+    inner = identify(text.slice(1), { strict: false, dialect })
+  } catch {
+    return false
+  }
+
+  return inner.length > 0 && inner.every((s) => isReadOnlyStatement(s, dialect, depth + 1))
+}
+
+export function isAllowedReadOnlyQuery (identifiedQueries: IdentifyResult[], readOnlyMode: boolean, dialect: IdentifierDialect = 'generic'): boolean {
+  return !readOnlyMode || identifiedQueries.every((s) => isReadOnlyStatement(s, dialect))
 }
 
 export const errorMessages = {
