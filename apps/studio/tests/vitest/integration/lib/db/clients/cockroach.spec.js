@@ -12,10 +12,8 @@ describe("CockroachDB Tests", () => {
   // const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
 
   beforeAll(async () => {
-    const timeoutDefault = 5000
     environment = await new DockerComposeEnvironment("tests/docker", "cockroachdb.yml").up()
     container = environment.getContainer('test_cockroachdb')
-    vi.setConfig({ testTimeout: timeoutDefault, hookTimeout: timeoutDefault })
     const config = {
       client: 'cockroachdb',
       host: container.getHost(),

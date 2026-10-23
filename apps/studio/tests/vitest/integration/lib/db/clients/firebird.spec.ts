@@ -18,7 +18,6 @@ describe("Firebird Tests", () => {
   let util: DBTestUtil;
 
   beforeAll(async () => {
-    const timeoutDefault = 5000;
 
     container = await new GenericContainer("firebirdsql/firebird:4.0.1")
       .withName("test_firebird")
@@ -40,7 +39,6 @@ describe("Firebird Tests", () => {
       .withStartupTimeout(dbtimeout)
       .start();
 
-    vi.setConfig({ testTimeout: timeoutDefault, hookTimeout: timeoutDefault });
 
     const config: IDbConnectionServerConfig = {
       client: "firebird",

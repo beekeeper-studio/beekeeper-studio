@@ -39,7 +39,6 @@ describe("StarRocks Tests", () => {
   let util
 
   beforeAll(async () => {
-    const timeoutDefault = 5000
     container = await new GenericContainer("starrocks/allin1-ubuntu")
       .withName("starrocks")
       .withExposedPorts(9030, 8030, 8040)
@@ -50,7 +49,6 @@ describe("StarRocks Tests", () => {
     const port = container.getMappedPort(9030)
     await waitForBackend(host, port)
 
-    vi.setConfig({ testTimeout: timeoutDefault, hookTimeout: timeoutDefault })
     const config = {
       client: 'starrocks',
       host,

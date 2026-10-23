@@ -6,11 +6,9 @@ import { PostgresTestDriver } from "./container"
 let util: DBTestUtil
 
 describe("When working with JSONB", () => {
-
+  vi.setConfig({ testTimeout: dbtimeout, hookTimeout: dbtimeout })
 
   beforeAll(async () => {
-   vi.setConfig({ testTimeout: dbtimeout, hookTimeout: dbtimeout })
-
     await PostgresTestDriver.start('16.4', false, false)
     util = new DBTestUtil(
       PostgresTestDriver.config,

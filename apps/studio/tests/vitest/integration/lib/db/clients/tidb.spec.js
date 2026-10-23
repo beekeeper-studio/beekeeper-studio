@@ -10,13 +10,11 @@ describe("TiDB Tests", () => {
   let util
 
   beforeAll(async () => {
-    const timeoutDefault = 5000
     container = await new GenericContainer("pingcap/tidb")
       .withName("tidb")
       .withExposedPorts(4000)
       .withStartupTimeout(dbtimeout)
       .start()
-    vi.setConfig({ testTimeout: timeoutDefault, hookTimeout: timeoutDefault })
     const config = {
       client: 'tidb',
       host: container.getHost(),

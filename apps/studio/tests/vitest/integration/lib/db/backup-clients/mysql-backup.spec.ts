@@ -66,7 +66,6 @@ function testWith(description: string, backupConfig: Partial<BackupConfig>, rest
     vi.setConfig({ testTimeout: dbtimeout, hookTimeout: dbtimeout })
 
     beforeAll(async () => {
-      const timeoutDefault = 10000;
       stub = installUtilStub();
       const temp = fs.mkdtempSync(path.join(os.tmpdir(), `mysql-`));
       fs.chmodSync(temp, "777")
@@ -121,7 +120,6 @@ function testWith(description: string, backupConfig: Partial<BackupConfig>, rest
 
       clients.backup.connConfig = iConn;
       clients.restore.connConfig = iConn;
-      vi.setConfig({ testTimeout: timeoutDefault, hookTimeout: timeoutDefault });
     })
 
     describe("Common Tests", () => {

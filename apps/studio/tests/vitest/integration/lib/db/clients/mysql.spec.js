@@ -27,7 +27,6 @@ function testWith(tag, socket = false, readonly = false, image = 'mysql', option
     let util
 
     beforeAll(async () => {
-      const timeoutDefault = 5000
       const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'mysql-'));
       fs.chmodSync(temp, "777")
       container = await new GenericContainer(`${image}:${tag}`)
@@ -53,7 +52,6 @@ function testWith(tag, socket = false, readonly = false, image = 'mysql', option
           FLUSH PRIVILEGES;
         `,
       ])
-      vi.setConfig({ testTimeout: timeoutDefault, hookTimeout: timeoutDefault })
       const config = {
         client: 'mysql',
         host: container.getHost(),

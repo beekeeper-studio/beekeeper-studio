@@ -45,7 +45,6 @@ function testWith(dockerTag: string, readonly: boolean) {
     const getUtil = () => util
 
     beforeAll(async () => {
-      const timeoutDefault = 5000
 
       container = await new GenericContainer(`mcr.microsoft.com/mssql/server:${dockerTag}`)
         // .withResourcesQuota({ memory: 2, cpu: 1 })
@@ -60,7 +59,6 @@ function testWith(dockerTag: string, readonly: boolean) {
         .withStartupTimeout(dbtimeout)
         .start()
 
-      vi.setConfig({ testTimeout: timeoutDefault, hookTimeout: timeoutDefault })
       const config = {
         client: 'sqlserver',
         host: container.getHost(),

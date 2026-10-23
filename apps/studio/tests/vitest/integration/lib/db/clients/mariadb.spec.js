@@ -10,7 +10,6 @@ describe("MariaDB Tests", () => {
   let util
 
   beforeAll(async () => {
-    const timeoutDefault = 5000
     container = await new GenericContainer("mariadb")
       .withName("maria")
       .withEnvironment({
@@ -20,7 +19,6 @@ describe("MariaDB Tests", () => {
       .withExposedPorts(3306)
       .withStartupTimeout(dbtimeout)
       .start()
-    vi.setConfig({ testTimeout: timeoutDefault })
     const config = {
       client: 'mariadb',
       host: container.getHost(),

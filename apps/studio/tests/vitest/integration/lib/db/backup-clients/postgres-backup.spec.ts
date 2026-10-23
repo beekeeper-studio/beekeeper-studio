@@ -107,7 +107,6 @@ function testWith(description: string, backupConfig: Partial<BackupConfig>, rest
 
     beforeAll(async () => {
       stub = installUtilStub();
-      const timeoutDefault = 10000;
       const temp = fs.mkdtempSync(path.join(os.tmpdir(), `psql-`));
       fs.chmodSync(temp, "777")
       container = await new GenericContainer(`postgres:latest`)
@@ -162,7 +161,6 @@ function testWith(description: string, backupConfig: Partial<BackupConfig>, rest
 
       clients.backup.connConfig = iConn;
       clients.restore.connConfig = iConn;
-      vi.setConfig({ testTimeout: timeoutDefault, hookTimeout: timeoutDefault });
     })
 
     describe("Common Tests", () => {

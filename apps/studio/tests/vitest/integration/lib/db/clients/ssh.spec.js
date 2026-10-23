@@ -43,7 +43,6 @@ describe("SSH Tunnel Tests", () => {
   beforeAll(async () => {
     await TestOrmConnection.connect()
 
-    const timeoutDefault = 5000
     environment = await new DockerComposeEnvironment("tests/docker", "ssh.yml")
       .withWaitStrategy('test_ssh_postgres', Wait.forLogMessage("database system is ready to accept connections", 2))
       .withWaitStrategy('test_ssh', Wait.forListeningPorts())
@@ -53,7 +52,6 @@ describe("SSH Tunnel Tests", () => {
     container = environment.getContainer('test_ssh')
     bastionContainer = environment.getContainer('test_ssh_bastion')
 
-    vi.setConfig({ testTimeout: timeoutDefault, hookTimeout: timeoutDefault })
 
     const config = {
       connectionType: 'postgresql',

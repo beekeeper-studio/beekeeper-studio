@@ -29,7 +29,6 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
     let util: DBTestUtil;
 
     beforeAll(async () => {
-      const timeoutDefault = 5000;
       container = await new GenericContainer(`clickhouse/clickhouse-server:${options.tag}`)
         .withName(`clickhouse-server-readonly-${options.readOnly.toString()}`)
         .withEnvironment({
@@ -40,7 +39,6 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         .withExposedPorts(8123)
         .withStartupTimeout(dbtimeout)
         .start();
-      vi.setConfig({ testTimeout: timeoutDefault, hookTimeout: timeoutDefault });
 
       await container.exec([
         "clickhouse-client",

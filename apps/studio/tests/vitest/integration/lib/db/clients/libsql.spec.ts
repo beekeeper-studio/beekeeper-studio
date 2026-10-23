@@ -12,7 +12,6 @@ import knex from "knex";
 import Client_Libsql from "@shared/lib/knex-libsql";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 
-const timeoutDefault = 5000
 
 // LibSQLClient opens a new remote connection for most queries, and sqld keeps
 // each one checked out for ~10s even after close(). The RW suite opens ~140 in
@@ -74,7 +73,6 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         container = await libsqlServerContainer(
           `libsql${options.readOnly ? "-readOnly" : ""}`
         ).start();
-        vi.setConfig({ testTimeout: timeoutDefault, hookTimeout: timeoutDefault })
         const host = container.getHost();
         const port = container.getMappedPort(8080);
         dbPath = `http://${host}:${port}`;
@@ -308,6 +306,8 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
 }
 
 function testReplica(readOnly = false) {
+  vi.setConfig({ testTimeout: dbtimeout, hookTimeout: dbtimeout })
+
   let replicaDir: any;
   let container: StartedTestContainer;
   let remoteClient: LibSQLClient;
@@ -317,7 +317,6 @@ function testReplica(readOnly = false) {
     replicaDir = tmp.dirSync();
 
     container = await libsqlServerContainer("libsql-replica-target").start();
-    vi.setConfig({ testTimeout: timeoutDefault, hookTimeout: timeoutDefault })
 
     const host = container.getHost();
     const port = container.getMappedPort(8080);
