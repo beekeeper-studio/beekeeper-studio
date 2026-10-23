@@ -205,6 +205,13 @@
         </template>
 
         <!-- Actions -->
+        <visualize-button
+          menu-id="tableTable.statusbar"
+          :header="visualizeHeader"
+          :disabled="isEmpty"
+          :conditions="{ explainResult: false }"
+          @select="openInPlugin"
+        />
         <x-button
           v-tooltip="`Refresh Table (${$bksConfigUI.getKeybindingLabel('general.refresh')})`"
           class="btn btn-flat"
@@ -344,6 +351,9 @@ import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import { ExpandablePath, parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
 import { stringToTypedArray, removeUnsortableColumnsFromSortBy } from "@/common/utils";
 import { UpdateOptions } from "@/lib/data/jsonViewer";
+import VisualizeButton from "@/components/plugins/VisualizeButton.vue";
+import type { StatusbarMenuPayload } from "@/services/plugin/web/MenuParams";
+import type { ContextItem } from "@/plugins/BeekeeperPlugin";
 
 const log = rawLog.scope('TableTable')
 
@@ -354,12 +364,13 @@ const nullComponent = {
 };
 
 export default Vue.extend({
-  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, LoadingSpinner },
+  components: { Statusbar, ColumnFilterModal, TableLength, RowFilterBuilder, EditorModal, LoadingSpinner, VisualizeButton },
   mixins: [data_converter, DataMutators, FkLinkMixin],
   props: ["active", 'tab', 'table'],
   data() {
     return {
       addedCol: false,
+      selectedCellCount: 0,
       filters: [],
       tableFilters: [createTableFilter(this.table.columns?.[0]?.columnName)],
       headerFilter: true,
@@ -425,6 +436,11 @@ export default Vue.extend({
     },
     isEmpty() {
       return _.isEmpty(this.data);
+    },
+    visualizeHeader() {
+      return this.selectedCellCount > 0
+        ? `Open ${this.$pluralize('cell', this.selectedCellCount, true)} in`
+        : `Open ${this.table.name} in`
     },
     isCassandra() {
       return ['cassandra', 'scylladb'].includes(this.connectionType)
@@ -1245,6 +1261,7 @@ export default Vue.extend({
           scrollPageDown: false
         },
         onRangeChange: this.handleRangeChange,
+        onSelectedCellsChange: (cells) => { this.selectedCellCount = cells },
       });
       this.tabulator.on('cellEdited', this.cellEdited)
       this.tabulator.on("rangeEdited", (range) => {
@@ -2328,6 +2345,21 @@ export default Vue.extend({
     },
     handleRangeChange(ranges: RangeComponent[]) {
       this.updateJsonViewer({ range: ranges[0] })
+    },
+    /** Visualize button: hand the selection, or the table and its filters, to a plugin */
+    async openInPlugin(item: ContextItem, event: Event) {
+      const filters: TableFilter[] = Array.isArray(this.filters) ? this.filters : []
+      let where = _.isString(this.filters) ? this.filters : ''
+      try {
+        if (filters.length > 0) {
+          const conditions = await Promise.all(filters.map((filter) => this.connection.getQueryForFilter(filter)))
+          where = joinFilters(conditions, filters)
+        }
+      } catch (ex) {
+        log.error("Unable to build the filter condition for a plugin", ex)
+      }
+      const payload: StatusbarMenuPayload = { tabulator: this.tabulator, table: this.table, filters, where }
+      item.handler({ ...payload, event })
     },
     handleSwitchedTab(tab) {
       if (tab === this.tab) {

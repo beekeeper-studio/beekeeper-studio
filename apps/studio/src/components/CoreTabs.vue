@@ -37,7 +37,6 @@
         <x-button
           class="btn btn-icon add-tab-dropdown"
           menu
-          v-if="newTabDropdownItems.length > 1"
         >
           <i class="material-icons">arrow_drop_down</i>
           <x-menu>
@@ -53,6 +52,23 @@
                 <x-shortcut v-if="menuItem.shortcut" :value="menuItem.shortcut" />
               </x-menuitem>
             </template>
+            <hr>
+            <x-menuitem
+              v-if="!hasPluginTabItems"
+              disabled
+              :title="noPluginsItem.title"
+            >
+              <x-label>
+                <i class="material-icons">{{ noPluginsItem.leadingIcon }}</i>
+                {{ noPluginsItem.name }}
+              </x-label>
+            </x-menuitem>
+            <x-menuitem @click.prevent="openPluginManager">
+              <x-label>
+                <i class="material-icons">extension</i>
+                Manage Plugins…
+              </x-label>
+            </x-menuitem>
           </x-menu>
         </x-button>
       </span>
@@ -309,6 +325,7 @@ import DatabaseBackup from './TabDatabaseBackup.vue'
 import PluginShell from './TabPluginShell.vue'
 import PluginBase from './TabPluginBase.vue'
 import { AppEvent } from '../common/AppEvent'
+import { noPluginsItem, openPluginManager } from '@/lib/menu/pluginMenuItems'
 import { mapGetters, mapState } from 'vuex'
 import Draggable from 'vuedraggable'
 import ShortcutHints from './editor/ShortcutHints.vue'
@@ -409,6 +426,14 @@ export default Vue.extend({
        'newTabDropdownItems': 'tabs/newTabDropdownItems',
        'getKeybindings': 'plugins/keybindings/getKeybindings',
     }),
+    hasPluginTabItems() {
+      return this.newTabDropdownItems.some(({ config }) =>
+        config.type === 'plugin-shell' || config.type === 'plugin-base'
+      )
+    },
+    noPluginsItem() {
+      return noPluginsItem
+    },
     tabIcon() {
       return {
         type: this.dbEntityType,
@@ -689,6 +714,7 @@ export default Vue.extend({
     closeCurrentTab(_id?:number, options?: CloseTabOptions) {
       if (this.activeTab) this.close(this.activeTab, options)
     },
+    openPluginManager,
     async createTab(config: TabTypeConfig.Config) {
       if (config.type === "query") {
         this.createQuery()

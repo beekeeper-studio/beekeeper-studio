@@ -1114,7 +1114,7 @@ Context information for how a plugin view was opened.
 | Property  | Type                    | Description |
 |-----------|-------------------------|-------------|
 | `command` | `string`               | The command from manifest.json |
-| `params`  | `LoadViewParams`       | Context-specific parameters (optional) |
+| `params`  | `LoadViewParams`       | Context-specific parameters, depending on the menu item's placement (optional). See [Menu item params](manifest.md#menu-item-params). |
 
 ### CellMenuParams
 
@@ -1161,6 +1161,47 @@ Parameters when the corner (top-left) context menu is triggered.
 |---------------|------------------|-------------|
 | `target`      | `CornerMenuTarget` | Information about the selection |
 | `activeRange` | `ActiveRange`    | Currently selected range |
+
+### EditorMenuParams
+
+Parameters from the query editor (`editor.query.context` and `editor.query.toolbar`).
+
+| Property        | Type     | Description |
+|-----------------|----------|-------------|
+| `text`          | `string` | The whole text of the editor |
+| `selectedText`  | `string` | The selected text, or an empty string |
+| `selectedQuery` | `string` | The statement under the cursor, or an empty string |
+
+### StatusbarMenuParams
+
+Parameters from the **Visualize** menu (`results.statusbar` and `tableTable.statusbar`).
+
+| Property      | Type                                  | Description |
+|---------------|---------------------------------------|-------------|
+| `source`      | `"selection" \| "result" \| "table"` | What was sent: the selected cells, every row of a query result, or a table to read yourself |
+| `activeRange` | `ActiveRange`                         | The rows sent. Present when `source` is `"selection"` or `"result"` |
+| `target`      | `CornerMenuTarget`                    | Same as `activeRange`, so handlers written for `CornerMenuParams` work unchanged (optional) |
+| `query`       | `string`                              | Query results only: the statement that produced the result (optional) |
+| `truncated`   | `boolean`                             | Query results only: the result stopped at the row limit (optional) |
+| `entity`      | `{ type: string; schema?: string; name: string }` | Table view only: the table being viewed (optional) |
+| `filters`     | `TableFilter[]`                       | Table view only: the filters applied in the table view (optional) |
+| `where`       | `string`                              | Table view only: the SQL condition for those filters, without the `WHERE` keyword. Empty when there are no filters (optional) |
+
+### TabMenuParams
+
+Parameters from a tab header (`tab.query.header.context` and `tab.table.header.context`).
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `tab`    | `{ type: string; id: number; title: string; data?: object }` | The tab. Query tabs have `data.query`; table tabs have `data.table` and `data.filters` |
+
+### EntityMenuParams
+
+Parameters from the sidebar (`entity.*.context`) and the structure view (`structure.statusbar.menu`).
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `entity` | `{ type: string; schema?: string; name: string }` | The table, schema or routine |
 
 ### ActiveRange
 

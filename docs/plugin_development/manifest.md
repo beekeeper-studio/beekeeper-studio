@@ -126,35 +126,134 @@ The `manifest.json` file defines your plugin's metadata, capabilities, settings,
 
 ### PluginMenuItem
 
-| Property    | Type                      | Required | Description                                                                                                                     |
-| ----------- | ------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `command`   | `string`                  | Yes      | Command or id of the menu item.                                                                                                 |
-| `name`      | `string`                  | Yes      | User-facing label shown in the UI for this menu item.                                                                           |
-| `view`      | `string`                  | No       | ID of a view defined in `capabilities.views`; the host opens a new tab of that view.                                            |
-| `placement` | `PluginMenuItemPlacement` | No       | Location or locations in the app where this menu item should appear, expressed as a string or array of strings.                 |
-| `group`     | `string`                  | No       | _(Planned for future releases)_ Optional group identifier for sorting and grouping items within a placement.                    |
-| `order`     | `number`                  | No       | _(Planned for future releases)_ Optional numeric order for fine-grained sorting within a group, with lower numbers shown first. |
+| Property      | Type                      | Required | Description                                                                                                                     |
+| ------------- | ------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `command`     | `string`                  | Yes      | Command or id of the menu item.                                                                                                 |
+| `name`        | `string`                  | Yes      | User-facing label shown in the UI for this menu item.                                                                           |
+| `view`        | `string`                  | No       | ID of a view defined in `capabilities.views`; the host opens a new tab of that view.                                            |
+| `placement`   | `PluginMenuItemPlacement` | No       | Location or locations in the app where this menu item should appear, expressed as a string or array of strings.                 |
+| `icon`        | `string`                  | No       | Material icon name shown next to the item. Falls back to the manifest's `icon`, then to `extension`.                            |
+| `enabledWhen` | `PluginMenuItemCondition` | No       | Keep the item disabled until this condition holds. Menus that don't report the condition leave the item enabled.                |
+| `group`       | `string`                  | No       | _(Planned for future releases)_ Optional group identifier for sorting and grouping items within a placement.                    |
+| `order`       | `number`                  | No       | _(Planned for future releases)_ Optional numeric order for fine-grained sorting within a group, with lower numbers shown first. |
+
+Each `command` must be unique within a placement. To show the same command with a different label in two places, add two menu items with the same `command` and different `placement`s.
 
 ### PluginMenuItemPlacement
 
-| Value                               | Description                                       |
-| ----------------------------------- | ------------------------------------------------- |
-| `"newTabDropdown"`                  | Shown in the dropdown list when opening a new tab |
-| `"menubar.tools"`                   | Shown in the tools menu                           |
-| `"editor.query.context"`            | Context menu inside the query editor              |
-| `"results.cell.context"`            | Context menu on a cell                            |
-| `"results.columnHeader.context"`    | Context menu on a row header                      |
-| `"results.rowHeader.context"`       | Context menu on a column header                   |
-| `"results.corner.context"`          | Context menu on the top left corner               |
-| `"tableTable.cell.context"`         | Context menu on a cell                            |
-| `"tableTable.columnHeader.context"` | Context menu on a row header                      |
-| `"tableTable.rowHeader.context"`    | Context menu on a column header                   |
-| `"tableTable.corner.context"`       | Context menu on the top left corner               |
-| `"tab.query.header.context"`        | Context menu on the query tab header              |
-| `"tab.table.header.context"`        | Context menu on the table tab header              |
-| `"entity.table.context"`            | Context menu on a table                           |
-| `"entity.schema.context"`           | Context menu on a schema                          |
-| `"entity.routine.context"`          | Context menu on a routine                         |
+| Value                               | Description                                                      |
+| ----------------------------------- | ---------------------------------------------------------------- |
+| `"newTabDropdown"`                  | Shown in the dropdown list when opening a new tab                |
+| `"menubar.tools"`                   | Shown in the tools menu                                          |
+| `"editor.query.context"`            | Context menu inside the query editor                             |
+| `"editor.query.toolbar"`            | Button in the query editor toolbar, next to Run                  |
+| `"results.cell.context"`            | Context menu on a cell                                           |
+| `"results.columnHeader.context"`    | Context menu on a column header                                  |
+| `"results.rowHeader.context"`       | Context menu on a row header                                     |
+| `"results.corner.context"`          | Context menu on the top left corner                              |
+| `"results.statusbar"`               | **Visualize** menu in the query results status bar               |
+| `"tableTable.cell.context"`         | Context menu on a cell                                           |
+| `"tableTable.columnHeader.context"` | Context menu on a column header                                  |
+| `"tableTable.rowHeader.context"`    | Context menu on a row header                                     |
+| `"tableTable.corner.context"`       | Context menu on the top left corner                              |
+| `"tableTable.statusbar"`            | **Visualize** menu in the table view status bar                  |
+| `"tab.query.header.context"`        | Context menu on the query tab header                             |
+| `"tab.table.header.context"`        | Context menu on the table tab header                             |
+| `"entity.table.context"`            | Context menu on a table                                          |
+| `"entity.schema.context"`           | Context menu on a schema                                         |
+| `"entity.routine.context"`          | Context menu on a routine                                        |
+| `"structure.statusbar.menu"`        | Actions menu in the table structure view status bar              |
+
+In context menus, plugin items share one section labelled **Plugins** at the bottom of the menu. Plugins are sorted by name, each plugin's items keep their manifest order, and the section ends with **Manage Plugins…**. The **Visualize** menus and the new tab dropdown end with **Manage Plugins…** too.
+
+#### Where placements appear
+
+`editor.query.toolbar` items are buttons in the query editor toolbar, next to **Run**. Each button shows the item's `icon` and `name`, so keep the name short.
+
+![An Explain button in the query editor toolbar](../assets/images/plugin-query-editor-toolbar.png)
+
+`results.statusbar` items are listed in the **Visualize** menu of the query results status bar. The button sits next to **Edit Data**, and is disabled while the result has no rows.
+
+![The Visualize button in the query results status bar](../assets/images/plugin-visualize-button.png)
+
+![The Visualize button disabled for a query with no results](../assets/images/plugin-visualize-button-disabled.png)
+
+![The Visualize menu in the query results status bar, with an Explain button in the query editor toolbar](../assets/images/plugin-visualize-menu.png)
+
+`tableTable.statusbar` items are listed in the **Visualize** menu of the table view.
+
+![The Visualize menu in the table view status bar](../assets/images/plugin-visualize-table-view.png)
+
+The `*.context` placements add items to the **Plugins** section of a context menu: here `editor.query.context`, `results.cell.context` and `entity.table.context`.
+
+![The Plugins section of the query editor context menu](../assets/images/plugin-menu-query-editor.png)
+
+![The Plugins section of a results grid cell's context menu](../assets/images/plugin-menu-results-grid.png)
+
+![The Plugins section of a table's context menu in the sidebar](../assets/images/plugin-menu-sidebar.png)
+
+`newTabDropdown` items are listed in the dropdown next to the new tab button.
+
+![The new tab dropdown with plugin entries and Manage Plugins](../assets/images/plugin-new-tab-dropdown.png)
+
+#### When no plugin uses a placement
+
+Menus keep their **Plugins** section, with a disabled **No plugins…** row above **Manage Plugins…**. This shows that plugin actions exist, and that no installed plugin adds one there. The same goes for both **Visualize** menus (the button always shows), the new tab dropdown and the actions menu of the table structure view. `editor.query.toolbar` is the exception: without a plugin, the toolbar has no plugin buttons.
+
+| Placement | With a plugin | Without plugins |
+| --------- | ------------- | --------------- |
+| `editor.query.toolbar` | ![Toolbar with an Explain button](../assets/images/plugin-query-editor-toolbar.png) | ![Toolbar without plugin buttons](../assets/images/plugin-none-query-editor-toolbar.png) |
+| `results.statusbar` | ![Results Visualize menu with plugin items](../assets/images/plugin-visualize-menu.png) | ![Results Visualize menu with No plugins](../assets/images/plugin-none-visualize-menu.png) |
+| `tableTable.statusbar` | ![Table view Visualize menu with plugin items](../assets/images/plugin-visualize-table-view.png) | ![Table view Visualize menu with No plugins](../assets/images/plugin-none-visualize-table-view.png) |
+| `editor.query.context` | ![Query editor menu with a Plugins section](../assets/images/plugin-menu-query-editor.png) | ![Query editor menu with No plugins](../assets/images/plugin-none-menu-query-editor.png) |
+| `results.cell.context` | ![Results grid menu with a Plugins section](../assets/images/plugin-menu-results-grid.png) | ![Results grid menu with No plugins](../assets/images/plugin-none-menu-results-grid.png) |
+| `entity.table.context` | ![Sidebar menu with a Plugins section](../assets/images/plugin-menu-sidebar.png) | ![Sidebar menu with No plugins](../assets/images/plugin-none-menu-sidebar.png) |
+| `newTabDropdown` | ![New tab dropdown with plugin entries](../assets/images/plugin-new-tab-dropdown.png) | ![New tab dropdown with No plugins](../assets/images/plugin-none-new-tab-dropdown.png) |
+
+![The structure view actions menu with No plugins](../assets/images/plugin-none-menu-structure.png)
+
+### PluginMenuItemCondition
+
+| Value             | Description                                                                                                                    |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `"explainResult"` | The result came from an `EXPLAIN` statement, or has the columns of a query plan (such as `QUERY PLAN`). Reported by `results.statusbar`; always false in `tableTable.statusbar`. |
+
+An item waiting on `explainResult` is disabled in the **Visualize** menu until the result is a query plan:
+
+![The Visualize menu for an EXPLAIN result, with Explain Visualizer enabled](../assets/images/plugin-visualize-explain.png)
+
+### Menu item params
+
+When a menu item is picked, the new tab can read how it was opened with [`getViewContext()`](api-reference.md#getviewcontext). `params` depends on the placement:
+
+| Placement                                                  | `params`                                                                     |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `newTabDropdown`, `menubar.tools`                          | None                                                                         |
+| `editor.query.context`, `editor.query.toolbar`             | [`EditorMenuParams`](api-reference.md#editormenuparams)                      |
+| `results.*.context`, `tableTable.*.context`                | [`CellMenuParams`](api-reference.md#cellmenuparams), [`ColumnMenuParams`](api-reference.md#columnmenuparams), [`RowMenuParams`](api-reference.md#rowmenuparams) or [`CornerMenuParams`](api-reference.md#cornermenuparams) |
+| `results.statusbar`, `tableTable.statusbar`                | [`StatusbarMenuParams`](api-reference.md#statusbarmenuparams)                |
+| `tab.query.header.context`, `tab.table.header.context`     | [`TabMenuParams`](api-reference.md#tabmenuparams)                            |
+| `entity.*.context`, `structure.statusbar.menu`             | [`EntityMenuParams`](api-reference.md#entitymenuparams)                      |
+
+#### Status bar params
+
+The **Visualize** menu sends what the user is looking at, and `source` says which:
+
+- `"selection"`: the user selected more than one cell, or a row or column from its header. `activeRange` holds the selection, and the menu heading counts cells instead of rows.
+- `"result"`: nothing is selected in a query result. `activeRange` holds every row of the result. `truncated` is true when the result stopped at the row limit, and `query` is the statement that produced it, so you can run it again for more rows.
+- `"table"`: nothing is selected in a table view. The grid only holds one page of the table, so no rows are sent. Read the table yourself from `entity`, applying `where` (the SQL condition for the filters in the table view), with a row limit that suits your plugin.
+
+![The Visualize menu with eight cells selected](../assets/images/plugin-visualize-selection.png)
+
+```json
+{
+  "command": "pivot-results",
+  "name": "Pivot Table",
+  "view": "pivot-view",
+  "placement": ["results.statusbar", "tableTable.statusbar"],
+  "icon": "pivot_table_chart"
+}
+```
 
 ## Legacy Format (Manifest V0)
 
