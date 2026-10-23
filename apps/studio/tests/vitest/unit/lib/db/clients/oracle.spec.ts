@@ -12,6 +12,9 @@ vi.mock('oracledb', () => {
     default: {
       CLOB: 2017,
       BLOB: 2019,
+      SYSDBA: 2,
+      SYSOPER: 4,
+      thin: true,
       fetchAsString: [],
       fetchAsBuffer: [],
       initOracleClient: mockInitOracleClient,
@@ -21,6 +24,7 @@ vi.mock('oracledb', () => {
 });
 
 import fs from 'fs';
+import oracledb from 'oracledb';
 import { OracleClient, _resetOracleStateForTesting } from '@commercial/backend/lib/db/clients/oracle';
 
 function buildServer(overrides: Record<string, any> = {}) {
@@ -143,6 +147,94 @@ describe('OracleClient connection error handling', () => {
     });
     const client = new OracleClient(server, buildDatabase());
     await expect(client.connect()).rejects.toThrow('NJS-510');
+  });
+});
+
+describe('OracleClient role (privilege)', () => {
+  const mockGetConnection = vi.fn()
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    _resetOracleStateForTesting();
+    vi.spyOn(fs, 'existsSync').mockReturnValue(true);
+    mockCreatePool.mockResolvedValue({ getConnection: mockGetConnection });
+  });
+
+  afterEach(() => {
+    (oracledb as any).thin = true;
+    vi.restoreAllMocks();
+  });
+
+  async function connect(overrides: Record<string, any>) {
+    const client = new OracleClient(buildServer(overrides), buildDatabase());
+    client['driverExecuteSimple'] = vi.fn().mockResolvedValue([{ BANNER: 'Oracle 19c' }]);
+    await client.connect();
+    return client;
+  }
+
+  it('does not set a privilege by default', async () => {
+    const client = await connect({ instantClientLocation: null });
+    const poolConfig = mockCreatePool.mock.calls[0][0];
+    expect(poolConfig).not.toHaveProperty('privilege');
+    expect(poolConfig.user).toBe('testuser');
+
+    await client.getPoolConnection();
+    expect(mockGetConnection).toHaveBeenCalledWith();
+  });
+
+  it('passes the privilege to the pool in thin mode', async () => {
+    const client = await connect({
+      instantClientLocation: null,
+      options: { privilege: 'SYSDBA' },
+    });
+    const poolConfig = mockCreatePool.mock.calls[0][0];
+    expect(poolConfig.privilege).toBe(oracledb.SYSDBA);
+    expect(poolConfig.user).toBe('testuser');
+    expect(poolConfig.password).toBe('testpass');
+
+    await client.getPoolConnection();
+    expect(mockGetConnection).toHaveBeenCalledWith();
+  });
+
+  it('uses a heterogeneous pool and passes credentials per connection in thick mode', async () => {
+    (oracledb as any).thin = false;
+    const client = await connect({ options: { privilege: 'SYSOPER' } });
+    const poolConfig = mockCreatePool.mock.calls[0][0];
+    expect(poolConfig.homogeneous).toBe(false);
+    expect(poolConfig.poolMin).toBe(0);
+    expect(poolConfig).not.toHaveProperty('user');
+    expect(poolConfig).not.toHaveProperty('password');
+    expect(poolConfig).not.toHaveProperty('privilege');
+
+    await client.getPoolConnection();
+    expect(mockGetConnection).toHaveBeenCalledWith({
+      user: 'testuser',
+      password: 'testpass',
+      privilege: oracledb.SYSOPER,
+    });
+  });
+
+  it('applies the privilege to connection string connections', async () => {
+    await connect({
+      instantClientLocation: null,
+      options: {
+        connectionMethod: 'connectionString',
+        connectionString: 'localhost/ORCL',
+        privilege: 'SYSDBA',
+      },
+    });
+    const poolConfig = mockCreatePool.mock.calls[0][0];
+    expect(poolConfig.connectString).toBe('localhost/ORCL');
+    expect(poolConfig.privilege).toBe(oracledb.SYSDBA);
+  });
+
+  it('rejects an unknown role', async () => {
+    const client = new OracleClient(
+      buildServer({ instantClientLocation: null, options: { privilege: 'SYSFOO' } }),
+      buildDatabase()
+    );
+    await expect(client.connect()).rejects.toThrow('Unknown Oracle role: SYSFOO');
+    expect(mockCreatePool).not.toHaveBeenCalled();
   });
 });
 

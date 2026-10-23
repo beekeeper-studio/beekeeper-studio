@@ -68,8 +68,18 @@ export function _resetOracleStateForTesting() {
   oracleInitConfigDir = null
 }
 
+const privileges = {
+  SYSDBA: oracle.SYSDBA,
+  SYSOPER: oracle.SYSOPER,
+}
+
 export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Connection> {
   pool: oracle.Pool;
+  // Set when connecting with a privilege in thick mode. Thick mode only applies
+  // a privilege on a heterogeneous pool, where the credentials go to each
+  // pool.getConnection() call instead of to createPool().
+  // @types/oracledb is missing privilege on pooled connection options.
+  connectionAttributes?: oracle.GetPooledConnectionOptions & { privilege: number };
   server: IDbConnectionServer
   database: IDbConnectionDatabase
   defaultSchema: () => Promise<string>
@@ -370,7 +380,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     return {
       columns: columns,
       totalRows: rowCount,
-      cursor: new OracleCursor(this.pool, q, [], chunkSize)
+      cursor: new OracleCursor(() => this.getPoolConnection(), q, [], chunkSize)
     }
   }
 
@@ -735,6 +745,24 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     if (configLocation && !cliLocation) {
       poolConfig['configDir'] = configLocation
     }
+
+    const privilegeName = this.server.config.options?.privilege
+    const privilege = privilegeName ? privileges[privilegeName] : undefined
+    if (privilegeName && privilege === undefined) {
+      throw new Error(`Unknown Oracle role: ${privilegeName}`)
+    }
+    this.connectionAttributes = undefined
+    if (privilege !== undefined) {
+      if (oracle.thin) {
+        poolConfig['privilege'] = privilege
+      } else {
+        const { user, password, ...rest } = poolConfig
+        // poolMin is 0 because a heterogeneous pool has no credentials to open
+        // sessions with until getConnection() supplies them.
+        poolConfig = { ...rest, homogeneous: false, poolMin: 0 }
+        this.connectionAttributes = { user, password, privilege }
+      }
+    }
     log.debug("Pool Config: ", poolConfig)
     this.pool = await oracle.createPool(poolConfig)
     const vSQL = `
@@ -746,6 +774,12 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
   }
   async checkConnection() {
     // empty on purpose
+  }
+
+  getPoolConnection(): Promise<oracle.Connection> {
+    return this.connectionAttributes
+      ? this.pool.getConnection(this.connectionAttributes)
+      : this.pool.getConnection()
   }
 
   async disconnect() {
@@ -872,7 +906,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     const hasReserved = this.reservedConnections.has(tabId);
     return {
       execute: (async () => {
-        connection = hasReserved ? this.peekConnection(tabId) : await this.pool.getConnection()
+        connection = hasReserved ? this.peekConnection(tabId) : await this.getPoolConnection()
         try {
           const data = await Promise.race([
             cancelable.wait(),
@@ -915,7 +949,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
 
   async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
     return {
-      cursor: new OracleCursor(this.pool, query, [], chunkSize)
+      cursor: new OracleCursor(() => this.getPoolConnection(), query, [], chunkSize)
     }
   }
 
@@ -1005,7 +1039,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
         const c = this.peekConnection(options?.tabId);
         return await runQuery(c);
       } else {
-        const c = options.connection ?? await this.pool.getConnection();
+        const c = options.connection ?? await this.getPoolConnection();
         return await withClosable(c, runQuery);
       }
   }
@@ -1017,7 +1051,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
       throw new Error(errorMessages.maxReservedConnections)
     }
 
-    const conn = await this.pool.getConnection();
+    const conn = await this.getPoolConnection();
     this.pushConnection(tabId, conn);
   }
 
