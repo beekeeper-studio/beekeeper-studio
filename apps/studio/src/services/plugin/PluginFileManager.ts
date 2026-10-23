@@ -7,7 +7,7 @@ import {
   DownloaderConfig,
   DownloaderReport,
 } from "nodejs-file-downloader";
-import { Manifest, PluginView, Release } from "./types";
+import { Manifest, PluginRegistryEntry, PluginView, Release } from "./types";
 import { PluginError, PluginSystemError } from "@/lib/errors";
 import extract from "extract-zip";
 import { tmpdir } from "os";
@@ -20,6 +20,8 @@ export type PluginFileManagerOptions = {
 const log = rawLog.scope("PluginFileManager");
 
 const PLUGIN_MANIFEST_FILENAME = "manifest.json";
+
+const ENTRY_CACHE_FILENAME = "__bksPluginRegistryEntryCache.json";
 
 /**
  * A plugin id is used verbatim as a single directory-name segment under the
@@ -247,6 +249,46 @@ export default class PluginFileManager {
       // Clean up on error
       fs.rmSync(tmpDirectory, { recursive: true, force: true });
       log.debug("Update failed", e);
+      throw e;
+    }
+  }
+
+  cacheEntry(entry: PluginRegistryEntry) {
+    const pluginDirectory = this.getDirectoryOf(entry.id);
+
+    if (!fs.existsSync(pluginDirectory)) {
+      throw new Error(`Cannot cache registry entry for non-existent plugin directory: ${pluginDirectory}`);
+    }
+
+    try {
+      fs.writeFileSync(path.join(pluginDirectory, ENTRY_CACHE_FILENAME), JSON.stringify(entry));
+    } catch (e) {
+      log.debug("Failed to cache entry for ", entry.id, e);
+      throw e;
+    }
+  }
+
+  getEntryCache(pluginId: string): PluginRegistryEntry {
+    const pluginDirectory = this.getDirectoryOf(pluginId);
+
+    if (!fs.existsSync(pluginDirectory)) {
+      throw new Error(`Cannot get cache registry entry for non-existent plugin directory: ${pluginDirectory}`);
+    }
+
+    const cacheFilePath = path.join(pluginDirectory, ENTRY_CACHE_FILENAME);
+
+    if (!fs.existsSync(cacheFilePath)) {
+      // Don't error, this won't work for unlisted plugins
+      log.debug('No cache found for', pluginId);
+      return null;
+    }
+
+    try {
+      const contents: string = fs.readFileSync(cacheFilePath, 'utf8');
+
+      return JSON.parse(contents) as PluginRegistryEntry;
+    } catch (e) {
+      log.debug("Failed to retrieve entry cache for", pluginId, e);
       throw e;
     }
   }
