@@ -149,7 +149,10 @@ export function normalizeFilters(filters: TableFilter[]) {
   for (const filter of filters as TableFilter[]) {
     if (!(filter.type && filter.field && (filter.value || filter.type.includes('is')))) continue;
     if (isListFilter(filter.type)) {
-      const value = (filter.value as string).split(/\s*,\s*/);
+      // Quick Filter sets the value to an array of the selected cell values
+      const value = _.isArray(filter.value)
+        ? filter.value
+        : filter.value.toString().split(/\s*,\s*/);
       normalized.push({ ...filter, value });
     } else {
       normalized.push(filter);

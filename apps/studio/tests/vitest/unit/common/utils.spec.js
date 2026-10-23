@@ -72,6 +72,17 @@ describe("normalizeFilters", () => {
     ])
     expect(result.map((f) => f.value)).toStrictEqual([["foo", "bar"], ["baz", "qux"]])
   })
+
+  it("keeps array values from Quick Filter for in and not in", () => {
+    const filters = [
+      { field: "a", type: "in", value: ["foo", 1] },
+      { field: "b", type: "not in", value: ["bar", 2] },
+    ]
+    const result = normalizeFilters(filters)
+    expect(result.map((f) => f.value)).toStrictEqual([["foo", 1], ["bar", 2]])
+    // the builder input shows the values as comma separated text
+    expect(filters.map((f) => f.value)).toStrictEqual(["foo,1", "bar,2"])
+  })
 })
 
 describe("removeUnsortableColumnsFromSortBy", () => {
