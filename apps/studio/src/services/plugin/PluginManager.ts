@@ -145,7 +145,11 @@ export default class PluginManager extends Hookable {
       } catch (e) {
         if (e instanceof PluginSystemError && e.code === "PLUGIN_NOT_FOUND") {
           // There's nothing wrong if the plugin is not found in the registry.
-          // It may be a local plugin.
+          // It may be a local plugin. See if we've maybe cached the entry in the past
+          const cached = this.fileManager.getEntryCache(manifest.id);
+          if (cached && cached.origin) {
+            origin = cached.origin;
+          }
         } else {
           // Else, it might be a real error
           log.error(e);
@@ -219,12 +223,18 @@ export default class PluginManager extends Hookable {
         );
       }
 
+
       log.debug(`Installing plugin "${id}" ${info.latestRelease.manifest.version}...`);
 
       if (update) {
         await this.fileManager.update(id, info.latestRelease);
       } else {
         await this.fileManager.download(id, info.latestRelease);
+      }
+
+      const entry = await this.registry.findEntry(id);
+      if (entry) {
+        this.fileManager.cacheEntry(entry);
       }
 
       const manifest = this.fileManager.getManifest(id);
