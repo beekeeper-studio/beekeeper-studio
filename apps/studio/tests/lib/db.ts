@@ -865,6 +865,11 @@ export class DBTestUtil {
     result = r.result.map((r: any) => r.bananas || r.BANANAS)
     expect(result).toMatchObject(['pears', 'cheese'])
 
+    // filter test - builder not in clause
+    r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], [{ field: 'bananas', type: 'not in', value: ["cheese"] }], this.defaultSchema)
+    result = r.result.map((r: any) => r.bananas || r.BANANAS)
+    expect(result).toMatchObject(['pears'])
+
     await this.knex('MixedCase').where({bananas: 'cheese'}).delete()
 
     // filter test - raw
