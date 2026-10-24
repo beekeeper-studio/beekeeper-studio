@@ -21,7 +21,7 @@ export const KeybindingsModule: Module<State, RootState> = {
      *
      * ```ini
      * [keybindings.plugins.bks-ai-shell]
-     * new-tab-dropdown-item = ctrlOrCmd+l
+     * new-tab-dropdown-item = ctrlOrCmd+shift+a
      * ```
      *
      * ```js
