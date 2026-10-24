@@ -103,7 +103,7 @@
 <script lang="ts">
 import { Tabulator, TabulatorFull, RowComponent, CellComponent } from 'tabulator-tables'
 import data_mutators from '../../mixins/data_mutators'
-import { TabulatorStateWatchers, trashButton, vueEditor, vueFormatter } from '@shared/lib/tabulator/helpers'
+import { TabulatorStateWatchers, trashButton, vueEditor, vueFormatter, editableTableKeybindings } from '@shared/lib/tabulator/helpers'
 import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter.vue'
 import StatusBar from '../common/StatusBar.vue'
 import Vue from 'vue'
@@ -418,6 +418,7 @@ export default Vue.extend({
         layout: 'fitColumns',
         placeholder: "No Indexes",
         height: 'auto',
+        keybindings: editableTableKeybindings,
         columnDefaults: {
           title: '',
           resizable: false,

@@ -96,7 +96,7 @@ import Vue from 'vue'
 import { Tabulator, TabulatorFull, CellComponent, RowComponent, ColumnDefinition } from 'tabulator-tables'
 
 import StatusBar from '../common/StatusBar.vue'
-import { TabulatorStateWatchers, trashButton, vueEditor } from '@shared/lib/tabulator/helpers'
+import { TabulatorStateWatchers, trashButton, vueEditor, editableTableKeybindings } from '@shared/lib/tabulator/helpers'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
 import { mapGetters, mapState } from 'vuex'
 import { CreateRelationSpec, Dialect, DialectTitles, FormatterDialect, RelationAlterations, TableKey } from '@shared/lib/dialects/models'
@@ -404,6 +404,7 @@ export default Vue.extend({
         placeholder: "No Relations",
         layout: 'fitColumns',
         height: 'auto',
+        keybindings: editableTableKeybindings,
       })
       this.newRows = []
       this.removedRows = []

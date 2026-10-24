@@ -118,7 +118,7 @@ import { format } from 'sql-formatter'
 import _ from 'lodash'
 import Vue from 'vue'
 // import globals from '../../common/globals'
-import { vueEditor, vueFormatter, trashButton, TabulatorStateWatchers, moveRowHandle } from '@shared/lib/tabulator/helpers'
+import { vueEditor, vueFormatter, trashButton, TabulatorStateWatchers, moveRowHandle, editableTableKeybindings } from '@shared/lib/tabulator/helpers'
 import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter.vue'
 import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
@@ -529,6 +529,7 @@ export default Vue.extend({
         },
         data: this.tableData,
         placeholder: "No Columns",
+        keybindings: editableTableKeybindings,
       })
 
       this.tabulator.on('rowMoved', (row) => this.movedRows(row))
