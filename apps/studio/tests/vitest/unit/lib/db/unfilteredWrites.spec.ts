@@ -4,7 +4,6 @@ import { safelyIdentify } from "@/lib/db/sql_tools";
 import {
   findUnfilteredWrites,
   hasOwnWhereClause,
-  shouldWarnOnUnfilteredWrites,
   statementExcerpt,
   unfilteredWritesMessage,
 } from "@/lib/db/unfilteredWrites";
@@ -100,22 +99,6 @@ describe("hasOwnWhereClause", () => {
     ["in lower case", "delete from t where id = 1"],
   ])("finds a WHERE %s", (_label, sql, dialect) => {
     expect(hasOwnWhereClause(sql, dialect)).toBe(true);
-  });
-});
-
-describe("shouldWarnOnUnfilteredWrites", () => {
-  it.each<[unknown, boolean, boolean]>([
-    ["always", false, true],
-    ["always", true, true],
-    ["production", false, false],
-    ["production", true, true],
-    ["never", true, false],
-    [" Production ", true, true],
-    // a missing or unknown value warns, rather than silently not
-    [undefined, false, true],
-    ["sometimes", false, true],
-  ])("%s on a production connection? %s => %s", (setting, isProduction, expected) => {
-    expect(shouldWarnOnUnfilteredWrites(setting, isProduction)).toBe(expected);
   });
 });
 

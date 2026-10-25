@@ -50,7 +50,6 @@ export class UsedConnection extends DbConnectionBase implements ISimpleConnectio
       this.sslCertFile = other.sslCertFile
       this.sslKeyFile = other.sslKeyFile
       this.readOnlyMode = other.readOnlyMode
-      this.isProduction = other.isProduction ?? false
       // `connectionId` is always passed explicitly by the caller: it's a
       // saved_connection reference, or null for a connection that was never
       // saved. It is never inferred from `id`, which belongs to a different

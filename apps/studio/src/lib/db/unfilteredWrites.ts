@@ -1,9 +1,6 @@
 import { Dialect as IdentifierDialect } from 'sql-query-identifier'
 import { IdentifyResult } from 'sql-query-identifier/lib/defines'
 
-/** When the query editor warns before an UPDATE or DELETE without a WHERE clause. */
-export type UnfilteredWriteWarning = 'always' | 'production' | 'never'
-
 const WRITE_TYPES = ['UPDATE', 'DELETE']
 const BACKSLASH_ESCAPES: IdentifierDialect[] = ['mysql', 'bigquery']
 const POSTGRES_LIKE: IdentifierDialect[] = ['psql']
@@ -92,18 +89,6 @@ export function findUnfilteredWrites(queries: IdentifyResult[], dialect: Identif
   return queries.filter((query) =>
     WRITE_TYPES.includes(query.type) && !hasOwnWhereClause(query.text, dialect)
   )
-}
-
-/** Whether to warn on a connection, given the configured setting. */
-export function shouldWarnOnUnfilteredWrites(setting: unknown, isProductionConnection: boolean): boolean {
-  switch (String(setting ?? 'always').trim().toLowerCase()) {
-    case 'never':
-      return false
-    case 'production':
-      return isProductionConnection
-    default:
-      return true
-  }
 }
 
 /** One line of a statement for the warning: whitespace collapsed, long ones cut. */

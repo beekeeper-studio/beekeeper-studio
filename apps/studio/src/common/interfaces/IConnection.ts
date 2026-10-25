@@ -53,7 +53,6 @@ export interface ISimpleConnection extends Transport {
   sslKeyFile: Nullable<string>
   sslRejectUnauthorized: boolean
   readOnlyMode: boolean
-  isProduction?: boolean
   labelColor?: Nullable<string>
   trustServerCertificate?: boolean
   windowsAuthEnabled?: boolean

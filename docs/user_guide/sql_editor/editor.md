@@ -78,14 +78,6 @@ Beekeeper allows you to:
 
 Before running an `UPDATE` or `DELETE` that has no `WHERE` clause, Beekeeper asks for confirmation, because such a statement can change every row in its table. A `WHERE` inside a subquery or a CTE does not count, and neither does a `LIMIT` or `TOP`: they cap how many rows change, not which ones.
 
-To only be asked on production databases, tick **Production Connection** in the connection form for those connections, and set `warnOnUnfilteredWrites` in the [config file](../configuration.md):
-
-```ini
-[ui.queryEditor]
-; always (the default), production, or never
-warnOnUnfilteredWrites = production
-```
-
 ## Transaction Management
 
 Transactions run within the query editor will be automatically detected by Beekeeper, which will then reserve a connection for your current query tab until that transaction is committed or rolled back.

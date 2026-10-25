@@ -5,15 +5,10 @@ import TabQueryEditor from "@/components/TabQueryEditor.vue";
 // clause runs (#4842). The methods run against a stand-in for the component.
 const { submitQuery, confirmUnfilteredWrites } = (TabQueryEditor as any).methods;
 
-function createEditor({
-  setting = "always",
-  isProduction = false,
-  confirmed = true,
-}: { setting?: string; isProduction?: boolean; confirmed?: boolean } = {}) {
+function createEditor({ confirmed = true }: { confirmed?: boolean } = {}) {
   const execute = vi.fn(async () => []);
   const editor: any = {
-    $bksConfig: { ui: { queryEditor: { warnOnUnfilteredWrites: setting } } },
-    usedConfig: { id: null, isProduction },
+    usedConfig: { id: null },
     identifierDialect: "generic",
     identifyDialect: "generic",
     paramTypes: undefined,
@@ -71,27 +66,6 @@ describe("the warning before an UPDATE or DELETE without WHERE", () => {
     const editor = createEditor();
 
     await submitQuery.call(editor, sql);
-
-    expect(editor.$confirm).not.toHaveBeenCalled();
-    expect(editor.connection.query).toHaveBeenCalledTimes(1);
-  });
-
-  it("asks only on production connections when set to production", async () => {
-    const development = createEditor({ setting: "production", isProduction: false });
-    await submitQuery.call(development, "DELETE FROM users");
-    expect(development.$confirm).not.toHaveBeenCalled();
-    expect(development.connection.query).toHaveBeenCalledTimes(1);
-
-    const production = createEditor({ setting: "production", isProduction: true, confirmed: false });
-    await submitQuery.call(production, "DELETE FROM users");
-    expect(production.$confirm).toHaveBeenCalledTimes(1);
-    expect(production.connection.query).not.toHaveBeenCalled();
-  });
-
-  it("never asks when set to never", async () => {
-    const editor = createEditor({ setting: "never", isProduction: true });
-
-    await submitQuery.call(editor, "DELETE FROM users");
 
     expect(editor.$confirm).not.toHaveBeenCalled();
     expect(editor.connection.query).toHaveBeenCalledTimes(1);
