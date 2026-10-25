@@ -531,6 +531,25 @@ const store = new Vuex.Store<State>({
       window.main.setWindowTitle(title);
     },
 
+    /**
+     * The connect that just succeeded created the SQLite file, so the Create
+     * flag has done its job. Clear it, so a later connect refuses the path
+     * again if the file goes missing. The stored copy is saved rather than
+     * `config`, which may hold form edits the user never saved.
+     */
+    async clearCreateDatabaseFile(context, config: IConnection) {
+      config.options = { ...config.options, createDatabaseFile: false }
+      if (_.isNil(config.id)) return
+
+      const saved: IConnection = context.state['data/connections'].items.find((c) => c.id === config.id)
+      if (saved?.options?.createDatabaseFile) {
+        await context.dispatch('data/connections/save', {
+          ...saved,
+          options: { ...saved.options, createDatabaseFile: false }
+        })
+      }
+    },
+
     async saveConnection(context, config: IConnection) {
       await context.dispatch('data/connections/save', config)
       const isConnected = !!context.state.server
@@ -615,6 +634,9 @@ const store = new Vuex.Store<State>({
         try {
           await Vue.prototype.$util.send('appdb/tabhistory/clearDeletedTabs', { workspaceId: context.state.usedConfig.workspaceId, connectionId: context.state.usedConfig.id })
           await context.dispatch('checkVersion');
+          if (config.options?.createDatabaseFile) {
+            await context.dispatch('clearCreateDatabaseFile', config)
+          }
         } catch (ex) {
           log.error('post-connect housekeeping failed', ex)
         }

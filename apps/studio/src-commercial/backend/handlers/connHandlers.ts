@@ -196,6 +196,12 @@ export const ConnHandlers: IConnectionHandlers = {
     }
     // HACK (@day): this is because of type fuckery, need to actually just recreate the object but I'm lazy rn and it's late
     connection.connectionType = config.connectionType ?? (config as any)._connectionType;
+    // The file exists now. Clear the flag (shared with server.config) before it
+    // is copied into recent connections, so a later connect refuses the path
+    // again if the file goes missing.
+    if (config.options?.createDatabaseFile) {
+      config.options.createDatabaseFile = false;
+    }
     await UsedConnection.recordUse(config);
 
     state(sId).server = server;

@@ -13,7 +13,7 @@ import migration from "@/migration/20250529_add_plugin_settings";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import { ConfigurationModule } from "@commercial/backend/plugin-system/modules";
 import { PluginSystemError } from "@/lib/errors";
-import { createConfig } from "@tests/integration/utils/config";
+import { createConfig } from "@tests/vitest/integration/utils/config";
 import globals from "@/common/globals";
 
 // Bundled plugins are the only ones allowed when the plugin system is disabled

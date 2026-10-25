@@ -12,7 +12,7 @@
     "outDir": "dist",
     "baseUrl": ".",
     "types": [
-      "jest",
+      "vitest/globals",
       "vite/client"
     ],
     "paths": {

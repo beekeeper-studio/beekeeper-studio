@@ -27,7 +27,7 @@ import os from "os";
 import path from "path";
 import Vue from "vue";
 import { Command } from "@/lib/db/models";
-import { installUtilStub, UtilStub } from "@tests/integration/lib/db/backup-clients/setup";
+import { installUtilStub, UtilStub } from "@tests/vitest/integration/lib/db/backup-clients/setup";
 
 // `which`/`where` and POSIX symlink semantics; the rig is unix-oriented.
 const describeOrSkip = process.platform === "win32" ? describe.skip : describe;

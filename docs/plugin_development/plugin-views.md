@@ -6,9 +6,6 @@ icon: material/view-dashboard
 
 # Plugin Views
 
-!!! warning "Beta Feature"
-    The plugin system is in beta (available in Beekeeper Studio 5.3+). We'd love your feedback!
-
 Plugins can integrate with Beekeeper Studio through different types of views, each designed for specific use cases. Views define where and how your plugin's interface appears within the application. The different view types are listed [here](manifest.md#pluginviewtype)
 
 ## Tab Views

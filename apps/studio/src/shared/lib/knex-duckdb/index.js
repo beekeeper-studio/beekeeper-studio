@@ -156,4 +156,4 @@ Object.assign(Client_DuckDB.prototype, {
   dialect: 'duckdb',
 });
 
-module.exports = { Client_DuckDB };
+export { Client_DuckDB };

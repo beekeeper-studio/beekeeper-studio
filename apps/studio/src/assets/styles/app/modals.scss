@@ -17,6 +17,7 @@
   // vue-js-modal's width prop can't reach it — cap the width here instead.
   &.upgrade-modal .v--modal {
     max-width: 520px;
+    overflow: hidden; // clips the panel's lifetime strip to the rounded corners
   }
 
   &.sql-files-import-modal, &.wait-sso-modal, &.connection-files-import-modal {

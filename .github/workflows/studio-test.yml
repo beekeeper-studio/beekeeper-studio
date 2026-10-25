@@ -73,21 +73,6 @@ jobs:
           HUSKY: "0"
           npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
 
-  new-tests-are-vitest:
-    name: New tests use vitest
-    runs-on: ubuntu-24.04
-    if: github.event_name == 'pull_request'
-    steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      # Jest is being replaced by vitest; new specs must go in
-      # apps/studio/tests/vitest/ (see apps/studio/tests/VITEST_MIGRATION.md)
-      - name: Check new specs land in tests/vitest
-        run: bin/check-for-new-jest-tests.sh
-
   unit:
     name: Unit tests
     runs-on: ubuntu-24.04
@@ -140,9 +125,7 @@ jobs:
       - name: Build UI Kit
         run: yarn lib:build
 
-      # Unit and non-DB integration tests run under vitest; only the docker-DB
-      # specs in the integration matrix below are still partly on jest
-      # (see apps/studio/tests/VITEST_MIGRATION.md)
+      # Everything runs under vitest (see apps/studio/tests/VITEST_MIGRATION.md)
       - name: Unit Tests
         run: yarn workspace beekeeper-studio run test:unit --silent
 
@@ -154,8 +137,7 @@ jobs:
 
 
   integration:
-    # ✌️ = vitest spec, 🥞 = still on jest
-    name: ${{ startsWith(matrix.chunk[1], 'apps/studio/tests/vitest/') && '✌️' || '🥞' }} ${{ matrix.chunk[0] }}
+    name: ${{ matrix.chunk[0] }}
     runs-on: ubuntu-24.04
     needs:
       - prep
@@ -205,9 +187,6 @@ jobs:
           timeout_minutes: 20
           max_attempts: 2
           on_retry_command: "docker ps -aq | xargs docker stop | xargs docker rm"
-          # No --runInBand/--ci: both are no-ops for jest here (maxWorkers: 1 in
-          # config, no snapshots) and unknown flags are fatal for chunks that
-          # integration-tests.sh dispatches to vitest.
           command: yarn workspace beekeeper-studio run test:integration ${{ matrix.chunk[1] }}
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
@@ -235,4 +214,4 @@ jobs:
   #       timeout_minutes: 20
   #       max_attempts: 2
   #       on_retry_command: "docker ps -aq | xargs docker stop | xargs docker rm"
-  #       command: yarn workspace beekeeper-studio run test:codemirror --runInBand --ci
+  #       command: yarn workspace beekeeper-studio run test:codemirror

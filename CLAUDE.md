@@ -17,7 +17,7 @@ Beekeeper Studio is a cross-platform SQL editor and database manager built with 
 - **Frontend**: Vue.js 2.7, TypeScript, Vuex for state management
 - **Desktop**: Electron 31.7.3
 - **Build**: ESBuild (main process), Vite (renderer process)
-- **Testing**: Vitest for unit tests; integration tests are mid-migration from Jest to Vitest (see `apps/studio/tests/VITEST_MIGRATION.md`); Playwright for e2e. **All new tests must be Vitest specs in `apps/studio/tests/vitest/` — CI fails PRs that add specs to the legacy jest tree** (`tests/integration/`; e2e is exempt).
+- **Testing**: Vitest for unit and integration tests (see `apps/studio/tests/VITEST_MIGRATION.md`); Playwright for e2e. **All new tests must be Vitest specs in `apps/studio/tests/vitest/`.**
 - **Styling**: SCSS with multiple themes
 
 ### Key Entry Points
@@ -130,7 +130,6 @@ assets/            # Styles, fonts, images
 - **ESBuild**: `apps/studio/esbuild.mjs` (main process build)
 - **Vite**: `apps/studio/vite.config.mjs` (renderer process build)
 - **TypeScript**: `apps/studio/tsconfig.json`
-- **Jest**: `apps/studio/jest.integration.config.js` (legacy integration tree only, plus specialized configs extending it)
 - **Vitest**: `apps/studio/vitest.config.mjs` family + `vitest.shared.mjs` (runs everything under `apps/studio/tests/vitest/`)
 - **Electron Builder**: `apps/studio/electron-builder-config.js`
 
@@ -143,7 +142,6 @@ Always run tests from the appropriate directory:
 Test files are organized in `apps/studio/tests/`:
 - `vitest/unit/` - Unit tests (Vitest — put new unit tests here)
 - `vitest/integration/` - Integration tests (Vitest — put new integration tests here)
-- `integration/` - Legacy integration tests still on Jest (migrate, don't add)
 - `e2e/` - End-to-end tests with Playwright
 
 ## Development Workflow
@@ -182,7 +180,7 @@ Examples:
   - esbuild main+preload → "./src/lib/log/mainLogger"
   - esbuild utility      → "./src/lib/log/utilityLogger"
   - vite renderer        → "./src/lib/log/rendererLogger"
-  - jest                 → "./src/lib/log/mainLogger"
+  - vitest               → "./src/lib/log/mainLogger"
   - tsc / IDE            → "./src/lib/log/bksLogger.d.ts" (ambient declaration; no runtime file)
 ```
 

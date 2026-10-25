@@ -9,7 +9,7 @@ import type {
 import { DatabaseType } from "@beekeeperstudio/plugin";
 import { findTable, PluginTabType } from "@/common/transport/TransportOpenTab";
 import { AppEvent } from "@/common/AppEvent";
-import { ExtendedTableColumn, NgQueryResult, TableOrView } from "@/lib/db/models";
+import { ExtendedTableColumn, NgQueryResult } from "@/lib/db/models";
 import _ from "lodash";
 import { SidebarTab } from "@/store/modules/SidebarModule";
 import {
@@ -21,11 +21,12 @@ import {
   CreatePluginTabOptions,
   PluginSnapshot,
 } from "../types";
-import { ExternalMenuItem, JsonValue } from "@/types";
+import { ExternalMenuItem } from "@/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
 import { cssVars } from "./cssVars";
 import type { DialectData } from "@/shared/lib/dialects/models";
+import { RequestMap } from "@beekeeperstudio/plugin/dist/internal";
 
 type Table = {
   name: string;
@@ -317,7 +318,7 @@ export default class PluginStoreService {
     this.appEventBus.emit(AppEvent.newCustomTab, transport);
   }
 
-  openTab(options: OpenTabRequest['args']): void {
+  openTab(options: RequestMap['openTab']['args']): void {
     if (options.type === "query") {
       if (!options.query) {
         this.appEventBus.emit(AppEvent.newTab)
@@ -342,7 +343,7 @@ export default class PluginStoreService {
       return;
     }
 
-    throw new Error(`Unsupported tab type: ${options.type}`);
+    throw new Error(`Unsupported tab type: ${(options as any).type}`);
   }
 
   addPopupMenuItem(menuId: string, item: ContextOption) {
@@ -371,7 +372,7 @@ export default class PluginStoreService {
   removeKeybinding(placement: Keybinding["placement"], handler: Keybinding["handler"]) {
     this.store.commit("plugins/keybinding/remove", { placement, handler });
   }
-  
+
   async loadSnapshots() {
     return await this.store.dispatch("plugins/snapshots/load");
   }

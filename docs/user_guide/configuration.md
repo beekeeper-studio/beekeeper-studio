@@ -59,7 +59,7 @@ pageSize = 200                          ; Show more rows per page
     - **File permissions**: Ensure the configuration file is readable by Beekeeper Studio
     - **Check logs**: Enable debug logging to see configuration loading details
 
-## Configuration Reference
+## Configuration Reference { #config-ref }
 
 Below are the default configuration values for Beekeeper Studio, copy and modify as needed.
 {% ini-include %}

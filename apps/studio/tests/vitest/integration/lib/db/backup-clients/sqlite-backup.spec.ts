@@ -5,8 +5,8 @@ import { IDbConnectionServerConfig } from "@/lib/db/types";
 import tmp from 'tmp';
 import { describe, expect, beforeAll, afterAll } from "vitest";
 import { DBTestUtil } from "@tests/lib/db";
-import { BackupTestConfig, runBackupTests } from "@tests/integration/lib/db/backup-clients/all";
-import { installUtilStub, UtilStub } from "@tests/integration/lib/db/backup-clients/setup";
+import { BackupTestConfig, runBackupTests } from "@tests/vitest/integration/lib/db/backup-clients/all";
+import { installUtilStub, UtilStub } from "@tests/vitest/integration/lib/db/backup-clients/setup";
 
 const TEST_CONFIGS: Array<BackupTestConfig> = [
   {
