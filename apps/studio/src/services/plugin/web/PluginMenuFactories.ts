@@ -1,6 +1,7 @@
 import { TransportOpenTab } from "@/common/transport/TransportOpenTab";
 import type { DatabaseEntity, TableOrView } from "@/lib/db/models";
 import type { CellComponent, ColumnComponent } from "tabulator-tables";
+import type { EntityMenuParams } from "@beekeeperstudio/plugin";
 import { MenuFactories, MenuFactory } from "./PluginMenuManager";
 import { buildParamsForStatusbar, buildParamsForTableMenu, editorParams } from "./MenuParams";
 import { AppEvent } from "@/common/AppEvent";
@@ -72,16 +73,16 @@ const popupMenuParams: Record<PluginPopupPlacement, ParamsBuilder> = {
   "tab.table.header.context": ({ item }: { item: TransportOpenTab }, context) => ({
     tab: context.store.serializeTab(item),
   }),
-  "entity.table.context": ({ item }: { item: DatabaseEntity }) => ({
+  "entity.table.context": ({ item }: { item: DatabaseEntity }): EntityMenuParams => ({
     entity: { type: "table", schema: item.schema, name: item.name },
   }),
-  "entity.schema.context": ({ item }: { item: string }) => ({
+  "entity.schema.context": ({ item }: { item: string }): EntityMenuParams => ({
     entity: { type: "schema", name: item },
   }),
-  "entity.routine.context": ({ item }: { item: DatabaseEntity }) => ({
+  "entity.routine.context": ({ item }: { item: DatabaseEntity }): EntityMenuParams => ({
     entity: { type: "routine", schema: item.schema, name: item.name },
   }),
-  "structure.statusbar.menu": ({ item }: { item: TableOrView }) => ({
+  "structure.statusbar.menu": ({ item }: { item: TableOrView }): EntityMenuParams => ({
     entity: { type: item.entityType, name: item.name, schema: item.schema },
   }),
 };

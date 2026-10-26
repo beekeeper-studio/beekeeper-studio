@@ -14,8 +14,11 @@ import type {
   ColumnMenuTarget,
   CornerMenuParams,
   CornerMenuTarget,
+  EditorMenuParams,
   RowMenuParams,
   RowMenuTarget,
+  StatusbarMenuParams,
+  TableFilter as PluginTableFilter,
 } from "@beekeeperstudio/plugin";
 import type { TableFilter } from "@/lib/db/models";
 import { dataColumns, selectedRange } from "@/common/tabulator";
@@ -148,7 +151,7 @@ function serializeArray(arr: unknown[]): unknown[] {
 /** The query editor passes its text in the handler payload. */
 export function editorParams(
   payload: { text?: string; selectedText?: string; selectedQuery?: string } = {}
-) {
+): EditorMenuParams {
   return {
     text: payload.text ?? "",
     selectedText: payload.selectedText ?? "",
@@ -168,29 +171,6 @@ export type StatusbarMenuPayload = {
   /** Filters applied in the table view. */
   filters?: TableFilter[];
   /** The SQL `WHERE` condition for those filters, without the keyword. */
-  where?: string;
-};
-
-/**
- * Params for `results.statusbar` and `tableTable.statusbar`. Mirrors
- * `StatusbarMenuParams` in `@beekeeperstudio/plugin`: import it from there
- * once a release carries it.
- *
- * - `selection`: the user selected more than one cell, or a row or column
- *   from its header. `activeRange` holds it.
- * - `result`: every row of a query result. `activeRange` holds it.
- * - `table`: a table view with nothing selected. The grid only holds one
- *   page, so no rows are sent: the plugin reads the table itself, with its
- *   own row limit, using `entity` and `where`.
- */
-export type StatusbarMenuParams = {
-  source: "selection" | "result" | "table";
-  target?: { type: "corner" } & ActiveRange;
-  activeRange?: ActiveRange;
-  query?: string;
-  truncated?: boolean;
-  entity?: { type: string; schema?: string; name: string };
-  filters?: TableFilter[];
   where?: string;
 };
 
@@ -219,7 +199,8 @@ export function buildParamsForStatusbar(payload: StatusbarMenuPayload): Statusba
           schema: payload.table.schema,
           name: payload.table.name,
         },
-        filters: payload.filters ?? [],
+        // The app's filter types are a superset of the SDK's (e.g. `not in`)
+        filters: (payload.filters ?? []) as PluginTableFilter[],
         where: payload.where ?? "",
       }
     : {
