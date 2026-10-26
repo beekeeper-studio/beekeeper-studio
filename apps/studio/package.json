@@ -208,7 +208,7 @@
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
     "dts-gen": "^0.10.9",
-    "electron": "44.5.0",
+    "electron": "44.9.1",
     "electron-builder": "^26.15.3",
     "esbuild": "^0.25.12",
     "esbuild-node-externals": "^1.13.1",
