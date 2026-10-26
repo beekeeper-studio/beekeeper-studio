@@ -66,6 +66,22 @@ describe("buildSelectTopQuery", () => {
           params: ["3", "9", "john"]
         }
       },
+      {
+        params: ['info', 0, 10, null, [{ field: 'name', type: 'in', value: ['john', 'jane'] }]],
+        result: {
+          countQuery: 'select count(*) as total from `info` where `name` in (?,?)',
+          query: 'select * from `info` where `name` in (?,?) limit 10 offset 0',
+          params: ["john", "jane"]
+        }
+      },
+      {
+        params: ['info', 0, 10, null, [{ field: 'name', type: 'not in', value: ['john', 'jane'] }]],
+        result: {
+          countQuery: 'select count(*) as total from `info` where `name` not in (?,?)',
+          query: 'select * from `info` where `name` not in (?,?) limit 10 offset 0',
+          params: ["john", "jane"]
+        }
+      },
     ]
 
     const trimQuery = query => {

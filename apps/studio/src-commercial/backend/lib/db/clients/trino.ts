@@ -622,12 +622,12 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
           return
         }
 
-        // Handle IN
-        if (op === "IN" && Array.isArray(val)) {
+        // Handle IN / NOT IN
+        if ((op === "IN" || op === "NOT IN") && Array.isArray(val)) {
           const values = val
             .map((v) => this.wrapDynamicLiteral(v))
             .join(", ")
-          filtersWithoutParams.push(`${field} IN (${values})`)
+          filtersWithoutParams.push(`${field} ${op} (${values})`)
           return
         }
 
