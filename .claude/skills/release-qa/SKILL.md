@@ -6,14 +6,16 @@ description: Release-test a Beekeeper Studio build end to end. Downloads a beta/
 # Release QA for Beekeeper Studio (Linux, headless)
 
 Drive the **shipped** app (the AppImage from GitHub Releases), not a dev build. Everything below was proven on
-`v6.2.0-beta.3`; scripts live in `scripts/` next to this file and are parameterised by env vars, not hard-coded paths.
+`v6.2.0-beta.3`. The scripts live in [`beekeeper-studio/beekeeper-demo-scripts`](https://github.com/beekeeper-studio/beekeeper-demo-scripts)
+under `qa/release-qa/` (see its README) and are parameterised by env vars, not hard-coded paths. In a Claude session attach that repo
+(`add_repo`) and clone it next to this one; below, `$S` is that folder.
 
 ## 0. Tools you need
 
 | Tool | Notes |
 |---|---|
 | `Xvfb`, `ffmpeg`, `node`, `python3` | preinstalled in the cloud sandbox |
-| Playwright | `require('/opt/node-tools/node_modules/playwright')` (set `PLAYWRIGHT_PATH` to override). Do **not** `playwright install`. |
+| Playwright | `lib.cjs` finds it via `PLAYWRIGHT_PATH`, then the beekeeper-studio checkout, then `/opt/node-tools` (preinstalled in the sandbox). Do **not** `playwright install`. |
 | `xdotool`, `xwininfo` | NOT preinstalled: `apt-get update && apt-get install -y xdotool x11-utils` (the `update` is required) |
 | `gh api` | only the REST API works (GraphQL is blocked): `gh api repos/beekeeper-studio/beekeeper-studio/releases/tags/<tag> --jq '.assets[]\|"\(.id) \(.name)"'` |
 
@@ -23,30 +25,30 @@ Download each release into its **own empty directory**; keep your scripts elsewh
 ## 1. Get the build and start it
 
 ```bash
-S=.claude/skills/release-qa/scripts; W=<scratchpad>; export QA_DIR=$W/qa-out
+S=<beekeeper-demo-scripts checkout>/qa/release-qa; W=<scratchpad>; export QA_DIR=$W/qa-out   # QA_DIR defaults to $S/out
 mkdir -p $W/release && cd $W/release
 gh api -H "Accept: application/octet-stream" repos/beekeeper-studio/beekeeper-studio/releases/assets/<asset-id> > bks.AppImage   # x86_64 .AppImage, ~360MB, ~5s
 chmod +x bks.AppImage && ./bks.AppImage --appimage-extract >/dev/null      # no FUSE needed -> ./squashfs-root
 $S/start_display.sh                                                          # Xvfb :99 1600x1000
 python3 $S/make_fixtures.py $W/data                                          # qa.db + CSVs
 $S/launch.sh $W/release/squashfs-root $W/profile 9222                        # --no-sandbox --disable-gpu --remote-debugging-port
-cd $S && node connect.js $W/data/qa.db                                       # SQLite connect (Database field is editable)
+cd $S && node connect.cjs $W/data/qa.db                                       # SQLite connect (Database field is editable)
 ```
 The window is 1200x800 at screen (196,100). Free edition is the default; see "Licensing" below.
 
 ## 2. Driving the app
 
-* `scripts/lib.js` -> `attach()` (CDP), `shot()`, `visibleRows()`, `editCell()`, `setEditorText()`, `tabTitles()`, `modalUp()`, `clickNonBlocking()`.
+* `$S/lib.cjs` -> `attach()` (CDP), `shot()`, `visibleRows()`, `editCell()`, `setEditorText()`, `tabTitles()`, `modalUp()`, `clickNonBlocking()`.
   Scripts call `browser.close()` at the end: that only disconnects, the app keeps running. Chain many small scripts.
 * `QA_DIR` = output root, `BKS_PORT` = which instance to attach to (default 9222).
-* `scripts/rec.sh start|stop <name>` records the whole X display (shows native dialogs too). Record **one clip per issue**
-  (a few seconds) and keep a clean repro script so the clip is short. `scripts/xshot.sh <name>` = X-level screenshot.
+* `$S/rec.sh start|stop <name>` records the whole X display (shows native dialogs too). Record **one clip per issue**
+  (a few seconds) and keep a clean repro script so the clip is short. `$S/xshot.sh <name>` = X-level screenshot.
 * Verify outcomes in the DB, not just the UI: `python3 -I -c "import sqlite3; c=sqlite3.connect('file:<db>?mode=ro',uri=True); print(c.execute('select ...').fetchall())"`.
 
 ### Native file dialogs (import / export / "Choose File")
 They are synchronous: the renderer freezes until the dialog closes, so an awaited click or `page.screenshot` **hangs**.
 1. Fire the click without awaiting: `clickNonBlocking(page, 'a.btn', /^Choose File$/)` and disconnect.
-2. `sleep 2; scripts/gtkdialog.sh /abs/path` (Ctrl+L, type path, **click** the Open/Select/Save button).
+2. `sleep 2; $S/gtkdialog.sh /abs/path` (Ctrl+L, type path, **click** the Open/Select/Save button).
    **Never press Return** in the GTK location bar - it closes the dialog as *cancelled* (returns `undefined`, nothing happens).
 3. Works for files and for "Select Folder". `window.main.*` is a contextBridge proxy: dialog APIs cannot be monkey-patched.
 
@@ -112,9 +114,9 @@ Note anything you changed to get unblocked (trial started, workaround config see
 
 | ID | Summary | Regression vs 6.1.6? | Re-check with |
 |---|---|---|---|
-| BUG-1 | SQLite structure editor: rename + add/drop column in one Apply generates `RENAME COLUMN "new" TO "new"` -> error `no such column`, partial apply, stale UI | No (also 6.1.6) | `node scripts/repro_structure_combo.js <table> rename add drop` |
-| BUG-2 | Closing any tab with unsaved changes: after Confirm the "Really close ?" modal stays open and blocks the UI | **Yes** | `node scripts/repro_close_unsaved.js` (reload the page afterwards) |
-| BUG-3 | First run: `user.config.ini` never created -> in-app config writes fail (Community Plugins cannot be enabled, list empty, no error) | Latent in 6.1.6 (plugins were disabled by default there) | `scripts/launch_fresh.sh` + `node scripts/repro_enable_community_plugins.js` |
+| BUG-1 | SQLite structure editor: rename + add/drop column in one Apply generates `RENAME COLUMN "new" TO "new"` -> error `no such column`, partial apply, stale UI | No (also 6.1.6) | `node $S/repro_structure_combo.cjs <table> rename add drop` |
+| BUG-2 | Closing any tab with unsaved changes: after Confirm the "Really close ?" modal stays open and blocks the UI | **Yes** | `node $S/repro_close_unsaved.cjs` (reload the page afterwards) |
+| BUG-3 | First run: `user.config.ini` never created -> in-app config writes fail (Community Plugins cannot be enabled, list empty, no error) | Latent in 6.1.6 (plugins were disabled by default there) | `$S/launch_fresh.sh` + `node $S/repro_enable_community_plugins.cjs` |
 | BUG-4 | Plugin manager "Official Plugins" toggle reads `officialEnabled` / writes `ultimateDisabled` (nonexistent keys): always ON, cannot change | New UI | same script; inspect `PluginManagerModal.vue` / bundle |
 
 Other notes: data-tab pending cell edits are discarded without a prompt when the tab is closed (same in 6.1.6); new column name in the
