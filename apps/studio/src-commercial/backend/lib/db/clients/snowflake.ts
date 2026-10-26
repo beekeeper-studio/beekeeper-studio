@@ -18,8 +18,11 @@ import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilder
 import { SnowflakeChangeBuilder } from "@/shared/lib/sql/change_builder/SnowflakeChangeBuilder";
 import { SnowflakeCursor } from "./snowflake/SnowflakeCursor";
 import { IndexColumn } from "@beekeeperstudio/plugin";
+import { JsonCredentialManager } from "snowflake-sdk/dist/lib/authentication/secure_storage/json_credential_manager";
 
 const log = rawLog.scope('snowflake')
+
+let snowflakeCredentialManager: JsonCredentialManager | null = null
 
 interface SnowflakeResult {
   columns: { name: string, type?: string | number | any }[]
@@ -67,6 +70,11 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
     snowflake.configure({
       logLevel: "OFF"
     })
+
+    if (!snowflakeCredentialManager) {
+      snowflakeCredentialManager = new JsonCredentialManager(undefined);
+      snowflake.configure({ customCredentialManager: snowflakeCredentialManager });
+    }
   }
 
   // Snowflake supports basically an infinite number of collations so idk how we want to handle this
