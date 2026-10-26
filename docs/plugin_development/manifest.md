@@ -78,7 +78,7 @@ The `manifest.json` file defines your plugin's metadata, capabilities, settings,
                 "entry": "index.html"
             }
         ],
-        "menus": [
+        "menu": [
             {
                 "command": "openAnalyzer",
                 "name": "Open Analyzer",
@@ -104,7 +104,7 @@ The `manifest.json` file defines your plugin's metadata, capabilities, settings,
 | Property | Type               | Required | Description                                |
 | -------- | ------------------ | -------- | ------------------------------------------ |
 | `views`  | `PluginView[]`     | No       | Array of view definitions for your plugin. |
-| `menus`  | `PluginMenuItem[]` | No       | Array of menu definitions for your plugin. |
+| `menu`   | `PluginMenuItem[]` | No       | Array of menu definitions for your plugin. |
 
 ### PluginView
 
@@ -138,6 +138,9 @@ The `manifest.json` file defines your plugin's metadata, capabilities, settings,
 | `order`       | `number`                  | No       | _(Planned for future releases)_ Optional numeric order for fine-grained sorting within a group, with lower numbers shown first. |
 
 Each `command` must be unique within a placement. To show the same command with a different label in two places, add two menu items with the same `command` and different `placement`s.
+
+!!! note "Beekeeper Studio 6.2"
+    The `editor.query.toolbar`, `results.statusbar` and `tableTable.statusbar` placements, and the `icon` and `enabledWhen` fields, need Beekeeper Studio 6.2 or later, as do items on the tab header placements (`tab.query.header.context` and `tab.table.header.context`). Earlier versions skip menu items whose placement they don't know, and ignore the two fields. Set `"minAppVersion": "6.2.0"` if your plugin depends on them.
 
 ### PluginMenuItemPlacement
 
@@ -234,6 +237,18 @@ When a menu item is picked, the new tab can read how it was opened with [`getVie
 | `results.statusbar`, `tableTable.statusbar`                | [`StatusbarMenuParams`](api-reference.md#statusbarmenuparams)                |
 | `tab.query.header.context`, `tab.table.header.context`     | [`TabMenuParams`](api-reference.md#tabmenuparams)                            |
 | `entity.*.context`, `structure.statusbar.menu`             | [`EntityMenuParams`](api-reference.md#entitymenuparams)                      |
+
+`@beekeeperstudio/plugin` 1.8.0 and later export these types. A command's placements decide its params, so narrow them by `command`:
+
+```typescript
+import { getViewContext, type StatusbarMenuParams } from "@beekeeperstudio/plugin";
+
+const context = await getViewContext();
+if (context.command === "pivot-results") {
+  const params = context.params as StatusbarMenuParams;
+  // params.source is "selection", "result" or "table"
+}
+```
 
 #### Status bar params
 
