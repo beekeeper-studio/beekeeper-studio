@@ -1,9 +1,8 @@
 <template>
   <base-modal
     :name="id"
-    @submit="confirm"
     @closed="reportClose(false)"
-    :closable="false"
+    :closable="variant === 'normal'"
   >
     <template #title>
       <slot name="title">
@@ -13,13 +12,13 @@
     <slot name="message">
       This action cannot be undone.
     </slot>
-    <template #footer>
-      <button class="btn btn-flat" type="button" @click.prevent="cancel">
+    <template #footer="{ close }">
+      <button class="btn btn-flat" type="button" @click.prevent="cancel(close)">
         <slot name="cancel-label">
           Cancel
         </slot>
       </button>
-      <button class="btn btn-primary" type="submit" :data-variant="variant">
+      <button class="btn btn-primary" type="submit" :data-variant="variant" @click.prevent="confirm(close)">
         <slot name="confirm-label">
           Confirm
         </slot>
@@ -62,13 +61,17 @@ export default Vue.extend({
         confirmed,
       } as ModalCloseEventData);
     },
-    confirm() {
+    confirm(closeFn: () => void) {
       this.reportClose(true);
-      this.$modal.hide(this.id);
+      if (closeFn) {
+        closeFn()
+      }
     },
-    cancel() {
+    cancel(closeFn: () => void) {
       this.reportClose(false);
-      this.$modal.hide(this.id);
+      if (closeFn) {
+        closeFn();
+      }
     },
   },
   mounted() {
