@@ -214,7 +214,7 @@
     "codemirror": "^5.63.1",
     "concurrently": "^8.2.2",
     "cross-spawn": "^7.0.6",
-    "happy-dom": "^20.8.9",
+    "happy-dom": "^21.0.4",
     "ist": "^1.1.7",
     "lodash": "^4.18.1",
     "material-icons": "^1.13.12",
