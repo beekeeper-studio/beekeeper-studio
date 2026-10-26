@@ -5,6 +5,7 @@
         v-if="!modal.noDisplay"
         :id="modal.id"
         :key="modal.id"
+        :variant="modal.variant"
       >
         <template #title v-if="modal.title">
           {{ modal.title }}
@@ -35,6 +36,7 @@ interface ModalOptions {
   message?: string;
   confirmLabel?: string;
   cancelLabel?: string;
+  variant?: "normal" | "danger";
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -58,7 +60,7 @@ export default Vue.extend({
   components: { ConfirmationModal },
   data() {
     return {
-      modals: [],
+      modals: [] as ModalContext[],
       idCounter: 0,
     };
   },
@@ -74,6 +76,11 @@ export default Vue.extend({
   methods: {
     onModalClose(event: ModalCloseEventData) {
       const idx: number = this.modals.findIndex((modal: ModalContext) => modal.id === event.modalId)
+      // Modals we aren't tracking still broadcast on this root event - ignore
+      // them rather than throwing, which would strand any modal whose handler
+      // runs after ours.
+      if (idx === -1) return;
+
       const modal: ModalContext = this.modals[idx];
 
       if (event.confirmed) modal.onConfirm();
@@ -93,13 +100,12 @@ export default Vue.extend({
     },
     async createModal(options: ModalOptions) {
       const modal: ModalContext = {
+        ...options,
         id: `${MODAL_NAME_PREFIX}-${this.idCounter++}`,
         title: options.title || DEFAULT_TITLE,
         message: options.message || DEFAULT_MESSAGE,
         cancelLabel: options.cancelLabel || DEFAULT_NO_LABEL,
         confirmLabel: options.confirmLabel || DEFAULT_YES_LABEL,
-        onConfirm: options.onConfirm,
-        onCancel: options.onCancel,
         noDisplay: false,
       }
       this.modals.push(modal);

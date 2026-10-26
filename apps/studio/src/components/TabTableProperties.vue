@@ -24,6 +24,14 @@
           >
             {{ pill.name }} {{ pill.dirty ? '*' : '' }}
           </a>
+          <a
+            v-if="erDiagramAvailable"
+            class="nav-pill er-diagram-pill"
+            title="Open ER Diagram in a new tab"
+            @click.prevent="openErDiagram"
+          >
+            ER Diagram <i class="material-icons">open_in_new</i>
+          </a>
         </div>
       </div>
       <div
@@ -54,7 +62,7 @@
             <div class="statusbar-info col flex expand">
               <x-button
                 @click.prevent="openData"
-                class="btn btn-flat btn-icon end"
+                class="btn btn-flat end"
                 title="View Data"
               >
                 Data <i class="material-icons">north_east</i>
@@ -248,7 +256,7 @@ export default {
   },
   computed: {
     ...mapState(['tables', 'tablesInitialLoaded', 'supportedFeatures', 'connection']),
-    ...mapGetters(['dialectData', 'dialect']),
+    ...mapGetters(['dialectData', 'dialect', 'erDiagramAvailable']),
     ...mapGetters('popupMenu', ['getExtraPopupMenu']),
     shouldInitialize() {
       // TODO (matthew): Move this to the wrapper TabWithTable
@@ -389,6 +397,15 @@ export default {
     handleExtraStatusbarMenuClick(event, item) {
       item.handler({ event, item: this.table });
     },
+    openErDiagram() {
+      this.$bksPlugin.execute("bks-er-diagram", "showOneTable", {
+        entity: {
+          type: this.table.entityType,
+          name: this.table.name,
+          schema: this.table.schema,
+        },
+      });
+    },
   },
   async mounted() {
     if (this.shouldInitialize) this.initialize()
@@ -397,13 +414,23 @@ export default {
 </script>
 
 <style scoped>
+.er-diagram-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.er-diagram-pill .material-icons {
+  font-size: 14px;
+}
+
 .permission-warning {
   cursor: pointer;
-  color: #f39c12;
+  color: var(--warning-text);
 }
 
 .permission-warning:hover {
-  color: #e67e22;
+  color: var(--warning-text-contrast);
 }
 
 .permission-warning i {

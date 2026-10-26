@@ -1,11 +1,6 @@
 @import "@beekeeperstudio/ui-kit/style.css";
-@import "codemirror/lib/codemirror";
-@import "codemirror/addon/hint/show-hint";
 @import "noty/lib/noty";
 @import "tabulator-tables/dist/css/tabulator_midnight.css";
-@import "codemirror/theme/monokai";
-@import "codemirror/addon/merge/merge";
-@import "codemirror/addon/search/matchesonscrollbar";
 @import "vue-select/dist/vue-select";
 @import "driver.js/dist/driver.css";
 
@@ -13,67 +8,10 @@
 @import './app/variables';
 @import './app/flex-grid';
 @import './app/base';
-@import './themes/themes.css';
+@import './app/vendor/material-symbols.scss';
 
-body.theme-system {
-  @media (prefers-color-scheme: dark) {
-    @import './app/mixins';
-    @import './components/all';
-    @import './vendor.scss';
-    @import './app/_all.scss';
-    @import './themes/dark/theme.scss';
-    @import './themes/scssvars-to-cssprops.scss';
-  }
-
-  @media (prefers-color-scheme: light) {
-    @import './themes/light/variables.scss';
-    @import './app/mixins';
-    @import './components/all';
-    @import './vendor.scss';
-    @import './app/_all.scss';
-    @import './themes/light/theme.scss';
-    @import './themes/scssvars-to-cssprops.scss';
-  }
-}
-
-body.theme-dark {
-  @import './themes/dark/variables.scss';
-  @import './app/mixins';
-  @import './components/all';
-  @import './vendor.scss';
-  @import './app/_all.scss';
-  @import './themes/dark/theme.scss';
-  @import './themes/scssvars-to-cssprops.scss';
-}
-
-body.theme-light {
-  @import './themes/light/variables.scss';
-  @import './app/mixins';
-  @import './components/all';
-  @import './vendor.scss';
-  @import './app/_all.scss';
-  @import './themes/light/theme.scss';
-  @import './themes/scssvars-to-cssprops.scss';
-}
-
-body.theme-solarized-dark {
-  @import './themes/solarized-dark/variables.scss';
-  @import './app/mixins';
-  @import './components/all';
-  @import './vendor.scss';
-  @import './app/_all.scss';
-  @import './themes/solarized-dark/theme.scss';
-  @import './themes/scssvars-to-cssprops.scss';
-}
-
-
-
-body.theme-solarized {
-  @import './themes/solarized-light/variables.scss';
-  @import './app/mixins';
-  @import './components/all';
-  @import './vendor.scss';
-  @import './app/_all.scss';
-  @import './themes/solarized-light/theme.scss';
-  @import './themes/scssvars-to-cssprops.scss';
-}
+@import './app/mixins';
+@import './components/all';
+@import './vendor.scss';
+@import './app/_all.scss';
+@import './app/legacy-plugin-css-vars';

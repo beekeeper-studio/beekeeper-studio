@@ -9,9 +9,10 @@
         name="dataCenter"
         class="form-control"
         v-model="config.cassandraOptions.localDataCenter"
+        :disabled="disabled"
       >
     </div>
-    <common-server-inputs :config="config" />
+    <common-server-inputs :config="config" :disabled="disabled" />
   </div>
 </template>
 <script>
@@ -25,6 +26,12 @@
     },
     methods: {
     },
-    props: ['config'],
+    props: {
+      config: Object,
+      disabled: {
+        type: Boolean,
+        default: false
+      }
+    },
   }
 </script>

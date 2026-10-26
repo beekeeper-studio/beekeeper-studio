@@ -43,6 +43,9 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
   paste(_1: Electron.MenuItem, win: ElectronWindow): void {
     if (win) win.webContents.paste()
   }
+  pasteAsNewRows(_1: Electron.MenuItem, win: ElectronWindow): void {
+    if (win) win.webContents.send(AppEvent.pasteAsNewRows)
+  }
   selectAll(_1: Electron.MenuItem, win: ElectronWindow): void {
     if (win) win.webContents.selectAll()
   }
@@ -165,13 +168,8 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.send(AppEvent.quickSearch)
   }
 
-  switchTheme = async (menuItem: Electron.MenuItem): Promise<void> => {
-    const label = _.isString(menuItem) ? menuItem : menuItem.label
-    this.settings.theme.userValue = label.toLowerCase().replaceAll(" ", "-")
-    await this.settings.theme.save()
-    getActiveWindows().forEach( window => {
-      window.send(AppEvent.settingsChanged, 'theme')
-    })
+  openAppearanceModal = (_menuItem: Electron.MenuItem, win: ElectronWindow): void => {
+    if (win) win.webContents.send(AppEvent.openAppearanceModal);
   }
 
   addBeekeeper = async (_1: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
@@ -214,6 +212,10 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.send(AppEvent.promptSqlFilesImport);
   }
 
+  importConnectionFiles = (_menuItem: Electron.MenuItem, win: ElectronWindow) => {
+    if (win) win.webContents.send(AppEvent.promptConnectionFilesImport);
+  }
+
   toggleMinimalMode = async (): Promise<void> => {
     this.settings.minimalMode.value = !this.settings.minimalMode.value
     await this.settings.minimalMode.save()
@@ -252,6 +254,10 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
 
   managePlugins = (_menuItem: Electron.MenuItem, win: ElectronWindow): void => {
     if (win) win.webContents.send(AppEvent.openPluginManager);
+  }
+
+  themePlayground = (_menuItem: Electron.MenuItem, win: ElectronWindow): void => {
+    if (win) win.webContents.send(AppEvent.openThemePlayground);
   }
 
   keyboardShortcuts = (_menuItem: Electron.MenuItem, win: ElectronWindow): void => {

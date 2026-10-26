@@ -6,6 +6,7 @@ import {CompletionContext, CompletionSource} from "@codemirror/autocomplete"
 import {PostgreSQL, MySQL, SQLConfig, SQLDialect} from "@codemirror/lang-sql"
 import theIst from "ist"
 import { extensions as sql, SQLExtensionsConfig } from "../../../lib/components/sql-text-editor/extensions"
+import { SQLServer } from "../../../lib/components/sql-text-editor/customDialects"
 
 function get(doc: string, conf: SQLExtensionsConfig & {explicit?: boolean, keywords?: boolean} = {}) {
   let cur = doc.indexOf("|"), dialect = conf.dialect || PostgreSQL
@@ -591,5 +592,45 @@ describe("SQL completion", () => {
     const result = await str(list)
     ist(result.includes("u_col"))
     ist(result.includes("o_col"))
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Bracket-quoted identifiers (SQL Server / MSSQL dialect).
+//
+// The SQLServer dialect sets `identifierQuotes: "["`, so the opening quote
+// is `[` and the closing quote is `]`. These tests exercise the asymmetric
+// open/close quoting logic (getClosingQuote, maybeQuoteCompletions,
+// nameCompletion, and the bracket-aware idName/QuotedSpan regexes).
+// ---------------------------------------------------------------------------
+
+describe("SQL completion (bracket-quoted identifiers)", () => {
+  it("completes bracket-quoted table names and closes with ]", () => {
+    ist(str(get("select [u|", {dialect: SQLServer, schema: schema1})),
+        "[products], [users]")
+  })
+
+  it("completes bracket-quoted column names under a bracket-quoted table", () => {
+    ist(str(get('select [users].[|', {dialect: SQLServer, schema: schema1})),
+        "[address], [id], [name]")
+  })
+
+  it("strips brackets when resolving a bracket-quoted parent table", () => {
+    // [users] must resolve to the `users` table so its columns are offered.
+    ist(str(get('select [users].|', {dialect: SQLServer, schema: schema1})),
+        "address, id, name")
+  })
+
+  it("consumes a trailing closing bracket", async () => {
+    // 'select [u' is 9 chars; the cursor sits before the closing ']' at index 9,
+    // so the completion range should extend to index 10 to overwrite it.
+    let r = await get('select [u|]', {dialect: SQLServer, schema: schema1})
+    ist(r!.to, 10)
+  })
+
+  it("applies the closing bracket for non-word identifiers (nameCompletion)", () => {
+    // Without getClosingQuote this would wrongly produce "[b c[" / "[b-c[".
+    ist(str(get("foo.b|", {schema: {foo: ["b c", "b-c", "bup"]}, dialect: SQLServer})),
+        "[b c], [b-c], bup")
   })
 })

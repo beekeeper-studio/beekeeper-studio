@@ -5,11 +5,6 @@ import {
   RangeComponent,
   TabulatorFull,
 } from "tabulator-tables";
-import {
-  copyActionsMenu,
-  resizeAllColumnsToFitContent,
-  resizeAllColumnsToFixedWidth,
-} from "@/lib/menu/tableMenu";
 import { rowHeaderField } from "@/common/utils";
 import _ from "lodash";
 import rawLog from "@bksLogger";
@@ -34,18 +29,12 @@ export function tabulatorForTableData(
   options: Options
 ): TabulatorFull {
   const { table, schema, ...tabulatorOptions } = options;
-  // Suppress the build-time save burst that clobbers persisted column
-  // widths on cold start.
-  let persistenceReady = false;
   const defaultOptions: Options = {
     persistence: {
       columns: ["width", "visible"],
     },
     persistenceMode: "local",
     persistenceWriterFunc: (id: string, type: string, data: unknown) => {
-      if (!persistenceReady) {
-        return;
-      }
       try {
         localStorage.setItem(`${id}-${type}`, JSON.stringify(data));
       } catch (e) {
@@ -60,15 +49,22 @@ export function tabulatorForTableData(
     selectableRangeMode: "ctrl",
     selectableRangeAutoFocus: false,
     selectableRangeRows: true,
+    selectableRangeFill: true,
+    selectableRangeBlurEditOnNavigate: true,
+    selectableRangeCommitEditOnNavigate: true,
     resizableColumnGuide: true,
     movableColumns: true,
     height: "100%",
-    editTriggerEvent: "dblclick",
+    editTriggerEvent: window.bksConfig.ui.tableTable.editTrigger === "click"
+      ? "click"
+      : "dblclick",
     debugInvalidComponentFuncs: false,
     history: true,
     keybindings: {
       undo: window.bksConfig.getKeybindings("tabulator", "general.undo"),
       redo: window.bksConfig.getKeybindings("tabulator", "general.redo"),
+      scrollToStart: false,
+      scrollToEnd: false,
     },
     rowHeader: {
       field: rowHeaderField,
@@ -88,39 +84,10 @@ export function tabulatorForTableData(
         relativeToPage: true,
         binaryEncoding: window.bksConfig.ui.general.binaryEncoding,
       },
-      contextMenu: (_e, cell) => {
-        return copyActionsMenu({ ranges: cell.getRanges(), table: table || "mytable", schema });
-      },
-      headerContextMenu: (_e, column) => {
-        return [
-          ...copyActionsMenu({
-            ranges: column.getTable().getRanges(),
-            table: table || "mytable",
-            schema,
-          }),
-          { separator: true },
-          resizeAllColumnsToFitContent,
-          resizeAllColumnsToFixedWidth,
-        ];
-      },
     },
   };
   const mergedOptions = _.merge(defaultOptions, tabulatorOptions);
-  if (tabulatorOptions.persistenceWriterFunc) {
-    mergedOptions.persistenceWriterFunc = (...args) => {
-      if (!persistenceReady) {
-        return;
-      }
-      tabulatorOptions.persistenceWriterFunc(...args);
-    }
-  }
   const tabulator = new TabulatorFull(el, mergedOptions);
-
-  const onFirstLayout = () => {
-    tabulator.off("layout-refreshed", onFirstLayout);
-    persistenceReady = true;
-  };
-  tabulator.on("layout-refreshed", onFirstLayout);
 
   if (options.onRangeChange) {
     const onRangeChange = () => {

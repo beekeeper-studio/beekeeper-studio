@@ -8,13 +8,14 @@
       :value="color"
       :checked="color == (value || 'default')"
       :class="['connection-label', getColorClass(color)]"
+      :disabled="disabled"
     >
   </div>
 </template>
 
 <script>
   export default {
-    props: ['value'],
+    props: ['value', 'disabled'],
     data: function() {
       return {
         colors: [
@@ -37,3 +38,9 @@
     }
   }
 </script>
+
+<style lang="scss" scoped>
+.connection-label {
+  padding: 0;
+}
+</style>

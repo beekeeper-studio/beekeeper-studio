@@ -3,7 +3,7 @@
     <template v-if="$config.oracleSupported">
       <div class="advanced-connection-settings">
         <div class="flex flex-middle">
-          <span class="btn-link btn-fab" @click.prevent="oracleExpanded = !oracleExpanded">
+          <span class="btn-icon" @click.prevent="oracleExpanded = !oracleExpanded">
             <i v-if="!oracleExpanded" class="material-icons">keyboard_arrow_right</i>
             <i v-if="oracleExpanded" class="material-icons">keyboard_arrow_down</i>
           </span>
@@ -13,9 +13,17 @@
         </div>
         <div v-if="oracleExpanded" class="advanced-body">
           <settings-input
+            v-if="$config.oracleInstantClientSupported"
             setting-key="oracleInstantClient" input-type="directory" @changed="restart"
             title="Instant Client Location" :help="help"
           />
+          <div v-else class="form-group">
+            <label>Instant Client Location</label>
+            <small class="help text-muted">
+              Oracle Instant Client is not available for Windows on ARM, so connections use thin mode.
+              Features that need thick mode, like Native Network Encryption, are unavailable.
+            </small>
+          </div>
           <settings-input
             setting-key="oracleConfigLocation" input-type="directory" @changed="configDirChanged" title="TNS_ADMIN override"
             help="The directory containing tnsnames.ora, sqlnet.ora, and wallets. Changing this after connecting requires a restart."
@@ -25,7 +33,7 @@
 
       <div class="form-group">
         <label for="connectionType">Connection Method</label>
-        <select v-model="connectionMethod">
+        <select v-model="connectionMethod" :disabled="disabled">
           <option value="manual">
             Manual Host and Port
           </option>
@@ -39,12 +47,13 @@
         <common-server-inputs
           :support-complex-s-s-l="false"
           ssl-help="Requires your wallet to be already set up in TNS_ADMIN" :config="config"
+          :disabled="disabled"
         />
         <div class="form-group">
           <label for="serviceName">Service Name</label>
-          <input type="text" class="form-control" v-model="config.serviceName">
+          <input type="text" class="form-control" v-model="config.serviceName" :disabled="disabled">
         </div>
-        <common-advanced :config="config" />
+        <common-advanced :config="config" :disabled="disabled" />
       </div>
       <div v-if="connectionMethod === 'connectionString'">
         <div class="form-group gutter">
@@ -52,16 +61,17 @@
           <textarea
             v-model="config.options.connectionString" name="connectionString" class="form-control" id=""
             cols="30" rows="5"
+            :disabled="disabled"
           />
         </div>
         <div class="row gutter">
           <div class="col s6 form-group">
             <label for="user">User (optional)</label>
-            <input type="text" name="user" v-model="config.username" class="form-control">
+            <input type="text" name="user" v-model="config.username" class="form-control" :disabled="disabled">
           </div>
           <div class="col s6 form-group">
             <label for="password">Password (optional)</label>
-            <input type="password" v-model="config.password" class="form-control">
+            <input type="password" v-model="config.password" class="form-control" :disabled="disabled">
           </div>
         </div>
         <br>
@@ -93,7 +103,13 @@ import { mapState } from 'vuex'
 
 export default Vue.extend({
   components: { CommonServerInputs, CommonAdvanced, SettingsInput },
-  props: ['config'],
+  props: {
+    config: Object,
+    disabled: {
+      type: Boolean,
+      default: false
+    }
+  },
   data: () => ({
     help: "Optional, but required for advanced functionality like Native Network Encryption.",
     oracleExpanded: true,

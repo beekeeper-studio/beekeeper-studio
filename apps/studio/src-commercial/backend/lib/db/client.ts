@@ -6,6 +6,7 @@ import { SQLServerClient } from '@/lib/db/clients/sqlserver';
 import { SqliteClient } from '@/lib/db/clients/sqlite';
 import { MariaDBClient } from '@/lib/db/clients/mariadb';
 import { TiDBClient } from '@/lib/db/clients/tidb';
+import { StarRocksClient } from '@/lib/db/clients/starrocks';
 import { RedshiftClient } from '@/lib/db/clients/redshift';
 import { CockroachClient } from '@/lib/db/clients/cockroach';
 import { GreengageClient } from '@/lib/db/clients/greengage';
@@ -35,6 +36,7 @@ const clients = new Map<ConnectionType, any>([
   ['redshift', RedshiftClient],
   ['mariadb', MariaDBClient],
   ['tidb', TiDBClient],
+  ['starrocks', StarRocksClient],
   ['cockroachdb', CockroachClient],
   ['greengage', GreengageClient],
   ['bigquery', BigQueryClient],

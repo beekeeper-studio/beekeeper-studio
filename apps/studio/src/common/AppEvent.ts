@@ -1,5 +1,6 @@
 import Vue from "vue"
 import rawLog from '@bksLogger'
+import { ShareableModule } from "@/store/DataModules";
 
 const log = rawLog.scope('AppEvent')
 
@@ -24,6 +25,7 @@ export enum AppEvent {
   createTableFromFile = 'new_table_from_file',
   openTableProperties = 'loadTableProperties',
   loadTable = 'loadTable',
+  loadSelectTop = 'loadSelectTop',
   quickSearch = 'quickSearch',
   promptLogin = 'cloud_signin',
   promptCreateWorkspace = 'cloud_create_workspace',
@@ -33,6 +35,7 @@ export enum AppEvent {
   promptQueryExport = 'q_export',
   promptConnectionImport = 'cloud_c_import',
   promptSqlFilesImport = 'q_files_import',
+  promptConnectionFilesImport = 'c_files_import',
   openCreateCollectionModal = 'create_collection_modal',
   openAddFieldModal = 'add_field_modal',
   enterLicense = 'enter_license',
@@ -48,6 +51,8 @@ export enum AppEvent {
   backupDatabase = 'backupDatabase',
   restoreDatabase = 'restoreDatabase',
   upgradeModal = 'upgradeModal',
+  /** Triggered when a lifetime (expired subscription) license tries to use cloud workspaces */
+  cloudWorkspacesBlocked = 'cloudWorkspacesBlocked',
   toggleExpandTableList = 'toggleExpandTableList',
   togglePinTableList = 'togglePinTableList',
   dropzoneEnter = 'dropzoneEnter',
@@ -65,6 +70,8 @@ export enum AppEvent {
   switchUserKeymap = 'switchUserKeymap',
   openPluginManager = 'openPluginManager',
   openKeyboardShortcuts = 'openKeyboardShortcuts',
+  openThemePlayground = 'openThemePlayground',
+  openAppearanceModal = 'openAppearanceModal',
   updateJsonViewerSidebar = 'updateJsonViewerSidebar',
   jsonViewerSidebarExpandPath = 'jsonViewerSidebarExpandPath',
   jsonViewerSidebarValueChange = 'jsonViewerSidebarValueChange',
@@ -87,6 +94,41 @@ export enum AppEvent {
    * this.trigger(AppEvent.openQueryEditHistory, savedQueryId);
    **/
   openQueryEditHistory = 'openQueryEditHistory',
+  /** Open a share modal by passing the subject as the first parameter (See {@link OpenShareModalOptions}).
+   * The subject should be available in the cloud.
+   * @example
+   * this.trigger(AppEvent.openShareModal, { id: 1, module: "data/queries" });
+   */
+  openShareModal = 'openShareModal',
+  /** Paste clipboard contents as new rows in the active table's Data tab. */
+  pasteAsNewRows = 'pasteAsNewRows',
+  /** Open a modal to move a connection or a saved query to a folder
+   * @example
+   * this.trigger(AppEvent.openMoveFileModal, {
+   *   type: "connection",
+   *   value: this.config, // the connection config
+   * });
+   **/
+  openMoveFileModal = 'openMoveFileModal',
+  /** Open a modal to move a folder to another folder
+   * @example
+   * this.trigger(AppEvent.openMoveFolderModal, {
+   *   type: "connectionFolder",
+   *   value: item, // the folder
+   * });
+   **/
+  openMoveFolderModal = 'openMoveFolderModal',
+  /** Open the connection type picker. Do not call this directly. Please use `this.$promptConnectionType()`. */
+  openConnectionTypePickerModal = 'openConnectionTypePickerModal',
+  /** Vim's `:w`. Broadcast, so only the active tab should act on it. */
+  vimWrite = 'vimWrite',
+  /** Vim's `:x` and `:wq`. Broadcast, so only the active tab should act. */
+  vimWriteQuit = 'vimWriteQuit',
+}
+
+export type OpenShareModalOptions =  {
+  id: number;
+  module: ShareableModule;
 }
 
 export interface RootBinding {

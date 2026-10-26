@@ -4,6 +4,7 @@ import PluginFileManager from "./PluginFileManager";
 import {
   Manifest as AnyVersionManifest,
   ManifestV1 as Manifest,
+  ManifestV1,
   PluginOrigin,
   PluginRepository,
   PluginSettings,
@@ -13,9 +14,11 @@ import rawLog from "@bksLogger";
 import PluginRepositoryService from "./PluginRepositoryService";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import semver from "semver";
-import { NotFoundPluginError, NotFoundPluginViewError, NotSupportedPluginError } from "./errors";
+import { PluginError, PluginSystemError } from "@/lib/errors";
 import { convertToManifestV1, isManifestV0, mapViewsAndMenuFromV0ToV1 } from "./utils";
 import { Hookable } from "./Hookable";
+import BksConfig from '@/common/bksConfig';
+import globals from "@/common/globals";
 
 const log = rawLog.scope("PluginManager");
 
@@ -44,11 +47,17 @@ export default class PluginManager extends Hookable {
       new PluginRegistry(new PluginRepositoryService());
   }
 
+  async triggerConfigReload() {
+    await this.callHook("config-reload", BksConfig);
+  }
+
   async initialize() {
     if (this.initialized) {
       log.warn("Calling initialize when already initialized");
       return;
     }
+
+    await this.registry.initialize();
 
     // FIXME: Migrate to full ini file configuration
     await this.loadPluginSettings();
@@ -62,8 +71,14 @@ export default class PluginManager extends Hookable {
 
     this.initialized = true;
 
+    // Auto update should maybe be a module?
+    // Don't run auto updates if the plugin system is disabled, or if `autoUpdate` is disabled
+    // (bundled plugins are updated above from resources)
+    if (BksConfig.pluginSystem.disabled || !BksConfig.pluginSystem.autoUpdate) return;
+
     for (const plugin of installedPlugins) {
-      if (!this.pluginSettings[plugin.id]?.autoUpdate) {
+      // Skipping bundled plugins like this feels like a wee bit of a hack
+      if (!this.pluginSettings[plugin.id]?.autoUpdate || globals.plugins.ensureInstalled.some(({id}) => id === plugin.id)) {
         continue;
       }
 
@@ -77,11 +92,6 @@ export default class PluginManager extends Hookable {
     }
   }
 
-  async getEntries() {
-    this.initializeGuard();
-    return await this.registry.getEntries();
-  }
-
   /**
    * Check if the view's entrypoint exists. The plugin must be installed,
    * and the view must be defined in the plugin's manifest.
@@ -91,14 +101,18 @@ export default class PluginManager extends Hookable {
   viewEntrypointExists(pluginId: string, viewId: string): boolean {
     const manifest = this.manifests.find((manifest) => manifest.id === pluginId);
     if (!manifest) {
-      throw new NotFoundPluginError(`Plugin "${pluginId}" not found.`);
+      throw new PluginSystemError(
+        "PLUGIN_NOT_FOUND",
+        `Plugin "${pluginId}" not found.`
+      );
     }
     const { views } = isManifestV0(manifest)
       ? mapViewsAndMenuFromV0ToV1(manifest)
       : manifest.capabilities;
     const view = views.find((v) => v.id === viewId);
     if (!view) {
-      throw new NotFoundPluginViewError(
+      throw new PluginSystemError(
+        "PLUGIN_VIEW_NOT_FOUND",
         `View "${viewId}" not found in plugin "${pluginId}".`
       );
     }
@@ -125,13 +139,17 @@ export default class PluginManager extends Hookable {
         const found = await this.registry.findEntry(manifest.id);
         origin = found.origin;
       } catch (e) {
-        if (e instanceof NotFoundPluginError) {
+        if (e instanceof PluginSystemError && e.code === "PLUGIN_NOT_FOUND") {
           // There's nothing wrong if the plugin is not found in the registry.
           // It may be a local plugin.
         } else {
           // Else, it might be a real error
           log.error(e);
         }
+      }
+
+      if (globals.plugins.ensureInstalled.some((e) => manifest.id === e.id)) {
+        origin = 'bundled';
       }
 
       snapshots.push({
@@ -145,8 +163,11 @@ export default class PluginManager extends Hookable {
     return await this.applyHook("plugin-snapshots", snapshots);
   }
 
-  /** Plugin is not loadable if the **current app version** is lower than the
-   * **minimum app version** required by the plugin. */
+  /** Plugin is not loadable if:
+   * - the **current app version** is lower than the **minimum app version** required by the plugin.
+   * - the plugin system is disabled (and plugin isn't bundled)
+   * - the registry the plugin is from is disabled
+   */
   isPluginLoadable(manifest: AnyVersionManifest): boolean {
     if (!manifest.minAppVersion) {
       return true;
@@ -170,11 +191,26 @@ export default class PluginManager extends Hookable {
     return await this.withPluginLock(id, async () => {
       const info = await this.registry.getRepository(id);
       if (!info) {
-        throw new NotFoundPluginError(`Plugin "${id}" not found in registry.`);
+        throw new PluginSystemError(
+          "PLUGIN_NOT_FOUND",
+          `Plugin "${id}" not found in registry.`
+        );
+      }
+
+      // The plugin is downloaded into a directory named after the registry id.
+      // Refuse to install if the release manifest declares a different id, so
+      // the on-disk directory name and the manifest id can never diverge (which
+      // is what allows a manifest id to later target another path).
+      if (info.latestRelease.manifest.id !== id) {
+        throw new PluginError(
+          "MANIFEST_PARSE",
+          `Plugin "${id}" manifest declares mismatched id "${info.latestRelease.manifest.id}".`
+        );
       }
 
       if (!this.isPluginLoadable(info.latestRelease.manifest)) {
-        throw new NotSupportedPluginError(
+        throw new PluginSystemError(
+          "PLUGIN_NOT_SUPPORTED",
           `${info.latestRelease.manifest.name} requires Beekeeper Studio ≥ 5.5.0. Please update the app first.`
         );
       }
@@ -192,9 +228,9 @@ export default class PluginManager extends Hookable {
         (manifest) => manifest.id === id
       );
       if (installedPluginIdx === -1) {
-        this.manifests.push(manifest);
+        this.manifests.push(convertToManifestV1(manifest));
       } else {
-        this.manifests[installedPluginIdx] = manifest;
+        this.manifests[installedPluginIdx] = convertToManifestV1(manifest);
       }
 
       if (!this.pluginSettings[id]) {
@@ -206,7 +242,7 @@ export default class PluginManager extends Hookable {
 
       log.info(`Installed plugin "${id}" v${info.latestRelease.manifest.version}`);
 
-      return manifest;
+      return convertToManifestV1(manifest);
     });
   }
 

@@ -1,5 +1,6 @@
 import rawLog from "@bksLogger";
 import fs from "fs";
+import crypto from "crypto";
 import path from "path";
 import {
   Downloader,
@@ -7,6 +8,7 @@ import {
   DownloaderReport,
 } from "nodejs-file-downloader";
 import { Manifest, PluginView, Release } from "./types";
+import { PluginError, PluginSystemError } from "@/lib/errors";
 import extract from "extract-zip";
 import { tmpdir } from "os";
 
@@ -18,6 +20,27 @@ export type PluginFileManagerOptions = {
 const log = rawLog.scope("PluginFileManager");
 
 const PLUGIN_MANIFEST_FILENAME = "manifest.json";
+
+/**
+ * A plugin id is used verbatim as a single directory-name segment under the
+ * plugins directory (see `getDirectoryOf`) and as an identity key. It is read
+ * from attacker-controlled `manifest.json`, so it must be constrained to a
+ * single safe path component: alphanumeric first character, then alphanumerics
+ * plus `.` `_` `-`. This forbids path separators and `.`/`..`, which are the
+ * only traversal-capable strings once separators are excluded.
+ */
+const PLUGIN_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/;
+
+/** Max length mirrors the npm package-name limit; ample for any real plugin. */
+const PLUGIN_ID_MAX_LENGTH = 214;
+
+export function isValidPluginId(id: unknown): id is string {
+  return (
+    typeof id === "string" &&
+    id.length <= PLUGIN_ID_MAX_LENGTH &&
+    PLUGIN_ID_PATTERN.test(id)
+  );
+}
 
 class PluginDownloadError extends Error {
   status: "UNKNOWN" | "NOT_FOUND" | "ABORTED" = "UNKNOWN";
@@ -123,6 +146,13 @@ export default class PluginFileManager {
           "User-Agent": "Beekeeper Studio",
         },
       });
+
+      const checksum = await this.hashFile(archivePath);
+
+      log.debug(`Checking ${archivePath} against checksum ${release.checksum}`);
+      if (release.checksum && checksum !== release.checksum) {
+        throw new PluginSystemError('CHECKSUM_MISMATCH', "Checksum mismatch, blocking install.");
+      }
 
       // Extract the archive to the temp directory
       log.debug(`Extracting plugin archive...`);
@@ -257,7 +287,9 @@ export default class PluginFileManager {
       });
 
       try {
-        manifests.push(JSON.parse(manifestContent));
+        const manifest = JSON.parse(manifestContent);
+        this.validateManifest(manifest, dir);
+        manifests.push(manifest);
       } catch (e) {
         log.error(`Failed to parse manifest for plugin "${dir}":`, e);
       }
@@ -266,17 +298,54 @@ export default class PluginFileManager {
     return manifests;
   }
 
-  getManifest(id: string) {
+  getManifest(id: string): Manifest {
     const directory = this.getDirectoryOf(id);
     const manifestContent = fs.readFileSync(
       path.join(directory, PLUGIN_MANIFEST_FILENAME),
       { encoding: "utf-8" }
     );
-    return JSON.parse(manifestContent);
+    const manifest = JSON.parse(manifestContent);
+    this.validateManifest(manifest, id);
+    return manifest;
   }
 
-  getDirectoryOf(id: string) {
-    return path.join(this.options.pluginsDirectory, id);
+  /**
+   * Ensure a manifest's self-declared id is safe to reuse. The id is later used
+   * as a path segment (uninstall/update) and as an identity key, so it must be
+   * well-formed and match the directory it was installed into. Trusting the
+   * directory name over the self-declared id stops a plugin from redirecting
+   * filesystem operations at another location.
+   */
+  private validateManifest(manifest: Manifest, expectedId: string) {
+    if (!isValidPluginId(manifest.id)) {
+      throw new PluginError(
+        "MANIFEST_PARSE",
+        `Plugin "${expectedId}" has a missing or invalid manifest id.`
+      );
+    }
+    if (manifest.id !== expectedId) {
+      throw new PluginError(
+        "MANIFEST_PARSE",
+        `Plugin manifest id "${manifest.id}" does not match expected id "${expectedId}".`
+      );
+    }
+  }
+
+  getDirectoryOf(id: string | Manifest) {
+    if (typeof id === "object") {
+      id = id.id;
+    }
+    const pluginsRoot = path.resolve(this.options.pluginsDirectory);
+    const resolved = path.resolve(pluginsRoot, id);
+    // Must be strictly *inside* the plugins directory. This rejects traversal
+    // (`../`), absolute ids, and the empty/`.` id (which would resolve to the
+    // plugins root itself and let `remove()` delete every installed plugin).
+    if (!resolved.startsWith(pluginsRoot + path.sep)) {
+      throw new Error(
+        `Refusing to access path outside plugins directory: ${id}`
+      );
+    }
+    return resolved;
   }
 
   private getPath(manifest: Manifest, filename: string): string {
@@ -294,6 +363,23 @@ export default class PluginFileManager {
       );
     }
     return resolved;
+  }
+
+  async hashFile(filePath: string): Promise<string> {
+    try {
+      const hash = crypto.createHash('sha256');
+      const rs = fs.createReadStream(filePath);
+
+      for await (const chunk of rs) {
+        hash.update(chunk);
+      }
+
+      return hash.digest('hex');
+    } catch (e) {
+      log.error(`Error calculating hash for ${filePath}`);
+      throw e;
+    }
+
   }
 
   readAsset(manifest: Manifest, filename: string): string {

@@ -8,7 +8,7 @@
     </div>
     <div class="form-group col">
       <label for="connection-mode">Connection Mode</label>
-      <select id="connection-mode" v-model="config.libsqlOptions.mode">
+      <select id="connection-mode" v-model="config.libsqlOptions.mode" :disabled="disabled">
         <option value="url">
           URL
         </option>
@@ -40,6 +40,7 @@
           v-model="config.defaultDatabase"
           type="text"
           name="url"
+          :disabled="disabled"
         >
       </div>
       <div class="form-group col">
@@ -50,6 +51,7 @@
           v-model="config.libsqlOptions.authToken"
           type="text"
           name="auth-token"
+          :disabled="disabled"
         />
       </div>
     </template>
@@ -59,6 +61,7 @@
         <file-picker
           v-model="config.defaultDatabase"
           input-id="default-database"
+          :disabled="disabled"
         />
         <platform-warning location="database-file" />
       </div>
@@ -76,6 +79,7 @@
           v-model="config.libsqlOptions.syncUrl"
           type="text"
           name="syncUrl"
+          :disabled="disabled"
         >
       </div>
       <div class="form-group col">
@@ -86,6 +90,7 @@
           v-model="config.libsqlOptions.authToken"
           type="text"
           name="auth-token"
+          :disabled="disabled"
         />
       </div>
       <div class="form-group col">
@@ -96,6 +101,7 @@
           v-model="config.libsqlOptions.syncPeriod"
           type="number"
           name="syncPeriod"
+          :disabled="disabled"
         >
       </div>
     </toggle-form-area>
@@ -108,7 +114,13 @@ import FilePicker from "@/components/common/form/FilePicker.vue";
 import PlatformWarning from "@/components/connection/PlatformWarning.vue";
 import ToggleFormArea from "../common/ToggleFormArea.vue";
 export default Vue.extend({
-  props: ["config"],
+  props: {
+    config: Object,
+    disabled: {
+      type: Boolean,
+      default: false
+    }
+  },
   components: { FilePicker, PlatformWarning, ToggleFormArea },
 });
 </script>

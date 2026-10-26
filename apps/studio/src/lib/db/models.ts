@@ -105,6 +105,8 @@ export interface ExtendedTableColumn extends SchemaItem {
   characterSet?: string
   collation?: string
   array?: boolean
+  /** For enum columns, the allowed values in definition order. Undefined for non-enum types. */
+  enumValues?: string[]
   bksField: BksField
 }
 
@@ -230,6 +232,7 @@ export const RoutineTypeNames = {
 
 export interface Routine extends DatabaseEntity {
   id: string;
+  oid?: string;
   returnType: string;
   returnTypeLength?: number;
   routineParams?: RoutineParam[];
@@ -281,6 +284,7 @@ export interface FieldEditData {
   array?: boolean;
   readOnlyReason?: FieldReadOnlyReason;
   dataType?: string;
+  enumValues?: string[];
   bksField?: BksField;
 }
 

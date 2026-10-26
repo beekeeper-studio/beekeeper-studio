@@ -32,10 +32,10 @@
       <span class="actions add-tab-group" id="add-tab-group">
         <a
           @click.prevent="createQuery(null)"
-          class="btn-fab add-query"
+          class="btn btn-icon add-query"
         ><i class=" material-icons">add</i></a>
         <x-button
-          class="btn-fab add-tab-dropdown"
+          class="btn btn-icon add-tab-dropdown"
           menu
           v-if="newTabDropdownItems.length > 1"
         >
@@ -58,7 +58,7 @@
       </span>
       <a
         @click.prevent="showUpgradeModal"
-        class="btn btn-brand btn-icon btn-upgrade"
+        class="btn btn-primary btn-brand btn-upgrade"
         v-tooltip="'Upgrade for: backup/restore, import from file, larger query results, and more!'"
         v-if="$store.getters.isCommunity"
       >
@@ -69,7 +69,7 @@
     <div class="tab-content">
       <div class="empty-editor-group empty flex-col  expand">
         <div class="expand layout-center">
-          <shortcut-hints />
+          <shortcut-hints type="core-tabs" />
         </div>
       </div>
       <div
@@ -288,7 +288,7 @@
       </template>
     </confirmation-modal>
 
-    <sql-files-import-modal @submit="importSqlFiles" />
+    <sql-files-import-modal />
     <create-collection-modal />
   </div>
 </template>
@@ -328,7 +328,7 @@ import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.
 import Shell from './TabShell.vue'
 
 import { safeSqlFormat as safeFormat } from '@/common/utils';
-import { TabTypeConfig, TransportOpenTab, TransportPluginTab, setFilters, matches, duplicate, TabType } from '@/common/transport/TransportOpenTab'
+import { TabTypeConfig, TransportOpenTab, TransportPluginTab, setFilters, matches, duplicate } from '@/common/transport/TransportOpenTab'
 import { wait } from '@/shared/lib/wait'
 
 export default Vue.extend({
@@ -377,12 +377,18 @@ export default Vue.extend({
     }
   },
   watch: {
-    async usedConfig() {
-      await this.$store.dispatch('tabs/load')
-      if (!this.tabItems?.length) {
-        await this.createQuery()
+    // immediate: usedConfig is committed before the interface flips to
+    // connected, so it is already set when this component mounts
+    usedConfig: {
+      immediate: true,
+      async handler() {
+        if (!this.usedConfig) return
+        await this.$store.dispatch('tabs/load')
+        if (!this.tabItems?.length) {
+          await this.createQuery()
+        }
+        wait(800).then(() => this.$tour.start("connectedScreen"));
       }
-      wait(800).then(() => this.$tour.start("connectedScreen"));
     }
   },
   filters: {
@@ -401,6 +407,7 @@ export default Vue.extend({
        'dialectData': 'dialectData',
        'dialectTitle': 'dialectTitle',
        'newTabDropdownItems': 'tabs/newTabDropdownItems',
+       'getKeybindings': 'plugins/keybindings/getKeybindings',
     }),
     tabIcon() {
       return {
@@ -439,6 +446,7 @@ export default Vue.extend({
         { event: AppEvent.openTableProperties, handler: this.openTableProperties },
         { event: 'loadSettings', handler: this.openSettings },
         { event: 'loadTableCreate', handler: this.loadTableCreate },
+        { event: AppEvent.loadSelectTop, handler: this.loadSelectTop },
         { event: 'loadRoutineCreate', handler: this.loadRoutineCreate },
         { event: 'favoriteClick', handler: this.favoriteClick },
         { event: 'exportTable', handler: this.openExportModal },
@@ -454,6 +462,7 @@ export default Vue.extend({
         { event: AppEvent.beginImport, handler: this.beginImport },
         { event: AppEvent.restoreDatabase, handler: this.restoreDatabase },
         { event: AppEvent.switchUserKeymap, handler: this.switchUserKeymap },
+        { event: AppEvent.pasteAsNewRows, handler: this.pasteAsNewRowsWrongTabCheck },
       ]
     },
     lastTab() {
@@ -479,6 +488,7 @@ export default Vue.extend({
         'tab.switchTab7': this.handleSwitchTab.bind(this, 6),
         'tab.switchTab8': this.handleSwitchTab.bind(this, 7),
         'tab.switchTab9': this.handleSwitchTab.bind(this, 8),
+        ...this.getKeybindings("newTabDropdown"),
       })
       // FIXME (azmi): move this to default config file
       if(this.$config.isMac) {
@@ -526,7 +536,20 @@ export default Vue.extend({
           this.$noty.success(`${this.dbAction} completed successfully`)
 
         } catch (ex) {
-          this.$noty.error(`Error performing ${this.dbAction}: ${ex.message}`)
+          const notificationMessage = [
+            `Error performing ${this.dbAction}: ${ex.message}`,
+            ex.detail && `DETAIL: ${ex.detail}`,
+            ex.hint && `HINT: ${ex.hint}`,
+          ].filter(Boolean).join('\n')
+
+          this.$noty.error(notificationMessage, {
+            timeout: 3500,
+            callbacks: {
+              onClick: async () => {
+                await this.$native.clipboard.writeText(notificationMessage)
+              },
+            },
+          })
         }
       })
     },
@@ -631,9 +654,6 @@ export default Vue.extend({
         this.lastFocused.focus()
       }
     },
-    openContextMenu(event, item) {
-      this.contextEvent = { event, item }
-    },
     async setActiveTab(tab: TransportOpenTab) {
       const switchingTab = tab.id !== this.activeTab?.id
       if (switchingTab) {
@@ -735,6 +755,15 @@ export default Vue.extend({
       result.unsavedChanges = false
       result.unsavedQueryText = optionalText
       await this.addTab(result)
+    },
+    async loadSelectTop(table) {
+      try {
+        const query = await this.connection.selectTopSql(table.name, 0, 100, [], [], table.schema, ['*'])
+        this.createQuery(query.replace(/\s+/g, ' ').trim())
+      } catch (ex) {
+        this.$noty.error(`An error occured while loading the SQL for '${table.name}' - ${ex.message}`)
+        throw ex
+      }
     },
     async loadTableCreate(table) {
       let method = null
@@ -896,70 +925,6 @@ export default Vue.extend({
 
       noty.close()
     },
-    async importSqlFiles(paths: string[]) {
-      const files = paths.map((path) => ({
-        path,
-        name: path.replace(/^.*[\\/]/, '').replace(/\.sql$/, ''),
-        error: false,
-      }))
-
-      let readerAbort: () => void;
-      let aborted  = false;
-
-      function abort() {
-        if (typeof readerAbort === 'function') {
-          readerAbort()
-        }
-        aborted = true
-      }
-
-      const notyQueue = 'load-queries'
-      const notyText = `Loading <span class="counter">1</span> of ${files.length} files`
-
-      const noty = this.$noty.info(notyText,  {
-        queue: notyQueue,
-        allowRawHtml: true,
-        buttons: [
-          Noty.button('Abort', 'btn btn-danger', abort)
-        ],
-      })
-
-      const counter = noty.barDom.querySelector('.counter')
-
-      for (let i = 0; i < files.length; i++) {
-        if (aborted) {
-          break
-        }
-
-        const file = files[i]
-
-        counter.textContent = `${i + 1}`
-
-        try {
-          // TODO (azmi): this process can take longer by accident. Consider
-          // an ability to cancel reading file.
-          const text = await this.$util.send('file/readSqlFile', { path: file.path })
-          if (text) {
-            const query = await this.$util.send('appdb/query/new');
-            query.title = file.name
-            query.text = text
-            await this.$store.dispatch('data/queries/save', query)
-          } else {
-            files[i].error = true
-          }
-        } catch (e) {
-            files[i].error = true
-        }
-      }
-
-      if (aborted) {
-        this.$noty.info('Loading aborted', { killer: notyQueue })
-      } else if (files.some(({ error }) => error)) {
-        this.$noty.error('Some files could not be loaded', { killer: notyQueue })
-      } else {
-        this.$noty.success('All files loaded', { killer: notyQueue })
-      }
-    },
     async handlePromptQueryExport(query) {
       const safeFilename = query.title.replace(/[/\\?%*:|"<>]/g, '_');
       const fileName = `${safeFilename}.sql`;
@@ -969,10 +934,12 @@ export default Vue.extend({
       const notyQueue = 'export-query'
       this.$noty.info('Exporting query',  { queue: notyQueue })
 
+      const fullQuery = await this.$store.dispatch('data/queries/findOne', query.id);
+
       try {
         const saved = await window.main.fileHelpers.save({
           fileName: lastExportPath,
-          content: query.text,
+          content: fullQuery.text,
           filters: [
             { name: 'SQL (*.sql)', extensions: ['sql'] },
             { name: 'All Files (*.*)', extensions: ['*'] },
@@ -988,12 +955,19 @@ export default Vue.extend({
       }
     },
     async loadRoutineCreate(routine) {
-      const result = await this.connection.getRoutineCreateScript(routine.name, routine.type, routine.schema);
+      const result = await this.connection.getRoutineCreateScript(routine.name, routine.type, routine.schema, routine.oid);
       const stringResult = safeFormat(_.isArray(result) ? result[0] : result, { language: FormatterDialect(this.dialect) })
       this.createQuery(stringResult);
     },
     switchUserKeymap(value) {
       this.$store.dispatch('settings/save', { key: 'keymap', value: value });
+    },
+    pasteAsNewRowsWrongTabCheck() {
+      // The active table's Data tab handles this itself. Anywhere else, the
+      // action isn't applicable, so surface a hint.
+      if (this.activeTab?.tabType !== 'table') {
+        this.$noty.error("Paste as new rows is only available in a table's Data tab")
+      }
     },
     openTableBuilder() {
       if (this.connectionType === 'mongodb') {
@@ -1065,9 +1039,15 @@ export default Vue.extend({
       if (this.closingTab) return; // prevent close modals queueing
 
       if (tab.unsavedChanges && !options?.ignoreUnsavedChanges) {
+        let confirmed = false
         this.closingTab = tab
-        const confirmed = await this.$confirmById(this.confirmModalId);
-        this.closingTab = null
+        try {
+          confirmed = await this.$confirmById(this.confirmModalId);
+        } finally {
+          // Never leave this set - it gates every close, so a stuck value
+          // silently disables tab closing for the rest of the session.
+          this.closingTab = null
+        }
         if (!confirmed) return
       }
 
@@ -1110,7 +1090,7 @@ export default Vue.extend({
       if (unsavedTabs.length > 0) {
         const confirmed = await this.$confirm(
           'Close all tabs?',
-          `You have ${unsavedTabs.length} unsaved ${window.main.pluralize('tab', unsavedTabs.length)}. Are you sure?`
+          `You have ${unsavedTabs.length} unsaved ${this.$pluralize('tab', unsavedTabs.length)}. Are you sure?`
         )
         if (!confirmed) return
       }
@@ -1122,7 +1102,7 @@ export default Vue.extend({
       if (unsavedTabs.length > 0) {
         const confirmed = await this.$confirm(
           'Close other tabs?',
-          `You have ${unsavedTabs.length} unsaved ${window.main.pluralize('tab', unsavedTabs.length)}. Are you sure?`
+          `You have ${unsavedTabs.length} unsaved ${this.$pluralize('tab', unsavedTabs.length)}. Are you sure?`
         )
         if (!confirmed) return
       }
@@ -1142,7 +1122,7 @@ export default Vue.extend({
       if (unsavedTabs.length > 0) {
         const confirmed = await this.$confirm(
           'Close tabs to the right?',
-          `You have ${unsavedTabs.length} unsaved ${window.main.pluralize('tab', unsavedTabs.length)} to be closed. Are you sure?`
+          `You have ${unsavedTabs.length} unsaved ${this.$pluralize('tab', unsavedTabs.length)} to be closed. Are you sure?`
         )
         if (!confirmed) return
       }

@@ -74,9 +74,14 @@ export default Vue.extend({
         this.$noty.error(e.message ?? e);
       }
     },
-    disconnect() {
-      this.$store.dispatch('disconnect');
-      this.$modal.hide(this.modalName);
+    async disconnect() {
+      try {
+        await this.$store.dispatch('disconnect');
+      } catch (e) {
+        this.$noty.error(`Disconnect failed: ${e.message ?? e}`);
+      } finally {
+        this.$modal.hide(this.modalName);
+      }
     }
   }
 })

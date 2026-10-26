@@ -1,8 +1,8 @@
 
-module.exports = async ({ github, core }, assetsUrl, channel) => {
+// assetName is latest-mac.yml for mac builds and latest.yml for Windows builds.
+module.exports = async ({ github, core }, assetsUrl, channel, assetName = 'latest-mac.yml') => {
   // even though the main channel is also called 'latest', the name of this file
   // doesn't change.... I don't know why, it's all very confusing.
-  const assetName = `latest-mac.yml`;
 
   async function findAssetByName(assets, name) {
     for (const asset of assets) {

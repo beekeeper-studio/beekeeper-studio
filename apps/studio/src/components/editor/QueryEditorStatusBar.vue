@@ -35,7 +35,7 @@
                 :key="index"
                 :value="index"
               >
-                Result {{ index + 1 }}: {{ shortNum(resultOption.rows.length, 0) }} {{ pluralize('row', resultOption.rows.length, false) }}
+                Result {{ index + 1 }}: {{ shortNum(resultOption.rows.length, 0) }} {{ $pluralize('row', resultOption.rows.length, false) }}
               </option>
             </select>
           </div>
@@ -90,7 +90,7 @@
     </x-button>
     <x-buttons v-if="canEdit && editing && changesCount > 0" class="pending-changes">
       <x-button
-        class="btn btn-primary btn-badge btn-icon"
+        class="btn btn-primary btn-badge"
         @click.prevent="saveChanges"
         v-tooltip="`Apply ${changesString}`"
       >
@@ -119,11 +119,12 @@
     </x-buttons>
     <span
       v-tooltip="editButtonTooltip"
+      class="inline-flex"
     >
       <x-button
         v-if="canEdit && !editing"
         :disabled="results?.length === 0 || !resultEditable || usedConfig.readOnlyMode"
-        class="btn btn-flat btn-icon"
+        class="btn btn-flat"
         id="edit-data-btn"
         @click.prevent="editResults"
       >
@@ -139,7 +140,7 @@
       Stop Editing
     </x-button>
     <x-button
-      class="btn btn-flat btn-icon end"
+      class="btn btn-flat end"
       :disabled="results?.length === 0"
       menu
     >
@@ -368,9 +369,6 @@ export default {
       if (newIndex >= 0 && newIndex < this.results?.length) {
         this.selectedResult = newIndex;
       }
-    },
-    pluralize(word, amount, flag) {
-      return window.main.pluralize(word, amount, flag)
     },
     // Attribution: https://stackoverflow.com/questions/10599933/convert-long-number-into-abbreviated-string-in-javascript-with-a-special-shortn/10601315
     shortNum(num, fixed) {

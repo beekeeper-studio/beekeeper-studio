@@ -16,12 +16,18 @@ export const CloudQueryAuditModule: Module<State, RootState> = {
     pollError: null,
   },
   actions: {
+    async initialize() {
+      // noop
+    },
     async load() {},
     async poll() {},
-    async list(context, queryId: number): Promise<IQueryAudit[]> {
+    async list(
+      context,
+      { queryId, limit }: { queryId: number; limit?: number }
+    ): Promise<IQueryAudit[]> {
       return await havingCli(
         context,
-        (cli) => cli.queryAudits.list(queryId),
+        (cli) => cli.queryAudits.list(queryId, limit),
       );
     },
     async get(
@@ -36,7 +42,7 @@ export const CloudQueryAuditModule: Module<State, RootState> = {
     async restore(
       context,
       { queryId, auditId }: { queryId: number; auditId: number }
-    ): Promise<ISavedQuery> {
+    ): Promise<void> {
       return await havingCli(
         context,
         (cli) => cli.queryAudits.restore(queryId, auditId),

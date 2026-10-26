@@ -15,6 +15,13 @@ export class ClickHouseConnection extends DatabaseConnection<NodeClickHouseClien
 
     if (this.server.config.url) {
       url = this.server.config.url;
+      // Route the user-provided URL through the SSH tunnel's local endpoint.
+      if (this.server.sshTunnel) {
+        const urlObj = new URL(url);
+        urlObj.hostname = this.server.config.localHost;
+        urlObj.port = this.server.config.localPort.toString();
+        url = urlObj.toString();
+      }
     } else {
       const host = this.server.sshTunnel
         ? this.server.config.localHost

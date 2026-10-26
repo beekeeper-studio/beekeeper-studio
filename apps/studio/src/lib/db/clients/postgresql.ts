@@ -3,7 +3,6 @@
 import { readFileSync } from 'fs';
 
 import pg, { QueryResult as PgQueryResult, QueryArrayResult as PgQueryArrayResult, FieldDef, PoolConfig, PoolClient } from 'pg';
-import { identify } from 'sql-query-identifier';
 import _ from 'lodash'
 import knexlib from 'knex'
 import logRaw from '@bksLogger'
@@ -11,7 +10,7 @@ import logRaw from '@bksLogger'
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
 import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries, errorMessages } from './utils';
-import { createCancelablePromise, joinFilters } from '../../../common/utils';
+import { createCancelablePromise, isListFilter, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
 import { VersionInfo } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
@@ -20,7 +19,7 @@ import { AlterPartitionsSpec, IndexColumn, TableKey } from '@shared/lib/dialects
 import { PostgresData } from '@shared/lib/dialects/postgresql';
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from './BasicDatabaseClient';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
-import { defaultCreateScript, postgres10CreateScript } from './postgresql/scripts';
+import { defaultCreateScript, foreignKeyColumnsSql, postgres10CreateScript } from './postgresql/scripts';
 import BksConfig from '@/common/bksConfig';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
@@ -223,8 +222,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
         r.routine_schema as routine_schema,
         r.routine_name as name,
         r.routine_type as routine_type,
-        r.data_type as data_type
+        r.data_type as data_type,
+        p.oid::text as oid
       FROM INFORMATION_SCHEMA.ROUTINES r
+      LEFT JOIN pg_catalog.pg_proc p
+        ON r.specific_name::text = p.proname || '_' || p.oid::text
       where r.routine_schema not in ('sys', 'information_schema',
                                      'pg_catalog', 'performance_schema')
         ${schemaFilter ? `AND ${schemaFilter}` : ''}
@@ -266,6 +268,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
         returnType: row.data_type,
         entityType: 'routine',
         id: row.id,
+        oid: row.oid,
         routineParams: params.map((p, i) => {
           return {
             name: p.parameter_name || `arg${i + 1}`,
@@ -331,6 +334,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
             udt_name || '(' || datetime_precision::varchar(255) || ')'
           ELSE udt_name
       END as data_type,
+        udt_schema,
         CASE
           WHEN data_type = 'ARRAY' THEN 'YES'
           ELSE 'NO'
@@ -341,7 +345,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       ORDER BY table_schema, table_name, ordinal_position
     `;
 
-    const data = await this.driverExecuteSingle(sql, { params });
+    const [data, enumValuesByType] = await Promise.all([
+      this.driverExecuteSingle(sql, { params }),
+      this.listEnumValues(table, schema),
+    ]);
 
     return data.rows.map((row: any) => ({
       schemaName: row.table_schema,
@@ -355,8 +362,57 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       generated: row.is_generated === "ALWAYS" || row.is_generated === "YES",
       array: row.is_array === "YES",
       comment: row.column_comment || null,
+      // For enum columns `data_type` is the udt_name (no precision suffix), so it
+      // matches the type name keyed schema-qualified below.
+      enumValues: enumValuesByType.get(`${row.udt_schema}.${row.data_type}`),
       bksField: this.parseTableColumn(row),
     }));
+  }
+
+  // Build a map of "schema.typename" -> ordered enum labels.
+  // When a table is given, only the enum types referenced by that table's
+  // columns are fetched; otherwise every enum type in the database is loaded.
+  // Wrapped so Postgres-compatible engines without pg_enum degrade to no dropdown.
+  protected async listEnumValues(table?: string, schema?: string): Promise<Map<string, string[]>> {
+    const map = new Map<string, string[]>();
+    try {
+      // Restrict to the types this table actually uses. typelem unwraps
+      // array-of-enum columns, whose atttypid is the array type, not the enum.
+      const filter = table
+        ? `WHERE t.oid IN (
+             SELECT COALESCE(NULLIF(et.typelem, 0), et.oid)
+             FROM pg_attribute a
+             JOIN pg_class c ON c.oid = a.attrelid
+             JOIN pg_namespace cn ON cn.oid = c.relnamespace
+             JOIN pg_type et ON et.oid = a.atttypid
+             WHERE c.relname = $1 AND cn.nspname = $2
+               AND a.attnum > 0 AND NOT a.attisdropped
+           )`
+        : "";
+      const sql = `
+        SELECT n.nspname AS schema, t.typname AS typename, e.enumlabel AS label
+        FROM pg_enum e
+        JOIN pg_type t ON t.oid = e.enumtypid
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        ${filter}
+        ORDER BY n.nspname, t.typname, e.enumsortorder
+      `;
+      const { rows } = await this.driverExecuteSingle(sql, {
+        params: table ? [table, schema] : [],
+      });
+      for (const row of rows) {
+        const key = `${row.schema}.${row.typename}`;
+        const existing = map.get(key);
+        if (existing) {
+          existing.push(row.label);
+        } else {
+          map.set(key, [row.label]);
+        }
+      }
+    } catch (err) {
+      log.warn("Could not load enum values from pg_enum", err);
+    }
+    return map;
   }
 
   async listTableTriggers(table: string, schema: string = this._defaultSchema): Promise<TableTrigger[]> {
@@ -488,185 +544,25 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   }
 
   async getOutgoingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
-    // Query for foreign keys FROM this table (referencing other tables)
+    // Foreign keys defined on this table (referencing other tables)
     const sql = `
-      SELECT
-        c.conname AS constraint_name,
-        a.attname AS column_name,
-        n.nspname AS from_schema,
-        t.relname AS from_table,
-        af.attname AS to_column,
-        tf.relname AS to_table,
-        nf.nspname AS to_schema,
-        CASE c.confupdtype::text
-          WHEN 'a' THEN 'NO ACTION'
-          WHEN 'r' THEN 'RESTRICT'
-          WHEN 'c' THEN 'CASCADE'
-          WHEN 'n' THEN 'SET NULL'
-          WHEN 'd' THEN 'SET DEFAULT'
-          ELSE c.confupdtype::text
-        END AS update_rule,
-        CASE c.confdeltype::text
-          WHEN 'a' THEN 'NO ACTION'
-          WHEN 'r' THEN 'RESTRICT'
-          WHEN 'c' THEN 'CASCADE'
-          WHEN 'n' THEN 'SET NULL'
-          WHEN 'd' THEN 'SET DEFAULT'
-          ELSE c.confdeltype::text
-        END AS delete_rule,
-        pos AS ordinal_position
-      FROM
-        pg_constraint c
-        JOIN pg_class t ON c.conrelid = t.oid
-        JOIN pg_namespace n ON t.relnamespace = n.oid
-        JOIN generate_subscripts(c.conkey, 1) pos ON true
-        JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = c.conkey[pos]
-        JOIN pg_class tf ON c.confrelid = tf.oid
-        JOIN pg_namespace nf ON tf.relnamespace = nf.oid
-        JOIN pg_attribute af ON af.attrelid = tf.oid AND af.attnum = c.confkey[pos]
-      WHERE
-        c.contype = 'f'
-        AND n.nspname = $1
-        AND t.relname = $2
-      ORDER BY
-        c.conname,
-        pos;
+      ${foreignKeyColumnsSql}
+      WHERE c.contype = 'f' AND n.nspname = $1 AND t.relname = $2
+      ORDER BY c.conname, pos
     `;
-
-    const params = [
-      schema,
-      table,
-    ];
-
-    const { rows } = await this.driverExecuteSingle(sql, { params });
-
-    // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(rows, 'constraint_name');
-
-    return Object.keys(groupedKeys).map(constraintName => {
-      const keyParts = groupedKeys[constraintName];
-
-      // If there's only one part, return a simple key (backward compatibility)
-      if (keyParts.length === 1) {
-        const row = keyParts[0];
-        return {
-          constraintName: row.constraint_name,
-          toTable: row.to_table,
-          toSchema: row.to_schema,
-          toColumn: row.to_column,
-          fromTable: row.from_table,
-          fromSchema: row.from_schema,
-          fromColumn: row.column_name,
-          onUpdate: row.update_rule,
-          onDelete: row.delete_rule,
-          isComposite: false
-        };
-      }
-
-      // If there are multiple parts, it's a composite key
-      const firstPart = keyParts[0];
-      return {
-        constraintName: firstPart.constraint_name,
-        toTable: firstPart.to_table,
-        toSchema: firstPart.to_schema,
-        toColumn: keyParts.map(p => p.to_column),
-        fromTable: firstPart.from_table,
-        fromSchema: firstPart.from_schema,
-        fromColumn: keyParts.map(p => p.column_name),
-        onUpdate: firstPart.update_rule,
-        onDelete: firstPart.delete_rule,
-        isComposite: true
-      };
-    });
+    const { rows } = await this.driverExecuteSingle(sql, { params: [schema, table] });
+    return this.parseForeignKeys(rows);
   }
 
   async getIncomingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
-    // Query for foreign keys TO this table (other tables referencing this table)
-    const incomingSQL = `
-      SELECT
-        c.conname AS constraint_name,
-        a.attname AS from_column,
-        n.nspname AS from_schema,
-        t.relname AS from_table,
-        af.attname AS to_column,
-        tf.relname AS to_table,
-        nf.nspname AS to_schema,
-        CASE c.confupdtype::text
-          WHEN 'a' THEN 'NO ACTION'
-          WHEN 'r' THEN 'RESTRICT'
-          WHEN 'c' THEN 'CASCADE'
-          WHEN 'n' THEN 'SET NULL'
-          WHEN 'd' THEN 'SET DEFAULT'
-          ELSE c.confupdtype::text
-        END AS update_rule,
-        CASE c.confdeltype::text
-          WHEN 'a' THEN 'NO ACTION'
-          WHEN 'r' THEN 'RESTRICT'
-          WHEN 'c' THEN 'CASCADE'
-          WHEN 'n' THEN 'SET NULL'
-          WHEN 'd' THEN 'SET DEFAULT'
-          ELSE c.confdeltype::text
-        END AS delete_rule,
-        pos AS ordinal_position
-      FROM
-        pg_constraint c
-        JOIN pg_class t ON c.conrelid = t.oid
-        JOIN pg_namespace n ON t.relnamespace = n.oid
-        JOIN generate_subscripts(c.conkey, 1) pos ON true
-        JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = c.conkey[pos]
-        JOIN pg_class tf ON c.confrelid = tf.oid
-        JOIN pg_namespace nf ON tf.relnamespace = nf.oid
-        JOIN pg_attribute af ON af.attrelid = tf.oid AND af.attnum = c.confkey[pos]
-      WHERE
-        c.contype = 'f'
-        AND nf.nspname = $1
-        AND tf.relname = $2
-      ORDER BY
-        c.conname,
-        pos;
+    // Foreign keys on other tables that reference this table
+    const sql = `
+      ${foreignKeyColumnsSql}
+      WHERE c.contype = 'f' AND nf.nspname = $1 AND tf.relname = $2
+      ORDER BY c.conname, pos
     `;
-
-    const params = [schema, table];
-    const { rows } = await this.driverExecuteSingle(incomingSQL, { params });
-
-    // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(rows, 'constraint_name');
-
-    return Object.keys(groupedKeys).map(constraintName => {
-      const keyParts = groupedKeys[constraintName];
-
-      // If there's only one part, return a simple key
-      if (keyParts.length === 1) {
-        const row = keyParts[0];
-        return {
-          constraintName: row.constraint_name,
-          toTable: row.to_table,
-          toSchema: row.to_schema,
-          toColumn: row.to_column,
-          fromTable: row.from_table,
-          fromSchema: row.from_schema,
-          fromColumn: row.from_column,
-          onUpdate: row.update_rule,
-          onDelete: row.delete_rule,
-          isComposite: false,
-        };
-      }
-
-      // If there are multiple parts, it's a composite key
-      const firstPart = keyParts[0];
-      return {
-        constraintName: firstPart.constraint_name,
-        toTable: firstPart.to_table,
-        toSchema: firstPart.to_schema,
-        toColumn: keyParts.map(p => p.to_column),
-        fromTable: firstPart.from_table,
-        fromSchema: firstPart.from_schema,
-        fromColumn: keyParts.map(p => p.from_column),
-        onUpdate: firstPart.update_rule,
-        onDelete: firstPart.delete_rule,
-        isComposite: true,
-      };
-    });
+    const { rows } = await this.driverExecuteSingle(sql, { params: [schema, table] });
+    return this.parseForeignKeys(rows);
   }
 
   async query(queryText: string, tabId: number, _options?: any): Promise<CancelableQuery> {
@@ -914,18 +810,20 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     return data.rows.map((row) => `${createViewSql}\n${row.pg_get_viewdef}`);
   }
 
-  async getRoutineCreateScript(routine: string, _type: string, schema: string = this._defaultSchema): Promise<string[]> {
+  async getRoutineCreateScript(routine: string, _type: string, schema: string = this._defaultSchema, id?: string): Promise<string[]> {
     const sql = `
       SELECT pg_get_functiondef(p.oid)
       FROM pg_proc p
              LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
       WHERE proname = $1
         AND n.nspname = $2
+        ${id ? 'AND p.oid = $3::oid' : ''}
     `;
 
     const params = [
       routine,
       schema,
+      ...(id ? [id] : []),
     ];
 
     const data = await this.driverExecuteSingle(sql, { params });
@@ -1356,7 +1254,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     } else if (filters && filters.length > 0) {
       let paramIdx = 1
       const allFilters = filters.map((item) => {
-        if (item.type === 'in' && _.isArray(item.value)) {
+        if (isListFilter(item.type) && _.isArray(item.value)) {
           const values = item.value.map((v, idx) => {
             return options.inlineParams
               ? knex.raw('?', [v]).toQuery()

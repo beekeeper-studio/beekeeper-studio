@@ -16,6 +16,7 @@ export const DatabaseTypes = [
   'bigquery',
   'firebird',
   'tidb',
+  'starrocks',
   'libsql',
   'clickhouse',
   'duckdb',
@@ -35,6 +36,7 @@ export type ConnectionType = typeof DatabaseTypes[number]
 export const ConnectionTypes = [
   { name: 'MySQL', value: 'mysql' },
   { name: 'TiDB', value: 'tidb' },
+  { name: 'StarRocks', value: 'starrocks' },
   { name: 'MariaDB', value: 'mariadb' },
   { name: 'Postgres', value: 'postgresql' },
   { name: 'SQLite', value: 'sqlite' },
@@ -58,7 +60,7 @@ export const ConnectionTypes = [
   { name: 'Bedrock', value: 'bedrock' },
   { name: 'DynamoDB', value: 'dynamodb' },
   { name: 'Snowflake', value: 'snowflake' }
-]
+] as const satisfies { name: string; value: ConnectionType }[]
 
 /** `value` should be recognized by codemirror */
 export const keymapTypes = [
@@ -79,6 +81,7 @@ export const TableFilterSymbols = [
     { value: '>', label: 'greater than', type: 'standard'},
     { value: ">=", label: "greater than or equal", type: 'standard' },
     { value: "in", label: 'in', arrayInput: true, type: 'standard' },
+    { value: "not in", label: 'not in', arrayInput: true, type: 'standard' },
     { value: "is", label: "is null", nullOnly: true, type: 'standard' },
     { value: "is not", label: "is not null", nullOnly: true, type: 'standard' }
 ]
@@ -169,6 +172,18 @@ export interface AzureAuthOptions {
   clientSecret?: string;
   msiEndpoint?: string;
   cliPath?: string;
+}
+
+// SQL Server integrated authentication (Kerberos/Windows via the msnodesqlv8 ODBC driver).
+export type SqlServerEncryptionMode = 'off' | 'on' | 'strict'
+export interface SqlServerOptions {
+  // off -> Encrypt=no; on -> Encrypt=yes + TrustServerCertificate=yes (trust, no validation);
+  // strict -> Encrypt=strict (TDS 8.0, validates; optionally pins serverCertificate).
+  encryptionMode?: SqlServerEncryptionMode
+  // strict mode only: path to a PEM/DER/CER file to pin the server's certificate against.
+  serverCertificate?: string
+  // Optional ODBC ServerSPN override when the auto-derived MSSQLSvc/<host>:<port> is wrong.
+  serverSpn?: string
 }
 export interface LibSQLOptions {
   mode: 'url' | 'file';
@@ -281,6 +296,9 @@ export interface IDbConnectionServerConfig {
   // SQL Server only. Use OS-level integrated authentication (SSPI/Kerberos/NTLM)
   // via the native msnodesqlv8 ODBC driver instead of a username/password.
   windowsAuthEnabled?: boolean
+  // SQL Server integrated auth only. Encryption mode, optional pinned server certificate,
+  // and optional SPN override -- consumed by connectWindowsAuth() / the ODBC conn string.
+  sqlServerOptions?: SqlServerOptions
   instantClientLocation?: string
   oracleConfigLocation?: string
   options?: any
@@ -296,6 +314,9 @@ export interface IDbConnectionServerConfig {
   dynamoDbOptions?: DynamoDBOptions
   snowflakeOptions?: SnowflakeOptions
   runtimeExtensions?: string[]
+  // Non-fatal ~/.ssh/config issues surfaced to the user (e.g. untrusted config,
+  // missing IdentityFile). Shown as warning toasts on connect/test.
+  sshConfigWarnings?: string[]
 }
 
 export interface IBasicDatabaseClient {
@@ -338,7 +359,7 @@ export interface IBasicDatabaseClient {
   getTableCreateScript(table: string, schema?: string): Promise<string>,
   getViewCreateScript(view: string, schema?: string): Promise<string[]>,
   getMaterializedViewCreateScript(view: string, schema?: string): Promise<string[]>,
-  getRoutineCreateScript(routine: string, type: string, schema?: string): Promise<string[]>,
+  getRoutineCreateScript(routine: string, type: string, schema?: string, id?: string): Promise<string[]>,
   createTable(table: CreateTableSpec): Promise<void>,
   getCollectionValidation(collection: string): Promise<any>,
   setCollectionValidation(params: any): Promise<void>,

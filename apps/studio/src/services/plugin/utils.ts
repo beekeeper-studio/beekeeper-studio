@@ -1,5 +1,11 @@
+import type { KeybindingTarget } from "@/types";
+import type { BksConfig } from "@/common/bksConfig/BksConfigProvider";
 import { Manifest, ManifestV0, ManifestV1, PluginMenuItem, PluginView } from "./types";
+import { Tokens } from "marked";
 import _ from "lodash";
+import rawLog from "@bksLogger";
+
+const log = rawLog.scope("plugin/utils");
 
 export function mapViewsAndMenuFromV0ToV1(manifest: ManifestV0): {
   views: PluginView[];
@@ -31,6 +37,24 @@ export function isManifestV0(m: Manifest): m is ManifestV0 {
   return m.manifestVersion === undefined || m.manifestVersion === 0;
 }
 
+export function getParsedKeybinding(
+  bksConfig: BksConfig,
+  keyPath: string,
+  target: KeybindingTarget
+) {
+  try {
+    const keybindings = bksConfig.getKeybindings(target, keyPath);
+    if (keybindings) {
+      return typeof keybindings === "string"
+        ? keybindings
+        : keybindings[0];
+    }
+  } catch (e) {
+    log.error(e);
+  }
+  return undefined;
+}
+
 /**
  * Converts a manifest (v0 or v1) to ManifestV1 format.
  * If the manifest is already v1, returns it as-is.
@@ -53,3 +77,56 @@ export function convertToManifestV1(manifest: Manifest): ManifestV1 {
     },
   };
 }
+
+// this gets around githubs rate limiting
+export function getPluginAvatarUrl(
+  plugin: { repo?: string },
+  size = 80
+): string | null {
+  const owner = plugin.repo?.split("/")[0];
+  return owner ? `https://github.com/${owner}.png?size=${size}` : null;
+}
+
+
+function resolveRepoUrl(url: string, base: string): string {
+  if (!url || url.startsWith("#") || url.startsWith("//") || /^[a-z][a-z0-9+.-]*:/i.test(url)) {
+    return url;
+  }
+  // A leading slash means the repo root on GitHub, not the host root
+  return new URL(url.replace(/^\/+/, ""), base).toString();
+}
+
+export function markedRepoUrlRewriter(repo: string) {
+  const rawBase = `https://raw.githubusercontent.com/${repo}/HEAD/`;
+  const blobBase = `https://github.com/${repo}/blob/HEAD/`;
+  const htmlAttr = /(<(img|video|source|a)\b[^>]*?\b(src|href)\s*=\s*)(["'])(.*?)\4/gi;
+
+  return (token: Tokens.Generic) => {
+    if (token.type === "image") {
+      token.href = resolveRepoUrl(token.href, rawBase);
+    } else if (token.type === "link") {
+      token.href = resolveRepoUrl(token.href, blobBase);
+    } else if (token.type === "html") {
+      token.text = token.text.replace(htmlAttr, (_match, prefix, tag, _attr, quote, url) => {
+        const base = tag.toLowerCase() === "a" ? blobBase : rawBase;
+        return `${prefix}${quote}${resolveRepoUrl(url, base)}${quote}`;
+      });
+    }
+  };
+}
+
+const videoAttachmentUrl = /^https:\/\/github\.com\/(user-attachments\/assets|[^/]+\/[^/]+\/assets\/\d+)\/[0-9a-f-]+$/i;
+
+export const markedVideoEmbed = {
+  renderer: {
+    paragraph({ tokens }: Tokens.Paragraph) {
+      const only = tokens.length === 1 ? tokens[0] : null;
+      if (only?.type !== "link" || only.text !== only.href || !videoAttachmentUrl.test(only.href)) {
+        return false;
+      }
+      const src = only.href.replace(/"/g, "&quot;");
+      return `<video src="${src}" controls muted playsinline preload="metadata"></video>\n`;
+    },
+  },
+};
+

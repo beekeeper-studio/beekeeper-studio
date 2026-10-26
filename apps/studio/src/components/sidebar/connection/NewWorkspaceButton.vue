@@ -6,7 +6,7 @@
   >
     <x-button class="nav-item" @click="onClick">
       <span class="avatar-btn-link"><i class="material-icons">add</i></span>
-      <x-menu v-if="credentials.length && $store.getters.isUltimate">
+      <x-menu v-if="credentials.length && $store.getters.canAccessCloudWorkspaces">
         <x-menuitem @click.prevent="createWorkspace">
           <x-label>Create a new workspace</x-label>
         </x-menuitem>
@@ -42,6 +42,8 @@ export default Vue.extend({
     onClick() {
       if (this.$store.getters.isCommunity) {
         this.$root.$emit(AppEvent.upgradeModal, 'Cloud Workspaces')
+      } else if (this.$store.getters.isLifetime) {
+        this.$root.$emit(AppEvent.cloudWorkspacesBlocked)
       }
     },
   }

@@ -1,5 +1,5 @@
 import { MysqlClient } from "./mysql";
-import { IDbConnectionDatabase } from '@/lib/db/types';
+import { IDbConnectionDatabase } from "@/lib/db/types";
 import { IDbConnectionServer } from "../backendTypes";
 import { MariaDBConnection } from "./mariadb/MariaDBConnection";
 

@@ -5,19 +5,28 @@
       <label for="url" required>
         Database URL
       </label>
-      <input v-model="config.url" id="url" type="text" class="form-control" name="url">
+      <input v-model="config.url" id="url" type="text" class="form-control" name="url" :disabled="disabled">
     </div>
     <div class="form-group">
       <label for="defaultDatabase">Default Database</label>
-      <input type="text" class="form-control" v-model="config.defaultDatabase">
+      <input type="text" class="form-control" v-model="config.defaultDatabase" :disabled="disabled">
     </div>
+    <common-advanced :config="config" />
   </div>
 </template>
 
 <script lang="ts">
+import CommonAdvanced from './CommonAdvanced.vue'
 
 export default {
-  props: ['config']
+  components: { CommonAdvanced },
+  props: {
+    config: Object,
+    disabled: {
+      type: Boolean,
+      default: false
+    }
+  }
 }
 </script>
 

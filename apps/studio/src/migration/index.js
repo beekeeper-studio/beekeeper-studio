@@ -16,6 +16,8 @@ import dev8 from './dev-8'
 import dev9 from './dev-9'
 import dev10 from './dev-10'
 import dev11Greengage from './dev-11-greengage'
+import dev12 from './dev-12'
+import dev13 from './dev-13'
 import domains from './20200519'
 import encrypt from './20200917-encrypt-passwords'
 import sslFiles from './20201008-add-ssl-files'
@@ -90,9 +92,15 @@ import addDynamodbOptions from './20260417_add_dynamodb_options'
 import addLicenseInvalidatedAt from './20260421_add_license_invalidated_at'
 import cleanupDuplicateLicenseKeys from './20260421_cleanup_duplicate_license_keys'
 import createTabulatorPersistence from './20260424_create_tabulator_persistence'
+import createQueryAudits from './20260526_create_query_audits'
 import clearLogFiles from './20260527_clear_log_files'
 import addSnowflakeOptions from './20260501_add_snowflake_options'
 import addWindowsAuthToConnections from './20260618_add_windows_auth_to_connections'
+import addSqlServerOptions from './20260626_add_sqlserver_options'
+import fixQueryAuditAppendOnlyTrigger from './20260914_fix_query_audit_append_only_trigger'
+import addScopeToPluginData from './20261011_add_scope_to_plugin_data'
+import splitThemeDarkFlag from './20260908_split_theme_dark_flag'
+import addGithubPluginSetting from './20261021_add_github_plugin_setting.js'
 
 import ultimate from './ultimate/index'
 
@@ -144,9 +152,15 @@ const realMigrations = [
   addLicenseInvalidatedAt,
   cleanupDuplicateLicenseKeys,
   createTabulatorPersistence,
+  createQueryAudits,
   clearLogFiles,
   addSnowflakeOptions,
-  addWindowsAuthToConnections
+  addWindowsAuthToConnections,
+  addSqlServerOptions,
+  fixQueryAuditAppendOnlyTrigger,
+  addScopeToPluginData,
+  splitThemeDarkFlag,
+  addGithubPluginSetting
 ]
 
 // fixtures require the models
@@ -156,7 +170,7 @@ const fixtures = [
 
 const devMigrations = [
   dev1, dev2, dev3, dev4, dev5, dev6, dev7, dev8, dev9,
-  dev10, dev11Greengage
+  dev10, dev11Greengage, dev12, dev13
 ]
 
 const migrations = [...realMigrations, ...fixtures, ...devMigrations]

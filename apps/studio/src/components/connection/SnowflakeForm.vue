@@ -2,7 +2,7 @@
   <div class="with-connection-type snowflake-form">
     <div class="form-group col">
       <label for="authenticationType">Authentication Method</label>
-      <select name="" id="" v-model="authType">
+      <select name="" id="" v-model="authType" :disabled="disabled">
         <option :key="`${t.value}-${t.name}`" v-for="t in authTypes" :value="t.value" :selected="authType === t.value">
           {{ t.name }}
         </option>
@@ -26,6 +26,7 @@
         class="form-control"
         placeholder="eg: <org_name>-<account_name>"
         v-model="config.snowflakeOptions.accountId"
+        :disabled="disabled"
       >
     </div>
     <div v-if="showUserAndPassword" class="row gutter">
@@ -34,11 +35,12 @@
         <masked-input
           :value="config.username"
           @input="val => config.username = val"
+          :disabled="disabled"
         />
       </div>
       <div class="col s6 form-group">
         <label for="password">Password</label>
-        <password-input v-model="config.password" />
+        <password-input v-model="config.password" :disabled="disabled" />
       </div>
     </div>
     <div class="form-group expand">
@@ -49,6 +51,7 @@
         type="text"
         class="form-control"
         v-model="config.defaultDatabase"
+        :disabled="disabled"
       >
     </div>
     <div class="form-group expand">
@@ -59,6 +62,7 @@
         type="text"
         class="form-control"
         v-model="config.snowflakeOptions.defaultWarehouse"
+        :disabled="disabled"
       >
     </div>
   </div>
@@ -77,6 +81,10 @@ export default {
       required: true,
     },
     testing: {
+      type: Boolean,
+      default: false,
+    },
+    disabled: {
       type: Boolean,
       default: false,
     },

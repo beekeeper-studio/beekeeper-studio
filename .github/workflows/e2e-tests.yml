@@ -20,27 +20,34 @@ jobs:
   prep:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Node.js, NPM and Yarn
         uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
 
+      # ImageOS identifies the runner image (e.g. ubuntu22, ubuntu24), so caches
+      # never cross runner image versions: node_modules holds native modules
+      # compiled for one exact image.
+      - name: Compute runner image cache id
+        shell: bash
+        run: echo "RUNNER_IMAGE_ID=${ImageOS:-unknown}" >> "$GITHUB_ENV"
+
       - name: Cache node_modules
         id: cache-nm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
             apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
 
       - name: Install dependencies
         if: steps.cache-nm.outputs.cache-hit != 'true'
-        uses: nick-fields/retry@v2
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 20
           max_attempts: 3
@@ -51,10 +58,10 @@ jobs:
 
       - name: Cache Playwright browsers
         id: cache-playwright
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('yarn.lock') }}
+          key: playwright-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('yarn.lock') }}
 
       - name: Install Playwright browsers
         if: steps.cache-playwright.outputs.cache-hit != 'true'
@@ -67,17 +74,21 @@ jobs:
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      - name: Install Python 3.11
-        uses: actions/setup-python@v5
+      - name: Install Python 3.12
+        uses: actions/setup-python@v6
         with:
-          python-version: 3.11
+          python-version: '3.12'
 
       - name: Install Node.js, NPM and Yarn
         uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
+
+      - name: Compute runner image cache id
+        shell: bash
+        run: echo "RUNNER_IMAGE_ID=${ImageOS:-unknown}" >> "$GITHUB_ENV"
 
       - name: Restore node_modules cache
         uses: actions/cache/restore@v5
@@ -87,14 +98,14 @@ jobs:
             apps/studio/node_modules
             apps/ui-kit/node_modules
             apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
           fail-on-cache-miss: true
 
       - name: Restore Playwright browsers cache
         uses: actions/cache/restore@v5
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('yarn.lock') }}
+          key: playwright-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('yarn.lock') }}
           fail-on-cache-miss: true
 
       - name: Install Playwright system dependencies
@@ -122,8 +133,113 @@ jobs:
 
       - name: Upload test results
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: test-results
+          path: apps/studio/test-results
+          retention-days: 7
+
+  # Windows on ARM. The runner image has no Docker, so PostgreSQL runs from
+  # EDB's x64 binaries under Windows' x64 emulation. Only the database is
+  # emulated: Beekeeper Studio and its native modules run as arm64.
+  e2e-tests-windows-arm64:
+    name: E2E Tests (Windows ARM64)
+    runs-on: windows-11-arm
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v5
+
+      - name: Install Python 3.12
+        id: python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      # node-gyp checks the PYTHON env var first. Without it, on Windows it asks
+      # the py launcher, which picks the newest Python on the runner, not this one.
+      - name: Use this Python for node-gyp
+        shell: bash
+        env:
+          PYTHON: ${{ steps.python.outputs.python-path }}
+        run: echo "PYTHON=$PYTHON" >> "$GITHUB_ENV"
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Compute runner image cache id
+        shell: bash
+        run: echo "RUNNER_IMAGE_ID=${ImageOS:-unknown}" >> "$GITHUB_ENV"
+
+      - name: Cache node_modules
+        id: cache-nm
+        uses: actions/cache@v5
+        with:
+          path: |
+            node_modules
+            apps/studio/node_modules
+            apps/ui-kit/node_modules
+            apps/sqltools/node_modules
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+
+      - name: Install dependencies
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 30
+          max_attempts: 3
+          command: yarn install --frozen-lockfile --network-timeout 100000
+        env:
+          HUSKY: "0"
+          npm_config_node_gyp: ${{ github.workspace }}\node_modules\node-gyp\bin\node-gyp.js
+
+      # Same database the Linux job gets from `docker compose up psql15`:
+      # postgres/example on port 5434, with the sakila data in saklia.
+      - name: Start PostgreSQL 15
+        shell: pwsh
+        env:
+          PG_ZIP_URL: https://get.enterprisedb.com/postgresql/postgresql-15.14-1-windows-x64-binaries.zip
+          PGPASSWORD: example
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+
+          # The x64 binaries need the x64 C++ runtime, which isn't on the arm64 image.
+          Invoke-WebRequest -Uri https://aka.ms/vc14/vc_redist.x64.exe -OutFile "$env:RUNNER_TEMP\vc_redist.x64.exe"
+          Start-Process -FilePath "$env:RUNNER_TEMP\vc_redist.x64.exe" -ArgumentList '/install', '/quiet', '/norestart' -Wait
+
+          Invoke-WebRequest -Uri $env:PG_ZIP_URL -OutFile "$env:RUNNER_TEMP\pgsql.zip"
+          Expand-Archive -Path "$env:RUNNER_TEMP\pgsql.zip" -DestinationPath $env:RUNNER_TEMP
+          $bin = "$env:RUNNER_TEMP\pgsql\bin"
+          $data = "$env:RUNNER_TEMP\pgdata"
+
+          Set-Content -Path "$env:RUNNER_TEMP\pgpass.txt" -Value $env:PGPASSWORD -NoNewline
+          & "$bin\initdb.exe" -D $data -U postgres --pwfile="$env:RUNNER_TEMP\pgpass.txt" -A scram-sha-256 -E UTF8
+          & "$bin\pg_ctl.exe" -D $data -o "-p 5434" -l "$env:RUNNER_TEMP\postgres.log" -w start
+
+          & "$bin\createdb.exe" -h localhost -p 5434 -U postgres saklia
+          foreach ($file in Get-ChildItem dev\docker_psql_init\*.sql | Sort-Object Name) {
+            & "$bin\psql.exe" -h localhost -p 5434 -U postgres -d saklia -q -v ON_ERROR_STOP=1 -f $file.FullName
+          }
+
+      - name: Build UI Kit
+        run: yarn lib:build
+
+      - name: Build App
+        run: yarn workspace beekeeper-studio build
+
+      - name: Run Tests
+        shell: bash
+        run: yarn workspace beekeeper-studio test:e2e:ci
+        env:
+          ELECTRON_ENABLE_LOGGING: 1
+
+      - name: Upload test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: test-results-windows-arm64
           path: apps/studio/test-results
           retention-days: 7

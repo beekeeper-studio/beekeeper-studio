@@ -97,6 +97,10 @@ class SSHConnection {
     this.debug("Shutdown connections")
     for (const connection of this.connections) {
       connection.removeAllListeners()
+      // Swallow late errors (e.g. the remote resetting the socket, ECONNRESET)
+      // emitted while the connection is closing. Without a handler these would
+      // surface as unhandled 'error' events and crash the process.
+      connection.on('error', () => { /* ignore during teardown */ })
       connection.end()
     }
     return new Promise<void>((resolve) => {
@@ -229,6 +233,11 @@ class SSHConnection {
       })
 
       connection.on('error', (error) => {
+        // if pageant is not running on windows, we log the message and move on to the next auth method rather than rejecting the connection.
+        if ((error as any).level === 'agent') {
+          this.log.warn(`Ignoring non-fatal SSH agent error: ${error.message}`)
+          return
+        }
         reject(error)
       })
       try {

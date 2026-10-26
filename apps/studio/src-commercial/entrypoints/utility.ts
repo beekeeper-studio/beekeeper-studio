@@ -11,7 +11,7 @@ import { ConnHandlers } from '../backend/handlers/connHandlers';
 import { FileHandlers } from '@/handlers/fileHandlers';
 import { GeneratorHandlers } from '@/handlers/generatorHandlers';
 import { Handlers } from '../backend/handlers/handlers';
-import { newState, removeState, state } from '@/handlers/handlerState';
+import { newState, removeState, setPluginManager, state } from '@/handlers/handlerState';
 import { QueryHandlers } from '@/handlers/queryHandlers';
 import { TabHistoryHandlers } from '@/handlers/tabHistoryHandlers'
 import { ExportHandlers } from '@commercial/backend/handlers/exportHandlers';
@@ -36,10 +36,14 @@ import _ from 'lodash';
 import {
   ConfigurationModule,
   BundledPluginModule,
+  RegistryModule,
+  LicenseModule,
 } from '@commercial/backend/plugin-system/modules';
-import bksConfig from '@/common/bksConfig';
+import { PluginErrorCode, PluginSystemErrorCode } from '@/lib/errors';
 
 import * as sms from 'source-map-support'
+import { WorkspaceHandlers } from '@/handlers/workspaceHandlers';
+import { ConfigHandlers } from '@/handlers/configHandlers';
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -52,8 +56,10 @@ const pluginManager = new PluginManager({
     pluginsDirectory: platformInfo.pluginsDirectory,
   }),
 });
-pluginManager.registerModule(ConfigurationModule.with({ config: bksConfig }));
+pluginManager.registerModule(ConfigurationModule.with({ config: BksConfig }));
+pluginManager.registerModule(RegistryModule.with({ config: BksConfig }));
 pluginManager.registerModule(BundledPluginModule);
+pluginManager.registerModule(LicenseModule);
 
 const driverDepManager = new DriverDepManager({
   fileManager: new DriverDepFileManager({
@@ -70,6 +76,10 @@ interface Reply {
   type: 'reply' | 'error',
   data?: any,
   error?: string
+  errorName?: "PluginSystemError" | "PluginError" | "Error"
+  errorCode?: PluginSystemErrorCode | PluginErrorCode
+  errorDetail?: string
+  errorHint?: string
   stack?: string
 }
 
@@ -87,11 +97,13 @@ export const handlers: Handlers = {
   ...EnumHandlers,
   ...TempHandlers,
   ...LicenseHandlers,
-  ...PluginHandlers(pluginManager),
+  ...PluginHandlers,
   ...DriverDepHandlers(driverDepManager),
   ...TabHistoryHandlers,
   ...LockHandlers,
   ...FormatterPresetHandlers,
+  ...WorkspaceHandlers,
+  ...ConfigHandlers,
   ...(platformInfo.isDevelopment && DevHandlers),
 };
 
@@ -155,13 +167,22 @@ async function runHandler(id: string, name: string, args: any) {
         replyArgs.type = 'error';
         replyArgs.stack = e?.stack;
         replyArgs.error = e?.message ?? e;
+        replyArgs.errorName = e?.name;
+        replyArgs.errorCode = e?.code;
+        replyArgs.errorDetail = e?.detail
+        replyArgs.errorHint = e?.hint
         log.error("HANDLER: ERROR", e)
       })
       .finally(() => {
         try {
           state(args.sId).port.postMessage(replyArgs);
         } catch (e) {
-          log.error('ERROR SENDING MESSAGE: ', replyArgs, '\n\n\n ERROR: ', e)
+          log.error('ERROR SENDING MESSAGE: ', replyArgs, '\n\n\n ERROR: ', e?.message ?? e)
+          replyArgs.type = 'error';
+          replyArgs.stack = e?.stack;
+          replyArgs.error = e?.message ?? 'Error sending message from utility process, this may be a bug. Please file an issue if this persists.'
+          delete replyArgs.data
+          state(args.sId).port.postMessage(replyArgs)
         }
       });
   } else {
@@ -196,6 +217,8 @@ async function init() {
   pluginManager.initialize().catch((e) => {
     log.error("Error initializing plugin manager", e);
   });
+
+  setPluginManager(pluginManager);
 
   driverDepManager.initialize().catch((e) => {
     log.error("Error initializing driver dep manager", e);

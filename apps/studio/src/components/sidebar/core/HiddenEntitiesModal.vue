@@ -14,7 +14,7 @@
           Hidden Entities
         </div>
         <a
-          class="close-btn btn btn-fab"
+          class="close-btn btn btn-icon"
           href="#"
           @click.prevent="closeModal"
         >
@@ -111,7 +111,7 @@
     }
 
     &:hover {
-      background-color: rgba(0, 0, 0, 0.2);
+      background-color: var(--gray-a7);
     }
 
     &:hover > button {

@@ -46,7 +46,7 @@
 
                 <div>
                   <x-button
-                    class="actions-btn btn btn-link btn-fab"
+                    class="actions-btn btn btn-icon"
                     title="actions"
                   >
                     <!-- <span>Actions</span> -->
@@ -104,7 +104,6 @@ import { AppEvent } from '@/common/AppEvent'
 import { CredentialBlob } from '@/store/modules/CredentialsModule'
 import Vue from 'vue'
 import { mapState } from 'vuex'
-import pluralize from 'pluralize'
 import StatusBadge from './StatusBadge.vue'
 
 export default Vue.extend({
@@ -131,7 +130,7 @@ export default Vue.extend({
       window.location.href = "https://app.beekeeperstudio.io"
     },
     workspaceText(blob: CredentialBlob) {
-      return pluralize("Workspace", blob.workspaces.length, true)
+      return this.$pluralize("Workspace", blob.workspaces.length, true)
     },
     showAccountsModal() {
       if (this.credentials.length) {
@@ -172,7 +171,7 @@ export default Vue.extend({
           font-size: 20px;
         }
       }
-      .btn-fab {
+      .btn-icon {
         min-width: 24px;
         width: 24px;
         height: 24px;

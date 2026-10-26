@@ -9,19 +9,22 @@ import { IndexColumn } from '@shared/lib/dialects/models';
 import type { Stream } from 'stream';
 
 export function camelCaseObjectKeys(data) {
+  if (_.isArray(data)) return data.map(camelCaseObjectKeys);
   if (_.isPlainObject(data)) {
-    const result = _.deepMapKeys(data, (_value, key) => _.camelCase(key))
-    return result
+    return _.deepMapKeys(data, (_value, key) => _.camelCase(key))
   }
   return data
 }
 
-// I don't know why different, but don't want to edit.
 export function snakeCaseObjectKeys(data) {
-  const result = _.mapKeys(data, (_value, key) => {
-    return _.snakeCase(key)
-  })
-  return result
+  if (_.isArray(data)) return data.map(snakeCaseObjectKeys);
+  if (_.isPlainObject(data)) {
+    return _.mapValues(
+      _.mapKeys(data, (_v, k) => _.snakeCase(k)),
+      snakeCaseObjectKeys
+    )
+  }
+  return data
 }
 
 export function parseIndexColumn(str: string): IndexColumn {
@@ -135,13 +138,21 @@ export function joinFilters(filters: string[], ops: TableFilter[] = []): string 
   return filters.reduce((a, b, idx) => `${a} ${ops[idx]?.op || 'AND'} ${b}`)
 }
 
+/** Filter types whose value is a list of values, eg `in` and `not in` */
+export function isListFilter(type: string): boolean {
+  return type === 'in' || type === 'not in'
+}
+
 /** Get rid of invalid filters and parse if needed */
 export function normalizeFilters(filters: TableFilter[]) {
   const normalized: TableFilter[] = [];
   for (const filter of filters as TableFilter[]) {
     if (!(filter.type && filter.field && (filter.value || filter.type.includes('is')))) continue;
-    if (filter.type === "in") {
-      const value = (filter.value as string).split(/\s*,\s*/);
+    if (isListFilter(filter.type)) {
+      // Quick Filter sets the value to an array of the selected cell values
+      const value = _.isArray(filter.value)
+        ? filter.value
+        : filter.value.toString().split(/\s*,\s*/);
       normalized.push({ ...filter, value });
     } else {
       normalized.push(filter);
@@ -287,16 +298,39 @@ export function stringifyWithBigInt(value: any): string {
   );
 }
 
-/** Convert Typed Array (Array Buffer View) to string based on `binaryEncoding` */
-export function typedArrayToString(typedArray: ArrayBufferView, forceEncoding?: 'hex' | 'base64') {
+/**
+ * Convert Typed Array (Array Buffer View) to string based on `binaryEncoding`.
+ * When maxChars is provided, only enough leading bytes to produce ~maxChars
+ * characters get converted, avoiding large string allocations for big buffers.
+ */
+export function typedArrayToString(typedArray: ArrayBufferView, forceEncoding?: 'hex' | 'base64', maxChars?: number) {
   const encoding = forceEncoding || window.bksConfig.ui.general.binaryEncoding
-  if (encoding === 'base64') {
-    // @ts-expect-error polyfill
-    return typedArray.toBase64();
-  } else {
-    // @ts-expect-error polyfill
-    return typedArray.toHex();
+
+  if (maxChars !== undefined && typedArray.byteLength > 0) {
+    const maxBytes = encoding === 'base64'
+      ? Math.floor(maxChars / 4) * 3
+      : Math.ceil(maxChars / 2)
+    if (typedArray.byteLength > maxBytes) {
+      const bytes = typedArray instanceof Uint8Array
+        ? typedArray.subarray(0, maxBytes)
+        : new Uint8Array(typedArray.buffer, typedArray.byteOffset, maxBytes)
+      // @ts-expect-error polyfill
+      return encoding === 'base64' ? bytes.toBase64() : bytes.toHex()
+    }
   }
+
+  // @ts-expect-error polyfill
+  return encoding === 'base64' ? typedArray.toBase64() : typedArray.toHex();
+}
+
+/**
+ * Number of characters `typedArrayToString` would produce for a buffer of
+ * `byteLength` bytes, without doing the conversion. Lets callers decide
+ * whether a buffer needs truncating before paying to encode it.
+ */
+export function encodedStringLength(byteLength: number, forceEncoding?: 'hex' | 'base64') {
+  const encoding = forceEncoding || window.bksConfig.ui.general.binaryEncoding
+  return encoding === 'base64' ? Math.ceil(byteLength / 3) * 4 : byteLength * 2
 }
 
 export function stringToTypedArray(str: string, forceEncoding?: 'hex' | 'base64') {

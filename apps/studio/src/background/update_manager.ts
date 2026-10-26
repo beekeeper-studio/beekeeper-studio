@@ -13,7 +13,7 @@ autoUpdater.logger = log
 
 // HACK(mc, 2019-09-10): work around https://github.com/electron-userland/electron-builder/issues/4046
 function dealWithAppImage() {
-  if (platformInfo.isAppImage) {
+  if (platformInfo.isAppImageLauncher) {
     // remap temporary running AppImage to actual source
     // THIS IS PROBABLY SUPER BRITTLE AND MAKES ME WANT TO STOP USING APPIMAGE
     // eslint-disable-next-line
@@ -42,6 +42,14 @@ function checkForUpdates() {
   }
 }
 
+// MSI installs are upgraded by IT, so their users are told to ask for the
+// update. Portable users download it from the website.
+function updateAvailableEvent() {
+  if (platformInfo.isMsi) return 'managed-update'
+  if (platformInfo.isPortable) return 'manual-update'
+  return 'update-available'
+}
+
 export function setAllowBeta(allowBeta: boolean) {
   autoUpdater.allowPrerelease = allowBeta;
   autoUpdater.channel = allowBeta ? 'beta' : 'latest';
@@ -59,7 +67,8 @@ export function manageUpdates(allowBeta: boolean, debug?: boolean): void {
     return
   }
 
-  setAllowBeta(allowBeta);
+  // IT deploys stable MSIs, so don't tell those users about betas
+  setAllowBeta(platformInfo.isMsi ? false : allowBeta);
 
   dealWithAppImage();
 
@@ -73,26 +82,29 @@ export function manageUpdates(allowBeta: boolean, debug?: boolean): void {
   ipcMain.on('updater-ready', () => {
     checkForUpdates()
     if (debug) {
-      getActiveWindows().forEach(beeWin => beeWin.send('update-available'))
+      getActiveWindows().forEach(beeWin => beeWin.send(updateAvailableEvent()))
     }
   })
 
-  autoUpdater.on('update-available', () => {
-    const message = platformInfo.isPortable ? 'manual-update' : 'update-available'
-    getActiveWindows().forEach(beeWin => beeWin.send(message))
+  autoUpdater.on('update-available', (info) => {
+    getActiveWindows().forEach(beeWin => beeWin.send(updateAvailableEvent(), info?.version))
   })
 
-  ipcMain.on('download-update', () => {
-    autoUpdater.downloadUpdate()
-  })
+  // An MSI install never downloads or installs updates itself: the NSIS
+  // installer the updater runs would leave a second, per-user copy behind.
+  if (!platformInfo.isMsi) {
+    ipcMain.on('download-update', () => {
+      autoUpdater.downloadUpdate()
+    })
 
-  autoUpdater.on('update-downloaded', () => {
-    getActiveWindows().forEach(beeWin => beeWin.send('update-downloaded'))
-  })
+    autoUpdater.on('update-downloaded', () => {
+      getActiveWindows().forEach(beeWin => beeWin.send('update-downloaded'))
+    })
 
-  ipcMain.on('install-update', () => {
-    autoUpdater.quitAndInstall()
-  })
+    ipcMain.on('install-update', () => {
+      autoUpdater.quitAndInstall()
+    })
+  }
 
   setInterval(() => {
     checkForUpdates()

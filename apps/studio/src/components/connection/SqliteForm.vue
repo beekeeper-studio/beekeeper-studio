@@ -10,8 +10,12 @@
           <file-picker
             v-model="config.defaultDatabase"
             input-id="Database"
-            editable
+            :editable="!createDatabaseFile"
             show-create-button
+            :clearable="createDatabaseFile"
+            @create="setCreateDatabaseFile(true)"
+            @choose="setCreateDatabaseFile(false)"
+            @clear="setCreateDatabaseFile(false)"
           />
 
           <toggle-form-area
@@ -55,7 +59,8 @@
                     </span>
                     <a
                       class="a-icon"
-                      @click.prevent="unloadExtension(extension)"
+                      :class="{ disabled }"
+                      @click.prevent="!disabled && unloadExtension(extension)"
                     ><i class="material-icons">delete</i></a>
                   </span>
                 </div>
@@ -70,7 +75,7 @@
               <div class="row flex-middle">
                 <span class="expand" />
                 <div class="btn-group">
-                  <button class="btn" @click.prevent.stop="loadExtension">
+                  <button class="btn" @click.prevent.stop="loadExtension" :disabled="disabled">
                     <i class="material-icons">add</i> Add Extension
                   </button>
                 </div>
@@ -92,7 +97,13 @@ import ToggleFormArea from '../common/ToggleFormArea.vue'
 import FilePicker from '../common/form/FilePicker.vue'
 import PlatformWarning from './PlatformWarning.vue'
 export default Vue.extend({
-  props: ['config'],
+  props: {
+    config: Object,
+    disabled: {
+      type: Boolean,
+      default: false
+    }
+  },
   components: {
     SettingsInput,
     ToggleFormArea,
@@ -115,9 +126,17 @@ export default Vue.extend({
     },
     runtimeExtensionsEnabled() {
       return this.$bksConfig.security.allowRuntimeExtensions
+    },
+    // Set by the Create button: the file is made on the next connect. The path
+    // can't be typed into until it is cleared, so a typo can't create a file.
+    createDatabaseFile() {
+      return !!this.config.options?.createDatabaseFile
     }
   },
   methods: {
+    setCreateDatabaseFile(value: boolean) {
+      this.$set(this.config, 'options', { ...this.config.options, createDatabaseFile: value })
+    },
     async unloadExtension(toRemove: string) {
       let value = this.sqliteRuntimeExtensions?.value
       value = value.filter((v) => v !== toRemove);

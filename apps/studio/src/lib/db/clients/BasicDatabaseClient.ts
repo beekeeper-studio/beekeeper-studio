@@ -1,6 +1,6 @@
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField, FieldDescriptor, FieldReadOnlyReason, ServerStatistics, FieldEditData } from '../models';
-import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
-import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries, applyChangesSql } from './utils';
+import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, ForeignKeyRow, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
+import { buildInsertQueries, buildInsertQuery, errorMessages, groupForeignKeyRows, isAllowedReadOnlyQuery, joinQueries, applyChangesSql } from './utils';
 import { Knex } from 'knex';
 import _ from 'lodash'
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
@@ -94,12 +94,6 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     this.connection = new NoopConnection({ server, database });
   }
 
-  async checkAllowReadOnly() {
-    if (platformInfo.testMode) return true;
-    const status = await LicenseKey.getLicenseStatus()
-    return status.isUltimate;
-  }
-
   set connectionHandler(fn: (msg: string) => void) {
     this.connErrHandler = fn;
   }
@@ -181,6 +175,33 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
    * Get all foreign keys that **reference** the given table (incoming relations).
    */
   abstract getIncomingKeys(_table: string, _schema?: string): Promise<TableKey[]>;
+
+  /**
+   * Map one row of a driver's foreign key query to a `ForeignKeyRow`. The
+   * default reads the column names shared by the queries in each driver's
+   * `scripts.ts`: constraint_name, from_schema, from_table, from_column,
+   * to_schema, to_table, to_column, ordinal_position, on_update, on_delete.
+   * Drivers whose catalog cannot be shaped that way override it.
+   */
+  protected parseForeignKeyRow(row: any): ForeignKeyRow {
+    return {
+      constraintName: row.constraint_name == null ? undefined : String(row.constraint_name),
+      fromSchema: row.from_schema ?? '',
+      fromTable: row.from_table,
+      fromColumn: row.from_column,
+      toSchema: row.to_schema ?? '',
+      toTable: row.to_table,
+      toColumn: row.to_column,
+      ordinalPosition: row.ordinal_position == null ? undefined : Number(row.ordinal_position),
+      onUpdate: row.on_update ?? undefined,
+      onDelete: row.on_delete ?? undefined,
+    };
+  }
+
+  /** Map the rows of a foreign key query and group them into `TableKey`s. */
+  protected parseForeignKeys(rows: any[]): TableKey[] {
+    return groupForeignKeyRows(rows.map((row) => this.parseForeignKeyRow(row)));
+  }
 
   listTablePartitions(_table: string, _schema?: string): Promise<TablePartition[]> {
     return Promise.resolve([])
@@ -274,6 +295,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
         nullable: tableColumn.nullable,
         array: tableColumn.array,
         dataType: tableColumn.dataType,
+        enumValues: tableColumn.enumValues,
         bksField: tableColumn.bksField,
       };
 
@@ -291,7 +313,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     })
   }
 
-  abstract query(queryText: string, tabId: number, options?: any): Promise<CancelableQuery>;
+  abstract query(queryText: string, tabId?: number, options?: any): Promise<CancelableQuery>;
   abstract executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>;
   abstract listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>;
   abstract getTableProperties(table: string, schema?: string): Promise<TableProperties | null>;
@@ -312,7 +334,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   async getMaterializedViewCreateScript(_view: string, _schema?: string): Promise<string[]> {
     return [];
   }
-  abstract getRoutineCreateScript(routine: string, type: string, schema?: string): Promise<string[]>;
+  abstract getRoutineCreateScript(routine: string, type: string, schema?: string, id?: string): Promise<string[]>;
 
   // This is just for Mongo, calling it createTable in case we want to use it for other dbs in the future
   async createTable(_table: CreateTableSpec): Promise<void> {
@@ -653,7 +675,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
       log.warn('Was not able to correctly identify query: ', error.message);
     }
 
-    if (await this.checkAllowReadOnly() && this.violatesReadOnly(statements, options)) {
+    if (this.violatesReadOnly(statements, options)) {
       throw new Error(errorMessages.readOnly);
     }
 
@@ -692,7 +714,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
       log.warn('Was not able to correctly identify query: ', error.message);
     }
 
-    if (await this.checkAllowReadOnly() && this.violatesReadOnly(statements, options)) {
+    if (this.violatesReadOnly(statements, options)) {
       throw new Error(errorMessages.readOnly);
     }
 

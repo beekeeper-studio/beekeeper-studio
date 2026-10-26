@@ -20,6 +20,7 @@ import {
   RowMenuParams,
   RowMenuTarget,
 } from "@beekeeperstudio/plugin";
+import { getParsedKeybinding } from "../utils";
 import { NativePluginMenuItem } from "../types";
 
 type BigIntSerialized = number;
@@ -149,12 +150,15 @@ function serializeArray(arr: unknown[]): unknown[] {
 
 const pluginMenuFactories: MenuFactories = {
   newTabDropdown: {
-    create(context, menuItem) {
+    create(context, menuItem, { keyPath }) {
       return {
         add() {
           context.store.setTabDropdownItem({
             manifest: context.manifest,
             menuItem,
+            keybindingLabel: keyPath ?
+              getParsedKeybinding(window.bksConfig, keyPath, "context-menu")
+              : undefined,
           });
         },
         remove() {
@@ -163,17 +167,24 @@ const pluginMenuFactories: MenuFactories = {
             menuItem,
           });
         },
+        keybindingHandler() {
+          context.createNewTab(menuItem.view, menuItem.command);
+        },
       };
     },
   },
   "menubar.tools": {
-    create(context, menuItem) {
+    create(context, menuItem, { keyPath }) {
       const id = `${context.manifest.id}-${menuItem.command}`;
+      const accelerator = keyPath ?
+        getParsedKeybinding(window.bksConfig, keyPath, "electron")
+        : undefined;
       const item: NativePluginMenuItem = {
         id,
         pluginId: context.manifest.id,
         label: menuItem.name,
         command: menuItem.command,
+        accelerator,
       };
       return {
         add() {
@@ -182,13 +193,14 @@ const pluginMenuFactories: MenuFactories = {
             label: menuItem.name,
             parentId: "tools",
             disableWhenDisconnected: true,
+            accelerator,
             action: { event: AppEvent.pluginMenuClicked, args: item },
           });
           window.main.addNativeMenuItem(item);
         },
         remove: () => {
           context.store.removeMenuBarItem(id);
-          window.main.removeMenuBarItem(id);
+          window.main.removeNativeMenuItem(id);
         },
       };
     },
@@ -202,7 +214,8 @@ const pluginMenuFactories: MenuFactories = {
           context.store.addPopupMenuItem(menuId, {
             name: menuItem.name,
             slug,
-            handler: (_event, payload) => {
+            // The query editor passes its text in the handler payload
+            handler: (payload: { text?: string; selectedText?: string; selectedQuery?: string } = {}) => {
               context.store.appEventBus.emit(
                 AppEvent.newCustomTab,
                 context.store.buildPluginTabInit({
@@ -210,9 +223,9 @@ const pluginMenuFactories: MenuFactories = {
                   viewId: menuItem.view,
                   command: menuItem.command,
                   params: {
-                    text: payload.text,
-                    selectedText: payload.selectedText,
-                    selectedQuery: payload.selectedQuery,
+                    text: payload.text ?? "",
+                    selectedText: payload.selectedText ?? "",
+                    selectedQuery: payload.selectedQuery ?? "",
                   },
                 })
               );

@@ -19,8 +19,8 @@
           <div class="actions">
             <a
               @click.prevent="refresh"
-              v-tooltip="`${ctrlOrCmd('r')} or F5`"
-              class="btn btn-link btn-fab"
+              v-tooltip="$bksConfigUI.getKeybindingLabel('general.refresh')"
+              class="btn btn-icon"
             ><i class="material-icons">refresh</i></a>
           </div>
         </div>
@@ -188,10 +188,6 @@ export default {
     }
   },
   methods: {
-    ctrlOrCmd(key) {
-      return platformInfo.isMac ? `⌘${key.toUpperCase()}` : `Ctrl+${key}`
-    },
-    
     async loadValidation() {
       if (this.loading) return
       this.loading = true

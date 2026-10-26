@@ -1,4 +1,4 @@
-import type { RequestPayload, ResponsePayload } from "@beekeeperstudio/plugin/dist/internal";
+import type { RequestPayload, ResponseData } from "@beekeeperstudio/plugin/dist/internal";
 import PluginStoreService from "./web/PluginStoreService";
 import rawLog from "@bksLogger";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
@@ -56,6 +56,9 @@ export interface PluginMenuItem {
   /** User-facing label shown in the UI for this menu item. */
   name: string;
 
+  /** Short explanation of what this command does. */
+  description?: string;
+
   /** The ID of a view defined in `capabilities.views`; the host opens a
    * new tab of that view. */
   view: string;
@@ -81,6 +84,7 @@ export type NativePluginMenuItem = {
   pluginId: string;
   label: string;
   command: string;
+  accelerator?: string;
 };
 
 /** Used by earlier versions of AI Shell. */
@@ -144,25 +148,64 @@ export type ManifestV1 = Omit<ManifestV0, "manifestVersion" | "capabilities"> & 
 };
 
 /**
- * The structure of a plugin entry.
+ * The raw structure of a plugin entry that is found in the registry file.
  *
  * @see {@link https://github.com/beekeeper-studio/beekeeper-studio-plugins}
  */
-export type PluginRegistryEntry = Pick<
+export type RawPluginRegistryEntry = Pick<
   Manifest,
   "id" | "name" | "author" | "description"
 > & {
   repo: string;
 };
 
+/**
+ * The plugin entry we will typically work with, since it's useful to keep
+ * the origin around and such
+ */
+export type PluginRegistryEntry = RawPluginRegistryEntry & {
+  origin: PluginOrigin;
+}
+
+export type RegistryMap = {
+  official: PluginRegistryEntry[],
+  community: PluginRegistryEntry[]
+} & {
+  [key: string]: PluginRegistryEntry[]
+};
+
+export interface Plugin extends PluginRegistryEntry, ManifestV1 {
+  installing: boolean;
+  installed: boolean;
+  enabled: boolean;
+  loadable: boolean;
+  error: unknown;
+  updateAvailable: boolean;
+  checkingForUpdates: boolean;
+}
+
+export interface PluginDisplayItem extends Plugin {
+  disabled: boolean;
+}
+
 export interface Release {
   manifest: Manifest;
   sourceArchiveUrl: string;
+  checksum: string;
 }
 
 export interface PluginRepository {
   latestRelease: Release;
   readme: string;
+  downloadCount?: number;
+}
+
+export interface RegistryConfig {
+  name: string,
+  origin: PluginOrigin,
+  owner: string,
+  repo: string,
+  file: string
 }
 
 export type OnViewRequestListener = (params: OnViewRequestListenerParams) => void | Promise<void>;
@@ -174,9 +217,9 @@ export type OnViewRequestListenerParams = {
   modifyResult: (callback: ViewResultModifier) => void;
 }
 
-export type AfterViewRequestCallback = (response: ResponsePayload) => void;
+export type AfterViewRequestCallback = (response: ResponseData) => void;
 
-export type ViewResultModifier = (result: ResponsePayload['result']) => ResponsePayload['result'] | Promise<ResponsePayload['result']>;
+export type ViewResultModifier = (result: ResponseData['result']) => ResponseData['result'] | Promise<ResponseData['result']>;
 
 export type PluginSettings = {
   [pluginId: string]: {
@@ -200,6 +243,7 @@ export type WebPluginContext = {
     info(text: string, options?: any): Noty;
   };
   confirm(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean>;
+  createNewTab(viewId: string, command: string, params?: JsonValue): void;
 }
 
 export type PluginSnapshot = {
@@ -216,6 +260,12 @@ export type WebPluginViewInstance = {
   iframe: HTMLIFrameElement;
   context: any;
 }
+
+export type Keybinding = {
+  placement: PluginMenuItemPlacement;
+  path: string;
+  handler: Function;
+};
 
 export type CreatePluginTabOptions = {
   manifest: Manifest;
@@ -234,14 +284,20 @@ type DisableState =
       disabled: true;
       reason:
         | "plugin-system-disabled"
+        | "official-plugins-disabled"
         | "community-plugins-disabled"
-        | "disabled-by-config";
+        | "custom-registries-disabled"
+        | "unlisted-disabled"
+        | "disabled-by-config"
+        | "max-plugins-reached";
     };
 
 /**
  * Indicates where a plugin originates from:
+ * - `bundled`: Features built with the plugin system that are bundled with the app
  * - `official`: {@link https://github.com/beekeeper-studio/beekeeper-studio-plugins/blob/main/plugins.json}
  * - `community`: {@link https://github.com/beekeeper-studio/beekeeper-studio-plugins/blob/main/community-plugins.json}
+ * - `custom`: Custom plugin from a custom third party repo (Business/Dev only)
  * - `unlisted`: Not listed in either repository
  */
-export type PluginOrigin = "official" | "community" | "unlisted";
+export type PluginOrigin = "bundled" | "official" | "community" | "custom"| "unlisted";

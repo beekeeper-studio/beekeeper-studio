@@ -41,6 +41,8 @@ export const LicenseHandlers: ILicenseHandlers = {
       isTrial: status.isTrial,
       isValidDateExpired: status.isValidDateExpired,
       isSupportDateExpired: status.isSupportDateExpired,
+      isLifetime: status.isLifetime,
+      canAccessCloudWorkspaces: status.canAccessCloudWorkspaces,
       maxAllowedVersion: status.maxAllowedVersion,
     };
   },

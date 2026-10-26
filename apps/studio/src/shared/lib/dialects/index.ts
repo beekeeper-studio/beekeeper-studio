@@ -18,6 +18,7 @@ import { SurrealDBData } from "./surrealdb";
 import { RedisData } from "@shared/lib/dialects/redis";
 import { DynamoDBData } from "./dynamodb";
 import { SnowflakeData } from "./snowflake";
+import { StarRocksData } from "./starrocks";
 
 export function getDialectData(dialect: Dialect): DialectData  {
   switch (dialect) {
@@ -59,6 +60,8 @@ export function getDialectData(dialect: Dialect): DialectData  {
       return DynamoDBData
     case 'snowflake':
       return SnowflakeData
+    case 'starrocks':
+      return StarRocksData
     default:
       return SqliteData
   }

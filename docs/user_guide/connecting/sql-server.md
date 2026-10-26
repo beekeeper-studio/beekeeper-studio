@@ -24,7 +24,7 @@ password-based **NTLM** authentication against a Windows domain account. It is
 distinct from integrated authentication: you still supply credentials, and it needs
 none of the system prerequisites below.
 
-### Windows / Kerberos (Integrated)
+### Kerberos / Windows (via ODBC)
 
 **Passwordless** authentication using the identity of the currently logged-in OS
 user (SSPI). The username and password fields are hidden — the connection uses your
@@ -43,6 +43,54 @@ prerequisites.
     Authentication feature set. SQL Login and Domain (NTLM) are available in all
     editions.
 
+## Host, instance, and port
+
+The **Host** field accepts the same forms SSMS does. Surrounding whitespace is trimmed,
+so a pasted value with a stray space still works.
+
+| Host | Connects to |
+| --- | --- |
+| `db.example.com` | The default instance, on the port in the **Port** field. |
+| `localhost` | The default instance on this machine. |
+| `.` | Shorthand for `localhost`. |
+| `(local)` | Shorthand for `localhost`. |
+| `db.example.com\SQLEXPRESS` | The named instance `SQLEXPRESS`. |
+
+### Named instances and the SQL Server Browser
+
+A named instance normally listens on a **dynamic port**, so its port has to be looked up
+from the **SQL Server Browser** service over **UDP 1434**. Leave **Port** at the default
+`1433` and that lookup happens automatically.
+
+The browser service is often stopped, or UDP 1434 is blocked by a firewall, and the
+lookup then fails with a timeout. Either:
+
+- Start the SQL Server Browser service and allow **UDP 1434** through the firewall, or
+- Give the instance a **static TCP port** in SQL Server Configuration Manager and enter
+  that port in the **Port** field. Any port other than `1433` connects directly and skips
+  the browser lookup entirely.
+
+To read the port an instance is currently listening on, run this from any tool already
+connected to it:
+
+```sql
+SELECT local_tcp_port FROM sys.dm_exec_connections WHERE session_id = @@SPID;
+```
+
+## Certificates
+
+Every stock SQL Server presents a **self-signed certificate**, and the driver validates
+certificates by default. New connections therefore have **Trust Server Certificate**
+enabled, so a default install connects with no extra setup.
+
+Clear the checkbox to validate the certificate against the operating system's trust
+store. The server then needs a certificate issued by a certificate authority the machine
+already trusts — a self-signed one is rejected.
+
+!!! note "Integrated authentication"
+    **Kerberos / Windows (via ODBC)** ignores this checkbox. Certificate handling for
+    that mode is the **Encryption** setting under [ODBC Options](#odbc-options).
+
 ## Kerberos vs NTLM
 
 "Integrated Authentication" (SSPI) is an umbrella over two wire protocols. The same
@@ -60,19 +108,22 @@ which protocol is negotiated.
 
 ## Prerequisites for integrated authentication
 
-!!! warning "These apply only to Windows / Kerberos (Integrated) mode"
+!!! warning "These apply only to Kerberos / Windows (via ODBC) mode"
     SQL Login, Domain (NTLM), and Azure / Entra ID need **none** of the packages
-    below. Only the passwordless **Windows / Kerberos (Integrated)** mode relies on a
+    below. Only the passwordless **Kerberos / Windows (via ODBC)** mode relies on a
     system ODBC driver and a Kerberos client.
 
 ### Windows
 
 Usually nothing extra is required. Windows ships an ODBC driver and SSPI support, so
-selecting **Windows / Kerberos (Integrated)** and connecting by hostname/FQDN works
+selecting **Kerberos / Windows (via ODBC)** and connecting by hostname/FQDN works
 out of the box on a domain-joined machine.
 
 If connections fail, install the latest
 [Microsoft ODBC Driver 18 for SQL Server](https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server).
+
+On a Windows on ARM PC running the ARM64 version of Beekeeper Studio, install the
+**ARM64** build of ODBC Driver 18. ODBC Driver 17 has no ARM64 build.
 
 ### Linux
 
@@ -115,14 +166,37 @@ and obtain a Kerberos ticket with `kinit` as on Linux.
 ## Connecting
 
 1. Add a new SQL Server connection.
-2. Set **Authentication** to **Windows / Kerberos (Integrated)**. The username and
+2. Set **Authentication** to **Kerberos / Windows (via ODBC)**. The username and
    password fields are hidden — authentication uses your current OS identity.
 3. Enter the server **hostname or FQDN** (use the fully qualified name so Kerberos can
    match the SPN) and port.
 4. Connect.
 
+### ODBC Options
+
+The **ODBC Options** section exposes the settings specific to integrated authentication:
+
+- **Encryption** — how the ODBC driver encrypts the connection:
+    - **Off** — no encryption (the login is still encrypted, but query traffic is not).
+    - **On (trust server certificate)** — encrypts the whole connection and trusts the
+      server certificate without validating it. Works with self-signed certificates.
+    - **Strict (validate certificate)** — TLS 1.2+/TDS 8.0; validates the server
+      certificate. Requires **SQL Server 2022 or newer**. If the certificate is self-signed
+      or issued by a CA your OS does not trust, set **Server Certificate** to a copy of the
+      server's certificate (PEM/DER/CER) to pin it.
+- **Server Certificate** — (Strict only) a certificate file to pin the server against,
+  instead of OS trust-store validation.
+- **Service Principal Name (SPN)** — override the Kerberos SPN when the auto-derived
+  `MSSQLSvc/<host>:<port>` is wrong (e.g. a CNAME, load balancer, or non-standard port).
+
 ## Troubleshooting
 
+- **"The server presented a self-signed certificate"** — the server's certificate is not
+  signed by a CA this machine trusts. Enable **Trust Server Certificate**, or install a
+  trusted certificate on the server. See [Certificates](#certificates).
+- **"No response from the SQL Server Browser service ... (UDP 1434)"** — the instance
+  name could not be resolved to a port. See
+  [Named instances and the SQL Server Browser](#named-instances-and-the-sql-server-browser).
 - **"Integrated authentication requires ... ODBC Driver 18 for SQL Server"** — the ODBC
   driver (and unixODBC on Linux/macOS) is not installed. See the prerequisites above.
 - **The connection times out during login** — TCP reached the server but the

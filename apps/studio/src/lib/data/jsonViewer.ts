@@ -36,7 +36,11 @@ export function findKeyPosition(jsonStr: string, path: (string | number)[]) {
     let found = false;
 
     for (let i = lineSearchOffset; i < lines.length; i++) {
-      const keyMatch = new RegExp(`^\\s{${(pathIdx + 1) * 2}}"${targetKey}":`);
+      // Escape regex metacharacters in the key: JSON keys commonly
+      // contain '.', '+', '(' etc. (URLs, domains, dotted config
+      // names), and an unescaped key would match the wrong line or
+      // fail to match at all.
+      const keyMatch = new RegExp(`^\\s{${(pathIdx + 1) * 2}}"${_.escapeRegExp(targetKey)}":`);
 
       if (keyMatch.test(lines[i])) {
         lineSearchOffset = i + 1;
@@ -125,17 +129,36 @@ export function deepFilterObjectProps(
  **/
 export function getPaths(obj: Record<string, any>) {
   const keys = [];
-  eachPaths(obj, (path) => keys.push(path));
+  eachPath(obj, (path) => keys.push(path));
   return keys;
 }
 
 type Value = string | boolean | number | null;
 
 /**
+ * The buffer behind a binary value, or null if the value isn't binary.
+ * Handles the mongodb objectid shape, where the buffer is nested one level.
+ **/
+export function binaryBufferOf(value: unknown): ArrayBufferView | null {
+  if (_.isTypedArray(value)) {
+    return value as ArrayBufferView;
+  }
+  // HACK: this is the case in mongodb objectid
+  if (value && typeof value === "object" && _.isTypedArray((value as any).buffer)) {
+    return (value as any).buffer;
+  }
+  return null;
+}
+
+/**
  * Recursively iterate through the object paths that has primitive values or
  * array
+ *
+ * Binary values are leaves, not objects to descend into. A typed array is
+ * `isObject` and not `isArray`, so without this it would recurse once per byte
+ * -- a megabyte blob produced a million path strings.
  **/
-export function eachPaths(
+export function eachPath(
   obj: Record<string, any>,
   fn: (path: string, value: Value | Value[]) => void,
   currentPath = ''
@@ -145,9 +168,9 @@ export function eachPaths(
     const newPath = currentPath ? `${currentPath}.${key}` : key;
     const value = obj[key];
 
-    if (_.isObject(obj[key]) && !_.isArray(obj[key]) && value !== null) {
+    if (_.isObject(value) && !_.isArray(value) && !binaryBufferOf(value)) {
       // Recurse if the value is an object
-      eachPaths(value, fn, newPath);
+      eachPath(value, fn, newPath);
     } else {
       // Apply the callback function on the current path and value
       fn(newPath, value);

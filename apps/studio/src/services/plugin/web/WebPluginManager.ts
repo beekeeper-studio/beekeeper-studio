@@ -1,14 +1,16 @@
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import rawLog from "@bksLogger";
-import { Manifest, OnViewRequestListener, PluginSnapshot } from "../types";
+import { OnViewRequestListener, PluginSnapshot } from "../types";
 import PluginStoreService from "./PluginStoreService";
 import WebPluginLoader from "./WebPluginLoader";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
-import { PluginNotificationData, PluginViewContext } from "@beekeeperstudio/plugin";
+import { divider } from "@beekeeperstudio/ui-kit";
+import { JsonValue, PluginViewContext } from "@beekeeperstudio/plugin";
 import { FileHelpers } from "@/types";
 import type Noty from "noty";
+import { AppEvent } from "@/common/AppEvent";
 import { WebPluginCommandExecutor } from "./WebPluginCommandExecutor";
-import { convertToManifestV1, mapViewsAndMenuFromV0ToV1 } from "../utils";
+import { NotificationData } from "@beekeeperstudio/plugin/dist/internal";
 
 const log = rawLog.scope("WebPluginManager");
 
@@ -155,7 +157,7 @@ export default class WebPluginManager {
   }
 
   /** Send a notification to a specific plugin */
-  async notify(pluginId: string, data: PluginNotificationData) {
+  async notify(pluginId: string, data: NotificationData) {
     const loader = this.loaders.get(pluginId);
     if (!loader) {
       throw new Error("Plugin not found: " + pluginId);
@@ -164,7 +166,7 @@ export default class WebPluginManager {
   }
 
   /** Send a notification to all plugins */
-  async notifyAll(data: PluginNotificationData) {
+  async notifyAll(data: NotificationData) {
     this.loaders.forEach((loader) => {
       loader.broadcast(data);
     })
@@ -230,7 +232,7 @@ export default class WebPluginManager {
 
     return [
       ...options,
-      { type: "divider" },
+      divider,
       ...extraOptions,
     ]
   }
@@ -253,7 +255,7 @@ export default class WebPluginManager {
     return loader.onDispose(fn);
   }
 
-  execute(pluginId: string, command: string) {
+  execute(pluginId: string, command: string, params?: JsonValue) {
     const loader = this.loaders.get(pluginId);
     if (!loader) {
       throw new Error(
@@ -261,7 +263,7 @@ export default class WebPluginManager {
       );
     }
     const executor = new WebPluginCommandExecutor(loader.context);
-    executor.execute(command);
+    executor.execute(command, params);
   }
 
 
@@ -280,6 +282,17 @@ export default class WebPluginManager {
       fileHelpers: this.fileHelpers,
       noty: this.noty,
       confirm: this.confirm,
+      createNewTab: (viewId, command, params) => {
+        this.pluginStore.appEventBus.emit(
+          AppEvent.newCustomTab,
+          this.pluginStore.buildPluginTabInit({
+            manifest: snapshot.manifest,
+            viewId,
+            command,
+            params,
+          })
+        );
+      },
     });
     await loader.load(snapshot);
     this.loaders.set(snapshot.manifest.id, loader);

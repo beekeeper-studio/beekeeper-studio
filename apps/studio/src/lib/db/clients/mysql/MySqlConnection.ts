@@ -192,8 +192,9 @@ export class MySqlConnection extends DatabaseConnection<mysql.PoolConnection> {
       dateStrings: true,
       supportBigNumbers: true,
       bigNumberStrings: true,
-      connectionLimit: BksConfig.db.mysql.maxConnections,
-      connectTimeout: BksConfig.db.mysql.connectTimeout,
+      enableCleartextPlugin: server.config.options?.enableClearText,
+      connectionLimit: BksConfig.db[server.config.client]?.maxConnections ?? BksConfig.db.mysql.maxConnections,
+      connectTimeout: BksConfig.db[server.config.client]?.connectTimeout ?? BksConfig.db.mysql.connectTimeout,
     };
 
     if (server.config.azureAuthOptions?.azureAuthEnabled) {

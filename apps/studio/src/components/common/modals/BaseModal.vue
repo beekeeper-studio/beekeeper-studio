@@ -2,31 +2,43 @@
   <portal to="modals">
     <modal
       :name="name"
+      :click-to-close="closable"
       @before-open="$emit('before-open', $event)"
-      @opened="$emit('opened')"
+      @before-close="handleBeforeClose"
+      @opened="handleOpened"
       @closed="$emit('closed')"
       class="base-modal-root"
+      :style="{ '--base-modal-min-width': minWidth, '--base-modal-max-width': maxWidth }"
     >
-      <div v-kbd-trap="true" class="base-modal">
+      <x-progressbar v-if="loading" />
+      <form
+        v-kbd-trap="true"
+        class="base-modal"
+        :style="{ height }"
+        ref="form"
+        @submit.prevent="$emit('submit', $event, close)"
+      >
         <div class="base-modal-header">
           <div class="base-modal-title">
             <slot name="title" :close="close" />
           </div>
           <a
+            v-if="closable"
             href="#"
             class="base-modal-close"
             @click.prevent="close"
+            ref="closeBtn"
           >
             <i class="material-icons">clear</i>
           </a>
         </div>
         <div class="base-modal-body">
-          <slot :close="close" />
+          <slot :close="close" :submit="() => $refs.form.requestSubmit()" />
         </div>
-        <div class="base-modal-footer">
+        <div class="base-modal-footer" v-if="$scopedSlots.footer">
           <slot name="footer" :close="close" />
         </div>
-      </div>
+      </form>
     </modal>
   </portal>
 </template>
@@ -40,21 +52,84 @@ export default Vue.extend({
       type: String,
       required: true,
     },
+    /** Query to find the first focusable element */
+    firstFocusable: {
+      type: String,
+      default: [
+        "a[href]:not(.base-modal-close)",
+        "button:not([disabled])",
+        "input:not([disabled])",
+        "select:not([disabled])",
+        "textarea:not([disabled])",
+        '[tabindex]:not([tabindex="-1"])',
+      ].join(","),
+    },
+    /** Show loading indicator */
+    loading: Boolean,
+    height: String,
+    minWidth: {
+      type: String,
+      default: "36rem"
+    },
+    maxWidth: {
+      type: String,
+      default: "550px"
+    },
+    /**
+     * When false there is no close button, and Escape, overlay clicks and
+     * stray `$modal.hide` calls are ignored: only `close()` (also exposed as
+     * the scoped slot prop) dismisses the modal. For dialogs that need an
+     * explicit decision, like the trial-ended prompt.
+     */
+    closable: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  data() {
+    return {
+      // Raised by close() for the duration of the hide call, so
+      // handleBeforeClose can tell an intentional close from an escape.
+      allowClose: false,
+    };
   },
   methods: {
     close() {
-      this.$modal.hide(this.name);
+      this.allowClose = true;
+      try {
+        this.$modal.hide(this.name);
+      } finally {
+        this.allowClose = false;
+      }
+    },
+    handleBeforeClose(event: { stop: () => void }) {
+      if (!this.closable && !this.allowClose) {
+        event.stop();
+        return;
+      }
+      this.$emit("before-close", event);
+    },
+    handleOpened() {
+      const target =
+        this.$refs.form?.querySelector(this.firstFocusable) ??
+        this.$refs.closeBtn;
+      target?.focus();
+      this.$emit("opened");
     },
   },
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .base-modal-root ::v-deep .v--modal {
+  min-width: var(--base-modal-min-width);
+  max-width: var(--base-modal-max-width);
   min-height: 6rem;
+  width: auto !important;
 }
 
 .base-modal {
+  --base-modal-footer-gap: 0.5rem;
   display: flex;
   flex-direction: column;
 }
@@ -70,7 +145,7 @@ export default Vue.extend({
 
 .base-modal-title {
   font-size: 1.1rem;
-  line-height: 1;
+  line-height: 1.8rem;
   font-weight: 500;
   margin: 0;
   display: flex;
@@ -80,12 +155,19 @@ export default Vue.extend({
   ::v-deep i.material-icons {
     font-size: 1.1rem;
   }
+
+  &::v-deep h2 {
+    margin: 0;
+    font-size: inherit;
+    font-weight: inherit;
+  }
 }
 
 .base-modal-close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  align-self: flex-start;
   width: 1.8rem;
   min-width: 1.8rem;
   height: 1.8rem;
@@ -101,27 +183,33 @@ export default Vue.extend({
 
 .base-modal-close:hover,
 .base-modal-close:focus {
-  background: rgb(from var(--theme-base) r g b / 10%);
+  background: var(--btn-bg-hover);
 }
 
 .base-modal-close .material-icons,
 .base-modal-close .material-icons-outlined {
   font-size: 1.25rem;
-  color: var(--text-dark);
+  color: var(--btn-fg);
 }
 
 .base-modal-body {
-  flex: 1 0 auto;
+  flex: 1 1 auto;
+  overflow-y: auto;
   width: 100%;
   padding: 0 1.2rem 0.8rem;
 }
 
 .base-modal-footer {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--base-modal-footer-gap);
   width: 100%;
   justify-content: flex-end;
   padding-inline: 1.2rem;
   padding-bottom: 0.8rem;
+}
+
+x-progressbar {
+  // Avoid shifting the other elements down
+  position: absolute;
 }
 </style>

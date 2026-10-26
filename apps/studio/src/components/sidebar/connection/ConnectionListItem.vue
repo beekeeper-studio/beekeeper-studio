@@ -51,18 +51,18 @@
           v-if="!pinned"
           @mousedown.prevent.stop="pin"
           :title="'Pin'"
-          class="btn-fab pin"
+          class="btn-icon pin"
         ><i class="bk-pin" /></span>
         <span
           v-if="pinned"
           @mousedown.prevent.stop="unpin"
           :title="'Unpin'"
-          class="btn-fab unpin"
+          class="btn-icon unpin"
         ><i class="material-icons">clear</i></span>
         <span
           v-if="pinned"
           @mousedown.prevent.stop="unpin"
-          class="btn-fab pinned"
+          class="btn-icon pinned"
         >
           <i
             class="bk-pin"
@@ -79,6 +79,7 @@ import TimeAgo from 'javascript-time-ago'
 import { mapGetters, mapState } from 'vuex'
 import { isUltimateType } from '@/common/interfaces/IConnection'
 import EditableText from '@/components/common/EditableText.vue'
+import { AppEvent } from '@/common/AppEvent';
 
 export default {
   components: { EditableText },
@@ -98,29 +99,15 @@ export default {
     rename: false,
   }),
   computed: {
+    ...mapGetters(["isCloud", "workspace"]),
     ...mapState('data/connections', {'connectionConfigs': 'items'}),
     ...mapState('data/connectionFolders', {'folders': 'items'}),
-    ...mapGetters(['isCloud']),
-    moveToOptions() {
-      const rootById = {}
-      this.folders.forEach(f => { if (!f.parentId) rootById[f.id] = f.name })
-      return this.folders
-        .filter(folder => folder.id !== this.config.connectionFolderId)
-        .map(folder => {
-          let name
-          if (!folder.parentId) {
-            const hasSubs = this.folders.some(f => f.parentId === folder.id)
-            name = hasSubs ? `Move to ${folder.name} (top level)` : `Move to ${folder.name}`
-          } else {
-            const parentName = rootById[folder.parentId] || ''
-            name = `Move to ${parentName} \u2192 ${folder.name}`
-          }
-          return { name, slug: `move-${folder.id}`, handler: this.moveItem, folder }
-        })
-    },
     classList() {
       return {
-        'active': this.savedConnection && this.selectedConfig ? this.savedConnection === this.selectedConfig : false
+        // the connection screen edits a copy, so compare by key, not identity
+        'active': !!this.savedConnection && !!this.selectedConfig &&
+          this.savedConnection.id === this.selectedConfig.id &&
+          this.savedConnection.workspaceId === this.selectedConfig.workspaceId
       }
     },
     labelColor() {
@@ -153,8 +140,8 @@ export default {
     },
     title() {
       return this.privacyMode ?
-        'Connection details hidden by Privacy Mode' :
-        this.$bks.buildConnectionString(this.displayConfig)
+        `Created by ${this.author}` :
+        `Created by ${this.author}, ${this.$bks.buildConnectionString(this.displayConfig)}`;
     },
     savedConnection() {
 
@@ -169,6 +156,12 @@ export default {
         return this.config
       }
     },
+    folder() {
+      return this.folders.find((f) => f.id === this.savedConnection.connectionFolderId);
+    },
+    isPersonal() {
+      return this.folder?.personal;
+    },
     // For display purposes only: prefer the linked saved connection when this
     // is a recent-list row, so edits to the saved connection (host, port, ssh,
     // etc.) propagate to the recent connections list. Falls back to the
@@ -176,6 +169,20 @@ export default {
     // recent entry).
     displayConfig() {
       return this.savedConnection || this.config
+    },
+    author() {
+      if (!this.isCloud) {
+        return "You";
+      }
+      if (!this.displayConfig || !this.displayConfig.membership) {
+        return "Unknown";
+      }
+      if (
+        this.displayConfig.membership.userId === this.workspace.currentMembership.userId
+      ) {
+        return "You";
+      }
+      return this.displayConfig.membership.name;
     },
   },
   methods: {
@@ -187,9 +194,10 @@ export default {
 
       event.stopPropagation();
 
-      const ultimateCheck = this.$store.getters.isUltimate
+      const canConnect = this.$store.getters.isUltimate
         ? true
         : !isUltimateType(this.displayConfig.connectionType)
+      const canWrite = this.config.canWrite ?? true;
 
       const options = [
         {
@@ -197,21 +205,24 @@ export default {
           slug: 'view',
           handler: (blob) => this.click(blob.item)
         },
-        ultimateCheck && {
+        {
           name: 'Connect',
           slug: 'connect',
+          hideIf: !canConnect,
           handler: (blob) => this.doubleClick(blob.item)
         },
-        !this.isRecentList && {
+        { type: "divider" },
+        {
           name: this.pinned ? 'Unpin' : 'Pin',
-          handler: () => this.pinned ? this.unpin() : this.pin()
+          handler: () => this.pinned ? this.unpin() : this.pin(),
+          hideIf: this.isRecentList,
         },
-        !this.isRecentList && {
-          name: "Rename",
-          slug: 'rename',
-          handler: () => {
-            this.rename = true;
-          },
+        { type: "divider", hideIf: this.isRecentList },
+        {
+          name: "Share",
+          slug: 'share',
+          handler: this.share,
+          hideIf: !this.isCloud || !this.savedConnection || !this.savedConnection.id || this.isPersonal,
         },
         {
           name: "Duplicate",
@@ -222,43 +233,36 @@ export default {
           name: `Copy ${this.connectionType}`,
           handler: this.copyUrl
         },
+        { type: "divider" },
         {
-          name: "Remove",
+          name: "Rename",
+          slug: 'rename',
+          handler: () => {
+            this.rename = true;
+          },
+          hideIf: this.isRecentList || !canWrite,
+        },
+        {
+          name: "Move",
+          handler: () => {
+            this.trigger(AppEvent.openMoveFileModal, {
+              type: "connection",
+              value: this.config,
+            });
+          },
+          hideIf: this.isRecentList || this.folders.length === 0,
+        },
+        {
+          name: "Delete",
           handler: this.remove
         },
-      ].filter(v => v)
-
-      if (this.isCloud || this.folders.length > 0) {
-        options.push({ type: 'divider' })
-        if (!this.isCloud && this.config.connectionFolderId) {
-          options.push({ name: 'Move to top level', handler: () => this.moveToRoot() })
-        }
-        options.push(...this.moveToOptions)
-      }
+      ].filter(({ hideIf }) => !hideIf)
 
       this.$bks.openMenu({
         event,
         item: this.config,
         options
       })
-    },
-    async moveToRoot() {
-      try {
-        await this.$store.dispatch('data/connectionFolders/moveToFolder', { connection: this.config, folder: null })
-      } catch (ex) {
-        this.$noty.error(`Move Error: ${ex.message}`)
-        console.error(ex)
-      }
-    },
-    async moveItem({ item, option }) {
-      try {
-        const folder = option.folder
-        if (!folder || !folder.id) return
-        await this.$store.dispatch('data/connectionFolders/moveToFolder', { connection: item, folder })
-      } catch(ex) {
-        this.$noty.error(`Move Error: ${ex.message}`)
-        console.error(ex)
-      }
     },
     async click() {
       if (this.savedConnection) {
@@ -279,6 +283,12 @@ export default {
     },
     duplicate() {
       this.$emit('duplicate', this.config)
+    },
+    share() {
+      this.trigger(AppEvent.openShareModal, {
+        id: this.savedConnection.id,
+        module: "data/connections",
+      });
     },
     async copyUrl() {
       try {
@@ -325,5 +335,23 @@ export default {
   .editable-text {
     width: 100%;
   }
+}
+
+/** --depth is from Tree.vue */
+.list-group .list-item .list-item-btn {
+  padding-left: calc(var(--depth) * 1.15rem);
+}
+
+.connection-label {
+  margin-left: 0.5rem;
+}
+
+.btn-icon.pin, .btn-icon.pinned {
+  &:hover, &:focus {
+    background: transparent;
+  }
+}
+.btn-icon.pinned .bk-pin {
+  color: var(--primary-solid-bg-hover-a);
 }
 </style>

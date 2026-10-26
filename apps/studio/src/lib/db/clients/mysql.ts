@@ -18,14 +18,15 @@ import {
   ClientError,
   errorMessages
 } from "./utils";
+import { parseQuotedEnumValues } from "./enumParsers";
 import {
   IDbConnectionDatabase,
   DatabaseElement,
 } from "../types";
 import { MysqlCursor } from "./mysql/MySqlCursor";
+import { foreignKeyColumnsSql } from "./mysql/scripts";
 import {createCancelablePromise} from "@/common/utils";
 import { errors } from "@/lib/errors";
-import { identify } from "sql-query-identifier";
 import { MySqlChangeBuilder } from "@shared/lib/sql/change_builder/MysqlChangeBuilder";
 import { AlterTableSpec, IndexColumn, TableKey } from "@shared/lib/dialects/models";
 import { MysqlData } from "@shared/lib/dialects/mysql";
@@ -348,6 +349,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       generationExpression: row.generation_expression,
       characterSet: row.character_set,
       collation: row.collation,
+      enumValues: parseQuotedEnumValues(row.column_type),
       bksField: this.parseTableColumn(row),
     }));
   }
@@ -575,142 +577,31 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     table: string,
     _schema?: string
   ): Promise<TableKey[]> {
-    // Query for foreign keys FROM this table (referencing other tables)
+    // Foreign keys defined on this table (referencing other tables)
     const sql = `
-    SELECT
-      cu.constraint_name as 'constraint_name',
-      cu.column_name as 'column_name',
-      cu.referenced_table_name as 'referenced_table_name',
-      IF(cu.referenced_table_name IS NOT NULL, 'FOREIGN', cu.constraint_name) as key_type,
-      cu.REFERENCED_TABLE_NAME as referenced_table,
-      cu.REFERENCED_COLUMN_NAME as referenced_column,
-      rc.UPDATE_RULE as on_update,
-      rc.DELETE_RULE as on_delete,
-      rc.CONSTRAINT_NAME as rc_constraint_name,
-      cu.ORDINAL_POSITION as ordinal_position
-    FROM information_schema.key_column_usage cu
-    JOIN information_schema.referential_constraints rc
-      on cu.constraint_name = rc.constraint_name
-      and cu.constraint_schema = rc.constraint_schema
-    WHERE table_schema = database()
-    AND cu.table_name = ?
-    AND cu.referenced_table_name IS NOT NULL
-    ORDER BY rc.CONSTRAINT_NAME, cu.ORDINAL_POSITION
-  `;
-
-    const params = [table];
-
-    const { rows } = await this.driverExecuteSingle(sql, { params });
-
-    // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(rows, 'constraint_name');
-
-    return Object.keys(groupedKeys).map(constraintName => {
-      const keyParts = groupedKeys[constraintName];
-
-      // If there's only one part, return a simple key (backward compatibility)
-      if (keyParts.length === 1) {
-        const row = keyParts[0];
-        return {
-          constraintName: `${row.constraint_name}`,
-          toTable: row.referenced_table,
-          toColumn: row.referenced_column,
-          fromTable: table,
-          fromColumn: row.column_name,
-          referencedTable: row.referenced_table_name,
-          keyType: `${row.key_type} KEY`,
-          onDelete: row.on_delete,
-          onUpdate: row.on_update,
-          toSchema: "",
-          fromSchema: "",
-          isComposite: false,
-        };
-      }
-
-      // If there are multiple parts, it's a composite key
-      const firstPart = keyParts[0];
-      return {
-        constraintName: `${firstPart.constraint_name}`,
-        toTable: firstPart.referenced_table,
-        toColumn: keyParts.map(p => p.referenced_column),
-        fromTable: table,
-        fromColumn: keyParts.map(p => p.column_name),
-        referencedTable: firstPart.referenced_table_name,
-        keyType: `${firstPart.key_type} KEY`,
-        onDelete: firstPart.on_delete,
-        onUpdate: firstPart.on_update,
-        toSchema: "",
-        fromSchema: "",
-        isComposite: true
-      };
-    });
+      ${foreignKeyColumnsSql}
+      WHERE cu.table_schema = database()
+        AND cu.table_name = ?
+        AND cu.referenced_table_name IS NOT NULL
+      ORDER BY cu.constraint_name, cu.ordinal_position
+    `;
+    const { rows } = await this.driverExecuteSingle(sql, { params: [table] });
+    return this.parseForeignKeys(rows);
   }
 
   async getIncomingKeys(
     table: string,
     _schema?: string
   ): Promise<TableKey[]> {
-    // Query for foreign keys TO this table (other tables referencing this table)
-    const incomingSQL = `
-    SELECT
-      cu.constraint_name as 'constraint_name',
-      cu.table_name as 'from_table',
-      cu.column_name as 'column_name',
-      cu.referenced_table_name as 'referenced_table',
-      cu.REFERENCED_COLUMN_NAME as 'referenced_column',
-      rc.UPDATE_RULE as on_update,
-      rc.DELETE_RULE as on_delete,
-      cu.ORDINAL_POSITION as ordinal_position
-    FROM information_schema.key_column_usage cu
-    JOIN information_schema.referential_constraints rc
-      on cu.constraint_name = rc.constraint_name
-      and cu.constraint_schema = rc.constraint_schema
-    WHERE table_schema = database()
-    AND cu.referenced_table_name = ?
-    ORDER BY cu.constraint_name, cu.ORDINAL_POSITION
-  `;
-
-    const params = [table];
-    const { rows } = await this.driverExecuteSingle(incomingSQL, { params });
-
-    // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(rows, 'constraint_name');
-
-    return Object.keys(groupedKeys).map(constraintName => {
-      const keyParts = groupedKeys[constraintName];
-
-      // If there's only one part, return a simple key
-      if (keyParts.length === 1) {
-        const row = keyParts[0];
-        return {
-          constraintName: `${row.constraint_name}`,
-          toTable: row.referenced_table,
-          toColumn: row.referenced_column,
-          fromTable: row.from_table,
-          fromColumn: row.column_name,
-          onDelete: row.on_delete,
-          onUpdate: row.on_update,
-          toSchema: "",
-          fromSchema: "",
-          isComposite: false,
-        };
-      }
-
-      // If there are multiple parts, it's a composite key
-      const firstPart = keyParts[0];
-      return {
-        constraintName: `${firstPart.constraint_name}`,
-        toTable: firstPart.referenced_table,
-        toColumn: keyParts.map(p => p.referenced_column),
-        fromTable: firstPart.from_table,
-        fromColumn: keyParts.map(p => p.column_name),
-        onDelete: firstPart.on_delete,
-        onUpdate: firstPart.on_update,
-        toSchema: "",
-        fromSchema: "",
-        isComposite: true,
-      };
-    });
+    // Foreign keys on other tables that reference this table
+    const sql = `
+      ${foreignKeyColumnsSql}
+      WHERE cu.table_schema = database()
+        AND cu.referenced_table_name = ?
+      ORDER BY cu.constraint_name, cu.ordinal_position
+    `;
+    const { rows } = await this.driverExecuteSingle(sql, { params: [table] });
+    return this.parseForeignKeys(rows);
   }
 
   async getTableProperties(
@@ -769,26 +660,28 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
   }
 
   async executeApplyChanges(changes: TableChanges, tabId?: number): Promise<any[]> {
+    if (tabId) {
+      return await this.runWithConnection(this.applyChangesRunner.bind(this, changes), tabId);
+    }
+    return await this.runWithTransaction(this.applyChangesRunner.bind(this, changes));
+  }
+
+  protected async applyChangesRunner(
+    changes: TableChanges,
+    connection: mysql.PoolConnection
+  ): Promise<any[]> {
     let results = [];
 
-    const run = async (connection: mysql.PoolConnection) => {
-      if (changes.inserts) {
-        await this.insertRows(changes.inserts, connection);
-      }
-
-      if (changes.updates) {
-        results = await this.updateValues(changes.updates, connection);
-      }
-
-      if (changes.deletes) {
-        await this.deleteRows(changes.deletes, connection);
-      }
+    if (changes.inserts) {
+      await this.insertRows(changes.inserts, connection);
     }
 
-    if (tabId) {
-      await this.runWithConnection(run, tabId);
-    } else {
-      await this.runWithTransaction(run);
+    if (changes.updates) {
+      results = await this.updateValues(changes.updates, connection);
+    }
+
+    if (changes.deletes) {
+      await this.deleteRows(changes.deletes, connection);
     }
 
     return results;
@@ -1451,4 +1344,5 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
 
 export const testOnly = {
   parseFields,
+  parseEnumValues: parseQuotedEnumValues,
 };

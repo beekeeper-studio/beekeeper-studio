@@ -38,9 +38,11 @@ import {
   TableUpdateResult,
 } from "@/lib/db/models";
 import { ClickHouseData } from "@shared/lib/dialects/clickhouse";
+import { parseClickHouseEnumValues } from "@/lib/db/clients/enumParsers";
 import _ from "lodash";
 import {
   createCancelablePromise,
+  isListFilter,
   joinFilters,
   streamToString,
 } from "@/common/utils";
@@ -205,6 +207,7 @@ export class ClickHouseClient extends BasicDatabaseClient<
         comment: row.comment,
         primaryKey: row.is_in_primary_key === 1,
         nullable: RE_NULLABLE.test(row.type),
+        enumValues: parseClickHouseEnumValues(row.type),
         bksField: this.parseTableColumn(row),
       };
     });
@@ -1061,7 +1064,7 @@ export class ClickHouseClient extends BasicDatabaseClient<
           ? `HEX(${ClickHouseData.wrapIdentifier(item.field)})`
           : ClickHouseData.wrapIdentifier(item.field);
 
-        if (item.type === "in") {
+        if (isListFilter(item.type)) {
           const params = _.isArray(item.value)
             ? item.value.map(() => `{p${paramCounter++}: Dynamic}`).join(",")
             : `{p${paramCounter++}: Dynamic}`;

@@ -1,4 +1,5 @@
 import { HasId } from "@/common/interfaces/IGeneric";
+import { snakeCaseObjectKeys } from "@/common/utils";
 import { CloudError, res, url } from "@/lib/cloud/ClientHelpers";
 import { AxiosInstance } from "axios";
 
@@ -6,6 +7,10 @@ interface Changes {
   changed: number
   deleted: number
 }
+
+export type ListOptions = {
+  params: Record<string, unknown>;
+};
 
 // function unixtime(date:Date): number {
 //   return (date.getTime() / 1000)
@@ -20,12 +25,22 @@ export abstract class GenericController<T extends HasId> {
   name: string
   plural: string
 
-  async list(updatedSince?: number): Promise<T[]> {
-    const params = updatedSince ? {
-      updated_since: updatedSince,
-      slim: true
-    } : { slim: true }
+  async list(updatedSince?: number, options?: ListOptions): Promise<T[]> {
+    const params: Record<string, unknown> = { slim: true };
+    if (options?.params) {
+      Object.assign(params, snakeCaseObjectKeys(options.params));
+    }
+    if (updatedSince) {
+      params.updated_since = updatedSince;
+    }
     const response = await this.axios.get(url(this.path), { params })
+    return res(response, this.plural)
+  }
+
+  async search(q: string): Promise<T[]> {
+    const response = await this.axios.get(url(this.path, 'search'), {
+      params: { q },
+    })
     return res(response, this.plural)
   }
 
@@ -62,5 +77,14 @@ export abstract class GenericController<T extends HasId> {
     if (!q.id) throw new CloudError(400, `Cannot delete ${this.name} without an ID`)
     const response = await this.axios.delete(url(this.path, q.id))
     return res(response, 'success')
+  }
+
+  async import(qs: T[]): Promise<T[]> {
+    const response = await this.axios.post(url(this.path, "import"), {
+      [this.plural]: qs,
+    }, {
+      timeout: 20000
+    });
+    return res(response, this.plural);
   }
 }

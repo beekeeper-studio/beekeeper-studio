@@ -9,10 +9,11 @@ import type {
 import { DatabaseType } from "@beekeeperstudio/plugin";
 import { findTable, PluginTabType } from "@/common/transport/TransportOpenTab";
 import { AppEvent } from "@/common/AppEvent";
-import { ExtendedTableColumn, NgQueryResult, TableOrView } from "@/lib/db/models";
+import { ExtendedTableColumn, NgQueryResult } from "@/lib/db/models";
 import _ from "lodash";
 import { SidebarTab } from "@/store/modules/SidebarModule";
 import {
+  Keybinding,
   Manifest,
   PluginMenuItem,
   PluginView,
@@ -20,11 +21,12 @@ import {
   CreatePluginTabOptions,
   PluginSnapshot,
 } from "../types";
-import { ExternalMenuItem, JsonValue } from "@/types";
+import { ExternalMenuItem } from "@/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
 import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
 import { cssVars } from "./cssVars";
 import type { DialectData } from "@/shared/lib/dialects/models";
+import { RequestMap } from "@beekeeperstudio/plugin/dist/internal";
 
 type Table = {
   name: string;
@@ -78,7 +80,7 @@ export default class PluginStoreService {
       .join("");
 
     return {
-      type: this.store.getters["settings/themeType"],
+      type: this.store.getters["theme/dark"] ? "dark" : "light",
       palette,
       cssString,
     };
@@ -151,6 +153,7 @@ export default class PluginStoreService {
   setTabDropdownItem(options: {
     menuItem: PluginMenuItem;
     manifest: Manifest;
+    keybindingLabel?: string;
   }): void {
     const ref: TabTypeConfig.PluginRef = {
       pluginId: options.manifest.id,
@@ -159,6 +162,7 @@ export default class PluginStoreService {
     const menuItem: TabTypeConfig.PluginConfig['menuItem'] = {
       label: options.menuItem.name,
       command: options.menuItem.command,
+      shortcut: options.keybindingLabel,
     }
     this.store.commit("tabs/setMenuItem", { ...ref, menuItem });
   }
@@ -252,6 +256,7 @@ export default class PluginStoreService {
       databaseName: this.store.state.database,
       defaultSchema: this.store.state.defaultSchema,
       readOnlyMode: this.store.state.usedConfig.readOnlyMode,
+      disabledFeatures: this.store.getters.dialectData.disabledFeatures,
     };
   }
 
@@ -313,7 +318,7 @@ export default class PluginStoreService {
     this.appEventBus.emit(AppEvent.newCustomTab, transport);
   }
 
-  openTab(options: OpenTabRequest['args']): void {
+  openTab(options: RequestMap['openTab']['args']): void {
     if (options.type === "query") {
       if (!options.query) {
         this.appEventBus.emit(AppEvent.newTab)
@@ -324,13 +329,13 @@ export default class PluginStoreService {
     }
 
     if (options.type === "tableStructure") {
-      const table = this.findTableOrThrow(options.table, options.schema);
+      const table = this.findTableOrThrow(options.name, options.schema);
       this.appEventBus.emit(AppEvent.openTableProperties, { table });
       return;
     }
 
     if (options.type === "tableTable") {
-      const table = this.findTableOrThrow(options.table, options.schema);
+      const table = this.findTableOrThrow(options.name, options.schema);
       this.appEventBus.emit(AppEvent.loadTable, {
         table,
         filters: options.filters,
@@ -338,7 +343,7 @@ export default class PluginStoreService {
       return;
     }
 
-    throw new Error(`Unsupported tab type: ${options.type}`);
+    throw new Error(`Unsupported tab type: ${(options as any).type}`);
   }
 
   addPopupMenuItem(menuId: string, item: ContextOption) {
@@ -350,11 +355,22 @@ export default class PluginStoreService {
   }
 
   addMenuBarItem(item: ExternalMenuItem<PluginTabContext>) {
-    this.store.commit("menuBar/add", item);
+    this.store.commit("menuBar/add", {
+      disableWhenDisconnected: true,
+      ...item,
+    });
   }
 
   removeMenuBarItem(id: string) {
     this.store.commit("menuBar/remove", id);
+  }
+
+  addKeybinding(keybinding: Keybinding) {
+    this.store.commit("plugins/keybindings/add", keybinding);
+  }
+
+  removeKeybinding(placement: Keybinding["placement"], handler: Keybinding["handler"]) {
+    this.store.commit("plugins/keybinding/remove", { placement, handler });
   }
 
   async loadSnapshots() {

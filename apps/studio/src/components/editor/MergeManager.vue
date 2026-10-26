@@ -11,7 +11,7 @@
       <span class="alert-footer btn-group">
         <span class="expand" />
         <a
-          class="btn btn-sm btn-link"
+          class="btn btn-sm"
           @click.prevent="undoMerge"
           title="What have you done to my query!?"
         >Undo</a>
@@ -35,7 +35,7 @@
         <span class="expand" />
         <x-button
           @click.prevent="viewDiff"
-          class="btn btn-link"
+          class="btn"
         >Preview Merge</x-button>
         <x-buttons>
           <x-button
@@ -100,7 +100,7 @@ import DiffViewer from '@/components/editor/DiffViewer.vue'
 
 export default Vue.extend({
   components: { DiffViewer },
-  props: ['query', 'unsavedText', 'originalText'],
+  props: ['query', 'unsavedText', 'originalText', 'pendingRemoteChanges'],
   data: () => ({
     preMergeText: null,
     diff: null
@@ -114,10 +114,6 @@ export default Vue.extend({
     },
     pendingLocalChanges() {
       return _.trim(this.unsavedText) !== _.trim(this.originalText)
-    },
-    pendingRemoteChanges() {
-      // the query object changed in the background
-      return this.query.text !== this.originalText
     },
     pendingMerge() {
       return !!this.preMergeText

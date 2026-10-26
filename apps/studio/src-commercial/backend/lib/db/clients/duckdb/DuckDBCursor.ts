@@ -1,6 +1,6 @@
 import { BeeCursor, TableColumn } from "@/lib/db/models";
 import rawLog from "@bksLogger";
-import { DuckDBResult, DuckDBConnection, DuckDBValue } from "@duckdb/node-api";
+import type { DuckDBResult, DuckDBConnection } from "@duckdb/node-api";
 
 const log = rawLog.scope("DuckDBCursor");
 

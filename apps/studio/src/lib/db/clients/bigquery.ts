@@ -5,15 +5,16 @@ import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, Ex
 import { DatabaseElement, IDbConnectionDatabase } from "../types";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "./BasicDatabaseClient";
 import knexlib from 'knex';
-import Client from 'knex/lib/client';
+import Client from 'knex/lib/client.js';
 import { BigQueryClient as BigQueryKnexClient } from '@shared/lib/knex-bigquery';
 import { BigQueryChangeBuilder } from "@shared/lib/sql/change_builder/BigQueryChangeBuilder";
 import platformInfo from "@/common/platform_info";
 import rawLog from '@bksLogger';
-import { applyChangesSql, buildDeleteQueries, buildInsertQuery, buildSelectQueriesFromUpdates, buildSelectTopQuery, buildUpdateQueries, escapeString } from './utils';
+import { buildDeleteQueries, buildInsertQuery, buildSelectQueriesFromUpdates, buildSelectTopQuery, buildUpdateQueries, escapeString } from './utils';
 import { createCancelablePromise } from '@/common/utils';
 import { errors } from '@/lib/errors';
 import { BigQueryCursor } from './bigquery/BigQueryCursor';
+import { foreignKeyColumnsSql } from './bigquery/scripts';
 import { BigQueryData } from '@shared/lib/dialects/bigquery';
 import { IDbConnectionServer } from '../backendTypes';
 import _ from 'lodash';
@@ -25,7 +26,7 @@ interface BigQueryResult {
   rows: any[],
   rowCount: number
   arrayMode: boolean
-  columns: bq.SchemaField[]
+  columns: any[]
 }
 
 const bigqueryContext = {
@@ -35,6 +36,28 @@ const bigqueryContext = {
   logQuery(_query: string, _options: QueryLogOptions, _context: ExecutionContext): Promise<number | string> {
     return null;
   }
+}
+
+export function parseRowData(data: Record<string, any>[]): Record<string, any>[] {
+  // BigQuery can return nested objects with custom types in the results
+  // look for the value string property.
+  // https://github.com/googleapis/nodejs-bigquery/blob/71dbed2140893677f7af254f5a7713a7f50bae92/src/bigquery.ts#L2191
+  return data.map((row) => {
+    const parsedRow: Record<string, any> = {}
+    Object.keys(row).forEach((key) => {
+      let strValue = row[key]
+      if (strValue !== null && typeof strValue === 'object') {
+        if ('value' in strValue) {
+          strValue = row[key].value
+          // This is for numerics which are returned as a 'BIG'
+        } else if ('toFixed' in strValue) {
+          strValue = row[key].toFixed()
+        }
+      }
+      parsedRow[key] = strValue
+    })
+    return parsedRow
+  })
 }
 
 export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
@@ -153,87 +176,29 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   }
 
   async getOutgoingKeys(table: string, _schema?: string): Promise<TableKey[]> {
-    // Query for foreign keys FROM this table (referencing other tables)
+    // Foreign keys defined on this table (referencing other tables)
     const sql = `
-      SELECT
-        NULL as from_schema,
-        f.table_name as from_table,
-        f.column_name as from_column,
-        NULL as to_schema,
-        t.table_name as to_table,
-        t.column_name as to_column,
-        f.constraint_name,
-        NULL as update_rule,
-        NULL as delete_rule
-      FROM
-        ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE as f
-      JOIN ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE as t
-      ON f.constraint_name = t.constraint_name
-      JOIN ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS as con
-      ON f.constraint_catalog = con.constraint_catalog
-      AND f.constraint_schema = con.constraint_schema
-      AND f.constraint_name = con.constraint_name
+      ${foreignKeyColumnsSql(this.wrapIdentifier(this.db))}
       WHERE f.table_schema = '${escapeString(this.db)}'
-      AND f.table_name = '${escapeString(table)}'
-      AND con.constraint_type = 'FOREIGN KEY'
+        AND f.table_name = '${escapeString(table)}'
+        AND con.constraint_type = 'FOREIGN KEY'
+      ORDER BY f.constraint_name, f.ordinal_position
     `;
-
     const data = await this.driverExecuteSingle(sql);
-
-    return data.rows.map((row) => ({
-      toTable: row.to_table,
-      toSchema: row.to_schema,
-      toColumn: row.to_column,
-      fromTable: row.from_table,
-      fromSchema: row.from_schema,
-      fromColumn: row.from_column,
-      constraintName: row.constraint_name,
-      onUpdate: row.update_rule,
-      onDelete: row.delete_rule,
-      isComposite: false
-    }));
+    return this.parseForeignKeys(data.rows);
   }
 
   async getIncomingKeys(table: string, _schema?: string): Promise<TableKey[]> {
-    // Query for foreign keys TO this table (other tables referencing this table)
+    // Foreign keys on other tables that reference this table
     const sql = `
-      SELECT
-        NULL as from_schema,
-        f.table_name as from_table,
-        f.column_name as from_column,
-        NULL as to_schema,
-        t.table_name as to_table,
-        t.column_name as to_column,
-        f.constraint_name,
-        NULL as update_rule,
-        NULL as delete_rule
-      FROM
-        ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.KEY_COLUMN_USAGE as f
-      JOIN ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE as t
-      ON f.constraint_name = t.constraint_name
-      JOIN ${this.wrapIdentifier(this.db)}.INFORMATION_SCHEMA.TABLE_CONSTRAINTS as con
-      ON f.constraint_catalog = con.constraint_catalog
-      AND f.constraint_schema = con.constraint_schema
-      AND f.constraint_name = con.constraint_name
+      ${foreignKeyColumnsSql(this.wrapIdentifier(this.db))}
       WHERE f.table_schema = '${escapeString(this.db)}'
-      AND t.table_name = '${escapeString(table)}'
-      AND con.constraint_type = 'FOREIGN KEY'
+        AND t.table_name = '${escapeString(table)}'
+        AND con.constraint_type = 'FOREIGN KEY'
+      ORDER BY f.constraint_name, f.ordinal_position
     `;
-
-    const result = await this.driverExecuteSingle(sql);
-
-    return result.rows.map((row) => ({
-      toTable: row.to_table,
-      toSchema: row.to_schema,
-      toColumn: row.to_column,
-      fromTable: row.from_table,
-      fromSchema: row.from_schema,
-      fromColumn: row.from_column,
-      constraintName: row.constraint_name,
-      onUpdate: row.update_rule,
-      onDelete: row.delete_rule,
-      isComposite: false
-    }));
+    const data = await this.driverExecuteSingle(sql);
+    return this.parseForeignKeys(data.rows);
   }
 
   async query(queryText: string, options: any = {}): Promise<CancelableQuery> {
@@ -615,7 +580,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   private parseRowQueryResult(data) {
     // Fallback in case the identifier could not reconize the command
     const isSelect = Array.isArray(data)
-    const rows = this.parseRowData(data) || []
+    const rows = parseRowData(data) || []
     const fields = Object.keys(rows[0] || {}).map((name) => ({ name, id: name }))
     log.debug("parseRowQueryResult data length: ", data.length)
 
@@ -628,22 +593,6 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
     }
   }
 
-  private parseRowData(data) {
-    // BigQuery can return nested objects with custom types in the results
-    // look for the value string property.
-    // https://github.com/googleapis/nodejs-bigquery/blob/71dbed2140893677f7af254f5a7713a7f50bae92/src/bigquery.ts#L2191
-    return data.map((row) => {
-      const parsedRow = {}
-      Object.keys(row).forEach((key) => {
-        let strValue = row[key]
-        if (strValue != null && (Object.prototype.hasOwnProperty.call(strValue, 'value'))) {
-          strValue = row[key].value
-        }
-        parsedRow[key] = strValue
-      })
-      return parsedRow
-    })
-  }
 
   private async insertRows(inserts: TableInsert[]) {
     for (const insert of inserts) {

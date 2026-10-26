@@ -25,95 +25,122 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-14, ubuntu-22.04, windows-2022, ubuntu-22.04-arm]
+        os: [macos-15, ubuntu-22.04, windows-2022, ubuntu-22.04-arm, windows-11-arm]
+
+    env:
+      # node-gyp uses Python to build native modules from source.
+      PYTHON_VERSION: '3.12'
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Snapcraft
-        uses: samuelmeuli/action-snapcraft@v2
+        uses: samuelmeuli/action-snapcraft@v3
         if: "contains(matrix.os, 'ubuntu')"
-
-      - name: Install python 3.11 (not Mac)
-        uses: actions/setup-python@v5
         with:
-          python-version: 3.11
-        if: "!startsWith(matrix.os, 'macos')"
+          channel: '8.x/stable'
+
+      - name: Install python ${{ env.PYTHON_VERSION }}
+        id: python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
 
       - name: Install flatpak tools
         if: "contains(matrix.os, 'ubuntu')"
         run: |
-          sudo apt install -y flatpak flatpak-builder rpm
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder rpm
           flatpak --user remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+      - name: Install ODBC build dependencies (linux)
+        if: "contains(matrix.os, 'ubuntu')"
+        run: bash ./.github/scripts/linux-install-odbc-deps.sh
+
+      - name: Install ODBC build dependencies (macos)
+        if: "startsWith(matrix.os, 'macos')"
+        run: bash ./.github/scripts/macos-install-odbc-deps.sh
 
       - name: Install fpm
         run: sudo gem install fpm -v 1.17.0
         if: "contains(matrix.os, 'ubuntu')"
 
-      - name: Install python 3.11 (mac)
-        if: "startsWith(matrix.os, 'macos')"
-        run: |
-          # Install Python 3.11
-          brew install python@3.11
-          # Add Python 3.11 to PATH
-          echo "/opt/homebrew/opt/python@3.11/libexec/bin" >> $GITHUB_PATH
-          export PATH="/opt/homebrew/opt/python@3.11/libexec/bin:$PATH"
-          export PYTHON_PATH="/opt/homebrew/opt/python@3.11/libexec/bin/python3"
-
+      # node-gyp checks the PYTHON env var first. Without it, on Windows it asks
+      # the py launcher, which picks the newest Python on the runner, not this one.
       - name: Verify Python Version
-        if: "startsWith(matrix.os, 'windows')"
+        shell: bash
+        env:
+          PYTHON: ${{ steps.python.outputs.python-path }}
         run: |
-          $PYTHON_VERSION = python --version | Out-String
-          Write-Output "Installed Python version: $PYTHON_VERSION"
-          if (-not $PYTHON_VERSION.StartsWith("Python 3.11")) {
-            Write-Output "Error: Python version does not start with 3.11"
-            exit 1
-          }
-        shell: powershell
-
-      - name: Verify Python Version
-        if: "!startsWith(matrix.os, 'windows')"
-        run: |
-          PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
-          echo "Installed Python version: $PYTHON_VERSION"
-          if [[ ! $PYTHON_VERSION == 3.11* ]]; then
-            echo "Error: Python version does not start with 3.11"
+          INSTALLED=$("$PYTHON" --version | cut -d " " -f 2)
+          echo "node-gyp will use Python $INSTALLED at $PYTHON"
+          if [[ $INSTALLED != "$PYTHON_VERSION".* ]]; then
+            echo "Error: Python version does not start with $PYTHON_VERSION"
             exit 1
           fi
+          echo "PYTHON=$PYTHON" >> "$GITHUB_ENV"
 
       - name: Install Node.js, NPM and Yarn
         uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
 
+      # ImageOS identifies the runner image (e.g. ubuntu22, win22, macos15), so
+      # caches never cross runner image versions: node_modules holds native
+      # modules compiled for one exact image.
+      - name: Compute runner image cache id
+        shell: bash
+        run: echo "RUNNER_IMAGE_ID=${ImageOS:-unknown}" >> "$GITHUB_ENV"
+
       - name: Cache node_modules
         id: cache-nm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
             apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          # Python is in the key so a Python bump rebuilds the native modules.
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-py${{ env.PYTHON_VERSION }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+
+      # For msnodesqlv8, if it previously failed in the cached version, clear the cache and try again :)
+      - name: Check restored node_modules
+        id: nm-health
+        if: steps.cache-nm.outputs.cache-hit == 'true'
+        continue-on-error: true
+        run: node -e "require('msnodesqlv8')"
+
+      - name: Discard broken node_modules
+        if: steps.nm-health.outcome == 'failure'
+        run: rm -rf node_modules apps/studio/node_modules apps/ui-kit/node_modules apps/sqltools/node_modules
 
       - name: Clean cache
-        if: steps.cache-nm.outputs.cache-hit != 'true'
+        if: steps.cache-nm.outputs.cache-hit != 'true' || steps.nm-health.outcome == 'failure'
         run: yarn cache clean
 
       - name: Check dependencies
-        if: steps.cache-nm.outputs.cache-hit != 'true'
+        if: steps.cache-nm.outputs.cache-hit != 'true' || steps.nm-health.outcome == 'failure'
         run: "yarn install --frozen-lockfile --network-timeout 100000"
         env:
           npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
+
+      - name: Verify msnodesqlv8 native build
+        run: node -e "require('msnodesqlv8')"
+
+      # Every database client loads at startup, so one native module that
+      # can't load on this arch breaks every connection.
+      - name: Verify native modules load in Electron
+        run: yarn workspace beekeeper-studio electron ../../bin/check-native-modules.js
+        env:
+          ELECTRON_RUN_AS_NODE: 1
+
       - name: Build Electron app
         run: "yarn run electron:build --publish never"
         if: startsWith(matrix.os, 'ubuntu') == false
         env:
-          PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHON_PATH' }}"
-          PYTHONPATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHONPATH' }}"
           SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
           USE_SYSTEM_FPM: true
 
@@ -122,17 +149,16 @@ jobs:
         run: yarn run electron:build --publish never --linux deb
         if: startsWith(matrix.os, 'ubuntu')
         env:
-          PYTHON_PATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHON_PATH' }}"
-          PYTHONPATH: "${{ startsWith(matrix.os, 'macos') && '/opt/homebrew/opt/python@3.11/libexec/bin/python3' || '$PYTHONPATH' }}"
           SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
           USE_SYSTEM_FPM: true
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.os }}
           path: |
             apps/studio/dist_electron/*.exe
+            apps/studio/dist_electron/*.msi
             apps/studio/dist_electron/*.deb
             apps/studio/dist_electron/*.rpm
             apps/studio/dist_electron/*.AppImage
@@ -147,10 +173,10 @@ jobs:
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download DEB artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: ubuntu-22.04
           path: ./deb-package
