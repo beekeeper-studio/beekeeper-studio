@@ -36,6 +36,26 @@ test.describe('Connection error handling', () => {
     expect(fs.existsSync(dbFile)).toBe(false);
   });
 
+  test('sqlite: Create makes the database file on connect', async () => {
+    const dbFile = path.join(os.tmpdir(), `bks-created-${Date.now()}.db`);
+    // The save dialog is native; answer it from the main process.
+    await electronApp.evaluate(({ dialog }, file) => {
+      dialog.showSaveDialogSync = () => file;
+    }, dbFile);
+
+    await userAttemptsTo.selectNewConnection('sqlite');
+    await window.locator('.sqlite-form').getByText('Create', { exact: true }).click();
+
+    // the path is locked until cleared, so a typo can't create a file
+    await expect(window.locator('#Database')).toHaveValue(dbFile);
+    await expect(window.locator('#Database')).toHaveAttribute('readonly');
+
+    await window.getByRole('button', { name: 'Connect', exact: false }).click();
+
+    await expect(coreInterface()).toBeVisible();
+    expect(fs.existsSync(dbFile)).toBe(true);
+  });
+
   test('sqlite: nonexistent directory stays on the connection screen with an error', async () => {
     const dbFile = path.join(os.tmpdir(), `bks-no-dir-${Date.now()}`, 'foo.db');
     await userAttemptsTo.selectNewConnection('sqlite');

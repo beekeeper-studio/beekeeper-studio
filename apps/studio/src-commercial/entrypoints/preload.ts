@@ -91,6 +91,9 @@ export const api = {
   join(...paths: string[]): string {
     return path.join(...paths);
   },
+  getPathForFile(file: File): string {
+    return webUtils.getPathForFile(file);
+  },
   basename(p: string, ext?: string): string {
     return path.basename(p, ext);
   },

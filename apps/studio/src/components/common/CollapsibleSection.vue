@@ -14,7 +14,7 @@
       @click.prevent="toggleContent = !toggleContent"
       class="more-button"
     >
-      <i class="material-icons">{{ toggleContent ? 'unfold_less' : 'unfold_more' }}</i> {{ moreText }}
+      <i class="material-icons">{{ toggleContent ? 'unfold_less' : 'unfold_more' }}</i> {{ toggleContent ? lessText : moreText }}
     </button>
   </div>
 </template>
@@ -23,7 +23,16 @@
 import Vue from "vue";
 
 export default Vue.extend({
-  props: [ "moreText" ],
+  props: {
+    moreText: {
+      type: String,
+      default: "Show More"
+    },
+    lessText: {
+      type: String,
+      default: "Show Less"
+    }
+  },
   data() {
     return {
       toggleContent: false,

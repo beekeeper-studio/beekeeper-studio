@@ -57,6 +57,8 @@ export default class PluginManager extends Hookable {
       return;
     }
 
+    await this.registry.initialize();
+
     // FIXME: Migrate to full ini file configuration
     await this.loadPluginSettings();
 

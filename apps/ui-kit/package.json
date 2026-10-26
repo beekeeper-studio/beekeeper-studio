@@ -202,7 +202,7 @@
     "highlight.js": "^11.11.1",
     "sql-formatter": "15.7.3",
     "sql-query-identifier": "^3.2.0",
-    "tabulator-tables": "^6.6.1",
+    "tabulator-tables": "^6.7.1",
     "vscode-languageserver-protocol": "^3.17.5"
   },
   "devDependencies": {
@@ -225,7 +225,7 @@
     "split.js": "^1.5.11",
     "tinyduration": "^3.2.4",
     "typescript": "~5.8.3",
-    "vite": "^8.0.8",
+    "vite": "^8.1.6",
     "vite-ng-plugin-vue2": "^1.0.0",
     "vitest": "~4.1.11",
     "vue": "^2.7.16",

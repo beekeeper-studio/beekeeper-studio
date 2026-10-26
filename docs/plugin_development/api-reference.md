@@ -6,9 +6,6 @@ icon: material/api
 
 # Plugin API Reference
 
-!!! warning "Beta Feature"
-    The plugin system is in beta (available in Beekeeper Studio 5.3+). We'd love your feedback!
-
 The Beekeeper Studio Plugin API is accessible through the `@beekeeperstudio/plugin` package. The API provides communication between your plugin and the main application.
 
 ## Installation
@@ -302,11 +299,9 @@ const result = await runQuery('SELECT * FROM users WHERE active = true LIMIT 10'
 
 **Signature:**
 ```typescript
-async function runQuery(query: string): Promise<{
-  results: QueryResult[];
-  error?: unknown;
-}>;
+async function runQuery(query: string): Promise<RunQueryResult>;
 ```
+See [RunQueryResult](#runqueryresult)
 
 ### getConnectionInfo
 
@@ -367,6 +362,7 @@ async function getConnectionInfo(): Promise<{
 | `redis` | Redis |
 | `surrealdb` | SurrealDB |
 | `trino` | Trino |
+| `snowflake` | Snowflake |
 
 ### setTabTitle
 
@@ -404,12 +400,10 @@ await expandTableResult([{
 **Signature:**
 ```typescript
 async function expandTableResult(
-  results: {
-    fields: QueryResult[];
-    rows: Record<string, JsonValue>[];
-  }[];
+  results: QueryResult[];
 ): Promise<void>;
 ```
+See [QueryResult](#queryresult)
 
 !!! tip "Table Display Tips"
     - Results will replace any existing table data
@@ -545,81 +539,54 @@ await openExternal('https://example.com');
 async function openExternal(link: string): Promise<void>;
 ```
 
-### getData
+### appStorage.getItem
 
-Retrieve stored data by key.
+Get data stored in the Beekeeper database that your plugin has set previously.
+
+This is available on the `appStorage` object.
 
 **Usage:**
 ```typescript
-import { getData } from '@beekeeperstudio/plugin';
+import { appStorage } from '@beekeeperstudio/plugin';
 
-// Get data with custom key
-const data = await getData('myKey');
+// Get plain data from the database
+const data = await appStorage.getItem('myKey');
 
-// Get data with default key
-const data = await getData();
+// Get encrypted data from the database
+const data = await appStorage.getItem('myKey', { encrypted: true });
 ```
 
 **Signature:**
 ```typescript
-async function getData<T = unknown>(key?: string): Promise<T>;
+async function getItem<T = unknown>(
+    key: string,
+    options?: { encrypted: boolean }
+): Promise<T | null>;
 ```
 
-### setData
-
+### appStorage.setItem
 Store data that can be retrieved later.
 
+This is available on the `appStorage` object.
+
 **Usage:**
 ```typescript
-import { setData } from '@beekeeperstudio/plugin';
+import { appStorage } from '@beekeeperstudio/plugin';
 
-// Store with custom key
-await setData('myKey', { name: 'John' });
+// Store plain data in the database
+await appStorage.setItem('myKey', 'superimportantdata');
 
-// Store with default key
-await setData({ name: 'John' });
+// Set encrypted data in the database
+await appStorage.setItem('myKey', 'supersecretdata', { encrypted: true });
 ```
 
 **Signature:**
 ```typescript
-async function setData<T = unknown>(key: string, value: T): Promise<void>;
-async function setData<T = unknown>(value: T): Promise<void>;
-```
-
-### getEncryptedData
-
-Retrieve encrypted stored data by key.
-
-**Usage:**
-```typescript
-import { getEncryptedData } from '@beekeeperstudio/plugin';
-const secretData = await getEncryptedData('secretKey');
-```
-
-**Signature:**
-```typescript
-async function getEncryptedData<T>(key: string): Promise<T>;
-```
-
-### setEncryptedData
-
-Store encrypted data that can be retrieved later.
-
-**Usage:**
-```typescript
-import { setEncryptedData } from '@beekeeperstudio/plugin';
-
-// Store with custom key
-await setEncryptedData('secretKey', { token: 'abc123' });
-
-// Store with default key
-await setEncryptedData({ token: 'abc123' });
-```
-
-**Signature:**
-```typescript
-async function setEncryptedData<T = unknown>(key: string, value: T): Promise<void>;
-async function setEncryptedData<T = unknown>(value: T): Promise<void>;
+async function setItem<T = unknown>(
+    key: string,
+    value: T,
+    options?: { encrypted: boolean }
+): Promise<void>;
 ```
 
 ### openTab
@@ -792,7 +759,7 @@ broadcast.post("hello");
 
 **Signature:**
 ```typescript
-function post(message: JsonValue): Promise<void>;
+function post(message: JsonValue): void;
 ```
 
 ### broadcast.on
@@ -926,12 +893,10 @@ const result = await confirm(
 {
   title?: string;
   message?: string;
-  options?: {
-    confirmLabel?: string;
-    cancelLabel?: string;
-  };
+  options?: ConfirmOptions;
 }
 ```
+See [ConfirmOptions](#confirmoptions)
 
 **Response Schema:**
 ```typescript
@@ -993,7 +958,7 @@ Fired when the application theme changes.
 import { addNotificationListener } from '@beekeeperstudio/plugin';
 addNotificationListener('themeChanged', (appTheme) => {
   // Apply new theme to your plugin
-  styleTag.textContent = `:root { ${params.cssString} }`;
+  styleTag.textContent = `:root { ${appTheme.cssString} }`;
 });
 ```
 
@@ -1055,31 +1020,20 @@ function removeNotificationListener(name: "themeChanged", handler: (args: any) =
 
 ## Type Definitions
 
-### Result
+### RunQueryResult
+The result returned by `runQuery`.
 
-| Property      | Type       | Description |
-|---------------|------------|-------------|
-| `rows`        | `object[]` | Array of result rows |
-| `fields`      | `Field[]`  | Array of field definitions |
-| `rowCount`    | `number`   | Number of rows returned |
-| `affectedRows`| `number`   | Number of rows affected (for INSERT/UPDATE/DELETE) |
-
-### Field
-
-| Property   | Type     | Description |
-|------------|----------|-------------|
-| `name`     | `string` | Column name |
-| `dataType` | `string` | Column data type |
+| Property       | Type           | Description |
+|----------------|----------------|-------------|
+| `results`      | `QueryResult`  | Query Results |
+| `error`        | `unknown`      | The error, if any ocurred |
 
 ### Column
 
 | Property       | Type      | Description |
 |----------------|-----------|-------------|
 | `name`         | `string`  | Column name |
-| `dataType`     | `string`  | Column data type |
-| `nullable`     | `boolean` | Whether column allows NULL values |
-| `primaryKey`   | `boolean` | Whether column is part of primary key |
-| `defaultValue` | `any`     | Default value for the column |
+| `type`         | `string`  | Column data type |
 
 ### Table
 
@@ -1179,6 +1133,16 @@ Parameters when a column header context menu is triggered.
 |---------------|-------------------|-------------|
 | `target`      | `ColumnMenuTarget` | Information about the clicked column |
 | `activeRange` | `ActiveRange`     | Currently selected range |
+
+### ConfirmOptions
+
+Options for the confirm modal.
+
+| Property       | Type              | Description |
+|----------------|-------------------|-------------|
+| `confirmLabel` | `string` | The label for the confirm button |
+| `cancelLabel`  | `string` | The label for the cancel button  |
+
 
 ### RowMenuParams
 
@@ -1302,7 +1266,7 @@ Represents the currently selected range in a data table.
 
 Union of supported database types:
 
-`'postgresql' | 'mysql' | 'mariadb' | 'sqlite' | 'sqlserver' | 'oracle' | 'mongodb' | 'cassandra' | 'clickhouse' | 'firebird' | 'bigquery' | 'redshift' | 'duckdb' | 'libsql' | 'redis' | 'surrealdb' | 'trino'`
+`'postgresql' | 'mysql' | 'mariadb' | 'sqlite' | 'sqlserver' | 'oracle' | 'mongodb' | 'cassandra' | 'clickhouse' | 'firebird' | 'bigquery' | 'redshift' | 'duckdb' | 'libsql' | 'redis' | 'surrealdb' | 'trino' | 'snowflake'`
 
 ### ThemeType
 

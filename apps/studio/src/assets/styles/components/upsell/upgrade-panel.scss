@@ -72,11 +72,88 @@
     }
   }
 
+  // Rotating customer quote. Quotes share one grid cell (see
+  // UpgradeTestimonials.vue), so the box keeps the height of the longest one.
+  .upgrade-testimonials {
+    display: grid;
+    margin: $gutter-w 0 0;
+    padding: $gutter-h * 1.5 $gutter-w;
+    border-left: 2px solid var(--border-subtle);
+    border-radius: 0 6px 6px 0;
+    background: color-mix(in srgb, var(--text) 4%, transparent);
+
+    .upgrade-testimonial {
+      grid-area: 1 / 1;
+      // Short quotes sit in the middle of the reserved space, not at the top.
+      align-self: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+      &.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+    }
+
+    blockquote {
+      margin: 0;
+      font-size: 0.875rem;
+      line-height: 1.45;
+      color: var(--text-contrast);
+    }
+
+    figcaption {
+      margin-top: $gutter-h * 0.75;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+
+      .author {
+        font-weight: 600;
+      }
+      .sep {
+        margin: 0 0.35em;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .upgrade-testimonial {
+        transition: none;
+      }
+    }
+  }
+
   // The shared upsell buttons are this panel's dialog footer, so give them the
   // same metrics .vue-dialog-buttons uses everywhere else.
   > .upsell-buttons {
     padding: 0 $gutter-w $gutter-w;
     padding-left: $gutter-w * 1.5;
+  }
+
+  // Lifetime-license callout: a quiet strip under the buttons, full width of
+  // the panel. The tooltip carries the 12-month condition the asterisk points to.
+  .upgrade-lifetime {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $gutter-h;
+    padding: $gutter-h * 1.25 $gutter-w;
+    border-top: 1px solid var(--border-subtle);
+    background: color-mix(in srgb, var(--text) 4%, transparent);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    cursor: help;
+
+    strong {
+      color: var(--text-contrast);
+      font-weight: 600;
+    }
+    .material-icons {
+      font-size: 18px;
+      color: var(--primary-text, var(--text));
+    }
+    .asterisk {
+      margin-left: 1px;
+    }
   }
 
   // Standalone (inline in a tab, or on the connection screen): the panel
@@ -86,6 +163,7 @@
     margin: 1.5rem auto;
     background: var(--bg-subtle);
     border-radius: 8px;
+    overflow: hidden; // clips the lifetime strip to the card's corners
     @include card-shadow;
 
     // Panels with a preview in the slot need more room.

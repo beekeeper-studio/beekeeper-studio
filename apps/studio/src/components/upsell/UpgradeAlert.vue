@@ -20,7 +20,7 @@
         v-tooltip="'Get lifetime app access with any purchase'"
         @click.prevent="buyLicense"
       >
-        Buy License
+        Upgrade
       </button>
     </div>
   </div>

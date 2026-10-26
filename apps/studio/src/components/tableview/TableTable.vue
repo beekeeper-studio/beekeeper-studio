@@ -40,6 +40,7 @@
         <div
           ref="table"
           class="spreadsheet-table"
+          @keydown="onTableKeydown"
         />
       </div>
       <ColumnFilterModal
@@ -1047,6 +1048,13 @@ export default Vue.extend({
         formatter: this.cellFormatter,
         formatterParams,
         editorParams: {
+          // textarea params
+          enterSubmit: true,
+          shiftEnterSubmit: true,
+          altEnterNewLine: true,
+          ctrlEnterNewLine: true,
+          metaEnterNewLine: true,
+
           verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
           dataType: column.dataType,
           search: true,
@@ -1081,6 +1089,14 @@ export default Vue.extend({
       // do nothing?
       log.debug('tab pressed')
 
+    },
+    onTableKeydown(e: KeyboardEvent) {
+      // Avoid conflicts with v-hotkey. For example, pressing shift+enter
+      // triggers cell editor submit and editor modal.
+      if (e.target instanceof HTMLInputElement
+        || e.target instanceof HTMLTextAreaElement) {
+        e.stopPropagation();
+      }
     },
     isFocusingEditableElement() {
       const el = document.activeElement
@@ -1356,7 +1372,8 @@ export default Vue.extend({
     getActionValue(cell: CellComponent, s: string) {
       const clickedValue = cell.getValue();
       switch(s) {
-        case 'in': {
+        case 'in':
+        case 'not in': {
           const ranges = cell.getRanges();
           const selectedCells = ranges.flatMap(range => range.getCells().flat());
           const selectedValues = selectedCells
@@ -1375,7 +1392,7 @@ export default Vue.extend({
     },
     quickFilterMenuItem(cell: CellComponent) {
       const symbols = [
-        '=', '!=', '<', '<=', '>', '>=', 'in', 'like'
+        '=', '!=', '<', '<=', '>', '>=', 'in', 'not in', 'like'
       ]
       return {
         label: createMenuItem("Quick Filter", "", { ultimate: this.$store.getters.isCommunity }),

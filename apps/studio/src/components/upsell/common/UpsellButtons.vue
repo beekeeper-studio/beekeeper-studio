@@ -18,7 +18,7 @@
       <span v-if="helpText" class="help">{{ helpText }}</span>
       <a v-if="trialAvailable" class="btn btn-flat" @click.prevent="startTrial">Start free trial</a>
       <a v-else :href="learnUrl" class="btn btn-flat">Learn more</a>
-      <a @click.prevent="buyLicense" class="btn btn-primary" v-tooltip="'Get lifetime app access with any purchase'">Buy License</a>
+      <a @click.prevent="buyLicense" class="btn btn-primary" v-tooltip="'Get lifetime app access with any purchase'">Upgrade</a>
     </div>
   </div>
 </template>

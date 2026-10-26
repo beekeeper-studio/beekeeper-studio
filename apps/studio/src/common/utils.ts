@@ -138,14 +138,21 @@ export function joinFilters(filters: string[], ops: TableFilter[] = []): string 
   return filters.reduce((a, b, idx) => `${a} ${ops[idx]?.op || 'AND'} ${b}`)
 }
 
+/** Filter types whose value is a list of values, eg `in` and `not in` */
+export function isListFilter(type: string): boolean {
+  return type === 'in' || type === 'not in'
+}
+
 /** Get rid of invalid filters and parse if needed */
 export function normalizeFilters(filters: TableFilter[]) {
   const normalized: TableFilter[] = [];
   for (const filter of filters as TableFilter[]) {
     if (!(filter.type && filter.field && (filter.value || filter.type.includes('is')))) continue;
-    if (filter.type === "in") {
-      // Plugins can open a table with the values already split
-      const value = Array.isArray(filter.value) ? filter.value : (filter.value as string).split(/\s*,\s*/);
+    if (isListFilter(filter.type)) {
+      // Quick Filter sets the value to an array of the selected cell values
+      const value = _.isArray(filter.value)
+        ? filter.value
+        : filter.value.toString().split(/\s*,\s*/);
       normalized.push({ ...filter, value });
       // Leave the caller's value alone: joining an array would split values
       // that contain commas the next time it is normalized
