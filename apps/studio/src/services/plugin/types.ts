@@ -237,6 +237,7 @@ export type WebPluginContext = {
   utility: UtilityConnection;
   log: ReturnType<typeof rawLog.scope>;
   appVersion: string;
+  pluginOrigin: PluginOrigin;
   fileHelpers: FileHelpers;
   noty: {
     success(text: string, options?: any): Noty;

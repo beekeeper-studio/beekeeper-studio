@@ -231,10 +231,13 @@ export default class WebPluginLoader {
 
         // ======== WRITE ACTIONS ===========
         case "runQuery": {
-          const forceReadOnly = await this.utilityConnection.send("plugin/getPluginSetting", {
-            id: this.manifest.id,
-            key: 'readOnly'
-          });
+          // HACK (@day): bundled plugins can get around readonly settings since they can't be set by users
+          const forceReadOnly = this.context.pluginOrigin !== 'bundled' ?
+            await this.utilityConnection.send("plugin/getPluginSetting", {
+              id: this.manifest.id,
+              key: 'readOnly'
+            }) :
+            false;
           response.result = await this.pluginStore.runQuery(response.args.query, { forceReadOnly });
           break;
         }
