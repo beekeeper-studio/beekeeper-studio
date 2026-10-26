@@ -33,15 +33,15 @@ describe('PopupMenuModule getExtraPopupMenu', () => {
     added.splice(0).forEach((options) => store.commit('popupMenu/remove', options))
   })
 
-  it('shows a disabled "No plugins…" row in plugin menus no plugin adds to', () => {
+  it('shows a disabled "No Plugins…" row in plugin menus no plugin adds to', () => {
     const uiKit = store.getters['popupMenu/getExtraPopupMenu']('editor.query', { transform: 'ui-kit' })
     expect(uiKit.map((item) => item.type ?? item.id)).toEqual(['divider', 'label', 'no-plugins', 'divider', 'manage-plugins'])
-    expect(uiKit[2]).toMatchObject({ label: 'No plugins…', disabled: true, leadingIcon: 'extension_off' })
+    expect(uiKit[2]).toMatchObject({ label: 'No Plugins…', disabled: true, leadingIcon: 'extension_off' })
 
     const tabulator = store.getters['popupMenu/getExtraPopupMenu']('results.cell', { transform: 'tabulator' })
     expect(tabulator).toHaveLength(5)
     expect(tabulator[2]).toMatchObject({ disabled: true })
-    expect(tabulator[2].label).toContain('No plugins…')
+    expect(tabulator[2].label).toContain('No Plugins…')
 
     const raw = store.getters['popupMenu/getExtraPopupMenu']('entity.table')
     expect(raw[2]).toMatchObject({ slug: 'no-plugins', disabled: true })
@@ -79,7 +79,7 @@ describe('PopupMenuModule getExtraPopupMenu', () => {
     ])
     expect(items[1].label).toBe('Plugins')
     expect(items[2].leadingIcon).toBe('map')
-    expect(items[4].leadingIcon).toBe('extension')
+    expect(items[4].leadingIcon).toBe('open_in_new')
   })
 
   it('merges the payload into the handler argument for ui-kit menus', () => {

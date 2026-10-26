@@ -65,8 +65,8 @@
             </x-menuitem>
             <x-menuitem @click.prevent="openPluginManager">
               <x-label>
-                <i class="material-icons">extension</i>
-                Manage Plugins…
+                <i class="material-icons">{{ managePluginsItem.leadingIcon }}</i>
+                {{ managePluginsItem.name }}
               </x-label>
             </x-menuitem>
           </x-menu>
@@ -325,7 +325,7 @@ import DatabaseBackup from './TabDatabaseBackup.vue'
 import PluginShell from './TabPluginShell.vue'
 import PluginBase from './TabPluginBase.vue'
 import { AppEvent } from '../common/AppEvent'
-import { noPluginsItem, openPluginManager } from '@/lib/menu/pluginMenuItems'
+import { managePluginsItem, noPluginsItem, openPluginManager } from '@/lib/menu/pluginMenuItems'
 import { mapGetters, mapState } from 'vuex'
 import Draggable from 'vuedraggable'
 import ShortcutHints from './editor/ShortcutHints.vue'
@@ -433,6 +433,9 @@ export default Vue.extend({
     },
     noPluginsItem() {
       return noPluginsItem
+    },
+    managePluginsItem() {
+      return managePluginsItem
     },
     tabIcon() {
       return {

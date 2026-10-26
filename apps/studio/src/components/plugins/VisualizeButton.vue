@@ -30,8 +30,8 @@
       </x-menuitem>
       <hr>
       <x-menuitem @click.prevent="openPluginManager">
-        <i class="material-icons">extension</i>
-        <x-label>Manage Plugins…</x-label>
+        <i class="material-icons">{{ managePluginsItem.leadingIcon }}</i>
+        <x-label>{{ managePluginsItem.name }}</x-label>
       </x-menuitem>
     </x-menu>
   </x-button>
@@ -41,11 +41,11 @@
 import Vue, { PropType } from "vue";
 import type { ContextItem } from "@/plugins/BeekeeperPlugin";
 import type { PluginMenuConditions } from "@/store/modules/PopupMenuModule";
-import { noPluginsItem, openPluginManager } from "@/lib/menu/pluginMenuItems";
+import { managePluginsItem, noPluginsItem, openPluginManager } from "@/lib/menu/pluginMenuItems";
 
 /**
  * Status bar button that opens the current data in a plugin. Lists the items
- * plugins add to `menuId`, or a disabled "No plugins…" row when there are
+ * plugins add to `menuId`, or a disabled "No Plugins…" row when there are
  * none, so the feature stays discoverable.
  */
 export default Vue.extend({
@@ -70,7 +70,7 @@ export default Vue.extend({
     },
   },
   data() {
-    return { noPluginsItem };
+    return { managePluginsItem, noPluginsItem };
   },
   computed: {
     items(): ContextItem[] {

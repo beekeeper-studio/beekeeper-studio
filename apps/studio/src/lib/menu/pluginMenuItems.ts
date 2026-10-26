@@ -47,13 +47,13 @@ export const openPluginManager = menuActions.managePlugins;
 export const managePluginsItem: ContextItem = {
   name: "Manage Plugins…",
   slug: "manage-plugins",
-  leadingIcon: "extension",
+  leadingIcon: "open_in_new",
   handler: () => openPluginManager(),
 };
 
 /** Shown in place of plugin items when no installed plugin adds any. */
 export const noPluginsItem: ContextItem = {
-  name: "No plugins…",
+  name: "No Plugins…",
   slug: "no-plugins",
   leadingIcon: "extension_off",
   title: "No installed plugin adds an action here",

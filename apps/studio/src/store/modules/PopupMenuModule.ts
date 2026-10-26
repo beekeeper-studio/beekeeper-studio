@@ -55,7 +55,7 @@ export const PopupMenuModule: Module<State, RootState> = {
     /**
      * The plugin section appended to a context menu: a divider, a "Plugins"
      * label, the plugin items, then a divider and "Manage Plugins…". When no
-     * plugin adds items, a disabled "No plugins…" row stands in for them.
+     * plugin adds items, a disabled "No Plugins…" row stands in for them.
      * Empty for menus plugins can't add to.
      */
     getExtraPopupMenu(_state, getters) {
