@@ -98,7 +98,7 @@ function testWith(options) {
 
     if (!options.readOnly) {
       describe("forceReadOnly (plugin read-only mode)", () => {
-        const countRows = async () => (await util.knex('withbooleans').count({ c: '*' }))[0].c
+        const countRows = async () => Number((await util.knex('withbooleans').count({ c: '*' }))[0].c)
 
         it("rejects writes on a writable connection", async () => {
           const before = await countRows()
