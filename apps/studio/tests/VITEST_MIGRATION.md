@@ -82,9 +82,11 @@ both trees (`bin/get-db-files-as-json.sh`), and `bin/integration-tests.sh`
 routes each chunk by path: `tests/vitest/**` goes to `yarn
 vitest:integration`, everything else to jest. Two caveats:
 
-- The vitest branch of that dispatch skips the oracle instant-client setup.
-  When `oracle.spec.js` migrates, move the dispatch below that setup or gate
-  it.
+- The vitest branch of that dispatch only runs the oracle instant-client setup
+  (and sets `ORACLE_CLI_PATH`) for specs whose file name starts with
+  `oracle`, as `oracle-role-thick.spec.ts` does. Keep that prefix when
+  `oracle.spec.js` migrates; the libaio steps in `studio-test.yml` match on it
+  too.
 - The `sqlserver-winauth` and kerberos flows call `internal:integration`
   directly and bypass the dispatch. Migrating those specs means updating
   `windows-login-tests.yaml` / `dev/docker_*_kerberos/tests/entrypoint.sh` in
