@@ -78,7 +78,10 @@
             >
             <span>Auto-update</span>
           </label>
-          <label class="checkbox-group">
+          <label
+            class="checkbox-group"
+            v-tooltip="'Only allow this plugin to run Read Only queries against your database'"
+          >
             <input
               type="checkbox"
               :checked="pluginReadOnly"
