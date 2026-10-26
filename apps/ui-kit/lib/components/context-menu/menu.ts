@@ -16,6 +16,8 @@ export interface BaseMenuItem<Item = unknown> {
   title?: string | ((options: { item: Item }) => string)
   /** Material icon name rendered on the trailing edge of the item */
   icon?: string
+  /** Material icon name rendered before the label */
+  leadingIcon?: string
 }
 
 export interface CheckedMenuItem<Item = unknown> extends BaseMenuItem<Item> {
@@ -29,7 +31,14 @@ export interface DividerItem {
   id: 'divider'
 }
 
-export type MenuItem<Item = unknown> = BaseMenuItem<Item> | CheckedMenuItem<Item> |  DividerItem
+/** A non-interactive heading for a group of items. */
+export interface LabelItem {
+  type: 'label'
+  id: string
+  label: string
+}
+
+export type MenuItem<Item = unknown> = BaseMenuItem<Item> | CheckedMenuItem<Item> | DividerItem | LabelItem
 
 export interface MenuProps<Item = unknown> {
   options: MenuItem<Item>[],
@@ -41,6 +50,10 @@ export interface MenuProps<Item = unknown> {
 }
 
 export const divider: DividerItem = { type: 'divider', id: 'divider' }
+
+export function sectionLabel(label: string, id = `label-${label}`): LabelItem {
+  return { type: 'label', id, label }
+}
 
 export function openMenu<Item>(args: MenuProps<Item>) {
   if (isEmpty(args.options)) return

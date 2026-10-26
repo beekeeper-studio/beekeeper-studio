@@ -114,7 +114,8 @@ $button-height:     $statusbar-height * 0.72;
     }
     &.actions-btn {
       padding: 0 0.35rem;
-      .material-icons {
+      // The button's own gear and arrow, not the icons in its menu
+      > .material-icons {
         width: 13px;
       }
     }
