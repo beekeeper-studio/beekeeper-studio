@@ -288,6 +288,7 @@ export default Vue.extend({
         }
 
         await this.$util.send('config/writeUserValue', { path: 'pluginSystem.communityDisabled', value: !value });
+        await this.reinitPluginData();
       }
     },
     officialEnabled: {
@@ -296,6 +297,7 @@ export default Vue.extend({
       },
       async set(value) {
         await this.$util.send('config/writeUserValue', { path: 'pluginSystem.ultimateDisabled', value: !value });
+        await this.reinitPluginData();
       }
     },
     customEnabled: {
@@ -304,6 +306,7 @@ export default Vue.extend({
       },
       async set(value) {
         await this.$util.send('config/writeUserValue', { path: 'pluginSystem.thirdPartyRegistriesDisabled', value: !value });
+        await this.reinitPluginData();
       }
     },
     unlistedEnabled: {
@@ -312,6 +315,7 @@ export default Vue.extend({
       },
       async set(value) {
         await this.$util.send('config/writeUserValue', { path: 'pluginSystem.unlistedDisabled', value: !value });
+        await this.reinitPluginData();
       }
     },
     githubToken() {
@@ -336,18 +340,16 @@ export default Vue.extend({
         }
       },
       immediate: true,
-    },
-    communityEnabled: {
-      async handler() {
-        if (this.pluginManagerStatus === "ready") {
-          this.plugins = [];
-          await this.$store.dispatch("plugins/initialize");
-          await this.loadPlugins();
-        }
-      }
     }
   },
   methods: {
+    async reinitPluginData() {
+      if (this.pluginManagerStatus === "ready") {
+        this.plugins = [];
+        await this.$store.dispatch("plugins/initialize");
+        await this.loadPlugins();
+      }
+    },
     async loadPlugins() {
       this.loadingPlugins = true;
 
