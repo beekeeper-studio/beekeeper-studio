@@ -75,7 +75,9 @@ export default class PluginRegistry {
 
   private async loadAllEntries() {
     try {
-      await Promise.all(this.registries.map((config) => this.loadEntries(config)));
+      await Promise.all(this.registries.map((config) => this.loadEntries(config).catch((e) => {
+        log.warn(`Failed to fetch registry ${config.name}`, e);
+      })));
     } catch (e) {
       log.error("Failed to fetch registry", e);
     }
