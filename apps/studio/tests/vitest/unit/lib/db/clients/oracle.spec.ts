@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { Mock } from "vitest";
 // Mock oracledb before any imports that use it
-const { mockInitOracleClient, mockCreatePool } = vi.hoisted(() => ({
+const { mockInitOracleClient, mockCreatePool, mockGetStandaloneConnection } = vi.hoisted(() => ({
   mockInitOracleClient: vi.fn(),
   mockCreatePool: vi.fn(),
+  mockGetStandaloneConnection: vi.fn(),
 }));
 
 vi.mock('oracledb', () => {
@@ -19,6 +20,7 @@ vi.mock('oracledb', () => {
       fetchAsBuffer: [],
       initOracleClient: mockInitOracleClient,
       createPool: mockCreatePool,
+      getConnection: mockGetStandaloneConnection,
     },
   };
 });
@@ -196,9 +198,9 @@ describe('OracleClient role (privilege)', () => {
     expect(mockGetConnection).toHaveBeenCalledWith();
   });
 
-  it('uses a heterogeneous pool and passes credentials per connection in thick mode', async () => {
+  it('uses a heterogeneous pool for SYSDBA in thick mode', async () => {
     (oracledb as any).thin = false;
-    const client = await connect({ options: { privilege: 'SYSOPER' } });
+    const client = await connect({ options: { privilege: 'SYSDBA' } });
     const poolConfig = mockCreatePool.mock.calls[0][0];
     expect(poolConfig.homogeneous).toBe(false);
     expect(poolConfig.poolMin).toBe(0);
@@ -210,6 +212,20 @@ describe('OracleClient role (privilege)', () => {
     expect(mockGetConnection).toHaveBeenCalledWith({
       user: 'testuser',
       password: 'testpass',
+      privilege: oracledb.SYSDBA,
+    });
+  });
+
+  it('uses standalone connections for SYSOPER in thick mode', async () => {
+    (oracledb as any).thin = false;
+    const client = await connect({ options: { privilege: 'SYSOPER' } });
+    expect(mockCreatePool).not.toHaveBeenCalled();
+
+    await client.getPoolConnection();
+    expect(mockGetStandaloneConnection).toHaveBeenCalledWith({
+      user: 'testuser',
+      password: 'testpass',
+      connectString: 'localhost:1521/ORCL',
       privilege: oracledb.SYSOPER,
     });
   });

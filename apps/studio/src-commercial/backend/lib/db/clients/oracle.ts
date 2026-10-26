@@ -74,12 +74,15 @@ const privileges = {
 }
 
 export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Connection> {
-  pool: oracle.Pool;
-  // Set when connecting with a privilege in thick mode. Thick mode only applies
+  pool?: oracle.Pool;
+  // Set when connecting with SYSDBA in thick mode. Thick mode only applies
   // a privilege on a heterogeneous pool, where the credentials go to each
   // pool.getConnection() call instead of to createPool().
   // @types/oracledb is missing privilege on pooled connection options.
   connectionAttributes?: oracle.GetPooledConnectionOptions & { privilege: number };
+  // Set instead of a pool for SYSOPER in thick mode, because OCI session pools
+  // only support SYSDBA. Each connection is a standalone connection.
+  standaloneAttributes?: oracle.ConnectionAttributes;
   server: IDbConnectionServer
   database: IDbConnectionDatabase
   defaultSchema: () => Promise<string>
@@ -752,19 +755,27 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
       throw new Error(`Unknown Oracle role: ${privilegeName}`)
     }
     this.connectionAttributes = undefined
+    this.standaloneAttributes = undefined
     if (privilege !== undefined) {
       if (oracle.thin) {
         poolConfig['privilege'] = privilege
-      } else {
+      } else if (privilege === oracle.SYSDBA) {
         const { user, password, ...rest } = poolConfig
         // poolMin is 0 because a heterogeneous pool has no credentials to open
         // sessions with until getConnection() supplies them.
         poolConfig = { ...rest, homogeneous: false, poolMin: 0 }
         this.connectionAttributes = { user, password, privilege }
+      } else {
+        this.standaloneAttributes = {
+          ..._.omit(poolConfig, ['poolIncrement', 'poolMin', 'poolMax']),
+          privilege,
+        }
       }
     }
-    log.debug("Pool Config: ", poolConfig)
-    this.pool = await oracle.createPool(poolConfig)
+    if (!this.standaloneAttributes) {
+      log.debug("Pool Config: ", poolConfig)
+      this.pool = await oracle.createPool(poolConfig)
+    }
     const vSQL = `
       SELECT BANNER as BANNER FROM v$version
       WHERE BANNER LIKE 'Oracle%';
@@ -777,6 +788,9 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
   }
 
   getPoolConnection(): Promise<oracle.Connection> {
+    if (this.standaloneAttributes) {
+      return oracle.getConnection(this.standaloneAttributes)
+    }
     return this.connectionAttributes
       ? this.pool.getConnection(this.connectionAttributes)
       : this.pool.getConnection()
