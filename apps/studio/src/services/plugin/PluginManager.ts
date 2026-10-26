@@ -4,10 +4,10 @@ import PluginFileManager from "./PluginFileManager";
 import {
   Manifest as AnyVersionManifest,
   ManifestV1 as Manifest,
-  ManifestV1,
   PluginOrigin,
   PluginRepository,
   PluginSettings,
+  PluginSettingsMap,
   PluginSnapshot,
 } from "./types";
 import rawLog from "@bksLogger";
@@ -33,11 +33,15 @@ export default class PluginManager extends Hookable {
   public readonly registry: PluginRegistry;
   public readonly fileManager: PluginFileManager;
   private manifests: Manifest[] = [];
-  pluginSettings: PluginSettings = {};
+  pluginSettings: PluginSettingsMap = {};
   private pluginLocks: string[] = [];
 
   /** A Constant for the setting key */
   private static readonly PLUGIN_SETTINGS = "pluginSettings";
+  private defaultSettings = {
+    autoUpdate: true,
+    readOnly: true
+  };
 
   constructor(readonly options: PluginManagerOptions) {
     super();
@@ -234,9 +238,7 @@ export default class PluginManager extends Hookable {
       }
 
       if (!this.pluginSettings[id]) {
-        this.pluginSettings[id] = {
-          autoUpdate: true,
-        };
+        this.pluginSettings[id] = { ...this.defaultSettings };
       }
       await this.savePluginSettings();
 
@@ -319,7 +321,7 @@ export default class PluginManager extends Hookable {
   private async loadPluginSettings() {
     const setting = await UserSetting.get(PluginManager.PLUGIN_SETTINGS);
     if (setting && setting.value) {
-      this.pluginSettings = setting.value as PluginSettings;
+      this.pluginSettings = setting.value as PluginSettingsMap;
       log.debug(
         `Loaded plugin settings: ${JSON.stringify(this.pluginSettings)}`
       );
@@ -338,27 +340,25 @@ export default class PluginManager extends Hookable {
   }
 
   /**
-   * Enable or disable automatic update checks for a specific plugin
+   * Enable or disable a setting for a specific plugin
    */
-  async setPluginAutoUpdateEnabled(id: string, enabled: boolean) {
+  async setPluginSetting(id: string, key: keyof PluginSettings, value: boolean) {
     if (!this.pluginSettings[id]) {
-      this.pluginSettings[id] = { autoUpdate: enabled };
+      this.pluginSettings[id] = { ...this.defaultSettings, [key]: value };
     } else {
-      this.pluginSettings[id].autoUpdate = enabled;
+      this.pluginSettings[id][key] = value;
     }
-    // Persist the changes to the database
+
     await this.savePluginSettings();
   }
 
-  /**
-   * Get the current auto-update setting for a specific plugin
-   */
-  getPluginAutoUpdateEnabled(id: string): boolean {
-    if (!_.has(this.pluginSettings, id)) {
-      log.warn(`Plugin "${id}" not found in plugin settings.`);
-      return false;
+  getPluginSetting(id: string, key: keyof PluginSettings): boolean {
+    if (!_.has(this.pluginSettings, id) || !_.has(this.pluginSettings[id], key)) {
+      log.debug(`plugin "${id}" with key "${key}", not found in plugin settings, using default`);
+      return this.defaultSettings[key] ?? false;
     }
-    return this.pluginSettings[id].autoUpdate;
+
+    return this.pluginSettings[id][key];
   }
 
   private initializeGuard() {

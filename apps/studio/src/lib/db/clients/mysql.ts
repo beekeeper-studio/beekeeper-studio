@@ -1063,6 +1063,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       params: {},
       rowsAsArray: options.rowsAsArray,
       connection: options.connection,
+      ...options
     });
 
     if (!rows) {
