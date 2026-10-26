@@ -13,6 +13,9 @@ import _ from "lodash";
 
 type ParamsBuilder = (options: any, context: WebPluginContext) => unknown;
 
+/** Toolbar buttons show their whole name, so a longer one crowds the toolbar. */
+export const TOOLBAR_NAME_MAX_LENGTH = 20;
+
 /**
  * A placement that adds an item to one of the app's popup menus. When the
  * item is picked, the plugin view opens in a new tab with the params built
@@ -26,6 +29,11 @@ function popupMenuFactory(
   return {
     create(context, menuItem) {
       const slug = `${context.manifest.id}-${menuItem.command}`;
+      if (placement === "editor.query.toolbar" && menuItem.name.length > TOOLBAR_NAME_MAX_LENGTH) {
+        context.log.warn(
+          `Toolbar button "${menuItem.name}" (${menuItem.command}) is longer than ${TOOLBAR_NAME_MAX_LENGTH} characters. The query editor toolbar shows the whole name, so keep it short.`
+        );
+      }
       return {
         add() {
           context.store.addPopupMenuItem(menuId, {
