@@ -624,7 +624,8 @@
   import { SmartLocalStorage } from '@/common/LocalStorage';
   import { IdentifyResult } from 'sql-query-identifier/lib/defines'
   import { isExplainResult } from '@/common/explain'
-  import type { StatusbarMenuPayload } from '@/services/plugin/web/MenuParams'
+  import type { GridStatusbarPayload } from '@/services/plugin/web/MenuParams'
+  import { selectedCells, visibleCells } from '@/common/tabulator'
 import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
   import { wait } from '@/shared/lib/wait'
   import ISavedQuery from '@/common/interfaces/ISavedQuery'
@@ -2121,8 +2122,9 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       openResultInPlugin(item, event) {
         const tabulator = this.$refs.table?.tabulator
         if (!tabulator) return
-        const payload: StatusbarMenuPayload = {
-          tabulator,
+        const payload: GridStatusbarPayload = {
+          selection: selectedCells(tabulator),
+          result: visibleCells(tabulator),
           query: this.resultStatements[this.selectedResult] ?? '',
           truncated: !!this.result?.truncated,
         }

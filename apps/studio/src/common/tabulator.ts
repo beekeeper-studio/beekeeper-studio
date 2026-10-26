@@ -4,6 +4,7 @@ import {
   ColumnComponent,
   Options as TabulatorOptions,
   RangeComponent,
+  RowComponent,
   Tabulator,
   TabulatorFull,
 } from "tabulator-tables";
@@ -136,9 +137,43 @@ const HEADER_SELECTING = ["row", "column", "all"];
 export function selectedRange(tabulator: Tabulator): RangeComponent | null {
   const range = _.last(tabulator.getRanges?.() ?? []);
   if (!range) return null;
-  // Not public API: the range module keeps the mode of the latest selection
+  // Not public API: the range module keeps the mode of the latest selection.
+  // A spec checks the field still exists after a Tabulator upgrade.
+  // TODO: use a public range API once Tabulator has one,
+  // https://github.com/tabulator-tables/tabulator/issues/4993
   const selecting = tabulator.modules?.selectRange?.selecting;
   return rangeCellCount(range) > 1 || HEADER_SELECTING.includes(selecting) ? range : null;
+}
+
+/** Cells taken from the grid: row positions, column titles, and the values row by row. */
+export interface GridCells {
+  rows: number[];
+  columns: string[];
+  value: unknown[][];
+}
+
+function cellsOf(rows: RowComponent[], columns: ColumnComponent[]): GridCells {
+  const data = dataColumns(columns);
+  return {
+    rows: rows.map((row, index) => row.getPosition() || index + 1),
+    columns: data.map((column) => column.getDefinition().title),
+    value: rows.map((row) => {
+      const values = row.getData();
+      return data.map((column) => values[column.getField()]);
+    }),
+  };
+}
+
+/** The cells the user selected (see {@link selectedRange}), or null. */
+export function selectedCells(tabulator: Tabulator): GridCells | null {
+  const range = selectedRange(tabulator);
+  return range ? cellsOf(range.getRows(), range.getColumns()) : null;
+}
+
+/** Every row that passes the grid's filters, in its visible columns. */
+export function visibleCells(tabulator: Tabulator): GridCells {
+  const columns = tabulator.getColumns().filter((column) => column.isVisible());
+  return cellsOf(tabulator.getRows("active"), columns);
 }
 
 /**

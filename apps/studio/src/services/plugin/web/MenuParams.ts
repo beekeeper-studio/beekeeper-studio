@@ -4,7 +4,6 @@ import type {
   ColumnComponent,
   RangeComponent,
   RowComponent,
-  Tabulator,
 } from "tabulator-tables";
 import type {
   ActiveRange,
@@ -21,7 +20,7 @@ import type {
   TableFilter as PluginTableFilter,
 } from "@beekeeperstudio/plugin";
 import type { TableFilter } from "@/lib/db/models";
-import { dataColumns, selectedRange } from "@/common/tabulator";
+import type { GridCells } from "@/common/tabulator";
 
 type BigIntSerialized = number;
 
@@ -159,39 +158,46 @@ export function editorParams(
   };
 }
 
-/** What a status bar Visualize button passes its plugin items' handlers. */
-export type StatusbarMenuPayload = {
-  tabulator: Tabulator;
+/**
+ * What the Visualize button in a data grid's status bar (query results and
+ * table views) passes its plugin items' handlers. Internal to the app:
+ * plugins get the params built from it.
+ */
+export type GridStatusbarPayload = {
+  /** The cells the user selected, or null when nothing is selected. */
+  selection: GridCells | null;
+  /** Every row of the query result. Query results only. */
+  result?: GridCells;
   /** The statement that produced the result. Query results only. */
   query?: string;
-  /** The result stopped at the row limit. Query results only. */
+  /** The result stopped at the app's row limit, so `result` may not hold
+   * every row the query returns. Query results only. */
   truncated?: boolean;
   /** The table being viewed. Table view only. */
   table?: { name: string; schema?: string; entityType?: string };
-  /** Filters applied in the table view. */
+  /** The filters applied in the table view. Table view only. */
   filters?: TableFilter[];
-  /** The SQL `WHERE` condition for those filters, without the keyword. */
+  /** The SQL condition for `filters`, without the `WHERE` keyword. Table
+   * view only. */
   where?: string;
 };
 
-/** Rows of `rows` and data columns of `columns`, leaving out internal columns
- * such as the row header and foreign key links. */
-function toActiveRange(
-  rows: RowComponent[],
-  columns: ColumnComponent[]
-): ActiveRange {
-  const data = dataColumns(columns);
+function cornerTarget(cells: GridCells): CornerMenuTarget {
   return {
-    rows: rows.map((row, index) => row.getPosition() || index + 1),
-    columns: data.map((column) => column.getDefinition().title),
-    value: rows.map((row) => {
-      const values = row.getData();
-      return serializeArray(data.map((column) => values[column.getField()]));
-    }) as ActiveRange["value"],
+    type: "corner",
+    rows: cells.rows,
+    columns: cells.columns,
+    value: cells.value.map((row) => serializeArray(row)) as CornerMenuTarget["value"],
   };
 }
 
-export function buildParamsForStatusbar(payload: StatusbarMenuPayload): StatusbarMenuParams {
+/**
+ * Params for `results.statusbar` and `tableTable.statusbar`. `target` holds
+ * the rows sent: the selection, or every row of a query result. A table view
+ * with nothing selected sends no rows, since its grid only holds one page:
+ * the plugin reads the table itself from `entity` and `where`.
+ */
+export function buildParamsForStatusbar(payload: GridStatusbarPayload): StatusbarMenuParams {
   const context: Partial<StatusbarMenuParams> = payload.table
     ? {
         entity: {
@@ -208,18 +214,12 @@ export function buildParamsForStatusbar(payload: StatusbarMenuPayload): Statusba
         truncated: !!payload.truncated,
       };
 
-  const range = selectedRange(payload.tabulator);
-  if (range) {
-    const activeRange = toActiveRange(range.getRows(), range.getColumns());
-    return { source: "selection", target: { type: "corner", ...activeRange }, activeRange, ...context };
+  if (payload.selection) {
+    return { source: "selection", target: cornerTarget(payload.selection), ...context };
   }
-
   if (payload.table) {
     return { source: "table", ...context };
   }
-
-  const tabulator = payload.tabulator;
-  const visible = tabulator.getColumns().filter((column) => column.isVisible());
-  const activeRange = toActiveRange(tabulator.getRows("active"), visible);
-  return { source: "result", target: { type: "corner", ...activeRange }, activeRange, ...context };
+  const result = payload.result ?? { rows: [], columns: [], value: [] };
+  return { source: "result", target: cornerTarget(result), ...context };
 }

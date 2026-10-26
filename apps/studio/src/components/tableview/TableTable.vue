@@ -345,14 +345,14 @@ import { TableFilter } from '@/lib/db/models';
 import { LanguageData } from '../../lib/editor/languageData'
 import { escapeHtml, FormatterParams } from '@shared/lib/tabulator';
 import { pasteRange, readClipboardRows, copyActionsMenu, pasteActionsMenu, commonColumnMenu, createMenuItem, resizeAllColumnsToFixedWidth, resizeAllColumnsToFitContent, resizeAllColumnsToFitContentAction } from '@/lib/menu/tableMenu';
-import { tabulatorForTableData } from "@/common/tabulator";
+import { selectedCells, tabulatorForTableData } from "@/common/tabulator";
 import { TransportTabulatorPersistence } from "@/common/transport/TransportTabulatorPersistence";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import { ExpandablePath, parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
 import { stringToTypedArray, removeUnsortableColumnsFromSortBy } from "@/common/utils";
 import { UpdateOptions } from "@/lib/data/jsonViewer";
 import VisualizeButton from "@/components/plugins/VisualizeButton.vue";
-import type { StatusbarMenuPayload } from "@/services/plugin/web/MenuParams";
+import type { GridStatusbarPayload } from "@/services/plugin/web/MenuParams";
 import type { ContextItem } from "@/plugins/BeekeeperPlugin";
 
 const log = rawLog.scope('TableTable')
@@ -2359,7 +2359,7 @@ export default Vue.extend({
       } catch (ex) {
         log.error("Unable to build the filter condition for a plugin", ex)
       }
-      const payload: StatusbarMenuPayload = { tabulator: this.tabulator, table: this.table, filters, where }
+      const payload: GridStatusbarPayload = { selection: selectedCells(this.tabulator), table: this.table, filters, where }
       item.handler({ ...payload, event })
     },
     handleSwitchedTab(tab) {
