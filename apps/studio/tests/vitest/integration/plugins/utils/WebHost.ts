@@ -7,7 +7,7 @@ import { State as RootState } from "@/store";
 import { PluginsModule } from "@/store/modules/plugins";
 import { TableOrView } from "@/lib/db/models";
 import { WebPlugin } from "./WebPlugin";
-import type { PluginSnapshot } from "@/services/plugin";
+import type { PluginSettings, PluginSnapshot } from "@/services/plugin";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { getDialectData } from "@shared/lib/dialects";
 import { dialectFor } from "@shared/lib/dialects/models";
@@ -24,6 +24,8 @@ export class WebHost {
   private pluginStoreService: PluginStoreService;
   private initialized = false;
   private plugins = new Map<string, PluginSnapshot>();
+  /** Values returned for `plugin/getPluginSetting`, keyed by plugin id */
+  public pluginSettings: Record<string, Partial<PluginSettings>> = {};
 
   private mockUtilityConnection = {
     send: vi.fn().mockImplementation((event: string, data?: any) => {
@@ -35,6 +37,9 @@ export class WebHost {
       }
       if (event === "plugin/entries") {
         return Promise.resolve({ official: [], community: [] });
+      }
+      if (event === "plugin/getPluginSetting") {
+        return Promise.resolve(this.pluginSettings[data.id]?.[data.key]);
       }
       return Promise.resolve();
     }),
@@ -140,6 +145,11 @@ export class WebHost {
   unload(plugin: WebPlugin): void {
     this.manager.unregisterIframe(plugin.manifest.id, plugin.iframe);
     this.plugins.delete(plugin.manifest.id);
+  }
+
+  /** Set the database connection plugins run queries against */
+  setConnection(connection: { executeQuery: (...args: any[]) => Promise<any> }): void {
+    (this.mockStore.state as any).connection = connection;
   }
 
   getLoadedPlugins() {

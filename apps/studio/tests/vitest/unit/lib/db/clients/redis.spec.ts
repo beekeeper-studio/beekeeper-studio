@@ -47,3 +47,52 @@ describe("RedisClient.getKeyInfo", () => {
     expect(info.memory).toBe(56);
   });
 });
+
+describe("RedisClient read-only commands", () => {
+  function createClient(readOnlyMode = false) {
+    const client = new RedisClient(
+      { config: { readOnlyMode } } as unknown as IDbConnectionServer,
+      { database: "0" } as IDbConnectionDatabase
+    );
+    const sendCommand = vi.fn().mockResolvedValue("OK");
+    client.redis = {
+      hello: vi.fn().mockResolvedValue({ proto: 2 }),
+      sendCommand,
+    } as unknown as RedisClientType;
+    return { client, sendCommand };
+  }
+
+  it("blocks write commands when forceReadOnly is set", async () => {
+    const { client, sendCommand } = createClient();
+
+    const [result] = await client.executeQuery("SET foo bar", { forceReadOnly: true });
+
+    expect(sendCommand).not.toHaveBeenCalled();
+    expect(result.rows[0].error).toContain("not allowed in Read-Only mode");
+  });
+
+  it("allows read commands when forceReadOnly is set", async () => {
+    const { client, sendCommand } = createClient();
+
+    await client.executeQuery("GET foo", { forceReadOnly: true });
+
+    expect(sendCommand).toHaveBeenCalledWith(["GET", "foo"]);
+  });
+
+  it("runs write commands when no options are passed", async () => {
+    const { client, sendCommand } = createClient();
+
+    await client.executeQuery("SET foo bar");
+
+    expect(sendCommand).toHaveBeenCalledWith(["SET", "foo", "bar"]);
+  });
+
+  it("runs write commands from the query editor path, which passes no options", async () => {
+    const { client, sendCommand } = createClient();
+
+    const query = await client.query("SET foo bar");
+    await query.execute();
+
+    expect(sendCommand).toHaveBeenCalledWith(["SET", "foo", "bar"]);
+  });
+});
