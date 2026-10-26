@@ -9,6 +9,7 @@ import { execSync } from 'child_process';
 import 'electron-log/preload';
 import type { SaveFileOptions } from '@/backend/lib/FileHelpers';
 import type { NativePluginMenuItem } from '@/services/plugin/types';
+import { BksConfigSource } from '@/common/bksConfig/BksConfigProvider';
 
 const electron = require('@electron/remote');
 
@@ -67,10 +68,15 @@ export const api = {
   async setConfirmWindowClose(enabled: boolean) {
     await ipcRenderer.invoke('setConfirmWindowClose', enabled);
   },
-  onUpdateEvent(event: 'update-available' | 'manual-update' | 'update-downloaded', bind: any) {
-    const eType = ['update-available', 'manual-update', 'update-downloaded'];
+  onUpdateEvent(event: 'update-available' | 'manual-update' | 'managed-update' | 'update-downloaded', bind: any) {
+    const eType = ['update-available', 'manual-update', 'managed-update', 'update-downloaded'];
     if (!eType.includes(event)) return;
     ipcRenderer.on(event, bind);
+  },
+  onBksConfigChanged(callback: (source: BksConfigSource) => void) {
+    ipcRenderer.on('bksConfigChanged', (_event: Electron.IpcRendererEvent, source: BksConfigSource) => {
+      callback(source);
+    });
   },
   updaterReady() {
     ipcRenderer.send('updater-ready');
@@ -81,6 +87,9 @@ export const api = {
   triggerInstall() {
     ipcRenderer.send('install-update');
   },
+  triggerRestart() {
+    ipcRenderer.send('app:restart');
+  },
   openExternally(link: string) {
     // URL protocol is validated in the main process by safeOpenExternal.
     ipcRenderer.send(AppEvent.openExternally, [link]);
@@ -90,6 +99,9 @@ export const api = {
   },
   join(...paths: string[]): string {
     return path.join(...paths);
+  },
+  getPathForFile(file: File): string {
+    return webUtils.getPathForFile(file);
   },
   basename(p: string, ext?: string): string {
     return path.basename(p, ext);
@@ -130,6 +142,16 @@ export const api = {
   onLeaveFullscreen(func: any, sId: string) {
     ipcRenderer.on(`leave-full-screen-${sId}`, func);
   },
+  onSystemUsesDarkColors(func: (dark: boolean) => void) {
+    ipcRenderer.on("systemUsesDarkColors", (_event, dark: boolean) => {
+      func(dark);
+    });
+  },
+  onWindowFocused(func: (focused: boolean) => void) {
+    ipcRenderer.on("windowFocused", (_event, focused: boolean) => {
+      func(focused);
+    });
+  },
   async isMaximized() {
     return await ipcRenderer.invoke('isMaximized');
   },
@@ -155,7 +177,7 @@ export const api = {
     return electron.clipboard.writeText(text);
   },
   writeImageToClipboard(dataUrl: string) {
-    return electron.clipboard.writeImage(nativeImage.createFromDataURL(dataUrl));
+    return ipcRenderer.invoke('clipboard:write', { content: dataUrl, image: true });
   },
   readTextFromClipboard(): string {
     return electron.clipboard.readText();

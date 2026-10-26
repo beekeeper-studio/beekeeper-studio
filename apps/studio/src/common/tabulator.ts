@@ -5,11 +5,6 @@ import {
   RangeComponent,
   TabulatorFull,
 } from "tabulator-tables";
-import {
-  copyActionsMenu,
-  resizeAllColumnsToFitContent,
-  resizeAllColumnsToFixedWidth,
-} from "@/lib/menu/tableMenu";
 import { rowHeaderField } from "@/common/utils";
 import _ from "lodash";
 import rawLog from "@bksLogger";
@@ -54,17 +49,22 @@ export function tabulatorForTableData(
     selectableRangeMode: "ctrl",
     selectableRangeAutoFocus: false,
     selectableRangeRows: true,
+    selectableRangeFill: true,
+    selectableRangeBlurEditOnNavigate: true,
+    selectableRangeCommitEditOnNavigate: true,
     resizableColumnGuide: true,
     movableColumns: true,
     height: "100%",
-    editTriggerEvent: window.bksConfig.ui.tableTable.editTrigger === "click" 
-      ? "click" 
+    editTriggerEvent: window.bksConfig.ui.tableTable.editTrigger === "click"
+      ? "click"
       : "dblclick",
     debugInvalidComponentFuncs: false,
     history: true,
     keybindings: {
       undo: window.bksConfig.getKeybindings("tabulator", "general.undo"),
       redo: window.bksConfig.getKeybindings("tabulator", "general.redo"),
+      scrollToStart: false,
+      scrollToEnd: false,
     },
     rowHeader: {
       field: rowHeaderField,
@@ -83,21 +83,6 @@ export function tabulatorForTableData(
       formatterParams: {
         relativeToPage: true,
         binaryEncoding: window.bksConfig.ui.general.binaryEncoding,
-      },
-      contextMenu: (_e, cell) => {
-        return copyActionsMenu({ ranges: cell.getRanges(), table: table || "mytable", schema });
-      },
-      headerContextMenu: (_e, column) => {
-        return [
-          ...copyActionsMenu({
-            ranges: column.getTable().getRanges(),
-            table: table || "mytable",
-            schema,
-          }),
-          { separator: true },
-          resizeAllColumnsToFitContent,
-          resizeAllColumnsToFixedWidth,
-        ];
       },
     },
   };

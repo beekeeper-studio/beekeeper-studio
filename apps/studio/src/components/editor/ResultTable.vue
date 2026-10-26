@@ -1,7 +1,7 @@
 <template>
   <div
     class="result-table"
-    :class="{ 'hidden-filter': hiddenFilter }"
+    :class="{ 'hidden-filter': hiddenFilter, 'editing-data': editingData }"
     v-hotkey="keymap"
   >
     <editor-modal
@@ -24,7 +24,7 @@
         >
         <button
           type="button"
-          class="clear btn-link"
+          class="clear"
           title="clear search filter"
           @click.prevent="clearSearchFilters"
         >
@@ -33,13 +33,13 @@
       </div>
       <button
         type="submit"
-        class="btn btn-primary btn-fab"
+        class="btn btn-primary btn-icon"
         title="filter results table"
       >
         <i class="material-icons">search</i>
       </button>
       <button
-        class="close-btn btn btn-flat btn-fab"
+        class="close-btn btn btn-flat btn-icon"
         title="Close filter"
         @click="closeTableFilter"
       >
@@ -49,6 +49,7 @@
     <div
       ref="tabulator"
       class="spreadsheet-table"
+      @keydown="onTableKeydown"
     />
   </div>
 </template>
@@ -67,7 +68,7 @@
   import { markdownTable } from 'markdown-table'
   import intervalParse from 'postgres-interval'
   import * as td from 'tinyduration'
-  import { copyRanges, copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth, createMenuItem, pasteRange } from '@/lib/menu/tableMenu';
+  import { copyActionsMenu, commonColumnMenu, resizeAllColumnsToFitContent, resizeAllColumnsToFixedWidth, createMenuItem, pasteRange } from '@/lib/menu/tableMenu';
   import { tabulatorForTableData } from '@/common/tabulator';
   import EditorModal from '../tableview/EditorModal.vue'
   import { AppEvent } from "@/common/AppEvent";
@@ -80,7 +81,7 @@
   import { CellComponent, RangeComponent, RowComponent } from 'tabulator-tables'
   import { PropType } from 'vue'
   import { safeSqlFormat } from '@/common/utils'
-import { stringToTypedArray } from '@/common/utils'
+  import { stringToTypedArray } from '@/common/utils'
 
   const log = rawLog.scope('ResultTable');
 
@@ -167,12 +168,17 @@ import { stringToTypedArray } from '@/common/utils'
         return this.dialectData?.queryDialectOverride ?? this.dialect;
       },
       keymap() {
+        // v-hotkey listens on the whole document, so a result table in a
+        // background tab would otherwise react to keys pressed anywhere.
+        if (!this.active) return {}
         return this.$vHotkeyKeymap({
           'queryEditor.copyResultSelection': this.copySelection.bind(this),
           'queryEditor.openTableFilter': this.focusOnFilterInput.bind(this),
           'general.save': this.saveChanges.bind(this),
           'general.openInSqlEditor': this.copyToSql.bind(this),
-          'resultTable.openEditorModal': this.openEditorMenuByShortcut.bind(this)
+          'general.pasteSelection': this.pasteSelection.bind(this),
+          'tableTable.openEditorModal': this.openEditorMenuByShortcut.bind(this),
+          'tableTable.nullSelection': this.nullTableSelection.bind(this)
         });
       },
       tableFilterKeymap() {
@@ -278,8 +284,10 @@ import { stringToTypedArray } from '@/common/utils'
             // @ts-ignore
             contextMenu: (_e, cell) => {
               return [
+                this.viewAsJsonMenuItem(),
+                { separator: true },
                 ...copyActionsMenu({
-                  ranges: cell.getTable().getRanges(),
+                  tabulator: cell.getTable(),
                   table: this.result.tableName || "mytable",
                   schema: this.result.schema,
                   escapeString: this.dialectData?.escapeString,
@@ -290,7 +298,7 @@ import { stringToTypedArray } from '@/common/utils'
             headerContextMenu: (_e, column) => {
               return [
                 ...copyActionsMenu({
-                  ranges: column.getTable().getRanges(),
+                  tabulator: column.getTable(),
                   table: this.result.tableName || "mytable",
                   schema: this.result.schema,
                   escapeString: this.dialectData?.escapeString,
@@ -305,6 +313,25 @@ import { stringToTypedArray } from '@/common/utils'
         });
 
         this.tabulator.on('cellEdited', this.cellEdited);
+        this.tabulator.on("rangeEdited", (range) => {
+          range.getModifiedCells().forEach((cell) => this.cellEdited(cell));
+          this.tabulator.modules.selectRange.restoreFocus()
+        });
+        this.tabulator.on('historyUndo', (action, component) => {
+          if (action === 'cellEdit') {
+            this.cellEdited(component);
+          } else if (action === "rangeEdit") {
+            component.getCells().flat().forEach((cell: CellComponent) => this.cellEdited(cell));
+          }
+        });
+
+        this.tabulator.on('historyRedo', (action, component) => {
+          if (action === 'cellEdit') {
+            this.cellEdited(component)
+          } else if (action === "rangeEdit") {
+            component.getCells().flat().forEach((cell: CellComponent) => this.cellEdited(cell));
+          }
+        })
       },
       rowFormatter(row: RowComponent) {
         const data = row.getData();
@@ -326,11 +353,23 @@ import { stringToTypedArray } from '@/common/utils'
         for (const field of fieldsWithClass) {
           const element = row.getCell(field)?.getElement();
           if (!element) continue;
-          if (!hasReset.includes(field)) {
+          if (!hasReset.includes(field) && this.fieldOriginalClassMap.has(field)) {
             element.classList.value = this.fieldOriginalClassMap.get(field);
             hasReset.push(field);
           }
           element.classList.add(classToAdd);
+        }
+      },
+      setRangesNull(ranges: RangeComponent[]) {
+        const targets = ranges.flatMap((range) => range.getCells().flat()).map((cell) => ({
+          row: cell.getRow(),
+          field: cell.getField()
+        }));
+
+        for (const { row, field } of targets) {
+          const cell = row.getCell(field);
+          if (!cell) continue;
+          if (this.cellEditCheck(cell)) cell.setValue(null);
         }
       },
       setAsNullMenuItem(ranges: RangeComponent[]) {
@@ -339,22 +378,15 @@ import { stringToTypedArray } from '@/common/utils'
           .every((col) => !this.cellEditCheck(col));
         return {
           label: createMenuItem("Set as NULL"),
-          action: () => {
-            const targets = ranges.flatMap((range) => range.getCells().flat()).map((cell) => ({
-              row: cell.getRow(),
-              field: cell.getField()
-            }));
-
-            for (const { row, field } of targets) {
-              const cell = row.getCell(field);
-              if (!cell) continue;
-              if (this.cellEditCheck(cell)) cell.setValue(null);
-            }
-          },
+          action: () => this.setRangesNull(ranges),
           disabled: areAllCellsReadOnly || !this.editingData,
         }
       },
-      openEditorMenuByShortcut() {
+      openEditorMenuByShortcut(e: KeyboardEvent) {
+        // Only when the key was pressed inside the grid. Shift+Enter is a
+        // newline elsewhere (SQL editor, plugin prompts, whose iframes
+        // forward their key events to the document).
+        if (!this.tabulator?.element.contains(e.target as Node)) return
         const range: RangeComponent = _.last(this.tabulator.getRanges())
         const cell = range.getCells().flat()[0];
         // (copied from TableTable.vue)
@@ -362,6 +394,21 @@ import { stringToTypedArray } from '@/common/utils'
         // it should be done by calling an event using this.$modal.show(modalName)
         // or this.$trigger(AppEvent.something) if possible
         this.openCellEditorModal(cell, !this.cellEditCheck(cell))
+      },
+      /** Opens the JSON sidebar on the selected row. Leads the cell and row menus. */
+      viewAsJsonMenuItem() {
+        return {
+          label: createMenuItem(
+            'View as JSON',
+            this.$bksConfig.getKeybindings('context-menu', 'general.jsonViewerSidebar'),
+            { icon: 'data_object' }
+          ),
+          action: () => {
+            this.trigger(AppEvent.selectSecondarySidebarTab, 'json-viewer')
+            this.trigger(AppEvent.toggleSecondarySidebar, true)
+            this.updateJsonViewerSidebar()
+          },
+        }
       },
       openEditorMenu(cell: CellComponent) {
         const isReadOnly = !this.cellEditCheck(cell);
@@ -404,11 +451,13 @@ import { stringToTypedArray } from '@/common/utils'
           const range = _.last(ranges);
 
           return [
+            this.viewAsJsonMenuItem(),
+            { separator: true },
             this.openEditorMenu(cell),
             this.setAsNullMenuItem(ranges),
             { separator: true },
             ...copyActionsMenu({
-              ranges: cell.getTable().getRanges(),
+              tabulator: cell.getTable(),
               table: this.result.tableName,
               schema: this.defaultSchema,
               escapeString: this.dialectData?.escapeString,
@@ -429,7 +478,7 @@ import { stringToTypedArray } from '@/common/utils'
         const columnMenu = (_e, column) => {
           return [
             ...copyActionsMenu({
-              ranges: column.getTable().getRanges(),
+              tabulator: column.getTable(),
               table: this.result.tableName,
               schema: this.defaultSchema,
               escapeString: this.dialectData?.escapeString,
@@ -503,7 +552,8 @@ import { stringToTypedArray } from '@/common/utils'
           dataType: editData?.dataType,
           width: columnWidth,
           mutator: this.resolveTabulatorMutator(column.dataType, dialectFor(this.connectionType)),
-          maxInitialWidth: this.$bksConfig.ui.tableTable.maxColumnWidth,
+          maxWidth: this.$bksConfig.ui.tableTable.maxColumnWidth,
+          maxInitialWidth: this.$bksConfig.ui.tableTable.maxInitialWidth,
           tooltip: this.cellTooltip,
           contextMenu: cellMenu,
           headerContextMenu: columnMenu,
@@ -517,6 +567,13 @@ import { stringToTypedArray } from '@/common/utils'
           formatter: this.cellFormatter,
           formatterParams,
           editorParams: {
+            // textarea params
+            enterSubmit: true,
+            shiftEnterSubmit: true,
+            altEnterNewLine: true,
+            ctrlEnterNewLine: true,
+            metaEnterNewLine: true,
+
             verticalNavigation: useVerticalNavigation ? 'editor' : undefined,
             dataType: editData?.dataType,
             search: true,
@@ -561,7 +618,7 @@ import { stringToTypedArray } from '@/common/utils'
       },
       headerFormatter(_cell, formatterParams) {
         const { columnName, dataType } = formatterParams
-        const dataTypeStr = dataType ? `<span class="badge column-data-type">${escapeHtml(dataType)}</span>` : '';
+        const dataTypeStr = dataType ? `<span class="column-data-type">${escapeHtml(dataType)}</span>` : '';
         return `
           <span class="title">
             ${escapeHtml(columnName)}
@@ -582,6 +639,14 @@ import { stringToTypedArray } from '@/common/utils'
           case 'boolean':
             return 'list'
           default: return ne
+        }
+      },
+      onTableKeydown(e: KeyboardEvent) {
+        // Avoid conflicts with v-hotkey. For example, pressing shift+enter
+        // triggers cell editor submit and editor modal.
+        if (e.target instanceof HTMLInputElement
+          || e.target instanceof HTMLTextAreaElement) {
+          e.stopPropagation();
         }
       },
       cellEditCheck(cell: CellComponent): boolean {
@@ -620,9 +685,9 @@ import { stringToTypedArray } from '@/common/utils'
           return;
         }
 
-        if (!this.fieldOriginalClassMap.has(cell.getField())) {
+        if (!this.fieldOriginalClassMap.has(cell.getField()) && cell.getElement()?.classList?.value) {
           // If we don't have the unmodified original class value, store it so we can reset classes later on :)
-          this.fieldOriginalClassMap.set(cell.getField(), cell.getElement()?.classList.value);
+          this.fieldOriginalClassMap.set(cell.getField(), cell.getElement()?.classList?.value);
         }
 
         // TODO (@day): if we're going to do inserts we'll have to check if edit is in a pending insert here
@@ -739,9 +804,6 @@ import { stringToTypedArray } from '@/common/utils'
           row.reformat();
         })
         this.tabulator.restoreRedraw();
-        this.$nextTick(() => {
-          this.tabulator.redraw()
-        })
       },
       buildPendingUpdates() {
         return this.pendingChanges.updates.map((update) => {
@@ -808,7 +870,16 @@ import { stringToTypedArray } from '@/common/utils'
       copySelection() {
         const isFocusingTable = this.checkTableFocus();
         if (!this.active || !isFocusingTable) return
-        copyRanges({ ranges: this.tabulator.getRanges(), type: 'plain' })
+        this.tabulator.copyRanges({ type: 'plain' })
+      },
+      pasteSelection() {
+        if (!this.checkTableFocus() || !this.editingData) return;
+        pasteRange(_.last(this.tabulator.getRanges()));
+        this.tabulator.modules.selectRange.restoreFocus()
+      },
+      nullTableSelection() {
+        if (!this.checkTableFocus() || !this.editingData) return;
+        this.setRangesNull(this.tabulator.getRanges());
       },
       dataToJson(rawData, firstObjectOnly) {
         const rows = _.isArray(rawData) ? rawData : [rawData]
@@ -833,6 +904,9 @@ import { stringToTypedArray } from '@/common/utils'
         })
       },
       resetPendingChanges() {
+        if (this.tabulator) {
+          this.tabulator.modules.history.clear();
+        }
         this.pendingChanges = {
           updates: [],
           deletes: []
@@ -1162,6 +1236,10 @@ import { stringToTypedArray } from '@/common/utils'
         padding-bottom: 5rem;
       }
     }
+
+    &:not(.editing-data) ::v-deep .tabulator-range-fill-handle {
+      display: none;
+    }
   }
 
   .table-search-wrapper.table-filter {
@@ -1174,12 +1252,12 @@ import { stringToTypedArray } from '@/common/utils'
     right: 1.5rem;
     z-index: 10;
     align-items: center;
-    background-color: var(--query-editor-bg);
-    border: 1px solid var(--border-color);
+    background: var(--editor-bg);
+    border: 1px solid var(--border-subtle);
     border-radius: 0.5rem;
     @include card-shadow;
 
-    .btn-fab {
+    .btn-icon {
       min-width: auto;
       width: 1.6rem;
       height: 1.5rem;

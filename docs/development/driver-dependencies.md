@@ -116,8 +116,10 @@ A few rules worth noting:
   used by the connection form. That binding is what makes the
   auto-download button appear next to the field.
 - `artifacts` covers `platform` ∈ `{linux, mac, windows}` and `arch` ∈
-  `{x64, arm64}`. If a user's platform is missing, the install fails
-  with a clear error and the manual download URL is offered.
+  `{x64, arm64}`. If there's no artifact for a user's platform and arch
+  (Oracle Instant Client on Windows ARM64, for example), the
+  auto-download button is hidden and `install()` refuses with a clear
+  error.
 - If `extractedDirName` is omitted, the file manager uses the first
   top-level directory in the extracted archive. Set it explicitly when
   the archive layout is stable.

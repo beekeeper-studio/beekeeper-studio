@@ -45,7 +45,7 @@
             'You cannot provide a comparison value when checking for NULL or NOT NULL' :
             ''"
           :placeholder="
-            filter.type === 'in'
+            isListInput
               ? `Enter values separated by comma, eg: foo,bar`
               : 'Enter Value'
           "
@@ -53,7 +53,7 @@
         <button
           v-if="!isNullFilter"
           type="button"
-          class="clear btn-link"
+          class="clear"
           @click.prevent="$set(filter, 'value', '')"
         >
           <i class="material-icons">cancel</i>
@@ -64,6 +64,7 @@
 </template>
 <script lang="js">
 import { TableFilterSymbols } from '@/lib/db/types';
+import { isListFilter } from '@/common/utils';
 import {mapState} from 'vuex'
 
 export default {
@@ -83,6 +84,9 @@ export default {
       const filterTypes = this.supportedFeatures.filterTypes ?? ['standard']
       
       return TableFilterSymbols.filter(tf => filterTypes.includes(tf.type))
+    },
+    isListInput() {
+      return isListFilter(this.filter.type)
     },
     isNullFilter() {
       const typeOptions = this.filterTypes.find((f) => f.value === this.filter.type)

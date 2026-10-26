@@ -26,7 +26,7 @@ export default class extends DefaultMenu {
         this.menuItems.primarySidebarToggle,
         this.menuItems.secondarySidebarToggle,
         { type: 'separator' },
-        this.menuItems.themeToggle,
+        this.menuItems.appearance,
         this.menuItems.reload,
         // This is added automatically in Mac
         ...(!this.platformInfo.isMac ? [this.menuItems.fullscreen] : []),
@@ -47,6 +47,7 @@ export default class extends DefaultMenu {
         this.menuItems.reload,
         this.menuItems.simulatePlatform,
         this.menuItems.licenseState,
+        this.menuItems.themePlayground,
       ],
     }
   }
@@ -74,7 +75,8 @@ export default class extends DefaultMenu {
       ]
     };
 
-    if (!this.platformInfo.isLinux || this.platformInfo.isAppImage) {
+    // MSI installs only get the versions IT deploys
+    if ((!this.platformInfo.isLinux || this.platformInfo.isAppImage) && !this.platformInfo.isMsi) {
       helpMenu.submenu.push(this.menuItems.toggleBeta)
     }
 

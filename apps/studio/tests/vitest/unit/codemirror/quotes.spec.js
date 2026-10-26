@@ -1,6 +1,6 @@
 import { describe } from "vitest";
 import { Pos } from "codemirror";
-import { testAutoquotes as test } from "@tests/unit/codemirror/helpers";
+import { testAutoquotes as test } from "./helpers";
 
 describe("Codemirror autoquotes", () => {
   test("Lowercased identifier", {

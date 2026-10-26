@@ -8,7 +8,7 @@ Puedes comprar una licencia de Beekeeper Studio desde [la pagina de precios](htt
 
 Las licencias se emiten a *personas*, no a maquinas. Asi que compra una licencia por cada persona individual que use la aplicacion. Compara planes [en la pagina de precios](https://beekeeperstudio.io/pricing)
 
-## Acceso de Por Vida
+## Acceso de Por Vida { #lifetime-access }
 
 Ya sea que elijas un plan de suscripcion anual o mensual para Beekeeper Studio, eres elegible para una **licencia de uso de por vida**. Esto significa que obtienes acceso perpetuo a cualquier version de Beekeeper Studio lanzada dentro de tu periodo de suscripcion, permitiendote usar el software indefinidamente sin pagos adicionales.
 

@@ -1,4 +1,9 @@
 import _ from "lodash";
+import {
+  getVimLineNumberOption,
+  setVimLineNumberOption,
+  VimLineNumberOptions,
+} from "./lineNumbers";
 
 export type IMapping = {
   lhs: string;
@@ -189,6 +194,29 @@ function applyKeymaps(vim: any, directives: VimDirective[]): void {
   appliedKeymapSignature = signature;
 }
 
+const LINE_NUMBER_OPTIONS: [keyof VimLineNumberOptions, string][] = [
+  ["number", "nu"],
+  ["relativenumber", "rnu"],
+];
+
+/**
+ * `number` and `relativenumber`, so they work from the vimrc and from `:set`.
+ * codemirror calls the callback with no value to read the option, and with no
+ * cm for the global value (the vimrc, and the global half of a plain `:set`).
+ */
+function defineLineNumberOptions(codeMirrorVimInstance: any) {
+  for (const [name, alias] of LINE_NUMBER_OPTIONS) {
+    // No default: codemirror would set it on every define, clobbering a
+    // global the user changed with `:set`.
+    codeMirrorVimInstance.defineOption(name, undefined, "boolean", [alias], (value?: boolean, cm?: any) => {
+      if (value === undefined) {
+        return getVimLineNumberOption(name, cm?.cm6);
+      }
+      setVimLineNumberOption(name, value, cm?.cm6);
+    });
+  }
+}
+
 export function extendVimOnCodeMirror(
   codeMirrorVimInstance: any,
   vimConfig?: Config,
@@ -203,6 +231,9 @@ export function extendVimOnCodeMirror(
   if (vimConfig) {
     applyConfig(codeMirrorVimInstance, vimConfig);
   }
+
+  // Before the keymaps, which may `set` these.
+  defineLineNumberOptions(codeMirrorVimInstance);
 
   if (_.isArray(vimKeymaps)) {
     applyKeymaps(codeMirrorVimInstance, vimKeymaps);
