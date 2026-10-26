@@ -162,7 +162,7 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         await util.knex.schema.raw("DROP INDEX col_exp_test_idx");
       });
     });
-    
+
     describe("Table References Tests", () => {
       beforeAll(async () => {
         // Create parent and child tables with foreign key relationships
@@ -172,7 +172,7 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
             department_name VARCHAR(100)
           )
         `);
-        
+
         await util.knex.schema.raw(`
           CREATE TABLE employees (
             employee_id INT PRIMARY KEY,
@@ -201,7 +201,7 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         }
       });
     });
-    
+
     describe("Upsert SQL Tests", () => {
       it("should create correct upsert SQL", async () => {
         const entity = { name: "test_table" };
@@ -209,11 +209,11 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
           { id: 1, name: "Test 1" },
           { id: 2, name: "Test 2" }
         ];
-        
+
         // Access the client directly to test the createUpsertSQL method
         // @ts-ignore - Accessing private method for testing
         const sql = util.connection.createUpsertSQL(entity, data);
-        
+
         expect(sql).toContain("INSERT OR REPLACE");
         expect(sql).toContain("`test_table`");
         expect(sql).toContain("`id`, `name`");
@@ -263,6 +263,29 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         const col = columns.find((c) => c.columnName.toLowerCase() === 'label')
         expect(col).toBeTruthy()
         expect(col.dataType.toLowerCase()).toContain('varchar')
+      })
+    })
+
+    // Regression: we used to set column name to the type alias for some reason
+    // make sure it's actually the column name and the type is the type alias
+    describe("executeQuery type alias regression", () => {
+      beforeAll(async () => {
+        await util.knex.schema.raw(`CREATE TABLE alias_regression (my_column JSON)`)
+        await util.knex.schema.raw(`INSERT INTO alias_regression VALUES ('{"a":1}')`)
+      })
+
+      afterAll(async () => {
+        await util.knex.schema.raw(`DROP TABLE IF EXISTS alias_regression`)
+      })
+
+      it("should use the column name, not the type alias, as the field name", async () => {
+        const results = await util.connection.executeQuery(
+          `SELECT my_column FROM alias_regression`
+        )
+
+        const field = results[0].fields[0] as { id: string; name: string; type: string }
+        expect(field.name).toBe("my_column")
+        expect(field.type).toBe("JSON")
       })
     })
 
