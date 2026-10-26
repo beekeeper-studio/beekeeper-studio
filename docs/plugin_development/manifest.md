@@ -171,7 +171,7 @@ In context menus, plugin items share one section labelled **Plugins** at the bot
 
 #### Where placements appear
 
-`editor.query.toolbar` items are buttons in the query editor toolbar, next to **Run**. Each button shows the item's `icon` and `name`, so keep the name short.
+`editor.query.toolbar` items are buttons in the query editor toolbar, next to **Run**. Each button shows the item's `icon` and its whole `name`, so keep the name short: a name longer than 20 characters logs a warning to the developer console.
 
 ![An Explain button in the query editor toolbar](../assets/images/plugin-query-editor-toolbar.png)
 
@@ -201,19 +201,19 @@ The `*.context` placements add items to the **Plugins** section of a context men
 
 #### When no plugin uses a placement
 
-Menus keep their **Plugins** section, with a disabled **No plugins…** row above **Manage Plugins…**. This shows that plugin actions exist, and that no installed plugin adds one there. The same goes for both **Visualize** menus (the button always shows), the new tab dropdown and the actions menu of the table structure view. `editor.query.toolbar` is the exception: without a plugin, the toolbar has no plugin buttons.
+Menus keep their **Plugins** section, with a disabled **No Plugins…** row above **Manage Plugins…**. This shows that plugin actions exist, and that no installed plugin adds one there. The same goes for both **Visualize** menus (the button always shows), the new tab dropdown and the actions menu of the table structure view. `editor.query.toolbar` is the exception: without a plugin, the toolbar has no plugin buttons.
 
 | Placement | With a plugin | Without plugins |
 | --------- | ------------- | --------------- |
 | `editor.query.toolbar` | ![Toolbar with an Explain button](../assets/images/plugin-query-editor-toolbar.png) | ![Toolbar without plugin buttons](../assets/images/plugin-none-query-editor-toolbar.png) |
-| `results.statusbar` | ![Results Visualize menu with plugin items](../assets/images/plugin-visualize-menu.png) | ![Results Visualize menu with No plugins](../assets/images/plugin-none-visualize-menu.png) |
-| `tableTable.statusbar` | ![Table view Visualize menu with plugin items](../assets/images/plugin-visualize-table-view.png) | ![Table view Visualize menu with No plugins](../assets/images/plugin-none-visualize-table-view.png) |
-| `editor.query.context` | ![Query editor menu with a Plugins section](../assets/images/plugin-menu-query-editor.png) | ![Query editor menu with No plugins](../assets/images/plugin-none-menu-query-editor.png) |
-| `results.cell.context` | ![Results grid menu with a Plugins section](../assets/images/plugin-menu-results-grid.png) | ![Results grid menu with No plugins](../assets/images/plugin-none-menu-results-grid.png) |
-| `entity.table.context` | ![Sidebar menu with a Plugins section](../assets/images/plugin-menu-sidebar.png) | ![Sidebar menu with No plugins](../assets/images/plugin-none-menu-sidebar.png) |
-| `newTabDropdown` | ![New tab dropdown with plugin entries](../assets/images/plugin-new-tab-dropdown.png) | ![New tab dropdown with No plugins](../assets/images/plugin-none-new-tab-dropdown.png) |
+| `results.statusbar` | ![Results Visualize menu with plugin items](../assets/images/plugin-visualize-menu.png) | ![Results Visualize menu with No Plugins](../assets/images/plugin-none-visualize-menu.png) |
+| `tableTable.statusbar` | ![Table view Visualize menu with plugin items](../assets/images/plugin-visualize-table-view.png) | ![Table view Visualize menu with No Plugins](../assets/images/plugin-none-visualize-table-view.png) |
+| `editor.query.context` | ![Query editor menu with a Plugins section](../assets/images/plugin-menu-query-editor.png) | ![Query editor menu with No Plugins](../assets/images/plugin-none-menu-query-editor.png) |
+| `results.cell.context` | ![Results grid menu with a Plugins section](../assets/images/plugin-menu-results-grid.png) | ![Results grid menu with No Plugins](../assets/images/plugin-none-menu-results-grid.png) |
+| `entity.table.context` | ![Sidebar menu with a Plugins section](../assets/images/plugin-menu-sidebar.png) | ![Sidebar menu with No Plugins](../assets/images/plugin-none-menu-sidebar.png) |
+| `newTabDropdown` | ![New tab dropdown with plugin entries](../assets/images/plugin-new-tab-dropdown.png) | ![New tab dropdown with No Plugins](../assets/images/plugin-none-new-tab-dropdown.png) |
 
-![The structure view actions menu with No plugins](../assets/images/plugin-none-menu-structure.png)
+![The structure view actions menu with No Plugins](../assets/images/plugin-none-menu-structure.png)
 
 ### PluginMenuItemCondition
 
@@ -254,8 +254,8 @@ if (context.command === "pivot-results") {
 
 The **Visualize** menu sends what the user is looking at, and `source` says which:
 
-- `"selection"`: the user selected more than one cell, or a row or column from its header. `activeRange` holds the selection, and the menu heading counts cells instead of rows.
-- `"result"`: nothing is selected in a query result. `activeRange` holds every row of the result. `truncated` is true when the result stopped at the row limit, and `query` is the statement that produced it, so you can run it again for more rows.
+- `"selection"`: the user selected more than one cell, or a row or column from its header. `target` holds the selection, and the menu heading counts cells instead of rows.
+- `"result"`: nothing is selected in a query result. `target` holds every row of the result. `truncated` is true when the result stopped at the row limit, and `query` is the statement that produced it, so you can run it again for more rows.
 - `"table"`: nothing is selected in a table view. The grid only holds one page of the table, so no rows are sent. Read the table yourself from `entity`, applying `where` (the SQL condition for the filters in the table view), with a row limit that suits your plugin.
 
 ![The Visualize menu with eight cells selected](../assets/images/plugin-visualize-selection.png)

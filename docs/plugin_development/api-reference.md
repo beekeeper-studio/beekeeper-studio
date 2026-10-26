@@ -1183,10 +1183,9 @@ Parameters from the **Visualize** menu (`results.statusbar` and `tableTable.stat
 | Property      | Type                                  | Description |
 |---------------|---------------------------------------|-------------|
 | `source`      | `"selection" \| "result" \| "table"` | What was sent: the selected cells, every row of a query result, or a table to read yourself |
-| `activeRange` | `ActiveRange`                         | The rows sent. Present when `source` is `"selection"` or `"result"` |
-| `target`      | `CornerMenuTarget`                    | Same as `activeRange`, so handlers written for `CornerMenuParams` work unchanged (optional) |
+| `target`      | `CornerMenuTarget`                    | The rows sent, shaped like a corner menu's target so handlers written for `CornerMenuParams` work unchanged. Absent when `source` is `"table"` (optional) |
 | `query`       | `string`                              | Query results only: the statement that produced the result (optional) |
-| `truncated`   | `boolean`                             | Query results only: the result stopped at the row limit (optional) |
+| `truncated`   | `boolean`                             | Query results only: the result stopped at the app's row limit, so `target` may not hold every row the query returns. Run `query` again for more (optional) |
 | `entity`      | [`MenuEntity`](#menuentity)           | Table view only: the table being viewed (optional) |
 | `filters`     | `TableFilter[]`                       | Table view only: the filters applied in the table view (optional) |
 | `where`       | `string`                              | Table view only: the SQL condition for those filters, without the `WHERE` keyword. Empty when there are no filters (optional) |
