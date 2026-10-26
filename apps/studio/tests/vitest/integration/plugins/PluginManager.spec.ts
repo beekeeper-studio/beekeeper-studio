@@ -229,8 +229,8 @@ describe("Basic Plugin Management", () => {
       await manager.installPlugin("frozen-banana");
 
       expect(manager.pluginSettings).toStrictEqual({
-        "test-plugin": { autoUpdate: true },
-        "frozen-banana": { autoUpdate: true },
+        "test-plugin": { autoUpdate: true, readOnly: true },
+        "frozen-banana": { autoUpdate: true, readOnly: true },
       });
 
       // Simulate plugin updates on the server
@@ -284,6 +284,77 @@ describe("Basic Plugin Management", () => {
       const promise = manager.updatePlugin("microwave-pizza");
       await expect(promise).rejects.toBeInstanceOf(PluginSystemError);
       await expect(promise).rejects.toHaveProperty("code", "PLUGIN_NOT_FOUND");
+    });
+  });
+
+  describe("Settings", () => {
+    async function seedPluginSettings(value: Record<string, unknown>) {
+      const setting = await UserSetting.findOneBy({ key: "pluginSettings" });
+      setting.userValue = JSON.stringify(value);
+      await setting.save();
+    }
+
+    it("installs plugins as read-only with auto-update on", async () => {
+      const manager = await initPluginManager(AppVer.COMPAT);
+      await manager.installPlugin("test-plugin");
+
+      expect(manager.pluginSettings["test-plugin"]).toStrictEqual({
+        autoUpdate: true,
+        readOnly: true,
+      });
+      expect(manager.getPluginSetting("test-plugin", "readOnly")).toBe(true);
+      expect(manager.getPluginSetting("test-plugin", "autoUpdate")).toBe(true);
+    });
+
+    it("falls back to read-only for settings saved before readOnly existed", async () => {
+      await seedPluginSettings({ "test-plugin": { autoUpdate: false } });
+      const manager = await initPluginManager(AppVer.COMPAT);
+
+      expect(manager.getPluginSetting("test-plugin", "readOnly")).toBe(true);
+      // Stored values still win over the defaults
+      expect(manager.getPluginSetting("test-plugin", "autoUpdate")).toBe(false);
+    });
+
+    it("falls back to read-only for plugins with no settings entry", async () => {
+      const manager = await initPluginManager(AppVer.COMPAT);
+
+      expect(manager.pluginSettings).not.toHaveProperty("local-plugin");
+      expect(manager.getPluginSetting("local-plugin", "readOnly")).toBe(true);
+    });
+
+    it("can turn read-only off, and it persists across restarts", async () => {
+      const manager = await initPluginManager(AppVer.COMPAT);
+      await manager.installPlugin("test-plugin");
+      await manager.setPluginSetting("test-plugin", "readOnly", false);
+
+      expect(manager.getPluginSetting("test-plugin", "readOnly")).toBe(false);
+
+      // Simulate app restart
+      const manager2 = await initPluginManager(AppVer.COMPAT);
+      expect(manager2.getPluginSetting("test-plugin", "readOnly")).toBe(false);
+      expect(manager2.getPluginSetting("test-plugin", "autoUpdate")).toBe(true);
+    });
+
+    it("keeps the other defaults when setting a value for a plugin with no entry", async () => {
+      const manager = await initPluginManager(AppVer.COMPAT);
+      await manager.setPluginSetting("local-plugin", "autoUpdate", false);
+
+      expect(manager.pluginSettings["local-plugin"]).toStrictEqual({
+        autoUpdate: false,
+        readOnly: true,
+      });
+    });
+
+    it("does not reset settings when reinstalling a plugin", async () => {
+      const manager = await initPluginManager(AppVer.COMPAT);
+      await manager.installPlugin("test-plugin");
+      await manager.setPluginSetting("test-plugin", "readOnly", false);
+
+      // Simulate plugin update on the server
+      repositoryService.plugins[0].latestRelease.version = "1.2.0";
+      await manager.updatePlugin("test-plugin");
+
+      expect(manager.getPluginSetting("test-plugin", "readOnly")).toBe(false);
     });
   });
 

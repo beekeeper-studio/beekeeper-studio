@@ -12,6 +12,7 @@ import {
   TableUpdateResult,
   TableUpdate,
   TableDelete,
+  PluginExecuteOptions,
 } from "../models";
 import {
   AppContextProvider,
@@ -459,7 +460,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     return [];
   }
 
-  async executeCommand(text: string): Promise<NgQueryResult[]> {
+  async executeCommand(text: string, options?: PluginExecuteOptions): Promise<NgQueryResult[]> {
     // Important to run before any command because previous command,
     // because it could have been "HEELO 3" which would change protocol version
     await this.getRespVersion();
@@ -483,7 +484,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         : null;
 
       if (
-        this.readOnlyMode &&
+        (this.readOnlyMode || options?.forceReadOnly) &&
         knownCommandDef &&
         !knownCommandDef.IS_READ_ONLY
       ) {
@@ -545,8 +546,8 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     };
   }
 
-  async executeQuery(queryText: string): Promise<NgQueryResult[]> {
-    return this.executeCommand(queryText);
+  async executeQuery(queryText: string, options?: PluginExecuteOptions): Promise<NgQueryResult[]> {
+    return this.executeCommand(queryText, options);
   }
 
   async listDatabases() {

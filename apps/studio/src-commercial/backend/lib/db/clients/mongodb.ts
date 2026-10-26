@@ -19,6 +19,7 @@ import platformInfo from "@/common/platform_info";
 import { MongoDBCursor } from './mongodb/MongoDBCursor';
 import { wrapIdentifier } from "@/lib/db/clients/postgresql";
 import knexlib from 'knex'
+import { errorMessages } from "@/lib/db/clients/utils";
 
 const knex = knexlib({ client: 'pg' })
 
@@ -784,9 +785,13 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     return await this.runtime.getShellPrompt()
   }
 
-  async executeQuery(queryText: string, _options?: any): Promise<NgQueryResult[]> {
+  async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
     const queries = this.identifyCommands(queryText);
     const results = [];
+
+    if (this.violatesReadOnly(queries, options)) {
+      throw new Error(errorMessages.readOnly);
+    }
 
     for (let i = 0; i < queries.length; i++) {
       const query = queries[i];

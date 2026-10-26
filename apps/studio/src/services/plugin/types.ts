@@ -222,12 +222,14 @@ export type AfterViewRequestCallback = (response: ResponseData) => void;
 export type ViewResultModifier = (result: ResponseData['result']) => ResponseData['result'] | Promise<ResponseData['result']>;
 
 export type PluginSettings = {
-  [pluginId: string]: {
-    autoUpdate: boolean;
-    disabled?: boolean;
-  }
+  autoUpdate: boolean;
+  disabled?: boolean;
+  readOnly?: boolean;
 }
 
+export type PluginSettingsMap = {
+  [pluginId: string]: PluginSettings
+}
 
 export type WebPluginContext = {
   manifest: ManifestV1;
@@ -235,6 +237,7 @@ export type WebPluginContext = {
   utility: UtilityConnection;
   log: ReturnType<typeof rawLog.scope>;
   appVersion: string;
+  pluginOrigin: PluginOrigin;
   fileHelpers: FileHelpers;
   noty: {
     success(text: string, options?: any): Noty;

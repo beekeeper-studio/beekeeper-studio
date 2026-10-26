@@ -129,7 +129,7 @@ export class BundledPlugin {
     fs.cpSync(this.sourceDir, this.targetDir, { recursive: true });
 
     // HACK: This must be set, otherwise the plugin will be copied again
-    await this.manager.setPluginAutoUpdateEnabled(this.sourceManifest.id, true);
+    await this.manager.setPluginSetting(this.sourceManifest.id, "autoUpdate", true);
   }
 
   async update() {
@@ -141,6 +141,6 @@ export class BundledPlugin {
     fs.cpSync(this.sourceDir, this.targetDir, { recursive: true });
 
     // HACK: This must be set, otherwise the plugin will be copied again
-    await this.manager.setPluginAutoUpdateEnabled(this.sourceManifest.id, true);
+    await this.manager.setPluginSetting(this.sourceManifest.id, "autoUpdate", true);
   }
 }

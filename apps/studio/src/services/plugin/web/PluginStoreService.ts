@@ -305,8 +305,8 @@ export default class PluginStoreService {
   }
 
   /* Run query in the background */
-  async runQuery(query: string) {
-    const results = await this.store.state.connection.executeQuery(query);
+  async runQuery(query: string, options?: any) {
+    const results = await this.store.state.connection.executeQuery(query, options);
 
     return {
       results: results.map(this.serializeQueryResponse),
