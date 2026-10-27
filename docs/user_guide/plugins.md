@@ -119,14 +119,16 @@ For Business users, custom registries allow you to distribute as many plugins as
     - Create a GitHub repository. Visibility doesn't matter, if you want a private registry we can configure a GitHub token later.
     - Add a JSON file, name it what you want, we'll call it `plugins.json`
     - Add your plugins to that file, you can check out the format from our community registry [here](https://github.com/beekeeper-studio/beekeeper-studio-plugins/blob/main/community-plugins.json). Each plugin needs an `id`, `name`, `author`, `description`, and `repo`.
+
 2. **Add the registry to the app**
     - In your [config](./configuration.md) add a section for your registry
-        ```ini
-            [pluginSystem.registries.community] # Replace community with a name for your registry. Needs to be unique.
-            owner = beekeeper-studio # The owner of the github repo
-            repo = beekeeper-studio-plugins # The repo name
-            file = community-plugins.json # The name of the file you created above
-    ```
+```ini
+[pluginSystem.registries.community] # Replace community with a name for your registry. Needs to be unique.
+owner = beekeeper-studio # The owner of the github repo
+repo = beekeeper-studio-plugins # The repo name
+file = community-plugins.json # The name of the file you created above
+```
+
 3. **Enable custom registries**
     - In your [config](./configuration.md), make sure `pluginSystem.thirdPartyRegistriesDisabled` is `false`.
     - You can also enable this by toggling custom registries in the plugin browse section, you may have to expand the settings at the top.
