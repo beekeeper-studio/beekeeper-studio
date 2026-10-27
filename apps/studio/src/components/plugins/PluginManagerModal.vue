@@ -292,10 +292,10 @@ export default Vue.extend({
     },
     officialEnabled: {
       get() {
-        return !this.$bksConfig.pluginSystem.officialEnabled;
+        return !this.$bksConfig.pluginSystem.officialDisabled;
       },
       async set(value) {
-        await this.$util.send('config/writeUserValue', { path: 'pluginSystem.ultimateDisabled', value: !value });
+        await this.$util.send('config/writeUserValue', { path: 'pluginSystem.officialDisabled', value: !value });
         await this.reinitPluginData();
       }
     },
