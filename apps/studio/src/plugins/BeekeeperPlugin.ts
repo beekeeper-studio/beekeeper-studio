@@ -7,6 +7,7 @@ import { isBksInternalColumn } from "@/common/utils"
 import store from '@/store'
 import TimeAgo from "javascript-time-ago"
 import { pluralize } from "@/vendor/pluralize"
+import { addWindowListener, removeWindowListener } from "@/lib/windowListeners"
 
 export type ContextOption = ContextItem | DividerItem;
 
@@ -212,7 +213,9 @@ export const BeekeeperPlugin = {
   },
   pluralize(word: string, count: number, inclusive?: boolean): string {
     return pluralize(word, count, inclusive);
-  }
+  },
+  addWindowListener,
+  removeWindowListener,
 }
 
 export type BeekeeperPlugin = typeof BeekeeperPlugin

@@ -59,6 +59,15 @@ export const api = {
   onUtilDied(bind: any) {
     ipcRenderer.on('utilDied', bind);
   },
+  setWindowListenerCount(type: string, count: number) {
+    ipcRenderer.send(AppEvent.windowListenerCount, type, count);
+  },
+  respondWindowClose(prevented: boolean) {
+    ipcRenderer.send(AppEvent.windowCloseResponse, prevented);
+  },
+  async setConfirmWindowClose(enabled: boolean) {
+    await ipcRenderer.invoke('setConfirmWindowClose', enabled);
+  },
   onUpdateEvent(event: 'update-available' | 'manual-update' | 'managed-update' | 'update-downloaded', bind: any) {
     const eType = ['update-available', 'manual-update', 'managed-update', 'update-downloaded'];
     if (!eType.includes(event)) return;
