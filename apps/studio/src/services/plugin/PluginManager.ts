@@ -181,7 +181,19 @@ export default class PluginManager extends Hookable {
     if (!manifest.minAppVersion) {
       return true;
     }
-    return semver.lte(semver.coerce(manifest.minAppVersion), semver.coerce(this.options.appVersion));
+    const minAppVersion = semver.coerce(manifest.minAppVersion);
+    if (!minAppVersion) {
+      log.warn(`Failed to load plugin ${manifest.id}, could not parse minAppVersion`);
+      return false;
+    }
+
+    const appVersion = semver.coerce(this.options.appVersion);
+    if (!appVersion) {
+      log.warn(`Failed to load plugin ${manifest.id}, could not parse appVersion`);
+      return false;
+    }
+
+    return semver.lte(minAppVersion, appVersion);
   }
 
   /** Install the latest version of a plugin. */

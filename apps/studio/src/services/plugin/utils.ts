@@ -11,14 +11,26 @@ export function mapViewsAndMenuFromV0ToV1(manifest: ManifestV0): {
   views: PluginView[];
   menu: PluginMenuItem[];
 } {
-  const views = manifest.capabilities.views.tabTypes?.map<PluginView>(
-    (tabType) => ({
-      id: tabType.id,
-      name: tabType.name,
-      type: tabType.kind.includes("shell") ? "shell-tab" : "base-tab",
-      entry: tabType.entry,
-    })
-  );
+
+  let views: PluginView[];
+
+  if (_.isArray(manifest.capabilities.views)) {
+    log.error(`manifestVersion: 1 is required to use view arrays, plugin ${manifest.id} not loading any views`)
+    views = [];
+  } else {
+    views = manifest.capabilities?.views?.tabTypes?.map<PluginView>(
+      (tabType) => ({
+        id: tabType.id,
+        name: tabType.name,
+        type: tabType.kind.includes("shell") ? "shell-tab" : "base-tab",
+        entry: tabType.entry,
+      })
+    ) ?? [];
+    if (views.length === 0) {
+      log.warn(`No views registered with plugin ${manifest.id}`)
+    }
+  }
+
   let menu: PluginMenuItem[] = [];
   if (_.isArray(manifest.capabilities.menu) && manifest.capabilities.menu.length > 0) {
     menu = manifest.capabilities.menu;

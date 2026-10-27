@@ -263,30 +263,30 @@ export default class PluginFileManager {
     }
 
     for (const dir of fs.readdirSync(this.options.pluginsDirectory)) {
-      if (
-        !fs
-          .statSync(path.join(this.options.pluginsDirectory, dir))
-          .isDirectory()
-      ) {
-        continue;
-      }
-
-      const manifestPath = path.join(
-        this.options.pluginsDirectory,
-        dir,
-        PLUGIN_MANIFEST_FILENAME
-      );
-
-      if (!fs.existsSync(manifestPath)) {
-        log.warn(`Found folder without manifest: ${dir}. Skipping.`);
-        continue;
-      }
-
-      const manifestContent = fs.readFileSync(manifestPath, {
-        encoding: "utf-8",
-      });
-
       try {
+        if (
+          !fs
+            .statSync(path.join(this.options.pluginsDirectory, dir))
+            .isDirectory()
+        ) {
+          continue;
+        }
+
+        const manifestPath = path.join(
+          this.options.pluginsDirectory,
+          dir,
+          PLUGIN_MANIFEST_FILENAME
+        );
+
+        if (!fs.existsSync(manifestPath)) {
+          log.warn(`Found folder without manifest: ${dir}. Skipping.`);
+          continue;
+        }
+
+        const manifestContent = fs.readFileSync(manifestPath, {
+          encoding: "utf-8",
+        });
+
         const manifest = JSON.parse(manifestContent);
         this.validateManifest(manifest, dir);
         manifests.push(manifest);
