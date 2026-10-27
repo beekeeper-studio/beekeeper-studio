@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest'
 import { createRequire } from 'module'
 import { EventEmitter } from 'events'
-import { ConnectionPool } from 'mssql'
+import tedious, { ConnectionPool } from 'mssql'
 import { SQLServerClient } from '@/lib/db/clients/sqlserver'
+import { bindDriver } from '@/lib/db/clients/sqlserverDriver'
 import { IDbConnectionDatabase, IDbConnectionServerConfig } from '@/lib/db/types'
 import { IDbConnectionServer } from '@/lib/db/backendTypes'
 
@@ -97,11 +98,39 @@ describe('SQLServerClient driver isolation', () => {
 
     const passwordAuth = new SQLServerClient(buildServer({}), database())
 
-    // Fails today with "connection.queryRaw is not a function" (from getVersion()).
+    // Before bindDriver this failed with "connection.queryRaw is not a function" (getVersion()).
     await expect(passwordAuth.connect()).resolves.toBeUndefined()
     expect(tediousConn.execSqlBatch).toHaveBeenCalledTimes(1)
     expect(tediousConn.execSqlBatch.mock.calls[0][0].sqlTextOrProcedure).toMatch(/@@VERSION/)
 
     await passwordAuth.disconnect()
+  })
+
+  describe('bindDriver', () => {
+    const poolConfig = { server: 'localhost', user: 'amos', password: 'secret' }
+
+    it('builds tedious requests and transactions after msnodesqlv8 is loaded', () => {
+      nodeRequire('mssql/msnodesqlv8')
+      const pool = new (bindDriver(tedious))(poolConfig)
+
+      expect(pool.request()).toBeInstanceOf(tedious.Request)
+      const transaction = pool.transaction()
+      expect(transaction).toBeInstanceOf(tedious.Transaction)
+      expect(transaction.request()).toBeInstanceOf(tedious.Request)
+    })
+
+    it('builds msnodesqlv8 requests and transactions whichever driver loaded last', () => {
+      const msnodesqlv8 = nodeRequire('mssql/msnodesqlv8')
+      // Re-registers tedious as the shared driver.
+      delete nodeRequire.cache[nodeRequire.resolve('mssql/lib/tedious')]
+      nodeRequire('mssql/lib/tedious')
+
+      const pool = new (bindDriver(msnodesqlv8))(poolConfig)
+
+      expect(pool.request()).toBeInstanceOf(msnodesqlv8.Request)
+      const transaction = pool.transaction()
+      expect(transaction).toBeInstanceOf(msnodesqlv8.Transaction)
+      expect(transaction.request()).toBeInstanceOf(msnodesqlv8.Request)
+    })
   })
 })
