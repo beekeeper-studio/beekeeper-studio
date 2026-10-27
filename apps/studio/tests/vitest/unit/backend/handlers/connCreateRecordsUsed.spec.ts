@@ -5,6 +5,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 const mockConnection = {
   connectionType: 'postgresql',
   connect: vi.fn(async () => undefined),
+  connection: { on: vi.fn() },
   server: { config: {} },
   database: { database: 'app' },
 }
