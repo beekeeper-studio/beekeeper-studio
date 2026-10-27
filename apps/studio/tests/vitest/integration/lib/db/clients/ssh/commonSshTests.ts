@@ -45,7 +45,7 @@ export function runSshTests(dbType: ConnectionType) {
       // Yield to the event loop to allow the "connection-lost" event to fire
       await new Promise((resolve) => setTimeout(resolve));
 
-      expect(fn).toBeCalled();
+      expect(fn).toHaveBeenCalled();
     });
 
     it("should be able to re-establish connection after losing connection", async () => {

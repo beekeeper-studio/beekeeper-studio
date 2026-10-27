@@ -8,7 +8,6 @@ import { ClickhouseKnexClient } from "@shared/lib/knex-clickhouse";
 import fs from 'fs';
 import path from 'path';
 import { identify } from 'sql-query-identifier';
-import { SshEnvironment } from './ssh/SshEnvironment';
 import { runSshTests } from "./ssh/commonSshTests";
 
 // Pin to explicit ClickHouse versions. Do NOT use the `latest` tag here: it is

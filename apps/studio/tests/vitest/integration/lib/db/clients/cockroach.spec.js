@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeAll, afterAll } from "vitest"
 import { DockerComposeEnvironment } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '@tests/lib/db'
 import { runCommonTests } from './all';
-import { SshEnvironment } from './ssh/SshEnvironment';
 import { runSshTests } from './ssh/commonSshTests';
 
 describe("CockroachDB Tests", () => {
