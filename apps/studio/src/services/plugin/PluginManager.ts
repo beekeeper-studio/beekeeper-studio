@@ -19,6 +19,7 @@ import { convertToManifestV1, isManifestV0, mapViewsAndMenuFromV0ToV1 } from "./
 import { Hookable } from "./Hookable";
 import BksConfig from '@/common/bksConfig';
 import globals from "@/common/globals";
+import { PluginEntryCache } from "@/common/appdb/models/PluginEntryCache";
 
 const log = rawLog.scope("PluginManager");
 
@@ -145,7 +146,11 @@ export default class PluginManager extends Hookable {
       } catch (e) {
         if (e instanceof PluginSystemError && e.code === "PLUGIN_NOT_FOUND") {
           // There's nothing wrong if the plugin is not found in the registry.
-          // It may be a local plugin.
+          // It may be a local plugin. See if we've maybe cached the entry in the past
+          const cached = await PluginEntryCache.findOneBy({ id: manifest.id });
+          if (cached && cached.origin) {
+            origin = cached.origin;
+          }
         } else {
           // Else, it might be a real error
           log.error(e);
@@ -219,12 +224,24 @@ export default class PluginManager extends Hookable {
         );
       }
 
+
       log.debug(`Installing plugin "${id}" ${info.latestRelease.manifest.version}...`);
 
       if (update) {
         await this.fileManager.update(id, info.latestRelease);
       } else {
         await this.fileManager.download(id, info.latestRelease);
+      }
+
+      const entry = await this.registry.findEntry(id);
+      if (entry) {
+        let cache = await PluginEntryCache.findOneBy({ id });
+
+        if (!cache) {
+          cache = new PluginEntryCache();
+        }
+
+        await cache.withProps(entry).save();
       }
 
       const manifest = this.fileManager.getManifest(id);
