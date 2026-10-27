@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient';
 import { dbtimeout } from '@tests/lib/db'
 import { SshEnvironment } from './SshEnvironment';
@@ -64,6 +65,26 @@ export function runCommonSshTests(dbType: ConnectionType) {
       await sshDatabase.connection.connect();
 
       expect(sshDatabase.connection.isConnected).toBe(true);
+      await expect(sshDatabase.executeQuery("select 1")).resolves.toBeDefined();
+    });
+
+    // Unlike a direct connection, the pool can't heal on its own once the tunnel is gone.
+    it("should fail fast without hanging until reconnected", async () => {
+      await sshEnvironment.restart();
+
+      const first = sshDatabase.executeQuery("select 1");
+      await expect(first.catch(() => {})).resolvesWithin(5000);
+      await expect(first).rejects.toThrow();
+
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+
+      const second = sshDatabase.executeQuery("select 1");
+      await expect(second.catch(() => {})).resolvesWithin(5000);
+      await expect(second).rejects.toThrow();
+
+      await sshDatabase.connection.disconnect();
+      await sshDatabase.connection.connect();
+
       await expect(sshDatabase.executeQuery("select 1")).resolves.toBeDefined();
     });
   });

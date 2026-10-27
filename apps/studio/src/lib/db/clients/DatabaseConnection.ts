@@ -94,7 +94,7 @@ export abstract class DatabaseConnection<
     // reuse existing tunnel
     if (this.server.config.ssh && !this.server.sshTunnel) {
       logger().debug("creating ssh tunnel");
-      this.server.sshTunnel = await connectTunnel(this.server.config, options.signal);
+      this.server.sshTunnel = await connectTunnel(this.server.config);
 
       this.server.config.localHost = this.server.sshTunnel.localHost;
       this.server.config.localPort = this.server.sshTunnel.localPort;
