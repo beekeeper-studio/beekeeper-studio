@@ -392,6 +392,7 @@ export default class PluginFileManager {
 
   /** Check if view's entrypoint exists */
   viewEntrypointExists(manifest: Manifest, view: PluginView): boolean {
-    return fs.existsSync(this.getPath(manifest, view.entry));
+    const entry = path.join(manifest.pluginEntryDir ?? ".", view.entry);
+    return fs.existsSync(this.getPath(manifest, entry));
   }
 }
