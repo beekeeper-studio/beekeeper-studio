@@ -267,26 +267,30 @@ export default class WebPluginLoader {
         case "noty.info":
           this.context.noty.info(response.args.message, {
             allowRawHtml: false,
+            fromName: this.manifest.name
           });
           break;
         case "noty.success":
           this.context.noty.success(response.args.message, {
             allowRawHtml: false,
+            fromName: this.manifest.name
           });
           break;
         case "noty.error":
           this.context.noty.error(response.args.message, {
             allowRawHtml: false,
+            fromName: this.manifest.name
           });
           break;
         case "noty.warning":
           this.context.noty.warning(response.args.message, {
             allowRawHtml: false,
+            fromName: this.manifest.name
           });
           break;
         case "confirm":
           response.result = await this.context.confirm(
-            response.args.title,
+            `${this.manifest.name}: ${response.args.title}`,
             response.args.message,
             response.args.options
           );
