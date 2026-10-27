@@ -101,6 +101,7 @@ import fixQueryAuditAppendOnlyTrigger from './20260914_fix_query_audit_append_on
 import addScopeToPluginData from './20261011_add_scope_to_plugin_data'
 import splitThemeDarkFlag from './20260908_split_theme_dark_flag'
 import addGithubPluginSetting from './20261021_add_github_plugin_setting.js'
+import addConfirmWindowCloseSetting from './20260929_add_confirm_window_close_setting'
 
 import ultimate from './ultimate/index'
 
@@ -160,7 +161,8 @@ const realMigrations = [
   fixQueryAuditAppendOnlyTrigger,
   addScopeToPluginData,
   splitThemeDarkFlag,
-  addGithubPluginSetting
+  addGithubPluginSetting,
+  addConfirmWindowCloseSetting
 ]
 
 // fixtures require the models
