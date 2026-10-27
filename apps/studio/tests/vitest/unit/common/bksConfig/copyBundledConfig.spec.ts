@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeAll, afterAll, beforeEach, afterEach } 
 import { mkdtempSync, writeFileSync, readFileSync, existsSync, chmodSync, rmSync } from "fs";
 import os from "os";
 import path from "path";
+import type { loadConfig as LoadConfig } from "@/common/bksConfig/mainBksConfig";
 
 // A packaged (non-dev) build, so loadConfig copies bundled configs into the
 // user directory. userDirectory is swapped per test.
@@ -29,7 +30,7 @@ const BUNDLED_USER = "[general]\nmaxResults = 20\n";
 const canDropWritePermission = process.platform !== "win32" && process.getuid?.() !== 0;
 const itWithPermissions = canDropWritePermission ? it : it.skip;
 
-let loadConfig: typeof import("@/common/bksConfig/mainBksConfig").loadConfig;
+let loadConfig: typeof LoadConfig;
 let bundleDir: string;
 let userDir: string;
 let originalResourcesPath: PropertyDescriptor | undefined;
