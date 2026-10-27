@@ -13,7 +13,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { DatabaseElement } from '@/lib/db/types';
-import { runCommonSshTests } from '@tests/vitest/integration/lib/db/clients/ssh/commonSshTests'
+import { runSshTests } from '@tests/vitest/integration/lib/db/clients/ssh/commonSshTests'
 
 const TEST_VERSIONS = [
   { version: '9.3', socket: false, readonly: false },
@@ -794,7 +794,7 @@ function testWith(dockerTag: TestVersion, socket = false, readonly = false) {
 
 TEST_VERSIONS.forEach(({ version, socket, readonly }) => testWith(version, socket, readonly))
 
-runCommonSshTests('postgresql');
+runSshTests('postgresql');
 
 describe(`Postgres (custom socket port connection)`, () => {
   vi.setConfig({ testTimeout: dbtimeout, hookTimeout: dbtimeout })

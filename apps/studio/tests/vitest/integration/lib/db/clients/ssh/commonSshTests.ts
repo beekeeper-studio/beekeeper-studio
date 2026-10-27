@@ -4,7 +4,7 @@ import { dbtimeout } from '@tests/lib/db'
 import { SshEnvironment } from './SshEnvironment';
 import { ConnectionType } from '@/lib/db/types';
 
-export function runCommonSshTests(dbType: ConnectionType) {
+export function runSshTests(dbType: ConnectionType) {
   describe(`SSH Tunnel Tests - ${dbType}`, () => {
     vi.setConfig({ testTimeout: dbtimeout, hookTimeout: dbtimeout });
 

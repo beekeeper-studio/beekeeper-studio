@@ -3,7 +3,7 @@ import { DockerComposeEnvironment } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '@tests/lib/db'
 import { runCommonTests } from './all';
 import { SshEnvironment } from './ssh/SshEnvironment';
-import { runCommonSshTests } from './ssh/commonSshTests';
+import { runSshTests } from './ssh/commonSshTests';
 
 describe("CockroachDB Tests", () => {
   vi.setConfig({ testTimeout: dbtimeout, hookTimeout: dbtimeout })
@@ -71,4 +71,4 @@ describe("CockroachDB Tests", () => {
   })
 })
 
-runCommonSshTests("cockroachdb");
+runSshTests("cockroachdb");

@@ -9,7 +9,7 @@ import fs from 'fs';
 import path from 'path';
 import { identify } from 'sql-query-identifier';
 import { SshEnvironment } from './ssh/SshEnvironment';
-import { runCommonSshTests } from "./ssh/commonSshTests";
+import { runSshTests } from "./ssh/commonSshTests";
 
 // Pin to explicit ClickHouse versions. Do NOT use the `latest` tag here: it is
 // mutable, so a new ClickHouse release silently changes what CI runs against.
@@ -344,4 +344,4 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
 
 TEST_VERSIONS.forEach(testWith);
 
-runCommonSshTests("clickhouse");
+runSshTests("clickhouse");
