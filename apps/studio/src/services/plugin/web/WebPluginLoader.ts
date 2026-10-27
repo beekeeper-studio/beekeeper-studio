@@ -369,6 +369,14 @@ export default class WebPluginLoader {
           return;
         }
 
+        // don't allow keyboard events to be run in the background
+        if (
+          windowEventClass === KeyboardEvent &&
+          (!document.hasFocus() || document.activeElement !== source)
+        ) {
+          return;
+        }
+
         document.dispatchEvent(
           new windowEventClass(
             notification.args.eventType,
