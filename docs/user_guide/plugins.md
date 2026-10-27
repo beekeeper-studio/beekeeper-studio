@@ -121,8 +121,7 @@ For Business users, custom registries allow you to distribute as many plugins as
     - Add your plugins to that file, you can check out the format from our community registry [here](https://github.com/beekeeper-studio/beekeeper-studio-plugins/blob/main/community-plugins.json). Each plugin needs an `id`, `name`, `author`, `description`, and `repo`.
 
 2. **Add the registry to the app**
-!!! tip
-    For fleet deployments, use the `system.config.ini` to configure this for every machine. User configs are overriden by those settings.
+
     - In your [config](./configuration.md) add a section for your registry
 ```ini
 [pluginSystem.registries.custom-name] # Replace custom-name with the name of your repo, this is only used internally and must be unique
@@ -130,6 +129,9 @@ owner = owner-name # The owner of the github repo
 repo = repository-name # The repository name
 file = plugins.json # The name of the file you created above
 ```
+
+    !!! tip
+        For fleet deployments, use the `system.config.ini` to configure this for every machine. User configs are overriden by those settings.
 
 3. **Enable custom registries**
     - In your [config](./configuration.md), make sure `pluginSystem.thirdPartyRegistriesDisabled` is `false`.
