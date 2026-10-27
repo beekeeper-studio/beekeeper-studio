@@ -168,6 +168,7 @@ export interface BigQueryOptions {
 export interface AzureAuthOptions {
   azureAuthEnabled?: boolean;
   azureAuthType?: AzureAuthType;
+  clientId?: string;
   tenantId?: string;
   clientSecret?: string;
   msiEndpoint?: string;
