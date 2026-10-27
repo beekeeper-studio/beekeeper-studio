@@ -142,3 +142,42 @@ export const markedVideoEmbed = {
   },
 };
 
+export type BigIntSerialized = number | string;
+
+export function serializeBigInt(val: bigint): BigIntSerialized;
+export function serializeBigInt<T>(val: T): T;
+export function serializeBigInt(val: unknown): unknown {
+  if (typeof val === "bigint") {
+    const num = Number(val);
+    return Number.isSafeInteger(num) ? num : val.toString();
+  }
+  return val;
+}
+
+export function serializeArray<T>(
+  arr: T[]
+): (T extends bigint ? BigIntSerialized : T)[];
+export function serializeArray(arr: unknown[]): unknown[] {
+  return arr.map((item) => serializeBigInt(item));
+}
+
+export function serializeRow(
+  row: Record<string, unknown>
+): Record<string, unknown> {
+  const serialized: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(row)) {
+    serialized[key] = serializeBigInt(value);
+  }
+  return serialized;
+}
+
+export function assertJsonSerializable(value: unknown, requestName: string) {
+  try {
+    JSON.stringify(value);
+  } catch (e) {
+    throw new Error(
+      `${requestName} value is not JSON-serializable: ${e?.message ?? e}`
+    );
+  }
+}
+

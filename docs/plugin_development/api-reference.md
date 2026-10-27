@@ -297,6 +297,9 @@ const result = await runQuery('SELECT * FROM users WHERE active = true LIMIT 10'
 }
 ```
 
+!!! note "Integer values"
+    Integers come back as JavaScript numbers when they fit in the safe integer range (±2^53 − 1). Larger integers, such as some 64-bit IDs, come back as strings so no precision is lost. Every value in `rows` can be passed to `JSON.stringify` or stored with [appStorage.setItem](#appstoragesetitem).
+
 **Signature:**
 ```typescript
 async function runQuery(query: string): Promise<RunQueryResult>;
@@ -588,6 +591,8 @@ async function setItem<T = unknown>(
     options?: { encrypted: boolean }
 ): Promise<void>;
 ```
+
+`value` is stored as JSON. A value JSON can't represent, such as a `BigInt` or an object with circular references, is rejected with an error and nothing is stored.
 
 ### openTab
 

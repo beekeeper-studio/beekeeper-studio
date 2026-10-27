@@ -17,6 +17,7 @@ import rawLog from "@bksLogger";
 import _ from "lodash";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { PluginMenuManager } from "./PluginMenuManager";
+import { assertJsonSerializable } from "../utils";
 import { PrimaryKeyColumn } from "@/lib/db/models";
 
 function joinUrlPath(a: string, b: string): string {
@@ -243,6 +244,7 @@ export default class WebPluginLoader {
         }
         case "setData":
         case "setEncryptedData": {
+          assertJsonSerializable(response.args.value, response.name);
           await this.utilityConnection.send(
             response.name === "setEncryptedData"
               ? "plugin/setEncryptedData"

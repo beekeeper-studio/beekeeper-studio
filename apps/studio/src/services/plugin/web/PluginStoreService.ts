@@ -24,7 +24,7 @@ import {
 } from "../types";
 import { ExternalMenuItem } from "@/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
-import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
+import { isManifestV0, mapViewsAndMenuFromV0ToV1, serializeRow } from "../utils";
 import { cssVars } from "./cssVars";
 import type { DialectData } from "@/shared/lib/dialects/models";
 import { RequestMap } from "@beekeeperstudio/plugin/dist/internal";
@@ -299,7 +299,7 @@ export default class PluginStoreService {
         name: field.name,
         dataType: field.dataType,
       })),
-      rows: result.rows,
+      rows: result.rows?.map(serializeRow),
       rowCount: result.rowCount,
       affectedRows: result.affectedRows,
     };
