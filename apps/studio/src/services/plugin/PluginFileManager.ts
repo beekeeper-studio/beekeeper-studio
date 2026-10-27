@@ -29,7 +29,7 @@ const PLUGIN_MANIFEST_FILENAME = "manifest.json";
  * plus `.` `_` `-`. This forbids path separators and `.`/`..`, which are the
  * only traversal-capable strings once separators are excluded.
  */
-const PLUGIN_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/;
+const PLUGIN_ID_PATTERN = /^[a-z0-9][a-z0-9._-]*$/;
 
 /** Max length mirrors the npm package-name limit; ample for any real plugin. */
 const PLUGIN_ID_MAX_LENGTH = 214;
