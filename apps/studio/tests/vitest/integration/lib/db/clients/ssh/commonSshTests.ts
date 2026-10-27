@@ -1,46 +1,71 @@
-import { describe, it, expect, vi, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
-import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient';
-import { dbtimeout } from '@tests/lib/db'
-import { SshEnvironment } from './SshEnvironment';
-import { ConnectionType } from '@/lib/db/types';
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  afterEach,
+} from "vitest";
+import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient";
+import { dbtimeout } from "@tests/lib/db";
+import { SshEnvironment } from "./SshEnvironment";
+import { ConnectionType, IDbConnectionServerConfig } from "@/lib/db/types";
+import { createServer } from "@commercial/backend/lib/db/server";
 
 export function runSshTests(dbType: ConnectionType) {
   describe(`SSH Tunnel Tests - ${dbType}`, () => {
     vi.setConfig({ testTimeout: dbtimeout, hookTimeout: dbtimeout });
 
-    let sshEnvironment: SshEnvironment;
-    let sshDatabase: BasicDatabaseClient<any>;
+    let sshEnv: SshEnvironment;
+    let client: BasicDatabaseClient<any>;
 
     beforeAll(async () => {
-      sshEnvironment = new SshEnvironment(dbType);
-      await sshEnvironment.start();
+      sshEnv = new SshEnvironment(dbType);
+      await sshEnv.start();
     });
 
     afterAll(async () => {
-      await sshEnvironment?.stop();
+      await sshEnv?.stop();
     });
 
     beforeEach(async () => {
-      sshDatabase = await sshEnvironment.connect();
+      const config = {
+        client: dbType,
+        host: sshEnv.dbConfig.networkAlias,
+        port: sshEnv.dbConfig.port,
+        user: sshEnv.dbConfig.user,
+        password: sshEnv.dbConfig.password,
+        ssh: {
+          host: sshEnv.getSshHost(),
+          port: sshEnv.getSshPort(),
+          user: "beekeeper",
+          password: "password",
+        },
+        trustServerCertificate: true,
+      } as IDbConnectionServerConfig;
+      client = createServer(config).createConnection(sshEnv.dbConfig.database);
+      await client.connect();
     });
 
     afterEach(async () => {
-      await sshDatabase?.disconnect();
+      await client?.disconnect();
     });
 
     it("should work", async () => {
-      await expect(sshDatabase.executeQuery("SELECT 1")).resolves.toBeDefined();
+      await expect(client.executeQuery("SELECT 1")).resolves.toBeDefined();
     });
 
     it("should detect connection lost", async () => {
       const fn = vi.fn();
 
-      sshDatabase.connection.on("connection-lost", fn);
+      client.connection.on("connection-lost", fn);
 
-      await sshEnvironment.restart();
+      await sshEnv.restart();
 
       // Must run a query to trigger the connection-lost event
-      await expect(sshDatabase.listTables()).rejects.toThrow();
+      await expect(client.listTables()).rejects.toThrow();
 
       // Yield to the event loop to allow the "connection-lost" event to fire
       await new Promise((resolve) => setTimeout(resolve));
@@ -50,42 +75,42 @@ export function runSshTests(dbType: ConnectionType) {
 
     it("should be able to re-establish connection after losing connection", async () => {
       const isConnectionLost = new Promise<void>((resolve) => {
-        sshDatabase.connection.once("connection-lost", resolve);
+        client.connection.once("connection-lost", resolve);
       });
 
-      await sshEnvironment.restart();
+      await sshEnv.restart();
 
       // Run a query to trigger the connection-lost event
-      await expect(sshDatabase.listTables()).rejects.toThrow();
+      await expect(client.listTables()).rejects.toThrow();
 
       // Connection-lost is triggered after running a query
       await expect(isConnectionLost).resolvesWithin(1000);
 
-      await sshDatabase.connection.disconnect();
-      await sshDatabase.connection.connect();
+      await client.connection.disconnect();
+      await client.connection.connect();
 
-      expect(sshDatabase.connection.isConnected).toBe(true);
-      await expect(sshDatabase.executeQuery("select 1")).resolves.toBeDefined();
+      expect(client.connection.isConnected).toBe(true);
+      await expect(client.executeQuery("select 1")).resolves.toBeDefined();
     });
 
     // Unlike a direct connection, the pool can't heal on its own once the tunnel is gone.
     it("should fail fast without hanging until reconnected", async () => {
-      await sshEnvironment.restart();
+      await sshEnv.restart();
 
-      const first = sshDatabase.executeQuery("select 1");
-      await expect(first.catch(() => {})).resolvesWithin(5000);
+      const first = client.executeQuery("select 1");
+      await expect(first.catch(() => { })).resolvesWithin(5000);
       await expect(first).rejects.toThrow();
 
       await new Promise((resolve) => setTimeout(resolve, 3000));
 
-      const second = sshDatabase.executeQuery("select 1");
-      await expect(second.catch(() => {})).resolvesWithin(5000);
+      const second = client.executeQuery("select 1");
+      await expect(second.catch(() => { })).resolvesWithin(5000);
       await expect(second).rejects.toThrow();
 
-      await sshDatabase.connection.disconnect();
-      await sshDatabase.connection.connect();
+      await client.connection.disconnect();
+      await client.connection.connect();
 
-      await expect(sshDatabase.executeQuery("select 1")).resolves.toBeDefined();
+      await expect(client.executeQuery("select 1")).resolves.toBeDefined();
     });
   });
 }

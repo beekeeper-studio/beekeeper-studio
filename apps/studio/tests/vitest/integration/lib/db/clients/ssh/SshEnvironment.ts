@@ -1,4 +1,4 @@
-import { ConnectionType, IDbConnectionServerConfig } from "@/lib/db/types";
+import { ConnectionType } from "@/lib/db/types";
 import {
   GenericContainer,
   Network,
@@ -7,7 +7,6 @@ import {
   Wait,
 } from "testcontainers";
 import { WaitStrategy } from "testcontainers/build/wait-strategies/wait-strategy";
-import { createServer } from "@commercial/backend/lib/db/server";
 import { HealthCheck } from "testcontainers/build/types";
 import pf from "portfinder";
 
@@ -153,7 +152,7 @@ export class SshEnvironment {
     this.type = type;
   }
 
-  private get config(): DbConfig {
+  get dbConfig(): DbConfig {
     return DB_CONFIGS[this.type]!;
   }
 
@@ -165,7 +164,7 @@ export class SshEnvironment {
       waitStrategy,
       healthCheck,
       command,
-    } = this.config;
+    } = this.dbConfig;
 
     this.network = await new Network().start();
 
@@ -243,29 +242,5 @@ export class SshEnvironment {
 
   getSshPort() {
     return this.sshHostPort;
-  }
-
-  async connect() {
-    const { networkAlias, port, user, password, database } = this.config;
-
-    const config = {
-      client: this.type,
-      host: networkAlias,
-      port,
-      user,
-      password,
-      ssh: {
-        host: this.getSshHost(),
-        port: this.getSshPort(),
-        user: "beekeeper",
-        password: "password",
-      },
-      trustServerCertificate: true,
-    } as IDbConnectionServerConfig;
-
-    const server = createServer(config);
-    const db = server.createConnection(database);
-    await db.connect();
-    return db;
   }
 }
