@@ -96,6 +96,39 @@ function testWith(options) {
       await util.connection.getTableReferences("foo.bar")
     })
 
+    it("Should resolve foreign keys declared without columns to the parent's primary key", async () => {
+      // The parent's primary key is (b, a): key order, not column order, decides the pairing
+      await util.knex.raw("CREATE TABLE implicit_parent (a INTEGER, b INTEGER, PRIMARY KEY (b, a))")
+      await util.knex.raw("CREATE TABLE implicit_single (id INTEGER PRIMARY KEY)")
+      await util.knex.raw(`
+        CREATE TABLE implicit_child (
+          id INTEGER PRIMARY KEY, pa INTEGER, pb INTEGER,
+          sid INTEGER REFERENCES implicit_single,
+          FOREIGN KEY (pb, pa) REFERENCES implicit_parent
+        )`)
+      try {
+        const composite = await util.connection.getIncomingKeys("implicit_parent")
+        expect(composite).toMatchObject([
+          { fromTable: "implicit_child", fromColumn: ["pb", "pa"], toColumn: ["b", "a"], isComposite: true },
+        ])
+
+        const single = await util.connection.getIncomingKeys("implicit_single")
+        expect(single).toMatchObject([
+          { fromTable: "implicit_child", fromColumn: "sid", toColumn: "id", isComposite: false },
+        ])
+
+        const outgoing = await util.connection.getOutgoingKeys("implicit_child")
+        expect(outgoing.map((k) => [k.toTable, k.fromColumn, k.toColumn])).toEqual(expect.arrayContaining([
+          ["implicit_parent", ["pb", "pa"], ["b", "a"]],
+          ["implicit_single", "sid", "id"],
+        ]))
+      } finally {
+        await util.knex.raw("DROP TABLE implicit_child")
+        await util.knex.raw("DROP TABLE implicit_parent")
+        await util.knex.raw("DROP TABLE implicit_single")
+      }
+    })
+
     if (!options.readOnly) {
       it("Should allow me to create a trigger", async () => {
         const trigger = `

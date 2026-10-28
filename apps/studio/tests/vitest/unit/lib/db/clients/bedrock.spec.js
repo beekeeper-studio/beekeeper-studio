@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { BedrockClient } from "@/lib/db/clients/bedrock";
 import { SqliteChangeBuilder } from "@/shared/lib/sql/change_builder/SqliteChangeBuilder";
 import { SqliteData } from "@/shared/lib/dialects/sqlite";
@@ -134,6 +134,33 @@ describe("Bedrock UNIT tests (no connection required)", () => {
           isComposite: false,
         },
       ]);
+    });
+  });
+
+  describe("getOutgoingKeys", () => {
+    it("resolves `REFERENCES parent` without columns to the parent's primary key", async () => {
+      const results = {
+        "pragma foreign_key_list('child')": [
+          { id: 0, seq: 0, table: "parent", from: "pb", to: null, on_update: "NO ACTION", on_delete: "NO ACTION" },
+          { id: 0, seq: 1, table: "parent", from: "pa", to: null, on_update: "NO ACTION", on_delete: "NO ACTION" },
+          { id: 1, seq: 0, table: "owner", from: "owner_id", to: "id", on_update: "NO ACTION", on_delete: "NO ACTION" },
+        ],
+        // primary key declared as (b, a): position, not column order, decides the pairing
+        "pragma table_xinfo('parent')": [
+          { cid: 0, name: "a", type: "INTEGER", pk: 2 },
+          { cid: 1, name: "b", type: "INTEGER", pk: 1 },
+        ],
+      };
+      client.driverExecuteSingle = vi.fn(async (sql) => ({ rows: results[sql] ?? [] }));
+
+      const keys = await client.getOutgoingKeys("child");
+
+      expect(keys.map((k) => [k.toTable, k.fromColumn, k.toColumn])).toEqual([
+        ["parent", ["pb", "pa"], ["b", "a"]],
+        ["owner", "owner_id", "id"],
+      ]);
+      // the parent's primary key is only looked up for the key that needs it
+      expect(client.driverExecuteSingle).toHaveBeenCalledTimes(2);
     });
   });
 });

@@ -342,7 +342,7 @@ import { tabulatorForTableData } from "@/common/tabulator";
 import { TransportTabulatorPersistence } from "@/common/transport/TransportTabulatorPersistence";
 import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import { ExpandablePath, parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
-import { groupIncomingKeysByColumn, normalizeIncomingKeys, referencedByMenuLabels } from '@/lib/data/referencedBy'
+import { groupIncomingKeysByColumn, referencedByMenuLabels } from '@/lib/data/referencedBy'
 import { stringToTypedArray, removeUnsortableColumnsFromSortBy } from "@/common/utils";
 import { UpdateOptions } from "@/lib/data/jsonViewer";
 
@@ -379,8 +379,6 @@ export default Vue.extend({
       rawTableKeys: [],
       rawIncomingKeys: [],
       primaryKeys: null,
-      // in key order rather than column order, for matching up composite keys
-      primaryKeysByPosition: [],
       pendingChanges: {
         inserts: [],
         updates: [],
@@ -566,7 +564,7 @@ export default Vue.extend({
     },
     // foreign keys in other tables that point at this table, by referenced column
     incomingKeysByColumn() {
-      return groupIncomingKeysByColumn(normalizeIncomingKeys(this.rawIncomingKeys, this.primaryKeysByPosition))
+      return groupIncomingKeysByColumn(this.rawIncomingKeys)
     },
     // we can use this to track if column names have been updated and we need
     // to refresh
@@ -2191,7 +2189,6 @@ export default Vue.extend({
       this.rawTableKeys = await this.connection.getTableKeys(this.table.name, this.table.schema);
       const rawPrimaryKeys = await this.connection.getPrimaryKeys(this.table.name, this.table.schema);
       this.primaryKeys = rawPrimaryKeys.map((key) => key.columnName);
-      this.primaryKeysByPosition = _.sortBy(rawPrimaryKeys, (key) => key.position ?? 0).map((key) => key.columnName);
     },
     async loadIncomingKeys() {
       // only tables can be the target of a foreign key

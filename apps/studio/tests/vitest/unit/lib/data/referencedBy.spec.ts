@@ -3,8 +3,6 @@ import {
   buildReferencedByFilters,
   groupIncomingKeysByColumn,
   keyColumnPairs,
-  mergeCompositeKeyParts,
-  normalizeIncomingKeys,
   referencedByColumns,
   referencedByLabel,
   referencedByMenuLabels,
@@ -48,71 +46,18 @@ describe("referencedBy", () => {
     it("returns nothing when the columns don't line up", () => {
       expect(keyColumnPairs(key({ toColumn: ["id", "other"] }))).toEqual([]);
       expect(keyColumnPairs(key({ toColumn: null }))).toEqual([]);
-    });
-  });
-
-  describe("mergeCompositeKeyParts", () => {
-    // how SQLite, BigQuery and Redshift report a composite foreign key
-    const parts = [
-      key({ fromTable: "line_adjustments", fromColumn: "order_id", toColumn: "order_id", constraintName: 0 }),
-      key({ fromTable: "line_adjustments", fromColumn: "line_no", toColumn: "line_no", constraintName: 0 }),
-    ];
-
-    it("combines parts of the same constraint into one composite key", () => {
-      expect(mergeCompositeKeyParts(parts)).toEqual([
-        key({
-          fromTable: "line_adjustments",
-          fromColumn: ["order_id", "line_no"],
-          toColumn: ["order_id", "line_no"],
-          constraintName: 0,
-          isComposite: true,
-        }),
-      ]);
+      expect(keyColumnPairs(key({ toColumn: [null, "id"], fromColumn: ["a", "b"] }))).toEqual([]);
     });
 
-    it("keeps separate constraints and tables apart", () => {
-      const other = key({ fromTable: "line_notes", fromColumn: "order_id", toColumn: "order_id", constraintName: 0 });
-      const second = key({ fromTable: "line_adjustments", fromColumn: "order_id", toColumn: "order_id", constraintName: 1 });
-      expect(mergeCompositeKeyParts([parts[0], other, second])).toHaveLength(3);
-    });
-
-    it("leaves keys without a constraint name alone", () => {
-      const keys = [key({ constraintName: undefined }), key({ constraintName: undefined, fromColumn: "other_id" })];
-      expect(mergeCompositeKeyParts(keys)).toEqual(keys);
-    });
-
-    it("doesn't mutate its input", () => {
-      mergeCompositeKeyParts(parts);
-      expect(parts[0].fromColumn).toBe("order_id");
-    });
-  });
-
-  describe("normalizeIncomingKeys", () => {
-    it("fills in a composite primary key for implicit composite references", () => {
-      const parts = [
-        key({ fromTable: "line_notes", fromColumn: "order_id", toColumn: null, constraintName: 0 }),
-        key({ fromTable: "line_notes", fromColumn: "line_no", toColumn: null, constraintName: 0 }),
-      ];
-      const [result] = normalizeIncomingKeys(parts, ["order_id", "line_no"]);
-      expect(keyColumnPairs(result)).toEqual([
-        { from: "order_id", to: "order_id" },
-        { from: "line_no", to: "line_no" },
-      ]);
-    });
-
-    it("fills in the primary key when the referenced column is missing", () => {
-      const result = normalizeIncomingKeys([key({ toColumn: null })], ["id"]);
-      expect(result[0].toColumn).toBe("id");
-    });
-
-    it("drops keys that can't be mapped to this table's columns", () => {
-      expect(normalizeIncomingKeys([key({ toColumn: null })], [])).toEqual([]);
-      expect(normalizeIncomingKeys([key({ toColumn: null })], ["a", "b"])).toEqual([]);
-    });
-
-    it("leaves complete keys alone", () => {
-      const keys = [key(), compositeKey];
-      expect(normalizeIncomingKeys(keys, ["id"])).toEqual(keys);
+    it("returns nothing for a key that repeats a column", () => {
+      // BigQuery pairs every referencing column with every referenced one
+      const crossJoined = key({
+        isComposite: true,
+        fromColumn: ["order_id", "order_id", "line_no", "line_no"],
+        toColumn: ["id", "line_no", "id", "line_no"],
+      });
+      expect(keyColumnPairs(crossJoined)).toEqual([]);
+      expect(buildReferencedByFilters(crossJoined, { id: 1, line_no: 2 })).toBeNull();
     });
   });
 
@@ -180,9 +125,7 @@ describe("referencedBy", () => {
     const original = key({ fromTable: "films", fromColumn: "original_language_id", toTable: "languages", constraintName: 0 });
 
     it("keeps them as separate keys on the referenced column", () => {
-      const keys = normalizeIncomingKeys([language, original], ["id"]);
-      expect(keys).toHaveLength(2);
-      expect(groupIncomingKeysByColumn(keys).id).toEqual([language, original]);
+      expect(groupIncomingKeysByColumn([language, original]).id).toEqual([language, original]);
     });
 
     it("filters each on its own column", () => {

@@ -11,67 +11,22 @@ export interface ReferencedByFilter {
   op: 'AND'
 }
 
-function columnList(columns: string | string[] | null | undefined): string[] {
-  return _.compact(_.castArray(columns ?? []))
-}
-
 /**
  * Pairs each column in the referencing table with the column it points at in
- * this table, eg [{ from: 'order_id', to: 'id' }]
+ * this table, eg [{ from: 'order_id', to: 'id' }]. Returns nothing for a key
+ * that can't be a real foreign key, so it gets no link rather than a wrong
+ * filter. BigQuery can't pair composite keys yet and reports every
+ * combination of columns, which shows up here as a repeated column.
  */
 export function keyColumnPairs(key: TableKey): { from: string, to: string }[] {
-  const from = columnList(key.fromColumn)
-  const to = columnList(key.toColumn)
-  if (!from.length || from.length !== to.length) return []
-  return from.map((column, i) => ({ from: column, to: to[i] }))
-}
-
-/**
- * Some drivers (SQLite, BigQuery, Redshift) report each column of a composite
- * foreign key as its own key with a shared constraint name. Combine them so
- * the filter uses every column, not just one.
- */
-export function mergeCompositeKeyParts(keys: TableKey[]): TableKey[] {
-  const result: TableKey[] = []
-  const byConstraint = new Map<string, TableKey>()
-
-  keys.forEach((key) => {
-    if (key.isComposite || _.isNil(key.constraintName)) {
-      result.push(key)
-      return
-    }
-
-    const id = JSON.stringify([key.fromSchema, key.fromTable, key.constraintName])
-    const existing = byConstraint.get(id)
-    if (!existing) {
-      const copy = { ...key }
-      byConstraint.set(id, copy)
-      result.push(copy)
-      return
-    }
-
-    // keep empty referenced columns in place so the pairs stay lined up
-    existing.isComposite = true
-    existing.fromColumn = [..._.castArray(existing.fromColumn), ..._.castArray(key.fromColumn)]
-    existing.toColumn = [..._.castArray(existing.toColumn), ..._.castArray(key.toColumn)]
-  })
-
-  return result
-}
-
-/**
- * Some drivers (eg SQLite with `REFERENCES orders`) leave the referenced
- * column empty when the foreign key points at the primary key. Fill it in, and
- * drop any key we can't map column-for-column.
- */
-export function normalizeIncomingKeys(keys: TableKey[], primaryKeys: string[] = []): TableKey[] {
-  return mergeCompositeKeyParts(keys ?? [])
-    .map((key) => {
-      if (columnList(key.toColumn).length) return key
-      const toColumn = primaryKeys.length === 1 ? primaryKeys[0] : [...primaryKeys]
-      return { ...key, toColumn }
-    })
-    .filter((key) => keyColumnPairs(key).length > 0)
+  const from = _.castArray(key.fromColumn ?? [])
+  const to = _.castArray(key.toColumn ?? [])
+  const valid = from.length > 0 &&
+    from.length === to.length &&
+    [...from, ...to].every((column) => !_.isEmpty(column)) &&
+    _.uniq(from).length === from.length &&
+    _.uniq(to).length === to.length
+  return valid ? from.map((column, i) => ({ from: column, to: to[i] })) : []
 }
 
 /** Groups incoming keys by the column in this table that they reference */
@@ -113,7 +68,7 @@ export function referencedByTable(key: TableKey): string {
 
 /** The referencing table's foreign key columns, eg "order_id, line_no" */
 export function referencedByColumns(key: TableKey): string {
-  return columnList(key.fromColumn).join(', ')
+  return _.castArray(key.fromColumn).join(', ')
 }
 
 /** eg "order_items (order_id)" */

@@ -234,7 +234,9 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
   }
 
   // pragma_foreign_key_list has no constraint names: `id` numbers each foreign
-  // key of a table and `seq` orders the columns within it.
+  // key of a table and `seq` orders the columns within it. `to` is NULL when
+  // the key is declared as just `REFERENCES parent`, which means the parent's
+  // primary key, so resolve it to the primary key column at the same position.
   async getOutgoingKeys(table: string, _schema?: string): Promise<TableKey[]> {
     // Foreign keys defined on this table (referencing other tables)
     const sql = `
@@ -244,7 +246,9 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         p.seq AS ordinal_position,
         p."from" AS from_column,
         p."table" AS to_table,
-        p."to" AS to_column,
+        COALESCE(p."to", (
+          SELECT pk.name FROM pragma_table_info(p."table") pk WHERE pk.pk = p.seq + 1
+        )) AS to_column,
         p.on_update AS on_update,
         p.on_delete AS on_delete
       FROM pragma_foreign_key_list('${SD.escapeString(table)}') p
@@ -263,7 +267,9 @@ export class SqliteClient extends BasicDatabaseClient<SqliteResult> {
         p.seq AS ordinal_position,
         p."from" AS from_column,
         p."table" AS to_table,
-        p."to" AS to_column,
+        COALESCE(p."to", (
+          SELECT pk.name FROM pragma_table_info(p."table") pk WHERE pk.pk = p.seq + 1
+        )) AS to_column,
         p.on_update AS on_update,
         p.on_delete AS on_delete
       FROM sqlite_master m

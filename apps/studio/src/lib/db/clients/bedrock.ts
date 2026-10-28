@@ -360,7 +360,20 @@ export class BedrockClient extends MysqlClient {
     const { rows } = await this.driverExecuteSingle(sql, {
       overrideReadonly: true,
     });
-    return asRows<any>(rows).map((row) => ({ ...row, from_table: table }));
+    const keyRows = asRows<any>(rows).map((row) => ({ ...row, from_table: table }));
+
+    // `to` is null for a bare `REFERENCES parent`, which means the parent's
+    // primary key: use the primary key column at the same position.
+    const parentKeys = new Map<string, PrimaryKeyColumn[]>();
+    for (const row of keyRows) {
+      if (row.to != null) continue;
+      if (!parentKeys.has(row.table)) {
+        parentKeys.set(row.table, await this.getPrimaryKeys(row.table));
+      }
+      const pk = parentKeys.get(row.table).find((k) => k.position === Number(row.seq) + 1);
+      row.to = pk?.columnName ?? null;
+    }
+    return keyRows;
   }
 
   parseTableColumn(row: { name: string; type: string }): BksField {
