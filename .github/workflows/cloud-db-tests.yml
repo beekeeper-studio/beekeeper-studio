@@ -1,0 +1,244 @@
+name: Cloud database integration tests
+
+# Runs the Redshift and BigQuery specs against real cloud databases; neither
+# has a container the normal integration matrix could start.
+#
+# - Redshift: resumes a dedicated, normally paused cluster, runs
+#   redshift.spec.ts and pauses the cluster again.
+# - BigQuery: creates a dataset for the run, runs bigquery.spec.ts and deletes
+#   the dataset again.
+#
+# Setup (AWS role, GCP workload identity, the `cloud-db-tests` environment,
+# repository variables and the Redshift password secret) is described in
+# dev/cloud_db_tests/README.md. Each job is skipped until its repository
+# variable is set (REDSHIFT_CLUSTER_IDENTIFIER, BIGQUERY_PROJECT_ID), and on
+# pull requests from forks, which get no credentials.
+
+permissions:
+  contents: read
+  # OIDC tokens for AWS and GCP
+  id-token: write
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'apps/studio/src/lib/db/clients/redshift.ts'
+      - 'apps/studio/src/lib/db/clients/redshift/**'
+      - 'apps/studio/src/lib/db/clients/bigquery.ts'
+      - 'apps/studio/src/lib/db/clients/bigquery/**'
+      - 'apps/studio/src/lib/db/clients/BasicDatabaseClient.ts'
+      - 'apps/studio/tests/vitest/integration/lib/db/clients/redshift.spec.ts'
+      - 'apps/studio/tests/vitest/integration/lib/db/clients/bigquery.spec.ts'
+      - 'dev/cloud_db_tests/**'
+      - '.github/workflows/cloud-db-tests.yml'
+  pull_request:
+    paths:
+      - 'apps/studio/src/lib/db/clients/redshift.ts'
+      - 'apps/studio/src/lib/db/clients/redshift/**'
+      - 'apps/studio/src/lib/db/clients/bigquery.ts'
+      - 'apps/studio/src/lib/db/clients/bigquery/**'
+      - 'apps/studio/src/lib/db/clients/BasicDatabaseClient.ts'
+      - 'apps/studio/tests/vitest/integration/lib/db/clients/redshift.spec.ts'
+      - 'apps/studio/tests/vitest/integration/lib/db/clients/bigquery.spec.ts'
+      - 'dev/cloud_db_tests/**'
+      - '.github/workflows/cloud-db-tests.yml'
+  schedule:
+    # Mondays, 14:23 UTC
+    - cron: '23 14 * * 1'
+  workflow_dispatch:
+    inputs:
+      databases:
+        description: Databases to test
+        type: choice
+        default: both
+        options:
+          - both
+          - redshift
+          - bigquery
+      keep_redshift_running:
+        description: Leave the Redshift cluster running afterwards (pause it yourself)
+        type: boolean
+        default: false
+
+jobs:
+  redshift:
+    name: Redshift
+    if: >-
+      vars.REDSHIFT_CLUSTER_IDENTIFIER != ''
+      && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+      && (github.event_name != 'workflow_dispatch' || inputs.databases != 'bigquery')
+    runs-on: ubuntu-24.04
+    environment: cloud-db-tests
+    # Runs share one cluster, so they queue instead of pausing it under each other.
+    concurrency:
+      group: cloud-db-tests-redshift
+      cancel-in-progress: false
+    timeout-minutes: 60
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      REDSHIFT_CLUSTER_IDENTIFIER: ${{ vars.REDSHIFT_CLUSTER_IDENTIFIER }}
+      REDSHIFT_SECURITY_GROUP_ID: ${{ vars.REDSHIFT_SECURITY_GROUP_ID }}
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v5
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Compute runner image cache id
+        shell: bash
+        run: echo "RUNNER_IMAGE_ID=${ImageOS:-unknown}" >> "$GITHUB_ENV"
+
+      # Same key as studio-test.yml, so a cache saved there is reused here.
+      - name: Cache node_modules
+        id: cache-nm
+        uses: actions/cache@v5
+        with:
+          path: |
+            node_modules
+            apps/studio/node_modules
+            apps/ui-kit/node_modules
+            apps/sqltools/node_modules
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+
+      - name: Install dependencies
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: yarn install --frozen-lockfile --network-timeout 100000
+        env:
+          HUSKY: "0"
+          npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          # Long enough to cover resume + tests + pause.
+          role-duration-seconds: 5400
+
+      - name: Resume the cluster
+        id: cluster
+        run: bash dev/cloud_db_tests/redshift-cluster.sh resume
+
+      - name: Allow this runner through the security group
+        id: ingress
+        if: env.REDSHIFT_SECURITY_GROUP_ID != ''
+        run: |
+          ip="$(curl -fsS https://checkip.amazonaws.com | tr -d '[:space:]')"
+          aws ec2 authorize-security-group-ingress \
+            --group-id "$REDSHIFT_SECURITY_GROUP_ID" \
+            --ip-permissions "IpProtocol=tcp,FromPort=${{ steps.cluster.outputs.port }},ToPort=${{ steps.cluster.outputs.port }},IpRanges=[{CidrIp=$ip/32,Description=github-actions-${{ github.run_id }}}]" \
+            > /dev/null
+          echo "cidr=$ip/32" >> "$GITHUB_OUTPUT"
+
+      - name: Test
+        run: yarn workspace beekeeper-studio vitest:integration tests/vitest/integration/lib/db/clients/redshift.spec.ts
+        env:
+          CLOUD_DB_TESTS_REQUIRED: '1'
+          REDSHIFT_HOST: ${{ steps.cluster.outputs.host }}
+          REDSHIFT_PORT: ${{ steps.cluster.outputs.port }}
+          REDSHIFT_DATABASE: ${{ vars.REDSHIFT_DATABASE || 'dev' }}
+          REDSHIFT_USER: ${{ vars.REDSHIFT_USER }}
+          REDSHIFT_PASSWORD: ${{ secrets.REDSHIFT_PASSWORD }}
+
+      - name: Remove this runner from the security group
+        if: always() && steps.ingress.outputs.cidr != ''
+        run: |
+          aws ec2 revoke-security-group-ingress \
+            --group-id "$REDSHIFT_SECURITY_GROUP_ID" \
+            --protocol tcp \
+            --port "${{ steps.cluster.outputs.port }}" \
+            --cidr "${{ steps.ingress.outputs.cidr }}" \
+            > /dev/null
+
+      - name: Pause the cluster
+        if: always() && !(github.event_name == 'workflow_dispatch' && inputs.keep_redshift_running)
+        run: bash dev/cloud_db_tests/redshift-cluster.sh pause
+
+  bigquery:
+    name: BigQuery
+    if: >-
+      vars.BIGQUERY_PROJECT_ID != ''
+      && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+      && (github.event_name != 'workflow_dispatch' || inputs.databases != 'redshift')
+    runs-on: ubuntu-24.04
+    environment: cloud-db-tests
+    timeout-minutes: 30
+    env:
+      BIGQUERY_PROJECT_ID: ${{ vars.BIGQUERY_PROJECT_ID }}
+      # Letters, digits and underscores only; unique per run attempt.
+      BIGQUERY_DATASET: bks_ci_${{ github.run_id }}_${{ github.run_attempt }}
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v5
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Compute runner image cache id
+        shell: bash
+        run: echo "RUNNER_IMAGE_ID=${ImageOS:-unknown}" >> "$GITHUB_ENV"
+
+      - name: Cache node_modules
+        id: cache-nm
+        uses: actions/cache@v5
+        with:
+          path: |
+            node_modules
+            apps/studio/node_modules
+            apps/ui-kit/node_modules
+            apps/sqltools/node_modules
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+
+      - name: Install dependencies
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          command: yarn install --frozen-lockfile --network-timeout 100000
+        env:
+          HUSKY: "0"
+          npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
+
+      # Writes an external-account credentials file and points
+      # GOOGLE_APPLICATION_CREDENTIALS at it, which the BigQuery client and
+      # the bq CLI both pick up.
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          project_id: ${{ vars.BIGQUERY_PROJECT_ID }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Create the dataset
+        id: dataset
+        run: |
+          # Tables expire after a day, in case the delete step never runs.
+          bq --location="${{ vars.BIGQUERY_LOCATION || 'US' }}" mk --dataset \
+            --default_table_expiration 86400 \
+            --description "Beekeeper Studio CI run ${{ github.run_id }}" \
+            "$BIGQUERY_PROJECT_ID:$BIGQUERY_DATASET"
+          echo "created=true" >> "$GITHUB_OUTPUT"
+
+      - name: Test
+        run: yarn workspace beekeeper-studio vitest:integration tests/vitest/integration/lib/db/clients/bigquery.spec.ts
+        env:
+          CLOUD_DB_TESTS_REQUIRED: '1'
+
+      - name: Delete the dataset
+        if: always() && steps.dataset.outputs.created == 'true'
+        run: bq rm --recursive --force --dataset "$BIGQUERY_PROJECT_ID:$BIGQUERY_DATASET"

@@ -190,23 +190,21 @@ export class RedshiftClient extends PostgresClient {
     // Foreign keys defined on this table (referencing other tables)
     const sql = `
       ${foreignKeyColumnsSql}
-      AND kcu.table_schema = $2
-      AND kcu.table_name = $1
+      AND from_ns.nspname = $2
+      AND from_tbl.relname = $1
+      ORDER BY con.conname, pos.n
     `;
     const data = await this.driverExecuteSingle(sql, { params: [table, schema] });
     return this.parseForeignKeys(data.rows);
   }
 
   async getIncomingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
-    // Foreign keys on other tables that reference this table. The referenced
-    // table is a computed column, so it can only be filtered from an outer
-    // query.
+    // Foreign keys on other tables that reference this table
     const sql = `
-      SELECT * FROM (
-        ${foreignKeyColumnsSql}
-        AND rc.unique_constraint_schema = $2
-      ) AS fk
-      WHERE fk.to_table = $1
+      ${foreignKeyColumnsSql}
+      AND to_ns.nspname = $2
+      AND to_tbl.relname = $1
+      ORDER BY from_ns.nspname, from_tbl.relname, con.conname, pos.n
     `;
     const data = await this.driverExecuteSingle(sql, { params: [table, schema] });
     return this.parseForeignKeys(data.rows);
