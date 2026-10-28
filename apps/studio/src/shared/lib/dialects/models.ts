@@ -86,7 +86,7 @@ export function KnexDialect(d: Dialect): KnexDialect {
   return d as KnexDialect
 }
 // REF: https://github.com/sql-formatter-org/sql-formatter/blob/master/docs/language.md#options
-export type FormatterDialect = 'postgresql' | 'mysql' | 'mariadb' | 'sql' | 'tsql' | 'redshift' | 'plsql' | 'db2' | 'sqlite' | 'trino' | 'snowflake'
+export type FormatterDialect = 'postgresql' | 'mysql' | 'mariadb' | 'sql' | 'tsql' | 'redshift' | 'plsql' | 'db2' | 'sqlite' | 'trino' | 'snowflake' | 'clickhouse'
 export function FormatterDialect(d: Dialect): FormatterDialect {
   if (!d) return 'mysql'
   if (d === 'sqlserver') return 'tsql'
@@ -100,6 +100,7 @@ export function FormatterDialect(d: Dialect): FormatterDialect {
   if (d === 'trino') return 'trino'
   if (d === 'surrealdb') return 'sql'
   if (d === 'snowflake') return 'snowflake'
+  if (d === 'clickhouse') return 'clickhouse'
   return 'mysql' // we want this as the default
 }
 
@@ -381,17 +382,39 @@ export type DialectConfig = {
 }
 
 
-export interface TableKey {
-  isComposite: boolean;
-  toTable: string;
-  toSchema: string;
-  toColumn: string | string[];
-  fromTable: string;
-  fromSchema: string;
-  fromColumn: string | string[];
+/**
+ * One column of a foreign key as read from a database catalog. Drivers map
+ * their catalog rows to this shape (see `BasicDatabaseClient.parseForeignKeyRow`)
+ * and `groupForeignKeyRows` assembles the rows into `TableKey`s, so every
+ * driver handles composite keys, column order and naming collisions the same way.
+ */
+export interface ForeignKeyRow {
+  /** Engines without named constraints (SQLite) report a per-table id instead. */
   constraintName?: string;
+  fromSchema: string;
+  fromTable: string;
+  fromColumn: string;
+  toSchema: string;
+  toTable: string;
+  toColumn: string;
+  /**
+   * Position of the column within its constraint; only the relative order
+   * matters. When every row of a constraint carries one the columns are
+   * ordered by it, otherwise the input order is kept.
+   */
+  ordinalPosition?: number;
   onUpdate?: string;
   onDelete?: string;
+}
+
+/**
+ * A foreign key. Single-column keys expose `fromColumn` / `toColumn` as
+ * strings; composite keys expose them as arrays paired by index.
+ */
+export interface TableKey extends Omit<ForeignKeyRow, 'fromColumn' | 'toColumn' | 'ordinalPosition'> {
+  isComposite: boolean;
+  fromColumn: string | string[];
+  toColumn: string | string[];
 }
 
 export interface RelationAlterations {

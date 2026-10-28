@@ -97,7 +97,10 @@
         class="toolbar text-right"
         ref="toolbar"
       >
-        <div class="actions secondary-actions">
+        <div
+          class="actions secondary-actions"
+          @wheel="scrollSecondaryActions"
+        >
           <div v-if="canManageTransactions">
             <transition name="fade-swap">
               <x-buttons
@@ -215,7 +218,7 @@
           <x-button
             v-if="queryId"
             @click.prevent="viewEditHistory"
-            class="btn btn-flat btn-small history-btn"
+            class="btn btn-icon history-btn"
             v-tooltip="updatedTooltip"
           >
             <i class="material-icons">history</i>
@@ -580,6 +583,7 @@
 
   import { canDeparameterize, convertParamsForReplacement, deparameterizeQuery, safelyIdentify } from '../lib/db/sql_tools'
   import { EditorMarker } from '@/lib/editor/utils'
+  import { recordPaidFeatureUse } from '@/lib/paidFeatures'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
@@ -1148,6 +1152,14 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       }
     },
     methods: {
+      scrollSecondaryActions(e: WheelEvent) {
+        const el = e.currentTarget as HTMLElement
+        if (!e.shiftKey || e.deltaX !== 0 || el.scrollWidth <= el.clientWidth) {
+          return
+        }
+        e.preventDefault()
+        el.scrollBy({ left: e.deltaY, behavior: "smooth" })
+      },
       ...mapActions({
         reloadQuery: "data/queries/reload",
         listQueryAudits: "data/queryAudits/list",
@@ -1421,6 +1433,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.$root.$emit(AppEvent.upgradeModal, "Editable Query Results")
           return;
         }
+        recordPaidFeatureUse('editable-query-results')
         if (!this.resultsEditData[this.selectedResult]) {
           const resultEditData: FieldEditData[] = await this.connection.getResultEditData(this.result?.text, this.result.fields);
 
@@ -1611,6 +1624,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.$root.$emit(AppEvent.upgradeModal, 'Query to File')
           return;
         }
+        recordPaidFeatureUse('query-to-file')
 
         // run the currently highlighted text (if any) to a file, else all sql
         const query_sql = this.hasSelectedText && this.primaryIsTab ? this.editor.selection : this.unsavedText;
@@ -1625,6 +1639,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.$root.$emit(AppEvent.upgradeModal, 'Query to File')
           return;
         }
+        recordPaidFeatureUse('query-to-file')
         if (this.runButtonDisabled) return;
         // run the currently selected query or highlighted (if there are multiple) to a file, else all sql
         let query_sql = ''
@@ -2271,7 +2286,6 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 </script>
 
 <style lang="scss" scoped>
-  @use "sass:color";
   @import '../assets/styles/app/_variables';
 
   .query-editor {
@@ -2289,30 +2303,13 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     color: var(--text);
   }
 
-  #commit-mode {
-    --togglebutton-color: color-mix(
-      in srgb,
-      var(--theme-base) 60%,
-      var(--query-editor-bg)
-      );
-    --togglebutton-background: color-mix(
-      in srgb,
-      var(--theme-base) 6%,
-      var(--query-editor-bg));
-    --togglebutton-content-checked-color: var(--theme-base);
-    --togglebutton-content-checked-background: color-mix(
-      in srgb,
-      var(--theme-base) 15%,
-      var(--query-editor-bg));
-  }
-
   .manual-commit-notice {
     display: flex;
     gap: 0.5rem;
     padding-block: 0.5rem;
     padding-inline: 0.75rem;
     margin-bottom: -0.75rem;
-    color: $brand-danger;
+    color: var(--danger-text);
     font-size: 0.85rem;
 
     [class^="material-icons"] {
@@ -2341,29 +2338,26 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     justify-content: center;
     align-items: center;
     gap: 0.25rem;
-    color: var(--brand-warning);
+    color: var(--warning-text);
     font-weight: bold;
-    background: color-mix(
-      in srgb,
-      var(--brand-warning) 4%,
-      var(--query-editor-bg));
+    background: var(--warning-bg-subtle);
     border-radius: 9999px;
     padding: 0.215rem 0.75rem;
-    box-shadow: 0 0 6px 0 rgb(from var(--brand-warning) r g b / 0.7);
+    box-shadow: 0 0 6px 0 var(--warning-a11);
     animation: glowAndDrop 0.9s cubic-bezier(0.33, 0, 0.2, 1) forwards;
   }
 
   @keyframes glowAndDrop {
     0% {
-      box-shadow: 0 0 0px 0 rgb(from var(--brand-warning) r g b / 0);
+      box-shadow: 0 0 0px 0 transparent;
     }
 
     60% {
-      box-shadow: 0 0 10px 0px rgb(from var(--brand-warning) r g b / 1);
+      box-shadow: 0 0 10px 0px var(--warning-solid-bg);
     }
 
     100% {
-      box-shadow: 0 0 3px 0 rgb(from var(--brand-warning) r g b / 1);
+      box-shadow: 0 0 3px 0 var(--warning-solid-bg);
     }
   }
 
@@ -2375,7 +2369,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     position: absolute;
     inset: 0;
     z-index: 10;
-    background-color: rgba(from var(--theme-bg) r g b / 70%);
+    background-color: var(--overlay-bg);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2432,11 +2426,6 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
   .btn.history-btn {
     background-color: transparent;
     box-shadow: none;
-    padding-inline: 0.15rem;
-
-    &:not(:hover) .material-icons {
-      color: var(--text-lighter);
-    }
   }
 </style>
 

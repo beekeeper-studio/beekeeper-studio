@@ -10,7 +10,7 @@ import * as cassandra from 'cassandra-driver';
 import { readFileSync } from "fs";
 import { CassandraChangeBuilder } from "@shared/lib/sql/change_builder/CassandraChangeBuilder";
 import rawLog from "@bksLogger";
-import { createCancelablePromise } from "@/common/utils";
+import { createCancelablePromise, isListFilter } from "@/common/utils";
 import { identify } from "sql-query-identifier";
 import { errors } from "@/lib/errors";
 import { dataTypesToMatchTypeCode, CassandraData as D } from "@shared/lib/dialects/cassandra";
@@ -202,27 +202,13 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     return Promise.resolve([]) // TODO (@will): Make sure this isn't a thing since you shouldn't be doing joins anyway?
   }
 
-  async getOutgoingKeys(table: string, _schema?: string): Promise<TableKey[]> {
-    const sql = `
-      SELECT column_name
-      FROM system_schema.columns
-      WHERE table_name = ?
-        AND kind = 'partition_key'
-      ALLOW FILTERING
-    `;
-    const params = [
-      table,
-    ];
-    const data = await this.driverExecuteSingle(sql, { params });
-    return data.rows.map((row) => ({
-      constraintName: null,
-      columnName: row.column_name,
-      referencedTable: null,
-      keyType: 'PRIMARY KEY'
-    } as any));
+  async getOutgoingKeys(_table: string, _schema?: string): Promise<TableKey[]> {
+    // Cassandra has no foreign keys.
+    return [];
   }
 
   async getIncomingKeys(_table: string, _schema?: string): Promise<TableKey[]> {
+    // Cassandra has no foreign keys.
     return [];
   }
 
@@ -766,7 +752,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     if (filters && _.isArray(filters) && filters.length > 0) {
       filterString = "WHERE " + filters.map((item) => {
         const field = this.wrapIdentifier(item.field);
-        if (item.type === 'in') {
+        if (isListFilter(item.type)) {
           let values = ''
           if (_.isArray(item.value)) {
             values = item.value.map((v) => (inlineParams ? v : "?")).join(",")

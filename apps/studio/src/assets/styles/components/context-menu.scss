@@ -14,19 +14,6 @@ hr {
 
 // ------ Theme Customization ------
 
-& {
-  --bks-context-menu-bg-color: var(--menu-bg);
-  --bks-context-menu-fg-color: #{$text};
-  --bks-context-menu-item-fg-color: #{$text-dark};
-  --bks-context-menu-item-bg-color-hover: #{rgba($theme-base, 0.05)};
-  --bks-context-menu-item-fg-color-disabled: #{rgba($text-dark, 0.35)};
-  --bks-context-menu-item-bg-color-disabled: transparent;
-  --bks-context-menu-item-shortcut-fg-color: #{rgba($text-dark, 0.5)};
-  --bks-context-menu-heading-fg-color: #{rgba($text-dark, 0.6)};
-  --bks-context-menu-item-description-fg-color: #{rgba($text-dark, 0.55)};
-  --bks-context-menu-divider-border-color: #{$border-color};
-}
-
 // Opened from the referenced-by link in a table cell
 .BksContextMenu-list.referenced-by-menu {
   max-width: 22rem;
@@ -43,11 +30,14 @@ hr {
   }
 }
 
-.BksContextMenu-item.disabled {
-  opacity: 0.5;
-  pointer-events: none;
+.BksContextMenu-item {
+  &.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
 }
 
-hr {
-  border-top: 1px solid var(--bks-context-menu-divider-border-color);
+.BksContextMenu-item-shortcut {
+  opacity: 0.5;
+  pointer-events: none;
 }

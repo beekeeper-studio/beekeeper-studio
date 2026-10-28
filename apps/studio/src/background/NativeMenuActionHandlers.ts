@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import {AppEvent} from '../common/AppEvent'
-import { buildWindow, getActiveWindows, OpenOptions } from './WindowBuilder'
+import { buildWindow, getActiveWindows, OpenOptions, setConfirmWindowClose } from './WindowBuilder'
 import { app } from 'electron'
 import { safeOpenExternal } from './lib/electron/safeOpenExternal'
 import platformInfo from '../common/platform_info'
@@ -168,13 +168,8 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     if (win) win.webContents.send(AppEvent.quickSearch)
   }
 
-  switchTheme = async (menuItem: Electron.MenuItem): Promise<void> => {
-    const label = _.isString(menuItem) ? menuItem : menuItem.label
-    this.settings.theme.userValue = label.toLowerCase().replaceAll(" ", "-")
-    await this.settings.theme.save()
-    getActiveWindows().forEach( window => {
-      window.send(AppEvent.settingsChanged, 'theme')
-    })
+  openAppearanceModal = (_menuItem: Electron.MenuItem, win: ElectronWindow): void => {
+    if (win) win.webContents.send(AppEvent.openAppearanceModal);
   }
 
   addBeekeeper = async (_1: Electron.MenuItem, win: ElectronWindow): Promise<void> => {
@@ -233,6 +228,10 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
     })
   }
 
+  toggleConfirmWindowClose = async (): Promise<void> => {
+    await setConfirmWindowClose(this.settings, !!this.settings.dontConfirmWindowClose?.value)
+  }
+
   switchLicenseState = async (state: Electron.MenuItem | DevLicenseState, win: ElectronWindow) => {
     if (win) win.webContents.send(AppEvent.switchLicenseState, state)
   }
@@ -255,6 +254,10 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
 
   managePlugins = (_menuItem: Electron.MenuItem, win: ElectronWindow): void => {
     if (win) win.webContents.send(AppEvent.openPluginManager);
+  }
+
+  themePlayground = (_menuItem: Electron.MenuItem, win: ElectronWindow): void => {
+    if (win) win.webContents.send(AppEvent.openThemePlayground);
   }
 
   keyboardShortcuts = (_menuItem: Electron.MenuItem, win: ElectronWindow): void => {

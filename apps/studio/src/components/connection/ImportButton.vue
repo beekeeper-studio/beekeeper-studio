@@ -3,7 +3,7 @@
     <a
       class="btn"
       :class="[
-        variant === 'flat' ? 'btn-flat' : 'btn-link btn-small',
+        variant === 'flat' ? 'btn-flat' : 'btn-small',
         { disabled }
       ]"
       @click.prevent="!disabled && $modal.show('import-modal')"

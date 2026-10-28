@@ -6,9 +6,6 @@ icon: material/hammer-wrench
 
 # Creating Your First Plugin
 
-!!! warning "Beta Feature"
-    The plugin system is in beta (available in Beekeeper Studio 5.3+). We'd love your feedback!
-
 Let's build a simple "Hello World" plugin! You'll create a new tab that shows "Hello World!" and learn how to interact with databases.
 
 ## What You Need
@@ -16,7 +13,8 @@ Let's build a simple "Hello World" plugin! You'll create a new tab that shows "H
 -   Basic HTML, CSS, and JavaScript knowledge
 -   Node.js and npm/yarn installed
 -   Beekeeper Studio installed
--   **[The plugin system enabled](../user_guide/configuration.md)**
+-   **[The plugin system and unlisted plugins enabled](../user_guide/configuration.md#config-ref)**
+-   (Optional) Use the [sample plugin](https://github.com/beekeeper-studio/bks-sample-plugin) for reference
 
 ## Quick Start (2 Options)
 
@@ -155,6 +153,9 @@ system is very straightforward. It only requires a plugin to have two files:
 * `index.html` - your plugin's main page
 
 To build from scratch:
+
+!!! note "Make sure everything is enabled!"
+    Plugin functionality is disabled by default in Beekeeper. Make sure `pluginSystem.disabled` and `pluginSystem.unlistedDisabled` are both `false` in your [config](../user_guide/configuration.md#config-ref)
 
 1. Create Your Plugin Folder
 
@@ -339,23 +340,25 @@ Add this to your project (If you didn't use Vite, add this to a new file called 
 
 ```javascript
 // Enables proper keyboard and mouse event handling
-import "@beekeeperstudio/plugin/dist/eventForwarder.js";
-import { getTables } from "@beekeeperstudio/plugin/";
+import "@beekeeperstudio/plugin/dist/eventForwarder";
+import { getTables } from "@beekeeperstudio/plugin";
 
 // Show database tables
 async function showTables() {
     try {
         const tables = await getTables();
         const tablesDiv = document.querySelector(".tables");
-        tablesDiv.innerHTML = `<strong>Tables:</strong> ${tables.map(t => t.name).join(", ")}`;
-        tablesDiv.classList.add("show");
+        if (tablesDiv) {
+            tablesDiv.innerHTML = `<strong>Tables:</strong> ${tables.map(t => t.name).join(", ")}`;
+            tablesDiv.classList.add("show");
+        }
     } catch (error) {
         console.error("Failed to get tables:", error);
     }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    document.querySelector("#show-tables-btn").addEventListener("click", showTables);
+    document.querySelector("#show-tables-btn")?.addEventListener("click", showTables);
 });
 ```
 
@@ -399,13 +402,13 @@ Update your javascript to use the app theme:
 
 ```diff
 // Enables proper keyboard and mouse event handling
-import "@beekeeperstudio/plugin/dist/eventForwarder.js";
-import { getTables } from "@beekeeperstudio/plugin/dist/index.js";
+import "@beekeeperstudio/plugin/dist/eventForwarder";
+import { getTables } from "@beekeeperstudio/plugin";
 + import { addNotificationListener, getAppInfo } from "@beekeeperstudio/plugin";
 
 + function applyTheme(theme) {
 +      document.querySelector("#app-theme")!.textContent =
-+        `:root { ${app.theme.cssString} }`;
++        `:root { ${theme.cssString} }`;
 + }
 
 + // Initialize theme
@@ -422,9 +425,9 @@ Update your CSS to use theme variables:
 
 ```diff
 -    background-color: #f8f9fa;
-+    background-color: var(--query-editor-bg);
++    background-color: var(--bg-base);
 -    color: #333;
-+    color: var(--text-dark);
++    color: var(--text-contrast);
 ```
 
 ## Final Result
@@ -444,8 +447,8 @@ Your complete `index.html`:
             font-family: system-ui, -apple-system, sans-serif;
             margin: 0;
             padding: 2rem;
-            background-color: var(--query-editor-bg);
-            color: var(--text-dark);
+            background-color: var(--bg-base);
+            color: var(--text-contrast);
         }
         .container {
             max-width: 600px;
@@ -453,16 +456,16 @@ Your complete `index.html`:
             text-align: center;
         }
         h1 {
-            color: #2d3748;
+            color: var(--text-contrast);
             margin-bottom: 1rem;
         }
         p {
-            color: #4a5568;
+            color: var(--text-contrast);
             margin-bottom: 1.5rem;
         }
         button {
-            background: var(--theme-base);
-            color: white;
+            background-color: var(--primary-solid-bg);
+            color: var(--primary-contrast);
             border: none;
             padding: 0.75rem 1.5rem;
             border-radius: 0.5rem;
@@ -470,11 +473,11 @@ Your complete `index.html`:
             font-size: 1rem;
             font-weight: 500;
         }
-        button:hover { opacity: 0.9; }
+        button:hover { background-color: var(--primary-solid-bg-hover); }
         .tables {
             margin-top: 1rem;
             padding: 1rem;
-            background: var(--brand-success-light);
+            background-color: var(--success-bg);
             border-radius: 0.5rem;
             display: none;
         }
@@ -499,12 +502,12 @@ Your complete `main.js`:
 
 ```javascript
 // Enables proper keyboard and mouse event handling
-import "@beekeeperstudio/plugin/dist/eventForwarder.js";
+import "@beekeeperstudio/plugin/dist/eventForwarder";
 import { getTables, addNotificationListener, getAppInfo } from "@beekeeperstudio/plugin";
 
 function applyTheme(theme) {
     document.querySelector("#app-theme").textContent =
-        `:root { ${app.theme.cssString} }`;
+        `:root { ${theme.cssString} }`;
 }
 
 // Initialize theme
@@ -518,8 +521,10 @@ async function showTables() {
     try {
         const tables = await getTables();
         const tablesDiv = document.querySelector(".tables");
-        tablesDiv.innerHTML = `<strong>Tables:</strong> ${tables.map(t => t.name).join(", ")}`;
-        tablesDiv.classList.add("show");
+        if (tablesDiv) {
+            tablesDiv.innerHTML = `<strong>Tables:</strong> ${tables.map(t => t.name).join(", ")}`;
+            tablesDiv.classList.add("show");
+        }
     } catch (error) {
         console.error("Failed to get tables:", error);
     }
@@ -527,7 +532,7 @@ async function showTables() {
 
 // Initialize
 document.addEventListener("DOMContentLoaded", () => {
-    document.querySelector("#show-tables-btn").addEventListener("click", showTables);
+    document.querySelector("#show-tables-btn")?.addEventListener("click", showTables);
 });
 ```
 

@@ -87,6 +87,7 @@
 
 <script>
   import { mapGetters, mapState, mapMutations } from 'vuex'
+  import { recordPaidFeatureUse } from '@/lib/paidFeatures'
   import Stepper from '../stepper/Stepper.vue'
   import ExportObjects from './ExportObjects.vue'
   import ExportOptions from './ExportOptions.vue'
@@ -190,6 +191,7 @@
         this.$native.files.showItemInFolder(this.tableOptions.filePath)
       },
       async startExport() {
+        recordPaidFeatureUse('multi-table-export')
         // Hide any success modal that might be showing already
         this.$modal.hide(`success-modal-${this.tab.id}`);
         
@@ -288,6 +290,9 @@
       },
     },
     async mounted() {
+      // The tab content is gated behind UpgradePanel, so opening it at all is
+      // use of the feature; running the export below counts again.
+      if (!this.isCommunity) recordPaidFeatureUse('multi-table-export')
       await this.$store.dispatch('multiTableExports/reset')
       await this.$store.dispatch('exports/removeInactive')
     }

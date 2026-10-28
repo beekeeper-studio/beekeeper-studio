@@ -10,7 +10,7 @@ import { ConfigMetadataProvider } from "@/common/bksConfig/ConfigMetadataProvide
 import platformInfo from "@/common/platform_info";
 import { AppDbHandlers } from "@/handlers/appDbHandlers";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
-import { createConfig } from "@tests/integration/utils/config";
+import { createConfig } from "@tests/vitest/integration/utils/config";
 
 const handlers = AppDbHandlers as Record<string, any>;
 

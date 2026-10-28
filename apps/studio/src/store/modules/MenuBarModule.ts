@@ -102,7 +102,8 @@ export const MenuBarModule: Module<State, RootState> = {
     },
     remove(state, id: string) {
       if (!state.externalMenu[id]) {
-        throw new Error(`Menu item ${id} does not exist`);
+        log.warn(`Menu item ${id} does not exist`);
+        return;
       }
       state.externalMenu = _.omit(state.externalMenu, id);
     },

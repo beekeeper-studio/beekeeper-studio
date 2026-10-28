@@ -66,7 +66,7 @@
     >
       <template #left-actions>
         <x-button
-          class="btn btn-flat btn-icon"
+          class="btn btn-flat"
           @click="toggleTablePanel"
         >
           <i class="material-icons">{{ isTablePanelVisible ? 'remove' : 'table_view' }}</i>
@@ -89,6 +89,7 @@ import { TransportPluginTab } from "@/common/transport/TransportOpenTab";
 import IsolatedPluginView from "@/components/plugins/IsolatedPluginView.vue";
 import Vue from "vue";
 import { mapGetters } from "vuex";
+import { paidFeatureForPlugin, recordPaidFeatureUse } from "@/lib/paidFeatures";
 import UpgradePanel from "@/components/upsell/UpgradePanel.vue";
 import AiShellUpsell from "@/components/upsell/AiShellUpsell.vue";
 import type { OnViewRequestListenerParams } from "@/services/plugin/types";
@@ -179,6 +180,8 @@ export default Vue.extend({
   methods: {
     initialize() {
       this.initialized = true;
+      const paidFeature = paidFeatureForPlugin(this.tab.context.pluginId);
+      if (paidFeature) recordPaidFeatureUse(paidFeature);
 
       if (this.split) {
         this.split.destroy();

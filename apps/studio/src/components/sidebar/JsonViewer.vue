@@ -19,7 +19,7 @@
           >
           <button
             type="button"
-            class="clear btn-link"
+            class="clear"
             @click="setFilter('')"
             v-if="filter"
           >
@@ -27,7 +27,7 @@
           </button>
         </div>
         <x-button
-          class="menu-btn btn btn-fab"
+          class="menu-btn btn btn-icon"
           tabindex="0"
         >
           <i class="material-icons">more_vert</i>

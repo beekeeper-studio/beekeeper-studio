@@ -2,7 +2,7 @@
 # no host setup beyond Docker is required:
 #   samba    -- Active Directory DC (KDC + LDAP), realm BKS.TEST
 #   mongodb  -- MongoDB Enterprise Server, given the mongodb/<host> service keytab
-#   tests    -- the Jest client (Kerberos client + mongosh), runs the spec in-network
+#   tests    -- the vitest client (Kerberos client + mongosh), runs the spec in-network
 #
 # GSSAPI authentication is a MongoDB Enterprise Server feature -- MongoDB Community does not
 # support it -- so the db service uses the enterprise build. Unlike SQL Server, MongoDB does
@@ -13,7 +13,7 @@
 # Docker DNS (no /etc/hosts), reads the repo krb5.conf via KRB5_CONFIG (no /etc edits), does
 # kinit against the in-network KDC, and runs the spec. Drive it with run.sh
 # (= docker compose run --rm tests). See
-# apps/studio/tests/integration/lib/db/clients/mongodb-kerberos.spec.ts for the test.
+# apps/studio/tests/vitest/integration/lib/db/clients/mongodb-kerberos.spec.ts for the test.
 name: bks-mongodb-kerberos
 
 networks:
