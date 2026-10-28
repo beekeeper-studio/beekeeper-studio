@@ -158,10 +158,14 @@ For Business users, custom registries allow you to distribute as many plugins as
 
     - In your [config](./configuration.md) add a section for your registry
 ```ini
-[pluginSystem.registries.custom-name] ; Replace custom-name with the name of your repo, this is only used internally and must be unique
-owner = owner-name ; The owner of the github repo
-repo = repository-name ; The repository name
-file = plugins.json ; The name of the file you created above
+; Replace custom-name with the name of your repo, this is only used internally and must be unique
+[pluginSystem.registries.custom-name]
+; The owner of the github repo
+owner = owner-name
+; The repository name
+repo = repository-name
+; The name of the file you created above
+file = plugins.json
 ```
 
     !!! tip
