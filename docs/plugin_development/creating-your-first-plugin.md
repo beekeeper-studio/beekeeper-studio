@@ -532,6 +532,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 ## What's Next? 🚀
 
--   **[Integration Points](integration-points.md)** - Add your plugin to menus and toolbars across the app
+-   **[Capabilities](capabilities.md)** - Add your plugin to menus and toolbars across the app
 -   **[Plugin SDK Reference](api-reference.md)** - Explore all functions in the SDK
 -   **[Publishing Plugins](publishing-plugins.md)** - Share your creation with the world!

@@ -1,14 +1,19 @@
 ---
-title: Integration Points
+title: Capabilities
 summary: "Every place in Beekeeper Studio where a plugin can add a menu item or button, with a manifest example for each."
 icon: material/menu-open
 ---
 
-# Integration Points
+# Capabilities
 
-Integration points are the places in Beekeeper Studio where your plugin can add a menu item or a button. Picking the item opens one of your plugin's [views](plugin-views.md) in a new tab, and the view can read where it was opened from with [`getViewContext()`](api-reference.md#getviewcontext).
+A plugin's capabilities are declared in the `capabilities` section of its [manifest](manifest.md#capabilities):
 
-Menu items are declared in the `capabilities.menu` array of your [manifest](manifest.md):
+- `views` are the [views](plugin-views.md) your plugin provides, such as a tab.
+- `menu` is the menu items and buttons that open those views, and where they appear in Beekeeper Studio.
+
+This page lists every place a menu item can appear. Picking the item opens one of your plugin's views in a new tab, and the view can read where it was opened from with [`getViewContext()`](api-reference.md#getviewcontext).
+
+Menu items are declared in the `capabilities.menu` array:
 
 ```json
 {
@@ -32,7 +37,7 @@ Menu items are declared in the `capabilities.menu` array of your [manifest](mani
 - `command` identifies the item. It must be unique within a placement.
 - `name` is the label users see.
 - `view` is the id of the view to open.
-- `placement` is one integration point, or an array of them to show the same item in several places.
+- `placement` is where the item appears: one placement, or an array of them to show the same item in several places.
 - `icon` is a [Material icon](https://fonts.google.com/icons?icon.set=Material+Icons) name. It falls back to the manifest's `icon`.
 
 See [PluginMenuItem](manifest.md#pluginmenuitem) for every field, including `enabledWhen`.
@@ -42,7 +47,7 @@ In context menus, items from all plugins share one **Plugins** section at the bo
 !!! note "Beekeeper Studio 6.2"
     `editor.query.toolbar`, `results.statusbar`, `tableTable.statusbar`, `tab.query.header.context` and `tab.table.header.context` need Beekeeper Studio 6.2 or later. Earlier versions skip items with a placement they don't know. Set `"minAppVersion": "6.2.0"` in your manifest if your plugin depends on them.
 
-## All Integration Points
+## All Menu Placements
 
 | Placement | Where it appears | View params |
 | --------- | ---------------- | ----------- |

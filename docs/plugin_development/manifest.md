@@ -34,9 +34,12 @@ The `manifest.json` file defines your plugin's metadata, capabilities, settings,
 
 ## Capabilities
 
-| Property | Type     | Required | Description                                |
-| -------- | -------- | -------- | ------------------------------------------ |
-| `views`  | `View[]` | Yes      | Array of view definitions for your plugin. |
+| Property | Type               | Required | Description                                                                    |
+| -------- | ------------------ | -------- | ------------------------------------------------------------------------------ |
+| `views`  | `View[]`           | Yes      | Array of view definitions for your plugin.                                     |
+| `menu`   | `PluginMenuItem[]` | No       | Menu items and buttons that open your views. See [PluginMenuItem](#pluginmenuitem). |
+
+See [Capabilities](capabilities.md) for every place a menu item can appear, with a screenshot and an example of each.
 
 ## View
 
@@ -144,7 +147,7 @@ Each `command` must be unique within a placement. To show the same command with 
 
 ### PluginMenuItemPlacement
 
-See [Integration Points](integration-points.md) for a screenshot and an example of each placement.
+See [Capabilities](capabilities.md) for a screenshot and an example of each placement.
 
 | Value                               | Description                                                      |
 | ----------------------------------- | ---------------------------------------------------------------- |

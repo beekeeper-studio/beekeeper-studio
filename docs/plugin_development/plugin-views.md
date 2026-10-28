@@ -148,6 +148,6 @@ if (state) {
 ## Next Steps
 
 - **[Creating Plugins](creating-your-first-plugin.md)** - Learn how to build your first plugin
-- **[Integration Points](integration-points.md)** - Add menu items and buttons that open your views
+- **[Capabilities](capabilities.md)** - Add menu items and buttons that open your views
 - **[Manifest Reference](manifest.md)** - Complete manifest file documentation
 - **[SDK Reference](api-reference.md)** - Functions available in the Plugin SDK

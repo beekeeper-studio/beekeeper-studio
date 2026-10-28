@@ -95,4 +95,4 @@ Plugins declare their views in the manifest file. Beekeeper Studio renders these
 
 -   **[Plugin SDK](sdk.md)** - The SDK and Vite build plugin
 -   **[Start Building](creating-your-first-plugin.md)** - Create your first plugin
--   **[Integration Points](integration-points.md)** - Every place a plugin can add a menu item or button
+-   **[Capabilities](capabilities.md)** - Every place a plugin can add a menu item or button
