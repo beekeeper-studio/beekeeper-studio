@@ -199,6 +199,7 @@ export default Vue.extend({
       align-items: center;
       flex-wrap: wrap;
       gap: 0.5ch;
+      color: var(--text-contrast);
     }
 
     .title :deep(.spinner) {
