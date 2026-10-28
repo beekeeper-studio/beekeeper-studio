@@ -20,7 +20,7 @@ The `manifest.json` file defines your plugin's metadata, capabilities, settings,
 | `icon`            | `string`               | No       | Material UI icon name. See [Material Icons](https://fonts.google.com/icons?icon.set=Material+Icons) for available options. |
 | `capabilities`    | `Capabilities`         | Yes      | Defines what views your plugin provides.                                                                                   |
 | `pluginEntryDir`  | `string`               | No       | Path to your plugin's built files relative to the plugin root. Defaults to project root.                                   |
-| `manifestVersion` | `1 \| 0`               | No       | Version of the manifest format. Defaults to `0`.                                                                           |
+| `manifestVersion` | `1 \| 0`               | No       | Version of the manifest format. Defaults to `0`. NOTE: Manifest v0 is deprecated and will be removed in a future release   |
 | `minAppVersion`   | `string`               | No       | Minimum Beekeeper Studio version required. If not specified, all version of Beekeeper Studio are supported.                |
 | `settings`        | `unknown`              | No       | _(Planned for future releases)_ Configuration options that can be set via config files.                                    |
 | `permissions`     | `unknown`              | No       | _(Planned for future releases)_ List of permissions your plugin requires.                                                  |

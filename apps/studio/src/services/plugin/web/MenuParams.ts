@@ -21,8 +21,7 @@ import type {
 } from "@beekeeperstudio/plugin";
 import type { TableFilter } from "@/lib/db/models";
 import type { GridCells } from "@/common/tabulator";
-
-type BigIntSerialized = number;
+import { serializeArray, serializeBigInt } from "../utils";
 
 export function buildParamsForTableMenu(
   component: CellComponent,
@@ -129,22 +128,6 @@ export function buildParamsForTableMenu(
   throw new Error(
     `Unknown component type: ${componentType}. This should never happen. Please report this as a bug.`
   );
-}
-
-function serializeBigInt(val: bigint): BigIntSerialized;
-function serializeBigInt<T>(val: T): T;
-function serializeBigInt(val: unknown): unknown {
-  if (typeof val === "bigint") {
-    return Number(val);
-  }
-  return val;
-}
-
-function serializeArray<T>(
-  arr: T[]
-): (T extends bigint ? BigIntSerialized : T)[];
-function serializeArray(arr: unknown[]): unknown[] {
-  return arr.map((item) => serializeBigInt(item));
 }
 
 /** The query editor passes its text in the handler payload. */

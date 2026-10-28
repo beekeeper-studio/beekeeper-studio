@@ -69,7 +69,15 @@ export default class PluginManager extends Hookable {
 
     await this.callHook("before-initialize");
 
-    const installedPlugins = this.fileManager.scanPlugins().map(convertToManifestV1);
+    const installedPlugins = this.fileManager.scanPlugins().map((manifest) => {
+      try {
+        return convertToManifestV1(manifest);
+      } catch (e) {
+        log.error('Error converting manifest: ', e);
+        return null;
+      }
+    }).filter((v) => !!v);
+
     this.manifests = installedPlugins;
 
     log.debug("Installed plugins:", installedPlugins);
@@ -181,7 +189,19 @@ export default class PluginManager extends Hookable {
     if (!manifest.minAppVersion) {
       return true;
     }
-    return semver.lte(semver.coerce(manifest.minAppVersion), semver.coerce(this.options.appVersion));
+    const minAppVersion = semver.coerce(manifest.minAppVersion);
+    if (!minAppVersion) {
+      log.warn(`Failed to load plugin ${manifest.id}, could not parse minAppVersion`);
+      return false;
+    }
+
+    const appVersion = semver.coerce(this.options.appVersion);
+    if (!appVersion) {
+      log.warn(`Failed to load plugin ${manifest.id}, could not parse appVersion`);
+      return false;
+    }
+
+    return semver.lte(minAppVersion, appVersion);
   }
 
   /** Install the latest version of a plugin. */

@@ -17,6 +17,7 @@ import rawLog from "@bksLogger";
 import _ from "lodash";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { PluginMenuManager } from "./PluginMenuManager";
+import { assertJsonSerializable } from "../utils";
 import { PrimaryKeyColumn } from "@/lib/db/models";
 
 function joinUrlPath(a: string, b: string): string {
@@ -243,6 +244,7 @@ export default class WebPluginLoader {
         }
         case "setData":
         case "setEncryptedData": {
+          assertJsonSerializable(response.args.value, response.name);
           await this.utilityConnection.send(
             response.name === "setEncryptedData"
               ? "plugin/setEncryptedData"
@@ -265,26 +267,30 @@ export default class WebPluginLoader {
         case "noty.info":
           this.context.noty.info(response.args.message, {
             allowRawHtml: false,
+            fromName: this.manifest.name
           });
           break;
         case "noty.success":
           this.context.noty.success(response.args.message, {
             allowRawHtml: false,
+            fromName: this.manifest.name
           });
           break;
         case "noty.error":
           this.context.noty.error(response.args.message, {
             allowRawHtml: false,
+            fromName: this.manifest.name
           });
           break;
         case "noty.warning":
           this.context.noty.warning(response.args.message, {
             allowRawHtml: false,
+            fromName: this.manifest.name
           });
           break;
         case "confirm":
           response.result = await this.context.confirm(
-            response.args.title,
+            `${this.manifest.name}: ${response.args.title}`,
             response.args.message,
             response.args.options
           );
@@ -360,6 +366,14 @@ export default class WebPluginLoader {
           this.log.warn(
             `Invalid or unknown event class: ${notification.args.eventClass}`
           );
+          return;
+        }
+
+        // don't allow keyboard events to be run in the background
+        if (
+          windowEventClass === KeyboardEvent &&
+          (!document.hasFocus() || document.activeElement !== source)
+        ) {
           return;
         }
 
