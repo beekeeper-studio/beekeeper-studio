@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import "./setup";
 import { WebHost, WebPlugin } from "./utils";
 import { tables } from "./utils/fixtures";
@@ -218,6 +218,54 @@ describe("WebPluginManager", () => {
           { name: "name", type: "varchar" },
           { name: "price", type: "decimal" },
         ]);
+      });
+    });
+
+    describe("runQuery", () => {
+      let executeQuery: ReturnType<typeof vi.fn>;
+
+      beforeEach(() => {
+        executeQuery = vi.fn().mockResolvedValue([]);
+        host.setConnection({ executeQuery });
+      });
+
+      it("runs the query with forceReadOnly when the plugin is read-only", async () => {
+        host.pluginSettings[plugin.manifest.id] = { readOnly: true };
+
+        const response = await plugin.request("runQuery", { query: "select 1" });
+
+        expect(response.error).toBeUndefined();
+        expect(response.result).toStrictEqual({ results: [] });
+        expect(executeQuery).toHaveBeenCalledWith("select 1", { forceReadOnly: true });
+      });
+
+      it("runs the query without forceReadOnly when read-only is turned off", async () => {
+        host.pluginSettings[plugin.manifest.id] = { readOnly: false };
+
+        await plugin.request("runQuery", { query: "delete from users" });
+
+        expect(executeQuery).toHaveBeenCalledWith("delete from users", { forceReadOnly: false });
+      });
+
+      it("reads the setting on every request, so toggling applies without reloading", async () => {
+        host.pluginSettings[plugin.manifest.id] = { readOnly: false };
+        await plugin.request("runQuery", { query: "delete from users" });
+
+        host.pluginSettings[plugin.manifest.id] = { readOnly: true };
+        await plugin.request("runQuery", { query: "delete from users" });
+
+        expect(executeQuery).toHaveBeenNthCalledWith(1, "delete from users", { forceReadOnly: false });
+        expect(executeQuery).toHaveBeenNthCalledWith(2, "delete from users", { forceReadOnly: true });
+      });
+
+      it("returns the read-only error to the plugin when the connection rejects the query", async () => {
+        host.pluginSettings[plugin.manifest.id] = { readOnly: true };
+        executeQuery.mockRejectedValue(new Error("Write action(s) not allowed in Read-Only Mode."));
+
+        const response = await plugin.request("runQuery", { query: "delete from users" });
+
+        expect(response.result).toBeUndefined();
+        expect(response.error.message).toContain("Read-Only Mode");
       });
     });
   });

@@ -279,6 +279,7 @@
             columnHeaders: true
           },
           onRangeChange: this.handleRangeChange,
+          onSelectedCellsChange: (cells) => this.$emit('selectionChange', cells),
           rowFormatter: this.rowFormatter,
           rowHeader: {
             // @ts-ignore

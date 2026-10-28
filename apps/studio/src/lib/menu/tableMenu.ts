@@ -128,6 +128,11 @@ export function createMenuItem(
   return `<x-menuitem>${leadingIcon}${label}${shortcut}${ultimateIcon}</x-menuitem>`;
 }
 
+/** A non-interactive heading for a group of items. Pair it with `disabled: true`. */
+export function createMenuSectionLabel(label: string) {
+  return `<div class="BksContextMenu-section-label">${escapeHtml(label)}</div>`;
+}
+
 export async function buildCopyText(
   rangeData: RangeData,
   options: {

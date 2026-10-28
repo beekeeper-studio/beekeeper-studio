@@ -24,6 +24,8 @@ export interface ConnectionOptions {
   jwtAuthEnabled?: boolean
   connectionMethod?: 'manual' | 'connectionString'
   connectionString?: string,
+  // Oracle: connect with an administrative privilege, eg to log in as SYS
+  privilege?: 'SYSDBA' | 'SYSOPER' | null
   enableClearText?: boolean
   // SQLite: create the database file on the next connect instead of refusing a
   // missing one. Set by the Create button, cleared once a connect succeeds.

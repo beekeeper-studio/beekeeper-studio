@@ -922,7 +922,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Reques
 
     return {
       transaction,
-      request: new sql.Request(transaction),
+      request: transaction.request(),
       hasIdentityColumn: await this.hasIdentityColumn(table)
     }
   }

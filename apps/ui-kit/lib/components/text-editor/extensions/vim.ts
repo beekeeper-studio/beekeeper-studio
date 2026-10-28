@@ -127,7 +127,7 @@ export class Register {
       this.linewise = true;
     }
     this.keyBuffer.push(text);
-    await this.clipboard.writeText(this.keyBuffer.join(' '), false)
+    await this.clipboard.writeText(this.toString(), false)
   }
 
   pushInsertModeChanges(changes: any) {
@@ -145,8 +145,8 @@ export class Register {
     this.linewise = false;
   }
 
-  async toString() {
-    return await this.clipboard.readText();
+  toString() {
+    return this.keyBuffer.join('');
   }
 
   private createInsertModeChanges(c: any) {
@@ -249,5 +249,61 @@ export function extendVimOnCodeMirror(
     } catch (e) {
       // Already defined.
     }
+    defineClipboardActions(codeMirrorVimInstance);
   }
+}
+
+// Below is a reimplementation of the register logic from replit/codemirror-vim for the `+` register, with the addition of logic
+// for the `*` register to accommodate electrons new async clipboard APIs
+
+async function readClipboardRegister(register: Register): Promise<{ text: string, register: { linewise: boolean, blockwise: boolean } }> {
+  const text = await register.clipboard.readText();
+  const sameText = text === register.toString();
+  return {
+    text,
+    register: {
+      linewise: sameText && register.linewise,
+      blockwise: sameText && register.blockwise,
+    },
+  };
+}
+
+function defineClipboardActions(codeMirrorVimInstance: any) {
+  const registerController = codeMirrorVimInstance.getRegisterController();
+
+  codeMirrorVimInstance.defineAction("paste", function (this: any, cm: any, actionArgs: any, vim: any) {
+    const register = registerController.getRegister(actionArgs.registerName);
+    if (actionArgs.registerName === "+") {
+      navigator.clipboard.readText().then((value) => {
+        this.continuePaste(cm, actionArgs, vim, value, register);
+      });
+    } else if (actionArgs.registerName === "*" && register instanceof Register) {
+      readClipboardRegister(register).then(({ text, register: shape }) => {
+        this.continuePaste(cm, actionArgs, vim, text, shape);
+      }).catch((e) => {
+        console.error("Could not read the clipboard for the * register", e);
+      });
+    } else {
+      this.continuePaste(cm, actionArgs, vim, register.toString(), register);
+    }
+  });
+
+  codeMirrorVimInstance.defineAction("insertRegister", function (cm: any, actionArgs: any) {
+    const registerName = actionArgs.selectedCharacter;
+    const register = registerController.getRegister(registerName);
+    if (registerName === "*" && register instanceof Register) {
+      register.clipboard.readText().then((text) => {
+        if (text) {
+          cm.replaceSelection(text);
+        }
+      }).catch((e) => {
+        console.error("Could not read the clipboard for the * register", e);
+      });
+      return;
+    }
+    const text = register && register.toString();
+    if (text) {
+      cm.replaceSelection(text);
+    }
+  });
 }

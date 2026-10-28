@@ -629,7 +629,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
 
   async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
     const arrayMode: boolean = options?.arrayMode;
-    const data = await this.driverExecuteMultiple(queryText, { arrayMode, tabId: options?.tabId });
+    const data = await this.driverExecuteMultiple(queryText, options);
 
     const commands = this.identifyCommands(queryText);
     log.info("COMMANDS: ", commands)

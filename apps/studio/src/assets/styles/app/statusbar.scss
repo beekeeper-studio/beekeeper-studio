@@ -13,6 +13,7 @@ $button-height:     $statusbar-height * 0.72;
 
   > .vue-portal-target {
     flex-grow: 1;
+    min-width: 0;
     height: 100%;
   }
 
@@ -78,6 +79,7 @@ $button-height:     $statusbar-height * 0.72;
 
 
   .connection-button-wrapper {
+    flex-shrink: 0;
     height: 100%;
     overflow: hidden;
   }
@@ -114,7 +116,8 @@ $button-height:     $statusbar-height * 0.72;
     }
     &.actions-btn {
       padding: 0 0.35rem;
-      .material-icons {
+      // The button's own gear and arrow, not the icons in its menu
+      > .material-icons {
         width: 13px;
       }
     }
@@ -254,8 +257,11 @@ $button-height:     $statusbar-height * 0.72;
       color: var(--statusbar-fg);
       font-size: 0.75rem;
       padding-right: 2rem;
+      // room for the icon once the message is truncated
+      min-width: calc(#{$gutter-h} + 16px + 0.35rem + 2rem);
       i {
         color: var(--statusbar-fg);
+        flex-shrink: 0;
       }
       > span {
         text-overflow: ellipsis;

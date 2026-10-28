@@ -1,4 +1,4 @@
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField, FieldDescriptor, FieldReadOnlyReason, ServerStatistics, FieldEditData } from '../models';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField, FieldDescriptor, FieldReadOnlyReason, ServerStatistics, FieldEditData, PluginExecuteOptions } from '../models';
 import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, ForeignKeyRow, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { buildInsertQueries, buildInsertQuery, errorMessages, groupForeignKeyRows, isAllowedReadOnlyQuery, joinQueries, applyChangesSql } from './utils';
 import { Knex } from 'knex';
@@ -8,8 +8,6 @@ import { ConnectionType, DatabaseElement, IBasicDatabaseClient, IDbConnectionDat
 import rawLog from "@bksLogger";
 import connectTunnel from '../tunnel';
 import { IDbConnectionServer } from '../backendTypes';
-import platformInfo from '@/common/platform_info';
-import { LicenseKey } from '@/common/appdb/models/LicenseKey';
 import { Dialect as IdentifierDialect, IdentifyResult } from 'sql-query-identifier/lib/defines';
 import { Transcoder } from '../serialization/transcoders';
 import { DatabaseConnection, NoopConnection } from './DatabaseConnection';
@@ -314,7 +312,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   }
 
   abstract query(queryText: string, tabId?: number, options?: any): Promise<CancelableQuery>;
-  abstract executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>;
+  abstract executeQuery(queryText: string, options?: PluginExecuteOptions & Record<string, any>): Promise<NgQueryResult[]>;
   abstract listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>;
   abstract getTableProperties(table: string, schema?: string): Promise<TableProperties | null>;
   abstract getQuerySelectTop(table: string, limit: number, schema?: string): Promise<string>;
@@ -654,8 +652,8 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     return transcoder?.deserialize(value) || value
   }
 
-  protected violatesReadOnly(statements: IdentifyResult[], options: any = {}) {
-    return !isAllowedReadOnlyQuery(statements, this.readOnlyMode) && !options.overrideReadonly
+  protected violatesReadOnly(statements: IdentifyResult[], options: PluginExecuteOptions & any = {}) {
+    return !isAllowedReadOnlyQuery(statements, this.readOnlyMode || options.forceReadOnly) && !options.overrideReadonly
   }
 
   protected identifyCommands(queryText: string): IdentifyResult[] {
@@ -668,7 +666,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     return commands;
   }
 
-  async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
+  async driverExecuteSingle(q: string, options: PluginExecuteOptions & Record<string, any> = {}): Promise<RawResultType> {
     const { queries: statements, error } = safelyIdentify(q, { dialect: this.dialect });
 
     if (error) {

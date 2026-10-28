@@ -1,6 +1,6 @@
 import { readFileSync } from "fs";
 import BksConfig from "@/common/bksConfig";
-import { ConnectionError, ConnectionPool, Request, Transaction } from "mssql";
+import sql, { ConnectionError, ConnectionPool, Request, Transaction } from "mssql";
 import { ConnectOptions, DatabaseConnection } from "../DatabaseConnection";
 import { IDbConnectionServer } from "../../backendTypes";
 import { IDbConnectionDatabase } from "../../types";
@@ -9,11 +9,16 @@ import { AzureAuthService } from "../../authentication/azure";
 import { getEntraOptions } from "../utils";
 import { buildWindowsAuthConnStr } from "../sqlserverWinAuth";
 import { parseSqlServerHost } from "../sqlserverHost";
+import { bindDriver } from "../sqlserverDriver";
 
 const log = logRaw.scope("SqlServerConnection");
 
 // Setup guide for SQL Server integrated / Kerberos authentication prerequisites.
 const WIN_AUTH_DOCS_URL = 'https://docs.beekeeperstudio.io/user_guide/connecting/sql-server/'
+
+// Username/password and Entra connections use tedious. Bound so a later integrated-auth
+// attempt (which loads mssql/msnodesqlv8) can't swap its Request class -- see sqlserverDriver.ts.
+const TediousConnectionPool = bindDriver(sql)
 
 // Wrap a promise with a JS-level deadline. msnodesqlv8/ODBC's native conn_timeout
 // does NOT reliably cancel a stalled SQLDriverConnect -- it only covers the TCP
@@ -125,7 +130,7 @@ export class SqlServerConnection extends DatabaseConnection<
       if (this.server.config.windowsAuthEnabled) {
         this.pool = await this.connectWindowsAuth();
       } else {
-        this.pool = await new ConnectionPool(this.dbConfig).connect();
+        this.pool = await new TediousConnectionPool(this.dbConfig).connect();
       }
     } catch (err) {
       throw withConnectHint(err, this.dbConfig);
@@ -186,6 +191,7 @@ export class SqlServerConnection extends DatabaseConnection<
       )
     }
 
+    const WindowsConnectionPool = bindDriver(sqlWindows)
     const encryptionMode = this.dbConfig.options?.encryptionMode || 'on'
     const serverCertificate = this.dbConfig.options?.serverCertificate
     const serverSpn = this.dbConfig.options?.serverSpn
@@ -222,7 +228,7 @@ export class SqlServerConnection extends DatabaseConnection<
       const candidate = candidates[i]
       // mssql ignores the driver name and emits Trusted_Connection as a boolean
       // (ODBC needs yes/no); set both, plus TrustServerCertificate when asked.
-      const connecting = new sqlWindows.ConnectionPool({
+      const connecting = new WindowsConnectionPool({
         ...this.dbConfig,
         connectionTimeout: CONNECT_TIMEOUT_S * 1000,
         beforeConnect: (cfg: any) => {

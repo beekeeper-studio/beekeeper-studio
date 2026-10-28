@@ -7,7 +7,8 @@ import type {
   TransportOpenTabInit,
 } from "@/common/transport/TransportOpenTab";
 import { DatabaseType } from "@beekeeperstudio/plugin";
-import { findTable, PluginTabType } from "@/common/transport/TransportOpenTab";
+import { findTable, getFilters, PluginTabType } from "@/common/transport/TransportOpenTab";
+import { normalizeFilters } from "@/common/utils";
 import { AppEvent } from "@/common/AppEvent";
 import { ExtendedTableColumn, NgQueryResult } from "@/lib/db/models";
 import _ from "lodash";
@@ -23,7 +24,7 @@ import {
 } from "../types";
 import { ExternalMenuItem } from "@/types";
 import { ContextOption } from "@/plugins/BeekeeperPlugin";
-import { isManifestV0, mapViewsAndMenuFromV0ToV1 } from "../utils";
+import { isManifestV0, mapViewsAndMenuFromV0ToV1, serializeRow } from "../utils";
 import { cssVars } from "./cssVars";
 import type { DialectData } from "@/shared/lib/dialects/models";
 import { RequestMap } from "@beekeeperstudio/plugin/dist/internal";
@@ -278,7 +279,7 @@ export default class PluginStoreService {
         title: tab.title,
         data: {
           table: findTable(tab, this.store.state.tables),
-          filters: [], // FIXME
+          filters: normalizeFilters(getFilters(tab) ?? []),
           result: null, // FIXME
         },
       };
@@ -298,15 +299,15 @@ export default class PluginStoreService {
         name: field.name,
         dataType: field.dataType,
       })),
-      rows: result.rows,
+      rows: result.rows?.map(serializeRow),
       rowCount: result.rowCount,
       affectedRows: result.affectedRows,
     };
   }
 
   /* Run query in the background */
-  async runQuery(query: string) {
-    const results = await this.store.state.connection.executeQuery(query);
+  async runQuery(query: string, options?: any) {
+    const results = await this.store.state.connection.executeQuery(query, options);
 
     return {
       results: results.map(this.serializeQueryResponse),

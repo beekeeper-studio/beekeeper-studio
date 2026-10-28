@@ -141,7 +141,7 @@ function copyBundledConfig(file: ConfigFileName, dest: string) {
     );
   }
   try {
-    accessSync(dest, constants.W_OK);
+    accessSync(path.dirname(dest), constants.W_OK);
     copyFileSync(src, dest);
   } catch (err) {
     log.warn(`Skipping copy of ${file}. Permission denied or dest not writable:`, err.message);
