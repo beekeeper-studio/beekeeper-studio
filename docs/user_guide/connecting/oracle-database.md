@@ -51,6 +51,12 @@ There are a number of ways you can connect to an Oracle database using Beekeeper
 2. TSA alias
 3. Host and port
 
+## Connecting as SYS (SYSDBA / SYSOPER)
+
+Oracle requires the `SYS` user to connect with an administrative role. Set **Role** on the connection form to `SYSDBA` or `SYSOPER` to connect with that privilege. Leave it as `Default` for regular users.
+
+The Role setting works with both connection methods (host and port, or connection string).
+
 ## Using tnsnames.ora
 
 You can specify your 'config' directory when adding an Oracle connection. Beekeeper Studio will use this to find your tnsnames.ora file, you can then use an alias in your connection string.

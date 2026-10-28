@@ -154,6 +154,9 @@ export function normalizeFilters(filters: TableFilter[]) {
         ? filter.value
         : filter.value.toString().split(/\s*,\s*/);
       normalized.push({ ...filter, value });
+      // Leave the caller's value alone: joining an array would split values
+      // that contain commas the next time it is normalized
+      continue;
     } else {
       normalized.push(filter);
 

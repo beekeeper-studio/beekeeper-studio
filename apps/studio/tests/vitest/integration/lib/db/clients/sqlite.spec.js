@@ -97,6 +97,37 @@ function testWith(options) {
     })
 
     if (!options.readOnly) {
+      describe("forceReadOnly (plugin read-only mode)", () => {
+        const countRows = async () => Number((await util.knex('withbooleans').count({ c: '*' }))[0].c)
+
+        it("rejects writes on a writable connection", async () => {
+          const before = await countRows()
+
+          await expect(
+            util.connection.executeQuery("INSERT INTO withbooleans (id, flag) VALUES (99, 1)", { forceReadOnly: true })
+          ).rejects.toThrow(/Read-Only Mode/)
+
+          expect(await countRows()).toBe(before)
+        })
+
+        it("rejects a script that mixes reads and writes", async () => {
+          const before = await countRows()
+
+          await expect(
+            util.connection.executeQuery("SELECT * FROM withbooleans; DELETE FROM withbooleans", { forceReadOnly: true })
+          ).rejects.toThrow(/Read-Only Mode/)
+
+          expect(await countRows()).toBe(before)
+        })
+
+        it("allows reads", async () => {
+          const [result] = await util.connection.executeQuery("SELECT * FROM withbooleans", { forceReadOnly: true })
+          expect(result.rows.length).toBe(await countRows())
+        })
+      })
+    }
+
+    if (!options.readOnly) {
       it("Should allow me to create a trigger", async () => {
         const trigger = `
          CREATE TRIGGER sqlmods

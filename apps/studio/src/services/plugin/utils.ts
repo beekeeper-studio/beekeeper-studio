@@ -11,16 +11,31 @@ export function mapViewsAndMenuFromV0ToV1(manifest: ManifestV0): {
   views: PluginView[];
   menu: PluginMenuItem[];
 } {
-  const views = manifest.capabilities.views.tabTypes?.map<PluginView>(
-    (tabType) => ({
-      id: tabType.id,
-      name: tabType.name,
-      type: tabType.kind.includes("shell") ? "shell-tab" : "base-tab",
-      entry: tabType.entry,
-    })
-  );
+
+  let views: PluginView[];
+
+  if (!manifest.capabilities) {
+    log.error(`missing capabilities for ${manifest.id}`)
+    views = []
+  } else if (_.isArray(manifest.capabilities.views)) {
+    log.error(`manifestVersion: 1 is required to use view arrays, plugin ${manifest.id} not loading any views`)
+    views = [];
+  } else {
+    views = manifest.capabilities?.views?.tabTypes?.map<PluginView>(
+      (tabType) => ({
+        id: tabType.id,
+        name: tabType.name,
+        type: tabType.kind.includes("shell") ? "shell-tab" : "base-tab",
+        entry: tabType.entry,
+      })
+    ) ?? [];
+    if (views.length === 0) {
+      log.warn(`No views registered with plugin ${manifest.id}`)
+    }
+  }
+
   let menu: PluginMenuItem[] = [];
-  if (_.isArray(manifest.capabilities.menu) && manifest.capabilities.menu.length > 0) {
+  if (manifest.capabilities && _.isArray(manifest.capabilities.menu) && manifest.capabilities.menu.length > 0) {
     menu = manifest.capabilities.menu;
   } else {
     menu = views.map((view) => ({
@@ -129,4 +144,43 @@ export const markedVideoEmbed = {
     },
   },
 };
+
+export type BigIntSerialized = number | string;
+
+export function serializeBigInt(val: bigint): BigIntSerialized;
+export function serializeBigInt<T>(val: T): T;
+export function serializeBigInt(val: unknown): unknown {
+  if (typeof val === "bigint") {
+    const num = Number(val);
+    return Number.isSafeInteger(num) ? num : val.toString();
+  }
+  return val;
+}
+
+export function serializeArray<T>(
+  arr: T[]
+): (T extends bigint ? BigIntSerialized : T)[];
+export function serializeArray(arr: unknown[]): unknown[] {
+  return arr.map((item) => serializeBigInt(item));
+}
+
+export function serializeRow(
+  row: Record<string, unknown>
+): Record<string, unknown> {
+  const serialized: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(row)) {
+    serialized[key] = serializeBigInt(value);
+  }
+  return serialized;
+}
+
+export function assertJsonSerializable(value: unknown, requestName: string) {
+  try {
+    JSON.stringify(value);
+  } catch (e) {
+    throw new Error(
+      `${requestName} value is not JSON-serializable: ${e?.message ?? e}`
+    );
+  }
+}
 

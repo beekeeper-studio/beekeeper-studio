@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { MongoDBClient, urlUsesGssapi } from "@commercial/backend/lib/db/clients/mongodb"
 
 describe("urlUsesGssapi", () => {
@@ -43,5 +43,48 @@ describe("MongoDBClient.listTables", () => {
     const tables = await client.listTables()
 
     expect(tables.map((t) => t.name)).toEqual(["Accounts", "audit_log", "orders", "users"])
+  })
+})
+
+describe("MongoDBClient.executeQuery read-only", () => {
+  function createClient() {
+    const client = new MongoDBClient(null, { database: "test" } as any)
+    const execute = vi.fn().mockResolvedValue([])
+    client.queryLeaf = { execute } as any
+    return { client, execute }
+  }
+
+  it("blocks writes when forceReadOnly is set", async () => {
+    const { client, execute } = createClient()
+
+    await expect(
+      client.executeQuery("DELETE FROM users WHERE id = 1", { forceReadOnly: true })
+    ).rejects.toThrow(/Read-Only Mode/)
+    expect(execute).not.toHaveBeenCalled()
+  })
+
+  it("runs nothing when a script mixes reads and writes", async () => {
+    const { client, execute } = createClient()
+
+    await expect(
+      client.executeQuery("SELECT * FROM users; DELETE FROM users WHERE id = 1", { forceReadOnly: true })
+    ).rejects.toThrow(/Read-Only Mode/)
+    expect(execute).not.toHaveBeenCalled()
+  })
+
+  it("allows reads when forceReadOnly is set", async () => {
+    const { client, execute } = createClient()
+
+    await client.executeQuery("SELECT * FROM users", { forceReadOnly: true })
+
+    expect(execute).toHaveBeenCalledWith("SELECT * FROM users")
+  })
+
+  it("allows writes when no options are passed", async () => {
+    const { client, execute } = createClient()
+
+    await client.executeQuery("DELETE FROM users WHERE id = 1")
+
+    expect(execute).toHaveBeenCalledTimes(1)
   })
 })

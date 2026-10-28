@@ -1,6 +1,6 @@
 import { EncryptedPluginData } from "@/common/appdb/models/EncryptedPluginData";
 import { PluginData, PluginDataOptions } from "@/common/appdb/models/PluginData";
-import { Manifest, PluginSnapshot, PluginRepository, ManifestV1, RegistryMap } from "@/services/plugin";
+import { Manifest, PluginSnapshot, PluginRepository, ManifestV1, RegistryMap, PluginSettings } from "@/services/plugin";
 import { PluginSystemError } from "@/lib/errors";
 import { getPluginManager, state } from "@/handlers/handlerState";
 
@@ -15,8 +15,8 @@ interface IPluginHandlers {
   "plugin/update": ({ id }: { id: string }) => Promise<Manifest>
   "plugin/uninstall": ({ id }: { id: string }) => Promise<void>
   "plugin/checkForUpdates": ({ id }: { id: string }) => Promise<boolean>
-  "plugin/setAutoUpdateEnabled": ({ id, enabled }: { id: string, enabled: boolean }) => Promise<void>
-  "plugin/getAutoUpdateEnabled": ({ id }: { id: string }) => Promise<boolean>
+  "plugin/setPluginSetting": ({ id, key, value }: { id: string, key: keyof PluginSettings, value: boolean }) => Promise<void>
+  "plugin/getPluginSetting": ({ id, key }: { id: string, key: keyof PluginSettings }) => Promise<boolean>
   "plugin/viewEntrypointExists": ({ pluginId, viewId }: { pluginId: string, viewId: string }) => Promise<boolean>
 
   "plugin/getData": ({ manifest, key, scope, sId }: { manifest: Manifest, key?: string, scope?: PluginDataScopeName, sId: string }) => Promise<unknown>
@@ -97,11 +97,11 @@ export const PluginHandlers: IPluginHandlers = {
   "plugin/checkForUpdates": async ({ id }) => {
     return await getPluginManager().checkForUpdates(id);
   },
-  "plugin/setAutoUpdateEnabled": async ({ id, enabled }) => {
-    await getPluginManager().setPluginAutoUpdateEnabled(id, enabled);
+  "plugin/setPluginSetting": async ({ id, key, value }) => {
+    await getPluginManager().setPluginSetting(id, key, value);
   },
-  "plugin/getAutoUpdateEnabled": async ({ id }) => {
-    return getPluginManager().getPluginAutoUpdateEnabled(id);
+  "plugin/getPluginSetting": async ({ id, key }) => {
+    return getPluginManager().getPluginSetting(id, key);
   },
   "plugin/viewEntrypointExists": async ({ pluginId, viewId }) => {
     return getPluginManager().viewEntrypointExists(pluginId, viewId);

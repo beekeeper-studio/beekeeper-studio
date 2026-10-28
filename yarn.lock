@@ -2012,10 +2012,10 @@
     lodash "^4.18.1"
     snowflake-sdk "^2.4.0"
 
-"@beekeeperstudio/plugin@^1.7.3":
-  version "1.7.3"
-  resolved "https://registry.yarnpkg.com/@beekeeperstudio/plugin/-/plugin-1.7.3.tgz#452e721c9f00ab251cd210c5422fe6ee69f3d9f0"
-  integrity sha512-cVmfc5xEKPcH1L3sNTMF3D5nUj9l3hTFHNP2+KcDM9Ctdi6yi5TF8+01ZrhChT6hltxk18Sx5zUtMhE/bduzhw==
+"@beekeeperstudio/plugin@^1.8.0":
+  version "1.8.0"
+  resolved "https://registry.yarnpkg.com/@beekeeperstudio/plugin/-/plugin-1.8.0.tgz#9fc397da1c1e8c1c8677c3b1e204337f0be552a3"
+  integrity sha512-BYKaP+NdT1EPd9TebRTWczeXUYggNJ/3r1mlne4t525qHJQbbD1sW0g5zZ8FKoGdgL9RYp1Ng/dwunJ7b6AH3w==
 
 "@bufbuild/protobuf@^2.5.0":
   version "2.11.0"

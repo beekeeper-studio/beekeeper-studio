@@ -80,5 +80,26 @@ describe("Plugin System", () => {
         },
       ]);
     });
+
+    // #4939: a malformed manifest must not throw, or it stops every plugin
+    // from initializing.
+    it("returns no views or menu when capabilities is missing", () => {
+      const { capabilities: _capabilities, ...noCapabilities } = manifestV0;
+      expect(
+        mapViewsAndMenuFromV0ToV1(noCapabilities as ManifestV0)
+      ).toStrictEqual({ views: [], menu: [] });
+    });
+
+    it("returns no views or menu for a V1-shaped manifest without manifestVersion", () => {
+      const v1Shaped = {
+        ...manifestV0,
+        capabilities: {
+          views: [{ id: "main", name: "Main", type: "base-tab", entry: "index.html" }],
+        },
+      };
+      expect(
+        mapViewsAndMenuFromV0ToV1(v1Shaped as unknown as ManifestV0)
+      ).toStrictEqual({ views: [], menu: [] });
+    });
   });
 });

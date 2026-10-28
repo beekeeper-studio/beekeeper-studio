@@ -4,10 +4,10 @@ import PluginFileManager from "./PluginFileManager";
 import {
   Manifest as AnyVersionManifest,
   ManifestV1 as Manifest,
-  ManifestV1,
   PluginOrigin,
   PluginRepository,
   PluginSettings,
+  PluginSettingsMap,
   PluginSnapshot,
 } from "./types";
 import rawLog from "@bksLogger";
@@ -19,6 +19,7 @@ import { convertToManifestV1, isManifestV0, mapViewsAndMenuFromV0ToV1 } from "./
 import { Hookable } from "./Hookable";
 import BksConfig from '@/common/bksConfig';
 import globals from "@/common/globals";
+import { PluginEntryCache } from "@/common/appdb/models/PluginEntryCache";
 
 const log = rawLog.scope("PluginManager");
 
@@ -33,11 +34,15 @@ export default class PluginManager extends Hookable {
   public readonly registry: PluginRegistry;
   public readonly fileManager: PluginFileManager;
   private manifests: Manifest[] = [];
-  pluginSettings: PluginSettings = {};
+  pluginSettings: PluginSettingsMap = {};
   private pluginLocks: string[] = [];
 
   /** A Constant for the setting key */
   private static readonly PLUGIN_SETTINGS = "pluginSettings";
+  private defaultSettings = {
+    autoUpdate: true,
+    readOnly: true
+  };
 
   constructor(readonly options: PluginManagerOptions) {
     super();
@@ -64,7 +69,15 @@ export default class PluginManager extends Hookable {
 
     await this.callHook("before-initialize");
 
-    const installedPlugins = this.fileManager.scanPlugins().map(convertToManifestV1);
+    const installedPlugins = this.fileManager.scanPlugins().map((manifest) => {
+      try {
+        return convertToManifestV1(manifest);
+      } catch (e) {
+        log.error('Error converting manifest: ', e);
+        return null;
+      }
+    }).filter((v) => !!v);
+
     this.manifests = installedPlugins;
 
     log.debug("Installed plugins:", installedPlugins);
@@ -141,7 +154,11 @@ export default class PluginManager extends Hookable {
       } catch (e) {
         if (e instanceof PluginSystemError && e.code === "PLUGIN_NOT_FOUND") {
           // There's nothing wrong if the plugin is not found in the registry.
-          // It may be a local plugin.
+          // It may be a local plugin. See if we've maybe cached the entry in the past
+          const cached = await PluginEntryCache.findOneBy({ id: manifest.id });
+          if (cached && cached.origin) {
+            origin = cached.origin;
+          }
         } else {
           // Else, it might be a real error
           log.error(e);
@@ -172,7 +189,19 @@ export default class PluginManager extends Hookable {
     if (!manifest.minAppVersion) {
       return true;
     }
-    return semver.lte(semver.coerce(manifest.minAppVersion), semver.coerce(this.options.appVersion));
+    const minAppVersion = semver.coerce(manifest.minAppVersion);
+    if (!minAppVersion) {
+      log.warn(`Failed to load plugin ${manifest.id}, could not parse minAppVersion`);
+      return false;
+    }
+
+    const appVersion = semver.coerce(this.options.appVersion);
+    if (!appVersion) {
+      log.warn(`Failed to load plugin ${manifest.id}, could not parse appVersion`);
+      return false;
+    }
+
+    return semver.lte(minAppVersion, appVersion);
   }
 
   /** Install the latest version of a plugin. */
@@ -215,12 +244,24 @@ export default class PluginManager extends Hookable {
         );
       }
 
+
       log.debug(`Installing plugin "${id}" ${info.latestRelease.manifest.version}...`);
 
       if (update) {
         await this.fileManager.update(id, info.latestRelease);
       } else {
         await this.fileManager.download(id, info.latestRelease);
+      }
+
+      const entry = await this.registry.findEntry(id);
+      if (entry) {
+        let cache = await PluginEntryCache.findOneBy({ id });
+
+        if (!cache) {
+          cache = new PluginEntryCache();
+        }
+
+        await cache.withProps(entry).save();
       }
 
       const manifest = this.fileManager.getManifest(id);
@@ -234,9 +275,7 @@ export default class PluginManager extends Hookable {
       }
 
       if (!this.pluginSettings[id]) {
-        this.pluginSettings[id] = {
-          autoUpdate: true,
-        };
+        this.pluginSettings[id] = { ...this.defaultSettings };
       }
       await this.savePluginSettings();
 
@@ -319,7 +358,7 @@ export default class PluginManager extends Hookable {
   private async loadPluginSettings() {
     const setting = await UserSetting.get(PluginManager.PLUGIN_SETTINGS);
     if (setting && setting.value) {
-      this.pluginSettings = setting.value as PluginSettings;
+      this.pluginSettings = setting.value as PluginSettingsMap;
       log.debug(
         `Loaded plugin settings: ${JSON.stringify(this.pluginSettings)}`
       );
@@ -338,27 +377,25 @@ export default class PluginManager extends Hookable {
   }
 
   /**
-   * Enable or disable automatic update checks for a specific plugin
+   * Enable or disable a setting for a specific plugin
    */
-  async setPluginAutoUpdateEnabled(id: string, enabled: boolean) {
+  async setPluginSetting(id: string, key: keyof PluginSettings, value: boolean) {
     if (!this.pluginSettings[id]) {
-      this.pluginSettings[id] = { autoUpdate: enabled };
+      this.pluginSettings[id] = { ...this.defaultSettings, [key]: value };
     } else {
-      this.pluginSettings[id].autoUpdate = enabled;
+      this.pluginSettings[id][key] = value;
     }
-    // Persist the changes to the database
+
     await this.savePluginSettings();
   }
 
-  /**
-   * Get the current auto-update setting for a specific plugin
-   */
-  getPluginAutoUpdateEnabled(id: string): boolean {
-    if (!_.has(this.pluginSettings, id)) {
-      log.warn(`Plugin "${id}" not found in plugin settings.`);
-      return false;
+  getPluginSetting(id: string, key: keyof PluginSettings): boolean {
+    if (!_.has(this.pluginSettings, id) || !_.has(this.pluginSettings[id], key)) {
+      log.debug(`plugin "${id}" with key "${key}", not found in plugin settings, using default`);
+      return this.defaultSettings[key] ?? false;
     }
-    return this.pluginSettings[id].autoUpdate;
+
+    return this.pluginSettings[id][key];
   }
 
   private initializeGuard() {

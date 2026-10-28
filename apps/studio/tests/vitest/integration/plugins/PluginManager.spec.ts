@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
 import fs from "fs";
+import path from "path";
 import { tmpdir } from "os";
 import PluginFileManager from "@/services/plugin/PluginFileManager";
 import PluginManager, {
@@ -229,8 +230,8 @@ describe("Basic Plugin Management", () => {
       await manager.installPlugin("frozen-banana");
 
       expect(manager.pluginSettings).toStrictEqual({
-        "test-plugin": { autoUpdate: true },
-        "frozen-banana": { autoUpdate: true },
+        "test-plugin": { autoUpdate: true, readOnly: true },
+        "frozen-banana": { autoUpdate: true, readOnly: true },
       });
 
       // Simulate plugin updates on the server
@@ -284,6 +285,161 @@ describe("Basic Plugin Management", () => {
       const promise = manager.updatePlugin("microwave-pizza");
       await expect(promise).rejects.toBeInstanceOf(PluginSystemError);
       await expect(promise).rejects.toHaveProperty("code", "PLUGIN_NOT_FOUND");
+    });
+  });
+
+  describe("Settings", () => {
+    async function seedPluginSettings(value: Record<string, unknown>) {
+      const setting = await UserSetting.findOneBy({ key: "pluginSettings" });
+      setting.userValue = JSON.stringify(value);
+      await setting.save();
+    }
+
+    it("installs plugins as read-only with auto-update on", async () => {
+      const manager = await initPluginManager(AppVer.COMPAT);
+      await manager.installPlugin("test-plugin");
+
+      expect(manager.pluginSettings["test-plugin"]).toStrictEqual({
+        autoUpdate: true,
+        readOnly: true,
+      });
+      expect(manager.getPluginSetting("test-plugin", "readOnly")).toBe(true);
+      expect(manager.getPluginSetting("test-plugin", "autoUpdate")).toBe(true);
+    });
+
+    it("falls back to read-only for settings saved before readOnly existed", async () => {
+      await seedPluginSettings({ "test-plugin": { autoUpdate: false } });
+      const manager = await initPluginManager(AppVer.COMPAT);
+
+      expect(manager.getPluginSetting("test-plugin", "readOnly")).toBe(true);
+      // Stored values still win over the defaults
+      expect(manager.getPluginSetting("test-plugin", "autoUpdate")).toBe(false);
+    });
+
+    it("falls back to read-only for plugins with no settings entry", async () => {
+      const manager = await initPluginManager(AppVer.COMPAT);
+
+      expect(manager.pluginSettings).not.toHaveProperty("local-plugin");
+      expect(manager.getPluginSetting("local-plugin", "readOnly")).toBe(true);
+    });
+
+    it("can turn read-only off, and it persists across restarts", async () => {
+      const manager = await initPluginManager(AppVer.COMPAT);
+      await manager.installPlugin("test-plugin");
+      await manager.setPluginSetting("test-plugin", "readOnly", false);
+
+      expect(manager.getPluginSetting("test-plugin", "readOnly")).toBe(false);
+
+      // Simulate app restart
+      const manager2 = await initPluginManager(AppVer.COMPAT);
+      expect(manager2.getPluginSetting("test-plugin", "readOnly")).toBe(false);
+      expect(manager2.getPluginSetting("test-plugin", "autoUpdate")).toBe(true);
+    });
+
+    it("keeps the other defaults when setting a value for a plugin with no entry", async () => {
+      const manager = await initPluginManager(AppVer.COMPAT);
+      await manager.setPluginSetting("local-plugin", "autoUpdate", false);
+
+      expect(manager.pluginSettings["local-plugin"]).toStrictEqual({
+        autoUpdate: false,
+        readOnly: true,
+      });
+    });
+
+    it("does not reset settings when reinstalling a plugin", async () => {
+      const manager = await initPluginManager(AppVer.COMPAT);
+      await manager.installPlugin("test-plugin");
+      await manager.setPluginSetting("test-plugin", "readOnly", false);
+
+      // Simulate plugin update on the server
+      repositoryService.plugins[0].latestRelease.version = "1.2.0";
+      await manager.updatePlugin("test-plugin");
+
+      expect(manager.getPluginSetting("test-plugin", "readOnly")).toBe(false);
+    });
+  });
+
+  // #4939: one bad folder or manifest in plugins/ used to abort
+  // initialize(), so no plugin loaded at all, bundled ones included.
+  describe("Initializing with a broken plugin", () => {
+    const validManifest = {
+      id: "broken-plugin",
+      name: "Broken Plugin",
+      version: "1.0.0",
+      description: "x",
+      author: "qa",
+    };
+
+    function writeManifest(dir: string, manifest: object) {
+      const pluginDir = path.join(fileManager.options.pluginsDirectory, dir);
+      fs.mkdirSync(pluginDir, { recursive: true });
+      fs.writeFileSync(path.join(pluginDir, "manifest.json"), JSON.stringify(manifest));
+    }
+
+    const brokenPlugins: [string, () => void][] = [
+      ["a manifest with no capabilities", () => {
+        writeManifest("broken-plugin", validManifest);
+      }],
+      ["a V1-shaped manifest without manifestVersion or menu", () => {
+        writeManifest("broken-plugin", {
+          ...validManifest,
+          capabilities: {
+            views: [{ id: "main", name: "Main", type: "base-tab", entry: "index.html" }],
+          },
+        });
+      }],
+      ["a minAppVersion that can't be parsed", () => {
+        writeManifest("broken-plugin", {
+          ...validManifest,
+          manifestVersion: 1,
+          minAppVersion: "latest",
+          capabilities: { views: [], menu: [] },
+        });
+      }],
+      ["a manifest.json that is a directory", () => {
+        fs.mkdirSync(
+          path.join(fileManager.options.pluginsDirectory, "broken-plugin", "manifest.json"),
+          { recursive: true }
+        );
+      }],
+    ];
+
+    // Symlinks need extra privileges on Windows
+    if (process.platform !== "win32") {
+      brokenPlugins.push(["a dangling symlink", () => {
+        fs.symlinkSync(
+          path.join(tmpdir(), "bks-nonexistent-plugin-dev-dir"),
+          path.join(fileManager.options.pluginsDirectory, "broken-plugin")
+        );
+      }]);
+    }
+
+    it.each(brokenPlugins)("still loads other plugins with %s", async (_name, createBrokenPlugin) => {
+      const installer = await initPluginManager(AppVer.COMPAT);
+      await installer.installPlugin("test-plugin");
+      createBrokenPlugin();
+
+      // A fresh manager scans plugins/ the way the app does at startup
+      const manager = await initPluginManager(AppVer.COMPAT);
+      const plugins = await manager.getPlugins();
+
+      const testPlugin = plugins.find((p) => p.manifest.id === "test-plugin");
+      expect(testPlugin).toHaveProperty("loadable", true);
+    });
+
+    it("marks a plugin with an unparsable minAppVersion as not loadable", async () => {
+      writeManifest("broken-plugin", {
+        ...validManifest,
+        manifestVersion: 1,
+        minAppVersion: "latest",
+        capabilities: { views: [], menu: [] },
+      });
+
+      const manager = await initPluginManager(AppVer.COMPAT);
+      const plugins = await manager.getPlugins();
+
+      const broken = plugins.find((p) => p.manifest.id === "broken-plugin");
+      expect(broken).toHaveProperty("loadable", false);
     });
   });
 

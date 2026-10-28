@@ -33,20 +33,32 @@ export type PluginMenuItemPlacement =
   | "newTabDropdown" // Shown in the dropdown list when opening a new tab
   | "menubar.tools" // Shown in the tools menu
   | "editor.query.context" // Context menu inside the query editor
+  | "editor.query.toolbar" // Button in the query editor toolbar, next to Run
   | "results.cell.context" // Context menu on a cell
-  | "results.columnHeader.context" // Context menu on a row header
-  | "results.rowHeader.context" // Context menu on a column header
+  | "results.columnHeader.context" // Context menu on a column header
+  | "results.rowHeader.context" // Context menu on a row header
   | "results.corner.context" // Context menu on the top left corner
+  | "results.statusbar" // Visualize button in the query results status bar
   | "tableTable.cell.context" // Context menu on a cell
-  | "tableTable.columnHeader.context" // Context menu on a row header
-  | "tableTable.rowHeader.context" // Context menu on a column header
+  | "tableTable.columnHeader.context" // Context menu on a column header
+  | "tableTable.rowHeader.context" // Context menu on a row header
   | "tableTable.corner.context" // Context menu on the top left corner
+  | "tableTable.statusbar" // Visualize button in the table view status bar
   | "tab.query.header.context" // Context menu on the query tab header
   | "tab.table.header.context" // Context menu on the table tab header
   | "entity.table.context" // Context menu on a table
   | "entity.schema.context" // Context menu on a schema
   | "entity.routine.context" // Context menu on a routine
   | "structure.statusbar.menu"; // Button rendered in the structure view status bar
+
+/**
+ * Conditions a menu item can wait for with `enabledWhen`. The item stays
+ * visible but disabled until the condition holds.
+ *
+ * - `explainResult`: the result came from an `EXPLAIN` statement, or has
+ *   the columns of a query plan. Reported by `results.statusbar`.
+ */
+export type PluginMenuItemCondition = "explainResult";
 
 /** A single menu item contributed by a plugin. */
 export interface PluginMenuItem {
@@ -66,6 +78,14 @@ export interface PluginMenuItem {
   /** Location or locations in the app where this menu item should appear,
    * expressed as a string or array of strings. */
   placement: PluginMenuItemPlacement | PluginMenuItemPlacement[];
+
+  /** Material icon name shown next to the item. Falls back to the
+   * manifest's `icon`. */
+  icon?: string;
+
+  /** Keep the item disabled until this condition holds. Only menus that
+   * report the condition apply it; elsewhere the item is always enabled. */
+  enabledWhen?: PluginMenuItemCondition;
 
   /** Optional group identifier for sorting and grouping items within a
    * placement.
@@ -222,12 +242,14 @@ export type AfterViewRequestCallback = (response: ResponseData) => void;
 export type ViewResultModifier = (result: ResponseData['result']) => ResponseData['result'] | Promise<ResponseData['result']>;
 
 export type PluginSettings = {
-  [pluginId: string]: {
-    autoUpdate: boolean;
-    disabled?: boolean;
-  }
+  autoUpdate: boolean;
+  disabled?: boolean;
+  readOnly?: boolean;
 }
 
+export type PluginSettingsMap = {
+  [pluginId: string]: PluginSettings
+}
 
 export type WebPluginContext = {
   manifest: ManifestV1;
@@ -235,6 +257,7 @@ export type WebPluginContext = {
   utility: UtilityConnection;
   log: ReturnType<typeof rawLog.scope>;
   appVersion: string;
+  pluginOrigin: PluginOrigin;
   fileHelpers: FileHelpers;
   noty: {
     success(text: string, options?: any): Noty;

@@ -53,6 +53,15 @@
           <label for="serviceName">Service Name</label>
           <input type="text" class="form-control" v-model="config.serviceName" :disabled="disabled">
         </div>
+        <div class="form-group">
+          <label for="oracleRole">Role</label>
+          <select id="oracleRole" v-model="privilege" :disabled="disabled">
+            <option v-for="r in roles" :key="r.label" :value="r.value">
+              {{ r.label }}
+            </option>
+          </select>
+          <small class="help text-muted">SYSDBA or SYSOPER is required to connect as SYS</small>
+        </div>
         <common-advanced :config="config" :disabled="disabled" />
       </div>
       <div v-if="connectionMethod === 'connectionString'">
@@ -73,6 +82,15 @@
             <label for="password">Password (optional)</label>
             <input type="password" v-model="config.password" class="form-control" :disabled="disabled">
           </div>
+        </div>
+        <div class="form-group">
+          <label for="oracleRole">Role</label>
+          <select id="oracleRole" v-model="privilege" :disabled="disabled">
+            <option v-for="r in roles" :key="r.label" :value="r.value">
+              {{ r.label }}
+            </option>
+          </select>
+          <small class="help text-muted">SYSDBA or SYSOPER is required to connect as SYS</small>
         </div>
         <br>
       </div>
@@ -113,6 +131,11 @@ export default Vue.extend({
   data: () => ({
     help: "Optional, but required for advanced functionality like Native Network Encryption.",
     oracleExpanded: true,
+    roles: [
+      { label: 'Default', value: null },
+      { label: 'SYSDBA', value: 'SYSDBA' },
+      { label: 'SYSOPER', value: 'SYSOPER' },
+    ],
   }),
   computed: {
     ...mapState('settings', { 'settings': 'settings'}),
@@ -122,6 +145,14 @@ export default Vue.extend({
       },
       get() {
         return this.config.options.connectionMethod
+      }
+    },
+    privilege: {
+      set(value: string | null) {
+        this.config.options = {...this.config.options, privilege: value}
+      },
+      get() {
+        return this.config.options.privilege ?? null
       }
     },
     restartNotification() {

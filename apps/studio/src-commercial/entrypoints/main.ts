@@ -128,9 +128,11 @@ let settings: IGroupedUserSettings
 let menuHandler
 log.debug("registering schema")
 // Scheme must be registered before the app is ready
-protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
-protocol.registerSchemesAsPrivileged([{scheme: 'plugin', privileges: { secure: true, standard: true } }])
-protocol.registerSchemesAsPrivileged([{scheme: 'theme', privileges: { secure: true, standard: true } }])
+protocol.registerSchemesAsPrivileged([
+  {scheme: 'app', privileges: { secure: true, standard: true } },
+  {scheme: 'plugin', privileges: { secure: true, standard: true } },
+  {scheme: 'theme', privileges: { secure: true, standard: true } }
+])
 let initialized = false
 
 async function initBasics() {

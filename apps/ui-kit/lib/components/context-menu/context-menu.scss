@@ -73,6 +73,29 @@
   opacity: 0.6;
 }
 
+.BksContextMenu-item-leading-icon {
+  margin-right: 0.4rem;
+}
+
+// A non-interactive heading for a group of items. The app's own menus (xel
+// and tabulator) use it too, so it carries its own spacing.
+.BksContextMenu-section-label {
+  padding: 0 $gutter-w;
+  min-height: 24px;
+  line-height: 24px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  cursor: default;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+  // Menus inside buttons inherit the button's centred text
+  text-align: left;
+}
+
 .BksContextMenu-item-trailing-icon i {
   text-align: center;
 }

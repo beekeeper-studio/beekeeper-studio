@@ -272,7 +272,7 @@
             </div>
             <div class="pitch" v-else>
               🌟 <strong>Make Your Own Plugins!</strong> - Add your own functionality to the app and share it with the community!
-              <a href="https://www.beekeeperstudio.io/features/sql-ai">Learn more</a>
+              <a href="https://www.beekeeperstudio.io/features/plugins">Learn more</a>
             </div>
           </template>
         </div>
