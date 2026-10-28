@@ -210,7 +210,7 @@ nav:
     - Creating your first plugin: plugin_development/creating-your-first-plugin.md
     - Plugin Views: plugin_development/plugin-views.md
     - Manifest Reference: plugin_development/manifest.md
-    - API Reference: plugin_development/api-reference.md
+    - SDK Reference: plugin_development/api-reference.md
     - Publishing: plugin_development/publishing-plugins.md
   - Support:
     - purchasing/purchasing-a-license.md

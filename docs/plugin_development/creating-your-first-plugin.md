@@ -39,7 +39,7 @@ It's quite straightforward to configure your project using vite. With a simple `
         cd hello-world-plugin
         ```
 
-2. Install the Beekeeper Studio Vite plugin
+2. Install the Beekeeper Studio [Vite build plugin](https://github.com/beekeeper-studio/vite-plugin)
 
     === "npm"
         ```bash
@@ -322,9 +322,9 @@ To build from scratch:
 
 ## Reading Database
 
-This section will demonstrate how to get some data from the app. By doing that, we will call an API that returns a list of tables.
+This section will demonstrate how to get some data from the app. By doing that, we will call an SDK function that returns a list of tables.
 
-First, let's install [@beekeeperstudio/plugin](https://www.npmjs.com/package/@beekeeperstudio/plugin) package:
+First, install the [Beekeeper Studio Plugin SDK](https://github.com/beekeeper-studio/plugin) ([`@beekeeperstudio/plugin`](https://www.npmjs.com/package/@beekeeperstudio/plugin) on npm):
 
 === "npm"
     ```bash
@@ -540,5 +540,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
 ## What's Next? 🚀
 
--   **[Plugin API Reference](api-reference.md)** - Explore all available functions
+-   **[Plugin SDK Reference](api-reference.md)** - Explore all functions in the SDK
 -   **[Publishing Plugins](publishing-plugins.md)** - Share your creation with the world!

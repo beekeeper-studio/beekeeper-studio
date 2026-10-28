@@ -238,7 +238,7 @@ When a menu item is picked, the new tab can read how it was opened with [`getVie
 | `tab.query.header.context`, `tab.table.header.context`     | [`TabMenuParams`](api-reference.md#tabmenuparams)                            |
 | `entity.*.context`, `structure.statusbar.menu`             | [`EntityMenuParams`](api-reference.md#entitymenuparams)                      |
 
-`@beekeeperstudio/plugin` 1.8.0 and later export these types. A command's placements decide its params, so narrow them by `command`:
+The Plugin SDK (`@beekeeperstudio/plugin`) 1.8.0 and later exports these types. A command's placements decide its params, so narrow them by `command`:
 
 ```typescript
 import { getViewContext, type StatusbarMenuParams } from "@beekeeperstudio/plugin";

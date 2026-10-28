@@ -46,7 +46,7 @@ When a plugin is installed:
 
 ### 3. Sandboxed Execution
 
-Each plugin is loaded into an `<iframe>` with `sandbox` attributes, limiting access to the host environment unless explicitly permitted via the plugin API. The iframe is served using a custom Electron protocol: `plugin://`, which is defined specifically for Beekeeper Studio. This protocol helps isolate plugins from external web content and is only accessible within the Beekeeper Studio application.
+Each plugin is loaded into an `<iframe>` with `sandbox` attributes, limiting access to the host environment unless explicitly permitted through the Plugin SDK. The iframe is served using a custom Electron protocol: `plugin://`, which is defined specifically for Beekeeper Studio. This protocol helps isolate plugins from external web content and is only accessible within the Beekeeper Studio application.
 
 ### 4. Message-Passing Communication
 
@@ -56,11 +56,16 @@ Plugins communicate with Beekeeper Studio using `postMessage`. This system suppo
 
 - A **notification** sends data without expecting a reply. For instance, when the theme changes, Beekeeper Studio notifies the plugin via a `themeChanged` notification.
 
-The [@beekeeperstudio/plugin](https://www.npmjs.com/package/@beekeeperstudio/plugin) package provides helper functions for handling communication such as `getTables()`, `runQuery()`, etc.
+The [Beekeeper Studio Plugin SDK](api-reference.md) ([`@beekeeperstudio/plugin`](https://www.npmjs.com/package/@beekeeperstudio/plugin) on npm) handles this communication for you, with typed functions such as `getTables()`, `runQuery()`, etc.
 
 ### 5. UI Integration
 
 Plugins declare their views in the manifest file. Beekeeper Studio renders these views and injects the corresponding `<iframe>` into the designated location in the UI.
+
+## Developer Tools
+
+- **[Beekeeper Studio Plugin SDK](https://github.com/beekeeper-studio/plugin)** ([`@beekeeperstudio/plugin`](https://www.npmjs.com/package/@beekeeperstudio/plugin)) - TypeScript SDK your plugin uses to talk to Beekeeper Studio. See the [SDK Reference](api-reference.md).
+- **[Vite build plugin](https://github.com/beekeeper-studio/vite-plugin)** ([`@beekeeperstudio/vite-plugin`](https://www.npmjs.com/package/@beekeeperstudio/vite-plugin)) - adds hot reloading during development and prepares your build for Beekeeper Studio.
 
 ## Next Step
 

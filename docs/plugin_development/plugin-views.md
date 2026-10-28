@@ -94,7 +94,7 @@ A single plugin can declare multiple views:
 
 ## View State
 
-Each plugin view can store and retrieve its own state using the `getViewState` and `setViewState` API methods. This state persists across application restarts.
+Each plugin view can store and retrieve its own state using the `getViewState` and `setViewState` SDK functions. This state persists across application restarts.
 
 ### State Isolation
 
@@ -128,4 +128,4 @@ if (state) {
 
 - **[Creating Plugins](creating-your-first-plugin.md)** - Learn how to build your first plugin
 - **[Manifest Reference](manifest.md)** - Complete manifest file documentation
-- **[API Reference](api-reference.md)** - Available plugin APIs
+- **[SDK Reference](api-reference.md)** - Functions available in the Plugin SDK

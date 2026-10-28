@@ -1,12 +1,12 @@
 ---
-title: Plugin API Reference
-summary: "Complete API reference for Beekeeper Studio plugin development."
+title: Plugin SDK Reference
+summary: "Complete reference for the Beekeeper Studio Plugin SDK."
 icon: material/api
 ---
 
-# Plugin API Reference
+# Plugin SDK Reference
 
-The Beekeeper Studio Plugin API is accessible through the `@beekeeperstudio/plugin` package. The API provides communication between your plugin and the main application.
+The [Beekeeper Studio Plugin SDK](https://github.com/beekeeper-studio/plugin) is published on npm as [`@beekeeperstudio/plugin`](https://www.npmjs.com/package/@beekeeperstudio/plugin). The SDK provides communication between your plugin and the main application.
 
 ## Installation
 
