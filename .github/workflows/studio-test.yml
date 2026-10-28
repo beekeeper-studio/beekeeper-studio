@@ -64,7 +64,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.cache-nm.outputs.cache-hit != 'true'
-        uses: nick-fields/retry@v2
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 20
           max_attempts: 3
@@ -125,18 +125,19 @@ jobs:
       - name: Build UI Kit
         run: yarn lib:build
 
+      # Everything runs under vitest (see apps/studio/tests/VITEST_MIGRATION.md)
       - name: Unit Tests
-        run: yarn workspace beekeeper-studio run test:unit --ci --silent
+        run: yarn workspace beekeeper-studio run test:unit --silent
 
       - name: Non-DB Integration Tests
-        run: yarn workspace beekeeper-studio run test:ci --ci --silent
+        run: yarn workspace beekeeper-studio run vitest:ci --silent
 
       - name: Unit Tests (UI Kit)
         run: yarn workspace @beekeeperstudio/ui-kit run test --silent
 
 
   integration:
-    name: 🥞 ${{ matrix.chunk[0] }}
+    name: ${{ matrix.chunk[0] }}
     runs-on: ubuntu-24.04
     needs:
       - prep
@@ -169,11 +170,11 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Install libaio (for oracle)
-        if: matrix.chunk[0] == 'oracle.spec.js'
+        if: startsWith(matrix.chunk[0], 'oracle')
         run: sudo apt install libaio-dev
 
       - name: Symlink libaio v1 (for oracle)
-        if: matrix.chunk[0] == 'oracle.spec.js'
+        if: startsWith(matrix.chunk[0], 'oracle')
         run: sudo ln -s /usr/lib/x86_64-linux-gnu/libaio.so.1t64 /usr/lib/x86_64-linux-gnu/libaio.so.1
 
       - name: Install PostgreSQL 15 (for postgres-backup)
@@ -181,12 +182,12 @@ jobs:
         run: sudo bash bin/get-postgres-15.sh
 
       - name: Test
-        uses: nick-fields/retry@v2
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 20
           max_attempts: 2
           on_retry_command: "docker ps -aq | xargs docker stop | xargs docker rm"
-          command: yarn workspace beekeeper-studio run test:integration --runInBand --ci ${{ matrix.chunk[1] }}
+          command: yarn workspace beekeeper-studio run test:integration ${{ matrix.chunk[1] }}
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
 
@@ -208,9 +209,9 @@ jobs:
   #     env:
   #       npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
   #   - name: Test
-  #     uses: nick-fields/retry@v2
+  #     uses: nick-fields/retry@v4
   #     with:
   #       timeout_minutes: 20
   #       max_attempts: 2
   #       on_retry_command: "docker ps -aq | xargs docker stop | xargs docker rm"
-  #       command: yarn workspace beekeeper-studio run test:codemirror --runInBand --ci
+  #       command: yarn workspace beekeeper-studio run test:codemirror

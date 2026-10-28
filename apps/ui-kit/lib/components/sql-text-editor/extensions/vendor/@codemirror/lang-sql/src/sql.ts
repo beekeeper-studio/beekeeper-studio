@@ -18,6 +18,10 @@ export type SQLConfig = BaseSQLConfig & {
    * applies.
    */
   quoteCharacter?: string
+
+  disableSchemaCompletion?: boolean
+
+  disableKeywordCompletion?: boolean
 }
 
 /// Returns a completion sources that provides schema-based completion
@@ -49,10 +53,17 @@ export function sql(config: SQLConfig = {}) {
   let lang = config.dialect || StandardSQL
   // upperCaseKeywords predates keywordCasing (upstream option); keep honoring it.
   let casing = config.keywordCasing || (config.upperCaseKeywords ? "upper" : "preserve")
-  return new LanguageSupport(lang.language, [
-    schemaCompletion(config),
-    lang.language.data.of({
+  const extensions: Extension[] = [];
+
+  if (!config.disableSchemaCompletion) {
+    extensions.push(schemaCompletion(config));
+  }
+
+  if (!config.disableKeywordCompletion) {
+    extensions.push(lang.language.data.of({
       autocomplete: keywordCompletionSource(lang, casing, config.keywordCompletion)
-    })
-  ])
+    }));
+  }
+
+  return new LanguageSupport(lang.language, extensions);
 }

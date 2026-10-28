@@ -76,6 +76,8 @@
         :keyword-casing="autocompleteKeywordCasing"
         :quote-identifiers="autocompleteQuoteIdentifiers"
         :quote-character="autocompleteQuoteCharacter"
+        :disable-keyword-completion="disableKeywordCompletion"
+        :disable-schema-completion="disableSchemaCompletion"
         :clipboard="$native.clipboard"
         :replace-extensions="replaceExtensions"
         :context-menu-items="editorContextMenu"
@@ -85,7 +87,8 @@
         @bks-initialized="handleEditorInitialized"
         @bks-value-change="unsavedText = $event.value"
         @bks-selection-change="handleEditorSelectionChange"
-        @bks-blur="onTextEditorBlur?.()"
+        @bks-focus="handleTextEditorFocus"
+        @bks-blur="handleTextEditorBlur"
         @bks-query-selection-change="handleQuerySelectionChange"
         @bks-apply-preset="applyPreset"
       />
@@ -94,7 +97,10 @@
         class="toolbar text-right"
         ref="toolbar"
       >
-        <div class="actions secondary-actions">
+        <div
+          class="actions secondary-actions"
+          @wheel="scrollSecondaryActions"
+        >
           <div v-if="canManageTransactions">
             <transition name="fade-swap">
               <x-buttons
@@ -212,7 +218,7 @@
           <x-button
             v-if="queryId"
             @click.prevent="viewEditHistory"
-            class="btn btn-flat btn-small history-btn"
+            class="btn btn-icon history-btn"
             v-tooltip="updatedTooltip"
           >
             <i class="material-icons">history</i>
@@ -223,6 +229,15 @@
             class="btn btn-flat btn-small ask-ai"
           >
             <i class="material-icons">auto_awesome</i> Ask AI
+          </x-button>
+          <x-button
+            v-for="item in toolbarPluginItems"
+            :key="item.slug"
+            @click.prevent="item.handler(editorMenuPayload())"
+            class="btn btn-flat btn-small plugin-toolbar-btn"
+            :title="item.plugin?.name"
+          >
+            <i class="material-icons">{{ item.leadingIcon }}</i> {{ item.name }}
           </x-button>
 
           <x-button
@@ -311,6 +326,7 @@
       <progress-bar
         @cancel="cancelQuery"
         :message="runningText"
+        :cancel-key="userKeymap === 'vim' ? 'Ctrl-Esc' : 'Esc'"
         v-if="running"
       />
       <result-table
@@ -326,6 +342,7 @@
         :tab="tab"
         :is-manual-commit="isManualCommit"
         :binary-encoding="$bksConfig.ui.general.binaryEncoding"
+        @selectionChange="resultSelectedCells = $event"
       />
       <div
         class="message"
@@ -355,7 +372,7 @@
         class="layout-center expand"
         v-else
       >
-        <shortcut-hints />
+        <shortcut-hints type="query-editor" />
       </div>
       <!-- <span class="expand" v-if="!result"></span> -->
       <!-- STATUS BAR -->
@@ -368,6 +385,9 @@
         :changes-count="$refs.table?.pendingChangesCount"
         :changes-string="$refs.table?.pendingChangesString"
         :result-editable="resultEditable"
+        :selected-cells="resultSelectedCells"
+        :explain-result="resultIsExplain"
+        @visualize="openResultInPlugin"
         @editResults="editResults"
         @stopEditing="stopEditing"
         @saveChanges="saveChanges"
@@ -476,10 +496,9 @@
                 >
               </div>
               <div class="form-group" v-if="queryFolders && queryFolders.length > 0">
-                <label>Folder <i v-if="!isUltimate && !isCloud" class="material-icons menu-icon">stars</i></label>
+                <label>Folder</label>
                 <in-app-folder-picker
                   v-model="query.queryFolderId"
-                  :disabled="!isUltimate && !isCloud"
                   folder-path="data/queryFolders"
                 />
               </div>
@@ -577,6 +596,7 @@
 
   import { canDeparameterize, convertParamsForReplacement, deparameterizeQuery, safelyIdentify } from '../lib/db/sql_tools'
   import { EditorMarker } from '@/lib/editor/utils'
+  import { recordPaidFeatureUse } from '@/lib/paidFeatures'
   import ProgressBar from './editor/ProgressBar.vue'
   import ResultTable from './editor/ResultTable.vue'
   import ShortcutHints from './editor/ShortcutHints.vue'
@@ -599,10 +619,13 @@
   import { FormatterDialect, dialectFor, formatOptionsFor } from "@shared/lib/dialects/models"
   import { findSqlQueryIdentifierDialect } from "@/lib/editor/CodeMirrorPlugins";
   import { queryMagicExtension } from "@/lib/editor/extensions/queryMagicExtension";
-  import { getVimKeymapsFromVimrc } from "@/lib/editor/vim";
+  import { vimExCommands } from "@/lib/editor/vimExCommands";
   import { monokaiInit } from '@uiw/codemirror-theme-monokai';
   import { SmartLocalStorage } from '@/common/LocalStorage';
   import { IdentifyResult } from 'sql-query-identifier/lib/defines'
+  import { isExplainResult } from '@/common/explain'
+  import type { GridStatusbarPayload } from '@/services/plugin/web/MenuParams'
+  import { selectedCells, visibleCells } from '@/common/tabulator'
 import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
   import { wait } from '@/shared/lib/wait'
   import ISavedQuery from '@/common/interfaces/ISavedQuery'
@@ -623,6 +646,10 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       return {
         latestAudit: null,
         results: [],
+        /** The statement that produced each result, for plugins */
+        resultStatements: [],
+        /** Cells selected in the result grid */
+        resultSelectedCells: 0,
         running: false,
         runningCount: 1,
         runningType: 'current',
@@ -658,6 +685,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         onTextEditorBlur: null,
         wrapText: false,
         vimKeymaps: [],
+        textEditor: null,
         formatterPresets: [],
         selectedFormatter: null,
         editHistoryOpen: false,
@@ -698,7 +726,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       }
     },
     computed: {
-      ...mapGetters(['dialect', 'dialectData', 'defaultSchema', 'isUltimate', 'isCloud', 'aiShellAvailable']),
+      ...mapGetters(['dialect', 'dialectData', 'defaultSchema', 'isCloud', 'aiShellAvailable']),
       ...mapGetters({
         'isCommunity': 'licenses/isCommunity',
         'userKeymap': 'settings/userKeymap',
@@ -712,6 +740,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       rootBindings() {
         return [
           { event: AppEvent.openQueryEditHistory, handler: this.handleOpenQueryEditHistory },
+          { event: AppEvent.vimWrite, handler: this.handleVimWrite },
+          { event: AppEvent.vimWriteQuit, handler: this.handleVimWriteQuit },
         ];
       },
       updatedByName() {
@@ -874,6 +904,13 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       result() {
         return this.results[this.selectedResult]
       },
+      /** Buttons plugins add next to Run (`editor.query.toolbar`) */
+      toolbarPluginItems() {
+        return this.$store.getters['popupMenu/getPluginMenuItems']('editor.query.toolbar')
+      },
+      resultIsExplain() {
+        return isExplainResult(this.result, this.resultStatements[this.selectedResult])
+      },
       rowCount() {
         return this.result && this.result.rows ? this.result.rows.length : 0
       },
@@ -956,32 +993,17 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           'queryEditor.secondaryQueryAction': this.queryFunctions.secondaryRead
         })
 
-        if(this.userKeymap === "vim") {
+        // Vim is registered first, so only a plain normal mode Esc gets here.
+        // Ctrl-Esc stays bound for anyone used to it.
+        keybindings["Esc"] = this.cancelQuery
+        if (this.userKeymap === "vim") {
           keybindings["Ctrl-Esc"] = this.cancelQuery
-        } else {
-          keybindings["Esc"] = this.cancelQuery
         }
 
         return keybindings
       },
       vimConfig() {
-        const exCommands = [
-          { name: "write", prefix: "w", handler: this.triggerSave },
-          { name: "quit", prefix: "q", handler: this.close },
-          { name: "qa", prefix: "qa", handler: () => this.$root.$emit(AppEvent.closeAllTabs) },
-          { name: "x", prefix: "x", handler: this.writeQuit },
-          { name: "wq", prefix: "wq", handler: this.writeQuit },
-          { name: "tabnew", prefix: "tabnew", handler: (_cn, params) => {
-            if(params.args && params.args.length > 0){
-              let queryName = params.args[0]
-              this.$root.$emit(AppEvent.newTab,"", queryName)
-              return
-            }
-            this.$root.$emit(AppEvent.newTab)
-          }},
-        ]
-
-        return { exCommands }
+        return vimExCommands(this.trigger)
       },
       editorMarkers() {
         const markers = []
@@ -1037,6 +1059,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
               settings: {
                 selection: "",
                 selectionMatch: "",
+                lineHighlight: "",
+                gutterActiveForeground: "",
               },
             }),
             this.queryMagic.extensions,
@@ -1065,7 +1089,13 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         // characters the dialect doesn't recognize as identifier quotes.
         if (value === 0 || value === -1 || value === '0' || value === '-1') return undefined;
         return typeof value === 'string' && value.trim() ? value.trim() : undefined;
-      }
+      },
+      disableKeywordCompletion() {
+        return this.$bksConfig.ui.queryEditor?.autocomplete?.disableKeywordCompletion;
+      },
+      disableSchemaCompletion() {
+        return this.$bksConfig.ui.queryEditor?.autocomplete?.disableSchemaCompletion;
+      },
     },
     watch: {
       queryId: {
@@ -1076,6 +1106,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       },
       selectedResult() {
         this.editingResult = false
+        this.resultSelectedCells = 0
       },
       error() {
         this.errorMarker = null
@@ -1149,6 +1180,14 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       }
     },
     methods: {
+      scrollSecondaryActions(e: WheelEvent) {
+        const el = e.currentTarget as HTMLElement
+        if (!e.shiftKey || e.deltaX !== 0 || el.scrollWidth <= el.clientWidth) {
+          return
+        }
+        e.preventDefault()
+        el.scrollBy({ left: e.deltaY, behavior: "smooth" })
+      },
       ...mapActions({
         reloadQuery: "data/queries/reload",
         listQueryAudits: "data/queryAudits/list",
@@ -1381,8 +1420,9 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.updateEditorHeight()
         })
       },
-      handleEditorInitialized() {
+      handleEditorInitialized(event) {
         this.editor.initialized = true
+        this.textEditor = event?.detail?.editor ?? event?.editor ?? null
 
         // Setup query magic data providers
         this.queryMagic.setDefaultSchemaGetter(() => this.defaultSchema);
@@ -1421,6 +1461,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.$root.$emit(AppEvent.upgradeModal, "Editable Query Results")
           return;
         }
+        recordPaidFeatureUse('editable-query-results')
         if (!this.resultsEditData[this.selectedResult]) {
           const resultEditData: FieldEditData[] = await this.connection.getResultEditData(this.result?.text, this.result.fields);
 
@@ -1477,10 +1518,34 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         const data = this.$refs.table.clipboard('md')
       },
       selectEditor() {
+        // The assignment is a no-op if intent was already 'text-editor', so
+        // ask the editor directly too.
+        this.focusElement = 'text-editor'
+        this.textEditor?.focus()
+      },
+      handleTextEditorFocus() {
+        // Set intent only. focusingElement drives is-focused, which the editor
+        // obeys, so echoing focus here steals it back from modals.
         this.focusElement = 'text-editor'
       },
+      handleTextEditorBlur() {
+        // An app-initiated blur updates the state itself; any other blur means
+        // the editor really lost focus and stale state would strand it (#3446).
+        if (this.onTextEditorBlur) {
+          this.onTextEditorBlur()
+        } else if (this.focusingElement === 'text-editor') {
+          this.focusingElement = 'none'
+        }
+      },
       selectTitleInput() {
-        this.$refs.titleInput.select()
+        // The vim ex prompt refocuses the editor as it closes, so claim the
+        // input after that settles.
+        this.$nextTick(() => {
+          const input = this.$refs.titleInput
+          if (!input) return
+          input.focus()
+          input.select()
+        })
       },
       selectFirstParameter() {
         if (!this.$refs['paramInput'] || this.$refs['paramInput'].length === 0) return
@@ -1587,6 +1652,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.$root.$emit(AppEvent.upgradeModal, 'Query to File')
           return;
         }
+        recordPaidFeatureUse('query-to-file')
 
         // run the currently highlighted text (if any) to a file, else all sql
         const query_sql = this.hasSelectedText && this.primaryIsTab ? this.editor.selection : this.unsavedText;
@@ -1601,6 +1667,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           this.$root.$emit(AppEvent.upgradeModal, 'Query to File')
           return;
         }
+        recordPaidFeatureUse('query-to-file')
         if (this.runButtonDisabled) return;
         // run the currently selected query or highlighted (if there are multiple) to a file, else all sql
         let query_sql = ''
@@ -1695,6 +1762,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         this.error = null
         this.queryForExecution = rawQuery
         this.results = []
+        this.resultStatements = []
+        this.resultSelectedCells = 0
         this.resultsEditData = []
         this.resultEditableMap = []
         this.editingResult = false
@@ -1779,6 +1848,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             }
           })
           this.results = Object.freeze(results);
+          this.resultStatements = results.map((_r, idx) => identification[idx]?.text ?? (results.length === 1 ? query : null))
           this.resultsEditData = this.results.map(() => null)
           this.resultEditableMap = this.results.map(() => true)
 
@@ -1804,7 +1874,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
             queryObj.id = lastQuery.id;
           }
 
-          this.$store.dispatch('data/usedQueries/save', queryObj)
+          if (this.usedConfig.id) this.$store.dispatch('data/usedQueries/save', queryObj)
 
           log.debug('identification', identification)
           const found = identification.find(i => {
@@ -1847,6 +1917,13 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         if(this.query.id) {
           this.close()
         }
+      },
+      // Broadcast to every tab, so only the active one acts.
+      handleVimWrite() {
+        if (this.active) this.triggerSave()
+      },
+      handleVimWriteQuit() {
+        if (this.active) this.writeQuit()
       },
       async switchPaneFocus(_event?: KeyboardEvent, target?: 'text-editor' | 'table') {
         if (target) {
@@ -1977,8 +2054,8 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       openTroubleshooting() {
         window.main.openExternally('https://docs.beekeeperstudio.io/support/troubleshooting/')
       },
-      copyQuerySelectionError() {
-        this.$native.clipboard.writeText(this.querySelectionError?.stack ?? this.querySelectionError?.message)
+      async copyQuerySelectionError() {
+        await this.$native.clipboard.writeText(this.querySelectionError?.stack ?? this.querySelectionError?.message)
       },
       startTimer() {
         this.elapsedTime = 0;
@@ -1999,7 +2076,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
         if (this.readOnly) {
           return [
             ...items,
-            ...this.getExtraPopupMenu("editor.query", { transform: "ui-kit" }),
+            ...this.getExtraPopupMenu("editor.query", { transform: "ui-kit", payload: this.editorMenuPayload() }),
           ]
         }
         return [
@@ -2038,8 +2115,28 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
                 },
               ]
             : []),
-          ...this.getExtraPopupMenu("editor.query", { transform: "ui-kit" }),
+          ...this.getExtraPopupMenu("editor.query", { transform: "ui-kit", payload: this.editorMenuPayload() }),
         ];
+      },
+      /** Visualize button: hand the selection, or the whole result, to a plugin */
+      openResultInPlugin(item, event) {
+        const tabulator = this.$refs.table?.tabulator
+        if (!tabulator) return
+        const payload: GridStatusbarPayload = {
+          selection: selectedCells(tabulator),
+          result: visibleCells(tabulator),
+          query: this.resultStatements[this.selectedResult] ?? '',
+          truncated: !!this.result?.truncated,
+        }
+        item.handler({ ...payload, event })
+      },
+      /** Editor text handed to plugin menu items (`editor.query.context`). */
+      editorMenuPayload() {
+        return {
+          text: this.unsavedText ?? "",
+          selectedText: this.hasSelectedText ? this.editor.selection : "",
+          selectedQuery: this.currentlySelectedQuery?.text ?? "",
+        };
       },
       viewEditHistory() {
         if (!this.query?.id) {
@@ -2202,12 +2299,15 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       })
       this.containerResizeObserver.observe(this.$refs.container)
 
+      // Reconfiguring the keymap rebuilds the vim extension underneath
+      // whatever has focus, so let it land before focusing (#2990).
+      await this.$store.dispatch('vim/load')
+      this.vimKeymaps = this.$store.getters['vim/directives']
+
       if (this.active) {
         await this.$nextTick()
         this.focusElement = 'text-editor'
       }
-
-      this.vimKeymaps = await getVimKeymapsFromVimrc()
 
       // Load formatter presets for context menu
       this.getPresets(this.$bksConfig.ui.queryEditor.defaultFormatter)
@@ -2229,7 +2329,6 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
 </script>
 
 <style lang="scss" scoped>
-  @use "sass:color";
   @import '../assets/styles/app/_variables';
 
   .query-editor {
@@ -2247,30 +2346,13 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     color: var(--text);
   }
 
-  #commit-mode {
-    --togglebutton-color: color-mix(
-      in srgb,
-      var(--theme-base) 60%,
-      var(--query-editor-bg)
-      );
-    --togglebutton-background: color-mix(
-      in srgb,
-      var(--theme-base) 6%,
-      var(--query-editor-bg));
-    --togglebutton-content-checked-color: var(--theme-base);
-    --togglebutton-content-checked-background: color-mix(
-      in srgb,
-      var(--theme-base) 15%,
-      var(--query-editor-bg));
-  }
-
   .manual-commit-notice {
     display: flex;
     gap: 0.5rem;
     padding-block: 0.5rem;
     padding-inline: 0.75rem;
     margin-bottom: -0.75rem;
-    color: $brand-danger;
+    color: var(--danger-text);
     font-size: 0.85rem;
 
     [class^="material-icons"] {
@@ -2299,29 +2381,26 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     justify-content: center;
     align-items: center;
     gap: 0.25rem;
-    color: var(--brand-warning);
+    color: var(--warning-text);
     font-weight: bold;
-    background: color-mix(
-      in srgb,
-      var(--brand-warning) 4%,
-      var(--query-editor-bg));
+    background: var(--warning-bg-subtle);
     border-radius: 9999px;
     padding: 0.215rem 0.75rem;
-    box-shadow: 0 0 6px 0 rgb(from var(--brand-warning) r g b / 0.7);
+    box-shadow: 0 0 6px 0 var(--warning-a11);
     animation: glowAndDrop 0.9s cubic-bezier(0.33, 0, 0.2, 1) forwards;
   }
 
   @keyframes glowAndDrop {
     0% {
-      box-shadow: 0 0 0px 0 rgb(from var(--brand-warning) r g b / 0);
+      box-shadow: 0 0 0px 0 transparent;
     }
 
     60% {
-      box-shadow: 0 0 10px 0px rgb(from var(--brand-warning) r g b / 1);
+      box-shadow: 0 0 10px 0px var(--warning-solid-bg);
     }
 
     100% {
-      box-shadow: 0 0 3px 0 rgb(from var(--brand-warning) r g b / 1);
+      box-shadow: 0 0 3px 0 var(--warning-solid-bg);
     }
   }
 
@@ -2333,7 +2412,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     position: absolute;
     inset: 0;
     z-index: 10;
-    background-color: rgba(from var(--theme-bg) r g b / 70%);
+    background-color: var(--overlay-bg);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2343,7 +2422,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
   }
 
   // Hide the dot on the range highlight when not editing result
-  .query-editor:not(.editing-result) ::v-deep .tabulator-range-active::after {
+  .query-editor:not(.editing-result) ::v-deep .tabulator-fill-handle {
     visibility: hidden;
   }
 
@@ -2357,7 +2436,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
     }
   }
 
-  .ask-ai .material-icons {
+  .ask-ai .material-icons, .plugin-toolbar-btn .material-icons {
     font-size: 1rem;
     margin-right: 0.25rem;
   }
@@ -2390,11 +2469,6 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
   .btn.history-btn {
     background-color: transparent;
     box-shadow: none;
-    padding-inline: 0.15rem;
-
-    &:not(:hover) .material-icons {
-      color: var(--text-lighter);
-    }
   }
 </style>
 

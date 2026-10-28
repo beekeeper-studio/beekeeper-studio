@@ -450,9 +450,6 @@ declare interface IBksConfig {
             selectDown: string[];
             selectUp: string[];
         };
-        resultTable: {
-            openEditorModal: string;
-        };
         tab: {
             closeTab: string;
             forceCloseTab: string;
@@ -474,16 +471,32 @@ declare interface IBksConfig {
             focusOnFilterInput: string;
             lastPage: string;
             nextPage: string;
-            nullSelection: string;
+            nullSelection: string[];
             openEditorModal: string;
             pasteAsNewRows: string;
             previousPage: string;
         };
     };
     pluginSystem: {
-        allow: string[];
+        autoUpdate: boolean;
         communityDisabled: boolean;
         disabled: boolean;
+        officialDisabled: boolean;
+        proxyGithubPluginRequests: boolean;
+        registries: {
+            community: {
+                file: string;
+                owner: string;
+                repo: string;
+            };
+            official: {
+                file: string;
+                owner: string;
+                repo: string;
+            };
+        };
+        thirdPartyRegistriesDisabled: boolean;
+        unlistedDisabled: boolean;
     };
     plugins: {
         "bks-ai-shell": {
@@ -507,6 +520,9 @@ declare interface IBksConfig {
         minPinLength: number;
     };
     ui: {
+        connectionSidebar: {
+            recentConnectionsLimit: number;
+        };
         export: {
             errorNoticeTimeout: number;
         };
@@ -521,6 +537,8 @@ declare interface IBksConfig {
         };
         queryEditor: {
             autocomplete: {
+                disableKeywordCompletion: boolean;
+                disableSchemaCompletion: boolean;
                 keywordCasing: string;
                 quoteIdentifiers: string;
             };

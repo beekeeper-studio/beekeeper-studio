@@ -61,8 +61,8 @@ export default Vue.extend({
     }
   },
   methods: {
-    click(e) {
-      this.$native.clipboard.writeText(e.message || e.toString())
+    async click(e) {
+      await this.$native.clipboard.writeText(e.message || e.toString())
     }
   }
 })

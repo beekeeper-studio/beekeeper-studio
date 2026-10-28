@@ -1,19 +1,27 @@
 <template>
   <base-modal
     :name="id"
-    @submit="confirm"
     @closed="reportClose(false)"
+    :closable="variant === 'normal'"
   >
     <template #title>
-      <slot name="title">Are you sure?</slot>
+      <slot name="title">
+        Are you sure?
+      </slot>
     </template>
-    <slot name="message">This action cannot be undone.</slot>
-    <template #footer>
-      <button class="btn btn-flat" type="button" @click.prevent="cancel">
-        <slot name="cancel-label">Cancel</slot>
+    <slot name="message">
+      This action cannot be undone.
+    </slot>
+    <template #footer="{ close }">
+      <button class="btn btn-flat" type="button" @click.prevent="cancel(close)">
+        <slot name="cancel-label">
+          Cancel
+        </slot>
       </button>
-      <button class="btn btn-primary" type="submit" :data-variant="variant">
-        <slot name="confirm-label">Confirm</slot>
+      <button class="btn btn-primary" type="submit" :data-variant="variant" @click.prevent="confirm(close)">
+        <slot name="confirm-label">
+          Confirm
+        </slot>
       </button>
     </template>
   </base-modal>
@@ -53,13 +61,17 @@ export default Vue.extend({
         confirmed,
       } as ModalCloseEventData);
     },
-    confirm() {
+    confirm(closeFn: () => void) {
       this.reportClose(true);
-      this.$modal.hide(this.id);
+      if (closeFn) {
+        closeFn()
+      }
     },
-    cancel() {
+    cancel(closeFn: () => void) {
       this.reportClose(false);
-      this.$modal.hide(this.id);
+      if (closeFn) {
+        closeFn();
+      }
     },
   },
   mounted() {
@@ -72,7 +84,7 @@ export default Vue.extend({
 
 <style scoped>
 .btn[data-variant=danger] {
-  background-color: var(--brand-danger);
-  color: white;
+  background-color: var(--danger-solid-bg);
+  color: var(--danger-contrast);
 }
 </style>

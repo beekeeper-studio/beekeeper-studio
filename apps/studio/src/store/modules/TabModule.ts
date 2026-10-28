@@ -7,6 +7,19 @@ import Vue from 'vue';
 
 const log = rawLog.scope('TabModule')
 
+// Everything CoreTabs does is keyed on `tab.id`: which header is selected,
+// which pane is shown, v-for keys, per-tab modals, the connection a tab
+// reserves for a transaction. Only a session on a saved connection persists
+// its tabs, and only the database hands out ids - so a tab that isn't
+// persisted takes a transient id instead. Negative, so it can never collide
+// with a database id, and counting down for the life of the renderer, so it's
+// never reused within a session.
+let nextTransientTabId = -1
+
+function transientTabId(): number {
+  return nextTransientTabId--
+}
+
 interface State {
   tabs: TransportOpenTab[],
   active?: TransportOpenTab,
@@ -203,6 +216,10 @@ export const TabModule: Module<State, RootState> = {
         item.deletedAt = null
         item.active = true
         item = await Vue.prototype.$util.send('appdb/tabs/save', { obj: item })
+      } else {
+        // a connection that was never saved has no id to key tabs on, so the
+        // tab is never persisted and needs an id of its own
+        item.id = transientTabId()
       }
       context.commit('add', item)
       return item;

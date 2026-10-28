@@ -1,6 +1,10 @@
 import { AppEvent } from "../../common/AppEvent"
 import rawLog from '@bksLogger'
 import { SmartLocalStorage } from '@/common/LocalStorage'
+import { dispatchWindowClose } from '@/lib/windowListeners'
+import { DevLicenseState } from '@/lib/license'
+import { resetTrialFlow } from '@/lib/trial'
+import { clearLifetimeVersionNotice } from '@/lib/lifetimeVersion'
 
 const log = rawLog.scope("AppEventHandler")
 
@@ -17,6 +21,7 @@ export default class {
     window.main.on(AppEvent.beekeeperAdded, this.addBeekeeper.bind(this))
     window.main.on(AppEvent.switchLicenseState, this.switchLicenseState.bind(this))
     window.main.on(AppEvent.simulatePlatform, this.simulatePlatform.bind(this))
+    window.main.on(AppEvent.windowClose, this.windowClose.bind(this))
     this.forward(AppEvent.disconnect)
     this.forward(AppEvent.closeTab)
     this.forward(AppEvent.newTab)
@@ -30,10 +35,13 @@ export default class {
     this.forward(AppEvent.exportTables);
     this.forward(AppEvent.upgradeModal)
     this.forward(AppEvent.promptSqlFilesImport)
+    this.forward(AppEvent.promptConnectionFilesImport)
     this.forward(AppEvent.updatePin)
     this.forward(AppEvent.settingsChanged)
     this.forward(AppEvent.openPluginManager)
     this.forward(AppEvent.openKeyboardShortcuts)
+    this.forward(AppEvent.openThemePlayground)
+    this.forward(AppEvent.openAppearanceModal)
     this.forward(AppEvent.pluginMenuClicked)
     this.forward(AppEvent.pasteAsNewRows)
   }
@@ -44,6 +52,10 @@ export default class {
       this.vueApp.$emit(event, ...args)
     }
     window.main.on(event, emit.bind(this))
+  }
+
+  async windowClose() {
+    window.main.respondWindowClose(await dispatchWindowClose())
   }
 
   closeTab() {
@@ -83,7 +95,12 @@ export default class {
 
   async switchLicenseState(_event, state) {
     await this.vueApp.$util.send('dev/switchLicenseState', { state })
-    this.vueApp.$store.dispatch("toggleShowBeginTrialModal", true)
+    // Forget the answers to the trial-ended and lifetime-version dialogs so
+    // they run again for the chosen state. Feature usage is kept unless
+    // starting over from a first install, so "trial expired" previews the
+    // dialog with real usage in it.
+    resetTrialFlow({ keepUsage: state !== DevLicenseState.firstInstall })
+    clearLifetimeVersionNotice()
     SmartLocalStorage.setBool('expiredLicenseEventsEmitted', false)
     window.location.reload(true)
   }

@@ -1,6 +1,6 @@
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField, FieldDescriptor, FieldReadOnlyReason, ServerStatistics, FieldEditData } from '../models';
-import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
-import { buildInsertQueries, buildInsertQuery, errorMessages, isAllowedReadOnlyQuery, joinQueries, applyChangesSql } from './utils';
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, SchemaFilterOptions, DatabaseFilterOptions, TableChanges, OrderBy, TableFilter, TableResult, StreamResults, CancelableQuery, ExtendedTableColumn, PrimaryKeyColumn, TableProperties, TableIndex, TableTrigger, TableInsert, NgQueryResult, TablePartition, TableUpdateResult, ImportFuncOptions, DatabaseEntity, BksField, FieldDescriptor, FieldReadOnlyReason, ServerStatistics, FieldEditData, PluginExecuteOptions } from '../models';
+import { AlterPartitionsSpec, AlterTableSpec, CreateTableSpec, ForeignKeyRow, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
+import { buildInsertQueries, buildInsertQuery, errorMessages, groupForeignKeyRows, isAllowedReadOnlyQuery, joinQueries, applyChangesSql } from './utils';
 import { Knex } from 'knex';
 import _ from 'lodash'
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
@@ -8,8 +8,6 @@ import { ConnectionType, DatabaseElement, IBasicDatabaseClient, IDbConnectionDat
 import rawLog from "@bksLogger";
 import connectTunnel from '../tunnel';
 import { IDbConnectionServer } from '../backendTypes';
-import platformInfo from '@/common/platform_info';
-import { LicenseKey } from '@/common/appdb/models/LicenseKey';
 import { Dialect as IdentifierDialect, IdentifyResult } from 'sql-query-identifier/lib/defines';
 import { Transcoder } from '../serialization/transcoders';
 import { ColumnReference, TableReference } from 'sql-query-identifier/lib/defines';
@@ -89,12 +87,6 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     this.database = database;
     this.db = database?.database
     this.connectionType = this.server?.config.client;
-  }
-
-  async checkAllowReadOnly() {
-    if (platformInfo.testMode) return true;
-    const status = await LicenseKey.getLicenseStatus()
-    return status.isUltimate;
   }
 
   set connectionHandler(fn: (msg: string) => void) {
@@ -190,6 +182,33 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
    * Get all foreign keys that **reference** the given table (incoming relations).
    */
   abstract getIncomingKeys(_table: string, _schema?: string): Promise<TableKey[]>;
+
+  /**
+   * Map one row of a driver's foreign key query to a `ForeignKeyRow`. The
+   * default reads the column names shared by the queries in each driver's
+   * `scripts.ts`: constraint_name, from_schema, from_table, from_column,
+   * to_schema, to_table, to_column, ordinal_position, on_update, on_delete.
+   * Drivers whose catalog cannot be shaped that way override it.
+   */
+  protected parseForeignKeyRow(row: any): ForeignKeyRow {
+    return {
+      constraintName: row.constraint_name == null ? undefined : String(row.constraint_name),
+      fromSchema: row.from_schema ?? '',
+      fromTable: row.from_table,
+      fromColumn: row.from_column,
+      toSchema: row.to_schema ?? '',
+      toTable: row.to_table,
+      toColumn: row.to_column,
+      ordinalPosition: row.ordinal_position == null ? undefined : Number(row.ordinal_position),
+      onUpdate: row.on_update ?? undefined,
+      onDelete: row.on_delete ?? undefined,
+    };
+  }
+
+  /** Map the rows of a foreign key query and group them into `TableKey`s. */
+  protected parseForeignKeys(rows: any[]): TableKey[] {
+    return groupForeignKeyRows(rows.map((row) => this.parseForeignKeyRow(row)));
+  }
 
   listTablePartitions(_table: string, _schema?: string): Promise<TablePartition[]> {
     return Promise.resolve([])
@@ -301,8 +320,8 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     })
   }
 
-  abstract query(queryText: string, tabId: number, options?: any): Promise<CancelableQuery>;
-  abstract executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]>;
+  abstract query(queryText: string, tabId?: number, options?: any): Promise<CancelableQuery>;
+  abstract executeQuery(queryText: string, options?: PluginExecuteOptions & Record<string, any>): Promise<NgQueryResult[]>;
   abstract listDatabases(filter?: DatabaseFilterOptions): Promise<string[]>;
   abstract getTableProperties(table: string, schema?: string): Promise<TableProperties | null>;
   abstract getQuerySelectTop(table: string, limit: number, schema?: string): Promise<string>;
@@ -642,8 +661,8 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     return transcoder?.deserialize(value) || value
   }
 
-  protected violatesReadOnly(statements: IdentifyResult[], options: any = {}) {
-    return !isAllowedReadOnlyQuery(statements, this.readOnlyMode) && !options.overrideReadonly
+  protected violatesReadOnly(statements: IdentifyResult[], options: PluginExecuteOptions & any = {}) {
+    return !isAllowedReadOnlyQuery(statements, this.readOnlyMode || options.forceReadOnly) && !options.overrideReadonly
   }
 
   protected identifyCommands(queryText: string): IdentifyResult[] {
@@ -656,14 +675,14 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     return commands;
   }
 
-  async driverExecuteSingle(q: string, options: any = {}): Promise<RawResultType> {
+  async driverExecuteSingle(q: string, options: PluginExecuteOptions & Record<string, any> = {}): Promise<RawResultType> {
     const { queries: statements, error } = safelyIdentify(q, { dialect: this.dialect });
 
     if (error) {
       log.warn('Was not able to correctly identify query: ', error.message);
     }
 
-    if (await this.checkAllowReadOnly() && this.violatesReadOnly(statements, options)) {
+    if (this.violatesReadOnly(statements, options)) {
       throw new Error(errorMessages.readOnly);
     }
 
@@ -702,7 +721,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
       log.warn('Was not able to correctly identify query: ', error.message);
     }
 
-    if (await this.checkAllowReadOnly() && this.violatesReadOnly(statements, options)) {
+    if (this.violatesReadOnly(statements, options)) {
       throw new Error(errorMessages.readOnly);
     }
 

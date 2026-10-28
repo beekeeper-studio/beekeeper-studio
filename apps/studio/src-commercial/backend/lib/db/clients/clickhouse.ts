@@ -43,6 +43,7 @@ import { parseClickHouseEnumValues } from "@/lib/db/clients/enumParsers";
 import _ from "lodash";
 import {
   createCancelablePromise,
+  isListFilter,
   joinFilters,
   streamToString,
 } from "@/common/utils";
@@ -1127,7 +1128,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
           ? `HEX(${ClickHouseData.wrapIdentifier(item.field)})`
           : ClickHouseData.wrapIdentifier(item.field);
 
-        if (item.type === "in") {
+        if (isListFilter(item.type)) {
           const params = _.isArray(item.value)
             ? item.value.map(() => `{p${paramCounter++}: Dynamic}`).join(",")
             : `{p${paramCounter++}: Dynamic}`;

@@ -32,12 +32,11 @@
       <span class="actions add-tab-group" id="add-tab-group">
         <a
           @click.prevent="createQuery(null)"
-          class="btn-fab add-query"
+          class="btn btn-icon add-query"
         ><i class=" material-icons">add</i></a>
         <x-button
-          class="btn-fab add-tab-dropdown"
+          class="btn btn-icon add-tab-dropdown"
           menu
-          v-if="newTabDropdownItems.length > 1"
         >
           <i class="material-icons">arrow_drop_down</i>
           <x-menu>
@@ -53,12 +52,29 @@
                 <x-shortcut v-if="menuItem.shortcut" :value="menuItem.shortcut" />
               </x-menuitem>
             </template>
+            <hr>
+            <x-menuitem
+              v-if="!hasPluginTabItems"
+              disabled
+              :title="noPluginsItem.title"
+            >
+              <x-label>
+                <i class="material-icons">{{ noPluginsItem.leadingIcon }}</i>
+                {{ noPluginsItem.name }}
+              </x-label>
+            </x-menuitem>
+            <x-menuitem @click.prevent="openPluginManager">
+              <x-label>
+                <i class="material-icons">{{ managePluginsItem.leadingIcon }}</i>
+                {{ managePluginsItem.name }}
+              </x-label>
+            </x-menuitem>
           </x-menu>
         </x-button>
       </span>
       <a
         @click.prevent="showUpgradeModal"
-        class="btn btn-brand btn-icon btn-upgrade"
+        class="btn btn-primary btn-brand btn-upgrade"
         v-tooltip="'Upgrade for: backup/restore, import from file, larger query results, and more!'"
         v-if="$store.getters.isCommunity"
       >
@@ -69,7 +85,7 @@
     <div class="tab-content">
       <div class="empty-editor-group empty flex-col  expand">
         <div class="expand layout-center">
-          <shortcut-hints />
+          <shortcut-hints type="core-tabs" />
         </div>
       </div>
       <div
@@ -288,7 +304,42 @@
       </template>
     </confirmation-modal>
 
-    <sql-files-import-modal @submit="importSqlFiles" />
+    <base-modal
+      :name="confirmWindowCloseModalId"
+      @submit="resolveConfirmWindowClose(true)"
+      @closed="resolveConfirmWindowClose(false)"
+    >
+      <template #title>
+        Close this window?
+      </template>
+      <p>{{ confirmWindowCloseMessage }}</p>
+      <div class="form-group">
+        <label class="checkbox form-row">
+          <input
+            v-model="dontConfirmWindowCloseAgain"
+            type="checkbox"
+          >
+          Don't show this again
+        </label>
+      </div>
+      <template #footer>
+        <button
+          class="btn btn-flat"
+          type="button"
+          @click.prevent="resolveConfirmWindowClose(false)"
+        >
+          Cancel
+        </button>
+        <button
+          class="btn btn-primary btn-danger"
+          type="submit"
+        >
+          Close Window
+        </button>
+      </template>
+    </base-modal>
+
+    <sql-files-import-modal />
     <create-collection-modal />
   </div>
 </template>
@@ -309,6 +360,7 @@ import DatabaseBackup from './TabDatabaseBackup.vue'
 import PluginShell from './TabPluginShell.vue'
 import PluginBase from './TabPluginBase.vue'
 import { AppEvent } from '../common/AppEvent'
+import { managePluginsItem, noPluginsItem, openPluginManager } from '@/lib/menu/pluginMenuItems'
 import { mapGetters, mapState } from 'vuex'
 import Draggable from 'vuedraggable'
 import ShortcutHints from './editor/ShortcutHints.vue'
@@ -323,6 +375,7 @@ import { DropzoneDropEvent } from '@/common/dropzone'
 import { readWebFile } from '@/common/utils'
 import Noty from 'noty'
 import ConfirmationModal from './common/modals/ConfirmationModal.vue'
+import BaseModal from './common/modals/BaseModal.vue'
 import CreateCollectionModal from './common/modals/CreateCollectionModal.vue'
 import SqlFilesImportModal from '@/components/common/modals/SqlFilesImportModal.vue'
 import Shell from './TabShell.vue'
@@ -330,6 +383,9 @@ import Shell from './TabShell.vue'
 import { safeSqlFormat as safeFormat } from '@/common/utils';
 import { TabTypeConfig, TransportOpenTab, TransportPluginTab, setFilters, matches, duplicate } from '@/common/transport/TransportOpenTab'
 import { wait } from '@/shared/lib/wait'
+import rawLog from '@bksLogger'
+
+const log = rawLog.scope('CoreTabs.vue')
 
 export default Vue.extend({
   props: [],
@@ -349,6 +405,7 @@ export default Vue.extend({
     DatabaseBackup,
     PendingChangesButton,
     ConfirmationModal,
+    BaseModal,
     SqlFilesImportModal,
     CreateCollectionModal,
     Shell,
@@ -374,15 +431,32 @@ export default Vue.extend({
       duplicateTableName: null,
       closingTab: null,
       confirmModalId: 'core-tabs-close-confirmation',
+      confirmWindowCloseModalId: 'core-tabs-confirm-window-close',
+      confirmWindowCloseMessage: '',
+      dontConfirmWindowCloseAgain: false,
+      confirmWindowCloseResolve: null as ((confirmed: boolean) => void) | null,
     }
   },
   watch: {
-    async usedConfig() {
-      await this.$store.dispatch('tabs/load')
-      if (!this.tabItems?.length) {
-        await this.createQuery()
+    confirmsWindowClose: {
+      immediate: true,
+      handler(confirms: boolean) {
+        if (confirms) this.$bks.addWindowListener('close', this.handleWindowClose)
+        else this.$bks.removeWindowListener('close', this.handleWindowClose)
+      },
+    },
+    // immediate: usedConfig is committed before the interface flips to
+    // connected, so it is already set when this component mounts
+    usedConfig: {
+      immediate: true,
+      async handler() {
+        if (!this.usedConfig) return
+        await this.$store.dispatch('tabs/load')
+        if (!this.tabItems?.length) {
+          await this.createQuery()
+        }
+        wait(800).then(() => this.$tour.start("connectedScreen"));
       }
-      wait(800).then(() => this.$tour.start("connectedScreen"));
     }
   },
   filters: {
@@ -395,6 +469,7 @@ export default Vue.extend({
   computed: {
     ...mapState(['selectedSidebarItem']),
     ...mapState('tabs', { 'activeTab': 'active', 'tabs': 'tabs' }),
+    ...mapState('settings', { 'settings': 'settings' }),
     ...mapState(['connection', 'connectionType', 'usedConfig']),
     ...mapGetters({
        'dialect': 'dialect',
@@ -403,6 +478,20 @@ export default Vue.extend({
        'newTabDropdownItems': 'tabs/newTabDropdownItems',
        'getKeybindings': 'plugins/keybindings/getKeybindings',
     }),
+    confirmsWindowClose() {
+      return !this.settings.dontConfirmWindowClose?.value && this.tabs.some((tab) => tab.unsavedChanges)
+    },
+    hasPluginTabItems() {
+      return this.newTabDropdownItems.some(({ config }) =>
+        config.type === 'plugin-shell' || config.type === 'plugin-base'
+      )
+    },
+    noPluginsItem() {
+      return noPluginsItem
+    },
+    managePluginsItem() {
+      return managePluginsItem
+    },
     tabIcon() {
       return {
         type: this.dbEntityType,
@@ -530,7 +619,20 @@ export default Vue.extend({
           this.$noty.success(`${this.dbAction} completed successfully`)
 
         } catch (ex) {
-          this.$noty.error(`Error performing ${this.dbAction}: ${ex.message}`)
+          const notificationMessage = [
+            `Error performing ${this.dbAction}: ${ex.message}`,
+            ex.detail && `DETAIL: ${ex.detail}`,
+            ex.hint && `HINT: ${ex.hint}`,
+          ].filter(Boolean).join('\n')
+
+          this.$noty.error(notificationMessage, {
+            timeout: 3500,
+            callbacks: {
+              onClick: async () => {
+                await this.$native.clipboard.writeText(notificationMessage)
+              },
+            },
+          })
         }
       })
     },
@@ -670,6 +772,7 @@ export default Vue.extend({
     closeCurrentTab(_id?:number, options?: CloseTabOptions) {
       if (this.activeTab) this.close(this.activeTab, options)
     },
+    openPluginManager,
     async createTab(config: TabTypeConfig.Config) {
       if (config.type === "query") {
         this.createQuery()
@@ -906,72 +1009,6 @@ export default Vue.extend({
 
       noty.close()
     },
-    async importSqlFiles(importConfig: { paths: string[], parentId: number }) {
-      const { paths, parentId } = importConfig;
-      const files = paths.map((path) => ({
-        path,
-        name: path.replace(/^.*[\\/]/, '').replace(/\.sql$/, ''),
-        error: false,
-      }))
-
-      let readerAbort: () => void;
-      let aborted  = false;
-
-      function abort() {
-        if (typeof readerAbort === 'function') {
-          readerAbort()
-        }
-        aborted = true
-      }
-
-      const notyQueue = 'load-queries'
-      const notyText = `Loading <span class="counter">1</span> of ${files.length} files`
-
-      const noty = this.$noty.info(notyText,  {
-        queue: notyQueue,
-        allowRawHtml: true,
-        buttons: [
-          Noty.button('Abort', 'btn btn-danger', abort)
-        ],
-      })
-
-      const counter = noty.barDom.querySelector('.counter')
-
-      for (let i = 0; i < files.length; i++) {
-        if (aborted) {
-          break
-        }
-
-        const file = files[i]
-
-        counter.textContent = `${i + 1}`
-
-        try {
-          // TODO (azmi): this process can take longer by accident. Consider
-          // an ability to cancel reading file.
-          const text = await this.$util.send('file/readSqlFile', { path: file.path })
-          if (text) {
-            const query = await this.$util.send('appdb/query/new');
-            query.name = file.name
-            query.text = text
-            query.queryFolderId = parentId
-            await this.$store.dispatch('data/queries/save', query)
-          } else {
-            files[i].error = true
-          }
-        } catch (e) {
-            files[i].error = true
-        }
-      }
-
-      if (aborted) {
-        this.$noty.info('Loading aborted', { killer: notyQueue })
-      } else if (files.some(({ error }) => error)) {
-        this.$noty.error('Some files could not be loaded', { killer: notyQueue })
-      } else {
-        this.$noty.success('All files loaded', { killer: notyQueue })
-      }
-    },
     async handlePromptQueryExport(query) {
       const safeFilename = query.name.replace(/[/\\?%*:|"<>]/g, '_');
       const fileName = `${safeFilename}.sql`;
@@ -1143,6 +1180,34 @@ export default Vue.extend({
       }
       this.$store.dispatch('tabs/unload')
     },
+    async handleWindowClose({ preventClose }) {
+      const unsavedTabs = this.tabs.filter((tab) => tab.unsavedChanges)
+      if (unsavedTabs.length === 0) return
+
+      this.confirmWindowCloseMessage = `You have ${unsavedTabs.length} unsaved ${this.$pluralize('tab', unsavedTabs.length)}. Are you sure?`
+      this.dontConfirmWindowCloseAgain = false
+      const confirmed = await new Promise<boolean>((resolve) => {
+        this.confirmWindowCloseResolve = resolve
+        this.$modal.show(this.confirmWindowCloseModalId)
+      })
+      if (!confirmed) return preventClose()
+
+      if (this.dontConfirmWindowCloseAgain) {
+        try {
+          await window.main.setConfirmWindowClose(false)
+        } catch (ex) {
+          log.error(ex)
+        }
+      }
+    },
+    // BaseModal emits `closed` after an explicit confirm/cancel too
+    resolveConfirmWindowClose(confirmed: boolean) {
+      const resolve = this.confirmWindowCloseResolve
+      if (!resolve) return
+      this.confirmWindowCloseResolve = null
+      this.$modal.hide(this.confirmWindowCloseModalId)
+      resolve(confirmed)
+    },
     async closeOther(tab: TransportOpenTab) {
       const others = _.without(this.tabItems, tab)
       const unsavedTabs = others.filter((t) => t.unsavedChanges)
@@ -1229,6 +1294,7 @@ export default Vue.extend({
   },
   beforeDestroy() {
     this.unregisterHandlers(this.rootBindings)
+    this.$bks.removeWindowListener('close', this.handleWindowClose)
   },
 
   async mounted() {

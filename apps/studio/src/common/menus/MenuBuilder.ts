@@ -26,11 +26,12 @@ export default class extends DefaultMenu {
         this.menuItems.primarySidebarToggle,
         this.menuItems.secondarySidebarToggle,
         { type: 'separator' },
-        this.menuItems.themeToggle,
+        this.menuItems.appearance,
         this.menuItems.reload,
         // This is added automatically in Mac
         ...(!this.platformInfo.isMac ? [this.menuItems.fullscreen] : []),
-        this.menuItems.privacyModeToggle
+        this.menuItems.privacyModeToggle,
+        this.menuItems.confirmWindowCloseToggle
         // Disable this for now in favor of #2380
         // this.menuItems.minimalModeToggle,
       ]
@@ -46,6 +47,7 @@ export default class extends DefaultMenu {
         this.menuItems.reload,
         this.menuItems.simulatePlatform,
         this.menuItems.licenseState,
+        this.menuItems.themePlayground,
       ],
     }
   }
@@ -73,7 +75,8 @@ export default class extends DefaultMenu {
       ]
     };
 
-    if (!this.platformInfo.isLinux || this.platformInfo.isAppImage) {
+    // MSI installs only get the versions IT deploys
+    if ((!this.platformInfo.isLinux || this.platformInfo.isAppImage) && !this.platformInfo.isMsi) {
       helpMenu.submenu.push(this.menuItems.toggleBeta)
     }
 
@@ -111,6 +114,7 @@ export default class extends DefaultMenu {
         this.menuItems.closeTab,
         { type: 'separator' },
         this.menuItems.importSqlFiles,
+        this.menuItems.importConnectionFiles,
         this.menuItems.quickSearch,
         this.menuItems.disconnect,
         // Moved to Beekeeper Studio menu for mac

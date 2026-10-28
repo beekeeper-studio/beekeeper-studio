@@ -865,6 +865,11 @@ export class DBTestUtil {
     result = r.result.map((r: any) => r.bananas || r.BANANAS)
     expect(result).toMatchObject(['pears', 'cheese'])
 
+    // filter test - builder not in clause
+    r = await this.connection.selectTop("MixedCase", 0, 10, [{ field: 'bananas', dir: 'DESC' }], [{ field: 'bananas', type: 'not in', value: ["cheese"] }], this.defaultSchema)
+    result = r.result.map((r: any) => r.bananas || r.BANANAS)
+    expect(result).toMatchObject(['pears'])
+
     await this.knex('MixedCase').where({bananas: 'cheese'}).delete()
 
     // filter test - raw
@@ -1480,6 +1485,22 @@ export class DBTestUtil {
       await this.knex.schema.raw(`INSERT INTO organizations FORMAT CSVWithNames\n${csvData}`)
       return
     }
+    if (this.dbType === 'sqlite') {
+      // The streaming path below issues ~200 autocommit batches, each of which
+      // fsyncs; on a slow CI disk that outlives the jest hook timeout. One
+      // transaction commits once. skipEmptyLines: unlike the streaming parser,
+      // a whole-file parse emits a trailing all-empty row for the final newline.
+      const rows = Papa.parse(fs.readFileSync(fileLocation, 'utf-8'), {
+        header: true,
+        skipEmptyLines: true,
+      }).data as Record<string, any>[]
+      await this.knex.transaction(async (trx) => {
+        for (const rowChunk of _.chunk(rows, 500)) {
+          await trx('organizations').insert(rowChunk)
+        }
+      })
+      return
+    }
     return new Promise<void>( (resolve, reject) => {
       const fileStream = fs.createReadStream(fileLocation)
       const promises = []
@@ -1488,23 +1509,34 @@ export class DBTestUtil {
       let batch = []
       const maxBatch = this.dbType === 'firebird' ? 255 : 233
 
+      // The first failed batch is remembered and stops the pump. Batch
+      // promises never reject — each records its error instead — because jest
+      // may already have abandoned this hook (timeout) or torn the suite down
+      // (knex.destroy() in afterAll) while Papa is still streaming chunks; a
+      // rejected promise with no handler attached kills the whole jest worker.
+      let pumpError: Error | null = null
       const execBatch = async (batch: Record<string, any>[]) => {
-        if (this.dbType === 'firebird') {
-          const inserts = batch.reduce((str, row) => `${str}INSERT INTO organizations (${Object.keys(row).join(',')}) VALUES (${Object.values(row).map(FirebirdData.wrapLiteral).join(',')});\n`, '')
-          await this.knex.schema.raw(`
-            EXECUTE BLOCK AS BEGIN
-              ${inserts}
-            END
-          `)
-        } else if (this.dbType === 'sqlserver') {
-          const { bindings, sql } = this.knex('organizations').insert(batch).toSQL()
-          await this.knex.raw(`
-            SET IDENTITY_INSERT organizations ON;
-              ${sql}
-            SET IDENTITY_INSERT organizations OFF;
-          `, bindings)
-        } else {
-          await this.knex('organizations').insert(batch)
+        if (pumpError) return
+        try {
+          if (this.dbType === 'firebird') {
+            const inserts = batch.reduce((str, row) => `${str}INSERT INTO organizations (${Object.keys(row).join(',')}) VALUES (${Object.values(row).map(FirebirdData.wrapLiteral).join(',')});\n`, '')
+            await this.knex.schema.raw(`
+              EXECUTE BLOCK AS BEGIN
+                ${inserts}
+              END
+            `)
+          } else if (this.dbType === 'sqlserver') {
+            const { bindings, sql } = this.knex('organizations').insert(batch).toSQL()
+            await this.knex.raw(`
+              SET IDENTITY_INSERT organizations ON;
+                ${sql}
+              SET IDENTITY_INSERT organizations OFF;
+            `, bindings)
+          } else {
+            await this.knex('organizations').insert(batch)
+          }
+        } catch (err) {
+          pumpError = pumpError || err
         }
       }
 
@@ -1512,7 +1544,11 @@ export class DBTestUtil {
         header: true,
         ...(useStep
           ? {
-              step(results: { data: Record<string, any> }) {
+              step(results: { data: Record<string, any> }, parser: { abort: () => void }) {
+                if (pumpError) {
+                  parser.abort();
+                  return;
+                }
                 batch.push(results.data);
                 if (batch.length >= maxBatch) {
                   promises.push(execBatch(batch));
@@ -1521,7 +1557,11 @@ export class DBTestUtil {
               },
             }
           : {
-              chunk(results: { data: Record<string, any>[] }) {
+              chunk(results: { data: Record<string, any>[] }, parser: { abort: () => void }) {
+                if (pumpError) {
+                  parser.abort();
+                  return;
+                }
                 if (results.data.length === 0) {
                   return;
                 }
@@ -1534,7 +1574,9 @@ export class DBTestUtil {
             promises.push(execBatch(batch));
             batch = [];
           }
-          Promise.all(promises).then(() => resolve()).catch(reject);
+          Promise.all(promises)
+            .then(() => (pumpError ? reject(pumpError) : resolve()))
+            .catch(reject);
         },
         error: (err) => reject(err),
       });
@@ -2397,26 +2439,23 @@ export class DBTestUtil {
       return expect.anything();
     }
 
-    // Test composite foreign keys functionality
+    // composite_child defines exactly one foreign key, and it is composite
     const tableKeys = await this.connection.getTableKeys('composite_child', this.defaultSchema);
+    expect(tableKeys).toHaveLength(1);
 
-    // Check that we have composite keys
-    const compositeKey = tableKeys.find(key => key.isComposite === true);
-    // If we have a composite key, assert its structure
-    expect(compositeKey).toBeDefined();
+    const compositeKey = tableKeys[0];
+    expect(compositeKey.isComposite).toBe(true);
+    expect(Array.isArray(compositeKey.fromColumn)).toBe(true);
+    expect(Array.isArray(compositeKey.toColumn)).toBe(true);
 
     const fromColumns = (compositeKey.fromColumn as string[]).map((c) => c.toLowerCase());
     const toColumns = (compositeKey.toColumn as string[]).map((c) => c.toLowerCase());
 
-    expect(compositeKey.isComposite).toBe(true);
-    expect(Array.isArray(compositeKey.fromColumn)).toBe(true);
-    expect(Array.isArray(compositeKey.toColumn)).toBe(true);
-    expect(compositeKey.fromColumn.length).toBeGreaterThan(1);
-    expect(compositeKey.toColumn.length).toBeGreaterThan(1);
-    expect(fromColumns).toContain('ref_id1');
-    expect(fromColumns).toContain('ref_id2');
-    expect(toColumns).toContain('parent_id1');
-    expect(toColumns).toContain('parent_id2');
+    // Column pairs must come back in constraint order with no duplicates, so
+    // that fromColumn[i] always references toColumn[i].
+    expect(fromColumns).toEqual(['ref_id1', 'ref_id2']);
+    expect(toColumns).toEqual(['parent_id1', 'parent_id2']);
+    expect(compositeKey.fromTable.toLowerCase()).toBe('composite_child');
     expect(compositeKey.toTable.toLowerCase()).toBe('composite_parent');
   }
 
@@ -2510,15 +2549,14 @@ export class DBTestUtil {
       .getIncomingKeys('composite_parent', this.defaultSchema)
       .then(normalizeTableKeys);
 
-    expect(tableKeys).toHaveLength(1);
-    expect(tableKeys).toStrictEqual(expect.arrayContaining([
+    expect(tableKeys).toStrictEqual([
       {
         toTable: 'composite_parent',
         fromTable: 'composite_child',
-        toColumn: expect.arrayContaining(['parent_id1', 'parent_id2']),
-        fromColumn: expect.arrayContaining(['ref_id1', 'ref_id2']),
+        toColumn: ['parent_id1', 'parent_id2'],
+        fromColumn: ['ref_id1', 'ref_id2'],
       }
-    ]));
+    ]);
   }
 
   async paramTest(params: string[]) {

@@ -34,6 +34,7 @@ export enum AppEvent {
   promptQueryExport = 'q_export',
   promptConnectionImport = 'cloud_c_import',
   promptSqlFilesImport = 'q_files_import',
+  promptConnectionFilesImport = 'c_files_import',
   openCreateCollectionModal = 'create_collection_modal',
   openAddFieldModal = 'add_field_modal',
   enterLicense = 'enter_license',
@@ -68,6 +69,8 @@ export enum AppEvent {
   switchUserKeymap = 'switchUserKeymap',
   openPluginManager = 'openPluginManager',
   openKeyboardShortcuts = 'openKeyboardShortcuts',
+  openThemePlayground = 'openThemePlayground',
+  openAppearanceModal = 'openAppearanceModal',
   updateJsonViewerSidebar = 'updateJsonViewerSidebar',
   jsonViewerSidebarExpandPath = 'jsonViewerSidebarExpandPath',
   jsonViewerSidebarValueChange = 'jsonViewerSidebarValueChange',
@@ -77,6 +80,12 @@ export enum AppEvent {
   switchedTab = 'switchedTab',
   /** A tab is about to be closed. First argument is the tab. */
   closingTab = 'closingTab',
+  /** Main asks the renderer's window close listeners. Answered with `windowCloseResponse`. */
+  windowClose = 'windowClose',
+  /** First argument is whether a listener prevented the close. */
+  windowCloseResponse = 'windowCloseResponse',
+  /** Arguments are the event type and how many listeners the renderer has for it. */
+  windowListenerCount = 'windowListenerCount',
   simulatePlatform = 'simulatePlatform',
   updatePin = 'updatePin',
   /** The theme has been changed. */
@@ -112,6 +121,12 @@ export enum AppEvent {
    * });
    **/
   openMoveFolderModal = 'openMoveFolderModal',
+  /** Open the connection type picker. Do not call this directly. Please use `this.$promptConnectionType()`. */
+  openConnectionTypePickerModal = 'openConnectionTypePickerModal',
+  /** Vim's `:w`. Broadcast, so only the active tab should act on it. */
+  vimWrite = 'vimWrite',
+  /** Vim's `:x` and `:wq`. Broadcast, so only the active tab should act. */
+  vimWriteQuit = 'vimWriteQuit',
 }
 
 export type OpenShareModalOptions =  {

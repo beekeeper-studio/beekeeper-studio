@@ -20,23 +20,16 @@
         </div>
 
         <div class="table-subheader">
-          <div class="table-title">
-            <h2>Relations</h2>
-          </div>
-          <div class="expand" />
-          <div class="actions">
-            <a
-              @click.prevent="$emit('refresh')"
-              v-tooltip="$bksConfigUI.getKeybindingLabel('general.refresh')"
-              class="btn btn-link btn-fab"
-            ><i class="material-icons">refresh</i></a>
-            <a
-              v-if="enabled && canAdd"
-              @click.prevent="addRow"
-              v-tooltip="$bksConfigUI.getKeybindingLabel('general.addRow')"
-              class="btn btn-primary btn-fab"
-            ><i class="material-icons">add</i></a>
-          </div>
+          <table-info-toolbar
+            :search-suffix="structureFilterSuffix"
+            filter-placeholder="Filter relations"
+            :show-add="enabled && canAdd"
+            add-label="Relation"
+            @search="setStructureFilterQuery"
+            @add="addRow"
+            @copy="copyStructure"
+            @refresh="$emit('refresh')"
+          />
         </div>
         <div
           class="table-relations"
@@ -113,17 +106,21 @@ import { format } from 'sql-formatter'
 import { AppEvent } from '@/common/AppEvent'
 import rawLog from '@bksLogger'
 import ErrorAlert from '../common/ErrorAlert.vue'
+import TableInfoToolbar from './TableInfoToolbar.vue'
 const log = rawLog.scope('TableRelations');
 import { escapeHtml } from '@shared/lib/tabulator'
 import { SelectableCellMixin } from '@/mixins/selectableCell';
+import { StructureCopyMixin } from '@/mixins/structureCopy';
+import { StructureFilterMixin } from '@/mixins/structureFilter';
 import { copyCellMenu } from '@/lib/menu/tableMenu';
 
 export default Vue.extend({
-  mixins: [SelectableCellMixin],
+  mixins: [SelectableCellMixin, StructureCopyMixin, StructureFilterMixin],
   props: ["table", "tabId", "active", "properties", 'tabState'],
   components: {
     StatusBar,
-    ErrorAlert
+    ErrorAlert,
+    TableInfoToolbar
   },
   data() {
     return {

@@ -58,18 +58,23 @@ export function buildItemNodes<T extends HasId>(
   items: T[],
   parentIdKey: string
 ): ExtendedItemNode<T>[] {
-  return items.map((item) => {
-    const parentId = item[parentIdKey];
-    return {
-      id: `item-${item.id}` as ItemNode["id"],
-      parentId: parentId ? `folder-${parentId}` : null,
-      parentIdKey,
-      type: "item",
-      name: item["name"] ?? "",
-      ref: item,
-      draggable: true,
-    };
-  });
+  return items.map((item) => buildItemNode(item, parentIdKey));
+}
+
+export function buildItemNode<T extends HasId>(
+  item: T,
+  parentIdKey: string
+): ExtendedItemNode<T> {
+  const parentId = item[parentIdKey];
+  return {
+    id: `item-${item.id}` as ItemNode["id"],
+    parentId: parentId ? `folder-${parentId}` : null,
+    parentIdKey,
+    type: "item",
+    name: item["name"] ?? "",
+    ref: item,
+    draggable: true,
+  };
 }
 
 /** Transform {@link TreeNodeMoveEvent} into a consumable payload for the reorder action. */

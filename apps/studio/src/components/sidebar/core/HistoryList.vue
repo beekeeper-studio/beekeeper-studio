@@ -68,7 +68,7 @@
       </nav>
     </div>
     <!-- <div class="toolbar btn-group row flex-right" v-show="checkedHistoryQueries.length > 0">
-      <a class="btn btn-link" @click="discardCheckedHistoryQueries">Cancel</a>
+      <a class="btn" @click="discardCheckedHistoryQueries">Cancel</a>
       <a class="btn btn-primary" :title="removeTitle" @click="removeCheckedHistoryQueries">Remove</a>
     </div> -->
   </div>
@@ -101,7 +101,10 @@ import SidebarLoading from '@/components/common/SidebarLoading.vue'
         if(this.showAllHistory){
           return this.history;
         } else {
-          return this.history.filter(item => item.connectionId === this.usedConfig?.id);
+          // an unsaved connection has no id, and so no history of its own
+          return this.usedConfig?.id
+            ? this.history.filter(item => item.connectionId === this.usedConfig.id)
+            : [];
         }
       },
     },

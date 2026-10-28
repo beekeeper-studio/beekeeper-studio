@@ -8,35 +8,17 @@ import {
   WebPluginViewInstance,
 } from "../types";
 import type {
-  RequestMap,
+  NotificationData,
   RequestPayload,
-  ResponsePayload,
-  NotificationMap,
+  ResponseData,
 } from "@beekeeperstudio/plugin/dist/internal";
 import PluginStoreService from "./PluginStoreService";
 import rawLog from "@bksLogger";
 import _ from "lodash";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { PluginMenuManager } from "./PluginMenuManager";
+import { assertJsonSerializable } from "../utils";
 import { PrimaryKeyColumn } from "@/lib/db/models";
-
-// Discriminated union for request+result that TypeScript can narrow by name
-type PluginResponseData = {
-  [K in keyof RequestMap]: {
-    id: string;
-    name: K;
-    args: RequestMap[K]["args"];
-    result: RequestMap[K]["return"];
-    error?: unknown;
-  };
-}[keyof RequestMap];
-
-type PluginNotificationData = {
-  [K in keyof NotificationMap]: {
-    name: K;
-    args: NotificationMap[K]["args"];
-  };
-}[keyof NotificationMap];
 
 function joinUrlPath(a: string, b: string): string {
   return `${a.replace(/\/+$/, "")}/${b.replace(/^\/+/, "")}`;
@@ -54,33 +36,36 @@ export default class WebPluginLoader {
   private onDisposeListeners: Function[] = [];
   private listeners: OnViewRequestListener[] = [];
 
-  /** @deprecated use `context.log` instead */
-  private log: ReturnType<typeof rawLog.scope>;
-  /** @deprecated use `context.manifest` instead */
-  public readonly manifest: Manifest;
-  /** @deprecated use `context.store` instead */
-  private pluginStore: PluginStoreService;
-  /** @deprecated use `context.utility` instead */
-  private utilityConnection: UtilityConnection;
   private listening = false;
 
   menu: PluginMenuManager;
 
   constructor(public readonly context: WebPluginContext) {
-    this.manifest = context.manifest;
-    this.pluginStore = context.store;
-    this.utilityConnection = context.utility;
-    this.log = context.log;
-
     this.menu = new PluginMenuManager(context);
 
     this.handleMessage = this.handleMessage.bind(this);
     this.onTableChanged = this.onTableChanged.bind(this);
   }
 
+  public get manifest(): Manifest {
+    return this.context.manifest;
+  }
+
+  private get log(): ReturnType<typeof rawLog.scope> {
+    return this.context.log;
+  }
+
+  private get pluginStore(): PluginStoreService {
+    return this.context.store;
+  }
+
+  private get utilityConnection(): UtilityConnection {
+    return this.context.utility;
+  }
+
   /** Starts the plugin */
   async load(snapshot: PluginSnapshot) {
-    const { views, menu } = this.context.manifest.capabilities;
+    const { views, menu } = this.manifest.capabilities;
 
     this.pluginStore.addTabTypeConfigs(snapshot.manifest, views);
 
@@ -149,10 +134,8 @@ export default class WebPluginLoader {
     }
 
     // Create `response` that TypeScript can narrow by name in switch
-    const response: PluginResponseData = {
-      id: request.id,
-      name: request.name,
-      args: request.args,
+    const response: ResponseData = {
+      ...request,
       result: undefined as any,
       error: undefined as any,
     };
@@ -163,41 +146,41 @@ export default class WebPluginLoader {
       switch (response.name) {
         // ========= READ ACTIONS ===========
         case "getSchemas":
-          response.result = await this.context.utility.send("conn/listSchemas");
+          response.result = await this.utilityConnection.send("conn/listSchemas");
           break;
         case "getTables":
-          response.result = this.context.store.getTables(
+          response.result = this.pluginStore.getTables(
             response.args.schema
           );
           break;
         case "getColumns":
-          response.result = await this.context.store.getColumns(
+          response.result = await this.pluginStore.getColumns(
             response.args.table,
             response.args.schema
           );
           break;
         case "getTableKeys":
         case "getOutgoingKeys":
-          response.result = await this.context.utility.send(
+          response.result = await this.utilityConnection.send(
             'conn/getOutgoingKeys',
             { table: response.args.table, schema: response.args.schema }
           );
           break;
         case "getIncomingKeys":
-          response.result = await this.context.utility.send(
+          response.result = await this.utilityConnection.send(
             'conn/getIncomingKeys',
             { table: response.args.table, schema: response.args.schema }
           );
           break;
         case "getTableIndexes":
-          response.result = await this.context.utility
+          response.result = await this.utilityConnection
             .send("conn/listTableIndexes", {
               table: response.args.table,
               schema: response.args.schema,
             });
           break;
         case "getPrimaryKeys":
-          response.result = await this.context.utility
+          response.result = await this.utilityConnection
             .send("conn/getPrimaryKeys", {
               table: response.args.table,
               schema: response.args.schema,
@@ -229,63 +212,85 @@ export default class WebPluginLoader {
             response.name === "getEncryptedData"
               ? "plugin/getEncryptedData"
               : "plugin/getData",
-            { manifest: this.manifest, key: response.args.key }
+            {
+              manifest: this.manifest,
+              key: response.args.key,
+              scope: response.args.scope,
+            }
           );
           response.result = value;
           break;
         }
         case "clipboard.readText":
-          response.result = window.main.readTextFromClipboard();
+          response.result = await window.main.readTextFromClipboard();
           break;
         case "checkForUpdate":
-          response.result = await this.context.utility.send("plugin/checkForUpdates", {
-            id: this.context.manifest.id,
+          response.result = await this.utilityConnection.send("plugin/checkForUpdates", {
+            id: this.manifest.id,
           });
           break;
 
         // ======== WRITE ACTIONS ===========
-        case "runQuery":
-          response.result = await this.pluginStore.runQuery(response.args.query);
+        case "runQuery": {
+          // HACK (@day): bundled plugins can get around readonly settings since they can't be set by users
+          const forceReadOnly = this.context.pluginOrigin !== 'bundled' ?
+            await this.utilityConnection.send("plugin/getPluginSetting", {
+              id: this.manifest.id,
+              key: 'readOnly'
+            }) :
+            false;
+          response.result = await this.pluginStore.runQuery(response.args.query, { forceReadOnly });
           break;
+        }
         case "setData":
         case "setEncryptedData": {
+          assertJsonSerializable(response.args.value, response.name);
           await this.utilityConnection.send(
             response.name === "setEncryptedData"
               ? "plugin/setEncryptedData"
               : "plugin/setData",
-            { manifest: this.manifest, key: response.args.key, value: response.args.value }
+            {
+              manifest: this.manifest,
+              key: response.args.key,
+              value: response.args.value,
+              scope: response.args.scope,
+            }
           )
           break;
         }
         case "clipboard.writeText":
-          window.main.writeTextToClipboard(response.args.text);
+          await window.main.writeTextToClipboard(response.args.text);
           break;
         case "clipboard.writeImage":
-          response.result = window.main.writeImageToClipboard(response.args.data);
+          response.result = await window.main.writeImageToClipboard(response.args.data);
           break;
         case "noty.info":
           this.context.noty.info(response.args.message, {
             allowRawHtml: false,
+            fromName: this.manifest.name
           });
           break;
         case "noty.success":
           this.context.noty.success(response.args.message, {
             allowRawHtml: false,
+            fromName: this.manifest.name
           });
           break;
         case "noty.error":
           this.context.noty.error(response.args.message, {
             allowRawHtml: false,
+            fromName: this.manifest.name
           });
           break;
         case "noty.warning":
           this.context.noty.warning(response.args.message, {
             allowRawHtml: false,
+            fromName: this.manifest.name
           });
           break;
         case "confirm":
           response.result = await this.context.confirm(
-            response.args.title,
+            `${this.manifest.name}: ${response.args.title}`,
             response.args.message,
             response.args.options
           );
@@ -316,7 +321,7 @@ export default class WebPluginLoader {
           window.main.openExternally(response.args.link);
           break;
         case "openTab":
-          this.pluginStore.openTab(response.args);
+          this.context.store.openTab(response.args);
           break;
 
         // ========= SYSTEM ACTIONS ===========
@@ -330,7 +335,7 @@ export default class WebPluginLoader {
           break;
 
         default:
-          throw new Error(`Unknown request: ${response.name}`);
+          throw new Error(`Unknown request: ${request.name}`);
       }
 
       for (const callback of modifyResultCallbacks) {
@@ -349,7 +354,7 @@ export default class WebPluginLoader {
 
   private async handleViewNotification(
     source: HTMLIFrameElement,
-    notification: PluginNotificationData
+    notification: NotificationData
   ) {
     switch (notification.name) {
       case "windowEvent": {
@@ -361,6 +366,14 @@ export default class WebPluginLoader {
           this.log.warn(
             `Invalid or unknown event class: ${notification.args.eventClass}`
           );
+          return;
+        }
+
+        // don't allow keyboard events to be run in the background
+        if (
+          windowEventClass === KeyboardEvent &&
+          (!document.hasFocus() || document.activeElement !== source)
+        ) {
           return;
         }
 
@@ -405,11 +418,11 @@ export default class WebPluginLoader {
     this.viewInstances = this.viewInstances.filter((ins) => ins.iframe !== iframe);
   }
 
-  postMessage(iframe: HTMLIFrameElement, data: PluginNotificationData | ResponsePayload) {
+  postMessage(iframe: HTMLIFrameElement, data: NotificationData | ResponseData) {
     iframe.contentWindow.postMessage(data, `plugin://${this.manifest.id}`);
   }
 
-  broadcast(data: PluginNotificationData) {
+  broadcast(data: NotificationData) {
     this.viewInstances.forEach(({ iframe }) => {
       this.postMessage(iframe, data);
     });
@@ -429,10 +442,10 @@ export default class WebPluginLoader {
   async unload() {
     window.removeEventListener("message", this.handleMessage);
 
-    const { views, menu } = this.context.manifest.capabilities;
+    const { views, menu } = this.manifest.capabilities;
 
     this.menu.unregister(views, menu);
-    this.pluginStore.removeTabTypeConfigs(this.context.manifest, views);
+    this.pluginStore.removeTabTypeConfigs(this.manifest, views);
   }
 
   addListener(listener: OnViewRequestListener) {
@@ -442,7 +455,7 @@ export default class WebPluginLoader {
     };
   }
 
-  checkPermission(data: PluginRequestData) {
+  checkPermission(_data: RequestPayload) {
     // do nothing on purpose
     // if not permitted, throw error
   }
