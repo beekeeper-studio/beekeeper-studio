@@ -7,6 +7,19 @@ const log = rawLog.scope('data/tools')
 
 type JsonFriendly = string | boolean | number | null | JsonFriendly[] | Record<string, any>
 
+/**
+ * JSON/JSONB cells can hold a parsed value (e.g. after cloning a row). Drivers
+ * render arrays as value lists, so it has to be serialized before it is sent.
+ * Strings are left alone so they aren't double-encoded.
+ */
+export function serializeJsonCellValue(dataType: string | undefined, value: any): any {
+  const type = String(dataType).toUpperCase()
+  if ((type === 'JSON' || type === 'JSONB') && _.isObject(value)) {
+    return JSON.stringify(value)
+  }
+  return value
+}
+
 function dec28bits(num: any): string {
   return ("00000000" + num.toString(2)).slice(-8);
 }
