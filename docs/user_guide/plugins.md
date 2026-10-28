@@ -111,6 +111,40 @@ Sometimes you might need a specific plugin version - maybe the latest plugin req
 
     The specific plugin version should now be installed and ready to use.
 
+## Disabling Plugins
+
+Plugins can be disabled in a variety of ways. By default, all registries are disabled (Official, Commmunity, Custom, and Unlisted). Disabling a registry means that all loading processes for that registry are skipped, and any plugins from that registry that are already installed are automatically disabled. There are controls in the browse section of the plugin modal to control these values, but they can also be manually set in the [ini config](./configuration.md). This is an excerpt from the default configuration:
+
+```ini
+[pluginSystem]
+; Disable plugin system entirely
+disabled = false
+
+; Disabled all official plugin functionality (installing, fetching the plugin list from
+; the registry, and load). These plugins can be found at https://github.com/beekeeper-studio/
+; beekeeper-studio-plugins/blob/main/plugins.json
+officialDisabled = true
+
+; Disable all community plugin functionality (installing, fetching the plugin list from the
+; registry, and loading). These plugins can be found at https://github.com/beekeeper-studio/
+; beekeeper-studio-plugins/blob/main/community-plugins.json
+communityDisabled = true
+
+; Disable third party registries, these are configured below via the [pluginSystem.registries] sections
+thirdPartyRegistriesDisabled = true
+
+; Disable unlisted plugin loading, these are plugins that are manually added to the
+; plugin directory
+unlistedDisabled = true
+```
+
+You can also explicitly disable a specific plugin by its id. In the ini config file:
+```ini
+; The plugin id can be found in the plugin's manifest.json, found in its repo or in the registry
+[plugin.plugin-id]
+disabled = true
+```
+
 ## Custom Registries
 
 For Business users, custom registries allow you to distribute as many plugins as you'd like to your team. Once set up, any plugins in your registry will show up in the plugin browse section. Here's how you can set up a custom registry:
@@ -124,10 +158,10 @@ For Business users, custom registries allow you to distribute as many plugins as
 
     - In your [config](./configuration.md) add a section for your registry
 ```ini
-[pluginSystem.registries.custom-name] # Replace custom-name with the name of your repo, this is only used internally and must be unique
-owner = owner-name # The owner of the github repo
-repo = repository-name # The repository name
-file = plugins.json # The name of the file you created above
+[pluginSystem.registries.custom-name] ; Replace custom-name with the name of your repo, this is only used internally and must be unique
+owner = owner-name ; The owner of the github repo
+repo = repository-name ; The repository name
+file = plugins.json ; The name of the file you created above
 ```
 
     !!! tip
