@@ -605,6 +605,7 @@ $gutter-h: 1.5rem;
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
+    color: var(--text-contrast);
   }
 
   a {
