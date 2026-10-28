@@ -14,7 +14,10 @@ export function mapViewsAndMenuFromV0ToV1(manifest: ManifestV0): {
 
   let views: PluginView[];
 
-  if (_.isArray(manifest.capabilities.views)) {
+  if (!manifest.capabilities) {
+    log.error(`missing capabilities for ${manifest.id}`)
+    views = []
+  } else if (_.isArray(manifest.capabilities.views)) {
     log.error(`manifestVersion: 1 is required to use view arrays, plugin ${manifest.id} not loading any views`)
     views = [];
   } else {
@@ -32,7 +35,7 @@ export function mapViewsAndMenuFromV0ToV1(manifest: ManifestV0): {
   }
 
   let menu: PluginMenuItem[] = [];
-  if (_.isArray(manifest.capabilities.menu) && manifest.capabilities.menu.length > 0) {
+  if (manifest.capabilities && _.isArray(manifest.capabilities.menu) && manifest.capabilities.menu.length > 0) {
     menu = manifest.capabilities.menu;
   } else {
     menu = views.map((view) => ({
