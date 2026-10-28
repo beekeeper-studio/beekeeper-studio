@@ -69,7 +69,15 @@ export default class PluginManager extends Hookable {
 
     await this.callHook("before-initialize");
 
-    const installedPlugins = this.fileManager.scanPlugins().map(convertToManifestV1);
+    const installedPlugins = this.fileManager.scanPlugins().map((manifest) => {
+      try {
+        return convertToManifestV1(manifest);
+      } catch (e) {
+        log.error('Error converting manifest: ', e);
+        return null;
+      }
+    }).filter((v) => !!v);
+
     this.manifests = installedPlugins;
 
     log.debug("Installed plugins:", installedPlugins);
