@@ -6,7 +6,7 @@ icon: material/api
 
 # Plugin SDK Reference
 
-The [Beekeeper Studio Plugin SDK](https://github.com/beekeeper-studio/plugin) is published on npm as [`@beekeeperstudio/plugin`](https://www.npmjs.com/package/@beekeeperstudio/plugin). The SDK provides communication between your plugin and the main application.
+The [Beekeeper Studio Plugin SDK](sdk.md) ([GitHub](https://github.com/beekeeper-studio/plugin)) is published on npm as [`@beekeeperstudio/plugin`](https://www.npmjs.com/package/@beekeeperstudio/plugin). The SDK provides communication between your plugin and the main application.
 
 ## Installation
 

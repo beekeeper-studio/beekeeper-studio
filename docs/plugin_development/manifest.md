@@ -119,7 +119,7 @@ The `manifest.json` file defines your plugin's metadata, capabilities, settings,
 
 | Value                 | Description                                                                            |
 | --------------------- | -------------------------------------------------------------------------------------- |
-| `"plain-tab"`         | Tab with your plugin's iframe taking up the entire tab.                                |
+| `"base-tab"`          | Tab with your plugin's iframe taking up the entire tab.                                |
 | `"shell-tab"`         | Tab with your plugin's iframe at the top and a collapsible result table at the bottom. |
 | `"primary-sidebar"`   | _(Planned for future releases)_ Primary sidebar panel.                                 |
 | `"secondary-sidebar"` | _(Planned for future releases)_ Secondary sidebar panel.                               |
@@ -143,6 +143,8 @@ Each `command` must be unique within a placement. To show the same command with 
     The `editor.query.toolbar`, `results.statusbar` and `tableTable.statusbar` placements, and the `icon` and `enabledWhen` fields, need Beekeeper Studio 6.2 or later, as do items on the tab header placements (`tab.query.header.context` and `tab.table.header.context`). Earlier versions skip menu items whose placement they don't know, and ignore the two fields. Set `"minAppVersion": "6.2.0"` if your plugin depends on them.
 
 ### PluginMenuItemPlacement
+
+See [Integration Points](integration-points.md) for a screenshot and an example of each placement.
 
 | Value                               | Description                                                      |
 | ----------------------------------- | ---------------------------------------------------------------- |

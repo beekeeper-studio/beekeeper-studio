@@ -16,6 +16,27 @@ Tab views appear as tabs in the main workspace area, alongside query tabs and ot
 
 The base tab will take up the entire tab space for your plugin's interface.
 
+Use it for plugins that bring their own interface and don't need a result table, such as dashboards, diagrams or forms.
+
+![Base Tab View Example](/assets/images/plugin-base-tab-view.png)
+
+**Manifest Example:**
+
+```json
+{
+  "capabilities": {
+    "views": [
+      {
+        "id": "table-overview",
+        "name": "Table Overview",
+        "type": "base-tab",
+        "entry": "index.html"
+      }
+    ]
+  }
+}
+```
+
 ### Shell Tab
 
 The shell tab contains a result table at the bottom that can be opened and closed.
@@ -127,5 +148,6 @@ if (state) {
 ## Next Steps
 
 - **[Creating Plugins](creating-your-first-plugin.md)** - Learn how to build your first plugin
+- **[Integration Points](integration-points.md)** - Add menu items and buttons that open your views
 - **[Manifest Reference](manifest.md)** - Complete manifest file documentation
 - **[SDK Reference](api-reference.md)** - Functions available in the Plugin SDK

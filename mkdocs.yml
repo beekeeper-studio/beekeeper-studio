@@ -209,8 +209,11 @@ nav:
     - Introduction: plugin_development/index.md
     - Creating your first plugin: plugin_development/creating-your-first-plugin.md
     - Plugin Views: plugin_development/plugin-views.md
+    - Integration Points: plugin_development/integration-points.md
     - Manifest Reference: plugin_development/manifest.md
-    - SDK Reference: plugin_development/api-reference.md
+    - SDK:
+      - Overview: plugin_development/sdk.md
+      - SDK Reference: plugin_development/api-reference.md
     - Publishing: plugin_development/publishing-plugins.md
   - Support:
     - purchasing/purchasing-a-license.md
