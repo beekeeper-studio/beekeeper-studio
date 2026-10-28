@@ -55,7 +55,7 @@
               <a
                 href="#"
                 class="trial-feature-more-link"
-                @click.prevent="openPricing"
+                @click.prevent="openUpgradePage"
               >other paid features</a>
             </span>
           </li>
@@ -100,7 +100,7 @@
               <a
                 href="#"
                 class="trial-feature-more-link"
-                @click.prevent="openPricing"
+                @click.prevent="openUpgradePage"
               >other paid features</a>
             </span>
           </li>
@@ -174,7 +174,7 @@ import {
   TRIAL_END_DECISION_KEY,
 } from "@/lib/trial";
 
-const PRICING_URL = "https://www.beekeeperstudio.io/pricing";
+const UPGRADE_URL = "https://www.beekeeperstudio.io/upgrade";
 /** How many features either list names before deferring to the pricing page. */
 const FEATURE_LIMIT = 6;
 /** Step two always names at least this many, so one used feature is not a list of one. */
@@ -323,12 +323,12 @@ export default Vue.extend({
       this.$root.$emit(AppEvent.enterLicense);
     },
     buyLicense() {
-      this.$native.openLink(PRICING_URL);
+      this.$native.openLink(UPGRADE_URL);
       this.enterLicense();
     },
     /** The step two link: the pricing page on its own, no license dialog. */
-    openPricing() {
-      this.$native.openLink(PRICING_URL);
+    openUpgradePage() {
+      this.$native.openLink(UPGRADE_URL);
     },
     async goToDowngrade() {
       this.acknowledged = false;
