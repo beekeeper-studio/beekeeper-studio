@@ -150,6 +150,53 @@ describe('store connect action', () => {
     expect(store.state.connected).toBe(true)
   })
 
+  describe('the SQLite Create flag', () => {
+    const save = vi.fn(async (_item: unknown) => undefined)
+    const stored = { ...CONFIG, name: 'stored name', options: { createDatabaseFile: true } }
+
+    beforeEach(() => {
+      save.mockClear()
+      store.registerModule('data/connections', {
+        namespaced: true,
+        state: { items: [stored] },
+        actions: { save: (_context, item) => save(item) },
+      } as any, { preserveState: false })
+    })
+
+    afterEach(() => {
+      store.unregisterModule('data/connections')
+    })
+
+    // The connect made the file, so the flag must not outlive it: a later
+    // connect has to refuse the path again if the file goes missing.
+    it('is cleared on the form config and the stored connection once connected', async () => {
+      const config = { ...CONFIG, name: 'unsaved edit', options: { createDatabaseFile: true } }
+
+      await store.dispatch('connect', { config })
+
+      expect(config.options.createDatabaseFile).toBe(false)
+      expect(save).toHaveBeenCalledTimes(1)
+      // the stored copy is saved, not the form's unsaved edits
+      expect(save).toHaveBeenCalledWith(expect.objectContaining({
+        name: 'stored name',
+        options: { createDatabaseFile: false },
+      }))
+    })
+
+    it('is kept when the connect fails', async () => {
+      sendImpl = async (channel) => {
+        if (channel === 'conn/create') throw new Error('unable to open database file')
+        return undefined
+      }
+      const config = { ...CONFIG, options: { createDatabaseFile: true } }
+
+      await expect(store.dispatch('connect', { config })).rejects.toThrow()
+
+      expect(config.options.createDatabaseFile).toBe(true)
+      expect(save).not.toHaveBeenCalled()
+    })
+  })
+
   it('keeps a working connection when post-connect housekeeping fails', async () => {
     sendImpl = async (channel) => {
       if (channel === 'appdb/tabhistory/clearDeletedTabs') throw new Error('tab history unavailable')

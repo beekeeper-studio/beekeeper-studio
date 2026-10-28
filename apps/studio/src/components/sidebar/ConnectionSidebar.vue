@@ -7,7 +7,7 @@
       <div class="btn-wrap quick-connect">
         <a
           href=""
-          class="btn btn-flat btn-icon btn-block"
+          class="btn btn-flat btn-block"
           data-testid="new-connection"
           @click.prevent="$emit('create')"
         >
@@ -146,7 +146,8 @@
               class="list-body"
             >
               <template v-if="searching">
-                <div class="empty-state"
+                <div
+                  class="empty-state"
                   v-if="!typing && !fetchingResults && filteredConnections.length === 0"
                 >
                   No connections match "{{ connFilter }}"
@@ -195,7 +196,7 @@
                       v-if="isCloud"
                     >
                       <a
-                        class="btn btn-flat btn-block btn-icon"
+                        class="btn btn-flat btn-block"
                         @click.prevent="importFromLocal"
                         title="Import connections from local workspace"
                       ><i class="material-icons">save_alt</i> Import</a>
@@ -257,15 +258,6 @@
                   >
                     <content-placeholder-text :lines="1" />
                   </content-placeholder>
-                </template>
-                <template #folder-empty="{ node, depth }">
-                  <div
-                    v-if="!loadingFolderIds.includes(node.ref.id) && !errors[node.ref.id]"
-                    class="tree-empty"
-                    :style="{ '--depth': depth }"
-                  >
-                    No items
-                  </div>
                 </template>
                 <template #item="{ node }">
                   <connection-list-item
@@ -853,11 +845,6 @@ export default {
   margin-bottom: -0.7rem;
   padding-left: calc(var(--depth) * 1rem + 0.55rem);
 }
-.tree-empty {
-  padding-left: calc(var(--depth) * 1rem + 0.55rem);
-  margin-block: 0.25rem;
-  opacity: 0.6;
-}
 ::v-deep .alert.error-alert.tree-error {
   margin-left: calc(var(--depth) * 1rem + 0.55rem);
   margin-right: 0.55rem;
@@ -881,7 +868,7 @@ export default {
 
 @keyframes just-created-fade {
   from {
-    background: rgb(from var(--theme-primary) r g b / 25%);
+    background: var(--primary-a8);
   }
   to {
     background: transparent;

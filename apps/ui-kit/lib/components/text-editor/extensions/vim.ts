@@ -1,4 +1,9 @@
 import _ from "lodash";
+import {
+  getVimLineNumberOption,
+  setVimLineNumberOption,
+  VimLineNumberOptions,
+} from "./lineNumbers";
 
 export type IMapping = {
   lhs: string;
@@ -122,7 +127,7 @@ export class Register {
       this.linewise = true;
     }
     this.keyBuffer.push(text);
-    await this.clipboard.writeText(this.keyBuffer.join(' '), false)
+    await this.clipboard.writeText(this.toString(), false)
   }
 
   pushInsertModeChanges(changes: any) {
@@ -140,8 +145,8 @@ export class Register {
     this.linewise = false;
   }
 
-  async toString() {
-    return await this.clipboard.readText();
+  toString() {
+    return this.keyBuffer.join('');
   }
 
   private createInsertModeChanges(c: any) {
@@ -189,6 +194,29 @@ function applyKeymaps(vim: any, directives: VimDirective[]): void {
   appliedKeymapSignature = signature;
 }
 
+const LINE_NUMBER_OPTIONS: [keyof VimLineNumberOptions, string][] = [
+  ["number", "nu"],
+  ["relativenumber", "rnu"],
+];
+
+/**
+ * `number` and `relativenumber`, so they work from the vimrc and from `:set`.
+ * codemirror calls the callback with no value to read the option, and with no
+ * cm for the global value (the vimrc, and the global half of a plain `:set`).
+ */
+function defineLineNumberOptions(codeMirrorVimInstance: any) {
+  for (const [name, alias] of LINE_NUMBER_OPTIONS) {
+    // No default: codemirror would set it on every define, clobbering a
+    // global the user changed with `:set`.
+    codeMirrorVimInstance.defineOption(name, undefined, "boolean", [alias], (value?: boolean, cm?: any) => {
+      if (value === undefined) {
+        return getVimLineNumberOption(name, cm?.cm6);
+      }
+      setVimLineNumberOption(name, value, cm?.cm6);
+    });
+  }
+}
+
 export function extendVimOnCodeMirror(
   codeMirrorVimInstance: any,
   vimConfig?: Config,
@@ -204,6 +232,9 @@ export function extendVimOnCodeMirror(
     applyConfig(codeMirrorVimInstance, vimConfig);
   }
 
+  // Before the keymaps, which may `set` these.
+  defineLineNumberOptions(codeMirrorVimInstance);
+
   if (_.isArray(vimKeymaps)) {
     applyKeymaps(codeMirrorVimInstance, vimKeymaps);
   } else {
@@ -218,5 +249,61 @@ export function extendVimOnCodeMirror(
     } catch (e) {
       // Already defined.
     }
+    defineClipboardActions(codeMirrorVimInstance);
   }
+}
+
+// Below is a reimplementation of the register logic from replit/codemirror-vim for the `+` register, with the addition of logic
+// for the `*` register to accommodate electrons new async clipboard APIs
+
+async function readClipboardRegister(register: Register): Promise<{ text: string, register: { linewise: boolean, blockwise: boolean } }> {
+  const text = await register.clipboard.readText();
+  const sameText = text === register.toString();
+  return {
+    text,
+    register: {
+      linewise: sameText && register.linewise,
+      blockwise: sameText && register.blockwise,
+    },
+  };
+}
+
+function defineClipboardActions(codeMirrorVimInstance: any) {
+  const registerController = codeMirrorVimInstance.getRegisterController();
+
+  codeMirrorVimInstance.defineAction("paste", function (this: any, cm: any, actionArgs: any, vim: any) {
+    const register = registerController.getRegister(actionArgs.registerName);
+    if (actionArgs.registerName === "+") {
+      navigator.clipboard.readText().then((value) => {
+        this.continuePaste(cm, actionArgs, vim, value, register);
+      });
+    } else if (actionArgs.registerName === "*" && register instanceof Register) {
+      readClipboardRegister(register).then(({ text, register: shape }) => {
+        this.continuePaste(cm, actionArgs, vim, text, shape);
+      }).catch((e) => {
+        console.error("Could not read the clipboard for the * register", e);
+      });
+    } else {
+      this.continuePaste(cm, actionArgs, vim, register.toString(), register);
+    }
+  });
+
+  codeMirrorVimInstance.defineAction("insertRegister", function (cm: any, actionArgs: any) {
+    const registerName = actionArgs.selectedCharacter;
+    const register = registerController.getRegister(registerName);
+    if (registerName === "*" && register instanceof Register) {
+      register.clipboard.readText().then((text) => {
+        if (text) {
+          cm.replaceSelection(text);
+        }
+      }).catch((e) => {
+        console.error("Could not read the clipboard for the * register", e);
+      });
+      return;
+    }
+    const text = register && register.toString();
+    if (text) {
+      cm.replaceSelection(text);
+    }
+  });
 }

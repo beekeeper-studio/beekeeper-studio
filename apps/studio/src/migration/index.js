@@ -98,6 +98,11 @@ import addSnowflakeOptions from './20260501_add_snowflake_options'
 import addWindowsAuthToConnections from './20260618_add_windows_auth_to_connections'
 import addSqlServerOptions from './20260626_add_sqlserver_options'
 import fixQueryAuditAppendOnlyTrigger from './20260914_fix_query_audit_append_only_trigger'
+import addScopeToPluginData from './20261011_add_scope_to_plugin_data'
+import splitThemeDarkFlag from './20260908_split_theme_dark_flag'
+import addGithubPluginSetting from './20261021_add_github_plugin_setting.js'
+import addConfirmWindowCloseSetting from './20260929_add_confirm_window_close_setting'
+import addPluginEntryCache from './20261026_add_plugin_entry_cache.js'
 
 import ultimate from './ultimate/index'
 
@@ -154,7 +159,12 @@ const realMigrations = [
   addSnowflakeOptions,
   addWindowsAuthToConnections,
   addSqlServerOptions,
-  fixQueryAuditAppendOnlyTrigger
+  fixQueryAuditAppendOnlyTrigger,
+  addScopeToPluginData,
+  splitThemeDarkFlag,
+  addGithubPluginSetting,
+  addConfirmWindowCloseSetting,
+  addPluginEntryCache
 ]
 
 // fixtures require the models

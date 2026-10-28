@@ -9,10 +9,30 @@
 // default are all inherited from the better-sqlite3 dialect unchanged — only
 // the driver and connection acquisition differ. (cf. ./knex-duckdb.)
 import Client_BetterSQLite3 from "knex/lib/dialects/better-sqlite3/index.js";
+import type Libsql from "libsql";
+
+/**
+ * libsql loads its native addon as soon as it's required, and it publishes no
+ * win32-arm64 build. The utility process imports every database client at
+ * startup, so a top-level import there would break every connection type, not
+ * just LibSQL. Always load it through here, on first use.
+ */
+export function loadLibsql(): typeof Libsql {
+  try {
+    return require("libsql");
+  } catch (e) {
+    if (process.platform === "win32" && process.arch === "arm64") {
+      throw new Error(
+        "LibSQL is not supported on Windows ARM64: the libsql driver has no native build for this platform."
+      );
+    }
+    throw e;
+  }
+}
 
 class Client_Libsql extends Client_BetterSQLite3 {
   _driver() {
-    return require("libsql");
+    return loadLibsql();
   }
 
   async acquireRawConnection() {

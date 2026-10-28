@@ -7,9 +7,15 @@
       role="img"
       :aria-label="icon.title"
     >
-      <path :d="icon.path" :fill="`#${icon.hex}`" />
+      <path :d="icon.path" fill="currentColor" />
     </svg>
-    <img v-else-if="icon" :src="icon" :alt="type" />
+    <span
+      v-else-if="icon"
+      class="devicon"
+      role="img"
+      :aria-label="type"
+      :style="{ maskImage: `url(${icon})` }"
+    />
     <i v-else class="material-icons-outlined default-icon">table_rows</i>
   </span>
 </template>
@@ -35,10 +41,10 @@ import {
   siTidb,
   siTrino,
 } from "simple-icons";
-import dynamodb from "devicon/icons/dynamodb/dynamodb-original.svg";
-import firebird from "devicon/icons/firebird/firebird-original.svg";
+import dynamodb from "devicon/icons/dynamodb/dynamodb-plain.svg";
+import firebird from "devicon/icons/firebird/firebird-plain.svg";
 import oracle from "devicon/icons/oracle/oracle-original.svg";
-import sqlserver from "devicon/icons/microsoftsqlserver/microsoftsqlserver-original.svg";
+import sqlserver from "devicon/icons/microsoftsqlserver/microsoftsqlserver-plain.svg";
 import { ConnectionType } from "@/lib/db/types";
 
 type DevIcon = string;
@@ -89,14 +95,22 @@ export default Vue.extend({
 
 <style lang="scss" scoped>
 svg,
-img,
+.devicon,
 i.default-icon {
   width: 1em;
   height: 1em;
 }
 
+.devicon {
+  display: inline-block;
+  background-color: currentColor;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+}
+
 i.default-icon {
   font-size: 1em;
-  color: hsl(from var(--theme-base) h s calc(l + 80));
+  color: var(--text-contrast);
 }
 </style>

@@ -5,10 +5,10 @@
     &.magic-link {
       a {
         text-decoration: underline;
-        color: $link-color;
+        color: var(--link-fg);
 
         &:hover {
-          color: $text-light;
+          color: var(--text-muted);
         }
       }
     }
@@ -22,7 +22,7 @@
       .bks-progress {
         height: 75%!important;
         vertical-align: middle;
-        background-color: $brand-success!important;
+        background: var(--success-solid-bg)!important;
       }
 
     }

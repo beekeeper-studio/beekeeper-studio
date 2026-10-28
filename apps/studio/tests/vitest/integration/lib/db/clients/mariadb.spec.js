@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 import { GenericContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '@tests/lib/db'
-import { runCommonTests } from '@tests/integration/lib/db/clients/all'
+import { runCommonTests } from '@tests/vitest/integration/lib/db/clients/all'
 
 describe("MariaDB Tests", () => {
   vi.setConfig({ testTimeout: dbtimeout, hookTimeout: dbtimeout })
@@ -10,7 +10,6 @@ describe("MariaDB Tests", () => {
   let util
 
   beforeAll(async () => {
-    const timeoutDefault = 5000
     container = await new GenericContainer("mariadb")
       .withName("maria")
       .withEnvironment({
@@ -20,7 +19,6 @@ describe("MariaDB Tests", () => {
       .withExposedPorts(3306)
       .withStartupTimeout(dbtimeout)
       .start()
-    vi.setConfig({ testTimeout: timeoutDefault })
     const config = {
       client: 'mariadb',
       host: container.getHost(),

@@ -21,8 +21,10 @@ import {
 } from './utils';
 import logRaw from '@bksLogger'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor'
+import { foreignKeyColumnsSql } from './sqlserver/scripts'
 import { buildWindowsAuthConnStr } from './sqlserverWinAuth'
 import { parseSqlServerHost } from './sqlserverHost'
+import { bindDriver } from './sqlserverDriver'
 import { SqlServerData } from '@shared/lib/dialects/sqlserver'
 import { SqlServerChangeBuilder } from '@shared/lib/sql/change_builder/SqlServerChangeBuilder'
 import { joinFilters } from '@/common/utils';
@@ -32,7 +34,7 @@ import {
   QueryLogOptions
 } from './BasicDatabaseClient'
 import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportFuncOptions, DatabaseEntity, BksFieldType, BksField, IncludedFilterTypes } from '../models';
-import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
+import { AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from '../serialization/transcoders';
@@ -46,6 +48,10 @@ const mmsqlErrors = {
 
 // Setup guide for SQL Server integrated / Kerberos authentication prerequisites.
 const WIN_AUTH_DOCS_URL = 'https://docs.beekeeperstudio.io/user_guide/connecting/sql-server/'
+
+// Username/password and Entra connections use tedious. Bound so a later integrated-auth
+// attempt (which loads mssql/msnodesqlv8) can't swap its Request class -- see sqlserverDriver.ts.
+const TediousConnectionPool = bindDriver(sql)
 
 // Wrap a promise with a JS-level deadline. msnodesqlv8/ODBC's native conn_timeout
 // does NOT reliably cancel a stalled SQLDriverConnect -- it only covers the TCP
@@ -496,178 +502,26 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     }
   }
 
-  async getOutgoingKeys(table: string, schema: string = this._defaultSchema) {
-    // Simplified approach to get foreign keys with ordinal position for proper ordering in composite keys
+  async getOutgoingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
+    // Foreign keys defined on this table (referencing other tables)
     const sql = `
-      SELECT
-        name = FK.CONSTRAINT_NAME,
-        from_schema = PK.TABLE_SCHEMA,
-        from_table = FK.TABLE_NAME,
-        from_column = CU.COLUMN_NAME,
-        to_schema = PK.TABLE_SCHEMA,
-        to_table = PK.TABLE_NAME,
-        to_column = PT.COLUMN_NAME,
-        constraint_name = C.CONSTRAINT_NAME,
-        on_update = C.UPDATE_RULE,
-        on_delete = C.DELETE_RULE,
-        CU.ORDINAL_POSITION as ordinal_position
-      FROM
-          INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS C
-      INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS FK
-          ON C.CONSTRAINT_NAME = FK.CONSTRAINT_NAME
-      INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS PK
-          ON C.UNIQUE_CONSTRAINT_NAME = PK.CONSTRAINT_NAME
-      INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE CU
-          ON C.CONSTRAINT_NAME = CU.CONSTRAINT_NAME
-      INNER JOIN (
-                  SELECT
-                      i1.TABLE_NAME,
-                      i2.COLUMN_NAME
-                  FROM
-                      INFORMATION_SCHEMA.TABLE_CONSTRAINTS i1
-                  INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE i2
-                      ON i1.CONSTRAINT_NAME = i2.CONSTRAINT_NAME
-                  WHERE
-                      i1.CONSTRAINT_TYPE = 'PRIMARY KEY'
-                ) PT
-          ON PT.TABLE_NAME = PK.TABLE_NAME
-      WHERE FK.TABLE_NAME = ${this.wrapValue(table)} AND FK.TABLE_SCHEMA = ${this.wrapValue(schema)}
-      ORDER BY
-        FK.CONSTRAINT_NAME,
-        CU.ORDINAL_POSITION
+      ${foreignKeyColumnsSql}
+      WHERE pt.name = ${this.wrapValue(table)} AND SCHEMA_NAME(pt.schema_id) = ${this.wrapValue(schema)}
+      ORDER BY fk.name, fkc.constraint_column_id
     `;
-
     const { data } = await this.driverExecuteSingle(sql);
-
-    // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(data.recordset, 'name');
-
-    const result = Object.keys(groupedKeys).map(constraintName => {
-      const keyParts = groupedKeys[constraintName];
-
-      // If there's only one part, return a simple key (backward compatibility)
-      if (keyParts.length === 1) {
-        const row = keyParts[0];
-        return {
-          constraintName: row.name,
-          toTable: row.to_table,
-          toSchema: row.to_schema,
-          toColumn: row.to_column,
-          fromTable: row.from_table,
-          fromSchema: row.from_schema,
-          fromColumn: row.from_column,
-          onUpdate: row.on_update,
-          onDelete: row.on_delete,
-          isComposite: false
-        };
-      }
-
-      // If there are multiple parts, it's a composite key
-      const firstPart = keyParts[0];
-      return {
-        constraintName: firstPart.name,
-        toTable: firstPart.to_table,
-        toSchema: firstPart.to_schema,
-        toColumn: keyParts.map(p => p.to_column),
-        fromTable: firstPart.from_table,
-        fromSchema: firstPart.from_schema,
-        fromColumn: keyParts.map(p => p.from_column),
-        onUpdate: firstPart.on_update,
-        onDelete: firstPart.on_delete,
-        isComposite: true
-      };
-    });
-
-    this.logger().debug("outgoingKeys result", result);
-    return result;
+    return this.parseForeignKeys(data.recordset || []);
   }
 
-  async getIncomingKeys(table: string, schema: string = this._defaultSchema) {
-    // Query for foreign keys TO this table (incoming - other tables referencing this table)
+  async getIncomingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
+    // Foreign keys on other tables that reference this table
     const sql = `
-      SELECT
-        name = FK.CONSTRAINT_NAME,
-        from_schema = FK.TABLE_SCHEMA,
-        from_table = FK.TABLE_NAME,
-        from_column = CU.COLUMN_NAME,
-        to_schema = PK.TABLE_SCHEMA,
-        to_table = PK.TABLE_NAME,
-        to_column = PT.COLUMN_NAME,
-        constraint_name = C.CONSTRAINT_NAME,
-        on_update = C.UPDATE_RULE,
-        on_delete = C.DELETE_RULE,
-        CU.ORDINAL_POSITION as ordinal_position
-      FROM
-          INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS C
-      INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS FK
-          ON C.CONSTRAINT_NAME = FK.CONSTRAINT_NAME
-      INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS PK
-          ON C.UNIQUE_CONSTRAINT_NAME = PK.CONSTRAINT_NAME
-      INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE CU
-          ON C.CONSTRAINT_NAME = CU.CONSTRAINT_NAME
-      INNER JOIN (
-                  SELECT
-                      i1.TABLE_NAME,
-                      i2.COLUMN_NAME,
-                      i2.ORDINAL_POSITION
-                  FROM
-                      INFORMATION_SCHEMA.TABLE_CONSTRAINTS i1
-                  INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE i2
-                      ON i1.CONSTRAINT_NAME = i2.CONSTRAINT_NAME
-                  WHERE
-                      i1.CONSTRAINT_TYPE = 'PRIMARY KEY'
-                ) PT
-          ON PT.TABLE_NAME = PK.TABLE_NAME AND CU.ORDINAL_POSITION = PT.ORDINAL_POSITION
-      WHERE PK.TABLE_NAME = ${this.wrapValue(table)} AND PK.TABLE_SCHEMA = ${this.wrapValue(schema)}
-      ORDER BY
-        FK.CONSTRAINT_NAME,
-        CU.ORDINAL_POSITION
+      ${foreignKeyColumnsSql}
+      WHERE rt.name = ${this.wrapValue(table)} AND SCHEMA_NAME(rt.schema_id) = ${this.wrapValue(schema)}
+      ORDER BY fk.name, fkc.constraint_column_id
     `;
-
     const { data } = await this.driverExecuteSingle(sql);
-    const recordset = data.recordset || [];
-
-    // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(recordset, 'name');
-
-    const result = Object.keys(groupedKeys).map(constraintName => {
-      const keyParts = groupedKeys[constraintName];
-
-      // If there's only one part, return a simple key (backward compatibility)
-      if (keyParts.length === 1) {
-        const row = keyParts[0];
-        return {
-          constraintName: row.name,
-          toTable: row.to_table,
-          toSchema: row.to_schema,
-          toColumn: row.to_column,
-          fromTable: row.from_table,
-          fromSchema: row.from_schema,
-          fromColumn: row.from_column,
-          onUpdate: row.on_update,
-          onDelete: row.on_delete,
-          isComposite: false
-        };
-      }
-
-      // If there are multiple parts, it's a composite key
-      const firstPart = keyParts[0];
-      return {
-        constraintName: firstPart.name,
-        toTable: firstPart.to_table,
-        toSchema: firstPart.to_schema,
-        toColumn: keyParts.map(p => p.to_column),
-        fromTable: firstPart.from_table,
-        fromSchema: firstPart.from_schema,
-        fromColumn: keyParts.map(p => p.from_column),
-        onUpdate: firstPart.on_update,
-        onDelete: firstPart.on_delete,
-        isComposite: true
-      };
-    });
-
-    this.logger().debug("incomingKeys result", result);
-    return result;
+    return this.parseForeignKeys(data.recordset || []);
   }
 
   async selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema: string = this._defaultSchema, selects = ['*']) {
@@ -1150,11 +1004,11 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async importStepZero(table: TableOrView): Promise<any> {
-    const transaction = new sql.Transaction(this.pool)
+    const transaction = this.pool.transaction()
 
     return {
       transaction,
-      request: new sql.Request(transaction),
+      request: transaction.request(),
       hasIdentityColumn: await this.hasIdentityColumn(table)
     }
   }
@@ -1197,7 +1051,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       if (this.server.config.windowsAuthEnabled) {
         this.pool = await this.connectWindowsAuth()
       } else {
-        this.pool = await new ConnectionPool(this.dbConfig).connect();
+        this.pool = await new TediousConnectionPool(this.dbConfig).connect();
       }
     } catch (err) {
       throw withConnectHint(err, this.dbConfig)
@@ -1378,6 +1232,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       )
     }
 
+    const WindowsConnectionPool = bindDriver(sqlWindows)
     const encryptionMode = this.dbConfig.options?.encryptionMode || 'on'
     const serverCertificate = this.dbConfig.options?.serverCertificate
     const serverSpn = this.dbConfig.options?.serverSpn
@@ -1414,7 +1269,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       const candidate = candidates[i]
       // mssql ignores the driver name and emits Trusted_Connection as a boolean
       // (ODBC needs yes/no); set both, plus TrustServerCertificate when asked.
-      const connecting = new sqlWindows.ConnectionPool({
+      const connecting = new WindowsConnectionPool({
         ...this.dbConfig,
         connectionTimeout: CONNECT_TIMEOUT_S * 1000,
         beforeConnect: (cfg: any) => {

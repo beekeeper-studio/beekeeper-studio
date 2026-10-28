@@ -9,7 +9,7 @@ import _ from 'lodash';
 import { MongoDBObjectIdTranscoder } from "@/lib/db/serialization/transcoders";
 import { ElectronRuntime as MongoRuntime } from '@mongosh/browser-runtime-electron';
 import { NodeDriverServiceProvider } from '@mongosh/service-provider-node-driver';
-import { createCancelablePromise } from "@/common/utils";
+import { createCancelablePromise, isListFilter } from "@/common/utils";
 import { errors } from "@/lib/errors";
 import EventEmitter from "events";
 import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilderBase";
@@ -19,6 +19,7 @@ import platformInfo from "@/common/platform_info";
 import { MongoDBCursor } from './mongodb/MongoDBCursor';
 import { wrapIdentifier } from "@/lib/db/clients/postgresql";
 import knexlib from 'knex'
+import { errorMessages } from "@/lib/db/clients/utils";
 
 const knex = knexlib({ client: 'pg' })
 
@@ -196,11 +197,13 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   async listTables(): Promise<TableOrView[]> {
     const db = this.conn.db(this.db);
     const collections = await db.listCollections().toArray();
-    return collections.map((col) => {
-      return {
-        name: col.name
-      } as TableOrView
-    })
+    return collections
+      .map((col) => {
+        return {
+          name: col.name
+        } as TableOrView
+      })
+      .sort((a, b) => a.name.localeCompare(b.name))
   }
 
   async listViews(): Promise<TableOrView[]> {
@@ -358,7 +361,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     } else if (filters && filters.length > 0) {
       let paramIdx = 1
       const allFilters = filters.map((item) => {
-        if (item.type === 'in' && _.isArray(item.value)) {
+        if (isListFilter(item.type) && _.isArray(item.value)) {
           const values = item.value.map((v, idx) => {
             return knex.raw('?', [v]).toQuery();
           })
@@ -782,9 +785,13 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     return await this.runtime.getShellPrompt()
   }
 
-  async executeQuery(queryText: string, _options?: any): Promise<NgQueryResult[]> {
+  async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
     const queries = this.identifyCommands(queryText);
     const results = [];
+
+    if (this.violatesReadOnly(queries, options)) {
+      throw new Error(errorMessages.readOnly);
+    }
 
     for (let i = 0; i < queries.length; i++) {
       const query = queries[i];
@@ -1141,6 +1148,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       ">": "$gt",
       ">=": "$gte",
       "in": "$in",
+      "not in": "$nin",
       "is": "$eq",
       "is not": "$neq"
     };
@@ -1167,9 +1175,9 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
       }
 
       let condition: Document;
-      if (filter.type === "in") {
+      if (isListFilter(filter.type)) {
         if (!_.isArray(filter.value)) {
-          log.warn(`Value for "in" must be an array: ${JSON.stringify(filter)}`);
+          log.warn(`Value for "${filter.type}" must be an array: ${JSON.stringify(filter)}`);
         }
         const value = filter.value.map((v) => this.convertValueForFilter(v));
         condition = { [filter.field]: { [mongoOp]: value }};

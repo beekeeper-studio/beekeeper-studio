@@ -3,6 +3,9 @@
   max-height: 100%;
   min-width: 300px;
   overflow: hidden;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-fg);
+
   &.hide {
     flex-basis: 44px!important;
     min-width: 44px!important;
@@ -20,7 +23,7 @@
       border: 0;
       margin: 0 $gutter-w;
       // border-top: 1px solid darken($theme-bg, 6%);
-      border-top: 1px solid $border-color;
+      border-top: 1px solid var(--border-subtle);
     }
     x-menu {
       hr {
@@ -37,14 +40,14 @@
     line-height: 28px;
     .sidebar-title {
       flex: 0 1 100%;
-      color: $text-dark;
+      color: var(--text-contrast);
       font-weight: 500;
       // NOTE: This was probably ok when we still use Roboto as a font.
       // Now we use system font. So at least in mac, this isn't good.
       // letter-spacing: 0.05rem;
       padding: 0 $gutter-h;
       // box-shadow: 0 1px darken($theme-bg, 6%);
-      box-shadow: 0 1px $border-color;
+      box-shadow: 0 1px var(--border-subtle);
     }
     .actions {
       display: flex;
@@ -54,7 +57,6 @@
     }
     .btn .material-icons {
       font-size: 18px;
-      color: $text-light;
     }
     .close-btn {
       // color: $text;
@@ -92,7 +94,7 @@
   // ---------------------------------
   .empty {
     padding: $gutter-w;
-    color: $text;
+    color: var(--text);
     font-size: 0.85rem;
     .empty-actions {
       .btn {
@@ -108,22 +110,21 @@
     align-items: center;
     height: $input-height;
     min-height: $input-height;
-    padding: 0 $gutter-h 0 0;
     margin-top: ($gutter-w * 0.25);
     margin-bottom: $gutter-h;
-    background: rgba($theme-base, 0.08);
     transition: background 0.15s ease-in-out;
     border-radius: 4px;
     cursor: pointer;
-    &:hover {
-      background: rgba($theme-base, 0.1);
+    &.btn {
+      font-weight: 400;
+      padding: 0 $gutter-h 0 0;
+      justify-content: flex-start;
     }
     .select-wrap {
       border: 0;
       box-shadow: none;
     }
     select {
-      color: $text-dark;
       padding-right: 1.5rem;
       cursor: pointer;
     }
@@ -132,10 +133,6 @@
       margin-left: $gutter-h;
       .material-icons {
         font-size: 16px;
-        color: $text-light;
-        &:hover {
-          color: $text-dark;
-        }
       }
     }
   }
@@ -149,11 +146,17 @@
       position: relative;
       display: flex;
       align-items: center;
-      border: 1px solid $border-color;
+      border: var(--input-border);
       border-radius: 4px;
+      background: var(--input-bg);
+
+      &:has(input:focus) {
+        border: var(--input-border-focus);
+      }
     }
     .filter-input {
       border: 0;
+      outline: none;
       padding-right: 0;
     }
     .filter-actions {
@@ -174,11 +177,8 @@
         }
         &:hover, &:focus {
           box-shadow: none;
-          .material-icons, .material-icons-outlined {
-            color: $text-dark;
-          }
         }
-        &.btn-fab {
+        &.btn-icon {
           margin-right: 2px;
           line-height: 22px;
           height: 22px;
@@ -187,9 +187,9 @@
           border-radius: 22px;
           border: 0;
           &.active {
-            background: rgba($theme-base, 0.1);
+            background: var(--gray-a4);
             .material-icons {
-              color: $theme-primary;
+              color: var(--info-text);
             }
           }
 
@@ -213,15 +213,14 @@
         font-size: 14px;
         line-height: 26px;
         width: 14px;
-        color: rgba($theme-base, 0.5);
       }
     }
   }
   .create-table {
-    color: $text;
+    color: var(--text);
     transition: color 0.2s ease-in-out;
     &:hover {
-      color: $theme-base;
+      color: var(--text-contrast);
     }
   }
   .toolbar {
@@ -253,18 +252,17 @@
   display: flex;
   align-items: center;
   padding: $gutter-w $gutter-w $gutter-w * 0.5;
-  color: $text-dark;
+  color: var(--text-contrast);
+
+  .sub .badge.active {
+    color: var(--info-text);
+  }
   .badge {
     font-size: 0.7rem;
     font-weight: normal;
-    color: $text;
     margin-top: -0.1rem;
     margin-left: ($gutter-h * 0.75);
     border-radius: $list-heading-height;
-    background: $border-color;
-    &.active {
-      color: $theme-primary;
-    }
   }
   .actions {
     display: flex;
@@ -280,6 +278,13 @@
       background-color: transparent;
       display: flex;
       cursor: pointer;
+      color: var(--btn-icon-fg);
+      &:hover, &:focus {
+        color: var(--btn-icon-fg-hover);
+      }
+      i {
+        color: inherit;
+      }
     }
     x-button {
       display: flex;
@@ -299,11 +304,16 @@
     & .create-table {
       visibility: visible;
     }
-    .material-icons, .material-icons-outlined {
-      font-size: 16px;
-      color: $text-light;
-      &:hover {
-        color: $text-dark;
+    a, x-button {
+      .material-icons, .material-icons-outlined {
+        font-weight: 600;
+        font-size: 16px;
+        color: var(--btn-icon-fg);
+      }
+      &:hover, &:focus {
+        .material-icons, .material-icons-outlined {
+          color: var(--btn-icon-fg-hover);
+        }
       }
     }
   }
@@ -337,15 +347,15 @@
   }
   .actions-btn {
     i {
-      color: $text-light;
+      color: var(--btn-fg);
       transition: color 0.15s ease-in-out;
       &:hover {
-        color: $text-dark;
+        background: var(--btn-bg-hover);
       }
     }
   }
   .subtitle {
-    color: $text-lighter;
+    color: var(--text-muted);
     font-size: 85%;
     display: flex;
     align-items: center;
@@ -370,7 +380,7 @@
     }
   }
   .list-item-btn {
-    color: rgba($theme-base, 0.77);
+    color: var(--btn-fg);
     // margin-right: $gutter-h;
     line-height: 1.8rem;
     height: 1.8rem;
@@ -378,10 +388,10 @@
     border-radius: 4px;
 
     &:hover, &:focus {
-      background: rgba($theme-base, 0.035);
+      background: var(--btn-bg-hover);
       .actions {
         display: flex;
-        .btn-fab {
+        .btn-icon {
           &.launch {
             display: inline-flex;
           }
@@ -389,11 +399,8 @@
       }
     }
 
-    &.active {
-      background-color: rgba($theme-base, 0.06);
-    }
-    &.selected {
-      background: rgba($theme-base, 0.1);
+    &.active, &.selected {
+      background: var(--bg-active);
     }
     &.open {
       // background: rgba($theme-base, 0.03);
@@ -428,12 +435,7 @@
       &.pinned {
         display: inline-flex;
       }
-      .btn-fab {
-        &:hover {
-          i {
-            color: $theme-base;
-          }
-        }
+      .btn-icon {
         &.launch {
           display: none;
         }
@@ -442,9 +444,6 @@
         }
         &.pinned {
           display: inline-flex;
-          i.bk-pin {
-            color: $theme-primary;
-          }
           i.material-icons {
             display:none;
           }
@@ -462,7 +461,6 @@
       i {
         font-size: 14px;
         line-height: 18px;
-        color: rgba($theme-base, 0.37);
         transition: color 0.15s ease-in-out;
       }
     }
@@ -489,7 +487,7 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    color: $text;
+    color: var(--text);
     padding: ($gutter-h * 0.5) 0;
     &:empty {
       padding: 0;
@@ -500,7 +498,7 @@
       top: 0;
       bottom: 0;
       left: 9px;
-      border-left: 1px solid rgba($theme-base,0.08);
+      border-left: 1px solid var(--gray-a2);
     }
     .title {
       flex-grow: 1;
@@ -511,7 +509,7 @@
       margin-right: 0;
       max-width: 50%;
       background: transparent;
-      color: $text-lighter;
+      color: var(--gray-10);
       padding: 0 0.1rem;
       min-width: fit-content;
       overflow: hidden;
@@ -523,32 +521,28 @@
     }
   }
   .sub-item {
-    color: $text;
+    color: var(--text);
     padding: ($gutter-h * 0.5);
     padding-right: $gutter-h * 0.5;
     padding-left: $gutter-w * 2;
     border-radius: 4px;
     &:hover {
-      background: rgba($theme-base, 0.035);
+      background: var(--bg-subtle-a);
     }
   }
-  .btn-fab {
+  .btn-icon {
     min-width: 18px;
     width: 18px;
     height: 18px;
     margin-right: $gutter-h * 0.5;
     transition: color 0.2 ease-in-out;
-    &:hover {
-      color: $text-dark;
-      background: transparent;
-    }
     .dropdown-icon {
+      color: var(--btn-icon-fg);
       &:hover, &:focus {
-        color: $text-dark;
+        color: var(--btn-icon-fg-hover);
       }
     }
     .material-icons {
-      color: rgba($theme-base, 0.37);
       font-size: 18px;
     }
   }
@@ -559,9 +553,6 @@
     &.hidden {
       visibility: hidden;
     }
-  }
-  .badge-info {
-    background: $brand-info;
   }
 
   // Collapse
@@ -584,15 +575,15 @@
       align-items: center;
       padding-left: 0;
       border-radius: 4px;
-      color: rgba($theme-base, 0.77);
-      .btn-fab {
+      color: var(--btn-fg);
+      .btn-icon {
         display: inline-flex!important;
         margin-right: $gutter-h * 0.5;
       }
-      &:hover {
-        background: rgba($theme-base, 0.035);
+      &:hover, &:focus {
+        background: var(--btn-bg-hover);
         .material-icons:first-child {
-          color: $text-dark;
+          color: var(--btn-icon-fg-hover);
         }
       }
       .schema-icon {
@@ -612,7 +603,7 @@
         top: 0;
         bottom: 0;
         left: 9px;
-        border-left: 1px solid rgba($theme-base,0.08);
+        border-left: 1px solid var(--gray-a4);
       }
     }
     > div > .schema-wrapper {
@@ -630,7 +621,7 @@
       &.empty {
         padding: $gutter-h;
         padding-left: $gutter-w * 1.8;
-        color: $text-lighter;
+        color: var(--text-muted);
       }
     }
   }
@@ -643,8 +634,8 @@
   width: $sidebar-min-w;
   padding: $gutter-w * 0.5;
   margin-bottom: $gutter-w * 0.3;
-  background: $theme-bg;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  background: var(--panel-bg);
+  box-shadow: var(--panel-shadow);
   border-radius: 4px;
   z-index: 1000;
   max-height: 50vh;
@@ -652,13 +643,12 @@
   flex-direction: column;
   border-radius: 8px;
   backdrop-filter: blur(8px);
-  border: 1px solid rgba($theme-base, 0.1);
 }
 
 .quick-switcher-content {
   padding: $gutter-w;
   overflow-y: auto;
-  color: $theme-base;
+  color: var(--panel-fg);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -678,7 +668,7 @@
   padding: 4px 4px;
   cursor: pointer;
   border-radius: 4px;
-  color: $theme-base;
+  color: var(--panel-fg);
   white-space: nowrap;
   display: flex;
   justify-content: space-between;
@@ -688,7 +678,7 @@
   transition: background 0.15s ease-in-out;
 
   &:hover {
-    background: rgba($theme-base, 0.05);
+    background: var(--btn-bg-hover);
   }
 
   &:disabled {
@@ -699,19 +689,19 @@
 }
 
 .quick-switcher-empty {
-  color: $text-lighter;
+  color: var(--text-muted);
   text-align: left;
 }
 
 .quick-switcher-header {
-  color: $text-dark;
-  background-color: $theme-bg;
+  color: var(--text-contrast);
+  background-color: var(--panel-bg);
   padding: 4px 6px;
   flex-shrink: 0;
 }
 
 .quick-switcher-footer {
-  background-color: $theme-bg;
+  background-color: var(--panel-bg);
   padding: 0px 6px;
   flex-shrink: 0;
 }

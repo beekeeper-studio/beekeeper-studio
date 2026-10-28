@@ -1,0 +1,45 @@
+import { describe, it, vi, beforeAll, afterAll } from "vitest"
+import { GenericContainer } from 'testcontainers'
+import { DBTestUtil, dbtimeout } from '@tests/lib/db'
+import { runCommonTests } from './all'
+
+describe("TiDB Tests", () => {
+  vi.setConfig({ testTimeout: dbtimeout, hookTimeout: dbtimeout })
+
+  let container;
+  let util
+
+  beforeAll(async () => {
+    container = await new GenericContainer("pingcap/tidb")
+      .withName("tidb")
+      .withExposedPorts(4000)
+      .withStartupTimeout(dbtimeout)
+      .start()
+    const config = {
+      client: 'tidb',
+      host: container.getHost(),
+      port: container.getMappedPort(4000),
+      user: 'root',
+      password: ''
+    }
+    util = new DBTestUtil(config, "test", { dialect: 'mysql'})
+    await util.setupdb()
+  })
+
+  afterAll(async () => {
+    await util.disconnect()
+    if (container) {
+      await container.stop()
+    }
+  })
+
+  describe("Common Tests", () => {
+    runCommonTests(() => util)
+  })
+
+  describe("Param tests", () => {
+    it("Should be able to handle positional (?) params", async () => {
+      await util.paramTest(['?']);
+    })
+  })
+})

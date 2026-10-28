@@ -42,10 +42,7 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   newTab = () => send('newTab')
   closeTab = () => send('closeTab')
   quickSearch  = () => send('quickSearch')
-  switchTheme = (menuItem: Electron.MenuItem) => {
-    const label = _.isString(menuItem) ? menuItem : menuItem.label
-    send('switchTheme', label.toLowerCase().replaceAll(" ", "-"))
-  }
+  openAppearanceModal = () => send("openAppearanceModal")
   reload = () => send('reload')
   disconnect = () => send('disconnect')
   addBeekeeper = () => send('addBeekeeper')
@@ -60,6 +57,7 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   importConnectionFiles = () => send('importConnectionFiles')
   toggleMinimalMode = () => send('toggleMinimalMode')
   togglePrivacyMode = () => send('togglePrivacyMode')
+  toggleConfirmWindowClose = () => send('toggleConfirmWindowClose')
   switchLicenseState = (_menuItem, _win, type) => send('switchLicenseState', type)
   simulatePlatform = (_menuItem, _win, platform) => send('simulatePlatform', platform)
   toggleBeta = (menuItem) => {
@@ -67,6 +65,7 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   }
   updatePin = () => send('updatePin')
   managePlugins = () => send("managePlugins")
+  themePlayground = () => send("themePlayground")
   keyboardShortcuts = () => send("keyboardShortcuts")
   handleAction = (action: CustomMenuAction) => send('handleAction', action)
   editorFontSizeReset = () => send('editorFontSizeReset')

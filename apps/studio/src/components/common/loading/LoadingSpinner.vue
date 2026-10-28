@@ -41,10 +41,10 @@ export default Vue.extend({
     width: var(--size);
     height: var(--size);
     margin: 4px;
-    border: 4px solid $theme-primary;
+    border: 4px solid var(--primary-solid-bg);
     border-radius: 50%;
     animation: spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-    border-color: $theme-primary transparent transparent transparent;
+    border-color: var(--primary-solid-bg) transparent transparent transparent;
 
     &:nth-child(1) {
       animation-delay: -0.45s;

@@ -111,6 +111,38 @@ Sometimes you might need a specific plugin version - maybe the latest plugin req
 
     The specific plugin version should now be installed and ready to use.
 
+## Custom Registries
+
+For Business users, custom registries allow you to distribute as many plugins as you'd like to your team. Once set up, any plugins in your registry will show up in the plugin browse section. Here's how you can set up a custom registry:
+
+1. **Create your registry**
+    - Create a GitHub repository. Visibility doesn't matter, if you want a private registry we can configure a GitHub token later.
+    - Add a JSON file, name it what you want, we'll call it `plugins.json`
+    - Add your plugins to that file, you can check out the format from our community registry [here](https://github.com/beekeeper-studio/beekeeper-studio-plugins/blob/main/community-plugins.json). Each plugin needs an `id`, `name`, `author`, `description`, and `repo`.
+
+2. **Add the registry to the app**
+
+    - In your [config](./configuration.md) add a section for your registry
+```ini
+[pluginSystem.registries.custom-name] # Replace custom-name with the name of your repo, this is only used internally and must be unique
+owner = owner-name # The owner of the github repo
+repo = repository-name # The repository name
+file = plugins.json # The name of the file you created above
+```
+
+    !!! tip
+        For fleet deployments, use the `system.config.ini` to configure this for every machine. User configs are overriden by those settings.
+
+3. **Enable custom registries**
+    - In your [config](./configuration.md), make sure `pluginSystem.thirdPartyRegistriesDisabled` is `false`.
+    - You can also enable this by toggling custom registries in the plugin browse section, you may have to expand the settings at the top.
+    - If your registry is in a private repo, ensure you've added a GitHub token with the correct access. This also increases your rate-limit with GitHub, so if you've been having issues with that, configuring this might help
+    ![Plugin manager showing enabled custom registries and a GitHub token](../assets/images/plugin-registries-enabled.png)
+
+4. **Install your plugins**
+    - You can now install plugins from your own registry! These will be marked as `Custom` in the install UI.
+    ![Plugin manager showing a custom plugin in the browse section](../assets/images/plugin-custom.png)
+
 ## Feature Requests
 
 Have ideas for new plugins or features? We'd love to hear from you:
@@ -120,4 +152,4 @@ Have ideas for new plugins or features? We'd love to hear from you:
 -   Submit feature requests on our GitHub repository
 
 !!! tip
-    Interested to develop your own plugins? Check out our [Plugin Development documentation](../plugin_development/index.md) to get started!
+    Interested in developing your own plugins? Check out our [Plugin Development documentation](../plugin_development/index.md) to get started!
