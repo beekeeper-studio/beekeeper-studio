@@ -49,3 +49,56 @@ describe("FkLinkMixin.openReferencedByMenu", () => {
     expect(ctx.$bks.openMenu).not.toHaveBeenCalled();
   });
 });
+
+describe("FkLinkMixin.fkClick", () => {
+  function clickOn(field, rowData, key) {
+    const row = { getCell: (name) => (name in rowData ? { getValue: () => rowData[name] } : undefined) };
+    const cell = {
+      getField: () => field,
+      getValue: () => rowData[field],
+      getRow: () => row,
+      getColumn: () => ({ getDefinition: () => ({ formatterParams: {} }) }),
+    };
+    const ctx = {
+      $store: { state: { tables: [{ name: key.toTable, schema: "" }] }, getters: { isCommunity: false } },
+      $root: { $emit: vi.fn() },
+      $noty: { error: vi.fn() },
+      trigger: vi.fn(),
+      connection: { getPrimaryKey: vi.fn() },
+    };
+    return FkLinkMixin.methods.fkClick.call(ctx, key, cell).then(() => ctx.$root.$emit.mock.calls[0][1]);
+  }
+
+  it("filters each column of a composite key by its own value", async () => {
+    const key = {
+      isComposite: true,
+      fromTable: "line_adjustments",
+      fromSchema: "",
+      fromColumn: ["order_id", "line_no"],
+      toTable: "order_lines",
+      toSchema: "",
+      toColumn: ["order_id", "line_no"],
+    };
+    const payload = await clickOn("order_id", { id: 2, order_id: 1006, line_no: 2 }, key);
+
+    expect(payload.filters).toEqual([
+      { field: "order_id", type: "=", value: 1006 },
+      { field: "line_no", type: "=", value: 2 },
+    ]);
+  });
+
+  it("filters a single column key by the clicked value", async () => {
+    const key = {
+      isComposite: false,
+      fromTable: "orders",
+      fromSchema: "",
+      fromColumn: "customer_id",
+      toTable: "customers",
+      toSchema: "",
+      toColumn: "id",
+    };
+    const payload = await clickOn("customer_id", { id: 1006, customer_id: 6 }, key);
+
+    expect(payload.filters).toEqual([{ field: "id", type: "=", value: 6 }]);
+  });
+});

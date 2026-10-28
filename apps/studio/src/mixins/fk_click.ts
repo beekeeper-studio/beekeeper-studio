@@ -131,7 +131,8 @@ export const FkLinkMixin = {
           return;
         }
         
-        let value = cell.getValue()
+        // each column of a composite key takes its value from its own cell
+        let value = valueCell.getValue()
 
         if (value instanceof Uint8Array) {
           const encoding = (params.binaryEncoding || 'hex') as 'hex' | 'base64'
