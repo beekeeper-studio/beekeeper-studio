@@ -1,44 +1,27 @@
+// Removes the update file this build leg just uploaded (latest-mac.yml for
+// mac builds, latest.yml for Windows builds) so finalize_update_yml can
+// upload one that lists both arches. The name is the same on every channel:
+// electron-builder only varies it for non-GitHub providers.
+module.exports = async ({ github, core, context }, releaseId, assetName) => {
+  const { owner, repo } = context.repo
 
-// assetName is latest-mac.yml for mac builds and latest.yml for Windows builds.
-module.exports = async ({ github, core }, assetsUrl, channel, assetName = 'latest-mac.yml') => {
-  // even though the main channel is also called 'latest', the name of this file
-  // doesn't change.... I don't know why, it's all very confusing.
+  // The release holds more assets than one API page (30 by default) and the
+  // update files sort last by name, so every page must be read or the file
+  // is reported missing and the finalize upload fails with already_exists.
+  const assets = await github.paginate(github.rest.repos.listReleaseAssets, {
+    owner,
+    repo,
+    release_id: releaseId,
+    per_page: 100,
+  })
 
-  async function findAssetByName(assets, name) {
-    for (const asset of assets) {
-      if (asset.name === name) {
-        return asset;
-      }
-    }
-    return null;
+  const matches = assets.filter((asset) => asset.name === assetName)
+  if (matches.length === 0) {
+    core.info(`No existing asset found with name: ${assetName}`)
+    return
   }
-
-  try {
-    // Get the existing assets for the release using the assetsUrl
-    const { data: assets } = await github.request({
-      method: 'GET',
-      url: assetsUrl,
-      headers: {
-        accept: 'application/vnd.github.v3+json',
-      },
-    });
-
-    // Check if the asset already exists and delete it if necessary
-    const asset = await findAssetByName(assets, assetName);
-    if (asset) {
-      await github.request({
-        method: 'DELETE',
-        url: asset.url,
-        headers: {
-          accept: 'application/vnd.github.v3+json',
-        },
-      });
-      core.info(`Deleted existing asset: ${assetName}`);
-    } else {
-      core.info(`No existing asset found with name: ${assetName}`);
-    }
-  } catch (error) {
-    core.error(`Error deleting asset: ${error.message}`);
-    core.setFailed(`Action failed with error ${error.message}`);
+  for (const asset of matches) {
+    await github.rest.repos.deleteReleaseAsset({ owner, repo, asset_id: asset.id })
+    core.info(`Deleted existing asset: ${assetName} (id ${asset.id})`)
   }
-};
+}
