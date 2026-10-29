@@ -88,3 +88,38 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+### Maintainer notes
+
+#### Upgrading Electron Gotchas
+
+This is always a total pain and will break the build 9/10.
+
+Some things you need to consider when upgrading Electron:
+
+1. Does it use a different node version. Eg Electron-18 uses node 14, 22 uses node 16. So everyone needs to upgrade
+2. Does node-abi need to be upgraded to be able to understand the electron version? This is used in the build to fetch prebuilt packages. You need to upgrade this in root/package.json#resolutions
+3. Were any APIs deprecated or removed? Make sure all features that interact with the Electron APIs still work, stuff like - selecting a file, maximizing a window, running a query, etc.
+
+
+#### Release Process
+
+1. Up the version number in package.json
+2. Replace `build/release-notes.md` with the latest release notes. Follow the format that is there.
+  - run `git log <last-tag>..HEAD --oneline | grep 'Merge pull'` to find PRs merged
+2. Commit
+3. Push to master
+4. Create a tag `git tag v<version>`. It must start with a 'v'
+5. `git push origin <tagname>`
+  - Now wait for the build/publish action to complete on Github
+6. Push the new release live
+  - Go to the new 'draft' release on the releases tab of github, edit the notes, publish
+  - Log into snapcraft.io, drag the uploaded release into the 'stable' channel for each architecture.
+
+This should also publish the latest docs
+
+Post Release:
+1. Copy release notes to a blog post, post on website
+2. Tweet link
+3. Share on LinkedIn
+4. Send to mailing list on SendInBlue
