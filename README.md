@@ -89,6 +89,9 @@ Top feature: It's smooth 🍫, fast 🏎, and you'll actually enjoy using it �
 
 <table>
   <tr>
+    <td colspan="2"><img src=".github/images/json-sidebar.png" alt="JSON sidebar showing a table row, including nested JSON data, next to the table view"><br><b>JSON sidebar</b>: inspect any row as JSON, including nested objects and arrays</td>
+  </tr>
+  <tr>
     <td width="50%"><img src=".github/images/sql-editor.png" alt="SQL editor with a query and its results in Beekeeper Studio"><br><b>SQL editor</b>: write queries, run them, and browse the results</td>
     <td width="50%"><img src=".github/images/table-data.png" alt="Spreadsheet-style table data editing in Beekeeper Studio"><br><b>Table data</b>: filter, sort, and edit rows like a spreadsheet</td>
   </tr>
