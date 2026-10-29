@@ -2,6 +2,7 @@ import { IDbConnectionServerConfig } from "@/lib/db/types";
 import { GenericContainer, StartedTestContainer } from "testcontainers";
 import { DBTestUtil, dbtimeout } from "../../../../lib/db";
 import { runCommonTests, runReadOnlyTests } from "./all";
+import { runBksTypeTests } from "./bksType";
 import knex from "knex";
 import { ClickhouseKnexClient } from "@shared/lib/knex-clickhouse";
 import fs from 'fs';
@@ -336,6 +337,95 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
 
         // Second result: FORMAT CSV — should contain the value
         expect(results[1].rows[0].c0).toContain("2");
+      });
+    });
+
+    describe("BksField tests", () => {
+      beforeAll(async () => {
+        await util.knex.schema.createTable("bks_types", (table) => {
+          table.specificType("int8_col", "Int8");
+          table.specificType("int16_col", "Int16");
+          table.specificType("int32_col", "Int32");
+          table.specificType("int64_col", "Int64");
+          table.specificType("int128_col", "Int128");
+          table.specificType("int256_col", "Int256");
+          table.specificType("uint8_col", "UInt8");
+          table.specificType("uint16_col", "UInt16");
+          table.specificType("uint32_col", "UInt32");
+          table.specificType("uint64_col", "UInt64");
+          table.specificType("uint128_col", "UInt128");
+          table.specificType("uint256_col", "UInt256");
+          table.specificType("float32_col", "Float32");
+          table.specificType("float64_col", "Float64");
+          table.specificType("decimal_col", "Decimal(10, 2)");
+          table.specificType("string_col", "String");
+          table.specificType("fixedstring_col", "FixedString(10)");
+          table.specificType("uuid_col", "UUID");
+          table.specificType("enum8_col", "Enum8('a' = 1, 'b' = 2)");
+          table.specificType("enum16_col", "Enum16('a' = 1, 'b' = 2)");
+          table.specificType("ipv4_col", "IPv4");
+          table.specificType("ipv6_col", "IPv6");
+          table.specificType("nullable_string_col", "Nullable(String)");
+          table.specificType(
+            "lowcardinality_string_col",
+            "LowCardinality(String)"
+          );
+          table.specificType("date_col", "Date");
+          table.specificType("date32_col", "Date32");
+          table.specificType("datetime_col", "DateTime");
+          table.specificType("datetime64_col", "DateTime64(3)");
+          table.specificType("bool_col", "Bool");
+        });
+      });
+
+      afterAll(async () => {
+        await util.knex.schema.dropTable("bks_types");
+      });
+
+      runBksTypeTests({
+        connection: () => util.connection,
+        table: "bks_types",
+        expectedResults: {
+          BINARY: [],
+          STRING: [
+            "string_col",
+            "fixedstring_col",
+            "uuid_col",
+            "enum8_col",
+            "enum16_col",
+            "ipv4_col",
+            "ipv6_col",
+            "nullable_string_col",
+            "lowcardinality_string_col",
+          ],
+          NUMBER: [
+            "int8_col",
+            "int16_col",
+            "int32_col",
+            "int64_col",
+            "int128_col",
+            "int256_col",
+            "uint8_col",
+            "uint16_col",
+            "uint32_col",
+            "uint64_col",
+            "uint128_col",
+            "uint256_col",
+            "float32_col",
+            "float64_col",
+            "decimal_col",
+          ],
+          DATETIME: [
+            "date_col",
+            "date32_col",
+            "datetime_col",
+            "datetime64_col",
+          ],
+          BOOLEAN: ["bool_col"],
+          OBJECTID: [],
+          SURREALID: [],
+          UNKNOWN: [],
+        },
       });
     });
   });

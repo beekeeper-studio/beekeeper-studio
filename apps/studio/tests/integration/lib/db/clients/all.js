@@ -606,14 +606,6 @@ export function runCommonTests(getUtil, opts = {}) {
       if (getUtil().data.disabledFeatures?.binaryColumn) return
       await getUtil().serializationBinary()
     })
-
-    test("should report a bksType for every listed column type", async () => {
-      await getUtil().listTableColumnsBksTypeTests()
-    })
-
-    test("should report a bksType for every result column type", async () => {
-      await getUtil().selectTopBksTypeTests()
-    })
   })
 
   describe("Manual Commit Mode (Transaction Management)", () => {

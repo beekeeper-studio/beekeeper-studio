@@ -2,6 +2,7 @@ import { Network} from "testcontainers"
 import { DBTestUtil, dbtimeout } from "../../../../lib/db"
 import { TrinoBackingPostgresDriver, TrinoHttpDriver, TrinoNginxProxy } from './trino/container'
 import { TableOrView } from "@/lib/db/models"
+import { runBksTypeTests } from "./bksType";
 
 describe('Trino integration tests', () => {
   jest.setTimeout(dbtimeout)
@@ -259,4 +260,53 @@ describe('Trino integration tests', () => {
       expect(Array.isArray(result.result)).toBe(true)
     })
   })
+
+  describe("BksField tests", () => {
+    beforeAll(async () => {
+      await dbfeeder.knex.schema.createTable("bks_types", (table) => {
+        table.specificType("smallint_col", "SMALLINT");
+        table.specificType("integer_col", "INTEGER");
+        table.specificType("bigint_col", "BIGINT");
+        table.specificType("numeric_col", "NUMERIC(10,2)");
+        table.specificType("real_col", "REAL");
+        table.specificType("double_col", "DOUBLE PRECISION");
+        table.specificType("char_col", "CHAR(10)");
+        table.specificType("varchar_col", "VARCHAR(255)");
+        table.specificType("text_col", "TEXT");
+        table.specificType("uuid_col", "UUID");
+        table.specificType("date_col", "DATE");
+        table.specificType("time_col", "TIME");
+        table.specificType("timestamp_col", "TIMESTAMP");
+        table.specificType("timestamptz_col", "TIMESTAMPTZ");
+        table.specificType("boolean_col", "BOOLEAN");
+        table.specificType("bytea_col", "BYTEA");
+      });
+    });
+
+    afterAll(async () => {
+      await dbfeeder.knex.schema.dropTable("bks_types");
+    });
+
+    runBksTypeTests({
+      connection: () => httpUtil.connection,
+      table: "bks_types",
+      expectedResults: {
+        BINARY: ["bytea_col"],
+        STRING: ["char_col", "varchar_col", "text_col", "uuid_col"],
+        NUMBER: [
+          "smallint_col",
+          "integer_col",
+          "bigint_col",
+          "numeric_col",
+          "real_col",
+          "double_col",
+        ],
+        DATETIME: ["date_col", "time_col", "timestamp_col", "timestamptz_col"],
+        BOOLEAN: ["boolean_col"],
+        OBJECTID: [],
+        SURREALID: [],
+        UNKNOWN: [],
+      },
+    });
+  });
 })

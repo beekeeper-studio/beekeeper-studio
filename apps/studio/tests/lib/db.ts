@@ -2013,49 +2013,6 @@ export class DBTestUtil {
     ])
   }
 
-  async listTableColumnsBksTypeTests() {
-    const columns = await this.connection.listTableColumns('bks_types', this.defaultSchema)
-    const fields = columns.map((c) => c.bksField);
-    const { num, str, datetime, bool, bin }
-      = _.keyBy(fields, (f) => f.name.toLowerCase());
-
-    expect(num.bksType).toBe('NUMBER')
-    expect(str.bksType).toBe('STRING')
-    expect(datetime.bksType).toBe('DATETIME')
-
-    // oracle has no boolean type, so knex asks for number(1) instead
-    if (this.dbType === "oracle") {
-      expect(bool.bksType).toBe('NUMBER')
-    } else {
-      expect(bool.bksType).toBe('BOOLEAN')
-    }
-
-    if (!this.data.disabledFeatures?.binaryColumn) {
-      expect(bin.bksType).toBe('BINARY')
-    }
-  }
-
-  async selectTopBksTypeTests() {
-    const { fields } = await this.connection.selectTop('bks_types', 0, 10, [], [], this.defaultSchema)
-    const { num,str,datetime,bool,bin } =
-      _.keyBy(fields, (f) => f.name.toLowerCase());
-
-    expect(num.bksType).toBe('NUMBER')
-    expect(str.bksType).toBe('STRING')
-    expect(datetime.bksType).toBe('DATETIME')
-
-    // oracle has no boolean type, so knex asks for number(1) instead
-    if (this.dbType === "oracle") {
-      expect(bool.bksType).toBe('NUMBER')
-    } else {
-      expect(bool.bksType).toBe('BOOLEAN')
-    }
-
-    if (!this.data.disabledFeatures?.binaryColumn) {
-      expect(bin.bksType).toBe('BINARY')
-    }
-  }
-
   async getQueryForFilterTest() {
     const expectedQueries: ExpectedQueries = {
       sqlite: "`bananas` = 'pears'",
@@ -2370,24 +2327,6 @@ export class DBTestUtil {
         })
       }
     }
-
-    await this.knex.schema.createTable('bks_types', (t) => {
-      t.integer('num').primary().notNullable()
-      t.string('str')
-      t.boolean('bool')
-
-      if (this.dbType === 'firebird') {
-        // knex asks for `datetime`, which firebird doesn't know about
-        t.specificType('datetime', 'timestamp')
-      } else {
-        t.dateTime('datetime')
-      }
-
-      if (!this.data.disabledFeatures?.binaryColumn) {
-        t.binary('bin', 8)
-      }
-    })
-
   }
 
   async databaseVersionTest() {

@@ -1,4 +1,3 @@
-import _ from "lodash";
 import { dbtimeout, rowobj } from "@tests/lib/db"
 import { GenericContainer, StartedTestContainer, Wait } from "testcontainers";
 import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient";
@@ -6,7 +5,17 @@ import { createServer } from "@commercial/backend/lib/db/server";
 import { setupDB } from "./mongodb/setupDb";
 import { TableOrView } from "@/lib/db/models";
 import { DatabaseElement } from "@/lib/db/types";
-import { Binary, MongoClient } from "mongodb";
+import {
+  Binary,
+  Decimal128,
+  Double,
+  Int32,
+  Long,
+  MongoClient,
+  ObjectId,
+  Timestamp,
+} from "mongodb";
+import { runBksTypeTests } from "./bksType";
 
 
 describe(`MongoDB`, () => {
@@ -1356,52 +1365,41 @@ describe(`MongoDB`, () => {
     });
   })
 
-  describe("BksFields", () => {
-    const testCollection = "bks_types";
-
+  describe("BksField tests", () => {
     beforeAll(async () => {
       const client = new MongoClient(config.url);
-      await client.db("bee").collection(testCollection).insertOne({
-        num_col: 42,
-        str_col: "hello",
+      await client.db("bee").collection("bks_types").insertOne({
+        binary_col: new Binary(Buffer.from([1, 2, 3])),
         bool_col: true,
-        datetime_col: new Date(),
-        bin_col: new Binary(Buffer.from([1, 2, 3])),
+        date_col: new Date(),
+        decimal128_col: Decimal128.fromString("1.5"),
+        double_col: new Double(1.5),
+        int32_col: new Int32(1),
+        long_col: Long.fromNumber(1),
+        objectid_col: new ObjectId(),
+        string_col: "hello",
+        timestamp_col: new Timestamp({ t: 1, i: 1 }),
       });
       await client.close(true);
     });
 
     afterAll(async () => {
-      try {
-        await connection.dropElement(testCollection, DatabaseElement.TABLE);
-      } catch (e) {
-        // Ignore errors
-      }
+      await connection.dropElement("bks_types", DatabaseElement.TABLE);
     });
 
-    it("should report a bksType for every listed column", async () => {
-      const columns = await connection.listTableColumns(testCollection);
-      const fields = columns.map((c) => c.bksField);
-      const result = _.keyBy(fields, "name");
-
-      expect(result._id.bksType).toBe("OBJECTID");
-      expect(result.num_col.bksType).toBe("NUMBER");
-      expect(result.str_col.bksType).toBe("STRING");
-      expect(result.bool_col.bksType).toBe("BOOLEAN");
-      expect(result.datetime_col.bksType).toBe("DATETIME");
-      expect(result.bin_col.bksType).toBe("BINARY");
-    });
-
-    it("should report a bksType for every result column", async () => {
-      const { fields } = await connection.selectTop(testCollection, 0, 10, [], []);
-      const result = _.keyBy(fields, "name");
-
-      expect(result._id.bksType).toBe("OBJECTID");
-      expect(result.num_col.bksType).toBe("NUMBER");
-      expect(result.str_col.bksType).toBe("STRING");
-      expect(result.bool_col.bksType).toBe("BOOLEAN");
-      expect(result.datetime_col.bksType).toBe("DATETIME");
-      expect(result.bin_col.bksType).toBe("BINARY");
+    runBksTypeTests({
+      connection: () => connection,
+      table: "bks_types",
+      expectedResults: {
+        BINARY: ["binary_col"],
+        STRING: ["string_col"],
+        NUMBER: ["decimal128_col", "double_col", "int32_col", "long_col"],
+        DATETIME: ["date_col", "timestamp_col"],
+        BOOLEAN: ["bool_col"],
+        OBJECTID: ["_id", "objectid_col"],
+        SURREALID: [],
+        UNKNOWN: [],
+      },
     });
   });
 })

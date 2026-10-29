@@ -4,6 +4,13 @@ import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient"
 import { createServer } from "@commercial/backend/lib/db/server"
 import { setupDB } from "./dynamodb/setupDb"
 import { DatabaseElement, IamAuthType } from "@/lib/db/types"
+import {
+  CreateTableCommand,
+  DynamoDBClient,
+  waitUntilTableExists,
+} from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { runBksTypeTests } from "./bksType";
 
 describe('DynamoDB', () => {
   jest.setTimeout(dbtimeout);
@@ -556,4 +563,53 @@ describe('DynamoDB', () => {
       ).rejects.toThrow()
     })
   })
+
+  describe("BksField tests", () => {
+    beforeAll(async () => {
+      const client = new DynamoDBClient({
+        region: "us-east-1",
+        endpoint,
+        credentials: { accessKeyId: "local", secretAccessKey: "local" },
+      });
+      await client.send(new CreateTableCommand({
+        TableName: "bks_types",
+        KeySchema: [{ AttributeName: "num_col", KeyType: "HASH" }],
+        AttributeDefinitions: [{ AttributeName: "num_col", AttributeType: "N" }],
+        BillingMode: "PAY_PER_REQUEST",
+      }));
+      await waitUntilTableExists(
+        { client, maxWaitTime: 30 },
+        { TableName: "bks_types" }
+      );
+      await DynamoDBDocumentClient.from(client).send(new PutCommand({
+        TableName: "bks_types",
+        Item: {
+          num_col: 1,
+          str_col: "a",
+          bool_col: true,
+          bin_col: new Uint8Array([1, 2, 3]),
+        },
+      }));
+      client.destroy();
+    });
+
+    afterAll(async () => {
+      await connection.dropElement("bks_types", DatabaseElement.TABLE);
+    });
+
+    runBksTypeTests({
+      connection: () => connection,
+      table: "bks_types",
+      expectedResults: {
+        BINARY: ["bin_col"],
+        STRING: ["str_col"],
+        NUMBER: ["num_col"],
+        DATETIME: [],
+        BOOLEAN: ["bool_col"],
+        OBJECTID: [],
+        SURREALID: [],
+        UNKNOWN: [],
+      },
+    });
+  });
 })
