@@ -85,6 +85,27 @@ Top feature: It's smooth 🍫, fast 🏎, and you'll actually enjoy using it �
 - View data as JSON
 - Loads more
 
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><img src=".github/images/sql-editor.png" alt="SQL editor with a query and its results in Beekeeper Studio"><br><b>SQL editor</b>: write queries, run them, and browse the results</td>
+    <td width="50%"><img src=".github/images/table-data.png" alt="Spreadsheet-style table data editing in Beekeeper Studio"><br><b>Table data</b>: filter, sort, and edit rows like a spreadsheet</td>
+  </tr>
+  <tr>
+    <td><img src=".github/images/autocomplete.png" alt="SQL autocomplete suggesting table names, with query history in the sidebar"><br><b>Autocomplete and history</b>: table and column suggestions as you type</td>
+    <td><img src=".github/images/connection.png" alt="Database connection screen with SSL and SSH tunnel options"><br><b>Connections</b>: SSL, SSH tunnels, and saved connections</td>
+  </tr>
+  <tr>
+    <td><img src=".github/images/ai-shell.png" alt="AI Shell exploring a database and writing a SQL query"><br><b>AI Shell</b>: ask questions about your data in plain English</td>
+    <td><img src=".github/images/erd.png" alt="Entity relationship diagram of related tables"><br><b>ER diagrams</b>: see how your tables relate</td>
+  </tr>
+</table>
+
+[![Watch the 5 minute Beekeeper Studio walkthrough video](.github/images/walkthrough.jpg)](https://www.beekeeperstudio.io/videos/walkthrough)
+
+👉 [Watch the 5 minute walkthrough](https://www.beekeeperstudio.io/videos/walkthrough) or [see all features](https://www.beekeeperstudio.io/features)
+
 ## Our approach to UX
 
 One of our frustrations with other open-source SQL editors and database managers is that they take a 'kitchen sink' approach to features, adding so many features that the UI becomes cluttered and hard to navigate. We wanted a good looking, open source SQL workbench that's powerful, but also easy to use. We couldn't find one, so we created Beekeeper Studio!
