@@ -13,7 +13,7 @@ Let's build a simple "Hello World" plugin! You'll create a new tab that shows "H
 -   Basic HTML, CSS, and JavaScript knowledge
 -   Node.js and npm/yarn installed
 -   Beekeeper Studio installed
--   **[The plugin system and unlisted plugins enabled](../user_guide/configuration.md#config-ref)**
+-   **[The plugin system and unlisted plugins enabled](#install-your-plugin)**
 -   (Optional) Use the [sample plugin](https://github.com/beekeeper-studio/bks-sample-plugin) for reference
 
 ## Quick Start (2 Options)
@@ -39,7 +39,7 @@ It's quite straightforward to configure your project using vite. With a simple `
         cd hello-world-plugin
         ```
 
-2. Install the Beekeeper Studio Vite plugin
+2. Install the Beekeeper Studio [Vite build plugin](sdk.md#vite-build-plugin)
 
     === "npm"
         ```bash
@@ -99,36 +99,7 @@ It's quite straightforward to configure your project using vite. With a simple `
     })
     ```
 
-5. Install the plugin
-
-    To install the plugin, you can simply move the project to the plugins directory
-    or create a symbolic link to it:
-
-    === "Linux"
-        ```bash
-        ln -s $(pwd) ~/.config/beekeeper-studio/plugins/hello-world-plugin
-        ```
-
-    === "macOS"
-        ```bash
-        ln -s $(pwd) "~/Library/Application Support/beekeeper-studio/plugins/hello-world-plugin"
-        ```
-
-    === "Windows"
-        ```cmd
-        mklink /D "%APPDATA%\beekeeper-studio\plugins\hello-world-plugin" "%CD%"
-        ```
-
-    === "Windows (Portable)"
-        ```cmd
-        mklink /D "{beekeeper-studio-directory}\beekeeper-studio-data\plugins\hello-world-plugin" "%CD%"
-        ```
-
-    !!! tip "Why use a symbolic link?"
-        This gives you control over your project location and keeps you free from accidentally uninstalling the plugin!
-
-
-6. Run development server
+5. Run development server
 
     === "npm"
         ```bash
@@ -140,22 +111,18 @@ It's quite straightforward to configure your project using vite. With a simple `
         yarn dev
         ```
 
-    Now you have hot reload! Changes to your code will automatically update in Beekeeper Studio.
+    Now you have hot reload! Once your plugin is [installed](#install-your-plugin), changes to your code will automatically update in Beekeeper Studio.
 
 ---
 
 ### Option 2: Build from Scratch
 
-You don't actually need Vite or any build tools to create a plugin. The plugin
-system is very straightforward. It only requires a plugin to have two files:
+You don't actually need Vite or any build tools to create a plugin. The plugin system is very straightforward. It only requires a plugin to have two files (see [Plugin Requirements](index.md#plugin-requirements)):
 
 * `manifest.json` - defines the plugin info (name, version, capabilities, etc.)
 * `index.html` - your plugin's main page
 
 To build from scratch:
-
-!!! note "Make sure everything is enabled!"
-    Plugin functionality is disabled by default in Beekeeper. Make sure `pluginSystem.disabled` and `pluginSystem.unlistedDisabled` are both `false` in your [config](../user_guide/configuration.md#config-ref)
 
 1. Create Your Plugin Folder
 
@@ -165,32 +132,6 @@ To build from scratch:
     mkdir hello-world-plugin
     cd hello-world-plugin
     ```
-
-    Then link it to Beekeeper Studio's plugins directory:
-
-    === "Linux"
-        ```bash
-        ln -s $(pwd) ~/.config/beekeeper-studio/plugins/hello-world-plugin
-        ```
-
-    === "macOS"
-        ```bash
-        ln -s $(pwd) "~/Library/Application Support/beekeeper-studio/plugins/hello-world-plugin"
-        ```
-
-    === "Windows"
-        ```cmd
-        mklink /D "%APPDATA%\beekeeper-studio\plugins\hello-world-plugin" "%CD%"
-        ```
-
-    === "Windows (Portable)"
-        ```cmd
-        mklink /D "{beekeeper-studio-directory}\beekeeper-studio-data\plugins\hello-world-plugin" "%CD%"
-        ```
-
-    !!! tip "Why use a symbolic link?"
-        This gives you control over your project location and keeps you free from accidentally uninstalling the plugin!
-
 2. Create the Manifest
 
     Create `manifest.json` - this tells Beekeeper Studio about your plugin:
@@ -301,12 +242,63 @@ To build from scratch:
     └── index.html
     ```
 
+## Install Your Plugin
+
+Beekeeper Studio loads plugins from its plugins directory. While you develop, link your project folder into that directory with a symbolic link. Your project stays wherever you like, and Beekeeper Studio always loads your latest code.
+
+1. Enable unlisted plugins
+
+    Plugins you add to the plugins directory yourself are called *unlisted* plugins, and Beekeeper Studio doesn't load them by default. Set these values in your [config](../user_guide/configuration.md#config-ref):
+
+    ```ini
+    [pluginSystem]
+    disabled = false
+    unlistedDisabled = false
+    ```
+
+2. Link your project into the plugins directory
+
+    Run this from your project folder (`hello-world-plugin`):
+
+    === "Linux"
+        ```bash
+        mkdir -p ~/.config/beekeeper-studio/plugins
+        ln -s "$(pwd)" ~/.config/beekeeper-studio/plugins/hello-world-plugin
+        ```
+
+    === "macOS"
+        ```bash
+        mkdir -p "$HOME/Library/Application Support/beekeeper-studio/plugins"
+        ln -s "$(pwd)" "$HOME/Library/Application Support/beekeeper-studio/plugins/hello-world-plugin"
+        ```
+
+    === "Windows"
+        ```cmd
+        if not exist "%APPDATA%\beekeeper-studio\plugins" mkdir "%APPDATA%\beekeeper-studio\plugins"
+        mklink /J "%APPDATA%\beekeeper-studio\plugins\hello-world-plugin" "%CD%"
+        ```
+
+    === "Windows (Portable)"
+        ```cmd
+        mklink /J "{beekeeper-studio-directory}\beekeeper-studio-data\plugins\hello-world-plugin" "%CD%"
+        ```
+
+    !!! warning "The link name must match your plugin id"
+        The folder name inside the plugins directory must be the same as the `id` in your `manifest.json` (`hello-world-plugin` in this guide). Beekeeper Studio skips a plugin whose folder name doesn't match its id.
+
+    !!! tip "Why use a symbolic link?"
+        Your project stays where you keep your code, and uninstalling the plugin from Beekeeper Studio can't delete your source files by accident. You can also copy the project folder into the plugins directory instead, but then you need to copy it again after every change.
+
+3. Restart Beekeeper Studio
+
+    Beekeeper Studio scans the plugins directory when it starts, so restart it after adding a new plugin. You only need to do this once: later changes to your code don't need a restart.
+
 ## Test Your Plugin
 
 !!! note "For Vite Users"
     If you're using Vite, make sure your dev server is running first!
 
-1. Open Beekeeper Studio
+1. Open Beekeeper Studio (after [installing your plugin](#install-your-plugin))
 2. Go to **Tools → Manage Plugins**
 3. Look for **Hello World Plugin** - if it's there, you're golden! ✨
 
@@ -322,9 +314,9 @@ To build from scratch:
 
 ## Reading Database
 
-This section will demonstrate how to get some data from the app. By doing that, we will call an API that returns a list of tables.
+This section will demonstrate how to get some data from the app. By doing that, we will call an SDK function that returns a list of tables.
 
-First, let's install [@beekeeperstudio/plugin](https://www.npmjs.com/package/@beekeeperstudio/plugin) package:
+First, install the [Beekeeper Studio Plugin SDK](sdk.md) ([`@beekeeperstudio/plugin`](https://www.npmjs.com/package/@beekeeperstudio/plugin) on npm):
 
 === "npm"
     ```bash
@@ -540,5 +532,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 ## What's Next? 🚀
 
--   **[Plugin API Reference](api-reference.md)** - Explore all available functions
+-   **[Capabilities](capabilities.md)** - Add your plugin to menus and toolbars across the app
+-   **[Plugin SDK Reference](api-reference.md)** - Explore all functions in the SDK
 -   **[Publishing Plugins](publishing-plugins.md)** - Share your creation with the world!

@@ -34,10 +34,12 @@ The `manifest.json` file defines your plugin's metadata, capabilities, settings,
 
 ## Capabilities
 
-| Property | Type               | Required | Description                                |
-| -------- | ------------------ | -------- | ------------------------------------------ |
-| `views`  | `View[]`           | Yes      | Array of view definitions for your plugin. |
-| `menu`   | `PluginMenuItem[]` | No       | Array of menu definitions for your plugin. |
+| Property | Type               | Required | Description                                                                    |
+| -------- | ------------------ | -------- | ------------------------------------------------------------------------------ |
+| `views`  | `View[]`           | Yes      | Array of view definitions for your plugin.                                     |
+| `menu`   | `PluginMenuItem[]` | No       | Menu items and buttons that open your views. See [PluginMenuItem](#pluginmenuitem). |
+
+See [Capabilities](capabilities.md) for every place a menu item can appear, with a screenshot and an example of each.
 
 ## View
 
@@ -145,6 +147,8 @@ Each `command` must be unique within a placement. To show the same command with 
 
 ### PluginMenuItemPlacement
 
+See [Capabilities](capabilities.md) for a screenshot and an example of each placement.
+
 | Value                               | Description                                                      |
 | ----------------------------------- | ---------------------------------------------------------------- |
 | `"newTabDropdown"`                  | Shown in the dropdown list when opening a new tab                |
@@ -239,7 +243,7 @@ When a menu item is picked, the new tab can read how it was opened with [`getVie
 | `tab.query.header.context`, `tab.table.header.context`     | [`TabMenuParams`](api-reference.md#tabmenuparams)                            |
 | `entity.*.context`, `structure.statusbar.menu`             | [`EntityMenuParams`](api-reference.md#entitymenuparams)                      |
 
-`@beekeeperstudio/plugin` 1.8.0 and later export these types. A command's placements decide its params, so narrow them by `command`:
+The Plugin SDK (`@beekeeperstudio/plugin`) 1.8.0 and later exports these types. A command's placements decide its params, so narrow them by `command`:
 
 ```typescript
 import { getViewContext, type StatusbarMenuParams } from "@beekeeperstudio/plugin";

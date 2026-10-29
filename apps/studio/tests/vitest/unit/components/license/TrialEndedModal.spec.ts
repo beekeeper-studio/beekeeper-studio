@@ -247,7 +247,7 @@ describe('TrialEndedModal', () => {
 
     // the link goes to pricing without opening the license dialog
     await wrapper.find('.trial-feature-more-link').trigger('click')
-    expect(mocks.$native.openLink).toHaveBeenCalledWith('https://www.beekeeperstudio.io/pricing')
+    expect(mocks.$native.openLink).toHaveBeenCalledWith('https://www.beekeeperstudio.io/upgrade')
     expect(hasDowngradedAfterTrial()).toBe(false)
     expect(mocks.$modal.hide).not.toHaveBeenCalled()
     wrapper.destroy()
@@ -344,7 +344,7 @@ describe('TrialEndedModal', () => {
 
     await wrapper.find('form').trigger('submit')
 
-    expect(mocks.$native.openLink).toHaveBeenCalledWith('https://www.beekeeperstudio.io/pricing')
+    expect(mocks.$native.openLink).toHaveBeenCalledWith('https://www.beekeeperstudio.io/upgrade')
     expect(enterLicense).toHaveBeenCalledTimes(1)
     expect(mocks.$modal.hide).not.toHaveBeenCalled()
     expect(hasDowngradedAfterTrial()).toBe(false)
