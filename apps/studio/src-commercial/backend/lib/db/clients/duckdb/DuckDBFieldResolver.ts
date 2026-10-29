@@ -20,64 +20,14 @@ const regex = {
   boolean: /^boolean$/,
 };
 
-// Built on use so the native DuckDB binding only loads when DuckDB is used.
-function getTypeIds(): Record<number, BksFieldType> {
-  const { DuckDBTypeId } = loadDuckDB();
-  return {
-    // binary
-    [DuckDBTypeId.BLOB]: "BINARY",
-
-    // string
-    [DuckDBTypeId.VARCHAR]: "STRING",
-    [DuckDBTypeId.ENUM]: "STRING",
-    [DuckDBTypeId.UUID]: "STRING",
-
-    // number
-    [DuckDBTypeId.TINYINT]: "NUMBER",
-    [DuckDBTypeId.SMALLINT]: "NUMBER",
-    [DuckDBTypeId.INTEGER]: "NUMBER",
-    [DuckDBTypeId.BIGINT]: "NUMBER",
-    [DuckDBTypeId.HUGEINT]: "NUMBER",
-    [DuckDBTypeId.UTINYINT]: "NUMBER",
-    [DuckDBTypeId.USMALLINT]: "NUMBER",
-    [DuckDBTypeId.UINTEGER]: "NUMBER",
-    [DuckDBTypeId.UBIGINT]: "NUMBER",
-    [DuckDBTypeId.UHUGEINT]: "NUMBER",
-    [DuckDBTypeId.FLOAT]: "NUMBER",
-    [DuckDBTypeId.DOUBLE]: "NUMBER",
-    [DuckDBTypeId.DECIMAL]: "NUMBER",
-    [DuckDBTypeId.BIGNUM]: "NUMBER",
-    [DuckDBTypeId.BIT]: "NUMBER",
-
-    // datetime
-    [DuckDBTypeId.DATE]: "DATETIME",
-    [DuckDBTypeId.TIME]: "DATETIME",
-    [DuckDBTypeId.TIME_TZ]: "DATETIME",
-    [DuckDBTypeId.TIMESTAMP]: "DATETIME",
-    [DuckDBTypeId.TIMESTAMP_S]: "DATETIME",
-    [DuckDBTypeId.TIMESTAMP_MS]: "DATETIME",
-    [DuckDBTypeId.TIMESTAMP_NS]: "DATETIME",
-    [DuckDBTypeId.TIMESTAMP_TZ]: "DATETIME",
-    [DuckDBTypeId.INTERVAL]: "DATETIME",
-
-    // boolean
-    [DuckDBTypeId.BOOLEAN]: "BOOLEAN",
-
-    // unknown
-    [DuckDBTypeId.INVALID]: "UNKNOWN",
-    [DuckDBTypeId.LIST]: "UNKNOWN",
-    [DuckDBTypeId.STRUCT]: "UNKNOWN",
-    [DuckDBTypeId.MAP]: "UNKNOWN",
-    [DuckDBTypeId.ARRAY]: "UNKNOWN",
-    [DuckDBTypeId.UNION]: "UNKNOWN",
-    [DuckDBTypeId.ANY]: "UNKNOWN",
-    [DuckDBTypeId.SQLNULL]: "UNKNOWN",
-  };
-}
-
 export class DuckDBFieldResolver extends FieldResolver<DuckDBResult> {
+  private bksTypesByTypeId?: Record<number, BksFieldType>;
+
   protected resolveRuntimeColumnType(column: ResultColumn) {
-    return getTypeIds()[column.type.typeId] ?? "UNKNOWN";
+    if (!this.bksTypesByTypeId) {
+      this.bksTypesByTypeId = this.buildBksTypesByTypeId();
+    }
+    return this.bksTypesByTypeId[column.type.typeId] ?? "UNKNOWN";
   }
 
   protected resolveDeclaredColumnType(column: RawTableColumn) {
@@ -107,5 +57,59 @@ export class DuckDBFieldResolver extends FieldResolver<DuckDBResult> {
     }
 
     return "UNKNOWN";
+  }
+
+  private buildBksTypesByTypeId(): Record<number, BksFieldType> {
+    const { DuckDBTypeId } = loadDuckDB();
+    return {
+      // binary
+      [DuckDBTypeId.BLOB]: "BINARY",
+
+      // string
+      [DuckDBTypeId.VARCHAR]: "STRING",
+      [DuckDBTypeId.ENUM]: "STRING",
+      [DuckDBTypeId.UUID]: "STRING",
+
+      // number
+      [DuckDBTypeId.TINYINT]: "NUMBER",
+      [DuckDBTypeId.SMALLINT]: "NUMBER",
+      [DuckDBTypeId.INTEGER]: "NUMBER",
+      [DuckDBTypeId.BIGINT]: "NUMBER",
+      [DuckDBTypeId.HUGEINT]: "NUMBER",
+      [DuckDBTypeId.UTINYINT]: "NUMBER",
+      [DuckDBTypeId.USMALLINT]: "NUMBER",
+      [DuckDBTypeId.UINTEGER]: "NUMBER",
+      [DuckDBTypeId.UBIGINT]: "NUMBER",
+      [DuckDBTypeId.UHUGEINT]: "NUMBER",
+      [DuckDBTypeId.FLOAT]: "NUMBER",
+      [DuckDBTypeId.DOUBLE]: "NUMBER",
+      [DuckDBTypeId.DECIMAL]: "NUMBER",
+      [DuckDBTypeId.BIGNUM]: "NUMBER",
+      [DuckDBTypeId.BIT]: "NUMBER",
+
+      // datetime
+      [DuckDBTypeId.DATE]: "DATETIME",
+      [DuckDBTypeId.TIME]: "DATETIME",
+      [DuckDBTypeId.TIME_TZ]: "DATETIME",
+      [DuckDBTypeId.TIMESTAMP]: "DATETIME",
+      [DuckDBTypeId.TIMESTAMP_S]: "DATETIME",
+      [DuckDBTypeId.TIMESTAMP_MS]: "DATETIME",
+      [DuckDBTypeId.TIMESTAMP_NS]: "DATETIME",
+      [DuckDBTypeId.TIMESTAMP_TZ]: "DATETIME",
+      [DuckDBTypeId.INTERVAL]: "DATETIME",
+
+      // boolean
+      [DuckDBTypeId.BOOLEAN]: "BOOLEAN",
+
+      // unknown
+      [DuckDBTypeId.INVALID]: "UNKNOWN",
+      [DuckDBTypeId.LIST]: "UNKNOWN",
+      [DuckDBTypeId.STRUCT]: "UNKNOWN",
+      [DuckDBTypeId.MAP]: "UNKNOWN",
+      [DuckDBTypeId.ARRAY]: "UNKNOWN",
+      [DuckDBTypeId.UNION]: "UNKNOWN",
+      [DuckDBTypeId.ANY]: "UNKNOWN",
+      [DuckDBTypeId.SQLNULL]: "UNKNOWN",
+    };
   }
 }

@@ -175,6 +175,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     }));
   }
 
+  /** Lists the table's columns as the database declares them. Run by `listTableColumns`. */
   protected abstract listTableColumnsRunner(_table?: string, _schema?: string, _connection?: any): Promise<RawTableColumn[]>;
 
   abstract listTableTriggers(table: string, schema?: string): Promise<TableTrigger[]>;
@@ -480,6 +481,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     return { result: rows, fields };
   }
 
+  /** Runs the select top query and returns the driver's raw result. Run by `selectTop`. */
   protected abstract selectTopRunner(_table: string, _offset: number, _limit: number, _orderBy: OrderBy[], _filters: string | TableFilter[], _schema?: string, _selects?: string[]): Promise<RawResultType>;
 
   abstract selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<string>;

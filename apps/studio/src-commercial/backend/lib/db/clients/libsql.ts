@@ -9,7 +9,7 @@ import { IDbConnectionDatabase } from "@/lib/db/types";
 import { SqliteCursor } from "@/lib/db/clients/sqlite/SqliteCursor";
 import { createSQLiteKnex } from "@/lib/db/clients/sqlite/utils";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
-import { NgQueryResult, BksField } from "@/lib/db/models";
+import { NgQueryResult } from "@/lib/db/models";
 import { LibSQLBinaryTranscoder } from "@/lib/db/serialization/transcoders";
 
 const log = rawLog.scope("libsql");
@@ -82,15 +82,6 @@ export class LibSQLClient extends SqliteClient {
     if (this._rawConnection) {
       this._rawConnection.sync();
     }
-  }
-
-  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], schema?: string, selects?: string[]): Promise<TableResult> {
-    const query = await this.selectTopSql(table, offset, limit, orderBy, filters, schema, selects);
-    const result = await this.driverExecuteSingle(query);
-    const columns = await this.listTableColumns(table);
-    const fields: BksField[] = columns.map((column) => column.bksField);
-    const rows = await this.serializeQueryResult(result, fields);
-    return { result: rows, fields };
   }
 
   protected async rawExecuteQuery(
