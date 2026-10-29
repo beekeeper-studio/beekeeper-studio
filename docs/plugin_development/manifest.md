@@ -34,9 +34,12 @@ The `manifest.json` file defines your plugin's metadata, capabilities, settings,
 
 ## Capabilities
 
-| Property | Type     | Required | Description                                |
-| -------- | -------- | -------- | ------------------------------------------ |
-| `views`  | `View[]` | Yes      | Array of view definitions for your plugin. |
+| Property | Type               | Required | Description                                                                    |
+| -------- | ------------------ | -------- | ------------------------------------------------------------------------------ |
+| `views`  | `View[]`           | Yes      | Array of view definitions for your plugin.                                     |
+| `menu`   | `PluginMenuItem[]` | No       | Menu items and buttons that open your views. See [PluginMenuItem](#pluginmenuitem). |
+
+See [Capabilities](capabilities.md) for every place a menu item can appear, with a screenshot and an example of each.
 
 ## View
 
@@ -119,7 +122,7 @@ The `manifest.json` file defines your plugin's metadata, capabilities, settings,
 
 | Value                 | Description                                                                            |
 | --------------------- | -------------------------------------------------------------------------------------- |
-| `"plain-tab"`         | Tab with your plugin's iframe taking up the entire tab.                                |
+| `"base-tab"`          | Tab with your plugin's iframe taking up the entire tab.                                |
 | `"shell-tab"`         | Tab with your plugin's iframe at the top and a collapsible result table at the bottom. |
 | `"primary-sidebar"`   | _(Planned for future releases)_ Primary sidebar panel.                                 |
 | `"secondary-sidebar"` | _(Planned for future releases)_ Secondary sidebar panel.                               |
@@ -143,6 +146,8 @@ Each `command` must be unique within a placement. To show the same command with 
     The `editor.query.toolbar`, `results.statusbar` and `tableTable.statusbar` placements, and the `icon` and `enabledWhen` fields, need Beekeeper Studio 6.2 or later, as do items on the tab header placements (`tab.query.header.context` and `tab.table.header.context`). Earlier versions skip menu items whose placement they don't know, and ignore the two fields. Set `"minAppVersion": "6.2.0"` if your plugin depends on them.
 
 ### PluginMenuItemPlacement
+
+See [Capabilities](capabilities.md) for a screenshot and an example of each placement.
 
 | Value                               | Description                                                      |
 | ----------------------------------- | ---------------------------------------------------------------- |
@@ -238,7 +243,7 @@ When a menu item is picked, the new tab can read how it was opened with [`getVie
 | `tab.query.header.context`, `tab.table.header.context`     | [`TabMenuParams`](api-reference.md#tabmenuparams)                            |
 | `entity.*.context`, `structure.statusbar.menu`             | [`EntityMenuParams`](api-reference.md#entitymenuparams)                      |
 
-`@beekeeperstudio/plugin` 1.8.0 and later export these types. A command's placements decide its params, so narrow them by `command`:
+The Plugin SDK (`@beekeeperstudio/plugin`) 1.8.0 and later exports these types. A command's placements decide its params, so narrow them by `command`:
 
 ```typescript
 import { getViewContext, type StatusbarMenuParams } from "@beekeeperstudio/plugin";

@@ -321,7 +321,8 @@ export default Vue.extend({
         const key = keys[c.columnName]
         return {
           primary: !!key || null,
-          ...c
+          ...c,
+          _originalColumnName: c.columnName
         }
       })
     },
@@ -338,6 +339,7 @@ export default Vue.extend({
 
       const features = _.isArray(feature) ? feature : [feature];
       if (!this.editable) return false
+      if (cell === FakeCell) return features.every((f) => this.isEditable(f))
       if (this.removedRows.includes(cell.getRow())) return false
       const row = cell.getRow()
       const columnName = row.getData()['columnName']
@@ -367,12 +369,9 @@ export default Vue.extend({
       const alterations = this.editedCells.map((cell: CellComponent) => {
 
         // renames happen last, so we need to get the original column name here.
-        const nameCell = cell.getRow().getCell('columnName')
-        const name = nameCell.isEdited() ? nameCell.getInitialValue() : nameCell.getValue()
-
         return {
           changeType: cell.getField(),
-          columnName: name,
+          columnName: cell.getRow().getData()['_originalColumnName'],
           newValue: cell.getValue()
         }
       })
@@ -381,7 +380,7 @@ export default Vue.extend({
         return row.getData()
       })
 
-      const drops = this.removedRows.map((row) => row.getData()['columnName'])
+      const drops = this.removedRows.map((row) => row.getData()['_originalColumnName'])
 
       const reorder = (this.reorderedRows.length > 0)
         ? { oldOrder: this.initialColumns.slice(0), newOrder: this.tabulator.getData() }
