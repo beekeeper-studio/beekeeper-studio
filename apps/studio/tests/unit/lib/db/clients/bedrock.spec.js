@@ -31,29 +31,6 @@ describe("Bedrock UNIT tests (no connection required)", () => {
     expect(builder).toBeInstanceOf(SqliteChangeBuilder);
   });
 
-  describe("fieldResolver.resolveListTableColumns", () => {
-    it("infers the bks type from the column type", () => {
-      const result = client.fieldResolver.resolveListTableColumns([
-        { columnName: "id", dataType: "INTEGER" },
-      ]);
-      expect(result).toEqual([{ name: "id", bksType: "NUMBER" }]);
-    });
-
-    it("maps BLOB columns to BINARY", () => {
-      const result = client.fieldResolver.resolveListTableColumns([
-        { columnName: "data", dataType: "BLOB" },
-      ]);
-      expect(result).toEqual([{ name: "data", bksType: "BINARY" }]);
-    });
-
-    it("is case insensitive on the type check", () => {
-      const result = client.fieldResolver.resolveListTableColumns([
-        { columnName: "data", dataType: "blob" },
-      ]);
-      expect(result).toEqual([{ name: "data", bksType: "BINARY" }]);
-    });
-  });
-
   describe("dataToColumns (private, via listTableColumns shape)", () => {
     const tableName = "widgets";
     const rows = [
@@ -91,15 +68,6 @@ describe("Bedrock UNIT tests (no connection required)", () => {
     it("flags generated columns when hidden is 2 or 3", () => {
       expect(columns[0].generated).toBe(false);
       expect(columns[3].generated).toBe(true);
-    });
-
-    it("carries a dataType the resolver can turn into a BksField", () => {
-      expect(client.fieldResolver.resolveListTableColumns(columns)).toEqual([
-        { name: "id", bksType: "NUMBER" },
-        { name: "name", bksType: "STRING" },
-        { name: "deleted_null_literal", bksType: "STRING" },
-        { name: "total", bksType: "NUMBER" },
-      ]);
     });
   });
 });

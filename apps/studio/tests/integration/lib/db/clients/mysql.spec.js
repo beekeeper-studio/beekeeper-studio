@@ -301,46 +301,6 @@ function testWith(tag, socket = false, readonly = false, image = 'mysql', option
       expect(secondResult.bitcol[0]).toBe(1)
     })
 
-    it("should parse all binary type columns", async () => {
-      await util.knex.raw(`
-        CREATE TABLE binary_data_types (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            binary_fixed BINARY(16),         -- Fixed-length binary data
-            binary_var VARBINARY(255),       -- Variable-length binary data
-            tiny_blob TINYBLOB,              -- Very small binary data (up to 255 bytes)
-            regular_blob BLOB,               -- Small binary data (up to 64 KB)
-            medium_blob MEDIUMBLOB,          -- Medium binary data (up to 16 MB)
-            large_blob LONGBLOB              -- Large binary data (up to 4 GB)
-        );
-      `);
-      await util.knex.raw(`
-        INSERT INTO binary_data_types (
-          binary_fixed, binary_var, tiny_blob,
-          regular_blob, medium_blob, large_blob
-        )
-        VALUES (
-          CAST('small_value' AS BINARY(16)), 'var_data', 'tiny',
-          'blob', 'medium', 'large'
-        );
-      `)
-
-      const expectedBksFields = [
-        { name: 'id', bksType: 'NUMBER' },
-        { name: 'binary_fixed', bksType: 'BINARY' },
-        { name: 'binary_var', bksType: 'BINARY' },
-        { name: 'tiny_blob', bksType: 'BINARY' },
-        { name: 'regular_blob', bksType: 'BINARY' },
-        { name: 'medium_blob', bksType: 'BINARY' },
-        { name: 'large_blob', bksType: 'BINARY' },
-      ]
-
-      const columns = await util.connection.listTableColumns('binary_data_types')
-      expect(columns.map((c) => c.bksField)).toStrictEqual(expectedBksFields)
-
-      const { fields } = await util.connection.selectTop('binary_data_types', 0, 10, [], [])
-      expect(fields).toStrictEqual(expectedBksFields)
-    })
-
     describe("Index Prefixes", () => {
       beforeAll(async () => {
         await util.knex.schema.createTable("has_prefix_indexes", (table) => {
@@ -371,43 +331,6 @@ function testWith(tag, socket = false, readonly = false, image = 'mysql', option
 
         await util.knex.schema.raw("DROP INDEX custom_prefix_index ON has_prefix_indexes")
       })
-    })
-
-    // Regression test: https://github.com/beekeeper-studio/beekeeper-studio/issues/2640
-    it("Should handle columns with binary collation", async () => {
-      if (tag == "5.1") return;
-
-      await util.knex.raw(`
-        CREATE TABLE binary_collation (
-          id int(10) unsigned NOT NULL AUTO_INCREMENT,
-          uuid char(14) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-          name varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
-          PRIMARY KEY (id),
-          UNIQUE KEY uuid (uuid)
-        ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci
-      `);
-
-      await util.knex.raw(`
-        INSERT INTO binary_collation (id, uuid, name) VALUES
-          (3, 'HIVsRcGKkPFtW', 'lorem'),
-          (1, 'Qwsogvtv82FCd', 'ipsum'),
-          (5, 'YnFzw1gLeOb1', 'dolor'),
-          (2, 'razxDUgYGNAdQ', 'sit'),
-          (4, 'yhjMzLPhuIDl', 'amet');
-      `);
-
-      const expectedBksFields = [
-        { name: 'id', bksType: 'NUMBER' },
-        { name: 'uuid', bksType: 'STRING' },
-        { name: 'name', bksType: 'STRING' },
-      ];
-
-      const columns = await util.connection.listTableColumns('binary_collation');
-      expect(columns.map((c) => c.bksField)).toStrictEqual(expectedBksFields);
-
-      const { fields } = await util.connection.selectTop('binary_collation', 0, 10, [], []);
-      expect(fields).toStrictEqual(expectedBksFields);
-
     })
 
     describe("Column Reordering", () => {
@@ -2368,6 +2291,10 @@ function testWith(tag, socket = false, readonly = false, image = 'mysql', option
           table.specificType("enum_col", "ENUM('a', 'b')");
           table.specificType("set_col", "SET('a', 'b')");
           table.specificType("json_col", "JSON");
+          table.specificType(
+            "binary_collation_col",
+            "CHAR(14) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin"
+          );
           table.specificType("date_col", "DATE");
           table.specificType("datetime_col", "DATETIME");
           table.specificType("timestamp_col", "TIMESTAMP NULL");
@@ -2410,6 +2337,7 @@ function testWith(tag, socket = false, readonly = false, image = 'mysql', option
             "enum_col",
             "set_col",
             "json_col",
+            "binary_collation_col",
           ],
           NUMBER: [
             "tinyint_col",

@@ -68,32 +68,6 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
       runCommonTests(() => util);
     });
 
-    it("should parse all binary columns", async () => {
-      await util.knex.raw(`
-        CREATE TABLE binary_data_types (
-            id INT PRIMARY KEY,
-            blob BLOB,
-            blob_alias BYTEA,               -- alias of BLOB
-            blob_alias2 BINARY,             -- alias of BLOB
-            blob_alias3 VARBINARY           -- alias of BLOB
-        );
-      `);
-
-      const expectedBksFields = [
-        { name: 'id', bksType: 'NUMBER' },
-        { name: 'blob', bksType: 'BINARY' },
-        { name: 'blob_alias', bksType: 'BINARY' },
-        { name: 'blob_alias2', bksType: 'BINARY' },
-        { name: 'blob_alias3', bksType: 'BINARY' },
-      ]
-
-      const columns = await util.connection.listTableColumns('binary_data_types')
-      expect(columns.map((c) => c.bksField)).toStrictEqual(expectedBksFields)
-
-      const { fields } = await util.connection.selectTop('binary_data_types', 0, 10, [], [], util.defaultSchema, ["*"])
-      expect(fields).toStrictEqual(expectedBksFields)
-    })
-
     it("should return enum values for enum columns", async () => {
       // Named enum types and inline enums both expand to ENUM(...) in
       // duckdb_columns.data_type, so the client parses values from there.

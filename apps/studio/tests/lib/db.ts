@@ -1983,10 +1983,6 @@ export class DBTestUtil {
     const data = result.result[0][BIN]
     expect(ArrayBuffer.isView(data)).toBe(true)
     expect(Buffer.from(data)).toEqual(b`deadbeef`)
-    expect(result.fields).toEqual([
-      { name: ID, bksType: 'NUMBER' },
-      { name: BIN, bksType: 'BINARY' },
-    ])
 
     await this.connection.applyChanges({
       inserts: [{

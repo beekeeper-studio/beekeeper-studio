@@ -43,41 +43,6 @@ describe("MariaDB Tests", () => {
     runCommonTests(() => util)
   })
 
-  // Regression test: https://github.com/beekeeper-studio/beekeeper-studio/issues/2640 
-  it("Should handle columns with binary collation", async () => {
-    await util.knex.raw(`
-      CREATE TABLE binary_collation (
-        id int(10) unsigned NOT NULL AUTO_INCREMENT,
-        uuid char(14) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-        name varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
-        PRIMARY KEY (id),
-        UNIQUE KEY uuid (uuid)
-      ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci
-    `);
-
-    await util.knex.raw(`
-      INSERT INTO binary_collation (id, uuid, name) VALUES
-        (3, 'HIVsRcGKkPFtW', 'lorem'),
-        (1, 'Qwsogvtv82FCd', 'ipsum'),
-        (5, 'YnFzw1gLeOb1', 'dolor'),
-        (2, 'razxDUgYGNAdQ', 'sit'),
-        (4, 'yhjMzLPhuIDl', 'amet');
-    `);
-
-    const expectedBksFields = [
-      { name: 'id', bksType: 'NUMBER' },
-      { name: 'uuid', bksType: 'STRING' },
-      { name: 'name', bksType: 'STRING' },
-    ];
-
-    const columns = await util.connection.listTableColumns('binary_collation');
-    expect(columns.map((c) => c.bksField)).toStrictEqual(expectedBksFields);
-
-    const { fields } = await util.connection.selectTop('binary_collation', 0, 10, [], []);
-    expect(fields).toStrictEqual(expectedBksFields);
-    
-  })
-
   describe("Param tests", () => {
     it("Should be able to handle positional (?) params", async () => {
       await util.paramTest(['?']);
@@ -105,6 +70,10 @@ describe("MariaDB Tests", () => {
         table.specificType("enum_col", "ENUM('a', 'b')");
         table.specificType("set_col", "SET('a', 'b')");
         table.specificType("json_col", "JSON");
+        table.specificType(
+          "binary_collation_col",
+          "CHAR(14) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin"
+        );
         table.specificType("date_col", "DATE");
         table.specificType("datetime_col", "DATETIME");
         table.specificType("timestamp_col", "TIMESTAMP NULL");
@@ -147,6 +116,7 @@ describe("MariaDB Tests", () => {
           "enum_col",
           "set_col",
           "json_col",
+          "binary_collation_col",
         ],
         NUMBER: [
           "tinyint_col",

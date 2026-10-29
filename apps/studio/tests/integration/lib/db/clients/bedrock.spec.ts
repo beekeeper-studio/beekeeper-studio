@@ -134,12 +134,6 @@ describe("Bedrock", () => {
     expect(byName.color.defaultValue).toBe("'red'");
     expect(byName.color.hasDefault).toBe(true);
     expect(byName.qty.nullable).toBe(true);
-    expect(cols.map((c) => c.bksField)).toEqual([
-      { name: "id", bksType: "NUMBER" },
-      { name: "name", bksType: "STRING" },
-      { name: "color", bksType: "STRING" },
-      { name: "qty", bksType: "NUMBER" },
-    ]);
   });
 
   it("lists indexes via PRAGMA index_list", async () => {

@@ -66,6 +66,10 @@ describe("TiDB Tests", () => {
         table.specificType("enum_col", "ENUM('a', 'b')");
         table.specificType("set_col", "SET('a', 'b')");
         table.specificType("json_col", "JSON");
+        table.specificType(
+          "binary_collation_col",
+          "CHAR(14) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin"
+        );
         table.specificType("date_col", "DATE");
         table.specificType("datetime_col", "DATETIME");
         table.specificType("timestamp_col", "TIMESTAMP NULL");
@@ -108,6 +112,7 @@ describe("TiDB Tests", () => {
           "enum_col",
           "set_col",
           "json_col",
+          "binary_collation_col",
         ],
         NUMBER: [
           "tinyint_col",
