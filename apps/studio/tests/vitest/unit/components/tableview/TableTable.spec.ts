@@ -218,3 +218,37 @@ describe("TableTable.vue — loadPersistence filters by tableId", () => {
     expect(vm.persistenceReader(vm.tableId, "columns")).toBe(false);
   });
 });
+
+// Primary and foreign keys used to skip the numeric/date `text-right` class,
+// so numeric ids were the only left-aligned numbers in the grid (#4843).
+describe("TableTable.vue — key column alignment", () => {
+  beforeEach(async () => {
+    await TestOrmConnection.connect();
+  });
+
+  afterEach(async () => {
+    await TestOrmConnection.disconnect();
+  });
+
+  function cssClassOf(columnName: string, dataType: string) {
+    const vm = mountTableTable("aligned");
+    vm.primaryKeys = ["id", "code"];
+    return vm.createColumnFromProps({ columnName, dataType }).cssClass.split(" ");
+  }
+
+  it("right-aligns a numeric primary key", () => {
+    expect(cssClassOf("id", "integer")).toEqual(
+      expect.arrayContaining(["primary-key", "text-right"])
+    );
+  });
+
+  it("keeps a text primary key left-aligned", () => {
+    const cssClass = cssClassOf("code", "varchar");
+    expect(cssClass).toContain("primary-key");
+    expect(cssClass).not.toContain("text-right");
+  });
+
+  it("still right-aligns plain numeric columns", () => {
+    expect(cssClassOf("amount", "numeric")).toContain("text-right");
+  });
+});
