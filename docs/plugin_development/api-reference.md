@@ -1,15 +1,12 @@
 ---
-title: Plugin API Reference
-summary: "Complete API reference for Beekeeper Studio plugin development."
+title: Plugin SDK Reference
+summary: "Complete reference for the Beekeeper Studio Plugin SDK."
 icon: material/api
 ---
 
-# Plugin API Reference
+# Plugin SDK Reference
 
-!!! warning "Beta Feature"
-    The plugin system is in beta (available in Beekeeper Studio 5.3+). We'd love your feedback!
-
-The Beekeeper Studio Plugin API is accessible through the `@beekeeperstudio/plugin` package. The API provides communication between your plugin and the main application.
+The [Beekeeper Studio Plugin SDK](sdk.md) ([GitHub](https://github.com/beekeeper-studio/plugin)) is published on npm as [`@beekeeperstudio/plugin`](https://www.npmjs.com/package/@beekeeperstudio/plugin). The SDK provides communication between your plugin and the main application.
 
 ## Installation
 
@@ -300,13 +297,14 @@ const result = await runQuery('SELECT * FROM users WHERE active = true LIMIT 10'
 }
 ```
 
+!!! note "Integer values"
+    Integers come back as JavaScript numbers when they fit in the safe integer range (±2^53 − 1). Larger integers, such as some 64-bit IDs, come back as strings so no precision is lost. Every value in `rows` can be passed to `JSON.stringify` or stored with [appStorage.setItem](#appstoragesetitem).
+
 **Signature:**
 ```typescript
-async function runQuery(query: string): Promise<{
-  results: QueryResult[];
-  error?: unknown;
-}>;
+async function runQuery(query: string): Promise<RunQueryResult>;
 ```
+See [RunQueryResult](#runqueryresult)
 
 ### getConnectionInfo
 
@@ -367,6 +365,7 @@ async function getConnectionInfo(): Promise<{
 | `redis` | Redis |
 | `surrealdb` | SurrealDB |
 | `trino` | Trino |
+| `snowflake` | Snowflake |
 
 ### setTabTitle
 
@@ -404,12 +403,10 @@ await expandTableResult([{
 **Signature:**
 ```typescript
 async function expandTableResult(
-  results: {
-    fields: QueryResult[];
-    rows: Record<string, JsonValue>[];
-  }[];
+  results: QueryResult[];
 ): Promise<void>;
 ```
+See [QueryResult](#queryresult)
 
 !!! tip "Table Display Tips"
     - Results will replace any existing table data
@@ -545,82 +542,57 @@ await openExternal('https://example.com');
 async function openExternal(link: string): Promise<void>;
 ```
 
-### getData
+### appStorage.getItem
 
-Retrieve stored data by key.
+Get data stored in the Beekeeper database that your plugin has set previously.
+
+This is available on the `appStorage` object.
 
 **Usage:**
 ```typescript
-import { getData } from '@beekeeperstudio/plugin';
+import { appStorage } from '@beekeeperstudio/plugin';
 
-// Get data with custom key
-const data = await getData('myKey');
+// Get plain data from the database
+const data = await appStorage.getItem('myKey');
 
-// Get data with default key
-const data = await getData();
+// Get encrypted data from the database
+const data = await appStorage.getItem('myKey', { encrypted: true });
 ```
 
 **Signature:**
 ```typescript
-async function getData<T = unknown>(key?: string): Promise<T>;
+async function getItem<T = unknown>(
+    key: string,
+    options?: { encrypted: boolean }
+): Promise<T | null>;
 ```
 
-### setData
-
+### appStorage.setItem
 Store data that can be retrieved later.
 
+This is available on the `appStorage` object.
+
 **Usage:**
 ```typescript
-import { setData } from '@beekeeperstudio/plugin';
+import { appStorage } from '@beekeeperstudio/plugin';
 
-// Store with custom key
-await setData('myKey', { name: 'John' });
+// Store plain data in the database
+await appStorage.setItem('myKey', 'superimportantdata');
 
-// Store with default key
-await setData({ name: 'John' });
+// Set encrypted data in the database
+await appStorage.setItem('myKey', 'supersecretdata', { encrypted: true });
 ```
 
 **Signature:**
 ```typescript
-async function setData<T = unknown>(key: string, value: T): Promise<void>;
-async function setData<T = unknown>(value: T): Promise<void>;
+async function setItem<T = unknown>(
+    key: string,
+    value: T,
+    options?: { encrypted: boolean }
+): Promise<void>;
 ```
 
-### getEncryptedData
-
-Retrieve encrypted stored data by key.
-
-**Usage:**
-```typescript
-import { getEncryptedData } from '@beekeeperstudio/plugin';
-const secretData = await getEncryptedData('secretKey');
-```
-
-**Signature:**
-```typescript
-async function getEncryptedData<T>(key: string): Promise<T>;
-```
-
-### setEncryptedData
-
-Store encrypted data that can be retrieved later.
-
-**Usage:**
-```typescript
-import { setEncryptedData } from '@beekeeperstudio/plugin';
-
-// Store with custom key
-await setEncryptedData('secretKey', { token: 'abc123' });
-
-// Store with default key
-await setEncryptedData({ token: 'abc123' });
-```
-
-**Signature:**
-```typescript
-async function setEncryptedData<T = unknown>(key: string, value: T): Promise<void>;
-async function setEncryptedData<T = unknown>(value: T): Promise<void>;
-```
+`value` is stored as JSON. A value JSON can't represent, such as a `BigInt` or an object with circular references, is rejected with an error and nothing is stored.
 
 ### openTab
 
@@ -792,7 +764,7 @@ broadcast.post("hello");
 
 **Signature:**
 ```typescript
-function post(message: JsonValue): Promise<void>;
+function post(message: JsonValue): void;
 ```
 
 ### broadcast.on
@@ -926,12 +898,10 @@ const result = await confirm(
 {
   title?: string;
   message?: string;
-  options?: {
-    confirmLabel?: string;
-    cancelLabel?: string;
-  };
+  options?: ConfirmOptions;
 }
 ```
+See [ConfirmOptions](#confirmoptions)
 
 **Response Schema:**
 ```typescript
@@ -993,13 +963,13 @@ Fired when the application theme changes.
 import { addNotificationListener } from '@beekeeperstudio/plugin';
 addNotificationListener('themeChanged', (appTheme) => {
   // Apply new theme to your plugin
-  styleTag.textContent = `:root { ${params.cssString} }`;
+  styleTag.textContent = `:root { ${appTheme.cssString} }`;
 });
 ```
 
 **Params schema:**
 
-See [appTheme](#AppTheme)
+See [appTheme](#apptheme)
 
 ### windowEvent
 
@@ -1055,31 +1025,20 @@ function removeNotificationListener(name: "themeChanged", handler: (args: any) =
 
 ## Type Definitions
 
-### Result
+### RunQueryResult
+The result returned by `runQuery`.
 
-| Property      | Type       | Description |
-|---------------|------------|-------------|
-| `rows`        | `object[]` | Array of result rows |
-| `fields`      | `Field[]`  | Array of field definitions |
-| `rowCount`    | `number`   | Number of rows returned |
-| `affectedRows`| `number`   | Number of rows affected (for INSERT/UPDATE/DELETE) |
-
-### Field
-
-| Property   | Type     | Description |
-|------------|----------|-------------|
-| `name`     | `string` | Column name |
-| `dataType` | `string` | Column data type |
+| Property       | Type           | Description |
+|----------------|----------------|-------------|
+| `results`      | `QueryResult`  | Query Results |
+| `error`        | `unknown`      | The error, if any ocurred |
 
 ### Column
 
 | Property       | Type      | Description |
 |----------------|-----------|-------------|
 | `name`         | `string`  | Column name |
-| `dataType`     | `string`  | Column data type |
-| `nullable`     | `boolean` | Whether column allows NULL values |
-| `primaryKey`   | `boolean` | Whether column is part of primary key |
-| `defaultValue` | `any`     | Default value for the column |
+| `type`         | `string`  | Column data type |
 
 ### Table
 
@@ -1160,7 +1119,11 @@ Context information for how a plugin view was opened.
 | Property  | Type                    | Description |
 |-----------|-------------------------|-------------|
 | `command` | `string`               | The command from manifest.json |
-| `params`  | `LoadViewParams`       | Context-specific parameters (optional) |
+| `params`  | [`LoadViewParams`](#loadviewparams) | Context-specific parameters, depending on the menu item's placement (optional). See [Menu item params](manifest.md#menu-item-params). |
+
+### LoadViewParams
+
+The params of the menu item that opened the view: one of [`CellMenuParams`](#cellmenuparams), [`ColumnMenuParams`](#columnmenuparams), [`RowMenuParams`](#rowmenuparams), [`CornerMenuParams`](#cornermenuparams), [`EditorMenuParams`](#editormenuparams), [`StatusbarMenuParams`](#statusbarmenuparams), [`TabMenuParams`](#tabmenuparams) or [`EntityMenuParams`](#entitymenuparams). Which one depends on the item's placement, so narrow it by `command`. `EditorMenuParams`, `StatusbarMenuParams`, `TabMenuParams`, `EntityMenuParams` and `MenuEntity` are exported from version 1.8.0.
 
 ### CellMenuParams
 
@@ -1180,6 +1143,16 @@ Parameters when a column header context menu is triggered.
 | `target`      | `ColumnMenuTarget` | Information about the clicked column |
 | `activeRange` | `ActiveRange`     | Currently selected range |
 
+### ConfirmOptions
+
+Options for the confirm modal.
+
+| Property       | Type              | Description |
+|----------------|-------------------|-------------|
+| `confirmLabel` | `string` | The label for the confirm button |
+| `cancelLabel`  | `string` | The label for the cancel button  |
+
+
 ### RowMenuParams
 
 Parameters when a row header context menu is triggered.
@@ -1197,6 +1170,56 @@ Parameters when the corner (top-left) context menu is triggered.
 |---------------|------------------|-------------|
 | `target`      | `CornerMenuTarget` | Information about the selection |
 | `activeRange` | `ActiveRange`    | Currently selected range |
+
+### EditorMenuParams
+
+Parameters from the query editor (`editor.query.context` and `editor.query.toolbar`).
+
+| Property        | Type     | Description |
+|-----------------|----------|-------------|
+| `text`          | `string` | The whole text of the editor |
+| `selectedText`  | `string` | The selected text, or an empty string |
+| `selectedQuery` | `string` | The statement under the cursor, or an empty string |
+
+### StatusbarMenuParams
+
+Parameters from the **Visualize** menu (`results.statusbar` and `tableTable.statusbar`).
+
+| Property      | Type                                  | Description |
+|---------------|---------------------------------------|-------------|
+| `source`      | `"selection" \| "result" \| "table"` | What was sent: the selected cells, every row of a query result, or a table to read yourself |
+| `target`      | `CornerMenuTarget`                    | The rows sent, shaped like a corner menu's target so handlers written for `CornerMenuParams` work unchanged. Absent when `source` is `"table"` (optional) |
+| `query`       | `string`                              | Query results only: the statement that produced the result (optional) |
+| `truncated`   | `boolean`                             | Query results only: the result stopped at the app's row limit, so `target` may not hold every row the query returns. Run `query` again for more (optional) |
+| `entity`      | [`MenuEntity`](#menuentity)           | Table view only: the table being viewed (optional) |
+| `filters`     | `TableFilter[]`                       | Table view only: the filters applied in the table view (optional) |
+| `where`       | `string`                              | Table view only: the SQL condition for those filters, without the `WHERE` keyword. Empty when there are no filters (optional) |
+
+### TabMenuParams
+
+Parameters from a tab header (`tab.query.header.context` and `tab.table.header.context`).
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `tab`    | `{ type: string; id: number; title: string; data?: object }` | The tab. Query tabs have `data.query`; table tabs have `data.table` and `data.filters` |
+
+### EntityMenuParams
+
+Parameters from the sidebar (`entity.*.context`) and the structure view (`structure.statusbar.menu`).
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `entity` | [`MenuEntity`](#menuentity) | The table, schema or routine |
+
+### MenuEntity
+
+A table, schema or routine that a menu was opened on.
+
+| Property | Type     | Description |
+|----------|----------|-------------|
+| `type`   | `string` | `"table"`, `"view"`, `"schema"` or `"routine"`, for example |
+| `schema` | `string` | Schema name (optional) |
+| `name`   | `string` | Name of the table, schema or routine |
 
 ### ActiveRange
 
@@ -1261,7 +1284,7 @@ Represents the currently selected range in a data table.
 
 Union of supported database types:
 
-`'postgresql' | 'mysql' | 'mariadb' | 'sqlite' | 'sqlserver' | 'oracle' | 'mongodb' | 'cassandra' | 'clickhouse' | 'firebird' | 'bigquery' | 'redshift' | 'duckdb' | 'libsql' | 'redis' | 'surrealdb' | 'trino'`
+`'postgresql' | 'mysql' | 'mariadb' | 'sqlite' | 'sqlserver' | 'oracle' | 'mongodb' | 'cassandra' | 'clickhouse' | 'firebird' | 'bigquery' | 'redshift' | 'duckdb' | 'libsql' | 'redis' | 'surrealdb' | 'trino' | 'snowflake'`
 
 ### ThemeType
 

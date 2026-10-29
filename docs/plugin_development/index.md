@@ -6,9 +6,6 @@ icon: material/puzzle
 
 # Introduction
 
-!!! warning "Beta Feature"
-    The plugin system is in beta (available in Beekeeper Studio 5.3+). We'd love your feedback!
-
 The Beekeeper Studio Plugin System allows developers to extend the application's functionality through user interface (UI). Plugins run in an `<iframe>` which means they are sandboxed and communicate with the main application through a structured API.
 
 ![Plugin Manager showing two installed plugins, and the detail information of the AI Shell plugin](/assets/images/plugin-manager-modal.png)
@@ -16,6 +13,30 @@ The Beekeeper Studio Plugin System allows developers to extend the application's
 ## What Are Plugins?
 
 Plugins are web apps (HTML, CSS, JavaScript) that run inside Beekeeper Studio to provide additional functionality beyond what the core application offers. Plugins can read from and write to your connected database, enabling you to build custom data analysis tools, specialized workflows, database utilities, and advanced features tailored to your specific needs.
+
+## Plugin Requirements
+
+A plugin is a folder containing a manifest and the web pages for its views:
+
+```
+hello-world-plugin/     # folder name must match the manifest id
+├── manifest.json       # required: plugin metadata, views and menu items
+├── index.html          # required: the entry page of each view
+└── assets/             # optional: scripts, styles and images the pages load
+```
+
+| File | Required | Description |
+| ---- | -------- | ----------- |
+| `manifest.json` | Yes | Lives at the root of the plugin folder. Declares the plugin's `id`, `name`, `author`, `description`, `version` and `capabilities`, and should set `"manifestVersion": 1`. See the [Manifest Reference](manifest.md). |
+| View entry pages | Yes, one per view | The HTML file named by each view's `entry`, such as `index.html` or `dist/index.html`. Paths are relative to the plugin folder, or to `pluginEntryDir` when it is set. |
+| Scripts, styles and images | No | Anything your pages load. Keep them inside the plugin folder and reference them with relative paths. |
+
+A few more rules apply:
+
+- The plugin's folder name must be the same as the `id` in `manifest.json`. Beekeeper Studio skips a plugin whose folder name doesn't match.
+- Plugins are plain web apps, so any framework or build tool works. If you use a bundler, point each view's `entry` at the built HTML file. The [Vite build plugin](sdk.md#vite-build-plugin) handles this for Vite projects.
+- The [Plugin SDK](sdk.md) is optional but recommended: it wraps the messages your plugin exchanges with Beekeeper Studio.
+- To [publish](publishing-plugins.md) a plugin, you also need a GitHub repository with a `README.md`, and a release with `manifest.json` and a `{pluginId}-{version}.zip` of the plugin folder.
 
 ## How Plugins Work
 
@@ -49,7 +70,7 @@ When a plugin is installed:
 
 ### 3. Sandboxed Execution
 
-Each plugin is loaded into an `<iframe>` with `sandbox` attributes, limiting access to the host environment unless explicitly permitted via the plugin API. The iframe is served using a custom Electron protocol: `plugin://`, which is defined specifically for Beekeeper Studio. This protocol helps isolate plugins from external web content and is only accessible within the Beekeeper Studio application.
+Each plugin is loaded into an `<iframe>` with `sandbox` attributes, limiting access to the host environment unless explicitly permitted through the Plugin SDK. The iframe is served using a custom Electron protocol: `plugin://`, which is defined specifically for Beekeeper Studio. This protocol helps isolate plugins from external web content and is only accessible within the Beekeeper Studio application.
 
 ### 4. Message-Passing Communication
 
@@ -59,12 +80,19 @@ Plugins communicate with Beekeeper Studio using `postMessage`. This system suppo
 
 - A **notification** sends data without expecting a reply. For instance, when the theme changes, Beekeeper Studio notifies the plugin via a `themeChanged` notification.
 
-The [@beekeeperstudio/plugin](https://www.npmjs.com/package/@beekeeperstudio/plugin) package provides helper functions for handling communication such as `getTables()`, `runQuery()`, etc.
+The [Beekeeper Studio Plugin SDK](sdk.md) ([`@beekeeperstudio/plugin`](https://www.npmjs.com/package/@beekeeperstudio/plugin) on npm) handles this communication for you, with typed functions such as `getTables()`, `runQuery()`, etc.
 
 ### 5. UI Integration
 
 Plugins declare their views in the manifest file. Beekeeper Studio renders these views and injects the corresponding `<iframe>` into the designated location in the UI.
 
+## Developer Tools
+
+- **[Beekeeper Studio Plugin SDK](sdk.md)** ([`@beekeeperstudio/plugin`](https://www.npmjs.com/package/@beekeeperstudio/plugin)) - TypeScript SDK your plugin uses to talk to Beekeeper Studio. See the [SDK Reference](api-reference.md).
+- **[Vite build plugin](sdk.md#vite-build-plugin)** ([`@beekeeperstudio/vite-plugin`](https://www.npmjs.com/package/@beekeeperstudio/vite-plugin)) - adds hot reloading during development and prepares your build for Beekeeper Studio.
+
 ## Next Step
 
+-   **[Plugin SDK](sdk.md)** - The SDK and Vite build plugin
 -   **[Start Building](creating-your-first-plugin.md)** - Create your first plugin
+-   **[Capabilities](capabilities.md)** - Every place a plugin can add a menu item or button

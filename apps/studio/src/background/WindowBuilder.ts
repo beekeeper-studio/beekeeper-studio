@@ -1,12 +1,14 @@
 import _ from 'lodash'
 import path from 'path'
-import { BrowserWindow, globalShortcut, Rectangle } from "electron"
+import { app, BrowserWindow, globalShortcut, ipcMain, Menu, Rectangle } from "electron"
 import electron from 'electron'
 import platformInfo from '../common/platform_info'
 import { IGroupedUserSettings } from '../common/appdb/models/user_setting'
 import rawLog from '@bksLogger'
 import querystring from 'query-string'
 import { safeOpenExternal } from './lib/electron/safeOpenExternal'
+import { AppEvent } from '../common/AppEvent'
+import { WindowCloseGuard, WindowCloseState } from './lib/electron/WindowCloseGuard'
 
 
 // eslint-disable-next-line
@@ -16,6 +18,33 @@ const log = rawLog.scope('WindowBuilder')
 
 const windows: BeekeeperWindow[] = []
 
+const closeState: WindowCloseState = { bypassed: false, quitRequested: false }
+
+export function bypassCloseListeners(): void {
+  closeState.bypassed = true
+}
+
+// a prevented close cancels app.quit(), the guard resumes it once the listeners allow the close
+app.on('before-quit', () => { closeState.quitRequested = true })
+
+// Playwright's app.quit() would hang on a prevented close in every e2e spec
+const closeListenersEnabled = !platformInfo.testMode || !!process.env.BKS_TEST_WINDOW_CLOSE_LISTENERS
+
+export async function setConfirmWindowClose(settings: IGroupedUserSettings, enabled: boolean): Promise<void> {
+  const setting = settings.dontConfirmWindowClose
+  if (!setting) return
+  setting.value = !enabled
+  await setting.save()
+  const menuItem = Menu.getApplicationMenu()?.getMenuItemById('confirm-window-close-toggle')
+  if (menuItem) menuItem.checked = enabled
+  getActiveWindows().forEach((window) => window.send(AppEvent.settingsChanged))
+}
+
+ipcMain.on(AppEvent.windowListenerCount, (event, type: string, count: number) => {
+  const window = windows.find((w) => w.webContents === event.sender)
+  if (window?.closeGuard && type === 'close') window.closeGuard.listenerCount = count
+})
+
 export interface OpenOptions {
   url?: string
 }
@@ -24,15 +53,32 @@ function getIcon() {
   return path.resolve(path.join(__dirname, '..', `public/icons/png/512x512.png`))
 }
 
+const devToolsEnabled = (platformInfo.env.development && !platformInfo.env.test) || platformInfo.debugEnabled
+
+// The renderer may reload itself with different theme params; those don't make it a different page.
+function normalizeUrl(url: string): string {
+  try {
+    const u = new URL(url)
+    for (const param of ['themeId', 'appearance', 'systemDark']) {
+      u.searchParams.delete(param);
+    }
+    return u.toString()
+  } catch {
+    return url
+  }
+}
+
 class BeekeeperWindow {
   private win: BrowserWindow | null
   private reloaded = false
   private appUrl: string
+  private systemUsesDarkColors: boolean;
   public sId: string;
+  public closeGuard?: WindowCloseGuard
 
   constructor(protected settings: IGroupedUserSettings, openOptions: OpenOptions) {
-    const theme = settings.theme
-    const dark = electron.nativeTheme.shouldUseDarkColors || theme.value.toString().includes('dark')
+    this.systemUsesDarkColors = electron.nativeTheme.shouldUseDarkColors;
+    const dark = this.isDark();
     let titleBarStyle: 'default' | 'hidden' = platformInfo.isWindows ? 'default' : 'hidden'
 
     if (platformInfo.isWayland) {
@@ -66,6 +112,10 @@ class BeekeeperWindow {
     // const appUrl = startUrl
     const queryObj: any = openOptions ? { ...openOptions } : {}
 
+    queryObj.themeId = this.getThemeId();
+    queryObj.appearance = this.getAppearance();
+    queryObj.systemDark = this.systemUsesDarkColors;
+
     if (platformInfo.isWayland) {
       queryObj.runningWayland = true
     }
@@ -77,7 +127,7 @@ class BeekeeperWindow {
 
     this.initializeCallbacks()
     this.win.webContents.on('will-navigate', (e, url) => {
-      if (url === this.appUrl) return // this is good
+      if (normalizeUrl(url) === normalizeUrl(this.appUrl)) return // this is good
       log.info("navigate to", url)
       e.preventDefault()
       let u: URL
@@ -92,7 +142,7 @@ class BeekeeperWindow {
     })
 
     this.win.webContents.setWindowOpenHandler(({ url }) => {
-      if (url === this.appUrl){
+      if (normalizeUrl(url) === normalizeUrl(this.appUrl)) {
         return {
           action: 'allow'
         }
@@ -128,6 +178,14 @@ class BeekeeperWindow {
       this.win.webContents.send(`leave-full-screen-${this.sId}`)
     })
 
+    this.win.on('focus', () => {
+      this.send('windowFocused', true)
+    })
+
+    this.win.on('blur', () => {
+      this.send('windowFocused', false)
+    })
+
     this.initialize()
       .then(() => log.debug("initialize finished"))
       .catch((ex) => log.error("INITIALIZE ERROR", ex)  )
@@ -153,7 +211,7 @@ class BeekeeperWindow {
     this.win.show()
 
     await this.win.loadURL(this.appUrl)
-    if ((platformInfo.env.development && !platformInfo.env.test) || platformInfo.debugEnabled) {
+    if (devToolsEnabled) {
       globalShortcut.register('F12', this.win.webContents.toggleDevTools.bind(this.win.webContents))
       globalShortcut.register('CommandOrControl+Shift+I', this.win.webContents.toggleDevTools.bind(this.win.webContents))
 
@@ -211,7 +269,7 @@ class BeekeeperWindow {
     this.win?.on('closed', () => {
       this.win = null
     })
-
+    if (closeListenersEnabled) this.closeGuard = new WindowCloseGuard(this.win, ipcMain, app, closeState)
 
     const windowMoveResizeListener = _.debounce(this.windowMoveResizeListener.bind(this), 1000)
     this.win.on('resize',windowMoveResizeListener)
@@ -231,8 +289,9 @@ class BeekeeperWindow {
     this.reloaded = true
   }
 
-  onClose(listener: (event: electron.Event) => void) {
-    this.win?.on('close', listener);
+  // 'closed', not 'close': a close can be prevented, and callers tear down state here
+  onClose(listener: () => void) {
+    this.win?.on('closed', listener);
   }
 
   get active() {
@@ -269,6 +328,24 @@ class BeekeeperWindow {
 
   closeWindow() {
     this.win?.close();
+  }
+
+  getThemeId() {
+    return this.settings.themeId?.value?.toString() || 'default';
+  }
+
+  getAppearance() {
+    return this.settings.appearance?.value?.toString() || 'auto';
+  }
+
+  /** is the window in dark mode? */
+  isDark(): boolean {
+    const appearance = this.getAppearance();
+    if (appearance === 'auto') {
+      return this.systemUsesDarkColors;
+    } else {
+      return appearance === 'dark'
+    }
   }
 }
 

@@ -26,10 +26,11 @@ import {
   DatabaseElement,
 } from "../types";
 import { MysqlCursor } from "./mysql/MySqlCursor";
+import { foreignKeyColumnsSql } from "./mysql/scripts";
 import {createCancelablePromise} from "@/common/utils";
 import { errors } from "@/lib/errors";
 import { MySqlChangeBuilder } from "@shared/lib/sql/change_builder/MysqlChangeBuilder";
-import { AlterTableSpec, IndexColumn, SchemaItem, TableKey } from "@shared/lib/dialects/models";
+import { AlterTableSpec, IndexColumn, TableKey } from "@shared/lib/dialects/models";
 import { MysqlData } from "@shared/lib/dialects/mysql";
 import {
   CancelableQuery,
@@ -107,94 +108,6 @@ function getRealError(conn, err) {
     return conn._protocol._fatalError;
   }
   return err;
-}
-
-async function configDatabase(
-  server: IDbConnectionServer,
-  database: IDbConnectionDatabase
-): Promise<mysql.PoolOptions> {
-
-  let iamToken = undefined;
-  if(server.config.iamAuthOptions?.iamAuthenticationEnabled){
-      iamToken = await refreshTokenIfNeeded(server.config?.iamAuthOptions, server, server.config.port || 5432)
-  }
-
-  const config: mysql.PoolOptions = {
-    authPlugins: {
-      'client_ed25519': ed25519AuthPlugin(),
-    },
-    host: server.config.host,
-    port: server.config.port,
-    user: server.config.user,
-    password: iamToken || server.config.password || undefined,
-    database: database.database,
-    multipleStatements: true,
-    dateStrings: true,
-    supportBigNumbers: true,
-    bigNumberStrings: true,
-    connectionLimit: BksConfig.db.mysql.maxConnections,
-    connectTimeout: BksConfig.db.mysql.connectTimeout,
-  };
-
-  if (server.config.azureAuthOptions?.azureAuthEnabled) {
-    const authService = new AzureAuthService();
-    return authService.configDB(server, config)
-  }
-
-  if (server.config.socketPathEnabled) {
-    config.socketPath = server.config.socketPath;
-    config.host = null;
-    config.port = null;
-    return config;
-  }
-
-  if (server.sshTunnel) {
-    config.host = server.config.localHost;
-    config.port = server.config.localPort;
-  }
-
-  if (
-    server.config.iamAuthOptions?.iamAuthenticationEnabled
-  ){
-    server.config.ssl = true
-  }
-
-  if (server.config.ssl) {
-    config.ssl = {};
-
-    if (server.config.sslCaFile) {
-      /* eslint-disable-next-line */
-      // @ts-ignore
-      config.ssl.ca = readFileSync(server.config.sslCaFile);
-    }
-
-    if (server.config.sslCertFile) {
-      /* eslint-disable-next-line */
-      // @ts-ignore
-      config.ssl.cert = readFileSync(server.config.sslCertFile);
-    }
-
-    if (server.config.sslKeyFile) {
-      /* eslint-disable-next-line */
-      // @ts-ignore
-      config.ssl.key = readFileSync(server.config.sslKeyFile);
-    }
-
-    if (!config.ssl.key && !config.ssl.ca && !config.ssl.cert) {
-      // TODO: provide this as an option in settings
-      // or per-connection as 'reject self-signed certs'
-      // How it works:
-      // if false, cert can be self-signed
-      // if true, has to be from a public CA
-      // Heroku certs are self-signed.
-      // if you provide ca/cert/key files, it overrides this
-      config.ssl.rejectUnauthorized = false;
-    } else {
-      config.ssl.rejectUnauthorized = server.config.sslRejectUnauthorized;
-    }
-  }
-
-  return config;
 }
 
 function isMultipleQuery(fields: any[]) {
@@ -292,7 +205,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
 
   async connect() {
     await super.connect();
-    const dbConfig = await configDatabase(this.server, this.database);
+    const dbConfig = await this.configDatabase(this.server, this.database);
     logger().debug("create driver client for mysql with config %j", dbConfig);
 
     this.conn = {
@@ -324,6 +237,95 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
 
 
     this.versionInfo = await this.getVersion();
+  }
+
+  async configDatabase(
+    server: IDbConnectionServer,
+    database: IDbConnectionDatabase
+  ): Promise<mysql.PoolOptions> {
+
+    let iamToken = undefined;
+    if(server.config.iamAuthOptions?.iamAuthenticationEnabled){
+        iamToken = await refreshTokenIfNeeded(server.config?.iamAuthOptions, server, server.config.port || 5432)
+    }
+
+    const config: mysql.PoolOptions = {
+      authPlugins: {
+        'client_ed25519': ed25519AuthPlugin(),
+      },
+      host: server.config.host,
+      port: server.config.port,
+      user: server.config.user,
+      password: iamToken || server.config.password || undefined,
+      database: database.database,
+      multipleStatements: true,
+      dateStrings: true,
+      supportBigNumbers: true,
+      bigNumberStrings: true,
+      enableCleartextPlugin: server.config.options?.enableClearText,
+      connectionLimit: BksConfig.db[this.connectionType].maxConnections ?? BksConfig.db.mysql.maxConnections,
+      connectTimeout: BksConfig.db[this.connectionType].connectTimeout ?? BksConfig.db.mysql.connectTimeout,
+    };
+
+    if (server.config.azureAuthOptions?.azureAuthEnabled) {
+      const authService = new AzureAuthService();
+      return authService.configDB(server, config)
+    }
+
+    if (server.config.socketPathEnabled) {
+      config.socketPath = server.config.socketPath;
+      config.host = null;
+      config.port = null;
+      return config;
+    }
+
+    if (server.sshTunnel) {
+      config.host = server.config.localHost;
+      config.port = server.config.localPort;
+    }
+
+    if (
+      server.config.iamAuthOptions?.iamAuthenticationEnabled
+    ){
+      server.config.ssl = true
+    }
+
+    if (server.config.ssl) {
+      config.ssl = {};
+
+      if (server.config.sslCaFile) {
+        /* eslint-disable-next-line */
+        // @ts-ignore
+        config.ssl.ca = readFileSync(server.config.sslCaFile);
+      }
+
+      if (server.config.sslCertFile) {
+        /* eslint-disable-next-line */
+        // @ts-ignore
+        config.ssl.cert = readFileSync(server.config.sslCertFile);
+      }
+
+      if (server.config.sslKeyFile) {
+        /* eslint-disable-next-line */
+        // @ts-ignore
+        config.ssl.key = readFileSync(server.config.sslKeyFile);
+      }
+
+      if (!config.ssl.key && !config.ssl.ca && !config.ssl.cert) {
+        // TODO: provide this as an option in settings
+        // or per-connection as 'reject self-signed certs'
+        // How it works:
+        // if false, cert can be self-signed
+        // if true, has to be from a public CA
+        // Heroku certs are self-signed.
+        // if you provide ca/cert/key files, it overrides this
+        config.ssl.rejectUnauthorized = false;
+      } else {
+        config.ssl.rejectUnauthorized = server.config.sslRejectUnauthorized;
+      }
+    }
+
+    return config;
   }
 
   async disconnect() {
@@ -693,142 +695,31 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     table: string,
     _schema?: string
   ): Promise<TableKey[]> {
-    // Query for foreign keys FROM this table (referencing other tables)
+    // Foreign keys defined on this table (referencing other tables)
     const sql = `
-    SELECT
-      cu.constraint_name as 'constraint_name',
-      cu.column_name as 'column_name',
-      cu.referenced_table_name as 'referenced_table_name',
-      IF(cu.referenced_table_name IS NOT NULL, 'FOREIGN', cu.constraint_name) as key_type,
-      cu.REFERENCED_TABLE_NAME as referenced_table,
-      cu.REFERENCED_COLUMN_NAME as referenced_column,
-      rc.UPDATE_RULE as on_update,
-      rc.DELETE_RULE as on_delete,
-      rc.CONSTRAINT_NAME as rc_constraint_name,
-      cu.ORDINAL_POSITION as ordinal_position
-    FROM information_schema.key_column_usage cu
-    JOIN information_schema.referential_constraints rc
-      on cu.constraint_name = rc.constraint_name
-      and cu.constraint_schema = rc.constraint_schema
-    WHERE table_schema = database()
-    AND cu.table_name = ?
-    AND cu.referenced_table_name IS NOT NULL
-    ORDER BY rc.CONSTRAINT_NAME, cu.ORDINAL_POSITION
-  `;
-
-    const params = [table];
-
-    const { rows } = await this.driverExecuteSingle(sql, { params });
-
-    // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(rows, 'constraint_name');
-
-    return Object.keys(groupedKeys).map(constraintName => {
-      const keyParts = groupedKeys[constraintName];
-
-      // If there's only one part, return a simple key (backward compatibility)
-      if (keyParts.length === 1) {
-        const row = keyParts[0];
-        return {
-          constraintName: `${row.constraint_name}`,
-          toTable: row.referenced_table,
-          toColumn: row.referenced_column,
-          fromTable: table,
-          fromColumn: row.column_name,
-          referencedTable: row.referenced_table_name,
-          keyType: `${row.key_type} KEY`,
-          onDelete: row.on_delete,
-          onUpdate: row.on_update,
-          toSchema: "",
-          fromSchema: "",
-          isComposite: false,
-        };
-      }
-
-      // If there are multiple parts, it's a composite key
-      const firstPart = keyParts[0];
-      return {
-        constraintName: `${firstPart.constraint_name}`,
-        toTable: firstPart.referenced_table,
-        toColumn: keyParts.map(p => p.referenced_column),
-        fromTable: table,
-        fromColumn: keyParts.map(p => p.column_name),
-        referencedTable: firstPart.referenced_table_name,
-        keyType: `${firstPart.key_type} KEY`,
-        onDelete: firstPart.on_delete,
-        onUpdate: firstPart.on_update,
-        toSchema: "",
-        fromSchema: "",
-        isComposite: true
-      };
-    });
+      ${foreignKeyColumnsSql}
+      WHERE cu.table_schema = database()
+        AND cu.table_name = ?
+        AND cu.referenced_table_name IS NOT NULL
+      ORDER BY cu.constraint_name, cu.ordinal_position
+    `;
+    const { rows } = await this.driverExecuteSingle(sql, { params: [table] });
+    return this.parseForeignKeys(rows);
   }
 
   async getIncomingKeys(
     table: string,
     _schema?: string
   ): Promise<TableKey[]> {
-    // Query for foreign keys TO this table (other tables referencing this table)
-    const incomingSQL = `
-    SELECT
-      cu.constraint_name as 'constraint_name',
-      cu.table_name as 'from_table',
-      cu.column_name as 'column_name',
-      cu.referenced_table_name as 'referenced_table',
-      cu.REFERENCED_COLUMN_NAME as 'referenced_column',
-      rc.UPDATE_RULE as on_update,
-      rc.DELETE_RULE as on_delete,
-      cu.ORDINAL_POSITION as ordinal_position
-    FROM information_schema.key_column_usage cu
-    JOIN information_schema.referential_constraints rc
-      on cu.constraint_name = rc.constraint_name
-      and cu.constraint_schema = rc.constraint_schema
-    WHERE table_schema = database()
-    AND cu.referenced_table_name = ?
-    ORDER BY cu.constraint_name, cu.ORDINAL_POSITION
-  `;
-
-    const params = [table];
-    const { rows } = await this.driverExecuteSingle(incomingSQL, { params });
-
-    // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(rows, 'constraint_name');
-
-    return Object.keys(groupedKeys).map(constraintName => {
-      const keyParts = groupedKeys[constraintName];
-
-      // If there's only one part, return a simple key
-      if (keyParts.length === 1) {
-        const row = keyParts[0];
-        return {
-          constraintName: `${row.constraint_name}`,
-          toTable: row.referenced_table,
-          toColumn: row.referenced_column,
-          fromTable: row.from_table,
-          fromColumn: row.column_name,
-          onDelete: row.on_delete,
-          onUpdate: row.on_update,
-          toSchema: "",
-          fromSchema: "",
-          isComposite: false,
-        };
-      }
-
-      // If there are multiple parts, it's a composite key
-      const firstPart = keyParts[0];
-      return {
-        constraintName: `${firstPart.constraint_name}`,
-        toTable: firstPart.referenced_table,
-        toColumn: keyParts.map(p => p.referenced_column),
-        fromTable: firstPart.from_table,
-        fromColumn: keyParts.map(p => p.column_name),
-        onDelete: firstPart.on_delete,
-        onUpdate: firstPart.on_update,
-        toSchema: "",
-        fromSchema: "",
-        isComposite: true,
-      };
-    });
+    // Foreign keys on other tables that reference this table
+    const sql = `
+      ${foreignKeyColumnsSql}
+      WHERE cu.table_schema = database()
+        AND cu.referenced_table_name = ?
+      ORDER BY cu.constraint_name, cu.ordinal_position
+    `;
+    const { rows } = await this.driverExecuteSingle(sql, { params: [table] });
+    return this.parseForeignKeys(rows);
   }
 
   async getTableProperties(
@@ -1145,6 +1036,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       params: {},
       rowsAsArray: options.rowsAsArray,
       connection: options.connection,
+      ...options
     });
 
     if (!rows) {

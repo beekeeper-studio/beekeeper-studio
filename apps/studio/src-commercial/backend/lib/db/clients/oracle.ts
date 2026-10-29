@@ -2,6 +2,7 @@ import { OracleData as D } from '@shared/lib/dialects/oracle';
 import knexLib from 'knex';
 import oracle, { Metadata } from 'oracledb'
 import _ from 'lodash'
+import { ForeignKeyRow } from '@shared/lib/dialects/models';
 import { IDbConnectionDatabase, DatabaseElement } from "@/lib/db/types";
 import { BasicDatabaseClient, NoOpContextProvider } from "@/lib/db/clients/BasicDatabaseClient";
 import BksConfig from '@/common/bksConfig';
@@ -37,11 +38,12 @@ import {
   errorMessages,
 } from '@/lib/db/clients/utils';
 import rawLog from '@bksLogger'
-import { createCancelablePromise, joinFilters } from '@/common/utils';
+import { createCancelablePromise, isListFilter, joinFilters } from '@/common/utils';
 import { errors } from '@/lib/errors';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 import platformInfo from '@/common/platform_info';
 import { OracleCursor } from './oracle/OracleCursor';
+import { foreignKeyColumnsSql } from './oracle/scripts';
 import { OracleChangeBuilder } from '@shared/lib/sql/change_builder/OracleChangeBuilder';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
 import { IDbConnectionServer } from '@/lib/db/backendTypes';
@@ -65,8 +67,21 @@ export function _resetOracleStateForTesting() {
   oracleInitConfigDir = null
 }
 
+const privileges = {
+  SYSDBA: oracle.SYSDBA,
+  SYSOPER: oracle.SYSOPER,
+}
+
 export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Connection> {
-  pool: oracle.Pool;
+  pool?: oracle.Pool;
+  // Set when connecting with SYSDBA in thick mode. Thick mode only applies
+  // a privilege on a heterogeneous pool, where the credentials go to each
+  // pool.getConnection() call instead of to createPool().
+  // @types/oracledb is missing privilege on pooled connection options.
+  connectionAttributes?: oracle.GetPooledConnectionOptions & { privilege: number };
+  // Set instead of a pool for SYSOPER in thick mode, because OCI session pools
+  // only support SYSDBA. Each connection is a standalone connection.
+  standaloneAttributes?: oracle.ConnectionAttributes;
   server: IDbConnectionServer
   database: IDbConnectionDatabase
   defaultSchema: () => Promise<string>
@@ -302,9 +317,9 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     let filterString = ""
     if (filters && filters.length > 0) {
       const allFilters = filters.map((item) => {
-        if (item.type === 'in') {
+        if (isListFilter(item.type)) {
           const valuesIn = item.value.map(v => D.escapeString(v, true))
-          return `${D.wrapIdentifier(item.field)} IN (${valuesIn.join(',')})`
+          return `${D.wrapIdentifier(item.field)} ${item.type.toUpperCase()} (${valuesIn.join(',')})`
         } else if (item.type.includes('is')) {
           return `${D.wrapIdentifier(item.field)} ${item.type.toUpperCase()} NULL`
         }
@@ -372,7 +387,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     return {
       columns: columns,
       totalRows: rowCount,
-      cursor: new OracleCursor(this.pool, q, [], chunkSize)
+      cursor: new OracleCursor(() => this.getPoolConnection(), q, [], chunkSize)
     }
   }
 
@@ -544,163 +559,32 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     }))
   }
   async getOutgoingKeys(table: string, schema?: string) {
-    // Query for foreign keys FROM this table (outgoing - referencing other tables)
-    // https://stackoverflow.com/questions/1729996/list-of-foreign-keys-and-the-tables-they-reference-in-oracle-db
+    // Foreign keys defined on this table (referencing other tables)
     const sql = `
-    SELECT
-      a.table_name,
-      a.column_name,
-      a.constraint_name,
-      a.position,
-      c.owner,
-      c.delete_rule,
-       -- referenced
-      c.r_owner,
-      c_pk.table_name as R_TABLE_NAME,
-      c_pk.constraint_name as R_PK,
-      c_pk.owner as R_OWNER,
-      r_a.COLUMN_NAME as R_COLUMN,
-      r_a.position as R_POSITION
-  -- constraint columns
-  FROM all_cons_columns a
-  -- constraint info for those columns
-  JOIN all_constraints c ON a.owner = c.owner
-                        AND a.constraint_name = c.constraint_name
-
-  -- information on the columns we're referencing
-  JOIN all_constraints c_pk ON c.r_owner = c_pk.owner
-                           AND c.r_constraint_name = c_pk.constraint_name
-
-    JOIN all_cons_columns r_a on c_pk.owner = r_a.owner and c_pk.CONSTRAINT_NAME = r_a.CONSTRAINT_NAME
- WHERE c.constraint_type = 'R'
-  AND c_pk.constraint_type = 'P'
-   AND a.table_name = ${D.escapeString(table.toUpperCase(), true)}
-   ${schema ? `AND a.owner = ${D.escapeString(schema.toUpperCase(), true)}` : ''}
-  ORDER BY
-    a.constraint_name,
-    a.position
-    `
-    const response = await this.driverExecuteSimple(sql);
-
-    // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(response, 'CONSTRAINT_NAME');
-
-    return Object.keys(groupedKeys).map(constraintName => {
-      const keyParts = groupedKeys[constraintName];
-
-      // Sort key parts by position to ensure correct column order
-      const sortedKeyParts = _.sortBy(keyParts, 'POSITION');
-
-      // If there's only one part, return a simple key (backward compatibility)
-      if (sortedKeyParts.length === 1) {
-        const row = sortedKeyParts[0];
-        return {
-          constraintName: row.CONSTRAINT_NAME,
-          toTable: row.R_TABLE_NAME,
-          toSchema: row.R_OWNER,
-          toColumn: row.R_COLUMN,
-          fromTable: row.TABLE_NAME,
-          fromSchema: row.OWNER,
-          fromColumn: row.COLUMN_NAME,
-          onDelete: row.DELETE_RULE,
-          isComposite: false
-        };
-      }
-
-      // If there are multiple parts, it's a composite key
-      const firstPart = sortedKeyParts[0];
-      return {
-        constraintName: firstPart.CONSTRAINT_NAME,
-        toTable: firstPart.R_TABLE_NAME,
-        toSchema: firstPart.R_OWNER,
-        toColumn: _.uniq(sortedKeyParts.map(p => p.R_COLUMN)),
-        fromTable: firstPart.TABLE_NAME,
-        fromSchema: firstPart.OWNER,
-        fromColumn: _.uniq(sortedKeyParts.map(p => p.COLUMN_NAME)),
-        onDelete: firstPart.DELETE_RULE,
-        isComposite: true
-      };
-    })
+      ${foreignKeyColumnsSql}
+      AND a.table_name = ${D.escapeString(table.toUpperCase(), true)}
+      ${schema ? `AND a.owner = ${D.escapeString(schema.toUpperCase(), true)}` : ''}
+      ORDER BY a.constraint_name, a.position
+    `;
+    const rows = await this.driverExecuteSimple(sql);
+    return this.parseForeignKeys(rows);
   }
 
   async getIncomingKeys(table: string, schema?: string) {
-    // Query for foreign keys TO this table (incoming - other tables referencing this table)
-    const incomingSQL = `
-    SELECT
-      a.table_name,
-      a.column_name,
-      a.constraint_name,
-      a.position,
-      c.owner,
-      c.delete_rule,
-       -- referenced
-      c.r_owner,
-      c_pk.table_name as R_TABLE_NAME,
-      c_pk.constraint_name as R_PK,
-      c_pk.owner as R_OWNER,
-      r_a.COLUMN_NAME as R_COLUMN,
-      r_a.position as R_POSITION
-  -- constraint columns
-  FROM all_cons_columns a
-  -- constraint info for those columns
-  JOIN all_constraints c ON a.owner = c.owner
-                        AND a.constraint_name = c.constraint_name
-
-  -- information on the columns we're referencing
-  JOIN all_constraints c_pk ON c.r_owner = c_pk.owner
-                           AND c.r_constraint_name = c_pk.constraint_name
-
-    JOIN all_cons_columns r_a on c_pk.owner = r_a.owner and c_pk.CONSTRAINT_NAME = r_a.CONSTRAINT_NAME
- WHERE c.constraint_type = 'R'
-  AND c_pk.constraint_type = 'P'
-   AND c_pk.table_name = ${D.escapeString(table.toUpperCase(), true)}
-   ${schema ? `AND c_pk.owner = ${D.escapeString(schema.toUpperCase(), true)}` : ''}
-  ORDER BY
-    a.constraint_name,
-    a.position
+    // Foreign keys on other tables that reference this table
+    const sql = `
+      ${foreignKeyColumnsSql}
+      AND c_pk.table_name = ${D.escapeString(table.toUpperCase(), true)}
+      ${schema ? `AND c_pk.owner = ${D.escapeString(schema.toUpperCase(), true)}` : ''}
+      ORDER BY a.owner, a.table_name, a.constraint_name, a.position
     `;
+    const rows = await this.driverExecuteSimple(sql);
+    return this.parseForeignKeys(rows);
+  }
 
-    const incoming = await this.driverExecuteSimple(incomingSQL);
-
-    // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(incoming, 'CONSTRAINT_NAME');
-
-    return Object.keys(groupedKeys).map(constraintName => {
-      const keyParts = groupedKeys[constraintName];
-
-      // Sort key parts by position to ensure correct column order
-      const sortedKeyParts = _.sortBy(keyParts, 'POSITION');
-
-      // If there's only one part, return a simple key (backward compatibility)
-      if (sortedKeyParts.length === 1) {
-        const row = sortedKeyParts[0];
-        return {
-          constraintName: row.CONSTRAINT_NAME,
-          toTable: row.R_TABLE_NAME,
-          toSchema: row.R_OWNER,
-          toColumn: row.R_COLUMN,
-          fromTable: row.TABLE_NAME,
-          fromSchema: row.OWNER,
-          fromColumn: row.COLUMN_NAME,
-          onDelete: row.DELETE_RULE,
-          isComposite: false,
-        };
-      }
-
-      // If there are multiple parts, it's a composite key
-      const firstPart = sortedKeyParts[0];
-      return {
-        constraintName: firstPart.CONSTRAINT_NAME,
-        toTable: firstPart.R_TABLE_NAME,
-        toSchema: firstPart.R_OWNER,
-        toColumn: _.uniq(sortedKeyParts.map(p => p.R_COLUMN)),
-        fromTable: firstPart.TABLE_NAME,
-        fromSchema: firstPart.OWNER,
-        fromColumn: _.uniq(sortedKeyParts.map(p => p.COLUMN_NAME)),
-        onDelete: firstPart.DELETE_RULE,
-        isComposite: true,
-      };
-    })
+  // Column names come back in upper case.
+  protected parseForeignKeyRow(row: any): ForeignKeyRow {
+    return super.parseForeignKeyRow(_.mapKeys(row, (_value, key) => key.toLowerCase()));
   }
 
 
@@ -784,7 +668,14 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
   async connect() {
     await super.connect();
 
-    const cliLocation = this.platformPath(this.server.config.instantClientLocation)
+    // A location saved by an x64 install still points at an x64 Instant Client,
+    // which an ARM64 process can't load. Ignore it and connect in thin mode.
+    if (this.server.config.instantClientLocation && !platformInfo.oracleInstantClientSupported) {
+      log.warn("Oracle Instant Client is not supported on this platform, ignoring the configured location and connecting in thin mode")
+    }
+    const cliLocation = platformInfo.oracleInstantClientSupported
+      ? this.platformPath(this.server.config.instantClientLocation)
+      : null
     // https://oracle.github.io/node-oracledb/doc/api.html#-152-optional-oracle-net-configuration
     const configLocation = this.platformPath(this.server.config.oracleConfigLocation)
 
@@ -861,8 +752,34 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     if (configLocation && !cliLocation) {
       poolConfig['configDir'] = configLocation
     }
-    log.debug("Pool Config: ", poolConfig)
-    this.pool = await oracle.createPool(poolConfig)
+
+    const privilegeName = this.server.config.options?.privilege
+    const privilege = privilegeName ? privileges[privilegeName] : undefined
+    if (privilegeName && privilege === undefined) {
+      throw new Error(`Unknown Oracle role: ${privilegeName}`)
+    }
+    this.connectionAttributes = undefined
+    this.standaloneAttributes = undefined
+    if (privilege !== undefined) {
+      if (oracle.thin) {
+        poolConfig['privilege'] = privilege
+      } else if (privilege === oracle.SYSDBA) {
+        const { user, password, ...rest } = poolConfig
+        // poolMin is 0 because a heterogeneous pool has no credentials to open
+        // sessions with until getConnection() supplies them.
+        poolConfig = { ...rest, homogeneous: false, poolMin: 0 }
+        this.connectionAttributes = { user, password, privilege }
+      } else {
+        this.standaloneAttributes = {
+          ..._.omit(poolConfig, ['poolIncrement', 'poolMin', 'poolMax']),
+          privilege,
+        }
+      }
+    }
+    if (!this.standaloneAttributes) {
+      log.debug("Pool Config: ", poolConfig)
+      this.pool = await oracle.createPool(poolConfig)
+    }
     const vSQL = `
       SELECT BANNER as BANNER FROM v$version
       WHERE BANNER LIKE 'Oracle%';
@@ -872,6 +789,15 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
   }
   async checkConnection() {
     // empty on purpose
+  }
+
+  getPoolConnection(): Promise<oracle.Connection> {
+    if (this.standaloneAttributes) {
+      return oracle.getConnection(this.standaloneAttributes)
+    }
+    return this.connectionAttributes
+      ? this.pool.getConnection(this.connectionAttributes)
+      : this.pool.getConnection()
   }
 
   async disconnect() {
@@ -997,7 +923,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     const hasReserved = this.reservedConnections.has(tabId);
     return {
       execute: (async () => {
-        connection = hasReserved ? this.peekConnection(tabId) : await this.pool.getConnection()
+        connection = hasReserved ? this.peekConnection(tabId) : await this.getPoolConnection()
         try {
           const data = await Promise.race([
             cancelable.wait(),
@@ -1040,7 +966,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
 
   async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
     return {
-      cursor: new OracleCursor(this.pool, query, [], chunkSize)
+      cursor: new OracleCursor(() => this.getPoolConnection(), query, [], chunkSize)
     }
   }
 
@@ -1130,7 +1056,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
         const c = this.peekConnection(options?.tabId);
         return await runQuery(c);
       } else {
-        const c = options.connection ?? await this.pool.getConnection();
+        const c = options.connection ?? await this.getPoolConnection();
         return await withClosable(c, runQuery);
       }
   }
@@ -1142,7 +1068,7 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
       throw new Error(errorMessages.maxReservedConnections)
     }
 
-    const conn = await this.pool.getConnection();
+    const conn = await this.getPoolConnection();
     this.pushConnection(tabId, conn);
   }
 

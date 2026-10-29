@@ -10,17 +10,19 @@ type State = DataState<TransportFavoriteQuery>
 
 export const UtilQueryModule: DataStore<TransportFavoriteQuery, State> = {
   namespaced: true,
-  state: {
-    items: [],
-    loading: false,
-    error: null,
-    pollError: null,
-    filter: undefined, // maybe this can be more advanced? date filter?
-    pendingSaveIds: [],
+  state() {
+    return {
+      items: [],
+      loading: false,
+      error: null,
+      pollError: null,
+      filter: undefined, // maybe this can be more advanced? date filter?
+      pendingSaveIds: [],
+    }
   },
   mutations: mutationsFor<TransportFavoriteQuery>({
     // more mutations go here
-    savedQueryFilter(state: DataState<TransportFavoriteQuery>, str: string) {
+    queryFilter(state: DataState<TransportFavoriteQuery>, str: string) {
       state.filter = str;
     },
     ...accessGrantMutations(),
@@ -32,15 +34,16 @@ export const UtilQueryModule: DataStore<TransportFavoriteQuery, State> = {
   actions: {
     ...utilActionsFor<TransportFavoriteQuery>('query', {}, {}, { text: true, title: true, database: true, excerpt: true, id: true }),
     ...accessGrantActions('queries'),
-    ...treeActions<TransportFavoriteQuery>({ plural: 'queryFolderIds', singular: 'queryFolderId' }),
+    ...treeActions<TransportFavoriteQuery>({ plural: 'queryFolderIds', singular: 'queryFolderId' }, true),
+    async initialize() {
+      // noop
+    },
     async afterMutate(context, { type, data }) {
       context.commit(`nodes/${type}`, data)
     },
-    async refresh(context) {
-      await context.dispatch('load');
-    },
-    setSavedQueryFilter: _.debounce(function (context, filter) {
-      context.commit('savedQueryFilter', filter);
+    setQueryFilter: _.debounce(function (context, filter) {
+      context.commit('queryFilter', filter);
+      context.dispatch('search', filter);
     }, 500),
 
     // Reorder action for drag/drop - matches cloud module interface

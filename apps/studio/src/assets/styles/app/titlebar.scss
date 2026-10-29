@@ -5,7 +5,6 @@ $titlebar-actions-height:   30px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: $titlebar-bg;
   padding: 0 $gutter-h;
   margin: 0;
   min-height: 1.6rem;
@@ -40,7 +39,6 @@ $titlebar-actions-height:   30px;
     left: 50%;
     transform: translateX(-50%);
     text-align: center;
-    color: $text-light;
     font-size: 0.85rem;
     line-height: 2;
     overflow: hidden;
@@ -65,13 +63,10 @@ $titlebar-actions-height:   30px;
       align-items: center;
       min-width: 0;
       border-radius: 0;
-      color: $text-light;
+      color: inherit;
       margin: 0;
       z-index: 10;
       box-shadow: none;
-      &:hover {
-        color: $text-dark;
-      }
       &:focus {
         background: transparent;
       }
@@ -102,14 +97,10 @@ $titlebar-actions-height:   30px;
       .maximized {
         transform: rotate(180deg);
       }
-      &:hover {
-        background: $brand-info;
-      }
+      --btn-bg-hover: var(--info-solid-bg);
     }
     #quit {
-      &:hover {
-        background: $brand-danger;
-      }
+      --btn-bg-hover: var(--danger-solid-bg);
     }
   }
 
@@ -136,8 +127,13 @@ $titlebar-actions-height:   30px;
 
 .titlebar-wrapper {
   padding-bottom: $gutter-h;
-  background-color: var(--bks-titleBar-activeBackground);
-  color: var(--bks-titleBar-activeForeground);
+  background: var(--titlebar-bg);
+  color: var(--titlebar-fg);
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+  body.window-inactive & {
+    background-color: var(--titlebar-inactive-bg);
+    color: var(--titlebar-inactive-fg);
+  }
   & .titlebar.windows.fullscreen {
     display: none;
     -webkit-app-region: no-drag;

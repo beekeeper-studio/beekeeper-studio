@@ -21,8 +21,8 @@ interface IWindowDialog {
 
 export interface NativePlugin {
   clipboard: {
-    writeText(text: string): void
-    readText(): string
+    writeText(text: string): Promise<void>
+    readText(): Promise<string>
   },
   files: {
     open(path: string): Promise<string>
@@ -45,7 +45,7 @@ export const ElectronPlugin: NativePlugin = {
     window.main.openLink(link);
   },
   clipboard: {
-    writeText(rawText: any, notify = true) {
+    async writeText(rawText: any, notify = true) {
       const copyNotification = new Noty({
         text: "Text copied to clipboard",
         layout: "bottomRight",
@@ -54,13 +54,13 @@ export const ElectronPlugin: NativePlugin = {
       })
       const text = _.toString(rawText)
       Noty.closeAll('clipboard')
-      window.main.writeTextToClipboard(text)
+      await window.main.writeTextToClipboard(text)
 
       if (!notify) return;
       copyNotification.show()
     },
-    readText(): string {
-      return window.main.readTextFromClipboard()
+    async readText(): Promise<string> {
+      return await window.main.readTextFromClipboard()
     }
   },
   files: {

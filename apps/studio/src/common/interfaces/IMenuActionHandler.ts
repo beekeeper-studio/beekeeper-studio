@@ -10,6 +10,7 @@ export interface IMenuActionHandler {
   togglePrimarySidebar: (menuItem: Electron.MenuItem, browserWindow: ElectronWindow) => void
   toggleSecondarySidebar: (menuItem: Electron.MenuItem, browserWindow: ElectronWindow) => void
   togglePrivacyMode: (menuItem: Electron.MenuItem, browserWindow: ElectronWindow) => void
+  toggleConfirmWindowClose: (menuItem: Electron.MenuItem, browserWindow: ElectronWindow) => void
   quit: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   undo: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   redo: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
@@ -36,7 +37,7 @@ export interface IMenuActionHandler {
   newTab: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   closeTab: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   quickSearch: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
-  switchTheme: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  openAppearanceModal: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   reload: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   disconnect: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   addBeekeeper: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
@@ -47,11 +48,13 @@ export interface IMenuActionHandler {
   upgradeModal: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   checkForUpdates: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   importSqlFiles: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  importConnectionFiles: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   toggleMinimalMode: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   switchLicenseState: (menuItem: Electron.MenuItem, win: ElectronWindow, state: DevLicenseState) => void
   simulatePlatform: (menuItem: Electron.MenuItem, win: ElectronWindow, platform: string) => void
   toggleBeta: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   managePlugins: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
+  themePlayground: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   updatePin: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   keyboardShortcuts: (menuItem: Electron.MenuItem, win: ElectronWindow) => void
   /** `handleAction` is used by menus that are defined at runtime (unlike other

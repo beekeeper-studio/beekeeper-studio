@@ -13,4 +13,11 @@ export LD_LIBRARY_PATH="$ORACLE_CLI_PATH"
 export ELECTRON_RUN_AS_NODE=1
 export TEST_MODE=1
 
-yarn workspace beekeeper-studio internal:integration "$@"
+# Spec paths arrive relative to the repo root (see get-db-files-as-json.sh);
+# vitest runs from apps/studio and filters by path substring.
+ARGS=()
+for arg in "$@"; do
+  ARGS+=("${arg#apps/studio/}")
+done
+
+yarn workspace beekeeper-studio vitest:integration ${ARGS[@]+"${ARGS[@]}"}

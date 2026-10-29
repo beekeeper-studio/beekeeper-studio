@@ -214,6 +214,12 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       showWhenConnected: true,
       enabled: false,
     },
+    importConnectionFiles: {
+      id: 'import-connection-files',
+      label: "Import Saved Connections",
+      click: actionHandler.importConnectionFiles,
+      enabled: true
+    },
     quickSearch: {
       id: 'go-to',
       label: "Quick Search",
@@ -249,41 +255,17 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       click: actionHandler.togglePrivacyMode,
       checked: settings?.privacyMode?.value
     },
-    themeToggle: {
-      id: "theme-toggle-menu",
-      label: "Theme",
-      submenu: [
-        {
-          type: 'radio',
-          label: "System",
-          click: actionHandler.switchTheme,
-          checked: settings?.theme?.value === 'system'
-        },
-        {
-          type: "radio",
-          label: "Light",
-          click: actionHandler.switchTheme,
-          checked: settings?.theme?.value === 'light'
-        },
-        {
-          type: 'radio',
-          label: "Dark",
-          click: actionHandler.switchTheme,
-          checked: settings?.theme?.value === 'dark'
-        },
-        {
-          type: 'radio',
-          label: 'Solarized',
-          click: actionHandler.switchTheme,
-          checked: settings?.theme?.value === 'solarized'
-        },
-        {
-          type: 'radio',
-          label: 'Solarized Dark',
-          click: actionHandler.switchTheme,
-          checked: settings?.theme?.value === 'solarized-dark'
-        }
-      ]
+    confirmWindowCloseToggle: {
+      id: 'confirm-window-close-toggle',
+      label: 'Confirm Before Closing Unsaved Tabs',
+      type: 'checkbox',
+      click: actionHandler.toggleConfirmWindowClose,
+      checked: !settings?.dontConfirmWindowClose?.value
+    },
+    appearance: {
+      id: "appearance-menu",
+      label: "Appearance",
+      click: actionHandler.openAppearanceModal,
     },
     enterLicense: {
       id: 'enter-license',
@@ -355,7 +337,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.onTrial),
         },
         {
-          label: "Trial expired",
+          label: "Trial expired (shows the trial-ended dialog)",
           click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.trialExpired),
         },
         {
@@ -367,7 +349,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.expiredLifetimeCoversThisVersion),
         },
         {
-          label: "On an expired, lifetime license, that covers an earlier version",
+          label: "On an expired, lifetime license, that covers an earlier version (shows the version dialog)",
           click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.expiredLifetimeCoversEarlierVersion),
         },
       ],
@@ -389,6 +371,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           checked: settings?.useBeta?.value == true
         }
       ]
+    },
+    themePlayground: {
+      id: 'theme-playground',
+      label: 'DEV Theme Playground',
+      click: actionHandler.themePlayground,
     },
     managePlugins: {
       id: 'manage-plugins',

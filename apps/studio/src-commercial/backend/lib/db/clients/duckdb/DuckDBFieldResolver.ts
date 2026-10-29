@@ -8,7 +8,7 @@ import {
   RawTableColumn,
 } from "@/lib/db/serialization/FieldResolver";
 import { BksFieldType } from "@/lib/db/models";
-import { DuckDBTypeId } from "@duckdb/node-api";
+import { loadDuckDB } from "@shared/lib/knex-duckdb/loadDuckDB";
 import { DuckDBResult, ResultColumn } from "../duckdb";
 
 const regex = {
@@ -20,60 +20,64 @@ const regex = {
   boolean: /^boolean$/,
 };
 
-const typeIds: Record<DuckDBTypeId, BksFieldType> = {
-  // binary
-  [DuckDBTypeId.BLOB]: "BINARY",
+// Built on use so the native DuckDB binding only loads when DuckDB is used.
+function getTypeIds(): Record<number, BksFieldType> {
+  const { DuckDBTypeId } = loadDuckDB();
+  return {
+    // binary
+    [DuckDBTypeId.BLOB]: "BINARY",
 
-  // string
-  [DuckDBTypeId.VARCHAR]: "STRING",
-  [DuckDBTypeId.ENUM]: "STRING",
-  [DuckDBTypeId.UUID]: "STRING",
+    // string
+    [DuckDBTypeId.VARCHAR]: "STRING",
+    [DuckDBTypeId.ENUM]: "STRING",
+    [DuckDBTypeId.UUID]: "STRING",
 
-  // number
-  [DuckDBTypeId.TINYINT]: "NUMBER",
-  [DuckDBTypeId.SMALLINT]: "NUMBER",
-  [DuckDBTypeId.INTEGER]: "NUMBER",
-  [DuckDBTypeId.BIGINT]: "NUMBER",
-  [DuckDBTypeId.HUGEINT]: "NUMBER",
-  [DuckDBTypeId.UTINYINT]: "NUMBER",
-  [DuckDBTypeId.USMALLINT]: "NUMBER",
-  [DuckDBTypeId.UINTEGER]: "NUMBER",
-  [DuckDBTypeId.UBIGINT]: "NUMBER",
-  [DuckDBTypeId.UHUGEINT]: "NUMBER",
-  [DuckDBTypeId.FLOAT]: "NUMBER",
-  [DuckDBTypeId.DOUBLE]: "NUMBER",
-  [DuckDBTypeId.DECIMAL]: "NUMBER",
-  [DuckDBTypeId.BIGNUM]: "NUMBER",
-  [DuckDBTypeId.BIT]: "NUMBER",
+    // number
+    [DuckDBTypeId.TINYINT]: "NUMBER",
+    [DuckDBTypeId.SMALLINT]: "NUMBER",
+    [DuckDBTypeId.INTEGER]: "NUMBER",
+    [DuckDBTypeId.BIGINT]: "NUMBER",
+    [DuckDBTypeId.HUGEINT]: "NUMBER",
+    [DuckDBTypeId.UTINYINT]: "NUMBER",
+    [DuckDBTypeId.USMALLINT]: "NUMBER",
+    [DuckDBTypeId.UINTEGER]: "NUMBER",
+    [DuckDBTypeId.UBIGINT]: "NUMBER",
+    [DuckDBTypeId.UHUGEINT]: "NUMBER",
+    [DuckDBTypeId.FLOAT]: "NUMBER",
+    [DuckDBTypeId.DOUBLE]: "NUMBER",
+    [DuckDBTypeId.DECIMAL]: "NUMBER",
+    [DuckDBTypeId.BIGNUM]: "NUMBER",
+    [DuckDBTypeId.BIT]: "NUMBER",
 
-  // datetime
-  [DuckDBTypeId.DATE]: "DATETIME",
-  [DuckDBTypeId.TIME]: "DATETIME",
-  [DuckDBTypeId.TIME_TZ]: "DATETIME",
-  [DuckDBTypeId.TIMESTAMP]: "DATETIME",
-  [DuckDBTypeId.TIMESTAMP_S]: "DATETIME",
-  [DuckDBTypeId.TIMESTAMP_MS]: "DATETIME",
-  [DuckDBTypeId.TIMESTAMP_NS]: "DATETIME",
-  [DuckDBTypeId.TIMESTAMP_TZ]: "DATETIME",
-  [DuckDBTypeId.INTERVAL]: "DATETIME",
+    // datetime
+    [DuckDBTypeId.DATE]: "DATETIME",
+    [DuckDBTypeId.TIME]: "DATETIME",
+    [DuckDBTypeId.TIME_TZ]: "DATETIME",
+    [DuckDBTypeId.TIMESTAMP]: "DATETIME",
+    [DuckDBTypeId.TIMESTAMP_S]: "DATETIME",
+    [DuckDBTypeId.TIMESTAMP_MS]: "DATETIME",
+    [DuckDBTypeId.TIMESTAMP_NS]: "DATETIME",
+    [DuckDBTypeId.TIMESTAMP_TZ]: "DATETIME",
+    [DuckDBTypeId.INTERVAL]: "DATETIME",
 
-  // boolean
-  [DuckDBTypeId.BOOLEAN]: "BOOLEAN",
+    // boolean
+    [DuckDBTypeId.BOOLEAN]: "BOOLEAN",
 
-  // unknown
-  [DuckDBTypeId.INVALID]: "UNKNOWN",
-  [DuckDBTypeId.LIST]: "UNKNOWN",
-  [DuckDBTypeId.STRUCT]: "UNKNOWN",
-  [DuckDBTypeId.MAP]: "UNKNOWN",
-  [DuckDBTypeId.ARRAY]: "UNKNOWN",
-  [DuckDBTypeId.UNION]: "UNKNOWN",
-  [DuckDBTypeId.ANY]: "UNKNOWN",
-  [DuckDBTypeId.SQLNULL]: "UNKNOWN",
-};
+    // unknown
+    [DuckDBTypeId.INVALID]: "UNKNOWN",
+    [DuckDBTypeId.LIST]: "UNKNOWN",
+    [DuckDBTypeId.STRUCT]: "UNKNOWN",
+    [DuckDBTypeId.MAP]: "UNKNOWN",
+    [DuckDBTypeId.ARRAY]: "UNKNOWN",
+    [DuckDBTypeId.UNION]: "UNKNOWN",
+    [DuckDBTypeId.ANY]: "UNKNOWN",
+    [DuckDBTypeId.SQLNULL]: "UNKNOWN",
+  };
+}
 
 export class DuckDBFieldResolver extends FieldResolver<DuckDBResult> {
   protected resolveRuntimeColumnType(column: ResultColumn) {
-    return typeIds[column.type.typeId] ?? "UNKNOWN";
+    return getTypeIds()[column.type.typeId] ?? "UNKNOWN";
   }
 
   protected resolveDeclaredColumnType(column: RawTableColumn) {

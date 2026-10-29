@@ -248,6 +248,10 @@ export interface Routine extends DatabaseEntity {
   type: RoutineType;
 }
 
+export interface PluginExecuteOptions {
+  forceReadOnly?: boolean;
+}
+
 export type IncludedFilterTypes = 'standard' | 'ilike'
 
 // NOTE (day): note sure if this is really where we want to put edit partitions?

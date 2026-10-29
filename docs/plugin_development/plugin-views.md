@@ -6,10 +6,7 @@ icon: material/view-dashboard
 
 # Plugin Views
 
-!!! warning "Beta Feature"
-    The plugin system is in beta (available in Beekeeper Studio 5.3+). We'd love your feedback!
-
-Plugins can integrate with Beekeeper Studio through different types of views, each designed for specific use cases. Views define where and how your plugin's interface appears within the application. The different view types are listed [here](/docs/plugin_development/manifest.md/?h=manifest#pluginviewtype)
+Plugins can integrate with Beekeeper Studio through different types of views, each designed for specific use cases. Views define where and how your plugin's interface appears within the application. The different view types are listed [here](manifest.md#pluginviewtype)
 
 ## Tab Views
 
@@ -18,6 +15,27 @@ Tab views appear as tabs in the main workspace area, alongside query tabs and ot
 ### Base Tab
 
 The base tab will take up the entire tab space for your plugin's interface.
+
+Use it for plugins that bring their own interface and don't need a result table, such as dashboards, diagrams or forms.
+
+![Base Tab View Example](/assets/images/plugin-base-tab-view.png)
+
+**Manifest Example:**
+
+```json
+{
+  "capabilities": {
+    "views": [
+      {
+        "id": "table-overview",
+        "name": "Table Overview",
+        "type": "base-tab",
+        "entry": "index.html"
+      }
+    ]
+  }
+}
+```
 
 ### Shell Tab
 
@@ -97,7 +115,7 @@ A single plugin can declare multiple views:
 
 ## View State
 
-Each plugin view can store and retrieve its own state using the `getViewState` and `setViewState` API methods. This state persists across application restarts.
+Each plugin view can store and retrieve its own state using the `getViewState` and `setViewState` SDK functions. This state persists across application restarts.
 
 ### State Isolation
 
@@ -129,6 +147,7 @@ if (state) {
 
 ## Next Steps
 
-- **[Creating Plugins](creating-plugins.md)** - Learn how to build your first plugin
+- **[Creating Plugins](creating-your-first-plugin.md)** - Learn how to build your first plugin
+- **[Capabilities](capabilities.md)** - Add menu items and buttons that open your views
 - **[Manifest Reference](manifest.md)** - Complete manifest file documentation
-- **[API Reference](api-reference.md)** - Available plugin APIs
+- **[SDK Reference](api-reference.md)** - Functions available in the Plugin SDK

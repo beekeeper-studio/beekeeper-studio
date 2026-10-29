@@ -11,6 +11,20 @@
     </div>
     <common-server-inputs v-show="showServerInputs" :config="config" :show-password-form="showPasswordForm" :disabled="disabled" />
 
+    <div class="form-group">
+      <label for="enableClearText" class="checkbox-group">
+        <input
+          :disabled="disabled"
+          class="form-control"
+          id="enableClearText"
+          type="checkbox"
+          name="enabeClearText"
+          v-model="config.options.enableClearText"
+        >
+        <span>Enable Cleartext Plugin</span>
+      </label>
+    </div>
+
     <common-iam v-show="iamAuthenticationEnabled" :auth-type="authType" :config="config" :disabled="disabled" />
     <common-entra-id v-show="azureAuthEnabled" :auth-type="authType" :config="config" :disabled="disabled" />
     <common-advanced :config="config" :disabled="disabled" />
