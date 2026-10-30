@@ -4,7 +4,7 @@
 # Electron's runtime shared libraries (the harness launches `electron` with
 # ELECTRON_RUN_AS_NODE). Source and node_modules are mounted at runtime (see
 # docker-compose.yml), so only system dependencies are baked here.
-FROM node:22-bookworm
+FROM node:24-bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive
 

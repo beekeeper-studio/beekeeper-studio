@@ -1,5 +1,6 @@
 [tools]
 node = "24"
-pnpm = "12"
+# When pnpm get's updated, update the packageManager version in package.json as well
+pnpm = "12.16.1"
 python = "3.12"
 jq = "1.7"
