@@ -8,6 +8,7 @@ import { SQLServerClient } from '@/lib/db/clients/sqlserver'
 import { SavedConnection } from '@/common/appdb/models/saved_connection'
 import fs from 'fs';
 import path from 'path';
+import { runSshTests } from './ssh/commonSshTests';
 
 // SQL Server testing policy:
 // We test against SQL Server until it leaves mainstream support
@@ -587,3 +588,5 @@ function testWith(dockerTag: string, readonly: boolean) {
 }
 
 TEST_VERSIONS.forEach(({ version, readonly }) => testWith(version, readonly));
+
+runSshTests("sqlserver");

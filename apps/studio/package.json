@@ -143,7 +143,7 @@
     "sql-query-identifier": "^3.2.0",
     "sqlanywhere": "git+https://github.com/beekeeper-studio/node-sqlanywhere.git#0e1280155455a308c04b07e9f6888372bd513b08",
     "ssh-config": "5.2.0",
-    "ssh2": "^1.14.0",
+    "ssh2": "^1.17.0",
     "surrealdb": "^2.0.8",
     "tabulator-tables": "^6.7.1",
     "tinyduration": "^3.2.4",

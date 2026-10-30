@@ -34,7 +34,7 @@ function buildServer(config: Partial<IDbConnectionServerConfig>, sshTunnel: any 
 async function buildConfig(config: Partial<IDbConnectionServerConfig>, sshTunnel: any = null) {
   const server = buildServer(config, sshTunnel)
   const client = new SQLServerClient(server, DATABASE)
-  return await client.configDatabase(server, DATABASE)
+  return await client.connector.configDatabase(server, DATABASE)
 }
 
 describe('configDatabase - host and instance', () => {

@@ -212,7 +212,11 @@ export const ConnHandlers: IConnectionHandlers = {
       dbConfig: connection.server.config,
       dbName: connection.database.database
     });
-    state(sId).connectionAbortController = null
+    state(sId).connectionAbortController = null;
+
+    connection.connector.on('connection-lost', () => {
+      state(sId).port.postMessage({ type: 'conn/connection-lost' });
+    });
   },
 
   'conn/test': async function({ config, osUser, sId }: { config: IConnection, osUser: string, sId: string }) {
@@ -262,6 +266,9 @@ export const ConnHandlers: IConnectionHandlers = {
       connection = state(sId).server.createConnection(newDatabase);
       try {
         await connection.connect();
+        connection.connection.on("connection-lost", () => {
+          state(sId).port.postMessage({ type: 'conn/connection-lost' });
+        })
       } catch (e) {
         state(sId).server.destroyConnection(newDatabase);
         throw new Error(`Could not connect to database: ${e.message}`);
@@ -275,6 +282,7 @@ export const ConnHandlers: IConnectionHandlers = {
   'conn/clearConnection': async function({ sId }: { sId: string}) {
     const s = state(sId);
     if (!s) return;
+    s.connection?.connection.removeAllListeners();
     s.connection = null;
     s.server = null;
     s.usedConfig = null;

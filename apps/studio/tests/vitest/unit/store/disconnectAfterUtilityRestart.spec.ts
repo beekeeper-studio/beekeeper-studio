@@ -33,6 +33,7 @@ const CONFIG = { id: 1, name: "prod", connectionType: "postgresql", workspaceId:
 function stubDriver() {
   return {
     connectionType: "postgresql",
+    connection: { removeAllListeners: vi.fn() },
     disconnect: vi.fn(async () => undefined),
     listTables: vi.fn(() => new Promise(() => undefined)), // a query still running when the crash hits
   }

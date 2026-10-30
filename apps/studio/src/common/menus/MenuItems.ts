@@ -228,6 +228,12 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       click: actionHandler.quickSearch,
       enabled: false,
     },
+    reconnect: {
+      id: 'reconnect',
+      label: "Reconnect",
+      click: actionHandler.reconnect,
+      enabled: false,
+    },
     disconnect: {
       id: 'disconnect',
       label: "Disconnect",

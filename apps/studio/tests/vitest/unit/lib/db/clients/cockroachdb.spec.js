@@ -42,7 +42,7 @@ describe("CockroachDB", () => {
 
     const database = { database: 'defaultdb', connected: false, connecting: false }
     const client = new CockroachClient(server, database)
-    const config = await client.configDatabase(server, database)
+    const config = await client.connector.configDatabase(server, database)
 
     expect(config.options).toBe('--cluster=bks-tester-12345 --crdb:jwt_auth_enabled=true')
     expect(config.password).toBe('jwt-token')
@@ -70,7 +70,7 @@ describe("CockroachDB", () => {
 
     const database = { database: 'defaultdb', connected: false, connecting: false }
     const client = new CockroachClient(server, database)
-    const config = await client.configDatabase(server, database)
+    const config = await client.connector.configDatabase(server, database)
 
     expect(config.password).toBe('header.payload.signature')
   })

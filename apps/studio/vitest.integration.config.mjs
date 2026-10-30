@@ -16,6 +16,7 @@ export default defineConfig({
     setupFiles: [
       './tests/init/vitest-env-setup.mjs',
       './tests/init/vitest-integration-setup.mjs',
+      './tests/init/matchers.js',
     ],
     // Containers/DB setup start in beforeAll, so keep hooks roomy.
     hookTimeout: 120000,

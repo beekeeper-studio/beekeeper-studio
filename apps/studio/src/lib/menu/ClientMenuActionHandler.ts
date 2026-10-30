@@ -44,6 +44,7 @@ export default class ClientMenuActionHandler implements IMenuActionHandler {
   quickSearch  = () => send('quickSearch')
   openAppearanceModal = () => send("openAppearanceModal")
   reload = () => send('reload')
+  reconnect = () => send('reconnect')
   disconnect = () => send('disconnect')
   addBeekeeper = () => send('addBeekeeper')
   togglePrimarySidebar = () => send('togglePrimarySidebar')
