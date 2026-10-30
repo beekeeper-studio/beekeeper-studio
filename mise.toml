@@ -2,3 +2,4 @@
 node = "24"
 pnpm = "12"
 python = "3.12"
+jq = "1.7"
