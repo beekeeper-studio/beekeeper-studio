@@ -12,7 +12,7 @@ The `manifest.json` file defines your plugin's metadata, capabilities, settings,
 
 | Property          | Type                   | Required | Description                                                                                                                |
 | ----------------  | ---------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `id`              | `string`               | Yes      | Unique identifier for your plugin. Use lowercase letters, numbers, and hyphens only.                                       |
+| `id`              | `string`               | Yes      | Unique identifier for your plugin. Use lowercase letters, numbers, and hyphens only. The `bks-` prefix is reserved for official plugins, and the Community Edition shows an upgrade prompt in place of a plugin whose id starts with it. |
 | `name`            | `string`               | Yes      | Display name shown to users in the Plugin Manager and UI.                                                                  |
 | `author`          | `string \| AuthorInfo` | Yes      | Plugin author or organization name.                                                                                        |
 | `description`     | `string`               | Yes      | Brief description of what your plugin does.                                                                                |
