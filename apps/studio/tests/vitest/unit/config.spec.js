@@ -4,6 +4,7 @@ import {
 } from "@/common/bksConfig/BksConfigProvider";
 import { checkConflicts, checkDeprecations, checkUnrecognized } from "@/common/bksConfig/mainBksConfig";
 import { parseIni, processRawConfig } from "@/config/helpers";
+import defaultConfigIni from "../../../default.config.ini";
 
 describe("Config", () => {
   it("should parse ini file correctly", () => {
@@ -623,4 +624,14 @@ quoted[] = '@'
 
     expect(processedConfig).toMatchObject(expected);
   })
+
+  it("should not bind the AI Shell shortcut to any other default keybinding", () => {
+    const { plugins, ...keybindings } = parseIni(defaultConfigIni).keybindings;
+    const aiShellKey = plugins["bks-ai-shell"]["new-tab-dropdown-item"];
+    const otherKeys = Object.values(keybindings)
+      .flatMap((section) => Object.values(section))
+      .flat();
+
+    expect(otherKeys).not.toContain(aiShellKey);
+  });
 });
