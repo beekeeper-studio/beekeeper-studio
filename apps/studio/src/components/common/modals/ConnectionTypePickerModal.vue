@@ -51,14 +51,17 @@
       <div class="empty-state" v-else>
         No connection types match "{{ filter }}"
       </div>
+      <slideover
+        ref="upgrade_slideover"
+      >
+        <upgrade-panel
+          :feature-name="selectedType?.name"
+        />
+      </slideover>
     </template>
 
     <template #footer="{ close }">
       <div class="footer-wrapper">
-        <upgrade-alert
-          v-if="selectedType?.lockedByLicense"
-          :feature-name="selectedType.name"
-        />
         <div class="actions">
           <button class="btn btn-flat" type="button" @click.prevent="close">
             Cancel
@@ -93,6 +96,8 @@
 import Vue from "vue";
 import BaseModal from "@/components/common/modals/BaseModal.vue";
 import DatabaseIcon from "@/components/common/DatabaseIcon.vue";
+import Slideover from "@/components/common/Slideover.vue";
+import UpgradePanel from "@/components/upsell/UpgradePanel.vue";
 import { AppEvent, RootBinding } from "@/common/AppEvent";
 import { ConnectionType, ConnectionTypes } from "@/lib/db/types";
 import { isUltimateType } from "@/common/interfaces/IConnection";
@@ -110,7 +115,7 @@ type OpenOptions = {
 };
 
 export default Vue.extend({
-  components: { BaseModal, DatabaseIcon, UpgradeAlert },
+  components: { BaseModal, DatabaseIcon, UpgradeAlert, Slideover, UpgradePanel },
   data() {
     return {
       modalName: "connection-type-picker-modal",
@@ -145,6 +150,13 @@ export default Vue.extend({
     selectedType(): Type | undefined {
       return this.types.find((option) => option.value === this.value);
     },
+  },
+  watch: {
+    value() {
+      if (this.selectedType.lockedByLicense) {
+        this.$refs.upgrade_slideover.show()
+      }
+    }
   },
   methods: {
     open(options: OpenOptions) {
