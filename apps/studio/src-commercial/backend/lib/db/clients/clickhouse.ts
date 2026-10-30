@@ -14,10 +14,8 @@ import {
   ClickHouseClient as NodeClickHouseClient,
 } from "@clickhouse/client";
 import {
-  BksField,
   CancelableQuery,
   DatabaseFilterOptions,
-  ExtendedTableColumn,
   FilterOptions,
   NgQueryResult,
   OrderBy,
@@ -33,7 +31,6 @@ import {
   TableIndex,
   TableOrView,
   TableProperties,
-  TableResult,
   TableTrigger,
   TableUpdate,
   TableUpdateResult,
@@ -68,6 +65,8 @@ import { ClickHouseCursor } from "./clickhouse/ClickHouseCursor";
 import { readFileSync } from 'fs';
 import { NodeClickHouseClientConfigOptions } from "@clickhouse/client/dist/config";
 import https from 'https'
+import { ClickHouseFieldResolver } from "./clickhouse/ClickHouseFieldResolver";
+import { RawTableColumn } from "@/lib/db/serialization/FieldResolver";
 
 interface JSONResult {
   statement: IdentifyResult;
@@ -83,8 +82,9 @@ interface StreamResult {
 
 type JSONOrStreamResult = JSONResult | StreamResult;
 
-interface ResultColumn {
+export interface ResultColumn {
   name: string;
+  type?: string;
 }
 
 interface BaseResult {
@@ -93,7 +93,7 @@ interface BaseResult {
   arrayMode: boolean;
 }
 
-type Result = BaseResult & JSONOrStreamResult;
+export type Result = BaseResult & JSONOrStreamResult;
 
 interface ExecuteQueryOptions {
   params?: Record<string, any>;
@@ -130,6 +130,7 @@ const RE_SELECT_FORMAT = /^\s*SELECT.+FORMAT\s+(\w+)\s*;?$/is;
 export class ClickHouseClient extends BasicDatabaseClient<Result> {
   version: string;
   client: NodeClickHouseClient;
+  fieldResolver = new ClickHouseFieldResolver();
   supportsTransaction: boolean;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
@@ -231,10 +232,10 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     }));
   }
 
-  async listTableColumns(
+  protected async listTableColumnsRunner(
     table?: string,
     _schema?: string
-  ): Promise<ExtendedTableColumn[]> {
+  ): Promise<RawTableColumn[]> {
     const sql = `
       SELECT
         name,
@@ -275,7 +276,6 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
         primaryKey: row.is_in_primary_key === 1,
         nullable: RE_NULLABLE.test(row.type),
         enumValues: parseClickHouseEnumValues(row.type),
-        bksField: this.parseTableColumn(row),
       };
     });
   }
@@ -320,7 +320,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     return res.length === 1 ? res[0].columnName : null;
   }
 
-  async selectTop(
+  protected async selectTopRunner(
     table: string,
     offset: number,
     limit: number,
@@ -328,7 +328,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     filters: string | TableFilter[],
     _schema?: string,
     selects?: string[]
-  ): Promise<TableResult> {
+  ): Promise<Result> {
     const columns = await this.listTableColumns(table);
     if (!selects || (selects?.length === 1 && selects[0] === '*')) {
       // select all columns with the column names instead of *
@@ -345,10 +345,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       selects
     );
     const { fullQuery } = queries;
-    const result = await this.driverExecuteSingle(fullQuery);
-    const fields = this.parseQueryResultColumns(result);
-    const rows = await this.serializeQueryResult(result, fields);
-    return { result: rows, fields };
+    return await this.driverExecuteSingle(fullQuery);
   }
 
   async selectTopSql(
@@ -1267,9 +1264,5 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       super.violatesReadOnly(statements, options) ||
       (this.readOnlyMode && options.insert)
     );
-  }
-
-  parseTableColumn(column: { name: string }): BksField {
-    return { name: column.name, bksType: "UNKNOWN" };
   }
 }

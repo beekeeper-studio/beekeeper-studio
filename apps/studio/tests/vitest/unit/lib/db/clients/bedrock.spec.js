@@ -32,23 +32,6 @@ describe("Bedrock UNIT tests (no connection required)", () => {
     expect(builder).toBeInstanceOf(SqliteChangeBuilder);
   });
 
-  describe("parseTableColumn", () => {
-    it("returns a minimal BksField for non-binary columns", () => {
-      const result = client.parseTableColumn({ name: "id", type: "INTEGER" });
-      expect(result).toEqual({ name: "id", bksType: "UNKNOWN" });
-    });
-
-    it("maps BLOB columns to BINARY", () => {
-      const result = client.parseTableColumn({ name: "data", type: "BLOB" });
-      expect(result).toEqual({ name: "data", bksType: "BINARY" });
-    });
-
-    it("is case insensitive on the type check", () => {
-      const result = client.parseTableColumn({ name: "data", type: "blob" });
-      expect(result).toEqual({ name: "data", bksType: "BINARY" });
-    });
-  });
-
   describe("dataToColumns (private, via listTableColumns shape)", () => {
     const tableName = "widgets";
     const rows = [
@@ -86,12 +69,6 @@ describe("Bedrock UNIT tests (no connection required)", () => {
     it("flags generated columns when hidden is 2 or 3", () => {
       expect(columns[0].generated).toBe(false);
       expect(columns[3].generated).toBe(true);
-    });
-
-    it("embeds a BksField on every column", () => {
-      for (const col of columns) {
-        expect(col.bksField).toEqual({ name: col.columnName, bksType: "UNKNOWN" });
-      }
     });
   });
 

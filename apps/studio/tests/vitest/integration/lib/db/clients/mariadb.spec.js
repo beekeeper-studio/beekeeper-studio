@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 import { GenericContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '@tests/lib/db'
 import { runCommonTests } from '@tests/vitest/integration/lib/db/clients/all'
+import { runBksTypeTests } from "./bksType";
 
 describe("MariaDB Tests", () => {
   vi.setConfig({ testTimeout: dbtimeout, hookTimeout: dbtimeout })
@@ -41,44 +42,104 @@ describe("MariaDB Tests", () => {
     runCommonTests(() => util)
   })
 
-  // Regression test: https://github.com/beekeeper-studio/beekeeper-studio/issues/2640 
-  it("Should handle columns with binary collation", async () => {
-    await util.knex.raw(`
-      CREATE TABLE binary_collation (
-        id int(10) unsigned NOT NULL AUTO_INCREMENT,
-        uuid char(14) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-        name varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
-        PRIMARY KEY (id),
-        UNIQUE KEY uuid (uuid)
-      ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci
-    `);
-
-    await util.knex.raw(`
-      INSERT INTO binary_collation (id, uuid, name) VALUES
-        (3, 'HIVsRcGKkPFtW', 'lorem'),
-        (1, 'Qwsogvtv82FCd', 'ipsum'),
-        (5, 'YnFzw1gLeOb1', 'dolor'),
-        (2, 'razxDUgYGNAdQ', 'sit'),
-        (4, 'yhjMzLPhuIDl', 'amet');
-    `);
-
-    const expectedBksFields = [
-      { name: 'id', bksType: 'UNKNOWN' },
-      { name: 'uuid', bksType: 'UNKNOWN' },
-      { name: 'name', bksType: 'UNKNOWN' },
-    ];
-
-    const columns = await util.connection.listTableColumns('binary_collation');
-    expect(columns.map((c) => c.bksField)).toStrictEqual(expectedBksFields);
-
-    const { fields } = await util.connection.selectTop('binary_collation', 0, 10, [], []);
-    expect(fields).toStrictEqual(expectedBksFields);
-    
-  })
-
   describe("Param tests", () => {
     it("Should be able to handle positional (?) params", async () => {
       await util.paramTest(['?']);
     })
   })
+
+  describe("BksField tests", () => {
+    beforeAll(async () => {
+      await util.knex.schema.createTable("bks_types", (table) => {
+        table.specificType("tinyint_col", "TINYINT");
+        table.specificType("smallint_col", "SMALLINT");
+        table.specificType("mediumint_col", "MEDIUMINT");
+        table.specificType("int_col", "INT");
+        table.specificType("bigint_col", "BIGINT");
+        table.specificType("decimal_col", "DECIMAL(10,2)");
+        table.specificType("float_col", "FLOAT");
+        table.specificType("double_col", "DOUBLE");
+        table.specificType("bit_col", "BIT(8)");
+        table.specificType("char_col", "CHAR(10)");
+        table.specificType("varchar_col", "VARCHAR(255)");
+        table.specificType("tinytext_col", "TINYTEXT");
+        table.specificType("text_col", "TEXT");
+        table.specificType("mediumtext_col", "MEDIUMTEXT");
+        table.specificType("longtext_col", "LONGTEXT");
+        table.specificType("enum_col", "ENUM('a', 'b')");
+        table.specificType("set_col", "SET('a', 'b')");
+        table.specificType("json_col", "JSON");
+        table.specificType(
+          "binary_collation_col",
+          "CHAR(14) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin"
+        );
+        table.specificType("date_col", "DATE");
+        table.specificType("datetime_col", "DATETIME");
+        table.specificType("timestamp_col", "TIMESTAMP NULL");
+        table.specificType("time_col", "TIME");
+        table.specificType("year_col", "YEAR");
+        table.specificType("boolean_col", "BOOLEAN");
+        table.specificType("tinyint1_col", "TINYINT(1)");
+        table.specificType("binary_col", "BINARY(8)");
+        table.specificType("varbinary_col", "VARBINARY(8)");
+        table.specificType("tinyblob_col", "TINYBLOB");
+        table.specificType("blob_col", "BLOB");
+        table.specificType("mediumblob_col", "MEDIUMBLOB");
+        table.specificType("longblob_col", "LONGBLOB");
+      });
+    });
+
+    afterAll(async () => {
+      await util.knex.schema.dropTable("bks_types");
+    });
+
+    runBksTypeTests({
+      connection: () => util.connection,
+      table: "bks_types",
+      expectedResults: {
+        BINARY: [
+          "binary_col",
+          "varbinary_col",
+          "tinyblob_col",
+          "blob_col",
+          "mediumblob_col",
+          "longblob_col",
+        ],
+        STRING: [
+          "char_col",
+          "varchar_col",
+          "tinytext_col",
+          "text_col",
+          "mediumtext_col",
+          "longtext_col",
+          "enum_col",
+          "set_col",
+          "json_col",
+          "binary_collation_col",
+        ],
+        NUMBER: [
+          "tinyint_col",
+          "smallint_col",
+          "mediumint_col",
+          "int_col",
+          "bigint_col",
+          "decimal_col",
+          "float_col",
+          "double_col",
+          "bit_col",
+        ],
+        DATETIME: [
+          "date_col",
+          "datetime_col",
+          "timestamp_col",
+          "time_col",
+          "year_col",
+        ],
+        BOOLEAN: ["boolean_col", "tinyint1_col"],
+        OBJECTID: [],
+        SURREALID: [],
+        UNKNOWN: [],
+      },
+    });
+  });
 })

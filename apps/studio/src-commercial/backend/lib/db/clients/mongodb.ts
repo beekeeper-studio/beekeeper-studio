@@ -3,7 +3,7 @@ import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db
 import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
 import { AggregationCursor, Collection, Db, Document, MongoClient, ObjectId } from 'mongodb';
 import rawLog from '@bksLogger';
-import { BksField, BksFieldType, CancelableQuery, ExtendedTableColumn, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableDelete, TableFilter, TableIndex, TableInsert, TableOrView, TableProperties, TableResult, TableTrigger, TableUpdate, TableUpdateResult } from "@/lib/db/models";
+import { CancelableQuery, NgQueryResult, OrderBy, PrimaryKeyColumn, Routine, SchemaFilterOptions, StreamResults, SupportedFeatures, TableChanges, TableColumn, TableDelete, TableFilter, TableIndex, TableInsert, TableOrView, TableProperties, TableTrigger, TableUpdate, TableUpdateResult } from "@/lib/db/models";
 import { CreateTableSpec, IndexAlterations, TableKey } from "@/shared/lib/dialects/models";
 import _ from 'lodash';
 import { MongoDBObjectIdTranscoder } from "@/lib/db/serialization/transcoders";
@@ -19,13 +19,15 @@ import platformInfo from "@/common/platform_info";
 import { MongoDBCursor } from './mongodb/MongoDBCursor';
 import { wrapIdentifier } from "@/lib/db/clients/postgresql";
 import knexlib from 'knex'
+import { MongoDBFieldResolver } from "./mongodb/MongoDBFieldResolver";
+import { RawTableColumn } from "@/lib/db/serialization/FieldResolver";
 import { errorMessages } from "@/lib/db/clients/utils";
 
 const knex = knexlib({ client: 'pg' })
 
 const log = rawLog.scope('mongodb');
 
-interface QueryResult {
+export interface QueryResult {
   columns: { name: string }[]
   rows: any[][] | Record<string, any>[];
   arrayMode: boolean;
@@ -90,6 +92,7 @@ const mongoContext = {
 }
 
 export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
+  fieldResolver = new MongoDBFieldResolver();
   conn: MongoClient;
   runtime: MongoRuntime;
   queryLeaf: QueryLeaf;
@@ -223,7 +226,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   }
 
   // TODO(@day): we need to figure out how to display cols that may have multiple types
-  async listTableColumns(table?: string): Promise<ExtendedTableColumn[]> {
+  protected async listTableColumnsRunner(table?: string): Promise<RawTableColumn[]> {
     const db = this.conn.db(this.db);
     if (table) {
       const cols = await this.getCollectionCols(db.collection(table));
@@ -231,7 +234,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
         tableName: table,
         columnName: col.field,
         dataType: col.types[0]
-      } as ExtendedTableColumn));
+      } as RawTableColumn));
     } else {
       const collections = await db.collections();
       return (await Promise.all(collections.map(async (value) => {
@@ -240,8 +243,7 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
           tableName: value.collectionName,
           columnName: col.field,
           dataType: col.types[0],
-          bksField: this.parseTableColumn({ field: col.field, type: col.types[0] })
-        } as ExtendedTableColumn))
+        } as RawTableColumn))
       }))).flat();
     }
   }
@@ -457,24 +459,9 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
     return result;
   }
 
-  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[]): Promise<TableResult> {
-    const result = await this.buildSelectTopCursor(table, offset, limit, orderBy, filters, selects).toArray();
-
-    const fields = this.parseQueryResultColumns(result[0] || {});
-    const rows = await this.serializeQueryResult({ rows: result, columns: [], arrayMode: false }, fields)
-
-    return { result: rows, fields: [] }
-  }
-
-  parseQueryResultColumns(row: any): BksField[] {
-    if (!row) return;
-    return Object.keys(row).map((column) => {
-      let bksType: BksFieldType = 'UNKNOWN';
-      if (row[column] instanceof ObjectId) {
-        bksType = 'OBJECTID';
-      }
-      return { name: column, bksType };
-    })
+  protected async selectTopRunner(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], _schema?: string, selects?: string[]): Promise<QueryResult> {
+    const rows = await this.buildSelectTopCursor(table, offset, limit, orderBy, filters, selects).toArray();
+    return { rows, columns: [], arrayMode: false };
   }
 
 
@@ -1008,13 +995,6 @@ export class MongoDBClient extends BasicDatabaseClient<QueryResult> {
   protected async rawExecuteQuery(_q: string, _options: any): Promise<QueryResult | QueryResult[]> {
     log.error('MongoDB does not support querying');
     return null;
-  }
-
-  protected parseTableColumn(column: { field: string, type: string }): BksField {
-    return {
-      name: column.field,
-      bksType: column.type === 'objectid' ? 'OBJECTID' : 'UNKNOWN'
-    }
   }
 
   // MongoDB Schema Validation Support

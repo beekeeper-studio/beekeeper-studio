@@ -35,7 +35,6 @@ import { MysqlData } from "@shared/lib/dialects/mysql";
 import {
   CancelableQuery,
   DatabaseFilterOptions,
-  ExtendedTableColumn,
   FilterOptions,
   ImportFuncOptions,
   NgQueryResult,
@@ -50,14 +49,11 @@ import {
   TableChanges,
   TableColumn,
   TableDelete,
-  BksField,
-  BksFieldType,
   TableFilter,
   TableIndex,
   TableInsert,
   TableOrView,
   TableProperties,
-  TableResult,
   TableTrigger,
   TableUpdate,
 } from "../models";
@@ -70,11 +66,15 @@ import { Version, isVersionLessThanOrEqual, parseVersion } from "@/common/versio
 import globals from '../../../common/globals';
 import {AzureAuthService} from "@/lib/db/authentication/azure";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
+import { MysqlFieldResolver } from "./mysql/MySqlFieldResolver";
+import { RawTableColumn } from "../serialization/FieldResolver";
 
-type ResultType = {
+export type ResultColumn = mysql.FieldPacket
+
+export type ResultType = {
   tableName?: string
   rows: any[];
-  columns: mysql.FieldPacket[];
+  columns: ResultColumn[];
   arrayMode: boolean;
 };
 
@@ -109,30 +109,6 @@ function getRealError(conn, err) {
   }
   return err;
 }
-
-const binaryTypes = [
-  mysql.Types.STRING, // aka CHAR or BINARY
-  mysql.Types.VAR_STRING, // aka VARCHAR or VARBINARY
-  mysql.Types.TINY_BLOB,
-  mysql.Types.BLOB,
-  mysql.Types.MEDIUM_BLOB,
-  mysql.Types.LONG_BLOB,
-]
-
-const binaryDataTypes = [
-  'binary',
-  'varbinary',
-  'tinyblob',
-  'blob',
-  'mediumblob',
-  'longblob',
-]
-
-// Ref: https://github.com/sidorares/node-mysql2/blob/master/lib/constants/field_flags.js
-const FieldFlags = {
-  BINARY: 128,
-};
-
 
 function isMultipleQuery(fields: any[]) {
   if (!fields) {
@@ -213,6 +189,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     pool: mysql.Pool;
   };
   transcoders = [GenericBinaryTranscoder];
+  fieldResolver = new MysqlFieldResolver();
 
   interval: NodeJS.Timeout
 
@@ -444,11 +421,11 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     });
   }
 
-  async listTableColumns(
+  protected async listTableColumnsRunner(
     table?: string,
     _schema?: string,
     connection?: Connection
-  ): Promise<ExtendedTableColumn[]> {
+  ): Promise<RawTableColumn[]> {
     const hasGeneratedSupport = this.connectionType == 'mariadb' ?
      !isVersionLessThanOrEqual(this.versionInfo, { major: 10, minor: 2, patch: 4 }):
      !isVersionLessThanOrEqual(this.versionInfo, { major: 5, minor: 7, patch: 5 });
@@ -495,7 +472,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       characterSet: row.character_set,
       collation: row.collation,
       enumValues: parseQuotedEnumValues(row.column_type),
-      bksField: this.parseTableColumn(row),
     }));
   }
 
@@ -621,7 +597,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     return res.length === 1 ? res[0].columnName : null;
   }
 
-  async selectTop(
+  protected async selectTopRunner(
     table: string,
     offset: number,
     limit: number,
@@ -629,7 +605,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     filters: string | TableFilter[],
     _schema?: string,
     selects?: string[]
-  ): Promise<TableResult> {
+  ): Promise<ResultType> {
     const columns = await this.listTableColumns(table);
     const queries = buildSelectTopQuery(
       table,
@@ -642,10 +618,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       selects
     );
     const { query, params } = queries;
-    const result = await this.driverExecuteSingle(query, { params });
-    const fields = columns.map((v) => v.bksField).filter((v) => selects && selects.length > 0 ? selects.includes(v.name) : true);
-    const rows = await this.serializeQueryResult(result, fields);
-    return { result: rows, fields };
+    return await this.driverExecuteSingle(query, { params });
   }
 
   async selectTopSql(
@@ -1503,23 +1476,6 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
         },
       };
     });
-  }
-
-  protected parseQueryResultColumns(qr: ResultType): BksField[] {
-    return qr.columns.map((column) => {
-      let bksType: BksFieldType = 'UNKNOWN';
-      if (binaryTypes.includes(column.type) && ((column.flags as number) & FieldFlags.BINARY)) {
-        bksType = 'BINARY';
-      }
-      return { name: column.name, bksType }
-    })
-  }
-
-  parseTableColumn(column: { column_name: string; data_type: string }): BksField {
-    return {
-      name: column.column_name,
-      bksType: binaryDataTypes.includes(column.data_type) ? 'BINARY' : 'UNKNOWN',
-    };
   }
 }
 

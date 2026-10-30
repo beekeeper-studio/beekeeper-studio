@@ -15,11 +15,8 @@ import {
   QueryLogOptions
 } from "@/lib/db/clients/BasicDatabaseClient"
 import {
-  BksField,
-  BksFieldType,
   CancelableQuery,
   DatabaseFilterOptions,
-  ExtendedTableColumn,
   FilterOptions,
   NgQueryResult,
   OrderBy,
@@ -34,7 +31,6 @@ import {
   TableIndex,
   TableOrView,
   TableProperties,
-  TableResult,
   TableTrigger
 } from "@/lib/db/models"
 import { TrinoData } from "@shared/lib/dialects/trino"
@@ -51,13 +47,15 @@ import {
 import { errors } from "@/lib/errors"
 import { IDbConnectionServer } from "@/lib/db/backendTypes"
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase"
+import { TrinoFieldResolver } from "./trino/TrinoFieldResolver";
+import { RawTableColumn } from "@/lib/db/serialization/FieldResolver";
 
-interface ResultColumn {
+export interface ResultColumn {
   name: string
   type: string
 }
 
-interface TrinoResult extends BaseQueryResult {
+export interface TrinoResult extends BaseQueryResult {
   info?: any,
   length?: number,
   queryId?: string
@@ -75,6 +73,7 @@ const trinoContext = {
 }
 
 export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
+  fieldResolver = new TrinoFieldResolver();
   version: string
   client: any
   supportsTransaction: boolean
@@ -173,7 +172,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
     return null
   }
 
-  async selectTop(
+  protected async selectTopRunner(
     table: string,
     offset: number,
     limit: number,
@@ -181,7 +180,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
     filters: string | TableFilter[],
     schema: string,
     selects: string[],
-  ): Promise<TableResult> {
+  ): Promise<TrinoResult> {
     const columns = await this.listTableColumns(table, schema)
     let selectFields = [...selects]
     if (!selects || selects?.length === 0 || (selects?.length === 1 && selects[0] === '*')) {
@@ -202,15 +201,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
     )
 
     const { query } = queries
-    const result = await this.driverExecuteSingle(query)
-    const fields = result.columns ? result.columns.map(c => ({
-      name: c.name,
-      bksType: 'UNKNOWN' as BksFieldType
-    })) : []
-    return {
-      result: result.rows || [],
-      fields
-    }
+    return await this.driverExecuteSingle(query)
   }
 
   async selectTopSql(
@@ -315,7 +306,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
     }))
   }
 
-  async listTableColumns(table: string, schema: string): Promise<ExtendedTableColumn[]> {
+  protected async listTableColumnsRunner(table: string, schema: string): Promise<RawTableColumn[]> {
     const sql = `
       SELECT
         *
@@ -340,7 +331,6 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
         comment: row.comment,
         primaryKey: false,
         nullable: row.is_nullable,
-        bksField: this.parseTableColumn(row),
       }
     })
   }
@@ -731,7 +721,4 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
     `
   }
 
-  parseTableColumn(column: TableColumn): BksField {
-    return { name: column.columnName, bksType: "UNKNOWN" }
-  }
 }

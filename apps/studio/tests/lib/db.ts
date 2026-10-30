@@ -1988,10 +1988,6 @@ export class DBTestUtil {
     const data = result.result[0][BIN]
     expect(ArrayBuffer.isView(data)).toBe(true)
     expect(Buffer.from(data)).toEqual(b`deadbeef`)
-    expect(result.fields).toEqual([
-      { name: ID, bksType: 'UNKNOWN' },
-      { name: BIN, bksType: 'BINARY' },
-    ])
 
     await this.connection.applyChanges({
       inserts: [{
@@ -2015,19 +2011,6 @@ export class DBTestUtil {
     expect(rows.map((r) => Buffer.from(sanitize(r.bin)))).toEqual([
       b`eeffeeff`,
       b`beefdeed`,
-    ])
-  }
-
-  async resolveTableColumns() {
-    const ID = this.dbType === 'firebird' ? 'ID' : 'id'
-    const BIN = this.dbType === 'firebird' ? 'BIN' : 'bin'
-
-    const columns = await this.connection.listTableColumns('contains_binary', this.defaultSchema)
-    const bksFields = columns.map(c => c.bksField)
-
-    expect(bksFields).toStrictEqual([
-      { name: ID, bksType: 'UNKNOWN' },
-      { name: BIN, bksType: 'BINARY' },
     ])
   }
 

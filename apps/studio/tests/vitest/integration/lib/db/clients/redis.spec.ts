@@ -4,6 +4,7 @@ import { StartedTestContainer } from "testcontainers";
 import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient";
 import { createServer } from "@commercial/backend/lib/db/server";
 import { RedisTestDriver } from "./redis/container";
+import { runBksTypeTests } from "./bksType";
 
 describe('Redis', () => {
   vi.setConfig({ testTimeout: dbtimeout, hookTimeout: dbtimeout });
@@ -2324,6 +2325,31 @@ describe('Redis', () => {
 
       const valueResult = await connection.executeQuery('GET test:jsonstring');
       expect(valueResult[0].rows[0].result).toBe('[1,2,3]');
+    });
+  });
+
+  describe("BksField tests", () => {
+    beforeAll(async () => {
+      await connection.executeQuery('SET bks:key "hello"');
+    });
+
+    afterAll(async () => {
+      await connection.executeQuery("FLUSHDB");
+    });
+
+    runBksTypeTests({
+      connection: () => connection,
+      table: "keys",
+      expectedResults: {
+        BINARY: [],
+        STRING: ["key", "value", "type", "encoding"],
+        NUMBER: ["ttl", "memory"],
+        DATETIME: [],
+        BOOLEAN: [],
+        OBJECTID: [],
+        SURREALID: [],
+        UNKNOWN: [],
+      },
     });
   });
 });

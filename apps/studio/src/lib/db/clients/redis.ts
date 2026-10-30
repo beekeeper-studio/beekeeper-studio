@@ -1,13 +1,11 @@
 import {
   SupportedFeatures,
   TableOrView,
-  TableResult,
   OrderBy,
   TableFilter,
   StreamResults,
   NgQueryResult,
   CancelableQuery,
-  ExtendedTableColumn,
   TableChanges,
   TableUpdateResult,
   TableUpdate,
@@ -23,6 +21,8 @@ import { createClient, RedisClientType } from "redis";
 import { getTransformReply } from "@redis/client/dist/lib/commander";
 import COMMANDS from "@redis/client/dist/lib/commands";
 import type { Command } from "@redis/client/dist/lib/RESP/types";
+import { RedisFieldResolver } from "./redis/RedisFieldResolver";
+import { RawTableColumn } from "../serialization/FieldResolver";
 import { IDbConnectionServer } from "../backendTypes";
 import { IDbConnectionDatabase } from "../types";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
@@ -33,7 +33,9 @@ import { RedisChangeBuilder } from "@shared/lib/sql/change_builder/RedisChangeBu
 import fs from "fs/promises";
 import REDIS_COMMAND_DOCS from "@beekeeperstudio/ui-kit/lib/components/text-editor/extensions/redisCommands.json";
 
-type RedisQueryResult = BaseQueryResult;
+export type RedisQueryResult = BaseQueryResult;
+
+export type ResultColumn = RedisQueryResult["columns"][number];
 
 type RedisSocketConfig = Parameters<typeof createClient>[0]["socket"];
 
@@ -225,6 +227,7 @@ function makeGenericResult(result: unknown, command: string) {
 }
 
 export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
+  fieldResolver = new RedisFieldResolver();
   redis: RedisClientType;
   respVersion: 2 | 3 = 2; // This is the default for most instances
 
@@ -360,7 +363,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     return [];
   }
 
-  async listTableColumns(table?: string): Promise<ExtendedTableColumn[]> {
+  protected async listTableColumnsRunner(table?: string): Promise<RawTableColumn[]> {
     if (table === "keys") {
       return [
         {
@@ -369,7 +372,6 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
           tableName: table,
           columnName: "key",
           dataType: "TEXT",
-          bksField: { bksType: "UNKNOWN", name: "key" },
         },
         {
           ordinalPosition: 1,
@@ -377,7 +379,6 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
           tableName: table,
           columnName: "value",
           dataType: "json",
-          bksField: { bksType: "UNKNOWN", name: "value" },
         },
         {
           ordinalPosition: 2,
@@ -385,7 +386,6 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
           tableName: table,
           columnName: "type",
           dataType: "TEXT",
-          bksField: { bksType: "UNKNOWN", name: "type" },
           generated: true,
         },
         {
@@ -394,7 +394,6 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
           tableName: table,
           columnName: "encoding",
           dataType: "TEXT",
-          bksField: { bksType: "UNKNOWN", name: "encoding" },
           generated: true,
         },
         {
@@ -403,7 +402,6 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
           tableName: table,
           columnName: "ttl",
           dataType: "INTEGER",
-          bksField: { bksType: "UNKNOWN", name: "ttl" },
         },
         {
           ordinalPosition: 5,
@@ -411,7 +409,6 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
           tableName: table,
           columnName: "memory",
           dataType: "INTEGER",
-          bksField: { bksType: "UNKNOWN", name: "memory" },
           generated: true,
         },
       ];
@@ -425,7 +422,6 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         tableName: table,
         columnName: key,
         dataType: "TEXT",
-        bksField: { bksType: "UNKNOWN", name: key },
       }));
     }
 
@@ -828,21 +824,19 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     }
   }
 
-  async selectTop(
+  protected async selectTopRunner(
     table: string,
     offset: number,
     limit: number,
     _orderBy?: OrderBy[], // TODO: how to disable ordering?
     filters?: string | TableFilter[]
-  ): Promise<TableResult> {
+  ): Promise<RedisQueryResult> {
     if (table === "info") {
       const info = await this.getInfo();
       return {
-        result: [info],
-        fields: Object.keys(info).map((key) => ({
-          name: key,
-          bksType: "UNKNOWN",
-        })),
+        rows: [info],
+        columns: Object.keys(info).map((key) => ({ name: key, type: "TEXT" })),
+        arrayMode: false,
       };
     }
 
@@ -868,15 +862,16 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     );
 
     return {
-      result,
-      fields: [
-        { name: "key", bksType: "UNKNOWN" },
-        { name: "value", bksType: "UNKNOWN" },
-        { name: "type", bksType: "UNKNOWN" },
-        { name: "encoding", bksType: "UNKNOWN" },
-        { name: "ttl", bksType: "UNKNOWN" },
-        { name: "memory", bksType: "UNKNOWN" },
+      rows: result,
+      columns: [
+        { name: "key", type: "TEXT" },
+        { name: "value", type: "json" },
+        { name: "type", type: "TEXT" },
+        { name: "encoding", type: "TEXT" },
+        { name: "ttl", type: "INTEGER" },
+        { name: "memory", type: "INTEGER" },
       ],
+      arrayMode: false,
     };
   }
 
@@ -942,10 +937,6 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
   }
 
   async dropElement(): Promise<void> {
-    throw new Error("Not supported");
-  }
-
-  parseTableColumn(): any {
     throw new Error("Not supported");
   }
 

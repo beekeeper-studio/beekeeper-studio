@@ -3,6 +3,7 @@ import path from 'path';
 import { DockerComposeEnvironment, GenericContainer, Wait } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '@tests/lib/db'
 import { runCommonTests } from './all'
+import { runBksTypeTests } from "./bksType";
 import { createServer } from '@commercial/backend/lib/db/server'
 import fs from 'fs'
 import os from 'os'
@@ -341,6 +342,76 @@ BEEKEEPER =
         await getUtil().queryStreamDoubleExecutionTest()
       })
     })
+
+    describe("BksField tests", () => {
+      beforeAll(async () => {
+        await util.knex.schema.createTable("bks_types", (table) => {
+          table.specificType("number_col", "NUMBER(10)");
+          table.specificType("number_scale_col", "NUMBER(10,2)");
+          table.specificType("integer_col", "INTEGER");
+          table.specificType("float_col", "FLOAT");
+          table.specificType("binary_float_col", "BINARY_FLOAT");
+          table.specificType("binary_double_col", "BINARY_DOUBLE");
+          table.specificType("char_col", "CHAR(10)");
+          table.specificType("varchar2_col", "VARCHAR2(255)");
+          table.specificType("nchar_col", "NCHAR(10)");
+          table.specificType("nvarchar2_col", "NVARCHAR2(255)");
+          table.specificType("clob_col", "CLOB");
+          table.specificType("nclob_col", "NCLOB");
+          table.specificType("date_col", "DATE");
+          table.specificType("timestamp_col", "TIMESTAMP");
+          table.specificType("timestamptz_col", "TIMESTAMP WITH TIME ZONE");
+          table.specificType(
+            "timestampltz_col",
+            "TIMESTAMP WITH LOCAL TIME ZONE"
+          );
+          table.specificType("interval_ym_col", "INTERVAL YEAR TO MONTH");
+          table.specificType("interval_ds_col", "INTERVAL DAY TO SECOND");
+          table.specificType("raw_col", "RAW(8)");
+          table.specificType("blob_col", "BLOB");
+        });
+      });
+
+      afterAll(async () => {
+        await util.knex.schema.dropTable("bks_types");
+      });
+
+      runBksTypeTests({
+        connection: () => util.connection,
+        table: "bks_types",
+        expectedResults: {
+          BINARY: ["raw_col", "blob_col"],
+          STRING: [
+            "char_col",
+            "varchar2_col",
+            "nchar_col",
+            "nvarchar2_col",
+            "clob_col",
+            "nclob_col",
+          ],
+          NUMBER: [
+            "number_col",
+            "number_scale_col",
+            "integer_col",
+            "float_col",
+            "binary_float_col",
+            "binary_double_col",
+          ],
+          DATETIME: [
+            "date_col",
+            "timestamp_col",
+            "timestamptz_col",
+            "timestampltz_col",
+            "interval_ym_col",
+            "interval_ds_col",
+          ],
+          BOOLEAN: [],
+          OBJECTID: [],
+          SURREALID: [],
+          UNKNOWN: [],
+        },
+      });
+    });
   })
 
 }

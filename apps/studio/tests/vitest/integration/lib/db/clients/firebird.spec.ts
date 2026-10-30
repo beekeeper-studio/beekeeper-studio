@@ -3,6 +3,7 @@ import { GenericContainer, StartedTestContainer, Wait } from "testcontainers";
 import { IDbConnectionServerConfig } from "@/lib/db/types";
 import { DBTestUtil, dbtimeout, Options } from "@tests/lib/db";
 import { runCommonTests } from "./all";
+import { runBksTypeTests } from "./bksType";
 import {
   Connection,
   createDatabase,
@@ -338,5 +339,54 @@ describe("Firebird Tests", () => {
     expect(compositeKey.toColumn).toContain('PARENT_ID1');
     expect(compositeKey.toColumn).toContain('PARENT_ID2');
     expect(compositeKey.toTable).toBe('COMPOSITE_PARENT_TEST');
+  });
+
+  describe("BksField tests", () => {
+    beforeAll(async () => {
+      await util.knex.schema.createTable("bks_types", (table) => {
+        table.specificType("smallint_col", "SMALLINT");
+        table.specificType("integer_col", "INTEGER");
+        table.specificType("bigint_col", "BIGINT");
+        table.specificType("decimal_col", "DECIMAL(10,2)");
+        table.specificType("numeric_col", "NUMERIC(10,2)");
+        table.specificType("float_col", "FLOAT");
+        table.specificType("double_col", "DOUBLE PRECISION");
+        table.specificType("char_col", "CHAR(10)");
+        table.specificType("varchar_col", "VARCHAR(255)");
+        table.specificType("text_blob_col", "BLOB SUB_TYPE TEXT");
+        table.specificType("date_col", "DATE");
+        table.specificType("time_col", "TIME");
+        table.specificType("timestamp_col", "TIMESTAMP");
+        table.specificType("boolean_col", "BOOLEAN");
+        table.specificType("binary_blob_col", "BLOB SUB_TYPE BINARY");
+      });
+    });
+
+    afterAll(async () => {
+      await util.knex.schema.dropTable("bks_types");
+    });
+
+    runBksTypeTests({
+      connection: () => util.connection,
+      table: "bks_types",
+      expectedResults: {
+        BINARY: ["binary_blob_col"],
+        STRING: ["char_col", "varchar_col", "text_blob_col"],
+        NUMBER: [
+          "smallint_col",
+          "integer_col",
+          "bigint_col",
+          "decimal_col",
+          "numeric_col",
+          "float_col",
+          "double_col",
+        ],
+        DATETIME: ["date_col", "time_col", "timestamp_col"],
+        BOOLEAN: ["boolean_col"],
+        OBJECTID: [],
+        SURREALID: [],
+        UNKNOWN: [],
+      },
+    });
   });
 });

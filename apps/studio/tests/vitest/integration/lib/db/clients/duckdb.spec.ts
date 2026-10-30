@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest"
 import { DBTestUtil } from "@tests/lib/db";
 import tmp from "tmp";
 import { runCommonTests } from "./all";
+import { runBksTypeTests } from "./bksType";
 import { IDbConnectionServerConfig } from "@/lib/db/types";
 import path from "path";
 import fs from "fs";
@@ -67,32 +68,6 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
     describe("Common Tests", () => {
       runCommonTests(() => util);
     });
-
-    it("should parse all binary columns", async () => {
-      await util.knex.raw(`
-        CREATE TABLE binary_data_types (
-            id INT PRIMARY KEY,
-            blob BLOB,
-            blob_alias BYTEA,               -- alias of BLOB
-            blob_alias2 BINARY,             -- alias of BLOB
-            blob_alias3 VARBINARY           -- alias of BLOB
-        );
-      `);
-
-      const expectedBksFields = [
-        { name: 'id', bksType: 'UNKNOWN' },
-        { name: 'blob', bksType: 'BINARY' },
-        { name: 'blob_alias', bksType: 'BINARY' },
-        { name: 'blob_alias2', bksType: 'BINARY' },
-        { name: 'blob_alias3', bksType: 'BINARY' },
-      ]
-
-      const columns = await util.connection.listTableColumns('binary_data_types')
-      expect(columns.map((c) => c.bksField)).toStrictEqual(expectedBksFields)
-
-      const { fields } = await util.connection.selectTop('binary_data_types', 0, 10, [], [], util.defaultSchema, ["*"])
-      expect(fields).toStrictEqual(expectedBksFields)
-    })
 
     it("should return enum values for enum columns", async () => {
       // Named enum types and inline enums both expand to ENUM(...) in
@@ -296,6 +271,73 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
         await util.queryStreamDoubleExecutionTest()
       })
     })
+
+    describe("BksField tests", () => {
+      beforeAll(async () => {
+        await util.knex.schema.createTable("bks_types", (table) => {
+          table.specificType("tinyint_col", "TINYINT");
+          table.specificType("smallint_col", "SMALLINT");
+          table.specificType("integer_col", "INTEGER");
+          table.specificType("bigint_col", "BIGINT");
+          table.specificType("hugeint_col", "HUGEINT");
+          table.specificType("utinyint_col", "UTINYINT");
+          table.specificType("usmallint_col", "USMALLINT");
+          table.specificType("uinteger_col", "UINTEGER");
+          table.specificType("ubigint_col", "UBIGINT");
+          table.specificType("float_col", "FLOAT");
+          table.specificType("double_col", "DOUBLE");
+          table.specificType("decimal_col", "DECIMAL(10,2)");
+          table.specificType("varchar_col", "VARCHAR");
+          table.specificType("uuid_col", "UUID");
+          table.specificType("json_col", "JSON");
+          table.specificType("date_col", "DATE");
+          table.specificType("time_col", "TIME");
+          table.specificType("timestamp_col", "TIMESTAMP");
+          table.specificType("timestamptz_col", "TIMESTAMPTZ");
+          table.specificType("interval_col", "INTERVAL");
+          table.specificType("boolean_col", "BOOLEAN");
+          table.specificType("blob_col", "BLOB");
+        });
+      });
+
+      afterAll(async () => {
+        await util.knex.schema.dropTable("bks_types");
+      });
+
+      runBksTypeTests({
+        connection: () => util.connection,
+        table: "bks_types",
+        expectedResults: {
+          BINARY: ["blob_col"],
+          STRING: ["varchar_col", "uuid_col", "json_col"],
+          NUMBER: [
+            "tinyint_col",
+            "smallint_col",
+            "integer_col",
+            "bigint_col",
+            "hugeint_col",
+            "utinyint_col",
+            "usmallint_col",
+            "uinteger_col",
+            "ubigint_col",
+            "float_col",
+            "double_col",
+            "decimal_col",
+          ],
+          DATETIME: [
+            "date_col",
+            "time_col",
+            "timestamp_col",
+            "timestamptz_col",
+            "interval_col",
+          ],
+          BOOLEAN: ["boolean_col"],
+          OBJECTID: [],
+          SURREALID: [],
+          UNKNOWN: [],
+        },
+      });
+    });
   });
 }
 

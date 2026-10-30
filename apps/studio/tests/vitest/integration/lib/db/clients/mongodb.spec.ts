@@ -6,6 +6,17 @@ import { createServer } from "@commercial/backend/lib/db/server";
 import { setupDB } from "./mongodb/setupDb";
 import { TableOrView } from "@/lib/db/models";
 import { DatabaseElement } from "@/lib/db/types";
+import {
+  Binary,
+  Decimal128,
+  Double,
+  Int32,
+  Long,
+  MongoClient,
+  ObjectId,
+  Timestamp,
+} from "mongodb";
+import { runBksTypeTests } from "./bksType";
 
 
 describe(`MongoDB`, () => {
@@ -1354,4 +1365,42 @@ describe(`MongoDB`, () => {
       }
     });
   })
+
+  describe("BksField tests", () => {
+    beforeAll(async () => {
+      const client = new MongoClient(config.url);
+      await client.db("bee").collection("bks_types").insertOne({
+        binary_col: new Binary(Buffer.from([1, 2, 3])),
+        bool_col: true,
+        date_col: new Date(),
+        decimal128_col: Decimal128.fromString("1.5"),
+        double_col: new Double(1.5),
+        int32_col: new Int32(1),
+        long_col: Long.fromNumber(1),
+        objectid_col: new ObjectId(),
+        string_col: "hello",
+        timestamp_col: new Timestamp({ t: 1, i: 1 }),
+      });
+      await client.close(true);
+    });
+
+    afterAll(async () => {
+      await connection.dropElement("bks_types", DatabaseElement.TABLE);
+    });
+
+    runBksTypeTests({
+      connection: () => connection,
+      table: "bks_types",
+      expectedResults: {
+        BINARY: ["binary_col"],
+        STRING: ["string_col"],
+        NUMBER: ["decimal128_col", "double_col", "int32_col", "long_col"],
+        DATETIME: ["date_col", "timestamp_col"],
+        BOOLEAN: ["bool_col"],
+        OBJECTID: ["_id", "objectid_col"],
+        SURREALID: [],
+        UNKNOWN: [],
+      },
+    });
+  });
 })

@@ -6,8 +6,6 @@ import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderB
 import { IDbConnectionServer } from "../backendTypes";
 import { IDbConnectionDatabase } from "../types";
 import {
-  BksField,
-  ExtendedTableColumn,
   TableTrigger,
   TableIndex,
   Routine,
@@ -29,6 +27,8 @@ import _ from "lodash";
 import { parseVersion } from "@/common/version";
 import { buildSelectTopQuery } from "./utils";
 import { createSQLiteKnex } from "./sqlite/utils";
+import { BedrockFieldResolver } from "./bedrock/BedrockFieldResolver";
+import { RawTableColumn } from "../serialization/FieldResolver";
 import rawLog from "@bksLogger";
 
 const log = rawLog.scope("bedrock");
@@ -53,6 +53,7 @@ interface PragmaColumnRow {
 }
 
 export class BedrockClient extends MysqlClient {
+  fieldResolver = new BedrockFieldResolver();
   dialectData = SqliteData;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
@@ -117,10 +118,10 @@ export class BedrockClient extends MysqlClient {
   }
 
   // Override listTableColumns to use SQLite PRAGMA instead of information_schema
-  async listTableColumns(
+  protected async listTableColumnsRunner(
     table?: string,
     _schema?: string
-  ): Promise<ExtendedTableColumn[]> {
+  ): Promise<RawTableColumn[]> {
     if (table) {
       const sql = `PRAGMA table_xinfo(${SD.escapeString(table, true)})`;
       const { rows } = await this.driverExecuteSingle(sql, {
@@ -135,7 +136,7 @@ export class BedrockClient extends MysqlClient {
 
     // Bedrock's MySQL plugin doesn't reliably return multiple result sets for
     // `;`-joined batches, so fetch one table at a time.
-    const out: ExtendedTableColumn[] = [];
+    const out: RawTableColumn[] = [];
     for (const t of tables) {
       const { rows } = await this.driverExecuteSingle(
         `PRAGMA table_xinfo(${SD.escapeString(t.name, true)})`,
@@ -242,7 +243,7 @@ export class BedrockClient extends MysqlClient {
     return results;
   }
 
-  private dataToColumns(data: PragmaColumnRow[], tableName: string): ExtendedTableColumn[] {
+  private dataToColumns(data: PragmaColumnRow[], tableName: string): RawTableColumn[] {
     return data.map((row) => {
       const defaultValue = row.dflt_value === "NULL" ? null : row.dflt_value;
       return {
@@ -254,7 +255,6 @@ export class BedrockClient extends MysqlClient {
         ordinalPosition: Number(row.cid),
         hasDefault: !_.isNil(defaultValue),
         generated: Number(row.hidden) === 2 || Number(row.hidden) === 3,
-        bksField: this.parseTableColumn(row),
       };
     });
   }
@@ -363,10 +363,4 @@ export class BedrockClient extends MysqlClient {
     return asRows<any>(rows).map((row) => ({ ...row, from_table: table }));
   }
 
-  parseTableColumn(row: { name: string; type: string }): BksField {
-    return {
-      name: row.name,
-      bksType: row.type?.toUpperCase() === "BLOB" ? "BINARY" : "UNKNOWN",
-    };
-  }
 }

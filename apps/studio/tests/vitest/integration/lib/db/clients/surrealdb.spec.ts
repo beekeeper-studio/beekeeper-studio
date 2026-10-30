@@ -6,6 +6,7 @@ import { createServer } from '@commercial/backend/lib/db/server'
 import { SurrealDBClient } from '@commercial/backend/lib/db/clients/surrealdb'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 import { TableOrView } from '@/lib/db/models'
+import { runBksTypeTests } from "./bksType";
 
 const TEST_VERSIONS = [
   { version: 'v2', protocol: 'ws' },
@@ -769,6 +770,61 @@ function testWith(tag, protocol) {
         expect(ages).toEqual([45, 40, 35, 30, 25])
       })
     })
+
+    describe("BksField tests", () => {
+      beforeAll(async () => {
+        await connection.executeQuery(`
+          DEFINE TABLE bks_types SCHEMAFULL;
+          DEFINE FIELD id ON TABLE bks_types TYPE record<bks_types>;
+          DEFINE FIELD int_col ON TABLE bks_types TYPE int;
+          DEFINE FIELD float_col ON TABLE bks_types TYPE float;
+          DEFINE FIELD decimal_col ON TABLE bks_types TYPE decimal;
+          DEFINE FIELD number_col ON TABLE bks_types TYPE number;
+          DEFINE FIELD string_col ON TABLE bks_types TYPE string;
+          DEFINE FIELD uuid_col ON TABLE bks_types TYPE uuid;
+          DEFINE FIELD datetime_col ON TABLE bks_types TYPE datetime;
+          DEFINE FIELD duration_col ON TABLE bks_types TYPE duration;
+          DEFINE FIELD bool_col ON TABLE bks_types TYPE bool;
+          DEFINE FIELD bytes_col ON TABLE bks_types TYPE bytes;
+          DEFINE FIELD record_col ON TABLE bks_types TYPE record<bks_types>;
+          DEFINE FIELD option_string_col ON TABLE bks_types TYPE option<string>;
+        `);
+        await connection.executeQuery(`
+          CREATE bks_types:one SET
+            int_col = 1,
+            float_col = 1.5f,
+            decimal_col = 1.5dec,
+            number_col = 1,
+            string_col = 'a',
+            uuid_col = rand::uuid(),
+            datetime_col = time::now(),
+            duration_col = 1h,
+            bool_col = true,
+            bytes_col = <bytes>'abc',
+            record_col = bks_types:one,
+            option_string_col = 'a';
+        `);
+      });
+
+      afterAll(async () => {
+        await connection.executeQuery("REMOVE TABLE bks_types");
+      });
+
+      runBksTypeTests({
+        connection: () => connection,
+        table: "bks_types",
+        expectedResults: {
+          BINARY: ["bytes_col"],
+          STRING: ["option_string_col", "string_col", "uuid_col"],
+          NUMBER: ["decimal_col", "float_col", "int_col", "number_col"],
+          DATETIME: ["datetime_col", "duration_col"],
+          BOOLEAN: ["bool_col"],
+          OBJECTID: [],
+          SURREALID: ["id", "record_col"],
+          UNKNOWN: [],
+        },
+      });
+    });
   })
 }
 
