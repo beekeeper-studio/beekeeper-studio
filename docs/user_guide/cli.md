@@ -6,9 +6,9 @@ icon: material/console
 
 # Command Line Interface
 
-`beekeeper-studio cli` runs a handful of read-mostly commands against a database connection that is **already open in the Beekeeper Studio app**: list schemas and tables, describe a table, run a query. The output is JSON by default, which makes it a good fit for scripts and for AI coding agents that need to look at a schema or check some data without being handed database credentials.
+`beekeeper-studio cli` runs a handful of **read-only** commands against a database connection that is **already open in the Beekeeper Studio app**: list schemas and tables, describe a table, run a query. The output is JSON by default, which makes it a good fit for scripts and for AI coding agents that need to look at a schema or check some data without being handed database credentials.
 
-The CLI does not connect to databases on its own. It talks to the running desktop app over a local socket, and the app runs the command on the connection it already holds. Close the app, or disconnect, and the CLI stops working.
+The CLI does not connect to databases on its own. It talks to the running desktop app over a local socket, and the app runs the command on the connection it already holds. Close the app, or disconnect, and the CLI stops working. Every call is recorded in a [log file](#audit-log).
 
 ```bash
 beekeeper-studio cli list-tables --schema public
@@ -20,7 +20,7 @@ beekeeper-studio cli query "select id, email from users order by id limit 5"
 
 CLI access is off for every connection by default. Turn it on in one of two ways:
 
-1. **Per connection**: check **Enable CLI Access** in the connection form (next to **Read Only Mode**), save the connection, and connect. Only connections with the box checked answer CLI commands.
+1. **Per connection**: check **Enable CLI Access** in the connection form (next to **Read Only Mode**), save the connection, and connect. Only connections with the box checked answer CLI commands. Changing the box on a saved connection takes effect on the next CLI call, no reconnect needed.
 2. **For every connection**: add this to your [user configuration file](configuration.md) and restart Beekeeper Studio:
 
     ```ini
@@ -35,7 +35,16 @@ Error (CLI_DISABLED): CLI access is not enabled for the open connection "Product
 To enable it, edit the connection in Beekeeper Studio, check "Enable CLI Access", save, and connect again. ...
 ```
 
-**Read Only Mode** still applies: a connection opened in read only mode rejects writes from the CLI just as it does in the SQL editor.
+## Read only
+
+The CLI never writes to a database, whatever the connection's own **Read Only Mode** setting is. `query` accepts statements that read data (`SELECT`, `WITH ... SELECT`, `SHOW`, `EXPLAIN`, `DESCRIBE` and so on, the same set the app allows in Read Only Mode). An `INSERT`, `UPDATE`, `DELETE`, DDL statement, or a batch that contains one, is rejected before anything runs:
+
+```text
+Error (READ_ONLY): The statement was rejected because the CLI is read only.
+The CLI is read only. It runs statements that read data (SELECT, SHOW, EXPLAIN, DESCRIBE and the like) on any connection; run writes in the Beekeeper Studio app.
+```
+
+The other commands only read catalog information.
 
 ## Running the command
 
@@ -77,7 +86,7 @@ Pass `cli` as the first argument to the Beekeeper Studio executable. Where the e
 | `list-tables` | Lists tables. Same as `list-entities --entity-type table` |
 | `list-entities` | Lists tables, views, materialized views and routines |
 | `structure <name>` | Columns, primary key, indexes, foreign keys, triggers and the create script of a table or view |
-| `query <sql>` | Runs SQL and prints the results. Each result is capped at 20,000 rows |
+| `query <sql>` | Runs a read-only SQL statement and prints the results. Each result is capped at 20,000 rows |
 | `help` | Prints the usage text |
 
 ### Options
@@ -131,7 +140,31 @@ $ beekeeper-studio cli query "select id, email from users limit 2"
 - Binary values are encoded as `{ "type": "binary", "encoding": "hex", "data": "…" }`. Integers outside JavaScript's safe range are returned as strings.
 - `--format markdown` prints tables instead, which is easier to read in a terminal or to paste into a chat.
 
-Errors are printed to stderr as `Error (CODE): message`, followed by a hint, and the process exits with status `1` (`2` for a usage mistake). Codes you may see: `NO_OPEN_CONNECTIONS`, `CLI_DISABLED`, `AMBIGUOUS_CONNECTION`, `UNKNOWN_CONNECTION`, `NOT_FOUND`, `QUERY_FAILED`.
+Errors are printed to stderr as `Error (CODE): message`, followed by a hint, and the process exits with status `1` (`2` for a usage mistake). Codes you may see: `NO_OPEN_CONNECTIONS`, `CLI_DISABLED`, `AMBIGUOUS_CONNECTION`, `UNKNOWN_CONNECTION`, `NOT_FOUND`, `READ_ONLY`, `QUERY_FAILED`.
+
+## Audit log
+
+The app writes one line of JSON to `cli.log` for every CLI call it answers, including calls that failed. The file sits next to the other Beekeeper Studio log files and rotates at 10 MB (the previous file is kept as `cli.old.log`):
+
+| Platform | Location |
+| -------- | -------- |
+| Linux | `~/.config/beekeeper-studio/logs/cli.log` |
+| macOS | `~/Library/Logs/beekeeper-studio/cli.log` |
+| Windows | `%APPDATA%\beekeeper-studio\logs\cli.log` |
+
+Each line records what was asked and a summary of what came back, never the data itself:
+
+```json
+{"time":"2026-10-30T13:12:40.512Z","command":"query","args":{"sql":"select id, email from users limit 2"},"connection":{"id":"7e1c…","name":"Local Postgres"},"ok":true,"durationMs":14,"responseBytes":412,"result":{"statements":1,"commands":["SELECT"],"rows":2,"totalRows":2,"truncated":false,"affectedRows":0}}
+{"time":"2026-10-30T13:13:02.081Z","command":"list-tables","args":{"schema":"public"},"connection":null,"ok":false,"durationMs":1,"responseBytes":655,"error":{"code":"CLI_DISABLED","message":"CLI access is not enabled for the open connection \"Prod\"."}}
+```
+
+- `args` is what the caller sent, SQL included. SQL longer than 10,000 characters is cut, with `sqlLength` and `sqlTruncated` added.
+- `connection` is the connection that answered, when one was selected.
+- `result` depends on the command: counts of connections, schemas, entities or columns, or for `query` the number of statements, rows returned and whether a result hit the row cap.
+- `error` carries the error code and message of a failed call.
+
+Because the file is line-delimited JSON, `tail -f` shows calls as they happen and `jq` can filter them, for example `jq 'select(.ok == false)' cli.log`.
 
 ## Using it with an AI coding agent
 
@@ -144,7 +177,7 @@ The database for this project is open in Beekeeper Studio. Inspect it with
 to enable CLI access for the connection.
 ```
 
-The agent only ever sees what the app lets it see: the connection's Read Only Mode applies, the 20,000 row cap applies, and when you disconnect in the app the agent loses access.
+The agent only ever sees what the app lets it see: every command is read only, the 20,000 row cap applies, each call is written to `cli.log`, and when you disconnect in the app the agent loses access.
 
 ## How it works
 

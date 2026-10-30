@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import { IConnection } from '@/common/interfaces/IConnection'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
+import { errorMessages as clientErrorMessages } from '@/lib/db/clients/utils'
 import {
   DatabaseEntity,
   ExtendedTableColumn,
@@ -49,6 +50,10 @@ export const ENABLE_CLI_HINT =
   'user.config.ini and restart Beekeeper Studio:\n[cli]\nenableForAllConnections = true'
 
 const FILE_BASED_TYPES = ['sqlite', 'duckdb', 'libsql']
+
+export const READ_ONLY_HINT =
+  'The CLI is read only. It runs statements that read data (SELECT, SHOW, EXPLAIN, DESCRIBE and ' +
+  'the like) on any connection; run writes in the Beekeeper Studio app.'
 
 export function connectionDisplayName(connection: CliOpenConnection): string {
   const config = connection.config
@@ -349,11 +354,19 @@ async function runQuery(client: BasicDatabaseClient<any, any>, sql: string | und
   }
   let results: NgQueryResult[]
   try {
+    // forceReadOnly is the same switch the plugin sandbox uses: the client
+    // rejects anything but reads, whatever the connection's own mode is.
     // arrayMode (postgres, sqlite) and rowsAsArray (mysql) keep duplicate
     // column names apart; clients that don't know the options ignore them.
-    results = await client.executeQuery(sql, { arrayMode: true, rowsAsArray: true })
+    results = await client.executeQuery(sql, { forceReadOnly: true, arrayMode: true, rowsAsArray: true })
   } catch (error) {
-    throw new CliError('QUERY_FAILED', error?.message ?? String(error), {
+    const message: string = error?.message ?? String(error)
+    if (message === clientErrorMessages.readOnly) {
+      throw new CliError('READ_ONLY', 'The statement was rejected because the CLI is read only.', {
+        hint: READ_ONLY_HINT,
+      })
+    }
+    throw new CliError('QUERY_FAILED', message, {
       details: _.omitBy(
         { code: error?.code, detail: error?.detail, hint: error?.hint, position: error?.position },
         _.isNil
@@ -394,6 +407,24 @@ async function runCommand(backend: CliBackend, request: CliRequest): Promise<unk
   const selected = await selectConnection(backend, args.connection)
   const connection = ref(selected.summary)
   const client = selected.connection.client
+
+  try {
+    return await runOnConnection(request, client, connection)
+  } catch (error) {
+    // The audit log wants to know which connection a failed call ran against.
+    if (isCliError(error)) {
+      error.details = { ...((error.details as Record<string, unknown>) || {}), connection }
+    }
+    throw error
+  }
+}
+
+async function runOnConnection(
+  request: CliRequest,
+  client: BasicDatabaseClient<any, any>,
+  connection: CliConnectionRef
+): Promise<unknown> {
+  const args = request.args || {}
 
   switch (request.command) {
     case 'list-schemas': {

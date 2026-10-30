@@ -1,5 +1,6 @@
 import fs from 'fs'
 import net from 'net'
+import { CliRequestEvent } from './auditLog'
 import { CliRequest, CliResponse } from './protocol'
 import { isWindowsPipePath } from './socketPath'
 
@@ -15,6 +16,8 @@ export interface CliServerOptions {
   log?: CliServerLogger
   /** A request line longer than this is rejected. SQL text is the only sizeable input. */
   maxRequestBytes?: number
+  /** Called after every reply, malformed requests included. Feeds the audit log. */
+  onRequestHandled?: (event: CliRequestEvent) => void
 }
 
 const DEFAULT_MAX_REQUEST_BYTES = 16 * 1024 * 1024
@@ -139,7 +142,7 @@ export class CliServer {
         this.respond(socket, {
           ok: false,
           error: { code: 'USAGE', message: `Request is larger than ${this.maxRequestBytes} bytes.` },
-        })
+        }, null, Date.now())
         return
       }
       const newline = buffer.indexOf('\n')
@@ -161,14 +164,15 @@ export class CliServer {
   }
 
   private async process(socket: net.Socket, line: string): Promise<void> {
-    let request: CliRequest
+    const started = Date.now()
+    let request: CliRequest | null = null
     try {
       request = JSON.parse(line)
     } catch {
       this.respond(socket, {
         ok: false,
         error: { code: 'USAGE', message: 'Malformed CLI request: expected one JSON object per line.' },
-      })
+      }, null, started)
       return
     }
 
@@ -179,21 +183,33 @@ export class CliServer {
       this.log.error('CLI request failed', error)
       response = { ok: false, error: { code: 'INTERNAL', message: error?.message ?? String(error) } }
     }
-    this.respond(socket, response)
+    this.respond(socket, response, request, started)
   }
 
-  private respond(socket: net.Socket, response: CliResponse): void {
-    if (socket.destroyed) return
+  private respond(socket: net.Socket, response: CliResponse, request: CliRequest | null, started: number): void {
     let payload: string
     try {
       payload = JSON.stringify(response)
     } catch (error) {
-      payload = JSON.stringify({
+      response = {
         ok: false,
         error: { code: 'INTERNAL', message: `Could not serialize the response: ${error?.message ?? error}` },
-      })
+      }
+      payload = JSON.stringify(response)
     }
-    socket.end(payload + '\n')
+    if (!socket.destroyed) {
+      socket.end(payload + '\n')
+    }
+    this.notify({ request, response, durationMs: Date.now() - started, responseBytes: Buffer.byteLength(payload) })
+  }
+
+  private notify(event: CliRequestEvent): void {
+    if (!this.options.onRequestHandled) return
+    try {
+      this.options.onRequestHandled(event)
+    } catch (error) {
+      this.log.warn('CLI request observer failed', error)
+    }
   }
 
   async stop(): Promise<void> {

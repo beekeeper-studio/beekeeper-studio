@@ -424,7 +424,7 @@ export default Vue.extend({
       return this.config.labelColor == "default" ? '' : `connection-label-color-${this.config.labelColor}`
     },
     cliAccessTooltip() {
-      return 'Allows <code>beekeeper-studio cli</code> commands (list tables, describe a table, run a query) to use this connection while it is open in the app. Read Only Mode still applies.'
+      return 'Allows <code>beekeeper-studio cli</code> commands to use this connection while it is open in the app. The CLI is read only: it can list schemas and tables, describe them and run queries that read data. Every call is recorded in cli.log.'
     },
     folder() {
       return this.connectionFolders.find((f) => f.id === this.config.connectionFolderId);

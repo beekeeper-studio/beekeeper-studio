@@ -246,19 +246,39 @@ describe('executeCliRequest', () => {
     it('reports sql errors as QUERY_FAILED', async () => {
       const error = expectError(await executeCliRequest(backend, request('query', { sql: 'select * from missing_table' })), 'QUERY_FAILED')
       expect(error.message).toContain('missing_table')
+      expect((error.details as any).connection).toEqual({ id: 'sid-primary', name: 'Local Dev' })
       expectError(await executeCliRequest(backend, request('query', { sql: '   ' })), 'USAGE')
     })
 
-    it('respects read only mode', async () => {
+    it('rejects writes even when the connection is not read only', async () => {
+      expect(client.readOnlyMode).toBe(false)
+      for (const sql of [
+        "insert into users (id, email) values (3, 'c@example.com')",
+        "update users set name = 'x' where id = 1",
+        'delete from users where id = 2',
+        'create table scratch (id integer)',
+        'drop table orders',
+        // a read followed by a write is rejected as a whole
+        "select 1; insert into users (id, email) values (4, 'd@example.com')",
+      ]) {
+        const error = expectError(await executeCliRequest(backend, request('query', { sql })), 'READ_ONLY')
+        expect(error.hint).toContain('read only')
+      }
+      const check = expectOk(await executeCliRequest(backend, request('query', { sql: 'select count(*) as n from users; select count(*) as orders from orders' })))
+      expect(check.results[0].rows[0].n).toBe(2)
+      expect(check.results[1].rows[0].orders).toBe(2)
+      expect(expectOk(await executeCliRequest(backend, request('list-tables'))).entities.map((e) => e.name)).toEqual(['orders', 'users'])
+    })
+
+    it('still answers reads on a read only connection', async () => {
       client.readOnlyMode = true
       try {
-        const error = expectError(await executeCliRequest(backend, request('query', { sql: "insert into users (id, email) values (3, 'c@example.com')" })), 'QUERY_FAILED')
-        expect(error.message.toLowerCase()).toContain('read')
+        const result = expectOk(await executeCliRequest(backend, request('query', { sql: 'select count(*) as n from users' })))
+        expect(result.results[0].rows[0].n).toBe(2)
+        expectError(await executeCliRequest(backend, request('query', { sql: 'delete from users' })), 'READ_ONLY')
       } finally {
         client.readOnlyMode = false
       }
-      const check = expectOk(await executeCliRequest(backend, request('query', { sql: 'select count(*) as n from users' })))
-      expect(check.results[0].rows[0].n).toBe(2)
     })
   })
 })

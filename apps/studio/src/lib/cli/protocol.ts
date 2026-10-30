@@ -56,6 +56,7 @@ export type CliErrorCode =
   | 'AMBIGUOUS_CONNECTION'
   | 'NOT_FOUND'
   | 'AMBIGUOUS_ENTITY'
+  | 'READ_ONLY'
   | 'QUERY_FAILED'
   | 'INTERNAL'
 

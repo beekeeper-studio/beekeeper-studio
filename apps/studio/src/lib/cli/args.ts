@@ -26,9 +26,10 @@ export interface CliInvocation {
 
 export const CLI_USAGE = `Usage: beekeeper-studio cli <command> [options]
 
-Runs against a database connection that is already open in the Beekeeper Studio
-desktop app. The connection needs "Enable CLI Access" checked in its connection
-settings, or [cli] enableForAllConnections = true in the ini config.
+Runs read-only commands against a database connection that is already open in
+the Beekeeper Studio desktop app. The connection needs "Enable CLI Access"
+checked in its connection settings, or [cli] enableForAllConnections = true in
+the ini config. Every call is recorded in the app's cli.log file.
 
 Commands:
   connections               List the connections currently open in the app
@@ -36,7 +37,8 @@ Commands:
   list-tables               List tables (same as list-entities --entity-type table)
   list-entities             List tables, views, materialized views and routines
   structure <name>          Columns, keys, indexes, relations, triggers and DDL of a table or view
-  query <sql>               Run SQL and print the results (at most 20,000 rows per result)
+  query <sql>               Run a read-only SQL statement and print the results
+                            (at most 20,000 rows per result)
   help                      Show this help
 
 Options:

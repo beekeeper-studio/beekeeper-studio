@@ -47,6 +47,7 @@ import { ConfigHandlers } from '@/handlers/configHandlers';
 import { CliServer } from '@/lib/cli/server';
 import { executeCliRequest } from '@/lib/cli/commands';
 import { utilityCliBackend } from '@/lib/cli/utilityBackend';
+import { CliAuditLog, createElectronLogSink } from '@/lib/cli/auditLog';
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -237,12 +238,20 @@ async function init() {
 
 function startCliServer() {
   if (!platformInfo.cliSocketPath) return;
+  const cliLog = rawLog.scope('CliServer');
+  // Every CLI call and a summary of its reply goes to cli.log, next to the
+  // other log files.
+  const auditSink = createElectronLogSink(rawLog);
+  const auditLog = new CliAuditLog(auditSink, (e) => cliLog.warn('Could not write the CLI audit log', e));
   cliServer = new CliServer({
     socketPath: platformInfo.cliSocketPath,
     handler: (request) => executeCliRequest(utilityCliBackend, request),
-    log: rawLog.scope('CliServer'),
+    onRequestHandled: (event) => auditLog.record(event),
+    log: cliLog,
   });
-  cliServer.start().catch((e) => {
+  cliServer.start().then((started) => {
+    if (started) cliLog.info(`CLI calls are recorded in ${auditSink.filePath() ?? 'cli.log'}`);
+  }).catch((e) => {
     log.error('Failed to start the CLI socket server', e);
   });
 }

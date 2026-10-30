@@ -123,6 +123,39 @@ describe('CliServer', () => {
     expect(JSON.parse(reply).ok).toBe(true)
   })
 
+  it('reports every handled request to the observer', async () => {
+    const events = []
+    const server = createServer({ onRequestHandled: (event) => { events.push(event) } })
+    await server.start()
+
+    const request: CliRequest = { version: CLI_PROTOCOL_VERSION, command: 'query', args: { sql: 'select 1' } }
+    const response = await sendCliRequest(server.socketPath, request, 5000)
+    expect(events).toHaveLength(1)
+    expect(events[0].request).toEqual(request)
+    expect(events[0].response).toEqual(response)
+    expect(events[0].durationMs).toBeGreaterThanOrEqual(0)
+    expect(events[0].responseBytes).toBe(Buffer.byteLength(JSON.stringify(response)))
+
+    await new Promise<void>((resolve, reject) => {
+      const socket = net.createConnection(server.socketPath)
+      // without a reader the socket never reaches 'end', and so never 'close'
+      socket.resume()
+      socket.on('connect', () => socket.end('nope\n'))
+      socket.on('close', () => resolve())
+      socket.on('error', reject)
+    })
+    expect(events).toHaveLength(2)
+    expect(events[1].request).toBeNull()
+    expect(events[1].response.ok).toBe(false)
+  })
+
+  it('keeps serving when the observer throws', async () => {
+    const server = createServer({ onRequestHandled: () => { throw new Error('observer broke') } })
+    await server.start()
+    const response = await sendCliRequest(server.socketPath, { version: 1, command: 'connections', args: {} }, 5000)
+    expect(response.ok).toBe(true)
+  })
+
   it('turns handler failures into error responses', async () => {
     const server = createServer({ handler: () => Promise.reject(new Error('boom')) })
     await server.start()
