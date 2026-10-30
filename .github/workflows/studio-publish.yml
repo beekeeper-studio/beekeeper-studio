@@ -226,7 +226,7 @@ jobs:
           command: "pnpm install --frozen-lockfile --fetch-timeout 100000"
 
       - name: Verify msnodesqlv8 native build
-        run: node -e "require('msnodesqlv8')"
+        run: pnpm -F beekeeper-studio exec node -e "require('msnodesqlv8')"
 
       # Every database client loads at startup, so one native module that
       # can't load on this arch breaks every connection. Fail before shipping it.
