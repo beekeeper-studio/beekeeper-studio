@@ -21,6 +21,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest, windows-11-arm]
 
+    # pnpm links get broken on windows when restoring cache, so use the hoisted linker to avoid links
+    env:
+      pnpm_config_node_linker: ${{ startsWith(matrix.os, 'windows') && 'hoisted' || 'isolated' }}
+
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v5
@@ -52,7 +56,7 @@ jobs:
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
-          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('mise.toml') }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ env.pnpm_config_node_linker }}-${{ hashFiles('mise.toml') }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies
         if: steps.cache-nm.outputs.cache-hit != 'true'

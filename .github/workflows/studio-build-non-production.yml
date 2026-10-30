@@ -81,8 +81,10 @@ jobs:
         shell: bash
         run: echo "RUNNER_IMAGE_ID=${ImageOS:-unknown}" >> "$GITHUB_ENV"
 
+      # pnpm links get broken on windows when restoring cache, do a fresh install for windows runners
       - name: Cache node_modules
         id: cache-nm
+        if: runner.os != 'Windows'
         uses: actions/cache@v5
         with:
           path: |
@@ -92,12 +94,14 @@ jobs:
           # Python is in the key so a Python bump rebuilds the native modules.
           key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-py${{ env.PYTHON_VERSION }}-${{ hashFiles('mise.toml') }}-${{ hashFiles('pnpm-lock.yaml') }}
 
-      # For msnodesqlv8, if it previously failed in the cached version, clear the cache and try again :)
+      # If any native module fails to load from the restored cache, reinstall.
       - name: Check restored node_modules
         id: nm-health
         if: steps.cache-nm.outputs.cache-hit == 'true'
         continue-on-error: true
-        run: pnpm -F beekeeper-studio exec node -e "require('msnodesqlv8')"
+        run: pnpm -F beekeeper-studio electron ../../bin/check-native-modules.js
+        env:
+          ELECTRON_RUN_AS_NODE: 1
 
       - name: Check dependencies
         if: steps.cache-nm.outputs.cache-hit != 'true' || steps.nm-health.outcome == 'failure'
