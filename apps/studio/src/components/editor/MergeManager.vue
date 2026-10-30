@@ -107,7 +107,8 @@ export default Vue.extend({
   }),
   computed: {
     remoteText() {
-      return this.query.text
+      // cloud queries can come back with null text
+      return this.query.text ?? ''
     },
     localText() {
       return this.unsavedText
@@ -125,7 +126,7 @@ export default Vue.extend({
   },
   methods: {
     discardLocal() {
-      this.$emit('change', this.query.text)
+      this.$emit('change', this.remoteText)
       this.acceptMerge()
     },
     merge() {
@@ -144,9 +145,9 @@ export default Vue.extend({
 
       // otherwise we use optimistic patching
       const patcher = new DiffPatchMerge()
-      console.log("Make Patch: ", this.originalText, this.query.text)
+      console.log("Make Patch: ", this.originalText, this.remoteText)
 
-      const patch = patcher.patch_make(this.originalText, this.query.text)
+      const patch = patcher.patch_make(this.originalText ?? '', this.remoteText)
       console.log("Apply Patch", this.unsavedText, patch)
       const [final] = patcher.patch_apply(patch, this.unsavedText)
       return final

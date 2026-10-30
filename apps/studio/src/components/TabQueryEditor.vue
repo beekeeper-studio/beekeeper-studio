@@ -823,7 +823,7 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
       },
       // the query object changed in the background
       pendingRemoteChanges() {
-        return this.query.text !== this.originalText
+        return (this.query.text ?? "") !== (this.originalText ?? "")
       },
       showDryRun() {
         return this.dialect == 'bigquery'
