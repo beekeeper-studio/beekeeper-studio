@@ -14,7 +14,7 @@ import MenuHandler from '@/background/NativeMenuBuilder'
 import { IGroupedUserSettings, UserSetting } from '@/common/appdb/models/user_setting'
 import Connection from '@/common/appdb/Connection'
 import Migration from '@/migration/index'
-import { buildWindow, getActiveWindows, getCurrentWindow } from '@/background/WindowBuilder'
+import { buildWindow, getActiveWindows, getCurrentWindow, setConfirmWindowClose } from '@/background/WindowBuilder'
 import platformInfo from '@/common/platform_info'
 import bksConfig from '@/common/bksConfig'
 
@@ -128,9 +128,11 @@ let settings: IGroupedUserSettings
 let menuHandler
 log.debug("registering schema")
 // Scheme must be registered before the app is ready
-protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
-protocol.registerSchemesAsPrivileged([{scheme: 'plugin', privileges: { secure: true, standard: true } }])
-protocol.registerSchemesAsPrivileged([{scheme: 'theme', privileges: { secure: true, standard: true } }])
+protocol.registerSchemesAsPrivileged([
+  {scheme: 'app', privileges: { secure: true, standard: true } },
+  {scheme: 'plugin', privileges: { secure: true, standard: true } },
+  {scheme: 'theme', privileges: { secure: true, standard: true } }
+])
 let initialized = false
 
 async function initBasics() {
@@ -261,7 +263,7 @@ function createAndSendPorts(filter: boolean, utilDied = false) {
       w.sId = sId;
       utilityProcess.postMessage({ type: 'init', sId }, [port1]);
       w.webContents.postMessage('port', { sId, utilDied }, [port2]);
-      w.onClose((_event: electron.Event) => {
+      w.onClose(() => {
         utilityProcess.postMessage({ type: 'close', sId })
       })
       if (filter) {
@@ -327,6 +329,10 @@ ipcMain.handle('maximizeWindow', () => {
 
 ipcMain.handle('closeWindow', () => {
   getCurrentWindow().closeWindow();
+})
+
+ipcMain.handle('setConfirmWindowClose', async (_event, enabled: boolean) => {
+  await setConfirmWindowClose(settings, enabled);
 })
 
 ipcMain.handle('clipboard:write', async (_event, { content, image }: { content: string, image: boolean }) => {

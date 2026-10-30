@@ -17,7 +17,6 @@ import rawLog from "@bksLogger";
 import { Client_DuckDB as DuckDBKnexClient } from "@shared/lib/knex-duckdb";
 import { loadDuckDB } from "@shared/lib/knex-duckdb/loadDuckDB";
 import type { DuckDBInstance as Database, DuckDBConnection as Connection, DuckDBMaterializedResult, DuckDBType, DuckDBValue, DuckDBListValue } from "@duckdb/node-api";
-import { identify } from "sql-query-identifier";
 import {
   CancelableQuery,
   DatabaseFilterOptions,
@@ -44,7 +43,7 @@ import {
   BksFieldType,
   DatabaseEntity,
 } from "@/lib/db/models";
-import { joinFilters } from "@/common/utils";
+import { isListFilter, joinFilters } from "@/common/utils";
 import { DuckDBCursor } from "./duckdb/DuckDBCursor";
 import { foreignKeyColumnsSql } from "./duckdb/scripts";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
@@ -110,7 +109,7 @@ function buildFilterString(
         ? `HEX(${DuckDBData.wrapIdentifier(item.field)})`
         : DuckDBData.wrapIdentifier(item.field);
 
-      if (item.type === "in") {
+      if (isListFilter(item.type)) {
         const questionMarks = _.isArray(item.value)
           ? item.value.map(() => "?").join(",")
           : "?";
@@ -292,8 +291,8 @@ export class DuckDBClient extends BasicDatabaseClient<DuckDBResult> {
     return results.map((result) => {
       const fields = result.columns.map((column, idx) => ({
         id: `c${idx}`,
-        name: column.type.alias || column.name,
-        type: column.type.toString(),
+        name: column.name,
+        type: column.type.alias || column.type.toString(),
       }));
 
       const rows = result.rows.map((row: typeof result.rows[number]) => {

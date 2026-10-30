@@ -34,11 +34,10 @@ If you opt for a monthly subscription and complete 12 consecutive months, the sa
 
 Our customers are head over heels for the lifetime license, but there's more to Beekeeper Studio that keeps them subscribed:
 
-1. **20% Renewal Discount**: Stay with us beyond 12 months and receive a 20% discount on future subscription payments.
-2. **Ongoing Software Updates**: As a subscriber, you'll have immediate access to all new features and updates of Beekeeper Studio.
-3. **Access Cloud Storage and Team Workspaces**: Enhance your productivity with [cloud storage and collaborative workspaces](https://www.beekeeperstudio.io/features/workspace).
-4. **Guaranteed Email Support**: We're always here to help, ensuring your experience with Beekeeper Studio is smooth and enjoyable.
-5. **Price Lock**: Your subscription price is locked in, even if we increase our pricing in the future. (which we should because it's pretty cheap!)
+1. **Ongoing Software Updates**: As a subscriber, you'll have immediate access to all new features and updates of Beekeeper Studio.
+2. **Access Cloud Storage and Team Workspaces**: Enhance your productivity with [cloud storage and collaborative workspaces](https://www.beekeeperstudio.io/features/workspace).
+3. **Guaranteed Email Support**: We're always here to help, ensuring your experience with Beekeeper Studio is smooth and enjoyable.
+4. **Price Lock**: Your subscription price is locked in, even if we increase our pricing in the future. (which we should because it's pretty cheap!)
 
 
 ## Why We Only Sell Subscriptions

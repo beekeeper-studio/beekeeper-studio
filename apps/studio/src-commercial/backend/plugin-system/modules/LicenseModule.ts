@@ -36,7 +36,7 @@ export class LicenseModule extends Module {
     let enabledCount = 0;
 
     return snapshots.map((snapshot) => {
-      if (snapshot.disableState.disabled) {
+      if (snapshot.disableState.disabled || snapshot.origin === 'bundled') {
         return snapshot;
       }
 

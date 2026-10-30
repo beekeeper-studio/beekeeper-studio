@@ -10,7 +10,7 @@ import logRaw from '@bksLogger'
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
 import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries, errorMessages } from './utils';
-import { createCancelablePromise, joinFilters } from '../../../common/utils';
+import { createCancelablePromise, isListFilter, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
 // FIXME (azmi): use BksConfig
 import globals from '../../../common/globals';
@@ -692,7 +692,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
 
   async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
     const arrayMode: boolean = options?.arrayMode;
-    const data = await this.driverExecuteMultiple(queryText, { arrayMode, tabId: options?.tabId });
+    const data = await this.driverExecuteMultiple(queryText, options);
 
     const commands = this.identifyCommands(queryText);
     log.info("COMMANDS: ", commands)
@@ -1317,7 +1317,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     } else if (filters && filters.length > 0) {
       let paramIdx = 1
       const allFilters = filters.map((item) => {
-        if (item.type === 'in' && _.isArray(item.value)) {
+        if (isListFilter(item.type) && _.isArray(item.value)) {
           const values = item.value.map((v, idx) => {
             return options.inlineParams
               ? knex.raw('?', [v]).toQuery()

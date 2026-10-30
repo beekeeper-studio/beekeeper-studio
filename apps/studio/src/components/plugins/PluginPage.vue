@@ -78,6 +78,17 @@
             >
             <span>Auto-update</span>
           </label>
+          <label
+            class="checkbox-group"
+            v-tooltip="'Only allow this plugin to run Read Only queries against your database'"
+          >
+            <input
+              type="checkbox"
+              :checked="pluginReadOnly"
+              @change="toggleReadOnly"
+            >
+            <span>Read-Only</span>
+          </label>
         </template>
         <x-button
           v-else
@@ -154,32 +165,51 @@ export default Vue.extend({
     return {
       autoUpdateEnabled: true,
       avatarBroken: false,
+      pluginReadOnly: true
     };
   },
   async mounted() {
     await this.getAutoUpdateSetting();
+    await this.getReadOnlySetting();
   },
   watch: {
     "plugin.id": async function () {
       this.avatarBroken = false;
       await this.getAutoUpdateSetting();
+      await this.getReadOnlySetting();
     },
   },
   methods: {
     async getAutoUpdateSetting() {
       this.autoUpdateEnabled = await this.$util.send(
-        "plugin/getAutoUpdateEnabled",
-        { id: this.plugin.id }
+        "plugin/getPluginSetting",
+        { id: this.plugin.id, key: 'autoUpdate' }
       );
     },
     async toggleAutoUpdate(event) {
       const enabled = event.target.checked;
-      await this.$util.send("plugin/setAutoUpdateEnabled", {
+      await this.$util.send("plugin/setPluginSetting", {
         id: this.plugin.id,
-        enabled,
+        key: 'autoUpdate',
+        value: enabled,
       });
       this.autoUpdateEnabled = enabled;
     },
+    async getReadOnlySetting() {
+      this.pluginReadOnly = await this.$util.send(
+        "plugin/getPluginSetting",
+        { id: this.plugin.id, key: 'readOnly' }
+      )
+    },
+    async toggleReadOnly(event) {
+      const value = event.target.checked;
+      await this.$util.send("plugin/setPluginSetting", {
+        id: this.plugin.id,
+        key: 'readOnly',
+        value
+      });
+      this.pluginReadOnly = value;
+    }
   },
   computed: {
     avatarUrl() {

@@ -251,19 +251,7 @@ export class BigQueryClient extends BasicDatabaseClient<BigQueryResult> {
   }
 
   async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
-    // Support passing a single query string and an object with params
-    // if (queryText instanceof String) {
-    //   queryText = { query: queries }
-    // }
-    let job = options?.job;
-    log.info("BIGQUERY, executing", queryText)
-    if (!job) {
-      [job] = await this.client.createQueryJob({query: queryText})
-    }
-
-    // Wait for the query to finish
-    const results = await job.getQueryResults()
-    return results.map((data) => this.parseRowQueryResult(data))
+    return await this.driverExecuteMultiple(queryText, options)
   }
 
   async listDatabases(_filter?: DatabaseFilterOptions): Promise<string[]> {

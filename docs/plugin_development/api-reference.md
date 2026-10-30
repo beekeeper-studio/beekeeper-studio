@@ -1,12 +1,12 @@
 ---
-title: Plugin API Reference
-summary: "Complete API reference for Beekeeper Studio plugin development."
+title: Plugin SDK Reference
+summary: "Complete reference for the Beekeeper Studio Plugin SDK."
 icon: material/api
 ---
 
-# Plugin API Reference
+# Plugin SDK Reference
 
-The Beekeeper Studio Plugin API is accessible through the `@beekeeperstudio/plugin` package. The API provides communication between your plugin and the main application.
+The [Beekeeper Studio Plugin SDK](sdk.md) ([GitHub](https://github.com/beekeeper-studio/plugin)) is published on npm as [`@beekeeperstudio/plugin`](https://www.npmjs.com/package/@beekeeperstudio/plugin). The SDK provides communication between your plugin and the main application.
 
 ## Installation
 
@@ -296,6 +296,9 @@ const result = await runQuery('SELECT * FROM users WHERE active = true LIMIT 10'
   ]
 }
 ```
+
+!!! note "Integer values"
+    Integers come back as JavaScript numbers when they fit in the safe integer range (±2^53 − 1). Larger integers, such as some 64-bit IDs, come back as strings so no precision is lost. Every value in `rows` can be passed to `JSON.stringify` or stored with [appStorage.setItem](#appstoragesetitem).
 
 **Signature:**
 ```typescript
@@ -588,6 +591,8 @@ async function setItem<T = unknown>(
     options?: { encrypted: boolean }
 ): Promise<void>;
 ```
+
+`value` is stored as JSON. A value JSON can't represent, such as a `BigInt` or an object with circular references, is rejected with an error and nothing is stored.
 
 ### openTab
 
@@ -1114,7 +1119,11 @@ Context information for how a plugin view was opened.
 | Property  | Type                    | Description |
 |-----------|-------------------------|-------------|
 | `command` | `string`               | The command from manifest.json |
-| `params`  | `LoadViewParams`       | Context-specific parameters (optional) |
+| `params`  | [`LoadViewParams`](#loadviewparams) | Context-specific parameters, depending on the menu item's placement (optional). See [Menu item params](manifest.md#menu-item-params). |
+
+### LoadViewParams
+
+The params of the menu item that opened the view: one of [`CellMenuParams`](#cellmenuparams), [`ColumnMenuParams`](#columnmenuparams), [`RowMenuParams`](#rowmenuparams), [`CornerMenuParams`](#cornermenuparams), [`EditorMenuParams`](#editormenuparams), [`StatusbarMenuParams`](#statusbarmenuparams), [`TabMenuParams`](#tabmenuparams) or [`EntityMenuParams`](#entitymenuparams). Which one depends on the item's placement, so narrow it by `command`. `EditorMenuParams`, `StatusbarMenuParams`, `TabMenuParams`, `EntityMenuParams` and `MenuEntity` are exported from version 1.8.0.
 
 ### CellMenuParams
 
@@ -1161,6 +1170,56 @@ Parameters when the corner (top-left) context menu is triggered.
 |---------------|------------------|-------------|
 | `target`      | `CornerMenuTarget` | Information about the selection |
 | `activeRange` | `ActiveRange`    | Currently selected range |
+
+### EditorMenuParams
+
+Parameters from the query editor (`editor.query.context` and `editor.query.toolbar`).
+
+| Property        | Type     | Description |
+|-----------------|----------|-------------|
+| `text`          | `string` | The whole text of the editor |
+| `selectedText`  | `string` | The selected text, or an empty string |
+| `selectedQuery` | `string` | The statement under the cursor, or an empty string |
+
+### StatusbarMenuParams
+
+Parameters from the **Visualize** menu (`results.statusbar` and `tableTable.statusbar`).
+
+| Property      | Type                                  | Description |
+|---------------|---------------------------------------|-------------|
+| `source`      | `"selection" \| "result" \| "table"` | What was sent: the selected cells, every row of a query result, or a table to read yourself |
+| `target`      | `CornerMenuTarget`                    | The rows sent, shaped like a corner menu's target so handlers written for `CornerMenuParams` work unchanged. Absent when `source` is `"table"` (optional) |
+| `query`       | `string`                              | Query results only: the statement that produced the result (optional) |
+| `truncated`   | `boolean`                             | Query results only: the result stopped at the app's row limit, so `target` may not hold every row the query returns. Run `query` again for more (optional) |
+| `entity`      | [`MenuEntity`](#menuentity)           | Table view only: the table being viewed (optional) |
+| `filters`     | `TableFilter[]`                       | Table view only: the filters applied in the table view (optional) |
+| `where`       | `string`                              | Table view only: the SQL condition for those filters, without the `WHERE` keyword. Empty when there are no filters (optional) |
+
+### TabMenuParams
+
+Parameters from a tab header (`tab.query.header.context` and `tab.table.header.context`).
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `tab`    | `{ type: string; id: number; title: string; data?: object }` | The tab. Query tabs have `data.query`; table tabs have `data.table` and `data.filters` |
+
+### EntityMenuParams
+
+Parameters from the sidebar (`entity.*.context`) and the structure view (`structure.statusbar.menu`).
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `entity` | [`MenuEntity`](#menuentity) | The table, schema or routine |
+
+### MenuEntity
+
+A table, schema or routine that a menu was opened on.
+
+| Property | Type     | Description |
+|----------|----------|-------------|
+| `type`   | `string` | `"table"`, `"view"`, `"schema"` or `"routine"`, for example |
+| `schema` | `string` | Schema name (optional) |
+| `name`   | `string` | Name of the table, schema or routine |
 
 ### ActiveRange
 

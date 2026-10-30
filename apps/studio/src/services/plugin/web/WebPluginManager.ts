@@ -278,6 +278,7 @@ export default class WebPluginManager {
       store: this.pluginStore,
       utility: this.utilityConnection,
       log: rawLog.scope(`Plugin:${snapshot.manifest.id}`),
+      pluginOrigin: snapshot.origin,
       appVersion: this.appVersion,
       fileHelpers: this.fileHelpers,
       noty: this.noty,

@@ -117,6 +117,13 @@
         </x-menu>
       </x-button>
     </x-buttons>
+    <visualize-button
+      menu-id="results.statusbar"
+      :header="visualizeHeader"
+      :disabled="rowCount === 0"
+      :conditions="{ explainResult }"
+      @select="(item, event) => $emit('visualize', item, event)"
+    />
     <span
       v-tooltip="editButtonTooltip"
       class="inline-flex"
@@ -231,6 +238,7 @@
 <script>
 import humanizeDuration from 'humanize-duration';
 import Statusbar from '../common/StatusBar.vue';
+import VisualizeButton from '../plugins/VisualizeButton.vue';
 import { mapState, mapGetters } from 'vuex';
 import { AppEvent } from '@/common/AppEvent';
 import formatSeconds from "@/lib/time/formatSeconds";
@@ -252,8 +260,8 @@ const shortEnglishHumanizer = humanizeDuration.humanizer({
 });
 
 export default {
-  props: ['results', 'running', 'value', 'executeTime', 'wrapText', 'active', 'elapsedTime', 'editing', 'changesCount', 'changesString', 'resultEditable'],
-  components: { Statusbar },
+  props: ['results', 'running', 'value', 'executeTime', 'wrapText', 'active', 'elapsedTime', 'editing', 'changesCount', 'changesString', 'resultEditable', 'selectedCells', 'explainResult'],
+  components: { Statusbar, VisualizeButton },
   data() {
     return {
       showHint: false,
@@ -310,6 +318,12 @@ export default {
     },
     rowCount() {
       return this.result && this.result.rows ? this.result.rows.length : 0
+    },
+    visualizeHeader() {
+      if (this.selectedCells > 0) {
+        return `Open ${this.$pluralize('cell', this.selectedCells, true)} in`
+      }
+      return `Open ${this.rowCount} ${this.$pluralize('row', this.rowCount, false)} in`
     },
     result() {
       return this.results[this.value]

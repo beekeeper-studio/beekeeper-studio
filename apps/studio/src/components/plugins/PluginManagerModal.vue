@@ -214,7 +214,6 @@ export default Vue.extend({
       modalName: "plugin-manager-modal",
       plugins: [],
       selectedPluginIdx: -1,
-      selectedPluginReadme: "",
       selectedPluginRepo: null,
       loadingPluginReadme: false,
       loadedPlugins: false,
@@ -288,14 +287,16 @@ export default Vue.extend({
         }
 
         await this.$util.send('config/writeUserValue', { path: 'pluginSystem.communityDisabled', value: !value });
+        await this.reinitPluginData();
       }
     },
     officialEnabled: {
       get() {
-        return !this.$bksConfig.pluginSystem.officialEnabled;
+        return !this.$bksConfig.pluginSystem.officialDisabled;
       },
       async set(value) {
-        await this.$util.send('config/writeUserValue', { path: 'pluginSystem.ultimateDisabled', value: !value });
+        await this.$util.send('config/writeUserValue', { path: 'pluginSystem.officialDisabled', value: !value });
+        await this.reinitPluginData();
       }
     },
     customEnabled: {
@@ -304,6 +305,7 @@ export default Vue.extend({
       },
       async set(value) {
         await this.$util.send('config/writeUserValue', { path: 'pluginSystem.thirdPartyRegistriesDisabled', value: !value });
+        await this.reinitPluginData();
       }
     },
     unlistedEnabled: {
@@ -312,6 +314,7 @@ export default Vue.extend({
       },
       async set(value) {
         await this.$util.send('config/writeUserValue', { path: 'pluginSystem.unlistedDisabled', value: !value });
+        await this.reinitPluginData();
       }
     },
     githubToken() {
@@ -336,18 +339,16 @@ export default Vue.extend({
         }
       },
       immediate: true,
-    },
-    communityEnabled: {
-      async handler() {
-        if (this.pluginManagerStatus === "ready") {
-          this.plugins = [];
-          await this.$store.dispatch("plugins/initialize");
-          await this.loadPlugins();
-        }
-      }
     }
   },
   methods: {
+    async reinitPluginData() {
+      if (this.pluginManagerStatus === "ready") {
+        this.plugins = [];
+        await this.$store.dispatch("plugins/initialize");
+        await this.loadPlugins();
+      }
+    },
     async loadPlugins() {
       this.loadingPlugins = true;
 
@@ -440,10 +441,18 @@ export default Vue.extend({
         log.error(e);
 
         if (e instanceof PluginSystemError && e.code === "PLUGIN_NOT_FOUND") {
+          try {
+            const readme = await this.$util.send("plugin/getAsset", { manifest: this.selectedPlugin, path: 'README.md' });
+            this.selectedPluginRepo = {
+              readme
+            };
+            this.loadingPluginReadme = false;
+            return;
+          } catch { }
+
           // FIXME use error alert box
-          this.selectedPluginReadme = "We can't find the repository for this plugin.";
+          this.$noty.error("We can't find the repository for this plugin.");
         } else {
-          this.selectedPluginReadme = "Something went wrong.";
           this.$noty.error(`Error opening plugin page: ${e.message}`);
         }
       }
@@ -596,6 +605,7 @@ $gutter-h: 1.5rem;
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
+    color: var(--text-contrast);
   }
 
   a {

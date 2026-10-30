@@ -34,11 +34,10 @@ Si optas por una suscripcion mensual y completas 12 meses consecutivos, el mismo
 
 Nuestros clientes estan encantados con la licencia de por vida, pero hay mas en Beekeeper Studio que los mantiene suscritos:
 
-1. **20% de Descuento en Renovacion**: Quedate con nosotros mas de 12 meses y recibe un 20% de descuento en pagos de suscripcion futuros.
-2. **Actualizaciones de Software Continuas**: Como suscriptor, tendras acceso inmediato a todas las nuevas caracteristicas y actualizaciones de Beekeeper Studio.
-3. **Acceso a Almacenamiento en la Nube y Espacios de Trabajo en Equipo**: Mejora tu productividad con [almacenamiento en la nube y espacios de trabajo colaborativos](https://www.beekeeperstudio.io/features/workspace).
-4. **Soporte por Email Garantizado**: Siempre estamos aqui para ayudar, asegurando que tu experiencia con Beekeeper Studio sea fluida y agradable.
-5. **Precio Bloqueado**: Tu precio de suscripcion esta bloqueado, incluso si aumentamos nuestros precios en el futuro. (lo cual deberiamos porque es bastante barato!)
+1. **Actualizaciones de Software Continuas**: Como suscriptor, tendras acceso inmediato a todas las nuevas caracteristicas y actualizaciones de Beekeeper Studio.
+2. **Acceso a Almacenamiento en la Nube y Espacios de Trabajo en Equipo**: Mejora tu productividad con [almacenamiento en la nube y espacios de trabajo colaborativos](https://www.beekeeperstudio.io/features/workspace).
+3. **Soporte por Email Garantizado**: Siempre estamos aqui para ayudar, asegurando que tu experiencia con Beekeeper Studio sea fluida y agradable.
+4. **Precio Bloqueado**: Tu precio de suscripcion esta bloqueado, incluso si aumentamos nuestros precios en el futuro. (lo cual deberiamos porque es bastante barato!)
 
 
 ## Por Que Solo Vendemos Suscripciones

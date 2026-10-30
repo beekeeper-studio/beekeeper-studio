@@ -111,6 +111,76 @@ Sometimes you might need a specific plugin version - maybe the latest plugin req
 
     The specific plugin version should now be installed and ready to use.
 
+## Disabling Plugins
+
+Plugins can be disabled in a variety of ways. By default, all registries are disabled (Official, Commmunity, Custom, and Unlisted). Disabling a registry means that all loading processes for that registry are skipped, and any plugins from that registry that are already installed are automatically disabled. There are controls in the browse section of the plugin modal to control these values, but they can also be manually set in the [ini config](./configuration.md). This is an excerpt from the default configuration:
+
+```ini
+[pluginSystem]
+; Disable plugin system entirely
+disabled = false
+
+; Disabled all official plugin functionality (installing, fetching the plugin list from
+; the registry, and load). These plugins can be found at https://github.com/beekeeper-studio/
+; beekeeper-studio-plugins/blob/main/plugins.json
+officialDisabled = true
+
+; Disable all community plugin functionality (installing, fetching the plugin list from the
+; registry, and loading). These plugins can be found at https://github.com/beekeeper-studio/
+; beekeeper-studio-plugins/blob/main/community-plugins.json
+communityDisabled = true
+
+; Disable third party registries, these are configured below via the [pluginSystem.registries] sections
+thirdPartyRegistriesDisabled = true
+
+; Disable unlisted plugin loading, these are plugins that are manually added to the
+; plugin directory
+unlistedDisabled = true
+```
+
+You can also explicitly disable a specific plugin by its id. In the ini config file:
+```ini
+; The plugin id can be found in the plugin's manifest.json, found in its repo or in the registry
+[plugin.plugin-id]
+disabled = true
+```
+
+## Custom Registries
+
+For Business users, custom registries allow you to distribute as many plugins as you'd like to your team. Once set up, any plugins in your registry will show up in the plugin browse section. Here's how you can set up a custom registry:
+
+1. **Create your registry**
+    - Create a GitHub repository. Visibility doesn't matter, if you want a private registry we can configure a GitHub token later.
+    - Add a JSON file, name it what you want, we'll call it `plugins.json`
+    - Add your plugins to that file, you can check out the format from our community registry [here](https://github.com/beekeeper-studio/beekeeper-studio-plugins/blob/main/community-plugins.json). Each plugin needs an `id`, `name`, `author`, `description`, and `repo`.
+
+2. **Add the registry to the app**
+
+    - In your [config](./configuration.md) add a section for your registry
+```ini
+; Replace custom-name with the name of your repo, this is only used internally and must be unique
+[pluginSystem.registries.custom-name]
+; The owner of the github repo
+owner = owner-name
+; The repository name
+repo = repository-name
+; The name of the file you created above
+file = plugins.json
+```
+
+    !!! tip
+        For fleet deployments, use the `system.config.ini` to configure this for every machine. User configs are overriden by those settings.
+
+3. **Enable custom registries**
+    - In your [config](./configuration.md), make sure `pluginSystem.thirdPartyRegistriesDisabled` is `false`.
+    - You can also enable this by toggling custom registries in the plugin browse section, you may have to expand the settings at the top.
+    - If your registry is in a private repo, ensure you've added a GitHub token with the correct access. This also increases your rate-limit with GitHub, so if you've been having issues with that, configuring this might help
+    ![Plugin manager showing enabled custom registries and a GitHub token](../assets/images/plugin-registries-enabled.png)
+
+4. **Install your plugins**
+    - You can now install plugins from your own registry! These will be marked as `Custom` in the install UI.
+    ![Plugin manager showing a custom plugin in the browse section](../assets/images/plugin-custom.png)
+
 ## Feature Requests
 
 Have ideas for new plugins or features? We'd love to hear from you:

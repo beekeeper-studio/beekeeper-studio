@@ -45,4 +45,28 @@ describe("menuItems", () => {
     expect(items.undo.role).toBe("undo");
     expect(items.redo.role).toBe("redo");
   });
+
+  describe("confirmWindowCloseToggle", () => {
+    const withSetting = (value?: boolean) =>
+      menuItems(
+        actionHandler,
+        (value === undefined ? {} : { dontConfirmWindowClose: { value } }) as unknown as IGroupedUserSettings,
+        { isMac: false, isWindows: true } as IPlatformInfo
+      ).confirmWindowCloseToggle;
+
+    it("is a checkbox wired to toggleConfirmWindowClose", () => {
+      const item = withSetting(false);
+      expect(item.type).toBe("checkbox");
+      expect(typeof item.click).toBe("function");
+    });
+
+    it("is ticked while the prompt is on (the default)", () => {
+      expect(withSetting(false).checked).toBe(true);
+      expect(withSetting(undefined).checked).toBe(true);
+    });
+
+    it("is unticked after \"Don't show this again\"", () => {
+      expect(withSetting(true).checked).toBe(false);
+    });
+  });
 });

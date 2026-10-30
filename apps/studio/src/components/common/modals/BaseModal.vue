@@ -130,6 +130,7 @@ export default Vue.extend({
 
 .base-modal {
   --base-modal-footer-gap: 0.5rem;
+  max-height: 80vh;
   display: flex;
   flex-direction: column;
 }

@@ -41,7 +41,7 @@ import {
   QueryLogOptions,
 } from "@/lib/db/clients/BasicDatabaseClient";
 import _ from "lodash";
-import { joinFilters } from "@/common/utils";
+import { isListFilter, joinFilters } from "@/common/utils";
 import { FirebirdChangeBuilder } from "@shared/lib/sql/change_builder/FirebirdChangeBuilder";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { FirebirdData } from "@shared/lib/dialects/firebird";
@@ -137,7 +137,7 @@ function buildFilterString(filters: TableFilter[], columns = []) {
         ? `HEX(${item.field})`
         : item.field;
 
-      if (item.type === "in") {
+      if (isListFilter(item.type)) {
         const questionMarks = _.isArray(item.value)
           ? item.value.map(() => "?").join(",")
           : "?";
