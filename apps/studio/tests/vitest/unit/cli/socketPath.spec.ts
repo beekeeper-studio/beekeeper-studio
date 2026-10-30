@@ -30,6 +30,16 @@ describe('resolveCliSocketPath', () => {
     expect(result.startsWith('\\\\.\\pipe\\beekeeper-studio-cli-')).toBe(true)
     expect(isWindowsPipePath(result)).toBe(true)
   })
+
+  it('ignores path casing on windows', () => {
+    const lower = resolveCliSocketPath({ userDirectory: 'c:\\users\\me\\appdata\\roaming\\beekeeper-studio', isWindows: true, isDevelopment: false })
+    const mixed = resolveCliSocketPath({ userDirectory: 'C:\\Users\\Me\\AppData\\Roaming\\beekeeper-studio', isWindows: true, isDevelopment: false })
+    expect(lower).toBe(mixed)
+    // elsewhere paths are case sensitive, so the hash must stay case sensitive too
+    const a = resolveCliSocketPath({ userDirectory: '/' + 'A'.repeat(UNIX_SOCKET_PATH_LIMIT), isWindows: false, isDevelopment: false, tmpDir: '/tmp' })
+    const b = resolveCliSocketPath({ userDirectory: '/' + 'a'.repeat(UNIX_SOCKET_PATH_LIMIT), isWindows: false, isDevelopment: false, tmpDir: '/tmp' })
+    expect(a).not.toBe(b)
+  })
 })
 
 describe('defaultUserDirectory', () => {

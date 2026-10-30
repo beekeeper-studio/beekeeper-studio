@@ -30,8 +30,12 @@ export function isWindowsPipePath(socketPath: string): boolean {
  */
 export function resolveCliSocketPath(options: CliSocketPathOptions): string {
   const suffix = options.isDevelopment ? '-dev' : ''
+  const resolved = path.resolve(options.userDirectory)
+  // Windows paths are case-insensitive, and the app (SHGetKnownFolderPath) and
+  // the CLI (%APPDATA%) can spell the same directory differently. Both must
+  // land on the same pipe name.
   const hash = createHash('sha1')
-    .update(path.resolve(options.userDirectory))
+    .update(options.isWindows ? resolved.toLowerCase() : resolved)
     .digest('hex')
     .slice(0, 12)
 

@@ -7,9 +7,13 @@ import { CliServer, probeSocket } from '@/lib/cli/server'
 import { CLI_EXIT_ERROR, CLI_EXIT_OK, CLI_EXIT_USAGE, CliClientIO, runCli, sendCliRequest } from '@/cli/client'
 import { CLI_PROTOCOL_VERSION, CliRequest, CliResponse } from '@/cli/protocol'
 
+const isWindows = process.platform === 'win32'
+
 let counter = 0
 function tempSocketPath(): string {
   counter += 1
+  // windows has no socket files: use a named pipe, like the app does
+  if (isWindows) return `\\\\.\\pipe\\bks-cli-test-${process.pid}-${counter}`
   // keep it short: unix socket paths are limited to ~100 bytes
   return path.join(os.tmpdir(), `bks-cli-test-${process.pid}-${counter}.sock`)
 }
@@ -48,7 +52,7 @@ describe('CliServer', () => {
     const server = createServer()
     expect(await server.start()).toBe(true)
     expect(server.listening).toBe(true)
-    expect(fs.existsSync(server.socketPath)).toBe(true)
+    if (!isWindows) expect(fs.existsSync(server.socketPath)).toBe(true)
 
     const request: CliRequest = { version: CLI_PROTOCOL_VERSION, command: 'list-schemas', args: { schema: 'public' } }
     const response = await sendCliRequest(server.socketPath, request, 5000)
@@ -57,18 +61,17 @@ describe('CliServer', () => {
     const socketPath = server.socketPath
     await server.stop()
     expect(server.listening).toBe(false)
-    expect(fs.existsSync(socketPath)).toBe(false)
+    if (!isWindows) expect(fs.existsSync(socketPath)).toBe(false)
   })
 
-  it('restricts the socket to the current user', async () => {
-    if (process.platform === 'win32') return
+  it.skipIf(isWindows)('restricts the socket to the current user', async () => {
     const server = createServer()
     await server.start()
     const mode = fs.statSync(server.socketPath).mode & 0o777
     expect(mode).toBe(0o600)
   })
 
-  it('replaces a stale socket file but not a live one', async () => {
+  it.skipIf(isWindows)('replaces a stale socket file but not a live one', async () => {
     const socketPath = tempSocketPath()
     fs.writeFileSync(socketPath, '')
     expect(await probeSocket(socketPath)).toBe(false)
@@ -83,6 +86,16 @@ describe('CliServer', () => {
 
     // the first server still answers
     const response = await sendCliRequest(socketPath, { version: 1, command: 'connections', args: {} }, 5000)
+    expect(response.ok).toBe(true)
+  })
+
+  it('refuses to start twice on the same address and leaves the first server running', async () => {
+    // the pipe/socket variant of the stale-file test, valid on every platform
+    const first = createServer()
+    expect(await first.start()).toBe(true)
+    const second = createServer({ socketPath: first.socketPath })
+    expect(await second.start()).toBe(false)
+    const response = await sendCliRequest(first.socketPath, { version: 1, command: 'connections', args: {} }, 5000)
     expect(response.ok).toBe(true)
   })
 
