@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeAll, afterAll, beforeEach, afterEach } 
 import { GenericContainer, Wait } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '@tests/lib/db'
 import { runCommonTests, runReadOnlyTests } from './all'
-import { runBksTypeTests } from "./bksType";
+import { runBksFieldTests } from "./bksFieldTests";
 import { DatabaseElement, IDbConnectionServerConfig } from '@/lib/db/types'
 import { IDbConnectionServer } from '@/lib/db/backendTypes'
 import { SQLServerClient } from '@/lib/db/clients/sqlserver'
@@ -585,91 +585,50 @@ function testWith(dockerTag: string, readonly: boolean) {
       expect(scriptStr.length).toBeGreaterThan(4000);
     })
 
-    describe("BksField tests", () => {
-      beforeAll(async () => {
-        await util.knex.schema.createTable("bks_types", (table) => {
-          table.specificType("tinyint_col", "TINYINT");
-          table.specificType("smallint_col", "SMALLINT");
-          table.specificType("int_col", "INT");
-          table.specificType("bigint_col", "BIGINT");
-          table.specificType("decimal_col", "DECIMAL(10,2)");
-          table.specificType("numeric_col", "NUMERIC(10,2)");
-          table.specificType("money_col", "MONEY");
-          table.specificType("smallmoney_col", "SMALLMONEY");
-          table.specificType("float_col", "FLOAT");
-          table.specificType("real_col", "REAL");
-          table.specificType("char_col", "CHAR(10)");
-          table.specificType("varchar_col", "VARCHAR(255)");
-          table.specificType("text_col", "TEXT");
-          table.specificType("nchar_col", "NCHAR(10)");
-          table.specificType("nvarchar_col", "NVARCHAR(255)");
-          table.specificType("ntext_col", "NTEXT");
-          table.specificType("xml_col", "XML");
-          table.specificType("uniqueidentifier_col", "UNIQUEIDENTIFIER");
-          table.specificType("date_col", "DATE");
-          table.specificType("time_col", "TIME");
-          table.specificType("datetime_col", "DATETIME");
-          table.specificType("datetime2_col", "DATETIME2");
-          table.specificType("smalldatetime_col", "SMALLDATETIME");
-          table.specificType("datetimeoffset_col", "DATETIMEOFFSET");
-          table.specificType("bit_col", "BIT");
-          table.specificType("binary_col", "BINARY(8)");
-          table.specificType("varbinary_col", "VARBINARY(8)");
-          table.specificType("image_col", "IMAGE");
-          table.specificType("rowversion_col", "ROWVERSION");
-        });
-      });
+    runBksFieldTests({
+      connection: () => util.connection,
+      table: "bks_types",
+      setup: `
+        CREATE TABLE bks_types (
+          -- BINARY
+          binary_col BINARY(8), varbinary_col VARBINARY(8), image_col IMAGE,
+          rowversion_col ROWVERSION,
 
-      afterAll(async () => {
-        await util.knex.schema.dropTable("bks_types");
-      });
+          -- NUMBER
+          tinyint_col TINYINT, smallint_col SMALLINT, int_col INT,
+          bigint_col BIGINT, decimal_col DECIMAL(10,2), numeric_col NUMERIC(10,2),
+          money_col MONEY, smallmoney_col SMALLMONEY, float_col FLOAT,
+          real_col REAL,
 
-      runBksTypeTests({
-        connection: () => util.connection,
-        table: "bks_types",
-        expectedResults: {
-          BINARY: [
-            "binary_col",
-            "varbinary_col",
-            "image_col",
-            "rowversion_col",
-          ],
-          STRING: [
-            "char_col",
-            "varchar_col",
-            "text_col",
-            "nchar_col",
-            "nvarchar_col",
-            "ntext_col",
-            "xml_col",
-            "uniqueidentifier_col",
-          ],
-          NUMBER: [
-            "tinyint_col",
-            "smallint_col",
-            "int_col",
-            "bigint_col",
-            "decimal_col",
-            "numeric_col",
-            "money_col",
-            "smallmoney_col",
-            "float_col",
-            "real_col",
-          ],
-          DATETIME: [
-            "date_col",
-            "time_col",
-            "datetime_col",
-            "datetime2_col",
-            "smalldatetime_col",
-            "datetimeoffset_col",
-          ],
-          BOOLEAN: ["bit_col"],
-          OBJECTID: [],
-          SURREALID: [],
-          UNKNOWN: [],
-        },
-      });
+          -- STRING
+          char_col CHAR(10), varchar_col VARCHAR(255), text_col TEXT,
+          nchar_col NCHAR(10), nvarchar_col NVARCHAR(255), ntext_col NTEXT,
+          xml_col XML, uniqueidentifier_col UNIQUEIDENTIFIER,
+
+          -- DATETIME
+          date_col DATE, time_col TIME, datetime_col DATETIME,
+          datetime2_col DATETIME2, smalldatetime_col SMALLDATETIME,
+          datetimeoffset_col DATETIMEOFFSET,
+
+          -- BOOLEAN
+          bit_col BIT
+        );
+      `,
+      // prettier-ignore
+      expectedResults: {
+        BINARY: ["binary_col", "varbinary_col", "image_col", "rowversion_col"],
+        STRING: ["char_col", "varchar_col", "text_col", "nchar_col",
+          "nvarchar_col", "ntext_col", "xml_col", "uniqueidentifier_col"],
+        NUMBER: ["tinyint_col", "smallint_col", "int_col", "bigint_col",
+          "decimal_col", "numeric_col", "money_col", "smallmoney_col",
+          "float_col", "real_col"],
+        DATETIME: ["date_col", "time_col", "datetime_col", "datetime2_col",
+          "smalldatetime_col", "datetimeoffset_col"],
+        BOOLEAN: ["bit_col"],
+        OBJECTID: [],
+        SURREALID: [],
+        UNKNOWN: [],
+      },
     });
   })
 }

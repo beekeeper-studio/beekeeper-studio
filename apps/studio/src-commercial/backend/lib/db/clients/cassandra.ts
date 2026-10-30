@@ -1,6 +1,8 @@
 import { TableKey } from "@shared/lib/dialects/models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
-import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, BksField } from "@/lib/db/models";
+import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, TableTrigger, TableIndex, SchemaFilterOptions, CancelableQuery, NgQueryResult, DatabaseFilterOptions, TableChanges, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults } from "@/lib/db/models";
+import { CassandraFieldResolver } from "./cassandra/CassandraFieldResolver";
+import { RawTableColumn } from "@/lib/db/serialization/FieldResolver";
 import { DatabaseElement, IDbConnectionDatabase } from "@/lib/db/types";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
 import knexlib from 'knex';
@@ -45,7 +47,7 @@ interface CassRow {
   [key: string]: any;
 }
 
-type CassandraResult = {
+export type CassandraResult = {
   info: any,
   length: number,
   columns: Array<{ name: string, type: { code: any, info: any } }>,
@@ -55,6 +57,8 @@ type CassandraResult = {
   arrayMode: boolean
 };
 
+export type ResultColumn = CassandraResult["columns"][number];
+
 type CassandraVersion = {
   versionString: string,
   version: string
@@ -62,6 +66,7 @@ type CassandraVersion = {
 
 export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
   client: cassandra.Client;
+  fieldResolver = new CassandraFieldResolver();
   versionInfo: CassandraVersion;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
@@ -154,11 +159,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     return Promise.resolve([]); // TODO (@will): make sure cassandra doesn't actually do this
   }
 
-  protected async listTableColumnsRunner() {
-    return null;
-  }
-
-  async listTableColumns(table?: string, _schema?: string): Promise<ExtendedTableColumn[]> {
+  protected async listTableColumnsRunner(table?: string, _schema?: string): Promise<RawTableColumn[]> {
     let sql: string;
     const params = [table];
     // allow filtering explained a bit: https://www.datastax.com/blog/allow-filtering-explained
@@ -186,8 +187,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
       .map((row) => ({
         columnName: row.column_name,
         dataType: row.type,
-        bksField: this.parseTableColumn(row as any),
-      } as ExtendedTableColumn));
+      } as RawTableColumn));
   }
 
   listTableTriggers(_table: string, _schema?: string): Promise<TableTrigger[]> {
@@ -403,8 +403,8 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     return ''
   }
 
-  async dropElement(elementName: string, typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
-    const sql = `DROP ${typeOfElement} ${this.wrapIdentifier(elementName)}`;
+  async dropElement(elementName: string, typeOfElement: DatabaseElement, keyspace?: string): Promise<void> {
+    const sql = `DROP ${typeOfElement} ${this.fqTableName(elementName, keyspace)}`;
 
     await this.driverExecuteSingle(sql);
   }
@@ -436,12 +436,21 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     throw new Error("Method not implemented.");
   }
 
-  protected async selectTopRunner(): Promise<CassandraResult> {
-    return null;
-  }
-
   // keyspace takes the place of schema here
   async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], keyspace?: string, selects?: string[]): Promise<TableResult> {
+    const result = await this.selectTopRunner(table, offset, limit, orderBy, filters, keyspace, selects)
+    const { rows, columns, hasNext, pageState } = result
+    const fields = this.fieldResolver.resolveQueryResult(result)
+
+    return {
+      result: this.parseRows(rows, columns) || [],
+      fields,
+      hasNext,
+      pageState: pageState || null
+    } as any
+  }
+
+  protected async selectTopRunner(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], keyspace?: string, selects?: string[]): Promise<CassandraResult> {
     // const { allowFilter } = userOptions
     // NOTE (@day): not sure why we added the userOptions thing here, talk to @will
     const allowFilter = true;
@@ -457,15 +466,7 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     if (offset) options.pageState = offset
 
     const result = await this.driverExecuteSingle(qs.query, { params: qs.params, options })
-    const { rows, columns, hasNext, pageState } = result
-    const fields = columns ? this.fieldResolver.resolveQueryResult(result) : []
-
-    return {
-      result: this.parseRows(rows, columns) || [],
-      fields,
-      hasNext,
-      pageState: pageState || null
-    } as any
+    return result
   }
 
   async selectTopSql(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: string | TableFilter[], keyspace?: string, selects?: string[]): Promise<string> {
@@ -790,13 +791,6 @@ export class CassandraClient extends BasicDatabaseClient<CassandraResult> {
     return keyspace && keyspace.length ?
       `${this.wrapIdentifier(keyspace)}.${this.wrapIdentifier(table)}` :
       this.wrapIdentifier(table)
-  }
-
-  parseTableColumn(column: { column_name: string; type: string }): BksField {
-    return {
-      name: column.column_name,
-      bksType: column.type.includes('blob') ? 'BINARY' : 'UNKNOWN',
-    };
   }
 
   private parseRows(rows, columns) {

@@ -182,7 +182,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
     selects: string[],
   ): Promise<TrinoResult> {
     const columns = await this.listTableColumns(table, schema)
-    let selectFields = [...selects]
+    let selectFields = selects ? [...selects] : []
     if (!selects || selects?.length === 0 || (selects?.length === 1 && selects[0] === '*')) {
       // select all columns with the column names instead of *
       selectFields = columns.map((v) => v.columnName)
@@ -715,7 +715,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
         FROM ${this.wrapIdentifier(this.db)}.${tableRef}
         ${filter}
       )
-      SELECT *
+      SELECT ${wrappedSelects}
       FROM ranked
       ${usePagination ? `WHERE rownum > ${safeOffset} AND rownum <= ${safeOffset + safeLimit}` : ""}
     `

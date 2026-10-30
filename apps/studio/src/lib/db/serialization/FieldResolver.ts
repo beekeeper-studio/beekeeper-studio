@@ -8,7 +8,9 @@ export class FieldResolver<
   QueryResult extends BaseQueryResult = BaseQueryResult
 > {
   resolveQueryResult(queryResult: QueryResult): BksField[] {
-    return queryResult.columns.map((column) => ({
+    // Bedrock sends no column metadata for a result without rows.
+    const columns = queryResult.columns ?? [];
+    return columns.map((column) => ({
       name: column.name,
       bksType: this.resolveRuntimeColumnType(column, queryResult),
     }));

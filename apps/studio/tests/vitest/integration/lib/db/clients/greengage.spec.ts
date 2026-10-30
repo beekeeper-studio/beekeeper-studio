@@ -2,7 +2,7 @@ import { describe, vi, beforeAll, afterAll } from "vitest"
 import { DockerComposeEnvironment, Wait } from 'testcontainers'
 import { DBTestUtil } from '@tests/lib/db'
 import { runCommonTests } from './all'
-import { runBksTypeTests } from "./bksType";
+import { runBksFieldTests } from "./bksFieldTests";
 
 const greengageTimeout = 600_000
 
@@ -88,83 +88,48 @@ function testWith(version: GreengageVersion) {
       runCommonTests(() => util)
     })
 
-    describe("BksField tests", () => {
-      beforeAll(async () => {
-        await util.knex.schema.createTable("bks_types", (table) => {
-          table.specificType("smallint_col", "SMALLINT");
-          table.specificType("integer_col", "INTEGER");
-          table.specificType("bigint_col", "BIGINT");
-          table.specificType("numeric_col", "NUMERIC(10,2)");
-          table.specificType("real_col", "REAL");
-          table.specificType("double_col", "DOUBLE PRECISION");
-          table.specificType("money_col", "MONEY");
-          table.specificType("char_col", "CHAR(10)");
-          table.specificType("varchar_col", "VARCHAR(255)");
-          table.specificType("text_col", "TEXT");
-          table.specificType("uuid_col", "UUID");
-          table.specificType("json_col", "JSON");
-          table.specificType("jsonb_col", "JSONB");
-          table.specificType("xml_col", "XML");
-          table.specificType("inet_col", "INET");
-          table.specificType("cidr_col", "CIDR");
-          table.specificType("macaddr_col", "MACADDR");
-          table.specificType("bit_col", "BIT(8)");
-          table.specificType("date_col", "DATE");
-          table.specificType("time_col", "TIME");
-          table.specificType("timetz_col", "TIMETZ");
-          table.specificType("timestamp_col", "TIMESTAMP");
-          table.specificType("timestamptz_col", "TIMESTAMPTZ");
-          table.specificType("interval_col", "INTERVAL");
-          table.specificType("boolean_col", "BOOLEAN");
-          table.specificType("bytea_col", "BYTEA");
-        });
-      });
+    runBksFieldTests({
+      connection: () => util.connection,
+      table: "bks_types",
+      setup: `
+        CREATE TABLE bks_types (
+          -- BINARY
+          bytea_col BYTEA,
 
-      afterAll(async () => {
-        await util.knex.schema.dropTable("bks_types");
-      });
+          -- NUMBER
+          smallint_col SMALLINT, integer_col INTEGER, bigint_col BIGINT,
+          numeric_col NUMERIC(10,2), real_col REAL, double_col DOUBLE PRECISION,
+          money_col MONEY,
 
-      runBksTypeTests({
-        connection: () => util.connection,
-        table: "bks_types",
-        expectedResults: {
-          BINARY: ["bytea_col"],
-          STRING: [
-            "char_col",
-            "varchar_col",
-            "text_col",
-            "uuid_col",
-            "json_col",
-            "jsonb_col",
-            "xml_col",
-            "inet_col",
-            "cidr_col",
-            "macaddr_col",
-            "bit_col",
-          ],
-          NUMBER: [
-            "smallint_col",
-            "integer_col",
-            "bigint_col",
-            "numeric_col",
-            "real_col",
-            "double_col",
-            "money_col",
-          ],
-          DATETIME: [
-            "date_col",
-            "time_col",
-            "timetz_col",
-            "timestamp_col",
-            "timestamptz_col",
-            "interval_col",
-          ],
-          BOOLEAN: ["boolean_col"],
-          OBJECTID: [],
-          SURREALID: [],
-          UNKNOWN: [],
-        },
-      });
+          -- STRING
+          char_col CHAR(10), varchar_col VARCHAR(255), text_col TEXT,
+          uuid_col UUID, json_col JSON, jsonb_col JSONB, xml_col XML,
+          inet_col INET, cidr_col CIDR, macaddr_col MACADDR, bit_col BIT(8),
+
+          -- DATETIME
+          date_col DATE, time_col TIME, timetz_col TIMETZ,
+          timestamp_col TIMESTAMP, timestamptz_col TIMESTAMPTZ,
+          interval_col INTERVAL,
+
+          -- BOOLEAN
+          boolean_col BOOLEAN
+        );
+      `,
+      // prettier-ignore
+      expectedResults: {
+        BINARY: ["bytea_col"],
+        STRING: ["char_col", "varchar_col", "text_col", "uuid_col", "json_col",
+          "jsonb_col", "xml_col", "inet_col", "cidr_col", "macaddr_col",
+          "bit_col"],
+        NUMBER: ["smallint_col", "integer_col", "bigint_col", "numeric_col",
+          "real_col", "double_col", "money_col"],
+        DATETIME: ["date_col", "time_col", "timetz_col", "timestamp_col",
+          "timestamptz_col", "interval_col"],
+        BOOLEAN: ["boolean_col"],
+        OBJECTID: [],
+        SURREALID: [],
+        UNKNOWN: [],
+      },
     });
   })
 }

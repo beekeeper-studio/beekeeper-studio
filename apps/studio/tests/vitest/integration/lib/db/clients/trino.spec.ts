@@ -3,7 +3,7 @@ import { Network} from "testcontainers"
 import { DBTestUtil, dbtimeout } from "@tests/lib/db"
 import { TrinoBackingPostgresDriver, TrinoHttpDriver, TrinoNginxProxy } from './trino/container'
 import { TableOrView } from "@/lib/db/models"
-import { runBksTypeTests } from "./bksType";
+import { runBksFieldTests } from "./bksFieldTests";
 
 describe('Trino integration tests', () => {
   vi.setConfig({ testTimeout: dbtimeout, hookTimeout: dbtimeout })
@@ -262,52 +262,48 @@ describe('Trino integration tests', () => {
     })
   })
 
-  describe("BksField tests", () => {
-    beforeAll(async () => {
-      await dbfeeder.knex.schema.createTable("bks_types", (table) => {
-        table.specificType("smallint_col", "SMALLINT");
-        table.specificType("integer_col", "INTEGER");
-        table.specificType("bigint_col", "BIGINT");
-        table.specificType("numeric_col", "NUMERIC(10,2)");
-        table.specificType("real_col", "REAL");
-        table.specificType("double_col", "DOUBLE PRECISION");
-        table.specificType("char_col", "CHAR(10)");
-        table.specificType("varchar_col", "VARCHAR(255)");
-        table.specificType("text_col", "TEXT");
-        table.specificType("uuid_col", "UUID");
-        table.specificType("date_col", "DATE");
-        table.specificType("time_col", "TIME");
-        table.specificType("timestamp_col", "TIMESTAMP");
-        table.specificType("timestamptz_col", "TIMESTAMPTZ");
-        table.specificType("boolean_col", "BOOLEAN");
-        table.specificType("bytea_col", "BYTEA");
-      });
-    });
+  runBksFieldTests({
+    connection: () => httpUtil.connection,
+    table: "bks_types",
+    schema: "public",
+    async setup() {
+      // dropElement is a no-op on Trino, so clear any table left by a rerun.
+      await httpUtil.connection.executeQuery(
+        "DROP TABLE IF EXISTS postgresql.public.bks_types"
+      );
+      await httpUtil.connection.executeQuery(`
+        CREATE TABLE postgresql.public.bks_types (
+          -- BINARY
+          bytea_col VARBINARY,
 
-    afterAll(async () => {
-      await dbfeeder.knex.schema.dropTable("bks_types");
-    });
+          -- NUMBER
+          smallint_col SMALLINT, integer_col INTEGER, bigint_col BIGINT,
+          numeric_col DECIMAL(10,2), real_col REAL, double_col DOUBLE,
 
-    runBksTypeTests({
-      connection: () => httpUtil.connection,
-      table: "bks_types",
-      expectedResults: {
-        BINARY: ["bytea_col"],
-        STRING: ["char_col", "varchar_col", "text_col", "uuid_col"],
-        NUMBER: [
-          "smallint_col",
-          "integer_col",
-          "bigint_col",
-          "numeric_col",
-          "real_col",
-          "double_col",
-        ],
-        DATETIME: ["date_col", "time_col", "timestamp_col", "timestamptz_col"],
-        BOOLEAN: ["boolean_col"],
-        OBJECTID: [],
-        SURREALID: [],
-        UNKNOWN: [],
-      },
-    });
+          -- STRING
+          char_col CHAR(10), varchar_col VARCHAR(255), text_col VARCHAR,
+          uuid_col UUID,
+
+          -- DATETIME
+          date_col DATE, time_col TIME(3), timestamp_col TIMESTAMP(3),
+          timestamptz_col TIMESTAMP(3) WITH TIME ZONE,
+
+          -- BOOLEAN
+          boolean_col BOOLEAN
+        )
+      `);
+    },
+    // prettier-ignore
+    expectedResults: {
+      BINARY: ["bytea_col"],
+      STRING: ["char_col", "varchar_col", "text_col", "uuid_col"],
+      NUMBER: ["smallint_col", "integer_col", "bigint_col", "numeric_col",
+        "real_col", "double_col"],
+      DATETIME: ["date_col", "time_col", "timestamp_col", "timestamptz_col"],
+      BOOLEAN: ["boolean_col"],
+      OBJECTID: [],
+      SURREALID: [],
+      UNKNOWN: [],
+    },
   });
 })

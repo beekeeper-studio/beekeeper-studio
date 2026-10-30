@@ -4,7 +4,7 @@ import { StartedTestContainer } from "testcontainers";
 import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient";
 import { createServer } from "@commercial/backend/lib/db/server";
 import { RedisTestDriver } from "./redis/container";
-import { runBksTypeTests } from "./bksType";
+import { runBksFieldTests } from "./bksFieldTests";
 
 describe('Redis', () => {
   vi.setConfig({ testTimeout: dbtimeout, hookTimeout: dbtimeout });
@@ -2328,28 +2328,21 @@ describe('Redis', () => {
     });
   });
 
-  describe("BksField tests", () => {
-    beforeAll(async () => {
-      await connection.executeQuery('SET bks:key "hello"');
-    });
-
-    afterAll(async () => {
-      await connection.executeQuery("FLUSHDB");
-    });
-
-    runBksTypeTests({
-      connection: () => connection,
-      table: "keys",
-      expectedResults: {
-        BINARY: [],
-        STRING: ["key", "value", "type", "encoding"],
-        NUMBER: ["ttl", "memory"],
-        DATETIME: [],
-        BOOLEAN: [],
-        OBJECTID: [],
-        SURREALID: [],
-        UNKNOWN: [],
-      },
-    });
+  runBksFieldTests({
+    connection: () => connection,
+    table: "keys",
+    skipDropTable: true,
+    setup: 'SET bks:key "hello"',
+    // prettier-ignore
+    expectedResults: {
+      BINARY: [],
+      STRING: ["key", "value", "type", "encoding"],
+      NUMBER: ["ttl", "memory"],
+      DATETIME: [],
+      BOOLEAN: [],
+      OBJECTID: [],
+      SURREALID: [],
+      UNKNOWN: [],
+    },
   });
 });

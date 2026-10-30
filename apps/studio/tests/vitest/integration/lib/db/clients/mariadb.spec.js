@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 import { GenericContainer } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '@tests/lib/db'
 import { runCommonTests } from '@tests/vitest/integration/lib/db/clients/all'
-import { runBksTypeTests } from "./bksType";
+import { runBksFieldTests } from "./bksFieldTests";
 
 describe("MariaDB Tests", () => {
   vi.setConfig({ testTimeout: dbtimeout, hookTimeout: dbtimeout })
@@ -48,98 +48,49 @@ describe("MariaDB Tests", () => {
     })
   })
 
-  describe("BksField tests", () => {
-    beforeAll(async () => {
-      await util.knex.schema.createTable("bks_types", (table) => {
-        table.specificType("tinyint_col", "TINYINT");
-        table.specificType("smallint_col", "SMALLINT");
-        table.specificType("mediumint_col", "MEDIUMINT");
-        table.specificType("int_col", "INT");
-        table.specificType("bigint_col", "BIGINT");
-        table.specificType("decimal_col", "DECIMAL(10,2)");
-        table.specificType("float_col", "FLOAT");
-        table.specificType("double_col", "DOUBLE");
-        table.specificType("bit_col", "BIT(8)");
-        table.specificType("char_col", "CHAR(10)");
-        table.specificType("varchar_col", "VARCHAR(255)");
-        table.specificType("tinytext_col", "TINYTEXT");
-        table.specificType("text_col", "TEXT");
-        table.specificType("mediumtext_col", "MEDIUMTEXT");
-        table.specificType("longtext_col", "LONGTEXT");
-        table.specificType("enum_col", "ENUM('a', 'b')");
-        table.specificType("set_col", "SET('a', 'b')");
-        table.specificType("json_col", "JSON");
-        table.specificType(
-          "binary_collation_col",
-          "CHAR(14) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin"
-        );
-        table.specificType("date_col", "DATE");
-        table.specificType("datetime_col", "DATETIME");
-        table.specificType("timestamp_col", "TIMESTAMP NULL");
-        table.specificType("time_col", "TIME");
-        table.specificType("year_col", "YEAR");
-        table.specificType("boolean_col", "BOOLEAN");
-        table.specificType("tinyint1_col", "TINYINT(1)");
-        table.specificType("binary_col", "BINARY(8)");
-        table.specificType("varbinary_col", "VARBINARY(8)");
-        table.specificType("tinyblob_col", "TINYBLOB");
-        table.specificType("blob_col", "BLOB");
-        table.specificType("mediumblob_col", "MEDIUMBLOB");
-        table.specificType("longblob_col", "LONGBLOB");
-      });
-    });
+  runBksFieldTests({
+    connection: () => util.connection,
+    table: "bks_types",
+    setup: `
+      CREATE TABLE bks_types (
+        -- BINARY
+        binary_col BINARY(8), varbinary_col VARBINARY(8), tinyblob_col TINYBLOB,
+        blob_col BLOB, mediumblob_col MEDIUMBLOB, longblob_col LONGBLOB,
 
-    afterAll(async () => {
-      await util.knex.schema.dropTable("bks_types");
-    });
+        -- NUMBER
+        tinyint_col TINYINT, smallint_col SMALLINT, mediumint_col MEDIUMINT,
+        int_col INT, bigint_col BIGINT, decimal_col DECIMAL(10,2),
+        float_col FLOAT, double_col DOUBLE, bit_col BIT(8),
 
-    runBksTypeTests({
-      connection: () => util.connection,
-      table: "bks_types",
-      expectedResults: {
-        BINARY: [
-          "binary_col",
-          "varbinary_col",
-          "tinyblob_col",
-          "blob_col",
-          "mediumblob_col",
-          "longblob_col",
-        ],
-        STRING: [
-          "char_col",
-          "varchar_col",
-          "tinytext_col",
-          "text_col",
-          "mediumtext_col",
-          "longtext_col",
-          "enum_col",
-          "set_col",
-          "json_col",
-          "binary_collation_col",
-        ],
-        NUMBER: [
-          "tinyint_col",
-          "smallint_col",
-          "mediumint_col",
-          "int_col",
-          "bigint_col",
-          "decimal_col",
-          "float_col",
-          "double_col",
-          "bit_col",
-        ],
-        DATETIME: [
-          "date_col",
-          "datetime_col",
-          "timestamp_col",
-          "time_col",
-          "year_col",
-        ],
-        BOOLEAN: ["boolean_col", "tinyint1_col"],
-        OBJECTID: [],
-        SURREALID: [],
-        UNKNOWN: [],
-      },
-    });
+        -- STRING
+        char_col CHAR(10), varchar_col VARCHAR(255), tinytext_col TINYTEXT,
+        text_col TEXT, mediumtext_col MEDIUMTEXT, longtext_col LONGTEXT,
+        enum_col ENUM('a', 'b'), set_col SET('a', 'b'), json_col JSON,
+        binary_collation_col CHAR(14) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,
+
+        -- DATETIME
+        date_col DATE, datetime_col DATETIME, timestamp_col TIMESTAMP NULL,
+        time_col TIME, year_col YEAR,
+
+        -- BOOLEAN
+        boolean_col BOOLEAN, tinyint1_col TINYINT(1)
+      );
+    `,
+    // prettier-ignore
+    expectedResults: {
+      BINARY: ["binary_col", "varbinary_col", "tinyblob_col", "blob_col",
+        "mediumblob_col", "longblob_col"],
+      STRING: ["char_col", "varchar_col", "tinytext_col", "text_col",
+        "mediumtext_col", "longtext_col", "enum_col", "set_col", "json_col",
+        "binary_collation_col"],
+      NUMBER: ["tinyint_col", "smallint_col", "mediumint_col", "int_col",
+        "bigint_col", "decimal_col", "float_col", "double_col", "bit_col"],
+      DATETIME: ["date_col", "datetime_col", "timestamp_col", "time_col",
+        "year_col"],
+      BOOLEAN: ["boolean_col", "tinyint1_col"],
+      OBJECTID: [],
+      SURREALID: [],
+      UNKNOWN: [],
+    },
   });
 })

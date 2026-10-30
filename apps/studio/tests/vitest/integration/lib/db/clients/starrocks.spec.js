@@ -3,7 +3,7 @@ import { GenericContainer } from 'testcontainers'
 import mysql from 'mysql2/promise'
 import { DBTestUtil, dbtimeout } from '@tests/lib/db'
 import { runCommonTests } from './all'
-import { runBksTypeTests } from "./bksType";
+import { runBksFieldTests } from "./bksFieldTests";
 import { StarRocksData } from '@shared/lib/dialects/starrocks'
 
 // StarRocks' all-in-one image bundles FE + BE. The BE registers a few seconds
@@ -174,54 +174,41 @@ describe("StarRocks Tests", () => {
     })
   })
 
-  describe("BksField tests", () => {
-    beforeAll(async () => {
-      await util.knex.schema.createTable("bks_types", (table) => {
-        table.specificType("tinyint_col", "TINYINT");
-        table.specificType("smallint_col", "SMALLINT");
-        table.specificType("int_col", "INT");
-        table.specificType("bigint_col", "BIGINT");
-        table.specificType("largeint_col", "LARGEINT");
-        table.specificType("decimal_col", "DECIMAL(10,2)");
-        table.specificType("float_col", "FLOAT");
-        table.specificType("double_col", "DOUBLE");
-        table.specificType("char_col", "CHAR(10)");
-        table.specificType("varchar_col", "VARCHAR(255)");
-        table.specificType("string_col", "STRING");
-        table.specificType("json_col", "JSON");
-        table.specificType("date_col", "DATE");
-        table.specificType("datetime_col", "DATETIME");
-        table.specificType("boolean_col", "BOOLEAN");
-        table.specificType("varbinary_col", "VARBINARY(8)");
-      });
-    });
+  runBksFieldTests({
+    connection: () => util.connection,
+    table: "bks_types",
+    setup: `
+      CREATE TABLE bks_types (
+        -- BINARY
+        varbinary_col VARBINARY(8),
 
-    afterAll(async () => {
-      await util.knex.schema.dropTable("bks_types");
-    });
+        -- NUMBER
+        tinyint_col TINYINT, smallint_col SMALLINT, int_col INT,
+        bigint_col BIGINT, largeint_col LARGEINT, decimal_col DECIMAL(10,2),
+        float_col FLOAT, double_col DOUBLE,
 
-    runBksTypeTests({
-      connection: () => util.connection,
-      table: "bks_types",
-      expectedResults: {
-        BINARY: ["varbinary_col"],
-        STRING: ["char_col", "varchar_col", "string_col", "json_col"],
-        NUMBER: [
-          "tinyint_col",
-          "smallint_col",
-          "int_col",
-          "bigint_col",
-          "largeint_col",
-          "decimal_col",
-          "float_col",
-          "double_col",
-        ],
-        DATETIME: ["date_col", "datetime_col"],
-        BOOLEAN: ["boolean_col"],
-        OBJECTID: [],
-        SURREALID: [],
-        UNKNOWN: [],
-      },
-    });
+        -- STRING
+        char_col CHAR(10), varchar_col VARCHAR(255), string_col STRING,
+        json_col JSON,
+
+        -- DATETIME
+        date_col DATE, datetime_col DATETIME,
+
+        -- BOOLEAN
+        boolean_col BOOLEAN
+      );
+    `,
+    // prettier-ignore
+    expectedResults: {
+      BINARY: ["varbinary_col"],
+      STRING: ["char_col", "varchar_col", "string_col", "json_col"],
+      NUMBER: ["tinyint_col", "smallint_col", "int_col", "bigint_col",
+        "largeint_col", "decimal_col", "float_col", "double_col"],
+      DATETIME: ["date_col", "datetime_col"],
+      BOOLEAN: ["boolean_col"],
+      OBJECTID: [],
+      SURREALID: [],
+      UNKNOWN: [],
+    },
   });
 })

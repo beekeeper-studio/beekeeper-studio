@@ -15,7 +15,7 @@ import { describe, it, expect, vi, beforeAll, afterAll } from "vitest"
 import knex from "knex";
 import { GenericContainer, StartedTestContainer } from "testcontainers";
 import { DBTestUtil, dbtimeout } from "@tests/lib/db";
-import { runBksTypeTests } from "./bksType";
+import { runBksFieldTests } from "./bksFieldTests";
 
 const BEDROCK_IMAGE = "rathboma/bedrock:2026-04-09";
 
@@ -258,62 +258,40 @@ describe("Bedrock", () => {
     expect(Number((postDelete[0].rows as any[])[0].n)).toBe(1);
   });
 
-  describe("BksField tests", () => {
-    beforeAll(async () => {
-      await util.connection.executeQuery(`
-        CREATE TABLE bks_types (
-          integer_col INTEGER,
-          int_col INT,
-          tinyint_col TINYINT,
-          bigint_col BIGINT,
-          real_col REAL,
-          double_col DOUBLE,
-          float_col FLOAT,
-          numeric_col NUMERIC,
-          decimal_col DECIMAL(10,2),
-          char_col CHAR(10),
-          varchar_col VARCHAR(255),
-          text_col TEXT,
-          clob_col CLOB,
-          date_col DATE,
-          datetime_col DATETIME,
-          time_col TIME,
-          boolean_col BOOLEAN,
-          blob_col BLOB
-        );
-      `);
-      await util.connection.executeQuery(
-        "INSERT INTO bks_types (integer_col) VALUES (1);"
+  runBksFieldTests({
+    connection: () => util.connection,
+    table: "bks_types",
+    setup: `
+      CREATE TABLE bks_types (
+        -- BINARY
+        blob_col BLOB,
+
+        -- NUMBER
+        integer_col INTEGER, int_col INT, tinyint_col TINYINT, bigint_col BIGINT,
+        real_col REAL, double_col DOUBLE, float_col FLOAT, numeric_col NUMERIC,
+        decimal_col DECIMAL(10,2),
+
+        -- STRING
+        char_col CHAR(10), varchar_col VARCHAR(255), text_col TEXT, clob_col CLOB,
+
+        -- DATETIME
+        date_col DATE, datetime_col DATETIME, time_col TIME,
+
+        -- BOOLEAN
+        boolean_col BOOLEAN
       );
-    });
-
-    afterAll(async () => {
-      await util.connection.executeQuery("DROP TABLE bks_types;");
-    });
-
-    runBksTypeTests({
-      connection: () => util.connection,
-      table: "bks_types",
-      expectedResults: {
-        BINARY: ["blob_col"],
-        STRING: ["char_col", "varchar_col", "text_col", "clob_col"],
-        NUMBER: [
-          "integer_col",
-          "int_col",
-          "tinyint_col",
-          "bigint_col",
-          "real_col",
-          "double_col",
-          "float_col",
-          "numeric_col",
-          "decimal_col",
-        ],
-        DATETIME: ["date_col", "datetime_col", "time_col"],
-        BOOLEAN: ["boolean_col"],
-        OBJECTID: [],
-        SURREALID: [],
-        UNKNOWN: [],
-      },
-    });
+    `,
+    // prettier-ignore
+    expectedResults: {
+      BINARY: ["blob_col"],
+      STRING: ["char_col", "varchar_col", "text_col", "clob_col"],
+      NUMBER: ["integer_col", "int_col", "tinyint_col", "bigint_col",
+        "real_col", "double_col", "float_col", "numeric_col", "decimal_col"],
+      DATETIME: ["date_col", "datetime_col", "time_col"],
+      BOOLEAN: ["boolean_col"],
+      OBJECTID: [],
+      SURREALID: [],
+      UNKNOWN: [],
+    },
   });
 });

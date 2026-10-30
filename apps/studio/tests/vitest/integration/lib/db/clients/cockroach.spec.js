@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeAll, afterAll } from "vitest"
 import { DockerComposeEnvironment } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '@tests/lib/db'
 import { runCommonTests } from './all';
-import { runBksTypeTests } from "./bksType";
+import { runBksFieldTests } from "./bksFieldTests";
 
 describe("CockroachDB Tests", () => {
   vi.setConfig({ testTimeout: dbtimeout, hookTimeout: dbtimeout })
@@ -69,74 +69,47 @@ describe("CockroachDB Tests", () => {
     expect(indexes.find((idx) => idx.name === 'expression_with_jsonb_operator').columns.length).toBe(1)
   })
 
-  describe("BksField tests", () => {
-    beforeAll(async () => {
-      await util.knex.schema.createTable("bks_types", (table) => {
-        table.specificType("smallint_col", "SMALLINT");
-        table.specificType("integer_col", "INTEGER");
-        table.specificType("bigint_col", "BIGINT");
-        table.specificType("decimal_col", "DECIMAL(10,2)");
-        table.specificType("real_col", "REAL");
-        table.specificType("double_col", "DOUBLE PRECISION");
-        table.specificType("char_col", "CHAR(10)");
-        table.specificType("varchar_col", "VARCHAR(255)");
-        table.specificType("text_col", "TEXT");
-        table.specificType("uuid_col", "UUID");
-        table.specificType("json_col", "JSON");
-        table.specificType("jsonb_col", "JSONB");
-        table.specificType("inet_col", "INET");
-        table.specificType("bit_col", "BIT(8)");
-        table.specificType("date_col", "DATE");
-        table.specificType("time_col", "TIME");
-        table.specificType("timetz_col", "TIMETZ");
-        table.specificType("timestamp_col", "TIMESTAMP");
-        table.specificType("timestamptz_col", "TIMESTAMPTZ");
-        table.specificType("interval_col", "INTERVAL");
-        table.specificType("boolean_col", "BOOLEAN");
-        table.specificType("bytea_col", "BYTEA");
-      });
-    });
+  runBksFieldTests({
+    connection: () => util.connection,
+    table: "bks_types",
+    setup: `
+      CREATE TABLE bks_types (
+        -- BINARY
+        bytea_col BYTEA,
 
-    afterAll(async () => {
-      await util.knex.schema.dropTable("bks_types");
-    });
+        -- NUMBER
+        smallint_col SMALLINT, integer_col INTEGER, bigint_col BIGINT,
+        decimal_col DECIMAL(10,2), real_col REAL, double_col DOUBLE PRECISION,
 
-    runBksTypeTests({
-      connection: () => util.connection,
-      table: "bks_types",
-      expectedResults: {
-        BINARY: ["bytea_col"],
-        STRING: [
-          "char_col",
-          "varchar_col",
-          "text_col",
-          "uuid_col",
-          "json_col",
-          "jsonb_col",
-          "inet_col",
-          "bit_col",
-        ],
-        NUMBER: [
-          "smallint_col",
-          "integer_col",
-          "bigint_col",
-          "decimal_col",
-          "real_col",
-          "double_col",
-        ],
-        DATETIME: [
-          "date_col",
-          "time_col",
-          "timetz_col",
-          "timestamp_col",
-          "timestamptz_col",
-          "interval_col",
-        ],
-        BOOLEAN: ["boolean_col"],
-        OBJECTID: [],
-        SURREALID: [],
-        UNKNOWN: [],
-      },
-    });
+        -- STRING
+        char_col CHAR(10), varchar_col VARCHAR(255), text_col TEXT,
+        uuid_col UUID, json_col JSON, jsonb_col JSONB, inet_col INET,
+        bit_col BIT(8),
+
+        -- DATETIME
+        date_col DATE, time_col TIME, timetz_col TIMETZ,
+        timestamp_col TIMESTAMP, timestamptz_col TIMESTAMPTZ,
+        interval_col INTERVAL,
+
+        -- BOOLEAN
+        boolean_col BOOLEAN,
+
+        PRIMARY KEY (integer_col)
+      );
+    `,
+    // prettier-ignore
+    expectedResults: {
+      BINARY: ["bytea_col"],
+      STRING: ["char_col", "varchar_col", "text_col", "uuid_col", "json_col",
+        "jsonb_col", "inet_col", "bit_col"],
+      NUMBER: ["smallint_col", "integer_col", "bigint_col", "decimal_col",
+        "real_col", "double_col"],
+      DATETIME: ["date_col", "time_col", "timetz_col", "timestamp_col",
+        "timestamptz_col", "interval_col"],
+      BOOLEAN: ["boolean_col"],
+      OBJECTID: [],
+      SURREALID: [],
+      UNKNOWN: [],
+    },
   });
 })

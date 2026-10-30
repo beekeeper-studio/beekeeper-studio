@@ -746,8 +746,11 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     throw new Error("Method not implemented.");
   }
 
-  dropElement(_elementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
-    throw new Error("Method not implemented.");
+  async dropElement(elementName: string, typeOfElement: DatabaseElement, _schema?: string): Promise<void> {
+    if (typeOfElement !== DatabaseElement.TABLE) {
+      throw new Error(`SurrealDB does not support dropping ${typeOfElement}`);
+    }
+    await this.driverExecuteSingle(`REMOVE TABLE ${this.wrapIdentifier(elementName)}`);
   }
 
   truncateElementSql(_elementName: string, _typeOfElement: DatabaseElement, _schema?: string): Promise<string> {

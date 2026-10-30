@@ -26,7 +26,6 @@ import {
   TableIndex,
   TableOrView,
   TableProperties,
-  TableResult,
   TableTrigger
 } from "@/lib/db/models";
 import {
@@ -365,18 +364,13 @@ export class OracleClient extends BasicDatabaseClient<DriverResult, oracle.Conne
     return query
   }
 
-  protected async selectTopRunner(): Promise<DriverResult> {
-    return null;
-  }
-
-  async selectTop(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = null, selects: string[] = ['*']): Promise<TableResult> {
+  protected async selectTopRunner(table: string, offset: number, limit: number, orderBy: OrderBy[], filters: TableFilter[] | string, schema: string = null, selects: string[] = ['*']): Promise<DriverResult> {
     schema = schema ? schema : await this.defaultSchema();
     const query = this.genSelect(table, offset, limit, orderBy, filters, schema, false, selects)
     const result = await this.driverExecuteSingle(query)
-    const fields = this.fieldResolver.resolveQueryResult(result)
-    const rows = await this.serializeQueryResult(result, fields)
-    return { result: await this.convertRowsToObjects(rows, result.result.metaData), fields }
+    return { ...result, rows: await this.convertRowsToObjects(result.rows, result.result.metaData), arrayMode: false }
   }
+
   async selectTopStream(table, orderBy, filters, chunkSize, schema): Promise<StreamResults> {
     const q = this.genSelect(table, null, null, orderBy, filters, schema)
     const countQ = this.genSelect(table, null, null, orderBy, filters, schema, true)
@@ -1104,5 +1098,5 @@ export interface DriverResult {
   info: IdentifyResult
   rows: unknown[]
   columns: ResultColumn[]
-  arrayMode: true
+  arrayMode: boolean
 }

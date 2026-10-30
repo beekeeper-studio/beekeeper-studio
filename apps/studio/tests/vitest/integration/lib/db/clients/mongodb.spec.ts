@@ -16,7 +16,7 @@ import {
   ObjectId,
   Timestamp,
 } from "mongodb";
-import { runBksTypeTests } from "./bksType";
+import { runBksFieldTests } from "./bksFieldTests";
 
 
 describe(`MongoDB`, () => {
@@ -1366,8 +1366,10 @@ describe(`MongoDB`, () => {
     });
   })
 
-  describe("BksField tests", () => {
-    beforeAll(async () => {
+  runBksFieldTests({
+    connection: () => connection,
+    table: "bks_types",
+    async setup() {
       const client = new MongoClient(config.url);
       await client.db("bee").collection("bks_types").insertOne({
         binary_col: new Binary(Buffer.from([1, 2, 3])),
@@ -1382,25 +1384,17 @@ describe(`MongoDB`, () => {
         timestamp_col: new Timestamp({ t: 1, i: 1 }),
       });
       await client.close(true);
-    });
-
-    afterAll(async () => {
-      await connection.dropElement("bks_types", DatabaseElement.TABLE);
-    });
-
-    runBksTypeTests({
-      connection: () => connection,
-      table: "bks_types",
-      expectedResults: {
-        BINARY: ["binary_col"],
-        STRING: ["string_col"],
-        NUMBER: ["decimal128_col", "double_col", "int32_col", "long_col"],
-        DATETIME: ["date_col", "timestamp_col"],
-        BOOLEAN: ["bool_col"],
-        OBJECTID: ["_id", "objectid_col"],
-        SURREALID: [],
-        UNKNOWN: [],
-      },
-    });
+    },
+    // prettier-ignore
+    expectedResults: {
+      BINARY: ["binary_col"],
+      STRING: ["string_col"],
+      NUMBER: ["decimal128_col", "double_col", "int32_col", "long_col"],
+      DATETIME: ["date_col", "timestamp_col"],
+      BOOLEAN: ["bool_col"],
+      OBJECTID: ["_id", "objectid_col"],
+      SURREALID: [],
+      UNKNOWN: [],
+    },
   });
 })

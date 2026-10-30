@@ -1,7 +1,7 @@
 import { describe, it, test, expect, vi, beforeAll, afterAll } from "vitest"
 import { DBTestUtil, dbtimeout, Options } from "@tests/lib/db";
 import { runCommonTests, runReadOnlyTests } from "./all";
-import { runBksTypeTests } from "./bksType";
+import { runBksFieldTests } from "./bksFieldTests";
 import { GenericContainer, StartedTestContainer } from "testcontainers";
 import { IDbConnectionServerConfig } from "@/lib/db/types";
 import tmp from "tmp";
@@ -304,58 +304,42 @@ function testWith(options: typeof TEST_VERSIONS[number]) {
       })
     }
 
-    describe("BksField tests", () => {
-      beforeAll(async () => {
-        await util.knex.schema.createTable("bks_types", (table) => {
-          table.specificType("integer_col", "INTEGER");
-          table.specificType("int_col", "INT");
-          table.specificType("tinyint_col", "TINYINT");
-          table.specificType("bigint_col", "BIGINT");
-          table.specificType("real_col", "REAL");
-          table.specificType("double_col", "DOUBLE");
-          table.specificType("float_col", "FLOAT");
-          table.specificType("numeric_col", "NUMERIC");
-          table.specificType("decimal_col", "DECIMAL(10,2)");
-          table.specificType("char_col", "CHAR(10)");
-          table.specificType("varchar_col", "VARCHAR(255)");
-          table.specificType("text_col", "TEXT");
-          table.specificType("clob_col", "CLOB");
-          table.specificType("date_col", "DATE");
-          table.specificType("datetime_col", "DATETIME");
-          table.specificType("time_col", "TIME");
-          table.specificType("boolean_col", "BOOLEAN");
-          table.specificType("blob_col", "BLOB");
-        });
-      });
+    runBksFieldTests({
+      connection: () => util.connection,
+      table: "bks_types",
+      setup: `
+        CREATE TABLE bks_types (
+          -- BINARY
+          blob_col BLOB,
 
-      afterAll(async () => {
-        await util.knex.schema.dropTable("bks_types");
-      });
+          -- NUMBER
+          integer_col INTEGER, int_col INT, tinyint_col TINYINT,
+          bigint_col BIGINT, real_col REAL, double_col DOUBLE, float_col FLOAT,
+          numeric_col NUMERIC, decimal_col DECIMAL(10,2),
 
-      runBksTypeTests({
-        connection: () => util.connection,
-        table: "bks_types",
-        expectedResults: {
-          BINARY: ["blob_col"],
-          STRING: ["char_col", "varchar_col", "text_col", "clob_col"],
-          NUMBER: [
-            "integer_col",
-            "int_col",
-            "tinyint_col",
-            "bigint_col",
-            "real_col",
-            "double_col",
-            "float_col",
-            "numeric_col",
-            "decimal_col",
-          ],
-          DATETIME: ["date_col", "datetime_col", "time_col"],
-          BOOLEAN: ["boolean_col"],
-          OBJECTID: [],
-          SURREALID: [],
-          UNKNOWN: [],
-        },
-      });
+          -- STRING
+          char_col CHAR(10), varchar_col VARCHAR(255), text_col TEXT,
+          clob_col CLOB,
+
+          -- DATETIME
+          date_col DATE, datetime_col DATETIME, time_col TIME,
+
+          -- BOOLEAN
+          boolean_col BOOLEAN
+        );
+      `,
+      // prettier-ignore
+      expectedResults: {
+        BINARY: ["blob_col"],
+        STRING: ["char_col", "varchar_col", "text_col", "clob_col"],
+        NUMBER: ["integer_col", "int_col", "tinyint_col", "bigint_col",
+          "real_col", "double_col", "float_col", "numeric_col", "decimal_col"],
+        DATETIME: ["date_col", "datetime_col", "time_col"],
+        BOOLEAN: ["boolean_col"],
+        OBJECTID: [],
+        SURREALID: [],
+        UNKNOWN: [],
+      },
     });
   });
 }
