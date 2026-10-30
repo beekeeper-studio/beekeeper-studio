@@ -99,9 +99,6 @@ jobs:
       - name: Install Playwright system dependencies
         run: pnpm -F beekeeper-studio exec playwright install-deps chromium
 
-      - name: Build UI Kit
-        run: pnpm lib:build
-
       - name: Build App
         run: pnpm -F beekeeper-studio build
 
@@ -202,9 +199,6 @@ jobs:
           foreach ($file in Get-ChildItem dev\docker_psql_init\*.sql | Sort-Object Name) {
             & "$bin\psql.exe" -h localhost -p 5434 -U postgres -d saklia -q -v ON_ERROR_STOP=1 -f $file.FullName
           }
-
-      - name: Build UI Kit
-        run: pnpm lib:build
 
       - name: Build App
         run: pnpm -F beekeeper-studio build

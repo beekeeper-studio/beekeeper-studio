@@ -6,8 +6,8 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "bks:build": "pnpm lib:build && pnpm -F beekeeper-studio electron:build",
-    "bks:dev": "pnpm lib:build && pnpm -F beekeeper-studio electron:serve",
+    "bks:build": "pnpm -F beekeeper-studio electron:build",
+    "bks:dev": "pnpm -F beekeeper-studio electron:serve",
     "bks:config:build": "pnpm -F beekeeper-studio config:build",
     "lib:dev": "pnpm -F @beekeeperstudio/ui-kit lib:dev",
     "lib:build": "pnpm -F @beekeeperstudio/ui-kit build",

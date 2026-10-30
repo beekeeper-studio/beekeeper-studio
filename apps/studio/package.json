@@ -12,7 +12,8 @@
   "scripts": {
     "build:esbuild": "node ./esbuild.mjs",
     "build:vite": "vite build",
-    "build": "concurrently -n esbuild,vite \"pnpm build:esbuild\" \"pnpm build:vite\"",
+    "build:deps": "pnpm -F \"beekeeper-studio^...\" run build",
+    "build": "pnpm build:deps && concurrently -n esbuild,vite \"pnpm build:esbuild\" \"pnpm build:vite\"",
     "test:codemirror": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 pnpm electron node_modules/vitest/vitest.mjs run --config ./vitest.codemirror.config.mjs",
     "test:ci": "pnpm vitest:ci",
     "test:unit": "cross-env TEST_MODE=1 ELECTRON_RUN_AS_NODE=1 pnpm electron node_modules/vitest/vitest.mjs run --config ./vitest.config.mjs",
@@ -24,7 +25,7 @@
     "test:e2e:smoke": "cross-env TEST_MODE=1 pnpm playwright test --config=playwright.smoke.config.ts",
     "lint": "eslint src src-commercial tests --ext .ts,.tsx,.vue,.js",
     "electron:build": "pnpm build && pnpm electron-builder --config ./electron-builder-config.js",
-    "electron:serve": "concurrently --kill-others-on-fail -c blue,green -n esbuild,vite \"pnpm dev:esbuild\" \"pnpm dev:vite\"",
+    "electron:serve": "pnpm build:deps && concurrently --kill-others-on-fail -c blue,green -n esbuild,vite \"pnpm dev:esbuild\" \"pnpm dev:vite\"",
     "config:build": "CLI_MODE=1 tsx ./src/config/typesGenerator.ts",
     "postinstall": "install-electron && electron-builder install-app-deps",
     "test:integration": "../../bin/integration-tests.sh",

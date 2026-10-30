@@ -85,9 +85,6 @@ jobs:
         if: runner.os == 'Linux'
         run: pnpm -F beekeeper-studio exec playwright install-deps chromium
 
-      - name: Build UI Kit
-        run: pnpm lib:build
-
       - name: Build App
         run: pnpm -F beekeeper-studio build
 
