@@ -154,7 +154,7 @@
     "lib:dev": "concurrently \"vite build -c vite.config.ts --watch --mode development\" \"vite build -c vite.config.vue.ts --watch --mode development\"",
     "lib:types": "tsc -p ./tsconfig.types.json",
     "test": "vitest run",
-    "build": "vite build -c vite.config.ts --mode production && vite build -c vite.config.vue.ts --mode production && yarn lib:types",
+    "build": "vite build -c vite.config.ts --mode production && vite build -c vite.config.vue.ts --mode production && pnpm lib:types",
     "preview": "vite preview"
   },
   "peerDependencies": {
@@ -206,10 +206,12 @@
     "vscode-languageserver-protocol": "^3.17.5"
   },
   "devDependencies": {
+    "@lezer/common": "^1.5.0",
     "@pdanpdan/vue-keyboard-trap": "^1.0.19",
     "@types/codemirror": "^0.0.97",
     "@types/lodash": "^4.14.159",
     "@types/tabulator-tables": "^6.3.4",
+    "@uiw/codemirror-theme-monokai": "^4.23.10",
     "@vue/web-component-wrapper": "beekeeper-studio/vue-web-component-wrapper#635e4b427b90e199c273b194cf9db6b744d63e95",
     "codemirror": "^5.63.1",
     "concurrently": "^8.2.2",
@@ -217,8 +219,11 @@
     "happy-dom": "^21.0.4",
     "ist": "^1.1.7",
     "lodash": "^4.18.1",
+    "markdown-table": "^3.0.2",
     "material-icons": "^1.13.12",
+    "papaparse": "^5.3.0",
     "postgres-interval": "^4.0.0",
+    "redis-splitargs": "^1.0.2",
     "rimraf": "^6.0.1",
     "sass": "~1.77.1",
     "scrollyfills": "^1.0.0",
@@ -228,6 +233,7 @@
     "vite": "^8.1.6",
     "vite-ng-plugin-vue2": "^1.0.0",
     "vitest": "~4.1.11",
+    "vscode-uri": "^3.0.8",
     "vue": "^2.7.16",
     "vue-js-modal": "^2.0.1",
     "vue-tsc": "^2.1.10",

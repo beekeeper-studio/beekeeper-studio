@@ -1,4 +1,4 @@
-@use "../../../../../node_modules/tabulator-tables/dist/css/tabulator.css";
+@use "tabulator-tables/dist/css/tabulator.css";
 @use '../../styles/variables' as *;
 @use "../../styles/base";
 @use './tabulator/magics.scss';
