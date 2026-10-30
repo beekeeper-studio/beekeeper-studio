@@ -22,15 +22,68 @@ const uf = new uFuzzy({
   intraIns: Infinity,
 });
 
+function buildSearchTarget(value: string) {
+  const positions: number[] = [];
+  const normalized = Array.from(value).reduce((result, char, index) => {
+    if (/^[\p{L}\p{N}]$/u.test(char)) {
+      positions.push(index);
+      return result + char.toLowerCase();
+    }
+
+    return result;
+  }, "");
+
+  return { normalized, positions };
+}
+
+function mapHighlightRanges(ranges: number[], positions: number[]) {
+  const mapped: number[] = [];
+
+  for (let i = 0; i < ranges.length; i += 2) {
+    const start = ranges[i];
+    const end = ranges[i + 1];
+
+    if (start == null || end == null || start >= end) {
+      continue;
+    }
+
+    const mappedStart = positions[start];
+    const mappedEnd = positions[end - 1];
+
+    if (mappedStart == null || mappedEnd == null) {
+      continue;
+    }
+
+    mapped.push(mappedStart, mappedEnd + 1);
+  }
+
+  return mapped;
+}
+
 export function searchItems(
   items: IndexItem[],
   searchTerm: string,
   limit = 20
 ): SearchResult[] {
-  const titles = items.map((item) => item.title);
-  const [idxs, info, order] = uf.search(titles, searchTerm, 0, Infinity);
+  const searchableItems = items.map((item) => ({
+    item,
+    title: item.title,
+    ...buildSearchTarget(item.title),
+  }));
+  const normalizedSearchTerm = buildSearchTarget(searchTerm).normalized;
 
-  if (!idxs || !order) {
+  if (!normalizedSearchTerm) {
+    return [];
+  }
+
+  const [idxs, info, order] = uf.search(
+    searchableItems.map((entry) => entry.normalized),
+    normalizedSearchTerm,
+    0,
+    Infinity
+  );
+
+  if (!idxs || !info || !order) {
     return [];
   }
 
@@ -39,17 +92,17 @@ export function searchItems(
   for (let i = 0; i < order.length && results.length < limit; i++) {
     const infoIdx = order[i];
     const itemIdx = idxs[infoIdx];
-    const item = items[itemIdx];
+    const entry = searchableItems[itemIdx];
 
     const highlight = uFuzzy.highlight(
-      titles[info.idx[infoIdx]],
-      info.ranges[infoIdx],
+      entry.title,
+      mapHighlightRanges(info.ranges[infoIdx], entry.positions),
       (part, matched) =>
         matched ? `<strong>${escapeHtml(part) ?? ""}</strong>` : escapeHtml(part) ?? ""
     );
 
     results.push({
-      ...item,
+      ...entry.item,
       highlight,
     });
   }
