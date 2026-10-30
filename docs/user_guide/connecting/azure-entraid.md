@@ -89,6 +89,11 @@ If you're part of a large enterprise, they likely have documentation on how to d
 
 The path to the `az` binary is detected automatically — common install locations are checked, including Homebrew. If it isn't found, click **Find** to retry or pick the binary manually with the file picker.
 
+!!! note "Windows"
+    Beekeeper looks for `az.cmd` on Windows, because the Azure CLI installs as a `.cmd` file rather than a plain executable. Auto-detection scans the `PATH` and common installer locations.
+
+    If Azure CLI authentication failed on Windows in Beekeeper Studio 5.9.2 or earlier, upgrade to 5.9.3 or later — those versions could not reliably launch `az.cmd`.
+
 ## Service Principal Authentication
 
 !!! info "MS SQL Server Supported"
