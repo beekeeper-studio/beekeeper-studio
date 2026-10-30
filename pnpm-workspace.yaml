@@ -3,9 +3,16 @@ packages:
 
 sideEffectsCache: false
 
+
+overrides:
+  cpu-features: "-"
+  axios: ^1.15.0
+  node-abi: ^4.35.0
+  nan: ^2.28.0
+  vite: ^8.1.6
+
 allowBuilds:
   core-js: true
-  cpu-features: true
   electron-winstaller: true
   esbuild: true
   kerberos: true
