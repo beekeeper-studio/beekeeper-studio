@@ -543,7 +543,7 @@ importers:
         specifier: 5.2.0
         version: 5.2.0
       ssh2:
-        specifier: ^1.14.0
+        specifier: ^1.17.0
         version: 1.17.0
       surrealdb:
         specifier: ^2.0.8
