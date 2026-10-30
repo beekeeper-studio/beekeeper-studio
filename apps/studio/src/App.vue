@@ -112,6 +112,8 @@ import { assignContextMenuToAllInputs } from './mixins/assignContextMenuToAllInp
 
 const log = rawLog.scope('app.vue')
 
+const COMPARE_PLANS_URL = 'https://www.beekeeperstudio.io/pricing/?compare=true'
+
 export default Vue.extend({
   name: 'App',
   mixins: [assignContextMenuToAllInputs],
@@ -143,6 +145,7 @@ export default Vue.extend({
     ...mapState('licenses', {
       status: (state) => state.status,
       licensesInitialized: (state) => state.initialized,
+      trialStartedOnLaunch: (state) => state.trialStartedOnLaunch,
     }),
     ...mapGetters({
       'isTrial': 'isTrial',
@@ -180,7 +183,11 @@ export default Vue.extend({
       await this.$nextTick()
       this.validateLicenseExpiry()
     }
-    this.notifyFreeTrial()
+    if (this.trialStartedOnLaunch) {
+      this.notifyTrialStarted()
+    } else {
+      this.notifyFreeTrial()
+    }
     this.interval = setInterval(this.notifyFreeTrial, globals.trialNotificationInterval)
     this.$store.dispatch('licenses/updateAll');
     this.licenseInterval = setInterval(
@@ -215,6 +222,26 @@ export default Vue.extend({
 
   },
   methods: {
+    // Takes the place of the expiry reminder when this launch started the
+    // trial: a reminder that it ends is a strange welcome.
+    notifyTrialStarted() {
+      Noty.closeAll('trial')
+      const n = new Noty({
+        text: `<div class="noty-onboarding-title">${globals.freeTrialDays} day free trial</div>
+              <div class="noty-onboarding-body">
+                All paid features have been unlocked. Enjoy!
+                <a class="link" href="${COMPARE_PLANS_URL}">Learn more</a>
+              </div>`,
+        closeWith: ['button'],
+        layout: 'bottomRight',
+        timeout: false,
+        queue: 'trial',
+        buttons: [
+          Noty.button('Sounds good', 'btn btn-primary', () => n.close()),
+        ],
+      })
+      n.show()
+    },
     notifyFreeTrial() {
       Noty.closeAll('trial')
       if (this.isTrial && this.isUltimate) {

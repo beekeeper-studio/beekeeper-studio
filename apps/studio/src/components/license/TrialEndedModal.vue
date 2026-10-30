@@ -218,18 +218,22 @@ export default Vue.extend({
     ...mapState("licenses", {
       licensesInitialized: (state: any) => state.initialized,
     }),
-    ...mapGetters("licenses", ["isTrialExpired", "realLicenses", "trialLicense"]),
+    ...mapGetters("licenses", ["isTrialExpired", "realLicenses", "trialLicense", "canStartTrial"]),
     /**
      * The expired trial has to be the only license there is. Someone holding
      * a paid key, whatever its state, is the license dialogs' concern: a
      * lifetime key that stops short of this version, say, must never be met
      * with an offer to downgrade.
+     *
+     * Nor is there anything to decide once a new trial can be started (long
+     * after this one ended): the "Start free trial" buttons are back instead.
      */
     shouldShow(): boolean {
       return (
         this.licensesInitialized &&
         this.isTrialExpired &&
         this.realLicenses.length === 0 &&
+        !this.canStartTrial &&
         !this.downgraded
       );
     },

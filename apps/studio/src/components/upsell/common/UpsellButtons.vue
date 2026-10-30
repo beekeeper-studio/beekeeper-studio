@@ -72,9 +72,8 @@ export default {
     trialEndDate() {
       return this.trialLicense?.validUntil?.toDateString()
     },
-    // Trial is only available if no licenses exist at all
     trialAvailable() {
-      return this.$store.getters['licenses/noLicensesFound']
+      return this.$store.getters['licenses/canStartTrial']
     },
     trialExpired() {
       if (!this.trialLicense) return false

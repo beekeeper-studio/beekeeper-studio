@@ -50,6 +50,7 @@ function buildStore(statusOverrides: Record<string, any> = {}, licenses: any[] =
           trialLicense: (state: any) => state.licenses.find((l: any) => l.licenseType === 'TrialLicense'),
           realLicenses: (state: any) => state.licenses.filter((l: any) => l.licenseType !== 'TrialLicense'),
           isTrialExpired: (state: any) => !!state.status.isTrial && !!state.status.isValidDateExpired,
+          canStartTrial: (state: any) => !!state.status.canStartTrial,
         },
         mutations: {
           setStatus(state: any, next: any) {
@@ -131,6 +132,15 @@ describe('TrialEndedModal', () => {
     await flush()
 
     expect(mocks.$modal.show).not.toHaveBeenCalled()
+    wrapper.destroy()
+  })
+
+  it('stays closed when a new trial can be started, long after this one ended', async () => {
+    const { wrapper, mocks, store } = mountModal(buildStore({ canStartTrial: true }))
+    await flush()
+
+    expect(mocks.$modal.show).not.toHaveBeenCalled()
+    expect(store.state.licenses.blockingDialog).toBeNull()
     wrapper.destroy()
   })
 

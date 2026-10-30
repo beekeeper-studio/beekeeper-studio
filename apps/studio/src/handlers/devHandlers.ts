@@ -2,6 +2,13 @@ import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import platformInfo from "@/common/platform_info";
 import { DevLicenseState } from "@/lib/license";
 
+// Start from a clean history too: LicenseKey.canStartTrial counts every
+// license row ever inserted.
+async function clearLicenses() {
+  await LicenseKey.clear();
+  await LicenseKey.query("DELETE FROM sqlite_sequence WHERE name = 'license_keys'");
+}
+
 export interface IDevHandlers {
   "dev/switchLicenseState": ({ state, sId }: { state: DevLicenseState; sId: string; }) => Promise<void>;
 }
@@ -16,19 +23,25 @@ export const DevHandlers: IDevHandlers = {
     const nextMonth = new Date(new Date().setMonth(new Date().getMonth() + 1));
     switch (state) {
       case DevLicenseState.firstInstall:
-        await LicenseKey.clear();
+        await clearLicenses();
         break;
       case DevLicenseState.onTrial:
-        await LicenseKey.clear();
+        await clearLicenses();
         await LicenseKey.createTrialLicense();
         break;
       case DevLicenseState.trialExpired: {
-        await LicenseKey.clear();
+        await clearLicenses();
         await LicenseKey.createTrialLicense(yesterday, yesterday);
         break;
       }
+      case DevLicenseState.trialExpiredLongAgo: {
+        const sevenMonthsAgo = new Date(new Date().setMonth(new Date().getMonth() - 7));
+        await clearLicenses();
+        await LicenseKey.createTrialLicense(sevenMonthsAgo, sevenMonthsAgo);
+        break;
+      }
       case DevLicenseState.activePaidLicense: {
-        await LicenseKey.clear();
+        await clearLicenses();
         const license = new LicenseKey();
         license.email = "fake_email";
         license.key = "fake_key";
@@ -39,7 +52,7 @@ export const DevHandlers: IDevHandlers = {
         break;
       }
       case DevLicenseState.expiredLifetimeCoversThisVersion: {
-        await LicenseKey.clear();
+        await clearLicenses();
         const license = new LicenseKey();
         license.email = "fake_email";
         license.key = "fake_key";
@@ -53,7 +66,7 @@ export const DevHandlers: IDevHandlers = {
         break;
       }
       case DevLicenseState.expiredLifetimeCoversEarlierVersion: {
-        await LicenseKey.clear();
+        await clearLicenses();
         const license = new LicenseKey();
         license.email = "fake_email";
         license.key = "fake_key";

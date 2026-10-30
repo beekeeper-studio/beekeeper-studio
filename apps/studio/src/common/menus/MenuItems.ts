@@ -322,7 +322,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       submenu: [
         { label: ">>> BEWARE: ALL LICENSES WILL BE LOST! <<<" },
         {
-          label: "First time install, no license, no trial.",
+          label: "First time install, no license, no trial (starts the trial on reload)",
           click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.firstInstall),
         },
         {
@@ -332,6 +332,10 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
         {
           label: "Trial expired (shows the trial-ended dialog)",
           click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.trialExpired),
+        },
+        {
+          label: "Trial expired 7 months ago (a new trial can be started)",
+          click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.trialExpiredLongAgo),
         },
         {
           label: "On an active paid license",

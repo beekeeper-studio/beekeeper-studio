@@ -10,6 +10,13 @@ function daysInFuture(days = 14) {
   return new Date(new Date().setDate(new Date().getDate() + days))
 }
 
+/** When a trial that ends at `validUntil` can be started again. */
+export function trialRenewableFrom(validUntil: Date): Date {
+  const date = new Date(validUntil)
+  date.setMonth(date.getMonth() + globals.trialRenewalMonths)
+  return date
+}
+
 export function keysToStatus(licenses: LicenseKey[]): LicenseStatus {
     const status = new LicenseStatus();
     status.condition = []
@@ -117,14 +124,43 @@ export class LicenseKey extends ApplicationEntity {
     return this.validUntil && this.validUntil > new Date()
   }
 
+  /**
+   * Whether a free trial can be started: with no license at all, or again
+   * when the last trial ended more than globals.trialRenewalMonths ago and no
+   * license was ever registered.
+   */
+  static async canStartTrial(now = new Date()): Promise<boolean> {
+    const licenses = await LicenseKey.find()
+    if (licenses.length === 0) return true
+    if (licenses.some((l) => l.licenseType !== "TrialLicense")) return false
+    const lastTrial = _.maxBy(licenses, (l) => new Date(l.validUntil).getTime())
+    if (now < trialRenewableFrom(lastTrial.validUntil)) return false
+    return !(await LicenseKey.wasLicenseEverRegistered(licenses.length))
+  }
+
+  /**
+   * A registered license can have been removed since, but its id stays used:
+   * the id is AUTOINCREMENT, so sqlite_sequence holds how many rows were ever
+   * inserted. Trial rows are never deleted (renewing adds a new one), so any
+   * more rows than there are trials were licenses.
+   */
+  private static async wasLicenseEverRegistered(trialCount: number): Promise<boolean> {
+    const [row] = await LicenseKey.query(
+      "SELECT seq FROM sqlite_sequence WHERE name = 'license_keys'"
+    )
+    return Number(row?.seq ?? 0) > trialCount
+  }
+
   public static async createTrialLicense(validUntil = daysInFuture(globals.freeTrialDays), supportUntil = validUntil) {
-    if ((await LicenseKey.count()) !== 0) {
+    if (!(await LicenseKey.canStartTrial())) {
       throw new Error("Not allowed");
     }
 
+    // (email, key) is unique, and a renewed trial keeps the trials before it
+    const trialCount = await LicenseKey.countBy({ licenseType: "TrialLicense" })
     const trialLicense = new LicenseKey();
     trialLicense.email = "trial_user";
-    trialLicense.key = "fake";
+    trialLicense.key = trialCount === 0 ? "fake" : `fake-${trialCount + 1}`;
     trialLicense.validUntil = validUntil;
     trialLicense.supportUntil = supportUntil;
     trialLicense.licenseType = "TrialLicense";

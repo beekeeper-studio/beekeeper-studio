@@ -12,6 +12,7 @@ export enum DevLicenseState {
   activePaidLicense,
   expiredLifetimeCoversThisVersion,
   expiredLifetimeCoversEarlierVersion,
+  trialExpiredLongAgo,
 }
 
 
@@ -21,6 +22,8 @@ export class LicenseStatus {
   license?: TransportLicenseKey
   fromFile = false
   filePath?: string = undefined
+  /** Set by license/getStatus from LicenseKey.canStartTrial. */
+  canStartTrial?: boolean
 
   get isUltimate() {
     return this.edition === "ultimate";
