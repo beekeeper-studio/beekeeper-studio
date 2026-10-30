@@ -103,6 +103,7 @@ import splitThemeDarkFlag from './20260908_split_theme_dark_flag'
 import addGithubPluginSetting from './20261021_add_github_plugin_setting.js'
 import addConfirmWindowCloseSetting from './20260929_add_confirm_window_close_setting'
 import addPluginEntryCache from './20261026_add_plugin_entry_cache.js'
+import renameQueryTitleToName from './20260821_rename_query_title_to_name'
 
 import ultimate from './ultimate/index'
 
@@ -164,7 +165,8 @@ const realMigrations = [
   splitThemeDarkFlag,
   addGithubPluginSetting,
   addConfirmWindowCloseSetting,
-  addPluginEntryCache
+  addPluginEntryCache,
+  renameQueryTitleToName
 ]
 
 // fixtures require the models

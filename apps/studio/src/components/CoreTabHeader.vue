@@ -202,8 +202,8 @@ import _ from 'lodash'
       },
       queryTabTitle() {
         if (!this.tab.tabType === 'query') return null
-        if (this.tab.query && this.tab.query.title) {
-          return this.tab.query.title
+        if (this.tab.query && this.tab.query.name) {
+          return this.tab.query.name
         }
         if (!this.cleanText) {
           return this.tab.title

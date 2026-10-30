@@ -7,7 +7,7 @@ import { QueryAudit } from './QueryAudit';
 
 @Entity({ name: 'favorite_query' })
 export class FavoriteQuery extends ApplicationEntity implements QueryLike {
-  static readonly searchableFields: string[] = [ 'title' ];
+  static readonly searchableFields: string[] = [ 'name' ];
 
   withProps(props?: any): FavoriteQuery {
     if (props) FavoriteQuery.merge(this, props);
@@ -15,7 +15,7 @@ export class FavoriteQuery extends ApplicationEntity implements QueryLike {
   }
 
   @Column({type: "varchar", nullable: false})
-  title!: string
+  name!: string
 
   @MaxLength(2_000_000, { message: `Queries have a max length of 2,000,000 characters.` })
   @Column({type: "text", nullable: false, select: false})

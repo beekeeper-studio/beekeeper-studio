@@ -7,7 +7,7 @@
           <i class="material-icons" :data-target-type="target.type">
             {{ target.type === "query" ? "code" : "link" }}
           </i>
-          {{ target.type === "query" ? target.value.title : target.value.name }}
+          {{ target.value.name }}
         </span>
         to
       </template>

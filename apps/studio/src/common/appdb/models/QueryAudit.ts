@@ -36,29 +36,29 @@ export class QueryAudit extends ApplicationEntity {
   @Column({ type: "varchar", nullable: false })
   action: "create" | "update";
 
-  /** `title` can be null if it's not changed. Always use `getDetail` to resolve it.
+  /** `name` can be null if it's not changed. Always use `getDetail` to resolve it.
    * @see {QueryAudit.fetchDetail} **/
   @Column({ type: "varchar", nullable: true })
-  title: string | null;
+  name: string | null;
 
   /** `text` can be null if it's not changed. Always use `getDetail` to resolve it.
    * @see {QueryAudit.fetchDetail} **/
   @Column({ type: "text", nullable: true, select: false })
   text: string | null;
 
-  private async resolveTitle(): Promise<string> {
+  private async resolveName(): Promise<string> {
     return await QueryAudit.findOne({
-      select: ["title"],
+      select: ["name"],
       where: {
         favoriteQueryId: this.favoriteQueryId,
         createdAt: LessThanOrEqual(this.createdAt),
-        title: Not(IsNull()),
+        name: Not(IsNull()),
       },
-    }).then((q) => q.title);
+    }).then((q) => q.name);
   }
 
-  private async resolveSnapshot(): Promise<{ text: string; title: string }> {
-    const title = await this.resolveTitle();
+  private async resolveSnapshot(): Promise<{ text: string; name: string }> {
+    const name = await this.resolveName();
     const textObj = await QueryAudit.findOne({
       select: ["text"],
       where: {
@@ -67,7 +67,7 @@ export class QueryAudit extends ApplicationEntity {
         text: Not(IsNull()),
       },
     });
-    return { title, text: textObj?.text ?? "" };
+    return { name, text: textObj?.text ?? "" };
   }
 
   async fetchDetail(): Promise<TransportQueryAuditDetail> {
@@ -79,7 +79,7 @@ export class QueryAudit extends ApplicationEntity {
     await FavoriteQuery.createQueryBuilder("query")
       .update()
       .set({
-        title: await this.resolveTitle(),
+        name: await this.resolveName(),
         text: () =>
           QueryAudit.createQueryBuilder()
             .subQuery()

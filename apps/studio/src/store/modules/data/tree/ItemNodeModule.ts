@@ -18,13 +18,10 @@ const asArray = <T>(value: T | T[]): T[] =>
 /**
  * Used for tree visualization using <tree> component
  **/
-export function ItemNodeModule(
-  parentIdKey: string,
-  nameKey: string
-): Module<State, RootState> {
+export function ItemNodeModule(parentIdKey: string): Module<State, RootState> {
   function applyUpsert(existing: Node[], items: HasId[]): Node[] {
     const next = [...existing];
-    const nodes = buildItemNodes(items, parentIdKey, nameKey);
+    const nodes = buildItemNodes(items, parentIdKey);
     for (const node of nodes) {
       const index = next.findIndex((i) => i.id === node.id);
       if (index === -1) {
@@ -45,7 +42,7 @@ export function ItemNodeModule(
     },
     mutations: {
       set(state, items: HasId | HasId[]) {
-        state.items = buildItemNodes(asArray(items), parentIdKey, nameKey);
+        state.items = buildItemNodes(asArray(items), parentIdKey);
       },
       /** A scoped payload only speaks for its own slice, so nodes outside it survive. */
       replace(state, payload: ReplacePayload<HasId>) {
@@ -54,7 +51,7 @@ export function ItemNodeModule(
           : payload;
 
         if (!replaceIf) {
-          state.items = buildItemNodes(items, parentIdKey, nameKey);
+          state.items = buildItemNodes(items, parentIdKey);
           return;
         }
 
