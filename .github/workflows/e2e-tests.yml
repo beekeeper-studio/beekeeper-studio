@@ -62,7 +62,7 @@ jobs:
 
       - name: Install Playwright browsers
         if: steps.cache-playwright.outputs.cache-hit != 'true'
-        run: pnpm playwright install chromium
+        run: pnpm -F beekeeper-studio exec playwright install chromium
 
   e2e-tests:
     name: E2E Tests
@@ -99,7 +99,7 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Install Playwright system dependencies
-        run: pnpm playwright install-deps chromium
+        run: pnpm -F beekeeper-studio exec playwright install-deps chromium
 
       - name: Build UI Kit
         run: pnpm lib:build

@@ -20,4 +20,4 @@ for arg in "$@"; do
   ARGS+=("${arg#apps/studio/}")
 done
 
-yarn workspace beekeeper-studio vitest:integration ${ARGS[@]+"${ARGS[@]}"}
+pnpm -F beekeeper-studio vitest:integration ${ARGS[@]+"${ARGS[@]}"}
