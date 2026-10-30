@@ -7,13 +7,10 @@ permissions:
 on:
   pull_request:
     paths-ignore:
-      - apps/sqltools/**
       - docs/**
   push:
     branches:
       - "master"
-    paths-ignore:
-      - 'apps/sqltools/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -92,7 +89,6 @@ jobs:
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
-            apps/sqltools/node_modules
           # Python is in the key so a Python bump rebuilds the native modules.
           key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-py${{ env.PYTHON_VERSION }}-${{ hashFiles('mise.toml') }}-${{ hashFiles('pnpm-lock.yaml') }}
 

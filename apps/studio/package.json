@@ -258,7 +258,4 @@
     "last 2 versions"
   ],
   "repository": "git@github.com:beekeeper-studio/beekeeper-studio.git",
-  "resolutions": {
-    "cpu-features": "file:./.yarn/packages/empty-package"
-  }
 }

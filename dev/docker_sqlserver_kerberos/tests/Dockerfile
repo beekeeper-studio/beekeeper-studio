@@ -27,7 +27,7 @@ RUN set -eux; \
 ENV PATH="/opt/mssql-tools18/bin:${PATH}"
 
 # yarn 1.x ships with the node image; corepack is a belt-and-suspenders fallback.
-RUN corepack enable || true
+RUN corepack enable
 
 COPY tests/entrypoint.sh /usr/local/bin/run-kerberos-tests.sh
 RUN chmod +x /usr/local/bin/run-kerberos-tests.sh

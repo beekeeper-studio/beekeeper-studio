@@ -9,8 +9,6 @@ on:
   push:
     tags:
       - "v*"
-    paths-ignore:
-      - "apps/sqltools/**"
 jobs:
   create_draft_release:
     runs-on: "ubuntu-22.04"
