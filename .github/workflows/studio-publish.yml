@@ -223,7 +223,7 @@ jobs:
         with:
           timeout_minutes: 20
           max_attempts: 3
-          command: "pnpm install --frozen-lockfile --fetch-timeout 100000"
+          command: "pnpm ci --fetch-timeout 100000"
 
       - name: Verify msnodesqlv8 native build
         run: pnpm -F beekeeper-studio exec node -e "require('msnodesqlv8')"

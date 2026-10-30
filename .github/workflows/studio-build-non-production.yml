@@ -103,13 +103,9 @@ jobs:
         continue-on-error: true
         run: pnpm -F beekeeper-studio exec node -e "require('msnodesqlv8')"
 
-      - name: Discard broken node_modules
-        if: steps.nm-health.outcome == 'failure'
-        run: rm -rf node_modules apps/studio/node_modules apps/ui-kit/node_modules apps/sqltools/node_modules
-
       - name: Check dependencies
         if: steps.cache-nm.outputs.cache-hit != 'true' || steps.nm-health.outcome == 'failure'
-        run: "pnpm install --frozen-lockfile --fetch-timeout 100000"
+        run: pnpm ci --fetch-timeout 100000
 
       - name: Verify msnodesqlv8 native build
         run: pnpm -F beekeeper-studio exec node -e "require('msnodesqlv8')"
