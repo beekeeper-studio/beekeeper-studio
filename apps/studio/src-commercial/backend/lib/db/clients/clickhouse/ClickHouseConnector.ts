@@ -1,14 +1,53 @@
-import { DatabaseConnection } from "@/lib/db/clients/DatabaseConnection";
+import { DatabaseConnector } from "@/lib/db/clients/DatabaseConnector";
 import {
   createClient,
   ClickHouseClient as NodeClickHouseClient,
+  DataFormat,
+  ExecParams,
+  ExecResult,
+  InsertParams,
+  InsertResult,
+  QueryParams,
+  QueryResult,
 } from "@clickhouse/client";
 import { readFileSync } from 'fs';
 import { NodeClickHouseClientConfigOptions } from "@clickhouse/client/dist/config";
 import https from 'https'
+import { Readable } from "stream";
 
-export class ClickHouseConnection extends DatabaseConnection<NodeClickHouseClient> {
+export class ClickHouseConnector extends DatabaseConnector<
+  NodeClickHouseClient
+> {
   private client: NodeClickHouseClient;
+
+  async query<Format extends DataFormat = "JSON">(
+    params: Omit<QueryParams, "format"> & { format?: Format }
+  ): Promise<QueryResult<Format>> {
+    const conn = await this.getRawConnection();
+    try {
+      return await conn.query(params);
+    } catch (err) {
+      throw this.handleError(err);
+    }
+  }
+
+  async exec(params: ExecParams): Promise<ExecResult<Readable>> {
+    const conn = await this.getRawConnection();
+    try {
+      return await conn.exec(params);
+    } catch (err) {
+      throw this.handleError(err);
+    }
+  }
+
+  async insert(params: InsertParams<Readable>): Promise<InsertResult> {
+    const conn = await this.getRawConnection();
+    try {
+      return await conn.insert(params);
+    } catch (err) {
+      throw this.handleError(err);
+    }
+  }
 
   protected async doConnect(): Promise<void> {
     let url: string;

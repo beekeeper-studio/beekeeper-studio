@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 import BksConfig from "@/common/bksConfig";
 import sql, { ConnectionError, ConnectionPool, Request, Transaction } from "mssql";
-import { ConnectOptions, DatabaseConnection } from "../DatabaseConnection";
+import { ConnectOptions, DatabaseConnector } from "../DatabaseConnector";
 import { IDbConnectionServer } from "../../backendTypes";
 import { IDbConnectionDatabase } from "../../types";
 import logRaw from "@bksLogger";
@@ -11,7 +11,7 @@ import { buildWindowsAuthConnStr } from "../sqlserverWinAuth";
 import { parseSqlServerHost } from "../sqlserverHost";
 import { bindDriver } from "../sqlserverDriver";
 
-const log = logRaw.scope("SqlServerConnection");
+const log = logRaw.scope("SqlServerConnector");
 
 // Setup guide for SQL Server integrated / Kerberos authentication prerequisites.
 const WIN_AUTH_DOCS_URL = 'https://docs.beekeeperstudio.io/user_guide/connecting/sql-server/'
@@ -99,24 +99,24 @@ function withConnectHint(err: any, config: any): any {
   return decorated
 }
 
-type GetClientOptions = {
+type GetRawConnectionOptions = {
   type: "request" | "transaction";
 };
 
-export class SqlServerConnection extends DatabaseConnection<
+export class SqlServerConnector extends DatabaseConnector<
   Request | Transaction,
-  GetClientOptions
+  GetRawConnectionOptions
 > {
   private pool: ConnectionPool;
   private authService: AzureAuthService;
   private dbConfig: any = {};
 
   async request(): Promise<Request> {
-    return await this.getClient({ type: "request" }) as Request;
+    return await this.getRawConnection({ type: "request" }) as Request;
   }
 
   async transaction(): Promise<Transaction> {
-    return await this.getClient({ type: "transaction" }) as Transaction;
+    return await this.getRawConnection({ type: "transaction" }) as Transaction;
   }
 
   protected async doConnect(options: ConnectOptions): Promise<void> {
@@ -154,7 +154,7 @@ export class SqlServerConnection extends DatabaseConnection<
   }
 
   protected async doGetClient(
-    options: GetClientOptions
+    options: GetRawConnectionOptions
   ): Promise<Request | Transaction> {
     if (options.type === "request") {
       return this.pool.request();

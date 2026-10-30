@@ -60,7 +60,7 @@ export function runSshTests(dbType: ConnectionType) {
     it("should detect connection lost", async () => {
       const fn = vi.fn();
 
-      client.connection.on("connection-lost", fn);
+      client.connector.on("connection-lost", fn);
 
       await sshEnv.restart();
 
@@ -75,7 +75,7 @@ export function runSshTests(dbType: ConnectionType) {
 
     it("should be able to re-establish connection after losing connection", async () => {
       const isConnectionLost = new Promise<void>((resolve) => {
-        client.connection.once("connection-lost", resolve);
+        client.connector.once("connection-lost", resolve);
       });
 
       await sshEnv.restart();
@@ -86,10 +86,10 @@ export function runSshTests(dbType: ConnectionType) {
       // Connection-lost is triggered after running a query
       await expect(isConnectionLost).resolvesWithin(1000);
 
-      await client.connection.disconnect();
-      await client.connection.connect();
+      await client.connector.disconnect();
+      await client.connector.connect();
 
-      expect(client.connection.isConnected).toBe(true);
+      expect(client.connector.isConnected).toBe(true);
       await expect(client.executeQuery("select 1")).resolves.toBeDefined();
     });
 
@@ -107,8 +107,8 @@ export function runSshTests(dbType: ConnectionType) {
       await expect(second.catch(() => { })).resolvesWithin(5000);
       await expect(second).rejects.toThrow();
 
-      await client.connection.disconnect();
-      await client.connection.connect();
+      await client.connector.disconnect();
+      await client.connector.connect();
 
       await expect(client.executeQuery("select 1")).resolves.toBeDefined();
     });

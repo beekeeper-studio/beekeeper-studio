@@ -3,18 +3,11 @@ import { FilterOptions, SupportedFeatures, TableIndex, TableOrView, TablePartiti
 import { PostgresClient, STQOptions } from "./postgresql";
 import _ from 'lodash';
 import { defaultCreateScript } from "./postgresql/scripts";
-import { CockroachConnection } from "./cockroach/CockroachConnection";
-import { IDbConnectionServer } from "../backendTypes";
-import { IDbConnectionDatabase } from "../types";
+import { CockroachConnector } from "./cockroach/CockroachConnector";
 
 
 export class CockroachClient extends PostgresClient {
-  connection: CockroachConnection;
-
-  constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    super(server, database);
-    this.connection = new CockroachConnection({ server, database });
-  }
+  connector = new CockroachConnector({ server: this.server, database: this.database });
 
   async supportedFeatures(): Promise<SupportedFeatures> {
     return {

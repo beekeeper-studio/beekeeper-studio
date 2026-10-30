@@ -35,8 +35,8 @@ import { AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from 
 import { AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from '../serialization/transcoders';
-import { SqlServerConnection } from './sqlserver/SqlServerConnection';
-export { flattenErrorText, sqlServerConnectHint, sqlServerConnectHints } from './sqlserver/SqlServerConnection';
+import { SqlServerConnector } from './sqlserver/SqlServerConnector';
+export { flattenErrorText, sqlServerConnectHint, sqlServerConnectHints } from './sqlserver/SqlServerConnector';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 const log = logRaw.scope('sql-server')
 
@@ -97,7 +97,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Reques
   dbConfig: any
   readOnlyMode: boolean
   logger: any
-  connection: SqlServerConnection;
+  connector = new SqlServerConnector({ server: this.server, database: this.database });
   _defaultSchema: string = 'dbo';
   authService: AzureAuthService;
   transcoders = [GenericBinaryTranscoder];
@@ -108,7 +108,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Reques
     this.readOnlyMode = server?.config?.readOnlyMode || false;
     this.logger = () => log
     this.createUpsertFunc = this.createUpsertSQL
-    this.connection = new SqlServerConnection({ server, database })
   }
 
   async defaultSchema(): Promise<string> {
@@ -238,7 +237,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Reques
 
   async query(queryText: string, tabId: number) {
     const hasReserved = this.reservedConnections.has(tabId);
-    const queryRequest: Request = hasReserved ? (this.reservedConnections.get(tabId) as Transaction).request() : await this.connection.request();
+    const queryRequest: Request = hasReserved ? (this.reservedConnections.get(tabId) as Transaction).request() : await this.connector.request();
     log.info("HAS RESERVED: ", hasReserved, "For query: ", queryText)
     return {
       execute: async(): Promise<NgQueryResult[]> => {
@@ -446,7 +445,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Reques
     return {
       totalRows: Number(rowCount),
       columns,
-      cursor: new SqlServerCursor(await this.connection.request(), query, chunkSize)
+      cursor: new SqlServerCursor(await this.connector.request(), query, chunkSize)
     }
   }
 
@@ -549,7 +548,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Reques
       return { connection, data, rowsAffected, columns, rows, arrayMode }
     };
 
-    return runQuery(options.connection ? options.connection : await this.connection.request());
+    return runQuery(options.connection ? options.connection : await this.connector.request());
   }
 
   async truncateAllTables(schema: string = this._defaultSchema) {
@@ -773,7 +772,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Reques
 
   async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
     return {
-      cursor: new SqlServerCursor(await this.connection.request(), query, chunkSize),
+      cursor: new SqlServerCursor(await this.connector.request(), query, chunkSize),
     }
   }
 
@@ -918,7 +917,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Reques
   }
 
   async importStepZero(table: TableOrView): Promise<any> {
-    const transaction = await this.connection.transaction();
+    const transaction = await this.connector.transaction();
 
     return {
       transaction,
@@ -1022,7 +1021,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Reques
       throw new Error(errorMessages.maxReservedConnections)
     }
 
-    const conn = await this.connection.transaction();
+    const conn = await this.connector.transaction();
     this.pushConnection(tabId, conn);
   }
 

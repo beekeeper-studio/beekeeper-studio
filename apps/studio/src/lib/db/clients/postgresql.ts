@@ -24,7 +24,7 @@ import BksConfig from '@/common/bksConfig';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import {AzureAuthService} from "@/lib/db/authentication/azure";
-import { PsqlConnection } from './postgresql/PsqlConnection';
+import { PsqlConnector } from './postgresql/PsqlConnector';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 
 const PD = PostgresData
@@ -84,7 +84,7 @@ const postgresContext = {
 
 export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient> {
   version: VersionInfo;
-  connection: PsqlConnection;
+  connector = new PsqlConnector({ server: this.server, database: this.database });
   _defaultSchema: string;
   dataTypes: any = {};
   transcoders = [GenericBinaryTranscoder];
@@ -93,7 +93,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     super(knex, postgresContext, server, database);
     this.dialect = 'psql';
     this.readOnlyMode = server?.config?.readOnlyMode || false;
-    this.connection = new PsqlConnection({ server, database });
   }
 
   async versionString(): Promise<string> {
@@ -944,7 +943,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     const cursorOpts = {
       query: qs.query,
       params: qs.params,
-      connection: this.connection,
+      connector: this.connector,
       chunkSize,
       dataTypes: this.dataTypes
     }
@@ -960,7 +959,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     const cursorOpts = {
       query: query,
       params: [],
-      connection: this.connection,
+      connector: this.connector,
       chunkSize,
       dataTypes: this.dataTypes
     }
@@ -1133,7 +1132,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       throw new Error(errorMessages.maxReservedConnections)
     }
 
-    const conn = await this.connection.getClient();
+    const conn = await this.connector.getRawConnection();
     this.pushConnection(tabId, conn);
   }
 
@@ -1179,7 +1178,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   // this will manage the connection for you, but won't call rollback
   // on an error, for that use `runWithTransaction`
   async runWithConnection<T>(child: (c: PoolClient) => Promise<T>): Promise<T> {
-    const connection = await this.connection.getClient()
+    const connection = await this.connector.getRawConnection()
     try {
       return await child(connection)
     } finally {

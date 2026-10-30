@@ -1,9 +1,9 @@
 import { PoolConfig } from "pg";
 import { IDbConnectionServer } from "../../backendTypes";
-import { PsqlConnection } from "../postgresql/PsqlConnection";
+import { PsqlConnector } from "../postgresql/PsqlConnector";
 import BksConfig from "@/common/bksConfig";
 
-export class CockroachConnection extends PsqlConnection {
+export class CockroachConnector extends PsqlConnector {
   protected async configDatabase(server: IDbConnectionServer, database: { database: string }) {
     const optionsParts: string[] = [];
     const password = server.config.options?.jwtAuthEnabled

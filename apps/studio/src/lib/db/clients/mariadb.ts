@@ -1,15 +1,8 @@
 import { MysqlClient } from "./mysql";
-import { IDbConnectionDatabase } from "@/lib/db/types";
-import { IDbConnectionServer } from "../backendTypes";
-import { MariaDBConnection } from "./mariadb/MariaDBConnection";
+import { MariaDBConnector } from "./mariadb/MariaDBConnector";
 
 export class MariaDBClient extends MysqlClient {
-  connection: MariaDBConnection;
-
-  constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
-    super(server, database);
-    this.connection = new MariaDBConnection({ server, database });
-  }
+  connector = new MariaDBConnector({ server: this.server, database: this.database });
 
   resolveDefault(defaultValue: string) {
     // adapted from https://github.com/PomeloFoundation/Pomelo.EntityFrameworkCore.MySql/pull/998/files

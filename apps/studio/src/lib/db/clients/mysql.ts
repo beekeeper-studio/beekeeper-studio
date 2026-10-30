@@ -64,7 +64,7 @@ import BksConfig from "@/common/bksConfig";
 import { IDbConnectionServer } from "../backendTypes";
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import { Version, isVersionLessThanOrEqual, parseVersion } from "@/common/version";
-import { MySqlConnection } from "./mysql/MySqlConnection";
+import { MySqlConnector } from "./mysql/MySqlConnector";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
 
 type ResultType = {
@@ -195,7 +195,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     versionString: string;
     version: number;
   };
-  connection: MySqlConnection;
+  connector = new MySqlConnector({ server: this.server, database: this.database });
   transcoders = [GenericBinaryTranscoder];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
@@ -203,16 +203,11 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
 
     this.dialect = 'mysql';
     this.readOnlyMode = server?.config?.readOnlyMode || false;
-    this.connection = new MySqlConnection({ server, database });
   }
 
   async connect() {
     await super.connect();
     this.versionInfo = await this.getVersion();
-  }
-
-  async disconnect() {
-    await super.disconnect();
   }
 
   async versionString() {
@@ -540,7 +535,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     return {
       totalRows: Number(rowCount.rows[0].total),
       columns,
-      cursor: new MysqlCursor(this.connection, query, params, chunkSize),
+      cursor: new MysqlCursor(this.connector, query, params, chunkSize),
     };
   }
 
@@ -952,14 +947,14 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     }
   ): Promise<ResultType | ResultType[]> {
     if (options.connection) {
-      return await this.connection.runQuery(query, {
+      return await this.connector.runQuery(query, {
         ...options,
         connection: options.connection,
       });
     }
     return await this.runWithConnection(
       async (connection) =>
-        await this.connection.runQuery(query, {
+        await this.connector.runQuery(query, {
           ...options,
           connection,
         })
@@ -972,7 +967,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     if (hasReserved) {
       conn = this.reservedConnections.get(tabId);
     } else {
-      conn = await this.connection.getClient();
+      conn = await this.connector.getRawConnection();
     }
 
     function handleError(error: any) {
@@ -1156,7 +1151,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     query: string,
     chunkSize: number
   ): Promise<StreamResults> {
-    const theCursor = new MysqlCursor(this.connection, query, [], chunkSize);
+    const theCursor = new MysqlCursor(this.connector, query, [], chunkSize);
 
     return {
       cursor: theCursor,
@@ -1251,7 +1246,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       throw new Error(errorMessages.maxReservedConnections)
     }
 
-    this.pushConnection(tabId, await this.connection.getClient());
+    this.pushConnection(tabId, await this.connector.getRawConnection());
   }
 
   async releaseConnection(tabId: number): Promise<void> {

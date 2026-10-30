@@ -10,7 +10,7 @@ import connectTunnel from '../tunnel';
 import { IDbConnectionServer } from '../backendTypes';
 import { Dialect as IdentifierDialect, IdentifyResult } from 'sql-query-identifier/lib/defines';
 import { Transcoder } from '../serialization/transcoders';
-import { DatabaseConnection, NoopConnection } from './DatabaseConnection';
+import { DatabaseConnector, NoopConnector } from './DatabaseConnector';
 import { ColumnReference, TableReference } from 'sql-query-identifier/lib/defines';
 import { safelyIdentify } from '../sql_tools';
 
@@ -80,7 +80,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
   connErrHandler: (msg: string) => void = null;
   reservedConnections: Map<number, Conn> = new Map<number, Conn>();
   transcoders: Transcoder<any, any>[] = [];
-  connection: DatabaseConnection<Conn> | NoopConnection;
+  connector: DatabaseConnector | NoopConnector;
 
   constructor(knex: Knex | null, contextProvider: AppContextProvider, server: IDbConnectionServer, database: IDbConnectionDatabase) {
     this.knex = knex;
@@ -89,7 +89,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
     this.database = database;
     this.db = database?.database
     this.connectionType = this.server?.config.client;
-    this.connection = new NoopConnection({ server, database });
+    this.connector = new NoopConnector({ server, database });
   }
 
   set connectionHandler(fn: (msg: string) => void) {
@@ -130,7 +130,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
         await this.disconnect();
       }
 
-      await this.connection.connect({ signal });
+      await this.connector.connect({ signal });
     } catch (err) {
       logger().error('Connection error %j', err);
       // this.disconnect(this.server, this.database);
@@ -145,7 +145,7 @@ export abstract class BasicDatabaseClient<RawResultType extends BaseQueryResult,
       // delete this.server.db[this.database.database]
     }
     await this.knex?.destroy();
-    await this.connection.disconnect();
+    await this.connector.disconnect();
   }
   // ****************************************************************************
 

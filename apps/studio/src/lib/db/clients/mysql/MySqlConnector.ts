@@ -12,10 +12,10 @@ import globals from "../../../../common/globals";
 import { AzureAuthService } from "@/lib/db/authentication/azure";
 import {
   ConnectionPoolOptions,
-  DatabaseConnection,
-} from "@/lib/db/clients/DatabaseConnection";
+  DatabaseConnector,
+} from "@/lib/db/clients/DatabaseConnector";
 
-const log = rawLog.scope("MySqlConnection");
+const log = rawLog.scope("MySqlConnector");
 
 const mysqlErrors = {
   EMPTY_QUERY: "ER_EMPTY_QUERY",
@@ -38,7 +38,7 @@ type ResultType = {
   arrayMode: boolean;
 };
 
-export class MySqlConnection extends DatabaseConnection<mysql.PoolConnection> {
+export class MySqlConnector extends DatabaseConnector<mysql.PoolConnection> {
   private conn: {
     pool: mysql.Pool;
   };

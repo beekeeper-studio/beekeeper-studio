@@ -2,7 +2,7 @@ import _ from "lodash";
 import { readFileSync } from "fs";
 import pg, { PoolClient, PoolConfig } from "pg";
 import logRaw from "@bksLogger";
-import { DatabaseConnection } from "@/lib/db/clients/DatabaseConnection";
+import { DatabaseConnector } from "@/lib/db/clients/DatabaseConnector";
 import type { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { refreshTokenIfNeeded } from "@/lib/db/clients/utils";
 import BksConfig from "@/common/bksConfig";
@@ -11,9 +11,9 @@ import { AzureAuthService } from "@/lib/db/authentication/azure";
 import globals from "@/common/globals";
 import { HasPool } from "@/lib/db/clients/postgresql/types";
 
-const log = logRaw.scope("PsqlConnection");
+const log = logRaw.scope("PsqlConnector");
 
-export class PsqlConnection extends DatabaseConnection<PoolClient> {
+export class PsqlConnector extends DatabaseConnector<PoolClient> {
   private interval: NodeJS.Timeout | null = null;
   private conn: HasPool;
 

@@ -214,7 +214,7 @@ export const ConnHandlers: IConnectionHandlers = {
     });
     state(sId).connectionAbortController = null;
 
-    connection.connection.on('connection-lost', () => {
+    connection.connector.on('connection-lost', () => {
       state(sId).port.postMessage({ type: 'conn/connection-lost' });
     });
   },

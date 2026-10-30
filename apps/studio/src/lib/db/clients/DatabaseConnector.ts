@@ -26,40 +26,14 @@ export class DatabaseConnectionLostError extends Error {
 }
 
 /**
- * A class that uniforms connection pool logic including the ssh tunnel.
+ * `DatabaseConnector` acts a bridge between the app and a database driver (mysql2, pg, etc..).
  *
- * @example
- *
- * class PsqlConnection extends DatabaseConnection<pg.Client> {
- *   // implement abstract methods here
- * }
- *
- * const connection = new PsqlConnection();
- *
- * // Connect before using
- * await connection.connect();
- *
- * // Get a client
- * const client = await conn.getClient();
- *
- * // Disconnect if not used
- * await connection.disconnect();
- *
- * // Listen for connection lost event
- * connection.on("connection-lost", async () => {
- *   // If connection is lost, we need to initiate a new fresh connection.
- *
- *   // 1. Makes sure we shutdown the active connection and ssh tunnel properly
- *   await connection.disconnect();
- *
- *   // 2. Makes a new connection and ssh tunnel (if enabled)
- *   await connection.connect();
- * })
- *
+ * Its main purpose is to handle low-level usage of the database driver that includes;
+ * configuration, connection pooling, error handling, ssh tunnels, etc..
  **/
-export abstract class DatabaseConnection<
-  Client,
-  GetClientOptions = any
+export abstract class DatabaseConnector<
+  RawConnection = any,
+  GetRawConnectionOptions = any
 > extends events.EventEmitter<{ "connection-lost": [] }> {
   private connected: boolean = false;
 
@@ -77,7 +51,9 @@ export abstract class DatabaseConnection<
 
   protected abstract doDisconnect(): Promise<void>;
 
-  protected abstract doGetClient(options?: GetClientOptions): Promise<Client>;
+  protected abstract doGetClient(
+    options?: GetRawConnectionOptions
+  ): Promise<RawConnection>;
 
   protected abstract isConnectionLostError(err: any): boolean;
 
@@ -116,7 +92,9 @@ export abstract class DatabaseConnection<
     this.connected = false;
   }
 
-  async getClient(options?: GetClientOptions): Promise<Client> {
+  async getRawConnection(
+    options?: GetRawConnectionOptions
+  ): Promise<RawConnection> {
     if (!this.connected) {
       await this.connect();
     }
@@ -124,28 +102,20 @@ export abstract class DatabaseConnection<
     try {
       return await this.doGetClient(options);
     } catch (err) {
-      await this.handleErrorAndRethrow(err);
+      throw this.handleError(err);
     }
   }
 
-  protected async handleError(err: any) {
+  protected handleError(err: any): Error {
     if (this.isConnectionLostError(err)) {
       this.emit("connection-lost");
+      return new DatabaseConnectionLostError(err);
     }
-  }
-
-  private async handleErrorAndRethrow(err: any) {
-    await this.handleError(err);
-
-    if (this.isConnectionLostError(err)) {
-      throw new DatabaseConnectionLostError(err);
-    }
-
-    throw err;
+    return err;
   }
 }
 
-export class NoopConnection extends DatabaseConnection<null, void> {
+export class NoopConnector extends DatabaseConnector<null, void> {
   protected async doConnect(): Promise<void> { }
   protected async doDisconnect(): Promise<void> { }
   protected async doGetClient(): Promise<null> {

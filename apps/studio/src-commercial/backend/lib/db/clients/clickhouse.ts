@@ -64,7 +64,7 @@ import { errors } from "@/lib/errors";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { ClickHouseCursor } from "./clickhouse/ClickHouseCursor";
-import { ClickHouseConnection } from "./clickhouse/ClickHouseConnection";
+import { ClickHouseConnector } from "./clickhouse/ClickHouseConnector";
 
 interface JSONResult {
   statement: IdentifyResult;
@@ -124,18 +124,15 @@ const knex = knexlib({ client: ClickhouseKnexClient });
 const RE_NULLABLE = /^Nullable\((.*)\)$/;
 const RE_SELECT_FORMAT = /^\s*SELECT.+FORMAT\s+(\w+)\s*;?$/is;
 
-export class ClickHouseClient extends BasicDatabaseClient<
-  Result,
-  NodeClickHouseClient
-> {
+export class ClickHouseClient extends BasicDatabaseClient<Result> {
   version: string;
   supportsTransaction: boolean;
+  connector = new ClickHouseConnector({ server: this.server, database: this.database });
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, clickhouseContext, server, database);
     this.dialect = "generic";
     this.readOnlyMode = server?.config?.readOnlyMode || false;
-    this.connection = new ClickHouseConnection({ server, database });
   }
 
   async connect(): Promise<void> {
@@ -770,8 +767,7 @@ export class ClickHouseClient extends BasicDatabaseClient<
     log.info(`Running Query`, query, options);
 
     if (options.insert) {
-      const client = await this.connection.getClient();
-      await client.insert(options.insert as any);
+      await this.connector.insert(options.insert as any);
       return [];
     }
 
@@ -786,8 +782,7 @@ export class ClickHouseClient extends BasicDatabaseClient<
       let rows: any[][] | Record<string, any>[] = [];
       let columns: ResultColumn[] = [];
       if (statement.executionType === "LISTING" && !format) {
-        const client = await this.connection.getClient();
-        const result = await client.query({
+        const result = await this.connector.query({
           query: statement.text,
           query_params: options.params,
           query_id: options.queryId,
@@ -798,8 +793,7 @@ export class ClickHouseClient extends BasicDatabaseClient<
         rows = data.data;
         columns = data.meta;
       } else {
-        const client = await this.connection.getClient();
-        const result = await client.exec({
+        const result = await this.connector.exec({
           query: statement.text,
           query_params: options.params,
           query_id: options.queryId,
@@ -1021,7 +1015,7 @@ export class ClickHouseClient extends BasicDatabaseClient<
     const cursor = new ClickHouseCursor({
       query: qs.query,
       params: qs.params,
-      client: await this.connection.getClient(),
+      client: await this.connector.getRawConnection(),
       chunkSize,
     });
     return { totalRows, columns, cursor };
@@ -1031,7 +1025,7 @@ export class ClickHouseClient extends BasicDatabaseClient<
     // const cursorOpts = {
     //   query,
     //   params: [],
-    //   client: this.connection.getClient(),
+    //   client: this.connector.getRawConnection(),
     //   chunkSize
     // }
 

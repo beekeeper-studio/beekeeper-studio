@@ -5,12 +5,12 @@ import {escapeString} from "./utils";
 import pg from 'pg';
 import { IndexColumn, TableKey } from "@shared/lib/dialects/models";
 import _ from "lodash";
-import { RedshiftConnection } from "./redshift/RedshiftConnection";
+import { RedshiftConnector } from "./redshift/RedshiftConnector";
 import { foreignKeyColumnsSql } from "./redshift/scripts";
 
 // One row per foreign-key column. Callers append the WHERE / ORDER BY.
 export class RedshiftClient extends PostgresClient {
-  connection: RedshiftConnection;
+  connector = new RedshiftConnector({ server: this.server, database: this.database });
 
   async supportedFeatures(): Promise<SupportedFeatures> {
     return {

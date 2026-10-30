@@ -1,11 +1,11 @@
 import { PoolConfig } from "pg";
 import { ClusterCredentialConfiguration, RedshiftCredentialResolver } from "../../authentication/amazon-redshift";
 import { IDbConnectionServer } from "../../backendTypes";
-import { PsqlConnection } from "../postgresql/PsqlConnection";
+import { PsqlConnector } from "../postgresql/PsqlConnector";
 import { resolveAWSCredentials } from "../utils";
 import BksConfig from "@/common/bksConfig";
 
-export class RedshiftConnection extends PsqlConnection {
+export class RedshiftConnector extends PsqlConnector {
   protected async configDatabase(server: IDbConnectionServer, database: { database: string }) {
     // If a temporary user is used to connect to the database, we populate it below.
     let tempUser: string;
