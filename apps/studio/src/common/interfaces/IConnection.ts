@@ -53,6 +53,8 @@ export interface ISimpleConnection extends Transport {
   sslKeyFile: Nullable<string>
   sslRejectUnauthorized: boolean
   readOnlyMode: boolean
+  /** Allows `beekeeper-studio cli` to use the connection while it is open. */
+  cliEnabled?: boolean
   labelColor?: Nullable<string>
   trustServerCertificate?: boolean
   windowsAuthEnabled?: boolean

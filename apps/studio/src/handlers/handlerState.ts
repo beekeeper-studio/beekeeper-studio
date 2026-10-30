@@ -18,7 +18,7 @@ export interface TempFile {
   fileHandle: fs.promises.FileHandle
 }
 
-class State {
+export class State {
   port: MessagePortMain = null
   server: IDbConnectionPublicServer = null;
   usedConfig: IConnection = null;
@@ -70,6 +70,11 @@ export function state(id: string): State {
 
 export function newState(id: string): void {
   states.set(id, new State());
+}
+
+/** Every window's state, keyed by its sId. Read-only use (the CLI lists open connections). */
+export function allStates(): IterableIterator<[string, State]> {
+  return states.entries();
 }
 
 export async function removeState(id: string): Promise<void> {

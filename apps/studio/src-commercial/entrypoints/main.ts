@@ -29,6 +29,8 @@ import * as sms from 'source-map-support'
 import { initializeSecurity } from '@/backend/lib/security'
 import { initializeFileHelpers } from '@/backend/lib/FileHelpers'
 import { safeOpenExternal } from '@/background/lib/electron/safeOpenExternal'
+import { cliArgsFromProcessArgv } from '@/lib/cli/args'
+import { runCli } from '@/lib/cli/client'
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -36,6 +38,47 @@ if (platformInfo.env.development || platformInfo.env.test) {
 
 log.transports.console.level = platformInfo.logLevel;
 log.transports.file.level = platformInfo.logLevel;
+
+// `beekeeper-studio cli <command> [options]`: this process is a client for the
+// app that is already running, not a second copy of it. It sends the command
+// over the CLI socket, prints the reply and exits before the window would open.
+const cliArgs = cliArgsFromProcessArgv()
+const cliMode = cliArgs !== null
+if (cliMode) {
+  // Only the command's output belongs on the terminal (mainLogger already
+  // silenced the console transport while the modules loaded).
+  log.transports.console.level = false
+  app.dock?.hide()
+  runCliAndExit(cliArgs)
+}
+
+function runCliAndExit(args: string[]) {
+  const readStdin = () => new Promise<string>((resolve, reject) => {
+    let text = ''
+    process.stdin.setEncoding('utf8')
+    process.stdin.on('data', (chunk: string) => { text += chunk })
+    process.stdin.on('end', () => resolve(text))
+    process.stdin.on('error', reject)
+  })
+  const flushAndExit = (code: number) => {
+    // stdout is a pipe when the output is captured; make sure it drained.
+    process.stdout.write('', () => process.stderr.write('', () => app.exit(code)))
+  }
+  runCli(args, {
+    socketPath: platformInfo.cliSocketPath,
+    io: {
+      writeOut: (text) => { process.stdout.write(text) },
+      writeErr: (text) => { process.stderr.write(text) },
+      readFile: (file) => fs.promises.readFile(path.resolve(file), 'utf8'),
+      readStdin,
+    },
+  })
+    .catch((error) => {
+      process.stderr.write(`${error?.stack || error}\n`)
+      return 1
+    })
+    .then(flushAndExit)
+}
 
 electron.nativeTheme.on('updated', () => {
   const dark = electron.nativeTheme.shouldUseDarkColors
@@ -218,6 +261,10 @@ app.on('browser-window-created', (_event: electron.Event, window: electron.Brows
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
+  // CLI mode exits on its own once the reply is printed. Opening a window here
+  // would start a second copy of the app.
+  if (cliMode) return
+
   if (isDevelopment && !process.env.IS_TEST) {
 
     // Per: www.npmjs.com/package/electron-devtools-installer?activeTab=readme#what-extensions-can-i-use

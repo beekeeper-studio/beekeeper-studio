@@ -44,12 +44,18 @@ import { PluginErrorCode, PluginSystemErrorCode } from '@/lib/errors';
 import * as sms from 'source-map-support'
 import { WorkspaceHandlers } from '@/handlers/workspaceHandlers';
 import { ConfigHandlers } from '@/handlers/configHandlers';
+import { CliServer } from '@/lib/cli/server';
+import { executeCliRequest } from '@/lib/cli/commands';
+import { utilityCliBackend } from '@/lib/cli/utilityBackend';
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
 }
 
 let ormConnection: ORMConnection;
+// Answers `beekeeper-studio cli` requests. It lives here because this process
+// owns the live database connections (one per window, see handlerState).
+let cliServer: CliServer | null = null;
 const pluginManager = new PluginManager({
   appVersion: platformInfo.appVersion,
   fileManager: new PluginFileManager({
@@ -224,5 +230,23 @@ async function init() {
     log.error("Error initializing driver dep manager", e);
   });
 
+  startCliServer();
+
   process.parentPort.postMessage({ type: 'ready' });
 }
+
+function startCliServer() {
+  if (!platformInfo.cliSocketPath) return;
+  cliServer = new CliServer({
+    socketPath: platformInfo.cliSocketPath,
+    handler: (request) => executeCliRequest(utilityCliBackend, request),
+    log: rawLog.scope('CliServer'),
+  });
+  cliServer.start().catch((e) => {
+    log.error('Failed to start the CLI socket server', e);
+  });
+}
+
+process.on('exit', () => {
+  cliServer?.stopSync();
+});

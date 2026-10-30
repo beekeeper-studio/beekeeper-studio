@@ -4,6 +4,9 @@ declare interface IBksConfig {
         azSQLLoginScope: string;
         ssoPrompt: string;
     };
+    cli: {
+        enableForAllConnections: boolean;
+    };
     db: {
         bedrock: {
             allowSkipToLastPage: boolean;

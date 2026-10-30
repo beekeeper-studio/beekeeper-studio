@@ -230,6 +230,10 @@ export class DbConnectionBase extends ApplicationEntity {
   @Column({type: 'boolean', nullable: false, default: false})
   readOnlyMode = true
 
+  // Lets `beekeeper-studio cli` commands use this connection while it is open in the app.
+  @Column({ type: 'boolean', nullable: false, default: false })
+  cliEnabled = false
+
   // Used for Oracle only
   @Column({ type: 'simple-json', nullable: false })
   options: ConnectionOptions = { connectionMethod: 'manual' }

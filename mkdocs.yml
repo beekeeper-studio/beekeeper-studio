@@ -204,6 +204,7 @@ nav:
     - Sharing & Permissions: user_guide/sharing.md
     - user_guide/security.md
     - Plugins: user_guide/plugins.md
+    - Command Line Interface: user_guide/cli.md
     - Configuration: user_guide/configuration.md
   - Plugin Development:
     - Introduction: plugin_development/index.md
