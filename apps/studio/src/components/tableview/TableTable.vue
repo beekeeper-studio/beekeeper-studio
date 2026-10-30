@@ -999,7 +999,9 @@ export default Vue.extend({
         cssClass += ' primary-key';
       } else if (hasKeyDatas) {
         cssClass += ' foreign-key';
-      } else if (isNumericDataType(column.dataType) || isDateDataType(column.dataType)) {
+      }
+
+      if (isNumericDataType(column.dataType) || isDateDataType(column.dataType)) {
         cssClass += ' text-right'
       }
 
