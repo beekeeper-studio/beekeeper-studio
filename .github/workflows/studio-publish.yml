@@ -185,26 +185,17 @@ jobs:
           vs-version: '16.11.14'
         if: matrix.os.type == 'windows'
 
-
-      - name: Install python ${{ env.PYTHON_VERSION }}
-        id: python
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
       - name: Install Node.js, NPM, PNPM, and Python
         uses: jdx/mise-action@v5
         with:
-          cache: 'false'
-
+          cache: false
 
       # node-gyp checks the PYTHON env var first. Without it, on Windows it asks
       # the py launcher, which picks the newest Python on the runner, not this one.
       - name: Verify Python Version
         shell: bash
-        env:
-          PYTHON: ${{ steps.python.outputs.python-path }}
         run: |
+          PYTHON="$(mise which python)"
           INSTALLED=$("$PYTHON" --version | cut -d " " -f 2)
           echo "node-gyp will use Python $INSTALLED at $PYTHON"
           if [[ $INSTALLED != "$PYTHON_VERSION".* ]]; then
@@ -227,12 +218,12 @@ jobs:
       # the native oracledb package.
       # But only sometimes. I cannot figure out why.
       # Someone should at some point.
-      - name: yarn install (with retry)
+      - name: pnpm install (with retry)
         uses: nick-fields/retry@v4
         with:
           timeout_minutes: 20
           max_attempts: 3
-          command: "yarn install --frozen-lockfile --network-timeout 100000"
+          command: "pnpm install --frozen-lockfile --fetch-timeout 100000"
 
       - name: Verify msnodesqlv8 native build
         run: node -e "require('msnodesqlv8')"
@@ -240,7 +231,7 @@ jobs:
       # Every database client loads at startup, so one native module that
       # can't load on this arch breaks every connection. Fail before shipping it.
       - name: Verify native modules load in Electron
-        run: yarn workspace beekeeper-studio electron ../../bin/check-native-modules.js
+        run: pnpm -F beekeeper-studio electron ../../bin/check-native-modules.js
         env:
           ELECTRON_RUN_AS_NODE: 1
 
@@ -292,7 +283,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           USE_SYSTEM_FPM: true
           SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
-        run: yarn run electron:build --publish always
+        run: pnpm run electron:build --publish always
 
       - name: Build & Publish (*NIX)
         if: matrix.os.type != 'windows'
@@ -306,7 +297,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           USE_SYSTEM_FPM: true
           SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
-        run: yarn run electron:build --publish always
+        run: pnpm run electron:build --publish always
 
       # Both arches of a platform upload the same update file name, each listing
       # only its own build. Remove it here; the finalize jobs below upload one
@@ -350,7 +341,7 @@ jobs:
             core.setOutput(process.env.OUTPUT, content)
       - name: Cleanup artifacts
         if: ${{!startsWith(matrix.os.name, 'windows')}}
-        run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap|*.yml|*.flatpak|*.aur)"
+        run: pnx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap|*.yml|*.flatpak|*.aur)"
 
       - name: Cleanup artifacts Win
         if: startsWith(matrix.os.name, 'windows')
