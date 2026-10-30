@@ -50,6 +50,13 @@
                   >
                   <span>Routines</span>
                 </label>
+                <label v-if="supportsColumnSearch">
+                  <input
+                    type="checkbox"
+                    v-model="searchColumns"
+                  >
+                  <span>Search columns</span>
+                </label>
                 <x-menuitem />
               </x-menu>
             </x-button>
@@ -62,6 +69,9 @@
       v-show="tablesLoading"
       style="margin-top: -5px;"
     />
+    <div v-if="$store.state.columnSearch.error" class="empty">
+      Unable to search columns: {{ $store.state.columnSearch.error }}
+    </div>
 
     <!-- Pinned Tables -->
     <div
@@ -251,6 +261,7 @@
           return this.$store.state.entityFilter.filterQuery
         },
         set(newFilter) {
+          this.$store.commit('columnSearch/reset', '')
           this.$store.dispatch('setFilterQuery', newFilter)
         }
       },
@@ -287,6 +298,17 @@
       supportsRoutines() {
         return this.supportedFeatures.customRoutines
       },
+      supportsColumnSearch() {
+        return this.dialect === 'postgresql' || this.dialect === 'mysql'
+      },
+      searchColumns: {
+        get() {
+          return this.$store.state.columnSearch.enabled
+        },
+        set(enabled) {
+          this.$store.dispatch('columnSearch/setEnabled', enabled)
+        }
+      },
       canCreateTable() {
         return !this.dialectData.disabledFeatures?.createTable
       },
@@ -300,7 +322,11 @@
       }
     },
     watch: {
+      usedConfig() {
+        this.$store.commit('columnSearch/reset', '')
+      },
       currentDatabase(){
+        this.$store.commit('columnSearch/reset', '')
         this.filterQuery = null
       },
       loadedWithPins (loaded, oldloaded) {

@@ -63,14 +63,14 @@
     >
       <span
         class="sub-item"
-        v-if="!loadingColumns && !(table.columns || table.columns?.length)"
+        v-if="!loadingColumns && !displayColumns?.length"
       >
         No Columns
       </span>
-      <template v-else-if="table.columns && table.columns.length > 0">
+      <template v-else-if="displayColumns && displayColumns.length > 0">
         <span
           :key="c.columnName"
-          v-for="(c, i) in table.columns"
+          v-for="(c, i) in displayColumns"
           class="sub-item"
           @contextmenu.prevent.stop="openColumnMenu(c, $event)"
         >
@@ -138,6 +138,7 @@ export default Vue.extend({
     "level",
     "expanded",
     "loadingColumns",
+    "matchingColumns",
   ],
   components: { TableIcon },
   data() {
@@ -167,6 +168,9 @@ export default Vue.extend({
     },
   },
   computed: {
+    displayColumns() {
+      return this.matchingColumns ?? this.table.columns
+    },
     selected() {
       return this.selectedSidebarItem === this.id;
     },

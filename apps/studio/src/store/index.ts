@@ -43,6 +43,8 @@ import { MenuBarModule } from './modules/MenuBarModule'
 import { PluginsModule, PluginsState } from './modules/plugins'
 import { VimStoreModule } from './modules/VimStoreModule'
 import { pluralize } from '@/vendor/pluralize'
+import { ColumnSearchModule } from './modules/ColumnSearchModule'
+import { ColumnSearchResult, matchColumnResults } from '@/lib/db/columnSearch'
 
 
 const log = RawLog.scope('store/index')
@@ -103,6 +105,7 @@ export interface State {
   tables: TableOrView[],
   routines: Routine[],
   entityFilter: EntityFilter,
+  columnSearch?: { enabled: boolean, query: string, results: ColumnSearchResult[], error: string | null },
   columnsLoading: string,
   tablesLoading: string,
   tablesInitialLoaded: boolean,
@@ -159,6 +162,7 @@ const store = new Vuex.Store<State>({
     menuBar: MenuBarModule,
     plugins: PluginsModule,
     vim: VimStoreModule,
+    columnSearch: ColumnSearchModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),
@@ -250,7 +254,10 @@ const store = new Vuex.Store<State>({
       return state.selectedSidebarItem
     },
     filteredTables(state) {
-      return entityFilter(state.tables, state.entityFilter);
+      const matches = state.columnSearch?.query === state.entityFilter.filterQuery ? state.columnSearch.results : []
+      return entityFilter(state.tables, state.entityFilter, table =>
+        matchColumnResults(matches, table.schema, table.name, state.database).length > 0
+      );
     },
     filteredRoutines(state) {
       return entityFilter(state.routines, state.entityFilter)
@@ -861,6 +868,7 @@ const store = new Vuex.Store<State>({
     },
     setFilterQuery: _.debounce(function (context, filterQuery) {
       context.commit('filterQuery', filterQuery)
+      context.dispatch('columnSearch/search', { query: filterQuery, dialect: context.getters.dialect })
     }, 500),
     async pinTable(context, table) {
       table.pinned = true

@@ -22,6 +22,7 @@
     :table="source.entity"
     :pinned="source.pinned"
     :loading-columns="source.loadingColumns"
+    :matching-columns="source.matchingColumns"
     @expand="onExpand($event, source)"
     @pin="onPin($event, source)"
     @contextmenu.prevent.stop="

@@ -72,7 +72,7 @@ export function deparameterizeQuery(queryText: string, dialect: Dialect, params:
   return result;
 }
 
-export function entityFilter(rawTables: any[], allFilters: EntityFilter) {
+export function entityFilter(rawTables: any[], allFilters: EntityFilter, matchesColumn?: (table: any) => boolean) {
   const tables = rawTables.filter((table) => {
     return (table.entityType === 'table' && allFilters.showTables &&
       ((table.parenttype != 'p' && !allFilters.showPartitions) || allFilters.showPartitions)) ||
@@ -92,7 +92,9 @@ export function entityFilter(rawTables: any[], allFilters: EntityFilter) {
     .difference(startsWithFilter)
     .filter((item) => item.name.toLowerCase().includes(filterQuery.toLowerCase()))
     .value()
-  return _.concat(startsWithFilter, containsFilter)
+  const nameMatches = _.concat(startsWithFilter, containsFilter)
+  const columnMatches = matchesColumn ? _.difference(tables, nameMatches).filter(matchesColumn) : []
+  return _.concat(nameMatches, columnMatches)
 }
 
 // a function that takes in a string and a dialect,
