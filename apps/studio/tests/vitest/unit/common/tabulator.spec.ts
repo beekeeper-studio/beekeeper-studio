@@ -1,9 +1,8 @@
-import { TabulatorFull } from 'tabulator-tables'
-import { editableTableKeybindings } from '@/shared/lib/tabulator/helpers'
+import { tabulatorForTableInfo } from '@/common/tabulator'
 
 // Regression coverage for #3172: Home/End did nothing in the column, relation
 // and index name/comment editors.
-describe('editableTableKeybindings', () => {
+describe('tabulatorForTableInfo', () => {
   let el: HTMLElement
 
   beforeEach(() => {
@@ -16,8 +15,7 @@ describe('editableTableKeybindings', () => {
   // Cell editors are inputs inside the table element, which is where
   // Tabulator listens for its keybindings.
   function pressInTableInput(key: string) {
-    const table = new TabulatorFull(el, {
-      keybindings: editableTableKeybindings,
+    const table = tabulatorForTableInfo(el, {
       data: [{ comment: 'hello' }],
       columns: [{ field: 'comment', editor: 'input' }],
     })

@@ -112,13 +112,13 @@
 </style>
 
 <script lang="ts">
-import { TabulatorFull, CellComponent, RowComponent } from 'tabulator-tables'
+import { CellComponent, RowComponent } from 'tabulator-tables'
 import DataMutators from '../../mixins/data_mutators'
 import { format } from 'sql-formatter'
 import _ from 'lodash'
 import Vue from 'vue'
 // import globals from '../../common/globals'
-import { vueEditor, vueFormatter, trashButton, TabulatorStateWatchers, moveRowHandle, editableTableKeybindings } from '@shared/lib/tabulator/helpers'
+import { vueEditor, vueFormatter, trashButton, TabulatorStateWatchers, moveRowHandle } from '@shared/lib/tabulator/helpers'
 import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter.vue'
 import CheckboxEditorVue from '@shared/components/tabulator/CheckboxEditor.vue'
 import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue'
@@ -131,6 +131,7 @@ import ErrorAlert from '../common/ErrorAlert.vue'
 import TableInfoToolbar from './TableInfoToolbar.vue'
 import rawLog from '@bksLogger'
 import { escapeHtml } from '@shared/lib/tabulator'
+import { tabulatorForTableInfo } from '@/common/tabulator'
 import { ExtendedTableColumn } from '@/lib/db/models'
 import { StructureCopyMixin } from '@/mixins/structureCopy'
 import { StructureFilterMixin } from '@/mixins/structureFilter'
@@ -517,7 +518,7 @@ export default Vue.extend({
       this.initialColumns = this.tableData.slice(0)
       if (this.tabulator) this.tabulator.destroy()
       // TODO: a loader would be so cool for tabulator for those gnarly column count tables that people might create...
-      this.tabulator = new TabulatorFull(this.$refs.tableSchema, {
+      this.tabulator = tabulatorForTableInfo(this.$refs.tableSchema, {
         columns: this.tableColumns,
         layout: 'fitColumns',
         movableRows: canMoveRows,
@@ -529,7 +530,6 @@ export default Vue.extend({
         },
         data: this.tableData,
         placeholder: "No Columns",
-        keybindings: editableTableKeybindings,
       })
 
       this.tabulator.on('rowMoved', (row) => this.movedRows(row))

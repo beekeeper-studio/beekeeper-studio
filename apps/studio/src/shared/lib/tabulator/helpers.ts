@@ -159,10 +159,3 @@ export const TabulatorStateWatchers = {
     }
   }
 }
-
-// Tabulator binds Home/End to row scrolling and calls preventDefault, which
-// stops the caret moving inside a cell editor input.
-export const editableTableKeybindings = {
-  scrollToStart: false,
-  scrollToEnd: false,
-}

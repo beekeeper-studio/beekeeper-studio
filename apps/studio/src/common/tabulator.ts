@@ -107,3 +107,20 @@ export function tabulatorForTableData(
   }
   return tabulator
 }
+
+// For the editable tables in the structure tab (columns, relations, indexes).
+export function tabulatorForTableInfo(
+  el: string | HTMLElement,
+  options: TabulatorOptions
+): TabulatorFull {
+  return new TabulatorFull(el, {
+    ...options,
+    keybindings: {
+      // Home/End would scroll the table and preventDefault, so the caret
+      // could not move inside a cell editor input.
+      scrollToStart: false,
+      scrollToEnd: false,
+      ...options.keybindings,
+    },
+  });
+}
