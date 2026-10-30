@@ -3,7 +3,6 @@ packages:
 
 sideEffectsCache: false
 
-
 overrides:
   cpu-features: "-"
   axios: ^1.15.0
@@ -21,9 +20,9 @@ allowBuilds:
   oracledb: true
   os-dns-native: true
   protobufjs: true
-  sqlanywhere@https://codeload.github.com/beekeeper-studio/node-sqlanywhere/tar.gz/0e1280155455a308c04b07e9f6888372bd513b08: true
-  ssh2: true
+  sqlanywhere@https://codeload.github.com/beekeeper-studio/node-sqlanywhere/tar.gz/0e1280155455a308c04b07e9f6888372bd513b08: false # needs to be run by electron install-app-deps
+  ssh2: false # needs to be run by electron install-app-deps
   vue-demi@0.14.10: true
   macos-export-certificate-and-key@2.0.1: true
   win-export-certificate-and-key@3.0.2: true
-  '@vue/web-component-wrapper@https://codeload.github.com/beekeeper-studio/vue-web-component-wrapper/tar.gz/635e4b427b90e199c273b194cf9db6b744d63e95': true
+  "@vue/web-component-wrapper@https://codeload.github.com/beekeeper-studio/vue-web-component-wrapper/tar.gz/635e4b427b90e199c273b194cf9db6b744d63e95": true
