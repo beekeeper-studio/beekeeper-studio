@@ -1,6 +1,9 @@
 import { MysqlClient } from "./mysql";
+import { MariaDBConnector } from "./mariadb/MariaDBConnector";
 
 export class MariaDBClient extends MysqlClient {
+  connector = new MariaDBConnector({ server: this.server, database: this.database });
+
   resolveDefault(defaultValue: string) {
     // adapted from https://github.com/PomeloFoundation/Pomelo.EntityFrameworkCore.MySql/pull/998/files
     if (!defaultValue) return null;

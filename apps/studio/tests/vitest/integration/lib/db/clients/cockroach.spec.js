@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeAll, afterAll } from "vitest"
 import { DockerComposeEnvironment } from 'testcontainers'
 import { DBTestUtil, dbtimeout } from '@tests/lib/db'
 import { runCommonTests } from './all';
+import { runSshTests } from './ssh/commonSshTests';
 
 describe("CockroachDB Tests", () => {
   vi.setConfig({ testTimeout: dbtimeout, hookTimeout: dbtimeout })
@@ -68,3 +69,5 @@ describe("CockroachDB Tests", () => {
     expect(indexes.find((idx) => idx.name === 'expression_with_jsonb_operator').columns.length).toBe(1)
   })
 })
+
+runSshTests("cockroachdb");

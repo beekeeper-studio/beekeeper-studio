@@ -8,7 +8,6 @@ import {
 import { ClickhouseKnexClient } from "@shared/lib/knex-clickhouse";
 import knexlib from "knex";
 import {
-  createClient,
   InsertParams,
   ResponseJSON,
   ClickHouseClient as NodeClickHouseClient,
@@ -65,9 +64,7 @@ import { errors } from "@/lib/errors";
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import { ClickHouseCursor } from "./clickhouse/ClickHouseCursor";
-import { readFileSync } from 'fs';
-import { NodeClickHouseClientConfigOptions } from "@clickhouse/client/dist/config";
-import https from 'https'
+import { ClickHouseConnector } from "./clickhouse/ClickHouseConnector";
 
 interface JSONResult {
   statement: IdentifyResult;
@@ -129,8 +126,8 @@ const RE_SELECT_FORMAT = /^\s*SELECT.+FORMAT\s+(\w+)\s*;?$/is;
 
 export class ClickHouseClient extends BasicDatabaseClient<Result> {
   version: string;
-  client: NodeClickHouseClient;
   supportsTransaction: boolean;
+  connector = new ClickHouseConnector({ server: this.server, database: this.database });
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, clickhouseContext, server, database);
@@ -140,68 +137,6 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
 
   async connect(): Promise<void> {
     await super.connect();
-
-    let url: string;
-
-    if (this.server.config.url) {
-      url = this.server.config.url
-      // Route the user-provided URL through the SSH tunnel's local endpoint.
-      if (this.server.sshTunnel) {
-        const urlObj = new URL(url);
-        urlObj.hostname = this.server.config.localHost;
-        urlObj.port = this.server.config.localPort.toString();
-        url = urlObj.toString();
-      }
-    } else {
-      const urlObj = new URL('http://example.com/');
-      urlObj.hostname = this.server.sshTunnel
-        ? this.server.config.localHost
-        : this.server.config.host;
-      urlObj.port = (this.server.sshTunnel
-        ? this.server.config.localPort
-        : this.server.config.port).toString();
-      urlObj.protocol = this.server.config.ssl ? 'https:' : 'http:';
-      url = urlObj.toString();
-    }
-
-    const config: NodeClickHouseClientConfigOptions = {
-      url,
-      username: this.server.config.user,
-      password: this.server.config.password,
-      database: this.database.database,
-      application: "Beekeeper Studio",
-      clickhouse_settings: {
-        default_format: "JSONCompact",
-      },
-      request_timeout: 120_000, // 2 minutes
-    };
-    if (this.server.config.ssl) {
-      let hasCerts = false;
-      // ClickHouse client supports both one-way and mutual TLS authentication. If sslCertFile and sslKeyFile are provided, we will use mutual TLS, otherwise we will use one-way TLS.
-      if (this.server.config.sslCaFile) {
-        hasCerts = true;
-        if (this.server.config.sslCertFile && this.server.config.sslKeyFile) {
-          config.tls = {
-            ca_cert: readFileSync(this.server.config.sslCaFile),
-            cert: readFileSync(this.server.config.sslCertFile),
-            key: readFileSync(this.server.config.sslKeyFile),
-          };
-        } else {
-          config.tls = {
-            ca_cert: readFileSync(this.server.config.sslCaFile),
-          };
-        }
-      }
-
-      // Beekeeper's default behavior is to disable verification unless certificates are provided.
-      if (!hasCerts || !this.server.config.sslRejectUnauthorized) {
-        config.http_agent = new https.Agent({
-          rejectUnauthorized: false
-        });
-      }
-    }
-
-    this.client = createClient(config);
     const result = await this.driverExecuteSingle(
       "SELECT version() AS version"
     );
@@ -209,11 +144,6 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     const str = json.data[0].version;
     this.version = str.trim();
     this.supportsTransaction = await this.checkTransactionSupport();
-  }
-
-  async disconnect(): Promise<void> {
-    await super.disconnect();
-    await this.client.close();
   }
 
   async versionString(): Promise<string> {
@@ -837,7 +767,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     log.info(`Running Query`, query, options);
 
     if (options.insert) {
-      await this.client.insert(options.insert as any);
+      await this.connector.insert(options.insert as any);
       return [];
     }
 
@@ -852,7 +782,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
       let rows: any[][] | Record<string, any>[] = [];
       let columns: ResultColumn[] = [];
       if (statement.executionType === "LISTING" && !format) {
-        const result = await this.client.query({
+        const result = await this.connector.query({
           query: statement.text,
           query_params: options.params,
           query_id: options.queryId,
@@ -863,7 +793,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
         rows = data.data;
         columns = data.meta;
       } else {
-        const result = await this.client.exec({
+        const result = await this.connector.exec({
           query: statement.text,
           query_params: options.params,
           query_id: options.queryId,
@@ -1085,7 +1015,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     const cursor = new ClickHouseCursor({
       query: qs.query,
       params: qs.params,
-      client: this.client,
+      client: await this.connector.getRawConnection(),
       chunkSize,
     });
     return { totalRows, columns, cursor };
@@ -1095,7 +1025,7 @@ export class ClickHouseClient extends BasicDatabaseClient<Result> {
     // const cursorOpts = {
     //   query,
     //   params: [],
-    //   client: this.client,
+    //   client: this.connector.getRawConnection(),
     //   chunkSize
     // }
 
