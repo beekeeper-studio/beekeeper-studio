@@ -5,7 +5,7 @@ import { resolve, join } from 'path'
 import { IPlatformInfo } from '../IPlatformInfo'
 import { BksVersion } from '@/lib/license'
 import { isMsiInstall } from '@/common/msiInstall'
-import { resolveCliSocketPath } from '@/lib/cli/socketPath'
+import { resolveCliSocketPath } from '@/cli/socketPath'
 
 
 // TODO: Automatically enable wayland without flags once

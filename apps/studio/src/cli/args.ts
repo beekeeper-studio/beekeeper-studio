@@ -24,7 +24,7 @@ export interface CliInvocation {
   sqlFromStdin: boolean
 }
 
-export const CLI_USAGE = `Usage: beekeeper-studio cli <command> [options]
+export const CLI_USAGE = `Usage: bks <command> [options]
 
 Runs read-only commands against a database connection that is already open in
 the Beekeeper Studio desktop app. The connection needs "Enable CLI Access"
@@ -52,15 +52,20 @@ Options:
   -f, --format <format>     Output format: json (default) or markdown
   -h, --help                Show this help
 
-Examples:
-  beekeeper-studio cli connections
-  beekeeper-studio cli list-tables --schema public
-  beekeeper-studio cli structure users --schema public
-  beekeeper-studio cli query "select id, email from users limit 10"
-  beekeeper-studio cli query --file ./report.sql --format markdown
-  echo "select count(*) from orders" | beekeeper-studio cli query -`
+Environment:
+  BKS_CLI_SOCKET            Socket the app listens on, when it is not in the default
+                            location (beekeeper-studio cli prints it)
+  BKS_CLI_DEV=1             Talk to a development build of the app
 
-const USAGE_HINT = 'Run `beekeeper-studio cli --help` for usage.'
+Examples:
+  bks connections
+  bks list-tables --schema public
+  bks structure users --schema public
+  bks query "select id, email from users limit 10"
+  bks query --file ./report.sql --format markdown
+  echo "select count(*) from orders" | bks query -`
+
+const USAGE_HINT = 'Run `bks --help` for usage.'
 
 /**
  * The binary receives launcher flags ahead of the user's own arguments (the

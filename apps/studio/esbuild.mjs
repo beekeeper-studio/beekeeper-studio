@@ -126,14 +126,53 @@ const utilityArgs = {
   plugins: [getElectronPlugin("Utility")]
 }
 
+// The bks command. It runs under plain node (or the app binary with
+// ELECTRON_RUN_AS_NODE), so it is a self-contained bundle with no externals,
+// and it must never pull in electron or the rest of the app: src/cli talks to
+// the running app over its socket and nothing else.
+function cliBoundaryPlugin() {
+  return {
+    name: 'cli-boundary-plugin',
+    setup(build) {
+      build.onResolve({ filter: /^(electron|@\/|@commercial\/|@shared\/|@bksLogger|assets\/)/ }, (args) => {
+        if (args.path.startsWith('@/cli/')) return null
+        return {
+          errors: [{
+            text: `dist/cli.js must not import "${args.path}" (from ${path.relative('.', args.importer)}). ` +
+              'src/cli has to stay free of electron and app code.',
+          }],
+        }
+      })
+    },
+  }
+}
+
+const cliArgs = {
+  platform: 'node',
+  entryPoints: ['src/cli/index.ts'],
+  outfile: 'dist/cli.js',
+  bundle: true,
+  external: [],
+  sourcemap: false,
+  minify: false,
+  banner: { js: '#!/usr/bin/env node' },
+  define: {
+    'process.env.NODE_ENV': env
+  },
+  // a CLI rebuild has no reason to restart electron
+  plugins: [cliBoundaryPlugin(), getElectronPlugin("CLI", () => {})]
+}
+
 if(isWatching) {
   const main = await esbuild.context(mainArgs)
   const utility = await esbuild.context(utilityArgs)
-  await Promise.all([main.watch(), utility.watch()])
+  const cli = await esbuild.context(cliArgs)
+  await Promise.all([main.watch(), utility.watch(), cli.watch()])
 } else {
   await Promise.all([
     esbuild.build(mainArgs),
     esbuild.build(utilityArgs),
+    esbuild.build(cliArgs),
   ])
 }
 // launch electron

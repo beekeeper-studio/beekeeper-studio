@@ -29,7 +29,8 @@
     "postinstall": "npx install-electron --no && electron-builder install-app-deps",
     "test:integration": "../../bin/integration-tests.sh",
     "dev:esbuild": "node ./esbuild.mjs watch",
-    "dev:vite": "vite dev"
+    "dev:vite": "vite dev",
+    "bks": "cross-env ELECTRON_RUN_AS_NODE=1 BKS_CLI_DEV=1 electron ./dist/cli.js"
   },
   "main": "dist/main.js",
   "dependencies": {

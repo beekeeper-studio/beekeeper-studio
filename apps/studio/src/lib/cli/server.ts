@@ -1,8 +1,8 @@
 import fs from 'fs'
 import net from 'net'
 import { CliRequestEvent } from './auditLog'
-import { CliRequest, CliResponse } from './protocol'
-import { isWindowsPipePath } from './socketPath'
+import { CliRequest, CliResponse } from '@/cli/protocol'
+import { isWindowsPipePath } from '@/cli/socketPath'
 
 export interface CliServerLogger {
   info(...args: any[]): void

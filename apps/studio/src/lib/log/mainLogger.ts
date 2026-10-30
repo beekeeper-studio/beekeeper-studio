@@ -1,7 +1,7 @@
 import log from 'electron-log/main';
 import path from 'path';
 import { redactMessage } from './redact';
-import { cliArgsFromProcessArgv } from '@/lib/cli/args';
+import { cliArgsFromProcessArgv } from '@/cli/args';
 
 // we set these in main.ts later, becuase we don't have access to platformInfo here.
 // `beekeeper-studio cli ...` prints its result on stdout, so in that mode the

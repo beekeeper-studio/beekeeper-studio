@@ -24,7 +24,7 @@ import {
   CliRequest,
   CliResponse,
   isCliError,
-} from './protocol'
+} from '@/cli/protocol'
 
 /** A live connection the app holds, as the CLI sees it. One per connected window. */
 export interface CliOpenConnection {

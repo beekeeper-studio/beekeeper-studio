@@ -36,6 +36,8 @@ export function notRunningMessage(socketPath: string): string {
     'Beekeeper Studio is not running (or is still starting up).',
     `The CLI talks to the running desktop app through ${socketPath}, and nothing is listening there.`,
     'Start Beekeeper Studio, connect to a database, then run the command again.',
+    'If the app is running, it may use another data directory: run `beekeeper-studio cli` to see',
+    'the socket it listens on and pass it in the BKS_CLI_SOCKET environment variable.',
   ].join('\n')
 }
 

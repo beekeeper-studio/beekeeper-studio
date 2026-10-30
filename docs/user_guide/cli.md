@@ -1,19 +1,19 @@
 ---
 title: Command Line Interface
-summary: "Query the database that is open in Beekeeper Studio from a terminal, a script, or an AI coding agent with the beekeeper-studio cli commands."
+summary: "Query the database that is open in Beekeeper Studio from a terminal, a script, or an AI coding agent with the bks command."
 icon: material/console
 ---
 
 # Command Line Interface
 
-`beekeeper-studio cli` runs a handful of **read-only** commands against a database connection that is **already open in the Beekeeper Studio app**: list schemas and tables, describe a table, run a query. The output is JSON by default, which makes it a good fit for scripts and for AI coding agents that need to look at a schema or check some data without being handed database credentials.
+`bks` is a small command line tool that ships with Beekeeper Studio. It runs a handful of **read-only** commands against a database connection that is **already open in the app**: list schemas and tables, describe a table, run a query. The output is JSON by default, which makes it a good fit for scripts and for AI coding agents that need to look at a schema or check some data without being handed database credentials.
 
-The CLI does not connect to databases on its own. It talks to the running desktop app over a local socket, and the app runs the command on the connection it already holds. Close the app, or disconnect, and the CLI stops working. Every call is recorded in a [log file](#audit-log).
+`bks` does not connect to databases on its own, and it does not start the app. It talks to the running desktop app over a local socket, and the app runs the command on the connection it already holds. Close the app, or disconnect, and `bks` stops working. Every call is recorded in a [log file](#audit-log).
 
 ```bash
-beekeeper-studio cli list-tables --schema public
-beekeeper-studio cli structure public.users
-beekeeper-studio cli query "select id, email from users order by id limit 5"
+bks list-tables --schema public
+bks structure public.users
+bks query "select id, email from users order by id limit 5"
 ```
 
 ## Enabling CLI access
@@ -46,36 +46,44 @@ The CLI is read only. It runs statements that read data (SELECT, SHOW, EXPLAIN, 
 
 The other commands only read catalog information.
 
-## Running the command
+## Finding the command
 
-Pass `cli` as the first argument to the Beekeeper Studio executable. Where the executable lives depends on how you installed the app:
+`bks` is installed with the app, under `resources/bin` in the install directory. It needs no separate Node.js install: it runs with the app's own runtime. Where that is depends on how you installed Beekeeper Studio:
 
 === "Linux"
-    The deb, rpm, pacman and snap packages put `beekeeper-studio` on your `PATH`:
+    The deb and rpm packages link it as `/usr/bin/bks`, so it is simply:
 
     ```bash
-    beekeeper-studio cli connections
+    bks connections
     ```
 
-    For an AppImage, run the AppImage file itself: `./Beekeeper-Studio-*.AppImage cli connections`.
-
-=== "macOS"
-    The executable is inside the app bundle. An alias keeps the commands short:
+    Other formats keep it inside the install directory, for example `/opt/Beekeeper Studio/resources/bin/bks`. An AppImage cannot be unpacked onto your `PATH`, so the AppImage hands the `cli` argument to `bks` for you:
 
     ```bash
-    alias beekeeper-studio="/Applications/Beekeeper Studio.app/Contents/MacOS/Beekeeper Studio"
-    beekeeper-studio cli connections
+    ./Beekeeper-Studio-*.AppImage cli connections
+    ```
+
+=== "macOS"
+    The command lives inside the app bundle. Link it once onto your `PATH`:
+
+    ```bash
+    ln -s "/Applications/Beekeeper Studio.app/Contents/Resources/bin/bks" /usr/local/bin/bks
+    bks connections
     ```
 
 === "Windows"
+    The command is `bks.cmd` in the install directory's `resources\bin` folder:
+
     ```powershell
-    & "$env:LOCALAPPDATA\Programs\beekeeper-studio\Beekeeper Studio.exe" cli connections
+    & "$env:LOCALAPPDATA\Programs\beekeeper-studio\resources\bin\bks.cmd" connections
     ```
 
-    The installer location differs for per-machine (MSI) installs: look under `C:\Program Files\beekeeper-studio`.
+    Add that folder to your `PATH` to call it as `bks`. Per-machine (MSI) installs live under `C:\Program Files\beekeeper-studio` instead.
 
-!!! note "Startup noise"
-    The command runs through the Electron binary, so on some systems the desktop toolkit prints warnings to **stderr** when it starts. The command's result is always written to **stdout** on its own, so `beekeeper-studio cli ... 2>/dev/null` or capturing only stdout gives you clean JSON.
+Not sure where it is? Run `beekeeper-studio cli` (or `beekeeper-studio cli --help`). The app does not run CLI commands itself, but it prints the exact location of `bks` for your install and the socket it listens on, then exits.
+
+!!! tip "Agents with Node.js"
+    `bks` is a plain Node.js program. If a tool already has `node`, it can also run `node "<install dir>/resources/bin/cli.js" <command>` directly.
 
 ## Commands
 
@@ -105,16 +113,24 @@ Pass `cli` as the first argument to the Beekeeper Studio executable. Where the e
 Every window in Beekeeper Studio can hold its own connection. If exactly one open connection has CLI access enabled it is used automatically. Otherwise pass `--connection`:
 
 ```bash
-beekeeper-studio cli connections
-beekeeper-studio cli list-tables --connection "Local Postgres"
+bks connections
+bks list-tables --connection "Local Postgres"
 ```
+
+### Environment variables
+
+| Variable | Meaning |
+| -------- | ------- |
+| `BKS_CLI_SOCKET` | The socket (or Windows named pipe) the app listens on, when the app uses a non-standard data directory. `beekeeper-studio cli` prints the path |
+| `BKS_CLI_DEV` | Set to `1` to talk to a development build of the app, which uses a separate socket |
+| `BKS_ELECTRON_BINARY` | For the `bks` shell script only: the Beekeeper Studio executable to run the client with, if it is not found next to the script |
 
 ## Output
 
 Results are JSON objects. Every result includes the connection that answered, so a script can check it ran against the database it expected.
 
 ```bash
-$ beekeeper-studio cli query "select id, email from users limit 2"
+$ bks query "select id, email from users limit 2"
 {
   "connection": { "id": "7e1c…", "name": "Local Postgres" },
   "results": [
@@ -172,13 +188,14 @@ Point your agent at the CLI instead of giving it a connection string. A short no
 
 ```text
 The database for this project is open in Beekeeper Studio. Inspect it with
-`beekeeper-studio cli list-tables`, `beekeeper-studio cli structure <table>` and
-`beekeeper-studio cli query "<sql>"`. If a command fails with CLI_DISABLED, ask me
-to enable CLI access for the connection.
+`bks list-tables`, `bks structure <table>` and `bks query "<sql>"`. If a command
+fails with CLI_DISABLED, ask me to enable CLI access for the connection.
 ```
 
 The agent only ever sees what the app lets it see: every command is read only, the 20,000 row cap applies, each call is written to `cli.log`, and when you disconnect in the app the agent loses access.
 
 ## How it works
 
-The app listens on a local socket (a Unix domain socket in the Beekeeper Studio data directory on Linux and macOS, a named pipe on Windows) that only your user account can open. The `cli` command sends one request over that socket and prints the reply. Nothing is exposed on the network, and no credentials leave the app.
+The app listens on a local socket (a Unix domain socket in the Beekeeper Studio data directory on Linux and macOS, a named pipe on Windows) that only your user account can open. `bks` sends one request over that socket and prints the reply. Nothing is exposed on the network, and no credentials leave the app.
+
+`bks` itself is a single JavaScript file, `resources/bin/cli.js`, started by a tiny shell script (`bks`) or batch file (`bks.cmd`) that runs the app's executable in Node.js mode. That is why it starts in a fraction of a second and prints nothing but the result: the desktop app and its browser engine never load.

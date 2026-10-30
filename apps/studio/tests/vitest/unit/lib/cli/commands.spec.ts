@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { SqliteClient } from '@/lib/db/clients/sqlite'
 import { CliBackend, CliOpenConnection, connectionDisplayName, executeCliRequest, formatQueryResult, uniqueColumnNames } from '@/lib/cli/commands'
-import { CLI_MAX_QUERY_ROWS, CLI_PROTOCOL_VERSION, CliCommandArgs, CliCommandName, CliResponse } from '@/lib/cli/protocol'
+import { CLI_MAX_QUERY_ROWS, CLI_PROTOCOL_VERSION, CliCommandArgs, CliCommandName, CliResponse } from '@/cli/protocol'
 
 async function createSqliteClient(): Promise<SqliteClient> {
   const server = { config: { client: 'sqlite', readOnlyMode: false }, db: {} } as any

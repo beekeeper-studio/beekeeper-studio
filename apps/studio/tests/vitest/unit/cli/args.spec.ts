@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { cliArgsFromProcessArgv, extractCliArgs, parseCliArgs, parseEntityTypes, CLI_USAGE } from '@/lib/cli/args'
-import { CLI_PROTOCOL_VERSION, CliError } from '@/lib/cli/protocol'
+import { cliArgsFromProcessArgv, extractCliArgs, parseCliArgs, parseEntityTypes, CLI_USAGE } from '@/cli/args'
+import { CLI_PROTOCOL_VERSION, CliError } from '@/cli/protocol'
 
 function usageErrorOf(args: string[]): CliError {
   try {
@@ -102,7 +102,8 @@ describe('parseCliArgs', () => {
     expect(parseCliArgs(['help']).help).toBe(true)
     expect(parseCliArgs(['list-tables', '-h']).help).toBe(true)
     expect(usageErrorOf([]).message).toContain('No command')
-    expect(CLI_USAGE).toContain('beekeeper-studio cli <command>')
+    expect(CLI_USAGE).toContain('Usage: bks <command>')
+    expect(CLI_USAGE).not.toContain('beekeeper-studio cli <command>')
   })
 
   it('rejects unknown commands and options', () => {

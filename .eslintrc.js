@@ -131,6 +131,29 @@ module.exports = {
       "rules": {
         "vue/valid-template-root": "off"
       }
+    },
+    {
+      // The bks command line client. It is bundled on its own (dist/cli.js)
+      // and runs under plain node, so it may only use node builtins, its own
+      // folder and its two small dependencies. Anything from the app or from
+      // electron would drag Chromium or native modules into the CLI.
+      "files": [
+        "apps/studio/src/cli/**/*.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": ["error", {
+          "patterns": [
+            {
+              "group": ["electron", "electron/*", "@electron/*"],
+              "message": "src/cli runs outside electron."
+            },
+            {
+              "group": ["@/*", "!@/cli", "!@/cli/*", "@commercial/*", "@shared/*", "@bksLogger", "assets/*", "../*"],
+              "message": "src/cli must not import app code; it talks to the app over its socket."
+            }
+          ]
+        }]
+      }
     }
   ]
 }

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { CLI_AUDIT_SQL_MAX_CHARS, CliAuditLog, buildAuditEntry, createElectronLogSink, summarizeResult } from '@/lib/cli/auditLog'
-import { CLI_PROTOCOL_VERSION, CliRequest, CliResponse } from '@/lib/cli/protocol'
+import { CLI_PROTOCOL_VERSION, CliRequest, CliResponse } from '@/cli/protocol'
 
 function request(command: CliRequest['command'], args: CliRequest['args'] = {}): CliRequest {
   return { version: CLI_PROTOCOL_VERSION, command, args }

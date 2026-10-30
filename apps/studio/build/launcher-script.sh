@@ -21,5 +21,13 @@ if [[ -f $XDG_CONFIG_HOME/bks-flags.conf ]]; then
   USER_FLAGS="$(cat $XDG_CONFIG_HOME/bks-flags.conf)"
 fi
 
+# `beekeeper-studio cli ...` is the bundled bks command. It runs under node and
+# must not go through electron (which would add --no-sandbox and boot Chromium),
+# so hand it over here. This is what makes the CLI reachable from an AppImage.
+if [[ "${1:-}" == "cli" ]]; then
+  shift
+  exec "$SCRIPT_DIR/resources/bin/bks" "$@"
+fi
+
 # Lots of users are reporting issues without --no-sandbox now. So it's officially now the default.
 exec "$SCRIPT_DIR/beekeeper-studio-bin" "--no-sandbox" $USER_FLAGS "$@"

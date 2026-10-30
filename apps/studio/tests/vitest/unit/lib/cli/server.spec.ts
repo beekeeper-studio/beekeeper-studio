@@ -4,8 +4,8 @@ import net from 'net'
 import os from 'os'
 import path from 'path'
 import { CliServer, probeSocket } from '@/lib/cli/server'
-import { CLI_EXIT_ERROR, CLI_EXIT_OK, CLI_EXIT_USAGE, CliClientIO, runCli, sendCliRequest } from '@/lib/cli/client'
-import { CLI_PROTOCOL_VERSION, CliRequest, CliResponse } from '@/lib/cli/protocol'
+import { CLI_EXIT_ERROR, CLI_EXIT_OK, CLI_EXIT_USAGE, CliClientIO, runCli, sendCliRequest } from '@/cli/client'
+import { CLI_PROTOCOL_VERSION, CliRequest, CliResponse } from '@/cli/protocol'
 
 let counter = 0
 function tempSocketPath(): string {
@@ -236,10 +236,10 @@ describe('runCli', () => {
     const { io, stdout, stderr } = fakeIO()
     expect(await runCli(['bogus'], { socketPath: '/nowhere', io, send })).toBe(CLI_EXIT_USAGE)
     expect(stderr()).toContain('Unknown command "bogus"')
-    expect(stderr()).toContain('Usage: beekeeper-studio cli')
+    expect(stderr()).toContain('Usage: bks <command>')
     expect(send).not.toHaveBeenCalled()
 
     expect(await runCli(['--help'], { socketPath: '/nowhere', io, send })).toBe(CLI_EXIT_OK)
-    expect(stdout()).toContain('Usage: beekeeper-studio cli')
+    expect(stdout()).toContain('Usage: bks <command>')
   })
 })

@@ -8,6 +8,11 @@ available()
   command -v "$1" >/dev/null 2>&1
 }
 
+# bks: the command line interface, see https://docs.beekeeperstudio.io/user_guide/cli/
+if [ ! -e /usr/bin/bks ] && [ -f "/opt/Beekeeper Studio/resources/bin/bks" ]; then
+  ln -s "/opt/Beekeeper Studio/resources/bin/bks" /usr/bin/bks
+fi
+
 if [ -f $NEW_FILE ]; then
   exit 0
 fi

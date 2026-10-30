@@ -1,5 +1,5 @@
 import { redactMessage } from '@/lib/log/redact'
-import { CliRequest, CliResponse } from './protocol'
+import { CliRequest, CliResponse } from '@/cli/protocol'
 
 /** What the socket server reports after answering one request. */
 export interface CliRequestEvent {

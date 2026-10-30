@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# The Beekeeper Studio CLI. Runs the bundled dist/cli.js with the app's own
+# Electron binary in Node mode (ELECTRON_RUN_AS_NODE), so it needs no separate
+# Node.js install and never starts the desktop app.
+set -euo pipefail
+
+# resolve symlinks (e.g. /usr/bin/bks) back to the real location
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+  DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+BIN_DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+RESOURCES_DIR="$(dirname "$BIN_DIR")"
+APP_DIR="$(dirname "$RESOURCES_DIR")"
+CLI_JS="$BIN_DIR/cli.js"
+
+# Linux: <app>/resources/bin/bks -> <app>/beekeeper-studio-bin
+# macOS: Contents/Resources/bin/bks -> Contents/MacOS/Beekeeper Studio
+CANDIDATES=(
+  "$APP_DIR/beekeeper-studio-bin"
+  "$APP_DIR/MacOS/Beekeeper Studio"
+  "$APP_DIR/beekeeper-studio"
+)
+if [[ -n "${BKS_ELECTRON_BINARY:-}" ]]; then
+  CANDIDATES=("$BKS_ELECTRON_BINARY" "${CANDIDATES[@]}")
+fi
+
+for candidate in "${CANDIDATES[@]}"; do
+  if [[ -f "$candidate" && -x "$candidate" ]]; then
+    ELECTRON_RUN_AS_NODE=1 exec "$candidate" "$CLI_JS" "$@"
+  fi
+done
+
+echo "bks: could not find the Beekeeper Studio executable next to $RESOURCES_DIR" >&2
+echo "Set BKS_ELECTRON_BINARY to it, or run the client with node: node \"$CLI_JS\"" >&2
+exit 1

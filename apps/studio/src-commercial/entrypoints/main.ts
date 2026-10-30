@@ -29,8 +29,8 @@ import * as sms from 'source-map-support'
 import { initializeSecurity } from '@/backend/lib/security'
 import { initializeFileHelpers } from '@/backend/lib/FileHelpers'
 import { safeOpenExternal } from '@/background/lib/electron/safeOpenExternal'
-import { cliArgsFromProcessArgv } from '@/lib/cli/args'
-import { runCli } from '@/lib/cli/client'
+import { cliArgsFromProcessArgv } from '@/cli/args'
+import { cliFallbackHelp } from '@/lib/cli/fallbackHelp'
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -39,45 +39,36 @@ if (platformInfo.env.development || platformInfo.env.test) {
 log.transports.console.level = platformInfo.logLevel;
 log.transports.file.level = platformInfo.logLevel;
 
-// `beekeeper-studio cli <command> [options]`: this process is a client for the
-// app that is already running, not a second copy of it. It sends the command
-// over the CLI socket, prints the reply and exits before the window would open.
+// `beekeeper-studio cli ...`: the CLI is the separate bks command bundled with
+// the app (resources/bin), running under node. Booting Electron just to proxy
+// a command would cost a second per call, so this process only prints where
+// bks is and exits before any window opens.
 const cliArgs = cliArgsFromProcessArgv()
 const cliMode = cliArgs !== null
 if (cliMode) {
-  // Only the command's output belongs on the terminal (mainLogger already
-  // silenced the console transport while the modules loaded).
+  // Only the help text belongs on the terminal (mainLogger already silenced
+  // the console transport while the modules loaded).
   log.transports.console.level = false
   app.dock?.hide()
-  runCliAndExit(cliArgs)
+  printCliHelpAndExit(cliArgs)
 }
 
-function runCliAndExit(args: string[]) {
-  const readStdin = () => new Promise<string>((resolve, reject) => {
-    let text = ''
-    process.stdin.setEncoding('utf8')
-    process.stdin.on('data', (chunk: string) => { text += chunk })
-    process.stdin.on('end', () => resolve(text))
-    process.stdin.on('error', reject)
-  })
-  const flushAndExit = (code: number) => {
-    // stdout is a pipe when the output is captured; make sure it drained.
-    process.stdout.write('', () => process.stderr.write('', () => app.exit(code)))
-  }
-  runCli(args, {
+function printCliHelpAndExit(args: string[]) {
+  const help = cliFallbackHelp({
+    resourcesPath: platformInfo.resourcesPath,
+    isWindows: platformInfo.isWindows,
+    isMac: platformInfo.isMac,
+    isDevelopment: platformInfo.isDevelopment,
     socketPath: platformInfo.cliSocketPath,
-    io: {
-      writeOut: (text) => { process.stdout.write(text) },
-      writeErr: (text) => { process.stderr.write(text) },
-      readFile: (file) => fs.promises.readFile(path.resolve(file), 'utf8'),
-      readStdin,
-    },
   })
-    .catch((error) => {
-      process.stderr.write(`${error?.stack || error}\n`)
-      return 1
-    })
-    .then(flushAndExit)
+  const wantsHelp = args.length === 0 || args[0] === 'help' || args.includes('--help') || args.includes('-h')
+  // A command that was not run is an error: say so on stderr and leave stdout
+  // empty, so a script does not mistake the help text for a result.
+  const text = wantsHelp
+    ? help
+    : `beekeeper-studio cli does not run commands itself. Use bks:\n\n${help}`
+  const stream = wantsHelp ? process.stdout : process.stderr
+  stream.write(text + '\n', () => app.exit(wantsHelp ? 0 : 2))
 }
 
 electron.nativeTheme.on('updated', () => {
