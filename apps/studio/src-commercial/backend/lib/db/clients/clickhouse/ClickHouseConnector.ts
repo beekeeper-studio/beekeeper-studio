@@ -120,10 +120,6 @@ export class ClickHouseConnector extends DatabaseConnector<
   }
 
   protected async doGetClient(): Promise<NodeClickHouseClient> {
-    const pingResult = await this.client.ping();
-    if (pingResult.success === false) {
-      throw pingResult.error;
-    }
     return this.client;
   }
 
