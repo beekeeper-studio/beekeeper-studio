@@ -74,6 +74,10 @@ Beekeeper allows you to:
 
 ![Image Alt Tag](../../assets/images/using-the-sql-editor-12.gif)
 
+## UPDATE and DELETE without WHERE
+
+Before running an `UPDATE` or `DELETE` that has no `WHERE` clause, Beekeeper asks for confirmation, because such a statement can change every row in its table. A `WHERE` inside a subquery or a CTE does not count, and neither does a `LIMIT` or `TOP`: they cap how many rows change, not which ones.
+
 ## Transaction Management
 
 Transactions run within the query editor will be automatically detected by Beekeeper, which will then reserve a connection for your current query tab until that transaction is committed or rolled back.
