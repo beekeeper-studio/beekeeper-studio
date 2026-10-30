@@ -351,6 +351,7 @@ import { getFilters, setFilters } from "@/common/transport/TransportOpenTab"
 import { ExpandablePath, parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
 import { stringToTypedArray, removeUnsortableColumnsFromSortBy } from "@/common/utils";
 import { UpdateOptions } from "@/lib/data/jsonViewer";
+import { serializeJsonCellValue } from "@/lib/data/tools";
 import VisualizeButton from "@/components/plugins/VisualizeButton.vue";
 import type { GridStatusbarPayload } from "@/services/plugin/web/MenuParams";
 import type { ContextItem } from "@/plugins/BeekeeperPlugin";
@@ -1475,12 +1476,8 @@ export default Vue.extend({
           if (this.isPrimaryKey(columnName) && (!d && d != 0)) {
             // do nothing
           } else {
-            result[columnName] = d
             // HACK (azmi): we should handle this from backend with tests instead
-            // _.isObject guard: if it's already a string don't stringify it (would double-encode)
-            if (this.dialect === 'postgresql' && dataType === 'jsonb' && _.isObject(d)) {
-              result[columnName] = JSON.stringify(d)
-            }
+            result[columnName] = serializeJsonCellValue(dataType, d)
           }
         })
         return {
@@ -2398,11 +2395,7 @@ export default Vue.extend({
 
       const column = this.table.columns.find((c) => c.columnName === key);
       if (column) {
-        const isJsonColumn = String(column.dataType).toUpperCase() === 'JSON' || String(column.dataType).toUpperCase() === 'JSONB'
-
-        if (isJsonColumn && _.isObject(value)) {
-          value = JSON.stringify(value)
-        }
+        value = serializeJsonCellValue(column.dataType, value)
       }
       this.selectedRow?.getCell(key).setValue(value)
     },
