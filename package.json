@@ -29,7 +29,8 @@
   },
   "devDependencies": {
     "husky": "8.0.3",
-    "pinst": "^3.0.0"
+    "pinst": "^3.0.0",
+    "beekeeper-studio": "workspace:*"
   },
   "packageManager": "pnpm@12.16.1"
 }

@@ -173,6 +173,9 @@ importers:
 
   .:
     devDependencies:
+      beekeeper-studio:
+        specifier: workspace:*
+        version: link:apps/studio
       husky:
         specifier: 8.0.3
         version: 8.0.3
