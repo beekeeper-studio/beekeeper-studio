@@ -65,7 +65,6 @@ jobs:
           command: pnpm install --frozen-lockfile --fetch-timeout 100000
         env:
           HUSKY: "0"
-          npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
 
       - name: Install xvfb-maybe
         run: npm install -g xvfb-maybe

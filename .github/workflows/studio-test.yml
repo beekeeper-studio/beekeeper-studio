@@ -64,7 +64,6 @@ jobs:
           command: pnpm install --frozen-lockfile --fetch-timeout 100000
         env:
           HUSKY: "0"
-          npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
 
   unit:
     name: Unit tests
@@ -195,8 +194,6 @@ jobs:
 
   #   - name: Install dependencies
   #     run: yarn install --frozen-lockfile
-  #     env:
-  #       npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
   #   - name: Test
   #     uses: nick-fields/retry@v4
   #     with:

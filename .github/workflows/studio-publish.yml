@@ -192,6 +192,12 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      - name: Install Node.js, NPM, PNPM, and Python
+        uses: jdx/mise-action@v5
+        with:
+          cache: 'false'
+
+
       # node-gyp checks the PYTHON env var first. Without it, on Windows it asks
       # the py launcher, which picks the newest Python on the runner, not this one.
       - name: Verify Python Version
@@ -206,11 +212,6 @@ jobs:
             exit 1
           fi
           echo "PYTHON=$PYTHON" >> "$GITHUB_ENV"
-
-      - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
 
       - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v3
@@ -232,8 +233,6 @@ jobs:
           timeout_minutes: 20
           max_attempts: 3
           command: "yarn install --frozen-lockfile --network-timeout 100000"
-        env:
-          npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
 
       - name: Verify msnodesqlv8 native build
         run: node -e "require('msnodesqlv8')"

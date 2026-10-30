@@ -124,8 +124,6 @@ jobs:
       - name: Check dependencies
         if: steps.cache-nm.outputs.cache-hit != 'true' || steps.nm-health.outcome == 'failure'
         run: "yarn install --frozen-lockfile --network-timeout 100000"
-        env:
-          npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
 
       - name: Verify msnodesqlv8 native build
         run: node -e "require('msnodesqlv8')"
