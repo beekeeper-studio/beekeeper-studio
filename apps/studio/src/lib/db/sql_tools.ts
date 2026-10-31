@@ -72,7 +72,7 @@ export function deparameterizeQuery(queryText: string, dialect: Dialect, params:
   return result;
 }
 
-export function entityFilter(rawTables: any[], allFilters: EntityFilter, matchesColumn?: (table: any) => boolean) {
+export function entityFilter(rawTables: any[], allFilters: EntityFilter, matchingColumns?: (table: any) => string[] | boolean) {
   const tables = rawTables.filter((table) => {
     return (table.entityType === 'table' && allFilters.showTables &&
       ((table.parenttype != 'p' && !allFilters.showPartitions) || allFilters.showPartitions)) ||
@@ -85,16 +85,34 @@ export function entityFilter(rawTables: any[], allFilters: EntityFilter, matches
   if (!filterQuery) {
     return tables
   }
-  const startsWithFilter = _(tables)
-    .filter((item) => _.startsWith(item.name.toLowerCase(), filterQuery.toLowerCase()))
-    .value()
-  const containsFilter = _(tables)
-    .difference(startsWithFilter)
-    .filter((item) => item.name.toLowerCase().includes(filterQuery.toLowerCase()))
-    .value()
-  const nameMatches = _.concat(startsWithFilter, containsFilter)
-  const columnMatches = matchesColumn ? _.difference(tables, nameMatches).filter(matchesColumn) : []
-  return _.concat(nameMatches, columnMatches)
+  const query = filterQuery.toLowerCase()
+  const seen = new Set<string>()
+  const matchRank = (name: string) => {
+    const value = name.toLowerCase()
+    return value === query ? 0 : value.startsWith(query) ? 1 : value.includes(query) ? 2 : Infinity
+  }
+  const compare = (a: string, b: string) => a < b ? -1 : a > b ? 1 : 0
+  return tables.filter((item) => {
+    if (!['table', 'view', 'materialized-view'].includes(item.entityType)) return true
+    const key = JSON.stringify([item.schema, item.name, item.entityType])
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  }).map((item) => {
+    let rank = matchRank(item.name)
+    if (rank === Infinity && matchingColumns) {
+      const columns = matchingColumns(item)
+      if (Array.isArray(columns)) {
+        for (const column of columns) rank = Math.min(rank, 3 + matchRank(column))
+      } else if (columns) rank = 5
+    }
+    return { item, rank }
+  }).filter(({ rank }) => rank < Infinity).sort((a, b) =>
+    a.rank - b.rank ||
+    compare(a.item.name.toLowerCase(), b.item.name.toLowerCase()) ||
+    compare((a.item.schema || '').toLowerCase(), (b.item.schema || '').toLowerCase()) ||
+    compare(a.item.name, b.item.name) || compare(a.item.schema || '', b.item.schema || '')
+  ).map(({ item }) => item)
 }
 
 // a function that takes in a string and a dialect,

@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { buildColumnSearchQuery, matchColumnResults, ColumnSearchRequests } from '../../../../../src/lib/db/columnSearch'
+import { buildColumnSearchQuery, matchColumnResults, indexColumnResults, ColumnSearchRequests } from '../../../../../src/lib/db/columnSearch'
 
 describe('column metadata search', () => {
+  it('indexes distinct schema and table pairs and removes duplicate columns', () => {
+    const rows = [
+      { schemaName: 'public', tableName: 'users', columnName: 'email', dataType: 'text' },
+      { schemaName: 'public', tableName: 'users', columnName: 'email', dataType: 'text' },
+      { schemaName: 'other', tableName: 'users', columnName: 'email', dataType: 'text' },
+    ]
+    const index = indexColumnResults(rows)
+    expect(matchColumnResults(index, 'public', 'users')).toHaveLength(1)
+    expect(matchColumnResults(index, 'other', 'users')).toHaveLength(1)
+  })
   it.each(['postgresql', 'mysql', 'mariadb'])('searches metadata for %s without embedding SQL input', (dialect) => {
     const query = buildColumnSearchQuery(dialect, "café'_%")
     expect(query).toBeTruthy()

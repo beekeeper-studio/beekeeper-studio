@@ -6,6 +6,13 @@ import { ColumnSearchModule } from '@/store/modules/ColumnSearchModule'
 Vue.use(Vuex)
 
 describe('sidebar column search', () => {
+  it('does not repeat an already completed search for the same term and connection', async () => {
+    const executeQuery = vi.fn().mockResolvedValue([{ rows: [] }])
+    const store = new Vuex.Store({ state: { database: 'db', connection: { executeQuery } }, modules: { columnSearch: ColumnSearchModule } })
+    await store.dispatch('columnSearch/search', { query: 'email', dialect: 'postgresql' })
+    await store.dispatch('columnSearch/search', { query: 'email', dialect: 'postgresql' })
+    expect(executeQuery).toHaveBeenCalledTimes(1)
+  })
   it('disables pending and future searches and searches again when enabled', async () => {
     let finish: (value: any) => void
     const executeQuery = vi.fn()

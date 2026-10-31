@@ -44,7 +44,7 @@ import { PluginsModule, PluginsState } from './modules/plugins'
 import { VimStoreModule } from './modules/VimStoreModule'
 import { pluralize } from '@/vendor/pluralize'
 import { ColumnSearchModule } from './modules/ColumnSearchModule'
-import { ColumnSearchResult, matchColumnResults } from '@/lib/db/columnSearch'
+import { ColumnSearchResult, indexColumnResults, matchColumnResults } from '@/lib/db/columnSearch'
 
 
 const log = RawLog.scope('store/index')
@@ -255,14 +255,18 @@ const store = new Vuex.Store<State>({
     },
     filteredTables(state) {
       const matches = state.columnSearch?.query === state.entityFilter.filterQuery ? state.columnSearch.results : []
+      const index = indexColumnResults(matches)
       return entityFilter(state.tables, state.entityFilter, table =>
-        matchColumnResults(matches, table.schema, table.name, state.database).length > 0
+        matchColumnResults(index, table.schema, table.name, state.database).map(column => column.columnName)
       );
     },
     filteredRoutines(state) {
       return entityFilter(state.routines, state.entityFilter)
     },
     schemaTables(state, g){
+      if (state.entityFilter.filterQuery && g.schemas.length > 1) {
+        return [{ schema: null, flatSearch: true, tables: g.filteredTables, routines: g.filteredRoutines }]
+      }
       // if no schemas, just return a single schema
       if (_.chain(state.tables).map('schema').uniq().value().length <= 1) {
         return [{

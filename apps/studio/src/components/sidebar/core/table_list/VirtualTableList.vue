@@ -34,7 +34,7 @@ import { mapGetters, mapState } from "vuex";
 import { entityId } from "@/common/utils";
 import "scrollyfills";
 import { TransportPinnedEntity } from "@/common/transport/TransportPinnedEntity";
-import { matchColumnResults } from "@/lib/db/columnSearch";
+import { indexColumnResults, matchColumnResults } from "@/lib/db/columnSearch";
 
 type Entity = TableOrView | Routine | string;
 
@@ -50,6 +50,7 @@ interface BaseItem {
   level: number;
   parent?: BaseItem;
   pinned: boolean;
+  showSchema?: boolean;
 }
 
 interface RootItem extends BaseItem {
@@ -94,6 +95,7 @@ export default Vue.extend({
   methods: {
     generateItems() {
       const items = [] as Item[];
+      const columnIndex = indexColumnResults(this.columnSearch.results);
       const noFolder = this.schemaTables.length === 1;
       const root: RootItem = {
         type: "root",
@@ -159,37 +161,39 @@ export default Vue.extend({
         }
 
         schema.tables.forEach((table: TableOrView) => {
-          const key = entityId(schema.schema, table);
+          const key = entityId(schema.flatSearch ? table.schema : schema.schema, table);
           const matched = this.filterQuery && this.columnSearch.query === this.filterQuery
-            ? matchColumnResults(this.columnSearch.results, table.schema, table.name, this.database)
+            ? matchColumnResults(columnIndex, table.schema, table.name, this.database)
             : [];
           items.push({
             type: "table",
             key,
             entity: table,
             expanded: matched.length > 0 || expandedMap.has(key),
-            hidden: this.hiddenEntities.includes(table),
+            hidden: this.hiddenEntities.includes(table) || (schema.flatSearch && this.hiddenSchemas.includes(table.schema)),
             contextMenu: this.tableMenuOptions,
             parent,
             level: noFolder ? 0 : 1,
             pinned: pinnedMap.has(key) || false,
             loadingColumns: false,
             matchingColumns: matched.length ? matched : undefined,
+            showSchema: schema.flatSearch,
           });
         });
 
         schema.routines.forEach((routine: Routine) => {
-          const key = entityId(schema.schema, routine);
+          const key = entityId(schema.flatSearch ? routine.schema : schema.schema, routine);
           items.push({
             entity: routine,
             key,
             type: "routine",
             expanded: expandedMap.has(key),
-            hidden: this.hiddenEntities.includes(routine),
+            hidden: this.hiddenEntities.includes(routine) || (schema.flatSearch && this.hiddenSchemas.includes(routine.schema)),
             contextMenu: this.routineMenuOptions,
             parent,
             level: noFolder ? 0 : 1,
             pinned: pinnedMap.has(key) || false,
+            showSchema: schema.flatSearch,
           });
         });
       });

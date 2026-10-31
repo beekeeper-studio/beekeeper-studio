@@ -39,7 +39,7 @@
           class="table-name truncate"
           :title="table.name"
         >{{
-          table.name
+          showSchema && table.schema ? table.schema + '.' + table.name : table.name
         }}</span>
       </span>
       <span
@@ -139,6 +139,7 @@ export default Vue.extend({
     "expanded",
     "loadingColumns",
     "matchingColumns",
+    "showSchema",
   ],
   components: { TableIcon },
   data() {

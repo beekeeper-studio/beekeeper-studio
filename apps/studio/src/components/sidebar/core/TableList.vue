@@ -261,7 +261,7 @@
           return this.$store.state.entityFilter.filterQuery
         },
         set(newFilter) {
-          this.$store.commit('columnSearch/reset', '')
+          this.$store.commit('columnSearch/invalidate')
           this.$store.dispatch('setFilterQuery', newFilter)
         }
       },
@@ -365,6 +365,8 @@
         try {
           this.$store.dispatch('updateRoutines')
           await this.$store.dispatch('updateTables')
+          this.$store.commit('columnSearch/reset', '')
+          await this.$store.dispatch('columnSearch/search', { query: this.filterQuery, dialect: this.dialect })
           // When we refresh sidebar tables we need to also refresh:
           // 1. Any open tables
           // 2. Any pinned tables

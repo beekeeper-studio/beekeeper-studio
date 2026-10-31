@@ -2,16 +2,24 @@ import { buildColumnSearchQuery, ColumnSearchRequests, ColumnSearchResult } from
 
 export const ColumnSearchModule = {
   namespaced: true,
-  state: () => ({ enabled: true, results: [] as ColumnSearchResult[], query: '', error: null as string | null, requests: new ColumnSearchRequests() }),
+  state: () => ({ enabled: true, results: [] as ColumnSearchResult[], query: '', error: null as string | null, requests: new ColumnSearchRequests(), completed: false, completedDatabase: null, completedConnection: null, completedDialect: '' }),
   mutations: {
     setEnabled(state, enabled: boolean) { state.enabled = enabled },
+    invalidate(state) { state.requests.invalidate() },
     reset(state, query: string) {
       state.requests.invalidate()
       state.query = query
       state.results = []
       state.error = null
+      state.completed = false
     },
-    results(state, rows: ColumnSearchResult[]) { state.results = rows },
+    results(state, { rows, database, connection, dialect }) {
+      state.results = rows
+      state.completed = true
+      state.completedDatabase = database
+      state.completedConnection = connection
+      state.completedDialect = dialect
+    },
     error(state, error: string) { state.error = error },
   },
   actions: {
@@ -24,6 +32,8 @@ export const ColumnSearchModule = {
       }
     },
     async search({ state, rootState, commit }, { query, dialect }: { query: string, dialect: string }) {
+      if (state.enabled && state.completed && query === state.query && dialect === state.completedDialect &&
+          rootState.database === state.completedDatabase && rootState.connection === state.completedConnection) return
       commit('reset', query || '')
       if (!state.enabled) return
       const sql = buildColumnSearchQuery(dialect, query)
@@ -33,7 +43,7 @@ export const ColumnSearchModule = {
       try {
         const result = await state.requests.run(() => connection.executeQuery(sql))
         if (result && connection === rootState.connection && database === rootState.database && state.query === query) {
-          commit('results', result[0]?.rows || [])
+          commit('results', { rows: result[0]?.rows || [], database, connection, dialect })
         }
       } catch (error) {
         if (connection === rootState.connection && database === rootState.database && state.query === query) {

@@ -24,8 +24,23 @@ export class ColumnSearchRequests {
   }
 }
 
-export function matchColumnResults(rows: ColumnSearchResult[], schema: string | undefined, table: string, database?: string): ColumnSearchResult[] {
-  return rows.filter(row => row.schemaName === (schema || database) && row.tableName === table)
+export function indexColumnResults(rows: ColumnSearchResult[]): Map<string, ColumnSearchResult[]> {
+  const index = new Map<string, ColumnSearchResult[]>()
+  const seen = new Set<string>()
+  for (const row of rows) {
+    const key = JSON.stringify([row.schemaName, row.tableName])
+    const columnKey = JSON.stringify([row.schemaName, row.tableName, row.columnName])
+    if (seen.has(columnKey)) continue
+    seen.add(columnKey)
+    if (!index.has(key)) index.set(key, [])
+    index.get(key).push(row)
+  }
+  return index
+}
+
+export function matchColumnResults(rows: ColumnSearchResult[] | Map<string, ColumnSearchResult[]>, schema: string | undefined, table: string, database?: string): ColumnSearchResult[] {
+  const index = Array.isArray(rows) ? indexColumnResults(rows) : rows
+  return index.get(JSON.stringify([schema || database, table])) || []
 }
 
 export function buildColumnSearchQuery(dialect: string, term: string): string | null {

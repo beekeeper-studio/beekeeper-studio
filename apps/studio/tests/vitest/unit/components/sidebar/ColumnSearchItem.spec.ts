@@ -1,13 +1,25 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { shallowMount } from '@vue/test-utils'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import Item from '@/components/sidebar/core/table_list/StatelessTableListItem.vue'
 import VirtualItem from '@/components/sidebar/core/table_list/Item.vue'
+import TableList from '@/components/sidebar/core/TableList.vue'
 
 Vue.use(Vuex)
 
 describe('sidebar column search display', () => {
+  it('refreshes matching column metadata when entities are refreshed', async () => {
+    const dispatch = vi.fn().mockResolvedValue(undefined)
+    const commit = vi.fn()
+    const context: any = {
+      $store: { dispatch, commit }, filterQuery: 'email', dialect: 'postgresql',
+      refreshExpandedColumns: vi.fn(), refreshPinnedColumns: vi.fn(), $noty: { error: vi.fn() },
+    }
+    await (TableList as any).methods.refreshTables.call(context)
+    expect(commit).toHaveBeenCalledWith('columnSearch/reset', '')
+    expect(dispatch).toHaveBeenCalledWith('columnSearch/search', { query: 'email', dialect: 'postgresql' })
+  })
   it('shows only matched columns when the search supplies them', () => {
     const store = new Vuex.Store({ state: { activeTab: null }, getters: { selectedSidebarItem: () => null } })
     const wrapper = shallowMount(Item as any, {
