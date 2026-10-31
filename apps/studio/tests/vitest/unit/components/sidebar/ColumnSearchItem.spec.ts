@@ -9,6 +9,16 @@ import TableList from '@/components/sidebar/core/TableList.vue'
 Vue.use(Vuex)
 
 describe('sidebar column search display', () => {
+  it.each([
+    ['postgresql', 'postgresql', true],
+    ['mysql', 'mysql', true],
+    ['mariadb', 'mysql', true],
+    ['cockroachdb', 'postgresql', false],
+    ['tidb', 'mysql', false],
+    ['sqlite', 'sqlite', false],
+  ])('shows the checkbox for %s only when supported', (connectionType, dialect, expected) => {
+    expect((TableList as any).computed.supportsColumnSearch.call({ connectionType, dialect })).toBe(expected)
+  })
   it('refreshes matching column metadata when entities are refreshed', async () => {
     const dispatch = vi.fn().mockResolvedValue(undefined)
     const commit = vi.fn()

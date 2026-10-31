@@ -16,6 +16,7 @@ describe('sidebar search debounce', () => {
   it('searches again when rapid edits return to the previous term', async () => {
     vi.useFakeTimers()
     store.commit('newConnection', { connectionType: 'postgresql', defaultDatabase: 'db' })
+    store.commit('connectionType', 'postgresql')
     const executeQuery = vi.spyOn(store.state.connection, 'executeQuery').mockResolvedValue([{ rows: [{ schemaName: 'public', tableName: 'users', columnName: 'email' }] }])
     store.commit('filterQuery', 'email')
     store.commit('columnSearch/reset', '')
@@ -30,6 +31,7 @@ describe('sidebar search debounce', () => {
   it('reuses the completed result when the debounced term is unchanged', async () => {
     vi.useFakeTimers()
     store.commit('newConnection', { connectionType: 'postgresql', defaultDatabase: 'db' })
+    store.commit('connectionType', 'postgresql')
     store.commit('columnSearch/reset', '')
     const executeQuery = vi.spyOn(store.state.connection, 'executeQuery').mockResolvedValue([{ rows: [] }])
     await store.dispatch('columnSearch/search', { query: 'email', dialect: 'postgresql' })

@@ -6,9 +6,21 @@ import { ColumnSearchModule } from '@/store/modules/ColumnSearchModule'
 Vue.use(Vuex)
 
 describe('sidebar column search', () => {
+  it.each([['postgresql', 'postgresql'], ['mysql', 'mysql'], ['mariadb', 'mysql']])('queries supported %s connections', async (connectionType, dialect) => {
+    const executeQuery = vi.fn().mockResolvedValue([{ rows: [] }])
+    const store = new Vuex.Store({ state: { database: 'db', connectionType, connection: { executeQuery } }, modules: { columnSearch: ColumnSearchModule } })
+    await store.dispatch('columnSearch/search', { query: 'email', dialect })
+    expect(executeQuery).toHaveBeenCalledTimes(1)
+  })
+  it.each([['cockroachdb', 'postgresql'], ['tidb', 'mysql']])('does not query unsupported %s connections', async (connectionType, dialect) => {
+    const executeQuery = vi.fn()
+    const store = new Vuex.Store({ state: { database: 'db', connectionType, connection: { executeQuery } }, modules: { columnSearch: ColumnSearchModule } })
+    await store.dispatch('columnSearch/search', { query: 'email', dialect })
+    expect(executeQuery).not.toHaveBeenCalled()
+  })
   it('does not repeat an already completed search for the same term and connection', async () => {
     const executeQuery = vi.fn().mockResolvedValue([{ rows: [] }])
-    const store = new Vuex.Store({ state: { database: 'db', connection: { executeQuery } }, modules: { columnSearch: ColumnSearchModule } })
+    const store = new Vuex.Store({ state: { database: 'db', connectionType: 'postgresql', connection: { executeQuery } }, modules: { columnSearch: ColumnSearchModule } })
     await store.dispatch('columnSearch/search', { query: 'email', dialect: 'postgresql' })
     await store.dispatch('columnSearch/search', { query: 'email', dialect: 'postgresql' })
     expect(executeQuery).toHaveBeenCalledTimes(1)
@@ -19,7 +31,7 @@ describe('sidebar column search', () => {
       .mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
       .mockResolvedValue([{ rows: [{ columnName: 'email' }] }])
     const store = new Vuex.Store({
-      state: { database: 'db', connection: { executeQuery }, entityFilter: { filterQuery: 'email' } },
+      state: { database: 'db', connectionType: 'postgresql', connection: { executeQuery }, entityFilter: { filterQuery: 'email' } },
       getters: { dialect: () => 'postgresql' },
       modules: { columnSearch: ColumnSearchModule },
     })
@@ -36,7 +48,7 @@ describe('sidebar column search', () => {
   })
   it('loads matching columns in one query and clears them when the search is cleared', async () => {
     const executeQuery = vi.fn().mockResolvedValue([{ rows: [{ schemaName: 'public', tableName: 'users', columnName: 'email', dataType: 'text' }] }])
-    const store = new Vuex.Store({ state: { database: 'db', connection: { executeQuery } }, modules: { columnSearch: ColumnSearchModule } })
+    const store = new Vuex.Store({ state: { database: 'db', connectionType: 'postgresql', connection: { executeQuery } }, modules: { columnSearch: ColumnSearchModule } })
     await store.dispatch('columnSearch/search', { query: 'email', dialect: 'postgresql' })
     expect(executeQuery).toHaveBeenCalledTimes(1)
     expect(store.state.columnSearch.results[0].columnName).toBe('email')
@@ -47,7 +59,7 @@ describe('sidebar column search', () => {
   it('does not publish an old response after the selected database changes', async () => {
     let finish: (value: any) => void
     const executeQuery = vi.fn().mockImplementation(() => new Promise(resolve => { finish = resolve }))
-    const store = new Vuex.Store({ state: { database: 'db', connection: { executeQuery } }, modules: { columnSearch: ColumnSearchModule } })
+    const store = new Vuex.Store({ state: { database: 'db', connectionType: 'postgresql', connection: { executeQuery } }, modules: { columnSearch: ColumnSearchModule } })
     const pending = store.dispatch('columnSearch/search', { query: 'email', dialect: 'postgresql' })
     store.state.database = 'other'
     finish([{ rows: [{ columnName: 'email' }] }])
@@ -57,7 +69,7 @@ describe('sidebar column search', () => {
 
   it('keeps name filtering usable when the metadata query fails', async () => {
     const executeQuery = vi.fn().mockRejectedValue(new Error('access denied'))
-    const store = new Vuex.Store({ state: { database: 'db', connection: { executeQuery } }, modules: { columnSearch: ColumnSearchModule } })
+    const store = new Vuex.Store({ state: { database: 'db', connectionType: 'postgresql', connection: { executeQuery } }, modules: { columnSearch: ColumnSearchModule } })
     await store.dispatch('columnSearch/search', { query: 'email', dialect: 'postgresql' })
     expect(store.state.columnSearch.results).toEqual([])
     expect(store.state.columnSearch.error).toBe('access denied')

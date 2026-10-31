@@ -1,4 +1,4 @@
-import { buildColumnSearchQuery, ColumnSearchRequests, ColumnSearchResult } from '@/lib/db/columnSearch'
+import { buildColumnSearchQuery, ColumnSearchRequests, ColumnSearchResult, supportsColumnSearch } from '@/lib/db/columnSearch'
 
 export const ColumnSearchModule = {
   namespaced: true,
@@ -32,10 +32,13 @@ export const ColumnSearchModule = {
       }
     },
     async search({ state, rootState, commit }, { query, dialect }: { query: string, dialect: string }) {
+      if (!state.enabled || !supportsColumnSearch(rootState.connectionType)) {
+        commit('reset', query || '')
+        return
+      }
       if (state.enabled && state.completed && query === state.query && dialect === state.completedDialect &&
           rootState.database === state.completedDatabase && rootState.connection === state.completedConnection) return
       commit('reset', query || '')
-      if (!state.enabled) return
       const sql = buildColumnSearchQuery(dialect, query)
       if (!sql) return
       const connection = rootState.connection

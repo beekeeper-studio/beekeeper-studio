@@ -5,6 +5,10 @@ export interface ColumnSearchResult {
   dataType: string
 }
 
+export function supportsColumnSearch(connectionType: string | null | undefined): boolean {
+  return ['postgresql', 'mysql', 'mariadb'].includes(connectionType)
+}
+
 export class ColumnSearchRequests {
   private sequence = 0
 

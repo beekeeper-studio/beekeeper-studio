@@ -206,6 +206,7 @@
   import VirtualTableList from './table_list/VirtualTableList.vue'
   import { TableOrView, Routine } from "@/lib/db/models";
   import { matches } from '@/common/transport/TransportPinnedEntity'
+  import { supportsColumnSearch } from '@/lib/db/columnSearch'
 
   export default {
     mixins: [TableFilter, TableListContextMenus],
@@ -299,7 +300,7 @@
         return this.supportedFeatures.customRoutines
       },
       supportsColumnSearch() {
-        return this.dialect === 'postgresql' || this.dialect === 'mysql'
+        return supportsColumnSearch(this.connectionType)
       },
       searchColumns: {
         get() {
