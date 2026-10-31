@@ -10,26 +10,38 @@
     </template>
 
     <template #default="{ submit }">
-      <div class="toolbar">
+      <search class="toolbar">
         <div class="filter-wrap">
+          <label class="visually-hidden" for="connection-type-filter">
+            Search connection types
+          </label>
           <input
+            id="connection-type-filter"
             class="filter-input"
-            type="text"
+            type="search"
             placeholder="Search connection types"
             v-model="filter"
+            @keydown.down.prevent="focusList"
           >
-          <x-buttons class="filter-actions">
-            <x-button v-if="filter" @click="filter = ''">
-              <i class="clear material-icons">cancel</i>
-            </x-button>
-          </x-buttons>
+          <button
+            v-if="filter"
+            class="filter-clear"
+            type="button"
+            title="Clear search"
+            @click="filter = ''"
+          >
+            <i class="material-icons" aria-hidden="true">cancel</i>
+            <span class="visually-hidden">Clear search</span>
+          </button>
         </div>
-      </div>
+      </search>
 
-      <div class="connection-types" v-if="filteredTypes.length">
+      <fieldset class="connection-types" ref="list" v-if="filteredTypes.length">
+        <legend class="visually-hidden">
+          Connection type
+        </legend>
         <label
           class="connection-type"
-          :class="{ selected: value === type.value }"
           v-for="type in filteredTypes"
           :key="type.value"
           :data-testid="`connection-type-${type.value}`"
@@ -39,18 +51,26 @@
             type="radio"
             name="connection-type"
             :value="type.value"
+            :tabindex="type.value === tabStopValue ? 0 : -1"
             v-model="value"
           >
-          <database-icon :type="type.value" />
+          <database-icon :type="type.value" aria-hidden="true" />
           <span class="name">{{ type.name }}</span>
-          <i v-if="type.lockedByLicense" class="material-icons ultimate-icon">
-            stars
-          </i>
+          <template v-if="type.lockedByLicense">
+            <i
+              class="material-icons ultimate-icon"
+              title="Requires Ultimate"
+              aria-hidden="true"
+            >
+              stars
+            </i>
+            <span class="visually-hidden">(requires Ultimate)</span>
+          </template>
         </label>
-      </div>
-      <div class="empty-state" v-else>
+      </fieldset>
+      <output class="empty-state" v-else>
         No connection types match "{{ filter }}"
-      </div>
+      </output>
     </template>
 
     <template #footer="{ close }">
@@ -142,6 +162,12 @@ export default Vue.extend({
         ? this.types
         : this.types.filter((type) => type.name.toLowerCase().includes(filter));
     },
+    tabStopValue(): ConnectionType | undefined {
+      const selectedIsVisible = this.filteredTypes.some(
+        (type) => type.value === this.value
+      );
+      return selectedIsVisible ? this.value : this.filteredTypes[0]?.value;
+    },
     selectedType(): Type | undefined {
       return this.types.find((option) => option.value === this.value);
     },
@@ -152,6 +178,14 @@ export default Vue.extend({
       this.value = null;
       this.openOptions = options;
       this.$modal.show(this.modalName);
+    },
+    focusList() {
+      if (!this.tabStopValue) {
+        return;
+      }
+      this.value = this.tabStopValue;
+      const list = this.$refs.list as HTMLElement | undefined;
+      list?.querySelector<HTMLInputElement>('input[tabindex="0"]')?.focus();
     },
     handleSubmit(_event: Event, close: Function) {
       if (!this.selectedType) {
@@ -200,31 +234,43 @@ export default Vue.extend({
   padding-right: 1.8rem;
 }
 
-.filter-actions {
+.filter-clear {
   position: absolute;
   right: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 0.4rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
 
-  x-button {
-    padding: 0 0.4rem;
-    background: transparent;
-    box-shadow: none;
-    cursor: pointer;
-    --trigger-effect: none;
-
-    &:before {
-      display: none !important;
-    }
-
-    .material-icons {
-      font-size: 1rem;
-      color: var(--text-muted);
-    }
+  .material-icons {
+    font-size: 1rem;
+    color: var(--text-muted);
   }
 }
 
 .toolbar,
 .connection-types {
   margin-right: -0.5rem;
+}
+
+.connection-types {
+  min-width: 0;
+  margin-left: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding: 0;
+  border: none;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .connection-type {
@@ -240,13 +286,22 @@ export default Vue.extend({
     font-size: 1rem;
   }
 
-  &:hover,
-  &:focus-within {
+  &:hover {
     background: var(--bg-hover-a);
   }
 
-  &.selected {
+  &:has(input:checked) {
     background: var(--bg-a);
+  }
+
+  &:has(input:focus-visible) {
+    outline: var(--focus-ring);
+    outline-offset: -2px;
+  }
+
+  input[type="radio"] {
+    position: absolute;
+    opacity: 0;
   }
 
   ::v-deep .database-icon {
@@ -256,11 +311,7 @@ export default Vue.extend({
     font-weight: 700;
     font-size: 1.25rem;
     margin-right: 0.5rem;
-  }
-
-  input[type="radio"] {
-    position: absolute;
-    opacity: 0;
+    margin-left: 0.75rem;
   }
 }
 

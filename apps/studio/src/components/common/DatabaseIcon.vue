@@ -14,7 +14,7 @@
       class="devicon"
       role="img"
       :aria-label="type"
-      :style="{ maskImage: `url(${icon})` }"
+      :style="devIconStyle"
     />
     <i v-else class="material-icons-outlined default-icon">table_rows</i>
   </span>
@@ -88,6 +88,9 @@ export default Vue.extend({
   computed: {
     icon() {
       return icons[this.type] ?? null;
+    },
+    devIconStyle(): Record<string, string> {
+      return { maskImage: `url("${this.icon}")` };
     },
   },
 });
