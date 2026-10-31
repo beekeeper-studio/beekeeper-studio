@@ -43,6 +43,8 @@ import { MenuBarModule } from './modules/MenuBarModule'
 import { PluginsModule, PluginsState } from './modules/plugins'
 import { VimStoreModule } from './modules/VimStoreModule'
 import { pluralize } from '@/vendor/pluralize'
+import { ColumnSearchModule } from './modules/ColumnSearchModule'
+import { ColumnSearchResult, indexColumnResults, matchColumnResults } from '@/lib/db/columnSearch'
 
 
 const log = RawLog.scope('store/index')
@@ -103,6 +105,7 @@ export interface State {
   tables: TableOrView[],
   routines: Routine[],
   entityFilter: EntityFilter,
+  columnSearch?: { enabled: boolean, query: string, results: ColumnSearchResult[], error: string | null },
   columnsLoading: string,
   tablesLoading: string,
   tablesInitialLoaded: boolean,
@@ -159,6 +162,7 @@ const store = new Vuex.Store<State>({
     menuBar: MenuBarModule,
     plugins: PluginsModule,
     vim: VimStoreModule,
+    columnSearch: ColumnSearchModule,
   },
   state: {
     connection: new ElectronUtilityConnectionClient(),
@@ -250,12 +254,19 @@ const store = new Vuex.Store<State>({
       return state.selectedSidebarItem
     },
     filteredTables(state) {
-      return entityFilter(state.tables, state.entityFilter);
+      const matches = state.columnSearch?.query === state.entityFilter.filterQuery ? state.columnSearch.results : []
+      const index = indexColumnResults(matches)
+      return entityFilter(state.tables, state.entityFilter, table =>
+        matchColumnResults(index, table.schema, table.name, state.database).map(column => column.columnName)
+      );
     },
     filteredRoutines(state) {
       return entityFilter(state.routines, state.entityFilter)
     },
     schemaTables(state, g){
+      if (state.entityFilter.filterQuery && g.schemas.length > 1) {
+        return [{ schema: null, flatSearch: true, tables: g.filteredTables, routines: g.filteredRoutines }]
+      }
       // if no schemas, just return a single schema
       if (_.chain(state.tables).map('schema').uniq().value().length <= 1) {
         return [{
@@ -861,6 +872,7 @@ const store = new Vuex.Store<State>({
     },
     setFilterQuery: _.debounce(function (context, filterQuery) {
       context.commit('filterQuery', filterQuery)
+      context.dispatch('columnSearch/search', { query: filterQuery, dialect: context.getters.dialect })
     }, 500),
     async pinTable(context, table) {
       table.pinned = true
