@@ -4,7 +4,7 @@
 # Electron's runtime shared libraries (the harness launches `electron` with
 # ELECTRON_RUN_AS_NODE). Source and node_modules are mounted at runtime (see
 # docker-compose.yml), so only system dependencies are baked here.
-FROM node:22-bookworm
+FROM node:24-bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -26,7 +26,7 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*
 
 # yarn 1.x ships with the node image; corepack is a belt-and-suspenders fallback.
-RUN corepack enable || true
+RUN corepack enable
 
 COPY tests/entrypoint.sh /usr/local/bin/run-kerberos-tests.sh
 RUN chmod +x /usr/local/bin/run-kerberos-tests.sh
