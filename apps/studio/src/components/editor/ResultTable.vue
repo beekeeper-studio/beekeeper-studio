@@ -72,7 +72,6 @@
   import { tabulatorForTableData } from '@/common/tabulator';
   import EditorModal from '../tableview/EditorModal.vue'
   import { AppEvent } from "@/common/AppEvent";
-  import XLSX from 'xlsx';
   import { parseRowDataForJsonViewer } from '@/lib/data/jsonViewer'
   import { vueEditor } from '@shared/lib/tabulator/helpers';
   import NullableInputEditorVue from '@shared/components/tabulator/NullableInputEditor.vue';
@@ -1038,7 +1037,7 @@
           // forceRedraw??
         }
       },
-      download(format) {
+      async download(format) {
         let formatter = format;
         const dateString = dateFormat(new Date(), 'yyyy-mm-dd_hMMss');
         const title = this.query.title ? _.snakeCase(this.query.title) : 'query_results';
@@ -1061,6 +1060,9 @@
 
         // Fix Issue #2863 replacing null values with empty string
         if(format === 'xlsx'){
+          // Lazy-load SheetJS only when exporting to Excel; keeps it out of the entry bundle.
+          const xlsxModule = await import('xlsx');
+          const XLSX = xlsxModule.default || xlsxModule;
           formatter = (rows, options, setFileContents) => {
              const values = rows.map(row => row.columns.map(col => {
                if(col.value === null){
