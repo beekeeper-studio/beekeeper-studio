@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
 import FileManager from "@/services/plugin/FileManager";
+import { Manifest } from "@/services/plugin/types";
 import PluginManager from "@/services/plugin/PluginManager";
 import { createPluginServer } from "@tests/vitest/integration/plugins/utils/server";
 import {
@@ -23,13 +24,13 @@ function readJson(...paths: string[]) {
   return JSON.parse(content);
 }
 
-function installV0Plugins(fileManager: FileManager) {
+function installV0Plugins(fileManager: FileManager<Manifest>) {
   const aiShellPath = path.join(
-    fileManager.options.pluginsDirectory,
+    fileManager.options.root,
     "bks-ai-shell"
   );
   const erDiagramPath = path.join(
-    fileManager.options.pluginsDirectory,
+    fileManager.options.root,
     "bks-er-diagram"
   );
   fs.cpSync(
@@ -63,7 +64,7 @@ describe("BundledPluginModule", () => {
   const repositoryService = new MockPluginRepositoryService(server);
   const registry = new PluginRegistry(repositoryService);
 
-  let fileManager: FileManager;
+  let fileManager: FileManager<Manifest>;
 
   function createPluginManager() {
     return new PluginManager({
@@ -100,12 +101,12 @@ describe("BundledPluginModule", () => {
     // Here we copy from node_modules, but any source works.
     fs.cpSync(
       BundledPlugin.resolve("@beekeeperstudio/bks-ai-shell"),
-      path.join(fileManager.options.pluginsDirectory, "bks-ai-shell"),
+      path.join(fileManager.options.root, "bks-ai-shell"),
       { recursive: true }
     );
     fs.cpSync(
       BundledPlugin.resolve("@beekeeperstudio/bks-er-diagram"),
-      path.join(fileManager.options.pluginsDirectory, "bks-er-diagram"),
+      path.join(fileManager.options.root, "bks-er-diagram"),
       { recursive: true }
     );
 

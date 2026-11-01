@@ -1,3 +1,4 @@
+import Vue from "vue";
 import { Module } from "vuex";
 import { State as RootState } from "../index";
 
@@ -15,19 +16,21 @@ export const ThemeModule: Module<State, RootState> = {
   namespaced: true,
   state: () => ({
     systemDark: true,
-    themes: [
-      { id: "default", label: "Default" },
-      { id: "solarized", label: "Solarized" },
-      { id: "dracula", label: "Dracula" },
-      { id: "github", label: "GitHub" },
-    ],
+    themes: [],
   }),
   mutations: {
     setSystemDark(state, systemDark: boolean) {
       state.systemDark = systemDark;
     },
+    setThemes(state, themes: Theme[]) {
+      state.themes = themes;
+    },
   },
   actions: {
+    async loadThemes(context) {
+      const themes = await Vue.prototype.$util.send("theme/list");
+      context.commit("setThemes", themes);
+    },
     setId(context, value: string) {
       context.dispatch(
         "settings/save",
@@ -44,6 +47,9 @@ export const ThemeModule: Module<State, RootState> = {
     },
   },
   getters: {
+    themes(state): Theme[] {
+      return state.themes;
+    },
     id(_state, _getters, _rootState, rootGetters) {
       return rootGetters["settings/settings"].themeId?.value || "default";
     },

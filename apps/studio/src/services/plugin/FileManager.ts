@@ -7,48 +7,28 @@ import {
   DownloaderConfig,
   DownloaderReport,
 } from "nodejs-file-downloader";
-import { Manifest, PluginView, Release } from "./types";
-import { PluginError, PluginSystemError } from "@/lib/errors";
+import { BaseManifest, Release } from "./types";
+import { isValidManifestId } from "./utils";
+import { ChecksumMismatchError, ManifestError, PathTraversalError } from "@/lib/errors";
 import extract from "extract-zip";
 import { tmpdir } from "os";
 
 export type FileManagerOptions = {
   downloadDirectory?: string;
-  pluginsDirectory: string;
+  root: string;
 }
 
 const log = rawLog.scope("FileManager");
 
-const PLUGIN_MANIFEST_FILENAME = "manifest.json";
+const MANIFEST_FILENAME = "manifest.json";
 
-/**
- * A plugin id is used verbatim as a single directory-name segment under the
- * plugins directory (see `getDirectoryOf`) and as an identity key. It is read
- * from attacker-controlled `manifest.json`, so it must be constrained to a
- * single safe path component: alphanumeric first character, then alphanumerics
- * plus `.` `_` `-`. This forbids path separators and `.`/`..`, which are the
- * only traversal-capable strings once separators are excluded.
- */
-const PLUGIN_ID_PATTERN = /^[a-z0-9][a-z0-9._-]*$/;
-
-/** Max length mirrors the npm package-name limit; ample for any real plugin. */
-const PLUGIN_ID_MAX_LENGTH = 214;
-
-export function isValidPluginId(id: unknown): id is string {
-  return (
-    typeof id === "string" &&
-    id.length <= PLUGIN_ID_MAX_LENGTH &&
-    PLUGIN_ID_PATTERN.test(id)
-  );
-}
-
-class PluginDownloadError extends Error {
+class DownloadError extends Error {
   status: "UNKNOWN" | "NOT_FOUND" | "ABORTED" = "UNKNOWN";
 
   constructor(message: string, public originalError?: Error) {
     super(message);
 
-    this.name = "PluginDownloadError";
+    this.name = "DownloadError";
     this.originalError = originalError;
 
     if (originalError) {
@@ -75,13 +55,13 @@ async function download(options: DownloaderConfig & { signal?: AbortSignal }) {
     downloadStatus = report.downloadStatus;
   } catch (e) {
     if (e.responseBody) {
-      throw new PluginDownloadError(e.responseBody, e);
+      throw new DownloadError(e.responseBody, e);
     }
-    throw new PluginDownloadError("Download failed", e);
+    throw new DownloadError("Download failed", e);
   }
 
   if (downloadStatus === "ABORTED") {
-    const error = new PluginDownloadError("Download aborted");
+    const error = new DownloadError("Download aborted");
     error.status = "ABORTED";
     throw error;
   }
@@ -102,46 +82,46 @@ async function extractArchive(
     await extract(archivePath, { dir: extractDir });
   } catch (error) {
     log.error(`Error extracting archive: ${error.message}`);
-    throw new Error(`Failed to extract plugin archive: ${error.message}`);
+    throw new Error(`Failed to extract archive: ${error.message}`);
   }
 }
 
-export default class FileManager {
+export default class FileManager<Manifest extends BaseManifest> {
   constructor(readonly options: FileManagerOptions) {}
 
-  /** Download plugin source archive to `directory` and extract it */
+  /** Download source archive to `directory` and extract it */
   async download(
-    pluginId: string,
-    release: Release,
+    id: string,
+    release: Release<Manifest>,
     options: {
       signal?: AbortSignal;
       /** for update */
       tmp?: boolean;
     } = {}
   ) {
-    const directory = this.getDirectoryOf(pluginId);
+    const directory = this.getDirectoryOf(id);
     const mustCleanup = !this.options?.downloadDirectory;
     const tmpDirectory =
       this.options?.downloadDirectory ||
-      path.join(tmpdir(), `beekeeper-plugin-${pluginId}-${Date.now()}`);
+      path.join(tmpdir(), `beekeeper-studio-${id}-${Date.now()}`);
 
     try {
       // Create temp directory for initial download
       fs.mkdirSync(tmpDirectory, { recursive: true });
 
       log.debug(
-        `Downloading plugin "${pluginId}" version "${release.manifest.version}"...`
+        `Downloading "${id}" version "${release.manifest.version}"...`
       );
 
       // Download the source archive
       log.debug(
-        `Downloading plugin source archive: "${release.sourceArchiveUrl}"...`
+        `Downloading source archive: "${release.sourceArchiveUrl}"...`
       );
       const archivePath = await download({
         url: release.sourceArchiveUrl,
         directory: tmpDirectory,
         signal: options.signal,
-        fileName: `${pluginId}-${release.manifest.version}-${Date.now()}-tmp.zip`,
+        fileName: `${id}-${release.manifest.version}-${Date.now()}-tmp.zip`,
         headers: {
           "User-Agent": "Beekeeper Studio",
         },
@@ -151,11 +131,11 @@ export default class FileManager {
 
       log.debug(`Checking ${archivePath} against checksum ${release.checksum}`);
       if (release.checksum && checksum !== release.checksum) {
-        throw new PluginSystemError('CHECKSUM_MISMATCH', "Checksum mismatch, blocking install.");
+        throw new ChecksumMismatchError("Checksum mismatch, blocking install.");
       }
 
       // Extract the archive to the temp directory
-      log.debug(`Extracting plugin archive...`);
+      log.debug(`Extracting archive...`);
       await extractArchive(archivePath, tmpDirectory);
 
       // If we're updating, keep in temp directory
@@ -220,19 +200,19 @@ export default class FileManager {
   }
 
   async update(
-    pluginId: string,
-    release: Release,
+    id: string,
+    release: Release<Manifest>,
     options: { signal?: AbortSignal } = {}
   ) {
     // Download to temp location
-    const tmpDirectory = await this.download(pluginId, release, {
+    const tmpDirectory = await this.download(id, release, {
       ...options,
       tmp: true,
     });
-    const finalDirectory = this.getDirectoryOf(pluginId);
+    const finalDirectory = this.getDirectoryOf(id);
 
     try {
-      // Remove existing plugin directory
+      // Remove existing directory
       fs.rmSync(finalDirectory, { recursive: true, force: true });
 
       // Create final directory
@@ -255,27 +235,27 @@ export default class FileManager {
     fs.rmSync(this.getDirectoryOf(id), { recursive: true, force: true });
   }
 
-  scanPlugins(): Manifest[] {
+  scan(): Manifest[] {
     const manifests: Manifest[] = [];
 
-    if (!fs.existsSync(this.options.pluginsDirectory)) {
-      fs.mkdirSync(this.options.pluginsDirectory, { recursive: true });
+    if (!fs.existsSync(this.options.root)) {
+      fs.mkdirSync(this.options.root, { recursive: true });
     }
 
-    for (const dir of fs.readdirSync(this.options.pluginsDirectory)) {
+    for (const dir of fs.readdirSync(this.options.root)) {
       try {
         if (
           !fs
-            .statSync(path.join(this.options.pluginsDirectory, dir))
+            .statSync(path.join(this.options.root, dir))
             .isDirectory()
         ) {
           continue;
         }
 
         const manifestPath = path.join(
-          this.options.pluginsDirectory,
+          this.options.root,
           dir,
-          PLUGIN_MANIFEST_FILENAME
+          MANIFEST_FILENAME
         );
 
         if (!fs.existsSync(manifestPath)) {
@@ -291,7 +271,7 @@ export default class FileManager {
         this.validateManifest(manifest, dir);
         manifests.push(manifest);
       } catch (e) {
-        log.error(`Failed to parse manifest for plugin "${dir}":`, e);
+        log.error(`Failed to parse manifest in "${dir}":`, e);
       }
     }
 
@@ -301,7 +281,7 @@ export default class FileManager {
   getManifest(id: string): Manifest {
     const directory = this.getDirectoryOf(id);
     const manifestContent = fs.readFileSync(
-      path.join(directory, PLUGIN_MANIFEST_FILENAME),
+      path.join(directory, MANIFEST_FILENAME),
       { encoding: "utf-8" }
     );
     const manifest = JSON.parse(manifestContent);
@@ -317,16 +297,14 @@ export default class FileManager {
    * filesystem operations at another location.
    */
   private validateManifest(manifest: Manifest, expectedId: string) {
-    if (!isValidPluginId(manifest.id)) {
-      throw new PluginError(
-        "MANIFEST_PARSE",
-        `Plugin "${expectedId}" has a missing or invalid manifest id.`
+    if (!isValidManifestId(manifest.id)) {
+      throw new ManifestError(
+        `"${expectedId}" has a missing or invalid manifest id.`
       );
     }
     if (manifest.id !== expectedId) {
-      throw new PluginError(
-        "MANIFEST_PARSE",
-        `Plugin manifest id "${manifest.id}" does not match expected id "${expectedId}".`
+      throw new ManifestError(
+        `Manifest id "${manifest.id}" does not match expected id "${expectedId}".`
       );
     }
   }
@@ -335,31 +313,31 @@ export default class FileManager {
     if (typeof id === "object") {
       id = id.id;
     }
-    const pluginsRoot = path.resolve(this.options.pluginsDirectory);
-    const resolved = path.resolve(pluginsRoot, id);
+    const root = path.resolve(this.options.root);
+    const resolved = path.resolve(root, id);
     // Must be strictly *inside* the plugins directory. This rejects traversal
     // (`../`), absolute ids, and the empty/`.` id (which would resolve to the
     // plugins root itself and let `remove()` delete every installed plugin).
-    if (!resolved.startsWith(pluginsRoot + path.sep)) {
-      throw new Error(
-        `Refusing to access path outside plugins directory: ${id}`
+    if (!resolved.startsWith(root + path.sep)) {
+      throw new PathTraversalError(
+        `Refusing to access path outside root directory: ${id}`
       );
     }
     return resolved;
   }
 
   private getPath(manifest: Manifest, filename: string): string {
-    const pluginRoot = path.resolve(
-      this.options.pluginsDirectory,
+    const root = path.resolve(
+      this.options.root,
       manifest.id
     );
-    const resolved = path.resolve(pluginRoot, filename);
+    const resolved = path.resolve(root, filename);
     if (
-      resolved !== pluginRoot &&
-      !resolved.startsWith(pluginRoot + path.sep)
+      resolved !== root &&
+      !resolved.startsWith(root + path.sep)
     ) {
-      throw new Error(
-        `Refusing to access path outside plugin directory: ${filename}`
+      throw new PathTraversalError(
+        `Refusing to access path outside directory: ${filename}`
       );
     }
     return resolved;
@@ -390,9 +368,7 @@ export default class FileManager {
     return fs.readFileSync(filePath, { encoding: "utf-8" });
   }
 
-  /** Check if view's entrypoint exists */
-  viewEntrypointExists(manifest: Manifest, view: PluginView): boolean {
-    const entry = path.join(manifest.pluginEntryDir ?? ".", view.entry);
-    return fs.existsSync(this.getPath(manifest, entry));
+  exists(manifest: Manifest, filename: string): boolean {
+    return fs.existsSync(this.getPath(manifest, filename));
   }
 }

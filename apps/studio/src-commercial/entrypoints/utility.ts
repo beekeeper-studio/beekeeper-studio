@@ -11,7 +11,7 @@ import { ConnHandlers } from '../backend/handlers/connHandlers';
 import { FileHandlers } from '@/handlers/fileHandlers';
 import { GeneratorHandlers } from '@/handlers/generatorHandlers';
 import { Handlers } from '../backend/handlers/handlers';
-import { newState, removeState, setPluginManager, state } from '@/handlers/handlerState';
+import { newState, pluginManager, removeState, state, themeManager } from '@/handlers/handlerState';
 import { QueryHandlers } from '@/handlers/queryHandlers';
 import { TabHistoryHandlers } from '@/handlers/tabHistoryHandlers'
 import { ExportHandlers } from '@commercial/backend/handlers/exportHandlers';
@@ -20,25 +20,18 @@ import { CliHandlers } from '@commercial/backend/handlers/cliHandlers';
 import { AwsHandlers } from '@commercial/backend/handlers/awsHandlers';
 import { ImportHandlers } from '@commercial/backend/handlers/importHandlers';
 import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
+import { ThemeHandlers } from '@commercial/backend/handlers/themeHandlers';
 import { TempHandlers } from '@/handlers/tempHandlers';
 import { DevHandlers } from '@/handlers/devHandlers';
 import { FormatterPresetHandlers } from '@/handlers/formatterPresetHandlers';
 import { LicenseHandlers } from '@/handlers/licenseHandlers';
 import { LockHandlers } from '@/handlers/lockHandlers';
 import { PluginHandlers } from '@commercial/backend/handlers/pluginHandlers';
-import { PluginManager } from '@/services/plugin';
-import FileManager from '@/services/plugin/FileManager';
 import { DriverDepHandlers } from '@/handlers/driverDepHandlers';
 import { DriverDepManager, DriverDepFileManager, createDefaultRegistry } from '@/services/driverDeps';
 import type { DepPlatform, DepArch } from '@/services/driverDeps';
 import BksConfig from '@/common/bksConfig';
 import _ from 'lodash';
-import {
-  ConfigurationModule,
-  BundledPluginModule,
-  RegistryModule,
-  LicenseModule,
-} from '@commercial/backend/plugin-system/modules';
 import { PluginErrorCode, PluginSystemErrorCode } from '@/lib/errors';
 
 import * as sms from 'source-map-support'
@@ -50,17 +43,6 @@ if (platformInfo.env.development || platformInfo.env.test) {
 }
 
 let ormConnection: ORMConnection;
-const pluginManager = new PluginManager({
-  appVersion: platformInfo.appVersion,
-  fileManager: new FileManager({
-    pluginsDirectory: platformInfo.pluginsDirectory,
-  }),
-});
-pluginManager.registerModule(ConfigurationModule.with({ config: BksConfig }));
-pluginManager.registerModule(RegistryModule.with({ config: BksConfig }));
-pluginManager.registerModule(BundledPluginModule);
-pluginManager.registerModule(LicenseModule);
-
 const driverDepManager = new DriverDepManager({
   fileManager: new DriverDepFileManager({
     driverDepsDirectory: platformInfo.driverDepsDirectory,
@@ -95,6 +77,7 @@ export const handlers: Handlers = {
   ...AwsHandlers,
   ...FileHandlers,
   ...EnumHandlers,
+  ...ThemeHandlers,
   ...TempHandlers,
   ...LicenseHandlers,
   ...PluginHandlers,
@@ -217,8 +200,6 @@ async function init() {
   pluginManager.initialize().catch((e) => {
     log.error("Error initializing plugin manager", e);
   });
-
-  setPluginManager(pluginManager);
 
   driverDepManager.initialize().catch((e) => {
     log.error("Error initializing driver dep manager", e);

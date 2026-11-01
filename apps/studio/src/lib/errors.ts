@@ -29,8 +29,7 @@ export type PluginSystemErrorCode =
   | 'PLUGIN_NOT_SUPPORTED'
   | 'PLUGIN_SYSTEM_DISABLED'
   | 'INIT_TIMEOUT'
-  | 'PLUGIN_LIMIT_REACHED'
-  | 'CHECKSUM_MISMATCH';
+  | 'PLUGIN_LIMIT_REACHED';
 
 export type PluginErrorCode =
   | 'UNKNOWN'
@@ -71,6 +70,39 @@ export class PluginError extends Error {
     message?: string,
     options?: ErrorOptions
   ) {
+    super(message, options);
+    this.name = this.constructor.name;
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
+}
+
+/** Thrown when a path would resolve outside the directory it must stay in. */
+export class PathTraversalError extends Error {
+  constructor(message?: string, options?: ErrorOptions) {
+    super(message, options);
+    this.name = this.constructor.name;
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
+}
+
+/** Thrown when a manifest.json is malformed or does not match where it was found. */
+export class ManifestError extends Error {
+  constructor(message?: string, options?: ErrorOptions) {
+    super(message, options);
+    this.name = this.constructor.name;
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
+}
+
+/** Thrown when a downloaded archive does not match its published checksum. */
+export class ChecksumMismatchError extends Error {
+  constructor(message?: string, options?: ErrorOptions) {
     super(message, options);
     this.name = this.constructor.name;
     if (Error.captureStackTrace) {

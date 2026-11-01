@@ -63,7 +63,7 @@ export default class PluginRepositoryService {
   }
 
 
-  private async fetchLatestRelease(owner: string, repo: string): Promise<Release> {
+  private async fetchLatestRelease(owner: string, repo: string): Promise<Release<Manifest>> {
     const response = await this.request(
       "GET /repos/{owner}/{repo}/releases/latest",
       {

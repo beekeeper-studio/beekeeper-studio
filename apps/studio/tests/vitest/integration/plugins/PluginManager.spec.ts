@@ -9,7 +9,7 @@ import PluginManager, {
 import { createPluginServer } from "./utils/server";
 import { createFileManager, cleanFileManager } from "./utils/fileManager";
 import { MockPluginRepositoryService } from "./utils/registry";
-import { PluginSystemError } from "@/lib/errors";
+import { PathTraversalError, PluginSystemError } from "@/lib/errors";
 import PluginRegistry from "@/services/plugin/PluginRegistry";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import migration from "@/migration/20250529_add_plugin_settings";
@@ -26,7 +26,7 @@ describe("Basic Plugin Management", () => {
     INCOMPAT = "5.3.0",
   }
 
-  let fileManager: FileManager;
+  let fileManager: FileManager<Manifest>;
 
   async function initPluginManager(
     appVersionOrOptions:
@@ -371,7 +371,7 @@ describe("Basic Plugin Management", () => {
     };
 
     function writeManifest(dir: string, manifest: object) {
-      const pluginDir = path.join(fileManager.options.pluginsDirectory, dir);
+      const pluginDir = path.join(fileManager.options.root, dir);
       fs.mkdirSync(pluginDir, { recursive: true });
       fs.writeFileSync(path.join(pluginDir, "manifest.json"), JSON.stringify(manifest));
     }
@@ -398,7 +398,7 @@ describe("Basic Plugin Management", () => {
       }],
       ["a manifest.json that is a directory", () => {
         fs.mkdirSync(
-          path.join(fileManager.options.pluginsDirectory, "broken-plugin", "manifest.json"),
+          path.join(fileManager.options.root, "broken-plugin", "manifest.json"),
           { recursive: true }
         );
       }],
@@ -409,7 +409,7 @@ describe("Basic Plugin Management", () => {
       brokenPlugins.push(["a dangling symlink", () => {
         fs.symlinkSync(
           path.join(tmpdir(), "bks-nonexistent-plugin-dev-dir"),
-          path.join(fileManager.options.pluginsDirectory, "broken-plugin")
+          path.join(fileManager.options.root, "broken-plugin")
         );
       }]);
     }
@@ -440,6 +440,67 @@ describe("Basic Plugin Management", () => {
 
       const broken = plugins.find((p) => p.manifest.id === "broken-plugin");
       expect(broken).toHaveProperty("loadable", false);
+    });
+  });
+
+  // The entry must be resolved against pluginEntryDir the same way the view's
+  // iframe URL is, or plugins whose files only live there never open (#4940).
+  describe("Checking a view's entrypoint", () => {
+    function writePlugin(pluginEntryDir?: string) {
+      const pluginDir = path.join(fileManager.options.root, "entry-plugin");
+      fs.mkdirSync(pluginDir, { recursive: true });
+      fs.writeFileSync(path.join(pluginDir, "manifest.json"), JSON.stringify({
+        id: "entry-plugin",
+        name: "Entry Plugin",
+        version: "1.0.0",
+        description: "x",
+        author: "qa",
+        manifestVersion: 1,
+        minAppVersion: AppVer.COMPAT,
+        pluginEntryDir,
+        capabilities: {
+          views: [{ id: "main", name: "Main", type: "base-tab", entry: "index.html" }],
+          menu: [],
+        },
+      }));
+    }
+
+    function writeFile(relativePath: string) {
+      const filePath = path.join(fileManager.options.root, relativePath);
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      fs.writeFileSync(filePath, "<!doctype html>");
+    }
+
+    it("finds the entry under pluginEntryDir", async () => {
+      writePlugin("dist");
+      writeFile("entry-plugin/dist/index.html");
+      const manager = await initPluginManager(AppVer.COMPAT);
+
+      expect(manager.viewEntrypointExists("entry-plugin", "main")).toBe(true);
+    });
+
+    it("doesn't accept an entry at the plugin root when pluginEntryDir is set", async () => {
+      writePlugin("dist");
+      writeFile("entry-plugin/index.html");
+      const manager = await initPluginManager(AppVer.COMPAT);
+
+      expect(manager.viewEntrypointExists("entry-plugin", "main")).toBe(false);
+    });
+
+    it("finds the entry at the plugin root when pluginEntryDir is not set", async () => {
+      writePlugin();
+      writeFile("entry-plugin/index.html");
+      const manager = await initPluginManager(AppVer.COMPAT);
+
+      expect(manager.viewEntrypointExists("entry-plugin", "main")).toBe(true);
+    });
+
+    it("refuses a pluginEntryDir that traverses out of the plugin's own directory", async () => {
+      writePlugin("../victim-plugin");
+      writeFile("victim-plugin/index.html");
+      const manager = await initPluginManager(AppVer.COMPAT);
+
+      expect(() => manager.viewEntrypointExists("entry-plugin", "main")).toThrow(PathTraversalError);
     });
   });
 

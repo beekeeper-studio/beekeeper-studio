@@ -37,7 +37,13 @@ export default {
       { id: "bks-er-diagram", pkg: "@beekeeperstudio/bks-er-diagram" },
     ],
     maxCommunityPlugins: 2
-  }
+  },
+  themes: [
+    { id: "default", label: "Default" },
+    { id: "solarized", label: "Solarized" },
+    { id: "dracula", label: "Dracula" },
+    { id: "github", label: "GitHub" },
+  ],
 }
 
 

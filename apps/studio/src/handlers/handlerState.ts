@@ -9,9 +9,19 @@ import { PluginManager } from "@/services/plugin";
 import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
 import { ChildProcessWithoutNullStreams } from "child_process";
 import { MessagePortMain } from "electron";
-import { FSWatcher } from "fs";
+import { FSWatcher } from "chokidar";
 import fs from "fs";
 import tmp from 'tmp';
+import platformInfo from '@/common/platform_info';
+import BksConfig from '@/common/bksConfig';
+import FileManager from '@/services/plugin/FileManager';
+import { ThemeManager } from '@commercial/backend/lib/theme/ThemeManager';
+import {
+  ConfigurationModule,
+  BundledPluginModule,
+  RegistryModule,
+  LicenseModule,
+} from '@commercial/backend/plugin-system/modules';
 
 export interface TempFile {
   fileObject: tmp.FileResult,
@@ -40,12 +50,14 @@ class State {
   // enums
   enumsInitialized = false;
 
-  private enumWatcher: FSWatcher = null;
+  private enumWatcher: fs.FSWatcher = null;
 
-  set watcher(value: FSWatcher) {
+  set watcher(value: fs.FSWatcher) {
     if (this.enumWatcher != null) this.enumWatcher.close();
     this.enumWatcher = value;
   }
+
+  themeWatcher: FSWatcher = null;
 
   // temp files
   tempFiles: Map<string, TempFile> = new Map();
@@ -53,15 +65,20 @@ class State {
 
 const states = new Map<string, State>();
 
-let pluginManager: PluginManager = null;
+export const pluginManager = new PluginManager({
+  appVersion: platformInfo.appVersion,
+  fileManager: new FileManager({
+    root: platformInfo.pluginsDirectory,
+  }),
+});
+pluginManager.registerModule(ConfigurationModule.with({ config: BksConfig }));
+pluginManager.registerModule(RegistryModule.with({ config: BksConfig }));
+pluginManager.registerModule(BundledPluginModule);
+pluginManager.registerModule(LicenseModule);
 
-export function getPluginManager(): PluginManager {
-  return pluginManager;
-}
-
-export function setPluginManager(manager: PluginManager) {
-  pluginManager = manager;
-}
+export const themeManager = new ThemeManager({
+  fileManager: new FileManager({ root: platformInfo.themesDirectory })
+});
 
 // I kinda hate this tbh. modifying could be scary
 export function state(id: string): State {
@@ -87,6 +104,7 @@ export async function removeState(id: string): Promise<void> {
     }
   }
   state.tempFiles.clear();
+  state.themeWatcher?.close();
   states.delete(id);
 }
 

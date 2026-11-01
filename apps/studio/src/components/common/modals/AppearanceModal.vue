@@ -74,7 +74,7 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { mapActions, mapGetters, mapState } from "vuex";
+import { mapActions, mapGetters } from "vuex";
 import { AppEvent } from "@/common/AppEvent";
 import BaseModal from "@/components/common/modals/BaseModal.vue";
 import ThemePreview from "@/components/common/ThemePreview.vue";
@@ -87,8 +87,8 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapState("theme", ["themes"]),
     ...mapGetters({
+      themes: "theme/themes",
       themeId: "theme/id",
       themeAppearance: "theme/appearance",
       themeDark: "theme/dark",

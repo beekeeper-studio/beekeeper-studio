@@ -19,8 +19,7 @@ import platformInfo from '@/common/platform_info'
 import bksConfig from '@/common/bksConfig'
 
 import { AppEvent } from '@/common/AppEvent'
-import { ProtocolBuilder } from '@/background/lib/electron/ProtocolBuilder';
-import { createThemeProtocol } from "@commercial/backend/lib/theme/ThemeProtocol";
+import { ProtocolBuilder } from '@commercial/backend/lib/electron/ProtocolBuilder';
 import { uuidv4 } from '@/lib/uuid';
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import { UtilProcMessage } from '@/types'
@@ -140,9 +139,10 @@ async function initBasics() {
   ProtocolBuilder.createAppProtocol()
   // this creates the plugin:// protocol we use for loading plugins
   ProtocolBuilder.createPluginProtocol()
+  // this creates the theme:// protocol we use for loading themes
+  ProtocolBuilder.createThemeProtocol();
   if (initialized) return settings
   initialized = true
-  createThemeProtocol();
   await ormConnection.connect()
   console.log("LD_LIBRARY_PATH", process.env.LD_LIBRARY_PATH)
   log.info("running migrations!!")

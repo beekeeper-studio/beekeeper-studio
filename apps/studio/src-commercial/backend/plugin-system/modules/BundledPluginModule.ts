@@ -42,7 +42,7 @@ export class BundledPluginModule extends Module {
   }
 
   private makePluginsDir() {
-    const pluginsDirectory = this.manager.fileManager.options.pluginsDirectory;
+    const pluginsDirectory = this.manager.fileManager.options.root;
     if (!fs.existsSync(pluginsDirectory)) {
       fs.mkdirSync(pluginsDirectory, { recursive: true });
     }

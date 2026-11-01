@@ -1,9 +1,12 @@
 import { Store } from "vuex";
 import { State } from "@/store/index";
 import { AppEvent } from "@/common/AppEvent";
+import { UtilityConnection } from "@/lib/utility/UtilityConnection";
+import { isValidManifestId } from "@/services/plugin/utils";
 
 export interface ThemeRendererOptions {
   store: Store<State>;
+  utility: UtilityConnection;
   bus: {
     emit: (event: AppEvent, ...args: any) => void;
     on: (event: AppEvent, listener: (...args: any) => void) => void;
@@ -39,6 +42,7 @@ export class ThemeRenderer {
     document.body.classList.toggle("window-inactive", !document.hasFocus());
 
     this.options.store.commit("theme/setSystemDark", this.media.matches);
+    await this.options.store.dispatch("theme/loadThemes");
 
     this.subscribe();
 
@@ -52,6 +56,10 @@ export class ThemeRenderer {
 
     window.main.onSystemUsesDarkColors((dark) => {
       this.options.store.commit("theme/setSystemDark", dark);
+    });
+
+    this.options.utility.addListener("externalThemeChanged", async () => {
+      await this.reloadStylesheet();
     });
 
     if (import.meta.hot) {
@@ -85,7 +93,7 @@ export class ThemeRenderer {
     const themeParams = new URLSearchParams(window.location.search);
     const rawThemeId = themeParams.get("themeId");
     const themeId =
-      rawThemeId && /^[a-zA-Z0-9_-]+$/.test(rawThemeId)
+      isValidManifestId(rawThemeId)
         ? rawThemeId
         : "default";
     const appearance = themeParams.get("appearance") ?? "auto";
@@ -109,6 +117,7 @@ export class ThemeRenderer {
     document.body.classList.toggle("light-theme", !dark);
 
     await this.loadStylesheet(`theme://${themeId}.css`);
+    this.options.utility.send("theme/watch", { themeId });
   }
 
   private async loadStylesheet(href: string): Promise<void> {

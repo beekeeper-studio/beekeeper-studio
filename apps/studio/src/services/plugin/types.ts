@@ -120,6 +120,15 @@ type LegacyViews = {
 
 export type Manifest = ManifestV0 | ManifestV1;
 
+export type BaseManifest = {
+  id: string;
+  version: string;
+};
+
+export type ThemeManifest = BaseManifest & {
+  name: string;
+};
+
 export type ManifestV0 = {
   manifestVersion?: 0;
   id: string;
@@ -208,14 +217,14 @@ export interface PluginDisplayItem extends Plugin {
   disabled: boolean;
 }
 
-export interface Release {
-  manifest: Manifest;
+export interface Release<M extends BaseManifest> {
+  manifest: M;
   sourceArchiveUrl: string;
   checksum: string;
 }
 
 export interface PluginRepository {
-  latestRelease: Release;
+  latestRelease: Release<Manifest>;
   readme: string;
   downloadCount?: number;
 }

@@ -1,4 +1,5 @@
 import _ from "lodash";
+import path from "path";
 import PluginRegistry from "./PluginRegistry";
 import FileManager from "./FileManager";
 import {
@@ -24,7 +25,7 @@ import { PluginEntryCache } from "@/common/appdb/models/PluginEntryCache";
 const log = rawLog.scope("PluginManager");
 
 export type PluginManagerOptions = {
-  fileManager?: FileManager;
+  fileManager?: FileManager<AnyVersionManifest>;
   registry?: PluginRegistry;
   appVersion: string;
 }
@@ -32,7 +33,7 @@ export type PluginManagerOptions = {
 export default class PluginManager extends Hookable {
   private initialized = false;
   public readonly registry: PluginRegistry;
-  public readonly fileManager: FileManager;
+  public readonly fileManager: FileManager<AnyVersionManifest>;
   private manifests: Manifest[] = [];
   pluginSettings: PluginSettingsMap = {};
   private pluginLocks: string[] = [];
@@ -69,7 +70,7 @@ export default class PluginManager extends Hookable {
 
     await this.callHook("before-initialize");
 
-    const installedPlugins = this.fileManager.scanPlugins().map((manifest) => {
+    const installedPlugins = this.fileManager.scan().map((manifest) => {
       try {
         return convertToManifestV1(manifest);
       } catch (e) {
@@ -129,7 +130,9 @@ export default class PluginManager extends Hookable {
         `View "${viewId}" not found in plugin "${pluginId}".`
       );
     }
-    return this.fileManager.viewEntrypointExists(manifest, view);
+    // Must match how `WebPluginLoader.getEntry` builds the view's iframe URL.
+    const entry = path.join(manifest.pluginEntryDir ?? ".", view.entry);
+    return this.fileManager.exists(manifest, entry);
   }
 
   async getRepository(pluginId: string): Promise<PluginRepository> {
