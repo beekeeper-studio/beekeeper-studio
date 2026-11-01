@@ -30,6 +30,7 @@ const UNWRAPPER = /^"(.*)"$/
 
 export const SqlServerData: DialectData = {
   sqlLabel: "SQL",
+  supportsDropDatabase: true,
   defaultSchema: 'dbo',
   columnTypes: types.map((t) => new ColumnType(t, supportsLength.includes(t), defaultLength(t))),
   constraintActions: [...defaultConstraintActions],

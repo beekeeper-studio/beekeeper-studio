@@ -26,18 +26,21 @@
         >
           <i class="material-icons" :class="{'refreshing-db-icon': isRefreshing }">{{ isRefreshing ? 'sync' : 'refresh' }}</i>
         </a>
-        <a
+        <button
           v-if="
             supportsMultipleDatabases &&
+            supportsDropDatabase &&
             !usedConfig?.readOnlyMode &&
             availableDatabases.length
           "
-          class="refresh"
-          @click.prevent="openDropDatabasesModal"
-          :title="'Drop Databases'"
+          class="btn btn-flat refresh"
+          type="button"
+          @click.prevent="openDatabaseMenu"
+          title="Database actions"
+          aria-label="Database actions"
         >
-          <i class="material-icons">delete</i>
-        </a>
+          <i class="material-icons">more_vert</i>
+        </button>
         <a
           v-if="!usedConfig?.readOnlyMode && supportsAddDatabase"
           class="refresh"
@@ -135,11 +138,13 @@
           this.isRefreshing = false
         }
       },
-        openDropDatabasesModal() {
-    this.$root.$emit(AppEvent.dropDatabases, {
-      databases: this.availableDatabases,
-      currentDatabase: this.selectedDatabase
-    })
+      openDatabaseMenu(clickEvent) {
+        this.$bks.openMenu({
+          id: 'database-dropdown-menu',
+          item: this.selectedDatabase,
+          options: this.databaseMenuOptions,
+          event: clickEvent
+        })
       },
       async databaseCreated(db) {
         this.$modal.hide('config-add-database')
@@ -166,6 +171,18 @@
       },
       supportsAddDatabase() {
         return !this.dialectData.disabledFeatures?.addDatabase
+      },
+      supportsDropDatabase() {
+        return this.dialectData.supportsDropDatabase === true
+      },
+      databaseMenuOptions() {
+        return [
+          {
+            name: 'Drop Databases',
+            slug: 'drop-databases',
+            handler: () => this.trigger(AppEvent.openDropDatabasesModal)
+          }
+        ]
       },
       availableDatabases() {
         return _.without(this.dbs, this.selectedDatabase)
@@ -236,7 +253,7 @@
     }
   }
 
-  a.refresh {
+  .refresh {
     color: var(--btn-fg);
 
     &:hover, &:focus {
