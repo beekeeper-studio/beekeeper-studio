@@ -1,4 +1,4 @@
-import PluginFileManager from "@/services/plugin/PluginFileManager";
+import FileManager from "@/services/plugin/FileManager";
 import fs from "fs";
 import path from "path";
 import { uuidv4 } from "@/lib/uuid";
@@ -24,15 +24,15 @@ import { tmpdir } from "os";
  * })
  * ```
  */
-export function createFileManager(): PluginFileManager {
-  return new PluginFileManager({
+export function createFileManager(): FileManager {
+  return new FileManager({
     downloadDirectory: tmpDir(),
     pluginsDirectory: tmpDir(),
   });
 }
 
 /** Erase plugins data. */
-export function cleanFileManager(manager: PluginFileManager) {
+export function cleanFileManager(manager: FileManager) {
   cleanTmpDir(manager.options.downloadDirectory);
   cleanTmpDir(manager.options.pluginsDirectory);
 }

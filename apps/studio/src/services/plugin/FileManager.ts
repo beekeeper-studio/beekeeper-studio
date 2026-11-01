@@ -12,12 +12,12 @@ import { PluginError, PluginSystemError } from "@/lib/errors";
 import extract from "extract-zip";
 import { tmpdir } from "os";
 
-export type PluginFileManagerOptions = {
+export type FileManagerOptions = {
   downloadDirectory?: string;
   pluginsDirectory: string;
 }
 
-const log = rawLog.scope("PluginFileManager");
+const log = rawLog.scope("FileManager");
 
 const PLUGIN_MANIFEST_FILENAME = "manifest.json";
 
@@ -106,8 +106,8 @@ async function extractArchive(
   }
 }
 
-export default class PluginFileManager {
-  constructor(readonly options: PluginFileManagerOptions) {}
+export default class FileManager {
+  constructor(readonly options: FileManagerOptions) {}
 
   /** Download plugin source archive to `directory` and extract it */
   async download(

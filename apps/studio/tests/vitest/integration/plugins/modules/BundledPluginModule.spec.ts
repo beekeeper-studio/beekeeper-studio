@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
-import PluginFileManager from "@/services/plugin/PluginFileManager";
+import FileManager from "@/services/plugin/FileManager";
 import PluginManager from "@/services/plugin/PluginManager";
 import { createPluginServer } from "@tests/vitest/integration/plugins/utils/server";
 import {
@@ -23,7 +23,7 @@ function readJson(...paths: string[]) {
   return JSON.parse(content);
 }
 
-function installV0Plugins(fileManager: PluginFileManager) {
+function installV0Plugins(fileManager: FileManager) {
   const aiShellPath = path.join(
     fileManager.options.pluginsDirectory,
     "bks-ai-shell"
@@ -63,7 +63,7 @@ describe("BundledPluginModule", () => {
   const repositoryService = new MockPluginRepositoryService(server);
   const registry = new PluginRegistry(repositoryService);
 
-  let fileManager: PluginFileManager;
+  let fileManager: FileManager;
 
   function createPluginManager() {
     return new PluginManager({

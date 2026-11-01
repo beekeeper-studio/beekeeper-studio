@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from
 import fs from "fs";
 import path from "path";
 import { tmpdir } from "os";
-import PluginFileManager from "@/services/plugin/PluginFileManager";
+import FileManager from "@/services/plugin/FileManager";
 import PluginManager, {
   PluginManagerOptions,
 } from "@/services/plugin/PluginManager";
@@ -26,7 +26,7 @@ describe("Basic Plugin Management", () => {
     INCOMPAT = "5.3.0",
   }
 
-  let fileManager: PluginFileManager;
+  let fileManager: FileManager;
 
   async function initPluginManager(
     appVersionOrOptions:
