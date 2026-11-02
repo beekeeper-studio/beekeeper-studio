@@ -242,9 +242,9 @@ app.on('ready', async () => {
   appReady = true
 
   if (urls.length > 0) {
-    urls.forEach((url: string) => buildWindow(settings, { url }))
+    await Promise.all(urls.map((url: string) => buildWindow(settings, { url })))
   } else if (getActiveWindows().length === 0) {
-    buildWindow(settings)
+    await buildWindow(settings)
   }
 
 })
