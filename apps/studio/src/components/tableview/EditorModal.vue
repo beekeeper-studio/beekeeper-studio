@@ -122,9 +122,9 @@
               <x-button
                 class="btn btn-primary btn-small"
                 :disabled="isReadOnly"
-                @click.prevent="saveAndMinify"
+                @click.prevent="save"
               >
-                <x-label>Minify & Apply</x-label>
+                <x-label>Apply (no minify)</x-label>
               </x-button>
               <x-button
                 :disabled="isReadOnly"
@@ -133,8 +133,8 @@
               >
                 <i class="material-icons">arrow_drop_down</i>
                 <x-menu style="--align: end">
-                  <x-menuitem @click.prevent="save">
-                    <x-label>Apply (no minify)</x-label>
+                  <x-menuitem @click.prevent="saveAndMinify">
+                    <x-label>Minify & Apply</x-label>
                   </x-menuitem>
                 </x-menu>
               </x-button>
