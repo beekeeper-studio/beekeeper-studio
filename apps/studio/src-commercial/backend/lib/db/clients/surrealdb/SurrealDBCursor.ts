@@ -1,6 +1,6 @@
 import { BeeCursor, TableColumn } from "@/lib/db/models";
 import rawLog from '@bksLogger';
-import { Frame } from "surrealdb";
+import { Frame, jsonify, Value } from "surrealdb";
 import { SurrealConn, SurrealPool } from "./SurrealDBPool";
 
 const log = rawLog.scope('surrealdb/cursor');
@@ -80,9 +80,15 @@ export class SurrealDBCursor extends BeeCursor {
     log.debug('SurrealDB cursor cancelled');
   }
 
+  // A SurrealDB value (RecordId, DateTime, Uuid, ...) is an object too, but it
+  // is a single cell, not a row: its data lives in private fields.
+  private isRecord(value: unknown): value is Record<string, unknown> {
+    return !!value && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Value);
+  }
+
   private getColumns(value: unknown): TableColumn[] {
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
-      return Object.keys(value as Record<string, unknown>).map((name) => ({
+    if (this.isRecord(value)) {
+      return Object.keys(value).map((name) => ({
         columnName: name,
         dataType: 'unknown',
       }));
@@ -90,10 +96,14 @@ export class SurrealDBCursor extends BeeCursor {
     return [{ columnName: 'value', dataType: 'unknown' }];
   }
 
+  // The exporters treat cells as plain data: CSV wrote a RecordId as JSON
+  // (`"person:1"` with the quotes, then CSV-quoted again) and JSON wrote its
+  // enumerable keys (`{}`). jsonify converts SurrealDB values, nested ones
+  // included, to plain values: `person:1`, ISO datetimes, GeoJSON.
   private toRow(value: unknown): any[] {
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
-      return Object.values(value as Record<string, unknown>);
+    if (this.isRecord(value)) {
+      return Object.values(value).map((v) => jsonify(v));
     }
-    return [value];
+    return [jsonify(value)];
   }
 }
