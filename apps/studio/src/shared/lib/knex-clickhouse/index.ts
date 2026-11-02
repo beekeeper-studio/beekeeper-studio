@@ -167,14 +167,7 @@ export class ClickhouseKnexClient extends Knex.Client {
         });
 
 
-        const result = escapeBinding(value);
-
-
-        if (typeof result === 'string') {
-            return result.replace(/\\/g, '\\\\');
-        }
-
-        return result;
+        return escapeBinding(value);
     }
 
     /**
