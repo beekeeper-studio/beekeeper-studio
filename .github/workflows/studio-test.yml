@@ -11,11 +11,7 @@ on:
     branches:
       - main
       - master
-    paths-ignore:
-      - apps/sqltools/**
   pull_request:
-    paths-ignore:
-      - apps/sqltools/**
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -27,22 +23,15 @@ jobs:
     outputs:
       test-chunks: ${{ steps.set-test-chunks.outputs.test-chunks }}
     steps:
-      - name: 'Setup jq'
-        uses: dcarbone/install-jq-action@v2
-        with:
-          version: "1.7"
-          force: true
-
       - uses: actions/checkout@v5
+
+      - name: Install Node.js, NPM, PNPM, and jq
+        uses: jdx/mise-action@v5
 
       - id: set-test-chunks
         name: Set Chunks
         run: echo "test-chunks=$(./bin/get-db-files-as-json.sh)" >> $GITHUB_OUTPUT
 
-      - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
 
       # ImageOS identifies the runner image (e.g. ubuntu22, ubuntu24), so caches
       # never cross runner image versions: node_modules holds native modules
@@ -59,8 +48,7 @@ jobs:
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
-            apps/sqltools/node_modules
-          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('mise.toml') }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies
         if: steps.cache-nm.outputs.cache-hit != 'true'
@@ -68,10 +56,9 @@ jobs:
         with:
           timeout_minutes: 20
           max_attempts: 3
-          command: yarn install --frozen-lockfile --network-timeout 100000
+          command: pnpm install --frozen-lockfile --fetch-timeout 100000
         env:
           HUSKY: "0"
-          npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
 
   unit:
     name: Unit tests
@@ -81,10 +68,8 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v5
 
-      - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
+      - name: Install Node.js, NPM, and PNPM
+        uses: jdx/mise-action@v5
 
       - name: Compute runner image cache id
         shell: bash
@@ -97,12 +82,11 @@ jobs:
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
-            apps/sqltools/node_modules
-          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('mise.toml') }}-${{ hashFiles('pnpm-lock.yaml') }}
           fail-on-cache-miss: true
 
       - name: Lint
-        run: yarn workspace beekeeper-studio run lint
+        run: pnpm -F beekeeper-studio run lint
 
       - name: Check for bad files
         run: bin/check-for-only-tests.sh
@@ -123,17 +107,17 @@ jobs:
         run: bin/check-shell-scripts.sh
 
       - name: Build UI Kit
-        run: yarn lib:build
+        run: pnpm lib:build
 
       # Everything runs under vitest (see apps/studio/tests/VITEST_MIGRATION.md)
       - name: Unit Tests
-        run: yarn workspace beekeeper-studio run test:unit --silent
+        run: pnpm -F beekeeper-studio run test:unit --silent
 
       - name: Non-DB Integration Tests
-        run: yarn workspace beekeeper-studio run vitest:ci --silent
+        run: pnpm -F beekeeper-studio run vitest:ci --silent
 
       - name: Unit Tests (UI Kit)
-        run: yarn workspace @beekeeperstudio/ui-kit run test --silent
+        run: pnpm -F @beekeeperstudio/ui-kit run test --silent
 
 
   integration:
@@ -149,10 +133,8 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v5
 
-      - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
+      - name: Install Node.js, NPM, and PNPM
+        uses: jdx/mise-action@v5
 
       - name: Compute runner image cache id
         shell: bash
@@ -165,8 +147,7 @@ jobs:
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
-            apps/sqltools/node_modules
-          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('mise.toml') }}-${{ hashFiles('pnpm-lock.yaml') }}
           fail-on-cache-miss: true
 
       - name: Install libaio (for oracle)
@@ -187,7 +168,7 @@ jobs:
           timeout_minutes: 20
           max_attempts: 2
           on_retry_command: "docker ps -aq | xargs docker stop | xargs docker rm"
-          command: yarn workspace beekeeper-studio run test:integration ${{ matrix.chunk[1] }}
+          command: pnpm -F beekeeper-studio run test:integration ${{ matrix.chunk[1] }}
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
 
@@ -206,8 +187,6 @@ jobs:
 
   #   - name: Install dependencies
   #     run: yarn install --frozen-lockfile
-  #     env:
-  #       npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
   #   - name: Test
   #     uses: nick-fields/retry@v4
   #     with:

@@ -6,7 +6,6 @@ permissions:
 on:
   pull_request:
     paths-ignore:
-      - apps/sqltools/**
       - docs/**
 
 concurrency:
@@ -26,25 +25,17 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v5
 
-      - name: Install Python
-        id: python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
+      - name: Install Node.js, NPM, PNPM, and Python
+        uses: jdx/mise-action@v5
 
       # node-gyp checks the PYTHON env var first. Without it, on Windows it asks
       # the py launcher, which picks the newest Python on the runner, not this one.
-      - name: Use this Python for node-gyp
+      - name: Use mise's Python for node-gyp
         shell: bash
-        env:
-          PYTHON: ${{ steps.python.outputs.python-path }}
-        run: echo "PYTHON=$PYTHON" >> "$GITHUB_ENV"
-
-      - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
-          cache: yarn
+        run: |
+          PYTHON="$(mise which python)"
+          "$PYTHON" --version
+          echo "PYTHON=$PYTHON" >> $GITHUB_ENV
 
       # ImageOS identifies the runner image (e.g. ubuntu24, win22, macos15), so
       # caches never cross runner image versions: node_modules holds native
@@ -53,16 +44,17 @@ jobs:
         shell: bash
         run: echo "RUNNER_IMAGE_ID=${ImageOS:-unknown}" >> "$GITHUB_ENV"
 
+      # pnpm links get broken on windows when restoring cache, do a fresh install for windows runners
       - name: Cache node_modules
         id: cache-nm
+        if: runner.os != 'Windows'
         uses: actions/cache@v5
         with:
           path: |
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
-            apps/sqltools/node_modules
-          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('mise.toml') }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies
         if: steps.cache-nm.outputs.cache-hit != 'true'
@@ -70,10 +62,9 @@ jobs:
         with:
           timeout_minutes: 20
           max_attempts: 3
-          command: yarn install --frozen-lockfile --network-timeout 100000
+          command: pnpm install --frozen-lockfile --fetch-timeout 100000
         env:
           HUSKY: "0"
-          npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
 
       - name: Install xvfb-maybe
         run: npm install -g xvfb-maybe
@@ -86,28 +77,25 @@ jobs:
             ~/.cache/ms-playwright
             ~/Library/Caches/ms-playwright
             ~/AppData/Local/ms-playwright
-          key: playwright-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('yarn.lock') }}
+          key: playwright-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('mise.toml') }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install Playwright browsers
         if: steps.cache-playwright.outputs.cache-hit != 'true'
-        run: yarn playwright install chromium
+        run: pnpm -F beekeeper-studio exec playwright install chromium
 
       - name: Install Playwright system dependencies (Linux)
         if: runner.os == 'Linux'
-        run: yarn playwright install-deps chromium
-
-      - name: Build UI Kit
-        run: yarn lib:build
+        run: pnpm -F beekeeper-studio exec playwright install-deps chromium
 
       - name: Build App
-        run: yarn workspace beekeeper-studio build
+        run: pnpm -F beekeeper-studio build
 
       - name: Run Tests (Linux/macOS)
         if: runner.os != 'Windows'
         shell: bash
         run: |
           xvfb-maybe -a -s "-screen 0 1024x768x24" -- bash -c '
-            yarn workspace beekeeper-studio test:e2e:smoke
+            pnpm -F beekeeper-studio test:e2e:smoke
           '
         env:
           ELECTRON_ENABLE_LOGGING: 1
@@ -118,7 +106,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          yarn workspace beekeeper-studio test:e2e:smoke
+          pnpm -F beekeeper-studio test:e2e:smoke
         env:
           ELECTRON_ENABLE_LOGGING: 1
 

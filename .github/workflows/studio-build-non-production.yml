@@ -7,13 +7,10 @@ permissions:
 on:
   pull_request:
     paths-ignore:
-      - apps/sqltools/**
       - docs/**
   push:
     branches:
       - "master"
-    paths-ignore:
-      - 'apps/sqltools/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -41,12 +38,8 @@ jobs:
         with:
           channel: '8.x/stable'
 
-      - name: Install python ${{ env.PYTHON_VERSION }}
-        id: python
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
+      - name: Install Node.js, NPM, PNPM, and Python
+        uses: jdx/mise-action@v5
 
       - name: Install flatpak tools
         if: "contains(matrix.os, 'ubuntu')"
@@ -71,9 +64,8 @@ jobs:
       # the py launcher, which picks the newest Python on the runner, not this one.
       - name: Verify Python Version
         shell: bash
-        env:
-          PYTHON: ${{ steps.python.outputs.python-path }}
         run: |
+          PYTHON="$(mise which python)"
           INSTALLED=$("$PYTHON" --version | cut -d " " -f 2)
           echo "node-gyp will use Python $INSTALLED at $PYTHON"
           if [[ $INSTALLED != "$PYTHON_VERSION".* ]]; then
@@ -82,11 +74,6 @@ jobs:
           fi
           echo "PYTHON=$PYTHON" >> "$GITHUB_ENV"
 
-      - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
-
       # ImageOS identifies the runner image (e.g. ubuntu22, win22, macos15), so
       # caches never cross runner image versions: node_modules holds native
       # modules compiled for one exact image.
@@ -94,51 +81,44 @@ jobs:
         shell: bash
         run: echo "RUNNER_IMAGE_ID=${ImageOS:-unknown}" >> "$GITHUB_ENV"
 
+      # pnpm links get broken on windows when restoring cache, do a fresh install for windows runners
       - name: Cache node_modules
         id: cache-nm
+        if: runner.os != 'Windows'
         uses: actions/cache@v5
         with:
           path: |
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
-            apps/sqltools/node_modules
           # Python is in the key so a Python bump rebuilds the native modules.
-          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-py${{ env.PYTHON_VERSION }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-py${{ env.PYTHON_VERSION }}-${{ hashFiles('mise.toml') }}-${{ hashFiles('pnpm-lock.yaml') }}
 
-      # For msnodesqlv8, if it previously failed in the cached version, clear the cache and try again :)
+      # If any native module fails to load from the restored cache, reinstall.
       - name: Check restored node_modules
         id: nm-health
         if: steps.cache-nm.outputs.cache-hit == 'true'
         continue-on-error: true
-        run: node -e "require('msnodesqlv8')"
-
-      - name: Discard broken node_modules
-        if: steps.nm-health.outcome == 'failure'
-        run: rm -rf node_modules apps/studio/node_modules apps/ui-kit/node_modules apps/sqltools/node_modules
-
-      - name: Clean cache
-        if: steps.cache-nm.outputs.cache-hit != 'true' || steps.nm-health.outcome == 'failure'
-        run: yarn cache clean
+        run: pnpm -F beekeeper-studio electron ../../bin/check-native-modules.js
+        env:
+          ELECTRON_RUN_AS_NODE: 1
 
       - name: Check dependencies
         if: steps.cache-nm.outputs.cache-hit != 'true' || steps.nm-health.outcome == 'failure'
-        run: "yarn install --frozen-lockfile --network-timeout 100000"
-        env:
-          npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
+        run: pnpm ci --fetch-timeout 100000
 
       - name: Verify msnodesqlv8 native build
-        run: node -e "require('msnodesqlv8')"
+        run: pnpm -F beekeeper-studio exec node -e "require('msnodesqlv8')"
 
       # Every database client loads at startup, so one native module that
       # can't load on this arch breaks every connection.
       - name: Verify native modules load in Electron
-        run: yarn workspace beekeeper-studio electron ../../bin/check-native-modules.js
+        run: pnpm -F beekeeper-studio electron ../../bin/check-native-modules.js
         env:
           ELECTRON_RUN_AS_NODE: 1
 
       - name: Build Electron app
-        run: "yarn run electron:build --publish never"
+        run: "pnpm run electron:build --publish never"
         if: startsWith(matrix.os, 'ubuntu') == false
         env:
           SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
@@ -146,7 +126,7 @@ jobs:
 
         # Build deb for hardlinks testing
       - name: Build Electron app
-        run: yarn run electron:build --publish never --linux deb
+        run: pnpm run electron:build --publish never --linux deb
         if: startsWith(matrix.os, 'ubuntu')
         env:
           SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
