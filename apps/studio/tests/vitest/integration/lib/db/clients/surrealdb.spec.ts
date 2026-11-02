@@ -6,6 +6,9 @@ import { createServer } from '@commercial/backend/lib/db/server'
 import { SurrealDBClient } from '@commercial/backend/lib/db/clients/surrealdb'
 import { BasicDatabaseClient } from '@/lib/db/clients/BasicDatabaseClient'
 import { TableOrView } from '@/lib/db/models'
+import { CsvExporter } from '@/lib/export/formats/csv'
+import tmp from 'tmp'
+import fs from 'fs'
 
 const TEST_VERSIONS = [
   { version: 'v2', protocol: 'ws' },
@@ -668,6 +671,32 @@ function testWith(tag, protocol) {
         expect(chunk.length).toBeLessThanOrEqual(1)
 
         await stream.cursor.close()
+      })
+
+      // https://github.com/beekeeper-studio/beekeeper-studio/issues/4986
+      it('should export record ids to CSV without extra quotes', async () => {
+        const file = tmp.tmpNameSync({ postfix: '.csv' })
+        const exporter = new CsvExporter(
+          file,
+          connection,
+          { name: 'person', entityType: 'table' } as TableOrView,
+          '',
+          '',
+          [],
+          { chunkSize: 100, deleteOnAbort: false },
+          { header: true, delimiter: ',' }
+        )
+
+        try {
+          await exporter.exportToFile()
+          expect(exporter.error).toBeNull()
+
+          const csv = fs.readFileSync(file, 'utf-8')
+          expect(csv).toMatch(/(^|,)person:alice(,|\n)/m)
+          expect(csv).not.toContain('"')
+        } finally {
+          fs.rmSync(file, { force: true })
+        }
       })
 
       it('should handle complex SurrealDB queries', async () => {
