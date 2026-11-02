@@ -146,17 +146,15 @@ We have you covered, read our [guide to contributing in 10 minutes without codin
 
 Want to write some code and improve Beekeeper Studio? Getting set-up is easy on Mac, Linux, or Windows.
 
-```bash
-# First: Install NodeJS 24, NPM, and PNPM
-# ...
+We use [mise](https://mise.jdx.dev/) to manage tool versions.
 
+```bash
 # 1. Fork the Beekeeper Studio Repo (click fork button at top right of this screen)
 # 2. Check out your fork:
 git clone git@github.com:<your-username>/beekeeper-studio.git beekeeper-studio
 cd beekeeper-studio/
 
-nvm use 24
-# OR We also support mise:
+# Use mise to install toolchain
 mise install # Installs node 24 and pnpm 12
 
 pnpm install # installs dependencies
