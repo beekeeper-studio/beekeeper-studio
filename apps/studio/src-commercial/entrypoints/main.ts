@@ -20,7 +20,7 @@ import bksConfig from '@/common/bksConfig'
 
 import { AppEvent } from '@/common/AppEvent'
 import { ProtocolBuilder } from '@/background/lib/electron/ProtocolBuilder';
-import { createThemeProtocol } from "@commercial/backend/lib/theme/ThemeProtocol";
+import { createThemeProtocol } from "@/lib/theme/ThemeProtocol";
 import { uuidv4 } from '@/lib/uuid';
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import { UtilProcMessage } from '@/types'

@@ -25,7 +25,7 @@ import { DevHandlers } from '@/handlers/devHandlers';
 import { FormatterPresetHandlers } from '@/handlers/formatterPresetHandlers';
 import { LicenseHandlers } from '@/handlers/licenseHandlers';
 import { LockHandlers } from '@/handlers/lockHandlers';
-import { PluginHandlers } from '@commercial/backend/handlers/pluginHandlers';
+import { PluginHandlers } from '@/handlers/pluginHandlers';
 import { PluginManager } from '@/services/plugin';
 import PluginFileManager from '@/services/plugin/PluginFileManager';
 import { DriverDepHandlers } from '@/handlers/driverDepHandlers';
@@ -38,7 +38,7 @@ import {
   BundledPluginModule,
   RegistryModule,
   LicenseModule,
-} from '@commercial/backend/plugin-system/modules';
+} from '@/services/plugin/modules';
 import { PluginErrorCode, PluginSystemErrorCode } from '@/lib/errors';
 
 import * as sms from 'source-map-support'

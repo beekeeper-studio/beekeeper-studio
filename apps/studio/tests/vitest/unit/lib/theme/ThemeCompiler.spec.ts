@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ThemeCompiler } from "@commercial/backend/lib/theme/ThemeCompiler";
+import { ThemeCompiler } from "@/lib/theme/ThemeCompiler";
 
 const themeCss = `
 .light-theme {

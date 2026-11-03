@@ -11,7 +11,7 @@ import PluginRegistry from "@/services/plugin/PluginRegistry";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import migration from "@/migration/20250529_add_plugin_settings";
 import { UserSetting } from "@/common/appdb/models/user_setting";
-import { ConfigurationModule } from "@commercial/backend/plugin-system/modules";
+import { ConfigurationModule } from "@/services/plugin/modules";
 import { PluginSystemError } from "@/lib/errors";
 import { createConfig } from "@tests/vitest/integration/utils/config";
 import globals from "@/common/globals";

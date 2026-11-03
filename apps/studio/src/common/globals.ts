@@ -30,7 +30,7 @@ export default {
     /**
      * Ensure these packages are bundled and installed for first time users.
      *
-     * @see `BundledPluginModule` in src-commercial/backend/plugin-system/modules/BundledPluginModule.ts
+     * @see `BundledPluginModule` in src/services/plugin/modules/BundledPluginModule.ts
      **/
     ensureInstalled: [
       { id: "bks-ai-shell", pkg: "@beekeeperstudio/bks-ai-shell" },
