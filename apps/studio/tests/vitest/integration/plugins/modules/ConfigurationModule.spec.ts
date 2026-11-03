@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
-import PluginFileManager from "@/services/plugin/PluginFileManager";
+import ExtensionFileManager from "@/services/extensions/ExtensionFileManager";
 import PluginManager from "@/services/plugin/PluginManager";
 import { createPluginServer } from "@tests/vitest/integration/plugins/utils/server";
 import {
@@ -47,7 +47,7 @@ describe("Plugin Configuration Module", () => {
   ];
 
   let registry: ExtensionRegistry;
-  let fileManager: PluginFileManager;
+  let fileManager: ExtensionFileManager;
 
   function createPluginManager() {
     return new PluginManager({ fileManager, registry, appVersion: "9.9.9" });

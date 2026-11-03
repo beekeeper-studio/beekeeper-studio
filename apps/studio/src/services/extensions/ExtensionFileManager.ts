@@ -7,17 +7,17 @@ import {
   DownloaderConfig,
   DownloaderReport,
 } from "nodejs-file-downloader";
-import { Manifest, PluginView, Release } from "./types";
+import { Manifest, PluginView, Release } from "@/services/plugin/types";
 import { PluginError, PluginSystemError } from "@/lib/errors";
 import extract from "extract-zip";
 import { tmpdir } from "os";
 
-export type PluginFileManagerOptions = {
+export type ExtensionFileManagerOptions = {
   downloadDirectory?: string;
   pluginsDirectory: string;
 }
 
-const log = rawLog.scope("PluginFileManager");
+const log = rawLog.scope("ExtensionFileManager");
 
 const PLUGIN_MANIFEST_FILENAME = "manifest.json";
 
@@ -106,8 +106,8 @@ async function extractArchive(
   }
 }
 
-export default class PluginFileManager {
-  constructor(readonly options: PluginFileManagerOptions) {}
+export default class ExtensionFileManager {
+  constructor(readonly options: ExtensionFileManagerOptions) {}
 
   /** Download plugin source archive to `directory` and extract it */
   async download(

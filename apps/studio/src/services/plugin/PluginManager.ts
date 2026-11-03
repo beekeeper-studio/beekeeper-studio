@@ -1,6 +1,6 @@
 import _ from "lodash";
 import ExtensionRegistry from "@/services/extensions/ExtensionRegistry";
-import PluginFileManager from "./PluginFileManager";
+import ExtensionFileManager from "@/services/extensions/ExtensionFileManager";
 import {
   Manifest as AnyVersionManifest,
   ManifestV1 as Manifest,
@@ -24,7 +24,7 @@ import { PluginEntryCache } from "@/common/appdb/models/PluginEntryCache";
 const log = rawLog.scope("PluginManager");
 
 export type PluginManagerOptions = {
-  fileManager?: PluginFileManager;
+  fileManager?: ExtensionFileManager;
   registry?: ExtensionRegistry;
   appVersion: string;
 }
@@ -32,7 +32,7 @@ export type PluginManagerOptions = {
 export default class PluginManager extends Hookable {
   private initialized = false;
   public readonly registry: ExtensionRegistry;
-  public readonly fileManager: PluginFileManager;
+  public readonly fileManager: ExtensionFileManager;
   private manifests: Manifest[] = [];
   pluginSettings: PluginSettingsMap = {};
   private pluginLocks: string[] = [];

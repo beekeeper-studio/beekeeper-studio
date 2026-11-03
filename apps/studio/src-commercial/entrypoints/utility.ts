@@ -27,7 +27,7 @@ import { LicenseHandlers } from '@/handlers/licenseHandlers';
 import { LockHandlers } from '@/handlers/lockHandlers';
 import { PluginHandlers } from '@/handlers/pluginHandlers';
 import { PluginManager } from '@/services/plugin';
-import PluginFileManager from '@/services/plugin/PluginFileManager';
+import ExtensionFileManager from '@/services/extensions/ExtensionFileManager';
 import { DriverDepHandlers } from '@/handlers/driverDepHandlers';
 import { DriverDepManager, DriverDepFileManager, createDefaultRegistry } from '@/services/driverDeps';
 import type { DepPlatform, DepArch } from '@/services/driverDeps';
@@ -52,7 +52,7 @@ if (platformInfo.env.development || platformInfo.env.test) {
 let ormConnection: ORMConnection;
 const pluginManager = new PluginManager({
   appVersion: platformInfo.appVersion,
-  fileManager: new PluginFileManager({
+  fileManager: new ExtensionFileManager({
     pluginsDirectory: platformInfo.pluginsDirectory,
   }),
 });

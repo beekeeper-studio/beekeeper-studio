@@ -20,7 +20,6 @@ import bksConfig from '@/common/bksConfig'
 
 import { AppEvent } from '@/common/AppEvent'
 import { ProtocolBuilder } from '@/background/lib/electron/ProtocolBuilder';
-import { createThemeProtocol } from "@/lib/theme/ThemeProtocol";
 import { uuidv4 } from '@/lib/uuid';
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import { UtilProcMessage } from '@/types'
@@ -142,7 +141,8 @@ async function initBasics() {
   ProtocolBuilder.createPluginProtocol()
   if (initialized) return settings
   initialized = true
-  createThemeProtocol();
+  // this creates the theme:// protocol we use for loading themes
+  ProtocolBuilder.createThemeProtocol();
   await ormConnection.connect()
   console.log("LD_LIBRARY_PATH", process.env.LD_LIBRARY_PATH)
   log.info("running migrations!!")
