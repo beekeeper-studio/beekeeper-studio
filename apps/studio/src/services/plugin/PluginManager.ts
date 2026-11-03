@@ -1,5 +1,5 @@
 import _ from "lodash";
-import PluginRegistry from "./PluginRegistry";
+import ExtensionRegistry from "@/services/extensions/ExtensionRegistry";
 import PluginFileManager from "./PluginFileManager";
 import {
   Manifest as AnyVersionManifest,
@@ -11,7 +11,7 @@ import {
   PluginSnapshot,
 } from "./types";
 import rawLog from "@bksLogger";
-import PluginRepositoryService from "./PluginRepositoryService";
+import ExtensionRepositoryService from "@/services/extensions/ExtensionRepositoryService";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import semver from "semver";
 import { PluginError, PluginSystemError } from "@/lib/errors";
@@ -25,13 +25,13 @@ const log = rawLog.scope("PluginManager");
 
 export type PluginManagerOptions = {
   fileManager?: PluginFileManager;
-  registry?: PluginRegistry;
+  registry?: ExtensionRegistry;
   appVersion: string;
 }
 
 export default class PluginManager extends Hookable {
   private initialized = false;
-  public readonly registry: PluginRegistry;
+  public readonly registry: ExtensionRegistry;
   public readonly fileManager: PluginFileManager;
   private manifests: Manifest[] = [];
   pluginSettings: PluginSettingsMap = {};
@@ -49,7 +49,7 @@ export default class PluginManager extends Hookable {
     this.fileManager = options.fileManager;
     this.registry =
       options.registry ||
-      new PluginRegistry(new PluginRepositoryService());
+      new ExtensionRegistry(new ExtensionRepositoryService());
   }
 
   async triggerConfigReload() {

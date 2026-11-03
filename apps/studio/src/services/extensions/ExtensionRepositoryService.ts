@@ -1,7 +1,7 @@
 import { OctokitOptions } from "@octokit/core";
 import { Octokit } from "@octokit/rest";
 import { RequestError } from "@octokit/request-error";
-import { Manifest, PluginRepository, Release, RawPluginRegistryEntry, RegistryConfig, PluginRegistryEntry } from "./types";
+import { Manifest, PluginRepository, Release, RawPluginRegistryEntry, RegistryConfig, PluginRegistryEntry } from "@/services/plugin/types";
 import { PluginSystemError } from "@/lib/errors";
 import rawLog from "@bksLogger";
 import { PluginsController } from "@/lib/cloud/controllers/PluginsController";
@@ -10,9 +10,9 @@ import BksConfig from "@/common/bksConfig";
 import platform_info from "@/common/platform_info";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 
-const log = rawLog.scope("PluginRepositoryService");
+const log = rawLog.scope("ExtensionRepositoryService");
 
-export default class PluginRepositoryService {
+export default class ExtensionRepositoryService {
   private octokit: Octokit;
   private controller: PluginsController;
 

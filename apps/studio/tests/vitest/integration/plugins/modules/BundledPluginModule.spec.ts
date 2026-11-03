@@ -7,7 +7,7 @@ import {
   cleanFileManager,
 } from "@tests/vitest/integration/plugins/utils/fileManager";
 import { MockPluginRepositoryService } from "@tests/vitest/integration/plugins/utils/registry";
-import PluginRegistry from "@/services/plugin/PluginRegistry";
+import ExtensionRegistry from "@/services/extensions/ExtensionRegistry";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import migration from "@/migration/20250529_add_plugin_settings";
 import { UserSetting } from "@/common/appdb/models/user_setting";
@@ -61,7 +61,7 @@ function installV0Plugins(fileManager: PluginFileManager) {
 describe("BundledPluginModule", () => {
   const server = createPluginServer();
   const repositoryService = new MockPluginRepositoryService(server);
-  const registry = new PluginRegistry(repositoryService);
+  const registry = new ExtensionRegistry(repositoryService);
 
   let fileManager: PluginFileManager;
 

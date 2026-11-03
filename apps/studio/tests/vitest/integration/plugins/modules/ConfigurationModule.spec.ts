@@ -7,7 +7,7 @@ import {
   cleanFileManager,
 } from "@tests/vitest/integration/plugins/utils/fileManager";
 import { MockPluginRepositoryService } from "@tests/vitest/integration/plugins/utils/registry";
-import PluginRegistry from "@/services/plugin/PluginRegistry";
+import ExtensionRegistry from "@/services/extensions/ExtensionRegistry";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import migration from "@/migration/20250529_add_plugin_settings";
 import { UserSetting } from "@/common/appdb/models/user_setting";
@@ -46,7 +46,7 @@ describe("Plugin Configuration Module", () => {
     },
   ];
 
-  let registry: PluginRegistry;
+  let registry: ExtensionRegistry;
   let fileManager: PluginFileManager;
 
   function createPluginManager() {
@@ -68,7 +68,7 @@ describe("Plugin Configuration Module", () => {
     const setting = await UserSetting.findOneBy({ key: "pluginSettings" });
     setting.userValue = "{}";
     await setting.save();
-    registry = new PluginRegistry(repositoryService);
+    registry = new ExtensionRegistry(repositoryService);
     fileManager = createFileManager();
   });
 

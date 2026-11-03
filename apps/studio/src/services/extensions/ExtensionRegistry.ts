@@ -1,12 +1,12 @@
 import rawLog from "@bksLogger";
-import PluginRepositoryService from "./PluginRepositoryService";
-import { PluginRepository, RegistryConfig, PluginRegistryEntry, RegistryMap } from "./types";
+import ExtensionRepositoryService from "@/services/extensions/ExtensionRepositoryService";
+import { PluginRepository, RegistryConfig, PluginRegistryEntry, RegistryMap } from "@/services/plugin/types";
 import { PluginSystemError } from "@/lib/errors";
 
-const log = rawLog.scope("PluginRegistry");
+const log = rawLog.scope("ExtensionRegistry");
 
 /** Use this to cache and get plugin info. */
-export default class PluginRegistry {
+export default class ExtensionRegistry {
   /** Disable fetching community entries. */
   public communityDisabled = false;
   /** Disable fetching official entries. */
@@ -41,7 +41,7 @@ export default class PluginRegistry {
     ]
   }
 
-  constructor(private readonly repositoryService: PluginRepositoryService) {
+  constructor(private readonly repositoryService: ExtensionRepositoryService) {
   }
 
   async initialize() {

@@ -10,7 +10,7 @@ import { createPluginServer } from "./utils/server";
 import { createFileManager, cleanFileManager } from "./utils/fileManager";
 import { MockPluginRepositoryService } from "./utils/registry";
 import { PluginSystemError } from "@/lib/errors";
-import PluginRegistry from "@/services/plugin/PluginRegistry";
+import ExtensionRegistry from "@/services/extensions/ExtensionRegistry";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import migration from "@/migration/20250529_add_plugin_settings";
 import { Manifest } from "@/services/plugin";
@@ -19,7 +19,7 @@ import { UserSetting } from "@/common/appdb/models/user_setting";
 describe("Basic Plugin Management", () => {
   const server = createPluginServer();
   const repositoryService = new MockPluginRepositoryService(server);
-  const registry = new PluginRegistry(repositoryService);
+  const registry = new ExtensionRegistry(repositoryService);
 
   enum AppVer {
     COMPAT = "5.4.0",
