@@ -543,6 +543,50 @@ function testWith(tag, protocol) {
           }
         }
       })
+
+      // https://github.com/beekeeper-studio/beekeeper-studio/issues/4985
+      it('should save numbers typed into a schemaless table as numbers', async () => {
+        const testTable = getTestTableName('schemaless_numbers')
+
+        try {
+          await connection.executeQuery(`
+            DEFINE TABLE ${testTable} SCHEMALESS;
+            CREATE ${testTable}:existing SET name = 'alpha', n = 1;
+          `)
+
+          const columns = await connection.listTableColumns(testTable)
+          const nColumn = columns.find((c) => c.columnName === 'n')
+          expect(nColumn.dataType).toBe('number')
+
+          // The grid sends typed values as strings
+          await connection.executeApplyChanges({
+            inserts: [{
+              table: testTable,
+              data: [{ id: null, name: 'delta', n: '4' }]
+            }],
+            updates: [{
+              table: testTable,
+              column: 'n',
+              columnType: nColumn.dataType,
+              value: '7',
+              primaryKeys: [{ column: 'id', value: `${testTable}:existing` }]
+            }],
+            deletes: []
+          })
+
+          const result = await connection.selectTop(testTable, 0, 10, [], [])
+          const inserted = result.result.find((r: any) => r.name === 'delta')
+          const updated = result.result.find((r: any) => r.name === 'alpha')
+          expect(inserted.n).toBe(4)
+          expect(updated.n).toBe(7)
+        } finally {
+          try {
+            await connection.executeQuery(`REMOVE TABLE ${testTable}`)
+          } catch (e) {
+            // Ignore cleanup errors
+          }
+        }
+      })
     })
 
     describe('Schema Operations', () => {
