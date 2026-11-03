@@ -1,10 +1,13 @@
 import { protocol } from 'electron'
 import * as path from 'path'
 import { readFile } from 'fs'
+import fs from 'fs/promises';
 import { URL } from 'url'
 import rawLog from '@bksLogger'
 import platformInfo from '@/common/platform_info'
 import bksConfig from "@/common/bksConfig";
+import { ThemeCompiler } from "@/lib/theme/ThemeCompiler";
+import { isValidManifestId } from "@/services/plugin/utils";
 
 const log = rawLog.scope('ProtocolBuilder')
 
@@ -137,5 +140,47 @@ export const ProtocolBuilder = {
         respond(response);
       })
     });
-  }
-}
+  },
+  createThemeProtocol: () => {
+    protocol.handle("theme", async (request) => {
+      const url = new URL(request.url);
+      const themeId = path.basename(url.hostname, ".css");
+
+      if (!isValidManifestId(themeId)) {
+        return new Response(null, { status: 404 });
+      }
+
+      try {
+        const builtinPath = path.join(
+          platformInfo.builtinThemesDirectory,
+          `${themeId}.css`
+        );
+        const externalPath = path.join(
+          platformInfo.themesDirectory,
+          themeId,
+          "style.css"
+        );
+        let themeCss: string;
+        try {
+          // Read builtin theme first
+          themeCss = await fs.readFile(builtinPath, "utf8");
+        } catch {
+          themeCss = await fs.readFile(externalPath, "utf8");
+        }
+        const compiler = new ThemeCompiler(themeCss);
+
+        if (url.searchParams.has("preview")) {
+          return new Response(compiler.compilePreview(themeId), {
+            headers: { "Content-Type": "text/css" },
+          });
+        }
+        return new Response(compiler.compile(), {
+          headers: { "Content-Type": "text/css" },
+        });
+      } catch (error) {
+        log.error("error loading theme", themeId, error);
+        return new Response(null, { status: 404 });
+      }
+    });
+  },
+};
