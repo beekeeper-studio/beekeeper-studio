@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { splitQueries, removeQueryQuotes, extractParams, isTextSelected, deparameterizeQuery, convertParamsForReplacement } from "@/lib/db/sql_tools";
+import { textWithLeadingComments, splitQueries, removeQueryQuotes, extractParams, isTextSelected, deparameterizeQuery, convertParamsForReplacement } from "@/lib/db/sql_tools";
 
 const testCases = {
   "select* from foo; select * from bar": 2,
@@ -218,3 +218,30 @@ describe("Postgres dollar-quoted function bodies", () => {
     expect(result[2].text).toMatch(/\$\$ language sql;/);
   });
 });
+
+describe("textWithLeadingComments", () => {
+  const send = (query) => {
+    const statements = splitQueries(query, "mssql")
+    return statements.map((_s, i) => textWithLeadingComments(query, statements, i))
+  }
+
+  it("keeps comments written before CREATE PROCEDURE", () => {
+    const query = "-- Author\n-- Description\ncreate procedure [dbo].[sp_name]\n  -- parameters\nas\nbegin\n  set nocount on;\nend"
+    const [text] = send(query)
+    expect(text).toBe(query)
+  })
+
+  it("keeps a block comment before each statement in a script", () => {
+    const query = "/* first */\ncreate view v1 as select 1;\n-- second\ncreate view v2 as select 2"
+    const [first, second] = send(query)
+    expect(first.startsWith("/* first */\ncreate view v1")).toBe(true)
+    expect(second.startsWith("-- second\ncreate view v2")).toBe(true)
+  })
+
+  it("does not pull in text that is not a comment", () => {
+    const query = "select 1; -- note\ncreate view v as select 2"
+    const statements = splitQueries(query, "mssql")
+    expect(textWithLeadingComments(query, statements, 1)).toBe("-- note\ncreate view v as select 2")
+    expect(textWithLeadingComments(query, statements, 0)).toBe(statements[0].text)
+  })
+})
