@@ -28,6 +28,7 @@
     <common-iam v-show="iamAuthenticationEnabled" :auth-type="authType" :config="config" :disabled="disabled" />
     <common-entra-id v-show="azureAuthEnabled" :auth-type="authType" :config="config" :disabled="disabled" />
     <common-advanced :config="config" :disabled="disabled" />
+    <mysql-session-variables :config="config" :disabled="disabled" />
   </div>
 </template>
 
@@ -37,13 +38,14 @@ import CommonServerInputs from './CommonServerInputs.vue'
 import CommonAdvanced from './CommonAdvanced.vue'
 import CommonIam from './CommonIam.vue'
 import CommonEntraId from './CommonEntraId.vue'
+import MysqlSessionVariables from './MysqlSessionVariables.vue'
 import {AppEvent} from "@/common/AppEvent";
 import {AzureAuthType, AzureAuthTypes, IamAuthTypes} from "@/lib/db/types";
 import _ from "lodash";
 import { mapGetters } from 'vuex';
 
 export default {
-  components: {CommonEntraId, CommonServerInputs, CommonAdvanced, CommonIam},
+  components: {CommonEntraId, CommonServerInputs, CommonAdvanced, CommonIam, MysqlSessionVariables},
   props: {
     config: Object,
     disabled: {

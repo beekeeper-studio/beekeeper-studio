@@ -14,6 +14,7 @@ import {
   ConnectionPoolOptions,
   DatabaseConnector,
 } from "@/lib/db/clients/DatabaseConnector";
+import { buildSessionVariablesQuery } from "./sessionVariables";
 
 const log = rawLog.scope("MySqlConnector");
 
@@ -44,6 +45,9 @@ export class MySqlConnector extends DatabaseConnector<mysql.PoolConnection> {
   };
   private interval: NodeJS.Timeout;
   private clientId: string;
+  private sessionVariablesQuery: string | null = null;
+  // pool connections that have already had the session variables applied
+  private initializedConnections = new WeakSet<mysql.PoolConnection>();
 
   constructor(options: ConnectionPoolOptions) {
     super(options);
@@ -90,6 +94,10 @@ export class MySqlConnector extends DatabaseConnector<mysql.PoolConnection> {
   }
 
   protected async doConnect(): Promise<void> {
+    // built up front so an invalid variable name fails the connect
+    this.sessionVariablesQuery = buildSessionVariablesQuery(
+      this.server.config.options?.sessionVariables
+    );
     const dbConfig = await this.configDatabase(this.server, this.database);
     log.debug("create driver client for mysql with config %j", dbConfig);
 
@@ -149,9 +157,36 @@ export class MySqlConnector extends DatabaseConnector<mysql.PoolConnection> {
       this.conn.pool.getConnection((err, connection) => {
         if (err) {
           reject(err);
-        } else {
-          resolve(connection);
+          return;
         }
+        this.applySessionVariables(connection).then(
+          () => resolve(connection),
+          (setErr) => {
+            // don't hand this connection out again without its variables
+            connection.destroy();
+            reject(setErr);
+          }
+        );
+      });
+    });
+  }
+
+  private applySessionVariables(connection: mysql.PoolConnection): Promise<void> {
+    const sql = this.sessionVariablesQuery;
+    if (!sql || this.initializedConnections.has(connection)) {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve, reject) => {
+      log.debug("Setting session variables on connection %d", connection.threadId);
+      connection.query(sql, (err) => {
+        if (err) {
+          log.error("Failed to set session variables", err.message);
+          reject(err);
+          return;
+        }
+        this.initializedConnections.add(connection);
+        resolve();
       });
     });
   }

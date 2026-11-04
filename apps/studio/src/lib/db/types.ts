@@ -132,6 +132,12 @@ export const SnowflakeAuthTypes = [
   { name: 'Multi-Factor Authentication with Duo', value: SnowflakeAuthType.MFANotif }
 ]
 
+// MySQL family: a session variable set with `SET SESSION` on each new connection
+export interface MysqlSessionVariable {
+  name: string;
+  value: string;
+}
+
 export interface RedshiftOptions {
   clusterIdentifier?: string;
   databaseGroup?: string;

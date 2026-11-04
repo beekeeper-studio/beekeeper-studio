@@ -6,8 +6,9 @@ import { ConnectionString } from 'connection-string'
 import log from '@bksLogger'
 import { AzureCredsEncryptTransformer, EncryptTransformer, SnowflakeOptionsTransformer, SurrealDbEncryptTransformer } from '../transformers/Transformers'
 import { IConnection, SshMode } from '@/common/interfaces/IConnection'
-import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, DynamoDBOptions, LibSQLOptions, RedshiftOptions, IamAuthOptions, SQLAnywhereOptions, SurrealDBOptions, SnowflakeOptions, SqlServerOptions } from "@/lib/db/types"
+import { AzureAuthOptions, BigQueryOptions, CassandraOptions, ConnectionType, ConnectionTypes, DynamoDBOptions, LibSQLOptions, RedshiftOptions, IamAuthOptions, SQLAnywhereOptions, SurrealDBOptions, SnowflakeOptions, SqlServerOptions, MysqlSessionVariable } from "@/lib/db/types"
 import { resolveHomePathToAbsolute } from "@/handlers/utils"
+import { sessionVariablesFromUrl } from "@/lib/db/clients/mysql/sessionVariables"
 import { ConnectionFolder } from './ConnectionFolder'
 
 const encrypt = new EncryptTransformer(loadEncryptionKey())
@@ -27,6 +28,8 @@ export interface ConnectionOptions {
   // Oracle: connect with an administrative privilege, eg to log in as SYS
   privilege?: 'SYSDBA' | 'SYSOPER' | null
   enableClearText?: boolean
+  // MySQL family: applied with SET SESSION on each new connection
+  sessionVariables?: MysqlSessionVariable[]
   // SQLite: create the database file on the next connect instead of refusing a
   // missing one. Set by the Create button, cleared once a connect succeeds.
   createDatabaseFile?: boolean
@@ -457,6 +460,13 @@ export class SavedConnection extends DbConnectionBase implements IConnection {
           ...this.options,
           cluster: clusterMatch ? clusterMatch[1] : undefined,
           jwtAuthEnabled: hasCockroachJwtOption,
+        }
+      }
+
+      if (['mysql', 'mariadb', 'tidb', 'starrocks'].includes(this.connectionType)) {
+        const sessionVariables = sessionVariablesFromUrl(cleanedUrl)
+        if (sessionVariables.length) {
+          this.options = { ...this.options, sessionVariables }
         }
       }
 

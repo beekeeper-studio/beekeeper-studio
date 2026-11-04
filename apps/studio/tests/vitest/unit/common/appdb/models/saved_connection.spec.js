@@ -164,6 +164,33 @@ describe("Saved Connection", () => {
         host: "localhost",
         defaultDatabase: "db"
       },
+      "mysql://user:pass@localhost:3306/db?sessionVariables=collation_connection=utf8mb4_unicode_520_ci,sql_mode='STRICT_TRANS_TABLES,NO_ZERO_DATE'&ssl=false": {
+        connectionType: "mysql",
+        username: "user",
+        password: "pass",
+        host: "localhost",
+        port: 3306,
+        defaultDatabase: "db",
+        options: {
+          connectionMethod: "manual",
+          sessionVariables: [
+            { name: "collation_connection", value: "utf8mb4_unicode_520_ci" },
+            { name: "sql_mode", value: "'STRICT_TRANS_TABLES,NO_ZERO_DATE'" },
+          ]
+        }
+      },
+      "mariadb://user:pass@localhost/db?sessionVariables=time_zone%3D%27%2B00%3A00%27": {
+        connectionType: "mariadb",
+        defaultDatabase: "db",
+        options: {
+          connectionMethod: "manual",
+          sessionVariables: [{ name: "time_zone", value: "'+00:00'" }]
+        }
+      },
+      "postgresql://user:pass@localhost/db?sessionVariables=a=b": {
+        connectionType: "postgresql",
+        options: { connectionMethod: "manual" }
+      },
     }
 
     Object.keys(testCases).forEach(url => {
