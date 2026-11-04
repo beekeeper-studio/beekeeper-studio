@@ -1,5 +1,6 @@
 <template>
   <toggle-form-area
+    ref="area"
     title="Session Variables"
     class="session-variables"
     :initially-expanded="variables.length > 0"
@@ -16,44 +17,39 @@
 
     <div
       v-if="variables.length"
-      class="row gutter"
+      class="session-variable-labels"
     >
-      <label class="col s5">Name</label>
-      <label class="col s6">Value</label>
+      <label>Name</label>
+      <label>Value</label>
+      <span class="remove-variable" />
     </div>
     <div
       v-for="(variable, index) in variables"
       :key="index"
-      class="row gutter session-variable"
+      class="session-variable"
     >
-      <div class="col s5 form-group">
-        <input
-          type="text"
-          class="form-control"
-          v-model="variable.name"
-          placeholder="collation_connection"
-          spellcheck="false"
-          :disabled="disabled"
-        >
-      </div>
-      <div class="col s6 form-group">
-        <input
-          type="text"
-          class="form-control"
-          v-model="variable.value"
-          placeholder="utf8mb4_unicode_520_ci"
-          spellcheck="false"
-          :disabled="disabled"
-        >
-      </div>
-      <div class="col s1 form-group remove-variable">
-        <a
-          class="a-icon"
-          :class="{ disabled }"
-          title="Remove variable"
-          @click.prevent="!disabled && removeVariable(index)"
-        ><i class="material-icons">delete</i></a>
-      </div>
+      <input
+        type="text"
+        class="form-control"
+        v-model="variable.name"
+        placeholder="collation_connection"
+        spellcheck="false"
+        :disabled="disabled"
+      >
+      <input
+        type="text"
+        class="form-control"
+        v-model="variable.value"
+        placeholder="utf8mb4_unicode_520_ci"
+        spellcheck="false"
+        :disabled="disabled"
+      >
+      <a
+        class="a-icon remove-variable"
+        :class="{ disabled }"
+        title="Remove variable"
+        @click.prevent="!disabled && removeVariable(index)"
+      ><i class="material-icons">delete</i></a>
     </div>
 
     <div class="row flex-middle">
@@ -86,6 +82,14 @@ export default {
       return this.config.options?.sessionVariables || []
     }
   },
+  watch: {
+    // Show variables that arrive while the form is open, eg from Import from URL
+    variables(now, before) {
+      if (now.length && !before.length && this.$refs.area) {
+        this.$refs.area.toggleContent = true
+      }
+    }
+  },
   methods: {
     setVariables(variables) {
       if (!this.config.options) {
@@ -104,9 +108,30 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.remove-variable {
+.session-variable-labels,
+.session-variable {
   display: flex;
   align-items: center;
+  gap: 0.5rem;
+
+  > label,
+  > input {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+.session-variable-labels {
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.session-variable {
+  margin-bottom: 0.5rem;
+}
+
+.remove-variable {
+  flex: 0 0 1.5rem;
   justify-content: center;
 }
 </style>

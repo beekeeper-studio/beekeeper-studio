@@ -51,6 +51,20 @@ describe("MysqlSessionVariables", () => {
     wrapper.destroy();
   });
 
+  it("expands when variables arrive while the form is open", async () => {
+    const { config, wrapper } = mountWith({ connectionMethod: "manual" });
+    await wrapper.vm.$nextTick();
+    expect(rows(wrapper).length).toBe(0);
+
+    // Import from URL replaces the whole options object
+    config.options = { sessionVariables: [{ name: "time_zone", value: "'+00:00'" }] };
+    await wrapper.vm.$nextTick();
+    await wrapper.vm.$nextTick();
+
+    expect(rows(wrapper).length).toBe(1);
+    wrapper.destroy();
+  });
+
   it("creates options when the config has none", async () => {
     const { config, wrapper } = mountWith(undefined);
     await wrapper.find(".btn-toggle").trigger("click");
