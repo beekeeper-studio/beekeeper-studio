@@ -28,7 +28,7 @@ export const SurrealDBRecordTranscoder: Transcoder<RecordId | StringRecordId, st
     return _.isString(value) && /^(?:[a-zA-Z_][a-zA-Z0-9_\-]*|⟨[^⟩]+⟩):.+$/.test(value);
   },
   deserializeCheckByField(field, value): value is string {
-    return field.bksType === 'SURREALID' && _.isString(value) && RECORD_ID_REGEX.test(value);;
+    return field.bksType === 'SURREALID' && _.isString(value) && RECORD_ID_REGEX.test(value);
   },
 }
 

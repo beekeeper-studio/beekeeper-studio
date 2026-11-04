@@ -7,7 +7,7 @@
   >
     <div class="info">
       <div class="title">
-        <span v-if="isSearching" v-html="source.name"></span>
+        <span v-if="isSearching" v-html="source.name" />
         <span v-else>{{ source.name }}</span>
         <span
           class="badge origin-badge"
