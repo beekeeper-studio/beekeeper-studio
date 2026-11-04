@@ -9,8 +9,8 @@ cd /app
 
 # node_modules live in container-private volumes; populate them on first run.
 if [ ! -d /app/node_modules/vitest ]; then
-  echo "::group::yarn install (first run)"
-  yarn install --frozen-lockfile --network-timeout 100000
+  echo "::group::pnpm install (first run)"
+  pnpm install --frozen-lockfile --fetch-timeout 100000
   echo "::endgroup::"
 fi
 
@@ -42,7 +42,7 @@ cd /app/apps/studio
 # Run the suite, capturing a machine-readable summary alongside the normal output.
 RESULT_FILE=/tmp/vitest-kerberos.json
 set +e
-yarn vitest:integration \
+pnpm vitest:integration \
   sqlserver-kerberos \
   --testTimeout=90000 \
   --reporter=json --outputFile="${RESULT_FILE}"

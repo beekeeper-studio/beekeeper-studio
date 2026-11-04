@@ -5,45 +5,32 @@
   "author": "Matthew Rathbone <matthew.rathbone@gmail.com>",
   "license": "MIT",
   "private": true,
-  "workspaces": [
-    "apps/*"
-  ],
   "scripts": {
-    "bks:build": "yarn lib:build && yarn workspace beekeeper-studio electron:build",
-    "bks:dev": "yarn lib:build && yarn workspace beekeeper-studio electron:serve",
-    "bks:config:build": "yarn workspace beekeeper-studio config:build",
-    "lib:dev": "yarn workspace @beekeeperstudio/ui-kit lib:dev",
-    "lib:build": "yarn workspace @beekeeperstudio/ui-kit build",
-    "sqltools:build": "yarn workspace sqltools build",
-    "sqltools:dev": "yarn workspace sqltools serve",
-    "electron:build": "yarn bks:build",
-    "electron:serve": "yarn bks:dev",
-    "docs:serve": "yarn workspace beekeeper-studio docs:serve",
-    "web:serve": "yarn sqltools:dev",
-    "test:e2e": "yarn workspace beekeeper-studio test:e2e",
-    "test:e2e:ci": "yarn workspace beekeeper-studio test:e2e:ci",
-    "test:integration": "yarn workspace beekeeper-studio test:integration",
-    "test:unit": "yarn workspace beekeeper-studio test:unit && yarn workspace @beekeeperstudio/ui-kit test",
-    "vitest:unit": "yarn workspace beekeeper-studio vitest:unit",
-    "vitest:integration": "yarn workspace beekeeper-studio vitest:integration",
-    "vitest:ci": "yarn workspace beekeeper-studio vitest:ci",
-    "test:ci": "yarn workspace beekeeper-studio test:ci",
-    "test:codemirror": "yarn workspace beekeeper-studio test:codemirror",
-    "all:lint": "yarn workspace beekeeper-studio lint",
+    "bks:build": "pnpm -F beekeeper-studio electron:build",
+    "bks:dev": "pnpm -F beekeeper-studio electron:serve",
+    "bks:config:build": "pnpm -F beekeeper-studio config:build",
+    "lib:dev": "pnpm -F @beekeeperstudio/ui-kit lib:dev",
+    "lib:build": "pnpm -F @beekeeperstudio/ui-kit build",
+    "electron:build": "pnpm bks:build",
+    "electron:serve": "pnpm bks:dev",
+    "test:e2e": "pnpm -F beekeeper-studio test:e2e",
+    "test:e2e:ci": "pnpm -F beekeeper-studio test:e2e:ci",
+    "test:integration": "pnpm -F beekeeper-studio test:integration",
+    "test:unit": "pnpm -F beekeeper-studio test:unit && pnpm -F ui-kit test",
+    "vitest:unit": "pnpm -F beekeeper-studio vitest:unit",
+    "vitest:integration": "pnpm -F beekeeper-studio vitest:integration",
+    "vitest:ci": "pnpm -F beekeeper-studio vitest:ci",
+    "test:ci": "pnpm -F beekeeper-studio test:ci",
+    "test:codemirror": "pnpm -F beekeeper-studio test:codemirror",
+    "all:lint": "pnpm -F beekeeper-studio lint",
     "postinstall": "husky install",
     "prepack": "pinst --disable",
     "postpack": "pinst --enable"
   },
   "devDependencies": {
     "husky": "8.0.3",
-    "pinst": "^3.0.0"
+    "pinst": "^3.0.0",
+    "beekeeper-studio": "workspace:*"
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
-  "resolutions": {
-    "cpu-features": "file:./.yarn/packages/empty-package",
-    "**/axios": "^1.15.0",
-    "node-abi": "^4.35.0",
-    "nan": "^2.28.0",
-    "vite": "^8.1.6"
-  }
+  "packageManager": "pnpm@12.16.1"
 }

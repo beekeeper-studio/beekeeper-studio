@@ -18,7 +18,7 @@ jobs:
     runs-on: windows-2022
     # Tight enough that a stall surfaces in minutes, not in an hour of
     # wall-clock, with room for the SQL Server install and up to three
-    # yarn install attempts. Bump it if install+test growth ever gets close.
+    # pnpm install attempts. Bump it if install+test growth ever gets close.
     timeout-minutes: 45
     defaults:
       run:
@@ -49,10 +49,8 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v5
 
-      - name: Install Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
+      - name: Install Node.js and PNPM
+        uses: jdx/mise-action@v5
 
       - name: Ensure SQL Server Express is installed
         run: |
@@ -147,7 +145,7 @@ jobs:
         with:
           timeout_minutes: 10
           max_attempts: 3
-          command: yarn install --frozen-lockfile --network-timeout 100000
+          command: pnpm install --frozen-lockfile --fetch-timeout 100000
 
       - name: Run SQL Server integrated auth spec
         working-directory: apps/studio
@@ -158,7 +156,7 @@ jobs:
         # ODBC handle left behind by msnodesqlv8 pool teardown can't hang the run.
         # --testTimeout: global per-test ceiling so any legitimate hang fails in
         # 90s instead of consuming the whole job budget.
-        run: yarn vitest:integration sqlserver-winauth --testTimeout=90000
+        run: pnpm vitest:integration sqlserver-winauth --testTimeout=90000
 
       - name: Collect SQL Server ERRORLOGs on failure
         if: failure()

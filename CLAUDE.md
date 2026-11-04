@@ -10,8 +10,7 @@ Beekeeper Studio is a cross-platform SQL editor and database manager built with 
 
 ### Monorepo Structure
 - **`apps/studio/`** - Main Electron application
-- **`apps/ui-kit/`** - Reusable UI components library (`@beekeeperstudio/ui-kit`)
-- **`apps/sqltools/`** - Currently unused workspace
+- **`apps/ui-kit/`** - Reusable UI components library (`@beekeeperstudio/ui-kit`), a `workspace:*` dependency of studio
 
 ### Technology Stack
 - **Frontend**: Vue.js 2.7, TypeScript, Vuex for state management
@@ -33,54 +32,59 @@ All entrypoints are listed under src-commercial/entrypoints
 
 ## Development Commands
 
-**Package Manager**: This project uses Yarn (not npm).
+**Package Manager**: This project uses pnpm (not npm or yarn). The pnpm version is pinned by `packageManager` in the root `package.json`; `mise.toml` pins Node and pnpm for local setup and CI.
+
+- Run a script in one workspace with `pnpm -F <package-name> <script>` (e.g. `pnpm -F beekeeper-studio lint`), or `cd` into the workspace and run `pnpm <script>`.
+- pnpm's `node_modules` is strict: a package can only import what its own `package.json` declares. If an import fails with "Cannot find module" after adding code, add the dependency to that workspace (`pnpm -F beekeeper-studio add <pkg>`) instead of relying on it being installed transitively.
+- Workspace-wide settings live in `pnpm-workspace.yaml`: `overrides` (forced dependency versions) and `allowBuilds` (which packages may run install scripts). A new dependency with a native build or postinstall script must be added to `allowBuilds`.
 
 ### Root-level Commands (from project root)
 ```bash
 # Development
-yarn bks:dev              # Start development server (builds lib + starts electron)
-yarn electron:serve       # Alias for bks:dev
+pnpm bks:dev              # Start development server (builds ui-kit + starts electron)
+pnpm electron:serve       # Alias for bks:dev
 
 # Building
-yarn bks:build            # Build complete app (lib + electron)
-yarn electron:build       # Alias for bks:build
-yarn lib:build            # Build UI kit library only
-yarn lib:dev              # Start UI kit in development/watch mode
+pnpm bks:build            # Build complete app (ui-kit + electron)
+pnpm electron:build       # Alias for bks:build
+pnpm lib:build            # Build UI kit library only
+pnpm lib:dev              # Start UI kit in development/watch mode
 
 # Testing
-yarn test:unit            # Unit tests (Vitest, tests/vitest/unit) + ui-kit tests
-yarn test:integration     # Integration tests
-yarn test:e2e             # End-to-end tests with Playwright
-yarn test:ci              # Non-DB integration tests (alias for vitest:ci)
-yarn test:codemirror      # CodeMirror-specific tests
-yarn vitest:integration   # Vitest integration tests (tests/vitest/integration)
-yarn vitest:ci            # Vitest integration tests minus docker-DB specs
+pnpm test:unit            # Unit tests (Vitest, tests/vitest/unit) + ui-kit tests
+pnpm test:integration     # Integration tests
+pnpm test:e2e             # End-to-end tests with Playwright
+pnpm test:ci              # Non-DB integration tests (alias for vitest:ci)
+pnpm test:codemirror      # CodeMirror-specific tests
+pnpm vitest:integration   # Vitest integration tests (tests/vitest/integration)
+pnpm vitest:ci            # Vitest integration tests minus docker-DB specs
 
 # Linting
-yarn all:lint             # Lint all workspaces
+pnpm all:lint             # Lint all workspaces
 ```
 
 ### Studio App Commands (from apps/studio/)
 ```bash
 # Development
-yarn electron:serve       # Start development with hot reload
-yarn dev:esbuild          # Watch main process (ESBuild)
-yarn dev:vite             # Watch renderer process (Vite)
+pnpm electron:serve       # Build ui-kit, then start development with hot reload
+pnpm dev:esbuild          # Watch main process (ESBuild)
+pnpm dev:vite             # Watch renderer process (Vite)
 
 # Building
-yarn build                # Build both main and renderer processes
-yarn build:esbuild        # Build main process only
-yarn build:vite           # Build renderer process only
-yarn electron:build       # Full production build with electron-builder
+pnpm build                # Build ui-kit (build:deps), then main and renderer processes
+pnpm build:deps           # Build studio's workspace dependencies (ui-kit) only
+pnpm build:esbuild        # Build main process only
+pnpm build:vite           # Build renderer process only
+pnpm electron:build       # Full production build with electron-builder
 
 # Test Build (Agents - use this to test the build, also good for CI)
-yarn run electron:build --linux AppImage  # Create Linux AppImage for testing
+pnpm run electron:build --linux AppImage  # Create Linux AppImage for testing
 
 # Testing
-yarn test:unit            # Unit tests
-yarn test:integration     # Integration tests
-yarn test:e2e             # E2E tests
-yarn lint                 # ESLint
+pnpm test:unit            # Unit tests
+pnpm test:integration     # Integration tests
+pnpm test:e2e             # E2E tests
+pnpm lint                 # ESLint
 ```
 
 ## Code Architecture
@@ -136,8 +140,10 @@ assets/            # Styles, fonts, images
 ## Running Tests
 
 Always run tests from the appropriate directory:
-- From root: `yarn test:unit`, `yarn test:integration`, `yarn test:e2e`
-- From apps/studio: `yarn test:unit`, `yarn test:integration`, `yarn test:e2e`
+- From root: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
+- From apps/studio: `pnpm test:unit`, `pnpm test:integration`, `pnpm test:e2e`
+
+Studio's tests resolve `@beekeeperstudio/ui-kit/vue/*` imports from ui-kit's built output, so run `pnpm lib:build` first if ui-kit hasn't been built.
 
 Test files are organized in `apps/studio/tests/`:
 - `vitest/unit/` - Unit tests (Vitest — put new unit tests here)
@@ -146,10 +152,10 @@ Test files are organized in `apps/studio/tests/`:
 
 ## Development Workflow
 
-1. **Setup**: `yarn install` from root
-2. **Start development**: `yarn bks:dev` (from root) or `yarn electron:serve` (from apps/studio)
-3. **Run tests**: `yarn test:unit` before committing
-4. **Build**: `yarn bks:build` for production build
+1. **Setup**: `mise install` (or Node 24 + pnpm via nvm/corepack), then `pnpm install` from root
+2. **Start development**: `pnpm bks:dev` (from root) or `pnpm electron:serve` (from apps/studio)
+3. **Run tests**: `pnpm test:unit` before committing
+4. **Build**: `pnpm bks:build` for production build
 
 ## UI Copy Style
 
