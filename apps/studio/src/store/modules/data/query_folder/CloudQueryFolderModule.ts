@@ -1,11 +1,11 @@
 import { IQueryFolder } from "@/common/interfaces/IQueryFolder";
 import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
-import { accessGrantMutations, cloudAccessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
-import { buildFolderTree } from "@/common/utils/folderTree";
+import { accessGrantMutations, accessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
+import { FolderFetchModule, treeActions } from "@/store/modules/data/tree/treeStore";
+import { FolderableState, folderableActions } from "@/store/modules/data/tree/folderableStore";
+import { FolderNodeModule } from "@/store/modules/data/tree/FolderNodeModule";
 
-
-
-type State = DataState<IQueryFolder>
+type State = DataState<IQueryFolder> & FolderableState<IQueryFolder>;
 
 export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
   namespaced: true,
@@ -13,21 +13,39 @@ export const CloudQueryFolderModule: DataStore<IQueryFolder, State> = {
     items: [],
     loading: false,
     error: null,
-    pollError: null
+    pollError: null,
   },
-  mutations: mutationsFor<IQueryFolder>({ ...accessGrantMutations() }, { field: 'name', direction: 'asc'}),
-  getters: {
-    foldersWithQueries: (state) => (queries: any[]) =>
-      buildFolderTree(state.items, queries, 'queryFolderId')
+  mutations: {
+    ...mutationsFor<IQueryFolder>({}, { field: 'name', direction: 'asc'}),
+    ...accessGrantMutations(),
   },
-  actions: actionsFor<IQueryFolder>('queryFolders', {
-    ...cloudAccessGrantActions('queryFolders'),
-    async poll() {
-      // empty on purpose
+  modules: {
+    nodes: FolderNodeModule,
+    folders: FolderFetchModule,
+  },
+  actions: {
+    ...actionsFor<IQueryFolder>('queryFolders', {}),
+    ...accessGrantActions('queryFolders'),
+    ...treeActions<IQueryFolder>({ plural: 'parentIds', singular: 'parentId' }),
+    ...folderableActions<IQueryFolder>(),
+    async initialize() {
+      // noop
     },
-    async moveToFolder(context, { query, folder }) {
-      const updated = { ...query, queryFolderId: folder?.id ?? null }
-      await context.dispatch('data/queries/save', updated, { root: true })
-    }
-  })
+    async poll(context) {
+      if (
+          context.rootState.connected
+          && context.rootState.sidebar.globalSidebarActiveItem === "queries"
+          && context.rootState.sidebar.primarySidebarOpen
+      ) {
+        const expandedFolderIds = context.rootState.sidebar.queries.expandedIds
+        const result = await context.dispatch('loadByParentIds', expandedFolderIds)
+        if (result.error) {
+          context.commit("pollError", result.error);
+        }
+      }
+    },
+    async afterMutate(context, { type, data }) {
+      context.commit(`nodes/${type}`, data)
+    },
+  },
 }

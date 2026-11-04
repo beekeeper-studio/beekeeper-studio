@@ -21,6 +21,9 @@ For a comparison of how thin and thick mode differ, see the Oracle Database docu
 2. On Linux you must have `libaio-dev` (apt) / `libaio-devel` (yum/dnf) installed.
 3. For Ubuntu 24.04+ You also need to make a symlink: `sudo ln -s /usr/lib/x86_64-linux-gnu/libaio.so.1t64 /usr/lib/x86_64-linux-gnu/libaio.so.1`
 
+!!! note "Windows on ARM"
+    Oracle doesn't make an Instant Client for Windows on ARM (ARM64), so the ARM64 version of Beekeeper Studio connects in thin mode only and hides the Instant Client setting. See [Windows on ARM](../../installation/windows.md#windows-on-arm).
+
 Below are specific instructions for each of the above requirements
 
 ### Download Oracle Instant Client
@@ -47,6 +50,12 @@ There are a number of ways you can connect to an Oracle database using Beekeeper
 1. SID or Service Name connection string
 2. TSA alias
 3. Host and port
+
+## Connecting as SYS (SYSDBA / SYSOPER)
+
+Oracle requires the `SYS` user to connect with an administrative role. Set **Role** on the connection form to `SYSDBA` or `SYSOPER` to connect with that privilege. Leave it as `Default` for regular users.
+
+The Role setting works with both connection methods (host and port, or connection string).
 
 ## Using tnsnames.ora
 

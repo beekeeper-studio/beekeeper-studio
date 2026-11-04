@@ -27,3 +27,10 @@ apps/studio/test-results
 *.log
 *.orig
 surreal_data/
+todo.txt
+done.txt
+local.config.ini
+
+# Python bytecode (mkdocs hooks in bin/mkdocs_hooks)
+__pycache__/
+*.pyc

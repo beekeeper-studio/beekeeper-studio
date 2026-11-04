@@ -232,11 +232,16 @@ export const RoutineTypeNames = {
 
 export interface Routine extends DatabaseEntity {
   id: string;
+  oid?: string;
   returnType: string;
   returnTypeLength?: number;
   routineParams?: RoutineParam[];
   pinned?: boolean;
   type: RoutineType;
+}
+
+export interface PluginExecuteOptions {
+  forceReadOnly?: boolean;
 }
 
 export type IncludedFilterTypes = 'standard' | 'ilike'

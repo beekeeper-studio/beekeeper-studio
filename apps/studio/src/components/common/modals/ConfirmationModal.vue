@@ -1,15 +1,27 @@
 <template>
-  <base-modal :name="id" @submit="confirm">
+  <base-modal
+    :name="id"
+    @closed="reportClose(false)"
+    :closable="variant === 'normal'"
+  >
     <template #title>
-      <slot name="title">Are you sure?</slot>
+      <slot name="title">
+        Are you sure?
+      </slot>
     </template>
-    <slot name="message">This action cannot be undone.</slot>
-    <template #footer>
-      <button class="btn btn-flat" type="button" @click.prevent="cancel">
-        <slot name="cancel-label">Cancel</slot>
+    <slot name="message">
+      This action cannot be undone.
+    </slot>
+    <template #footer="{ close }">
+      <button class="btn btn-flat" type="button" @click.prevent="cancel(close)">
+        <slot name="cancel-label">
+          Cancel
+        </slot>
       </button>
-      <button class="btn btn-primary" type="submit" :data-variant="variant">
-        <slot name="confirm-label">Confirm</slot>
+      <button class="btn btn-primary" type="submit" :data-variant="variant" @click.prevent="confirm(close)">
+        <slot name="confirm-label">
+          Confirm
+        </slot>
       </button>
     </template>
   </base-modal>
@@ -36,21 +48,30 @@ export default Vue.extend({
     },
   },
   methods: {
-    confirm() {
+    /**
+     * Whoever opened this modal is likely awaiting a promise that only settles
+     * on this event, so every way out has to report an outcome - including the
+     * ones we don't control (the header close button, Escape, clicking the
+     * overlay), which only reach us as `closed`. `closed` also fires after an
+     * explicit confirm/cancel; the manager ignores the second report.
+     */
+    reportClose(confirmed: boolean) {
       this.trigger(MODAL_CLOSE_EVENT, {
         modalId: this.id,
-        confirmed: true,
+        confirmed,
       } as ModalCloseEventData);
-
-      this.$modal.hide(this.id);
     },
-    cancel() {
-      this.trigger(MODAL_CLOSE_EVENT, {
-        modalId: this.id,
-        confirmed: false,
-      } as ModalCloseEventData);
-
-      this.$modal.hide(this.id);
+    confirm(closeFn: () => void) {
+      this.reportClose(true);
+      if (closeFn) {
+        closeFn()
+      }
+    },
+    cancel(closeFn: () => void) {
+      this.reportClose(false);
+      if (closeFn) {
+        closeFn();
+      }
     },
   },
   mounted() {
@@ -63,7 +84,7 @@ export default Vue.extend({
 
 <style scoped>
 .btn[data-variant=danger] {
-  background-color: var(--brand-danger);
-  color: white;
+  background-color: var(--danger-solid-bg);
+  color: var(--danger-contrast);
 }
 </style>

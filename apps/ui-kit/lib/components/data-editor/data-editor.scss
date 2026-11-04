@@ -3,8 +3,8 @@
 .BksDataEditor {
   display: flex;
   height: 33rem;
-  background-color: $query-editor-bg;
-  color: $text-dark;
+  background-color: var(--editor-bg);
+  color: var(--text-contrast);
 
   .BksEntityList {
     height: 100%;
@@ -45,7 +45,7 @@
 }
 
 .BksDataEditor-gutter {
-  outline: 1px solid #eee;
+  outline: 1px solid var(--border-subtle);
 }
 
 .BksDataEditor-initial-placeholder {

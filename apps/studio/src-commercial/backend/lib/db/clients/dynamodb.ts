@@ -53,7 +53,7 @@ import { CreateTableSpec, IndexAlterations, TableKey } from '@/shared/lib/dialec
 import { ChangeBuilderBase } from '@/shared/lib/sql/change_builder/ChangeBuilderBase';
 import { DynamoDBChangeBuilder } from '@/shared/lib/sql/change_builder/DynamoDBChangeBuilder';
 import { DynamoDBData, dynamoTypeLabel } from '@/shared/lib/dialects/dynamodb';
-import { resolveAWSCredentials } from '@/lib/db/clients/utils';
+import { errorMessages, resolveAWSCredentials } from '@/lib/db/clients/utils';
 import { createCancelablePromise } from '@/common/utils';
 import { errors } from '@/lib/errors';
 import { DynamoDBCursor } from './dynamodb/DynamoDBCursor';
@@ -466,7 +466,8 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
           values[vk] = f.value;
           clause = `${nk} ${f.type} ${vk}`;
           break;
-        case 'in': {
+        case 'in':
+        case 'not in': {
           const vals = Array.isArray(f.value) ? f.value : [f.value];
           const keys = vals.map((v, i) => {
             const k = `${vk}_${i}`;
@@ -474,6 +475,7 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
             return k;
           });
           clause = `${nk} IN (${keys.join(', ')})`;
+          if (f.type === 'not in') clause = `NOT (${clause})`;
           break;
         }
         case 'is':
@@ -630,7 +632,7 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
     }
   }
 
-  async executeQuery(queryText: string, _options?: any): Promise<NgQueryResult[]> {
+  async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
     // Use sql-query-identifier with native DynamoDB/PartiQL dialect support (v2.11.0+)
     const identified = this.identifyCommands(queryText);
     const results: NgQueryResult[] = [];
@@ -640,9 +642,10 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
       if (!statement) continue;
 
       const isMutation = stmt.executionType === 'MODIFICATION';
-      if (this.readOnlyMode && isMutation) {
-        throw new Error('Write action(s) not allowed in Read-Only Mode.');
+      if (this.violatesReadOnly([stmt], options)) {
+        throw new Error(errorMessages.readOnly);
       }
+
       try {
         const items: any[] = [];
         let nextToken: string | undefined;

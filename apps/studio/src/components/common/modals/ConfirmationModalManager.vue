@@ -76,6 +76,11 @@ export default Vue.extend({
   methods: {
     onModalClose(event: ModalCloseEventData) {
       const idx: number = this.modals.findIndex((modal: ModalContext) => modal.id === event.modalId)
+      // Modals we aren't tracking still broadcast on this root event - ignore
+      // them rather than throwing, which would strand any modal whose handler
+      // runs after ours.
+      if (idx === -1) return;
+
       const modal: ModalContext = this.modals[idx];
 
       if (event.confirmed) modal.onConfirm();

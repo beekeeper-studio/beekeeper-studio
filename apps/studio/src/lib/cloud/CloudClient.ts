@@ -17,6 +17,7 @@ import { LicenseKeyController } from './controllers/LicenseKeyController';
 import { camelCaseObjectKeys, snakeCaseObjectKeys } from '@/common/utils';
 
 import { IPlatformInfo } from '@/common/IPlatformInfo';
+import { PluginsController } from './controllers/PluginsController';
 
 const log = rawLog.scope('cloudClient')
 
@@ -71,6 +72,10 @@ export class CloudClient {
     return await controller.get(email, key, installationId, platformInfo)
   }
 
+  public static getPluginsController(baseUrl: string): PluginsController {
+    return new PluginsController(staticAxios(baseUrl));
+  }
+
   axios: AxiosInstance
   public queries: QueriesController
   public queryAudits: QueryAuditsController
@@ -108,12 +113,12 @@ export class CloudClient {
     this.memberships = new MembershipsController(this.axios)
 
     this.axios.interceptors.request.use(request => {
-      log.debug('REQ', request)
+      // log.debug('REQ', request)
       return request
     })
 
     this.axios.interceptors.response.use(response => {
-      log.debug('RES:', response)
+      // log.debug('RES:', response)
       return response
     })
 

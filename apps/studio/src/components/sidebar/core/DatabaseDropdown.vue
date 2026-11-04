@@ -1,6 +1,6 @@
 <template>
   <div class="fixed">
-    <div class="data-select-wrap" :class="{'disabled-db-dropdown': isRefreshing}">
+    <div class="btn btn-flat data-select-wrap" :class="{'disabled-db-dropdown': isRefreshing}">
       <p
         v-if="!supportsMultipleDatabases"
         class="sqlite-db-name"
@@ -215,6 +215,14 @@
     text-decoration: underline;
     & :hover {
       text-decoration: none;
+    }
+  }
+
+  a.refresh {
+    color: var(--btn-fg);
+
+    &:hover, &:focus {
+      color: var(--btn-fg-hover);
     }
   }
 </style>

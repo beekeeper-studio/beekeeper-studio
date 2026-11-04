@@ -19,7 +19,7 @@
       >
         <div class="btn-wrap" v-if="canBuilderFilter">
           <button
-            class="btn btn-flat btn-fab"
+            class="btn btn-flat btn-icon"
             type="button"
             @click.stop="toggleFilterMode"
             title="Toggle Filter Type"
@@ -39,7 +39,7 @@
             >
             <button
               type="button"
-              class="clear btn-link"
+              class="clear"
               @click.prevent="filterRaw = ''"
             >
               <i class="material-icons">cancel</i>
@@ -48,7 +48,7 @@
         </div>
         <div class="btn-wrap">
           <button
-            class="btn btn-primary btn-fab"
+            class="btn btn-primary btn-icon btn-brand"
             type="submit"
             title="Filter"
             v-if="!minimalMode"
@@ -64,7 +64,7 @@
         <div class="left-section">
           <div class="btn-wrap" v-if="canRawFilter">
             <button
-              class="btn btn-flat btn-fab"
+              class="btn btn-flat btn-icon"
               type="button"
               @click.stop="toggleFilterMode"
               title="Toggle Filter Type"
@@ -72,13 +72,18 @@
               <i class="material-icons">code</i>
             </button>
           </div>
+          <span
+            v-else
+            class="btn-icon filter-mode-spacer"
+            aria-hidden="true"
+          />
           <div
             class="btn-wrap"
             v-for="(filter, index) in additionalFilters"
             :key="index"
           >
             <button
-              class="btn btn-flat btn-fab op-filter"
+              class="btn btn-flat btn-icon op-filter"
               type="button"
               :disabled="dialectData.disabledFeatures && dialectData.disabledFeatures.filterWithOR"
               @click.stop="filter.op = filter.op === 'AND' ? 'OR' : 'AND'"
@@ -112,12 +117,12 @@
         <div class="right-section">
           <div class="ghost-add-apply">
             <div class="btn-wrap">
-              <button class="btn btn-flat btn-fab">
+              <button class="btn btn-flat btn-icon">
                 <i class="material-icons">add</i>
               </button>
             </div>
             <div class="btn-wrap">
-              <button class="btn btn-primary btn-fab">
+              <button class="btn btn-primary btn-icon">
                 <i class="material-icons">search</i>
               </button>
             </div>
@@ -129,7 +134,7 @@
             >
               <button
                 v-if="filters.length > 1"
-                class="btn btn-flat btn-fab remove-filter"
+                class="btn btn-flat btn-icon remove-filter"
                 type="button"
                 title="Remove filter"
                 @click="removeFilter(-1)"
@@ -138,7 +143,7 @@
               </button>
               <div class="btn-wrap add-filter">
                 <button
-                  class="btn btn-flat btn-fab"
+                  class="btn btn-flat btn-icon"
                   type="button"
                   title="Add filter"
                   @click="addFilter"
@@ -151,7 +156,7 @@
                 ref="filterButtonWrapper"
               >
                 <button
-                  class="btn btn-primary btn-fab"
+                  class="btn btn-primary btn-icon btn-brand"
                   type="submit"
                   title="Apply filter"
                 >
@@ -166,7 +171,7 @@
             :key="index"
           >
             <button
-              class="btn btn-flat btn-fab remove-filter"
+              class="btn btn-flat btn-icon remove-filter"
               type="button"
               title="Remove filter"
               @click="removeFilter(index)"
@@ -189,6 +194,7 @@ import { TableFilter } from "@/lib/db/models";
 import { joinFilters, normalizeFilters, createTableFilter, checkEmptyFilters } from "@/common/utils";
 import { mapGetters, mapState } from "vuex";
 import { AppEvent } from "@/common/AppEvent";
+import { recordPaidFeatureUse } from "@/lib/paidFeatures";
 import _ from 'lodash';
 import BuilderFilter from "./filter/BuilderFilter.vue";
 
@@ -264,11 +270,13 @@ export default Vue.extend({
       this.$nextTick(this.focusOnInput);
     },
     addFilter() {
-      if (this.isCommunity) {
-        if (this.filters.length >= 2) {
+      // Two filters are free; the third onwards is the paid part.
+      if (this.filters.length >= 2) {
+        if (this.isCommunity) {
           this.$root.$emit(AppEvent.upgradeModal, "Advanced Filters")
           return;
         }
+        recordPaidFeatureUse('advanced-filters')
       }
       const lastFilter = this.filters[this.filters.length - 1];
       const cloned = _.clone(lastFilter)

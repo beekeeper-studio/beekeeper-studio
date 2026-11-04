@@ -1,17 +1,8 @@
-@use "sass:list";
-$color-defaults: (
-  red:          $brand-danger,
-  orange:       $brand-warning,
-  yellow:       $brand-primary,
-  green:        $brand-success,
-  blue:         $brand-info,
-  purple:       $brand-purple,
-  pink:         $brand-pink,
-);
+@use '../tokens/common' as *;
 
-@each $key, $val in $color-defaults {
-  .connection-label-color-#{'#{$key}'} {
-    --connection-label-color: #{list.nth($val, 1)};
+@each $hue in $hues {
+  .connection-label-color-#{'#{$hue}'} {
+    --connection-label-color: var(--#{$hue}-solid-bg-a);
   }
 }
 
@@ -23,42 +14,41 @@ $color-defaults: (
   width: 3px;
   border-radius: 3px;
   margin-right: $gutter-w * 0.85;
-  background-color: rgba($theme-base, 0.08);
+  background: var(--bg-a);
 
-  @each $key, $val in $color-defaults {
-    &.connection-label-color-#{'#{$key}'} {
-      background-color: list.nth($val, 1);
+  @each $hue in $hues {
+    &.connection-label-color-#{'#{$hue}'} {
+      background-color: var(--#{$hue}-solid-bg-a);
       &:checked {
-        background-color: list.nth($val, 1);
+        background-color: var(--#{$hue}-solid-bg-a);
       }
     }
   }
 }
 .connection-button {
-  @each $key, $val in $color-defaults {
-    &.#{'#{$key}'} {
-      background-color: rgba(list.nth($val, 1), 1);
+  @each $hue in $hues {
+    &.#{'#{$hue}'} {
+      background-color: var(--#{$hue}-solid-bg-a);
+      color: var(--#{$hue}-contrast);
     }
   }
 }
 
 .statusbar {
-  @each $key, $val in $color-defaults {
-    &.#{'#{$key}'} {
-      background-color: rgba(list.nth($val, 1), 0.85);
-    }
-  }
-  &.query-meta {
-    @each $key, $val in $color-defaults {
-      &.#{'#{$key}'} {
-        background-color: rgba(list.nth($val, 1), 0.85);
-      }
+  @each $hue in $hues {
+    &.#{'#{$hue}'} {
+      --statusbar-bg: rgb(from var(--#{$hue}-solid-bg-a) r g b / 0.85);
+      --statusbar-fg: var(--#{$hue}-contrast);
+      --statusbar-fg-inverse: hsl(from var(--#{$hue}-contrast) 0 0% calc(100 - l));
+      --btn-primary-bg: rgb(from var(--statusbar-fg) r g b / 0.8);
+      --btn-primary-bg-hover: rgb(from var(--statusbar-fg) r g b / 0.45);
+      --btn-primary-fg: var(--statusbar-fg-inverse);
     }
   }
   &.editing, &.failure {
-    @each $key, $val in $color-defaults {
-      &.#{'#{$key}'} {
-        background-color: rgba(list.nth($val, 1), 0.8);
+    @each $hue in $hues {
+      &.#{'#{$hue}'} {
+        --statusbar-bg: rgb(from var(--#{$hue}-solid-bg-a) r g b / 0.8);
       }
     }
   }
@@ -66,17 +56,18 @@ $color-defaults: (
 
 input[type="radio"].connection-label {
   box-shadow: none;
+  border: 0;
   margin: 0 0 0 ($gutter-h * 0.75);
   border-radius: 50%;
   &:checked {
-    outline: 2px solid $text-dark;
+    outline: 2px solid var(--text);
     outline-offset: -2px;
   }
   &:focus {
     outline-offset: -2px !important; // using !important because the browser style does. why browser...
   }
   &.connection-label-color-default {
-    outline: 1px solid rgba($theme-base, 0.2);
+    outline: 1px solid var(--border-a);
     outline-offset: -1px;
     &:checked {
       background-color: transparent;

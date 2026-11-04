@@ -16,7 +16,7 @@ export class OracleCursor extends BeeCursor {
   private fields: Metadata<any>[];
 
   constructor(
-    private pool: oracle.Pool,
+    private getConnection: () => Promise<oracle.Connection>,
     private query: string,
     private params: string[],
     chunkSize: number
@@ -34,7 +34,7 @@ export class OracleCursor extends BeeCursor {
   }
 
   async start(): Promise<void> {
-    this.conn = await this.pool.getConnection()
+    this.conn = await this.getConnection()
     log.info("Oracle cursor start", this.query, this.params)
     this.stream = this.conn.queryStream(this.query, this.params)
     this.stream.on('error', this.handleError.bind(this))

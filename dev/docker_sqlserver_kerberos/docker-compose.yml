@@ -2,13 +2,13 @@
 # test -- no host setup beyond Docker is required:
 #   samba  -- Active Directory DC (KDC + LDAP), realm BKS.TEST
 #   mssql  -- SQL Server 2022 on Linux, joined to the realm via a keytab
-#   tests  -- the Jest client (ODBC Driver 18 + Kerberos client), runs the spec in-network
+#   tests  -- the vitest client (ODBC Driver 18 + Kerberos client), runs the spec in-network
 #
 # The `tests` service joins the same network, so dc.bks.test / mssql.bks.test resolve via
 # Docker DNS (no /etc/hosts), reads the repo krb5.conf via KRB5_CONFIG (no /etc edits), does
 # kinit against the in-network KDC, and runs the spec. Drive it with run.sh
 # (= docker compose run --rm tests). See
-# apps/studio/tests/integration/lib/db/clients/sqlserver-kerberos.spec.ts for the test.
+# apps/studio/tests/vitest/integration/lib/db/clients/sqlserver-kerberos.spec.ts for the test.
 name: bks-sqlserver-kerberos
 
 networks:

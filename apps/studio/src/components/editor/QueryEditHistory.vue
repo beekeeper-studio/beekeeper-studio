@@ -23,7 +23,7 @@
       <header class="sub">
         <span>Query Edit History</span>
         <button
-          class="close-btn btn btn-flat btn-fab"
+          class="btn btn-icon"
           type="button"
           aria-label="Close"
           @click="$emit('close')"
@@ -31,6 +31,12 @@
           <i class="material-icons">close</i>
         </button>
       </header>
+      <div v-if="pendingRemoteChanges" class="alert alert-warning">
+        <i class="material-icons">error_outline</i>
+        <div class="alert-body">
+          This query has been updated by someone else. Restore is unavailable until those changes are merged or discarded.
+        </div>
+      </div>
       <div class="audit-groups">
         <x-progressbar v-show="loadingList" />
         <section v-if="hasUnsavedChanges" class="audit-group">
@@ -86,7 +92,7 @@
                 <span
                   v-if="
                     audit.queryAudit.action === 'update' &&
-                    audit.queryAudit.title != null
+                      audit.queryAudit.title != null
                   "
                   class="changed-the-title-to"
                 >
@@ -167,6 +173,10 @@ export default Vue.extend({
       type: String as PropType<string | null>,
       default: null,
     },
+    pendingRemoteChanges: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     return {
@@ -237,7 +247,12 @@ export default Vue.extend({
       return mode === "text/x-redis" ? "redis" : mode;
     },
     canRestore() {
-      if (this.loadingList || this.restoring || !this.selectedAuditId) {
+      if (
+        this.loadingList ||
+        this.restoring ||
+        !this.selectedAuditId ||
+        this.pendingRemoteChanges
+      ) {
         return false;
       }
 
@@ -378,7 +393,7 @@ export default Vue.extend({
       try {
         const queryAudits: IQueryAudit[] = await this.$store.dispatch(
           "data/queryAudits/list",
-          queryId
+          { queryId }
         );
         this.queryAudits = queryAudits;
         if (queryAudits.length === 0) {
@@ -485,7 +500,14 @@ export default Vue.extend({
     replaceExtensions(extensions: Extension): Extension[] {
       return [
         extensions,
-        monokaiInit({ settings: { selection: "", selectionMatch: "" } }),
+        monokaiInit({
+          settings: {
+            selection: "",
+            selectionMatch: "",
+            lineHighlight: "",
+            gutterActiveForeground: "",
+          },
+        }),
       ];
     },
   },
@@ -494,7 +516,7 @@ export default Vue.extend({
 
 <style scoped>
 .query-edit-history {
-  background-color: var(--query-editor-bg);
+  background: var(--bg-base);
   display: flex;
   overflow: hidden;
 }
@@ -527,7 +549,7 @@ export default Vue.extend({
   bottom: 0;
   left: 50%;
   width: 1px;
-  background-color: var(--border-color);
+  background-color: var(--border-subtle);
   transform: translateX(-50%);
 }
 
@@ -536,7 +558,7 @@ export default Vue.extend({
   align-items: center;
   justify-content: center;
   flex-grow: 1;
-  color: var(--text-lighter);
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
@@ -558,15 +580,7 @@ export default Vue.extend({
     justify-content: space-between;
     gap: 0.5rem;
     padding: 0.5rem 0.5rem 0.5rem 1rem;
-    color: var(--text-dark);
-  }
-
-  .close-btn {
-    color: var(--text-light);
-
-    .material-icons {
-      font-size: 1.145rem;
-    }
+    color: var(--text-contrast);
   }
 }
 
@@ -585,7 +599,7 @@ export default Vue.extend({
   padding-block: 0.25rem;
   font-size: 1rem;
   font-weight: normal;
-  color: var(--text-light);
+  color: var(--text-muted);
   text-transform: capitalize;
 }
 
@@ -608,7 +622,7 @@ export default Vue.extend({
     width: 0.5rem;
     height: 0.5rem;
     border-radius: 9999px;
-    background-color: hsl(from var(--bks-theme-primary) h s calc(l - 2));
+    background-color: var(--primary-solid-bg);
   }
 }
 
@@ -628,7 +642,7 @@ export default Vue.extend({
 
   .editor-label,
   .changed-the-title-to {
-    color: var(--text-lighter);
+    color: var(--text-muted);
     font-size: 0.8rem;
   }
 
@@ -639,7 +653,7 @@ export default Vue.extend({
   .item {
     border: none;
     background-color: transparent;
-    color: var(--text-dark);
+    color: var(--text-contrast);
     width: 100%;
     cursor: pointer;
     border-radius: 4px;
@@ -653,11 +667,11 @@ export default Vue.extend({
 }
 
 .query-edit-history .audit-list .item:hover {
-  background-color: rgb(from var(--theme-base) r g b / 3.5%);
+  background-color: var(--bg-subtle-a);
 }
 
 .query-edit-history .audit-list .item[aria-current="true"] {
-  background-color: rgb(from var(--theme-base) r g b / 10%);
+  background-color: var(--bg-a);
 }
 
 .query-edit-history {

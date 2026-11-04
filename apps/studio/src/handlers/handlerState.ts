@@ -1,9 +1,11 @@
 import { IConnection } from "@/common/interfaces/IConnection";
+import { CloudClient } from "@/lib/cloud/CloudClient";
 import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient";
 import { CancelableQuery } from "@/lib/db/models";
 import { IDbConnectionPublicServer } from "@/lib/db/serverTypes";
 import { Export } from "@/lib/export";
 import ImportClass from "@/lib/import"
+import { PluginManager } from "@/services/plugin";
 import { SqlGenerator } from "@shared/lib/sql/SqlGenerator";
 import { ChildProcessWithoutNullStreams } from "child_process";
 import { MessagePortMain } from "electron";
@@ -30,6 +32,9 @@ class State {
   imports: Map<string, ImportClass> = new Map();
   backupProc: ChildProcessWithoutNullStreams = null;
 
+  cloudClient: CloudClient = null;
+  workspaceId: number = null;
+
   connectionAbortController: AbortController = null;
 
   // enums
@@ -47,6 +52,16 @@ class State {
 }
 
 const states = new Map<string, State>();
+
+let pluginManager: PluginManager = null;
+
+export function getPluginManager(): PluginManager {
+  return pluginManager;
+}
+
+export function setPluginManager(manager: PluginManager) {
+  pluginManager = manager;
+}
 
 // I kinda hate this tbh. modifying could be scary
 export function state(id: string): State {
@@ -87,6 +102,7 @@ export const errorMessages = {
 
 export function getDriverHandler(name: string) {
   return async function({sId }: { sId: string }): Promise<any> {
+    checkConnection(sId);
     return await state(sId).connection[name]();
   }
 }

@@ -21,10 +21,13 @@ export const CloudQueryAuditModule: Module<State, RootState> = {
     },
     async load() {},
     async poll() {},
-    async list(context, queryId: number): Promise<IQueryAudit[]> {
+    async list(
+      context,
+      { queryId, limit }: { queryId: number; limit?: number }
+    ): Promise<IQueryAudit[]> {
       return await havingCli(
         context,
-        (cli) => cli.queryAudits.list(queryId),
+        (cli) => cli.queryAudits.list(queryId, limit),
       );
     },
     async get(

@@ -11,7 +11,7 @@
           <div class="dialog-c-title has-icon">
             <i class="material-icons">edit</i>
             Update your PIN
-            <a class="close-btn btn btn-fab" href="#" @click.prevent="close">
+            <a class="close-btn btn btn-icon" href="#" @click.prevent="close">
               <i class="material-icons">clear</i>
             </a>
           </div>

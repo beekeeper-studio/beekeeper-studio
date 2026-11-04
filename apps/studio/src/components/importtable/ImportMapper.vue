@@ -51,7 +51,7 @@
       ref="tabulator"
     />
     <button
-      class="btn btn-primary btn-icon btn-table-create"
+      class="btn btn-primary btn-table-create"
       type="button"
       @click.prevent="$emit('finish')"
     >

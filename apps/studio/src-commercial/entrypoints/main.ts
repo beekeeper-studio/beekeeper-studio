@@ -1,9 +1,8 @@
 'use strict'
 import * as fs from 'fs'
 import path from 'path'
-import { app, protocol } from 'electron'
+import { app, protocol, ipcMain, clipboard, ClipboardItem } from 'electron'
 import * as electron from 'electron'
-import { ipcMain } from 'electron'
 import _ from 'lodash'
 import log from '@bksLogger'
 
@@ -15,12 +14,13 @@ import MenuHandler from '@/background/NativeMenuBuilder'
 import { IGroupedUserSettings, UserSetting } from '@/common/appdb/models/user_setting'
 import Connection from '@/common/appdb/Connection'
 import Migration from '@/migration/index'
-import { buildWindow, getActiveWindows, getCurrentWindow } from '@/background/WindowBuilder'
+import { buildWindow, getActiveWindows, getCurrentWindow, setConfirmWindowClose } from '@/background/WindowBuilder'
 import platformInfo from '@/common/platform_info'
 import bksConfig from '@/common/bksConfig'
 
 import { AppEvent } from '@/common/AppEvent'
 import { ProtocolBuilder } from '@/background/lib/electron/ProtocolBuilder';
+import { createThemeProtocol } from "@commercial/backend/lib/theme/ThemeProtocol";
 import { uuidv4 } from '@/lib/uuid';
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import { UtilProcMessage } from '@/types'
@@ -36,6 +36,11 @@ if (platformInfo.env.development || platformInfo.env.test) {
 
 log.transports.console.level = platformInfo.logLevel;
 log.transports.file.level = platformInfo.logLevel;
+
+electron.nativeTheme.on('updated', () => {
+  const dark = electron.nativeTheme.shouldUseDarkColors
+  getActiveWindows().forEach((w) => w.send('systemUsesDarkColors', dark))
+})
 
 function initUserDirectory(d: string) {
   if (!fs.existsSync(d)) {
@@ -83,6 +88,11 @@ async function createUtilityProcess() {
   utilityProcess.on("message", (msg: UtilProcMessage) => {
     if (msg.type === 'openExternal') {
       safeOpenExternal(msg.url)
+    } else if (msg.type === 'configChanged') {
+      bksConfig.reload(msg.source);
+      for (const w of getActiveWindows()) {
+        w.send('bksConfigChanged', msg.source);
+      }
     }
   })
 
@@ -120,8 +130,11 @@ let settings: IGroupedUserSettings
 let menuHandler
 log.debug("registering schema")
 // Scheme must be registered before the app is ready
-protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
-protocol.registerSchemesAsPrivileged([{scheme: 'plugin', privileges: { secure: true, standard: true } }])
+protocol.registerSchemesAsPrivileged([
+  {scheme: 'app', privileges: { secure: true, standard: true } },
+  {scheme: 'plugin', privileges: { secure: true, standard: true } },
+  {scheme: 'theme', privileges: { secure: true, standard: true } }
+])
 let initPromise: Promise<IGroupedUserSettings> | null = null
 
 // callers can run concurrently (eg 'ready' and 'open-url'), so they all share
@@ -229,6 +242,8 @@ app.on('ready', async () => {
   ProtocolBuilder.createAppProtocol()
   // this creates the plugin:// protocol we use for loading plugins
   ProtocolBuilder.createPluginProtocol()
+  // this creates the theme:// protocol we use for loading themes
+  createThemeProtocol()
 
   const settings = await initBasics()
   initializeSecurity(app);
@@ -258,7 +273,7 @@ function createAndSendPorts(filter: boolean, utilDied = false) {
       w.sId = sId;
       utilityProcess.postMessage({ type: 'init', sId }, [port1]);
       w.webContents.postMessage('port', { sId, utilDied }, [port2]);
-      w.onClose((_event: electron.Event) => {
+      w.onClose(() => {
         utilityProcess.postMessage({ type: 'close', sId })
       })
       if (filter) {
@@ -332,6 +347,36 @@ ipcMain.handle('maximizeWindow', () => {
 
 ipcMain.handle('closeWindow', () => {
   getCurrentWindow().closeWindow();
+})
+
+ipcMain.handle('setConfirmWindowClose', async (_event, enabled: boolean) => {
+  await setConfirmWindowClose(settings, enabled);
+})
+
+ipcMain.handle('clipboard:write', async (_event, { content, image }: { content: string, image: boolean }) => {
+  let item: ClipboardItem;
+  if (image) {
+    const im = electron.nativeImage.createFromDataURL(content);
+    const pngBuffer = im.toPNG();
+    const blob = new Blob([pngBuffer], { type: 'image/png' });
+    item = new ClipboardItem({
+      'image/png': blob
+    });
+  } else {
+    item = new ClipboardItem({
+      'text/plain': content
+    });
+  }
+  await clipboard.write([item]);
+})
+
+ipcMain.handle('clipboard:read', async () => {
+  return await clipboard.readText();
+})
+
+ipcMain.on('app:restart', async () => {
+  app.relaunch();
+  app.exit();
 })
 
 // Exit cleanly on request from parent process in development mode.

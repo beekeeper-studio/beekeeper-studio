@@ -2,6 +2,7 @@ import { Entity, Column, OneToMany, ManyToOne, JoinColumn, BeforeRemove, BeforeI
 import { ApplicationEntity } from './application_entity'
 import { FavoriteQuery } from './favorite_query'
 import { pluralize } from '@/vendor/pluralize'
+import { PreventMovingFolderInsideItself } from '../validators/PreventMovingFolderInsideItself'
 
 @Entity({ name: 'query_folder' })
 export class QueryFolder extends ApplicationEntity {
@@ -20,6 +21,7 @@ export class QueryFolder extends ApplicationEntity {
   expanded = true
 
   @Column({ type: 'integer', nullable: true, default: null })
+  @PreventMovingFolderInsideItself
   parentId: Nullable<number> = null
 
   // Do NOT initialize this to null. A null initializer becomes an own property

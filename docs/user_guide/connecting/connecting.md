@@ -188,6 +188,19 @@ When you also enter a value in the form, the form value wins — `~/.ssh/config`
 
 `Match exec` runs an arbitrary command, exactly as `ssh` does. To avoid running commands from a config you don't control, Beekeeper mirrors OpenSSH's safeguard: your `~/.ssh/config` is only read when it is **owned by you (or root) and not writable by group or other users** (e.g. `chmod 600`). A config with looser permissions is ignored entirely and a warning is logged. This check is POSIX-only; on Windows the file is always read. Note that `Match exec` is evaluated through your system shell, so its availability depends on the platform.
 
+#### `Include`
+
+`Include` support is partial. Included files are read in place, and glob patterns work:
+
+```
+Include ~/.ssh/config.d/*.conf
+Include work/bastion.conf
+```
+
+Paths can be absolute, start with `~`, or be relative to the folder holding the config file. Included files must meet the same permission requirements as `~/.ssh/config`.
+
+Two limits: an `Include` must start at the beginning of a line, so an indented one inside a `Host` block is ignored, and an `Include` inside an already-included file is skipped.
+
 #### Supported and unsupported `ssh_config` features
 
 **Supported**
@@ -197,12 +210,13 @@ When you also enter a value in the form, the form value wins — `~/.ssh/config`
 - `IdentityFile` (one or more; Automatic mode), with missing files skipped
 - `IdentitiesOnly`
 - Glob patterns and negation (`!`) in `Host` / `Match host` patterns
+- `Include`, at the start of a line, including glob patterns
 
 **Not supported (ignored)**
 
 - `ProxyJump` / `ProxyCommand` — configure the bastion host explicitly in the connection form instead
 - `ForwardAgent`, `LocalForward`, `RemoteForward`, `DynamicForward`
-- `Include`d config files
+- Indented `Include` directives, and `Include`s inside an already-included file
 - Any other directive not listed under *Supported* above
 
 If you rely on `ProxyJump`, configure the bastion host explicitly in the connection form.
