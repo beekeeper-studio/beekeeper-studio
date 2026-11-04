@@ -3,7 +3,7 @@ import { Extension, StateField, StateEffect } from "@codemirror/state";
 import { EditorView, Decoration, DecorationSet } from "@codemirror/view";
 import { Options } from "sql-query-identifier";
 import { IdentifyResult, ParamTypes } from "sql-query-identifier/lib/defines";
-import { safelyIdentify } from "@/utils";
+import { safelyIdentify, splitRedisCommands } from "@/utils";
 
 // Utility function from entity-list/sql_tools
 function isTextSelected(
@@ -43,6 +43,15 @@ interface QuerySelectionState {
 // Effects for updating the state
 const setDialectEffect = StateEffect.define<Options["dialect"]>();
 const setParamTypesEffect = StateEffect.define<Options["paramTypes"]>();
+const setSplitByLineEffect = StateEffect.define<boolean>();
+
+/**
+ * Switch between one query per statement (SQL) and one query per line
+ * (Redis), e.g. when the editor's language changes.
+ */
+export function applySplitQueriesByLine(view: EditorView, splitByLine: boolean) {
+  view.dispatch({ effects: setSplitByLineEffect.of(splitByLine) });
+}
 
 function getSelectedQueryPosition(
   queries: IdentifyResult[],
@@ -89,13 +98,18 @@ function getSelectedQueryIndex(
 function splitQueries(
   queryText: string,
   dialect: Options["dialect"],
-  paramTypes: ParamTypes
+  paramTypes: ParamTypes,
+  splitByLine: boolean
 ): {
   queries: IdentifyResult[];
   error: Error | null;
 } {
   if (_.isEmpty(queryText.trim())) {
     return { queries: [], error: null };
+  }
+
+  if (splitByLine) {
+    return { queries: splitRedisCommands(queryText), error: null };
   }
 
   return safelyIdentify(queryText, { dialect, paramTypes });
@@ -105,7 +119,8 @@ function splitQueries(
 export function querySelection(
   dialect?: Options["dialect"],
   paramTypes?: Options["paramTypes"],
-  onQuerySelectionChange?: (params: QuerySelectionChangeParams) => void
+  onQuerySelectionChange?: (params: QuerySelectionChangeParams) => void,
+  splitByLine = false
 ): Extension {
   // Seed the dialect/paramTypes state with the values supplied at construction so the
   // very first identification uses them. Previously these defaulted to "generic"/null and
@@ -136,6 +151,18 @@ export function querySelection(
     }
   });
 
+  const splitByLineState = StateField.define<boolean>({
+    create: () => splitByLine,
+    update: (value, tr) => {
+      for (const effect of tr.effects) {
+        if (effect.is(setSplitByLineEffect)) {
+          return effect.value;
+        }
+      }
+      return value;
+    }
+  });
+
   // State field that manages query selection
   const querySelectionState = StateField.define<QuerySelectionState>({
     create: () => ({
@@ -149,6 +176,7 @@ export function querySelection(
     update: (state, tr) => {
       const dialect = tr.state.field(dialectState);
       const paramTypes = tr.state.field(paramTypeState);
+      const splitByLine = tr.state.field(splitByLineState);
 
       // Get cursor positions
       const cursor = tr.state.selection.main;
@@ -156,7 +184,12 @@ export function querySelection(
       const cursorIndexAnchor = cursor.anchor;
 
       // Split queries
-      const { queries, error } = splitQueries(tr.state.doc.toString(), dialect, paramTypes);
+      const { queries, error } = splitQueries(
+        tr.state.doc.toString(),
+        dialect,
+        paramTypes,
+        splitByLine
+      );
       const selectedQueryIndex = getSelectedQueryIndex(
         queries,
         cursorIndex,
@@ -202,9 +235,13 @@ export function querySelection(
   return [
     dialectState,
     paramTypeState,
+    splitByLineState,
     querySelectionState,
     EditorView.updateListener.of((update) => {
-      if (update.docChanged || update.selectionSet) {
+      const splitModeChanged =
+        update.state.field(splitByLineState) !==
+        update.startState.field(splitByLineState);
+      if (update.docChanged || update.selectionSet || splitModeChanged) {
         // Call the callback if query selection changed
         const currentState = update.state.field(querySelectionState);
         const prevState = update.startState.field(querySelectionState);
