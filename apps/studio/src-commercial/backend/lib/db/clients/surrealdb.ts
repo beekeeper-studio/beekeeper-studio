@@ -1,12 +1,18 @@
-import { ProvidedAuth, RecordId } from "surrealdb";
+import { DateTime, Decimal, Duration, escapeIdent, Geometry, jsonify, ProvidedAuth, RecordId, StringRecordId, surql, Table, toSurqlString, Uuid } from "surrealdb";
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, BksField, CancelableQuery, BksFieldType, TableChanges, TableUpdateResult, TableInsert, TableUpdate, TableDelete } from "@/lib/db/models";
 import { ForeignKeyRow, TableKey } from "@/shared/lib/dialects/models";
 import { _baseTest } from "@playwright/test";
 import { DatabaseElement, IDbConnectionDatabase, SurrealAuthType } from "@/lib/db/types";
 import rawLog from '@bksLogger';
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
-import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
-import { SurrealDBRecordTranscoder, Transcoder } from "@/lib/db/serialization/transcoders";
+import { BasicDatabaseClient, ExecutionContext, QueryLogOptions, TableColumnMap } from "@/lib/db/clients/BasicDatabaseClient";
+import {
+  Transcoder,
+  IntegerTranscoder,
+  FloatTranscoder,
+  NumberTranscoder,
+  BooleanTranscoder,
+} from "@/lib/db/serialization/transcoders";
 import { SurrealDBCursor } from "./surrealdb/SurrealDBCursor";
 import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SurrealDBChangeBuilder } from "@/shared/lib/sql/change_builder/SurrealDBChangeBuilder";
@@ -14,8 +20,16 @@ import { SurrealConn, SurrealPool } from "./surrealdb/SurrealDBPool";
 import _ from "lodash";
 import { groupForeignKeyRows } from "@/lib/db/clients/utils";
 import { surrealEscapeValue } from "@/shared/lib/dialects/surrealdb";
-import { uuidv4 } from "@/lib/uuid";
 import { isListFilter } from "@/common/utils";
+import {
+  SurrealDBRecordTranscoder,
+  SurrealDBDecimalTranscoder,
+  SurrealDBDateTimeTranscoder,
+  SurrealDBDurationTranscoder,
+  SurrealDBUuidTranscoder,
+  SurrealDBJsonTranscoder,
+  SurrealDBGeometryTranscoder,
+} from "@/lib/db/serialization/surreal_transcoders";
 
 const log = rawLog.scope('SurrealDB');
 
@@ -70,7 +84,19 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
   version: SurrealDBResult;
   pool: SurrealPool;
   connectionString: string;
-  transcoders: Transcoder<any, any>[] = [SurrealDBRecordTranscoder];
+  transcoders: Transcoder<any, any>[] = [
+    SurrealDBRecordTranscoder,
+    SurrealDBDecimalTranscoder,
+    SurrealDBDateTimeTranscoder,
+    SurrealDBDurationTranscoder,
+    SurrealDBUuidTranscoder,
+    IntegerTranscoder,
+    FloatTranscoder,
+    NumberTranscoder,
+    BooleanTranscoder,
+    SurrealDBJsonTranscoder,
+    SurrealDBGeometryTranscoder,
+  ];
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(null, surrealContext, server, database);
@@ -82,8 +108,6 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     await super.connect();
 
     const config = this.configDatabase();
-    log.info('CONNECTION STRING: ', this.connectionString);
-    log.info('DATABASE: ', this.db)
 
     // TODO (@day): possibly temporary. We may want to make it so that namespaces essentially function like databases, and databases function like schemata in postgres
     this.pool = new SurrealPool(this.connectionString, {
@@ -252,64 +276,60 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
       const result = await this.driverExecuteSingle(`INFO FOR TABLE ${table} STRUCTURE`);
       const tableFields = result?.rows[0]?.fields as SurrealFieldInfo[] || [];
       let ordinalPosition = 1;
-      const parentFields = [];
 
       // This means it's a schemaless table, so we'll have to guess
       if (!tableFields || tableFields.length === 0) {
         const results = await this.driverExecuteSingle(`SELECT * FROM ${table} LIMIT 10`);
         const existingFields = new Set<string>();
+        // Fields only seen as NONE / NULL so far, their kind is a placeholder until a value shows up
+        const nullOnlyFields = new Set<string>();
         results.rows.forEach((row) => {
           Object.entries(row).forEach(([field, value]) => {
-            let type: string = typeof value;
-
-            if (_.isArray(value)) {
-              type = 'array'
-            }
-
-            if (value instanceof RecordId) {
-              if (value.table.name === table) {
-                type = 'string'
-              } else {
-                type = `record<${value.table.name}>`
-              }
-            }
+            const kind = this.valueToKind(value, table);
 
             if (!existingFields.has(field)) {
               existingFields.add(field);
+              if (kind === null) nullOnlyFields.add(field);
               tableFields.push({
                 flex: false,
-                kind: type,
+                kind: kind ?? 'any',
                 name: field,
                 readonly: false,
                 default: null,
                 value: null,
                 what: table
               });
-            } else {
-              const fieldIndex = tableFields.findIndex((v) => v.name === field);
-              if (tableFields[fieldIndex].kind !== type) {
-                tableFields[fieldIndex].kind = 'any';
+            } else if (kind !== null) {
+              const fieldInfo = tableFields.find((v) => v.name === field);
+              if (nullOnlyFields.has(field)) {
+                nullOnlyFields.delete(field);
+                fieldInfo.kind = kind;
+              } else if (fieldInfo.kind !== kind) {
+                fieldInfo.kind = 'any';
               }
             }
           })
         })
       }
 
-      return tableFields.map((fieldInfo: SurrealFieldInfo) => {
-        if (fieldInfo.kind.startsWith('array<') || fieldInfo.kind.startsWith('object')) {
-          parentFields.push(fieldInfo.name)
-        }
-        const isObjectOrArrayChild = parentFields.some((v) => {
-          return fieldInfo.name.startsWith(`${v}.`) ||
-            fieldInfo.name.startsWith(`${v}[*]`);
+      // Surreal auto creates an id field if one isn't explicitly defined at creation,
+      // but it won't show up in the info query, so this manually adds it
+      if (!tableFields.some((f) => f.name === 'id')) {
+        tableFields.unshift({
+          name: 'id',
+          kind: `record<${table}>`,
+          flex: false,
+          readonly: false,
+          default: null,
+          value: null,
+          what: table,
         });
-        if (isObjectOrArrayChild) {
-          // These are just typings for subobjects, which we don't currently support returning
-          // metadata for, so we just skip them
-          return null;
-        }
+      }
 
-        return {
+      const fieldNames = new Set(tableFields.map((f) => f.name));
+      return tableFields
+        .filter((f) => !this.isChildField(f.name, fieldNames))
+        .map((fieldInfo: SurrealFieldInfo) => ({
           tableName: table,
           columnName: fieldInfo.name,
           dataType: fieldInfo.kind,
@@ -318,8 +338,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
           hasDefault: !!fieldInfo.default,
           generated: false,
           bksField: this.parseTableColumn(fieldInfo)
-        } as ExtendedTableColumn;
-      }).filter((v) => !!v)
+        }))
     } catch (err) {
       log.error(`Error extracting table columns for ${table}`, err);
       throw err;
@@ -415,7 +434,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
   async query(queryText: string, _tabId?: number, options?: any): Promise<CancelableQuery> {
     return {
       execute: async(): Promise<NgQueryResult[]> => {
-        return await this.executeQuery(queryText, options)
+        return await this.executeQuery(queryText, { ...options, multiple: true })
       },
       async cancel() {
         log.warn('SurrealDB does not currently support cancelling queries');
@@ -430,7 +449,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
 
     return results.map(result => ({
       command: queryText.trim().split(' ')[0].toUpperCase(),
-      rows: result.rows,
+      rows: result.rows.map((row) => jsonify(row)),
       fields: result.columns.map(col => ({ name: col.name, id: col.name })),
       rowCount: result.rows.length,
       affectedRows: result.rows.length
@@ -605,19 +624,16 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     };
   }
 
-  // TODO (@day): this may not cover all instances
   wrapIdentifier(value: string): string {
     if (!value || value === '*') return value;
 
-      // Match array indexes like field[0]
-      const matched = value.match(/^(.*?)(\[[0-9]+\])$/);
-      if (matched) {
-        return this.wrapIdentifier(matched[1]) + matched[2];
-      }
+    // Match array indexes like field[0]
+    const matched = value.match(/^(.*?)(\[[0-9]+\])$/);
+    if (matched) {
+      return this.wrapIdentifier(matched[1]) + matched[2];
+    }
 
-      // Escape backticks by doubling them, then wrap in backticks
-      const escaped = value.replace(/`/g, '``');
-      return `\`${escaped}\``;
+    return escapeIdent(value);
   }
 
   getBuilder(table: string, schema?: string): ChangeBuilderBase | Promise<ChangeBuilderBase> {
@@ -678,6 +694,18 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     return funcDef ? [funcDef] : []
   }
 
+  async applyChangesSql(changes: TableChanges): Promise<string> {
+    await this.deserializeTableChanges(changes);
+
+    const queries: { query: string, bindings: Record<string, unknown>}[] = [
+      ...await this.insertRows(changes.inserts),
+      ...await this.updateValues(changes.updates),
+      ...await this.deleteRows(changes.deletes),
+    ];
+
+    return queries.map((q) => this.boundQueryToString(q)).join('\n');
+  }
+
   async executeApplyChanges(changes: TableChanges): Promise<TableUpdateResult[]> {
     const results: TableUpdateResult[] = [];
     const sql = ['BEGIN'];
@@ -710,7 +738,15 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
       }
 
       if (changes.deletes) {
-        sql.push(...await this.deleteRows(changes.deletes));
+        const result = await this.deleteRows(changes.deletes);
+        sql.push(...result.map((r) => r.query));
+        allBindings = {
+          ...allBindings,
+          ...result.map((r) => r.bindings).reduce((p, c) => ({
+            ...p,
+            ...c
+          }), {})
+        };
       }
 
       sql.push('COMMIT');
@@ -768,8 +804,6 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     const conn = options?.connection ? options.connection : await this.pool.connect();
     try {
       const bindings = options?.bindings ? options.bindings : {}
-      log.info('RUNNING QUERY: ', q)
-      log.info('BINDINGS: ', bindings)
       const result = await conn.query(q, bindings);
 
       const results = result.map((queryResult) => {
@@ -809,24 +843,101 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
   }
 
   protected parseTableColumn(column: SurrealFieldInfo): BksField {
-    const isRecord = column.kind.startsWith('record<') || column.name === 'id';
     return {
       name: column.name,
-      bksType: isRecord ? 'SURREALID' : 'UNKNOWN'
+      bksType: column.name === 'id' ? 'SURREALID' : this.kindToBksType(column.kind)
     }
   }
 
-  parseQueryResultColumns(qr: SurrealDBQueryResult): BksField[] {
-    const row = qr.rows[0];
-    return qr.columns.map((column) => {
-      let bksType: BksFieldType = 'UNKNOWN';
+  private kindToBksType(kind: string): BksFieldType {
+    // Remove the option<> wrapper
+    const unwrapped = kind?.trim().replace(/^option<(.*)>$/, '$1') ?? '';
+    // Remove generic args, convert type | none to just type
+    const parts = unwrapped.split('<')[0].split('|').map((p) => p.trim()).filter((p) => p !== 'none');
+    if (parts.length !== 1) return 'UNKNOWN';
+    const base = parts[0];
 
-      if (row[column.name] instanceof RecordId) {
-        bksType = 'SURREALID';
-      }
-      // TODO (@day): may need to do some analysis here
+    switch (base) {
+      case 'record': return 'SURREALID';
+      case 'string': return 'STRING';
+      case 'number': return 'NUMBER';
+      case 'int': return 'INTEGER';
+      case 'float': return 'FLOAT';
+      case 'decimal': return 'DECIMAL';
+      case 'bool': return 'BOOLEAN';
+      case 'datetime': return 'DATETIME';
+      case 'duration': return 'DURATION';
+      case 'uuid': return 'UUID';
+      case 'object': return 'OBJECT';
+      case 'array':
+      case 'set':
+        return 'ARRAY';
+      case 'geometry': return 'GEOMETRY';
+      default: return 'UNKNOWN';
+    }
+  }
+
+  // Guess types for schemaless tables
+  private valueToKind(value: unknown, table: string): string | null {
+    if (value == null) return null;
+    if (value instanceof RecordId) {
+      return value.table.name === table ? 'string' : `record<${value.table.name}>`;
+    }
+    if (value instanceof Decimal) return 'decimal';
+    if (value instanceof DateTime || value instanceof Date) return 'datetime';
+    if (value instanceof Duration) return 'duration';
+    if (value instanceof Uuid) return 'uuid';
+    if (value instanceof Geometry) return 'geometry';
+    if (_.isString(value)) return 'string';
+    // A sample can't tell int from float, so stay general
+    if (_.isNumber(value) || typeof value === 'bigint') return 'number';
+    if (_.isBoolean(value)) return 'bool';
+    if (_.isArray(value)) return 'array';
+    if (value instanceof Set) return 'set';
+    if (_.isPlainObject(value)) return 'object';
+    return 'any';
+  }
+
+  private valueToBksType(value: unknown): BksFieldType {
+    if (value instanceof RecordId || value instanceof StringRecordId) return 'SURREALID';
+    if (value instanceof Decimal) return 'DECIMAL';
+    if (value instanceof DateTime || value instanceof Date) return 'DATETIME';
+    if (value instanceof Duration) return 'DURATION';
+    if (value instanceof Uuid) return 'UUID';
+    if (value instanceof Geometry) return 'GEOMETRY';
+    if (_.isString(value)) return 'STRING';
+    if (_.isNumber(value)) return Number.isInteger(value) ? 'INTEGER' : 'FLOAT';
+    if (_.isBoolean(value)) return 'BOOLEAN';
+    if (_.isArray(value) || value instanceof Set) return 'ARRAY';
+    if (_.isPlainObject(value)) return 'OBJECT';
+    return 'UNKNOWN';
+  }
+
+  parseQueryResultColumns(qr: SurrealDBQueryResult): BksField[] {
+    return qr.columns.map((column) => {
+      // Use the first row with a value, a NONE / NULL in row 0 says nothing about the type
+      const sample = qr.rows.find((row) => row?.[column.name] != null);
+      const bksType = sample ? this.valueToBksType(sample[column.name]) : 'UNKNOWN';
       return { name: column.name, bksType }
     })
+  }
+
+  protected async deserializeTableChanges(changes: TableChanges) {
+    const targets = _.uniqBy([
+      ...(changes.inserts ?? []),
+      ...(changes.updates ?? []),
+      ...(changes.deletes ?? []),
+    ].map(({ table, schema }) => ({ table, schema })),
+      ({ table, schema }) => this.getTableMapKey(table, schema));
+
+    // table map key -> column name -> column
+    const columns: TableColumnMap = {};
+    await Promise.all(targets.map(async ({ table, schema }) => {
+      const tableColumns = await this.listTableColumns(table, schema);
+      columns[this.getTableMapKey(table, schema)] = _.keyBy(tableColumns, 'columnName');
+    }));
+
+    return await super.deserializeTableChanges(changes, columns);
   }
 
   private normalizeValue(value: string, column?: ExtendedTableColumn) {
@@ -837,87 +948,60 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
   }
 
   private async insertRows(rawInserts: TableInsert[]): Promise<{ query: string, bindings: any }[]> {
-    const sql = [];
-    const columnsList = await Promise.all(rawInserts.map((insert) => {
-      return this.listTableColumns(insert.table);
-    }));
+    return rawInserts.flatMap((insert) =>
+      insert.data.map((row) => {
+        const { id, ...fields } = row;
+        let target = null;
 
-    const fixedInserts = rawInserts.map((insert, idx) => {
-      const result = { ...insert };
-      const columns = columnsList[idx];
-      result.data = result.data.map((obj) => {
-        return _.mapValues(obj, (value, key) => {
-          const column = columns.find((c) => c.columnName === key);
-          // if (column.columnName != 'id') {
-
-            // return this.normalizeValue(value, column);
-          // }
-
-          return value;
-        })
-      })
-      return result;
-    })
-    for (const insert of fixedInserts) {
-      for (const d of insert.data) {
-        log.info('CREATING: ', insert);
-        log.info('DATA: ', d)
-        let id: string = insert.table;
-        if (d['id'] && _.isString(d['id'])) {
-          id = new RecordId(insert.table, d['id']).toString();
-        } else if (d['id']) {
-          id = d['id'].toString();
+        if (id == null || id === '') {
+          target = surql`type::table(${insert.table})`;
+        } else if (id instanceof RecordId || id instanceof StringRecordId) {
+          target = id;
+        } else {
+          target = new RecordId(insert.table, id);
         }
-        log.info('ID: ', id)
-        d['id'] = undefined;
-        const bindings = {};
-        const data = Object.entries(d).map(([fieldName, fieldData]) => {
-          const varName = `v_${uuidv4().replace(/-/g, '_')}`;
-          bindings[varName] = fieldData
-          return `${this.wrapIdentifier(fieldName)} = $${varName}`
-        })
 
-        const query = `
-          CREATE ${id} SET
-            ${data.join(',\n')}
-        `;
-
-        sql.push({ query, bindings })
-      }
-    }
-
-    return sql;
+        const q = surql`CREATE ${target} CONTENT ${fields}`;
+        return { query: q.query, bindings: q.bindings };
+      })
+    );
   }
 
   // TODO (@day): may need to normalize values here
   private async updateValues(updates: TableUpdate[]): Promise<{ query: string, bindings: any}[]> {
-    const sql = [];
-    for (const update of updates) {
-      // TODO (@day): may need to sanitize the id
-      // Surreal only has the id for primary keys, so it will always be there
-      const varName = `v_${uuidv4().replace(/-/g, '_')}`;
-      sql.push({
-        query: `
-          UPDATE ${update.primaryKeys[0].value} SET
-            ${update.column} = $${varName}
-        `,
-        bindings: {
-          [varName]: update.value
-        }
-      });
-    }
-    return sql;
+    return updates.map((update) => {
+      const q = surql`UPDATE ${this.toRecordId(update.primaryKeys[0].value)} SET `
+        .append(`${escapeIdent(update.column)} = `)
+        .append`${update.value}`;
+      return { query: q.query, bindings: q.bindings };
+    });
   }
 
-  private async deleteRows(deletes: TableDelete[]): Promise<string[]> {
-    const sql = [];
-    for (const del of deletes) {
-      log.debug('DELETING: ', del.primaryKeys[0].value)
-      // TODO (@day): we need to sanitize this
-      sql.push(`DELETE ${del.primaryKeys[0].value}`)
-    }
+  private async deleteRows(deletes: TableDelete[]): Promise<{ query: string, bindings: any }[]> {
+    return deletes.map((del) => {
+      // Surreal only has the id for primary keys, so it will always be there
+      const q = surql`DELETE ${this.toRecordId(del.primaryKeys[0].value)}`;
+      return { query: q.query, bindings: q.bindings };
+    });
+  }
 
-    return sql;
+  private toRecordId(value: unknown) {
+    return _.isString(value) ? new StringRecordId(value) : value;
+  }
+
+  private boundQueryToString(bound: { query: string, bindings: Record<string, unknown>}) {
+    const lets = Object.entries(bound.bindings)
+      .map(([name, value]) => `LET $${name} = ${toSurqlString(value)};`);
+    return [...lets, `${bound.query};`].join('\n');
+  }
+
+  private isChildField(maybeChild: string, fields: Set<string>): boolean {
+    for (let i = maybeChild.length - 1; i > 0; i--) {
+      if ((maybeChild[i] === '.' || maybeChild[i] === '[') && fields.has(maybeChild.slice(0, i))) {
+        return true;
+      }
+    }
+    return false;
   }
 
 }
