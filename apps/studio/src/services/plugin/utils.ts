@@ -184,3 +184,108 @@ export function assertJsonSerializable(value: unknown, requestName: string) {
   }
 }
 
+
+// Known keys for each part of manifest.json. Keep these in sync with the
+// `ManifestV0` / `ManifestV1` / `PluginView` / `PluginMenuItem` types and
+// docs/plugin_development/manifest.md.
+const MANIFEST_KEYS = [
+  "manifestVersion", "id", "name", "author", "description", "version",
+  "minAppVersion", "icon", "capabilities", "pluginEntryDir", "settings",
+  "permissions",
+];
+const AUTHOR_KEYS = ["name", "url"];
+const CAPABILITIES_KEYS = ["views", "menu"];
+const VIEW_KEYS = ["id", "name", "type", "entry"];
+const MENU_ITEM_KEYS = [
+  "command", "name", "description", "view", "placement", "icon",
+  "enabledWhen", "group", "order",
+];
+
+export type UnknownManifestProperty = {
+  /** Where the property is, e.g. `capabilities.menu[0].placment` */
+  path: string;
+  /** The closest known property name, if one is close enough */
+  suggestion?: string;
+};
+
+function levenshtein(a: string, b: string): number {
+  const prev = Array.from({ length: b.length + 1 }, (_v, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    let diag = prev[0];
+    prev[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const tmp = prev[j];
+      prev[j] = Math.min(
+        prev[j] + 1,
+        prev[j - 1] + 1,
+        diag + (a[i - 1] === b[j - 1] ? 0 : 1)
+      );
+      diag = tmp;
+    }
+  }
+  return prev[b.length];
+}
+
+function closestKey(key: string, known: string[]): string | undefined {
+  const lower = key.toLowerCase();
+  let best: string | undefined;
+  let bestDistance = Infinity;
+  for (const candidate of known) {
+    const distance = levenshtein(lower, candidate.toLowerCase());
+    if (distance < bestDistance) {
+      best = candidate;
+      bestDistance = distance;
+    }
+  }
+  // Only suggest when it's plausibly a typo, not a different word.
+  const maxDistance = Math.max(1, Math.floor(key.length / 3));
+  return bestDistance <= maxDistance ? best : undefined;
+}
+
+function collectUnknown(
+  value: unknown,
+  known: string[],
+  path: string,
+  out: UnknownManifestProperty[]
+) {
+  if (!_.isPlainObject(value)) return;
+  for (const key of Object.keys(value as object)) {
+    // `$schema` and similar editor hints are fine
+    if (key.startsWith("$") || known.includes(key)) continue;
+    out.push({
+      path: path ? `${path}.${key}` : key,
+      suggestion: closestKey(key, known),
+    });
+  }
+}
+
+/**
+ * Lists properties in a plugin manifest that Beekeeper Studio doesn't know
+ * about, usually typos such as `placment` or `entryPoint`. Unknown properties
+ * are ignored when loading, so this is only used to warn plugin developers.
+ */
+export function findUnknownManifestProperties(manifest: Manifest): UnknownManifestProperty[] {
+  const out: UnknownManifestProperty[] = [];
+  collectUnknown(manifest, MANIFEST_KEYS, "", out);
+  collectUnknown(manifest?.author, AUTHOR_KEYS, "author", out);
+
+  const capabilities = manifest?.capabilities;
+  collectUnknown(capabilities, CAPABILITIES_KEYS, "capabilities", out);
+
+  if (_.isArray(capabilities?.views)) {
+    capabilities.views.forEach((view, i) =>
+      collectUnknown(view, VIEW_KEYS, `capabilities.views[${i}]`, out)
+    );
+  }
+  if (_.isArray(capabilities?.menu)) {
+    capabilities.menu.forEach((item, i) =>
+      collectUnknown(item, MENU_ITEM_KEYS, `capabilities.menu[${i}]`, out)
+    );
+  }
+  return out;
+}
+
+export function formatUnknownManifestProperty({ path, suggestion }: UnknownManifestProperty): string {
+  const message = `Unknown property "${path}" in manifest.json.`;
+  return suggestion ? `${message} Did you mean "${suggestion}"?` : message;
+}
