@@ -1,47 +1,41 @@
 import postcss, { AtRule, Root } from "postcss";
+import safeParser from "postcss-safe-parser";
+import rawLog from "@bksLogger";
 import { ColorGenerator } from "./ColorGenerator";
+import { stripExternalResources } from "./themeCssSanitizer";
+
+const log = rawLog.scope("ThemeCompiler");
 
 export class ThemeCompiler {
   constructor(readonly css: string) { }
 
   compile(): string {
-    const processor = postcss([
-      {
-        postcssPlugin: "theme-colors",
-        Once: (root) => {
-          const lightColors = this.generateColors(
-            root,
-            ".light-theme",
-            "light"
-          );
-          const darkColors = this.generateColors(root, ".dark-theme", "dark");
-          root.prepend(
-            `.light-theme { ${lightColors} }`,
-            `.dark-theme { ${darkColors} }`
-          );
-
-          // Keeps the active theme out of theme previews, which load their
-          // own theme in a nested @scope.
-          const scope = new AtRule({
-            name: "scope",
-            params: "(:root) to ([data-theme-preview])",
-          });
-          const nodes = root.nodes.slice();
-          root.removeAll();
-          scope.append(nodes);
-          root.append(scope);
-        },
-      },
-    ]);
-    const result = processor.process(this.css);
-    return result.css;
+    // Keeps the active theme out of theme previews, which load their own theme
+    // in a nested @scope.
+    return this.build("(:root) to ([data-theme-preview])");
   }
 
   compilePreview(themeId: string): string {
-    const result = postcss([
+    return this.build(`([data-theme-preview="${themeId}"])`);
+  }
+
+  /** For stylesheets a theme imports, which aren't scoped or given colors. */
+  sanitize(): string {
+    return postcss([
       {
-        postcssPlugin: "theme-preview-colors",
+        postcssPlugin: "theme-sanitize",
+        Once: (root) => stripExternalResources(root),
+      },
+    ]).process(this.css, { parser: safeParser, from: undefined }).css;
+  }
+
+  private build(scopeParams: string): string {
+    return postcss([
+      {
+        postcssPlugin: "theme-build",
         Once: (root) => {
+          stripExternalResources(root);
+
           const lightColors = this.generateColors(
             root,
             ".light-theme",
@@ -53,18 +47,21 @@ export class ThemeCompiler {
             `.dark-theme { ${darkColors} }`
           );
 
-          const scope = new AtRule({
-            name: "scope",
-            params: `([data-theme-preview="${themeId}"])`,
-          });
+          const scope = new AtRule({ name: "scope", params: scopeParams });
           const nodes = root.nodes.slice();
+          // Browsers drop these inside @scope, so they stay at the top level.
+          const atRulesNamed = (name: string) =>
+            nodes.filter(
+              (node) => node.type === "atrule" && node.name.toLowerCase() === name
+            );
+          // Browsers ignore an @import that follows any other rule.
+          const unscoped = [...atRulesNamed("import"), ...atRulesNamed("font-face")];
           root.removeAll();
-          scope.append(nodes);
-          root.append(scope);
+          scope.append(nodes.filter((node) => !unscoped.includes(node)));
+          root.append(...unscoped, scope);
         },
       },
-    ]).process(this.css);
-    return result.css;
+    ]).process(this.css, { parser: safeParser, from: undefined }).css;
   }
 
   private generateColors(
@@ -78,12 +75,18 @@ export class ThemeCompiler {
       return "";
     }
 
-    const palette = new ColorGenerator({
-      appearance,
-      background: colors.background,
-      accent: colors.accent,
-      gray: colors.gray,
-    });
+    let palette: ColorGenerator;
+    try {
+      palette = new ColorGenerator({
+        appearance,
+        background: colors.background,
+        accent: colors.accent,
+        gray: colors.gray,
+      });
+    } catch (e) {
+      log.warn(`Skipping ${appearance} palette, invalid base colors`, e);
+      return "";
+    }
 
     let css = "";
     if (colors.accent) {

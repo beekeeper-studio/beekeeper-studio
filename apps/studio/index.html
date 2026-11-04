@@ -14,7 +14,7 @@
       const rawThemeId = params.get("themeId");
       const themeId = /^[a-zA-Z0-9_-]+$/.test(rawThemeId || "") ? rawThemeId : "default";
       const appearance = params.get("appearance") || "auto";
-      document.getElementById("theme").href = `theme://${themeId}.css`;
+      document.getElementById("theme").href = `theme://${themeId}/style.css`;
     </script>
 
     <script src="./src-commercial/entrypoints/renderer.ts" type="module"></script>

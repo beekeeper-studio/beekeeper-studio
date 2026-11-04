@@ -231,6 +231,7 @@ import ClipboardRangeModule from '@/plugins/ClipboardRangeModule'
     handler.registerCallbacks()
     const theme = new ThemeRenderer({
       store,
+      utility,
       bus: {
         emit: (...args) => app.$root.$emit(...args),
         on: (...args) => app.$root.$on(...args),

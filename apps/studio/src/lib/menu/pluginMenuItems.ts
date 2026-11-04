@@ -45,7 +45,7 @@ const menuActions = new ClientMenuActionHandler();
 export const openPluginManager = menuActions.managePlugins;
 
 export const managePluginsItem: ContextItem = {
-  name: "Manage Plugins…",
+  name: "Manage Plugins",
   slug: "manage-plugins",
   leadingIcon: "open_in_new",
   handler: () => openPluginManager(),

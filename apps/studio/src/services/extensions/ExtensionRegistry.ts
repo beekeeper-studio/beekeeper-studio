@@ -1,47 +1,32 @@
 import rawLog from "@bksLogger";
 import ExtensionRepositoryService from "@/services/extensions/ExtensionRepositoryService";
-import { PluginRepository, RegistryConfig, PluginRegistryEntry, RegistryMap } from "@/services/plugin/types";
+import { ExtensionRepository, RegistryConfig, ExtensionRegistryEntry, RegistryMap } from "@/services/plugin/types";
 import { PluginSystemError } from "@/lib/errors";
 
 const log = rawLog.scope("ExtensionRegistry");
 
 /** Use this to cache and get plugin info. */
 export default class ExtensionRegistry {
+  public repositoryService: ExtensionRepositoryService;
+  public registries: RegistryConfig[];
   /** Disable fetching community entries. */
   public communityDisabled = false;
   /** Disable fetching official entries. */
   public officialDisabled = false;
+  /** Failures from the most recent load, by registry name. */
+  public errors: Record<string, string> = {};
 
-  private repositories: Record<string, PluginRepository> = {};
-  private entriesMap: Map<string, PluginRegistryEntry[]> = new Map<string, PluginRegistryEntry[]>();
+  private repositories: Record<string, ExtensionRepository> = {};
+  private entriesMap: Map<string, ExtensionRegistryEntry[]> = new Map<string, ExtensionRegistryEntry[]>();
   private cached: Set<string> = new Set<string>();
-  private defaultRegistries: RegistryConfig[] = [
-    {
-      name: "official",
-      origin: "official",
-      owner: "beekeeper-studio",
-      repo: "beekeeper-studio-plugins",
-      file: "plugins.json"
-    },
-    {
-      name: "community",
-      origin: "community",
-      owner: "beekeeper-studio",
-      repo: "beekeeper-studio-plugins",
-      file: "community-plugins.json"
-    },
-  ]
 
-  private additionalRegistries: RegistryConfig[] = [];
-
-  private get registries() {
-    return [
-      ...this.defaultRegistries,
-      ...this.additionalRegistries
-    ]
-  }
-
-  constructor(private readonly repositoryService: ExtensionRepositoryService) {
+  constructor(readonly options?: {
+    repositoryService?: ExtensionRepositoryService,
+    registries?: RegistryConfig[]
+  }) {
+    this.repositoryService =
+      options?.repositoryService ?? new ExtensionRepositoryService();
+    this.registries = options?.registries ? [...options.registries] : [];
   }
 
   async initialize() {
@@ -56,7 +41,7 @@ export default class ExtensionRegistry {
     ) as RegistryMap;
   }
 
-  async findEntry(id: string): Promise<PluginRegistryEntry> {
+  async findEntry(id: string): Promise<ExtensionRegistryEntry> {
     await this.loadAllEntries();
     for (const reg of this.registries) {
       const entries = this.entriesMap.get(reg.name);
@@ -74,9 +59,11 @@ export default class ExtensionRegistry {
   }
 
   private async loadAllEntries() {
+    this.errors = {};
     try {
       await Promise.all(this.registries.map((config) => this.loadEntries(config).catch((e) => {
         log.warn(`Failed to fetch registry ${config.name}`, e);
+        this.errors[config.name] = e?.message ?? String(e);
       })));
     } catch (e) {
       log.error("Failed to fetch registry", e);
@@ -113,15 +100,15 @@ export default class ExtensionRegistry {
 
   /** Get the info for a specific plugin. The data is always cached. To force
    * a reload, use `reloadRepository`. */
-  async getRepository(pluginId: string): Promise<PluginRepository> {
+  async getRepository(pluginId: string): Promise<ExtensionRepository> {
     if (Object.hasOwn(this.repositories, pluginId)) {
       return this.repositories[pluginId];
     }
     return await this.reloadRepository(pluginId);
   }
 
-  async reloadRepository(pluginId: string): Promise<PluginRepository> {
-    const entry: PluginRegistryEntry = await this.findEntry(pluginId);
+  async reloadRepository(pluginId: string): Promise<ExtensionRepository> {
+    const entry: ExtensionRegistryEntry = await this.findEntry(pluginId);
 
     log.debug(
       `Fetching info for plugin "${pluginId}" (repo: ${entry.repo})...`
@@ -146,13 +133,5 @@ export default class ExtensionRegistry {
     this.cached.clear();
     this.entriesMap.clear();
     this.repositories = {};
-  }
-
-  addRegistry(registry: RegistryConfig) {
-    this.additionalRegistries.push(registry);
-  }
-
-  clearRegistries() {
-    this.additionalRegistries = [];
   }
 }

@@ -1,8 +1,8 @@
 import { BksConfig } from "@/common/bksConfig/BksConfigProvider";
-import { Module, ModuleOptions } from "@/services/plugin/Module";
-import platformInfo from '@/common/platform_info';
+import { PluginModule, type PluginModuleOptions } from "./PluginModule";
 import { RegistryConfig } from "@/services/plugin";
 import { LicenseKey } from "@/common/appdb/models/LicenseKey";
+import globals from "@/common/globals";
 
 
 type RegistryOptions = {
@@ -10,31 +10,34 @@ type RegistryOptions = {
 }
 
 
-export class RegistryModule extends Module {
-  constructor(private options: RegistryOptions & ModuleOptions) {
+export class RegistryModule extends PluginModule {
+  private registries: RegistryConfig[] = [];
+
+  constructor(private options: RegistryOptions & PluginModuleOptions) {
     super(options);
 
+    this.onConfigReload = this.onConfigReload.bind(this);
+
     this.hook("before-initialize", this.addAdditionalRegistries);
-    this.hook("config-reload", this.onConfigReload);
+    this.options.config.on("reload", this.onConfigReload);
   }
 
   static with(options: RegistryOptions) {
     return class extends RegistryModule {
-      constructor(baseOptions: ModuleOptions) {
+      constructor(baseOptions: PluginModuleOptions) {
         super({ ...baseOptions, ...options });
       }
     };
   }
 
-  private onConfigReload(config: BksConfig) {
-    this.manager.registry.clearRegistries();
+  private onConfigReload() {
     this.manager.registry.clearCache();
-    this.options.config = config;
 
     this.addAdditionalRegistries();
   }
 
   private async addAdditionalRegistries() {
+    this.registries = [];
     const license = await LicenseKey.getLicenseStatus();
     // This is meant to be a Business only feature, we just can't check that here yet
     // TODO (@day): business only
@@ -49,7 +52,7 @@ export class RegistryModule extends Module {
           continue;
         }
 
-        this.manager.registry.addRegistry({
+        this.registries.push({
           name: registry,
           origin: 'custom',
           owner: entry.owner,
@@ -58,5 +61,9 @@ export class RegistryModule extends Module {
         });
       }
     }
+    this.manager.registry.registries = [
+      ...globals.plugins.registries,
+      ...this.registries,
+    ];
   }
 }

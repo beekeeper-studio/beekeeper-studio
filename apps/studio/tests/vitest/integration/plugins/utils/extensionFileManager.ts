@@ -1,4 +1,5 @@
 import ExtensionFileManager from "@/services/extensions/ExtensionFileManager";
+import { Manifest } from "@/services/plugin/types";
 import fs from "fs";
 import path from "path";
 import { uuidv4 } from "@/lib/uuid";
@@ -10,7 +11,7 @@ import { tmpdir } from "os";
  * Usage:
  *
  * ```js
- * import { createFileManager, cleanFileManager } from "./fileManager";
+ * import { createFileManager, cleanFileManager } from "./extensionFileManager";
  *
  * it("can do it", async () => {
  *   const fileManager = createFileManager();
@@ -24,17 +25,17 @@ import { tmpdir } from "os";
  * })
  * ```
  */
-export function createFileManager(): ExtensionFileManager {
+export function createFileManager(): ExtensionFileManager<Manifest> {
   return new ExtensionFileManager({
     downloadDirectory: tmpDir(),
-    pluginsDirectory: tmpDir(),
+    root: tmpDir(),
   });
 }
 
 /** Erase plugins data. */
-export function cleanFileManager(manager: ExtensionFileManager) {
+export function cleanFileManager(manager: ExtensionFileManager<Manifest>) {
   cleanTmpDir(manager.options.downloadDirectory);
-  cleanTmpDir(manager.options.pluginsDirectory);
+  cleanTmpDir(manager.options.root);
 }
 
 function tmpDir() {

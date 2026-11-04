@@ -519,6 +519,11 @@ declare interface IBksConfig {
         lockMode: string;
         minPinLength: number;
     };
+    themeSystem: {
+        autoUpdate: boolean;
+        communityDisabled: boolean;
+        unlistedDisabled: boolean;
+    };
     ui: {
         connectionSidebar: {
             recentConnectionsLimit: number;

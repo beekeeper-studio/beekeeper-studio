@@ -74,7 +74,8 @@ export function mainPlatformInfo(): IPlatformInfo {
   }
   const pluginsDirectory = join(userDirectory, 'plugins')
   const driverDepsDirectory = join(userDirectory, 'driver-deps')
-  const themesDirectory = isDevEnv
+  const themesDirectory = join(userDirectory, 'themes')
+  const builtinThemesDirectory = isDevEnv
     ? resolve("./public/themes")
     : join(__dirname, "renderer", "themes");
 
@@ -125,6 +126,7 @@ export function mainPlatformInfo(): IPlatformInfo {
     downloadsDirectory,
     homeDirectory,
     pluginsDirectory,
+    builtinThemesDirectory,
     themesDirectory,
     driverDepsDirectory,
     testMode,
@@ -141,6 +143,7 @@ export function mainPlatformInfo(): IPlatformInfo {
     logLevel: resolveLevel(p.env, isDevEnv),
 
     cloudUrl: isDevEnv ? 'http://localhost:3000' : 'https://app.beekeeperstudio.io'
+    // cloudUrl: 'https://app.beekeeperstudio.io'
   }
 }
 

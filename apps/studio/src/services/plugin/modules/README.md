@@ -7,11 +7,11 @@ Modules extend the `PluginManager` by hooking into its lifecycle events. They ru
 ```
 Hookable (abstract)
   └─ PluginManager
-       ├─ registerModule(ModuleClass)
+       ├─ registerModule(PluginModuleClass)
        ├─ callHook(name, ...args)     ← side-effect hooks (fire-and-forget)
        └─ applyHook(name, ...args)    ← waterfall hooks (transform data)
 
-Module (abstract)
+PluginModule (abstract)
   └─ ConfigurationModule              ← existing example
 ```
 
@@ -19,10 +19,10 @@ Modules register handlers for named hooks in their constructor. The `PluginManag
 
 ## The `static with()` Pattern
 
-`registerModule()` expects a `ModuleClass` — a constructor that accepts only `ModuleOptions`:
+`registerModule()` expects a module class — a constructor that accepts only `PluginModuleOptions`:
 
 ```typescript
-type ModuleClass = new (options: ModuleOptions) => Module;
+new (options: PluginModuleOptions) => PluginModule;
 ```
 
 If your module needs additional configuration beyond the `PluginManager` reference, use the `static with()` factory method.
@@ -30,7 +30,7 @@ If your module needs additional configuration beyond the `PluginManager` referen
 ```typescript
 static with(options: MyModuleOptions) {
   return class extends MyModule {
-    constructor(baseOptions: ModuleOptions) {
+    constructor(baseOptions: PluginModuleOptions) {
       super({ ...baseOptions, ...options });
     }
   };
@@ -45,14 +45,14 @@ pluginManager.registerModule(SimpleModule);
 
 ## Adding New Hooks
 
-Add the hook signature to `ModuleHookMap` in `src/services/plugin/Module.ts`:
+Add the hook signature to `PluginModuleHookMap` in `src/services/plugin/modules/PluginModule.ts`:
 
 ```typescript
-export interface ModuleHookMap {
+export interface PluginModuleHookMap {
  "before-install-plugin": (pluginId: string) => void | Promise<void>;
  "plugin-snapshots": (snapshots: PluginSnapshot[]) => PluginSnapshot[] | Promise<PluginSnapshot[]>;
  "my-new-hook": (data: SomeType) => SomeType | Promise<SomeType>;
 }
 ```
 
-Both side-effect and waterfall hooks coexist in the same `ModuleHookMap`. The difference is how the `PluginManager` calls them: `callHook` for side-effect hooks (typically `void`), `applyHook` for waterfall hooks (typically returns a type).
+Both side-effect and waterfall hooks coexist in the same `PluginModuleHookMap`. The difference is how the `PluginManager` calls them: `callHook` for side-effect hooks (typically `void`), `applyHook` for waterfall hooks (typically returns a type).

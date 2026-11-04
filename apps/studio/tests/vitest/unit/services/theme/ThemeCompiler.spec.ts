@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ThemeCompiler } from "@/lib/theme/ThemeCompiler";
+import { ThemeCompiler } from "@/services/theme/ThemeCompiler";
 
 const themeCss = `
 .light-theme {
@@ -147,5 +147,85 @@ describe("ThemeCompiler", () => {
         true
       );
     });
+  });
+});
+
+describe("theme CSS network isolation", () => {
+  it.each([
+    `.a { background: url("https://example.com/tracking-pixel.png"); }`,
+    `.a { background: url(http://example.com/x.png); }`,
+    `.a { background: url(//example.com/x.png); }`,
+    `.a { background: url(\\\\\\\\example.com/x.png); }`,
+    `.a { background: url(file:///etc/passwd); }`,
+    `.a { background: url(theme://other-theme/secret.png); }`,
+    `.a { background: url(\\68ttps://example.com/x.png); }`,
+    `.a { background: \\75 rl(https://example.com/x.png); }`,
+    `.a { background: url("ht\\
+tps://example.com/x.png"); }`,
+    `.a { background: image-set("https://example.com/x.png" 1x); }`,
+    `.a { background: -webkit-image-set(url(https://example.com/x.png) 1x); }`,
+    `.a { --x: url(https://example.com/x.png); }`,
+    `@import "https://example.com/x.css";`,
+    `@import url(//example.com/x.css);`,
+    `@import url("data:text/css,.a{background:url(https://example.com/x.png)}");`,
+    `@font-face { font-family: x; src: url(https://example.com/x.woff2); }`,
+    `.a { background: url(https://example.com/x.png)`,
+  ])("strips %s", (css) => {
+    const out = new ThemeCompiler(css).compile();
+    expect(out).not.toMatch(/example\.com/);
+    expect(new ThemeCompiler(css).sanitize()).not.toMatch(/example\.com/);
+  });
+
+  it("strips image-set() fed through var(), which hides its URL", () => {
+    const css = `.a { --x: "https://example.com/x.png"; background: image-set(var(--x) 1x); }`;
+    expect(new ThemeCompiler(css).compile()).not.toContain("image-set");
+  });
+
+  it.each([
+    `.a { background: url(fonts/x.png); }`,
+    `.a { background: url("../x.png"); }`,
+    `.a { background: url("data:image/png;base64,AAAA"); }`,
+    `.a { mask: url(#mask); }`,
+    `.a { content: "https://example.com"; }`,
+    `.a { background: image-set("x.png" 1x, "y.png" 2x); }`,
+  ])("keeps %s", (css) => {
+    const declaration = css.slice(css.indexOf("{") + 1, css.indexOf(";"));
+    expect(new ThemeCompiler(css).compile()).toContain(declaration.trim());
+  });
+});
+
+describe("theme CSS at-rules", () => {
+  it("keeps @font-face and local @import outside the scope", () => {
+    const css = new ThemeCompiler(`
+.a { color: red; }
+@font-face { font-family: x; src: url(fonts/x.woff2); }
+@import "./more.css";
+`).compile();
+    const scope = css.indexOf("@scope");
+    expect(css.indexOf("@font-face")).toBeLessThan(scope);
+    expect(css.indexOf("@import")).toBeLessThan(scope);
+    expect(css.indexOf(".a")).toBeGreaterThan(scope);
+    expect(css.indexOf("@import")).toBeLessThan(css.indexOf("@font-face"));
+  });
+});
+
+describe("theme CSS syntax errors", () => {
+  it("keeps the rest of the file when a closing brace is missing", () => {
+    const css = new ThemeCompiler(`
+.dark-theme { --background: #0b2a4a; --base-accent: #3da5ff; }
+.broken { color: red;
+.after { color: blue; }
+`).compile();
+    expect(css).toContain("--primary-1:");
+    expect(css).toContain("color: blue");
+  });
+
+  it("keeps the rest of the file when a base color is unparseable", () => {
+    const css = new ThemeCompiler(`
+.light-theme { --background: #fff
+.dark-theme { --background: #0b2a4a; }
+.other { color: blue; }
+`).compile();
+    expect(css).toContain("color: blue");
   });
 });

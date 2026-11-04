@@ -130,7 +130,7 @@ log.debug("registering schema")
 protocol.registerSchemesAsPrivileged([
   {scheme: 'app', privileges: { secure: true, standard: true } },
   {scheme: 'plugin', privileges: { secure: true, standard: true } },
-  {scheme: 'theme', privileges: { secure: true, standard: true } }
+  {scheme: 'theme', privileges: { secure: true, standard: true, corsEnabled: true } }
 ])
 let initialized = false
 

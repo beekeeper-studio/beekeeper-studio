@@ -20,25 +20,18 @@ import { CliHandlers } from '@commercial/backend/handlers/cliHandlers';
 import { AwsHandlers } from '@commercial/backend/handlers/awsHandlers';
 import { ImportHandlers } from '@commercial/backend/handlers/importHandlers';
 import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
+import { ThemeHandlers, themeManager } from '@/handlers/themeHandlers';
 import { TempHandlers } from '@/handlers/tempHandlers';
 import { DevHandlers } from '@/handlers/devHandlers';
 import { FormatterPresetHandlers } from '@/handlers/formatterPresetHandlers';
 import { LicenseHandlers } from '@/handlers/licenseHandlers';
 import { LockHandlers } from '@/handlers/lockHandlers';
-import { PluginHandlers } from '@/handlers/pluginHandlers';
-import { PluginManager } from '@/services/plugin';
-import ExtensionFileManager from '@/services/extensions/ExtensionFileManager';
+import { PluginHandlers, pluginManager } from '@/handlers/pluginHandlers';
 import { DriverDepHandlers } from '@/handlers/driverDepHandlers';
 import { DriverDepManager, DriverDepFileManager, createDefaultRegistry } from '@/services/driverDeps';
 import type { DepPlatform, DepArch } from '@/services/driverDeps';
 import BksConfig from '@/common/bksConfig';
 import _ from 'lodash';
-import {
-  ConfigurationModule,
-  BundledPluginModule,
-  RegistryModule,
-  LicenseModule,
-} from '@/services/plugin/modules';
 import { PluginErrorCode, PluginSystemErrorCode } from '@/lib/errors';
 
 import * as sms from 'source-map-support'
@@ -50,16 +43,6 @@ if (platformInfo.env.development || platformInfo.env.test) {
 }
 
 let ormConnection: ORMConnection;
-const pluginManager = new PluginManager({
-  appVersion: platformInfo.appVersion,
-  fileManager: new ExtensionFileManager({
-    pluginsDirectory: platformInfo.pluginsDirectory,
-  }),
-});
-pluginManager.registerModule(ConfigurationModule.with({ config: BksConfig }));
-pluginManager.registerModule(RegistryModule.with({ config: BksConfig }));
-pluginManager.registerModule(BundledPluginModule);
-pluginManager.registerModule(LicenseModule);
 
 const driverDepManager = new DriverDepManager({
   fileManager: new DriverDepFileManager({
@@ -95,6 +78,7 @@ export const handlers: Handlers = {
   ...AwsHandlers,
   ...FileHandlers,
   ...EnumHandlers,
+  ...ThemeHandlers,
   ...TempHandlers,
   ...LicenseHandlers,
   ...PluginHandlers,
@@ -218,7 +202,9 @@ async function init() {
     log.error("Error initializing plugin manager", e);
   });
 
-  setPluginManager(pluginManager);
+  themeManager.initialize().catch((e) => {
+    log.error("Error initializing theme manager", e);
+  });
 
   driverDepManager.initialize().catch((e) => {
     log.error("Error initializing driver dep manager", e);

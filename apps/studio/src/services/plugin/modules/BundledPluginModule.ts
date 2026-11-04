@@ -4,7 +4,7 @@ import semver from "semver";
 import rawLog from "@bksLogger";
 import platformInfo from "@/common/platform_info";
 import globals from "@/common/globals";
-import { Module, type ModuleOptions } from "@/services/plugin/Module";
+import { PluginModule, type PluginModuleOptions } from "./PluginModule";
 import type PluginManager from "@/services/plugin/PluginManager";
 import type { Manifest } from "@/services/plugin/types";
 
@@ -22,8 +22,8 @@ const log = rawLog.scope("BundledPluginModule");
  * await manager.initialize();
  * ```
  **/
-export class BundledPluginModule extends Module {
-  constructor(options: ModuleOptions) {
+export class BundledPluginModule extends PluginModule {
+  constructor(options: PluginModuleOptions) {
     super(options);
 
     this.hook("before-initialize", this.installBundledPlugins);
@@ -42,7 +42,7 @@ export class BundledPluginModule extends Module {
   }
 
   private makePluginsDir() {
-    const pluginsDirectory = this.manager.fileManager.options.pluginsDirectory;
+    const pluginsDirectory = this.manager.fileManager.options.root;
     if (!fs.existsSync(pluginsDirectory)) {
       fs.mkdirSync(pluginsDirectory, { recursive: true });
     }

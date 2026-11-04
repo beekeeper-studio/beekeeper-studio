@@ -1,10 +1,11 @@
 <template>
-  <div class="plugin-page-container">
+  <div class="extension-page-container">
     <div class="header">
       <div class="identity">
         <div class="identity-text">
           <div class="title">
-            {{ plugin.name }} <span class="version" v-if="plugin?.version != null">v{{ plugin.version }}</span>
+            {{ extension.name }} <span class="version" v-if="extension?.version != null">v{{ extension.version }}</span>
+            <span class="badge" v-if="extension.origin === 'unlisted'">Unlisted</span>
           </div>
           <div class="author">
             By
@@ -15,124 +16,103 @@
               alt=""
               @error="avatarBroken = true"
             >
-            <template v-if="plugin.author.name && plugin.author.url">
-              <a :href="plugin.author.url">{{ plugin.author.name }}</a>
+            <template v-if="extension.author?.name && extension.author?.url">
+              <a :href="extension.author.url">{{ extension.author.name }}</a>
             </template>
             <template v-else>
-              {{ plugin.author }}
+              {{ extension.author }}
             </template>
             <i
               class="material-icons verified-icon"
-              v-if="plugin.origin === 'official'"
+              v-if="extension.origin === 'official'"
             >verified</i>
             <span
-              v-if="pluginRepo?.downloadCount != null"
+              v-if="extensionRepo?.downloadCount != null"
               class="downloads"
-              :title="$pluralize('download', pluginRepo.downloadCount, true)"
+              :title="$pluralize('download', extensionRepo.downloadCount, true)"
             >
               <i class="material-icons">download</i>
-              <span>{{ pluginRepo.downloadCount }}</span>
+              <span>{{ extensionRepo.downloadCount }}</span>
             </span>
           </div>
         </div>
       </div>
-      <a v-if="plugin.repo" :href="`https://github.com/${plugin.repo}`">
+      <a v-if="extension.repo" :href="`https://github.com/${extension.repo}`">
         <span class="flex">
           <i class="material-icons">link</i>
           <span>&nbsp;</span>
-          <span>{{ plugin.repo }}</span>
+          <span>{{ extension.repo }}</span>
         </span>
       </a>
       <div class="description">
-        {{ plugin.description }}
+        {{ extension.description }}
       </div>
-      <div class="actions" v-if="plugin.repo && !$bksConfig.pluginSystem.disabled">
-        <template v-if="plugin.installed">
+      <div
+        class="actions"
+        v-if="extension.repo || extension.installed"
+      >
+        <template v-if="extension.installed">
           <x-button
-            v-if="plugin.updateAvailable"
+            v-if="extension.repo && extension.updateAvailable"
             @click.prevent="$emit('update')"
             class="btn btn-primary"
           >
             <x-label>
               {{
-                plugin.installing ? "Updating..." : "Update"
+                extension.installing ? "Updating..." : "Update"
               }}
             </x-label>
           </x-button>
           <x-button
-            v-else
+            v-else-if="extension.repo"
             @click.prevent="$emit('checkForUpdates')"
             class="btn btn-flat"
-            :disabled="plugin.checkingForUpdates"
+            :disabled="extension.checkingForUpdates"
           >
             <x-label>Check for Updates</x-label>
           </x-button>
           <x-button @click.prevent="$emit('uninstall')" class="btn btn-flat">
             <x-label>Uninstall</x-label>
           </x-button>
-          <label class="checkbox-group">
-            <input
-              type="checkbox"
-              :checked="autoUpdateEnabled"
-              @change="toggleAutoUpdate"
-            >
-            <span>Auto-update</span>
-          </label>
-          <label
-            class="checkbox-group"
-            v-tooltip="'Only allow this plugin to run Read Only queries against your database'"
-          >
-            <input
-              type="checkbox"
-              :checked="pluginReadOnly"
-              @change="toggleReadOnly"
-            >
-            <span>Read-Only</span>
-          </label>
+          <slot name="settings" />
         </template>
         <x-button
           v-else
           @click.prevent="$emit('install')"
           class="btn btn-primary"
-          :disabled="plugin.installing"
+          :disabled="extension.installing"
         >
           <x-label>
             {{
-              plugin.installing ? "Installing..." : "Install"
+              extension.installing ? "Installing..." : "Install"
             }}
           </x-label>
         </x-button>
       </div>
       <div
         v-if="
-          !plugin.checkingForUpdates && plugin.checkingForUpdates !== null
+          !extension.checkingForUpdates && extension.checkingForUpdates !== null
         "
         class="update-indicator"
       >
-        {{ plugin.updateAvailable ? "Update Available!" : "Up to date!" }}
+        {{ extension.updateAvailable ? "Update Available!" : "Up to date!" }}
       </div>
-      <DisableStateAlert :plugin-id="plugin.id" />
-      <div class="alert alert-danger" v-if="!plugin.loadable && plugin.installed">
-        <i class="material-icons">error_outline</i>
-        <div class="alert-body expand">
-          <span>This plugin was not loaded because it requires Beekeeper Studio {{ plugin.minAppVersion }}+. Please upgrade the app or <a href="https://docs.beekeeperstudio.io/user_guide/plugins/#installing-a-specific-plugin-version">install a compatible plugin version</a>.</span>
-        </div>
-      </div>
-      <div class="alert alert-danger" v-if="plugin.error">
+      <slot name="alerts" />
+      <div class="alert alert-danger" v-if="extension.error">
         <i class="material-icons">error_outline</i>
         <div class="alert-body expand" style="white-space: pre-wrap;">
-          <span v-if="plugin.error.toString?.().includes('not compatible')">
-            {{ plugin.error }}
+          <span v-if="extension.error.toString?.().includes('not compatible')">
+            {{ extension.error }}
             Or <a href="https://docs.beekeeperstudio.io/user_guide/plugins/#installing-a-specific-plugin-version">install</a> a compatible plugin version.
           </span>
-          <span v-else>{{ plugin.error }}</span>
+          <span v-else>{{ extension.error }}</span>
         </div>
       </div>
     </div>
     <div class="divider" v-if="rawHtmlContent" />
     <div class="markdown-content">
       <div v-if="loadingMarkdown" class="loading">
-        Loading plugin readme
+        Loading readme
       </div>
       <div v-html="rawHtmlContent" />
     </div>
@@ -145,87 +125,43 @@ import DOMPurify from "dompurify";
 import { Marked } from "marked";
 import markedAlert from "marked-alert";
 import { getPluginAvatarUrl, markedRepoUrlRewriter, markedVideoEmbed } from "@/services/plugin/utils";
-import DisableStateAlert from "./DisableStateAlert.vue";
-import { PluginRepository, Plugin } from "@/services/plugin/types";
+import { ExtensionRepository, ExtensionUI } from "@/services/plugin/types";
 
 export default Vue.extend({
-  name: "PluginPage",
-  components: {
-    DisableStateAlert,
-  },
+  name: "ExtensionPage",
   props: {
-    plugin: {
-      type: Object as PropType<Plugin>,
+    extension: {
+      type: Object as PropType<ExtensionUI>,
       required: true,
     },
-    pluginRepo: Object as PropType<PluginRepository>,
+    extensionRepo: Object as PropType<ExtensionRepository>,
     loadingMarkdown: Boolean,
   },
   data() {
     return {
-      autoUpdateEnabled: true,
       avatarBroken: false,
-      pluginReadOnly: true
     };
   },
-  async mounted() {
-    await this.getAutoUpdateSetting();
-    await this.getReadOnlySetting();
-  },
   watch: {
-    "plugin.id": async function () {
+    "extension.id": function () {
       this.avatarBroken = false;
-      await this.getAutoUpdateSetting();
-      await this.getReadOnlySetting();
     },
-  },
-  methods: {
-    async getAutoUpdateSetting() {
-      this.autoUpdateEnabled = await this.$util.send(
-        "plugin/getPluginSetting",
-        { id: this.plugin.id, key: 'autoUpdate' }
-      );
-    },
-    async toggleAutoUpdate(event) {
-      const enabled = event.target.checked;
-      await this.$util.send("plugin/setPluginSetting", {
-        id: this.plugin.id,
-        key: 'autoUpdate',
-        value: enabled,
-      });
-      this.autoUpdateEnabled = enabled;
-    },
-    async getReadOnlySetting() {
-      this.pluginReadOnly = await this.$util.send(
-        "plugin/getPluginSetting",
-        { id: this.plugin.id, key: 'readOnly' }
-      )
-    },
-    async toggleReadOnly(event) {
-      const value = event.target.checked;
-      await this.$util.send("plugin/setPluginSetting", {
-        id: this.plugin.id,
-        key: 'readOnly',
-        value
-      });
-      this.pluginReadOnly = value;
-    }
   },
   computed: {
     avatarUrl() {
-      return getPluginAvatarUrl(this.plugin, 160);
+      return getPluginAvatarUrl(this.extension, 160);
     },
     rawHtmlContent() {
-      if (!this.pluginRepo?.readme) return "";
+      if (!this.extensionRepo?.readme) return "";
       const marked = new Marked()
         .use(markedAlert())
         .use(markedVideoEmbed);
 
-      if (this.plugin.repo) {
-        marked.use({ walkTokens: markedRepoUrlRewriter(this.plugin.repo) });
+      if (this.extension.repo) {
+        marked.use({ walkTokens: markedRepoUrlRewriter(this.extension.repo) });
       }
 
-      return DOMPurify.sanitize(marked.parse(this.pluginRepo?.readme, { async: false, gfm: true, breaks: true }));
+      return DOMPurify.sanitize(marked.parse(this.extensionRepo?.readme, { async: false, gfm: true, breaks: true }));
     },
   },
 });
@@ -300,7 +236,7 @@ $gutter-h: 1.5rem;
   100% { content: "..."; }
 }
 
-.plugin-page-container {
+.extension-page-container {
   padding-inline: $gutter-h;
   overflow-y: auto;
   flex-grow: 1;

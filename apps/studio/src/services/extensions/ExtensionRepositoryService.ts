@@ -1,7 +1,7 @@
 import { OctokitOptions } from "@octokit/core";
 import { Octokit } from "@octokit/rest";
 import { RequestError } from "@octokit/request-error";
-import { Manifest, PluginRepository, Release, RawPluginRegistryEntry, RegistryConfig, PluginRegistryEntry } from "@/services/plugin/types";
+import { ExtensionManifest as Manifest, ExtensionRepository, Release, RawPluginRegistryEntry, RegistryConfig, ExtensionRegistryEntry } from "@/services/plugin/types";
 import { PluginSystemError } from "@/lib/errors";
 import rawLog from "@bksLogger";
 import { PluginsController } from "@/lib/cloud/controllers/PluginsController";
@@ -32,7 +32,7 @@ export default class ExtensionRepositoryService {
     this.controller = CloudClient.getPluginsController(platform_info.cloudUrl);
   }
 
-  async fetchRegistry(config: RegistryConfig): Promise<PluginRegistryEntry[]> {
+  async fetchRegistry(config: RegistryConfig): Promise<ExtensionRegistryEntry[]> {
     let raw = [];
     if (BksConfig.pluginSystem.proxyGithubPluginRequests && (config.origin === 'official' || config.origin === 'community')) {
        raw = await this.controller.getRegistry(config.name);
@@ -51,7 +51,7 @@ export default class ExtensionRepositoryService {
     }));
   }
 
-  async fetchPluginRepository(owner: string, repo: string, origin: string): Promise<PluginRepository> {
+  async fetchPluginRepository(owner: string, repo: string, origin: string): Promise<ExtensionRepository> {
     if (BksConfig.pluginSystem.proxyGithubPluginRequests && (origin === 'official' || origin === 'community')) {
       const pluginRepo = await this.controller.getRepository(owner, repo);
       return pluginRepo;
@@ -63,7 +63,7 @@ export default class ExtensionRepositoryService {
   }
 
 
-  private async fetchLatestRelease(owner: string, repo: string): Promise<Release> {
+  private async fetchLatestRelease(owner: string, repo: string): Promise<Release<Manifest>> {
     const response = await this.request(
       "GET /repos/{owner}/{repo}/releases/latest",
       {

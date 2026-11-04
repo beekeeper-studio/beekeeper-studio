@@ -6,7 +6,7 @@
           <input
             class="filter-input"
             type="text"
-            placeholder="Search Plugins"
+            :placeholder="searchPlaceholder"
             v-model="searchQuery"
           >
           <x-buttons class="filter-actions">
@@ -17,68 +17,63 @@
             >
               <i class="clear material-icons">cancel</i>
             </x-button>
-
-            <x-button
-              class="btn btn-fab btn-link action-item"
-              :class="{ active: pluginsHidden }"
-              @click="openFilterMenu"
-              menu
-            >
-              <i class="material-icons-outlined">filter_alt</i>
-              <x-menu>
-                <label v-if="canFilterOfficial">
-                  <input
-                    type="checkbox"
-                    v-model="pluginFilter.showOfficial"
-                  >
-                  <span>Official</span>
-                </label>
-                <label v-if="canFilterCommunity">
-                  <input
-                    type="checkbox"
-                    v-model="pluginFilter.showCommunity"
-                  >
-                  <span>Community</span>
-                </label>
-                <label v-if="canFilterCustom">
-                  <input
-                    type="checkbox"
-                    v-model="pluginFilter.showCustom"
-                  >
-                  <span>Custom</span>
-                </label>
-                <x-menuitem />
-                <label v-if="canFilterUnlisted">
-                  <input
-                    type="checkbox"
-                    v-model="pluginFilter.showUnlisted"
-                  >
-                  <span>Unlisted</span>
-                </label>
-                <label v-if="canFilterUnlisted">
-                  <input
-                    type="checkbox"
-                    v-model="pluginFilter.showUnlisted"
-                  >
-                  <span>Unlisted</span>
-                </label>
-                <x-menuitem />
-              </x-menu>
-            </x-button>
           </x-buttons>
         </div>
       </div>
+      <div class="list-filters">
+        <label class="checkbox-group">
+          <input
+            type="checkbox"
+            v-model="showUninstalled"
+          >
+          <span>Show uninstalled</span>
+        </label>
+        <template v-if="showOriginFilter">
+          <label for="plugin-origin-filter">Origin:</label>
+          <select
+            id="plugin-origin-filter"
+            class="auto-width"
+            v-model="origin"
+          >
+            <option value="any">
+              Any
+            </option>
+            <option value="official">
+              Official
+            </option>
+            <option value="community">
+              Community
+            </option>
+            <option value="unlisted">
+              Unlisted
+            </option>
+          </select>
+        </template>
+      </div>
     </div>
 
-    <div class="plugin-list">
-      <virtual-plugin-list
-        :items="filteredPlugins"
-        :isSearching="!!searchQuery"
-        @install="$emit('install', $event)"
-        @uninstall="$emit('uninstall', $event)"
-        @update="$emit('update', $event)"
-        @checkForUpdates="$emit('checkForUpdates', $event)"
-        @item-click="$emit('item-click', $event)"
+    <div
+      v-if="filteredPlugins.length === 0"
+      class="empty-state"
+    >
+      <i class="material-icons-outlined">
+        {{ searchQuery ? "search_off" : "inventory_2" }}
+      </i>
+      <span v-if="searchQuery">No results for "{{ searchQuery }}"</span>
+      <span v-else>It's quiet in here</span>
+    </div>
+    <div
+      v-else
+      class="plugin-list"
+    >
+      <plugin-item
+        v-for="plugin in filteredPlugins"
+        :key="plugin.id"
+        :source="plugin"
+        :is-searching="!!searchQuery"
+        :broken-avatars="brokenAvatars"
+        :emit="emitItemEvent"
+        :mark-as-broken-avatar="markAsBrokenAvatar"
       />
     </div>
   </div>
@@ -86,11 +81,10 @@
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
-import VirtualPluginList from "./VirtualPluginList.vue";
-import type { Plugin, PluginDisplayItem, PluginOrigin } from "@/services/plugin/types";
+import PluginItem from "./PluginItem.vue";
+import type { ExtensionUI, ExtensionOrigin } from "@/services/plugin/types";
 import { mapGetters } from "vuex";
 import _ from "lodash";
-import { openMenu } from "@beekeeperstudio/ui-kit";
 import uFuzzy from "@leeoniya/ufuzzy";
 import { escapeHtml } from "@/shared/lib/tabulator";
 
@@ -101,11 +95,19 @@ const uf = new uFuzzy({
 
 export default Vue.extend({
   name: "PluginList",
-  components: { VirtualPluginList },
+  components: { PluginItem },
   props: {
     plugins: {
-      type: Array as PropType<PluginDisplayItem[]>,
+      type: Array as PropType<ExtensionUI[]>,
       required: true,
+    },
+    searchPlaceholder: {
+      type: String,
+      default: "Search Plugins",
+    },
+    showOriginFilter: {
+      type: Boolean,
+      default: true,
     },
   },
   data() {
@@ -113,78 +115,32 @@ export default Vue.extend({
       // we do this so we don't continuously try bad urls
       brokenAvatars: [] as string[],
       searchQuery: null,
-      pluginFilter: {
-        showOfficial: true,
-        showCommunity: true,
-        showCustom: true,
-        showUnlisted: true,
-      }
+      origin: "any" as "any" | ExtensionOrigin,
+      showUninstalled: true,
     };
   },
   computed: {
     ...mapGetters("plugins/snapshots", ["snapshotsById"]),
-    canFilterOfficial() {
-      return !this.$bksConfig.pluginSystem.officialDisabled;
-    },
-    canFilterCommunity() {
-      return !this.$bksConfig.pluginSystem.communityDisabled && this.hasCommunity;
-    },
-    canFilterCustom() {
-      return !this.$bksConfig.pluginSystem.thirdPartyRegistriesDisabled && this.hasCustom;
-    },
-    canFilterUnlisted() {
-      return !this.$bksConfig.pluginSystem.unlistedDisabled && this.hasUnlisted;
-    },
-    pluginsHidden() {
-      return !this.pluginFilter.showOfficial ||
-        !this.pluginFilter.showCommunity ||
-        !this.pluginFilter.showCustom ||
-        !this.pluginFilter.showUnlisted;
-    },
-    hasCommunity() {
-      return this.plugins.some((p: Plugin) => p.origin === 'community');
-    },
-    hasCustom() {
-      return this.plugins.some((p: Plugin) => p.origin === 'custom');
-    },
-    hasUnlisted() {
-      return this.plugins.some((p: Plugin) => p.origin === 'unlisted');
-    },
-    originFilter() {
-      const filter: PluginOrigin[] = [];
-
-      if (this.pluginFilter.showOfficial) {
-        filter.push("official");
-      }
-
-      if (this.pluginFilter.showCommunity) {
-        filter.push("community");
-      }
-
-      if (this.pluginFilter.showCustom) {
-        filter.push("custom");
-      }
-
-      if (this.pluginFilter.showUnlisted) {
-        filter.push("unlisted");
-      }
-
-      return filter;
-    },
     filteredPlugins() {
-      const plugins = this.plugins.filter((p: Plugin) => this.originFilter.includes(p.origin));
+      let plugins: ExtensionUI[] = this.plugins;
+      if (this.origin !== "any") {
+        plugins = plugins.filter((p: ExtensionUI) => p.origin === this.origin);
+      }
+      if (!this.showUninstalled) {
+        plugins = plugins.filter((p: ExtensionUI) => p.installed);
+      }
       if (!this.searchQuery) {
         return plugins;
       }
 
-      const names = plugins.map((p: Plugin) => p.name);
+      const names = plugins.map((p: ExtensionUI) => p.name);
       const [idxs, info, order] = uf.search(names, this.searchQuery, 0, Infinity)
 
       if (!idxs || !info || !order) {
         return [];
       }
 
-      const results: Plugin[] = [];
+      const results: ExtensionUI[] = [];
       for (let i = 0; i < order.length; i++) {
         const infoIdx = order[i];
         const itemIdx = idxs[infoIdx];
@@ -210,12 +166,15 @@ export default Vue.extend({
     }
   },
   methods: {
+    emitItemEvent(eventName: string, plugin: ExtensionUI) {
+      this.$emit(eventName, plugin);
+    },
+    markAsBrokenAvatar(id: string) {
+      this.brokenAvatars.push(id);
+    },
     clearFilter() {
       this.searchQuery = null;
     },
-    openFilterMenu(event: MouseEvent) {
-      openMenu({ event, options: this.filterMenuOptions})
-    }
   },
 });
 </script>
@@ -241,9 +200,47 @@ export default Vue.extend({
   min-width: 400px;
 }
 
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex: 1 1 auto;
+  padding: 2rem 0;
+  color: var(--text-muted);
+
+  .material-icons-outlined {
+    font-size: 2.5rem;
+  }
+}
+
+.fixed {
+  position: sticky;
+  // Sits below a ConfigPage's sticky header when inside one
+  top: var(--config-page-header-height, 0);
+  z-index: 1;
+  background: var(--panel-bg);
+}
+
+.list-filters {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: $gutter-h;
+  padding-inline: 0.5rem;
+
+  .checkbox-group {
+    margin-right: auto;
+    padding-left: 0;
+  }
+}
+
 .filter {
   position: relative;
   margin-bottom: $gutter-h;
+  padding-inline: 0.5rem;
   .filter-wrap {
     position: relative;
     display: flex;
@@ -292,20 +289,6 @@ export default Vue.extend({
           }
         }
 
-      }
-    }
-    x-menu {
-      padding: $gutter-h 0;
-      label {
-        display: flex;
-        justify-content: flex-start;
-        align-items: center;
-        padding: 0 $gutter-w;
-        min-height: $input-height;
-        cursor: pointer;
-      }
-      x-menuitem {
-        display: none;
       }
     }
     .material-icons, .material-icons-outlined {

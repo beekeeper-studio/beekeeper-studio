@@ -1,11 +1,13 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
+import globals from "@/common/globals";
 import ExtensionFileManager from "@/services/extensions/ExtensionFileManager";
+import { Manifest } from "@/services/plugin/types";
 import PluginManager from "@/services/plugin/PluginManager";
 import { createPluginServer } from "@tests/vitest/integration/plugins/utils/server";
 import {
   createFileManager,
   cleanFileManager,
-} from "@tests/vitest/integration/plugins/utils/fileManager";
+} from "@tests/vitest/integration/plugins/utils/extensionFileManager";
 import { MockPluginRepositoryService } from "@tests/vitest/integration/plugins/utils/registry";
 import ExtensionRegistry from "@/services/extensions/ExtensionRegistry";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
@@ -23,13 +25,13 @@ function readJson(...paths: string[]) {
   return JSON.parse(content);
 }
 
-function installV0Plugins(fileManager: ExtensionFileManager) {
+function installV0Plugins(fileManager: ExtensionFileManager<Manifest>) {
   const aiShellPath = path.join(
-    fileManager.options.pluginsDirectory,
+    fileManager.options.root,
     "bks-ai-shell"
   );
   const erDiagramPath = path.join(
-    fileManager.options.pluginsDirectory,
+    fileManager.options.root,
     "bks-er-diagram"
   );
   fs.cpSync(
@@ -61,9 +63,12 @@ function installV0Plugins(fileManager: ExtensionFileManager) {
 describe("BundledPluginModule", () => {
   const server = createPluginServer();
   const repositoryService = new MockPluginRepositoryService(server);
-  const registry = new ExtensionRegistry(repositoryService);
+  const registry = new ExtensionRegistry({
+    repositoryService,
+    registries: globals.plugins.registries,
+  });
 
-  let fileManager: ExtensionFileManager;
+  let fileManager: ExtensionFileManager<Manifest>;
 
   function createPluginManager() {
     return new PluginManager({
@@ -100,12 +105,12 @@ describe("BundledPluginModule", () => {
     // Here we copy from node_modules, but any source works.
     fs.cpSync(
       BundledPlugin.resolve("@beekeeperstudio/bks-ai-shell"),
-      path.join(fileManager.options.pluginsDirectory, "bks-ai-shell"),
+      path.join(fileManager.options.root, "bks-ai-shell"),
       { recursive: true }
     );
     fs.cpSync(
       BundledPlugin.resolve("@beekeeperstudio/bks-er-diagram"),
-      path.join(fileManager.options.pluginsDirectory, "bks-er-diagram"),
+      path.join(fileManager.options.root, "bks-er-diagram"),
       { recursive: true }
     );
 

@@ -1,9 +1,9 @@
 import { BaseEntity, Column, Entity, PrimaryColumn } from "typeorm";
-import { PluginOrigin, PluginRegistryEntry } from "@/services/plugin";
+import { ExtensionOrigin, ExtensionRegistryEntry } from "@/services/plugin";
 
 @Entity({ name: "plugin_entry_cache"})
 export class PluginEntryCache extends BaseEntity {
-  withProps(props: PluginRegistryEntry) {
+  withProps(props: ExtensionRegistryEntry) {
     // @ts-ignore It will just never be happy
     PluginEntryCache.merge(this, props);
     return this;
@@ -25,5 +25,5 @@ export class PluginEntryCache extends BaseEntity {
   repo: string
 
   @Column({ type: 'varchar', nullable: false})
-  origin: PluginOrigin
+  origin: ExtensionOrigin
 }

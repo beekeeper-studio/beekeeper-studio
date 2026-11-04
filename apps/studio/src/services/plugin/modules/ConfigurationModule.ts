@@ -1,6 +1,6 @@
 import _ from "lodash";
 import { PluginSnapshot } from "@/services/plugin";
-import { Module, ModuleOptions } from "@/services/plugin/Module";
+import { PluginModule, type PluginModuleOptions } from "./PluginModule";
 import { PluginSystemError } from "@/lib/errors";
 import { BksConfig } from "@/common/bksConfig/BksConfigProvider";
 import globals from "@/common/globals";
@@ -25,28 +25,24 @@ type ConfigurationOptions = {
  *
  * ```
  */
-export class ConfigurationModule extends Module {
-  constructor(private options: ConfigurationOptions & ModuleOptions) {
+export class ConfigurationModule extends PluginModule {
+  constructor(private options: ConfigurationOptions & PluginModuleOptions) {
     super(options);
+
+    this.setManagerRegistryFlags = this.setManagerRegistryFlags.bind(this);
 
     this.setManagerRegistryFlags();
     this.hook("before-install-plugin", this.validatePluginInstall);
     this.hook("plugin-snapshots", this.applyConfig);
-    this.hook("config-reload", this.onConfigReload);
+    this.options.config.on("reload", this.setManagerRegistryFlags);
   }
 
   static with(options: ConfigurationOptions) {
     return class extends ConfigurationModule {
-      constructor(baseOptions: ModuleOptions) {
+      constructor(baseOptions: PluginModuleOptions) {
         super({ ...baseOptions, ...options });
       }
     };
-  }
-
-  private onConfigReload(config: BksConfig) {
-    this.options.config = config;
-
-    this.setManagerRegistryFlags();
   }
 
   private setManagerRegistryFlags() {

@@ -1,12 +1,17 @@
 <template>
-  <span class="theme-preview-scope" :data-theme-preview="themeId">
+  <span
+    class="theme-preview-scope"
+    :class="{ split: appearance === 'auto' }"
+    :data-theme-preview="themeId"
+  >
     <link
       rel="stylesheet"
-      :href="`theme://${themeId}.css?preview&t=${reloadedAt}`"
+      :href="`theme://${themeId}/style.css?preview&t=${reloadedAt}`"
     >
     <span
-      class="theme-preview"
-      :class="[`theme-${themeId}`, dark ? 'dark-theme' : 'light-theme']"
+      v-for="mode in modes"
+      :key="mode"
+      :class="`theme-preview theme-${themeId} ${mode}`"
     >
       <span class="titlebar-preview">
         <span v-if="$config.isMac" class="traffic-lights">
@@ -91,11 +96,6 @@
                 </td>
                 <td>admin</td>
               </tr>
-              <tr>
-                <td>3</td>
-                <td>carol</td>
-                <td>admin</td>
-              </tr>
             </tbody>
           </table>
         </span>
@@ -110,7 +110,8 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import Vue, { PropType } from "vue";
+import { AppEvent } from "@/common/AppEvent";
 
 export default Vue.extend({
   props: {
@@ -118,9 +119,20 @@ export default Vue.extend({
       type: String,
       required: true,
     },
-    dark: {
-      type: Boolean,
-      default: false,
+    appearance: {
+      type: String as PropType<"light" | "dark" | "auto">,
+      default: "auto",
+    },
+  },
+  computed: {
+    modes(): string[] {
+      if (this.appearance === "light") {
+        return ["light-theme"];
+      } else if (this.appearance === "dark") {
+        return ["dark-theme"];
+      } else {
+        return ["light-theme", "dark-theme"];
+      }
     },
   },
   data() {
@@ -129,16 +141,23 @@ export default Vue.extend({
     };
   },
   mounted() {
+    this.$root.$on(AppEvent.themeFileChanged, this.handleThemeFileChanged);
     if (import.meta.hot) {
       import.meta.hot.on("theme-css-update", this.reloadStylesheet);
     }
   },
   beforeDestroy() {
+    this.$root.$off(AppEvent.themeFileChanged, this.handleThemeFileChanged);
     if (import.meta.hot) {
       import.meta.hot.off("theme-css-update", this.reloadStylesheet);
     }
   },
   methods: {
+    handleThemeFileChanged(id: string) {
+      if (id === this.themeId) {
+        this.reloadStylesheet();
+      }
+    },
     reloadStylesheet() {
       this.reloadedAt = Date.now();
     },
@@ -148,19 +167,34 @@ export default Vue.extend({
 
 <style scoped lang="scss">
 .theme-preview-scope {
-  display: block;
+  display: grid;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  container-type: inline-size;
+
+  > .theme-preview {
+    grid-area: 1 / 1;
+  }
+
+  &.split > .light-theme {
+    clip-path: polygon(0 0, 60% 0, 40% 100%, 0 100%);
+  }
+
+  &.split > .dark-theme {
+    clip-path: polygon(60% 0, 100% 0, 100% 100%, 40% 100%);
+  }
 }
 
 .theme-preview {
   display: flex;
   flex-direction: column;
   width: 100%;
-  font-size: 0.75rem;
-  line-height: 1.6;
+  font-size: 3.6cqi;
+  line-height: 1.5;
   min-width: 0;
   color: var(--app-fg);
   background: var(--app-bg);
-  padding: 0.25rem;
+  padding: 0.4em;
 
   .titlebar-preview {
     position: relative;
@@ -244,7 +278,7 @@ export default Vue.extend({
 
   .sidebar-preview {
     display: flex;
-    flex: 0 0 8.25em;
+    flex: 0 0 7em;
     flex-direction: column;
     padding: 0.5em 0.75em;
     font-size: 0.85em;

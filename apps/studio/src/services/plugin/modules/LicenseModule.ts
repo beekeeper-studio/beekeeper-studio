@@ -2,10 +2,10 @@ import { LicenseKey } from "@/common/appdb/models/LicenseKey";
 import globals from "@/common/globals";
 import { PluginSystemError } from "@/lib/errors";
 import { PluginSnapshot } from "@/services/plugin";
-import { Module, ModuleOptions } from "@/services/plugin/Module";
+import { PluginModule, type PluginModuleOptions } from "./PluginModule";
 
-export class LicenseModule extends Module {
-  constructor(options: ModuleOptions) {
+export class LicenseModule extends PluginModule {
+  constructor(options: PluginModuleOptions) {
     super(options);
 
     this.hook("before-install-plugin", this.guardInstall);

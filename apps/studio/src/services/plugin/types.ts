@@ -4,6 +4,7 @@ import rawLog from "@bksLogger";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { FileHelpers, JsonValue } from "@/types";
 import type Noty from "noty";
+import { Extension } from "@codemirror/state";
 
 /**
  * The kind of the tab. There is only one kind currently:
@@ -120,6 +121,21 @@ type LegacyViews = {
 
 export type Manifest = ManifestV0 | ManifestV1;
 
+export type ExtensionManifest = {
+  id: string;
+  name: string;
+  author:
+  | string
+  | {
+    name: string;
+    url: string;
+  };
+  description: string;
+  version: string;
+};
+
+export type ThemeManifest = ExtensionManifest;
+
 export type ManifestV0 = {
   manifestVersion?: 0;
   id: string;
@@ -168,12 +184,15 @@ export type ManifestV1 = Omit<ManifestV0, "manifestVersion" | "capabilities"> & 
 };
 
 /**
- * The raw structure of a plugin entry that is found in the registry file.
+ * The raw structure of a plugin/theme entry that is found in the registry files:
+ * - plugins.json
+ * - community-plugins.json
+ * - community-themes.json
  *
  * @see {@link https://github.com/beekeeper-studio/beekeeper-studio-plugins}
  */
 export type RawPluginRegistryEntry = Pick<
-  Manifest,
+  ExtensionManifest,
   "id" | "name" | "author" | "description"
 > & {
   repo: string;
@@ -183,18 +202,18 @@ export type RawPluginRegistryEntry = Pick<
  * The plugin entry we will typically work with, since it's useful to keep
  * the origin around and such
  */
-export type PluginRegistryEntry = RawPluginRegistryEntry & {
-  origin: PluginOrigin;
+export type ExtensionRegistryEntry = RawPluginRegistryEntry & {
+  origin: ExtensionOrigin;
 }
 
 export type RegistryMap = {
-  official: PluginRegistryEntry[],
-  community: PluginRegistryEntry[]
+  official: ExtensionRegistryEntry[],
+  community: ExtensionRegistryEntry[]
 } & {
-  [key: string]: PluginRegistryEntry[]
+  [key: string]: ExtensionRegistryEntry[]
 };
 
-export interface Plugin extends PluginRegistryEntry, ManifestV1 {
+export interface ExtensionUI extends ExtensionRegistryEntry, ExtensionManifest {
   installing: boolean;
   installed: boolean;
   enabled: boolean;
@@ -202,27 +221,24 @@ export interface Plugin extends PluginRegistryEntry, ManifestV1 {
   error: unknown;
   updateAvailable: boolean;
   checkingForUpdates: boolean;
-}
-
-export interface PluginDisplayItem extends Plugin {
   disabled: boolean;
 }
 
-export interface Release {
+export interface Release<Manifest extends ExtensionManifest> {
   manifest: Manifest;
   sourceArchiveUrl: string;
   checksum: string;
 }
 
-export interface PluginRepository {
-  latestRelease: Release;
+export interface ExtensionRepository {
+  latestRelease: Release<ExtensionManifest>;
   readme: string;
   downloadCount?: number;
 }
 
 export interface RegistryConfig {
   name: string,
-  origin: PluginOrigin,
+  origin: ExtensionOrigin,
   owner: string,
   repo: string,
   file: string
@@ -257,7 +273,7 @@ export type WebPluginContext = {
   utility: UtilityConnection;
   log: ReturnType<typeof rawLog.scope>;
   appVersion: string;
-  pluginOrigin: PluginOrigin;
+  pluginOrigin: ExtensionOrigin;
   fileHelpers: FileHelpers;
   noty: {
     success(text: string, options?: any): Noty;
@@ -273,9 +289,26 @@ export type PluginSnapshot = {
   manifest: ManifestV1;
   /** Is this compatible with the current app version? */
   loadable: boolean;
-  origin: PluginOrigin;
+  origin: ExtensionOrigin;
   disableState: DisableState;
 };
+
+export type ThemeSnapshot = {
+  manifest: ThemeManifest;
+  origin: ExtensionOrigin;
+  disableState: ThemeDisableState;
+};
+
+export type ThemeDisableState =
+  | { disabled: false }
+  | {
+      disabled: true;
+      reason:
+        | "community-themes-disabled"
+        | "unlisted-disabled"
+        | "missing-style"
+        | "bundled-id-conflict";
+    };
 
 export type WebPluginManagerStatus = "initializing" | "ready" | "failed-to-initialize";
 
@@ -316,11 +349,11 @@ type DisableState =
     };
 
 /**
- * Indicates where a plugin originates from:
+ * Indicates where an extension (plugin or theme) originates from:
  * - `bundled`: Features built with the plugin system that are bundled with the app
  * - `official`: {@link https://github.com/beekeeper-studio/beekeeper-studio-plugins/blob/main/plugins.json}
  * - `community`: {@link https://github.com/beekeeper-studio/beekeeper-studio-plugins/blob/main/community-plugins.json}
  * - `custom`: Custom plugin from a custom third party repo (Business/Dev only)
  * - `unlisted`: Not listed in either repository
  */
-export type PluginOrigin = "bundled" | "official" | "community" | "custom"| "unlisted";
+export type ExtensionOrigin = "bundled" | "official" | "community" | "custom"| "unlisted";

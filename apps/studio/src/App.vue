@@ -33,10 +33,9 @@
     <import-connections-modal />
     <connection-files-import-modal />
     <plugin-controller :editor-font-size="editorFontSize" />
-    <plugin-manager-modal />
     <keyboard-shortcuts-modal />
     <theme-playground-modal />
-    <appearance-modal />
+    <config-modal />
     <move-item-modal />
     <move-folder-modal />
     <connection-type-picker-modal />
@@ -94,10 +93,9 @@ import LifetimeVersionNotCoveredModal from '@/components/license/LifetimeVersion
 import CloudWorkspacesBlockedModal from '@/components/license/CloudWorkspacesBlockedModal.vue'
 import type { LicenseStatus } from "@/lib/license";
 import { SmartLocalStorage } from '@/common/LocalStorage';
-import PluginManagerModal from '@/components/plugins/PluginManagerModal.vue'
 import KeyboardShortcutsModal from '@/components/common/modals/KeyboardShortcutsModal.vue'
 import ThemePlaygroundModal from '@/components/common/modals/ThemePlaygroundModal.vue'
-import AppearanceModal from '@/components/common/modals/AppearanceModal.vue'
+import ConfigModal from '@/components/common/modals/ConfigModal.vue'
 import PluginController from '@/components/plugins/PluginController.vue'
 import LockManager from "@/components/managers/LockManager.vue";
 import InputEphemeralModal from "@/components/common/modals/InputEphemeralModal.vue";
@@ -122,9 +120,9 @@ export default Vue.extend({
     EnterLicenseModal, TrialEndedModal, LicenseExpiredModal,
     LifetimeLicenseExpiredModal, LifetimeVersionNotCoveredModal, CloudWorkspacesBlockedModal,
     WorkspaceCreateModal, WorkspaceRenameModal, WorkspaceDeleteModal,
-    PluginManagerModal, ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal, ThemePlaygroundModal,
+    ConfigurationWarningModal, PluginController, LockManager, KeyboardShortcutsModal, ThemePlaygroundModal, ConfigModal,
     InputEphemeralModal, ShareModal, MoveItemModal, MoveFolderModal,
-    ConnectionFilesImportModal, ConnectionTypePickerModal, AppearanceModal
+    ConnectionFilesImportModal, ConnectionTypePickerModal
   },
   data() {
     return {
@@ -172,6 +170,8 @@ export default Vue.extend({
     clearInterval(this.licenseInterval)
   },
   async mounted() {
+    // TODO: temporary, for debugging the config modal
+    this.$nextTick(() => this.$modal.show("config-modal"));
     // The store loads licenses before this component exists, so the
     // `licensesInitialized` and `status` watchers never see the initial
     // values. Without this, a trial or license that lapsed while the app was

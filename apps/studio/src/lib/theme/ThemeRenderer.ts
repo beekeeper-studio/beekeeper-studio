@@ -1,9 +1,15 @@
 import { Store } from "vuex";
 import { State } from "@/store/index";
 import { AppEvent } from "@/common/AppEvent";
+import { UtilityConnection } from "@/lib/utility/UtilityConnection";
+import { isValidManifestId } from "@/services/plugin/utils";
+import rawLog from "@bksLogger";
+
+const log = rawLog.scope("ThemeRenderer");
 
 export interface ThemeRendererOptions {
   store: Store<State>;
+  utility: UtilityConnection;
   bus: {
     emit: (event: AppEvent, ...args: any) => void;
     on: (event: AppEvent, listener: (...args: any) => void) => void;
@@ -17,9 +23,17 @@ export class ThemeRenderer {
   private dark: boolean | null = null;
   private link: HTMLLinkElement | null = null;
 
+  private utility: UtilityConnection;
+  private bus: ThemeRendererOptions["bus"];
+  private store: ThemeRendererOptions["store"];
+
   private media = window.matchMedia("(prefers-color-scheme: dark)");
 
-  constructor(readonly options: ThemeRendererOptions) { }
+  constructor(readonly options: ThemeRendererOptions) {
+    this.utility = options.utility;
+    this.bus = options.bus;
+    this.store = options.store;
+  }
 
   async initialize(): Promise<void> {
     if (this.initialized) {
@@ -39,10 +53,17 @@ export class ThemeRenderer {
     document.body.classList.toggle("window-inactive", !document.hasFocus());
 
     this.options.store.commit("theme/setSystemDark", this.media.matches);
+    await this.options.store.dispatch("theme/loadThemes");
 
     this.subscribe();
 
     this.initialized = true;
+
+    // Startup must not wait on the network; origins are refreshed behind it.
+    this.utility
+      .send("theme/syncOrigins")
+      .then(() => this.options.store.dispatch("theme/loadThemes"))
+      .catch((e) => log.warn("Failed to refresh theme origins", e));
   }
 
   private subscribe() {
@@ -54,13 +75,22 @@ export class ThemeRenderer {
       this.options.store.commit("theme/setSystemDark", dark);
     });
 
+    this.utility.send("theme/watch");
+
+    this.bus.on(AppEvent.themeFileChanged, async (id: string) => {
+      await this.store.dispatch("theme/loadThemes");
+      if (id === this.themeId) {
+        await this.reloadStylesheet();
+      }
+    });
+
     if (import.meta.hot) {
       import.meta.hot.on("theme-css-update", async () => {
         await this.reloadStylesheet();
       });
     }
 
-    this.options.store.watch(
+    this.store.watch(
       (_state, getters) => ({
         themeId: getters["theme/id"],
         themeDark: getters["theme/dark"],
@@ -85,7 +115,7 @@ export class ThemeRenderer {
     const themeParams = new URLSearchParams(window.location.search);
     const rawThemeId = themeParams.get("themeId");
     const themeId =
-      rawThemeId && /^[a-zA-Z0-9_-]+$/.test(rawThemeId)
+      isValidManifestId(rawThemeId)
         ? rawThemeId
         : "default";
     const appearance = themeParams.get("appearance") ?? "auto";
@@ -108,7 +138,14 @@ export class ThemeRenderer {
     document.body.classList.toggle("dark-theme", dark);
     document.body.classList.toggle("light-theme", !dark);
 
-    await this.loadStylesheet(`theme://${themeId}.css`);
+    try {
+      await this.loadStylesheet(`theme://${themeId}/style.css`);
+    } catch (e) {
+      log.error(e);
+      if (themeId !== "default") {
+        await this.apply("default", dark);
+      }
+    }
   }
 
   private async loadStylesheet(href: string): Promise<void> {
@@ -131,6 +168,10 @@ export class ThemeRenderer {
       return;
     }
 
-    await this.loadStylesheet(`${href.split("?")[0]}?t=${Date.now()}`);
+    try {
+      await this.loadStylesheet(`${href.split("?")[0]}?t=${Date.now()}`);
+    } catch (e) {
+      log.warn(e);
+    }
   }
 }

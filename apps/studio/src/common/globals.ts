@@ -1,4 +1,4 @@
-
+import type { RegistryConfig, ThemeManifest } from "@/services/plugin";
 
 export default {
   updateCheckInterval: 1000 * 60 * 60 * 24, // 24 hours
@@ -36,8 +36,66 @@ export default {
       { id: "bks-ai-shell", pkg: "@beekeeperstudio/bks-ai-shell" },
       { id: "bks-er-diagram", pkg: "@beekeeperstudio/bks-er-diagram" },
     ],
-    maxCommunityPlugins: 2
-  }
+    maxCommunityPlugins: 2,
+    registries: [
+      {
+        name: "official",
+        origin: "official",
+        owner: "beekeeper-studio",
+        repo: "beekeeper-studio-plugins",
+        file: "plugins.json"
+      },
+      {
+        name: "community",
+        origin: "community",
+        owner: "beekeeper-studio",
+        repo: "beekeeper-studio-plugins",
+        file: "community-plugins.json"
+      },
+    ] satisfies RegistryConfig[],
+  },
+  themes: {
+    /** Bundled themes are stored in `apps/studio/public/themes/<id>.css`. **/
+    bundled: [
+      {
+        id: "default",
+        name: "Default",
+        author: "Beekeeper Studio",
+        description: "The default Beekeeper Studio theme.",
+        version: "1.0.0",
+      },
+      {
+        id: "solarized",
+        name: "Solarized",
+        author: "Beekeeper Studio",
+        description: "A theme based on the Solarized palette.",
+        version: "1.0.0",
+      },
+      {
+        id: "dracula",
+        name: "Dracula",
+        author: "Beekeeper Studio",
+        description: "A theme based on the Dracula palette.",
+        version: "1.0.0",
+      },
+      {
+        id: "github",
+        name: "GitHub",
+        author: "Beekeeper Studio",
+        description: "A theme based on GitHub's colors.",
+        version: "1.0.0",
+      },
+    ] satisfies ThemeManifest[],
+    registries: [
+      {
+        name: "community-themes",
+        origin: "community",
+        owner: "beekeeper-studio",
+        repo: "beekeeper-studio-plugins",
+        file: "community-themes.json"
+      },
+    ] satisfies RegistryConfig[],
+  },
 }
 
 

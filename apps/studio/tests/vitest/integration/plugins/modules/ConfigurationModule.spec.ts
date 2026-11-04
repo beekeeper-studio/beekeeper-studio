@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
 import ExtensionFileManager from "@/services/extensions/ExtensionFileManager";
+import { Manifest } from "@/services/plugin/types";
 import PluginManager from "@/services/plugin/PluginManager";
 import { createPluginServer } from "@tests/vitest/integration/plugins/utils/server";
 import {
   createFileManager,
   cleanFileManager,
-} from "@tests/vitest/integration/plugins/utils/fileManager";
+} from "@tests/vitest/integration/plugins/utils/extensionFileManager";
 import { MockPluginRepositoryService } from "@tests/vitest/integration/plugins/utils/registry";
 import ExtensionRegistry from "@/services/extensions/ExtensionRegistry";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
@@ -47,7 +48,7 @@ describe("Plugin Configuration Module", () => {
   ];
 
   let registry: ExtensionRegistry;
-  let fileManager: ExtensionFileManager;
+  let fileManager: ExtensionFileManager<Manifest>;
 
   function createPluginManager() {
     return new PluginManager({ fileManager, registry, appVersion: "9.9.9" });
@@ -68,7 +69,10 @@ describe("Plugin Configuration Module", () => {
     const setting = await UserSetting.findOneBy({ key: "pluginSettings" });
     setting.userValue = "{}";
     await setting.save();
-    registry = new ExtensionRegistry(repositoryService);
+    registry = new ExtensionRegistry({
+      repositoryService,
+      registries: globals.plugins.registries
+    });
     fileManager = createFileManager();
   });
 
