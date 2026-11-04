@@ -174,6 +174,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       label: 'Getting Started Guide',
       click: actionHandler.openGettingStarted
     },
+    openUserConfig: {
+      id: 'openUserConfig',
+      label: 'Open User Config File',
+      click: actionHandler.openUserConfig
+    },
     reload: {
       id: 'reload-window',
       label: "Reload Window",
