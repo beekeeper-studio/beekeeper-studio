@@ -9,7 +9,7 @@
       </span>
     </div>
     <div class="control">
-      <slot/>
+      <slot />
     </div>
   </div>
 </template>
