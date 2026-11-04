@@ -2,8 +2,7 @@ import { IShareable } from "./IShareable"
 
 export default interface ISavedQuery extends IShareable {
   id: number | null
-  title: string
-  // same as title, damn you title
+  name: string
   text: string
   excerpt: string
   database: string | null

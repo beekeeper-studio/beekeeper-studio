@@ -1010,7 +1010,7 @@ export default Vue.extend({
       noty.close()
     },
     async handlePromptQueryExport(query) {
-      const safeFilename = query.title.replace(/[/\\?%*:|"<>]/g, '_');
+      const safeFilename = query.name.replace(/[/\\?%*:|"<>]/g, '_');
       const fileName = `${safeFilename}.sql`;
 
       const lastExportPath = await Vue.prototype.$settings.get("lastExportPath", await window.main.defaultExportPath(fileName));

@@ -1,7 +1,7 @@
 
 
 export interface QueryLike {
-  title?: string
+  name?: string
   text: string
   database?: string | null
   status?: string

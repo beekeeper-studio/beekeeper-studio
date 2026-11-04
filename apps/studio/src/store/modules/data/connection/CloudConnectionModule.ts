@@ -32,7 +32,7 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
     ...accessGrantMutations(),
   }, { field: 'name', direction: 'asc'}),
   modules: {
-    nodes: ItemNodeModule('connectionFolderId', 'name'),
+    nodes: ItemNodeModule('connectionFolderId'),
     folders: FolderFetchModule,
   },
   actions: {
