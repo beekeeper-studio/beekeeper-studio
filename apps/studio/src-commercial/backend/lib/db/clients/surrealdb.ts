@@ -1,4 +1,4 @@
-import { DateTime, Decimal, Duration, escapeIdent, Geometry, jsonify, ProvidedAuth, RecordId, StringRecordId, surql, Table, toSurqlString, Uuid } from "surrealdb";
+import { DateTime, Decimal, Duration, escapeIdent, Geometry, jsonify, ProvidedAuth, RecordId, StringRecordId, surql, toSurqlString, Uuid } from "surrealdb";
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, BksField, CancelableQuery, BksFieldType, TableChanges, TableUpdateResult, TableInsert, TableUpdate, TableDelete } from "@/lib/db/models";
 import { ForeignKeyRow, TableKey } from "@/shared/lib/dialects/models";
 import { _baseTest } from "@playwright/test";
@@ -938,13 +938,6 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     }));
 
     return await super.deserializeTableChanges(changes, columns);
-  }
-
-  private normalizeValue(value: string, column?: ExtendedTableColumn) {
-    if (column.dataType === 'string' && _.isString(value)) {
-      return surrealEscapeValue(value)
-    }
-    return value;
   }
 
   private async insertRows(rawInserts: TableInsert[]): Promise<{ query: string, bindings: any }[]> {
