@@ -1442,6 +1442,50 @@ function testWith(tag, protocol) {
       })
 
       describe('applyChangesSql', () => {
+        // https://github.com/beekeeper-studio/beekeeper-studio/issues/4981
+        // "Copy to SQL" used to go through the generic applyChangesSql, which needs a knex
+        // instance. The SurrealDB client has none, so it threw `knex is not a function`.
+        it('generates SurrealQL for a pending update without a knex instance', async () => {
+          await withTable('edit_sql_update', (t) => `
+            DEFINE TABLE ${t} SCHEMALESS;
+            CREATE ${t}:1 SET name = 'alpha';
+          `, async (t) => {
+            const sql = await connection.applyChangesSql({
+              inserts: [],
+              deletes: [],
+              updates: [{
+                table: t,
+                column: 'name',
+                value: 'beta',
+                primaryKeys: [{ column: 'id', value: `${t}:1` }],
+              }],
+            })
+
+            expect(sql).toMatch(/UPDATE/i)
+            expect(sql).toContain(`${t}:1`)
+            expect(sql).toContain('name')
+            expect(sql).toContain('beta')
+          })
+        })
+
+        it('generates SurrealQL for pending inserts and deletes', async () => {
+          await withTable('edit_sql_insert_delete', (t) => `
+            DEFINE TABLE ${t} SCHEMALESS;
+            CREATE ${t}:2 SET name = 'delta';
+          `, async (t) => {
+            const sql = await connection.applyChangesSql({
+              updates: [],
+              inserts: [{ table: t, data: [{ name: 'gamma' }] }],
+              deletes: [{ table: t, primaryKeys: [{ column: 'id', value: `${t}:2` }] }],
+            })
+
+            expect(sql).toMatch(/CREATE|INSERT/i)
+            expect(sql).toContain('gamma')
+            expect(sql).toMatch(/DELETE/i)
+            expect(sql).toContain(`${t}:2`)
+          })
+        })
+
         it('generates SurrealQL that runs and makes the same change', async () => {
           await withTable('edit_sql', (t) => `DEFINE TABLE ${t} SCHEMALESS;`, async (t) => {
             const sql = await connection.applyChangesSql({
