@@ -65,13 +65,6 @@
     </div>
     <div
       class="alert-body"
-      v-else-if="snapshot.disableState.reason === 'bundled-id-conflict'"
-    >
-      {{ snapshot.manifest.name }} is disabled because its id conflicts with a
-      bundled theme.
-    </div>
-    <div
-      class="alert-body"
       v-else-if="snapshot.disableState.reason === 'disabled-by-config'"
     >
       {{ snapshot.manifest.name }} has been disabled via configuration.

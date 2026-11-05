@@ -3,6 +3,7 @@ import type { ThemeSnapshot } from "@/services/plugin/types";
 import type { ThemeManager } from "../ThemeManager";
 
 export interface ThemeModuleHookMap {
+  "after-initialize": () => void | Promise<void>;
   "theme-snapshots": (
     snapshots: ThemeSnapshot[]
   ) => ThemeSnapshot[] | Promise<ThemeSnapshot[]>;

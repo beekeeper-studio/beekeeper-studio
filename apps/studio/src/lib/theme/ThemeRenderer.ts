@@ -58,12 +58,6 @@ export class ThemeRenderer {
     this.subscribe();
 
     this.initialized = true;
-
-    // Startup must not wait on the network; origins are refreshed behind it.
-    this.utility
-      .send("theme/syncOrigins")
-      .then(() => this.options.store.dispatch("theme/loadThemes"))
-      .catch((e) => log.warn("Failed to refresh theme origins", e));
   }
 
   private subscribe() {

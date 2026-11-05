@@ -1,4 +1,3 @@
-import fs from "fs";
 import path from "path";
 import semver from "semver";
 import { watch, FSWatcher } from "chokidar";
@@ -6,17 +5,14 @@ import ExtensionFileManager from "@/services/extensions/ExtensionFileManager";
 import globals from "@/common/globals";
 import {
   ExtensionOrigin,
-  ExtensionRegistryEntry,
-  RegistryMap,
   Release,
   ThemeDisableState,
   ThemeManifest,
   ThemeSnapshot,
 } from "@/services/plugin/types";
-import type { BksConfig } from "@/common/bksConfig/BksConfigProvider";
 import ExtensionRegistry from "@/services/extensions/ExtensionRegistry";
 import rawLog from "@bksLogger";
-import { ThemeSystemError } from "@/lib/errors";
+import { PluginSystemError, ThemeSystemError } from "@/lib/errors";
 import { ThemeEntryCache } from "@/common/appdb/models/ThemeEntryCache";
 import { Hookable } from "@/services/plugin/Hookable";
 import type { ThemeModuleHookMap } from "./modules/ThemeModule";
@@ -25,17 +21,16 @@ const log = rawLog.scope("ThemeManager");
 
 export type ThemeManagerOptions = {
   fileManager: ExtensionFileManager<ThemeManifest>;
-  config: BksConfig;
   registry?: ExtensionRegistry;
 };
 
 export class ThemeManager extends Hookable<ThemeManager, ThemeModuleHookMap> {
-  public readonly fileManager: ExtensionFileManager<ThemeManifest>;
-  public readonly registry: ExtensionRegistry;
-  private watcher: FSWatcher = null;
   private initialized = false;
+  public readonly registry: ExtensionRegistry;
+  public readonly fileManager: ExtensionFileManager<ThemeManifest>;
+  private manifests: ThemeManifest[] = [];
   private themeLocks: string[] = [];
-  private autoUpdated = false;
+  private watcher: FSWatcher = null;
   private watchListeners = new Map<string, (themeId: string) => void>();
 
   constructor(readonly options: ThemeManagerOptions) {
@@ -54,7 +49,23 @@ export class ThemeManager extends Hookable<ThemeManager, ThemeModuleHookMap> {
 
     await this.registry.initialize();
 
+    const installedThemes = this.fileManager.scan().filter((manifest) => {
+      if (this.isBundled(manifest.id)) {
+        log.warn(
+          `Ignoring theme "${manifest.name}": id "${manifest.id}" is reserved by a bundled theme.`
+        );
+        return false;
+      }
+      return true;
+    });
+
+    this.manifests = installedThemes;
+
+    log.debug("Installed themes:", installedThemes);
+
     this.initialized = true;
+
+    await this.callHook("after-initialize");
   }
 
   /** Install the latest version of a theme. */
@@ -71,7 +82,7 @@ export class ThemeManager extends Hookable<ThemeManager, ThemeModuleHookMap> {
     let update = false;
 
     // If theme is already installed, perform update
-    if (this.fileManager.scan().find((manifest) => manifest.id === id)) {
+    if (this.manifests.find((manifest) => manifest.id === id)) {
       update = true;
     }
 
@@ -102,12 +113,37 @@ export class ThemeManager extends Hookable<ThemeManager, ThemeModuleHookMap> {
         await this.fileManager.download(id, latestRelease);
       }
 
-      await this.rememberOrigin(await this.registry.findEntry(id));
+      const entry = await this.registry.findEntry(id);
+      if (entry) {
+        let cache = await ThemeEntryCache.findOneBy({ id });
+
+        if (!cache) {
+          cache = new ThemeEntryCache();
+        }
+
+        await cache.withProps(entry).save();
+      }
+
+      const manifest = this.fileManager.getManifest(id);
+      const installedIdx = this.manifests.findIndex(
+        (manifest) => manifest.id === id
+      );
+      if (installedIdx === -1) {
+        this.manifests.push(manifest);
+      } else {
+        this.manifests[installedIdx] = manifest;
+      }
 
       log.info(`Installed theme "${id}" v${latestRelease.manifest.version}`);
 
-      return this.fileManager.getManifest(id);
+      return manifest;
     });
+  }
+
+  async updateTheme(id: string): Promise<ThemeManifest> {
+    this.initializeGuard();
+    await this.registry.reloadRepository(id);
+    return await this.installTheme(id);
   }
 
   async uninstallTheme(id: string): Promise<void> {
@@ -116,13 +152,15 @@ export class ThemeManager extends Hookable<ThemeManager, ThemeModuleHookMap> {
       log.debug(`Uninstalling theme "${id}"...`);
 
       this.fileManager.remove(id);
-      await ThemeEntryCache.delete({ id }).catch((e) => log.warn(e));
+      this.manifests = this.manifests.filter((manifest) => manifest.id !== id);
 
       log.debug(`Theme "${id}" uninstalled!`);
     });
   }
 
   async getThemes(): Promise<ThemeSnapshot[]> {
+    this.initializeGuard();
+
     const snapshots: ThemeSnapshot[] = globals.themes.bundled.map(
       (manifest) => ({
         manifest,
@@ -131,11 +169,23 @@ export class ThemeManager extends Hookable<ThemeManager, ThemeModuleHookMap> {
       })
     );
 
-    const manifests = this.fileManager.scan();
-    const origins = await this.readCachedOrigins();
+    for (const manifest of this.manifests) {
+      let origin: ExtensionOrigin = "unlisted";
 
-    for (const manifest of manifests) {
-      const origin = origins.get(manifest.id) ?? "unlisted";
+      try {
+        const found = await this.registry.findEntry(manifest.id);
+        origin = found.origin;
+      } catch (e) {
+        if (e instanceof PluginSystemError && e.code === "PLUGIN_NOT_FOUND") {
+          // Not in the registry now; it may have been installed from one before.
+          const cached = await ThemeEntryCache.findOneBy({ id: manifest.id });
+          if (cached && cached.origin) {
+            origin = cached.origin;
+          }
+        } else {
+          log.error(e);
+        }
+      }
 
       snapshots.push({
         manifest,
@@ -144,69 +194,19 @@ export class ThemeManager extends Hookable<ThemeManager, ThemeModuleHookMap> {
       });
     }
 
-    this.watcher?.add(manifests.map((manifest) => this.stylePath(manifest.id)));
+    this.watcher?.add(this.manifests.map((manifest) => this.stylePath(manifest.id)));
 
     return await this.applyHook("theme-snapshots", snapshots);
-  }
-
-  /** Fetch registry entries, remembering the origin of installed themes. */
-  async getEntries(
-    clearCache = false
-  ): Promise<{ entries: RegistryMap; errors: string[] }> {
-    if (clearCache) {
-      this.registry.clearCache();
-    }
-
-    const entries = await this.registry.getEntries();
-    const installed = this.fileManager.scan().map((manifest) => manifest.id);
-
-    for (const entry of Object.values(entries).flat()) {
-      if (installed.includes(entry.id) && !this.isBundled(entry.id)) {
-        await this.rememberOrigin(entry);
-      }
-    }
-
-    return { entries, errors: Object.values(this.registry.errors) };
-  }
-
-  async syncOrigins(): Promise<void> {
-    if (this.fileManager.scan().length > 0) {
-      await this.getEntries();
-    }
-  }
-
-  /** Update registry themes to their latest release, once per app launch. */
-  async autoUpdateThemes(): Promise<void> {
-    this.initializeGuard();
-
-    if (this.autoUpdated || !this.options.config.themeSystem.autoUpdate) {
-      return;
-    }
-    this.autoUpdated = true;
-
-    const themes = await this.getThemes();
-    for (const { manifest, origin, disableState } of themes) {
-      if (origin === "bundled" || origin === "unlisted" || disableState.disabled) {
-        continue;
-      }
-      // A linked theme is someone's working copy, which a release must not replace.
-      if (fs.lstatSync(this.fileManager.getDirectoryOf(manifest.id)).isSymbolicLink()) {
-        continue;
-      }
-      try {
-        if (await this.checkForUpdates(manifest.id)) {
-          await this.installTheme(manifest.id);
-        }
-      } catch (e) {
-        log.warn(`Failed to auto-update theme "${manifest.id}"`, e);
-      }
-    }
   }
 
   async checkForUpdates(id: string): Promise<boolean> {
     this.initializeGuard();
 
-    const manifest = this.fileManager.getManifest(id);
+    const manifest = this.manifests.find((manifest) => manifest.id === id);
+    if (!manifest) {
+      throw new Error(`Theme "${id}" is not installed.`);
+    }
+
     const head = await this.registry.reloadRepository(id);
     const latest = semver.coerce(head.latestRelease.manifest.version);
     const current = semver.coerce(manifest.version);
@@ -218,38 +218,7 @@ export class ThemeManager extends Hookable<ThemeManager, ThemeModuleHookMap> {
     return globals.themes.bundled.some((theme) => theme.id === id);
   }
 
-  private async rememberOrigin(entry: ExtensionRegistryEntry) {
-    try {
-      let cache = await ThemeEntryCache.findOneBy({ id: entry.id });
-
-      if (!cache) {
-        cache = new ThemeEntryCache();
-      }
-
-      await cache.withProps(entry).save();
-    } catch (e) {
-      log.warn(`Failed to remember origin of theme "${entry.id}"`, e);
-    }
-  }
-
-  private async readCachedOrigins(): Promise<Map<string, ExtensionOrigin>> {
-    try {
-      const cached = await ThemeEntryCache.find();
-      return new Map(cached.map(({ id, origin }) => [id, origin]));
-    } catch (e) {
-      log.error(e);
-      return new Map();
-    }
-  }
-
   private getDisableState(manifest: ThemeManifest): ThemeDisableState {
-    if (this.isBundled(manifest.id)) {
-      log.warn(
-        `Ignoring theme "${manifest.name}": id "${manifest.id}" is reserved by a bundled theme.`
-      );
-      return { disabled: true, reason: "bundled-id-conflict" };
-    }
-
     if (!this.fileManager.exists(manifest, "style.css")) {
       return { disabled: true, reason: "missing-style" };
     }
@@ -282,7 +251,7 @@ export class ThemeManager extends Hookable<ThemeManager, ThemeModuleHookMap> {
     };
 
     this.watcher = watch(
-      this.fileManager.scan().map((manifest) => this.stylePath(manifest.id)),
+      this.manifests.map((manifest) => this.stylePath(manifest.id)),
       { ignoreInitial: true }
     )
       .on("change", notify)

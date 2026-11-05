@@ -3,19 +3,19 @@ import platformInfo from '@/common/platform_info';
 import ExtensionFileManager from '@/services/extensions/ExtensionFileManager';
 import { ThemeManager } from '@/services/theme/ThemeManager';
 import { ThemeConfigurationModule } from '@/services/theme/modules/ThemeConfigurationModule';
+import { ThemeAutoUpdateModule } from '@/services/theme/modules/ThemeAutoUpdateModule';
 import BksConfig from '@/common/bksConfig';
 import { ExtensionRepository, RegistryMap, ThemeManifest, ThemeSnapshot } from '@/services/plugin/types';
 
 export const themeManager = new ThemeManager({
   fileManager: new ExtensionFileManager({ root: platformInfo.themesDirectory }),
-  config: BksConfig,
 });
 themeManager.registerModule(ThemeConfigurationModule.with({ config: BksConfig }));
+themeManager.registerModule(ThemeAutoUpdateModule.with({ config: BksConfig }));
 
 export interface IThemeHandlers {
   'theme/themes': () => Promise<ThemeSnapshot[]>,
   'theme/watch': ({ sId }: { sId: string }) => Promise<void>
-  'theme/syncOrigins': () => Promise<void>
   'theme/checkForUpdates': ({ id }: { id: string }) => Promise<boolean>
   'theme/install': ({ id }: { id: string }) => Promise<ThemeManifest>
   'theme/entries': ({ clearCache }: { clearCache: boolean }) => Promise<{ entries: RegistryMap, errors: string[] }>
@@ -32,10 +32,6 @@ export const ThemeHandlers: IThemeHandlers = {
       state(sId).port.postMessage({ type: 'themeFileChanged', input: id });
     });
   },
-  'theme/syncOrigins': async function() {
-    await themeManager.syncOrigins();
-    await themeManager.autoUpdateThemes();
-  },
   'theme/checkForUpdates': async function({ id }: { id: string }) {
     return await themeManager.checkForUpdates(id);
   },
@@ -43,7 +39,11 @@ export const ThemeHandlers: IThemeHandlers = {
     return await themeManager.installTheme(id);
   },
   'theme/entries': async function({ clearCache }: { clearCache: boolean }) {
-    return await themeManager.getEntries(clearCache);
+    if (clearCache) {
+      themeManager.registry.clearCache();
+    }
+    const entries = await themeManager.registry.getEntries();
+    return { entries, errors: Object.values(themeManager.registry.errors) };
   },
   'theme/repository': async function({ id }: { id: string }) {
     return await themeManager.registry.getRepository(id);

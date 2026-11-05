@@ -306,8 +306,7 @@ export type ThemeDisableState =
       reason:
         | "community-themes-disabled"
         | "unlisted-theme-disabled"
-        | "missing-style"
-        | "bundled-id-conflict";
+        | "missing-style";
     };
 
 export type WebPluginManagerStatus = "initializing" | "ready" | "failed-to-initialize";

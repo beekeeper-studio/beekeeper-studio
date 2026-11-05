@@ -347,9 +347,6 @@ export default Vue.extend({
       setThemeId: "setId",
       loadThemes: "loadThemes",
     }),
-    isIgnoredTheme(theme: ThemeSnapshot) {
-      return theme.disableState.disabled && theme.disableState.reason === "bundled-id-conflict";
-    },
     disabledReasonText(theme: ThemeSnapshot) {
       if (!theme.disableState.disabled) {
         return "";
