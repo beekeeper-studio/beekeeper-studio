@@ -55,7 +55,7 @@ export class ThemeProtocol {
         return new Response(null, { status: 404 });
       }
       const css = await fs.readFile(
-        path.join(platformInfo.builtinThemesDirectory, `${themeId}.css`),
+        path.join(platformInfo.builtinThemesDirectory, themeId, "style.css"),
         "utf8"
       );
       return this.respond(this.compile(css, themeId, url), "text/css");

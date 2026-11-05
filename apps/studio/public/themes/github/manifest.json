@@ -1,0 +1,10 @@
+{
+  "id": "github",
+  "name": "GitHub",
+  "author": {
+    "name": "Beekeeper Studio",
+    "url": "https://www.beekeeperstudio.io"
+  },
+  "description": "A theme based on GitHub's colors.",
+  "version": "1.0.0"
+}

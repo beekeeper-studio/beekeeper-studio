@@ -1,4 +1,8 @@
 import type { RegistryConfig, ThemeManifest } from "@/services/plugin";
+import defaultThemeManifest from "../../public/themes/default/manifest.json";
+import solarizedThemeManifest from "../../public/themes/solarized/manifest.json";
+import draculaThemeManifest from "../../public/themes/dracula/manifest.json";
+import githubThemeManifest from "../../public/themes/github/manifest.json";
 
 export default {
   updateCheckInterval: 1000 * 60 * 60 * 24, // 24 hours
@@ -55,36 +59,11 @@ export default {
     ] satisfies RegistryConfig[],
   },
   themes: {
-    /** Bundled themes are stored in `apps/studio/public/themes/<id>.css`. **/
     bundled: [
-      {
-        id: "default",
-        name: "Default",
-        author: "Beekeeper Studio",
-        description: "The default Beekeeper Studio theme.",
-        version: "1.0.0",
-      },
-      {
-        id: "solarized",
-        name: "Solarized",
-        author: "Beekeeper Studio",
-        description: "A theme based on the Solarized palette.",
-        version: "1.0.0",
-      },
-      {
-        id: "dracula",
-        name: "Dracula",
-        author: "Beekeeper Studio",
-        description: "A theme based on the Dracula palette.",
-        version: "1.0.0",
-      },
-      {
-        id: "github",
-        name: "GitHub",
-        author: "Beekeeper Studio",
-        description: "A theme based on GitHub's colors.",
-        version: "1.0.0",
-      },
+      defaultThemeManifest,
+      solarizedThemeManifest,
+      draculaThemeManifest,
+      githubThemeManifest,
     ] satisfies ThemeManifest[],
     registries: [
       {
