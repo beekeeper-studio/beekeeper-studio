@@ -1165,8 +1165,11 @@ export default Vue.extend({
   grid-auto-columns: calc((100% - 4rem) / 4.5);
   gap: 0.5rem;
   overflow-x: auto;
+  // Just enough padding-top so the menu button doesn't get clipped by overflow
+  padding-top: 0.5rem;
   padding-bottom: 0.5rem;
   padding-right: 0.2rem;
+  margin-top: -0.3rem;
 }
 
 .form-group label.theme-item {
