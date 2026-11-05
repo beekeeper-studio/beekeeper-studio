@@ -14,7 +14,14 @@
       const rawThemeId = params.get("themeId");
       const themeId = /^[a-zA-Z0-9_-]+$/.test(rawThemeId || "") ? rawThemeId : "default";
       const appearance = params.get("appearance") || "auto";
-      document.getElementById("theme").href = `theme://${themeId}/style.css`;
+      const themeLink = document.getElementById("theme");
+      themeLink.onerror = () => {
+        if (themeId === "default") {
+          return;
+        }
+        themeLink.href = "theme://default/style.css";
+      };
+      themeLink.href = `theme://${themeId}/style.css`;
     </script>
 
     <script src="./src-commercial/entrypoints/renderer.ts" type="module"></script>
@@ -24,7 +31,6 @@
       const systemDark = matchMedia("(prefers-color-scheme: dark)").matches;
       const isDark = appearance === "auto" ? systemDark : appearance === "dark";
       document.body.classList.add(isDark ? "dark-theme" : "light-theme");
-      document.body.classList.add(`theme-${themeId}`);
     </script>
     <noscript>
       <strong>We're sorry but beekeeper-studio doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
