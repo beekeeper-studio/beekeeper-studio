@@ -79,6 +79,25 @@ export class PluginError extends Error {
   }
 }
 
+export type ThemeSystemErrorCode =
+  | "THEME_ID_RESERVED"
+  | "THEME_NOT_FOUND"
+  | "MANIFEST_ID_MISMATCH";
+
+export class ThemeSystemError extends Error {
+  constructor(
+    public readonly code: ThemeSystemErrorCode,
+    message?: string,
+    options?: ErrorOptions
+  ) {
+    super(message, options);
+    this.name = this.constructor.name;
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
+}
+
 /** Thrown when a path would resolve outside the directory it must stay in. */
 export class PathTraversalError extends Error {
   constructor(message?: string, options?: ErrorOptions) {

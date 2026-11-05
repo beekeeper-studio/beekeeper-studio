@@ -16,7 +16,7 @@ import {
 import type { BksConfig } from "@/common/bksConfig/BksConfigProvider";
 import ExtensionRegistry from "@/services/extensions/ExtensionRegistry";
 import rawLog from "@bksLogger";
-import { PluginError, PluginSystemError } from "@/lib/errors";
+import { ThemeSystemError } from "@/lib/errors";
 import { ThemeEntryCache } from "@/common/appdb/models/ThemeEntryCache";
 import { Hookable } from "@/services/plugin/Hookable";
 import type { ThemeModuleHookMap } from "./modules/ThemeModule";
@@ -62,8 +62,8 @@ export class ThemeManager extends Hookable<ThemeManager, ThemeModuleHookMap> {
     this.initializeGuard();
 
     if (this.isBundled(id)) {
-      throw new PluginSystemError(
-        "PLUGIN_NOT_SUPPORTED",
+      throw new ThemeSystemError(
+        "THEME_ID_RESERVED",
         `Theme id "${id}" is reserved by a bundled theme.`
       );
     }
@@ -78,8 +78,8 @@ export class ThemeManager extends Hookable<ThemeManager, ThemeModuleHookMap> {
     return await this.withThemeLock(id, async () => {
       const info = await this.registry.getRepository(id);
       if (!info) {
-        throw new PluginSystemError(
-          "PLUGIN_NOT_FOUND",
+        throw new ThemeSystemError(
+          "THEME_NOT_FOUND",
           `Theme "${id}" not found in registry.`
         );
       }
@@ -88,8 +88,8 @@ export class ThemeManager extends Hookable<ThemeManager, ThemeModuleHookMap> {
       // The theme is downloaded into a directory named after the registry id,
       // so the manifest id must match it.
       if (latestRelease.manifest.id !== id) {
-        throw new PluginError(
-          "MANIFEST_PARSE",
+        throw new ThemeSystemError(
+          "MANIFEST_ID_MISMATCH",
           `Theme "${id}" manifest declares mismatched id "${latestRelease.manifest.id}".`
         );
       }
