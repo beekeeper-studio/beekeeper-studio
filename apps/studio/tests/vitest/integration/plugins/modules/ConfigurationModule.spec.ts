@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
-import ExtensionFileManager from "@/services/extensions/ExtensionFileManager";
+import ExtensionFileManager from "@/services/extension/ExtensionFileManager";
 import { Manifest } from "@/services/plugin/types";
 import PluginManager from "@/services/plugin/PluginManager";
 import { createPluginServer } from "@tests/vitest/integration/plugins/utils/server";
@@ -8,7 +8,7 @@ import {
   cleanFileManager,
 } from "@tests/vitest/integration/plugins/utils/extensionFileManager";
 import { MockPluginRepositoryService } from "@tests/vitest/integration/plugins/utils/registry";
-import ExtensionRegistry from "@/services/extensions/ExtensionRegistry";
+import ExtensionRegistry from "@/services/extension/ExtensionRegistry";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import migration from "@/migration/20250529_add_plugin_settings";
 import { UserSetting } from "@/common/appdb/models/user_setting";

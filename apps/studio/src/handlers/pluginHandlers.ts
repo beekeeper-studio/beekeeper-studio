@@ -5,14 +5,14 @@ import { PluginSystemError } from "@/lib/errors";
 import { state } from "@/handlers/handlerState";
 import platformInfo from '@/common/platform_info';
 import { PluginManager } from '@/services/plugin';
-import ExtensionFileManager from '@/services/extensions/ExtensionFileManager';
+import ExtensionFileManager from '@/services/extension/ExtensionFileManager';
 import {
   ConfigurationModule,
   BundledPluginModule,
   RegistryModule,
   LicenseModule,
 } from '@/services/plugin/modules';
-import ExtensionRegistry from '@/services/extensions/ExtensionRegistry';
+import ExtensionRegistry from '@/services/extension/ExtensionRegistry';
 import globals from '@/common/globals';
 import BksConfig from '@/common/bksConfig';
 

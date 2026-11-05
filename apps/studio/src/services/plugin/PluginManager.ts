@@ -1,7 +1,7 @@
 import _ from "lodash";
 import path from "path";
-import ExtensionRegistry from "@/services/extensions/ExtensionRegistry";
-import ExtensionFileManager from "@/services/extensions/ExtensionFileManager";
+import ExtensionRegistry from "@/services/extension/ExtensionRegistry";
+import ExtensionFileManager from "@/services/extension/ExtensionFileManager";
 import {
   Manifest as AnyVersionManifest,
   ManifestV1 as Manifest,

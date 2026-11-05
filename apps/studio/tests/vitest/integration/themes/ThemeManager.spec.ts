@@ -2,13 +2,13 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from
 import globals from "@/common/globals";
 import fs from "fs";
 import path from "path";
-import ExtensionFileManager from "@/services/extensions/ExtensionFileManager";
+import ExtensionFileManager from "@/services/extension/ExtensionFileManager";
 import { ThemeManager } from "@/services/theme/ThemeManager";
 import { createThemeServer } from "./utils/server";
 import { createFileManager, cleanFileManager } from "./utils/extensionFileManager";
 import { MockThemeRepositoryService } from "./utils/registry";
 import { PluginSystemError, ThemeSystemError } from "@/lib/errors";
-import ExtensionRegistry from "@/services/extensions/ExtensionRegistry";
+import ExtensionRegistry from "@/services/extension/ExtensionRegistry";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import { ThemeManifest, ThemeSnapshot } from "@/services/plugin";
 

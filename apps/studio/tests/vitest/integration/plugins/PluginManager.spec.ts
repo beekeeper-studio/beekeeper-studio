@@ -3,7 +3,7 @@ import globals from "@/common/globals";
 import fs from "fs";
 import path from "path";
 import { tmpdir } from "os";
-import ExtensionFileManager from "@/services/extensions/ExtensionFileManager";
+import ExtensionFileManager from "@/services/extension/ExtensionFileManager";
 import PluginManager, {
   PluginManagerOptions,
 } from "@/services/plugin/PluginManager";
@@ -11,7 +11,7 @@ import { createPluginServer } from "./utils/server";
 import { createFileManager, cleanFileManager } from "./utils/extensionFileManager";
 import { MockPluginRepositoryService } from "./utils/registry";
 import { PathTraversalError, PluginSystemError } from "@/lib/errors";
-import ExtensionRegistry from "@/services/extensions/ExtensionRegistry";
+import ExtensionRegistry from "@/services/extension/ExtensionRegistry";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import migration from "@/migration/20250529_add_plugin_settings";
 import { Manifest } from "@/services/plugin";

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
 import fs from "fs";
 import path from "path";
-import ExtensionFileManager from "@/services/extensions/ExtensionFileManager";
+import ExtensionFileManager from "@/services/extension/ExtensionFileManager";
 import { ThemeManifest } from "@/services/plugin/types";
 import { ThemeManager } from "@/services/theme/ThemeManager";
 import { createThemeServer } from "@tests/vitest/integration/themes/utils/server";
@@ -10,7 +10,7 @@ import {
   cleanFileManager,
 } from "@tests/vitest/integration/themes/utils/extensionFileManager";
 import { MockThemeRepositoryService } from "@tests/vitest/integration/themes/utils/registry";
-import ExtensionRegistry from "@/services/extensions/ExtensionRegistry";
+import ExtensionRegistry from "@/services/extension/ExtensionRegistry";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import { ThemeConfigurationModule } from "@/services/theme/modules/ThemeConfigurationModule";
 import { createConfig } from "@tests/vitest/integration/utils/config";

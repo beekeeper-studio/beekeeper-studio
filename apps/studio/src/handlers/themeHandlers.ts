@@ -1,6 +1,6 @@
 import { state } from '@/handlers/handlerState';
 import platformInfo from '@/common/platform_info';
-import ExtensionFileManager from '@/services/extensions/ExtensionFileManager';
+import ExtensionFileManager from '@/services/extension/ExtensionFileManager';
 import { ThemeManager } from '@/services/theme/ThemeManager';
 import { ThemeConfigurationModule } from '@/services/theme/modules/ThemeConfigurationModule';
 import { ThemeAutoUpdateModule } from '@/services/theme/modules/ThemeAutoUpdateModule';

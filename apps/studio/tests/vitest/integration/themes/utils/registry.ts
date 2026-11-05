@@ -1,5 +1,5 @@
 import { ThemeManifest, ExtensionOrigin, RawPluginRegistryEntry } from "@/services/plugin";
-import ExtensionRepositoryService from "@/services/extensions/ExtensionRepositoryService";
+import ExtensionRepositoryService from "@/services/extension/ExtensionRepositoryService";
 import { MockThemeServer } from "./server";
 import BksConfig from "@/common/bksConfig";
 
@@ -17,7 +17,7 @@ export type Theme = {
  * Usage:
  *
  * ```js
- * import ExtensionRegistry from "@/services/extensions/ExtensionRegistry";
+ * import ExtensionRegistry from "@/services/extension/ExtensionRegistry";
  * import { MockThemeRepositoryService } from "./registry";
  *
  * const server = createThemeServer();

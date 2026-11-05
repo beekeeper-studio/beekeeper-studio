@@ -1,7 +1,7 @@
 import path from "path";
 import semver from "semver";
 import { watch, FSWatcher } from "chokidar";
-import ExtensionFileManager from "@/services/extensions/ExtensionFileManager";
+import ExtensionFileManager from "@/services/extension/ExtensionFileManager";
 import globals from "@/common/globals";
 import {
   ExtensionOrigin,
@@ -10,7 +10,7 @@ import {
   ThemeManifest,
   ThemeSnapshot,
 } from "@/services/plugin/types";
-import ExtensionRegistry from "@/services/extensions/ExtensionRegistry";
+import ExtensionRegistry from "@/services/extension/ExtensionRegistry";
 import rawLog from "@bksLogger";
 import { PluginSystemError, ThemeSystemError } from "@/lib/errors";
 import { ThemeEntryCache } from "@/common/appdb/models/ThemeEntryCache";

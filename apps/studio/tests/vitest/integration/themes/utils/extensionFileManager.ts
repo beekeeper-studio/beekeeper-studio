@@ -1,4 +1,4 @@
-import ExtensionFileManager from "@/services/extensions/ExtensionFileManager";
+import ExtensionFileManager from "@/services/extension/ExtensionFileManager";
 import { ThemeManifest } from "@/services/plugin/types";
 import fs from "fs";
 import path from "path";

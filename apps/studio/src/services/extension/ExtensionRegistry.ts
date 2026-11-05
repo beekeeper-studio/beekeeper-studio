@@ -1,5 +1,5 @@
 import rawLog from "@bksLogger";
-import ExtensionRepositoryService from "@/services/extensions/ExtensionRepositoryService";
+import ExtensionRepositoryService from "@/services/extension/ExtensionRepositoryService";
 import { ExtensionRepository, RegistryConfig, ExtensionRegistryEntry, RegistryMap } from "@/services/plugin/types";
 import { PluginSystemError } from "@/lib/errors";
 
