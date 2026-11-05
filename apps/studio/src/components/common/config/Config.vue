@@ -113,6 +113,7 @@ export default Vue.extend({
 .config {
   display: flex;
   align-items: flex-start;
+  height: 100%;
 }
 
 .config-nav {
@@ -161,6 +162,7 @@ export default Vue.extend({
 
 .content {
   flex-grow: 1;
+  height: 100%;
   min-width: 0;
   // Stops the slide-in from adding a horizontal scrollbar
   overflow-x: clip;

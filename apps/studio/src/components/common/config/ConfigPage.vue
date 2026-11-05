@@ -89,6 +89,9 @@ export default Vue.extend({
 .config-page {
   --config-page-header-height: 2.6rem;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .config-page-header {
@@ -128,6 +131,17 @@ export default Vue.extend({
 
   .material-icons {
     font-size: 1.25rem;
+  }
+}
+
+// Each page scrolls on its own so a virtual list inside can fill it
+.config-page-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+
+  ::v-deep > .config-page-content {
+    height: 100%;
   }
 }
 

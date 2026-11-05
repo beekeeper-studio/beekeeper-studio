@@ -30,19 +30,6 @@
       <div class="alerts">
         <error-alert :error="errors" />
       </div>
-      <config-item
-        label="Plugin Configuration"
-        helper="Registries, updates and GitHub rate limits."
-      >
-        <button
-          type="button"
-          class="btn btn-flat"
-          @click="config.open('plugin-config')"
-        >
-          Configure…
-        </button>
-      </config-item>
-      <h3>Available Plugins</h3>
       <plugin-list
         class="remote-plugin-list"
         :plugins="sortedPlugins"
@@ -51,7 +38,23 @@
         @update="update"
         @item-click="openPluginPage"
         @checkForUpdates="checkForUpdates"
-      />
+      >
+        <template #header>
+          <config-item
+            label="Plugin Configuration"
+            helper="Registries, updates and GitHub rate limits."
+          >
+            <button
+              type="button"
+              class="btn btn-flat"
+              @click="config.open('plugin-config')"
+            >
+              Configure…
+            </button>
+          </config-item>
+          <h3>Available Plugins</h3>
+        </template>
+      </plugin-list>
     </div>
     <config-page
       id="plugin-detail"

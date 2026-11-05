@@ -1,6 +1,23 @@
 <template>
-  <div class="plugin-list-wrap">
-    <div class="fixed">
+  <virtual-list
+    class="plugin-list"
+    data-key="id"
+    :data-sources="filteredPlugins"
+    :data-component="itemComponent"
+    :estimate-size="80"
+    header-class="plugin-list-header"
+    :header-style="{ top: `-${introHeight}px` }"
+    :extra-props="{
+      isSearching: !!searchQuery,
+      brokenAvatars,
+      emit: emitItemEvent,
+      markAsBrokenAvatar,
+    }"
+  >
+    <template #header>
+      <div ref="intro">
+        <slot name="header" />
+      </div>
       <div class="filter">
         <div class="filter-wrap">
           <input
@@ -50,37 +67,25 @@
           </select>
         </template>
       </div>
-    </div>
-
-    <div
-      v-if="filteredPlugins.length === 0"
-      class="empty-state"
-    >
-      <i class="material-icons-outlined">
-        {{ searchQuery ? "search_off" : "inventory_2" }}
-      </i>
-      <span v-if="searchQuery">No results for "{{ searchQuery }}"</span>
-      <span v-else>It's quiet in here</span>
-    </div>
-    <div
-      v-else
-      class="plugin-list"
-    >
-      <plugin-item
-        v-for="plugin in filteredPlugins"
-        :key="plugin.id"
-        :source="plugin"
-        :is-searching="!!searchQuery"
-        :broken-avatars="brokenAvatars"
-        :emit="emitItemEvent"
-        :mark-as-broken-avatar="markAsBrokenAvatar"
-      />
-    </div>
-  </div>
+    </template>
+    <template #footer>
+      <div
+        v-if="filteredPlugins.length === 0"
+        class="empty-state"
+      >
+        <i class="material-icons-outlined">
+          {{ searchQuery ? "search_off" : "inventory_2" }}
+        </i>
+        <span v-if="searchQuery">No results for "{{ searchQuery }}"</span>
+        <span v-else>It's quiet in here</span>
+      </div>
+    </template>
+  </virtual-list>
 </template>
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
+import VirtualList from "vue-virtual-scroll-list";
 import PluginItem from "./PluginItem.vue";
 import type { ExtensionUI, ExtensionOrigin } from "@/services/plugin/types";
 import { mapGetters } from "vuex";
@@ -95,7 +100,7 @@ const uf = new uFuzzy({
 
 export default Vue.extend({
   name: "PluginList",
-  components: { PluginItem },
+  components: { VirtualList },
   props: {
     plugins: {
       type: Array as PropType<ExtensionUI[]>,
@@ -117,6 +122,9 @@ export default Vue.extend({
       searchQuery: null,
       origin: "any" as "any" | ExtensionOrigin,
       installedOnly: false,
+      itemComponent: PluginItem,
+      introHeight: 0,
+      introObserver: null as ResizeObserver | null,
     };
   },
   computed: {
@@ -165,7 +173,17 @@ export default Vue.extend({
       return results;
     }
   },
+  mounted() {
+    this.introObserver = new ResizeObserver(this.updateIntroHeight);
+    this.introObserver.observe(this.$refs.intro as HTMLElement);
+  },
+  beforeDestroy() {
+    this.introObserver.disconnect();
+  },
   methods: {
+    updateIntroHeight() {
+      this.introHeight = (this.$refs.intro as HTMLElement).offsetHeight;
+    },
     emitItemEvent(eventName: string, plugin: ExtensionUI) {
       this.$emit(eventName, plugin);
     },
@@ -182,22 +200,18 @@ export default Vue.extend({
 <style lang="scss" scoped>
 @import '../../shared/assets/styles/_variables';
 
-.plugin-list-wrap {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
 .plugin-list {
-  list-style-type: none;
-  padding: 0 0 0.5rem;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
+  height: 100%;
   min-height: 0;
   min-width: 400px;
+  overflow-y: auto;
+}
+
+// Negative top lets the slotted intro scroll away while the search bar sticks
+.plugin-list ::v-deep .plugin-list-header {
+  position: sticky;
+  z-index: 1;
+  background: var(--panel-bg);
 }
 
 .empty-state {
@@ -213,14 +227,6 @@ export default Vue.extend({
   .material-icons-outlined {
     font-size: 2.5rem;
   }
-}
-
-.fixed {
-  position: sticky;
-  // Sits below a ConfigPage's sticky header when inside one
-  top: var(--config-page-header-height, 0);
-  z-index: 1;
-  background: var(--panel-bg);
 }
 
 .list-filters {
