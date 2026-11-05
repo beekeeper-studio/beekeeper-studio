@@ -133,7 +133,8 @@ export default Vue.extend({
 
 // While a nested page is active, hide everything else on this page
 .config-page-body.has-open-child ::v-deep {
-  > :not(.config-page) {
+  > :not(.config-page, .config-page-content),
+  > .config-page-content > :not(.config-page) {
     display: none;
   }
 }
