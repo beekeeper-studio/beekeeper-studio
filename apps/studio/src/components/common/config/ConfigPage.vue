@@ -43,18 +43,22 @@ export default Vue.extend({
     parentPage: { default: null },
   },
   props: {
+    /** Unique page id. Pass it to `open()` or `v-model` to show this page. */
     id: {
       type: String,
       required: true,
     },
+    /** Heading of the page, also used as its tab label when top-level. */
     title: {
       type: String,
       required: true,
     },
+    /** Material icon name shown in the tab. Only used by top-level pages. */
     icon: {
       type: String,
       default: null,
     },
+    /** Show a progress bar at the top of the page. */
     loading: Boolean,
   },
   computed: {

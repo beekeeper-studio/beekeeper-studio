@@ -47,6 +47,7 @@ export default Vue.extend({
     return { config: this };
   },
   props: {
+    /** Id of the page being shown. Bind with `v-model`. */
     activePageId: {
       type: String,
       required: true,

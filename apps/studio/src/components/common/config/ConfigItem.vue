@@ -24,17 +24,24 @@ import Vue, { PropType } from "vue";
 
 export default Vue.extend({
   props: {
+    /** Title shown above the helper text. */
     label: {
       type: String,
       required: true,
     },
+    /** Muted description shown under the label. */
     helper: {
       type: String,
       default: "",
     },
+    /** Render as a `<fieldset>` with a `<legend>`. Enable this if you make multiple inputs. */
     fieldset: Boolean,
+    /** Briefly flash the background to draw attention to this item. */
     highlighted: Boolean,
-    // "column" puts the control under the label instead of beside it
+    /**
+     * Main axis for the label and slot content, like CSS `flex-direction`:
+     * `row` puts the content beside the label, `column` puts it below.
+     */
     direction: {
       type: String as PropType<"row" | "column">,
       default: "row",
