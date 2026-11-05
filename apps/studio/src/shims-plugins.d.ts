@@ -29,7 +29,7 @@ declare module 'vue/types/vue' {
       warning(text: string, opts?: any): Noty
       info(text: string, opts?: any): Noty
     }
-    $confirm(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean>
+    $confirm(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string, variant?: "normal" | "danger" }): Promise<boolean>
     $confirmById(id: string): Promise<boolean>
     /**
      * Open the connection type picker.
