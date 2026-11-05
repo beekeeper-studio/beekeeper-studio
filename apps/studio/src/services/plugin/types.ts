@@ -290,7 +290,7 @@ export type PluginSnapshot = {
   /** Is this compatible with the current app version? */
   loadable: boolean;
   origin: ExtensionOrigin;
-  disableState: DisableState;
+  disableState: PluginDisableState;
 };
 
 export type ThemeSnapshot = {
@@ -305,7 +305,7 @@ export type ThemeDisableState =
       disabled: true;
       reason:
         | "community-themes-disabled"
-        | "unlisted-disabled"
+        | "unlisted-theme-disabled"
         | "missing-style"
         | "bundled-id-conflict";
     };
@@ -334,7 +334,7 @@ export type CreatePluginTabOptions = {
  * By default, `disabled` is `false`.
  * This value may be modified by other modules (e.g. {@link ConfigurationModule}).
  */
-type DisableState =
+type PluginDisableState =
   | { disabled: false }
   | {
       disabled: true;

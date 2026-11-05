@@ -127,16 +127,6 @@
                 </span>
               </label>
             </div>
-            <div
-              v-for="theme in ignoredThemes"
-              :key="`ignored-${theme.manifest.id}`"
-              class="alert"
-            >
-              <i class="material-icons-outlined">info</i>
-              <div class="alert-body expand">
-                {{ theme.manifest.name }} is ignored: id "{{ theme.manifest.id }}" is reserved by a bundled theme.
-              </div>
-            </div>
           </config-item>
           <config-item
             label="Community Themes"
@@ -343,7 +333,7 @@
                   </label>
                 </template>
                 <template #alerts>
-                  <disable-state-alert :plugin-id="selectedPlugin.id" />
+                  <disable-state-alert :id="selectedPlugin.id" type="plugin" />
                   <div
                     class="alert alert-danger"
                     v-if="!selectedPlugin.loadable && selectedPlugin.installed"
@@ -516,9 +506,6 @@ export default Vue.extend({
     }),
     listedThemes(): ThemeSnapshot[] {
       return this.themes.filter((theme) => !this.isIgnoredTheme(theme));
-    },
-    ignoredThemes(): ThemeSnapshot[] {
-      return this.themes.filter((theme) => this.isIgnoredTheme(theme));
     },
     installedIds(): string[] {
       return this.themes.map((theme) => theme.manifest.id);
@@ -712,7 +699,7 @@ export default Vue.extend({
       }
       return {
         "community-themes-disabled": "Community themes are off",
-        "unlisted-disabled": "Unlisted themes are off",
+        "unlisted-theme-disabled": "Unlisted themes are off",
         "missing-style": "Missing style.css",
       }[theme.disableState.reason];
     },

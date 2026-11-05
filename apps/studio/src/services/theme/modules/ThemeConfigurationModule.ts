@@ -41,7 +41,7 @@ export class ThemeConfigurationModule extends ThemeModule {
       if (snapshot.origin === "unlisted" && themeSystem.unlistedDisabled) {
         return {
           ...snapshot,
-          disableState: { disabled: true, reason: "unlisted-disabled" },
+          disableState: { disabled: true, reason: "unlisted-theme-disabled" },
         };
       }
 
