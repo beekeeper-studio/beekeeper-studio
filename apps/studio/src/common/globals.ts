@@ -1,8 +1,8 @@
 import type { RegistryConfig, ThemeManifest } from "@/services/plugin";
-import defaultThemeManifest from "../../public/themes/default/manifest.json";
-import solarizedThemeManifest from "../../public/themes/solarized/manifest.json";
-import draculaThemeManifest from "../../public/themes/dracula/manifest.json";
-import githubThemeManifest from "../../public/themes/github/manifest.json";
+import defaultTheme from "../../public/themes/default/manifest.json";
+import solarizedTheme from "../../public/themes/solarized/manifest.json";
+import draculaTheme from "../../public/themes/dracula/manifest.json";
+import githubTheme from "../../public/themes/github/manifest.json";
 
 export default {
   updateCheckInterval: 1000 * 60 * 60 * 24, // 24 hours
@@ -60,10 +60,10 @@ export default {
   },
   themes: {
     bundled: [
-      defaultThemeManifest,
-      solarizedThemeManifest,
-      draculaThemeManifest,
-      githubThemeManifest,
+      defaultTheme,
+      solarizedTheme,
+      draculaTheme,
+      githubTheme,
     ] satisfies ThemeManifest[],
     registries: [
       {

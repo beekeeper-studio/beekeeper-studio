@@ -143,7 +143,6 @@ export function mainPlatformInfo(): IPlatformInfo {
     logLevel: resolveLevel(p.env, isDevEnv),
 
     cloudUrl: isDevEnv ? 'http://localhost:3000' : 'https://app.beekeeperstudio.io'
-    // cloudUrl: 'https://app.beekeeperstudio.io'
   }
 }
 

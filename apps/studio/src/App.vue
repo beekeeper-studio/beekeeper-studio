@@ -170,8 +170,6 @@ export default Vue.extend({
     clearInterval(this.licenseInterval)
   },
   async mounted() {
-    // TODO: temporary, for debugging the config modal
-    this.$nextTick(() => this.$modal.show("config-modal"));
     // The store loads licenses before this component exists, so the
     // `licensesInitialized` and `status` watchers never see the initial
     // values. Without this, a trial or license that lapsed while the app was
