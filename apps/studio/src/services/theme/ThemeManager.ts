@@ -218,11 +218,17 @@ export class ThemeManager extends Hookable<ThemeManager, ThemeModuleHookMap> {
     return globals.themes.bundled.some((theme) => theme.id === id);
   }
 
-  private async rememberOrigin({ id, origin }: ExtensionRegistryEntry) {
+  private async rememberOrigin(entry: ExtensionRegistryEntry) {
     try {
-      await new ThemeEntryCache().withProps({ id, origin }).save();
+      let cache = await ThemeEntryCache.findOneBy({ id: entry.id });
+
+      if (!cache) {
+        cache = new ThemeEntryCache();
+      }
+
+      await cache.withProps(entry).save();
     } catch (e) {
-      log.warn(`Failed to remember origin of theme "${id}"`, e);
+      log.warn(`Failed to remember origin of theme "${entry.id}"`, e);
     }
   }
 

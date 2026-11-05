@@ -5,27 +5,27 @@ import { ThemeSnapshot } from "@/services/plugin/types";
 
 export type State = {
   systemDark: boolean;
-  themes: ThemeSnapshot[];
+  snapshots: ThemeSnapshot[];
 };
 
 export const ThemeModule: Module<State, RootState> = {
   namespaced: true,
   state: () => ({
     systemDark: true,
-    themes: [],
+    snapshots: [],
   }),
   mutations: {
     setSystemDark(state, systemDark: boolean) {
       state.systemDark = systemDark;
     },
-    setThemes(state, themes: ThemeSnapshot[]) {
-      state.themes = themes;
+    setSnapshots(state, snapshots: ThemeSnapshot[]) {
+      state.snapshots = snapshots;
     },
   },
   actions: {
     async loadThemes(context) {
-      const themes = await Vue.prototype.$util.send("theme/themes");
-      context.commit("setThemes", themes);
+      const snapshots = await Vue.prototype.$util.send("theme/themes");
+      context.commit("setSnapshots", snapshots);
     },
     setId(context, value: string) {
       context.dispatch(
@@ -43,12 +43,12 @@ export const ThemeModule: Module<State, RootState> = {
     },
   },
   getters: {
-    themes(state): ThemeSnapshot[] {
-      return state.themes;
+    snapshots(state): ThemeSnapshot[] {
+      return state.snapshots;
     },
     id(state, _getters, _rootState, rootGetters) {
       const id = rootGetters["settings/settings"].themeId?.value || "default";
-      const theme = state.themes.find((t) => t.manifest.id === id);
+      const theme = state.snapshots.find((t) => t.manifest.id === id);
       if (theme?.disableState.disabled) {
         return "default";
       }

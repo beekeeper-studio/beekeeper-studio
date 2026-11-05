@@ -101,25 +101,7 @@
                     </x-button>
                   </span>
                 </span>
-                <span
-                  v-if="theme.disableState.disabled"
-                  class="theme-preview-frame theme-disabled-info"
-                >
-                  <span>
-                    <span class="badge">{{ theme.origin }}</span>
-                    <span class="badge">disabled</span>
-                  </span>
-                  <span>{{ disabledReasonText(theme) }}</span>
-                  <a
-                    v-if="theme.disableState.reason !== 'missing-style'"
-                    href="#"
-                    @click.prevent.stop="open('theme-config')"
-                  >Theme Configuration</a>
-                </span>
-                <span
-                  v-else
-                  class="theme-preview-frame"
-                >
+                <span class="theme-preview-frame">
                   <theme-preview
                     :theme-id="theme.manifest.id"
                     :appearance="themeAppearance"
@@ -129,7 +111,7 @@
             </div>
           </config-item>
           <config-item
-            label="Community Themes"
+            label="Get More Themes"
             helper="Themes made and shared by the community."
           >
             <button
@@ -154,7 +136,7 @@
           </config-item>
           <config-page
             id="community-themes"
-            title="Community Themes"
+            title="Themes"
             :loading="loadingEntries"
           >
             <template>
@@ -175,7 +157,7 @@
                 </button>
               </div>
               <plugin-list
-                v-if="!themeEntriesError || themeEntries.length > 0"
+                v-if="!themeEntriesError || displayThemes.length > 0"
                 :plugins="displayThemes"
                 search-placeholder="Search Themes"
                 :show-origin-filter="false"
@@ -500,28 +482,62 @@ export default Vue.extend({
   },
   computed: {
     ...mapGetters({
-      themes: "theme/themes",
+      themes: "theme/snapshots",
       themeId: "theme/id",
       themeAppearance: "theme/appearance",
     }),
     listedThemes(): ThemeSnapshot[] {
-      return this.themes.filter((theme) => !this.isIgnoredTheme(theme));
+      return this.themes.filter((theme) => !theme.disableState.disabled);
     },
     installedIds(): string[] {
       return this.themes.map((theme) => theme.manifest.id);
     },
     displayThemes(): ExtensionUI[] {
-      return this.themeEntries.map((entry) => ({
-        ...entry,
-        installed: this.installedIds.includes(entry.id),
-        installing: this.installingIds.includes(entry.id),
-        enabled: true,
-        loadable: true,
-        checkingForUpdates: null,
-        updateAvailable: false,
-        error: this.installErrors[entry.id] ?? null,
-        disabled: false,
-      }) as ExtensionUI);
+      const list: ExtensionUI[] = [];
+
+      for (const theme of this.themes as ThemeSnapshot[]) {
+        if (theme.origin === "bundled") {
+          continue;
+        }
+
+        const entry = this.themeEntries.find(
+          (entry) => entry.id === theme.manifest.id
+        );
+
+        list.push({
+          ...theme.manifest,
+          origin: theme.origin,
+          repo: entry?.repo ?? null,
+          installed: true,
+          installing: this.installingIds.includes(theme.manifest.id),
+          enabled: true,
+          loadable: true,
+          checkingForUpdates: null,
+          updateAvailable: false,
+          error: this.installErrors[theme.manifest.id] ?? null,
+          disabled: theme.disableState.disabled,
+        } as ExtensionUI);
+      }
+
+      for (const entry of this.themeEntries) {
+        if (this.installedIds.includes(entry.id)) {
+          continue;
+        }
+
+        list.push({
+          ...entry,
+          installed: false,
+          installing: this.installingIds.includes(entry.id),
+          enabled: true,
+          loadable: true,
+          checkingForUpdates: null,
+          updateAvailable: false,
+          error: this.installErrors[entry.id] ?? null,
+          disabled: false,
+        } as ExtensionUI);
+      }
+
+      return list;
     },
     rootBindings() {
       return [

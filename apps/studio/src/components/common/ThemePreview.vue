@@ -1,7 +1,7 @@
 <template>
   <span
     class="theme-preview-scope"
-    :class="{ split: appearance === 'auto' }"
+    :class="`appearance-${appearance}`"
     :data-theme-preview="themeId"
   >
     <link
@@ -124,6 +124,11 @@ export default Vue.extend({
       default: "auto",
     },
   },
+  data() {
+    return {
+      reloadedAt: 0,
+    };
+  },
   computed: {
     modes(): string[] {
       if (this.appearance === "light") {
@@ -134,23 +139,11 @@ export default Vue.extend({
         return ["light-theme", "dark-theme"];
       }
     },
-  },
-  data() {
-    return {
-      reloadedAt: 0,
-    };
-  },
-  mounted() {
-    this.$root.$on(AppEvent.themeFileChanged, this.handleThemeFileChanged);
-    if (import.meta.hot) {
-      import.meta.hot.on("theme-css-update", this.reloadStylesheet);
-    }
-  },
-  beforeDestroy() {
-    this.$root.$off(AppEvent.themeFileChanged, this.handleThemeFileChanged);
-    if (import.meta.hot) {
-      import.meta.hot.off("theme-css-update", this.reloadStylesheet);
-    }
+    rootBindings() {
+      return [
+        { event: AppEvent.themeFileChanged, handler: this.handleThemeFileChanged },
+      ]
+    },
   },
   methods: {
     handleThemeFileChanged(id: string) {
@@ -161,6 +154,18 @@ export default Vue.extend({
     reloadStylesheet() {
       this.reloadedAt = Date.now();
     },
+  },
+  mounted() {
+    if (import.meta.hot) {
+      import.meta.hot.on("theme-css-update", this.reloadStylesheet);
+    }
+    this.registerHandlers(this.rootBindings)
+  },
+  beforeDestroy() {
+    if (import.meta.hot) {
+      import.meta.hot.off("theme-css-update", this.reloadStylesheet);
+    }
+    this.unregisterHandlers(this.rootBindings)
   },
 });
 </script>
@@ -176,11 +181,11 @@ export default Vue.extend({
     grid-area: 1 / 1;
   }
 
-  &.split > .light-theme {
+  &.appearance-auto > .light-theme {
     clip-path: polygon(0 0, 60% 0, 40% 100%, 0 100%);
   }
 
-  &.split > .dark-theme {
+  &.appearance-auto > .dark-theme {
     clip-path: polygon(60% 0, 100% 0, 100% 100%, 40% 100%);
   }
 }
