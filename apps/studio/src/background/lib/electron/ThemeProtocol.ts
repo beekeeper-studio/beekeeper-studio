@@ -6,7 +6,6 @@ import rawLog from "@bksLogger";
 import platformInfo from "@/common/platform_info";
 import globals from "@/common/globals";
 import { ThemeCompiler } from "@/services/theme/ThemeCompiler";
-import { isValidManifestId } from "@/services/plugin/utils";
 
 const log = rawLog.scope("ThemeProtocol");
 
@@ -44,7 +43,7 @@ export class ThemeProtocol {
     const themeId = url.hostname;
     const segments = this.parsePath(url.pathname);
 
-    if (!isValidManifestId(themeId) || !segments) {
+    if (!segments) {
       return new Response(null, { status: 404 });
     }
 
