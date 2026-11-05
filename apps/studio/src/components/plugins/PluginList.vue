@@ -24,9 +24,9 @@
         <label class="checkbox-group">
           <input
             type="checkbox"
-            v-model="showUninstalled"
+            v-model="installedOnly"
           >
-          <span>Show uninstalled</span>
+          <span>Installed only</span>
         </label>
         <template v-if="showOriginFilter">
           <label for="plugin-origin-filter">Origin:</label>
@@ -116,7 +116,7 @@ export default Vue.extend({
       brokenAvatars: [] as string[],
       searchQuery: null,
       origin: "any" as "any" | ExtensionOrigin,
-      showUninstalled: true,
+      installedOnly: false,
     };
   },
   computed: {
@@ -126,7 +126,7 @@ export default Vue.extend({
       if (this.origin !== "any") {
         plugins = plugins.filter((p: ExtensionUI) => p.origin === this.origin);
       }
-      if (!this.showUninstalled) {
+      if (this.installedOnly) {
         plugins = plugins.filter((p: ExtensionUI) => p.installed);
       }
       if (!this.searchQuery) {
