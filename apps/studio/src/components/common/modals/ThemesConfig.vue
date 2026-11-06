@@ -155,7 +155,7 @@
           @item-click="openThemePage"
           @checkForUpdates="checkForUpdates"
         >
-          <template #header>
+          <template #sticky-header>
             <div class="header-row">
               <h3>Available Themes</h3>
               <button

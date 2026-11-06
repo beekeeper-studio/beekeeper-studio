@@ -2,37 +2,11 @@
   <div class="config-page-content">
     <div class="plugin-manager-content">
       <plugin-disabled-overlay v-if="$bksConfig.pluginSystem.disabled" />
-      <div
-        v-if="!optInAlertDismissed"
-        class="alert alert-info"
-      >
-        <i class="material-icons-outlined">info</i>
-        <div class="alert-body expand">
-          Official and community plugins are off by default. Turn them
-          on in Plugin Configuration to see more plugins.
-        </div>
-        <button
-          type="button"
-          class="btn btn-flat"
-          @click="highlightOptIn = true; config.open('plugin-config')"
-        >
-          Configure…
-        </button>
-        <button
-          type="button"
-          class="btn btn-icon"
-          title="Dismiss"
-          @click="dismissOptInAlert"
-        >
-          <i class="material-icons">close</i>
-        </button>
-      </div>
-      <div class="alerts">
-        <error-alert :error="errors" />
-      </div>
       <plugin-list
-        class="remote-plugin-list"
-        :plugins="sortedPlugins"
+        class="installed-plugin-list"
+        :plugins="sortedInstalledPlugins"
+        :show-installed-filter="false"
+        :show-origin-filter="false"
         @install="install"
         @uninstall="uninstall"
         @update="update"
@@ -40,22 +14,41 @@
         @checkForUpdates="checkForUpdates"
       >
         <template #header>
-          <control-row
-            title="Plugin Configuration"
-            description="Registries, updates and GitHub rate limits."
-          >
-            <button
-              type="button"
-              class="btn btn-flat"
-              @click="config.open('plugin-config')"
+          <div class="config-group">
+            <control-row
+              title="Install Plugins"
+              description="Browse and install plugins from the plugin registry."
             >
-              Configure…
-            </button>
-          </control-row>
+              <button
+                type="button"
+                class="btn btn-flat"
+                @click="config.open('plugin-browse')"
+              >
+                Browse…
+              </button>
+            </control-row>
+            <control-row
+              title="Plugin Configuration"
+              description="Registries, updates and GitHub rate limits."
+            >
+              <button
+                type="button"
+                class="btn btn-flat"
+                @click="config.open('plugin-config')"
+              >
+                Configure…
+              </button>
+            </control-row>
+            <div class="alerts">
+              <error-alert :error="errors" />
+            </div>
+          </div>
+        </template>
+        <template #sticky-header>
           <div class="header-row">
-            <h3>Available Plugins</h3>
+            <h3>Installed Plugins</h3>
             <button
-              v-if="hasInstalledPlugins"
+              v-if="sortedInstalledPlugins.length > 0"
               type="button"
               class="btn btn-icon"
               title="Check For Updates"
@@ -64,9 +57,57 @@
               <i class="material-icons">refresh</i>
             </button>
           </div>
+          <div
+            v-if="sortedInstalledPlugins.length === 0"
+            class="alert alert-info"
+          >
+            No plugins are currently installed
+          </div>
         </template>
       </plugin-list>
     </div>
+    <config-page
+      id="plugin-browse"
+      title="Browse Plugins"
+      :loading="loadingPlugins"
+    >
+      <template>
+        <div
+          v-if="!optInAlertDismissed"
+          class="alert alert-info"
+        >
+          <i class="material-icons-outlined">info</i>
+          <div class="alert-body expand">
+            Official and community plugins are off by default. Turn them
+            on in Plugin Configuration to see more plugins.
+          </div>
+          <button
+            type="button"
+            class="btn btn-flat"
+            @click="highlightOptIn = true; config.open('plugin-config')"
+          >
+            Configure…
+          </button>
+          <button
+            type="button"
+            class="btn btn-icon"
+            title="Dismiss"
+            @click="dismissOptInAlert"
+          >
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+        <plugin-list
+          class="remote-plugin-list"
+          :plugins="sortedPlugins"
+          @install="install"
+          @uninstall="uninstall"
+          @update="update"
+          @item-click="openPluginPage"
+          @checkForUpdates="checkForUpdates"
+        />
+      </template>
+    </config-page>
     <config-page
       id="plugin-detail"
       :title="selectedPlugin ? selectedPlugin.name : ''"
@@ -250,6 +291,9 @@ export default Vue.extend({
     selectedPlugin() {
       return this.plugins[this.selectedPluginIdx];
     },
+    sortedInstalledPlugins() {
+      return _.sortBy(this.displayPlugins.filter((plugin) => plugin.installed), this.pluginSorter);
+    },
     sortedPlugins() {
       return _.sortBy(this.displayPlugins, this.pluginSorter);
     },
@@ -258,9 +302,6 @@ export default Vue.extend({
         ...plugin,
         disabled: this.snapshotsById[plugin.id]?.disableState.disabled
       }));
-    },
-    hasInstalledPlugins(): boolean {
-      return this.plugins.some((plugin) => plugin.installed);
     },
     autoUpdate: {
       get() {
@@ -572,6 +613,11 @@ $gutter-h: 1.5rem;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.installed-plugin-list {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .plugin-manager-content {

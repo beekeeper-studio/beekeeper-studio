@@ -18,6 +18,7 @@
       <div ref="intro">
         <slot name="header" />
       </div>
+      <slot name="sticky-header" />
       <div class="filter">
         <div class="filter-wrap">
           <input
@@ -37,8 +38,14 @@
           </x-buttons>
         </div>
       </div>
-      <div class="list-filters">
-        <label class="checkbox-group">
+      <div
+        v-if="showInstalledFilter || showOriginFilter"
+        class="list-filters"
+      >
+        <label
+          v-if="showInstalledFilter"
+          class="checkbox-group"
+        >
           <input
             type="checkbox"
             v-model="installedOnly"
@@ -111,6 +118,10 @@ export default Vue.extend({
       default: "Search Plugins",
     },
     showOriginFilter: {
+      type: Boolean,
+      default: true,
+    },
+    showInstalledFilter: {
       type: Boolean,
       default: true,
     },
@@ -211,6 +222,7 @@ export default Vue.extend({
 .plugin-list ::v-deep .plugin-list-header {
   position: sticky;
   z-index: 1;
+  padding-bottom: 0.25rem;
   background: var(--panel-bg);
 }
 

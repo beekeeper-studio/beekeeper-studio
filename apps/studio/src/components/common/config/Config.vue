@@ -189,6 +189,10 @@ export default Vue.extend({
       left: 0;
       right: 0;
     }
+
+    .config-group {
+      margin-bottom: 1rem;
+    }
   }
 }
 </style>

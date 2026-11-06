@@ -81,7 +81,7 @@ export default Vue.extend({
   }
 
   h3 {
-    margin-top: 1rem;
+    margin-top: 0;
     margin-bottom: 0.75rem;
     padding-inline: 0.5rem;
     font-size: 1rem;
