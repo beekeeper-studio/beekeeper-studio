@@ -9,6 +9,10 @@ Writing SQL is such a fundamental part of interacting with a relational database
 
 You can use the SQL query tab to write, and run, SQL queries quickly and easily.
 
+## Quickly querying a table
+
+Right-click any table in the left sidebar and choose `SQL: Select Top` to open a new query tab pre-filled with a `SELECT * FROM` statement limited to 100 rows. The exact syntax (`LIMIT`, `TOP`, or `FETCH FIRST`) matches the database dialect so the query can run immediately.
+
 ## Code completion
 
 We have tried to make our code completion useful but not intrusive.

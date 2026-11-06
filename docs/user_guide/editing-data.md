@@ -57,7 +57,7 @@ Click the little `<>` icon to the left of the filters to enter a sql filter. You
 
 ## Editing Data
 
-In the table view you can easily edit any cell you like. Simply double click the cell to edit.
+In the table view you can edit any cell you like. Click a cell to enter edit mode, type the new value, and press `Enter` (or `Tab`) to stage the change. `Esc` cancels without staging.
 
 !!! note
     Beekeeper only supports editing tables with primary keys.
@@ -114,6 +114,7 @@ You can clone, delete, and create new rows of data pretty easily.
 
 - **Delete or Clone**: Right-click a row (or multiple selected rows) to delete or clone them.
 - **Add a Single Row**: Click the `+` button at the bottom right to add a new row. New rows will be added to the end of the table, even though they appear at the top of the UI for convenience.
+- **Add via context menu:** Right-click the empty space below the last row and choose `Add row`. The new row is staged at the end of the table, the same as the footer `+` button.
 - **Paste as New Rows**: Copy multi-row data from Excel, Google Sheets, or another table, then right-click any cell and choose `Paste as new rows` (or press `ctrl+shift+v` / `cmd+shift+v`). Beekeeper Studio positionally maps the clipboard values to the visible table columns and stages the new rows at the end of the table.
 
 ## Copying Data
