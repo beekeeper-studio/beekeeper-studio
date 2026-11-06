@@ -808,7 +808,8 @@
       },
       buildPendingUpdates() {
         return this.pendingChanges.updates.map((update) => {
-          return _.omit(update, ['key', 'oldValue', 'cell']);
+          // Issue #4802: Retain oldValue so backend MongoDB adapter can compute granular dotted-path updates
+          return _.omit(update, ['key', 'cell']);
         });
       },
       discardChanges() {

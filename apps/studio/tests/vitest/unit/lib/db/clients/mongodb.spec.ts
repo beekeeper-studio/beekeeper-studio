@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { MongoDBClient, urlUsesGssapi } from "@commercial/backend/lib/db/clients/mongodb"
+import { ObjectId } from "mongodb";
 
 describe("urlUsesGssapi", () => {
   it("detects GSSAPI on a standard URL", () => {
@@ -86,5 +87,259 @@ describe("MongoDBClient.executeQuery read-only", () => {
     await client.executeQuery("DELETE FROM users WHERE id = 1")
 
     expect(execute).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe("MongoDBClient.updateValues", () => {
+  it("emits dotted-path $set for changed fields and leaves untouched BSON Date sibling intact", async () => {
+    const client = new MongoDBClient(null, { database: "test" } as any)
+    const docId = new ObjectId()
+    const initialDate = new Date("2023-01-15T12:00:00.000Z")
+
+    const existingDoc = {
+      _id: docId,
+      meta: {
+        created_at: initialDate,
+        author: "alice",
+        version: 1,
+      },
+    }
+
+    const mockCollection = {
+      findOne: vi.fn().mockResolvedValue(existingDoc),
+      findOneAndUpdate: vi.fn().mockResolvedValue({
+        ...existingDoc,
+        meta: {
+          created_at: initialDate,
+          author: "alice",
+          version: 2,
+        },
+      }),
+    }
+    const mockConnection = {
+      collection: vi.fn().mockReturnValue(mockCollection),
+    } as any
+
+    const update = {
+      table: "test_table",
+      column: "meta",
+      primaryKeys: [{ column: "_id", value: docId.toHexString() }],
+      value: {
+        created_at: "2023-01-15T12:00:00.000Z",
+        author: "alice",
+        version: 2,
+      },
+      oldValue: {
+        created_at: "2023-01-15T12:00:00.000Z",
+        author: "alice",
+        version: 1,
+      },
+    }
+
+    await client.updateValues([update as any], mockConnection)
+
+    expect(mockCollection.findOneAndUpdate).toHaveBeenCalledTimes(1)
+    const [, updateDoc] = mockCollection.findOneAndUpdate.mock.calls[0]
+    expect(updateDoc).not.toHaveProperty("$set.meta")
+    expect(updateDoc.$set).toEqual({
+      "meta.version": 2,
+    })
+    expect("meta.created_at" in (updateDoc.$set || {})).toBe(false)
+    expect("meta.author" in (updateDoc.$set || {})).toBe(false)
+  })
+
+  it("emits $unset when a subdocument field is deleted", async () => {
+    const client = new MongoDBClient(null, { database: "test" } as any)
+    const docId = new ObjectId()
+
+    const existingDoc = {
+      _id: docId,
+      meta: {
+        created_at: new Date("2023-01-15T12:00:00.000Z"),
+        author: "alice",
+        version: 1,
+      },
+    }
+
+    const mockCollection = {
+      findOne: vi.fn().mockResolvedValue(existingDoc),
+      findOneAndUpdate: vi.fn().mockResolvedValue({
+        _id: docId,
+        meta: {
+          created_at: new Date("2023-01-15T12:00:00.000Z"),
+          version: 1,
+        },
+      }),
+    }
+    const mockConnection = {
+      collection: vi.fn().mockReturnValue(mockCollection),
+    } as any
+
+    const update = {
+      table: "test_table",
+      column: "meta",
+      primaryKeys: [{ column: "_id", value: docId.toHexString() }],
+      value: {
+        created_at: "2023-01-15T12:00:00.000Z",
+        version: 1,
+      },
+      oldValue: {
+        created_at: "2023-01-15T12:00:00.000Z",
+        author: "alice",
+        version: 1,
+      },
+    }
+
+    await client.updateValues([update as any], mockConnection)
+
+    expect(mockCollection.findOneAndUpdate).toHaveBeenCalledTimes(1)
+    const [, updateDoc] = mockCollection.findOneAndUpdate.mock.calls[0]
+    expect(updateDoc.$unset).toEqual({
+      "meta.author": "",
+    })
+    expect(updateDoc).not.toHaveProperty("$set")
+  })
+
+  it("emits both $set and $unset when modifying and deleting nested fields simultaneously", async () => {
+    const client = new MongoDBClient(null, { database: "test" } as any)
+    const docId = new ObjectId()
+
+    const existingDoc = {
+      _id: docId,
+      meta: {
+        created_at: new Date("2023-01-15T12:00:00.000Z"),
+        author: "alice",
+        version: 1,
+      },
+    }
+
+    const mockCollection = {
+      findOne: vi.fn().mockResolvedValue(existingDoc),
+      findOneAndUpdate: vi.fn().mockResolvedValue({
+        _id: docId,
+        meta: {
+          created_at: new Date("2023-01-15T12:00:00.000Z"),
+          version: 2,
+        },
+      }),
+    }
+    const mockConnection = {
+      collection: vi.fn().mockReturnValue(mockCollection),
+    } as any
+
+    const update = {
+      table: "test_table",
+      column: "meta",
+      primaryKeys: [{ column: "_id", value: docId.toHexString() }],
+      value: {
+        created_at: "2023-01-15T12:00:00.000Z",
+        version: 2,
+      },
+      oldValue: {
+        created_at: "2023-01-15T12:00:00.000Z",
+        author: "alice",
+        version: 1,
+      },
+    }
+
+    await client.updateValues([update as any], mockConnection)
+
+    expect(mockCollection.findOneAndUpdate).toHaveBeenCalledTimes(1)
+    const [, updateDoc] = mockCollection.findOneAndUpdate.mock.calls[0]
+    expect(updateDoc.$set).toEqual({
+      "meta.version": 2,
+    })
+    expect(updateDoc.$unset).toEqual({
+      "meta.author": "",
+    })
+    expect("meta.created_at" in (updateDoc.$set || {})).toBe(false)
+  })
+
+  it("restores modified date string to a native BSON Date instance in $set", async () => {
+    const client = new MongoDBClient(null, { database: "test" } as any)
+    const docId = new ObjectId()
+    const oldDate = new Date("2023-01-15T12:00:00.000Z")
+    const newDateString = "2024-06-01T10:00:00.000Z"
+    const expectedNewDate = new Date(newDateString)
+
+    const existingDoc = {
+      _id: docId,
+      meta: {
+        created_at: oldDate,
+        author: "alice",
+      },
+    }
+
+    const mockCollection = {
+      findOne: vi.fn().mockResolvedValue(existingDoc),
+      findOneAndUpdate: vi.fn().mockResolvedValue({
+        _id: docId,
+        meta: {
+          created_at: expectedNewDate,
+          author: "alice",
+        },
+      }),
+    }
+    const mockConnection = {
+      collection: vi.fn().mockReturnValue(mockCollection),
+    } as any
+
+    const update = {
+      table: "test_table",
+      column: "meta",
+      primaryKeys: [{ column: "_id", value: docId.toHexString() }],
+      value: {
+        created_at: newDateString,
+        author: "alice",
+      },
+      oldValue: {
+        created_at: "2023-01-15T12:00:00.000Z",
+        author: "alice",
+      },
+    }
+
+    await client.updateValues([update as any], mockConnection)
+
+    expect(mockCollection.findOneAndUpdate).toHaveBeenCalledTimes(1)
+    const [, updateDoc] = mockCollection.findOneAndUpdate.mock.calls[0]
+    expect(updateDoc.$set["meta.created_at"]).toBeInstanceOf(Date)
+    expect(updateDoc.$set["meta.created_at"].getTime()).toBe(expectedNewDate.getTime())
+  })
+
+  it("updates top-level primitive columns directly with $set", async () => {
+    const client = new MongoDBClient(null, { database: "test" } as any)
+    const docId = new ObjectId()
+
+    const mockCollection = {
+      findOne: vi.fn(),
+      findOneAndUpdate: vi.fn().mockResolvedValue({
+        _id: docId,
+        name: "updated_name",
+      }),
+    }
+    const mockConnection = {
+      collection: vi.fn().mockReturnValue(mockCollection),
+    } as any
+
+    const update = {
+      table: "test_table",
+      column: "name",
+      primaryKeys: [{ column: "_id", value: docId.toHexString() }],
+      value: "updated_name",
+      oldValue: "old_name",
+    }
+
+    await client.updateValues([update as any], mockConnection)
+
+    expect(mockCollection.findOneAndUpdate).toHaveBeenCalledTimes(1)
+    expect(mockCollection.findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: docId },
+      {
+        $set: {
+          name: "updated_name",
+        },
+      },
+      { returnDocument: "after" }
+    )
   })
 })
