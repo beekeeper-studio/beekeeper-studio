@@ -1,0 +1,180 @@
+import { OctokitOptions } from "@octokit/core";
+import { Octokit } from "@octokit/rest";
+import { RequestError } from "@octokit/request-error";
+import { ExtensionManifest as Manifest, ExtensionRepository, Release, RawPluginRegistryEntry, RegistryConfig, ExtensionRegistryEntry } from "@/services/plugin/types";
+import { ExtensionRepositoryError } from "@/lib/errors";
+import rawLog from "@bksLogger";
+import { PluginsController } from "@/lib/cloud/controllers/PluginsController";
+import { CloudClient } from "@/lib/cloud/CloudClient";
+import BksConfig from "@/common/bksConfig";
+import platform_info from "@/common/platform_info";
+import { UserSetting } from "@/common/appdb/models/user_setting";
+
+const log = rawLog.scope("ExtensionRepositoryService");
+
+export default class ExtensionRepositoryService {
+  private octokit: Octokit;
+  private controller: PluginsController;
+
+  constructor(private options?: { octokitOptions?: OctokitOptions }) {
+  }
+
+  async initialize() {
+    const token = (await UserSetting.get("pluginGithubToken"))?.userValue;
+
+    this.octokit = new Octokit({
+      baseUrl: process.env.BKS_PLUGIN_GITHUB_API_BASE_URL,
+      userAgent: "Beekeeper Studio",
+      auth: token ?? process.env.BKS_PLUGIN_GITHUB_TOKEN,
+      log,
+      ...this.options?.octokitOptions,
+    });
+    this.controller = CloudClient.getPluginsController(platform_info.cloudUrl);
+  }
+
+  async fetchRegistry(config: RegistryConfig): Promise<ExtensionRegistryEntry[]> {
+    let raw = [];
+    if (BksConfig.pluginSystem.proxyGithubPluginRequests && (config.origin === 'official' || config.origin === 'community')) {
+       raw = await this.controller.getRegistry(config.name);
+    } else {
+      // Custom is going to have to go through local GitHub API, we aren't going to cache for them
+      raw = await this.fetchJson(
+        config.owner,
+        config.repo,
+        config.file
+      )
+    }
+
+    return raw.map((entry) => ({
+      ...entry,
+      origin: config.origin
+    }));
+  }
+
+  async fetchPluginRepository(owner: string, repo: string, origin: string): Promise<ExtensionRepository> {
+    if (BksConfig.pluginSystem.proxyGithubPluginRequests && (origin === 'official' || origin === 'community')) {
+      const pluginRepo = await this.controller.getRepository(owner, repo);
+      return pluginRepo;
+    } else {
+      const latestRelease = await this.fetchLatestRelease(owner, repo);
+      const readme = await this.fetchReadme(owner, repo);
+      return { latestRelease, readme };
+    }
+  }
+
+
+  private async fetchLatestRelease(owner: string, repo: string): Promise<Release<Manifest>> {
+    const response = await this.request(
+      "GET /repos/{owner}/{repo}/releases/latest",
+      {
+        headers: {
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+        owner,
+        repo,
+      }
+    ).catch((e) => {
+        if (e instanceof RequestError && e.status === 404) {
+          throw new ExtensionRepositoryError(
+            "LATEST_RELEASE_NOT_FOUND",
+            `No latest release found for ${owner}/${repo}`,
+            { cause: e }
+          );
+        }
+        throw e;
+      });
+
+    const manifestAsset = response.data.assets.find((asset) => asset.name === "manifest.json")
+
+    if (!manifestAsset) {
+      throw new ExtensionRepositoryError(
+        "RELEASE_ASSET_NOT_FOUND",
+        `No manifest.json found in the latest release`
+      )
+    }
+
+    const manifestResponse = await this.request(
+      "GET /repos/{owner}/{repo}/releases/assets/{asset_id}",
+      {
+        headers: {
+          "X-GitHub-Api-Version": "2022-11-28",
+          "accept": "application/octet-stream",
+        },
+        owner,
+        repo,
+        asset_id: manifestAsset.id,
+      }
+    )
+
+    const rawManifest = manifestResponse.data as unknown as ArrayBuffer
+    const manifest: Manifest = JSON.parse(Buffer.from(rawManifest).toString("utf-8"))
+
+    const asset = response.data.assets.find((asset) =>
+      asset.name === `${manifest.id}.zip` ||
+      asset.name === `${manifest.id}-${manifest.version}.zip`
+    )
+    if (!asset) {
+      throw new ExtensionRepositoryError(
+        "RELEASE_ASSET_NOT_FOUND",
+        `No asset found matching ${manifest.id}.zip or ${manifest.id}-${manifest.version}.zip in the latest release`
+      )
+    }
+
+    return {
+      manifest,
+      sourceArchiveUrl: asset.browser_download_url,
+      checksum: (asset.digest as string)?.replace(/^sha256:/, '')
+    };
+  }
+
+  protected async fetchReadme(owner: string, repo: string) {
+    const response = await this.request(
+      "GET /repos/{owner}/{repo}/readme",
+      {
+        headers: {
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+        owner,
+        repo,
+      }
+    );
+    return Buffer.from(response.data.content, "base64").toString("utf-8");
+  }
+
+  protected async fetchJson(owner: string, repo: string, path: string): Promise<RawPluginRegistryEntry[]> {
+    const response = await this.request(
+      "GET /repos/{owner}/{repo}/contents/{path}",
+      {
+        headers: {
+          "X-GitHub-Api-Version": "2022-11-28",
+          accept: "application/vnd.github+json",
+        },
+        owner,
+        repo,
+        path,
+      }
+    );
+    const content = Buffer.from(response.data.content, "base64").toString(
+      "utf-8"
+    );
+    return JSON.parse(content) as RawPluginRegistryEntry[];
+  }
+
+  /** Wraps octokit.request with rate limit error handling. */
+  private async request(...args: Parameters<Octokit["request"]>) {
+    try {
+      return await this.octokit.request(...args);
+    } catch (error) {
+      if (
+        error instanceof RequestError &&
+        (error.status === 403 || error.status === 429)
+      ) {
+        throw new Error(
+          "GitHub API rate limit exceeded. Set the BKS_PLUGIN_GITHUB_TOKEN environment variable with a GitHub personal access token to increase the limit.",
+          { cause: error }
+        );
+      }
+      throw error;
+    }
+  }
+}

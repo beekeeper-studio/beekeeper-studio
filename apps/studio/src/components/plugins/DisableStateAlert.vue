@@ -42,6 +42,29 @@
     </div>
     <div
       class="alert-body"
+      v-else-if="snapshot.disableState.reason === 'unlisted-theme-disabled'"
+    >
+      {{ snapshot.manifest.name }} is an unlisted theme. Unlisted themes are
+      disabled via configuration. You can enable them in your ini config or at
+      the top of the browse section.
+    </div>
+    <div
+      class="alert-body"
+      v-else-if="snapshot.disableState.reason === 'community-themes-disabled'"
+    >
+      {{ snapshot.manifest.name }} is a community theme. Community themes are
+      disabled via configuration. You can enable them in your ini config or at
+      the top of the browse section.
+    </div>
+    <div
+      class="alert-body"
+      v-else-if="snapshot.disableState.reason === 'missing-style'"
+    >
+      {{ snapshot.manifest.name }} is disabled because its stylesheet is
+      missing.
+    </div>
+    <div
+      class="alert-body"
       v-else-if="snapshot.disableState.reason === 'disabled-by-config'"
     >
       {{ snapshot.manifest.name }} has been disabled via configuration.
@@ -60,8 +83,8 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
-import { PluginSnapshot } from "@/services/plugin";
+import Vue, { PropType } from "vue";
+import { PluginSnapshot, ThemeSnapshot } from "@/services/plugin";
 import { mapGetters } from "vuex";
 import globals from "@/common/globals";
 import rawLog from "@bksLogger";
@@ -71,22 +94,30 @@ const log = rawLog.scope('DisableState')
 export default Vue.extend({
   name: "DisableStateAlert",
   props: {
-    pluginId: {
+    id: {
       type: String,
+      required: true,
+    },
+    type: {
+      type: String as PropType<"plugin" | "theme">,
       required: true,
     },
   },
   computed: {
-    ...mapGetters("plugins/snapshots", ["snapshotsById"]),
-    snapshot(): PluginSnapshot | undefined {
-      return this.snapshotsById[this.pluginId];
+    ...mapGetters("plugins/snapshots", { plugins: "snapshotsById" }),
+    ...mapGetters("themes/snapshots", { themes: "snapshotsById" }),
+    snapshot(): PluginSnapshot | ThemeSnapshot | undefined {
+      if (this.type === "plugin") {
+        return this.plugins[this.id];
+      }
+      return this.themes[this.id];
     },
     maxPlugins() {
       return globals.plugins.maxCommunityPlugins;
     }
   },
   mounted() {
-    log.info('disableState', this.snapshot.disableState)
+    log.info('disableState', this.snapshot, this.snapshot?.disableState)
   }
 });
 </script>

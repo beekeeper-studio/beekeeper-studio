@@ -45,8 +45,9 @@ export default class {
     this.forward(AppEvent.openThemePlayground)
     this.forward(AppEvent.openAppearanceModal)
     this.forward(AppEvent.pluginMenuClicked)
-    this.vueApp.$util.addListener('conn/connection-lost', this.connectionLost.bind(this))
     this.forward(AppEvent.pasteAsNewRows)
+    this.vueApp.$util.addListener('conn/connection-lost', this.connectionLost.bind(this))
+    this.vueApp.$util.addListener('themeFileChanged', (...args) => this.vueApp.$emit(AppEvent.themeFileChanged, ...args))
   }
 
   forward(event) {

@@ -8,6 +8,8 @@
 
   /* ===== Button ===== */
 
+  --btn-gap: 0.15rem;
+
   /* Ghost Button */
   --btn-fg: var(--gray-a11);
   --btn-fg-hover: var(--gray-12);

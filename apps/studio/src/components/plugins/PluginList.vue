@@ -1,12 +1,30 @@
 <template>
-  <div class="plugin-list-wrap">
-    <div class="fixed">
+  <virtual-list
+    class="plugin-list"
+    data-key="id"
+    :data-sources="filteredPlugins"
+    :data-component="itemComponent"
+    :estimate-size="80"
+    header-class="plugin-list-header"
+    :header-style="{ top: `-${introHeight}px` }"
+    :extra-props="{
+      isSearching: !!searchQuery,
+      brokenAvatars,
+      emit: emitItemEvent,
+      markAsBrokenAvatar,
+    }"
+  >
+    <template #header>
+      <div ref="intro">
+        <slot name="header" />
+      </div>
+      <slot name="sticky-header" />
       <div class="filter">
         <div class="filter-wrap">
           <input
             class="filter-input"
             type="text"
-            placeholder="Search Plugins"
+            :placeholder="searchPlaceholder"
             v-model="searchQuery"
           >
           <x-buttons class="filter-actions">
@@ -21,7 +39,6 @@
             <x-button
               class="btn btn-fab btn-link action-item"
               :class="{ active: pluginsHidden }"
-              @click="openFilterMenu"
               menu
             >
               <i class="material-icons-outlined">filter_alt</i>
@@ -55,42 +72,35 @@
                   >
                   <span>Unlisted</span>
                 </label>
-                <label v-if="canFilterUnlisted">
-                  <input
-                    type="checkbox"
-                    v-model="pluginFilter.showUnlisted"
-                  >
-                  <span>Unlisted</span>
-                </label>
                 <x-menuitem />
               </x-menu>
             </x-button>
           </x-buttons>
         </div>
       </div>
-    </div>
-
-    <div class="plugin-list">
-      <virtual-plugin-list
-        :items="filteredPlugins"
-        :isSearching="!!searchQuery"
-        @install="$emit('install', $event)"
-        @uninstall="$emit('uninstall', $event)"
-        @update="$emit('update', $event)"
-        @checkForUpdates="$emit('checkForUpdates', $event)"
-        @item-click="$emit('item-click', $event)"
-      />
-    </div>
-  </div>
+    </template>
+    <template #footer>
+      <div
+        v-if="filteredPlugins.length === 0"
+        class="empty-state"
+      >
+        <i class="material-icons-outlined">
+          {{ searchQuery ? "search_off" : "inventory_2" }}
+        </i>
+        <span v-if="searchQuery">No results for "{{ searchQuery }}"</span>
+        <span v-else>It's quiet in here</span>
+      </div>
+    </template>
+  </virtual-list>
 </template>
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
-import VirtualPluginList from "./VirtualPluginList.vue";
-import type { Plugin, PluginDisplayItem, PluginOrigin } from "@/services/plugin/types";
+import VirtualList from "vue-virtual-scroll-list";
+import PluginItem from "./PluginItem.vue";
+import type { ExtensionUI, ExtensionOrigin } from "@/services/plugin/types";
 import { mapGetters } from "vuex";
 import _ from "lodash";
-import { openMenu } from "@beekeeperstudio/ui-kit";
 import uFuzzy from "@leeoniya/ufuzzy";
 import { escapeHtml } from "@/shared/lib/tabulator";
 
@@ -101,11 +111,19 @@ const uf = new uFuzzy({
 
 export default Vue.extend({
   name: "PluginList",
-  components: { VirtualPluginList },
+  components: { VirtualList },
   props: {
     plugins: {
-      type: Array as PropType<PluginDisplayItem[]>,
+      type: Array as PropType<ExtensionUI[]>,
       required: true,
+    },
+    searchPlaceholder: {
+      type: String,
+      default: "Search Plugins",
+    },
+    type: {
+      type: String as PropType<"plugin" | "theme">,
+      default: "plugin",
     },
   },
   data() {
@@ -118,22 +136,28 @@ export default Vue.extend({
         showCommunity: true,
         showCustom: true,
         showUnlisted: true,
-      }
+      },
+      itemComponent: PluginItem,
+      introHeight: 0,
+      introObserver: null as ResizeObserver | null,
     };
   },
   computed: {
     ...mapGetters("plugins/snapshots", ["snapshotsById"]),
+    systemConfig() {
+      return this.type === "theme" ? this.$bksConfig.themeSystem : this.$bksConfig.pluginSystem;
+    },
     canFilterOfficial() {
-      return !this.$bksConfig.pluginSystem.officialDisabled;
+      return !this.systemConfig.officialDisabled && this.hasOfficial;
     },
     canFilterCommunity() {
-      return !this.$bksConfig.pluginSystem.communityDisabled && this.hasCommunity;
+      return !this.systemConfig.communityDisabled && this.hasCommunity;
     },
     canFilterCustom() {
-      return !this.$bksConfig.pluginSystem.thirdPartyRegistriesDisabled && this.hasCustom;
+      return !this.systemConfig.thirdPartyRegistriesDisabled && this.hasCustom;
     },
     canFilterUnlisted() {
-      return !this.$bksConfig.pluginSystem.unlistedDisabled && this.hasUnlisted;
+      return !this.systemConfig.unlistedDisabled && this.hasUnlisted;
     },
     pluginsHidden() {
       return !this.pluginFilter.showOfficial ||
@@ -141,17 +165,20 @@ export default Vue.extend({
         !this.pluginFilter.showCustom ||
         !this.pluginFilter.showUnlisted;
     },
+    hasOfficial() {
+      return this.plugins.some((p: ExtensionUI) => p.origin === 'official');
+    },
     hasCommunity() {
-      return this.plugins.some((p: Plugin) => p.origin === 'community');
+      return this.plugins.some((p: ExtensionUI) => p.origin === 'community');
     },
     hasCustom() {
-      return this.plugins.some((p: Plugin) => p.origin === 'custom');
+      return this.plugins.some((p: ExtensionUI) => p.origin === 'custom');
     },
     hasUnlisted() {
-      return this.plugins.some((p: Plugin) => p.origin === 'unlisted');
+      return this.plugins.some((p: ExtensionUI) => p.origin === 'unlisted');
     },
     originFilter() {
-      const filter: PluginOrigin[] = [];
+      const filter: ExtensionOrigin[] = [];
 
       if (this.pluginFilter.showOfficial) {
         filter.push("official");
@@ -172,19 +199,19 @@ export default Vue.extend({
       return filter;
     },
     filteredPlugins() {
-      const plugins = this.plugins.filter((p: Plugin) => this.originFilter.includes(p.origin));
+      const plugins: ExtensionUI[] = this.plugins.filter((p: ExtensionUI) => this.originFilter.includes(p.origin));
       if (!this.searchQuery) {
         return plugins;
       }
 
-      const names = plugins.map((p: Plugin) => p.name);
+      const names = plugins.map((p: ExtensionUI) => p.name);
       const [idxs, info, order] = uf.search(names, this.searchQuery, 0, Infinity)
 
       if (!idxs || !info || !order) {
         return [];
       }
 
-      const results: Plugin[] = [];
+      const results: ExtensionUI[] = [];
       for (let i = 0; i < order.length; i++) {
         const infoIdx = order[i];
         const itemIdx = idxs[infoIdx];
@@ -209,13 +236,26 @@ export default Vue.extend({
       return results;
     }
   },
+  mounted() {
+    this.introObserver = new ResizeObserver(this.updateIntroHeight);
+    this.introObserver.observe(this.$refs.intro as HTMLElement);
+  },
+  beforeDestroy() {
+    this.introObserver.disconnect();
+  },
   methods: {
+    updateIntroHeight() {
+      this.introHeight = (this.$refs.intro as HTMLElement).offsetHeight;
+    },
+    emitItemEvent(eventName: string, plugin: ExtensionUI) {
+      this.$emit(eventName, plugin);
+    },
+    markAsBrokenAvatar(id: string) {
+      this.brokenAvatars.push(id);
+    },
     clearFilter() {
       this.searchQuery = null;
     },
-    openFilterMenu(event: MouseEvent) {
-      openMenu({ event, options: this.filterMenuOptions})
-    }
   },
 });
 </script>
@@ -223,27 +263,40 @@ export default Vue.extend({
 <style lang="scss" scoped>
 @import '../../shared/assets/styles/_variables';
 
-.plugin-list-wrap {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
 .plugin-list {
-  list-style-type: none;
-  padding: 0 0 0.5rem;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
+  height: 100%;
   min-height: 0;
   min-width: 400px;
+  overflow-y: auto;
+}
+
+// Negative top lets the slotted intro scroll away while the search bar sticks
+.plugin-list ::v-deep .plugin-list-header {
+  position: sticky;
+  z-index: 1;
+  padding-bottom: 0.25rem;
+  background: var(--panel-bg);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex: 1 1 auto;
+  padding: 2rem 0;
+  color: var(--text-muted);
+
+  .material-icons-outlined {
+    font-size: 2.5rem;
+  }
 }
 
 .filter {
   position: relative;
   margin-bottom: $gutter-h;
+  padding-inline: 0.5rem;
   .filter-wrap {
     position: relative;
     display: flex;

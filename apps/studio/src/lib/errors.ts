@@ -23,8 +23,6 @@ export type PluginSystemErrorCode =
   | 'STORAGE_READ_ERROR'
   | 'STORAGE_WRITE_ERROR'
   | 'PLUGIN_NOT_FOUND'
-  | 'PLUGIN_LATEST_RELEASE_NOT_FOUND'
-  | 'PLUGIN_RELEASE_ASSET_NOT_FOUND'
   | 'PLUGIN_VIEW_NOT_FOUND'
   | 'PLUGIN_NOT_SUPPORTED'
   | 'PLUGIN_SYSTEM_DISABLED'
@@ -71,6 +69,94 @@ export class PluginError extends Error {
     message?: string,
     options?: ErrorOptions
   ) {
+    super(message, options);
+    this.name = this.constructor.name;
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
+}
+
+export type ExtensionRepositoryErrorCode =
+  | "LATEST_RELEASE_NOT_FOUND"
+  | "RELEASE_ASSET_NOT_FOUND";
+
+/** Thrown when an extension's repository doesn't have a usable release. */
+export class ExtensionRepositoryError extends Error {
+  constructor(
+    public readonly code: ExtensionRepositoryErrorCode,
+    message?: string,
+    options?: ErrorOptions
+  ) {
+    super(message, options);
+    this.name = this.constructor.name;
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
+}
+
+export type ExtensionRegistryErrorCode = "ENTRY_NOT_FOUND";
+
+/** Thrown when an extension can't be found in any registry. */
+export class ExtensionRegistryError extends Error {
+  constructor(
+    public readonly code: ExtensionRegistryErrorCode,
+    message?: string,
+    options?: ErrorOptions
+  ) {
+    super(message, options);
+    this.name = this.constructor.name;
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
+}
+
+export type ThemeSystemErrorCode =
+  | "THEME_ID_RESERVED"
+  | "THEME_NOT_FOUND"
+  | "MANIFEST_ID_MISMATCH";
+
+export class ThemeSystemError extends Error {
+  constructor(
+    public readonly code: ThemeSystemErrorCode,
+    message?: string,
+    options?: ErrorOptions
+  ) {
+    super(message, options);
+    this.name = this.constructor.name;
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
+}
+
+/** Thrown when a path would resolve outside the directory it must stay in. */
+export class PathTraversalError extends Error {
+  constructor(message?: string, options?: ErrorOptions) {
+    super(message, options);
+    this.name = this.constructor.name;
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
+}
+
+/** Thrown when a manifest.json is malformed or does not match where it was found. */
+export class ManifestError extends Error {
+  constructor(message?: string, options?: ErrorOptions) {
+    super(message, options);
+    this.name = this.constructor.name;
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
+}
+
+/** Thrown when a downloaded archive does not match its published checksum. */
+export class ChecksumMismatchError extends Error {
+  constructor(message?: string, options?: ErrorOptions) {
     super(message, options);
     this.name = this.constructor.name;
     if (Error.captureStackTrace) {

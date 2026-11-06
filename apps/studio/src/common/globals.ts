@@ -1,4 +1,8 @@
-
+import type { RegistryConfig, ThemeManifest } from "@/services/plugin";
+import defaultTheme from "../../public/themes/default/manifest.json";
+import solarizedTheme from "../../public/themes/solarized/manifest.json";
+import draculaTheme from "../../public/themes/dracula/manifest.json";
+import githubTheme from "../../public/themes/github/manifest.json";
 
 export default {
   updateCheckInterval: 1000 * 60 * 60 * 24, // 24 hours
@@ -30,14 +34,47 @@ export default {
     /**
      * Ensure these packages are bundled and installed for first time users.
      *
-     * @see `BundledPluginModule` in src-commercial/backend/plugin-system/modules/BundledPluginModule.ts
+     * @see `BundledPluginModule` in src/services/plugin/modules/BundledPluginModule.ts
      **/
     ensureInstalled: [
       { id: "bks-ai-shell", pkg: "@beekeeperstudio/bks-ai-shell" },
       { id: "bks-er-diagram", pkg: "@beekeeperstudio/bks-er-diagram" },
     ],
-    maxCommunityPlugins: 2
-  }
+    maxCommunityPlugins: 2,
+    registries: [
+      {
+        name: "official",
+        origin: "official",
+        owner: "beekeeper-studio",
+        repo: "beekeeper-studio-plugins",
+        file: "plugins.json"
+      },
+      {
+        name: "community",
+        origin: "community",
+        owner: "beekeeper-studio",
+        repo: "beekeeper-studio-plugins",
+        file: "community-plugins.json"
+      },
+    ] satisfies RegistryConfig[],
+  },
+  themes: {
+    bundled: [
+      defaultTheme,
+      solarizedTheme,
+      draculaTheme,
+      githubTheme,
+    ] satisfies ThemeManifest[],
+    registries: [
+      {
+        name: "community-themes",
+        origin: "community",
+        owner: "beekeeper-studio",
+        repo: "beekeeper-studio-plugins",
+        file: "community-themes.json"
+      },
+    ] satisfies RegistryConfig[],
+  },
 }
 
 

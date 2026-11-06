@@ -31,7 +31,7 @@ import NotyPlugin from '@/plugins/NotyPlugin'
 import '@/common/initializers/big_int_initializer.ts'
 import SettingsPlugin from '@/plugins/SettingsPlugin'
 import rawLog from '@bksLogger'
-import { ThemeRenderer } from "@commercial/lib/theme/ThemeRenderer";
+import { ThemeRenderer } from "@/lib/theme/ThemeRenderer";
 import { HeaderSortTabulatorModule } from '@/plugins/HeaderSortTabulatorModule'
 import { KeyListenerTabulatorModule } from '@/plugins/KeyListenerTabulatorModule'
 import { UtilityConnection } from '@/lib/utility/UtilityConnection'
@@ -231,6 +231,7 @@ import ClipboardRangeModule from '@/plugins/ClipboardRangeModule'
     handler.registerCallbacks()
     const theme = new ThemeRenderer({
       store,
+      utility,
       bus: {
         emit: (...args) => app.$root.$emit(...args),
         on: (...args) => app.$root.$on(...args),

@@ -2,6 +2,7 @@ import rawLog from "@bksLogger";
 import _ from "lodash";
 import type { IPlatformInfo } from "../IPlatformInfo";
 import type { KeybindingTarget, Platform } from "@/types";
+import { EventEmitter } from "@/common/EventEmitter";
 
 export interface BksConfigSource {
   defaultConfig: IBksConfig;
@@ -11,6 +12,10 @@ export interface BksConfigSource {
 }
 
 export type BksConfig = BksConfigProvider & IBksConfig;
+
+export interface BksConfigEventMap {
+  reload: (config: BksConfig) => void;
+}
 
 export type IniArray = {
   [key: number]: string | number;
@@ -289,7 +294,7 @@ class Config {
   }
 }
 
-export class BksConfigProvider {
+export class BksConfigProvider extends EventEmitter<BksConfigEventMap> {
   public source: BksConfigSource;
   private defaultConfig: Config;
   private systemConfig: Config;
@@ -297,6 +302,7 @@ export class BksConfigProvider {
   private mergedConfig: IBksConfig;
 
   constructor(source: BksConfigSource, private platformInfo: IPlatformInfo) {
+    super();
     this.apply(source);
   }
 
@@ -333,6 +339,8 @@ export class BksConfigProvider {
     for (const [key, value] of Object.entries(this.mergedConfig)) {
       this[key] = value;
     }
+
+    this.emit("reload", this as unknown as BksConfig);
   }
 
   userCanOverride(path: string): boolean {
