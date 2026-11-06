@@ -463,6 +463,9 @@
     }
     .multiple-filter  {
       flex-grow: 1;
+      // Let the inputs shrink and clip so the add/apply buttons stay in view
+      min-width: 0;
+      overflow: hidden;
       & > * {
         display: flex;
         gap: 0.4rem;
