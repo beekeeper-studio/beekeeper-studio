@@ -64,6 +64,8 @@ export default Vue.extend({
     },
     /** Show a progress bar at the top of the page. */
     loading: Boolean,
+    /** Fit the page to the modal, for content that scrolls itself like a virtual list. */
+    fillHeight: Boolean,
   },
   computed: {
     isActive(): boolean {
@@ -133,7 +135,7 @@ export default Vue.extend({
 .config-page-header {
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -148,11 +150,9 @@ export default Vue.extend({
   }
 }
 
-// Each page scrolls on its own so a virtual list inside can fill it
 .config-page-body {
   flex: 1 1 auto;
   min-height: 0;
-  overflow-y: auto;
 
   ::v-deep > .config-page-content {
     height: 100%;

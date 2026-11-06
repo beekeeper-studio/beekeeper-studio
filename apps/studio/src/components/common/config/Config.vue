@@ -1,5 +1,8 @@
 <template>
-  <div class="config">
+  <div
+    class="config"
+    :class="{ 'fill-height': fillHeight }"
+  >
     <div class="config-nav">
       <div
         role="tablist"
@@ -67,6 +70,11 @@ export default Vue.extend({
     topLevelPages() {
       return this.pages.filter((page) => !page.parentPage);
     },
+    fillHeight() {
+      // Nested pages sit in a slideover that takes its size from this element.
+      return !!this.activePage?.parentPage
+        || this.topLevelPages.some((page) => page.containsActivePage && page.fillHeight);
+    },
     activePage() {
       return this.pages.find((page) => page.id === this.activePageId);
     },
@@ -112,13 +120,18 @@ export default Vue.extend({
 
 .config {
   display: flex;
-  align-items: flex-start;
-  height: 100%;
+  min-height: 100%;
+
+  // A virtual list needs a fixed height, so it scrolls itself instead of the modal
+  &.fill-height {
+    height: 100%;
+  }
 }
 
 .config-nav {
   position: sticky;
   top: 0;
+  align-self: flex-start;
   width: 9rem;
   flex-shrink: 0;
 }

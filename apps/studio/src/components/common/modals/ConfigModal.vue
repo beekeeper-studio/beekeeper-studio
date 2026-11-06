@@ -11,7 +11,7 @@
       <config-page id="themes" title="Themes" icon="palette">
         <themes-config />
       </config-page>
-      <config-page id="plugins" title="Plugins" icon="extension">
+      <config-page id="plugins" title="Plugins" icon="extension" fill-height>
         <plugins-config @loading="loadingPlugins = $event" />
       </config-page>
     </config>

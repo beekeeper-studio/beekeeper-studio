@@ -1,6 +1,30 @@
 <template>
   <div class="config-page-content">
     <control-row
+      title="Get More Themes"
+      description="Themes made and shared by the community."
+    >
+      <button
+        type="button"
+        class="btn btn-flat"
+        @click="config.open('community-themes')"
+      >
+        Browse…
+      </button>
+    </control-row>
+    <control-row
+      title="Theme Configuration"
+      description="Updates, community and unlisted themes."
+    >
+      <button
+        type="button"
+        class="btn btn-flat"
+        @click="config.open('theme-config')"
+      >
+        Configure…
+      </button>
+    </control-row>
+    <control-row
       fieldset
       title="Theme mode"
     >
@@ -43,7 +67,7 @@
     <control-row
       fieldset
       direction="column"
-      title="Available Themes"
+      title="Installed Themes"
     >
       <div class="theme-list">
         <label
@@ -94,30 +118,6 @@
           </span>
         </label>
       </div>
-    </control-row>
-    <control-row
-      title="Get More Themes"
-      description="Themes made and shared by the community."
-    >
-      <button
-        type="button"
-        class="btn btn-flat"
-        @click="config.open('community-themes')"
-      >
-        Browse…
-      </button>
-    </control-row>
-    <control-row
-      title="Theme Configuration"
-      description="Updates, community and unlisted themes."
-    >
-      <button
-        type="button"
-        class="btn btn-flat"
-        @click="config.open('theme-config')"
-      >
-        Configure…
-      </button>
     </control-row>
     <config-page
       id="community-themes"
@@ -318,7 +318,8 @@ export default Vue.extend({
       return this.themes.some((theme) => theme.installed);
     },
     listedThemes(): ThemeSnapshot[] {
-      return this.snapshots.filter((theme) => !theme.disableState.disabled);
+      const enabled = this.snapshots.filter((theme) => !theme.disableState.disabled);
+      return _.sortBy(enabled, (theme) => theme.manifest.name.toLowerCase());
     },
     themeAutoUpdate: {
       get() {
@@ -625,14 +626,9 @@ export default Vue.extend({
 
 .theme-list {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: calc((100% - 4rem) / 4.5);
-  gap: 0.5rem;
-  overflow-x: auto;
-  // Just enough padding-top so the menu button doesn't get clipped by overflow
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  padding-right: 0.2rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding-top: 1rem;
 }
 
 .form-group label.theme-item {
