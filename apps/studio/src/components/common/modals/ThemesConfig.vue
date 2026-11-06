@@ -148,7 +148,7 @@
           v-if="!themeEntriesError || sortedThemes.length > 0"
           :plugins="sortedThemes"
           search-placeholder="Search Themes"
-          :show-origin-filter="false"
+          type="theme"
           @install="install"
           @uninstall="uninstall"
           @update="update"
@@ -157,7 +157,7 @@
         >
           <template #sticky-header>
             <div class="header-row">
-              <h3>Available Themes</h3>
+              <h3>Browse Themes</h3>
               <button
                 v-if="hasInstalledThemes"
                 type="button"

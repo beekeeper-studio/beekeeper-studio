@@ -5,8 +5,6 @@
       <plugin-list
         class="installed-plugin-list"
         :plugins="sortedInstalledPlugins"
-        :show-installed-filter="false"
-        :show-origin-filter="false"
         @install="install"
         @uninstall="uninstall"
         @update="update"

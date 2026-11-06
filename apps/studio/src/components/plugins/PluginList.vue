@@ -35,44 +35,48 @@
             >
               <i class="clear material-icons">cancel</i>
             </x-button>
+
+            <x-button
+              class="btn btn-fab btn-link action-item"
+              :class="{ active: pluginsHidden }"
+              menu
+            >
+              <i class="material-icons-outlined">filter_alt</i>
+              <x-menu>
+                <label v-if="canFilterOfficial">
+                  <input
+                    type="checkbox"
+                    v-model="pluginFilter.showOfficial"
+                  >
+                  <span>Official</span>
+                </label>
+                <label v-if="canFilterCommunity">
+                  <input
+                    type="checkbox"
+                    v-model="pluginFilter.showCommunity"
+                  >
+                  <span>Community</span>
+                </label>
+                <label v-if="canFilterCustom">
+                  <input
+                    type="checkbox"
+                    v-model="pluginFilter.showCustom"
+                  >
+                  <span>Custom</span>
+                </label>
+                <x-menuitem />
+                <label v-if="canFilterUnlisted">
+                  <input
+                    type="checkbox"
+                    v-model="pluginFilter.showUnlisted"
+                  >
+                  <span>Unlisted</span>
+                </label>
+                <x-menuitem />
+              </x-menu>
+            </x-button>
           </x-buttons>
         </div>
-      </div>
-      <div
-        v-if="showInstalledFilter || showOriginFilter"
-        class="list-filters"
-      >
-        <label
-          v-if="showInstalledFilter"
-          class="checkbox-group"
-        >
-          <input
-            type="checkbox"
-            v-model="installedOnly"
-          >
-          <span>Installed only</span>
-        </label>
-        <template v-if="showOriginFilter">
-          <label for="plugin-origin-filter">Origin:</label>
-          <select
-            id="plugin-origin-filter"
-            class="auto-width"
-            v-model="origin"
-          >
-            <option value="any">
-              Any
-            </option>
-            <option value="official">
-              Official
-            </option>
-            <option value="community">
-              Community
-            </option>
-            <option value="unlisted">
-              Unlisted
-            </option>
-          </select>
-        </template>
       </div>
     </template>
     <template #footer>
@@ -117,13 +121,9 @@ export default Vue.extend({
       type: String,
       default: "Search Plugins",
     },
-    showOriginFilter: {
-      type: Boolean,
-      default: true,
-    },
-    showInstalledFilter: {
-      type: Boolean,
-      default: true,
+    type: {
+      type: String as PropType<"plugin" | "theme">,
+      default: "plugin",
     },
   },
   data() {
@@ -131,8 +131,12 @@ export default Vue.extend({
       // we do this so we don't continuously try bad urls
       brokenAvatars: [] as string[],
       searchQuery: null,
-      origin: "any" as "any" | ExtensionOrigin,
-      installedOnly: false,
+      pluginFilter: {
+        showOfficial: true,
+        showCommunity: true,
+        showCustom: true,
+        showUnlisted: true,
+      },
       itemComponent: PluginItem,
       introHeight: 0,
       introObserver: null as ResizeObserver | null,
@@ -140,14 +144,62 @@ export default Vue.extend({
   },
   computed: {
     ...mapGetters("plugins/snapshots", ["snapshotsById"]),
+    systemConfig() {
+      return this.type === "theme" ? this.$bksConfig.themeSystem : this.$bksConfig.pluginSystem;
+    },
+    canFilterOfficial() {
+      return !this.systemConfig.officialDisabled && this.hasOfficial;
+    },
+    canFilterCommunity() {
+      return !this.systemConfig.communityDisabled && this.hasCommunity;
+    },
+    canFilterCustom() {
+      return !this.systemConfig.thirdPartyRegistriesDisabled && this.hasCustom;
+    },
+    canFilterUnlisted() {
+      return !this.systemConfig.unlistedDisabled && this.hasUnlisted;
+    },
+    pluginsHidden() {
+      return !this.pluginFilter.showOfficial ||
+        !this.pluginFilter.showCommunity ||
+        !this.pluginFilter.showCustom ||
+        !this.pluginFilter.showUnlisted;
+    },
+    hasOfficial() {
+      return this.plugins.some((p: ExtensionUI) => p.origin === 'official');
+    },
+    hasCommunity() {
+      return this.plugins.some((p: ExtensionUI) => p.origin === 'community');
+    },
+    hasCustom() {
+      return this.plugins.some((p: ExtensionUI) => p.origin === 'custom');
+    },
+    hasUnlisted() {
+      return this.plugins.some((p: ExtensionUI) => p.origin === 'unlisted');
+    },
+    originFilter() {
+      const filter: ExtensionOrigin[] = [];
+
+      if (this.pluginFilter.showOfficial) {
+        filter.push("official");
+      }
+
+      if (this.pluginFilter.showCommunity) {
+        filter.push("community");
+      }
+
+      if (this.pluginFilter.showCustom) {
+        filter.push("custom");
+      }
+
+      if (this.pluginFilter.showUnlisted) {
+        filter.push("unlisted");
+      }
+
+      return filter;
+    },
     filteredPlugins() {
-      let plugins: ExtensionUI[] = this.plugins;
-      if (this.origin !== "any") {
-        plugins = plugins.filter((p: ExtensionUI) => p.origin === this.origin);
-      }
-      if (this.installedOnly) {
-        plugins = plugins.filter((p: ExtensionUI) => p.installed);
-      }
+      const plugins: ExtensionUI[] = this.plugins.filter((p: ExtensionUI) => this.originFilter.includes(p.origin));
       if (!this.searchQuery) {
         return plugins;
       }
@@ -241,20 +293,6 @@ export default Vue.extend({
   }
 }
 
-.list-filters {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: $gutter-h;
-  padding-inline: 0.5rem;
-
-  .checkbox-group {
-    margin-right: auto;
-    padding-left: 0;
-  }
-}
-
 .filter {
   position: relative;
   margin-bottom: $gutter-h;
@@ -307,6 +345,20 @@ export default Vue.extend({
           }
         }
 
+      }
+    }
+    x-menu {
+      padding: $gutter-h 0;
+      label {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        padding: 0 $gutter-w;
+        min-height: $input-height;
+        cursor: pointer;
+      }
+      x-menuitem {
+        display: none;
       }
     }
     .material-icons, .material-icons-outlined {
