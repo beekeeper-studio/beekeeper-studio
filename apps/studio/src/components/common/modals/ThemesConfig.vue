@@ -154,7 +154,22 @@
           @update="update"
           @item-click="openThemePage"
           @checkForUpdates="checkForUpdates"
-        />
+        >
+          <template #header>
+            <div class="header-row">
+              <h3>Available Themes</h3>
+              <button
+                v-if="hasInstalledThemes"
+                type="button"
+                class="btn btn-icon"
+                title="Check For Updates"
+                @click="checkAllForUpdates"
+              >
+                <i class="material-icons">refresh</i>
+              </button>
+            </div>
+          </template>
+        </plugin-list>
       </template>
     </config-page>
     <config-page
@@ -299,6 +314,9 @@ export default Vue.extend({
         disabled: this.snapshotsById[theme.id]?.disableState.disabled
       }));
     },
+    hasInstalledThemes(): boolean {
+      return this.themes.some((theme) => theme.installed);
+    },
     listedThemes(): ThemeSnapshot[] {
       return this.snapshots.filter((theme) => !theme.disableState.disabled);
     },
@@ -426,6 +444,10 @@ export default Vue.extend({
         this.updateTheme(id, { checkingForUpdates: false });
       }
     },
+    async checkAllForUpdates() {
+      const installed = this.themes.filter((theme) => theme.installed && theme.repo);
+      await Promise.all(installed.map((theme) => this.checkForUpdates(theme)));
+    },
     async uninstall({ id }) {
       const confirmed = await this.$confirm(
         "Are you sure you want to uninstall?",
@@ -523,6 +545,13 @@ export default Vue.extend({
 </script>
 
 <style lang="scss" scoped>
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
 .alerts {
   margin-inline: 1.25rem;
 }

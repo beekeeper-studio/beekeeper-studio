@@ -52,7 +52,18 @@
               Configure…
             </button>
           </control-row>
-          <h3>Available Plugins</h3>
+          <div class="header-row">
+            <h3>Available Plugins</h3>
+            <button
+              v-if="hasInstalledPlugins"
+              type="button"
+              class="btn btn-icon"
+              title="Check For Updates"
+              @click="checkAllForUpdates"
+            >
+              <i class="material-icons">refresh</i>
+            </button>
+          </div>
         </template>
       </plugin-list>
     </div>
@@ -248,6 +259,9 @@ export default Vue.extend({
         disabled: this.snapshotsById[plugin.id]?.disableState.disabled
       }));
     },
+    hasInstalledPlugins(): boolean {
+      return this.plugins.some((plugin) => plugin.installed);
+    },
     autoUpdate: {
       get() {
         return this.$bksConfig.pluginSystem.autoUpdate;
@@ -415,6 +429,10 @@ export default Vue.extend({
         this.updatePlugin(id, { checkingForUpdates: false });
       }
     },
+    async checkAllForUpdates() {
+      const installed = this.plugins.filter((plugin) => plugin.installed && plugin.repo);
+      await Promise.all(installed.map((plugin) => this.checkForUpdates(plugin)));
+    },
     async uninstall({ id }) {
       const confirmed = await this.$confirm(
         "Are you sure you want to uninstall?",
@@ -547,6 +565,13 @@ $gutter-h: 1.5rem;
 
 .alerts {
   margin-inline: 1.25rem;
+}
+
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 .plugin-manager-content {
