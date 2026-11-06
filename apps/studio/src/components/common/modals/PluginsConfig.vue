@@ -40,9 +40,9 @@
         @checkForUpdates="checkForUpdates"
       >
         <template #header>
-          <config-item
-            label="Plugin Configuration"
-            helper="Registries, updates and GitHub rate limits."
+          <control-row
+            title="Plugin Configuration"
+            description="Registries, updates and GitHub rate limits."
           >
             <button
               type="button"
@@ -51,7 +51,7 @@
             >
               Configure…
             </button>
-          </config-item>
+          </control-row>
           <h3>Available Plugins</h3>
         </template>
       </plugin-list>
@@ -112,63 +112,63 @@
       id="plugin-config"
       title="Plugin Configuration"
     >
-      <config-item
-        label="Auto update"
-        helper="Allow plugins to be automatically updated on application launch."
+      <control-row
+        title="Auto update"
+        description="Allow plugins to be automatically updated on application launch."
       >
         <x-switch
           @click.prevent="autoUpdate = !autoUpdate"
           :toggled="autoUpdate"
         />
-      </config-item>
-      <config-item
-        label="Official Plugins"
+      </control-row>
+      <control-row
+        title="Official Plugins"
         :highlighted="highlightOptIn"
-        helper="Official Plugins are built and maintained by the Beekeeper Studio Team"
+        description="Official Plugins are built and maintained by the Beekeeper Studio Team"
       >
         <x-switch
           @click.prevent="officialEnabled = !officialEnabled"
           :toggled="officialEnabled"
         />
-      </config-item>
-      <config-item
-        label="Community Plugins"
+      </control-row>
+      <control-row
+        title="Community Plugins"
         :highlighted="highlightOptIn"
-        helper="Community plugins are developed and maintained by independent third parties, not by Beekeeper Studio. Use at your own risk."
+        description="Community plugins are developed and maintained by independent third parties, not by Beekeeper Studio. Use at your own risk."
       >
         <x-switch
           @click.prevent="communityEnabled = !communityEnabled"
           :toggled="communityEnabled"
         />
-      </config-item>
-      <config-item
-        label="Custom Registries"
-        helper="Enable custom registries to find plugins from. These can be configured in your ini file."
+      </control-row>
+      <control-row
+        title="Custom Registries"
+        description="Enable custom registries to find plugins from. These can be configured in your ini file."
       >
         <x-switch
           @click.prevent="customEnabled = !customEnabled"
           :toggled="customEnabled"
         />
-      </config-item>
-      <config-item
-        label="Unlisted Plugins"
-        helper="Enable unlisted plugins. These are anonymous plugins not found in a registry, just placed in your plugin directory manually."
+      </control-row>
+      <control-row
+        title="Unlisted Plugins"
+        description="Enable unlisted plugins. These are anonymous plugins not found in a registry, just placed in your plugin directory manually."
       >
         <x-switch
           @click.prevent="unlistedEnabled = !unlistedEnabled"
           :toggled="unlistedEnabled"
         />
-      </config-item>
-      <config-item
-        label="Github Token"
-        helper="Github requests are rate limited. If you find yourself running into issues, setting this will increase that limit."
+      </control-row>
+      <control-row
+        title="Github Token"
+        description="Github requests are rate limited. If you find yourself running into issues, setting this will increase that limit."
       >
         <input
           type="password"
           :value="githubToken"
           @change="saveGithubToken($event.target.value)"
         >
-      </config-item>
+      </control-row>
     </config-page>
   </div>
 </template>
@@ -177,7 +177,7 @@
 import Vue from "vue";
 import { mapGetters, mapState } from "vuex";
 import ConfigPage from "@/components/common/config/ConfigPage.vue";
-import ConfigItem from "@/components/common/config/ConfigItem.vue";
+import ControlRow from "@/components/common/ControlRow.vue";
 import ExtensionPage from "@/components/plugins/ExtensionPage.vue";
 import PluginList from "@/components/plugins/PluginList.vue";
 import type { ExtensionRegistryEntry, ExtensionUI } from "@/services/plugin/types";
@@ -215,7 +215,7 @@ export default Vue.extend({
   name: "PluginsConfig",
   components: {
     ConfigPage,
-    ConfigItem,
+    ControlRow,
     ExtensionPage,
     PluginList,
     DisableStateAlert,

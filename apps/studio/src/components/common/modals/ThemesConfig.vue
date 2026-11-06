@@ -1,8 +1,8 @@
 <template>
   <div class="config-page-content">
-    <config-item
+    <control-row
       fieldset
-      label="Theme mode"
+      title="Theme mode"
     >
       <span class="mode-options">
         <label class="mode-option">
@@ -39,11 +39,11 @@
           <span class="mode-option-content">Auto</span>
         </label>
       </span>
-    </config-item>
-    <config-item
+    </control-row>
+    <control-row
       fieldset
       direction="column"
-      label="Available Themes"
+      title="Available Themes"
     >
       <div class="theme-list">
         <label
@@ -94,10 +94,10 @@
           </span>
         </label>
       </div>
-    </config-item>
-    <config-item
-      label="Get More Themes"
-      helper="Themes made and shared by the community."
+    </control-row>
+    <control-row
+      title="Get More Themes"
+      description="Themes made and shared by the community."
     >
       <button
         type="button"
@@ -106,10 +106,10 @@
       >
         Browse…
       </button>
-    </config-item>
-    <config-item
-      label="Theme Configuration"
-      helper="Updates, community and unlisted themes."
+    </control-row>
+    <control-row
+      title="Theme Configuration"
+      description="Updates, community and unlisted themes."
     >
       <button
         type="button"
@@ -118,7 +118,7 @@
       >
         Configure…
       </button>
-    </config-item>
+    </control-row>
     <config-page
       id="community-themes"
       title="Themes"
@@ -173,33 +173,33 @@
       id="theme-config"
       title="Theme Configuration"
     >
-      <config-item
-        label="Auto update"
-        helper="Allow themes to be automatically updated on application launch."
+      <control-row
+        title="Auto update"
+        description="Allow themes to be automatically updated on application launch."
       >
         <x-switch
           @click.prevent="themeAutoUpdate = !themeAutoUpdate"
           :toggled="themeAutoUpdate"
         />
-      </config-item>
-      <config-item
-        label="Community Themes"
-        helper="Community themes are developed and maintained by independent third parties, not by Beekeeper Studio. Use at your own risk."
+      </control-row>
+      <control-row
+        title="Community Themes"
+        description="Community themes are developed and maintained by independent third parties, not by Beekeeper Studio. Use at your own risk."
       >
         <x-switch
           @click.prevent="communityThemesEnabled = !communityThemesEnabled"
           :toggled="communityThemesEnabled"
         />
-      </config-item>
-      <config-item
-        label="Unlisted Themes"
-        helper="Enable unlisted themes. These are themes not found in a registry, just placed in your themes directory manually."
+      </control-row>
+      <control-row
+        title="Unlisted Themes"
+        description="Enable unlisted themes. These are themes not found in a registry, just placed in your themes directory manually."
       >
         <x-switch
           @click.prevent="unlistedThemesEnabled = !unlistedThemesEnabled"
           :toggled="unlistedThemesEnabled"
         />
-      </config-item>
+      </control-row>
     </config-page>
   </div>
 </template>
@@ -209,7 +209,7 @@ import Vue from "vue";
 import { mapActions, mapGetters } from "vuex";
 import ThemePreview from "@/components/common/ThemePreview.vue";
 import ConfigPage from "@/components/common/config/ConfigPage.vue";
-import ConfigItem from "@/components/common/config/ConfigItem.vue";
+import ControlRow from "@/components/common/ControlRow.vue";
 import ExtensionPage from "@/components/plugins/ExtensionPage.vue";
 import PluginList from "@/components/plugins/PluginList.vue";
 import type {
@@ -226,9 +226,9 @@ export default Vue.extend({
   components: {
     ThemePreview,
     ConfigPage,
-    ConfigItem,
     ExtensionPage,
     PluginList,
+    ControlRow,
   },
   inject: ["config"],
   data() {
@@ -575,7 +575,6 @@ export default Vue.extend({
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
   padding-right: 0.2rem;
-  margin-top: -0.3rem;
 }
 
 .form-group label.theme-item {
