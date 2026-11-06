@@ -6,7 +6,7 @@ import knexlib from 'knex'
 import BksConfig from "@/common/bksConfig";
 import _ from 'lodash'
 
-import { DatabaseElement, IDbConnectionDatabase } from "../types"
+import { AzureAuthType, DatabaseElement, IDbConnectionDatabase } from "../types"
 import {
   buildDatabaseFilter,
   buildDeleteQueries,
@@ -35,7 +35,7 @@ import {
 } from './BasicDatabaseClient'
 import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportFuncOptions, DatabaseEntity, BksFieldType, BksField, IncludedFilterTypes } from '../models';
 import { AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
-import { AzureAuthService } from '../authentication/azure';
+import { AzureAuthService, AzureCliTokenCredential } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from '../serialization/transcoders';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
@@ -79,6 +79,7 @@ export function flattenErrorText(err: any): string {
     if (typeof e.code === 'string') parts.push(e.code)
     if (e.originalError) visit(e.originalError)
     if (Array.isArray(e.precedingErrors)) e.precedingErrors.forEach(visit)
+    if (Array.isArray(e.errors)) e.errors.forEach(visit)
   }
   if (Array.isArray(err)) err.forEach(visit); else visit(err)
   return parts.join('; ')
@@ -121,12 +122,13 @@ export function sqlServerConnectHint(err: any, config: any): string | null {
 // nothing and the connection screen gains the one sentence that resolves the failure.
 function withConnectHint(err: any, config: any): any {
   const hint = sqlServerConnectHint(err, config)
-  if (!hint) return err
+  const hasMessage = err instanceof Error && !!err.message
+  if (!hint && hasMessage) return err
 
-  const message = ((err instanceof Error && err.message) || flattenErrorText(err) || String(err)).trim()
+  const message = ((hasMessage && err.message) || flattenErrorText(err) || String(err)).trim()
   // The connection screen renders this as one line, so join rather than stack.
   const separator = /[.!?]$/.test(message) ? ' ' : '. '
-  const decorated: any = new Error(`${message}${separator}${hint}`)
+  const decorated: any = new Error(hint ? `${message}${separator}${hint}` : message)
   decorated.originalError = err
   if (err?.code) decorated.code = err.code
   return decorated
@@ -1336,8 +1338,11 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       await this.authService.init(server.config.authId)
 
       const options = getEntraOptions(server, { signal })
+      const authType = server.config.azureAuthOptions.azureAuthType;
 
-      config.authentication = await this.authService.auth(server.config.azureAuthOptions.azureAuthType, options);
+      config.authentication = authType === AzureAuthType.CLI ?
+        { type: 'token-credential', options: { credential: new AzureCliTokenCredential(options.cliPath) } } :
+        await this.authService.auth(authType, options);
 
       config.options = {
         encrypt: true
