@@ -321,9 +321,7 @@ jobs:
         with:
           script: |
             const script = require('./.github/scripts/delete_latest_yml.js')
-            const assetsUrl = 'https://api.github.com/repos/beekeeper-studio/beekeeper-studio/releases/${{ needs.create_draft_release.outputs.id }}/assets'
-            const channel = '${{needs.identify_channel.outputs.channel}}'
-            await script({ github, core, context }, assetsUrl, channel, process.env.ASSET_NAME)
+            await script({ github, core, context }, process.env.RELEASE_ID, process.env.ASSET_NAME)
 
       - name: Invalidate cloudfront cache
         if: matrix.os.type == 'linux' && needs.identify_channel.outputs.channel == 'latest'
@@ -422,18 +420,28 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+            const { owner, repo } = context.repo;
             const releaseId = process.env.RELEASE_ID;
+            const name = process.env.FILE;
 
-            // Read the merged yml file
-            const ymlContent = fs.readFileSync('merged.yml', 'utf8');
+            // Replace the file if a build leg's delete missed it or this job
+            // is being re-run: uploading over an existing name fails with
+            // already_exists. Read every page, the release has more assets
+            // than one page holds and the update files sort last by name.
+            const assets = await github.paginate(github.rest.repos.listReleaseAssets, {
+              owner, repo, release_id: releaseId, per_page: 100,
+            });
+            for (const asset of assets.filter((asset) => asset.name === name)) {
+              await github.rest.repos.deleteReleaseAsset({ owner, repo, asset_id: asset.id });
+              core.info(`Replaced existing asset: ${name} (id ${asset.id})`);
+            }
 
-            // Upload the asset using the release ID
             await github.rest.repos.uploadReleaseAsset({
-              owner: 'beekeeper-studio',
-              repo: 'beekeeper-studio',
+              owner,
+              repo,
               release_id: releaseId,
-              name: process.env.FILE,
-              data: ymlContent,
+              name,
+              data: fs.readFileSync('merged.yml', 'utf8'),
               headers: {
                 'content-type': 'application/octet-stream'
               }
