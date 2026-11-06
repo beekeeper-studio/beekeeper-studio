@@ -79,7 +79,7 @@
     "axios-retry": "^3.2.4",
     "base64-url": "^2.3.3",
     "bcryptjs": "^3.0.2",
-    "better-sqlite3": "^13.0.3",
+    "better-sqlite3": "12.11.1",
     "bezier-easing": "^2.1.0",
     "bluebird": "^3.7.2",
     "builder-util-runtime": "^9.1.1",

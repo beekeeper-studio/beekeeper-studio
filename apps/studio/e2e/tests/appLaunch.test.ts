@@ -25,6 +25,31 @@ test.describe("App Launch", () => {
         await expect(newDatabaseConnection.newConnectionButton).toBeVisible();
     });
 
+    // better-sqlite3 13 calls process.report.getReport() when loading its Linux
+    // binding, which hangs in the Electron utility process. Electron-as-Node
+    // unit tests don't exercise that process. Check persistence across restart
+    // as well as startup so future dependency upgrades cover both paths.
+    test("persists application settings through the utility process", async () => {
+        const key = 'startup-smoke';
+        const expected = `persisted-${Date.now()}`;
+        electronApp = await launchElectron();
+        window = await electronApp.firstWindow();
+        await window.evaluate(async ({ settingKey, value }) => {
+            const app = Array.from(document.querySelectorAll('*')).map((el: any) => el.__vue__).find((vm) => vm?.$store && vm?.$util);
+            await app.$store.dispatch('settings/save', { key: settingKey, value });
+        }, { settingKey: key, value: expected });
+
+        await electronApp.close();
+        electronApp = await launchElectron();
+        window = await electronApp.firstWindow();
+        const value = await window.evaluate(async (settingKey) => {
+            const app = Array.from(document.querySelectorAll('*')).map((el: any) => el.__vue__).find((vm) => vm?.$store && vm?.$util);
+            const setting = await app.$util.send('appdb/setting/findOneBy', { options: { key: settingKey } });
+            return setting.value;
+        }, key);
+        expect(value).toBe(expected);
+    });
+
     // The utility process loads every database client, native modules
     // included, before it answers. A query result means they all loaded on
     // this platform and architecture, not just the SQLite driver.
