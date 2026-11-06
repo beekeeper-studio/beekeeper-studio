@@ -74,6 +74,7 @@ export default Vue.extend({
     },
     close() {
       this.open = false;
+      this.$emit("close");
     },
     setSelector() {
       if (this.mountingSelector) {

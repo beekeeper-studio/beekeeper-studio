@@ -1,5 +1,18 @@
 <template>
+  <slideover
+    v-if="parentPage"
+    ref="slideover"
+    mount-to-nearest=".config > .content"
+    :loading="loading"
+    @close="onSlideoverClose"
+  >
+    <template #title>
+      <h2>{{ title }}</h2>
+    </template>
+    <slot :open="config.open" />
+  </slideover>
   <div
+    v-else
     v-show="containsActivePage"
     class="config-page"
   >
@@ -8,33 +21,24 @@
       v-show="isActive"
       class="config-page-header"
     >
-      <a
-        v-if="parentPage"
-        href="#"
-        class="config-page-back"
-        @click.prevent="config.back(parentPage.id)"
-      >
-        <i class="material-icons">arrow_back</i>
-      </a>
       <h2>{{ title }}</h2>
     </div>
-    <transition :name="parentPage ? 'slideover' : null">
-      <div
-        v-show="containsActivePage"
-        class="config-page-body"
-        :class="{ 'has-open-child': !isActive }"
-      >
-        <slot :open="config.open" />
-      </div>
-    </transition>
+    <div
+      class="config-page-body"
+      :class="{ 'has-open-child': !isActive }"
+    >
+      <slot :open="config.open" />
+    </div>
   </div>
 </template>
 
 <script lang="ts">
 import Vue from "vue";
+import Slideover from "@/components/common/Slideover.vue";
 
 export default Vue.extend({
   name: "ConfigPage",
+  components: { Slideover },
   provide() {
     return { parentPage: this };
   },
@@ -76,11 +80,38 @@ export default Vue.extend({
       return false;
     },
   },
+  watch: {
+    containsActivePage() {
+      this.syncSlideover();
+    },
+  },
   created() {
     this.config.register(this);
   },
+  mounted() {
+    this.syncSlideover();
+  },
   beforeDestroy() {
     this.config.unregister(this);
+  },
+  methods: {
+    onSlideoverClose() {
+      // Also fires when another page took over, which must not navigate again.
+      if (this.isActive) {
+        this.config.back(this.parentPage.id);
+      }
+    },
+    syncSlideover() {
+      const slideover = this.$refs.slideover as any;
+      if (!slideover) {
+        return;
+      }
+      if (this.containsActivePage) {
+        slideover.show();
+      } else {
+        slideover.close();
+      }
+    },
   },
 });
 </script>
@@ -112,28 +143,6 @@ export default Vue.extend({
   }
 }
 
-.config-page-back {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.8rem;
-  height: 1.8rem;
-  border-radius: 1.8rem;
-  color: var(--text-dark);
-  transition: background 0.15s ease-in-out;
-  // make the button look visually aligned
-  margin-left: -0.35rem;
-
-  &:hover,
-  &:focus {
-    background: var(--gray-a4);
-  }
-
-  .material-icons {
-    font-size: 1.25rem;
-  }
-}
-
 // Each page scrolls on its own so a virtual list inside can fill it
 .config-page-body {
   flex: 1 1 auto;
@@ -151,16 +160,6 @@ export default Vue.extend({
   > .config-page-content > :not(.config-page) {
     display: none;
   }
-}
-
-.slideover-enter-active,
-.slideover-leave-active {
-  transition: transform 0.25s ease;
-}
-
-.slideover-enter,
-.slideover-leave-to {
-  transform: translateX(100%);
 }
 
 x-progressbar {

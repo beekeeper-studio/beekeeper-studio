@@ -166,5 +166,29 @@ export default Vue.extend({
   min-width: 0;
   // Stops the slide-in from adding a horizontal scrollbar
   overflow-x: clip;
+  position: relative;
+
+  ::v-deep {
+    .slideover-header {
+      height: 2.6rem;
+      padding: 0 0.5rem 0.4rem;
+
+      h2 {
+        margin: 0;
+        font-size: 1.1rem;
+      }
+    }
+
+    .slideover-body {
+      padding: 0;
+    }
+
+    x-progressbar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+    }
+  }
 }
 </style>
