@@ -285,6 +285,7 @@ module.exports = {
     publish: ['github'],
     signtoolOptions: {
       sign: "./build/win/sign.js",
+      publisherName: "Beekeeper Studio, Inc"
     },
   },
   portable: {
