@@ -11,7 +11,8 @@ import { ConnHandlers } from '../backend/handlers/connHandlers';
 import { FileHandlers } from '@/handlers/fileHandlers';
 import { GeneratorHandlers } from '@/handlers/generatorHandlers';
 import { Handlers } from '../backend/handlers/handlers';
-import { newState, removeState, setPluginManager, state } from '@/handlers/handlerState';
+import { newState, removeState, state } from '@/handlers/handlerState';
+import { context } from '@/handlers/handlerContext';
 import { QueryHandlers } from '@/handlers/queryHandlers';
 import { TabHistoryHandlers } from '@/handlers/tabHistoryHandlers'
 import { ExportHandlers } from '@commercial/backend/handlers/exportHandlers';
@@ -20,23 +21,36 @@ import { CliHandlers } from '@commercial/backend/handlers/cliHandlers';
 import { AwsHandlers } from '@commercial/backend/handlers/awsHandlers';
 import { ImportHandlers } from '@commercial/backend/handlers/importHandlers';
 import { EnumHandlers } from '@commercial/backend/handlers/enumHandlers';
-import { ThemeHandlers, themeManager } from '@/handlers/themeHandlers';
+import { ThemeHandlers } from '@/handlers/themeHandlers';
 import { TempHandlers } from '@/handlers/tempHandlers';
 import { DevHandlers } from '@/handlers/devHandlers';
 import { FormatterPresetHandlers } from '@/handlers/formatterPresetHandlers';
 import { LicenseHandlers } from '@/handlers/licenseHandlers';
 import { LockHandlers } from '@/handlers/lockHandlers';
-import { PluginHandlers, pluginManager } from '@/handlers/pluginHandlers';
+import { PluginHandlers } from '@/handlers/pluginHandlers';
+import { PluginManager } from '@/services/plugin';
+import ExtensionFileManager from '@/services/extension/ExtensionFileManager';
 import { DriverDepHandlers } from '@/handlers/driverDepHandlers';
 import { DriverDepManager, DriverDepFileManager, createDefaultRegistry } from '@/services/driverDeps';
 import type { DepPlatform, DepArch } from '@/services/driverDeps';
 import BksConfig from '@/common/bksConfig';
 import _ from 'lodash';
+import {
+  ConfigurationModule,
+  BundledPluginModule,
+  RegistryModule,
+  LicenseModule,
+} from '@/services/plugin/modules';
 import { PluginErrorCode, PluginSystemErrorCode } from '@/lib/errors';
 
 import * as sms from 'source-map-support'
 import { WorkspaceHandlers } from '@/handlers/workspaceHandlers';
 import { ConfigHandlers } from '@/handlers/configHandlers';
+import ExtensionRegistry from '@/services/extension/ExtensionRegistry';
+import globals from '@/common/globals';
+import { ThemeManager } from '@/services/theme/ThemeManager';
+import { ThemeConfigurationModule } from '@/services/theme/modules/ThemeConfigurationModule';
+import { ThemeAutoUpdateModule } from '@/services/theme/modules/ThemeAutoUpdateModule';
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -197,6 +211,33 @@ async function initState(sId: string, port: MessagePortMain) {
 async function init() {
   ormConnection = new ORMConnection(platformInfo.appDbPath, false);
   await ormConnection.connect();
+
+  const pluginManager = new PluginManager({
+    appVersion: platformInfo.appVersion,
+    fileManager: new ExtensionFileManager({
+      root: platformInfo.pluginsDirectory,
+    }),
+    registry: new ExtensionRegistry({ registries: globals.plugins.registries }),
+  });
+  pluginManager.registerModules([
+    ConfigurationModule.with({ config: BksConfig }),
+    RegistryModule.with({ config: BksConfig }),
+    BundledPluginModule,
+    LicenseModule,
+  ]);
+
+  const themeManager = new ThemeManager({
+    fileManager: new ExtensionFileManager({
+      root: platformInfo.themesDirectory,
+    }),
+  });
+  themeManager.registerModules([
+    ThemeConfigurationModule.with({ config: BksConfig }),
+    ThemeAutoUpdateModule.with({ config: BksConfig }),
+  ]);
+
+  context.pluginManager = pluginManager;
+  context.themeManager = themeManager;
 
   pluginManager.initialize().catch((e) => {
     log.error("Error initializing plugin manager", e);

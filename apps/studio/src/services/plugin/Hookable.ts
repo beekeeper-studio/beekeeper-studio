@@ -17,6 +17,12 @@ export abstract class Hookable<Manager, Hooks> {
     this.modules.push(new moduleCls({ manager: this }));
   }
 
+  registerModules(this: Manager & Hookable<Manager, Hooks>, moduleClasses: HookableModuleClass<Manager, Hooks>[]) {
+    for (const moduleCls of moduleClasses) {
+      this.registerModule(moduleCls);
+    }
+  }
+
   /** Run all handlers for a side-effect hook (no return value). */
   protected async callHook<K extends keyof Hooks>(
     name: K,

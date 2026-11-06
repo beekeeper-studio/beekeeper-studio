@@ -1,17 +1,6 @@
+import { context } from '@/handlers/handlerContext';
 import { state } from '@/handlers/handlerState';
-import platformInfo from '@/common/platform_info';
-import ExtensionFileManager from '@/services/extension/ExtensionFileManager';
-import { ThemeManager } from '@/services/theme/ThemeManager';
-import { ThemeConfigurationModule } from '@/services/theme/modules/ThemeConfigurationModule';
-import { ThemeAutoUpdateModule } from '@/services/theme/modules/ThemeAutoUpdateModule';
-import BksConfig from '@/common/bksConfig';
 import { ExtensionRepository, RegistryMap, ThemeManifest, ThemeSnapshot } from '@/services/plugin/types';
-
-export const themeManager = new ThemeManager({
-  fileManager: new ExtensionFileManager({ root: platformInfo.themesDirectory }),
-});
-themeManager.registerModule(ThemeConfigurationModule.with({ config: BksConfig }));
-themeManager.registerModule(ThemeAutoUpdateModule.with({ config: BksConfig }));
 
 export interface IThemeHandlers {
   'theme/themes': () => Promise<ThemeSnapshot[]>,
@@ -25,30 +14,30 @@ export interface IThemeHandlers {
 
 export const ThemeHandlers: IThemeHandlers = {
   'theme/themes': async function() {
-    return await themeManager.getThemes();
+    return await context.themeManager.getThemes();
   },
   'theme/watch': async function({ sId }: { sId: string }) {
-    themeManager.watch(sId, (id) => {
+    context.themeManager.watch(sId, (id) => {
       state(sId).port.postMessage({ type: 'themeFileChanged', input: id });
     });
   },
   'theme/checkForUpdates': async function({ id }: { id: string }) {
-    return await themeManager.checkForUpdates(id);
+    return await context.themeManager.checkForUpdates(id);
   },
   'theme/install': async function({ id }: { id: string }) {
-    return await themeManager.installTheme(id);
+    return await context.themeManager.installTheme(id);
   },
   'theme/entries': async function({ clearCache }: { clearCache: boolean }) {
     if (clearCache) {
-      themeManager.registry.clearCache();
+      context.themeManager.registry.clearCache();
     }
-    const entries = await themeManager.registry.getEntries();
-    return { entries, errors: Object.values(themeManager.registry.errors) };
+    const entries = await context.themeManager.registry.getEntries();
+    return { entries, errors: Object.values(context.themeManager.registry.errors) };
   },
   'theme/repository': async function({ id }: { id: string }) {
-    return await themeManager.registry.getRepository(id);
+    return await context.themeManager.registry.getRepository(id);
   },
   'theme/uninstall': async function({ id }: { id: string }) {
-    await themeManager.uninstallTheme(id);
+    await context.themeManager.uninstallTheme(id);
   }
 };
