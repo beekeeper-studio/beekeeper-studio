@@ -34,6 +34,7 @@ import { mapGetters, mapState } from "vuex";
 import { entityId } from "@/common/utils";
 import "scrollyfills";
 import { TransportPinnedEntity } from "@/common/transport/TransportPinnedEntity";
+import { indexColumnResults, matchColumnResults } from "@/lib/db/columnSearch";
 
 type Entity = TableOrView | Routine | string;
 
@@ -49,6 +50,7 @@ interface BaseItem {
   level: number;
   parent?: BaseItem;
   pinned: boolean;
+  showSchema?: boolean;
 }
 
 interface RootItem extends BaseItem {
@@ -67,6 +69,7 @@ interface TableItem extends BaseItem {
   entity: TableOrView;
   parent: BaseItem;
   loadingColumns: boolean;
+  matchingColumns?: any[];
 }
 
 interface RoutineItem extends BaseItem {
@@ -86,11 +89,13 @@ export default Vue.extend({
       estimateItemHeight: this.$bksConfig.ui.tableList.itemHeight, // height of collapsed item
       keeps: 30,
       generated: false,
+      searchExpansionSnapshot: null as Map<string, boolean> | null,
     };
   },
   methods: {
     generateItems() {
       const items = [] as Item[];
+      const columnIndex = indexColumnResults(this.columnSearch.results);
       const noFolder = this.schemaTables.length === 1;
       const root: RootItem = {
         type: "root",
@@ -116,6 +121,15 @@ export default Vue.extend({
           }
         }
       }
+      if (this.filterQuery && !this.searchExpansionSnapshot) {
+        this.searchExpansionSnapshot = new Map(this.items.map(item => [item.key, item.expanded]));
+      } else if (!this.filterQuery && this.searchExpansionSnapshot) {
+        expandedMap.clear();
+        this.searchExpansionSnapshot.forEach((expanded, key) => {
+          if (expanded) expandedMap.set(key, true);
+        });
+        this.searchExpansionSnapshot = null;
+      }
 
       for (const pin of this.pins) {
         const key = entityId(pin.schemaName, pin.entity);
@@ -133,7 +147,7 @@ export default Vue.extend({
             type: "schema",
             key,
             entity: schema.schema,
-            expanded: !this.generated
+            expanded: this.filterQuery ? true : !this.generated
               ? this.defaultSchema === schema.schema
               : expandedMap.has(key),
             hidden: this.hiddenSchemas.includes(schema.schema),
@@ -147,33 +161,39 @@ export default Vue.extend({
         }
 
         schema.tables.forEach((table: TableOrView) => {
-          const key = entityId(schema.schema, table);
+          const key = entityId(schema.flatSearch ? table.schema : schema.schema, table);
+          const matched = this.filterQuery && this.columnSearch.query === this.filterQuery
+            ? matchColumnResults(columnIndex, table.schema, table.name, this.database)
+            : [];
           items.push({
             type: "table",
             key,
             entity: table,
-            expanded: expandedMap.has(key),
-            hidden: this.hiddenEntities.includes(table),
+            expanded: matched.length > 0 || expandedMap.has(key),
+            hidden: this.hiddenEntities.includes(table) || (schema.flatSearch && this.hiddenSchemas.includes(table.schema)),
             contextMenu: this.tableMenuOptions,
             parent,
             level: noFolder ? 0 : 1,
             pinned: pinnedMap.has(key) || false,
             loadingColumns: false,
+            matchingColumns: matched.length ? matched : undefined,
+            showSchema: schema.flatSearch,
           });
         });
 
         schema.routines.forEach((routine: Routine) => {
-          const key = entityId(schema.schema, routine);
+          const key = entityId(schema.flatSearch ? routine.schema : schema.schema, routine);
           items.push({
             entity: routine,
             key,
             type: "routine",
             expanded: expandedMap.has(key),
-            hidden: this.hiddenEntities.includes(routine),
+            hidden: this.hiddenEntities.includes(routine) || (schema.flatSearch && this.hiddenSchemas.includes(routine.schema)),
             contextMenu: this.routineMenuOptions,
             parent,
             level: noFolder ? 0 : 1,
             pinned: pinnedMap.has(key) || false,
+            showSchema: schema.flatSearch,
           });
         });
       });
@@ -201,7 +221,7 @@ export default Vue.extend({
 
           if (item.expanded) {
             if (item.type === "table") {
-              const cols = item.entity.columns?.length ?? 1;
+              const cols = item.matchingColumns?.length ?? item.entity.columns?.length ?? 1;
               totalHeight += cols * 20.29; // plus column height when expanded
             } else if (item.type === "routine") {
               const params = item.entity.routineParams?.length ?? 0;
@@ -233,6 +253,7 @@ export default Vue.extend({
         const item = this.displayItems[i];
         if (!item.expanded) continue;
         if (item.type !== "table") continue;
+        if (item.matchingColumns) continue;
         if (whenEmpty && item.entity.columns?.length) continue;
         if (item.loadingColumns) continue;
 
@@ -241,7 +262,7 @@ export default Vue.extend({
     },
     handleExpand(_: Event, item: Item) {
       item.expanded = !item.expanded;
-      if (item.expanded && item.type === "table") {
+      if (item.expanded && item.type === "table" && !item.matchingColumns) {
         this.loadColumns(item);
       }
       this.generateDisplayItems();
@@ -317,11 +338,22 @@ export default Vue.extend({
       hiddenSchemas: "hideEntities/databaseSchemas",
     }),
     ...mapState("pins", ["pins"]),
+    ...mapState(["database", "columnSearch"]),
+    filterQuery() {
+      return this.$store.state.entityFilter.filterQuery;
+    },
   },
   watch: {
     schemaTables() {
       this.generateItems();
       this.generateDisplayItems();
+    },
+    columnSearch: {
+      deep: true,
+      handler() {
+        this.generateItems();
+        this.generateDisplayItems();
+      },
     },
     minimalMode() {
       this.generateDisplayItems();
