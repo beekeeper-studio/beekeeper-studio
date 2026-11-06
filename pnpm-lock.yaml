@@ -294,8 +294,8 @@ importers:
         specifier: ^4.4.8
         version: 4.4.9
       '@surrealdb/codemirror':
-        specifier: ^1.0.4
-        version: 1.0.5
+        specifier: ^1.1.0
+        version: 1.1.0
       '@trinodb/trino-js-client':
         specifier: ^0.3.2
         version: 0.3.2(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
@@ -546,8 +546,8 @@ importers:
         specifier: ^1.17.0
         version: 1.17.0
       surrealdb:
-        specifier: ^2.0.8
-        version: 2.0.8(tslib@2.8.1)(typescript@5.8.3)
+        specifier: ^2.2.1
+        version: 2.2.1(tslib@2.8.1)(typescript@5.8.3)
       tabulator-tables:
         specifier: ^6.7.1
         version: 6.7.1
@@ -3570,11 +3570,17 @@ packages:
   '@surrealdb/codemirror@1.0.5':
     resolution: {integrity: sha512-8isqh3yFmLDlshykllCP3roPdkCQfp3PKdh2wUcQMwHk54EWs7ZJUhTcJrM1goY8SB58uOdr/EiamEXR05JI5Q==}
 
+  '@surrealdb/codemirror@1.1.0':
+    resolution: {integrity: sha512-yiif+gE+L2Bned92/36uflOf+T5kgVKNZH3TclwlTW9bzfqoQPl0uERCl4IA+F329Vt0ilttPbOGS6X57jgJgQ==}
+
   '@surrealdb/lezer@1.0.5':
     resolution: {integrity: sha512-3+tXRE71D3BZdGGHLVaPVRmOrQHheGuwl69i13/c+5Ub1IQXQIQCUTOKcN43eJTBDQbE80Nc4SRkzeQdH5N/yA==}
 
-  '@surrealdb/sqon@0.1.0':
-    resolution: {integrity: sha512-pooKLZ0W6mN8XHzJQavGOdfZOZksycmIjhwFwvG0kdCAt4I5U6KKPHcXQwFkTDNKFKFKdufczLRnzHapPIslQw==}
+  '@surrealdb/lezer@1.1.0':
+    resolution: {integrity: sha512-AJylzIuUdhjOIhuFhPIR/ZDEg4vUazzSt1/zoHlvW61flfdI9fNx2iuUG6a1g7MVOqe6qj6e+wbUPWm87VizBA==}
+
+  '@surrealdb/sqon@0.2.1':
+    resolution: {integrity: sha512-syLKHRHMoyzbimUAOni3Jn8oeEIGXpsHJjIOaZ5qJ17BQHXQvlvlhqRL5/r83YKWz7ptgt2lVNyoU857lOfvAQ==}
     peerDependencies:
       tslib: ^2.6.3
       typescript: ^5.0.0
@@ -8501,8 +8507,8 @@ packages:
     resolution: {integrity: sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==}
     engines: {node: '>= 0.4'}
 
-  surrealdb@2.0.8:
-    resolution: {integrity: sha512-nkoTAdnfJYc0EvB2Hut0MET/UiWTOT6+TJODoubHzoC952gJvjEbHMx5TLrecUYo1vIN3/qBgwMIcLKK0WC7zQ==}
+  surrealdb@2.2.1:
+    resolution: {integrity: sha512-n2f/BR032GR3Bs2CYvBOPnBA4rhl80vYbWASmUMk5XkDTWx8RUW6WfyiV9NOTKA0j638J61Uztd0bV1yfCYszg==}
     peerDependencies:
       tslib: ^2.6.3
       typescript: ^5.0.0 || ^6.0.0
@@ -12935,13 +12941,28 @@ snapshots:
       '@surrealdb/lezer': 1.0.5
       compare-versions: 6.1.1
 
+  '@surrealdb/codemirror@1.1.0':
+    dependencies:
+      '@codemirror/language': 6.12.1
+      '@codemirror/lint': 6.9.3
+      '@lezer/common': 1.5.0
+      '@lezer/javascript': 1.5.4
+      '@surrealdb/lezer': 1.1.0
+      compare-versions: 6.1.1
+
   '@surrealdb/lezer@1.0.5':
     dependencies:
       '@lezer/common': 1.5.0
       '@lezer/highlight': 1.2.3
       '@lezer/lr': 1.4.8
 
-  '@surrealdb/sqon@0.1.0(tslib@2.8.1)(typescript@5.8.3)':
+  '@surrealdb/lezer@1.1.0':
+    dependencies:
+      '@lezer/common': 1.5.0
+      '@lezer/highlight': 1.2.3
+      '@lezer/lr': 1.4.8
+
+  '@surrealdb/sqon@0.2.1(tslib@2.8.1)(typescript@5.8.3)':
     dependencies:
       '@surrealdb/cbor': 2.0.0-alpha.4
       tslib: 2.8.1
@@ -18619,9 +18640,9 @@ snapshots:
 
   supports-preserve-symlinks-flag@1.0.0: {}
 
-  surrealdb@2.0.8(tslib@2.8.1)(typescript@5.8.3):
+  surrealdb@2.2.1(tslib@2.8.1)(typescript@5.8.3):
     dependencies:
-      '@surrealdb/sqon': 0.1.0(tslib@2.8.1)(typescript@5.8.3)
+      '@surrealdb/sqon': 0.2.1(tslib@2.8.1)(typescript@5.8.3)
       tslib: 2.8.1
       typescript: 5.8.3
 

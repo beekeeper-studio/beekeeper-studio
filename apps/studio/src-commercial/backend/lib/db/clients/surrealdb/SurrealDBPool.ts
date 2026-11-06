@@ -55,7 +55,7 @@ export class SurrealPool {
   async connect(): Promise<SurrealConn> {
     for (const p of this.pool) {
       if (!this.inUse.has(p.id)) {
-        log.info('Reusing connection', p.id);
+        log.debug('Reusing connection', p.id);
         this.inUse.add(p.id);
         return p;
       }
@@ -63,7 +63,7 @@ export class SurrealPool {
 
     if (this.pool.length < this.maxSize) {
       const newConn = new SurrealConn(this);
-      log.info('Acquiring new connection', newConn.id);
+      log.debug('Acquiring new connection', newConn.id);
       await newConn.connect(this.connectionString, this.config);
       await newConn.use(this.database);
       if (this.auth) {
@@ -79,11 +79,11 @@ export class SurrealPool {
     }
 
     return new Promise((resolve, reject) => {
-      log.info('Waiting for new connection to be available');
+      log.debug('Waiting for new connection to be available');
       const interval = setInterval(() => {
         for (const p of this.pool) {
           if (!this.inUse.has(p.id)) {
-            log.info('Reusing connection', p.id);
+            log.debug('Reusing connection', p.id);
             this.inUse.add(p.id);
             clearInterval(interval);
             clearTimeout(timeout);
@@ -111,7 +111,7 @@ export class SurrealPool {
   }
 
   async release(conn: SurrealConn) {
-    log.info('Releasing connection', conn.id);
+    log.debug('Releasing connection', conn.id);
     this.inUse.delete(conn.id);
   }
 
