@@ -829,9 +829,11 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
     })
   }
 
-  private normalizeValue(value: string, column?: ExtendedTableColumn) {
-    if (column.dataType === 'string' && _.isString(value)) {
-      return surrealEscapeValue(value)
+  // The grid sends edited values as strings, so numeric fields need converting back
+  private normalizeValue(value: any, dataType?: string) {
+    const isNumeric = /^(option<)?(number|int|float|decimal)>?$/.test(dataType ?? '');
+    if (isNumeric && _.isString(value) && value.trim() !== '' && !isNaN(Number(value))) {
+      return Number(value);
     }
     return value;
   }
@@ -848,12 +850,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
       result.data = result.data.map((obj) => {
         return _.mapValues(obj, (value, key) => {
           const column = columns.find((c) => c.columnName === key);
-          // if (column.columnName != 'id') {
-
-            // return this.normalizeValue(value, column);
-          // }
-
-          return value;
+          return this.normalizeValue(value, column?.dataType);
         })
       })
       return result;
@@ -902,7 +899,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
             ${update.column} = $${varName}
         `,
         bindings: {
-          [varName]: update.value
+          [varName]: this.normalizeValue(update.value, update.columnType)
         }
       });
     }
