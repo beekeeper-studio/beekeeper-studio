@@ -648,7 +648,7 @@ export class FirebirdClient extends BasicDatabaseClient<FirebirdResult, Firebird
         SELECT
           ${_.isNumber(limit) ? `FIRST ${limit}` : ""}
           ${_.isNumber(offset) ? `SKIP ${offset}` : ""}
-          ${selects.map((s) => FirebirdData.wrapIdentifier(s)).join(", ")}
+          ${selects.join(", ")}
         FROM ${table}
         ${filterString}
         ${orderByString}

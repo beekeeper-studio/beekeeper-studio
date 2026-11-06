@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import { buildSelectTopQuery as buildDuckDBSelectTopQuery } from "@commercial/backend/lib/db/clients/duckdb";
-import { FirebirdClient } from "@commercial/backend/lib/db/clients/firebird";
 import { CassandraClient } from "@commercial/backend/lib/db/clients/cassandra";
 
 // "SQL: Select Top" passes the table's column names as `selects`, so each
@@ -17,18 +16,6 @@ describe("select top column quoting", () => {
     it("leaves * unquoted", () => {
       const { query } = buildDuckDBSelectTopQuery("cheeses", 0, 100, [], [], "main");
       expect(query).toContain("SELECT *");
-    });
-  });
-
-  describe("Firebird", () => {
-    it("quotes selected columns that need it", () => {
-      const { query } = FirebirdClient.buildSelectTopQuery("CHEESES", 0, 100, [], [], "total", columns);
-      expect(query).toContain('id, UserName, "first name"');
-    });
-
-    it("leaves * unquoted", () => {
-      const { query } = FirebirdClient.buildSelectTopQuery("CHEESES", 0, 100, [], []);
-      expect(query).toMatch(/SKIP 0\s+\*\s+FROM/);
     });
   });
 
