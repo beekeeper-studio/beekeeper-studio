@@ -1,4 +1,4 @@
-import { removeQueryQuotes } from "../../lib/utils/sql";
+import { removeQueryQuotes, splitRedisCommands } from "../../lib/utils/sql";
 
 const unquoteTestCases = {
   "SELECT * FROM foo;": `SELECT * FROM foo;`,
@@ -27,6 +27,26 @@ describe("Query Unquoter", () => {
       const result = removeQueryQuotes(possibleQuery, "generic");
       expect(result).toBe(expected);
     })
+  })
+})
+
+describe("splitRedisCommands", () => {
+  it("returns one command per line, skipping blank and comment lines", () => {
+    const text = "# users\r\n\r\n  GET user:1:name  \r\nGET user:2:name\n\n";
+
+    const commands = splitRedisCommands(text);
+
+    expect(commands.map((c) => c.text)).toEqual([
+      "GET user:1:name",
+      "GET user:2:name",
+    ]);
+    for (const command of commands) {
+      expect(text.slice(command.start, command.end + 1)).toBe(command.text);
+    }
+  })
+
+  it("returns nothing for an empty script", () => {
+    expect(splitRedisCommands("  \n# only a comment\n")).toEqual([]);
   })
 })
 
