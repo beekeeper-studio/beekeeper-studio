@@ -18,6 +18,7 @@ import {
   DynamoDBDocumentClient,
   BatchWriteCommand,
   ExecuteStatementCommand,
+  NumberValue,
   ScanCommand,
   UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
@@ -95,6 +96,15 @@ function inferTypeFromValue(value: any): string {
   }
   if (typeof value === 'object') return 'M';
   return 'UNKNOWN';
+}
+
+// The table grid edits cells as text, so values for Number attributes arrive as
+// strings and would be stored as S. NumberValue keeps the exact digits.
+function toAttributeValue(value: any, dataType: string | undefined): any {
+  if (dataType === 'Number' && typeof value === 'string' && value.trim() !== '' && Number.isFinite(Number(value))) {
+    return NumberValue.from(value.trim());
+  }
+  return value;
 }
 
 export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
@@ -747,7 +757,8 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
   async insertRows(inserts: TableInsert[]): Promise<void> {
     for (const ins of inserts) {
       if (!ins.table) throw new Error('Missing table name for insert');
-      const rows = ins.data || [];
+      const types = new Map((await this.listTableColumns(ins.table)).map((c) => [c.columnName, c.dataType]));
+      const rows = (ins.data || []).map((row) => _.mapValues(row, (v, k) => toAttributeValue(v, types.get(k))));
       // BatchWriteItem has a 25-item limit per request.
       for (const chunk of _.chunk(rows, 25)) {
         await this.doc.send(new BatchWriteCommand({
@@ -772,7 +783,7 @@ export class DynamoDBClient extends BasicDatabaseClient<DynamoQueryResult> {
         Key: key,
         UpdateExpression: 'SET #c = :v',
         ExpressionAttributeNames: { '#c': upd.column },
-        ExpressionAttributeValues: { ':v': upd.value },
+        ExpressionAttributeValues: { ':v': toAttributeValue(upd.value, upd.columnType) },
         ReturnValues: 'ALL_NEW',
       }));
       out.push(result.Attributes);

@@ -209,6 +209,32 @@ describe('DynamoDB', () => {
       expect(result.result[0].age).toBe(99)
     })
 
+    it('stores Number values edited as text in the grid as N', async () => {
+      await connection.executeApplyChanges({
+        inserts: [{ table: 'Users', data: [{ id: 'u7', email: 'gina@example.com', name: 'Gina', age: '5' }] }],
+        updates: [{
+          table: 'Users',
+          column: 'age',
+          columnType: 'Number',
+          value: '12345678901234567890',
+          primaryKeys: [{ column: 'id', value: 'u2' }],
+        }],
+        deletes: [],
+      })
+      const { DynamoDBClient: Raw, GetItemCommand } = await import('@aws-sdk/client-dynamodb')
+      const raw = new Raw({
+        region: 'us-east-1',
+        endpoint,
+        credentials: { accessKeyId: 'local', secretAccessKey: 'local' },
+      })
+      const updated = await raw.send(new GetItemCommand({ TableName: 'Users', Key: { id: { S: 'u2' } } }))
+      const inserted = await raw.send(new GetItemCommand({ TableName: 'Users', Key: { id: { S: 'u7' } } }))
+      raw.destroy()
+      expect(updated.Item.age).toStrictEqual({ N: '12345678901234567890' })
+      expect(inserted.Item.age).toStrictEqual({ N: '5' })
+      expect(inserted.Item.name).toStrictEqual({ S: 'Gina' })
+    })
+
     it('updates rows on a composite partition+sort key', async () => {
       await connection.executeApplyChanges({
         inserts: [],
