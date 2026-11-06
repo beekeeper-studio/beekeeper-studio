@@ -76,10 +76,10 @@
               >
                 <i class="material-icons">more_horiz</i>
                 <x-menu>
-                  <x-menuitem @click="openThemePage(theme)">
+                  <x-menuitem @click="openThemePage(theme.manifest)">
                     <x-label>View</x-label>
                   </x-menuitem>
-                  <x-menuitem @click="uninstallTheme(theme.manifest.id)">
+                  <x-menuitem @click="uninstall(theme.manifest)">
                     <x-label>Uninstall</x-label>
                   </x-menuitem>
                 </x-menu>
@@ -122,7 +122,7 @@
     <config-page
       id="community-themes"
       title="Themes"
-      :loading="loadingEntries"
+      :loading="loadingEntries || loadingThemes"
     >
       <template>
         <div
@@ -136,18 +136,24 @@
           <button
             type="button"
             class="btn btn-flat"
-            @click="loadThemeEntries"
+            @click="reinitThemeData"
           >
             Retry
           </button>
         </div>
+        <div class="alerts">
+          <error-alert :error="errors" />
+        </div>
         <plugin-list
-          v-if="!themeEntriesError || displayThemes.length > 0"
-          :plugins="displayThemes"
+          v-if="!themeEntriesError || sortedThemes.length > 0"
+          :plugins="sortedThemes"
           search-placeholder="Search Themes"
           :show-origin-filter="false"
-          @install="installTheme"
-          @item-click="openEntryPage"
+          @install="install"
+          @uninstall="uninstall"
+          @update="update"
+          @item-click="openThemePage"
+          @checkForUpdates="checkForUpdates"
         />
       </template>
     </config-page>
@@ -159,13 +165,14 @@
       <template>
         <extension-page
           v-if="selectedTheme"
+          type="theme"
           :extension="selectedTheme"
           :extension-repo="selectedThemeRepo"
           :loading-markdown="loadingThemeReadme"
-          @install="installTheme(selectedTheme)"
-          @uninstall="uninstallTheme(selectedTheme.id)"
-          @update="installTheme(selectedTheme)"
-          @checkForUpdates="checkThemeForUpdates(selectedTheme)"
+          @install="install(selectedTheme)"
+          @uninstall="uninstall(selectedTheme)"
+          @update="update(selectedTheme)"
+          @checkForUpdates="checkForUpdates(selectedTheme)"
         />
       </template>
     </config-page>
@@ -206,101 +213,94 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { mapActions, mapGetters } from "vuex";
+import { mapActions, mapGetters, mapState } from "vuex";
 import ThemePreview from "@/components/common/ThemePreview.vue";
 import ConfigPage from "@/components/common/config/ConfigPage.vue";
 import ControlRow from "@/components/common/ControlRow.vue";
+import ErrorAlert from "@/components/common/ErrorAlert.vue";
 import ExtensionPage from "@/components/plugins/ExtensionPage.vue";
 import PluginList from "@/components/plugins/PluginList.vue";
 import type {
+  ExtensionOrigin,
   ExtensionRegistryEntry,
   ExtensionUI,
   ThemeSnapshot,
 } from "@/services/plugin/types";
 import rawLog from "@bksLogger";
+import _ from "lodash";
 
 const log = rawLog.scope("ThemesConfig");
+
+const ORIGIN_ORDER: Record<ExtensionOrigin, number> = {
+  "official": 0,
+  "community": 1,
+  "custom": 2,
+  "unlisted": 3,
+  // This shouldn't happen, we exclude bundled from the list
+  "bundled": Number.MAX_SAFE_INTEGER
+};
+
+const INSTALL_ORDER: Record<"true" | "false", number> = {
+  "true": 0,
+  "false": 10
+}
+
+const DISABLED_ORDER: Record<"true" | "false", number> = {
+  "true": 20,
+  "false": 0
+}
 
 export default Vue.extend({
   name: "ThemesConfig",
   components: {
     ThemePreview,
     ConfigPage,
+    ControlRow,
+    ErrorAlert,
     ExtensionPage,
     PluginList,
-    ControlRow,
   },
   inject: ["config"],
   data() {
     return {
-      selectedTheme: null as ExtensionUI | null,
+      themes: [] as ExtensionUI[],
+      selectedThemeIdx: -1,
       selectedThemeRepo: null,
       loadingThemeReadme: false,
-      themeEntries: [] as ExtensionRegistryEntry[],
-      themeEntriesError: null as string | null,
-      loadingEntries: false,
-      installingIds: [] as string[],
-      installErrors: {} as Record<string, string>,
+      errors: null,
+      loadingThemes: false,
     };
   },
   computed: {
-    ...mapGetters({
-      themes: "theme/snapshots",
-      themeId: "theme/id",
-      themeAppearance: "theme/appearance",
+    ...mapState("themes/snapshots", {
+      snapshots: "all",
     }),
-    listedThemes(): ThemeSnapshot[] {
-      return this.themes.filter((theme) => !theme.disableState.disabled);
+    ...mapState("themes/entries", {
+      themeEntriesError: "error",
+      loadingEntries: "loading",
+    }),
+    ...mapGetters("themes/entries", {
+      entries: "all",
+    }),
+    ...mapGetters("themes/snapshots", ["snapshotsById"]),
+    ...mapGetters({
+      themeId: "themes/id",
+      themeAppearance: "themes/appearance",
+    }),
+    selectedTheme() {
+      return this.themes[this.selectedThemeIdx];
     },
-    installedIds(): string[] {
-      return this.themes.map((theme) => theme.manifest.id);
+    sortedThemes() {
+      return _.sortBy(this.displayThemes, this.themeSorter);
     },
     displayThemes(): ExtensionUI[] {
-      const list: ExtensionUI[] = [];
-
-      for (const theme of this.themes as ThemeSnapshot[]) {
-        if (theme.origin === "bundled") {
-          continue;
-        }
-
-        const entry = this.themeEntries.find(
-          (entry) => entry.id === theme.manifest.id
-        );
-
-        list.push({
-          ...theme.manifest,
-          origin: theme.origin,
-          repo: entry?.repo ?? null,
-          installed: true,
-          installing: this.installingIds.includes(theme.manifest.id),
-          enabled: true,
-          loadable: true,
-          checkingForUpdates: null,
-          updateAvailable: false,
-          error: this.installErrors[theme.manifest.id] ?? null,
-          disabled: theme.disableState.disabled,
-        } as ExtensionUI);
-      }
-
-      for (const entry of this.themeEntries) {
-        if (this.installedIds.includes(entry.id)) {
-          continue;
-        }
-
-        list.push({
-          ...entry,
-          installed: false,
-          installing: this.installingIds.includes(entry.id),
-          enabled: true,
-          loadable: true,
-          checkingForUpdates: null,
-          updateAvailable: false,
-          error: this.installErrors[entry.id] ?? null,
-          disabled: false,
-        } as ExtensionUI);
-      }
-
-      return list;
+      return this.themes.map((theme) => ({
+        ...theme,
+        disabled: this.snapshotsById[theme.id]?.disableState.disabled
+      }));
+    },
+    listedThemes(): ThemeSnapshot[] {
+      return this.snapshots.filter((theme) => !theme.disableState.disabled);
     },
     themeAutoUpdate: {
       get() {
@@ -322,7 +322,7 @@ export default Vue.extend({
           path: "themeSystem.communityDisabled",
           value: !value,
         });
-        await this.loadThemes();
+        await this.reinitThemeData();
       },
     },
     unlistedThemesEnabled: {
@@ -334,18 +334,17 @@ export default Vue.extend({
           path: "themeSystem.unlistedDisabled",
           value: !value,
         });
-        await this.loadThemes();
+        await this.reinitThemeData();
       },
     },
   },
-  mounted() {
-    this.loadThemeEntries();
+  async mounted() {
+    await this.reinitThemeData();
   },
   methods: {
-    ...mapActions("theme", {
+    ...mapActions("themes", {
       setThemeDark: "setDark",
       setThemeId: "setId",
-      loadThemes: "loadThemes",
     }),
     disabledReasonText(theme: ThemeSnapshot) {
       if (!theme.disableState.disabled) {
@@ -357,57 +356,77 @@ export default Vue.extend({
         "missing-style": "Missing style.css",
       }[theme.disableState.reason];
     },
-    async checkThemeForUpdates({ id }: { id: string }) {
-      this.selectedTheme = { ...this.selectedTheme, checkingForUpdates: true };
+    async reinitThemeData() {
+      this.themes = [];
+      await this.$store.dispatch("themes/initialize");
+      await this.loadThemes();
+    },
+    async loadThemes() {
+      this.loadingThemes = true;
+
       try {
-        const updateAvailable = await this.$util.send("theme/checkForUpdates", { id });
-        this.selectedTheme = { ...this.selectedTheme, updateAvailable };
+        this.themes = await this.buildThemeListData();
+      } catch (e) {
+        log.error(e);
+      }
+
+      this.loadingThemes = false;
+    },
+    updateTheme(id: string, updated: Partial<ExtensionUI>) {
+      const idx = this.themes.findIndex((t) => t.id === id);
+      if (idx === -1) {
+        return;
+      }
+      this.$set(this.themes, idx, { ...this.themes[idx], ...updated });
+    },
+    async install({ id }) {
+      try {
+        this.updateTheme(id, { installing: true, error: null });
+        await this.$util.send("theme/install", { id });
+        await this.$store.dispatch("themes/snapshots/load");
+        this.updateTheme(id, { installed: true, loadable: true });
+      } catch (e) {
+        log.error(e);
+        this.updateTheme(id, { error: e });
+        this.$noty.error(`Failed to install theme: ${e.message}`);
+      } finally {
+        this.updateTheme(id, { installing: false });
+      }
+    },
+    async update({ id }) {
+      try {
+        this.updateTheme(id, { installing: true, error: null });
+        const manifest = await this.$util.send("theme/update", { id });
+        await this.$store.dispatch("themes/snapshots/load");
+        this.updateTheme(id, {
+          version: manifest.version,
+          updateAvailable: false,
+          loadable: true,
+        });
+      } catch (e) {
+        log.error(e);
+        this.updateTheme(id, { error: e });
+        this.$noty.error(`Failed to update theme: ${e.message}`);
+      } finally {
+        this.updateTheme(id, { installing: false });
+      }
+    },
+    async checkForUpdates({ id }) {
+      try {
+        this.updateTheme(id, { checkingForUpdates: true });
+        this.updateTheme(id, {
+          updateAvailable: await this.$util.send("theme/checkForUpdates", {
+            id,
+          }),
+        });
       } catch (e) {
         log.error(e);
         this.$noty.error(`Failed to check for update: ${e.message}`);
       } finally {
-        this.selectedTheme = { ...this.selectedTheme, checkingForUpdates: false };
+        this.updateTheme(id, { checkingForUpdates: false });
       }
     },
-    async openThemePage(theme: ThemeSnapshot) {
-      this.selectedThemeRepo = null;
-      this.selectedTheme = {
-        ...theme.manifest,
-        origin: theme.origin,
-        repo: null,
-        installed: true,
-        installing: false,
-        enabled: true,
-        loadable: true,
-        error: null,
-        updateAvailable: false,
-        checkingForUpdates: null,
-        disabled: false,
-      };
-      this.loadingThemeReadme = true;
-      this.config.open("theme-detail");
-      try {
-        const { entries: registryMap } = await this.$util.send("theme/entries", {
-          clearCache: false,
-        });
-        const entries: ExtensionRegistryEntry[] = Object.values(registryMap).flat();
-        const entry = entries.find((e) => e.id === theme.manifest.id);
-        if (entry) {
-          this.selectedTheme = {
-            ...this.selectedTheme,
-            repo: entry.repo,
-            origin: entry.origin,
-          };
-          this.selectedThemeRepo = await this.$util.send("theme/repository", {
-            id: theme.manifest.id,
-          });
-        }
-      } catch (e) {
-        this.$noty.error(`Error opening theme page: ${e.message}`);
-      }
-      this.loadingThemeReadme = false;
-    },
-    async uninstallTheme(id: string) {
+    async uninstall({ id }) {
       const confirmed = await this.$confirm(
         "Are you sure you want to uninstall?",
         undefined,
@@ -419,85 +438,95 @@ export default Vue.extend({
 
       try {
         await this.$util.send("theme/uninstall", { id });
-        this.config.open("themes");
         if (this.themeId === id) {
           await this.setThemeId("default");
         }
-        await this.loadThemes();
+        await this.$store.dispatch("themes/snapshots/load");
+        this.updateTheme(id, { installed: false });
       } catch (e) {
+        log.error(e);
+        this.updateTheme(id, { error: e });
         this.$noty.error(`Failed to uninstall theme: ${e.message}`);
       }
     },
-    async loadThemeEntries() {
-      this.loadingEntries = true;
-      this.themeEntriesError = null;
-      try {
-        const { entries, errors } = await this.$util.send("theme/entries", {
-          clearCache: true,
-        });
-        this.themeEntries = Object.values(entries).flat();
-        this.themeEntriesError = errors.length > 0 ? errors.join("; ") : null;
-      } catch (e) {
-        this.themeEntriesError = e.message;
-      }
-      this.loadingEntries = false;
-    },
-    async openEntryPage(entry: ExtensionUI) {
-      this.selectedTheme = entry;
+    async openThemePage({ id }) {
+      this.selectedThemeIdx = this.themes.findIndex((t) => t.id === id);
       this.selectedThemeRepo = null;
       this.loadingThemeReadme = true;
       this.config.open("theme-detail");
       try {
-        this.selectedThemeRepo = await this.$util.send("theme/repository", {
-          id: entry.id,
-        });
-        const installed = this.themes.find((theme) => theme.manifest.id === entry.id);
-        this.selectedTheme = {
-          ...this.selectedTheme,
-          version: installed?.manifest.version ?? this.selectedThemeRepo.latestRelease?.manifest.version,
-        };
+        this.selectedThemeRepo = await this.$util.send("theme/details", { id });
       } catch (e) {
+        log.error(e);
         this.$noty.error(`Error opening theme page: ${e.message}`);
       }
       this.loadingThemeReadme = false;
     },
-    async installTheme({ id }: { id: string }) {
-      this.installingIds.push(id);
-      this.$delete(this.installErrors, id);
-      if (this.selectedTheme?.id === id) {
-        this.selectedTheme = { ...this.selectedTheme, installing: true, error: null };
+    async buildThemeListData() {
+      const entries: ExtensionRegistryEntry[] = this.entries;
+      const installedThemes: ThemeSnapshot[] = this.snapshots;
+      const list: ExtensionUI[] = [];
+
+      for (const { manifest, origin } of installedThemes) {
+        const data: ExtensionUI = {
+          ...manifest,
+          installed: true,
+          installing: false,
+          checkingForUpdates: null,
+          loadable: true,
+          origin
+        } as ExtensionUI;
+
+        if (data.origin === "bundled") {
+          continue;
+        }
+
+        const entry = entries.find((entry) => entry.id === manifest.id);
+
+        // if the theme is found in a registry
+        if (entry) {
+          data.repo = entry.repo;
+          data.updateAvailable = await this.$util
+            .send("theme/checkForUpdates", { id: manifest.id })
+            .catch((e) => {
+              this.errors = [
+                `Failed to check for updates for ${manifest.id}: ${e.message}`,
+              ];
+              log.error(e);
+              return false;
+            });
+        }
+
+        list.push(data);
       }
-      try {
-        const manifest = await this.$util.send("theme/install", { id });
-        await this.loadThemes();
-        if (this.selectedTheme?.id === id) {
-          this.selectedTheme = {
-            ...this.selectedTheme,
-            installed: true,
-            version: manifest.version,
-            updateAvailable: false,
-          };
-        }
-      } catch (e) {
-        this.$set(this.installErrors, id, e.message);
-        if (this.selectedTheme?.id === id) {
-          this.selectedTheme = { ...this.selectedTheme, error: e.message };
-        }
-        this.$noty.error(`Failed to install theme: ${e.message}`);
-      } finally {
-        this.installingIds = this.installingIds.filter(
-          (installingId) => installingId !== id
-        );
-        if (this.selectedTheme?.id === id) {
-          this.selectedTheme = { ...this.selectedTheme, installing: false };
+
+      for (const entry of entries) {
+        if (!_.find(list, { id: entry.id })) {
+          const data: ExtensionUI = {
+            ...entry,
+            installed: false,
+            installing: false,
+            checkingForUpdates: null,
+          } as ExtensionUI;
+
+          list.push(data);
         }
       }
+
+      return list;
+    },
+    themeSorter(t: ExtensionUI) {
+      return ORIGIN_ORDER[t.origin] + INSTALL_ORDER[`${t.installed}`] + DISABLED_ORDER[`${t.disabled}`];
     },
   },
 });
 </script>
 
 <style lang="scss" scoped>
+.alerts {
+  margin-inline: 1.25rem;
+}
+
 .mode-options {
   display: flex;
   align-items: center;

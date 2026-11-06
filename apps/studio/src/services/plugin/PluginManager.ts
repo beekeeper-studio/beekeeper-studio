@@ -15,7 +15,7 @@ import {
 import rawLog from "@bksLogger";
 import { UserSetting } from "@/common/appdb/models/user_setting";
 import semver from "semver";
-import { PluginError, PluginSystemError } from "@/lib/errors";
+import { ExtensionRegistryError, PluginError, PluginSystemError } from "@/lib/errors";
 import { convertToManifestV1, isManifestV0, mapViewsAndMenuFromV0ToV1 } from "./utils";
 import { Hookable } from "./Hookable";
 import type { PluginModuleHookMap } from "./modules/PluginModule";
@@ -154,7 +154,7 @@ export default class PluginManager extends Hookable<PluginManager, PluginModuleH
         const found = await this.registry.findEntry(manifest.id);
         origin = found.origin;
       } catch (e) {
-        if (e instanceof PluginSystemError && e.code === "PLUGIN_NOT_FOUND") {
+        if (e instanceof ExtensionRegistryError && e.code === "ENTRY_NOT_FOUND") {
           // There's nothing wrong if the plugin is not found in the registry.
           // It may be a local plugin. See if we've maybe cached the entry in the past
           const cached = await PluginEntryCache.findOneBy({ id: manifest.id });

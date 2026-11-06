@@ -12,7 +12,7 @@ import {
 } from "@/services/plugin/types";
 import ExtensionRegistry from "@/services/extension/ExtensionRegistry";
 import rawLog from "@bksLogger";
-import { PluginSystemError, ThemeSystemError } from "@/lib/errors";
+import { ExtensionRegistryError, ThemeSystemError } from "@/lib/errors";
 import { ThemeEntryCache } from "@/common/appdb/models/ThemeEntryCache";
 import { Hookable } from "@/services/plugin/Hookable";
 import type { ThemeModuleHookMap } from "./modules/ThemeModule";
@@ -176,7 +176,7 @@ export class ThemeManager extends Hookable<ThemeManager, ThemeModuleHookMap> {
         const found = await this.registry.findEntry(manifest.id);
         origin = found.origin;
       } catch (e) {
-        if (e instanceof PluginSystemError && e.code === "PLUGIN_NOT_FOUND") {
+        if (e instanceof ExtensionRegistryError && e.code === "ENTRY_NOT_FOUND") {
           // Not in the registry now; it may have been installed from one before.
           const cached = await ThemeEntryCache.findOneBy({ id: manifest.id });
           if (cached && cached.origin) {
@@ -212,6 +212,11 @@ export class ThemeManager extends Hookable<ThemeManager, ThemeModuleHookMap> {
     const current = semver.coerce(manifest.version);
 
     return !!latest && !!current && semver.gt(latest, current);
+  }
+
+  async getThemeAsset(manifest: ThemeManifest, filename: string): Promise<string> {
+    this.initializeGuard();
+    return this.fileManager.readAsset(manifest, filename);
   }
 
   private isBundled(id: string): boolean {

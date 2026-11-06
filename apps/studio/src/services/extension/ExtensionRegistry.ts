@@ -1,7 +1,7 @@
 import rawLog from "@bksLogger";
 import ExtensionRepositoryService from "@/services/extension/ExtensionRepositoryService";
 import { ExtensionRepository, RegistryConfig, ExtensionRegistryEntry, RegistryMap } from "@/services/plugin/types";
-import { PluginSystemError } from "@/lib/errors";
+import { ExtensionRegistryError } from "@/lib/errors";
 
 const log = rawLog.scope("ExtensionRegistry");
 
@@ -52,9 +52,9 @@ export default class ExtensionRegistry {
         }
       }
     }
-    throw new PluginSystemError(
-      "PLUGIN_NOT_FOUND",
-      `Plugin "${id}" not found in registry.`
+    throw new ExtensionRegistryError(
+      "ENTRY_NOT_FOUND",
+      `Extension "${id}" not found in registry.`
     );
   }
 

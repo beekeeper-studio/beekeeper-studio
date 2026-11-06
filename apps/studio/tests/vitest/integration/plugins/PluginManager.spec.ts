@@ -10,7 +10,7 @@ import PluginManager, {
 import { createPluginServer } from "./utils/server";
 import { createFileManager, cleanFileManager } from "./utils/extensionFileManager";
 import { MockPluginRepositoryService } from "./utils/registry";
-import { PathTraversalError, PluginSystemError } from "@/lib/errors";
+import { ExtensionRegistryError, PathTraversalError, PluginSystemError } from "@/lib/errors";
 import ExtensionRegistry from "@/services/extension/ExtensionRegistry";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import migration from "@/migration/20250529_add_plugin_settings";
@@ -161,8 +161,8 @@ describe("Basic Plugin Management", () => {
     it("can not install nonexistent plugins", async () => {
       const manager = await initPluginManager(AppVer.COMPAT);
       const promise = manager.installPlugin("microwave-pizza");
-      await expect(promise).rejects.toBeInstanceOf(PluginSystemError);
-      await expect(promise).rejects.toHaveProperty("code", "PLUGIN_NOT_FOUND");
+      await expect(promise).rejects.toBeInstanceOf(ExtensionRegistryError);
+      await expect(promise).rejects.toHaveProperty("code", "ENTRY_NOT_FOUND");
     });
 
     it("cleans up temp files after installing and updating a plugin", async () => {
@@ -287,8 +287,8 @@ describe("Basic Plugin Management", () => {
     it("can not update nonexistent plugins", async () => {
       const manager = await initPluginManager(AppVer.COMPAT);
       const promise = manager.updatePlugin("microwave-pizza");
-      await expect(promise).rejects.toBeInstanceOf(PluginSystemError);
-      await expect(promise).rejects.toHaveProperty("code", "PLUGIN_NOT_FOUND");
+      await expect(promise).rejects.toBeInstanceOf(ExtensionRegistryError);
+      await expect(promise).rejects.toHaveProperty("code", "ENTRY_NOT_FOUND");
     });
   });
 

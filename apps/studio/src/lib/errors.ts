@@ -23,8 +23,6 @@ export type PluginSystemErrorCode =
   | 'STORAGE_READ_ERROR'
   | 'STORAGE_WRITE_ERROR'
   | 'PLUGIN_NOT_FOUND'
-  | 'PLUGIN_LATEST_RELEASE_NOT_FOUND'
-  | 'PLUGIN_RELEASE_ASSET_NOT_FOUND'
   | 'PLUGIN_VIEW_NOT_FOUND'
   | 'PLUGIN_NOT_SUPPORTED'
   | 'PLUGIN_SYSTEM_DISABLED'
@@ -68,6 +66,42 @@ export class PluginSystemError extends Error {
 export class PluginError extends Error {
   constructor(
     public readonly code: PluginErrorCode,
+    message?: string,
+    options?: ErrorOptions
+  ) {
+    super(message, options);
+    this.name = this.constructor.name;
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
+}
+
+export type ExtensionRepositoryErrorCode =
+  | "LATEST_RELEASE_NOT_FOUND"
+  | "RELEASE_ASSET_NOT_FOUND";
+
+/** Thrown when an extension's repository doesn't have a usable release. */
+export class ExtensionRepositoryError extends Error {
+  constructor(
+    public readonly code: ExtensionRepositoryErrorCode,
+    message?: string,
+    options?: ErrorOptions
+  ) {
+    super(message, options);
+    this.name = this.constructor.name;
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
+}
+
+export type ExtensionRegistryErrorCode = "ENTRY_NOT_FOUND";
+
+/** Thrown when an extension can't be found in any registry. */
+export class ExtensionRegistryError extends Error {
+  constructor(
+    public readonly code: ExtensionRegistryErrorCode,
     message?: string,
     options?: ErrorOptions
   ) {

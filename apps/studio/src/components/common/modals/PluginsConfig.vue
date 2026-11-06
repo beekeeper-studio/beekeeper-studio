@@ -64,6 +64,7 @@
       <template>
         <extension-page
           v-if="selectedPlugin"
+          type="plugin"
           :extension="selectedPlugin"
           :extension-repo="selectedPluginRepo"
           :loading-markdown="loadingPluginReadme"
@@ -92,18 +93,6 @@
               >
               <span>Read-Only</span>
             </label>
-          </template>
-          <template #alerts>
-            <disable-state-alert :id="selectedPlugin.id" type="plugin" />
-            <div
-              class="alert alert-danger"
-              v-if="!selectedPlugin.loadable && selectedPlugin.installed"
-            >
-              <i class="material-icons">error_outline</i>
-              <div class="alert-body expand">
-                <span>This plugin was not loaded because it requires Beekeeper Studio {{ selectedPlugin.minAppVersion }}+. Please upgrade the app or <a href="https://docs.beekeeperstudio.io/user_guide/plugins/#installing-a-specific-plugin-version">install a compatible plugin version</a>.</span>
-              </div>
-            </div>
           </template>
         </extension-page>
       </template>
@@ -183,10 +172,8 @@ import PluginList from "@/components/plugins/PluginList.vue";
 import type { ExtensionRegistryEntry, ExtensionUI } from "@/services/plugin/types";
 import rawLog from "@bksLogger";
 import _ from "lodash";
-import DisableStateAlert from "@/components/plugins/DisableStateAlert.vue";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
 import PluginDisabledOverlay from "@/components/plugins/PluginDisabledOverlay.vue";
-import { PluginSystemError } from "@/lib/errors";
 import { SmartLocalStorage } from "@/common/LocalStorage";
 import type { PluginSnapshot, ExtensionOrigin } from "@/services/plugin";
 
@@ -218,7 +205,6 @@ export default Vue.extend({
     ControlRow,
     ExtensionPage,
     PluginList,
-    DisableStateAlert,
     PluginDisabledOverlay,
     ErrorAlert,
   },
@@ -229,7 +215,7 @@ export default Vue.extend({
       optInAlertDismissed: SmartLocalStorage.getBool(
         "pluginOptInAlertDismissed"
       ),
-      plugins: [],
+      plugins: [] as ExtensionUI[],
       selectedPluginIdx: -1,
       selectedPluginRepo: null,
       loadingPluginReadme: false,
@@ -486,25 +472,10 @@ export default Vue.extend({
       await this.getAutoUpdateSetting(id);
       await this.getReadOnlySetting(id);
       try {
-        this.selectedPluginRepo = await this.$util.send("plugin/repository", { id });
+        this.selectedPluginRepo = await this.$util.send("plugin/details", { id });
       } catch (e) {
         log.error(e);
-
-        if (e instanceof PluginSystemError && e.code === "PLUGIN_NOT_FOUND") {
-          try {
-            const readme = await this.$util.send("plugin/getAsset", { manifest: this.selectedPlugin, path: 'README.md' });
-            this.selectedPluginRepo = {
-              readme
-            };
-            this.loadingPluginReadme = false;
-            return;
-          } catch { }
-
-          // FIXME use error alert box
-          this.$noty.error("We can't find the repository for this plugin.");
-        } else {
-          this.$noty.error(`Error opening plugin page: ${e.message}`);
-        }
+        this.$noty.error(`Error opening plugin page: ${e.message}`);
       }
       this.loadingPluginReadme = false;
     },

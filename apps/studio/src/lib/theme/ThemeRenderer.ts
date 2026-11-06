@@ -52,8 +52,8 @@ export class ThemeRenderer {
 
     document.body.classList.toggle("window-inactive", !document.hasFocus());
 
-    this.options.store.commit("theme/setSystemDark", this.media.matches);
-    await this.options.store.dispatch("theme/loadThemes");
+    this.options.store.commit("themes/setSystemDark", this.media.matches);
+    await this.options.store.dispatch("themes/snapshots/load");
 
     this.subscribe();
 
@@ -66,13 +66,13 @@ export class ThemeRenderer {
     });
 
     window.main.onSystemUsesDarkColors((dark) => {
-      this.options.store.commit("theme/setSystemDark", dark);
+      this.options.store.commit("themes/setSystemDark", dark);
     });
 
     this.utility.send("theme/watch");
 
     this.bus.on(AppEvent.themeFileChanged, async (id: string) => {
-      await this.store.dispatch("theme/loadThemes");
+      await this.store.dispatch("themes/snapshots/load");
       if (id === this.themeId) {
         await this.reloadStylesheet();
       }
@@ -86,8 +86,8 @@ export class ThemeRenderer {
 
     this.store.watch(
       (_state, getters) => ({
-        themeId: getters["theme/id"],
-        themeDark: getters["theme/dark"],
+        themeId: getters["themes/id"],
+        themeDark: getters["themes/dark"],
       }),
       ({ themeId, themeDark }) => this.handleThemeChanged(themeId, themeDark)
     );

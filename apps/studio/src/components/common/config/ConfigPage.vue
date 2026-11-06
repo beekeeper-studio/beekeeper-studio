@@ -69,6 +69,11 @@ export default Vue.extend({
     isActive(): boolean {
       return this.config.activePageId === this.id;
     },
+    // A page stays open beneath the nested page opened from it, so it doesn't slide away.
+    isSlideoverOpen(): boolean {
+      const isCovered = !!this.config.activePage?.parentPage && this.config.history.includes(this.id);
+      return this.containsActivePage || isCovered;
+    },
     containsActivePage(): boolean {
       let page = this.config.activePage;
       while (page) {
@@ -81,7 +86,7 @@ export default Vue.extend({
     },
   },
   watch: {
-    containsActivePage() {
+    isSlideoverOpen() {
       this.syncSlideover();
     },
   },
@@ -106,7 +111,7 @@ export default Vue.extend({
       if (!slideover) {
         return;
       }
-      if (this.containsActivePage) {
+      if (this.isSlideoverOpen) {
         slideover.show();
       } else {
         slideover.close();

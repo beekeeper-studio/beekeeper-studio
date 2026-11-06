@@ -1,7 +1,7 @@
 import { EncryptedPluginData } from "@/common/appdb/models/EncryptedPluginData";
 import { PluginData, PluginDataOptions } from "@/common/appdb/models/PluginData";
 import { Manifest, PluginSnapshot, ExtensionRepository, ManifestV1, RegistryMap, PluginSettings } from "@/services/plugin";
-import { PluginSystemError } from "@/lib/errors";
+import { ExtensionRegistryError, PluginSystemError } from "@/lib/errors";
 import { context } from "@/handlers/handlerContext";
 import { state } from "@/handlers/handlerState";
 
@@ -11,7 +11,7 @@ interface IPluginHandlers {
   "plugin/waitForInit": () => Promise<void>,
   "plugin/plugins": () => Promise<PluginSnapshot[]>
   "plugin/entries": ({ clearCache }: { clearCache: boolean }) => Promise<RegistryMap>
-  "plugin/repository": ({ id }: { id: string }) => Promise<ExtensionRepository>
+  "plugin/details": ({ id }: { id: string }) => Promise<Partial<ExtensionRepository>>
   "plugin/install": ({ id }: { id: string }) => Promise<Manifest>
   "plugin/update": ({ id }: { id: string }) => Promise<Manifest>
   "plugin/uninstall": ({ id }: { id: string }) => Promise<void>
@@ -81,8 +81,30 @@ export const PluginHandlers: IPluginHandlers = {
     }
     return await context.pluginManager.registry.getEntries();
   },
-  "plugin/repository": async ({ id }) => {
-    return await context.pluginManager.getRepository(id);
+  "plugin/details": async ({ id }) => {
+    try {
+      return await context.pluginManager.getRepository(id);
+    } catch (e) {
+      if (!(e instanceof ExtensionRegistryError && e.code === "ENTRY_NOT_FOUND")) {
+        throw e;
+      }
+      const plugins = await context.pluginManager.getPlugins();
+      const plugin = plugins.find(({ manifest }) => manifest.id === id);
+      if (!plugin) {
+        throw e;
+      }
+      try {
+        return {
+          readme: await context.pluginManager.getPluginAsset(
+            plugin.manifest as ManifestV1,
+            "README.md",
+          ),
+        };
+      } catch {
+        // A plugin without a readme is still reported as missing from the registry.
+        throw e;
+      }
+    }
   },
   "plugin/install": async ({ id }) => {
     return await context.pluginManager.installPlugin(id);

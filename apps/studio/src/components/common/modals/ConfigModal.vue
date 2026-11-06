@@ -55,10 +55,6 @@ export default Vue.extend({
       this.$noty.error("Failed to initialize plugin manager.");
     }
     this.registerHandlers(this.rootBindings);
-   setTimeout(() => {
-    // FIXME debug only, remove before committing
-    this.openAppearance();
-   }, 400)
   },
   beforeDestroy() {
     this.unregisterHandlers(this.rootBindings);

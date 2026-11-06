@@ -152,7 +152,7 @@ export default Vue.extend({
     }
   },
   computed: {
-    ...mapGetters({ themeId: 'theme/id' }),
+    ...mapGetters({ themeId: 'themes/id' }),
     tooltip() {
       if (this.continueButtonDisabled) return this.currentStep.nextButtonDisabledTooltip
       return undefined

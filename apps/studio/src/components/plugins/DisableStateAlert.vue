@@ -104,8 +104,8 @@ export default Vue.extend({
     },
   },
   computed: {
-    ...mapGetters("plugins/snapshots", ["plugins"]),
-    ...mapGetters("themes/snapshots", ["themes"]),
+    ...mapGetters("plugins/snapshots", { plugins: "snapshotsById" }),
+    ...mapGetters("themes/snapshots", { themes: "snapshotsById" }),
     snapshot(): PluginSnapshot | ThemeSnapshot | undefined {
       if (this.type === "plugin") {
         return this.plugins[this.id];
@@ -117,7 +117,7 @@ export default Vue.extend({
     }
   },
   mounted() {
-    log.info('disableState', this.snapshot.disableState)
+    log.info('disableState', this.snapshot, this.snapshot?.disableState)
   }
 });
 </script>

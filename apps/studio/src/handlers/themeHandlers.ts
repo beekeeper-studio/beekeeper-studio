@@ -1,4 +1,5 @@
 import { context } from '@/handlers/handlerContext';
+import { ExtensionRegistryError } from '@/lib/errors';
 import { state } from '@/handlers/handlerState';
 import { ExtensionRepository, RegistryMap, ThemeManifest, ThemeSnapshot } from '@/services/plugin/types';
 
@@ -7,9 +8,10 @@ export interface IThemeHandlers {
   'theme/watch': ({ sId }: { sId: string }) => Promise<void>
   'theme/checkForUpdates': ({ id }: { id: string }) => Promise<boolean>
   'theme/install': ({ id }: { id: string }) => Promise<ThemeManifest>
+  'theme/update': ({ id }: { id: string }) => Promise<ThemeManifest>
   'theme/entries': ({ clearCache }: { clearCache: boolean }) => Promise<{ entries: RegistryMap, errors: string[] }>
-  'theme/repository': ({ id }: { id: string }) => Promise<ExtensionRepository>
   'theme/uninstall': ({ id }: { id: string }) => Promise<void>
+  'theme/details': ({ id }: { id: string }) => Promise<Partial<ExtensionRepository>>
 }
 
 export const ThemeHandlers: IThemeHandlers = {
@@ -27,6 +29,9 @@ export const ThemeHandlers: IThemeHandlers = {
   'theme/install': async function({ id }: { id: string }) {
     return await context.themeManager.installTheme(id);
   },
+  'theme/update': async function({ id }: { id: string }) {
+    return await context.themeManager.updateTheme(id);
+  },
   'theme/entries': async function({ clearCache }: { clearCache: boolean }) {
     if (clearCache) {
       context.themeManager.registry.clearCache();
@@ -34,10 +39,27 @@ export const ThemeHandlers: IThemeHandlers = {
     const entries = await context.themeManager.registry.getEntries();
     return { entries, errors: Object.values(context.themeManager.registry.errors) };
   },
-  'theme/repository': async function({ id }: { id: string }) {
-    return await context.themeManager.registry.getRepository(id);
-  },
   'theme/uninstall': async function({ id }: { id: string }) {
     await context.themeManager.uninstallTheme(id);
+  },
+  'theme/details': async function({ id }: { id: string }) {
+    try {
+      return await context.themeManager.registry.getRepository(id);
+    } catch (e) {
+      if (!(e instanceof ExtensionRegistryError && e.code === 'ENTRY_NOT_FOUND')) {
+        throw e;
+      }
+      const themes = await context.themeManager.getThemes();
+      const theme = themes.find(({ manifest }) => manifest.id === id);
+      if (!theme) {
+        throw e;
+      }
+      try {
+        return { readme: await context.themeManager.getThemeAsset(theme.manifest, 'README.md') };
+      } catch {
+        // A theme without a readme is still reported as missing from the registry.
+        throw e;
+      }
+    }
   }
 };

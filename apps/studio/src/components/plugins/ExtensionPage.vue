@@ -97,7 +97,16 @@
       >
         {{ extension.updateAvailable ? "Update Available!" : "Up to date!" }}
       </div>
-      <slot name="alerts" />
+      <disable-state-alert :id="extension.id" :type="type" />
+      <div
+        class="alert alert-danger"
+        v-if="!extension.loadable && extension.installed"
+      >
+        <i class="material-icons">error_outline</i>
+        <div class="alert-body expand">
+          <span>This plugin was not loaded because it requires Beekeeper Studio {{ extension.minAppVersion }}+. Please upgrade the app or <a href="https://docs.beekeeperstudio.io/user_guide/plugins/#installing-a-specific-plugin-version">install a compatible plugin version</a>.</span>
+        </div>
+      </div>
       <div class="alert alert-danger" v-if="extension.error">
         <i class="material-icons">error_outline</i>
         <div class="alert-body expand" style="white-space: pre-wrap;">
@@ -126,10 +135,16 @@ import { Marked } from "marked";
 import markedAlert from "marked-alert";
 import { getPluginAvatarUrl, markedRepoUrlRewriter, markedVideoEmbed } from "@/services/plugin/utils";
 import { ExtensionRepository, ExtensionUI } from "@/services/plugin/types";
+import DisableStateAlert from "./DisableStateAlert.vue";
 
 export default Vue.extend({
   name: "ExtensionPage",
+  components: { DisableStateAlert },
   props: {
+    type: {
+      type: String as PropType<"plugin" | "theme">,
+      required: true,
+    },
     extension: {
       type: Object as PropType<ExtensionUI>,
       required: true,

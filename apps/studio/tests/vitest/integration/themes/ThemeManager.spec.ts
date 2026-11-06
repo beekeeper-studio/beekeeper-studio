@@ -7,7 +7,7 @@ import { ThemeManager } from "@/services/theme/ThemeManager";
 import { createThemeServer } from "./utils/server";
 import { createFileManager, cleanFileManager } from "./utils/extensionFileManager";
 import { MockThemeRepositoryService } from "./utils/registry";
-import { PluginSystemError, ThemeSystemError } from "@/lib/errors";
+import { ExtensionRegistryError, ThemeSystemError } from "@/lib/errors";
 import ExtensionRegistry from "@/services/extension/ExtensionRegistry";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import { ThemeManifest, ThemeSnapshot } from "@/services/plugin";
@@ -105,8 +105,8 @@ describe("Basic Theme Management", () => {
     it("can not install nonexistent themes", async () => {
       const manager = await initThemeManager();
       const promise = manager.installTheme("microwave-pizza");
-      await expect(promise).rejects.toBeInstanceOf(PluginSystemError);
-      await expect(promise).rejects.toHaveProperty("code", "PLUGIN_NOT_FOUND");
+      await expect(promise).rejects.toBeInstanceOf(ExtensionRegistryError);
+      await expect(promise).rejects.toHaveProperty("code", "ENTRY_NOT_FOUND");
     });
 
     it("can not install a theme with a bundled id", async () => {
@@ -211,8 +211,8 @@ describe("Basic Theme Management", () => {
     it("can not update nonexistent themes", async () => {
       const manager = await initThemeManager();
       const promise = manager.updateTheme("microwave-pizza");
-      await expect(promise).rejects.toBeInstanceOf(PluginSystemError);
-      await expect(promise).rejects.toHaveProperty("code", "PLUGIN_NOT_FOUND");
+      await expect(promise).rejects.toBeInstanceOf(ExtensionRegistryError);
+      await expect(promise).rejects.toHaveProperty("code", "ENTRY_NOT_FOUND");
     });
   });
 

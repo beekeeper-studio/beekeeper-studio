@@ -1,31 +1,32 @@
-import Vue from "vue";
 import { Module } from "vuex";
-import { State as RootState } from "../index";
-import { ThemeSnapshot } from "@/services/plugin/types";
+import { State as RootState } from "@/store";
+import { ThemeEntriesModule } from "./ThemeEntriesModule";
+import { ThemeSnapshotsModule } from "./ThemeSnapshotsModule";
 
 export type State = {
   systemDark: boolean;
-  snapshots: ThemeSnapshot[];
 };
 
-export const ThemeModule: Module<State, RootState> = {
+export const ThemesModule: Module<State, RootState> = {
   namespaced: true,
+  modules: {
+    entries: ThemeEntriesModule,
+    snapshots: ThemeSnapshotsModule,
+  },
   state: () => ({
     systemDark: true,
-    snapshots: [],
   }),
   mutations: {
     setSystemDark(state, systemDark: boolean) {
       state.systemDark = systemDark;
     },
-    setSnapshots(state, snapshots: ThemeSnapshot[]) {
-      state.snapshots = snapshots;
-    },
   },
   actions: {
-    async loadThemes(context) {
-      const snapshots = await Vue.prototype.$util.send("theme/themes");
-      context.commit("setSnapshots", snapshots);
+    async initialize(context) {
+      await Promise.all([
+        context.dispatch("entries/load"),
+        context.dispatch("snapshots/load"),
+      ]);
     },
     setId(context, value: string) {
       context.dispatch(
@@ -43,12 +44,9 @@ export const ThemeModule: Module<State, RootState> = {
     },
   },
   getters: {
-    snapshots(state): ThemeSnapshot[] {
-      return state.snapshots;
-    },
-    id(state, _getters, _rootState, rootGetters) {
+    id(_state, getters, _rootState, rootGetters) {
       const id = rootGetters["settings/settings"].themeId?.value || "default";
-      const theme = state.snapshots.find((t) => t.manifest.id === id);
+      const theme = getters["snapshots/snapshotsById"][id];
       if (theme?.disableState.disabled) {
         return "default";
       }
