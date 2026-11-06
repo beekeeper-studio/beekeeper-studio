@@ -112,7 +112,7 @@
 </style>
 
 <script lang="ts">
-import { TabulatorFull, CellComponent, RowComponent } from 'tabulator-tables'
+import { CellComponent, RowComponent } from 'tabulator-tables'
 import DataMutators from '../../mixins/data_mutators'
 import { format } from 'sql-formatter'
 import _ from 'lodash'
@@ -131,6 +131,7 @@ import ErrorAlert from '../common/ErrorAlert.vue'
 import TableInfoToolbar from './TableInfoToolbar.vue'
 import rawLog from '@bksLogger'
 import { escapeHtml } from '@shared/lib/tabulator'
+import { tabulatorForTableInfo } from '@/common/tabulator'
 import { ExtendedTableColumn } from '@/lib/db/models'
 import { StructureCopyMixin } from '@/mixins/structureCopy'
 import { StructureFilterMixin } from '@/mixins/structureFilter'
@@ -516,7 +517,7 @@ export default Vue.extend({
       this.initialColumns = this.tableData.slice(0)
       if (this.tabulator) this.tabulator.destroy()
       // TODO: a loader would be so cool for tabulator for those gnarly column count tables that people might create...
-      this.tabulator = new TabulatorFull(this.$refs.tableSchema, {
+      this.tabulator = tabulatorForTableInfo(this.$refs.tableSchema, {
         columns: this.tableColumns,
         layout: 'fitColumns',
         movableRows: canMoveRows,

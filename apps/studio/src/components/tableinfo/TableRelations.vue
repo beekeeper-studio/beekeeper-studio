@@ -93,7 +93,7 @@
 </template>
 <script lang="ts">
 import Vue from 'vue'
-import { Tabulator, TabulatorFull, CellComponent, RowComponent, ColumnDefinition } from 'tabulator-tables'
+import { Tabulator, CellComponent, RowComponent, ColumnDefinition } from 'tabulator-tables'
 
 import StatusBar from '../common/StatusBar.vue'
 import { TabulatorStateWatchers, trashButton, vueEditor } from '@shared/lib/tabulator/helpers'
@@ -109,6 +109,7 @@ import ErrorAlert from '../common/ErrorAlert.vue'
 import TableInfoToolbar from './TableInfoToolbar.vue'
 const log = rawLog.scope('TableRelations');
 import { escapeHtml } from '@shared/lib/tabulator'
+import { tabulatorForTableInfo } from '@/common/tabulator'
 import { SelectableCellMixin } from '@/mixins/selectableCell';
 import { StructureCopyMixin } from '@/mixins/structureCopy';
 import { StructureFilterMixin } from '@/mixins/structureFilter';
@@ -393,7 +394,7 @@ export default Vue.extend({
     initializeTabulator() {
 
       this.tabulator?.destroy()
-      this.tabulator = new TabulatorFull(this.$refs.tabulator, {
+      this.tabulator = tabulatorForTableInfo(this.$refs.tabulator, {
         columns: this.tableColumns,
         data: this.tableData,
         columnDefaults: {

@@ -101,7 +101,7 @@
   </div>
 </template>
 <script lang="ts">
-import { Tabulator, TabulatorFull, RowComponent, CellComponent } from 'tabulator-tables'
+import { Tabulator, RowComponent, CellComponent } from 'tabulator-tables'
 import data_mutators from '../../mixins/data_mutators'
 import { TabulatorStateWatchers, trashButton, vueEditor, vueFormatter } from '@shared/lib/tabulator/helpers'
 import CheckboxFormatterVue from '@shared/components/tabulator/CheckboxFormatter.vue'
@@ -120,6 +120,7 @@ import { TableIndex } from '@/lib/db/models'
 import { mapGetters, mapState } from 'vuex'
 const log = rawLog.scope('TableIndexVue')
 import { escapeHtml } from '@shared/lib/tabulator'
+import { tabulatorForTableInfo } from '@/common/tabulator'
 import { parseIndexColumn as mysqlParseIndexColumn } from '@/common/utils'
 import { SelectableCellMixin } from '@/mixins/selectableCell';
 import { StructureCopyMixin } from '@/mixins/structureCopy';
@@ -412,7 +413,7 @@ export default Vue.extend({
   mounted() {
     // this.initializeTabulator()
     this.tabState.dirty = false
-      this.tabulator = new TabulatorFull(this.$refs.tabulator, {
+      this.tabulator = tabulatorForTableInfo(this.$refs.tabulator, {
         data: this.tableData,
         columns: this.tableColumns,
         layout: 'fitColumns',
