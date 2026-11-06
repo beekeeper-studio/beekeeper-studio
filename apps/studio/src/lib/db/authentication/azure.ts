@@ -130,6 +130,7 @@ export class AzureCliTokenCredential implements AzureTokenCredential {
     }
   }
 
+  // Tedious re runs this when getting new connections for the pool, so it will refresh the token for us
   async getToken(scopes: string | string[]): Promise<AzureAccessToken> {
     const scopeList = Array.isArray(scopes) ? scopes : [scopes];
     const key = scopeList.join(' ');
