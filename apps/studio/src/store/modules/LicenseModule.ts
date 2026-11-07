@@ -23,6 +23,8 @@ interface State {
    * stacked on top of one: NotificationManager holds its upsell toast back.
    */
   blockingDialog: string | null
+  /** This window started the free trial at launch (startTrialOnLaunch). */
+  trialStartedOnLaunch: boolean
 }
 
 const log = rawLog.scope('LicenseModule')
@@ -62,10 +64,13 @@ export const LicenseModule: Module<State, RootState>  = {
     status: defaultStatus,
     installationId: null,
     blockingDialog: null,
+    trialStartedOnLaunch: false,
   }),
   getters: {
+    /** The latest trial: a renewed trial keeps the ones before it. */
     trialLicense(state) {
-      return state.licenses.find((l) => l.licenseType === 'TrialLicense')
+      const trials = state.licenses.filter((l) => l.licenseType === 'TrialLicense')
+      return _.maxBy(trials, (l) => new Date(l.validUntil).getTime())
     },
     realLicenses(state) {
       return state.licenses.filter((l) => l.licenseType !== 'TrialLicense')
@@ -77,6 +82,14 @@ export const LicenseModule: Module<State, RootState>  = {
     },
     noLicensesFound(state) {
       return state.licenses.length === 0
+    },
+    /**
+     * A trial can be started: there's no license at all, or the last trial
+     * ended long enough ago and no license was ever registered
+     * (LicenseKey.canStartTrial).
+     */
+    canStartTrial(state) {
+      return !!state.status.canStartTrial
     },
     isUltimate(state) {
       if (!state) return false
@@ -136,6 +149,9 @@ export const LicenseModule: Module<State, RootState>  = {
     setBlockingDialog(state, name: string | null) {
       state.blockingDialog = name
     },
+    setTrialStartedOnLaunch(state, b: boolean) {
+      state.trialStartedOnLaunch = b
+    },
   },
   actions: {
     async init(context) {
@@ -144,6 +160,7 @@ export const LicenseModule: Module<State, RootState>  = {
         return
       }
       await context.dispatch('sync')
+      await context.dispatch('startTrialOnLaunch')
       // A trial end that an older version already announced counts as answered.
       adoptLegacyTrialEndDecision({
         trialExpired: context.getters.isTrialExpired,
@@ -160,6 +177,26 @@ export const LicenseModule: Module<State, RootState>  = {
       const installationId = await Vue.prototype.$util.send('license/getInstallationId');
       context.commit('installationId', installationId)
       context.commit('setInitialized', true)
+    },
+    /**
+     * Anyone who has never had a trial gets one when the app starts, and
+     * App.vue says so. A trial license is never removed, so that's anyone
+     * without a license at all (an offline license file counts as one). A
+     * trial that ended long ago is only started again from a "Start free
+     * trial" button, never by itself.
+     */
+    async startTrialOnLaunch(context) {
+      if (!context.getters.noLicensesFound) return
+      try {
+        await Vue.prototype.$util.send('license/createTrialLicense')
+      } catch (error) {
+        // eg another window of the app started it first
+        log.error("Failed to start the trial", error)
+        return
+      }
+      context.commit('setTrialStartedOnLaunch', true)
+      announceLicensesChanged()
+      await context.dispatch('sync')
     },
     async add(context, { email, key, trial }) {
       if (trial) {

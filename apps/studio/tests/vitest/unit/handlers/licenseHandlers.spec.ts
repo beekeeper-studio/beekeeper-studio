@@ -146,4 +146,80 @@ describe("LicenseHandlers", () => {
       expect(status.canAccessCloudWorkspaces).toBe(true);
     });
   });
+
+  describe("starting a trial", () => {
+    const monthsAgo = (months: number) => new Date(new Date().setMonth(new Date().getMonth() - months));
+    const canStartTrial = async () => (await LicenseHandlers["license/getStatus"]()).canStartTrial;
+
+    async function savePaidLicense() {
+      const license = new LicenseKey();
+      license.email = "someone@example.com";
+      license.key = "abc-123";
+      license.validUntil = new Date(Date.now() + 86_400_000);
+      license.supportUntil = license.validUntil;
+      license.licenseType = "PersonalLicense";
+      return await license.save();
+    }
+
+    it("is open without any license", async () => {
+      expect(await canStartTrial()).toBe(true);
+      await LicenseHandlers["license/createTrialLicense"]();
+      expect((await LicenseHandlers["license/getStatus"]()).isTrial).toBe(true);
+    });
+
+    it("is closed during a trial, and for six months after it ends", async () => {
+      await LicenseKey.createTrialLicense();
+      expect(await canStartTrial()).toBe(false);
+
+      await LicenseKey.clear();
+      await LicenseKey.createTrialLicense(monthsAgo(5), monthsAgo(5));
+      expect(await canStartTrial()).toBe(false);
+      await expect(LicenseHandlers["license/createTrialLicense"]()).rejects.toThrow("Not allowed");
+    });
+
+    it("opens again six months after a trial ends, keeping the old trial", async () => {
+      await LicenseKey.createTrialLicense(monthsAgo(7), monthsAgo(7));
+      expect(await canStartTrial()).toBe(true);
+
+      await LicenseHandlers["license/createTrialLicense"]();
+
+      const status = await LicenseHandlers["license/getStatus"]();
+      expect(status.isTrial).toBe(true);
+      expect(status.isUltimate).toBe(true);
+      expect(status.canStartTrial).toBe(false);
+      const trials = await LicenseKey.findBy({ licenseType: "TrialLicense" });
+      expect(trials.map((t) => t.key).sort()).toEqual(["fake", "fake-2"]);
+    });
+
+    it("stays closed after an old trial for anyone who has a license", async () => {
+      await LicenseKey.createTrialLicense(monthsAgo(7), monthsAgo(7));
+      await savePaidLicense();
+      expect(await canStartTrial()).toBe(false);
+    });
+
+    it("stays closed after an old trial for anyone who ever registered a license", async () => {
+      await LicenseKey.createTrialLicense(monthsAgo(7), monthsAgo(7));
+      const license = await savePaidLicense();
+      await LicenseHandlers["license/remove"]({ id: license.id });
+
+      expect(await LicenseKey.find()).toHaveLength(1);
+      expect(await canStartTrial()).toBe(false);
+      await expect(LicenseHandlers["license/createTrialLicense"]()).rejects.toThrow("Not allowed");
+    });
+
+    it("stays closed when a license was registered and removed before the trial", async () => {
+      const license = await savePaidLicense();
+      await LicenseHandlers["license/remove"]({ id: license.id });
+      await LicenseKey.createTrialLicense(monthsAgo(7), monthsAgo(7));
+      expect(await canStartTrial()).toBe(false);
+    });
+
+    it("is closed with an offline license file", async () => {
+      (OfflineLicense.load as Mock).mockReturnValue({
+        isValid: true,
+        toLicenseStatus: () => ({ edition: "ultimate", condition: [], fromFile: true }),
+      });
+      expect(await canStartTrial()).toBe(false);
+    });
+  });
 });

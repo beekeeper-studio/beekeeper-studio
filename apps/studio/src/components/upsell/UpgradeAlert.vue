@@ -44,7 +44,7 @@ export default Vue.extend({
   }),
   computed: {
     trialAvailable(): boolean {
-      return this.$store.getters["licenses/noLicensesFound"];
+      return this.$store.getters["licenses/canStartTrial"];
     },
   },
   methods: {

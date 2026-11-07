@@ -19,5 +19,12 @@ export async function launchElectron() {
 
   }
 
+  // a launch without a license starts the free trial and says so
+  try {
+    await win.getByText("Sounds good", { exact: true }).click({ timeout: 500 })
+  } catch(e) {
+
+  }
+
   return app;
 }

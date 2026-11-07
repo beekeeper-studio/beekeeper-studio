@@ -29,13 +29,16 @@ export const LicenseHandlers: ILicenseHandlers = {
     // priority over ALL other licenses
     const offline = OfflineLicense.load()
     let status = null
+    let canStartTrial = false
     if (offline && offline.isValid) {
       status = offline.toLicenseStatus()
     } else {
       status = await LicenseKey.getLicenseStatus();
+      canStartTrial = await LicenseKey.canStartTrial();
     }
     return {
       ...status,
+      canStartTrial,
       isUltimate: status.isUltimate,
       isCommunity: status.isCommunity,
       isTrial: status.isTrial,

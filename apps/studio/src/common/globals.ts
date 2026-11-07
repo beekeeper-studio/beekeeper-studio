@@ -3,6 +3,8 @@
 export default {
   updateCheckInterval: 1000 * 60 * 60 * 24, // 24 hours
   freeTrialDays: 14,
+  // a trial that ended this long ago can be started again, if no license was ever registered
+  trialRenewalMonths: 6,
   psqlTimeout: 15000, // 15 seconds
   psqlIdleTimeout: 20000,
   defaultChunkSize: 100,
