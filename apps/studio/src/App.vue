@@ -132,7 +132,6 @@ export default Vue.extend({
       interval: null,
       licenseInterval: null,
       runningWayland: false,
-      darkMediaQuery: null,
     }
   },
   computed: {
@@ -171,7 +170,6 @@ export default Vue.extend({
   async beforeDestroy() {
     clearInterval(this.interval)
     clearInterval(this.licenseInterval)
-    this.darkMediaQuery?.removeEventListener('change', this.applyTheme)
   },
   async mounted() {
     // The store loads licenses before this component exists, so the
@@ -217,22 +215,6 @@ export default Vue.extend({
 
   },
   methods: {
-    getTheme() {
-      if (this.themeValue === "system") {
-        return this.darkMediaQuery.matches ? "system-dark" : "system-light";
-      }
-      return this.themeValue || "system-light";
-    },
-    getThemeType() {
-      if (this.themeValue === "system") {
-        return this.darkMediaQuery.matches ? "dark" : "light";
-      }
-      return this.themeValue?.includes("dark") ? "dark" : "light";
-    },
-    applyTheme() {
-      document.documentElement.dataset.theme = this.getTheme();
-      document.documentElement.dataset.themeType = this.getThemeType();
-    },
     notifyFreeTrial() {
       Noty.closeAll('trial')
       if (this.isTrial && this.isUltimate) {

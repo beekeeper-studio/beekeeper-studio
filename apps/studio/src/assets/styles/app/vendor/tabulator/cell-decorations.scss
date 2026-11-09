@@ -10,11 +10,11 @@
 .tabulator-cell {
   > pre,
   > .cell-link-wrapper {
-    color: var(--cell-fg-color);
+    color: var(--table-cell-fg);
   }
 
   &.bks-type-binary > pre,
   &.bks-type-binary > .cell-link-wrapper {
-    color: var(--cell-binary-fg-color);
+    color: var(--table-cell-binary-fg);
   }
 }
