@@ -1,0 +1,26 @@
+{
+  "name": "@beekeeperstudio/mcp-server",
+  "version": "0.1.0",
+  "description": "MCP server that exposes the Beekeeper Studio bks CLI as tools",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "bks-mcp": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.4.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
+  }
+}
