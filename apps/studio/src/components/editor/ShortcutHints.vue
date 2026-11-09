@@ -56,9 +56,11 @@
       </template>
     </div>
     <button
-      class="btn btn-small btn-link btn-view-all"
+      class="btn btn-small btn-view-all"
       @click="openKeyboardShortcuts"
-    >View all shortcuts ...</button>
+    >
+      View all shortcuts ...
+    </button>
   </div>
 </template>
 <script lang="ts">
@@ -98,6 +100,6 @@ type ShortcutHintsType = 'core-tabs' | 'query-editor'
 .btn.btn-view-all {
   margin-top: 0.5rem;
   margin-left: -0.25rem;
-  color: var(--text-lighter);
+  color: var(--text-muted);
 }
 </style>

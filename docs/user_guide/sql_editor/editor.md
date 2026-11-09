@@ -195,6 +195,21 @@ Vim binds `Ctrl+P` to "move up" in every mode. In Beekeeper Studio it stays on
 quick search instead, since `k` already moves up. To take it back, add
 `nnoremap <C-p> k` to your `.beekeeper.vimrc`.
 
+### Relative line numbers
+
+`set relativenumber` (or `set rnu`) numbers each line by its distance from the
+cursor, so a count like `5j` can be read straight off the gutter. Put it in
+your `.beekeeper.vimrc` to use it in every editor, or type `:set rnu` and
+`:set nornu` to switch it on the fly.
+
+| Options | Cursor line shows | Other lines show |
+| --- | --- | --- |
+| `set relativenumber` | Its line number | Distance from the cursor |
+| `set nonumber relativenumber` | `0` | Distance from the cursor |
+
+`:setlocal rnu` applies to the current editor only. Relative numbers only show
+in vim mode, and `set nonumber` on its own does not hide the line numbers.
+
 ### Customisation
 
 You can also add your own keybindings and motions to the vim editor by placing a `.beekeeper.vimrc` file in the `userDirectory` for Beekeeper Studio and writing out your custom mappings.
@@ -223,7 +238,7 @@ commands:
 | `noremap`, `nnoremap`, `inoremap`, `vnoremap` | Non-recursive mappings |
 | `unmap`, `nunmap`, `iunmap`, `vunmap` | Remove a mapping |
 | `mapclear`, `nmapclear`, `imapclear`, `vmapclear` | Remove every custom mapping |
-| `set` | Vim options, e.g. `set ignorecase`, `set nonumber`, `set tabstop=4` |
+| `set` | Vim options, e.g. `set ignorecase`, `set relativenumber`, `set tabstop=4` |
 | `let mapleader` | What `<leader>` expands to. Defaults to `\` |
 
 Anything that cannot be parsed is reported in a notification naming the line,

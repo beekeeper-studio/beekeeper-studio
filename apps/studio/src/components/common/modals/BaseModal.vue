@@ -2,23 +2,28 @@
   <portal to="modals">
     <modal
       :name="name"
+      :click-to-close="closable"
       @before-open="$emit('before-open', $event)"
+      @before-close="handleBeforeClose"
       @opened="handleOpened"
       @closed="$emit('closed')"
       class="base-modal-root"
+      :style="{ '--base-modal-min-width': minWidth, '--base-modal-max-width': maxWidth }"
     >
       <x-progressbar v-if="loading" />
       <form
         v-kbd-trap="true"
         class="base-modal"
-        ref="baseModal"
-        @submit.prevent="$emit('submit', $event)"
+        :style="{ height }"
+        ref="form"
+        @submit.prevent="$emit('submit', $event, close)"
       >
         <div class="base-modal-header">
           <div class="base-modal-title">
             <slot name="title" :close="close" />
           </div>
           <a
+            v-if="closable"
             href="#"
             class="base-modal-close"
             @click.prevent="close"
@@ -28,7 +33,7 @@
           </a>
         </div>
         <div class="base-modal-body">
-          <slot :close="close" />
+          <slot :close="close" :submit="() => $refs.form.requestSubmit()" />
         </div>
         <div class="base-modal-footer" v-if="$scopedSlots.footer">
           <slot name="footer" :close="close" />
@@ -61,16 +66,54 @@ export default Vue.extend({
     },
     /** Show loading indicator */
     loading: Boolean,
+    height: String,
+    minWidth: {
+      type: String,
+      default: "36rem"
+    },
+    maxWidth: {
+      type: String,
+      default: "550px"
+    },
+    /**
+     * When false there is no close button, and Escape, overlay clicks and
+     * stray `$modal.hide` calls are ignored: only `close()` (also exposed as
+     * the scoped slot prop) dismisses the modal. For dialogs that need an
+     * explicit decision, like the trial-ended prompt.
+     */
+    closable: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  data() {
+    return {
+      // Raised by close() for the duration of the hide call, so
+      // handleBeforeClose can tell an intentional close from an escape.
+      allowClose: false,
+    };
   },
   methods: {
     close() {
-      this.$modal.hide(this.name);
+      this.allowClose = true;
+      try {
+        this.$modal.hide(this.name);
+      } finally {
+        this.allowClose = false;
+      }
+    },
+    handleBeforeClose(event: { stop: () => void }) {
+      if (!this.closable && !this.allowClose) {
+        event.stop();
+        return;
+      }
+      this.$emit("before-close", event);
     },
     handleOpened() {
       const target =
-        this.$refs.baseModal.querySelector(this.firstFocusable) ??
+        this.$refs.form?.querySelector(this.firstFocusable) ??
         this.$refs.closeBtn;
-      target.focus();
+      target?.focus();
       this.$emit("opened");
     },
   },
@@ -79,13 +122,15 @@ export default Vue.extend({
 
 <style lang="scss" scoped>
 .base-modal-root ::v-deep .v--modal {
-  min-width: 36rem;
+  min-width: var(--base-modal-min-width);
+  max-width: var(--base-modal-max-width);
   min-height: 6rem;
-  max-width: 550px;
   width: auto !important;
 }
 
 .base-modal {
+  --base-modal-footer-gap: 0.5rem;
+  max-height: 80vh;
   display: flex;
   flex-direction: column;
 }
@@ -139,24 +184,25 @@ export default Vue.extend({
 
 .base-modal-close:hover,
 .base-modal-close:focus {
-  background: rgb(from var(--theme-base) r g b / 10%);
+  background: var(--btn-bg-hover);
 }
 
 .base-modal-close .material-icons,
 .base-modal-close .material-icons-outlined {
   font-size: 1.25rem;
-  color: var(--text-dark);
+  color: var(--btn-fg);
 }
 
 .base-modal-body {
-  flex: 1 0 auto;
+  flex: 1 1 auto;
+  overflow-y: auto;
   width: 100%;
   padding: 0 1.2rem 0.8rem;
 }
 
 .base-modal-footer {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--base-modal-footer-gap);
   width: 100%;
   justify-content: flex-end;
   padding-inline: 1.2rem;

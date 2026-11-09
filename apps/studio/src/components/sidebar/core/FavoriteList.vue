@@ -77,7 +77,6 @@
             </div>
           </div>
         </div>
-        <expired-folder-alert v-if="!canCreateFolders && folders.length > 0" />
         <error-alert
           v-if="error && !isPollError && !errorList.includes(error)"
           :error="error"
@@ -143,7 +142,7 @@
                   v-if="isCloud"
                 >
                   <a
-                    class="btn btn-flat btn-block btn-icon"
+                    class="btn btn-flat btn-block"
                     @click.prevent="importFromLocal"
                     title="Import queries from local workspace"
                   ><i class="material-icons">save_alt</i> Import</a>
@@ -209,15 +208,6 @@
                 <content-placeholder-text :lines="1" />
               </content-placeholder>
             </template>
-            <template #folder-empty="{ node, depth }">
-              <div
-                v-if="!loadingFolderIds.includes(node.ref.id) && !errors[node.ref.id]"
-                class="tree-empty"
-                :style="{ '--depth': depth }"
-              >
-                No items
-              </div>
-            </template>
             <template #item="{ node }">
               <favorite-list-item
                 v-if="node.ref === draftItem"
@@ -264,7 +254,6 @@ import { AppEvent } from '@/common/AppEvent'
 import { buildFolderNodes, buildItemNode, parseReorderTarget } from "@/common/utils/folderTree"
 import EditableText from '@/components/common/EditableText.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
-import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
 import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
 import ContentPlaceholderText from '@/components/common/loading/ContentPlaceholderText.vue'
 import { collectVisibleItemIds, rangeSelectVisibleIds, toggleSelectedId } from "@beekeeperstudio/ui-kit/tree/helpers"
@@ -278,7 +267,7 @@ import FavoriteListItem from './favorite_list/FavoriteListItem.vue'
 const log = rawLog.scope('FavoriteList')
 
 export default {
-  components: { SidebarLoading, ErrorAlert, ExpiredFolderAlert, FavoriteListItem, Tree, TreeFolder, EditableText, ContentPlaceholder, ContentPlaceholderText },
+  components: { SidebarLoading, ErrorAlert, FavoriteListItem, Tree, TreeFolder, EditableText, ContentPlaceholder, ContentPlaceholderText },
   data: function () {
     return {
       selectedIds: [],
@@ -299,7 +288,7 @@ export default {
   },
   watch: {
     filterQuery(value) {
-      this.setSavedQueryFilter(value);
+      this.setQueryFilter(value);
     },
   },
   beforeDestroy() {
@@ -314,7 +303,7 @@ export default {
       globalSidebarActiveItem: 'globalSidebarActiveItem',
       primarySidebarOpen: 'primarySidebarOpen',
     }),
-    ...mapGetters(['workspace', 'isCloud', 'isUltimate', 'canCreateFolders']),
+    ...mapGetters(['workspace', 'isCloud']),
     ...mapGetters('data/queries', {'filteredQueries': 'filteredQueries'}),
     ...mapState('tabs', {'activeTab': 'active'}),
     ...mapState('data/queries/nodes', {'itemNodes': 'items'}),
@@ -323,7 +312,7 @@ export default {
       'queries': 'items',
       'queriesError': 'error',
       'queriesPollError': 'pollError',
-      'savedQueryFilter': 'filter',
+      'queryFilter': 'filter',
       'pendingSaveIds': 'pendingSaveIds',
       fetchingResults: 'searching',
     }),
@@ -363,14 +352,14 @@ export default {
       }
       return this.sortedItemNodes;
     },
-    expandedNodeIds() {
-      return this.expandedFolderIds.map((id) => `folder-${id}`);
-    },
     sortedItemNodes() {
       // Drag and drop is the only way to reorder queries, and it lands in
       // `position`. Sorting by title here would outrank it, so a drag would
       // save but never show.
       return _.sortBy(this.itemNodes, (n) => n.ref.position ?? 0)
+    },
+    expandedNodeIds() {
+      return this.expandedFolderIds.map((id) => `folder-${id}`);
     },
     searching() {
       return !!this.filterQuery;
@@ -379,7 +368,7 @@ export default {
       return this.folders.length === 0 && this.foldersLoading;
     },
     typing() {
-      return this.filterQuery !== this.savedQueryFilter;
+      return this.filterQuery !== this.queryFilter;
     },
     error() {
       return this.queriesError || this.foldersError || null
@@ -433,7 +422,7 @@ export default {
       loadQueryFolders: 'data/queryFolders/loadByParentIds',
       unloadQueries: 'data/queries/unloadByParentIds',
       unloadQueryFolders: 'data/queryFolders/unloadByParentIds',
-      setSavedQueryFilter: 'data/queries/setSavedQueryFilter',
+      setQueryFilter: 'data/queries/setQueryFilter',
     }),
     ...mapMutations({
       setExpandedFolderIds: 'sidebar/queries/expandedIds',
@@ -501,10 +490,10 @@ export default {
     },
     importFromLocal() {
       if (!this.isCloud) {
-          this.$root.$emit(AppEvent.upgradeModal, 'Cloud Workspaces')
-          return
-        }
-        this.$root.$emit(AppEvent.promptQueryImport)
+        this.$root.$emit(AppEvent.upgradeModal, 'Cloud Workspaces')
+        return
+      }
+      this.$root.$emit(AppEvent.promptQueryImport)
     },
     importFromComputer() {
       this.$root.$emit(AppEvent.promptSqlFilesImport)
@@ -598,10 +587,6 @@ export default {
       this.cloudSelectionAnchorId = null
     },
     createFolder() {
-      if (!this.canCreateFolders) {
-        this.$root.$emit(AppEvent.upgradeModal, 'Folders')
-        return
-      }
       this.startRootDraft("folder");
     },
     startRootDraft(type) {
@@ -699,10 +684,6 @@ export default {
         {
           name: "New Folder",
           handler: ({ item }) => {
-            if (!this.canCreateFolders) {
-              this.$root.$emit(AppEvent.upgradeModal, 'Folders');
-              return;
-            }
             this.startDrafting("folder", item.id);
             this.expandFolder(item.id);
           },
@@ -861,11 +842,6 @@ export default {
   margin-bottom: -0.7rem;
   padding-left: calc(var(--depth) * 1rem + 0.55rem);
 }
-.tree-empty {
-  padding-left: calc(var(--depth) * 1rem + 0.55rem);
-  margin-block: 0.25rem;
-  opacity: 0.6;
-}
 ::v-deep .alert.error-alert.tree-error {
   margin-left: calc(var(--depth) * 1rem + 0.55rem);
   margin-right: 0.55rem;
@@ -890,7 +866,7 @@ export default {
 
 @keyframes commited-fade {
   from {
-    background: rgb(from var(--theme-primary) r g b / 25%);
+    background: var(--primary-a8);
   }
   to {
     background: transparent;

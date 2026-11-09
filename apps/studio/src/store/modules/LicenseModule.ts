@@ -8,6 +8,7 @@ import Vue from "vue"
 import { LicenseStatus } from '@/lib/license';
 import { SmartLocalStorage } from '@/common/LocalStorage';
 import { CloudClient } from '@/lib/cloud/CloudClient';
+import { adoptLegacyTrialEndDecision, resetTrialFlow } from '@/lib/trial';
 
 interface State {
   initialized: boolean
@@ -16,6 +17,12 @@ interface State {
   now: Date
   status: LicenseStatus,
   installationId: string | null
+  /**
+   * The name of the license dialog currently waiting for an answer (the
+   * trial-ended or lifetime-version dialog), or null. Nothing should be
+   * stacked on top of one: NotificationManager holds its upsell toast back.
+   */
+  blockingDialog: string | null
 }
 
 const log = rawLog.scope('LicenseModule')
@@ -26,6 +33,18 @@ const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
 // hammer the license server with identical in-flight requests.
 let inflightUpdateAll: Promise<void> | null = null
 const inflightUpdates = new Map<string, Promise<void>>()
+
+/**
+ * Stamped by add/remove so the app's other windows re-read the licenses at
+ * once rather than on their next scheduled check (see init).
+ */
+export const LICENSES_CHANGED_KEY = 'licensesChangedAt'
+
+function announceLicensesChanged() {
+  SmartLocalStorage.addItem(LICENSES_CHANGED_KEY, Date.now())
+}
+
+let stopWatchingOtherWindows: (() => void) | null = null
 
 const defaultStatus = new LicenseStatus()
 Object.assign(defaultStatus, {
@@ -41,7 +60,8 @@ export const LicenseModule: Module<State, RootState>  = {
     error: null,
     now: new Date(),
     status: defaultStatus,
-    installationId: null
+    installationId: null,
+    blockingDialog: null,
   }),
   getters: {
     trialLicense(state) {
@@ -70,6 +90,10 @@ export const LicenseModule: Module<State, RootState>  = {
       if (!state) return true
       return state.status.isTrial
     },
+    /** The current license is a trial that has run out. */
+    isTrialExpired(state) {
+      return !!state.status.isTrial && !!state.status.isValidDateExpired
+    },
     isValidStateExpired(state) {
       // this means a license with lifetime perms, but is no longer valid for software updates
       // so the user has to use an older version of the app.
@@ -78,6 +102,14 @@ export const LicenseModule: Module<State, RootState>  = {
     isLifetime(state) {
       // a paid license past its subscription period, still valid for app usage
       return state.status.isLifetime
+    },
+    /**
+     * A lifetime license this app version has outgrown: the subscription is
+     * over and this version was released after it ended ("App version not
+     * allowed"), so the app runs as the Community Edition under it.
+     */
+    isLifetimeVersionNotCovered(state) {
+      return !!state.status.isLifetime && !!state.status.isCommunity
     },
     canAccessCloudWorkspaces(state) {
       // cloud workspaces need an active subscription, lifetime-only licenses
@@ -101,6 +133,9 @@ export const LicenseModule: Module<State, RootState>  = {
     setStatus(state, status: LicenseStatus) {
       state.status = status
     },
+    setBlockingDialog(state, name: string | null) {
+      state.blockingDialog = name
+    },
   },
   actions: {
     async init(context) {
@@ -109,6 +144,19 @@ export const LicenseModule: Module<State, RootState>  = {
         return
       }
       await context.dispatch('sync')
+      // A trial end that an older version already announced counts as answered.
+      adoptLegacyTrialEndDecision({
+        trialExpired: context.getters.isTrialExpired,
+        hasRealLicense: context.getters.realLicenses.length > 0,
+      })
+      // A license entered or removed in another window of the app takes
+      // effect here too, without waiting for the next scheduled check.
+      if (typeof window !== 'undefined') {
+        stopWatchingOtherWindows?.()
+        stopWatchingOtherWindows = SmartLocalStorage.onChange(LICENSES_CHANGED_KEY, () => {
+          context.dispatch('sync')
+        })
+      }
       const installationId = await Vue.prototype.$util.send('license/getInstallationId');
       context.commit('installationId', installationId)
       context.commit('setInitialized', true)
@@ -147,6 +195,9 @@ export const LicenseModule: Module<State, RootState>  = {
       }
       // allow emitting expired license events next time
       SmartLocalStorage.setBool('expiredLicenseEventsEmitted', false)
+      // A new license supersedes whatever was decided at the end of the trial.
+      resetTrialFlow()
+      announceLicensesChanged()
       await context.dispatch('sync')
     },
     async update(_context, license: TransportLicenseKey) {
@@ -230,6 +281,9 @@ export const LicenseModule: Module<State, RootState>  = {
     },
     async remove(context, license) {
       await Vue.prototype.$util.send('license/remove', { id: license.id })
+      // Without a license the trial-end question is open again.
+      resetTrialFlow()
+      announceLicensesChanged()
       await context.dispatch('sync')
       if (context.getters.isCommunity && context.rootState.workspaceId !== -1) {
         context.commit('workspaceId', -1, { root: true })

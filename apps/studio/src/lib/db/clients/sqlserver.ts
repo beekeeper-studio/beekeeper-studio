@@ -21,7 +21,7 @@ import {
 } from './utils';
 import logRaw from '@bksLogger'
 import { SqlServerCursor } from './sqlserver/SqlServerCursor'
-import { buildWindowsAuthConnStr } from './sqlserverWinAuth'
+import { foreignKeyColumnsSql } from './sqlserver/scripts'
 import { SqlServerData } from '@shared/lib/dialects/sqlserver'
 import { SqlServerChangeBuilder } from '@shared/lib/sql/change_builder/SqlServerChangeBuilder'
 import { joinFilters } from '@/common/utils';
@@ -31,10 +31,12 @@ import {
   QueryLogOptions
 } from './BasicDatabaseClient'
 import { FilterOptions, OrderBy, TableFilter, ExtendedTableColumn, TableIndex, TableProperties, TableResult, StreamResults, Routine, TableOrView, NgQueryResult, DatabaseFilterOptions, TableChanges, ImportFuncOptions, DatabaseEntity, BksFieldType, BksField, IncludedFilterTypes } from '../models';
-import { AlterTableSpec, IndexAlterations, RelationAlterations } from '@shared/lib/dialects/models';
+import { AlterTableSpec, IndexAlterations, RelationAlterations, TableKey } from '@shared/lib/dialects/models';
 import { AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from '../serialization/transcoders';
+import { SqlServerConnector } from './sqlserver/SqlServerConnector';
+export { flattenErrorText, sqlServerConnectHint, sqlServerConnectHints } from './sqlserver/SqlServerConnector';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 const log = logRaw.scope('sql-server')
 
@@ -42,23 +44,6 @@ const D = SqlServerData
 const mmsqlErrors = {
   CANCELED: 'ECANCEL',
 };
-
-// Setup guide for SQL Server integrated / Kerberos authentication prerequisites.
-const WIN_AUTH_DOCS_URL = 'https://docs.beekeeperstudio.io/user_guide/connecting/sql-server/'
-
-// Wrap a promise with a JS-level deadline. msnodesqlv8/ODBC's native conn_timeout
-// does NOT reliably cancel a stalled SQLDriverConnect -- it only covers the TCP
-// connect, not the post-connect TDS prelogin / SSPI handshake -- so a stalled
-// Kerberos/NTLM negotiation would otherwise hang indefinitely. This guarantees the
-// attempt rejects; the orphaned native handle may persist, but the app stays
-// responsive and surfaces a clear error instead of locking up.
-function withDeadline<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
-  let timer: NodeJS.Timeout;
-  const deadline = new Promise<never>((_resolve, reject) => {
-    timer = setTimeout(() => reject(new Error(message)), ms);
-  });
-  return Promise.race([promise, deadline]).finally(() => clearTimeout(timer)) as Promise<T>;
-}
 
 type SQLServerVersion = {
   supportOffsetFetch: boolean
@@ -105,14 +90,14 @@ knex.client._escapeBinding = function (value: any, context: any) {
 // NOTE:
 // DO NOT USE CONCAT() in sql, not compatible with Sql Server <= 2008
 // SQL Server < 2012 might eventually need its own class.
-export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transaction> {
+export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Request | Transaction> {
   server: IDbConnectionServer
   database: IDbConnectionDatabase
   version: SQLServerVersion
   dbConfig: any
   readOnlyMode: boolean
   logger: any
-  pool: ConnectionPool;
+  connector = new SqlServerConnector({ server: this.server, database: this.database });
   _defaultSchema: string = 'dbo';
   authService: AzureAuthService;
   transcoders = [GenericBinaryTranscoder];
@@ -252,7 +237,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
 
   async query(queryText: string, tabId: number) {
     const hasReserved = this.reservedConnections.has(tabId);
-    const queryRequest: Request = hasReserved ? this.reservedConnections.get(tabId).request() : this.pool.request();
+    const queryRequest: Request = hasReserved ? (this.reservedConnections.get(tabId) as Transaction).request() : await this.connector.request();
     log.info("HAS RESERVED: ", hasReserved, "For query: ", queryText)
     return {
       execute: async(): Promise<NgQueryResult[]> => {
@@ -430,178 +415,26 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     }
   }
 
-  async getOutgoingKeys(table: string, schema: string = this._defaultSchema) {
-    // Simplified approach to get foreign keys with ordinal position for proper ordering in composite keys
+  async getOutgoingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
+    // Foreign keys defined on this table (referencing other tables)
     const sql = `
-      SELECT
-        name = FK.CONSTRAINT_NAME,
-        from_schema = PK.TABLE_SCHEMA,
-        from_table = FK.TABLE_NAME,
-        from_column = CU.COLUMN_NAME,
-        to_schema = PK.TABLE_SCHEMA,
-        to_table = PK.TABLE_NAME,
-        to_column = PT.COLUMN_NAME,
-        constraint_name = C.CONSTRAINT_NAME,
-        on_update = C.UPDATE_RULE,
-        on_delete = C.DELETE_RULE,
-        CU.ORDINAL_POSITION as ordinal_position
-      FROM
-          INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS C
-      INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS FK
-          ON C.CONSTRAINT_NAME = FK.CONSTRAINT_NAME
-      INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS PK
-          ON C.UNIQUE_CONSTRAINT_NAME = PK.CONSTRAINT_NAME
-      INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE CU
-          ON C.CONSTRAINT_NAME = CU.CONSTRAINT_NAME
-      INNER JOIN (
-                  SELECT
-                      i1.TABLE_NAME,
-                      i2.COLUMN_NAME
-                  FROM
-                      INFORMATION_SCHEMA.TABLE_CONSTRAINTS i1
-                  INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE i2
-                      ON i1.CONSTRAINT_NAME = i2.CONSTRAINT_NAME
-                  WHERE
-                      i1.CONSTRAINT_TYPE = 'PRIMARY KEY'
-                ) PT
-          ON PT.TABLE_NAME = PK.TABLE_NAME
-      WHERE FK.TABLE_NAME = ${this.wrapValue(table)} AND FK.TABLE_SCHEMA = ${this.wrapValue(schema)}
-      ORDER BY
-        FK.CONSTRAINT_NAME,
-        CU.ORDINAL_POSITION
+      ${foreignKeyColumnsSql}
+      WHERE pt.name = ${this.wrapValue(table)} AND SCHEMA_NAME(pt.schema_id) = ${this.wrapValue(schema)}
+      ORDER BY fk.name, fkc.constraint_column_id
     `;
-
     const { data } = await this.driverExecuteSingle(sql);
-
-    // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(data.recordset, 'name');
-
-    const result = Object.keys(groupedKeys).map(constraintName => {
-      const keyParts = groupedKeys[constraintName];
-
-      // If there's only one part, return a simple key (backward compatibility)
-      if (keyParts.length === 1) {
-        const row = keyParts[0];
-        return {
-          constraintName: row.name,
-          toTable: row.to_table,
-          toSchema: row.to_schema,
-          toColumn: row.to_column,
-          fromTable: row.from_table,
-          fromSchema: row.from_schema,
-          fromColumn: row.from_column,
-          onUpdate: row.on_update,
-          onDelete: row.on_delete,
-          isComposite: false
-        };
-      }
-
-      // If there are multiple parts, it's a composite key
-      const firstPart = keyParts[0];
-      return {
-        constraintName: firstPart.name,
-        toTable: firstPart.to_table,
-        toSchema: firstPart.to_schema,
-        toColumn: keyParts.map(p => p.to_column),
-        fromTable: firstPart.from_table,
-        fromSchema: firstPart.from_schema,
-        fromColumn: keyParts.map(p => p.from_column),
-        onUpdate: firstPart.on_update,
-        onDelete: firstPart.on_delete,
-        isComposite: true
-      };
-    });
-
-    this.logger().debug("outgoingKeys result", result);
-    return result;
+    return this.parseForeignKeys(data.recordset || []);
   }
 
-  async getIncomingKeys(table: string, schema: string = this._defaultSchema) {
-    // Query for foreign keys TO this table (incoming - other tables referencing this table)
+  async getIncomingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
+    // Foreign keys on other tables that reference this table
     const sql = `
-      SELECT
-        name = FK.CONSTRAINT_NAME,
-        from_schema = FK.TABLE_SCHEMA,
-        from_table = FK.TABLE_NAME,
-        from_column = CU.COLUMN_NAME,
-        to_schema = PK.TABLE_SCHEMA,
-        to_table = PK.TABLE_NAME,
-        to_column = PT.COLUMN_NAME,
-        constraint_name = C.CONSTRAINT_NAME,
-        on_update = C.UPDATE_RULE,
-        on_delete = C.DELETE_RULE,
-        CU.ORDINAL_POSITION as ordinal_position
-      FROM
-          INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS C
-      INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS FK
-          ON C.CONSTRAINT_NAME = FK.CONSTRAINT_NAME
-      INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS PK
-          ON C.UNIQUE_CONSTRAINT_NAME = PK.CONSTRAINT_NAME
-      INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE CU
-          ON C.CONSTRAINT_NAME = CU.CONSTRAINT_NAME
-      INNER JOIN (
-                  SELECT
-                      i1.TABLE_NAME,
-                      i2.COLUMN_NAME,
-                      i2.ORDINAL_POSITION
-                  FROM
-                      INFORMATION_SCHEMA.TABLE_CONSTRAINTS i1
-                  INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE i2
-                      ON i1.CONSTRAINT_NAME = i2.CONSTRAINT_NAME
-                  WHERE
-                      i1.CONSTRAINT_TYPE = 'PRIMARY KEY'
-                ) PT
-          ON PT.TABLE_NAME = PK.TABLE_NAME AND CU.ORDINAL_POSITION = PT.ORDINAL_POSITION
-      WHERE PK.TABLE_NAME = ${this.wrapValue(table)} AND PK.TABLE_SCHEMA = ${this.wrapValue(schema)}
-      ORDER BY
-        FK.CONSTRAINT_NAME,
-        CU.ORDINAL_POSITION
+      ${foreignKeyColumnsSql}
+      WHERE rt.name = ${this.wrapValue(table)} AND SCHEMA_NAME(rt.schema_id) = ${this.wrapValue(schema)}
+      ORDER BY fk.name, fkc.constraint_column_id
     `;
-
     const { data } = await this.driverExecuteSingle(sql);
-    const recordset = data.recordset || [];
-
-    // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(recordset, 'name');
-
-    const result = Object.keys(groupedKeys).map(constraintName => {
-      const keyParts = groupedKeys[constraintName];
-
-      // If there's only one part, return a simple key (backward compatibility)
-      if (keyParts.length === 1) {
-        const row = keyParts[0];
-        return {
-          constraintName: row.name,
-          toTable: row.to_table,
-          toSchema: row.to_schema,
-          toColumn: row.to_column,
-          fromTable: row.from_table,
-          fromSchema: row.from_schema,
-          fromColumn: row.from_column,
-          onUpdate: row.on_update,
-          onDelete: row.on_delete,
-          isComposite: false
-        };
-      }
-
-      // If there are multiple parts, it's a composite key
-      const firstPart = keyParts[0];
-      return {
-        constraintName: firstPart.name,
-        toTable: firstPart.to_table,
-        toSchema: firstPart.to_schema,
-        toColumn: keyParts.map(p => p.to_column),
-        fromTable: firstPart.from_table,
-        fromSchema: firstPart.from_schema,
-        fromColumn: keyParts.map(p => p.from_column),
-        onUpdate: firstPart.on_update,
-        onDelete: firstPart.on_delete,
-        isComposite: true
-      };
-    });
-
-    this.logger().debug("incomingKeys result", result);
-    return result;
+    return this.parseForeignKeys(data.recordset || []);
   }
 
   async selectTopStream(table: string, orderBy: OrderBy[], filters: string | TableFilter[], chunkSize: number, schema: string = this._defaultSchema, selects = ['*']) {
@@ -612,7 +445,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     return {
       totalRows: Number(rowCount),
       columns,
-      cursor: new SqlServerCursor(this.pool.request(), query, chunkSize)
+      cursor: new SqlServerCursor(await this.connector.request(), query, chunkSize)
     }
   }
 
@@ -715,7 +548,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       return { connection, data, rowsAffected, columns, rows, arrayMode }
     };
 
-    return runQuery(options.connection ? options.connection : this.pool.request());
+    return runQuery(options.connection ? options.connection : await this.connector.request());
   }
 
   async truncateAllTables(schema: string = this._defaultSchema) {
@@ -746,7 +579,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
     // identifier classifies that as a plain SELECT, so the read-only guard in
     // driverExecuteSingle never trips even though it creates a table. Enforce
     // read-only mode explicitly here.
-    if (await this.checkAllowReadOnly() && this.readOnlyMode) {
+    if (this.readOnlyMode) {
       throw new Error(errorMessages.readOnly)
     }
 
@@ -939,7 +772,7 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
 
   async queryStream(query: string, chunkSize: number): Promise<StreamResults> {
     return {
-      cursor: new SqlServerCursor(this.pool.request(), query, chunkSize),
+      cursor: new SqlServerCursor(await this.connector.request(), query, chunkSize),
     }
   }
 
@@ -1084,11 +917,11 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async importStepZero(table: TableOrView): Promise<any> {
-    const transaction = new sql.Transaction(this.pool)
+    const transaction = await this.connector.transaction();
 
     return {
       transaction,
-      request: new sql.Request(transaction),
+      request: transaction.request(),
       hasIdentityColumn: await this.hasIdentityColumn(table)
     }
   }
@@ -1123,33 +956,9 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   /* helper functions and settings below! */
 
   async connect(signal?: AbortSignal): Promise<void> {
-    await super.connect();
-
-    this.dbConfig = await this.configDatabase(this.server, this.database, signal)
-
-    if (this.server.config.windowsAuthEnabled) {
-      this.pool = await this.connectWindowsAuth()
-    } else {
-      this.pool = await new ConnectionPool(this.dbConfig).connect();
-    }
-
-    this.pool.on('error', (err) => {
-      if (err instanceof ConnectionError) {
-        log.error('Pool ConnectionError', err.message)
-      }
-      log.error("Pool event: connection error:", err.name, err.message);
-    });
-
-
-    this.logger().debug('create driver client for mmsql with config %j', this.dbConfig);
+    await super.connect(signal);
     this.version = await this.getVersion()
     return
-  }
-
-  async disconnect(): Promise<void> {
-    await this.pool.close();
-
-    await super.disconnect();
   }
 
   async listCharsets() {
@@ -1212,12 +1021,12 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       throw new Error(errorMessages.maxReservedConnections)
     }
 
-    const conn = this.pool.transaction();
+    const conn = await this.connector.transaction();
     this.pushConnection(tabId, conn);
   }
 
   async releaseConnection(tabId: number): Promise<void> {
-    const conn = this.popConnection(tabId);
+    const conn = this.popConnection(tabId) as Transaction | undefined;
     if (conn) {
       try {
         // This may throw if the connection hasn't been begun yet, so just to be safe we'll catch
@@ -1227,19 +1036,19 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
   }
 
   async startTransaction(tabId: number): Promise<void> {
-    const conn = this.peekConnection(tabId);
+    const conn = this.peekConnection(tabId) as Transaction;
     await conn.begin();
   }
 
   async commitTransaction(tabId: number): Promise<void> {
-    const conn = this.popConnection(tabId);
+    const conn = this.popConnection(tabId) as Transaction;
     await conn.commit();
     // commit releases the connection annoyingly so we have to re reserve one
     await this.reserveConnection(tabId);
   }
 
   async rollbackTransaction(tabId: number): Promise<void> {
-    const conn = this.popConnection(tabId);
+    const conn = this.popConnection(tabId) as Transaction;
     await conn.rollback();
     // rollback also releases the connection so we have to re reserve the connection
     await this.reserveConnection(tabId);
@@ -1282,216 +1091,6 @@ export class SQLServerClient extends BasicDatabaseClient<SQLServerResult, Transa
       affectedRows: rowsAffected,
       text: command?.text
     }
-  }
-
-  // SQL Server integrated authentication (SSPI). The OS/ODBC layer negotiates the
-  // actual protocol: Kerberos when the host is domain-joined with a reachable KDC
-  // and a matching SPN (typically connecting by hostname/FQDN), otherwise NTLM.
-  // tedious cannot do this, so we route through the native msnodesqlv8 driver.
-  // Works on Windows (SSPI) and on Linux/macOS when unixODBC + the Microsoft ODBC
-  // Driver 18 + a Kerberos ticket (kinit) are configured on the host.
-  private async connectWindowsAuth(): Promise<ConnectionPool> {
-    let sqlWindows: any
-    try {
-      sqlWindows = require('mssql/msnodesqlv8')
-    } catch {
-      throw new Error(
-        (process.platform === 'win32'
-          ? 'Integrated authentication is unavailable: the msnodesqlv8 native module could not be loaded. Try reinstalling Beekeeper Studio.'
-          : 'Integrated authentication is unavailable: the msnodesqlv8 native module could not be loaded. Install unixODBC and the Microsoft ODBC Driver 18 for SQL Server, then reinstall Beekeeper Studio.') +
-        ` See ${WIN_AUTH_DOCS_URL} for setup.`
-      )
-    }
-
-    const encryptionMode = this.dbConfig.options?.encryptionMode || 'on'
-    const serverCertificate = this.dbConfig.options?.serverCertificate
-    const serverSpn = this.dbConfig.options?.serverSpn
-    const server = this.dbConfig.server
-    const port = this.dbConfig.port || 1433
-    const CONNECT_TIMEOUT_S = 15
-
-    // Driver discovery is folded into the real connect: try each candidate ODBC
-    // driver with the actual connection and keep the first that opens. A missing
-    // driver fails immediately at the ODBC driver-manager level (IM002, before any
-    // network or auth), so only the driver that is present completes a single SSPI/
-    // Kerberos handshake -- no throwaway probe connection, and the string that is
-    // validated IS the string used. Modern drivers first (TLS 1.2 support); the
-    // legacy built-in driver only exists on Windows and is a last resort.
-    const candidates: { driver: string, legacy: boolean }[] = [
-      { driver: 'ODBC Driver 18 for SQL Server', legacy: false },
-      { driver: 'ODBC Driver 17 for SQL Server', legacy: false },
-    ]
-    if (process.platform === 'win32') {
-      candidates.push({ driver: 'SQL Server', legacy: true })
-    }
-
-    // Flatten every nested message out of an mssql/msnodesqlv8 error so a missing
-    // driver can be told apart from a real auth/connect failure (mssql wraps native
-    // errors and exposes them via originalError / precedingErrors).
-    const errorText = (err: any): string => {
-      const parts: string[] = []
-      const visit = (e: any) => {
-        if (!e) return
-        if (typeof e === 'string') { parts.push(e); return }
-        if (typeof e.message === 'string') parts.push(e.message)
-        if (e.originalError) visit(e.originalError)
-        if (Array.isArray(e.precedingErrors)) e.precedingErrors.forEach(visit)
-      }
-      if (Array.isArray(err)) err.forEach(visit); else visit(err)
-      return parts.join('; ')
-    }
-    const isDriverMissing = (text: string): boolean =>
-      /IM002|IM003|data source name not found|specified driver could not be loaded|can'?t open lib|file not found/i.test(text)
-
-    const driverMissingError = () => new Error(
-      (process.platform === 'win32'
-        ? 'Integrated authentication requires an ODBC Driver for SQL Server. Install "ODBC Driver 18 for SQL Server" (or 17) from Microsoft.'
-        : 'Integrated authentication requires unixODBC and the Microsoft "ODBC Driver 18 for SQL Server" installed on this machine.') +
-      ` See ${WIN_AUTH_DOCS_URL} for setup.`
-    )
-
-    for (let i = 0; i < candidates.length; i++) {
-      const candidate = candidates[i]
-      // mssql ignores the driver name and emits Trusted_Connection as a boolean
-      // (ODBC needs yes/no); set both, plus TrustServerCertificate when asked.
-      const connecting = new sqlWindows.ConnectionPool({
-        ...this.dbConfig,
-        connectionTimeout: CONNECT_TIMEOUT_S * 1000,
-        beforeConnect: (cfg: any) => {
-          // Pin the discovered driver + Trusted_Connection, and translate the encryption mode
-          // and SPN into ODBC clauses (see buildWindowsAuthConnStr for the exact mapping).
-          cfg.conn_str = buildWindowsAuthConnStr(cfg.conn_str, {
-            driver: candidate.driver,
-            encryptionMode,
-            serverCertificate,
-            serverSpn,
-          })
-          cfg.conn_timeout = CONNECT_TIMEOUT_S
-        }
-      }).connect()
-
-      try {
-        const pool = await withDeadline(
-          connecting,
-          CONNECT_TIMEOUT_S * 1000,
-          `Integrated authentication timed out after ${CONNECT_TIMEOUT_S}s connecting to ${server},${port} with Driver={${candidate.driver}}. ` +
-          `The server is reachable but the SSPI/Kerberos login handshake did not complete in time. ` +
-          `Check the SQL Server SPN registration and that the current user's Kerberos ticket (kinit) or NTLM fallback can reach a domain controller.`
-        )
-        if (candidate.legacy) {
-          log.warn('Integrated authentication is using the legacy "{SQL Server}" ODBC driver, ' +
-            'which does not support TLS 1.2. Install "ODBC Driver 18 for SQL Server" (or 17) from Microsoft for secure connections.')
-        }
-        return pool
-      } catch (err) {
-        // A missing driver is not fatal while other candidates remain; advance to
-        // the next. Any other failure (auth, unreachable, or the withDeadline
-        // timeout above) is real and already carries a useful message.
-        if (isDriverMissing(errorText(err))) {
-          if (i < candidates.length - 1) continue
-          throw driverMissingError()
-        }
-        throw err instanceof Error ? err : new Error(errorText(err))
-      }
-    }
-
-    // Only reached if the candidate list is empty (it never is).
-    throw driverMissingError()
-  }
-
-  private async configDatabase(server: IDbConnectionServer, database: IDbConnectionDatabase, signal?: AbortSignal): Promise<any> { // changed to any for now, might need to make some changes
-    const config: any = {
-      server: server.config.host,
-      database: database.database,
-      requestTimeout: Infinity,
-      appName: 'beekeeperstudio',
-      pool: {
-        max: BksConfig.db.sqlserver.maxConnections
-      }
-    };
-
-    if (server.config.azureAuthOptions?.azureAuthEnabled) {
-      this.authService = new AzureAuthService();
-      await this.authService.init(server.config.authId)
-
-      const options = getEntraOptions(server, { signal })
-
-      config.authentication = await this.authService.auth(server.config.azureAuthOptions.azureAuthType, options);
-
-      config.options = {
-        encrypt: true
-      };
-
-      return config;
-    }
-
-    if (server.config.windowsAuthEnabled) {
-      config.port = Number(server.config.port);
-
-      if (server.sshTunnel) {
-        config.server = server.config.localHost;
-        config.port = server.config.localPort;
-      }
-
-      // trustedConnection delegates auth to the OS (SSPI -> Kerberos/NTLM) via msnodesqlv8.
-      // The integrated-auth encryption/cert/SPN settings live in sqlServerOptions;
-      // connectWindowsAuth() translates encryptionMode into the ODBC Encrypt/strict clauses.
-      const sqlServerOptions = server.config.sqlServerOptions || {};
-      config.options = {
-        trustedConnection: true,
-        encryptionMode: sqlServerOptions.encryptionMode || 'on',
-        serverCertificate: sqlServerOptions.serverCertificate || undefined,
-        serverSpn: sqlServerOptions.serverSpn || undefined,
-      };
-
-      return config;
-    }
-
-    config.user = server.config.user;
-    config.password = server.config.password;
-    config.port = Number(server.config.port);
-
-    if (server.config.domain) {
-      config.domain = server.config.domain
-    }
-
-    if (server.sshTunnel) {
-      config.server = server.config.localHost;
-      config.port = server.config.localPort;
-    }
-
-    config.options = { trustServerCertificate: server.config.trustServerCertificate }
-
-    if (server.config.ssl) {
-      const options: any = {
-        encrypt: server.config.ssl,
-        cryptoCredentialsDetails: {}
-      }
-
-      if (server.config.sslCaFile) {
-        options.cryptoCredentialsDetails.ca = readFileSync(server.config.sslCaFile);
-      }
-
-      if (server.config.sslCertFile) {
-        options.cryptoCredentialsDetails.cert = readFileSync(server.config.sslCertFile);
-      }
-
-      if (server.config.sslKeyFile) {
-        options.cryptoCredentialsDetails.key = readFileSync(server.config.sslKeyFile);
-      }
-
-
-      if (server.config.sslCaFile && server.config.sslCertFile && server.config.sslKeyFile) {
-        // trust = !reject
-        // mssql driver reverses this setting for no obvious reason
-        // other drivers simply pass through to the SSL library.
-        options.trustServerCertificate = !server.config.sslRejectUnauthorized
-      }
-
-      config.options = options;
-    }
-
-    return config;
   }
 
   private genSelectOld(table: string,

@@ -12,6 +12,7 @@ import {
   TableUpdateResult,
   TableUpdate,
   TableDelete,
+  PluginExecuteOptions,
 } from "../models";
 import {
   AppContextProvider,
@@ -141,7 +142,7 @@ type RedisTableRow = {
   key: string;
   type: RedisKeyType;
   ttl: number;
-  memory: number;
+  memory: number | null;
   encoding: string;
   value: unknown;
 };
@@ -459,7 +460,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     return [];
   }
 
-  async executeCommand(text: string): Promise<NgQueryResult[]> {
+  async executeCommand(text: string, options?: PluginExecuteOptions): Promise<NgQueryResult[]> {
     // Important to run before any command because previous command,
     // because it could have been "HEELO 3" which would change protocol version
     await this.getRespVersion();
@@ -483,7 +484,7 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
         : null;
 
       if (
-        this.readOnlyMode &&
+        (this.readOnlyMode || options?.forceReadOnly) &&
         knownCommandDef &&
         !knownCommandDef.IS_READ_ONLY
       ) {
@@ -545,8 +546,8 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
     };
   }
 
-  async executeQuery(queryText: string): Promise<NgQueryResult[]> {
-    return this.executeCommand(queryText);
+  async executeQuery(queryText: string, options?: PluginExecuteOptions): Promise<NgQueryResult[]> {
+    return this.executeCommand(queryText, options);
   }
 
   async listDatabases() {
@@ -601,7 +602,13 @@ export class RedisClient extends BasicDatabaseClient<RedisQueryResult> {
 
   async getKeyInfo(key: string): Promise<RedisTableRow> {
     const type = (await this.redis.type(key)) as RedisKeyType;
-    const memory = (await this.redis.memoryUsage(key)) as number;
+    let memory: number | null = null;
+    try {
+      memory = (await this.redis.memoryUsage(key)) as number;
+    } catch (error) {
+      // MEMORY USAGE is only available in Redis 4.0+
+      log.debug(`Could not get memory usage for key ${key}:`, error);
+    }
 
     let encoding = "unknown";
     try {
