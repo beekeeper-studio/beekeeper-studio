@@ -126,7 +126,7 @@ $titlebar-actions-height:   30px;
 }
 
 .titlebar-wrapper {
-  padding-bottom: $gutter-h;
+  margin-bottom: $gutter-h;
   background: var(--titlebar-bg);
   color: var(--titlebar-fg);
   transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
