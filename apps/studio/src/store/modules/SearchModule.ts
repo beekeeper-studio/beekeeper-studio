@@ -22,10 +22,12 @@ const uf = new uFuzzy({
   intraIns: Infinity,
 });
 
+const LETTER_OR_NUMBER = /^[\p{L}\p{N}]$/u;
+
 function buildSearchTarget(value: string) {
   const positions: number[] = [];
   const normalized = Array.from(value).reduce((result, char, index) => {
-    if (/^[\p{L}\p{N}]$/u.test(char)) {
+    if (LETTER_OR_NUMBER.test(char)) {
       positions.push(index);
       return result + char.toLowerCase();
     }
