@@ -10,7 +10,7 @@
     >
       <span
         @contextmenu.prevent.stop=""
-        class="btn-fab open-close"
+        class="btn-icon open-close"
         @mousedown.prevent="toggleColumns"
       >
         <i class="dropdown-icon material-icons">keyboard_arrow_right</i>
@@ -46,13 +46,13 @@
         <span
           v-if="!pinned"
           @mousedown.prevent.stop="pin"
-          class="btn-fab pin"
+          class="btn-icon pin"
           :title="'Pin'"
         ><i class="bk-pin" /></span>
         <span
           v-if="pinned"
           @mousedown.prevent.stop="unpin"
-          class="btn-fab unpin"
+          class="btn-icon unpin"
           :title="'Unpin'"
         ><i
           class="material-icons"
@@ -60,7 +60,7 @@
         <span
           v-if="pinned"
           @mousedown.prevent.stop="unpin"
-          class="btn-fab pinned"
+          class="btn-icon pinned"
         >
           <i
             class="bk-pin"

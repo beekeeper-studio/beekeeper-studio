@@ -1,0 +1,65 @@
+import { readFileSync } from 'fs'
+import { resolve } from 'path'
+import vue from 'vite-ng-plugin-vue2'
+import commonjs from 'vite-plugin-commonjs'
+import viteConfig from './vite.config.mjs'
+
+// Importing a .ini file yields its raw text as the default export.
+function rawIni() {
+  return {
+    name: 'bks:raw-ini',
+    enforce: 'pre',
+    load(id) {
+      if (id.endsWith('.ini')) {
+        return `export default ${JSON.stringify(readFileSync(id, 'utf8'))};`
+      }
+    },
+  }
+}
+
+// commonjs() mirrors vite.config.mjs: parts of src still use bare require()
+// (e.g. src/shared/lib/knex-bigquery/index.js), which the ESM transform would
+// otherwise leave undefined at runtime.
+export const plugins = [vue(), commonjs(), rawIni()]
+
+// Path aliases come from the renderer vite config (one source of truth for @,
+// @shared, @commercial, assets) with test-only entries prepended — array form is
+// first-match-wins:
+// - @beekeeperstudio/ui-kit resolves to lib source; regex with
+//   $ anchor because an object-form key is a prefix match and would also rewrite
+//   subpath imports (@beekeeperstudio/ui-kit/vue/* must keep resolving through
+//   the built dist, which needs `yarn lib:build` first, same as CI).
+// - @tests exists only for tests.
+// - @bksLogger maps to mainLogger; the renderer's rendererLogger
+//   entry is filtered out rather than shadowed.
+// No @marimo-team/codemirror-languageserver stub or @libsql/core -> lib-cjs
+// remap: vitest resolves the packages' own `import` conditions. Re-add here if a
+// spec trips on them.
+export const alias = [
+  { find: /^@beekeeperstudio\/ui-kit$/, replacement: resolve(__dirname, '../ui-kit/lib/index.ts') },
+  { find: /^@tests(.*)$/, replacement: resolve(__dirname, 'tests') + '$1' },
+  { find: '@bksLogger', replacement: resolve(__dirname, 'src/lib/log/mainLogger.ts') },
+  ...Object.entries(viteConfig.resolve.alias)
+    .filter(([find]) => find !== '@bksLogger')
+    .map(([find, replacement]) => ({ find, replacement })),
+]
+
+export const resolveOptions = {
+  alias,
+  // Same reasoning as apps/ui-kit/vite.config.ts: duplicate copies of vue break
+  // $store/plugin injection and duplicate @codemirror/state copies break CM6.
+  dedupe: ['vue', '@codemirror/state', '@codemirror/view'],
+}
+
+// pool 'forks' is what makes the electron-as-node wrapper work: tinypool forks
+// process.execPath (the electron binary) and ELECTRON_RUN_AS_NODE=1 is inherited,
+// so workers are node-mode electron with the right native-module ABI.
+// fileParallelism false runs spec files one at a time (DB specs share docker ports).
+// globals on because shared helpers (tests/lib/db.ts, tests/vitest/integration/lib/
+// db/clients/all.js) call describe/test/expect ambiently. Spec files still import
+// explicitly from 'vitest'.
+export const baseTest = {
+  globals: true,
+  pool: 'forks',
+  fileParallelism: false,
+}

@@ -130,6 +130,7 @@ export class TextEditor {
         to: this.view.state.doc.length,
         insert: value,
       },
+      annotations: Transaction.addToHistory.of(false),
     });
   }
 

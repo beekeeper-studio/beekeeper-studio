@@ -12,3 +12,6 @@ trim_trailing_whitespace = true
 [docs/**.*]
 indent_style = space
 indent_size = 4
+
+[*.py]
+indent_size = 4

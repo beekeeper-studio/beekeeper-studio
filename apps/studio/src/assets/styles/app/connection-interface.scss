@@ -1,4 +1,3 @@
-@use "sass:color";
 .interface.connection-interface {
   padding-top: 0;
 }
@@ -10,7 +9,7 @@
   display: flex;
   justify-content: center;
   a {
-    color: rgba($theme-base, 0.2);
+    color: var(--gray-8);
     // font-style: italic;
     line-height: 2;
   }
@@ -21,7 +20,6 @@
 // --------------------------------
 .connection-main {
   display: flex;
-  background: $query-editor-bg;
   height: 100%;
   max-height: 100vh;
   padding: 0 $gutter-w;
@@ -39,7 +37,6 @@
     @include small-wrap;
   }
   .card-flat {
-    background: $theme-bg;
     margin: $gutter-w 0;
     &[class*="connection-label-color"] {
       position: relative;
@@ -76,7 +73,6 @@
     .material-icons.has-tooltip {
       font-weight: inherit;
       font-size: 1.1em;
-      color: $text-lighter;
     }
   }
 
@@ -87,9 +83,8 @@
   .save-connection {
     margin-top: ($gutter-w * 1.25);
     padding-top: ($gutter-w * 1.25);
-    border-top: 1px solid $border-color;
+    border-top: 1px solid var(--border-subtle);
     h3 {
-      color: $text-dark;
       margin: 0 0 $gutter-h;
     }
     .save-actions .btn {
@@ -99,7 +94,6 @@
       margin-bottom: $gutter-h;
     }
     .has-tooltip {
-      color: $text-lighter;
       margin-left: $gutter-h;
     }
     .save-actions {
@@ -112,7 +106,7 @@
   .pitch {
     text-align: center;
     a {
-      color: $theme-primary;
+      color: var(--primary-text);
       &:hover {
         text-decoration: underline;
       }
@@ -154,11 +148,11 @@
 .advanced-connection-settings {
   display: flex;
   flex-direction: column;
-  background: color.adjust($theme-bg, $lightness: -4%);
+  background: var(--bg-base);
   border-radius: 8px;
   margin: $gutter-w 0;
   padding: $gutter-w ($gutter-w * 1.25);
-  .btn-fab {
+  .btn-icon {
     margin-left: -$gutter-w * 0.75;
     margin-right: $gutter-h * 0.5;
     margin-top: -$gutter-h;
@@ -191,7 +185,7 @@
   margin: 0;
   i {
     font-size: 3rem;
-    color: $text-lighter;
+    color: var(--text-muted);
     transition: color 0.15s ease-in-out;
     cursor: pointer;
   }
@@ -201,7 +195,7 @@
   }
   &.enabled {
     i {
-      color: $theme-primary;
+      color: var(--primary-text);
     }
   }
   x-switch {

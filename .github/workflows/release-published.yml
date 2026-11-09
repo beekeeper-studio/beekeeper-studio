@@ -199,6 +199,8 @@ jobs:
     steps:
       - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v3
+        with:
+          channel: '8.x/stable'
 
       - name: Download release snaps
         run: |

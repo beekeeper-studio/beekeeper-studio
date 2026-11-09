@@ -1,5 +1,6 @@
 import rawLog from "@bksLogger";
 import fs from "fs";
+import crypto from "crypto";
 import path from "path";
 import {
   Downloader,
@@ -7,7 +8,7 @@ import {
   DownloaderReport,
 } from "nodejs-file-downloader";
 import { Manifest, PluginView, Release } from "./types";
-import { PluginError } from "@/lib/errors";
+import { PluginError, PluginSystemError } from "@/lib/errors";
 import extract from "extract-zip";
 import { tmpdir } from "os";
 
@@ -28,7 +29,7 @@ const PLUGIN_MANIFEST_FILENAME = "manifest.json";
  * plus `.` `_` `-`. This forbids path separators and `.`/`..`, which are the
  * only traversal-capable strings once separators are excluded.
  */
-const PLUGIN_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/;
+const PLUGIN_ID_PATTERN = /^[a-z0-9][a-z0-9._-]*$/;
 
 /** Max length mirrors the npm package-name limit; ample for any real plugin. */
 const PLUGIN_ID_MAX_LENGTH = 214;
@@ -146,6 +147,13 @@ export default class PluginFileManager {
         },
       });
 
+      const checksum = await this.hashFile(archivePath);
+
+      log.debug(`Checking ${archivePath} against checksum ${release.checksum}`);
+      if (release.checksum && checksum !== release.checksum) {
+        throw new PluginSystemError('CHECKSUM_MISMATCH', "Checksum mismatch, blocking install.");
+      }
+
       // Extract the archive to the temp directory
       log.debug(`Extracting plugin archive...`);
       await extractArchive(archivePath, tmpDirectory);
@@ -255,30 +263,30 @@ export default class PluginFileManager {
     }
 
     for (const dir of fs.readdirSync(this.options.pluginsDirectory)) {
-      if (
-        !fs
-          .statSync(path.join(this.options.pluginsDirectory, dir))
-          .isDirectory()
-      ) {
-        continue;
-      }
-
-      const manifestPath = path.join(
-        this.options.pluginsDirectory,
-        dir,
-        PLUGIN_MANIFEST_FILENAME
-      );
-
-      if (!fs.existsSync(manifestPath)) {
-        log.warn(`Found folder without manifest: ${dir}. Skipping.`);
-        continue;
-      }
-
-      const manifestContent = fs.readFileSync(manifestPath, {
-        encoding: "utf-8",
-      });
-
       try {
+        if (
+          !fs
+            .statSync(path.join(this.options.pluginsDirectory, dir))
+            .isDirectory()
+        ) {
+          continue;
+        }
+
+        const manifestPath = path.join(
+          this.options.pluginsDirectory,
+          dir,
+          PLUGIN_MANIFEST_FILENAME
+        );
+
+        if (!fs.existsSync(manifestPath)) {
+          log.warn(`Found folder without manifest: ${dir}. Skipping.`);
+          continue;
+        }
+
+        const manifestContent = fs.readFileSync(manifestPath, {
+          encoding: "utf-8",
+        });
+
         const manifest = JSON.parse(manifestContent);
         this.validateManifest(manifest, dir);
         manifests.push(manifest);
@@ -357,6 +365,23 @@ export default class PluginFileManager {
     return resolved;
   }
 
+  async hashFile(filePath: string): Promise<string> {
+    try {
+      const hash = crypto.createHash('sha256');
+      const rs = fs.createReadStream(filePath);
+
+      for await (const chunk of rs) {
+        hash.update(chunk);
+      }
+
+      return hash.digest('hex');
+    } catch (e) {
+      log.error(`Error calculating hash for ${filePath}`);
+      throw e;
+    }
+
+  }
+
   readAsset(manifest: Manifest, filename: string): string {
     const filePath = this.getPath(manifest, filename);
     if (!fs.existsSync(filePath)) {
@@ -367,6 +392,7 @@ export default class PluginFileManager {
 
   /** Check if view's entrypoint exists */
   viewEntrypointExists(manifest: Manifest, view: PluginView): boolean {
-    return fs.existsSync(this.getPath(manifest, view.entry));
+    const entry = path.join(manifest.pluginEntryDir ?? ".", view.entry);
+    return fs.existsSync(this.getPath(manifest, entry));
   }
 }

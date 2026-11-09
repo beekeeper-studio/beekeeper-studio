@@ -1,0 +1,10 @@
+@use "sass:meta";
+@use "./fallback";
+
+@layer theme {
+  @include meta.load-css("./aliases");
+}
+
+@layer component {
+  @include meta.load-css("./component");
+}

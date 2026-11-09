@@ -1,5 +1,8 @@
 <template>
-  <div class="sidebar-wrap row">
+  <div
+    class="sidebar-wrap row"
+    v-hotkey="bulkSelectionKeymap"
+  >
     <workspace-sidebar />
 
     <!-- QUICK CONNECT -->
@@ -7,7 +10,8 @@
       <div class="btn-wrap quick-connect">
         <a
           href=""
-          class="btn btn-flat btn-icon btn-block"
+          class="btn btn-flat btn-block"
+          data-testid="new-connection"
           @click.prevent="$emit('create')"
         >
           <i class="material-icons">add</i>
@@ -93,52 +97,45 @@
           ref="savedConnectionList"
         >
           <div class="list-group">
-            <div class="list-heading">
-              <div class="flex">
-                <div class="sub row flex-middle noselect">
+            <div class="list-heading row">
+              <div class="sub row flex-middle expand">
+                <div class="expand noselect">
                   Saved <span class="badge">{{ (filteredConnections || []).length }}</span>
                 </div>
-                <span class="expand" />
                 <div class="actions">
-                  <a
-                    v-if="isCloud"
-                    @click.prevent="importFromLocal"
-                    title="Import connections from local workspace"
-                  >
-                    <i class="material-icons">save_alt</i>
-                  </a>
                   <a
                     @click.prevent="createFolder"
                     title="New Folder"
                   >
                     <i class="material-icons-outlined">create_new_folder</i>
                   </a>
-                  <a @click.prevent="refresh"><i class="material-icons">refresh</i></a>
+                  <x-button
+                    title="Import Connections"
+                  >
+                    <i class="material-icons">save_alt</i>
+                    <x-menu style="--align: end;">
+                      <x-menuitem @click.prevent="importFromComputer">
+                        <x-label>Import .json files into Saved Connections</x-label>
+                      </x-menuitem>
+                      <x-menuitem
+                        v-if="isCloud"
+                        @click.prevent="importFromLocal"
+                      >
+                        <x-label>Import connections from local workspace</x-label>
+                      </x-menuitem>
+                    </x-menu>
+                  </x-button>
+                  <a @click.prevent="refresh">
+                    <i class="material-icons">refresh</i>
+                  </a>
                   <sidebar-sort-buttons
                     v-if="!isCloud"
                     v-model="sort"
                     :sort-options="sortables"
                   />
                 </div>
-                <!-- <x-button class="actions-btn btn btn-link btn-small" v-tooltip="`Sorted by ${sortables[sortOrder]}`">
-                  <i class="material-icons-outlined">sort</i>
-                  <x-menu style="--target-align: right;">
-                    <x-menuitem
-                      v-for="i in Object.keys(sortables)"
-                      :key="i"
-                      :toggled="i === sortOrder"
-                      togglable
-                      @click="sortConnections(i)"
-                    >
-                      <x-label>{{ sortables[i] }}</x-label>
-                    </x-menuitem>
-                  </x-menu>
-                </x-button> -->
               </div>
             </div>
-            <expired-folder-alert
-              v-if="!canCreateFolders && folders.length > 0"
-            />
             <error-alert
               :error="error"
               v-if="error && !isPollError && !errorList.includes(error)"
@@ -152,7 +149,8 @@
               class="list-body"
             >
               <template v-if="searching">
-                <div class="empty-state"
+                <div
+                  class="empty-state"
                   v-if="!typing && !fetchingResults && filteredConnections.length === 0"
                 >
                   No connections match "{{ connFilter }}"
@@ -166,8 +164,14 @@
                   :pinned="pinnedConnections.includes(c)"
                   :is-recent-list="false"
                   :privacy-mode="privacyMode"
+                  :selected="selectedIds.includes(itemNodeId(c))"
+                  :bulk-selection-active="bulkSelectionActive"
+                  :selected-count="selectedIds.length"
                   @edit="edit"
                   @remove="remove"
+                  @select="select"
+                  @add-to-selection="addToSelection"
+                  @remove-selected="removeCheckedConnections"
                   @duplicate="duplicate"
                   @doubleClick="connect"
                 />
@@ -188,6 +192,7 @@
                 :folders="extendedFolderNodes"
                 :items="sortedItemNodes"
                 :expanded-ids="expandedNodeIds"
+                :filter="connFilter"
                 @update:expandedIds="setExpandedIds"
                 @bks-tree-node-move="handleTreeNodeMove"
               >
@@ -201,7 +206,7 @@
                       v-if="isCloud"
                     >
                       <a
-                        class="btn btn-flat btn-block btn-icon"
+                        class="btn btn-flat btn-block"
                         @click.prevent="importFromLocal"
                         title="Import connections from local workspace"
                       ><i class="material-icons">save_alt</i> Import</a>
@@ -264,15 +269,6 @@
                     <content-placeholder-text :lines="1" />
                   </content-placeholder>
                 </template>
-                <template #folder-empty="{ node, depth }">
-                  <div
-                    v-if="!loadingFolderIds.includes(node.ref.id) && !errors[node.ref.id]"
-                    class="tree-empty"
-                    :style="{ '--depth': depth }"
-                  >
-                    No items
-                  </div>
-                </template>
                 <template #item="{ node }">
                   <connection-list-item
                     :config="node.ref"
@@ -281,9 +277,15 @@
                     :pinned="pinnedConnectionIds.includes(node.ref.id)"
                     :is-recent-list="false"
                     :privacy-mode="privacyMode"
-                    :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.ref.id) }"
+                    :selected="selectedIds.includes(node.id)"
+                    :bulk-selection-active="bulkSelectionActive"
+                    :selected-count="selectedIds.length"
                     @edit="edit"
                     @remove="remove"
+                    @select="select"
+                    @add-to-selection="addToSelection"
+                    @remove-selected="removeCheckedConnections"
+                    :class="{ 'drag-pending': (pendingSaveIds || []).includes(node.ref.id) }"
                     @duplicate="duplicate"
                     @doubleClick="connect"
                   />
@@ -299,7 +301,7 @@
         <div
           class="list recent-connection-list expand"
           ref="recentConnectionList"
-          v-show="!connFilter"
+          v-show="!connFilter && !bulkSelectionActive"
         >
           <div class="list-group">
             <div class="list-heading">
@@ -324,28 +326,42 @@
           </div>
         </div>
       </div>
+      <div
+        class="toolbar btn-group row flex-right"
+        v-show="bulkSelectionActive"
+      >
+        <a
+          class="btn btn-flat"
+          @click="discardCheckedConnections"
+        >Cancel</a>
+        <a
+          class="btn btn-primary btn-danger"
+          :title="removeTitle"
+          @click="removeCheckedConnections"
+        >Remove</a>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
-import _ from 'lodash'
-import WorkspaceSidebar from './WorkspaceSidebar.vue'
-import { mapState, mapGetters, mapActions, mapMutations } from 'vuex'
-import ConnectionListItem from './connection/ConnectionListItem.vue'
+import { AppEvent } from '@/common/AppEvent'
+import { buildFolderNodes, parseReorderTarget } from "@/common/utils/folderTree"
+import EditableText from '@/components/common/EditableText.vue'
+import ErrorAlert from '@/components/common/ErrorAlert.vue'
 import SidebarLoading from '@/components/common/SidebarLoading.vue'
 import ContentPlaceholder from '@/components/common/loading/ContentPlaceholder.vue'
 import ContentPlaceholderText from '@/components/common/loading/ContentPlaceholderText.vue'
-import ErrorAlert from '@/components/common/ErrorAlert.vue'
-import ExpiredFolderAlert from '@/components/common/ExpiredFolderAlert.vue'
-import Split from 'split.js'
-import { AppEvent } from '@/common/AppEvent'
-import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree";
+import { collectVisibleItemIds, rangeSelectVisibleIds, toggleSelectedId } from "@beekeeperstudio/ui-kit/tree/helpers"
+import { Tree, TreeFolder } from "@beekeeperstudio/ui-kit/vue/tree"
 import rawLog from '@bksLogger'
-import SidebarSortButtons from '../common/SidebarSortButtons.vue'
-import EditableText from '@/components/common/EditableText.vue'
+import _ from 'lodash'
 import Noty from 'noty'
-import { buildFolderNodes, parseReorderTarget } from '@/common/utils/folderTree'
+import Split from 'split.js'
+import { mapActions, mapGetters, mapMutations, mapState } from 'vuex'
+import SidebarSortButtons from '../common/SidebarSortButtons.vue'
+import WorkspaceSidebar from './WorkspaceSidebar.vue'
+import ConnectionListItem from './connection/ConnectionListItem.vue'
 
 const log = rawLog.scope('connection-sidebar');
 
@@ -359,13 +375,14 @@ export default {
     Tree,
     TreeFolder,
     EditableText,
-    ExpiredFolderAlert,
     SidebarSortButtons,
     WorkspaceSidebar,
   },
   props: ['selectedConfig'],
   data: () => ({
     split: null,
+    selectedIds: [],
+    cloudSelectionAnchorId: null,
     sortables: {
       labelColor: "Color",
       id: "Created",
@@ -419,7 +436,6 @@ export default {
       settings: 'settings/settings',
       isCloud: 'isCloud',
       isUltimate: 'isUltimate',
-      canCreateFolders: 'canCreateFolders',
       activeWorkspaces: 'credentials/activeWorkspaces',
       pinnedConnections: 'pinnedConnections/pinnedConnections',
       filteredConnections: 'data/connections/filteredConnections',
@@ -445,6 +461,34 @@ export default {
     },
     searching() {
       return !!this.connFilter;
+    },
+    bulkSelectionActive() {
+      return this.selectedIds.length > 0
+    },
+    bulkSelectionKeymap() {
+      if (!this.bulkSelectionActive) return {}
+      return { esc: this.discardCheckedConnections }
+    },
+    visibleItemIds() {
+      if (this.searching) {
+        return this.filteredConnections.map((connection) =>
+          this.itemNodeId(connection)
+        )
+      }
+      return collectVisibleItemIds(
+        this.extendedFolderNodes,
+        this.sortedItemNodes,
+        this.expandedNodeIds
+      )
+    },
+    removeTitle() {
+      return `Remove ${this.selectedIds.length} saved connections`;
+    },
+    selectedItems() {
+      const byId = new Map(this.itemNodes.map((node) => [node.id, node.ref]))
+      return this.selectedIds
+        .map((id) => byId.get(id))
+        .filter((item) => item != null)
     },
     initializing() {
       return this.folders.length === 0 && this.foldersLoading;
@@ -552,6 +596,78 @@ export default {
     setFolderError(id, error) {
       this.$set(this.errors, id, error);
     },
+    setSelectedIds(selectedIds) {
+      this.selectedIds = selectedIds
+    },
+    addToSelection(config) {
+      const id = this.itemNodeId(config)
+      if (!this.selectedIds.includes(id)) {
+        this.setSelectedIds([...this.selectedIds, id])
+      }
+    },
+    itemNodeId(config) {
+      return `item-${config.id}`
+    },
+    select(config, event) {
+      const nodeId = this.itemNodeId(config)
+      if (event?.shiftKey) {
+        const visibleIds = this.visibleItemIds
+        const anchorId = this.cloudSelectionAnchorId ?? visibleIds[0]
+        if (anchorId != null) {
+          this.setSelectedIds(
+            rangeSelectVisibleIds(
+              this.selectedIds,
+              anchorId,
+              nodeId,
+              visibleIds
+            )
+          )
+          this.cloudSelectionAnchorId = nodeId
+          return
+        }
+      }
+      // Checkbox clicks and cmd/ctrl-clicks toggle bulk selection. A plain
+      // row click only updates the range-select anchor (and still opens the
+      // connection via the list item).
+      if (event?.metaKey || event?.ctrlKey || event?.target?.type === 'checkbox') {
+        let base = this.selectedIds
+        if (
+          base.length === 0 &&
+          this.cloudSelectionAnchorId &&
+          this.cloudSelectionAnchorId !== nodeId
+        ) {
+          // Plain-click set an anchor without entering bulk mode; include it
+          // when the next cmd/ctrl-click starts multi-select.
+          base = [this.cloudSelectionAnchorId]
+        }
+        this.setSelectedIds(toggleSelectedId(base, nodeId))
+        this.cloudSelectionAnchorId = nodeId
+        return
+      }
+      this.cloudSelectionAnchorId = nodeId
+      if (this.selectedIds.length > 0) {
+        this.setSelectedIds([nodeId])
+      }
+    },
+    async removeCheckedConnections() {
+      const items = this.selectedItems
+      const count = items.length
+      if (count === 0) return
+      const message = count === 1
+        ? `Delete "${items[0].name || 'connection'}"?`
+        : `Delete ${count} saved connections?`
+      if (!await this.$confirm(message, undefined, { variant: 'danger' })) {
+        return
+      }
+      for (const config of items) {
+        await this.$store.dispatch('data/connections/remove', config)
+      }
+      this.selectedIds = []
+    },
+    discardCheckedConnections() {
+      this.selectedIds = []
+      this.cloudSelectionAnchorId = null
+    },
     clearFilter() {
       this.connFilter = null;
     },
@@ -570,8 +686,10 @@ export default {
         sizes: this.sizes
       })
     },
+    importFromComputer() {
+      this.$root.$emit(AppEvent.promptConnectionFilesImport)
+    },
     importFromLocal() {
-      console.log("triggering import")
       this.$root.$emit(AppEvent.promptConnectionImport)
     },
     async refresh() {
@@ -596,16 +714,12 @@ export default {
       return `label-${color}`
     },
     createFolder() {
-      if (!this.canCreateFolders) {
-        this.$root.$emit(AppEvent.upgradeModal, 'Folders')
-        return
-      }
       if (this.isCloud) {
         // Find personal folder
         const parent = this.folders.find((f) => f.personal && !f.parentId);
         if (!parent) {
           this.$noty.error(
-            "No personal folder found. Right-click an existing folder and choose New Subfolder to create a folder instead."
+            "No personal folder found. Right-click an existing folder and choose New Folder to create a folder instead."
           );
           return;
         }
@@ -646,13 +760,15 @@ export default {
       const canWrite = folder.canWrite ?? true;
       const isRoot = !folder.parentId;
       const options = [{
-        name: 'New Subfolder',
+        name: 'New Folder',
         handler: ({ item }) => {
-          if (!this.canCreateFolders) {
-            this.$root.$emit(AppEvent.upgradeModal, 'Folders');
-            return;
-          }
           this.startDrafting(item.id);
+          this.expandFolder(item.id);
+        },
+      }, {
+        name: 'New Connection',
+        handler: ({ item }) => {
+          this.$emit('create', { connectionFolderId: item.id });
           this.expandFolder(item.id);
         },
       }];
@@ -771,7 +887,7 @@ export default {
       }
     },
     async deleteFolder(folder) {
-      if (await this.$confirm(`Delete folder "${folder.name}"?`)) {
+      if (await this.$confirm(`Delete folder "${folder.name}"?`, undefined, { variant: "danger" })) {
         try {
           await this.$store.dispatch('data/connectionFolders/remove', folder)
         } catch (e) {
@@ -862,11 +978,6 @@ export default {
   margin-bottom: -0.7rem;
   padding-left: calc(var(--depth) * 1rem + 0.55rem);
 }
-.tree-empty {
-  padding-left: calc(var(--depth) * 1rem + 0.55rem);
-  margin-block: 0.25rem;
-  opacity: 0.6;
-}
 ::v-deep .alert.error-alert.tree-error {
   margin-left: calc(var(--depth) * 1rem + 0.55rem);
   margin-right: 0.55rem;
@@ -890,19 +1001,20 @@ export default {
 
 @keyframes just-created-fade {
   from {
-    background: rgb(from var(--theme-primary) r g b / 25%);
+    background: var(--primary-a8);
   }
   to {
     background: transparent;
   }
-}
-::v-deep .alert.expired-folder-alert {
-  margin-inline: 0.8rem;
 }
 
 .empty-state {
   padding-top: 0.25rem;
   padding-left: 0.5rem;
   font-size: 0.85rem;
+}
+
+.toolbar {
+  padding-inline: 0.75rem;
 }
 </style>

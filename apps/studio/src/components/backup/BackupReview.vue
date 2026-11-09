@@ -68,8 +68,8 @@ export default Vue.extend({
     }
   },
   methods: {
-    copyCommand(command: string) {
-      this.$native.clipboard.writeText(command);
+    async copyCommand(command: string) {
+      await this.$native.clipboard.writeText(command);
     }
   }
 })

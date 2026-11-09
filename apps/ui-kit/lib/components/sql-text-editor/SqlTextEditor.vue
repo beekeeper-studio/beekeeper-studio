@@ -11,7 +11,7 @@ import {
   ContextMenuExtension,
   InternalContextItem,
   divider,
-} from "../context-menu";
+} from "../context-menu/menu";
 import { format, formatDialect } from "sql-formatter";
 import ProxyEmit from "../mixins/ProxyEmit";
 import Vue from "vue";

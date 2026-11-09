@@ -1,9 +1,14 @@
-import { Column, Entity } from "typeorm";
+import { Column, Entity, IsNull } from "typeorm";
 import { ApplicationEntity } from "./application_entity";
 import _ from "lodash";
 import rawLog from "@bksLogger";
 
 const log = rawLog.scope("PluginData");
+
+export type PluginDataOptions = {
+  connectionId?: number;
+  workspaceId?: number;
+};
 
 @Entity({ name: "plugin_data" })
 export class PluginData extends ApplicationEntity {
@@ -21,8 +26,25 @@ export class PluginData extends ApplicationEntity {
   @Column({ type: "varchar", nullable: false })
   value: string;
 
-  static async get(pluginId: string, key: string = "default"): Promise<string | null> {
-    const store = await this.findOne({ where: { pluginId, key } });
+  @Column({ type: "integer", nullable: true })
+  connectionId: number | null;
+
+  @Column({ type: "integer", nullable: true })
+  workspaceId: number | null;
+
+  static async get(
+    pluginId: string,
+    key: string = "default",
+    options?: PluginDataOptions
+  ): Promise<string | null> {
+    const store = await this.findOne({
+      where: {
+        pluginId,
+        key,
+        connectionId: options?.connectionId ?? IsNull(),
+        workspaceId: options?.workspaceId ?? IsNull(),
+      },
+    });
     if (!store) return null;
     try {
       return JSON.parse(store.value || '"null"');
@@ -32,8 +54,20 @@ export class PluginData extends ApplicationEntity {
     }
   }
 
-  static async set(pluginId: string, key: string = "default", value: unknown = null) {
-    const existing = await this.findOne({ where: { pluginId, key } });
+  static async set(
+    pluginId: string,
+    key: string = "default",
+    value: unknown = null,
+    options?: PluginDataOptions
+  ) {
+    const existing = await this.findOne({
+      where: {
+        pluginId,
+        key,
+        connectionId: options?.connectionId ?? IsNull(),
+        workspaceId: options?.workspaceId ?? IsNull(),
+      },
+    });
     if (existing) {
       existing.value = JSON.stringify(value);
       await existing.save();
@@ -43,6 +77,8 @@ export class PluginData extends ApplicationEntity {
     data.pluginId = pluginId;
     data.key = key;
     data.value = JSON.stringify(value);
+    data.connectionId = options?.connectionId ?? null;
+    data.workspaceId = options?.workspaceId ?? null;
     await data.save();
   }
 }

@@ -22,10 +22,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
+      - name: Install Node.js, NPM and PNPM
+        uses: jdx/mise-action@v5
 
       # ImageOS identifies the runner image (e.g. ubuntu22, ubuntu24), so caches
       # never cross runner image versions: node_modules holds native modules
@@ -42,30 +40,28 @@ jobs:
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
-            apps/sqltools/node_modules
-          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('mise.toml') }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies
         if: steps.cache-nm.outputs.cache-hit != 'true'
-        uses: nick-fields/retry@v2
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 20
           max_attempts: 3
-          command: yarn install --frozen-lockfile --network-timeout 100000
+          command: pnpm install --frozen-lockfile --fetch-timeout 100000
         env:
           HUSKY: "0"
-          npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
 
       - name: Cache Playwright browsers
         id: cache-playwright
         uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('yarn.lock') }}
+          key: playwright-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install Playwright browsers
         if: steps.cache-playwright.outputs.cache-hit != 'true'
-        run: yarn playwright install chromium
+        run: pnpm -F beekeeper-studio exec playwright install chromium
 
   e2e-tests:
     name: E2E Tests
@@ -76,15 +72,8 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v5
 
-      - name: Install Python 3.11
-        uses: actions/setup-python@v6
-        with:
-          python-version: 3.11
-
-      - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
+      - name: Install Node.js, NPM, PNPM, and Python
+        uses: jdx/mise-action@v5
 
       - name: Compute runner image cache id
         shell: bash
@@ -97,25 +86,21 @@ jobs:
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
-            apps/sqltools/node_modules
-          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('mise.toml') }}-${{ hashFiles('pnpm-lock.yaml') }}
           fail-on-cache-miss: true
 
       - name: Restore Playwright browsers cache
         uses: actions/cache/restore@v5
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('yarn.lock') }}
+          key: playwright-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
           fail-on-cache-miss: true
 
       - name: Install Playwright system dependencies
-        run: yarn playwright install-deps chromium
-
-      - name: Build UI Kit
-        run: yarn lib:build
+        run: pnpm -F beekeeper-studio exec playwright install-deps chromium
 
       - name: Build App
-        run: yarn workspace beekeeper-studio build
+        run: pnpm -F beekeeper-studio build
 
       - name: Start postgres container
         run: docker compose up psql15 -d --wait
@@ -124,7 +109,7 @@ jobs:
         shell: bash
         run: |
           xvfb-run --auto-servernum --server-args "-screen 0 1600x1000x24" bash -c '
-            yarn workspace beekeeper-studio test:e2e:ci
+            pnpm -F beekeeper-studio test:e2e:ci
           '
         env:
           ELECTRON_ENABLE_LOGGING: 1
@@ -136,5 +121,100 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: test-results
+          path: apps/studio/test-results
+          retention-days: 7
+
+  # Windows on ARM. The runner image has no Docker, so PostgreSQL runs from
+  # EDB's x64 binaries under Windows' x64 emulation. Only the database is
+  # emulated: Beekeeper Studio and its native modules run as arm64.
+  e2e-tests-windows-arm64:
+    name: E2E Tests (Windows ARM64)
+    runs-on: windows-11-arm
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v5
+
+      - name: Install Node.js, NPM, PNPM and Python
+        uses: jdx/mise-action@v5
+
+      # node-gyp checks the PYTHON env var first. Without it, on Windows it asks
+      # the py launcher, which picks the newest Python on the runner, not mise's.
+      - name: Use mise's Python for node-gyp
+        shell: bash
+        run: |
+          PYTHON="$(mise which python)"
+          "$PYTHON" --version
+          echo "PYTHON=$PYTHON" >> "$GITHUB_ENV"
+
+      - name: Compute runner image cache id
+        shell: bash
+        run: echo "RUNNER_IMAGE_ID=${ImageOS:-unknown}" >> "$GITHUB_ENV"
+
+      # pnpm links get broken on windows when restoring cache, do a fresh install for windows runners
+      - name: Cache node_modules
+        id: cache-nm
+        if: runner.os != 'Windows'
+        uses: actions/cache@v5
+        with:
+          path: |
+            node_modules
+            apps/studio/node_modules
+            apps/ui-kit/node_modules
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('mise.toml') }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 30
+          max_attempts: 3
+          command: pnpm install --frozen-lockfile --fetch-timeout 100000
+        env:
+          HUSKY: "0"
+
+      # Same database the Linux job gets from `docker compose up psql15`:
+      # postgres/example on port 5434, with the sakila data in saklia.
+      - name: Start PostgreSQL 15
+        shell: pwsh
+        env:
+          PG_ZIP_URL: https://get.enterprisedb.com/postgresql/postgresql-15.14-1-windows-x64-binaries.zip
+          PGPASSWORD: example
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+
+          # The x64 binaries need the x64 C++ runtime, which isn't on the arm64 image.
+          Invoke-WebRequest -Uri https://aka.ms/vc14/vc_redist.x64.exe -OutFile "$env:RUNNER_TEMP\vc_redist.x64.exe"
+          Start-Process -FilePath "$env:RUNNER_TEMP\vc_redist.x64.exe" -ArgumentList '/install', '/quiet', '/norestart' -Wait
+
+          Invoke-WebRequest -Uri $env:PG_ZIP_URL -OutFile "$env:RUNNER_TEMP\pgsql.zip"
+          Expand-Archive -Path "$env:RUNNER_TEMP\pgsql.zip" -DestinationPath $env:RUNNER_TEMP
+          $bin = "$env:RUNNER_TEMP\pgsql\bin"
+          $data = "$env:RUNNER_TEMP\pgdata"
+
+          Set-Content -Path "$env:RUNNER_TEMP\pgpass.txt" -Value $env:PGPASSWORD -NoNewline
+          & "$bin\initdb.exe" -D $data -U postgres --pwfile="$env:RUNNER_TEMP\pgpass.txt" -A scram-sha-256 -E UTF8
+          & "$bin\pg_ctl.exe" -D $data -o "-p 5434" -l "$env:RUNNER_TEMP\postgres.log" -w start
+
+          & "$bin\createdb.exe" -h localhost -p 5434 -U postgres saklia
+          foreach ($file in Get-ChildItem dev\docker_psql_init\*.sql | Sort-Object Name) {
+            & "$bin\psql.exe" -h localhost -p 5434 -U postgres -d saklia -q -v ON_ERROR_STOP=1 -f $file.FullName
+          }
+
+      - name: Build App
+        run: pnpm -F beekeeper-studio build
+
+      - name: Run Tests
+        shell: bash
+        run: pnpm -F beekeeper-studio test:e2e:ci
+        env:
+          ELECTRON_ENABLE_LOGGING: 1
+
+      - name: Upload test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: test-results-windows-arm64
           path: apps/studio/test-results
           retention-days: 7

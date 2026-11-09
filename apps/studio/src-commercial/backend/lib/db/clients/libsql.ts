@@ -1,9 +1,9 @@
 import _ from "lodash";
 import rawLog from "@bksLogger";
 import { SqliteClient, SqliteResult } from "@/lib/db/clients/sqlite";
-import Client_Libsql from "@shared/lib/knex-libsql";
+import Client_Libsql, { loadLibsql } from "@shared/lib/knex-libsql";
 import { BasicDatabaseClient } from "@/lib/db/clients/BasicDatabaseClient";
-import Database from "libsql";
+import type Database from "libsql";
 import { LibSQLCursor, LibSQLCursorOptions } from "./libsql/LibSQLCursor";
 import { IDbConnectionDatabase } from "@/lib/db/types";
 import { SqliteCursor } from "@/lib/db/clients/sqlite/SqliteCursor";
@@ -104,6 +104,7 @@ export class LibSQLClient extends SqliteClient {
 
   // @ts-expect-error not fully typed
   protected createRawConnection(filename: string) {
+    const Database = loadLibsql();
     return new Database(filename, {
       // @ts-expect-error not fully typed
       authToken: this.useAuthToken ? this.libsqlOptions.authToken : undefined,
@@ -130,6 +131,7 @@ export class LibSQLClient extends SqliteClient {
     if (this.isRemote) {
       throw new Error("Creating database on remote server is not supported");
     }
+    const Database = loadLibsql();
     const conn = new Database(path);
     conn.close();
   }
