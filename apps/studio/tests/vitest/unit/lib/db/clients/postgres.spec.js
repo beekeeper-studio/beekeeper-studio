@@ -253,4 +253,20 @@ describe("Postgres UNIT tests (no connection required)", () => {
     })
   })
 
+  describe("buildSelectTopQueries selects", () => {
+    const build = (selects) => client.buildSelectTopQueries({
+      table: 'users', schema: 'public', selects, filters: [], orderBy: [],
+      limit: 100, offset: 0, version: { number: 160000 }, inlineParams: true,
+    }).query.replace(/\s+/g, ' ').trim()
+
+    it("keeps * unquoted", () => {
+      expect(build(['*'])).toBe('SELECT * FROM "public"."users" LIMIT 100 OFFSET 0')
+    })
+
+    it("quotes column names so mixed case and reserved words work", () => {
+      expect(build(['id', 'UserName', 'order']))
+        .toBe('SELECT "id", "UserName", "order" FROM "public"."users" LIMIT 100 OFFSET 0')
+    })
+  })
+
 })
