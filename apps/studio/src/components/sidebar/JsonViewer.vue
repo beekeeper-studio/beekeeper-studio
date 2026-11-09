@@ -54,6 +54,7 @@
         :force-initialize="reinitializeTextEditor + (reinitialize ?? 0)"
         :markers="markers"
         :replace-extensions="replaceExtensions"
+        :read-only="readOnly"
         :line-wrapping="wrapText"
         :line-gutters="lineGutters"
         :line-numbers="false"
@@ -326,6 +327,14 @@ export default Vue.extend({
         lineGutters.push({ line, type });
       })
       return lineGutters;
+    },
+    /**
+     * Nothing can be edited without editable ranges (e.g. query results, or a
+     * table view that isn't editable). Read-only hides the search panel's
+     * Replace / Replace All, which would otherwise show but do nothing.
+     */
+    readOnly() {
+      return this.editableRanges.length === 0
     },
     editableRanges() {
       const editablePaths = this.editablePaths

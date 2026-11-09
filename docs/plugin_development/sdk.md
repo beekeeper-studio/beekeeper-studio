@@ -31,6 +31,11 @@ Plugins run in a sandboxed `<iframe>` and talk to Beekeeper Studio with `postMes
     yarn add @beekeeperstudio/plugin
     ```
 
+=== "pnpm"
+    ```bash
+    pnpm add @beekeeperstudio/plugin
+    ```
+
 ### Usage
 
 ```typescript
@@ -80,6 +85,11 @@ You still use the SDK in your plugin code; the build plugin only changes how it 
 === "yarn"
     ```bash
     yarn add -D @beekeeperstudio/vite-plugin
+    ```
+
+=== "pnpm"
+    ```bash
+    pnpm add -D @beekeeperstudio/vite-plugin
     ```
 
 ### Configuration

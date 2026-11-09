@@ -29,6 +29,12 @@ const windowsArch = process.argv.includes('--arm64') ? 'arm64'
   : process.arch
 const windowsArchSuffix = windowsArch === 'arm64' ? '-arm64' : ''
 
+// Bug in electron builder 26: the installer can't decomprees arm64 binaries. So it silently drops them.
+// The fix is to use an older compression algo
+// https://github.com/electron-userland/electron-builder/issues/9983
+if (process.platform === 'win32' && windowsArch === 'arm64' && !process.env.ELECTRON_BUILDER_7Z_FILTER) {
+  process.env.ELECTRON_BUILDER_7Z_FILTER = 'BCJ'
+}
 
 module.exports = {
   appId: "io.beekeeperstudio.desktop",
