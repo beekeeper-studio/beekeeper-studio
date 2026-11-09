@@ -247,11 +247,11 @@
       v-show="bulkSelectionActive"
     >
       <a
-        class="btn btn-link"
+        class="btn btn-flat"
         @click="discardCheckedFavorites"
       >Cancel</a>
       <a
-        class="btn btn-primary"
+        class="btn btn-primary btn-danger"
         :title="removeTitle"
         @click="removeCheckedFavorites"
       >Remove</a>
@@ -887,5 +887,9 @@ export default {
   padding-top: 0.25rem;
   padding-left: 0.5rem;
   font-size: 0.85rem;
+}
+
+.toolbar {
+  padding-inline: 0.75rem;
 }
 </style>

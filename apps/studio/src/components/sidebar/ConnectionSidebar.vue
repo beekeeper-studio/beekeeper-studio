@@ -301,7 +301,7 @@
         <div
           class="list recent-connection-list expand"
           ref="recentConnectionList"
-          v-show="!connFilter"
+          v-show="!connFilter && !bulkSelectionActive"
         >
           <div class="list-group">
             <div class="list-heading">
@@ -331,11 +331,11 @@
         v-show="bulkSelectionActive"
       >
         <a
-          class="btn btn-link"
+          class="btn btn-flat"
           @click="discardCheckedConnections"
         >Cancel</a>
         <a
-          class="btn btn-primary"
+          class="btn btn-primary btn-danger"
           :title="removeTitle"
           @click="removeCheckedConnections"
         >Remove</a>
@@ -1012,5 +1012,9 @@ export default {
   padding-top: 0.25rem;
   padding-left: 0.5rem;
   font-size: 0.85rem;
+}
+
+.toolbar {
+  padding-inline: 0.75rem;
 }
 </style>
