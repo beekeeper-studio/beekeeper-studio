@@ -69,7 +69,7 @@ export default {
     },
     cellFormatter(
       cell: CellComponent,
-      params: { fk?: any[], isPK?: boolean, fkOnClick?: (e: MouseEvent, cell: CellComponent) => void, binaryEncoding?: string } = {},
+      params: { fk?: any[], isPK?: boolean, fkOnClick?: (e: MouseEvent, cell: CellComponent) => void, binaryEncoding?: string, hasDefault?: boolean } = {},
       onRendered: (func: () => void) => void
     ) {
       const classNames = []
@@ -77,6 +77,11 @@ export default {
 
       if (cellValue instanceof Uint8Array) {
         classNames.push('binary-type')
+      }
+
+      // An empty cell on a new row is left out of the INSERT, so the database fills in its default.
+      if (params.hasDefault && _.isNil(cellValue) && cell.getRow().getElement()?.classList.contains('inserted')) {
+        return buildNullValue('EMPTY')
       }
 
       const nullValue = emptyResult(cellValue)

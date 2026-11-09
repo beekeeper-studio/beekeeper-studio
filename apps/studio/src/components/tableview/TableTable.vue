@@ -1017,6 +1017,7 @@ export default Vue.extend({
         fkOnClick: hasKeyDatas && ((_e, cell) => this.fkClick(keyDatas[0][1].find((k) => !k.isComposite) ?? keyDatas[0][1][0], cell)),
         isPK: isPK,
         binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
+        hasDefault: column.hasDefault,
       }
 
       const result = {
@@ -1738,6 +1739,7 @@ export default Vue.extend({
       }
 
       this.pendingChanges.inserts.push(payload)
+      row.reformat()
     },
     addRowsToPendingDeletes(rows: RowComponent[]) {
       if (_.isEmpty(this.primaryKeys)) {
