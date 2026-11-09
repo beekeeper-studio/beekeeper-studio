@@ -2,6 +2,7 @@ import { IDbConnectionServer } from "@/lib/db/backendTypes";
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from "@/lib/db/clients/BasicDatabaseClient";
 import { DatabaseElement, IDbConnectionDatabase, SnowflakeAuthType } from "@/lib/db/types";
 import * as snowflake from "snowflake-sdk";
+import { JsonCredentialManager } from "snowflake-sdk/dist/lib/authentication/secure_storage/json_credential_manager";
 import { Connection, ConnectionOptions, Pool, PoolOptions } from "snowflake-sdk"
 import BksConfig from "@/common/bksConfig";
 import rawLog from '@bksLogger'
@@ -65,7 +66,8 @@ export class SnowflakeClient extends BasicDatabaseClient<SnowflakeResult, Connec
     })
 
     snowflake.configure({
-      logLevel: "OFF"
+      logLevel: "OFF",
+      customCredentialManager: new JsonCredentialManager(null)
     })
   }
 
