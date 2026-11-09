@@ -1,5 +1,5 @@
 import knexlib from "knex";
-import { makeEscape } from "knex/lib/util/string";
+import { makeEscape } from "knex/lib/util/string.js";
 import { makeString } from "@/common/utils";
 
 export function createSQLiteKnex(client: any = "better-sqlite3") {

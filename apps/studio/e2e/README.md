@@ -8,11 +8,11 @@ To execute the tests locally, follow these steps:
 
 1. Start the Electron app in one terminal window:
    ```sh
-   yarn run electron:serve
+   pnpm run electron:serve
    ```
 2. Run the E2E tests in another terminal window:
    ```sh
-   yarn run test:e2e
+   pnpm run test:e2e
    ```
 
 ## Project Structure

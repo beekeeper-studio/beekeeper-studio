@@ -60,7 +60,7 @@ export const ConnectionTypes = [
   { name: 'Bedrock', value: 'bedrock' },
   { name: 'DynamoDB', value: 'dynamodb' },
   { name: 'Snowflake', value: 'snowflake' }
-]
+] as const satisfies { name: string; value: ConnectionType }[]
 
 /** `value` should be recognized by codemirror */
 export const keymapTypes = [
@@ -81,6 +81,7 @@ export const TableFilterSymbols = [
     { value: '>', label: 'greater than', type: 'standard'},
     { value: ">=", label: "greater than or equal", type: 'standard' },
     { value: "in", label: 'in', arrayInput: true, type: 'standard' },
+    { value: "not in", label: 'not in', arrayInput: true, type: 'standard' },
     { value: "is", label: "is null", nullOnly: true, type: 'standard' },
     { value: "is not", label: "is not null", nullOnly: true, type: 'standard' }
 ]

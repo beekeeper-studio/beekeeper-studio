@@ -13,8 +13,9 @@ function isNumeric(str: unknown): boolean {
   ); // ...and ensure strings of whitespace fail
 }
 
-function parseIni(text: string): Record<string, unknown> {
-  const obj = ini.parse(text);
+function parseIni(text: string, preserveComments: boolean = false): Record<string, unknown> {
+  // @ts-ignore
+  const obj = ini.parse(text, { preserveComments });
   return _.cloneDeepWith(obj, (value) => {
     if (isNumeric(value)) {
       return _.toNumber(value);
@@ -68,12 +69,6 @@ function processRawConfig(config: Record<string, unknown>): Record<string, unkno
     for (const section of TableSections) {
       populateDefaults(config, `ui.${section}`, "ui.table.default")
     }
-  }
-
-  const allowedPlugins = config.pluginSystem?.allow;
-  if (allowedPlugins) {
-    // Filter out any empty strings
-    config.pluginSystem.allow = allowedPlugins.filter(Boolean);
   }
 
   return config;

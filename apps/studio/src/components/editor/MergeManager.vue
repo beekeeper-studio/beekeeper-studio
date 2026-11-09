@@ -11,7 +11,7 @@
       <span class="alert-footer btn-group">
         <span class="expand" />
         <a
-          class="btn btn-sm btn-link"
+          class="btn btn-sm"
           @click.prevent="undoMerge"
           title="What have you done to my query!?"
         >Undo</a>
@@ -35,7 +35,7 @@
         <span class="expand" />
         <x-button
           @click.prevent="viewDiff"
-          class="btn btn-link"
+          class="btn"
         >Preview Merge</x-button>
         <x-buttons>
           <x-button

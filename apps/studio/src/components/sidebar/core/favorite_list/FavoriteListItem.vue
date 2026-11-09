@@ -5,19 +5,28 @@
   >
     <a
       class="list-item-btn"
+      @click.prevent="$emit('select', item, $event)"
       :title="title"
-      @click.prevent="$emit('select', item)"
       @dblclick.prevent="$emit('open', item)"
-      :class="{active, selected}"
+      :class="{active, selected, 'bulk-selection-active': bulkSelectionActive}"
     >
+      <input
+        draggable="false"
+        @mousedown.stop.prevent
+        @click.stop="$emit('select', item, $event)"
+        type="checkbox"
+        class="form-control delete-checkbox"
+        :class="{ shown: bulkSelectionActive }"
+        :checked="selected"
+      >
       <i class="item-icon query material-icons">code</i>
       <div class="list-text">
         <div class="list-title flex-col">
           <editable-text
             :initial-value="item.title"
-            :rename="rename"
+            :rename="draft || rename"
             @submit="submitRename"
-            @cancel="rename = false"
+            @cancel="cancelRename"
           />
         </div>
         <div class="database subtitle"><span>{{ subtitle }}</span></div>
@@ -26,16 +35,31 @@
   </div>
 </template>
 <script lang="ts">
-import _ from 'lodash'
-import Vue from 'vue'
-import { mapGetters, mapState } from 'vuex'
-import TimeAgo from 'javascript-time-ago'
-import EditableText from '@/components/common/EditableText.vue'
 import { AppEvent } from '@/common/AppEvent'
+import ISavedQuery from '@/common/interfaces/ISavedQuery'
+import { TransportFavoriteQuery } from '@/common/transport'
+import EditableText from '@/components/common/EditableText.vue'
+import TimeAgo from 'javascript-time-ago'
+import _ from 'lodash'
+import Vue, { PropType } from 'vue'
+import { mapGetters, mapState } from 'vuex'
+
+type Query = ISavedQuery | TransportFavoriteQuery;
+type Draft = Partial<Query> & Pick<Query, 'title' | 'queryFolderId'>;
 
 export default Vue.extend({
   components: { EditableText },
-  props: ['item', 'selected', 'active'],
+  props: {
+    item: {
+      type: Object as PropType<Query | Draft>,
+      required: true,
+    },
+    selected: Boolean,
+    active: Boolean,
+    draft: Boolean,
+    bulkSelectionActive: Boolean,
+    selectedCount: Number,
+  },
   data: () => ({
     timeAgo: new TimeAgo('en-US'),
     rename: false,
@@ -88,7 +112,30 @@ export default Vue.extend({
         return;
       }
 
+      if (this.draft) {
+        return;
+      }
+
       event.stopPropagation();
+
+      let effectiveCount = this.selectedCount ?? 0
+      if (this.bulkSelectionActive && !this.selected) {
+        this.$emit('add-to-selection', this.item)
+        effectiveCount += 1
+      }
+      if (effectiveCount >= 2) {
+        this.$bks.openMenu({
+          item,
+          event,
+          options: [
+            {
+              name: 'Delete',
+              handler: () => this.$emit('remove-selected'),
+            },
+          ],
+        })
+        return
+      }
 
       const canWrite = this.item.canWrite ?? true;
 
@@ -105,7 +152,7 @@ export default Vue.extend({
         {
           name: "Share",
           slug: 'share',
-          handler: this.share,
+          handler: () => this.share(),
           hideIf: !this.isCloud || !this.item.id || this.isPersonal,
         },
         {
@@ -152,6 +199,10 @@ export default Vue.extend({
       });
     },
     async submitRename(title) {
+      if (this.draft) {
+        this.$emit('submit-draft', title)
+        return;
+      }
       if (!title || title === this.item.title) {
         this.rename = false;
         return;
@@ -167,6 +218,13 @@ export default Vue.extend({
       } finally {
         this.rename = false;
       }
+    },
+    cancelRename() {
+      if (this.draft) {
+        this.$emit('cancel-draft');
+        return;
+      }
+      this.rename = false;
     },
   }
 
@@ -187,10 +245,10 @@ export default Vue.extend({
 
 /** --depth is from Tree.vue */
 .list-group .list-item .list-item-btn {
-  padding-left: calc(var(--depth) * 1.2rem);
+  padding-left: calc(var(--depth) * 1.15rem);
 }
 
 .item-icon {
-  margin-left: 0.25rem;
+  margin-left: 0.5rem;
 }
 </style>

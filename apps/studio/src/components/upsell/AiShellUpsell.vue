@@ -4,6 +4,7 @@
     title="The SQL AI shell needs a paid license"
     :description="description"
     :show-features="false"
+    :show-testimonials="false"
     standalone
     wide
   >

@@ -22,6 +22,7 @@ import { QueryFolder } from "./models/QueryFolder"
 import { ConnectionFolder } from "./models/ConnectionFolder"
 import { TabulatorPersistence } from "./models/TabulatorPersistence"
 import { QueryAudit } from "./models/QueryAudit"
+import { PluginEntryCache } from "./models/PluginEntryCache"
 
 const models = [
   SavedConnection,
@@ -46,6 +47,7 @@ const models = [
   ConnectionFolder,
   TabulatorPersistence,
   QueryAudit,
+  PluginEntryCache,
 ]
 
 interface IConnectionState {
