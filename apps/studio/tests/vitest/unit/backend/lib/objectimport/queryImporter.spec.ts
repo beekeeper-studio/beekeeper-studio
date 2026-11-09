@@ -38,7 +38,7 @@ describe('QueryImporter (local)', () => {
       expect(stats.warnings).toEqual([])
       expect(await FavoriteQuery.count()).toBe(2)
 
-      const titles = (await FavoriteQuery.find()).map((q) => q.title).sort()
+      const titles = (await FavoriteQuery.find()).map((q) => q.name).sort()
       expect(titles).toEqual(['first.sql', 'second.txt'])
     })
 
@@ -51,7 +51,7 @@ describe('QueryImporter (local)', () => {
       // text has select: false, so fetch it explicitly
       const saved = await FavoriteQuery.createQueryBuilder('q')
         .addSelect('q.text')
-        .where('q.title = :title', { title: 'greeting.sql' })
+        .where('q.name = :name', { name: 'greeting.sql' })
         .getOne()
       expect(saved.text).toBe('SELECT 42;')
     })
@@ -67,7 +67,7 @@ describe('QueryImporter (local)', () => {
       const stats = await importer.importSelections([a], folder.id)
 
       expect(stats.items).toBe(1)
-      const fromDb = await FavoriteQuery.findOneBy({ title: 'first.sql' })
+      const fromDb = await FavoriteQuery.findOneBy({ name: 'first.sql' })
       expect(fromDb.queryFolderId).toBe(folder.id)
     })
 
@@ -124,7 +124,7 @@ describe('QueryImporter (local)', () => {
       const nestedFolder = await QueryFolder.findOneBy({ name: 'nested' })
       expect(nestedFolder.parentId).toBe(topFolder.id)
 
-      const child = await FavoriteQuery.findOneBy({ title: 'child.sql' })
+      const child = await FavoriteQuery.findOneBy({ name: 'child.sql' })
       expect(child.queryFolderId).toBe(nestedFolder.id)
     })
 
@@ -138,7 +138,7 @@ describe('QueryImporter (local)', () => {
       expect(stats.items).toBe(1)
       expect(await QueryFolder.count()).toBe(0)
 
-      const query = await FavoriteQuery.findOneBy({ title: 'a.sql' })
+      const query = await FavoriteQuery.findOneBy({ name: 'a.sql' })
       expect(query.queryFolderId).toBeNull()
     })
 

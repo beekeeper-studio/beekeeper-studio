@@ -23,7 +23,7 @@
       <div class="list-text">
         <div class="list-title flex-col">
           <editable-text
-            :initial-value="item.title"
+            :initial-value="item.name"
             :rename="draft || rename"
             @submit="submitRename"
             @cancel="cancelRename"
@@ -45,7 +45,7 @@ import Vue, { PropType } from 'vue'
 import { mapGetters, mapState } from 'vuex'
 
 type Query = ISavedQuery | TransportFavoriteQuery;
-type Draft = Partial<Query> & Pick<Query, 'title' | 'queryFolderId'>;
+type Draft = Partial<Query> & Pick<Query, 'name' | 'queryFolderId'>;
 
 export default Vue.extend({
   components: { EditableText },
@@ -203,7 +203,7 @@ export default Vue.extend({
         this.$emit('submit-draft', title)
         return;
       }
-      if (!title || title === this.item.title) {
+      if (!title || title === this.item.name) {
         this.rename = false;
         return;
       }
@@ -211,7 +211,7 @@ export default Vue.extend({
       try {
         await this.$store.dispatch('data/queries/save', {
           id: this.item.id,
-          title,
+          name: title,
         });
       } catch (ex) {
         this.$noty.error(`Rename error: ${ex.userMessage ?? ex.message}`)
