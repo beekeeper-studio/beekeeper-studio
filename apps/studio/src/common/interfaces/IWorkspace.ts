@@ -1,4 +1,4 @@
-
+import { IMembership } from "./IMembership"
 
 export interface IWorkspace {
   id: number
@@ -11,6 +11,7 @@ export interface IWorkspace {
   active: boolean
   isOwner?: boolean
   level: string
+  currentMembership: IMembership;
 }
 
 export const LocalWorkspace: IWorkspace = {
@@ -20,6 +21,12 @@ export const LocalWorkspace: IWorkspace = {
   type: 'local',
   name: 'Local Workspace',
   icon: 'laptop',
-  active: true
-
+  active: true,
+  currentMembership: {
+    id: -1,
+    workspaceId: -1,
+    userId: -1,
+    name: "",
+    email: "",
+  },
 }

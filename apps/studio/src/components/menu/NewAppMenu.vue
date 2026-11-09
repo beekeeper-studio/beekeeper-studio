@@ -126,7 +126,7 @@ export default {
     menuElements() {
       return Array.from(this.$refs.nav.getElementsByTagName("*"))
     },
-    ...mapGetters('menuBar', ['menus', 'connectionMenuItems']),
+    ...mapGetters('menuBar', ['menus', 'connectionMenuItems', 'appMenuItems']),
     ...mapState(['connected']),
     ...mapState('tabs', { activeTab: 'active' })
   },
@@ -145,6 +145,7 @@ export default {
   methods: {
     isMenuItemDisabled(itemId){
       if (this.connectionMenuItems.includes(itemId) && !this.connected) return true;
+      if (this.appMenuItems.includes(itemId) && this.connected) return true;
       if (itemId === 'paste-as-new-rows') return this.activeTab?.tabType !== 'table';
       return false;
     },
@@ -287,6 +288,6 @@ export default {
   margin-block: 0.35em;
   width: 100%;
   width: 100%;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-subtle);
 }
 </style>

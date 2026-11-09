@@ -5,6 +5,7 @@
 # Not `set -e`: we want to push through and surface diagnostics rather than abort silently.
 set -uxo pipefail
 
+# shellcheck disable=SC2034  # kept for reference/parity with DOMAIN_DNS; documents the AD realm
 REALM="BKS.TEST"
 DOMAIN_DNS="bks.test"
 ADMIN_USER="Administrator"
@@ -31,6 +32,7 @@ echo "${ADMIN_PASS}" | adcli join "${DOMAIN_DNS}" --login-user "${ADMIN_USER}" -
 grep -q 'sss' /etc/nsswitch.conf || sed -i -E 's/^(passwd:.*)$/\1 sss/; s/^(group:.*)$/\1 sss/' /etc/nsswitch.conf
 mkdir -p /var/lib/sss/db /var/lib/sss/mc /var/lib/sss/pipes
 sssd -i -d 2 &
+# shellcheck disable=SC2034  # background sssd pid captured for debugging; not waited on
 SSSD_PID=$!
 sleep 5
 echo "AD principal resolution check:"

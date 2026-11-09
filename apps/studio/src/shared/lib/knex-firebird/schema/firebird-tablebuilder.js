@@ -1,4 +1,4 @@
-import TableBuilder from 'knex/lib/schema/tablebuilder'
+import TableBuilder from 'knex/lib/schema/tablebuilder.js'
 import { isObject } from 'lodash';
 
 export default class TableBuilder_Firebird extends TableBuilder {

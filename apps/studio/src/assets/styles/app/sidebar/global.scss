@@ -2,7 +2,9 @@
   .global-items {
     display: flex;
     flex-direction: column;
-    background: $global-sidebar-bg;
+    background: var(--sidebar-rail-bg);
+    color: var(--sidebar-rail-fg);
+    border-radius: 0 6px 6px 0;
     &:hover {
       .nav-item {
         &.refresh {
@@ -11,13 +13,11 @@
       }
     }
     &.workspace-items {
-      margin-top: $gutter-h * 0.5;
-
       .nav-item {
         &.active {
           .avatar {
             box-shadow: none;
-            color: $text-dark;
+            background: var(--bg-active);
           }
         }
         .workspace-avatar {
@@ -43,7 +43,7 @@
         }
       }
     }
-    
+
     // Items with an Active state
     .nav-item.selectable {
       &:before {
@@ -51,32 +51,26 @@
         transition: opacity 0.15s ease-in-out;
       }
       &:hover {
-        .avatar {
-          color: rgba($theme-base, 0.38);
-        }
         &:before {
           content: '';
           position: absolute;
           left: 0;
-          width: 1px;
+          width: 2px;
           height: 20px;
-          background: rgba($theme-base, 0.2);
+          background: var(--gray-a7);
           border-radius: 3px;
           overflow: hidden;
           opacity: 1;
         }
       }
       &.active, &.active:hover {
-        .avatar {
-          color: $text-dark;
-        }
         &:before {
           content: '';
           position: absolute;
           left: 0;
-          width: 1px;
+          width: 2px;
           height: 20px;
-          background: $theme-base;
+          background: var(--gray-12);
           border-radius: 3px;
           overflow: hidden;
           opacity: 1;
@@ -84,9 +78,6 @@
         // > span {
         //   background: rgba($theme-base, 0.08);
         // }
-      }
-      .avatar {
-        background: rgba($theme-base, 0.08);
       }
     }
     .nav-item {
@@ -98,12 +89,18 @@
       width: 44px;
       height: 44px;
       font-size: 18px;
-      color: rgba($theme-base, 0.38);
       transition: color 0.15s ease-in-out;
-      &.active {
-        color: $text-dark;
+      color: var(--sidebar-rail-fg);
+      &:hover {
+        color: var(--sidebar-rail-fg-hover);
       }
-      > span {  
+      &.active {
+        color: var(--sidebar-rail-active-fg);
+        > span {
+          background: var(--sidebar-rail-active-bg);
+        }
+      }
+      > span {
         height: $nav-item-size;
         width: $nav-item-size;
         border-radius: $nav-item-size;
@@ -137,11 +134,7 @@
     }
   }
   .avatar {
-    color: $text-lighter;
     transition: color 0.2s ease-in-out, background 0.2s ease-in-out;
-    &:hover {
-      color: $text-dark;
-    }
   }
   .avatar {
     position: relative;
@@ -165,14 +158,6 @@
       font-size: 10px;
       font-weight: bold;
       margin: 0;
-      background: #666;
-      color: rgba(black, 0.87);
-      &.badge-danger {
-        background: $brand-danger;
-      }
-      &.badge-success {
-        background: $brand-success;
-      }
       .material-icons {
         font-size: 12px;
       }

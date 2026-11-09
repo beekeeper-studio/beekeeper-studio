@@ -4,6 +4,8 @@ import { existsSync } from 'fs'
 import { resolve, join } from 'path'
 import { IPlatformInfo } from '../IPlatformInfo'
 import { BksVersion } from '@/lib/license'
+import { isMsiInstall } from '@/common/msiInstall'
+
 
 // TODO: Automatically enable wayland without flags once
 // we're confident it will 'just work' for all Wayland users.
@@ -49,18 +51,19 @@ export function mainPlatformInfo(): IPlatformInfo {
   const isWindows = platform === 'win32'
   const isMac = platform === 'darwin'
   const isArm = p.arch.startsWith('arm')
+  // process.arch reports x64 in this case, so isArm is false.
+  const runningUnderArm64Translation = testMode ? false : !!e.app.runningUnderARM64Translation
   const easyPlatform = isWindows ? 'windows' : (isMac ? 'mac' : 'linux')
   const locale = testMode ? 'test' : e.app.getLocale();
-
-  const windowPrefersDarkMode = false
 
   const updatesDisabled = !!p.env.BEEKEEPER_DISABLE_UPDATES
 
   // previous builds of Beekeeper Studio required native libs for Oracle,
   // but now it should work on all platforms
-  // FIXME: Windows ARM - this needs to be disabled
-  // as instant client not available there
   const oracleSupported = true
+  // Oracle publishes no Instant Client for Windows ARM64, and node-oracledb
+  // ships no thick-mode binary for it, so Oracle connects in thin mode there.
+  const oracleInstantClientSupported = !(isWindows && p.arch === 'arm64')
 
   const resourcesPath = isDevEnv ? resolve('./extra_resources') : resolve(p.resourcesPath)
   let userDirectory = testMode ? './tmp' : e.app.getPath("userData")
@@ -71,10 +74,16 @@ export function mainPlatformInfo(): IPlatformInfo {
   }
   const pluginsDirectory = join(userDirectory, 'plugins')
   const driverDepsDirectory = join(userDirectory, 'driver-deps')
+  const themesDirectory = isDevEnv
+    ? resolve("./public/themes")
+    : join(__dirname, "renderer", "themes");
 
   const sessionType = p.env.XDG_SESSION_TYPE
 
-  const slice = isDevEnv ? 2 : 1
+  // `electron <app path>` (dev, and the e2e tests) puts the app path at
+  // argv[1]; a packaged build doesn't. Keying this off isDevEnv missed test
+  // mode, where the app read its own entry script as a URL to open on launch.
+  const slice = p.defaultApp ? 2 : 1
   const parsedArgs = yargs(p.argv.slice(slice))
   const appVersion = testMode ? '0.0.0' : e.app.getVersion()
 
@@ -84,7 +93,8 @@ export function mainPlatformInfo(): IPlatformInfo {
       sessionType === 'wayland' && !isWindows && !isMac
   }
    return {
-    isWindows, isMac, isArm, oracleSupported,
+    isWindows, isMac, isArm, runningUnderArm64Translation,
+    oracleSupported, oracleInstantClientSupported,
     parsedArgs,
     isLinux: !isWindows && !isMac,
     sessionType,
@@ -92,8 +102,10 @@ export function mainPlatformInfo(): IPlatformInfo {
     isSnap: p.env.ELECTRON_SNAP,
     isFlatpak: !!p.env.FLATPAK_ID || existsSync('/.flatpak-info'),
     isPortable: isWindows && p.env.PORTABLE_EXECUTABLE_DIR,
+    isMsi: isWindows && !isDevEnv && !testMode && isMsiInstall(p.execPath),
     isDevelopment: isDevEnv,
-    isAppImage: p.env.DESKTOPINTEGRATION === 'AppImageLauncher',
+    isAppImage: !!process.env.APPIMAGE,
+    isAppImageLauncher: process.env.DESKTOPINTEGRATION === 'AppImageLauncher',
     sshAuthSock: p.env.SSH_AUTH_SOCK,
     sshConfigExists: existsSync(join(homeDirectory, '.ssh', 'config')),
     defaultSshIdentityFile: ['id_ed25519', 'id_ecdsa', 'id_rsa', 'id_dsa']
@@ -109,11 +121,11 @@ export function mainPlatformInfo(): IPlatformInfo {
     debugEnabled: !!p.env.DEBUG,
     DEBUG: p.env.DEBUG,
     platform: easyPlatform,
-    darkMode: testMode ? true : !!(e.nativeTheme.shouldUseDarkColors) || windowPrefersDarkMode,
     userDirectory,
     downloadsDirectory,
     homeDirectory,
     pluginsDirectory,
+    themesDirectory,
     driverDepsDirectory,
     testMode,
     appDbPath: join(userDirectory, isDevEnv ? 'app-dev.db' : 'app.db'),

@@ -2,7 +2,7 @@
   <div class="with-connection-type">
     <div class="form-group col">
       <label for="connectionMethod">Connection Method</label>
-      <select name="connectionMethod" id="" v-model="config.sqlAnywhereOptions.mode">
+      <select name="connectionMethod" id="" v-model="config.sqlAnywhereOptions.mode" :disabled="disabled">
         <option value="server">
           Server
         </option>
@@ -11,12 +11,13 @@
         </option>
       </select>
     </div>
-    <common-server-inputs :support-complex-s-s-l="false" :config="config" v-show="isServer">
+    <common-server-inputs :support-complex-s-s-l="false" :config="config" v-show="isServer" :disabled="disabled">
       <div class="form-group expand">
         <label for="serverName">Server Name</label>
         <masked-input
           :value="config.sqlAnywhereOptions.serverName"
           @input="val => config.sqlAnywhereOptions.serverName = val"
+          :disabled="disabled"
         />
       </div>
     </common-server-inputs>
@@ -27,11 +28,12 @@
           <masked-input
             :value="config.username"
             @input="val => config.username = val"
+            :disabled="disabled"
           />
         </div>
         <div class="col s6 form-group">
           <label for="password">Password</label>
-          <password-input v-model="config.password" />
+          <password-input v-model="config.password" :disabled="disabled" />
         </div>
       </div>
       <div class="form-group expand">
@@ -39,11 +41,12 @@
         <masked-input
           :value="config.sqlAnywhereOptions.serverName"
           @input="val => config.sqlAnywhereOptions.serverName = val"
+          :disabled="disabled"
         />
       </div>
       <div class="form-group expand">
         <label for="databaseName">Database Name</label>
-        <input type="text" class="form-control" v-model="config.defaultDatabase">
+        <input type="text" class="form-control" v-model="config.defaultDatabase" :disabled="disabled">
       </div>
       <div class="form-group col">
         <div class="form-group">
@@ -52,6 +55,7 @@
             v-model="config.sqlAnywhereOptions.databaseFile"
             input-id="filepath"
             editable
+            :disabled="disabled"
           />
         </div>
       </div>
@@ -67,7 +71,13 @@ import PasswordInput from '@/components/common/form/PasswordInput.vue'
 
 export default {
   components: { CommonServerInputs, FilePicker, MaskedInput, PasswordInput },
-  props: ['config'],
+  props: {
+    config: Object,
+    disabled: {
+      type: Boolean,
+      default: false
+    }
+  },
   computed: {
     isServer() {
       return this.config.sqlAnywhereOptions.mode === 'server';

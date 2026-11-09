@@ -7,7 +7,7 @@
 //   esbuild main+preload build → src/lib/log/mainLogger.ts
 //   esbuild utility build      → src/lib/log/utilityLogger.ts
 //   vite renderer build        → src/lib/log/rendererLogger.ts
-//   jest (test runner)         → src/lib/log/mainLogger.ts (moduleNameMapper)
+//   vitest (test runner)       → src/lib/log/mainLogger.ts (vitest.shared.mjs alias)
 //   tsc / IDE                  → this file (this declaration)
 //
 // Declaring the export at the base `Logger` interface (which `MainLogger`,

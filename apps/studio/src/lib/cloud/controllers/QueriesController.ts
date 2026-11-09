@@ -1,5 +1,6 @@
 import ISavedQuery from '@/common/interfaces/ISavedQuery'
 import { GenericController } from '@/lib/cloud/controllers/GenericController'
+import { AccessGrantsController } from "@/lib/cloud/controllers/AccessGrantsController";
 import { res, url } from "@/lib/cloud/ClientHelpers";
 
 export interface ReorderResult {
@@ -10,14 +11,19 @@ export interface ReorderResult {
 }
 
 export class QueriesController extends GenericController<ISavedQuery> {
-  name = 'query'
+  name = 'query' as const
   plural = 'queries'
   path = '/queries'
 
-  async reorder(id: number, position: { before?: number | null; after?: number } | number, queryFolderId?: number | null): Promise<ReorderResult[]> {
+  accessGrantsOf(queryId: number) {
+    return new AccessGrantsController(this.axios, this.path, queryId);
+  }
+
+  async reorder(id: number, position: { before?: number | null; after?: number } | number, queryFolderId?: number | null, confirm?: boolean): Promise<ReorderResult[]> {
     const response = await this.axios.patch(url(this.path, id, 'reorder'), {
       position,
-      queryFolderId
+      queryFolderId,
+      confirm
     })
     return res(response, 'queries')
   }

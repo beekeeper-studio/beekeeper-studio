@@ -1,3 +1,4 @@
+import { markRaw } from "vue";
 import { TextEditor } from "./TextEditor";
 import props from "./props";
 import {
@@ -5,7 +6,7 @@ import {
   divider,
   InternalContextItem,
   openMenu,
-} from "../context-menu";
+} from "../context-menu/menu";
 import { readClipboard, writeClipboard } from "../../utils";
 import { TextEditorBlurEvent, TextEditorFocusEvent, TextEditorInitializedEvent, TextEditorLSPReadyEvent, TextEditorMenuContext, TextEditorSelectionChangeEvent, TextEditorValueChangeEvent } from "./types";
 
@@ -119,6 +120,10 @@ export default {
     },
     applyKeymap() {
       this.textEditor.setKeymap(this.keymap, this.vimOptions);
+      // Rebuilding the vim extension can drop dom focus.
+      if (this.isFocused) {
+        this.textEditor.focus();
+      }
     },
     applyLineWrapping() {
       this.textEditor.setLineWrapping(this.lineWrapping);
@@ -187,10 +192,17 @@ export default {
         markers: this.markers,
         lineGutters: this.lineGutters,
         foldGutters: this.foldGutters,
+        indentationMarkers: this.indentationMarkers,
         actionsKeymap: this.getActionsKeymap()
       });
 
-      this.textEditor = textEditor;
+      // markRaw keeps the editor out of Vue's reactive tree. Vue's isPlainObject
+      // is a loose Object.prototype.toString check, so a class instance
+      // qualifies and observe() would walk the whole CodeMirror graph --
+      // installing reactive getters/setters on the doc, state and parser, and
+      // re-observing parser objects created during tokenizing. Nothing watches
+      // or computes on textEditor; every consumer uses it imperatively.
+      this.textEditor = markRaw(textEditor);
 
       this.initialized?.();
 
@@ -205,12 +217,16 @@ export default {
             this.textEditor.execCommand("findAndReplace")
           }
         },
-        {
-          key: "Mod-r",
-          run: () => {
-            this.textEditor.execCommand("findAndReplace")
+        // Mod-r is vim's redo, and duplicates Mod-f above. Vim should win on
+        // precedence anyway, but claiming it risks silently breaking redo.
+        ...(this.keymap === "vim" ? [] : [
+          {
+            key: "Mod-r",
+            run: () => {
+              this.textEditor.execCommand("findAndReplace")
+            }
           }
-        },
+        ]),
         ...this.internalActionsKeymap
       ]
 
@@ -238,6 +254,7 @@ export default {
             shortcut: "Control+Shift+Z",
             write: true,
           },
+          divider,
           {
             label: "Cut",
             id: "text-cut",
@@ -279,6 +296,7 @@ export default {
             class: selectionDepClass,
             write: true,
           },
+          divider,
           {
             label: "Select All",
             id: "text-select-all",
@@ -287,7 +305,6 @@ export default {
             },
             shortcut: "Control+A",
           },
-          divider,
           {
             label: this.readOnly ? "Find" : "Find & Replace",
             id: "text-find",

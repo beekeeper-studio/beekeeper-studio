@@ -20,24 +20,18 @@
         </div>
 
         <div class="table-subheader">
-          <div class="table-title">
-            <h2>Columns</h2>
-          </div>
-          <slot />
-          <span class="expand" />
-          <div class="actions">
-            <a
-              @click.prevent="refreshColumns"
-              v-tooltip="`${ctrlOrCmd('r')} or F5`"
-              class="btn btn-link btn-fab"
-            ><i class="material-icons">refresh</i></a>
-            <a
-              v-if="editable"
-              v-tooltip="ctrlOrCmd('n')"
-              @click.prevent="addRow"
-              class="btn btn-primary btn-fab"
-            ><i class="material-icons">add</i></a>
-          </div>
+          <table-info-toolbar
+            :search-suffix="structureFilterSuffix"
+            filter-placeholder="Filter columns"
+            :show-add="editable"
+            add-label="Column"
+            @search="setStructureFilterQuery"
+            @add="addRow"
+            @copy="copyStructure"
+            @refresh="refreshColumns"
+          >
+            <slot />
+          </table-info-toolbar>
         </div>
         <div ref="tableSchema" />
         <!-- Tabulator can be slow to open especially for some really large column counts. Let the user know. -->
@@ -134,9 +128,12 @@ import { AppEvent } from '@/common/AppEvent'
 import StatusBar from '../common/StatusBar.vue'
 import { AlterTableSpec, FormatterDialect } from '@shared/lib/dialects/models'
 import ErrorAlert from '../common/ErrorAlert.vue'
+import TableInfoToolbar from './TableInfoToolbar.vue'
 import rawLog from '@bksLogger'
 import { escapeHtml } from '@shared/lib/tabulator'
 import { ExtendedTableColumn } from '@/lib/db/models'
+import { StructureCopyMixin } from '@/mixins/structureCopy'
+import { StructureFilterMixin } from '@/mixins/structureFilter'
 
 const log = rawLog.scope('table-schema')
 
@@ -152,9 +149,10 @@ const FakeCell = {
 export default Vue.extend({
   components: {
     StatusBar,
-    ErrorAlert
+    ErrorAlert,
+    TableInfoToolbar
   },
-  mixins: [DataMutators],
+  mixins: [DataMutators, StructureCopyMixin, StructureFilterMixin],
   props: ["table", "tabID", "active", "primaryKeys", "tabState"],
   data() {
     return {
@@ -323,7 +321,8 @@ export default Vue.extend({
         const key = keys[c.columnName]
         return {
           primary: !!key || null,
-          ...c
+          ...c,
+          _originalColumnName: c.columnName
         }
       })
     },
@@ -340,6 +339,7 @@ export default Vue.extend({
 
       const features = _.isArray(feature) ? feature : [feature];
       if (!this.editable) return false
+      if (cell === FakeCell) return features.every((f) => this.isEditable(f))
       if (this.removedRows.includes(cell.getRow())) return false
       const row = cell.getRow()
       const columnName = row.getData()['columnName']
@@ -369,12 +369,9 @@ export default Vue.extend({
       const alterations = this.editedCells.map((cell: CellComponent) => {
 
         // renames happen last, so we need to get the original column name here.
-        const nameCell = cell.getRow().getCell('columnName')
-        const name = nameCell.isEdited() ? nameCell.getInitialValue() : nameCell.getValue()
-
         return {
           changeType: cell.getField(),
-          columnName: name,
+          columnName: cell.getRow().getData()['_originalColumnName'],
           newValue: cell.getValue()
         }
       })
@@ -383,7 +380,7 @@ export default Vue.extend({
         return row.getData()
       })
 
-      const drops = this.removedRows.map((row) => row.getData()['columnName'])
+      const drops = this.removedRows.map((row) => row.getData()['_originalColumnName'])
 
       const reorder = (this.reorderedRows.length > 0)
         ? { oldOrder: this.initialColumns.slice(0), newOrder: this.tabulator.getData() }
@@ -535,12 +532,12 @@ export default Vue.extend({
 
       this.tabulator.on('rowMoved', (row) => this.movedRows(row))
     },
-    columnNameCellClick(_e: any, cell: CellComponent) {
+    async columnNameCellClick(_e: any, cell: CellComponent) {
       if (!this.editable || this.disabledFeatures?.alter?.renameColumn) {
         const element = cell.getElement()
         element.classList.add('copied');
         setTimeout(() => element.classList.remove('copied'), 500)
-        this.$native.clipboard.writeText(cell.getValue(), true);
+        await this.$native.clipboard.writeText(cell.getValue(), true);
       }
     },
     columnNameCellTooltip(_e: any, cell: CellComponent, _onRendered: any) {
@@ -560,4 +557,3 @@ export default Vue.extend({
   },
 })
 </script>
-

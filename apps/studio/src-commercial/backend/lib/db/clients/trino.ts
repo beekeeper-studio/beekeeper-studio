@@ -7,7 +7,7 @@ import {
   QueryResult,
   ConnectionOptions as TrinoConnectionOptions,
   SecureContextOptions
-} from 'trino-client'
+} from '@trinodb/trino-js-client'
 import {
   BaseQueryResult,
   BasicDatabaseClient,
@@ -48,7 +48,6 @@ import {
   AlterTableSpec,
   TableKey
 } from "@shared/lib/dialects/models"
-import { IdentifyResult } from "sql-query-identifier/lib/defines"
 import { errors } from "@/lib/errors"
 import { IDbConnectionServer } from "@/lib/db/backendTypes"
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase"
@@ -111,7 +110,7 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
       server: url,
       catalog: this.database.database
     }
-    
+
     if (this.server.config.ssl) {
       const sslOptions: SecureContextOptions = {}
 
@@ -411,14 +410,15 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
   }
 
   async executeQuery(
-    queryText: string
+    queryText: string,
+    options?: any
   ): Promise<NgQueryResult[]> {
     const queries = queryText.trim().split(';')
     const results: NgQueryResult[] = await Promise.all(
       queries
         .filter(q => q.trim() !== '')
         .map(async q => {
-          const {rows, columns} = await this.driverExecuteSingle(q)
+          const {rows, columns} = await this.driverExecuteSingle(q, options)
           const fields = rows.length === 0 ? [] : columns.map(c => ({ ...c, id: c.name }))
           return {
             fields,
@@ -441,6 +441,14 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
       const rows: any[] = []
 
       for await (const r of result) {
+        // The trino-client iterator doesn't throw on query failure - it
+        // yields the error response as a normal value, so without this
+        // check a failed query looks like a successful 0-row result.
+        if (r.error) {
+          const { errorName, message } = r.error
+          throw new Error(errorName ? `${errorName}: ${message}` : message)
+        }
+
         const { data: resultData, columns: resultColumns } = r
         columns = resultColumns
 
@@ -614,12 +622,12 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
           return
         }
 
-        // Handle IN
-        if (op === "IN" && Array.isArray(val)) {
+        // Handle IN / NOT IN
+        if ((op === "IN" || op === "NOT IN") && Array.isArray(val)) {
           const values = val
             .map((v) => this.wrapDynamicLiteral(v))
             .join(", ")
-          filtersWithoutParams.push(`${field} IN (${values})`)
+          filtersWithoutParams.push(`${field} ${op} (${values})`)
           return
         }
 
@@ -721,13 +729,6 @@ export class TrinoClient extends BasicDatabaseClient<TrinoResult> {
       FROM ranked
       ${usePagination ? `WHERE rownum > ${safeOffset} AND rownum <= ${safeOffset + safeLimit}` : ""}
     `
-  }
-
-  protected violatesReadOnly(statements: IdentifyResult[], options: any = {}) {
-    return (
-      super.violatesReadOnly(statements, options) ||
-      (this.readOnlyMode && options.insert)
-    )
   }
 
   parseTableColumn(column: TableColumn): BksField {

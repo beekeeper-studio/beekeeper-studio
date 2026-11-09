@@ -15,7 +15,7 @@
       @click.stop.prevent
       @dblclick.stop
       @mousedown.stop
-    />
+    >
   </div>
 </template>
 <script lang="ts">
@@ -40,21 +40,24 @@ export default Vue.extend({
     };
   },
   watch: {
-    async rename(active: boolean) {
-      this.submitting = false;
+    rename: {
+      immediate: true,
+      async handler(active: boolean) {
+        this.submitting = false;
 
-      if (!active) {
-        return;
-      }
+        if (!active) {
+          return;
+        }
 
-      this.value = this.initialValue;
+        this.value = this.initialValue;
 
-      await this.$nextTick();
+        await this.$nextTick();
 
-      const input = this.$refs.input as HTMLInputElement | undefined;
+        const input = this.$refs.input as HTMLInputElement | undefined;
 
-      input?.focus();
-      input?.select();
+        input?.focus();
+        input?.select();
+      },
     },
   },
   methods: {
@@ -87,10 +90,10 @@ export default Vue.extend({
     font-size: inherit;
     line-height: normal;
     position: absolute;
-    left: -0.15rem;
+    left: 0;
     top: 50%;
     transform: translateY(-50%);
-    background-color: var(--theme-bg);
+    background-color: var(--bg-subtle);
 
     &[data-submitting="true"] {
       border: none;

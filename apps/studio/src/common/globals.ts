@@ -6,10 +6,6 @@ export default {
   psqlTimeout: 15000, // 15 seconds
   psqlIdleTimeout: 20000,
   defaultChunkSize: 100,
-  largeFieldWidth: 300,
-  maxColumnWidth: 1000,
-  minColumnWidth: 100,
-  maxInitialWidth: 500,
   maxDetailViewTextLength: 30,
   bigTableColumnWidth: 125,
   maxColumnWidthTableInfo: 300,
@@ -40,6 +36,7 @@ export default {
       { id: "bks-ai-shell", pkg: "@beekeeperstudio/bks-ai-shell" },
       { id: "bks-er-diagram", pkg: "@beekeeperstudio/bks-er-diagram" },
     ],
+    maxCommunityPlugins: 2
   }
 }
 

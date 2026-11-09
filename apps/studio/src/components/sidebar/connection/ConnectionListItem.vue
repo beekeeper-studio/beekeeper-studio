@@ -8,9 +8,19 @@
       href=""
       class="list-item-btn"
       :class="classList"
-      @click.prevent="click(config)"
+      @click.prevent="handleClick($event)"
       @dblclick.prevent="doubleClick(config)"
     >
+      <input
+        v-if="!isRecentList"
+        draggable="false"
+        @mousedown.stop.prevent
+        @click.stop="$emit('select', config, $event)"
+        type="checkbox"
+        class="form-control delete-checkbox"
+        :class="{ shown: bulkSelectionActive }"
+        :checked="selected"
+      >
       <span :class="`connection-label connection-label-color-${labelColor}`" />
       <div class="connection-title flex-col expand">
         <div class="title">
@@ -51,18 +61,18 @@
           v-if="!pinned"
           @mousedown.prevent.stop="pin"
           :title="'Pin'"
-          class="btn-fab pin"
+          class="btn-icon pin"
         ><i class="bk-pin" /></span>
         <span
           v-if="pinned"
           @mousedown.prevent.stop="unpin"
           :title="'Unpin'"
-          class="btn-fab unpin"
+          class="btn-icon unpin"
         ><i class="material-icons">clear</i></span>
         <span
           v-if="pinned"
           @mousedown.prevent.stop="unpin"
-          class="btn-fab pinned"
+          class="btn-icon pinned"
         >
           <i
             class="bk-pin"
@@ -75,11 +85,11 @@
   </div>
 </template>
 <script>
-import TimeAgo from 'javascript-time-ago'
-import { mapGetters, mapState } from 'vuex'
-import { isUltimateType } from '@/common/interfaces/IConnection'
-import EditableText from '@/components/common/EditableText.vue'
 import { AppEvent } from '@/common/AppEvent';
+import { isUltimateType } from '@/common/interfaces/IConnection';
+import EditableText from '@/components/common/EditableText.vue';
+import TimeAgo from 'javascript-time-ago';
+import { mapGetters, mapState } from 'vuex';
 
 export default {
   components: { EditableText },
@@ -91,7 +101,10 @@ export default {
     'selectedConfig',
     'showDuplicate',
     'pinned',
-    'privacyMode'
+    'privacyMode',
+    'bulkSelectionActive',
+    'selected',
+    'selectedCount',
   ],
   data: () => ({
     timeAgo: new TimeAgo('en-US'),
@@ -99,11 +112,17 @@ export default {
     rename: false,
   }),
   computed: {
+    ...mapGetters(["isCloud", "workspace"]),
     ...mapState('data/connections', {'connectionConfigs': 'items'}),
     ...mapState('data/connectionFolders', {'folders': 'items'}),
     classList() {
       return {
-        'active': this.savedConnection && this.selectedConfig ? this.savedConnection === this.selectedConfig : false
+        // the connection screen edits a copy, so compare by key, not identity
+        'active': !!this.savedConnection && !!this.selectedConfig &&
+          this.savedConnection.id === this.selectedConfig.id &&
+          this.savedConnection.workspaceId === this.selectedConfig.workspaceId,
+        'selected': this.selected,
+        'bulk-selection-active': this.bulkSelectionActive,
       }
     },
     labelColor() {
@@ -136,8 +155,8 @@ export default {
     },
     title() {
       return this.privacyMode ?
-        'Connection details hidden by Privacy Mode' :
-        this.$bks.buildConnectionString(this.displayConfig)
+        `Created by ${this.author}` :
+        `Created by ${this.author}, ${this.$bks.buildConnectionString(this.displayConfig)}`;
     },
     savedConnection() {
 
@@ -152,6 +171,12 @@ export default {
         return this.config
       }
     },
+    folder() {
+      return this.folders.find((f) => f.id === this.savedConnection.connectionFolderId);
+    },
+    isPersonal() {
+      return this.folder?.personal;
+    },
     // For display purposes only: prefer the linked saved connection when this
     // is a recent-list row, so edits to the saved connection (host, port, ssh,
     // etc.) propagate to the recent connections list. Falls back to the
@@ -159,6 +184,20 @@ export default {
     // recent entry).
     displayConfig() {
       return this.savedConnection || this.config
+    },
+    author() {
+      if (!this.isCloud) {
+        return "You";
+      }
+      if (!this.displayConfig || !this.displayConfig.membership) {
+        return "Unknown";
+      }
+      if (
+        this.displayConfig.membership.userId === this.workspace.currentMembership.userId
+      ) {
+        return "You";
+      }
+      return this.displayConfig.membership.name;
     },
   },
   methods: {
@@ -170,9 +209,29 @@ export default {
 
       event.stopPropagation();
 
-      const ultimateCheck = this.$store.getters.isUltimate
+      let effectiveCount = this.selectedCount ?? 0
+      if (this.bulkSelectionActive && !this.selected) {
+        this.$emit('add-to-selection', this.config)
+        effectiveCount += 1
+      }
+      if (effectiveCount >= 2) {
+        this.$bks.openMenu({
+          event,
+          item: this.config,
+          options: [
+            {
+              name: 'Delete',
+              handler: () => this.$emit('remove-selected'),
+            },
+          ],
+        })
+        return
+      }
+
+      const canConnect = this.$store.getters.isUltimate
         ? true
         : !isUltimateType(this.displayConfig.connectionType)
+      const canWrite = this.config.canWrite ?? true;
 
       const options = [
         {
@@ -180,35 +239,44 @@ export default {
           slug: 'view',
           handler: (blob) => this.click(blob.item)
         },
-        ultimateCheck && {
+        {
           name: 'Connect',
           slug: 'connect',
+          hideIf: !canConnect,
           handler: (blob) => this.doubleClick(blob.item)
         },
         { type: "divider" },
-        !this.isRecentList && {
+        {
           name: this.pinned ? 'Unpin' : 'Pin',
-          handler: () => this.pinned ? this.unpin() : this.pin()
+          handler: () => this.pinned ? this.unpin() : this.pin(),
+          hideIf: this.isRecentList,
         },
-        !this.isRecentList && { type: "divider" },
+        { type: "divider", hideIf: this.isRecentList },
+        {
+          name: "Share",
+          slug: 'share',
+          handler: () => this.share(),
+          hideIf: !this.isCloud || !this.savedConnection || !this.savedConnection.id || this.isPersonal,
+        },
         {
           name: "Duplicate",
           slug: 'duplicate',
-          handler: this.duplicate
+          handler: () => this.duplicate(),
         },
         {
           name: `Copy ${this.connectionType}`,
-          handler: this.copyUrl
+          handler: () => this.copyUrl(),
         },
         { type: "divider" },
-        !this.isRecentList && {
+        {
           name: "Rename",
           slug: 'rename',
           handler: () => {
             this.rename = true;
           },
+          hideIf: this.isRecentList || !canWrite,
         },
-        !this.isRecentList && this.folders.length > 0 && {
+        {
           name: "Move",
           handler: () => {
             this.trigger(AppEvent.openMoveFileModal, {
@@ -216,12 +284,13 @@ export default {
               value: this.config,
             });
           },
+          hideIf: this.isRecentList || this.folders.length === 0,
         },
         {
           name: "Delete",
-          handler: this.remove
+          handler: () => this.remove(),
         },
-      ].filter(v => v)
+      ].filter(({ hideIf }) => !hideIf)
 
       this.$bks.openMenu({
         event,
@@ -236,6 +305,14 @@ export default {
         this.$emit('edit', this.config)
       }
     },
+    handleClick(event) {
+      if (event.metaKey || event.ctrlKey || event.shiftKey) {
+        this.$emit('select', this.config, event)
+        return
+      }
+      this.$emit('select', this.config, event)
+      this.click()
+    },
     async doubleClick() {
       if (this.savedConnection) {
         this.$emit('doubleClick', this.savedConnection)
@@ -248,6 +325,12 @@ export default {
     },
     duplicate() {
       this.$emit('duplicate', this.config)
+    },
+    share() {
+      this.trigger(AppEvent.openShareModal, {
+        id: this.savedConnection.id,
+        module: "data/connections",
+      });
     },
     async copyUrl() {
       try {
@@ -294,5 +377,23 @@ export default {
   .editable-text {
     width: 100%;
   }
+}
+
+/** --depth is from Tree.vue */
+.list-group .list-item .list-item-btn {
+  padding-left: calc(var(--depth) * 1.15rem);
+}
+
+.connection-label {
+  margin-left: 0.5rem;
+}
+
+.btn-icon.pin, .btn-icon.pinned {
+  &:hover, &:focus {
+    background: transparent;
+  }
+}
+.btn-icon.pinned .bk-pin {
+  color: var(--primary-solid-bg-hover-a);
 }
 </style>

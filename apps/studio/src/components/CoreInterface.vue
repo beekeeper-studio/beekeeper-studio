@@ -137,8 +137,14 @@
       },
     },
     watch: {
-      async usedConfig(){
-        await this.$store.dispatch('pins/loadPins');
+      // immediate: usedConfig is committed before the interface flips to
+      // connected, so it is already set when this component mounts
+      usedConfig: {
+        immediate: true,
+        async handler() {
+          if (!this.usedConfig) return
+          await this.$store.dispatch('pins/loadPins');
+        }
       },
       initializing() {
         if (this.initializing) return;
@@ -370,6 +376,7 @@
 <style scoped>
 .split-container {
   display: flex;
-  width: 100%;
+  flex: 1 1 0;
+  min-width: 0;
 }
 </style>

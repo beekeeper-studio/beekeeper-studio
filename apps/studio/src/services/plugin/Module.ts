@@ -1,3 +1,4 @@
+import { BksConfig } from "@/common/bksConfig/BksConfigProvider";
 import type PluginManager from "./PluginManager";
 import type { PluginSnapshot } from "./types";
 
@@ -13,6 +14,7 @@ export interface ModuleHookMap {
   "plugin-snapshots": (
     snapshots: PluginSnapshot[]
   ) => PluginSnapshot[] | Promise<PluginSnapshot[]>;
+  "config-reload": (config: BksConfig) => void | Promise<void>;
 }
 
 export type ModuleHook = {

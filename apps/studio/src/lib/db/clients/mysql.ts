@@ -8,16 +8,14 @@ import {
 } from "./BasicDatabaseClient";
 import mysql, { Connection } from "mysql2";
 import rawLog from "@bksLogger";
-import ed25519AuthPlugin from "@coresql/mysql2-auth-ed25519";
 import knexlib from "knex";
-import { readFileSync } from "fs";
 import _ from "lodash";
 import {
   buildDeleteQueries,
   buildInsertQuery,
   buildSelectTopQuery,
   escapeString,
-  ClientError, refreshTokenIfNeeded,
+  ClientError,
   errorMessages
 } from "./utils";
 import { parseQuotedEnumValues } from "./enumParsers";
@@ -26,9 +24,9 @@ import {
   DatabaseElement,
 } from "../types";
 import { MysqlCursor } from "./mysql/MySqlCursor";
+import { foreignKeyColumnsSql } from "./mysql/scripts";
 import {createCancelablePromise} from "@/common/utils";
 import { errors } from "@/lib/errors";
-import { identify } from "sql-query-identifier";
 import { MySqlChangeBuilder } from "@shared/lib/sql/change_builder/MysqlChangeBuilder";
 import { AlterTableSpec, IndexColumn, TableKey } from "@shared/lib/dialects/models";
 import { MysqlData } from "@shared/lib/dialects/mysql";
@@ -63,12 +61,10 @@ import {
 } from "../models";
 import { ChangeBuilderBase } from "@shared/lib/sql/change_builder/ChangeBuilderBase";
 import BksConfig from "@/common/bksConfig";
-import { uuidv4 } from "@/lib/uuid";
 import { IDbConnectionServer } from "../backendTypes";
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import { Version, isVersionLessThanOrEqual, parseVersion } from "@/common/version";
-import globals from '../../../common/globals';
-import {AzureAuthService} from "@/lib/db/authentication/azure";
+import { MySqlConnector } from "./mysql/MySqlConnector";
 import { IdentifyResult } from "sql-query-identifier/lib/defines";
 
 type ResultType = {
@@ -101,15 +97,6 @@ const mysqlErrors = {
 
 const knex = knexlib({ client: "mysql2" });
 
-function getRealError(conn, err) {
-  /* eslint no-underscore-dangle:0 */
-  if (conn && conn._protocol && conn._protocol._fatalError) {
-    logger().warn("Query error", err, conn._protocol._fatalError);
-    return conn._protocol._fatalError;
-  }
-  return err;
-}
-
 const binaryTypes = [
   mysql.Types.STRING, // aka CHAR or BINARY
   mysql.Types.VAR_STRING, // aka VARCHAR or VARBINARY
@@ -132,94 +119,6 @@ const binaryDataTypes = [
 const FieldFlags = {
   BINARY: 128,
 };
-
-async function configDatabase(
-  server: IDbConnectionServer,
-  database: IDbConnectionDatabase
-): Promise<mysql.PoolOptions> {
-
-  let iamToken = undefined;
-  if(server.config.iamAuthOptions?.iamAuthenticationEnabled){
-      iamToken = await refreshTokenIfNeeded(server.config?.iamAuthOptions, server, server.config.port || 5432)
-  }
-
-  const config: mysql.PoolOptions = {
-    authPlugins: {
-      'client_ed25519': ed25519AuthPlugin(),
-    },
-    host: server.config.host,
-    port: server.config.port,
-    user: server.config.user,
-    password: iamToken || server.config.password || undefined,
-    database: database.database,
-    multipleStatements: true,
-    dateStrings: true,
-    supportBigNumbers: true,
-    bigNumberStrings: true,
-    connectionLimit: BksConfig.db.mysql.maxConnections,
-    connectTimeout: BksConfig.db.mysql.connectTimeout,
-  };
-
-  if (server.config.azureAuthOptions?.azureAuthEnabled) {
-    const authService = new AzureAuthService();
-    return authService.configDB(server, config)
-  }
-
-  if (server.config.socketPathEnabled) {
-    config.socketPath = server.config.socketPath;
-    config.host = null;
-    config.port = null;
-    return config;
-  }
-
-  if (server.sshTunnel) {
-    config.host = server.config.localHost;
-    config.port = server.config.localPort;
-  }
-
-  if (
-    server.config.iamAuthOptions?.iamAuthenticationEnabled
-  ){
-    server.config.ssl = true
-  }
-
-  if (server.config.ssl) {
-    config.ssl = {};
-
-    if (server.config.sslCaFile) {
-      /* eslint-disable-next-line */
-      // @ts-ignore
-      config.ssl.ca = readFileSync(server.config.sslCaFile);
-    }
-
-    if (server.config.sslCertFile) {
-      /* eslint-disable-next-line */
-      // @ts-ignore
-      config.ssl.cert = readFileSync(server.config.sslCertFile);
-    }
-
-    if (server.config.sslKeyFile) {
-      /* eslint-disable-next-line */
-      // @ts-ignore
-      config.ssl.key = readFileSync(server.config.sslKeyFile);
-    }
-
-    if (!config.ssl.key && !config.ssl.ca && !config.ssl.cert) {
-      // TODO: provide this as an option in settings
-      // or per-connection as 'reject self-signed certs'
-      // How it works:
-      // if false, cert can be self-signed
-      // if true, has to be from a public CA
-      // Heroku certs are self-signed.
-      // if you provide ca/cert/key files, it overrides this
-      config.ssl.rejectUnauthorized = false;
-    } else {
-      config.ssl.rejectUnauthorized = server.config.sslRejectUnauthorized;
-    }
-  }
-
-  return config;
-}
 
 function isMultipleQuery(fields: any[]) {
   if (!fields) {
@@ -296,18 +195,11 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     versionString: string;
     version: number;
   };
-  conn: {
-    pool: mysql.Pool;
-  };
+  connector = new MySqlConnector({ server: this.server, database: this.database });
   transcoders = [GenericBinaryTranscoder];
-
-  interval: NodeJS.Timeout
-
-  clientId: string
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, context, server, database);
-    this.clientId = uuidv4();
 
     this.dialect = 'mysql';
     this.readOnlyMode = server?.config?.readOnlyMode || false;
@@ -315,47 +207,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
 
   async connect() {
     await super.connect();
-    const dbConfig = await configDatabase(this.server, this.database);
-    logger().debug("create driver client for mysql with config %j", dbConfig);
-
-    this.conn = {
-      pool: mysql.createPool(dbConfig),
-    };
-
-    if(this.server.config.iamAuthOptions?.iamAuthenticationEnabled){
-      this.interval = setInterval(async () => {
-        try {
-          this.conn.pool.getConnection(async (err, connection) => {
-            if(err) throw err;
-            connection.config.password = await refreshTokenIfNeeded(this.server.config.iamAuthOptions, this.server, this.server.config.port || 3306)
-            connection.release();
-            log.info('Token refreshed successfully.')
-          });
-        } catch (err) {
-          log.error('Could not refresh token!')
-        }
-      }, globals.iamRefreshTime);
-    }
-
-    this.conn.pool.on('acquire', (connection) => {
-      log.debug('Pool connection %d acquired on %s', connection.threadId, this.clientId);
-    });
-
-    this.conn.pool.on('release', (connection) => {
-      log.debug('Pool connection %d released on %s', connection.threadId, this.clientId);
-    });
-
-
     this.versionInfo = await this.getVersion();
-  }
-
-  async disconnect() {
-    if(this.interval){
-      clearInterval(this.interval);
-    }
-    this.conn?.pool.end();
-
-    await super.disconnect();
   }
 
   async versionString() {
@@ -683,7 +535,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     return {
       totalRows: Number(rowCount.rows[0].total),
       columns,
-      cursor: new MysqlCursor(this.conn, query, params, chunkSize),
+      cursor: new MysqlCursor(this.connector, query, params, chunkSize),
     };
   }
 
@@ -720,142 +572,31 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     table: string,
     _schema?: string
   ): Promise<TableKey[]> {
-    // Query for foreign keys FROM this table (referencing other tables)
+    // Foreign keys defined on this table (referencing other tables)
     const sql = `
-    SELECT
-      cu.constraint_name as 'constraint_name',
-      cu.column_name as 'column_name',
-      cu.referenced_table_name as 'referenced_table_name',
-      IF(cu.referenced_table_name IS NOT NULL, 'FOREIGN', cu.constraint_name) as key_type,
-      cu.REFERENCED_TABLE_NAME as referenced_table,
-      cu.REFERENCED_COLUMN_NAME as referenced_column,
-      rc.UPDATE_RULE as on_update,
-      rc.DELETE_RULE as on_delete,
-      rc.CONSTRAINT_NAME as rc_constraint_name,
-      cu.ORDINAL_POSITION as ordinal_position
-    FROM information_schema.key_column_usage cu
-    JOIN information_schema.referential_constraints rc
-      on cu.constraint_name = rc.constraint_name
-      and cu.constraint_schema = rc.constraint_schema
-    WHERE table_schema = database()
-    AND cu.table_name = ?
-    AND cu.referenced_table_name IS NOT NULL
-    ORDER BY rc.CONSTRAINT_NAME, cu.ORDINAL_POSITION
-  `;
-
-    const params = [table];
-
-    const { rows } = await this.driverExecuteSingle(sql, { params });
-
-    // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(rows, 'constraint_name');
-
-    return Object.keys(groupedKeys).map(constraintName => {
-      const keyParts = groupedKeys[constraintName];
-
-      // If there's only one part, return a simple key (backward compatibility)
-      if (keyParts.length === 1) {
-        const row = keyParts[0];
-        return {
-          constraintName: `${row.constraint_name}`,
-          toTable: row.referenced_table,
-          toColumn: row.referenced_column,
-          fromTable: table,
-          fromColumn: row.column_name,
-          referencedTable: row.referenced_table_name,
-          keyType: `${row.key_type} KEY`,
-          onDelete: row.on_delete,
-          onUpdate: row.on_update,
-          toSchema: "",
-          fromSchema: "",
-          isComposite: false,
-        };
-      }
-
-      // If there are multiple parts, it's a composite key
-      const firstPart = keyParts[0];
-      return {
-        constraintName: `${firstPart.constraint_name}`,
-        toTable: firstPart.referenced_table,
-        toColumn: keyParts.map(p => p.referenced_column),
-        fromTable: table,
-        fromColumn: keyParts.map(p => p.column_name),
-        referencedTable: firstPart.referenced_table_name,
-        keyType: `${firstPart.key_type} KEY`,
-        onDelete: firstPart.on_delete,
-        onUpdate: firstPart.on_update,
-        toSchema: "",
-        fromSchema: "",
-        isComposite: true
-      };
-    });
+      ${foreignKeyColumnsSql}
+      WHERE cu.table_schema = database()
+        AND cu.table_name = ?
+        AND cu.referenced_table_name IS NOT NULL
+      ORDER BY cu.constraint_name, cu.ordinal_position
+    `;
+    const { rows } = await this.driverExecuteSingle(sql, { params: [table] });
+    return this.parseForeignKeys(rows);
   }
 
   async getIncomingKeys(
     table: string,
     _schema?: string
   ): Promise<TableKey[]> {
-    // Query for foreign keys TO this table (other tables referencing this table)
-    const incomingSQL = `
-    SELECT
-      cu.constraint_name as 'constraint_name',
-      cu.table_name as 'from_table',
-      cu.column_name as 'column_name',
-      cu.referenced_table_name as 'referenced_table',
-      cu.REFERENCED_COLUMN_NAME as 'referenced_column',
-      rc.UPDATE_RULE as on_update,
-      rc.DELETE_RULE as on_delete,
-      cu.ORDINAL_POSITION as ordinal_position
-    FROM information_schema.key_column_usage cu
-    JOIN information_schema.referential_constraints rc
-      on cu.constraint_name = rc.constraint_name
-      and cu.constraint_schema = rc.constraint_schema
-    WHERE table_schema = database()
-    AND cu.referenced_table_name = ?
-    ORDER BY cu.constraint_name, cu.ORDINAL_POSITION
-  `;
-
-    const params = [table];
-    const { rows } = await this.driverExecuteSingle(incomingSQL, { params });
-
-    // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(rows, 'constraint_name');
-
-    return Object.keys(groupedKeys).map(constraintName => {
-      const keyParts = groupedKeys[constraintName];
-
-      // If there's only one part, return a simple key
-      if (keyParts.length === 1) {
-        const row = keyParts[0];
-        return {
-          constraintName: `${row.constraint_name}`,
-          toTable: row.referenced_table,
-          toColumn: row.referenced_column,
-          fromTable: row.from_table,
-          fromColumn: row.column_name,
-          onDelete: row.on_delete,
-          onUpdate: row.on_update,
-          toSchema: "",
-          fromSchema: "",
-          isComposite: false,
-        };
-      }
-
-      // If there are multiple parts, it's a composite key
-      const firstPart = keyParts[0];
-      return {
-        constraintName: `${firstPart.constraint_name}`,
-        toTable: firstPart.referenced_table,
-        toColumn: keyParts.map(p => p.referenced_column),
-        fromTable: firstPart.from_table,
-        fromColumn: keyParts.map(p => p.column_name),
-        onDelete: firstPart.on_delete,
-        onUpdate: firstPart.on_update,
-        toSchema: "",
-        fromSchema: "",
-        isComposite: true,
-      };
-    });
+    // Foreign keys on other tables that reference this table
+    const sql = `
+      ${foreignKeyColumnsSql}
+      WHERE cu.table_schema = database()
+        AND cu.referenced_table_name = ?
+      ORDER BY cu.constraint_name, cu.ordinal_position
+    `;
+    const { rows } = await this.driverExecuteSingle(sql, { params: [table] });
+    return this.parseForeignKeys(rows);
   }
 
   async getTableProperties(
@@ -914,26 +655,28 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
   }
 
   async executeApplyChanges(changes: TableChanges, tabId?: number): Promise<any[]> {
+    if (tabId) {
+      return await this.runWithConnection(this.applyChangesRunner.bind(this, changes), tabId);
+    }
+    return await this.runWithTransaction(this.applyChangesRunner.bind(this, changes));
+  }
+
+  protected async applyChangesRunner(
+    changes: TableChanges,
+    connection: mysql.PoolConnection
+  ): Promise<any[]> {
     let results = [];
 
-    const run = async (connection: mysql.PoolConnection) => {
-      if (changes.inserts) {
-        await this.insertRows(changes.inserts, connection);
-      }
-
-      if (changes.updates) {
-        results = await this.updateValues(changes.updates, connection);
-      }
-
-      if (changes.deletes) {
-        await this.deleteRows(changes.deletes, connection);
-      }
+    if (changes.inserts) {
+      await this.insertRows(changes.inserts, connection);
     }
 
-    if (tabId) {
-      await this.runWithConnection(run, tabId);
-    } else {
-      await this.runWithTransaction(run);
+    if (changes.updates) {
+      results = await this.updateValues(changes.updates, connection);
+    }
+
+    if (changes.deletes) {
+      await this.deleteRows(changes.deletes, connection);
     }
 
     return results;
@@ -1170,6 +913,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       params: {},
       rowsAsArray: options.rowsAsArray,
       connection: options.connection,
+      ...options
     });
 
     if (!rows) {
@@ -1202,59 +946,35 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       params?: any;
     }
   ): Promise<ResultType | ResultType[]> {
-    const runQuery = (connection: mysql.PoolConnection) =>
-      new Promise<ResultType>((resolve, reject) => {
-        const params =
-          !options.params || _.isEmpty(options.params)
-            ? undefined
-            : options.params;
-        logger().info(`Running Query`, query, params);
-        connection.query(
-          {
-            sql: query,
-            values: params,
-            rowsAsArray: options.rowsAsArray,
-          },
-          (err, data, fields) => {
-            if (err && err.code === mysqlErrors.EMPTY_QUERY) {
-              return resolve({ rows: [], columns: [], arrayMode: undefined });
-            }
-
-            if (err) {
-              return reject(getRealError(connection, err));
-            }
-
-            logger().info(`Running Query Finished`);
-            resolve({ rows: data as any[], columns: fields, arrayMode: options.rowsAsArray });
-          }
-        );
+    if (options.connection) {
+      return await this.connector.runQuery(query, {
+        ...options,
+        connection: options.connection,
       });
-
-    return options.connection
-      ? runQuery(options.connection)
-      : this.runWithConnection(runQuery);
+    }
+    return await this.runWithConnection(
+      async (connection) =>
+        await this.connector.runQuery(query, {
+          ...options,
+          connection,
+        })
+    );
   }
 
   async runWithConnection<T>(run: (connection: mysql.PoolConnection) => Promise<T>, tabId?: number): Promise<T> {
-    const { pool } = this.conn;
     const hasReserved = this.reservedConnections.has(tabId);
     let conn: mysql.PoolConnection;
     if (hasReserved) {
       conn = this.reservedConnections.get(tabId);
     } else {
-      conn = await new Promise((resolve, reject) => {
-        pool.getConnection((err, connection) => {
-          if (err) {
-            reject(err);
-          }
-          resolve(connection);
-        })
-      });
+      conn = await this.connector.getRawConnection();
     }
 
-    conn.on("error", (error) => {
+    function handleError(error: any) {
       logger().error("Connection fatal error %j", error);
-    });
+    }
+
+    conn.on("error", handleError);
 
     try {
       return await run(conn);
@@ -1262,6 +982,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       if (!hasReserved) {
         conn.release();
       }
+      conn.off("error", handleError);
     }
   }
 
@@ -1430,7 +1151,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
     query: string,
     chunkSize: number
   ): Promise<StreamResults> {
-    const theCursor = new MysqlCursor(this.conn, query, [], chunkSize);
+    const theCursor = new MysqlCursor(this.connector, query, [], chunkSize);
 
     return {
       cursor: theCursor,
@@ -1525,19 +1246,7 @@ export class MysqlClient extends BasicDatabaseClient<ResultType, mysql.PoolConne
       throw new Error(errorMessages.maxReservedConnections)
     }
 
-    return new Promise((resolve, reject) => {
-      this.conn.pool.getConnection((err, conn) => {
-        if (!err) {
-          try {
-            this.pushConnection(tabId, conn);
-            resolve();
-          } catch (e) {
-            reject(e);
-          }
-        }
-        reject(err);
-      })
-    })
+    this.pushConnection(tabId, await this.connector.getRawConnection());
   }
 
   async releaseConnection(tabId: number): Promise<void> {

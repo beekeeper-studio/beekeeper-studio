@@ -1,31 +1,15 @@
-export interface IQueryAuditUser {
-  id?: number
-  name?: string
-  email?: string
-  username?: string
-}
+import {
+  TransportQueryAudit,
+  TransportQueryAuditDetail,
+} from "@/common/transport/TransportQueryAudit";
 
-export interface IQueryAudit {
-  id: number
-  revision: number
-  action: 'create' | 'update' | 'destroy'
-  createdAt: number
-  user: IQueryAuditUser
-}
+export type IQueryAudit = TransportQueryAudit & {
+  /** NOTE: `user` can contain nothing! */
+  user: {
+    id: number;
+    name: string;
+    email: string;
+  } | {};
+};
 
-export interface IQueryAuditValues {
-  title: string
-  text: string
-}
-
-export interface IQueryAuditChangeSize {
-  added: number
-  removed: number
-}
-
-export interface IQueryAuditDetail extends IQueryAudit {
-  previousAuditId: number | null
-  values: IQueryAuditValues
-  changedFields: string[]
-  changes: Record<string, IQueryAuditChangeSize>
-}
+export type IQueryAuditDetail = TransportQueryAuditDetail;

@@ -25,6 +25,50 @@ export interface SshConfigResult {
   warnings?: SshConfigWarning[];
 }
 
+type ReadConfigResult = {
+  content: string;
+  warning?: SshConfigWarning;
+};
+
+function readConfigFile(configPath: string): ReadConfigResult {
+  const trustIssue = configTrustIssue(configPath);
+
+  if (trustIssue) {
+    log.warn(`Ignoring ${configPath}: ${trustIssue}`);
+    return {
+      content: "",
+      warning: {
+        code: "untrusted",
+        message: `${tildify(configPath)} was ignored because ${trustIssue}.`,
+      },
+    };
+  }
+
+  try {
+    return {
+      content: fs.readFileSync(configPath, "utf8"),
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+
+    log.warn(`Ignoring ${configPath}: ${message}`);
+    return {
+      content: "",
+      warning: {
+        code: "invalid",
+        message: `${tildify(configPath)} could not be read and was ignored.`,
+      },
+    };
+  }
+}
+
+// ssh(1) resolves a relative Include against the directory of the config that
+// declared it, not the working directory.
+function resolveIncludePattern(pattern: string, includeRoot: string): string {
+  const expanded = resolveHomePathToAbsolute(pattern);
+  return path.isAbsolute(expanded) ? expanded : path.join(includeRoot, expanded);
+}
+
 // Display ~/.ssh/config instead of the absolute path when it's under home.
 function tildify(p: string): string {
   const home = os.homedir();
@@ -57,30 +101,65 @@ function configTrustIssue(configPath: string): string | null {
 
 export function readSshConfig(
   host: string,
-  configPath?: string,
+  rootConfigPath?: string,
   user?: string
 ): SshConfigResult {
   const endResult: SshConfigResult = { host };
-  configPath = configPath ?? path.join(os.homedir(), ".ssh", "config");
-  if (!fs.existsSync(configPath)) {
+  const warnings: SshConfigWarning[] = [];
+
+  rootConfigPath = rootConfigPath ?? path.join(os.homedir(), ".ssh", "config");
+  if (!fs.existsSync(rootConfigPath)) {
     return endResult;
   }
 
-  const trustIssue = configTrustIssue(configPath);
-  if (trustIssue) {
-    log.warn(`Ignoring ${configPath}: ${trustIssue}`);
-    endResult.warnings = [
-      {
-        code: "untrusted",
-        message: `${tildify(configPath)} was ignored because ${trustIssue}.`,
-      },
-    ];
+  const rootConfig = readConfigFile(rootConfigPath);
+  if (rootConfig.warning) {
+    endResult.warnings = [rootConfig.warning];
     return endResult;
   }
+
+  const includeRoot = path.dirname(rootConfigPath);
+
+  // Expanded in place so ordering holds. Nested Includes are not expanded.
+  const includeRegex = /^Include[ \t]+(.+)$/gim;
+  const expandedConfig = rootConfig.content.replace(includeRegex, (_, rawPattern) => {
+    // The leading whitespace keeps a `#` inside a filename intact.
+    const pattern = rawPattern.replace(/\s+#.*$/, "").trim();
+    let combinedConfig = "";
+
+    // A bad include must not take down the rest of the config.
+    let matchedEntries: fs.Dirent[];
+    try {
+      matchedEntries = fs
+        .globSync(resolveIncludePattern(pattern, includeRoot), {
+          withFileTypes: true,
+        })
+        .filter((entry) => !entry.isDirectory());
+    } catch (err) {
+      log.warn(`Ignoring Include ${pattern}: ${err.message}`);
+      warnings.push({
+        code: "invalid",
+        message: `Include ${pattern} could not be expanded and was ignored.`,
+      });
+      return "";
+    }
+
+    for (const entry of matchedEntries) {
+      const filePath = path.join(entry.parentPath, entry.name);
+      const includedFile = readConfigFile(filePath);
+
+      if (includedFile.warning) {
+        warnings.push(includedFile.warning);
+      }
+
+      combinedConfig += includedFile.content + "\n";
+    }
+
+    return combinedConfig;
+  });
 
   try {
-    const raw = fs.readFileSync(configPath, "utf-8");
-    const config = SSHConfig.parse(raw);
+    const config = SSHConfig.parse(expandedConfig);
     // Pass the connection username so `Match user`/`Match localuser` rules are
     // evaluated against it. Without it, compute() falls back to the OS user and
     // those Match blocks never fire.
@@ -114,13 +193,15 @@ export function readSshConfig(
       endResult.user = result.user as string;
     }
   } catch (err) {
-    log.error("Failed to read or parse ~/.ssh/config:", err);
-    endResult.warnings = [
-      {
-        code: "invalid",
-        message: `${tildify(configPath)} could not be parsed and was ignored.`,
-      },
-    ];
+    log.error("Failed to parse ~/.ssh/config:", err);
+    warnings.push({
+      code: "invalid",
+      message: `${tildify(rootConfigPath)} could not be parsed and was ignored.`,
+    });
+  }
+
+  if (warnings.length) {
+    endResult.warnings = warnings;
   }
 
   return endResult;
