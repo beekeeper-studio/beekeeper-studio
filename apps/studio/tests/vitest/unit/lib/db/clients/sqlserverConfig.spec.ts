@@ -142,9 +142,13 @@ describe('sqlServerConnectHint', () => {
     const tedious: any = new Error("Login failed for user 'sa'.")
     tedious.code = 'ELOGIN'
     expect(sqlServerConnectHint(tedious, config)).toBe(expected)
-    // The ODBC driver (integrated auth) has no code, only text.
-    expect(sqlServerConnectHint(new Error("[Microsoft][ODBC Driver 18 for SQL Server]Login failed for user 'CORP\\me'."), config))
-      .toBe(expected)
+    // The ODBC driver (integrated auth) reports SQL Server's error number as a numeric code,
+    // so the wording -- which follows the server's language -- does not matter.
+    const odbc: any = new Error('[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Fehler bei der Anmeldung.')
+    odbc.code = 18456
+    expect(sqlServerConnectHint(odbc, config)).toBe(expected)
+    // Text is the last resort when an error arrives with no code at all.
+    expect(sqlServerConnectHint(new Error("Login failed for user 'CORP\\me'."), config)).toBe(expected)
 
     expect(expected).not.toMatch(/browser|1434/i)
     expect(expected).toContain('Default Database')
@@ -167,7 +171,13 @@ describe('sqlServerConnectHint', () => {
     expect(sqlServerConnectHint(login, {
       server: '192.168.0.170', database: 'nope', options: { instanceName: 'CLIENTSQLSERVER' },
     }, localized)).toBe(expected)
-    // The ODBC driver (integrated auth) reports no number, only text.
+    // The ODBC driver (integrated auth) puts the number on the error itself, which mssql
+    // re-wraps -- shape captured from ODBC Driver 18 against a real server.
+    const odbc: any = new Error('[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Die Datenbank kann nicht geoeffnet werden.')
+    odbc.code = 4060
+    expect(sqlServerConnectHint(odbc, { server: 'localhost', database: 'nope', options: { trustedConnection: true } }))
+      .toBe(expected)
+    // Text is the last resort when an error arrives with no number at all.
     expect(sqlServerConnectHint(
       new Error('Cannot open database "nope" requested by the login. The login failed.'),
       { server: 'localhost', database: 'nope', options: {} }

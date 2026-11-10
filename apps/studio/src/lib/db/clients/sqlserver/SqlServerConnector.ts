@@ -79,23 +79,44 @@ export interface SqlServerLoginError {
   message: string
 }
 
-// Error 4060: the database named in the login cannot be opened. The server does not say
-// whether it is missing or merely off-limits to this login. The number is exact and
-// language-independent; the text is the fallback for the ODBC driver, which gives no number.
+// SQL Server's own error numbers, which are the same in every server language.
+// 4060: the database named in the login cannot be opened -- the server does not say whether
+// it is missing or merely off-limits to this login. 18456: login failed.
 const CANNOT_OPEN_DATABASE_NUMBER = 4060
-const CANNOT_OPEN_DATABASE_PATTERN = /cannot open database .* requested by the login/i
+const LOGIN_FAILED_NUMBER = 18456
 
-export function isSqlServerDatabaseUnavailable(err: any, serverErrors: SqlServerLoginError[] = []): boolean {
-  return serverErrors.some((e) => e.number === CANNOT_OPEN_DATABASE_NUMBER) ||
-    CANNOT_OPEN_DATABASE_PATTERN.test(flattenErrorText(err))
+// The two drivers hand the number over differently. tedious drops it (its error is just
+// code 'ELOGIN'), so it is read off the login ERROR tokens collected in doConnect. The ODBC
+// driver (msnodesqlv8, integrated auth) reports the first server error with the number as a
+// numeric `code`, which mssql copies onto its ConnectionError.
+function serverErrorNumbers(err: any, serverErrors: SqlServerLoginError[] = []): number[] {
+  const numbers: number[] = serverErrors.map((e) => e.number)
+  const visit = (e: any) => {
+    if (!e || typeof e !== 'object') return
+    numbers.push(e.code, e.number)
+    if (e.originalError) visit(e.originalError)
+    if (Array.isArray(e.precedingErrors)) e.precedingErrors.forEach(visit)
+    if (Array.isArray(e.errors)) e.errors.forEach(visit)
+  }
+  if (Array.isArray(err)) err.forEach(visit); else visit(err)
+  return numbers.filter((n) => typeof n === 'number')
 }
 
 // A login rejection is sent by SQL Server itself, so the host -- and for a named instance the
-// browser lookup -- already worked. tedious tags these ELOGIN; the ODBC driver only has text.
+// browser lookup -- already worked. The text is only a fallback for errors that arrive with
+// neither a number nor tedious's ELOGIN code.
 const LOGIN_REJECTED_PATTERN = /\bELOGIN\b|login failed|cannot open database/i
+const CANNOT_OPEN_DATABASE_PATTERN = /cannot open database .* requested by the login/i
 
-export function isSqlServerLoginRejection(err: any): boolean {
-  return LOGIN_REJECTED_PATTERN.test(flattenErrorText(err))
+export function isSqlServerLoginRejection(err: any, serverErrors: SqlServerLoginError[] = []): boolean {
+  const numbers = serverErrorNumbers(err, serverErrors)
+  return numbers.includes(LOGIN_FAILED_NUMBER) || numbers.includes(CANNOT_OPEN_DATABASE_NUMBER) ||
+    LOGIN_REJECTED_PATTERN.test(flattenErrorText(err))
+}
+
+export function isSqlServerDatabaseUnavailable(err: any, serverErrors: SqlServerLoginError[] = []): boolean {
+  return serverErrorNumbers(err, serverErrors).includes(CANNOT_OPEN_DATABASE_NUMBER) ||
+    CANNOT_OPEN_DATABASE_PATTERN.test(flattenErrorText(err))
 }
 
 // Both failure modes reach the user as something they cannot act on: a self-signed
@@ -119,7 +140,7 @@ export function sqlServerConnectHint(err: any, config: any, serverErrors: SqlSer
   const instanceName = config?.options?.instanceName
   if (!instanceName) return null
 
-  return isSqlServerLoginRejection(err)
+  return isSqlServerLoginRejection(err, serverErrors)
     ? sqlServerConnectHints.loginRejected(config.server, instanceName)
     : sqlServerConnectHints.browserUnreachable(config.server, instanceName)
 }
@@ -145,7 +166,7 @@ function withConnectHint(err: any, config: any, serverErrors: SqlServerLoginErro
   const hint = sqlServerConnectHint(err, config, serverErrors)
   const hasMessage = err instanceof Error && !!err.message
   const original = ((hasMessage && err.message) || flattenErrorText(err) || String(err)).trim()
-  const message = isSqlServerLoginRejection(err)
+  const message = isSqlServerLoginRejection(err, serverErrors)
     ? sqlServerLoginMessage(original, serverErrors.map((e) => e.message))
     : original
   if (!hint && hasMessage && message === original) return err
