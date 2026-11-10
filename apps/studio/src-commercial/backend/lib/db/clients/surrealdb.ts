@@ -1,7 +1,6 @@
 import { DateTime, Decimal, Duration, escapeIdent, Geometry, jsonify, ProvidedAuth, RecordId, StringRecordId, surql, toSurqlString, Uuid } from "surrealdb";
 import { SupportedFeatures, FilterOptions, TableOrView, Routine, TableColumn, ExtendedTableColumn, TableTrigger, TableIndex, SchemaFilterOptions, NgQueryResult, DatabaseFilterOptions, TableProperties, PrimaryKeyColumn, OrderBy, TableFilter, TableResult, StreamResults, BksField, CancelableQuery, BksFieldType, TableChanges, TableUpdateResult, TableInsert, TableUpdate, TableDelete } from "@/lib/db/models";
 import { ForeignKeyRow, TableKey } from "@/shared/lib/dialects/models";
-import { _baseTest } from "@playwright/test";
 import { DatabaseElement, IDbConnectionDatabase, SurrealAuthType } from "@/lib/db/types";
 import rawLog from '@bksLogger';
 import { IDbConnectionServer } from "@/lib/db/backendTypes";
@@ -17,6 +16,7 @@ import { SurrealDBCursor } from "./surrealdb/SurrealDBCursor";
 import { ChangeBuilderBase } from "@/shared/lib/sql/change_builder/ChangeBuilderBase";
 import { SurrealDBChangeBuilder } from "@/shared/lib/sql/change_builder/SurrealDBChangeBuilder";
 import { SurrealConn, SurrealPool } from "./surrealdb/SurrealDBPool";
+import { kindToBksType, valueToKind } from "./surrealdb/utils";
 import _ from "lodash";
 import { groupForeignKeyRows } from "@/lib/db/clients/utils";
 import { surrealEscapeValue } from "@/shared/lib/dialects/surrealdb";
@@ -285,7 +285,7 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
         const nullOnlyFields = new Set<string>();
         results.rows.forEach((row) => {
           Object.entries(row).forEach(([field, value]) => {
-            const kind = this.valueToKind(value, table);
+            const kind = valueToKind(value, table);
 
             if (!existingFields.has(field)) {
               existingFields.add(field);
@@ -845,57 +845,8 @@ export class SurrealDBClient extends BasicDatabaseClient<SurrealDBQueryResult> {
   protected parseTableColumn(column: SurrealFieldInfo): BksField {
     return {
       name: column.name,
-      bksType: column.name === 'id' ? 'SURREALID' : this.kindToBksType(column.kind)
+      bksType: column.name === 'id' ? 'SURREALID' : kindToBksType(column.kind)
     }
-  }
-
-  private kindToBksType(kind: string): BksFieldType {
-    // Remove the option<> wrapper
-    const unwrapped = kind?.trim().replace(/^option<(.*)>$/, '$1') ?? '';
-    // Remove generic args, convert type | none to just type
-    const parts = unwrapped.split('<')[0].split('|').map((p) => p.trim()).filter((p) => p !== 'none');
-    if (parts.length !== 1) return 'UNKNOWN';
-    const base = parts[0];
-
-    switch (base) {
-      case 'record': return 'SURREALID';
-      case 'string': return 'STRING';
-      case 'number': return 'NUMBER';
-      case 'int': return 'INTEGER';
-      case 'float': return 'FLOAT';
-      case 'decimal': return 'DECIMAL';
-      case 'bool': return 'BOOLEAN';
-      case 'datetime': return 'DATETIME';
-      case 'duration': return 'DURATION';
-      case 'uuid': return 'UUID';
-      case 'object': return 'OBJECT';
-      case 'array':
-      case 'set':
-        return 'ARRAY';
-      case 'geometry': return 'GEOMETRY';
-      default: return 'UNKNOWN';
-    }
-  }
-
-  // Guess types for schemaless tables
-  private valueToKind(value: unknown, table: string): string | null {
-    if (value == null) return null;
-    if (value instanceof RecordId) {
-      return value.table.name === table ? 'string' : `record<${value.table.name}>`;
-    }
-    if (value instanceof Decimal) return 'decimal';
-    if (value instanceof DateTime || value instanceof Date) return 'datetime';
-    if (value instanceof Duration) return 'duration';
-    if (value instanceof Uuid) return 'uuid';
-    if (value instanceof Geometry) return 'geometry';
-    if (_.isString(value)) return 'string';
-    // A sample can't tell int from float, so stay general
-    if (_.isNumber(value) || typeof value === 'bigint') return 'number';
-    if (_.isBoolean(value)) return 'bool';
-    if (_.isArray(value)) return 'array';
-    if (value instanceof Set) return 'set';
-    if (_.isPlainObject(value)) return 'object';
-    return 'any';
   }
 
   private valueToBksType(value: unknown): BksFieldType {
