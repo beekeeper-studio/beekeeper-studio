@@ -5,21 +5,21 @@ import { ExtensionRepository, RegistryMap, ThemeManifest, ThemeSnapshot } from '
 
 export interface IThemeHandlers {
   'theme/themes': () => Promise<ThemeSnapshot[]>,
-  'theme/watch': ({ sId }: { sId: string }) => Promise<void>
+  'theme/watch': ({ sId, themeId }: { sId: string, themeId: string }) => Promise<void>
   'theme/checkForUpdates': ({ id }: { id: string }) => Promise<boolean>
   'theme/install': ({ id }: { id: string }) => Promise<ThemeManifest>
   'theme/update': ({ id }: { id: string }) => Promise<ThemeManifest>
   'theme/entries': ({ clearCache }: { clearCache: boolean }) => Promise<{ entries: RegistryMap, errors: string[] }>
   'theme/uninstall': ({ id }: { id: string }) => Promise<void>
-  'theme/details': ({ id }: { id: string }) => Promise<Partial<ExtensionRepository>>
+  'theme/repository': ({ id }: { id: string }) => Promise<Partial<ExtensionRepository>>
 }
 
 export const ThemeHandlers: IThemeHandlers = {
   'theme/themes': async function() {
     return await context.themeManager.getThemes();
   },
-  'theme/watch': async function({ sId }: { sId: string }) {
-    context.themeManager.watch(sId, (id) => {
+  'theme/watch': async function({ sId, themeId }: { sId: string, themeId: string }) {
+    context.themeManager.watch(sId, themeId, (id) => {
       state(sId).port.postMessage({ type: 'themeFileChanged', input: id });
     });
   },
@@ -42,7 +42,7 @@ export const ThemeHandlers: IThemeHandlers = {
   'theme/uninstall': async function({ id }: { id: string }) {
     await context.themeManager.uninstallTheme(id);
   },
-  'theme/details': async function({ id }: { id: string }) {
+  'theme/repository': async function({ id }: { id: string }) {
     try {
       return await context.themeManager.registry.getRepository(id);
     } catch (e) {

@@ -299,6 +299,11 @@ $gutter-h: 1.5rem;
     }
   }
 
+  .alert {
+    margin: 0;
+    margin-top: 0.5rem;
+  }
+
   .divider {
     width: 100%;
     border-bottom: 1px solid var(--gray-a4);

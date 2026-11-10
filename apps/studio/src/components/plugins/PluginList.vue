@@ -18,7 +18,9 @@
       <div ref="intro">
         <slot name="header" />
       </div>
-      <slot name="sticky-header" />
+      <hgroup class="sticky-header" v-if="$slots['sticky-header']">
+        <slot name="sticky-header" />
+      </hgroup>
       <div class="filter">
         <div class="filter-wrap">
           <input
@@ -37,6 +39,7 @@
             </x-button>
 
             <x-button
+              v-if="canFilter"
               class="btn btn-fab btn-link action-item"
               :class="{ active: pluginsHidden }"
               menu
@@ -146,6 +149,9 @@ export default Vue.extend({
     ...mapGetters("plugins/snapshots", ["snapshotsById"]),
     systemConfig() {
       return this.type === "theme" ? this.$bksConfig.themeSystem : this.$bksConfig.pluginSystem;
+    },
+    canFilter() {
+      return this.canFilterOfficial || this.canFilterCommunity || this.canFilterCustom || this.canFilterUnlisted;
     },
     canFilterOfficial() {
       return !this.systemConfig.officialDisabled && this.hasOfficial;
@@ -261,8 +267,6 @@ export default Vue.extend({
 </script>
 
 <style lang="scss" scoped>
-@import '../../shared/assets/styles/_variables';
-
 .plugin-list {
   height: 100%;
   min-height: 0;
@@ -295,7 +299,7 @@ export default Vue.extend({
 
 .filter {
   position: relative;
-  margin-bottom: $gutter-h;
+  margin-bottom: 0.4rem;
   padding-inline: 0.5rem;
   .filter-wrap {
     position: relative;
@@ -310,7 +314,7 @@ export default Vue.extend({
   }
   .filter-actions {
     display: inline-flex;
-    padding: 0 0 0 ($gutter-h * 0.5);
+    padding: 0 0 0 0.2rem;
     x-button {
       display: inline-flex;
       align-items: center;
@@ -348,13 +352,13 @@ export default Vue.extend({
       }
     }
     x-menu {
-      padding: $gutter-h 0;
+      padding: 0.4rem 0;
       label {
         display: flex;
         justify-content: flex-start;
         align-items: center;
-        padding: 0 $gutter-w;
-        min-height: $input-height;
+        padding: 0 0.8rem;
+        min-height: 26px;
         cursor: pointer;
       }
       x-menuitem {
@@ -366,6 +370,31 @@ export default Vue.extend({
       line-height: 26px;
       width: 14px;
       color: var(--text-muted);
+    }
+  }
+}
+
+hgroup.sticky-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-inline: 0.5rem;
+  height: 2.5rem;
+
+  &::v-deep {
+    h1, h2, h3, h4, h5, h6 {
+      margin: 0;
+      padding: 0;
+    }
+
+    .btn-icon {
+      width: 1.5rem;
+      min-width: 1.5rem;
+      height: 1.5rem;
+
+      .material-icons, .material-icons-outlined {
+        font-size: 1.2rem;
+      }
     }
   }
 }

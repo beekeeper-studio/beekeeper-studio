@@ -1,127 +1,163 @@
 <template>
-  <span
-    class="theme-preview-scope"
-    :class="`appearance-${appearance}`"
-    :data-theme-preview="themeId"
+  <label
+    class="theme-item"
+    :class="{ selected, disabled: theme.disableState.disabled }"
   >
-    <link
-      rel="stylesheet"
-      :href="`theme://${themeId}/style.css?preview&t=${reloadedAt}`"
-    >
-    <span
-      v-for="mode in modes"
-      :key="mode"
-      :class="`theme-preview theme-${themeId} ${mode}`"
-    >
-      <span class="titlebar-preview">
-        <span v-if="$config.isMac" class="traffic-lights">
-          <span class="traffic-light close" />
-          <span class="traffic-light minimize" />
-          <span class="traffic-light maximize" />
-        </span>
-        <span class="title">Beekeeper Studio</span>
-        <span class="titlebar-actions">
-          <template v-if="!$config.isMac">
-            <i class="material-icons">remove</i>
-            <i class="material-icons">crop_square</i>
-            <i class="material-icons">clear</i>
-          </template>
-        </span>
-      </span>
-      <span class="workspace-preview">
-        <span class="sidebar-preview">
-          <span class="heading">Entities</span>
-          <span class="table-item">
-            <i class="material-icons table-icon">grid_on</i>
-            <span class="name">users</span>
-          </span>
-          <span class="table-item">
-            <i class="material-icons table-icon">grid_on</i>
-            <span class="name">orders</span>
-          </span>
-          <span class="table-item">
-            <i class="material-icons view-icon">grid_on</i>
-            <span class="name">active_users</span>
-          </span>
-        </span>
-        <span class="query-editor-preview">
-          <span class="tabs-preview">
-            <span class="tab active">
-              <i class="material-icons query">code</i>
-              Query #1
-            </span>
-            <span class="tab">
-              <i class="material-icons table-icon">grid_on</i>
-              users
-            </span>
-          </span>
-          <span class="editor-preview">
-            <span class="line">
-              <span class="gutter">1</span>
-              <span class="kw">SELECT</span> * <span class="kw">FROM</span> users
-            </span>
-            <span class="line">
-              <span class="gutter">2</span>
-              <span class="kw">WHERE</span> role =
-              <span class="str">'admin'</span>
-            </span>
-            <span class="line">
-              <span class="gutter">3</span>
-              <span class="kw">LIMIT</span> <span class="num">3</span>
-            </span>
-            <span class="actions">
-              <span class="btn-primary-preview"> Run </span>
-            </span>
-          </span>
-          <table class="result-preview">
-            <thead>
-              <tr>
-                <th class="range-highlight range-bottom">id</th>
-                <th class="range-highlight range-bottom">name</th>
-                <th>role</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="range-selected range-top range-left">1</td>
-                <td class="range-selected range-top range-right">alice</td>
-                <td>admin</td>
-              </tr>
-              <tr>
-                <td class="range-selected range-bottom range-left">2</td>
-                <td
-                  class="range-selected range-bottom range-right range-handle"
-                >
-                  bob
-                </td>
-                <td>admin</td>
-              </tr>
-            </tbody>
-          </table>
-        </span>
-      </span>
-      <span class="statusbar-preview">
-        <i class="material-icons">link</i>
-        <span class="name">my_database</span>
-        <i class="material-icons settings">settings</i>
+    <span class="theme-name">
+      <input
+        type="radio"
+        name="theme-name"
+        :value="themeId"
+        :checked="selected"
+        :disabled="theme.disableState.disabled"
+        @change="$emit('change', themeId)"
+      >
+      <span class="theme-label">{{ theme.manifest.name }}</span>
+      <span
+        v-if="theme.origin !== 'bundled'"
+        @click.prevent.stop
+      >
+        <x-button
+          class="btn btn-icon"
+          title="More"
+          menu
+        >
+          <i class="material-icons">more_horiz</i>
+          <x-menu>
+            <x-menuitem @click="$emit('view', theme.manifest)">
+              <x-label>View</x-label>
+            </x-menuitem>
+            <x-menuitem @click="$emit('uninstall', theme.manifest)">
+              <x-label>Uninstall</x-label>
+            </x-menuitem>
+          </x-menu>
+        </x-button>
       </span>
     </span>
-  </span>
+    <span class="theme-preview-frame">
+      <span
+        class="theme-preview-scope"
+        :class="`appearance-${appearance}`"
+        :data-theme-preview="themeId"
+      >
+        <link
+          rel="stylesheet"
+          :href="`theme://${themeId}/style.css?preview&t=${reloadedAt}`"
+        >
+        <span
+          v-for="mode in modes"
+          :key="mode"
+          :class="`theme-preview theme-${themeId} ${mode}`"
+        >
+          <span class="titlebar-preview">
+            <span v-if="$config.isMac" class="traffic-lights">
+              <span class="traffic-light close" />
+              <span class="traffic-light minimize" />
+              <span class="traffic-light maximize" />
+            </span>
+            <span class="title">Beekeeper Studio</span>
+            <span class="titlebar-actions">
+              <template v-if="!$config.isMac">
+                <i class="material-icons">remove</i>
+                <i class="material-icons">crop_square</i>
+                <i class="material-icons">clear</i>
+              </template>
+            </span>
+          </span>
+          <span class="workspace-preview">
+            <span class="sidebar-preview">
+              <span class="heading">Entities</span>
+              <span class="table-item">
+                <i class="material-icons table-icon">grid_on</i>
+                <span class="name">users</span>
+              </span>
+              <span class="table-item">
+                <i class="material-icons table-icon">grid_on</i>
+                <span class="name">orders</span>
+              </span>
+              <span class="table-item">
+                <i class="material-icons view-icon">grid_on</i>
+                <span class="name">active_users</span>
+              </span>
+            </span>
+            <span class="query-editor-preview">
+              <span class="tabs-preview">
+                <span class="tab active">
+                  <i class="material-icons query">code</i>
+                  Query #1
+                </span>
+                <span class="tab">
+                  <i class="material-icons table-icon">grid_on</i>
+                  users
+                </span>
+              </span>
+              <span class="editor-preview">
+                <span class="line">
+                  <span class="gutter">1</span>
+                  <span class="kw">SELECT</span> * <span class="kw">FROM</span> users
+                </span>
+                <span class="line">
+                  <span class="gutter">2</span>
+                  <span class="kw">WHERE</span> role =
+                  <span class="str">'admin'</span>
+                </span>
+                <span class="line">
+                  <span class="gutter">3</span>
+                  <span class="kw">LIMIT</span> <span class="num">3</span>
+                </span>
+                <span class="actions">
+                  <span class="btn-primary-preview"> Run </span>
+                </span>
+              </span>
+              <table class="result-preview">
+                <thead>
+                  <tr>
+                    <th class="range-highlight range-bottom">id</th>
+                    <th class="range-highlight range-bottom">name</th>
+                    <th>role</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="range-selected range-top range-left">1</td>
+                    <td class="range-selected range-top range-right">alice</td>
+                    <td>admin</td>
+                  </tr>
+                  <tr>
+                    <td class="range-selected range-bottom range-left">2</td>
+                    <td
+                      class="range-selected range-bottom range-right range-handle"
+                    >
+                      bob
+                    </td>
+                    <td>admin</td>
+                  </tr>
+                </tbody>
+              </table>
+            </span>
+          </span>
+          <span class="statusbar-preview">
+            <i class="material-icons">link</i>
+            <span class="name">my_database</span>
+            <i class="material-icons settings">settings</i>
+          </span>
+        </span>
+      </span>
+    </span>
+  </label>
 </template>
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
+import { mapGetters } from "vuex";
 import { AppEvent } from "@/common/AppEvent";
+import type { ThemeSnapshot } from "@/services/plugin/types";
 
 export default Vue.extend({
   props: {
-    themeId: {
-      type: String,
+    theme: {
+      type: Object as PropType<ThemeSnapshot>,
       required: true,
-    },
-    appearance: {
-      type: String as PropType<"light" | "dark" | "auto">,
-      default: "auto",
     },
   },
   data() {
@@ -130,6 +166,16 @@ export default Vue.extend({
     };
   },
   computed: {
+    ...mapGetters({
+      currentThemeId: "themes/id",
+      appearance: "themes/appearance",
+    }),
+    themeId(): string {
+      return this.theme.manifest.id;
+    },
+    selected(): boolean {
+      return this.currentThemeId === this.themeId;
+    },
     modes(): string[] {
       if (this.appearance === "light") {
         return ["light-theme"];
@@ -171,6 +217,66 @@ export default Vue.extend({
 </script>
 
 <style scoped lang="scss">
+label.theme-item {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  cursor: pointer;
+  align-items: flex-start;
+
+  .theme-preview-frame {
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+  }
+
+  &.selected .theme-preview-frame {
+    border-color: var(--border-hover);
+    outline: 1px solid var(--border-hover);
+    box-shadow: 0 0 3px 1px var(--border-hover);
+  }
+
+  &:has(input:focus-visible) .theme-preview-frame {
+    outline: var(--focus-ring);
+  }
+
+  &.disabled .theme-label {
+    color: var(--text-muted);
+  }
+
+  .theme-name {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 1.15rem;
+    margin-bottom: 0.35rem;
+    font-size: 12px;
+    font-weight: 700;
+
+    .theme-label {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+      border: 0;
+      box-shadow: none;
+    }
+  }
+}
+
 .theme-preview-scope {
   display: grid;
   aspect-ratio: 16 / 10;
@@ -479,5 +585,9 @@ export default Vue.extend({
     color: var(--btn-primary-fg);
     background: var(--btn-primary-bg);
   }
+}
+
+.btn-icon {
+  margin-right: -0.25rem;
 }
 </style>

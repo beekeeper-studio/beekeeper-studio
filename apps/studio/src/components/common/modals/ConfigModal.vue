@@ -73,10 +73,8 @@ export default Vue.extend({
 </script>
 
 <style lang="scss" scoped>
-@import '../../../assets/styles/app/_variables';
-
 .config ::v-deep {
-  .content > :first-child {
+  .config-content > :first-child {
     margin-top: 0;
   }
 
@@ -85,12 +83,6 @@ export default Vue.extend({
     margin-bottom: 0.75rem;
     padding-inline: 0.5rem;
     font-size: 1rem;
-  }
-
-  p.description {
-    margin-bottom: 0.25rem;
-    padding-inline: 0.5rem;
-    font-size: $base-font-size;
   }
 
   hr {

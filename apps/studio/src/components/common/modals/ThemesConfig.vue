@@ -24,10 +24,7 @@
         Configure…
       </button>
     </control-row>
-    <control-row
-      fieldset
-      title="Theme mode"
-    >
+    <control-row fieldset title="Theme mode">
       <span class="mode-options">
         <label class="mode-option">
           <input
@@ -37,7 +34,7 @@
             value="light"
             :checked="themeAppearance === 'light'"
             @change="setThemeDark('light')"
-          >
+          />
           <span class="mode-option-content">Light</span>
         </label>
         <label class="mode-option">
@@ -48,7 +45,7 @@
             value="dark"
             :checked="themeAppearance === 'dark'"
             @change="setThemeDark('dark')"
-          >
+          />
           <span class="mode-option-content">Dark</span>
         </label>
         <label class="mode-option">
@@ -59,135 +56,102 @@
             value="auto"
             :checked="themeAppearance === 'auto'"
             @change="setThemeDark('auto')"
-          >
+          />
           <span class="mode-option-content">Auto</span>
         </label>
       </span>
     </control-row>
-    <control-row
-      fieldset
-      direction="column"
-      title="Installed Themes"
-    >
+    <control-row fieldset direction="column" title="Installed Themes">
       <div class="theme-list">
-        <label
-          v-for="theme in listedThemes"
+        <theme-preview
+          v-for="theme in enabledThemes"
           :key="theme.manifest.id"
-          class="theme-item"
-          :class="{
-            selected: themeId === theme.manifest.id,
-            disabled: theme.disableState.disabled,
-          }"
-        >
-          <span class="theme-name">
-            <input
-              type="radio"
-              name="theme-name"
-              :value="theme.manifest.id"
-              :checked="themeId === theme.manifest.id"
-              :disabled="theme.disableState.disabled"
-              @change="setThemeId(theme.manifest.id)"
-            >
-            <span class="theme-label">{{ theme.manifest.name }}</span>
-            <span
-              v-if="theme.origin !== 'bundled'"
-              @click.prevent.stop
-            >
-              <x-button
-                class="btn btn-icon"
-                title="More"
-                menu
-              >
-                <i class="material-icons">more_horiz</i>
-                <x-menu>
-                  <x-menuitem @click="openThemePage(theme.manifest)">
-                    <x-label>View</x-label>
-                  </x-menuitem>
-                  <x-menuitem @click="uninstall(theme.manifest)">
-                    <x-label>Uninstall</x-label>
-                  </x-menuitem>
-                </x-menu>
-              </x-button>
-            </span>
-          </span>
-          <span class="theme-preview-frame">
-            <theme-preview
-              :theme-id="theme.manifest.id"
-              :appearance="themeAppearance"
-            />
-          </span>
-        </label>
+          :theme="theme"
+          @change="setThemeId"
+          @view="openPage"
+          @uninstall="uninstall"
+        />
       </div>
+      <template v-if="licenseDisabledThemes.length > 0">
+        <div class="license-notice">
+          <span>Upgrade to unlock the themes below</span>
+          <upsell-buttons />
+        </div>
+        <div class="theme-list">
+          <theme-preview
+            v-for="theme in licenseDisabledThemes"
+            :key="theme.manifest.id"
+            :theme="theme"
+            @change="setThemeId"
+            @view="openPage"
+            @uninstall="uninstall"
+          />
+        </div>
+      </template>
     </control-row>
     <config-page
       id="community-themes"
       title="Themes"
-      :loading="loadingEntries || loadingThemes"
+      :loading="loadingEntries || loadingCatalog"
     >
-      <template>
-        <div
-          v-if="themeEntriesError"
-          class="alert alert-danger"
+      <div
+        v-if="entriesError"
+        class="alert alert-danger"
+      >
+        <i class="material-icons">error_outline</i>
+        <div class="alert-body expand">
+          Community themes unavailable: {{ entriesError }}
+        </div>
+        <button
+          type="button"
+          class="btn btn-flat"
+          @click="reload"
         >
-          <i class="material-icons">error_outline</i>
-          <div class="alert-body expand">
-            Community themes unavailable: {{ themeEntriesError }}
-          </div>
+          Retry
+        </button>
+      </div>
+      <error-alert :error="errors" />
+      <plugin-list
+        v-if="!entriesError || sortedCatalog.length > 0"
+        :plugins="sortedCatalog"
+        search-placeholder="Search Themes"
+        type="theme"
+        @install="install"
+        @uninstall="uninstall"
+        @update="update"
+        @item-click="openPage"
+        @checkForUpdates="checkForUpdates"
+      >
+        <template #sticky-header>
+          <h3>Browse Themes</h3>
           <button
+            v-if="hasInstalledItems"
             type="button"
-            class="btn btn-flat"
-            @click="reinitThemeData"
+            class="btn btn-icon"
+            title="Check For Updates"
+            @click="checkAllForUpdates"
           >
-            Retry
+            <i class="material-icons">refresh</i>
           </button>
-        </div>
-        <div class="alerts">
-          <error-alert :error="errors" />
-        </div>
-        <plugin-list
-          v-if="!themeEntriesError || sortedThemes.length > 0"
-          :plugins="sortedThemes"
-          search-placeholder="Search Themes"
-          type="theme"
-          @install="install"
-          @uninstall="uninstall"
-          @update="update"
-          @item-click="openThemePage"
-          @checkForUpdates="checkForUpdates"
-        >
-          <template #sticky-header>
-            <div class="header-row">
-              <h3>Browse Themes</h3>
-              <button
-                v-if="hasInstalledThemes"
-                type="button"
-                class="btn btn-icon"
-                title="Check For Updates"
-                @click="checkAllForUpdates"
-              >
-                <i class="material-icons">refresh</i>
-              </button>
-            </div>
-          </template>
-        </plugin-list>
-      </template>
+        </template>
+      </plugin-list>
     </config-page>
     <config-page
       id="theme-detail"
-      :title="selectedTheme ? selectedTheme.name : ''"
-      :loading="loadingThemeReadme"
+      :title="selectedItem ? selectedItem.name : ''"
+      :loading="loadingReadme"
     >
       <template>
         <extension-page
-          v-if="selectedTheme"
+          v-if="selectedItem"
           type="theme"
-          :extension="selectedTheme"
-          :extension-repo="selectedThemeRepo"
-          :loading-markdown="loadingThemeReadme"
-          @install="install(selectedTheme)"
-          @uninstall="uninstall(selectedTheme)"
-          @update="update(selectedTheme)"
-          @checkForUpdates="checkForUpdates(selectedTheme)"
+          :extension="selectedItem"
+          :extension-repo="selectedRepo"
+          :loading-markdown="loadingReadme"
+          @install="install(selectedItem)"
+          @uninstall="uninstall(selectedItem)"
+          @update="update(selectedItem)"
+          @checkForUpdates="checkForUpdates(selectedItem)"
         />
       </template>
     </config-page>
@@ -200,8 +164,8 @@
         description="Allow themes to be automatically updated on application launch."
       >
         <x-switch
-          @click.prevent="themeAutoUpdate = !themeAutoUpdate"
-          :toggled="themeAutoUpdate"
+          @click.prevent="autoUpdate = !autoUpdate"
+          :toggled="autoUpdate"
         />
       </control-row>
       <control-row
@@ -209,8 +173,8 @@
         description="Community themes are developed and maintained by independent third parties, not by Beekeeper Studio. Use at your own risk."
       >
         <x-switch
-          @click.prevent="communityThemesEnabled = !communityThemesEnabled"
-          :toggled="communityThemesEnabled"
+          @click.prevent="communityEnabled = !communityEnabled"
+          :toggled="communityEnabled"
         />
       </control-row>
       <control-row
@@ -218,8 +182,8 @@
         description="Enable unlisted themes. These are themes not found in a registry, just placed in your themes directory manually."
       >
         <x-switch
-          @click.prevent="unlistedThemesEnabled = !unlistedThemesEnabled"
-          :toggled="unlistedThemesEnabled"
+          @click.prevent="unlistedEnabled = !unlistedEnabled"
+          :toggled="unlistedEnabled"
         />
       </control-row>
     </config-page>
@@ -235,6 +199,7 @@ import ControlRow from "@/components/common/ControlRow.vue";
 import ErrorAlert from "@/components/common/ErrorAlert.vue";
 import ExtensionPage from "@/components/plugins/ExtensionPage.vue";
 import PluginList from "@/components/plugins/PluginList.vue";
+import UpsellButtons from "@/components/upsell/common/UpsellButtons.vue";
 import type {
   ExtensionOrigin,
   ExtensionRegistryEntry,
@@ -255,16 +220,6 @@ const ORIGIN_ORDER: Record<ExtensionOrigin, number> = {
   "bundled": Number.MAX_SAFE_INTEGER
 };
 
-const INSTALL_ORDER: Record<"true" | "false", number> = {
-  "true": 0,
-  "false": 10
-}
-
-const DISABLED_ORDER: Record<"true" | "false", number> = {
-  "true": 20,
-  "false": 0
-}
-
 export default Vue.extend({
   name: "ThemesConfig",
   components: {
@@ -274,24 +229,25 @@ export default Vue.extend({
     ErrorAlert,
     ExtensionPage,
     PluginList,
+    UpsellButtons,
   },
   inject: ["config"],
   data() {
     return {
-      themes: [] as ExtensionUI[],
-      selectedThemeIdx: -1,
-      selectedThemeRepo: null,
-      loadingThemeReadme: false,
+      catalog: [] as ExtensionUI[],
+      selectedItemIdx: -1,
+      selectedRepo: null,
+      loadingReadme: false,
       errors: null,
-      loadingThemes: false,
+      loadingCatalog: false,
     };
   },
   computed: {
     ...mapState("themes/snapshots", {
-      snapshots: "all",
+      installedThemes: "all",
     }),
     ...mapState("themes/entries", {
-      themeEntriesError: "error",
+      entriesError: "error",
       loadingEntries: "loading",
     }),
     ...mapGetters("themes/entries", {
@@ -302,26 +258,20 @@ export default Vue.extend({
       themeId: "themes/id",
       themeAppearance: "themes/appearance",
     }),
-    selectedTheme() {
-      return this.themes[this.selectedThemeIdx];
+    selectedItem() {
+      return this.catalog[this.selectedItemIdx];
     },
-    sortedThemes() {
-      return _.sortBy(this.displayThemes, this.themeSorter);
-    },
-    displayThemes(): ExtensionUI[] {
-      return this.themes.map((theme) => ({
-        ...theme,
-        disabled: this.snapshotsById[theme.id]?.disableState.disabled
+    sortedCatalog() {
+      const items: ExtensionUI[] = this.catalog.map((item) => ({
+        ...item,
+        disabled: this.snapshotsById[item.id]?.disableState.disabled,
       }));
+      return _.sortBy(items, this.sorter);
     },
-    hasInstalledThemes(): boolean {
-      return this.themes.some((theme) => theme.installed);
+    hasInstalledItems(): boolean {
+      return this.catalog.some((item) => item.installed);
     },
-    listedThemes(): ThemeSnapshot[] {
-      const enabled = this.snapshots.filter((theme) => !theme.disableState.disabled);
-      return _.sortBy(enabled, (theme) => theme.manifest.name.toLowerCase());
-    },
-    themeAutoUpdate: {
+    autoUpdate: {
       get() {
         return this.$bksConfig.themeSystem.autoUpdate;
       },
@@ -332,7 +282,7 @@ export default Vue.extend({
         });
       },
     },
-    communityThemesEnabled: {
+    communityEnabled: {
       get() {
         return !this.$bksConfig.themeSystem.communityDisabled;
       },
@@ -341,10 +291,10 @@ export default Vue.extend({
           path: "themeSystem.communityDisabled",
           value: !value,
         });
-        await this.reinitThemeData();
+        await this.reload();
       },
     },
-    unlistedThemesEnabled: {
+    unlistedEnabled: {
       get() {
         return !this.$bksConfig.themeSystem.unlistedDisabled;
       },
@@ -353,87 +303,89 @@ export default Vue.extend({
           path: "themeSystem.unlistedDisabled",
           value: !value,
         });
-        await this.reinitThemeData();
+        await this.reload();
       },
+    },
+      enabledThemes(): ThemeSnapshot[] {
+      return this.installedThemes.filter(
+        (theme) => !theme.disableState.disabled,
+      );
+    },
+    licenseDisabledThemes(): ThemeSnapshot[] {
+      return this.installedThemes.filter(
+        (theme) =>
+          theme.disableState.disabled &&
+          theme.disableState.reason === "license-required",
+      );
     },
   },
   async mounted() {
-    await this.reinitThemeData();
+    await this.reload();
   },
   methods: {
     ...mapActions("themes", {
       setThemeDark: "setDark",
       setThemeId: "setId",
     }),
-    disabledReasonText(theme: ThemeSnapshot) {
-      if (!theme.disableState.disabled) {
-        return "";
-      }
-      return {
-        "community-themes-disabled": "Community themes are off",
-        "unlisted-theme-disabled": "Unlisted themes are off",
-        "missing-style": "Missing style.css",
-      }[theme.disableState.reason];
-    },
-    async reinitThemeData() {
-      this.themes = [];
+    async reload() {
+      this.catalog = [];
       await this.$store.dispatch("themes/initialize");
-      await this.loadThemes();
+      await this.loadCatalog();
     },
-    async loadThemes() {
-      this.loadingThemes = true;
+    async loadCatalog() {
+      this.loadingCatalog = true;
 
       try {
-        this.themes = await this.buildThemeListData();
+        this.catalog = await this.buildCatalog();
       } catch (e) {
         log.error(e);
       }
 
-      this.loadingThemes = false;
+      this.loadingCatalog = false;
     },
-    updateTheme(id: string, updated: Partial<ExtensionUI>) {
-      const idx = this.themes.findIndex((t) => t.id === id);
+    patchCatalogItem(id: string, patch: Partial<ExtensionUI>) {
+      const idx = this.catalog.findIndex((item) => item.id === id);
       if (idx === -1) {
         return;
       }
-      this.$set(this.themes, idx, { ...this.themes[idx], ...updated });
+      this.$set(this.catalog, idx, { ...this.catalog[idx], ...patch });
     },
     async install({ id }) {
       try {
-        this.updateTheme(id, { installing: true, error: null });
+        this.patchCatalogItem(id, { installing: true, error: null });
         await this.$util.send("theme/install", { id });
         await this.$store.dispatch("themes/snapshots/load");
-        this.updateTheme(id, { installed: true, loadable: true });
+        this.patchCatalogItem(id, { installed: true, loadable: true });
       } catch (e) {
         log.error(e);
-        this.updateTheme(id, { error: e });
+        this.patchCatalogItem(id, { error: e });
         this.$noty.error(`Failed to install theme: ${e.message}`);
       } finally {
-        this.updateTheme(id, { installing: false });
+        this.patchCatalogItem(id, { installing: false });
       }
     },
     async update({ id }) {
       try {
-        this.updateTheme(id, { installing: true, error: null });
+        this.patchCatalogItem(id, { installing: true, error: null });
         const manifest = await this.$util.send("theme/update", { id });
         await this.$store.dispatch("themes/snapshots/load");
-        this.updateTheme(id, {
+        this.patchCatalogItem(id, {
           version: manifest.version,
           updateAvailable: false,
           loadable: true,
         });
       } catch (e) {
         log.error(e);
-        this.updateTheme(id, { error: e });
+        this.patchCatalogItem(id, { error: e });
         this.$noty.error(`Failed to update theme: ${e.message}`);
       } finally {
-        this.updateTheme(id, { installing: false });
+        this.patchCatalogItem(id, { installing: false });
       }
     },
     async checkForUpdates({ id }) {
       try {
-        this.updateTheme(id, { checkingForUpdates: true });
-        this.updateTheme(id, {
+        this.patchCatalogItem(id, { checkingForUpdates: true });
+        this.patchCatalogItem(id, {
           updateAvailable: await this.$util.send("theme/checkForUpdates", {
             id,
           }),
@@ -442,12 +394,12 @@ export default Vue.extend({
         log.error(e);
         this.$noty.error(`Failed to check for update: ${e.message}`);
       } finally {
-        this.updateTheme(id, { checkingForUpdates: false });
+        this.patchCatalogItem(id, { checkingForUpdates: false });
       }
     },
     async checkAllForUpdates() {
-      const installed = this.themes.filter((theme) => theme.installed && theme.repo);
-      await Promise.all(installed.map((theme) => this.checkForUpdates(theme)));
+      const installed = this.catalog.filter((item) => item.installed && item.repo);
+      await Promise.all(installed.map((item) => this.checkForUpdates(item)));
     },
     async uninstall({ id }) {
       const confirmed = await this.$confirm(
@@ -465,33 +417,37 @@ export default Vue.extend({
           await this.setThemeId("default");
         }
         await this.$store.dispatch("themes/snapshots/load");
-        this.updateTheme(id, { installed: false });
+        this.patchCatalogItem(id, { installed: false });
       } catch (e) {
         log.error(e);
-        this.updateTheme(id, { error: e });
+        this.patchCatalogItem(id, { error: e });
         this.$noty.error(`Failed to uninstall theme: ${e.message}`);
       }
     },
-    async openThemePage({ id }) {
-      this.selectedThemeIdx = this.themes.findIndex((t) => t.id === id);
-      this.selectedThemeRepo = null;
-      this.loadingThemeReadme = true;
+    async openPage({ id }) {
+      this.selectedItemIdx = this.catalog.findIndex((item) => item.id === id);
+      this.selectedRepo = null;
+      this.loadingReadme = true;
       this.config.open("theme-detail");
       try {
-        this.selectedThemeRepo = await this.$util.send("theme/details", { id });
+        this.selectedRepo = await this.$util.send("theme/repository", { id });
       } catch (e) {
         log.error(e);
         this.$noty.error(`Error opening theme page: ${e.message}`);
       }
-      this.loadingThemeReadme = false;
+      this.loadingReadme = false;
     },
-    async buildThemeListData() {
+    async buildCatalog() {
       const entries: ExtensionRegistryEntry[] = this.entries;
-      const installedThemes: ThemeSnapshot[] = this.snapshots;
-      const list: ExtensionUI[] = [];
+      const installedThemes: ThemeSnapshot[] = this.installedThemes;
+      const catalog: ExtensionUI[] = [];
 
       for (const { manifest, origin } of installedThemes) {
-        const data: ExtensionUI = {
+        if (origin === "bundled") {
+          continue;
+        }
+
+        const item: ExtensionUI = {
           ...manifest,
           installed: true,
           installing: false,
@@ -500,16 +456,11 @@ export default Vue.extend({
           origin
         } as ExtensionUI;
 
-        if (data.origin === "bundled") {
-          continue;
-        }
-
         const entry = entries.find((entry) => entry.id === manifest.id);
 
-        // if the theme is found in a registry
         if (entry) {
-          data.repo = entry.repo;
-          data.updateAvailable = await this.$util
+          item.repo = entry.repo;
+          item.updateAvailable = await this.$util
             .send("theme/checkForUpdates", { id: manifest.id })
             .catch((e) => {
               this.errors = [
@@ -520,43 +471,32 @@ export default Vue.extend({
             });
         }
 
-        list.push(data);
+        catalog.push(item);
       }
 
       for (const entry of entries) {
-        if (!_.find(list, { id: entry.id })) {
-          const data: ExtensionUI = {
+        if (!_.find(catalog, { id: entry.id })) {
+          catalog.push({
             ...entry,
             installed: false,
             installing: false,
             checkingForUpdates: null,
-          } as ExtensionUI;
-
-          list.push(data);
+          } as ExtensionUI);
         }
       }
 
-      return list;
+      return catalog;
     },
-    themeSorter(t: ExtensionUI) {
-      return ORIGIN_ORDER[t.origin] + INSTALL_ORDER[`${t.installed}`] + DISABLED_ORDER[`${t.disabled}`];
+    sorter(item: ExtensionUI) {
+      return (
+        ORIGIN_ORDER[item.origin] + (item.installed ? 0 : 10) + (item.disabled ? 20 : 0)
+      );
     },
   },
 });
 </script>
 
 <style lang="scss" scoped>
-.header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.alerts {
-  margin-inline: 1.25rem;
-}
-
 .mode-options {
   display: flex;
   align-items: center;
@@ -576,7 +516,9 @@ export default Vue.extend({
   color: var(--btn-fg);
   background: var(--btn-flat-bg);
   cursor: pointer;
-  transition: background 0.15s ease-in-out, color 0.15s ease-in-out;
+  transition:
+    background 0.15s ease-in-out,
+    color 0.15s ease-in-out;
 
   &:hover {
     color: var(--btn-flat-fg-hover);
@@ -605,7 +547,6 @@ export default Vue.extend({
     box-shadow: none;
   }
 
-
   .mode-option-content {
     display: inline-flex;
     align-items: center;
@@ -631,82 +572,12 @@ export default Vue.extend({
   padding-top: 1rem;
 }
 
-.form-group label.theme-item {
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-  cursor: pointer;
-  align-items: flex-start;
-
-  .theme-preview-frame {
-    overflow: hidden;
-    border-radius: 4px;
-    border: 1px solid var(--border-subtle);
-    border-radius: 4px;
-  }
-
-  &.selected .theme-preview-frame {
-    border-color: var(--border-hover);
-    outline: 1px solid var(--border-hover);
-    box-shadow: 0 0 3px 1px var(--border-hover);
-  }
-
-  &:has(input:focus-visible) .theme-preview-frame {
-    outline: var(--focus-ring);
-  }
-
-  .theme-name {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    height: 1.15rem;
-    margin-bottom: 0.35rem;
-    font-size: 12px;
-    font-weight: 700;
-
-    .theme-label {
-      flex: 1 1 auto;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    input {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0 0 0 0);
-      white-space: nowrap;
-      border: 0;
-      box-shadow: none;
-    }
-  }
-}
-
-.theme-preview-frame {
-  width: 100%;
-}
-
-.form-group label.theme-item.disabled {
-  cursor: default;
-
-  .theme-label {
-    opacity: 0.6;
-  }
-}
-
-.theme-disabled-info {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.25rem;
-  aspect-ratio: 16 / 10;
-  padding: 0.35rem;
-  font-size: 11px;
-  overflow: hidden;
+.license-notice {
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-muted);
 }
 </style>

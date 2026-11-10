@@ -30,7 +30,7 @@
     </div>
     <div
       role="tabpanel"
-      class="content"
+      class="config-content"
     >
       <slot />
     </div>
@@ -173,7 +173,7 @@ export default Vue.extend({
   }
 }
 
-.content {
+.config-content {
   flex-grow: 1;
   height: 100%;
   min-width: 0;
@@ -205,6 +205,10 @@ export default Vue.extend({
 
     .config-group {
       margin-bottom: 1rem;
+    }
+
+    .alert {
+      margin-inline: 0.5rem;
     }
   }
 }

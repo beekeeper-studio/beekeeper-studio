@@ -51,6 +51,7 @@ import globals from '@/common/globals';
 import { ThemeManager } from '@/services/theme/ThemeManager';
 import { ThemeConfigurationModule } from '@/services/theme/modules/ThemeConfigurationModule';
 import { ThemeAutoUpdateModule } from '@/services/theme/modules/ThemeAutoUpdateModule';
+import { ThemeLicenseModule } from '@/services/theme/modules/ThemeLicenseModule';
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -234,6 +235,7 @@ async function init() {
   themeManager.registerModules([
     ThemeConfigurationModule.with({ config: BksConfig }),
     ThemeAutoUpdateModule.with({ config: BksConfig }),
+    ThemeLicenseModule,
   ]);
 
   context.pluginManager = pluginManager;

@@ -1,6 +1,11 @@
 
 .flyout-nav {
   font-size: $form-control-font-size;
+  &:focus-visible {
+    // Opening a menu shows outline in an awkward position
+    // https://github.com/beekeeper-studio/beekeeper-studio/pull/5018#pullrequestreview-5832380368
+    --focus-ring: none;
+  }
   .disabled-app-menu {
     pointer-events:none;
     opacity: 0.5;

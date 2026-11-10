@@ -31,7 +31,10 @@ export class ThemeManager extends Hookable<ThemeManager, ThemeModuleHookMap> {
   private manifests: ThemeManifest[] = [];
   private themeLocks: string[] = [];
   private watcher: FSWatcher = null;
-  private watchListeners = new Map<string, (themeId: string) => void>();
+  private watchListeners = new Map<
+    string,
+    { themeId: string; onChange: (themeId: string) => void }
+  >();
 
   constructor(readonly options: ThemeManagerOptions) {
     super();
@@ -79,11 +82,10 @@ export class ThemeManager extends Hookable<ThemeManager, ThemeModuleHookMap> {
       );
     }
 
-    let update = false;
+    const update = this.manifests.some((manifest) => manifest.id === id);
 
-    // If theme is already installed, perform update
-    if (this.manifests.find((manifest) => manifest.id === id)) {
-      update = true;
+    if (!update) {
+      await this.callHook("before-install-theme", id);
     }
 
     return await this.withThemeLock(id, async () => {
@@ -194,8 +196,6 @@ export class ThemeManager extends Hookable<ThemeManager, ThemeModuleHookMap> {
       });
     }
 
-    this.watcher?.add(this.manifests.map((manifest) => this.stylePath(manifest.id)));
-
     return await this.applyHook("theme-snapshots", snapshots);
   }
 
@@ -235,34 +235,44 @@ export class ThemeManager extends Hookable<ThemeManager, ThemeModuleHookMap> {
     return path.join(this.fileManager.getDirectoryOf(themeId), "style.css");
   }
 
-  /** Watch every installed theme's `style.css`, including it being deleted or restored. */
-  watch(key: string, onChange: (themeId: string) => void) {
-    this.watchListeners.set(key, onChange);
+  /** Watch the `style.css` of the theme each listener is using, including it being deleted or restored. */
+  watch(key: string, themeId: string, onChange: (themeId: string) => void) {
+    this.watchListeners.set(key, { themeId, onChange });
 
-    if (this.watcher) {
-      return;
+    if (!this.watcher) {
+      this.watcher = watch([], { ignoreInitial: true })
+        .on("change", this.notifyWatchers)
+        .on("add", this.notifyWatchers)
+        .on("unlink", this.notifyWatchers);
     }
 
-    const notify = (stylePath: string) => {
-      const themeId = path.basename(path.dirname(stylePath));
-      for (const [listenerKey, listener] of this.watchListeners) {
-        try {
-          listener(themeId);
-        } catch (e) {
-          log.debug("Dropping theme watch listener", e);
-          this.watchListeners.delete(listenerKey);
-        }
-      }
-    };
+    const wanted = new Set(
+      [...this.watchListeners.values()]
+        .filter(({ themeId }) => !this.isBundled(themeId))
+        .map(({ themeId }) => this.stylePath(themeId))
+    );
+    const watched = Object.entries(this.watcher.getWatched()).flatMap(
+      ([dir, files]) => files.map((file) => path.join(dir, file))
+    );
 
-    this.watcher = watch(
-      this.manifests.map((manifest) => this.stylePath(manifest.id)),
-      { ignoreInitial: true }
-    )
-      .on("change", notify)
-      .on("add", notify)
-      .on("unlink", notify);
+    this.watcher.unwatch(watched.filter((file) => !wanted.has(file)));
+    this.watcher.add([...wanted]);
   }
+
+  private notifyWatchers = (stylePath: string) => {
+    const themeId = path.basename(path.dirname(stylePath));
+    for (const [key, listener] of this.watchListeners) {
+      if (listener.themeId !== themeId) {
+        continue;
+      }
+      try {
+        listener.onChange(themeId);
+      } catch (e) {
+        log.debug("Dropping theme watch listener", e);
+        this.watchListeners.delete(key);
+      }
+    }
+  };
 
   private async withThemeLock<T>(
     id: string,

@@ -6,7 +6,9 @@ icon: material/palette-swatch
 
 # Theme Color System
 
-Beekeeper Studio's interface is built almost entirely from CSS custom properties. A theme does not set the color of a button or a table row directly — it sets a small number of **seed colors**, and everything else is derived from them.
+Beekeeper Studio's interface is built almost entirely from CSS custom properties. By default, every color is derived from a small number of **seed colors**. You can still set the color of a specific component when you need to.
+
+This keeps a theme consistent without much effort: every part of the interface draws from the same scales. It also makes recoloring easy: set `--base-accent` and everything that uses the primary color follows it.
 
 This page explains that derivation. If you just want to build a theme, start with [Creating a Theme](./creating-a-theme.md) and come back here when you need to know what a particular variable means.
 
@@ -14,18 +16,16 @@ This page explains that derivation. If you just want to build a theme, start wit
 
 Colors move through four layers, each one built on the one above it.
 
-| Layer | Example | Where it lives |
-| ----- | ------- | -------------- |
-| Seeds | `--base-blue: #0969da` | Your theme file |
-| Scales | `--blue-9`, `--blue-a3` | Generated at runtime |
-| Roles | `--blue-solid-bg`, `--text-muted` | `tokens/aliases.scss` |
-| Components | `--btn-primary-bg`, `--editor-keyword-fg` | `tokens/component.css` |
+| Layer           | Example                                         | Where it lives                                       |
+|-----------------|-------------------------------------------------|------------------------------------------------------|
+| Seeds           | `--base-blue`                                   | Your theme file                                      |
+| Steps           | `--blue-1`, `--blue-2`, `--blue-3`, ...         | Generated at runtime                                 |
+| Aliases         | `--blue-solid-bg`, `--blue-solid-contrast`, ... | `apps/studio/src/assets/styles/tokens/aliases.scss`  |
+| Components      | `--btn-bg`, `--sidebar-bg`, ...                 | `apps/studio/src/assets/styles/tokens/component.css` |
 
-A theme normally only touches the first layer, and overrides individual entries in the last one when a specific component needs to look different.
+### Seeds
 
-## Seeds
-
-A seed is one hex color. Beekeeper Studio reads these from your theme file after it loads:
+Beekeeper Studio reads these from your theme file after it loads:
 
 ```css
 --background      /* the page background */
@@ -33,11 +33,12 @@ A seed is one hex color. Beekeeper Studio reads these from your theme file after
 --base-red        --base-orange     --base-yellow
 --base-green      --base-blue       --base-purple
 --base-pink
+--base-accent     /* optional — drives the primary family */
 ```
 
-`--background` and `--base-gray` are required — the rest are optional, and any hue you leave out simply gets no scale. Seeds may differ between light and dark mode, and usually should.
+`--background` is required  — the rest are optional. `--base-accent` is not a hue of its own; it generates the `primary` scale (see [Semantic families](#semantic-families)). Seeds may differ between light and dark mode, and usually should.
 
-## Scales
+### Steps
 
 Each seed is expanded into a **12-step scale** using the [Radix Colors](https://www.radix-ui.com/colors) algorithm. The scale is generated in the app, not written by hand, and is transposed onto your `--background` so the steps sit correctly against your actual page color.
 
@@ -48,9 +49,9 @@ For a seed named `blue` you get:
 - `--blue-contrast` — the text color that reads legibly on top of step 9
 - `--blue-surface` — a translucent panel fill derived from step 2
 
-### What each step is for
+#### Use cases
 
-The twelve steps are not a light-to-dark ramp you pick from by eye. Each step has a job, and using the wrong one is what makes an interface look off.
+Each step is designed to be used in a particular way, following [Radix's use cases](https://www.radix-ui.com/colors/docs/palette-composition/understanding-the-scale#use-cases).
 
 | Step | Role name | Use it for |
 | ---- | --------- | ---------- |
@@ -67,9 +68,7 @@ The twelve steps are not a light-to-dark ramp you pick from by eye. Each step ha
 | 11 | `text` | Low-contrast text |
 | 12 | `text-contrast` | High-contrast text |
 
-Step 9 is the one that matters most: it *is* your seed color. The other eleven are built around it. If a theme looks wrong, it is usually because a seed was chosen without considering that it has to work as a solid fill with readable text on top.
-
-The alpha variants carry the same meanings. Prefer them whenever the color sits on top of something that isn't the page background — a row highlight over a striped table, for instance — because they blend instead of covering.
+Step 9 is the seed color. The other eleven are built around it.
 
 ### Role aliases
 
@@ -90,6 +89,20 @@ Gray is special: because it's the neutral the whole interface is built from, its
 ```
 
 Two extra aliases exist for convenience: `--border-color` (same as `--border-subtle`) and `--text-muted` (`--gray-10`).
+
+Please find all aliases in `apps/studio/src/assets/styles/tokens/aliases.scss`.
+
+### Components
+
+Component tokens are what the interface actually should use. Each one points at a step or alias:
+
+```css
+--btn-primary-bg: var(--primary-solid-bg);
+--btn-flat-bg: var(--gray-a3);
+--sidebar-bg: var(--gray-2);
+```
+
+Please find all component tokens in `apps/studio/src/assets/styles/tokens/component.css`.
 
 ## Semantic families
 
@@ -115,9 +128,9 @@ Component tokens are written against families, not hues. That is why a danger bu
 
 The other four families are fixed to their hue. A theme that needs a different one overrides the component tokens that use it.
 
-## Syntax categories
+## Syntax highlighting
 
-The SQL editor has around sixty color tokens, which is far too many to set one by one. They are grouped into eleven **categories**, and each token defaults to its category:
+Text editor colors are grouped into eleven **categories**.
 
 ```css
 --syntax-keyword      --syntax-string       --syntax-constant
@@ -126,16 +139,4 @@ The SQL editor has around sixty color tokens, which is far too many to set one b
 --syntax-comment      --syntax-punctuation
 ```
 
-Setting `--syntax-string` colors strings, escapes, regular expressions, character literals and attribute values in one line. You then override individual tokens only where your theme genuinely differs — for example, if escapes should stand out from the strings around them.
-
-## Where it all comes from
-
-| File | Contains |
-| ---- | -------- |
-| `apps/studio/public/themes/<id>.css` | Theme seeds and overrides |
-| `src/assets/styles/tokens/common.scss` | Step and role names, hue list, family map |
-| `src/assets/styles/tokens/aliases.scss` | Role aliases, family mapping |
-| `src/assets/styles/tokens/component.css` | Every component token and its default |
-| `src/assets/styles/tokens/fallback.css` | Values used before a theme loads |
-
-`component.css` is the reference worth keeping open while working on a theme — it lists every token that exists, grouped by the part of the interface it affects.
+Each category colors a group of more specific `--editor-*-fg` tokens. Please find all of them in [`component.css`](https://github.com/beekeeper-studio/beekeeper-studio/blob/master/apps/studio/src/assets/styles/tokens/component.css).

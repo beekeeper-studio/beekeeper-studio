@@ -43,24 +43,16 @@
           </div>
         </template>
         <template #sticky-header>
-          <div class="header-row">
-            <h3>Installed Plugins</h3>
-            <button
-              v-if="sortedInstalledPlugins.length > 0"
-              type="button"
-              class="btn btn-icon"
-              title="Check For Updates"
-              @click="checkAllForUpdates"
-            >
-              <i class="material-icons">refresh</i>
-            </button>
-          </div>
-          <div
-            v-if="sortedInstalledPlugins.length === 0"
-            class="alert alert-info"
+          <h3>Installed Plugins</h3>
+          <button
+            v-if="sortedInstalledPlugins.length > 0"
+            type="button"
+            class="btn btn-icon"
+            title="Check For Updates"
+            @click="checkAllForUpdates"
           >
-            No plugins are currently installed
-          </div>
+            <i class="material-icons">refresh</i>
+          </button>
         </template>
       </plugin-list>
     </div>
@@ -111,41 +103,39 @@
       :title="selectedPlugin ? selectedPlugin.name : ''"
       :loading="loadingPluginReadme"
     >
-      <template>
-        <extension-page
-          v-if="selectedPlugin"
-          type="plugin"
-          :extension="selectedPlugin"
-          :extension-repo="selectedPluginRepo"
-          :loading-markdown="loadingPluginReadme"
-          @install="install(selectedPlugin)"
-          @uninstall="uninstall(selectedPlugin)"
-          @update="update(selectedPlugin)"
-          @checkForUpdates="checkForUpdates(selectedPlugin)"
-        >
-          <template #settings>
-            <label class="checkbox-group">
-              <input
-                type="checkbox"
-                :checked="autoUpdateEnabled"
-                @change="toggleAutoUpdate"
-              >
-              <span>Auto-update</span>
-            </label>
-            <label
-              class="checkbox-group"
-              v-tooltip="'Only allow this plugin to run Read Only queries against your database'"
+      <extension-page
+        v-if="selectedPlugin"
+        type="plugin"
+        :extension="selectedPlugin"
+        :extension-repo="selectedPluginRepo"
+        :loading-markdown="loadingPluginReadme"
+        @install="install(selectedPlugin)"
+        @uninstall="uninstall(selectedPlugin)"
+        @update="update(selectedPlugin)"
+        @checkForUpdates="checkForUpdates(selectedPlugin)"
+      >
+        <template #settings>
+          <label class="checkbox-group">
+            <input
+              type="checkbox"
+              :checked="autoUpdateEnabled"
+              @change="toggleAutoUpdate"
             >
-              <input
-                type="checkbox"
-                :checked="pluginReadOnly"
-                @change="toggleReadOnly"
-              >
-              <span>Read-Only</span>
-            </label>
-          </template>
-        </extension-page>
-      </template>
+            <span>Auto-update</span>
+          </label>
+          <label
+            class="checkbox-group"
+            v-tooltip="'Only allow this plugin to run Read Only queries against your database'"
+          >
+            <input
+              type="checkbox"
+              :checked="pluginReadOnly"
+              @change="toggleReadOnly"
+            >
+            <span>Read-Only</span>
+          </label>
+        </template>
+      </extension-page>
     </config-page>
     <config-page
       id="plugin-config"
@@ -238,16 +228,6 @@ const ORIGIN_ORDER: Record<ExtensionOrigin, number> = {
   "bundled": Number.MAX_SAFE_INTEGER
 };
 
-const INSTALL_ORDER: Record<"true" | "false", number> = {
-  "true": 0,
-  "false": 10
-}
-
-const DISABLED_ORDER: Record<"true" | "false", number> = {
-  "true": 20,
-  "false": 0
-}
-
 export default Vue.extend({
   name: "PluginsConfig",
   components: {
@@ -271,7 +251,6 @@ export default Vue.extend({
       loadingPluginReadme: false,
       autoUpdateEnabled: true,
       pluginReadOnly: true,
-      loadedPlugins: false,
       errors: null,
       loadingPlugins: false,
     };
@@ -529,7 +508,7 @@ export default Vue.extend({
       await this.getAutoUpdateSetting(id);
       await this.getReadOnlySetting(id);
       try {
-        this.selectedPluginRepo = await this.$util.send("plugin/details", { id });
+        this.selectedPluginRepo = await this.$util.send("plugin/repository", { id });
       } catch (e) {
         log.error(e);
         this.$noty.error(`Error opening plugin page: ${e.message}`);
@@ -590,7 +569,9 @@ export default Vue.extend({
       return list;
     },
     pluginSorter(p: ExtensionUI) {
-      return ORIGIN_ORDER[p.origin] + INSTALL_ORDER[`${p.installed}`] + DISABLED_ORDER[`${p.disabled}`];
+      return (
+        ORIGIN_ORDER[p.origin] + (p.installed ? 0 : 10) + (p.disabled ? 20 : 0)
+      );
     },
     async saveGithubToken(value: string) {
       await this.$settings.set('pluginGithubToken', value);
@@ -611,6 +592,7 @@ $gutter-h: 1.5rem;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  padding-inline: 0.5rem;
 }
 
 .installed-plugin-list {
@@ -625,7 +607,4 @@ $gutter-h: 1.5rem;
   position: relative;
 }
 
-.plugin-manager-filter-container {
-  margin-top: 1rem;
-}
 </style>

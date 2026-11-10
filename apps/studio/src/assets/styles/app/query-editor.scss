@@ -120,6 +120,7 @@
 
   .BksSqlTextEditor {
     min-height: 0;
+    isolation: isolate;
   }
 
   .statusbar {

@@ -2,7 +2,7 @@
   <slideover
     v-if="parentPage"
     ref="slideover"
-    mount-to-nearest=".config > .content"
+    mount-to-nearest=".config > .config-content"
     :loading="loading"
     @close="onSlideoverClose"
   >

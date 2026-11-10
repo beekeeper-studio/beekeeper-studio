@@ -116,7 +116,8 @@ export class ExtensionRegistryError extends Error {
 export type ThemeSystemErrorCode =
   | "THEME_ID_RESERVED"
   | "THEME_NOT_FOUND"
-  | "MANIFEST_ID_MISMATCH";
+  | "MANIFEST_ID_MISMATCH"
+  | "LICENSE_REQUIRED";
 
 export class ThemeSystemError extends Error {
   constructor(

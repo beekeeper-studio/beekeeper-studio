@@ -69,8 +69,6 @@ export class ThemeRenderer {
       this.options.store.commit("themes/setSystemDark", dark);
     });
 
-    this.utility.send("theme/watch");
-
     this.bus.on(AppEvent.themeFileChanged, async (id: string) => {
       await this.store.dispatch("themes/snapshots/load");
       if (id === this.themeId) {
@@ -90,6 +88,11 @@ export class ThemeRenderer {
         themeDark: getters["themes/dark"],
       }),
       ({ themeId, themeDark }) => this.handleThemeChanged(themeId, themeDark)
+    );
+
+    this.store.watch(
+      (_state, getters) => getters["licenses/isUltimate"],
+      () => this.store.dispatch("themes/snapshots/load")
     );
   }
 
@@ -119,6 +122,9 @@ export class ThemeRenderer {
   }
 
   private async apply(themeId: string, dark: boolean): Promise<void> {
+    if (themeId !== this.themeId) {
+      this.utility.send("theme/watch", { themeId });
+    }
     this.themeId = themeId;
     this.dark = dark;
 

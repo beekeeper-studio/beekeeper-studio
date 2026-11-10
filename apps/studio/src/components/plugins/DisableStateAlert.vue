@@ -76,6 +76,12 @@
       {{ snapshot.manifest.name }} has been disabled as your license only allows
       {{ maxPlugins }}. Upgrade or uninstall the excess plugins.
     </div>
+    <div
+      class="alert-body"
+      v-else-if="snapshot.disableState.reason === 'license-required'"
+    >
+      {{ snapshot.manifest.name }} requires a paid license.
+    </div>
     <div class="alert-body" v-else>
       {{ snapshot.manifest.name }} is currently disabled.
     </div>

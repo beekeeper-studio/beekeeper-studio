@@ -11,7 +11,7 @@ interface IPluginHandlers {
   "plugin/waitForInit": () => Promise<void>,
   "plugin/plugins": () => Promise<PluginSnapshot[]>
   "plugin/entries": ({ clearCache }: { clearCache: boolean }) => Promise<RegistryMap>
-  "plugin/details": ({ id }: { id: string }) => Promise<Partial<ExtensionRepository>>
+  "plugin/repository": ({ id }: { id: string }) => Promise<Partial<ExtensionRepository>>
   "plugin/install": ({ id }: { id: string }) => Promise<Manifest>
   "plugin/update": ({ id }: { id: string }) => Promise<Manifest>
   "plugin/uninstall": ({ id }: { id: string }) => Promise<void>
@@ -81,7 +81,7 @@ export const PluginHandlers: IPluginHandlers = {
     }
     return await context.pluginManager.registry.getEntries();
   },
-  "plugin/details": async ({ id }) => {
+  "plugin/repository": async ({ id }) => {
     try {
       return await context.pluginManager.getRepository(id);
     } catch (e) {

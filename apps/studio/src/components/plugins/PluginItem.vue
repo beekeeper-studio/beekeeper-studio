@@ -137,7 +137,6 @@ export default Vue.extend({
 }
 
 .badge {
-  font-size: 0.75rem;
   vertical-align: middle;
   text-transform: none;
 
