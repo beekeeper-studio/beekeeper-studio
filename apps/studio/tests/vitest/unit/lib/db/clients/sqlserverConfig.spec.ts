@@ -189,6 +189,28 @@ describe('sqlServerConnectHint', () => {
     ])).toBeNull()
   })
 
+  it("asks for a Default Database when the login's own default cannot be opened", () => {
+    const expected = sqlServerConnectHints.defaultDatabaseUnavailable
+    expect(expected).toContain('Default Database')
+    const blank = { server: 'localhost', options: {} }
+
+    // tedious: the number arrives on the collected login ERROR tokens.
+    const login: any = new Error("Login failed for user 'app'.")
+    login.code = 'ELOGIN'
+    expect(sqlServerConnectHint(login, blank, [
+      { number: 4064, message: 'Standarddatenbank des Benutzers kann nicht geoeffnet werden.' },
+      { number: 18456, message: "Login failed for user 'app'." },
+    ])).toBe(expected)
+    // ODBC: the number is the error's numeric code.
+    const odbc: any = new Error('[Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Standarddatenbank kann nicht geoeffnet werden.')
+    odbc.code = 4064
+    expect(sqlServerConnectHint(odbc, blank)).toBe(expected)
+    // Text is the last resort.
+    expect(sqlServerConnectHint(new Error('Cannot open user default database. Login failed.'), blank)).toBe(expected)
+    // More specific than the generic instance rejection.
+    expect(sqlServerConnectHint(odbc, { server: 'db1', options: { instanceName: 'SQL2019' } })).toBe(expected)
+  })
+
   it('leaves the frontend helper adding a docs link and no second copy of the advice', () => {
     // Only one layer states the remedy. These failures are classified here because the
     // frontend only ever sees a flat message (UtilityConnection rebuilds errors as

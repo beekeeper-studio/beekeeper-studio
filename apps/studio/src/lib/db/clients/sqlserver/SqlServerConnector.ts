@@ -71,6 +71,9 @@ export const sqlServerConnectHints = {
   databaseUnavailable: (database: string): string =>
     `Database "${database}" does not exist on this server, or the login has no access to it. ` +
     `Clear Default Database to connect to the login's default database.`,
+  defaultDatabaseUnavailable:
+    `The login's own default database cannot be opened. Enter a database the login can ` +
+    `access, such as master, in Default Database.`,
 }
 
 // What the server sent in an ERROR token during login (tedious 'errorMessage' event).
@@ -81,8 +84,10 @@ export interface SqlServerLoginError {
 
 // SQL Server's own error numbers, which are the same in every server language.
 // 4060: the database named in the login cannot be opened -- the server does not say whether
-// it is missing or merely off-limits to this login. 18456: login failed.
+// it is missing or merely off-limits to this login. 4064: no database was named and the one
+// the server falls back to for this login cannot be opened. 18456: login failed.
 const CANNOT_OPEN_DATABASE_NUMBER = 4060
+const CANNOT_OPEN_DEFAULT_DATABASE_NUMBER = 4064
 const LOGIN_FAILED_NUMBER = 18456
 
 // The two drivers hand the number over differently. tedious drops it (its error is just
@@ -105,18 +110,25 @@ function serverErrorNumbers(err: any, serverErrors: SqlServerLoginError[] = []):
 // A login rejection is sent by SQL Server itself, so the host -- and for a named instance the
 // browser lookup -- already worked. The text is only a fallback for errors that arrive with
 // neither a number nor tedious's ELOGIN code.
-const LOGIN_REJECTED_PATTERN = /\bELOGIN\b|login failed|cannot open database/i
+const LOGIN_REJECTED_PATTERN = /\bELOGIN\b|login failed|cannot open database|cannot open user default database/i
 const CANNOT_OPEN_DATABASE_PATTERN = /cannot open database .* requested by the login/i
+const CANNOT_OPEN_DEFAULT_DATABASE_PATTERN = /cannot open user default database/i
 
 export function isSqlServerLoginRejection(err: any, serverErrors: SqlServerLoginError[] = []): boolean {
   const numbers = serverErrorNumbers(err, serverErrors)
   return numbers.includes(LOGIN_FAILED_NUMBER) || numbers.includes(CANNOT_OPEN_DATABASE_NUMBER) ||
+    numbers.includes(CANNOT_OPEN_DEFAULT_DATABASE_NUMBER) ||
     LOGIN_REJECTED_PATTERN.test(flattenErrorText(err))
 }
 
 export function isSqlServerDatabaseUnavailable(err: any, serverErrors: SqlServerLoginError[] = []): boolean {
   return serverErrorNumbers(err, serverErrors).includes(CANNOT_OPEN_DATABASE_NUMBER) ||
     CANNOT_OPEN_DATABASE_PATTERN.test(flattenErrorText(err))
+}
+
+export function isSqlServerDefaultDatabaseUnavailable(err: any, serverErrors: SqlServerLoginError[] = []): boolean {
+  return serverErrorNumbers(err, serverErrors).includes(CANNOT_OPEN_DEFAULT_DATABASE_NUMBER) ||
+    CANNOT_OPEN_DEFAULT_DATABASE_PATTERN.test(flattenErrorText(err))
 }
 
 // Both failure modes reach the user as something they cannot act on: a self-signed
@@ -135,6 +147,11 @@ export function sqlServerConnectHint(err: any, config: any, serverErrors: SqlSer
   // Applies with or without an instance name, and is more specific than loginRejected.
   if (config?.database && isSqlServerDatabaseUnavailable(err, serverErrors)) {
     return sqlServerConnectHints.databaseUnavailable(config.database)
+  }
+
+  // The mirror case: Default Database was left blank, and the fix is to fill it in.
+  if (isSqlServerDefaultDatabaseUnavailable(err, serverErrors)) {
+    return sqlServerConnectHints.defaultDatabaseUnavailable
   }
 
   const instanceName = config?.options?.instanceName
