@@ -219,8 +219,8 @@ importers:
         specifier: ^1.1.2
         version: 1.1.2
       '@beekeeperstudio/knex-snowflake-dialect':
-        specifier: ^0.5.0
-        version: 0.5.0(asn1.js@5.4.1)(debug@4.4.3(supports-color@8.1.1))(knex@2.5.1(better-sqlite3@13.0.3)(mysql2@3.23.1(@types/node@22.19.11))(pg@8.18.0)(supports-color@8.1.1)(tedious@19.2.1(@azure/core-client@1.10.1(supports-color@8.1.1))(supports-color@8.1.1)))(supports-color@8.1.1)
+        specifier: ^0.5.1
+        version: 0.5.1(knex@2.5.1(better-sqlite3@13.0.3)(mysql2@3.23.1(@types/node@22.19.11))(pg@8.18.0)(supports-color@8.1.1)(tedious@19.2.1(@azure/core-client@1.10.1(supports-color@8.1.1))(supports-color@8.1.1)))(snowflake-sdk@3.4.1(asn1.js@5.4.1)(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1))
       '@beekeeperstudio/plugin':
         specifier: ^1.8.0
         version: 1.8.0
@@ -1976,10 +1976,11 @@ packages:
   '@beekeeperstudio/bks-er-diagram@1.1.2':
     resolution: {integrity: sha512-633LYkE/mGaRS25VECpYl8cqgulfCr9o7vK4G74+NBXT/rSM0iZc3xGh2f0axbieGBKQ5gh91OjrukZ+gtf0wA==}
 
-  '@beekeeperstudio/knex-snowflake-dialect@0.5.0':
-    resolution: {integrity: sha512-n9jb/t2GQal4y4UW4HOFcTs+TsEZTY03D03yLwXKD5T4A7riTDQ0EiTCiJ/jrCiFgdZfmQghvSAkxj+79Qaqug==}
+  '@beekeeperstudio/knex-snowflake-dialect@0.5.1':
+    resolution: {integrity: sha512-RQlhlk3sgrLH6HdKRM8zQwX2e6+IafFw/X/R9khr2dxs3bxMb2ixMjQFW76dyeMJQ+j5WHlWBO+X8hwF+csG8A==}
     peerDependencies:
       knex: '>=2.4.1'
+      snowflake-sdk: '>=2.4.0'
 
   '@beekeeperstudio/plugin@1.8.0':
     resolution: {integrity: sha512-BYKaP+NdT1EPd9TebRTWczeXUYggNJ/3r1mlne4t525qHJQbbD1sW0g5zZ8FKoGdgL9RYp1Ng/dwunJ7b6AH3w==}
@@ -11139,15 +11140,11 @@ snapshots:
 
   '@beekeeperstudio/bks-er-diagram@1.1.2': {}
 
-  '@beekeeperstudio/knex-snowflake-dialect@0.5.0(asn1.js@5.4.1)(debug@4.4.3(supports-color@8.1.1))(knex@2.5.1(better-sqlite3@13.0.3)(mysql2@3.23.1(@types/node@22.19.11))(pg@8.18.0)(supports-color@8.1.1)(tedious@19.2.1(@azure/core-client@1.10.1(supports-color@8.1.1))(supports-color@8.1.1)))(supports-color@8.1.1)':
+  '@beekeeperstudio/knex-snowflake-dialect@0.5.1(knex@2.5.1(better-sqlite3@13.0.3)(mysql2@3.23.1(@types/node@22.19.11))(pg@8.18.0)(supports-color@8.1.1)(tedious@19.2.1(@azure/core-client@1.10.1(supports-color@8.1.1))(supports-color@8.1.1)))(snowflake-sdk@3.4.1(asn1.js@5.4.1)(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1))':
     dependencies:
       knex: 2.5.1(better-sqlite3@13.0.3)(mysql2@3.23.1(@types/node@22.19.11))(pg@8.18.0)(supports-color@8.1.1)(tedious@19.2.1(@azure/core-client@1.10.1(supports-color@8.1.1))(supports-color@8.1.1))
       lodash: 4.18.1
       snowflake-sdk: 3.4.1(asn1.js@5.4.1)(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
-    transitivePeerDependencies:
-      - asn1.js
-      - debug
-      - supports-color
 
   '@beekeeperstudio/plugin@1.8.0': {}
 

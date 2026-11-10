@@ -28,4 +28,4 @@ allowBuilds:
   "@vue/web-component-wrapper@https://codeload.github.com/beekeeper-studio/vue-web-component-wrapper/tar.gz/635e4b427b90e199c273b194cf9db6b744d63e95": true
 
 minimumReleaseAgeExclude:
-  - "@beekeeperstudio/knex-snowflake-dialect@0.5.0"
+  - "@beekeeperstudio/knex-snowflake-dialect@0.5.1"
