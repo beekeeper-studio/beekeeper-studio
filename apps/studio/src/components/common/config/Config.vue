@@ -116,8 +116,6 @@ export default Vue.extend({
 </script>
 
 <style lang="scss" scoped>
-@import '../../../assets/styles/app/_variables';
-
 .config {
   display: flex;
   min-height: 100%;
@@ -147,7 +145,6 @@ export default Vue.extend({
   justify-content: flex-start;
   padding-left: 0.75rem;
   border-radius: 6px;
-  font-size: $base-font-size;
   font-weight: normal;
   text-align: left;
   text-transform: none;
