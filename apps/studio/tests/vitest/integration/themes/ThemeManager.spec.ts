@@ -250,5 +250,37 @@ describe("Basic Theme Management", () => {
         expect(changed).toContain("theme-watcher-test");
       }, { timeout: 5000, interval: 200 });
     });
+
+    it("should watch one theme at a time", async () => {
+      const changed: string[] = [];
+
+      installTheme("first-theme");
+      installTheme("second-theme");
+
+      const manager = new ThemeManager({ fileManager, registry });
+      manager.registerModule(class extends ThemeModule {
+        constructor(options: ThemeModuleOptions) {
+          super(options);
+          this.hook("theme-file-changed", (themeId) => void changed.push(themeId));
+        }
+      });
+      await manager.initialize();
+
+      manager.watch("first-theme");
+      manager.watch("second-theme");
+
+      const firstStyle = path.join(fileManager.options.root, "first-theme", "style.css");
+      const secondStyle = path.join(fileManager.options.root, "second-theme", "style.css");
+
+      await vi.waitFor(() => {
+        fs.appendFileSync(secondStyle, "body {}\n");
+        expect(changed).toContain("second-theme");
+      }, { timeout: 5000, interval: 200 });
+
+      fs.appendFileSync(firstStyle, "body {}\n");
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      expect(changed).not.toContain("first-theme");
+    });
   });
 });
