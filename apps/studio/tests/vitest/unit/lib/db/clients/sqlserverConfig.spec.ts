@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { SQLServerClient, sqlServerConnectHint, sqlServerConnectHints } from '@/lib/db/clients/sqlserver'
+import { SQLServerClient, sqlServerConnectHint, sqlServerConnectHints, sqlServerLoginMessage } from '@/lib/db/clients/sqlserver'
 import { IDbConnectionDatabase, IDbConnectionServerConfig } from '@/lib/db/types'
 import { IDbConnectionServer } from '@/lib/db/backendTypes'
 import { FriendlyErrorHelper } from '@/frontend/utils/FriendlyErrorHelper'
@@ -134,6 +134,27 @@ describe('sqlServerConnectHint', () => {
     expect(hint).toContain('Port field')
   })
 
+  it('never blames SQL Browser when the named instance answered and rejected the login', () => {
+    // A login rejection comes from the instance itself, so the browser lookup succeeded.
+    const config = { server: '192.168.0.170', options: { instanceName: 'CLIENTSQLSERVER' } }
+    const expected = sqlServerConnectHints.loginRejected('192.168.0.170', 'CLIENTSQLSERVER')
+
+    const tedious: any = new Error("Login failed for user 'sa'.")
+    tedious.code = 'ELOGIN'
+    expect(sqlServerConnectHint(tedious, config)).toBe(expected)
+    // The ODBC driver (integrated auth) has no code, only text.
+    expect(sqlServerConnectHint(new Error("[Microsoft][ODBC Driver 18 for SQL Server]Login failed for user 'CORP\\me'."), config))
+      .toBe(expected)
+    expect(sqlServerConnectHint(new Error('Cannot open database "nope" requested by the login.'), config))
+      .toBe(expected)
+
+    expect(expected).not.toMatch(/browser|1434/i)
+    expect(expected).toContain('Default Database')
+    // Must not pick up the frontend's SQL Browser docs link either.
+    const help = FriendlyErrorHelper.getHelpText('sqlserver', new Error(`Login failed for user 'sa'. ${expected}`))
+    expect(help?.link ?? '').not.toContain('sql-server-browser')
+  })
+
   it('leaves the frontend helper adding a docs link and no second copy of the advice', () => {
     // Only one layer states the remedy. These failures are classified here because the
     // frontend only ever sees a flat message (UtilityConnection rebuilds errors as
@@ -159,5 +180,21 @@ describe('sqlServerConnectHint', () => {
       port: 14330,
       options: {},
     })).toBeNull()
+  })
+})
+
+describe('sqlServerLoginMessage', () => {
+  it("puts the server's earlier login errors in front of the generic one", () => {
+    expect(sqlServerLoginMessage("Login failed for user 'sa'.", [
+      'Cannot open database "nope" requested by the login. The login failed.',
+      "Login failed for user 'sa'.",
+    ])).toBe('Cannot open database "nope" requested by the login. The login failed. Login failed for user \'sa\'.')
+  })
+
+  it('leaves the message alone when the server sent nothing more', () => {
+    expect(sqlServerLoginMessage("Login failed for user 'sa'.", [])).toBe("Login failed for user 'sa'.")
+    expect(sqlServerLoginMessage("Login failed for user 'sa'.", ["Login failed for user 'sa'."]))
+      .toBe("Login failed for user 'sa'.")
+    expect(sqlServerLoginMessage("Login failed for user 'sa'.")).toBe("Login failed for user 'sa'.")
   })
 })

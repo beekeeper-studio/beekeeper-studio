@@ -65,6 +65,17 @@ export const sqlServerConnectHints = {
     `No response from the SQL Server Browser service on ${host} (UDP 1434), required to resolve ` +
     `instance ${instanceName}. Start the SQL Server Browser service, allow UDP 1434 through the ` +
     `firewall, or enter the instance's static TCP port in the Port field.`,
+  loginRejected: (host: string, instanceName: string): string =>
+    `Instance ${instanceName} on ${host} was reached and rejected the login. Check the user, ` +
+    `password, and Default Database for this instance.`,
+}
+
+// A login rejection is sent by SQL Server itself, so the host -- and for a named instance the
+// browser lookup -- already worked. tedious tags these ELOGIN; the ODBC driver only has text.
+const LOGIN_REJECTED_PATTERN = /\bELOGIN\b|login failed|cannot open database/i
+
+export function isSqlServerLoginRejection(err: any): boolean {
+  return LOGIN_REJECTED_PATTERN.test(flattenErrorText(err))
 }
 
 // Both failure modes reach the user as something they cannot act on: a self-signed
@@ -73,26 +84,47 @@ export const sqlServerConnectHints = {
 // The browser case is keyed off the built config rather than the driver's text -- that text
 // is inconsistent (a generic "Failed to connect ... in 15000ms" in testing, not tedious's
 // "Failed to get response from SQL Server Browser") and options.instanceName is set exactly
-// when the connection depends on a browser lookup.
+// when the connection depends on a browser lookup. A login rejection is the exception: the
+// instance answered, so blaming the browser sends the user after the wrong problem.
 export function sqlServerConnectHint(err: any, config: any): string | null {
   if (SELF_SIGNED_CERT_PATTERN.test(flattenErrorText(err))) {
     return sqlServerConnectHints.selfSignedCertificate
   }
 
   const instanceName = config?.options?.instanceName
-  if (instanceName) return sqlServerConnectHints.browserUnreachable(config.server, instanceName)
+  if (!instanceName) return null
 
-  return null
+  return isSqlServerLoginRejection(err)
+    ? sqlServerConnectHints.loginRejected(config.server, instanceName)
+    : sqlServerConnectHints.browserUnreachable(config.server, instanceName)
+}
+
+// tedious keeps only the LAST error the server sends during login, which is always the
+// generic "Login failed for user 'x'." The message before it carries the actual reason
+// (e.g. `Cannot open database "x" requested by the login`), so put those back in front.
+export function sqlServerLoginMessage(message: string, serverMessages: string[] = []): string {
+  const seen = new Set<string>()
+  const parts: string[] = []
+  for (const raw of [...serverMessages, message]) {
+    const text = (raw || '').trim()
+    if (!text || seen.has(text) || (text !== message.trim() && message.includes(text))) continue
+    seen.add(text)
+    parts.push(/[.!?]$/.test(text) ? text : `${text}.`)
+  }
+  return parts.join(' ') || message
 }
 
 // Keep the driver's own text (and the original error) and append the remedy, so logs lose
 // nothing and the connection screen gains the one sentence that resolves the failure.
-function withConnectHint(err: any, config: any): any {
+function withConnectHint(err: any, config: any, serverMessages: string[] = []): any {
   const hint = sqlServerConnectHint(err, config)
   const hasMessage = err instanceof Error && !!err.message
-  if (!hint && hasMessage) return err
+  const original = ((hasMessage && err.message) || flattenErrorText(err) || String(err)).trim()
+  const message = isSqlServerLoginRejection(err)
+    ? sqlServerLoginMessage(original, serverMessages)
+    : original
+  if (!hint && hasMessage && message === original) return err
 
-  const message = ((hasMessage && err.message) || flattenErrorText(err) || String(err)).trim()
   // The connection screen renders this as one line, so join rather than stack.
   const separator = /[.!?]$/.test(message) ? ' ' : '. '
   const decorated: any = new Error(hint ? `${message}${separator}${hint}` : message)
@@ -128,14 +160,28 @@ export class SqlServerConnector extends DatabaseConnector<
       options.signal
     );
 
+    // Every error the server sends while logging in, in order. Only collected until the
+    // first connect settles: the pool reuses beforeConnect for each later connection.
+    const loginMessages: string[] = []
+    let collecting = true
+
     try {
       if (this.server.config.windowsAuthEnabled) {
         this.pool = await this.connectWindowsAuth();
       } else {
-        this.pool = await new TediousConnectionPool(this.dbConfig).connect();
+        this.pool = await new TediousConnectionPool({
+          ...this.dbConfig,
+          beforeConnect: (conn: any) => {
+            conn.on('errorMessage', (token: any) => {
+              if (collecting && token?.message) loginMessages.push(token.message)
+            })
+          },
+        }).connect();
       }
     } catch (err) {
-      throw withConnectHint(err, this.dbConfig);
+      throw withConnectHint(err, this.dbConfig, loginMessages);
+    } finally {
+      collecting = false
     }
 
     this.pool.on("error", (err) => {

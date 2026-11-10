@@ -183,6 +183,39 @@ function testWith(dockerTag: string, readonly: boolean) {
       })
     })
 
+    // tedious reports only the last login error ("Login failed for user"), which hides
+    // the reason and reads like a bad password.
+    describe("Login rejection", () => {
+      it("reports the missing database instead of a bare login failure", async () => {
+        const config = {
+          client: 'sqlserver',
+          host: container.getHost(),
+          port: container.getMappedPort(1433),
+          user: 'sa',
+          password: 'Example*1',
+          trustServerCertificate: true,
+          readOnlyMode: readonly,
+        } as IDbConnectionServerConfig
+
+        const client = new SQLServerClient(
+          { db: {}, sshTunnel: null, config } as IDbConnectionServer,
+          { database: 'no_such_database', connected: false, connecting: false, namespace: null }
+        )
+
+        let message = ''
+        try {
+          await client.connect()
+          await client.disconnect()
+        } catch (err) {
+          message = err.message
+        }
+
+        expect(message).toContain('Cannot open database "no_such_database"')
+        expect(message).toContain("Login failed for user 'sa'")
+        expect(message).not.toMatch(/SQL Server Browser/i)
+      })
+    })
+
     describe("Typed BEGIN TRAN (manual-commit query-tab flow)", () => {
       const tabId = 901
 
