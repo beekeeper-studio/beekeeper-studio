@@ -153,9 +153,8 @@
         to the first line of the code presented. Very silly decision
        -->
       <pre><code
-        ref="superFormatterCodeBlock"
-        class="language-sql"
-        v-html="formattedCode"
+        class="hljs language-sql"
+        v-html="highlightedCode"
       /></pre>
     </div>
     <div class="formatter-buttons">
@@ -254,6 +253,12 @@ export default Vue.extend({
         { value: 'lower' }
       ]
     },
+    // Markup for the preview. The query is user controlled, so it must never
+    // reach v-html directly: hljs.highlight() HTML-escapes its input and only
+    // adds its own <span> wrappers.
+    highlightedCode() {
+      return hljs.highlight(this.formattedCode ?? '', { language: 'sql' }).value
+    },
     canDelete() {
       const preset = this.presets.find(p => p.id === this.selectedPresetId)
       return preset == null ? false : !preset.systemDefault
@@ -280,17 +285,6 @@ export default Vue.extend({
     }
   },
   methods: {
-    highlightCode() {
-      this.$nextTick(() => {
-        const codeBlock = this.$refs.superFormatterCodeBlock
-        if (codeBlock) {
-          // Remove previous highlighting
-          delete codeBlock.dataset.highlighted
-          // Apply new highlighting
-          hljs.highlightElement(codeBlock)
-        }
-      })
-    },
     deleteConfig() {
       this.$emit('bks-delete-preset', { id: this.selectedPresetId })
     },
@@ -325,7 +319,7 @@ export default Vue.extend({
       } catch (_e) {
         // Fall back to the raw input if the formatter can't parse — matches the
         // behavior of the studio's safeSqlFormat wrapper.
-        this.formattedCode = this.value
+        this.formattedCode = this.value ?? ''
       }
     },
     handlePresetChange() {
@@ -351,9 +345,6 @@ export default Vue.extend({
   watch: {
     value() {
       this.updatePreview()
-    },
-    formattedCode() {
-      this.highlightCode()
     },
     addNewPreset(addingNewPreset) {
       if (addingNewPreset) {
