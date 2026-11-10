@@ -68,6 +68,26 @@ export const sqlServerConnectHints = {
   loginRejected: (host: string, instanceName: string): string =>
     `Instance ${instanceName} on ${host} was reached and rejected the login. Check the user, ` +
     `password, and Default Database for this instance.`,
+  databaseUnavailable: (database: string): string =>
+    `Database "${database}" does not exist on this server, or the login has no access to it. ` +
+    `Clear Default Database to connect to the login's default database.`,
+}
+
+// What the server sent in an ERROR token during login (tedious 'errorMessage' event).
+export interface SqlServerLoginError {
+  number?: number
+  message: string
+}
+
+// Error 4060: the database named in the login cannot be opened. The server does not say
+// whether it is missing or merely off-limits to this login. The number is exact and
+// language-independent; the text is the fallback for the ODBC driver, which gives no number.
+const CANNOT_OPEN_DATABASE_NUMBER = 4060
+const CANNOT_OPEN_DATABASE_PATTERN = /cannot open database .* requested by the login/i
+
+export function isSqlServerDatabaseUnavailable(err: any, serverErrors: SqlServerLoginError[] = []): boolean {
+  return serverErrors.some((e) => e.number === CANNOT_OPEN_DATABASE_NUMBER) ||
+    CANNOT_OPEN_DATABASE_PATTERN.test(flattenErrorText(err))
 }
 
 // A login rejection is sent by SQL Server itself, so the host -- and for a named instance the
@@ -86,9 +106,14 @@ export function isSqlServerLoginRejection(err: any): boolean {
 // "Failed to get response from SQL Server Browser") and options.instanceName is set exactly
 // when the connection depends on a browser lookup. A login rejection is the exception: the
 // instance answered, so blaming the browser sends the user after the wrong problem.
-export function sqlServerConnectHint(err: any, config: any): string | null {
+export function sqlServerConnectHint(err: any, config: any, serverErrors: SqlServerLoginError[] = []): string | null {
   if (SELF_SIGNED_CERT_PATTERN.test(flattenErrorText(err))) {
     return sqlServerConnectHints.selfSignedCertificate
+  }
+
+  // Applies with or without an instance name, and is more specific than loginRejected.
+  if (config?.database && isSqlServerDatabaseUnavailable(err, serverErrors)) {
+    return sqlServerConnectHints.databaseUnavailable(config.database)
   }
 
   const instanceName = config?.options?.instanceName
@@ -116,12 +141,12 @@ export function sqlServerLoginMessage(message: string, serverMessages: string[] 
 
 // Keep the driver's own text (and the original error) and append the remedy, so logs lose
 // nothing and the connection screen gains the one sentence that resolves the failure.
-function withConnectHint(err: any, config: any, serverMessages: string[] = []): any {
-  const hint = sqlServerConnectHint(err, config)
+function withConnectHint(err: any, config: any, serverErrors: SqlServerLoginError[] = []): any {
+  const hint = sqlServerConnectHint(err, config, serverErrors)
   const hasMessage = err instanceof Error && !!err.message
   const original = ((hasMessage && err.message) || flattenErrorText(err) || String(err)).trim()
   const message = isSqlServerLoginRejection(err)
-    ? sqlServerLoginMessage(original, serverMessages)
+    ? sqlServerLoginMessage(original, serverErrors.map((e) => e.message))
     : original
   if (!hint && hasMessage && message === original) return err
 
@@ -162,7 +187,7 @@ export class SqlServerConnector extends DatabaseConnector<
 
     // Every error the server sends while logging in, in order. Only collected until the
     // first connect settles: the pool reuses beforeConnect for each later connection.
-    const loginMessages: string[] = []
+    const loginErrors: SqlServerLoginError[] = []
     let collecting = true
 
     try {
@@ -173,13 +198,15 @@ export class SqlServerConnector extends DatabaseConnector<
           ...this.dbConfig,
           beforeConnect: (conn: any) => {
             conn.on('errorMessage', (token: any) => {
-              if (collecting && token?.message) loginMessages.push(token.message)
+              if (collecting && token?.message) {
+                loginErrors.push({ number: token.number, message: token.message })
+              }
             })
           },
         }).connect();
       }
     } catch (err) {
-      throw withConnectHint(err, this.dbConfig, loginMessages);
+      throw withConnectHint(err, this.dbConfig, loginErrors);
     } finally {
       collecting = false
     }

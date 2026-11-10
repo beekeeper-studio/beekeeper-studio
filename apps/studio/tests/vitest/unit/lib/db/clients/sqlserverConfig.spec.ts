@@ -145,14 +145,38 @@ describe('sqlServerConnectHint', () => {
     // The ODBC driver (integrated auth) has no code, only text.
     expect(sqlServerConnectHint(new Error("[Microsoft][ODBC Driver 18 for SQL Server]Login failed for user 'CORP\\me'."), config))
       .toBe(expected)
-    expect(sqlServerConnectHint(new Error('Cannot open database "nope" requested by the login.'), config))
-      .toBe(expected)
 
     expect(expected).not.toMatch(/browser|1434/i)
     expect(expected).toContain('Default Database')
     // Must not pick up the frontend's SQL Browser docs link either.
     const help = FriendlyErrorHelper.getHelpText('sqlserver', new Error(`Login failed for user 'sa'. ${expected}`))
     expect(help?.link ?? '').not.toContain('sql-server-browser')
+  })
+
+  it('names the Default Database field when the server cannot open the requested database', () => {
+    const login: any = new Error("Login failed for user 'sa'.")
+    login.code = 'ELOGIN'
+    const expected = sqlServerConnectHints.databaseUnavailable('nope')
+    expect(expected).toContain('Default Database')
+
+    // Error 4060 is exact, whatever language the server words its message in.
+    const localized = [{ number: 4060, message: 'Die von der Anmeldung angeforderte Datenbank "nope" kann nicht geoeffnet werden.' }]
+    expect(sqlServerConnectHint(login, { server: 'localhost', database: 'nope', options: {} }, localized))
+      .toBe(expected)
+    // More specific than the generic instance rejection.
+    expect(sqlServerConnectHint(login, {
+      server: '192.168.0.170', database: 'nope', options: { instanceName: 'CLIENTSQLSERVER' },
+    }, localized)).toBe(expected)
+    // The ODBC driver (integrated auth) reports no number, only text.
+    expect(sqlServerConnectHint(
+      new Error('Cannot open database "nope" requested by the login. The login failed.'),
+      { server: 'localhost', database: 'nope', options: {} }
+    )).toBe(expected)
+
+    // A plain bad password (18456) is not a database problem.
+    expect(sqlServerConnectHint(login, { server: 'localhost', database: 'nope', options: {} }, [
+      { number: 18456, message: "Login failed for user 'sa'." },
+    ])).toBeNull()
   })
 
   it('leaves the frontend helper adding a docs link and no second copy of the advice', () => {

@@ -213,6 +213,7 @@ function testWith(dockerTag: string, readonly: boolean) {
         expect(message).toContain('Cannot open database "no_such_database"')
         expect(message).toContain("Login failed for user 'sa'")
         expect(message).not.toMatch(/SQL Server Browser/i)
+        expect(message).toContain('Clear Default Database')
       })
     })
 
