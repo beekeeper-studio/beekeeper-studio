@@ -1,0 +1,168 @@
+name: SQL Server Integrated Auth integration test
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    paths:
+      - 'apps/studio/src/lib/db/clients/sqlserver.ts'
+      - 'apps/studio/src/lib/db/types.ts'
+      - 'apps/studio/package.json'
+      - 'apps/studio/tests/vitest/integration/lib/db/clients/sqlserver-winauth.spec.ts'
+      - '.github/workflows/windows-login-tests.yaml'
+  workflow_dispatch:
+
+jobs:
+  sqlserver-winauth:
+    runs-on: windows-2022
+    # Tight enough that a stall surfaces in minutes, not in an hour of
+    # wall-clock, with room for the SQL Server install and up to three
+    # pnpm install attempts. Bump it if install+test growth ever gets close.
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      # SQL Server only runs on volumes with 512-byte or 4 KB sectors. Some
+      # windows-2022 runners have NVMe disks that report 8 KB, where every
+      # install attempt fails with error 5178 after several minutes. The fix
+      # (ForcedPhysicalSectorSizeInBytes) needs a reboot, so stop straight away;
+      # a re-run usually lands on a 4 KB runner.
+      # https://learn.microsoft.com/en-us/troubleshoot/sql/database-engine/database-file-operations/troubleshoot-os-4kb-disk-sector-size
+      - name: Check the runner's disk can host SQL Server
+        run: |
+          $sizes = fsutil fsinfo sectorinfo C: |
+            Select-String 'PhysicalBytesPerSectorFor(Atomicity|Performance)\s*:\s*(\d+)' |
+            ForEach-Object { [int]$_.Matches[0].Groups[2].Value }
+          if (-not $sizes) {
+            Write-Host '::warning::Could not read the sector size of C:, continuing.'
+            exit 0
+          }
+          $sector = ($sizes | Measure-Object -Maximum).Maximum
+          Write-Host "C: physical sector size: $sector bytes"
+          if ($sector -gt 4096) {
+            Write-Host "::error title=Runner disk unsupported by SQL Server::C: has $sector-byte sectors and SQL Server supports at most 4096. Re-run the job to get a different runner."
+            exit 1
+          }
+
+      - name: Check out Git repository
+        uses: actions/checkout@v5
+
+      - name: Install Node.js and PNPM
+        uses: jdx/mise-action@v5
+
+      - name: Ensure SQL Server Express is installed
+        run: |
+          # Skip if a SQL Server instance is already installed on the runner.
+          # windows-2022 has historically shipped with SQL Server Express 2019
+          # pre-installed; relying on that when it's there sidesteps chocolatey
+          # flakes entirely.
+          $existing = Get-ChildItem 'HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server' -ErrorAction SilentlyContinue |
+            Where-Object {
+              $_.Name -match 'MSSQL\d+\.' -and
+              (Test-Path (Join-Path $_.PSPath 'MSSQLServer\SuperSocketNetLib\Tcp'))
+            } | Select-Object -First 1
+          if ($existing) {
+            Write-Host "Using pre-installed SQL Server instance: $($existing.Name)"
+            exit 0
+          }
+
+          Write-Host 'No pre-installed SQL Server found. Installing via chocolatey with retry.'
+          $maxAttempts = 3
+          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+            Write-Host "::group::chocolatey install attempt $attempt of $maxAttempts"
+            # --limit-output dropped on purpose: we want full logs when it fails.
+            choco install sql-server-express -y --no-progress --ignore-checksums
+            $exit = $LASTEXITCODE
+            Write-Host '::endgroup::'
+            if ($exit -eq 0) { exit 0 }
+            if ($attempt -lt $maxAttempts) {
+              Write-Host "Chocolatey exit $exit. Backing off before retry."
+              Start-Sleep -Seconds 30
+            }
+          }
+          throw "Failed to install SQL Server Express after $maxAttempts chocolatey attempts."
+
+      - name: Enable TCP/IP on port 1433 and restart the instance
+        run: |
+          $base = Get-ChildItem 'HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server' |
+            Where-Object {
+              $_.Name -like '*SQLEXPRESS*' -and
+              (Test-Path (Join-Path $_.PSPath 'MSSQLServer\SuperSocketNetLib\Tcp'))
+            } | Select-Object -First 1
+          if (-not $base) { throw 'Could not locate the SQLEXPRESS registry key.' }
+
+          $tcp = Join-Path $base.PSPath 'MSSQLServer\SuperSocketNetLib\Tcp'
+          Set-ItemProperty -Path $tcp -Name 'Enabled' -Value 1
+
+          # Wipe dynamic ports and pin TcpPort=1433 on every IP stanza so the
+          # probe (Server=localhost,1433) reliably lands on this instance.
+          Get-ChildItem $tcp | ForEach-Object {
+            Set-ItemProperty -Path $_.PSPath -Name 'TcpDynamicPorts' -Value ''
+            Set-ItemProperty -Path $_.PSPath -Name 'TcpPort' -Value '1433'
+          }
+
+          Restart-Service 'MSSQL$SQLEXPRESS' -Force
+
+          $deadline = (Get-Date).AddSeconds(90)
+          while ((Get-Date) -lt $deadline) {
+            if (Test-NetConnection -ComputerName localhost -Port 1433 -InformationLevel Quiet -WarningAction SilentlyContinue) {
+              Write-Host 'SQL Server is listening on 1433.'
+              break
+            }
+            Start-Sleep -Seconds 2
+          }
+
+      - name: Open Windows Firewall for TCP/1433
+        run: |
+          # Connections by hostname (vs localhost) traverse the NIC and are
+          # subject to firewall rules. Loopback bypasses the firewall, so the
+          # localhost case works without this rule, but the hostname case in
+          # the vitest spec needs it.
+          New-NetFirewallRule -DisplayName 'SQL Server TCP 1433 (CI)' `
+            -Direction Inbound -Action Allow -Protocol TCP -LocalPort 1433 | Out-Null
+
+      - name: Verify integrated auth reaches SQL Server (pre-flight)
+        run: |
+          # The chocolatey package adds the installing user (runneradmin) as a
+          # sysadmin, so integrated auth over TCP should succeed without any
+          # further GRANT. If this step fails the vitest step will too, so fail
+          # early with a cleaner diagnostic. Exercise both hostnames the vitest
+          # spec will try.
+          sqlcmd -S "localhost,1433" -E -Q "SELECT SUSER_SNAME() AS loginName, @@VERSION AS v;"
+          if ($LASTEXITCODE -ne 0) { throw "Integrated auth pre-flight (localhost) failed (exit $LASTEXITCODE)." }
+
+          $hn = [System.Net.Dns]::GetHostName()
+          Write-Host "Pre-flighting hostname connection to $hn,1433"
+          sqlcmd -S "$hn,1433" -E -Q "SELECT SUSER_SNAME() AS loginName, @@SERVERNAME AS server;"
+          if ($LASTEXITCODE -ne 0) { throw "Integrated auth pre-flight (hostname=$hn) failed (exit $LASTEXITCODE)." }
+
+      # Same as the other workflows: a longer network timeout and retries, since
+      # this job has no node_modules cache and downloads every package each run.
+      - name: Install workspace dependencies
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: pnpm install --frozen-lockfile --fetch-timeout 100000
+
+      - name: Run SQL Server integrated auth spec
+        working-directory: apps/studio
+        env:
+          TEST_MODE: '1'
+          ELECTRON_RUN_AS_NODE: '1'
+        # vitest force-terminates its forked workers after teardown, so a native
+        # ODBC handle left behind by msnodesqlv8 pool teardown can't hang the run.
+        # --testTimeout: global per-test ceiling so any legitimate hang fails in
+        # 90s instead of consuming the whole job budget.
+        run: pnpm vitest:integration sqlserver-winauth --testTimeout=90000
+
+      - name: Collect SQL Server ERRORLOGs on failure
+        if: failure()
+        run: |
+          Get-ChildItem 'C:\Program Files\Microsoft SQL Server\*\MSSQL\Log\ERRORLOG*' -ErrorAction SilentlyContinue |
+            ForEach-Object {
+              Write-Host "===== $($_.FullName) ====="
+              Get-Content $_.FullName -Tail 200
+            }

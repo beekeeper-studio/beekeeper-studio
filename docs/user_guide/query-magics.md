@@ -24,6 +24,7 @@ Here's a quick walkthrough on how to use Query Magics.
 - Display a number as a star rating
 - Display a number as a progress bar
 - Display a number as localized money
+- Display a unix timestamp as a readable date string
 
 ## How To Use Query Magics
 
@@ -176,6 +177,20 @@ columname__format__stars[__max]
 --examples
 columname__format__stars__10 -- 0-10 stars
 
+```
+
+### Format as Unix Timestamp
+
+Converts a Unix timestamp (in seconds, milliseconds, microseconds, or nanoseconds) to a readable date string. Defaults to local timezone and locale format.
+
+```sql
+-- Valid scales: s (default), ms, us, ns
+columnname__format__unixtime[__scale][__utc][__iso]
+
+-- examples
+columnname__format__unixtime              -- 12/12/25, 12:12:12 PM
+columnname__format__unixtime__ms__utc     -- 12/12/25, 6:12:12 PM
+columnname__format__unixtime__ns__iso     -- 2025-12-12T18:12:12.000Z
 ```
 
 ### Link to another table (goto)

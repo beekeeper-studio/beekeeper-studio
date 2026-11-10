@@ -1,14 +1,3 @@
-@use "sass:color";
-
-$row-highlight:          color.adjust($query-editor-bg, $lightness: 1%);
-$row-add:                #104633;
-$row-delete:             #8A3937;
-$row-error:              #38201F;
-
-$cell-edited:            #50492A;
-$cell-error:             $row-error;
-$cell-success:           $row-add;
-
 // Table Info
 .table-properties {
   display: flex;
@@ -53,7 +42,14 @@ $cell-success:           $row-add;
     .table-title {
       display: flex;
       flex-grow: 1;
-      color: $text-dark;
+      align-items: baseline;
+      gap: 10px;
+      color: var(--text-contrast);
+      .filter-match-label {
+        font-size: 12.5px;
+        color: var(--text-muted);
+        white-space: nowrap;
+      }
     }
     h2 {
       margin: 0;
@@ -64,38 +60,209 @@ $cell-success:           $row-add;
       display: flex;
       align-items: center;
       padding: 0;
-      .btn-fab {
+      .btn-icon {
         margin-left: $gutter-h;
       }
-      .btn-fab.btn-link {
-        margin-left: $gutter-w;
+    }
+
+    // Toolbar row: title + search | refresh / copy / add
+    .table-info-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex: 1;
+      min-width: 0;
+
+      .toolbar-btn {
+        margin: 0;
+        cursor: pointer;
+        @include noselect;
+      }
+
+      // Both sides of the row are pinned to 30px so opening the search
+      // (26px icon -> 30px field) never changes the row's height.
+      .toolbar-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1;
+        min-width: 0;
+        height: 30px;
+        color: var(--text-contrast);
+        h2 {
+          margin: 0;
+          white-space: nowrap;
+        }
+      }
+
+      .search-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        &:hover, &:focus {
+          background: var(--gray-a3);
+        }
+        .material-icons {
+          font-size: 16px;
+          color: var(--text-muted);
+        }
+      }
+
+      .table-info-filter {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        height: 30px;
+        // Width comes from the container, never from the field's contents,
+        // so the box stays put while the count and clear button appear.
+        flex: 1;
+        min-width: 0;
+        max-width: 380px;
+        padding: 0 8px 0 10px;
+        background: var(--input-bg);
+        border: var(--input-border);
+        border-radius: 6px;
+        transition: border-color 0.15s ease-in-out;
+        &:focus-within {
+          border: var(--input-border-focus);
+        }
+        .search-icon {
+          flex: none;
+          font-size: 16px;
+          color: var(--text-muted);
+        }
+        .filter-input {
+          flex: 1;
+          min-width: 0;
+          height: 100%;
+          padding: 0;
+          border: 0;
+          background: transparent;
+          box-shadow: none;
+          font-size: 13px;
+          color: var(--text-contrast);
+          &:focus {
+            border: 0;
+            box-shadow: none;
+          }
+        }
+        .filter-matches {
+          flex: none;
+          min-width: 3em;
+          text-align: right;
+          font-size: 12px;
+          color: var(--text-muted);
+          white-space: nowrap;
+          &.is-hidden {
+            visibility: hidden;
+          }
+        }
+        .clear-filter {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex: none;
+          width: 16px;
+          height: 16px;
+          padding: 0;
+          border: 0;
+          border-radius: 999px;
+          background: transparent;
+          color: var(--text-muted);
+          cursor: pointer;
+          &.is-hidden {
+            visibility: hidden;
+          }
+          &:hover {
+            background: var(--gray-a5);
+            color: var(--text-contrast);
+          }
+          i {
+            font-size: 12px;
+          }
+        }
+      }
+
+      .toolbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        flex: none;
+        height: 30px;
+      }
+
+      .copy-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        height: 30px;
+        line-height: 28px;
+        padding: 0 7px 0 8px;
+        background: transparent;
+        border: 0;
+        border-radius: 6px;
+        box-shadow: none;
+        color: var(--text);
+        &:hover, &:focus {
+          background: var(--gray-a3);
+          color: var(--text-contrast);
+        }
+        .material-icons {
+          font-size: 15px;
+          font-weight: normal;
+          color: var(--text-muted);
+        }
+        .material-icons.dropdown-icon {
+          font-size: 14px;
+          margin-left: -2px;
+        }
+      }
+
+      .refresh-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
+        &:hover, &:focus {
+          background: var(--gray-a3);
+        }
+        .material-icons {
+          font-size: 16px;
+          color: var(--text-muted);
+        }
+      }
+
+      // No divider before the add button: separation comes from the gap and
+      // the add button being the only filled control.
+      .add-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 30px;
+        margin-left: 8px;
+        padding: 0 13px 0 10px;
+        border-radius: 6px;
+        background: var(--primary-solid-bg);
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--primary-contrast);
+        &:hover, &:focus {
+          background: var(--primary-solid-bg-hover);
+          color: var(--primary-contrast);
+        }
+        .material-icons {
+          font-size: 15px;
+          color: var(--primary-contrast);
+        }
       }
     }
   }
-
-  // Nav Pills
-  // -------------------------------
-  .nav-pills {
-    display: flex;
-    justify-content: center;
-    box-shadow: inset 0 -1px $border-color;
-    .nav-pill {
-      font-weight: 500;
-      padding: $gutter-w ($gutter-w * 1.25);
-      color: $text-light;
-      transition: color 0.2s ease-in-out,
-                  box-shadow 0.2s ease-in-out;
-      &:hover {
-        color: $text-dark;
-        box-shadow: inset 0 -2px rgba($theme-base, 0.2);
-      }
-      &.active {
-        color: $theme-primary;
-        box-shadow: inset 0 -2px $theme-primary;
-      }
-    }
-  }
-
 
   // Table Info
   // --------------------------------
@@ -116,7 +283,7 @@ $cell-success:           $row-add;
     .table-meta {
       padding: $gutter-w;
       margin: 0 - $gutter-h;
-      color: $text-lighter;
+      color: var(--text-muted);
     }
     .table-description {
       position: relative;
@@ -126,16 +293,16 @@ $cell-success:           $row-add;
       cursor: pointer;
       min-height: 60px;
       &:hover {
-        background: rgba($theme-base, 0.025);
+        background: var(--gray-a2);
         .material-icons {
           display: inline-block;
         }
       }
       &.edit-success {
-        background-color: $row-add;
+        background-color: var(--table-row-added-bg);
       }
       &.edit-error {
-        background-color: $row-error;
+        background-color: var(--table-row-error-bg);
       }
       .material-icons {
         display: none;
@@ -162,7 +329,7 @@ $cell-success:           $row-add;
       span.markdown {
         content: 'markdown';
         font-size: 10px;
-        color: $text-lighter;
+        color: var(--text-muted);
         display: inline-block;
         position: absolute;
         top: $gutter-h;
@@ -170,7 +337,7 @@ $cell-success:           $row-add;
         padding: 0 $gutter-h;
         line-height: 1.8;
         // background: rgba($theme-base, 0.1);
-        box-shadow: 0 0 0 1px $border-color;
+        box-shadow: 0 0 0 1px var(--border-subtle);
         border-radius: 4px;
       }
     }
@@ -192,7 +359,7 @@ $cell-success:           $row-add;
         padding-bottom: 0;
       }
       label {
-        color: $text-light;
+        color: var(--text-muted);
         min-width: 110px;
       }
       select, textarea {
@@ -215,19 +382,11 @@ $cell-success:           $row-add;
       }
 
       .tabulator-cell:not(.tabulator-editable) {
-        color: $text-lighter;
+        color: var(--text-muted);
         &:hover {
           background-color: transparent;
         }
       }
-    }
-  }
-}
-
-.tabulator-table {
-  .tabulator-cell {
-    .null-value {
-      color: rgba($theme-base, 0.28);
     }
   }
 }
@@ -241,16 +400,16 @@ $cell-success:           $row-add;
   $cell-font-size:         13px;
   $cell-padding:           0.8rem;
   $row-gutter:             3px;
-  $btn-fab-size:           28px;
+  $btn-icon-size:           28px;
 
   .table-properties-wrap {
 
     // Schema Header
     .schema-header {
-      .btn-fab {
-        width: $btn-fab-size;
-        height: $btn-fab-size;
-        min-width: $btn-fab-size;
+      .btn-icon {
+        width: $btn-icon-size;
+        height: $btn-icon-size;
+        min-width: $btn-icon-size;
       }
       .title {
         margin: 0;
@@ -259,7 +418,6 @@ $cell-success:           $row-add;
 
     // Tabulator Header Row
     .tabulator {
-      --tabulator-row-even-deleted-bg-color: var(--tabulator-row-odd-deleted-bg-color);
       .tabulator-header {
         .tabulator-col {
           padding: 0 $cell-padding;
@@ -274,10 +432,6 @@ $cell-success:           $row-add;
     // Field Rows
     .tabulator-row {
       margin: $row-gutter 0;
-      background-color: transparent;
-      &.tabulator-row-even {
-        background-color: rgb(from var(--theme-base) r g b / 5%);
-      }
       .tabulator-cell {
         min-height: $row-height;
         height: $row-height;
@@ -318,7 +472,7 @@ $cell-success:           $row-add;
               &:active,
               &:checked,
               &:checked:active {
-                background: $theme-base;
+                background: var(--checkbox-checked-bg);
                 box-shadow: none;
               }
             }
@@ -330,7 +484,7 @@ $cell-success:           $row-add;
               background: transparent!important;
               box-shadow: none!important;
               &:after {
-                color: $theme-base;
+                color: var(--text-contrast);
                 font-size: 20px;
               }
               &[disabled="disabled"] {
@@ -349,7 +503,7 @@ $cell-success:           $row-add;
         &.remove-btn {
           &:hover {
             div.dynamic-action:after {
-              color: $theme-base;
+              color: var(--text-contrast);
             }
           }
           .material-icons {
@@ -395,7 +549,7 @@ $cell-success:           $row-add;
       right: 0;
       left: 0;
       font-family: 'Material Icons';
-      color: $text-lighter;
+      color: var(--text-muted);
       content: "close";
       transition: color 0.2s ease-in-out;
       font-size: 18px;
@@ -409,16 +563,16 @@ $cell-success:           $row-add;
 
     &.tabulator-row-even {
       &.inserted {
-        background-color: $row-add!important;
+        background-color: var(--table-row-added-bg)!important;
       }
       &.inserted, &.deleted {
         .tabulator-cell {
           cursor: pointer;
           &.edited {
-            background: rgba($theme-base, 0.05);
+            background: var(--gray-a3);
           }
           &.edited:hover {
-            background: rgba($theme-base, 0.12);
+            background: var(--gray-a5);
           }
         }
       }
@@ -434,6 +588,6 @@ $cell-success:           $row-add;
 }
 
 .tabulator .tabulator-header .tabulator-col.tabulator-sortable.tabulator-col-sorter-element:hover {
-  background-color: rgba($theme-base, 0.035);
+  background-color: var(--gray-a2);
 }
 

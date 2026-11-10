@@ -3,7 +3,6 @@
 import { readFileSync } from 'fs';
 
 import pg, { QueryResult as PgQueryResult, QueryArrayResult as PgQueryArrayResult, FieldDef, PoolConfig, PoolClient } from 'pg';
-import { identify } from 'sql-query-identifier';
 import _ from 'lodash'
 import knexlib from 'knex'
 import logRaw from '@bksLogger'
@@ -11,22 +10,21 @@ import logRaw from '@bksLogger'
 import { DatabaseElement, IDbConnectionDatabase } from '../types'
 import { FilterOptions, OrderBy, TableFilter, TableUpdateResult, TableResult, Routine, TableChanges, TableInsert, TableUpdate, TableDelete, DatabaseFilterOptions, SchemaFilterOptions, NgQueryResult, StreamResults, ExtendedTableColumn, PrimaryKeyColumn, TableIndex, CancelableQuery, SupportedFeatures, TableColumn, TableOrView, TableProperties, TableTrigger, TablePartition, ImportFuncOptions, BksField, BksFieldType } from "../models";
 import { buildDatabaseFilter, buildDeleteQueries, buildInsertQueries, buildSchemaFilter, buildSelectQueriesFromUpdates, buildUpdateQueries, escapeString, refreshTokenIfNeeded, joinQueries, errorMessages } from './utils';
-import { createCancelablePromise, joinFilters } from '../../../common/utils';
+import { createCancelablePromise, isListFilter, joinFilters } from '../../../common/utils';
 import { errors } from '../../errors';
-// FIXME (azmi): use BksConfig
-import globals from '../../../common/globals';
-import { HasPool, VersionInfo } from './postgresql/types'
+import { VersionInfo } from './postgresql/types'
 import { PsqlCursor } from './postgresql/PsqlCursor';
 import { PostgresqlChangeBuilder } from '@shared/lib/sql/change_builder/PostgresqlChangeBuilder';
 import { AlterPartitionsSpec, IndexColumn, TableKey } from '@shared/lib/dialects/models';
 import { PostgresData } from '@shared/lib/dialects/postgresql';
 import { BasicDatabaseClient, ExecutionContext, QueryLogOptions } from './BasicDatabaseClient';
 import { ChangeBuilderBase } from '@shared/lib/sql/change_builder/ChangeBuilderBase';
-import { defaultCreateScript, postgres10CreateScript } from './postgresql/scripts';
+import { defaultCreateScript, foreignKeyColumnsSql, postgres10CreateScript } from './postgresql/scripts';
 import BksConfig from '@/common/bksConfig';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from "../serialization/transcoders";
 import {AzureAuthService} from "@/lib/db/authentication/azure";
+import { PsqlConnector } from './postgresql/PsqlConnector';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 
 const PD = PostgresData
@@ -86,11 +84,10 @@ const postgresContext = {
 
 export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient> {
   version: VersionInfo;
-  conn: HasPool;
+  connector = new PsqlConnector({ server: this.server, database: this.database });
   _defaultSchema: string;
   dataTypes: any = {};
   transcoders = [GenericBinaryTranscoder];
-  interval: NodeJS.Timeout;
 
   constructor(server: IDbConnectionServer, database: IDbConnectionDatabase) {
     super(knex, postgresContext, server, database);
@@ -133,72 +130,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       return;
     }
     await super.connect();
-
-    const dbConfig = await this.configDatabase(this.server, this.database);
-
-    log.info("CONFIG: ", dbConfig)
-
-    this.conn = {
-      pool: new pg.Pool(dbConfig)
-    };
-
-    const test = await this.conn.pool.connect()
-
-    if (this.server.config.iamAuthOptions?.iamAuthenticationEnabled) {
-      this.interval = setInterval(async () => {
-        try {
-          const newPassword = await refreshTokenIfNeeded(this.server.config.iamAuthOptions, this.server, this.server.config.port || 5432);
-
-          const newPool = new pg.Pool({
-            ...dbConfig,
-            password: newPassword,
-          });
-
-          const test = await newPool.connect();
-          test.release();
-
-          if (this.conn?.pool) {
-            await this.conn.pool.end();
-          }
-          this.conn = { pool: newPool };
-
-          log.info('Token refreshed successfully and connection pool updated.');
-        } catch (err) {
-          log.error('Could not refresh token or update connection pool!', err);
-        }
-        // FIXME (azmi): use BksConfig
-      }, globals.iamRefreshTime);
-    }
-
-    test.release();
-
-    this.conn.pool.on('acquire', (_client) => {
-      log.debug('Pool event: connection acquired')
-    })
-
-    this.conn.pool.on('error', (err, _client) => {
-      log.error("Pool event: connection error:", err.name, err.message)
-    })
-
-    // @ts-ignore
-    this.conn.pool.on('release', (err, client) => {
-      log.debug('Pool event: connection released')
-    })
-
-
-    log.debug('connected');
     this._defaultSchema = await this.getSchema();
     this.version = await this.getVersion();
     this.dataTypes = await this.getTypes();
     this.database.connected = true;
-  }
-
-  async disconnect(): Promise<void> {
-    if(this.interval){
-      clearInterval(this.interval);
-    }
-    await super.disconnect();
-    this.conn.pool.end();
   }
 
   async listTables(filter?: FilterOptions): Promise<TableOrView[]> {
@@ -286,8 +221,11 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
         r.routine_schema as routine_schema,
         r.routine_name as name,
         r.routine_type as routine_type,
-        r.data_type as data_type
+        r.data_type as data_type,
+        p.oid::text as oid
       FROM INFORMATION_SCHEMA.ROUTINES r
+      LEFT JOIN pg_catalog.pg_proc p
+        ON r.specific_name::text = p.proname || '_' || p.oid::text
       where r.routine_schema not in ('sys', 'information_schema',
                                      'pg_catalog', 'performance_schema')
         ${schemaFilter ? `AND ${schemaFilter}` : ''}
@@ -329,6 +267,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
         returnType: row.data_type,
         entityType: 'routine',
         id: row.id,
+        oid: row.oid,
         routineParams: params.map((p, i) => {
           return {
             name: p.parameter_name || `arg${i + 1}`,
@@ -394,6 +333,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
             udt_name || '(' || datetime_precision::varchar(255) || ')'
           ELSE udt_name
       END as data_type,
+        udt_schema,
         CASE
           WHEN data_type = 'ARRAY' THEN 'YES'
           ELSE 'NO'
@@ -404,7 +344,10 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       ORDER BY table_schema, table_name, ordinal_position
     `;
 
-    const data = await this.driverExecuteSingle(sql, { params });
+    const [data, enumValuesByType] = await Promise.all([
+      this.driverExecuteSingle(sql, { params }),
+      this.listEnumValues(table, schema),
+    ]);
 
     return data.rows.map((row: any) => ({
       schemaName: row.table_schema,
@@ -418,8 +361,57 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       generated: row.is_generated === "ALWAYS" || row.is_generated === "YES",
       array: row.is_array === "YES",
       comment: row.column_comment || null,
+      // For enum columns `data_type` is the udt_name (no precision suffix), so it
+      // matches the type name keyed schema-qualified below.
+      enumValues: enumValuesByType.get(`${row.udt_schema}.${row.data_type}`),
       bksField: this.parseTableColumn(row),
     }));
+  }
+
+  // Build a map of "schema.typename" -> ordered enum labels.
+  // When a table is given, only the enum types referenced by that table's
+  // columns are fetched; otherwise every enum type in the database is loaded.
+  // Wrapped so Postgres-compatible engines without pg_enum degrade to no dropdown.
+  protected async listEnumValues(table?: string, schema?: string): Promise<Map<string, string[]>> {
+    const map = new Map<string, string[]>();
+    try {
+      // Restrict to the types this table actually uses. typelem unwraps
+      // array-of-enum columns, whose atttypid is the array type, not the enum.
+      const filter = table
+        ? `WHERE t.oid IN (
+             SELECT COALESCE(NULLIF(et.typelem, 0), et.oid)
+             FROM pg_attribute a
+             JOIN pg_class c ON c.oid = a.attrelid
+             JOIN pg_namespace cn ON cn.oid = c.relnamespace
+             JOIN pg_type et ON et.oid = a.atttypid
+             WHERE c.relname = $1 AND cn.nspname = $2
+               AND a.attnum > 0 AND NOT a.attisdropped
+           )`
+        : "";
+      const sql = `
+        SELECT n.nspname AS schema, t.typname AS typename, e.enumlabel AS label
+        FROM pg_enum e
+        JOIN pg_type t ON t.oid = e.enumtypid
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        ${filter}
+        ORDER BY n.nspname, t.typname, e.enumsortorder
+      `;
+      const { rows } = await this.driverExecuteSingle(sql, {
+        params: table ? [table, schema] : [],
+      });
+      for (const row of rows) {
+        const key = `${row.schema}.${row.typename}`;
+        const existing = map.get(key);
+        if (existing) {
+          existing.push(row.label);
+        } else {
+          map.set(key, [row.label]);
+        }
+      }
+    } catch (err) {
+      log.warn("Could not load enum values from pg_enum", err);
+    }
+    return map;
   }
 
   async listTableTriggers(table: string, schema: string = this._defaultSchema): Promise<TableTrigger[]> {
@@ -551,185 +543,25 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   }
 
   async getOutgoingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
-    // Query for foreign keys FROM this table (referencing other tables)
+    // Foreign keys defined on this table (referencing other tables)
     const sql = `
-      SELECT
-        c.conname AS constraint_name,
-        a.attname AS column_name,
-        n.nspname AS from_schema,
-        t.relname AS from_table,
-        af.attname AS to_column,
-        tf.relname AS to_table,
-        nf.nspname AS to_schema,
-        CASE c.confupdtype::text
-          WHEN 'a' THEN 'NO ACTION'
-          WHEN 'r' THEN 'RESTRICT'
-          WHEN 'c' THEN 'CASCADE'
-          WHEN 'n' THEN 'SET NULL'
-          WHEN 'd' THEN 'SET DEFAULT'
-          ELSE c.confupdtype::text
-        END AS update_rule,
-        CASE c.confdeltype::text
-          WHEN 'a' THEN 'NO ACTION'
-          WHEN 'r' THEN 'RESTRICT'
-          WHEN 'c' THEN 'CASCADE'
-          WHEN 'n' THEN 'SET NULL'
-          WHEN 'd' THEN 'SET DEFAULT'
-          ELSE c.confdeltype::text
-        END AS delete_rule,
-        pos AS ordinal_position
-      FROM
-        pg_constraint c
-        JOIN pg_class t ON c.conrelid = t.oid
-        JOIN pg_namespace n ON t.relnamespace = n.oid
-        JOIN generate_subscripts(c.conkey, 1) pos ON true
-        JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = c.conkey[pos]
-        JOIN pg_class tf ON c.confrelid = tf.oid
-        JOIN pg_namespace nf ON tf.relnamespace = nf.oid
-        JOIN pg_attribute af ON af.attrelid = tf.oid AND af.attnum = c.confkey[pos]
-      WHERE
-        c.contype = 'f'
-        AND n.nspname = $1
-        AND t.relname = $2
-      ORDER BY
-        c.conname,
-        pos;
+      ${foreignKeyColumnsSql}
+      WHERE c.contype = 'f' AND n.nspname = $1 AND t.relname = $2
+      ORDER BY c.conname, pos
     `;
-
-    const params = [
-      schema,
-      table,
-    ];
-
-    const { rows } = await this.driverExecuteSingle(sql, { params });
-
-    // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(rows, 'constraint_name');
-
-    return Object.keys(groupedKeys).map(constraintName => {
-      const keyParts = groupedKeys[constraintName];
-
-      // If there's only one part, return a simple key (backward compatibility)
-      if (keyParts.length === 1) {
-        const row = keyParts[0];
-        return {
-          constraintName: row.constraint_name,
-          toTable: row.to_table,
-          toSchema: row.to_schema,
-          toColumn: row.to_column,
-          fromTable: row.from_table,
-          fromSchema: row.from_schema,
-          fromColumn: row.column_name,
-          onUpdate: row.update_rule,
-          onDelete: row.delete_rule,
-          isComposite: false
-        };
-      }
-
-      // If there are multiple parts, it's a composite key
-      const firstPart = keyParts[0];
-      return {
-        constraintName: firstPart.constraint_name,
-        toTable: firstPart.to_table,
-        toSchema: firstPart.to_schema,
-        toColumn: keyParts.map(p => p.to_column),
-        fromTable: firstPart.from_table,
-        fromSchema: firstPart.from_schema,
-        fromColumn: keyParts.map(p => p.column_name),
-        onUpdate: firstPart.update_rule,
-        onDelete: firstPart.delete_rule,
-        isComposite: true
-      };
-    });
+    const { rows } = await this.driverExecuteSingle(sql, { params: [schema, table] });
+    return this.parseForeignKeys(rows);
   }
 
   async getIncomingKeys(table: string, schema: string = this._defaultSchema): Promise<TableKey[]> {
-    // Query for foreign keys TO this table (other tables referencing this table)
-    const incomingSQL = `
-      SELECT
-        c.conname AS constraint_name,
-        a.attname AS from_column,
-        n.nspname AS from_schema,
-        t.relname AS from_table,
-        af.attname AS to_column,
-        tf.relname AS to_table,
-        nf.nspname AS to_schema,
-        CASE c.confupdtype::text
-          WHEN 'a' THEN 'NO ACTION'
-          WHEN 'r' THEN 'RESTRICT'
-          WHEN 'c' THEN 'CASCADE'
-          WHEN 'n' THEN 'SET NULL'
-          WHEN 'd' THEN 'SET DEFAULT'
-          ELSE c.confupdtype::text
-        END AS update_rule,
-        CASE c.confdeltype::text
-          WHEN 'a' THEN 'NO ACTION'
-          WHEN 'r' THEN 'RESTRICT'
-          WHEN 'c' THEN 'CASCADE'
-          WHEN 'n' THEN 'SET NULL'
-          WHEN 'd' THEN 'SET DEFAULT'
-          ELSE c.confdeltype::text
-        END AS delete_rule,
-        pos AS ordinal_position
-      FROM
-        pg_constraint c
-        JOIN pg_class t ON c.conrelid = t.oid
-        JOIN pg_namespace n ON t.relnamespace = n.oid
-        JOIN generate_subscripts(c.conkey, 1) pos ON true
-        JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = c.conkey[pos]
-        JOIN pg_class tf ON c.confrelid = tf.oid
-        JOIN pg_namespace nf ON tf.relnamespace = nf.oid
-        JOIN pg_attribute af ON af.attrelid = tf.oid AND af.attnum = c.confkey[pos]
-      WHERE
-        c.contype = 'f'
-        AND nf.nspname = $1
-        AND tf.relname = $2
-      ORDER BY
-        c.conname,
-        pos;
+    // Foreign keys on other tables that reference this table
+    const sql = `
+      ${foreignKeyColumnsSql}
+      WHERE c.contype = 'f' AND nf.nspname = $1 AND tf.relname = $2
+      ORDER BY c.conname, pos
     `;
-
-    const params = [schema, table];
-    const { rows } = await this.driverExecuteSingle(incomingSQL, { params });
-
-    // Group by constraint name to identify composite keys
-    const groupedKeys = _.groupBy(rows, 'constraint_name');
-
-    return Object.keys(groupedKeys).map(constraintName => {
-      const keyParts = groupedKeys[constraintName];
-
-      // If there's only one part, return a simple key
-      if (keyParts.length === 1) {
-        const row = keyParts[0];
-        return {
-          constraintName: row.constraint_name,
-          toTable: row.to_table,
-          toSchema: row.to_schema,
-          toColumn: row.to_column,
-          fromTable: row.from_table,
-          fromSchema: row.from_schema,
-          fromColumn: row.from_column,
-          onUpdate: row.update_rule,
-          onDelete: row.delete_rule,
-          isComposite: false,
-        };
-      }
-
-      // If there are multiple parts, it's a composite key
-      const firstPart = keyParts[0];
-      return {
-        constraintName: firstPart.constraint_name,
-        toTable: firstPart.to_table,
-        toSchema: firstPart.to_schema,
-        toColumn: keyParts.map(p => p.to_column),
-        fromTable: firstPart.from_table,
-        fromSchema: firstPart.from_schema,
-        fromColumn: keyParts.map(p => p.from_column),
-        onUpdate: firstPart.update_rule,
-        onDelete: firstPart.delete_rule,
-        isComposite: true,
-      };
-    });
+    const { rows } = await this.driverExecuteSingle(sql, { params: [schema, table] });
+    return this.parseForeignKeys(rows);
   }
 
   async query(queryText: string, tabId: number, _options?: any): Promise<CancelableQuery> {
@@ -796,7 +628,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
 
   async executeQuery(queryText: string, options?: any): Promise<NgQueryResult[]> {
     const arrayMode: boolean = options?.arrayMode;
-    const data = await this.driverExecuteMultiple(queryText, { arrayMode, tabId: options?.tabId });
+    const data = await this.driverExecuteMultiple(queryText, options);
 
     const commands = this.identifyCommands(queryText);
     log.info("COMMANDS: ", commands)
@@ -977,18 +809,20 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     return data.rows.map((row) => `${createViewSql}\n${row.pg_get_viewdef}`);
   }
 
-  async getRoutineCreateScript(routine: string, _type: string, schema: string = this._defaultSchema): Promise<string[]> {
+  async getRoutineCreateScript(routine: string, _type: string, schema: string = this._defaultSchema, id?: string): Promise<string[]> {
     const sql = `
       SELECT pg_get_functiondef(p.oid)
       FROM pg_proc p
              LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
       WHERE proname = $1
         AND n.nspname = $2
+        ${id ? 'AND p.oid = $3::oid' : ''}
     `;
 
     const params = [
       routine,
       schema,
+      ...(id ? [id] : []),
     ];
 
     const data = await this.driverExecuteSingle(sql, { params });
@@ -1109,7 +943,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     const cursorOpts = {
       query: qs.query,
       params: qs.params,
-      conn: this.conn,
+      connector: this.connector,
       chunkSize,
       dataTypes: this.dataTypes
     }
@@ -1125,7 +959,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     const cursorOpts = {
       query: query,
       params: [],
-      conn: this.conn,
+      connector: this.connector,
       chunkSize,
       dataTypes: this.dataTypes
     }
@@ -1298,7 +1132,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       throw new Error(errorMessages.maxReservedConnections)
     }
 
-    const conn = await this.conn.pool.connect();
+    const conn = await this.connector.getRawConnection();
     this.pushConnection(tabId, conn);
   }
 
@@ -1344,7 +1178,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   // this will manage the connection for you, but won't call rollback
   // on an error, for that use `runWithTransaction`
   async runWithConnection<T>(child: (c: PoolClient) => Promise<T>): Promise<T> {
-    const connection = await this.conn.pool.connect()
+    const connection = await this.connector.getRawConnection()
     try {
       return await child(connection)
     } finally {
@@ -1419,7 +1253,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     } else if (filters && filters.length > 0) {
       let paramIdx = 1
       const allFilters = filters.map((item) => {
-        if (item.type === 'in' && _.isArray(item.value)) {
+        if (isListFilter(item.type) && _.isArray(item.value)) {
           const values = item.value.map((v, idx) => {
             return options.inlineParams
               ? knex.raw('?', [v]).toQuery()
@@ -1443,7 +1277,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
       })
     }
 
-    const selectSQL = `SELECT ${selects.join(', ')}`
+    const selectSQL = `SELECT ${selects.map((s) => wrapIdentifier(s)).join(', ')}`
     const baseSQL = `
       FROM ${wrapIdentifier(options.schema)}.${wrapIdentifier(options.table)}
       ${filterString}
@@ -1498,92 +1332,6 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
     const sql = `select tableowner from pg_catalog.pg_tables where tablename = $1 and schemaname = $2`
     const result = await this.driverExecuteSingle(sql, { params: [table, schema] });
     return result.rows[0]?.tableowner;
-  }
-
-  protected async configDatabase(server: IDbConnectionServer, database: { database: string}) {
-
-    let iamToken = undefined;
-    if(server.config.iamAuthOptions?.iamAuthenticationEnabled){
-      iamToken = await refreshTokenIfNeeded(server.config?.iamAuthOptions, server, server.config.port || 5432)
-    }
-
-    const config: PoolConfig = {
-      host: server.config.host,
-      port: server.config.port || undefined,
-      password: iamToken || server.config.password || undefined,
-      database: database.database,
-      max: BksConfig.db.postgres.maxConnections, // max idle connections per time (30 secs)
-      connectionTimeoutMillis: BksConfig.db.postgres.connectionTimeout,
-      idleTimeoutMillis: BksConfig.db.postgres.idleTimeout,
-    };
-
-    if (server.config.azureAuthOptions?.azureAuthEnabled) {
-      const authService = new AzureAuthService();
-      config.user = server.config.user
-      return authService.configDB(server, config)
-    }
-
-    if (
-      server.config.client === "postgresql" &&
-      // fix https://github.com/beekeeper-studio/beekeeper-studio/issues/2630
-      // we only need SSL for iam authentication
-      server.config?.iamAuthOptions?.iamAuthenticationEnabled
-    ){
-      server.config.ssl = true;
-    }
-
-    return this.configurePool(config, server, null);
-  }
-
-  protected configurePool(config: PoolConfig, server: IDbConnectionServer, tempUser: string) {
-    if (tempUser) {
-      config.user = tempUser
-    } else if (server.config.user) {
-      config.user = server.config.user
-    } else if (server.config.osUser) {
-      config.user = server.config.osUser
-    }
-
-    if (server.config.socketPathEnabled) {
-      config.host = server.config.socketPath;
-      config.port = server.config.port;
-      return config;
-    }
-
-    if (server.sshTunnel) {
-      config.host = server.config.localHost;
-      config.port = server.config.localPort;
-    }
-
-    if (server.config.ssl) {
-
-      config.ssl = {}
-
-      if (server.config.sslCaFile) {
-        config.ssl.ca = readFileSync(server.config.sslCaFile);
-      }
-
-      if (server.config.sslCertFile) {
-        config.ssl.cert = readFileSync(server.config.sslCertFile);
-      }
-
-      if (server.config.sslKeyFile) {
-        config.ssl.key = readFileSync(server.config.sslKeyFile);
-      }
-      if (!config.ssl.key && !config.ssl.ca && !config.ssl.cert) {
-        // TODO: provide this as an option in settings
-        // not per-connection
-        // How it works:
-        // if false, cert can be self-signed
-        // if true, has to be from a public CA
-        // Heroku certs are self-signed.
-        // if you provide ca/cert/key files, it overrides this
-        config.ssl.rejectUnauthorized = false
-      } else {
-        config.ssl.rejectUnauthorized = server.config.sslRejectUnauthorized
-      }
-    }
-    return config;
   }
 
   protected async getTypes(): Promise<any> {
@@ -1777,7 +1525,19 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
   // so we need to turn the string representation back to an array
   private normalizeValue(value: string, column?: ExtendedTableColumn) {
     if (column?.array && _.isString(value)) {
-      return JSON.parse(value)
+      try {
+        return JSON.parse(value)
+      } catch {
+        // pg has no registered parser for custom enum array types (e.g. myenum[]) so it
+        // returns the raw PostgreSQL array literal like {val1,val2}. Reuse pg's built-in
+        // text-array parser (OID 1009) to decode it into a proper JS array, consistent
+        // with how pg handles built-in array types.
+        if (value.startsWith('{') && value.endsWith('}')) {
+          const parseTextArray = pg.types.getTypeParser(1009, 'text')
+          return parseTextArray(value)
+        }
+        return value
+      }
     }
     return value
   }

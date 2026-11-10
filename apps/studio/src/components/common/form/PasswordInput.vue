@@ -5,6 +5,7 @@
       :value="value"
       class="password"
       @input="$emit('input', $event)"
+      :disabled="disabled"
     />
     <i
       @click.prevent="showPassword = !showPassword"
@@ -23,6 +24,10 @@ export default {
     value: {
       type: [String, Number],
       default: ''
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
   },
   data() {

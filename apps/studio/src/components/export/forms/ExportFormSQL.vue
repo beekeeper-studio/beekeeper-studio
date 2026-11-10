@@ -30,6 +30,21 @@
         <span>Create Table Before Inserting</span>
       </label>
     </div>
+    <div class="form-group row">
+      <label
+        for="preserveColumnOrder"
+        class="checkbox-group"
+      >
+        <input
+          v-model="options.preserveColumnOrder"
+          id="preserveColumnOrder"
+          type="checkbox"
+          name="preserveColumnOrder"
+          class="form-control"
+        >
+        <span>Preserve Column Order</span>
+      </label>
+    </div>
   </div>
 </template>
 
@@ -45,6 +60,7 @@ export default {
       options: {
         createTable: false,
         schema: false,
+        preserveColumnOrder: false,
       },
     };
   },

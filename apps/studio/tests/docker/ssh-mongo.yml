@@ -1,0 +1,60 @@
+version: '3'
+networks:
+  testrunner_ssh:
+  testrunner_bastion:
+  bastion_ssh:
+  ssh_mongo:
+services:
+  mongo:
+    image: mongo:latest
+    container_name: test_ssh_mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: beekeeper
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: bee
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+      start_period: 5s
+    networks:
+      # mongo is only reachable from the ssh container, never from the test runner
+      - ssh_mongo
+  ssh:
+    build:
+      context: ./
+      dockerfile: ./SSHDockerFile
+    container_name: test_ssh_mongo_gateway
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+      - PASSWORD_ACCESS=true
+      - USER_PASSWORD=password
+      - USER_NAME=beekeeper
+      - SUDO_ACCESS=true
+    ports:
+      - 2222
+    networks:
+      - testrunner_ssh
+      - bastion_ssh
+      - ssh_mongo
+  bastion:
+    build:
+      context: ./
+      dockerfile: ./SSHDockerFile
+    container_name: test_ssh_mongo_bastion
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+      - PASSWORD_ACCESS=true
+      - USER_PASSWORD=password
+      - USER_NAME=beekeeper
+      - SUDO_ACCESS=true
+    ports:
+      - 2222
+    networks:
+      - testrunner_bastion
+      - bastion_ssh

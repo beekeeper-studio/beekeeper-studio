@@ -6,7 +6,6 @@ permissions:
 on:
   pull_request:
     paths-ignore:
-      - apps/sqltools/**
       - docs/**
 
 concurrency:
@@ -20,85 +19,83 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-24.04, macos-latest, windows-latest, windows-11-arm]
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      - name: Install Python 3.11 (non-Mac)
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.11
-        if: runner.os != 'macOS'
+      - name: Install Node.js, NPM, PNPM, and Python
+        uses: jdx/mise-action@v5
 
-      - name: Install Python 3.11 (Mac)
-        if: runner.os == 'macOS'
+      # node-gyp checks the PYTHON env var first. Without it, on Windows it asks
+      # the py launcher, which picks the newest Python on the runner, not this one.
+      - name: Use mise's Python for node-gyp
+        shell: bash
         run: |
-          brew install python@3.11
-          echo "/opt/homebrew/opt/python@3.11/libexec/bin" >> $GITHUB_PATH
+          PYTHON="$(mise which python)"
+          "$PYTHON" --version
+          echo "PYTHON=$PYTHON" >> $GITHUB_ENV
 
-      - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
-          cache: yarn
+      # ImageOS identifies the runner image (e.g. ubuntu24, win22, macos15), so
+      # caches never cross runner image versions: node_modules holds native
+      # modules compiled for one exact image.
+      - name: Compute runner image cache id
+        shell: bash
+        run: echo "RUNNER_IMAGE_ID=${ImageOS:-unknown}" >> "$GITHUB_ENV"
 
+      # pnpm links get broken on windows when restoring cache, do a fresh install for windows runners
       - name: Cache node_modules
         id: cache-nm
-        uses: actions/cache@v4
+        if: runner.os != 'Windows'
+        uses: actions/cache@v5
         with:
           path: |
             node_modules
             apps/studio/node_modules
             apps/ui-kit/node_modules
-            apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          key: node-modules-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('mise.toml') }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies
         if: steps.cache-nm.outputs.cache-hit != 'true'
-        uses: nick-fields/retry@v2
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 20
           max_attempts: 3
-          command: yarn install --frozen-lockfile --network-timeout 100000
+          command: pnpm install --frozen-lockfile --fetch-timeout 100000
         env:
           HUSKY: "0"
-          npm_config_node_gyp: ${{ github.workspace }}/node_modules/node-gyp/bin/node-gyp.js
 
       - name: Install xvfb-maybe
         run: npm install -g xvfb-maybe
 
       - name: Cache Playwright browsers
         id: cache-playwright
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/ms-playwright
             ~/Library/Caches/ms-playwright
             ~/AppData/Local/ms-playwright
-          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('yarn.lock') }}
+          key: playwright-${{ env.RUNNER_IMAGE_ID }}-${{ runner.arch }}-${{ hashFiles('mise.toml') }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install Playwright browsers
         if: steps.cache-playwright.outputs.cache-hit != 'true'
-        run: yarn playwright install chromium
+        run: pnpm -F beekeeper-studio exec playwright install chromium
 
       - name: Install Playwright system dependencies (Linux)
         if: runner.os == 'Linux'
-        run: yarn playwright install-deps chromium
-
-      - name: Build UI Kit
-        run: yarn lib:build
+        run: pnpm -F beekeeper-studio exec playwright install-deps chromium
 
       - name: Build App
-        run: yarn workspace beekeeper-studio build
+        run: pnpm -F beekeeper-studio build
 
       - name: Run Tests (Linux/macOS)
         if: runner.os != 'Windows'
         shell: bash
         run: |
           xvfb-maybe -a -s "-screen 0 1024x768x24" -- bash -c '
-            yarn workspace beekeeper-studio test:e2e:smoke
+            pnpm -F beekeeper-studio test:e2e:smoke
           '
         env:
           ELECTRON_ENABLE_LOGGING: 1
@@ -109,13 +106,13 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          yarn workspace beekeeper-studio test:e2e:smoke
+          pnpm -F beekeeper-studio test:e2e:smoke
         env:
           ELECTRON_ENABLE_LOGGING: 1
 
       - name: Upload test results
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: test-results-${{ matrix.os }}
           path: apps/studio/test-results

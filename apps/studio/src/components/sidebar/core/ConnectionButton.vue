@@ -8,7 +8,7 @@
     :class="classes"
   >
     <x-button
-      class="btn btn-link btn-icon"
+      class="btn"
       menu
     >
       <i class="material-icons">link</i>
@@ -25,6 +25,11 @@
           class="red"
         >
           <x-label><i class="material-icons">power_settings_new</i>Disconnect</x-label>
+        </x-menuitem>
+        <x-menuitem
+          @click.prevent="reconnect(false)"
+        >
+          <x-label><i class="material-icons">replay</i>Reconnect</x-label>
         </x-menuitem>
         <x-menuitem @click.prevent="$modal.show('config-save-modal')">
           <x-label v-if="config.id">
@@ -49,9 +54,7 @@
               <i class="material-icons">swap_horiz</i>
               Switch Connection
             </span>
-            <span style="font-size: 22px;">
-              {{ isQuickSwitcherVisible ? '‹' : '›' }}
-            </span>
+            <span style="font-size: 22px;">›</span>
           </x-label>
         </x-menuitem>
       </x-menu>
@@ -94,6 +97,7 @@
         </div>
       </modal>
     </portal>
+
     <portal to="modals">
       <modal
         class="vue-dialog beekeeper-modal"
@@ -104,13 +108,13 @@
       >
         <form
           v-kbd-trap="true"
-          @submit.prevent="disconnect(true)"
+          @submit.prevent="runningExportsModalParams.onSubmit()"
         >
           <div class="dialog-content">
             <div class="dialog-c-title">
-              Confirm Disconnect
+              {{ runningExportsModalParams.title }}
             </div>
-            There are active exports running. Are you sure you want to disconnect?
+            {{ runningExportsModalParams.message }}
           </div>
           <div class="vue-dialog-buttons">
             <button
@@ -125,7 +129,7 @@
               class="btn btn-danger"
               type="submit"
             >
-              Disconnect
+              {{ runningExportsModalParams.confirmLabel }}
             </button>
           </div>
         </form>
@@ -153,14 +157,22 @@
             >
               {{ conn.name }}
             </button>
+            <div
+              v-if="!displayedConnections.length"
+              class="quick-switcher-empty"
+            >
+              No {{ showingMore ? 'saved' : 'recent' }} connections
+            </div>
           </div>
         </div>
         <div class="quick-switcher-footer">
-          <button class="quick-switcher-item more" @click.stop="toggleMore">
+          <button
+            class="quick-switcher-item more"
+            :disabled="moreDisabled"
+            @click.stop="toggleMore"
+          >
             <span class="label">{{ showingMore ? 'less' : 'more' }}</span>
-            <span style="font-size: 22px;">
-              {{ showingMore ? '‹' : '›' }}
-            </span>
+            <span style="font-size: 22px;">›</span>
           </button>
         </div>
       </div>
@@ -177,7 +189,7 @@ const log = rawLog.scope('app.vue')
 
 export default {
   components: {
-    SaveConnectionForm
+    SaveConnectionForm,
   },
   data() {
     return {
@@ -185,6 +197,7 @@ export default {
       isQuickSwitcherVisible: false,
       showingMore: false,
       recentConnections: [],
+      runningExportsModalParams: {},
     }
   },
   computed: {
@@ -221,6 +234,12 @@ export default {
         conn.id !== this.config.id || conn.workspaceId !== this.config.workspaceId
       );
     },
+    moreDisabled() {
+      const otherConnections = this.showingMore ? this.recentConnections : this.savedConnections;
+      return !otherConnections.filter(conn =>
+        conn.id !== this.config.id || conn.workspaceId !== this.config.workspaceId
+      ).length;
+    },
     classes() {
       const result = {
         'connection-button': true
@@ -247,11 +266,32 @@ export default {
     },
     disconnect(force) {
       if (this.hasRunningExports && !force) {
+        this.runningExportsModalParams = {
+          title: 'Confirm Disconnect',
+          message: 'There are active exports running. Are you sure you want to disconnect?',
+          confirmLabel: 'Disconnect',
+          onSubmit: () => this.disconnect(true),
+        }
         this.$modal.show('running-exports-modal')
       } else {
         this.$store.dispatch('disconnect')
       }
     },
+    reconnect(force) {
+      if (this.hasRunningExports && !force) {
+        this.runningExportsModalParams = {
+          title: 'Confirm Reconnect',
+          message: 'There are active exports running. Are you sure you want to reconnect?',
+          confirmLabel: 'Reconnect',
+          onSubmit: () => this.reconnect(true),
+        }
+        this.$modal.show('running-exports-modal')
+      } else {
+        this.$modal.hide('running-exports-modal')
+        this.$store.dispatch('reconnect')
+      }
+    },
+
     async syncDatabase() {
       try {
         await this.$store.dispatch('syncDatabase')
@@ -273,14 +313,14 @@ export default {
         return;
       }
 
-      await this.$store.dispatch('disconnect')
       try {
+        await this.$store.dispatch('disconnect')
         const { auth, cancelled } = await this.$bks.unlock();
         if (cancelled) return;
         await this.$store.dispatch('connect', { config, auth });
       } catch (ex) {
         log.error(ex)
-        this.$noty.error("Error establishing a connection")
+        this.$noty.error(`Error establishing a connection: ${ex?.message ?? ex}`)
       }
       this.isQuickSwitcherVisible = false
     },

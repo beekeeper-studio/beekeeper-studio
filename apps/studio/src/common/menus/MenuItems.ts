@@ -22,8 +22,12 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
     undo: {
       id: 'undo',
       label: "Undo",
+      // Displayed only — the focused editor (CodeMirror, text inputs)
+      // handles the shortcut itself. Registering it would fire an extra
+      // webContents.undo() per keypress, undoing 2-3 steps at once.
       accelerator: "CommandOrControl+Z",
       click: actionHandler.undo,
+      registerAccelerator: false,
       role: 'undo',
     },
     redo: {
@@ -31,6 +35,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       label: "Redo",
       accelerator: platformInfo.isWindows ? 'Ctrl+Y' : 'Shift+CommandOrControl+Z',
       click: actionHandler.redo,
+      registerAccelerator: false,
       role: 'redo',
     },
     cut: {
@@ -56,6 +61,16 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       click: actionHandler.paste,
       registerAccelerator: false,
       role: 'paste',
+    },
+    pasteAsNewRows: {
+      id: 'paste-as-new-rows',
+      label: 'Paste as new rows',
+      // Displayed only — the shortcut is handled by the table grid's own
+      // keymap so it stays scoped to the table and doesn't fire elsewhere
+      // (e.g. plain-text paste in the query editor).
+      accelerator: 'CommandOrControl+Shift+V',
+      registerAccelerator: false,
+      click: actionHandler.pasteAsNewRows,
     },
 
     selectAll: {
@@ -199,12 +214,24 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       showWhenConnected: true,
       enabled: false,
     },
+    importConnectionFiles: {
+      id: 'import-connection-files',
+      label: "Import Saved Connections",
+      click: actionHandler.importConnectionFiles,
+      enabled: true
+    },
     quickSearch: {
       id: 'go-to',
       label: "Quick Search",
       accelerator: "CommandOrControl+P",
       registerAccelerator: false,
       click: actionHandler.quickSearch,
+      enabled: false,
+    },
+    reconnect: {
+      id: 'reconnect',
+      label: "Reconnect",
+      click: actionHandler.reconnect,
       enabled: false,
     },
     disconnect: {
@@ -234,41 +261,17 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
       click: actionHandler.togglePrivacyMode,
       checked: settings?.privacyMode?.value
     },
-    themeToggle: {
-      id: "theme-toggle-menu",
-      label: "Theme",
-      submenu: [
-        {
-          type: 'radio',
-          label: "System",
-          click: actionHandler.switchTheme,
-          checked: settings?.theme?.value === 'system'
-        },
-        {
-          type: "radio",
-          label: "Light",
-          click: actionHandler.switchTheme,
-          checked: settings?.theme?.value === 'light'
-        },
-        {
-          type: 'radio',
-          label: "Dark",
-          click: actionHandler.switchTheme,
-          checked: settings?.theme?.value === 'dark'
-        },
-        {
-          type: 'radio',
-          label: 'Solarized',
-          click: actionHandler.switchTheme,
-          checked: settings?.theme?.value === 'solarized'
-        },
-        {
-          type: 'radio',
-          label: 'Solarized Dark',
-          click: actionHandler.switchTheme,
-          checked: settings?.theme?.value === 'solarized-dark'
-        }
-      ]
+    confirmWindowCloseToggle: {
+      id: 'confirm-window-close-toggle',
+      label: 'Confirm Before Closing Unsaved Tabs',
+      type: 'checkbox',
+      click: actionHandler.toggleConfirmWindowClose,
+      checked: !settings?.dontConfirmWindowClose?.value
+    },
+    appearance: {
+      id: "appearance-menu",
+      label: "Appearance",
+      click: actionHandler.openAppearanceModal,
     },
     enterLicense: {
       id: 'enter-license',
@@ -340,7 +343,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.onTrial),
         },
         {
-          label: "Trial expired",
+          label: "Trial expired (shows the trial-ended dialog)",
           click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.trialExpired),
         },
         {
@@ -352,7 +355,7 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.expiredLifetimeCoversThisVersion),
         },
         {
-          label: "On an expired, lifetime license, that covers an earlier version",
+          label: "On an expired, lifetime license, that covers an earlier version (shows the version dialog)",
           click: (item, win) => actionHandler.switchLicenseState(item, win, DevLicenseState.expiredLifetimeCoversEarlierVersion),
         },
       ],
@@ -374,6 +377,11 @@ export function menuItems(actionHandler: IMenuActionHandler, settings: IGroupedU
           checked: settings?.useBeta?.value == true
         }
       ]
+    },
+    themePlayground: {
+      id: 'theme-playground',
+      label: 'DEV Theme Playground',
+      click: actionHandler.themePlayground,
     },
     managePlugins: {
       id: 'manage-plugins',

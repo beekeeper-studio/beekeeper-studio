@@ -33,6 +33,8 @@ function isSensitiveKey(key: PropertyKey | undefined): boolean {
 function redact(input: unknown): unknown {
   return cloneDeepWith(input, (value, key) => {
     if (isSensitiveKey(key) && value != null) return REDACTED;
+    // lodash doesn't clone errors for some reason, so they just end up becoming {}
+    if (value instanceof Error) return value;
     // returning undefined hands the value back to lodash for normal cloning
     return undefined;
   });

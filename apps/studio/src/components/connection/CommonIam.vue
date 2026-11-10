@@ -36,6 +36,7 @@
           <x-switch
             @click.prevent="toggleServerless"
             :toggled="config.redshiftOptions.isServerless"
+            :disabled="disabled"
           />
         </h4>
       </div>
@@ -90,21 +91,21 @@
 
       <div class="form-group">
         <label for="AWS Region">AWS Region</label>
-        <masked-input :value="config.iamAuthOptions.awsRegion" @input="val => config.iamAuthOptions.awsRegion = val" />
+        <masked-input :value="config.iamAuthOptions.awsRegion" @input="val => config.iamAuthOptions.awsRegion = val" :disabled="disabled" />
       </div>
 
       <div v-show="isRedshift">
         <div class="form-group">
           <label for="Cluster Identifier">Cluster Identifier or Workgroup Name</label>
-          <masked-input :value="config.redshiftOptions.clusterIdentifier" @input="val => config.redshiftOptions.clusterIdentifier = val" :type="'password'" />
+          <masked-input :value="config.redshiftOptions.clusterIdentifier" @input="val => config.redshiftOptions.clusterIdentifier = val" :type="'password'" :disabled="disabled" />
         </div>
         <div class="form-group">
           <label for="Database Group">Database Group <span class="hint">(optional)</span></label>
-          <input type="text" class="form-control" v-model="config.redshiftOptions.databaseGroup">
+          <input type="text" class="form-control" v-model="config.redshiftOptions.databaseGroup" :disabled="disabled">
         </div>
         <div class="form-group">
           <label for="Token Duration">Token Duration <span class="hint">(optional, in seconds)</span></label>
-          <input type="text" class="form-control" v-model="config.redshiftOptions.tokenDurationSeconds">
+          <input type="text" class="form-control" v-model="config.redshiftOptions.tokenDurationSeconds" :disabled="disabled">
         </div>
       </div>
     </div>
@@ -116,7 +117,14 @@ import MaskedInput from '@/components/MaskedInput.vue'
 import CliPathPicker from '@/components/common/form/CliPathPicker.vue'
 
 export default {
-  props: ['config', 'authType'],
+  props: {
+    config: Object,
+    authType: [String, Number],
+    disabled: {
+      type: Boolean,
+      default: false
+    }
+  },
   components: {
     MaskedInput,
     CliPathPicker

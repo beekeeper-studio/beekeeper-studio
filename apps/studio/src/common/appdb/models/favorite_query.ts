@@ -1,12 +1,14 @@
-import ISavedQuery from '@/common/interfaces/ISavedQuery'
 import { MaxLength } from 'class-validator';
-import { Entity, Column, Index, BeforeInsert, BeforeUpdate, ManyToOne, JoinColumn } from 'typeorm'
+import { Entity, Column, Index, BeforeInsert, BeforeUpdate, ManyToOne, JoinColumn, OneToMany } from 'typeorm'
 import { ApplicationEntity  } from './application_entity'
 import { QueryLike } from './base'
 import { QueryFolder } from './QueryFolder'
+import { QueryAudit } from './QueryAudit';
 
 @Entity({ name: 'favorite_query' })
-export class FavoriteQuery extends ApplicationEntity implements QueryLike, ISavedQuery {
+export class FavoriteQuery extends ApplicationEntity implements QueryLike {
+  static readonly searchableFields: string[] = [ 'title' ];
+
   withProps(props?: any): FavoriteQuery {
     if (props) FavoriteQuery.merge(this, props);
     return this;
@@ -42,6 +44,9 @@ export class FavoriteQuery extends ApplicationEntity implements QueryLike, ISave
   @JoinColumn({ name: 'queryFolderId' })
   queryFolder?: QueryFolder
 
+  @OneToMany(() => QueryAudit, (audit) => audit.favoriteQuery)
+  queryAudits: QueryAudit[]
+
   @BeforeInsert()
   @BeforeUpdate()
   setDefaultDatabase(): void {
@@ -53,6 +58,4 @@ export class FavoriteQuery extends ApplicationEntity implements QueryLike, ISave
       this.connectionHash = 'DEPRECATED'
     }
   }
-  
-
 }

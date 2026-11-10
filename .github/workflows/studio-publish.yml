@@ -1,55 +1,30 @@
 name: Studio - Build & Publish
 
 permissions:
-  contents: read
+  contents: write # for the softprops action
   actions: write
+  id-token: write
 
 on:
   push:
     tags:
       - "v*"
-    paths-ignore:
-      - "apps/sqltools/**"
 jobs:
   create_draft_release:
     runs-on: "ubuntu-22.04"
     outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-      assets_url: ${{ steps.create_release.outputs.assets_url }}
       id: ${{ steps.create_release.outputs.id }}
-      json: ${{ steps.create_release.outputs.json }}
-      azure_client_id: ${{ steps.azure_creds.outputs.client_id }}
-      azure_tenant_id: ${{ steps.azure_creds.outputs.tenant_id }}
-      azure_keyvault_url: ${{ steps.azure_creds.outputs.keyvault_url }}
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v5
 
-        # Requires us to use a github token with more power (to create drafts on another repo)
-      - name: Create or check draft release
+      - name: Create draft release
         id: create_release
-        uses: actions/github-script@v7
-        env:
-          TAG_NAME: ${{ github.ref_name }}
-          OWNER: 'beekeeper-studio'
-          REPO: 'beekeeper-studio'
+        uses: softprops/action-gh-release@v3
         with:
-          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
-          script: |
-            const script = require('./.github/scripts/create_draft_release.js')
-            await script({github, context, core}, process.env.OWNER, process.env.REPO, process.env.TAG_NAME)
+          draft: true
+          generate_release_notes: true
 
-      - name: Extract Azure credentials from existing secrets
-        id: azure_creds
-        env:
-          KEYVAULT_AUTH: "${{secrets.keyvault_auth}}"
-        run: |
-          CLIENT_ID=$(echo "$KEYVAULT_AUTH" | jq -r '.id')
-          TENANT_ID=$(echo "$KEYVAULT_AUTH" | jq -r '.tenant')
-          KEYVAULT_URL=$(echo "$KEYVAULT_AUTH" | jq -r '.url')
-          echo "client_id=$CLIENT_ID" >> $GITHUB_OUTPUT
-          echo "tenant_id=$TENANT_ID" >> $GITHUB_OUTPUT
-          echo "keyvault_url=$KEYVAULT_URL" >> $GITHUB_OUTPUT
   # electron-builder comes built in with channels -- latest, beta, alpha.
   # To support these for deb, rpm, and snap, we need to extract the channel from the package version
   # outputs: latest, beta, alpha
@@ -61,7 +36,7 @@ jobs:
       deb_codename: ${{steps.extract_channel.outputs.deb_codename}}
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v5
       - name: Extract Channel from package.json
         id: extract_channel
         run: bash ./.github/scripts/extract_channel.sh
@@ -69,60 +44,109 @@ jobs:
   release:
     runs-on: ${{ matrix.os.name }}
     needs: [create_draft_release, identify_channel]
+    env:
+      # node-gyp uses Python to build native modules from source.
+      PYTHON_VERSION: '3.12'
     outputs:
       mac_x64_yml: ${{ steps.set_yaml.outputs.mac_x64_yml }}
       mac_arm64_yml: ${{ steps.set_yaml.outputs.mac_arm64_yml }}
-    env:
-      SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.snapcraft_token }}
+      win_x64_yml: ${{ steps.set_yaml.outputs.win_x64_yml }}
+      win_arm64_yml: ${{ steps.set_yaml.outputs.win_arm64_yml }}
 
     strategy:
       fail-fast: false
       matrix:
+        # update_yml is the update file electron-builder writes on this leg. Both
+        # arches of a platform write the same file name, so each leg passes its
+        # copy out as update_yml_output and finalize_update_yml merges them.
         os:
           - name: ubuntu-22.04
             arch: x64
             type: linux
-            setup_python: true
             setup_ruby: true
             setup_flatpak: true
           - name: windows-2022
             arch: x64
             type: windows
-            setup_python: true
+            update_yml: latest.yml
+            update_yml_output: win_x64_yml
+          # Builds natively, so native modules compile for arm64.
+          - name: windows-11-arm
+            arch: arm64
+            type: windows
+            update_yml: latest.yml
+            update_yml_output: win_arm64_yml
           - name: ubuntu-22.04-arm
             arch: arm64
             type: linux
-            setup_python: true
             setup_ruby: true
             setup_flatpak: true
-          - name: macos-14-large
+          - name: macos-15-large
             arch: x64
             type: macos
-          - name: macos-14
+            update_yml: latest-mac.yml
+            update_yml_output: mac_x64_yml
+          - name: macos-15
             arch: arm64
             type: macos
+            update_yml: latest-mac.yml
+            update_yml_output: mac_arm64_yml
     steps:
 
+      # core24 snaps always run a full `snapcraft pack --use-lxd` build, so every
+      # Linux runner needs an initialised LXD (previously only arm64 required it).
       - name: setup LXD
         uses: canonical/setup-lxd@main
-        if: matrix.os.type == 'linux' && matrix.os.arch == 'arm64'
+        if: matrix.os.type == 'linux'
 
       - name: Check out Git repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v5
 
       - name: Install flatpak tools
         if: matrix.os.setup_flatpak
         run: bash ./.github/scripts/install-build-deps.sh
 
-      - name: Install azuresigntool
-        run: 'dotnet tool install --global AzureSignTool --version 7.0.1'
-        if: matrix.os.type == 'windows'
+      - name: Install ODBC build dependencies (linux)
+        if: matrix.os.type == 'linux'
+        run: bash ./.github/scripts/linux-install-odbc-deps.sh
 
-      - name: Azure Login
+      - name: Install ODBC build dependencies (macos)
+        if: matrix.os.type == 'macos'
+        run: bash ./.github/scripts/macos-install-odbc-deps.sh
+
+      - name: Set up Java (for jsign)
         if: matrix.os.type == 'windows'
-        uses: azure/login@v2
+        uses: actions/setup-java@v5
         with:
-          creds: '{"clientId":"${{ needs.create_draft_release.outputs.azure_client_id }}","clientSecret":"${{ secrets.keyvault_auth_secret }}","subscriptionId":"${{ secrets.azure_subscription_id }}","tenantId":"${{ needs.create_draft_release.outputs.azure_tenant_id }}"}'
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install jsign
+        if: matrix.os.type == 'windows'
+        shell: powershell
+        env:
+          JSIGN_VERSION: '7.4'
+          JSIGN_SHA256: '2abf2ade9ea322acc2d60c24794eadc465ff9380938fca4c932d09e0b25f1c28'
+        run: |
+          $jar = "$env:RUNNER_TEMP\jsign.jar"
+          Invoke-WebRequest -Uri "https://github.com/ebourg/jsign/releases/download/$env:JSIGN_VERSION/jsign-$env:JSIGN_VERSION.jar" -OutFile $jar
+          $expected = ($env:JSIGN_SHA256 -replace '\s','').ToLower()
+          $actual = (Get-FileHash $jar -Algorithm SHA256).Hash.ToLower()
+          if ($actual -ne $expected) {
+            Write-Error "jsign checksum mismatch: expected $expected got $actual"
+            exit 1
+          }
+          "JSIGN_JAR=$jar" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Decode Windows code signing certificate
+        if: matrix.os.type == 'windows'
+        shell: powershell
+        env:
+          WIN_CODESIGN_CERT: ${{ secrets.win_codesign_cert }}
+        run: |
+          $cert = "$env:RUNNER_TEMP\codesign-cert.pem"
+          [IO.File]::WriteAllBytes($cert, [Convert]::FromBase64String($env:WIN_CODESIGN_CERT))
+          "WIN_CERT_FILE=$cert" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - uses: ruby/setup-ruby@v1
         with:
@@ -137,7 +161,7 @@ jobs:
         env:
           OWNER: 'beekeeper-studio'
           REPO: 'beekeeper-studio'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs')
@@ -154,103 +178,60 @@ jobs:
 
 
       - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@v3
         with:
           vs-version: '16.11.14'
         if: matrix.os.type == 'windows'
 
-
-      - name: "Install python 3.11 (NOT Mac)"
-        uses: actions/setup-python@v5
+      - name: Install Node.js, NPM, PNPM, and Python
+        uses: jdx/mise-action@v5
         with:
-          python-version: 3.11
-        if: matrix.os.setup_python
+          cache: false
 
-      - name: Install python 3.11 (mac arm64)
-        if: matrix.os.type == 'macos'
-        id: mac_python
-        env:
-          ARCH: ${{ matrix.os.arch }}
-        run: |
-          rm -f /usr/local/bin/2to3-3.11
-          rm -f /usr/local/bin/idle3.11
-          rm -f /usr/local/bin/pydoc3.11
-          rm -f /usr/local/bin/python3.11
-          rm -f /usr/local/bin/python3.11-config
-          brew install python@3.11
-          if [ "$ARCH" = "arm64" ]; then
-              # Add Python 3.11 to PATH for arm64
-              echo "/opt/homebrew/opt/python@3.11/libexec/bin" >> $GITHUB_PATH
-              export PATH="/opt/homebrew/opt/python@3.11/libexec/bin:$PATH"
-              export PYTHON_PATH="/opt/homebrew/opt/python@3.11/libexec/bin/python3"
-              echo "python_path=$PYTHON_PATH" >> $GITHUB_OUTPUT
-          else
-              # Add Python 3.11 to PATH for other architectures
-              echo "/usr/local/opt/python@3.11/libexec/bin" >> $GITHUB_PATH
-              export PATH="/usr/local/opt/python@3.11/libexec/bin:$PATH"
-              export PYTHON_PATH="/usr/local/opt/python@3.11/libexec/bin/python3"
-              echo "python_path=$PYTHON_PATH" >> $GITHUB_OUTPUT
-          fi
-
+      # node-gyp checks the PYTHON env var first. Without it, on Windows it asks
+      # the py launcher, which picks the newest Python on the runner, not this one.
       - name: Verify Python Version
-        if: matrix.os.type == 'windows'
+        shell: bash
         run: |
-          $PYTHON_VERSION = python --version | Out-String
-          Write-Output "Installed Python version: $PYTHON_VERSION"
-          if (-not $PYTHON_VERSION.StartsWith("Python 3.11")) {
-            Write-Output "Error: Python version does not start with 3.11"
-            exit 1
-          }
-        shell: powershell
-
-        # Verify on everything except windows
-      - name: Verify Python Version
-        if: matrix.os.type != 'windows'
-        run: |
-          PYTHON_VERSION=$(python3 --version | cut -d " " -f 2)
-          echo "Installed Python version: $PYTHON_VERSION"
-          if [[ ! $PYTHON_VERSION == 3.11* ]]; then
-            echo "Error: Python version does not start with 3.11"
+          PYTHON="$(mise which python)"
+          INSTALLED=$("$PYTHON" --version | cut -d " " -f 2)
+          echo "node-gyp will use Python $INSTALLED at $PYTHON"
+          if [[ $INSTALLED != "$PYTHON_VERSION".* ]]; then
+            echo "Error: Python version does not start with $PYTHON_VERSION"
             exit 1
           fi
-
-      - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
-
-      - name: Cache node_modules
-        id: cache-nm
-        uses: actions/cache@v4
-        with:
-          path: |
-            node_modules
-            apps/studio/node_modules
-            apps/ui-kit/node_modules
-            apps/sqltools/node_modules
-          key: node-modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc') }}-${{ hashFiles('yarn.lock') }}
+          echo "PYTHON=$PYTHON" >> "$GITHUB_ENV"
 
       - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v3
         if: matrix.os.type == 'linux'
+        with:
+          channel: '8.x/stable'
 
-      - name: Clean cache
-        if: steps.cache-nm.outputs.cache-hit != 'true'
-        run: yarn cache clean --all
-
+      # No node_modules cache here, deliberately. Release builds always install
+      # and compile native modules from scratch so their glibc/libstdc++
+      # requirements match this runner's OS. A cache seeded by a newer-OS job
+      # once shipped binaries that could not load on Ubuntu 22.04/Debian 12 (#4627).
       # FIXME (matthew) Windows needs retries. It sometimes fails to build
       # the native oracledb package.
       # But only sometimes. I cannot figure out why.
       # Someone should at some point.
-      - name: yarn install (with retry)
-        if: steps.cache-nm.outputs.cache-hit != 'true'
-        uses: nick-fields/retry@v2
+      - name: pnpm install (with retry)
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 20
           max_attempts: 3
-          command: "yarn install --frozen-lockfile --network-timeout 100000"
+          command: "pnpm ci --fetch-timeout 100000"
+
+      - name: Verify msnodesqlv8 native build
+        run: pnpm -F beekeeper-studio exec node -e "require('msnodesqlv8')"
+
+      # Every database client loads at startup, so one native module that
+      # can't load on this arch breaks every connection. Fail before shipping it.
+      - name: Verify native modules load in Electron
+        run: pnpm -F beekeeper-studio electron ../../bin/check-native-modules.js
         env:
-          npm_config_node_gyp: ${{ github.workspace }}${{ runner.os == 'Windows' && '\node_modules\node-gyp\bin\node-gyp.js' || '/node_modules/node-gyp/bin/node-gyp.js' }}
+          ELECTRON_RUN_AS_NODE: 1
 
       - name: Remove dist directory
         if: matrix.os.type != 'windows'
@@ -274,6 +255,18 @@ jobs:
         run: |
           echo "$DATA" | base64 --decode > ~/mac-certificate.p12
 
+      # Authenticate just before signing so the access token (1h lifetime) is
+      # fresh. token_format: access_token outputs the token jsign uses as its
+      # KMS store password, so no gcloud token minting is needed in sign.js.
+      - name: Authenticate to Google Cloud
+        id: auth
+        if: matrix.os.type == 'windows'
+        uses: google-github-actions/auth@v3
+        with:
+          token_format: access_token
+          workload_identity_provider: ${{ secrets.gcp_workload_identity_provider }}
+          service_account: ${{ secrets.gcp_service_account }}
+
         # Oh hello future Matthew, why do we split out windows build?
         # well CSC_LINK gets picked up EVEN THOUGH YOU HAVE
         # A CUSTOM sign.js. Obviously a bug, but this is a workaround
@@ -281,14 +274,14 @@ jobs:
       - name: Build & Publish (NT)
         if: matrix.os.type == 'windows'
         env:
-          KEYVAULT_URL: "${{ needs.create_draft_release.outputs.azure_keyvault_url }}"
-          KV_WIN_CERTIFICATE: "${{secrets.kv_win_certificate}}"
-          PYTHON_PATH: "${{'$PYTHON_PATH' }}"
-          PYTHONPATH: "${{ '$PYTHONPATH' }}"
-          GH_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
+          GCP_KMS_KEYRING: "${{ secrets.gcp_kms_keyring }}"
+          GCP_KMS_KEY: "${{ secrets.gcp_kms_key }}"
+          GCP_ACCESS_TOKEN: "${{ steps.auth.outputs.access_token }}"
+          # WIN_CERT_FILE and JSIGN_JAR are exported to $GITHUB_ENV by earlier steps
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           USE_SYSTEM_FPM: true
           SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
-        run: yarn run electron:build --publish always
+        run: pnpm run electron:build --publish always
 
       - name: Build & Publish (*NIX)
         if: matrix.os.type != 'windows'
@@ -299,25 +292,24 @@ jobs:
           APPLE_TEAM_ID: "7KK583U8H2"
           CSC_LINK: "~/mac-certificate.p12"
           CSC_KEY_PASSWORD: ${{ secrets.mac_dev_pw }}
-          PYTHON_PATH: "${{ matrix.os.type == 'macos' && steps.mac_python.outputs.python_path || '$PYTHON_PATH' }}"
-          PYTHONPATH: "${{ matrix.os.type == 'macos' && steps.mac_python.outputs.python_path || '$PYTHONPATH' }}"
-          GH_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           USE_SYSTEM_FPM: true
           SNAPCRAFT_BUILD_ENVIRONMENT: 'lxd'
-        run: yarn run electron:build --publish always
+        run: pnpm run electron:build --publish always
 
-      - name: Delete latest-mac.yml
-        if: matrix.os.type == 'macos'
-        uses: actions/github-script@v7
+      # Both arches of a platform upload the same update file name, each listing
+      # only its own build. Remove it here; the finalize jobs below upload one
+      # file listing both.
+      - name: Delete ${{ matrix.os.update_yml }}
+        if: matrix.os.update_yml
+        uses: actions/github-script@v8
         env:
           RELEASE_ID: ${{needs.create_draft_release.outputs.id}}
+          ASSET_NAME: ${{ matrix.os.update_yml }}
         with:
-          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
           script: |
             const script = require('./.github/scripts/delete_latest_yml.js')
-            const assetsUrl = '${{ needs.create_draft_release.outputs.assets_url }}'
-            const channel = '${{needs.identify_channel.outputs.channel}}'
-            await script({ github, core, context }, assetsUrl, channel)
+            await script({ github, core, context }, process.env.RELEASE_ID, process.env.ASSET_NAME)
 
       - name: Invalidate cloudfront cache
         if: matrix.os.type == 'linux' && needs.identify_channel.outputs.channel == 'latest'
@@ -333,49 +325,51 @@ jobs:
 
       - name: Set yaml files
         id: set_yaml
-        if: matrix.os.type == 'macos'
-        uses: actions/github-script@v7
+        if: matrix.os.update_yml
+        uses: actions/github-script@v8
         env:
-          ARCH: ${{ matrix.os.arch }}
-          CHANNEL: ${{needs.identify_channel.outputs.channel}}
+          YML: ${{ matrix.os.update_yml }}
+          OUTPUT: ${{ matrix.os.update_yml_output }}
         with:
-          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
           script: |
             const fs = require('fs')
-            const content = fs.readFileSync(`apps/studio/dist_electron/latest-mac.yml`, 'utf8')
-            core.setOutput(`mac_${process.env.ARCH}_yml`, content)
-      - name: Upload DEB/RPM artifacts
-        uses: actions/upload-artifact@v4
-        if: matrix.os.type == 'linux'
-        with:
-          name: "${{matrix.os.type}}-${{matrix.os.arch}}"
-          path: |
-            apps/studio/dist_electron/*.deb
-            apps/studio/dist_electron/*.rpm
-
+            const content = fs.readFileSync(`apps/studio/dist_electron/${process.env.YML}`, 'utf8')
+            core.setOutput(process.env.OUTPUT, content)
       - name: Cleanup artifacts
         if: ${{!startsWith(matrix.os.name, 'windows')}}
-        run: npx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap|*.yml|*.flatpak|*.aur)"
+        run: pnx rimraf "apps/studio/dist_electron/!(*.exe|*.deb|*.rpm|*.AppImage|*.dmg|*.snap|*.yml|*.flatpak|*.aur)"
 
       - name: Cleanup artifacts Win
         if: startsWith(matrix.os.name, 'windows')
         shell: powershell
-        run: Get-ChildItem apps/studio/dist_electron -File | Where-Object { $_.Extension -notin '.exe','.yml' } | Remove-Item -Force
+        run: Get-ChildItem apps/studio/dist_electron -File | Where-Object { $_.Extension -notin '.exe','.msi','.yml' } | Remove-Item -Force
 
 
-  finalize_mac_yml:
+  # Merges each platform's x64 and arm64 update files into the one file
+  # electron-updater reads. x64 entries stay first: older Windows clients pick
+  # the first .exe listed, newer ones the file whose name contains their arch.
+  finalize_update_yml:
     needs: [release, create_draft_release, identify_channel]
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - file: latest-mac.yml
+            x64_output: mac_x64_yml
+            arm64_output: mac_arm64_yml
+          - file: latest.yml
+            x64_output: win_x64_yml
+            arm64_output: win_arm64_yml
     steps:
       - uses: actions/setup-node@v6
       - run: npm install js-yaml
       - name: Merge yml files
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
-          INTEL_YML: ${{ needs.release.outputs.mac_x64_yml }}
-          ARM_YML: ${{ needs.release.outputs.mac_arm64_yml }}
+          INTEL_YML: ${{ needs.release.outputs[matrix.x64_output] }}
+          ARM_YML: ${{ needs.release.outputs[matrix.arm64_output] }}
         with:
-          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
           script: |
             const fs = require('fs');
             const yaml = require('js-yaml');
@@ -405,113 +399,41 @@ jobs:
             };
 
             const merge = mergeFiles();
-            fs.writeFileSync('mac.yml', merge, 'utf8');
-      - name: Upload fixed mac yml
-        uses: actions/github-script@v7
+            fs.writeFileSync('merged.yml', merge, 'utf8');
+      - name: Upload merged ${{ matrix.file }}
+        uses: actions/github-script@v8
         env:
           RELEASE_ID: ${{ needs.create_draft_release.outputs.id }}
+          FILE: ${{ matrix.file }}
         with:
-          github-token: ${{ secrets.GH_DEPLOY_TOKEN }}
           script: |
             const fs = require('fs');
+            const { owner, repo } = context.repo;
             const releaseId = process.env.RELEASE_ID;
+            const name = process.env.FILE;
 
-            // Read the merged yml file
-            const ymlContent = fs.readFileSync('mac.yml', 'utf8');
+            // Replace the file if a build leg's delete missed it or this job
+            // is being re-run: uploading over an existing name fails with
+            // already_exists. Read every page, the release has more assets
+            // than one page holds and the update files sort last by name.
+            const assets = await github.paginate(github.rest.repos.listReleaseAssets, {
+              owner, repo, release_id: releaseId, per_page: 100,
+            });
+            for (const asset of assets.filter((asset) => asset.name === name)) {
+              await github.rest.repos.deleteReleaseAsset({ owner, repo, asset_id: asset.id });
+              core.info(`Replaced existing asset: ${name} (id ${asset.id})`);
+            }
 
-            // Upload the asset using the release ID
             await github.rest.repos.uploadReleaseAsset({
-              owner: 'beekeeper-studio',
-              repo: 'beekeeper-studio',
+              owner,
+              repo,
               release_id: releaseId,
-              name: 'latest-mac.yml',
-              data: ymlContent,
+              name,
+              data: fs.readFileSync('merged.yml', 'utf8'),
               headers: {
                 'content-type': 'application/octet-stream'
               }
             });
-  publish_snapcraft:
-    # The release pushes to edge. We need to promote the edge release if we have a stable release
-    needs: [release, identify_channel]
-    runs-on: ubuntu-latest
-    if: needs.identify_channel.outputs.channel == 'latest'
-    env:
-      SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.snapcraft_token }}
-    steps:
-      - name: Install Snapcraft
-        uses: samuelmeuli/action-snapcraft@v3
-      - name: Move release snap from edge to stable
-        continue-on-error: true
-        run: |
-          snapcraft promote beekeeper-studio --from-channel "latest/edge" --to-channel "latest/stable" --yes
-
-  publish_repositories:
-    needs: [release, create_draft_release, identify_channel]
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v1
-
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: 3.0.2
-
-      - name: Install dependencies for rpm deployment
-        run: sudo apt-get update && sudo apt-get install -y createrepo-c
-
-      - name: Install deb-s3 from GitHub
-        run: |
-          curl -sL https://github.com/deb-s3/deb-s3/releases/download/0.11.8/deb-s3-0.11.8.gem -o ./deb-s3.gem
-          gem install -N ./deb-s3.gem
-
-      - name: Import GPG key
-        id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v3
-        with:
-          gpg-private-key: ${{ secrets.gpg_key }}
-
-      - run: "rm -rf ./artifacts; mkdir artifacts"
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ./artifacts
-
-      # Only publishing the DEB for the stable channel (for now)
-      - name: Publish DEB to R2
-        if: needs.identify_channel.outputs.channel == 'latest'
-        run: |
-          deb-s3 upload $(find ./artifacts -type f -name "*.deb") \
-            --bucket=beekeeper-deb-repo \
-            --codename=${{needs.identify_channel.outputs.deb_codename}} \
-            --endpoint=${{secrets.cloudflare_endpoint}} \
-            --lock \
-            --sign=${{steps.import_gpg.outputs.keyid}} \
-            --preserve-versions
-        env:
-          AWS_ACCESS_KEY_ID: "${{secrets.cloudflare_key_id}}"
-          AWS_SECRET_ACCESS_KEY: "${{secrets.cloudflare_secret_access_key}}"
-          AWS_DEFAULT_REGION: "us-east-1"
-          # 2025-01-15: AWS made changes to their clis that broke compatibility
-          # for third party services.
-          # This works around that.
-          # https://github.com/aws/aws-sdk-ruby/issues/3166
-          AWS_REQUEST_CHECKSUM_CALCULATION: WHEN_REQUIRED
-          AWS_RESPONSE_CHECKSUM_VALIDATION: WHEN_REQUIRED
-
-      - name: Publish RPM to R2
-        if: needs.identify_channel.outputs.channel == 'latest'
-        run: |
-          .github/scripts/publish_rpm.sh $(find ./artifacts -type f -name "*.rpm")
-        env:
-          GPG_KEY_ID: "${{steps.import_gpg.outputs.keyid}}"
-          R2_BUCKET: "beekeeper-rpm-repo/repo"
-          R2_ENDPOINT: ${{secrets.cloudflare_endpoint}}
-          AWS_ACCESS_KEY_ID: "${{secrets.cloudflare_key_id}}"
-          AWS_SECRET_ACCESS_KEY: "${{secrets.cloudflare_secret_access_key}}"
-          # 2025-01-15: AWS made changes to their clis that broke compatibility
-          # for third party services.
-          # This works around that.
-          # https://github.com/aws/aws-sdk-ruby/issues/3166
-          AWS_REQUEST_CHECKSUM_CALCULATION: WHEN_REQUIRED
-          AWS_RESPONSE_CHECKSUM_VALIDATION: WHEN_REQUIRED
+  # deb/rpm repo publishing and snap store uploads moved to
+  # release-published.yml: they now run when the draft release is published,
+  # not at build time, so no channel ships before the manual publish click.

@@ -10,7 +10,7 @@
     x-tab {
       padding: 0;
       min-height: 0px;
-      color: $text;
+      color: var(--tab-fg);
       z-index: 0;
       --selection-indicator-height: 0;
       --ripple-background: none;
@@ -23,7 +23,7 @@
       }
 
       &[selected] {
-        color: $text-dark;
+        color: var(--tab-active-fg);
       }
     }
   }

@@ -1,9 +1,14 @@
 import { ICloudSavedConnection } from "@/common/interfaces/IConnection";
 import { actionsFor, DataState, DataStore, mutationsFor } from "@/store/modules/data/DataModuleBase";
 import { havingCli } from "@/store/modules/data/StoreHelpers";
+import { accessGrantMutations, accessGrantActions } from "@/store/modules/data/access_grant/accessGrantStore";
+import { FolderFetchModule, treeActions } from "@/store/modules/data/tree/treeStore";
+import { ItemNodeModule } from "@/store/modules/data/tree/ItemNodeModule";
 import _ from "lodash";
 
-type State = DataState<ICloudSavedConnection>
+type State = DataState<ICloudSavedConnection> & {
+  linkedSavedConnectionIds: number[]
+};
 
 export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
   namespaced: true,
@@ -13,25 +18,53 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
     error: null,
     pollError: null,
     filter: undefined,
-    pendingSaveIds: []
+    pendingSaveIds: [],
+    searching: false,
+    linkedSavedConnectionIds: []
   },
   mutations: mutationsFor<ICloudSavedConnection>({
     connectionFilter(state: State, str: string) {
       state.filter = str;
-    }
+    },
+    linkedSavedConnectionIds(state: State, conns: number[]) {
+      state.linkedSavedConnectionIds = conns;
+    },
+    ...accessGrantMutations(),
   }, { field: 'name', direction: 'asc'}),
-  actions: actionsFor<ICloudSavedConnection>('connections', {
+  modules: {
+    nodes: ItemNodeModule('connectionFolderId', 'name'),
+    folders: FolderFetchModule,
+  },
+  actions: {
+    ...actionsFor<ICloudSavedConnection>('connections', {}),
+    ...accessGrantActions('connections'),
+    ...treeActions<ICloudSavedConnection>({ plural: 'connectionFolderIds', singular: 'connectionFolderId' }, false),
+    async initialize() {
+    },
+    async poll(context) {
+      if (!context.rootState.connected) {
+        const expandedFolderIds = context.rootState.sidebar.connections.expandedIds
+        const result = await context.dispatch('loadByParentIds', expandedFolderIds)
+        if (result.error) {
+          context.commit("pollError", result.error);
+        }
+      }
+    },
+    async afterMutate(context, { type, data }) {
+      context.commit(`nodes/${type}`, data)
+    },
     setConnectionFilter: _.debounce(function (context, filter) {
       context.commit('connectionFilter', filter);
+      context.dispatch('search', filter);
     }, 500),
     async saveMany(context, items: ICloudSavedConnection[]) {
       // Mark items as pending to protect from poll overwrites
       items.forEach(item => context.commit('addPendingSave', item.id))
-      context.commit('upsert', items)
+      await context.dispatch('mutate', { type: 'upsert', data: items })
       try {
         return await havingCli(context, async (cli) => {
           const saved = await Promise.all(items.map(item => cli.connections.upsert(item)))
-          context.commit('upsert', saved)
+          await context.dispatch('mutate', { type: 'upsert', data: saved })
         })
       } finally {
         // Clear pending status
@@ -39,7 +72,7 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
       }
     },
     // Reorder action for drag/drop - uses dedicated reorder API that returns all affected positions
-    async reorder(context, { item, position, connectionFolderId }) {
+    async reorder(context, { item, position, connectionFolderId, confirm }) {
       // Get the full item from state for optimistic update
       const existing = context.state.items.find(c => c.id === item.id)
       if (!existing) return
@@ -69,11 +102,16 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
       // Mark as pending to protect from poll overwrites
       context.commit('addPendingSave', item.id)
 
-      // Optimistic commit with numeric position
-      context.commit('upsert', {
-        ...existing,
-        connectionFolderId: connectionFolderId ?? existing.connectionFolderId,
-        position: optimisticPosition
+      // Optimistic commit with numeric position. Not awaited: `mutate` applies
+      // both the item and node commits synchronously, and waiting would hold
+      // the reorder request back a turn.
+      context.dispatch('mutate', {
+        type: 'upsert',
+        data: {
+          ...existing,
+          connectionFolderId: connectionFolderId ?? existing.connectionFolderId,
+          position: optimisticPosition
+        }
       })
 
       // Use dedicated reorder API that returns all affected positions
@@ -82,31 +120,65 @@ export const CloudConnectionModule: DataStore<ICloudSavedConnection, State> = {
           const affectedItems = await cli.connections.reorder(
             item.id,
             position,
-            connectionFolderId
+            connectionFolderId,
+            confirm
           )
           // Update all affected items with their new positions and folder
-          affectedItems.forEach(affected => {
+          for (const affected of affectedItems) {
             const existing = context.state.items.find(c => c.id === affected.id)
             if (existing) {
-              context.commit('upsert', {
-                ...existing,
-                position: affected.position,
-                connectionFolderId: affected.connectionFolderId
+              await context.dispatch('mutate', {
+                type: 'upsert',
+                data: {
+                  ...existing,
+                  position: affected.position,
+                  connectionFolderId: affected.connectionFolderId
+                }
               })
             }
-          })
+          }
           return item.id
         })
       } catch (e) {
         // Revert optimistic update using pre-mutation snapshot
-        context.commit('upsert', snapshot)
+        await context.dispatch('mutate', { type: 'upsert', data: snapshot })
         throw e
       } finally {
         // Clear pending status
         context.commit('removePendingSave', item.id)
       }
+    },
+    async loadLinkedSavedConnectionIds(context) {
+      const used = context.rootGetters['data/usedconnections/orderedUsedConfigs'];
+      if (!used) return;
+
+      const ids = used.map((u) => u.connectionId);
+
+      context.commit('linkedSavedConnectionIds', ids);
+    },
+    async loadByParentIds(context, parentIds: number[]) {
+      if (context.state.linkedSavedConnectionIds?.length === 0) {
+        await context.dispatch('loadLinkedSavedConnectionIds');
+      }
+
+      let persistentIds = [];
+      if (!_.isNil(context.state.linkedSavedConnectionIds)) {
+        persistentIds = context.state.linkedSavedConnectionIds;
+      }
+
+      return await context.dispatch('loadWithOptions', {
+        parentIds,
+        persistentIds
+      });
+    },
+    async unloadByParentIds(context, parentIds: number[]) {
+      const persistentIds = context.state.linkedSavedConnectionIds ?? [];
+      return context.dispatch('unloadWithOptions', {
+        parentIds,
+        persistentIds
+      });
     }
-  }),
+  },
   getters: {
     filteredConnections(state) {
       if (!state.filter) {

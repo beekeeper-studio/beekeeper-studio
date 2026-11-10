@@ -49,6 +49,15 @@ article {
     }
 }
 
+/* A 16:9 video player (Cloudflare Stream or YouTube iframe) at the content's width. */
+.md-typeset .video-embed {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 0;
+    border-radius: 3px;
+}
+
 
 .md-typeset table:not([class]) td {
     padding: 0.75em 1.25em;

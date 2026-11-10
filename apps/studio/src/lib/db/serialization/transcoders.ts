@@ -1,7 +1,8 @@
 import _ from "lodash";
 import { BksField } from "../models";
 import rawLog from "@bksLogger";
-import { DuckDBBlobValue } from "@duckdb/node-api";
+import type { DuckDBBlobValue } from "@duckdb/node-api";
+import { loadDuckDB } from "@shared/lib/knex-duckdb/loadDuckDB";
 import { ObjectId } from "mongodb";
 import { RecordId, StringRecordId } from "surrealdb";
 
@@ -119,7 +120,7 @@ export const DuckDBBinaryTranscoder: Transcoder<DuckDBBlobValue, Uint8Array> = {
   },
   deserialize(value) {
     if (_.isNil(value)) return value;
-    const blob = new DuckDBBlobValue(value);
+    const blob = new (loadDuckDB().DuckDBBlobValue)(value);
     Object.assign(blob, {
       toSQL() {
         return `'${this.toString("hex")}'`;

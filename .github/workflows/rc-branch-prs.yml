@@ -1,0 +1,49 @@
+name: Open PRs for RC branches
+
+# Release candidate (rc-*) branches sometimes get fixes that we always want
+# back in master. This checks every rc-* branch daily and opens a PR into
+# master for any that contain commits master doesn't already have.
+#
+# The actual logic lives in bin/rc-prs/ so it can be run and tested locally:
+#   bin/rc-prs/sync-rc-prs.sh            # do it for real
+#   DRY_RUN=1 bin/rc-prs/sync-rc-prs.sh  # show what it would do
+
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  schedule:
+    # Daily at 06:00 UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (report what would happen, don't open PRs)"
+        type: boolean
+        default: false
+
+jobs:
+  open-rc-prs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Open PRs for rc-* branches with commits not in master
+        id: sync
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
+        run: bin/rc-prs/sync-rc-prs.sh
+
+      - name: Report results
+        if: always() && steps.sync.outputs.checked_count != ''
+        run: |
+          echo "Checked ${{ steps.sync.outputs.checked_count }} rc-* branch(es)"
+          echo "Opened ${{ steps.sync.outputs.opened_count }} PR(s)"
+          echo "Skipped (PR already open): ${{ steps.sync.outputs.existing_count }}"
+          echo "Skipped (in sync): ${{ steps.sync.outputs.not_ahead_count }}"
+          echo "Errors: ${{ steps.sync.outputs.error_count }}"

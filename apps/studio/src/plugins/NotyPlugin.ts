@@ -21,10 +21,14 @@ const VueNoty = {
     return new Noty(params)
   },
 
-  show(text, type = 'alert', opts: { allowRawHtml?: boolean } = {}) {
+  show(text, type = 'alert', opts: { allowRawHtml?: boolean, fromName?: string } = {}) {
+    text = opts.allowRawHtml ? text : escapeHtml(text);
+    if (opts.fromName) {
+      text = `${opts.fromName}: ${text}`;
+    }
     const params = Object.assign({}, this.options, opts, {
       type,
-      text: opts.allowRawHtml ? text : escapeHtml(text)
+      text
     })
 
     const noty = this.create(params)

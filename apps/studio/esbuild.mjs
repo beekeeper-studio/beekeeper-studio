@@ -4,6 +4,7 @@ import { spawn, exec, fork } from 'child_process'
 import path from 'path';
 import _ from 'lodash'
 import fs from 'fs'
+import electronBin from 'electron'
 
 // NOTE: keep in sync with src/common/globals.ts -> plugins.ensureInstalled
 const ensureInstalled = [
@@ -13,29 +14,13 @@ const ensureInstalled = [
 
 const isWatching = process.argv[2] === 'watch';
 
-function getElectronBinary() {
-  const winLinux = path.join('../../node_modules/electron/dist/electron')
-  const mac = path.join('../../node_modules/electron/dist/Electron.app/Contents/MacOS/Electron')
-  const result = process.platform === 'darwin' ? mac : winLinux
-  return path.resolve(result)
-}
-
-let electronBin
-try {
-  electronBin = getElectronBinary()
-  console.log("Path to electron: ", electronBin)
-} catch (err) {
-  console.error(err)
-  throw new Error(err)
-}
-
 const externals = ['better-sqlite3', 'sqlite3',
         'sequelize', 'reflect-metadata',
         'cassandra-driver', 'mysql2', 'ssh2', 'mysql',
         'oracledb', '@electron/remote', "@google-cloud/bigquery",
         'pg-query-stream', 'electron', '@duckdb/node-api',
         '@mongosh/browser-runtime-electron', '@mongosh/service-provider-node-driver',
-        'mongodb-client-encryption', 'sqlanywhere', 'ws', 'kerberos',
+        'mongodb-client-encryption', 'sqlanywhere', 'ws', 'kerberos', 'msnodesqlv8',
         ...ensureInstalled,
       ]
 

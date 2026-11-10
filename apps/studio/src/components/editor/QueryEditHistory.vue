@@ -23,7 +23,7 @@
       <header class="sub">
         <span>Query Edit History</span>
         <button
-          class="close-btn btn btn-flat btn-fab"
+          class="btn btn-icon"
           type="button"
           aria-label="Close"
           @click="$emit('close')"
@@ -31,9 +31,15 @@
           <i class="material-icons">close</i>
         </button>
       </header>
+      <div v-if="pendingRemoteChanges" class="alert alert-warning">
+        <i class="material-icons">error_outline</i>
+        <div class="alert-body">
+          This query has been updated by someone else. Restore is unavailable until those changes are merged or discarded.
+        </div>
+      </div>
       <div class="audit-groups">
         <x-progressbar v-show="loadingList" />
-        <section v-if="dirty" class="audit-group">
+        <section v-if="hasUnsavedChanges" class="audit-group">
           <ul>
             <li class="item-wrapper">
               <button
@@ -77,7 +83,21 @@
                   Current version
                 </span>
                 <time class="title" v-text="audit.time" />
-                <span class="editor-label">{{ audit.user }}</span>
+                <span
+                  v-if="isCloud && 'name' in audit.queryAudit.user"
+                  class="editor-label"
+                >
+                  {{ audit.queryAudit.user.name }}
+                </span>
+                <span
+                  v-if="
+                    audit.queryAudit.action === 'update' &&
+                      audit.queryAudit.title != null
+                  "
+                  class="changed-the-title-to"
+                >
+                  Changed the title to "{{ audit.queryAudit.title }}"
+                </span>
               </button>
             </li>
           </ul>
@@ -96,12 +116,11 @@
             Close
           </button>
           <button
+            v-if="query?.canWrite"
             class="btn btn-primary"
             type="button"
             @click="confirmRestore"
-            :disabled="
-              isCurrentVersion() || restoring || selectedAuditId === 'unsaved' || loadingList
-            "
+            :disabled="!canRestore"
           >
             Restore this version
           </button>
@@ -113,7 +132,7 @@
 
 <script lang="ts">
 import Vue, { PropType } from "vue";
-import { mapGetters, mapState } from "vuex";
+import { mapGetters, mapState, mapActions } from "vuex";
 import MergeTextEditor from "@beekeeperstudio/ui-kit/vue/merge-text-editor";
 import {
   IQueryAudit,
@@ -154,6 +173,10 @@ export default Vue.extend({
       type: String as PropType<string | null>,
       default: null,
     },
+    pendingRemoteChanges: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     return {
@@ -191,9 +214,15 @@ export default Vue.extend({
   },
   computed: {
     ...mapState(["connectionType", "tables"]),
-    ...mapGetters(["dialectData"]),
-    dirty(): boolean {
+    ...mapGetters(["dialectData", "isCloud"]),
+    ...mapState("data/queries", {
+      queries: "items"
+    }),
+    hasUnsavedChanges(): boolean {
       return this.unsavedText !== null;
+    },
+    query(): ISavedQuery {
+      return this.queries.find((q) => q.id === this.queryId);
     },
     currentText(): string {
       if (this.selectedAuditId === "unsaved") {
@@ -217,15 +246,39 @@ export default Vue.extend({
       const mode = this.dialectData?.textEditorMode;
       return mode === "text/x-redis" ? "redis" : mode;
     },
+    canRestore() {
+      if (
+        this.loadingList ||
+        this.restoring ||
+        !this.selectedAuditId ||
+        this.pendingRemoteChanges
+      ) {
+        return false;
+      }
+
+      if (this.hasUnsavedChanges && this.selectedAuditId !== "unsaved") {
+        return true;
+      }
+
+      if (
+        this.selectedAuditId === "unsaved" ||
+        this.selectedAuditId === this.queryAudits[0].id
+      ) {
+        return false;
+      }
+
+      return true;
+    },
     audits(): Audit[] {
-      // The top entry of the saved list is the "current version" only when
-      // the editor isn't dirty — when dirty, the synthetic unsaved row above
-      // the list takes that role.
       return this.queryAudits.map((queryAudit: IQueryAudit, i: number) => ({
         queryAudit,
-        time: this.formatTime(queryAudit.createdAt),
-        user: this.userLabel(queryAudit),
-        isCurrentVersion: !this.dirty && i === 0,
+        // createdAt is float seconds since epoch (from cloud API).
+        time: this.formatTime(
+          typeof queryAudit.createdAt === 'number'
+            ? new Date(queryAudit.createdAt * 1000)
+            : queryAudit.createdAt
+        ),
+        isCurrentVersion: !this.hasUnsavedChanges && i === 0,
       }));
     },
     groupedAudits(): AuditGroup[] {
@@ -236,7 +289,9 @@ export default Vue.extend({
       for (const audit of this.audits) {
         // createdAt is float seconds since epoch (cloud API convention).
         const heading = this.$bks.timeAgo(
-          new Date(audit.queryAudit.createdAt * 1000)
+          typeof audit.queryAudit.createdAt === 'number'
+            ? new Date(audit.queryAudit.createdAt * 1000)
+            : audit.queryAudit.createdAt
         );
         if (!current || current.heading !== heading) {
           current = { heading, items: [] };
@@ -266,6 +321,9 @@ export default Vue.extend({
     this.destroySplit();
   },
   methods: {
+    ...mapActions({
+      restore: "data/queryAudits/restore",
+    }),
     initSplit() {
       if (this.split) {
         return;
@@ -308,21 +366,7 @@ export default Vue.extend({
       this.error = null;
       this.showDiff = true;
     },
-    isCurrentVersion(audit?: IQueryAudit): boolean {
-      // When the editor is dirty, no saved audit reflects what's in the
-      // editor, so restoring any of them is a meaningful action.
-      if (this.dirty || this.queryAudits.length === 0) {
-        return false;
-      }
-      const target = audit ?? this.selectedAudit;
-      if (!target) {
-        return false;
-      }
-      return target.id === this.queryAudits[0].id;
-    },
-    formatTime(createdAt: number): string {
-      // createdAt is float seconds since epoch (cloud API convention).
-      const d = new Date(createdAt * 1000);
+    formatTime(d: Date): string {
       const month = d.toLocaleString("en-US", { month: "long" });
       const day = d.getDate();
       const time = d.toLocaleString("en-US", {
@@ -349,14 +393,14 @@ export default Vue.extend({
       try {
         const queryAudits: IQueryAudit[] = await this.$store.dispatch(
           "data/queryAudits/list",
-          queryId
+          { queryId }
         );
         this.queryAudits = queryAudits;
         if (queryAudits.length === 0) {
           this.previousAudit = null;
           this.selectedAuditId = null;
           this.selectedAudit = null;
-        } else if (this.dirty) {
+        } else if (this.hasUnsavedChanges) {
           await this.selectAudit("unsaved");
         } else {
           await this.selectAudit(queryAudits[0].id);
@@ -421,28 +465,31 @@ export default Vue.extend({
     },
     async confirmRestore(): Promise<void> {
       const queryId = this.queryId;
-      const auditId = this.selectedAuditId;
+      const auditId = this.selectedAudit.id;
       if (queryId == null || auditId == null) {
         return;
       }
       const confirmed = await this.$confirm(
         "Restore this version?",
-        "The current query text will be replaced with this revision. This will create a new entry in the edit history.",
+        "The current query text will be replaced with this version. This will create a new entry in the edit history.",
         { confirmLabel: "Restore" }
       );
       if (!confirmed) {
         return;
       }
+
       this.restoring = true;
       this.error = null;
+
+      const latestAudit = this.queryAudits[0];
+
       try {
-        const restored: ISavedQuery = await this.$store.dispatch(
-          "data/queryAudits/restore",
-          { queryId, auditId }
-        );
-        this.$store.commit("data/queries/upsert", restored);
-        await this.loadAudits();
-        this.$emit("restore", restored);
+        if (this.hasUnsavedChanges && this.selectedAuditId === latestAudit.id) {
+          this.$emit("discardUnsavedChanges");
+        } else {
+          await this.restore({ queryId, auditId });
+          this.$emit("restore");
+        }
       } catch (e) {
         log.error(e);
         this.error = e;
@@ -453,7 +500,14 @@ export default Vue.extend({
     replaceExtensions(extensions: Extension): Extension[] {
       return [
         extensions,
-        monokaiInit({ settings: { selection: "", selectionMatch: "" } }),
+        monokaiInit({
+          settings: {
+            selection: "",
+            selectionMatch: "",
+            lineHighlight: "",
+            gutterActiveForeground: "",
+          },
+        }),
       ];
     },
   },
@@ -462,7 +516,7 @@ export default Vue.extend({
 
 <style scoped>
 .query-edit-history {
-  background-color: var(--query-editor-bg);
+  background: var(--bg-base);
   display: flex;
   overflow: hidden;
 }
@@ -495,7 +549,7 @@ export default Vue.extend({
   bottom: 0;
   left: 50%;
   width: 1px;
-  background-color: var(--border-color);
+  background-color: var(--border-subtle);
   transform: translateX(-50%);
 }
 
@@ -504,7 +558,7 @@ export default Vue.extend({
   align-items: center;
   justify-content: center;
   flex-grow: 1;
-  color: var(--text-lighter);
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
@@ -526,15 +580,7 @@ export default Vue.extend({
     justify-content: space-between;
     gap: 0.5rem;
     padding: 0.5rem 0.5rem 0.5rem 1rem;
-    color: var(--text-dark);
-  }
-
-  .close-btn {
-    color: var(--text-light);
-
-    .material-icons {
-      font-size: 1.145rem;
-    }
+    color: var(--text-contrast);
   }
 }
 
@@ -553,7 +599,7 @@ export default Vue.extend({
   padding-block: 0.25rem;
   font-size: 1rem;
   font-weight: normal;
-  color: var(--text-light);
+  color: var(--text-muted);
   text-transform: capitalize;
 }
 
@@ -576,7 +622,7 @@ export default Vue.extend({
     width: 0.5rem;
     height: 0.5rem;
     border-radius: 9999px;
-    background-color: hsl(from var(--bks-theme-primary) h s calc(l - 2));
+    background-color: var(--primary-solid-bg);
   }
 }
 
@@ -594,15 +640,20 @@ export default Vue.extend({
     margin: 0;
   }
 
-  .editor-label {
-    color: var(--text-lighter);
+  .editor-label,
+  .changed-the-title-to {
+    color: var(--text-muted);
     font-size: 0.8rem;
+  }
+
+  .changed-the-title-to {
+    font-style: italic;
   }
 
   .item {
     border: none;
     background-color: transparent;
-    color: var(--text-dark);
+    color: var(--text-contrast);
     width: 100%;
     cursor: pointer;
     border-radius: 4px;
@@ -616,11 +667,11 @@ export default Vue.extend({
 }
 
 .query-edit-history .audit-list .item:hover {
-  background-color: rgb(from var(--theme-base) r g b / 3.5%);
+  background-color: var(--bg-subtle-a);
 }
 
 .query-edit-history .audit-list .item[aria-current="true"] {
-  background-color: rgb(from var(--theme-base) r g b / 10%);
+  background-color: var(--bg-a);
 }
 
 .query-edit-history {

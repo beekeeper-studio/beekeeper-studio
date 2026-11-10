@@ -1,39 +1,86 @@
 import { AppEvent } from "@/common/AppEvent"
 import Vue from 'vue'
-import ContextMenu from '@/components/common/ContextMenu.vue'
+import { openMenu, MenuItem, DividerItem } from "@beekeeperstudio/ui-kit"
 import { IConnection } from "@/common/interfaces/IConnection"
+import { ConnectionType } from "@/lib/db/types"
 import { isBksInternalColumn } from "@/common/utils"
 import store from '@/store'
 import TimeAgo from "javascript-time-ago"
+import { pluralize } from "@/vendor/pluralize"
+import { addWindowListener, removeWindowListener } from "@/lib/windowListeners"
+import type { PluginMenuItemCondition } from "@/services/plugin/types"
 
-export interface ContextOption {
+export type ContextOption = ContextItem | DividerItem | LabelItem;
+
+export type ContextItem = {
   name: string,
   slug: string
-  type?: 'divider'
   handler: (...any) => void
   class?: string | ((...args: any[]) => string)
   shortcut?: string
-  ultimate?: boolean
   title?: string | ((...args: any[]) => string)
+  /** Material icon name rendered on the trailing edge of the item */
+  icon?: string
+  /** Material icon name rendered before the label */
+  leadingIcon?: string
+  /** Set on items contributed by a plugin. Plugin items are grouped and
+   * sorted by plugin name. */
+  plugin?: { id: string, name: string }
+  /** Keep the item disabled unless the menu reports this condition. Ignored
+   * by menus that don't report any conditions. */
+  enabledWhen?: PluginMenuItemCondition
+  /** Disable the item. The handler will not fire and the item appears greyed out. */
+  disabled?: boolean
+  /** Keep the menu open after this item is clicked */
+  keepOpen?: boolean
+  /** Child items. When present, this item opens a submenu. */
+  items?: ContextOption[]
 }
 
 interface MenuProps {
   /** The id of the menu. Not to be confused with the `elementId`. */
   id?: string
   options: ContextOption[],
+  /** A CSS selector for the element the menu is attached to. @default body */
   elementId?: string
   item: any,
   event: Event
 }
 
+function isDividerOrLabel(option: ContextOption): option is DividerItem | LabelItem {
+  return "type" in option && (option.type === "divider" || option.type === "label")
+}
+
+/** Convert a studio ContextOption into a UI Kit MenuItem, preserving the legacy
+ * `handler({ item, option, event })` call convention. */
+export function toMenuItem(option: ContextOption): MenuItem {
+  if (isDividerOrLabel(option)) {
+    return option
+  }
+
+  return {
+    id: option.slug,
+    label: option.name,
+    class: option.class,
+    shortcut: option.shortcut,
+    title: option.title,
+    icon: option.icon,
+    leadingIcon: option.leadingIcon,
+    disabled: option.disabled,
+    keepOpen: option.keepOpen,
+    items: option.items?.map(toMenuItem),
+    handler: (event, item) => option.handler({ item, option, event }),
+  }
+}
+
 export const BeekeeperPlugin = {
-  timeAgo(date: Date) {
+  timeAgo(date: Date, style?: string) {
     if (date > new Date('2888-01-01')) {
       return 'forever'
     }
     const ta = new TimeAgo('en-US')
 
-    return ta.format(date)
+    return ta.format(date, style)
 
   },
   closeTab(id?: string) {
@@ -49,16 +96,15 @@ export const BeekeeperPlugin = {
     }
   },
   openMenu(args: MenuProps): void {
-    const ContextComponent = Vue.extend(ContextMenu)
-    const cMenu = new ContextComponent({
-      store,
-      propsData: args
+    const getExtraPopupMenu = store.getters["popupMenu/getExtraPopupMenu"];
+    const extra: ContextOption[] = getExtraPopupMenu(args.id) ?? [];
+    const options = [...args.options, ...extra].map(toMenuItem)
+    openMenu({
+      options,
+      item: args.item,
+      event: args.event,
+      targetElement: args.elementId,
     })
-    cMenu.$on('close', () => {
-      cMenu.$off()
-      cMenu.$destroy()
-    })
-    cMenu.$mount()
   },
   buildConnectionName(config: IConnection) {
     return config.name || this.simpleConnectionString(config)
@@ -174,7 +220,12 @@ export const BeekeeperPlugin = {
         onCancel: () => resolve({ cancelled: true }),
       });
     })
-  }
+  },
+  pluralize(word: string, count: number, inclusive?: boolean): string {
+    return pluralize(word, count, inclusive);
+  },
+  addWindowListener,
+  removeWindowListener,
 }
 
 export type BeekeeperPlugin = typeof BeekeeperPlugin
@@ -184,8 +235,9 @@ export default {
   install(Vue) {
     Vue.prototype.$app = BeekeeperPlugin
     Vue.prototype.$bks = BeekeeperPlugin
+    Vue.prototype.$pluralize = pluralize;
 
-    Vue.prototype.$confirm = function(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string }): Promise<boolean> {
+    Vue.prototype.$confirm = function(title?: string, message?: string, options?: { confirmLabel?: string, cancelLabel?: string, variant?: string }): Promise<boolean> {
       return new Promise<boolean>((resolve, reject) => {
         try {
           this.trigger(AppEvent.createConfirmModal, {
@@ -199,6 +251,19 @@ export default {
           reject(e)
         }
       })
+    }
+
+    Vue.prototype.$promptConnectionType = function(): Promise<ConnectionType | false> {
+      return new Promise<ConnectionType | false>((resolve, reject) => {
+        try {
+          this.trigger(AppEvent.openConnectionTypePickerModal, {
+            onConfirm: (connectionType: ConnectionType) => resolve(connectionType),
+            onCancel: () => resolve(false),
+          });
+        } catch (e) {
+          reject(e);
+        }
+      });
     }
 
     Vue.prototype.$confirmById = function(id: string): Promise<boolean> {

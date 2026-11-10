@@ -55,6 +55,12 @@ Enabling PIN lock mode requires any Beekeeper Studio user to enter a pin code be
 3. **Restart Beekeeper Studio** - it will start fresh with default settings
 
 
+### SSH Config Match Rules
+
+When connecting over an SSH tunnel, Beekeeper Studio reads `~/.ssh/config` the same way `ssh` does, including `Match` blocks. `Match exec` decides whether a block applies by running an arbitrary command, so a config you don't fully control could execute commands when you connect.
+
+Beekeeper Studio already ignores `~/.ssh/config` entirely unless it is owned by you and is not writable by group or other users. To additionally skip `Match exec` sections, set `disableSshConfigMatchExec = true` in the `[security]` section of your config file. `Host` blocks and non-exec `Match` rules (`Match host`, `Match user`, etc.) are still applied — only `Match exec` is skipped.
+
 ### Enterprise Security Recommendations
 
 To enforce security settings on all Beekeeper Studio users you can deploy an administrator configuration file (`system.config.ini`) (see [Configuration docs](./configuration.md) for reference)

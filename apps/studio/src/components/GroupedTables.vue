@@ -6,7 +6,6 @@
 
 <script>
 import { Tabulator, TabulatorFull, GroupRowsModule } from 'tabulator-tables'
-import pluralize from 'pluralize'
 import { escapeHtml } from '@shared/lib/tabulator'
 
 export default {
@@ -80,7 +79,7 @@ export default {
       if  (schema == null ){
         this.$emit('select-rows', this.tabulator.getSelectedData())
         return
-      } 
+      }
 
       this.groupVisibility()
       this.$emit('select-rows', this.tabulator.getSelectedData())
@@ -90,7 +89,7 @@ export default {
       if  (schema == null ){
         this.$emit('select-rows', this.tabulator.getSelectedData())
         return
-      } 
+      }
 
       this.groupVisibility()
       this.$emit('select-rows', this.tabulator.getSelectedData())
@@ -152,7 +151,7 @@ export default {
           if (hasGroups) {
             this.$nextTick(this.setSelectHeaderListener)
           }
-          return `<div class="group-header"><input name="group-header-select" class="select-group" type="checkbox" value="${sanValue}" /><span>${sanValue}</span> <span style="margin-left:10px;">(${count} ${pluralize('item', count)})</span> </div>`;
+          return `<div class="group-header"><input name="group-header-select" class="select-group" type="checkbox" value="${sanValue}" /><span>${sanValue}</span> <span style="margin-left:10px;">(${count} ${this.$pluralize('item', count)})</span> </div>`;
         } : null,
         columnDefaults: {
           resizable: false,
