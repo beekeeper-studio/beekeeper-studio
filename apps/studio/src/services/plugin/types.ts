@@ -4,7 +4,6 @@ import rawLog from "@bksLogger";
 import type { UtilityConnection } from "@/lib/utility/UtilityConnection";
 import { FileHelpers, JsonValue } from "@/types";
 import type Noty from "noty";
-import { Extension } from "@codemirror/state";
 
 /**
  * The kind of the tab. There is only one kind currently:

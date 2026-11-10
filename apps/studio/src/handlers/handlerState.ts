@@ -11,6 +11,9 @@ import { MessagePortMain } from "electron";
 import { FSWatcher } from "fs";
 import fs from "fs";
 import tmp from 'tmp';
+import rawLog from "@bksLogger";
+
+const log = rawLog.scope("handlerState");
 
 export interface TempFile {
   fileObject: tmp.FileResult,
@@ -56,6 +59,17 @@ const states = new Map<string, State>();
 // I kinda hate this tbh. modifying could be scary
 export function state(id: string): State {
   return states.get(id);
+}
+
+/** Send a message to every renderer session. */
+export function broadcast(message: unknown): void {
+  for (const state of states.values()) {
+    try {
+      state.port.postMessage(message);
+    } catch (e) {
+      log.debug("Failed to broadcast message", e);
+    }
+  }
 }
 
 export function newState(id: string): void {

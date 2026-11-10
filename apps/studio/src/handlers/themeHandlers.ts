@@ -1,11 +1,10 @@
 import { context } from '@/handlers/handlerContext';
 import { ExtensionRegistryError } from '@/lib/errors';
-import { state } from '@/handlers/handlerState';
 import { ExtensionRepository, RegistryMap, ThemeManifest, ThemeSnapshot } from '@/services/plugin/types';
 
 export interface IThemeHandlers {
   'theme/themes': () => Promise<ThemeSnapshot[]>,
-  'theme/watch': ({ sId, themeId }: { sId: string, themeId: string }) => Promise<void>
+  'theme/watch': ({ themeId }: { themeId: string }) => Promise<void>
   'theme/checkForUpdates': ({ id }: { id: string }) => Promise<boolean>
   'theme/install': ({ id }: { id: string }) => Promise<ThemeManifest>
   'theme/update': ({ id }: { id: string }) => Promise<ThemeManifest>
@@ -18,10 +17,8 @@ export const ThemeHandlers: IThemeHandlers = {
   'theme/themes': async function() {
     return await context.themeManager.getThemes();
   },
-  'theme/watch': async function({ sId, themeId }: { sId: string, themeId: string }) {
-    context.themeManager.watch(sId, themeId, (id) => {
-      state(sId).port.postMessage({ type: 'themeFileChanged', input: id });
-    });
+  'theme/watch': async function({ themeId }: { themeId: string }) {
+    context.themeManager.watch(themeId);
   },
   'theme/checkForUpdates': async function({ id }: { id: string }) {
     return await context.themeManager.checkForUpdates(id);

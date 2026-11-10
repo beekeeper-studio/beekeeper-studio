@@ -52,6 +52,7 @@ import { ThemeManager } from '@/services/theme/ThemeManager';
 import { ThemeConfigurationModule } from '@/services/theme/modules/ThemeConfigurationModule';
 import { ThemeAutoUpdateModule } from '@/services/theme/modules/ThemeAutoUpdateModule';
 import { ThemeLicenseModule } from '@/services/theme/modules/ThemeLicenseModule';
+import { ThemeFileChangedModule } from '@/services/theme/modules/ThemeFileChangedModule';
 
 if (platformInfo.env.development || platformInfo.env.test) {
   sms.install()
@@ -236,6 +237,7 @@ async function init() {
     ThemeConfigurationModule.with({ config: BksConfig }),
     ThemeAutoUpdateModule.with({ config: BksConfig }),
     ThemeLicenseModule,
+    ThemeFileChangedModule,
   ]);
 
   context.pluginManager = pluginManager;

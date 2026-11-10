@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from "vitest";
 import globals from "@/common/globals";
 import fs from "fs";
 import path from "path";
@@ -11,6 +11,7 @@ import { ExtensionRegistryError, ThemeSystemError } from "@/lib/errors";
 import ExtensionRegistry from "@/services/extension/ExtensionRegistry";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import { ThemeManifest, ThemeSnapshot } from "@/services/plugin";
+import { ThemeModule, type ThemeModuleOptions } from "@/services/theme/modules/ThemeModule";
 
 describe("Basic Theme Management", () => {
   const server = createThemeServer();
@@ -29,7 +30,7 @@ describe("Basic Theme Management", () => {
   }
 
   /** Place a theme in the themes directory by hand, like an unlisted theme. */
-  function placeTheme(id: string, { style = true } = {}) {
+  function installTheme(id: string, { style = true } = {}) {
     const directory = path.join(fileManager.options.root, id);
     fs.mkdirSync(directory, { recursive: true });
     fs.writeFileSync(
@@ -128,7 +129,7 @@ describe("Basic Theme Management", () => {
     });
 
     it("ignores an installed theme whose id clashes with a bundled one", async () => {
-      placeTheme("dracula");
+      installTheme("dracula");
       const manager = await initThemeManager();
       const themes = (await manager.getThemes()).filter(
         (theme) => theme.manifest.id === "dracula"
@@ -138,7 +139,7 @@ describe("Basic Theme Management", () => {
     });
 
     it("marks a theme placed by hand as unlisted", async () => {
-      placeTheme("hand-made");
+      installTheme("hand-made");
       const manager = await initThemeManager();
       const [theme] = installedThemes(await manager.getThemes());
       expect(theme.origin).toBe("unlisted");
@@ -161,7 +162,7 @@ describe("Basic Theme Management", () => {
     });
 
     it("disables a theme without style.css", async () => {
-      placeTheme("no-style", { style: false });
+      installTheme("no-style", { style: false });
       const manager = await initThemeManager();
       const [theme] = installedThemes(await manager.getThemes());
       expect(theme.disableState).toStrictEqual({
@@ -222,6 +223,32 @@ describe("Basic Theme Management", () => {
       await manager.installTheme("test-theme");
       await manager.uninstallTheme("test-theme");
       expect(installedThemes(await manager.getThemes())).toHaveLength(0);
+    });
+  });
+
+  describe("Watching", () => {
+    it("Should be able to watch a theme file", async () => {
+      const changed: string[] = [];
+
+      installTheme("theme-watcher-test");
+
+      const manager = new ThemeManager({ fileManager, registry });
+      manager.registerModule(class extends ThemeModule {
+        constructor(options: ThemeModuleOptions) {
+          super(options);
+          this.hook("theme-file-changed", (themeId) => void changed.push(themeId));
+        }
+      });
+      await manager.initialize();
+
+      manager.watch("theme-watcher-test");
+
+      const stylePath = path.join(fileManager.options.root, "theme-watcher-test", "style.css");
+      // The watcher starts asynchronously, so keep editing until it reports.
+      await vi.waitFor(() => {
+        fs.appendFileSync(stylePath, "body {}\n");
+        expect(changed).toContain("theme-watcher-test");
+      }, { timeout: 5000, interval: 200 });
     });
   });
 });

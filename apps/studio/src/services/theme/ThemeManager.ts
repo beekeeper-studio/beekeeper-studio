@@ -31,10 +31,7 @@ export class ThemeManager extends Hookable<ThemeManager, ThemeModuleHookMap> {
   private manifests: ThemeManifest[] = [];
   private themeLocks: string[] = [];
   private watcher: FSWatcher = null;
-  private watchListeners = new Map<
-    string,
-    { themeId: string; onChange: (themeId: string) => void }
-  >();
+  private watchedThemeId: string = null;
 
   constructor(readonly options: ThemeManagerOptions) {
     super();
@@ -231,14 +228,8 @@ export class ThemeManager extends Hookable<ThemeManager, ThemeModuleHookMap> {
     return { disabled: false };
   }
 
-  private stylePath(themeId: string): string {
-    return path.join(this.fileManager.getDirectoryOf(themeId), "style.css");
-  }
-
-  /** Watch the `style.css` of the theme each listener is using, including it being deleted or restored. */
-  watch(key: string, themeId: string, onChange: (themeId: string) => void) {
-    this.watchListeners.set(key, { themeId, onChange });
-
+  /** Watch the active theme's `style.css`, including it being deleted or restored. */
+  watch(themeId: string) {
     if (!this.watcher) {
       this.watcher = watch([], { ignoreInitial: true })
         .on("change", this.notifyWatchers)
@@ -246,32 +237,26 @@ export class ThemeManager extends Hookable<ThemeManager, ThemeModuleHookMap> {
         .on("unlink", this.notifyWatchers);
     }
 
-    const wanted = new Set(
-      [...this.watchListeners.values()]
-        .filter(({ themeId }) => !this.isBundled(themeId))
-        .map(({ themeId }) => this.stylePath(themeId))
-    );
-    const watched = Object.entries(this.watcher.getWatched()).flatMap(
-      ([dir, files]) => files.map((file) => path.join(dir, file))
-    );
+    if (themeId === this.watchedThemeId) {
+      return;
+    }
 
-    this.watcher.unwatch(watched.filter((file) => !wanted.has(file)));
-    this.watcher.add([...wanted]);
+    if (this.watchedThemeId && !this.isBundled(this.watchedThemeId)) {
+      this.watcher.unwatch(path.join(this.fileManager.getDirectoryOf(this.watchedThemeId), "style.css"));
+    }
+
+    this.watchedThemeId = themeId;
+
+    if (!this.isBundled(themeId)) {
+      this.watcher.add(path.join(this.fileManager.getDirectoryOf(themeId), "style.css"));
+    }
   }
 
   private notifyWatchers = (stylePath: string) => {
     const themeId = path.basename(path.dirname(stylePath));
-    for (const [key, listener] of this.watchListeners) {
-      if (listener.themeId !== themeId) {
-        continue;
-      }
-      try {
-        listener.onChange(themeId);
-      } catch (e) {
-        log.debug("Dropping theme watch listener", e);
-        this.watchListeners.delete(key);
-      }
-    }
+    this.callHook("theme-file-changed", themeId).catch((e) => {
+      log.error("Error handling theme file change", e);
+    });
   };
 
   private async withThemeLock<T>(

@@ -4,6 +4,7 @@ import type { ThemeManager } from "../ThemeManager";
 
 export interface ThemeModuleHookMap {
   "after-initialize": () => void | Promise<void>;
+  "theme-file-changed": (themeId: string) => void | Promise<void>;
   "before-install-theme": (themeId: string) => void | Promise<void>;
   "theme-snapshots": (
     snapshots: ThemeSnapshot[]
