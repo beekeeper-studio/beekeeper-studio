@@ -13,7 +13,7 @@
     </template>
     <template>
       <div class="plugin-manager-content">
-        <plugin-disabled-overlay v-if="$bksConfig.pluginSystem.disabled"/>
+        <plugin-disabled-overlay v-if="$bksConfig.pluginSystem.disabled" />
         <div class="card padding control-card">
           <control-row
             title="Install plugins"

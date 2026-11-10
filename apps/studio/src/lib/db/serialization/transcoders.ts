@@ -1,39 +1,73 @@
 import _ from "lodash";
-import { BksField } from "../models";
+import { BksField, BksFieldType } from "../models";
 import rawLog from "@bksLogger";
 import type { DuckDBBlobValue } from "@duckdb/node-api";
 import { loadDuckDB } from "@shared/lib/knex-duckdb/loadDuckDB";
 import { ObjectId } from "mongodb";
-import { RecordId, StringRecordId } from "surrealdb";
 
 const log = rawLog.scope("transcoders");
 
 export interface Transcoder<T, U> {
   serialize(value: T): U;
-  deserialize(value: U): T;
+  deserialize(value: U, field?: BksField): T;
   serializeCheckByField(field: BksField): boolean;
   deserializeCheckByValue(value: unknown): value is U;
+  deserializeCheckByField?(field: BksField, value: unknown): value is U
 }
 
-export const SurrealDBRecordTranscoder: Transcoder<RecordId | StringRecordId, string> = {
-  serialize(value) {
-    if (!(value instanceof RecordId) && !(value instanceof StringRecordId)) {
-      log.warn("SurrealDBRecordTranscoder: cannot serialize non-recordid value");
-      return value;
-    }
-    return value.toString();
-  },
-  deserialize(value) {
-    return new StringRecordId(value)
-  },
-  serializeCheckByField(field): boolean {
-    return field.bksType === 'SURREALID';
-  },
-  deserializeCheckByValue(value): value is string {
-    // This may be too permissive but we'll see
-    return _.isString(value) && /^(?:[a-zA-Z_][a-zA-Z0-9_\-]*|⟨[^⟩]+⟩):.+$/.test(value);
-  }
+// Factory for simple transcoders, string => basic type based purely on BksFieldType
+function primitiveTranscoder<T>(
+  type: BksFieldType,
+  parse: (value: string) => T | undefined
+): Transcoder<T, string> {
+  return {
+    serialize(value) {
+      return value as unknown as string;
+    },
+    deserialize(value) {
+      const parsed = parse(value);
+      return parsed === undefined ? value as unknown as T : parsed;
+    },
+    serializeCheckByField(_field): boolean {
+      return false;
+    },
+    deserializeCheckByValue(_value): _value is string {
+      return false;
+    },
+    deserializeCheckByField(field, value): value is string {
+      return field.bksType === type && _.isString(value);
+    },
+  };
 }
+
+export const NUMERIC_REGEX = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/;
+const INTEGER_REGEX = /^[+-]?\d+$/;
+
+function parseInteger(value: string): number | bigint | undefined {
+  const trimmed = value.trim();
+  if (!INTEGER_REGEX.test(trimmed)) return undefined;
+  const num = Number(trimmed);
+  return Number.isSafeInteger(num) ? num : BigInt(trimmed);
+}
+
+function parseFloatValue(value: string): number | undefined {
+  const trimmed = value.trim();
+  if (!NUMERIC_REGEX.test(trimmed)) return undefined;
+  const num = Number(trimmed);
+  return Number.isFinite(num) ? num : undefined;
+}
+
+export const IntegerTranscoder = primitiveTranscoder('INTEGER', parseInteger);
+export const FloatTranscoder = primitiveTranscoder('FLOAT', parseFloatValue);
+export const NumberTranscoder = primitiveTranscoder('NUMBER', (value) =>
+  INTEGER_REGEX.test(value.trim()) ? parseInteger(value) : parseFloatValue(value)
+);
+export const BooleanTranscoder = primitiveTranscoder('BOOLEAN', (value) => {
+  const lower = value.trim().toLowerCase();
+  if (lower === 'true') return true;
+  if (lower === 'false') return false;
+  return undefined;
+});
 
 export const MongoDBObjectIdTranscoder: Transcoder<ObjectId, Uint8Array> = {
   serialize(value) {

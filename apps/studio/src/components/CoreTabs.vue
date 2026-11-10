@@ -840,10 +840,24 @@ export default Vue.extend({
       result.unsavedQueryText = optionalText
       await this.addTab(result)
     },
+    async selectTopColumnNames(table): Promise<string[]> {
+      if (table.columns?.length) return table.columns.map((c) => c.columnName)
+      try {
+        const columns = table.entityType === 'materialized-view'
+          ? await this.connection.listMaterializedViewColumns(table.name, table.schema)
+          : await this.connection.listTableColumns(table.name, table.schema)
+        return (columns || []).map((c) => c.columnName)
+      } catch (ex) {
+        log.warn(`Unable to list columns for '${table.name}', falling back to SELECT *`, ex)
+        return []
+      }
+    },
     async loadSelectTop(table) {
       try {
-        const query = await this.connection.selectTopSql(table.name, 0, 100, [], [], table.schema, ['*'])
-        this.createQuery(query.replace(/\s+/g, ' ').trim())
+        const columns = await this.selectTopColumnNames(table)
+        const selects = columns.length ? columns : ['*']
+        const query = await this.connection.selectTopSql(table.name, 0, 100, [], [], table.schema, selects)
+        this.createQuery(safeFormat(query, { language: FormatterDialect(this.dialect) }))
       } catch (ex) {
         this.$noty.error(`An error occured while loading the SQL for '${table.name}' - ${ex.message}`)
         throw ex
