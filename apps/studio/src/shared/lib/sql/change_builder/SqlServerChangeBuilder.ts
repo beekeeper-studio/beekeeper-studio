@@ -115,15 +115,20 @@ export class SqlServerChangeBuilder extends ChangeBuilderBase {
   }
 
   initialSql(spec: AlterTableSpec) {
-    const defaults = (spec.alterations || []).filter((a) => a.changeType === 'defaultValue')
-    const results = defaults.map((change) => {
-      const existing = this.getDefaultConstraint(change.columnName)
+    // SQL Server refuses to drop a column that still has a default constraint,
+    // so those go too, as well as the ones we are replacing
+    const columns = _.uniq([
+      ...(spec.alterations || []).filter((a) => a.changeType === 'defaultValue').map((a) => a.columnName),
+      ...(spec.drops || []),
+    ])
+    const results = columns.map((column) => {
+      const existing = this.getDefaultConstraint(column)
       if (!existing) return null
-      return `DROP CONSTRAINT ${this.wrapIdentifier(existing.name)}`
+      return `ALTER TABLE ${this.tableName} DROP CONSTRAINT ${this.wrapIdentifier(existing.name)}`
     }).filter((f) => !!f)
 
     if (!results.length) return null;
-    return `ALTER TABLE ${this.tableName} ${results.join("\n")}`
+    return results.join(";")
   }
 
   endSql(spec: AlterTableSpec) {
