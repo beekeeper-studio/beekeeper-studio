@@ -8,8 +8,8 @@
 .app-version {
   display: flex;
   justify-content: center;
+  --link-fg: var(--gray-8);
   a {
-    color: var(--gray-8);
     // font-style: italic;
     line-height: 2;
   }
@@ -35,6 +35,9 @@
 
   .small-wrap {
     @include small-wrap;
+  }
+  .connection-form-card {
+    background: var(--connection-form-card-bg);
   }
   .card-flat {
     margin: $gutter-w 0;
@@ -148,7 +151,7 @@
 .advanced-connection-settings {
   display: flex;
   flex-direction: column;
-  background: var(--bg-base);
+  background: var(--bg-subtle-a);
   border-radius: 8px;
   margin: $gutter-w 0;
   padding: $gutter-w ($gutter-w * 1.25);

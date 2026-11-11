@@ -2,7 +2,7 @@
   <div class="interface connection-interface">
     <privacy-banner class="privacyBanner" :privacy-mode="privacyMode" />
     <div class="interface-wrap row">
-      <sidebar class="connection-sidebar" ref="sidebar" v-show="sidebarShown">
+      <sidebar class="connection-sidebar primary-sidebar" ref="sidebar" v-show="sidebarShown">
         <connection-sidebar
           :selected-config="config"
           @remove="remove"
@@ -19,9 +19,9 @@
           </div>
           <div
             v-else-if="!config.connectionType"
-            class="empty-state"
+            class="empty-state welcome"
           >
-            <h3>Welcome to Beekeeper Studio</h3>
+            <h3 class="welcome-title">Welcome to Beekeeper Studio</h3>
             <p>Start by adding new connection.</p>
             <p>Or connection from a URL.</p>
             <div class="actions">
@@ -34,7 +34,7 @@
               </ImportButton>
             </div>
           </div>
-          <div class="card-flat padding" :class="determineLabelColor" v-else>
+          <div class="connection-form-card card-flat padding" :class="determineLabelColor" v-else>
             <div class="connection-heading">
               <h3 class="card-title">
                 {{ pageTitle }}

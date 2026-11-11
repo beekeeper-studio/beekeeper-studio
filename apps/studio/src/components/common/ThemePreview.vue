@@ -365,7 +365,8 @@ label.theme-item {
     gap: 0.4em;
     padding: 0.3em 0.75em;
     font-size: 0.85em;
-    color: var(--text-contrast);
+    color: var(--statusbar-fg);
+    background: var(--statusbar-bg);
 
     .material-icons {
       font-size: 1.2em;
@@ -374,7 +375,6 @@ label.theme-item {
 
     .settings {
       margin-left: auto;
-      color: var(--text);
     }
   }
 
@@ -476,8 +476,8 @@ label.theme-item {
     flex-direction: column;
     padding: 0.5em 0.25em;
     font-family: var(--font-family-mono);
-    color: var(--editor-fg, var(--text-contrast));
-    background-color: var(--bg-base);
+    color: var(--editor-fg);
+    background: var(--editor-bg);
     white-space: nowrap;
 
     .line {
@@ -488,19 +488,19 @@ label.theme-item {
     .gutter {
       width: 1em;
       text-align: right;
-      color: var(--editor-linenumber-fg, var(--text));
+      color: var(--editor-linenumber-fg);
     }
 
     .kw {
-      color: var(--editor-keyword-fg, var(--info-text));
+      color: var(--editor-keyword-fg);
     }
 
     .str {
-      color: var(--editor-string-fg, var(--primary-text));
+      color: var(--editor-string-fg);
     }
 
     .num {
-      color: var(--editor-number-fg, var(--primary-text));
+      color: var(--editor-number-fg);
     }
 
     .actions {
@@ -515,6 +515,8 @@ label.theme-item {
     table-layout: fixed;
     border-collapse: collapse;
     border-top: 1px solid var(--border-subtle);
+    color: var(--table-cell-fg);
+    background: var(--table-bg);
 
     th,
     td {
@@ -529,12 +531,16 @@ label.theme-item {
 
     th {
       font-weight: 600;
-      color: var(--text-contrast);
-      border-bottom: 1px solid var(--border-subtle);
+      color: var(--table-fg);
+      box-shadow: var(--table-header-shadow);
     }
 
     tbody tr:nth-child(odd) {
-      background-color: var(--bg-subtle-a);
+      background-color: var(--table-row-odd-bg);
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: var(--table-row-even-bg);
     }
 
     th.range-highlight {

@@ -80,7 +80,7 @@ $cell-padding:           $gutter-w;
             }
           }
           .null-value {
-            color: var(--text-muted);
+            color: var(--table-cell-readonly-fg);
           }
         }
       }
@@ -102,7 +102,7 @@ $cell-padding:           $gutter-w;
       .tabulator-col {
         &.foreign-key {
           &:before {
-            color: var(--primary-text);
+            color: var(--primary-solid-bg);
           }
         }
       }
@@ -120,7 +120,7 @@ $cell-padding:           $gutter-w;
         .tabulator-cell {
           &.primary-key, &.read-only-field {
             &:hover {
-              background: var(--gray-a3);
+              background: var(--table-cell-bg-hover);
               cursor: pointer;
             }
           }
@@ -128,7 +128,7 @@ $cell-padding:           $gutter-w;
       }
       &.inserted {
         .tabulator-editing {
-          box-shadow: inset 0 -1px var(--text-contrast);
+          box-shadow: inset 0 -1px var(--text);
         }
       }
       &.deleted,
@@ -191,7 +191,7 @@ $cell-padding:           $gutter-w;
               &:checked,
               &:checked:active {
                 &:after {
-                  color: var(--app-bg);
+                  color: var(--btn-primary-fg);
                 }
               }
             }
@@ -248,7 +248,7 @@ $cell-padding:           $gutter-w;
         padding: 4px 6px;
         line-height: $row-height - 8px; // row-height - vertical padding
         z-index: 10;
-        box-shadow: inset 1px solid var(--text-contrast);
+        box-shadow: inset 1px 0 var(--text);
         height: auto;
         &:before {
           content: '';
@@ -257,17 +257,17 @@ $cell-padding:           $gutter-w;
           right: 0;
           left: 0;
           bottom: 0;
-          background: var(--editor-bg);
+          background: var(--table-bg);
         }
       }
       &.active-cell {
         background: var(--selection-bg);
-        border-color: var(--border-hover);
+        border-color: var(--border);
         color: var(--selection-fg);
       }
 
       &.copied {
-        background: var(--gray-a9);
+        background: var(--table-cell-selected-bg);
       }
 
       // Cell States
@@ -275,11 +275,11 @@ $cell-padding:           $gutter-w;
       &.edit-error,
       &.edit-success {
         border-radius: $cell-radius;
-        color: var(--text-contrast);
+        color: var(--table-cell-fg);
       }
       &.tabulator-editing {
-        box-shadow: inset 0 -1px var(--text-contrast);
-        background: var(--gray-a4);
+        box-shadow: inset 0 -1px var(--text);
+        background: var(--table-cell-editing-bg);
         padding-left: 0;
         padding-right: 0;
         min-height: $row-height;
@@ -288,7 +288,7 @@ $cell-padding:           $gutter-w;
         overflow-y: visible;
         height: auto;
         &:focus {
-          box-shadow: inset 0 -1px var(--text-contrast);
+          box-shadow: inset 0 -1px var(--text);
         }
         pre, input:not([type="checkbox"]), textarea {
           padding: 0 $cell-padding;
@@ -309,12 +309,12 @@ $cell-padding:           $gutter-w;
           padding: 0;
         }
         input[type="checkbox"] {
-          box-shadow: inset 0 0 0 2px var(--text-contrast);
+          box-shadow: inset 0 0 0 2px var(--text);
           &:active,
           &:checked,
           &:checked:active {
             &:after {
-              color: var(--app-bg);
+              color: var(--btn-primary-fg);
             }
           }
         }
@@ -334,11 +334,11 @@ $cell-padding:           $gutter-w;
     }
 
     &.copied {
-      background: var(--gray-a9) ;
+      background: var(--table-cell-selected-bg);
       .tabulator-cell {
 
         &:hover {
-          background: var(--gray-a9) ;
+          background: var(--table-cell-selected-bg);
         }
       }
     }
@@ -384,7 +384,7 @@ $cell-padding:           $gutter-w;
       i.fk-link {
         display: inline-block;
         &:hover {
-          color: var(--text-contrast);
+          color: var(--text);
         }
       }
     }
@@ -488,7 +488,7 @@ $cell-padding:           $gutter-w;
             $font-size: 13px;
             font-family: 'Material Icons';
             font-size: $font-size;
-            color: var(--primary-text);
+            color: var(--primary-solid-bg);
             padding-left: $foreign-key-width - $font-size;
             display: inline-flex;
             align-items: center;
@@ -500,11 +500,11 @@ $cell-padding:           $gutter-w;
           }
         }
         &.read-only-field:before {
-          color: var(--text-muted);
+          color: var(--gray-a8);
           content: 'edit_off';
         }
         &.primary-key:before {
-          color: var(--primary-text);
+          color: var(--info-text);
         }
         &.foreign-key-button {
           display: none;
@@ -514,7 +514,7 @@ $cell-padding:           $gutter-w;
           content: 'bolt';
           font-family: 'Material Icons';
           font-size: $font-size;
-          color: var(--text-muted);
+          color: var(--gray-a8);
           padding-left: $foreign-key-width - $font-size;
           display: inline-flex;
           align-items: center;
@@ -587,7 +587,7 @@ $cell-padding:           $gutter-w;
 
   .tabulator-edit-select-list {
     background: var(--panel-bg);
-    color: var(--panel-fg);
+    color: var(--text);
     border-width: 1;
     border-color: var(--gray-a3);
     border-radius: 2px;
@@ -633,7 +633,7 @@ $cell-padding:           $gutter-w;
       }
       &.active {
         color: var(--text-contrast);
-        background: var(--gray-a7);
+        background: var(--gray-a5);
       }
       &:disabled {
         opacity: 0.35;
@@ -711,7 +711,7 @@ $cell-padding:           $gutter-w;
     }
     .tabulator-edit-select-list-item {
       &:hover {
-        background: var(--gray-a3);
+        background: var(--table-cell-bg-hover);
       }
       &.active, &.active:hover {
         background: var(--info-solid-bg);
@@ -851,10 +851,10 @@ $cell-padding:           $gutter-w;
 
     .tabulator-header {
       color: inherit;
-      background: var(--table-bg);
-      box-shadow: 0 1px var(--border-subtle);
+      background: transparent;
+      box-shadow: var(--table-header-shadow);
       .tabulator-col {
-        background: var(--table-bg);
+        background: transparent;
         border-color: transparent;
         &.tabulator-frozen {
           border-color: transparent;
@@ -916,13 +916,13 @@ $cell-padding:           $gutter-w;
       }
 
       &.tabulator-sortable[aria-sort="descending"] .tabulator-col-content .tabulator-col-sorter .tabulator-arrow {
-        border-top-color: var(--text-contrast);
+        border-top-color: var(--table-fg);
       }
       &.tabulator-sortable[aria-sort="ascending"] .tabulator-col-content .tabulator-col-sorter .tabulator-arrow {
-        border-bottom-color: var(--text-contrast);
+        border-bottom-color: var(--table-fg);
       }
       &.tabulator-sortable[aria-sort="none"] .tabulator-col-content .tabulator-col-sorter .tabulator-arrow {
-        border-bottom-color: var(--gray-a8);
+        border-bottom-color: var(--btn-icon-fg);
       }
     }
   }

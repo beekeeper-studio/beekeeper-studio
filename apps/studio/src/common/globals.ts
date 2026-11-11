@@ -3,6 +3,7 @@ import defaultTheme from "../../public/themes/default/manifest.json";
 import solarizedTheme from "../../public/themes/solarized/manifest.json";
 import draculaTheme from "../../public/themes/dracula/manifest.json";
 import githubTheme from "../../public/themes/github/manifest.json";
+import urbanSundownTheme from "../../public/themes/urban-sundown/manifest.json";
 
 export default {
   updateCheckInterval: 1000 * 60 * 60 * 24, // 24 hours
@@ -64,6 +65,7 @@ export default {
       solarizedTheme,
       draculaTheme,
       githubTheme,
+      urbanSundownTheme,
     ] satisfies ThemeManifest[],
     registries: [
       {

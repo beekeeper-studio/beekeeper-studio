@@ -17,7 +17,7 @@
   .filter-wrap {
     display: flex;
     align-items: center;
-    border: 1px solid var(--border-subtle);
+    border: var(--input-border);
     border-radius: 4px;
 
     .filter-input {
@@ -200,7 +200,7 @@
 
     .actions-btn {
       i {
-        color: var(--text-muted);
+        color: var(--btn-fg);
         transition: color 0.15s ease-in-out;
 
         &:hover {
@@ -269,7 +269,7 @@
       }
 
       &.selected {
-        background: var(--gray-a4);
+        background: var(--bg-active);
       }
 
       &.open {
@@ -380,7 +380,7 @@
         top: 0;
         bottom: 0;
         left: 9px;
-        border-left: 1px solid var(--gray-a4);
+        border-left: 1px solid var(--gray-a2);
       }
 
       .title {
@@ -393,7 +393,7 @@
         margin-right: 0;
         max-width: 50%;
         background: transparent;
-        color: var(--text-muted);
+        color: var(--gray-10);
         padding: 0 0.1rem;
         min-width: fit-content;
         overflow: hidden;

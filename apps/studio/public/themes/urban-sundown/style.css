@@ -1,0 +1,111 @@
+.light-theme {
+  --background: white;
+  --base-gray: #b39a97;
+  --base-accent: var(--base-purple);
+
+  --base-red: #c2414f;
+  --base-pink: #b65f80;
+  --base-purple: #6b285e;
+  --base-orange: #ac4c1d;
+  --base-yellow: #b07a12;
+  --base-green: #3f8a5f;
+  --base-blue: #2f7fa8;
+
+  /* --app-bg: linear-gradient(0deg, #a7590f 0%, #6b285e 20%, #0d002c 60%, black 100%); */
+  --app-bg: linear-gradient(0deg, #fcf0d8 0%, #F0CB8B 20%, #f49bba 80%, #7d93f1 100%);
+
+  --editor-bg: var(--background);
+
+  .welcome {
+    > :not(.actions) {
+      color: white;
+      text-shadow: 1px 1px 7px rgb(0 0 0 / 50%);
+    }
+  }
+  .app-version {
+    --link-fg: black;
+  }
+
+  .table-list-component .item-icon.table-icon {
+    filter: drop-shadow(0 0 3px rgb(from currentColor r g b / 55%));
+  }
+
+  .empty-tabs-content {
+    .shortcut-item {
+      color: white;
+      text-shadow: 1px 1px 7px rgb(0 0 0 / 50%);
+      --kbd-fg: white;
+    }
+
+    .btn {
+      color: white;
+      text-shadow: 1px 1px 7px rgb(0 0 0 / 50%);
+    }
+  }
+}
+
+.dark-theme {
+  --background: black;
+  --base-gray: #12101d;
+  --base-accent: #984587;
+
+  --base-red: #f07a82;
+  --base-pink: #d488a6;
+  --base-purple: #c5b6d8;
+  --base-orange: #ffb176;
+  --base-yellow: #f2c46b;
+  --base-green: #7fc79a;
+  --base-blue: #66b7dd;
+
+  --app-bg: linear-gradient(0deg, #a7590f 0%, #6b285e 20%, #0d002c 60%, black 100%);
+  --editor-bg: #020106;
+
+  --connection-form-card-bg: rgb(from var(--bg-subtle) r g b / 50%);
+
+  --preloader-accent: white;
+  --sidebar-rail-active-fg: white;
+  --titlebar-fg: white;
+  --notif-bg: var(--bg);
+
+  .welcome-title {
+    color: white;
+    text-shadow: rgb(255 255 255 / 28%) 0px 0px 5px, rgb(from var(--base-pink) r g b / 36%) 0px 0px 15px, rgb(from var(--base-pink) r g b / 22%) 0px 0px 30px, rgb(from var(--base-pink) r g b / 14%) 0px 0px 42px;
+  }
+
+  .app-version {
+    --link-fg: white;
+  }
+
+  &:not(.window-inactive) .titlebar-title {
+    text-shadow: rgb(255 255 255 / 29%) 0px 0px 3px, rgb(from var(--base-pink) r g b / 10%) 0px 0px 10px;
+  }
+
+
+  .global-items .nav-item.active.active {
+    filter: drop-shadow(0 0 3px rgb(255 255 255 / 34%)) drop-shadow(0 0 10px rgb(from var(--base-pink) r g b / 35%));
+  }
+}
+
+.global-status-bar {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.primary-sidebar {
+  border-right: 1px solid var(--border-subtle);
+}
+
+.secondary-sidebar {
+  border-left: 1px solid var(--border-subtle);
+}
+
+.titlebar-wrapper {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.preloader {
+  filter: drop-shadow(0 0 3px rgb(from var(--preloader-accent) r g b / 34%)) drop-shadow(0 0 13px rgb(from white r g b / 25%));
+}
+
+.connection-form-card {
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 8%), 0 0 12px rgb(255 255 255 / 10%), 0 0 40px rgb(from var(--base-pink) r g b / 25%);
+}
