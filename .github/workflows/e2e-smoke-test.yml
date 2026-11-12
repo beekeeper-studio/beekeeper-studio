@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest, windows-11-arm]
+        os: [ubuntu-24.04, macos-latest, windows-latest, windows-11-arm]
 
     steps:
       - name: Check out Git repository

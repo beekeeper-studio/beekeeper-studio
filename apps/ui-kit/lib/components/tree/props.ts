@@ -1,5 +1,5 @@
 import { PropType } from "vue";
-import { FolderNode, ItemNode } from "./types";
+import { FolderNode, ItemNode, Node } from "./types";
 
 const props = {
   folders: {
@@ -13,6 +13,10 @@ const props = {
   expandedIds: {
     type: Array as PropType<FolderNode["id"][]>,
     required: true,
+  },
+  selectedIds: {
+    type: Array as PropType<Node["id"][]>,
+    default: undefined,
   },
   filter: {
     type: String,

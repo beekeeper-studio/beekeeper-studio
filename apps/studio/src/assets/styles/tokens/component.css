@@ -153,6 +153,7 @@
   --table-cell-selected-bg: var(--bg-a);
   --table-cell-editing-bg: var(--bg-active-a);
   --table-cell-edited-bg: var(--primary-bg-hover-a);
+  --table-cell-binary-fg: var(--pink-text);
 
   --table-range-border: var(--primary-solid-bg);
   --table-range-handle-bg: var(--primary-solid-bg);

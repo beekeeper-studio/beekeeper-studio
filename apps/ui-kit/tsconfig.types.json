@@ -22,6 +22,7 @@
     "lib/components/data-editor/types.ts",
     "lib/components/surreal-text-editor/types.ts",
     "lib/components/tree/types.ts",
+    "lib/components/tree/tree.ts",
     "lib/config/context-menu.ts",
     "lib/components/mongo-shell/state.ts"
   ],

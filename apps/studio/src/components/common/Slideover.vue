@@ -10,8 +10,7 @@
           v-if="open"
           class="slideover"
         >
-          <x-progressbar v-if="loading && open">
-          </x-progressbar>
+          <x-progressbar v-if="loading && open" />
           <div class="slideover-header">
             <a
               href="#"
@@ -26,7 +25,7 @@
             class="slideover-body"
             :class="{ 'slideover-body-flex': flexBody }"
           >
-            <slot/>
+            <slot />
           </div>
           <div class="slideover-footer" v-if="$scopedSlots.footer">
             <slot name="footer" :close="close" />
