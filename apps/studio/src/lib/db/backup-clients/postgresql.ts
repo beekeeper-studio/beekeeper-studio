@@ -32,7 +32,7 @@ export class PostgresBackupClient extends BaseCommandClient {
   get settingsSections(): CommandSettingSection[] {
     // set defaults for postgres backup
     if (!this._config.format) {
-      this._config.format = 'd';
+      this._config.format = 'c';
     }
 
     return [
@@ -57,6 +57,13 @@ export class PostgresBackupClient extends BaseCommandClient {
             selectOptions: this.backupFormats,
             placeholder: 'Select a format...',
             required: true
+          },
+          {
+            controlType: 'info',
+            settingDesc: 'Directory format writes multiple files and requires an empty or new Output Directory.',
+            show: (config: BackupConfig): boolean => {
+              return config.format === 'd';
+            }
           },
           {
             controlType: 'select',
