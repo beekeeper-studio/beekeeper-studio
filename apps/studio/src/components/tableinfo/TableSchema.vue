@@ -5,10 +5,6 @@
   >
     <div class="table-info-table-wrap">
       <div class="center-wrap">
-        <error-alert
-          :error="error"
-          v-if="error"
-        />
         <div
           class="notices"
           v-if="notice"
@@ -46,6 +42,16 @@
     </div>
 
     <div class="expand" />
+
+    <div
+      v-if="error"
+      class="schema-error"
+    >
+      <error-alert
+        :error="error"
+        class="center-wrap"
+      />
+    </div>
 
     <status-bar class="tabulator-footer" :active="active">
       <div class="flex flex-middle statusbar-actions">
@@ -99,6 +105,13 @@
 </template>
 
 <style scoped>
+  .schema-error {
+    flex-shrink: 0;
+    max-height: 30%;
+    overflow: auto;
+    overflow-wrap: anywhere;
+    padding: 0 1.5rem;
+  }
   .columns-loading-disclaimer {
     width: 100%;
     text-align: center;
