@@ -205,20 +205,22 @@ nav:
     - user_guide/security.md
     - Plugins: user_guide/plugins.md
     - Configuration: user_guide/configuration.md
-  - Plugin Development:
-    - Introduction: plugin_development/index.md
-    - Creating your first plugin: plugin_development/creating-your-first-plugin.md
-    - Plugin Views: plugin_development/plugin-views.md
-    - Capabilities: plugin_development/capabilities.md
-    - Manifest Reference: plugin_development/manifest.md
-    - SDK:
-      - Overview: plugin_development/sdk.md
-      - SDK Reference: plugin_development/api-reference.md
-    - Publishing: plugin_development/publishing-plugins.md
-  - Theme Development:
-    - Creating your first theme: theme_development/creating-your-first-theme.md
-    - Color System: theme_development/color-system.md
-    - Publishing: theme_development/publishing-themes.md
+  - Plugins & Themes:
+    - Plugins:
+      - Introduction: plugin_development/index.md
+      - Creating your first plugin: plugin_development/creating-your-first-plugin.md
+      - Plugin Views: plugin_development/plugin-views.md
+      - Capabilities: plugin_development/capabilities.md
+      - Manifest Reference: plugin_development/manifest.md
+      - SDK:
+        - Overview: plugin_development/sdk.md
+        - SDK Reference: plugin_development/api-reference.md
+      - Publishing: plugin_development/publishing-plugins.md
+    - Themes:
+      - Introduction: theme_development/index.md
+      - Creating your first theme: theme_development/creating-your-first-theme.md
+      - Color System: theme_development/color-system.md
+      - Publishing: theme_development/publishing-themes.md
   - Support:
     - purchasing/purchasing-a-license.md
     - purchasing/license-types.md
