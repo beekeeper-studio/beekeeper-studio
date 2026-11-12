@@ -72,9 +72,10 @@
           @uninstall="uninstall"
         />
       </div>
-      <template v-if="licenseDisabledThemes.length > 0">
+      <!-- Show the upsell buttons even if there are no license disabled themes -->
+      <template v-if="isCommunity">
         <div class="license-notice">
-          <span>Upgrade to unlock the themes below</span>
+          <span>Upgrade to unlock Community themes</span>
           <upsell-buttons />
         </div>
         <div class="theme-list">
@@ -245,6 +246,7 @@ export default Vue.extend({
     };
   },
   computed: {
+    ...mapGetters(["isCommunity"]),
     ...mapState("themes/snapshots", {
       installedThemes: "all",
     }),
