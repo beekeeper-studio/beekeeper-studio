@@ -16,6 +16,7 @@
       <span
         v-if="theme.origin !== 'bundled'"
         @click.prevent.stop
+        class="theme-actions"
       >
         <x-button
           class="btn btn-icon"
@@ -233,8 +234,7 @@ label.theme-item {
 
   &.selected .theme-preview-frame {
     border-color: var(--border-hover);
-    outline: 1px solid var(--border-hover);
-    box-shadow: 0 0 3px 1px var(--border-hover);
+    box-shadow: 0 0 3px 0px var(--border-hover);
   }
 
   &:has(input:focus-visible) .theme-preview-frame {
@@ -243,6 +243,10 @@ label.theme-item {
 
   &.disabled .theme-label {
     color: var(--text-muted);
+  }
+
+  &:not(:hover) .theme-actions {
+    display: none;
   }
 
   .theme-name {
@@ -263,16 +267,7 @@ label.theme-item {
     }
 
     input {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0 0 0 0);
-      white-space: nowrap;
-      border: 0;
-      box-shadow: none;
+      flex: 0 0 auto;
     }
   }
 }
