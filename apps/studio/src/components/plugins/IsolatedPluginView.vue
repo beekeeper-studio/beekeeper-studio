@@ -44,7 +44,7 @@
         Reload
       </button>
     </div>
-    <DisableStateAlert v-else :plugin-id="pluginId" />
+    <DisableStateAlert v-else :id="pluginId" type="plugin" />
     <div class="iframe-container" ref="container" />
   </div>
 </template>

@@ -68,7 +68,7 @@
       </x-button>
       <x-button
         @click.stop
-        class="menu-btn btn btn-fab"
+        class="menu-btn btn btn-icon"
         v-if="source.installed"
       >
         <i class="material-icons">more_vert</i>
@@ -91,7 +91,7 @@
 <script lang="ts">
 import Vue, { PropType } from "vue";
 import LoadingSpinner from "@/components/common/loading/LoadingSpinner.vue";
-import type { PluginDisplayItem, PluginOrigin } from "@/services/plugin/types";
+import type { ExtensionUI, ExtensionOrigin } from "@/services/plugin/types";
 import { getPluginAvatarUrl } from "@/services/plugin/utils";
 import _ from "lodash";
 
@@ -99,7 +99,7 @@ export default Vue.extend({
   components: { LoadingSpinner },
   props: {
     source: {
-      type: Object as PropType<PluginDisplayItem>
+      type: Object as PropType<ExtensionUI>
     },
     isSearching: {
       type: Boolean,
@@ -116,10 +116,10 @@ export default Vue.extend({
     }
   },
   methods: {
-    originLabel(origin: PluginOrigin) {
+    originLabel(origin: ExtensionOrigin) {
       return _.upperFirst(origin);
     },
-    avatarUrl(plugin: PluginDisplayItem) {
+    avatarUrl(plugin: ExtensionUI) {
       return getPluginAvatarUrl(plugin);
     },
   }
@@ -137,7 +137,6 @@ export default Vue.extend({
 }
 
 .badge {
-  font-size: 0.75rem;
   vertical-align: middle;
   text-transform: none;
 
@@ -148,7 +147,7 @@ export default Vue.extend({
 
 .badge.origin-badge.origin-official {
   background: var(--primary-text);
-  color: rgba(0, 0, 0, 0.87);
+  color: var(--primary-contrast);
 }
 
 .author-avatar {
@@ -162,7 +161,9 @@ export default Vue.extend({
 
 
 .item {
-  padding: 1rem $gutter-h;
+  padding: 0.75rem 0.5rem;
+  font-size: $form-control-font-size;
+  line-height: 1.5;
   border-radius: 0.375rem;
   display: flex;
   place-content: space-between;
@@ -187,11 +188,6 @@ export default Vue.extend({
   .info {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-
-    .description {
-      line-height: 1.5rem;
-    }
 
     .title {
       font-weight: 700;
@@ -211,12 +207,10 @@ export default Vue.extend({
     .author {
       display: flex;
       align-items: center;
-      font-size: 0.875rem;
       color: var(--text);
     }
 
     .status-error {
-      font-size: 0.875rem;
       color: var(--danger-text);
       display: flex;
       align-items: center;

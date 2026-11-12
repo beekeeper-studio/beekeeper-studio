@@ -761,8 +761,8 @@ $cell-padding:           $gutter-w;
   background: var(--menu-bg);
   color: var(--menu-fg);
   box-shadow: var(--panel-shadow);
-  border: none;
-  border-radius: 6px;
+  border: var(--menu-border);
+  border-radius: var(--menu-border-radius);
   min-width: 150px;
   padding: 0.3rem 0;
 

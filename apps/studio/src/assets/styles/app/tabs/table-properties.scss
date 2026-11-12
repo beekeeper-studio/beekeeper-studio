@@ -125,7 +125,7 @@
         padding: 0 8px 0 10px;
         background: var(--input-bg);
         border: var(--input-border);
-        border-radius: 6px;
+        border-radius: var(--input-border-radius);
         transition: border-color 0.15s ease-in-out;
         &:focus-within {
           border: var(--input-border-focus);

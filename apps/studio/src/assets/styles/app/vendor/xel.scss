@@ -490,7 +490,7 @@ x-buttons.selectbutton {
       padding: 0.0325rem 0.75rem;
       align-items: center;
       justify-content: center;
-      border-radius: 8px;
+      border-radius: $btn-border-radius;
     }
 
     &[toggled] .togglebutton-content {
@@ -499,13 +499,13 @@ x-buttons.selectbutton {
     }
 
     &:first-child {
-      border-start-start-radius: 8px;
-      border-end-start-radius: 8px;
+      border-start-start-radius: $btn-border-radius;
+      border-end-start-radius: $btn-border-radius;
     }
 
     &:last-child {
-      border-start-end-radius: 8px;
-      border-end-end-radius: 8px;
+      border-start-end-radius: $btn-border-radius;
+      border-end-end-radius: $btn-border-radius;
     }
   }
 }
@@ -793,7 +793,8 @@ x-menu {
   background: var(--menu-bg);
   color: var(--menu-fg);
   padding: ($gutter-h * 0.75) 0;
-  border-radius: 6px;
+  border: var(--menu-border);
+  border-radius: var(--menu-border-radius);
   box-shadow: var(--panel-shadow);
   font-size: 0.85rem;
   text-transform: none;

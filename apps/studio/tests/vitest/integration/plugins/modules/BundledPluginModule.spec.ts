@@ -1,13 +1,15 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
-import PluginFileManager from "@/services/plugin/PluginFileManager";
+import globals from "@/common/globals";
+import ExtensionFileManager from "@/services/extension/ExtensionFileManager";
+import { Manifest } from "@/services/plugin/types";
 import PluginManager from "@/services/plugin/PluginManager";
 import { createPluginServer } from "@tests/vitest/integration/plugins/utils/server";
 import {
   createFileManager,
   cleanFileManager,
-} from "@tests/vitest/integration/plugins/utils/fileManager";
+} from "@tests/vitest/integration/plugins/utils/extensionFileManager";
 import { MockPluginRepositoryService } from "@tests/vitest/integration/plugins/utils/registry";
-import PluginRegistry from "@/services/plugin/PluginRegistry";
+import ExtensionRegistry from "@/services/extension/ExtensionRegistry";
 import { TestOrmConnection } from "@tests/lib/TestOrmConnection";
 import migration from "@/migration/20250529_add_plugin_settings";
 import { UserSetting } from "@/common/appdb/models/user_setting";
@@ -16,20 +18,20 @@ import path from "path";
 import {
   BundledPlugin,
   BundledPluginModule,
-} from "@commercial/backend/plugin-system/modules/BundledPluginModule";
+} from "@/services/plugin/modules/BundledPluginModule";
 
 function readJson(...paths: string[]) {
   const content = fs.readFileSync(path.join(...paths), { encoding: "utf-8" });
   return JSON.parse(content);
 }
 
-function installV0Plugins(fileManager: PluginFileManager) {
+function installV0Plugins(fileManager: ExtensionFileManager<Manifest>) {
   const aiShellPath = path.join(
-    fileManager.options.pluginsDirectory,
+    fileManager.options.root,
     "bks-ai-shell"
   );
   const erDiagramPath = path.join(
-    fileManager.options.pluginsDirectory,
+    fileManager.options.root,
     "bks-er-diagram"
   );
   fs.cpSync(
@@ -61,9 +63,12 @@ function installV0Plugins(fileManager: PluginFileManager) {
 describe("BundledPluginModule", () => {
   const server = createPluginServer();
   const repositoryService = new MockPluginRepositoryService(server);
-  const registry = new PluginRegistry(repositoryService);
+  const registry = new ExtensionRegistry({
+    repositoryService,
+    registries: globals.plugins.registries,
+  });
 
-  let fileManager: PluginFileManager;
+  let fileManager: ExtensionFileManager<Manifest>;
 
   function createPluginManager() {
     return new PluginManager({
@@ -100,12 +105,12 @@ describe("BundledPluginModule", () => {
     // Here we copy from node_modules, but any source works.
     fs.cpSync(
       BundledPlugin.resolve("@beekeeperstudio/bks-ai-shell"),
-      path.join(fileManager.options.pluginsDirectory, "bks-ai-shell"),
+      path.join(fileManager.options.root, "bks-ai-shell"),
       { recursive: true }
     );
     fs.cpSync(
       BundledPlugin.resolve("@beekeeperstudio/bks-er-diagram"),
-      path.join(fileManager.options.pluginsDirectory, "bks-er-diagram"),
+      path.join(fileManager.options.root, "bks-er-diagram"),
       { recursive: true }
     );
 

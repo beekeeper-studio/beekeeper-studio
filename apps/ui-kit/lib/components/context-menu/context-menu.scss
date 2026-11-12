@@ -15,13 +15,13 @@
   background: var(--menu-bg);
   color: var(--menu-fg);
   padding: ($gutter-h * 0.75) 0;
-  border-radius: 6px;
+  border: var(--menu-border);
+  border-radius: var(--menu-border-radius);
   box-shadow: var(--panel-shadow);
   font-size: 0.85rem;
   text-transform: none;
   font-weight: 400;
   min-width: 150px;
-  border: 0;
 
   &.BksContextMenu-active {
     display: block;

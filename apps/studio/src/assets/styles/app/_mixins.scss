@@ -46,7 +46,7 @@
 @mixin btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.15rem;
+  gap: var(--btn-gap);
   font-size: 12px;
   font-family: inherit;
   line-height: $input-height;
