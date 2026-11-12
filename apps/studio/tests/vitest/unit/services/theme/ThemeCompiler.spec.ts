@@ -111,6 +111,17 @@ describe("ThemeCompiler", () => {
       expect(css).not.toContain("--gray-1:");
     });
 
+    it("generates scales when the theme doesn't set the background", () => {
+      const compiler = new ThemeCompiler(`
+.dark-theme {
+  --base-accent: #0969da;
+}
+`);
+      const css = compiler.compile();
+
+      expect(css).toContain("--primary-9:");
+    });
+
     it("compiles a theme without a dark mode", () => {
       const compiler = new ThemeCompiler(`
 .light-theme {

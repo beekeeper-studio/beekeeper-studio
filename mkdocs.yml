@@ -215,6 +215,10 @@ nav:
       - Overview: plugin_development/sdk.md
       - SDK Reference: plugin_development/api-reference.md
     - Publishing: plugin_development/publishing-plugins.md
+  - Theme Development:
+    - Creating your first theme: theme_development/creating-your-first-theme.md
+    - Color System: theme_development/color-system.md
+    - Publishing: theme_development/publishing-themes.md
   - Support:
     - purchasing/purchasing-a-license.md
     - purchasing/license-types.md

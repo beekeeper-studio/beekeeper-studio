@@ -4,6 +4,7 @@
     flex-direction: column;
     background: var(--sidebar-rail-bg);
     color: var(--sidebar-rail-fg);
+    box-shadow: inset -1px 0 var(--sidebar-rail-border);
     // border-radius: 0 6px 6px 0;
     &:hover {
       .nav-item {

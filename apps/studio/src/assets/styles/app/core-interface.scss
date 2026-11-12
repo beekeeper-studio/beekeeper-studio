@@ -41,6 +41,14 @@
     flex: none;
     max-width: none;
   }
+  .split-container {
+    > .primary-sidebar + .gutter {
+      --gutter-border: var(--primary-sidebar-gutter-border);
+    }
+    > .gutter:has(+ .secondary-sidebar) {
+      --gutter-border: var(--secondary-sidebar-gutter-border);
+    }
+  }
   .page-content {
     &:not(.main-content) {
       flex: 1 1 auto;

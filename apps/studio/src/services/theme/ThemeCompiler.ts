@@ -71,15 +71,17 @@ export class ThemeCompiler {
   ): string {
     const colors = this.readBaseColors(root, selector);
 
-    if (!colors.background) {
-      return "";
+    // Must match the --background defaults in tokens/semantics.scss.
+    let background = colors.background;
+    if (!background) {
+      background = appearance === "light" ? "#ffffff" : "#121212";
     }
 
     let palette: ColorGenerator;
     try {
       palette = new ColorGenerator({
         appearance,
-        background: colors.background,
+        background,
         accent: colors.accent,
         gray: colors.gray,
       });

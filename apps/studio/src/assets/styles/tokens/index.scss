@@ -2,7 +2,7 @@
 @use "./fallback";
 
 @layer theme {
-  @include meta.load-css("./aliases");
+  @include meta.load-css("./semantics");
 }
 
 @layer component {

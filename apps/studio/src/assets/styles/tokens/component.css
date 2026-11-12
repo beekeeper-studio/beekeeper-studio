@@ -47,8 +47,8 @@
 
   --input-bg: transparent;
   --input-fg: var(--text);
-  --input-border: 1px solid var(--border-subtle);
-  --input-border-focus: 1px solid var(--border-hover);
+  --input-border: 1px solid var(--border-subtle-a);
+  --input-border-focus: 1px solid var(--border-hover-a);
   --input-border-radius: 4px;
 
   /* ===== Checkbox ===== */
@@ -92,6 +92,7 @@
   --sidebar-rail-fg-hover: var(--solid-bg-hover);
   --sidebar-rail-active-fg: var(--text);
   --sidebar-rail-active-bg: transparent;
+  --sidebar-rail-border: transparent;
 
   /* ===== Panel ===== */
   /* A surface that floats above the app: cards, modals, menus, tooltips, etc. */
@@ -110,6 +111,11 @@
   --menu-shadow: var(--panel-shadow);
   --menu-border: var(--panel-border);
   --menu-border-radius: 6px;
+
+  --gutter-border: transparent;
+  --query-editor-gutter-border: var(--border-subtle);
+  --primary-sidebar-gutter-border: var(--gutter-border);
+  --secondary-sidebar-gutter-border: var(--gutter-border);
 
   /* ===== Connection Form ===== */
 

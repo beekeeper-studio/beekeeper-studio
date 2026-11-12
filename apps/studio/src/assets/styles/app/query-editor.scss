@@ -75,10 +75,8 @@
     }
 
   }
-  .top-panel {
-    .toolbar {
-      box-shadow: inset 0 -1px var(--border-subtle);
-    }
+  .gutter {
+    --gutter-border: var(--query-editor-gutter-border);
   }
   .bottom-panel {
     background: var(--bottom-panel-bg);
