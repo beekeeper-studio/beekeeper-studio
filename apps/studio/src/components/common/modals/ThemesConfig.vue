@@ -206,6 +206,8 @@ import type {
   ExtensionUI,
   ThemeSnapshot,
 } from "@/services/plugin/types";
+import { AppEvent } from "@/common/AppEvent";
+import { ThemeSystemError } from "@/lib/errors";
 import rawLog from "@bksLogger";
 import _ from "lodash";
 
@@ -358,6 +360,13 @@ export default Vue.extend({
         this.patchCatalogItem(id, { installed: true, loadable: true });
       } catch (e) {
         log.error(e);
+        if (
+          e instanceof ThemeSystemError &&
+          e.code === "LICENSE_REQUIRED"
+        ) {
+          this.$root.$emit(AppEvent.upgradeModal, "Community Themes");
+          return;
+        }
         this.patchCatalogItem(id, { error: e });
         this.$noty.error(`Failed to install theme: ${e.message}`);
       } finally {

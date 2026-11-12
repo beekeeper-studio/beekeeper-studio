@@ -41,7 +41,7 @@ import {
   RegistryModule,
   LicenseModule,
 } from '@/services/plugin/modules';
-import { ExtensionRegistryErrorCode, ExtensionRepositoryErrorCode, PluginErrorCode, PluginSystemErrorCode } from '@/lib/errors';
+import { ExtensionRegistryErrorCode, ExtensionRepositoryErrorCode, PluginErrorCode, PluginSystemErrorCode, ThemeSystemErrorCode } from '@/lib/errors';
 
 import * as sms from 'source-map-support'
 import { WorkspaceHandlers } from '@/handlers/workspaceHandlers';
@@ -75,8 +75,8 @@ interface Reply {
   type: 'reply' | 'error',
   data?: any,
   error?: string
-  errorName?: "PluginSystemError" | "PluginError" | "ExtensionRegistryError" | "ExtensionRepositoryError" | "Error"
-  errorCode?: PluginSystemErrorCode | PluginErrorCode | ExtensionRegistryErrorCode | ExtensionRepositoryErrorCode
+  errorName?: "PluginSystemError" | "PluginError" | "ExtensionRegistryError" | "ExtensionRepositoryError" | "ThemeSystemError" | "Error"
+  errorCode?: PluginSystemErrorCode | PluginErrorCode | ExtensionRegistryErrorCode | ExtensionRepositoryErrorCode | ThemeSystemErrorCode
   errorDetail?: string
   errorHint?: string
   stack?: string
