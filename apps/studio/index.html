@@ -74,7 +74,8 @@
           display: table-cell;
           text-align: center;
           vertical-align: middle;
-          color: var(--app-fg);
+          background: var(--preloader-bg);
+          color: var(--preloader-fg);
           font-size: 14px;
         }
         .preloader {
@@ -91,21 +92,21 @@
           height: 50px;
           width: 50px;
           border-radius: 50%;
-          box-shadow: 1px 1px var(--yellow-9),
+          box-shadow: 1px 1px var(--preloader-accent),
                       1px 2px rgba(0, 0, 0 , 0.25);
           transform: rotateX(50deg) rotateY(0deg) rotateZ(45deg);
         }
         .preloader .layer:nth-of-type(1) {
-          background: rgb(from var(--yellow-9) r g b / 0.65);
+          background: rgb(from var(--preloader-accent) r g b / 0.65);
           margin-top: 36px;
           animation: movedown  0.8s cubic-bezier(0.39, 0.575, 0.565, 1)  0.4s infinite normal;
         }
         .preloader .layer:nth-of-type(2) {
-          background: rgb(from var(--yellow-9) r g b / 0.65);
+          background: rgb(from var(--preloader-accent) r g b / 0.65);
           margin-top: 18px;
         }
         .preloader .layer:nth-of-type(3) {
-          background: rgb(from var(--yellow-9) r g b / 0.75);
+          background: rgb(from var(--preloader-accent) r g b / 0.75);
           animation: moveup  0.8s cubic-bezier(0.39, 0.575, 0.565, 1) infinite normal;
         }
         @keyframes moveup {
@@ -142,8 +143,12 @@
         }
       </style>
       <div class="preloader-wrap">
-        <div class="preloader"><i class="layer"></i><i class="layer"></i><i class="layer"></i></div>
-        <span>Loading</span>
+        <div class="preloader">
+          <i class="layer layer-bottom"></i>
+          <i class="layer layer-middle"></i>
+          <i class="layer layer-top"></i>
+        </div>
+        <span class="preloader-text">Loading</span>
       </div>
     </div>
     <!-- built files will be auto injected -->

@@ -4,8 +4,9 @@
 }
 
 .driver-popover {
-  background: var(--app-bg);
-  color: var(--text-contrast);
+  background: var(--panel-bg);
+  color: var(--panel-fg);
+  box-shadow: var(--panel-shadow);
 
   &,
   *:not(.material-icons) {
@@ -16,8 +17,24 @@
     font-family: "Material Icons";
   }
 
+  .driver-popover-arrow-side-top {
+    border-top-color: var(--panel-bg);
+  }
+
   .driver-popover-arrow-side-bottom {
-    border-bottom-color: var(--app-bg);
+    border-bottom-color: var(--panel-bg);
+  }
+
+  .driver-popover-arrow-side-left {
+    border-left-color: var(--panel-bg);
+  }
+
+  .driver-popover-arrow-side-right {
+    border-right-color: var(--panel-bg);
+  }
+
+  .driver-popover-navigation-btns {
+    gap: 0.5rem;
   }
 
   [class^="driver-"][class$="-btn"] {
@@ -49,11 +66,6 @@
   .driver-popover-description {
     font-size: 1rem;
   }
-}
-
-.driver-popover-footer button {
-    text-decoration: unset;
-    text-shadow: unset;
 }
 
 body.driver-active[data-driver-step-element="#add-tab-group"] #add-tab-group {

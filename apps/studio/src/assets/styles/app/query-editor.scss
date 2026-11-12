@@ -81,6 +81,7 @@
     }
   }
   .bottom-panel {
+    background: var(--bottom-panel-bg);
     > .layout-center {
       overflow: hidden;
     }

@@ -80,7 +80,8 @@ body {
   .v--modal {
     background: var(--panel-bg);
     text-align: left !important;
-    border-radius: 8px !important;
+    border: var(--panel-border);
+    border-radius: var(--panel-border-radius) !important;
     padding: 0 !important;
     width: 100%!important;
     top: initial!important;

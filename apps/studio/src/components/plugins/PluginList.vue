@@ -306,7 +306,7 @@ export default Vue.extend({
     display: flex;
     align-items: center;
     border: var(--input-border);
-    border-radius: 4px;
+    border-radius: var(--input-border-radius);
   }
   .filter-input {
     border: 0;

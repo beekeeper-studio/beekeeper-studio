@@ -19,6 +19,7 @@
   }
 
   .bottom-panel {
+    background: var(--bottom-panel-bg);
     overflow: auto;
     display: flex;
     flex-direction: column;

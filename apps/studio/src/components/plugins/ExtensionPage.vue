@@ -365,7 +365,7 @@ $gutter-h: 1.5rem;
         margin: 1rem 0;
         padding: 0.5rem 1rem;
         border-left: 3px solid var(--alert-color);
-        border-radius: 0 6px 6px 0;
+        border-radius: 0 var(--alert-border-radius) var(--alert-border-radius) 0;
         background: var(--alert-bg);
 
         > :first-child { margin-top: 0; }

@@ -173,7 +173,7 @@ x-buttons > x-button[menu].btn {
   @include btn-small;
 }
 x-buttons {
-  border-radius: 6px;
+  border-radius: var(--btn-border-radius);
   overflow: hidden;
   > x-button.btn-small {
     border-radius: 0;
@@ -395,7 +395,7 @@ input[type="checkbox"] {
   border: 0;
   margin-top: -1px;
   margin-right: ($gutter-w * 0.8);
-	border-radius: 5px;
+	border-radius: var(--checkbox-border-radius);
   transition: background 0.2s ease-in-out;
   cursor: pointer;
   &:active,
@@ -665,6 +665,8 @@ input[type=file] {
 .card {
   background: var(--panel-bg);
   color: var(--text);
+  border: var(--panel-border);
+  border-radius: var(--panel-border-radius);
   box-shadow: var(--panel-shadow);
 }
 .card-flat {
@@ -780,7 +782,7 @@ input[type=file] {
 .alert {
   display: flex;
   align-items: flex-start;
-  border-radius: 6px;
+  border-radius: var(--alert-border-radius);
   padding: 0.75rem 1rem;
   background: var(--alert-bg);
   color: var(--alert-fg);

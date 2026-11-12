@@ -64,7 +64,7 @@
 
   // Placeholder
   ::placeholder {
-    color: var(--text-muted);
+    color: var(--gray-a7);
   }
 
   // Scrollbar
@@ -376,7 +376,7 @@
     display: inline-flex;
     -webkit-appearance: none;
     background-color: transparent;
-    outline: 2px solid var(--gray-a7);
+    outline: 2px solid var(--checkbox-border);
     outline-offset: -2px;
     height: $checkbox-size;
     line-height: $checkbox-size;
@@ -385,7 +385,7 @@
     border: 0;
     margin-top: -1px;
     margin-right: ($gutter-w * 0.8);
-    border-radius: 5px;
+    border-radius: var(--checkbox-border-radius);
     transition: background 0.2s ease-in-out;
     cursor: pointer;
     &:active,
@@ -406,7 +406,7 @@
       left: 0;
       height: 100%;
       width: 100%;
-      color: var(--app-bg);
+      color: var(--checkbox-checked-fg);
     }
   }
 
@@ -529,33 +529,33 @@
   }
   .item-icon {
     font-size: 12px;
-    color: var(--yellow-text);
+    color: var(--icon-table-fg);
     &.schema-icon {
-      color: var(--text-muted);
+      color: var(--icon-schema-fg);
     }
     &.view-icon {
-      color: var(--blue-text);
+      color: var(--icon-view-fg);
     }
     &.routine-icon {
-      color: var(--green-text);
+      color: var(--icon-routine-fg);
       &.routine-window-icon {
-        color: var(--pink-text);
+        color: var(--icon-window-fg);
       }
       &.routine-function-icon {
-        color: var(--green-text);
+        color: var(--icon-function-fg);
       }
       &.routine-aggregate-icon {
-        color: var(--orange-text);
+        color: var(--icon-aggregate-fg);
       }
       &.routine-procedure-icon {
-        color: var(--blue-text);
+        color: var(--icon-procedure-fg);
       }
     }
     &.materialized-view-icon {
-      color: var(--green-text);
+      color: var(--icon-materialized-view-fg);
     }
     &.query {
-      color: var(--pink-text);
+      color: var(--icon-query-fg);
     }
     &.database {
       color: var(--purple-text);
@@ -633,7 +633,7 @@
   }
   .card {
     background: var(--panel-bg);
-    color: var(--panel-fg);
+    color: var(--text);
     box-shadow: var(--panel-shadow);
   }
   .card-flat {
@@ -730,7 +730,7 @@
 
   .alert {
     display: flex;
-    border-radius: 6px;
+    border-radius: var(--alert-border-radius);
     padding: 0.75rem 1rem;
     background: var(--alert-bg);
     color: var(--alert-fg);

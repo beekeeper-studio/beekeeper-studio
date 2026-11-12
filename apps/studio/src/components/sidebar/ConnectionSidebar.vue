@@ -10,7 +10,7 @@
       <div class="btn-wrap quick-connect">
         <a
           href=""
-          class="btn btn-flat btn-block"
+          class="btn btn-flat btn-block new-connection-btn"
           data-testid="new-connection"
           @click.prevent="$emit('create')"
         >
