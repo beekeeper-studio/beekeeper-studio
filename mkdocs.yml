@@ -164,6 +164,9 @@ nav:
     - installation/windows-enterprise.md
     - installation/macos-m1-intel.md
     - installation/linux.md
+    - Migration:
+      - installation/popsql-migration.md
+
   - Connecting To A Database:
     - user_guide/connecting/supported-databases.md
     - Connection Options: user_guide/connecting/connecting.md
