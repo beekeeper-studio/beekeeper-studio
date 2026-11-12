@@ -6,3 +6,15 @@
     text-decoration-color: var(--text-muted);
   }
 }
+
+.tabulator-cell {
+  > pre,
+  > .cell-link-wrapper {
+    color: var(--table-cell-fg);
+  }
+
+  &.bks-type-binary > pre,
+  &.bks-type-binary > .cell-link-wrapper {
+    color: var(--table-cell-binary-fg);
+  }
+}

@@ -10,6 +10,12 @@ The Beekeeper Studio Plugin System allows developers to extend the application's
 
 ![Plugin Manager showing two installed plugins, and the detail information of the AI Shell plugin](/assets/images/plugin-manager-modal.png)
 
+## Build a Plugin in 90 Seconds
+
+Watch a plugin go from nothing to a working prototype, then follow [Creating Your First Plugin](creating-your-first-plugin.md) to build your own.
+
+<iframe class="video-embed" title="Build a Beekeeper Studio plugin" src="https://customer-9e8rhpcybmkrnvce.cloudflarestream.com/6d0a118a0c650056e67959d76ceee999/iframe?poster=https%3A%2F%2Fdocs.beekeeperstudio.io%2Fassets%2Fimages%2Fplugin-development-video.jpg&amp;primaryColor=%23fad83b" loading="lazy" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" allowfullscreen></iframe>
+
 ## What Are Plugins?
 
 Plugins are web apps (HTML, CSS, JavaScript) that run inside Beekeeper Studio to provide additional functionality beyond what the core application offers. Plugins can read from and write to your connected database, enabling you to build custom data analysis tools, specialized workflows, database utilities, and advanced features tailored to your specific needs.

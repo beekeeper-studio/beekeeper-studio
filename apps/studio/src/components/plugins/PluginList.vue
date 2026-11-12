@@ -73,7 +73,7 @@
     <div class="plugin-list">
       <virtual-plugin-list
         :items="filteredPlugins"
-        :isSearching="!!searchQuery"
+        :is-searching="!!searchQuery"
         @install="$emit('install', $event)"
         @uninstall="$emit('uninstall', $event)"
         @update="$emit('update', $event)"

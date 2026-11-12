@@ -528,6 +528,7 @@
           fkOnClick: undefined,
           isPK: editData?.isPK,
           binaryEncoding: this.$bksConfig.ui.general.binaryEncoding,
+          bksType: this.$bksConfig.ui.resultTable.dataTypeColors ? editData?.bksField?.bksType : undefined,
         }
 
         let headerTooltip = escapeHtml(column.name);
