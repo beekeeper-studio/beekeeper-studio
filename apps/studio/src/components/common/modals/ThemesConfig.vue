@@ -1,7 +1,7 @@
 <template>
   <div class="config-page-content">
     <control-row
-      title="Get More Themes"
+      title="Community Themes"
       description="Themes made and shared by the community."
     >
       <button
@@ -91,7 +91,7 @@
     </control-row>
     <config-page
       id="community-themes"
-      title="Themes"
+      title="Community Themes"
       :loading="loadingEntries || loadingCatalog"
     >
       <div
@@ -358,6 +358,9 @@ export default Vue.extend({
         await this.$util.send("theme/install", { id });
         await this.$store.dispatch("themes/snapshots/load");
         this.patchCatalogItem(id, { installed: true, loadable: true });
+        if (!this.snapshotsById[id]?.disableState.disabled) {
+          await this.setThemeId(id);
+        }
       } catch (e) {
         log.error(e);
         if (
