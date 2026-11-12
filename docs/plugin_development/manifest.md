@@ -14,13 +14,13 @@ The `manifest.json` file defines your plugin's metadata, capabilities, settings,
 | ----------------  | ---------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------- |
 | `id`              | `string`               | Yes      | Unique identifier for your plugin. Use lowercase letters, numbers, and hyphens only.                                       |
 | `name`            | `string`               | Yes      | Display name shown to users in the Plugin Manager and UI.                                                                  |
-| `author`          | `string \| AuthorInfo` | Yes      | Plugin author or organization name.                                                                                        |
+| `author`          | `string | AuthorInfo`  | Yes      | Plugin author or organization name.                                                                                        |
 | `description`     | `string`               | Yes      | Brief description of what your plugin does.                                                                                |
 | `version`         | `string`               | Yes      | Semantic version of your plugin (e.g., "1.0.0", "2.1.5").                                                                  |
 | `icon`            | `string`               | No       | Material UI icon name. See [Material Icons](https://fonts.google.com/icons?icon.set=Material+Icons) for available options. |
 | `capabilities`    | `Capabilities`         | Yes      | Defines what views your plugin provides.                                                                                   |
 | `pluginEntryDir`  | `string`               | No       | Path to your plugin's built files relative to the plugin root. Defaults to project root.                                   |
-| `manifestVersion` | `1 \| 0`               | No       | Version of the manifest format. Defaults to `0`. NOTE: Manifest v0 is deprecated and will be removed in a future release   |
+| `manifestVersion` | `1 | 0`                | No       | Version of the manifest format. Defaults to `0`. NOTE: Manifest v0 is deprecated and will be removed in a future release   |
 | `minAppVersion`   | `string`               | No       | Minimum Beekeeper Studio version required. If not specified, all version of Beekeeper Studio are supported.                |
 | `settings`        | `unknown`              | No       | _(Planned for future releases)_ Configuration options that can be set via config files.                                    |
 | `permissions`     | `unknown`              | No       | _(Planned for future releases)_ List of permissions your plugin requires.                                                  |
