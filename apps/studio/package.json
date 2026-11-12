@@ -25,7 +25,7 @@
     "test:e2e:smoke": "cross-env TEST_MODE=1 pnpm playwright test --config=playwright.smoke.config.ts",
     "lint": "eslint src src-commercial tests --ext .ts,.tsx,.vue,.js",
     "electron:build": "pnpm build && pnpm electron-builder --config ./electron-builder-config.js",
-    "electron:serve": "pnpm build:deps && concurrently --kill-others-on-fail -c blue,green -n esbuild,vite \"pnpm dev:esbuild\" \"pnpm dev:vite\"",
+    "electron:serve": "pnpm build:deps && concurrently --kill-others-on-fail --kill-signal SIGKILL -c blue,green -n esbuild,vite \"pnpm dev:esbuild\" \"pnpm dev:vite\"",
     "config:build": "CLI_MODE=1 tsx ./src/config/typesGenerator.ts",
     "postinstall": "install-electron && electron-builder install-app-deps",
     "test:integration": "../../bin/integration-tests.sh",
