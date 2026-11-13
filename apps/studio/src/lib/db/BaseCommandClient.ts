@@ -230,6 +230,13 @@ export abstract class BaseCommandClient {
           settingDesc: 'Restore a "directory" backup',
         } : null,
         {
+          controlType: 'info',
+          settingDesc: 'Directory format writes multiple files and requires an empty or new Output Directory.',
+          show: (config: BackupConfig): boolean => {
+            return !isRestore && config.format === 'd';
+          }
+        },
+        {
           controlType: 'filepicker',
           settingName: isRestore ? 'inputPath' : 'outputPath',
           settingDesc: isRestore ? 'Backup Location' : 'Output Directory',
