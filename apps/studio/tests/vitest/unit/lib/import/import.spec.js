@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import ImportClass from '@/lib/import/'
+import ImportClass, { betterColumnName } from '@/lib/import/'
 
 describe('Import Class', () => {
   let importInstance
@@ -86,6 +86,41 @@ describe('Import Class', () => {
         { columnName: 'id', primary: true, dataTypes: new Set(['integerType']) },
         { columnName: 'name', primary: false, dataTypes: new Set(['stringType']) },
       ])
+    })
+  })
+
+  describe('betterColumnName', () => {
+    test('should replace periods with underscores', () => {
+      expect(betterColumnName('first.name')).toBe('first_name')
+      expect(betterColumnName('amount.usd')).toBe('amount_usd')
+      expect(betterColumnName('order.item.id')).toBe('order_item_id')
+    })
+
+    test('should replace whitespace with underscores', () => {
+      expect(betterColumnName('first name')).toBe('first_name')
+      expect(betterColumnName('Amount USD')).toBe('amount_usd')
+    })
+
+    test('should handle combinations of spaces and periods', () => {
+      expect(betterColumnName('user . name')).toBe('user_name')
+      expect(betterColumnName('data..set...name')).toBe('data_set_name')
+    })
+
+    test('should trim leading and trailing periods or underscores', () => {
+      expect(betterColumnName('.hidden.')).toBe('hidden')
+      expect(betterColumnName('_user_id_')).toBe('user_id')
+      expect(betterColumnName('..field..')).toBe('field')
+    })
+
+    test('should convert to lowercase', () => {
+      expect(betterColumnName('FIRST.NAME')).toBe('first_name')
+      expect(betterColumnName('User.EmailAddress')).toBe('user_emailaddress')
+    })
+
+    test('should handle empty or falsy strings', () => {
+      expect(betterColumnName('')).toBe('')
+      expect(betterColumnName(null)).toBe('')
+      expect(betterColumnName(undefined)).toBe('')
     })
   })
 })
