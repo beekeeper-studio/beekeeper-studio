@@ -2,7 +2,7 @@ import rawLog from "@bksLogger";
 import platformInfo from "@/common/platform_info";
 import * as path from "path";
 import _ from "lodash";
-import { existsSync, readFileSync, copyFileSync, accessSync, constants } from "fs";
+import { existsSync, readFileSync, copyFileSync, accessSync, constants, mkdirSync, writeFileSync } from "fs";
 import { parseIni, processRawConfig } from "@/config/helpers";
 import {
   BksConfigProvider,
@@ -238,6 +238,41 @@ export function resolveConfigDir() {
   return path.resolve(__dirname, "..");
 }
 
+/** The user config file: `local.config.ini` in development, `user.config.ini` otherwise. */
+function userConfigFileName(): "local.config.ini" | "user.config.ini" {
+  return platformInfo.isDevelopment ? "local.config.ini" : "user.config.ini";
+}
+
+/** Full path of the user config file that `loadBksConfigSource` reads. */
+export function userConfigPath(): string {
+  return path.join(resolveConfigDir(), userConfigFileName());
+}
+
+export const USER_CONFIG_TEMPLATE = `; Beekeeper Studio user configuration
+; Settings here override the defaults. Restart Beekeeper Studio after saving.
+; Reference: https://docs.beekeeperstudio.io/user_guide/configuration/
+`;
+
+/**
+ * Creates the config file at `filePath` from `USER_CONFIG_TEMPLATE` if it
+ * doesn't exist yet. An existing file is never touched.
+ *
+ * @returns true if the file was created
+ */
+export function ensureConfigFile(filePath: string): boolean {
+  if (existsSync(filePath)) return false;
+  mkdirSync(path.dirname(filePath), { recursive: true });
+  try {
+    // `wx` fails instead of overwriting if the file appeared in the meantime
+    writeFileSync(filePath, USER_CONFIG_TEMPLATE, { flag: "wx" });
+  } catch (e) {
+    if (e?.code === "EEXIST") return false;
+    throw e;
+  }
+  log.info(`Created user config at ${filePath}`);
+  return true;
+}
+
 function collectConfigWarnings(
   defaultConfig: IBksConfig,
   systemConfig: Partial<IBksConfig>,
@@ -277,9 +312,7 @@ export function loadBksConfigSource(): BksConfigSource {
   const deprecatedConfig: Partial<IBksConfig> = loadConfig("deprecated.config.ini");
   let userConfig: Partial<IBksConfig> = {};
   try {
-    userConfig = loadConfig(
-      platformInfo.isDevelopment ? "local.config.ini" : "user.config.ini"
-    );
+    userConfig = loadConfig(userConfigFileName());
   } catch (e) {
     log.warn(`Failed loading user config. Ignoring.`, e);
   }

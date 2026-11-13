@@ -33,6 +33,9 @@ That means: Admin settings override user settings, user settings override defaul
 
 Decide which file to change (user or administrator). If the file doesn't exist yet, create it using any text editor. Here's a simple starter configuration. I can put this in my **User configuration**:
 
+!!! tip "Open the user configuration from the app"
+    **Help → Open User Config File** opens your user configuration in your default text editor. If the file doesn't exist yet, it's created first.
+
 ```ini
 ; My Beekeeper Studio Configuration
 ; Lines starting with semicolons are comments

@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import {AppEvent} from '../common/AppEvent'
 import { buildWindow, getActiveWindows, OpenOptions, setConfirmWindowClose } from './WindowBuilder'
-import { app } from 'electron'
+import { app, dialog, shell } from 'electron'
 import { safeOpenExternal } from './lib/electron/safeOpenExternal'
 import platformInfo from '../common/platform_info'
 import path from 'path'
@@ -11,6 +11,10 @@ import { autoUpdater } from "electron-updater"
 import { DevLicenseState } from '@/lib/license';
 import { setAllowBeta } from './update_manager'
 import { CustomMenuAction } from '@/types'
+import { ensureConfigFile, userConfigPath } from '@/common/bksConfig/mainBksConfig'
+import rawLog from '@bksLogger'
+
+const log = rawLog.scope('NativeMenuActionHandlers')
 
 type ElectronWindow = Electron.BrowserWindow | undefined
 
@@ -125,6 +129,24 @@ export default class NativeMenuActionHandlers implements IMenuActionHandler {
 
   openGettingStarted(): void {
     safeOpenExternal("https://docs.beekeeperstudio.io/getting-started-guide/")
+  }
+
+  async openUserConfig(): Promise<void> {
+    const filePath = userConfigPath()
+    try {
+      ensureConfigFile(filePath)
+    } catch (e) {
+      log.error(`Failed to create user config at ${filePath}`, e)
+      dialog.showErrorBox("Unable to create the config file", `${filePath}\n\n${e.message}`)
+      return
+    }
+    // openPath resolves to an error message, e.g. when no app is registered
+    // for .ini files. Show the file in its folder instead.
+    const error = await shell.openPath(filePath)
+    if (error) {
+      log.warn(`Failed to open ${filePath}: ${error}`)
+      shell.showItemInFolder(filePath)
+    }
   }
 
   checkForUpdates(_menuItem: Electron.MenuItem, _win: Electron.BrowserWindow): void {

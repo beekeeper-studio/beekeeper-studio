@@ -64,6 +64,7 @@ export default class extends DefaultMenu {
         this.menuItems.gettingStartedGuide,
         { type: 'separator' },
         this.menuItems.addBeekeeper,
+        this.menuItems.openUserConfig,
         this.menuItems.devtools,
         // Moved to Beekeeper Studio menu for mac
         ...(!this.platformInfo.isMac ? [this.menuItems.checkForUpdate] : []),
