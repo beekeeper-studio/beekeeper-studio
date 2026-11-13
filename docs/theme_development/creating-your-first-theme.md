@@ -53,25 +53,28 @@ A theme only needs two files:
 
     ```css
     .light-theme {
-      --background: WhiteSmoke;
+      --background: AliceBlue;
     }
 
     .dark-theme {
-      --background: #010109;
+      --background: #0b1325;
     }
     ```
 
-    That's a working theme already! `.light-theme` applies in light mode and `.dark-theme` in dark mode. Values shared by both modes go in a combined block:
+    That's a working theme already! `.light-theme` applies in light mode and `.dark-theme` in dark mode.
+
+    If you only want to style dark mode, you can omit `.light-theme` entirely:
 
     ```css
-    .light-theme,
     .dark-theme {
-      /* applied in both */
+      --background: #0b1325;
     }
     ```
 
+    In this case, the app will use the default theme's light colors.
+
     !!! note "Every color is optional"
-        Anything you leave out uses the default. `--background` defaults to `white` in light mode and `#121212` in dark mode, and if you leave out `.dark-theme` entirely, dark mode uses Beekeeper Studio's default theme.
+        Anything you leave out uses the default. `--background` defaults to `white` in light mode and `#121212` in dark mode.
 
     Now, your project structure should look like this:
     ```
@@ -82,11 +85,17 @@ A theme only needs two files:
 
 ## Install Your Theme
 
-Beekeeper Studio loads themes from its themes directory. While you develop, link your theme folder into that directory with a symbolic link. Your folder stays wherever you like, and Beekeeper Studio always loads your latest changes.
+Beekeeper Studio loads themes from its themes directory. While you develop, link your theme folder into that directory with a symbolic link. Your folder stays wherever you like.
 
 1. Enable unlisted themes
 
-    Themes you add to the themes directory yourself are called *unlisted* themes, and Beekeeper Studio doesn't load them by default. Set this value in your [config](../user_guide/configuration.md#config-ref):
+    Themes you add to the themes directory yourself are called *unlisted* themes, and Beekeeper Studio doesn't load them by default.
+
+    Go to **View → Appearance → Configure...**. Enable Unlisted Themes.
+
+    ![Appearance settings with the Configure button for theme configuration](/assets/images/themes/configure-unlisted-themes.png)
+
+    Or you can set this value in your [config](../user_guide/configuration.md#config-ref) file:
 
     ```ini
     [themeSystem]
@@ -124,19 +133,23 @@ Beekeeper Studio loads themes from its themes directory. While you develop, link
         The folder name inside the themes directory must be the same as the `id` in your `manifest.json` (`my-first-theme` in this guide).
 
     !!! tip "Why use a symbolic link?"
-        Your theme stays where you keep your code, and uninstalling the theme from Beekeeper Studio can't delete your files by accident. You can also copy the folder into the themes directory instead, but then you need to copy it again after every change.
+        Your theme stays where you keep your code, and uninstalling the theme from Beekeeper Studio can't delete your files by accident.
 
 3. Restart Beekeeper Studio
 
-    Beekeeper Studio scans the themes directory when it starts, so restart it after adding a new theme. You only need to do this once: after that, changes to `style.css` show up right away.
+    Beekeeper Studio scans the themes directory on startup.
 
 ## Test Your Theme
 
 1. Open Beekeeper Studio (after [installing your theme](#install-your-theme))
 2. Go to **View → Appearance**
-3. Look for **My First Theme** - if it's there, you're golden! ✨
-4. Select it
-5. **Boom!** Your theme is live 🎯 Edit `style.css` and the app hot reloads your changes.
+3. Select **My First Theme**
+4. **Boom!** Your theme is live 🎯
+
+!!! tip "Hot reload"
+    Edit `style.css` and the app hot reloads your changes.
+
+![Beekeeper Studio welcome screen with the theme's dark background](/assets/images/themes/first-theme-dark.png)
 
 ## Add Some Color
 
@@ -144,18 +157,20 @@ Beekeeper Studio loads themes from its themes directory. While you develop, link
 
 ```diff
 .light-theme {
-  --background: WhiteSmoke;
+  --background: AliceBlue;
 + --base-accent: #0969da;
 }
 
 .dark-theme {
-  --background: #010109;
+  --background: #0b1325;
 + --base-accent: #1f6feb;
 }
 ```
 
 !!! tip
     Base colors accept any CSS color value: hex (`#fad83b`), named colors (`WhiteSmoke`), `rgb()`, `hsl()`, `oklch()`, `lab()` or `color()`. `color-mix()` and relative colors (`rgb(from …)`) are not supported.
+
+![Beekeeper Studio with the theme's accent color applied](/assets/images/themes/first-theme-accent.png)
 
 You can set other base colors too as needed:
 
@@ -176,7 +191,7 @@ Want more control? Set the colors for individual components:
 
 ```diff
 .dark-theme {
-  --background: #010109;
+  --background: #0b1325;
   --base-accent: #1f6feb;
 + --sidebar-bg: black;
 }
@@ -186,34 +201,23 @@ See [`component.css`](https://github.com/beekeeper-studio/beekeeper-studio/blob/
 
 ## Syntax Highlighting
 
-Make the SQL editor match your theme! Editor colors are grouped into eleven categories, so a few lines recolor everything:
+Make the SQL editor match your theme! This time, let's make colors that apply to both light and dark theme:
 
 ```diff
 .dark-theme {
-  --background: #010109;
+  --background: #0b1325;
   --base-accent: #1f6feb;
   --sidebar-bg: black;
-+ --syntax-keyword: #ff7b72;
-+ --syntax-string: #a5d6ff;
-+ --syntax-comment: #8b949e;
 }
+
++ .light-theme, .dark-theme {
++   --syntax-keyword: #e01b6a;
++   --syntax-variable: #d97706;
++   --syntax-comment: #5a6b8c;
++ }
 ```
 
-Here are all the categories:
-
-```css
---syntax-keyword      --syntax-string       --syntax-constant
---syntax-variable     --syntax-function     --syntax-type
---syntax-decorator    --syntax-link         --syntax-diff
---syntax-comment      --syntax-punctuation
-```
-
-!!! tip "Need more control?"
-    Each category colors a group of more specific `--editor-*-fg` tokens. Set one of those to change a single token type, like numbers:
-
-    ```css
-    --editor-number-fg: #79c0ff;
-    ```
+See [Syntax Highlighting](color-system.md#syntax-highlighting) for every syntax token you can set.
 
 ## Final Result
 
@@ -221,19 +225,24 @@ Your complete `style.css`:
 
 ```css
 .light-theme {
-  --background: WhiteSmoke;
+  --background: AliceBlue;
   --base-accent: #0969da;
 }
 
 .dark-theme {
-  --background: #010109;
+  --background: #0b1325;
   --base-accent: #1f6feb;
   --sidebar-bg: black;
-  --syntax-keyword: #ff7b72;
-  --syntax-string: #a5d6ff;
-  --syntax-comment: #8b949e;
+}
+
+.light-theme, .dark-theme {
+  --syntax-keyword: #e01b6a;
+  --syntax-variable: #d97706;
+  --syntax-comment: #5a6b8c;
 }
 ```
+
+![Beekeeper Studio with the finished theme](/assets/images/themes/first-theme-full.png)
 
 ## What's Next? 🚀
 
