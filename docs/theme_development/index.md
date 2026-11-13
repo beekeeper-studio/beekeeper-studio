@@ -8,6 +8,8 @@ icon: material/palette
 
 The Beekeeper Studio Theme System allows designers and developers to change the look of the application with CSS. Themes set a handful of colors, and Beekeeper Studio builds every other color in the interface from them.
 
+![Themes settings showing the Default, Solarized, Dracula and GitHub themes with light and dark previews](/assets/images/themes/themes-overview.png)
+
 ## What Are Themes?
 
 Themes are CSS stylesheets that recolor Beekeeper Studio. Every theme can have a light and a dark version, and the app switches between them based on the **Light**, **Dark** or **Auto** mode in the Appearance window. Themes can set a few seed colors and let the [Color System](color-system.md) generate the rest, or override the colors of individual components.
