@@ -96,3 +96,70 @@ describe("RedisClient read-only commands", () => {
     expect(sendCommand).toHaveBeenCalledWith(["SET", "foo", "bar"]);
   });
 });
+
+describe("RedisClient.executeApplyChanges inserts", () => {
+  function createClient() {
+    const client = new RedisClient(
+      { config: { readOnlyMode: false } } as unknown as IDbConnectionServer,
+      { database: "0" } as IDbConnectionDatabase
+    );
+    const redis = {
+      set: vi.fn().mockResolvedValue("OK"),
+      del: vi.fn().mockResolvedValue(1),
+      hSet: vi.fn().mockResolvedValue(1),
+      expire: vi.fn().mockResolvedValue(true),
+    };
+    client.redis = redis as unknown as RedisClientType;
+    return { client, redis };
+  }
+
+  function insert(row: Record<string, unknown>) {
+    return {
+      inserts: [{ table: "keys", data: [row] }],
+      updates: [],
+      deletes: [],
+    };
+  }
+
+  it("writes the value typed in the new row", async () => {
+    const { client, redis } = createClient();
+
+    await client.executeApplyChanges(
+      insert({ key: "qa:newkey", value: "hello world", ttl: null })
+    );
+
+    expect(redis.set).toHaveBeenCalledTimes(1);
+    expect(redis.set).toHaveBeenCalledWith("qa:newkey", "hello world");
+    expect(redis.expire).not.toHaveBeenCalled();
+  });
+
+  it("creates an empty string key when the row has no value", async () => {
+    const { client, redis } = createClient();
+
+    await client.executeApplyChanges(insert({ key: "qa:empty", value: null }));
+
+    expect(redis.set).toHaveBeenCalledWith("qa:empty", "");
+  });
+
+  it("stores a JSON object value as a hash", async () => {
+    const { client, redis } = createClient();
+
+    await client.executeApplyChanges(
+      insert({ key: "qa:hash", value: '{"name":"John"}' })
+    );
+
+    expect(redis.set).not.toHaveBeenCalled();
+    expect(redis.hSet).toHaveBeenCalledWith("qa:hash", "name", "John");
+  });
+
+  it("applies the TTL typed in the new row", async () => {
+    const { client, redis } = createClient();
+
+    await client.executeApplyChanges(
+      insert({ key: "qa:ttl", value: "v", ttl: "60" })
+    );
+
+    expect(redis.set).toHaveBeenCalledWith("qa:ttl", "v");
+    expect(redis.expire).toHaveBeenCalledWith("qa:ttl", 60);
+  });
+});
