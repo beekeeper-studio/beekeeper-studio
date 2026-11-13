@@ -51,6 +51,7 @@
     <ExportManager />
     <lost-connection-modal />
     <rename-database-element-modal />
+    <drop-databases-modal />
   </div>
 </template>
 
@@ -69,6 +70,7 @@
   import GlobalStatusBar from './GlobalStatusBar.vue'
   import Vue from 'vue'
   import RenameDatabaseElementModal from './common/modals/RenameDatabaseElementModal.vue'
+  import DropDatabasesModal from './common/modals/DropDatabasesModal.vue'
   import PrivacyBanner from '@/components/PrivacyBanner.vue'
   import { mapGetters, mapActions, mapState } from 'vuex'
   import _ from "lodash"
@@ -76,6 +78,7 @@
   export default Vue.extend({
     components: {
       CoreSidebar,
+      DropDatabasesModal,
       CoreTabs,
       Sidebar,
       ExportManager,

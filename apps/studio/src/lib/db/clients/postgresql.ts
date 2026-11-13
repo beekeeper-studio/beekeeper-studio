@@ -1005,7 +1005,7 @@ export class PostgresClient extends BasicDatabaseClient<QueryResult, PoolClient>
 
   async dropElement(elementName: string, typeOfElement: DatabaseElement, schema: string = this._defaultSchema): Promise<void> {
     // Schemas are top-level objects and don't need schema prefixing
-    const sql = typeOfElement === DatabaseElement.SCHEMA
+    const sql = typeOfElement === DatabaseElement.SCHEMA || typeOfElement === DatabaseElement.DATABASE
       ? `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${this.wrapIdentifier(elementName)}`
       : `DROP ${PD.wrapLiteral(DatabaseElement[typeOfElement])} ${this.wrapIdentifier(schema)}.${this.wrapIdentifier(elementName)}`
 

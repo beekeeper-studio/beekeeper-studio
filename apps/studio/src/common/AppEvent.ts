@@ -47,6 +47,7 @@ export enum AppEvent {
   setDatabaseElementName = 'setDatabaseElementName',
   deleteDatabaseElement = 'deleteDatabaseElement',
   dropDatabaseElement = 'dropDatabaseElement',
+  openDropDatabasesModal = 'openDropDatabasesModal',
   duplicateDatabaseTable = 'duplicateDatabaseTable',
   backupDatabase = 'backupDatabase',
   restoreDatabase = 'restoreDatabase',

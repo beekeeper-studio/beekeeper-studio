@@ -144,6 +144,7 @@ export class ColumnType {
 export interface DialectData {
   queryDialectOverride?: string,
   columnTypes?: ColumnType[],
+  supportsDropDatabase?: boolean,
   constraintActions?: string[]
   importDataType?: ImportDefaultDataTypes
   wrapIdentifier?: (s: string) => string
