@@ -1052,4 +1052,61 @@ describe('ResultTable - Cell Editing Methods', () => {
       expect(tracker.editSuccess).toBeInstanceOf(Set)
     })
   })
+
+  describe('clipboard', () => {
+    it('stringifies object and JSON values instead of emitting [object Object] in TSV format (issue-5044)', async () => {
+      let capturedText = ''
+      const mockContext = {
+        tabulator: {
+          getData: vi.fn(() => [
+            { id: 1, name: 'apple', meta: { a: 1 } },
+            { id: 2, name: 'banana', meta: { b: [1, 2] } },
+            { id: 3, name: 'cherry', meta: null },
+            { id: 4, name: 'date', meta: {} },
+          ]),
+        },
+        dataToJson: vi.fn((rows: any[]) => rows),
+        $native: {
+          clipboard: {
+            writeText: vi.fn(async (text: string) => {
+              capturedText = text
+            }),
+          },
+        },
+      }
+
+      await methods.clipboard.call(mockContext)
+
+      expect(mockContext.$native.clipboard.writeText).toHaveBeenCalled()
+      expect(capturedText).not.toContain('[object Object]')
+      expect(capturedText).toContain('"{""a"":1}"')
+      expect(capturedText).toContain('"{""b"":[1,2]}"')
+      expect(capturedText).toContain('"{}"')
+    })
+
+    it('stringifies object values in markdown format', async () => {
+      let capturedText = ''
+      const mockContext = {
+        tabulator: {
+          getData: vi.fn(() => [
+            { id: 1, meta: { a: 1 } },
+          ]),
+        },
+        dataToJson: vi.fn((rows: any[]) => rows),
+        $native: {
+          clipboard: {
+            writeText: vi.fn(async (text: string) => {
+              capturedText = text
+            }),
+          },
+        },
+      }
+
+      await methods.clipboard.call(mockContext, 'md')
+
+      expect(mockContext.$native.clipboard.writeText).toHaveBeenCalled()
+      expect(capturedText).not.toContain('[object Object]')
+      expect(capturedText).toContain('{"a":1}')
+    })
+  })
 })
