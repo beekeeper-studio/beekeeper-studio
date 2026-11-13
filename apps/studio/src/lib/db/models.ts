@@ -218,6 +218,8 @@ export interface TableUpdate {
   columnType?: string;
   columnObject?: ExtendedTableColumn
   value: any;
+  // Issue #4802: Retain old value to support granular dotted-path updates and prevent BSON type loss in MongoDB
+  oldValue?: any;
 }
 
 export interface TableDelete {
