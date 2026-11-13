@@ -19,6 +19,8 @@ export class BackupConfig {
   // TEXT INPUT CONTROLS ----------------------------------------------------
   filename?: string = dateFormat(new Date(), 'yyyy-mm-dd_HHMMss');
 
+  filenameTemplate?: string = null;
+
   encryptionCertificate?: string = null;
 
   encryptionKey?: string = null;
