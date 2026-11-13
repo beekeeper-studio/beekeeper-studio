@@ -36,18 +36,26 @@ describe("PostgresBackupClient", () => {
     expect(command.options).toContain(`--file=${client.outputFilePath}`);
   });
 
-  it("shows empty-directory guidance only when Directory format ('d') is selected", () => {
+  it("shows empty-directory guidance in fileSettings only when Directory format ('d') is selected", () => {
     const client = new PostgresBackupClient();
     const sections = client.settingsSections;
-    const pgDumpOptions = sections.find((s) => s.header === "pg_dump Options");
-    const dirNotice = pgDumpOptions.controls.find(
+    const fileSettings = sections.find((s) => s.header === "Output");
+    const dirNotice = fileSettings?.controls.find(
       (c) =>
         c.controlType === "info" &&
         c.settingDesc.includes("empty or new Output Directory"),
     );
 
     expect(dirNotice).toBeDefined();
-    expect(dirNotice.show({ format: "c" } as any)).toBe(false);
-    expect(dirNotice.show({ format: "d" } as any)).toBe(true);
+    expect(dirNotice?.show({ format: "c" } as any)).toBe(false);
+    expect(dirNotice?.show({ format: "d" } as any)).toBe(true);
+
+    const pgDumpOptions = sections.find((s) => s.header === "pg_dump Options");
+    const optionsNotice = pgDumpOptions?.controls.find(
+      (c) =>
+        c.controlType === "info" &&
+        c.settingDesc.includes("empty or new Output Directory"),
+    );
+    expect(optionsNotice).toBeUndefined();
   });
 });

@@ -29,6 +29,23 @@ export class PostgresBackupClient extends BaseCommandClient {
     { name: '9', value: '9' }
   ];
 
+  protected get fileSettings(): CommandSettingSection {
+    const base = super.fileSettings;
+    return {
+      ...base,
+      controls: [
+        ...base.controls,
+        {
+          controlType: 'info',
+          settingDesc: 'Directory format writes multiple files and requires an empty or new Output Directory.',
+          show: (config: BackupConfig): boolean => {
+            return config.format === 'd';
+          }
+        }
+      ]
+    };
+  }
+
   get settingsSections(): CommandSettingSection[] {
     // set defaults for postgres backup
     if (!this._config.format) {
@@ -57,13 +74,6 @@ export class PostgresBackupClient extends BaseCommandClient {
             selectOptions: this.backupFormats,
             placeholder: 'Select a format...',
             required: true
-          },
-          {
-            controlType: 'info',
-            settingDesc: 'Directory format writes multiple files and requires an empty or new Output Directory.',
-            show: (config: BackupConfig): boolean => {
-              return config.format === 'd';
-            }
           },
           {
             controlType: 'select',
