@@ -1,6 +1,18 @@
 <template>
   <div
-    v-if="isCommunity"
+    v-if="!isSupported"
+    class="tabcontent"
+  >
+    <div class="not-supported">
+      <div class="card-flat padding">
+        <h3 class="card-title">
+          Beekeeper does not currently support Data Export for {{ dialectTitle }} ☹️
+        </h3>
+      </div>
+    </div>
+  </div>
+  <div
+    v-else-if="isCommunity"
     class="upgrade-panel-tab-wrapper"
   >
     <upgrade-panel feature-name="Multi-Table Export" standalone />
@@ -96,6 +108,7 @@
 
   import { ExportStatus } from '../../lib/export/models'
   import StatusBar from '@/components/common/StatusBar.vue';
+  import { DialectTitles } from '@shared/lib/dialects/models'
 
   export default {
     components: {
@@ -155,7 +168,17 @@
       ...mapGetters({
         'hasRunningExports': 'exports/hasRunningExports',
         'isCommunity': 'isCommunity',
+        'dialect': 'dialect',
+        'dialectData': 'dialectData',
       }),
+      // Same flag that disables Export To File on a table, so the wizard
+      // doesn't let you configure an export that can only fail
+      isSupported() {
+        return !this.dialectData?.disabledFeatures?.exportTable
+      },
+      dialectTitle() {
+        return DialectTitles[this.dialect] ?? this.dialect
+      },
       selectedTables() {
         return this.tablesToExport.length;
       },
@@ -292,7 +315,7 @@
     async mounted() {
       // The tab content is gated behind UpgradePanel, so opening it at all is
       // use of the feature; running the export below counts again.
-      if (!this.isCommunity) recordPaidFeatureUse('multi-table-export')
+      if (this.isSupported && !this.isCommunity) recordPaidFeatureUse('multi-table-export')
       await this.$store.dispatch('multiTableExports/reset')
       await this.$store.dispatch('exports/removeInactive')
     }
