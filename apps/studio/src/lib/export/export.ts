@@ -215,7 +215,15 @@ export abstract class Export {
         rows.length > 0 &&
         this.status === ExportStatus.Exporting
       )
-      await this.cursor?.close()
+      await this.closeCursor()
+  }
+
+  // Close the cursor once. Most cursors hold a pooled connection until
+  // they are closed, so a failed export must close it too.
+  private async closeCursor(): Promise<void> {
+    const cursor = this.cursor
+    this.cursor = undefined
+    await cursor?.close()
   }
 
   async finalizeExport(): Promise<void> {
@@ -245,6 +253,11 @@ export abstract class Export {
       this.status = ExportStatus.Error
       this.error = error
       log.error(error)
+      try {
+        await this.closeCursor()
+      } catch (closeError) {
+        log.warn('could not close the export cursor', closeError)
+      }
       await this.fileHandle?.close()
       if (this.options.deleteOnAbort) {
         await promises.unlink(this.filePath)
