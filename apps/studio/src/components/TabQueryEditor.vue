@@ -604,7 +604,7 @@
   import BksSuperFormatter from "@beekeeperstudio/ui-kit/vue/super-formatter"
   import SurrealTextEditor from "@beekeeperstudio/ui-kit/vue/surreal-text-editor"
   import InAppFolderPicker from "@/components/common/form/InAppFolderPicker.vue"
-  import { divider, type Entity } from "@beekeeperstudio/ui-kit";
+  import { divider, splitRedisCommands, type Entity } from "@beekeeperstudio/ui-kit";
 
   import QueryEditorStatusBar from './editor/QueryEditorStatusBar.vue'
   import QueryEditHistory from '@/components/editor/QueryEditHistory.vue'
@@ -1698,7 +1698,10 @@ import { KeybindingPath } from '@/common/bksConfig/BksConfigProvider'
           return await this.submitQuery(this.currentlySelectedQuery.text)
         }
 
-        const { queries, error } = safelyIdentify(this.unsavedText, { dialect: this.identifierDialect, paramTypes: this.paramTypes })
+        // Redis runs one command per line, so like SQL this falls back to the first one
+        const { queries, error } = this.dialect === 'redis'
+          ? { queries: splitRedisCommands(this.unsavedText), error: null }
+          : safelyIdentify(this.unsavedText, { dialect: this.identifierDialect, paramTypes: this.paramTypes })
 
         // this should not theoretically be possible as there probably would have been a queryselection error,
         // but if we somehow manage to get here, we need to panic
