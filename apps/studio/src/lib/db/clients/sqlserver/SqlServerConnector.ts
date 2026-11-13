@@ -65,6 +65,70 @@ export const sqlServerConnectHints = {
     `No response from the SQL Server Browser service on ${host} (UDP 1434), required to resolve ` +
     `instance ${instanceName}. Start the SQL Server Browser service, allow UDP 1434 through the ` +
     `firewall, or enter the instance's static TCP port in the Port field.`,
+  loginRejected: (host: string, instanceName: string): string =>
+    `Instance ${instanceName} on ${host} was reached and rejected the login. Check the user, ` +
+    `password, and Default Database for this instance.`,
+  databaseUnavailable: (database: string): string =>
+    `Database "${database}" does not exist on this server, or the login has no access to it. ` +
+    `Clear Default Database to connect to the login's default database.`,
+  defaultDatabaseUnavailable:
+    `The login's own default database cannot be opened. Enter a database the login can ` +
+    `access, such as master, in Default Database.`,
+}
+
+// What the server sent in an ERROR token during login (tedious 'errorMessage' event).
+export interface SqlServerLoginError {
+  number?: number
+  message: string
+}
+
+// SQL Server's own error numbers, which are the same in every server language.
+// 4060: the database named in the login cannot be opened -- the server does not say whether
+// it is missing or merely off-limits to this login. 4064: no database was named and the one
+// the server falls back to for this login cannot be opened. 18456: login failed.
+const CANNOT_OPEN_DATABASE_NUMBER = 4060
+const CANNOT_OPEN_DEFAULT_DATABASE_NUMBER = 4064
+const LOGIN_FAILED_NUMBER = 18456
+
+// The two drivers hand the number over differently. tedious drops it (its error is just
+// code 'ELOGIN'), so it is read off the login ERROR tokens collected in doConnect. The ODBC
+// driver (msnodesqlv8, integrated auth) reports the first server error with the number as a
+// numeric `code`, which mssql copies onto its ConnectionError.
+function serverErrorNumbers(err: any, serverErrors: SqlServerLoginError[] = []): number[] {
+  const numbers: number[] = serverErrors.map((e) => e.number)
+  const visit = (e: any) => {
+    if (!e || typeof e !== 'object') return
+    numbers.push(e.code, e.number)
+    if (e.originalError) visit(e.originalError)
+    if (Array.isArray(e.precedingErrors)) e.precedingErrors.forEach(visit)
+    if (Array.isArray(e.errors)) e.errors.forEach(visit)
+  }
+  if (Array.isArray(err)) err.forEach(visit); else visit(err)
+  return numbers.filter((n) => typeof n === 'number')
+}
+
+// A login rejection is sent by SQL Server itself, so the host -- and for a named instance the
+// browser lookup -- already worked. The text is only a fallback for errors that arrive with
+// neither a number nor tedious's ELOGIN code.
+const LOGIN_REJECTED_PATTERN = /\bELOGIN\b|login failed|cannot open database|cannot open user default database/i
+const CANNOT_OPEN_DATABASE_PATTERN = /cannot open database .* requested by the login/i
+const CANNOT_OPEN_DEFAULT_DATABASE_PATTERN = /cannot open user default database/i
+
+export function isSqlServerLoginRejection(err: any, serverErrors: SqlServerLoginError[] = []): boolean {
+  const numbers = serverErrorNumbers(err, serverErrors)
+  return numbers.includes(LOGIN_FAILED_NUMBER) || numbers.includes(CANNOT_OPEN_DATABASE_NUMBER) ||
+    numbers.includes(CANNOT_OPEN_DEFAULT_DATABASE_NUMBER) ||
+    LOGIN_REJECTED_PATTERN.test(flattenErrorText(err))
+}
+
+export function isSqlServerDatabaseUnavailable(err: any, serverErrors: SqlServerLoginError[] = []): boolean {
+  return serverErrorNumbers(err, serverErrors).includes(CANNOT_OPEN_DATABASE_NUMBER) ||
+    CANNOT_OPEN_DATABASE_PATTERN.test(flattenErrorText(err))
+}
+
+export function isSqlServerDefaultDatabaseUnavailable(err: any, serverErrors: SqlServerLoginError[] = []): boolean {
+  return serverErrorNumbers(err, serverErrors).includes(CANNOT_OPEN_DEFAULT_DATABASE_NUMBER) ||
+    CANNOT_OPEN_DEFAULT_DATABASE_PATTERN.test(flattenErrorText(err))
 }
 
 // Both failure modes reach the user as something they cannot act on: a self-signed
@@ -73,26 +137,57 @@ export const sqlServerConnectHints = {
 // The browser case is keyed off the built config rather than the driver's text -- that text
 // is inconsistent (a generic "Failed to connect ... in 15000ms" in testing, not tedious's
 // "Failed to get response from SQL Server Browser") and options.instanceName is set exactly
-// when the connection depends on a browser lookup.
-export function sqlServerConnectHint(err: any, config: any): string | null {
+// when the connection depends on a browser lookup. A login rejection is the exception: the
+// instance answered, so blaming the browser sends the user after the wrong problem.
+export function sqlServerConnectHint(err: any, config: any, serverErrors: SqlServerLoginError[] = []): string | null {
   if (SELF_SIGNED_CERT_PATTERN.test(flattenErrorText(err))) {
     return sqlServerConnectHints.selfSignedCertificate
   }
 
-  const instanceName = config?.options?.instanceName
-  if (instanceName) return sqlServerConnectHints.browserUnreachable(config.server, instanceName)
+  // Applies with or without an instance name, and is more specific than loginRejected.
+  if (config?.database && isSqlServerDatabaseUnavailable(err, serverErrors)) {
+    return sqlServerConnectHints.databaseUnavailable(config.database)
+  }
 
-  return null
+  // The mirror case: Default Database was left blank, and the fix is to fill it in.
+  if (isSqlServerDefaultDatabaseUnavailable(err, serverErrors)) {
+    return sqlServerConnectHints.defaultDatabaseUnavailable
+  }
+
+  const instanceName = config?.options?.instanceName
+  if (!instanceName) return null
+
+  return isSqlServerLoginRejection(err, serverErrors)
+    ? sqlServerConnectHints.loginRejected(config.server, instanceName)
+    : sqlServerConnectHints.browserUnreachable(config.server, instanceName)
+}
+
+// tedious keeps only the LAST error the server sends during login, which is always the
+// generic "Login failed for user 'x'." The message before it carries the actual reason
+// (e.g. `Cannot open database "x" requested by the login`), so put those back in front.
+export function sqlServerLoginMessage(message: string, serverMessages: string[] = []): string {
+  const seen = new Set<string>()
+  const parts: string[] = []
+  for (const raw of [...serverMessages, message]) {
+    const text = (raw || '').trim()
+    if (!text || seen.has(text) || (text !== message.trim() && message.includes(text))) continue
+    seen.add(text)
+    parts.push(/[.!?]$/.test(text) ? text : `${text}.`)
+  }
+  return parts.join(' ') || message
 }
 
 // Keep the driver's own text (and the original error) and append the remedy, so logs lose
 // nothing and the connection screen gains the one sentence that resolves the failure.
-function withConnectHint(err: any, config: any): any {
-  const hint = sqlServerConnectHint(err, config)
+function withConnectHint(err: any, config: any, serverErrors: SqlServerLoginError[] = []): any {
+  const hint = sqlServerConnectHint(err, config, serverErrors)
   const hasMessage = err instanceof Error && !!err.message
-  if (!hint && hasMessage) return err
+  const original = ((hasMessage && err.message) || flattenErrorText(err) || String(err)).trim()
+  const message = isSqlServerLoginRejection(err, serverErrors)
+    ? sqlServerLoginMessage(original, serverErrors.map((e) => e.message))
+    : original
+  if (!hint && hasMessage && message === original) return err
 
-  const message = ((hasMessage && err.message) || flattenErrorText(err) || String(err)).trim()
   // The connection screen renders this as one line, so join rather than stack.
   const separator = /[.!?]$/.test(message) ? ' ' : '. '
   const decorated: any = new Error(hint ? `${message}${separator}${hint}` : message)
@@ -128,14 +223,30 @@ export class SqlServerConnector extends DatabaseConnector<
       options.signal
     );
 
+    // Every error the server sends while logging in, in order. Only collected until the
+    // first connect settles: the pool reuses beforeConnect for each later connection.
+    const loginErrors: SqlServerLoginError[] = []
+    let collecting = true
+
     try {
       if (this.server.config.windowsAuthEnabled) {
         this.pool = await this.connectWindowsAuth();
       } else {
-        this.pool = await new TediousConnectionPool(this.dbConfig).connect();
+        this.pool = await new TediousConnectionPool({
+          ...this.dbConfig,
+          beforeConnect: (conn: any) => {
+            conn.on('errorMessage', (token: any) => {
+              if (collecting && token?.message) {
+                loginErrors.push({ number: token.number, message: token.message })
+              }
+            })
+          },
+        }).connect();
       }
     } catch (err) {
-      throw withConnectHint(err, this.dbConfig);
+      throw withConnectHint(err, this.dbConfig, loginErrors);
+    } finally {
+      collecting = false
     }
 
     this.pool.on("error", (err) => {

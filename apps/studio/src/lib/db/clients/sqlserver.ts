@@ -36,7 +36,7 @@ import { AzureAuthService } from '../authentication/azure';
 import { IDbConnectionServer } from '../backendTypes';
 import { GenericBinaryTranscoder } from '../serialization/transcoders';
 import { SqlServerConnector } from './sqlserver/SqlServerConnector';
-export { flattenErrorText, sqlServerConnectHint, sqlServerConnectHints } from './sqlserver/SqlServerConnector';
+export { flattenErrorText, isSqlServerDatabaseUnavailable, isSqlServerDefaultDatabaseUnavailable, isSqlServerLoginRejection, sqlServerConnectHint, sqlServerConnectHints, sqlServerLoginMessage } from './sqlserver/SqlServerConnector';
 import { IdentifyResult } from 'sql-query-identifier/lib/defines';
 const log = logRaw.scope('sql-server')
 
