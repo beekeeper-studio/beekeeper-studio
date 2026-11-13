@@ -40,7 +40,7 @@
           class="table-name truncate"
           :title="routine.name"
         >{{
-          routine.name
+          showSchema && routine.schema ? routine.schema + '.' + routine.name : routine.name
         }}</span>
       </span>
       <span
@@ -111,7 +111,7 @@ import Vue from "vue";
 import { RoutineTypeNames } from "@/lib/db/models";
 
 export default Vue.extend({
-  props: ["routine", "pinned", "draggable", "level", "expanded"],
+  props: ["routine", "pinned", "draggable", "level", "expanded", "showSchema"],
   data() {
     return {
       selected: false,
